@@ -13,7 +13,9 @@ Argo will keep one Session domain and two separate paths around it:
 1. A managed connection drives a live agent that Argo owns.
 2. A watcher discovers and reads a Session that Argo does not own.
 
-For Claude, the Agent SDK will be the preferred managed connection after Anthropic confirms the authentication model. Subscription billing must also remain available. The existing PTY connection will remain a tested fallback. A PTY is a pseudo-terminal that runs the real interactive Claude Code interface.
+For Claude, raw `stream-json` from the unmodified Claude Code binary will be the preferred managed connection. The existing PTY connection will remain a tested fallback. A PTY is a pseudo-terminal that runs the real interactive Claude Code interface.
+
+The Agent SDK remains a supported architecture option. Argo can enable it for API-key users, cloud-provider users, or an authentication model that Anthropic approves for Argo.
 
 For Codex, `codex app-server` will remain the managed connection. Argo will consume its complete event stream for live managed Sessions.
 
@@ -23,26 +25,29 @@ XState will own only the live connection flows that Argo controls. It will not o
 
 ## Direct answer: Agent SDK or raw `stream-json`?
 
-If billing is the same, Argo does not have a strong product reason to prefer raw `claude --output-format stream-json` over the Agent SDK.
+If billing is the same, raw `claude --output-format stream-json` still has one strong product advantage. Anthropic explicitly permits a third-party product to run the unmodified Claude Code binary with the user's own login.
+
+Anthropic treats the Agent SDK differently. Its legal page tells third-party products that use the Agent SDK to use API-key or cloud-provider authentication. It does not permit a product to route Pro or Max credentials through an SDK integration unless Anthropic agrees otherwise.
 
 The Agent SDK gives Argo an official library boundary. It provides typed messages, permission callbacks, custom tools, session controls, and cancellation. It also hides some process and protocol work that Argo otherwise owns.
 
 Raw `stream-json` gives Argo direct control of the child process and the wire format. It reduces dependence on an SDK release. It also makes the move between structured input and a PTY easier because both paths launch the same executable.
 
-Those raw protocol benefits do not justify a third product mode. Argo can offer two Claude drivers:
+Argo can support three internal drivers without adding three user-facing modes:
 
-- `ClaudeSdkDriver` for the normal managed experience.
+- `ClaudeCliStreamDriver` for the normal subscription experience.
+- `ClaudeSdkDriver` for approved or API-billed SDK use.
 - `ClaudePtyDriver` for the interactive fallback.
 
-The SDK itself uses Claude Code as the agent runtime. The billing risk for the SDK and `claude -p` is therefore the same class of risk. If Anthropic restricts headless subscription use again, Argo can select the PTY driver for new channels.
+The SDK and `claude -p` share a billing-policy risk because both are headless. Their authentication rules are not the same. If Anthropic restricts headless subscription use again, Argo can select the PTY driver for new channels.
 
 Argo must not switch drivers during a Turn. A Turn is one user request and its agent response. If the SDK fails after a Turn starts, Argo will close that channel, reconcile the Session record, and resume through the PTY at the next Turn boundary.
 
-## Why the SDK is the preferred Claude driver
+## When the Agent SDK is the better Claude driver
 
 The SDK wins when these conditions are true:
 
-- The user can use it with the current Claude plan.
+- The user supplies an API key or supported cloud-provider credential, or Anthropic approves the subscription path for Argo.
 - Its event set covers the Feed, permissions, questions, plans, tools, and usage data that Argo needs.
 - Argo can package and update it without losing Claude Code configuration behavior.
 
@@ -62,18 +67,19 @@ It also creates these costs:
 - A headless billing policy change can disable this path for subscription users.
 - The adapter still needs strict boundary validation. TypeScript types do not validate runtime data.
 
-## Where raw `stream-json` still helps
+## Why raw `stream-json` is the default
 
-Raw `stream-json` remains useful as an internal compatibility path. It does not need its own product setting.
+Raw `stream-json` runs the unmodified Claude Code binary. The user completes Claude Code's own sign-in flow, and Argo never collects or stores the credential.
 
-Argo can use it for these cases:
+This path gives Argo these benefits:
 
-- A short-lived experiment before an SDK feature is available.
-- A diagnostic tool that records the exact Claude Code event stream.
-- A compatibility bridge if the SDK package cannot run in the desktop build.
-- A parity test for the SDK adapter.
+- It matches Anthropic's documented third-party product rule.
+- It uses the user's Claude subscription under the current billing policy.
+- It preserves Claude Code configuration, plugins, hooks, and MCP servers.
+- It keeps a child-process seam between Argo and the vendor runtime.
+- It stays close to the PTY fallback because both paths launch the same binary.
 
-If Argo promotes raw `stream-json` to a supported driver, it must own event validation, version drift, backpressure, cancellation, permission routing, and process cleanup. The Agent SDK already exists to own much of that work.
+Argo still owns event validation, version drift, backpressure, cancellation, permission routing, and process cleanup. The Claude adapter will hide that work behind one small interface.
 
 ## Why the PTY remains necessary
 
@@ -101,9 +107,15 @@ The earlier research session ran a headless Claude command on this machine. The 
 
 Argo must treat billing as a driver selection policy, not as a domain rule. The Session model must not know why Argo selected the SDK or PTY.
 
-Billing behavior and permitted authentication are separate questions. Anthropic directs third-party products to contact sales about permitted authentication methods. Before Argo ships the SDK as the default connection, the team must get written confirmation for this use case.
+Billing behavior and permitted authentication are separate questions. Billing tells Argo which account pays. Authentication policy tells Argo which credentials a third-party product can use.
 
-Before Argo starts an SDK Session, it will read the init event and expose the active credential source. If an API key takes precedence over the subscription, Argo will warn the user before the first paid Turn.
+Anthropic permits a third-party product to run the unmodified Claude Code binary. Each user must sign in through Anthropic's flow with their own subscription, API key, or supported provider credential. The product must not collect, store, resell, or intermediate the credential.
+
+Anthropic gives the Agent SDK a narrower rule. A third-party product that uses the SDK must use an API key or supported cloud provider. The product cannot route Free, Pro, or Max credentials through the SDK on the user's behalf unless Anthropic agrees otherwise.
+
+Argo can use the raw CLI path under the published conditions and Commercial Terms. It does not need a separate authentication exception. Argo needs an agreement before it offers subscription authentication through its Agent SDK integration.
+
+Before Argo starts a CLI Session, it will read the init event and expose the active credential source. If an API key takes precedence over the subscription, Argo will warn the user before the first paid Turn.
 
 Sources: [Anthropic billing notice](https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan), [Claude Code legal and compliance](https://code.claude.com/docs/en/legal-and-compliance)
 
@@ -158,7 +170,7 @@ Each managed Session will have one XState actor inside its Harness adapter:
 
 These must remain two machines. ADR-0024 requires each Harness adapter to own its protocol and lifecycle. A shared machine in the Session domain puts Claude and Codex conditions back into shared code.
 
-The Claude machine can invoke either `ClaudeSdkDriver` or `ClaudePtyDriver`. Driver selection happens before the connection enters `Live`. The selected driver stays fixed for the life of that channel.
+The Claude machine can invoke `ClaudeCliStreamDriver`, `ClaudeSdkDriver`, or `ClaudePtyDriver`. Driver selection happens before the connection enters `Live`. The selected driver stays fixed for the life of that channel.
 
 The Codex machine invokes `CodexAppServerDriver`.
 
@@ -274,6 +286,7 @@ flowchart LR
     DRIVE --> CMACHINE[Claude XState adapter]
     DRIVE --> XMACHINE[Codex XState adapter]
 
+    CMACHINE --> CCLI[Claude stream-json driver]
     CMACHINE --> CSDK[Claude Agent SDK driver]
     CMACHINE --> CPTY[Claude PTY driver]
     XMACHINE --> CODEX[Codex app-server driver]
@@ -326,6 +339,16 @@ This use follows ADR-0043. Durable Argo settings and disposable external indexes
 
 ## Claude data flow
 
+### Managed with raw `stream-json`
+
+1. Argo launches the unmodified Claude Code binary with structured input and output.
+2. Claude Code emits live JSON events on stdout.
+3. The Claude adapter validates and normalizes each event.
+4. Argo sends prompts, interrupts, and permission decisions through the documented CLI protocol.
+5. The transcript observer confirms durable history and fills any gaps.
+
+This is the default path for users who sign in to Claude Code with their own subscription.
+
 ### Managed with the Agent SDK
 
 1. Argo starts or resumes the Session through `ClaudeSdkDriver`.
@@ -334,7 +357,7 @@ This use follows ADR-0043. Durable Argo settings and disposable external indexes
 4. Argo updates the Feed and Session status from the managed channel.
 5. The transcript observer confirms durable history and fills any gaps.
 
-The live SDK stream is the primary source during the Turn. The transcript is the durable reconciliation source after the Turn.
+This path is available for API-key, cloud-provider, or approved subscription authentication. The live SDK stream is the primary source during the Turn. The transcript is the durable reconciliation source after the Turn.
 
 ### Managed with the PTY
 
@@ -393,22 +416,31 @@ The market does not use one common transport. It does show a strong split betwee
 
 | Product | Claude live path | History or watched path | Codex path | Evidence |
 | --- | --- | --- | --- | --- |
-| Conductor 0.85 | Structured Claude stream through its bundled runtime | Internal session store | `codex app-server` | Local inspection of the installed app bundle and [Conductor FAQ](https://www.conductor.build/docs/faq) |
+| Conductor 0.85 | Agent SDK over native Claude Code | Internal session store | `codex app-server` | Local bundle inspection, [subscription update](https://www.conductor.build/blog/claude-subscription-update), and [FAQ](https://www.conductor.build/docs/faq) |
 | Vibe Kanban | Raw `stream-json` over child stdio | Separate review and record readers | `codex app-server` | [Source repository](https://github.com/BloopAI/vibe-kanban) |
+| Crystal | Raw `stream-json` over child stdio | Its own task records | Not established | [Source repository](https://github.com/stravu/crystal) |
 | Sculptor | Raw `stream-json` in a container | Transcript lookup for resume | Other adapters use their own protocols | [Source repository](https://github.com/imbue-ai/sculptor) |
-| Claude Code UI | Agent SDK for chat | Watches Claude transcript files | Not the focus of the reviewed path | [Source repository](https://github.com/siteboon/claudecodeui) |
+| HumanLayer | Raw `stream-json` from its daemon | Its own Session records | Not established | [Source repository](https://github.com/humanlayer/humanlayer) |
+| Terragon | Raw `stream-json` | Finds and repairs Claude transcripts | Not established | [Source repository](https://github.com/terragon-labs/terragon-oss) |
 | Claudia | Raw `stream-json` for live Turns | Reads Claude transcripts for history | Not established | [Source repository](https://github.com/getAsterisk/claudia) |
+| cui | Raw `stream-json` for live Turns | Reads Claude transcripts for history | Not established | [Source repository](https://github.com/wbopan/cui) |
+| Claude Code UI | Agent SDK for chat and PTY for its shell | Watches Claude transcript files | Not the focus of the reviewed path | [Source repository](https://github.com/siteboon/claudecodeui) |
+| Happy | Agent SDK | Watches Claude transcript files | ACP support | [Source repository](https://github.com/slopus/happy) |
+| Zed with Claude | Agent SDK through `claude-code-acp` | ACP session updates | ACP for supported agents | [Claude Code ACP](https://github.com/zed-industries/claude-code-acp) |
 | Claude Squad | Real Claude TUI in tmux | Captures terminal panes | Not established | [Source repository](https://github.com/smtg-ai/claude-squad) |
-| Zed with Claude | ACP client over `claude-code-acp` | ACP session updates | ACP for supported agents | [Claude Code ACP](https://github.com/zed-industries/claude-code-acp) |
+| Uzi and ccmanager | Real Claude TUI in tmux or a PTY | Hooks or terminal panes | Not established | [Uzi](https://github.com/devflowinc/uzi), [ccmanager](https://github.com/kbwo/ccmanager) |
 
 The pattern is consistent:
 
-- Structured streams or SDK events drive most hidden managed agents.
+- Raw `stream-json` drives most hidden Claude agents in the reviewed open-source products.
+- Agent SDK integrations exist in Conductor, Claude Code UI, Happy, and Zed's Claude adapter.
 - Transcript files often supply history, discovery, resume checks, and repair.
 - Terminal scraping appears mainly in products that show or multiplex the real terminal.
 - Codex integrations use `codex app-server` when they need a first-party live protocol.
 
-Argo is unusual because its current managed Claude Feed depends on the transcript during the live Turn. That design came from the need to keep the interactive billing surface. It does not need to remain the preferred path when the SDK uses the subscription.
+Conductor publicly says that it uses the Agent SDK with the user's Claude subscription and that it is working with Anthropic. Its public pages do not state whether it has a separate agreement. Argo cannot infer permission from Conductor's implementation.
+
+Argo is unusual because its current managed Claude Feed depends on the transcript during the live Turn. A raw structured stream removes that live dependency without moving authentication into the SDK.
 
 Watched Sessions are less common as a first-class product feature. Several products list or import old Sessions, but fewer keep an always-synchronized read-only view of work from other clients. Argo can keep that feature as a continuity layer without forcing it into the managed architecture.
 
@@ -418,9 +450,10 @@ Driver selection belongs in the Claude adapter. The product core asks for a mana
 
 Use this order for a new or resumed channel:
 
-1. Use the Agent SDK when Anthropic permits this use, subscription use is available, and the SDK passes the required capability tests.
-2. Use the PTY when the SDK is unavailable, restricted, or disabled by the user.
-3. Refuse the start if neither path is healthy. Keep the draft and explain the failure.
+1. Use raw `stream-json` with the unmodified Claude Code binary and the user's own Claude Code login.
+2. Use the Agent SDK for API-key, cloud-provider, or separately approved subscription authentication.
+3. Use the PTY when headless use is unavailable, restricted, or disabled by the user.
+4. Refuse the start if no path is healthy. Keep the draft and explain the failure.
 
 Argo must record the selected driver on the live channel. It does not store the driver as a permanent property of the Session.
 
@@ -449,7 +482,8 @@ The remaining work is concentrated in the adapter and projection layers:
 
 | Gap | Size | Reason |
 | --- | --- | --- |
-| Add `ClaudeSdkDriver` | Medium | New driver behind an existing seam |
+| Add `ClaudeCliStreamDriver` | Medium | New default driver behind an existing seam |
+| Add optional `ClaudeSdkDriver` | Medium | Adds richer SDK features for permitted authentication paths |
 | Add driver selection and capability reporting | Small to medium | The port already declares adapter capabilities |
 | Read the full Codex managed event set | Large | Feed projection currently returns to rollout files for many items |
 | Make live channel events primary for managed Sessions | Large | Requires stable identifiers and deduplication with transcripts |
@@ -458,7 +492,7 @@ The remaining work is concentrated in the adapter and projection layers:
 | Detect Claude credential source | Small | The init event exposes `apiKeySource` |
 | Repair interrupted Claude transcripts before resume | Medium | Needs a safe and tested record repair rule |
 | Replace direct Codex title SQLite reads | Small | `thread/list` exposes the native name |
-| Add parity tests for SDK and PTY | Medium | Both drivers must produce the same Argo outcomes |
+| Add parity tests for structured CLI, SDK, and PTY | Medium | All drivers must produce the same Argo outcomes |
 
 This is not a whole-app rewrite. The control seam is already close to the target. The larger change is the managed Feed projection, especially for Codex.
 
@@ -479,21 +513,27 @@ This is not a whole-app rewrite. The control seam is already close to the target
 - Keep rollout tailing for watched Codex Sessions.
 - Move native title reads from `state_5.sqlite` to `thread/list`.
 
-### Phase 3: add the Claude SDK driver
+### Phase 3: add the Claude structured CLI driver
 
-- Implement the SDK adapter behind the existing drive port.
-- Make sure that all SDK data crosses a runtime validation boundary.
-- Compare SDK and PTY outcomes with the same adapter contract tests.
-- Run the SDK in shadow mode before it becomes the default.
+- Implement the raw `stream-json` adapter behind the existing drive port.
+- Make sure that all CLI events cross a runtime validation boundary.
+- Compare structured CLI and PTY outcomes with the same adapter contract tests.
+- Run the structured CLI path in shadow mode before it becomes the default.
 
-### Phase 4: make the SDK the default
+### Phase 4: add the optional Agent SDK driver
 
-- Select the SDK when credential and billing checks pass.
+- Select the SDK only for a permitted authentication path.
+- Reuse the same normalized event and capability contracts.
+- Compare SDK outcomes with the structured CLI and PTY contract tests.
+- Keep the raw structured CLI as the subscription default.
+
+### Phase 5: keep the PTY fallback healthy
+
 - Keep a visible setting for the PTY compatibility path.
 - Keep automated PTY tests so the fallback does not decay.
 - Do not remove transcript observation.
 
-### Phase 5: improve watched Sessions
+### Phase 6: improve watched Sessions
 
 - Make the read-only posture clear in the Roster and Feed.
 - Show source health and last update time.
@@ -504,7 +544,8 @@ This is not a whole-app rewrite. The control seam is already close to the target
 
 Argo will revisit the preferred Claude driver when one of these events occurs:
 
-- Anthropic activates separate billing or blocks subscription use for the SDK.
+- Anthropic activates separate billing or blocks subscription use for `claude -p`.
+- Anthropic permits subscription authentication for Argo's Agent SDK integration.
 - The SDK cannot match required Claude Code plugin or hook behavior.
 - SDK packaging creates an unacceptable desktop release risk.
 - Raw `stream-json` exposes a required feature before the SDK.
@@ -516,7 +557,7 @@ Argo will revisit watched Codex observation when Codex provides a supported subs
 
 Build the architecture around one durable Session, one read-only observation port, and one managed drive port.
 
-Use the Claude Agent SDK as the preferred managed driver after Anthropic confirms the authentication model and while billing remains equal. Keep the current PTY adapter as a tested policy fallback. Do not add raw `stream-json` as a third user-facing mode unless the SDK blocks a required feature.
+Use raw `stream-json` from the unmodified Claude Code binary as the preferred managed driver. Keep the current PTY adapter as a tested policy fallback. Add the Agent SDK for API-key, cloud-provider, or separately approved subscription authentication.
 
 Use `codex app-server` as the full live source for managed Codex Sessions. Keep transcript and rollout observers for watched Sessions and for durable reconciliation.
 
@@ -531,11 +572,19 @@ Keep watched Sessions. They are not the main interaction path, but they preserve
 - [Claude Code legal and compliance](https://code.claude.com/docs/en/legal-and-compliance)
 - [OpenAI Codex app-server client](https://github.com/openai/codex/tree/main/codex-rs/app-server-client)
 - [OpenAI Codex thread store](https://github.com/openai/codex/tree/main/codex-rs/thread-store)
+- [Conductor Claude subscription update](https://www.conductor.build/blog/claude-subscription-update)
 - [Vibe Kanban source](https://github.com/BloopAI/vibe-kanban)
+- [Crystal source](https://github.com/stravu/crystal)
 - [Sculptor source](https://github.com/imbue-ai/sculptor)
+- [HumanLayer source](https://github.com/humanlayer/humanlayer)
+- [Terragon source](https://github.com/terragon-labs/terragon-oss)
 - [Claude Code UI source](https://github.com/siteboon/claudecodeui)
+- [Happy source](https://github.com/slopus/happy)
 - [Claudia source](https://github.com/getAsterisk/claudia)
+- [cui source](https://github.com/wbopan/cui)
 - [Claude Squad source](https://github.com/smtg-ai/claude-squad)
+- [Uzi source](https://github.com/devflowinc/uzi)
+- [ccmanager source](https://github.com/kbwo/ccmanager)
 - [Claude Code ACP source](https://github.com/zed-industries/claude-code-acp)
 - `docs/adr/0024-session-drive-port-two-adapters.md`
 - `docs/adr/0026-a-resume-chain-can-be-resumed.md`
