@@ -49,6 +49,7 @@ test('starts a clean database with every ordered migration', async () => {
       { name: '20260921164243_aberrant_thundra' },
       { name: '20260921173714_demonic_meteorite' },
       { name: '20260921194635_worried_gargoyle' },
+      { name: '20260921223050_tiresome_the_initiative' },
     ])
     database
       .prepare('INSERT INTO project (id, path, common_directory) VALUES (?, ?, ?)')

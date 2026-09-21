@@ -40,11 +40,11 @@ export async function startNewSession(
     })
     return false
   }
+  const cwd = cockpit.workspace?.path ?? cockpit.project.path
   const creation = useSessionCreationStore.getState()
   // The "+" click already began this row (`identity.kind === 'pending'`); a Send from a bare
   // composer with no prior "+" begins one here instead. Either way, one draft row exists.
-  const pending =
-    identity.kind === 'pending' ? creation.pending : creation.begin(harness, cockpit.project.path)
+  const pending = identity.kind === 'pending' ? creation.pending : creation.begin(harness, cwd)
   if (pending === null || pending.stage !== 'draft') return false
   // A rapid second Enter/`+` finds the row already submitting and no-ops (#2109): the observable
   // contract is one user action produces at most one new Session, not which mechanism enforces it.
@@ -53,7 +53,7 @@ export async function startNewSession(
   try {
     const reply = await start.mutateAsync({
       harness,
-      cwd: cockpit.project.path,
+      cwd,
       prompt,
       setup,
       attachments,

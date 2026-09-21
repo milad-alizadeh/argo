@@ -2,7 +2,9 @@ import { useQuery } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
 import type { ProjectError, ProjectErrorCode } from '@/domains/projects/contract/contract'
 import type { ProjectListed, ProjectSummary } from '@/domains/projects/contract/messages'
+import type { WorkspaceSummary } from '@/domains/projects/contract/workspace-messages'
 import { useProjectMutations } from '@/domains/projects/renderer/hooks/use-project-mutations'
+import { useWorkspaces } from '@/domains/projects/renderer/hooks/use-workspaces'
 import {
   type ProjectContractError,
   throwProjectContractError,
@@ -15,23 +17,35 @@ export type Cockpit = {
   status: CockpitStatus
   project: ProjectSummary | null
   projects: readonly ProjectSummary[]
+  workspace: WorkspaceSummary | null
+  workspaces: readonly WorkspaceSummary[]
   message: string | null
   code: ProjectErrorCode | null
   busy: boolean
 }
 
-export type ProjectActions = { open: () => void; select: (projectId: string) => void }
+export type ProjectActions = {
+  open: () => void
+  select: (projectId: string) => void
+  selectWorkspace: (workspaceId: string) => void
+  createManagedWorkspace: (baseRef: string) => void
+}
+
+export type ProjectCockpit = Omit<Cockpit, 'workspace' | 'workspaces'>
 
 const IDLE = { project: null, projects: [], message: null, code: null, busy: false } as const
-const LOADING: Cockpit = { status: 'loading', ...IDLE }
-const EMPTY: Cockpit = { status: 'empty', ...IDLE }
+const LOADING: ProjectCockpit = { status: 'loading', ...IDLE }
+const EMPTY: ProjectCockpit = { status: 'empty', ...IDLE }
 
-function refuse(previous: Cockpit, reply: ProjectError | ProjectContractError): Cockpit {
+function refuse(
+  previous: ProjectCockpit,
+  reply: ProjectError | ProjectContractError,
+): ProjectCockpit {
   const status = previous.status === 'loading' ? 'empty' : previous.status
   return { ...previous, status, message: null, code: reply.code, busy: false }
 }
 
-async function cockpitForListing(reply: ProjectListed): Promise<Cockpit> {
+async function cockpitForListing(reply: ProjectListed): Promise<ProjectCockpit> {
   const project = reply.projects.find((candidate) => candidate.id === reply.selectedId)
   if (!project) return { ...EMPTY, projects: reply.projects }
   const opened = await window.argo.openProject({ projectId: project.id })
@@ -66,7 +80,7 @@ async function cockpitForListing(reply: ProjectListed): Promise<Cockpit> {
 }
 
 function useProjectListing() {
-  return useQuery<Cockpit, ProjectContractError>({
+  return useQuery<ProjectCockpit, ProjectContractError>({
     queryKey: projectListQueryKey,
     staleTime: Infinity,
     retry: false,
@@ -90,9 +104,14 @@ export function useProjects(): [Cockpit, ProjectActions] {
 
   const queryCockpit = projects.data ?? LOADING
   const error = projects.error
-  const cockpit = useMemo(
+  const projectCockpit = useMemo(
     () => ({ ...(error ? refuse(queryCockpit, error) : queryCockpit), busy: mutations.isPending }),
     [error, mutations.isPending, queryCockpit],
+  )
+  const [workspaces, workspaceActions] = useWorkspaces(projectCockpit.project?.id ?? null)
+  const cockpit = useMemo(
+    () => ({ ...projectCockpit, ...workspaces }),
+    [projectCockpit, workspaces],
   )
 
   const open = useCallback(() => {
@@ -112,5 +131,8 @@ export function useProjects(): [Cockpit, ProjectActions] {
     [mutations],
   )
 
-  return [cockpit, useMemo(() => ({ open, select }), [open, select])]
+  return [
+    cockpit,
+    useMemo(() => ({ open, select, ...workspaceActions }), [open, select, workspaceActions]),
+  ]
 }

@@ -7,6 +7,10 @@ import {
   type TurnSetupControlProps,
 } from '@/domains/sessions/renderer/composer/run-setup-menu'
 import type { ComposerAttachment } from '@/domains/sessions/renderer/composer/use-composer-store'
+import {
+  WorkspaceMenu,
+  type WorkspaceMenuControlProps,
+} from '@/domains/sessions/renderer/composer/workspace-menu'
 import type { HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
@@ -34,6 +38,7 @@ export function ComposerToolbar({
   onOpenContextPicker,
   harness,
   setup,
+  workspace,
   isRunning,
   onInterrupt,
   interruptRef,
@@ -44,6 +49,7 @@ export function ComposerToolbar({
   onOpenContextPicker: () => void
   harness: HarnessControl | null
   setup: TurnSetupControlProps | null
+  workspace: WorkspaceMenuControlProps | null
   isRunning: boolean
   onInterrupt?: () => Promise<boolean>
   interruptRef: Parameters<typeof Button>[0]['ref']
@@ -54,6 +60,7 @@ export function ComposerToolbar({
     <div className="flex items-center gap-1 p-(--spacing-shell-item) @[36rem]:gap-2">
       <AddContextButton onOpen={onOpenContextPicker} />
       {harness ? <RunSetupMenu harness={harness} setup={setup} /> : null}
+      {workspace ? <WorkspaceMenu {...workspace} /> : null}
       <div className="ml-auto flex items-center gap-1">
         {setup ? <ModeMenu {...setup} /> : null}
         {isRunning ? (

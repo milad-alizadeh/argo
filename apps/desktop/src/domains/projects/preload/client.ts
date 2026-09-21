@@ -1,4 +1,5 @@
 import {
+  type ProjectError as ProjectErrorReply,
   type ProjectOpenReply,
   type ProjectSetupCommand,
   type ProjectSetupReply,
@@ -7,7 +8,10 @@ import {
 } from '@/domains/projects/contract/contract'
 import type { ProjectListReply } from '@/domains/projects/contract/messages'
 import { PROJECT_OPERATIONS } from '@/domains/projects/contract/operations'
+import type { ProjectWorkspaceListed } from '@/domains/projects/contract/workspace-messages'
 import { createDomainClient } from '@/shared/ipc/client'
+
+export type ProjectWorkspaceReply = ProjectWorkspaceListed | ProjectErrorReply
 
 export type ProjectClient = {
   openProject(request: { projectId: string }): Promise<ProjectOpenReply>
@@ -23,6 +27,15 @@ export type ProjectClient = {
   registerProject(): Promise<ProjectListReply>
   relocateProject(request: { projectId: string }): Promise<ProjectListReply>
   selectProject(request: { projectId: string }): Promise<ProjectListReply>
+  listProjectWorkspaces(request: { projectId: string }): Promise<ProjectWorkspaceReply>
+  selectProjectWorkspace(request: {
+    projectId: string
+    workspaceId: string
+  }): Promise<ProjectWorkspaceReply>
+  createManagedProjectWorkspace(request: {
+    projectId: string
+    baseRef: string
+  }): Promise<ProjectWorkspaceReply>
 }
 
 export function createProjectClient(
@@ -53,5 +66,8 @@ export function createProjectClient(
     registerProject: () => client.register(),
     relocateProject: (request) => client.relocate(request),
     selectProject: (request) => client.select(request),
+    listProjectWorkspaces: (request) => client.workspaceList(request),
+    selectProjectWorkspace: (request) => client.workspaceSelect(request),
+    createManagedProjectWorkspace: (request) => client.workspaceCreateManaged(request),
   }
 }

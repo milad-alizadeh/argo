@@ -1,10 +1,13 @@
 import { type BrowserWindow, dialog, net } from 'electron'
 import { projectError } from '@/domains/projects/contract/contract'
 import { PROJECT_OPERATIONS } from '@/domains/projects/contract/operations'
+import { createManagedProjectWorkspace } from '@/domains/projects/main/create-managed-project-workspace'
+import { listProjectWorkspaces } from '@/domains/projects/main/list-project-workspaces'
 import { listProjects } from '@/domains/projects/main/list-projects'
 import { openProject } from '@/domains/projects/main/open-project'
 import { registerProject, relocateProject } from '@/domains/projects/main/register-project'
 import { selectProject } from '@/domains/projects/main/select-project'
+import { selectProjectWorkspace } from '@/domains/projects/main/select-project-workspace'
 import { projectSetupRuntime } from '@/domains/projects/main/setup/actors/project-setup-actors'
 import type { OnboardingAgentDriver } from '@/domains/projects/main/setup/onboarding-agent/runtime/run-onboarding-agent'
 import {
@@ -79,6 +82,12 @@ export function attachProjectBridge(
       register: registerProject,
       relocate: relocateProject,
       select: selectProject,
+      workspaceList: (request, context) =>
+        context.exclusive(() => listProjectWorkspaces(request, context)),
+      workspaceSelect: (request, context) =>
+        context.exclusive(() => selectProjectWorkspace(request, context)),
+      workspaceCreateManaged: (request, context) =>
+        context.exclusive(() => createManagedProjectWorkspace(request, context)),
     },
     error: projectError,
   })
