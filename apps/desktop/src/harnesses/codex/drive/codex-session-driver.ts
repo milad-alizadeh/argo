@@ -69,7 +69,7 @@ function decidePendingPermission(
 ) {
   const pending = session?.pendingPermission
   if (!session || !pending || pending.id !== permissionId) return false
-  session.channel.respond(pending.requestId, codexApprovalDecision(decision))
+  session.channel.respond(pending.requestId, codexApprovalDecision(pending, decision))
   session.pendingPermission = null
   if (session.status === 'permission') session.status = 'running'
   return true
