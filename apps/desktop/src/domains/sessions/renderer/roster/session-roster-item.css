@@ -4,6 +4,9 @@
   --roster-dot-gap: 2px;
   --roster-dot-radius: calc(var(--size-state-dot) / 2);
   --roster-dot-offset: 2px;
+  --roster-harness-spin-duration: 2.4s;
+  --roster-harness-spin-easing: linear;
+  --roster-harness-spin-turn: 1turn;
 
   position: absolute;
   inset: 0;
@@ -15,4 +18,75 @@
     transparent calc(var(--roster-dot-radius) + var(--roster-dot-gap)),
     black calc(var(--roster-dot-radius) + var(--roster-dot-gap))
   );
+}
+
+.roster-harness-mark [data-slot="harness-logo"] {
+  display: inline-flex;
+}
+
+.roster-harness-mark [data-slot="harness-logo"][data-active="true"] {
+  animation: roster-harness-spin var(--roster-harness-spin-duration)
+    var(--roster-harness-spin-easing) infinite;
+}
+
+.roster-session-status {
+  --roster-status-pulse-duration: 1.6s;
+  --roster-status-pulse-easing: ease-in-out;
+  --roster-attention-glow: 0 0 5px color-mix(in srgb, var(--color-warn) 35%, transparent);
+
+  background-color: var(--color-idle);
+  box-shadow: none;
+  opacity: 1;
+  transition:
+    background-color var(--duration-attention) var(--ease-emphasized),
+    box-shadow var(--duration-attention) var(--ease-emphasized),
+    opacity var(--duration-attention) var(--ease-emphasized);
+}
+
+.roster-session-status[data-variant="active"] {
+  background-color: var(--color-active);
+  animation: roster-status-pulse var(--roster-status-pulse-duration)
+    var(--roster-status-pulse-easing) infinite;
+}
+
+.roster-session-status[data-variant="attention"] {
+  background-color: var(--color-warn);
+  box-shadow: var(--roster-attention-glow);
+}
+
+.roster-session-status[data-variant="failed"] {
+  background-color: var(--color-danger);
+}
+
+.roster-session-status[data-variant="unread"] {
+  background-color: var(--color-plan);
+  box-shadow: var(--shadow-unread-glow);
+}
+
+.roster-session-status[data-variant="unknown"] {
+  background-color: transparent;
+  box-shadow: var(--shadow-state-outline);
+}
+
+@keyframes roster-harness-spin {
+  to {
+    transform: rotate(var(--roster-harness-spin-turn));
+  }
+}
+
+@keyframes roster-status-pulse {
+  50% {
+    box-shadow: var(--shadow-state-glow);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .roster-harness-mark [data-slot="harness-logo"][data-active="true"],
+  .roster-session-status[data-variant="active"] {
+    animation: none;
+  }
+
+  .roster-session-status {
+    transition: none;
+  }
 }

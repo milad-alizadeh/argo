@@ -14,15 +14,13 @@ import { sessionName } from '@/domains/sessions/renderer/roster/roster-rows'
 import type { SelectionModifier } from '@/domains/sessions/renderer/roster/roster-selection'
 import { SessionMetadata } from '@/domains/sessions/renderer/roster/session-roster-metadata'
 import type { Session } from '@/domains/sessions/renderer/types'
-import { Loader } from '@/platform/renderer/components/loader'
 import './session-roster-item.css'
 import {
   SessionBlockedBadge,
   SessionLockedMark,
   STATUS_LABELS,
-  STATUS_MARKS,
+  statusVariantOf,
 } from '@/domains/sessions/renderer/roster/session-roster-status'
-import { unreadMarkerPrototypeDot } from '@/domains/sessions/renderer/roster/unread-marker-prototype'
 
 function selectionModifierOf(event: {
   shiftKey: boolean
@@ -87,11 +85,7 @@ export function SessionRosterItem({
     ? 'focus-visible:outline-2 focus-visible:outline-transparent focus-visible:ring-0'
     : 'focus-visible:ring-2 focus-visible:ring-ring'
   const running = session.status === 'running' || session.status === 'starting'
-  const prototypeDot = unreadMarkerPrototypeDot({
-    blocked: session.status === 'asking' || session.status === 'permission',
-    failed: session.status === 'ended' || session.status === 'stopped',
-    unread: session.unread,
-  })
+  const statusVariant = statusVariantOf(session)
   // A shift- or platform-modifier click selects (ranges or adds to the bulk selection) instead of
   // opening the Session, so no checkbox is needed for multi-select (#2194, dropped per review). A
   // plain click keeps opening the Session, as it did before selection existed.
@@ -119,10 +113,13 @@ export function SessionRosterItem({
       >
         <span aria-hidden="true" className="relative flex h-5 w-4 shrink-0 items-center">
           <span className="roster-harness-mark">
-            {knownHarness(session.harness) ? <HarnessLogo harness={session.harness} /> : null}
+            <span data-active={running} data-slot="harness-logo">
+              {knownHarness(session.harness) ? <HarnessLogo harness={session.harness} /> : null}
+            </span>
           </span>
           <span
-            className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full ${session.unread ? prototypeDot : STATUS_MARKS[session.status]}`}
+            className="roster-session-status absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full"
+            data-variant={statusVariant}
             data-slot="session-status"
           />
         </span>
@@ -150,7 +147,6 @@ export function SessionRosterItem({
             ) : null}
             <SessionBlockedBadge session={session} />
             <SessionLockedMark session={session} />
-            {running ? <Loader aria-hidden={true} className="ml-auto" size="meta" /> : null}
             {session.unread ? <span className="sr-only">{t('rosterStatusUnread')}</span> : null}
           </span>
           <ActivityLine session={session} />

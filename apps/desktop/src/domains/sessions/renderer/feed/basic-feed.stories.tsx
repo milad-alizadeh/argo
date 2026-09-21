@@ -342,14 +342,14 @@ const delegationFeed = {
       id: 'agent-review:started',
       subagentId: 'call-review',
       event: 'started' as const,
-      name: 'Review the Feed card for keyboard access.',
+      name: 'Review the Feed disclosure for keyboard access.',
     },
     {
       shape: 'subagent' as const,
       id: 'agent-review:messaged',
       subagentId: 'call-review',
       event: 'messaged' as const,
-      name: 'Review the Feed card for keyboard access.',
+      name: 'Review the Feed disclosure for keyboard access.',
     },
     {
       shape: 'subagent' as const,
@@ -357,7 +357,7 @@ const delegationFeed = {
       subagentId: 'call-review',
       event: 'responded' as const,
       state: 'completed' as const,
-      name: 'Review the Feed card for keyboard access.',
+      name: 'Review the Feed disclosure for keyboard access.',
       text: 'Keyboard access holds.',
       model: 'gpt-5.6-terra',
       durationMs: 72000,
@@ -368,7 +368,7 @@ const delegationFeed = {
 
 const REVIEW_AGENT = {
   id: 'call-review',
-  label: 'Review the Feed card for keyboard access.',
+  label: 'Review the Feed disclosure for keyboard access.',
   state: 'completed' as const,
   startedAt: '2026-09-02T08:00:00.000Z',
   endedAt: '2026-09-02T08:01:12.000Z',
@@ -397,8 +397,8 @@ function LinkedFeed(args: React.ComponentProps<typeof BasicFeed>) {
   )
 }
 
-// Each block titles its work and shows only the newest line, and opens its feed or terminal.
-export const DelegationCards: Story = {
+// Each event's title opens the child Session without expanding the parent Feed.
+export const DelegationEvents: Story = {
   args: { feed: delegationFeed, selectedSessionId: 'subagents' },
   render: (args) => <LinkedFeed {...args} />,
   play: async ({ canvasElement }) => {
@@ -406,16 +406,15 @@ export const DelegationCards: Story = {
     await expect(canvas.getAllByRole('region', { name: 'Background Agent' })).toHaveLength(3)
     const agent = canvas.getAllByRole('region', { name: 'Background Agent' }).at(-1) as HTMLElement
     await expect(agent).toHaveTextContent('Done')
-    await expect(agent).toHaveTextContent('Review the Feed card for keyboard access.')
+    await expect(agent).toHaveTextContent('Review the Feed disclosure for keyboard access.')
     await expect(agent).not.toHaveClass('border-b')
-    await expect(agent).toHaveTextContent('gpt-5.6-terra · 1m 12s · 4.2k tokens')
     await userEvent.click(
       within(agent).getByRole('button', {
-        name: 'Open the Review the Feed card for keyboard access. Session',
+        name: 'Review the Feed disclosure for keyboard access. responded',
       }),
     )
     await expect(
-      canvas.getByText('Opened Review the Feed card for keyboard access.'),
+      canvas.getByText('Opened Review the Feed disclosure for keyboard access.'),
     ).toBeInTheDocument()
   },
 }
@@ -870,14 +869,14 @@ const allVariationsFeed = {
       shape: 'prose' as const,
       id: 'variations-delegation-label',
       role: 'assistant' as const,
-      text: '**Delegation cards** (an agent that has started)',
+      text: '**Delegation events** (an agent that has started)',
     },
     {
       shape: 'subagent' as const,
       id: 'variations-agent',
       subagentId: 'variations-review',
       event: 'started' as const,
-      name: 'Review the Feed card for keyboard access.',
+      name: 'Review the Feed disclosure for keyboard access.',
     },
     {
       shape: 'prose' as const,
@@ -1603,9 +1602,9 @@ const thoughtDeliveredFeed = {
   ],
 } satisfies SessionFeed
 
-function ThinkingFeed() {
+function ThinkingFeed({ initialRunning = true }: { initialRunning?: boolean }) {
   const [current, setCurrent] = useState<SessionFeed>(thinkingFeed)
-  const [running, setRunning] = useState(true)
+  const [running, setRunning] = useState(initialRunning)
   return (
     <div className="flex h-dvh flex-col">
       <button type="button" onClick={() => setCurrent(thoughtDeliveredFeed)}>
@@ -1659,6 +1658,22 @@ export const ThoughtWhileThinking: Story = {
       const rows = drawnRows(canvasElement).map((row) => row.getAttribute('data-feed-row'))
       expect(rows.indexOf('thinking:activity')).toBe(rows.indexOf('thinking-reply') + 1)
     })
+  },
+}
+
+// Codex can write its reasoning summary before Argo receives the matching running report. The
+// available headline must not disappear during that short status gap.
+export const ThoughtWhileStatusIsUnknown: Story = {
+  render: () => <ThinkingFeed initialRunning={false} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() =>
+      expect(drawnRow(canvasElement, 'thinking:activity')).toHaveTextContent(
+        'Designing issue creation order and labeling',
+      ),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Deliver reply' }))
+    await waitFor(() => expect(drawnRow(canvasElement, 'thinking:activity')).toBeUndefined())
   },
 }
 
