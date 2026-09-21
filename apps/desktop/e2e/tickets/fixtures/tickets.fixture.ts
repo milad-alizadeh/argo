@@ -20,6 +20,7 @@ import {
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from '../../../src/domains/sessions/main/composition/proof-protocol'
+import { createDurableDatabase } from '../../../src/platform/main/storage/durable-database'
 import { sharedDatabasePath } from '../../../src/platform/main/storage/shared-database'
 import {
   GITHUB_PROOF_ORIGIN_ENV,
@@ -87,7 +88,9 @@ export async function prepare(
   const noSessions = path.join(root, 'no-sessions')
   await mkdir(userData, { recursive: true })
   await mkdir(noSessions, { recursive: true })
-  const projects = createProjectStore(new DatabaseSync(sharedDatabasePath(userData)))
+  const projects = createProjectStore(
+    createDurableDatabase(new DatabaseSync(sharedDatabasePath(userData))),
+  )
   projects.replace({
     projects: [
       { id: 'project-1', path: projectPath, commonDirectory: path.join(projectPath, '.git') },

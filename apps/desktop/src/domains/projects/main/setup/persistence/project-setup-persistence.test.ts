@@ -4,6 +4,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { type TestContext, test } from 'node:test'
+import { drizzle } from 'drizzle-orm/bun-sqlite'
 import { createProjectStore } from '@/domains/projects/main/sqlite-store'
 import {
   migrateTestDatabase,
@@ -130,7 +131,7 @@ test('preserves a corrupt checkpoint as recovery evidence and starts a safe repl
 function setupStore(databasePath: string) {
   const database = new Database(databasePath)
   migrateDatabase(database)
-  return createProjectStore(database)
+  return createProjectStore(drizzle({ client: database }))
 }
 
 async function temporarySetup(context: TestContext) {
@@ -139,7 +140,7 @@ async function temporarySetup(context: TestContext) {
   const databasePath = path.join(directory, 'argo.sqlite')
   const database = new Database(databasePath)
   migrateDatabase(database)
-  return { database, databasePath, store: createProjectStore(database) }
+  return { database, databasePath, store: createProjectStore(drizzle({ client: database })) }
 }
 
 function migrateDatabase(database: Database): void {

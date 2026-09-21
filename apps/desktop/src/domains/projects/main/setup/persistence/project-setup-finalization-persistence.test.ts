@@ -4,6 +4,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
+import { drizzle } from 'drizzle-orm/bun-sqlite'
 import { createProjectStore } from '@/domains/projects/main/sqlite-store'
 import {
   migrateTestDatabase,
@@ -50,5 +51,5 @@ test('recovers a completed worktree promotion without promoting it twice after a
 function createStore(databasePath: string) {
   const database = new Database(databasePath)
   migrateTestDatabase(database, projectMigrationsFolder())
-  return createProjectStore(database)
+  return createProjectStore(drizzle({ client: database }))
 }

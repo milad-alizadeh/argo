@@ -14,6 +14,7 @@ import {
   SETUP_DOCUMENT_PROOF_URL_ENV,
 } from '../../../src/domains/projects/main/proof-protocol'
 import { createProjectStore } from '../../../src/domains/projects/main/sqlite-store'
+import { createDurableDatabase } from '../../../src/platform/main/storage/durable-database'
 import { sharedDatabasePath } from '../../../src/platform/main/storage/shared-database'
 import { appExecutable, packagedTestCopy } from '../../packaged-app'
 import { makeProjectLocallyReady } from './locally-ready-project'
@@ -42,7 +43,7 @@ export async function prepare(root, application?) {
   await mkdir(projectPath)
   await makeProjectLocallyReady(projectPath)
   const databasePath = sharedDatabasePath(userData)
-  const projects = createProjectStore(new DatabaseSync(databasePath))
+  const projects = createProjectStore(createDurableDatabase(new DatabaseSync(databasePath)))
   projects.replace({
     projects: [
       { id: 'project-1', path: projectPath, commonDirectory: path.join(projectPath, '.git') },
@@ -92,7 +93,7 @@ export async function prepareManual(
   await run('git', ['-C', projectPath, 'push', '--quiet', '-u', 'origin', branch])
   await run('git', ['-C', remote, 'symbolic-ref', 'HEAD', `refs/heads/${branch}`])
   const databasePath = sharedDatabasePath(userData)
-  const projects = createProjectStore(new DatabaseSync(databasePath))
+  const projects = createProjectStore(createDurableDatabase(new DatabaseSync(databasePath)))
   projects.replace({
     projects: [
       { id: 'project-setup', path: projectPath, commonDirectory: path.join(projectPath, '.git') },
@@ -110,7 +111,7 @@ export async function prepareManual(
 }
 
 export async function readManualSetupConfiguration(fixture: { databasePath: string }) {
-  const projects = createProjectStore(new DatabaseSync(fixture.databasePath))
+  const projects = createProjectStore(createDurableDatabase(new DatabaseSync(fixture.databasePath)))
   try {
     const checkpoint = projects.readSetupCheckpoint('project-setup')
     if (!checkpoint) throw new Error('Manual setup checkpoint is unavailable.')

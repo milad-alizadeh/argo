@@ -36,11 +36,7 @@ export async function fixture(context: TestContext) {
   migrate(drizzle({ client: database }), {
     migrationsFolder: path.resolve(import.meta.dirname, '../../drizzle'),
   })
-  const projects = createProjectStore({
-    exec: (source) => database.exec(source),
-    prepare: (source) => database.query(source),
-    close: () => database.close(),
-  })
+  const projects = createProjectStore(drizzle({ client: database }))
   context.after(() => projects.close())
   return {
     root,

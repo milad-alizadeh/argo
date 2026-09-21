@@ -14,6 +14,7 @@ import {
   writeFixtureTree,
 } from '../../../mocks/sessions/mock-transcript-files'
 import { createProjectStore } from '../../../src/domains/projects/main/sqlite-store'
+import { createDurableDatabase } from '../../../src/platform/main/storage/durable-database'
 import { sharedDatabasePath } from '../../../src/platform/main/storage/shared-database'
 import {
   makeProjectLocallyReady,
@@ -141,7 +142,9 @@ export async function prepare(
 const PROOF_PROJECT_ID = 'session-proof-project'
 
 async function writeProjectStore(userData, project, selectedId) {
-  const projects = createProjectStore(new DatabaseSync(sharedDatabasePath(userData)))
+  const projects = createProjectStore(
+    createDurableDatabase(new DatabaseSync(sharedDatabasePath(userData))),
+  )
   projects.replace({
     projects: [
       { id: PROOF_PROJECT_ID, path: project, commonDirectory: path.join(project, '.git') },
