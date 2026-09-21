@@ -7,8 +7,11 @@ import process from 'node:process'
 import { CYCLES, RESULT_PREFIX } from './acceptance-protocol.mts'
 
 export { RESULT_PREFIX }
-// The endurance check is 600 spawn/exit cycles, so the launch budget is minutes, not seconds.
-export const LAUNCH_TIMEOUT_MS = 10 * 60_000
+// The endurance check is 600 spawn/exit cycles, but each cycle already bounds itself to 15s
+// (`CYCLE_TIMEOUT_MS` in pty-endurance.ts) and throws instead of hanging, so a genuinely broken
+// app fails within seconds, not minutes. A green run takes well under a minute (#2605); this stays
+// a multiple of that, not the ten-minute budget that let one bad launch run the whole CI job out.
+export const LAUNCH_TIMEOUT_MS = 2 * 60_000
 
 export const APP_NAME = 'Argo'
 // One arm64 download for Apple silicon, and no Intel or universal build
