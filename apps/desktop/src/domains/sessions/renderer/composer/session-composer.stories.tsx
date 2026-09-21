@@ -236,7 +236,7 @@ function FailedQueuedComposerStory() {
   )
 }
 
-// The send never settles, so the composer is read before a successful send clears it (#1999).
+// The send never settles, so the composer proves that an optimistic prompt clears at once.
 function UnsettledSendStory() {
   const [sent, setSent] = useState<string[]>([])
 
@@ -533,7 +533,7 @@ export const EnterSends: Story = {
     await userEvent.keyboard('{Enter}')
 
     await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^Send this once\.$/)
-    await expect(composer.innerText).toBe('Send this once.')
+    await expect(composer.innerText).toBe('\n')
   },
 }
 
