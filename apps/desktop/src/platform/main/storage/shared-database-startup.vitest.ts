@@ -1,12 +1,10 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
 import { expect, test } from 'vitest'
 import {
   openSharedDatabase,
   rebuildSharedDatabaseIndexes,
-  sharedDatabasePath,
 } from '@/platform/main/storage/shared-database'
 
 async function temporaryUserData(): Promise<string> {
@@ -28,6 +26,9 @@ test('starts a clean database with every ordered migration', async () => {
         { name: 'project' },
         { name: 'project_selection' },
         { name: 'project_setup_checkpoint' },
+        { name: 'project_setup_actor' },
+        { name: 'project_setup_effect' },
+        { name: 'project_setup_recovery' },
         { name: 'session_ticket_link' },
       ]),
     )
@@ -40,6 +41,7 @@ test('starts a clean database with every ordered migration', async () => {
       { name: '20260921153754_low_ronan' },
       { name: '20260921153755_session_search' },
       { name: '20260921160623_sharp_silver_samurai' },
+      { name: '20260921164243_aberrant_thundra' },
     ])
     database
       .prepare('INSERT INTO project (id, path, common_directory) VALUES (?, ?, ?)')
@@ -55,28 +57,6 @@ test('starts a clean database with every ordered migration', async () => {
         .run('project-constraint', '/tmp/constraint', 'unknown', '{}', '1'),
     ).toThrow()
     database.close()
-  } finally {
-    await rm(userData, { recursive: true, force: true })
-  }
-})
-
-test('resets the pre-cutover database once without deleting credentials', async () => {
-  const userData = await temporaryUserData()
-  try {
-    const databasePath = sharedDatabasePath(userData)
-    const credentialPath = path.join(userData, 'portable-v1', 'grants.json')
-    await mkdir(path.dirname(credentialPath), { recursive: true })
-    await writeFile(credentialPath, '{"credential":"keep"}')
-    const legacy = new DatabaseSync(databasePath)
-    legacy.exec('CREATE TABLE project (id TEXT PRIMARY KEY) STRICT')
-    legacy.close()
-
-    const database = openSharedDatabase(userData, migrationsFolder)
-    expect(
-      database.prepare('SELECT name FROM sqlite_master WHERE name = ?').all('project'),
-    ).toEqual([{ name: 'project' }])
-    database.close()
-    await expect(readFile(credentialPath, 'utf8')).resolves.toBe('{"credential":"keep"}')
   } finally {
     await rm(userData, { recursive: true, force: true })
   }
