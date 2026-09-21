@@ -15,7 +15,7 @@ import {
 } from '../../../mocks/sessions/mock-transcript-files'
 import { createProjectStore } from '../../../src/domains/projects/main/sqlite-store'
 import { createDurableDatabase } from '../../../src/platform/main/storage/durable-database'
-import { sharedDatabasePath } from '../../../src/platform/main/storage/shared-database'
+import { sharedDatabasePath } from '../../../src/platform/main/storage/shared-database-path'
 import {
   makeProjectLocallyReady,
   markProjectSetupLocallyReady,

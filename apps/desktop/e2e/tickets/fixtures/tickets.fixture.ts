@@ -21,7 +21,7 @@ import {
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from '../../../src/domains/sessions/main/composition/proof-protocol'
 import { createDurableDatabase } from '../../../src/platform/main/storage/durable-database'
-import { sharedDatabasePath } from '../../../src/platform/main/storage/shared-database'
+import { sharedDatabasePath } from '../../../src/platform/main/storage/shared-database-path'
 import {
   GITHUB_PROOF_ORIGIN_ENV,
   LINEAR_PROOF_ORIGIN_ENV,

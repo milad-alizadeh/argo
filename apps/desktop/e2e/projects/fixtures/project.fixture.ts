@@ -15,7 +15,7 @@ import {
 } from '../../../src/domains/projects/main/proof-protocol'
 import { createProjectStore } from '../../../src/domains/projects/main/sqlite-store'
 import { createDurableDatabase } from '../../../src/platform/main/storage/durable-database'
-import { sharedDatabasePath } from '../../../src/platform/main/storage/shared-database'
+import { sharedDatabasePath } from '../../../src/platform/main/storage/shared-database-path'
 import { appExecutable, packagedTestCopy } from '../../packaged-app'
 import { makeProjectLocallyReady } from './locally-ready-project'
 

@@ -3,6 +3,12 @@ import { createRequire } from 'node:module'
 import path from 'node:path'
 import { createDurableDatabase } from '@/platform/main/storage/durable-database'
 import { databaseMigrationsFolder } from '@/platform/main/storage/migrations-folder'
+import {
+  sharedDatabaseBackupPath,
+  sharedDatabasePath,
+} from '@/platform/main/storage/shared-database-path'
+
+export { sharedDatabaseBackupPath, sharedDatabasePath }
 
 type DatabaseSync = import('node:sqlite').DatabaseSync
 
@@ -23,14 +29,6 @@ function migrateDatabase(database: DatabaseSync, migrationsFolder: string): void
 
 function packagedMigrationsFolder(): string {
   return databaseMigrationsFolder()
-}
-
-export function sharedDatabasePath(userData: string): string {
-  return path.join(userData, 'argo.sqlite')
-}
-
-export function sharedDatabaseBackupPath(userData: string): string {
-  return path.join(userData, 'argo.backup.sqlite')
 }
 
 export function openSharedDatabase(
