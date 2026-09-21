@@ -34,3 +34,41 @@ export const projectSetupCheckpoint = sqliteTable(
     ),
   ],
 )
+
+export const projectSetupActor = sqliteTable(
+  'project_setup_actor',
+  {
+    projectId: text('project_id')
+      .primaryKey()
+      .references(() => project.id),
+    checkpointVersion: integer('checkpoint_version').notNull(),
+    machineVersion: integer('machine_version').notNull(),
+    revision: integer().notNull(),
+    persistedSnapshot: text('persisted_snapshot').notNull(),
+    receipts: text().notNull(),
+    savedAt: text('saved_at').notNull(),
+  },
+  (table) => [
+    check('project_setup_actor_checkpoint_version', sql`${table.checkpointVersion} = 1`),
+    check('project_setup_actor_machine_version', sql`${table.machineVersion} > 0`),
+    check('project_setup_actor_revision', sql`${table.revision} >= 0`),
+  ],
+)
+
+export const projectSetupEffect = sqliteTable('project_setup_effect', {
+  projectId: text('project_id')
+    .primaryKey()
+    .references(() => project.id),
+  intentJson: text('intent_json').notNull(),
+  resultJson: text('result_json').notNull(),
+  savedAt: text('saved_at').notNull(),
+})
+
+export const projectSetupRecovery = sqliteTable('project_setup_recovery', {
+  projectId: text('project_id')
+    .primaryKey()
+    .references(() => project.id),
+  rawRecord: text('raw_record').notNull(),
+  reason: text().notNull(),
+  savedAt: text('saved_at').notNull(),
+})

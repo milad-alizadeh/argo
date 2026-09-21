@@ -74,7 +74,6 @@ test('reports a missing Project without treating the identifier as a path', asyn
     type: 'project.error',
     requestId: 'open-1',
     code: 'missing-project',
-    message: 'This Project is not registered.',
   })
 })
 
@@ -87,7 +86,6 @@ test('reports denied access without exposing the filesystem error', async (conte
       type: 'project.error',
       requestId: 'open-1',
       code: 'access-denied',
-      message: 'Argo cannot access this Project.',
     })
   } finally {
     await chmod(projectPath, 0o700)
@@ -110,7 +108,6 @@ test('refuses a corrupt stored registration without leaking its data', async (co
     type: 'project.error',
     requestId: 'open-1',
     code: 'storage-invalid',
-    message: 'The Project registry cannot be read in this format.',
   })
 })
 

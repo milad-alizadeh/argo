@@ -98,6 +98,7 @@ export function useSessionScreenModel() {
   const artifacts = useWorkArtifacts(session, selectedSessionId, work)
   const inspectorReveal = workInspectorReveal(workReveal, artifacts.shell, artifacts.shellOutput)
   return {
+    isNewSession: sessionId === 'new',
     selectedSessionId,
     feed,
     feedError,

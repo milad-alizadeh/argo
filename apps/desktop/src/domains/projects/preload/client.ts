@@ -1,7 +1,9 @@
 import {
   type ProjectOpenReply,
+  type ProjectSetupCommand,
   type ProjectSetupReply,
   projectError,
+  projectSetupSnapshotSchema,
 } from '@/domains/projects/contract/contract'
 import type { ProjectListReply } from '@/domains/projects/contract/messages'
 import { PROJECT_OPERATIONS } from '@/domains/projects/contract/operations'
@@ -9,10 +11,14 @@ import { createDomainClient } from '@/shared/ipc/client'
 
 export type ProjectClient = {
   openProject(request: { projectId: string }): Promise<ProjectOpenReply>
-  beginProjectSetup(request: { projectId: string }): Promise<ProjectSetupReply>
-  saveProjectSetup(request: { projectId: string; source: string }): Promise<ProjectSetupReply>
-  validateProjectSetup(request: { projectId: string; source: string }): Promise<ProjectSetupReply>
-  cancelProjectSetup(request: { projectId: string }): Promise<ProjectSetupReply>
+  projectSetupSnapshot(request: { projectId: string }): Promise<ProjectSetupReply>
+  sendProjectSetupCommand(request: {
+    projectId: string
+    commandId: string
+    expectedRevision: number
+    command: ProjectSetupCommand
+  }): Promise<ProjectSetupReply>
+  subscribeProjectSetup(projectId: string, listener: (reply: ProjectSetupReply) => void): () => void
   listProjects(): Promise<ProjectListReply>
   registerProject(): Promise<ProjectListReply>
   relocateProject(request: { projectId: string }): Promise<ProjectListReply>
@@ -21,6 +27,7 @@ export type ProjectClient = {
 
 export function createProjectClient(
   invoke: (channel: string, request: unknown) => Promise<unknown>,
+  subscribe: (channel: string, listener: (value: unknown) => void) => () => void = () => () => {},
 ): ProjectClient {
   const client = createDomainClient(PROJECT_OPERATIONS, invoke, projectError)
   return {
@@ -35,10 +42,13 @@ export function createProjectClient(
       }
       return reply
     },
-    beginProjectSetup: (request) => client.setupBegin(request),
-    saveProjectSetup: (request) => client.setupSave(request),
-    validateProjectSetup: (request) => client.setupValidate(request),
-    cancelProjectSetup: (request) => client.setupCancel(request),
+    projectSetupSnapshot: (request) => client.setupSnapshot(request),
+    sendProjectSetupCommand: (request) => client.setupCommand(request),
+    subscribeProjectSetup: (projectId, listener) =>
+      subscribe('argo:project:setup:changed', (value) => {
+        const parsed = projectSetupSnapshotSchema.safeParse(value)
+        if (parsed.success && parsed.data.projectId === projectId) listener(parsed.data)
+      }),
     listProjects: () => client.list(),
     registerProject: () => client.register(),
     relocateProject: (request) => client.relocate(request),

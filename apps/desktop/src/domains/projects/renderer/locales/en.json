@@ -1,4 +1,26 @@
 {
+  "error": {
+    "missing-project": "This Project is not registered.",
+    "access-denied": "Argo cannot access this Project.",
+    "invalid-request": "The Project request is invalid.",
+    "unsupported-version": "This Project contract version is not supported.",
+    "project-unavailable": "The registered Project folder is unavailable.",
+    "internal-error": "Argo could not open this Project.",
+    "storage-invalid": "The Project registry cannot be read in this format.",
+    "storage-unavailable": "Argo cannot access the Project registry.",
+    "invalid-response": "Argo received an invalid Project response.",
+    "connection-lost": "The connection to Argo was lost.",
+    "not-a-repository": "That folder is not a git repository.",
+    "already-registered": "Another Project is already registered at that folder.",
+    "git-unavailable": "Argo cannot run git on this computer.",
+    "storage-not-written": "Argo could not save the Project registry.",
+    "invalid-configuration": "The Project configuration is not valid. Every target needs a path and four commands: setup, run, build and test.",
+    "setup-unavailable": "Argo could not prepare Project setup.",
+    "setup-network-unavailable": "Argo could not download Project setup from GitHub.",
+    "setup-document-invalid": "GitHub returned an invalid Project setup document.",
+    "onboarding-run-not-found": "This onboarding run is no longer available.",
+    "onboarding-harness-unavailable": "Argo cannot run guided setup with this harness yet."
+  },
   "switcher": {
     "placeholder": "Select project",
     "current": "Current project: {{name}}",
@@ -17,381 +39,162 @@
     "description": "Argo shows the Sessions, Tickets and Atlas of one Project. Choose its folder to begin.",
     "add": "Add Project…"
   },
-  "onboarding": {
-    "label": "Project setup",
-    "back": "Back",
-    "productName": "argo",
-    "flow": {
-      "skip": "Skip for now",
-      "folder": {
-        "title": "Choose a Project folder",
-        "description": "Choose the Project folder. Argo will find Targets inside it.",
-        "choose": "Choose"
-      },
-      "method": {
-        "title": "1 · Choose a setup method",
-        "description": "Ask an agent to find Targets and recommend setup, or define Target commands without changing Project files.",
-        "defaultReady": "{{harness}} is the default Harness. It is ready.",
-        "defaultRequired": "Choose a default Harness before Argo analyzes the Project.",
-        "useDefault": "Use {{harness}} as default",
-        "analyze": "Analyze Project",
-        "skipNote": "You can open this Project now and finish setup later.",
+  "setup": {
+    "harnessName": {
+      "claude": "Claude Code",
+      "codex": "Codex"
+    },
+    "label": "Set up {{name}}",
+    "configurationLabel": "Project configuration",
+    "invalidJson": "Enter valid JSON.",
+    "testing": "Testing config…",
+    "actor": {
+      "choosing-method": {
+        "title": "Choose setup for {{name}}",
+        "description": "Choose agent-led setup, manual setup, or finish setup later.",
+        "harnessLabel": "Harness",
+        "continueAction": "Continue",
+        "skipAction": "Skip",
         "agent": {
           "title": "Set up with an agent",
-          "subtitle": "A Harness is the app that Argo uses to run an agent."
+          "description": "A Harness is the app that Argo uses to run an agent."
         },
         "manual": {
           "title": "Manual setup",
-          "subtitle": "Preview Target JSON without changing Project files."
+          "description": "Preview Project JSON without changing Project files."
         }
       },
-      "defaultHarness": {
-        "title": "Choose your default Harness",
-        "description": "Choose the Harness to use in this setup preview.",
-        "label": "Default Harness",
-        "save": "Use Harness"
+      "manual": {
+        "title": "Manual setup",
+        "description": "Save valid Project JSON without changing Project files.",
+        "cardTitle": "Project Target configuration",
+        "cardDescription": "Paste the Project JSON that Argo will save.",
+        "action": "Save manual setup"
       },
-      "harness": {
-        "title": "Choose the setup agent",
-        "description": "Argo will start a short-lived agent that plans setup for this Project. It will not write files during planning.",
-        "label": "Harness",
-        "note": "The agent can read Project files. Argo applies changes in a separate phase that you start later.",
-        "plan": "Plan Project setup"
+      "deferred": {
+        "title": "Setup deferred",
+        "description": "The Project is open. You can finish setup when ready.",
+        "action": "Finish setup"
       },
-      "analyzing": {
-        "title": "2 · Analyze the Project",
-        "description": "The setup agent builds a plan. It does not write files, install dependencies, or run Project commands yet.",
-        "progress": "Planning",
-        "progressCount": "{{current}} of {{total}}"
+      "ready": {
+        "title": "Setup ready",
+        "description": "Project setup is complete.",
+        "action": "Edit setup"
       },
-      "recommendations": {
+      "planning": {
+        "title": "Plan Project setup",
+        "description": "The agent is inspecting the Project without changing files."
+      },
+      "questions": {
+        "title": "Answer setup questions",
+        "description": "Answer the focused questions to continue the same plan.",
+        "progressLabel": "Setup question progress",
+        "progress": "Question {{current}} of {{total}}",
+        "recommended": "Recommended",
+        "chooseAnswer": "Choose an answer or type your own.",
+        "otherAnswer": "Other answer",
+        "otherAnswerPlaceholder": "Type another answer",
+        "previous": "Previous",
+        "next": "Next",
+        "continue": "Continue planning"
+      },
+      "reviewing-plan": {
         "title": "3 · Targets and tools",
-        "description": "The agent found {{targets}} without changing the Project."
+        "description_one": "The agent found {{count}} runnable Target without changing the Project.",
+        "description_other": "The agent found {{count}} runnable Targets without changing the Project.",
+        "planLabel": "Targets and recommended tools",
+        "summaryTitle": "Setup summary",
+        "targets": "Targets",
+        "skillsAndCapabilities": "Skills and capabilities",
+        "recommendedTools": "Recommended tools",
+        "dependencies": "Dependencies",
+        "projectChanges": "Project setup",
+        "changeCount_one": "{{count}} planned change",
+        "changeCount_other": "{{count}} planned changes",
+        "verification": "Verification",
+        "framework": "Framework",
+        "packageManager": "Package manager",
+        "none": "None",
+        "notSet": "Not set",
+        "currentSetup": "Current setup",
+        "agentWillAdd": "Agent will add",
+        "noSuggestions": "No additional tools are needed.",
+        "commands": "Commands",
+        "feedbackLabel": "Plan change feedback",
+        "feedbackPlaceholder": "Tell the agent what to change in this setup plan",
+        "changeAction": "Customize plan",
+        "requestChangeAction": "Update plan",
+        "continueAction": "Continue to Project setup"
       },
-      "continueToProjectSetup": "Continue to Project setup",
-      "customize": {
-        "title": "Customize Targets and setup actions",
-        "description": "Keep only the Targets that matter. Each Target owns its path, commands, tools, dependencies, and verification.",
-        "action": "Customize plan",
-        "addTarget": "Add Target"
-      },
-      "planInput": {
-        "title": "Choose the main Project folder",
-        "description": "The agent stopped before producing plan data because two Project folders look runnable.",
-        "question": "Use packages as independent Targets?",
-        "note": "Your answer updates the plan. Argo did not apply any changes.",
-        "confirm": "Yes, use Project packages"
-      },
-      "cannotPlan": {
-        "title": "Setup needs another route",
-        "description": "The agent could not find a supported manifest or a safe command source. No partial plan is shown.",
-        "analyzeAgain": "Analyze again",
-        "manual": "Use manual JSON"
-      },
-      "invalidPlan": {
-        "title": "The plan could not be read safely",
-        "description": "Argo rejected the agent response at the boundary. Targets and recommendations are hidden so partial data cannot be applied.",
-        "retry": "Retry analysis"
-      },
-      "projectSetup": {
+      "customizing-project-setup": {
         "title": "4 · Customize Project setup",
         "description": "Choose the Project-wide changes to include in the preview.",
-        "apply": "Preview apply and verify"
+        "planLabel": "Project setup changes",
+        "backAction": "Back to Targets and tools",
+        "toggleAction": "Include {{name}}",
+        "acceptAction": "Preview apply and verify"
       },
-      "apply": {
-        "title": "5 · Preview apply and verification",
-        "description": "This preview shows how an agent will apply each accepted change and verify each required Target.",
-        "waiting": "The preview is waiting for issue tracking and domain documentation choices.",
-        "continue": "Confirm choices and continue"
+      "applying": {
+        "title": "Apply the accepted setup plan",
+        "description": "The agent is applying only the reviewed plan in the setup worktree."
       },
-      "applyFailed": {
-        "title": "Target verification failed",
-        "description": "{{target}} failed a required task. Fix its setup or retry the failed task before Argo starts this Project.",
-        "edit": "Edit failed Target",
-        "retry": "Retry failed task"
-      },
-      "starting": {
-        "title": "Previewing the Project start",
-        "description": "The preview completed its required tasks for {{targets}}."
-      },
-      "complete": {
-        "openTitle": "Project preview ready",
-        "skippedDescription": "Setup was skipped. The preview has no required Targets or configuration.",
-        "runningTitle": "Setup preview complete",
-        "runningDescription": "This preview shows the Targets and Project files the agent will prepare.",
+      "reviewing-diff": {
+        "title": "Review the observed changes",
+        "description": "Review the final diff before Project setup can finish.",
         "diffTitle": "Setup diff",
-        "diffAccessibleName": "Project file changes",
+        "diffLabel": "Observed Project file changes",
         "markViewed": "Mark {{path}} as viewed",
-        "viewed": "Viewed"
+        "viewed": "Viewed",
+        "feedbackLabel": "Message the setup agent",
+        "feedbackPlaceholder": "Describe what the setup agent should change",
+        "changeAction": "Send to agent",
+        "approveAction": "Approve final diff"
       },
-      "openProject": "Open Project",
-      "openProjectUnavailable": "Project opening will be connected with setup persistence."
-    },
-    "none": "None",
-    "noneYet": "None yet",
-    "notSet": "Not set",
-    "count": {
-      "target_one": "{{count}} Target",
-      "target_other": "{{count}} Targets",
-      "runnableTarget_one": "{{count}} runnable Target",
-      "runnableTarget_other": "{{count}} runnable Targets"
-    },
-    "summary": {
-      "title": "Setup summary",
-      "applied": "Preview complete.",
-      "willApply": "Included in this preview.",
-      "targets": "Targets",
-      "targetTools": "Target tools",
-      "projectSetup": "Project setup",
-      "dependencies": "Dependencies",
-      "verification": "Verification",
-      "noProjectFileChanges": "No Project file changes",
-      "noChanges": "No changes",
-      "jsonStructureOnly": "JSON structure only"
-    },
-    "repositoryGroups": {
-      "projectFiles": {
-        "summary_one": "{{count}} project file change",
-        "summary_other": "{{count}} project file changes",
-        "subtitle": "Writes or updates files in this Project.",
-        "title": "Project file changes"
+      "cancelling": {
+        "title": "Stopping Project setup",
+        "description": "Argo is waiting for the active agent Session to stop."
       },
-      "agentSkills": {
-        "summary_one": "{{count}} agent skill",
-        "summary_other": "{{count}} agent skills",
-        "subtitle": "Installs reusable skills for Claude Code and Codex.",
-        "title": "Agent skills"
+      "cancel-failed": {
+        "title": "Project setup may still be running",
+        "description": "Argo could not confirm that the active agent Session stopped.",
+        "label": "Project setup stop failed",
+        "action": "Try stopping setup again"
       },
-      "harnessSettings": {
-        "summary_one": "{{count}} Harness setting",
-        "summary_other": "{{count}} Harness settings",
-        "subtitle": "Changes a global Harness setting outside this Project.",
-        "title": "Harness settings"
+      "awaiting-approval": {
+        "title": "Approve agent action",
+        "description": "Review the proposed agent action before Argo continues the same Session.",
+        "label": "Proposed agent action"
+      },
+      "finalizing": {
+        "title": "Finish Project setup",
+        "description": "Argo is promoting the approved setup worktree."
+      },
+      "review-required": {
+        "title": "Review Project changes",
+        "description": "Project source changed after the plan was accepted.",
+        "label": "Project source review",
+        "diffLabel": "Project changes since plan review",
+        "feedback": "Revise the setup plan for these Project changes.",
+        "action": "Return to plan review"
+      },
+      "interrupted": {
+        "title": "Project setup was interrupted",
+        "description": "Reconcile the same Attempt before resuming, or start a new Attempt.",
+        "label": "Interrupted Project setup",
+        "resume": "Resume setup",
+        "restart": "Start a new Attempt"
+      },
+      "progressLabel": "Setup progress",
+      "cancelAction": "Cancel setup",
+      "busy": "Working…",
+      "recovery": {
+        "interrupted": "The active setup agent stopped before it completed.",
+        "application-drift": "The Project changed after the setup plan was accepted.",
+        "cancelled": "The active Project setup Session was cancelled.",
+        "finalization-failed": "Argo could not promote the approved Project setup worktree.",
+        "restart-finalization-unconfirmed": "Argo could not confirm that the approved setup worktree was promoted before restart."
       }
     },
-    "target": {
-      "fallbackName": "A Target",
-      "currentSetup": "Current setup",
-      "framework": "Framework",
-      "packageManager": "Package manager",
-      "startCommand": "Start command",
-      "buildCommand": "Build command",
-      "testCommand": "Test command",
-      "existingTools": "Existing tools",
-      "noneDetected": "None detected",
-      "agentWillAdd": "The agent will add",
-      "noSuggestions": "The agent proposed no changes for this Target.",
-      "remove": "Remove {{target}}",
-      "name": "Target name",
-      "path": "Path from Project folder",
-      "commands": "Commands",
-      "suggestedTools": "Suggested tools",
-      "suggestedToolsDescription": "Choose which tools the agent will add to this Target.",
-      "noPath": "No path set"
-    },
-    "manual": {
-      "title": "Import Target configuration",
-      "description": "Paste Target definitions for this Project. Argo validates only the JSON structure. It does not inspect or run commands, change files, or install anything.",
-      "cardTitle": "Target configuration JSON",
-      "cardDescription": "Empty Targets and commands are allowed.",
-      "inputLabel": "Project Target configuration",
-      "validate": "Validate JSON",
-      "saveAndOpen": "Preview configuration",
-      "targetNote": "Argo validates only the JSON structure. It did not inspect or run these commands.",
-      "status": {
-        "invalid": "Use a JSON object with a targets object. Target fields must be strings.",
-        "valid": "The JSON structure is valid.",
-        "found": "{{targets}} found. Empty Targets and commands are allowed."
-      },
-      "complete": {
-        "title": "Manual configuration preview",
-        "description": "The JSON structure is valid. This preview did not save data, inspect commands, or change Project files.",
-        "stored": "Ready to store in Argo",
-        "noTargets": "No Targets configured",
-        "noTargetsDescription": "You can add Target definitions later."
-      }
-    },
-    "evidence": {
-      "title": "Setup evidence",
-      "project": "Project",
-      "projectFolder": "Project folder",
-      "targets": "Targets",
-      "stack": "Stack",
-      "stackValue": "Bun · Electron · Markdown",
-      "lastAction": "Last action"
-    },
-    "agent": {
-      "title": "Project setup agent",
-      "subtitle": "Argo · preview, then connect",
-      "introduction": "Preview the Project setup flow. No files or saved Projects change in this UI ticket."
-    },
-    "review": {
-      "title": "Setup review",
-      "disclosure": "Setup review and progress"
-    },
-    "timeline": {
-      "folder": "Project folder selected",
-      "method": "Setup method chosen",
-      "plan": "Targets and plan prepared",
-      "approved": "Setup preview approved",
-      "opened": "Project opened",
-      "started": "Project start previewed"
-    },
-    "event": {
-      "choose-folder": "Choose a Project folder",
-      "manual-selected": "Manual setup selected",
-      "default-harness-required": "Choose a default harness",
-      "default-harness-configured": "Default Harness configured",
-      "default-harness-set": "Default Harness selected",
-      "default-harness-cleared": "Default Harness cleared",
-      "analysis-started": "Setup analysis started",
-      "analysis-inspect-folder": "Inspecting the Project folder",
-      "analysis-identify-targets": "Identifying Targets",
-      "analysis-resolve-commands": "Resolving commands",
-      "analysis-audit-setup": "Auditing existing setup",
-      "analysis-recommend-capabilities": "Preparing recommendations",
-      "analysis-define-verification": "Defining verification",
-      "plan-ready": "Setup plan ready",
-      "planning-boundary": "Setup planning needs input",
-      "plan-input-resolved": "Planning input resolved",
-      "analysis-restarted": "Setup analysis restarted",
-      "apply-started": "Applying setup",
-      "apply-retrying": "Retrying setup",
-      "task-waiting": "Waiting for setup choices",
-      "task-continued": "Setup choices confirmed",
-      "task-passed": "Setup task passed",
-      "task-failed": "Setup task failed",
-      "tasks-passed": "Setup tasks passed",
-      "back": "Went back",
-      "folder-selected": "Project folder selected",
-      "folder-opened": "Project folder selection opened",
-      "customization-opened": "Target customization opened",
-      "project-setup-opened": "Project setup opened",
-      "target-added": "Target added",
-      "target-removed": "Target removed",
-      "target-updated": "Target updated",
-      "target-recommendation-customized": "Target tools updated",
-      "repository-recommendation-customized": "Project setup updated",
-      "failure-target-set": "Verification failure preview selected",
-      "failure-target-cleared": "Verification failure preview cleared",
-      "failed-target-editing": "Failed Target opened for editing",
-      "plan-outcome-ready": "Ready plan preview selected",
-      "plan-outcome-needs-input": "Input-required preview selected",
-      "plan-outcome-cannot-plan": "Unsupported Project preview selected",
-      "plan-outcome-invalid": "Invalid-plan preview selected",
-      "manual-source-valid": "Manual JSON validated",
-      "manual-saved": "Manual configuration preview complete",
-      "setup-skipped": "Setup skipped",
-      "project-started": "Project started"
-    },
-    "recommendation": {
-      "argo-skill-bundle": {
-        "label": "Argo skill bundle",
-        "reason": "Adds the Project skills that Argo maintains."
-      },
-      "matt-pocock": {
-        "label": "Matt Pocock skills",
-        "reason": "Adds selected engineering workflow skills."
-      },
-      "writing-skills": {
-        "label": "Writing skills",
-        "reason": "Adds skills for clear instructions and documentation."
-      },
-      "rtk-filters": {
-        "label": "RTK filters",
-        "reason": "Keeps command output focused during Project work."
-      },
-      "quality-gates": {
-        "label": "Quality gates",
-        "reason": "Runs the Project checks before changes land."
-      },
-      "agent-instructions": {
-        "label": "Agent instructions",
-        "reason": "Records the Project rules for coding agents."
-      },
-      "guardrail-hooks": {
-        "label": "Guardrail hooks",
-        "reason": "Protects the Project worktree and branch flow."
-      },
-      "interface-review": {
-        "label": "Interface review",
-        "reason": "Reviews live UI changes for accessibility and behavior."
-      },
-      "visual-direction": {
-        "label": "Visual direction",
-        "reason": "Records the visual choices for UI work."
-      },
-      "agent-doc-audit": {
-        "label": "Agent document audit",
-        "reason": "Reviews agent instructions for accuracy."
-      },
-      "codex-todos": {
-        "label": "Codex task tracking",
-        "reason": "Tracks multi-step work in Codex."
-      },
-      "storybook": { "label": "Storybook", "reason": "Reviews each UI state in isolation." },
-      "playwright": { "label": "Playwright", "reason": "Tests user flows in the packaged app." },
-      "markdown-checks": {
-        "label": "Markdown checks",
-        "reason": "Checks the Project Markdown files."
-      },
-      "typedoc": { "label": "TypeDoc", "reason": "Generates API documentation." }
-    },
-    "task": {
-      "inspect-folder": {
-        "label": "Inspect Project folder",
-        "detail": "Reading the Project structure"
-      },
-      "identify-targets": {
-        "label": "Identify Targets",
-        "detail": "Finding runnable parts of the Project"
-      },
-      "resolve-commands": {
-        "label": "Resolve commands",
-        "detail": "Reading the available commands"
-      },
-      "audit-setup": { "label": "Audit setup", "detail": "Reviewing existing setup" },
-      "recommend-capabilities": {
-        "label": "Recommend capabilities",
-        "detail": "Preparing suggested tools"
-      },
-      "define-verification": {
-        "label": "Define verification",
-        "detail": "Preparing required checks"
-      }
-    },
-    "applyTask": {
-      "write": {
-        "label": "Write .argo/settings.json",
-        "detail": "Write the approved Project and Target configuration."
-      },
-      "verifyProject": {
-        "label": "Verify Project changes",
-        "detail": "Make sure that each accepted Project change works."
-      },
-      "installForTarget": "{{tool}} for {{target}}",
-      "runCommand": "Run {{command}}.",
-      "buildCommand": "the build command",
-      "testCommand": "the test command",
-      "buildTarget": "Build {{target}}",
-      "testTarget": "Test {{target}}"
-    },
-    "action": {
-      "acceptRecommendation": "Accept {{label}}"
-    }
-  },
-  "setup": {
-    "label": "Set up {{name}}",
-    "title": "Set up {{name}} before starting Sessions",
-    "description": "Choose the recommended plan, customize it, or configure the Project manually.",
-    "configurationLabel": "Project configuration",
-    "saved": "Config saved.",
-    "valid": "All Project commands passed validation.",
-    "invalid": "A Project command failed. Make sure that the working path exists and each command exits successfully.",
-    "testing": "Testing config…",
-    "invalidJson": "Fix JSON syntax before testing the config.",
-    "invalidSetupDocument": "GitHub returned an invalid Project setup document.",
-    "setupNetworkUnavailable": "Argo could not download Project setup from GitHub.",
     "document": {
       "apply": "Apply setup",
       "applying": "Applying setup…",
@@ -406,20 +209,54 @@
       "included": "{{label}}",
       "notIncluded": "No {{label}}",
       "notSet": "Not set",
-      "preparing": "Preparing setup",
-      "preparingDescription": "Retrieving the setup skill and generating a plan…",
-      "preparingTitle": "Preparing this Project for agents",
       "readyDescription": "Argo inspected the repository and prepared the smallest useful setup. No files change until you apply it.",
       "readyTitle": "Ready this Project for agents",
       "recommended": "Recommended plan",
-      "retry": "Try again",
       "summaryDescription": "Review what Argo will apply, customize it, or import an existing configuration.",
       "summaryTitle": "Setup summary",
       "testConfiguration": "Test configuration",
-      "testSetup": "Test setup",
-      "unavailable": "Setup unavailable",
-      "unavailableDescription": "Argo could not prepare this Project setup.",
-      "unavailableTitle": "Project setup could not start"
+      "testSetup": "Test setup"
+    },
+    "shell": {
+      "agentTitle": "Project setup agent",
+      "agentSubtitle": "Argo · preview, then connect",
+      "introduction": "Preview the Project setup flow. No files or saved Projects change in this UI ticket.",
+      "reviewTitle": "Setup review",
+      "reviewDisclosure": "Setup review and progress"
+    },
+    "event": {
+      "applyStarted": "Applying setup",
+      "permissionPending": "Waiting for permission",
+      "interrupted": "Project setup was interrupted",
+      "reviewingChanges": "Reviewing setup changes",
+      "planReady": "Setup plan ready",
+      "planningStarted": "Planning Project setup"
+    },
+    "task": {
+      "inspect-folder": {
+        "label": "Inspect Project folder",
+        "detail": "Reading the Project structure"
+      },
+      "identify-targets": {
+        "label": "Identify Targets",
+        "detail": "Finding runnable parts of the Project"
+      },
+      "resolve-commands": {
+        "label": "Resolve commands",
+        "detail": "Reading the available commands"
+      },
+      "audit-setup": {
+        "label": "Audit setup",
+        "detail": "Reviewing existing setup"
+      },
+      "recommend-capabilities": {
+        "label": "Recommend capabilities",
+        "detail": "Preparing suggested tools"
+      },
+      "define-verification": {
+        "label": "Define verification",
+        "detail": "Preparing required checks"
+      }
     }
   }
 }

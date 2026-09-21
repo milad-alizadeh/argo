@@ -5,6 +5,9 @@
 // reads the keys built from a variable, which no type can follow. The namespaces come from the
 // renderer's own registration, so a namespace is added in one place.
 import { expect, test } from 'bun:test'
+import { PROJECT_ERROR_CODES } from '@/domains/projects/contract/contract'
+import { PROJECT_SETUP_RECOVERY_CODES } from '@/domains/projects/contract/project-setup-recovery'
+import { PROJECT_SETUP_RECOVERY_KEYS } from '@/domains/projects/renderer/setup/project-setup-recovery-text'
 import { CATALOGS } from '@/renderer/catalogs'
 
 const NAMESPACES = Object.keys(CATALOGS)
@@ -42,7 +45,7 @@ function leafKeys(catalog: object, prefix = ''): string[] {
 // every segment is a hole names nothing in particular, or a `${a}.${b}` written for some other
 // purpose would answer for the whole catalog.
 function keyPatterns(source: string): RegExp[] {
-  const literals = source.match(/(['`])[\w.:${}[\]]+?\1/g) ?? []
+  const literals = source.match(/(['`])[\w.:${}[\]-]+?\1/g) ?? []
   return literals.flatMap((literal) => {
     const body = literal.slice(1, -1).replace(/\$\{[^}]*\}/g, HOLE)
     const segments = body.split('.')
@@ -54,6 +57,21 @@ function keyPatterns(source: string): RegExp[] {
 
 const sources = await Promise.all(sourceFiles.map((file) => Bun.file(file).text()))
 const PATTERNS = sources.flatMap(keyPatterns)
+
+test('every Project error code has reader text', () => {
+  expect(Object.keys(CATALOGS.projects.error).sort()).toEqual([...PROJECT_ERROR_CODES].sort())
+})
+
+test('every Project setup recovery code has reader text', () => {
+  expect(Object.keys(PROJECT_SETUP_RECOVERY_KEYS).sort()).toEqual(
+    [...PROJECT_SETUP_RECOVERY_CODES].sort(),
+  )
+  expect(Object.keys(CATALOGS.projects.setup.actor.recovery).sort()).toEqual(
+    Object.values(PROJECT_SETUP_RECOVERY_KEYS)
+      .flatMap((key) => (key ? [key.slice(key.lastIndexOf('.') + 1)] : []))
+      .sort(),
+  )
+})
 
 test('every catalog key has a call site', () => {
   const skipped = new Set(NAMESPACES_AWAITING_MIGRATION)

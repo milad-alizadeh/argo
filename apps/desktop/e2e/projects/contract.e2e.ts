@@ -63,7 +63,7 @@ test('opens a registered Project through the preload surface alone', async ({ pr
   assert.equal(typeof reply.requestId, 'string')
   assert.deepEqual(reply, {
     version: 1,
-    type: 'project.opened',
+    type: 'project.setup-required',
     requestId: reply.requestId,
     project: { id: 'project-1', name: 'example' },
   })
@@ -124,8 +124,8 @@ test('registers, restarts, selects, and reopens a Project from SQLite', async ({
   try {
     const page = await reopened.firstWindow()
     const result = await invoke(page, { projectId: 'project-1' })
-    assert.equal(result.type, 'project.opened')
-    assert.deepEqual(result.type === 'project.opened' ? result.project : null, {
+    assert.equal(result.type, 'project.setup-required')
+    assert.deepEqual(result.type === 'project.setup-required' ? result.project : null, {
       id: 'project-1',
       name: 'example',
     })

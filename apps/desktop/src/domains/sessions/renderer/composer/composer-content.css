@@ -23,29 +23,6 @@
   border-top: 1px solid var(--border);
 }
 
-.session-page__composer-permission {
-  overflow: hidden;
-  interpolate-size: allow-keywords;
-}
-
-.session-page__composer-permission-body {
-  display: grid;
-  gap: var(--spacing-shell-item);
-  padding: var(--spacing-shell-item) var(--spacing-shell-item) var(--spacing-shell-item)
-    var(--spacing-shell-inset);
-}
-
-.session-page__composer-permission-call {
-  max-height: calc(var(--size-queue-row) * 3);
-  margin: 0;
-  overflow: auto;
-  padding: var(--spacing-tight) var(--spacing-shell-item);
-  border-radius: var(--radius-md);
-  background: var(--muted);
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
 .session-page__queued-message {
   display: flex;
   height: var(--size-queue-row);

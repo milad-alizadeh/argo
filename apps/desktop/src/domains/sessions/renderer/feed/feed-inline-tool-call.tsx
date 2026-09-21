@@ -16,7 +16,7 @@ import {
 import { CodeLanguageIcon } from '@/domains/sessions/renderer/feed/content/code-language-icon'
 import { FeedMarkdown } from '@/domains/sessions/renderer/feed/content/feed-markdown'
 import { FEED_CARD_RADIUS_CLASS } from '@/domains/sessions/renderer/feed/content/feed-surface'
-import { RunningText, StatusIcon } from '@/domains/sessions/renderer/feed/feed-tool-status'
+import { StatusIcon } from '@/domains/sessions/renderer/feed/feed-tool-status'
 import {
   type ToolCall,
   type ToolRow,
@@ -27,6 +27,7 @@ import {
   type ToolGroupState,
   useToolGroupOpen,
 } from '@/domains/sessions/renderer/feed/tool-group-state'
+import { RunningText } from '@/platform/renderer/components/running-text'
 
 // A command or an unclassified tool call reads as one code block despite the transcript's
 // separate invocation and result messages. A Skill call instead reads as the skill's own

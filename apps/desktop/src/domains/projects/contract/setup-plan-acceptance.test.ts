@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import {
+  acceptedPlanFixture,
+  planFixture,
+} from '../../../../test-fixtures/projects/setup/setup-plan.fixture'
 import { validateAcceptedSetupPlan } from './setup-plan'
-import { acceptedPlanFixture, planFixture } from './setup-plan.fixture'
 import { validatePlanRevision } from './setup-plan-validation'
 
 function first<T>(items: T[]): T {
@@ -56,6 +59,35 @@ test('validateAcceptedSetupPlan rejects an id absent from the source plan', () =
   })
   assert.equal(outcome.valid, false)
   assert.match(outcome.issues.join('\n'), /not present in the reviewed source plan/)
+})
+
+test('validateAcceptedSetupPlan rejects changed content with a reviewed id', () => {
+  const source = planFixture()
+  const target = first(source.targets)
+  const outcome = validateAcceptedSetupPlan(source, {
+    ...acceptedPlanFixture(source),
+    targets: [{ ...target, name: 'Changed after review' }],
+  })
+
+  assert.equal(outcome.valid, false)
+  assert.match(outcome.issues.join('\n'), /does not match the reviewed source plan/)
+})
+
+test('validateAcceptedSetupPlan rejects an incomplete fingerprint set', () => {
+  const source = planFixture({
+    source: {
+      ...planFixture().source,
+      fingerprints: { 'AGENTS.md': 'one', 'package.json': 'two' },
+    },
+  })
+  const accepted = acceptedPlanFixture(source)
+  const outcome = validateAcceptedSetupPlan(source, {
+    ...accepted,
+    fingerprints: { 'AGENTS.md': 'one' },
+  })
+
+  assert.equal(outcome.valid, false)
+  assert.match(outcome.issues.join('\n'), /complete source fingerprint set/)
 })
 
 test('validateAcceptedSetupPlan rejects a stale fingerprint', () => {

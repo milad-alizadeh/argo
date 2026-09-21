@@ -106,7 +106,13 @@ export function SessionRosterItem({
         onBlur={() => setPointerFocused(false)}
         onClick={handleRowClick}
         onFocus={onFocus}
-        onKeyDown={() => setPointerFocused(false)}
+        onKeyDown={(event) => {
+          setPointerFocused(false)
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            onSelect()
+          }
+        }}
         onPointerDown={() => setPointerFocused(true)}
         tabIndex={tabIndex}
         type="button"

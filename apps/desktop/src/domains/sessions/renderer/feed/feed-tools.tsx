@@ -10,13 +10,14 @@ import {
   FeedInlineToolCall,
   FeedInlineToolCallItem,
 } from '@/domains/sessions/renderer/feed/feed-inline-tool-call'
-import { RunningText, StatusIcon } from '@/domains/sessions/renderer/feed/feed-tool-status'
+import { StatusIcon } from '@/domains/sessions/renderer/feed/feed-tool-status'
 import { LiveActivityText } from '@/domains/sessions/renderer/feed/live-activity-text'
 import {
   type ToolGroupState,
   useToolGroupOpen,
 } from '@/domains/sessions/renderer/feed/tool-group-state'
 import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
+import { RunningText } from '@/platform/renderer/components/running-text'
 
 export type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 export type ToolCall = Extract<SessionFeedRow, { shape: 'tool-group' }>['calls'][number]

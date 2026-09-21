@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import {
   ATTACHMENT_ENTER_MS,
   ATTACHMENT_EXIT_MS,
-} from '@/domains/sessions/renderer/composer/tray/use-exit-presence'
+} from '@/platform/renderer/components/exit-presence'
 
 // React's style type names no custom properties, so the times are asserted into it.
 const motion = {

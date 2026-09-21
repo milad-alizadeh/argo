@@ -2,6 +2,7 @@
 // the other just to name a project id.
 import type {
   ProjectRegistry,
+  ProjectSetupRecord,
   ProjectStore,
   SetupCheckpoint,
 } from '@/domains/projects/main/sqlite-store'
@@ -17,6 +18,7 @@ export function projectStore(projectId: string): ProjectStore {
     selectedId: projectId,
   }
   let checkpoint: SetupCheckpoint | null = null
+  let projectSetup: ProjectSetupRecord | null = null
   return {
     read: () => registry,
     replace: (next) => {
@@ -36,9 +38,22 @@ export function projectStore(projectId: string): ProjectStore {
         ),
       }
     },
+    promoteSetupWorktree: (projectId, worktreePath) => {
+      registry = {
+        ...registry,
+        projects: registry.projects.map((project) =>
+          project.id === projectId ? { ...project, path: worktreePath } : project,
+        ),
+      }
+      if (checkpoint?.projectId === projectId) checkpoint = { ...checkpoint, phase: 'ready' }
+    },
     readSetupCheckpoint: (id) => (checkpoint?.projectId === id ? checkpoint : null),
     writeSetupCheckpoint: (next) => {
       checkpoint = next
+    },
+    readProjectSetup: (id) => (projectSetup?.projectId === id ? projectSetup : null),
+    writeProjectSetup: (next) => {
+      projectSetup = next
     },
     close: () => undefined,
   }

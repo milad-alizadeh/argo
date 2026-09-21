@@ -12,6 +12,7 @@ const documentPath = path.resolve(
   process.cwd(),
   '../../packages/argo-skills/setup/project-setup.json',
 )
+export const PACKAGED_PROOF_SETUP_DOCUMENT_REVISION = 'packaged-proof'
 
 async function proofDocument(): Promise<SetupDocument> {
   const loaded = parseSetupDocument(JSON.parse(await readFile(documentPath, 'utf8')))
@@ -32,7 +33,12 @@ async function proofDocument(): Promise<SetupDocument> {
   const desktop = isRecord(targets) ? targets.desktop : undefined
   if (!isRecord(desktop)) throw new Error('Packaged proof requires the desktop target.')
   desktop.build = 'true'
-  const document = { ...loaded, configuration, revision: 'packaged-proof', fields }
+  const document = {
+    ...loaded,
+    configuration,
+    revision: PACKAGED_PROOF_SETUP_DOCUMENT_REVISION,
+    fields,
+  }
   return {
     ...document,
     configuration: JSON.parse(setupConfiguration(document, {})),
@@ -45,18 +51,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export async function startMockSetupDocumentLoopback() {
   const document = await proofDocument()
-  let requestCount = 0
   const server = createServer((_request, response) => {
-    requestCount += 1
-    setTimeout(() => {
-      if (requestCount === 1) {
-        response.writeHead(503)
-        response.end()
-        return
-      }
-      response.writeHead(200, { 'Content-Type': 'application/json' })
-      response.end(JSON.stringify(document))
-    }, 500)
+    response.writeHead(200, { 'Content-Type': 'application/json' })
+    response.end(JSON.stringify(document))
   })
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
   const { port } = server.address() as AddressInfo

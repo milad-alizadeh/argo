@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { SessionActivity } from '@/domains/sessions/contract/model/models'
 import { displayedToolLabel } from '@/domains/sessions/contract/model/tool-feed'
-import { RunningText } from '@/domains/sessions/renderer/feed/feed-tool-status'
+import { RunningText } from '@/platform/renderer/components/running-text'
 
 export type LiveActivity = {
   activity: Pick<SessionActivity, 'kind' | 'label' | 'open'> | null

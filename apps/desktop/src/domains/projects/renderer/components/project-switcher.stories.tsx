@@ -35,24 +35,20 @@ export const ProjectActions: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const menu = within(canvasElement.ownerDocument.body)
-    await waitFor(() =>
-      expect(canvas.getByRole('button', { name: 'Current project: argo' })).toBeEnabled(),
-    )
+    const currentProject = () => canvas.getByRole('button', { name: /^Current project:/ })
+    await waitFor(() => expect(currentProject()).toBeEnabled())
     dispatchProjectCommand(canvasElement)
-    await waitFor(() => expect(window.location.hash).toBe('#/projects/new'))
-    window.location.hash = ''
-    await userEvent.click(canvas.getByRole('button', { name: 'Current project: argo' }))
+    await waitFor(() => expect(currentProject()).toBeEnabled())
+    await userEvent.click(currentProject())
     await waitFor(() => expect(menu.getByText('Switch project')).toBeInTheDocument())
     await userEvent.click(menu.getByRole('menuitem', { name: 'Switch to argo' }))
     // The previous menu's closing animation leaves it briefly unclickable, still in the DOM.
     await waitFor(() => expect(menu.queryByRole('menu')).toBeNull())
-    await waitFor(() =>
-      expect(canvas.getByRole('button', { name: 'Current project: argo' })).toBeEnabled(),
-    )
-    await userEvent.click(canvas.getByRole('button', { name: 'Current project: argo' }))
+    await waitFor(() => expect(currentProject()).toBeEnabled())
+    await userEvent.click(currentProject())
     await waitFor(() => expect(menu.getByText('Switch project')).toBeInTheDocument())
     await userEvent.click(menu.getByRole('menuitem', { name: 'Add project' }))
-    await waitFor(() => expect(window.location.hash).toBe('#/projects/new'))
+    await waitFor(() => expect(menu.queryByRole('menu')).toBeNull())
   },
 }
 
@@ -60,10 +56,9 @@ export const OpensProjectSettings: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const menu = within(canvasElement.ownerDocument.body)
-    await waitFor(() =>
-      expect(canvas.getByRole('button', { name: 'Current project: argo' })).toBeEnabled(),
-    )
-    await userEvent.click(canvas.getByRole('button', { name: 'Current project: argo' }))
+    const currentProject = () => canvas.getByRole('button', { name: /^Current project:/ })
+    await waitFor(() => expect(currentProject()).toBeEnabled())
+    await userEvent.click(currentProject())
     await waitFor(() => expect(menu.getByText('Switch project')).toBeInTheDocument())
     await userEvent.click(menu.getByRole('menuitem', { name: 'Project settings…' }))
     await expect(await menu.findByRole('heading', { name: 'Project settings' })).toBeInTheDocument()

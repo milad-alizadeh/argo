@@ -28,7 +28,7 @@ const EMPTY: Cockpit = { status: 'empty', ...IDLE }
 
 function refuse(previous: Cockpit, reply: ProjectError | ProjectContractError): Cockpit {
   const status = previous.status === 'loading' ? 'empty' : previous.status
-  return { ...previous, status, message: reply.message, code: reply.code, busy: false }
+  return { ...previous, status, message: null, code: reply.code, busy: false }
 }
 
 async function cockpitForListing(reply: ProjectListed): Promise<Cockpit> {
@@ -36,8 +36,14 @@ async function cockpitForListing(reply: ProjectListed): Promise<Cockpit> {
   if (!project) return { ...EMPTY, projects: reply.projects }
   const opened = await window.argo.openProject({ projectId: project.id })
   if (opened.type === 'project.error') {
-    const { message, code } = opened
-    return { status: 'refused', project, projects: reply.projects, message, code, busy: false }
+    return {
+      status: 'refused',
+      project,
+      projects: reply.projects,
+      message: null,
+      code: opened.code,
+      busy: false,
+    }
   }
   if (opened.type === 'project.setup-required') {
     return {

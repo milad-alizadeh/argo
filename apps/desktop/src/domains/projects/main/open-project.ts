@@ -15,7 +15,10 @@ import { isRecord } from '@/shared/validation'
 import type { SetupDocument } from '../contract/setup-document'
 import type { SetupCheckpoint } from './sqlite-store'
 
-type OpenProjectStore = ProjectStore & { loadSetupDocument: () => Promise<SetupDocument> }
+type OpenProjectStore = ProjectStore & {
+  projectSetup?: { snapshot: (projectId: string) => { screen: string } }
+  loadSetupDocument?: () => Promise<SetupDocument>
+}
 
 // A store failure prevents Project opening, while `project.list` can still report an empty cockpit.
 function loadProjects(store: ProjectStore) {
@@ -46,10 +49,12 @@ export async function openProject(
   const configurationSource = await readProjectConfigurationSource(project.path)
   const checkpoint = store.projects.readSetupCheckpoint(project.id)
   const documentChanged = await setupDocumentChanged(checkpoint, store)
+  const setup = store.projectSetup?.snapshot(project.id)
   if (
     configuration === null ||
     documentChanged ||
-    (checkpoint?.phase === 'ready' && checkpoint.configurationSource !== configurationSource)
+    (checkpoint?.phase === 'ready' && checkpoint.configurationSource !== configurationSource) ||
+    (setup !== undefined && setup.screen !== 'ready' && setup.screen !== 'deferred')
   ) {
     if (checkpoint) {
       store.projects.writeSetupCheckpoint({
@@ -73,11 +78,8 @@ export async function openProject(
   }
 }
 
-async function setupDocumentChanged(
-  checkpoint: SetupCheckpoint | null,
-  store: Pick<OpenProjectStore, 'loadSetupDocument'>,
-) {
-  if (checkpoint?.phase !== 'ready') return false
+async function setupDocumentChanged(checkpoint: SetupCheckpoint | null, store: OpenProjectStore) {
+  if (checkpoint?.phase !== 'ready' || store.loadSetupDocument === undefined) return false
   try {
     return (await store.loadSetupDocument()).revision !== checkpoint.documentRevision
   } catch {

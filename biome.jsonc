@@ -502,6 +502,24 @@
         }
       }
     },
+    // KIND: a state machine is one declarative transition graph. Splitting that graph to
+    // satisfy a file ceiling hides its states, transitions and invoked actors from readers.
+    {
+      "includes": ["**/*-machine.ts"],
+      "formatter": {
+        "expand": "always"
+      },
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveLinesPerFunction": "off"
+          },
+          "style": {
+            "noExcessiveLinesPerFile": "off"
+          }
+        }
+      }
+    },
     // KIND: the token contract is one declarative catalog. Splitting it would hide ownership
     // across files, so its length is not a measure of code complexity.
     {

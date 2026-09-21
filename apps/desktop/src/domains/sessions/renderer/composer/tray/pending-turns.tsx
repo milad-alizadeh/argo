@@ -2,11 +2,11 @@ import { GripVertical, Route } from 'lucide-react'
 import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PendingTurnActions } from '@/domains/sessions/renderer/composer/tray/pending-turn-actions'
+import type { PendingTurn } from '@/domains/sessions/renderer/composer/tray/use-pending-turns'
 import {
   attachmentExitDelay,
   focusMessageField,
-} from '@/domains/sessions/renderer/composer/tray/use-exit-presence'
-import type { PendingTurn } from '@/domains/sessions/renderer/composer/tray/use-pending-turns'
+} from '@/platform/renderer/components/exit-presence'
 
 function queuedMessageClassName(
   id: string,
