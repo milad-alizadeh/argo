@@ -51,14 +51,19 @@ export const SidebarControls: Story = {
     )
 
     await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
-    await waitFor(() =>
-      expect(canvas.getByRole('button', { name: 'Open sidebar' })).toBeInTheDocument(),
+    const opener = await canvas.findByRole('button', { name: 'Open sidebar' })
+    await expect(opener).toBeVisible()
+    const openerContainer = canvasElement.querySelector(
+      '[data-component="CockpitCollapsedSidebarControl"]',
     )
-    await expect(
-      canvasElement.querySelector('[data-component="CockpitCollapsedSidebarControl"]')
-        ?.childElementCount,
-    ).toBe(1)
-    await userEvent.click(canvas.getByRole('button', { name: 'Open sidebar' }))
-    await expect(canvas.getByLabelText('Cockpit sidebar')).toBeInTheDocument()
+    if (openerContainer === null) throw new Error('The collapsed sidebar control is absent.')
+    await expect(openerContainer).toHaveClass('no-drag-region')
+    await userEvent.click(opener)
+    await waitFor(() =>
+      expect(
+        canvas.getByLabelText('Cockpit sidebar').getBoundingClientRect().width,
+      ).toBeGreaterThan(0),
+    )
+    await expect(canvas.getByRole('button', { name: 'Collapse sidebar' })).toHaveFocus()
   },
 }

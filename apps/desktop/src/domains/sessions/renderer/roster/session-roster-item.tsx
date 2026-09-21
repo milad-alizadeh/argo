@@ -84,7 +84,7 @@ export function SessionRosterItem({
   const focusHighlight = pointerFocused
     ? 'focus-visible:outline-2 focus-visible:outline-transparent focus-visible:ring-0'
     : 'focus-visible:ring-2 focus-visible:ring-ring'
-  const running = session.status === 'running' || session.status === 'starting'
+  const running = session.status === 'running'
   const statusVariant = statusVariantOf(session)
   // A shift- or platform-modifier click selects (ranges or adds to the bulk selection) instead of
   // opening the Session, so no checkbox is needed for multi-select (#2194, dropped per review). A

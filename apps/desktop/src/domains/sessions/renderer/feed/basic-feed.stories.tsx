@@ -1000,6 +1000,13 @@ const historyFeed = {
   sessionId: 'history',
   rows: historyRows,
 } satisfies SessionFeed
+const secondHistoryFeed = {
+  ...historyFeed,
+  chainId: 'second-history',
+  revision: 'second-history-one',
+  sessionId: 'second-history',
+  rows: historyRows.map((row) => ({ ...row, id: `second-${row.id}` })),
+} satisfies SessionFeed
 const historyAnchorId = `history-${Math.floor(historyRows.length / 2)}`
 
 const disclosureGroup = toolFeed.rows[0]
@@ -1098,6 +1105,36 @@ function HistoryScrollHarness() {
   )
 }
 
+function SwitchingHistoryHarness() {
+  const [selected, setSelected] = useState<'history' | 'second-history'>('history')
+  const current = selected === 'history' ? historyFeed : secondHistoryFeed
+  return (
+    <div className="flex h-dvh flex-col">
+      <button type="button" onClick={() => setSelected('history')}>
+        Open first Session
+      </button>
+      <button type="button" onClick={() => setSelected('second-history')}>
+        Open second Session
+      </button>
+      <div className="min-h-0 flex-1">
+        <BasicFeed
+          activeEvidenceId={null}
+          answeringQuestionId={null}
+          failure={null}
+          feed={current}
+          liveFacts={LIVE_FACTS}
+          onAnswerQuestion={() => {}}
+          onOpenEvidence={() => {}}
+          onOpenSession={() => {}}
+          onRetryFeed={() => {}}
+          questionFailure={() => null}
+          selectedSessionId={selected}
+        />
+      </div>
+    </div>
+  )
+}
+
 function HistoryPrependHarness() {
   const [current, setCurrent] = useState<SessionFeed>(historyFeed)
   return (
@@ -1179,6 +1216,94 @@ export const HistoryFollowsStreamingReplyAtLatest: Story = {
   },
 }
 
+const WAIT_UPDATE_TEXT = [
+  'CI remains pending.',
+  'GitHub has not returned a check result yet.',
+  'The required-check watch is still pending.',
+  'The macOS rerun remains pending.',
+] as const
+
+const WAIT_TOOL_ROW = {
+  shape: 'tool-group' as const,
+  id: 'wait-update-command',
+  label: 'Ran a command',
+  calls: [
+    {
+      shape: 'tool' as const,
+      id: 'wait-update-command:call',
+      kind: 'command' as const,
+      label: 'Ran a command',
+      lineCounts: null,
+      status: 'succeeded' as const,
+      evidence: null,
+      text: 'rtk gh pr checks',
+    },
+  ],
+} satisfies SessionFeedRow
+
+function WaitUpdateHarness() {
+  const [rows, setRows] = useState<SessionFeedRow[]>([])
+  const append = () => {
+    const text = WAIT_UPDATE_TEXT[rows.length]
+    if (text === undefined) return
+    setRows((current) => [
+      ...current,
+      { shape: 'prose', id: `wait-update-${current.length}`, role: 'assistant', text },
+    ])
+  }
+  const waitingFeed = {
+    ...feed,
+    sessionId: 'wait-updates',
+    chainId: 'wait-updates',
+    revision: `wait-updates-${rows.length}`,
+    rows: [WAIT_TOOL_ROW, ...rows],
+  } satisfies SessionFeed
+  return (
+    <div className="flex h-dvh flex-col">
+      <button type="button" onClick={append}>
+        Receive CI update
+      </button>
+      <div className="min-h-0 flex-1">
+        <BasicFeed
+          activeEvidenceId={null}
+          answeringQuestionId={null}
+          failure={null}
+          feed={waitingFeed}
+          liveFacts={LIVE_FACTS}
+          onAnswerQuestion={() => {}}
+          onOpenEvidence={() => {}}
+          onOpenSession={() => {}}
+          onRetryFeed={() => {}}
+          questionFailure={() => null}
+          selectedSessionId="wait-updates"
+        />
+      </div>
+    </div>
+  )
+}
+
+// Wait updates follow a collapsed command and must not retain estimate-height gaps (#2545).
+export const WaitingUpdatesUseMeasuredSpacing: Story = {
+  render: () => <WaitUpdateHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    for (const text of WAIT_UPDATE_TEXT) {
+      await userEvent.click(canvas.getByRole('button', { name: 'Receive CI update' }))
+      await canvas.findByText(text)
+    }
+    await waitFor(() => expect(drawnRows(canvasElement)).toHaveLength(WAIT_UPDATE_TEXT.length + 1))
+    const rows = drawnRows(canvasElement)
+    for (let index = 1; index < rows.length; index++) {
+      const previous = rows[index - 1]
+      const current = rows[index]
+      expect(current?.getBoundingClientRect().top).toBeCloseTo(
+        previous?.getBoundingClientRect().bottom ?? Number.NaN,
+        0,
+      )
+    }
+  },
+}
+
 export const FreshSessionLandsAtEndUnderStrictMode: Story = {
   render: () => (
     <StrictMode>
@@ -1191,6 +1316,28 @@ export const FreshSessionLandsAtEndUnderStrictMode: Story = {
     await waitFor(() =>
       expect(history.scrollTop).toBeCloseTo(history.scrollHeight - history.clientHeight, 1),
     )
+  },
+}
+
+export const SessionSwitchRestoresReadingPosition: Story = {
+  render: () => <SwitchingHistoryHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const history = await canvas.findByLabelText('Session history')
+    await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(history.clientHeight))
+    history.scrollTop = history.scrollHeight / 2
+    fireEvent.scroll(history)
+    const savedPosition = history.scrollTop
+    await userEvent.click(canvas.getByRole('button', { name: 'Open second Session' }))
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Session history')).toHaveAttribute(
+        'data-session',
+        'second-history',
+      ),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Open first Session' }))
+    const restored = await canvas.findByLabelText('Session history')
+    await waitFor(() => expect(restored.scrollTop).toBeCloseTo(savedPosition, 1))
   },
 }
 

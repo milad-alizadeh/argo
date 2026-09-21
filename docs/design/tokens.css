@@ -71,7 +71,8 @@
   --size-attachment-thumbnail: 56px;
   --size-attachment-card: 64px;
   --size-attachment-tray: 72px;
-  --inset-composer-plan: calc(var(--size-control) * 3 + var(--spacing-shell-item));
+  --size-composer-plan-trigger: calc(var(--size-control) * 3 + var(--spacing-shell-item));
+  --inset-composer-plan: var(--size-composer-plan-trigger);
   --size-session-menu: 23rem;
   --size-session-popover: 26rem;
   --size-composer-suggestions: 30rem;
@@ -369,7 +370,7 @@
   --color-off: oklch(0.72 0 0);
   /* State marks need 3:1 contrast on the Roster's white ground, where the design's dark-first
      inks are too light to remain distinguishable (#2526). */
-  --color-active: #0b7a57;
+  --color-active: #159b70;
   --color-warn: #a16207;
   --color-plan: #2563eb;
   --color-plan-track: rgb(0 0 0 / 0.1);
