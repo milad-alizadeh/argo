@@ -47,7 +47,6 @@ const NOTIFICATION = {
       '<task-notification>\n<task-id>agent-9</task-id>\n<tool-use-id>toolu_1</tool-use-id>\n<status>completed</status>\n<summary>Agent "Review the Feed card" finished</summary>\n<result>Looks right.</result>\n</task-notification>',
   },
 }
-
 function records(...lines: Record<string, unknown>[]) {
   return readingSpawnedAgents(
     lines.flatMap((line) => parseTranscriptLine(JSON.stringify(line)) ?? []),
@@ -59,7 +58,6 @@ function rowsOf(...lines: Record<string, unknown>[]) {
   return projectFeed({ id: 's', retiredIds: [], files: [file], originUnread: false }, undefined)
     .rows
 }
-
 const MESSAGE = {
   type: 'assistant',
   uuid: 'a-2',
