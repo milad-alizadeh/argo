@@ -14,10 +14,12 @@ const NO_PENDING_TURNS: PendingTurn[] = []
 export function usePendingTurns({
   isRunning,
   onSend,
+  onSteer,
   sessionId,
 }: {
   isRunning: boolean
   onSend: Send
+  onSteer?: (text: string, attachments: SessionAttachmentInput[]) => Promise<boolean>
   sessionId: string
 }) {
   const pendingTurns = useComposerStore(
@@ -42,6 +44,15 @@ export function usePendingTurns({
     },
     [reorder, sessionId],
   )
+  const steerPendingTurn = useCallback(
+    async (turn: PendingTurn) => {
+      if (onSteer === undefined) return false
+      const steered = await onSteer(turn.text, turn.attachments)
+      if (steered) removePendingTurn(turn.id)
+      return steered
+    },
+    [onSteer, removePendingTurn],
+  )
 
   useEffect(() => {
     const becameIdle = wasRunning.current && !isRunning
@@ -53,5 +64,5 @@ export function usePendingTurns({
     })
   }, [isRunning, onSend, pendingTurns, removePendingTurn])
 
-  return { addPendingTurn, pendingTurns, removePendingTurn, reorderPendingTurn }
+  return { addPendingTurn, pendingTurns, removePendingTurn, reorderPendingTurn, steerPendingTurn }
 }

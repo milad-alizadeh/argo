@@ -24,6 +24,7 @@ function fixture(overrides: Partial<Parameters<typeof performSend>[0]> = {}) {
       },
       setupValue: null,
       clearDraft: () => {},
+      restoreDraft: () => {},
       clear: (ids: string[]) => {
         calls.cleared.push(ids)
       },

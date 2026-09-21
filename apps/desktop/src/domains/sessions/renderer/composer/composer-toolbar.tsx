@@ -1,4 +1,5 @@
 import { ArrowUp, Plus, Square } from 'lucide-react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ModeMenu } from '@/domains/sessions/renderer/composer/mode-menu'
 import {
@@ -48,6 +49,7 @@ export function ComposerToolbar({
   interruptRef: Parameters<typeof Button>[0]['ref']
 }) {
   const { t } = useTranslation('sessions')
+  const [isInterrupting, setInterrupting] = useState(false)
   return (
     <div className="flex items-center gap-1 p-(--spacing-shell-item) @[36rem]:gap-2">
       <AddContextButton onOpen={onOpenContextPicker} />
@@ -57,7 +59,11 @@ export function ComposerToolbar({
         {isRunning ? (
           <Button
             aria-label={t('composer.interrupt')}
-            onClick={() => void onInterrupt?.()}
+            disabled={isInterrupting}
+            onClick={() => {
+              setInterrupting(true)
+              void onInterrupt?.().finally(() => setInterrupting(false))
+            }}
             ref={interruptRef}
             size="icon-sm"
             type="button"

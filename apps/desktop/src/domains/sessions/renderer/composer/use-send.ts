@@ -30,6 +30,7 @@ export async function performSend(input: {
   onSend: Send
   setupValue: TurnSetup | null | undefined
   clearDraft: (editor?: LexicalEditor | null) => void
+  restoreDraft: (text: string, editor?: LexicalEditor | null) => void
   clear: (ids: string[]) => void
 }) {
   const { draft, attachments, markError, isRunning, addPendingTurn, editor, onSend } = input
@@ -43,9 +44,13 @@ export async function performSend(input: {
     clear(resolved.sentIds)
     return
   }
-  if (await onSend(resolved.prompt, setupValue ?? null, resolved.attachments)) {
-    clearDraft(editor)
+  const send = onSend(resolved.prompt, setupValue ?? null, resolved.attachments)
+  // Clear the editor with the optimistic prompt so its Lexical document does not outlive the prompt.
+  clearDraft(editor)
+  if (await send) {
     clear(resolved.sentIds)
+  } else {
+    input.restoreDraft(draft, editor)
   }
 }
 
@@ -56,6 +61,7 @@ export function useSend(input: {
   attachments: ComposerAttachment[]
   clear: (ids: string[]) => void
   clearDraft: (editor?: LexicalEditor | null) => void
+  restoreDraft: (text: string, editor?: LexicalEditor | null) => void
   isRunning: boolean
   markError: (ids: string[]) => void
   addPendingTurn: (
@@ -66,7 +72,7 @@ export function useSend(input: {
   onSend: Send
   setupValue: TurnSetup | null | undefined
 }) {
-  const { editorRef, draft, attachments, clear, clearDraft, isRunning } = input
+  const { editorRef, draft, attachments, clear, clearDraft, isRunning, restoreDraft } = input
   const { markError, addPendingTurn, onSend, setupValue } = input
   return useCallback(
     () =>
@@ -80,6 +86,7 @@ export function useSend(input: {
         isRunning,
         markError,
         onSend,
+        restoreDraft,
         setupValue,
       }),
     [
@@ -92,6 +99,7 @@ export function useSend(input: {
       isRunning,
       markError,
       onSend,
+      restoreDraft,
       setupValue,
     ],
   )

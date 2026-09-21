@@ -28,10 +28,12 @@ export function useComposerMarker(options: {
 }) {
   const { marker, roster, identity, selectedRow, sessionId, onInterruptBase } = options
   const onInterrupt = useCallback(async () => {
+    const entry = sessionId === null ? undefined : marker.entries.get(sessionId)
+    if (sessionId !== null) marker.clear(sessionId)
     const interrupted = await onInterruptBase()
-    if (interrupted && sessionId !== null) marker.clear(sessionId)
+    if (!interrupted && sessionId !== null && entry !== undefined) marker.begin(sessionId, entry)
     return interrupted
-  }, [onInterruptBase, sessionId, marker])
+  }, [onInterruptBase, sessionId, marker, marker.entries])
   useEffect(() => {
     for (const [key, entry] of marker.entries) {
       const row = findSessionRow(roster, key)

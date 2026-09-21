@@ -1,4 +1,5 @@
 import { codexTurnSetupSchema } from '@/domains/sessions/contract/codex-turn-setup'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import type {
   DriveFailure,
   SessionDriveAdapter,
@@ -26,6 +27,21 @@ function failureOf(error: unknown, fallback: DriveFailure['error']): DriveFailur
   const message = error instanceof Error ? error.message : ''
   if (ACTIVE_ELSEWHERE.test(message)) return { error: 'held-elsewhere' }
   return { error: fallback }
+}
+
+async function steer(options: {
+  driver: CodexSessionDrive
+  sessionId: string
+  prompt: string
+  attachments: SessionAttachmentInput[]
+}) {
+  const { driver, sessionId, prompt, attachments } = options
+  try {
+    await driver.steer?.({ sessionId, text: prompt, attachments })
+    return { ok: true } as const
+  } catch (error) {
+    return failureOf(error, 'not-drivable')
+  }
 }
 
 export function createCodexDriveAdapter(driver: CodexSessionDrive): SessionDriveAdapter {
@@ -59,6 +75,9 @@ export function createCodexDriveAdapter(driver: CodexSessionDrive): SessionDrive
         console.error('Argo could not send to Codex Session', sessionId, error)
         return failureOf(error, 'not-drivable')
       }
+    },
+    async steer({ sessionId, prompt, attachments }) {
+      return steer({ driver, sessionId, prompt, attachments })
     },
     async interrupt({ sessionId }) {
       try {

@@ -38,6 +38,11 @@ export type SessionHarnessent = {
     setup?: unknown
     attachments?: SessionAttachmentInput[]
   }): Promise<SessionAcceptedReply>
+  steerSession(request: {
+    sessionId: string
+    prompt: string
+    attachments?: SessionAttachmentInput[]
+  }): Promise<SessionAcceptedReply>
   interruptSession(request: { sessionId: string }): Promise<SessionAcceptedReply>
   compactSession(request: { sessionId: string }): Promise<SessionAcceptedReply>
   handoffSession(request: { sessionId: string }): Promise<SessionAcceptedReply>
@@ -101,6 +106,7 @@ export function createSessionHarnessent(
   return {
     startSession: (request) => client.start(request),
     sendSession: (request) => client.send(request),
+    steerSession: (request) => client.steer(request),
     interruptSession: (request) => client.interrupt(request),
     compactSession: (request) => client.compact(request),
     handoffSession: (request) => client.handoff(request),
