@@ -53,6 +53,7 @@ export const PROJECT_PROOF_SURFACE = [
   'startSession',
   'statSessionAttachments',
   'subscribeProjectSetup',
+  'steerSession',
   'updatePriority',
   'updateStatus',
   'verifyAccount',

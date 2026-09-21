@@ -7,26 +7,85 @@ import { sessionListReplySchema } from '@/domains/sessions/contract/ipc/contract
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 
+async function writeRollout({
+  root,
+  date,
+  sessionId,
+  records,
+}: {
+  root: string
+  date: string
+  sessionId: string
+  records: unknown[]
+}) {
+  const day = path.join(root, ...date.split('-'))
+  await mkdir(day, { recursive: true })
+  await writeFile(
+    path.join(day, `rollout-${date}T01-14-46-${sessionId}.jsonl`),
+    records.map((record) => JSON.stringify(record)).join('\n'),
+  )
+}
+
+function sessionMeta({
+  sessionId,
+  cwd,
+  branch,
+  timestamp,
+}: {
+  sessionId: string
+  cwd: string
+  branch: string
+  timestamp: string
+}) {
+  return {
+    timestamp,
+    type: 'session_meta',
+    payload: {
+      id: sessionId,
+      cwd,
+      git: { commit_hash: 'abc', branch, repository_url: '' },
+    },
+  }
+}
+
+async function listedSessions(root: string) {
+  const reply = sessionListReplySchema.parse(
+    await createSessionReader([codexSessionSource(root)]).listSessions({
+      version: 1,
+      type: 'session.list',
+      requestId: 'list-1',
+      projectRoot: null,
+    }),
+  )
+  if (reply.type !== 'session.listed') throw new Error('Expected Sessions to be listed')
+  return reply.sessions
+}
+
+async function assertSession(root: string, expected: { id: string; cwd: string; branch: string }) {
+  const sessions = await listedSessions(root)
+  assert.deepEqual(
+    sessions.map(({ id, cwd, branch }) => ({ id, cwd, branch })),
+    [expected],
+  )
+}
+
 // Codex writes the folder and branch a thread runs in on its `session_meta` record only, and a
 // Project scopes the Roster by that folder (#2204); the branch is what names the Ticket.
 test('reads the folder and branch a Codex Session runs in from its session_meta record', async (context) => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-cwd-'))
   context.after(() => rm(root, { recursive: true, force: true }))
-  const day = path.join(root, '2026', '09', '14')
-  await mkdir(day, { recursive: true })
   const sessionId = '01a09d44-306e-7b00-b7c7-0391bb2ae350'
-  await writeFile(
-    path.join(day, `rollout-2026-09-14T01-14-46-${sessionId}.jsonl`),
-    [
-      {
+  await writeRollout({
+    root,
+    date: '2026-09-14',
+    sessionId,
+    records: [
+      sessionMeta({
+        sessionId,
+        cwd: '/Users/x/proj',
+        branch: 'argo/#2428-issue-completion',
         timestamp: '2026-09-14T00:14:46.946Z',
-        type: 'session_meta',
-        payload: {
-          id: sessionId,
-          cwd: '/Users/x/proj',
-          git: { commit_hash: 'abc', branch: 'argo/#2428-issue-completion', repository_url: '' },
-        },
-      },
+      }),
       {
         timestamp: '2026-09-14T00:14:50.000Z',
         type: 'event_msg',
@@ -47,28 +106,45 @@ test('reads the folder and branch a Codex Session runs in from its session_meta 
           },
         },
       },
-    ]
-      .map((record) => JSON.stringify(record))
-      .join('\n'),
-  )
+    ],
+  })
 
-  const reply = sessionListReplySchema.parse(
-    await createSessionReader([codexSessionSource(root)]).listSessions({
-      version: 1,
-      type: 'session.list',
-      requestId: 'list-1',
-      projectRoot: null,
-    }),
-  )
-  assert.equal(reply.type, 'session.listed')
-  assert.deepEqual(
-    reply.sessions.map(({ id, cwd, branch }) => ({ id, cwd, branch })),
-    [
+  await assertSession(root, {
+    id: sessionId,
+    cwd: '/Users/x/proj/.claude/worktrees/ticket-2376-session search',
+    branch: 'argo/#2428-issue-completion',
+  })
+})
+
+test('reads a desktop Codex custom tool worktree as the Session location', async (context) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-custom-place-'))
+  context.after(() => rm(root, { recursive: true, force: true }))
+  const sessionId = '01a0c193-3f66-7591-948e-7a0550d49061'
+  const worktree = '/Users/x/proj/.claude/worktrees/ticket-2543-codex-custom-tool-place'
+  await writeRollout({
+    root,
+    date: '2026-09-21',
+    sessionId,
+    records: [
+      sessionMeta({
+        sessionId,
+        cwd: '/Users/x/proj',
+        branch: 'main',
+        timestamp: '2026-09-21T02:27:28.000Z',
+      }),
       {
-        id: sessionId,
-        cwd: '/Users/x/proj/.claude/worktrees/ticket-2376-session search',
-        branch: 'argo/#2428-issue-completion',
+        timestamp: '2026-09-21T02:27:30.000Z',
+        type: 'response_item',
+        payload: {
+          type: 'custom_tool_call',
+          id: 'custom-1',
+          call_id: 'call-1',
+          name: 'exec',
+          input: `const worktree = "${worktree}"; const result = await tools.exec_command({cmd:"git status",workdir:worktree});`,
+        },
       },
     ],
-  )
+  })
+
+  await assertSession(root, { id: sessionId, cwd: worktree, branch: 'main' })
 })

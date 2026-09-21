@@ -21,6 +21,7 @@ import {
   sessionStartRequestSchema,
   sessionStatAttachmentsReplySchema,
   sessionStatAttachmentsRequestSchema,
+  sessionSteerRequestSchema,
   sessionSubagentUsageReplySchema,
   sessionSubagentUsageRequestSchema,
   sessionTicketConnectRequestSchema,
@@ -69,6 +70,12 @@ export const SESSION_OPERATIONS = {
     name: 'session.send',
     channel: 'argo:session:send',
     request: sessionSendRequestSchema,
+    reply: sessionAcceptedReplySchema,
+  },
+  steer: {
+    name: 'session.steer',
+    channel: 'argo:session:steer',
+    request: sessionSteerRequestSchema,
     reply: sessionAcceptedReplySchema,
   },
   interrupt: {

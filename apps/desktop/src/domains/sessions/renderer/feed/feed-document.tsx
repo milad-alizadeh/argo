@@ -33,8 +33,10 @@ export type FeedQuestionHandlers = {
 export type FeedDocumentContext = {
   active: boolean
   activeEvidenceId: string | null
+  initialScrollPosition?: number | null
   onJumpToLatestChange?: (sessionId: string, action: (() => void) | null) => void
   onOpenSession: (sessionId: string) => void
+  onScrollPositionChange?: (sessionId: string, position: number) => void
 } & FeedQuestionHandlers
 
 export type FeedDocumentProps = {
@@ -44,6 +46,7 @@ export type FeedDocumentProps = {
 }
 
 function ignoreJumpToLatestChange(_sessionId: string, _action: (() => void) | null) {}
+function ignoreScrollPositionChange(_sessionId: string, _position: number) {}
 
 // The Feed never draws a thought from the transcript as history. While the Turn runs, the
 // Session's activity (the fact the roster draws under the title, a thought or the latest call)
@@ -51,7 +54,12 @@ function ignoreJumpToLatestChange(_sessionId: string, _action: (() => void) | nu
 // when the Turn ends (#2410), and the compaction marker stands in for it while compaction runs.
 function liveRows(reading: SessionFeed, facts: NonNullable<FeedLiveFacts>): SessionFeedRow[] {
   const rows = foldSettledToolRuns(reading.rows.filter((row) => row.shape !== 'thought'))
-  const activity = facts.isRunning && facts.compactionStartedAt === null ? facts.activity : null
+  const hasTrailingThought = reading.rows.at(-1)?.shape === 'thought'
+  const activity =
+    facts.compactionStartedAt === null &&
+    (facts.isRunning || (facts.activity?.kind === 'thought' && hasTrailingThought))
+      ? facts.activity
+      : null
   if (activity === null) return rows
   const turnStart = rows.findLastIndex((row) => row.shape === 'prose' && row.role === 'user')
   const last = rows.at(-1)
@@ -91,14 +99,12 @@ function liveReading(reading: SessionFeed, liveFacts: FeedLiveFacts) {
 export function FeedDocument({ reading, liveFacts, actions }: FeedDocumentProps) {
   const { t } = useTranslation('sessions')
   const onJumpToLatestChange = actions.onJumpToLatestChange ?? ignoreJumpToLatestChange
-  const onOpenSession = actions.onOpenSession
   const live = liveReading(reading, liveFacts)
-  const feed = live.reading
   const toolGroups = useRef(new ToolGroupState()).current
   const revealCache = useRef<RevealCache>(new Map()).current
   const revealsFor = useReveals()
   const DrawnRow = useDrawnRow({
-    sessionId: feed.sessionId,
+    sessionId: live.reading.sessionId,
     activeEvidenceId: actions.activeEvidenceId,
     onOpenEvidence: actions.onOpenEvidence,
     toolGroups,
@@ -110,26 +116,27 @@ export function FeedDocument({ reading, liveFacts, actions }: FeedDocumentProps)
   })
   const { column, settled, stalled, retry } = useSettledFeed({
     active: actions.active,
-    sessionId: feed.sessionId,
-    revision: feed.revision,
-    rows: feed.rows,
+    sessionId: live.reading.sessionId,
+    revision: live.reading.revision,
+    rows: live.reading.rows,
     isRunning: live.isRunning,
     stallTimeoutMs: actions.stallTimeoutMs,
   })
-  const lastRow = feed.rows[feed.rows.length - 1]
-  // A running assistant reply or tool group is the Feed's live tail.
+  const lastRow = live.reading.rows.at(-1)
   const tailIsLive = lastRow !== undefined && isFeedRowStreaming(lastRow)
   const streamingRowId = live.isRunning && tailIsLive ? lastRow.id : null
   // A quiet marker keeps its box through prose/tool changes, so the Feed height stays stable (#2241).
-  const tail = liveFeedTail(live, lastRow, onOpenSession)
+  const tail = liveFeedTail(live, lastRow, actions.onOpenSession)
   const content = feedContent({
     active: actions.active,
+    initialScrollPosition: actions.initialScrollPosition ?? null,
     settled,
     isRunning: live.isRunning,
     stalled,
     posture: live.posture,
     onRetry: retry,
     onJumpToLatestChange,
+    onScrollPositionChange: actions.onScrollPositionChange ?? ignoreScrollPositionChange,
     DrawnRow,
     revealsFor,
     streamingRowId,

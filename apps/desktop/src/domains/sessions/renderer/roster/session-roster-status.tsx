@@ -4,15 +4,26 @@ import type { Session } from '@/domains/sessions/renderer/types'
 import { sessionPostureLocksAnswer } from '@/domains/sessions/renderer/types'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 
-export const STATUS_MARKS: Record<Session['status'], string> = {
-  asking: 'bg-warn',
-  ended: 'bg-danger',
-  idle: 'bg-idle',
-  permission: 'bg-warn',
-  running: 'bg-idle',
-  starting: 'bg-idle',
-  stopped: 'bg-danger',
-  unknown: 'bg-transparent shadow-state-outline',
+export type SessionStatusVariant = 'active' | 'attention' | 'failed' | 'idle' | 'unknown' | 'unread'
+
+// A working Session outranks its unread result; `starting` keeps its idle mark until a Turn works.
+export function statusVariantOf(session: Pick<Session, 'status' | 'unread'>): SessionStatusVariant {
+  switch (session.status) {
+    case 'running':
+      return 'active'
+    case 'starting':
+      return 'idle'
+    case 'asking':
+    case 'permission':
+      return 'attention'
+    case 'ended':
+    case 'stopped':
+      return 'failed'
+    case 'unknown':
+      return 'unknown'
+    case 'idle':
+      return session.unread ? 'unread' : 'idle'
+  }
 }
 
 // The dot beside a Session carries its status as colour; this is that same fact in words, for a
@@ -49,7 +60,7 @@ export function SessionBlockedBadge({ session }: { session: Session }) {
   const { t } = useTranslation('sessions')
   if (!NEEDS_INPUT[session.status]) return null
   return (
-    <Badge className="border-warn/40 text-warn" size="default" variant="outline">
+    <Badge size="compact" variant="warning">
       {t('needsInput')}
     </Badge>
   )

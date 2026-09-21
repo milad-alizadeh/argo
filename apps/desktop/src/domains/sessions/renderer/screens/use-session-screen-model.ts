@@ -10,6 +10,7 @@ import { useSessionPermission } from '@/domains/sessions/renderer/composer/use-s
 import { useSessionQuestion } from '@/domains/sessions/renderer/composer/use-session-question'
 import { COMPOSER_FOCUS_STATE } from '@/domains/sessions/renderer/composer-focus-state'
 import type { WorkSelection } from '@/domains/sessions/renderer/inspector/session-inspector'
+import { workInspectorReveal } from '@/domains/sessions/renderer/inspector/work-inspector-reveal'
 import { sessionHarness } from '@/domains/sessions/renderer/screens/session-screen-state'
 import { useSelectedSession } from '@/domains/sessions/renderer/screens/use-selected-session'
 import { readableSessionId } from '@/domains/sessions/renderer/session-creation'
@@ -50,10 +51,13 @@ function useWorkArtifacts(
   const shell = session?.shell.find((command) => command.id === work.shellId) ?? null
   const delegation =
     session?.subagents.find((candidate) => candidate.id === work.subagentId) ?? null
+  const delegationFeed = useDelegationFeed(selectedSessionId, delegation?.id ?? null)
   return {
     shell,
     delegation,
-    delegationFeed: useDelegationFeed(selectedSessionId, delegation?.id ?? null),
+    delegationFeed: delegationFeed.feed,
+    delegationFeedError: delegationFeed.feedError,
+    retryDelegationFeed: delegationFeed.retry,
     subagentUsage: useDelegationUsage(
       session === null || session.subagents.length === 0 ? null : selectedSessionId,
       session?.subagents.some((candidate) => candidate.state === 'running') === true,
@@ -92,6 +96,7 @@ export function useSessionScreenModel() {
   const permission = useSessionPermission(readableSessionId(selectedSessionId))
   const question = useSessionQuestion(readableSessionId(selectedSessionId))
   const artifacts = useWorkArtifacts(session, selectedSessionId, work)
+  const inspectorReveal = workInspectorReveal(workReveal, artifacts.shell, artifacts.shellOutput)
   return {
     selectedSessionId,
     feed,
@@ -108,7 +113,7 @@ export function useSessionScreenModel() {
     question,
     work,
     pick,
-    workReveal,
+    workReveal: inspectorReveal,
     ...artifacts,
   }
 }

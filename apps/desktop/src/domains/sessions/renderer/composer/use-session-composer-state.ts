@@ -1,6 +1,7 @@
 import { $convertFromMarkdownString, TRANSFORMERS } from '@lexical/markdown'
 import { $createParagraphNode, $getRoot, type LexicalEditor } from 'lexical'
 import { type RefObject, useCallback, useRef } from 'react'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import type { TurnSetupControlProps } from '@/domains/sessions/renderer/composer/run-setup-menu'
 import {
   type PendingTurn,
@@ -36,7 +37,15 @@ function useComposerDraft(sessionId: string, editorRef: RefObject<LexicalEditor 
     },
     [editorRef, sessionId, setDraft],
   )
-  return { changeDraft, clearDraft, draft }
+  const restoreDraft = useCallback(
+    (text: string, editor = editorRef.current) => {
+      if ((useComposerStore.getState().drafts[sessionId] ?? '') !== '') return
+      editor?.update(() => $convertFromMarkdownString(text, TRANSFORMERS))
+      setDraft(sessionId, text)
+    },
+    [editorRef, sessionId, setDraft],
+  )
+  return { changeDraft, clearDraft, draft, restoreDraft }
 }
 
 // A queued Turn brought back to edit restores its text and, where still offered, its own setup
@@ -63,16 +72,18 @@ function useEditPendingTurn(
 export function useSessionComposerState({
   isRunning,
   onSend,
+  onSteer,
   sessionId,
   setup,
 }: {
   isRunning: boolean
   onSend: Send
+  onSteer?: (text: string, attachments: SessionAttachmentInput[]) => Promise<boolean>
   sessionId: string
   setup: TurnSetupControlProps | null
 }) {
   const editorRef = useRef<LexicalEditor>(null)
-  const { changeDraft, clearDraft, draft } = useComposerDraft(sessionId, editorRef)
+  const { changeDraft, clearDraft, draft, restoreDraft } = useComposerDraft(sessionId, editorRef)
   const { attachments, attach, remove, markError, clear, tickets, addTicket, removeTicket } =
     useComposerAttachments(sessionId)
   const onEdit = useEditPendingTurn(editorRef, changeDraft, setup)
@@ -81,11 +92,8 @@ export function useSessionComposerState({
       onSend(text, turnSetupOf(setup, turnSetup ?? undefined), pendingAttachments),
     [onSend, setup],
   )
-  const { addPendingTurn, pendingTurns, removePendingTurn, reorderPendingTurn } = usePendingTurns({
-    isRunning,
-    onSend: sendPendingTurn,
-    sessionId,
-  })
+  const { addPendingTurn, pendingTurns, removePendingTurn, reorderPendingTurn, steerPendingTurn } =
+    usePendingTurns({ isRunning, onSend: sendPendingTurn, onSteer, sessionId })
   const send = useSend({
     addPendingTurn,
     attachments,
@@ -96,6 +104,7 @@ export function useSessionComposerState({
     isRunning,
     markError,
     onSend,
+    restoreDraft,
     setupValue: setup?.value,
   })
   const { attachFiles, dropFiles } = useAttachmentTransfer(attach)
@@ -114,6 +123,7 @@ export function useSessionComposerState({
     removeTicket,
     removePendingTurn,
     reorderPendingTurn,
+    steerPendingTurn,
     send,
   }
 }

@@ -2,11 +2,13 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
+import type { SessionShellOutput } from '@/domains/sessions/contract/model/background-work-contract'
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/model/models'
 import { SessionComposer } from '@/domains/sessions/renderer/composer/session-composer'
 import { RICH_MARKDOWN } from '@/domains/sessions/renderer/feed/content/feed-samples'
 import { INACTIVE_FEED_LIVE_FACTS } from '@/domains/sessions/renderer/feed/feed-live-facts'
 import { SessionInspector } from '@/domains/sessions/renderer/inspector/session-inspector'
+import { workInspectorReveal } from '@/domains/sessions/renderer/inspector/work-inspector-reveal'
 import { Roster, type RosterActions } from '@/domains/sessions/renderer/roster/roster'
 import {
   sessionRosterRow,
@@ -66,6 +68,7 @@ const SESSION_ROSTER = [
     cwd: '/workspace/argo',
     branch: 'argo/#1847-inline-references',
     updatedAt: '2026-09-13T15:28:00Z',
+    shell: [sessionShellCommand({ id: 'codex-command', command: 'bun run typecheck' })],
     contextTokens: 21_000,
     spentTokens: 4_600,
   }),
@@ -217,25 +220,26 @@ function ReviewSidebar({
 function ReviewInspector({
   delegation,
   shell,
+  shellOutput,
 }: {
   delegation: SessionSubagent | null
   shell: SessionShellCommand | null
+  shellOutput: SessionShellOutput
 }) {
   return (
     <SessionInspector
       activeEvidenceId={null}
       delegation={delegation}
       delegationFeed={delegation === null ? null : delegationFeedFor(delegation)}
+      delegationFeedError={null}
       evidence={null}
       sessionId={null}
       handoff={null}
       onOpenEvidence={() => {}}
       onOpenSession={() => {}}
+      onRetryDelegationFeed={() => {}}
       shell={shell}
-      shellOutput={{
-        state: 'available',
-        tail: 'Checked 187 files.\ncheck:design-tokens — clean.\n',
-      }}
+      shellOutput={shellOutput}
     />
   )
 }
@@ -258,13 +262,29 @@ function ReviewInspectorBar({
   return null
 }
 
+function reviewInspectorReveal(
+  picked: { id: string; count: number } | null,
+  shell: SessionShellCommand | null,
+  shellOutput: SessionShellOutput,
+) {
+  return (
+    workInspectorReveal(
+      picked === null ? null : `${picked.id}#${picked.count}`,
+      shell,
+      shellOutput,
+    ) ?? undefined
+  )
+}
+
 function ReviewScreen({
   initialSessionId = 'composer-review',
   rows = null,
+  shellOutput = { state: 'available', tail: 'Checked 187 files.\ncheck:design-tokens — clean.\n' },
   showPlan = true,
 }: {
   initialSessionId?: string
   rows?: SessionFeed['rows'] | null
+  shellOutput?: SessionShellOutput
   showPlan?: boolean
 }) {
   const [selectedSessionId, setSelectedSessionId] = useState(initialSessionId)
@@ -307,10 +327,12 @@ function ReviewScreen({
           />
         }
         session={session}
-        inspector={<ReviewInspector delegation={delegation} shell={shell} />}
+        inspector={
+          <ReviewInspector delegation={delegation} shell={shell} shellOutput={shellOutput} />
+        }
         inspectorBar={<ReviewInspectorBar delegation={delegation} shell={shell} />}
         defaultInspectorCollapsed
-        inspectorReveal={picked === null ? undefined : `${picked.id}#${picked.count}`}
+        inspectorReveal={reviewInspectorReveal(picked, shell, shellOutput)}
         liveFacts={liveFactsFor(session)}
         onOpenEvidence={() => {}}
         onOpenSession={() => {}}
@@ -560,9 +582,7 @@ async function expectDelegatedFeedSurvivesCollapse(canvas: ReturnType<typeof wit
   expectVisibleFeedRowsDoNotOverlap(within(inspector).getByLabelText(SESSION_HISTORY_LABEL))
 
   await userEvent.click(canvas.getByRole('button', { name: 'Collapse Session inspector' }))
-  await waitFor(() =>
-    expect(inspector.querySelector('.feed__document')).toHaveAttribute('data-active', 'false'),
-  )
+  await waitFor(() => expect(inspector.querySelector('.feed__document')).toBeNull())
   await pickSubagent(canvas)
   const reopenedInspector = await canvas.findByRole('region', { name: 'Subagent' })
   expectVisibleFeedRowsDoNotOverlap(within(reopenedInspector).getByLabelText(SESSION_HISTORY_LABEL))
@@ -610,6 +630,18 @@ export const Open: Story = {
     await expectDelegatedFeedSurvivesCollapse(canvas)
 
     await expectShellReopensWithOutput(canvasElement)
+  },
+}
+
+export const CodexShellWithoutOutputDoesNotRevealInspector: Story = {
+  render: () => (
+    <ReviewScreen initialSessionId="shortcut-review" shellOutput={{ state: 'absent' }} />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: /^Shell/ }))
+    await userEvent.click(await screen.findByRole('menuitem'))
+    await expect(canvas.queryByRole('button', { name: 'Collapse Session inspector' })).toBeNull()
   },
 }
 

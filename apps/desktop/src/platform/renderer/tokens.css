@@ -40,9 +40,9 @@
   --color-ticket-done: #5e6ad2;
   --font-sans: "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "Geist Mono Variable", "SF Mono", "Cascadia Mono", Menlo, monospace;
-  --text-code: 12px;
+  --text-code: 13px;
   /* Supporting facts and compact counts share the one smaller sans rung. */
-  --text-meta: 11px;
+  --text-meta: 12px;
   /* Named on Tailwind's own spacing namespace, so one declaration serves both readers: the Feed
      reaches these through var() for properties no utility expresses, and the Roster reaches the
      same numbers as `gap-tight` and the rest. Named `--space-*` they would still be valid CSS
@@ -109,7 +109,9 @@
   --size-attachment-thumbnail: 56px;
   --size-attachment-card: 64px;
   --size-attachment-tray: 72px;
-  --inset-composer-plan: calc(var(--size-control) * 3 + var(--spacing-shell-item));
+  /* The editor reserves the plan control width, so its first line does not pass under the control. */
+  --size-composer-plan-trigger: calc(var(--size-control) * 3 + var(--spacing-shell-item));
+  --inset-composer-plan: var(--size-composer-plan-trigger);
   /* A dropdown or popover menu hung off the composer's toolbar: mode, permission and run setup. */
   --size-session-menu: 23rem;
   /* A wider popover carrying prose and a meter: context and usage. */
@@ -151,18 +153,18 @@
    appearances; only the Plan track, a white wash that vanishes on white, is restated. */
 @theme inline {
   --font-heading: var(--font-sans);
-  /* Most product text shares one compact reading rung. Role and weight create hierarchy; the
-     title is the rare larger step and code is the technical 12px exception. */
-  --text-title: 16px;
-  --text-title--line-height: 22px;
-  --text-heading: 13px;
-  --text-heading--line-height: 19px;
-  --text-body: 13px;
-  --text-body--line-height: 19px;
-  --text-prose: 13px;
-  --text-prose--line-height: 19px;
-  --text-meta--line-height: 15px;
-  --text-code--line-height: 18px;
+  /* Most product text shares one reading rung. Role and weight create hierarchy. The title is the
+     rare larger step and code uses a 13px technical rung. */
+  --text-title: 18px;
+  --text-title--line-height: 24px;
+  --text-heading: 14px;
+  --text-heading--line-height: 20px;
+  --text-body: 14px;
+  --text-body--line-height: 20px;
+  --text-prose: 14px;
+  --text-prose--line-height: 20px;
+  --text-meta--line-height: 16px;
+  --text-code--line-height: 19px;
   --text-control: var(--text-body);
   --text-control--line-height: var(--text-body--line-height);
   --text-badge: var(--text-meta);
@@ -179,7 +181,7 @@
   --text-prose-weight: 400;
   --text-meta-weight: 400;
   --text-code-weight: 400;
-  --text-control-weight: 500;
+  --text-control-weight: 400;
   --text-title-tracking: normal;
   --text-heading-tracking: normal;
   --text-body-tracking: normal;
@@ -191,7 +193,7 @@
   --size-navigation-rail: 64px;
   --inset-navigation-rail-item-top: calc((var(--size-chrome-bar) - var(--size-control)) / 2);
   --size-cockpit-sidebar-default: 368px;
-  --size-cockpit-sidebar-min: 240px;
+  --size-cockpit-sidebar-min: 360px;
   --size-cockpit-sidebar-max: 460px;
   --size-cockpit-content-min: 400px;
   --size-navigation-item: 36px;
@@ -430,6 +432,11 @@
   --color-quiet: oklch(0.44 0 0);
   --color-faint: var(--muted-foreground);
   --color-off: oklch(0.72 0 0);
+  /* State marks need 3:1 contrast on the Roster's white ground, where the design's dark-first
+     inks are too light to remain distinguishable (#2526). */
+  --color-active: #159b70;
+  --color-warn: #a16207;
+  --color-plan: #2563eb;
   --color-plan-track: rgb(0 0 0 / 0.1);
   /* How far label text leans to its colour: GitHub's pale a2eeef measured 6.8:1 on its tint here. */
   --ticket-label-lean: 40%;

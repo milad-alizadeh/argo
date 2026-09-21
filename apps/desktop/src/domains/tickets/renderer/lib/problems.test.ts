@@ -1,12 +1,11 @@
 import { expect, test } from 'bun:test'
-import accounts from '@/domains/accounts/renderer/locales/en.json'
 import { connection } from '@/domains/tickets/renderer/detail/ticket-fixtures'
 import { connectionProblem } from '@/domains/tickets/renderer/lib/problems'
-import tickets from '@/domains/tickets/renderer/locales/en.json'
 import { initializeRendererI18n } from '@/platform/renderer/i18n/i18n'
+import { CATALOGS } from '@/renderer/catalogs'
 
 await initializeRendererI18n({
-  catalogs: { accounts, tickets },
+  catalogs: CATALOGS,
   defaultNamespace: 'tickets',
   language: 'en',
 })

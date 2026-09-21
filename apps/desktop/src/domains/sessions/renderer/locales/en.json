@@ -8,7 +8,6 @@
   "newSession": "New Session",
   "searchSessions": "Search Sessions",
   "subagent": "Subagent",
-  "subagentLoading": "Loading agent transcript…",
   "findSession": "Find a Session",
   "reading": "Reading this Session",
   "noSessionsFound": "No Sessions found",
@@ -319,6 +318,12 @@
   "delegation": {
     "agent": { "label": "Background Agent" },
     "shell": { "label": "Background Task", "running": "Running Background Task" },
+    "event": {
+      "messaged": "{{name}} received a message",
+      "responded": "{{name}} sent a reply to the main Session",
+      "started": "{{name}} started",
+      "stopped": "{{name}} stopped"
+    },
     "open": "Open the {{name}} Session",
     "tokens": "{{amount}} tokens"
   },
