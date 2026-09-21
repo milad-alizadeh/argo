@@ -48,7 +48,9 @@ export const Responded: Story = {
   args: { onOpen: fn(), row: RESPONDED_ROW },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByRole('button', { name: /Spec review responded/ }))
+    await userEvent.click(
+      canvas.getByRole('button', { name: /Spec review sent a reply to the main Session/ }),
+    )
     await expect(args.onOpen).toHaveBeenCalledTimes(1)
   },
 }
