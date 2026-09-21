@@ -1,4 +1,3 @@
-import { FolderGit2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { AccountsDialog, useAccountsDialog } from '@/domains/accounts/renderer/port'
 import {
@@ -12,6 +11,7 @@ import {
   useTicketsView,
 } from '@/domains/tickets/renderer/hooks/use-tickets-view'
 import { TicketProblem } from '@/domains/tickets/renderer/status/ticket-problem'
+import { Icon } from '@/platform/renderer/components/icon'
 import {
   Empty,
   EmptyDescription,
@@ -47,7 +47,7 @@ function NoProject() {
     <Empty className="h-full">
       <EmptyHeader>
         <EmptyMedia variant="icon">
-          <FolderGit2 aria-hidden="true" />
+          <Icon name="repository" />
         </EmptyMedia>
         <EmptyTitle>{t('screen.noProject.title')}</EmptyTitle>
         <EmptyDescription>{t('screen.noProject.description')}</EmptyDescription>

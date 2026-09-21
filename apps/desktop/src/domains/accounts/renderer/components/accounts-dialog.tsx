@@ -1,4 +1,3 @@
-import { TriangleAlert } from 'lucide-react'
 import { type ReactNode, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -16,6 +15,7 @@ import {
 } from '@/domains/accounts/renderer/hooks/use-accounts'
 import { useSignIn } from '@/domains/accounts/renderer/hooks/use-sign-in'
 import { useAccountsDialog } from '@/domains/accounts/renderer/state/use-accounts-dialog'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Alert, AlertDescription } from '@/platform/renderer/components/ui/alert'
 import {
   Dialog,
@@ -43,7 +43,7 @@ function Failure({ error }: { error: ContractFailure }) {
   const contractText = useContractText()
   return (
     <Alert className="border-destructive/50 bg-destructive/10" variant="destructive">
-      <TriangleAlert aria-hidden="true" />
+      <Icon name="triangle-alert" />
       <AlertDescription>{contractText(error)}</AlertDescription>
     </Alert>
   )

@@ -1,4 +1,3 @@
-import { ArrowLeft, Check, Circle, Folder } from 'lucide-react'
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
@@ -6,6 +5,7 @@ import type {
   ProjectSetupSnapshot,
 } from '@/domains/projects/contract/contract'
 import type { ProjectSummary } from '@/domains/projects/contract/messages'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   ProjectSetupAgentHeader,
@@ -44,7 +44,7 @@ export function ProjectSetupView({ command, project, snapshot }: ProjectSetupVie
       event={
         <>
           <span className="grid size-8 place-items-center rounded-full bg-muted">
-            <Folder className="size-4" />
+            <Icon name="folder" size="control" />
           </span>
           <p>{t(setupEvent(snapshot))}</p>
         </>
@@ -64,7 +64,7 @@ export function ProjectSetupView({ command, project, snapshot }: ProjectSetupVie
               size="icon-sm"
               variant="ghost"
             >
-              <ArrowLeft />
+              <Icon name="back" />
             </Button>
           ) : null}
           <h1
@@ -99,7 +99,7 @@ function ProjectSetupEvidence({ snapshot }: Pick<ProjectSetupViewProps, 'snapsho
         {snapshot.progress.length === 0 ? (
           <li className="relative grid min-h-11 grid-cols-[var(--size-icon-control)_minmax(0,1fr)] gap-2.5 type-control text-muted-foreground">
             <span className="z-10 grid size-(--size-icon-control) place-items-center rounded-full border bg-sidebar">
-              <Circle className="size-3" />
+              <Icon name="setup-step-pending" className="size-3" />
             </span>
             <p>{t('setup.actor.busy')}</p>
           </li>
@@ -112,9 +112,9 @@ function ProjectSetupEvidence({ snapshot }: Pick<ProjectSetupViewProps, 'snapsho
             >
               <span className="z-10 grid size-(--size-icon-control) place-items-center rounded-full border bg-sidebar group-data-[complete=true]:border-success/40 group-data-[complete=true]:bg-success/10 group-data-[complete=true]:text-success">
                 {step.status === 'passed' ? (
-                  <Check className="size-3" />
+                  <Icon name="confirmed" className="size-3" />
                 ) : (
-                  <Circle className="size-3" />
+                  <Icon name="setup-step-pending" className="size-3" />
                 )}
               </span>
               <p className="pt-0.5">{step.message}</p>

@@ -1,7 +1,7 @@
-import { Lock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { Session } from '@/domains/sessions/renderer/types'
 import { sessionPostureLocksAnswer } from '@/domains/sessions/renderer/types'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 
 export type SessionStatusVariant = 'active' | 'attention' | 'failed' | 'idle' | 'unknown' | 'unread'
@@ -77,7 +77,7 @@ export function SessionLockedMark({ session }: { session: Session }) {
   if (session.locked !== true && !unanswerableHere(session)) return null
   return (
     <span className="inline-flex shrink-0 items-center" title={OPEN_ELSEWHERE_MESSAGE}>
-      <Lock aria-hidden className="size-3.5 text-faint" />
+      <Icon name="awaiting-permission" className="size-3.5 text-faint" />
       <span className="sr-only">{OPEN_ELSEWHERE_MESSAGE}</span>
     </span>
   )

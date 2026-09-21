@@ -1,4 +1,3 @@
-import { ArrowUp, Plus, Square } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ModeMenu } from '@/domains/sessions/renderer/composer/mode-menu'
@@ -8,6 +7,7 @@ import {
 } from '@/domains/sessions/renderer/composer/run-setup-menu'
 import type { ComposerAttachment } from '@/domains/sessions/renderer/composer/use-composer-store'
 import type { HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 
@@ -22,7 +22,7 @@ function AddContextButton({ onOpen }: { onOpen: () => void }) {
       type="button"
       variant="ghost"
     >
-      <Plus />
+      <Icon name="add" />
     </InputGroupButton>
   )
 }
@@ -69,7 +69,7 @@ export function ComposerToolbar({
             size="icon-sm"
             type="button"
           >
-            <Square fill="currentColor" />
+            <Icon className="size-2.5" fill="currentColor" name="interrupt" />
           </Button>
         ) : (
           <Button
@@ -78,7 +78,7 @@ export function ComposerToolbar({
             size="icon-sm"
             type="submit"
           >
-            <ArrowUp />
+            <Icon name="send" />
           </Button>
         )}
       </div>

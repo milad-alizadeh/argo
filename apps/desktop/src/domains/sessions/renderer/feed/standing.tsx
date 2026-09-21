@@ -1,9 +1,9 @@
-import { MessagesSquare, TriangleAlert } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { FeedLoading } from '@/domains/sessions/renderer/feed/feed-loading'
 import { StalledFeed } from '@/domains/sessions/renderer/feed/stalled-feed'
 import { sessionFailureState } from '@/domains/sessions/renderer/session-failure-state'
 import type { SessionError } from '@/domains/sessions/renderer/types'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import {
   Empty,
@@ -34,7 +34,7 @@ export function Standing({
         data-state={sessionFailureState(failure.code)}
       >
         <Alert className="max-w-sm" variant="destructive">
-          <TriangleAlert aria-hidden="true" />
+          <Icon name="triangle-alert" />
           <AlertTitle>{t('standing.failure')}</AlertTitle>
           <AlertDescription>{failure.message}</AlertDescription>
         </Alert>
@@ -45,7 +45,7 @@ export function Standing({
       <Empty className="h-full" data-state="unselected">
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <MessagesSquare aria-hidden="true" />
+            <Icon name="messages-square" />
           </EmptyMedia>
           <EmptyTitle>{t('standing.unselectedTitle')}</EmptyTitle>
           <EmptyDescription>{t('standing.unselectedDescription')}</EmptyDescription>

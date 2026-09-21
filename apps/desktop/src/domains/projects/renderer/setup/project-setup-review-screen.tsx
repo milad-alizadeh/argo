@@ -1,4 +1,3 @@
-import { CheckCircle2, GitBranch, Package } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
@@ -6,6 +5,7 @@ import type {
   ProjectSetupSnapshot,
 } from '@/domains/projects/contract/contract'
 import { FileDiffList } from '@/platform/renderer/components/file-diff-list'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { Textarea } from '@/platform/renderer/components/ui/textarea'
 import { projectSetupDiffFiles } from './project-setup-diff-files'
@@ -114,7 +114,7 @@ function ReviewingDiff({ command, snapshot }: ReviewScreenProps) {
     <section aria-label={t('setup.actor.reviewing-diff.diffLabel')}>
       <div className="text-center">
         <span className="mx-auto grid size-14 place-items-center rounded-full bg-diff-added/10 text-diff-added">
-          <CheckCircle2 className="size-7" />
+          <Icon name="success" className="size-7" />
         </span>
         <h1 className="onboarding-stage-heading mt-5 type-title font-heading" tabIndex={-1}>
           {t('setup.actor.reviewing-diff.title')}
@@ -134,7 +134,7 @@ function ReviewingDiff({ command, snapshot }: ReviewScreenProps) {
             <section className="overflow-hidden rounded-xl border" key={target.id}>
               <header className="flex items-center gap-3 px-4 py-3">
                 <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted">
-                  <Package className="size-4" />
+                  <Icon name="target-repository" size="control" />
                 </span>
                 <span className="min-w-0">
                   <strong className="block truncate type-body">{target.name}</strong>
@@ -152,7 +152,7 @@ function ReviewingDiff({ command, snapshot }: ReviewScreenProps) {
       ) : null}
       <div className="mt-7 space-y-4">
         <h2 className="flex items-center gap-2 type-heading">
-          <GitBranch className="size-4 text-muted-foreground" />
+          <Icon name="branch" className="text-muted-foreground" size="control" />
           {t('setup.actor.reviewing-diff.diffTitle')}
         </h2>
         <FileDiffList

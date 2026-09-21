@@ -1,9 +1,9 @@
-import { Check, Lock } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Question, QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import { FEED_CARD_RADIUS_CLASS } from '@/domains/sessions/renderer/feed/content/feed-surface'
 import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import {
   Questionnaire,
@@ -109,7 +109,7 @@ function FeedQuestionLocked({ row }: { row: AskRow }) {
         </div>
       ))}
       <Alert className="border-0 bg-transparent p-0">
-        <Lock aria-hidden />
+        <Icon name="awaiting-permission" />
         <AlertTitle>{t('question.locked.title')}</AlertTitle>
         <AlertDescription>{t('question.locked.description')}</AlertDescription>
       </Alert>
@@ -137,7 +137,7 @@ export function FeedQuestion({
   if (row.answer !== null) {
     return (
       <div className="flex items-center gap-2 type-meta text-muted-foreground">
-        <Check className="!size-(--size-icon-inline)" />
+        <Icon name="confirmed" size="control" />
         {row.answer}
       </div>
     )

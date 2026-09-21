@@ -1,5 +1,5 @@
-import { Info } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import { Button } from '@/platform/renderer/components/ui/button'
 
@@ -15,7 +15,7 @@ export function SignInNotice({ onConnect, onDismiss }: SignInNoticeProps) {
       className="mx-(--spacing-shell-item) mb-(--spacing-shell-item) w-auto shrink-0 bg-muted/40"
       role="region"
     >
-      <Info aria-hidden="true" />
+      <Icon name="info" />
       <AlertTitle>{t('notice.title')}</AlertTitle>
       <AlertDescription className="grid gap-(--spacing-shell-item)">
         <p>{t('notice.body')}</p>

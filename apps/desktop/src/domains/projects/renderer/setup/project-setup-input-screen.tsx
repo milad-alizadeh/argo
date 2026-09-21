@@ -1,10 +1,10 @@
-import { FileJson } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
   ProjectSetupCommand,
   ProjectSetupSnapshot,
 } from '@/domains/projects/contract/contract'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
@@ -150,7 +150,7 @@ function Manual({ command, snapshot }: InputScreenProps) {
       <section className="mt-7 overflow-hidden rounded-xl border bg-card">
         <div className="flex items-center gap-3 px-3.5 py-3">
           <span className="grid size-8 shrink-0 place-items-center rounded-md bg-muted">
-            <FileJson className="size-4" />
+            <Icon name="config-file" size="control" />
           </span>
           <span className="min-w-0">
             <span className="block type-body font-semibold">

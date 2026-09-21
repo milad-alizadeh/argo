@@ -1,4 +1,3 @@
-import type { LucideIcon } from 'lucide-react'
 import { z } from 'zod'
 
 import type { SessionSetup } from '@/domains/sessions/contract/model/models'
@@ -6,6 +5,7 @@ import {
   type ComposerIdentity,
   composerIdentityKey,
 } from '@/domains/sessions/renderer/composer/composer-identity'
+import type { IconName } from '@/platform/renderer/components/icon'
 
 // The Model, Effort and Mode a composer sends with its next Turn (CONTEXT.md L2 · Model and Effort).
 export const turnSetupSchema = z.strictObject({
@@ -23,7 +23,7 @@ export type SetupChoice = {
   reads: (reading: string) => boolean
   efforts?: readonly string[]
 }
-export type ModeChoice = SetupChoice & { detail: string; icon: LucideIcon }
+export type ModeChoice = SetupChoice & { detail: string; icon: IconName }
 
 // What one adapter lets a person set; an adapter that declares none draws no control.
 export type TurnSetupChoices = {

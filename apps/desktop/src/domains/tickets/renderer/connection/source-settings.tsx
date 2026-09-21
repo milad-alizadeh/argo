@@ -1,9 +1,9 @@
-import { BookMarked, TriangleAlert } from 'lucide-react'
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { providerPresentation } from '@/domains/accounts/renderer/port'
 import type { ConnectionSummary } from '@/domains/tickets/contract/contract'
 import { ConnectionStatusMark } from '@/domains/tickets/renderer/connection/connection-status-mark'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Loader } from '@/platform/renderer/components/loader'
 import { Alert, AlertDescription } from '@/platform/renderer/components/ui/alert'
 import { Button } from '@/platform/renderer/components/ui/button'
@@ -48,7 +48,7 @@ function Source({ connection, disconnecting, onDisconnect, onConnect }: SourceSe
     return (
       <Item className="border-dashed" variant="outline">
         <ItemMedia className={mediaTile} variant="icon">
-          <BookMarked aria-hidden="true" />
+          <Icon name="ticket-source" />
         </ItemMedia>
         <ItemContent>
           <ItemTitle className="type-control">{t('settings.none.title')}</ItemTitle>
@@ -71,7 +71,7 @@ function Source({ connection, disconnecting, onDisconnect, onConnect }: SourceSe
   return (
     <Item variant="outline">
       <ItemMedia className={mediaTile} variant="icon">
-        <BookMarked aria-hidden="true" />
+        <Icon name="ticket-source" />
       </ItemMedia>
       <ItemContent className="min-w-0">
         <ItemTitle className="type-control max-w-full truncate">{connection.label}</ItemTitle>
@@ -120,7 +120,7 @@ export function SourceSettings(props: SourceSettingsProps) {
       <Source {...props} />
       {props.error ? (
         <Alert className="border-destructive/50 bg-destructive/10" variant="destructive">
-          <TriangleAlert aria-hidden="true" />
+          <Icon name="triangle-alert" />
           <AlertDescription>{contractText(props.error)}</AlertDescription>
         </Alert>
       ) : null}

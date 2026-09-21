@@ -1,6 +1,6 @@
-import { ArrowLeft } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 
 export function SetupPage({ actions, children }: { actions?: ReactNode; children: ReactNode }) {
@@ -22,7 +22,7 @@ export function BackButton({ onClick }: { onClick: () => void }) {
   const { t } = useTranslation('projects')
   return (
     <Button className="-ml-3" onClick={onClick} type="button" variant="ghost">
-      <ArrowLeft aria-hidden="true" />
+      <Icon name="back" />
       {t('setup.document.back')}
     </Button>
   )

@@ -1,4 +1,3 @@
-import { Bot } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import {
   DELEGATION_PHASE_WORK_STATES,
@@ -7,6 +6,7 @@ import {
 import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
 import { WORK_STATE_MARKS } from '@/domains/sessions/renderer/work/session-work'
 import { readableWorkTitle } from '@/domains/sessions/renderer/work/work-presentation'
+import { Icon } from '@/platform/renderer/components/icon'
 
 type SubagentRow = Extract<SessionFeedRow, { shape: 'subagent' }>
 
@@ -70,7 +70,7 @@ export function DelegationEvent({ row, onOpen }: { row: SubagentRow; onOpen?: ()
           aria-hidden="true"
           className="relative flex size-(--size-icon-inline) shrink-0 items-center"
         >
-          <Bot className="size-(--size-icon-inline)" />
+          <Icon name="agent" className="size-(--size-icon-inline)" />
           <span
             className={`absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full ${stateMark}`}
             data-slot="delegation-status"

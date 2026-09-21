@@ -1,10 +1,9 @@
-import { GitFork, Minimize2 } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { Icon, type IconName } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 
 type ContextAction = {
   accessibleName: string
-  icon: ReactNode
+  icon: IconName
   label: string
   onClick: (() => Promise<boolean>) | undefined
   disabled: boolean | undefined
@@ -30,7 +29,7 @@ function ContextActionButtons({
       type="button"
       variant={action.variant}
     >
-      {action.icon}
+      <Icon name={action.icon} />
       {labelled ? action.label : null}
     </Button>
   ))
@@ -54,7 +53,7 @@ export function SessionContextActions({
   const actions: [ContextAction, ContextAction] = [
     {
       accessibleName: 'Compact context',
-      icon: <Minimize2 />,
+      icon: 'compact',
       label: 'Compact',
       onClick: onCompact,
       disabled: !canCompact || isCompacting,
@@ -62,7 +61,7 @@ export function SessionContextActions({
     },
     {
       accessibleName: 'Handoff Session',
-      icon: <GitFork />,
+      icon: 'handoff',
       label: 'Handoff',
       onClick: onHandoff,
       disabled: !canHandoff || isHandingOff,

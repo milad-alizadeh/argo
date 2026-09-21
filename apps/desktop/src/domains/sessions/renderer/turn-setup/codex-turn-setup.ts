@@ -1,5 +1,3 @@
-import { Hand, ShieldAlert, ShieldCheck } from 'lucide-react'
-
 import {
   CODEX_EFFORTS,
   CODEX_MODELS,
@@ -32,21 +30,21 @@ const MODES: ModeChoice[] = [
     value: 'read-only',
     label: 'Ask first',
     detail: 'Read-only work asks before any change',
-    icon: Hand,
+    icon: 'mode-manual',
     reads: (value) => value === 'read-only',
   },
   {
     value: 'workspace-write',
     label: 'Approve safely',
     detail: 'Work in this project, asking at the boundary',
-    icon: ShieldCheck,
+    icon: 'mode-approve-safely',
     reads: (value) => value === 'workspace-write',
   },
   {
     value: 'danger-full-access',
     label: 'Full access',
     detail: 'Work without permission prompts',
-    icon: ShieldAlert,
+    icon: 'mode-bypass-permissions',
     reads: (value) => value === 'danger-full-access',
   },
 ]

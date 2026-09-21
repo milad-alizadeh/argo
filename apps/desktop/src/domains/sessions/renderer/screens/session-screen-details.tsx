@@ -1,4 +1,3 @@
-import { Lock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { SessionErrorCode } from '@/domains/sessions/contract/ipc/contract'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
@@ -6,6 +5,7 @@ import { COMPOSER_COLUMN } from '@/domains/sessions/renderer/composer/composer-f
 import { SessionComposer } from '@/domains/sessions/renderer/composer/session-composer'
 import type { HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
 import type { SessionRoster } from '@/domains/sessions/renderer/types'
+import { Icon } from '@/platform/renderer/components/icon'
 import { PermissionPrompt } from '@/platform/renderer/components/permission-prompt'
 import {
   Alert,
@@ -150,7 +150,7 @@ function OpenElsewhere({ onRetry }: { onRetry: (() => void) | null }) {
   return (
     <div className={`${COMPOSER_COLUMN} mt-3 pb-(--spacing-session-composer-ink-bottom)`}>
       <Alert>
-        <Lock aria-hidden />
+        <Icon name="awaiting-permission" />
         <AlertTitle>{t('openElsewhere.title')}</AlertTitle>
         <AlertDescription>{t('openElsewhere.description')}</AlertDescription>
         {onRetry === null ? null : (

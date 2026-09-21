@@ -1,6 +1,4 @@
-import { ExternalLink, GitFork } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-
 import type { Provider } from '@/domains/accounts/contract/contract'
 import { providerPresentation } from '@/domains/accounts/renderer/port'
 import { FeedMarkdown } from '@/domains/sessions/renderer/port'
@@ -20,6 +18,7 @@ import {
 import { TicketDetailSection } from '@/domains/tickets/renderer/detail/ticket-detail-section'
 import type { LinkedSession } from '@/domains/tickets/renderer/hooks/use-linked-sessions'
 import { closedChildren } from '@/domains/tickets/renderer/lib/backlog'
+import { Icon } from '@/platform/renderer/components/icon'
 
 const keyText = 'font-mono type-meta'
 
@@ -44,7 +43,7 @@ function TicketKey({ ticket, provider }: { ticket: Ticket; provider: Provider })
       target="_blank"
     >
       {ticket.key}
-      <ExternalLink aria-hidden="true" className="size-(--size-icon-meta) shrink-0" />
+      <Icon name="open-external" className="size-(--size-icon-meta) shrink-0" />
     </a>
   )
 }
@@ -104,7 +103,7 @@ export function TicketDetail(props: TicketDetailProps) {
         )}
         {children.length > 0 ? (
           <TicketDetailSection
-            icon={<GitFork aria-hidden="true" className={stateIcon} />}
+            icon={<Icon name="ticket-children" className={stateIcon} />}
             title={t('detail.childrenCount', {
               closed: closedChildren(ticket),
               count: children.length,
