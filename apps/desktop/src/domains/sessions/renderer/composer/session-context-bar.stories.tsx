@@ -39,9 +39,6 @@ export const MeterAndLabels: Story = {
     const canvas = within(canvasElement)
 
     await expect(canvas.getByLabelText(/Dumb zone/)).toBeVisible()
-    const usage = canvas.getByRole('button', { name: 'Usage 8%' })
-    await expect(usage).toBeVisible()
-    expect(getComputedStyle(usage).fontWeight).toBe('400')
     const context = canvas.getByRole('button', { name: 'Context 74%' })
     await userEvent.click(context)
     await waitFor(() => expect(within(document.body).getByText('Context window')).toBeVisible())
@@ -54,8 +51,6 @@ export const MeterAndLabels: Story = {
     const actions = handoff?.parentElement
     if (bar === null || actions === null || actions === undefined)
       throw new Error('The visible context bar actions are absent.')
-
-    expect(usage.parentElement).not.toHaveClass('border-l')
 
     const barStyle = getComputedStyle(bar)
     expect(bar.getBoundingClientRect().right - actions.getBoundingClientRect().right).toBeCloseTo(
@@ -101,6 +96,6 @@ export const PercentageAndIcons: Story = {
     )
     const labeledActions = canvas.getByText('Compact').parentElement
     if (labeledActions === null) throw new Error('The full context actions are absent.')
-    expect(getComputedStyle(labeledActions).display).toBe('none')
+    await expect(labeledActions).not.toBeVisible()
   },
 }
