@@ -2,10 +2,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, within } from 'storybook/test'
-import { BackgroundWork } from '@/domains/sessions/renderer/feed/background-work'
-import { FeedSubagent } from '@/domains/sessions/renderer/feed/feed-subagent'
+import { DelegationEvent } from './delegation-event'
 
-type Row = Parameters<typeof FeedSubagent>[0]['row']
+type Row = Parameters<typeof DelegationEvent>[0]['row']
 
 const RESPONDED_ROW: Row = {
   shape: 'subagent',
@@ -21,28 +20,22 @@ const RESPONDED_ROW: Row = {
 
 function FeedRow({ row, openable = true }: { row: Row; openable?: boolean }) {
   const [opened, setOpened] = useState(false)
-  const links = {
-    find: () => (openable ? ({ kind: 'delegation' } as never) : null),
-    open: () => setOpened(true),
-  }
   return (
     <div className="max-w-(--size-session-column) bg-background p-snug">
-      <BackgroundWork.Provider value={links as never}>
-        <FeedSubagent row={row} />
-      </BackgroundWork.Provider>
+      <DelegationEvent onOpen={openable ? () => setOpened(true) : undefined} row={row} />
       <output>{opened ? 'Opened the agent feed' : ''}</output>
     </div>
   )
 }
 
-const meta: Meta<typeof FeedSubagent> = {
+const meta: Meta<typeof DelegationEvent> = {
   title: 'Sessions/Feed/Delegation',
-  component: FeedSubagent,
+  component: DelegationEvent,
   parameters: { layout: 'fullscreen' },
 }
 
 export default meta
-type Story = StoryObj<typeof FeedSubagent>
+type Story = StoryObj<typeof DelegationEvent>
 
 export const Started: Story = {
   render: () => (
