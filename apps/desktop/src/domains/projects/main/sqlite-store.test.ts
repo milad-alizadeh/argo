@@ -79,7 +79,7 @@ test('restores a revisioned ProjectSetup actor from SQLite', async (context) => 
   const setup = createProjectSetupRegistry(first)
   setup.command({
     commandId: 'finish-later',
-    event: { type: 'DEFER' },
+    event: { type: 'Defer' },
     expectedRevision: 0,
     projectId: 'project-1',
   })

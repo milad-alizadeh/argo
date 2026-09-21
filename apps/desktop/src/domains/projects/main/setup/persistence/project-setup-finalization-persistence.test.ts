@@ -21,6 +21,7 @@ test('recovers a completed worktree promotion without promoting it twice after a
   const plan = planFixture()
   setup.transition('project-1', { type: 'Choose agent', harness: 'claude' })
   setup.transition('project-1', { type: 'Plan validated', plan })
+  setup.transition('project-1', { type: 'Continue plan review' })
   setup.transition('project-1', { type: 'Accept plan', acceptedPlan: acceptedPlanFixture(plan) })
   setup.transition('project-1', { type: 'Application completed', finalDiff: 'diff', progress: [] })
   setup.transition('project-1', { type: 'Approve final diff' })

@@ -44,10 +44,6 @@
       "claude": "Claude Code",
       "codex": "Codex"
     },
-    "harnessUnavailable": {
-      "claude": "Claude guided setup is not available in this Argo version.",
-      "codex": "Codex guided setup is not available in this Argo version."
-    },
     "label": "Set up {{name}}",
     "configurationLabel": "Project configuration",
     "invalidJson": "Enter valid JSON.",
@@ -110,12 +106,6 @@
         "summaryTitle": "Setup summary",
         "targets": "Targets",
         "skillsAndCapabilities": "Skills and capabilities",
-        "disposition": {
-          "recommended": "Recommended",
-          "optional": "Optional",
-          "already-satisfied": "Already set up",
-          "not-applicable": "Not applicable"
-        },
         "recommendedTools": "Recommended tools",
         "dependencies": "Dependencies",
         "projectChanges": "Project setup",

@@ -250,7 +250,7 @@ TargetsAndTools.play = async ({ args, canvasElement }) => {
 ProjectSetup.play = async ({ args, canvasElement }) => {
   const canvas = within(canvasElement)
   await expect(canvas.getByText('Argo agent skills')).toBeVisible()
-  await expect(canvas.getByText('Project setup')).toBeVisible()
+  await expect(canvas.getByRole('button', { name: 'Project setup' })).toBeVisible()
   await expect(canvas.getByRole('button', { name: 'Skills and capabilities' })).toHaveAttribute(
     'aria-expanded',
     'true',

@@ -7,6 +7,7 @@
 import { expect, test } from 'bun:test'
 import { PROJECT_ERROR_CODES } from '@/domains/projects/contract/contract'
 import { PROJECT_SETUP_RECOVERY_CODES } from '@/domains/projects/contract/project-setup-recovery'
+import { PROJECT_SETUP_RECOVERY_KEYS } from '@/domains/projects/renderer/setup/project-setup-recovery-text'
 import { CATALOGS } from '@/renderer/catalogs'
 
 const NAMESPACES = Object.keys(CATALOGS)
@@ -62,8 +63,13 @@ test('every Project error code has reader text', () => {
 })
 
 test('every Project setup recovery code has reader text', () => {
-  expect(Object.keys(CATALOGS.projects.setup.actor.recovery).sort()).toEqual(
+  expect(Object.keys(PROJECT_SETUP_RECOVERY_KEYS).sort()).toEqual(
     [...PROJECT_SETUP_RECOVERY_CODES].sort(),
+  )
+  expect(Object.keys(CATALOGS.projects.setup.actor.recovery).sort()).toEqual(
+    Object.values(PROJECT_SETUP_RECOVERY_KEYS)
+      .flatMap((key) => (key ? [key.slice(key.lastIndexOf('.') + 1)] : []))
+      .sort(),
   )
 })
 

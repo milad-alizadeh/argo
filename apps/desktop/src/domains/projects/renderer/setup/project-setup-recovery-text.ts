@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next'
 import type { ProjectSetupRecoveryCode } from '@/domains/projects/contract/project-setup-recovery'
 
-const recoveryKeys = {
+export const PROJECT_SETUP_RECOVERY_KEYS = {
   interrupted: 'setup.actor.recovery.interrupted',
   'application-drift': 'setup.actor.recovery.application-drift',
   cancelled: 'setup.actor.recovery.cancelled',
@@ -16,6 +16,6 @@ export function projectSetupRecoveryText(
   code: ProjectSetupRecoveryCode | null,
 ): string | null {
   if (!code) return null
-  const key = recoveryKeys[code]
+  const key = PROJECT_SETUP_RECOVERY_KEYS[code]
   return key ? t(key) : null
 }
