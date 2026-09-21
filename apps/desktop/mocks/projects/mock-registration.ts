@@ -7,6 +7,8 @@ import os from 'node:os'
 import path from 'node:path'
 import type { TestContext } from 'node:test'
 import { promisify } from 'node:util'
+import { drizzle } from 'drizzle-orm/bun-sqlite'
+import { migrate } from 'drizzle-orm/bun-sqlite/migrator'
 import { createProjectStore } from '../../src/domains/projects/main/sqlite-store'
 import { createWriteQueue } from '../../src/platform/main/storage/portable-file'
 
@@ -31,6 +33,9 @@ export async function fixture(context: TestContext) {
   } = { folder: null, during: null, queue: null }
   await mkdir(path.join(root, 'userData'), { recursive: true })
   const database = new Database(path.join(root, 'userData', 'argo.sqlite'))
+  migrate(drizzle({ client: database }), {
+    migrationsFolder: path.resolve(import.meta.dirname, '../../drizzle'),
+  })
   const projects = createProjectStore({
     exec: (source) => database.exec(source),
     prepare: (source) => database.query(source),
