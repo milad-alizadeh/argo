@@ -80,7 +80,7 @@ export function SessionDelegationInspector({
         onOpenSession={onOpenSession}
         onRetryFeed={onRetryFeed}
         questionFailure={() => null}
-        selectedSessionId={sessionId}
+        selectedSessionId={reading?.sessionId ?? sessionId}
       />
     </section>
   )

@@ -410,7 +410,7 @@ export const DelegationEvents: Story = {
     await expect(agent).not.toHaveClass('border-b')
     await userEvent.click(
       within(agent).getByRole('button', {
-        name: 'Review the Feed disclosure for keyboard access. responded',
+        name: 'Review the Feed disclosure for keyboard access. sent a reply to the main Session',
       }),
     )
     await expect(
