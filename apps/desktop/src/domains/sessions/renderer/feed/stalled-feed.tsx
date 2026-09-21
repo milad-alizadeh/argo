@@ -1,5 +1,5 @@
-import { RotateCw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Empty,
@@ -24,7 +24,7 @@ export function StalledFeed({
     <Empty className="h-full" data-state="stalled">
       <EmptyHeader>
         <EmptyMedia variant="icon">
-          <RotateCw aria-hidden="true" />
+          <Icon name="retry" />
         </EmptyMedia>
         <EmptyTitle>{t('stalled.title')}</EmptyTitle>
         <EmptyDescription>

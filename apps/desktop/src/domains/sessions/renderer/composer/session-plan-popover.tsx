@@ -1,6 +1,6 @@
-import { Check } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { PlanEntryStatus, SessionPlan } from '@/domains/sessions/contract/model/models'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Popover,
@@ -74,7 +74,11 @@ function AvailablePlan({ plan }: { plan: Extract<SessionPlan, { state: 'availabl
               {entry.status === 'in_progress' ? (
                 <span className="absolute inset-0 animate-ping rounded-full border border-foreground/40 motion-reduce:animate-none" />
               ) : null}
-              {entry.status === 'completed' ? <Check className="size-3" /> : index + 1}
+              {entry.status === 'completed' ? (
+                <Icon name="confirmed" className="size-3" />
+              ) : (
+                index + 1
+              )}
             </span>
             <span className={PLAN_ENTRY_TEXT_CLASS[entry.status]}>{entry.content}</span>
           </li>

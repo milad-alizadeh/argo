@@ -1,7 +1,7 @@
-import { ChevronDown, ShieldQuestion } from 'lucide-react'
 import { type ReactNode, type RefObject, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { focusAfterLeaving, useExitPresence } from '@/platform/renderer/components/exit-presence'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { ButtonGroup, ButtonGroupSeparator } from '@/platform/renderer/components/ui/button-group'
 import {
@@ -105,8 +105,8 @@ function PermissionCard({
         }
       >
         <div className={presentation === 'stage' ? 'contents' : 'flex items-center gap-2'}>
-          <ShieldQuestion
-            aria-hidden="true"
+          <Icon
+            name="shield-question"
             className="size-(--size-icon-inline) shrink-0 text-muted-foreground"
           />
           <h3 id={titleId} className="min-w-0 flex-1 type-heading">
@@ -186,7 +186,7 @@ function AllowButton({
           disabled={disabled}
           render={<Button aria-label={t('permission.more')} size="icon-sm" />}
         >
-          <ChevronDown aria-hidden="true" />
+          <Icon name="chevron-down" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" side="top" className="w-auto">
           <DropdownMenuItem onClick={() => void onDecide('allowForSession')}>

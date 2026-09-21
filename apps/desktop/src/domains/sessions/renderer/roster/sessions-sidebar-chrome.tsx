@@ -1,10 +1,10 @@
-import { Loader2, Plus, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { RosterFilterMenu } from '@/domains/sessions/renderer/roster/roster-filter-menu'
 import { ROSTER_ROW_HEIGHT } from '@/domains/sessions/renderer/roster/roster-rows'
 import type { RosterStatus } from '@/domains/sessions/renderer/roster/use-roster-filter-store'
 import { sessionFailureState } from '@/domains/sessions/renderer/session-failure-state'
 import type { SessionError, SessionRoster } from '@/domains/sessions/renderer/types'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   InputGroup,
@@ -34,7 +34,7 @@ export function RosterStatusRow({ label }: { label: string }) {
       role="status"
       style={{ height: ROSTER_ROW_HEIGHT }}
     >
-      <Loader2 aria-hidden="true" className="size-4 animate-spin text-muted-foreground" />
+      <Icon name="loading" className="size-4 animate-spin text-muted-foreground" />
     </div>
   )
 }
@@ -77,7 +77,7 @@ export function SessionsSidebarHeader({
     <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 pl-4 pr-(--spacing-shell-icon)">
       <InputGroup className="flex-1">
         <InputGroupAddon>
-          <Search aria-hidden="true" />
+          <Icon name="search" />
         </InputGroupAddon>
         <InputGroupInput
           aria-label={t('searchSessions')}
@@ -91,7 +91,7 @@ export function SessionsSidebarHeader({
       <div className="ml-(--spacing-shell-tight) flex items-center">
         <RosterFilterMenu onStatusChange={onStatusChange} status={status} />
         <Button aria-label={t('newSession')} onClick={onNew} size="icon-sm" variant="ghost">
-          <Plus />
+          <Icon name="add" />
         </Button>
       </div>
     </header>

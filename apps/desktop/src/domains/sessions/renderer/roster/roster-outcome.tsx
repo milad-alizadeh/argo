@@ -1,4 +1,3 @@
-import { Inbox, TriangleAlert } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { RosterLoading } from '@/domains/sessions/renderer/roster/sessions-sidebar-chrome'
 import {
@@ -6,6 +5,7 @@ import {
   showsActive,
 } from '@/domains/sessions/renderer/roster/use-roster-filter-store'
 import type { SessionError, SessionRoster } from '@/domains/sessions/renderer/types'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/platform/renderer/components/ui/empty'
 
@@ -15,7 +15,7 @@ function NoSessionsFound() {
     <Empty className="flex-none px-4 py-8">
       <EmptyHeader>
         <EmptyMedia variant="icon">
-          <Inbox aria-hidden="true" />
+          <Icon name="no-sessions" />
         </EmptyMedia>
         <EmptyTitle>{t('noSessionsFound')}</EmptyTitle>
       </EmptyHeader>
@@ -30,7 +30,7 @@ function RosterErrorAlert({ error }: { error: SessionError }) {
       className="mx-3 mt-3 w-auto border-destructive/50 bg-destructive/10"
       variant="destructive"
     >
-      <TriangleAlert aria-hidden="true" />
+      <Icon name="triangle-alert" />
       <AlertTitle>{t('unableToLoadSessions')}</AlertTitle>
       <AlertDescription>{error.message}</AlertDescription>
     </Alert>

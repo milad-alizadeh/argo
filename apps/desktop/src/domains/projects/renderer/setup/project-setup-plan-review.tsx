@@ -1,14 +1,6 @@
-import {
-  BadgeCheck,
-  FileCog,
-  Library,
-  Package,
-  Settings2,
-  Sparkles,
-  TerminalSquare,
-} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { SetupPlan } from '@/domains/projects/contract/setup-plan'
+import { Icon } from '@/platform/renderer/components/icon'
 import {
   joinOrNone,
   PlanSection,
@@ -49,8 +41,8 @@ export function ProjectSetupPlanConfiguration({
   return (
     <div className="grid gap-4">
       <RecommendationGroup
-        fallbackIcon={<BadgeCheck />}
-        icon={<BadgeCheck />}
+        fallbackIcon={<Icon name="badge-check" />}
+        icon={<Icon name="badge-check" />}
         items={plan.capabilities
           .filter(({ disposition }) => disposition !== 'not-applicable')
           .map((capability) => ({
@@ -65,8 +57,8 @@ export function ProjectSetupPlanConfiguration({
       />
       {repositoryTools.length ? (
         <RecommendationGroup
-          fallbackIcon={<Sparkles />}
-          icon={<Sparkles />}
+          fallbackIcon={<Icon name="sparkles" />}
+          icon={<Icon name="sparkles" />}
           items={repositoryTools.map((recommendation) => ({
             id: recommendation.id,
             title: recommendation.recommendedChoice,
@@ -80,8 +72,8 @@ export function ProjectSetupPlanConfiguration({
         />
       ) : null}
       <RecommendationGroup
-        fallbackIcon={<FileCog />}
-        icon={<FileCog />}
+        fallbackIcon={<Icon name="generated-config" />}
+        icon={<Icon name="generated-config" />}
         items={actions.map((action) => ({
           id: action.id,
           title: action.reason,
@@ -99,14 +91,17 @@ export function ProjectSetupPlanConfiguration({
 export function ProjectSetupPlanSummary({ plan }: { plan: SetupPlan }) {
   const { t } = useTranslation('projects')
   return (
-    <PlanSection icon={<Settings2 />} title={t('setup.actor.reviewing-plan.summaryTitle')}>
+    <PlanSection
+      icon={<Icon name="setup-configuration" />}
+      title={t('setup.actor.reviewing-plan.summaryTitle')}
+    >
       <SummaryRow
-        icon={<Package />}
+        icon={<Icon name="target-repository" />}
         label={t('setup.actor.reviewing-plan.targets')}
         value={plan.targets.map(({ name }) => name).join(' · ')}
       />
       <SummaryRow
-        icon={<Sparkles />}
+        icon={<Icon name="sparkles" />}
         label={t('setup.actor.reviewing-plan.recommendedTools')}
         value={joinOrNone(
           plan.toolRecommendations.map(({ recommendedChoice }) => recommendedChoice),
@@ -114,19 +109,19 @@ export function ProjectSetupPlanSummary({ plan }: { plan: SetupPlan }) {
         )}
       />
       <SummaryRow
-        icon={<Library />}
+        icon={<Icon name="dependencies" />}
         label={t('setup.actor.reviewing-plan.dependencies')}
         value={joinOrNone(planDependencies(plan), t('setup.actor.reviewing-plan.none'))}
       />
       <SummaryRow
-        icon={<FileCog />}
+        icon={<Icon name="generated-config" />}
         label={t('setup.actor.reviewing-plan.projectChanges')}
         value={t('setup.actor.reviewing-plan.changeCount', {
           count: plan.repositoryActions.length + plan.targetActions.length,
         })}
       />
       <SummaryRow
-        icon={<TerminalSquare />}
+        icon={<Icon name="verification" />}
         label={t('setup.actor.reviewing-plan.verification')}
         value={joinOrNone(
           plan.verification.flatMap(({ command }) => (command ? [command] : [])),

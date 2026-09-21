@@ -1,9 +1,9 @@
-import { Check, ChevronDown, Folder, Plus, Settings } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ProjectSettingsDialog } from '@/domains/projects/renderer/components/project-settings-dialog'
 import { useProjects } from '@/domains/projects/renderer/port'
 import { useCommands } from '@/platform/renderer/cockpit/hooks/use-commands'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   DropdownMenu,
@@ -39,9 +39,9 @@ export function ProjectSwitcher() {
             />
           }
         >
-          <Folder />
+          <Icon name="folder" />
           <span className="truncate font-medium">{projectName}</span>
-          <ChevronDown className="text-muted-foreground" />
+          <Icon name="chevron-down" className="text-muted-foreground" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64">
           <DropdownMenuGroup>
@@ -52,20 +52,20 @@ export function ProjectSwitcher() {
                 aria-label={t('switcher.switchTo', { name: project.name })}
                 onClick={() => actions.select(project.id)}
               >
-                <Folder />
+                <Icon name="folder" />
                 <span className="flex-1 truncate">{project.name}</span>
-                {project.id === cockpit.project?.id ? <Check /> : null}
+                {project.id === cockpit.project?.id ? <Icon name="confirmed" /> : null}
               </DropdownMenuItem>
             ))}
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem aria-label={t('switcher.add')} onClick={actions.open}>
-            <Plus />
+            <Icon name="add" />
             {t('switcher.addEllipsis')}
           </DropdownMenuItem>
           {cockpit.project ? (
             <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
-              <Settings />
+              <Icon name="settings" />
               {t('switcher.settings')}
             </DropdownMenuItem>
           ) : null}

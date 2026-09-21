@@ -1,4 +1,3 @@
-import { ExternalLink, Plug, TriangleAlert } from 'lucide-react'
 import { useRef } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import type {
@@ -8,6 +7,7 @@ import type {
 } from '@/domains/accounts/contract/contract'
 import type { SignIn } from '@/domains/accounts/renderer/hooks/use-sign-in'
 import { providerPresentation } from '@/domains/accounts/renderer/lib/providers'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Alert, AlertDescription } from '@/platform/renderer/components/ui/alert'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { useContractText } from '@/platform/renderer/i18n/contract-text'
@@ -58,7 +58,7 @@ function WaitingStep({ challenge, onOpen, onCancel }: StepProps) {
       </div>
       <div className="flex flex-wrap gap-(--spacing-shell-item)">
         <Button onClick={onOpen}>
-          <ExternalLink aria-hidden="true" />
+          <Icon name="open-external" />
           {t(`provider.${provider}.open`)}
         </Button>
         <Button onClick={onCancel} variant="ghost">
@@ -82,7 +82,7 @@ function ConnectButtons({ providers, phase, provider, start }: SignInPanelProps)
             onClick={() => start(candidate)}
             variant="outline"
           >
-            <Plug aria-hidden="true" />
+            <Icon name="connect" />
             {asking
               ? providerPresentation(candidate).requesting
               : t(`provider.${candidate}.connect`)}
@@ -108,7 +108,7 @@ export function SignInPanel(props: SignInPanelProps) {
     >
       {error ? (
         <Alert className="border-destructive/50 bg-destructive/10" variant="destructive">
-          <TriangleAlert aria-hidden="true" />
+          <Icon name="triangle-alert" />
           <AlertDescription>{contractText(error)}</AlertDescription>
         </Alert>
       ) : null}

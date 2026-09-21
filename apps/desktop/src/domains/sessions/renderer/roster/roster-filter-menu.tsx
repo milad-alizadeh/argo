@@ -1,6 +1,6 @@
-import { SlidersVertical } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { RosterStatus } from '@/domains/sessions/renderer/roster/use-roster-filter-store'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   DropdownMenu,
@@ -32,7 +32,7 @@ export function RosterFilterMenu({
       <DropdownMenuTrigger
         render={
           <Button aria-label={t('filterSessions')} size="icon-sm" variant="ghost">
-            <SlidersVertical />
+            <Icon name="roster-filter" />
           </Button>
         }
       />

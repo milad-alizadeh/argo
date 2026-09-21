@@ -1,7 +1,7 @@
-import { Sparkles } from 'lucide-react'
 import type { LiveActivity } from '@/domains/sessions/contract/model/feed-rows'
 import { toolPresentation } from '@/domains/sessions/renderer/feed/feed-tools'
 import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
+import type { IconName } from '@/platform/renderer/components/icon'
 
 type ToolGroup = Extract<SessionFeedRow, { shape: 'tool-group' }>
 type ToolKind = ToolGroup['calls'][number]['kind']
@@ -15,7 +15,10 @@ export function liveActivity(group: ToolGroup): LiveActivity | null {
 }
 
 // A thought titles under a spark; a call under its own kind; a settled count under the terminal.
-export function groupIcon(activity: LiveActivity | null, titleKind: ToolKind | undefined) {
-  if (activity?.kind === 'thought') return Sparkles
+export function groupIcon(
+  activity: LiveActivity | null,
+  titleKind: ToolKind | undefined,
+): IconName {
+  if (activity?.kind === 'thought') return 'sparkles'
   return toolPresentation(titleKind ?? activity?.kind ?? 'command').icon
 }

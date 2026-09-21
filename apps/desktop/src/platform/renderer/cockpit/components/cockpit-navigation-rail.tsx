@@ -1,7 +1,6 @@
-import { type LucideIcon, Map as MapIcon, MessagesSquare, Settings, Ticket } from 'lucide-react'
 import { memo, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-
+import { Icon, type IconName } from '@/platform/renderer/components/icon'
 import {
   DESTINATION_PATHS,
   DESTINATIONS,
@@ -10,10 +9,10 @@ import {
   shortcut,
 } from '@/platform/shared/commands'
 
-const navigationIcons: Record<Destination, LucideIcon> = {
-  Sessions: MessagesSquare,
-  Tickets: Ticket,
-  Atlas: MapIcon,
+const navigationIcons: Record<Destination, IconName> = {
+  Sessions: 'messages-square',
+  Tickets: 'ticket',
+  Atlas: 'atlas',
 }
 
 function destinationFromHash(): Destination {
@@ -42,7 +41,7 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
     >
       <div className="flex flex-col items-center gap-2 pt-(--inset-navigation-rail-item-top)">
         {DESTINATIONS.map((itemDestination) => {
-          const Icon = navigationIcons[itemDestination]
+          const iconName = navigationIcons[itemDestination]
           const active = destination === itemDestination
           const label = t(`platform:${shortcut(navigateCommand(itemDestination)).labelKey}`)
           return (
@@ -63,7 +62,7 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
                     : 'text-muted-foreground group-hover:bg-muted group-hover:text-foreground'
                 }`}
               >
-                <Icon />
+                <Icon name={iconName} />
               </span>
               <span className={active ? 'font-medium text-foreground' : 'text-muted-foreground'}>
                 {label}
@@ -79,7 +78,7 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
           className="group flex flex-col items-center gap-1 type-meta"
         >
           <span className="grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors group-hover:bg-sidebar group-hover:text-foreground">
-            <Settings />
+            <Icon name="settings" />
           </span>
           <span className="text-muted-foreground">{settingsLabel}</span>
         </button>

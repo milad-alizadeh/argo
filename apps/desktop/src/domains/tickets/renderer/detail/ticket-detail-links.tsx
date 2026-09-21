@@ -1,13 +1,13 @@
-import { Ban, CircleCheck, CircleDot } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
 import type { Ticket, TicketLink, TicketState } from '@/domains/tickets/contract/contract'
 import { TicketDetailSection } from '@/domains/tickets/renderer/detail/ticket-detail-section'
 import { sourcePresentation } from '@/domains/tickets/renderer/lib/sources'
+import { Icon, type IconName } from '@/platform/renderer/components/icon'
 
-const STATE_ICONS: Record<TicketState, { Icon: typeof CircleDot; tone: string }> = {
-  open: { Icon: CircleDot, tone: 'text-active' },
-  closed: { Icon: CircleCheck, tone: 'text-muted-foreground' },
+const STATE_ICONS: Record<TicketState, { icon: IconName; tone: string }> = {
+  open: { icon: 'ticket-link-open', tone: 'text-active' },
+  closed: { icon: 'ticket-link-closed', tone: 'text-muted-foreground' },
 }
 
 export const stateIcon = 'size-(--size-icon-meta) shrink-0'
@@ -20,10 +20,10 @@ export const linkRow =
 
 function LinkContent({ link }: { link: TicketLink }) {
   const { t } = useTranslation('tickets')
-  const { Icon, tone } = STATE_ICONS[link.state]
+  const { icon, tone } = STATE_ICONS[link.state]
   return (
     <>
-      <Icon aria-hidden="true" className={`${stateIcon} ${tone}`} />
+      <Icon name={icon} className={`${stateIcon} ${tone}`} />
       <span className="sr-only">{t(`detail.state.${link.state}`)}</span>
       <span className="min-w-0 flex-1 truncate type-body">{link.title}</span>
       <span className="shrink-0 font-mono type-meta text-faint">{link.key}</span>
@@ -62,7 +62,7 @@ export function Dependencies({ blockedBy, provider, ...navigation }: Dependencie
   if (blockedBy === null) {
     return (
       <TicketDetailSection
-        icon={<Ban aria-hidden="true" className={blockedIcon} />}
+        icon={<Icon name="blocked" className={blockedIcon} />}
         title={t('detail.blockedBy')}
       >
         <p className="type-meta text-muted-foreground">
@@ -74,7 +74,7 @@ export function Dependencies({ blockedBy, provider, ...navigation }: Dependencie
   if (blockedBy.length === 0) return null
   return (
     <TicketDetailSection
-      icon={<Ban aria-hidden="true" className={blockedIcon} />}
+      icon={<Icon name="blocked" className={blockedIcon} />}
       title={t('detail.blockedByCount', { count: blockedBy.length })}
     >
       <Links links={blockedBy} {...navigation} />

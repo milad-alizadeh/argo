@@ -1,6 +1,6 @@
-import { GitBranch } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { SessionTicket } from '@/domains/sessions/contract/model/models'
+import { Icon } from '@/platform/renderer/components/icon'
 import type { DevelopmentIdentity } from '@/platform/shared/development-identity'
 
 type DevelopmentIdentityBarProps = {
@@ -45,7 +45,7 @@ export function DevelopmentIdentityBar({ identity, ticket }: DevelopmentIdentity
         className="ml-auto flex min-w-0 items-center gap-1 font-mono text-background/80"
         title={identity.worktree}
       >
-        <GitBranch aria-hidden="true" className="size-(--size-icon-inline) shrink-0" />
+        <Icon name="worktree" className="size-(--size-icon-inline) shrink-0" />
         <span className="truncate">{identity.worktree}</span>
       </span>
     </aside>

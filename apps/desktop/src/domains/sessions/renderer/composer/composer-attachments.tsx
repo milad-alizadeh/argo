@@ -1,7 +1,7 @@
-import { X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { AttachmentChip, parseFilename } from '@/domains/sessions/renderer/attachment-chip'
 import type { ComposerAttachment } from '@/domains/sessions/renderer/composer/use-composer-store'
+import { Icon } from '@/platform/renderer/components/icon'
 import {
   AttachmentAction,
   AttachmentActions,
@@ -31,7 +31,7 @@ export function ComposerAttachments({ attachments, onRemove }: ComposerAttachmen
               })}
               onClick={() => onRemove(attachment.id)}
             >
-              <X />
+              <Icon name="close" />
             </AttachmentAction>
           </AttachmentActions>
         </AttachmentChip>

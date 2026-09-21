@@ -1,9 +1,9 @@
-import { Expand } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FEED_CARD_RADIUS_CLASS } from '@/domains/sessions/renderer/feed/content/feed-surface'
 import { mermaidThemeVariables } from '@/domains/sessions/renderer/feed/content/mermaid-theme'
 import { useDarkAppearance } from '@/platform/renderer/appearance/hooks/use-appearance'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 
 type Drawing = 'pending' | 'drawn' | 'failed'
@@ -88,7 +88,7 @@ export function FeedMermaid({
         </span>
         {drawing === 'drawn' && onOpen ? (
           <Button size="icon-xs" variant="ghost" aria-label={t('diagram.expand')} onClick={onOpen}>
-            <Expand className="!size-(--size-icon-control)" />
+            <Icon name="expand" className="!size-(--size-icon-control)" />
           </Button>
         ) : null}
       </figcaption>

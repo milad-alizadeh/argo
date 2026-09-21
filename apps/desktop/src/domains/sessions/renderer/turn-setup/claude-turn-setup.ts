@@ -1,5 +1,3 @@
-import { FileCheck2, Hand, ListTodo, ShieldAlert, ShieldX, WandSparkles } from 'lucide-react'
-
 import {
   CLAUDE_EFFORTS,
   CLAUDE_MODELS,
@@ -36,42 +34,42 @@ const MODES: ModeChoice[] = [
     value: 'auto',
     label: 'Auto',
     detail: 'Claude handles permission decisions',
-    icon: WandSparkles,
+    icon: 'mode-auto',
     reads: (reading) => reading === 'auto',
   },
   {
     value: 'manual',
     label: 'Manual',
     detail: 'Ask before making changes',
-    icon: Hand,
+    icon: 'mode-manual',
     reads: (reading) => reading === 'manual' || reading === 'default',
   },
   {
     value: 'acceptEdits',
     label: 'Accept edits',
     detail: 'Accept file edits automatically',
-    icon: FileCheck2,
+    icon: 'mode-accept-edits',
     reads: (reading) => reading === 'acceptEdits',
   },
   {
     value: 'plan',
     label: 'Plan',
     detail: 'Create a plan before making changes',
-    icon: ListTodo,
+    icon: 'mode-plan',
     reads: (reading) => reading === 'plan',
   },
   {
     value: 'dontAsk',
     label: "Don't ask",
     detail: 'Deny anything not approved in advance',
-    icon: ShieldX,
+    icon: 'mode-dont-ask',
     reads: (reading) => reading === 'dontAsk',
   },
   {
     value: 'bypassPermissions',
     label: 'Bypass',
     detail: 'Run without permission checks',
-    icon: ShieldAlert,
+    icon: 'mode-bypass-permissions',
     reads: (reading) => reading === 'bypassPermissions',
   },
 ]

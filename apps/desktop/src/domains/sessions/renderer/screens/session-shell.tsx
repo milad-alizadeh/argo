@@ -1,4 +1,3 @@
-import { GitFork } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { sessionName } from '@/domains/sessions/renderer/roster/roster-rows'
@@ -10,6 +9,7 @@ import {
 import { worktreeName } from '@/domains/sessions/renderer/screens/session-worktree'
 import type { Session } from '@/domains/sessions/renderer/types'
 import { InspectorSplit } from '@/platform/renderer/cockpit/inspector-split/inspector-split'
+import { Icon } from '@/platform/renderer/components/icon'
 
 import './session-screen.css'
 
@@ -33,7 +33,7 @@ function SessionHeader({ session }: { session: SessionShellProps['session'] }) {
       <h1 className="truncate type-heading">{sessionName(session, t('newSession'))}</h1>
       {worktree ? (
         <p className="mt-1 flex min-w-0 items-center gap-1 type-meta text-muted-foreground">
-          <GitFork aria-hidden="true" className="size-(--size-icon-inline) shrink-0" />
+          <Icon name="worktree" className="size-(--size-icon-inline) shrink-0" />
           <span className="truncate">{worktree}</span>
         </p>
       ) : null}

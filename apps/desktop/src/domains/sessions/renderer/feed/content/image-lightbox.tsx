@@ -1,8 +1,8 @@
-import { Download, X } from 'lucide-react'
 import type { ReactEventHandler } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FEED_CARD_RADIUS_CLASS } from '@/domains/sessions/renderer/feed/content/feed-surface'
 import { useImageLightboxTransition } from '@/domains/sessions/renderer/feed/content/image-lightbox-transition'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Dialog,
@@ -61,7 +61,7 @@ function LightboxContent({
           nativeButton={false}
           render={<a href={image.source} download={image.title} />}
         >
-          <Download />
+          <Icon name="download" />
         </Button>
         <Button
           variant="secondary"
@@ -69,7 +69,7 @@ function LightboxContent({
           aria-label={t('image.close')}
           onClick={transition.close}
         >
-          <X />
+          <Icon name="close" />
         </Button>
       </div>
       <img

@@ -1,4 +1,3 @@
-import { Archive } from 'lucide-react'
 import { type MouseEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { SessionReferenceText } from '@/domains/sessions/renderer/composer/references/session-reference'
@@ -21,6 +20,7 @@ import {
   STATUS_LABELS,
   statusVariantOf,
 } from '@/domains/sessions/renderer/roster/session-roster-status'
+import { Icon } from '@/platform/renderer/components/icon'
 
 function selectionModifierOf(event: {
   shiftKey: boolean
@@ -147,7 +147,7 @@ export function SessionRosterItem({
                 className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border/70 bg-background/70 px-1.5 py-0.5 type-meta font-medium text-muted-foreground"
                 data-slot="archived-session"
               >
-                <Archive aria-hidden="true" className="size-3" />
+                <Icon name="archive-session" className="size-3" />
                 {t('rosterStatusArchived')}
               </span>
             ) : null}

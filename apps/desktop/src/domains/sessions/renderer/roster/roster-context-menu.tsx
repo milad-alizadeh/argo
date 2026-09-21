@@ -1,4 +1,3 @@
-import { Archive } from 'lucide-react'
 import { type MouseEvent, type ReactNode, useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -8,6 +7,7 @@ import {
   sessionName,
 } from '@/domains/sessions/renderer/roster/roster-rows'
 import type { Session } from '@/domains/sessions/renderer/types'
+import { Icon } from '@/platform/renderer/components/icon'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -105,7 +105,7 @@ export function RosterContextMenu({
               <>
                 <ContextMenuSeparator />
                 <ContextMenuItem onClick={() => onArchive(target.session.id)}>
-                  <Archive aria-hidden="true" />
+                  <Icon name="archive-session" />
                   {t('bulkSelect.archive')}
                 </ContextMenuItem>
               </>

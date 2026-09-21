@@ -1,9 +1,9 @@
-import { CheckCircle2, Circle, LoaderCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type {
   ProjectSetupCommand,
   ProjectSetupSnapshot,
 } from '@/domains/projects/contract/contract'
+import { Icon } from '@/platform/renderer/components/icon'
 import { RunningText } from '@/platform/renderer/components/running-text'
 import { Button } from '@/platform/renderer/components/ui/button'
 
@@ -104,14 +104,14 @@ function taskListStatus(status: ProgressRow['status']) {
 function ProgressIcon({ status }: Pick<ProgressRow, 'status'>) {
   switch (status) {
     case 'pending':
-      return <Circle className="size-4" />
+      return <Icon name="setup-step-pending" size="control" />
     case 'running':
-      return <LoaderCircle className="size-4 animate-spin" />
+      return <Icon name="loading" className="animate-spin" size="control" />
     case 'waiting-for-user':
-      return <Circle className="size-4" />
+      return <Icon name="setup-step-pending" size="control" />
     case 'passed':
-      return <CheckCircle2 className="size-4" />
+      return <Icon name="success" size="control" />
     case 'failed':
-      return <Circle className="size-4" />
+      return <Icon name="octagon-alert" size="control" />
   }
 }
