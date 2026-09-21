@@ -44,7 +44,7 @@ export const ChoosesModelAndEffort: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const trigger = canvas.getByRole('button', { name: TRIGGER })
-    await expect(trigger).toHaveTextContent('Claude Code·Opus 5·Medium')
+    await expect(trigger).toHaveTextContent('Opus 5·Medium')
     await expect(trigger).toHaveAccessibleName('Choose run setup: Claude Code, Opus 5, Medium')
 
     await userEvent.click(trigger)
@@ -82,7 +82,7 @@ export const ChoosesModelAndEffort: Story = {
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(page().queryByRole('radiogroup', { name: 'Model' })).toBeNull())
     await expect(trigger).toHaveFocus()
-    await expect(trigger).toHaveTextContent('Claude Code·Sonnet 5·Extra high')
+    await expect(trigger).toHaveTextContent('Sonnet 5·Extra high')
   },
 }
 
@@ -149,6 +149,6 @@ export const NewSessionChoosesHarness: Story = {
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(page().queryByRole('tablist')).toBeNull())
     await expect(trigger).toHaveFocus()
-    await expect(trigger).toHaveTextContent('Claude Code·Opus 5·Medium')
+    await expect(trigger).toHaveTextContent('Opus 5·Medium')
   },
 }

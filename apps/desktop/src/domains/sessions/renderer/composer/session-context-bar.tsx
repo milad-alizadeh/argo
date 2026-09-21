@@ -52,32 +52,22 @@ function ContextMeter({
 }
 
 function ContextSummary({
-  capacityTokens,
   percentage,
   usedTokens,
 }: {
-  capacityTokens: number | null
   percentage: number | null
   usedTokens: number
 }) {
   const { t } = useTranslation('sessions')
   return (
-    <div className="hidden shrink-0 items-center gap-1 type-meta tabular-nums @[40rem]:flex">
+    <div className="hidden shrink-0 items-center gap-1 type-meta tabular-nums @[56rem]:flex">
       <span className="font-medium text-foreground">
         {t('composer.contextWindow.tokenCount', { count: Math.round(usedTokens / 1000) })}
       </span>
-      {capacityTokens === null ? (
+      {percentage === null ? (
         <span className="text-muted-foreground"> {t('composer.contextWindow.tokens')}</span>
       ) : (
-        <>
-          <span className="text-muted-foreground">
-            {' / '}
-            {t('composer.contextWindow.tokenCount', {
-              count: Math.round(capacityTokens / 1000),
-            })}
-          </span>
-          <span className="font-medium">· {percentage}%</span>
-        </>
+        <span className="font-medium">· {percentage}%</span>
       )}
     </div>
   )
@@ -136,11 +126,7 @@ export function SessionContextBar({
         />
       </div>
       <ContextMeter contextAlert={contextAlert} percentage={percentage} />
-      <ContextSummary
-        capacityTokens={capacityTokens}
-        percentage={percentage}
-        usedTokens={usedTokens}
-      />
+      <ContextSummary percentage={percentage} usedTokens={usedTokens} />
       <SessionContextActions
         {...{ canCompact, canHandoff, isCompacting, isHandingOff, onCompact, onHandoff }}
       />

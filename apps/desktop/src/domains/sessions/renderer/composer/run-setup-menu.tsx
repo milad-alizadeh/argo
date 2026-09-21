@@ -22,8 +22,6 @@ export type TurnSetupControlProps = {
 
 type RunSetupMenuProps = { harness: HarnessControl; setup: TurnSetupControlProps | null }
 
-const WIDE_ONLY = 'hidden @[36rem]:inline'
-
 export function RunSetupMenu({ harness, setup }: RunSetupMenuProps) {
   const harnessLabel = HARNESSES[harness.harness].label
   const facts = setupFacts(setup)
@@ -41,13 +39,11 @@ export function RunSetupMenu({ harness, setup }: RunSetupMenuProps) {
       >
         <HarnessLogo harness={harness.harness} />
         <span className="min-w-0 truncate">
-          {/* The logo names the harness, so its word waits for room; the Model and Effort never do. */}
-          <span className={WIDE_ONLY}>{harnessLabel}</span>
+          {/* The logo names the harness, so its word only shows when there's no Model and Effort to say instead. */}
+          {facts.length === 0 ? <span>{harnessLabel}</span> : null}
           {facts.map((fact, index) => (
             <Fragment key={fact}>
-              <span className={`mx-1.5 text-muted-foreground ${index === 0 ? WIDE_ONLY : ''}`}>
-                ·
-              </span>
+              {index > 0 ? <span className="mx-1.5 text-muted-foreground">·</span> : null}
               <span>{fact}</span>
             </Fragment>
           ))}
