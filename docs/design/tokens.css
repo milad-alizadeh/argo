@@ -71,7 +71,8 @@
   --size-attachment-thumbnail: 56px;
   --size-attachment-card: 64px;
   --size-attachment-tray: 72px;
-  --inset-composer-plan: calc(var(--size-control) * 3 + var(--spacing-shell-item));
+  --size-composer-plan-trigger: calc(var(--size-control) * 3 + var(--spacing-shell-item));
+  --inset-composer-plan: var(--size-composer-plan-trigger);
   --size-session-menu: 23rem;
   --size-session-popover: 26rem;
   --size-composer-suggestions: 30rem;
