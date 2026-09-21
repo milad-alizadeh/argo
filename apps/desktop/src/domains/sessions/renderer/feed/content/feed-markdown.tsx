@@ -1,4 +1,3 @@
-import { FileText } from 'lucide-react'
 import { memo, type ReactNode, useContext, useMemo } from 'react'
 import Markdown, { type Components, type ExtraProps } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -15,6 +14,7 @@ import {
 } from '@/domains/sessions/renderer/feed/content/markdown-evidence'
 import { feedUrlTransform } from '@/domains/sessions/renderer/feed/content/markdown-urls'
 import { MermaidFence } from '@/domains/sessions/renderer/feed/content/mermaid-fence'
+import { Icon } from '@/platform/renderer/components/icon'
 
 type MarkdownNode = ExtraProps['node']
 
@@ -58,7 +58,7 @@ function Link({ href, children }: { href?: string; children?: ReactNode }) {
       className={`inline-flex items-baseline gap-1 ${LINK_CLASS}`}
       onClick={() => context.onOpenEvidence({ shape: 'file', id, path: href })}
     >
-      <FileText aria-hidden="true" className="size-(--size-icon-inline) self-center" />
+      <Icon name="file-text" className="size-(--size-icon-inline) self-center" />
       {children}
     </button>
   )

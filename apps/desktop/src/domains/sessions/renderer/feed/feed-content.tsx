@@ -1,4 +1,3 @@
-import { Inbox } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { AnchoredFeed } from '@/domains/sessions/renderer/feed/anchored-feed'
 import type { DrawnRowProps } from '@/domains/sessions/renderer/feed/drawn-row'
@@ -10,6 +9,7 @@ import {
   type Settled,
   type useSettledFeed,
 } from '@/domains/sessions/renderer/feed/use-settled-feed'
+import { Icon } from '@/platform/renderer/components/icon'
 import {
   Empty,
   EmptyDescription,
@@ -67,7 +67,7 @@ export function feedContent({
       <Empty className="h-full">
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <Inbox aria-hidden="true" />
+            <Icon name="empty-feed" />
           </EmptyMedia>
           <EmptyTitle>{emptyText[0]}</EmptyTitle>
           <EmptyDescription>{emptyText[1]}</EmptyDescription>

@@ -1,5 +1,3 @@
-import { FilePenLine, Globe, Search, SquareTerminal, WandSparkles, Wrench } from 'lucide-react'
-import type { ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
 import { displayedToolLabel } from '@/domains/sessions/contract/model/tool-feed'
 import { standsAlone, TOOL_KIND_PRESENTATION } from '@/domains/sessions/contract/model/tool-groups'
@@ -17,22 +15,20 @@ import {
   useToolGroupOpen,
 } from '@/domains/sessions/renderer/feed/tool-group-state'
 import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
+import { Icon, type IconName } from '@/platform/renderer/components/icon'
 import { RunningText } from '@/platform/renderer/components/running-text'
 
 export type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 export type ToolCall = Extract<SessionFeedRow, { shape: 'tool-group' }>['calls'][number]
 
 const TOOL_ICONS = {
-  terminal: SquareTerminal,
-  search: Search,
-  file: FilePenLine,
-  wrench: Wrench,
-  wand: WandSparkles,
-  globe: Globe,
-} satisfies Record<
-  (typeof TOOL_KIND_PRESENTATION)[ToolRow['kind']]['icon'],
-  ComponentType<{ className?: string }>
->
+  terminal: 'tool-terminal',
+  search: 'search',
+  file: 'tool-edit-file',
+  wrench: 'tool-generic',
+  wand: 'tool-magic',
+  globe: 'tool-web',
+} satisfies Record<(typeof TOOL_KIND_PRESENTATION)[ToolRow['kind']]['icon'], IconName>
 
 export function toolPresentation(kind: ToolRow['kind']) {
   const presentation = TOOL_KIND_PRESENTATION[kind]
@@ -66,7 +62,7 @@ export function FeedToolLine({
   onOpen: (row: ToolRow) => void
 }) {
   const { t } = useTranslation('sessions')
-  const Icon = toolPresentation(call.kind).icon
+  const iconName = toolPresentation(call.kind).icon
   const active = activeEvidenceId === call.id
   const failed = call.status === 'failed'
   return (
@@ -77,7 +73,7 @@ export function FeedToolLine({
       data-feed-evidence-id={call.id}
       onClick={() => onOpen({ ...call, shape: 'tool' })}
     >
-      <Icon aria-hidden="true" className="!size-(--size-icon-inline) shrink-0" />
+      <Icon className="!size-(--size-icon-inline) shrink-0" name={iconName} />
       <span className="min-w-0 truncate text-left [direction:rtl]">
         <RunningText running={call.status === 'running'}>
           {displayedToolLabel(call, call.status === 'running', t('workState.running'))}

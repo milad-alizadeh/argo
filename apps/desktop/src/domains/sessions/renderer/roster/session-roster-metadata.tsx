@@ -1,9 +1,9 @@
-import { Bot, GitPullRequestArrow, Ticket } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { sessionTiming } from '@/domains/sessions/renderer/roster/session-timing'
 import type { Session } from '@/domains/sessions/renderer/types'
 import { ticketKeyInPlace } from '@/domains/tickets/contract/branch-ticket'
+import { Icon } from '@/platform/renderer/components/icon'
 
 function planStepTone(session: Session, step: number) {
   if (session.plan?.state !== 'available') return 'bg-border'
@@ -74,18 +74,18 @@ export function SessionMetadata({ session }: { session: Session }) {
       {session.plan?.state === 'malformed' ? <span>{t('roster.planUnreadable')}</span> : null}
       {ticketKey !== null ? (
         <span className="inline-flex items-center gap-1">
-          <Ticket aria-hidden="true" />
+          <Icon name="ticket" />
           <span>{ticketKey}</span>
         </span>
       ) : null}
       {session.pullRequest !== null ? (
         <span className="inline-flex" data-slot="session-pull-request">
-          <GitPullRequestArrow aria-hidden="true" />
+          <Icon name="pull-request-linked" />
         </span>
       ) : null}
       {session.subagents.length > 0 ? (
         <span className="inline-flex items-center gap-1">
-          <Bot aria-hidden="true" />
+          <Icon name="agent" />
           <span>{session.subagents.length}</span>
         </span>
       ) : null}

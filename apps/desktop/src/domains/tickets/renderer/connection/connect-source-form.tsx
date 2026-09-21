@@ -1,4 +1,3 @@
-import { Plug } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { AccountSummary } from '@/domains/accounts/contract/contract'
@@ -10,6 +9,7 @@ import {
   SourceField,
 } from '@/domains/tickets/renderer/connection/source-field'
 import { sourcePresentation } from '@/domains/tickets/renderer/lib/sources'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Card,
@@ -61,7 +61,7 @@ function NoAccount({ onConnectAccount }: { onConnectAccount: () => void }) {
     <Empty className="h-full">
       <EmptyHeader>
         <EmptyMedia variant="icon">
-          <Plug aria-hidden="true" />
+          <Icon name="connect" />
         </EmptyMedia>
         <EmptyTitle>{t('connect.form.noAccount.title')}</EmptyTitle>
         <EmptyDescription>{t('connect.form.noAccount.description')}</EmptyDescription>

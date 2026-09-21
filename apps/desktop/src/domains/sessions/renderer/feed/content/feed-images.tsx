@@ -1,4 +1,3 @@
-import { ImageOff } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FEED_CARD_RADIUS_CLASS } from '@/domains/sessions/renderer/feed/content/feed-surface'
@@ -6,6 +5,7 @@ import {
   ImageLightbox,
   type ImageSize,
 } from '@/domains/sessions/renderer/feed/content/image-lightbox'
+import { Icon } from '@/platform/renderer/components/icon'
 
 export function FeedGallery({ children }: { children: ReactNode }) {
   return (
@@ -35,7 +35,7 @@ export function FeedMissingImage({
       className={`${frame} shrink-0 overflow-hidden border bg-card ${FEED_CARD_RADIUS_CLASS}`}
     >
       <div className="flex h-full flex-col items-center justify-center gap-2 bg-card text-muted-foreground">
-        <ImageOff className="!size-(--size-icon-control)" />
+        <Icon name="image-unavailable" size="control" />
         <p className={compact ? 'sr-only' : 'type-meta'}>{t('image.unavailable')}</p>
       </div>
       {label ? <figcaption className="sr-only">{label}</figcaption> : null}

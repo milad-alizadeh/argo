@@ -1,7 +1,6 @@
 // The pair of buttons the Session header carries: one for Subagents, one for background Shells
 // (#1582). A Session that ran neither draws neither, so a screen with no background work has no
 // header control at all.
-import { Bot, SquareTerminal } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { SubagentUsageFacts } from '@/domains/sessions/contract/model/background-work-contract'
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/model/models'
@@ -35,14 +34,14 @@ export function SessionWorkButtons({
     <>
       <SessionWorkMenu
         entries={delegationEntries(subagents, { now: clock, usage: subagentUsage ?? {} }, t)}
-        icon={Bot}
+        icon="agent"
         label="Subagents"
         onSelect={onSelectDelegation}
         selectedId={selectedDelegationId}
       />
       <SessionWorkMenu
         entries={shellEntries(shell, clock, t)}
-        icon={SquareTerminal}
+        icon="tool-terminal"
         label="Shell"
         onSelect={onSelectShell}
         selectedId={selectedShellId}

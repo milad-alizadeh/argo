@@ -1,4 +1,4 @@
-import { ArrowDown } from 'lucide-react'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Tooltip,
@@ -29,7 +29,7 @@ export function FeedJumpToLatest({
               type="button"
               variant="secondary"
             >
-              <ArrowDown aria-hidden="true" />
+              <Icon name="jump-to-latest" />
             </Button>
           }
         />

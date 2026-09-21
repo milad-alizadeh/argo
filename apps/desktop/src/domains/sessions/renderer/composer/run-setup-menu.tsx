@@ -1,4 +1,3 @@
-import { Check, ChevronDown } from 'lucide-react'
 import { Fragment, useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { EffortSlider } from '@/domains/sessions/renderer/composer/effort-slider'
@@ -11,6 +10,7 @@ import {
   type TurnSetup,
   type TurnSetupChoices,
 } from '@/domains/sessions/renderer/turn-setup/turn-setup'
+import { Icon } from '@/platform/renderer/components/icon'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 import { Popover, PopoverContent, PopoverTrigger } from '@/platform/renderer/components/ui/popover'
 
@@ -48,7 +48,7 @@ export function RunSetupMenu({ harness, setup }: RunSetupMenuProps) {
             </Fragment>
           ))}
         </span>
-        <ChevronDown className="hidden text-muted-foreground @[36rem]:block" />
+        <Icon name="chevron-down" className="hidden text-muted-foreground @[36rem]:block" />
       </PopoverTrigger>
       <PopoverContent
         align="start"
@@ -132,7 +132,7 @@ function ModelOptions({ choices, value, onChange }: TurnSetupControlProps) {
                   </span>
                 ) : null}
               </span>
-              {active ? <Check className="ml-auto size-4" /> : null}
+              {active ? <Icon name="confirmed" className="ml-auto size-4" /> : null}
             </label>
           )
         })}

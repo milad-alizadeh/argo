@@ -1,6 +1,6 @@
-import { ChevronDown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
+import { Icon } from '@/platform/renderer/components/icon'
 import {
   Collapsible,
   CollapsibleContent,
@@ -38,7 +38,10 @@ export function FeedMarker({ row }: { row: MarkerRow }) {
       <CollapsibleTrigger className={`group ${markerVariants({ variant: 'separator' })} type-body`}>
         <MarkerContent>{label}</MarkerContent>
         <MarkerIcon>
-          <ChevronDown className="transition-transform group-data-[panel-open]:rotate-180" />
+          <Icon
+            name="chevron-down"
+            className="transition-transform group-data-[panel-open]:rotate-180"
+          />
         </MarkerIcon>
       </CollapsibleTrigger>
       <CollapsibleContent>

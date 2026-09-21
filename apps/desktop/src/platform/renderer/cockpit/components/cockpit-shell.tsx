@@ -1,8 +1,8 @@
-import { PanelLeftIcon } from 'lucide-react'
 import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { usePanelRef } from 'react-resizable-panels'
 import { CockpitNavigationRail } from '@/platform/renderer/cockpit/components/cockpit-navigation-rail'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   ResizableHandle,
@@ -42,7 +42,7 @@ function SidebarHeader({ header, onToggle, toggleRef }: SidebarHeaderProps) {
         ref={toggleRef}
         onClick={onToggle}
       >
-        <PanelLeftIcon />
+        <Icon name="panel-left" />
       </Button>
       <div className="no-drag-region ml-auto min-w-0">{header}</div>
     </header>
@@ -63,7 +63,7 @@ function CollapsedSidebarControl({ onToggle, toggleRef }: SidebarToggleProps) {
         ref={toggleRef}
         onClick={onToggle}
       >
-        <PanelLeftIcon />
+        <Icon name="panel-left" />
       </Button>
     </div>
   )

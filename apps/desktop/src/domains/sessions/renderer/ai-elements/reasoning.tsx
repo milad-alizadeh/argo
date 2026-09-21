@@ -1,4 +1,3 @@
-import { BrainIcon, ChevronDownIcon } from 'lucide-react'
 import {
   type ComponentProps,
   createContext,
@@ -7,6 +6,7 @@ import {
   useEffect,
   useState,
 } from 'react'
+import { Icon } from '@/platform/renderer/components/icon'
 import {
   Collapsible,
   CollapsibleContent,
@@ -88,10 +88,12 @@ export function ReasoningTrigger({
     >
       {children ?? (
         <>
-          <BrainIcon className="size-4" />
+          <Icon name="reasoning" size="control" />
           {getThinkingMessage(isStreaming, duration)}
-          <ChevronDownIcon
-            className={cn('size-4 transition-transform', isOpen ? 'rotate-180' : 'rotate-0')}
+          <Icon
+            name="chevron-down"
+            size="control"
+            className={cn('transition-transform', isOpen ? 'rotate-180' : 'rotate-0')}
           />
         </>
       )}
