@@ -58,7 +58,9 @@ function mockCodexDriver() {
       roster: () => [],
       liveMessages: () => [],
       pendingQuestion: () => null,
+      pendingPermission: () => null,
       decideQuestion: () => true,
+      decidePermission: () => true,
       close: () => {},
     },
   }

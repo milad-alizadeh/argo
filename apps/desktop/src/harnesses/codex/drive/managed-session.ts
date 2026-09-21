@@ -5,6 +5,7 @@ import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-e
 import { codexLaunchEnvironment } from '@/harnesses/codex/drive/launch-environment'
 import { createLiveMessages, type LiveMessages } from '@/harnesses/codex/drive/live-messages'
 import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
+import type { PendingCodexPermission } from '@/harnesses/codex/drive/permission-protocol'
 import { codexNotificationRecorder } from '@/harnesses/codex/drive/record-notification'
 
 export type ManagedSession = {
@@ -21,6 +22,7 @@ export type ManagedSession = {
   compactionStartedAt: string | null
   title?: { text: string; source: 'custom' }
   pendingQuestion: PendingCodexQuestion | null
+  pendingPermission: PendingCodexPermission | null
 }
 
 export type ManagedSessionOptions = {
@@ -82,6 +84,7 @@ export function rememberManagedSession(options: {
     messages,
     compactionStartedAt: null,
     pendingQuestion: null,
+    pendingPermission: null,
   })
   driver.ownership?.bind(sessionId)
   channel.onExit(() => {

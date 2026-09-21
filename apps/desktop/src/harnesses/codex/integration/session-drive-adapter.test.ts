@@ -12,6 +12,8 @@ function mockDriver(overrides: Partial<Parameters<typeof createCodexDriveAdapter
     send: async () => {},
     interrupt: async () => {},
     compact: async () => {},
+    pendingPermission: () => null,
+    decidePermission: () => false,
     ...overrides,
   } as Parameters<typeof createCodexDriveAdapter>[0]
 }
@@ -142,17 +144,32 @@ test('does not accept a compact Codex could not be given', async () => {
   assert.deepEqual(result, { error: 'not-drivable' })
 })
 
-test('reads no pending Permission, since Codex Permissions are #1841', async () => {
-  const adapter = createCodexDriveAdapter(mockDriver())
-  assert.deepEqual(await adapter.readPermission({ sessionId }), { permission: null })
+test('reads a pending Codex Permission', async () => {
+  const adapter = createCodexDriveAdapter(
+    mockDriver({
+      pendingPermission: () => ({ id: 'permission-1', requestId: 1, sessionId, description: 'Run gh issue create' }),
+    }),
+  )
+  assert.deepEqual(await adapter.readPermission({ sessionId }), {
+    permission: { id: 'permission-1', sessionId, description: 'Run gh issue create' },
+  })
 })
 
-test('refuses a Codex Permission decision, since none is ever waiting', async () => {
-  const adapter = createCodexDriveAdapter(mockDriver())
+test('passes a Codex Permission decision to its driver', async () => {
+  const decided: string[] = []
+  const adapter = createCodexDriveAdapter(
+    mockDriver({
+      decidePermission: (_sessionId, _permissionId, decision) => {
+        decided.push(decision)
+        return true
+      },
+    }),
+  )
   const result = await adapter.decidePermission({
     sessionId,
     permissionId: 'permission-1',
     decision: 'allow',
   })
-  assert.deepEqual(result, { error: 'stale-permission' })
+  assert.deepEqual(result, { ok: true })
+  assert.deepEqual(decided, ['allow'])
 })

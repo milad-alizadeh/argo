@@ -11,6 +11,7 @@ import type { WireMessage } from '@/harnesses/codex/drive/protocol'
 import { readCompletedTurn, readThreadStatus } from '@/harnesses/codex/drive/protocol'
 import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
 import { readRequestUserInput } from '@/harnesses/codex/drive/question-protocol'
+import { readRequestApproval, type PendingCodexPermission } from '@/harnesses/codex/drive/permission-protocol'
 import { readUpdatedThreadName } from '@/harnesses/codex/drive/rename-protocol'
 
 export type HeldSession = {
@@ -21,6 +22,7 @@ export type HeldSession = {
   compactionStartedAt: string | null
   title?: { text: string; source: 'custom' }
   pendingQuestion: PendingCodexQuestion | null
+  pendingPermission: PendingCodexPermission | null
 }
 
 // Returns whether this notification was a server request this recorder claimed and will answer
@@ -46,6 +48,12 @@ export function recordCodexNotification({
   if (question?.threadId === sessionId) {
     session.pendingQuestion = question
     if (session.status === 'running') session.status = 'asking'
+    return true
+  }
+  const permission = readRequestApproval(message)
+  if (permission?.sessionId === sessionId) {
+    session.pendingPermission = permission
+    if (session.status === 'running') session.status = 'permission'
     return true
   }
   if (session.messages.record(message)) return false
