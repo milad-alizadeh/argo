@@ -12,6 +12,8 @@ function mockDriver(overrides: Partial<Parameters<typeof createCodexDriveAdapter
     send: async () => {},
     interrupt: async () => {},
     compact: async () => {},
+    pendingPermission: () => null,
+    decidePermission: () => false,
     ...overrides,
   } as Parameters<typeof createCodexDriveAdapter>[0]
 }
@@ -140,19 +142,4 @@ test('does not accept a compact Codex could not be given', async () => {
 
   const result = await adapter.compact({ sessionId })
   assert.deepEqual(result, { error: 'not-drivable' })
-})
-
-test('reads no pending Permission, since Codex Permissions are #1841', async () => {
-  const adapter = createCodexDriveAdapter(mockDriver())
-  assert.deepEqual(await adapter.readPermission({ sessionId }), { permission: null })
-})
-
-test('refuses a Codex Permission decision, since none is ever waiting', async () => {
-  const adapter = createCodexDriveAdapter(mockDriver())
-  const result = await adapter.decidePermission({
-    sessionId,
-    permissionId: 'permission-1',
-    decision: 'allow',
-  })
-  assert.deepEqual(result, { error: 'stale-permission' })
 })
