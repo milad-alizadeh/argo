@@ -8,9 +8,9 @@ import {
   type ManagedSessionOptions,
   managedRoster,
 } from '@/harnesses/codex/drive/managed-session'
+import { codexApprovalDecision } from '@/harnesses/codex/drive/permission-protocol'
 import { codexAnswersFor, settleQuestion } from '@/harnesses/codex/drive/question-protocol'
 import { readRename } from '@/harnesses/codex/drive/rename-protocol'
-import { codexApprovalDecision } from '@/harnesses/codex/drive/permission-protocol'
 import { createResumingChannel } from '@/harnesses/codex/drive/resuming-channel'
 import { beginSession, startTurn } from '@/harnesses/codex/drive/turn-lifecycle'
 
@@ -62,6 +62,19 @@ function closeManagedSessions(
   }
 }
 
+function decidePendingPermission(
+  session: ManagedSession | undefined,
+  permissionId: string,
+  decision: 'allow' | 'deny' | 'allowForSession' | 'cancel',
+) {
+  const pending = session?.pendingPermission
+  if (!session || !pending || pending.id !== permissionId) return false
+  session.channel.respond(pending.requestId, codexApprovalDecision(decision))
+  session.pendingPermission = null
+  if (session.status === 'permission') session.status = 'running'
+  return true
+}
+
 export function createCodexSessionDriver(options: ManagedSessionOptions): CodexSessionDriver {
   const sessions = new Map<string, ManagedSession>()
   const renameWaiters = new Map<string, (title: string) => void>()
@@ -106,15 +119,8 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
     isLockedElsewhere: (sessionId) => driver.ownership?.standing(sessionId) === 'held-elsewhere',
     pendingQuestion: (sessionId) => held(sessionId)?.pendingQuestion ?? null,
     pendingPermission: (sessionId) => held(sessionId)?.pendingPermission ?? null,
-    decidePermission(sessionId, permissionId, decision) {
-      const session = held(sessionId)
-      const pending = session?.pendingPermission
-      if (!session || !pending || pending.id !== permissionId) return false
-      session.channel.respond(pending.requestId, codexApprovalDecision(decision))
-      session.pendingPermission = null
-      if (session.status === 'permission') session.status = 'running'
-      return true
-    },
+    decidePermission: (sessionId, permissionId, decision) =>
+      decidePendingPermission(held(sessionId), permissionId, decision),
     decideQuestion(sessionId, questionId, answers) {
       const session = held(sessionId)
       if (session === undefined || session.pendingQuestion === null) return false

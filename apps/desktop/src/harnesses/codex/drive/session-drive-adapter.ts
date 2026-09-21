@@ -1,11 +1,11 @@
 import { codexTurnSetupSchema } from '@/domains/sessions/contract/codex-turn-setup'
+import type { Permission } from '@/domains/sessions/contract/drive/permission'
 import type {
   DriveFailure,
   SessionDriveAdapter,
 } from '@/domains/sessions/contract/session-drive-adapter'
 import type { CodexSessionDrive } from '@/harnesses/codex/drive/codex-session-driver'
 import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
-import type { Permission } from '@/domains/sessions/contract/drive/permission'
 
 const FAILURE_MESSAGES = {
   'harness-unavailable': 'Codex is not available. Run codex doctor to repair it.',
@@ -22,7 +22,9 @@ const FAILURE_MESSAGES = {
 // to replace this heuristic with the real one.
 const ACTIVE_ELSEWHERE = /already active|in use|held by|another (client|session|instance)/i
 
-function toPermission(permission: NonNullable<ReturnType<CodexSessionDrive['pendingPermission']>>): Permission {
+function toPermission(
+  permission: NonNullable<ReturnType<CodexSessionDrive['pendingPermission']>>,
+): Permission {
   return { id: permission.id, sessionId: permission.sessionId, description: permission.description }
 }
 

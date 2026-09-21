@@ -4,8 +4,8 @@ import type { CodexChannel } from '@/harnesses/codex/drive/codex-channel'
 import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
 import { codexLaunchEnvironment } from '@/harnesses/codex/drive/launch-environment'
 import { createLiveMessages, type LiveMessages } from '@/harnesses/codex/drive/live-messages'
-import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
 import type { PendingCodexPermission } from '@/harnesses/codex/drive/permission-protocol'
+import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
 import { codexNotificationRecorder } from '@/harnesses/codex/drive/record-notification'
 
 export type ManagedSession = {
@@ -29,6 +29,7 @@ export type ManagedSessionOptions = {
   findExecutable: () => string | null
   now: () => Date
   onPlanUpdated?: () => void
+  permissionTimeoutMs?: number
   openChannel: (
     executable: string,
     options: { cwd: string; env: NodeJS.ProcessEnv },
@@ -99,6 +100,16 @@ export function rememberManagedSession(options: {
       renameWaiters,
       now: driver.now,
       onPlanUpdated,
+      onPermission: (permission) => {
+        const timeout = setTimeout(() => {
+          const current = sessions.get(sessionId)
+          if (current?.pendingPermission?.requestId !== permission.requestId) return
+          current.channel.respond(permission.requestId, { decision: 'decline' })
+          current.pendingPermission = null
+          if (current.status === 'permission') current.status = 'running'
+        }, driver.permissionTimeoutMs ?? 86_400_000)
+        timeout.unref()
+      },
     }),
   )
 }
