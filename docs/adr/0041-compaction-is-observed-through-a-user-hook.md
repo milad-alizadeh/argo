@@ -2,6 +2,9 @@
 
 Status: accepted · 2026-09-15
 
+> **Superseded by ADR-0047 · 2026-09-21:** adapters read compaction from vendor events and history.
+> Argo no longer installs a user-level compaction hook or reads transcript and rollout boundaries.
+
 Amends ADR-0024, which installs Argo's hooks only in the companion plugin of a Session that Argo
 starts.
 

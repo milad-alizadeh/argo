@@ -1,6 +1,5 @@
 ## Observation surface (cross-cutting)
 
-- **Terminal** — a PTY Argo owns, running in a Workspace's cwd. As an *observation* surface it
-  is the **session terminal**: the live, steerable view of a managed Session (managed-only).
-- **Transcript** — the **read-only replay** view, parsed from the CLI's on-disk record. Any
-  session, external or historical.
+- **Feed** — the ordered Session history projected from validated vendor events and reads. A
+  managed Session adds live updates. A watched or historical Session is read-only. The Feed is not
+  a transcript parser or terminal mirror.
