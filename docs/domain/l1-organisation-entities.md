@@ -80,12 +80,11 @@ Three independent, optional, many-to-many edges:
 
   This edge **is** the **claim lease** on a decision ticket — a ticket is `claimed` exactly
   while a live Session links to it, its age `now − link.createdAt` (DIRECT) and its release the
-  session's own end; there is no TTL. Across a restart the link survives, **re-derived from the
-  session's own read of its brief file**, but liveness drops to DERIVED — so the claim degrades
-  to **stale** rather than reading as held: stale-on-open is takeable with a warning,
-  stale-on-closed is inert (closure is read before claims). That derivation is why a Session
-  Argo **managed** before — now reading `external` with no live channel — keeps its claim, while
-  one Argo never managed never wrote a brief-file link to read back, so it never holds one. The
+  session's own end; there is no TTL. Across a restart the Argo-owned durable link survives, but
+  liveness drops to DERIVED — so the claim degrades to **stale** rather than reading as held:
+  stale-on-open is takeable with a warning, stale-on-closed is inert (closure is read before
+  claims). A Session Argo **managed** before — now `watched` with no live channel — keeps its
+  durable link. The
   provider assignee is a **visible echo** for teammates, never the lease — it carries no age,
   nothing releases it, and it is written by the **agent** under `/wayfinder`, not by Argo.
 - **Session → Delivery** — "which branch / product am I moving."

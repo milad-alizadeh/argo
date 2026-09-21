@@ -3,12 +3,12 @@
 A property **of each rendered fact**, not a session-wide mode — one Session mixes tiers.
 
 - **DIRECT** — Argo owns the fact (managed pid, a mode Argo set).
-- **DERIVED** — observed from outside Argo, whether **inferred** from a signal (external
-  liveness via process-match + mtime; the `~n%` context estimate) **or read verbatim** from an
+- **DERIVED** — observed from outside Argo, whether **inferred** from a signal (the `~n%` context
+  estimate) **or read verbatim** from an
   external authority (a code-host Review or Check; a Ticket's Answer prose). Verbatim reads
   are **never reworded or summarized**.
 - **CONVENTION** — arrived over the companion-plugin/MCP channel (managed-only, e.g.
-  `report_status`); never existed in a transcript.
+  `report_status`); not part of native vendor history.
 
 **INFERRED is the Atlas's own mark on a DERIVED fact, not a fourth tier** (#1157). Everything the
 Atlas holds is DERIVED — the repository is the only source — but a Domain is not observed the way
@@ -46,7 +46,6 @@ is `Read Only ≈` rather than the `Code` its approvals could eventually reach. 
 undecidable the ordinary rule applies and the value is `unknown` — `claude` `dontAsk` is the
 case, because its boundary is an allowlist Argo cannot see.
 
-Two DERIVED soft-spots to render honestly, not hide: external liveness (process-match on `cwd` +
-mtime is **not a unique key** — two `claude` in one repo can mis-match, and mtime goes stale
-during long "thinking", so it can read live-as-idle); and `~n%` context (the window denominator
-is model-dependent and may be unnamed in the transcript).
+One DERIVED soft-spot remains: `~n%` context. The window denominator is model-dependent and may be
+absent from the vendor interface. Watched liveness is never inferred from process matching or file
+age; it stays `unknown` when the vendor does not establish it.

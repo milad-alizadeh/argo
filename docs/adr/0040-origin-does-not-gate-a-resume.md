@@ -2,6 +2,10 @@
 
 Status: accepted · 2026-09-14
 
+> **Superseded in part by ADR-0047 · 2026-09-21:** origin still does not gate resume. A SQLite
+> lease replaces the ownership JSON ledger, vendor liveness replaces transcript and process
+> heuristics, and a Session without an Argo-owned channel is `watched`.
+
 Supersedes the `never-owned` standing and the "`external` Sessions are still not resumable"
 consequence of ADR-0026. Binding on #10 and on `SessionOwnership`.
 

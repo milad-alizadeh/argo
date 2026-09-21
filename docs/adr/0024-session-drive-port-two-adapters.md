@@ -2,6 +2,11 @@
 
 Status: accepted · 2026-08-12 (proposed 2026-08-10; Codex channel corrected to app-server and verified, #547) · extent amended (#749) · 2026-08-26 · permission socket placement amended (#1842) · 2026-09-13
 
+> **Superseded in part by ADR-0047 · 2026-09-21:** the separate Agent SDK billing claim, Claude
+> PTY driver, and transcript-observation rules no longer apply. Claude uses a subscription-only
+> Agent SDK adapter when Anthropic supports Argo's authorization. Codex keeps app-server. Both use
+> vendor history, and a future PTY adapter is deferred.
+
 ADR-0041 adds one user-level hook that every Claude Session runs, for compaction only.
 
 ## Context

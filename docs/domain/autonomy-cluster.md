@@ -2,7 +2,7 @@
 
 - **Mode** — the **Session's** *standing* autonomy stance (root-Agent fact, not per-Subagent): a
   four-rung ladder **`Read Only | Plan | Code | Auto`**, plus **`unknown`** when unobservable.
-  DIRECT for managed, tier-gated for external. Each rung is a **boundary**, not a prompt
+  DIRECT for managed, tier-gated for watched. Each rung is a **boundary**, not a prompt
   frequency: inside it the agent acts, at it Permission fires (ADR-0025).
   - **Read Only** — no writes are possible.
   - **Plan** — Read Only's boundary carrying a deliverable: the agent proposes, then hands off.
@@ -36,8 +36,8 @@
   that goes because the user cancelled its turn produces none: that is the user answering, and it
   is indistinguishable from a hook simply going, so both stay silent under the degrade-down rule.
   **Survives no restart**, for the reason a Standing allow does not — the gate that would have
-  observed it dies with the PTY, so an Argo restarting under a live CLI records nothing and the
-  Session reads `external` instead.
+  observed it dies with the managed channel, so an Argo restart records nothing and the Session
+  reads `watched` instead.
 - **Gate** — **Argo's own** policy on automating *Delivery* steps (create-PR, merge,
   push-after-PR), each `ask | auto`. Argo-owned automation, **not** an agent prompt — a
   different actor and axis from Permission.

@@ -27,3 +27,17 @@ database, so it does not copy credentials or Session archives. If Argo cannot op
 database, it offers to restore the latest backup or quit. It does not replace the damaged file
 without that choice. The Session index stays disposable. Its own recovery discards only its
 cache tables and rebuilds them from CLI transcripts.
+
+## Amendment · Drizzle owns schema changes · 2026-09-21
+
+Drizzle Kit generates the shared schema history and normal indexes. Domain table definitions stay
+beside the domains that own them, and one Drizzle configuration collects them. Custom SQL
+migrations own FTS5 tables, triggers, and data changes that Drizzle cannot express.
+
+Repositories continue to use `node:sqlite` directly until Drizzle's Node SQLite runtime packages
+are stable. This keeps schema management independent from the runtime repository layer.
+
+ADR-0047 replaces transcript-built Session indexes. Vendor interfaces are the only input to the
+disposable Session metadata and FTS5 tables. The development cutover resets the existing database
+and removes old JSON stores, compatibility readers, and legacy migrations. Backup and recovery
+apply from the first shipped version of the new schema.
