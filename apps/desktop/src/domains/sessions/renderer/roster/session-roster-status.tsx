@@ -4,15 +4,27 @@ import type { Session } from '@/domains/sessions/renderer/types'
 import { sessionPostureLocksAnswer } from '@/domains/sessions/renderer/types'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 
-export const STATUS_MARKS: Record<Session['status'], string> = {
-  asking: 'bg-warn',
-  ended: 'bg-danger',
-  idle: 'bg-idle',
-  permission: 'bg-warn',
-  running: 'bg-idle',
-  starting: 'bg-idle',
-  stopped: 'bg-danger',
-  unknown: 'bg-transparent shadow-state-outline',
+export type SessionStatusVariant = 'active' | 'attention' | 'failed' | 'idle' | 'unknown' | 'unread'
+
+// A Session running now is the Roster's active state, which outranks the unread marker from its
+// last settled Turn (#2514). The dot's variant is one render fact so its CSS can transition
+// between the semantic states without a second competing mark (#2526).
+export function statusVariantOf(session: Pick<Session, 'status' | 'unread'>): SessionStatusVariant {
+  switch (session.status) {
+    case 'running':
+    case 'starting':
+      return 'active'
+    case 'asking':
+    case 'permission':
+      return 'attention'
+    case 'ended':
+    case 'stopped':
+      return 'failed'
+    case 'unknown':
+      return 'unknown'
+    case 'idle':
+      return session.unread ? 'unread' : 'idle'
+  }
 }
 
 // The dot beside a Session carries its status as colour; this is that same fact in words, for a

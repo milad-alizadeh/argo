@@ -25,11 +25,9 @@ Argo uses a productive scale for a dense macOS app:
   precision with human warmth. It also calls out tabular figures. It does not publish a product
   UI size scale.
 
-These systems converge on a small number of neighboring sizes. Argo therefore uses 13px as the
-dominant interface and reading size, including controls, and 11px for dense metadata. Technical
-text uses Geist Mono at 12px. Headings change weight instead of size. The 16px title is a rare
-escape hatch for detail pages. This avoids the weak half-step hierarchy created by placing 13px
-interface text beside 14px prose.
+These systems use a small number of neighboring sizes. Argo uses 14px for interface and reading
+text, including controls. It uses 12px for dense metadata. Technical text uses Geist Mono at
+13px. Headings change weight instead of size. The 18px title applies only to detail pages.
 
 ## Text surface map
 
@@ -50,13 +48,13 @@ The Atlas page has no reader text yet. Story fixtures do not set the production 
 
 | Role | Size and line height | Weight | Use |
 | --- | --- | --- | --- |
-| `title` | 16/22px | 500 | The main title in a detail surface or a large value |
-| `heading` | 13/19px | 500 | A pane, group, or document heading |
-| `body` | 13/19px | 400 | Dense interface text and list titles |
-| `prose` | 13/19px | 400 | Messages, Markdown, and longer reading |
-| `control` | 13/19px | 500 | Buttons, tabs, menu labels, and compact section labels |
-| `meta` | 11/15px | 400 | Timing, state, counts, paths, and supporting facts |
-| `code` | 12/18px | 400 | Code, terminal output, and machine identifiers |
+| `title` | 18/24px | 500 | The main title in a detail surface or a large value |
+| `heading` | 14/20px | 500 | A pane, group, or document heading |
+| `body` | 14/20px | 400 | Dense interface text and list titles |
+| `prose` | 14/20px | 400 | Messages, Markdown, and longer reading |
+| `control` | 14/20px | 500 | Buttons, tabs, menu labels, and compact section labels |
+| `meta` | 12/16px | 400 | Timing, state, counts, paths, and supporting facts |
+| `code` | 13/19px | 400 | Code, terminal output, and machine identifiers |
 
 Use medium or semibold emphasis only when text must differ from adjacent text in the same role.
 Use tabular numerals for timing, percentages, progress, and counts.
@@ -70,7 +68,7 @@ editor cannot attach a role class to those generated nodes.
 
 Shared UI primitives keep their generated shadcn rung names. `components.json` keeps
 `tailwind.cssVariables` enabled, and the Tailwind v4 `@theme inline` contract maps `text-xs`,
-`text-sm`, and `text-base` to the dominant 13px rung. A shadcn update therefore inherits Argo's
+`text-sm`, and `text-base` to the dominant 14px rung. A shadcn update therefore inherits Argo's
 scale without per-component patches. Product components use a semantic role when their meaning is
 more specific than the primitive default; the role adds intent rather than correcting the
 primitive. `type-label` remains a compatibility alias for existing labels. New app-owned code
