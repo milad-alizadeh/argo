@@ -48,6 +48,8 @@ function mockCodexAdapter(): SessionDriveAdapter {
     rename: async () => 'Renamed.',
     roster: () => [],
     liveMessages: () => [],
+    pendingPermission: () => null,
+    decidePermission: () => false,
     pendingQuestion: () => null,
     decideQuestion: () => true,
     close: () => {},
