@@ -2,6 +2,7 @@
 // in place of it (#1582). The document is the Feed's, so a Subagent reads exactly the way the
 // Session it belongs to reads.
 
+import { useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SessionSubagent } from '@/domains/sessions/contract/model/models'
 import { BasicFeed } from '@/domains/sessions/renderer/feed/basic-feed'
@@ -14,6 +15,21 @@ import type {
 } from '@/domains/sessions/renderer/types'
 
 import '@/domains/sessions/renderer/feed/feed.css'
+
+function useVisibleInspector() {
+  const inspector = useRef<HTMLElement>(null)
+  const [active, setActive] = useState(false)
+  useLayoutEffect(() => {
+    const element = inspector.current
+    if (element === null) return
+    const synchronizeActive = () => setActive(element.getBoundingClientRect().width > 0)
+    const observer = new ResizeObserver(synchronizeActive)
+    observer.observe(element)
+    synchronizeActive()
+    return () => observer.disconnect()
+  }, [])
+  return { active, inspector }
+}
 
 function responseRow(delegation: SessionSubagent): SessionFeedRow | null {
   if (delegation.state === 'running') return null
@@ -63,11 +79,13 @@ export function SessionDelegationInspector({
   sessionId: string | null
 }) {
   const { t } = useTranslation('sessions')
+  const { active, inspector } = useVisibleInspector()
   const reading = withResponseEvent(feed, delegation)
   return (
     <section
       aria-label={t('subagent')}
       className="flex h-full min-h-0 flex-1 flex-col overflow-hidden"
+      ref={inspector}
     >
       <BasicFeed
         activeEvidenceId={activeEvidenceId}
@@ -80,7 +98,7 @@ export function SessionDelegationInspector({
         onOpenSession={onOpenSession}
         onRetryFeed={onRetryFeed}
         questionFailure={() => null}
-        selectedSessionId={reading?.sessionId ?? sessionId}
+        selectedSessionId={active ? (reading?.sessionId ?? sessionId) : null}
       />
     </section>
   )

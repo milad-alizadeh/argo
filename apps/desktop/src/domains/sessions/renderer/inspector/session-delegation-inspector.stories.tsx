@@ -130,7 +130,9 @@ export const LoadingSubagent: Story = {
   },
   render: (args) => <InspectorStory args={args} />,
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByLabelText('Loading this Session')).toBeVisible()
+    await waitFor(() =>
+      expect(within(canvasElement).getByLabelText('Loading this Session')).toBeVisible(),
+    )
   },
 }
 
