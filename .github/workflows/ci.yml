@@ -407,8 +407,10 @@ jobs:
           echo "no electron/install.js under node_modules or apps/desktop/node_modules" >&2
           exit 1
 
+      # Always runs, HIT or MISS: the probe above is a dry run and writes nothing, so this is the
+      # only step that actually restores `out/Argo-darwin-arm64/` from the remote cache. On a HIT
+      # it's a fast restore with no toolchain; on a MISS it's the real package build.
       - name: Package arm64
-        if: steps.replay.outputs.status != 'HIT'
         run: bun run turbo run build --filter=@argo/desktop
 
       # Bypasses turbo (#2605): turbo's cache key covers the whole `test:e2e` task, not one
