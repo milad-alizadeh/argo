@@ -2,7 +2,6 @@
 // prove a re-read reaches the file system rather than a cache.
 import { appendFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
 import type { MockSetupDocument } from '../../../mocks/providers/setup/mock-setup-document-loopback'
 import { pointShellOutputAtRoot } from '../../../mocks/sessions/mock-shell-output'
 import {
@@ -13,12 +12,11 @@ import {
   writeArchiveStore,
   writeFixtureTree,
 } from '../../../mocks/sessions/mock-transcript-files'
-import { createProjectStore } from '../../../src/domains/projects/main/sqlite-store'
-import { sharedDatabasePath } from '../../../src/platform/main/storage/shared-database'
 import {
   makeProjectLocallyReady,
   markProjectSetupLocallyReady,
 } from '../../projects/fixtures/locally-ready-project'
+import { seedSingleProject } from '../../projects/fixtures/project.fixture'
 
 export const FIXTURES = [
   'resumeParent',
@@ -141,13 +139,7 @@ export async function prepare(
 const PROOF_PROJECT_ID = 'session-proof-project'
 
 async function writeProjectStore(userData, project, selectedId) {
-  const projects = createProjectStore(new DatabaseSync(sharedDatabasePath(userData)))
-  projects.replace({
-    projects: [
-      { id: PROOF_PROJECT_ID, path: project, commonDirectory: path.join(project, '.git') },
-    ],
-    selectedId,
-  })
+  const projects = seedSingleProject(userData, { id: PROOF_PROJECT_ID, path: project, selectedId })
   markProjectSetupLocallyReady(projects, PROOF_PROJECT_ID, project)
   projects.close()
 }

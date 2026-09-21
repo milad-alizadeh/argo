@@ -4,6 +4,8 @@ import { chmod, mkdir, mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { type TestContext, test } from 'node:test'
+import { drizzle } from 'drizzle-orm/bun-sqlite'
+import { migrate } from 'drizzle-orm/bun-sqlite/migrator'
 import type {
   ProjectError,
   ProjectOpenReply,
@@ -32,7 +34,10 @@ async function fixture(context: TestContext) {
   const projectPath = path.join(root, 'example')
   await mkdir(projectPath)
   const database = new Database(path.join(root, 'argo.sqlite'))
-  const projects = createProjectStore(database)
+  migrate(drizzle({ client: database }), {
+    migrationsFolder: path.resolve(import.meta.dirname, '../drizzle'),
+  })
+  const projects = createProjectStore(drizzle({ client: database }))
   projects.replace({
     projects: [
       { id: 'project-1', path: projectPath, commonDirectory: path.join(projectPath, '.git') },

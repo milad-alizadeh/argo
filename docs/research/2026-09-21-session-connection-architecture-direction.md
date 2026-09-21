@@ -56,6 +56,13 @@ copy full transcripts into SQLite. SQLite stores only Argo-owned records and a d
 projection populated through vendor reads. Resuming an older Session sends its native ID to the
 SDK or app-server; Argo does not reconstruct the conversation itself.
 
+## SQLite boundary
+
+Normal durable repositories use the pinned `drizzle-orm/node-sqlite` adapter. Their schema and
+types come from the domain-owned Drizzle tables. Direct SQLite is reserved for FTS5, required
+PRAGMAs, and other operations that Drizzle cannot express. Adapter contract tests protect that
+pinned runtime before it changes.
+
 ## Architecture
 
 ```mermaid

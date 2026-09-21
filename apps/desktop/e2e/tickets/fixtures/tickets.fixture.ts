@@ -2,7 +2,6 @@
 // The providers are the one thing mocked; the cockpit, its stores and safeStorage all run for real.
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
 import { type ElectronApplication, _electron as electron } from 'playwright-core'
 import type { MockGitHub } from '../../../mocks/providers/github/mock-github'
 import { startMockGitHubLoopback } from '../../../mocks/providers/github/mock-github-loopback'
@@ -15,12 +14,10 @@ import {
   PROJECT_PROOF_STORE_ENV,
   SETUP_DOCUMENT_PROOF_URL_ENV,
 } from '../../../src/domains/projects/main/proof-protocol'
-import { createProjectStore } from '../../../src/domains/projects/main/sqlite-store'
 import {
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from '../../../src/domains/sessions/main/composition/proof-protocol'
-import { sharedDatabasePath } from '../../../src/platform/main/storage/shared-database'
 import {
   GITHUB_PROOF_ORIGIN_ENV,
   LINEAR_PROOF_ORIGIN_ENV,
@@ -30,7 +27,7 @@ import {
   makeProjectLocallyReady,
   markProjectSetupLocallyReady,
 } from '../../projects/fixtures/locally-ready-project'
-import { repository } from '../../projects/fixtures/project.fixture'
+import { repository, seedSingleProject } from '../../projects/fixtures/project.fixture'
 
 export const OCTOCAT = { id: 583231, login: 'octocat' }
 export const HUBOT = { id: 2, login: 'hubot' }
@@ -87,13 +84,7 @@ export async function prepare(
   const noSessions = path.join(root, 'no-sessions')
   await mkdir(userData, { recursive: true })
   await mkdir(noSessions, { recursive: true })
-  const projects = createProjectStore(new DatabaseSync(sharedDatabasePath(userData)))
-  projects.replace({
-    projects: [
-      { id: 'project-1', path: projectPath, commonDirectory: path.join(projectPath, '.git') },
-    ],
-    selectedId: 'project-1',
-  })
+  const projects = seedSingleProject(userData, { id: 'project-1', path: projectPath })
   markProjectSetupLocallyReady(projects, 'project-1', projectPath)
   projects.close()
   const github = await startMockGitHubLoopback()
