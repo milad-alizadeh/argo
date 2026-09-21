@@ -1,10 +1,11 @@
-import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { FeedQuestionHandlers } from '@/domains/sessions/renderer/feed/feed-document'
 import type { FeedLiveFacts } from '@/domains/sessions/renderer/feed/feed-live-facts'
 import { FEED_STALL_TIMEOUT_MS, useStallTimer } from '@/domains/sessions/renderer/feed/feed-stall'
 import { keptDocument } from '@/domains/sessions/renderer/feed/kept-document'
 import { Standing } from '@/domains/sessions/renderer/feed/standing'
+import { useFeedRetry } from '@/domains/sessions/renderer/feed/use-feed-retry'
+import { useFeedScrollPositions } from '@/domains/sessions/renderer/feed/use-feed-scroll-positions'
 import { useHeldPrompt } from '@/domains/sessions/renderer/feed/use-held-prompt'
 import { useKeptDocuments } from '@/domains/sessions/renderer/feed/use-kept-documents'
 import { awaitingAssistantReply } from '@/domains/sessions/renderer/feed/use-settled-feed'
@@ -28,6 +29,38 @@ function optimisticFeedDocument(sessionId: SessionId): SessionFeed {
   }
 }
 
+function awaitingSelectedFeed({
+  current,
+  failure,
+  selectedSessionId,
+  optimisticSession,
+  liveFacts,
+}: {
+  current: SessionFeed | null
+  failure: SessionError | null
+  selectedSessionId: SessionId | null
+  optimisticSession: boolean
+  liveFacts: FeedLiveFacts
+}) {
+  return (
+    failure === null &&
+    selectedSessionId !== null &&
+    !optimisticSession &&
+    (current === null || (liveFacts?.isRunning === true && awaitingAssistantReply(current.rows)))
+  )
+}
+
+type BasicFeedProps = {
+  feed: SessionFeed | null
+  activeEvidenceId: string | null
+  liveFacts: FeedLiveFacts
+  onOpenSession: (sessionId: string) => void
+  failure: SessionError | null
+  onRetryFeed: () => void
+  onJumpToLatestChange?: (sessionId: string, action: (() => void) | null) => void
+  selectedSessionId: SessionId | null
+} & FeedQuestionHandlers
+
 export function BasicFeed({
   feed,
   activeEvidenceId,
@@ -42,22 +75,14 @@ export function BasicFeed({
   answeringQuestionId,
   questionFailure,
   stallTimeoutMs = FEED_STALL_TIMEOUT_MS,
-}: {
-  feed: SessionFeed | null
-  activeEvidenceId: string | null
-  liveFacts: FeedLiveFacts
-  onOpenSession: (sessionId: string) => void
-  failure: SessionError | null
-  onRetryFeed: () => void
-  onJumpToLatestChange?: (sessionId: string, action: (() => void) | null) => void
-  selectedSessionId: SessionId | null
-} & FeedQuestionHandlers) {
+}: BasicFeedProps) {
   const { t } = useTranslation('sessions')
+  const { initialPosition, savePosition } = useFeedScrollPositions()
   const { current, ordered } = useKeptDocuments(feed, selectedSessionId)
   const liveFacts = useHeldPrompt(selectedSessionId, reportedLiveFacts)
   // The Standing spinner (below) has no bound of its own: a Session whose read never answers
   // (#2102) never gets a kept document, so `current` stays null forever without this.
-  const [retryToken, setRetryToken] = useState(0)
+  const { retry, retryToken } = useFeedRetry(onRetryFeed)
   const optimisticSession = selectedSessionId !== null && isOptimisticSessionId(selectedSessionId)
   // The prompt row outlives the temporary id: the real Session's first read can trail the hand-off.
   const holdsPrompt =
@@ -69,26 +94,25 @@ export function BasicFeed({
     optimisticDocument === null
       ? ordered
       : [[optimisticDocument.sessionId, optimisticDocument] as const]
-  const awaitingFeed =
-    failure === null &&
-    selectedSessionId !== null &&
-    !optimisticSession &&
-    (current === null || (liveFacts?.isRunning === true && awaitingAssistantReply(current.rows)))
+  const awaitingFeed = awaitingSelectedFeed({
+    current,
+    failure,
+    selectedSessionId,
+    optimisticSession,
+    liveFacts,
+  })
   const stalled = useStallTimer(
     awaitingFeed ? `${selectedSessionId}:${retryToken}` : false,
     stallTimeoutMs,
   )
-  const retry = useCallback(() => {
-    setRetryToken((token) => token + 1)
-    onRetryFeed()
-  }, [onRetryFeed])
-
   const shared = {
     selectedSessionId,
     liveFacts,
     activeEvidenceId,
     failure,
+    initialScrollPosition: initialPosition,
     onOpenSession,
+    onScrollPositionChange: savePosition,
     onJumpToLatestChange,
     onOpenEvidence,
     onAnswerQuestion,
