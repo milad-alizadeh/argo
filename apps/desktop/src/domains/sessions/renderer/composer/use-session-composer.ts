@@ -87,7 +87,7 @@ export function useSessionComposer(options: SessionComposerOptions): ComposerRes
   const [failure, setFailure] = useState<Failure | null>(null)
   const queryClient = useQueryClient()
   const mutations = useSessionMutations()
-  const setDraft = useComposerStore((state) => state.setDraft)
+  const composerActions = useComposerStore.getState()
   const { identity, sessionId, control, watchTurn, marker, selectedRow, isCompacting } =
     useComposerFacts({ harness, cockpit, roster, selectedSessionId }, setFailure)
   const { isHandingOff, onCompact, onHandoff, onInterrupt, onSteer, ...marks } = useComposerActions(
@@ -112,7 +112,9 @@ export function useSessionComposer(options: SessionComposerOptions): ComposerRes
     queryClient,
     roster,
     send: mutations.send,
-    setDraft,
+    setDraft: composerActions.setDraft,
+    removeAttachmentPaths: composerActions.removeAttachmentPaths,
+    rekey: composerActions.rekey,
     setFailure,
     start: mutations.start,
     watchTurn,
