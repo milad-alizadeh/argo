@@ -27,8 +27,21 @@ test('reads an additional-permissions approval request', () => {
     description: 'Allow browser access',
     additionalPermissions: { network: { enabled: true } },
   })
-  assert.deepEqual(
-    codexApprovalDecision(permission ?? assert.fail('Missing permission'), 'allow'),
-    { permissions: { network: { enabled: true } }, scope: 'turn' },
-  )
+  const profilePermission = permission ?? assert.fail('Missing permission')
+  assert.deepEqual(codexApprovalDecision(profilePermission, 'allow'), {
+    permissions: { network: { enabled: true } },
+    scope: 'turn',
+  })
+  assert.deepEqual(codexApprovalDecision(profilePermission, 'allowForSession'), {
+    permissions: { network: { enabled: true } },
+    scope: 'session',
+  })
+  assert.deepEqual(codexApprovalDecision(profilePermission, 'deny'), {
+    permissions: {},
+    scope: 'turn',
+  })
+  assert.deepEqual(codexApprovalDecision(profilePermission, 'cancel'), {
+    permissions: {},
+    scope: 'turn',
+  })
 })
