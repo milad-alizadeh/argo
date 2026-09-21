@@ -3,6 +3,8 @@ import type { ElectronApplication, Page } from 'playwright-core'
 import { launch } from '../projects/fixtures/project.fixture'
 import { expect, test } from './fixtures/project-setup.fixture'
 
+test.skip(true, 'Replaced by the Session and Project setup rewrite in #2576.')
+
 async function hiddenPage(application: ElectronApplication): Promise<Page> {
   const page = await application.firstWindow()
   await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.hide())
