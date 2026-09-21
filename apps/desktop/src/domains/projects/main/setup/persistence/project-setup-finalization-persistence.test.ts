@@ -4,6 +4,8 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
+import { drizzle } from 'drizzle-orm/bun-sqlite'
+import { migrate } from 'drizzle-orm/bun-sqlite/migrator'
 import { createProjectStore } from '@/domains/projects/main/sqlite-store'
 import {
   acceptedPlanFixture,
@@ -15,7 +17,7 @@ test('recovers a completed worktree promotion without promoting it twice after a
   const directory = await mkdtemp(path.join(os.tmpdir(), 'argo-project-setup-finalization-'))
   context.after(() => rm(directory, { recursive: true, force: true }))
   const databasePath = path.join(directory, 'argo.sqlite')
-  const store = createProjectStore(new Database(databasePath))
+  const store = createStore(databasePath)
   store.insertProject({ id: 'project-1', path: '/repo', commonDirectory: '/repo/.git' })
   const setup = createProjectSetupRegistry(store)
   const plan = planFixture()
@@ -35,10 +37,18 @@ test('recovers a completed worktree promotion without promoting it twice after a
   store.promoteSetupWorktree('project-1', '/repo/.argo/worktrees/setup-project-1')
   store.close()
 
-  const reopenedStore = createProjectStore(new Database(databasePath))
+  const reopenedStore = createStore(databasePath)
   const recovered = createProjectSetupRegistry(reopenedStore).snapshot('project-1')
   assert.equal(recovered.screen, 'ready')
   assert.equal(reopenedStore.read().projects[0]?.path, '/repo/.argo/worktrees/setup-project-1')
   assert.equal(reopenedStore.readSetupCheckpoint('project-1')?.phase, 'ready')
   reopenedStore.close()
 })
+
+function createStore(databasePath: string) {
+  const database = new Database(databasePath)
+  migrate(drizzle({ client: database }), {
+    migrationsFolder: path.resolve(import.meta.dirname, '../../../../../../drizzle'),
+  })
+  return createProjectStore(database)
+}

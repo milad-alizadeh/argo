@@ -4,6 +4,8 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { type TestContext, test } from 'node:test'
+import { drizzle } from 'drizzle-orm/bun-sqlite'
+import { migrate } from 'drizzle-orm/bun-sqlite/migrator'
 import { createProjectStore } from '@/domains/projects/main/sqlite-store'
 import { createProjectSetupRegistry } from './project-setup-registry'
 
@@ -60,6 +62,7 @@ test('writes an effect intent before an external effect can begin', async (conte
   context.after(() => rm(directory, { recursive: true, force: true }))
   const databasePath = path.join(directory, 'argo.sqlite')
   const database = new Database(databasePath)
+  migrateDatabase(database)
   const store = createProjectStore(database)
   const setup = createProjectSetupRegistry(store)
   setup.transition('project-1', { type: 'Choose agent', harness: 'claude' })
@@ -129,6 +132,7 @@ test('preserves a corrupt checkpoint as recovery evidence and starts a safe repl
 
 function setupStore(databasePath: string) {
   const database = new Database(databasePath)
+  migrateDatabase(database)
   return createProjectStore(database)
 }
 
@@ -137,5 +141,12 @@ async function temporarySetup(context: TestContext) {
   context.after(() => rm(directory, { recursive: true, force: true }))
   const databasePath = path.join(directory, 'argo.sqlite')
   const database = new Database(databasePath)
+  migrateDatabase(database)
   return { database, databasePath, store: createProjectStore(database) }
+}
+
+function migrateDatabase(database: Database): void {
+  migrate(drizzle({ client: database }), {
+    migrationsFolder: path.resolve(import.meta.dirname, '../../../../../../drizzle'),
+  })
 }
