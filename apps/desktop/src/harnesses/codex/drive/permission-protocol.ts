@@ -1,16 +1,23 @@
 import type { ManagedSession } from '@/harnesses/codex/drive/managed-session'
-import { protocolString, type RequestID, type WireMessage } from '@/harnesses/codex/drive/protocol'
+import {
+  protocolRecord,
+  protocolString,
+  type RequestID,
+  type WireMessage,
+} from '@/harnesses/codex/drive/protocol'
 
 export type PendingCodexPermission = {
   id: string
   requestId: RequestID
   sessionId: string
   description: string
+  additionalPermissions: Record<string, unknown> | null
 }
 
 const APPROVAL_METHODS = new Set([
   'item/commandExecution/requestApproval',
   'item/fileChange/requestApproval',
+  'item/permissions/requestApproval',
 ])
 
 export function readRequestApproval(message: WireMessage): PendingCodexPermission | undefined {
@@ -24,10 +31,26 @@ export function readRequestApproval(message: WireMessage): PendingCodexPermissio
     requestId: message.id,
     sessionId,
     description: typeof reason === 'string' && reason.length > 0 ? reason : message.method,
+    additionalPermissions:
+      message.method === 'item/permissions/requestApproval'
+        ? protocolRecord(message.params.permissions, 'Additional permissions')
+        : null,
   }
 }
 
-export function codexApprovalDecision(decision: 'allow' | 'deny' | 'allowForSession' | 'cancel') {
+export function codexApprovalDecision(
+  permission: PendingCodexPermission,
+  decision: 'allow' | 'deny' | 'allowForSession' | 'cancel',
+) {
+  if (permission.additionalPermissions !== null) {
+    return {
+      permissions:
+        decision === 'allow' || decision === 'allowForSession'
+          ? permission.additionalPermissions
+          : {},
+      scope: decision === 'allowForSession' ? 'session' : 'turn',
+    }
+  }
   return { decision: decision === 'allow' || decision === 'allowForSession' ? 'accept' : 'decline' }
 }
 
@@ -38,7 +61,7 @@ export function decidePendingPermission(
 ) {
   const pending = session?.pendingPermission
   if (!session || !pending || pending.id !== permissionId) return false
-  session.channel.respond(pending.requestId, codexApprovalDecision(decision))
+  session.channel.respond(pending.requestId, codexApprovalDecision(pending, decision))
   session.pendingPermission = null
   if (session.status === 'permission') session.status = 'running'
   return true

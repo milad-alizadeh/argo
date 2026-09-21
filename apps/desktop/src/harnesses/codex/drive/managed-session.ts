@@ -4,7 +4,10 @@ import type { CodexChannel } from '@/harnesses/codex/drive/codex-channel'
 import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
 import { codexLaunchEnvironment } from '@/harnesses/codex/drive/launch-environment'
 import { createLiveMessages, type LiveMessages } from '@/harnesses/codex/drive/live-messages'
-import type { PendingCodexPermission } from '@/harnesses/codex/drive/permission-protocol'
+import {
+  codexApprovalDecision,
+  type PendingCodexPermission,
+} from '@/harnesses/codex/drive/permission-protocol'
 import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
 import { codexNotificationRecorder } from '@/harnesses/codex/drive/record-notification'
 
@@ -54,6 +57,7 @@ export async function openManagedChannel(options: ManagedSessionOptions, cwd: st
       (value) => value,
     )
     opened.notify('initialized')
+    await opened.request('skills/list', { cwds: [cwd], forceReload: true }, (value) => value)
     return opened
   } catch (error) {
     channel?.close()
@@ -104,7 +108,7 @@ export function rememberManagedSession(options: {
         const timeout = setTimeout(() => {
           const current = sessions.get(sessionId)
           if (current?.pendingPermission?.requestId !== permission.requestId) return
-          current.channel.respond(permission.requestId, { decision: 'decline' })
+          current.channel.respond(permission.requestId, codexApprovalDecision(permission, 'deny'))
           current.pendingPermission = null
           if (current.status === 'permission') current.status = 'running'
         }, driver.permissionTimeoutMs ?? 86_400_000)

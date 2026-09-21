@@ -1824,6 +1824,56 @@ export const ThoughtWhileStatusIsUnknown: Story = {
   },
 }
 
+// Watched Sessions cannot always prove a live Turn, but their Feed and Roster still name the
+// same newest observed activity. The Feed must not replace it with a grouped command summary.
+export const CommandActivityWhileStatusIsUnknown: Story = {
+  args: {
+    feed: {
+      ...feed,
+      sessionId: 'external-command',
+      chainId: 'external-command',
+      revision: 'external-command-one',
+      rows: [
+        { shape: 'prose', id: 'external-prompt', role: 'user', text: 'Triage the report.' },
+        {
+          shape: 'tool-group',
+          id: 'external-commands',
+          label: 'Ran 7 commands',
+          calls: [
+            {
+              shape: 'tool',
+              id: 'external-command',
+              kind: 'command',
+              label: 'Ran rtk gh issue create',
+              lineCounts: null,
+              status: 'succeeded',
+              evidence: null,
+              text: 'rtk gh issue create',
+            },
+          ],
+        },
+      ],
+    },
+    liveFacts: {
+      ...LIVE_FACTS,
+      status: 'unknown',
+      activity: {
+        kind: 'command',
+        label: 'Ran rtk gh issue create',
+        open: false,
+        tool: 'Bash',
+        target: 'rtk gh issue create',
+      },
+    },
+    selectedSessionId: 'external-command',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('button', { name: 'Ran rtk gh issue create' })).toBeVisible()
+    await expect(canvas.queryByText('Ran 7 commands')).toBeNull()
+  },
+}
+
 // The Turn can end on a thought, as an interrupted one does; a thought never outlives its Turn.
 export const ThoughtLeavesWithItsTurn: Story = {
   render: () => <ThinkingFeed />,

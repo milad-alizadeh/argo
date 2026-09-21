@@ -116,16 +116,19 @@ cockpit's "needs input" signal. Not MCP elicitation: `codex mcp-server` never ra
 gate has two clocks and Argo's is the shorter, so the hook's own timeout stands behind it. The
 app-server has none at all: an approval nobody answers holds the Turn open for ever
 (openai/codex#11816, and a 60s hold sat open in the #547 spike). So the adapter imposes its own
-deadline, answers `decline` when it runs out, and publishes the `PermissionExpiry` — the same
+deadline, refuses the request when it runs out, and publishes the `PermissionExpiry` — the same
 DIRECT reading the `claude` gate publishes, arrived at with no second clock to fall back on.
 
 **Argo sends two of the four decision words**, `accept` and `decline`, and nothing else.
 `acceptForSession` would make the SERVER stop asking with no way to take that back, so a standing
 allow (#572) is held on Argo's side instead, where a revocation has something to revoke. `cancel`
-would interrupt the Turn as well as refuse the action, which is not what a Deny means. The
-server's third approval, `item/permissions/requestApproval`, answers with a permission profile
-rather than a decision word — it is refused as unsupported, because the cockpit has no control
-that produces one and a shape guessed at is worse than a refusal.
+would interrupt the Turn as well as refuse the action, which is not what a Deny means.
+
+**The third approval has a profile response, not a decision word.** `item/permissions/requestApproval`
+carries a requested permission profile. Argo shows it in the existing Permission tray. Allow returns
+the exact profile with `scope: "turn"`. Allow for session uses `scope: "session"`. Deny and expiry
+return an empty profile with `scope: "turn"`. Argo does not construct a profile itself, and generic
+MCP elicitation stays outside this adapter.
 
 **A patch prompt joins its own diff.** `item/fileChange/requestApproval` carries `itemId`,
 `threadId`, `turnId`, `reason` and `grantRoot` — no content. What the patch would write arrives

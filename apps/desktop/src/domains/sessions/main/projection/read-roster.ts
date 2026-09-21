@@ -31,7 +31,7 @@ async function discoverFromSource(
       ...discovery,
       rows: discovery.rows.map((row) => ({
         ...row,
-        locked: row.locked === true || isLockedElsewhere(row.id),
+        locked: row.locked === true || (row.posture === 'external' && isLockedElsewhere(row.id)),
       })),
     }
   } catch (error) {

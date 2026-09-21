@@ -50,10 +50,35 @@ function responses(message: TranscriptMessage, agents: Agents): SubagentEvent[] 
   })
 }
 
+function subagentResponseRecords(
+  record: TranscriptRecord,
+  agents: Agents,
+): TranscriptRecord[] | null {
+  if (record.kind === 'subagent' && record.event === 'responded') {
+    const call = agents.get(record.subagentId)
+    if (call !== undefined) agents.close(call.id)
+    return call === undefined && agents.hasSpawned(record.subagentId) ? [] : [record]
+  }
+  if (record.kind !== 'background-task') return null
+  const call = agents.get(record.callId)
+  if (call === undefined) return agents.hasSpawned(record.callId) ? [] : null
+  agents.close(call.id)
+  return [
+    responded({
+      call,
+      timestamp: record.timestamp,
+      startedAt: agents.startedAt(call.id),
+      ending: { state: record.state, reply: null },
+    }),
+  ]
+}
+
 export function readingSpawnedAgents(records: TranscriptRecord[]): TranscriptRecord[] {
   const agents = new Agents()
   return records.flatMap((record): TranscriptRecord[] => {
-    if (record.kind !== 'message') return [record]
+    if (record.kind !== 'message') {
+      return subagentResponseRecords(record, agents) ?? [record]
+    }
     const spawns = record.toolCalls.filter(
       (call): call is Control => call.kind === 'subagent-control' && call.intent === 'start',
     )
