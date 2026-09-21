@@ -54,7 +54,7 @@ function CollapsedSidebarControl({ onToggle, toggleRef }: SidebarToggleProps) {
   return (
     <div
       data-component="CockpitCollapsedSidebarControl"
-      className="absolute top-0 left-(--spacing-shell-gutter) z-20 flex h-(--size-chrome-bar) items-center"
+      className="no-drag-region absolute top-0 left-(--spacing-shell-gutter) z-20 flex h-(--size-chrome-bar) items-center"
     >
       <Button
         aria-label={t('shell.openSidebar')}
