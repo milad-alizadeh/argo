@@ -20,12 +20,14 @@ import {
 
 export function feedContent({
   active,
+  initialScrollPosition,
   settled,
   isRunning,
   stalled,
   posture,
   onRetry,
   onJumpToLatestChange,
+  onScrollPositionChange,
   DrawnRow,
   revealsFor,
   streamingRowId,
@@ -33,12 +35,14 @@ export function feedContent({
   emptyText,
 }: {
   active: boolean
+  initialScrollPosition: number | null
   settled: ReturnType<typeof useSettledFeed>['settled']
   isRunning: boolean
   stalled: boolean
   posture: 'managed' | 'external' | null
   onRetry: () => void
   onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
+  onScrollPositionChange: (sessionId: string, position: number) => void
   DrawnRow: (props: DrawnRowProps) => ReactNode
   revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>
   streamingRowId: string | null
@@ -73,10 +77,12 @@ export function feedContent({
   return (
     <AnchoredFeed
       active={active}
+      initialScrollPosition={initialScrollPosition}
       rows={settled.rows}
       settled={settled}
       FeedRow={DrawnRow}
       onJumpToLatestChange={onJumpToLatestChange}
+      onScrollPositionChange={onScrollPositionChange}
       revealsFor={revealsFor}
       streamingRowId={streamingRowId}
       tail={tail}

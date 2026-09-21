@@ -80,6 +80,7 @@ async function codexReader(context: Context): Promise<Reader> {
     turnId: null,
     compactionStartedAt: null,
     pendingQuestion: null,
+    pendingPermission: null,
   }
   sessions.set(SESSION, held)
   recordCodexNotification({

@@ -1,4 +1,5 @@
 import { codexTurnSetupSchema } from '@/domains/sessions/contract/codex-turn-setup'
+import type { Permission } from '@/domains/sessions/contract/drive/permission'
 import type {
   DriveFailure,
   SessionDriveAdapter,
@@ -20,6 +21,12 @@ const FAILURE_MESSAGES = {
 // the caller's own code. The exact wording still needs a live repro against a held Session (#2053)
 // to replace this heuristic with the real one.
 const ACTIVE_ELSEWHERE = /already active|in use|held by|another (client|session|instance)/i
+
+function toPermission(
+  permission: NonNullable<ReturnType<CodexSessionDrive['pendingPermission']>>,
+): Permission {
+  return { id: permission.id, sessionId: permission.sessionId, description: permission.description }
+}
 
 function failureOf(error: unknown, fallback: DriveFailure['error']): DriveFailure {
   if (error instanceof CodexSessionDriverError) return { error: error.code }
@@ -81,13 +88,14 @@ export function createCodexDriveAdapter(driver: CodexSessionDrive): SessionDrive
     async handoff() {
       return { error: 'not-drivable' }
     },
-    // Codex Permissions are #1841, still out of scope: there is never a pending Permission to
-    // read, and a decision always answers that it is no longer waiting.
-    async readPermission() {
-      return { permission: null }
+    async readPermission({ sessionId }) {
+      const permission = driver.pendingPermission(sessionId)
+      return { permission: permission === null ? null : toPermission(permission) }
     },
-    async decidePermission() {
-      return { error: 'stale-permission' }
+    async decidePermission({ sessionId, permissionId, decision }) {
+      return driver.decidePermission(sessionId, permissionId, decision)
+        ? { ok: true }
+        : { error: 'stale-permission' }
     },
     async decideQuestion({ sessionId, questionId, answers }) {
       try {

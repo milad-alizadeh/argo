@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef } from 'react'
 export function useInitialFeedPosition({
   active,
   following,
+  initialScrollPosition,
   onPositioned,
   sessionId,
   viewport,
@@ -11,6 +12,7 @@ export function useInitialFeedPosition({
 }: {
   active: boolean
   following: boolean
+  initialScrollPosition: number | null
   onPositioned: () => void
   sessionId: string
   viewport: HTMLElement | null
@@ -24,9 +26,10 @@ export function useInitialFeedPosition({
     // Apply the opening position in layout so a delayed initial jump cannot
     // override a reader who has already moved into history. This also lets
     // StrictMode safely skip a position that already happened.
-    virtualizer.scrollToEnd()
+    if (initialScrollPosition === null) virtualizer.scrollToEnd()
+    else viewport.scrollTop = initialScrollPosition
     onPositioned()
-  }, [onPositioned, sessionId, viewport, virtualizer])
+  }, [initialScrollPosition, onPositioned, sessionId, viewport, virtualizer])
   useLayoutEffect(() => {
     const returned = active && !wasActive.current
     wasActive.current = active
