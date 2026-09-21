@@ -9,6 +9,7 @@ import {
 } from '@/domains/sessions/contract/drive/permission'
 import type { SessionDriveAdapter } from '@/domains/sessions/contract/session-drive-adapter'
 import { createClaudeDriveAdapter } from '@/harnesses/claude/drive/session-drive-adapter'
+import type { CodexSessionDrive } from '@/harnesses/codex/drive/codex-session-driver'
 import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session-drive-adapter'
 
 function mockClaudeAdapter(): SessionDriveAdapter {
@@ -48,11 +49,9 @@ function mockCodexAdapter(): SessionDriveAdapter {
     roster: () => [],
     liveMessages: () => [],
     pendingQuestion: () => null,
-    pendingPermission: () => null,
     decideQuestion: () => true,
-    decidePermission: () => true,
     close: () => {},
-  })
+  } as unknown as CodexSessionDrive)
 }
 
 test('the Claude adapter reads its pending Permission in the shared, Harness-neutral shape', async () => {

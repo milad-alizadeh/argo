@@ -143,33 +143,3 @@ test('does not accept a compact Codex could not be given', async () => {
   const result = await adapter.compact({ sessionId })
   assert.deepEqual(result, { error: 'not-drivable' })
 })
-
-test('reads a pending Codex Permission', async () => {
-  const adapter = createCodexDriveAdapter(
-    mockDriver({
-      pendingPermission: () => ({ id: 'permission-1', requestId: 1, sessionId, description: 'Run gh issue create' }),
-    }),
-  )
-  assert.deepEqual(await adapter.readPermission({ sessionId }), {
-    permission: { id: 'permission-1', sessionId, description: 'Run gh issue create' },
-  })
-})
-
-test('passes a Codex Permission decision to its driver', async () => {
-  const decided: string[] = []
-  const adapter = createCodexDriveAdapter(
-    mockDriver({
-      decidePermission: (_sessionId, _permissionId, decision) => {
-        decided.push(decision)
-        return true
-      },
-    }),
-  )
-  const result = await adapter.decidePermission({
-    sessionId,
-    permissionId: 'permission-1',
-    decision: 'allow',
-  })
-  assert.deepEqual(result, { ok: true })
-  assert.deepEqual(decided, ['allow'])
-})

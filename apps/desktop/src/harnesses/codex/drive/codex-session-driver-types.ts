@@ -4,8 +4,8 @@ import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import type { CodexProcess } from '@/harnesses/codex/drive/codex-channel'
 import type { LiveMessage, LiveMessages } from '@/harnesses/codex/drive/live-messages'
-import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
 import type { PendingCodexPermission } from '@/harnesses/codex/drive/permission-protocol'
+import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
 
 export type { CodexProcess, LiveMessage, LiveMessages }
 
