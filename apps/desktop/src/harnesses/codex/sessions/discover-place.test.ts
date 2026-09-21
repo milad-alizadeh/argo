@@ -61,6 +61,14 @@ async function listedSessions(root: string) {
   return reply.sessions
 }
 
+async function assertSession(root: string, expected: { id: string; cwd: string; branch: string }) {
+  const sessions = await listedSessions(root)
+  assert.deepEqual(
+    sessions.map(({ id, cwd, branch }) => ({ id, cwd, branch })),
+    [expected],
+  )
+}
+
 // Codex writes the folder and branch a thread runs in on its `session_meta` record only, and a
 // Project scopes the Roster by that folder (#2204); the branch is what names the Ticket.
 test('reads the folder and branch a Codex Session runs in from its session_meta record', async (context) => {
@@ -101,17 +109,11 @@ test('reads the folder and branch a Codex Session runs in from its session_meta 
     ],
   })
 
-  const sessions = await listedSessions(root)
-  assert.deepEqual(
-    sessions.map(({ id, cwd, branch }) => ({ id, cwd, branch })),
-    [
-      {
-        id: sessionId,
-        cwd: '/Users/x/proj/.claude/worktrees/ticket-2376-session search',
-        branch: 'argo/#2428-issue-completion',
-      },
-    ],
-  )
+  await assertSession(root, {
+    id: sessionId,
+    cwd: '/Users/x/proj/.claude/worktrees/ticket-2376-session search',
+    branch: 'argo/#2428-issue-completion',
+  })
 })
 
 test('reads a desktop Codex custom tool worktree as the Session location', async (context) => {
@@ -144,9 +146,5 @@ test('reads a desktop Codex custom tool worktree as the Session location', async
     ],
   })
 
-  const sessions = await listedSessions(root)
-  assert.equal(sessions.length, 1)
-  assert.equal(sessions[0]?.id, sessionId)
-  assert.equal(sessions[0]?.cwd, worktree)
-  assert.equal(sessions[0]?.branch, 'main')
+  await assertSession(root, { id: sessionId, cwd: worktree, branch: 'main' })
 })
