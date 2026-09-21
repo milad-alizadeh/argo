@@ -1,19 +1,23 @@
-import { useVirtualizer } from '@tanstack/react-virtual'
 import type { ReactNode } from 'react'
 import { type FeedRowComponent, FeedViewport } from '@/domains/sessions/renderer/feed/feed-viewport'
 import type { Reveal } from '@/domains/sessions/renderer/feed/reveal'
+import { useAnchoredVirtualizer } from '@/domains/sessions/renderer/feed/use-anchored-virtualizer'
+import { useFeedPrompt } from '@/domains/sessions/renderer/feed/use-feed-prompt'
 import { useFeedTailFollow } from '@/domains/sessions/renderer/feed/use-feed-tail-follow'
 import { useFeedViewport } from '@/domains/sessions/renderer/feed/use-feed-viewport'
 import { useInitialFeedPosition } from '@/domains/sessions/renderer/feed/use-initial-feed-position'
 import { useJumpToLatest } from '@/domains/sessions/renderer/feed/use-jump-to-latest'
-import { usePromptAtTop, usePromptHold } from '@/domains/sessions/renderer/feed/use-prompt-at-top'
+import { usePromptHold } from '@/domains/sessions/renderer/feed/use-prompt-at-top'
+import { useScrollPositionSnapshot } from '@/domains/sessions/renderer/feed/use-scroll-position-snapshot'
 import type { Settled } from '@/domains/sessions/renderer/feed/use-settled-feed'
 import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
 
 type AnchoredFeedProps = {
   active: boolean
   FeedRow: FeedRowComponent
+  initialScrollPosition: number | null
   onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
+  onScrollPositionChange: (sessionId: string, position: number) => void
   rows: readonly SessionFeedRow[]
   settled: Settled
   revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>
@@ -22,16 +26,13 @@ type AnchoredFeedProps = {
   tail: ReactNode
 }
 
-const FEED_ROW_ESTIMATE_PX = 96
-const FEED_OVERSCAN = 8
-const TAIL_THRESHOLD_PX = 80
-const TAIL_KEY = 'feed-tail'
-
 // TanStack chat pattern: https://tanstack.com/virtual/latest/docs/chat.
 export function AnchoredFeed({
   active,
   FeedRow,
+  initialScrollPosition,
   onJumpToLatestChange,
+  onScrollPositionChange,
   rows,
   settled,
   revealsFor,
@@ -41,42 +42,32 @@ export function AnchoredFeed({
   const { attachViewport, padding, viewport } = useFeedViewport()
   const tailFollow = useFeedTailFollow(settled.reading.sessionId, { active, viewport })
   const { following, update: updatePromptHold } = usePromptHold(tailFollow.shouldFollow)
-  const virtualizer = useVirtualizer({
-    // End anchoring is only correct while the reader is following the tail.
-    // While they are reading history, retain their actual reading position as
-    // rows append instead of resolving the previous end anchor.
-    anchorTo: following ? 'end' : 'start',
-    count: rows.length + (tail === null ? 0 : 1),
-    estimateSize: () => FEED_ROW_ESTIMATE_PX,
-    // Only follow an append while the reader is already at the tail. Keeping
-    // this enabled while they are inspecting history makes a streamed row pull
-    // them back to the end before the Jump to latest control can be used.
-    followOnAppend: following ? 'smooth' : false,
-    getItemKey: (index) => (index === rows.length ? TAIL_KEY : feedRowAt(rows, index).id),
-    getScrollElement: () => viewport,
+  const virtualizer = useAnchoredVirtualizer({
+    following,
+    rows,
+    tail,
+    viewport,
+    padding,
     onChange: tailFollow.onChange,
-    overscan: FEED_OVERSCAN,
-    paddingStart: padding.start,
-    paddingEnd: padding.end,
-    scrollPaddingStart: padding.start,
-    scrollEndThreshold: TAIL_THRESHOLD_PX,
   })
   useInitialFeedPosition({
     active,
     following: tailFollow.atLatest,
+    initialScrollPosition,
     onPositioned: tailFollow.markInitiallyPositioned,
     sessionId: settled.reading.sessionId,
     viewport,
     virtualizer,
   })
-  const promptIndex = usePromptAtTop({
+  useScrollPositionSnapshot(settled.reading.sessionId, viewport, onScrollPositionChange)
+  const promptIndex = useFeedPrompt({
     positioned: !tailFollow.awaitingInitialPosition,
     rows,
     sessionId: settled.reading.sessionId,
     virtualizer,
+    updatePromptHold,
+    paddingStart: padding.start,
   })
-  updatePromptHold(virtualizer, promptIndex, padding.start)
-  const reveals = revealsFor(settled)
   useJumpToLatest({
     active,
     onJumpToLatestChange,
@@ -91,7 +82,7 @@ export function AnchoredFeed({
         FeedRow={FeedRow}
         gap={padding.start}
         promptIndex={promptIndex}
-        reveals={reveals}
+        reveals={revealsFor(settled)}
         rows={rows}
         setViewport={attachViewport}
         settled={settled}
@@ -101,10 +92,4 @@ export function AnchoredFeed({
       />
     </div>
   )
-}
-
-function feedRowAt(rows: readonly SessionFeedRow[], index: number) {
-  const row = rows[index]
-  if (row === undefined) throw new RangeError(`Feed row ${index} is outside the virtualizer range.`)
-  return row
 }
