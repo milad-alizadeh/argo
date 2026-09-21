@@ -59,10 +59,11 @@ export function ComposerToolbar({
         {isRunning ? (
           <Button
             aria-label={t('composer.interrupt')}
-            disabled={isInterrupting}
+            disabled={isInterrupting || onInterrupt === undefined}
             onClick={() => {
+              if (onInterrupt === undefined) return
               setInterrupting(true)
-              void onInterrupt?.().finally(() => setInterrupting(false))
+              void onInterrupt().finally(() => setInterrupting(false))
             }}
             ref={interruptRef}
             size="icon-sm"

@@ -82,6 +82,14 @@ test('does not accept a Turn Codex could not be given', async () => {
   assert.deepEqual(result, { error: 'not-drivable' })
 })
 
+test('does not accept a Steer when the Codex driver cannot steer', async () => {
+  const adapter = createCodexDriveAdapter(mockDriver())
+
+  assert.deepEqual(await adapter.steer?.({ attachments: [], sessionId, prompt: 'Continue.' }), {
+    error: 'not-drivable',
+  })
+})
+
 test('refuses a malformed Turn setup before it reaches the driver', async () => {
   const setup = { model: 'gpt-5.6-luna', effort: 'ultra', mode: 'workspace-write' }
   const adapter = createCodexDriveAdapter(mockDriver())

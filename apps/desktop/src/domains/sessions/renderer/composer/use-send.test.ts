@@ -49,6 +49,18 @@ test('a Send with no Turn running calls onSend and never queues', async () => {
   expect(calls.addPendingTurn).toEqual([])
 })
 
+test('a rejected Send restores its draft', async () => {
+  const restored: string[] = []
+  const { input } = fixture({
+    onSend: async () => false,
+    restoreDraft: (draft) => restored.push(draft),
+  })
+
+  await performSend(input)
+
+  expect(restored).toEqual(['hello'])
+})
+
 test('an empty draft with no attachments does neither', async () => {
   const { calls, input } = fixture({ draft: '   ', isRunning: false })
   await performSend(input)

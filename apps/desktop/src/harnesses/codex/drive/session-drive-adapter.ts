@@ -36,8 +36,9 @@ async function steer(options: {
   attachments: SessionAttachmentInput[]
 }) {
   const { driver, sessionId, prompt, attachments } = options
+  if (driver.steer === undefined) return { error: 'not-drivable' } as const
   try {
-    await driver.steer?.({ sessionId, text: prompt, attachments })
+    await driver.steer({ sessionId, text: prompt, attachments })
     return { ok: true } as const
   } catch (error) {
     return failureOf(error, 'not-drivable')

@@ -39,6 +39,7 @@ function useComposerDraft(sessionId: string, editorRef: RefObject<LexicalEditor 
   )
   const restoreDraft = useCallback(
     (text: string, editor = editorRef.current) => {
+      if ((useComposerStore.getState().drafts[sessionId] ?? '') !== '') return
       editor?.update(() => $convertFromMarkdownString(text, TRANSFORMERS))
       setDraft(sessionId, text)
     },
