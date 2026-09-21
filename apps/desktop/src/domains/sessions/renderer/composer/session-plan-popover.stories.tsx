@@ -34,7 +34,7 @@ async function hoversPlan(canvasElement: HTMLElement) {
   const canvas = within(canvasElement)
   const trigger = canvas.getByRole('button', { name: 'Open task plan' })
   await userEvent.hover(trigger)
-  await expect(trigger).toHaveAttribute('aria-expanded', 'true')
+  await waitFor(() => expect(trigger).toHaveAttribute('aria-expanded', 'true'))
   return trigger
 }
 
