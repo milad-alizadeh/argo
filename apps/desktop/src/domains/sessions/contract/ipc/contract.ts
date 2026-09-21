@@ -60,6 +60,18 @@ export const sessionSendRequestSchema = z
   .refine(({ prompt, attachments }) => prompt.trim().length > 0 || (attachments?.length ?? 0) > 0)
 export type SessionSendRequest = z.infer<typeof sessionSendRequestSchema>
 
+export const sessionSteerRequestSchema = z
+  .strictObject({
+    version: z.literal(1),
+    type: z.literal('session.steer'),
+    requestId: identifierSchema,
+    sessionId: identifierSchema,
+    prompt: z.string(),
+    attachments: z.array(sessionAttachmentInputSchema).optional(),
+  })
+  .refine(({ prompt, attachments }) => prompt.trim().length > 0 || (attachments?.length ?? 0) > 0)
+export type SessionSteerRequest = z.infer<typeof sessionSteerRequestSchema>
+
 export const sessionInterruptRequestSchema = z.strictObject({
   version: z.literal(1),
   type: z.literal('session.interrupt'),

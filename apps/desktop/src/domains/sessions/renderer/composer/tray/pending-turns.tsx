@@ -77,11 +77,13 @@ function useQueueAnimations(
 export function PendingTurns({
   turns,
   onEdit,
+  onSteer,
   onRemove,
   onReorder,
 }: {
   turns: PendingTurn[]
   onEdit: (turn: PendingTurn) => void
+  onSteer: (turn: PendingTurn) => Promise<boolean>
   onRemove: (id: string) => void
   onReorder: (sourceId: string, targetId: string) => void
 }) {
@@ -112,7 +114,12 @@ export function PendingTurns({
             <Route aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
             <span className="min-w-0 flex-1 truncate type-body">{turn.text}</span>
             <span className="sr-only">{t('composer.queued.reorder')}</span>
-            <PendingTurnActions onEdit={onEdit} onRemove={removeTurn} turn={turn} />
+            <PendingTurnActions
+              onEdit={onEdit}
+              onRemove={removeTurn}
+              onSteer={onSteer}
+              turn={turn}
+            />
           </li>
         ))}
       </ul>

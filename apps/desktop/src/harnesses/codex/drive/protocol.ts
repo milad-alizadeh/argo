@@ -23,6 +23,7 @@ export type RequestParams = {
     approvalPolicy: 'on-request' | 'never'
     sandboxPolicy: { type: 'readOnly' | 'workspaceWrite' | 'dangerFullAccess' }
   }
+  'turn/steer': { threadId: string; input: Input[]; expectedTurnId: string }
   'turn/interrupt': { threadId: string; turnId: string }
   'thread/name/set': { threadId: string; name: string }
   'thread/compact/start': { threadId: string }
@@ -112,6 +113,10 @@ function readTurn(value: unknown): Turn {
 
 export function readStartedTurn(value: unknown): Turn {
   return readTurn(protocolRecord(value, 'Turn start result').turn)
+}
+
+export function readSteeredTurn(value: unknown): string {
+  return protocolString(protocolRecord(value, 'Turn steer result').turnId, 'Steered Turn ID')
 }
 
 export function readCompletedTurn(message: WireMessage) {

@@ -51,6 +51,7 @@ type ComposerFormProps = {
   onEdit: (turn: ReturnType<typeof usePendingTurns>['pendingTurns'][number]) => void
   onInterrupt?: () => Promise<boolean>
   onRemove: (id: string) => void
+  onSteer: (turn: ReturnType<typeof usePendingTurns>['pendingTurns'][number]) => Promise<boolean>
   onRemoveAttachment: (id: string) => void
   onReorder: (sourceId: string, targetId: string) => void
   onSend: () => void
@@ -85,6 +86,7 @@ export function ComposerForm({
   onEdit,
   onInterrupt,
   onRemove,
+  onSteer,
   onRemoveAttachment,
   onReorder,
   onSend,
@@ -111,6 +113,7 @@ export function ComposerForm({
           onEdit={onEdit}
           onRemove={onRemove}
           onReorder={onReorder}
+          onSteer={onSteer}
         />
       </AttachmentTray>
       <ComposerCard

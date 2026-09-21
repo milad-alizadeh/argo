@@ -27,6 +27,11 @@ export type SessionDriveAdapter = {
     setup: unknown
     attachments: SessionAttachmentInput[]
   }): Promise<DriveOk | DriveFailure>
+  steer?(request: {
+    sessionId: string
+    prompt: string
+    attachments: SessionAttachmentInput[]
+  }): Promise<DriveOk | DriveFailure>
   interrupt(request: { sessionId: string }): Promise<DriveOk | DriveFailure>
   compact(request: { sessionId: string }): Promise<DriveOk | DriveFailure>
   handoff(request: { sessionId: string }): Promise<DriveOk | DriveFailure>

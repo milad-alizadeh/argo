@@ -22,6 +22,11 @@ export type CodexSessionDriver = {
     setup: CodexTurnSetup | undefined
     attachments: SessionAttachmentInput[]
   }) => Promise<void>
+  steer?: (request: {
+    sessionId: string
+    text: string
+    attachments: SessionAttachmentInput[]
+  }) => Promise<void>
   interrupt: (sessionId: string) => Promise<void>
   compact: (sessionId: string) => Promise<void>
   rename: (sessionId: string, name: string) => Promise<string>
@@ -44,6 +49,7 @@ export type CodexSessionDrive = Pick<
   CodexSessionDriver,
   | 'start'
   | 'send'
+  | 'steer'
   | 'interrupt'
   | 'compact'
   | 'rename'

@@ -5,6 +5,7 @@ import { ComposerForm } from '@/domains/sessions/renderer/composer/composer-form
 import { activeReference } from '@/domains/sessions/renderer/composer/references/composer-reference-menu'
 import type { HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
 import './composer-content.css'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import type { TurnSetupControlProps } from '@/domains/sessions/renderer/composer/run-setup-menu'
 import type { Send } from '@/domains/sessions/renderer/composer/use-send'
 
@@ -21,6 +22,7 @@ export type SessionComposerProps = {
   onInterrupt?: () => Promise<boolean>
   sessionId: string
   onSend: Send
+  onSteer?: (text: string, attachments: SessionAttachmentInput[]) => Promise<boolean>
   permissionPrompt?: ReactNode
   plan?: SessionPlan | null
   harness?: HarnessControl | null
@@ -40,13 +42,14 @@ export function SessionComposer({
   onInterrupt,
   sessionId,
   onSend,
+  onSteer,
   permissionPrompt,
   plan = null,
   harness = null,
   setup = null,
 }: SessionComposerProps) {
   const [contextPickerOpen, setContextPickerOpen] = useState(false)
-  const state = useComposer({ identity: sessionId, isRunning, send: onSend, setup })
+  const state = useComposer({ identity: sessionId, isRunning, send: onSend, steer: onSteer, setup })
   useEffect(() => {
     if (activeReference(state.draft)?.trigger === '@') setContextPickerOpen(true)
   }, [state.draft])
@@ -73,6 +76,7 @@ export function SessionComposer({
       onHandoff={onHandoff}
       onInterrupt={onInterrupt}
       onRemove={state.removePendingTurn}
+      onSteer={state.steerPendingTurn}
       onRemoveAttachment={state.removeAttachment}
       onReorder={state.reorderPendingTurn}
       onSend={() => {

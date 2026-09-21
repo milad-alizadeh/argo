@@ -89,6 +89,7 @@ export const AboveTheQueue: Story = {
         onEdit={() => {}}
         onRemove={() => {}}
         onReorder={() => {}}
+        onSteer={async () => false}
       />
     </>
   ),
@@ -144,6 +145,7 @@ export const HandsFocusOn: Story = {
           onEdit={() => {}}
           onRemove={() => {}}
           onReorder={() => {}}
+          onSteer={async () => false}
         />
       </>
     )

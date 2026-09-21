@@ -31,7 +31,7 @@ async function ownedAdapter(context: OwnerContext, sessionId: string): Promise<O
   const adapter = context.adapters[harness]
   return adapter === undefined ? undefined : { adapter, harness }
 }
-async function ownedAccepted<T>(
+export async function ownedAccepted<T>(
   context: OwnerContext,
   request: { sessionId: string; requestId: string },
   run: (owned: Owned) => Promise<{ error: DriveFailureCode } | T>,
