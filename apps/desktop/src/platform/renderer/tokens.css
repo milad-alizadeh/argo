@@ -434,7 +434,7 @@
   --color-off: oklch(0.72 0 0);
   /* State marks need 3:1 contrast on the Roster's white ground, where the design's dark-first
      inks are too light to remain distinguishable (#2526). */
-  --color-active: #0b7a57;
+  --color-active: #159b70;
   --color-warn: #a16207;
   --color-plan: #2563eb;
   --color-plan-track: rgb(0 0 0 / 0.1);
