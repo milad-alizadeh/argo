@@ -1,11 +1,12 @@
 import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
 import { isIdentifier } from '@/shared/validation'
 
-// What a `SubAgentActivity` kind reports as a Subagent event; `completed` is the only one that ends it.
+// What a `SubAgentActivity` kind reports as a Subagent event.
 const ACTIVITY_EVENTS = {
-  started: 'started',
-  interacted: 'messaged',
-  completed: 'responded',
+  started: { event: 'started' },
+  interacted: { event: 'messaged' },
+  completed: { event: 'responded', state: 'completed' },
+  interrupted: { event: 'responded', state: 'interrupted' },
 } as const
 
 export function agentLabel(agentPath: string): string | null {
@@ -25,7 +26,7 @@ export function subagentActivity(
   if (typeof item.agent_thread_id !== 'string' || !isIdentifier(item.agent_thread_id)) return null
   if (typeof item.agent_path !== 'string') return null
   if (typeof item.kind !== 'string' || !Object.hasOwn(ACTIVITY_EVENTS, item.kind)) return null
-  const event = ACTIVITY_EVENTS[item.kind as keyof typeof ACTIVITY_EVENTS]
+  const activity = ACTIVITY_EVENTS[item.kind as keyof typeof ACTIVITY_EVENTS]
   const name = agentLabel(item.agent_path)
   const base = {
     kind: 'subagent' as const,
@@ -34,5 +35,7 @@ export function subagentActivity(
     subagentId: item.agent_thread_id,
     ...(name === null ? {} : { name }),
   }
-  return event === 'responded' ? { ...base, event, state: 'completed' } : { ...base, event }
+  return 'state' in activity
+    ? { ...base, event: activity.event, state: activity.state }
+    : { ...base, event: activity.event }
 }

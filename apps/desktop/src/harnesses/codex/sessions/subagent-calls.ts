@@ -41,6 +41,13 @@ export function readingSubagentCalls(records: TranscriptRecord[]): TranscriptRec
     const call = record.kind === 'trace' ? record.subagentCall : undefined
     if (call?.intent === 'start' && call.model !== null) models.set(call.callId, call.model)
   }
+  const nativeInterruptions = new Set(
+    records.flatMap((record) =>
+      record.kind === 'subagent' && record.event === 'responded' && record.state === 'interrupted'
+        ? [record.subagentId]
+        : [],
+    ),
+  )
   const threads = new Map<string, string>()
   const startedAt = new Map<string, string | null>()
   return records.flatMap((record): TranscriptRecord[] => {
@@ -50,7 +57,9 @@ export function readingSubagentCalls(records: TranscriptRecord[]): TranscriptRec
       return [subagentWithFacts(record, models, startedAt)]
     }
     const call = record.kind === 'trace' ? record.subagentCall : undefined
-    return call?.intent === 'stop' ? [record, ...interrupted(call, threads)] : [record]
+    return call?.intent === 'stop'
+      ? [record, ...interrupted(call, threads, nativeInterruptions)]
+      : [record]
   })
 }
 
@@ -71,10 +80,14 @@ function subagentWithFacts(
   }
 }
 
-function interrupted(call: SubagentCall, threads: Map<string, string>): TranscriptRecord[] {
+function interrupted(
+  call: SubagentCall,
+  threads: Map<string, string>,
+  nativeInterruptions: ReadonlySet<string>,
+): TranscriptRecord[] {
   const label = call.target === null ? null : agentLabel(call.target)
   const subagentId = label === null ? undefined : threads.get(label)
-  if (subagentId === undefined) return []
+  if (subagentId === undefined || nativeInterruptions.has(subagentId)) return []
   return [
     {
       kind: 'subagent',

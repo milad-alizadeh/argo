@@ -1603,9 +1603,9 @@ const thoughtDeliveredFeed = {
   ],
 } satisfies SessionFeed
 
-function ThinkingFeed() {
+function ThinkingFeed({ initialRunning = true }: { initialRunning?: boolean }) {
   const [current, setCurrent] = useState<SessionFeed>(thinkingFeed)
-  const [running, setRunning] = useState(true)
+  const [running, setRunning] = useState(initialRunning)
   return (
     <div className="flex h-dvh flex-col">
       <button type="button" onClick={() => setCurrent(thoughtDeliveredFeed)}>
@@ -1659,6 +1659,22 @@ export const ThoughtWhileThinking: Story = {
       const rows = drawnRows(canvasElement).map((row) => row.getAttribute('data-feed-row'))
       expect(rows.indexOf('thinking:activity')).toBe(rows.indexOf('thinking-reply') + 1)
     })
+  },
+}
+
+// Codex can write its reasoning summary before Argo receives the matching running report. The
+// available headline must not disappear during that short status gap.
+export const ThoughtWhileStatusIsUnknown: Story = {
+  render: () => <ThinkingFeed initialRunning={false} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() =>
+      expect(drawnRow(canvasElement, 'thinking:activity')).toHaveTextContent(
+        'Designing issue creation order and labeling',
+      ),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Deliver reply' }))
+    await waitFor(() => expect(drawnRow(canvasElement, 'thinking:activity')).toBeUndefined())
   },
 }
 
