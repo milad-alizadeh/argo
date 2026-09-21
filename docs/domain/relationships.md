@@ -7,7 +7,7 @@
   Account is the level a grant, a token and a revocation all sit at, and Connection is the level a
   provider *choice* and its health sit at.
 - **L1 triangle** (all optional): **Session—Ticket** (branchless-fallback assertion, else
-  derived), **Session—Delivery** (**`0..1` at a time**, N over a resume chain),
+  derived), **Session—Delivery** (**`0..1` at a time**, N over a native Session),
   **Delivery—Ticket** (join precedence, **user-assertable when unlinked**). Many-to-many
   holds only *across time*; at any instant a Session is on at most one branch → one Delivery.
 - **Agent tree**: **Session** *is* the root **Agent** (`parentId: null`); an **Agent** `0..N`
@@ -23,10 +23,10 @@
 - **Delivery detail**: **Delivery** `1—1` **Diff**, `0—N` **Review** (`0—N` **Finding**), `0—N`
   **Check**, and `1—N` **Gate** (per automatable step).
 - **Session** `0—N` **Outcome** (the `produces` link; each refs a typed target —
-  **Diff/Delivery** | **Ticket** | **artifact**). External sessions: none in v1.
-- **Session** `0..1` **session Terminal** (live PTY, managed-only) and `0—N` **MCP server**
-  (observed attribute, deferred); a **Workspace** additionally has `0—N` agent-less **scratch
-  Terminal**.
+  **Diff/Delivery** | **Ticket** | **artifact**). Watched Sessions: none in v1.
+- **Session** `0..1` **managed channel** (SDK or app-server, managed-only) and `0—N` **MCP server**
+  (observed attribute, deferred); a **Workspace** additionally has `0—N` agent-less scratch
+  **Terminal**.
 - **Person** (`me | other`) authors a **Review** and owns the teammate-PR distinction on a
   **Delivery**; drives "needs-you" attention.
 - **Honesty tier** — an attribute on *every* rendered fact (DIRECT / DERIVED / CONVENTION), not

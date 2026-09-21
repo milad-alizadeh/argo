@@ -32,7 +32,7 @@
     never re-read from disk, never updated by a later edit to the same file. This is what
     separates it from L4's **Diff** (branch-vs-base, git-addressed, current). One renderer draws
     both; only the feed's is bounded to a first hunk.
-  - A **`media`** result takes the transcript's **embedded bytes** as primary at the DIRECT tier
+  - A **`media`** result takes the vendor event's **embedded bytes** as primary at the DIRECT tier
     (what the agent actually looked at, and uninvalidatable); a **re-read of the path** is the
     fallback only, at the lower tier and labelled as the current file. Gated on the declared
     image **type**, not the tool's name. A result with no bytes renders as an honest absence,
@@ -47,12 +47,12 @@
   join key `branch` lives here** — Delivery is keyed by `Workspace.branch`. Node-scoped
   (ADR-0010): an Agent has **`0..1` owned** Workspace and otherwise **inherits its parent's** —
   a Subagent without its own worktree renders no second chip. DIRECT for a managed Agent,
-  DERIVED for external. Every owned Workspace branches from the Project's shared base ref.
+  DERIVED for watched. Every owned Workspace branches from the Project's shared base ref.
 - **Compaction** — a marker in an Agent's Turn sequence where history was condensed; the
-  resume-chain stitches across it.
+  native Session continues across it.
 - **Usage** — token/cost/context telemetry, DERIVED. Not a tree node — a fact on Turn +
   Session, **and on a Subagent as a whole**: a Subagent's turns run in a sidechain the parent
-  transcript does not attribute, so its spend is read off the delegating Tool Call's result, the
+  history may not attribute, so its spend is read off the delegating Tool Call's result, the
   only place it is ever reported. The Session roll-up sums both grains. **Cost is derived from
   an Argo-owned, versioned pricing table** — rebuildable owned-state, staleable on provider
   price changes.

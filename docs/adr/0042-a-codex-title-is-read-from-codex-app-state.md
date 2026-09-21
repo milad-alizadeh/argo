@@ -2,6 +2,9 @@
 
 Status: accepted · 2026-09-15
 
+> **Superseded by ADR-0047 · 2026-09-21:** Codex titles come from app-server. Argo no longer reads
+> `state_5.sqlite` or any other private Codex schema.
+
 Reopens closed #435, which said that a Codex title from SQLite needs its own ADR.
 
 ## Context

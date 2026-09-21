@@ -2,6 +2,9 @@
 
 Status: partially superseded (#182) · 2026-07-22
 
+> **Superseded in part by ADR-0047 · 2026-09-21:** the no-Session-kinds rule stands. Session
+> posture is now `managed | watched`, and identity is Harness plus native Session ID.
+
 > **Renamed by #881 · 2026-08-28:** the entity called **Work Item** below is now **Ticket**,
 > and the **Work Item provider** port is the **Ticket provider**. The wording here is left as it
 > was written; `docs/domain/rationale.md` → L1 carries why the word changed.

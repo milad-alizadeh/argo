@@ -99,43 +99,37 @@ silently empties for ordinary hand-named branches with no PR — the common case
 
 ## L2
 
-**`managed` is not extra spec over `external`.** External is the baseline: transcript-tailing is
-the floor for every session, and its DERIVED-liveness machinery is mandatory anyway for Argo's
-own sessions across a restart. Managed = external + PTY steering + CONVENTION channel.
+**`managed | watched` names channel ownership, not Session kind.** Vendor history is the floor for
+both postures. Managed adds an Argo-owned live channel. Watched means read-only now, not read-only
+forever. After restart, a Session becomes watched because the channel died; native resume can open
+a new managed channel (ADR-0047).
 
-**Orphaned is a posture, not a kind.** Adding a fourth stored classification would imply Argo
-could restore steering by writing a value down; it can't — the channel died with the process.
+**Native identity replaces resume-chain reconstruction.** A Harness and its native Session ID
+already name the conversation that its API can list, read, and resume. Rebuilding a second identity
+from files makes Argo responsible for vendor storage details and creates aliases that every store
+must preserve. A fork therefore has its own native ID and is a separate Session.
 
-**`starting` is a status because the SIGNAL is real, not because the wait is.** #585 declined to
-report a spawn's boot at all: the only fact on hand was "managed and nothing written yet", which
-has no end, and a wall-clock timer would have been a guess wearing an observation's clothes. What
-made it a term was Argo owning the PTY — the child's first bytes are DIRECT, and a claim with an
-end Argo witnessed is a state rather than a spinner (#587).
-
-**`running` is tier-gated because ONE window of it is a thing Argo did.** The rest of the status is
-a reading joining a record to a process by working directory and time window, which is DERIVED and
-stays so. But Argo performs the composer submit itself, so between that submit and the record
-answering it there is nothing to corroborate — the Turn is DIRECT for the same reason `starting` is
-(#1048). The window is deliberately no wider. Holding the claim across the whole Turn would need a
-rule for WHICH open Turn is Argo's, and the only one available reads a Turn typed at the dock
-terminal as one of ours — which is the guess #587 refused, arriving by a different door.
+**Status comes from the vendor boundary.** Managed actors know when their own start, Turn, gate,
+and close transitions occur. Watched Sessions use only vendor history and liveness. Process
+matching, file age, and unfinished records no longer stand in for liveness.
 
 **Entry is a fact about the process, not a kind of Session.** A `claude -p` run is one logical
-resume-chain and the root Agent — a Session by L2's own definition, and #1073 declined to carve out
-a second kind for it. What is true of it is narrower: nobody is at the terminal. That is a property
-of how the process was started, so it sits beside `cli` and `cwd` rather than beside
-`managed | external`, and it changes what the Roster DRAWS without changing what a Session IS.
+vendor Session and the root Agent, so #1073 declined to carve out a second kind for it. What is
+true of it is narrower: nobody is at the terminal. That is a property of how the process was
+started, so it sits beside `harness` and `cwd` rather than beside `managed | watched`, and it
+changes what the Roster draws without changing what a Session is.
 
 **And the folded row is not one either.** A row standing for 180 Sessions is not a Session, so
 #1073 named it in "Not domain entities" beside Cockpit and Roster rather than in L2 — it belongs to
 the projection, and nothing about it reaches `HubSession`. Two alternatives were on the table and
 were declined. **Hiding headless runs** (dropping them at `isPublished`) is cheaper and needs no
-name at all, but a headless run that FAILED would become invisible and its transcript unreachable
+name at all, but a headless run that FAILED would become invisible and its history unreachable
 from the cockpit — the Roster lying by omission about work that ran in this Project. **Admitting
 them and fixing only the naming** (#1072) is honest to L2 as written and needs no new concept, but
-leaves the Roster permanently ~55% SDK output: 328 transcripts in the argo Project's 7-day working
-set, at least 136 of them headless, and one caption loop burying the four Sessions being steered
-under fourteen visible rows. Folding keeps the evidence reachable and spends one row on it.
+leaves the Roster permanently dominated by headless SDK output. The earlier measured set contained
+328 Sessions in the Argo Project's seven-day working set, at least 136 of them headless, and one
+caption loop burying the four Sessions being steered under fourteen visible rows. Folding keeps the
+evidence reachable and spends one row on it.
 
 **`SessionFacts` dissolved.** Naming it as an entity would duplicate the homes its members
 already have (Workspace / Delivery / Session status) and invite drift. What is real is the
@@ -200,8 +194,8 @@ we observed. This is the same rule the DERIVED tier generalizes.
 lives in pre-commit hooks + prose. Reimplementing a local runner would create a second, weaker
 source of truth for the same question.
 
-**Outcome persists while Delivery doesn't** because a CONVENTION-tier outcome may never have
-existed in a transcript (ADR-0008) — there is nothing to re-derive it from.
+**Outcome persists while Delivery doesn't** because a CONVENTION-tier outcome may never exist in
+native vendor history (ADR-0008) — there is nothing to re-derive it from.
 
 ## Autonomy
 

@@ -3,6 +3,11 @@
 Status: accepted · 2026-08-11 · amended 2026-09-13 by #1842 (the trigger is the next Turn) ·
 amended 2026-09-14 by #2092, superseded in part by ADR-0040 (origin does not gate a resume)
 
+> **Superseded in part by ADR-0047 · 2026-09-21:** a Session now uses its Harness and native
+> vendor ID. Vendor history and liveness replace resume-chain reconstruction, transcript-tip
+> identity, transcript reads, and the ownership JSON ledger. The distinction between a temporary
+> live channel and a durable resumable Session remains.
+
 Supersedes one clause of `docs/domain/l2-session.md`: *"the PTY/steering channel dies with the
 owning process and cannot be re-adopted, so a `managed` session whose owner is gone demotes to
 **orphaned** — observation-only, steering unrecoverable."* The first half stands. The second is
