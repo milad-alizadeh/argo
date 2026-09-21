@@ -4,6 +4,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
+import { createProjectSetupRegistry } from '@/domains/projects/main/setup/persistence/project-setup-registry'
 import { createProjectStore } from '@/domains/projects/main/sqlite-store'
 import { SETUP_DOCUMENT_REVISION } from '../../../../test-fixtures/projects/setup-document.fixture'
 
@@ -70,6 +71,38 @@ test('keeps a setup checkpoint after the store reopens', async (context) => {
     documentRevision: SETUP_DOCUMENT_REVISION,
   })
   reopened.close()
+})
+
+test('restores a revisioned ProjectSetup actor from SQLite', async (context) => {
+  const databasePath = await temporaryDatabase(context)
+  const { store: first } = openStore(databasePath)
+  const setup = createProjectSetupRegistry(first)
+  setup.command({
+    commandId: 'finish-later',
+    event: { type: 'Defer' },
+    expectedRevision: 0,
+    projectId: 'project-1',
+  })
+  first.close()
+
+  const { store: reopenedStore } = openStore(databasePath)
+  const reopened = createProjectSetupRegistry(reopenedStore)
+  assert.deepEqual(reopened.snapshot('project-1'), {
+    projectId: 'project-1',
+    revision: 1,
+    screen: 'deferred',
+    manualSource: '',
+    attempt: null,
+    questions: [],
+    plan: null,
+    acceptedPlan: null,
+    progress: [],
+    finalDiff: null,
+    activeEffect: null,
+    recoveryMessage: null,
+    pendingApproval: null,
+  })
+  reopenedStore.close()
 })
 
 test('updates a Project path without discarding its setup checkpoint', async (context) => {

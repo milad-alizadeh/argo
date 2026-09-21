@@ -71,7 +71,12 @@ function neverCalled<T>(): T {
 async function domains(userData: string) {
   const rendererURL = RENDERER_URL
   const projectMock = createMockIpcWindow()
-  attachProjectBridge(projectMock.window, { projectData: userData, rendererURL })
+  Object.assign(projectMock.window, { once: () => undefined })
+  attachProjectBridge(projectMock.window, {
+    projects: neverCalled(),
+    rendererURL,
+    onboardingDriver: neverCalled(),
+  })
 
   const sessionMock = createMockIpcWindow()
   attachSessionBridge(sessionMock.window, { ...neverCalled<SessionContext>(), rendererURL })

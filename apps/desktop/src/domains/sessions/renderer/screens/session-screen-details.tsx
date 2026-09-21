@@ -4,9 +4,9 @@ import type { SessionErrorCode } from '@/domains/sessions/contract/ipc/contract'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import { COMPOSER_COLUMN } from '@/domains/sessions/renderer/composer/composer-form'
 import { SessionComposer } from '@/domains/sessions/renderer/composer/session-composer'
-import { PermissionPrompt } from '@/domains/sessions/renderer/composer/tray/permission-prompt'
 import type { HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
 import type { SessionRoster } from '@/domains/sessions/renderer/types'
+import { PermissionPrompt } from '@/platform/renderer/components/permission-prompt'
 import {
   Alert,
   AlertAction,

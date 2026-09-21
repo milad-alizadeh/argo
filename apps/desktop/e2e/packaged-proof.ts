@@ -56,7 +56,7 @@ export const test = base.extend<PackagedProofFixtures, PackagedProofWorkerFixtur
       await rm(root, { recursive: true, force: true })
     }
   },
-  setupBackend: ['production', { option: true }],
+  setupBackend: ['remote', { option: true }],
   setupDocument: async ({ setupBackend }, use) => {
     if (setupBackend === 'production') {
       await use(undefined)

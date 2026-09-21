@@ -1,6 +1,9 @@
 import { type ElectronApplication, _electron as electron, type Page } from 'playwright-core'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
-import { PROJECT_PROOF_STORE_ENV } from '../../src/domains/projects/main/proof-protocol'
+import {
+  PROJECT_PROOF_STORE_ENV,
+  SETUP_DOCUMENT_PROOF_URL_ENV,
+} from '../../src/domains/projects/main/proof-protocol'
 import {
   SESSION_CLAUDE_EXECUTABLE_ENV,
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
@@ -79,6 +82,9 @@ export async function createPackagedSessionHarness(request: {
       env: {
         ...launchEnvironment(run, launch),
         [PROJECT_PROOF_STORE_ENV]: fixture.userData,
+        ...(fixture.setupDocumentURL
+          ? { [SETUP_DOCUMENT_PROOF_URL_ENV]: fixture.setupDocumentURL }
+          : {}),
         [ACCEPTANCE_ENV]: '0',
       },
       timeout: backend.budgetMs,

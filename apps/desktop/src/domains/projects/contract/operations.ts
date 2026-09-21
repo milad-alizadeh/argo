@@ -2,14 +2,10 @@ import {
   projectErrorSchema,
   projectOpenedSchema,
   projectOpenRequestSchema,
-  projectSetupBeginRequestSchema,
-  projectSetupCancelledSchema,
-  projectSetupCancelRequestSchema,
-  projectSetupEditingSchema,
+  projectSetupCommandRequestSchema,
   projectSetupRequiredSchema,
-  projectSetupSaveRequestSchema,
-  projectSetupValidatedSchema,
-  projectSetupValidateRequestSchema,
+  projectSetupSnapshotRequestSchema,
+  projectSetupSnapshotSchema,
 } from '@/domains/projects/contract/contract'
 import {
   projectCancelledSchema,
@@ -32,29 +28,17 @@ export const PROJECT_OPERATIONS = {
     request: projectOpenRequestSchema,
     reply: projectOpenedSchema.or(projectSetupRequiredSchema).or(projectErrorSchema),
   },
-  setupBegin: {
-    name: 'project.setup.begin',
-    channel: 'argo:project:setup:begin',
-    request: projectSetupBeginRequestSchema,
-    reply: projectSetupEditingSchema.or(projectErrorSchema),
+  setupCommand: {
+    name: 'project.setup.command',
+    channel: 'argo:project:setup:command',
+    request: projectSetupCommandRequestSchema,
+    reply: projectSetupSnapshotSchema.or(projectErrorSchema),
   },
-  setupSave: {
-    name: 'project.setup.save',
-    channel: 'argo:project:setup:save',
-    request: projectSetupSaveRequestSchema,
-    reply: projectSetupEditingSchema.or(projectErrorSchema),
-  },
-  setupValidate: {
-    name: 'project.setup.validate',
-    channel: 'argo:project:setup:validate',
-    request: projectSetupValidateRequestSchema,
-    reply: projectSetupValidatedSchema.or(projectErrorSchema),
-  },
-  setupCancel: {
-    name: 'project.setup.cancel',
-    channel: 'argo:project:setup:cancel',
-    request: projectSetupCancelRequestSchema,
-    reply: projectSetupCancelledSchema.or(projectErrorSchema),
+  setupSnapshot: {
+    name: 'project.setup.snapshot',
+    channel: 'argo:project:setup:snapshot',
+    request: projectSetupSnapshotRequestSchema,
+    reply: projectSetupSnapshotSchema.or(projectErrorSchema),
   },
   list: {
     name: 'project.list',

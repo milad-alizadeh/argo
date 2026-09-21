@@ -35,6 +35,7 @@ export type ClaudeSessionDriver = {
   completeHandoffs: () => void
   send: (sessionId: string, turn: ClaudeTurnRequest) => Promise<void>
   interrupt: (sessionId: string) => void
+  hasSession?: (sessionId: string) => boolean
   rename: (sessionId: string, name: string) => Promise<string>
   liveMessages: (sessionId: string) => LiveMessage[]
   roster: () => SessionRosterRow[]
@@ -136,6 +137,7 @@ export function createClaudeSessionDriver(options: DriverOptions): ClaudeSession
     handoff: (sessionId) => startHandoff(options, sessions, sessionId),
     completeHandoffs: () => completeHandoffs({ options, startSession, channel, sessions }),
     interrupt: (sessionId) => interruptSession(sessions, sessionId),
+    hasSession: (sessionId) => sessions.has(sessionId),
     rename: (sessionId, name) => renameSession({ channel, sessions }, sessionId, name),
     liveMessages: (sessionId) => sessions.get(sessionId)?.messages.list() ?? [],
     roster: () => roster(options, sessions),

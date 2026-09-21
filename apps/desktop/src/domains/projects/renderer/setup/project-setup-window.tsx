@@ -1,104 +1,145 @@
-import { Save } from 'lucide-react'
-import { useEffect, useMemo } from 'react'
+import { ArrowLeft, Check, Circle, Folder } from 'lucide-react'
+import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import type {
+  ProjectSetupCommand,
+  ProjectSetupSnapshot,
+} from '@/domains/projects/contract/contract'
 import type { ProjectSummary } from '@/domains/projects/contract/messages'
-import type { SetupDocument } from '@/domains/projects/contract/setup-document'
-import { ConfigurationPanel } from '@/domains/projects/renderer/setup/project-setup-configuration'
+import { Button } from '@/platform/renderer/components/ui/button'
 import {
-  type ProjectSetupMessage,
-  useProjectSetup,
-} from '@/domains/projects/renderer/setup/use-project-setup'
-import { useToastManager } from '@/platform/renderer/components/ui/toast'
+  ProjectSetupAgentHeader,
+  ProjectSetupIntroduction,
+  ProjectSetupShell,
+} from './project-setup-layout'
+import { ProjectSetupPlanSummary } from './project-setup-plan-review'
+import { ProjectSetupScreen } from './project-setup-screen'
+import { useProjectSetup } from './use-project-setup'
+
+type ProjectSetupViewProps = {
+  command: (command: ProjectSetupCommand) => Promise<void>
+  project: ProjectSummary
+  snapshot: ProjectSetupSnapshot
+}
 
 export function ProjectSetupWindow({ project }: { project: ProjectSummary }) {
-  const { t } = useTranslation('projects')
-  const messages = useMemo(
-    () => ({
-      valid: t('setup.valid'),
-      invalid: t('setup.invalid'),
-      invalidJson: t('setup.invalidJson'),
-      invalidSetupDocument: t('setup.invalidSetupDocument'),
-      saved: t('setup.saved'),
-      setupNetworkUnavailable: t('setup.setupNetworkUnavailable'),
-    }),
-    [t],
-  )
-  const setup = useProjectSetup(project.id, messages)
-  return <ProjectSetupView project={project} {...setup} />
+  const setup = useProjectSetup(project.id)
+  if (setup.loading || !setup.snapshot) return <main aria-busy="true" />
+  return <ProjectSetupView project={project} snapshot={setup.snapshot} command={setup.command} />
 }
 
-export type ProjectSetupViewProps = {
-  document: SetupDocument | null
-  message: ProjectSetupMessage | null
-  applyConfiguration: () => Promise<void>
-  loading: boolean
-  retry: () => void
-  saving: 'apply' | 'test' | null
-  source: string
-  testConfiguration: () => Promise<void>
-  updateSource: (source: string) => void
-}
-
-export function ProjectSetupView({
-  project,
-  document,
-  message,
-  applyConfiguration,
-  loading,
-  retry,
-  saving,
-  source,
-  testConfiguration,
-  updateSource,
-}: { project: ProjectSummary } & ProjectSetupViewProps) {
+export function ProjectSetupView({ command, project, snapshot }: ProjectSetupViewProps) {
   const { t } = useTranslation('projects')
-  const { add } = useToastManager()
-  const setup = {
-    applyConfiguration,
-    document,
-    loading,
-    message,
-    retry,
-    saving,
-    source,
-    testConfiguration,
-    updateSource,
+  const conversationRef = useRef<HTMLElement>(null)
+  const translationValues = {
+    count: snapshot.plan?.targets.length ?? 0,
+    name: project.name,
   }
-  useEffect(() => {
-    if (!message) return
-    add({ priority: 'high', title: message.text, type: message.tone })
-  }, [add, message])
+  const title = t(`setup.actor.${snapshot.screen}.title`, translationValues)
+  const description = t(`setup.actor.${snapshot.screen}.description`, translationValues)
   return (
-    <main
-      aria-label={t('setup.label', { name: project.name })}
-      className="flex h-full min-h-0 flex-col bg-background"
-      data-component="ProjectSetupWindow"
+    <ProjectSetupShell
+      accessibleName={t('setup.label', { name: project.name })}
+      contentRef={conversationRef}
+      event={
+        <>
+          <span className="grid size-8 place-items-center rounded-full bg-muted">
+            <Folder className="size-4" />
+          </span>
+          <p>{t(setupEvent(snapshot))}</p>
+        </>
+      }
+      header={<ProjectSetupAgentHeader />}
+      introduction={<ProjectSetupIntroduction />}
+      sidebar={<ProjectSetupEvidence snapshot={snapshot} />}
+      sidebarDisclosureLabel={t('setup.shell.reviewDisclosure')}
     >
-      <div className="drag-region h-(--size-chrome-bar) shrink-0" />
-      <SetupWorkspace project={project} {...setup} />
-    </main>
+      {snapshot.screen === 'reviewing-diff' ? null : (
+        <header>
+          {snapshot.screen === 'customizing-project-setup' ? (
+            <Button
+              aria-label={t('setup.actor.customizing-project-setup.backAction')}
+              className="-ml-2 mb-3 size-9"
+              onClick={() => void command({ type: 'back' })}
+              size="icon-sm"
+              variant="ghost"
+            >
+              <ArrowLeft />
+            </Button>
+          ) : null}
+          <h1
+            className="onboarding-stage-heading type-title font-heading text-foreground"
+            tabIndex={-1}
+          >
+            {title}
+          </h1>
+          <p className="mt-2 max-w-2xl type-body text-muted-foreground">{description}</p>
+        </header>
+      )}
+      <ProjectSetupScreen command={command} snapshot={snapshot} />
+    </ProjectSetupShell>
   )
 }
 
-function SetupWorkspace({
-  project,
-  ...setup
-}: { project: ProjectSummary } & ProjectSetupViewProps) {
+function ProjectSetupEvidence({ snapshot }: Pick<ProjectSetupViewProps, 'snapshot'>) {
   const { t } = useTranslation('projects')
+  const plan =
+    snapshot.screen === 'reviewing-plan' || snapshot.screen === 'customizing-project-setup'
+      ? snapshot.plan
+      : null
   return (
-    <section className="mx-auto grid w-full max-w-7xl flex-1 grid-rows-[auto_minmax(0,1fr)] gap-6 overflow-y-auto px-6 py-8">
-      <header className="flex min-w-0 items-start gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted text-foreground">
-          <Save aria-hidden="true" />
+    <>
+      <h2 className="type-heading">{t('setup.shell.reviewTitle')}</h2>
+      {plan ? (
+        <div className="mt-5">
+          <ProjectSetupPlanSummary plan={plan} />
         </div>
-        <div className="min-w-0">
-          <h1 className="type-title font-heading text-foreground">
-            {t('setup.title', { name: project.name })}
-          </h1>
-          <p className="mt-1 max-w-2xl type-body text-muted-foreground">{t('setup.description')}</p>
-        </div>
-      </header>
-      <ConfigurationPanel {...setup} />
-    </section>
+      ) : null}
+      <ol className={plan ? 'mt-7 grid border-t pt-5' : 'mt-5 grid'}>
+        {snapshot.progress.length === 0 ? (
+          <li className="relative grid min-h-11 grid-cols-[var(--size-icon-control)_minmax(0,1fr)] gap-2.5 type-control text-muted-foreground">
+            <span className="z-10 grid size-(--size-icon-control) place-items-center rounded-full border bg-sidebar">
+              <Circle className="size-3" />
+            </span>
+            <p>{t('setup.actor.busy')}</p>
+          </li>
+        ) : (
+          snapshot.progress.map((step) => (
+            <li
+              className="group relative grid min-h-11 grid-cols-[var(--size-icon-control)_minmax(0,1fr)] gap-2.5 type-control text-muted-foreground before:absolute before:left-3 before:h-11 before:w-px before:bg-border last:before:hidden data-[complete=true]:text-foreground"
+              data-complete={step.status === 'passed'}
+              key={step.stepId}
+            >
+              <span className="z-10 grid size-(--size-icon-control) place-items-center rounded-full border bg-sidebar group-data-[complete=true]:border-success/40 group-data-[complete=true]:bg-success/10 group-data-[complete=true]:text-success">
+                {step.status === 'passed' ? (
+                  <Check className="size-3" />
+                ) : (
+                  <Circle className="size-3" />
+                )}
+              </span>
+              <p className="pt-0.5">{step.message}</p>
+            </li>
+          ))
+        )}
+      </ol>
+    </>
   )
+}
+
+function setupEvent(snapshot: ProjectSetupSnapshot) {
+  switch (snapshot.screen) {
+    case 'applying':
+      return 'setup.event.applyStarted'
+    case 'awaiting-approval':
+      return 'setup.event.permissionPending'
+    case 'interrupted':
+      return 'setup.event.interrupted'
+    case 'reviewing-diff':
+      return 'setup.event.reviewingChanges'
+    case 'reviewing-plan':
+    case 'customizing-project-setup':
+      return 'setup.event.planReady'
+    default:
+      return 'setup.event.planningStarted'
+  }
 }

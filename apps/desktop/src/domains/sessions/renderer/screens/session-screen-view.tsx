@@ -97,7 +97,7 @@ function liveFactsOf({ composer, session }: SessionScreenModel): NonNullable<Fee
 
 export function SessionScreenView() {
   const model = useSessionScreenModel()
-  const { evidence, feed, feedError, question, session } = model
+  const { evidence, feed, feedError, isNewSession, question, session } = model
   const { navigate, retryFeed, selectedSessionId, setEvidence, workReveal } = model
   const openSession = (sessionId: string) => navigate(`/sessions/${sessionId}`)
   const answerQuestion = (_sessionId: string, questionId: string, answers: QuestionAnswer[]) =>
@@ -117,7 +117,7 @@ export function SessionScreenView() {
         answeringQuestionId={model.question.answeringId}
         questionFailure={model.question.failureFor}
         composer={
-          selectedSessionId === null ? null : (
+          selectedSessionId === null && !isNewSession ? null : (
             <SessionComposerArea
               composer={model.composer}
               permission={model.permission}

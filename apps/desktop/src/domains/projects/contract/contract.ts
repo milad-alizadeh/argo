@@ -1,6 +1,24 @@
 import { z } from 'zod'
 import { identifierSchema } from '@/shared/validation'
-import { setupDocumentSchema } from './setup-document'
+import type { ProjectError } from './project-error'
+import {
+  projectSetupEffectSchema,
+  projectSetupPendingApprovalSchema,
+} from './project-setup-approval'
+import { projectSetupAnswerSchema, projectSetupQuestionSchema } from './project-setup-question'
+import { projectSetupRecoveryCodeSchema } from './project-setup-recovery'
+import { projectSetupScreenSchema } from './project-setup-screen'
+
+export {
+  PROJECT_ERROR_CODES,
+  type ProjectError,
+  type ProjectErrorCode,
+  projectError,
+  projectErrorSchema,
+} from './project-error'
+
+import { acceptedSetupPlanSchema, setupPlanSchema } from './setup-plan'
+import { setupStepStatusSchema } from './setup-progress'
 
 export const projectOpenRequestSchema = z.strictObject({
   version: z.literal(1),
@@ -28,114 +46,98 @@ export const projectSetupRequiredSchema = z.strictObject({
 })
 export type ProjectSetupRequired = z.infer<typeof projectSetupRequiredSchema>
 
-export const projectSetupBeginRequestSchema = z.strictObject({
+const onboardingHarnessSchema = z.enum(['claude', 'codex'])
+const onboardingHarnessAvailabilitySchema = z.strictObject({
+  harness: onboardingHarnessSchema,
+  unavailableReason: z.string().min(1).nullable(),
+})
+const projectSetupCommandSchema = z.discriminatedUnion('type', [
+  z.strictObject({ type: z.literal('choose-manual') }),
+  z.strictObject({ type: z.literal('choose-agent'), harness: onboardingHarnessSchema }),
+  z.strictObject({
+    type: z.literal('answer-questions'),
+    answers: z.array(projectSetupAnswerSchema).min(1),
+  }),
+  z.strictObject({ type: z.literal('request-plan-change'), feedback: z.string().min(1) }),
+  z.strictObject({ type: z.literal('continue-plan-review') }),
+  z.strictObject({ type: z.literal('accept-plan'), acceptedPlan: acceptedSetupPlanSchema }),
+  z.strictObject({
+    type: z.literal('choose-application-harness'),
+    harness: onboardingHarnessSchema,
+  }),
+  z.strictObject({ type: z.literal('approve-final-diff') }),
+  z.strictObject({
+    type: z.literal('request-application-change'),
+    feedback: z.string().min(1),
+  }),
+  z.strictObject({ type: z.literal('cancel-setup') }),
+  z.strictObject({ type: z.literal('retry-cancel') }),
+  z.strictObject({ type: z.literal('approve-effect') }),
+  z.strictObject({ type: z.literal('reject-effect') }),
+  z.strictObject({ type: z.literal('resume-planning') }),
+  z.strictObject({ type: z.literal('resume-application') }),
+  z.strictObject({ type: z.literal('restart-attempt') }),
+  z.strictObject({ type: z.literal('defer') }),
+  z.strictObject({ type: z.literal('back') }),
+  z.strictObject({ type: z.literal('save-manual'), source: z.string().min(1).max(100_000) }),
+  z.strictObject({ type: z.literal('resume-setup') }),
+  z.strictObject({ type: z.literal('edit-setup') }),
+])
+export type ProjectSetupCommand = z.infer<typeof projectSetupCommandSchema>
+
+export const projectSetupCommandRequestSchema = z.strictObject({
   version: z.literal(1),
-  type: z.literal('project.setup.begin'),
+  type: z.literal('project.setup.command'),
+  requestId: identifierSchema,
+  projectId: identifierSchema,
+  commandId: identifierSchema,
+  expectedRevision: z.number().int().nonnegative(),
+  command: projectSetupCommandSchema,
+})
+export type ProjectSetupCommandRequest = z.infer<typeof projectSetupCommandRequestSchema>
+
+export const projectSetupSnapshotRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('project.setup.snapshot'),
   requestId: identifierSchema,
   projectId: identifierSchema,
 })
-export type ProjectSetupBeginRequest = z.infer<typeof projectSetupBeginRequestSchema>
+export type ProjectSetupSnapshotRequest = z.infer<typeof projectSetupSnapshotRequestSchema>
 
-export const projectSetupSaveRequestSchema = z.strictObject({
+export const projectSetupSnapshotSchema = z.strictObject({
   version: z.literal(1),
-  type: z.literal('project.setup.save'),
+  type: z.literal('project.setup.snapshot'),
   requestId: identifierSchema,
   projectId: identifierSchema,
-  source: z.string().min(1).max(100_000),
+  revision: z.number().int().nonnegative(),
+  harnesses: z.array(onboardingHarnessAvailabilitySchema).length(2).optional(),
+  screen: projectSetupScreenSchema,
+  manualSource: z.string(),
+  attempt: z
+    .strictObject({
+      number: z.number().int().positive(),
+      planningHarness: onboardingHarnessSchema,
+      applicationHarness: onboardingHarnessSchema.nullable(),
+      planningSessionId: identifierSchema.nullable(),
+      applicationSessionId: identifierSchema.nullable(),
+    })
+    .nullable(),
+  questions: z.array(projectSetupQuestionSchema),
+  plan: setupPlanSchema.nullable(),
+  acceptedPlan: acceptedSetupPlanSchema.nullable(),
+  progress: z.array(
+    z.strictObject({
+      stepId: identifierSchema,
+      status: setupStepStatusSchema,
+      message: z.string().min(1),
+    }),
+  ),
+  finalDiff: z.string().nullable(),
+  activeEffect: projectSetupEffectSchema.nullable(),
+  recoveryMessage: projectSetupRecoveryCodeSchema.nullable(),
+  pendingApproval: projectSetupPendingApprovalSchema,
 })
-export type ProjectSetupSaveRequest = z.infer<typeof projectSetupSaveRequestSchema>
+export type ProjectSetupSnapshot = z.infer<typeof projectSetupSnapshotSchema>
 
-export const projectSetupValidateRequestSchema = z.strictObject({
-  version: z.literal(1),
-  type: z.literal('project.setup.validate'),
-  requestId: identifierSchema,
-  projectId: identifierSchema,
-  source: z.string(),
-})
-export type ProjectSetupValidateRequest = z.infer<typeof projectSetupValidateRequestSchema>
-
-export const projectSetupEditingSchema = z.strictObject({
-  version: z.literal(1),
-  type: z.literal('project.setup.editing'),
-  requestId: identifierSchema,
-  project: projectLabelSchema,
-  source: z.string(),
-  document: setupDocumentSchema,
-  saved: z.boolean(),
-})
-export type ProjectSetupEditing = z.infer<typeof projectSetupEditingSchema>
-
-export const projectSetupValidatedSchema = z.strictObject({
-  version: z.literal(1),
-  type: z.literal('project.setup.validated'),
-  requestId: identifierSchema,
-  project: projectLabelSchema,
-  valid: z.boolean(),
-})
-export type ProjectSetupValidated = z.infer<typeof projectSetupValidatedSchema>
-
-export const projectSetupCancelledSchema = z.strictObject({
-  version: z.literal(1),
-  type: z.literal('project.setup.cancelled'),
-  requestId: identifierSchema,
-  project: projectLabelSchema,
-})
-export type ProjectSetupCancelled = z.infer<typeof projectSetupCancelledSchema>
-
-export const projectSetupCancelRequestSchema = z.strictObject({
-  version: z.literal(1),
-  type: z.literal('project.setup.cancel'),
-  requestId: identifierSchema,
-  projectId: identifierSchema,
-})
-export type ProjectSetupCancelRequest = z.infer<typeof projectSetupCancelRequestSchema>
-
-export const PROJECT_ERRORS = {
-  'missing-project': 'This Project is not registered.',
-  'access-denied': 'Argo cannot access this Project.',
-  'invalid-request': 'The Project request is invalid.',
-  'unsupported-version': 'This Project contract version is not supported.',
-  'project-unavailable': 'The registered Project folder is unavailable.',
-  'internal-error': 'Argo could not open this Project.',
-  'storage-invalid': 'The Project registry cannot be read in this format.',
-  'storage-unavailable': 'Argo cannot access the Project registry.',
-  'invalid-response': 'Argo received an invalid Project response.',
-  'connection-lost': 'The connection to Argo was lost.',
-  'not-a-repository': 'That folder is not a git repository.',
-  'already-registered': 'Another Project is already registered at that folder.',
-  'git-unavailable': 'Argo cannot run git on this computer.',
-  'storage-not-written': 'Argo could not save the Project registry.',
-  'invalid-configuration':
-    'The Project configuration is not valid. Every target needs a path and four commands: setup, run, build and test.',
-  'setup-unavailable': 'Argo could not prepare Project setup.',
-  'setup-network-unavailable': 'Argo could not download Project setup from GitHub.',
-  'setup-document-invalid': 'GitHub returned an invalid Project setup document.',
-  'onboarding-run-not-found': 'This onboarding run is no longer available.',
-  'onboarding-harness-unavailable': 'Argo cannot run guided setup with this harness yet.',
-} as const
-
-export type ProjectErrorCode = keyof typeof PROJECT_ERRORS
-export const projectErrorSchema = z
-  .strictObject({
-    version: z.literal(1),
-    type: z.literal('project.error'),
-    requestId: identifierSchema.nullable(),
-    code: z.enum(Object.keys(PROJECT_ERRORS) as [ProjectErrorCode, ...ProjectErrorCode[]]),
-    message: z.string(),
-  })
-  .refine(({ code, message }) => message === PROJECT_ERRORS[code])
-export type ProjectError = z.infer<typeof projectErrorSchema>
 export type ProjectOpenReply = ProjectOpened | ProjectSetupRequired | ProjectError
-export type ProjectSetupReply =
-  | ProjectSetupEditing
-  | ProjectSetupValidated
-  | ProjectSetupCancelled
-  | ProjectError
-
-export function projectError(code: ProjectErrorCode, requestId: string | null): ProjectError {
-  return { version: 1, type: 'project.error', requestId, code, message: PROJECT_ERRORS[code] }
-}
-
-// Every action shares one shape: version 1, a named type, a request ID, and zero or more further
-// identifier fields. Extra fields are refused rather than ignored, so a request cannot smuggle a
-// path or a channel past the guard.
+export type ProjectSetupReply = ProjectSetupSnapshot | ProjectError

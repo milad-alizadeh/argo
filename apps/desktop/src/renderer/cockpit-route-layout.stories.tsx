@@ -2,9 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
-import { expect, userEvent, waitFor, within } from 'storybook/test'
-
-import { ProjectOnboarding } from '@/domains/projects/renderer/setup/project-onboarding'
+import { expect, within } from 'storybook/test'
 import { SessionsSidebar } from '@/domains/sessions/renderer/roster/sessions-sidebar'
 import { SELECTED_SESSION_KEY } from '@/domains/sessions/renderer/roster/use-sidebar-actions'
 import { CockpitRouteLayout } from '@/renderer/cockpit-router'
@@ -17,11 +15,6 @@ function CockpitRouteLayoutStory() {
         {
           element: <CockpitRouteLayout />,
           children: [
-            {
-              id: 'project-onboarding',
-              path: '/projects/new',
-              element: <ProjectOnboarding />,
-            },
             {
               path: '/sessions',
               handle: { sidebar: <SessionsSidebar /> },
@@ -89,9 +82,5 @@ export const NoProject: Story = {
     await expect(await canvas.findByText('Add a Project to start')).toBeVisible()
     await expect(canvas.queryByRole('complementary', { name: 'Sessions sidebar' })).toBeNull()
     await expect(canvas.queryByRole('button', { name: 'New Session' })).toBeNull()
-    await userEvent.click(canvas.getByRole('button', { name: 'Add Project…' }))
-    await waitFor(() => expect(canvas.getByRole('main', { name: 'Project setup' })).toBeVisible())
-    await expect(canvas.getByRole('heading', { name: 'Choose a Project folder' })).toBeVisible()
-    await expect(canvas.queryByText('Add a Project to start')).toBeNull()
   },
 }

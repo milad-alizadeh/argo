@@ -2,7 +2,7 @@ import React, { type CSSProperties, type HTMLAttributes, useEffect, useState } f
 import { createHighlighterCore, type HighlighterCore } from 'shiki/core'
 import { createJavaScriptRegexEngine } from 'shiki/engine/javascript'
 import { type BundledLanguage, bundledLanguages } from 'shiki/langs'
-import { xcodeCodeThemes } from '@/domains/sessions/renderer/ai-elements/xcode-code-theme'
+import { xcodeCodeThemes } from '@/platform/renderer/components/xcode-code-theme'
 import { cn } from '@/platform/renderer/lib/utils'
 
 const THEMES = { light: 'xcode-light', dark: 'xcode-dark' } as const

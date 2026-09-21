@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
-import { xcodeCodePalette } from '@/domains/sessions/renderer/ai-elements/xcode-code-theme'
 import { drawnColor } from '@/domains/sessions/renderer/feed/content/appearance-probe'
 import { FeedCode } from '@/domains/sessions/renderer/feed/content/feed-code'
 import { SAMPLE_TYPESCRIPT } from '@/domains/sessions/renderer/feed/content/feed-samples'
+import { xcodeCodePalette } from '@/platform/renderer/components/xcode-code-theme'
 
 const meta: Meta<typeof FeedCode> = {
   title: 'Sessions/Feed/Code',
