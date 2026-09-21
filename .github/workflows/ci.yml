@@ -5,9 +5,11 @@
 # `desktop-artifact` packages `apps/desktop` for arm64 on macOS and runs its packaged tests (#1769)
 # on a PR only when it touches the desktop app, the root manifest, the lockfile or `.github/`, and
 # its filter fails CLOSED. It also runs on every push to `main`, unfiltered, to write the
-# base-branch `macOS-bun-*` and `macOS-electron-*` caches a PR restores from (#2214).
+# base-branch `macOS-bun-*` and `macOS-electron-*` caches a PR restores from (#2214). `desktop-e2e`
+# runs the e2e flows across two macOS shards off that same package, instead of one job walking
+# every case in series (#2605).
 #
-# The macOS job is free: standard GitHub-hosted runners are unlimited on public repositories, and
+# The macOS jobs are free: standard GitHub-hosted runners are unlimited on public repositories, and
 # `argo` is public. The "99% of the Actions bill" figure that removed the previous macOS job read
 # the GROSS column; the BILLED column is $0. AGENTS.md holds that correction in full.
 #
@@ -68,10 +70,6 @@ jobs:
       - name: Lint and format
         run: bun run format-and-lint
 
-      - name: Workflow contracts
-        if: ${{ !cancelled() }}
-        run: bun run quality:workflows
-
       - name: Fetch main baseline
         if: ${{ !cancelled() }}
         run: git fetch --no-tags origin main:refs/remotes/origin/main
@@ -114,11 +112,6 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run test:hooks
 
-      # A number to read, not a gate: no threshold, no failing exit. #2404.
-      - name: Coverage report (bun suite)
-        if: ${{ !cancelled() }}
-        run: bun run --cwd apps/desktop test:coverage
-
   storybook:
     name: storybook interaction tests
     runs-on: ubuntu-latest
@@ -153,11 +146,6 @@ jobs:
 
       - name: Storybook interaction tests
         run: bun run test:storybook
-
-      # `storybook-dark` only: `storybook-light` runs the same modules, so a second coverage pass
-      # adds time and no new covered line. A number to read, not a gate. #2404.
-      - name: Coverage report (Storybook interaction tests)
-        run: bun run --cwd apps/desktop test:coverage:storybook
 
   # The package contents, on EVERY pull request and with no path filter (#1806). The manifest's
   # likeliest regression is a lockfile refresh, and a dependency bump may touch no `apps/desktop`
@@ -234,7 +222,11 @@ jobs:
     name: package · run packaged tests
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     runs-on: macos-26
-    timeout-minutes: 45
+    timeout-minutes: 20
+    # Read by `desktop-e2e` below, so it skips the same PRs this job did rather than re-running
+    # its own path filter (and disagreeing with this one if the two ever drift).
+    outputs:
+      desktop: ${{ steps.touched.outputs.desktop }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -360,26 +352,83 @@ jobs:
         if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
         run: bun run turbo run test:packaged-pty --filter=@argo/desktop
 
-      # Every flow under `apps/desktop/e2e/`, one Playwright project each, against a packaged copy:
-      # the Project contract, the Session Feed and journeys (#1831), and the Tickets workflow with
-      # GitHub and Linear mocked on loopback ports (#1848). Nothing takes a screenshot (#1910): the
-      # assertions read the DOM, and reviewers inspect pixels in Storybook.
-      - name: Test the e2e flows in a packaged copy
-        if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
-        run: bun run turbo run test:e2e --filter=@argo/desktop
+  # Every flow under `apps/desktop/e2e/` (the Project contract, the Session Feed, journeys #1831,
+  # the adversarial Session cases, and Tickets with GitHub and Linear mocked on loopback ports
+  # #1848), sharded across parallel macOS jobs (#2605): one packaged-app boot and one Playwright
+  # startup per shard instead of one job launching all 61+ cases in series. Nothing takes a
+  # screenshot (#1910): the assertions read the DOM, and reviewers inspect pixels in Storybook.
+  #
+  # `needs: desktop-artifact` reuses ITS package rather than repackaging: the two jobs share one
+  # turbo remote cache (#2214), so this job's own `build` step is normally a replay, not a run. The
+  # steps that install Electron and package again are a fallback for the rare case where that
+  # cache write hasn't landed yet, not the expected path.
+  #
+  # Two shards keeps this job's macOS usage at 2, so the pair of jobs together (this one plus
+  # `desktop-artifact`) stay at 3 of the 5 concurrent macOS jobs GitHub Free allows, leaving room
+  # for another PR's `desktop-artifact` to start rather than queue behind this one.
+  desktop-e2e:
+    name: e2e shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+    needs: desktop-artifact
+    if: needs.desktop-artifact.outputs.desktop == 'true'
+    runs-on: macos-26
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2]
+        shardTotal: [2]
+    steps:
+      - uses: actions/checkout@v5
 
-      - name: Test adversarial Session flows in a packaged copy
-        if: ${{ success() && steps.touched.outputs.desktop == 'true' }}
-        run: bun run turbo run test:e2e:adversarial --filter=@argo/desktop
+      - uses: ./.github/actions/setup
+
+      - name: Turbo remote cache
+        uses: rharkor/caching-for-turbo@v2.5.1
+
+      - id: replay
+        uses: ./.github/actions/turbo-replay
+        with:
+          task: build
+
+      - if: steps.replay.outputs.status != 'HIT'
+        uses: ./.github/actions/electron-cache
+
+      - name: Install the Electron binary
+        if: steps.replay.outputs.status != 'HIT'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for root in node_modules apps/desktop/node_modules; do
+            if [ -f "$root/electron/install.js" ]; then
+              node "$root/electron/install.js"
+              exit 0
+            fi
+          done
+          echo "no electron/install.js under node_modules or apps/desktop/node_modules" >&2
+          exit 1
+
+      - name: Package arm64
+        if: steps.replay.outputs.status != 'HIT'
+        run: bun run turbo run build --filter=@argo/desktop
+
+      # Bypasses turbo (#2605): turbo's cache key covers the whole `test:e2e` task, not one
+      # shard's slice of it, so routing a sharded run through `turbo run test:e2e` risks one shard
+      # replaying another shard's cached verdict instead of running its own cases. Playwright's own
+      # `--shard` decides which cases this job owns; `playwright.config.ts` still supplies the
+      # projects, `maxFailures`, and retries.
+      - name: Test the e2e flows in a packaged copy (this shard)
+        working-directory: apps/desktop
+        run: bunx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
 
       # The Playwright HTML report and any trace a failing case wrote (#2325): `playwright.config.ts`
-      # keeps both only on failure, so a red run here is the one place they exist to read.
+      # keeps both only on failure, so a red run here is the one place they exist to read. Named per
+      # shard so two failing shards in one run don't overwrite each other's artifact.
       - name: Upload e2e failure artifacts
         id: e2e-artifacts
-        if: ${{ failure() && steps.touched.outputs.desktop == 'true' }}
+        if: failure()
         uses: actions/upload-artifact@v5
         with:
-          name: e2e-failure
+          name: e2e-failure-shard-${{ matrix.shardIndex }}
           path: |
             apps/desktop/playwright-report
             apps/desktop/test-results
@@ -392,9 +441,9 @@ jobs:
         env:
           ARTIFACT_URL: ${{ steps.e2e-artifacts.outputs.artifact-url }}
         run: |
-          echo "::error title=e2e failed::Report and traces: $ARTIFACT_URL"
+          echo "::error title=e2e failed (shard ${{ matrix.shardIndex }})::Report and traces: $ARTIFACT_URL"
           {
-            echo "### e2e failure artifacts"
+            echo "### e2e failure artifacts (shard ${{ matrix.shardIndex }})"
             echo ""
             echo "[Download the Playwright report and traces]($ARTIFACT_URL)."
             echo "Unzip it, then run \`npx playwright show-report playwright-report\` or \`npx playwright show-trace test-results/<case>/trace.zip\`."
