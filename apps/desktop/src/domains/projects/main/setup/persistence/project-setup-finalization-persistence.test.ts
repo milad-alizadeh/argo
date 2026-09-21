@@ -4,9 +4,11 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { drizzle } from 'drizzle-orm/bun-sqlite'
-import { migrate } from 'drizzle-orm/bun-sqlite/migrator'
 import { createProjectStore } from '@/domains/projects/main/sqlite-store'
+import {
+  migrateTestDatabase,
+  projectMigrationsFolder,
+} from '../../../../../../test-fixtures/projects/migrate-test-database'
 import {
   acceptedPlanFixture,
   planFixture,
@@ -47,8 +49,6 @@ test('recovers a completed worktree promotion without promoting it twice after a
 
 function createStore(databasePath: string) {
   const database = new Database(databasePath)
-  migrate(drizzle({ client: database }), {
-    migrationsFolder: path.resolve(import.meta.dirname, '../../../../../../drizzle'),
-  })
+  migrateTestDatabase(database, projectMigrationsFolder(import.meta.dirname))
   return createProjectStore(database)
 }
