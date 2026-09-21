@@ -14,9 +14,6 @@ export type ConnectTicketInput = {
   state: 'open' | 'closed'
 }
 
-// A Turn in progress owns the Harness's input; a rename must never compete with it (issue #2134).
-const TURN_IN_PROGRESS = new Set(['running', 'permission', 'asking'])
-
 export type ConnectOutcome = {
   renamed: boolean
   // Set only when the current title is `custom` and a reader has not yet said whether to
@@ -53,17 +50,6 @@ export async function connectTicket(request: {
       outcome: { renamed: false, needsRenameConfirmation: false, renameFailure: null },
       failure: reply.message,
       invalidate: false,
-    }
-  }
-  if (TURN_IN_PROGRESS.has(session.status)) {
-    return {
-      outcome: {
-        renamed: false,
-        needsRenameConfirmation: false,
-        renameFailure: 'Argo will not rename a Session while a Turn is running.',
-      },
-      failure: null,
-      invalidate: true,
     }
   }
   const renameReply = await argo.renameSession({ sessionId: session.id, name: ticket.title })
