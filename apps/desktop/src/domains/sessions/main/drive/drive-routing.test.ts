@@ -35,7 +35,7 @@ function mockClaudeDriver() {
       decidePermission: () => true,
       isLockedElsewhere: () => false,
       decideQuestion: async () => true,
-      rename: async () => 'Renamed.',
+      rename: async () => `Renamed.`,
       liveMessages: () => [],
       roster: () => [],
       close: async () => {},
