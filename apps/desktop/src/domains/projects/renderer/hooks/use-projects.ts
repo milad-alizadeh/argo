@@ -108,7 +108,9 @@ export function useProjects(): [Cockpit, ProjectActions] {
     () => ({ ...(error ? refuse(queryCockpit, error) : queryCockpit), busy: mutations.isPending }),
     [error, mutations.isPending, queryCockpit],
   )
-  const [workspaces, workspaceActions] = useWorkspaces(projectCockpit.project?.id ?? null)
+  const [workspaces, workspaceActions] = useWorkspaces(
+    projectCockpit.status === 'selected' ? (projectCockpit.project?.id ?? null) : null,
+  )
   const cockpit = useMemo(
     () => ({ ...projectCockpit, ...workspaces }),
     [projectCockpit, workspaces],
