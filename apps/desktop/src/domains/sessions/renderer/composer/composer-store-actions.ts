@@ -46,6 +46,12 @@ function attachmentActions(set: ComposerSet) {
           current.filter((attachment) => !ids.includes(attachment.id)),
         ),
       })),
+    removeAttachmentPaths: (composerKey: string, paths: string[]) =>
+      set(({ attachments }) => ({
+        attachments: updateComposerEntries(attachments, composerKey, (current) =>
+          current.filter((attachment) => !paths.includes(attachment.path)),
+        ),
+      })),
   }
 }
 

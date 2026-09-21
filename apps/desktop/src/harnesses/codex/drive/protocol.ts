@@ -8,11 +8,13 @@ import type { CodexThreadStatus } from '@/harnesses/codex/drive/managed-status'
 // in docs/research/2026-09-09-codex-transport.md.
 export type RequestID = string | number
 export type ThreadConfiguration = { cwd: string }
+export type SkillsListRequest = { cwds: string[]; forceReload: boolean }
 export type RequestParams = {
   initialize: {
     clientInfo: { name: string; title: string; version: string }
     capabilities: { experimentalApi: boolean; requestAttestation: boolean }
   }
+  'skills/list': SkillsListRequest
   'thread/start': ThreadConfiguration
   'thread/resume': ThreadConfiguration & { threadId: string }
   'turn/start': {

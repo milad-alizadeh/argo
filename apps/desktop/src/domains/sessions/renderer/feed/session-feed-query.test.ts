@@ -5,6 +5,35 @@ import {
   sessionFeedQuery,
 } from '@/domains/sessions/renderer/feed/session-feed-query'
 
+test('reads a newly started Session by its real identifier', async () => {
+  const readSessionFeed = vi.fn().mockResolvedValue({
+    version: 1,
+    type: 'session.feed.read',
+    requestId: 'new-session-feed',
+    sessionId: 'session-new',
+    chainId: 'session-new',
+    revision: 'initial',
+    rows: [],
+  })
+  const originalWindow = globalThis.window
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: { argo: { cancelSessionFeed: vi.fn(), readSessionFeed } },
+  })
+  const options = sessionFeedQuery(new QueryClient(), 'session-new', null)
+
+  try {
+    await options.queryFn?.({ signal: new AbortController().signal } as never)
+    expect(readSessionFeed).toHaveBeenCalledWith({
+      sessionId: 'session-new',
+      subagentId: null,
+      revision: null,
+    })
+  } finally {
+    Object.defineProperty(globalThis, 'window', { configurable: true, value: originalWindow })
+  }
+})
+
 describe('caching and retrying the Session feed read', () => {
   test('removes an inactive transcript as soon as its observer switches away', async () => {
     const client = new QueryClient()

@@ -54,6 +54,7 @@ export async function openManagedChannel(options: ManagedSessionOptions, cwd: st
       (value) => value,
     )
     opened.notify('initialized')
+    await opened.request('skills/list', { cwds: [cwd], forceReload: true }, (value) => value)
     return opened
   } catch (error) {
     channel?.close()
