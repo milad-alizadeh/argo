@@ -104,12 +104,13 @@ export function SessionPlanPopover({ plan }: { plan: SessionPlan | null }) {
   return (
     <Popover>
       <PopoverTrigger
+        openOnHover
         render={
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="h-8 gap-1.5 rounded-full !bg-card px-2.5 type-control"
+            className="h-8 w-(--size-composer-plan-trigger) gap-1.5 rounded-full !bg-card px-2.5 type-control"
             aria-label={t('composer.taskPlan.open')}
           />
         }

@@ -26,6 +26,31 @@ test('keeps existing Sessions read, then marks a completed newer turn unread', a
   )
 })
 
+test('keeps an unseen result through its next running turn and after it settles', async () => {
+  const unread = createInMemorySessionUnreadStore()
+  const result = {
+    id: 'session-1',
+    retiredIds: [],
+    status: 'idle' as const,
+    updatedAt: '2026-09-20T10:00:00.000Z',
+  }
+
+  await unread.project([result])
+  await unread.setUnread(['session-1'], true)
+  assert.equal(
+    (
+      await unread.project([
+        { ...result, status: 'running' as const, updatedAt: '2026-09-20T10:01:00.000Z' },
+      ])
+    )[0]?.unread,
+    true,
+  )
+  assert.equal(
+    (await unread.project([{ ...result, updatedAt: '2026-09-20T10:02:00.000Z' }]))[0]?.unread,
+    true,
+  )
+})
+
 test('focus and explicit actions set persisted reader state', async () => {
   const unread = createInMemorySessionUnreadStore()
   const row = {
