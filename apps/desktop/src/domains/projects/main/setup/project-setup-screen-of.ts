@@ -2,40 +2,35 @@ import type { ProjectSetupActor } from './project-setup-actor'
 
 export function setupScreenOf(actor: ProjectSetupActor) {
   switch (actor.getSnapshot().value) {
-    case 'choosingMethod':
+    case 'Choosing setup method':
       return 'choosing-method' as const
-    case 'manual':
-    case 'deferred':
-    case 'ready':
-      return actor.getSnapshot().value
-    case 'preflight':
-      return 'preflight' as const
-    case 'planningUnavailable':
-      return 'planning-unavailable' as const
-    case 'planning':
-      return 'planning' as const
-    case 'questions':
+    case 'Manual setup':
+      return 'manual' as const
+    case 'Deferred':
+      return 'deferred' as const
+    case 'Ready':
+      return 'ready' as const
+    case 'Planning':
+      return actor.getSnapshot().context.pendingApproval ? 'awaiting-approval' : 'planning'
+    case 'Questions':
       return 'questions' as const
-    case 'reviewingPlan':
+    case 'Reviewing plan':
       return 'reviewing-plan' as const
-    case 'invalidPlan':
-      return 'invalid-plan' as const
-    case 'applying':
-      return 'applying' as const
-    case 'reviewingDiff':
+    case 'Customizing Project setup':
+      return 'customizing-project-setup' as const
+    case 'Applying':
+      return actor.getSnapshot().context.pendingApproval ? 'awaiting-approval' : 'applying'
+    case 'Reviewing changes':
       return 'reviewing-diff' as const
-    case 'cancelling':
+    case 'Cancelling':
       return 'cancelling' as const
-    case 'cancelFailed':
+    case 'Cancel failed':
       return 'cancel-failed' as const
-    case 'awaitingPlanningApproval':
-    case 'awaitingApplicationApproval':
-      return 'awaiting-approval' as const
-    case 'finalizing':
+    case 'Finalizing':
       return 'finalizing' as const
-    case 'reviewRequired':
+    case 'Review required':
       return 'review-required' as const
-    case 'interrupted':
+    case 'Interrupted':
       return 'interrupted' as const
     default:
       throw new Error('ProjectSetup reached an unsupported state.')

@@ -51,18 +51,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export async function startMockSetupDocumentLoopback() {
   const document = await proofDocument()
-  let requestCount = 0
   const server = createServer((_request, response) => {
-    requestCount += 1
-    setTimeout(() => {
-      if (requestCount === 1) {
-        response.writeHead(503)
-        response.end()
-        return
-      }
-      response.writeHead(200, { 'Content-Type': 'application/json' })
-      response.end(JSON.stringify(document))
-    }, 500)
+    response.writeHead(200, { 'Content-Type': 'application/json' })
+    response.end(JSON.stringify(document))
   })
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
   const { port } = server.address() as AddressInfo

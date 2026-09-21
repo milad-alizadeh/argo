@@ -5,7 +5,6 @@ import { AtlasPage } from '@/domains/atlas/renderer/pages/atlas-page'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { useProjects } from '@/domains/projects/renderer/port'
 import { EmptyProjectScreen } from '@/domains/projects/renderer/screens/empty-project-screen'
-import { ProjectOnboarding } from '@/domains/projects/renderer/setup/project-onboarding'
 import { ProjectSetupWindow } from '@/domains/projects/renderer/setup/project-setup-window'
 import { DevelopmentIdentityBar } from '@/domains/sessions/renderer/composer/development-identity-bar'
 import { SessionsPage } from '@/domains/sessions/renderer/pages/sessions-page'
@@ -45,7 +44,7 @@ export function CockpitRouteLayout() {
     null,
   )
 
-  if (matches.some((match) => match.id === 'project-onboarding' || match.id === 'project-setup')) {
+  if (matches.some((match) => match.id === 'project-setup')) {
     return <Outlet />
   }
   if (cockpit.status === 'empty') return <EmptyProjectScreen />
@@ -68,7 +67,6 @@ export const cockpitRouter = createHashRouter([
     element: <CockpitRouteLayout />,
     children: [
       { index: true, element: <Navigate replace to="/sessions" /> },
-      { id: 'project-onboarding', path: '/projects/new', element: <ProjectOnboarding /> },
       { id: 'project-setup', path: '/projects/:projectId/setup', element: <ProjectSetupScreen /> },
       {
         path: '/sessions',

@@ -1,52 +1,54 @@
+import type { ProjectSetupRecoveryCode } from '@/domains/projects/contract/project-setup-recovery'
+import type {
+  ProjectSetupAnswer,
+  ProjectSetupQuestion,
+} from '@/domains/projects/contract/project-setup-question'
 import type { AcceptedSetupPlan, SetupPlan } from '@/domains/projects/contract/setup-plan'
 import type { SetupStepStatus } from '@/domains/projects/contract/setup-progress'
 
 export type ProjectSetupEvent =
-  | { type: 'CHOOSE_MANUAL' }
-  | { type: 'CHOOSE_AGENT'; harness: 'claude' | 'codex' }
-  | { type: 'PREFLIGHT_PASSED' }
-  | { type: 'PLANNING_SESSION_STARTED'; sessionId: string }
-  | { type: 'PREFLIGHT_FAILED' }
-  | { type: 'RETRY_PREFLIGHT' }
-  | { type: 'QUESTIONS_RECEIVED'; questions: Array<{ id: string; prompt: string }> }
-  | { type: 'ANSWERS_SENT' }
-  | { type: 'PLAN_VALIDATED'; plan: SetupPlan }
-  | { type: 'INVALID_OUTPUT' }
-  | { type: 'REQUEST_PLAN_CHANGE' }
-  | { type: 'CHOOSE_APPLICATION_HARNESS'; harness: 'claude' | 'codex' }
-  | { type: 'ACCEPT_PLAN'; acceptedPlan: AcceptedSetupPlan }
-  | { type: 'APPLICATION_SESSION_STARTED'; sessionId: string }
+  | { type: 'Choose manual' }
+  | { type: 'Choose agent'; harness: 'claude' | 'codex' }
+  | { type: 'Planning session started'; sessionId: string }
+  | { type: 'Questions received'; questions: ProjectSetupQuestion[] }
+  | { type: 'Answers sent'; answers: ProjectSetupAnswer[] }
+  | { type: 'Plan validated'; plan: SetupPlan }
+  | { type: 'Invalid output'; issues: string[] }
+  | { type: 'Request plan change'; feedback: string }
+  | { type: 'Continue plan review' }
+  | { type: 'Select application harness'; harness: 'claude' | 'codex' }
+  | { type: 'Accept plan'; acceptedPlan: AcceptedSetupPlan }
+  | { type: 'Application session started'; sessionId: string }
   | {
-      type: 'PROGRESS_RECEIVED'
+      type: 'Progress received'
       progress: Array<{ stepId: string; status: SetupStepStatus; message: string }>
     }
   | {
-      type: 'APPLICATION_COMPLETED'
+      type: 'Application completed'
       finalDiff: string
       progress: Array<{ stepId: string; status: SetupStepStatus; message: string }>
     }
-  | { type: 'APPLICATION_DRIFT'; reason: string }
-  | { type: 'EFFECT_INTENT_SAVED'; effect: 'planning' | 'application' }
-  | { type: 'EFFECT_INTERRUPTED'; reason: string }
-  | { type: 'RESUME_PLANNING' }
-  | { type: 'RESUME_APPLICATION' }
-  | { type: 'RESTART_ATTEMPT' }
-  | { type: 'DEFER' }
-  | { type: 'BACK' }
-  | { type: 'SAVE_MANUAL'; source: string }
-  | { type: 'RESUME_SETUP' }
-  | { type: 'START_REPAIR_OR_UPGRADE' }
-  | { type: 'APPROVE_FINAL_DIFF' }
-  | { type: 'REJECT_FINAL_DIFF' }
-  | { type: 'CANCEL_SETUP_REQUESTED' }
-  | { type: 'RETRY_CANCEL' }
-  | { type: 'PERMISSION_REQUESTED'; permissionId: string; description: string }
-  | { type: 'APPROVE_EFFECT' }
-  | { type: 'REJECT_EFFECT' }
-  | { type: 'CANCEL_SETUP_CONFIRMED' }
-  | { type: 'CANCEL_SETUP_FAILED'; reason: string }
-  | { type: 'FINALIZATION_COMPLETED' }
-  | { type: 'FINALIZATION_FAILED'; reason: string }
+  | { type: 'Application drift'; reason: ProjectSetupRecoveryCode; finalDiff: string }
+  | { type: 'Effect interrupted'; reason: ProjectSetupRecoveryCode }
+  | { type: 'Resume planning' }
+  | { type: 'Resume application' }
+  | { type: 'Restart attempt' }
+  | { type: 'Defer' }
+  | { type: 'Back' }
+  | { type: 'Save manual'; source: string }
+  | { type: 'Resume setup' }
+  | { type: 'Edit setup' }
+  | { type: 'Approve final diff' }
+  | { type: 'Request application change'; feedback: string }
+  | { type: 'Cancel setup requested' }
+  | { type: 'Retry cancel' }
+  | { type: 'Permission requested'; permissionId: string; description: string }
+  | { type: 'Approve effect' }
+  | { type: 'Reject effect' }
+  | { type: 'Cancel setup confirmed' }
+  | { type: 'Cancel setup failed'; reason: ProjectSetupRecoveryCode }
+  | { type: 'Finalization completed' }
+  | { type: 'Finalization failed'; reason: ProjectSetupRecoveryCode }
 
 export type ProjectSetupContext = {
   manualSource: string
@@ -62,13 +64,13 @@ export type ProjectSetupContext = {
   }>
   planningSessionId: string | null
   applicationSessionId: string | null
-  questions: Array<{ id: string; prompt: string }>
+  questions: ProjectSetupQuestion[]
   plan: SetupPlan | null
   acceptedPlan: AcceptedSetupPlan | null
   progress: Array<{ stepId: string; status: SetupStepStatus; message: string }>
   finalDiff: string | null
   activeEffect: 'planning' | 'application' | null
-  recoveryMessage: string | null
+  recoveryMessage: ProjectSetupRecoveryCode | null
   pendingFinalization: boolean
   pendingApproval: {
     effect: 'planning' | 'application'
@@ -77,21 +79,23 @@ export type ProjectSetupContext = {
   } | null
 }
 
-export const initialProjectSetupContext = {
-  manualSource: '',
-  selectedHarness: null,
-  applicationHarness: null,
-  attemptNumber: null,
-  attemptEvidence: [],
-  planningSessionId: null,
-  applicationSessionId: null,
-  questions: [],
-  plan: null,
-  acceptedPlan: null,
-  progress: [],
-  finalDiff: null,
-  activeEffect: null,
-  recoveryMessage: null,
-  pendingFinalization: false,
-  pendingApproval: null,
-} satisfies ProjectSetupContext
+export function initialProjectSetupContext(): ProjectSetupContext {
+  return {
+    manualSource: '',
+    selectedHarness: null,
+    applicationHarness: null,
+    attemptNumber: null,
+    attemptEvidence: [],
+    planningSessionId: null,
+    applicationSessionId: null,
+    questions: [],
+    plan: null,
+    acceptedPlan: null,
+    progress: [],
+    finalDiff: null,
+    activeEffect: null,
+    recoveryMessage: null,
+    pendingFinalization: false,
+    pendingApproval: null,
+  }
+}

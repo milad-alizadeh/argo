@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { z } from 'zod'
-import type { ProjectSetupRecord } from '@/domains/projects/main/setup/project-setup-registry'
-import { projectSetupStore } from '@/domains/projects/main/setup/project-setup-sqlite-store'
+import type { ProjectSetupRecord } from '@/domains/projects/main/setup/persistence/project-setup-registry'
+import { projectSetupStore } from '@/domains/projects/main/setup/persistence/project-setup-storage'
 import { identifierSchema } from '@/shared/validation'
 import { createSetupWorktreePromotion } from './project-store-promotion'
 import {
@@ -10,7 +10,7 @@ import {
   type SetupCheckpoint,
 } from './setup-checkpoint-store'
 
-export type { ProjectSetupRecord } from '@/domains/projects/main/setup/project-setup-registry'
+export type { ProjectSetupRecord } from '@/domains/projects/main/setup/persistence/project-setup-registry'
 export type { SetupCheckpoint } from './setup-checkpoint-store'
 
 export type ProjectRegistration = {

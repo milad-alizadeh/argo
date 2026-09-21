@@ -122,7 +122,7 @@ export async function readManualSetupConfiguration(fixture: { databasePath: stri
 
 // One launch of the packaged app against the fixture's own application data. A restart is another
 // call to this, which is the only honest way to prove what survives one.
-export function launch(fixture) {
+export function launch(fixture, environment: Record<string, string> = {}) {
   return electron.launch({
     executablePath: appExecutable(fixture.application),
     env: {
@@ -131,6 +131,7 @@ export function launch(fixture) {
       ...(fixture.setupDocument
         ? { [SETUP_DOCUMENT_PROOF_URL_ENV]: fixture.setupDocument.url }
         : {}),
+      ...environment,
       [ACCEPTANCE_ENV]: '0',
     },
     timeout: 30_000,

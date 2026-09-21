@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import {
+  acceptedPlanFixture,
+  planFixture,
+} from '../../../../test-fixtures/projects/setup/setup-plan.fixture'
 import { validateAcceptedSetupPlan } from './setup-plan'
-import { acceptedPlanFixture, planFixture } from './setup-plan.fixture'
 import { validatePlanRevision } from './setup-plan-validation'
 
 function first<T>(items: T[]): T {

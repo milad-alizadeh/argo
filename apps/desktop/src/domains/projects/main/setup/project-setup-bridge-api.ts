@@ -3,25 +3,24 @@ import type {
   ProjectSetupSnapshotRequest,
 } from '@/domains/projects/contract/contract'
 import { projectError } from '@/domains/projects/contract/contract'
+import type { ProjectSetupRuntime } from '@/domains/projects/main/setup/actors/project-setup-actors'
+import type { createProjectSetupRegistry } from '@/domains/projects/main/setup/persistence/project-setup-registry'
 import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
-import { commandHarnessIsAvailable, defaultHarnesses, eventFor } from './project-setup-command'
-import { startProjectSetupEffect } from './project-setup-effect-runner'
-import type { ProjectSetupEffects } from './project-setup-effects'
-import type { createProjectSetupRegistry } from './project-setup-registry'
+import { commandHarnessIsAvailable, eventFor } from './project-setup-command'
 
 type Registry = ReturnType<typeof createProjectSetupRegistry>
 type Dependencies = {
-  effects: ProjectSetupEffects | undefined
   projects: ProjectStore
   registry: Registry
+  runtime: ProjectSetupRuntime
 }
 
 export function projectSetupBridgeApi(
   projects: ProjectStore,
   registry: Registry,
-  effects: ProjectSetupEffects | undefined,
+  runtime: ProjectSetupRuntime,
 ) {
-  const dependencies = { effects, projects, registry }
+  const dependencies = { projects, registry, runtime }
   return {
     actorSnapshot: (projectId: string) => registry.snapshot(projectId),
     command: (request: ProjectSetupCommandRequest) => command({ ...dependencies, request }),
@@ -30,46 +29,33 @@ export function projectSetupBridgeApi(
 }
 
 function command({
-  effects,
   projects,
   registry,
   request,
+  runtime,
 }: Dependencies & { request: ProjectSetupCommandRequest }) {
   if (!hasProject(projects, request.projectId))
     return projectError('missing-project', request.requestId)
-  if (!commandHarnessIsAvailable(request.command, effects))
-    return response(request.requestId, registry.snapshot(request.projectId), effects)
-  const current = registry.snapshot(request.projectId)
+  if (!commandHarnessIsAvailable(request.command, runtime))
+    return response(request.requestId, registry.snapshot(request.projectId), runtime)
   const result = registry.commandWithStatus({
     commandId: request.commandId,
     event: eventFor(request.command),
     expectedRevision: request.expectedRevision,
     projectId: request.projectId,
   })
-  if (result.accepted) {
-    startProjectSetupEffect({
-      effects,
-      projectId: request.projectId,
-      registry,
-      request,
-      snapshot:
-        request.command.type === 'approve-effect' || request.command.type === 'reject-effect'
-          ? current
-          : result.snapshot,
-    })
-  }
-  return response(request.requestId, result.snapshot, effects)
+  return response(request.requestId, result.snapshot, runtime)
 }
 
 function snapshot({
-  effects,
   projects,
   registry,
   request,
+  runtime,
 }: Dependencies & { request: ProjectSetupSnapshotRequest }) {
   if (!hasProject(projects, request.projectId))
     return projectError('missing-project', request.requestId)
-  return response(request.requestId, registry.snapshot(request.projectId), effects)
+  return response(request.requestId, registry.snapshot(request.projectId), runtime)
 }
 
 function hasProject(projects: ProjectStore, projectId: string) {
@@ -79,11 +65,11 @@ function hasProject(projects: ProjectStore, projectId: string) {
 function response(
   requestId: string,
   snapshot: ReturnType<Registry['snapshot']>,
-  effects: ProjectSetupEffects | undefined,
+  runtime: ProjectSetupRuntime,
 ) {
   return {
     ...snapshot,
-    harnesses: effects?.harnesses?.() ?? defaultHarnesses,
+    harnesses: runtime.harnesses,
     requestId,
     type: 'project.setup.snapshot' as const,
     version: 1 as const,

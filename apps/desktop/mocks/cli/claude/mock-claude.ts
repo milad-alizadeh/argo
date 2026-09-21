@@ -13,6 +13,7 @@ import {
 } from '../../../src/domains/sessions/main/composition/proof-protocol.ts'
 import { type AdversarialTurn, adversarialTurn } from '../../sessions/adversarial-turns.ts'
 import { MOCK_CLAUDE_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
+import { projectSetupReply } from './mock-project-setup.ts'
 
 process.title = MOCK_CLAUDE_PROCESS_TITLE
 
@@ -30,6 +31,7 @@ const RENAME = /^\/rename (.+)$/
 const replyDelay = Number(process.env[SESSION_MOCK_REPLY_DELAY_MS_ENV] ?? '0')
 const REPLY_DELAY_MS = Number.isFinite(replyDelay) && replyDelay > 0 ? replyDelay : 0
 const adversarialSeed = process.env[SESSION_MOCK_ADVERSARIAL_SEED_ENV]
+const projectSetupScenario = process.env.ARGO_PROJECT_SETUP_MOCK_SCENARIO
 let turnIndex = 0
 
 const [transcripts, ...flags] = process.argv.slice(2)
@@ -77,33 +79,56 @@ function compact() {
 }
 
 function writeReply(text: string, plan: AdversarialTurn | null) {
+  const response =
+    projectSetupReply(text, projectSetupScenario) ?? `Mock Claude read: ${text}${plan ? ' 🦜' : ''}`
   const reply = record('assistant', {
     role: 'assistant',
     stop_reason: 'end_turn',
-    content: [{ type: 'text', text: `Mock Claude read: ${text}${plan ? ' 🦜' : ''}` }],
+    content: [{ type: 'text', text: response }],
   })
   if (plan === null) {
     appendFileSync(transcript, reply)
-    return
+    return response
   }
   const bytes = Buffer.from(reply)
   const characterAt = bytes.indexOf(Buffer.from('🦜'))
   const splitAt = characterAt + Math.min(plan.replySplitByte, Buffer.from('🦜').length - 1)
   appendFileSync(transcript, bytes.subarray(0, splitAt))
   setTimeout(() => appendFileSync(transcript, bytes.subarray(splitAt)), 1)
+  return response
 }
 
-async function waitForPermission() {
+async function runHook(file: string, input: unknown) {
   if (pluginRoot === null) return
-  const hook = spawn('/bin/sh', [path.join(pluginRoot, 'permission-hook.sh')], {
+  const hook = spawn('/bin/sh', [path.join(pluginRoot, file)], {
     stdio: ['pipe', 'ignore', 'ignore'],
   })
-  hook.stdin.end(`${JSON.stringify({ tool_name: 'Bash', tool_input: { command: 'bun test' } })}\n`)
+  hook.stdin.end(`${JSON.stringify(input)}\n`)
   await once(hook, 'exit')
 }
 
+async function waitForPermission() {
+  await runHook('permission-hook.sh', {
+    tool_name: 'Bash',
+    tool_input: { command: 'bun test' },
+  })
+}
+
+async function displayReply(text: string) {
+  await runHook('display-hook.sh', {
+    turn_id: randomUUID(),
+    message_id: randomUUID(),
+    index: 0,
+    delta: text,
+  })
+}
+
 async function settleTurn(text: string, plan: AdversarialTurn | null) {
-  if (plan?.permissionBeforeReply) await waitForPermission()
+  if (
+    plan?.permissionBeforeReply ||
+    (projectSetupScenario === 'permission' && text.includes('ARGO_SETUP_PLAN'))
+  )
+    await waitForPermission()
   if (plan?.outcome === 'stall') return
   const delay = plan?.firstReplyDelayMs ?? REPLY_DELAY_MS
   if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay))
@@ -111,7 +136,7 @@ async function settleTurn(text: string, plan: AdversarialTurn | null) {
     process.stdout.write('Mock Claude failed a Turn.\r\n')
     process.exit(1)
   }
-  writeReply(text, plan)
+  await displayReply(writeReply(text, plan))
 }
 
 let pending = ''

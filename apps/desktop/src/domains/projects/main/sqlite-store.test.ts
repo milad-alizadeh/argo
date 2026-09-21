@@ -4,7 +4,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { createProjectSetupRegistry } from '@/domains/projects/main/setup/project-setup-registry'
+import { createProjectSetupRegistry } from '@/domains/projects/main/setup/persistence/project-setup-registry'
 import { createProjectStore } from '@/domains/projects/main/sqlite-store'
 import { SETUP_DOCUMENT_REVISION } from '../../../../test-fixtures/projects/setup-document.fixture'
 

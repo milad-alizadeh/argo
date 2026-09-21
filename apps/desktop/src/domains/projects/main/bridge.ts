@@ -5,15 +5,15 @@ import { listProjects } from '@/domains/projects/main/list-projects'
 import { openProject } from '@/domains/projects/main/open-project'
 import { registerProject, relocateProject } from '@/domains/projects/main/register-project'
 import { selectProject } from '@/domains/projects/main/select-project'
-import type { OnboardingAgentDriver } from '@/domains/projects/main/setup/onboarding-agent/run-onboarding-agent'
-import { createProjectSetupBridge } from '@/domains/projects/main/setup/project-setup-bridge'
-import { createClaudeProjectSetupEffects } from '@/domains/projects/main/setup/project-setup-effects'
+import { projectSetupRuntime } from '@/domains/projects/main/setup/actors/project-setup-actors'
+import type { OnboardingAgentDriver } from '@/domains/projects/main/setup/onboarding-agent/runtime/run-onboarding-agent'
 import {
   loadSetupDocument,
   type SetupDocumentSource,
   setupDocumentRequest,
   setupDocumentURL,
-} from '@/domains/projects/main/setup/setup-bundle'
+} from '@/domains/projects/main/setup/preparation/setup-bundle'
+import { createProjectSetupBridge } from '@/domains/projects/main/setup/project-setup-bridge'
 import type { ProjectStore as ProjectRegistryStore } from '@/domains/projects/main/sqlite-store'
 import { platformText } from '@/platform/main/i18n'
 import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
@@ -56,7 +56,7 @@ export function attachProjectBridge(
   const projectSetup = createProjectSetupBridge(
     window,
     storage.projects,
-    createClaudeProjectSetupEffects({
+    projectSetupRuntime({
       driver: storage.onboardingDriver,
       loadSetupDocument: setupDocument,
       projects: storage.projects,

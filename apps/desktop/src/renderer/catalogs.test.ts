@@ -5,6 +5,8 @@
 // reads the keys built from a variable, which no type can follow. The namespaces come from the
 // renderer's own registration, so a namespace is added in one place.
 import { expect, test } from 'bun:test'
+import { PROJECT_ERROR_CODES } from '@/domains/projects/contract/contract'
+import { PROJECT_SETUP_RECOVERY_CODES } from '@/domains/projects/contract/project-setup-recovery'
 import { CATALOGS } from '@/renderer/catalogs'
 
 const NAMESPACES = Object.keys(CATALOGS)
@@ -54,6 +56,16 @@ function keyPatterns(source: string): RegExp[] {
 
 const sources = await Promise.all(sourceFiles.map((file) => Bun.file(file).text()))
 const PATTERNS = sources.flatMap(keyPatterns)
+
+test('every Project error code has reader text', () => {
+  expect(Object.keys(CATALOGS.projects.error).sort()).toEqual([...PROJECT_ERROR_CODES].sort())
+})
+
+test('every Project setup recovery code has reader text', () => {
+  expect(Object.keys(CATALOGS.projects.setup.actor.recovery).sort()).toEqual(
+    [...PROJECT_SETUP_RECOVERY_CODES].sort(),
+  )
+})
 
 test('every catalog key has a call site', () => {
   const skipped = new Set(NAMESPACES_AWAITING_MIGRATION)

@@ -3,6 +3,7 @@ import type {
   ProjectSetupCommand,
   ProjectSetupSnapshot,
 } from '@/domains/projects/contract/contract'
+import { PermissionPrompt } from '@/platform/renderer/components/permission-prompt'
 import { Button } from '@/platform/renderer/components/ui/button'
 
 type ApprovalScreenProps = {
@@ -10,31 +11,33 @@ type ApprovalScreenProps = {
   snapshot: ProjectSetupSnapshot
 }
 
-export function EffectApproval({ command, snapshot }: ApprovalScreenProps) {
+export function Approval({ command, snapshot }: ApprovalScreenProps) {
   const { t } = useTranslation('projects')
+  const approval = snapshot.pendingApproval
+  if (approval === null) return null
   return (
-    <section className="mt-6 grid gap-3" aria-label={t('setup.actor.awaiting-approval.label')}>
-      <p className="type-body">{snapshot.pendingApproval?.description}</p>
-      <div className="flex gap-3">
-        <Button onClick={() => void command({ type: 'approve-effect' })}>
-          {t('setup.actor.awaiting-approval.approve')}
-        </Button>
-        <Button onClick={() => void command({ type: 'reject-effect' })} variant="outline">
-          {t('setup.actor.awaiting-approval.reject')}
-        </Button>
-      </div>
+    <section className="mt-6" aria-label={t('setup.actor.awaiting-approval.label')}>
+      <PermissionPrompt
+        harness={snapshot.attempt?.applicationHarness ?? snapshot.attempt?.planningHarness}
+        permission={{ description: approval.description, id: approval.permissionId }}
+        onDecide={async (decision) => {
+          await command({ type: decision === 'allow' ? 'approve-effect' : 'reject-effect' })
+          return true
+        }}
+      />
     </section>
   )
 }
 
-export function CancelFailed({ command, snapshot }: ApprovalScreenProps) {
+export function CancelFailed({ command }: ApprovalScreenProps) {
   const { t } = useTranslation('projects')
   return (
-    <section className="mt-6 grid gap-3" aria-label={t('setup.actor.cancel-failed.label')}>
-      <p className="type-body">{snapshot.recoveryMessage}</p>
-      <Button onClick={() => void command({ type: 'retry-cancel' })}>
-        {t('setup.actor.cancel-failed.action')}
-      </Button>
+    <section className="mt-6" aria-label={t('setup.actor.cancel-failed.label')}>
+      <div className="flex justify-end">
+        <Button onClick={() => void command({ type: 'retry-cancel' })}>
+          {t('setup.actor.cancel-failed.action')}
+        </Button>
+      </div>
     </section>
   )
 }

@@ -3,12 +3,10 @@ import { z } from 'zod'
 export const projectSetupScreenSchema = z.enum([
   'choosing-method',
   'manual',
-  'preflight',
-  'planning-unavailable',
   'planning',
   'questions',
   'reviewing-plan',
-  'invalid-plan',
+  'customizing-project-setup',
   'applying',
   'review-required',
   'interrupted',

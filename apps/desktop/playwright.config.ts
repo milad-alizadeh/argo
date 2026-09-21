@@ -19,6 +19,7 @@ export default defineConfig<object, SessionBackendOptions>({
     : 'line',
   outputDir: 'test-results',
   projects: [
+    { name: 'project-setup', testDir: 'e2e/project-setup' },
     { name: 'projects', testDir: 'e2e/projects' },
     {
       name: 'sessions',

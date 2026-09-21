@@ -50,7 +50,7 @@ export function ImportSetup({
       <Textarea
         aria-invalid={!valid}
         aria-label={t('setup.configurationLabel')}
-        className="project-setup-import-source mt-8 resize-y font-mono"
+        className="mt-8 min-h-96 resize-y font-mono"
         onChange={(event) => onConfigurationChange(event.target.value)}
         value={configurationSource}
       />

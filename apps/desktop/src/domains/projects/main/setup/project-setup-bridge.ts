@@ -1,9 +1,8 @@
 import type { BrowserWindow } from 'electron'
+import type { ProjectSetupRuntime } from '@/domains/projects/main/setup/actors/project-setup-actors'
+import { createProjectSetupRegistry } from '@/domains/projects/main/setup/persistence/project-setup-registry'
 import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
 import { projectSetupBridgeApi } from './project-setup-bridge-api'
-import { defaultHarnesses } from './project-setup-command'
-import type { ProjectSetupEffects } from './project-setup-effects'
-import { createProjectSetupRegistry } from './project-setup-registry'
 
 const registries = new WeakMap<object, ReturnType<typeof createProjectSetupRegistry>>()
 const changedChannel = 'argo:project:setup:changed'
@@ -11,26 +10,26 @@ const changedChannel = 'argo:project:setup:changed'
 export function createProjectSetupBridge(
   window: BrowserWindow,
   projects: ProjectStore,
-  effects?: ProjectSetupEffects,
+  runtime: ProjectSetupRuntime,
 ) {
-  const registry = registryFor(projects)
+  const registry = registryFor(projects, runtime)
   const unsubscribe = registry.subscribeAll((_projectId, snapshot) => {
     window.webContents.send(changedChannel, {
       version: 1,
       type: 'project.setup.snapshot',
       requestId: 'subscription',
       ...snapshot,
-      harnesses: effects?.harnesses?.() ?? defaultHarnesses,
+      harnesses: runtime.harnesses,
     })
   })
   window.once('closed', unsubscribe)
-  return projectSetupBridgeApi(projects, registry, effects)
+  return projectSetupBridgeApi(projects, registry, runtime)
 }
 
-function registryFor(projects: ProjectStore) {
+function registryFor(projects: ProjectStore, runtime: ProjectSetupRuntime) {
   const current = registries.get(projects)
   if (current) return current
-  const registry = createProjectSetupRegistry(projects)
+  const registry = createProjectSetupRegistry(projects, runtime)
   registries.set(projects, registry)
   return registry
 }

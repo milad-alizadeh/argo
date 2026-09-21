@@ -1,10 +1,28 @@
+import { FileJson } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
   ProjectSetupCommand,
   ProjectSetupSnapshot,
 } from '@/domains/projects/contract/contract'
+import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Button } from '@/platform/renderer/components/ui/button'
+import {
+  Questionnaire,
+  QuestionnaireActions,
+  QuestionnaireChoice,
+  QuestionnaireChoices,
+  QuestionnaireDescription,
+  QuestionnaireError,
+  QuestionnaireInput,
+  QuestionnaireItem,
+  QuestionnaireNext,
+  QuestionnairePrevious,
+  QuestionnaireProgress,
+  QuestionnaireSubmit,
+  QuestionnaireTitle,
+} from '@/platform/renderer/components/ui/questionnaire'
+import { ProjectSetupEditor } from './project-setup-editor'
 
 type InputScreenProps = {
   command: (command: ProjectSetupCommand) => Promise<void>
@@ -15,8 +33,6 @@ export function InputScreen({ command, snapshot }: InputScreenProps) {
   switch (snapshot.screen) {
     case 'questions':
       return <Questions command={command} snapshot={snapshot} />
-    case 'invalid-plan':
-      return <InvalidPlan command={command} />
     case 'manual':
       return <Manual command={command} snapshot={snapshot} />
     default:
@@ -26,52 +42,94 @@ export function InputScreen({ command, snapshot }: InputScreenProps) {
 
 function Questions({ command, snapshot }: InputScreenProps) {
   const { t } = useTranslation('projects')
-  const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [selections, setSelections] = useState<Record<string, string[]>>({})
+  const [customAnswers, setCustomAnswers] = useState<Record<string, string>>({})
+  const completed = snapshot.questions.map(({ id }) => ({
+    id,
+    selections: selections[id] ?? [],
+    custom: customAnswers[id] ?? '',
+  }))
   const submitAnswers = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const completed = snapshot.questions.map(({ id }) => ({ id, answer: answers[id] ?? '' }))
-    if (completed.every(({ answer }) => answer.trim().length > 0)) {
-      void command({ type: 'answer-questions', answers: completed })
-    }
+    void command({ type: 'answer-questions', answers: completed })
   }
+  const items = snapshot.questions.map(({ id, suggestions }) => ({
+    name: id,
+    required: true,
+    choices: suggestions.map((value) => ({ value })),
+  }))
   return (
-    <form className="mt-6 grid gap-4" onSubmit={submitAnswers}>
+    <Questionnaire
+      className="mt-7 rounded-xl border bg-card p-5"
+      items={items}
+      onSubmit={submitAnswers}
+      shortcuts="letters"
+    >
+      <QuestionnaireProgress
+        aria-label={t('setup.actor.questions.progressLabel')}
+        render={(props, { current, total }) => (
+          <div {...props}>{t('setup.actor.questions.progress', { current, total })}</div>
+        )}
+      />
       {snapshot.questions.map((question) => (
-        <label className="grid gap-2 type-body" key={question.id}>
-          <span>{question.prompt}</span>
-          <input
-            className="rounded-md border p-3"
-            onChange={(event) =>
-              setAnswers((current) => ({ ...current, [question.id]: event.target.value }))
-            }
-            value={answers[question.id] ?? ''}
-          />
-        </label>
+        <QuestionnaireItem key={question.id} multiple name={question.id} required>
+          <QuestionnaireTitle>{question.prompt}</QuestionnaireTitle>
+          {question.context ? (
+            <QuestionnaireDescription>{question.context}</QuestionnaireDescription>
+          ) : null}
+          <QuestionnaireChoices>
+            {question.suggestions.map((suggestion) => (
+              <QuestionnaireChoice
+                checked={(selections[question.id] ?? []).includes(suggestion)}
+                key={suggestion}
+                onChange={() =>
+                  setSelections((current) => ({
+                    ...current,
+                    [question.id]: toggled(current[question.id] ?? [], suggestion),
+                  }))
+                }
+                value={suggestion}
+              >
+                <span className="flex items-center justify-between gap-3 font-medium">
+                  {suggestion}
+                  {suggestion === question.recommended ? (
+                    <Badge size="compact" variant="secondary">
+                      {t('setup.actor.questions.recommended')}
+                    </Badge>
+                  ) : null}
+                </span>
+              </QuestionnaireChoice>
+            ))}
+            <QuestionnaireInput
+              aria-label={t('setup.actor.questions.otherAnswer')}
+              onChange={(event) =>
+                setCustomAnswers((current) => ({
+                  ...current,
+                  [question.id]: event.target.value,
+                }))
+              }
+              placeholder={t('setup.actor.questions.otherAnswerPlaceholder')}
+              value={customAnswers[question.id] ?? ''}
+            />
+          </QuestionnaireChoices>
+          <QuestionnaireError>{t('setup.actor.questions.chooseAnswer')}</QuestionnaireError>
+        </QuestionnaireItem>
       ))}
-      <Button type="submit">{t('setup.actor.questions.continue')}</Button>
-    </form>
+      <QuestionnaireActions>
+        <QuestionnairePrevious>{t('setup.actor.questions.previous')}</QuestionnairePrevious>
+        <QuestionnaireNext>{t('setup.actor.questions.next')}</QuestionnaireNext>
+        <QuestionnaireSubmit>
+          {t('setup.actor.questions.continue')}
+        </QuestionnaireSubmit>
+      </QuestionnaireActions>
+    </Questionnaire>
   )
 }
 
-function InvalidPlan({ command }: Pick<InputScreenProps, 'command'>) {
-  const { t } = useTranslation('projects')
-  const [feedback, setFeedback] = useState('')
-  return (
-    <div className="mt-6 grid gap-3">
-      <textarea
-        aria-label={t('setup.actor.invalid-plan.feedbackLabel')}
-        className="min-h-24 rounded-md border p-3 type-body"
-        onChange={(event) => setFeedback(event.target.value)}
-        value={feedback}
-      />
-      <Button
-        disabled={feedback.trim().length === 0}
-        onClick={() => void command({ type: 'request-plan-change', feedback })}
-      >
-        {t('setup.actor.invalid-plan.changeAction')}
-      </Button>
-    </div>
-  )
+function toggled(values: string[], value: string) {
+  return values.includes(value)
+    ? values.filter((candidate) => candidate !== value)
+    : [...values, value]
 }
 
 function Manual({ command, snapshot }: InputScreenProps) {
@@ -79,21 +137,33 @@ function Manual({ command, snapshot }: InputScreenProps) {
   const [source, setSource] = useState(snapshot.manualSource)
   useEffect(() => setSource(snapshot.manualSource), [snapshot.manualSource])
   return (
-    <div className="mt-6 grid gap-3">
-      <textarea
-        aria-label={t('setup.configurationLabel')}
-        className="min-h-64 rounded-md border p-3 font-mono"
-        onChange={(event) => setSource(event.target.value)}
-        value={source}
-      />
-      <div className="flex gap-3">
-        <Button onClick={() => void command({ type: 'save-manual', source })}>
-          {t('setup.actor.manual.action')}
-        </Button>
+    <>
+      <section className="mt-7 overflow-hidden rounded-xl border bg-card">
+        <div className="flex items-center gap-3 px-3.5 py-3">
+          <span className="grid size-8 shrink-0 place-items-center rounded-md bg-muted">
+            <FileJson className="size-4" />
+          </span>
+          <span className="min-w-0">
+            <span className="block type-body font-semibold">
+              {t('setup.actor.manual.cardTitle')}
+            </span>
+            <small className="mt-1 block type-control leading-snug text-muted-foreground">
+              {t('setup.actor.manual.cardDescription')}
+            </small>
+          </span>
+        </div>
+        <div className="border-t p-4">
+          <ProjectSetupEditor onChange={setSource} source={source} />
+        </div>
+      </section>
+      <div className="mt-6 flex flex-wrap justify-end gap-2">
         <Button onClick={() => void command({ type: 'back' })} variant="outline">
           {t('setup.document.back')}
         </Button>
+        <Button onClick={() => void command({ type: 'save-manual', source })}>
+          {t('setup.actor.manual.action')}
+        </Button>
       </div>
-    </div>
+    </>
   )
 }

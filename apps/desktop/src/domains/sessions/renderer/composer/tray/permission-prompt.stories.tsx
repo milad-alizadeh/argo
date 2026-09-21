@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test'
 import type { Permission } from '@/domains/sessions/contract/ipc/contract'
 import { PendingTurns } from '@/domains/sessions/renderer/composer/tray/pending-turns'
-import { PermissionPrompt } from '@/domains/sessions/renderer/composer/tray/permission-prompt'
+import { PermissionPrompt } from '@/platform/renderer/components/permission-prompt'
 import '../composer-content.css'
 import { AttachmentTray } from '@/domains/sessions/renderer/composer/tray/attachment-tray'
 

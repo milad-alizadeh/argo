@@ -4,7 +4,10 @@ import type {
   ProjectSetupCommand,
   ProjectSetupSnapshot,
 } from '@/domains/projects/contract/contract'
+import { FileDiffList } from '@/platform/renderer/components/file-diff-list'
 import { Button } from '@/platform/renderer/components/ui/button'
+import { projectSetupDiffFiles } from './project-setup-diff-files'
+import { projectSetupRecoveryText } from './project-setup-recovery-text'
 
 export function Recovery({
   command,
@@ -15,28 +18,59 @@ export function Recovery({
   review: boolean
   snapshot: ProjectSetupSnapshot
 }) {
+  if (review) return <ReviewRequired command={command} snapshot={snapshot} />
   const { t } = useTranslation('projects')
-  const action = review
-    ? { type: 'request-plan-change' as const, feedback: 'Review drift' }
-    : {
-        type: snapshot.attempt?.applicationSessionId
-          ? ('resume-application' as const)
-          : ('resume-planning' as const),
-      }
+  const action = {
+    type: snapshot.attempt?.applicationSessionId
+      ? ('resume-application' as const)
+      : ('resume-planning' as const),
+  }
+  const recoveryText = projectSetupRecoveryText(t, snapshot.recoveryMessage)
   return (
     <section
       className="mt-6 grid gap-3"
-      aria-label={t(review ? 'setup.actor.review-required.label' : 'setup.actor.interrupted.label')}
+      aria-label={t('setup.actor.interrupted.label')}
     >
-      <p className="type-body">{snapshot.recoveryMessage}</p>
-      <SetupCommandButton command={command} value={action}>
-        {t(review ? 'setup.actor.review-required.action' : 'setup.actor.interrupted.resume')}
-      </SetupCommandButton>
-      {!review ? (
-        <SetupCommandButton command={command} value={{ type: 'restart-attempt' }} variant="outline">
+      {recoveryText ? <p className="type-body">{recoveryText}</p> : null}
+      <div className="flex flex-wrap justify-end gap-2">
+        <SetupCommandButton command={command} value={action}>
+          {t('setup.actor.interrupted.resume')}
+        </SetupCommandButton>
+        <SetupCommandButton
+          command={command}
+          value={{ type: 'restart-attempt' }}
+          variant="outline"
+        >
           {t('setup.actor.interrupted.restart')}
         </SetupCommandButton>
-      ) : null}
+      </div>
+    </section>
+  )
+}
+
+function ReviewRequired({ command, snapshot }: Omit<Parameters<typeof Recovery>[0], 'review'>) {
+  const { t } = useTranslation('projects')
+  return (
+    <section className="mt-6 grid gap-4" aria-label={t('setup.actor.review-required.label')}>
+      <p className="type-body">{projectSetupRecoveryText(t, snapshot.recoveryMessage)}</p>
+      <FileDiffList
+        accessibleName={t('setup.actor.review-required.diffLabel')}
+        className="max-h-[36rem]"
+        files={projectSetupDiffFiles(snapshot.finalDiff)}
+        markViewedLabel={(path) => t('setup.actor.reviewing-diff.markViewed', { path })}
+        viewedLabel={t('setup.actor.reviewing-diff.viewed')}
+      />
+      <div className="flex justify-end">
+        <SetupCommandButton
+          command={command}
+          value={{
+            type: 'request-plan-change',
+            feedback: t('setup.actor.review-required.feedback'),
+          }}
+        >
+          {t('setup.actor.review-required.action')}
+        </SetupCommandButton>
+      </div>
     </section>
   )
 }

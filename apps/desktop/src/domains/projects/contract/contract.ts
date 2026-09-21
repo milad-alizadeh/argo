@@ -5,10 +5,15 @@ import {
   projectSetupEffectSchema,
   projectSetupPendingApprovalSchema,
 } from './project-setup-approval'
+import { projectSetupRecoveryCodeSchema } from './project-setup-recovery'
 import { projectSetupScreenSchema } from './project-setup-screen'
+import {
+  projectSetupAnswerSchema,
+  projectSetupQuestionSchema,
+} from './project-setup-question'
 
 export {
-  PROJECT_ERRORS,
+  PROJECT_ERROR_CODES,
   type ProjectError,
   type ProjectErrorCode,
   projectError,
@@ -52,19 +57,22 @@ const onboardingHarnessAvailabilitySchema = z.strictObject({
 const projectSetupCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('choose-manual') }),
   z.strictObject({ type: z.literal('choose-agent'), harness: onboardingHarnessSchema }),
-  z.strictObject({ type: z.literal('retry-preflight') }),
   z.strictObject({
     type: z.literal('answer-questions'),
-    answers: z.array(z.strictObject({ id: identifierSchema, answer: z.string().min(1) })).min(1),
+    answers: z.array(projectSetupAnswerSchema).min(1),
   }),
   z.strictObject({ type: z.literal('request-plan-change'), feedback: z.string().min(1) }),
+  z.strictObject({ type: z.literal('continue-plan-review') }),
   z.strictObject({ type: z.literal('accept-plan'), acceptedPlan: acceptedSetupPlanSchema }),
   z.strictObject({
     type: z.literal('choose-application-harness'),
     harness: onboardingHarnessSchema,
   }),
   z.strictObject({ type: z.literal('approve-final-diff') }),
-  z.strictObject({ type: z.literal('reject-final-diff') }),
+  z.strictObject({
+    type: z.literal('request-application-change'),
+    feedback: z.string().min(1),
+  }),
   z.strictObject({ type: z.literal('cancel-setup') }),
   z.strictObject({ type: z.literal('retry-cancel') }),
   z.strictObject({ type: z.literal('approve-effect') }),
@@ -76,7 +84,7 @@ const projectSetupCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('back') }),
   z.strictObject({ type: z.literal('save-manual'), source: z.string().min(1).max(100_000) }),
   z.strictObject({ type: z.literal('resume-setup') }),
-  z.strictObject({ type: z.literal('start-repair-or-upgrade') }),
+  z.strictObject({ type: z.literal('edit-setup') }),
 ])
 export type ProjectSetupCommand = z.infer<typeof projectSetupCommandSchema>
 
@@ -117,7 +125,7 @@ export const projectSetupSnapshotSchema = z.strictObject({
       applicationSessionId: identifierSchema.nullable(),
     })
     .nullable(),
-  questions: z.array(z.strictObject({ id: identifierSchema, prompt: z.string().min(1) })),
+  questions: z.array(projectSetupQuestionSchema),
   plan: setupPlanSchema.nullable(),
   acceptedPlan: acceptedSetupPlanSchema.nullable(),
   progress: z.array(
@@ -129,7 +137,7 @@ export const projectSetupSnapshotSchema = z.strictObject({
   ),
   finalDiff: z.string().nullable(),
   activeEffect: projectSetupEffectSchema.nullable(),
-  recoveryMessage: z.string().nullable(),
+  recoveryMessage: projectSetupRecoveryCodeSchema.nullable(),
   pendingApproval: projectSetupPendingApprovalSchema,
 })
 export type ProjectSetupSnapshot = z.infer<typeof projectSetupSnapshotSchema>

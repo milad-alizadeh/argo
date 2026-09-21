@@ -2,24 +2,18 @@
 // validates before render; schemas live apart so each concern stays small.
 
 import { z } from 'zod'
-import { identifierSchema } from '../../../shared/validation'
+import { projectSetupQuestionSchema } from './project-setup-question'
 import { acceptedSetupPlanSchema, setupPlanSchema } from './setup-plan-schema'
 import type { AcceptedSetupPlan, SetupPlan } from './setup-plan-types'
 
 export type { AcceptedSetupPlan, SetupPlan }
 export { acceptedSetupPlanSchema, setupPlanSchema }
 
-const questionSchema = z.object({
-  id: identifierSchema,
-  prompt: z.string().min(1),
-  context: z.string().optional(),
-})
-
 export const setupPlanningResultSchema = z.discriminatedUnion('status', [
   z.object({
     status: z.literal('needs-user-input'),
     revision: z.string().min(1),
-    questions: z.array(questionSchema).min(1),
+    questions: z.array(projectSetupQuestionSchema).min(1),
   }),
   z.object({
     status: z.literal('ready-for-review'),

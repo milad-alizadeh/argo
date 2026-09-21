@@ -75,7 +75,6 @@ const invalidResponse = {
   type: 'project.error',
   requestId: 'list-1',
   code: 'invalid-response',
-  message: 'Argo received an invalid Project response.',
 }
 
 test('passes a well formed listing through untouched', async () => {

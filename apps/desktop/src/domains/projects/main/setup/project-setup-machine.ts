@@ -1,150 +1,498 @@
-import { assign, createMachine } from 'xstate'
-import { updateCurrentAttemptEvidence } from './project-setup-attempt-evidence'
-import { projectSetupFinalizationState } from './project-setup-machine-finalization-state'
-import { projectSetupRunningStates } from './project-setup-machine-running-states'
+import { assertEvent, assign, sendTo, setup } from 'xstate'
+import { inactiveProjectSetupActors } from '@/domains/projects/main/setup/actors/project-setup-actors'
+import { projectSetupApplicationInput } from '@/domains/projects/main/setup/actors/project-setup-application-actor'
+import { projectSetupCancellationInput } from '@/domains/projects/main/setup/actors/project-setup-cancellation-actor'
+import { projectSetupPlanningInput } from '@/domains/projects/main/setup/actors/project-setup-planning-actor'
 import {
   initialProjectSetupContext,
   type ProjectSetupContext,
   type ProjectSetupEvent,
 } from './project-setup-machine-types'
-import { projectSetupTerminalStates } from './project-setup-terminal-states'
+
 export const PROJECT_SETUP_MACHINE_VERSION = 1
 
-export const projectSetupMachine = createMachine({
-  types: {} as { context: ProjectSetupContext; events: ProjectSetupEvent },
-  id: 'project-setup',
-  initial: 'choosingMethod',
-  context: initialProjectSetupContext,
-  on: {
-    EFFECT_INTERRUPTED: {
-      target: '.interrupted',
-      actions: assign({
-        activeEffect: null,
-        pendingApproval: null,
-        recoveryMessage: ({ event }) => event.reason,
-      }),
-    },
-    PROGRESS_RECEIVED: { actions: assign({ progress: ({ event }) => event.progress }) },
+function updateCurrentAttemptEvidence(
+  context: ProjectSetupContext,
+  change: Partial<ProjectSetupContext['attemptEvidence'][number]>,
+) {
+  const attemptNumber = context.attemptNumber
+  if (attemptNumber === null) return context.attemptEvidence
+  return context.attemptEvidence.map((attempt) =>
+    attempt.number === attemptNumber
+      ? {
+          ...attempt,
+          ...change,
+        }
+      : attempt,
+  )
+}
+
+const projectSetup = setup({
+  types: {} as {
+    context: ProjectSetupContext
+    events: ProjectSetupEvent
+    tags: 'agent-running' | 'busy' | 'permission-capable' | 'recoverable'
   },
-  states: {
-    choosingMethod: {
-      on: {
-        CHOOSE_MANUAL: 'manual',
-        CHOOSE_AGENT: {
-          target: 'preflight',
-          actions: assign({
-            applicationHarness: ({ event }) => event.harness,
-            attemptNumber: ({ context }) => (context.attemptNumber ?? 0) + 1,
-            attemptEvidence: ({ context, event }) => [
-              ...context.attemptEvidence,
-              {
-                number: (context.attemptNumber ?? 0) + 1,
-                planningHarness: event.harness,
-                planningSessionId: null,
-                applicationSessionId: null,
-                acceptedPlanRevision: null,
-              },
-            ],
-            selectedHarness: ({ event }) => event.harness,
-          }),
-        },
-        DEFER: 'deferred',
+  actors: inactiveProjectSetupActors,
+  guards: {
+    'if an approval is pending': ({ context }) => context.pendingApproval !== null,
+  },
+  actions: {
+    interruptEffect: assign({
+      activeEffect: null,
+      pendingApproval: null,
+      recoveryMessage: ({ event }) => {
+        assertEvent(event, 'Effect interrupted')
+        return event.reason
       },
-    },
-    preflight: { on: { PREFLIGHT_PASSED: 'planning', PREFLIGHT_FAILED: 'planningUnavailable' } },
-    planningUnavailable: {
-      on: {
-        RETRY_PREFLIGHT: 'preflight',
-        CHOOSE_MANUAL: 'manual',
-        DEFER: 'deferred',
+    }),
+    recordProgress: assign({
+      progress: ({ event }) => {
+        assertEvent(event, 'Progress received')
+        return event.progress
       },
-    },
-    questions: { on: { ANSWERS_SENT: { target: 'planning', actions: assign({ questions: [] }) } } },
-    reviewingPlan: {
-      on: {
-        REQUEST_PLAN_CHANGE: 'planning',
-        CHOOSE_APPLICATION_HARNESS: {
-          actions: assign({ applicationHarness: ({ event }) => event.harness }),
-        },
-        ACCEPT_PLAN: {
-          target: 'applying',
-          actions: assign({
-            acceptedPlan: ({ event }) => event.acceptedPlan,
-            attemptEvidence: ({ context, event }) =>
-              updateCurrentAttemptEvidence(context, {
-                acceptedPlanRevision: event.acceptedPlan.sourceRevision,
-              }),
-          }),
-        },
+    }),
+    beginAttempt: assign({
+      applicationHarness: ({ event }) => {
+        assertEvent(event, 'Choose agent')
+        return event.harness
       },
-    },
-    invalidPlan: { on: { REQUEST_PLAN_CHANGE: 'planning' } },
-    reviewRequired: { on: { REQUEST_PLAN_CHANGE: 'planning' } },
-    interrupted: {
-      on: {
-        RESUME_PLANNING: { target: 'planning', actions: assign({ recoveryMessage: null }) },
-        RESUME_APPLICATION: { target: 'applying', actions: assign({ recoveryMessage: null }) },
-        RESTART_ATTEMPT: {
-          target: 'choosingMethod',
-          actions: assign({
-            applicationSessionId: null,
-            finalDiff: null,
-            plan: null,
-            acceptedPlan: null,
+      attemptNumber: ({ context }) => (context.attemptNumber ?? 0) + 1,
+      attemptEvidence: ({ context, event }) => {
+        assertEvent(event, 'Choose agent')
+        return [
+          ...context.attemptEvidence,
+          {
+            number: (context.attemptNumber ?? 0) + 1,
+            planningHarness: event.harness,
             planningSessionId: null,
-            progress: [],
-            recoveryMessage: null,
-          }),
-        },
-      },
-    },
-    reviewingDiff: {
-      on: {
-        APPROVE_FINAL_DIFF: {
-          target: 'finalizing',
-          actions: assign({ pendingFinalization: true }),
-        },
-        REJECT_FINAL_DIFF: {
-          target: 'reviewingPlan',
-          actions: assign({
             applicationSessionId: null,
-            finalDiff: null,
-            acceptedPlan: null,
-            progress: [],
-          }),
+            acceptedPlanRevision: null,
+          },
+        ]
+      },
+      selectedHarness: ({ event }) => {
+        assertEvent(event, 'Choose agent')
+        return event.harness
+      },
+    }),
+    beginPlanning: assign({
+      activeEffect: 'planning',
+    }),
+    recordPlanningSession: assign({
+      planningSessionId: ({ event }) => {
+        assertEvent(event, 'Planning session started')
+        return event.sessionId
+      },
+      attemptEvidence: ({ context, event }) => {
+        assertEvent(event, 'Planning session started')
+        return updateCurrentAttemptEvidence(context, {
+          planningSessionId: event.sessionId,
+        })
+      },
+    }),
+    recordQuestions: assign({
+      activeEffect: null,
+      pendingApproval: null,
+      questions: ({ event }) => {
+        assertEvent(event, 'Questions received')
+        return event.questions
+      },
+    }),
+    recordPlan: assign({
+      activeEffect: null,
+      pendingApproval: null,
+      plan: ({ event }) => {
+        assertEvent(event, 'Plan validated')
+        return event.plan
+      },
+    }),
+    finishEffect: assign({
+      activeEffect: null,
+      pendingApproval: null,
+    }),
+    requestPermission: assign(
+      (
+        { event },
+        params: {
+          effect: 'planning' | 'application'
+        },
+      ) => {
+        assertEvent(event, 'Permission requested')
+        return {
+          pendingApproval: {
+            effect: params.effect,
+            permissionId: event.permissionId,
+            description: event.description,
+          },
+        }
+      },
+    ),
+    forwardPlanningPermission: sendTo('onboardingPlanning', ({ event }) => event),
+    forwardApplicationPermission: sendTo('onboardingApplication', ({ event }) => event),
+    clearPermission: assign({
+      pendingApproval: null,
+    }),
+    clearQuestions: assign({
+      questions: [],
+    }),
+    recordApplicationHarness: assign({
+      applicationHarness: ({ event }) => {
+        assertEvent(event, 'Select application harness')
+        return event.harness
+      },
+    }),
+    acceptPlan: assign({
+      acceptedPlan: ({ event }) => {
+        assertEvent(event, 'Accept plan')
+        return event.acceptedPlan
+      },
+      attemptEvidence: ({ context, event }) => {
+        assertEvent(event, 'Accept plan')
+        return updateCurrentAttemptEvidence(context, {
+          acceptedPlanRevision: event.acceptedPlan.sourceRevision,
+        })
+      },
+    }),
+    beginApplication: assign({
+      activeEffect: 'application',
+    }),
+    recordApplicationSession: assign({
+      applicationSessionId: ({ event }) => {
+        assertEvent(event, 'Application session started')
+        return event.sessionId
+      },
+      attemptEvidence: ({ context, event }) => {
+        assertEvent(event, 'Application session started')
+        return updateCurrentAttemptEvidence(context, {
+          applicationSessionId: event.sessionId,
+        })
+      },
+    }),
+    completeApplication: assign({
+      activeEffect: null,
+      pendingApproval: null,
+      finalDiff: ({ event }) => {
+        assertEvent(event, 'Application completed')
+        return event.finalDiff
+      },
+      progress: ({ event }) => {
+        assertEvent(event, 'Application completed')
+        return event.progress
+      },
+    }),
+    recordApplicationDrift: assign({
+      activeEffect: null,
+      pendingApproval: null,
+      finalDiff: ({ event }) => {
+        assertEvent(event, 'Application drift')
+        return event.finalDiff
+      },
+      recoveryMessage: ({ event }) => {
+        assertEvent(event, 'Application drift')
+        return event.reason
+      },
+    }),
+    clearRecoveryMessage: assign({
+      recoveryMessage: null,
+    }),
+    restartAttempt: assign({
+      applicationSessionId: null,
+      finalDiff: null,
+      plan: null,
+      acceptedPlan: null,
+      planningSessionId: null,
+      progress: [],
+      recoveryMessage: null,
+    }),
+    beginFinalization: assign({
+      pendingFinalization: true,
+    }),
+    confirmCancellation: assign({
+      activeEffect: null,
+      recoveryMessage: 'cancelled',
+    }),
+    recordCancellationFailure: assign({
+      recoveryMessage: ({ event }) => {
+        assertEvent(event, 'Cancel setup failed')
+        return event.reason
+      },
+    }),
+    completeFinalization: assign({
+      pendingFinalization: false,
+    }),
+    recordFinalizationFailure: assign({
+      pendingFinalization: false,
+      recoveryMessage: ({ event }) => {
+        assertEvent(event, 'Finalization failed')
+        return event.reason
+      },
+    }),
+    saveManualSource: assign({
+      manualSource: ({ event }) => {
+        assertEvent(event, 'Save manual')
+        return event.source
+      },
+    }),
+  },
+})
+
+export const projectSetupMachine = projectSetup.createMachine({
+  id: 'project-setup',
+  initial: 'Choosing setup method',
+  context: initialProjectSetupContext,
+  states: {
+    'Choosing setup method': {
+      on: {
+        'Choose manual': 'Manual setup',
+        'Choose agent': {
+          target: 'Planning',
+          actions: 'beginAttempt',
+        },
+        Defer: 'Deferred',
+      },
+    },
+    Planning: {
+      tags: [
+        'agent-running',
+        'busy',
+        'permission-capable',
+      ],
+      entry: 'beginPlanning',
+      exit: 'clearPermission',
+      invoke: {
+        id: 'onboardingPlanning',
+        src: 'onboardingPlanning',
+        input: ({ context, event }) => projectSetupPlanningInput(context, event),
+      },
+      on: {
+        'Effect interrupted': {
+          target: 'Interrupted',
+          actions: 'interruptEffect',
+        },
+        'Progress received': {
+          actions: 'recordProgress',
+        },
+        'Cancel setup requested': 'Cancelling',
+        'Planning session started': {
+          actions: 'recordPlanningSession',
+        },
+        'Questions received': {
+          target: 'Questions',
+          actions: 'recordQuestions',
+        },
+        'Plan validated': {
+          target: 'Reviewing plan',
+          actions: 'recordPlan',
+        },
+        'Invalid output': {
+          target: 'Planning',
+        },
+        'Permission requested': {
+          actions: {
+            type: 'requestPermission',
+            params: {
+              effect: 'planning',
+            },
+          },
+        },
+        'Approve effect': {
+          guard: 'if an approval is pending',
+          actions: [
+            'forwardPlanningPermission',
+            'clearPermission',
+          ],
+        },
+        'Reject effect': {
+          guard: 'if an approval is pending',
+          actions: [
+            'forwardPlanningPermission',
+            'clearPermission',
+          ],
         },
       },
     },
-    cancelling: {
+    Questions: {
       on: {
-        CANCEL_SETUP_CONFIRMED: {
-          target: 'interrupted',
-          actions: assign({
-            activeEffect: null,
-            recoveryMessage: 'The active Project setup Session was cancelled.',
-          }),
-        },
-        CANCEL_SETUP_FAILED: {
-          target: 'cancelFailed',
-          actions: assign({ recoveryMessage: ({ event }) => event.reason }),
+        'Answers sent': {
+          target: 'Planning',
+          actions: 'clearQuestions',
         },
       },
     },
-    cancelFailed: { on: { RETRY_CANCEL: 'cancelling' } },
-    awaitingPlanningApproval: {
+    'Reviewing plan': {
       on: {
-        APPROVE_EFFECT: { target: 'planning', actions: assign({ pendingApproval: null }) },
-        REJECT_EFFECT: { target: 'reviewingPlan', actions: assign({ pendingApproval: null }) },
+        'Request plan change': 'Planning',
+        'Continue plan review': 'Customizing Project setup',
       },
     },
-    awaitingApplicationApproval: {
+    'Customizing Project setup': {
       on: {
-        APPROVE_EFFECT: { target: 'applying', actions: assign({ pendingApproval: null }) },
-        REJECT_EFFECT: { target: 'reviewingPlan', actions: assign({ pendingApproval: null }) },
+        Back: 'Reviewing plan',
+        'Request plan change': 'Planning',
+        'Select application harness': {
+          actions: 'recordApplicationHarness',
+        },
+        'Accept plan': {
+          target: 'Applying',
+          actions: 'acceptPlan',
+        },
       },
     },
-    ...projectSetupFinalizationState,
-    ...projectSetupRunningStates,
-    ...projectSetupTerminalStates,
+    Applying: {
+      tags: [
+        'agent-running',
+        'busy',
+        'permission-capable',
+      ],
+      entry: 'beginApplication',
+      exit: 'clearPermission',
+      invoke: {
+        id: 'onboardingApplication',
+        src: 'onboardingApplication',
+        input: ({ context, event }) => projectSetupApplicationInput(context, event),
+      },
+      on: {
+        'Effect interrupted': {
+          target: 'Interrupted',
+          actions: 'interruptEffect',
+        },
+        'Progress received': {
+          actions: 'recordProgress',
+        },
+        'Cancel setup requested': 'Cancelling',
+        'Application session started': {
+          actions: 'recordApplicationSession',
+        },
+        'Application completed': {
+          target: 'Reviewing changes',
+          actions: 'completeApplication',
+        },
+        'Application drift': {
+          target: 'Review required',
+          actions: 'recordApplicationDrift',
+        },
+        'Invalid output': {
+          target: 'Reviewing plan',
+          actions: 'finishEffect',
+        },
+        'Permission requested': {
+          actions: {
+            type: 'requestPermission',
+            params: {
+              effect: 'application',
+            },
+          },
+        },
+        'Approve effect': {
+          guard: 'if an approval is pending',
+          actions: [
+            'forwardApplicationPermission',
+            'clearPermission',
+          ],
+        },
+        'Reject effect': {
+          guard: 'if an approval is pending',
+          actions: [
+            'forwardApplicationPermission',
+            'clearPermission',
+          ],
+        },
+      },
+    },
+    'Review required': {
+      on: {
+        'Request plan change': 'Planning',
+      },
+    },
+    Interrupted: {
+      tags: 'recoverable',
+      on: {
+        'Resume planning': {
+          target: 'Planning',
+          actions: 'clearRecoveryMessage',
+        },
+        'Resume application': {
+          target: 'Applying',
+          actions: 'clearRecoveryMessage',
+        },
+        'Restart attempt': {
+          target: 'Choosing setup method',
+          actions: 'restartAttempt',
+        },
+      },
+    },
+    'Reviewing changes': {
+      on: {
+        'Approve final diff': {
+          target: 'Finalizing',
+          actions: 'beginFinalization',
+        },
+        'Request application change': {
+          target: 'Applying',
+        },
+      },
+    },
+    Cancelling: {
+      tags: 'busy',
+      invoke: {
+        id: 'cancellation',
+        src: 'cancellation',
+        input: ({ context }) => projectSetupCancellationInput(context),
+      },
+      on: {
+        'Cancel setup confirmed': {
+          target: 'Interrupted',
+          actions: 'confirmCancellation',
+        },
+        'Cancel setup failed': {
+          target: 'Cancel failed',
+          actions: 'recordCancellationFailure',
+        },
+      },
+    },
+    'Cancel failed': {
+      tags: 'recoverable',
+      on: {
+        'Retry cancel': 'Cancelling',
+      },
+    },
+    Finalizing: {
+      tags: 'busy',
+      invoke: {
+        id: 'finalization',
+        src: 'finalization',
+      },
+      on: {
+        'Finalization completed': {
+          target: 'Ready',
+          actions: 'completeFinalization',
+        },
+        'Finalization failed': {
+          target: 'Reviewing changes',
+          actions: 'recordFinalizationFailure',
+        },
+      },
+    },
+    'Manual setup': {
+      on: {
+        Back: 'Choosing setup method',
+        Defer: 'Deferred',
+        'Save manual': {
+          target: 'Ready',
+          actions: 'saveManualSource',
+        },
+      },
+    },
+    Deferred: {
+      on: {
+        'Resume setup': 'Choosing setup method',
+      },
+    },
+    Ready: {
+      on: {
+        'Edit setup': 'Choosing setup method',
+      },
+    },
   },
 })

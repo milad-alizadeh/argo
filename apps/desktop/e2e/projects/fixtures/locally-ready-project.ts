@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { PACKAGED_PROOF_SETUP_DOCUMENT_REVISION } from '../../../mocks/providers/setup/mock-setup-document-loopback'
-import { createProjectSetupRegistry } from '../../../src/domains/projects/main/setup/project-setup-registry'
+import { createProjectSetupRegistry } from '../../../src/domains/projects/main/setup/persistence/project-setup-registry'
 import type { ProjectStore } from '../../../src/domains/projects/main/sqlite-store'
 
 export const LOCALLY_READY_CONFIGURATION = JSON.stringify(
@@ -42,6 +42,6 @@ export function markProjectSetupLocallyReady(
 ) {
   projects.writeSetupCheckpoint(locallyReadyCheckpoint(projectId, projectPath))
   const setup = createProjectSetupRegistry(projects)
-  setup.transition(projectId, { type: 'CHOOSE_MANUAL' })
-  setup.transition(projectId, { type: 'SAVE_MANUAL', source: LOCALLY_READY_CONFIGURATION })
+  setup.transition(projectId, { type: 'Choose manual' })
+  setup.transition(projectId, { type: 'Save manual', source: LOCALLY_READY_CONFIGURATION })
 }

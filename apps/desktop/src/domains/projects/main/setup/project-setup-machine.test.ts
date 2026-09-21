@@ -1,116 +1,73 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { acceptedPlanFixture, planFixture } from '@/domains/projects/contract/setup-plan.fixture'
-import { createProjectSetupActor } from './project-setup-actor'
-import { setupScreenOf } from './project-setup-screen-of'
+import { createActor } from 'xstate'
+import { getAdjacencyMap, getShortestPaths } from 'xstate/graph'
+import { projectSetupModelEvents } from '../../../../../test-fixtures/projects/setup/project-setup-model.fixture'
+import { projectSetupMachine } from './project-setup-machine'
+import type { ProjectSetupEvent } from './project-setup-machine-types'
 
-test('keeps manual setup and deferred setup as reactivatable resting paths', () => {
-  const actor = createProjectSetupActor()
-  actor.start()
-
-  actor.send({ type: 'CHOOSE_MANUAL' })
-  assert.equal(setupScreenOf(actor), 'manual')
-
-  actor.send({ type: 'SAVE_MANUAL', source: '{"version":1}' })
-  assert.equal(setupScreenOf(actor), 'ready')
-
-  actor.send({ type: 'START_REPAIR_OR_UPGRADE' })
-  actor.send({ type: 'DEFER' })
-  assert.equal(setupScreenOf(actor), 'deferred')
-
-  actor.send({ type: 'RESUME_SETUP' })
-  assert.equal(setupScreenOf(actor), 'choosing-method')
+const modeledMachine = projectSetupMachine.provide({
+  actions: {
+    forwardApplicationPermission: () => undefined,
+    forwardPlanningPermission: () => undefined,
+  },
 })
 
-test('restores the exact durable manual screen and source', () => {
-  const first = createProjectSetupActor()
-  first.start()
-  first.send({ type: 'CHOOSE_MANUAL' })
-  const restored = createProjectSetupActor(first.getPersistedSnapshot())
-  restored.start()
+type ModeledSnapshot = ReturnType<typeof modeledMachine.getInitialSnapshot>
 
-  assert.equal(setupScreenOf(restored), 'manual')
-  assert.equal(restored.getSnapshot().context.manualSource, '')
+const rootEvents = new Set(modeledMachine.root.ownEvents)
+const traversal = {
+  events: (snapshot: ModeledSnapshot) => {
+    const stateNode = modeledMachine.getStateNodeById(`${modeledMachine.id}.${snapshot.value}`)
+    const acceptedEvents = new Set([...rootEvents, ...stateNode.ownEvents])
+    return projectSetupModelEvents.filter(
+      (event) =>
+        acceptedEvents.has(event.type) &&
+        !(event.type === 'Choose agent' && (snapshot.context.attemptNumber ?? 0) >= 2),
+    )
+  },
+  limit: 5_000,
+  serializeEvent: (event: ProjectSetupEvent) => event.type,
+  serializeState: (snapshot: ModeledSnapshot) =>
+    JSON.stringify({
+      value: snapshot.value,
+      pendingApproval: snapshot.context.pendingApproval?.effect ?? null,
+    }),
+}
+
+const shortestPaths = getShortestPaths(modeledMachine, traversal)
+const shortestPathByState = new Map(
+  shortestPaths.map((path) => [traversal.serializeState(path.state), path]),
+)
+const adjacency = getAdjacencyMap(modeledMachine, traversal)
+const transitionCases = Object.values(adjacency).flatMap(({ state, transitions }) => {
+  const prefix = shortestPathByState.get(traversal.serializeState(state))
+  assert.ok(prefix)
+  return Object.values(transitions).map((transition) => ({
+    description: `${String(state.value)} — ${transition.event.type} → ${String(transition.state.value)}`,
+    steps: [...prefix.steps.filter((step) => step.event.type !== 'xstate.init'), transition],
+  }))
 })
 
-test('keeps one agent Attempt across planning questions, review, and application', () => {
-  const plan = planFixture()
-  const actor = reviewingPlanActor(plan, true)
-  assert.equal(setupScreenOf(actor), 'reviewing-plan')
+test('the model reaches every declared state', () => {
+  const reachedStates = new Set(shortestPaths.map(({ state }) => state.value))
+  assert.deepEqual(reachedStates, new Set(Object.keys(projectSetupMachine.states)))
+})
 
-  actor.send({
-    type: 'ACCEPT_PLAN',
-    acceptedPlan: acceptedPlanFixture(plan),
+for (const transitionCase of transitionCases) {
+  test(`model: ${transitionCase.description}`, () => {
+    const actor = createActor(modeledMachine)
+    actor.start()
+    for (const step of transitionCase.steps) {
+      actor.send(step.event)
+      const actual = actor.getSnapshot()
+      assert.equal(actual.value, step.state.value)
+      assert.deepEqual(JSON.parse(JSON.stringify(actual.context)), actual.context)
+      if (actual.context.pendingApproval) {
+        assert.ok(actual.matches('Planning') || actual.matches('Applying'))
+        assert.equal(actual.context.pendingApproval.effect, actual.context.activeEffect)
+      }
+    }
+    actor.stop()
   })
-  actor.send({ type: 'APPLICATION_SESSION_STARTED', sessionId: 'application-session' })
-  actor.send({
-    type: 'APPLICATION_COMPLETED',
-    finalDiff: 'diff --git a/.argo/settings.json b/.argo/settings.json',
-    progress: [{ stepId: 'verify-desktop', status: 'passed', message: 'Verified desktop.' }],
-  })
-
-  assert.equal(setupScreenOf(actor), 'reviewing-diff')
-  assert.equal(actor.getSnapshot().context.attemptNumber, 1)
-  assert.equal(actor.getSnapshot().context.planningSessionId, 'planning-session')
-  assert.equal(actor.getSnapshot().context.applicationSessionId, 'application-session')
-})
-
-test('keeps an interrupted Attempt recoverable and starts a monotonic replacement Attempt', () => {
-  const actor = createProjectSetupActor()
-  actor.start()
-  actor.send({ type: 'CHOOSE_AGENT', harness: 'claude' })
-  actor.send({ type: 'PREFLIGHT_PASSED' })
-  actor.send({ type: 'EFFECT_INTENT_SAVED', effect: 'planning' })
-  actor.send({
-    type: 'PERMISSION_REQUESTED',
-    permissionId: 'permission-1',
-    description: 'Read files.',
-  })
-  actor.send({ type: 'EFFECT_INTERRUPTED', reason: 'The Session stopped.' })
-
-  assert.equal(setupScreenOf(actor), 'interrupted')
-  assert.equal(actor.getSnapshot().context.pendingApproval, null)
-  actor.send({ type: 'RESTART_ATTEMPT' })
-  assert.equal(setupScreenOf(actor), 'choosing-method')
-  actor.send({ type: 'CHOOSE_AGENT', harness: 'claude' })
-  assert.equal(actor.getSnapshot().context.attemptNumber, 2)
-  assert.deepEqual(
-    actor.getSnapshot().context.attemptEvidence.map(({ number }) => number),
-    [1, 2],
-  )
-})
-
-test('keeps rejection in the same Attempt and guards final approval behind promotion', () => {
-  const plan = planFixture()
-  const actor = reviewingPlanActor(plan)
-  actor.send({ type: 'ACCEPT_PLAN', acceptedPlan: acceptedPlanFixture(plan) })
-  actor.send({ type: 'APPLICATION_COMPLETED', finalDiff: 'diff', progress: [] })
-  actor.send({ type: 'REJECT_FINAL_DIFF' })
-  assert.equal(setupScreenOf(actor), 'reviewing-plan')
-  assert.equal(actor.getSnapshot().context.attemptNumber, 1)
-
-  actor.send({ type: 'ACCEPT_PLAN', acceptedPlan: acceptedPlanFixture(plan) })
-  actor.send({ type: 'APPLICATION_COMPLETED', finalDiff: 'diff', progress: [] })
-  actor.send({ type: 'APPROVE_FINAL_DIFF' })
-  assert.equal(setupScreenOf(actor), 'finalizing')
-  actor.send({ type: 'FINALIZATION_COMPLETED' })
-  assert.equal(setupScreenOf(actor), 'ready')
-})
-
-function reviewingPlanActor(plan: ReturnType<typeof planFixture>, asksQuestions = false) {
-  const actor = createProjectSetupActor()
-  actor.start()
-  actor.send({ type: 'CHOOSE_AGENT', harness: 'claude' })
-  actor.send({ type: 'PREFLIGHT_PASSED' })
-  if (asksQuestions) {
-    actor.send({ type: 'PLANNING_SESSION_STARTED', sessionId: 'planning-session' })
-    actor.send({
-      type: 'QUESTIONS_RECEIVED',
-      questions: [{ id: 'question-1', prompt: 'Which package manager should Argo use?' }],
-    })
-    assert.equal(setupScreenOf(actor), 'questions')
-    actor.send({ type: 'ANSWERS_SENT' })
-  }
-  actor.send({ type: 'PLAN_VALIDATED', plan })
-  return actor
 }

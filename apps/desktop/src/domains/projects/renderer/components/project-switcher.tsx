@@ -20,7 +20,7 @@ export function ProjectSwitcher() {
   const { t } = useTranslation('projects')
   const [cockpit, actions] = useProjects()
   useCommands((command) => {
-    if (command === REGISTER_PROJECT_COMMAND) openProjectOnboarding()
+    if (command === REGISTER_PROJECT_COMMAND) actions.open()
   })
   const projectName = cockpit.project?.name ?? t('switcher.placeholder')
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -59,7 +59,7 @@ export function ProjectSwitcher() {
             ))}
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem aria-label={t('switcher.add')} onClick={openProjectOnboarding}>
+          <DropdownMenuItem aria-label={t('switcher.add')} onClick={actions.open}>
             <Plus />
             {t('switcher.addEllipsis')}
           </DropdownMenuItem>
@@ -80,8 +80,4 @@ export function ProjectSwitcher() {
       ) : null}
     </>
   )
-}
-
-function openProjectOnboarding() {
-  window.location.hash = '/projects/new'
 }

@@ -5,7 +5,7 @@ import { mkdir, realpath, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
-import { developmentSetupDocumentEnvironment } from '../src/domains/projects/main/setup/setup-document-source.ts'
+import { developmentSetupDocumentEnvironment } from '../src/domains/projects/main/setup/preparation/setup-document-source.ts'
 import { startControlServer } from './dev-control-server.mts'
 import { stopElectronProcess, stopForgeProcess } from './dev-launch-stop.mts'
 import {

@@ -14,7 +14,13 @@ const developmentServer =
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
-    dedupe: ['react', 'react-dom'],
+    dedupe: [
+      'react',
+      'react-dom',
+      '@codemirror/language',
+      '@codemirror/state',
+      '@codemirror/view',
+    ],
     alias: [
       { find: '@', replacement: path.resolve(import.meta.dirname, 'src') },
       {
