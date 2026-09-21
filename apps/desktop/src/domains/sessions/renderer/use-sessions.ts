@@ -94,8 +94,9 @@ export function useSessions(
   useEffect(() => {
     if (pending?.stage !== 'reconciling') return
     if (rosterData?.sessions.some((session) => session.id === pending.id) !== true) return
+    if (feed.data === undefined || feed.data === null) return
     useSessionCreationStore.getState().confirmed(pending.id)
-  }, [pending, rosterData])
+  }, [feed.data, pending, rosterData])
   // A new Codex Session is navigable as soon as its drive channel returns an id, before its
   // first transcript record makes the Session discoverable to the Feed reader. Keep that
   // expected gap loading; the failed Feed query already retries until the record arrives.
