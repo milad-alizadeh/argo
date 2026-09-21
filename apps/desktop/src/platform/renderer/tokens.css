@@ -191,7 +191,7 @@
   --size-navigation-rail: 64px;
   --inset-navigation-rail-item-top: calc((var(--size-chrome-bar) - var(--size-control)) / 2);
   --size-cockpit-sidebar-default: 368px;
-  --size-cockpit-sidebar-min: 240px;
+  --size-cockpit-sidebar-min: 360px;
   --size-cockpit-sidebar-max: 460px;
   --size-cockpit-content-min: 400px;
   --size-navigation-item: 36px;
