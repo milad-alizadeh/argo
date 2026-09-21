@@ -66,6 +66,18 @@ describe('composer attachments', () => {
 
     expect(useComposerStore.getState().attachments['session-one']).toBeUndefined()
   })
+
+  test('removing accepted attachment paths leaves unreadable attachments in the composer', () => {
+    useComposerStore
+      .getState()
+      .addAttachments('session-one', ['/repo/readable.md', '/repo/gone.md'])
+
+    useComposerStore.getState().removeAttachmentPaths('session-one', ['/repo/readable.md'])
+
+    expect(useComposerStore.getState().attachments['session-one']).toMatchObject([
+      { path: '/repo/gone.md' },
+    ])
+  })
 })
 
 // A draft is keyed by the composer's identity, so it survives under a draft key even though no

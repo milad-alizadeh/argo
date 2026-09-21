@@ -63,6 +63,7 @@ export type ComposerState = {
   removeAttachment: (composerKey: string, id: string) => void
   markAttachmentsError: (composerKey: string, ids: string[]) => void
   removeAttachments: (composerKey: string, ids: string[]) => void
+  removeAttachmentPaths: (composerKey: string, paths: string[]) => void
   addTicket: (composerKey: string, ticket: Omit<ComposerTicketContext, 'id'>) => void
   removeTicket: (composerKey: string, id: string) => void
   chooseSetup: (composerKey: string, setup: TurnSetup) => void

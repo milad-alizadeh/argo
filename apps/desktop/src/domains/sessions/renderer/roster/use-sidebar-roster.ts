@@ -1,4 +1,4 @@
-import { type RefObject, useCallback, useEffect, useMemo, useState } from 'react'
+import { type RefObject, useCallback, useMemo, useState } from 'react'
 import { rosterState } from '@/domains/sessions/renderer/roster/sessions-sidebar-chrome'
 import {
   useRosterFilterStore,
@@ -6,9 +6,9 @@ import {
 } from '@/domains/sessions/renderer/roster/use-roster-filter-store'
 import { useRosterFocus } from '@/domains/sessions/renderer/roster/use-roster-focus'
 import { useRosterSelection } from '@/domains/sessions/renderer/roster/use-roster-selection'
-import { useSearchSelection } from '@/domains/sessions/renderer/roster/use-search-selection'
 import { useSessionSearch } from '@/domains/sessions/renderer/roster/use-session-search'
 import type {
+  Session,
   SessionError,
   SessionId,
   SessionRoster,
@@ -17,6 +17,14 @@ import type {
 
 const NO_SESSIONS: SessionsListed['sessions'] = []
 const NO_TITLES: Record<string, string> = {}
+
+export function rosterTitledSearchResults(
+  searched: readonly Session[],
+  roster: readonly Session[],
+): Session[] {
+  const rosterById = new Map(roster.map((session) => [session.id, session]))
+  return searched.map((session) => rosterById.get(session.id) ?? session)
+}
 
 // A renamed title is shown locally, keyed by session id, until a roster read carries the same
 // title back through the transcript. Keying on the roster array's identity instead let a read
@@ -62,19 +70,13 @@ export function useSidebarRoster({
   const sessions = roster?.sessions ?? NO_SESSIONS
   const searching = search.trim() !== ''
   const searched = useSessionSearch(search, projectRoot, status)
-  const setSearchSelection = useSearchSelection((state) => state.setSession)
-  const visible = searching ? searched.sessions : sessions
+  const visible = useMemo(
+    () => (searching ? rosterTitledSearchResults(searched.sessions, sessions) : sessions),
+    [searched.sessions, searching, sessions],
+  )
   const visibleIds = useMemo(() => visible.map((session) => session.id), [visible])
   const selection = useRosterSelection(visibleIds, selectedSessionId)
   const focus = useRosterFocus(sidebar, visible, selectedSessionId)
-
-  useEffect(() => {
-    const selected = searching
-      ? (searched.sessions.find(({ id }) => id === selectedSessionId) ?? null)
-      : null
-    setSearchSelection(selected)
-    return () => setSearchSelection(null)
-  }, [searched.sessions, searching, selectedSessionId, setSearchSelection])
 
   // Both keep one identity for as long as their inputs do: a row is memoized, so a handler rebuilt
   // on every render would re-render every row whenever anything else on the screen ticked.

@@ -86,6 +86,7 @@ function liveFactsOf({ composer, session }: SessionScreenModel): NonNullable<Fee
     handoffStartedAt: session?.handoffStartedAt ?? null,
     handoffTo: session?.handoffTo ?? null,
     isRunning: session?.status === 'running' || session?.status === 'permission',
+    status: session?.status ?? null,
     activity: session?.activity ?? null,
     optimisticRow: composer.optimisticRow,
     settledPromptRow: composer.settledPromptRow,
