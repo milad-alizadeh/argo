@@ -8,6 +8,7 @@ export type FeedLiveFacts = {
   handoffStartedAt: string | null
   handoffTo: SessionId | null
   isRunning: boolean
+  status: Session['status'] | null
   // What the Session is doing now, the same fact the roster draws under its title.
   activity: Session['activity']
   optimisticRow: SessionFeedRow | null
@@ -23,6 +24,7 @@ export const INACTIVE_FEED_LIVE_FACTS = {
   handoffStartedAt: null,
   handoffTo: null,
   isRunning: false,
+  status: null,
   activity: null,
   optimisticRow: null,
   posture: null,
