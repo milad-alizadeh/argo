@@ -23,7 +23,7 @@ function FeedRow({ row, openable = true }: { row: Row; openable?: boolean }) {
   return (
     <div className="max-w-(--size-session-column) bg-background p-snug">
       <DelegationEvent onOpen={openable ? () => setOpened(true) : undefined} row={row} />
-      <output>{opened ? 'Opened the agent feed' : ''}</output>
+      <output>{opened ? 'Opened the agent inspector' : ''}</output>
     </div>
   )
 }
@@ -54,7 +54,7 @@ export const Responded: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: /Spec review responded/ }))
-    await expect(canvas.getByText('Opened the agent feed')).toBeVisible()
+    await expect(canvas.getByText('Opened the agent inspector')).toBeVisible()
   },
 }
 
