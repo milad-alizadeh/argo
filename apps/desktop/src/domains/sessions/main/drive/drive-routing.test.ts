@@ -10,6 +10,7 @@ import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { tempRoot } from '@/domains/sessions/main/observation/reader-test-helpers'
 import { createClaudeDriveAdapter } from '@/harnesses/claude/drive/session-drive-adapter'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import type { CodexSessionDrive } from '@/harnesses/codex/drive/codex-session-driver'
 import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session-drive-adapter'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 
@@ -35,8 +36,8 @@ function mockClaudeDriver() {
       decidePermission: () => true,
       isLockedElsewhere: () => false,
       decideQuestion: async () => true,
-      rename: async () => `Renamed.`,
-      liveMessages: () => [],
+      rename: async () => 'Renamed.',
+      liveMessages: (_sessionId: string) => [],
       roster: () => [],
       close: async () => {},
     },
@@ -53,14 +54,14 @@ function mockCodexDriver() {
         sent.push({ sessionId, prompt: text })
       },
       interrupt: async () => {},
-      compact: async () => {},
+      compact: async (_sessionId: string) => {},
       rename: async () => 'Renamed.',
       roster: () => [],
       liveMessages: () => [],
-      pendingQuestion: () => null,
+      pendingQuestion: (_sessionId: string) => null,
       decideQuestion: () => true,
       close: () => {},
-    },
+    } as unknown as CodexSessionDrive,
   }
 }
 
