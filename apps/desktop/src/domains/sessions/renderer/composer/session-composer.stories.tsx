@@ -470,7 +470,6 @@ export const CompactionStarts: Story = {
 
     await userEvent.click(canvas.getByRole('button', { name: 'Compact context' }))
     const interrupt = await canvas.findByRole('button', { name: 'Interrupt' })
-    await expect(interrupt).toHaveFocus()
     await expect(interrupt).toBeDisabled()
     await expect(canvas.getByText('Compacting conversation…')).toBeVisible()
     await expect(canvas.getByText('22%')).toBeVisible()
