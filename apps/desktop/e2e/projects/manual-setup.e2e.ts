@@ -3,6 +3,8 @@ import type { ElectronApplication, Page } from 'playwright-core'
 import { expect, test } from '../packaged-proof'
 import { launch, prepare } from './fixtures/project.fixture'
 
+test.skip(true, 'Replaced by the Session and Project setup rewrite in #2576.')
+
 async function openSetup(application: ElectronApplication): Promise<Page> {
   const page = await application.firstWindow()
   await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.show())
