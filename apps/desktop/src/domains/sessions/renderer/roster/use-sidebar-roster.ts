@@ -1,4 +1,4 @@
-import { type RefObject, useCallback, useMemo, useState } from 'react'
+import { type RefObject, useCallback, useEffect, useMemo, useState } from 'react'
 import { rosterState } from '@/domains/sessions/renderer/roster/sessions-sidebar-chrome'
 import {
   useRosterFilterStore,
@@ -6,6 +6,7 @@ import {
 } from '@/domains/sessions/renderer/roster/use-roster-filter-store'
 import { useRosterFocus } from '@/domains/sessions/renderer/roster/use-roster-focus'
 import { useRosterSelection } from '@/domains/sessions/renderer/roster/use-roster-selection'
+import { useSearchSelection } from '@/domains/sessions/renderer/roster/use-search-selection'
 import { useSessionSearch } from '@/domains/sessions/renderer/roster/use-session-search'
 import type {
   SessionError,
@@ -61,10 +62,19 @@ export function useSidebarRoster({
   const sessions = roster?.sessions ?? NO_SESSIONS
   const searching = search.trim() !== ''
   const searched = useSessionSearch(search, projectRoot, status)
+  const setSearchSelection = useSearchSelection((state) => state.setSession)
   const visible = searching ? searched.sessions : sessions
   const visibleIds = useMemo(() => visible.map((session) => session.id), [visible])
   const selection = useRosterSelection(visibleIds, selectedSessionId)
   const focus = useRosterFocus(sidebar, visible, selectedSessionId)
+
+  useEffect(() => {
+    const selected = searching
+      ? (searched.sessions.find(({ id }) => id === selectedSessionId) ?? null)
+      : null
+    setSearchSelection(selected)
+    return () => setSearchSelection(null)
+  }, [searched.sessions, searching, selectedSessionId, setSearchSelection])
 
   // Both keep one identity for as long as their inputs do: a row is memoized, so a handler rebuilt
   // on every render would re-render every row whenever anything else on the screen ticked.

@@ -8,6 +8,7 @@ import {
 } from '@/domains/sessions/renderer/session-contract-error'
 import { sessionSearchQueryKey } from '@/domains/sessions/renderer/session-queries'
 import type { SessionSearched } from '@/domains/sessions/renderer/types'
+import { useWatchedQueries } from '@/domains/sessions/renderer/use-watched-topic'
 
 const SEARCH_DEBOUNCE_MS = 250
 
@@ -37,8 +38,9 @@ export function useSessionSearch(
 ) {
   const query = useDebouncedQuery(rawQuery.trim())
   const enabled = query !== ''
+  const queryKey = sessionSearchQueryKey(projectRoot, status, query)
   const searched = useInfiniteQuery<SearchPage, SessionContractError>({
-    queryKey: sessionSearchQueryKey(projectRoot, status, query),
+    queryKey,
     enabled,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
@@ -59,6 +61,8 @@ export function useSessionSearch(
       }
     },
   })
+  // A transcript update re-reads the active search so both views keep one current title.
+  useWatchedQueries('sessions', enabled ? [queryKey] : [])
 
   const sessions = searched.data?.pages.flatMap((page) => page.sessions) ?? []
   // The most recently read page's word on it: backfill (#2373) can turn this true between one

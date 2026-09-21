@@ -133,6 +133,7 @@ const meta: Meta<typeof RosterHarness> = {
   // (#2277's fix for the poll racing the reader's own growth), so a story that grows it must not
   // leave that window for the next story to inherit.
   beforeEach: () => {
+    useRosterFilterStore.setState({ status: 'active' })
     useRosterWindowStore.setState({ cursors: {}, orders: {} })
     return withRosterHost(async () => listedReply(listed))
   },
