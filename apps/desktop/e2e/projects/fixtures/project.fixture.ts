@@ -22,6 +22,20 @@ import { makeProjectLocallyReady } from './locally-ready-project'
 
 const run = promisify(execFile)
 
+// The one project entry every fixture in this proof suite seeds before it launches the app.
+export function seedSingleProject(
+  userData: string,
+  project: { id: string; path: string; selectedId?: string | null },
+) {
+  const { id, path: projectPath, selectedId = id } = project
+  const projects = createProjectStore(createDurableDatabase(openSharedDatabase(userData)))
+  projects.replace({
+    projects: [{ id, path: projectPath, commonDirectory: path.join(projectPath, '.git') }],
+    selectedId,
+  })
+  return projects
+}
+
 export async function repository(folder) {
   await mkdir(folder, { recursive: true })
   await run('git', ['-C', folder, 'init', '--quiet'])
@@ -44,14 +58,7 @@ export async function prepare(root, application?) {
   await mkdir(projectPath)
   await makeProjectLocallyReady(projectPath)
   const databasePath = sharedDatabasePath(userData)
-  const projects = createProjectStore(createDurableDatabase(openSharedDatabase(userData)))
-  projects.replace({
-    projects: [
-      { id: 'project-1', path: projectPath, commonDirectory: path.join(projectPath, '.git') },
-    ],
-    selectedId: 'project-1',
-  })
-  projects.close()
+  seedSingleProject(userData, { id: 'project-1', path: projectPath }).close()
   return {
     application,
     userData,
@@ -94,14 +101,7 @@ export async function prepareManual(
   await run('git', ['-C', projectPath, 'push', '--quiet', '-u', 'origin', branch])
   await run('git', ['-C', remote, 'symbolic-ref', 'HEAD', `refs/heads/${branch}`])
   const databasePath = sharedDatabasePath(userData)
-  const projects = createProjectStore(createDurableDatabase(openSharedDatabase(userData)))
-  projects.replace({
-    projects: [
-      { id: 'project-setup', path: projectPath, commonDirectory: path.join(projectPath, '.git') },
-    ],
-    selectedId: 'project-setup',
-  })
-  projects.close()
+  seedSingleProject(userData, { id: 'project-setup', path: projectPath }).close()
   return {
     application,
     databasePath,

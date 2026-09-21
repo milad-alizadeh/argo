@@ -12,13 +12,11 @@ import {
   writeArchiveStore,
   writeFixtureTree,
 } from '../../../mocks/sessions/mock-transcript-files'
-import { createProjectStore } from '../../../src/domains/projects/main/sqlite-store'
-import { createDurableDatabase } from '../../../src/platform/main/storage/durable-database'
-import { openSharedDatabase } from '../../../src/platform/main/storage/shared-database'
 import {
   makeProjectLocallyReady,
   markProjectSetupLocallyReady,
 } from '../../projects/fixtures/locally-ready-project'
+import { seedSingleProject } from '../../projects/fixtures/project.fixture'
 
 export const FIXTURES = [
   'resumeParent',
@@ -141,13 +139,7 @@ export async function prepare(
 const PROOF_PROJECT_ID = 'session-proof-project'
 
 async function writeProjectStore(userData, project, selectedId) {
-  const projects = createProjectStore(createDurableDatabase(openSharedDatabase(userData)))
-  projects.replace({
-    projects: [
-      { id: PROOF_PROJECT_ID, path: project, commonDirectory: path.join(project, '.git') },
-    ],
-    selectedId,
-  })
+  const projects = seedSingleProject(userData, { id: PROOF_PROJECT_ID, path: project, selectedId })
   markProjectSetupLocallyReady(projects, PROOF_PROJECT_ID, project)
   projects.close()
 }
