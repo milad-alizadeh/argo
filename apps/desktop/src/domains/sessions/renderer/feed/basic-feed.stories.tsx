@@ -1000,6 +1000,13 @@ const historyFeed = {
   sessionId: 'history',
   rows: historyRows,
 } satisfies SessionFeed
+const secondHistoryFeed = {
+  ...historyFeed,
+  chainId: 'second-history',
+  revision: 'second-history-one',
+  sessionId: 'second-history',
+  rows: historyRows.map((row) => ({ ...row, id: `second-${row.id}` })),
+} satisfies SessionFeed
 const historyAnchorId = `history-${Math.floor(historyRows.length / 2)}`
 
 const disclosureGroup = toolFeed.rows[0]
@@ -1093,6 +1100,36 @@ function HistoryScrollHarness() {
         {jumpToLatest === null ? null : (
           <FeedJumpToLatest label="Jump to latest" onClick={jumpToLatest} />
         )}
+      </div>
+    </div>
+  )
+}
+
+function SwitchingHistoryHarness() {
+  const [selected, setSelected] = useState<'history' | 'second-history'>('history')
+  const current = selected === 'history' ? historyFeed : secondHistoryFeed
+  return (
+    <div className="flex h-dvh flex-col">
+      <button type="button" onClick={() => setSelected('history')}>
+        Open first Session
+      </button>
+      <button type="button" onClick={() => setSelected('second-history')}>
+        Open second Session
+      </button>
+      <div className="min-h-0 flex-1">
+        <BasicFeed
+          activeEvidenceId={null}
+          answeringQuestionId={null}
+          failure={null}
+          feed={current}
+          liveFacts={LIVE_FACTS}
+          onAnswerQuestion={() => {}}
+          onOpenEvidence={() => {}}
+          onOpenSession={() => {}}
+          onRetryFeed={() => {}}
+          questionFailure={() => null}
+          selectedSessionId={selected}
+        />
       </div>
     </div>
   )
@@ -1279,6 +1316,28 @@ export const FreshSessionLandsAtEndUnderStrictMode: Story = {
     await waitFor(() =>
       expect(history.scrollTop).toBeCloseTo(history.scrollHeight - history.clientHeight, 1),
     )
+  },
+}
+
+export const SessionSwitchRestoresReadingPosition: Story = {
+  render: () => <SwitchingHistoryHarness />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const history = await canvas.findByLabelText('Session history')
+    await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(history.clientHeight))
+    history.scrollTop = history.scrollHeight / 2
+    fireEvent.scroll(history)
+    const savedPosition = history.scrollTop
+    await userEvent.click(canvas.getByRole('button', { name: 'Open second Session' }))
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Session history')).toHaveAttribute(
+        'data-session',
+        'second-history',
+      ),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Open first Session' }))
+    const restored = await canvas.findByLabelText('Session history')
+    await waitFor(() => expect(restored.scrollTop).toBeCloseTo(savedPosition, 1))
   },
 }
 
