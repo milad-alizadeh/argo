@@ -23,7 +23,7 @@ import { productionInstall } from './scripts/production-install.mts'
 // on its first require (#1743). The plugin defers to an `ignore` function we supply, so this is
 // the supported way to keep one. Forge prunes dev dependencies out of node_modules itself, so
 // keeping the whole tree is the ordinary Electron shape, not a size regression.
-const KEPT_IN_PACKAGE = [/^\/\.vite($|\/)/, /^\/node_modules($|\/)/]
+const KEPT_IN_PACKAGE = [/^\/\.vite($|\/)/, /^\/drizzle($|\/)/, /^\/node_modules($|\/)/]
 
 // Dropped back out of that. `node-pty` ships prebuilt binaries for every platform it supports, and
 // on a macOS-only build the Windows ones are dead weight in every install and every full-download

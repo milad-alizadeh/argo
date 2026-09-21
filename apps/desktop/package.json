@@ -9,6 +9,7 @@
     "dev:status": "node scripts/dev-control.mts status",
     "dev:stop": "node scripts/dev-control.mts stop",
     "dev:prove-isolation": "node scripts/prove-dev-instance-isolation.mts",
+    "database:generate": "drizzle-kit generate --config drizzle.config.ts",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "storybook": "storybook dev -p 6006",
@@ -22,7 +23,6 @@
     "test:darwin-manifest": "electron-forge package --platform darwin --arch arm64 && node scripts/desktop-manifest.mts out/Argo-darwin-arm64/Argo.app",
     "test:packaged-pty": "node scripts/prove-packaged-pty.mts",
     "test:e2e": "playwright test",
-    "test:e2e:adversarial": "ARGO_E2E_ADVERSARIAL=1 playwright test --project=sessions-adversarial",
     "test:e2e:profile": "ARGO_E2E_PROFILE=1 playwright test",
     "e2e:real": "ARGO_E2E_REAL=1 playwright test --project=real-sessions",
     "test:live-claude-display": "node tools/run-tool.mts tools/claude/message-display.ts",
@@ -32,9 +32,7 @@
     "desktop:manifest": "node scripts/desktop-manifest.mts",
     "desktop:verdict": "node scripts/write-release-verdict.mts",
     "test": "bun test && bun run test:node",
-    "test:node": "vitest run --project=node",
-    "test:coverage": "bun test --coverage --coverage-reporter=lcov --coverage-dir=coverage/bun",
-    "test:coverage:storybook": "vitest run --project=storybook-dark --coverage"
+    "test:node": "vitest run --project=node"
   },
   "dependencies": {
     "@codemirror/language": "^6.12.4",
@@ -49,6 +47,7 @@
     "@uiw/react-codemirror": "^4.25.11",
     "cmdk": "^1.1.1",
     "date-fns": "^4.4.0",
+    "drizzle-orm": "^1.0.0-rc.4",
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.5.0",
     "node-addon-api": "7.1.1",

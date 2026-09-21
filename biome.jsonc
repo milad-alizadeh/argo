@@ -181,6 +181,26 @@
   //             never add an entry to make a build pass.
   "overrides": [
     {
+      "includes": [
+        "apps/desktop/src/domains/projects/main/**/*.ts",
+        "apps/desktop/src/domains/tickets/main/**/*.ts"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "node:sqlite": "Normal durable repositories use the shared Drizzle adapter."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
       "includes": ["apps/desktop/components.json", "lint/biome/fixtures/components/**/*.json"],
       "plugins": ["./lint/biome/components-style.grit"]
     },
@@ -337,6 +357,26 @@
                       "@/platform/renderer/**"
                     ],
                     "message": "Main facets can import only contract, main, or shared facets."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/desktop/test-fixtures/**/*.{ts,tsx}"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["../*", "./*/*"],
+                    "message": "Test fixtures use @/ for parent or cross-directory source imports."
                   }
                 ]
               }

@@ -22,19 +22,19 @@ const PACKAGED_PROOFS = [
   'test:packaged-manifest',
   'test:packaged-pty',
   'test:e2e',
-  'test:e2e:adversarial',
 ]
+
+const turbo = (): TurboConfig => json(path.join(repoRoot, 'turbo.json'))
+const task = (name: string): TurboTask => {
+  const found = turbo().tasks[name]
+  if (!found) throw new Error(`turbo.json names no ${name} task`)
+  return found
+}
 
 // `turbo.json` carries no comments, because this file parses it with `JSON.parse` and turbo's own
 // tolerance for them is not shared. So the reasoning behind each cache decision lives here, next
 // to the assertion that holds it.
 describe('what turbo caches', () => {
-  const turbo = (): TurboConfig => json(path.join(repoRoot, 'turbo.json'))
-  const task = (name: string): TurboTask => {
-    const found = turbo().tasks[name]
-    if (!found) throw new Error(`turbo.json names no ${name} task`)
-    return found
-  }
   const cached = (name: string) => task(name).cache !== false
 
   // The two persistent servers never finish, so they have nothing to cache.
@@ -70,7 +70,8 @@ describe('what turbo caches', () => {
   // hand-listed input set naming only some of `src` serves a stale site or a stale story verdict.
   test('hashes every source the Storybook site and its stories carry', () => {
     expect(task('build:storybook').inputs?.[0]).toBe('$TURBO_DEFAULT$')
-    expect(task('test:storybook').inputs?.[0]).toBe('$TURBO_DEFAULT$')
+    expect(task('test:storybook').inputs).toContain('src/**')
+    expect(task('test:storybook').inputs).toContain('.storybook/**')
   })
 
   // The default input set stops at the package directory, and these root files are read by the
@@ -105,12 +106,24 @@ describe('what turbo caches', () => {
       expect(entry.dependsOn ?? [], `${name} depends on the release build`).not.toContain('^build')
   })
 
-  // The suite reads its own fixtures, `forge.config.ts`, `package-manifest.json` and both
-  // lockfiles. An input list that named them would go stale the first time a test read one more
-  // file, and a stale list is a cache that serves a pass for code it never hashed. So `test`
-  // narrows the default set rather than replacing it.
-  test('narrows the test inputs without hand-listing them', () => {
-    expect(task('test').inputs?.[0]).toBe('$TURBO_DEFAULT$')
+  // `test` runs `bun test` and the node Vitest project over `src/**`, and those suites import
+  // fixtures from `mocks/**` (#2605), so both stay hand-listed inputs.
+  test('hashes the sources and mocks the test task actually reads', () => {
+    expect(task('test').inputs).toContain('src/**')
+    expect(task('test').inputs).toContain('mocks/**')
+  })
+})
+
+// `test`, `test:storybook` and `test:darwin-manifest` narrow $TURBO_DEFAULT$ to explicit globs
+// (#2605), so an e2e-only or tools-only change replays their cache instead of invalidating it.
+describe('what the narrowed desktop tasks avoid hashing', () => {
+  test('keeps e2e and tools out of test, test:storybook and test:darwin-manifest', () => {
+    for (const name of ['test', 'test:storybook', 'test:darwin-manifest']) {
+      const leaked = (task(name).inputs ?? []).filter(
+        (glob) => glob.startsWith('e2e/') || glob.startsWith('tools/'),
+      )
+      expect(leaked, `${name} hashes e2e or tools`).toEqual([])
+    }
   })
 })
 
@@ -167,8 +180,8 @@ describe('what the packaged tasks hash', () => {
     ['test:packaged-manifest', 'package-manifest.json'],
     ['test:packaged-pty', 'scripts/prove-packaged-pty.mts'],
     ['test:e2e', 'e2e/sessions/journeys.e2e.ts'],
+    ['test:e2e', 'e2e/sessions/adversarial.e2e.ts'],
     ['test:e2e', 'mocks/cli/claude/mock-claude.ts'],
-    ['test:e2e:adversarial', 'e2e/sessions/adversarial.e2e.ts'],
   ])(
     'reruns %s after the packaged app or %s changes',
     (proof, file) => {

@@ -2,7 +2,7 @@
   "threshold": 1,
   "minTokens": 50,
   "minLines": 5,
-  "format": ["typescript", "tsx", "javascript", "swift"],
+  "format": ["typescript", "tsx", "javascript"],
   "reporters": ["console"],
   "absolute": true,
   "gitignore": true,
@@ -13,9 +13,6 @@
     "**/.vite/**",
     "**/*.stories.tsx",
     "prototypes/**",
-    "**/skills/**/templates/**",
-    "**/build/**",
-    "**/Fixtures/**",
-    "**/Sources/ArgoFixtures/**"
+    "**/skills/**/templates/**"
   ]
 }
