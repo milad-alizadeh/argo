@@ -58,6 +58,7 @@ export const RenderedSkill: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByRole('heading', { name: 'Implement' })).toBeVisible()
+    await expect(canvas.getAllByText('Implement')).toHaveLength(1)
     await expect(canvas.getByText('worktree').tagName).toBe('STRONG')
     await expect(canvasElement).not.toHaveTextContent('description: Build a ticket')
   },
