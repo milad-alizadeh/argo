@@ -27,7 +27,8 @@ export function useAnchoredVirtualizer({
     anchorTo: following ? 'end' : 'start',
     count: rows.length + (tail === null ? 0 : 1),
     estimateSize: () => FEED_ROW_ESTIMATE_PX,
-    followOnAppend: following ? 'smooth' : false,
+    // Smooth tail scrolling delays short-row measurement and leaves estimate-sized gaps (#2545).
+    followOnAppend: following,
     getItemKey: (index) => (index === rows.length ? TAIL_KEY : feedRowAt(rows, index).id),
     getScrollElement: () => viewport,
     onChange,
