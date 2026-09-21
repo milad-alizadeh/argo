@@ -39,7 +39,7 @@ test('starts a Codex thread, sends the opening Turn and scrubs Codex credentials
     assert.equal('CODEX_API_KEY' in (environments[0] ?? {}), false)
     assert.deepEqual(
       channel.calls.map(({ method }) => method),
-      ['initialize', 'thread/start', 'turn/start'],
+      ['initialize', 'skills/list', 'thread/start', 'turn/start'],
     )
     assert.deepEqual(
       driver

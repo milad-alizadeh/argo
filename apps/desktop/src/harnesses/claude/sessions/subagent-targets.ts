@@ -33,6 +33,10 @@ export class Agents {
     return this.open.get(callId)
   }
 
+  hasSpawned(callId: string) {
+    return this.spawned.has(callId)
+  }
+
   startedAt(callId: string) {
     return this.started.get(callId) ?? null
   }
