@@ -5,6 +5,41 @@ import {
   sessionFeedQuery,
 } from '@/domains/sessions/renderer/feed/session-feed-query'
 
+function feedReply(sessionId: string, requestId: string, revision: string) {
+  return {
+    version: 1,
+    type: 'session.feed.read' as const,
+    requestId,
+    sessionId,
+    chainId: sessionId,
+    revision,
+    rows: [],
+  }
+}
+
+test('reads a newly started Session by its real identifier', async () => {
+  const readSessionFeed = vi
+    .fn()
+    .mockResolvedValue(feedReply('session-new', 'new-session-feed', 'initial'))
+  const originalWindow = globalThis.window
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: { argo: { cancelSessionFeed: vi.fn(), readSessionFeed } },
+  })
+  const options = sessionFeedQuery(new QueryClient(), 'session-new', null)
+
+  try {
+    await options.queryFn?.({ signal: new AbortController().signal } as never)
+    expect(readSessionFeed).toHaveBeenCalledWith({
+      sessionId: 'session-new',
+      subagentId: null,
+      revision: null,
+    })
+  } finally {
+    Object.defineProperty(globalThis, 'window', { configurable: true, value: originalWindow })
+  }
+})
+
 describe('caching and retrying the Session feed read', () => {
   test('removes an inactive transcript as soon as its observer switches away', async () => {
     const client = new QueryClient()
@@ -25,15 +60,10 @@ describe('caching and retrying the Session feed read', () => {
   test('starts a new read when retrying a pending Feed with no cached data', async () => {
     const client = new QueryClient()
     const pendingRead = new Promise<never>(() => {})
-    const readSessionFeed = vi.fn().mockResolvedValueOnce(pendingRead).mockResolvedValueOnce({
-      version: 1,
-      type: 'session.feed.read',
-      requestId: 'recovered-feed',
-      sessionId: 'session-a',
-      chainId: 'session-a',
-      revision: 'recovered',
-      rows: [],
-    })
+    const readSessionFeed = vi
+      .fn()
+      .mockResolvedValueOnce(pendingRead)
+      .mockResolvedValueOnce(feedReply('session-a', 'recovered-feed', 'recovered'))
     const originalWindow = globalThis.window
     Object.defineProperty(globalThis, 'window', {
       configurable: true,

@@ -1,7 +1,10 @@
 import type { useQueryClient } from '@tanstack/react-query'
 import type { NavigateFunction } from 'react-router'
 import type { Cockpit } from '@/domains/projects/renderer/port'
-import type { ComposerIdentity } from '@/domains/sessions/renderer/composer/composer-identity'
+import {
+  type ComposerIdentity,
+  composerIdentityKey,
+} from '@/domains/sessions/renderer/composer/composer-identity'
 import { sendToDraftIdentity } from '@/domains/sessions/renderer/composer/send-draft-turn'
 import { sendToSessionIdentity } from '@/domains/sessions/renderer/composer/send-turn'
 import type { ComposerState } from '@/domains/sessions/renderer/composer/use-composer-store'
@@ -23,6 +26,8 @@ type ComposerSendOptions = {
   roster: ReturnType<typeof useSessions>['roster']
   send: ReturnType<typeof useSessionMutations>['send']
   setDraft: ComposerState['setDraft']
+  removeAttachmentPaths: ComposerState['removeAttachmentPaths']
+  rekey: ComposerState['rekey']
   setFailure: (failure: Failure | null) => void
   start: ReturnType<typeof useSessionMutations>['start']
   watchTurn: ReturnType<typeof useTurnSetup>['watchTurn']
@@ -39,6 +44,8 @@ export function composerSend(options: ComposerSendOptions): Send {
     roster,
     send,
     setDraft,
+    removeAttachmentPaths,
+    rekey,
     setFailure,
     start,
     watchTurn,
@@ -57,7 +64,14 @@ export function composerSend(options: ComposerSendOptions): Send {
             cockpit,
             marker,
             navigate,
-            onStarted: (sessionId) => setDraft(sessionId, ''),
+            onStarted: (sessionId) => {
+              rekey(composerIdentityKey(identity), sessionId)
+              setDraft(sessionId, '')
+              removeAttachmentPaths(
+                sessionId,
+                attachments.map((attachment) => attachment.path),
+              )
+            },
             queryClient,
             setFailure,
             start,

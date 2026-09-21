@@ -35,6 +35,13 @@ export function managedSessionIsRunning(
   }
 }
 
+export function isManagedSessionSelected(
+  identity: ComposerIdentity,
+  posture: SessionRosterRow['posture'] | null,
+): boolean {
+  return identity.kind === 'session' && posture === 'managed'
+}
+
 // Bundles the mutations and the Turn Marker, whose availability and wiring all hinge on the same
 // facts (the Harness, the current identity, and the selected roster row), so the main hook states
 // each fact once.
@@ -76,9 +83,10 @@ export function useComposerActions(options: {
     onInterruptBase,
   })
   const sessionSelected = identity.kind === 'session'
+  const managedSessionSelected = isManagedSessionSelected(identity, selectedRow?.posture ?? null)
   return {
     isHandingOff,
-    onCompact: sessionSelected ? onCompact : undefined,
+    onCompact: managedSessionSelected ? onCompact : undefined,
     onHandoff: harness === 'claude' && sessionSelected ? onHandoff : undefined,
     onInterrupt,
     onSteer,

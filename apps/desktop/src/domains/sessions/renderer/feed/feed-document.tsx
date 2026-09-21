@@ -48,16 +48,14 @@ export type FeedDocumentProps = {
 function ignoreJumpToLatestChange(_sessionId: string, _action: (() => void) | null) {}
 function ignoreScrollPositionChange(_sessionId: string, _position: number) {}
 
-// The Feed never draws a thought from the transcript as history. While the Turn runs, the
-// Session's activity (the fact the roster draws under the title, a thought or the latest call)
-// titles the Turn's tool group; before any tool has run, a thought is its own line. It leaves
-// when the Turn ends (#2410), and the compaction marker stands in for it while compaction runs.
 function liveRows(reading: SessionFeed, facts: NonNullable<FeedLiveFacts>): SessionFeedRow[] {
   const rows = foldSettledToolRuns(reading.rows.filter((row) => row.shape !== 'thought'))
   const hasTrailingThought = reading.rows.at(-1)?.shape === 'thought'
   const activity =
     facts.compactionStartedAt === null &&
-    (facts.isRunning || (facts.activity?.kind === 'thought' && hasTrailingThought))
+    (facts.isRunning ||
+      facts.status === 'unknown' ||
+      (facts.activity?.kind === 'thought' && hasTrailingThought))
       ? facts.activity
       : null
   if (activity === null) return rows
