@@ -26,6 +26,41 @@ async function writeRollout({
   )
 }
 
+function sessionMeta({
+  sessionId,
+  cwd,
+  branch,
+  timestamp,
+}: {
+  sessionId: string
+  cwd: string
+  branch: string
+  timestamp: string
+}) {
+  return {
+    timestamp,
+    type: 'session_meta',
+    payload: {
+      id: sessionId,
+      cwd,
+      git: { commit_hash: 'abc', branch, repository_url: '' },
+    },
+  }
+}
+
+async function listedSessions(root: string) {
+  const reply = sessionListReplySchema.parse(
+    await createSessionReader([codexSessionSource(root)]).listSessions({
+      version: 1,
+      type: 'session.list',
+      requestId: 'list-1',
+      projectRoot: null,
+    }),
+  )
+  if (reply.type !== 'session.listed') throw new Error('Expected Sessions to be listed')
+  return reply.sessions
+}
+
 // Codex writes the folder and branch a thread runs in on its `session_meta` record only, and a
 // Project scopes the Roster by that folder (#2204); the branch is what names the Ticket.
 test('reads the folder and branch a Codex Session runs in from its session_meta record', async (context) => {
@@ -37,15 +72,12 @@ test('reads the folder and branch a Codex Session runs in from its session_meta 
     date: '2026-09-14',
     sessionId,
     records: [
-      {
+      sessionMeta({
+        sessionId,
+        cwd: '/Users/x/proj',
+        branch: 'argo/#2428-issue-completion',
         timestamp: '2026-09-14T00:14:46.946Z',
-        type: 'session_meta',
-        payload: {
-          id: sessionId,
-          cwd: '/Users/x/proj',
-          git: { commit_hash: 'abc', branch: 'argo/#2428-issue-completion', repository_url: '' },
-        },
-      },
+      }),
       {
         timestamp: '2026-09-14T00:14:50.000Z',
         type: 'event_msg',
@@ -69,17 +101,9 @@ test('reads the folder and branch a Codex Session runs in from its session_meta 
     ],
   })
 
-  const reply = sessionListReplySchema.parse(
-    await createSessionReader([codexSessionSource(root)]).listSessions({
-      version: 1,
-      type: 'session.list',
-      requestId: 'list-1',
-      projectRoot: null,
-    }),
-  )
-  assert.equal(reply.type, 'session.listed')
+  const sessions = await listedSessions(root)
   assert.deepEqual(
-    reply.sessions.map(({ id, cwd, branch }) => ({ id, cwd, branch })),
+    sessions.map(({ id, cwd, branch }) => ({ id, cwd, branch })),
     [
       {
         id: sessionId,
@@ -100,15 +124,12 @@ test('reads a desktop Codex custom tool worktree as the Session location', async
     date: '2026-09-21',
     sessionId,
     records: [
-      {
+      sessionMeta({
+        sessionId,
+        cwd: '/Users/x/proj',
+        branch: 'main',
         timestamp: '2026-09-21T02:27:28.000Z',
-        type: 'session_meta',
-        payload: {
-          id: sessionId,
-          cwd: '/Users/x/proj',
-          git: { commit_hash: 'abc', branch: 'main', repository_url: '' },
-        },
-      },
+      }),
       {
         timestamp: '2026-09-21T02:27:30.000Z',
         type: 'response_item',
@@ -123,17 +144,9 @@ test('reads a desktop Codex custom tool worktree as the Session location', async
     ],
   })
 
-  const reply = sessionListReplySchema.parse(
-    await createSessionReader([codexSessionSource(root)]).listSessions({
-      version: 1,
-      type: 'session.list',
-      requestId: 'list-1',
-      projectRoot: null,
-    }),
-  )
-  assert.equal(reply.type, 'session.listed')
-  assert.deepEqual(
-    reply.sessions.map(({ id, cwd, branch }) => ({ id, cwd, branch })),
-    [{ id: sessionId, cwd: worktree, branch: 'main' }],
-  )
+  const sessions = await listedSessions(root)
+  assert.equal(sessions.length, 1)
+  assert.equal(sessions[0]?.id, sessionId)
+  assert.equal(sessions[0]?.cwd, worktree)
+  assert.equal(sessions[0]?.branch, 'main')
 })
