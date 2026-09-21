@@ -319,6 +319,12 @@
   "delegation": {
     "agent": { "label": "Background Agent" },
     "shell": { "label": "Background Task", "running": "Running Background Task" },
+    "event": {
+      "messaged": "{{name}} received a message",
+      "responded": "{{name}} responded",
+      "started": "{{name}} started",
+      "stopped": "{{name}} stopped"
+    },
     "open": "Open the {{name}} Session",
     "tokens": "{{amount}} tokens"
   },

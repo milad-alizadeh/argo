@@ -1,8 +1,9 @@
 // The parity suite (#2443) for a Subagent: the same lifecycle read from a Claude and a Codex transcript.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { delegationFacts } from '@/domains/sessions/renderer/feed/delegation/delegation-facts'
+import { DELEGATION_PHASE_WORK_STATES } from '@/domains/sessions/renderer/feed/delegation/delegation-facts'
 import { delegationEntries } from '@/domains/sessions/renderer/work/session-work-entries'
+import { workPresentation } from '@/domains/sessions/renderer/work/work-presentation'
 import { i18n } from '@/renderer/i18n'
 import { read } from './session-parity-harnesses'
 
@@ -28,12 +29,12 @@ function respondedPresentation(result: Awaited<ReturnType<typeof read>>) {
       phase = 'failed'
       break
   }
-  const feed = delegationFacts(
+  const feed = workPresentation(
     {
+      kind: 'subagent',
       id: feedRow.id,
       name: feedRow.name ?? feedRow.subagentId,
-      phase,
-      line: feedRow.text ?? null,
+      state: DELEGATION_PHASE_WORK_STATES[phase],
       durationMs: feedRow.durationMs ?? null,
       tokens: feedRow.tokens ?? null,
       model: feedRow.model ?? null,
