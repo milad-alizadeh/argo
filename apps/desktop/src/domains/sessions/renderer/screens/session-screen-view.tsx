@@ -46,11 +46,13 @@ function Inspector({ model }: { model: SessionScreenModel }) {
       activeEvidenceId={evidence?.id ?? null}
       delegation={model.delegation}
       delegationFeed={model.delegationFeed}
+      delegationFeedError={model.delegationFeedError}
       evidence={evidence}
       sessionId={model.selectedSessionId}
       handoff={<SessionHandoffFacts onNavigate={navigate} roster={roster} session={session} />}
       onOpenEvidence={setEvidence}
       onOpenSession={(sessionId) => navigate(`/sessions/${sessionId}`)}
+      onRetryDelegationFeed={model.retryDelegationFeed}
       shell={model.shell}
       shellOutput={model.shellOutput}
     />

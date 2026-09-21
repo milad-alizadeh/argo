@@ -90,17 +90,19 @@ export function useSessionComposer(options: SessionComposerOptions): ComposerRes
   const setDraft = useComposerStore((state) => state.setDraft)
   const { identity, sessionId, control, watchTurn, marker, selectedRow, isCompacting } =
     useComposerFacts({ harness, cockpit, roster, selectedSessionId }, setFailure)
-  const { isHandingOff, onCompact, onHandoff, onInterrupt, ...marks } = useComposerActions({
-    harness,
-    identity,
-    mutations,
-    marker,
-    roster,
-    sessionId,
-    selectedRow,
-    setFailure,
-    queryClient,
-  })
+  const { isHandingOff, onCompact, onHandoff, onInterrupt, onSteer, ...marks } = useComposerActions(
+    {
+      harness,
+      identity,
+      mutations,
+      marker,
+      roster,
+      sessionId,
+      selectedRow,
+      setFailure,
+      queryClient,
+    },
+  )
   const onSend = composerSend({
     harness,
     cockpit,
@@ -128,6 +130,7 @@ export function useSessionComposer(options: SessionComposerOptions): ComposerRes
       onCompact,
       onHandoff,
       onInterrupt,
+      onSteer,
       onSend,
       sessionId: composerIdentityKey(identity),
       setup: control,

@@ -46,6 +46,7 @@ import {
   sendSession,
   startSession,
 } from '@/domains/sessions/main/drive/drive'
+import { steerSession } from '@/domains/sessions/main/drive/steer-session'
 import { platformText } from '@/platform/main/i18n'
 import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
 
@@ -123,6 +124,7 @@ export function attachSessionBridge(
       disconnectTicket: (request, context) => context.reader.disconnectTicket(request),
       start: (request, context) => startSession(request, context.adapters),
       send: (request, context) => sendSession(request, ownerContext(context)),
+      steer: (request, context) => steerSession(request, ownerContext(context)),
       interrupt: (request, context) => interruptSession(request, ownerContext(context)),
       compact: (request, context) => compactSession(request, ownerContext(context)),
       handoff: (request, context) => handoffSession(request, ownerContext(context)),

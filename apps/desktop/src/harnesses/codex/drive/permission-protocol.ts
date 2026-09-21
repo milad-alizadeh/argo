@@ -1,3 +1,4 @@
+import type { ManagedSession } from '@/harnesses/codex/drive/managed-session'
 import { protocolString, type RequestID, type WireMessage } from '@/harnesses/codex/drive/protocol'
 
 export type PendingCodexPermission = {
@@ -28,4 +29,17 @@ export function readRequestApproval(message: WireMessage): PendingCodexPermissio
 
 export function codexApprovalDecision(decision: 'allow' | 'deny' | 'allowForSession' | 'cancel') {
   return { decision: decision === 'allow' || decision === 'allowForSession' ? 'accept' : 'decline' }
+}
+
+export function decidePendingPermission(
+  session: ManagedSession | undefined,
+  permissionId: string,
+  decision: 'allow' | 'deny' | 'allowForSession' | 'cancel',
+) {
+  const pending = session?.pendingPermission
+  if (!session || !pending || pending.id !== permissionId) return false
+  session.channel.respond(pending.requestId, codexApprovalDecision(decision))
+  session.pendingPermission = null
+  if (session.status === 'permission') session.status = 'running'
+  return true
 }

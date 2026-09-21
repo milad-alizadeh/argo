@@ -14,6 +14,7 @@ import { nestedToolCalls } from './nested-tool-call'
 import { otherFacts } from './other-facts'
 import { readToolResults } from './rich-results'
 import { readSubagentCall } from './subagent-calls'
+import { quotedAfter, readToolCallInput } from './tool-call-input'
 
 // `function_call`'s arguments are a JSON object serialised as a string; a `custom_tool_call`'s
 // `input` is the bare string the model wrote (a script), so it is kept as a single field rather
@@ -21,22 +22,6 @@ import { readSubagentCall } from './subagent-calls'
 // A script often writes its arguments as JavaScript, not JSON (`"workdir":wd`, `cmd:\`…\``); the
 // command, or a web search's first query (`q:"…"`) or opened page (`ref_id:"https://…"`), is
 // still one quoted string, and it is the one the Feed labels the call by.
-const QUOTED = String.raw`"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'|\x60((?:[^\x60\\]|\\.)*)\x60`
-const ESCAPES: Record<string, string> = { n: '\n', t: '\t', r: '\r' }
-
-function unescaped(literal: string) {
-  return literal.replace(/\\(.)/g, (_, character: string) => ESCAPES[character] ?? character)
-}
-
-function quotedAfter(value: string, lead: string): string | null {
-  const match = value.match(new RegExp(String.raw`${lead}\s*(?:${QUOTED})`))
-  const found = match?.[1] ?? match?.[2] ?? match?.[3] ?? null
-  return found === null ? null : unescaped(found)
-}
-
-function writtenField(value: string, key: string): string | null {
-  return quotedAfter(value, String.raw`["']?${key}["']?\s*:`)
-}
 
 // `tools.apply_patch(patch)` names a constant the script declared above it, or quotes the patch.
 function patchArgument(script: string, argumentsText: string): string | null {
@@ -46,49 +31,30 @@ function patchArgument(script: string, argumentsText: string): string | null {
   return quotedAfter(argumentsText, '^\\s*')
 }
 
-function readArguments(value: unknown): Record<string, unknown> {
-  if (typeof value !== 'string') return {}
-  try {
-    const parsed = JSON.parse(value)
-    return isRecord(parsed) ? parsed : { arguments: parsed }
-  } catch {
-    const cmd = writtenField(value, 'cmd')
-    const query = writtenField(value, 'q')
-    const url = [writtenField(value, 'ref_id'), writtenField(value, 'url')].find(
-      (found) => found?.startsWith('http') === true,
-    )
-    const path = writtenField(value, 'path')
-    return {
-      arguments: value,
-      ...(cmd === null ? {} : { cmd }),
-      ...(path === null ? {} : { path }),
-      ...(query === null ? {} : { query }),
-      ...(url === undefined ? {} : { url }),
-    }
-  }
-}
-
 type RawToolCall = { id: string; name: string; input: Record<string, unknown> }
 
 function rawToolCalls(payload: Record<string, unknown>): RawToolCall[] {
   if (typeof payload.call_id !== 'string' || typeof payload.name !== 'string') return []
   if (COMMAND_POLLS.has(payload.name)) return []
   if (payload.type === 'function_call')
-    return [{ id: payload.call_id, name: payload.name, input: readArguments(payload.arguments) }]
+    return [
+      { id: payload.call_id, name: payload.name, input: readToolCallInput(payload.arguments) },
+    ]
   if (payload.type !== 'custom_tool_call' || typeof payload.input !== 'string') return []
+  const script = payload.input
   if (payload.name !== 'exec')
-    return [{ id: `${payload.call_id}:0`, name: payload.name, input: { input: payload.input } }]
-  const nested = nestedToolCalls(payload.input)
+    return [{ id: `${payload.call_id}:0`, name: payload.name, input: { input: script } }]
+  const nested = nestedToolCalls(script)
   return nested.length === 0
-    ? [{ id: `${payload.call_id}:0`, name: payload.name, input: { input: payload.input } }]
+    ? [{ id: `${payload.call_id}:0`, name: payload.name, input: { input: script } }]
     : nested
         .map(({ name, argumentsText }, index) => ({
           id: `${payload.call_id}:${index}`,
           name,
           input:
             name === 'apply_patch'
-              ? { patch: patchArgument(payload.input as string, argumentsText) ?? argumentsText }
-              : readArguments(argumentsText),
+              ? { patch: patchArgument(script, argumentsText) ?? argumentsText }
+              : readToolCallInput(argumentsText, script),
         }))
         .filter((call) => !COMMAND_POLLS.has(call.name))
 }
@@ -115,6 +81,13 @@ function classified({ id, name, input }: RawToolCall): ToolCall {
     editFacts(name, input) ??
     otherFacts(name, input)
   return { id, ...(facts ?? { kind: 'other', label: `Ran ${name}`, text: null, source: null }) }
+}
+
+function commandWorkingDirectory(calls: RawToolCall[]): string | null {
+  const call = calls.findLast(
+    ({ name, input }) => commandFacts(name, input) !== null && typeof input.workdir === 'string',
+  )
+  return typeof call?.input.workdir === 'string' ? call.input.workdir : null
 }
 
 function readWebSearchRecord(
@@ -159,6 +132,7 @@ export function readToolRecord(
       role: 'assistant',
       originSessionId: null,
       blocks: visible.map((call) => ({ shape: 'tool' as const, callId: call.id })),
+      cwd: commandWorkingDirectory(calls),
       toolCalls: visible,
     })
   }

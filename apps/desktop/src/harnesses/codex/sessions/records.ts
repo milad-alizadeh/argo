@@ -75,6 +75,9 @@ function event(record: Record<string, unknown>, payload: Record<string, unknown>
   if (contextWindow !== null) return contextWindow
   const turn = readTurnRecord(record, payload)
   if (turn !== null) return turn
+  // Codex 0.147.0 writes a Subagent activity as its own snake-case event.
+  if (payload.type === 'sub_agent_activity')
+    return subagentActivity(record, { ...payload, type: 'SubAgentActivity', id: payload.event_id })
   if (payload.type === 'item_completed') return itemMessage(record, payload)
   if (payload.type !== 'user_message' && payload.type !== 'agent_message') return null
   if (isRecord(payload.item)) return itemMessage(record, payload)

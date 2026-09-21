@@ -58,6 +58,14 @@ export function useSessionMutations() {
         }),
       ),
   })
+  const steer = useMutation<
+    void,
+    SessionContractError,
+    { prompt: string; sessionId: string; attachments: SessionAttachmentInput[] }
+  >({
+    mutationFn: async ({ prompt, sessionId, attachments }) =>
+      acceptedOrThrow(await window.argo.steerSession({ sessionId, prompt, attachments })),
+  })
   const start = useMutation<
     SessionStarted,
     SessionContractError,
@@ -82,5 +90,5 @@ export function useSessionMutations() {
     },
   })
 
-  return { compact, handoff, interrupt, send, start }
+  return { compact, handoff, interrupt, send, start, steer }
 }

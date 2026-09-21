@@ -1,14 +1,17 @@
 import { CODEX_OPENING_SETUP } from '@/domains/sessions/contract/codex-turn-setup'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import type { CodexSessionDriver } from '@/harnesses/codex/drive/codex-session-driver-types'
 import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
 import { compactCodexSession } from '@/harnesses/codex/drive/compact-session'
+import { inputItemsFor } from '@/harnesses/codex/drive/input-items'
 import { readInterrupt } from '@/harnesses/codex/drive/interrupt-protocol'
 import {
   type ManagedSession,
   type ManagedSessionOptions,
   managedRoster,
 } from '@/harnesses/codex/drive/managed-session'
-import { codexApprovalDecision } from '@/harnesses/codex/drive/permission-protocol'
+import { decidePendingPermission } from '@/harnesses/codex/drive/permission-protocol'
+import { readSteeredTurn } from '@/harnesses/codex/drive/protocol'
 import { codexAnswersFor, settleQuestion } from '@/harnesses/codex/drive/question-protocol'
 import { readRename } from '@/harnesses/codex/drive/rename-protocol'
 import { createResumingChannel } from '@/harnesses/codex/drive/resuming-channel'
@@ -62,17 +65,24 @@ function closeManagedSessions(
   }
 }
 
-function decidePendingPermission(
-  session: ManagedSession | undefined,
-  permissionId: string,
-  decision: 'allow' | 'deny' | 'allowForSession' | 'cancel',
-) {
-  const pending = session?.pendingPermission
-  if (!session || !pending || pending.id !== permissionId) return false
-  session.channel.respond(pending.requestId, codexApprovalDecision(decision))
-  session.pendingPermission = null
-  if (session.status === 'permission') session.status = 'running'
-  return true
+async function steerTurn(options: {
+  session: ManagedSession | undefined
+  sessionId: string
+  text: string
+  attachments: SessionAttachmentInput[]
+}) {
+  const { session, sessionId, text, attachments } = options
+  if (session?.status !== 'running' || session.turnId === null)
+    throw new CodexSessionDriverError('not-drivable')
+  await session.channel.request(
+    'turn/steer',
+    {
+      threadId: sessionId,
+      input: inputItemsFor(text, attachments),
+      expectedTurnId: session.turnId,
+    },
+    readSteeredTurn,
+  )
 }
 
 export function createCodexSessionDriver(options: ManagedSessionOptions): CodexSessionDriver {
@@ -95,6 +105,9 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
         sessions,
         setup: setup ?? CODEX_OPENING_SETUP,
       })
+    },
+    async steer({ sessionId, text, attachments }) {
+      await steerTurn({ session: held(sessionId), sessionId, text, attachments })
     },
     async interrupt(sessionId) {
       const session = held(sessionId)

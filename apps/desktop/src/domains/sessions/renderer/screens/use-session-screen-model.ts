@@ -51,10 +51,13 @@ function useWorkArtifacts(
   const shell = session?.shell.find((command) => command.id === work.shellId) ?? null
   const delegation =
     session?.subagents.find((candidate) => candidate.id === work.subagentId) ?? null
+  const delegationFeed = useDelegationFeed(selectedSessionId, delegation?.id ?? null)
   return {
     shell,
     delegation,
-    delegationFeed: useDelegationFeed(selectedSessionId, delegation?.id ?? null),
+    delegationFeed: delegationFeed.feed,
+    delegationFeedError: delegationFeed.feedError,
+    retryDelegationFeed: delegationFeed.retry,
     subagentUsage: useDelegationUsage(
       session === null || session.subagents.length === 0 ? null : selectedSessionId,
       session?.subagents.some((candidate) => candidate.state === 'running') === true,

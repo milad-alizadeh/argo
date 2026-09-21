@@ -231,11 +231,13 @@ function ReviewInspector({
       activeEvidenceId={null}
       delegation={delegation}
       delegationFeed={delegation === null ? null : delegationFeedFor(delegation)}
+      delegationFeedError={null}
       evidence={null}
       sessionId={null}
       handoff={null}
       onOpenEvidence={() => {}}
       onOpenSession={() => {}}
+      onRetryDelegationFeed={() => {}}
       shell={shell}
       shellOutput={shellOutput}
     />
@@ -580,9 +582,7 @@ async function expectDelegatedFeedSurvivesCollapse(canvas: ReturnType<typeof wit
   expectVisibleFeedRowsDoNotOverlap(within(inspector).getByLabelText(SESSION_HISTORY_LABEL))
 
   await userEvent.click(canvas.getByRole('button', { name: 'Collapse Session inspector' }))
-  await waitFor(() =>
-    expect(inspector.querySelector('.feed__document')).toHaveAttribute('data-active', 'false'),
-  )
+  await waitFor(() => expect(inspector.querySelector('.feed__document')).toBeNull())
   await pickSubagent(canvas)
   const reopenedInspector = await canvas.findByRole('region', { name: 'Subagent' })
   expectVisibleFeedRowsDoNotOverlap(within(reopenedInspector).getByLabelText(SESSION_HISTORY_LABEL))

@@ -6,7 +6,10 @@ import type {
   SessionShellOutput,
   SubagentUsageFacts,
 } from '@/domains/sessions/contract/model/background-work-contract'
-import { sessionFeedQuery } from '@/domains/sessions/renderer/feed/session-feed-query'
+import {
+  retrySessionFeed,
+  sessionFeedQuery,
+} from '@/domains/sessions/renderer/feed/session-feed-query'
 import type { SessionContractError } from '@/domains/sessions/renderer/session-contract-error'
 import {
   SESSION_REFRESH_MS,
@@ -67,5 +70,9 @@ export function useDelegationFeed(sessionId: SessionId | null, subagentId: strin
   const feed = useQuery<SessionFeed | null, SessionContractError>(query)
   // A Subagent's transcript sits under the same watched trees as its Session's own.
   useWatchedQueries('sessions', [query.queryKey])
-  return feed.data ?? null
+  return {
+    feed: feed.data ?? null,
+    feedError: feed.failureCount > 1 ? feed.error : null,
+    retry: () => void retrySessionFeed(queryClient, query.queryKey, feed.refetch),
+  }
 }
