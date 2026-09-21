@@ -129,17 +129,16 @@ sub-agent rule: `docs/agents/worktrees.md`.
 
 ## Subagents
 
-A subagent's model and reasoning effort are explicit decisions per dispatch. Set both on every
-dispatch. A fan-out pays for each agent. Choose the lowest model and effort that can complete the
-bounded task. Use a cheaper, faster model with minimal or low effort for contained research,
-read-only inspection, and localized mechanical file changes. Raise the model or effort only for
-sustained reasoning, ambiguous design judgment, broad code understanding, or high-risk
-verification.
+Right-size every dispatch: set its model and reasoning effort explicitly. An omitted value
+inherits the parent configuration. Choose the lowest tier that can complete the bounded task. Use
+a cheaper, faster tier with minimal or low effort for contained research, read-only inspection,
+and localized mechanical file changes. Use a higher tier only for sustained reasoning, ambiguous
+design judgment, broad code understanding, or high-risk verification.
 
-The dispatching session's model is the ceiling. A subagent uses the same model or a cheaper one.
-For example, Sol can dispatch Sol or a cheaper model, but it cannot dispatch Astra. Report the
-model, effort, and task-specific reason for the tier. If a dispatch uses the parent model or more
-than low effort, state why the lower tier cannot safely complete the task.
+The parent model is the ceiling. A subagent uses that model or a cheaper one. For example, Sol can
+dispatch Sol or a cheaper model, but not Astra. Report the model, effort, and task-specific basis.
+If a dispatch uses the parent model or more than low effort, name the task requirement that
+demands it.
 
 ## Cross-CLI guardrail hooks
 
