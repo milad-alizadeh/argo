@@ -30,6 +30,14 @@ async function opensPlan(canvasElement: HTMLElement) {
   return trigger
 }
 
+async function hoversPlan(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement)
+  const trigger = canvas.getByRole('button', { name: 'Open task plan' })
+  await userEvent.hover(trigger)
+  await waitFor(() => expect(trigger).toHaveAttribute('aria-expanded', 'true'))
+  return trigger
+}
+
 function planContent(trigger: HTMLElement) {
   const contentId = trigger.getAttribute('aria-controls')
   const contents =
@@ -61,6 +69,15 @@ export const Available: Story = {
     await expect(
       popover.getByRole('listitem', { name: 'Choose the base layout: In progress' }),
     ).toBeVisible()
+  },
+}
+
+export const OpensOnHover: Story = {
+  args: { plan },
+  play: async ({ canvasElement }) => {
+    const trigger = await hoversPlan(canvasElement)
+    const popover = await shownPlanContent(trigger)
+    await expect(popover.getByRole('list', { name: 'Task plan' })).toBeVisible()
   },
 }
 
