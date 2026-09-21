@@ -12,6 +12,7 @@ const documentPath = path.resolve(
   process.cwd(),
   '../../packages/argo-skills/setup/project-setup.json',
 )
+export const PACKAGED_PROOF_SETUP_DOCUMENT_REVISION = 'packaged-proof'
 
 async function proofDocument(): Promise<SetupDocument> {
   const loaded = parseSetupDocument(JSON.parse(await readFile(documentPath, 'utf8')))
@@ -32,7 +33,12 @@ async function proofDocument(): Promise<SetupDocument> {
   const desktop = isRecord(targets) ? targets.desktop : undefined
   if (!isRecord(desktop)) throw new Error('Packaged proof requires the desktop target.')
   desktop.build = 'true'
-  const document = { ...loaded, configuration, revision: 'packaged-proof', fields }
+  const document = {
+    ...loaded,
+    configuration,
+    revision: PACKAGED_PROOF_SETUP_DOCUMENT_REVISION,
+    fields,
+  }
   return {
     ...document,
     configuration: JSON.parse(setupConfiguration(document, {})),

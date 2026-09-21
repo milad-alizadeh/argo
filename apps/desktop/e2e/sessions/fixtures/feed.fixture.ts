@@ -3,6 +3,7 @@
 import { appendFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
+import type { MockSetupDocument } from '../../../mocks/providers/setup/mock-setup-document-loopback'
 import { pointShellOutputAtRoot } from '../../../mocks/sessions/mock-shell-output'
 import {
   CODEX_FIXTURES,
@@ -14,7 +15,10 @@ import {
 } from '../../../mocks/sessions/mock-transcript-files'
 import { createProjectStore } from '../../../src/domains/projects/main/sqlite-store'
 import { sharedDatabasePath } from '../../../src/platform/main/storage/shared-database'
-import { makeProjectLocallyReady } from '../../projects/fixtures/locally-ready-project'
+import {
+  makeProjectLocallyReady,
+  markProjectSetupLocallyReady,
+} from '../../projects/fixtures/locally-ready-project'
 
 export const FIXTURES = [
   'resumeParent',
@@ -100,7 +104,14 @@ export async function streamProse(transcripts, text) {
 }
 
 // The Roster shows only for a selected Project (#2307), so only the empty-window case leaves it unset.
-export async function prepare(root, application, { projectSelected }) {
+export async function prepare(
+  root,
+  application,
+  {
+    projectSelected,
+    setupDocument,
+  }: { projectSelected: boolean; setupDocument: MockSetupDocument | undefined },
+) {
   const claudeTranscripts = path.join(root, 'claude-transcripts')
   const codexTranscripts = path.join(root, 'codex-transcripts')
   await writeFixtureTree(claudeTranscripts, FIXTURES, { inProofProject: true })
@@ -117,7 +128,14 @@ export async function prepare(root, application, { projectSelected }) {
   await mkdir(project)
   await makeProjectLocallyReady(project)
   await writeProjectStore(userData, project, projectSelected ? PROOF_PROJECT_ID : null)
-  return { application, claudeTranscripts, codexTranscripts, userData, project }
+  return {
+    application,
+    claudeTranscripts,
+    codexTranscripts,
+    userData,
+    project,
+    setupDocumentURL: setupDocument?.url,
+  }
 }
 
 const PROOF_PROJECT_ID = 'session-proof-project'
@@ -130,6 +148,7 @@ async function writeProjectStore(userData, project, selectedId) {
     ],
     selectedId,
   })
+  markProjectSetupLocallyReady(projects, PROOF_PROJECT_ID, project)
   projects.close()
 }
 

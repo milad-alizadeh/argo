@@ -42,9 +42,17 @@ export async function packagedTestCopy(root: string, arch = 'arm64') {
 async function waitForPackagedApp(application: string): Promise<void> {
   for (let attempt = 0; attempt < 300; attempt += 1) {
     try {
-      if ((await stat(application)).isDirectory()) return
+      const executable = path.join(application, 'Contents', 'MacOS', 'Argo')
+      const archive = path.join(application, 'Contents', 'Resources', 'app.asar')
+      if (
+        (await stat(application)).isDirectory() &&
+        (await stat(executable)).isFile() &&
+        (await stat(archive)).isFile()
+      ) {
+        return
+      }
     } catch {
-      // Forge finishes the app bundle after its CLI process returns on some local macOS runs.
+      // Forge finishes the app bundle after its CLI process returns on some macOS runs.
     }
     await new Promise((resolve) => setTimeout(resolve, 100))
   }

@@ -16,7 +16,11 @@ export function createProgressReporter(
 ) {
   const progress = new Map<string, { stepId: string; status: SetupStepStatus; message: string }>()
   return (event: { stepId: string; status: SetupStepStatus; message: string }) => {
-    progress.set(event.stepId, event)
+    progress.set(event.stepId, {
+      stepId: event.stepId,
+      status: event.status,
+      message: event.message,
+    })
     onProgress([...progress.values()])
   }
 }

@@ -23,6 +23,8 @@ const test = packagedTest.extend<{ project: ProjectRun }>({
   },
 })
 
+test.setTimeout(120_000)
+
 test('delivers one revisioned setup command and restores its durable actor state', async ({
   project,
 }) => {

@@ -33,7 +33,7 @@
     "desktop:verdict": "node scripts/write-release-verdict.mts",
     "test": "bun test && bun run test:node",
     "test:node": "vitest run --project=node",
-    "test:coverage": "bun test --coverage --coverage-reporter=text --coverage-reporter=lcov --coverage-dir=coverage/bun",
+    "test:coverage": "bun test --coverage --coverage-reporter=lcov --coverage-dir=coverage/bun",
     "test:coverage:storybook": "vitest run --project=storybook-dark --coverage"
   },
   "dependencies": {
