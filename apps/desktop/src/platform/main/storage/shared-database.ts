@@ -12,7 +12,14 @@ export { sharedDatabaseBackupPath, sharedDatabasePath }
 
 type DatabaseSync = import('node:sqlite').DatabaseSync
 
-const nodeRequire = createRequire(import.meta.url)
+// createRequire needs a base path to resolve bare specifiers from, never `import.meta.url`:
+// that token alone is a parse-time SyntaxError in the CommonJS-loaded contexts (Playwright's e2e
+// fixtures, Bun) that also reach this module, even on a branch that never runs it (#2599).
+const nodeRequire = createRequire(
+  process.resourcesPath
+    ? path.join(process.resourcesPath, 'app.asar', 'package.json')
+    : path.join(process.cwd(), 'package.json'),
+)
 
 const SESSION_SEARCH_MIGRATION = '20260921153755_session_search'
 

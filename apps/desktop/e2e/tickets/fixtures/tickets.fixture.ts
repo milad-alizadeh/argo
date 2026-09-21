@@ -2,7 +2,6 @@
 // The providers are the one thing mocked; the cockpit, its stores and safeStorage all run for real.
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
 import { type ElectronApplication, _electron as electron } from 'playwright-core'
 import type { MockGitHub } from '../../../mocks/providers/github/mock-github'
 import { startMockGitHubLoopback } from '../../../mocks/providers/github/mock-github-loopback'
@@ -21,7 +20,7 @@ import {
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from '../../../src/domains/sessions/main/composition/proof-protocol'
 import { createDurableDatabase } from '../../../src/platform/main/storage/durable-database'
-import { sharedDatabasePath } from '../../../src/platform/main/storage/shared-database-path'
+import { openSharedDatabase } from '../../../src/platform/main/storage/shared-database'
 import {
   GITHUB_PROOF_ORIGIN_ENV,
   LINEAR_PROOF_ORIGIN_ENV,
@@ -88,9 +87,7 @@ export async function prepare(
   const noSessions = path.join(root, 'no-sessions')
   await mkdir(userData, { recursive: true })
   await mkdir(noSessions, { recursive: true })
-  const projects = createProjectStore(
-    createDurableDatabase(new DatabaseSync(sharedDatabasePath(userData))),
-  )
+  const projects = createProjectStore(createDurableDatabase(openSharedDatabase(userData)))
   projects.replace({
     projects: [
       { id: 'project-1', path: projectPath, commonDirectory: path.join(projectPath, '.git') },
