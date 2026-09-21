@@ -51,7 +51,12 @@ function ignoreJumpToLatestChange(_sessionId: string, _action: (() => void) | nu
 // when the Turn ends (#2410), and the compaction marker stands in for it while compaction runs.
 function liveRows(reading: SessionFeed, facts: NonNullable<FeedLiveFacts>): SessionFeedRow[] {
   const rows = foldSettledToolRuns(reading.rows.filter((row) => row.shape !== 'thought'))
-  const activity = facts.isRunning && facts.compactionStartedAt === null ? facts.activity : null
+  const hasTrailingThought = reading.rows.at(-1)?.shape === 'thought'
+  const activity =
+    facts.compactionStartedAt === null &&
+    (facts.isRunning || (facts.activity?.kind === 'thought' && hasTrailingThought))
+      ? facts.activity
+      : null
   if (activity === null) return rows
   const turnStart = rows.findLastIndex((row) => row.shape === 'prose' && row.role === 'user')
   const last = rows.at(-1)
