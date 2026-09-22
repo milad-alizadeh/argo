@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict'
+import { readFile, writeFile } from 'node:fs/promises'
+import path from 'node:path'
 import { setTimeout } from 'node:timers/promises'
 import type { Page } from 'playwright-core'
 import { createSessionByClick, openSessionByClick } from '../gestures'
@@ -8,6 +10,18 @@ type Restart = () => Promise<Page>
 
 const OPENING_PROMPT = 'Open the Codex resume proof.'
 const RESUMING_PROMPT = 'Carry on after the restart.'
+const REFUSAL = 'Another Codex client holds this Session.'
+
+async function markVendorActive(root: string, sessionId: string) {
+  const file = path.join(root, 'argo-vendor-history.json')
+  const stored = JSON.parse(await readFile(file, 'utf8')) as {
+    threads: { id: string; status: { type: string; message?: string } }[]
+  }
+  const thread = stored.threads.find((candidate) => candidate.id === sessionId)
+  assert.ok(thread !== undefined)
+  thread.status = { type: 'active', message: REFUSAL }
+  await writeFile(file, JSON.stringify(stored))
+}
 
 async function rosterRow(page: Page, sessionId: string) {
   const reply = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
@@ -40,7 +54,7 @@ export async function provePackagedCodexResume(
 
   const relaunched = await restart()
   const [reread] = await rosterRow(relaunched, sessionId)
-  assert.equal(reread?.posture, 'external')
+  assert.equal(reread?.posture, 'watched')
   await openSessionByClick(relaunched, sessionId)
   const history = relaunched.getByRole('region', { name: 'Session history' })
   await backend.waitForReply(relaunched, { harness: 'codex', prompt: OPENING_PROMPT })
@@ -65,4 +79,28 @@ export async function provePackagedCodexResume(
     [{ id: sessionId, posture: 'managed' }],
   )
   return relaunched
+}
+
+export async function provePackagedCodexResumeRefusal(
+  page: Page,
+  {
+    restart,
+    root,
+  }: {
+    restart: Restart
+    root: string
+  },
+) {
+  const sessionId = await createSessionByClick(page, {
+    harness: 'codex',
+    prompt: 'Open the Codex refusal proof.',
+  })
+  const relaunched = await restart(() => markVendorActive(root, sessionId))
+  await openSessionByClick(relaunched, sessionId)
+  await sendFromComposer(relaunched, 'Try to take over this active Session.')
+  const alert = relaunched.getByRole('alert')
+  await alert.waitFor()
+  assert.match((await alert.textContent()) ?? '', new RegExp(REFUSAL))
+  const [row] = await rosterRow(relaunched, sessionId)
+  assert.equal(row?.posture, 'watched')
 }

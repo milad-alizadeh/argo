@@ -42,9 +42,10 @@ export async function ownerHarnessFor() {
 
 export async function writeMockCodex(root: string) {
   const executable = `${root}/codex`
+  const vendorHistory = path.join(root, 'argo-vendor-history.json')
   await writeFile(
     executable,
-    `#!/bin/sh\nexec "${process.execPath}" --no-warnings "${fixture}" "$@"\n`,
+    `#!/bin/sh\nARGO_CODEX_VENDOR_HISTORY="${vendorHistory}" exec "${process.execPath}" --no-warnings "${fixture}" "$@"\n`,
   )
   await chmod(executable, 0o755)
   return executable

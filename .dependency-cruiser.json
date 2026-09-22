@@ -21,6 +21,18 @@
           "^apps/desktop/src/domains/sessions/main/index/session-index/roster-fixtures\\.ts$"
         ]
       }
+    },
+    {
+      "name": "codex-history-does-not-import-retired-readers",
+      "comment": "Codex history reads app-server. Rollout files are invalidation signals only (#2581).",
+      "severity": "error",
+      "from": {
+        "path": "^apps/desktop/src/harnesses/codex/(history|observation)/",
+        "pathNot": "\\.(test|stories)\\.(ts|tsx)$"
+      },
+      "to": {
+        "path": "^apps/desktop/src/harnesses/codex/sessions/"
+      }
     }
   ],
   "options": {

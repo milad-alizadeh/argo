@@ -35,6 +35,9 @@ test('projects managed Codex app-server state without a transcript', async () =>
       subscribe: () => () => {},
     } satisfies SessionAdapter,
     projections: () => [projection()],
+    watchedProjections: () => [],
+    refreshHistory: async () => [],
+    checkoutFor: () => null,
   })
 
   const listed = await source.discoverSessions()

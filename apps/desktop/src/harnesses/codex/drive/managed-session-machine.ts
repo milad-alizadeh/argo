@@ -69,12 +69,12 @@ type ManagedSessionContext = {
   lastSendOutcome: SendOutcome | null
   lastSendRejection: string | null
   sendSequence: number
+  opensExistingThread: boolean
 }
 
 // A fresh `session.start` carries no native ID: Codex only hands one back in `thread/start`'s
 // response, so lease acquisition (keyed on that ID) cannot run before the thread exists. A
-// `resume` already knows the ID (an app restart reattaching to a still-managed Session) and skips
-// thread creation.
+// `resume` already knows the ID. It calls `thread/resume` only after the lease is held (#2581).
 export type ManagedSessionInput =
   | {
       kind: 'start'
@@ -174,6 +174,28 @@ function createManagedSessionActors(deps: ManagedSessionDeps) {
     >(({ input }) => {
       deps.sessionService.release(input.sessionId)
       return Promise.resolve()
+    }),
+    resumeThread: fromPromise<
+      {
+        threadId: string
+      },
+      {
+        threadId: string
+        cwd: string
+      }
+    >(async ({ input }) => {
+      const threadId = await requireChannel(deps.getChannel).request(
+        'thread/resume',
+        {
+          cwd: input.cwd,
+          threadId: input.threadId,
+        },
+        readThreadId,
+      )
+      if (threadId !== input.threadId) throw new Error('Codex resumed a different Session.')
+      return {
+        threadId,
+      }
     }),
     startThread: fromPromise<
       {
@@ -579,6 +601,7 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
       lastSendOutcome: null,
       lastSendRejection: null,
       sendSequence: 0,
+      opensExistingThread: input.kind === 'resume',
     }),
     initial: 'AwaitingWorkspace',
     states: {
@@ -629,14 +652,37 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
           }),
           onDone: [
             {
-              guard: ({ event }) => event.output.posture === 'managed',
-              target: 'Active',
+              guard: ({ event }) => event.output.posture !== 'managed',
+              target: 'Watched',
             },
             {
-              target: 'Watched',
+              guard: ({ context }) => context.opensExistingThread,
+              target: 'ResumingThread',
+            },
+            {
+              target: 'Active',
             },
           ],
           onError: 'Failed',
+        },
+      },
+      ResumingThread: {
+        invoke: {
+          src: 'resumeThread',
+          input: ({ context }) => ({
+            threadId: threadIdOf(context),
+            cwd: context.cwd,
+          }),
+          onDone: 'Active',
+          onError: {
+            target: 'ReleasingLease',
+            actions: assign({
+              lastSendRejection: ({ event }) =>
+                event.error instanceof Error
+                  ? event.error.message
+                  : 'Codex refused to resume this Session.',
+            }),
+          },
         },
       },
       Active: {

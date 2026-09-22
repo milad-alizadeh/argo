@@ -6,7 +6,7 @@ import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import type { DriveSessionErrorCode } from '@/domains/sessions/contract/model/session-error'
 
 export type DriveFailureCode = DriveSessionErrorCode | 'missing-session'
-export type DriveFailure = { error: DriveFailureCode }
+export type DriveFailure = { error: DriveFailureCode; message?: string }
 export type DriveOk = { ok: true }
 
 export type SessionDriveAdapter = {

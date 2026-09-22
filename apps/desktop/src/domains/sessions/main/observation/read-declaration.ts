@@ -26,6 +26,9 @@ export function readFailure(error: unknown) {
   if (isRecord(error) && (error.code === 'ENOENT' || error.code === 'ENOTDIR')) {
     return 'transcripts-unavailable'
   }
+  if (isRecord(error) && error.code === 'vendor-history-unavailable') {
+    return 'vendor-history-unavailable'
+  }
   return 'internal-error'
 }
 

@@ -20,7 +20,7 @@ export {
   unreadableRowHeight,
 } from '@/domains/sessions/contract/model/feed-rows'
 
-export const SESSION_POSTURES = ['managed', 'external'] as const
+export const SESSION_POSTURES = ['managed', 'external', 'watched'] as const
 export const sessionPostureSchema = z.enum(SESSION_POSTURES)
 export const SESSION_ENTRIES = ['interactive', 'headless'] as const
 export const sessionEntrySchema = z.enum(SESSION_ENTRIES)

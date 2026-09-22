@@ -38,6 +38,7 @@ export function attachManagedSessions(
       claudeSessionAdapterRegistration,
       createCodexSessionAdapterRegistration({
         transcriptsRoot: codexTranscriptsRoot(options.home),
+        knownWorkspaces: () => options.projects.knownWorkspaces(),
         findExecutable: () =>
           options.proofEnabled
             ? (process.env[SESSION_CODEX_EXECUTABLE_ENV] ?? null)

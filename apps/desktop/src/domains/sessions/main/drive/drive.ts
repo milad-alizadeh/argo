@@ -14,16 +14,22 @@ export type OwnerContext = {
 }
 type Owned = { adapter: SessionDriveAdapter; harness: string }
 
-function driveFailureReply(
-  adapter: SessionDriveAdapter,
-  failure: DriveFailureCode,
-  requestId: string,
-) {
+function driveFailureReply({
+  adapter,
+  failure,
+  requestId,
+  message,
+}: {
+  adapter: SessionDriveAdapter
+  failure: DriveFailureCode
+  requestId: string
+  message?: string
+}) {
   if (failure === 'missing-session') return sessionError('missing-session', requestId)
   return driveSessionErrorWithMessage(failure, {
     harness: adapter.harness,
     requestId,
-    message: adapter.failureMessage(failure),
+    message: message ?? adapter.failureMessage(failure),
   })
 }
 async function ownedAdapter(context: OwnerContext, sessionId: string): Promise<Owned | undefined> {
@@ -35,13 +41,18 @@ async function ownedAdapter(context: OwnerContext, sessionId: string): Promise<O
 export async function ownedAccepted<T>(
   context: OwnerContext,
   request: { sessionId: string; requestId: string },
-  run: (owned: Owned) => Promise<{ error: DriveFailureCode } | T>,
+  run: (owned: Owned) => Promise<{ error: DriveFailureCode; message?: string } | T>,
 ): Promise<SessionContract.SessionAcceptedReply> {
   const owned = await ownedAdapter(context, request.sessionId)
   if (owned === undefined) return sessionError('missing-session', request.requestId)
   const result = await run(owned)
   if (result !== null && typeof result === 'object' && 'error' in result) {
-    return driveFailureReply(owned.adapter, result.error, request.requestId)
+    return driveFailureReply({
+      adapter: owned.adapter,
+      failure: result.error,
+      requestId: request.requestId,
+      message: result.message,
+    })
   }
   return {
     version: 1,
@@ -66,7 +77,14 @@ export async function startSession(
     setup: request.setup,
     attachments: request.attachments ?? [],
   })
-  if ('error' in result) return driveFailureReply(adapter, result.error, request.requestId)
+  if ('error' in result) {
+    return driveFailureReply({
+      adapter,
+      failure: result.error,
+      requestId: request.requestId,
+      message: result.message,
+    })
+  }
   return {
     version: 1,
     type: 'session.started',
