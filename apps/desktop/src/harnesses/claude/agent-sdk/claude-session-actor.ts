@@ -55,11 +55,11 @@ const claudeSessionSetup = setup({
     }),
   },
   guards: {
-    isSubscriptionAuthorized: (_, params: { message: SDKMessage }) =>
+    isSubscriptionAuthorized: (_, params: { message: ClaudeSdkMessage }) =>
       isSubscriptionAuthorized(params.message),
-    isInheritedApiCredential: (_, params: { message: SDKMessage }) =>
+    isInheritedApiCredential: (_, params: { message: ClaudeSdkMessage }) =>
       isInheritedApiCredential(params.message),
-    isAuthenticationFailure: (_, params: { message: SDKMessage }) =>
+    isAuthenticationFailure: (_, params: { message: ClaudeSdkMessage }) =>
       isAuthenticationFailure(params.message),
   },
   actions: {

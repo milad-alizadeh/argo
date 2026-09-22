@@ -5,13 +5,6 @@ import {
   sendToDraftIdentity,
 } from '@/domains/sessions/renderer/composer/send-draft-turn'
 import { sendToNewSession, sendToSelected } from '@/domains/sessions/renderer/composer/send-turn'
-import {
-  beginEntry,
-  clearEntry,
-  rekeyEntry,
-  type TurnMarkerApi,
-  type TurnMarkerEntries,
-} from '@/domains/sessions/renderer/composer/use-turn-marker'
 import { useSessionCreationStore } from '@/domains/sessions/renderer/session-creation'
 import {
   COCKPIT,
@@ -21,6 +14,7 @@ import {
   PROJECT,
   SETUP,
 } from '../../../../../mocks/sessions/mock-send-turn'
+import { mockTurnMarker } from '../../../../../mocks/sessions/mock-turn-marker'
 
 beforeEach(() => {
   useSessionCreationStore.setState({ pending: null })
@@ -65,23 +59,6 @@ test('a Send with no prior Session starts one and navigates to it', async () => 
   expect(navigated).toEqual([['/sessions/session-new', { replace: true, state: 'focus-composer' }]])
 })
 
-// The hook's own transitions over a plain map, without mounting React.
-function turnMarker() {
-  const marker = {
-    entries: new Map() as TurnMarkerEntries,
-    begin: (key: string, entry: Parameters<TurnMarkerApi['begin']>[1]) => {
-      marker.entries = beginEntry(marker.entries, key, { ...entry, startedAt: 0 })
-    },
-    rekey: (from: string, to: string) => {
-      marker.entries = rekeyEntry(marker.entries, from, to)
-    },
-    clear: (key: string) => {
-      marker.entries = clearEntry(marker.entries, key)
-    },
-  }
-  return marker
-}
-
 // Rapid Enter presses on a new Session (#2229): the dropped duplicate leaves the first Send's
 // Turn Marker in place, so Starting Session shows until the Session answers.
 test("a dropped duplicate Send keeps the first Send's Turn Marker", async () => {
@@ -93,7 +70,7 @@ test("a dropped duplicate Send keeps the first Send's Turn Marker", async () => 
         answer = resolve
       }),
   )
-  const marker = turnMarker()
+  const marker = mockTurnMarker()
   const deps: DraftSendDeps = {
     harness: 'claude',
     cockpit: COCKPIT,
@@ -120,7 +97,7 @@ test("a dropped duplicate Send keeps the first Send's Turn Marker", async () => 
 test('a Send from a pending Composer reports the real Session id after rekeying', async () => {
   const opened = useSessionCreationStore.getState().begin('claude', PROJECT.path)
   const started: string[] = []
-  const marker = turnMarker()
+  const marker = mockTurnMarker()
   const deps: DraftSendDeps = {
     harness: 'claude',
     cockpit: COCKPIT,

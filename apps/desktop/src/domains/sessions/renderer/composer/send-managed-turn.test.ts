@@ -1,29 +1,10 @@
 import { expect, test } from 'bun:test'
 import { QueryClient } from '@tanstack/react-query'
 import { sendToSessionIdentity } from '@/domains/sessions/renderer/composer/send-turn'
-import {
-  beginEntry,
-  clearEntry,
-  type TurnMarkerApi,
-  type TurnMarkerEntries,
-} from '@/domains/sessions/renderer/composer/use-turn-marker'
-
-function turnMarker() {
-  const marker = {
-    entries: new Map() as TurnMarkerEntries,
-    begin: (key: string, entry: Parameters<TurnMarkerApi['begin']>[1]) => {
-      marker.entries = beginEntry(marker.entries, key, { ...entry, startedAt: 0 })
-    },
-    rekey: () => {},
-    clear: (key: string) => {
-      marker.entries = clearEntry(marker.entries, key)
-    },
-  }
-  return marker
-}
+import { mockTurnMarker } from '../../../../../mocks/sessions/mock-turn-marker'
 
 function managedClaudeDeps(
-  marker: ReturnType<typeof turnMarker>,
+  marker: ReturnType<typeof mockTurnMarker>,
   sendManagedClaude: Parameters<typeof sendToSessionIdentity>[0]['sendManagedClaude'],
   failures: unknown[],
 ) {
@@ -41,7 +22,7 @@ function managedClaudeDeps(
 }
 
 test('an uncertain managed Claude Send keeps its Turn Marker and draft state', async () => {
-  const marker = turnMarker()
+  const marker = mockTurnMarker()
   const failures: unknown[] = []
 
   await expect(
@@ -57,7 +38,7 @@ test('an uncertain managed Claude Send keeps its Turn Marker and draft state', a
 })
 
 test('a rejected managed Claude Send clears its Turn Marker and reports the reason', async () => {
-  const marker = turnMarker()
+  const marker = mockTurnMarker()
   const failures: unknown[] = []
 
   await expect(
