@@ -57,8 +57,15 @@ export function ProjectSetupShell({
         {header}
       </header>
       <div className="grid min-h-0 min-w-0 flex-1 grid-cols-[minmax(0,1fr)_var(--size-session-inspector)] overflow-hidden max-lg:grid-cols-1">
+        {/* The aside comes first in the markup so its "Review setup" heading precedes the section's own
+            headings in document order; `order-*` keeps the visual columns as they were. Reordering only
+            the markup (without `order-*`) would flip the layout, and `order-*` alone changes paint order
+            but not the accessibility tree, which follows source order. */}
+        <aside className="order-2 min-h-0 min-w-0 overflow-x-hidden overflow-y-auto border-l bg-sidebar px-(--spacing-shell-gutter) pt-(--spacing-shell-region) pb-24 max-lg:hidden">
+          {sidebar}
+        </aside>
         <section
-          className="min-h-0 min-w-0 overflow-x-hidden overflow-y-auto px-8 pt-8 pb-24 lg:px-16"
+          className="order-1 min-h-0 min-w-0 overflow-x-hidden overflow-y-auto px-8 pt-8 pb-24 lg:px-16"
           ref={contentRef}
         >
           <div className="mb-3 grid max-w-3xl grid-cols-[var(--size-control)_minmax(0,1fr)] gap-3 type-body text-muted-foreground [&_p]:pt-1.5">
@@ -78,9 +85,6 @@ export function ProjectSetupShell({
             {children}
           </div>
         </section>
-        <aside className="min-h-0 min-w-0 overflow-x-hidden overflow-y-auto border-l bg-sidebar px-(--spacing-shell-gutter) pt-(--spacing-shell-region) pb-24 max-lg:hidden">
-          {sidebar}
-        </aside>
       </div>
     </main>
   )

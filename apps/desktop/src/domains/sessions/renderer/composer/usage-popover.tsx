@@ -59,7 +59,7 @@ export function UsagePopover({ harness }: { harness: 'claude' | 'codex' }) {
               <span className="ml-auto type-meta text-muted-foreground">{item.detail}</span>
               <span className="w-8 text-right type-meta tabular-nums">{item.percentage}%</span>
             </div>
-            <Progress value={item.percentage} />
+            <Progress aria-label={item.label} value={item.percentage} />
           </div>
         ))}
       </PopoverContent>

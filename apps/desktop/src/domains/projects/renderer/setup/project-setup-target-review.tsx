@@ -24,10 +24,10 @@ export function TargetReview({
       title={target.name}
     >
       <div className="grid gap-3 border-b bg-muted/20 px-3.5 py-3">
-        <h3 className="flex items-center gap-2 type-heading">
+        <h2 className="flex items-center gap-2 type-heading">
           <Icon name="source-code" className="text-muted-foreground" size="control" />
           {t('setup.actor.reviewing-plan.currentSetup')}
-        </h3>
+        </h2>
         <div className="grid grid-cols-2 gap-2">
           <Fact
             label={t('setup.actor.reviewing-plan.framework')}
@@ -46,10 +46,10 @@ export function TargetReview({
         <p className="type-label text-muted-foreground">{target.evidence}</p>
       </div>
       <div className="px-3.5 py-3">
-        <h3 className="flex items-center gap-2 type-heading">
+        <h2 className="flex items-center gap-2 type-heading">
           <Icon name="sparkles" className="text-muted-foreground" size="control" />
           {t('setup.actor.reviewing-plan.agentWillAdd')}
-        </h3>
+        </h2>
         {recommendations.length ? (
           <RecommendationRows recommendations={recommendations} />
         ) : (
@@ -66,10 +66,10 @@ function CommandList({ commands }: { commands: SetupPlan['targets'][number]['com
   const { t } = useTranslation('projects')
   return (
     <div>
-      <h4 className="flex items-center gap-2 type-label font-semibold">
+      <h3 className="flex items-center gap-2 type-label font-semibold">
         <Icon name="source-code" className="text-muted-foreground" size="control" />
         {t('setup.actor.reviewing-plan.commands')}
-      </h4>
+      </h3>
       <dl className="mt-2 grid grid-cols-3 gap-2">
         {Object.entries(commands).map(([name, value]) => (
           <div className="min-w-0 rounded-lg border bg-card px-2.5 py-2" key={name}>

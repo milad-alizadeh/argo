@@ -403,8 +403,13 @@ export const DelegationEvents: Story = {
   render: (args) => <LinkedFeed {...args} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getAllByRole('region', { name: 'Background Agent' })).toHaveLength(3)
-    const agent = canvas.getAllByRole('region', { name: 'Background Agent' }).at(-1) as HTMLElement
+    // Each event's region is now named for that event (#2623), not the shared generic label.
+    await expect(
+      canvas.getAllByRole('region', { name: /Review the Feed disclosure for keyboard access\./ }),
+    ).toHaveLength(3)
+    const agent = canvas.getByRole('region', {
+      name: 'Review the Feed disclosure for keyboard access. sent a reply to the main Session',
+    })
     await expect(agent).toHaveTextContent('Done')
     await expect(agent).toHaveTextContent('Review the Feed disclosure for keyboard access.')
     await expect(agent).not.toHaveClass('border-b')
@@ -900,7 +905,11 @@ export const AllRowVariations: Story = {
     await expect(canvas.getByRole('button', { name: 'Simple english' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Ran a command, edited a file' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Ran a command' })).toBeVisible()
-    await expect(canvas.getByRole('region', { name: 'Background Agent' })).toBeVisible()
+    await expect(
+      canvas.getByRole('region', {
+        name: 'Review the Feed disclosure for keyboard access. started',
+      }),
+    ).toBeVisible()
     const link = canvas.getByRole('link', {
       name: 'https://github.com/milad-alizadeh/argo/pull/2203',
     })

@@ -58,7 +58,9 @@ export function DelegationEvent({ row, onOpen }: { row: SubagentRow; onOpen?: ()
   const stateMark = WORK_STATE_MARKS[DELEGATION_PHASE_WORK_STATES[phase]]
   return (
     <section
-      aria-label={t('delegation.agent.label')}
+      // Named for this event, not the generic `delegation.agent.label`: several delegation events can
+      // sit in one feed, and landmarks need distinct names to stay distinguishable.
+      aria-label={label}
       className="min-w-0 py-1"
       data-event={row.event}
       data-slot="feed-delegation"

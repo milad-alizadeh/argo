@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { type ReactNode, useLayoutEffect } from 'react'
 import { InspectorToggles } from '@/platform/renderer/cockpit/inspector-split/inspector-toggles'
 import {
   type InspectorSizes,
@@ -45,6 +45,13 @@ function InspectorPanel({
   defaultCollapsed: boolean
   defaultInspectorSize: string | undefined
 }) {
+  // react-resizable-panels draws its own `overflow: auto` wrapper one level above `<aside>`, and
+  // gives that wrapper no way to take a prop, so the scrollable element's tab stop is set here by
+  // hand once the wrapper exists (#2623: `scrollable-region-focusable`).
+  useLayoutEffect(() => {
+    const scrollParent = panels.inspectorElement.current?.parentElement
+    if (scrollParent) scrollParent.tabIndex = 0
+  }, [panels.inspectorElement])
   return (
     <ResizablePanel
       id={`${id}-inspector`}

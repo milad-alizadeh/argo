@@ -2,20 +2,13 @@ import { type ReactNode, type RefObject, useEffect, useId, useRef, useState } fr
 import { useTranslation } from 'react-i18next'
 import { focusAfterLeaving, useExitPresence } from '@/platform/renderer/components/exit-presence'
 import { Icon } from '@/platform/renderer/components/icon'
-import { Button } from '@/platform/renderer/components/ui/button'
-import { ButtonGroup, ButtonGroupSeparator } from '@/platform/renderer/components/ui/button-group'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/platform/renderer/components/ui/dropdown-menu'
+  AllowButton,
+  type PermissionAnswer,
+  type SessionHarness,
+} from '@/platform/renderer/components/permission-allow-button'
+import { Button } from '@/platform/renderer/components/ui/button'
 
-// What each Harness's standing allow covers: Claude's gate remembers similar calls, Codex the Session.
-const STANDING_ALLOW = { claude: 'permission.allowSimilar', codex: 'permission.allowAll' } as const
-
-type PermissionAnswer = 'allow' | 'allowForSession' | 'deny'
-type SessionHarness = keyof typeof STANDING_ALLOW
 type Permission = { description: string; id: string }
 
 type PermissionLabels = { allow: string; deny: string; title: string }
@@ -23,6 +16,10 @@ type PermissionLabels = { allow: string; deny: string; title: string }
 export type PermissionPromptProps = {
   presentation?: 'composer' | 'stage'
   harness?: SessionHarness
+  // The composer tray has no page heading above it, so the title defaults to `h3`. A caller that
+  // nests this under its own `h1` (Project setup's Approval screen) passes 2 to keep the document
+  // outline unbroken.
+  headingLevel?: 2 | 3
   labels?: PermissionLabels
   permission: Pick<Permission, 'description' | 'id'> | null
   onDecide: (decision: PermissionAnswer) => Promise<boolean>
@@ -30,6 +27,7 @@ export type PermissionPromptProps = {
 
 // The top card in the composer's attachment tray, above the queue.
 export function PermissionPrompt({
+  headingLevel = 3,
   labels,
   permission,
   presentation = 'composer',
@@ -42,6 +40,7 @@ export function PermissionPrompt({
     <PermissionCard
       key={shown.id}
       exiting={exiting}
+      headingLevel={headingLevel}
       labels={
         labels ?? {
           allow: t('permission.allow'),
@@ -69,6 +68,7 @@ function useFocusAfterLeaving(cardRef: RefObject<HTMLElement | null>, exiting: b
 function PermissionCard({
   harness,
   exiting,
+  headingLevel,
   labels,
   permission,
   presentation,
@@ -109,9 +109,15 @@ function PermissionCard({
             name="shield-question"
             className="size-(--size-icon-inline) shrink-0 text-muted-foreground"
           />
-          <h3 id={titleId} className="min-w-0 flex-1 type-heading">
-            {labels.title}
-          </h3>
+          {headingLevel === 2 ? (
+            <h2 id={titleId} className="min-w-0 flex-1 type-heading">
+              {labels.title}
+            </h2>
+          ) : (
+            <h3 id={titleId} className="min-w-0 flex-1 type-heading">
+              {labels.title}
+            </h3>
+          )}
           {presentation === 'composer' ? (
             <PermissionActions denyLabel={labels.deny} locked={locked} onDecide={decide}>
               {actions}
@@ -153,47 +159,5 @@ function PermissionActions({
       </Button>
       {children}
     </div>
-  )
-}
-
-function AllowButton({
-  allowLabel,
-  harness,
-  disabled,
-  onDecide,
-}: {
-  allowLabel: string
-  harness: SessionHarness | undefined
-  disabled: boolean
-  onDecide: (decision: PermissionAnswer) => Promise<void>
-}) {
-  const { t } = useTranslation('sessions')
-  if (harness === undefined) {
-    return (
-      <Button disabled={disabled} size="sm" onClick={() => void onDecide('allow')}>
-        {allowLabel}
-      </Button>
-    )
-  }
-  return (
-    <ButtonGroup>
-      <Button disabled={disabled} size="sm" onClick={() => void onDecide('allow')}>
-        {allowLabel}
-      </Button>
-      <ButtonGroupSeparator className="bg-primary-foreground/25" />
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          disabled={disabled}
-          render={<Button aria-label={t('permission.more')} size="icon-sm" />}
-        >
-          <Icon name="chevron-down" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" side="top" className="w-auto">
-          <DropdownMenuItem onClick={() => void onDecide('allowForSession')}>
-            {t(STANDING_ALLOW[harness])}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </ButtonGroup>
   )
 }

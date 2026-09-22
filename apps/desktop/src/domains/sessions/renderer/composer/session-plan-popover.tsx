@@ -59,7 +59,11 @@ function AvailablePlan({ plan }: { plan: Extract<SessionPlan, { state: 'availabl
           {t('composer.plan', { current: currentStep(plan), total: plan.entries.length })}
         </PopoverTitle>
       </PopoverHeader>
-      <Progress value={percentage} className="h-1.5" />
+      <Progress
+        aria-label={t('roster.planProgress', { completed: progressed, total: plan.entries.length })}
+        value={percentage}
+        className="h-1.5"
+      />
       <ol aria-label={t('composer.taskPlan.label')} className="grid gap-1">
         {plan.entries.map((entry, index) => (
           <li

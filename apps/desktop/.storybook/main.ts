@@ -8,7 +8,7 @@ const config: StorybookConfig = {
     '../src/platform/renderer/**/*.stories.@(ts|tsx|js|jsx)',
     '../src/domains/*/renderer/**/*.stories.@(ts|tsx|js|jsx)',
   ],
-  addons: ['@storybook/addon-vitest'],
+  addons: ['@storybook/addon-vitest', '@storybook/addon-a11y'],
   framework: { name: '@storybook/react-vite', options: {} },
   viteFinal: async (viteConfig) => ({
     ...viteConfig,

@@ -24,7 +24,8 @@ export function CompactionMarker({
     return () => window.clearInterval(timer)
   }, [])
   return (
-    <article className="grid gap-2 type-body" role="status">
+    // `article` disallows `role="status"` in ARIA-in-HTML; this is a live status marker, not sectioning content.
+    <div className="grid gap-2 type-body" role="status">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <Loader aria-hidden={true} />
         <span>{t('marks.compacting')}</span>
@@ -36,12 +37,13 @@ export function CompactionMarker({
       {percentage === null ? null : (
         <div className="flex items-center gap-2 pl-6">
           <Progress
+            aria-label={t('marks.compacting')}
             className="min-w-0 flex-1 [&_[data-slot=progress-track]]:h-2"
             value={percentage}
           />
           <span className="shrink-0 text-muted-foreground tabular-nums">{percentage}%</span>
         </div>
       )}
-    </article>
+    </div>
   )
 }

@@ -111,7 +111,9 @@ function ReviewingDiff({ command, snapshot }: ReviewScreenProps) {
   const [feedback, setFeedback] = useState('')
   const targets = snapshot.acceptedPlan?.targets ?? []
   return (
-    <section aria-label={t('setup.actor.reviewing-diff.diffLabel')}>
+    // No aria-label of its own: `FileDiffList` below is already the labelled landmark, and giving this
+    // wrapper the same name doubled it.
+    <section>
       <div className="text-center">
         <span className="mx-auto grid size-14 place-items-center rounded-full bg-diff-added/10 text-diff-added">
           <Icon name="success" className="size-7" />
