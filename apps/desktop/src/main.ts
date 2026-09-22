@@ -14,7 +14,6 @@ import {
 } from '@/domains/sessions/contract/model/feed-images'
 import { openDurableStores } from '@/main/durable-stores'
 import { startDesktopApplication } from '@/platform/main/application/start'
-import { configureStorageRuntime } from '@/platform/main/storage/storage-runtime'
 import {
   DEVELOPMENT_APPLICATION_NAME,
   developmentStoreDirectories,
@@ -25,6 +24,7 @@ import {
 } from '@/platform/main/development/instance'
 import { writeDevelopmentReady } from '@/platform/main/development/ready'
 import { installMenu } from '@/platform/main/menu'
+import { configureStorageRuntime } from '@/platform/main/storage/storage-runtime'
 import { createDesktopWindow } from '@/platform/main/window/create-window'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mts'
 
