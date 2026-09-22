@@ -1,4 +1,3 @@
-import { editPresentation, fileName } from './file-presentation'
 import type { SessionFeedRow } from '../models'
 import {
   type AskFacts,
@@ -8,6 +7,7 @@ import {
   type ToolCall,
   type ToolResult as TranscriptToolResult,
 } from '../transcript'
+import { editPresentation, fileName } from './file-presentation'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 type AskRow = Extract<SessionFeedRow, { shape: 'ask' }>

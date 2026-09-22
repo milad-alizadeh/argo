@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionFeedRow } from './index'
-import { type ToolResult, toolRows } from './index'
-import { foldSettledToolRuns, groupToolRuns } from './index'
 import type { ToolCall } from '../transcript'
+import type { SessionFeedRow } from './index'
+import { foldSettledToolRuns, groupToolRuns, type ToolResult, toolRows } from './index'
 import { searchCall } from './tool-feed-test-fixtures'
 
 function bash(id: string, command: string): ToolCall {

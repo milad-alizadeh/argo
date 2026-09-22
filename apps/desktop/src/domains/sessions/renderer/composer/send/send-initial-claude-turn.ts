@@ -1,6 +1,6 @@
+import type { useSessionMutations } from '../hooks'
 import { afterRosterPaint } from './after-roster-paint'
 import type { TurnInput } from './send-turn'
-import type { useSessionMutations } from '../hooks'
 
 export function sendInitialClaudeTurn(
   send: ReturnType<typeof useSessionMutations>['send'],

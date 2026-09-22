@@ -1,12 +1,17 @@
 import type { createChainCache, SessionChain } from '@/domains/sessions/contract/model'
 import { currentSessionId } from '@/domains/sessions/contract/model'
-import { createFullRecordTracker } from '../../indexing'
-import { SessionIndex } from '../../indexing'
-import { createIndexedWindow } from '../../indexing'
-import { isSessionIndexFallback } from '../../indexing'
+import {
+  type createFullRecordTracker,
+  type createIndexedWindow,
+  isSessionIndexFallback,
+  type SessionIndex,
+} from '../../indexing'
+import type {
+  createTranscriptSummariser,
+  TranscriptDiscoverySource,
+} from '../tail/transcript-window'
 import { readIndexedChain } from './read-indexed-chain'
 import { ROSTER_PAGE_SIZE } from './roster-page-size'
-import type { createTranscriptSummariser, TranscriptDiscoverySource } from '../tail/transcript-window'
 
 export type ChainReaderParts = {
   source: TranscriptDiscoverySource

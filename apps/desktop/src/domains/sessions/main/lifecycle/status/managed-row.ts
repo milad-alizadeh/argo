@@ -5,7 +5,7 @@ import {
   managedRosterRow,
   reconcileRosterRow,
 } from '@/domains/sessions/contract/observation'
-import { TranscriptDiscovery } from '../../observation'
+import type { TranscriptDiscovery } from '../../observation'
 import { rollupSessionStatus } from './session-status-rollup'
 
 function titleRank(title: SessionTitle | null): number {

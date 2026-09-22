@@ -1,8 +1,4 @@
-import type {
-  channelActions,
-  DriverOptions,
-  ManagedSession,
-} from '../channel/drive-channel'
+import type { channelActions, DriverOptions, ManagedSession } from '../channel/drive-channel'
 import { ClaudeSessionDriverError } from '../channel/driver-error'
 import { briefPath, handoffCommand, handoffOpening } from './handoff-script'
 

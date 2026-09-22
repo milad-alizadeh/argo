@@ -3,7 +3,10 @@ import { test } from 'node:test'
 import type { SessionChain } from '@/domains/sessions/contract/model/transcript/chains'
 import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript/transcript'
 import { readShellCommands } from '@/domains/sessions/contract/observation/signals'
-import { chainBackgroundTasks, chainMessages } from '@/domains/sessions/main/projection/roster/roster'
+import {
+  chainBackgroundTasks,
+  chainMessages,
+} from '@/domains/sessions/main/projection/roster/roster'
 import { parseTranscriptLine } from '@/harnesses/claude/sessions/records/records'
 
 test('ends a background command whose notice arrived while the Session was idle', () => {

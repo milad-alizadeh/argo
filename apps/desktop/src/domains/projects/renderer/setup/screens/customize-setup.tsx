@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/platform/renderer/components/ui/button'
 import type { SetupDocument } from '@/domains/projects/contract/setup'
-import { BackButton, isJson, SetupPage } from './setup-page'
+import { Button } from '@/platform/renderer/components/ui/button'
 import { SetupPlanCustomization } from '../plan/setup-plan-customization'
 import type { SetupSectionModel } from '../plan/setup-plan-sections'
 import type { SetupAnswer } from '../use-setup-answers'
+import { BackButton, isJson, SetupPage } from './setup-page'
 
 export function CustomizeSetup({
   answers,

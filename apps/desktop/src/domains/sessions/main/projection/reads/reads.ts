@@ -11,8 +11,7 @@ import type {
   SessionSubagentUsageRequest,
 } from '@/domains/sessions/contract/ipc'
 import type { SessionChain } from '@/domains/sessions/contract/model'
-import { fromNothing, fromOwner, MISSING_SESSION } from '../../observation'
-import { SessionSource } from '../../observation'
+import { fromNothing, fromOwner, MISSING_SESSION, type SessionSource } from '../../observation'
 import { skillFileContent } from './read-skill-file'
 
 // A relative path resolves against the workspace, and an absolute one must already lie inside

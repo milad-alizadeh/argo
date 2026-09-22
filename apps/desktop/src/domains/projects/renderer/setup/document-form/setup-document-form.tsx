@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { setupConfiguration, type SetupDocument } from '@/domains/projects/contract/setup'
+import { type SetupDocument, setupConfiguration } from '@/domains/projects/contract/setup'
+import { setupSections } from '../plan/setup-plan-sections'
 import { CustomizeSetup } from '../screens/customize-setup'
 import { ImportSetup } from '../screens/import-setup'
 import { RecommendedSetup } from '../screens/recommended-setup'
-import { setupSections } from '../plan/setup-plan-sections'
 import { useSetupAnswers } from '../use-setup-answers'
 
 type SetupMode = 'recommended' | 'customize' | 'manual'

@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { setupDocumentFixture } from '../../../../../test-fixtures/projects/setup-document.fixture'
-import { setupAnswers, setupConfiguration } from './setup-document'
-import { parseSetupDocument } from './setup-document'
+import { parseSetupDocument, setupAnswers, setupConfiguration } from './setup-document'
 
 const document = setupDocumentFixture({
   locales: {

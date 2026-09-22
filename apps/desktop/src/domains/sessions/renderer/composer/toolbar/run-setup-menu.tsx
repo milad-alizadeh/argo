@@ -1,15 +1,15 @@
-import { HARNESSES, type HarnessControl, HarnessTabs, HarnessLogo } from '../../harness'
 import { Fragment, useId } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Icon } from '@/platform/renderer/components/icon/icon'
+import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
+import { Popover, PopoverContent, PopoverTrigger } from '@/platform/renderer/components/ui/popover'
+import { HARNESSES, type HarnessControl, HarnessLogo, HarnessTabs } from '../../harness'
 import {
   choiceLabel,
   effortChoices,
   type TurnSetup,
   type TurnSetupChoices,
 } from '../turn-setup/turn-setup'
-import { Icon } from '@/platform/renderer/components/icon/icon'
-import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
-import { Popover, PopoverContent, PopoverTrigger } from '@/platform/renderer/components/ui/popover'
 import { EffortSlider } from './effort-slider'
 
 export type TurnSetupControlProps = {

@@ -1,1 +1,1 @@
-export { TicketsScreenView, TicketsScreen } from './tickets-screen-view'
+export { TicketsScreen, TicketsScreenView } from './tickets-screen-view'

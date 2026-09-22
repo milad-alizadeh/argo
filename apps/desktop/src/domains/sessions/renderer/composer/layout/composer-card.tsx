@@ -1,13 +1,16 @@
-import type { HarnessControl } from '../../harness'
-import { DraftContextPicker } from '../references/context-picker/draft-context-picker'
 import type { LexicalEditor } from 'lexical'
 import type { DragEvent, RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
-
 import type { SessionPlan } from '@/domains/sessions/contract/model'
+import type { HarnessControl } from '../../harness'
 import { SessionContextBar } from '../context-bar'
 import type { ComposerAttachment, ComposerTicketContext } from '../hooks'
-import { ComposerToolbar, type TurnSetupControlProps, type WorkspaceMenuControlProps } from '../toolbar'
+import { DraftContextPicker } from '../references/context-picker/draft-context-picker'
+import {
+  ComposerToolbar,
+  type TurnSetupControlProps,
+  type WorkspaceMenuControlProps,
+} from '../toolbar'
 import { ComposerEditorArea } from './composer-editor-area'
 
 type ComposerCardProps = {

@@ -7,8 +7,16 @@ import {
   type SessionFeedRequest,
   sessionError,
 } from '@/domains/sessions/contract/ipc'
-import { appendedReply, feedReply, HeldFeed, keepFeed, stableChain, unchangedReply } from '../../projection'
-import { FeedProjectionState, projectFeed } from '../../projection'
+import {
+  appendedReply,
+  type FeedProjectionState,
+  feedReply,
+  type HeldFeed,
+  keepFeed,
+  projectFeed,
+  stableChain,
+  unchangedReply,
+} from '../../projection'
 import type { SessionSource } from './session-source'
 
 // `key` is the document's own key in the cache. A Session's Feed and each of its Subagents'

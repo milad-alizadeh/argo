@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next'
+import type { SetupDocument } from '@/domains/projects/contract/setup'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Button } from '@/platform/renderer/components/ui/button'
-import type { SetupDocument } from '@/domains/projects/contract/setup'
-import { isJson, SetupPage } from './setup-page'
 import type { SetupSectionModel } from '../plan/setup-plan-sections'
 import { SetupPlanSummary } from '../plan/setup-plan-summary'
 import type { SetupAnswer } from '../use-setup-answers'
+import { isJson, SetupPage } from './setup-page'
 
 export function RecommendedSetup({
   answers,

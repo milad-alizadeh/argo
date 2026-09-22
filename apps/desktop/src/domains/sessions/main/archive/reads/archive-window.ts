@@ -6,10 +6,13 @@
 // grows to the whole tree, which is what restoring an id that is no longer on disk costs.
 import { sessionError } from '@/domains/sessions/contract/ipc'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model'
-import { combineDiscoveries, Discovered } from '../../observation'
-import { readFailure } from '../../observation'
-import { SessionSource } from '../../observation'
-import { decodeRosterCursor, RosterCursorMap } from '../../projection'
+import {
+  combineDiscoveries,
+  type Discovered,
+  readFailure,
+  type SessionSource,
+} from '../../observation'
+import { decodeRosterCursor, type RosterCursorMap } from '../../projection'
 
 // The merged reply below needs a request id for its error case, which no caller ever reads: an
 // archive reading answers under its own request id, in its own envelope.

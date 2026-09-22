@@ -14,6 +14,8 @@ import {
   markCompactingRows,
 } from '@/harnesses/claude/compaction/compaction-roster'
 import type { LiveMessage } from '@/harnesses/claude/drive/channel/live-messages'
+import { readShellOutput } from '../records/shell-output'
+import { readSubagentChain, readSubagentTokens } from '../subagents/subagents'
 import {
   backfillTick,
   clearFullRecords,
@@ -31,8 +33,6 @@ import {
   type ProcessState,
   readLiveProcesses,
 } from './live-processes'
-import { readShellOutput } from '../records/shell-output'
-import { readSubagentChain, readSubagentTokens } from '../subagents/subagents'
 
 async function completeCompactions(options: {
   transcripts: string

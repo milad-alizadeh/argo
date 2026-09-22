@@ -5,17 +5,12 @@
 // where a source has no index does this fall back to growing the same bounded window the Roster
 // and Archive already grow (`archive-window.ts`) and filtering the grown rows itself.
 
-import type {
-  RosterStatus,
-  SessionSearchRequest,
-} from '@/domains/sessions/contract/ipc'
+import type { RosterStatus, SessionSearchRequest } from '@/domains/sessions/contract/ipc'
 import { newestFirst, type SessionRosterRow } from '@/domains/sessions/contract/model'
-import { isArchivedSession } from '../../archive'
-import { growWindow } from '../../archive'
+import { growWindow, isArchivedSession } from '../../archive'
 import { isSessionIndexFallback } from '../../indexing'
+import { fromContext, type ReadContext, type SessionSource } from '../../observation'
 import { belongsToProject, projectRootsOf } from '../../project-scope'
-import { fromContext, ReadContext } from '../../observation'
-import { SessionSource } from '../../observation'
 import { matchesSearchQuery } from './search-match'
 
 export const SEARCH_PAGE_LIMIT = 20

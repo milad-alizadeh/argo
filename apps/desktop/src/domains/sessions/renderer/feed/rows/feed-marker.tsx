@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import type { SessionFeedRow } from '../../types'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   Collapsible,
@@ -12,6 +11,7 @@ import {
   MarkerIcon,
   markerVariants,
 } from '@/platform/renderer/components/ui/marker'
+import type { SessionFeedRow } from '../../types'
 
 type MarkerRow = Extract<SessionFeedRow, { shape: 'marker' }>
 

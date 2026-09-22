@@ -18,8 +18,8 @@ import {
   unusedIndex,
 } from '@/harnesses/composition/harness-registration.fixture'
 import { harnessWatchedSources } from '@/harnesses/composition/session-bridges'
-import { registerWatching } from '@/platform/main/watch/bridge'
 import { WATCHED_CHANGED_CHANNEL } from '@/platform/contract/watch'
+import { registerWatching } from '@/platform/main/watch/bridge'
 
 function assertDriveCalls(driver: FixtureDriver) {
   assert.deepEqual(driver.sent, [{ sessionId: 'fixture-1', prompt: 'To fixture.' }])

@@ -1,10 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import {
-  sessionFeedRowSchema,
-  sessionRosterRowSchema,
-} from './index'
 import { rosterRow } from '../observation/roster-row-test-fixture'
+import { sessionFeedRowSchema, sessionRosterRowSchema } from './index'
 
 const roster = rosterRow()
 

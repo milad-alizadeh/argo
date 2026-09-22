@@ -1,6 +1,5 @@
-import type { SessionFeedRow } from '../index'
+import type { SessionFeedRow, ToolCall } from '../index'
 import { type ToolResult, toolRows } from '../index'
-import type { ToolCall } from '../index'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 

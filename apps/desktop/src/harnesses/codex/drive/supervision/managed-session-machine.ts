@@ -8,7 +8,6 @@ import type {
   TurnStatus,
 } from '@/domains/sessions/next/contract/session-projection-contract'
 import type { SessionService } from '@/domains/sessions/next/main/session-service'
-import { type CodexChannel, CodexChannelClosedError } from '@/harnesses/codex/drive/supervision/codex-channel'
 import type { PendingCodexPermission } from '@/harnesses/codex/drive/permission-protocol'
 import {
   codexApprovalDecision,
@@ -30,6 +29,10 @@ import {
 import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
 import { codexAnswersFor, readRequestUserInput } from '@/harnesses/codex/drive/question-protocol'
 import { readUpdatedThreadName } from '@/harnesses/codex/drive/rename-protocol'
+import {
+  type CodexChannel,
+  CodexChannelClosedError,
+} from '@/harnesses/codex/drive/supervision/codex-channel'
 
 function turnStatusFrom(status: WireTurnStatus): TurnStatus {
   return status === 'inProgress' ? 'running' : status

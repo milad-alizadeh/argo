@@ -3,9 +3,9 @@ import { useState } from 'react'
 import type { WorkspaceSummary } from '@/domains/projects/contract/workspace-messages'
 import type { SessionPlan } from '@/domains/sessions/contract/model/models'
 import { SessionComposer } from '@/domains/sessions/renderer/composer/session-composer'
+import { CLAUDE_TURN_SETUP } from '@/domains/sessions/renderer/composer/turn-setup/claude-turn-setup'
 import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
-import { CLAUDE_TURN_SETUP } from '@/domains/sessions/renderer/composer/turn-setup/claude-turn-setup'
 
 const FRAME = 'mx-auto max-w-4xl p-8'
 

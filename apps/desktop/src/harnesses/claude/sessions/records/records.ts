@@ -5,7 +5,6 @@ import type {
   TranscriptMessage,
   TranscriptRecord,
 } from '@/domains/sessions/contract/model/transcript/transcript'
-import { readBackgroundTask } from '@/harnesses/claude/sessions/subagents/background-task'
 import {
   readBlocks,
   readToolCalls,
@@ -19,6 +18,7 @@ import { promptBlocks } from '@/harnesses/claude/sessions/records/prompt-images'
 import { queuedPromptRecord } from '@/harnesses/claude/sessions/records/queued-prompt'
 import { readSkillBody } from '@/harnesses/claude/sessions/records/skill-body'
 import { readStandaloneRecord } from '@/harnesses/claude/sessions/records/standalone-records'
+import { readBackgroundTask } from '@/harnesses/claude/sessions/subagents/background-task'
 import { isRecord } from '@/shared/validation'
 
 export type { ContentBlock, SessionEntry, ToolCall, TranscriptMessage, TranscriptRecord }

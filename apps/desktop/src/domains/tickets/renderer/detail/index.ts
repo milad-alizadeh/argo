@@ -1,2 +1,2 @@
-export { TicketDeck } from './ticket-deck'
 export type { TicketDeckProps } from './ticket-deck'
+export { TicketDeck } from './ticket-deck'

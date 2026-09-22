@@ -11,8 +11,8 @@
 // is about to answer for and reindexes any whose identity moved, rather than serving whatever
 // reconcile last wrote.
 import { stat } from 'node:fs/promises'
-import { rootOf } from '@/domains/sessions/contract/model'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model'
+import { rootOf } from '@/domains/sessions/contract/model'
 import type {
   IndexedTranscriptFile,
   SessionIndex,

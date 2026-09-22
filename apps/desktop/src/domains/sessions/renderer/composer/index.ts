@@ -1,4 +1,5 @@
 export { DevelopmentIdentityBar } from './development-identity-bar'
+export { SessionComposer } from './editor'
 export {
   type ComposerTicketContext,
   useComposerStore,
@@ -11,6 +12,5 @@ export { activeReference } from './references/composer-reference-menu'
 export { $createComposerTicketReferenceNode } from './references/composer-ticket-reference-node'
 export { SessionReferenceText } from './references/session-reference'
 export { TicketProviderIcon } from './references/ticket-provider-icon'
-export { SessionComposer } from './editor'
 export type { TurnSetupControlProps } from './toolbar'
 export { useSessionComposer } from './use-session-composer'

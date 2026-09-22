@@ -1,8 +1,8 @@
 // The application menu. A menu item sends the command to the renderer rather than acting in the
 // main process, so the menu and the on-screen control reach the one action through one contract.
 import { type BrowserWindow, Menu, type MenuItemConstructorOptions } from 'electron'
-import { menuTemplate } from '@/platform/main/menu-template'
 import { COMMAND_CHANNEL, type MenuEntry } from '@/platform/contract/commands'
+import { menuTemplate } from '@/platform/main/menu-template'
 
 function toMenuItem(entry: MenuEntry, window: BrowserWindow): MenuItemConstructorOptions {
   const { command, submenu, role, ...rest } = entry

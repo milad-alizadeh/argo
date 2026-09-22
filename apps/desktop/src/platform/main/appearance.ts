@@ -2,8 +2,6 @@
 // window frame follows the page, and it writes the choice to `userData` (apps/desktop/AGENTS.md).
 import path from 'node:path'
 import { type BrowserWindow, nativeTheme } from 'electron'
-import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
-import { otherFields, readDocument, writeDocument } from '@/platform/main/storage/portable-file'
 import {
   APPEARANCE_CHANGED_CHANNEL,
   APPEARANCE_OPERATIONS,
@@ -15,6 +13,8 @@ import {
   DEFAULT_APPEARANCE,
   windowBackground,
 } from '@/platform/contract/appearance'
+import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
+import { otherFields, readDocument, writeDocument } from '@/platform/main/storage/portable-file'
 
 const state = (): AppearanceState => ({
   appearance: nativeTheme.themeSource,

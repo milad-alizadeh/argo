@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import type { SessionFeedRow } from '../../types'
 import { Loader } from '@/platform/renderer/components/loader/loader'
+import type { SessionFeedRow } from '../../types'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 

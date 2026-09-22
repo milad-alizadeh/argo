@@ -7,14 +7,14 @@ import type {
 import type { ProjectSummary } from '@/domains/projects/contract/messages'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
+import { ProjectSetupPlanSummary } from '../plan/project-setup-plan-review'
+import { useProjectSetup } from '../use-project-setup'
 import {
   ProjectSetupAgentHeader,
   ProjectSetupIntroduction,
   ProjectSetupShell,
 } from './project-setup-layout'
-import { ProjectSetupPlanSummary } from '../plan/project-setup-plan-review'
 import { ProjectSetupScreen } from './project-setup-screen'
-import { useProjectSetup } from '../use-project-setup'
 
 type ProjectSetupViewProps = {
   command: (command: ProjectSetupCommand) => Promise<void>

@@ -1,14 +1,14 @@
 import { fromCallback } from 'xstate'
 import type { ProjectSetupAnswer } from '@/domains/projects/contract/setup'
-import { runPlanningAgent } from './onboarding-agent/planning/run-planning-agent'
-import { prepareSetupWorktree } from './preparation/setup-worktree'
-import type { ProjectSetupServices } from './project-setup-logic'
-import type { ProjectSetupContext, ProjectSetupEvent } from './project-setup-machine-types'
 import {
   type ActivePermission,
   projectSetupPermissionDecisionHandler,
 } from './actors/project-setup-permission-decisions'
 import { projectSetupProgressReporter } from './actors/project-setup-progress'
+import { runPlanningAgent } from './onboarding-agent/planning/run-planning-agent'
+import { prepareSetupWorktree } from './preparation/setup-worktree'
+import type { ProjectSetupServices } from './project-setup-logic'
+import type { ProjectSetupContext, ProjectSetupEvent } from './project-setup-machine-types'
 import { startProjectSetupTask } from './project-setup-task'
 
 export type ProjectSetupPlanningInput = {

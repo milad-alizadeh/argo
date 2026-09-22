@@ -5,7 +5,10 @@ import os from 'node:os'
 import path from 'node:path'
 import type { TestContext } from 'node:test'
 import type { Cipher } from '@/domains/accounts/main/grants'
-import { dispatchAccount, dispatchTicket } from '@/domains/accounts/main/test-support/harness-dispatch'
+import {
+  dispatchAccount,
+  dispatchTicket,
+} from '@/domains/accounts/main/test-support/harness-dispatch'
 import { PROJECT_ID, projectStore } from '@/domains/accounts/main/test-support/harness-fixtures'
 import { accessEndpoints, bootMain } from '@/domains/accounts/main/test-support/harness-main'
 import { type MockGitHub, startMockGitHub } from '../../../../../mocks/providers/github/mock-github'

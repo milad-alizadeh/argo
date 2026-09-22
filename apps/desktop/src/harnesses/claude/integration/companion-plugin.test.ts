@@ -6,8 +6,8 @@ import os from 'node:os'
 import path from 'node:path'
 
 import { openCompanionPlugin } from '@/harnesses/claude/drive/channel/companion-plugin'
-import { createMessageDisplay } from '@/harnesses/claude/drive/turn/message-display'
 import { createClaudePermissionGate } from '@/harnesses/claude/drive/permission/permission-gate'
+import { createMessageDisplay } from '@/harnesses/claude/drive/turn/message-display'
 
 type Registered = { matcher?: string; hooks: { command: string }[] }
 

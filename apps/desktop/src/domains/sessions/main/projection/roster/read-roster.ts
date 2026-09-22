@@ -3,12 +3,15 @@
 // archive flag (#2315).
 
 import { type SessionListRequest, sessionError } from '@/domains/sessions/contract/ipc'
-import { isArchivedSession, SessionArchiveStore } from '../../archive'
-import { Discovered, combineDiscoveries } from '../../observation'
-import { readFailure } from '../../observation'
-import { SessionSource } from '../../observation'
-import { SessionUnreadStore } from '../../unread'
 import type { SessionTicketLinkStore } from '@/domains/tickets/main'
+import { isArchivedSession, type SessionArchiveStore } from '../../archive'
+import {
+  combineDiscoveries,
+  type Discovered,
+  readFailure,
+  type SessionSource,
+} from '../../observation'
+import type { SessionUnreadStore } from '../../unread'
 import { decodeRosterCursor } from './roster-cursor'
 
 // Project scope is applied inside each adapter's own `discoverSessions` (#2239), at the boundary

@@ -1,6 +1,5 @@
 import { memo, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
 import {
   DESTINATION_PATHS,
   DESTINATIONS,
@@ -8,6 +7,7 @@ import {
   navigateCommand,
   shortcut,
 } from '@/platform/contract/commands'
+import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
 
 const navigationIcons: Record<Destination, IconName> = {
   Sessions: 'messages-square',

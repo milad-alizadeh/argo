@@ -8,9 +8,9 @@ import {
   EmptyTitle,
 } from '@/platform/renderer/components/ui/empty'
 import { FeedLoading } from '../feed-loading'
-import { StalledFeed } from '../stalled-feed'
 import { AnchoredFeed } from '../scroll/anchored-feed'
 import type { Reveal } from '../scroll/reveal'
+import { StalledFeed } from '../stalled-feed'
 import type { DrawnRowProps } from './drawn-row'
 import { awaitingAssistantReply, type Settled, type useSettledFeed } from './use-settled-feed'
 

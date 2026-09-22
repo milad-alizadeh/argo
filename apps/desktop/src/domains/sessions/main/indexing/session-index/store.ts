@@ -31,7 +31,11 @@ function backfillProgressOf(database: DatabaseSync, harness: string): BackfillPr
   return { boundary, complete: record.complete === 1 }
 }
 
-function writeBackfillProgress(database: DatabaseSync, harness: string, progress: BackfillProgress) {
+function writeBackfillProgress(
+  database: DatabaseSync,
+  harness: string,
+  progress: BackfillProgress,
+) {
   database
     .prepare(
       `INSERT OR REPLACE INTO backfill_progress (harness, boundary_written_at, boundary_path, complete)
@@ -61,7 +65,11 @@ function searchExcerptOf(text: string, query: string): string | null {
   return `${from > 0 ? '…' : ''}${text.slice(from, to)}${to < text.length ? '…' : ''}`
 }
 
-function searchChainsOf(database: DatabaseSync, harness: string, query: string): SessionRosterRow[] {
+function searchChainsOf(
+  database: DatabaseSync,
+  harness: string,
+  query: string,
+): SessionRosterRow[] {
   const titleOrId = database
     .prepare(
       'SELECT chain_id, row_json FROM session_chain WHERE harness = ? ORDER BY updated_at DESC',

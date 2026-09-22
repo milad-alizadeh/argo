@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { displayedToolLabel } from '@/domains/sessions/contract/model'
+import { RunningText } from '@/platform/renderer/components/running-text'
 import {
   CodeBlock,
   CodeBlockActions,
@@ -8,14 +9,10 @@ import {
   CodeBlockHeader,
   CodeBlockTitle,
 } from '../../ai-elements'
-import {
-  codeLanguageLabel,
-  detectCodeLanguage,
-} from '../content/code-language'
+import { codeLanguageLabel, detectCodeLanguage } from '../content/code-language'
 import { CodeLanguageIcon } from '../content/code-language-icon'
 import { FeedMarkdown } from '../content/feed-markdown'
 import { FEED_CARD_RADIUS_CLASS } from '../content/feed-surface'
-import { RunningText } from '@/platform/renderer/components/running-text'
 import { type ToolGroupState, useToolGroupOpen } from '../rows/tool-group-state'
 import { CollapsibleText } from './collapsible-text'
 import { StatusIcon } from './feed-tool-status'

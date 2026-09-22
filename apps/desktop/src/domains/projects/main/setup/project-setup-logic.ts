@@ -1,8 +1,8 @@
 import { fromCallback } from 'xstate'
-import { defaultProjectSetupHarnesses } from '@/domains/projects/contract/setup'
 import type { SetupDocument } from '@/domains/projects/contract/setup'
-import type { OnboardingAgentDriver } from './onboarding-agent/runtime/run-onboarding-agent'
+import { defaultProjectSetupHarnesses } from '@/domains/projects/contract/setup'
 import type { ProjectStore } from '../sqlite-store'
+import type { OnboardingAgentDriver } from './onboarding-agent/runtime/run-onboarding-agent'
 import {
   type ProjectSetupApplicationInput,
   projectSetupApplicationLogic,

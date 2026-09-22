@@ -1,4 +1,3 @@
-import type { SessionHarness } from '../../harness'
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
@@ -15,12 +14,14 @@ import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import type { LexicalEditor } from 'lexical'
 import { type RefObject, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { lastInputWasKeyboard } from '@/platform/renderer/lib/input-modality'
+import type { SessionHarness } from '../../harness'
+import type { ComposerTicketContext } from '../hooks'
 import { ComposerReferenceMenuPlugin } from '../references/composer-reference-menu-plugin'
 import { ComposerReferenceNode } from '../references/composer-reference-node'
 import { ComposerReferencePlugin } from '../references/composer-reference-plugin'
 import { ComposerTicketReferenceNode } from '../references/composer-ticket-reference-node'
 import { ComposerTicketReferencePlugin } from '../references/composer-ticket-reference-plugin'
-import { lastInputWasKeyboard } from '@/platform/renderer/lib/input-modality'
 import { SendOnEnterPlugin } from './session-composer-enter'
 import {
   composerNodes,
@@ -28,7 +29,6 @@ import {
   MarkdownPastePlugin,
   MarkdownTypingShortcutPlugin,
 } from './session-composer-markdown'
-import type { ComposerTicketContext } from '../hooks'
 
 function editorState(text: string) {
   return () => $convertFromMarkdownString(text, TRANSFORMERS)

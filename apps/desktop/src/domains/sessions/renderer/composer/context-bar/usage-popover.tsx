@@ -1,4 +1,3 @@
-import { HARNESSES } from '../../harness'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
@@ -11,6 +10,7 @@ import {
   PopoverTrigger,
 } from '@/platform/renderer/components/ui/popover'
 import { Progress } from '@/platform/renderer/components/ui/progress'
+import { HARNESSES } from '../../harness'
 
 const PLAN_USAGE = {
   claude: [

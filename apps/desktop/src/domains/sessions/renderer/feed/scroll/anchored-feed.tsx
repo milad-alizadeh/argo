@@ -1,7 +1,12 @@
 import type { ReactNode } from 'react'
 import type { SessionFeedRow } from '../../types'
 import type { Settled } from '../document/use-settled-feed'
-import { useAnchoredVirtualizer, useFeedViewport, useInitialFeedPosition, useScrollPositionSnapshot } from './anchoring'
+import {
+  useAnchoredVirtualizer,
+  useFeedViewport,
+  useInitialFeedPosition,
+  useScrollPositionSnapshot,
+} from './anchoring'
 import { type FeedRowComponent, FeedViewport } from './feed-viewport'
 import { useFeedPrompt, usePromptHold } from './prompt-pin'
 import type { Reveal } from './reveal'

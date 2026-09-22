@@ -1,18 +1,28 @@
 // Split out of `discover-transcript-sessions.ts` (150-line file ceiling, AGENTS.md): the index-backed
 // half of one discoverer's window, kept beside the model it reads but out of the file that builds it.
-import type { createChainCache, SessionChain } from '@/domains/sessions/contract/model'
-import type { SessionRosterRow } from '@/domains/sessions/contract/model'
-import { boundIndexedWindow, discoverIndexedWindow } from '../../indexing'
-import { ResolvedIndexedIds, resolveIndexedIds } from '../../indexing'
-import { SessionIndex } from '../../indexing'
-import { isSessionIndexFallback } from '../../indexing'
-import { holdsMessage } from '../../indexing'
+import type {
+  createChainCache,
+  SessionChain,
+  SessionRosterRow,
+} from '@/domains/sessions/contract/model'
+import {
+  type boundIndexedWindow,
+  discoverIndexedWindow,
+  holdsMessage,
+  isSessionIndexFallback,
+  type ResolvedIndexedIds,
+  resolveIndexedIds,
+  type SessionIndex,
+} from '../../indexing'
+import type {
+  createTranscriptSummariser,
+  TranscriptDiscoverySource,
+} from '../tail/transcript-window'
 import type {
   TranscriptDiscovery,
   TranscriptDiscoveryOptions,
 } from './discover-transcript-sessions'
 import { nextCursorFor, windowSizeFor } from './discover-transcript-sessions'
-import type { createTranscriptSummariser, TranscriptDiscoverySource } from '../tail/transcript-window'
 
 // Archive and restore (#2374) resolve an id straight off the index's persisted resume graph
 // rather than growing a discovery window to find it.

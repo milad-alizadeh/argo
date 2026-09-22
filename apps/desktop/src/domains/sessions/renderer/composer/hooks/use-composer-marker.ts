@@ -1,6 +1,14 @@
-import { optimisticRowFor, runningTurnView, settledPromptRowFor, type TurnMarkerEntry, type TurnMarkerRow, turnEnded, turnMarkerView } from '../../feed'
 import { useCallback, useEffect, useRef } from 'react'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model'
+import {
+  optimisticRowFor,
+  runningTurnView,
+  settledPromptRowFor,
+  type TurnMarkerEntry,
+  type TurnMarkerRow,
+  turnEnded,
+  turnMarkerView,
+} from '../../feed'
 import type { useSessions } from '../../use-sessions'
 import { type ComposerIdentity, composerIdentityKey, findSessionRow } from '../identity'
 import { useComposerStore } from './use-composer-store'

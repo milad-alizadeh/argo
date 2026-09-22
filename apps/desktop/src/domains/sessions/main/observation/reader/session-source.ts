@@ -3,17 +3,15 @@
 // some CLIs supply today. Split from reader.ts so this and the discovery/feed-reading modules it
 // depends on can reference the same shape without an import cycle. Archiving is not among them:
 // Argo owns that flag for every Harness at once (`archive-store.ts`, #2315).
+import type { SessionRenameReply, SessionRenameRequest } from '@/domains/sessions/contract/ipc'
 import type {
-  SessionRenameReply,
-  SessionRenameRequest,
-} from '@/domains/sessions/contract/ipc'
-import type {
+  SessionChain,
+  SessionFeedRow,
+  SessionRosterRow,
   SessionShellOutput,
   SessionSubagentUsage,
 } from '@/domains/sessions/contract/model'
-import type { SessionChain } from '@/domains/sessions/contract/model'
-import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/contract/model'
-import { ResolvedIndexedIds } from '../../indexing'
+import type { ResolvedIndexedIds } from '../../indexing'
 import type { BackfillProgress, TranscriptDiscovery } from './discover-transcript-sessions'
 
 // What a driver shows over one Session's recorded Feed while a Turn streams: the rows to draw, and

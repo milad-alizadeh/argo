@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
-import { createWatchClient } from '@/platform/preload/watch'
 import type { WatchTopic } from '@/platform/contract/watch'
 import { isWatchTopic } from '@/platform/contract/watch'
+import { createWatchClient } from '@/platform/preload/watch'
 
 // A client wired to a subscription the test drives itself, standing in for the IPC channel the
 // preload world hands it.

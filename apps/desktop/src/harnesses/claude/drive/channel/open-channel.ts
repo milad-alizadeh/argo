@@ -1,7 +1,7 @@
 import { claudeCliEnvironment } from '@/harnesses/claude/cli-environment'
 import { compactionProgress, launchArguments } from '../turn/claude-setup'
-import { type CompanionPart, openCompanionPlugin } from './companion-plugin'
 import type { ClaudeTurnRequest } from '../turn/deliver-turn'
+import { type CompanionPart, openCompanionPlugin } from './companion-plugin'
 import type { DriverOptions, ManagedSession } from './drive-channel'
 import { ClaudeSessionDriverError } from './driver-error'
 import { firstFrame } from './first-frame'

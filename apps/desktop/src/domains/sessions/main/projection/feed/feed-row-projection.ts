@@ -1,12 +1,12 @@
-import type { SessionFeedRow } from '@/domains/sessions/contract/model'
-import { type ToolEvidence, toolRows } from '@/domains/sessions/contract/model'
 import type {
   ContentBlock,
+  SessionFeedRow,
   SubagentEvent,
   ToolCall,
   TranscriptMessage,
   TranscriptRecord,
 } from '@/domains/sessions/contract/model'
+import { type ToolEvidence, toolRows } from '@/domains/sessions/contract/model'
 import { withPromptAttachments } from './prompt-attachments'
 
 function resultImageRows(record: TranscriptMessage): SessionFeedRow[] {

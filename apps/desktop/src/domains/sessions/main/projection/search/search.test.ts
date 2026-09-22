@@ -7,18 +7,12 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { sessionArchiveSetReplySchema } from '@/domains/sessions/contract/ipc/contract'
-import {
-  createSessionArchiveStore,
-  sessionArchivePath,
-} from '../../archive/store/archive-store'
-import {
-  indexedAdapters,
-  sessionIdAt,
-} from '../../indexing/session-index/roster-fixtures'
-import { createSessionReader } from '../../observation/reader/reader'
 import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-sessions'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+import { createSessionArchiveStore, sessionArchivePath } from '../../archive/store/archive-store'
+import { indexedAdapters, sessionIdAt } from '../../indexing/session-index/roster-fixtures'
+import { createSessionReader } from '../../observation/reader/reader'
 
 function adapter(harness: string) {
   const found = indexedAdapters.find((candidate) => candidate.harness === harness)

@@ -38,7 +38,9 @@ export function bootMain(options: {
   endpoints: ReturnType<typeof accessEndpoints>
   cipher: Cipher
   openExternal: (url: string) => Promise<void>
-  projects: ReturnType<typeof import('@/domains/accounts/main/test-support/harness-fixtures').projectStore>
+  projects: ReturnType<
+    typeof import('@/domains/accounts/main/test-support/harness-fixtures').projectStore
+  >
 }) {
   const { userData, accountData, endpoints, cipher, openExternal, projects } = options
   const access = createAccountAccess({

@@ -2,9 +2,9 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FEED_CARD_RADIUS_CLASS } from '@/domains/sessions/renderer/feed/content/feed-surface'
 import { mermaidThemeVariables } from '@/domains/sessions/renderer/feed/content/mermaid-theme'
-import { useDarkAppearance } from '@/platform/renderer/use-appearance'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
+import { useDarkAppearance } from '@/platform/renderer/use-appearance'
 
 type Drawing = 'pending' | 'drawn' | 'failed'
 

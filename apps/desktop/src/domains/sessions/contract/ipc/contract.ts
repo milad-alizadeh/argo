@@ -2,10 +2,9 @@
 // the one shared drive operation table every Harness answers through (ADR-0024, #2030). Named
 // operations only: the renderer never receives the IPC object or picks a channel.
 import { z } from 'zod'
-import { sessionAttachmentInputSchema } from '../drive'
-import { permissionSchema, READER_DECISIONS } from '../drive'
-import { sessionErrorSchema } from '../model'
 import { identifierSchema } from '@/shared/validation'
+import { permissionSchema, READER_DECISIONS, sessionAttachmentInputSchema } from '../drive'
+import { sessionErrorSchema } from '../model'
 
 export * from '../claude-turn-setup'
 export * from '../drive'

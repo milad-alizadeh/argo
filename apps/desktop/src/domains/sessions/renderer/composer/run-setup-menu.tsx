@@ -1,15 +1,15 @@
 import { Fragment, useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { EffortSlider } from '@/domains/sessions/renderer/composer/effort-slider'
-import { HarnessLogo } from '@/domains/sessions/renderer/harness/harness-logo'
-import { HarnessTabs } from '@/domains/sessions/renderer/harness/harness-tabs'
-import { HARNESSES, type HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
 import {
   choiceLabel,
   effortChoices,
   type TurnSetup,
   type TurnSetupChoices,
 } from '@/domains/sessions/renderer/composer/turn-setup/turn-setup'
+import { HarnessLogo } from '@/domains/sessions/renderer/harness/harness-logo'
+import { HarnessTabs } from '@/domains/sessions/renderer/harness/harness-tabs'
+import { HARNESSES, type HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 import { Popover, PopoverContent, PopoverTrigger } from '@/platform/renderer/components/ui/popover'

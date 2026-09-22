@@ -1,7 +1,7 @@
 import type { Meta } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
-import { FeedToolGroup, FeedToolLine } from './feed-tools'
 import { ToolGroupState } from '../rows/tool-group-state'
+import { FeedToolGroup, FeedToolLine } from './feed-tools'
 
 const command = {
   shape: 'tool' as const,

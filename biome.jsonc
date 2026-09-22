@@ -271,7 +271,7 @@
         "!apps/desktop/src/platform/renderer/components/ui/**",
         "!**/*.{test,stories}.{ts,tsx}",
         "!**/*-samples.{ts,tsx}",
-        "!apps/desktop/src/platform/shared/appearance.ts"
+        "!apps/desktop/src/platform/contract/appearance.ts"
       ],
       "plugins": ["./lint/biome/design-values-js.grit", "./lint/biome/i18n.grit"]
     },

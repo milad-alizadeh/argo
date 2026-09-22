@@ -1,8 +1,8 @@
-import type { SessionErrorCode } from '@/domains/sessions/contract/ipc'
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive'
+import type { SessionErrorCode } from '@/domains/sessions/contract/ipc'
 import { SessionContractError } from '../../session-contract-error'
-import type { TurnSetup } from '../turn-setup/turn-setup'
 import type { useSessionMutations } from '../hooks'
+import type { TurnSetup } from '../turn-setup/turn-setup'
 
 // A failure belongs to the Session it happened on, so selecting another Session does not show it.
 export type Failure = { sessionId: string | null; message: string; code: SessionErrorCode | null }

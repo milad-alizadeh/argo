@@ -1,12 +1,11 @@
-import type { SessionHarness } from '../../harness'
 import type { LexicalEditor } from 'lexical'
 import type { RefObject } from 'react'
-
 import type { SessionPlan } from '@/domains/sessions/contract/model'
-import { ComposerAttachments } from './composer-attachments'
+import type { SessionHarness } from '../../harness'
 import { ComposerEditor } from '../editor/session-composer-editor'
-import { SessionPlanPopover } from './session-plan-popover'
 import type { ComposerAttachment, ComposerTicketContext } from '../hooks'
+import { ComposerAttachments } from './composer-attachments'
+import { SessionPlanPopover } from './session-plan-popover'
 
 export function ComposerEditorArea({
   attachments,

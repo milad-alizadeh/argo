@@ -1,31 +1,27 @@
 export { rowsOfRecord } from './feed/feed'
-export { connectTicketReply } from './reads/ticket-link-reader'
-export { disconnectTicketReply } from './reads/ticket-link-reader'
-export { searchRead } from './search/search-reads'
-export { delegationUsageRead } from './reads/reads'
-export { shellOutputRead } from './reads/reads'
-export { skillFileRead } from './reads/reads'
-export { workspaceFileRead } from './reads/reads'
-export { createFeedReader } from './feed/read-session-feed'
-export { listReply } from './roster/read-roster'
+export type { HeldFeed } from './feed/feed-cache'
+export { appendedReply, feedReply, keepFeed, stableChain, unchangedReply } from './feed/feed-cache'
 export type { FeedProjectionState } from './feed/feed-incremental'
 export { projectFeed } from './feed/feed-incremental'
-export type { HeldFeed } from './feed/feed-cache'
-export { appendedReply } from './feed/feed-cache'
-export { feedReply } from './feed/feed-cache'
-export { keepFeed } from './feed/feed-cache'
-export { stableChain } from './feed/feed-cache'
-export { unchangedReply } from './feed/feed-cache'
-export { encodeRosterCursor } from './roster/roster-cursor'
+export { createFeedReader } from './feed/read-session-feed'
+export {
+  delegationUsageRead,
+  shellOutputRead,
+  skillFileRead,
+  workspaceFileRead,
+} from './reads/reads'
+export { connectTicketReply, disconnectTicketReply } from './reads/ticket-link-reader'
+export { readPlanSnapshot, readPlanStatus } from './roster/plan'
+export { listReply } from './roster/read-roster'
+export { chainBackgroundTasks, chainMessages, projectRosterRow } from './roster/roster'
 export type { RosterCursorMap } from './roster/roster-cursor'
-export { decodeRosterCursor } from './roster/roster-cursor'
-export { rosterCursorMapSchema } from './roster/roster-cursor'
-export { projectRosterRow } from './roster/roster'
-export { chainBackgroundTasks } from './roster/roster'
-export { chainMessages } from './roster/roster'
+export {
+  decodeRosterCursor,
+  encodeRosterCursor,
+  rosterCursorMapSchema,
+} from './roster/roster-cursor'
 export { rosterMetadata } from './roster/roster-metadata'
-export { matchesSearchQuery } from './search/search-match'
-export { hasOpenSubagent } from './roster/subagents'
 export { pendingAskCall } from './roster/status'
-export { readPlanSnapshot } from './roster/plan'
-export { readPlanStatus } from './roster/plan'
+export { hasOpenSubagent } from './roster/subagents'
+export { matchesSearchQuery } from './search/search-match'
+export { searchRead } from './search/search-reads'

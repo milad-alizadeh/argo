@@ -12,11 +12,10 @@ import type {
   SessionArchiveSetRequest,
 } from '@/domains/sessions/contract/ipc'
 import { newestFirst, type SessionRosterRow } from '@/domains/sessions/contract/model'
-import { fromContext, ReadContext } from '../../observation'
-import { SessionSource } from '../../observation'
+import { fromContext, type ReadContext, type SessionSource } from '../../observation'
 import { rosterCursorMapSchema } from '../../projection'
-import { indexedResolution } from './archive-index-resolution'
 import { isArchivedSession } from '../store/archive-store'
+import { indexedResolution } from './archive-index-resolution'
 import { growWindow } from './archive-window'
 
 // A page's worth of Archived Sessions, read on demand rather than on every poll (#1593).

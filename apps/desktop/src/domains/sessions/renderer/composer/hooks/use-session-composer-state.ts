@@ -2,12 +2,9 @@ import { $convertFromMarkdownString, TRANSFORMERS } from '@lexical/markdown'
 import { $createParagraphNode, $getRoot, type LexicalEditor } from 'lexical'
 import { type RefObject, useCallback, useRef } from 'react'
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive'
-import {
-  type PendingTurn,
-  usePendingTurns,
-} from '../tray/use-pending-turns'
-import { supportedSetup, type TurnSetup } from '../turn-setup/turn-setup'
 import type { TurnSetupControlProps } from '../toolbar'
+import { type PendingTurn, usePendingTurns } from '../tray/use-pending-turns'
+import { supportedSetup, type TurnSetup } from '../turn-setup/turn-setup'
 import { useAttachmentTransfer, useComposerAttachments } from './use-composer-attachments'
 import { useComposerStore } from './use-composer-store'
 import { type Send, useSend } from './use-send'

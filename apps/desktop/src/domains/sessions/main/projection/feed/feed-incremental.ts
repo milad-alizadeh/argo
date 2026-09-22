@@ -2,12 +2,16 @@
 // the records the last poll already turned into rows only when it must. A row freezes once
 // nothing later in the chain can still change it — every Tool Call it draws has a result, and it
 // is not part of a trailing Tool Call or damaged-line run. Frozen rows are never rebuilt.
-import type { SessionChain } from '@/domains/sessions/contract/model'
-import type { SessionFeedRow } from '@/domains/sessions/contract/model'
-import type { ToolEvidence, ToolResult } from '@/domains/sessions/contract/model'
+import type {
+  SessionChain,
+  SessionFeedRow,
+  ToolEvidence,
+  ToolResult,
+  TranscriptFile,
+  TranscriptRecord,
+} from '@/domains/sessions/contract/model'
 import { groupedRowIndexes, groupToolRuns } from '@/domains/sessions/contract/model'
 import { collectFeedRows, rowsOfRecord, withoutRepeatedBreaks } from './feed'
-import type { TranscriptFile, TranscriptRecord } from '@/domains/sessions/contract/model'
 
 export type PositionedRecord = { record: TranscriptRecord; position: string; fileIndex: number }
 

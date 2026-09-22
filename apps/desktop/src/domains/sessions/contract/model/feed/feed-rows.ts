@@ -1,13 +1,13 @@
 import { z } from 'zod'
-import { questionSchema } from '../../drive'
 import { identifierSchema } from '@/shared/validation'
-import { feedImageUrlSchema } from './feed-images'
+import { questionSchema } from '../../drive'
 import {
   BACKGROUND_STATES,
   SUBAGENT_EVENTS,
   TRANSCRIPT_EVENT_KINDS,
   type TranscriptEventKind,
 } from '../transcript'
+import { feedImageUrlSchema } from './feed-images'
 
 export const FEED_MARKERS = ['compacted', 'interrupted'] as const
 export const feedMarkerSchema = z.enum(FEED_MARKERS)

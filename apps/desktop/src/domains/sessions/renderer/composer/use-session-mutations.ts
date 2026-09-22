@@ -2,13 +2,13 @@ import { useMutation } from '@tanstack/react-query'
 
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import type { SessionAcceptedReply, SessionStarted } from '@/domains/sessions/contract/ipc/contract'
+import type { TurnSetup } from '@/domains/sessions/renderer/composer/turn-setup/turn-setup'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import {
   type SessionContractError,
   throwSessionContractError,
   throwUnexpectedSessionReply,
 } from '@/domains/sessions/renderer/session-contract-error'
-import type { TurnSetup } from '@/domains/sessions/renderer/composer/turn-setup/turn-setup'
 
 type Turn = { prompt: string; setup: TurnSetup | null; attachments: SessionAttachmentInput[] }
 type StartTurn = Turn & { harness: SessionHarness; cwd: string; deferInitialTurn?: boolean }

@@ -15,9 +15,9 @@ import { SessionScreenView } from '@/domains/sessions/renderer/screens/session-s
 import { TicketsPage } from '@/domains/tickets/renderer/pages/tickets-page'
 import { TicketsScreenView } from '@/domains/tickets/renderer/screens/tickets-screen-view'
 import { TicketsSidebar } from '@/domains/tickets/renderer/sidebar/tickets-sidebar'
+import { DESTINATION_PATHS, DESTINATIONS, navigateCommand } from '@/platform/contract/commands'
 import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
 import { useCommands } from '@/platform/renderer/cockpit/hooks/use-commands'
-import { DESTINATION_PATHS, DESTINATIONS, navigateCommand } from '@/platform/contract/commands'
 
 type CockpitRouteHandle = {
   sidebar: ReactNode

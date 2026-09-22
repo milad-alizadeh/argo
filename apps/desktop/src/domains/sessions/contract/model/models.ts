@@ -1,10 +1,10 @@
 import { z } from 'zod'
+import { ticketKey } from '@/domains/tickets/contract/ticket'
+import { identifierSchema } from '@/shared/validation'
 import {
   createSessionRosterRowSchema,
   managedRosterRow,
 } from '../observation/roster-row-definition'
-import { ticketKey } from '@/domains/tickets/contract/ticket'
-import { identifierSchema } from '@/shared/validation'
 import { liveActivitySchema } from './feed/feed-rows'
 
 export {

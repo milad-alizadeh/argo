@@ -1,9 +1,12 @@
 import { rootOf, type SessionChain } from '@/domains/sessions/contract/model'
-import { createFullRecordTracker } from '../../indexing'
-import { freshIdentityOf } from '../../indexing'
-import { SessionIndex, TranscriptFileIdentity } from '../../indexing'
-import { createIndexedWindow } from '../../indexing'
-import { reindexCandidates } from '../../indexing'
+import {
+  type createFullRecordTracker,
+  type createIndexedWindow,
+  freshIdentityOf,
+  reindexCandidates,
+  type SessionIndex,
+  type TranscriptFileIdentity,
+} from '../../indexing'
 
 // The indexed fast path: a Session the Session index has already stitched, at any depth, is
 // resolved from its stored chain rather than by growing a window over the whole tree (#2507).

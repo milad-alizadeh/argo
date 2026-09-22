@@ -4,11 +4,9 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, test } from 'vitest'
-import { requestArchiveList } from '../../archive'
-import { createSessionArchiveStore, sessionArchivePath } from '../../archive'
-import { createSessionReader } from '../../observation'
-import { feedRequest, listing } from '../../observation'
 import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main'
+import { createSessionArchiveStore, requestArchiveList, sessionArchivePath } from '../../archive'
+import { createSessionReader, feedRequest, listing } from '../../observation'
 import { openSessionIndex } from './open-index'
 import {
   type IndexedAdapter,

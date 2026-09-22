@@ -1,5 +1,9 @@
 import { createInterface } from 'node:readline'
-import type { RequestID, RequestParams, WireMessage } from '@/harnesses/codex/drive/protocol/protocol'
+import type {
+  RequestID,
+  RequestParams,
+  WireMessage,
+} from '@/harnesses/codex/drive/protocol/protocol'
 import { readMessage } from '@/harnesses/codex/drive/protocol/protocol'
 
 // Distinguishes "the channel dropped before we got an answer" from an ordinary JSON-RPC error

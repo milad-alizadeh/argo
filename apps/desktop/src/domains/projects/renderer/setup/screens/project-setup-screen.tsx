@@ -5,11 +5,11 @@ import type {
 } from '@/domains/projects/contract/contract'
 import { RunningText } from '@/platform/renderer/components/running-text'
 import { Button } from '@/platform/renderer/components/ui/button'
+import { Progress } from '../project-setup-progress'
+import { Recovery } from '../project-setup-recovery'
 import { Approval, CancelFailed } from './project-setup-approval-screen'
 import { InputScreen } from './project-setup-input-screen'
 import { ProjectSetupMethodScreen } from './project-setup-method-screen'
-import { Progress } from '../project-setup-progress'
-import { Recovery } from '../project-setup-recovery'
 import { ReviewScreen } from './project-setup-review-screen'
 
 type ProjectSetupScreenProps = {

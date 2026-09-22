@@ -5,7 +5,6 @@ import type {
 } from '@/domains/sessions/next/contract/session-contract'
 import type { SessionCommandOutcome } from '@/domains/sessions/next/contract/session-projection-contract'
 import type { SessionService } from '@/domains/sessions/next/main/session-service'
-import type { AppServerSupervisor } from '@/harnesses/codex/drive/supervision/app-server-supervisor-machine'
 import {
   executeSend,
   requireSessionEntry,
@@ -14,6 +13,7 @@ import {
 import { CodexSessionDriverError } from '@/harnesses/codex/drive/session/codex-session-error'
 import type { ManagedSessionActor } from '@/harnesses/codex/drive/session/codex-session-projection'
 import { waitForManaged } from '@/harnesses/codex/drive/session/codex-session-ready'
+import type { AppServerSupervisor } from '@/harnesses/codex/drive/supervision/app-server-supervisor-machine'
 import type {
   createManagedSessionMachine,
   ManagedSessionInput,

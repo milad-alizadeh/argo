@@ -1,5 +1,5 @@
-import { CodexSessionDriverError } from '@/harnesses/codex/drive/session/codex-session-error'
 import { readCompactStart } from '@/harnesses/codex/drive/compact-protocol'
+import { CodexSessionDriverError } from '@/harnesses/codex/drive/session/codex-session-error'
 import type { ManagedSession } from '@/harnesses/codex/drive/supervision/managed-session'
 
 // `thread/compact/start` only acks that Codex began compacting (#2123); completion arrives later,

@@ -1,10 +1,5 @@
 import type { QuestionAnswer } from '@/domains/sessions/contract/drive'
-import type {
-  SessionError,
-  SessionEvidence,
-  SessionFeed,
-  SessionId,
-} from '../../types'
+import type { SessionError, SessionEvidence, SessionFeed, SessionId } from '../../types'
 import type { FeedDocumentContext } from './feed-document'
 import { FeedDocument } from './feed-document'
 import type { FeedLiveFacts } from './feed-live-facts'

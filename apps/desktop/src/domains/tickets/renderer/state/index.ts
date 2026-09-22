@@ -1,1 +1,1 @@
-export { useTicketSearch, useSettledQuery } from './use-ticket-search'
+export { useSettledQuery, useTicketSearch } from './use-ticket-search'

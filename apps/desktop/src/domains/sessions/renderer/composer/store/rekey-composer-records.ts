@@ -1,5 +1,5 @@
-import { rekeyComposerRecord } from './rekey-composer-record'
 import type { ComposerState } from '../hooks'
+import { rekeyComposerRecord } from './rekey-composer-record'
 
 type ComposerRecords = Pick<
   ComposerState,

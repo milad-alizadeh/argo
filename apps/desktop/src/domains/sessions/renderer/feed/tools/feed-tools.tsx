@@ -4,10 +4,10 @@ import {
   standsAlone,
   TOOL_KIND_PRESENTATION,
 } from '@/domains/sessions/contract/model'
-import { TaskItem } from '../../ai-elements'
-import type { SessionFeedRow } from '../../types'
 import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
 import { RunningText } from '@/platform/renderer/components/running-text'
+import { TaskItem } from '../../ai-elements'
+import type { SessionFeedRow } from '../../types'
 import { LiveActivityText } from '../rows/live-activity-text'
 import { type ToolGroupState, useToolGroupOpen } from '../rows/tool-group-state'
 import { CollapsibleText } from './collapsible-text'

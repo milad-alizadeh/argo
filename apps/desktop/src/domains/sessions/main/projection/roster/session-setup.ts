@@ -1,5 +1,5 @@
-import type { SessionSetup } from '@/domains/sessions/contract/model'
 import type {
+  SessionSetup,
   TranscriptMessage,
   TranscriptRecord,
 } from '@/domains/sessions/contract/model'

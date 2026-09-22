@@ -4,12 +4,12 @@ import {
   composerIdentityOf,
   findSessionRow,
 } from '@/domains/sessions/renderer/composer/composer-identity'
+import { useTurnSetup } from '@/domains/sessions/renderer/composer/turn-setup/use-turn-setup'
 import type { Failure } from '@/domains/sessions/renderer/composer/use-session-composer-actions'
 import { useTurnMarker } from '@/domains/sessions/renderer/composer/use-turn-marker'
 import type { WorkspaceMenuControlProps } from '@/domains/sessions/renderer/composer/workspace-menu'
 import { HARNESSES, type SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import { useSessionCreationStore } from '@/domains/sessions/renderer/session-creation'
-import { useTurnSetup } from '@/domains/sessions/renderer/composer/turn-setup/use-turn-setup'
 import type { useSessions } from '@/domains/sessions/renderer/use-sessions'
 
 const NO_ROWS: SessionRosterRow[] = []

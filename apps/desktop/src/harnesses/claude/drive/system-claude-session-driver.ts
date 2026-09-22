@@ -2,13 +2,13 @@ import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import * as pty from 'node-pty'
 import { createOwnershipLedger, isProcessAlive } from '@/domains/sessions/main'
+import { claudeResumeTarget } from '@/harnesses/claude/sessions/discovery/resume-target'
+import { claudePendingQuestion } from '@/harnesses/claude/sessions/subagents/pending-question'
+import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 import { createClaudeSessionDriver } from './claude-session-driver'
 import { createHandoffLedger } from './handoff/handoff-ledger'
-import { createMessageDisplay } from './turn/message-display'
 import { createClaudePermissionGate } from './permission/permission-gate'
-import { claudePendingQuestion } from '@/harnesses/claude/sessions/subagents/pending-question'
-import { claudeResumeTarget } from '@/harnesses/claude/sessions/discovery/resume-target'
-import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
+import { createMessageDisplay } from './turn/message-display'
 
 function readHandoffBrief(briefPath: string): string | null {
   try {

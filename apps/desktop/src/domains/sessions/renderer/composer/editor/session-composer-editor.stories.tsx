@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
 import { Button } from '@/platform/renderer/components/ui/button'
+import { useComposerStore } from '../hooks'
 import { ComposerStory } from './composer-story-samples'
 import { SessionComposer, type SessionComposerProps } from './session-composer'
-import { useComposerStore } from '../hooks'
 
 const FRAME = 'mx-auto max-w-4xl p-8'
 
@@ -71,7 +71,9 @@ function UnsettledSendStory({ onSend }: { onSend: SessionComposerProps['onSend']
 }
 
 function CodexComposerStory({ onSend }: { onSend: SessionComposerProps['onSend'] }) {
-  return <SessionComposer harness={{ harness: 'codex' }} onSend={onSend} sessionId="codex-session" />
+  return (
+    <SessionComposer harness={{ harness: 'codex' }} onSend={onSend} sessionId="codex-session" />
+  )
 }
 
 const MARKDOWN_SHORTCUTS: Array<{

@@ -1,7 +1,7 @@
 import type { StoreApi } from 'zustand'
+import type { ComposerState, PendingTurn } from '../hooks'
 import { updateComposerEntries } from './composer-entry-records'
 import { rekeyComposerRecords } from './rekey-composer-records'
-import type { ComposerState, PendingTurn } from '../hooks'
 
 type ComposerSet = StoreApi<ComposerState>['setState']
 

@@ -1,4 +1,3 @@
-import { ContextPopover } from '../context-window/context-popover'
 import { useTranslation } from 'react-i18next'
 import {
   Tooltip,
@@ -6,6 +5,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/platform/renderer/components/ui/tooltip'
+import { ContextPopover } from '../context-window/context-popover'
 import { SessionContextActions } from './session-context-actions'
 import { UsagePopover } from './usage-popover'
 

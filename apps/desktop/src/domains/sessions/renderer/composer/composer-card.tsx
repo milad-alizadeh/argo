@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import type { SessionPlan } from '@/domains/sessions/contract/model/models'
 import { ComposerEditorArea } from '@/domains/sessions/renderer/composer/composer-editor-area'
 import { ComposerToolbar } from '@/domains/sessions/renderer/composer/composer-toolbar'
+import { DraftContextPicker } from '@/domains/sessions/renderer/composer/references/context-picker/draft-context-picker'
 import type { TurnSetupControlProps } from '@/domains/sessions/renderer/composer/run-setup-menu'
 import { SessionContextBar } from '@/domains/sessions/renderer/composer/session-context-bar'
 import type {
@@ -12,7 +13,6 @@ import type {
   ComposerTicketContext,
 } from '@/domains/sessions/renderer/composer/use-composer-store'
 import type { WorkspaceMenuControlProps } from '@/domains/sessions/renderer/composer/workspace-menu'
-import { DraftContextPicker } from '@/domains/sessions/renderer/composer/references/context-picker/draft-context-picker'
 import type { HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
 
 type ComposerCardProps = {

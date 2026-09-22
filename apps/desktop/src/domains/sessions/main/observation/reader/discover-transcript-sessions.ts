@@ -1,17 +1,27 @@
+import type { SessionRosterRow, TranscriptFile } from '@/domains/sessions/contract/model'
 import {
   createChainCache,
   createChainHistory,
   type SessionChain,
 } from '@/domains/sessions/contract/model'
-import type { SessionRosterRow } from '@/domains/sessions/contract/model'
-import type { TranscriptFile } from '@/domains/sessions/contract/model'
-import { boundIndexedWindow, presentedRows } from '../../indexing'
-import { createFullRecordTracker } from '../../indexing'
-import { createBackgroundIndexing } from '../../indexing'
-import { BackfillProgress, SessionIndex, TranscriptPath } from '../../indexing'
+import {
+  type BackfillProgress,
+  boundIndexedWindow,
+  createBackgroundIndexing,
+  createFullRecordTracker,
+  presentedRows,
+  type SessionIndex,
+  type TranscriptPath,
+} from '../../indexing'
 import { createTitleLedger } from '../../lifecycle'
-import { projectRosterRow } from '../../projection'
-import { rosterMetadata } from '../../projection'
+import { projectRosterRow, rosterMetadata } from '../../projection'
+import {
+  createFileReader,
+  createTranscriptParser,
+  createTranscriptSummariser,
+  type TranscriptDiscoverySource,
+  transcriptIdentities,
+} from '../tail/transcript-window'
 import { createChainReader } from './chain-reader'
 import {
   discoverSessionsWith,
@@ -20,13 +30,6 @@ import {
   searchAgainst,
 } from './discover-transcript-window'
 import { ROSTER_PAGE_SIZE } from './roster-page-size'
-import {
-  createFileReader,
-  createTranscriptParser,
-  createTranscriptSummariser,
-  type TranscriptDiscoverySource,
-  transcriptIdentities,
-} from '../tail/transcript-window'
 
 export type { TranscriptPath }
 export { ROSTER_PAGE_SIZE }

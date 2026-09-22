@@ -3,13 +3,13 @@ import { isOptimisticSessionId } from '../../session-creation'
 import type { SessionError, SessionFeed, SessionId } from '../../types'
 import { FEED_STALL_TIMEOUT_MS, useStallTimer } from '../feed-stall'
 import { Standing } from '../standing'
+import type { FeedQuestionHandlers } from './feed-document'
 import {
   useFeedRetry,
   useFeedScrollPositions,
   useHeldPrompt,
   useKeptDocuments,
 } from './feed-document-state'
-import type { FeedQuestionHandlers } from './feed-document'
 import type { FeedLiveFacts } from './feed-live-facts'
 import { keptDocument } from './kept-document'
 import { awaitingAssistantReply } from './use-settled-feed'

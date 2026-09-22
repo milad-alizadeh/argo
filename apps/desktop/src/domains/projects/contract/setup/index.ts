@@ -5,73 +5,73 @@ export {
 } from './project-setup-approval'
 
 export {
-  projectSetupHarnesses,
   defaultProjectSetupHarnesses,
   type ProjectSetupHarness,
   type ProjectSetupHarnessAvailability,
+  projectSetupHarnesses,
 } from './project-setup-harness'
 
 export {
-  projectSetupQuestionSchema,
-  projectSetupAnswerSchema,
-  type ProjectSetupQuestion,
   type ProjectSetupAnswer,
+  type ProjectSetupQuestion,
+  projectSetupAnswerSchema,
+  projectSetupQuestionSchema,
 } from './project-setup-question'
 
 export {
   PROJECT_SETUP_RECOVERY_CODES,
-  projectSetupRecoveryCodeSchema,
   type ProjectSetupRecoveryCode,
+  projectSetupRecoveryCodeSchema,
 } from './project-setup-recovery'
 
 export { projectSetupScreenSchema } from './project-setup-screen'
 
 export {
-  type SetupAnswers,
-  setupAnswers,
-  setupConfiguration,
-  setupLocale,
-  setupFieldText,
-  setupPlanText,
-  setupChoiceText,
-  SETUP_RENDERER_CAPABILITIES,
-  validateSetupDocument,
-  setupFieldSchema,
-  setupDocumentSchema,
   parseSetupDocument,
-  type SetupField,
+  SETUP_RENDERER_CAPABILITIES,
+  type SetupAnswers,
   type SetupDocument,
+  type SetupField,
+  setupAnswers,
+  setupChoiceText,
+  setupConfiguration,
+  setupDocumentSchema,
+  setupFieldSchema,
+  setupFieldText,
+  setupLocale,
+  setupPlanText,
+  validateSetupDocument,
 } from './setup-document'
 
 export {
+  type AcceptedPlanValidationOutcome,
+  type AcceptedSetupPlan,
+  acceptedSetupPlanSchema,
   findsCycle,
   handoffSchema,
-  setupPlanSchema,
-  acceptedSetupPlanSchema,
+  type PlanValidationOutcome,
+  parseAcceptedSetupPlan,
+  parseSetupPlanningResult,
   type SetupPlan,
-  type AcceptedSetupPlan,
-  validateIdentifiers,
-  validateTargetReferences,
+  type SetupPlanningResult,
+  setupPlanningResultSchema,
+  setupPlanSchema,
+  validateAcceptedSetupPlan,
   validateDefaultTargets,
+  validateIdentifiers,
+  validatePlanRevision,
   validatePrerequisites,
   validateSetupPlan,
-  validatePlanRevision,
-  type PlanValidationOutcome,
-  setupPlanningResultSchema,
-  parseSetupPlanningResult,
-  parseAcceptedSetupPlan,
-  validateAcceptedSetupPlan,
-  type SetupPlanningResult,
-  type AcceptedPlanValidationOutcome,
+  validateTargetReferences,
 } from './setup-plan'
 
 export {
-  setupStepStatusSchema,
-  setupPlanningProgressEventSchema,
-  setupApplicationProgressEventSchema,
-  parseSetupPlanningProgressEvent,
   parseSetupApplicationProgressEvent,
-  type SetupStepStatus,
-  type SetupPlanningProgressEvent,
+  parseSetupPlanningProgressEvent,
   type SetupApplicationProgressEvent,
+  type SetupPlanningProgressEvent,
+  type SetupStepStatus,
+  setupApplicationProgressEventSchema,
+  setupPlanningProgressEventSchema,
+  setupStepStatusSchema,
 } from './setup-progress'

@@ -10,6 +10,8 @@ import {
 import { sendInitialClaudeTurn } from '@/domains/sessions/renderer/composer/send-initial-claude-turn'
 import { sendManagedSessionTurn } from '@/domains/sessions/renderer/composer/send-managed-session-turn'
 import { sendToSelected } from '@/domains/sessions/renderer/composer/send-selected-turn'
+import type { TurnSetup } from '@/domains/sessions/renderer/composer/turn-setup/turn-setup'
+import type { useTurnSetup } from '@/domains/sessions/renderer/composer/turn-setup/use-turn-setup'
 import type { SendOutcome } from '@/domains/sessions/renderer/composer/use-send'
 import type { Failure } from '@/domains/sessions/renderer/composer/use-session-composer-actions'
 import type { useSessionMutations } from '@/domains/sessions/renderer/composer/use-session-mutations'
@@ -22,8 +24,6 @@ import {
   sessionHarnessOf,
 } from '@/domains/sessions/renderer/harness/harnesses'
 import { invalidateSessionRoster } from '@/domains/sessions/renderer/session-queries'
-import type { TurnSetup } from '@/domains/sessions/renderer/composer/turn-setup/turn-setup'
-import type { useTurnSetup } from '@/domains/sessions/renderer/composer/turn-setup/use-turn-setup'
 import type { SessionRoster } from '@/domains/sessions/renderer/types'
 
 export type TurnInput = {

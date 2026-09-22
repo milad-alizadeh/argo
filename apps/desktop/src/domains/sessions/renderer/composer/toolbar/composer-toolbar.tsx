@@ -1,12 +1,12 @@
-import type { HarnessControl } from '../../harness'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
+import type { HarnessControl } from '../../harness'
+import type { ComposerAttachment } from '../hooks'
 import { ModeMenu } from './mode-menu'
 import { RunSetupMenu, type TurnSetupControlProps } from './run-setup-menu'
-import type { ComposerAttachment } from '../hooks'
 import { WorkspaceMenu, type WorkspaceMenuControlProps } from './workspace-menu'
 
 function AddContextButton({ onOpen }: { onOpen: () => void }) {

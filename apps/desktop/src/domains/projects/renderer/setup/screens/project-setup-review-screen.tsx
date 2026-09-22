@@ -9,7 +9,10 @@ import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { Textarea } from '@/platform/renderer/components/ui/textarea'
 import { projectSetupDiffFiles } from '../editor/project-setup-diff-files'
-import { ProjectSetupPlanConfiguration, ProjectSetupPlanReview } from '../plan/project-setup-plan-review'
+import {
+  ProjectSetupPlanConfiguration,
+  ProjectSetupPlanReview,
+} from '../plan/project-setup-plan-review'
 import { projectSetupRecoveryText } from '../project-setup-recovery-text'
 
 type ReviewScreenProps = {

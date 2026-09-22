@@ -5,8 +5,8 @@ import type {
 } from '@/domains/sessions/contract/model/transcript/transcript'
 import { taggedField, taggedText } from '@/harnesses/host/envelope-tags'
 import { isRecord } from '@/shared/validation'
-import { readableCommandOutput } from './command-output'
 import { readTaskDelivery } from '../subagents/task-notification'
+import { readableCommandOutput } from './command-output'
 
 function envelopeText(content: unknown): string | null {
   if (typeof content === 'string') return content

@@ -1,12 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { StrictMode, useState } from 'react'
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
-import {
-  BROKEN_PICTURE,
-  RICH_MARKDOWN,
-  SAMPLE_PICTURE,
-} from '../content/feed-samples'
 import type { SessionError, SessionFeed, SessionFeedRow } from '../../types'
+import { BROKEN_PICTURE, RICH_MARKDOWN, SAMPLE_PICTURE } from '../content/feed-samples'
 import { BackgroundWork, type BackgroundWorkLinks } from '../rows/background-work'
 import { FeedJumpToLatest } from '../rows/feed-jump-to-latest'
 import { BasicFeed } from './basic-feed'

@@ -1,7 +1,10 @@
 import { type ReactNode, type RefObject, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { focusAfterLeaving, useExitPresence } from '@/platform/renderer/components/permission/exit-presence'
 import { Icon } from '@/platform/renderer/components/icon/icon'
+import {
+  focusAfterLeaving,
+  useExitPresence,
+} from '@/platform/renderer/components/permission/exit-presence'
 import {
   AllowButton,
   type PermissionAnswer,

@@ -2,18 +2,14 @@
 // bounded discovery window `archive-window.ts` falls back to. Node runs these for the same reason
 // `archive-index.vitest.ts` does: the index reaches `node:sqlite`, which Bun does not ship.
 import { describe, expect, test } from 'vitest'
-import {
-  indexedAdapters,
-  manyTranscripts,
-  sessionIdAt,
-} from './session-index/roster-fixtures'
-import { createSessionReader } from '../observation'
+import type { createSessionReader } from '../observation'
 import { requestSearch } from '../projection/search/search-request'
 import {
   createIndexedReadHarness,
   expectAnsweredByIndex,
   finishBackfill,
 } from './indexed-read-test-harness'
+import { indexedAdapters, manyTranscripts, sessionIdAt } from './session-index/roster-fixtures'
 
 const { harness } = createIndexedReadHarness()
 

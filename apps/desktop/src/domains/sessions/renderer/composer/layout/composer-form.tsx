@@ -1,13 +1,12 @@
-import type { HarnessControl } from '../../harness'
 import type { LexicalEditor } from 'lexical'
 import { type ReactNode, type RefObject, useEffect, useRef } from 'react'
-
 import type { SessionPlan } from '@/domains/sessions/contract/model'
+import type { HarnessControl } from '../../harness'
+import type { ComposerAttachment, ComposerTicketContext } from '../hooks'
+import type { TurnSetupControlProps, WorkspaceMenuControlProps } from '../toolbar'
 import { AttachmentTray } from '../tray/attachment-tray'
 import { PendingTurns } from '../tray/pending-turns'
 import type { usePendingTurns } from '../tray/use-pending-turns'
-import type { ComposerAttachment, ComposerTicketContext } from '../hooks'
-import type { TurnSetupControlProps, WorkspaceMenuControlProps } from '../toolbar'
 import { ComposerCard } from './composer-card'
 
 // The composer card's column; attached secondary surfaces inset from its edges.

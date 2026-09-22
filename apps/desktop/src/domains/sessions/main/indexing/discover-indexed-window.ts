@@ -5,10 +5,10 @@
 // line ceiling.
 
 import type { SessionRosterRow } from '@/domains/sessions/contract/model'
+import type { createTitleLedger } from '../lifecycle'
+import { nextCursorFor, type TranscriptDiscovery } from '../observation'
 import type { SessionIndex } from './session-index/contract'
 import { createIndexedWindow } from './session-index/indexed-window'
-import { createTitleLedger } from '../lifecycle'
-import { TranscriptDiscovery, nextCursorFor } from '../observation'
 
 // One indexed reader per index handed in, kept because it holds the hydration the first pass
 // paid for. A different index rebinds it rather than reusing another database's history.

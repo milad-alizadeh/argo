@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import type { SessionPlan } from '@/domains/sessions/contract/model'
-import { ComposerStory } from './composer-story-samples'
 import { useComposerStore } from '../hooks'
+import { ComposerStory } from './composer-story-samples'
 
 const FRAME = 'mx-auto max-w-4xl p-8'
 

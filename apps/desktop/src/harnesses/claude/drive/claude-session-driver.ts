@@ -2,6 +2,9 @@ import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import type { ClaudePermission } from '@/domains/sessions/contract/ipc/contract'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import { managedRow, rollupSessionStatus } from '@/domains/sessions/main'
+import { channelActions, type DriverOptions, type ManagedSession } from './channel/drive-channel'
+import { ClaudeSessionDriverError } from './channel/driver-error'
+import type { LiveMessage } from './channel/live-messages'
 import { closeSessions } from './claude-session-close'
 import {
   beginCompaction,
@@ -9,9 +12,6 @@ import {
   compactSession,
   completeCompaction,
 } from './compaction-driver'
-import { channelActions, type DriverOptions, type ManagedSession } from './channel/drive-channel'
-import { ClaudeSessionDriverError } from './channel/driver-error'
-import type { LiveMessage } from './channel/live-messages'
 import { clearHandoff, completeHandoffs, startHandoff } from './handoff/handoff-driver'
 import { claudeManagedStatus } from './managed-status'
 import type { ClaudeTurnRequest } from './turn/deliver-turn'

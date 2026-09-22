@@ -1,10 +1,10 @@
-import type { ManagedSession } from '@/harnesses/codex/drive/supervision/managed-session'
 import {
   protocolRecord,
   protocolString,
   type RequestID,
   type WireMessage,
 } from '@/harnesses/codex/drive/protocol/protocol'
+import type { ManagedSession } from '@/harnesses/codex/drive/supervision/managed-session'
 
 export type PendingCodexPermission = {
   id: string

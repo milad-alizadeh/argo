@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict'
 import type { SESSION_OPERATIONS } from '@/domains/sessions/contract/ipc'
 import { managedRow } from '../../lifecycle'
-import { SessionSource } from '../../observation'
+import type { SessionSource } from '../../observation'
 
 export type Reply = Record<string, unknown>
 

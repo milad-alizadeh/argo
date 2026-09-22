@@ -1,17 +1,13 @@
 import path from 'node:path'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
+import { project, projectSelection, projectSetupCheckpoint } from '@/domains/projects/main/schema'
 import type { ProjectSetupRecord } from '@/domains/projects/main/setup/persistence/project-setup-registry'
 import { projectSetupStore } from '@/domains/projects/main/setup/persistence/project-setup-storage'
 import {
   createWorkspaceStore,
   type WorkspaceStore,
 } from '@/domains/projects/main/workspaces/workspace-store'
-import {
-  project,
-  projectSelection,
-  projectSetupCheckpoint,
-} from '@/domains/projects/main/schema'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 import { identifierSchema } from '@/shared/validation'
 import { createSetupWorktreePromotion } from './project-store-promotion'

@@ -7,7 +7,6 @@ import {
   composerIdentityKey,
 } from '@/domains/sessions/renderer/composer/composer-identity'
 import type { TurnSetupControlProps } from '@/domains/sessions/renderer/composer/run-setup-menu'
-import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
 import {
   refusalOf,
   resolvedTurnSetup,
@@ -15,6 +14,7 @@ import {
   type TurnSetupChoices,
   turnSettled,
 } from '@/domains/sessions/renderer/composer/turn-setup/turn-setup'
+import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
 
 // Each harness remembers its own Model and Effort for a new composer (CONTEXT.md L2 · Model and Effort).
 const REMEMBERED_STORAGE_KEY = 'argo.composer-model-effort'

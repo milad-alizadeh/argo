@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { platformText, setPlatformLanguage } from '@/platform/main/i18n'
 import { SHORTCUTS } from '@/platform/contract/commands'
+import { platformText, setPlatformLanguage } from '@/platform/main/i18n'
 import en from '@/platform/renderer/i18n/locales/en.json'
 
 function leafKeys(catalog: object, prefix: string): string[] {

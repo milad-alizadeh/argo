@@ -8,12 +8,12 @@ import { mock } from 'bun:test'
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { SESSION_OPERATIONS } from '@/domains/sessions/contract/ipc/operations'
-import { createSessionReader } from '../../observation/reader/reader'
-import type { SessionSource } from '../../observation/reader/session-source'
 import { electronStandIn } from '@/platform/main/test-doubles/electron-stand-in'
 import { createMockIpcWindow, RENDERER_URL } from '../../../../../../mocks/contract/mock-ipc-window'
-import { DECLARATIONS, type Declaration, owningSource, type Reply } from './reads-failure-cases'
+import { createSessionReader } from '../../observation/reader/reader'
+import type { SessionSource } from '../../observation/reader/session-source'
 import { fileInWorkspace } from './reads'
+import { DECLARATIONS, type Declaration, owningSource, type Reply } from './reads-failure-cases'
 
 // The Session bridge opens the attachment chooser over Electron's `dialog`, which no read
 // reaches. The stand-in goes in before the bridge is imported, as a static import would resolve

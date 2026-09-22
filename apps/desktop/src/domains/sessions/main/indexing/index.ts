@@ -1,27 +1,24 @@
-export { createWorkerSessionIndex } from './session-index/worker-index'
-export { sessionIndexPath } from './session-index/open-index'
-export { openSessionIndex } from './session-index/open-index'
-export { startBackfill } from './session-background-indexing'
-export { withReconcile } from './session-background-indexing'
-export type { SessionIndex } from './session-index/contract'
-export type { TranscriptFileIdentity } from './session-index/contract'
-export type { TranscriptPath } from './session-index/contract'
-export type { BackfillProgress } from './session-index/contract'
-export { isSessionIndexFallback } from './session-index/recovery'
-export type { ResolvedIndexedIds } from './resolve-indexed-ids'
-export { freshIdentityOf } from './resolve-indexed-ids'
-export { resolveIndexedIds } from './resolve-indexed-ids'
-export { reindexCandidates } from './session-index/reindex-pass'
-export { createIndexedWindow } from './session-index/indexed-window'
+export { boundIndexedWindow, discoverIndexedWindow, presentedRows } from './discover-indexed-window'
 export { createFullRecordTracker } from './full-record-tracker'
-export { holdsMessage } from './session-index/window-pass'
-export { boundIndexedWindow } from './discover-indexed-window'
-export { discoverIndexedWindow } from './discover-indexed-window'
-export { presentedRows } from './discover-indexed-window'
+export {
+  createIndexedReadHarness,
+  expectAnsweredByIndex,
+  finishBackfill,
+} from './indexed-read-test-harness'
+export type { ResolvedIndexedIds } from './resolve-indexed-ids'
+export { freshIdentityOf, resolveIndexedIds } from './resolve-indexed-ids'
+export { startBackfill, withReconcile } from './session-background-indexing'
 export { createBackgroundIndexing } from './session-index/backfill-reconcile'
-export { indexedAdapters } from './session-index/roster-fixtures'
-export { manyTranscripts } from './session-index/roster-fixtures'
-export { sessionIdAt } from './session-index/roster-fixtures'
-export { createIndexedReadHarness } from './indexed-read-test-harness'
-export { expectAnsweredByIndex } from './indexed-read-test-harness'
-export { finishBackfill } from './indexed-read-test-harness'
+export type {
+  BackfillProgress,
+  SessionIndex,
+  TranscriptFileIdentity,
+  TranscriptPath,
+} from './session-index/contract'
+export { createIndexedWindow } from './session-index/indexed-window'
+export { openSessionIndex, sessionIndexPath } from './session-index/open-index'
+export { isSessionIndexFallback } from './session-index/recovery'
+export { reindexCandidates } from './session-index/reindex-pass'
+export { indexedAdapters, manyTranscripts, sessionIdAt } from './session-index/roster-fixtures'
+export { holdsMessage } from './session-index/window-pass'
+export { createWorkerSessionIndex } from './session-index/worker-index'

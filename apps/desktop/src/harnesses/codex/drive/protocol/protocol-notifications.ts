@@ -1,11 +1,6 @@
 import assert from 'node:assert/strict'
 import type { CodexThreadStatus } from '@/harnesses/codex/drive/managed-status'
-import {
-  protocolRecord,
-  protocolString,
-  readTurn,
-  type WireMessage,
-} from './protocol'
+import { protocolRecord, protocolString, readTurn, type WireMessage } from './protocol'
 
 export function readCompletedTurn(message: WireMessage) {
   if (!('method' in message) || message.method !== 'turn/completed') return undefined

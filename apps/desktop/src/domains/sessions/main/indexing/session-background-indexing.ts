@@ -3,11 +3,11 @@
 // own change announcements already use. Both pause while a selected Feed is reading, so neither
 // races the file it is reading. Split from `session-bridges.ts` to keep that composition root short.
 import type { BrowserWindow } from 'electron'
-import { SessionReader } from '../composition'
+import type { WatchedSource } from '@/platform/main/watch/watch-source'
+import type { SessionReader } from '../composition'
+import type { SessionSource } from '../observation'
 import { createBackfillScheduler } from './session-index/backfill-scheduler'
 import type { BackfillProgress } from './session-index/contract'
-import { SessionSource } from '../observation'
-import type { WatchedSource } from '@/platform/main/watch/watch-source'
 
 type IndexedBackfillSource = Pick<SessionSource, 'backfillTick' | 'reconcileAll'> & {
   backfillTick: NonNullable<SessionSource['backfillTick']>

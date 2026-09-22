@@ -1,5 +1,5 @@
-import { useVirtualizer } from '@tanstack/react-virtual'
 import type { ReactVirtualizer } from '@tanstack/react-virtual'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import type { Virtualizer } from '@tanstack/virtual-core'
 import { type ReactNode, useCallback, useLayoutEffect, useRef, useState } from 'react'
 import type { SessionFeedRow } from '../../types'

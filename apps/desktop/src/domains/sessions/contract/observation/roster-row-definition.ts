@@ -1,9 +1,5 @@
 import { z } from 'zod'
-import {
-  type SessionRosterRow,
-  type SessionTitle,
-  sessionRosterRowSchema,
-} from '../model'
+import { type SessionRosterRow, type SessionTitle, sessionRosterRowSchema } from '../model'
 import type { RosterRowContext } from './roster-row-context'
 import { type RosterRowField, rosterRowFields } from './roster-row-fields'
 

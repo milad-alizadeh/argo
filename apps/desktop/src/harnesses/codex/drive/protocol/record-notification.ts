@@ -11,11 +11,14 @@ import {
   readRequestApproval,
 } from '@/harnesses/codex/drive/permission-protocol'
 import { readUpdatedPlan } from '@/harnesses/codex/drive/plan-protocol'
-import type { WireMessage } from './protocol'
-import { readCompletedTurn, readThreadStatus } from '@/harnesses/codex/drive/protocol/protocol-notifications'
+import {
+  readCompletedTurn,
+  readThreadStatus,
+} from '@/harnesses/codex/drive/protocol/protocol-notifications'
 import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
 import { readRequestUserInput } from '@/harnesses/codex/drive/question-protocol'
 import { readUpdatedThreadName } from '@/harnesses/codex/drive/rename-protocol'
+import type { WireMessage } from './protocol'
 
 export type HeldSession = {
   messages: LiveMessages

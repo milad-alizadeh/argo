@@ -1,2 +1,2 @@
-export { attachSessionBridge } from './bridge'
 export type { SessionReader } from './bridge'
+export { attachSessionBridge } from './bridge'

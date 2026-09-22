@@ -5,9 +5,9 @@
 // takes its parsed request type and `reads.ts` declares nothing but resolution and body.
 
 import { sessionError } from '@/domains/sessions/contract/ipc'
-import { SessionArchiveStore } from '../../archive'
-import { SessionUnreadStore } from '../../unread'
 import { isRecord } from '@/shared/validation'
+import type { SessionArchiveStore } from '../../archive'
+import type { SessionUnreadStore } from '../../unread'
 import type { SessionSource } from './session-source'
 
 export type OwnerFor = (sessionId: string) => Promise<SessionSource | undefined>

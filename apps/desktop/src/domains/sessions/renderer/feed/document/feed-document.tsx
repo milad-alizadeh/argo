@@ -2,11 +2,7 @@ import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { QuestionAnswer } from '@/domains/sessions/contract/drive'
 import { foldSettledToolRuns, withHeadline } from '@/domains/sessions/contract/model'
-import type {
-  SessionEvidence,
-  SessionFeed,
-  SessionFeedRow,
-} from '../../types'
+import type { SessionEvidence, SessionFeed, SessionFeedRow } from '../../types'
 import { sessionPostureLocksAnswer } from '../../types'
 import { isFeedRowStreaming } from '../rows/feed-row-renderers'
 import type { RevealCache } from '../rows/streaming-text'

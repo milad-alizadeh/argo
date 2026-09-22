@@ -2,11 +2,7 @@ import assert from 'node:assert/strict'
 
 import { z } from 'zod'
 import type { Question, QuestionAnswer, QuestionOption } from '@/domains/sessions/contract/drive'
-import type {
-  PlanEntryStatus,
-  SessionPlan,
-  SessionStatus,
-} from '@/domains/sessions/contract/model'
+import type { PlanEntryStatus, SessionPlan, SessionStatus } from '@/domains/sessions/contract/model'
 import type { Input } from '../input-items'
 import type { ManagedSession } from '../supervision/managed-session'
 

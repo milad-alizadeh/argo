@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { identifierSchema } from '@/shared/validation'
 import {
   sessionActivitySchema,
   sessionEntrySchema,
@@ -12,7 +13,6 @@ import {
   sessionTicketSchema,
   sessionTitleSchema,
 } from '../model'
-import { identifierSchema } from '@/shared/validation'
 import { rosterRowField as field } from './roster-row-field'
 
 export type { RosterRowField } from './roster-row-field'

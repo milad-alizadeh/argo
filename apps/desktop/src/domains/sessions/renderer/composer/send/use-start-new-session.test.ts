@@ -1,11 +1,11 @@
 import { beforeEach, expect, test } from 'bun:test'
-import { useSessionCreationStore } from '../../session-creation'
 import {
   COCKPIT,
   mockStart,
   newSessionDeps,
   PROJECT,
 } from '../../../../../../mocks/sessions/mock-send-turn'
+import { useSessionCreationStore } from '../../session-creation'
 import { sendToNewSession } from './send-turn'
 import { startNewSession } from './use-start-new-session'
 

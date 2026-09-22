@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { AttachmentChip } from '../../attachment-chip'
-import { FeedImage } from '../content/feed-images'
 import { PromptText } from '../../prompt'
 import type { SessionEvidence } from '../../types'
+import { FeedImage } from '../content/feed-images'
 
 // Biome refuses a position key, and the same file can be attached twice: count earlier copies.
 function keyedAttachments(sources: readonly string[]) {

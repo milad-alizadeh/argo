@@ -1,6 +1,6 @@
 import type { WorkspaceSelection } from '@/domains/sessions/next/contract/session-contract'
-import type { AppServerSupervisorDeps } from '@/harnesses/codex/drive/supervision/app-server-supervisor-machine'
 import type { CodexSessionAdapter } from '@/harnesses/codex/drive/session/codex-session-adapter-contract'
+import type { AppServerSupervisorDeps } from '@/harnesses/codex/drive/supervision/app-server-supervisor-machine'
 
 export type { CodexSessionAdapter } from '@/harnesses/codex/drive/session/codex-session-adapter-contract'
 
@@ -11,7 +11,10 @@ import {
 } from '@/harnesses/codex/drive/session/codex-session-commands'
 import { CodexSessionDriverError } from '@/harnesses/codex/drive/session/codex-session-error'
 import { createCodexSessionHistory } from '@/harnesses/codex/drive/session/codex-session-history'
-import { resumeCodexSession, startCodexSession } from '@/harnesses/codex/drive/session/codex-session-launch'
+import {
+  resumeCodexSession,
+  startCodexSession,
+} from '@/harnesses/codex/drive/session/codex-session-launch'
 import type { ManagedSessionActor } from '@/harnesses/codex/drive/session/codex-session-projection'
 import {
   registerCodexSessionActor,

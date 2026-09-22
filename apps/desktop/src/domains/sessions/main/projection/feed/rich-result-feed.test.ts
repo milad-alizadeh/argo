@@ -2,9 +2,9 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { SessionChain } from '@/domains/sessions/contract/model'
 import { checkedDataImageUrl } from '@/domains/sessions/contract/model/feed'
+import { readCall } from '@/domains/sessions/contract/model/feed/tool-feed-test-fixtures'
 import { transcriptMessage as message } from '../../observation/tail/transcript-test-fixtures'
 import { projectFeed } from './feed-incremental'
-import { readCall } from '@/domains/sessions/contract/model/feed/tool-feed-test-fixtures'
 
 test('projects tool result images into the historical Feed', () => {
   const image = checkedDataImageUrl('data:image/png;base64,AAAA')

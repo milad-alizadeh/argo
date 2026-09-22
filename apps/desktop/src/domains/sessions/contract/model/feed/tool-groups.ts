@@ -1,5 +1,5 @@
-import type { LiveActivity } from './feed-rows'
 import type { SessionFeedRow } from '../models'
+import type { LiveActivity } from './feed-rows'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 

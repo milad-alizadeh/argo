@@ -1,12 +1,12 @@
 import { useTranslation } from 'react-i18next'
 import {
+  type SetupDocument,
   setupChoiceText,
   setupFieldText,
   setupPlanText,
-  type SetupDocument,
 } from '@/domains/projects/contract/setup'
-import { fieldsForSection, SectionIcon, type SetupSectionModel } from './setup-plan-sections'
 import type { SetupAnswer } from '../use-setup-answers'
+import { fieldsForSection, SectionIcon, type SetupSectionModel } from './setup-plan-sections'
 
 export function SetupPlanSummary({
   answers,

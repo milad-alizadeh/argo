@@ -8,7 +8,7 @@ import {
   type TranscriptRecord,
   transcriptFileFrom,
 } from '@/domains/sessions/contract/model'
-import { TranscriptFileIdentity, TranscriptPath } from '../../indexing'
+import type { TranscriptFileIdentity, TranscriptPath } from '../../indexing'
 import { createTranscriptRecordReader } from './transcript-lines'
 
 export type TranscriptDiscoverySource = {

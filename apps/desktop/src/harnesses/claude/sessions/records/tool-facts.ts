@@ -1,5 +1,4 @@
 import { questionSchema } from '@/domains/sessions/contract/drive'
-import { mcpOther, skillTitle } from '@/domains/sessions/contract/model'
 import type {
   AskFacts,
   EditedFile,
@@ -11,7 +10,7 @@ import type {
   SearchFacts,
   SkillFacts,
 } from '@/domains/sessions/contract/model'
-import { createdPatch, unifiedPatch } from '@/domains/sessions/contract/model'
+import { createdPatch, mcpOther, skillTitle, unifiedPatch } from '@/domains/sessions/contract/model'
 
 const ASK_TOOL = 'AskUserQuestion'
 

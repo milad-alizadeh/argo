@@ -3,8 +3,8 @@ import { useState } from 'react'
 import { expect, userEvent, within } from 'storybook/test'
 import { BasicFeed, INACTIVE_FEED_LIVE_FACTS } from '../../feed'
 import type { SessionFeed } from '../../types'
-import { SessionComposer } from './session-composer'
 import { useComposerStore } from '../hooks'
+import { SessionComposer } from './session-composer'
 
 const COMPACTION_FEED = {
   version: 1,

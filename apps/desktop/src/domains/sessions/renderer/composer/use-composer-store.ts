@@ -7,12 +7,12 @@ import {
   type ComposerTicketContext,
   ticketContextSchema,
 } from '@/domains/sessions/renderer/composer/composer-ticket-context'
+import type { TurnSetup } from '@/domains/sessions/renderer/composer/turn-setup/turn-setup'
 import type { TurnMarkerEntry } from '@/domains/sessions/renderer/feed/rows/turn-marker-state'
 import {
   SESSION_HARNESSES,
   type SessionHarness,
 } from '@/domains/sessions/renderer/harness/harnesses'
-import type { TurnSetup } from '@/domains/sessions/renderer/composer/turn-setup/turn-setup'
 
 export type { ComposerTicketContext } from '@/domains/sessions/renderer/composer/composer-ticket-context'
 

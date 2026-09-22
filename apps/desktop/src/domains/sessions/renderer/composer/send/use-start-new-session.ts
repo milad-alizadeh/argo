@@ -1,10 +1,10 @@
-import type { SessionHarness } from '../../harness'
 import type { Cockpit } from '@/domains/projects/renderer'
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive'
+import type { SessionHarness } from '../../harness'
 import { useSessionCreationStore } from '../../session-creation'
-import type { TurnSetup } from '../turn-setup/turn-setup'
-import type { ComposerIdentity } from '../identity'
 import type { useSessionMutations } from '../hooks'
+import type { ComposerIdentity } from '../identity'
+import type { TurnSetup } from '../turn-setup/turn-setup'
 import { codeFrom, type Failure, messageFrom } from './session-failure'
 
 async function paintRoster(): Promise<void> {

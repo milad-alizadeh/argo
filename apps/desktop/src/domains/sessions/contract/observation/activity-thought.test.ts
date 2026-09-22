@@ -1,10 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type {
-  ContentBlock,
-  ToolCall,
-  TranscriptMessage,
-} from '../model/transcript'
+import type { ContentBlock, ToolCall, TranscriptMessage } from '../model/transcript'
 import { readActivity } from './signals'
 
 const BASE: Omit<TranscriptMessage, 'uuid' | 'role' | 'blocks' | 'toolCalls'> = {

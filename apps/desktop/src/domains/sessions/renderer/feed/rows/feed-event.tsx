@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import type { SessionFeedRow } from '../../types'
 import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
+import type { SessionFeedRow } from '../../types'
 
 type FeedEventRow = Extract<SessionFeedRow, { shape: 'event' }>
 

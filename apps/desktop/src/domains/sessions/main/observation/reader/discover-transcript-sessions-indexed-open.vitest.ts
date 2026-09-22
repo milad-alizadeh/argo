@@ -5,12 +5,12 @@ import { appendFile, mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, test } from 'vitest'
-import { openSessionIndex } from '../../indexing'
 import {
   mockDiscoverer,
   writeManySessions,
   writeMockTranscript,
 } from '../../../../../../mocks/sessions/mock-discover-transcript-sessions'
+import { openSessionIndex } from '../../indexing'
 import { ROSTER_PAGE_SIZE } from './discover-transcript-sessions'
 
 const cleanUp: (() => Promise<void>)[] = []

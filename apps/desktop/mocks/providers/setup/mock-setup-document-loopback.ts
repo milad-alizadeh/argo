@@ -4,8 +4,8 @@ import type { AddressInfo } from 'node:net'
 import path from 'node:path'
 import {
   parseSetupDocument,
-  setupConfiguration,
   type SetupDocument,
+  setupConfiguration,
 } from '../../../src/domains/projects/contract/setup'
 
 const documentPath = path.resolve(

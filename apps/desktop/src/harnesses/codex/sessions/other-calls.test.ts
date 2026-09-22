@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { fed, feedRequest, rowsOf } from '@/domains/sessions/main/observation/reader/reader-test-helpers'
+import {
+  fed,
+  feedRequest,
+  rowsOf,
+} from '@/domains/sessions/main/observation/reader/reader-test-helpers'
 import { toolCallsOf } from '@/domains/sessions/main/projection/feed/tool-calls-of'
 import { readerOverRollout } from './rollout-reader-test-helper'
 

@@ -4,8 +4,7 @@ import {
   acceptedPlanFixture,
   planFixture,
 } from '../../../../../test-fixtures/projects/setup/setup-plan.fixture'
-import { validateAcceptedSetupPlan } from './setup-plan'
-import { validatePlanRevision } from './setup-plan'
+import { validateAcceptedSetupPlan, validatePlanRevision } from './setup-plan'
 
 function first<T>(items: T[]): T {
   const item = items[0]

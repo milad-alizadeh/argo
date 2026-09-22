@@ -1,7 +1,7 @@
-import { setupPlanText, type SetupDocument } from '@/domains/projects/contract/setup'
+import { type SetupDocument, setupPlanText } from '@/domains/projects/contract/setup'
+import type { SetupAnswer } from '../use-setup-answers'
 import { SetupPlanField } from './setup-plan-field'
 import { fieldsForSection, SectionIcon, type SetupSectionModel } from './setup-plan-sections'
-import type { SetupAnswer } from '../use-setup-answers'
 
 export function SetupPlanCustomization({
   answers,

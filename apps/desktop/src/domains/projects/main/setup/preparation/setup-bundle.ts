@@ -1,5 +1,5 @@
-import { SETUP_DOCUMENT_PROOF_URL_ENV } from '@/domains/projects/main/proof-protocol'
 import { parseSetupDocument, type SetupDocument } from '@/domains/projects/contract/setup'
+import { SETUP_DOCUMENT_PROOF_URL_ENV } from '@/domains/projects/main/proof-protocol'
 import {
   ARGO_SETUP_DOCUMENT_URL,
   DEVELOPMENT_SETUP_DOCUMENT_URL_ENV,

@@ -4,8 +4,11 @@ import { test } from 'node:test'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import { managedRow } from '@/domains/sessions/main/lifecycle/status/managed-row'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader/reader'
-import { createHeldRolloutReader, heldRolloutIds } from '@/harnesses/codex/sessions/records/held-rollouts'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+import {
+  createHeldRolloutReader,
+  heldRolloutIds,
+} from '@/harnesses/codex/sessions/records/held-rollouts'
 import {
   OPEN_TURN_COMPLETE,
   openTurnRolloutRoot,

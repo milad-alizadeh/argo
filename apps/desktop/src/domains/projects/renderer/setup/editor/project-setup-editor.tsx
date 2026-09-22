@@ -5,8 +5,8 @@ import { tags } from '@lezer/highlight'
 import CodeMirror, { EditorView } from '@uiw/react-codemirror'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useDarkAppearance } from '@/platform/renderer/use-appearance'
 import { lastInputWasKeyboard } from '@/platform/renderer/lib/input-modality'
+import { useDarkAppearance } from '@/platform/renderer/use-appearance'
 import { xcodeEditorTheme } from './project-setup-editor-theme'
 
 const jsonLanguage = StreamLanguage.define({ ...json, tokenTable: { property: tags.propertyName } })
