@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { stitchChains } from '@/domains/sessions/contract/model/transcript/chains'
 import { projectRosterRow } from '@/domains/sessions/main/projection/roster/roster'
-import { fixtureFiles } from '@/harnesses/claude/integration/session-fixtures'
+import { fixtureFiles } from './session-fixtures'
 
 async function rowOf(names) {
   return projectRosterRow(stitchChains(await fixtureFiles(names))[0], 'claude')

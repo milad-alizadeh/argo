@@ -7,7 +7,7 @@ import {
   projectSetupRecoveryCodeSchema,
   setupPlanSchema,
 } from '@/domains/projects/contract/setup'
-import { PROJECT_SETUP_MACHINE_VERSION } from '@/domains/projects/main/setup/project-setup-machine'
+import { PROJECT_SETUP_MACHINE_VERSION } from '../project-setup-machine'
 import type { ProjectSetupRecord } from './project-setup-registry'
 
 const harnessSchema = z.enum(['claude', 'codex'])

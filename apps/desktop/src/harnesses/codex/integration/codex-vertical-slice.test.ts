@@ -8,9 +8,9 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { compactSession, sendSession, startSession } from '@/domains/sessions/main/drive/drive.ts'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
-import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session/session-drive-adapter'
-import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions.ts'
 import { driverBackedByFixture } from '../../../../mocks/cli/codex/mock-codex-driver.ts'
+import { createCodexDriveAdapter } from '../drive/session/session-drive-adapter'
+import { codexSessionSource } from '../sessions/read-sessions'
 
 test('starting a Codex Session over the real transport makes it appear in the shared Roster', async () => {
   const driver = driverBackedByFixture()

@@ -1,25 +1,22 @@
 import path from 'node:path'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { project, projectSelection, projectSetupCheckpoint } from '@/domains/projects/main/schema'
-import type { ProjectSetupRecord } from '@/domains/projects/main/setup/persistence/project-setup-registry'
-import { projectSetupStore } from '@/domains/projects/main/setup/persistence/project-setup-storage'
-import {
-  createWorkspaceStore,
-  type WorkspaceStore,
-} from '@/domains/projects/main/workspaces/workspace-store'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 import { identifierSchema } from '@/shared/validation'
 import { createSetupWorktreePromotion } from './project-store-promotion'
+import { project, projectSelection, projectSetupCheckpoint } from './schema'
+import type { ProjectSetupRecord } from './setup/persistence/project-setup-registry'
+import { projectSetupStore } from './setup/persistence/project-setup-storage'
 import { readSetupCheckpoint, type SetupCheckpoint } from './setup-checkpoint-store'
+import { createWorkspaceStore, type WorkspaceStore } from './workspaces/workspace-store'
 
-export type { ProjectSetupRecord } from '@/domains/projects/main/setup/persistence/project-setup-registry'
+export type { ProjectSetupRecord } from './setup/persistence/project-setup-registry'
+export type { SetupCheckpoint } from './setup-checkpoint-store'
 export type {
   ManagedWorkspaceRecovery,
   WorkspaceKind,
   WorkspaceRecord,
-} from '@/domains/projects/main/workspaces/workspace-store'
-export type { SetupCheckpoint } from './setup-checkpoint-store'
+} from './workspaces/workspace-store'
 
 export type ProjectRegistration = { id: string; path: string; commonDirectory: string }
 export type ProjectRegistry = { projects: ProjectRegistration[]; selectedId: string | null }

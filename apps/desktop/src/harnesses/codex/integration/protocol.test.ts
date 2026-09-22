@@ -8,7 +8,7 @@ import {
   readStartedTurn,
   readThreadId,
   readThreadStatus,
-} from '@/harnesses/codex/drive/protocol'
+} from '../drive/protocol'
 
 test('parses a JSON-RPC result response', () => {
   const message = readMessage('{"id":1,"result":{"thread":{"id":"thread-1"}}}')

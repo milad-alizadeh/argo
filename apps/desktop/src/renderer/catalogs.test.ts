@@ -8,7 +8,7 @@ import { expect, test } from 'bun:test'
 import { PROJECT_ERROR_CODES } from '@/domains/projects/contract/contract'
 import { PROJECT_SETUP_RECOVERY_CODES } from '@/domains/projects/contract/setup'
 import { PROJECT_SETUP_RECOVERY_KEYS } from '@/domains/projects/renderer/setup/project-setup-recovery-text'
-import { CATALOGS } from '@/renderer/catalogs'
+import { CATALOGS } from './catalogs'
 
 const NAMESPACES = Object.keys(CATALOGS)
 

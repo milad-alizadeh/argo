@@ -1,6 +1,6 @@
-import { readCompactStart } from '@/harnesses/codex/drive/protocol'
-import { CodexSessionDriverError } from '@/harnesses/codex/drive/session/codex-session-error'
-import type { ManagedSession } from '@/harnesses/codex/drive/supervision/managed-session'
+import { readCompactStart } from './protocol'
+import { CodexSessionDriverError } from './session/codex-session-error'
+import type { ManagedSession } from './supervision/managed-session'
 
 // `thread/compact/start` only acks that Codex began compacting (#2123); completion arrives later,
 // as an `item/completed` notification, and clears `compactionStartedAt` in record-notification.ts.

@@ -1,6 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import { ContextDetails } from '@/domains/sessions/renderer/composer/context-window/context-details'
-import { contextZone } from '@/domains/sessions/renderer/composer/context-window/context-zone'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
@@ -11,6 +9,8 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from '@/platform/renderer/components/ui/popover'
+import { ContextDetails } from './context-details'
+import { contextZone } from './context-zone'
 
 type ContextTriggerProps = {
   capacityTokens: number | null

@@ -5,20 +5,13 @@ import { z } from 'zod'
 import { displayName, provider } from '@/domains/accounts/contract/contract'
 import { PROVIDER_OUTAGE_ERRORS } from '@/domains/accounts/contract/provider-outage'
 import {
-  priorityLevel,
-  statusId,
-  ticket,
-  ticketKey,
-  ticketPriority,
-  ticketStatus,
-} from '@/domains/tickets/contract/ticket'
-import {
   type ContractError,
   errorFactory,
   errorSchema,
   identifier,
   message,
 } from '@/shared/messages'
+import { priorityLevel, statusId, ticket, ticketKey, ticketPriority, ticketStatus } from './ticket'
 
 export type {
   Ticket,
@@ -27,7 +20,7 @@ export type {
   TicketPriority,
   TicketState,
   TicketStatus,
-} from '@/domains/tickets/contract/ticket'
+} from './ticket'
 
 // One screenful: small enough that its edge reads land before a person scrolls to the next.
 export const TICKET_PAGE_SIZE = 25

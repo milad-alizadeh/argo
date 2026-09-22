@@ -1,6 +1,6 @@
 // Development apps share the Project, Account, and Ticket connection state across worktrees.
 import path from 'node:path'
-import { absolute, type DevelopmentInstance } from '@/platform/main/development/instance'
+import { absolute, type DevelopmentInstance } from './instance'
 
 export const DEVELOPMENT_APPLICATION_NAME = 'Argo Development'
 const DEVELOPMENT_SHARED_STORE = DEVELOPMENT_APPLICATION_NAME

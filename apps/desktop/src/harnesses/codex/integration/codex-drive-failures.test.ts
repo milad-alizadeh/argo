@@ -3,12 +3,12 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { sendSession, startSession } from '@/domains/sessions/main/drive/drive.ts'
-import { createCodexSessionDriver } from '@/harnesses/codex/drive/session/codex-session-driver'
-import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session/session-drive-adapter'
 import {
   driverBackedByFixture,
   ownerHarnessFor,
 } from '../../../../mocks/cli/codex/mock-codex-driver.ts'
+import { createCodexSessionDriver } from '../drive/session/codex-session-driver'
+import { createCodexDriveAdapter } from '../drive/session/session-drive-adapter'
 
 test('driving a Session with no findable transcript reports a drivable failure, not a stall', async () => {
   const driver = driverBackedByFixture()

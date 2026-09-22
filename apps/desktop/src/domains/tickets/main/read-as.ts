@@ -10,7 +10,7 @@ import {
   type TicketErrorCode,
   ticketError,
 } from '@/domains/tickets/contract/contract'
-import type { Reader, SourceRead, TicketSource } from '@/domains/tickets/main/sources'
+import type { Reader, SourceRead, TicketSource } from './sources'
 
 const TOKEN_ERRORS: Record<Exclude<TokenFailure['reason'], 'renewal-failed'>, TicketErrorCode> = {
   storage: 'storage-unavailable',

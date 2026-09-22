@@ -3,12 +3,12 @@ import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
-import { fixtureRoot } from '@/harnesses/claude/integration/session-fixtures'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-sessions'
 import {
   pointShellOutputAtRoot,
   shellOutputRoot,
 } from '../../../../mocks/sessions/mock-shell-output'
+import { claudeSessionSource } from '../sessions/discovery/read-sessions'
+import { fixtureRoot } from './session-fixtures'
 
 function request(shellId: string) {
   return {

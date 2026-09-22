@@ -8,7 +8,7 @@ import {
   rosterTitles,
   THREADS_SCHEMA,
   writeStateStore,
-} from '@/harnesses/codex/sessions/thread/thread-title-fixtures'
+} from './thread-title-fixtures'
 
 const CODEX_NAME = 'Implement Geist desktop typography contract'
 

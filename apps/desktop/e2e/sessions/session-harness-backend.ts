@@ -2,7 +2,7 @@
 // packaged app copy and the launches; the backend answers the four questions that change when the
 // proof swaps a mock `claude` and `codex` for the real ones.
 import type { Page } from 'playwright-core'
-import type { SessionHarness } from '../../src/domains/sessions/renderer/harness/harnesses'
+import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 
 // The disk state the harness prepares for every backend.
 export type SessionFixture = {

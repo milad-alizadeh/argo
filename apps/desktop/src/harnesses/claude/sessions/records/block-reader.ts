@@ -5,11 +5,11 @@ import type {
   ToolCall,
   ToolResult,
 } from '@/domains/sessions/contract/model/transcript/transcript'
-import { askFacts } from '@/harnesses/claude/sessions/ask-facts'
-import { bashFacts } from '@/harnesses/claude/sessions/bash-facts'
-import { editFacts } from '@/harnesses/claude/sessions/edit-facts'
-import { lookupFacts } from '@/harnesses/claude/sessions/lookup-facts'
 import { isRecord } from '@/shared/validation'
+import { askFacts } from '../ask-facts'
+import { bashFacts } from '../bash-facts'
+import { editFacts } from '../edit-facts'
+import { lookupFacts } from '../lookup-facts'
 import { POLL_TOOLS, skillOrOtherFacts } from '../other-facts'
 
 // The receipt's own sentence: "Output is being written to: <path>. You will be notified ...".

@@ -10,11 +10,11 @@ import {
 } from '@/domains/accounts/renderer/port'
 import { useSelectedProject } from '@/domains/projects/renderer/port'
 import type { ConnectionSummary } from '@/domains/tickets/contract/contract'
-import { ConnectionStatusMark } from '@/domains/tickets/renderer/connection/connection-status-mark'
-import { useConnection, useTicketList } from '@/domains/tickets/renderer/hooks/use-tickets'
-import { uniqueTickets } from '@/domains/tickets/renderer/lib/backlog'
-import { TicketsSidebarHeader } from '@/domains/tickets/renderer/sidebar/tickets-sidebar-header'
 import { useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
+import { ConnectionStatusMark } from '../connection/connection-status-mark'
+import { useConnection, useTicketList } from '../hooks/use-tickets'
+import { uniqueTickets } from '../lib/backlog'
+import { TicketsSidebarHeader } from './tickets-sidebar-header'
 
 export type TicketsSidebarContentProps = {
   connection: ConnectionSummary | null

@@ -3,7 +3,7 @@
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import type { SessionIndex } from '@/domains/sessions/main/indexing/session-index/contract'
 import { managedRow } from '@/domains/sessions/main/lifecycle/status/managed-row'
-import type { HarnessRegistration } from '@/harnesses/composition/harness-registration'
+import type { HarnessRegistration } from './harness-registration'
 
 const setup = { model: null, effort: null, mode: null } as const
 

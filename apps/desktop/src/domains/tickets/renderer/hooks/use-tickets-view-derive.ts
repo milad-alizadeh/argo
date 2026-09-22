@@ -11,17 +11,17 @@ import type {
   TicketPriority,
   TicketStatus,
 } from '@/domains/tickets/contract/contract'
-import type { ConnectSourceFormProps } from '@/domains/tickets/renderer/connection/connect-source-form'
-import type { TicketDeckProps } from '@/domains/tickets/renderer/detail/ticket-deck'
-import { listedBacklog, type TicketListing } from '@/domains/tickets/renderer/hooks/listed-backlog'
-import type { ConnectForm } from '@/domains/tickets/renderer/hooks/use-connect-form'
+import type { ContractFailure } from '@/platform/renderer/lib/query-client'
+import type { ConnectSourceFormProps } from '../connection/connect-source-form'
+import type { TicketDeckProps } from '../detail/ticket-deck'
 import {
   connectionProblem,
   failureProblem,
   isConnectionProblem,
   type TicketProblemProps,
-} from '@/domains/tickets/renderer/lib/problems'
-import type { ContractFailure } from '@/platform/renderer/lib/query-client'
+} from '../lib/problems'
+import { listedBacklog, type TicketListing } from './listed-backlog'
+import type { ConnectForm } from './use-connect-form'
 
 // Everything the Tickets screen can show, resolved here before anything draws.
 export type TicketsView =

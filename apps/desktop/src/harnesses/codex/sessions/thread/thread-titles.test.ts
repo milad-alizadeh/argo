@@ -10,7 +10,7 @@ import {
   rosterTitles,
   THREADS_SCHEMA,
   writeStateStore,
-} from '@/harnesses/codex/sessions/thread/thread-title-fixtures'
+} from './thread-title-fixtures'
 
 test('titles a Codex thread with the name Codex Desktop gave it', async (context) => {
   const { transcripts, state } = await codexHome(context)

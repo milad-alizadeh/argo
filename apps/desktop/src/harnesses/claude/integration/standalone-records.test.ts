@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { parseTranscriptLine } from '@/harnesses/claude/sessions/records'
+import { parseTranscriptLine } from '../sessions/records'
 
 test('reads a standalone permission mode as neutral Session setup', () => {
   assert.deepEqual(

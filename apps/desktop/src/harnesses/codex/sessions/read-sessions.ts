@@ -10,8 +10,8 @@ import {
   type SessionIndex,
   type SessionSource,
 } from '@/domains/sessions/main'
-import type { PendingCodexQuestion } from '@/harnesses/codex/drive/protocol'
-import type { LiveMessage } from '@/harnesses/codex/drive/session/codex-session-driver'
+import type { PendingCodexQuestion } from '../drive/protocol'
+import type { LiveMessage } from '../drive/session/codex-session-driver'
 import {
   backfillTick,
   clearFullRecords,

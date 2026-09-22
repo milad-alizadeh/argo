@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader/reader'
 import { listed, tempRoot } from '@/domains/sessions/main/observation/reader/reader-test-helpers'
-import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+import { codexSessionSource } from '../read-sessions'
 
 export const SESSION_ID = '01a0870e-f790-7fd0-984c-95e8686f1f0c'
 export const TIMESTAMP = '2026-09-15T10:00:00.000Z'

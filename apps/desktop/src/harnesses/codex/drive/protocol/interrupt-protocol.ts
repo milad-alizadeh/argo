@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { protocolRecord } from '@/harnesses/codex/drive/protocol/protocol'
+import { protocolRecord } from './protocol'
 
 export function readInterrupt(value: unknown): void {
   const result = protocolRecord(value, 'Interrupt result')

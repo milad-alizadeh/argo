@@ -1,15 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import type { ProjectListReply } from '@/domains/projects/contract/messages'
-import type { ProjectCockpit } from '@/domains/projects/renderer/hooks/use-projects'
-import {
-  type ProjectContractError,
-  throwProjectContractError,
-} from '@/domains/projects/renderer/project-contract-error'
-import {
-  projectListQueryKey,
-  projectMutationKey,
-} from '@/domains/projects/renderer/project-queries'
+import { type ProjectContractError, throwProjectContractError } from '../project-contract-error'
+import { projectListQueryKey, projectMutationKey } from '../project-queries'
+import type { ProjectCockpit } from './use-projects'
 
 export function useProjectMutations(options: {
   cockpitForListing: (

@@ -1,16 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test'
-import { roleColors } from '@/domains/sessions/renderer/feed/content/appearance-probe'
-import {
-  FeedGallery,
-  FeedImage,
-  FeedMissingImage,
-} from '@/domains/sessions/renderer/feed/content/feed-images'
-import {
-  BROKEN_PICTURE,
-  SAMPLE_PICTURE,
-} from '@/domains/sessions/renderer/feed/content/feed-samples'
-import { ImageLightbox } from '@/domains/sessions/renderer/feed/content/image-lightbox'
+import { roleColors } from './appearance-probe'
+import { FeedGallery, FeedImage, FeedMissingImage } from './feed-images'
+import { BROKEN_PICTURE, SAMPLE_PICTURE } from './feed-samples'
+import { ImageLightbox } from './image-lightbox'
 
 const meta = {
   title: 'Sessions/Feed/Images',

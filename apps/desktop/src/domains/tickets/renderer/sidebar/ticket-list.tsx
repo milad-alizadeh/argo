@@ -2,14 +2,6 @@ import type { TFunction } from 'i18next'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { providerPresentation } from '@/domains/accounts/renderer/port'
-import {
-  type Backlog,
-  backlogRows,
-  treeRails,
-  unfoldedRows,
-} from '@/domains/tickets/renderer/lib/backlog'
-import { sourcePresentation } from '@/domains/tickets/renderer/lib/sources'
-import { TicketRow } from '@/domains/tickets/renderer/sidebar/ticket-row'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Loader } from '@/platform/renderer/components/loader/loader'
 import {
@@ -20,6 +12,9 @@ import {
   EmptyTitle,
 } from '@/platform/renderer/components/ui/empty'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
+import { type Backlog, backlogRows, treeRails, unfoldedRows } from '../lib/backlog'
+import { sourcePresentation } from '../lib/sources'
+import { TicketRow } from './ticket-row'
 
 export type TicketListProps = {
   backlog: Backlog

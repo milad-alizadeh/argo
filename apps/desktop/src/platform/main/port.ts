@@ -1,1 +1,1 @@
-export { readDocumentSync, writeDocumentSync } from '@/platform/main/storage/portable-file'
+export { readDocumentSync, writeDocumentSync } from './storage/portable-file'

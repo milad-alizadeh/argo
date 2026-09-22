@@ -9,11 +9,8 @@ import type {
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import type { SessionIndex, SessionSource } from '@/domains/sessions/main'
 import { discoverRoster } from '@/domains/sessions/main'
-import {
-  compactionEndedAt,
-  markCompactingRows,
-} from '@/harnesses/claude/compaction/compaction-roster'
-import type { LiveMessage } from '@/harnesses/claude/drive/channel/live-messages'
+import { compactionEndedAt, markCompactingRows } from '../../compaction/compaction-roster'
+import type { LiveMessage } from '../../drive/channel/live-messages'
 import { readShellOutput } from '../records/shell-output'
 import { readSubagentChain, readSubagentTokens } from '../subagents/subagents'
 import {

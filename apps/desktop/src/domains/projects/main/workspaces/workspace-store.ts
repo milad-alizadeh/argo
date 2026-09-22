@@ -1,12 +1,12 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import type { ProjectDatabase } from '@/domains/projects/main/sqlite-store'
 import {
   managedWorkspaceRecovery,
   projectWorkspaceSelection,
   workspace,
   workspaceKinds,
 } from '../schema'
+import type { ProjectDatabase } from '../sqlite-store'
 
 export type WorkspaceRecord = typeof workspace.$inferSelect
 export type WorkspaceKind = WorkspaceRecord['kind']

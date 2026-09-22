@@ -10,7 +10,7 @@
 import { cp, mkdir, readFile, utimes, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
-import { sessionArchivePath } from '../../src/domains/sessions/main/archive/store/archive-store'
+import { sessionArchivePath } from '@/domains/sessions/main/archive/store/archive-store'
 
 // A run always starts in `apps/desktop`; `import.meta` is unavailable once Playwright loads this as CommonJS.
 const FIXTURES = path.join(process.cwd(), 'mocks', 'cli', 'claude', 'fixtures', 'sessions')

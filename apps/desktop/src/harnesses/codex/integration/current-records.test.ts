@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { parseCodexTranscriptLine } from '@/harnesses/codex/sessions/records'
+import { parseCodexTranscriptLine } from '../sessions/records'
 
 function completed(item: unknown) {
   return parseCodexTranscriptLine(

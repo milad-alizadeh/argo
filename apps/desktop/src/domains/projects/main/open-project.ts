@@ -4,10 +4,10 @@ import {
   type ProjectOpenRequest,
   projectError,
 } from '@/domains/projects/contract/contract'
-import { toSummary } from '@/domains/projects/main/presentation'
-import type { ProjectStore } from '@/domains/projects/main/register-project'
-import { isProjectStoreInvalid } from '@/domains/projects/main/sqlite-store'
 import { isRecord } from '@/shared/validation'
+import { toSummary } from './presentation'
+import type { ProjectStore } from './register-project'
+import { isProjectStoreInvalid } from './sqlite-store'
 
 // A store failure prevents Project opening, while `project.list` can still report an empty cockpit.
 function loadProjects(store: ProjectStore) {

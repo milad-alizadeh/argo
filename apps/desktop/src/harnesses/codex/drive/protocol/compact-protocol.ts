@@ -1,9 +1,5 @@
 import assert from 'node:assert/strict'
-import {
-  protocolRecord,
-  protocolString,
-  type WireMessage,
-} from '@/harnesses/codex/drive/protocol/protocol'
+import { protocolRecord, protocolString, type WireMessage } from './protocol'
 
 export function readCompactStart(value: unknown): void {
   const result = protocolRecord(value, 'Compact start result')

@@ -3,9 +3,9 @@
 // itself and blocks until the flow ends, so login() resolves only then.
 import { type ChildProcess, spawn } from 'node:child_process'
 import type { HarnessSignInDriver } from '@/domains/harness-signin/main/port'
-import { createSystemCodexReadiness } from '@/harnesses/codex/readiness/system-codex-readiness'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 import { runLoginProcess } from '@/harnesses/host/run-login-process'
+import { createSystemCodexReadiness } from './system-codex-readiness'
 
 export type CodexLoginSpawn = (executable: string, args: string[]) => ChildProcess
 

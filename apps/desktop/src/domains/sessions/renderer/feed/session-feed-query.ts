@@ -7,12 +7,9 @@ import {
   type SessionContractError,
   throwSessionContractError,
   throwUnexpectedSessionReply,
-} from '@/domains/sessions/renderer/session-contract-error'
-import {
-  SESSION_REFRESH_MS,
-  sessionFeedQueryKey,
-} from '@/domains/sessions/renderer/session-queries'
-import type { SessionFeed, SessionId } from '@/domains/sessions/renderer/types'
+} from '../session-contract-error'
+import { SESSION_REFRESH_MS, sessionFeedQueryKey } from '../session-queries'
+import type { SessionFeed, SessionId } from '../types'
 
 export async function retrySessionFeed(
   queryClient: QueryClient,

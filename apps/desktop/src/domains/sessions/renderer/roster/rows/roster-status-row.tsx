@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
-import { sessionFailureState } from '@/domains/sessions/renderer/session-failure-state'
-import type { SessionError, SessionRoster } from '@/domains/sessions/renderer/types'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Skeleton } from '@/platform/renderer/components/ui/skeleton'
+import { sessionFailureState } from '../../session-failure-state'
+import type { SessionError, SessionRoster } from '../../types'
 import { ROSTER_ROW_HEIGHT } from './roster-rows'
 
 export function rosterState(

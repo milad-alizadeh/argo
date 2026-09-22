@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createLiveMessages } from '@/harnesses/codex/drive/live-messages'
+import { createLiveMessages } from '../drive/live-messages'
 
 const delta = (itemId: string, text: string, threadId = 'thread-1') => ({
   method: 'item/agentMessage/delta',

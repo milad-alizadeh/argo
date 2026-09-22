@@ -5,17 +5,17 @@ import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { expect as baseExpect } from '@playwright/test'
 import type { ElectronApplication, Page } from 'playwright-core'
-import { writeMockClaudeReadinessCli } from '../../../mocks/cli/claude/mock-claude-readiness-cli'
-import { writeMockCodexReadinessCli } from '../../../mocks/cli/codex/mock-codex-readiness-cli'
-import type { MockSetupDocument } from '../../../mocks/providers/setup/mock-setup-document-loopback'
 import {
   HARNESS_SIGNIN_CLAUDE_EXECUTABLE_ENV,
   HARNESS_SIGNIN_CODEX_EXECUTABLE_ENV,
   HARNESS_SIGNIN_EXPIRES_AFTER_MS_ENV,
-} from '../../../src/domains/harness-signin/contract/proof-protocol'
-import { createProjectStore } from '../../../src/domains/projects/main/sqlite-store'
-import { createDurableDatabase } from '../../../src/platform/main/storage/durable-database'
-import { openSharedDatabase } from '../../../src/platform/main/storage/shared-database'
+} from '@/domains/harness-signin/contract/proof-protocol'
+import { createProjectStore } from '@/domains/projects/main/sqlite-store'
+import { createDurableDatabase } from '@/platform/main/storage/durable-database'
+import { openSharedDatabase } from '@/platform/main/storage/shared-database'
+import { writeMockClaudeReadinessCli } from '../../../mocks/cli/claude/mock-claude-readiness-cli'
+import { writeMockCodexReadinessCli } from '../../../mocks/cli/codex/mock-codex-readiness-cli'
+import type { MockSetupDocument } from '../../../mocks/providers/setup/mock-setup-document-loopback'
 import { test as packagedTest } from '../../packaged-proof'
 import { openHiddenWindow } from '../../packaged-window'
 import {

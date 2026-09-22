@@ -1,4 +1,4 @@
-import type { ClientErrorCode, OperationTable, ReplyOf, RequestOf } from '@/shared/ipc/operations'
+import type { ClientErrorCode, OperationTable, ReplyOf, RequestOf } from './operations'
 
 type EnvelopeFields<Request> = Omit<Request, 'version' | 'type' | 'requestId'>
 

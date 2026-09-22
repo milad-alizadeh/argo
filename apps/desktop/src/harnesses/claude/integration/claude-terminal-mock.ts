@@ -1,4 +1,4 @@
-import { CYCLE_MODE, REDRAW } from '@/harnesses/claude/drive/turn/claude-setup'
+import { CYCLE_MODE, REDRAW } from '../drive/turn/claude-setup'
 
 // The Modes this mock offers, in the order Shift+Tab reaches them.
 export const FOOTERS = ['manual mode on', 'accept edits on', 'plan mode on', 'auto mode on']

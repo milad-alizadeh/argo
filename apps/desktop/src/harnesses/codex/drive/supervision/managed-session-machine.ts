@@ -25,11 +25,8 @@ import {
   readUpdatedThreadName,
   type WireMessage,
   type TurnStatus as WireTurnStatus,
-} from '@/harnesses/codex/drive/protocol'
-import {
-  type CodexChannel,
-  CodexChannelClosedError,
-} from '@/harnesses/codex/drive/supervision/codex-channel'
+} from '../protocol'
+import { type CodexChannel, CodexChannelClosedError } from './codex-channel'
 
 function turnStatusFrom(status: WireTurnStatus): TurnStatus {
   return status === 'inProgress' ? 'running' : status

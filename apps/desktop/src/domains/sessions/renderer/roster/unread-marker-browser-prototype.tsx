@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MemoryRouter } from 'react-router'
-import { sessionRosterRow } from '@/domains/sessions/renderer/session-fixtures'
 import { Loader, type LoaderSize } from '@/platform/renderer/components/loader/loader'
+import { sessionRosterRow } from '../session-fixtures'
 import { SessionRosterItem } from './rows'
 import { SessionsSidebarHeader } from './sidebar'
 

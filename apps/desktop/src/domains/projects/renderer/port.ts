@@ -3,5 +3,5 @@ export {
   type Cockpit,
   type ProjectActions,
   useProjects,
-} from '@/domains/projects/renderer/hooks/use-projects'
-export { useSelectedProject } from '@/domains/projects/renderer/hooks/use-selected-project'
+} from './hooks/use-projects'
+export { useSelectedProject } from './hooks/use-selected-project'

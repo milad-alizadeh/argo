@@ -1,7 +1,7 @@
 // One button in the Session header per kind of background work, each carrying its own count and
 // opening its own list (#1582). The button is the whole permanent footprint: nothing is parked in
 // the inspector, so the Feed keeps its width until the reader asks for something.
-import type { WorkEntry } from '@/domains/sessions/renderer/work/session-work-entries'
+
 import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
 import {
   DropdownMenu,
@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
 import { cn } from '@/platform/renderer/lib/utils'
+import type { WorkEntry } from './session-work-entries'
 
 function Row({
   entry,

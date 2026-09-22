@@ -5,7 +5,7 @@
 // is registered before the dynamic imports below, since a static import would resolve the real
 // `electron` package first.
 import { mock } from 'bun:test'
-import { electronStandIn } from '@/platform/main/test-doubles/electron-stand-in'
+import { electronStandIn } from '../test-doubles/electron-stand-in'
 
 mock.module('electron', () => electronStandIn)
 
@@ -55,7 +55,7 @@ const [
   import('@/domains/projects/contract/operations'),
   import('@/domains/sessions/main/composition/bridge'),
   import('@/domains/sessions/contract/ipc/operations'),
-  import('@/platform/main/appearance'),
+  import('../appearance'),
   import('@/platform/contract/appearance'),
 ])
 

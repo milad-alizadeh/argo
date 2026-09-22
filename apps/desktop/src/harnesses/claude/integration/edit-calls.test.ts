@@ -6,8 +6,8 @@ import {
   feedRequest,
   rowsOf,
 } from '@/domains/sessions/main/observation/reader/reader-test-helpers'
-import { fixtureRoot } from '@/harnesses/claude/integration/session-fixtures'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-sessions'
+import { claudeSessionSource } from '../sessions/discovery/read-sessions'
+import { fixtureRoot } from './session-fixtures'
 
 test('a written and an edited file arrive as edits with their diffs before any result', async (context) => {
   const root = await fixtureRoot(context, ['parityEdit'])

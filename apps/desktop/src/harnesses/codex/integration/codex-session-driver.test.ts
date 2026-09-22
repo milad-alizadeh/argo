@@ -2,11 +2,11 @@
 // codex-session-driver-turns.test.ts to stay under the file's line cap.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { mockChannel, mockChannelFailing } from '../../../../mocks/cli/codex/mock-channel.ts'
 import {
   CodexSessionDriverError,
   createCodexSessionDriver,
-} from '@/harnesses/codex/drive/session/codex-session-driver'
-import { mockChannel, mockChannelFailing } from '../../../../mocks/cli/codex/mock-channel.ts'
+} from '../drive/session/codex-session-driver'
 
 const STARTED_AT = new Date('2026-09-13T15:17:11.000Z')
 

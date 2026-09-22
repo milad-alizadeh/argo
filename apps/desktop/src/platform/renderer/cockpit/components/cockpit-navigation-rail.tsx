@@ -7,7 +7,7 @@ import {
   navigateCommand,
   shortcut,
 } from '@/platform/contract/commands'
-import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
+import { Icon, type IconName } from '../../components/icon/icon'
 
 const navigationIcons: Record<Destination, IconName> = {
   Sessions: 'messages-square',

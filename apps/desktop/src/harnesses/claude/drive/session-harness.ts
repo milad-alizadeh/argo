@@ -3,15 +3,15 @@
 // iterates. No file outside `harnesses/claude` names this driver's shape.
 import path from 'node:path'
 import { SESSION_CLAUDE_EXECUTABLE_ENV } from '@/domains/sessions/contract/proof-protocol'
-import { installCompactionHook } from '@/harnesses/claude/compaction/compaction-hook'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-sessions'
+import type { HarnessRegistration } from '@/harnesses/composition/harness-registration'
+import { installCompactionHook } from '../compaction/compaction-hook'
+import { claudeSessionSource } from '../sessions/discovery/read-sessions'
 import {
   claudeCompactionStartsRoot,
   claudeProcessesRoot,
   claudeSettingsPath,
   claudeTranscriptsRoot,
-} from '@/harnesses/claude/sessions/discovery/roots'
-import type { HarnessRegistration } from '@/harnesses/composition/harness-registration'
+} from '../sessions/discovery/roots'
 import { renameClaudeSession } from './rename-session'
 import { createClaudeDriveAdapter } from './session-drive-adapter'
 import { createSystemClaudeSessionDriver } from './system-claude-session-driver'

@@ -3,21 +3,21 @@ export {
   AccountsDialog,
   AccountsPanel,
   type AccountsPanelProps,
-} from '@/domains/accounts/renderer/components/accounts-dialog'
+} from './components/accounts-dialog'
 export {
   SignInNotice,
   type SignInNoticeProps,
-} from '@/domains/accounts/renderer/components/sign-in-notice'
+} from './components/sign-in-notice'
 export {
   type AccountListing,
   useAccounts,
   useDismissNotice,
-} from '@/domains/accounts/renderer/hooks/use-accounts'
+} from './hooks/use-accounts'
 export {
   capitalized,
   providerPresentation,
-} from '@/domains/accounts/renderer/lib/providers'
+} from './lib/providers'
 export {
   openAccountsDialog,
   useAccountsDialog,
-} from '@/domains/accounts/renderer/state/use-accounts-dialog'
+} from './state/use-accounts-dialog'

@@ -4,10 +4,7 @@ import type {
   ProjectWorkspaceListed,
   WorkspaceSummary,
 } from '@/domains/projects/contract/workspace-messages'
-import {
-  type ProjectContractError,
-  throwProjectContractError,
-} from '@/domains/projects/renderer/project-contract-error'
+import { type ProjectContractError, throwProjectContractError } from '../project-contract-error'
 
 export type WorkspaceCockpit = {
   workspaces: readonly WorkspaceSummary[]

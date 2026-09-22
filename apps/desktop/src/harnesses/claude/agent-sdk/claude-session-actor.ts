@@ -1,25 +1,22 @@
 import { assign, fromPromise, sendTo, setup } from 'xstate'
-import { appendAssistantMessage } from '@/harnesses/claude/agent-sdk/claude-live-messages'
-import { claudeQueryLogic } from '@/harnesses/claude/agent-sdk/claude-query-actor'
-import {
-  initialClaudeSessionContext,
-  sessionFrom,
-} from '@/harnesses/claude/agent-sdk/claude-session-context'
-import { leaseStates } from '@/harnesses/claude/agent-sdk/claude-session-lease-states'
-import { recoveringState } from '@/harnesses/claude/agent-sdk/claude-session-recovery'
+import { appendAssistantMessage } from './claude-live-messages'
+import { claudeQueryLogic } from './claude-query-actor'
+import { initialClaudeSessionContext, sessionFrom } from './claude-session-context'
+import { leaseStates } from './claude-session-lease-states'
+import { recoveringState } from './claude-session-recovery'
 import {
   isAuthenticationFailure,
   isInheritedApiCredential,
   isSubscriptionAuthorized,
-} from '@/harnesses/claude/agent-sdk/subscription-authorization'
+} from './subscription-authorization'
 import type {
   ClaudeSdkMessage,
   ClaudeSessionContext,
   ClaudeSessionEvent,
   ClaudeSessionInput,
-} from '@/harnesses/claude/agent-sdk/types'
+} from './types'
 
-export type { ClaudeQueryFactory, ClaudeSessionInput } from '@/harnesses/claude/agent-sdk/types'
+export type { ClaudeQueryFactory, ClaudeSessionInput } from './types'
 
 const messageParams = ({ event }: { event: { message: ClaudeSdkMessage } }) => ({
   message: event.message,

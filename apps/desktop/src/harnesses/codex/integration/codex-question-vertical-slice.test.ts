@@ -9,9 +9,9 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { decideSessionQuestion, startSession } from '@/domains/sessions/main/drive/drive.ts'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
-import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session/session-drive-adapter'
-import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions.ts'
 import { driverBackedByFixture } from '../../../../mocks/cli/codex/mock-codex-driver.ts'
+import { createCodexDriveAdapter } from '../drive/session/session-drive-adapter'
+import { codexSessionSource } from '../sessions/read-sessions'
 
 async function until<Value>(read: () => Value | null, attempts = 50): Promise<Value> {
   for (let attempt = 0; attempt < attempts; attempt += 1) {

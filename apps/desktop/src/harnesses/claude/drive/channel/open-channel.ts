@@ -1,4 +1,4 @@
-import { claudeCliEnvironment } from '@/harnesses/claude/cli-environment'
+import { claudeCliEnvironment } from '../../cli-environment'
 import { compactionProgress, launchArguments } from '../turn/claude-setup'
 import type { ClaudeTurnRequest } from '../turn/deliver-turn'
 import { type CompanionPart, openCompanionPlugin } from './companion-plugin'

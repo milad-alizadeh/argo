@@ -2,10 +2,10 @@
 // booting the fixture rather than routing test call sites onto the typed clients.
 
 import type { ACCOUNT_OPERATIONS } from '@/domains/accounts/contract/operations'
-import { PROJECT_ID } from '@/domains/accounts/main/test-support/harness-fixtures'
 import type { TicketPriority } from '@/domains/tickets/contract/contract'
 import type { TICKET_OPERATIONS } from '@/domains/tickets/contract/operations'
 import type { createDomainClient } from '@/shared/ipc/client'
+import { PROJECT_ID } from './harness-fixtures'
 
 export type AccountDispatchClient = ReturnType<typeof createDomainClient<typeof ACCOUNT_OPERATIONS>>
 export type TicketDispatchClient = ReturnType<typeof createDomainClient<typeof TICKET_OPERATIONS>>

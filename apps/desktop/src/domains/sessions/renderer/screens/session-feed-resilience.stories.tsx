@@ -2,10 +2,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
-import { SessionsSidebar } from '@/domains/sessions/renderer/roster/sidebar/sessions-sidebar'
-import { SessionScreenView } from '@/domains/sessions/renderer/screens/session-screen-view'
-import { sessionRosterRow } from '@/domains/sessions/renderer/session-fixtures'
 import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
+import { SessionsSidebar } from '../roster/sidebar/sessions-sidebar'
+import { sessionRosterRow } from '../session-fixtures'
+import { SessionScreenView } from './session-screen-view'
 
 const session = sessionRosterRow({
   id: 'flaky-feed-session',

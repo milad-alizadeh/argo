@@ -2,10 +2,10 @@ import type {
   SessionProjection,
   Unsubscribe,
 } from '@/domains/sessions/next/contract/session-projection-contract'
-import type { SessionRegistry } from '@/harnesses/codex/drive/session/codex-session-commands'
-import type { ManagedSessionActor } from '@/harnesses/codex/drive/session/codex-session-projection'
-import { projectionFrom } from '@/harnesses/codex/drive/session/codex-session-projection'
-import type { sharedAppServerRuntimeFor } from '@/harnesses/codex/drive/supervision/codex-shared-app-server-runtime'
+import type { sharedAppServerRuntimeFor } from '../supervision/codex-shared-app-server-runtime'
+import type { SessionRegistry } from './codex-session-commands'
+import type { ManagedSessionActor } from './codex-session-projection'
+import { projectionFrom } from './codex-session-projection'
 
 export function registerCodexSessionActor(options: {
   actor: ManagedSessionActor

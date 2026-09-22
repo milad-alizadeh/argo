@@ -4,17 +4,14 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import type { TestContext } from 'node:test'
-import type { Cipher } from '@/domains/accounts/main/grants'
-import {
-  dispatchAccount,
-  dispatchTicket,
-} from '@/domains/accounts/main/test-support/harness-dispatch'
-import { PROJECT_ID, projectStore } from '@/domains/accounts/main/test-support/harness-fixtures'
-import { accessEndpoints, bootMain } from '@/domains/accounts/main/test-support/harness-main'
 import { type MockGitHub, startMockGitHub } from '../../../../../mocks/providers/github/mock-github'
 import { type MockLinear, startMockLinear } from '../../../../../mocks/providers/linear/mock-linear'
+import type { Cipher } from '../grants'
+import { dispatchAccount, dispatchTicket } from './harness-dispatch'
+import { PROJECT_ID, projectStore } from './harness-fixtures'
+import { accessEndpoints, bootMain } from './harness-main'
 
-export { LIST, OCTOCAT, PROJECT_ID } from '@/domains/accounts/main/test-support/harness-fixtures'
+export { LIST, OCTOCAT, PROJECT_ID } from './harness-fixtures'
 
 // Reversible and never the plaintext, so a test can look for the token in every byte written.
 export function testCipher(): Cipher & { enabled: boolean } {

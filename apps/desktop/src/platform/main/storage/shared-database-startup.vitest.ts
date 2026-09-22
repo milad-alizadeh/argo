@@ -2,11 +2,8 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { expect, test } from 'vitest'
-import { databaseMigrationsFolder } from '@/platform/main/storage/migrations-folder'
-import {
-  openSharedDatabase,
-  rebuildSharedDatabaseIndexes,
-} from '@/platform/main/storage/shared-database'
+import { databaseMigrationsFolder } from './migrations-folder'
+import { openSharedDatabase, rebuildSharedDatabaseIndexes } from './shared-database'
 
 async function temporaryUserData(): Promise<string> {
   return mkdtemp(path.join(os.tmpdir(), 'argo-shared-database-startup-'))

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript/transcript'
-import { answeringEveryNestedCall } from '@/harnesses/codex/sessions/records/nested-results'
-import { readToolRecord } from '@/harnesses/codex/sessions/tool-calls'
+import { readToolRecord } from '../tool-calls'
+import { answeringEveryNestedCall } from './nested-results'
 
 const RECORD = { timestamp: '2026-09-18T17:08:08.000Z' }
 

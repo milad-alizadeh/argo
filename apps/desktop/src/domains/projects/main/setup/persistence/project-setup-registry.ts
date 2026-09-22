@@ -3,13 +3,10 @@ import { validateAcceptedSetupPlan } from '@/domains/projects/contract/setup'
 import {
   inactiveProjectSetupRuntime,
   type ProjectSetupRuntime,
-} from '@/domains/projects/main/setup/actors/project-setup-actors'
-import { isManualProjectDetails } from '@/domains/projects/main/setup/preparation/project-setup-manual-details'
-import type { ProjectSetupEvent } from '@/domains/projects/main/setup/project-setup-machine-types'
-import {
-  type ProjectSetupSnapshot,
-  projectSetupSnapshot,
-} from '@/domains/projects/main/setup/project-setup-snapshot'
+} from '../actors/project-setup-actors'
+import { isManualProjectDetails } from '../preparation/project-setup-manual-details'
+import type { ProjectSetupEvent } from '../project-setup-machine-types'
+import { type ProjectSetupSnapshot, projectSetupSnapshot } from '../project-setup-snapshot'
 import { registeredProjectSetupActor } from './project-setup-registry-hydration'
 
 export type ProjectSetupRecord = {
@@ -22,7 +19,7 @@ export type ProjectSetupRecord = {
   receipts: Record<string, ProjectSetupSnapshot>
 }
 
-export type { ProjectSetupSnapshot } from '@/domains/projects/main/setup/project-setup-snapshot'
+export type { ProjectSetupSnapshot } from '../project-setup-snapshot'
 
 export type ProjectSetupStore = {
   readProjectSetup: (projectId: string) => ProjectSetupRecord | null

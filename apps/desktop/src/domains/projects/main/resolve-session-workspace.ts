@@ -1,8 +1,8 @@
 import { realpath } from 'node:fs/promises'
-import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
-import { createManagedWorkspace } from '@/domains/projects/main/workspaces/create-managed-workspace'
-import { reconcileWorkspaces } from '@/domains/projects/main/workspaces/workspace-reconciliation'
 import type { WorkspaceSelection } from '@/domains/sessions/next/contract/session-contract'
+import type { ProjectStore } from './sqlite-store'
+import { createManagedWorkspace } from './workspaces/create-managed-workspace'
+import { reconcileWorkspaces } from './workspaces/workspace-reconciliation'
 
 function selectedProject(store: ProjectStore) {
   const registry = store.read()

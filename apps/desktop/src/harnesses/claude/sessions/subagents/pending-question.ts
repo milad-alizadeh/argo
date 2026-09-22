@@ -1,5 +1,5 @@
 import { chainMessages, pendingAskCall } from '@/domains/sessions/main'
-import { readSessionFiles } from '@/harnesses/claude/sessions/discovery/discover'
+import { readSessionFiles } from '../discovery/discover'
 
 // The same confirmability status.ts's `isAskPending` reads externally, via the shared
 // `pendingAskCall` predicate: a structured question in the last assistant record that no later

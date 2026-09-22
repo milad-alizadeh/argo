@@ -7,8 +7,8 @@ import {
   rowsOf,
 } from '@/domains/sessions/main/observation/reader/reader-test-helpers'
 import { toolCallsOf } from '@/domains/sessions/main/projection/feed/tool-calls-of'
-import { fixtureRoot } from '@/harnesses/claude/integration/session-fixtures'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-sessions'
+import { claudeSessionSource } from '../sessions/discovery/read-sessions'
+import { fixtureRoot } from './session-fixtures'
 
 test('shows the pattern of a file search for Glob and Grep', async (context) => {
   const root = await fixtureRoot(context, ['fileSearch'])

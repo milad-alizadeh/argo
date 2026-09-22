@@ -1,6 +1,6 @@
 import { fromCallback } from 'xstate'
-import { promoteSetupWorktree } from '@/domains/projects/main/setup/project-setup-finalization'
-import type { ProjectSetupEvent } from '@/domains/projects/main/setup/project-setup-machine-types'
+import { promoteSetupWorktree } from '../project-setup-finalization'
+import type { ProjectSetupEvent } from '../project-setup-machine-types'
 import { startProjectSetupActorTask } from './project-setup-actor-task'
 import type { ProjectSetupServices } from './project-setup-actors'
 

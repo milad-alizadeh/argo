@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { parseTranscriptLine } from '@/harnesses/claude/sessions/records/records'
+import { parseTranscriptLine } from './records'
 
 test('draws pasted text as the prompt, without the wrapper the Harness keeps it in', () => {
   const record = parseTranscriptLine(

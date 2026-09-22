@@ -1,15 +1,15 @@
 import type { SessionPlan, SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import { managedRow, type OwnershipLedger } from '@/domains/sessions/main'
-import { codexLaunchEnvironment } from '@/harnesses/codex/drive/launch-environment'
-import { createLiveMessages, type LiveMessages } from '@/harnesses/codex/drive/live-messages'
+import { codexLaunchEnvironment } from '../launch-environment'
+import { createLiveMessages, type LiveMessages } from '../live-messages'
 import {
   codexApprovalDecision,
   type PendingCodexPermission,
   type PendingCodexQuestion,
-} from '@/harnesses/codex/drive/protocol'
-import { codexNotificationRecorder } from '@/harnesses/codex/drive/protocol/record-notification'
-import { CodexSessionDriverError } from '@/harnesses/codex/drive/session/codex-session-error'
-import type { CodexChannel } from '@/harnesses/codex/drive/supervision/codex-channel'
+} from '../protocol'
+import { codexNotificationRecorder } from '../protocol/record-notification'
+import { CodexSessionDriverError } from '../session/codex-session-error'
+import type { CodexChannel } from './codex-channel'
 
 export type ManagedSession = {
   channel: CodexChannel

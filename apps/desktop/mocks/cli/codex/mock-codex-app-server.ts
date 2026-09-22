@@ -2,7 +2,7 @@ import { createInterface } from 'node:readline'
 import {
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
-} from '../../../src/domains/sessions/contract/proof-protocol.ts'
+} from '@/domains/sessions/contract/proof-protocol'
 import { MOCK_CODEX_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
 import { compactionItem, completeTurn } from './fixtures/mock-codex-responses.ts'
 import { rememberThreadCwd } from './fixtures/mock-codex-transcript.ts'

@@ -9,19 +9,15 @@ import {
   useSessionComposer,
   useSessionPermission,
   useSessionQuestion,
-} from '@/domains/sessions/renderer/composer'
-import { COMPOSER_FOCUS_STATE } from '@/domains/sessions/renderer/composer-focus-state'
-import { workInspectorReveal } from '@/domains/sessions/renderer/inspector/work-inspector-reveal'
-import { sessionHarness } from '@/domains/sessions/renderer/screens/session-screen-state'
-import { useSelectedSession } from '@/domains/sessions/renderer/screens/use-selected-session'
-import { readableSessionId } from '@/domains/sessions/renderer/session-creation'
-import type { SessionEvidence } from '@/domains/sessions/renderer/types'
-import { useSessions } from '@/domains/sessions/renderer/use-sessions'
-import {
-  useDelegationFeed,
-  useDelegationUsage,
-  useShellOutput,
-} from '@/domains/sessions/renderer/work/use-session-work'
+} from '../composer'
+import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
+import { workInspectorReveal } from '../inspector/work-inspector-reveal'
+import { readableSessionId } from '../session-creation'
+import type { SessionEvidence } from '../types'
+import { useSessions } from '../use-sessions'
+import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../work/use-session-work'
+import { sessionHarness } from './session-screen-state'
+import { useSelectedSession } from './use-selected-session'
 import type { WorkSelection } from './work-selection'
 
 const NOTHING_PICKED: WorkSelection = { sessionId: null, subagentId: null, shellId: null }

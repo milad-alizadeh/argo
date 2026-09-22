@@ -3,9 +3,9 @@ import type {
   ProjectSetupSnapshotRequest,
 } from '@/domains/projects/contract/contract'
 import { projectError } from '@/domains/projects/contract/contract'
-import type { ProjectSetupRuntime } from '@/domains/projects/main/setup/actors/project-setup-actors'
-import type { createProjectSetupRegistry } from '@/domains/projects/main/setup/persistence/project-setup-registry'
-import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
+import type { ProjectStore } from '../sqlite-store'
+import type { ProjectSetupRuntime } from './actors/project-setup-actors'
+import type { createProjectSetupRegistry } from './persistence/project-setup-registry'
 import { commandHarnessIsAvailable, eventFor } from './project-setup-command'
 
 type Registry = ReturnType<typeof createProjectSetupRegistry>

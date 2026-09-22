@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { mockChannel, mockChannelFailing } from '../../../../mocks/cli/codex/mock-channel.ts'
 import {
   CodexSessionDriverError,
   createCodexSessionDriver,
-} from '@/harnesses/codex/drive/session/codex-session-driver'
-import type { CodexChannel } from '@/harnesses/codex/drive/supervision/codex-channel'
-import { mockChannel, mockChannelFailing } from '../../../../mocks/cli/codex/mock-channel.ts'
+} from '../drive/session/codex-session-driver'
+import type { CodexChannel } from '../drive/supervision/codex-channel'
 
 const STARTED_AT = new Date('2026-09-13T15:17:11.000Z')
 

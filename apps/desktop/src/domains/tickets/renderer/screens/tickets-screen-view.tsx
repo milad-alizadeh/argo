@@ -1,16 +1,5 @@
 import { useTranslation } from 'react-i18next'
 import { AccountsDialog, useAccountsDialog } from '@/domains/accounts/renderer/port'
-import {
-  ConnectSourceFields,
-  ConnectSourceForm,
-} from '@/domains/tickets/renderer/connection/connect-source-form'
-import { TicketDeck } from '@/domains/tickets/renderer/detail/ticket-deck'
-import {
-  type TicketsScreenProps,
-  type TicketsView,
-  useTicketsView,
-} from '@/domains/tickets/renderer/hooks/use-tickets-view'
-import { TicketProblem } from '@/domains/tickets/renderer/status/ticket-problem'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   Empty,
@@ -20,6 +9,14 @@ import {
   EmptyTitle,
 } from '@/platform/renderer/components/ui/empty'
 import { Skeleton } from '@/platform/renderer/components/ui/skeleton'
+import { ConnectSourceFields, ConnectSourceForm } from '../connection/connect-source-form'
+import { TicketDeck } from '../detail/ticket-deck'
+import {
+  type TicketsScreenProps,
+  type TicketsView,
+  useTicketsView,
+} from '../hooks/use-tickets-view'
+import { TicketProblem } from '../status/ticket-problem'
 
 // The skeleton takes the backlog's own geometry, so the rows do not jump when they arrive.
 function Loading({ label }: { label: string }) {

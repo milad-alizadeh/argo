@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import type { CodexThreadStatus } from '@/harnesses/codex/drive/managed-status'
+import type { CodexThreadStatus } from '../managed-status'
 import { protocolRecord, protocolString, readTurn, type WireMessage } from './protocol'
 
 export function readCompletedTurn(message: WireMessage) {

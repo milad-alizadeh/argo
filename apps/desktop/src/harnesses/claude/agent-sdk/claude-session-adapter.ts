@@ -5,19 +5,16 @@ import type {
   Unsubscribe,
 } from '@/domains/sessions/next/contract/session-projection-contract'
 import type { SessionService } from '@/domains/sessions/next/main/session-service'
-import { acceptedSessionOutcome } from '@/harnesses/claude/agent-sdk/accepted-session-outcome'
-import { createClaudeQuery } from '@/harnesses/claude/agent-sdk/claude-agent-sdk'
-import { createClaudeSessionMachine } from '@/harnesses/claude/agent-sdk/claude-session-actor'
-import type { ClaudeSessionAdapter } from '@/harnesses/claude/agent-sdk/claude-session-adapter-contract'
-import { eventFor } from '@/harnesses/claude/agent-sdk/claude-session-command-event'
-import { keyOf } from '@/harnesses/claude/agent-sdk/claude-session-key'
-import {
-  type ClaudeSessionActor,
-  projectionFrom,
-} from '@/harnesses/claude/agent-sdk/claude-session-projection'
-import { sessionRegistry } from '@/harnesses/claude/agent-sdk/claude-session-registry'
-import { sendWhenManaged } from '@/harnesses/claude/agent-sdk/send-when-managed'
-import type { ClaudeQueryFactory } from '@/harnesses/claude/agent-sdk/types'
+import { acceptedSessionOutcome } from './accepted-session-outcome'
+import { createClaudeQuery } from './claude-agent-sdk'
+import { createClaudeSessionMachine } from './claude-session-actor'
+import type { ClaudeSessionAdapter } from './claude-session-adapter-contract'
+import { eventFor } from './claude-session-command-event'
+import { keyOf } from './claude-session-key'
+import { type ClaudeSessionActor, projectionFrom } from './claude-session-projection'
+import { sessionRegistry } from './claude-session-registry'
+import { sendWhenManaged } from './send-when-managed'
+import type { ClaudeQueryFactory } from './types'
 
 export function watchedChanges(changed: Set<() => void>) {
   return (listener: () => void) => {

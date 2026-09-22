@@ -1,13 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
-import {
-  backlog,
-  engine,
-  standalone,
-  wayfinder,
-} from '@/domains/tickets/renderer/detail/ticket-fixtures'
-import { TicketList } from '@/domains/tickets/renderer/sidebar/ticket-list'
-import { STATUSES } from '@/domains/tickets/renderer/status/status-fixtures'
+import { backlog, engine, standalone, wayfinder } from '../detail/ticket-fixtures'
+import { STATUSES } from '../status/status-fixtures'
+import { TicketList } from './ticket-list'
 
 const longTicket = {
   ...wayfinder,

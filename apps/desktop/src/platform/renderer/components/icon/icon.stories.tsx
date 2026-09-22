@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { Icon } from '@/platform/renderer/components/icon/icon'
-import { ICONS, type IconName } from '@/platform/renderer/components/icon/icon-registry'
+import { Icon } from './icon'
+import { ICONS, type IconName } from './icon-registry'
 
 const meta = {
   title: 'Components/Icon',

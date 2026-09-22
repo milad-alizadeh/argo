@@ -4,8 +4,8 @@
 import { readdir } from 'node:fs/promises'
 import path from 'node:path'
 import { createTranscriptDiscoverer, type TranscriptDiscovery } from '@/domains/sessions/main'
-import { normalizeClaudeRecords } from '@/harnesses/claude/sessions/discovery/normalize-records'
-import { parseTranscriptLine } from '@/harnesses/claude/sessions/records/records'
+import { parseTranscriptLine } from '../records/records'
+import { normalizeClaudeRecords } from './normalize-records'
 
 export type Discovery = TranscriptDiscovery
 

@@ -1,7 +1,7 @@
-import { linkRow, stateIcon } from '@/domains/tickets/renderer/detail/ticket-detail-links'
-import { TicketDetailSection } from '@/domains/tickets/renderer/detail/ticket-detail-section'
-import type { LinkedSession } from '@/domains/tickets/renderer/hooks/use-linked-sessions'
 import { Icon } from '@/platform/renderer/components/icon/icon'
+import type { LinkedSession } from '../hooks/use-linked-sessions'
+import { linkRow, stateIcon } from './ticket-detail-links'
+import { TicketDetailSection } from './ticket-detail-section'
 
 export function LinkedSessions({
   sessions,

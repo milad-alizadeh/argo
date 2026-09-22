@@ -4,7 +4,7 @@
 import type { EditorConfig, LexicalNode, NodeKey, SerializedLexicalNode } from 'lexical'
 import { DecoratorNode } from 'lexical'
 import type { ReactNode } from 'react'
-import { SkillBadge } from '@/domains/sessions/renderer/prompt/prompt-text'
+import { SkillBadge } from '../../prompt/prompt-text'
 
 export type SerializedSkillMentionNode = SerializedLexicalNode & {
   skillName: string

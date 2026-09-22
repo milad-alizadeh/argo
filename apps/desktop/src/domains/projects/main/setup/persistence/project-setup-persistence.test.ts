@@ -5,11 +5,11 @@ import os from 'node:os'
 import path from 'node:path'
 import { type TestContext, test } from 'node:test'
 import { drizzle } from 'drizzle-orm/bun-sqlite'
-import { createProjectStore } from '@/domains/projects/main/sqlite-store'
 import {
   migrateTestDatabase,
   projectMigrationsFolder,
 } from '../../../../../../test-fixtures/projects/migrate-test-database'
+import { createProjectStore } from '../../sqlite-store'
 import { createProjectSetupRegistry } from './project-setup-registry'
 
 test('restores the exact ready manual setup after a restart', async (context) => {

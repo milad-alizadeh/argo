@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { stitchChains } from '@/domains/sessions/contract/model/transcript/chains'
-import { fixtureFile, fixtureFiles } from '@/harnesses/claude/integration/session-fixtures'
+import { fixtureFile, fixtureFiles } from './session-fixtures'
 
 async function chainsOf(names) {
   return stitchChains(await fixtureFiles(names))

@@ -5,7 +5,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { sessionFeedReplySchema } from '@/domains/sessions/contract/ipc/contract'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader/reader'
-import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+import { codexSessionSource } from './read-sessions'
 
 test('reads a spawned agent transcript from its parent delegation', async (context) => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-delegation-'))

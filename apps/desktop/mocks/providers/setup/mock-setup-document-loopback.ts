@@ -6,7 +6,7 @@ import {
   parseSetupDocument,
   type SetupDocument,
   setupConfiguration,
-} from '../../../src/domains/projects/contract/setup'
+} from '@/domains/projects/contract/setup'
 
 const documentPath = path.resolve(
   process.cwd(),

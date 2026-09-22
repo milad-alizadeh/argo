@@ -6,9 +6,9 @@ import path from 'node:path'
 import { stitchChains } from '@/domains/sessions/contract/model/transcript/chains'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { projectRosterRow } from '@/domains/sessions/main/projection/roster/roster'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-sessions'
-import { readTranscriptFile } from '@/harnesses/claude/sessions/discovery/transcript-file'
 import { fixtureLines, writeFixtureTree } from '../../../../mocks/sessions/mock-transcript-files'
+import { claudeSessionSource } from '../sessions/discovery/read-sessions'
+import { readTranscriptFile } from '../sessions/discovery/transcript-file'
 
 export const unscopedListing = {
   version: 1,

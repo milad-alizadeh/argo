@@ -2,14 +2,10 @@ import assert from 'node:assert/strict'
 import path from 'node:path'
 import { test } from 'node:test'
 import {
-  gitCommonDirectory,
-  linkedWorktreePaths,
-  mainWorktreePath,
-} from '@/platform/main/git-worktrees'
-import {
   addLinkedWorktree,
   workspaceRepoFixture,
 } from '../../../test-fixtures/projects/workspaces/workspace-repo.fixture'
+import { gitCommonDirectory, linkedWorktreePaths, mainWorktreePath } from './git-worktrees'
 
 test('reads the main worktree back from its own common directory', async (context) => {
   const { project } = await workspaceRepoFixture(context)

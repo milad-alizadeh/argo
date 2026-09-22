@@ -1,5 +1,4 @@
 import type { BrowserWindow } from 'electron'
-import { isTrustedRendererFrame } from '@/platform/main/security/is-trusted-renderer-frame'
 import type {
   MainErrorCode,
   Operation,
@@ -10,6 +9,7 @@ import type {
 } from '@/shared/ipc/operations'
 import { isOtherVersion } from '@/shared/messages'
 import { requestIdentifier } from '@/shared/validation'
+import { isTrustedRendererFrame } from '../security/is-trusted-renderer-frame'
 
 export function registerDomainHandlers<Operations extends OperationTable, Context>(config: {
   window: BrowserWindow

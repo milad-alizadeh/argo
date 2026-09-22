@@ -2,7 +2,7 @@
 // main process, so the menu and the on-screen control reach the one action through one contract.
 import { type BrowserWindow, Menu, type MenuItemConstructorOptions } from 'electron'
 import { COMMAND_CHANNEL, type MenuEntry } from '@/platform/contract/commands'
-import { menuTemplate } from '@/platform/main/menu-template'
+import { menuTemplate } from './menu-template'
 
 function toMenuItem(entry: MenuEntry, window: BrowserWindow): MenuItemConstructorOptions {
   const { command, submenu, role, ...rest } = entry

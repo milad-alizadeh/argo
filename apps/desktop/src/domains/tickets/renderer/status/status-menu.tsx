@@ -1,8 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
 import type { TicketStatus } from '@/domains/tickets/contract/contract'
-import type { SourcePresentation } from '@/domains/tickets/renderer/lib/sources'
-import { StatusIcon, StatusMark } from '@/domains/tickets/renderer/status/ticket-status'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   DropdownMenu,
@@ -11,6 +9,8 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
+import type { SourcePresentation } from '../lib/sources'
+import { StatusIcon, StatusMark } from './ticket-status'
 
 export type StatusMenuProps = {
   status: TicketStatus

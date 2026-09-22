@@ -1,15 +1,12 @@
-import { waitForChannel } from '@/harnesses/codex/drive/session/codex-session-launch'
-import type { AppServerSupervisor } from '@/harnesses/codex/drive/supervision/app-server-supervisor-machine'
-import {
-  createRolloutInvalidation,
-  watchRolloutSignals,
-} from '@/harnesses/codex/history/rollout-signal'
+import { createRolloutInvalidation, watchRolloutSignals } from '../../history/rollout-signal'
 import {
   CodexHistoryUnavailableError,
   type HistoryTransport,
   requestStoredHistory,
-} from '@/harnesses/codex/history/vendor-history'
-import { createWatchedCodexSessions } from '@/harnesses/codex/history/watched-session'
+} from '../../history/vendor-history'
+import { createWatchedCodexSessions } from '../../history/watched-session'
+import type { AppServerSupervisor } from '../supervision/app-server-supervisor-machine'
+import { waitForChannel } from './codex-session-launch'
 
 export function createCodexSessionHistory(options: {
   supervisor: AppServerSupervisor

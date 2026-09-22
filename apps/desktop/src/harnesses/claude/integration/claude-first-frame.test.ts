@@ -4,8 +4,8 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { createOwnershipLedger } from '@/domains/sessions/main/lifecycle/ownership/ownership-ledger'
-import { FIRST_FRAME_TIMEOUT_MS } from '@/harnesses/claude/drive/channel/first-frame'
-import { createClaudeSessionDriver } from '@/harnesses/claude/drive/claude-session-driver.ts'
+import { FIRST_FRAME_TIMEOUT_MS } from '../drive/channel/first-frame'
+import { createClaudeSessionDriver } from '../drive/claude-session-driver'
 import {
   ledgerFile,
   mockPermissionGate,
@@ -14,7 +14,7 @@ import {
   PASTED,
   STARTED_AT,
   settle,
-} from '@/harnesses/claude/integration/claude-driver-launch.ts'
+} from './claude-driver-launch'
 
 const FIRST_FRAME = '\u001b[?2026h\u001b[?25l> \u001b[?25h\u001b[?2026l'
 const turn = (prompt: string) => ({ prompt, setup: OPENING })

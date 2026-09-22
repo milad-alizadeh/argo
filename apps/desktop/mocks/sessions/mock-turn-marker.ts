@@ -4,7 +4,7 @@ import {
   rekeyEntry,
   type TurnMarkerApi,
   type TurnMarkerEntries,
-} from '../../src/domains/sessions/renderer/composer/hooks/use-turn-marker'
+} from '@/domains/sessions/renderer/composer/hooks/use-turn-marker'
 
 export function mockTurnMarker() {
   const marker = {

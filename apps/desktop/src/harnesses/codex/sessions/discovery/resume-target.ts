@@ -1,4 +1,4 @@
-import { readSessionFiles } from '@/harnesses/codex/sessions/discovery/discover'
+import { readSessionFiles } from './discover'
 
 // A live channel needs the folder its last Turn ran in. Codex writes it only once, on the
 // `session_meta` record every file opens with, and never again on the message records

@@ -3,10 +3,7 @@ import {
   CODEX_MODELS,
   codexEfforts,
 } from '@/domains/sessions/contract/codex-turn-setup'
-import type {
-  ModeChoice,
-  TurnSetupChoices,
-} from '@/domains/sessions/renderer/composer/turn-setup/turn-setup'
+import type { ModeChoice, TurnSetupChoices } from './turn-setup'
 
 const effortLabels: Record<(typeof CODEX_EFFORTS)[number], string> = {
   low: 'Low',

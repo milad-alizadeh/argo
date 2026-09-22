@@ -3,6 +3,6 @@
 // Session file names a `harness`.
 import { claudeHarness } from '@/harnesses/claude/drive/session-harness'
 import { codexHarness } from '@/harnesses/codex/drive/session/session-harness'
-import type { HarnessRegistration } from '@/harnesses/composition/harness-registration'
+import type { HarnessRegistration } from './harness-registration'
 
 export const sessionHarnesses: readonly HarnessRegistration[] = [claudeHarness, codexHarness]

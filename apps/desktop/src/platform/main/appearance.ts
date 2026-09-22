@@ -13,8 +13,8 @@ import {
   DEFAULT_APPEARANCE,
   windowBackground,
 } from '@/platform/contract/appearance'
-import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
-import { otherFields, readDocument, writeDocument } from '@/platform/main/storage/portable-file'
+import { registerDomainHandlers } from './ipc/register-domain-handlers'
+import { otherFields, readDocument, writeDocument } from './storage/portable-file'
 
 const state = (): AppearanceState => ({
   appearance: nativeTheme.themeSource,

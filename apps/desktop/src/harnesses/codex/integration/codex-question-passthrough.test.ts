@@ -6,8 +6,8 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { sendSession, startSession } from '@/domains/sessions/main/drive/drive.ts'
-import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session/session-drive-adapter'
 import { driverBackedByFixture } from '../../../../mocks/cli/codex/mock-codex-driver.ts'
+import { createCodexDriveAdapter } from '../drive/session/session-drive-adapter'
 
 test('a Codex Turn still carries the shared editor markdown to the transport when it is not asking', async () => {
   const echoDir = mkdtempSync(path.join(os.tmpdir(), 'argo-codex-question-echo-'))

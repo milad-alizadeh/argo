@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 
-import { SessionEvidenceInspector } from '@/domains/sessions/renderer/inspector/session-evidence-inspector'
+import { SessionEvidenceInspector } from './session-evidence-inspector'
 
 const SKILL_PATH = '/storybook/.claude/skills/implement/SKILL.md'
 const SKILL_FILE = [

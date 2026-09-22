@@ -1,6 +1,6 @@
-import { createProjectSetupActor } from '@/domains/projects/main/setup/project-setup-actor'
-import { projectSetupSnapshot } from '@/domains/projects/main/setup/project-setup-snapshot'
-import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
+import type { ProjectStore } from '../../sqlite-store'
+import { createProjectSetupActor } from '../project-setup-actor'
+import { projectSetupSnapshot } from '../project-setup-snapshot'
 import type {
   ProjectSetupRegistryState,
   ProjectSetupStore,

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CodeBlock } from '@/domains/sessions/renderer/ai-elements/code-block'
-import { detectCodeLanguageFromPath } from '@/domains/sessions/renderer/feed/content/code-language'
-import { FeedMarkdown } from '@/domains/sessions/renderer/feed/content/feed-markdown'
-import type { SessionFileEvidence } from '@/domains/sessions/renderer/types'
+import { CodeBlock } from '../ai-elements/code-block'
+import { detectCodeLanguageFromPath } from '../feed/content/code-language'
+import { FeedMarkdown } from '../feed/content/feed-markdown'
+import type { SessionFileEvidence } from '../types'
 
 const MARKDOWN_FILE = /\.(md|markdown)$/i
 

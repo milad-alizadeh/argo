@@ -6,8 +6,8 @@ import {
   feedRequest,
   rowsOf,
 } from '@/domains/sessions/main/observation/reader/reader-test-helpers'
-import { fixtureRoot, fixtureRosterRow } from '@/harnesses/claude/integration/session-fixtures'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-sessions'
+import { claudeSessionSource } from '../sessions/discovery/read-sessions'
+import { fixtureRoot, fixtureRosterRow } from './session-fixtures'
 
 // A background command runs until something ends it; the Harness's `killed` and a stop call both read
 // as `interrupted`, and the stop call draws no row of its own (#2443).

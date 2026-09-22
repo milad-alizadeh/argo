@@ -1,5 +1,5 @@
-import type { RequestParams } from '../../../src/harnesses/codex/drive/protocol'
-import type { CodexChannel } from '../../../src/harnesses/codex/drive/supervision/codex-channel.ts'
+import type { RequestParams } from '@/harnesses/codex/drive/protocol'
+import type { CodexChannel } from '@/harnesses/codex/drive/supervision/codex-channel'
 
 // An in-memory `CodexChannel`, shared by the driver's unit tests: it answers just enough of the
 // verbs `codex-session-driver.ts` sends to stand a managed Session up.

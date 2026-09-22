@@ -3,7 +3,7 @@ import {
   readAgentMessageDelta,
   readCompletedAgentMessage,
   type WireMessage,
-} from '@/harnesses/codex/drive/protocol'
+} from './protocol'
 
 // An agent message as the app-server has streamed it so far; `id` is its rollout message id.
 export type LiveMessage = { id: string; text: string }

@@ -1,29 +1,20 @@
 import type { WorkspaceSelection } from '@/domains/sessions/next/contract/session-contract'
-import type { CodexSessionAdapter } from '@/harnesses/codex/drive/session/codex-session-adapter-contract'
-import type { AppServerSupervisorDeps } from '@/harnesses/codex/drive/supervision/app-server-supervisor-machine'
+import type { AppServerSupervisorDeps } from '../supervision/app-server-supervisor-machine'
+import type { CodexSessionAdapter } from './codex-session-adapter-contract'
 
-export type { CodexSessionAdapter } from '@/harnesses/codex/drive/session/codex-session-adapter-contract'
+export type { CodexSessionAdapter } from './codex-session-adapter-contract'
 
-import { closeCodexSessionAdapter } from '@/harnesses/codex/drive/codex-session-adapter-close'
-import {
-  executeCommand,
-  type SessionRegistry,
-} from '@/harnesses/codex/drive/session/codex-session-commands'
-import { CodexSessionDriverError } from '@/harnesses/codex/drive/session/codex-session-error'
-import { createCodexSessionHistory } from '@/harnesses/codex/drive/session/codex-session-history'
-import {
-  resumeCodexSession,
-  startCodexSession,
-} from '@/harnesses/codex/drive/session/codex-session-launch'
-import type { ManagedSessionActor } from '@/harnesses/codex/drive/session/codex-session-projection'
-import {
-  registerCodexSessionActor,
-  subscribeToCodexSession,
-} from '@/harnesses/codex/drive/session/codex-session-registration'
-import { sharedAppServerRuntimeFor } from '@/harnesses/codex/drive/supervision/codex-shared-app-server-runtime'
-import type { ManagedSessionDeps } from '@/harnesses/codex/drive/supervision/managed-session-machine'
-import { createManagedSessionMachine } from '@/harnesses/codex/drive/supervision/managed-session-machine'
 import { createWatchedChanges } from '@/harnesses/composition/watched-changes'
+import { closeCodexSessionAdapter } from '../codex-session-adapter-close'
+import { sharedAppServerRuntimeFor } from '../supervision/codex-shared-app-server-runtime'
+import type { ManagedSessionDeps } from '../supervision/managed-session-machine'
+import { createManagedSessionMachine } from '../supervision/managed-session-machine'
+import { executeCommand, type SessionRegistry } from './codex-session-commands'
+import { CodexSessionDriverError } from './codex-session-error'
+import { createCodexSessionHistory } from './codex-session-history'
+import { resumeCodexSession, startCodexSession } from './codex-session-launch'
+import type { ManagedSessionActor } from './codex-session-projection'
+import { registerCodexSessionActor, subscribeToCodexSession } from './codex-session-registration'
 
 function attachRegistry(
   appServer: ReturnType<typeof sharedAppServerRuntimeFor>,

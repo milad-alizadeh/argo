@@ -6,18 +6,15 @@ import type {
   SessionShellOutput,
   SubagentUsageFacts,
 } from '@/domains/sessions/contract/model/wire/background-work-contract'
-import {
-  retrySessionFeed,
-  sessionFeedQuery,
-} from '@/domains/sessions/renderer/feed/session-feed-query'
-import type { SessionContractError } from '@/domains/sessions/renderer/session-contract-error'
+import { retrySessionFeed, sessionFeedQuery } from '../feed/session-feed-query'
+import type { SessionContractError } from '../session-contract-error'
 import {
   SESSION_REFRESH_MS,
   sessionShellOutputQueryKey,
   sessionSubagentUsageQueryKey,
-} from '@/domains/sessions/renderer/session-queries'
-import type { SessionFeed, SessionId } from '@/domains/sessions/renderer/types'
-import { useWatchedQueries } from '@/domains/sessions/renderer/use-watched-topic'
+} from '../session-queries'
+import type { SessionFeed, SessionId } from '../types'
+import { useWatchedQueries } from '../use-watched-topic'
 
 // Each read re-parses every Subagent transcript the Session has, so a Session whose Subagents have
 // all come back is read once rather than on every pass.

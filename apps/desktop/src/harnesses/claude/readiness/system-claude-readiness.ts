@@ -1,9 +1,9 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import type { HarnessReadiness } from '@/domains/harness-signin/contract/contract'
-import { claudeCliEnvironment } from '@/harnesses/claude/cli-environment'
-import { claudeReadiness } from '@/harnesses/claude/readiness/claude-readiness'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
+import { claudeCliEnvironment } from '../cli-environment'
+import { claudeReadiness } from './claude-readiness'
 
 const execFileAsync = promisify(execFile)
 

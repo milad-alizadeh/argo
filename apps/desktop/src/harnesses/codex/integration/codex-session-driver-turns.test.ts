@@ -3,8 +3,8 @@
 // across a quick reply.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createCodexSessionDriver } from '@/harnesses/codex/drive/session/codex-session-driver'
 import { mockChannel } from '../../../../mocks/cli/codex/mock-channel.ts'
+import { createCodexSessionDriver } from '../drive/session/codex-session-driver'
 
 const STARTED_AT = new Date('2026-09-13T15:17:11.000Z')
 

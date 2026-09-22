@@ -2,7 +2,7 @@
 // through (#1582). The pane states the command's own words and its current state.
 import { useTranslation } from 'react-i18next'
 import type { SessionShellCommand } from '@/domains/sessions/contract/model/models'
-import { InspectorTerminal } from '@/domains/sessions/renderer/inspector/inspector-terminal'
+import { InspectorTerminal } from './inspector-terminal'
 
 export function SessionShellInspector({
   command,

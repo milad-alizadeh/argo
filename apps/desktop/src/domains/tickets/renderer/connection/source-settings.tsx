@@ -2,7 +2,6 @@ import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { providerPresentation } from '@/domains/accounts/renderer/port'
 import type { ConnectionSummary } from '@/domains/tickets/contract/contract'
-import { ConnectionStatusMark } from '@/domains/tickets/renderer/connection/connection-status-mark'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Loader } from '@/platform/renderer/components/loader/loader'
 import { Alert, AlertDescription } from '@/platform/renderer/components/ui/alert'
@@ -18,6 +17,7 @@ import {
 import { useContractText } from '@/platform/renderer/i18n/contract-text'
 import { useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
+import { ConnectionStatusMark } from './connection-status-mark'
 
 export type SourceSettingsProps = {
   // Undefined while the Connection is read; null when the Project has none.

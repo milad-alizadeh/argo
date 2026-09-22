@@ -1,5 +1,5 @@
 import type { SessionAdapterRegistration } from '@/domains/sessions/next/main/session-adapter-registry'
-import { createClaudeSessionAdapter } from '@/harnesses/claude/agent-sdk/claude-session-adapter'
+import { createClaudeSessionAdapter } from './claude-session-adapter'
 
 export const claudeSessionAdapterRegistration: SessionAdapterRegistration = {
   harness: 'claude',

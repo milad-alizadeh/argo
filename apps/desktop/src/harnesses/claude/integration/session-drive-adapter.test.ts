@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { ClaudeSessionDriverError } from '@/harnesses/claude/drive/channel/driver-error'
-import { createClaudeDriveAdapter } from '@/harnesses/claude/drive/session-drive-adapter.ts'
-import type { ClaudeTurnRequest } from '@/harnesses/claude/drive/turn/deliver-turn'
 import { mockDriver, sessionId } from '../../../../mocks/cli/claude/mock-claude-driver.ts'
+import { ClaudeSessionDriverError } from '../drive/channel/driver-error'
+import { createClaudeDriveAdapter } from '../drive/session-drive-adapter'
+import type { ClaudeTurnRequest } from '../drive/turn/deliver-turn'
 
 const setup = { model: 'haiku', effort: 'low', mode: 'plan' } as const
 

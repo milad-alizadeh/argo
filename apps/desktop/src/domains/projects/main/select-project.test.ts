@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { registerProject } from '@/domains/projects/main/register-project'
-import { selectProject } from '@/domains/projects/main/select-project'
 import { fixture, register, repository } from '../../../../mocks/projects/mock-registration'
+import { registerProject } from './register-project'
+import { selectProject } from './select-project'
 
 const select = (id, projectId) => ({
   version: 1,

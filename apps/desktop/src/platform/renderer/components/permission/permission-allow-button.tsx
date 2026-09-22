@@ -1,13 +1,13 @@
 import { useTranslation } from 'react-i18next'
-import { Icon } from '@/platform/renderer/components/icon/icon'
-import { Button } from '@/platform/renderer/components/ui/button'
-import { ButtonGroup, ButtonGroupSeparator } from '@/platform/renderer/components/ui/button-group'
+import { Icon } from '../icon/icon'
+import { Button } from '../ui/button'
+import { ButtonGroup, ButtonGroupSeparator } from '../ui/button-group'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/platform/renderer/components/ui/dropdown-menu'
+} from '../ui/dropdown-menu'
 
 // What each Harness's standing allow covers: Claude's gate remembers similar calls, Codex the Session.
 const STANDING_ALLOW = { claude: 'permission.allowSimilar', codex: 'permission.allowAll' } as const

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import type { CodeLanguage } from '@/domains/sessions/renderer/feed/content/code-language'
 import { Icon } from '@/platform/renderer/components/icon/icon'
+import type { CodeLanguage } from './code-language'
 
 export function CodeLanguageIcon({ language }: { language: CodeLanguage | null }) {
   const { t } = useTranslation('sessions')

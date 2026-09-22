@@ -1,6 +1,6 @@
-import type { WireMessage } from '@/harnesses/codex/drive/protocol/protocol'
-import { protocolRecord, protocolString } from '@/harnesses/codex/drive/protocol/protocol'
-import type { AgentMessageText } from '@/harnesses/codex/drive/protocol/protocol-notifications'
+import type { WireMessage } from './protocol'
+import { protocolRecord, protocolString } from './protocol'
+import type { AgentMessageText } from './protocol-notifications'
 
 export function readCompletedAgentMessage(message: WireMessage): AgentMessageText | undefined {
   if (!('method' in message) || message.method !== 'item/completed') return undefined

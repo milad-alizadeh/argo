@@ -4,9 +4,9 @@ import type {
   ToolResult,
   TranscriptRecord,
 } from '@/domains/sessions/contract/model/transcript/transcript'
-import { readImage } from '@/harnesses/codex/sessions/prompt-images'
-import { readHarnessEnvelopes } from '@/harnesses/codex/sessions/records/harness-envelopes'
 import { isRecord } from '@/shared/validation'
+import { readImage } from '../prompt-images'
+import { readHarnessEnvelopes } from './harness-envelopes'
 
 export function messageBlocks(
   value: unknown,

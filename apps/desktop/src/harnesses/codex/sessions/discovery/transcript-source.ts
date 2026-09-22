@@ -1,6 +1,6 @@
-import { codexStatePath } from '@/harnesses/codex/sessions/discovery/roots'
-import { codexSessionSource, type ReaderOptions } from '@/harnesses/codex/sessions/read-sessions'
-import { codexThreadNames } from '@/harnesses/codex/sessions/records/state-store'
+import { codexSessionSource, type ReaderOptions } from '../read-sessions'
+import { codexThreadNames } from '../records/state-store'
+import { codexStatePath } from './roots'
 
 // Codex Desktop's thread names live beside the rollouts (ADR-0042). Both Codex sources read them.
 export function codexTranscriptSource(
