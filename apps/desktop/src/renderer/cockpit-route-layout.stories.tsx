@@ -40,11 +40,11 @@ function CockpitRouteLayoutStory() {
   )
 }
 
-const meta: Meta<typeof CockpitRouteLayoutStory> = {
+const meta = {
   title: 'Cockpit/Route Layout',
   component: CockpitRouteLayoutStory,
   parameters: { layout: 'fullscreen' },
-}
+} satisfies Meta<typeof CockpitRouteLayoutStory>
 
 export default meta
 type Story = StoryObj<typeof CockpitRouteLayoutStory>

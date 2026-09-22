@@ -55,7 +55,7 @@ function fileDataTransfer(names: string[]) {
   return dataTransfer
 }
 
-const meta: Meta<typeof ComposerStory> = {
+const meta = {
   title: 'Sessions/Composer/Attachments',
   component: ComposerStory,
   decorators: [
@@ -69,7 +69,7 @@ const meta: Meta<typeof ComposerStory> = {
   beforeEach: () => {
     useComposerStore.setState(useComposerStore.getInitialState())
   },
-}
+} satisfies Meta<typeof ComposerStory>
 
 export default meta
 type Story = StoryObj<typeof ComposerStory>

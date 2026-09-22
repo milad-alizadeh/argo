@@ -48,10 +48,10 @@ function WorkspaceStory() {
   )
 }
 
-const meta: Meta<typeof WorkspaceStory> = {
+const meta = {
   title: 'Sessions/Composer/Workspace Menu',
   component: WorkspaceStory,
-}
+} satisfies Meta<typeof WorkspaceStory>
 
 export default meta
 type Story = StoryObj<typeof WorkspaceStory>

@@ -28,10 +28,10 @@ function RunSetupStory({ started = true }: { started?: boolean }) {
   )
 }
 
-const meta: Meta<typeof RunSetupStory> = {
+const meta = {
   title: 'Sessions/Composer/Run Setup Menu',
   component: RunSetupStory,
-}
+} satisfies Meta<typeof RunSetupStory>
 
 export default meta
 type Story = StoryObj<typeof RunSetupStory>

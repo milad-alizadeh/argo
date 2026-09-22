@@ -14,7 +14,7 @@ const WATCH = sessionShellCommand({
   outputPath: '/tmp/argo-shell/watch.output',
 })
 
-const meta: Meta<typeof SessionShellInspector> = {
+const meta = {
   title: 'Sessions/Screen/Shell Inspector',
   component: SessionShellInspector,
   parameters: { layout: 'fullscreen' },
@@ -26,7 +26,7 @@ const meta: Meta<typeof SessionShellInspector> = {
       </div>
     ),
   ],
-}
+} satisfies Meta<typeof SessionShellInspector>
 
 export default meta
 type Story = StoryObj<typeof SessionShellInspector>

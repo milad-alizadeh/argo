@@ -45,7 +45,7 @@ const FEED = {
   ],
 } satisfies SessionFeed
 
-const meta: Meta<typeof SessionDelegationInspector> = {
+const meta = {
   title: 'Sessions/Screen/Subagent Inspector',
   component: SessionDelegationInspector,
   parameters: { layout: 'fullscreen' },
@@ -56,7 +56,7 @@ const meta: Meta<typeof SessionDelegationInspector> = {
       </div>
     ),
   ],
-}
+} satisfies Meta<typeof SessionDelegationInspector>
 
 export default meta
 type Story = StoryObj<typeof SessionDelegationInspector>

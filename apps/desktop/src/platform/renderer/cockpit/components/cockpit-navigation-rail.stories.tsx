@@ -3,7 +3,7 @@ import { expect, userEvent, within } from 'storybook/test'
 
 import { CockpitNavigationRail } from '@/platform/renderer/cockpit/components/cockpit-navigation-rail'
 
-const meta: Meta<typeof CockpitNavigationRail> = {
+const meta = {
   title: 'Cockpit/Navigation Rail',
   component: CockpitNavigationRail,
   parameters: {
@@ -16,7 +16,7 @@ const meta: Meta<typeof CockpitNavigationRail> = {
       </div>
     ),
   ],
-}
+} satisfies Meta<typeof CockpitNavigationRail>
 
 export default meta
 type Story = StoryObj<typeof CockpitNavigationRail>

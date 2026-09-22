@@ -16,7 +16,7 @@ const command = {
   text: 'bun test',
 }
 
-const meta: Meta<typeof SessionEvidenceInspector> = {
+const meta = {
   title: 'Sessions/Screen/Evidence Inspector',
   component: SessionEvidenceInspector,
   parameters: { layout: 'fullscreen' },
@@ -27,7 +27,7 @@ const meta: Meta<typeof SessionEvidenceInspector> = {
       </div>
     ),
   ],
-}
+} satisfies Meta<typeof SessionEvidenceInspector>
 
 export default meta
 type Story = StoryObj<typeof SessionEvidenceInspector>

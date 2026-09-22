@@ -3,10 +3,10 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import { SessionPlanPopover } from '@/domains/sessions/renderer/composer/session-plan-popover'
 
-const meta: Meta<typeof SessionPlanPopover> = {
+const meta = {
   title: 'Sessions/Composer/Plan',
   component: SessionPlanPopover,
-}
+} satisfies Meta<typeof SessionPlanPopover>
 
 export default meta
 type Story = StoryObj<typeof SessionPlanPopover>

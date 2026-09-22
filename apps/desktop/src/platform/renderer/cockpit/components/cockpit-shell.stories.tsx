@@ -4,7 +4,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { CockpitNavigationRail } from '@/platform/renderer/cockpit/components/cockpit-navigation-rail'
 import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
 
-const meta: Meta<typeof CockpitShell> = {
+const meta = {
   title: 'Cockpit/Shell',
   component: CockpitShell,
   parameters: {
@@ -17,7 +17,7 @@ const meta: Meta<typeof CockpitShell> = {
       </div>
     ),
   ],
-}
+} satisfies Meta<typeof CockpitShell>
 
 export default meta
 type Story = StoryObj<typeof CockpitShell>

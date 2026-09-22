@@ -15,10 +15,10 @@ function ProjectSwitcherStory() {
   )
 }
 
-const meta: Meta<typeof ProjectSwitcherStory> = {
+const meta = {
   title: 'Projects/Project Switcher',
   component: ProjectSwitcherStory,
-}
+} satisfies Meta<typeof ProjectSwitcherStory>
 
 export default meta
 type Story = StoryObj<typeof ProjectSwitcherStory>
