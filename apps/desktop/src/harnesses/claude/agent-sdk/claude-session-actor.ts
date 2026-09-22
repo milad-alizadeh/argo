@@ -53,6 +53,10 @@ const claudeSessionSetup = setup({
       isAuthenticationFailure(params.message),
   },
   actions: {
+    startInitialTurn: sendTo('claudeQuery', ({ context }) => ({
+      type: 'Send',
+      prompt: context.prompt,
+    })),
     markUnavailable: assign({ sourceHealth: 'unavailable' as const }),
     markWatched: assign({ releaseTarget: 'watched' as const }),
     releaseAsUnavailable: assign({ releaseTarget: 'unavailable' as const }),
@@ -82,9 +86,7 @@ const claudeSessionSetup = setup({
         : {},
     ),
   },
-  delays: {
-    recoveryTimeout: 60_000,
-  },
+  delays: { recoveryTimeout: 60_000 },
 })
 
 export function createClaudeSessionMachine(input: ClaudeSessionInput) {
