@@ -20,7 +20,7 @@ export function ClaudeContextComposition() {
             key={item.label}
           >
             <span className="text-muted-foreground">{item.label}</span>
-            <Progress className="h-1.5" value={item.percentage} />
+            <Progress aria-label={item.label} className="h-1.5" value={item.percentage} />
             <span className="text-right tabular-nums">{item.value}</span>
           </div>
         ))}

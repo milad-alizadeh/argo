@@ -14,7 +14,9 @@
      Session name. Neither is named `muted`, because `globals.css` gives `--color-muted` the
      shadcn surface meaning and the later declaration would win. */
   --color-quiet: #a8aeb5;
-  --color-faint: #929aa1;
+  /* Lightened from the design's #929aa1: that value cleared --card but not --selected (#383838),
+     failing 4.5:1 for a selected row's subtitle text. */
+  --color-faint: #9ca3a9;
   /* The design's `text.disabled`: the outline of a state Argo cannot place. */
   --color-off: #4e545a;
   /* The four state inks a state dot is drawn in. `active` is running and `warn` is attention; the
@@ -291,7 +293,8 @@
 }
 
 @theme {
-  --color-language-typescript: var(--color-sky-600);
+  /* -700, not -600: white ink on -600 clears 3:1 (an icon) but not 4.5:1 (this is text). */
+  --color-language-typescript: var(--color-sky-700);
   --color-language-typescript-ink: var(--color-white);
   --color-language-go: var(--color-cyan-600);
   --color-language-ruby: var(--color-red-600);
@@ -331,12 +334,17 @@
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  /* Darkened from shadcn's default 0.556: that clears --background but not --selected (#e4e4e4),
+     failing 4.5:1 for muted text on a selected row. */
+  --muted-foreground: oklch(0.508 0 0);
   /* The selected row or rail item: a step past the hover ground, so the two never read alike. */
   --selected: oklch(0.92 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  /* Darkened from shadcn's default 0.577: that clears solid grounds but not the /10-/20 tinted
+     fills badges and buttons use behind destructive text, nor an alert description's own
+     destructive/90. */
+  --destructive: oklch(0.489 0.245 27.325);
   --success: oklch(0.448 0.119 151.328); /* 6.1:1 on --background */
   --diff-added: oklch(0.508 0.118 165.612); /* 5.5:1 on --background */
   --border: oklch(0.922 0 0);
@@ -400,7 +408,9 @@
   --selected: oklch(0.34 0 0);
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
+  /* Lightened from shadcn's default 0.704: that clears --card but not a destructive/80 label at
+     80% opacity over --popover, failing 4.5:1. */
+  --destructive: oklch(0.728 0.191 22.216);
   --success: oklch(0.765 0.177 151.328);
   --diff-added: oklch(0.765 0.177 163.223);
   --border: oklch(1 0 0 / 10%);
@@ -427,7 +437,9 @@
   --color-terminal-blue: var(--color-blue-400);
   --color-terminal-magenta: var(--color-purple-400);
   --color-terminal-cyan: var(--color-cyan-400);
-  --ticket-label-lean: 55%;
+  /* Matches the light appearance's 40% (line ~456): 55% left a saturated label colour (GitHub's
+     #5319e7) short of 4.5:1 against its own tinted fill. */
+  --ticket-label-lean: 40%;
 }
 
 :root:not(.dark) {
@@ -438,7 +450,9 @@
   /* State marks need 3:1 contrast on the Roster's white ground, where the design's dark-first
      inks are too light to remain distinguishable (#2526). */
   --color-active: #159b70;
-  --color-warn: #a16207;
+  /* Darkened from #a16207: that cleared --background but not the warn badge's own tinted fill,
+     failing 4.5:1 for its label text. */
+  --color-warn: #975c07;
   --color-plan: #2563eb;
   --color-plan-track: rgb(0 0 0 / 0.1);
   /* How far label text leans to its colour: GitHub's pale a2eeef measured 6.8:1 on its tint here. */

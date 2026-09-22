@@ -41,7 +41,6 @@
     }
   },
   "feedLabel": "Session Feed",
-  "feedRegionLabel": "Session feed",
   "workspaceLabel": "Session workspace",
   "composerRegionLabel": "Session composer",
   "development": {
@@ -126,6 +125,7 @@
       "loadedContext": "Loaded context"
     },
     "setup": {
+      "title": "Run setup",
       "effort": "Effort",
       "effortDescription": "More effort trades speed for deeper reasoning.",
       "choosePermissionMode": "Choose permission mode: {{mode}}",

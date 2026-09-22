@@ -111,6 +111,37 @@ version. After switching Node's major version, delete `node_modules` and install
 nvm reads `.nvmrc` and not `.node-version`, so to run CI's version locally name it:
 `nvm install "$(cat .node-version)" && nvm use "$(cat .node-version)"`.
 
+## The Storybook accessibility gate (#2623)
+
+`@storybook/addon-a11y` runs an axe scan after every story's `play` function, wired to
+`a11y: { test: 'error' }` in `apps/desktop/.storybook/preview.ts`. A violation fails that story's
+test, inside the same `test:storybook` run CI already gates on — there is no separate step, and
+no separate place it can fail open other than that file itself.
+
+**It proves only what a story renders and only what axe's ruleset checks.** A screen no story
+covers, a state only a real click sequence reaches, and anything axe does not test (focus order,
+keyboard operability beyond a scan, screen-reader phrasing) get none of this gate's coverage;
+`docs/agents/visual-verification.md` and the `apps/desktop/AGENTS.md` accessible-names section
+carry those by hand.
+
+**The staged rollout is the one honest way to turn a gate like this on.** `test: 'todo'` reports
+without failing, so the addon shipped, every existing story ran once at that grade, and only the
+triaged, clean result moved the grade to `'error'`. Skipping the `'todo'` step would have turned
+on a gate already red, which teaches everyone to ignore its failures.
+
+**One rule is disabled, and it names the vendored markup it exists for**: `aria-hidden-focus`,
+because Base UI's own portalled popovers render an `aria-hidden="true"` focus-guard span
+(`data-base-ui-focus-guard`) that this repository does not author. Disabling a rule for
+first-party code instead would hide a real finding behind the same mechanism; the reason this one
+is safe is that it names a specific third-party element, not a whole rule class waived on trust.
+
+Fixing what the gate finds is design-token work, not exception work: several shared color tokens
+(`--muted-foreground`, `--destructive`, `--color-warn`, `--color-faint`, a language badge's fill)
+cleared contrast against `--background` but not against a tinted fill, a hover state, or an
+opacity-blended variant of themselves — the actual grounds a reader sees the text on. The fix
+darkens or lightens the token by the smallest step that clears the tightest of those grounds,
+recorded as a comment on the changed line, never a per-component override.
+
 ## Where an exemption goes
 
 Exemptions live in **two** files, each entry labelled **KIND** (permanent — the rule doesn't
@@ -120,6 +151,7 @@ apply to that category) or **RATCHET** (debt; the list may only shrink):
 |---|---|
 | `biome.jsonc` `overrides` | every lint cap, the line ceiling included |
 | `.jscpd.json` `ignore` | duplication — reasons in `scripts/jscpd-ignore-reasons.txt`, one per glob |
+| `apps/desktop/.storybook/preview.ts` `a11y.options.rules` | Storybook axe rules — **KIND** only, named to the vendored element it exempts, never a rule waived on trust |
 
 Two rules have no linter and live in `AGENTS.md` prose only: a cast standing in for a
 check, and the exhaustive construct over a closed set.

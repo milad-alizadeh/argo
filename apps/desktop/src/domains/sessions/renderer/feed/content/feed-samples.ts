@@ -32,7 +32,7 @@ step two: send the Turn
 
 > Keep the active Session and its work visible while composing.
 
-## What changed
+# What changed
 
 - Attachments stay in a single row.
 - The draft stays \`editable\` throughout.
