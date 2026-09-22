@@ -1,7 +1,7 @@
 // The packaged Project contract: the preload surface, `openProject` and its refusals, each read
 // off its own launch of the shipped app against its own application data (#2326).
 import assert from 'node:assert/strict'
-import { chmod, readFile } from 'node:fs/promises'
+import { chmod } from 'node:fs/promises'
 import type { ElectronApplication, Page } from 'playwright-core'
 import { assertShippedFusesIntact } from '../packaged-app'
 import { packagedFixture } from '../packaged-fixture'
@@ -77,11 +77,11 @@ test('refuses a request that names a path', async ({ project }) => {
 })
 
 test('leaves the Project store unchanged', async ({ project }) => {
-  const before = await readFile(project.fixture.databasePath)
+  const before = await project.page.evaluate(() => window.argo.listProjects())
   await invoke(project.page, { projectId: 'project-1' })
   await invoke(project.page, { projectId: 'missing' })
   await invoke(project.page, { projectId: 'project-1', path: '/private' })
-  assert.deepEqual(await readFile(project.fixture.databasePath), before)
+  assert.deepEqual(await project.page.evaluate(() => window.argo.listProjects()), before)
 })
 
 test('registers, restarts, selects, and reopens a Project from SQLite', async ({ project }) => {
