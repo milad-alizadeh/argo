@@ -25,19 +25,14 @@ function succeeded() {
   return { ok: true } as const
 }
 
-function unsupportedInput(attachments: readonly unknown[], setup: unknown): boolean {
-  return attachments.length > 0 || setup !== undefined
+function hasAttachments(attachments: readonly unknown[]): boolean {
+  return attachments.length > 0
 }
 
 function commandOperations(adapter: SessionAdapter) {
   return {
-    async send({
-      sessionId,
-      prompt,
-      setup,
-      attachments,
-    }: Parameters<SessionDriveAdapter['send']>[0]) {
-      if (unsupportedInput(attachments, setup)) return failed()
+    async send({ sessionId, prompt, attachments }: Parameters<SessionDriveAdapter['send']>[0]) {
+      if (hasAttachments(attachments)) return failed()
       const outcome = await adapter.execute({
         type: 'session.send',
         session: identity(sessionId),
@@ -50,7 +45,7 @@ function commandOperations(adapter: SessionAdapter) {
       prompt,
       attachments,
     }: Parameters<NonNullable<SessionDriveAdapter['steer']>>[0]) {
-      if (attachments.length > 0) return failed()
+      if (hasAttachments(attachments)) return failed()
       const outcome = await adapter.execute({
         type: 'session.steer',
         session: identity(sessionId),
@@ -123,8 +118,8 @@ export function createCodexAppServerDriveAdapter(options: {
     harness: 'codex',
     failureMessage: (code) => FAILURE_MESSAGES[code],
     turnSetupSchema: ignoredSetupSchema,
-    async start({ cwd, prompt, setup, attachments }) {
-      if (unsupportedInput(attachments, setup)) return { error: 'launch-failed' }
+    async start({ cwd, prompt, attachments }) {
+      if (hasAttachments(attachments)) return { error: 'launch-failed' }
       const outcome = await options.adapter.execute({
         type: 'session.start',
         harness: 'codex',

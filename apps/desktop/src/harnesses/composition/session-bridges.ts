@@ -66,6 +66,7 @@ type AttachSessionsRequest = ManagedSessionBridges & {
   acceptance: boolean
   driveAdapters?: Partial<SessionDriveAdapters>
   harnesses?: readonly HarnessRegistration[]
+  sources?: readonly SessionSource[]
 }
 
 function attachWatching(options: {
@@ -107,6 +108,7 @@ export function attachSessions(window: BrowserWindow, request: AttachSessionsReq
     managedLiveMessages,
     managedRosterChanges,
     managedRename,
+    sources: additionalSources = [],
     harnesses = sessionHarnesses,
   } = request
   // Argo's own archive flag, for every harness at once (#2315).
@@ -128,7 +130,7 @@ export function attachSessions(window: BrowserWindow, request: AttachSessionsReq
       managedRename,
     }),
   )
-  const sources = runtimes.map((runtime) => runtime.source)
+  const sources = [...runtimes.map((runtime) => runtime.source), ...additionalSources]
   const reader = createSessionReader(sources, ticketLinks, { ...archive, unread })
   const adapters: SessionDriveAdapters = {}
   for (const runtime of runtimes) adapters[runtime.harness] = runtime.driveAdapter

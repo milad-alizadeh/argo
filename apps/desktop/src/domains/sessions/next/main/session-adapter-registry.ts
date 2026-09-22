@@ -1,3 +1,4 @@
+import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
 import type { Harness, WorkspaceSelection } from '@/domains/sessions/next/contract/session-contract'
 import type { SessionAdapter } from '@/domains/sessions/next/contract/session-projection-contract'
 import type { SessionService } from '@/domains/sessions/next/main/session-service'
@@ -12,6 +13,7 @@ export type SessionAdapterRuntime = {
 export type SessionAdapterInstance = {
   adapter: SessionAdapter
   close: () => void
+  source?: SessionSource
 }
 
 export type SessionAdapterRegistration = {
@@ -21,6 +23,7 @@ export type SessionAdapterRegistration = {
 
 export type SessionAdapterRegistry = {
   adapterFor: (harness: Harness) => SessionAdapter | undefined
+  sourceFor: (harness: Harness) => SessionSource | undefined
   close: () => void
 }
 
@@ -37,6 +40,7 @@ export function createSessionAdapterRegistry(
   }
   return {
     adapterFor: (harness) => adapters.get(harness)?.adapter,
+    sourceFor: (harness) => adapters.get(harness)?.source,
     close: () => {
       for (const instance of adapters.values()) instance.close()
     },

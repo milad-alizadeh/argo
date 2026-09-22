@@ -16,7 +16,7 @@ import {
   makeProjectLocallyReady,
   markProjectSetupLocallyReady,
 } from '../../projects/fixtures/locally-ready-project'
-import { seedSingleProject } from '../../projects/fixtures/project.fixture'
+import { repository, seedSingleProject } from '../../projects/fixtures/project.fixture'
 
 export const FIXTURES = [
   'resumeParent',
@@ -123,7 +123,7 @@ export async function prepare(
   await mkdir(userData, { recursive: true })
   await writeArchiveStore(userData, ARCHIVED)
   const project = proofProject(claudeTranscripts)
-  await mkdir(project)
+  await repository(project)
   await makeProjectLocallyReady(project)
   await writeProjectStore(userData, project, projectSelected ? PROOF_PROJECT_ID : null)
   return {

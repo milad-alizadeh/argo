@@ -1,5 +1,6 @@
 import type { SessionAdapterRegistration } from '@/domains/sessions/next/main/session-adapter-registry'
 import { createCodexSessionAdapter } from '@/harnesses/codex/drive/codex-session-adapter'
+import { createCodexAppServerSessionSource } from '@/harnesses/codex/observation/app-server-session-source'
 
 export function createCodexSessionAdapterRegistration(options: {
   findExecutable: () => string | null
@@ -14,7 +15,11 @@ export function createCodexSessionAdapterRegistration(options: {
         now: runtime.now,
         resolveWorkspace: runtime.resolveWorkspace,
       })
-      return { adapter, close: adapter.close }
+      return {
+        adapter,
+        close: adapter.close,
+        source: createCodexAppServerSessionSource({ adapter, projections: adapter.projections }),
+      }
     },
   }
 }

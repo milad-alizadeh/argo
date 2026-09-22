@@ -5,6 +5,7 @@ import type {
 } from '@/domains/sessions/next/contract/session-contract'
 import type {
   SessionAdapter,
+  SessionProjection,
   Unsubscribe,
 } from '@/domains/sessions/next/contract/session-projection-contract'
 import type {
@@ -155,7 +156,11 @@ export function createCodexSessionAdapter(deps: {
       }
       detach()
     },
+    projections: appServer.projections,
   }
 }
 
-export type CodexSessionAdapter = SessionAdapter & { close: () => void }
+export type CodexSessionAdapter = SessionAdapter & {
+  close: () => void
+  projections: () => readonly SessionProjection[]
+}

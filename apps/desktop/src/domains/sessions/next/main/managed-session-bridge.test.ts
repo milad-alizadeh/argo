@@ -11,7 +11,7 @@ mock.module('electron', () => electronStandIn)
 const { attachManagedSessionBridge } = await import('./managed-session-bridge')
 
 function adapterRegistry(adapter: SessionAdapter | undefined): SessionAdapterRegistry {
-  return { adapterFor: () => adapter, close: () => {} }
+  return { adapterFor: () => adapter, sourceFor: () => undefined, close: () => {} }
 }
 
 function startCommand() {

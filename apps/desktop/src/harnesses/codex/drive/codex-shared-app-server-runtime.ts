@@ -23,6 +23,7 @@ type SharedAppServerRuntime = {
     listener: (projection: SessionProjection) => void,
   ) => Unsubscribe | undefined
   publish: (projection: SessionProjection) => void
+  projections: () => readonly SessionProjection[]
 }
 
 let sharedAppServerRuntime: SharedAppServerRuntime | null = null
@@ -79,6 +80,7 @@ export function sharedAppServerRuntimeFor(
         listener({ ...projection, posture: 'watched' })
       }
     },
+    projections: () => [...projections.values()],
   }
   return sharedAppServerRuntime
 }

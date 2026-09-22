@@ -61,6 +61,31 @@ async function cancelFeed({
   }
 }
 
+function readDirectManagedFeed(source: SessionSource, request: SessionFeedRequest) {
+  const feed = source.readManagedFeed?.(request.sessionId)
+  if (feed === undefined) return undefined
+  if (feed === null) return sessionError('missing-session', request.requestId)
+  if (feed.revision === request.revision) {
+    return {
+      version: 1 as const,
+      type: 'session.feed.unchanged' as const,
+      requestId: request.requestId,
+      sessionId: request.sessionId,
+      chainId: feed.chainId,
+      revision: feed.revision,
+    }
+  }
+  return {
+    version: 1 as const,
+    type: 'session.feed.read' as const,
+    requestId: request.requestId,
+    sessionId: request.sessionId,
+    chainId: feed.chainId,
+    revision: feed.revision,
+    rows: feed.rows,
+  }
+}
+
 export function createFeedReader(
   ownership: Ownership,
   feeds: Map<string, HeldFeed>,
@@ -86,18 +111,22 @@ export function createFeedReader(
           }
           reply = await readOwnedFeed(context, request)
         } else {
-          const managed = ownership.managed(owner, sessionId)
-          reply = await readFeedWithOverlay(
-            {
-              source: owner,
-              feeds,
-              projections,
-              managed,
-              key: sessionId,
-              signal: controller.signal,
-            },
-            request,
-          )
+          const direct = readDirectManagedFeed(owner, request)
+          if (direct !== undefined) reply = direct
+          else {
+            const managed = ownership.managed(owner, sessionId)
+            reply = await readFeedWithOverlay(
+              {
+                source: owner,
+                feeds,
+                projections,
+                managed,
+                key: sessionId,
+                signal: controller.signal,
+              },
+              request,
+            )
+          }
         }
         // A cancel that lands after the owner lookup but before this settles still wins: the
         // caller switched away and no longer wants an answer that finished instead of stopping.
