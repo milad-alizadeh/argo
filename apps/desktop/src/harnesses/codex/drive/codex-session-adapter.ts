@@ -106,7 +106,7 @@ export function createCodexSessionAdapter(deps: {
       const key = keyOf(snapshot.context.sessionId)
       let entry = registry.get(key)
       if (entry === undefined) {
-        entry = { actor, revision: 0, listeners: new Set() }
+        entry = { actor, revision: 0, listeners: new Set(), sendQueue: Promise.resolve() }
         registry.set(key, entry)
       }
       entry.revision += 1

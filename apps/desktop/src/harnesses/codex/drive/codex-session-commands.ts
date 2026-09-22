@@ -19,6 +19,7 @@ export type SessionRegistryEntry = {
   actor: ManagedSessionActor
   revision: number
   listeners: Set<(projection: SessionProjection) => void>
+  sendQueue: Promise<void>
 }
 
 export type SessionRegistry = Map<string, SessionRegistryEntry>
@@ -75,6 +76,23 @@ function waitForCommandSettlement(actor: ManagedSessionActor): Promise<CommandSe
   })
 }
 
+function waitForIdle(actor: ManagedSessionActor): Promise<boolean> {
+  const snapshot = actor.getSnapshot()
+  if (snapshot.matches({ Active: 'Idle' })) return Promise.resolve(true)
+  if (!snapshot.matches('Active')) return Promise.resolve(false)
+  return new Promise((resolve) => {
+    const subscription = actor.subscribe((next) => {
+      if (next.matches({ Active: 'Idle' })) {
+        subscription.unsubscribe()
+        resolve(true)
+      } else if (!next.matches('Active')) {
+        subscription.unsubscribe()
+        resolve(false)
+      }
+    })
+  })
+}
+
 export async function executeCommand(
   command: SessionCommand,
   registry: SessionRegistry,
@@ -95,16 +113,29 @@ export async function executeSend(
   entry: SessionRegistryEntry,
   prompt: string,
 ): Promise<SessionCommandOutcome> {
-  if (!entry.actor.getSnapshot().matches({ Active: 'Idle' })) {
-    return { kind: 'rejected', reason: 'Codex is already running a Turn' }
+  const previous = entry.sendQueue
+  let release: () => void = () => {}
+  entry.sendQueue = new Promise((resolve) => {
+    release = resolve
+  })
+  await previous
+  try {
+    if (!(await waitForIdle(entry.actor))) {
+      return { kind: 'rejected', reason: 'Codex cannot accept a follow-up Turn' }
+    }
+    const settlement = waitForCommandSettlement(entry.actor)
+    entry.actor.send({ type: 'Send', prompt })
+    entry.revision += 1
+    const result = await settlement
+    if (result.outcome === 'uncertain') return { kind: 'uncertain' }
+    if (result.outcome === 'rejected') {
+      return { kind: 'rejected', reason: result.rejection ?? 'Codex rejected the send' }
+    }
+    return {
+      kind: 'accepted',
+      projection: projectionFrom(entry.actor.getSnapshot(), entry.revision),
+    }
+  } finally {
+    release()
   }
-  const settlement = waitForCommandSettlement(entry.actor)
-  entry.actor.send({ type: 'Send', prompt })
-  entry.revision += 1
-  const result = await settlement
-  if (result.outcome === 'uncertain') return { kind: 'uncertain' }
-  if (result.outcome === 'rejected') {
-    return { kind: 'rejected', reason: result.rejection ?? 'Codex rejected the send' }
-  }
-  return { kind: 'accepted', projection: projectionFrom(entry.actor.getSnapshot(), entry.revision) }
 }

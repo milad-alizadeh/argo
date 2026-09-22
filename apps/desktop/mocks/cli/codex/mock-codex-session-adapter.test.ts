@@ -7,7 +7,7 @@ import {
   mockCodexExecutable,
 } from './mock-codex-session-adapter-support.ts'
 
-test('starts a managed Session after the shared app-server handshake', async () => {
+test('queues a follow-up Send until the active Turn settles', async () => {
   const adapter = await createMockAdapter()
   try {
     const outcome = await adapter.execute({
@@ -20,12 +20,12 @@ test('starts a managed Session after the shared app-server handshake', async () 
     if (outcome.kind === 'accepted') {
       assert.equal(outcome.projection.session.harness, 'codex')
       assert.equal(outcome.projection.turns.length, 1)
-      const retry = await adapter.execute({
+      const followUp = await adapter.execute({
         type: 'session.send',
         session: outcome.projection.session,
         prompt: 'Send while the first Turn is still running.',
       })
-      assert.equal(retry.kind, 'rejected')
+      assert.equal(followUp.kind, 'accepted')
     }
   } finally {
     adapter.close()

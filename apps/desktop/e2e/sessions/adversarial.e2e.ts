@@ -10,6 +10,14 @@ async function statusFor(page: Parameters<typeof createSessionByClick>[0], sessi
   }, sessionId)
 }
 
+async function postureFor(page: Parameters<typeof createSessionByClick>[0], sessionId: string) {
+  return page.evaluate(async (id) => {
+    const reply = await window.argo.listSessions({ projectRoot: null })
+    if (reply.type !== 'session.listed') return null
+    return reply.sessions.find((session) => session.id === id)?.posture ?? null
+  }, sessionId)
+}
+
 test.describe('session-adversarial', () => {
   test.use({ adversarialSeed: 'seed-42' })
 
@@ -21,6 +29,7 @@ test.describe('session-adversarial', () => {
       prompt: firstPrompt,
     })
     await expect(page.getByText(`Mock Codex read: ${firstPrompt} 🦜`)).toBeVisible()
+    await expect.poll(() => postureFor(page, failedSessionId)).toBe('managed')
 
     const composer = page.getByRole('combobox', { name: 'Message' })
     await composer.click()

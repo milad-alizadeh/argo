@@ -8,6 +8,7 @@ import {
   findSessionRow,
 } from '@/domains/sessions/renderer/composer/composer-identity'
 import { sendInitialClaudeTurn } from '@/domains/sessions/renderer/composer/send-initial-claude-turn'
+import { sendManagedSessionTurn } from '@/domains/sessions/renderer/composer/send-managed-session-turn'
 import { sendToSelected } from '@/domains/sessions/renderer/composer/send-selected-turn'
 import type { SendOutcome } from '@/domains/sessions/renderer/composer/use-send'
 import type { Failure } from '@/domains/sessions/renderer/composer/use-session-composer-actions'
@@ -16,7 +17,10 @@ import { startNewSession } from '@/domains/sessions/renderer/composer/use-start-
 import type { TurnMarkerApi } from '@/domains/sessions/renderer/composer/use-turn-marker'
 import { COMPOSER_FOCUS_STATE } from '@/domains/sessions/renderer/composer-focus-state'
 import { promptOf, stageFor } from '@/domains/sessions/renderer/feed/turn-marker-state'
-import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
+import {
+  type SessionHarness,
+  sessionHarnessOf,
+} from '@/domains/sessions/renderer/harness/harnesses'
 import { invalidateSessionRoster } from '@/domains/sessions/renderer/session-queries'
 import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
 import type { useTurnSetup } from '@/domains/sessions/renderer/turn-setup/use-turn-setup'
@@ -99,7 +103,11 @@ export async function sendToSessionIdentity(
     SendDeps,
     'marker' | 'queryClient' | 'roster' | 'send' | 'setFailure' | 'watchTurn'
   > & {
-    sendManagedClaude: (sessionId: string, prompt: string) => Promise<SessionCommandOutcome>
+    sendManagedSession: (
+      harness: SessionHarness,
+      sessionId: string,
+      prompt: string,
+    ) => Promise<SessionCommandOutcome>
   },
   sessionId: string,
   turn: TurnInput,
@@ -112,13 +120,19 @@ export async function sendToSessionIdentity(
     since,
     ...promptOf(turn),
   })
+  const harness = sessionHarnessOf(row)
   const sendManaged =
-    row?.harness === 'claude' &&
-    row.posture === 'managed' &&
+    row?.posture === 'managed' &&
     turn.attachments.length === 0 &&
-    turn.setup === null
+    (harness === 'codex' || turn.setup === null)
   const sent: SendOutcome | boolean = sendManaged
-    ? await sendManagedClaudeTurn({ deps, sessionId, turn, since })
+    ? await sendManagedSessionTurn({
+        deps,
+        harness,
+        sessionId,
+        turn,
+        since,
+      })
     : await sendToSelected({
         queryClient,
         since,
@@ -130,28 +144,4 @@ export async function sendToSessionIdentity(
       })
   if (sent === false || sent === 'rejected') marker.clear(sessionId)
   return sent
-}
-
-async function sendManagedClaudeTurn(options: {
-  deps: Pick<SendDeps, 'queryClient' | 'setFailure' | 'watchTurn'> & {
-    sendManagedClaude: (sessionId: string, prompt: string) => Promise<SessionCommandOutcome>
-  }
-  sessionId: string
-  since: string | null
-  turn: TurnInput
-}): Promise<SendOutcome> {
-  const { deps, sessionId, since, turn } = options
-  const outcome = await deps.sendManagedClaude(sessionId, turn.prompt)
-  switch (outcome.kind) {
-    case 'accepted':
-      if (turn.setup !== null) deps.watchTurn(sessionId, turn.setup, since)
-      await invalidateSessionRoster(deps.queryClient)
-      deps.setFailure(null)
-      return 'accepted'
-    case 'rejected':
-      deps.setFailure({ sessionId, message: outcome.reason, code: null })
-      return 'rejected'
-    case 'uncertain':
-      return 'uncertain'
-  }
 }
