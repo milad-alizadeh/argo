@@ -14,15 +14,18 @@ import {
   codexApprovalDecision,
   readRequestApproval,
 } from '@/harnesses/codex/drive/permission-protocol'
-import type { WireMessage, TurnStatus as WireTurnStatus } from '@/harnesses/codex/drive/protocol'
+import {
+  readThreadId,
+  type WireMessage,
+  type TurnStatus as WireTurnStatus,
+} from '@/harnesses/codex/drive/protocol'
 import {
   readAgentMessageDelta,
   readCompletedTurn,
-  readThreadId,
   readThreadStatus,
   readThreadTokenUsageUpdated,
   readToolCallUpdate,
-} from '@/harnesses/codex/drive/protocol'
+} from '@/harnesses/codex/drive/protocol-notifications'
 import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
 import { codexAnswersFor, readRequestUserInput } from '@/harnesses/codex/drive/question-protocol'
 import { readUpdatedThreadName } from '@/harnesses/codex/drive/rename-protocol'
@@ -460,7 +463,11 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
             ]
           return context.toolCalls.map((toolCall) =>
             toolCall.id === update.id
-              ? { ...toolCall, name: update.name, status: update.status }
+              ? {
+                  ...toolCall,
+                  name: update.name,
+                  status: update.status,
+                }
               : toolCall,
           )
         },
@@ -470,7 +477,10 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
           if (event.type !== 'Notification') return context.usage
           const usage = readThreadTokenUsageUpdated(event.message)
           if (usage === undefined) return context.usage
-          return { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens }
+          return {
+            inputTokens: usage.inputTokens,
+            outputTokens: usage.outputTokens,
+          }
         },
       }),
       assignTitle: assign({
@@ -493,7 +503,10 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
       turns: [],
       messages: [],
       toolCalls: [],
-      usage: { inputTokens: 0, outputTokens: 0 },
+      usage: {
+        inputTokens: 0,
+        outputTokens: 0,
+      },
       title: null,
       pendingApproval: null,
       pendingQuestion: null,
