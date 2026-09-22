@@ -68,7 +68,7 @@ export function rosterRowOf(projection: SessionProjection, cwd: string | null) {
     ...row,
     posture: projection.posture === 'watched' ? 'watched' : 'managed',
     turnStartedAt: turnStartedAtOf(projection),
-    updatedAt: startedAtOf(projection),
+    updatedAt: turnStartedAtOf(projection) ?? startedAtOf(projection),
   })
 }
 
