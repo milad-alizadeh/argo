@@ -91,13 +91,13 @@ type Story = StoryObj<typeof SessionScreenView>
 async function sendWithMaxEffort(canvasElement: HTMLElement) {
   const canvas = within(canvasElement)
   const trigger = await canvas.findByRole('button', { name: /^Choose run setup/ })
-  await waitFor(() => expect(trigger).toHaveTextContent('Claude Code·Opus 5·Medium'))
+  await waitFor(() => expect(trigger).toHaveTextContent('Opus 5·Medium'))
   await userEvent.click(trigger)
   fireEvent.change(await within(document.body).findByRole('slider', { name: 'Effort' }), {
     target: { value: '4' },
   })
   await userEvent.keyboard('{Escape}')
-  await expect(trigger).toHaveTextContent('Claude Code·Opus 5·Max')
+  await expect(trigger).toHaveTextContent('Opus 5·Max')
 
   await userEvent.click(canvas.getByLabelText('Message'))
   await userEvent.type(canvas.getByLabelText('Message'), 'Think hard about the driver.')
@@ -124,7 +124,7 @@ export const RefusedChoiceReverts: Story = {
         ),
       { timeout: 3000 },
     )
-    await expect(trigger).toHaveTextContent('Claude Code·Opus 5·High')
+    await expect(trigger).toHaveTextContent('Opus 5·High')
     await expectSameWidthAsComposer(canvasElement)
   },
 }
@@ -149,7 +149,7 @@ export const AcceptedChoiceStays: Story = {
     const trigger = await sendWithMaxEffort(canvasElement)
     await waitFor(() => expect(accepted.sent).toHaveLength(1))
     // Two roster polls land the reply the send produced.
-    await waitFor(() => expect(trigger).toHaveTextContent('Claude Code·Opus 5·Max'))
+    await waitFor(() => expect(trigger).toHaveTextContent('Opus 5·Max'))
     await expect(within(canvasElement).queryByRole('alert')).toBeNull()
   },
 }

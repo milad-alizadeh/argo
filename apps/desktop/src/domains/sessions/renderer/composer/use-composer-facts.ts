@@ -1,0 +1,76 @@
+import type { Cockpit, ProjectActions } from '@/domains/projects/renderer/port'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import {
+  composerIdentityOf,
+  findSessionRow,
+} from '@/domains/sessions/renderer/composer/composer-identity'
+import type { Failure } from '@/domains/sessions/renderer/composer/use-session-composer-actions'
+import { useTurnMarker } from '@/domains/sessions/renderer/composer/use-turn-marker'
+import type { WorkspaceMenuControlProps } from '@/domains/sessions/renderer/composer/workspace-menu'
+import { HARNESSES, type SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
+import { useSessionCreationStore } from '@/domains/sessions/renderer/session-creation'
+import { useTurnSetup } from '@/domains/sessions/renderer/turn-setup/use-turn-setup'
+import type { useSessions } from '@/domains/sessions/renderer/use-sessions'
+
+const NO_ROWS: SessionRosterRow[] = []
+
+export type ComposerFactsOptions = {
+  harness: SessionHarness
+  cockpit: Cockpit
+  projectActions: Pick<ProjectActions, 'selectWorkspace' | 'createManagedWorkspace'>
+  roster: ReturnType<typeof useSessions>['roster']
+  selectedSessionId: string | null
+}
+
+// A Session's Workspace is fixed at `session.start` (AC6, #2600): the picker is only offered
+// before a Roster row exists for it.
+function workspaceControl(
+  identity: ReturnType<typeof composerIdentityOf>,
+  cockpit: Cockpit,
+  projectActions: ComposerFactsOptions['projectActions'],
+): WorkspaceMenuControlProps | null {
+  if (identity.kind !== 'draft') return null
+  return {
+    workspaces: cockpit.workspaces,
+    workspace: cockpit.workspace,
+    onSelect: projectActions.selectWorkspace,
+    onCreateManaged: () => projectActions.createManagedWorkspace('HEAD'),
+  }
+}
+
+// The facts the setup pane, the mutations, and the Turn Marker all need before they can be wired:
+// who is selected, and the harness setup control that goes with them.
+export function useComposerFacts(
+  options: ComposerFactsOptions,
+  setFailure: (failure: Failure | null) => void,
+) {
+  const { harness, cockpit, projectActions, roster, selectedSessionId } = options
+  // The "+" click already gave this row a pending identity (#2109); a bare selection has none.
+  const pending = useSessionCreationStore((state) => state.pending)
+  const pendingSessionId = pending?.stage === 'draft' ? pending.id : null
+  const identity = composerIdentityOf(
+    selectedSessionId,
+    cockpit.project?.id ?? null,
+    pendingSessionId,
+  )
+  const sessionId = identity.kind === 'session' ? identity.sessionId : null
+  const { control, watchTurn } = useTurnSetup({
+    harness,
+    choices: HARNESSES[harness].setup,
+    identity,
+    rows: roster?.sessions ?? NO_ROWS,
+    onRefusal: (refusal) => setFailure({ ...refusal, code: null }),
+  })
+  const marker = useTurnMarker()
+  const selectedRow = findSessionRow(roster, sessionId)
+  return {
+    identity,
+    sessionId,
+    control,
+    workspace: workspaceControl(identity, cockpit, projectActions),
+    watchTurn,
+    marker,
+    selectedRow,
+    isCompacting: (selectedRow?.compactionStartedAt ?? null) !== null,
+  }
+}

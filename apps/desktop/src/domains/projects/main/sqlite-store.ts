@@ -4,6 +4,10 @@ import { z } from 'zod'
 import type { ProjectSetupRecord } from '@/domains/projects/main/setup/persistence/project-setup-registry'
 import { projectSetupStore } from '@/domains/projects/main/setup/persistence/project-setup-storage'
 import {
+  createWorkspaceStore,
+  type WorkspaceStore,
+} from '@/domains/projects/main/workspaces/workspace-store'
+import {
   project,
   projectSelection,
   projectSetupCheckpoint,
@@ -12,11 +16,14 @@ import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 import { identifierSchema } from '@/shared/validation'
 import { createSetupWorktreePromotion } from './project-store-promotion'
 import { readSetupCheckpoint, type SetupCheckpoint } from './setup-checkpoint-store'
-import { createWorkspaceStore, type WorkspaceStore } from './workspace-store'
 
 export type { ProjectSetupRecord } from '@/domains/projects/main/setup/persistence/project-setup-registry'
+export type {
+  ManagedWorkspaceRecovery,
+  WorkspaceKind,
+  WorkspaceRecord,
+} from '@/domains/projects/main/workspaces/workspace-store'
 export type { SetupCheckpoint } from './setup-checkpoint-store'
-export type { ManagedWorkspaceRecovery, WorkspaceKind, WorkspaceRecord } from './workspace-store'
 
 export type ProjectRegistration = { id: string; path: string; commonDirectory: string }
 export type ProjectRegistry = { projects: ProjectRegistration[]; selectedId: string | null }

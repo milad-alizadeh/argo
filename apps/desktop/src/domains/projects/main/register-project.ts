@@ -43,6 +43,15 @@ export async function currentRegistry(
   }
 }
 
+export function findProject(
+  store: Pick<ProjectStore, 'projects'>,
+  projectId: string,
+  requestId: string,
+): ProjectRegistration | ProjectError {
+  const project = store.projects.read().projects.find((candidate) => candidate.id === projectId)
+  return project ?? projectError('missing-project', requestId)
+}
+
 async function chooseRepository(store: ProjectStore) {
   const folder = await store.chooseFolder()
   if (folder === null) return null

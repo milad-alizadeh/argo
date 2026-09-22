@@ -10,7 +10,7 @@ export const workspace = sqliteTable(
     id: text().primaryKey(),
     projectId: text('project_id')
       .notNull()
-      .references(() => project.id),
+      .references(() => project.id, { onDelete: 'cascade' }),
     kind: text({ enum: workspaceKinds }).notNull(),
     displayName: text('display_name').notNull(),
     path: text().notNull(),
@@ -25,15 +25,15 @@ export const workspace = sqliteTable(
 export const projectWorkspaceSelection = sqliteTable('project_workspace_selection', {
   projectId: text('project_id')
     .primaryKey()
-    .references(() => project.id),
+    .references(() => project.id, { onDelete: 'cascade' }),
   workspaceId: text('workspace_id')
     .notNull()
-    .references(() => workspace.id),
+    .references(() => workspace.id, { onDelete: 'cascade' }),
 })
 
 export const managedWorkspaceRecovery = sqliteTable('managed_workspace_recovery', {
   workspaceId: text('workspace_id')
     .primaryKey()
-    .references(() => workspace.id),
+    .references(() => workspace.id, { onDelete: 'cascade' }),
   checkoutRemovedAt: text('checkout_removed_at').notNull(),
 })
