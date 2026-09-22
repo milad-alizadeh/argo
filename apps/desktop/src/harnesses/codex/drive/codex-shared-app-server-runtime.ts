@@ -26,18 +26,21 @@ type SharedAppServerRuntime = {
   projections: () => readonly SessionProjection[]
 }
 
-let sharedAppServerRuntime: SharedAppServerRuntime | null = null
+const runtimesByExecutable = new Map<string, SharedAppServerRuntime>()
 
 export function sharedAppServerRuntimeFor(
   findExecutable: AppServerSupervisorDeps['findExecutable'],
 ): SharedAppServerRuntime {
-  if (sharedAppServerRuntime !== null) return sharedAppServerRuntime
+  const executable = findExecutable()
+  const executableKey = executable ?? ''
+  const existing = runtimesByExecutable.get(executableKey)
+  if (existing !== undefined) return existing
   const registries = new Set<ManagedSessionRegistry>()
   const projections = new Map<string, SessionProjection>()
   const observers = new Map<string, Set<(projection: SessionProjection) => void>>()
   const keyOf = (session: SessionProjection['session']) => `${session.harness}:${session.nativeId}`
   const supervisor = createAppServerSupervisor({
-    findExecutable,
+    findExecutable: () => executable,
     dispatchNotification: (message) => {
       for (const registry of registries) registry.dispatchNotification(message)
     },
@@ -49,7 +52,7 @@ export function sharedAppServerRuntimeFor(
     },
   })
   supervisor.actor.start()
-  sharedAppServerRuntime = {
+  const runtime: SharedAppServerRuntime = {
     supervisor,
     attach: (registry) => {
       registries.add(registry)
@@ -57,7 +60,7 @@ export function sharedAppServerRuntimeFor(
         registries.delete(registry)
         if (registries.size !== 0) return
         supervisor.close()
-        sharedAppServerRuntime = null
+        runtimesByExecutable.delete(executableKey)
       }
     },
     observe: (session, listener) => {
@@ -82,5 +85,6 @@ export function sharedAppServerRuntimeFor(
     },
     projections: () => [...projections.values()],
   }
-  return sharedAppServerRuntime
+  runtimesByExecutable.set(executableKey, runtime)
+  return runtime
 }

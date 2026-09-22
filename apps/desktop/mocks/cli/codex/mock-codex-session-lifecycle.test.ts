@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createMockAdapter, waitFor } from './mock-codex-session-adapter-support.ts'
+import {
+  createAdapter,
+  createMockAdapter,
+  mockCodexExecutable,
+  waitFor,
+} from './mock-codex-session-adapter-support.ts'
 
 async function start(adapter: Awaited<ReturnType<typeof createMockAdapter>>, prompt: string) {
   const outcome = await adapter.execute({
@@ -46,5 +51,20 @@ test('unsubscribes before it releases a closed managed Session lease', async () 
     await waitFor(() => released.includes(session.nativeId))
   } finally {
     adapter.close()
+  }
+})
+
+test('does not share an app-server process between different executables', async () => {
+  const first = createAdapter(await mockCodexExecutable())
+  const second = createAdapter(await mockCodexExecutable())
+  try {
+    const [one, two] = await Promise.all([
+      start(first, 'First isolated Session.'),
+      start(second, 'Second isolated Session.'),
+    ])
+    assert.equal(one.nativeId, two.nativeId)
+  } finally {
+    first.close()
+    second.close()
   }
 })
