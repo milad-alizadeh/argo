@@ -41,10 +41,12 @@ const UNPACKED = 'app.asar.unpacked'
 // compare fully literally, because that is where an unwanted file actually arrives.
 const VITE_OUTPUT = /^\/?\.vite\//
 const CONTENT_HASH = /-[A-Za-z0-9_-]{8}(\.[^./]+)$/
+const CLAUDE_AGENT_SDK_PLATFORM = /claude-agent-sdk-(?:darwin-arm64|linux-x64)(?=\/|$)/
 
 export function normalisedEntry(entry: string): string {
-  if (!VITE_OUTPUT.test(entry)) return entry
-  return entry.replace(CONTENT_HASH, '-[hash]$1')
+  const platformNeutral = entry.replace(CLAUDE_AGENT_SDK_PLATFORM, 'claude-agent-sdk-[platform]')
+  if (!VITE_OUTPUT.test(platformNeutral)) return platformNeutral
+  return platformNeutral.replace(CONTENT_HASH, '-[hash]$1')
 }
 
 // Every file under `root`, as a path relative to it with forward slashes. Directories are not
@@ -127,7 +129,18 @@ export function readCheckedInManifest(manifestPath = MANIFEST_PATH): {
     }
   }
   const failures = manifestSchemaFailures(parsed)
-  return { manifest: failures.length === 0 ? (parsed as PackageManifest) : null, failures }
+  return {
+    manifest:
+      failures.length === 0
+        ? (Object.fromEntries(
+            SECTIONS.map((section) => [
+              section,
+              (parsed as PackageManifest)[section].map(normalisedEntry),
+            ]),
+          ) as PackageManifest)
+        : null,
+    failures,
+  }
 }
 
 function sectionDifferences(section: string, expected: string[], actual: string[]): string[] {
