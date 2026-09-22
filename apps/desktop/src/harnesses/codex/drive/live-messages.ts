@@ -1,9 +1,9 @@
 import {
   type AgentMessageText,
+  readAgentMessageDelta,
   readCompletedAgentMessage,
-} from '@/harnesses/codex/drive/agent-message-protocol'
-import type { WireMessage } from '@/harnesses/codex/drive/protocol/protocol'
-import { readAgentMessageDelta } from '@/harnesses/codex/drive/protocol/protocol-notifications'
+  type WireMessage,
+} from '@/harnesses/codex/drive/protocol'
 
 // An agent message as the app-server has streamed it so far; `id` is its rollout message id.
 export type LiveMessage = { id: string; text: string }

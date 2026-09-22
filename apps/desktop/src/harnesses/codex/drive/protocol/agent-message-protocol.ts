@@ -1,7 +1,6 @@
 import type { WireMessage } from '@/harnesses/codex/drive/protocol/protocol'
 import { protocolRecord, protocolString } from '@/harnesses/codex/drive/protocol/protocol'
-
-export type AgentMessageText = { threadId: string; turnId: string; itemId: string; text: string }
+import type { AgentMessageText } from '@/harnesses/codex/drive/protocol/protocol-notifications'
 
 export function readCompletedAgentMessage(message: WireMessage): AgentMessageText | undefined {
   if (!('method' in message) || message.method !== 'item/completed') return undefined

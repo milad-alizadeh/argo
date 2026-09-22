@@ -2,7 +2,7 @@ import type {
   SessionProjection,
   Unsubscribe,
 } from '@/domains/sessions/next/contract/session-projection-contract'
-import type { WireMessage } from '@/harnesses/codex/drive/protocol/protocol'
+import type { WireMessage } from '@/harnesses/codex/drive/protocol'
 import type {
   AppServerSupervisor,
   AppServerSupervisorDeps,

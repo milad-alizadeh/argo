@@ -1,24 +1,14 @@
 import type { SessionPlan, SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import { rollupSessionStatus } from '@/domains/sessions/main'
-import {
-  readCompletedCompaction,
-  readStartedCompaction,
-} from '@/harnesses/codex/drive/compact-protocol'
 import type { LiveMessages } from '@/harnesses/codex/drive/live-messages'
 import { codexManagedStatus } from '@/harnesses/codex/drive/managed-status'
-import {
-  type PendingCodexPermission,
-  readRequestApproval,
-} from '@/harnesses/codex/drive/permission-protocol'
-import { readUpdatedPlan } from '@/harnesses/codex/drive/plan-protocol'
-import {
-  readCompletedTurn,
-  readThreadStatus,
-} from '@/harnesses/codex/drive/protocol/protocol-notifications'
-import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
-import { readRequestUserInput } from '@/harnesses/codex/drive/question-protocol'
-import { readUpdatedThreadName } from '@/harnesses/codex/drive/rename-protocol'
+import { readCompletedCompaction, readStartedCompaction } from './compact-protocol'
+import { type PendingCodexPermission, readRequestApproval } from './permission-protocol'
+import { readUpdatedPlan } from './plan-protocol'
 import type { WireMessage } from './protocol'
+import { readCompletedTurn, readThreadStatus } from './protocol-notifications'
+import { type PendingCodexQuestion, readRequestUserInput } from './question-protocol'
+import { readUpdatedThreadName } from './rename-protocol'
 
 export type HeldSession = {
   messages: LiveMessages

@@ -5,9 +5,9 @@ import { createLiveMessages, type LiveMessages } from '@/harnesses/codex/drive/l
 import {
   codexApprovalDecision,
   type PendingCodexPermission,
-} from '@/harnesses/codex/drive/permission-protocol'
+  type PendingCodexQuestion,
+} from '@/harnesses/codex/drive/protocol'
 import { codexNotificationRecorder } from '@/harnesses/codex/drive/protocol/record-notification'
-import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
 import { CodexSessionDriverError } from '@/harnesses/codex/drive/session/codex-session-error'
 import type { CodexChannel } from '@/harnesses/codex/drive/supervision/codex-channel'
 

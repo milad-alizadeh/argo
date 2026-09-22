@@ -1,5 +1,5 @@
 import type { OwnershipStanding } from '@/domains/sessions/main'
-import { readThreadId } from '@/harnesses/codex/drive/protocol/protocol'
+import { readThreadId } from '@/harnesses/codex/drive/protocol'
 import { CodexSessionDriverError } from '@/harnesses/codex/drive/session/codex-session-error'
 import {
   type ManagedSession,

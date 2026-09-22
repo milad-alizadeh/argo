@@ -1,6 +1,5 @@
 export { createCodexAppServerDriveAdapter } from './codex-app-server-drive-adapter'
-export type { RequestParams } from './protocol/protocol'
-export type { PendingCodexQuestion } from './question-protocol'
+export type { PendingCodexQuestion, RequestParams } from './protocol'
 export type { CodexSessionAdapter } from './session/codex-session-adapter-contract'
 export { createCodexSessionAdapterRegistration } from './session/codex-session-adapter-registration'
 export type { LiveMessage } from './session/codex-session-driver'

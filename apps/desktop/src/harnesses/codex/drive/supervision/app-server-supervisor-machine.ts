@@ -1,6 +1,6 @@
 import { type ActorRefFrom, assign, createActor, fromPromise, setup } from 'xstate'
 import { codexLaunchEnvironment } from '@/harnesses/codex/drive/launch-environment'
-import type { WireMessage } from '@/harnesses/codex/drive/protocol/protocol'
+import type { WireMessage } from '@/harnesses/codex/drive/protocol'
 import { CodexSessionDriverError } from '@/harnesses/codex/drive/session/codex-session-error'
 import type { CodexChannel } from '@/harnesses/codex/drive/supervision/codex-channel'
 import { openAppServer } from '@/harnesses/codex/drive/supervision/open-app-server'

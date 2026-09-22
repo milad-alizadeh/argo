@@ -8,27 +8,24 @@ import type {
   TurnStatus,
 } from '@/domains/sessions/next/contract/session-projection-contract'
 import type { SessionService } from '@/domains/sessions/next/main/session-service'
-import type { PendingCodexPermission } from '@/harnesses/codex/drive/permission-protocol'
 import {
+  codexAnswersFor,
   codexApprovalDecision,
-  readRequestApproval,
-} from '@/harnesses/codex/drive/permission-protocol'
-import {
-  readThreadId,
-  type WireMessage,
-  type TurnStatus as WireTurnStatus,
-} from '@/harnesses/codex/drive/protocol/protocol'
-import {
+  type PendingCodexPermission,
+  type PendingCodexQuestion,
   readAgentMessageDelta,
   readClosedThread,
   readCompletedTurn,
+  readRequestApproval,
+  readRequestUserInput,
+  readThreadId,
   readThreadStatus,
   readThreadTokenUsageUpdated,
   readToolCallUpdate,
-} from '@/harnesses/codex/drive/protocol/protocol-notifications'
-import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
-import { codexAnswersFor, readRequestUserInput } from '@/harnesses/codex/drive/question-protocol'
-import { readUpdatedThreadName } from '@/harnesses/codex/drive/rename-protocol'
+  readUpdatedThreadName,
+  type WireMessage,
+  type TurnStatus as WireTurnStatus,
+} from '@/harnesses/codex/drive/protocol'
 import {
   type CodexChannel,
   CodexChannelClosedError,

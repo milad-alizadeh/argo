@@ -1,4 +1,4 @@
-import { readCompactStart } from '@/harnesses/codex/drive/compact-protocol'
+import { readCompactStart } from '@/harnesses/codex/drive/protocol'
 import { CodexSessionDriverError } from '@/harnesses/codex/drive/session/codex-session-error'
 import type { ManagedSession } from '@/harnesses/codex/drive/supervision/managed-session'
 

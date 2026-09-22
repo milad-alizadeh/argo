@@ -3,8 +3,7 @@ import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/a
 import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import type { LiveMessage, LiveMessages } from '@/harnesses/codex/drive/live-messages'
-import type { PendingCodexPermission } from '@/harnesses/codex/drive/permission-protocol'
-import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
+import type { PendingCodexPermission, PendingCodexQuestion } from '@/harnesses/codex/drive/protocol'
 import type { CodexProcess } from '@/harnesses/codex/drive/supervision/codex-channel'
 
 export type { CodexProcess, LiveMessage, LiveMessages }

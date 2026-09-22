@@ -129,8 +129,3 @@ export function readStartedTurn(value: unknown): Turn {
 export function readSteeredTurn(value: unknown): string {
   return protocolString(protocolRecord(value, 'Turn steer result').turnId, 'Steered Turn ID')
 }
-
-export function readInterrupt(value: unknown): void {
-  const result = protocolRecord(value, 'Interrupt result')
-  assert.equal(Object.keys(result).length, 0, 'Interrupt response must be empty')
-}

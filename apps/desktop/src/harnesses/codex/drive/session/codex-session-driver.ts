@@ -2,11 +2,14 @@ import { CODEX_OPENING_SETUP } from '@/domains/sessions/contract/codex-turn-setu
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import { compactCodexSession } from '@/harnesses/codex/drive/compact-session'
 import { inputItemsFor } from '@/harnesses/codex/drive/input-items'
-import { readInterrupt } from '@/harnesses/codex/drive/interrupt-protocol'
-import { decidePendingPermission } from '@/harnesses/codex/drive/permission-protocol'
-import { readSteeredTurn } from '@/harnesses/codex/drive/protocol/protocol'
-import { codexAnswersFor, settleQuestion } from '@/harnesses/codex/drive/question-protocol'
-import { readRename } from '@/harnesses/codex/drive/rename-protocol'
+import {
+  codexAnswersFor,
+  decidePendingPermission,
+  readInterrupt,
+  readRename,
+  readSteeredTurn,
+  settleQuestion,
+} from '@/harnesses/codex/drive/protocol'
 import { createResumingChannel } from '@/harnesses/codex/drive/resuming-channel'
 import type { CodexSessionDriver } from '@/harnesses/codex/drive/session/codex-session-driver-types'
 import { CodexSessionDriverError } from '@/harnesses/codex/drive/session/codex-session-error'
