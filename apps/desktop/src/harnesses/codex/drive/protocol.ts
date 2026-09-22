@@ -26,7 +26,7 @@ export type RequestParams = {
     itemsView: 'full'
     sortDirection: 'asc'
   }
-  'thread/loaded/list': { cursor?: string }
+  'thread/loaded/list': { cursor?: string; limit: number }
   'turn/start': {
     threadId: string
     input: Input[]

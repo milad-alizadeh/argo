@@ -3,6 +3,7 @@ import {
   type SessionFeedRow,
   sessionRosterRowSchema,
 } from '@/domains/sessions/contract/model/models'
+import { sessionError } from '@/domains/sessions/contract/model/session-error'
 import type { TranscriptDiscovery } from '@/domains/sessions/main/observation/discover-transcript-sessions'
 import type { SessionProjection } from '@/domains/sessions/next/contract/session-projection-contract'
 import { reconcileStoredHistory } from '@/harnesses/codex/history/watched-projection'
@@ -34,6 +35,18 @@ function promptOf(projection: SessionProjection): string {
   return projection.messages.find((message) => message.role === 'user')?.text ?? 'New Codex Session'
 }
 
+function titleOf(projection: SessionProjection) {
+  if (projection.sourceHealth === 'unavailable') {
+    return {
+      text: sessionError('vendor-history-unavailable', null).message,
+      source: 'custom' as const,
+    }
+  }
+  return projection.title === null
+    ? undefined
+    : { text: projection.title, source: 'custom' as const }
+}
+
 function turnStartedAtOf(projection: SessionProjection): string | null {
   const startedAt = projection.turns.reduce<number | null>(
     (latest, turn) => (latest === null || turn.startedAt > latest ? turn.startedAt : latest),
@@ -53,7 +66,7 @@ export function rosterRowOf(projection: SessionProjection, cwd: string | null) {
       setup: { model: null, effort: null, mode: null },
       startedAt: startedAtOf(projection),
       status: statusOf(projection),
-      title: projection.title === null ? undefined : { text: projection.title, source: 'custom' },
+      title: titleOf(projection),
       compactionPercentage: null,
       compactionStartedAt: null,
       compactionTokens: null,

@@ -87,3 +87,23 @@ test('projects managed Codex app-server state without a transcript', async () =>
     },
   ])
 })
+
+test('names unavailable vendor history in the watched Session title', async () => {
+  const unavailable = {
+    ...projection(),
+    posture: 'watched' as const,
+    sourceHealth: 'unavailable' as const,
+  }
+  const source = createCodexAppServerSessionSource({
+    adapter: {
+      execute: async () => ({ kind: 'accepted', projection: unavailable }),
+      subscribe: () => () => {},
+    },
+    projections: () => [],
+    watchedProjections: () => [],
+    refreshHistory: async () => [unavailable],
+    checkoutFor: () => null,
+  })
+  const listed = await source.discoverSessions()
+  assert.equal(listed.rows[0]?.title?.text, 'Session history is unavailable.')
+})

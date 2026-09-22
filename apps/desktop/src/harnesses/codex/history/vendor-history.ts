@@ -1,5 +1,4 @@
 import type { CodexChannel } from '@/harnesses/codex/drive/codex-channel'
-import type { RequestParams } from '@/harnesses/codex/drive/protocol'
 import { pagesOf, threadOf, turnsOf } from '@/harnesses/codex/history/vendor-convert'
 import {
   CodexHistoryUnavailableError,
@@ -14,6 +13,12 @@ import {
   threadSchema,
   turnSchema,
 } from '@/harnesses/codex/history/vendor-model'
+import {
+  listParams,
+  loadedParams,
+  readParams,
+  turnsParams,
+} from '@/harnesses/codex/history/vendor-request-params'
 
 export { readResumePermission } from '@/harnesses/codex/history/resume-permission'
 export type {
@@ -102,28 +107,12 @@ export async function requestStoredHistory(
 ): Promise<unknown> {
   switch (method) {
     case 'thread/list':
-      return channel.request(
-        'thread/list',
-        params as RequestParams['thread/list'],
-        (value) => value,
-      )
+      return channel.request('thread/list', listParams(params), (value) => value)
     case 'thread/read':
-      return channel.request(
-        'thread/read',
-        params as RequestParams['thread/read'],
-        (value) => value,
-      )
+      return channel.request('thread/read', readParams(params), (value) => value)
     case 'thread/turns/list':
-      return channel.request(
-        'thread/turns/list',
-        params as RequestParams['thread/turns/list'],
-        (value) => value,
-      )
+      return channel.request('thread/turns/list', turnsParams(params), (value) => value)
     case 'thread/loaded/list':
-      return channel.request(
-        'thread/loaded/list',
-        params as RequestParams['thread/loaded/list'],
-        (value) => value,
-      )
+      return channel.request('thread/loaded/list', loadedParams(params), (value) => value)
   }
 }
