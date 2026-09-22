@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionSetup } from '@/domains/sessions/contract/model/models'
-import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
+import { useComposerStore } from '@/domains/sessions/renderer/composer'
 import { SessionScreenView } from '@/domains/sessions/renderer/screens/session-screen-view'
 import { sessionRosterRow } from '@/domains/sessions/renderer/session-fixtures'
 

@@ -4,10 +4,12 @@ import { useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
 
 import { useProjects } from '@/domains/projects/renderer/port'
-import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
-import { useSessionComposer } from '@/domains/sessions/renderer/composer/use-session-composer'
-import { useSessionPermission } from '@/domains/sessions/renderer/composer/use-session-permission'
-import { useSessionQuestion } from '@/domains/sessions/renderer/composer/use-session-question'
+import {
+  useComposerStore,
+  useSessionComposer,
+  useSessionPermission,
+  useSessionQuestion,
+} from '@/domains/sessions/renderer/composer'
 import { COMPOSER_FOCUS_STATE } from '@/domains/sessions/renderer/composer-focus-state'
 import { workInspectorReveal } from '@/domains/sessions/renderer/inspector/work-inspector-reveal'
 import { sessionHarness } from '@/domains/sessions/renderer/screens/session-screen-state'

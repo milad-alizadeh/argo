@@ -8,7 +8,7 @@ import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-
 import { useProjects } from '@/domains/projects/renderer/port'
 import { EmptyProjectScreen } from '@/domains/projects/renderer/screens/empty-project-screen'
 import { ProjectSetupWindow } from '@/domains/projects/renderer/setup/screens/project-setup-window'
-import { DevelopmentIdentityBar } from '@/domains/sessions/renderer/composer/development-identity-bar'
+import { DevelopmentIdentityBar } from '@/domains/sessions/renderer/composer'
 import { SessionsPage } from '@/domains/sessions/renderer/pages/sessions-page'
 import { SessionsSidebar } from '@/domains/sessions/renderer/roster/sidebar/sessions-sidebar'
 import { SessionScreenView } from '@/domains/sessions/renderer/screens/session-screen-view'

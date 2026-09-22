@@ -4,7 +4,7 @@ import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/model/models'
 import type { SessionShellOutput } from '@/domains/sessions/contract/model/wire/background-work-contract'
-import { SessionComposer } from '@/domains/sessions/renderer/composer/session-composer'
+import { SessionComposer } from '@/domains/sessions/renderer/composer'
 import { RICH_MARKDOWN } from '@/domains/sessions/renderer/feed/content/feed-samples'
 import { INACTIVE_FEED_LIVE_FACTS } from '@/domains/sessions/renderer/feed/document/feed-live-facts'
 import { SessionInspector } from '@/domains/sessions/renderer/inspector/session-inspector'

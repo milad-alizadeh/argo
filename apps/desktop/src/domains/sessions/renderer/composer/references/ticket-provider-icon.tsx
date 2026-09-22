@@ -1,4 +1,4 @@
-import type { ComposerTicketContext } from '@/domains/sessions/renderer/composer/use-composer-store'
+import type { ComposerTicketContext } from '../store'
 
 export const ticketProviderIconSource: Record<ComposerTicketContext['provider'], string> = {
   github: '/provider-icons/github.svg',

@@ -9,10 +9,10 @@ import {
 } from 'lexical'
 import type { RefObject } from 'react'
 import { useEffect, useState } from 'react'
-import { activeReference } from '@/domains/sessions/renderer/composer/references/composer-reference-menu'
-import { $createComposerTicketReferenceNode } from '@/domains/sessions/renderer/composer/references/composer-ticket-reference-node'
-import { ContextPicker } from '@/domains/sessions/renderer/composer/references/context-picker/context-picker'
-import type { ComposerTicketContext } from '@/domains/sessions/renderer/composer/use-composer-store'
+import type { ComposerTicketContext } from '../../store'
+import { activeReference } from '../composer-reference-menu'
+import { $createComposerTicketReferenceNode } from '../composer-ticket-reference-node'
+import { ContextPicker } from './context-picker'
 
 function contextTicketButtons() {
   return [...document.querySelectorAll<HTMLButtonElement>('[data-context-ticket="true"]')]

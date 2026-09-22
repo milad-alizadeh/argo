@@ -1,7 +1,7 @@
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
-import type { TurnSetupControlProps } from '@/domains/sessions/renderer/composer/run-setup-menu'
-import type { Send } from '@/domains/sessions/renderer/composer/use-send'
-import { useSessionComposerState } from '@/domains/sessions/renderer/composer/use-session-composer-state'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive'
+import type { TurnSetupControlProps } from '../toolbar'
+import type { Send } from './use-send'
+import { useSessionComposerState } from './use-session-composer-state'
 
 type ComposerOptions = {
   identity: string
