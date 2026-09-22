@@ -174,6 +174,10 @@ live, and the render commands. Interface review reads it rather than guessing th
 **`docs/designs/` is a closed archive.** Everything in it is for `apps/macOS`, and nothing new
 goes there.
 
+A story's `title:` nests under its owning parent component's Storybook group, one level per
+parent, matching the file's folder placement (`Sessions/Composer/*`, #2619); a shared
+cross-domain primitive stays under `Components/`.
+
 ## Visual verification
 
 **A component is reviewed in Storybook, and a screen is reviewed by running a render command.**

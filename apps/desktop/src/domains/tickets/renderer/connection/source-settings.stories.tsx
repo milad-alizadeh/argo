@@ -5,7 +5,7 @@ import { SourceSettings } from '@/domains/tickets/renderer/connection/source-set
 import { connection } from '@/domains/tickets/renderer/detail/ticket-fixtures'
 
 const meta: Meta<typeof SourceSettings> = {
-  title: 'Tickets/Source Settings',
+  title: 'Tickets/Connection/Source Settings',
   component: SourceSettings,
   decorators: [
     (Story) => (

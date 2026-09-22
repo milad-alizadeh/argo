@@ -67,7 +67,7 @@ const document = parseSetupDocument({
 })
 
 const meta: Meta<typeof SetupDocumentForm> = {
-  title: 'Projects/Setup Document Form',
+  title: 'Projects/Setup/Document Form',
   component: SetupDocumentForm,
   parameters: { layout: 'padded' },
 }

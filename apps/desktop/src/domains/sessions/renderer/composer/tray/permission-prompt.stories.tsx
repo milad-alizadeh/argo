@@ -14,7 +14,7 @@ const permission: Permission = {
 }
 
 const meta = {
-  title: 'Sessions/Permission Prompt',
+  title: 'Sessions/Composer/Permission Prompt',
   component: PermissionPrompt,
   args: { harness: 'claude', permission, onDecide: fn(async () => true) },
   decorators: [
