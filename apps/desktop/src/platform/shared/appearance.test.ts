@@ -7,7 +7,7 @@ import {
   DEFAULT_APPEARANCE,
   isAppearanceState,
   windowBackground,
-} from '@/platform/shared/appearance'
+} from './appearance'
 
 const state = (requestId: string, appearance = 'system', dark = true) => ({
   version: 1,

@@ -2,21 +2,15 @@ import { useTranslation } from 'react-i18next'
 import { displayedToolLabel } from '@/domains/sessions/contract/model/tool-feed'
 import { standsAlone, TOOL_KIND_PRESENTATION } from '@/domains/sessions/contract/model/tool-groups'
 import { TaskItem } from '@/domains/sessions/renderer/ai-elements/task'
-import { CollapsibleText } from '@/domains/sessions/renderer/feed/collapsible-text'
-import { groupIcon, liveActivity } from '@/domains/sessions/renderer/feed/feed-group-title'
-import {
-  FeedInlineToolCall,
-  FeedInlineToolCallItem,
-} from '@/domains/sessions/renderer/feed/feed-inline-tool-call'
-import { StatusIcon } from '@/domains/sessions/renderer/feed/feed-tool-status'
-import { LiveActivityText } from '@/domains/sessions/renderer/feed/live-activity-text'
-import {
-  type ToolGroupState,
-  useToolGroupOpen,
-} from '@/domains/sessions/renderer/feed/tool-group-state'
 import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
 import { Icon, type IconName } from '@/platform/renderer/components/icon'
 import { RunningText } from '@/platform/renderer/components/running-text'
+import { CollapsibleText } from './collapsible-text'
+import { groupIcon, liveActivity } from './feed-group-title'
+import { FeedInlineToolCall, FeedInlineToolCallItem } from './feed-inline-tool-call'
+import { StatusIcon } from './feed-tool-status'
+import { LiveActivityText } from './live-activity-text'
+import { type ToolGroupState, useToolGroupOpen } from './tool-group-state'
 
 export type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 export type ToolCall = Extract<SessionFeedRow, { shape: 'tool-group' }>['calls'][number]

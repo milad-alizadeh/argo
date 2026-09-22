@@ -8,8 +8,8 @@ import {
   type TicketUpdateReply,
   ticketError,
 } from '@/domains/tickets/contract/contract'
-import { connectionSummary } from '@/domains/tickets/main/connection-summary'
-import { type Call, readAs } from '@/domains/tickets/main/read-as'
+import { connectionSummary } from './connection-summary'
+import { type Call, readAs } from './read-as'
 
 const STORAGE_ERRORS = { unreadable: 'storage-unavailable', invalid: 'storage-invalid' } as const
 

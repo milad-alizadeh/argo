@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { sessionErrorSchema } from '@/domains/sessions/contract/model/session-error'
 import { identifierSchema } from '@/shared/validation'
+import { sessionErrorSchema } from './session-error'
 
 export const sessionFileRequestSchema = z.strictObject({
   version: z.literal(1),

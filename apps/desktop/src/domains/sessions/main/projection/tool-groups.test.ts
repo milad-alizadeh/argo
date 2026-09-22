@@ -11,11 +11,7 @@ import {
   TOOL_KIND_PRESENTATION,
 } from '@/domains/sessions/contract/model/tool-groups'
 import type { ToolCall } from '@/domains/sessions/contract/model/transcript'
-import {
-  editCall,
-  fetchCall,
-  searchCall,
-} from '@/domains/sessions/main/projection/tool-feed-test-fixtures'
+import { editCall, fetchCall, searchCall } from './tool-feed-test-fixtures'
 
 function bash(id: string, command: string): ToolCall {
   return { id, kind: 'execute', command, label: null, text: command, background: false }

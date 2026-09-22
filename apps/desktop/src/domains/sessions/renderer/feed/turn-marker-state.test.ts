@@ -1,8 +1,5 @@
 import { expect, test } from 'bun:test'
-import type {
-  TurnMarkerEntry,
-  TurnMarkerRow,
-} from '@/domains/sessions/renderer/feed/turn-marker-state'
+import type { TurnMarkerEntry, TurnMarkerRow } from './turn-marker-state'
 import {
   optimisticRowFor,
   promptOf,
@@ -11,7 +8,7 @@ import {
   stageFor,
   turnEnded,
   turnMarkerView,
-} from '@/domains/sessions/renderer/feed/turn-marker-state'
+} from './turn-marker-state'
 
 function entry(overrides: Partial<TurnMarkerEntry> = {}): TurnMarkerEntry {
   return {

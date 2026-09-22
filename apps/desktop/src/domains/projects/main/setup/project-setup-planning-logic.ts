@@ -2,17 +2,14 @@ import { fromCallback } from 'xstate'
 import type { ProjectSetupAnswer } from '@/domains/projects/contract/project-setup-question'
 import { runPlanningAgent } from '@/domains/projects/main/setup/onboarding-agent/planning/run-planning-agent'
 import { prepareSetupWorktree } from '@/domains/projects/main/setup/preparation/setup-worktree'
-import type {
-  ProjectSetupContext,
-  ProjectSetupEvent,
-} from '@/domains/projects/main/setup/project-setup-machine-types'
-import { startProjectSetupTask } from './project-setup-task'
 import type { ProjectSetupServices } from './project-setup-logic'
+import type { ProjectSetupContext, ProjectSetupEvent } from './project-setup-machine-types'
 import {
   type ActivePermission,
   projectSetupPermissionDecisionHandler,
 } from './project-setup-permission-decisions'
 import { projectSetupProgressReporter } from './project-setup-progress'
+import { startProjectSetupTask } from './project-setup-task'
 
 export type ProjectSetupPlanningInput = {
   continuation?: { prompt: string; sessionId: string }

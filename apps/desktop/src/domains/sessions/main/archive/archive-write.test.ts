@@ -2,10 +2,6 @@ import assert from 'node:assert/strict'
 import { mkdir } from 'node:fs/promises'
 import { test } from 'node:test'
 import { sessionArchiveSetReplySchema } from '@/domains/sessions/contract/ipc/contract'
-import {
-  createSessionArchiveStore,
-  sessionArchivePath,
-} from '@/domains/sessions/main/archive/archive-store'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import {
   listed,
@@ -14,6 +10,7 @@ import {
 } from '@/domains/sessions/main/observation/reader-test-helpers'
 import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import { createSessionArchiveStore, sessionArchivePath } from './archive-store'
 
 // `failed` is a storage failure alone (#2315): the flag is Argo's own, so the only reason a
 // Session cannot be archived is that its document does not get written. A directory where the

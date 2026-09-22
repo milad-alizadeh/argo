@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { fed, feedRequest, rowsOf } from '@/domains/sessions/main/observation/reader-test-helpers'
-import { readerOverRollout } from '@/harnesses/codex/sessions/rollout-reader-test-helper'
+import { readerOverRollout } from './rollout-reader-test-helper'
 
 const SESSION = 'parityLookup'
 

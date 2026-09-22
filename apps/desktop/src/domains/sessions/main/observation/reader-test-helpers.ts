@@ -7,7 +7,7 @@ import {
   sessionListReplySchema,
 } from '@/domains/sessions/contract/ipc/contract'
 import { mergeAppendedFeed } from '@/domains/sessions/contract/model/feed-contract'
-import type { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import type { createSessionReader } from './reader'
 
 export {
   appendCodexRecord,
@@ -15,7 +15,7 @@ export {
   appendGarbledCodexLine,
   appendHalfCodexTranscript,
   writeCodexTranscript,
-} from '@/domains/sessions/main/observation/reader-test-codex-helpers'
+} from './reader-test-codex-helpers'
 
 export async function tempRoot(context: { after: (cleanup: () => Promise<void>) => void }) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-reader-'))

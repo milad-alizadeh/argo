@@ -16,7 +16,7 @@ import { isSessionIndexFallback } from '@/domains/sessions/main/index/session-in
 import { belongsToProject, projectRootsOf } from '@/domains/sessions/main/lifecycle/project-scope'
 import { fromContext, type ReadContext } from '@/domains/sessions/main/observation/read-declaration'
 import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
-import { matchesSearchQuery } from '@/domains/sessions/main/projection/search-match'
+import { matchesSearchQuery } from './search-match'
 
 export const SEARCH_PAGE_LIMIT = 20
 

@@ -2,12 +2,9 @@ import type {
   SessionProjection,
   Unsubscribe,
 } from '@/domains/sessions/next/contract/session-projection-contract'
-import type {
-  AppServerSupervisor,
-  AppServerSupervisorDeps,
-} from '@/harnesses/codex/drive/app-server-supervisor-machine'
-import { createAppServerSupervisor } from '@/harnesses/codex/drive/app-server-supervisor-machine'
-import type { WireMessage } from '@/harnesses/codex/drive/protocol'
+import type { AppServerSupervisor, AppServerSupervisorDeps } from './app-server-supervisor-machine'
+import { createAppServerSupervisor } from './app-server-supervisor-machine'
+import type { WireMessage } from './protocol'
 
 type ManagedSessionRegistry = {
   dispatchNotification: (message: WireMessage) => void

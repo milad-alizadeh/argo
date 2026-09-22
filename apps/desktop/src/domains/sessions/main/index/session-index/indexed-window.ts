@@ -6,13 +6,9 @@
 import type { ChainHistory, SessionChain } from '@/domains/sessions/contract/model/chains'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import type { TranscriptFile } from '@/domains/sessions/contract/model/transcript'
-import type {
-  SessionIndex,
-  TranscriptFileIdentity,
-  TranscriptPath,
-} from '@/domains/sessions/main/index/session-index/contract'
-import { reindexCandidates } from '@/domains/sessions/main/index/session-index/reindex-pass'
-import { chainsInWindow } from '@/domains/sessions/main/index/session-index/window-pass'
+import type { SessionIndex, TranscriptFileIdentity, TranscriptPath } from './contract'
+import { reindexCandidates } from './reindex-pass'
+import { chainsInWindow } from './window-pass'
 
 export type ReadTranscripts = (
   paths: readonly TranscriptPath[],

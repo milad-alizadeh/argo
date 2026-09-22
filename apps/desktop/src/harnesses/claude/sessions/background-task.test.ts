@@ -4,7 +4,7 @@ import type { SessionChain } from '@/domains/sessions/contract/model/chains'
 import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript'
 import { readShellCommands } from '@/domains/sessions/contract/observation/signals'
 import { chainBackgroundTasks, chainMessages } from '@/domains/sessions/main/projection/roster'
-import { parseTranscriptLine } from '@/harnesses/claude/sessions/records'
+import { parseTranscriptLine } from './records'
 
 test('ends a background command whose notice arrived while the Session was idle', () => {
   const call = JSON.stringify({

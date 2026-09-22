@@ -4,15 +4,15 @@ import { test } from 'node:test'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
-import { createHeldRolloutReader, heldRolloutIds } from '@/harnesses/codex/sessions/held-rollouts'
-import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+import { createHeldRolloutReader, heldRolloutIds } from './held-rollouts'
+import { codexSessionSource } from './read-sessions'
 import {
   OPEN_TURN_COMPLETE,
   openTurnRolloutRoot,
   rolloutPath,
   rosterRows as rows,
   OPEN_TURN_THREAD as THREAD,
-} from '@/harnesses/codex/sessions/rollout-test-helpers'
+} from './rollout-test-helpers'
 
 const OTHER_THREAD = '01a0b000-0000-7000-8000-000000000009'
 

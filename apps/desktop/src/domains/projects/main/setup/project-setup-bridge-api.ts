@@ -3,10 +3,10 @@ import type {
   ProjectSetupSnapshotRequest,
 } from '@/domains/projects/contract/contract'
 import { projectError } from '@/domains/projects/contract/contract'
-import type { ProjectSetupRuntime } from '@/domains/projects/main/setup/project-setup-logic'
 import type { createProjectSetupRegistry } from '@/domains/projects/main/setup/persistence/project-setup-registry'
 import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
 import { commandHarnessIsAvailable, eventFor } from './project-setup-command'
+import type { ProjectSetupRuntime } from './project-setup-logic'
 
 type Registry = ReturnType<typeof createProjectSetupRegistry>
 type Dependencies = {

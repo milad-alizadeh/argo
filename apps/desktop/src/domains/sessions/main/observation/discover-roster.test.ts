@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
-import { discoverRoster } from '@/domains/sessions/main/observation/discover-roster'
+import { discoverRoster } from './discover-roster'
 
 const PROJECT = '/projects/argo'
 

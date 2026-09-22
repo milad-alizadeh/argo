@@ -4,16 +4,13 @@ import {
   type ProjectOpenRequest,
   projectError,
 } from '@/domains/projects/contract/contract'
-import { toSummary } from '@/domains/projects/main/presentation'
-import {
-  readProjectConfiguration,
-  readProjectConfigurationSource,
-} from '@/domains/projects/main/project-configuration'
-import type { ProjectStore } from '@/domains/projects/main/register-project'
-import { isProjectStoreInvalid } from '@/domains/projects/main/sqlite-store'
 import { isRecord } from '@/shared/validation'
 import type { SetupDocument } from '../contract/setup-document'
+import { toSummary } from './presentation'
+import { readProjectConfiguration, readProjectConfigurationSource } from './project-configuration'
+import type { ProjectStore } from './register-project'
 import type { SetupCheckpoint } from './sqlite-store'
+import { isProjectStoreInvalid } from './sqlite-store'
 
 type OpenProjectStore = ProjectStore & {
   projectSetup?: { snapshot: (projectId: string) => { screen: string } }

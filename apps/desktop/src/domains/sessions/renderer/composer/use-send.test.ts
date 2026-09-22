@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { performSend } from '@/domains/sessions/renderer/composer/use-send'
+import { performSend } from './use-send'
 
 function fixture(overrides: Partial<Parameters<typeof performSend>[0]> = {}) {
   const calls = {

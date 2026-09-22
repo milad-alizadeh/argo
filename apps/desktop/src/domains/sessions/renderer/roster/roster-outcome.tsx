@@ -1,13 +1,10 @@
 import { useTranslation } from 'react-i18next'
-import { RosterLoading } from '@/domains/sessions/renderer/roster/sessions-sidebar-chrome'
-import {
-  type RosterStatus,
-  showsActive,
-} from '@/domains/sessions/renderer/roster/use-roster-filter-store'
 import type { SessionError, SessionRoster } from '@/domains/sessions/renderer/types'
 import { Icon } from '@/platform/renderer/components/icon'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/platform/renderer/components/ui/empty'
+import { RosterLoading } from './sessions-sidebar-chrome'
+import { type RosterStatus, showsActive } from './use-roster-filter-store'
 
 function NoSessionsFound() {
   const { t } = useTranslation('sessions')

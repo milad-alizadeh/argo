@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
-import type { RosterActions } from '@/domains/sessions/renderer/roster/roster-actions'
 import type { Session, SessionId } from '@/domains/sessions/renderer/types'
+import type { RosterActions } from './roster-actions'
 
 export function useRenameDialog(
   rename: (sessionId: SessionId, title: string) => void,

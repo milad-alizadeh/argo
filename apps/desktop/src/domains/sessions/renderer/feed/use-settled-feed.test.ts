@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
-import { awaitingAssistantReply } from '@/domains/sessions/renderer/feed/use-settled-feed'
 import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
+import { awaitingAssistantReply } from './use-settled-feed'
 
 const prompt = (id: string): SessionFeedRow => ({
   shape: 'prose',

@@ -12,7 +12,7 @@ import type {
   TranscriptFileIdentity,
   TranscriptPath,
 } from '@/domains/sessions/main/index/session-index/contract'
-import { createTranscriptRecordReader } from '@/domains/sessions/main/observation/transcript-lines'
+import { createTranscriptRecordReader } from './transcript-lines'
 
 export type TranscriptDiscoverySource = {
   harness: string

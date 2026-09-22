@@ -4,7 +4,9 @@ import assert from 'node:assert/strict'
 import { chmod } from 'node:fs/promises'
 import { test } from 'node:test'
 import { sessionListReplySchema } from '@/domains/sessions/contract/ipc/contract'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+import { createSessionReader } from './reader'
 import {
   appendCodexTranscript,
   fed,
@@ -14,9 +16,7 @@ import {
   tempRoot,
   writeClaudeTranscript,
   writeCodexTranscript,
-} from '@/domains/sessions/main/observation/reader-test-helpers'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
-import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+} from './reader-test-helpers'
 
 test('answers with the first error when every Harness folder is missing', async (context) => {
   const root = await tempRoot(context)

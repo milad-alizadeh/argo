@@ -9,7 +9,7 @@ import {
   type LinearEndpoints,
   linearProofEndpoints,
 } from '@/providers/linear/endpoints'
-import { GITHUB_PROOF_ORIGIN_ENV, LINEAR_PROOF_ORIGIN_ENV } from '@/providers/proof-protocol'
+import { GITHUB_PROOF_ORIGIN_ENV, LINEAR_PROOF_ORIGIN_ENV } from './proof-protocol'
 
 export type ProviderEndpoints = { github: GitHubEndpoints; linear: LinearEndpoints | null }
 

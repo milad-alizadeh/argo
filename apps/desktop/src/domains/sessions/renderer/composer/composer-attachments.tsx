@@ -1,12 +1,12 @@
 import { useTranslation } from 'react-i18next'
 import { AttachmentChip, parseFilename } from '@/domains/sessions/renderer/attachment-chip'
-import type { ComposerAttachment } from '@/domains/sessions/renderer/composer/use-composer-store'
 import { Icon } from '@/platform/renderer/components/icon'
 import {
   AttachmentAction,
   AttachmentActions,
   AttachmentGroup,
 } from '@/platform/renderer/components/ui/attachment'
+import type { ComposerAttachment } from './use-composer-store'
 
 export type ComposerAttachmentsProps = {
   attachments: ComposerAttachment[]

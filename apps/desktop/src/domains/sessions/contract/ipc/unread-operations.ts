@@ -1,7 +1,4 @@
-import {
-  sessionUnreadFocusReplySchema,
-  sessionUnreadFocusRequestSchema,
-} from '@/domains/sessions/contract/ipc/contract'
+import { sessionUnreadFocusReplySchema, sessionUnreadFocusRequestSchema } from './contract'
 
 export const SESSION_UNREAD_OPERATIONS = {
   focusUnread: {

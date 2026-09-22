@@ -1,16 +1,11 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useRef } from 'react'
-import { moveFocus } from '@/domains/sessions/renderer/roster/roster-arrow-keys'
-import { RosterContextMenu } from '@/domains/sessions/renderer/roster/roster-context-menu'
-import { RosterRowView } from '@/domains/sessions/renderer/roster/roster-row-view'
-import {
-  ROSTER_ROW_HEIGHT,
-  type RosterRow,
-  type RosterRowHandlers,
-  rowPlace,
-} from '@/domains/sessions/renderer/roster/roster-rows'
-import { useSentinelFetch } from '@/domains/sessions/renderer/roster/use-roster-sentinel-fetch'
 import type { SessionId } from '@/domains/sessions/renderer/types'
+import { moveFocus } from './roster-arrow-keys'
+import { RosterContextMenu } from './roster-context-menu'
+import { RosterRowView } from './roster-row-view'
+import { ROSTER_ROW_HEIGHT, type RosterRow, type RosterRowHandlers, rowPlace } from './roster-rows'
+import { useSentinelFetch } from './use-roster-sentinel-fetch'
 
 // Overscan generous enough to keep a roster's realistic session count fully mounted, so arrow-key
 // navigation (which walks the mounted buttons) behaves the same as the flat list it replaces;

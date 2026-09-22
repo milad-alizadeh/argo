@@ -1,6 +1,6 @@
 import type * as SessionContract from '@/domains/sessions/contract/ipc/contract'
 import { sessionError } from '@/domains/sessions/contract/ipc/contract'
-import { type OwnerContext, ownedAccepted } from '@/domains/sessions/main/drive/drive'
+import { type OwnerContext, ownedAccepted } from './drive'
 
 export async function steerSession(
   request: SessionContract.SessionSteerRequest,

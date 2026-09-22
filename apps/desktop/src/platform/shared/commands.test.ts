@@ -11,7 +11,7 @@ import {
   ROSTER_MOVES,
   SEND_MESSAGE_COMMAND,
   SHORTCUTS,
-} from '@/platform/shared/commands'
+} from './commands'
 
 const pressed = (key, modifiers = {}) => ({
   key,

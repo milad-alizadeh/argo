@@ -1,6 +1,6 @@
 import type { SessionAdapterRegistration } from '@/domains/sessions/next/main/session-adapter-registry'
-import { createCodexSessionAdapter } from '@/harnesses/codex/drive/codex-session-adapter'
 import { createCodexAppServerSessionSource } from '@/harnesses/codex/observation/app-server-session-source'
+import { createCodexSessionAdapter } from './codex-session-adapter'
 
 export function createCodexSessionAdapterRegistration(options: {
   findExecutable: () => string | null

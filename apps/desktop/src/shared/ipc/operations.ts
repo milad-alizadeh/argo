@@ -13,14 +13,14 @@ export type Operation<Request, Reply extends ReplyEnvelope> = {
 
 export type OperationTable = Record<string, Operation<unknown, ReplyEnvelope>>
 
-export type RequestOf<Operation> = Operation extends import('@/shared/ipc/operations').Operation<
+export type RequestOf<Operation> = Operation extends import('./operations').Operation<
   infer Request,
   ReplyEnvelope
 >
   ? Request
   : never
 
-export type ReplyOf<Operation> = Operation extends import('@/shared/ipc/operations').Operation<
+export type ReplyOf<Operation> = Operation extends import('./operations').Operation<
   unknown,
   infer Reply extends ReplyEnvelope
 >

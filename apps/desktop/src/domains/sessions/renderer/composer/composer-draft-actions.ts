@@ -1,5 +1,5 @@
 import type { StoreApi } from 'zustand'
-import type { ComposerState } from '@/domains/sessions/renderer/composer/use-composer-store'
+import type { ComposerState } from './use-composer-store'
 
 type ComposerSet = StoreApi<ComposerState>['setState']
 

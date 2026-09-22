@@ -4,10 +4,7 @@ import {
   unreadableRowHeight,
 } from '@/domains/sessions/contract/model/models'
 import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
-import {
-  isHiddenToolRunBoundary,
-  rowsOfRecord,
-} from '@/domains/sessions/main/projection/feed-row-projection'
+import { isHiddenToolRunBoundary, rowsOfRecord } from './feed-row-projection'
 
 export { isHiddenToolRunBoundary, rowsOfRecord, UNREADABLE_ROW, unreadableRowHeight }
 

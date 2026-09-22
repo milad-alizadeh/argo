@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
-import { nextReveals } from '@/domains/sessions/renderer/feed/reveal'
-import type { Settled } from '@/domains/sessions/renderer/feed/use-settled-feed'
 import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
+import { nextReveals } from './reveal'
+import type { Settled } from './use-settled-feed'
 
 function settled(rows: SessionFeedRow[]): Settled {
   return {

@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
-import { ComposerStory } from '@/domains/sessions/renderer/composer/composer-story-samples'
-import { SessionComposer } from '@/domains/sessions/renderer/composer/session-composer'
-import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
 import { Button } from '@/platform/renderer/components/ui/button'
+import { ComposerStory } from './composer-story-samples'
+import { SessionComposer } from './session-composer'
+import { useComposerStore } from './use-composer-store'
 
 const FRAME = 'mx-auto max-w-4xl p-8'
 

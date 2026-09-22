@@ -2,14 +2,14 @@
 import { rmSync, writeFileSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
 import { afterEach, describe, expect, test } from 'vitest'
+import { feedRequest } from '@/domains/sessions/main/observation/reader-test-helpers'
 import {
   type IndexedAdapter,
   indexedAdapters,
   manyTranscripts,
   sessionIdAt,
-} from '@/domains/sessions/main/index/session-index/roster-fixtures'
-import { rosterHarness } from '@/domains/sessions/main/index/session-index/roster-harness'
-import { feedRequest } from '@/domains/sessions/main/observation/reader-test-helpers'
+} from './roster-fixtures'
+import { rosterHarness } from './roster-harness'
 
 const rosters = rosterHarness()
 afterEach(rosters.cleanUp)

@@ -6,7 +6,7 @@ import { test } from 'node:test'
 import type { SessionReader } from '@/domains/sessions/main/composition/bridge'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import type { LiveMessage } from '@/harnesses/codex/drive/codex-session-driver'
-import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+import { codexSessionSource } from './read-sessions'
 
 const SESSION = 'liveThread'
 

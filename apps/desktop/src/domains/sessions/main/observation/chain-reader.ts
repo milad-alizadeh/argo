@@ -4,12 +4,9 @@ import type { createFullRecordTracker } from '@/domains/sessions/main/index/full
 import type { SessionIndex } from '@/domains/sessions/main/index/session-index/contract'
 import type { createIndexedWindow } from '@/domains/sessions/main/index/session-index/indexed-window'
 import { isSessionIndexFallback } from '@/domains/sessions/main/index/session-index/recovery'
-import { readIndexedChain } from '@/domains/sessions/main/observation/read-indexed-chain'
-import type {
-  createTranscriptSummariser,
-  TranscriptDiscoverySource,
-} from '@/domains/sessions/main/observation/transcript-window'
+import { readIndexedChain } from './read-indexed-chain'
 import { ROSTER_PAGE_SIZE } from './roster-page-size'
+import type { createTranscriptSummariser, TranscriptDiscoverySource } from './transcript-window'
 
 export type ChainReaderParts = {
   source: TranscriptDiscoverySource

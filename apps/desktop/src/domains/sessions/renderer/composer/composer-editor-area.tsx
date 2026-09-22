@@ -2,14 +2,11 @@ import type { LexicalEditor } from 'lexical'
 import type { RefObject } from 'react'
 
 import type { SessionPlan } from '@/domains/sessions/contract/model/models'
-import { ComposerAttachments } from '@/domains/sessions/renderer/composer/composer-attachments'
-import { ComposerEditor } from '@/domains/sessions/renderer/composer/session-composer-editor'
-import { SessionPlanPopover } from '@/domains/sessions/renderer/composer/session-plan-popover'
-import type {
-  ComposerAttachment,
-  ComposerTicketContext,
-} from '@/domains/sessions/renderer/composer/use-composer-store'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
+import { ComposerAttachments } from './composer-attachments'
+import { ComposerEditor } from './session-composer-editor'
+import { SessionPlanPopover } from './session-plan-popover'
+import type { ComposerAttachment, ComposerTicketContext } from './use-composer-store'
 
 export function ComposerEditorArea({
   attachments,

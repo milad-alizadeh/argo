@@ -2,8 +2,8 @@
 // instead of here (house rule: a helper hoists on the third caller).
 import { useState } from 'react'
 import type { SessionPlan } from '@/domains/sessions/contract/model/models'
-import { SessionComposer } from '@/domains/sessions/renderer/composer/session-composer'
 import { Button } from '@/platform/renderer/components/ui/button'
+import { SessionComposer } from './session-composer'
 
 export function ComposerStory({ plan = null }: { plan?: SessionPlan | null }) {
   const [sessionId, setSessionId] = useState('session-one')

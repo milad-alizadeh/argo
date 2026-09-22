@@ -1,8 +1,8 @@
 import { cn } from 'cn'
 import type * as React from 'react'
-import { ICONS, type IconName } from '@/platform/renderer/components/icon-registry'
+import { ICONS, type IconName } from './icon-registry'
 
-export type { IconName } from '@/platform/renderer/components/icon-registry'
+export type { IconName } from './icon-registry'
 
 export type IconSize = 'control' | 'meta' | 'inline' | 'text'
 

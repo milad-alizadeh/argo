@@ -9,15 +9,11 @@ import {
   useRosterWindowCursor,
   useRosterWindowStore,
 } from '@/domains/sessions/renderer/roster/use-roster-window-store'
-import type { SessionContractError } from '@/domains/sessions/renderer/session-contract-error'
-import {
-  mergeOptimisticRow,
-  readableSessionId,
-  useSessionCreationStore,
-} from '@/domains/sessions/renderer/session-creation'
-import { invalidateSessionRoster } from '@/domains/sessions/renderer/session-queries'
-import type { SessionFeed, SessionId } from '@/domains/sessions/renderer/types'
-import { useWatchedQueries, useWatchedTopic } from '@/domains/sessions/renderer/use-watched-topic'
+import type { SessionContractError } from './session-contract-error'
+import { mergeOptimisticRow, readableSessionId, useSessionCreationStore } from './session-creation'
+import { invalidateSessionRoster } from './session-queries'
+import type { SessionFeed, SessionId } from './types'
+import { useWatchedQueries, useWatchedTopic } from './use-watched-topic'
 
 // A refresh must refresh only the window this reader has already loaded, never regrow it (#2239),
 // and every consumer of the roster must agree on which window that is: the cursor therefore lives in

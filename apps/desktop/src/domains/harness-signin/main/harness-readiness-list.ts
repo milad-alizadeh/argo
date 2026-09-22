@@ -1,5 +1,5 @@
 import type { HarnessReadinessListed } from '@/domains/harness-signin/contract/contract'
-import type { HarnessReadinessRegistration } from '@/domains/harness-signin/main'
+import type { HarnessReadinessRegistration } from './index'
 
 export async function listHarnessReadiness(
   registrations: readonly HarnessReadinessRegistration[],

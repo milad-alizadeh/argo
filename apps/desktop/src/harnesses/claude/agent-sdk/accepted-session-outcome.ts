@@ -1,7 +1,4 @@
-import {
-  type ClaudeSessionActor,
-  projectionFrom,
-} from '@/harnesses/claude/agent-sdk/claude-session-projection'
+import { type ClaudeSessionActor, projectionFrom } from './claude-session-projection'
 
 export function acceptedSessionOutcome(entry: { actor: ClaudeSessionActor; revision: number }) {
   return {

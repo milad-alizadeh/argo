@@ -2,8 +2,8 @@
 // each Subagent of a Session has spent. Both are asked for only while a reader is looking at the
 // work rail, so neither rides the Roster or Feed reply.
 import { z } from 'zod'
-import { sessionErrorSchema } from '@/domains/sessions/contract/model/session-error'
 import { identifierSchema } from '@/shared/validation'
+import { sessionErrorSchema } from './session-error'
 
 // What one background Shell has written so far, read from the file the Harness's own receipt named
 // (#1582). The renderer asks for it by the Shell's call id, never by a path of its own.

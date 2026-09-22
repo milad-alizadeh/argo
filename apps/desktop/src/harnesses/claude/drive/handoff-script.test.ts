@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { briefPath, handoffCommand, handoffOpening } from '@/harnesses/claude/drive/handoff-script'
+import { briefPath, handoffCommand, handoffOpening } from './handoff-script'
 
 test('the brief path is a markdown file under the given root, scoped to the Session and moment', () => {
   const path = briefPath({ root: '/tmp/handoffs', sessionId: 'abc-123', atMs: 42 })

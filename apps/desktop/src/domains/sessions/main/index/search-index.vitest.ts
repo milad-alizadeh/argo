@@ -3,17 +3,17 @@
 // `archive-index.vitest.ts` does: the index reaches `node:sqlite`, which Bun does not ship.
 import { describe, expect, test } from 'vitest'
 import {
-  createIndexedReadHarness,
-  expectAnsweredByIndex,
-  finishBackfill,
-} from '@/domains/sessions/main/index/indexed-read-test-harness'
-import {
   indexedAdapters,
   manyTranscripts,
   sessionIdAt,
 } from '@/domains/sessions/main/index/session-index/roster-fixtures'
 import type { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { requestSearch } from '@/domains/sessions/main/projection/search-request'
+import {
+  createIndexedReadHarness,
+  expectAnsweredByIndex,
+  finishBackfill,
+} from './indexed-read-test-harness'
 
 const { harness } = createIndexedReadHarness()
 

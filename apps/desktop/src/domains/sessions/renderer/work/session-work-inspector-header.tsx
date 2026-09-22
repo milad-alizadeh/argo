@@ -1,10 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import {
-  elapsedDuration,
-  type SessionWork,
-  subagentWorkState,
-} from '@/domains/sessions/renderer/work/session-work'
-import { workPresentation } from '@/domains/sessions/renderer/work/work-presentation'
+import { elapsedDuration, type SessionWork, subagentWorkState } from './session-work'
+import { workPresentation } from './work-presentation'
 
 // Work is always inspected one pane at a time, so its name and state belong in that pane's chrome.
 export function SessionWorkInspectorHeader({ work, now }: { work: SessionWork; now?: number }) {

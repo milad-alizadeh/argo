@@ -9,7 +9,7 @@ import path from 'node:path'
 
 import { openCompanionPlugin } from '@/harnesses/claude/drive/companion-plugin'
 import { createClaudePermissionGate } from '@/harnesses/claude/drive/permission-gate'
-import { hookSocketPath } from '@/harnesses/claude/integration/hook-socket'
+import { hookSocketPath } from './hook-socket'
 
 const LONG_ROOT = path.join('Application Support', '@argo', 'desktop', 'claude-permission-plugins')
 

@@ -5,24 +5,17 @@ import type {
 } from '@/domains/sessions/next/contract/session-contract'
 import type { SessionCommandOutcome } from '@/domains/sessions/next/contract/session-projection-contract'
 import type { SessionService } from '@/domains/sessions/next/main/session-service'
-import type { AppServerSupervisor } from '@/harnesses/codex/drive/app-server-supervisor-machine'
-import {
-  executeSend,
-  requireSessionEntry,
-  type SessionRegistry,
-} from '@/harnesses/codex/drive/codex-session-commands'
-import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
-import type { ManagedSessionActor } from '@/harnesses/codex/drive/codex-session-projection'
-import { waitForManaged } from '@/harnesses/codex/drive/codex-session-ready'
-import type {
-  createManagedSessionMachine,
-  ManagedSessionInput,
-} from '@/harnesses/codex/drive/managed-session-machine'
 import { beginWatchedResume } from '@/harnesses/codex/history/resume-watched'
 import {
   type HistoryTransport,
   readResumePermission,
 } from '@/harnesses/codex/history/vendor-history'
+import type { AppServerSupervisor } from './app-server-supervisor-machine'
+import { executeSend, requireSessionEntry, type SessionRegistry } from './codex-session-commands'
+import { CodexSessionDriverError } from './codex-session-error'
+import type { ManagedSessionActor } from './codex-session-projection'
+import { waitForManaged } from './codex-session-ready'
+import type { createManagedSessionMachine, ManagedSessionInput } from './managed-session-machine'
 
 function keyOf(session: SessionIdentity): string {
   return `${session.harness}:${session.nativeId}`

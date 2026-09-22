@@ -5,7 +5,7 @@
 // It runs INSIDE the packaged app, because that is the only place the properties are true or
 // false. A PTY that works under `bun test` says nothing about one behind a hardened runtime, an
 // asar and a code signature.
-import { PtySession } from '@/platform/main/testing/pty-session'
+import { PtySession } from './pty-session'
 
 const CASE_TIMEOUT_MS = 15_000
 const SETTLE_MS = 300

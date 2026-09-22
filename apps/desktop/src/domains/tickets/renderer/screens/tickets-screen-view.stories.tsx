@@ -15,10 +15,10 @@ import {
   ticketsView,
 } from '@/domains/tickets/renderer/detail/ticket-fixtures'
 import type { TicketsScreenProps } from '@/domains/tickets/renderer/hooks/use-tickets-view'
-import { TicketsScreen } from '@/domains/tickets/renderer/screens/tickets-screen-view'
 import { TicketsSidebarContent } from '@/domains/tickets/renderer/sidebar/tickets-sidebar'
 import { STATUSES } from '@/domains/tickets/renderer/status/status-fixtures'
 import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
+import { TicketsScreen } from './tickets-screen-view'
 
 // The screen no longer holds its own selection (#2134: a Session's "Open Ticket" must land on the
 // same Ticket after a reload), so a story stands in for the router state that owns it in the app.

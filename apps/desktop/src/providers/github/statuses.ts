@@ -2,9 +2,9 @@
 // Each status's id is the `state_reason` it is closed with, or `open`.
 
 import type { StatusChange, TicketStatus } from '@/domains/tickets/contract/ticket'
-import type { GitHubEndpoints } from '@/providers/github/endpoints'
-import { failed, type GitHubRead, patch } from '@/providers/github/http'
 import { isRecord } from '@/shared/validation'
+import type { GitHubEndpoints } from './endpoints'
+import { failed, type GitHubRead, patch } from './http'
 
 const OPEN: TicketStatus = { id: 'open', name: 'Open', category: 'unstarted' }
 const COMPLETED: TicketStatus = {

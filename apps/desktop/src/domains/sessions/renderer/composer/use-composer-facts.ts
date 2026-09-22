@@ -1,16 +1,13 @@
 import type { Cockpit, ProjectActions } from '@/domains/projects/renderer'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import {
-  composerIdentityOf,
-  findSessionRow,
-} from '@/domains/sessions/renderer/composer/composer-identity'
-import type { Failure } from '@/domains/sessions/renderer/composer/use-session-composer-actions'
-import { useTurnMarker } from '@/domains/sessions/renderer/composer/use-turn-marker'
-import type { WorkspaceMenuControlProps } from '@/domains/sessions/renderer/composer/workspace-menu'
 import { HARNESSES, type SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import { useSessionCreationStore } from '@/domains/sessions/renderer/session-creation'
 import { useTurnSetup } from '@/domains/sessions/renderer/turn-setup/use-turn-setup'
 import type { useSessions } from '@/domains/sessions/renderer/use-sessions'
+import { composerIdentityOf, findSessionRow } from './composer-identity'
+import type { Failure } from './use-session-composer-actions'
+import { useTurnMarker } from './use-turn-marker'
+import type { WorkspaceMenuControlProps } from './workspace-menu'
 
 const NO_ROWS: SessionRosterRow[] = []
 

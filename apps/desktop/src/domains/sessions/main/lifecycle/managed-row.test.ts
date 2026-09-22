@@ -10,7 +10,7 @@ import {
   reconcileRosterRow,
   rosterRowFields,
 } from '@/domains/sessions/contract/observation/roster-row-definition'
-import { managedRow, mergeManagedRoster } from '@/domains/sessions/main/lifecycle/managed-row'
+import { managedRow, mergeManagedRoster } from './managed-row'
 
 const setup = { model: null, effort: null, mode: null } as const
 const HELD_TITLE = 'Held title'

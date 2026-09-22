@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
-import { deliverAnswer } from '@/harnesses/claude/drive/question-answer'
+import { deliverAnswer } from './question-answer'
 
 const DOWN = '[B'
 const noWait = async () => {}

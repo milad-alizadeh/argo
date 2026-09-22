@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { type TestContext, test } from 'node:test'
 
-import { createOwnershipLedger } from '@/domains/sessions/main/lifecycle/ownership-ledger'
+import { createOwnershipLedger } from './ownership-ledger'
 
 async function ledgerPath(context: TestContext) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-ownership-'))

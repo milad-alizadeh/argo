@@ -22,8 +22,8 @@ import {
   readTurnStartedAt,
 } from '@/domains/sessions/contract/observation/signals'
 import { readSetup } from '@/domains/sessions/main/composition/session-setup'
-import { readPlan } from '@/domains/sessions/main/projection/plan'
-import { readExternalStatus } from '@/domains/sessions/main/projection/status'
+import { readPlan } from './plan'
+import { readExternalStatus } from './status'
 
 export type { RosterRow, SessionTitle }
 // The `managed | external` axis (CONTEXT.md L2). This slice discovers Sessions from transcripts

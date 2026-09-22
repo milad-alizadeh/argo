@@ -1,6 +1,6 @@
 import type { ProjectSetupCommandRequest } from '@/domains/projects/contract/contract'
 import { defaultProjectSetupHarnesses } from '@/domains/projects/contract/project-setup-harness'
-import type { ProjectSetupRuntime } from '@/domains/projects/main/setup/project-setup-logic'
+import type { ProjectSetupRuntime } from './project-setup-logic'
 
 export function commandHarnessIsAvailable(
   command: ProjectSetupCommandRequest['command'],

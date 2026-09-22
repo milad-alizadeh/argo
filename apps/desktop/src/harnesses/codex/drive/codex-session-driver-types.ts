@@ -2,10 +2,10 @@ import type { CodexTurnSetup } from '@/domains/sessions/contract/codex-turn-setu
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import type { CodexProcess } from '@/harnesses/codex/drive/codex-channel'
-import type { LiveMessage, LiveMessages } from '@/harnesses/codex/drive/live-messages'
-import type { PendingCodexPermission } from '@/harnesses/codex/drive/permission-protocol'
-import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
+import type { CodexProcess } from './codex-channel'
+import type { LiveMessage, LiveMessages } from './live-messages'
+import type { PendingCodexPermission } from './permission-protocol'
+import type { PendingCodexQuestion } from './question-protocol'
 
 export type { CodexProcess, LiveMessage, LiveMessages }
 

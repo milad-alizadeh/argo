@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { FeedQuestion } from '@/domains/sessions/renderer/feed/feed-question'
 import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
+import { FeedQuestion } from './feed-question'
 
 type AskRow = Extract<SessionFeedRow, { shape: 'ask' }>
 

@@ -14,7 +14,7 @@ import {
   type TurnSetup,
   type TurnSetupChoices,
   turnSettled,
-} from '@/domains/sessions/renderer/turn-setup/turn-setup'
+} from './turn-setup'
 
 // Each harness remembers its own Model and Effort for a new composer (CONTEXT.md L2 · Model and Effort).
 const REMEMBERED_STORAGE_KEY = 'argo.composer-model-effort'

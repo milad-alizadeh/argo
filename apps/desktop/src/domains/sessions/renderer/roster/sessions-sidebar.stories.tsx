@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { useRosterFilterStore } from '@/domains/sessions/renderer/roster/use-roster-filter-store'
-import { useRosterWindowStore } from '@/domains/sessions/renderer/roster/use-roster-window-store'
 import { sessionRosterRow, sessionSubagent } from '@/domains/sessions/renderer/session-fixtures'
 import type { SessionError, SessionId, SessionsListed } from '@/domains/sessions/renderer/types'
 import { Roster, type RosterActions } from './roster'
+import { useRosterFilterStore } from './use-roster-filter-store'
+import { useRosterWindowStore } from './use-roster-window-store'
 
 const session = sessionRosterRow({
   id: 'prose',

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { fed, feedRequest, rowsOf } from '@/domains/sessions/main/observation/reader-test-helpers'
-import { readPatchFiles } from '@/harnesses/codex/sessions/apply-patch'
-import { readerOverRollout } from '@/harnesses/codex/sessions/rollout-reader-test-helper'
+import { readPatchFiles } from './apply-patch'
+import { readerOverRollout } from './rollout-reader-test-helper'
 
 const UPDATE = [
   '*** Begin Patch',

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { createInMemorySessionUnreadStore } from '@/domains/sessions/main/unread/unread-store'
+import { createInMemorySessionUnreadStore } from './unread-store'
 
 test('keeps existing Sessions read, then marks a completed newer turn unread', async () => {
   const unread = createInMemorySessionUnreadStore()

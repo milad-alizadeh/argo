@@ -2,10 +2,10 @@
 // runs over both adapters rather than over shared code with a stub Harness beneath it (#2372).
 import { mkdir, utimes, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import type { SessionIndex } from '@/domains/sessions/main/index/session-index/contract'
 import type { SessionSource } from '@/domains/sessions/main/observation/reader'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+import type { SessionIndex } from './contract'
 
 // `resumeOf` is the Session this transcript continues, written the way each Harness writes a resume:
 // Claude names the predecessor's uuid, Codex carries the origin thread id on every message.

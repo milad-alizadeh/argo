@@ -1,14 +1,4 @@
 import type { ReactNode } from 'react'
-import { AnchoredFeed } from '@/domains/sessions/renderer/feed/anchored-feed'
-import type { DrawnRowProps } from '@/domains/sessions/renderer/feed/drawn-row'
-import { FeedLoading } from '@/domains/sessions/renderer/feed/feed-loading'
-import type { Reveal } from '@/domains/sessions/renderer/feed/reveal'
-import { StalledFeed } from '@/domains/sessions/renderer/feed/stalled-feed'
-import {
-  awaitingAssistantReply,
-  type Settled,
-  type useSettledFeed,
-} from '@/domains/sessions/renderer/feed/use-settled-feed'
 import { Icon } from '@/platform/renderer/components/icon'
 import {
   Empty,
@@ -17,6 +7,12 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/platform/renderer/components/ui/empty'
+import { AnchoredFeed } from './anchored-feed'
+import type { DrawnRowProps } from './drawn-row'
+import { FeedLoading } from './feed-loading'
+import type { Reveal } from './reveal'
+import { StalledFeed } from './stalled-feed'
+import { awaitingAssistantReply, type Settled, type useSettledFeed } from './use-settled-feed'
 
 export function feedContent({
   active,

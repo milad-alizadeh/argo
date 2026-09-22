@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript'
 import { projectFeed } from '@/domains/sessions/main/projection/feed-incremental'
-import { normalizeCodexMessageRecords } from '@/harnesses/codex/sessions/discover'
-import { parseCodexTranscriptLine } from '@/harnesses/codex/sessions/records'
+import { normalizeCodexMessageRecords } from './discover'
+import { parseCodexTranscriptLine } from './records'
 
 type ParsedRecord = Exclude<ReturnType<typeof parseCodexTranscriptLine>, null>
 function subagentActivity(kind: string, agentThreadId: string, agentPath: string) {

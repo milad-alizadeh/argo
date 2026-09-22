@@ -16,15 +16,9 @@ import { holdsMessage } from '@/domains/sessions/main/index/session-index/window
 import type {
   TranscriptDiscovery,
   TranscriptDiscoveryOptions,
-} from '@/domains/sessions/main/observation/discover-transcript-sessions'
-import {
-  nextCursorFor,
-  windowSizeFor,
-} from '@/domains/sessions/main/observation/discover-transcript-sessions'
-import type {
-  createTranscriptSummariser,
-  TranscriptDiscoverySource,
-} from '@/domains/sessions/main/observation/transcript-window'
+} from './discover-transcript-sessions'
+import { nextCursorFor, windowSizeFor } from './discover-transcript-sessions'
+import type { createTranscriptSummariser, TranscriptDiscoverySource } from './transcript-window'
 
 // Archive and restore (#2374) resolve an id straight off the index's persisted resume graph
 // rather than growing a discovery window to find it.

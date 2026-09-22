@@ -1,11 +1,11 @@
 import { z } from 'zod'
+import { identifierSchema } from '@/shared/validation'
 import {
   type Harness,
   harnessSchema,
   sessionIdentitySchema,
   workspaceSelectionSchema,
-} from '@/domains/sessions/next/contract/session-contract'
-import { identifierSchema } from '@/shared/validation'
+} from './session-contract'
 
 const startCommandSchema = z.strictObject({
   type: z.literal('session.start'),

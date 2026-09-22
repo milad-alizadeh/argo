@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { canRestoreInterruptedMarker } from '@/domains/sessions/renderer/composer/use-composer-marker'
+import { canRestoreInterruptedMarker } from './use-composer-marker'
 
 const entry = {
   files: [],

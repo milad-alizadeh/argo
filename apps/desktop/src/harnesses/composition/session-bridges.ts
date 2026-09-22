@@ -19,12 +19,6 @@ import {
   sessionUnreadPath,
 } from '@/domains/sessions/main/unread/unread-store'
 import type { SessionTicketLinkStore } from '@/domains/tickets/main'
-import type {
-  HarnessRegistration,
-  HarnessRuntime,
-  ManagedSessionBridges,
-} from '@/harnesses/composition/harness-registration'
-import { sessionHarnesses } from '@/harnesses/composition/registered-harnesses'
 import { registerWatching } from '@/platform/main/watch/bridge'
 import { watchTrees } from '@/platform/main/watch/watch-paths'
 import {
@@ -33,6 +27,12 @@ import {
   watchWindowFocus,
 } from '@/platform/main/watch/watch-signals'
 import type { WatchedSource } from '@/platform/main/watch/watch-source'
+import type {
+  HarnessRegistration,
+  HarnessRuntime,
+  ManagedSessionBridges,
+} from './harness-registration'
+import { sessionHarnesses } from './registered-harnesses'
 
 // A Harness callback reaches `registerWatching` raw when its own runtime already reconciles it.
 export function harnessWatchedSources(harnesses: readonly HarnessRuntime[]): {

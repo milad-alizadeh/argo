@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import type { TurnSetupControlProps } from '@/domains/sessions/renderer/composer/run-setup-menu'
 import { Icon } from '@/platform/renderer/components/icon'
 import {
   DropdownMenu,
@@ -11,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
+import type { TurnSetupControlProps } from './run-setup-menu'
 
 // Extracted from the prototype's PermissionMenu (602bcce2); CONTEXT.md L2 · Session Mode.
 export function ModeMenu({ choices, value, onChange }: TurnSetupControlProps) {

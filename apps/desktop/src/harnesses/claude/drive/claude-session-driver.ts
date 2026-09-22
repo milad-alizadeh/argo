@@ -2,27 +2,19 @@ import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import type { ClaudePermission } from '@/domains/sessions/contract/ipc/contract'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import { managedRow, rollupSessionStatus } from '@/domains/sessions/main'
-import { closeSessions } from '@/harnesses/claude/drive/claude-session-close'
+import { closeSessions } from './claude-session-close'
 import {
   beginCompaction,
   clearCompaction,
   compactSession,
   completeCompaction,
-} from '@/harnesses/claude/drive/compaction-driver'
-import type { ClaudeTurnRequest } from '@/harnesses/claude/drive/deliver-turn'
-import {
-  channelActions,
-  type DriverOptions,
-  type ManagedSession,
-} from '@/harnesses/claude/drive/drive-channel'
-import { ClaudeSessionDriverError } from '@/harnesses/claude/drive/driver-error'
-import {
-  clearHandoff,
-  completeHandoffs,
-  startHandoff,
-} from '@/harnesses/claude/drive/handoff-driver'
-import type { LiveMessage } from '@/harnesses/claude/drive/live-messages'
-import { claudeManagedStatus } from '@/harnesses/claude/drive/managed-status'
+} from './compaction-driver'
+import type { ClaudeTurnRequest } from './deliver-turn'
+import { channelActions, type DriverOptions, type ManagedSession } from './drive-channel'
+import { ClaudeSessionDriverError } from './driver-error'
+import { clearHandoff, completeHandoffs, startHandoff } from './handoff-driver'
+import type { LiveMessage } from './live-messages'
+import { claudeManagedStatus } from './managed-status'
 
 export type ClaudeSessionDriver = {
   start: (request: { cwd: string } & ClaudeTurnRequest) => string

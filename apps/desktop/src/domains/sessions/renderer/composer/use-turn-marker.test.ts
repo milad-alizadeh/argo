@@ -1,10 +1,6 @@
 import { expect, test } from 'bun:test'
-import type { TurnMarkerEntries } from '@/domains/sessions/renderer/composer/use-turn-marker'
-import {
-  beginEntry,
-  clearEntry,
-  rekeyEntry,
-} from '@/domains/sessions/renderer/composer/use-turn-marker'
+import type { TurnMarkerEntries } from './use-turn-marker'
+import { beginEntry, clearEntry, rekeyEntry } from './use-turn-marker'
 
 const EMPTY: TurnMarkerEntries = new Map()
 

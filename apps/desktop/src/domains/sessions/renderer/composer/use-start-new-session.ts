@@ -1,15 +1,11 @@
 import type { Cockpit } from '@/domains/projects/renderer'
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
-import type { ComposerIdentity } from '@/domains/sessions/renderer/composer/composer-identity'
-import {
-  codeFrom,
-  type Failure,
-  messageFrom,
-} from '@/domains/sessions/renderer/composer/use-session-composer-actions'
-import type { useSessionMutations } from '@/domains/sessions/renderer/composer/use-session-mutations'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import { useSessionCreationStore } from '@/domains/sessions/renderer/session-creation'
 import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
+import type { ComposerIdentity } from './composer-identity'
+import { codeFrom, type Failure, messageFrom } from './use-session-composer-actions'
+import type { useSessionMutations } from './use-session-mutations'
 
 async function paintRoster(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 0))

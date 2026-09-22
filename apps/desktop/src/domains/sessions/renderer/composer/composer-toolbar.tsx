@@ -1,19 +1,13 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ModeMenu } from '@/domains/sessions/renderer/composer/mode-menu'
-import {
-  RunSetupMenu,
-  type TurnSetupControlProps,
-} from '@/domains/sessions/renderer/composer/run-setup-menu'
-import type { ComposerAttachment } from '@/domains/sessions/renderer/composer/use-composer-store'
-import {
-  WorkspaceMenu,
-  type WorkspaceMenuControlProps,
-} from '@/domains/sessions/renderer/composer/workspace-menu'
 import type { HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
 import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
+import { ModeMenu } from './mode-menu'
+import { RunSetupMenu, type TurnSetupControlProps } from './run-setup-menu'
+import type { ComposerAttachment } from './use-composer-store'
+import { WorkspaceMenu, type WorkspaceMenuControlProps } from './workspace-menu'
 
 function AddContextButton({ onOpen }: { onOpen: () => void }) {
   const { t } = useTranslation('sessions')

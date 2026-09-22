@@ -1,10 +1,7 @@
 import { fromCallback } from 'xstate'
-import type {
-  ProjectSetupContext,
-  ProjectSetupEvent,
-} from '@/domains/projects/main/setup/project-setup-machine-types'
-import { startProjectSetupTask } from './project-setup-task'
 import type { ProjectSetupServices } from './project-setup-logic'
+import type { ProjectSetupContext, ProjectSetupEvent } from './project-setup-machine-types'
+import { startProjectSetupTask } from './project-setup-task'
 
 export type ProjectSetupCancellationInput = {
   effect: 'planning' | 'application' | null

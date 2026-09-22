@@ -3,18 +3,6 @@ import type { NavigateFunction } from 'react-router'
 import type { Cockpit } from '@/domains/projects/renderer'
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import type { SessionCommandOutcome } from '@/domains/sessions/next/contract/session-projection-contract'
-import {
-  type ComposerIdentity,
-  findSessionRow,
-} from '@/domains/sessions/renderer/composer/composer-identity'
-import { sendInitialClaudeTurn } from '@/domains/sessions/renderer/composer/send-initial-claude-turn'
-import { sendManagedSessionTurn } from '@/domains/sessions/renderer/composer/send-managed-session-turn'
-import { sendToSelected } from '@/domains/sessions/renderer/composer/send-selected-turn'
-import type { SendOutcome } from '@/domains/sessions/renderer/composer/use-send'
-import type { Failure } from '@/domains/sessions/renderer/composer/use-session-composer-actions'
-import type { useSessionMutations } from '@/domains/sessions/renderer/composer/use-session-mutations'
-import { startNewSession } from '@/domains/sessions/renderer/composer/use-start-new-session'
-import type { TurnMarkerApi } from '@/domains/sessions/renderer/composer/use-turn-marker'
 import { COMPOSER_FOCUS_STATE } from '@/domains/sessions/renderer/composer-focus-state'
 import { promptOf, stageFor } from '@/domains/sessions/renderer/feed/turn-marker-state'
 import {
@@ -25,6 +13,15 @@ import { invalidateSessionRoster } from '@/domains/sessions/renderer/session-que
 import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
 import type { useTurnSetup } from '@/domains/sessions/renderer/turn-setup/use-turn-setup'
 import type { SessionRoster } from '@/domains/sessions/renderer/types'
+import { type ComposerIdentity, findSessionRow } from './composer-identity'
+import { sendInitialClaudeTurn } from './send-initial-claude-turn'
+import { sendManagedSessionTurn } from './send-managed-session-turn'
+import { sendToSelected } from './send-selected-turn'
+import type { SendOutcome } from './use-send'
+import type { Failure } from './use-session-composer-actions'
+import type { useSessionMutations } from './use-session-mutations'
+import { startNewSession } from './use-start-new-session'
+import type { TurnMarkerApi } from './use-turn-marker'
 
 export type TurnInput = {
   prompt: string
@@ -33,7 +30,7 @@ export type TurnInput = {
 }
 
 // Exported for direct testing: the send-routing decision itself needs no React to prove.
-export { sendToSelected } from '@/domains/sessions/renderer/composer/send-selected-turn'
+export { sendToSelected } from './send-selected-turn'
 
 export function sendToNewSession(request: {
   harness: SessionHarness

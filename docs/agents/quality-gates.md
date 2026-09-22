@@ -63,7 +63,18 @@ trusting this gate:
   file gets only the last one's patterns; the earlier ones' bans are silently dropped for it.
   Tracked, unfixed: #2624.
 
-**A domain reaches another domain's `main` or `renderer` facet only through its `port.ts`**
+**A sibling in the same folder is `./name`; `@/` is a crossing** (#2637). Biome's
+`noRestrictedImports` patterns can ban `../*` and `./*/*` (the parent and grandchild forms) but
+cannot tell an alias from a relative path once both resolve to the same file, so it cannot catch
+`@/domains/x/main/helper` written for a file already inside `domains/x/main/`.
+`.dependency-cruiser.json`'s `no-aliased-same-folder-import` rule can: every resolved edge carries
+a `dependencyTypes` array, and `aliased-tsconfig` marks one written as an alias, so the rule
+matches a `from` folder against a `to` path with the same folder as a backreference.
+`apps/desktop/src/harnesses/**` had no `noRestrictedImports` block at all until this rule needed
+one added; unlike the domain facets, it still has no facet-crossing matrix (main/preload/renderer
+bans), only the `../*`/`./*/*` ban.
+
+**A domain reaches another domain's `main` or `renderer` facet only through its `index.ts`**
 (#2623, ADR-0044). This is a separate gate from the specifier rule above, on a separate engine:
 `.dependency-cruiser.json`'s `domain-port-only` rule, run as `quality:boundaries` and in CI as its
 own step. Biome cannot express it as one rule (no regex backreference between `from` and `to`), so

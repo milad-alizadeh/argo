@@ -6,14 +6,14 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, test } from 'vitest'
-import { openSessionIndex } from '@/domains/sessions/main/index/session-index/open-index'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { openSessionIndex } from './open-index'
 import {
   type IndexedAdapter,
   indexedAdapters,
   manyTranscripts,
   sessionIdAt,
-} from '@/domains/sessions/main/index/session-index/roster-fixtures'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+} from './roster-fixtures'
 
 const cleanUp: (() => Promise<void>)[] = []
 afterEach(async () => {

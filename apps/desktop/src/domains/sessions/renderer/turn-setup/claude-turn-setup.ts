@@ -3,11 +3,7 @@ import {
   CLAUDE_MODELS,
   type ClaudeTurnSetup,
 } from '@/domains/sessions/contract/ipc/contract'
-import type {
-  ModeChoice,
-  SetupChoice,
-  TurnSetupChoices,
-} from '@/domains/sessions/renderer/turn-setup/turn-setup'
+import type { ModeChoice, SetupChoice, TurnSetupChoices } from './turn-setup'
 
 type ClaudeModel = ClaudeTurnSetup['model']
 type ClaudeEffort = ClaudeTurnSetup['effort']

@@ -2,8 +2,8 @@
 // line ceiling, the same way `store-backfill.ts` already is.
 import type { DatabaseSync } from 'node:sqlite'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import { storedRosterRow } from '@/domains/sessions/main/index/session-index/stored-row'
 import { matchesSearchQuery } from '@/domains/sessions/main/projection/search-match'
+import { storedRosterRow } from './stored-row'
 
 const EXCERPT_RADIUS = 80
 

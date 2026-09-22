@@ -6,18 +6,12 @@ import {
   type IndexedTranscriptFile,
   NO_CHAIN,
   type SessionIndexWrite,
-} from '@/domains/sessions/main/index/session-index/contract'
-import {
-  SESSION_INDEX_SCHEMA,
-  SESSION_INDEX_VERSION,
-} from '@/domains/sessions/main/index/session-index/schema'
-import {
-  backfillProgressOf,
-  writeBackfillProgress,
-} from '@/domains/sessions/main/index/session-index/store-backfill'
-import { searchChainsOf } from '@/domains/sessions/main/index/session-index/store-search'
-import { writePass } from '@/domains/sessions/main/index/session-index/store-write'
-import { storedRosterRow } from '@/domains/sessions/main/index/session-index/stored-row'
+} from './contract'
+import { SESSION_INDEX_SCHEMA, SESSION_INDEX_VERSION } from './schema'
+import { backfillProgressOf, writeBackfillProgress } from './store-backfill'
+import { searchChainsOf } from './store-search'
+import { writePass } from './store-write'
+import { storedRosterRow } from './stored-row'
 
 export type SessionIndexStore = {
   filesAt: (harness: string, paths: readonly string[]) => IndexedTranscriptFile[]

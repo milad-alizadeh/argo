@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
 import { projectFeed } from '@/domains/sessions/main/projection/feed-incremental'
-import { parseTranscriptLine } from '@/harnesses/claude/sessions/records'
+import { parseTranscriptLine } from './records'
 
 function commandMessage(uuid: string, callId: string): TranscriptRecord {
   return {

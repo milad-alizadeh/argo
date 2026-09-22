@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { codexManagedStatus } from '@/harnesses/codex/drive/managed-status'
+import { codexManagedStatus } from './managed-status'
 
 test('Codex: a waitingOnApproval thread flag reads permission', () => {
   assert.equal(

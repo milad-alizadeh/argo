@@ -1,8 +1,8 @@
 import type { StoreApi } from 'zustand'
-import { draftActions } from '@/domains/sessions/renderer/composer/composer-draft-actions'
-import { updateComposerEntries } from '@/domains/sessions/renderer/composer/composer-entry-records'
-import { turnActions } from '@/domains/sessions/renderer/composer/composer-turn-actions'
-import type { ComposerState } from '@/domains/sessions/renderer/composer/use-composer-store'
+import { draftActions } from './composer-draft-actions'
+import { updateComposerEntries } from './composer-entry-records'
+import { turnActions } from './composer-turn-actions'
+import type { ComposerState } from './use-composer-store'
 
 type ComposerSet = StoreApi<ComposerState>['setState']
 

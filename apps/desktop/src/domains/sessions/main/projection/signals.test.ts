@@ -6,7 +6,7 @@ import type {
   TranscriptMessage,
 } from '@/domains/sessions/contract/model/transcript'
 import { readActivity } from '@/domains/sessions/contract/observation/signals'
-import { readCall } from '@/domains/sessions/main/projection/tool-feed-test-fixtures'
+import { readCall } from './tool-feed-test-fixtures'
 
 function promptMessage(): TranscriptMessage {
   return {

@@ -17,23 +17,23 @@ import type {
   TranscriptPath,
 } from '@/domains/sessions/main/index/session-index/contract'
 import { createTitleLedger } from '@/domains/sessions/main/lifecycle/title-ledger'
-import { createChainReader } from '@/domains/sessions/main/observation/chain-reader'
+import { projectRosterRow } from '@/domains/sessions/main/projection/roster'
+import { rosterMetadata } from '@/domains/sessions/main/projection/roster-metadata'
+import { createChainReader } from './chain-reader'
 import {
   discoverSessionsWith,
   historyCompleteFor,
   resolveIdsAgainst,
   searchAgainst,
-} from '@/domains/sessions/main/observation/discover-transcript-window'
-import { ROSTER_PAGE_SIZE } from '@/domains/sessions/main/observation/roster-page-size'
+} from './discover-transcript-window'
+import { ROSTER_PAGE_SIZE } from './roster-page-size'
 import {
   createFileReader,
   createTranscriptParser,
   createTranscriptSummariser,
   type TranscriptDiscoverySource,
   transcriptIdentities,
-} from '@/domains/sessions/main/observation/transcript-window'
-import { projectRosterRow } from '@/domains/sessions/main/projection/roster'
-import { rosterMetadata } from '@/domains/sessions/main/projection/roster-metadata'
+} from './transcript-window'
 
 export type { TranscriptPath }
 export { ROSTER_PAGE_SIZE }

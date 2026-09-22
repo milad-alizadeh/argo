@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { statusVariantOf } from '@/domains/sessions/renderer/roster/session-roster-status'
+import { statusVariantOf } from './session-roster-status'
 
 test('keeps a new Session idle until its first Turn is working', () => {
   expect(statusVariantOf({ status: 'starting', unread: false })).toBe('idle')

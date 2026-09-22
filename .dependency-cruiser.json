@@ -53,6 +53,16 @@
           "^apps/desktop/src/domains/sessions/main/drive/drive\\.ts$"
         ]
       }
+    },
+    {
+      "name": "no-aliased-same-folder-import",
+      "comment": "A sibling in the same folder is ./name; @/ is a crossing.",
+      "severity": "error",
+      "from": { "path": "^(apps/desktop/src/.+)/[^/]+\\.tsx?$" },
+      "to": {
+        "dependencyTypes": ["aliased-tsconfig"],
+        "path": "^$1/[^/]+\\.tsx?$"
+      }
     }
   ],
   "options": {

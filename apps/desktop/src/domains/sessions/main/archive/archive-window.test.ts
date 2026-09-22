@@ -6,11 +6,6 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { sessionArchiveListReplySchema } from '@/domains/sessions/contract/ipc/contract'
-import { ARCHIVE_PAGE_LIMIT } from '@/domains/sessions/main/archive/archive-reads'
-import {
-  createSessionArchiveStore,
-  sessionArchivePath,
-} from '@/domains/sessions/main/archive/archive-store'
 import { ROSTER_PAGE_SIZE } from '@/domains/sessions/main/observation/discover-transcript-sessions'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main'
@@ -19,6 +14,8 @@ import {
   writeManySessions,
 } from '@/harnesses/claude/integration/session-window-fixture'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import { ARCHIVE_PAGE_LIMIT } from './archive-reads'
+import { createSessionArchiveStore, sessionArchivePath } from './archive-store'
 
 const ROOT_ID = 'archivedRoot'
 const RESUMED_ID = 'resumedFromArchivedRoot'

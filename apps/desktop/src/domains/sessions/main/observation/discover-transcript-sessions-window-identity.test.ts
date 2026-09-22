@@ -5,12 +5,12 @@ import assert from 'node:assert/strict'
 import { rm } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
-import { ROSTER_PAGE_SIZE } from '@/domains/sessions/main/observation/discover-transcript-sessions'
 import {
   mockDiscoverer,
   mockRoot,
   writeMockTranscript,
 } from '../../../../../mocks/sessions/mock-discover-transcript-sessions'
+import { ROSTER_PAGE_SIZE } from './discover-transcript-sessions'
 
 test('a resumed Session keeps its id and title as its origin file moves out of the window and back', async (context) => {
   const root = await mockRoot(context)

@@ -1,11 +1,5 @@
 import { type MouseEvent, type ReactNode, useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  type RosterMenuHandlers,
-  type RosterRow,
-  renamedSession,
-  sessionName,
-} from '@/domains/sessions/renderer/roster/roster-rows'
 import type { Session } from '@/domains/sessions/renderer/types'
 import { Icon } from '@/platform/renderer/components/icon'
 import {
@@ -16,6 +10,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/platform/renderer/components/ui/context-menu'
+import { type RosterMenuHandlers, type RosterRow, renamedSession, sessionName } from './roster-rows'
 
 type RosterMenuTarget = { session: Session; archived: boolean }
 

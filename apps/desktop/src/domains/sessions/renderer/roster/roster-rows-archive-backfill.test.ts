@@ -5,7 +5,7 @@ import {
   archiveStillIndexing,
   kindsOf,
   loadingArchive,
-} from '@/domains/sessions/renderer/roster/roster-rows-test-fixtures'
+} from './roster-rows-test-fixtures'
 
 describe('building the roster rows for the Archive while backfill runs (#2374)', () => {
   test('says older history is still indexing rather than the Archive being empty', () => {

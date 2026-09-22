@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { createBackgroundIndexing } from '@/domains/sessions/main/index/session-index/background-indexing'
 import { unusedIndex } from '@/harnesses/composition/harness-registration.fixture'
+import { createBackgroundIndexing } from './background-indexing'
 
 function enoent(): NodeJS.ErrnoException {
   const error = new Error('ENOENT: no such file or directory') as NodeJS.ErrnoException

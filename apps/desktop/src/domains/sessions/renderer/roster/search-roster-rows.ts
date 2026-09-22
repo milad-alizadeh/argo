@@ -1,6 +1,6 @@
-import type { RosterRow } from '@/domains/sessions/renderer/roster/roster-rows'
 import type { SessionContractError } from '@/domains/sessions/renderer/session-contract-error'
 import type { Session } from '@/domains/sessions/renderer/types'
+import type { RosterRow } from './roster-rows'
 
 export type SearchRosterState = {
   sessions: readonly Session[]

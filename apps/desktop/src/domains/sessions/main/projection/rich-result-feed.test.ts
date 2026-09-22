@@ -3,8 +3,8 @@ import { test } from 'node:test'
 import type { SessionChain } from '@/domains/sessions/contract/model/chains'
 import { checkedDataImageUrl } from '@/domains/sessions/contract/model/feed-images'
 import { transcriptMessage as message } from '@/domains/sessions/main/observation/transcript-test-fixtures'
-import { projectFeed } from '@/domains/sessions/main/projection/feed-incremental'
-import { readCall } from '@/domains/sessions/main/projection/tool-feed-test-fixtures'
+import { projectFeed } from './feed-incremental'
+import { readCall } from './tool-feed-test-fixtures'
 
 test('projects tool result images into the historical Feed', () => {
   const image = checkedDataImageUrl('data:image/png;base64,AAAA')

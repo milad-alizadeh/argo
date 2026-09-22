@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import {
-  codeFrom,
-  type Failure,
-  messageFrom,
-} from '@/domains/sessions/renderer/composer/use-session-composer-actions'
-import type { useSessionMutations } from '@/domains/sessions/renderer/composer/use-session-mutations'
+import { codeFrom, type Failure, messageFrom } from './use-session-composer-actions'
+import type { useSessionMutations } from './use-session-mutations'
 
 export function useHandoff(
   handoff: ReturnType<typeof useSessionMutations>['handoff'],

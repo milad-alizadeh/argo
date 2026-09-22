@@ -8,8 +8,8 @@ import {
   tempRoot,
   writeClaudeTranscript,
 } from '@/domains/sessions/main/observation/reader-test-helpers'
-import { createInMemorySessionUnreadStore } from '@/domains/sessions/main/unread/unread-store'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import { createInMemorySessionUnreadStore } from './unread-store'
 
 test('clears unread state when the reader opens a Session', async (context) => {
   const unread = createInMemorySessionUnreadStore()

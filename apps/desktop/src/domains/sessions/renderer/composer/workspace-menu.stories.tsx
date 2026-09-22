@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import type { WorkspaceSummary } from '@/domains/projects/contract/workspace-messages'
-import { WorkspaceMenu } from '@/domains/sessions/renderer/composer/workspace-menu'
+import { WorkspaceMenu } from './workspace-menu'
 
 const WORKSPACE_CANDIDATES: [WorkspaceSummary, WorkspaceSummary, WorkspaceSummary] = [
   {

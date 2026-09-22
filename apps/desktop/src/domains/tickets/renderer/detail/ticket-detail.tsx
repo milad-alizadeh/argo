@@ -3,22 +3,14 @@ import type { Provider } from '@/domains/accounts/contract/contract'
 import { providerPresentation } from '@/domains/accounts/renderer'
 import { FeedMarkdown } from '@/domains/sessions/renderer'
 import type { Ticket } from '@/domains/tickets/contract/contract'
-import { TicketDetailEmpty } from '@/domains/tickets/renderer/detail/ticket-detail-empty'
-import { LinkedSessions } from '@/domains/tickets/renderer/detail/ticket-detail-linked-sessions'
-import {
-  Dependencies,
-  Links,
-  type Navigation,
-  stateIcon,
-} from '@/domains/tickets/renderer/detail/ticket-detail-links'
-import {
-  type Editing,
-  Properties,
-} from '@/domains/tickets/renderer/detail/ticket-detail-properties'
-import { TicketDetailSection } from '@/domains/tickets/renderer/detail/ticket-detail-section'
 import type { LinkedSession } from '@/domains/tickets/renderer/hooks/use-linked-sessions'
 import { closedChildren } from '@/domains/tickets/renderer/lib/backlog'
 import { Icon } from '@/platform/renderer/components/icon'
+import { TicketDetailEmpty } from './ticket-detail-empty'
+import { LinkedSessions } from './ticket-detail-linked-sessions'
+import { Dependencies, Links, type Navigation, stateIcon } from './ticket-detail-links'
+import { type Editing, Properties } from './ticket-detail-properties'
+import { TicketDetailSection } from './ticket-detail-section'
 
 const keyText = 'font-mono type-meta'
 

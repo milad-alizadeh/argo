@@ -1,12 +1,9 @@
 import { useLexicalTextEntity } from '@lexical/react/useLexicalTextEntity'
 import type { EntityMatch } from '@lexical/text'
 import type { TextNode } from 'lexical'
-import {
-  $createComposerReferenceNode,
-  ComposerReferenceNode,
-} from '@/domains/sessions/renderer/composer/references/composer-reference-node'
-import { referenceInText } from '@/domains/sessions/renderer/composer/references/session-reference'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
+import { $createComposerReferenceNode, ComposerReferenceNode } from './composer-reference-node'
+import { referenceInText } from './session-reference'
 
 function referenceMatch(text: string): EntityMatch | null {
   const match = referenceInText(text)

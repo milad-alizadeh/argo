@@ -3,12 +3,9 @@
 // placeholders than it accepts. Launch, focus and system resume all trigger this, alongside the
 // watcher's own settle signal — the same mechanism serves both, so there is one place that decides
 // "changed" rather than a second one trusting an OS-reported filename.
-import type {
-  SessionIndex,
-  TranscriptFileIdentity,
-} from '@/domains/sessions/main/index/session-index/contract'
-import type { IndexedWindowSource } from '@/domains/sessions/main/index/session-index/indexed-window'
-import { reindexCandidates } from '@/domains/sessions/main/index/session-index/reindex-pass'
+import type { SessionIndex, TranscriptFileIdentity } from './contract'
+import type { IndexedWindowSource } from './indexed-window'
+import { reindexCandidates } from './reindex-pass'
 
 // SQLite's default `SQLITE_MAX_VARIABLE_NUMBER` is 999; a chunk stays comfortably under it so one
 // `filesAt` call never needs more placeholders than a single chunk of candidates.

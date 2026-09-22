@@ -2,7 +2,6 @@ import { fromCallback } from 'xstate'
 import { defaultProjectSetupHarnesses } from '@/domains/projects/contract/project-setup-harness'
 import type { SetupDocument } from '@/domains/projects/contract/setup-document'
 import type { OnboardingAgentDriver } from '@/domains/projects/main/setup/onboarding-agent/runtime/run-onboarding-agent'
-import type { ProjectSetupEvent } from '@/domains/projects/main/setup/project-setup-machine-types'
 import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
 import {
   type ProjectSetupApplicationInput,
@@ -13,6 +12,7 @@ import {
   projectSetupCancellationLogic,
 } from './project-setup-cancellation-logic'
 import { projectSetupFinalizationLogic } from './project-setup-finalization-logic'
+import type { ProjectSetupEvent } from './project-setup-machine-types'
 import {
   type ProjectSetupPlanningInput,
   projectSetupPlanningLogic,

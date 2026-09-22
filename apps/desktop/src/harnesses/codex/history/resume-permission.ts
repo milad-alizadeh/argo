@@ -1,4 +1,4 @@
-import { statusOf } from '@/harnesses/codex/history/vendor-convert'
+import { statusOf } from './vendor-convert'
 import {
   type HistoryTransport,
   LOADED_THREAD_LIST_METHOD,
@@ -6,7 +6,7 @@ import {
   PAGE_LIMIT,
   readSchema,
   STORED_THREAD_READ_METHOD,
-} from '@/harnesses/codex/history/vendor-model'
+} from './vendor-model'
 
 function loadedIds(value: unknown): string[] {
   const parsed = loadedSchema.safeParse(value)

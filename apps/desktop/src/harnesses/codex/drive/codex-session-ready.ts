@@ -1,4 +1,4 @@
-import type { ManagedSessionActor } from '@/harnesses/codex/drive/codex-session-projection'
+import type { ManagedSessionActor } from './codex-session-projection'
 
 function rejectionOf(actor: ManagedSessionActor): string {
   return actor.getSnapshot().context.lastSendRejection ?? 'Codex refused to resume this Session.'

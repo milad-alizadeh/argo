@@ -1,6 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query'
 import type { RosterStatus } from '@/domains/sessions/contract/ipc/contract'
-import type { SessionId } from '@/domains/sessions/renderer/types'
+import type { SessionId } from './types'
 
 export const SESSION_REFRESH_MS = 500
 export const sessionRosterQueryKey = ['sessions', 'roster'] as const

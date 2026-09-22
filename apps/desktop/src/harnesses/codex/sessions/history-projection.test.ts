@@ -10,7 +10,7 @@ import {
   listed,
   rowsOf,
 } from '@/domains/sessions/main/observation/reader-test-helpers'
-import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+import { codexSessionSource } from './read-sessions'
 
 async function readerFor(
   context: { after: (cleanup: () => Promise<void>) => void },

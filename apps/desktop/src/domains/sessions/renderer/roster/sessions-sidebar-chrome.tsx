@@ -1,7 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import { RosterFilterMenu } from '@/domains/sessions/renderer/roster/roster-filter-menu'
-import { ROSTER_ROW_HEIGHT } from '@/domains/sessions/renderer/roster/roster-rows'
-import type { RosterStatus } from '@/domains/sessions/renderer/roster/use-roster-filter-store'
 import { sessionFailureState } from '@/domains/sessions/renderer/session-failure-state'
 import type { SessionError, SessionRoster } from '@/domains/sessions/renderer/types'
 import { Icon } from '@/platform/renderer/components/icon'
@@ -12,6 +9,9 @@ import {
   InputGroupInput,
 } from '@/platform/renderer/components/ui/input-group'
 import { Skeleton } from '@/platform/renderer/components/ui/skeleton'
+import { RosterFilterMenu } from './roster-filter-menu'
+import { ROSTER_ROW_HEIGHT } from './roster-rows'
+import type { RosterStatus } from './use-roster-filter-store'
 
 export function rosterState(
   roster: SessionRoster | null,

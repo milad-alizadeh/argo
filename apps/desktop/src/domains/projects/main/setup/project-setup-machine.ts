@@ -1,13 +1,13 @@
 import { assertEvent, assign, sendTo, setup } from 'xstate'
-import { inactiveProjectSetupLogic } from '@/domains/projects/main/setup/project-setup-logic'
-import { projectSetupApplicationInput } from '@/domains/projects/main/setup/project-setup-application-logic'
-import { projectSetupCancellationInput } from '@/domains/projects/main/setup/project-setup-cancellation-logic'
-import { projectSetupPlanningInput } from '@/domains/projects/main/setup/project-setup-planning-logic'
+import { projectSetupApplicationInput } from './project-setup-application-logic'
+import { projectSetupCancellationInput } from './project-setup-cancellation-logic'
+import { inactiveProjectSetupLogic } from './project-setup-logic'
 import {
   initialProjectSetupContext,
   type ProjectSetupContext,
   type ProjectSetupEvent,
 } from './project-setup-machine-types'
+import { projectSetupPlanningInput } from './project-setup-planning-logic'
 
 export const PROJECT_SETUP_MACHINE_VERSION = 1
 

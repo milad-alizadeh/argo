@@ -1,27 +1,30 @@
 import { assign, fromPromise, sendTo, setup } from 'xstate'
-import { appendAssistantMessage } from '@/harnesses/claude/agent-sdk/claude-live-messages'
-import { claudeQueryLogic } from '@/harnesses/claude/agent-sdk/claude-query-logic'
-import {
-  initialClaudeSessionContext,
-  sessionFrom,
-} from '@/harnesses/claude/agent-sdk/claude-session-context'
-import { leaseStates } from '@/harnesses/claude/agent-sdk/claude-session-lease-states'
-import { recoveringState } from '@/harnesses/claude/agent-sdk/claude-session-recovery'
+import { appendAssistantMessage } from './claude-live-messages'
+import { claudeQueryLogic } from './claude-query-logic'
+import { initialClaudeSessionContext, sessionFrom } from './claude-session-context'
+import { leaseStates } from './claude-session-lease-states'
+import { recoveringState } from './claude-session-recovery'
 import {
   isAuthenticationFailure,
   isInheritedApiCredential,
   isSubscriptionAuthorized,
-} from '@/harnesses/claude/agent-sdk/subscription-authorization'
+} from './subscription-authorization'
 import type {
   ClaudeSdkMessage,
   ClaudeSessionContext,
   ClaudeSessionEvent,
   ClaudeSessionInput,
-} from '@/harnesses/claude/agent-sdk/types'
+} from './types'
 
-export type { ClaudeQueryFactory, ClaudeSessionInput } from '@/harnesses/claude/agent-sdk/types'
+export type { ClaudeQueryFactory, ClaudeSessionInput } from './types'
 
-const messageParams = ({ event }: { event: { message: ClaudeSdkMessage } }) => ({
+const messageParams = ({
+  event,
+}: {
+  event: {
+    message: ClaudeSdkMessage
+  }
+}) => ({
   message: event.message,
 })
 const claudeSessionSetup = setup({
@@ -45,55 +48,95 @@ const claudeSessionSetup = setup({
     }),
   },
   guards: {
-    isSubscriptionAuthorized: (_, params: { message: ClaudeSdkMessage }) =>
-      isSubscriptionAuthorized(params.message),
-    isInheritedApiCredential: (_, params: { message: ClaudeSdkMessage }) =>
-      isInheritedApiCredential(params.message),
-    isAuthenticationFailure: (_, params: { message: ClaudeSdkMessage }) =>
-      isAuthenticationFailure(params.message),
+    isSubscriptionAuthorized: (
+      _,
+      params: {
+        message: ClaudeSdkMessage
+      },
+    ) => isSubscriptionAuthorized(params.message),
+    isInheritedApiCredential: (
+      _,
+      params: {
+        message: ClaudeSdkMessage
+      },
+    ) => isInheritedApiCredential(params.message),
+    isAuthenticationFailure: (
+      _,
+      params: {
+        message: ClaudeSdkMessage
+      },
+    ) => isAuthenticationFailure(params.message),
   },
   actions: {
     startInitialTurn: sendTo('claudeQuery', ({ context }) => ({
       type: 'Send',
       prompt: context.prompt,
     })),
-    markUnavailable: assign({ sourceHealth: 'unavailable' as const }),
-    markWatched: assign({ releaseTarget: 'watched' as const }),
-    releaseAsUnavailable: assign({ releaseTarget: 'unavailable' as const }),
+    markUnavailable: assign({
+      sourceHealth: 'unavailable' as const,
+    }),
+    markWatched: assign({
+      releaseTarget: 'watched' as const,
+    }),
+    releaseAsUnavailable: assign({
+      releaseTarget: 'unavailable' as const,
+    }),
     recordAssistantMessage: assign(({ context, event }) =>
       event.type === 'SDK message'
-        ? { liveMessages: appendAssistantMessage(context.liveMessages, event.message) }
+        ? {
+            liveMessages: appendAssistantMessage(context.liveMessages, event.message),
+          }
         : {},
     ),
     addApproval: assign(({ context, event }) =>
       event.type === 'Approval requested'
-        ? { pendingApprovals: [...context.pendingApprovals, event.approval] }
+        ? {
+            pendingApprovals: [
+              ...context.pendingApprovals,
+              event.approval,
+            ],
+          }
         : {},
     ),
     removeApproval: assign(({ context, event }) =>
       event.type === 'Decide'
-        ? { pendingApprovals: context.pendingApprovals.filter(({ id }) => id !== event.approvalId) }
+        ? {
+            pendingApprovals: context.pendingApprovals.filter(({ id }) => id !== event.approvalId),
+          }
         : {},
     ),
     addQuestion: assign(({ context, event }) =>
       event.type === 'Question requested'
-        ? { pendingQuestions: [...context.pendingQuestions, event.question] }
+        ? {
+            pendingQuestions: [
+              ...context.pendingQuestions,
+              event.question,
+            ],
+          }
         : {},
     ),
     removeQuestion: assign(({ context, event }) =>
       event.type === 'Answer'
-        ? { pendingQuestions: context.pendingQuestions.filter(({ id }) => id !== event.questionId) }
+        ? {
+            pendingQuestions: context.pendingQuestions.filter(({ id }) => id !== event.questionId),
+          }
         : {},
     ),
   },
-  delays: { recoveryTimeout: 60_000 },
+  delays: {
+    recoveryTimeout: 60_000,
+  },
 })
 
 export function createClaudeSessionMachine(input: ClaudeSessionInput) {
   return claudeSessionSetup.createMachine({
     id: 'claudeManagedSession',
     context: () => initialClaudeSessionContext(input),
-    invoke: { id: 'claudeQuery', src: 'claudeQuery', input: () => input },
+    invoke: {
+      id: 'claudeQuery',
+      src: 'claudeQuery',
+      input: () => input,
+    },
     initial: 'Authorizing',
     states: {
       ...leaseStates(input),
@@ -101,18 +144,29 @@ export function createClaudeSessionMachine(input: ClaudeSessionInput) {
         on: {
           'SDK message': [
             {
-              guard: { type: 'isInheritedApiCredential', params: messageParams },
+              guard: {
+                type: 'isInheritedApiCredential',
+                params: messageParams,
+              },
               target: 'Unavailable',
             },
             {
-              guard: { type: 'isSubscriptionAuthorized', params: messageParams },
+              guard: {
+                type: 'isSubscriptionAuthorized',
+                params: messageParams,
+              },
               target: 'AcquiringLease',
               actions: [
-                assign({ session: ({ event }) => sessionFrom(event.message) }),
+                assign({
+                  session: ({ event }) => sessionFrom(event.message),
+                }),
                 sendTo('claudeQuery', ({ event }) => {
                   const session = sessionFrom(event.message)
                   if (session === null) throw new Error('Claude Session has no identity')
-                  return { type: 'Session identified', session }
+                  return {
+                    type: 'Session identified',
+                    session,
+                  }
                 }),
               ],
             },
@@ -122,21 +176,50 @@ export function createClaudeSessionMachine(input: ClaudeSessionInput) {
       },
       Managed: {
         on: {
-          Send: { actions: sendTo('claudeQuery', ({ event }) => event) },
-          Steer: { actions: sendTo('claudeQuery', ({ event }) => event) },
-          Interrupt: { actions: sendTo('claudeQuery', ({ event }) => event) },
-          Decide: { actions: ['removeApproval', sendTo('claudeQuery', ({ event }) => event)] },
-          Answer: { actions: ['removeQuestion', sendTo('claudeQuery', ({ event }) => event)] },
-          'Approval requested': { actions: 'addApproval' },
-          'Question requested': { actions: 'addQuestion' },
-          Rename: { actions: sendTo('claudeQuery', ({ event }) => event) },
+          Send: {
+            actions: sendTo('claudeQuery', ({ event }) => event),
+          },
+          Steer: {
+            actions: sendTo('claudeQuery', ({ event }) => event),
+          },
+          Interrupt: {
+            actions: sendTo('claudeQuery', ({ event }) => event),
+          },
+          Decide: {
+            actions: [
+              'removeApproval',
+              sendTo('claudeQuery', ({ event }) => event),
+            ],
+          },
+          Answer: {
+            actions: [
+              'removeQuestion',
+              sendTo('claudeQuery', ({ event }) => event),
+            ],
+          },
+          'Approval requested': {
+            actions: 'addApproval',
+          },
+          'Question requested': {
+            actions: 'addQuestion',
+          },
+          Rename: {
+            actions: sendTo('claudeQuery', ({ event }) => event),
+          },
           'SDK message': [
             {
-              guard: { type: 'isAuthenticationFailure', params: messageParams },
+              guard: {
+                type: 'isAuthenticationFailure',
+                params: messageParams,
+              },
               target: 'Releasing',
-              actions: assign({ releaseTarget: 'unavailable' }),
+              actions: assign({
+                releaseTarget: 'unavailable',
+              }),
             },
-            { actions: 'recordAssistantMessage' },
+            {
+              actions: 'recordAssistantMessage',
+            },
           ],
           'Channel lost': 'Recovering',
           'SDK failed': 'Releasing',
@@ -145,9 +228,16 @@ export function createClaudeSessionMachine(input: ClaudeSessionInput) {
         },
       },
       Recovering: recoveringState(messageParams),
-      Unavailable: { type: 'final', entry: 'markUnavailable' },
-      Watched: { type: 'final' },
-      Closed: { type: 'final' },
+      Unavailable: {
+        type: 'final',
+        entry: 'markUnavailable',
+      },
+      Watched: {
+        type: 'final',
+      },
+      Closed: {
+        type: 'final',
+      },
     },
   })
 }

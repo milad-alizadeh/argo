@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { DevelopmentIdentityBar } from '@/domains/sessions/renderer/composer/development-identity-bar'
 import { WINDOW_MINIMUM_WIDTH } from '@/platform/shared/minimum-width'
+import { DevelopmentIdentityBar } from './development-identity-bar'
 
 const identity = {
   id: 'ticket-2173-a1b2c3d4',

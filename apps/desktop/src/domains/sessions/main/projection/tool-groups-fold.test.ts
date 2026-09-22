@@ -4,7 +4,7 @@ import type { SessionFeedRow } from '@/domains/sessions/contract/model/feed-rows
 import { type ToolResult, toolRows } from '@/domains/sessions/contract/model/tool-feed'
 import { foldSettledToolRuns, groupToolRuns } from '@/domains/sessions/contract/model/tool-groups'
 import type { ToolCall } from '@/domains/sessions/contract/model/transcript'
-import { searchCall } from '@/domains/sessions/main/projection/tool-feed-test-fixtures'
+import { searchCall } from './tool-feed-test-fixtures'
 
 function bash(id: string, command: string): ToolCall {
   return { id, kind: 'execute', command, label: null, text: command, background: false }

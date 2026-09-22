@@ -1,10 +1,7 @@
 import { useTranslation } from 'react-i18next'
 
-import {
-  ContextPickerContents,
-  type TicketChoice,
-} from '@/domains/sessions/renderer/context/context-picker-contents'
-import { useContextPickerFocus } from '@/domains/sessions/renderer/context/use-context-picker-focus'
+import { ContextPickerContents, type TicketChoice } from './context-picker-contents'
+import { useContextPickerFocus } from './use-context-picker-focus'
 
 type TicketTextKey =
   | 'composer.contextPicker.ticket.sharedPicker'

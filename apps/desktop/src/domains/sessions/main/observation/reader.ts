@@ -10,8 +10,6 @@ import {
   type SessionArchiveStore,
 } from '@/domains/sessions/main/archive/archive-store'
 import type { SessionReader } from '@/domains/sessions/main/composition/bridge'
-import type { OwnerFor, ReadContext } from '@/domains/sessions/main/observation/read-declaration'
-import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
 import type { HeldFeed } from '@/domains/sessions/main/projection/feed-cache'
 import type { FeedProjectionState } from '@/domains/sessions/main/projection/feed-incremental'
 import { listReply } from '@/domains/sessions/main/projection/read-roster'
@@ -35,8 +33,10 @@ import {
   createInMemorySessionTicketLinkStore,
   type SessionTicketLinkStore,
 } from '@/domains/tickets/main'
+import type { OwnerFor, ReadContext } from './read-declaration'
+import type { SessionSource } from './session-source'
 
-export type { FeedOverlay, SessionSource } from '@/domains/sessions/main/observation/session-source'
+export type { FeedOverlay, SessionSource } from './session-source'
 
 type ReaderState = SessionArchiveStore & { unread?: SessionUnreadStore }
 

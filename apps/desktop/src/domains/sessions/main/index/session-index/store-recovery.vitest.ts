@@ -4,13 +4,7 @@ import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { afterEach, expect, test } from 'vitest'
-import {
-  chainOf,
-  passOf,
-  rowFor,
-  storeHarness,
-  writeChain,
-} from '@/domains/sessions/main/index/session-index/store-fixtures'
+import { chainOf, passOf, rowFor, storeHarness, writeChain } from './store-fixtures'
 
 const stores = storeHarness()
 afterEach(stores.cleanUp)

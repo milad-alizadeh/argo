@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
-import { SessionPlanPopover } from '@/domains/sessions/renderer/composer/session-plan-popover'
+import { SessionPlanPopover } from './session-plan-popover'
 
 const meta = {
   title: 'Sessions/Composer/Plan',

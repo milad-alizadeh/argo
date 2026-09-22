@@ -1,5 +1,5 @@
-import { rekeyComposerRecord } from '@/domains/sessions/renderer/composer/rekey-composer-record'
-import type { ComposerState } from '@/domains/sessions/renderer/composer/use-composer-store'
+import { rekeyComposerRecord } from './rekey-composer-record'
+import type { ComposerState } from './use-composer-store'
 
 type ComposerRecords = Pick<
   ComposerState,

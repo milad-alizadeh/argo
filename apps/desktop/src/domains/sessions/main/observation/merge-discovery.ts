@@ -4,11 +4,11 @@ import {
   type SessionListReply,
   sessionError,
 } from '@/domains/sessions/contract/ipc/contract'
-import type { TranscriptDiscovery } from '@/domains/sessions/main/observation/discover-transcript-sessions'
 import {
   encodeRosterCursor,
   type RosterCursorMap,
 } from '@/domains/sessions/main/projection/roster-cursor'
+import type { TranscriptDiscovery } from './discover-transcript-sessions'
 
 export type Discovered = TranscriptDiscovery | { error: SessionError }
 

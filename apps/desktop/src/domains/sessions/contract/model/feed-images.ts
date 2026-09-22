@@ -2,7 +2,7 @@
 // allows: inline bytes as `data:`, a file on disk as `argo-attachment://`.
 import { z } from 'zod'
 import { attachmentKindOf } from '@/domains/sessions/contract/drive/attachments-contract'
-import type { ContentBlock } from '@/domains/sessions/contract/model/transcript'
+import type { ContentBlock } from './transcript'
 
 // Never `file://`: Chromium refuses a `file://` subresource load from a document the Vite dev
 // server serves over `http://`, which left every locally-attached image thumbnail unrendered in

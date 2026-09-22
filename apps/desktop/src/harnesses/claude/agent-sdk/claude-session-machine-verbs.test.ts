@@ -1,9 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import {
-  fakeClaudeQuery,
-  flush,
-  startedClaudeActor,
-} from '@/harnesses/claude/agent-sdk/claude-session-test-support'
+import { fakeClaudeQuery, flush, startedClaudeActor } from './claude-session-test-support'
 
 describe('claude session actor verb set', () => {
   test('streams a steer command into the SDK alongside the running turn', async () => {

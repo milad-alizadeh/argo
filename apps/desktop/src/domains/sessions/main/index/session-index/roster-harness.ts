@@ -3,10 +3,10 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import type { SessionIndex } from '@/domains/sessions/main/index/session-index/contract'
-import { openSessionIndex } from '@/domains/sessions/main/index/session-index/open-index'
-import type { IndexedAdapter } from '@/domains/sessions/main/index/session-index/roster-fixtures'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import type { SessionIndex } from './contract'
+import { openSessionIndex } from './open-index'
+import type { IndexedAdapter } from './roster-fixtures'
 
 type Reader = ReturnType<typeof createSessionReader>
 

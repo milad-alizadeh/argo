@@ -1,7 +1,7 @@
 import { useRef } from 'react'
-import type { FeedLiveFacts } from '@/domains/sessions/renderer/feed/feed-live-facts'
 import { isOptimisticSessionId } from '@/domains/sessions/renderer/session-creation'
 import type { SessionFeedRow, SessionId } from '@/domains/sessions/renderer/types'
+import type { FeedLiveFacts } from './feed-live-facts'
 
 // The Turn Marker retires when the roster moves, which can precede the transcript's first row.
 // The Feed keeps the last prompt it saw for this Session so the bubble never blinks out (#2430).

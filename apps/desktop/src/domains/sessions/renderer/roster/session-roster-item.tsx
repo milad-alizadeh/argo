@@ -9,18 +9,18 @@ import {
   sessionHarnessOf,
 } from '@/domains/sessions/renderer/harness/harnesses'
 import { PromptText } from '@/domains/sessions/renderer/prompt/prompt-text'
-import { sessionName } from '@/domains/sessions/renderer/roster/roster-rows'
-import type { SelectionModifier } from '@/domains/sessions/renderer/roster/roster-selection'
-import { SessionMetadata } from '@/domains/sessions/renderer/roster/session-roster-metadata'
 import type { Session } from '@/domains/sessions/renderer/types'
+import { sessionName } from './roster-rows'
+import type { SelectionModifier } from './roster-selection'
+import { SessionMetadata } from './session-roster-metadata'
 import './session-roster-item.css'
+import { Icon } from '@/platform/renderer/components/icon'
 import {
   SessionBlockedBadge,
   SessionLockedMark,
   STATUS_LABELS,
   statusVariantOf,
-} from '@/domains/sessions/renderer/roster/session-roster-status'
-import { Icon } from '@/platform/renderer/components/icon'
+} from './session-roster-status'
 
 function selectionModifierOf(event: {
   shiftKey: boolean

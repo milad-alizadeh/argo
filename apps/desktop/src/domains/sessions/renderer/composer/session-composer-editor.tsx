@@ -19,16 +19,16 @@ import { ComposerReferenceNode } from '@/domains/sessions/renderer/composer/refe
 import { ComposerReferencePlugin } from '@/domains/sessions/renderer/composer/references/composer-reference-plugin'
 import { ComposerTicketReferenceNode } from '@/domains/sessions/renderer/composer/references/composer-ticket-reference-node'
 import { ComposerTicketReferencePlugin } from '@/domains/sessions/renderer/composer/references/composer-ticket-reference-plugin'
-import { SendOnEnterPlugin } from '@/domains/sessions/renderer/composer/session-composer-enter'
+import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
+import { lastInputWasKeyboard } from '@/platform/renderer/lib/input-modality'
+import { SendOnEnterPlugin } from './session-composer-enter'
 import {
   composerNodes,
   composerTransformers,
   MarkdownPastePlugin,
   MarkdownTypingShortcutPlugin,
-} from '@/domains/sessions/renderer/composer/session-composer-markdown'
-import type { ComposerTicketContext } from '@/domains/sessions/renderer/composer/use-composer-store'
-import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
-import { lastInputWasKeyboard } from '@/platform/renderer/lib/input-modality'
+} from './session-composer-markdown'
+import type { ComposerTicketContext } from './use-composer-store'
 
 function editorState(text: string) {
   return () => $convertFromMarkdownString(text, TRANSFORMERS)

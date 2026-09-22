@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { AtlasPage } from '@/domains/atlas/renderer/pages/atlas-page'
+import { AtlasPage } from './atlas-page'
 
 const meta = {
   title: 'Atlas/Atlas Page',

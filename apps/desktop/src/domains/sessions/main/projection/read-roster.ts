@@ -11,9 +11,9 @@ import type { Discovered } from '@/domains/sessions/main/observation/merge-disco
 import { combineDiscoveries } from '@/domains/sessions/main/observation/merge-discovery'
 import { readFailure } from '@/domains/sessions/main/observation/read-declaration'
 import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
-import { decodeRosterCursor } from '@/domains/sessions/main/projection/roster-cursor'
 import type { SessionUnreadStore } from '@/domains/sessions/main/unread/unread-store'
 import type { SessionTicketLinkStore } from '@/domains/tickets/main'
+import { decodeRosterCursor } from './roster-cursor'
 
 // Project scope is applied inside each adapter's own `discoverSessions` (#2239), at the boundary
 // where that adapter's rows are built — never here, after every adapter has already read a

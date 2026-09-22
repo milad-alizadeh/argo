@@ -9,22 +9,22 @@ import {
   createSessionArchiveStore,
   sessionArchivePath,
 } from '@/domains/sessions/main/archive/archive-store'
-import { openSessionIndex } from '@/domains/sessions/main/index/session-index/open-index'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { feedRequest, listing } from '@/domains/sessions/main/observation/reader-test-helpers'
+import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main'
+import { openSessionIndex } from './open-index'
 import {
   type IndexedAdapter,
   indexedAdapters,
   manyTranscripts,
   sessionIdAt,
-} from '@/domains/sessions/main/index/session-index/roster-fixtures'
-import { rosterHarness } from '@/domains/sessions/main/index/session-index/roster-harness'
+} from './roster-fixtures'
+import { rosterHarness } from './roster-harness'
 import {
   createWorkerSessionIndex,
   type SessionIndexWorkerPort,
   SessionIndexWorkerStoppedError,
-} from '@/domains/sessions/main/index/session-index/worker-index'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
-import { feedRequest, listing } from '@/domains/sessions/main/observation/reader-test-helpers'
-import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main'
+} from './worker-index'
 
 const rosters = rosterHarness()
 afterEach(rosters.cleanUp)

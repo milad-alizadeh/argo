@@ -5,7 +5,7 @@ import { test } from 'node:test'
 import type { PlanEntryStatus, SessionPlan } from '@/domains/sessions/contract/model/models'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { listed, tempRoot } from '@/domains/sessions/main/observation/reader-test-helpers'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import { claudeSessionSource } from './read-sessions'
 
 const SESSION_ID = 'plan-session'
 const TIMESTAMP = '2026-09-15T10:00:00.000Z'

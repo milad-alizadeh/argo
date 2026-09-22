@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { ticketKeyInBranch, ticketKeyInPlace } from '@/domains/tickets/contract/branch-ticket'
+import { ticketKeyInBranch, ticketKeyInPlace } from './branch-ticket'
 
 const CASES: [string | null, string | null][] = [
   ['argo/#2428-issue-completion', '#2428'],

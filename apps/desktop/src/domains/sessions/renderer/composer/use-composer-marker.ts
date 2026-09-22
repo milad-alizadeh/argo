@@ -1,13 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import {
-  type ComposerIdentity,
-  composerIdentityKey,
-  findSessionRow,
-} from '@/domains/sessions/renderer/composer/composer-identity'
-import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
-import type { useTurnMarker } from '@/domains/sessions/renderer/composer/use-turn-marker'
-import {
   optimisticRowFor,
   runningTurnView,
   settledPromptRowFor,
@@ -17,6 +10,9 @@ import {
   turnMarkerView,
 } from '@/domains/sessions/renderer/feed/turn-marker-state'
 import type { useSessions } from '@/domains/sessions/renderer/use-sessions'
+import { type ComposerIdentity, composerIdentityKey, findSessionRow } from './composer-identity'
+import { useComposerStore } from './use-composer-store'
+import type { useTurnMarker } from './use-turn-marker'
 
 // The Turn Marker's lifecycle (#2099): retire an entry on a successful interrupt or once the
 // Session's real record catches up to it, and read the current identity's entry into the two

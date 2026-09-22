@@ -5,7 +5,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { UnreadMarkerBrowserPrototype } from '@/domains/sessions/renderer/roster/unread-marker-browser-prototype'
 import { AppQueryProvider } from '@/platform/renderer/app-query-provider'
-import { App } from '@/renderer/app'
+import { App } from './app'
 import '../platform/renderer/styles/globals.css'
 
 const host = document.getElementById('root')

@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import { sessionRosterRowSchema } from '@/domains/sessions/contract/model/models'
-import { sessionErrorSchema } from '@/domains/sessions/contract/model/session-error'
 import { identifierSchema } from '@/shared/validation'
+import { sessionRosterRowSchema } from './models'
+import { sessionErrorSchema } from './session-error'
 
 // A page of the reader's Archived Sessions, read on demand rather than every poll (#1593): the
 // active list never carries one of these rows. `cursor` is opaque and echoed back to ask for the

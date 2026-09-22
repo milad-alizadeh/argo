@@ -1,9 +1,6 @@
 import { expect, test } from 'bun:test'
-import {
-  fakeClaudeQuery,
-  managedSessionService,
-} from '@/harnesses/claude/agent-sdk/claude-query-fixture'
-import { createClaudeSessionAdapter } from '@/harnesses/claude/agent-sdk/claude-session-adapter'
+import { fakeClaudeQuery, managedSessionService } from './claude-query-fixture'
+import { createClaudeSessionAdapter } from './claude-session-adapter'
 
 function managedAdapter(fake: ReturnType<typeof fakeClaudeQuery>) {
   return createClaudeSessionAdapter({

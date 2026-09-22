@@ -8,7 +8,7 @@ import {
   SESSION_ID,
   TIMESTAMP,
   updatePlan,
-} from '@/harnesses/codex/sessions/plan-call-fixtures'
+} from './plan-call-fixtures'
 
 const cases: { claim: string; records: unknown[]; plan: SessionPlan | null }[] = [
   {

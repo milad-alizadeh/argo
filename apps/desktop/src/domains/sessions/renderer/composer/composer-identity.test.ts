@@ -1,9 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import {
-  composerIdentityKey,
-  composerIdentityOf,
-} from '@/domains/sessions/renderer/composer/composer-identity'
+import { composerIdentityKey, composerIdentityOf } from './composer-identity'
 
 test('reads no selected Session as a draft scoped to the open Project', () => {
   expect(composerIdentityOf(null, 'project-1', null)).toEqual({

@@ -4,8 +4,8 @@ import {
   resultText,
   type ToolResult,
 } from '@/domains/sessions/contract/model/transcript'
-import { readImage } from '@/harnesses/codex/sessions/prompt-images'
 import { isRecord } from '@/shared/validation'
+import { readImage } from './prompt-images'
 
 function resultBlocks(output: unknown): RichResultBlock[] {
   if (typeof output === 'string') return [{ shape: 'text', text: output }]

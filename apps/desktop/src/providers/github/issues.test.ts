@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { github, githubWithRepository, OCTOCAT, signIn } from '@/providers/github/harness'
-import { readTicketPage } from '@/providers/github/issues'
-import { checkRepository, isRepositoryScope } from '@/providers/github/repository'
 import type { MockIssue } from '../../../mocks/providers/github/mock-github'
+import { github, githubWithRepository, OCTOCAT, signIn } from './harness'
+import { readTicketPage } from './issues'
+import { checkRepository, isRepositoryScope } from './repository'
 
 test('a repository check names the repository by its canonical name', async (context) => {
   const [mock, endpoints] = await github(context)

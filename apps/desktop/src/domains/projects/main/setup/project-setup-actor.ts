@@ -1,5 +1,5 @@
 import { createActor, type Snapshot } from 'xstate'
-import type { inactiveProjectSetupLogic } from '@/domains/projects/main/setup/project-setup-logic'
+import type { inactiveProjectSetupLogic } from './project-setup-logic'
 import { projectSetupMachine } from './project-setup-machine'
 
 export type ProjectSetupActor = ReturnType<typeof createProjectSetupActor>

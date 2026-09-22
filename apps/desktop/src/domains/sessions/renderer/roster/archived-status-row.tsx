@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next'
-import type { RosterRow } from '@/domains/sessions/renderer/roster/roster-rows'
-import { RosterStatusRow } from '@/domains/sessions/renderer/roster/sessions-sidebar-chrome'
 import { sessionFailureState } from '@/domains/sessions/renderer/session-failure-state'
 import { Icon } from '@/platform/renderer/components/icon'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
+import type { RosterRow } from './roster-rows'
+import { RosterStatusRow } from './sessions-sidebar-chrome'
 
 // The rows an Archived section's own load state contributes to the merged list, once it is read
 // (#2194 follow-up): a session row never carries these, so they live beside it rather than in

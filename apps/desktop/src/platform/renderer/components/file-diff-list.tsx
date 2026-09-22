@@ -1,7 +1,7 @@
 import { type ReactNode, useState } from 'react'
-import { diffLines } from '@/platform/renderer/components/file-diff-lines'
-import { Icon } from '@/platform/renderer/components/icon'
 import { cn } from '@/platform/renderer/lib/utils'
+import { diffLines } from './file-diff-lines'
+import { Icon } from './icon'
 
 export type FileDiff = { diff: string; path: string }
 

@@ -1,9 +1,9 @@
 // Shared mocks for use-session-ticket-link.test.ts: a mock window.argo and a Session builder,
 // so each test states only the title source and Turn status it cares about.
 
-import type { ConnectTicketInput } from '@/domains/sessions/renderer/roster/use-session-ticket-link'
 import { sessionRosterRow } from '@/domains/sessions/renderer/session-fixtures'
 import type { Session } from '@/domains/sessions/renderer/types'
+import type { ConnectTicketInput } from './use-session-ticket-link'
 
 type TitleSource = NonNullable<Session['title']>['source']
 

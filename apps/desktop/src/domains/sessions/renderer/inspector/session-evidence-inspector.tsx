@@ -4,12 +4,12 @@ import { patchFiles } from '@/domains/sessions/contract/model/patch-files'
 import { CodeBlock } from '@/domains/sessions/renderer/ai-elements/code-block'
 import { detectCodeLanguageFromPath } from '@/domains/sessions/renderer/feed/content/code-language'
 import { FeedMermaid } from '@/domains/sessions/renderer/feed/content/feed-mermaid'
-import { InspectorTerminal } from '@/domains/sessions/renderer/inspector/inspector-terminal'
-import { SessionDiffViewer } from '@/domains/sessions/renderer/inspector/session-diff-viewer'
-import { SessionFileInspector } from '@/domains/sessions/renderer/inspector/session-file-inspector'
-import { SessionPatchViewer } from '@/domains/sessions/renderer/inspector/session-patch-viewer'
-import { SessionSkillInspector } from '@/domains/sessions/renderer/inspector/session-skill-inspector'
 import type { SessionEvidence } from '@/domains/sessions/renderer/types'
+import { InspectorTerminal } from './inspector-terminal'
+import { SessionDiffViewer } from './session-diff-viewer'
+import { SessionFileInspector } from './session-file-inspector'
+import { SessionPatchViewer } from './session-patch-viewer'
+import { SessionSkillInspector } from './session-skill-inspector'
 
 // A long path truncates at its start, so the filename at the end stays visible.
 function InspectorTitle({ title }: { title: string }) {

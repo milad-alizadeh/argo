@@ -1,20 +1,17 @@
 import type { useQueryClient } from '@tanstack/react-query'
 import type { NavigateFunction } from 'react-router'
 import type { Cockpit } from '@/domains/projects/renderer'
-import {
-  type ComposerIdentity,
-  composerIdentityKey,
-} from '@/domains/sessions/renderer/composer/composer-identity'
-import { sendToDraftIdentity } from '@/domains/sessions/renderer/composer/send-draft-turn'
-import { sendToSessionIdentity } from '@/domains/sessions/renderer/composer/send-turn'
-import type { ComposerState } from '@/domains/sessions/renderer/composer/use-composer-store'
-import type { Send } from '@/domains/sessions/renderer/composer/use-send'
-import type { Failure } from '@/domains/sessions/renderer/composer/use-session-composer-actions'
-import type { useSessionMutations } from '@/domains/sessions/renderer/composer/use-session-mutations'
-import type { TurnMarkerApi } from '@/domains/sessions/renderer/composer/use-turn-marker'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import type { useTurnSetup } from '@/domains/sessions/renderer/turn-setup/use-turn-setup'
 import type { useSessions } from '@/domains/sessions/renderer/use-sessions'
+import { type ComposerIdentity, composerIdentityKey } from './composer-identity'
+import { sendToDraftIdentity } from './send-draft-turn'
+import { sendToSessionIdentity } from './send-turn'
+import type { ComposerState } from './use-composer-store'
+import type { Send } from './use-send'
+import type { Failure } from './use-session-composer-actions'
+import type { useSessionMutations } from './use-session-mutations'
+import type { TurnMarkerApi } from './use-turn-marker'
 
 type ComposerSendOptions = {
   harness: SessionHarness

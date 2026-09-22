@@ -1,7 +1,7 @@
 import type { LiveActivity } from '@/domains/sessions/contract/model/feed-rows'
-import { toolPresentation } from '@/domains/sessions/renderer/feed/feed-tools'
 import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
 import type { IconName } from '@/platform/renderer/components/icon'
+import { toolPresentation } from './feed-tools'
 
 type ToolGroup = Extract<SessionFeedRow, { shape: 'tool-group' }>
 type ToolKind = ToolGroup['calls'][number]['kind']

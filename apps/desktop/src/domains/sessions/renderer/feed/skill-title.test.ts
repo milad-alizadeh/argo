@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { withoutRepeatedTitle } from '@/domains/sessions/renderer/feed/skill-title'
+import { withoutRepeatedTitle } from './skill-title'
 
 test.each([
   ['# Simple English\n\nWrite plain English.', 'Write plain English.'],

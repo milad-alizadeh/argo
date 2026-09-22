@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { SETTLE_MS, watchTrees } from '@/platform/main/watch/watch-paths'
+import { SETTLE_MS, watchTrees } from './watch-paths'
 
 // Twice the settle window, so a change that has been reported has certainly arrived and a change that
 // has not been reported certainly never will be.

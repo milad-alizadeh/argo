@@ -8,8 +8,8 @@ import {
   type SessionIndex,
   type TranscriptFileIdentity,
   type TranscriptPath,
-} from '@/domains/sessions/main/index/session-index/contract'
-import type { IndexedWindowSource } from '@/domains/sessions/main/index/session-index/indexed-window'
+} from './contract'
+import type { IndexedWindowSource } from './indexed-window'
 import {
   chainIdByPath,
   type FileIdentities,
@@ -19,7 +19,7 @@ import {
   indexedFiles,
   isUnchanged,
   pathOfIndexed,
-} from '@/domains/sessions/main/index/session-index/window-pass'
+} from './window-pass'
 
 export type Reindexed = {
   owners: Map<string, string>

@@ -19,7 +19,7 @@ import {
   type threadSchema,
   type turnSchema,
   type VendorStatus,
-} from '@/harnesses/codex/history/vendor-model'
+} from './vendor-model'
 
 export function statusOf(value: z.infer<typeof statusSchema> | undefined): VendorStatus {
   if (value === undefined) return { type: 'unknown' }

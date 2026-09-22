@@ -1,9 +1,9 @@
 // The Project facts other domains may use. Project storage remains private to this domain.
 import { realpath } from 'node:fs/promises'
-import { toSummary } from '@/domains/projects/main/presentation'
-import { resolveSessionWorkspace } from '@/domains/projects/main/resolve-session-workspace'
-import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
 import type { WorkspaceSelection } from '@/domains/sessions/next/contract/session-contract'
+import { toSummary } from './presentation'
+import { resolveSessionWorkspace } from './resolve-session-workspace'
+import type { ProjectStore } from './sqlite-store'
 
 export type ProjectPort = {
   has: (projectId: string) => boolean

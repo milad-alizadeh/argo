@@ -5,7 +5,7 @@ import {
   sessionArchiveSetRequestSchema,
   sessionSearchReplySchema,
   sessionSearchRequestSchema,
-} from '@/domains/sessions/contract/ipc/contract'
+} from './contract'
 
 // The Archive and search operations, apart from the main table for the same reason
 // SESSION_READ_OPERATIONS is (read-operations.ts): the flat table hit the file's line cap.

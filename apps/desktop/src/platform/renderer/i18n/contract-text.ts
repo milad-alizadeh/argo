@@ -2,8 +2,8 @@
 // `message` stays English text for a developer reading a log, and no screen shows it once its
 // domain owns a catalog.
 import { useTranslation } from 'react-i18next'
-import { i18n } from '@/platform/renderer/i18n/i18n'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
+import { i18n } from './i18n'
 
 // A lib file that is not itself a rendered component reads the current language this way, as
 // `providerPresentation` does: it answers correctly, but subscribes nothing to a language change.

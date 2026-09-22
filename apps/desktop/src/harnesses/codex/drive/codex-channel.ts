@@ -1,6 +1,6 @@
 import { createInterface } from 'node:readline'
-import type { RequestID, RequestParams, WireMessage } from '@/harnesses/codex/drive/protocol'
-import { readMessage } from '@/harnesses/codex/drive/protocol'
+import type { RequestID, RequestParams, WireMessage } from './protocol'
+import { readMessage } from './protocol'
 
 // Distinguishes "the channel dropped before we got an answer" from an ordinary JSON-RPC error
 // response, so a caller can tell an uncertain outcome from a definite rejection (#2580).

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
-import { WINDOW_MINIMUM_WIDTH } from '@/platform/main/window/minimum-width'
+import { WINDOW_MINIMUM_WIDTH } from './minimum-width'
 
 const HANDLE = 1
 

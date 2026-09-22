@@ -6,10 +6,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { displayedToolLabel, type ToolResult } from '@/domains/sessions/contract/model/tool-feed'
-import {
-  executeCall as command,
-  onlyToolRow,
-} from '@/domains/sessions/main/projection/tool-feed-test-fixtures'
+import { executeCall as command, onlyToolRow } from './tool-feed-test-fixtures'
 
 test('a command with no result yet is running with no evidence', () => {
   const row = onlyToolRow([command({ id: 'call-1', command: 'bun test' })], new Map())

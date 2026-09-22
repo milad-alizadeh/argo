@@ -1,9 +1,9 @@
 import { type ActorRefFrom, assign, createActor, fromPromise, setup } from 'xstate'
-import type { CodexChannel } from '@/harnesses/codex/drive/codex-channel'
-import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
-import { codexLaunchEnvironment } from '@/harnesses/codex/drive/launch-environment'
-import { openAppServer } from '@/harnesses/codex/drive/open-app-server'
-import type { WireMessage } from '@/harnesses/codex/drive/protocol'
+import type { CodexChannel } from './codex-channel'
+import { CodexSessionDriverError } from './codex-session-error'
+import { codexLaunchEnvironment } from './launch-environment'
+import { openAppServer } from './open-app-server'
+import type { WireMessage } from './protocol'
 
 // ADR-0047: one shared `codex app-server` process per window, multiplexing every managed Codex
 // Session as a thread over one JSON-RPC channel, in place of the one-process-per-Session shape

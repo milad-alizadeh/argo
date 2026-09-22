@@ -2,18 +2,15 @@ import { $convertFromMarkdownString, TRANSFORMERS } from '@lexical/markdown'
 import { $createParagraphNode, $getRoot, type LexicalEditor } from 'lexical'
 import { type RefObject, useCallback, useRef } from 'react'
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
-import type { TurnSetupControlProps } from '@/domains/sessions/renderer/composer/run-setup-menu'
 import {
   type PendingTurn,
   usePendingTurns,
 } from '@/domains/sessions/renderer/composer/tray/use-pending-turns'
-import {
-  useAttachmentTransfer,
-  useComposerAttachments,
-} from '@/domains/sessions/renderer/composer/use-composer-attachments'
-import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
-import { type Send, useSend } from '@/domains/sessions/renderer/composer/use-send'
 import { supportedSetup, type TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
+import type { TurnSetupControlProps } from './run-setup-menu'
+import { useAttachmentTransfer, useComposerAttachments } from './use-composer-attachments'
+import { useComposerStore } from './use-composer-store'
+import { type Send, useSend } from './use-send'
 
 // The setup a queued Turn was written with, narrowed to the choices still offered.
 function turnSetupOf(setup: TurnSetupControlProps | null, turnSetup: TurnSetup | undefined) {

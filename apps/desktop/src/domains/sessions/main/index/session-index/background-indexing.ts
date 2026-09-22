@@ -2,18 +2,12 @@
 // reconcile pass, both sharing the bounded window's hydration so a resumed half never re-stitches
 // against a history the window read has not filled. Split from `discover-transcript-sessions.ts`
 // to keep that factory's own function short.
-import { runBackfillBatch } from '@/domains/sessions/main/index/session-index/backfill-pass'
-import type {
-  BackfillProgress,
-  SessionIndex,
-  TranscriptFileIdentity,
-} from '@/domains/sessions/main/index/session-index/contract'
-import type {
-  createIndexedWindow,
-  IndexedWindowSource,
-} from '@/domains/sessions/main/index/session-index/indexed-window'
-import { reconcileAll as reconcileCandidates } from '@/domains/sessions/main/index/session-index/reconcile-pass'
+
 import { isRecord } from '@/shared/validation'
+import { runBackfillBatch } from './backfill-pass'
+import type { BackfillProgress, SessionIndex, TranscriptFileIdentity } from './contract'
+import type { createIndexedWindow, IndexedWindowSource } from './indexed-window'
+import { reconcileAll as reconcileCandidates } from './reconcile-pass'
 
 export type IndexedWindowFor = (index: SessionIndex) => ReturnType<typeof createIndexedWindow>
 

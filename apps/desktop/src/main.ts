@@ -4,7 +4,6 @@ import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, net, protocol } from 'electron'
-import { attachBridges } from '@/bridges'
 import { seedDevelopmentProject } from '@/domains/projects/main/development-seed'
 import { openProjectStore } from '@/domains/projects/main/main-store'
 import { PROJECT_PROOF_STORE_ENV } from '@/domains/projects/main/proof-protocol'
@@ -27,6 +26,7 @@ import { installMenu } from '@/platform/main/menu'
 import { configureStorageRuntime } from '@/platform/main/storage/storage-runtime'
 import { createDesktopWindow } from '@/platform/main/window/create-window'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mts'
+import { attachBridges } from './bridges'
 
 protocol.registerSchemesAsPrivileged([
   {

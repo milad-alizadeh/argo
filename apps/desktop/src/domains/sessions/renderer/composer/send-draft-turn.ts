@@ -1,17 +1,14 @@
 import type { useQueryClient } from '@tanstack/react-query'
 import type { NavigateFunction } from 'react-router'
 import type { Cockpit } from '@/domains/projects/renderer'
-import {
-  type ComposerIdentity,
-  composerIdentityKey,
-} from '@/domains/sessions/renderer/composer/composer-identity'
-import { sendToNewSession, type TurnInput } from '@/domains/sessions/renderer/composer/send-turn'
-import type { Failure } from '@/domains/sessions/renderer/composer/use-session-composer-actions'
-import type { useSessionMutations } from '@/domains/sessions/renderer/composer/use-session-mutations'
-import type { TurnMarkerApi } from '@/domains/sessions/renderer/composer/use-turn-marker'
 import { promptOf } from '@/domains/sessions/renderer/feed/turn-marker-state'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import type { useTurnSetup } from '@/domains/sessions/renderer/turn-setup/use-turn-setup'
+import { type ComposerIdentity, composerIdentityKey } from './composer-identity'
+import { sendToNewSession, type TurnInput } from './send-turn'
+import type { Failure } from './use-session-composer-actions'
+import type { useSessionMutations } from './use-session-mutations'
+import type { TurnMarkerApi } from './use-turn-marker'
 
 export type DraftSendDeps = {
   harness: SessionHarness

@@ -1,6 +1,6 @@
 import type { ReactVirtualizer } from '@tanstack/react-virtual'
-import { usePromptAtTop } from '@/domains/sessions/renderer/feed/use-prompt-at-top'
 import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
+import { usePromptAtTop } from './use-prompt-at-top'
 
 export function useFeedPrompt({
   positioned,

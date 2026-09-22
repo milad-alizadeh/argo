@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { formatElapsed } from '@/domains/sessions/renderer/feed/elapsed'
 import { Loader } from '@/platform/renderer/components/loader'
 import { Progress } from '@/platform/renderer/components/ui/progress'
+import { formatElapsed } from './elapsed'
 
 function elapsedSince(startedAt: string, now: number) {
   return formatElapsed(now - Date.parse(startedAt))

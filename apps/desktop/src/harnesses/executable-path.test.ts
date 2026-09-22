@@ -6,7 +6,7 @@ import path from 'node:path'
 import type { TestContext } from 'node:test'
 import { test } from 'node:test'
 
-import { findExecutableOnLoginShellPath } from '@/harnesses/executable-path'
+import { findExecutableOnLoginShellPath } from './executable-path'
 
 async function directory(context: TestContext) {
   const folder = await mkdtemp(path.join(os.tmpdir(), 'argo-login-shell-bin-'))

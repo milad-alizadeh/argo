@@ -5,7 +5,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
-import { createTranscriptRecordReader } from '@/domains/sessions/main/observation/transcript-lines'
+import { createTranscriptRecordReader } from './transcript-lines'
 
 async function tempFile(context: { after: (cleanup: () => Promise<void>) => void }) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-transcript-lines-'))

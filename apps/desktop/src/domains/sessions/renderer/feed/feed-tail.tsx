@@ -1,15 +1,12 @@
 // The markers after the last row: compaction, handoff, and the Turn Marker.
 import type { ReactNode } from 'react'
-import { CompactionMarker } from '@/domains/sessions/renderer/feed/compaction-marker'
-import type { FeedLiveFacts } from '@/domains/sessions/renderer/feed/feed-live-facts'
-import { isFeedToolGroup } from '@/domains/sessions/renderer/feed/feed-row-renderers'
-import {
-  HandoffCompletedMarker,
-  HandoffMarker,
-} from '@/domains/sessions/renderer/feed/handoff-marker'
-import { TurnMarker } from '@/domains/sessions/renderer/feed/turn-marker'
-import type { TurnMarkerView } from '@/domains/sessions/renderer/feed/turn-marker-state'
 import type { SessionFeed } from '@/domains/sessions/renderer/types'
+import { CompactionMarker } from './compaction-marker'
+import type { FeedLiveFacts } from './feed-live-facts'
+import { isFeedToolGroup } from './feed-row-renderers'
+import { HandoffCompletedMarker, HandoffMarker } from './handoff-marker'
+import { TurnMarker } from './turn-marker'
+import type { TurnMarkerView } from './turn-marker-state'
 
 export function compactionMarker(
   startedAt: string | null,

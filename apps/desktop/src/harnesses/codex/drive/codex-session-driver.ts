@@ -1,22 +1,18 @@
 import { CODEX_OPENING_SETUP } from '@/domains/sessions/contract/codex-turn-setup'
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
-import type { CodexSessionDriver } from '@/harnesses/codex/drive/codex-session-driver-types'
-import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
-import { compactCodexSession } from '@/harnesses/codex/drive/compact-session'
-import { inputItemsFor } from '@/harnesses/codex/drive/input-items'
-import { readInterrupt } from '@/harnesses/codex/drive/interrupt-protocol'
-import {
-  type ManagedSession,
-  type ManagedSessionOptions,
-  managedRoster,
-} from '@/harnesses/codex/drive/managed-session'
-import { decidePendingPermission } from '@/harnesses/codex/drive/permission-protocol'
-import { readSteeredTurn } from '@/harnesses/codex/drive/protocol'
-import { codexAnswersFor, settleQuestion } from '@/harnesses/codex/drive/question-protocol'
-import { readRename } from '@/harnesses/codex/drive/rename-protocol'
-import { createResumingChannel } from '@/harnesses/codex/drive/resuming-channel'
-import { beginSession, startTurn } from '@/harnesses/codex/drive/turn-lifecycle'
 import { createWatchedChanges } from '@/harnesses/composition/watched-changes'
+import type { CodexSessionDriver } from './codex-session-driver-types'
+import { CodexSessionDriverError } from './codex-session-error'
+import { compactCodexSession } from './compact-session'
+import { inputItemsFor } from './input-items'
+import { readInterrupt } from './interrupt-protocol'
+import { type ManagedSession, type ManagedSessionOptions, managedRoster } from './managed-session'
+import { decidePendingPermission } from './permission-protocol'
+import { readSteeredTurn } from './protocol'
+import { codexAnswersFor, settleQuestion } from './question-protocol'
+import { readRename } from './rename-protocol'
+import { createResumingChannel } from './resuming-channel'
+import { beginSession, startTurn } from './turn-lifecycle'
 
 export type {
   CodexProcess,
@@ -24,7 +20,7 @@ export type {
   CodexSessionDriver,
   LiveMessage,
   LiveMessages,
-} from '@/harnesses/codex/drive/codex-session-driver-types'
+} from './codex-session-driver-types'
 export { CodexSessionDriverError }
 
 function startManagedSession({

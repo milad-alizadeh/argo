@@ -1,11 +1,11 @@
 import type { useQueryClient } from '@tanstack/react-query'
 import type { SessionCommandOutcome } from '@/domains/sessions/next/contract/session-projection-contract'
-import type { SendOutcome } from '@/domains/sessions/renderer/composer/use-send'
-import type { Failure } from '@/domains/sessions/renderer/composer/use-session-composer-actions'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import { invalidateSessionRoster } from '@/domains/sessions/renderer/session-queries'
 import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
 import type { useTurnSetup } from '@/domains/sessions/renderer/turn-setup/use-turn-setup'
+import type { SendOutcome } from './use-send'
+import type { Failure } from './use-session-composer-actions'
 
 export async function sendManagedSessionTurn(options: {
   deps: {

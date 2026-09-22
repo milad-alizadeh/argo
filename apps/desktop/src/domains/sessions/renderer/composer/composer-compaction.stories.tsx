@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, within } from 'storybook/test'
-import { SessionComposer } from '@/domains/sessions/renderer/composer/session-composer'
-import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
 import { BasicFeed } from '@/domains/sessions/renderer/feed/basic-feed'
 import { INACTIVE_FEED_LIVE_FACTS } from '@/domains/sessions/renderer/feed/feed-live-facts'
 import type { SessionFeed } from '@/domains/sessions/renderer/types'
+import { SessionComposer } from './session-composer'
+import { useComposerStore } from './use-composer-store'
 
 const COMPACTION_FEED = {
   version: 1,

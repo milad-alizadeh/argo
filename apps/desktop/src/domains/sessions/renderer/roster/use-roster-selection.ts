@@ -1,10 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import {
-  clickSelection,
-  EMPTY_ROSTER_SELECTION,
-  type SelectionModifier,
-} from '@/domains/sessions/renderer/roster/roster-selection'
 import type { SessionId } from '@/domains/sessions/renderer/types'
+import { clickSelection, EMPTY_ROSTER_SELECTION, type SelectionModifier } from './roster-selection'
 
 // The one place #2194's click/Shift/Cmd rules turn into state: a plain click on the row still
 // opens it (SessionsSidebarContainer's `onSelect`) and clears this instead of adding to it, so

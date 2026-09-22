@@ -5,8 +5,8 @@ import {
   managedRosterRow,
   reconcileRosterRow,
 } from '@/domains/sessions/contract/observation/roster-row-definition'
-import { rollupSessionStatus } from '@/domains/sessions/main/lifecycle/session-status-rollup'
 import type { TranscriptDiscovery } from '@/domains/sessions/main/observation/discover-transcript-sessions'
+import { rollupSessionStatus } from './session-status-rollup'
 
 function titleRank(title: SessionTitle | null): number {
   return title === null ? TITLE_SOURCES.length : TITLE_SOURCES.indexOf(title.source)

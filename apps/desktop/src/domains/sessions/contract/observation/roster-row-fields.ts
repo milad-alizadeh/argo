@@ -12,10 +12,10 @@ import {
   sessionTicketSchema,
   sessionTitleSchema,
 } from '@/domains/sessions/contract/model/models'
-import { rosterRowField as field } from '@/domains/sessions/contract/observation/roster-row-field'
 import { identifierSchema } from '@/shared/validation'
+import { rosterRowField as field } from './roster-row-field'
 
-export type { RosterRowField } from '@/domains/sessions/contract/observation/roster-row-field'
+export type { RosterRowField } from './roster-row-field'
 
 const optionalCount = () => z.number().int().nonnegative().nullable().optional()
 const optionalDate = () => z.string().datetime().nullable().optional()

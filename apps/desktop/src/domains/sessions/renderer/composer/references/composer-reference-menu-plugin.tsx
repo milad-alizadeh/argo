@@ -8,14 +8,14 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import { useEffect, useRef, useState } from 'react'
+import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import {
   activeReference,
   ComposerReferenceMenu,
   type ReferenceSuggestion,
   referenceMenu,
   referenceMenuKey,
-} from '@/domains/sessions/renderer/composer/references/composer-reference-menu'
-import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
+} from './composer-reference-menu'
 
 function replaceActiveReference(editor: LexicalEditor, source: string) {
   editor.update(() => {

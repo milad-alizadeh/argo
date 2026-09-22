@@ -44,7 +44,7 @@ facet cannot import an application composition root.
 
 `biome.jsonc`'s `noRestrictedImports` overrides enforce the facet matrix. The port-only
 cross-domain rule (#2623) lives instead in `.dependency-cruiser.json`, a deliberate exception to
-consolidating checks into Biome: stating "reach another domain only through its port.ts" as one
+consolidating checks into Biome: stating "reach another domain only through its index.ts" as one
 rule needs a regex backreference between `from.path` and `to.pathNot`, and Biome has no such
 primitive as of 2.5.4 (open request: `biomejs/biome` discussion #6245). Without it, the rule would
 need one override block per domain, repeating the same shape five or six times. `bun run quality`

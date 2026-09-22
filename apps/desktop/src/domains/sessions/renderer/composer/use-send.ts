@@ -2,9 +2,9 @@ import type { LexicalEditor } from 'lexical'
 import { type RefObject, useCallback } from 'react'
 
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
-import { resolveAttachments } from '@/domains/sessions/renderer/composer/use-composer-attachments'
-import type { ComposerAttachment } from '@/domains/sessions/renderer/composer/use-composer-store'
 import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
+import { resolveAttachments } from './use-composer-attachments'
+import type { ComposerAttachment } from './use-composer-store'
 
 export type SendOutcome = 'accepted' | 'rejected' | 'uncertain'
 export type Send = (

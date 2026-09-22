@@ -11,8 +11,6 @@ import { useSessionQuestion } from '@/domains/sessions/renderer/composer/use-ses
 import { COMPOSER_FOCUS_STATE } from '@/domains/sessions/renderer/composer-focus-state'
 import type { WorkSelection } from '@/domains/sessions/renderer/inspector/session-inspector'
 import { workInspectorReveal } from '@/domains/sessions/renderer/inspector/work-inspector-reveal'
-import { sessionHarness } from '@/domains/sessions/renderer/screens/session-screen-state'
-import { useSelectedSession } from '@/domains/sessions/renderer/screens/use-selected-session'
 import { readableSessionId } from '@/domains/sessions/renderer/session-creation'
 import type { SessionEvidence } from '@/domains/sessions/renderer/types'
 import { useSessions } from '@/domains/sessions/renderer/use-sessions'
@@ -21,6 +19,8 @@ import {
   useDelegationUsage,
   useShellOutput,
 } from '@/domains/sessions/renderer/work/use-session-work'
+import { sessionHarness } from './session-screen-state'
+import { useSelectedSession } from './use-selected-session'
 
 const NOTHING_PICKED: WorkSelection = { sessionId: null, subagentId: null, shellId: null }
 

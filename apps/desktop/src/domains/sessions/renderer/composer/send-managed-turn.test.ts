@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 import { QueryClient } from '@tanstack/react-query'
-import { sendToSessionIdentity } from '@/domains/sessions/renderer/composer/send-turn'
 import { mockTurnMarker } from '../../../../../mocks/sessions/mock-turn-marker'
+import { sendToSessionIdentity } from './send-turn'
 
 function managedSessionDeps(
   marker: ReturnType<typeof mockTurnMarker>,

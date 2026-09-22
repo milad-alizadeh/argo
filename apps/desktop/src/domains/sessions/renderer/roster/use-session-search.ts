@@ -1,6 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import type { RosterStatus } from '@/domains/sessions/renderer/roster/use-roster-filter-store'
 import {
   type SessionContractError,
   throwSessionContractError,
@@ -9,6 +8,7 @@ import {
 import { sessionSearchQueryKey } from '@/domains/sessions/renderer/session-queries'
 import type { SessionSearched } from '@/domains/sessions/renderer/types'
 import { useWatchedQueries } from '@/domains/sessions/renderer/use-watched-topic'
+import type { RosterStatus } from './use-roster-filter-store'
 
 const SEARCH_DEBOUNCE_MS = 250
 

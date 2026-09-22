@@ -1,12 +1,8 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { HarnessLogo } from '@/domains/sessions/renderer/harness/harness-logo'
-import {
-  HARNESSES,
-  SESSION_HARNESSES,
-  type SessionHarness,
-} from '@/domains/sessions/renderer/harness/harnesses'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/platform/renderer/components/ui/tabs'
+import { HarnessLogo } from './harness-logo'
+import { HARNESSES, SESSION_HARNESSES, type SessionHarness } from './harnesses'
 
 export function HarnessTabs({
   harness,

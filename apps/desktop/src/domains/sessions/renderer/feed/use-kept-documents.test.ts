@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { useKeptDocuments } from '@/domains/sessions/renderer/feed/use-kept-documents'
+import { useKeptDocuments } from './use-kept-documents'
 
 describe('keeping only the selected feed document mounted', () => {
   test('exposes only the selected feed document', () => {

@@ -1,6 +1,6 @@
-import type { SessionRegistry } from '@/harnesses/codex/drive/codex-session-commands'
-import type { ManagedSessionActor } from '@/harnesses/codex/drive/codex-session-projection'
-import type { ManagedSessionDeps } from '@/harnesses/codex/drive/managed-session-machine'
+import type { SessionRegistry } from './codex-session-commands'
+import type { ManagedSessionActor } from './codex-session-projection'
+import type { ManagedSessionDeps } from './managed-session-machine'
 
 export function closeCodexSessionAdapter(
   registry: SessionRegistry,

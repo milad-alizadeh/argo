@@ -1,5 +1,5 @@
-import type { TurnMarkerView } from '@/domains/sessions/renderer/feed/turn-marker-state'
 import type { Session, SessionFeedRow, SessionId } from '@/domains/sessions/renderer/types'
+import type { TurnMarkerView } from './turn-marker-state'
 
 export type FeedLiveFacts = {
   compactionStartedAt: string | null

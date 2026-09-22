@@ -1,5 +1,5 @@
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import type { ClaudeSessionSnapshot } from '@/harnesses/claude/agent-sdk/claude-session-projection'
+import type { ClaudeSessionSnapshot } from './claude-session-projection'
 
 export function rosterFrom(snapshot: ClaudeSessionSnapshot): SessionRosterRow | null {
   const session = snapshot.context.session

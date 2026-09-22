@@ -14,7 +14,6 @@ export * from '@/domains/sessions/contract/drive/permission'
 export * from '@/domains/sessions/contract/drive/question-contract'
 export * from '@/domains/sessions/contract/drive/rename-contract'
 export * from '@/domains/sessions/contract/drive/skill-contract'
-export * from '@/domains/sessions/contract/ipc/search-contract'
 export * from '@/domains/sessions/contract/model/archive-contract'
 export * from '@/domains/sessions/contract/model/background-work-contract'
 export * from '@/domains/sessions/contract/model/feed-contract'
@@ -22,6 +21,7 @@ export * from '@/domains/sessions/contract/model/file-contract'
 export * from '@/domains/sessions/contract/model/session-error'
 export * from '@/domains/sessions/contract/model/unread-contract'
 export * from '@/domains/sessions/contract/ticket-link-contract'
+export * from './search-contract'
 
 // One drive request table for every Harness (#2030): `start` names its Harness, and every other drive
 // operation routes by the Session's owner, resolved from the reader's owner lookup.

@@ -14,9 +14,9 @@ import {
   readOwnedFeed,
 } from '@/domains/sessions/main/observation/read-owned-feed'
 import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
-import { disposeFeed, type HeldFeed } from '@/domains/sessions/main/projection/feed-cache'
-import type { FeedProjectionState } from '@/domains/sessions/main/projection/feed-incremental'
-import { createFeedReads, isAbortError } from '@/domains/sessions/main/projection/feed-reads'
+import { disposeFeed, type HeldFeed } from './feed-cache'
+import type { FeedProjectionState } from './feed-incremental'
+import { createFeedReads, isAbortError } from './feed-reads'
 
 type Ownership = {
   ownerFor: OwnerFor

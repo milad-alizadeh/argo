@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { transcriptMessage } from '@/domains/sessions/main/observation/transcript-test-fixtures'
-import { readExternalStatus } from '@/domains/sessions/main/projection/status'
+import { readExternalStatus } from './status'
 
 test('a terminal Turn ends a pending ask', () => {
   const question = transcriptMessage({

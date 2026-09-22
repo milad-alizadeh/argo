@@ -2,7 +2,7 @@
 // (CONTEXT.md L2 · Session): a file links to what it resumed through the `leafUuid` its first
 // `last-prompt` record names, and where a relocation left no shared uuid the only shared key is
 // the origin `session_id` every message-bearing record carries.
-import type { TranscriptFile } from '@/domains/sessions/contract/model/transcript'
+import type { TranscriptFile } from './transcript'
 
 export type SessionChain = {
   // The chain's stable id: the id of its origin file. Every other member id is retired.

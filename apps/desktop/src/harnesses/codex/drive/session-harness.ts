@@ -4,12 +4,12 @@
 import path from 'node:path'
 import { SESSION_CODEX_EXECUTABLE_ENV } from '@/domains/sessions/contract/proof-protocol'
 import { attachCodexCompactionBridge } from '@/harnesses/codex/compaction/bridge'
-import { renameCodexSession } from '@/harnesses/codex/drive/rename-session'
-import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session-drive-adapter'
-import { createSystemCodexSessionDriver } from '@/harnesses/codex/drive/system-codex-session-driver'
 import { codexTranscriptsRoot } from '@/harnesses/codex/sessions/roots'
 import { codexTranscriptSource } from '@/harnesses/codex/sessions/transcript-source'
 import type { HarnessRegistration } from '@/harnesses/composition/harness-registration'
+import { renameCodexSession } from './rename-session'
+import { createCodexDriveAdapter } from './session-drive-adapter'
+import { createSystemCodexSessionDriver } from './system-codex-session-driver'
 
 export const codexHarness: HarnessRegistration = {
   harness: 'codex',

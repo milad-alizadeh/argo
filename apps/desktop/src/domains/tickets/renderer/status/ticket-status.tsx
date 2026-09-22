@@ -2,8 +2,8 @@
 // The icon's shape carries the category, so a status is never its colour alone.
 import type { ReactNode } from 'react'
 import type { TicketPriority, TicketStatus } from '@/domains/tickets/contract/contract'
-import { StatusGlyph } from '@/domains/tickets/renderer/status/status-glyph'
 import { Icon } from '@/platform/renderer/components/icon'
+import { StatusGlyph } from './status-glyph'
 
 const markIcon = 'size-(--size-icon-meta) shrink-0'
 

@@ -1,15 +1,8 @@
 import type { PermissionResult, Query, UserDialogResult } from '@anthropic-ai/claude-agent-sdk'
 import { fromCallback } from 'xstate'
-import { createPendingRequestRegistry } from '@/harnesses/claude/agent-sdk/pending-request-registry'
-import {
-  createStreamInputChannel,
-  userMessage,
-} from '@/harnesses/claude/agent-sdk/stream-input-channel'
-import {
-  type ClaudeSessionEvent,
-  type ClaudeSessionInput,
-  claudeSdkMessageSchema,
-} from '@/harnesses/claude/agent-sdk/types'
+import { createPendingRequestRegistry } from './pending-request-registry'
+import { createStreamInputChannel, userMessage } from './stream-input-channel'
+import { type ClaudeSessionEvent, type ClaudeSessionInput, claudeSdkMessageSchema } from './types'
 
 function handleEvent(options: {
   event: ClaudeSessionEvent

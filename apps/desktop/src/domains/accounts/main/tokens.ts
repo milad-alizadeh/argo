@@ -2,9 +2,9 @@
 // sent, a refused one is renewed once and tried again, and a renewal the provider refuses leaves
 // the Account expired; each Account on its own, so one lapsing never touches another.
 
-import { type AccountAccess, markRevoked, writeState } from '@/domains/accounts/main/access'
-import { type AccountRecord, readAccounts } from '@/domains/accounts/main/registry'
 import type { Grant } from '@/providers/grant'
+import { type AccountAccess, markRevoked, writeState } from './access'
+import { type AccountRecord, readAccounts } from './registry'
 
 // Renewed this long before it lapses, so a token is never sent in its last minutes.
 const RENEWAL_MARGIN_MILLISECONDS = 5 * 60_000

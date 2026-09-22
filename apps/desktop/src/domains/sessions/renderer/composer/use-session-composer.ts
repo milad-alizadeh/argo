@@ -3,21 +3,18 @@ import { useState } from 'react'
 import type { NavigateFunction } from 'react-router'
 import type { Cockpit, ProjectActions } from '@/domains/projects/renderer'
 import type { SessionErrorCode } from '@/domains/sessions/contract/ipc/contract'
-import { composerIdentityKey } from '@/domains/sessions/renderer/composer/composer-identity'
-import { composerSend } from '@/domains/sessions/renderer/composer/composer-send'
-import type { SessionComposerProps } from '@/domains/sessions/renderer/composer/session-composer'
-import {
-  managedSessionIsRunning,
-  useComposerActions,
-} from '@/domains/sessions/renderer/composer/use-composer-actions'
-import { useComposerFacts } from '@/domains/sessions/renderer/composer/use-composer-facts'
-import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
-import type { Failure } from '@/domains/sessions/renderer/composer/use-session-composer-actions'
-import { useSessionMutations } from '@/domains/sessions/renderer/composer/use-session-mutations'
 import type { TurnMarkerView } from '@/domains/sessions/renderer/feed/turn-marker-state'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
 import type { useSessions } from '@/domains/sessions/renderer/use-sessions'
+import { composerIdentityKey } from './composer-identity'
+import { composerSend } from './composer-send'
+import type { SessionComposerProps } from './session-composer'
+import { managedSessionIsRunning, useComposerActions } from './use-composer-actions'
+import { useComposerFacts } from './use-composer-facts'
+import { useComposerStore } from './use-composer-store'
+import type { Failure } from './use-session-composer-actions'
+import { useSessionMutations } from './use-session-mutations'
 
 type SessionComposerOptions = {
   harness: SessionHarness

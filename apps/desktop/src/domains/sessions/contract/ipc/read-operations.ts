@@ -7,7 +7,7 @@ import {
   sessionFileRequestSchema,
   sessionSkillReplySchema,
   sessionSkillRequestSchema,
-} from '@/domains/sessions/contract/ipc/contract'
+} from './contract'
 
 export const SESSION_READ_OPERATIONS = {
   feed: {

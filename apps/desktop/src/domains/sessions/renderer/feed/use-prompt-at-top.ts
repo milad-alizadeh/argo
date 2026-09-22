@@ -1,7 +1,7 @@
 import type { ReactVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useState } from 'react'
-import { isFeedRowPrompt } from '@/domains/sessions/renderer/feed/feed-row-renderers'
 import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
+import { isFeedRowPrompt } from './feed-row-renderers'
 
 type Virtualizer = ReactVirtualizer<HTMLElement, Element>
 type Pin = { sessionId: string; id: string | null }

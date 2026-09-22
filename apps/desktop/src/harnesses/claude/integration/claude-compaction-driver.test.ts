@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { STARTED_AT, startedSession } from '@/harnesses/claude/integration/claude-driver-launch.ts'
+import { STARTED_AT, startedSession } from './claude-driver-launch.ts'
 
 test('keeps the selected Session compacting until a newer compact boundary arrives', async (context) => {
   const { driver, sessionId, writes } = await startedSession(context)

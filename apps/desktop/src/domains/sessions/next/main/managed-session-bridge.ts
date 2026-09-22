@@ -8,8 +8,8 @@ import type {
 } from '@/domains/sessions/next/ipc/managed-session-contract'
 import { managedSessionError } from '@/domains/sessions/next/ipc/managed-session-error'
 import { MANAGED_SESSION_OPERATIONS } from '@/domains/sessions/next/ipc/managed-session-operations'
-import type { SessionAdapterRegistry } from '@/domains/sessions/next/main/session-adapter-registry'
 import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
+import type { SessionAdapterRegistry } from './session-adapter-registry'
 
 function adapterFor(command: SessionCommand, adapters: SessionAdapterRegistry) {
   const harness = command.type === 'session.start' ? command.harness : command.session.harness

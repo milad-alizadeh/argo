@@ -8,7 +8,6 @@ import {
   CodeBlockTitle,
 } from '@/domains/sessions/renderer/ai-elements/code-block'
 import { CodeBlockCopyButton } from '@/domains/sessions/renderer/ai-elements/code-block-copy-button'
-import { CollapsibleText } from '@/domains/sessions/renderer/feed/collapsible-text'
 import {
   codeLanguageLabel,
   detectCodeLanguage,
@@ -16,18 +15,12 @@ import {
 import { CodeLanguageIcon } from '@/domains/sessions/renderer/feed/content/code-language-icon'
 import { FeedMarkdown } from '@/domains/sessions/renderer/feed/content/feed-markdown'
 import { FEED_CARD_RADIUS_CLASS } from '@/domains/sessions/renderer/feed/content/feed-surface'
-import { StatusIcon } from '@/domains/sessions/renderer/feed/feed-tool-status'
-import {
-  type ToolCall,
-  type ToolRow,
-  toolPresentation,
-} from '@/domains/sessions/renderer/feed/feed-tools'
-import { withoutRepeatedTitle } from '@/domains/sessions/renderer/feed/skill-title'
-import {
-  type ToolGroupState,
-  useToolGroupOpen,
-} from '@/domains/sessions/renderer/feed/tool-group-state'
 import { RunningText } from '@/platform/renderer/components/running-text'
+import { CollapsibleText } from './collapsible-text'
+import { StatusIcon } from './feed-tool-status'
+import { type ToolCall, type ToolRow, toolPresentation } from './feed-tools'
+import { withoutRepeatedTitle } from './skill-title'
+import { type ToolGroupState, useToolGroupOpen } from './tool-group-state'
 
 // A command or an unclassified tool call reads as one code block despite the transcript's
 // separate invocation and result messages. A Skill call instead reads as the skill's own

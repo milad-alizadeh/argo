@@ -7,13 +7,10 @@ import type {
   DriveFailure,
   SessionDriveAdapter,
 } from '@/domains/sessions/contract/session-drive-adapter'
-import {
-  embedAttachments,
-  mentionableAttachments,
-} from '@/harnesses/claude/drive/attachment-prompt'
-import type { ClaudeSessionDriver } from '@/harnesses/claude/drive/claude-session-driver'
-import { ClaudeSessionDriverError } from '@/harnesses/claude/drive/driver-error'
-import type { ClaudePermissionDecision } from '@/harnesses/claude/drive/permission-gate'
+import { embedAttachments, mentionableAttachments } from './attachment-prompt'
+import type { ClaudeSessionDriver } from './claude-session-driver'
+import { ClaudeSessionDriverError } from './driver-error'
+import type { ClaudePermissionDecision } from './permission-gate'
 
 const FAILURE_MESSAGES = {
   'harness-unavailable': 'Claude Code is not available. Run claude doctor to repair it.',

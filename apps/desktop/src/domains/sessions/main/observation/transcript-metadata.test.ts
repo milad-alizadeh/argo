@@ -4,8 +4,8 @@ import type {
   TranscriptMessage,
   TranscriptRecord,
 } from '@/domains/sessions/contract/model/transcript'
-import { transcriptMessage } from '@/domains/sessions/main/observation/transcript-test-fixtures'
 import { rosterMetadata } from '@/domains/sessions/main/projection/roster-metadata'
+import { transcriptMessage } from './transcript-test-fixtures'
 
 function message(overrides: Partial<TranscriptMessage>): TranscriptMessage {
   return transcriptMessage({ uuid: 'message-1', ...overrides })

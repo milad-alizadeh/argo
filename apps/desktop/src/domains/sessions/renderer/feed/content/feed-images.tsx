@@ -1,11 +1,8 @@
 import { type ReactNode, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FEED_CARD_RADIUS_CLASS } from '@/domains/sessions/renderer/feed/content/feed-surface'
-import {
-  ImageLightbox,
-  type ImageSize,
-} from '@/domains/sessions/renderer/feed/content/image-lightbox'
 import { Icon } from '@/platform/renderer/components/icon'
+import { FEED_CARD_RADIUS_CLASS } from './feed-surface'
+import { ImageLightbox, type ImageSize } from './image-lightbox'
 
 export function FeedGallery({ children }: { children: ReactNode }) {
   return (

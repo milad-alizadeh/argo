@@ -6,7 +6,7 @@ import {
   projectSetupRequiredSchema,
   projectSetupSnapshotRequestSchema,
   projectSetupSnapshotSchema,
-} from '@/domains/projects/contract/contract'
+} from './contract'
 import {
   projectCancelledSchema,
   projectListedSchema,
@@ -14,13 +14,13 @@ import {
   projectRegisterRequestSchema,
   projectRelocateRequestSchema,
   projectSelectRequestSchema,
-} from '@/domains/projects/contract/messages'
+} from './messages'
 import {
   projectWorkspaceCreateManagedRequestSchema,
   projectWorkspaceListedSchema,
   projectWorkspaceListRequestSchema,
   projectWorkspaceSelectRequestSchema,
-} from '@/domains/projects/contract/workspace-messages'
+} from './workspace-messages'
 
 const projectListReplySchema = projectListedSchema.or(projectCancelledSchema).or(projectErrorSchema)
 const projectWorkspaceReplySchema = projectWorkspaceListedSchema.or(projectErrorSchema)

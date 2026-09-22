@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
-import { ComposerStory } from '@/domains/sessions/renderer/composer/composer-story-samples'
-import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
+import { ComposerStory } from './composer-story-samples'
+import { useComposerStore } from './use-composer-store'
 
 const FRAME = 'mx-auto max-w-4xl p-8'
 const CONTEXT_PICKER_FRAME = 'mx-auto mt-72 max-w-4xl p-8 pt-96'

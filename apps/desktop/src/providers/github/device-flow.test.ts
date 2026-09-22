@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { awaitGrant, readIdentity, requestChallenge } from '@/providers/github/device-flow'
-import { proofEndpoints } from '@/providers/github/endpoints'
-import { github, OCTOCAT } from '@/providers/github/harness'
 import { assertUnstubbedRequestFails } from '../../../mocks/providers/msw-node-bridge'
+import { awaitGrant, readIdentity, requestChallenge } from './device-flow'
+import { proofEndpoints } from './endpoints'
+import { github, OCTOCAT } from './harness'
 
 test('a proof origin is taken only when it is a loopback origin', () => {
   assert.deepEqual(proofEndpoints('http://127.0.0.1:4000'), {

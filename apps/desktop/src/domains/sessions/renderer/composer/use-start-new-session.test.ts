@@ -1,6 +1,4 @@
 import { beforeEach, expect, test } from 'bun:test'
-import { sendToNewSession } from '@/domains/sessions/renderer/composer/send-turn'
-import { startNewSession } from '@/domains/sessions/renderer/composer/use-start-new-session'
 import { useSessionCreationStore } from '@/domains/sessions/renderer/session-creation'
 import {
   COCKPIT,
@@ -8,6 +6,8 @@ import {
   newSessionDeps,
   PROJECT,
 } from '../../../../../mocks/sessions/mock-send-turn'
+import { sendToNewSession } from './send-turn'
+import { startNewSession } from './use-start-new-session'
 
 beforeEach(() => {
   useSessionCreationStore.setState({ pending: null })

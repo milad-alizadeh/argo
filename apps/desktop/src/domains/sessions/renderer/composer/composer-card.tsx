@@ -3,17 +3,14 @@ import type { DragEvent, RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { SessionPlan } from '@/domains/sessions/contract/model/models'
-import { ComposerEditorArea } from '@/domains/sessions/renderer/composer/composer-editor-area'
-import { ComposerToolbar } from '@/domains/sessions/renderer/composer/composer-toolbar'
-import type { TurnSetupControlProps } from '@/domains/sessions/renderer/composer/run-setup-menu'
-import { SessionContextBar } from '@/domains/sessions/renderer/composer/session-context-bar'
-import type {
-  ComposerAttachment,
-  ComposerTicketContext,
-} from '@/domains/sessions/renderer/composer/use-composer-store'
-import type { WorkspaceMenuControlProps } from '@/domains/sessions/renderer/composer/workspace-menu'
 import { DraftContextPicker } from '@/domains/sessions/renderer/context/draft-context-picker'
 import type { HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
+import { ComposerEditorArea } from './composer-editor-area'
+import { ComposerToolbar } from './composer-toolbar'
+import type { TurnSetupControlProps } from './run-setup-menu'
+import { SessionContextBar } from './session-context-bar'
+import type { ComposerAttachment, ComposerTicketContext } from './use-composer-store'
+import type { WorkspaceMenuControlProps } from './workspace-menu'
 
 type ComposerCardProps = {
   attachments: ComposerAttachment[]

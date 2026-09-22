@@ -1,6 +1,6 @@
-import { editPresentation, fileName } from '@/domains/sessions/contract/model/file-presentation'
-import type { SessionFeedRow } from '@/domains/sessions/contract/model/models'
-import { searchLabel, searchOutcome } from '@/domains/sessions/contract/model/tool-changes'
+import { editPresentation, fileName } from './file-presentation'
+import type { SessionFeedRow } from './models'
+import { searchLabel, searchOutcome } from './tool-changes'
 import {
   type AskFacts,
   type BackgroundState,
@@ -8,7 +8,7 @@ import {
   resultText,
   type ToolCall,
   type ToolResult as TranscriptToolResult,
-} from '@/domains/sessions/contract/model/transcript'
+} from './transcript'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 type AskRow = Extract<SessionFeedRow, { shape: 'ask' }>

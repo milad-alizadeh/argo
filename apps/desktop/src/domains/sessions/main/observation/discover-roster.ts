@@ -4,7 +4,7 @@
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import { mergeManagedRoster } from '@/domains/sessions/main/lifecycle/managed-row'
 import { belongsToProject, projectRootsOf } from '@/domains/sessions/main/lifecycle/project-scope'
-import type { TranscriptDiscovery } from '@/domains/sessions/main/observation/discover-transcript-sessions'
+import type { TranscriptDiscovery } from './discover-transcript-sessions'
 
 export type RosterJoin = (
   rows: SessionRosterRow[],

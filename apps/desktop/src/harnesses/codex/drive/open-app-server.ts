@@ -1,6 +1,6 @@
 import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process'
-import type { CodexChannel } from '@/harnesses/codex/drive/codex-channel'
-import { openCodexChannel } from '@/harnesses/codex/drive/codex-channel'
+import type { CodexChannel } from './codex-channel'
+import { openCodexChannel } from './codex-channel'
 
 export function openAppServer(options: {
   executable: string

@@ -7,13 +7,13 @@ import type {
   SessionCommandOutcome,
   SessionProjection,
 } from '@/domains/sessions/next/contract/session-projection-contract'
-import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
+import { CodexSessionDriverError } from './codex-session-error'
 import {
   type ManagedSessionActor,
   type ManagedSessionSnapshot,
   projectionFrom,
-} from '@/harnesses/codex/drive/codex-session-projection'
-import type { ManagedSessionEvent } from '@/harnesses/codex/drive/managed-session-machine'
+} from './codex-session-projection'
+import type { ManagedSessionEvent } from './managed-session-machine'
 
 export type SessionRegistryEntry = {
   actor: ManagedSessionActor

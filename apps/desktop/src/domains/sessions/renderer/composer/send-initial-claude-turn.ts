@@ -1,6 +1,6 @@
-import type { useSessionMutations } from '@/domains/sessions/renderer/composer/use-session-mutations'
 import { afterRosterPaint } from './after-roster-paint'
 import type { TurnInput } from './send-turn'
+import type { useSessionMutations } from './use-session-mutations'
 
 export function sendInitialClaudeTurn(
   send: ReturnType<typeof useSessionMutations>['send'],

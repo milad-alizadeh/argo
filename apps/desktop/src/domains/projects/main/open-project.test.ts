@@ -3,16 +3,16 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { openProject } from '@/domains/projects/main/open-project'
-import { readProjectConfigurationSource } from '@/domains/projects/main/project-configuration'
-import type { ProjectStore } from '@/domains/projects/main/register-project'
-import type { SetupCheckpoint } from '@/domains/projects/main/sqlite-store'
 import { projectConfigurationSource } from '../../../../test-fixtures/projects/project-configuration.fixture'
 import {
   SETUP_DOCUMENT_REVISION,
   setupDocumentFixture,
 } from '../../../../test-fixtures/projects/setup-document.fixture'
 import { parseSetupDocument, type SetupDocument } from '../contract/setup-document'
+import { openProject } from './open-project'
+import { readProjectConfigurationSource } from './project-configuration'
+import type { ProjectStore } from './register-project'
+import type { SetupCheckpoint } from './sqlite-store'
 
 async function fixture(context: { after: (callback: () => Promise<void>) => void }) {
   const project = await mkdtemp(path.join(os.tmpdir(), 'argo-open-project-'))

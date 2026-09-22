@@ -1,8 +1,8 @@
 import { useLayoutEffect, useRef } from 'react'
-import { formatTurnElapsed } from '@/domains/sessions/renderer/feed/elapsed'
-import type { TurnMarkerView } from '@/domains/sessions/renderer/feed/turn-marker-state'
 import { Icon } from '@/platform/renderer/components/icon'
 import { Marker, MarkerContent, MarkerIcon } from '@/platform/renderer/components/ui/marker'
+import { formatTurnElapsed } from './elapsed'
+import type { TurnMarkerView } from './turn-marker-state'
 
 const PHASE_LABEL: Record<TurnMarkerView['phase'], string> = {
   starting: 'Starting Session',

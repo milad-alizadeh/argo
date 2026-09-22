@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { patchFiles } from '@/domains/sessions/contract/model/patch-files'
+import { patchFiles } from './patch-files'
 
 const TWO_FILES = [
   'Update File: /repo/src/app.ts',

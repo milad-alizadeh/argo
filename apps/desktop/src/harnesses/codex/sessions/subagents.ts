@@ -1,9 +1,9 @@
 import type { SessionChain } from '@/domains/sessions/contract/model/chains'
 import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript'
 import { createTranscriptRecordReader } from '@/domains/sessions/main'
-import { normalizeCodexMessageRecords } from '@/harnesses/codex/sessions/discover'
-import { parseCodexTranscriptLine } from '@/harnesses/codex/sessions/records'
-import { transcriptPaths } from '@/harnesses/codex/sessions/transcript-paths'
+import { normalizeCodexMessageRecords } from './discover'
+import { parseCodexTranscriptLine } from './records'
+import { transcriptPaths } from './transcript-paths'
 
 const { readRecords } = createTranscriptRecordReader(parseCodexTranscriptLine)
 

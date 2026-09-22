@@ -480,6 +480,30 @@
         }
       }
     },
+    {
+      "includes": [
+        "apps/desktop/src/harnesses/**",
+        "!**/*.{test,stories}.{ts,tsx}",
+        "!**/session-fixtures.ts"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["../*", "./*/*"],
+                    "message": "./ imports stay in the current directory. Use @/ for parent or cross-directory source imports."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     // KIND: throwaway research prototypes (output of the `prototype` skill). Deliberately
     // quick, deleted rather than maintained — the caps would tax exploration for no return.
     {

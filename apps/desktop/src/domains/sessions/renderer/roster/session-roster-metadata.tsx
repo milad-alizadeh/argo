@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { sessionTiming } from '@/domains/sessions/renderer/roster/session-timing'
 import type { Session } from '@/domains/sessions/renderer/types'
 import { ticketKeyInPlace } from '@/domains/tickets/contract/branch-ticket'
 import { Icon } from '@/platform/renderer/components/icon'
+import { sessionTiming } from './session-timing'
 
 function planStepTone(session: Session, step: number) {
   if (session.plan?.state !== 'available') return 'bg-border'

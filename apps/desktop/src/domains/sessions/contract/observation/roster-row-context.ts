@@ -1,6 +1,6 @@
 import type { SessionChain } from '@/domains/sessions/contract/model/chains'
 import type { TranscriptMessage } from '@/domains/sessions/contract/model/transcript'
-import type { BackgroundTask } from '@/domains/sessions/contract/observation/signals'
+import type { BackgroundTask } from './signals'
 
 export type RosterRowContext = {
   chain: SessionChain

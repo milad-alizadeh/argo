@@ -2,8 +2,8 @@
 // next batch covers, and when there is nothing older left. `runBackfillBatch`, which also reindexes
 // what the batch finds changed, is `backfill-window.vitest.ts` because it needs the real index.
 import { describe, expect, test } from 'vitest'
-import { nextBackfillSlice } from '@/domains/sessions/main/index/session-index/backfill-pass'
-import type { TranscriptFileIdentity } from '@/domains/sessions/main/index/session-index/contract'
+import { nextBackfillSlice } from './backfill-pass'
+import type { TranscriptFileIdentity } from './contract'
 
 function identityAt(
   minutesAgo: number,

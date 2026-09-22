@@ -3,13 +3,13 @@ import os from 'node:os'
 import path from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { afterEach, expect, test, vi } from 'vitest'
-import { recoverDurableStore } from '@/platform/main/storage/durable-store-recovery'
-import { databaseMigrationsFolder } from '@/platform/main/storage/migrations-folder'
+import { recoverDurableStore } from './durable-store-recovery'
+import { databaseMigrationsFolder } from './migrations-folder'
 import {
   backupSharedDatabase,
   openSharedDatabase,
   rebuildSharedDatabaseIndexes,
-} from '@/platform/main/storage/shared-database'
+} from './shared-database'
 
 const electron = vi.hoisted(() => ({
   exit: vi.fn(),

@@ -7,7 +7,6 @@ import {
   type SessionFeedRequest,
   sessionError,
 } from '@/domains/sessions/contract/ipc/contract'
-import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
 import {
   appendedReply,
   feedReply,
@@ -20,6 +19,7 @@ import {
   type FeedProjectionState,
   projectFeed,
 } from '@/domains/sessions/main/projection/feed-incremental'
+import type { SessionSource } from './session-source'
 
 // `key` is the document's own key in the cache. A Session's Feed and each of its Subagents'
 // Feeds are separate documents read from separate files, so they cannot share one entry, and

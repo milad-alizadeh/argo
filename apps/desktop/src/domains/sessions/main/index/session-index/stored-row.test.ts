@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { rosterRow } from '@/domains/sessions/contract/observation/roster-row-test-fixture'
-import { storedRosterRow } from '@/domains/sessions/main/index/session-index/stored-row'
+import { storedRosterRow } from './stored-row'
 
 test('loads a stored Session row that predates the harness name', () => {
   const row = rosterRow()

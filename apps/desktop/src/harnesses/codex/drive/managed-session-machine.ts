@@ -8,17 +8,10 @@ import type {
   TurnStatus,
 } from '@/domains/sessions/next/contract/session-projection-contract'
 import type { SessionService } from '@/domains/sessions/next/main/session-service'
-import { type CodexChannel, CodexChannelClosedError } from '@/harnesses/codex/drive/codex-channel'
-import type { PendingCodexPermission } from '@/harnesses/codex/drive/permission-protocol'
-import {
-  codexApprovalDecision,
-  readRequestApproval,
-} from '@/harnesses/codex/drive/permission-protocol'
-import {
-  readThreadId,
-  type WireMessage,
-  type TurnStatus as WireTurnStatus,
-} from '@/harnesses/codex/drive/protocol'
+import { type CodexChannel, CodexChannelClosedError } from './codex-channel'
+import type { PendingCodexPermission } from './permission-protocol'
+import { codexApprovalDecision, readRequestApproval } from './permission-protocol'
+import { readThreadId, type WireMessage, type TurnStatus as WireTurnStatus } from './protocol'
 import {
   readAgentMessageDelta,
   readClosedThread,
@@ -26,10 +19,10 @@ import {
   readThreadStatus,
   readThreadTokenUsageUpdated,
   readToolCallUpdate,
-} from '@/harnesses/codex/drive/protocol-notifications'
-import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
-import { codexAnswersFor, readRequestUserInput } from '@/harnesses/codex/drive/question-protocol'
-import { readUpdatedThreadName } from '@/harnesses/codex/drive/rename-protocol'
+} from './protocol-notifications'
+import type { PendingCodexQuestion } from './question-protocol'
+import { codexAnswersFor, readRequestUserInput } from './question-protocol'
+import { readUpdatedThreadName } from './rename-protocol'
 
 function turnStatusFrom(status: WireTurnStatus): TurnStatus {
   return status === 'inProgress' ? 'running' : status

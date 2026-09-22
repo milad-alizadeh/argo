@@ -2,7 +2,8 @@
 // cases hold the Feed to the file's whole content whatever the Harness did to it between two reads.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+import { createSessionReader } from './reader'
 import {
   appendCodexTranscript,
   appendGarbledCodexLine,
@@ -10,8 +11,7 @@ import {
   feedRequest,
   tempRoot,
   writeCodexTranscript,
-} from '@/domains/sessions/main/observation/reader-test-helpers'
-import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+} from './reader-test-helpers'
 
 const SESSION = 'appended'
 

@@ -4,18 +4,14 @@
 
 import type { PlanChange, TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
 import { readPlanSnapshot } from '@/domains/sessions/main'
+import { isRecord } from '@/shared/validation'
 import {
   JAVASCRIPT_IDENTIFIER_SOURCE,
   nextQuotedState,
   openedQuote,
   type Quote,
-} from '@/harnesses/codex/sessions/javascript-string'
-import {
-  arrayAssignedTo,
-  codeMatch,
-  nestedToolCall,
-} from '@/harnesses/codex/sessions/nested-tool-call'
-import { isRecord } from '@/shared/validation'
+} from './javascript-string'
+import { arrayAssignedTo, codeMatch, nestedToolCall } from './nested-tool-call'
 
 const PLAN_FUNCTION = 'update_plan'
 

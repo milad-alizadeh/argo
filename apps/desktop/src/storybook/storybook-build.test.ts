@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { parseImporters, parseStories } from '@/storybook/storybook-build'
+import { parseImporters, parseStories } from './storybook-build'
 
 const entry = (type: string, name: string) => ({
   type,

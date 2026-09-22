@@ -2,18 +2,15 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { useProjects, useSelectedProject } from '@/domains/projects/renderer'
 import { currentSessionId } from '@/domains/sessions/contract/model/models'
-import { Roster, type RosterActions } from '@/domains/sessions/renderer/roster/roster'
-import { useOrderedSessions } from '@/domains/sessions/renderer/roster/roster-order'
-import { SessionTicketLinkDialog } from '@/domains/sessions/renderer/roster/session-ticket-link-dialog'
-import { UnreadMarkerPrototypeSwitcher } from '@/domains/sessions/renderer/roster/unread-marker-prototype'
-import { useDerivedTicketLink } from '@/domains/sessions/renderer/roster/use-derived-ticket-link'
-import { useArchiveSelected } from '@/domains/sessions/renderer/roster/use-session-archive-mutation'
-import { useSessionTicketLink } from '@/domains/sessions/renderer/roster/use-session-ticket-link'
-import {
-  SELECTED_SESSION_KEY,
-  useSidebarActions,
-} from '@/domains/sessions/renderer/roster/use-sidebar-actions'
 import type { Session } from '@/domains/sessions/renderer/types'
+import { Roster, type RosterActions } from './roster'
+import { useOrderedSessions } from './roster-order'
+import { SessionTicketLinkDialog } from './session-ticket-link-dialog'
+import { UnreadMarkerPrototypeSwitcher } from './unread-marker-prototype'
+import { useDerivedTicketLink } from './use-derived-ticket-link'
+import { useArchiveSelected } from './use-session-archive-mutation'
+import { useSessionTicketLink } from './use-session-ticket-link'
+import { SELECTED_SESSION_KEY, useSidebarActions } from './use-sidebar-actions'
 
 // A stored id absent from the active Roster is not necessarily gone: the active list never
 // carries an archived Session, so this can still be one, restored by the Archive section

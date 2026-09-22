@@ -1,10 +1,10 @@
 import type { Snapshot } from 'xstate'
 import { validateAcceptedSetupPlan } from '@/domains/projects/contract/setup-plan'
+import { isManualProjectDetails } from '@/domains/projects/main/setup/preparation/project-setup-manual-details'
 import {
   inactiveProjectSetupRuntime,
   type ProjectSetupRuntime,
 } from '@/domains/projects/main/setup/project-setup-logic'
-import { isManualProjectDetails } from '@/domains/projects/main/setup/preparation/project-setup-manual-details'
 import type { ProjectSetupEvent } from '@/domains/projects/main/setup/project-setup-machine-types'
 import {
   type ProjectSetupSnapshot,

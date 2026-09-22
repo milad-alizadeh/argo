@@ -1,6 +1,6 @@
 import 'i18next'
 
-import type { CATALOGS, DEFAULT_NAMESPACE } from '@/renderer/catalogs'
+import type { CATALOGS, DEFAULT_NAMESPACE } from './catalogs'
 
 declare module 'i18next' {
   interface CustomTypeOptions {

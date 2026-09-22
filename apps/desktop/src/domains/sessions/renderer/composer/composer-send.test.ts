@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 import { QueryClient } from '@tanstack/react-query'
-import { composerSend } from '@/domains/sessions/renderer/composer/composer-send'
 import { useSessionCreationStore } from '@/domains/sessions/renderer/session-creation'
+import { composerSend } from './composer-send'
 
 test('a started Session removes only the submitted attachment paths from its rekeyed composer', async () => {
   useSessionCreationStore.setState({ pending: null })

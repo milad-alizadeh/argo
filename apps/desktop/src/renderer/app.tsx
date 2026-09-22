@@ -3,7 +3,7 @@ import './i18n'
 import { RouterProvider } from 'react-router'
 
 import { useAppearance } from '@/platform/renderer/appearance/hooks/use-appearance'
-import { cockpitRouter } from '@/renderer/cockpit-router'
+import { cockpitRouter } from './cockpit-router'
 
 export function App() {
   useAppearance()

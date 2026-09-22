@@ -14,7 +14,7 @@ import {
   PASTED,
   STARTED_AT,
   settle,
-} from '@/harnesses/claude/integration/claude-driver-launch.ts'
+} from './claude-driver-launch.ts'
 
 const FIRST_FRAME = '\u001b[?2026h\u001b[?25l> \u001b[?25h\u001b[?2026l'
 const turn = (prompt: string) => ({ prompt, setup: OPENING })

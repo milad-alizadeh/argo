@@ -12,12 +12,12 @@ import type {
   SessionArchiveSetRequest,
 } from '@/domains/sessions/contract/ipc/contract'
 import { newestFirst, type SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import { indexedResolution } from '@/domains/sessions/main/archive/archive-index-resolution'
-import { isArchivedSession } from '@/domains/sessions/main/archive/archive-store'
-import { growWindow } from '@/domains/sessions/main/archive/archive-window'
 import { fromContext, type ReadContext } from '@/domains/sessions/main/observation/read-declaration'
 import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
 import { rosterCursorMapSchema } from '@/domains/sessions/main/projection/roster-cursor'
+import { indexedResolution } from './archive-index-resolution'
+import { isArchivedSession } from './archive-store'
+import { growWindow } from './archive-window'
 
 // A page's worth of Archived Sessions, read on demand rather than on every poll (#1593).
 export const ARCHIVE_PAGE_LIMIT = 20

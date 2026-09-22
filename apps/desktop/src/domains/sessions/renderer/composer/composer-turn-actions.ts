@@ -1,10 +1,7 @@
 import type { StoreApi } from 'zustand'
-import { updateComposerEntries } from '@/domains/sessions/renderer/composer/composer-entry-records'
-import { rekeyComposerRecords } from '@/domains/sessions/renderer/composer/rekey-composer-records'
-import type {
-  ComposerState,
-  PendingTurn,
-} from '@/domains/sessions/renderer/composer/use-composer-store'
+import { updateComposerEntries } from './composer-entry-records'
+import { rekeyComposerRecords } from './rekey-composer-records'
+import type { ComposerState, PendingTurn } from './use-composer-store'
 
 type ComposerSet = StoreApi<ComposerState>['setState']
 

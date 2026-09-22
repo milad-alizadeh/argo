@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { createManagedSessionClient } from '@/domains/sessions/next/preload/managed-session-client'
+import { createManagedSessionClient } from './managed-session-client'
 
 const start = {
   type: 'session.start' as const,

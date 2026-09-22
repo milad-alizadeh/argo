@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { isManagedSessionSelected } from '@/domains/sessions/renderer/composer/use-composer-actions'
+import { isManagedSessionSelected } from './use-composer-actions'
 
 test('allows compacting a managed Session', () => {
   expect(isManagedSessionSelected({ kind: 'session', sessionId: 'session-1' }, 'managed')).toBe(

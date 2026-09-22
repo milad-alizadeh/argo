@@ -7,9 +7,9 @@ import { openAccountsDialog } from '@/domains/accounts/renderer'
 import type { TicketScope } from '@/domains/tickets/contract/contract'
 import type { ConnectSourceFormProps } from '@/domains/tickets/renderer/connection/connect-source-form'
 import type { SourceDiscovery } from '@/domains/tickets/renderer/connection/source-field'
-import { useConnectSource, useSources } from '@/domains/tickets/renderer/hooks/use-tickets'
 import { useContractText } from '@/platform/renderer/i18n/contract-text'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
+import { useConnectSource, useSources } from './use-tickets'
 
 export type ConnectForm = Omit<ConnectSourceFormProps, 'projectName' | 'accounts'>
 

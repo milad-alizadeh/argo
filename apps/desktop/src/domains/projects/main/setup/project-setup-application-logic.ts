@@ -4,18 +4,15 @@ import { fromCallback } from 'xstate'
 import type { AcceptedSetupPlan } from '@/domains/projects/contract/setup-plan'
 import { runApplicationAgent } from '@/domains/projects/main/setup/onboarding-agent/application/run-application-agent'
 import { prepareSetupWorktree } from '@/domains/projects/main/setup/preparation/setup-worktree'
-import type {
-  ProjectSetupContext,
-  ProjectSetupEvent,
-} from '@/domains/projects/main/setup/project-setup-machine-types'
-import { findProjectSetupApplicationDrift } from '@/domains/projects/main/setup/project-setup-reconciliation'
-import { startProjectSetupTask } from './project-setup-task'
 import type { ProjectSetupServices } from './project-setup-logic'
+import type { ProjectSetupContext, ProjectSetupEvent } from './project-setup-machine-types'
 import {
   type ActivePermission,
   projectSetupPermissionDecisionHandler,
 } from './project-setup-permission-decisions'
 import { projectSetupProgressReporter } from './project-setup-progress'
+import { findProjectSetupApplicationDrift } from './project-setup-reconciliation'
+import { startProjectSetupTask } from './project-setup-task'
 
 const runFile = promisify(execFile)
 

@@ -1,14 +1,10 @@
 import { memo } from 'react'
-import { ArchivedSectionRow } from '@/domains/sessions/renderer/roster/archived-status-row'
-import {
-  type RosterRow,
-  renamedSession,
-  sameRosterRow,
-} from '@/domains/sessions/renderer/roster/roster-rows'
-import type { SelectionModifier } from '@/domains/sessions/renderer/roster/roster-selection'
-import { SessionRosterItem } from '@/domains/sessions/renderer/roster/session-roster-item'
-import { RosterLoadingMoreRow } from '@/domains/sessions/renderer/roster/sessions-sidebar-chrome'
 import type { SessionId } from '@/domains/sessions/renderer/types'
+import { ArchivedSectionRow } from './archived-status-row'
+import { type RosterRow, renamedSession, sameRosterRow } from './roster-rows'
+import type { SelectionModifier } from './roster-selection'
+import { SessionRosterItem } from './session-roster-item'
+import { RosterLoadingMoreRow } from './sessions-sidebar-chrome'
 
 // The row reads its own place in the list as three booleans rather than the ids they come from: an
 // id would re-render all 82 rows when the reader opened one Session, since every row compares it.

@@ -3,13 +3,9 @@
 // ever reading the whole tree in one pass. A batch never repeats a file another batch already
 // covered and never skips one, because "already covered" is a place in the newest-first order
 // (a written time and a path), not a position in an array that new Sessions keep shifting.
-import type {
-  BackfillProgress,
-  SessionIndex,
-  TranscriptFileIdentity,
-} from '@/domains/sessions/main/index/session-index/contract'
-import type { IndexedWindowSource } from '@/domains/sessions/main/index/session-index/indexed-window'
-import { reindexCandidates } from '@/domains/sessions/main/index/session-index/reindex-pass'
+import type { BackfillProgress, SessionIndex, TranscriptFileIdentity } from './contract'
+import type { IndexedWindowSource } from './indexed-window'
+import { reindexCandidates } from './reindex-pass'
 
 type Boundary = NonNullable<BackfillProgress['boundary']>
 

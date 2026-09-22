@@ -1,11 +1,6 @@
 import { CLAUDE_MODES, type ClaudeTurnSetup } from '@/domains/sessions/contract/ipc/contract'
-import {
-  CYCLE_MODE,
-  footerMode,
-  REDRAW,
-  setupCommands,
-} from '@/harnesses/claude/drive/claude-setup'
-import { claudeTurn } from '@/harnesses/claude/drive/claude-turn'
+import { CYCLE_MODE, footerMode, REDRAW, setupCommands } from './claude-setup'
+import { claudeTurn } from './claude-turn'
 
 export type Wait = (milliseconds: number) => Promise<void>
 export type ClaudeTurnRequest = { prompt: string; setup: ClaudeTurnSetup }

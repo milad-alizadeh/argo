@@ -4,7 +4,7 @@ import { mkdtemp, rm, utimes } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { readThreadNames } from '@/harnesses/codex/sessions/thread-names'
+import { readThreadNames } from './thread-names'
 
 type Context = { after: (cleanup: () => Promise<void>) => void }
 

@@ -2,17 +2,14 @@ import type { LexicalEditor } from 'lexical'
 import { type ReactNode, type RefObject, useEffect, useRef } from 'react'
 
 import type { SessionPlan } from '@/domains/sessions/contract/model/models'
-import { ComposerCard } from '@/domains/sessions/renderer/composer/composer-card'
-import type { TurnSetupControlProps } from '@/domains/sessions/renderer/composer/run-setup-menu'
 import { AttachmentTray } from '@/domains/sessions/renderer/composer/tray/attachment-tray'
 import { PendingTurns } from '@/domains/sessions/renderer/composer/tray/pending-turns'
 import type { usePendingTurns } from '@/domains/sessions/renderer/composer/tray/use-pending-turns'
-import type {
-  ComposerAttachment,
-  ComposerTicketContext,
-} from '@/domains/sessions/renderer/composer/use-composer-store'
-import type { WorkspaceMenuControlProps } from '@/domains/sessions/renderer/composer/workspace-menu'
 import type { HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
+import { ComposerCard } from './composer-card'
+import type { TurnSetupControlProps } from './run-setup-menu'
+import type { ComposerAttachment, ComposerTicketContext } from './use-composer-store'
+import type { WorkspaceMenuControlProps } from './workspace-menu'
 
 // The composer card's column; attached secondary surfaces inset from its edges.
 export const COMPOSER_COLUMN = 'mx-auto w-full max-w-(--size-session-column)'

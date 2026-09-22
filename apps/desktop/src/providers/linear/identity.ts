@@ -2,9 +2,9 @@
 // the Account, and the same person in two workspaces is two Accounts.
 
 import type { Identity } from '@/providers/grant'
-import type { LinearEndpoints } from '@/providers/linear/endpoints'
-import { failed, type LinearRead, query } from '@/providers/linear/http'
 import { isIdentifier, isRecord } from '@/shared/validation'
+import type { LinearEndpoints } from './endpoints'
+import { failed, type LinearRead, query } from './http'
 
 const VIEWER = 'query Viewer { viewer { id name email organization { name } } }'
 

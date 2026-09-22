@@ -1,5 +1,3 @@
-import type { AppServerSupervisor } from '@/harnesses/codex/drive/app-server-supervisor-machine'
-import { waitForChannel } from '@/harnesses/codex/drive/codex-session-launch'
 import {
   createRolloutInvalidation,
   watchRolloutSignals,
@@ -10,6 +8,8 @@ import {
   requestStoredHistory,
 } from '@/harnesses/codex/history/vendor-history'
 import { createWatchedCodexSessions } from '@/harnesses/codex/history/watched-session'
+import type { AppServerSupervisor } from './app-server-supervisor-machine'
+import { waitForChannel } from './codex-session-launch'
 
 export function createCodexSessionHistory(options: {
   supervisor: AppServerSupervisor

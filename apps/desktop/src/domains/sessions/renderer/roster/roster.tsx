@@ -1,22 +1,19 @@
 import { type RefObject, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { RenameDialog } from '@/domains/sessions/renderer/roster/rename-dialog'
-import type { RosterActions } from '@/domains/sessions/renderer/roster/roster-actions'
-import { useOrderedSessions } from '@/domains/sessions/renderer/roster/roster-order'
-import { RosterOutcome } from '@/domains/sessions/renderer/roster/roster-outcome'
-import { rosterRows } from '@/domains/sessions/renderer/roster/roster-rows'
-import { RosterVirtualList } from '@/domains/sessions/renderer/roster/roster-virtual-list'
-import {
-  rosterState,
-  SessionsSidebarHeader,
-} from '@/domains/sessions/renderer/roster/sessions-sidebar-chrome'
-import { useArchivedSection } from '@/domains/sessions/renderer/roster/use-archived-section'
-import { useRenameDialog } from '@/domains/sessions/renderer/roster/use-rename-dialog'
-import { useRosterStatus } from '@/domains/sessions/renderer/roster/use-roster-filter-store'
-import { useSidebarRoster } from '@/domains/sessions/renderer/roster/use-sidebar-roster'
 import type { Session, SessionId } from '@/domains/sessions/renderer/types'
+import { RenameDialog } from './rename-dialog'
+import type { RosterActions } from './roster-actions'
+import { useOrderedSessions } from './roster-order'
+import { RosterOutcome } from './roster-outcome'
+import { rosterRows } from './roster-rows'
+import { RosterVirtualList } from './roster-virtual-list'
+import { rosterState, SessionsSidebarHeader } from './sessions-sidebar-chrome'
+import { useArchivedSection } from './use-archived-section'
+import { useRenameDialog } from './use-rename-dialog'
+import { useRosterStatus } from './use-roster-filter-store'
+import { useSidebarRoster } from './use-sidebar-roster'
 
-export type { RosterActions } from '@/domains/sessions/renderer/roster/roster-actions'
+export type { RosterActions } from './roster-actions'
 
 const NOOP = () => {}
 

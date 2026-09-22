@@ -5,8 +5,8 @@ import type {
   SessionProjection,
   SessionStatus,
 } from '@/domains/sessions/next/contract/session-projection-contract'
-import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
-import type { createManagedSessionMachine } from '@/harnesses/codex/drive/managed-session-machine'
+import { CodexSessionDriverError } from './codex-session-error'
+import type { createManagedSessionMachine } from './managed-session-machine'
 
 export type ManagedSessionActor = ActorRefFrom<ReturnType<typeof createManagedSessionMachine>>
 export type ManagedSessionSnapshot = SnapshotFrom<ManagedSessionActor>

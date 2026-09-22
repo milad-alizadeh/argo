@@ -4,13 +4,13 @@
 import type { SessionChain } from '@/domains/sessions/contract/model/chains'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import type { TranscriptFile } from '@/domains/sessions/contract/model/transcript'
+import { projectFeed } from '@/domains/sessions/main/projection/feed-incremental'
 import {
   type IndexedSessionChain,
   type IndexedTranscriptFile,
   NO_CHAIN,
   type TranscriptFileIdentity,
-} from '@/domains/sessions/main/index/session-index/contract'
-import { projectFeed } from '@/domains/sessions/main/projection/feed-incremental'
+} from './contract'
 
 export type FileIdentities = ReadonlyMap<string, { writtenAt: number; size: number }>
 

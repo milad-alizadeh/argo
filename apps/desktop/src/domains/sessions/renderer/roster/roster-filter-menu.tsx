@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import type { RosterStatus } from '@/domains/sessions/renderer/roster/use-roster-filter-store'
 import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
@@ -9,6 +8,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
+import type { RosterStatus } from './use-roster-filter-store'
 
 // The closed set of filters, each with the catalog key that names it to the reader.
 const STATUS_LABELS = {

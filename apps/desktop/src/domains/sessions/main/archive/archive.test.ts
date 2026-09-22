@@ -2,11 +2,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { sessionArchiveSetReplySchema } from '@/domains/sessions/contract/ipc/contract'
-import { requestArchiveList } from '@/domains/sessions/main/archive/archive-list-request'
-import {
-  createSessionArchiveStore,
-  sessionArchivePath,
-} from '@/domains/sessions/main/archive/archive-store'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import {
   listed,
@@ -17,6 +12,8 @@ import {
 import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+import { requestArchiveList } from './archive-list-request'
+import { createSessionArchiveStore, sessionArchivePath } from './archive-store'
 
 type Context = { after: (cleanup: () => Promise<void>) => void }
 

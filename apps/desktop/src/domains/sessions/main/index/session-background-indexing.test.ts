@@ -1,8 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import {
-  createLaunchBackfillTick,
-  reconcileIndexedSources,
-} from '@/domains/sessions/main/index/session-background-indexing'
+import { createLaunchBackfillTick, reconcileIndexedSources } from './session-background-indexing'
 
 describe('reconcileIndexedSources', () => {
   test('leaves a fresh index to bounded backfill instead of reconciling its full history', async () => {

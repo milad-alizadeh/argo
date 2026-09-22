@@ -2,19 +2,16 @@ import { z } from 'zod'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { sessionAttachmentInputSchema } from '@/domains/sessions/contract/drive/attachments-contract'
-import { composerActions } from '@/domains/sessions/renderer/composer/composer-store-actions'
-import {
-  type ComposerTicketContext,
-  ticketContextSchema,
-} from '@/domains/sessions/renderer/composer/composer-ticket-context'
 import type { TurnMarkerEntry } from '@/domains/sessions/renderer/feed/turn-marker-state'
 import {
   SESSION_HARNESSES,
   type SessionHarness,
 } from '@/domains/sessions/renderer/harness/harnesses'
 import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
+import { composerActions } from './composer-store-actions'
+import { type ComposerTicketContext, ticketContextSchema } from './composer-ticket-context'
 
-export type { ComposerTicketContext } from '@/domains/sessions/renderer/composer/composer-ticket-context'
+export type { ComposerTicketContext } from './composer-ticket-context'
 
 // A path the user attached. `error` means the file was unreadable the last time it was checked
 // (typically at Send), so it stays in the strip for the user to fix or remove rather than being

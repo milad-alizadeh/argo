@@ -6,9 +6,9 @@
 
 import { sessionError } from '@/domains/sessions/contract/ipc/contract'
 import type { SessionArchiveStore } from '@/domains/sessions/main/archive/archive-store'
-import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
 import type { SessionUnreadStore } from '@/domains/sessions/main/unread/unread-store'
 import { isRecord } from '@/shared/validation'
+import type { SessionSource } from './session-source'
 
 export type OwnerFor = (sessionId: string) => Promise<SessionSource | undefined>
 

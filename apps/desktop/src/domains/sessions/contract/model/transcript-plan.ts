@@ -1,4 +1,4 @@
-import type { PlanEntryStatus } from '@/domains/sessions/contract/model/models'
+import type { PlanEntryStatus } from './models'
 
 // One change a record makes to its Session's Plan (CONTEXT.md L3 · Plan), as its adapter read it.
 export type PlanChange =

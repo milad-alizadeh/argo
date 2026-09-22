@@ -1,5 +1,5 @@
-import type { TurnSetupControlProps } from '@/domains/sessions/renderer/composer/run-setup-menu'
 import { effortChoices } from '@/domains/sessions/renderer/turn-setup/turn-setup'
+import type { TurnSetupControlProps } from './run-setup-menu'
 
 // The end labels sit inside the track; the rest centre on their stop.
 function labelShift(index: number, last: number) {

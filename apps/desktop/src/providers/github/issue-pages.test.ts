@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { TICKET_PAGE_SIZE } from '@/domains/tickets/contract/contract'
-import { github, githubWithRepository, OCTOCAT, signIn } from '@/providers/github/harness'
-import { readTicketPage, searchQuery } from '@/providers/github/issues'
+import { github, githubWithRepository, OCTOCAT, signIn } from './harness'
+import { readTicketPage, searchQuery } from './issues'
 
 test('a backlog reads one page at a time and names the next until it ends', async (context) => {
   const [mock, endpoints] = await github(context)

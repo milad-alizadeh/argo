@@ -8,7 +8,7 @@ import {
   type ComposerAttachment,
   type ComposerTicketContext,
   useComposerStore,
-} from '@/domains/sessions/renderer/composer/use-composer-store'
+} from './use-composer-store'
 
 // A stable reference for "no attachments yet": the selector below must return the same array on
 // every call with no entry, or zustand's useSyncExternalStore snapshot never settles (#1845).

@@ -7,9 +7,9 @@ import { fileURLToPath } from 'node:url'
 import { sessionListReplySchema } from '@/domains/sessions/contract/ipc/contract'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
-import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
-import { codexStatePath } from '@/harnesses/codex/sessions/roots'
-import { readThreadNames } from '@/harnesses/codex/sessions/thread-names'
+import { codexSessionSource } from './read-sessions'
+import { codexStatePath } from './roots'
+import { readThreadNames } from './thread-names'
 
 export const CREATED_THREAD = 'codexCreatedThread'
 export const DELEGATED_REQUEST =

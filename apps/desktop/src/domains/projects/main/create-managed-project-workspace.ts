@@ -3,12 +3,9 @@ import type {
   ProjectWorkspaceCreateManagedRequest,
   ProjectWorkspaceListed,
 } from '@/domains/projects/contract/workspace-messages'
-import {
-  listProjectWorkspaces,
-  relistRequest,
-} from '@/domains/projects/main/list-project-workspaces'
-import { findProject, type ProjectStore } from '@/domains/projects/main/register-project'
 import { createManagedWorkspace } from '@/domains/projects/main/workspaces/create-managed-workspace'
+import { listProjectWorkspaces, relistRequest } from './list-project-workspaces'
+import { findProject, type ProjectStore } from './register-project'
 
 export async function createManagedProjectWorkspace(
   request: ProjectWorkspaceCreateManagedRequest,

@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { ToolGroupState } from '@/domains/sessions/renderer/feed/tool-group-state'
+import { ToolGroupState } from './tool-group-state'
 
 test('notifies only the tool group whose disclosure changed', () => {
   const state = new ToolGroupState()

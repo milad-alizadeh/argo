@@ -10,7 +10,7 @@ import type {
   TranscriptRecord,
 } from '@/domains/sessions/contract/model/transcript'
 import { transcriptMessage as message } from '@/domains/sessions/main/observation/transcript-test-fixtures'
-import { projectFeed } from '@/domains/sessions/main/projection/feed-incremental'
+import { projectFeed } from './feed-incremental'
 
 function prose(uuid: string, text: string): TranscriptMessage {
   return message({ uuid, blocks: [{ shape: 'prose', text }] })

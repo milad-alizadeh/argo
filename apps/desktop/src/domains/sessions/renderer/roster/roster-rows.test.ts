@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { sessionName } from '@/domains/sessions/renderer/roster/roster-rows'
+import { sessionName } from './roster-rows'
 import {
   archiveFetchingMore,
   archiveWithMorePages,
@@ -7,8 +7,8 @@ import {
   kindsOf,
   loadingArchive,
   someArchived,
-} from '@/domains/sessions/renderer/roster/roster-rows-test-fixtures'
-import type { RosterStatus } from '@/domains/sessions/renderer/roster/use-roster-filter-store'
+} from './roster-rows-test-fixtures'
+import type { RosterStatus } from './use-roster-filter-store'
 
 describe('building the roster rows for a status filter', () => {
   test('ends on the paging sentinel while a wider window is available', () => {

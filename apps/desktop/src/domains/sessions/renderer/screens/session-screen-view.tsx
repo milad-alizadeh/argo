@@ -2,19 +2,13 @@ import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import { BackgroundWork } from '@/domains/sessions/renderer/feed/background-work'
 import type { FeedLiveFacts } from '@/domains/sessions/renderer/feed/feed-live-facts'
 import { SessionInspector } from '@/domains/sessions/renderer/inspector/session-inspector'
-import { backgroundWorkLinks } from '@/domains/sessions/renderer/screens/background-work-links'
-import {
-  SessionComposerArea,
-  SessionHandoffFacts,
-} from '@/domains/sessions/renderer/screens/session-screen-details'
-import { SessionShell } from '@/domains/sessions/renderer/screens/session-shell'
-import {
-  type SessionScreenModel,
-  useSessionScreenModel,
-} from '@/domains/sessions/renderer/screens/use-session-screen-model'
 import type { SessionFeed } from '@/domains/sessions/renderer/types'
 import { SessionWorkButtons } from '@/domains/sessions/renderer/work/session-work-buttons'
 import { SessionWorkInspectorHeader } from '@/domains/sessions/renderer/work/session-work-inspector-header'
+import { backgroundWorkLinks } from './background-work-links'
+import { SessionComposerArea, SessionHandoffFacts } from './session-screen-details'
+import { SessionShell } from './session-shell'
+import { type SessionScreenModel, useSessionScreenModel } from './use-session-screen-model'
 
 // An unanswered ask row, if the Feed is currently showing one.
 function pendingQuestionId(feed: SessionFeed | null): string | null {

@@ -6,14 +6,14 @@ import {
   CLAUDE_MODES,
   claudeTurnSetupSchema,
 } from '@/domains/sessions/contract/ipc/contract'
-import { CLAUDE_TURN_SETUP } from '@/domains/sessions/renderer/turn-setup/claude-turn-setup'
+import { CLAUDE_TURN_SETUP } from './claude-turn-setup'
 import {
   refusalOf,
   resolvedTurnSetup,
   setupFromReading,
   supportedSetup,
   turnSettled,
-} from '@/domains/sessions/renderer/turn-setup/turn-setup'
+} from './turn-setup'
 
 const requested = { model: 'opus', effort: 'max', mode: 'bypassPermissions' }
 

@@ -3,7 +3,7 @@ import { mkdtemp, readdir, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { type TestContext, test } from 'node:test'
-import { createHandoffLedger } from '@/harnesses/claude/drive/handoff-ledger'
+import { createHandoffLedger } from './handoff-ledger'
 
 async function ledgerPath(context: TestContext) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-handoff-'))
