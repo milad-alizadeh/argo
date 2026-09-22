@@ -1,16 +1,15 @@
-import type {
-  PermissionResult,
-  Query,
-  SDKMessage,
-  UserDialogResult,
-} from '@anthropic-ai/claude-agent-sdk'
+import type { PermissionResult, Query, UserDialogResult } from '@anthropic-ai/claude-agent-sdk'
 import { fromCallback } from 'xstate'
 import { createPendingRequestRegistry } from '@/harnesses/claude/agent-sdk/pending-request-registry'
 import {
   createStreamInputChannel,
   userMessage,
 } from '@/harnesses/claude/agent-sdk/stream-input-channel'
-import type { ClaudeSessionEvent, ClaudeSessionInput } from '@/harnesses/claude/agent-sdk/types'
+import {
+  type ClaudeSessionEvent,
+  type ClaudeSessionInput,
+  claudeSdkMessageSchema,
+} from '@/harnesses/claude/agent-sdk/types'
 
 function handleEvent(options: {
   event: ClaudeSessionEvent
@@ -82,7 +81,12 @@ export const claudeQueryLogic = fromCallback<ClaudeSessionEvent, ClaudeSessionIn
       try {
         for await (const message of query.current) {
           if (stopped) return
-          sendBack({ type: 'SDK message', message: message as SDKMessage })
+          const parsed = claudeSdkMessageSchema.safeParse(message)
+          if (!parsed.success) {
+            sendBack({ type: 'SDK failed' })
+            return
+          }
+          sendBack({ type: 'SDK message', message: parsed.data })
         }
         if (!stopped) sendBack({ type: 'SDK ended' })
       } catch {

@@ -87,6 +87,16 @@ describe('claude session actor authorization', () => {
     expect(actor.getSnapshot().value).toBe('Unavailable')
     expect(actor.getSnapshot().context.sourceHealth).toBe('unavailable')
   })
+
+  test('rejects malformed SDK stream messages at the adapter boundary', async () => {
+    const fake = fakeClaudeQuery()
+    const actor = harness(fake)
+
+    fake.emitMalformedMessage()
+    await flush()
+
+    expect(actor.getSnapshot().value).toBe('Unavailable')
+  })
 })
 
 describe('claude session actor commands', () => {

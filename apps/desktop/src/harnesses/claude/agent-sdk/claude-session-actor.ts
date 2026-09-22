@@ -1,4 +1,3 @@
-import type { SDKMessage } from '@anthropic-ai/claude-agent-sdk'
 import { assign, fromPromise, sendTo, setup } from 'xstate'
 import type { SessionIdentity } from '@/domains/sessions/next/contract/session-contract'
 import { claudeQueryLogic } from '@/harnesses/claude/agent-sdk/claude-query-actor'
@@ -9,6 +8,7 @@ import {
   isSubscriptionAuthorized,
 } from '@/harnesses/claude/agent-sdk/subscription-authorization'
 import type {
+  ClaudeSdkMessage,
   ClaudeSessionContext,
   ClaudeSessionEvent,
   ClaudeSessionInput,
@@ -16,7 +16,7 @@ import type {
 
 export type { ClaudeQueryFactory, ClaudeSessionInput } from '@/harnesses/claude/agent-sdk/types'
 
-const messageParams = ({ event }: { event: { message: SDKMessage } }) => ({
+const messageParams = ({ event }: { event: { message: ClaudeSdkMessage } }) => ({
   message: event.message,
 })
 
@@ -29,7 +29,7 @@ function initialContext(input: ClaudeSessionInput): ClaudeSessionContext {
   }
 }
 
-function sessionFrom(message: SDKMessage): SessionIdentity | null {
+function sessionFrom(message: ClaudeSdkMessage): SessionIdentity | null {
   if (message.type !== 'system' || message.subtype !== 'init') return null
   return { harness: 'claude', nativeId: message.session_id }
 }

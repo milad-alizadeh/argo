@@ -120,6 +120,7 @@ export function fakeClaudeQuery() {
       deliver?.(initMessage(apiKeySource)),
     emitAssistantError: (error: SDKAssistantMessageError) =>
       deliver?.(assistantErrorMessage(error)),
+    emitMalformedMessage: () => deliver?.({ type: 'assistant' } as SDKMessage),
     requestApproval: (toolUseID: string, toolName: string) => {
       if (callbacks === undefined) throw new Error('createQuery was never called')
       return callbacks.canUseTool(toolName, {}, mockPermissionOptions(toolUseID))
