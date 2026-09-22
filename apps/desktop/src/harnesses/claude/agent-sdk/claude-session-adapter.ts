@@ -17,6 +17,7 @@ import {
   type ClaudeSessionActor,
   projectionFrom,
 } from '@/harnesses/claude/agent-sdk/claude-session-projection'
+import type { ClaudeQueryFactory } from '@/harnesses/claude/agent-sdk/types'
 
 type RegistryEntry = {
   actor: ClaudeSessionActor
@@ -56,6 +57,8 @@ async function startClaudeSession(options: {
     resolveWorkspace: (
       selection: WorkspaceSelection,
     ) => Promise<{ workspaceId: string; cwd: string }>
+    createQuery: ClaudeQueryFactory
+    renameSession: (sessionId: string, title: string) => Promise<void>
   }
   register: (actor: ClaudeSessionActor) => void
   requireEntry: (session: SessionIdentity) => RegistryEntry
@@ -69,8 +72,8 @@ async function startClaudeSession(options: {
       workspaceId,
       prompt: command.prompt,
       cwd,
-      createQuery: createClaudeQuery,
-      renameSession,
+      createQuery: deps.createQuery,
+      renameSession: deps.renameSession,
       sessionService: deps.sessionService,
     }),
   ).start()
@@ -89,7 +92,14 @@ export function createClaudeSessionAdapter(deps: {
   sessionService: SessionService
   waitForWorkspaceReady: (workspaceId: string) => Promise<void>
   resolveWorkspace: (selection: WorkspaceSelection) => Promise<{ workspaceId: string; cwd: string }>
+  createQuery?: ClaudeQueryFactory
+  renameSession?: (sessionId: string, title: string) => Promise<void>
 }): ClaudeSessionAdapter {
+  const runtime = {
+    ...deps,
+    createQuery: deps.createQuery ?? createClaudeQuery,
+    renameSession: deps.renameSession ?? renameSession,
+  }
   const registry: Registry = new Map()
   const requireEntry = (session: SessionIdentity) => {
     const entry = registry.get(keyOf(session))
@@ -110,7 +120,7 @@ export function createClaudeSessionAdapter(deps: {
   return {
     execute: async (command) => {
       if (command.type === 'session.start')
-        return startClaudeSession({ command, deps, register, requireEntry })
+        return startClaudeSession({ command, deps: runtime, register, requireEntry })
       if (command.type === 'session.compact')
         return { kind: 'rejected', reason: 'Claude does not support manual compaction' }
       const entry = requireEntry(command.session)
