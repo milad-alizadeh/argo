@@ -13,6 +13,7 @@ import {
 } from '../../../src/domains/sessions/main/composition/proof-protocol.ts'
 import { type AdversarialTurn, adversarialTurn } from '../../sessions/adversarial-turns.ts'
 import { MOCK_CLAUDE_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
+import { startMockClaudeSdkStream } from './mock-claude-sdk-stream.ts'
 import { projectSetupReply } from './mock-project-setup.ts'
 
 process.title = MOCK_CLAUDE_PROCESS_TITLE
@@ -35,6 +36,7 @@ const projectSetupScenario = process.env.ARGO_PROJECT_SETUP_MOCK_SCENARIO
 let turnIndex = 0
 
 const [transcripts, ...flags] = process.argv.slice(2)
+const agentSdk = flags.includes('stream-json')
 
 function flagValue(flag: string): string | null {
   const index = flags.indexOf(flag)
@@ -42,7 +44,8 @@ function flagValue(flag: string): string | null {
 }
 
 // claude 2.1.270 continues `--resume <id>` in that id's own transcript file (ADR-0026).
-const sessionId = flagValue('--session-id') ?? flagValue('--resume')
+const sessionId =
+  flagValue('--session-id') ?? flagValue('--resume') ?? (agentSdk ? randomUUID() : null)
 const pluginRoot = flagValue('--plugin-dir')
 if (transcripts === undefined || sessionId === null) process.exit(2)
 
@@ -142,6 +145,7 @@ async function settleTurn(text: string, plan: AdversarialTurn | null) {
 let pending = ''
 if (process.stdin.isTTY) process.stdin.setRawMode(true)
 process.stdin.setEncoding('utf8')
+if (agentSdk) startMockClaudeSdkStream(sessionId, (prompt) => writeReply(prompt, null))
 // The end of a synchronized frame, which is what Argo waits for before it sends a Turn (#2002).
 process.stdout.write(`${ESCAPE}[?2026h> ${ESCAPE}[?2026l`)
 process.stdin.on('data', (chunk: string) => {
