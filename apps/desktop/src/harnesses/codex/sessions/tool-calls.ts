@@ -12,12 +12,12 @@ import { isRecord } from '@/shared/validation'
 import { commandFacts } from './command-facts'
 import { editFacts } from './edit-facts'
 import { readSubagentCall } from './facts/subagent-calls'
-import { quotedAfter, readToolCallInput } from './tool-call-input'
 import { lookupFacts } from './lookup-facts'
 import { nestedToolCalls } from './nested-tool-call'
 import { otherFacts } from './other-facts'
 import { messageRecord } from './records/message-record'
 import { readToolResults } from './records/rich-results'
+import { quotedAfter, readToolCallInput } from './tool-call-input'
 
 // `function_call`'s arguments are a JSON object serialised as a string; a `custom_tool_call`'s
 // `input` is the bare string the model wrote (a script), so it is kept as a single field rather
