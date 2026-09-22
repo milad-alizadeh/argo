@@ -1,13 +1,6 @@
-import { createActor } from 'xstate'
-import type {
-  SessionIdentity,
-  WorkspaceSelection,
-} from '@/domains/sessions/next/contract/session-contract'
+import type { SessionIdentity } from '@/domains/sessions/next/contract/session-contract'
 import type { Unsubscribe } from '@/domains/sessions/next/contract/session-projection-contract'
-import type {
-  AppServerSupervisor,
-  AppServerSupervisorDeps,
-} from '@/harnesses/codex/drive/app-server-supervisor-machine'
+import type { AppServerSupervisorDeps } from '@/harnesses/codex/drive/app-server-supervisor-machine'
 import type { CodexSessionAdapter } from '@/harnesses/codex/drive/codex-session-adapter-contract'
 
 export type { CodexSessionAdapter } from '@/harnesses/codex/drive/codex-session-adapter-contract'
@@ -15,11 +8,10 @@ export type { CodexSessionAdapter } from '@/harnesses/codex/drive/codex-session-
 import { closeCodexSessionAdapter } from '@/harnesses/codex/drive/codex-session-adapter-close'
 import {
   executeCommand,
-  executeSend,
-  requireSessionEntry,
   type SessionRegistry,
 } from '@/harnesses/codex/drive/codex-session-commands'
 import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
+import { resumeCodexSession, startCodexSession } from '@/harnesses/codex/drive/codex-session-launch'
 import type { ManagedSessionActor } from '@/harnesses/codex/drive/codex-session-projection'
 import { projectionFrom } from '@/harnesses/codex/drive/codex-session-projection'
 import { sharedAppServerRuntimeFor } from '@/harnesses/codex/drive/codex-shared-app-server-runtime'
@@ -31,40 +23,6 @@ function keyOf(session: SessionIdentity): string {
   return `${session.harness}:${session.nativeId}`
 }
 
-function waitForIdentity(actor: ManagedSessionActor): Promise<void> {
-  const initial = actor.getSnapshot()
-  if (initial.context.sessionId !== null) return Promise.resolve()
-  if (initial.matches('Failed')) return Promise.reject(new CodexSessionDriverError('launch-failed'))
-  return new Promise((resolve, reject) => {
-    const subscription = actor.subscribe((snapshot) => {
-      if (snapshot.context.sessionId !== null) {
-        subscription.unsubscribe()
-        resolve()
-      } else if (snapshot.matches('Failed')) {
-        subscription.unsubscribe()
-        reject(new CodexSessionDriverError('launch-failed'))
-      }
-    })
-  })
-}
-function waitForChannel(supervisor: AppServerSupervisor): Promise<void> {
-  if (supervisor.getChannel() !== null) return Promise.resolve()
-  return new Promise((resolve, reject) => {
-    const subscription = supervisor.actor.subscribe((snapshot) => {
-      if (supervisor.getChannel() !== null) {
-        subscription.unsubscribe()
-        resolve()
-      } else if (snapshot.matches('Backoff')) {
-        subscription.unsubscribe()
-        reject(new CodexSessionDriverError('launch-failed'))
-      }
-    })
-    if (supervisor.getChannel() !== null) {
-      subscription.unsubscribe()
-      resolve()
-    }
-  })
-}
 function attachRegistry(
   appServer: ReturnType<typeof sharedAppServerRuntimeFor>,
   registry: SessionRegistry,
@@ -118,17 +76,19 @@ export function createCodexSessionAdapter(deps: {
     actor.subscribe(notify)
     notify(actor.getSnapshot())
   }
-  async function start(selection: WorkspaceSelection, prompt: string) {
-    const { workspaceId, cwd } = await deps.resolveWorkspace(selection)
-    await waitForChannel(supervisor)
-    const actor = createActor(machine, { input: { kind: 'start', workspaceId, cwd } }).start()
-    registerOnceIdentified(actor)
-    await waitForIdentity(actor)
-    const identity = actor.getSnapshot().context.sessionId as SessionIdentity
-    return executeSend(requireSessionEntry(registry, identity), prompt)
+  const launch = {
+    machine,
+    register: registerOnceIdentified,
+    registry,
+    resolveWorkspace: deps.resolveWorkspace,
+    supervisor,
   }
   return {
-    execute: (command) => executeCommand(command, registry, start),
+    execute: (command) =>
+      executeCommand(command, registry, (selection, prompt) =>
+        startCodexSession(launch, selection, prompt),
+      ),
+    resume: (request) => resumeCodexSession(launch, request),
     subscribe: (session, onProjection) => {
       const entry = registry.get(keyOf(session))
       if (entry === undefined) {

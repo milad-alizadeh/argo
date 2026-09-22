@@ -62,14 +62,21 @@ function waitForCommandSettlement(actor: ManagedSessionActor): Promise<CommandSe
   const baseline = actor.getSnapshot().context.sendSequence
   return new Promise((resolve) => {
     const settle = (snapshot: ManagedSessionSnapshot) => {
-      if (snapshot.context.sendSequence === baseline || snapshot.context.lastSendOutcome === null) {
-        return
-      }
+      const settled =
+        snapshot.context.sendSequence !== baseline && snapshot.context.lastSendOutcome !== null
+      if (!settled && snapshot.status !== 'done' && snapshot.status !== 'stopped') return
       subscription.unsubscribe()
-      resolve({
-        outcome: snapshot.context.lastSendOutcome,
-        rejection: snapshot.context.lastSendRejection,
-      })
+      resolve(
+        settled
+          ? {
+              outcome: snapshot.context.lastSendOutcome as CommandSettlement['outcome'],
+              rejection: snapshot.context.lastSendRejection,
+            }
+          : {
+              outcome: 'rejected',
+              rejection: snapshot.context.lastSendRejection ?? 'Codex closed the thread',
+            },
+      )
     }
     const subscription = actor.subscribe(settle)
     settle(actor.getSnapshot())

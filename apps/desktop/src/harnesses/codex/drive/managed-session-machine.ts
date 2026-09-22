@@ -75,7 +75,7 @@ type ManagedSessionContext = {
 // response, so lease acquisition (keyed on that ID) cannot run before the thread exists. A
 // `resume` already knows the ID (an app restart reattaching to a still-managed Session) and skips
 // thread creation.
-type ManagedSessionInput =
+export type ManagedSessionInput =
   | {
       kind: 'start'
       workspaceId: string

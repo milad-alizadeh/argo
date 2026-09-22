@@ -1,7 +1,8 @@
 import { z } from 'zod'
 import type { SessionDriveAdapter } from '@/domains/sessions/contract/session-drive-adapter'
 import type { WorkspaceSelection } from '@/domains/sessions/next/contract/session-contract'
-import type { SessionAdapter } from '@/domains/sessions/next/contract/session-projection-contract'
+import type { CodexSessionAdapter } from '@/harnesses/codex/drive/codex-session-adapter-contract'
+import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
 
 const ignoredSetupSchema = z.unknown()
 const FAILURE_MESSAGES = {
@@ -29,16 +30,36 @@ function hasAttachments(attachments: readonly unknown[]): boolean {
   return attachments.length > 0
 }
 
-function commandOperations(adapter: SessionAdapter) {
+function failureOf(error: unknown) {
+  if (error instanceof CodexSessionDriverError && error.code !== 'missing-session') {
+    return { error: error.code } as const
+  }
+  return failed()
+}
+
+function commandOperations(
+  adapter: CodexSessionAdapter,
+  workspaceForCwd: (cwd: string) => Promise<WorkspaceSelection>,
+) {
   return {
-    async send({ sessionId, prompt, attachments }: Parameters<SessionDriveAdapter['send']>[0]) {
+    async send({
+      sessionId,
+      cwd,
+      prompt,
+      attachments,
+    }: Parameters<SessionDriveAdapter['send']>[0]) {
       if (hasAttachments(attachments)) return failed()
-      const outcome = await adapter.execute({
-        type: 'session.send',
-        session: identity(sessionId),
-        prompt,
-      })
-      return outcome.kind === 'accepted' ? succeeded() : failed()
+      try {
+        const outcome = await adapter.resume({
+          session: identity(sessionId),
+          workspace: await workspaceForCwd(cwd),
+          cwd,
+          prompt,
+        })
+        return outcome.kind === 'accepted' ? succeeded() : failed()
+      } catch (error) {
+        return failureOf(error)
+      }
     },
     async steer({
       sessionId,
@@ -76,7 +97,7 @@ function commandOperations(adapter: SessionAdapter) {
   }
 }
 
-function decisionOperations(adapter: SessionAdapter) {
+function decisionOperations(adapter: CodexSessionAdapter) {
   return {
     async decidePermission({
       sessionId,
@@ -111,7 +132,7 @@ function decisionOperations(adapter: SessionAdapter) {
 }
 
 export function createCodexAppServerDriveAdapter(options: {
-  adapter: SessionAdapter
+  adapter: CodexSessionAdapter
   workspaceForCwd: (cwd: string) => Promise<WorkspaceSelection>
 }): SessionDriveAdapter {
   return {
@@ -130,7 +151,7 @@ export function createCodexAppServerDriveAdapter(options: {
         ? { sessionId: outcome.projection.session.nativeId }
         : failed()
     },
-    ...commandOperations(options.adapter),
+    ...commandOperations(options.adapter, options.workspaceForCwd),
     ...decisionOperations(options.adapter),
   }
 }
