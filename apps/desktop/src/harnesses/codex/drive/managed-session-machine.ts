@@ -470,7 +470,12 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
           const turnId = `pending-${context.sendSequence + 1}`
           return [
             ...context.messages,
-            { id: `user-${context.sendSequence + 1}`, turnId, role: 'user', text: event.prompt },
+            {
+              id: `user-${context.sendSequence + 1}`,
+              turnId,
+              role: 'user',
+              text: event.prompt,
+            },
           ]
         },
       }),
@@ -607,7 +612,10 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
         states: {
           Idle: {
             on: {
-              Send: { target: 'Running', actions: 'appendUserMessage' },
+              Send: {
+                target: 'Running',
+                actions: 'appendUserMessage',
+              },
             },
           },
           Running: {

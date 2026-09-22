@@ -4,15 +4,16 @@ import type {
   WorkspaceSelection,
 } from '@/domains/sessions/next/contract/session-contract'
 import type {
-  SessionAdapter,
-  SessionProjection,
   Unsubscribe,
 } from '@/domains/sessions/next/contract/session-projection-contract'
 import type {
   AppServerSupervisor,
   AppServerSupervisorDeps,
 } from '@/harnesses/codex/drive/app-server-supervisor-machine'
-import { createCodexRosterChanges } from '@/harnesses/codex/drive/codex-roster-changes'
+import type { CodexSessionAdapter } from '@/harnesses/codex/drive/codex-session-adapter-contract'
+
+export type { CodexSessionAdapter } from '@/harnesses/codex/drive/codex-session-adapter-contract'
+
 import {
   executeCommand,
   executeSend,
@@ -88,7 +89,6 @@ export function createCodexSessionAdapter(deps: {
   resolveWorkspace: (selection: WorkspaceSelection) => Promise<{ workspaceId: string; cwd: string }>
 }): CodexSessionAdapter {
   const registry: SessionRegistry = new Map()
-  const rosterChanges = createCodexRosterChanges()
   const appServer = sharedAppServerRuntimeFor(deps.findExecutable)
   const supervisor = appServer.supervisor
   const detach = attachRegistry(appServer, registry)
@@ -110,7 +110,6 @@ export function createCodexSessionAdapter(deps: {
       entry.revision += 1
       const projection = projectionFrom(snapshot, entry.revision)
       appServer.publish(projection)
-      rosterChanges.notify()
       for (const listener of entry.listeners) listener(projection)
     }
     actor.subscribe(notify)
@@ -147,12 +146,5 @@ export function createCodexSessionAdapter(deps: {
       detach()
     },
     projections: appServer.projections,
-    onRosterChanged: rosterChanges.subscribe,
   }
-}
-
-export type CodexSessionAdapter = SessionAdapter & {
-  close: () => void
-  projections: () => readonly SessionProjection[]
-  onRosterChanged: (listener: () => void) => () => void
 }
