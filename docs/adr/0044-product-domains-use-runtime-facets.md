@@ -42,9 +42,14 @@ Contract code cannot import Electron, Node, React, storage, providers, or render
 code cannot import Electron, Node, main implementations, or preload implementations. A domain
 facet cannot import an application composition root.
 
-`biome.jsonc`'s `noRestrictedImports` overrides enforce the facet matrix and the port-only
-cross-domain rule, one override per domain (#2623). `bun run quality` runs biome as part of
-`format-and-lint`. Tests stay beside the facet that owns the behavior.
+`biome.jsonc`'s `noRestrictedImports` overrides enforce the facet matrix. The port-only
+cross-domain rule (#2623) lives instead in `.dependency-cruiser.json`, a deliberate exception to
+consolidating checks into Biome: stating "reach another domain only through its port.ts" as one
+rule needs a regex backreference between `from.path` and `to.pathNot`, and Biome has no such
+primitive as of 2.5.4 (open request: `biomejs/biome` discussion #6245). Without it, the rule would
+need one override block per domain, repeating the same shape five or six times. `bun run quality`
+runs biome as part of `format-and-lint` and dependency-cruiser as `quality:boundaries`. Tests stay
+beside the facet that owns the behavior.
 
 Every domain lives in this layout. `src/` holds `domains`, `platform`, `shared`, `harnesses`,
 `providers`, the `renderer` composition root, and the entry points. A harness is a named external
