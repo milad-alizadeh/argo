@@ -14,7 +14,6 @@ import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import type { LexicalEditor } from 'lexical'
 import { type RefObject, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { referenceMenu } from '@/domains/sessions/renderer/composer/references/composer-reference-menu'
 import { ComposerReferenceMenuPlugin } from '@/domains/sessions/renderer/composer/references/composer-reference-menu-plugin'
 import { ComposerReferenceNode } from '@/domains/sessions/renderer/composer/references/composer-reference-node'
 import { ComposerReferencePlugin } from '@/domains/sessions/renderer/composer/references/composer-reference-plugin'
@@ -80,7 +79,7 @@ export function ComposerEditor({
 }) {
   const { t } = useTranslation('sessions')
   const [showsKeyboardFocus, setShowsKeyboardFocus] = useState(false)
-  const referencesOpen = !contextPickerOpen && referenceMenu(draft) !== null
+  const [referencesOpen, setReferencesOpen] = useState(false)
   return (
     <LexicalComposer
       initialConfig={{
@@ -125,7 +124,12 @@ export function ComposerEditor({
       <EditorRefPlugin editorRef={editorRef} />
       <FocusOnMountPlugin enabled={focusOnMount} />
       <SendOnEnterPlugin onSend={onSend} />
-      <ComposerReferenceMenuPlugin harness={harness} disabled={contextPickerOpen} draft={draft} />
+      <ComposerReferenceMenuPlugin
+        harness={harness}
+        disabled={contextPickerOpen}
+        draft={draft}
+        onOpenChange={setReferencesOpen}
+      />
     </LexicalComposer>
   )
 }

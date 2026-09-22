@@ -22,7 +22,7 @@ export const managedSessionSubscribeRequestSchema = z.strictObject({
   session: sessionIdentitySchema,
 })
 
-export const managedSessionOutcomeSchema = z.strictObject({
+const managedSessionOutcomeSchema = z.strictObject({
   version: z.literal(1),
   type: z.literal('managed-session.outcome'),
   requestId: identifierSchema,
@@ -30,14 +30,14 @@ export const managedSessionOutcomeSchema = z.strictObject({
 })
 export type ManagedSessionOutcome = z.infer<typeof managedSessionOutcomeSchema>
 
-export const managedSessionSubscribedSchema = z.strictObject({
+const managedSessionSubscribedSchema = z.strictObject({
   version: z.literal(1),
   type: z.literal('managed-session.subscribed'),
   requestId: identifierSchema,
 })
 export type ManagedSessionSubscribed = z.infer<typeof managedSessionSubscribedSchema>
 
-export const managedSessionErrorSchema = z.strictObject({
+const managedSessionErrorSchema = z.strictObject({
   version: z.literal(1),
   type: z.literal('managed-session.error'),
   requestId: identifierSchema.nullable(),

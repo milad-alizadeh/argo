@@ -57,10 +57,12 @@ export function ComposerReferenceMenuPlugin({
   harness = null,
   disabled = false,
   draft,
+  onOpenChange,
 }: {
   harness?: SessionHarness | null
   disabled?: boolean
   draft: string
+  onOpenChange: (open: boolean) => void
 }) {
   const [editor] = useLexicalComposerContext()
   const reference = activeReference(draft)
@@ -88,6 +90,10 @@ export function ComposerReferenceMenuPlugin({
         COMMAND_PRIORITY_HIGH,
       ),
     [editor],
+  )
+  useEffect(
+    () => onOpenChange(!disabled && menu.choices !== null),
+    [disabled, menu.choices, onOpenChange],
   )
   if (disabled || menu.choices === null) return null
   return (

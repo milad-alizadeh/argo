@@ -9,10 +9,10 @@ import {
 } from '@/domains/sessions/next/contract/session-contract'
 import { identifierSchema } from '@/shared/validation'
 
-export const turnStatusSchema = z.enum(['running', 'completed', 'interrupted', 'failed'])
+const turnStatusSchema = z.enum(['running', 'completed', 'interrupted', 'failed'])
 export type TurnStatus = z.infer<typeof turnStatusSchema>
 
-export const turnSchema = z.strictObject({
+const turnSchema = z.strictObject({
   id: identifierSchema,
   status: turnStatusSchema,
   startedAt: z.number().int().nonnegative(),
@@ -20,10 +20,10 @@ export const turnSchema = z.strictObject({
 })
 export type Turn = z.infer<typeof turnSchema>
 
-export const messageRoleSchema = z.enum(['user', 'agent'])
+const messageRoleSchema = z.enum(['user', 'agent'])
 export type MessageRole = z.infer<typeof messageRoleSchema>
 
-export const messageSchema = z.strictObject({
+const messageSchema = z.strictObject({
   id: identifierSchema,
   turnId: identifierSchema,
   role: messageRoleSchema,
@@ -31,10 +31,10 @@ export const messageSchema = z.strictObject({
 })
 export type Message = z.infer<typeof messageSchema>
 
-export const toolCallStatusSchema = z.enum(['running', 'completed', 'failed'])
+const toolCallStatusSchema = z.enum(['running', 'completed', 'failed'])
 export type ToolCallStatus = z.infer<typeof toolCallStatusSchema>
 
-export const toolCallSchema = z.strictObject({
+const toolCallSchema = z.strictObject({
   id: identifierSchema,
   turnId: identifierSchema,
   name: z.string().min(1),
@@ -42,7 +42,7 @@ export const toolCallSchema = z.strictObject({
 })
 export type ToolCall = z.infer<typeof toolCallSchema>
 
-export const approvalSchema = z.strictObject({
+const approvalSchema = z.strictObject({
   id: identifierSchema,
   turnId: identifierSchema,
   toolCallId: identifierSchema.nullable(),
@@ -50,17 +50,17 @@ export const approvalSchema = z.strictObject({
 })
 export type Approval = z.infer<typeof approvalSchema>
 
-export const questionSchema = z.strictObject({
+const questionSchema = z.strictObject({
   id: identifierSchema,
   turnId: identifierSchema,
   prompt: z.string().min(1),
 })
 export type Question = z.infer<typeof questionSchema>
 
-export const sessionStatusSchema = z.enum(['idle', 'running', 'awaitingApproval', 'awaitingAnswer'])
+const sessionStatusSchema = z.enum(['idle', 'running', 'awaitingApproval', 'awaitingAnswer'])
 export type SessionStatus = z.infer<typeof sessionStatusSchema>
 
-export const sessionUsageSchema = z.strictObject({
+const sessionUsageSchema = z.strictObject({
   inputTokens: z.number().int().nonnegative(),
   outputTokens: z.number().int().nonnegative(),
 })
