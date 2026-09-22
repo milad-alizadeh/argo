@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
 
-import { useProjects } from '@/domains/projects/renderer/port'
+import { useProjects } from '@/domains/projects/renderer'
 import {
   useComposerStore,
   useSessionComposer,

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { ProjectSummary } from '@/domains/projects/contract/messages'
-import { SourceSettings, useConnection, useDisconnectSource } from '@/domains/tickets/renderer/port'
+import { SourceSettings, useConnection, useDisconnectSource } from '@/domains/tickets/renderer'
 import {
   Dialog,
   DialogContent,

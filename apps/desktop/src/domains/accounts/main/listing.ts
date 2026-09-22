@@ -8,7 +8,7 @@ import {
   type AccountSummary,
   accountError,
 } from '@/domains/accounts/contract/contract'
-import { readConnections } from '@/domains/connections/main/port'
+import { readConnections } from '@/domains/connections/main'
 import { type AccountAccess, accountState, projectNames } from './access'
 import { availableProviders } from './providers'
 import { type AccountRecord, type AccountRegistry, readAccounts, writeAccounts } from './registry'

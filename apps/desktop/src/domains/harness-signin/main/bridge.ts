@@ -7,9 +7,9 @@ import { HARNESS_SIGN_IN_OPERATIONS } from '@/domains/harness-signin/contract/op
 import { HARNESS_SIGNIN_EXPIRES_AFTER_MS_ENV } from '@/domains/harness-signin/contract/proof-protocol'
 import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
 import { listHarnessReadiness } from './harness-readiness-list'
+import type { HarnessReadinessRegistration } from './harness-readiness-registration'
 import { createHarnessSignIn, type HarnessSignInDriver } from './harness-sign-in'
 import { canceledReply, resolvedReply, startedReply } from './harness-sign-in-replies'
-import type { HarnessReadinessRegistration } from './port'
 
 export type HarnessSignInContext = {
   registrations: readonly HarnessReadinessRegistration[]

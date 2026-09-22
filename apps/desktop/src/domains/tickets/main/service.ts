@@ -1,5 +1,5 @@
-import { projectNames } from '@/domains/accounts/main/port'
-import type { TicketConnection } from '@/domains/connections/main/port'
+import { projectNames } from '@/domains/accounts/main'
+import type { TicketConnection } from '@/domains/connections/main'
 import {
   type TicketConnectedReply,
   type TicketDiscoverReply,

@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
-import { useProjects } from '../port'
+import { useProjects } from '../hooks'
 import { ProjectSettingsDialog } from './project-settings-dialog'
 
 export function ProjectSwitcher() {

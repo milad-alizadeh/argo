@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { HarnessReadiness } from '@/domains/harness-signin/contract/contract'
-import { HarnessLogo } from '@/domains/sessions/renderer/port'
+import { HarnessLogo } from '@/domains/sessions/renderer'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Card, CardContent } from '@/platform/renderer/components/ui/card'
 import { useHarnessSignIn } from '../hooks/use-harness-sign-in'

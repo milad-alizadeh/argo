@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { NavigateFunction } from 'react-router'
-import type { Cockpit, ProjectActions } from '@/domains/projects/renderer/port'
+import type { Cockpit, ProjectActions } from '@/domains/projects/renderer'
 import type { SessionErrorCode } from '@/domains/sessions/contract/ipc/contract'
 import type { TurnMarkerView } from '../../feed'
 import type { SessionHarness } from '../../harness'

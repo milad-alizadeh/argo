@@ -6,7 +6,7 @@ import {
   HARNESS_SIGNIN_CLAUDE_EXECUTABLE_ENV,
   HARNESS_SIGNIN_CODEX_EXECUTABLE_ENV,
 } from '@/domains/harness-signin/contract/proof-protocol'
-import type { HarnessReadinessRegistration } from '@/domains/harness-signin/main/port'
+import type { HarnessReadinessRegistration } from '@/domains/harness-signin/main'
 import { createClaudeSignInDriver } from '@/harnesses/claude/readiness/claude-sign-in-driver'
 import { createSystemClaudeReadiness } from '@/harnesses/claude/readiness/system-claude-readiness'
 import { createCodexSignInDriver } from '@/harnesses/codex/readiness/codex-sign-in-driver'

@@ -1,5 +1,5 @@
 import type { BrowserWindow } from 'electron'
-import { createProjectPort } from '@/domains/projects/main/port'
+import { createProjectPort } from '@/domains/projects/main'
 import { workspaceSelectionForSessionCwd } from '@/domains/projects/main/resolve-session-workspace'
 import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
 import { attachManagedSessions } from '@/domains/sessions/next/main/managed-session-composition'

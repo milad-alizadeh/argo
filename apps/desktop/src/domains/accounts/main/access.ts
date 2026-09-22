@@ -2,7 +2,7 @@
 // window in `main.ts` and shared by the Account and Ticket bridges, so both write through one queue.
 
 import type { AccountState } from '@/domains/accounts/contract/contract'
-import type { ProjectPort } from '@/domains/projects/main/port'
+import type { ProjectPort } from '@/domains/projects/main'
 import { createWriteQueue, portablePath } from '@/platform/main/storage/portable-file'
 import type { ProviderEndpoints } from '@/providers/endpoints'
 import { type Cipher, createGrantStore, type GrantStore } from './grants'

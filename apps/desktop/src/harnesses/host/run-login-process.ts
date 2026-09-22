@@ -1,7 +1,7 @@
 // Every Harness's `login` blocks on one spawned CLI process and reads the same three outcomes
 // from it (#2579): the sign-in driver only differs in what it spawns, never in how it is watched.
 import type { ChildProcess } from 'node:child_process'
-import type { HarnessSignInOutcome } from '@/domains/harness-signin/main/port'
+import type { HarnessSignInOutcome } from '@/domains/harness-signin/main'
 
 export function runLoginProcess(
   child: ChildProcess,

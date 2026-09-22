@@ -7,8 +7,8 @@ import {
   type SignInNoticeProps,
   useAccounts,
   useDismissNotice,
-} from '@/domains/accounts/renderer/port'
-import { useSelectedProject } from '@/domains/projects/renderer/port'
+} from '@/domains/accounts/renderer'
+import { useSelectedProject } from '@/domains/projects/renderer'
 import type { ConnectionSummary } from '@/domains/tickets/contract/contract'
 import { useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
 import { ConnectionStatusMark } from '../connection/connection-status-mark'

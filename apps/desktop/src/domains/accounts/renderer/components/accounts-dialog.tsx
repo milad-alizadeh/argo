@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import type { AccountConnected } from '@/domains/accounts/contract/contract'
 import type { HarnessReadiness } from '@/domains/harness-signin/contract/contract'
-import { HarnessReadinessList, useHarnessReadiness } from '@/domains/harness-signin/renderer/port'
+import { HarnessReadinessList, useHarnessReadiness } from '@/domains/harness-signin/renderer'
 import { ContractFailureAlert } from '@/platform/renderer/components/contract-failure-alert'
 import {
   Dialog,

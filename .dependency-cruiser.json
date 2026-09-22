@@ -8,8 +8,8 @@
         "path": "^apps/desktop/src/domains/([^/]+)/",
         "pathNot": [
           "\\.(test|stories)\\.(ts|tsx)$",
-          "^apps/desktop/src/domains/accounts/main/harness-fixtures\\.ts$",
-          "^apps/desktop/src/domains/sessions/main/index/session-index/roster-fixtures\\.ts$"
+          "^apps/desktop/src/domains/accounts/main/test-support/harness-fixtures\\.ts$",
+          "^apps/desktop/src/domains/sessions/main/indexing/session-index/roster-fixtures\\.ts$"
         ]
       },
       "to": {
@@ -17,8 +17,8 @@
         "pathNot": [
           "^apps/desktop/src/domains/$1/",
           "/index\\.tsx?$",
-          "^apps/desktop/src/domains/accounts/main/harness-fixtures\\.ts$",
-          "^apps/desktop/src/domains/sessions/main/index/session-index/roster-fixtures\\.ts$"
+          "^apps/desktop/src/domains/accounts/main/test-support/harness-fixtures\\.ts$",
+          "^apps/desktop/src/domains/sessions/main/indexing/session-index/roster-fixtures\\.ts$"
         ]
       }
     },

@@ -3,8 +3,8 @@
 import type { UseQueryResult } from '@tanstack/react-query'
 import type { TFunction } from 'i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
-import type { AccountListing } from '@/domains/accounts/renderer/port'
-import { openAccountsDialog } from '@/domains/accounts/renderer/port'
+import type { AccountListing } from '@/domains/accounts/renderer'
+import { openAccountsDialog } from '@/domains/accounts/renderer'
 import type { ProjectSummary } from '@/domains/projects/contract/messages'
 import type {
   ConnectionSummary,
