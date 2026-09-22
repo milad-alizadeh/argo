@@ -9,25 +9,29 @@ import type {
   SessionIdentity,
   SourceHealth,
 } from '@/domains/sessions/next/contract/session-contract'
+import type { SessionService } from '@/domains/sessions/next/main/session-service'
 
 export type ClaudeQueryFactory = (params: {
   prompt: AsyncIterable<SDKUserMessage>
   cwd: string
+  resume: string | undefined
   canUseTool: CanUseTool
   onUserDialog: OnUserDialog
 }) => Query
 
 export type ClaudeSessionInput = {
-  session: SessionIdentity
+  session: SessionIdentity | null
   prompt: string
   cwd: string
   createQuery: ClaudeQueryFactory
   renameSession: (sessionId: string, title: string) => Promise<void>
+  sessionService: SessionService
 }
 
 export type ClaudeSessionContext = {
-  session: SessionIdentity
+  session: SessionIdentity | null
   sourceHealth: SourceHealth
+  releaseTarget: 'closed' | 'unavailable' | 'watched'
 }
 
 export type ClaudeSessionEvent =
@@ -40,3 +44,6 @@ export type ClaudeSessionEvent =
   | { type: 'SDK message'; message: SDKMessage }
   | { type: 'SDK ended' }
   | { type: 'SDK failed' }
+  | { type: 'Session identified'; session: SessionIdentity }
+  | { type: 'Channel restored' }
+  | { type: 'Close' }

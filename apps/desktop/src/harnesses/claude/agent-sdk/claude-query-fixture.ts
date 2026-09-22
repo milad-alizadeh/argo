@@ -2,26 +2,17 @@ import type {
   ApiKeySource,
   CanUseTool,
   OnUserDialog,
-  PermissionResult,
   Query,
   SDKAssistantMessageError,
   SDKMessage,
   SDKUserMessage,
-  UserDialogResult,
 } from '@anthropic-ai/claude-agent-sdk'
-import type { ClaudeQueryFactory } from '@/harnesses/claude/agent-sdk/claude-session-actor'
+import type { SessionService } from '@/domains/sessions/next/main/session-service'
 
-export type FakeClaudeQuery = {
-  createQuery: ClaudeQueryFactory
-  renameSession: (sessionId: string, title: string) => Promise<void>
-  emitInit: (fields: { apiKeySource: ApiKeySource }) => void
-  emitAssistantError: (error: SDKAssistantMessageError) => void
-  requestApproval: (toolUseID: string, toolName: string) => Promise<PermissionResult | null>
-  requestDialog: (requestId: string) => Promise<UserDialogResult | null>
-  sentPrompts: () => string[]
-  interruptCalls: number
-  closed: boolean
-  renamedTo: string[]
+export const managedSessionService: SessionService = {
+  acquire: () => ({ posture: 'managed' }),
+  renew: () => ({ posture: 'managed' }),
+  release: () => {},
 }
 
 function initMessage(apiKeySource: ApiKeySource): SDKMessage {
@@ -67,6 +58,7 @@ function fakeQuery(hooks: {
     onUserDialog,
   }: {
     prompt: AsyncIterable<SDKUserMessage>
+    resume: string | undefined
     canUseTool: CanUseTool
     onUserDialog: OnUserDialog
   }): Query {
@@ -94,9 +86,7 @@ function fakeQuery(hooks: {
   }
 }
 
-// Stands in for the Claude Agent SDK subprocess: a paid vendor call CI cannot reach, so tests
-// drive it through a synthetic message stream instead of a live query().
-export function fakeClaudeQuery(): FakeClaudeQuery {
+export function fakeClaudeQuery() {
   let deliver: ((message: SDKMessage) => void) | undefined
   let callbacks: { canUseTool: CanUseTool; onUserDialog: OnUserDialog } | undefined
   const sent: SDKUserMessage[] = []

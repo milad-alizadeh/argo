@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 import { createActor } from 'xstate'
-import { fakeClaudeQuery } from '@/harnesses/claude/agent-sdk/claude-query-fixture'
+import {
+  fakeClaudeQuery,
+  managedSessionService,
+} from '@/harnesses/claude/agent-sdk/claude-query-fixture'
 import { createClaudeSessionMachine } from '@/harnesses/claude/agent-sdk/claude-session-actor'
 
 function flush(): Promise<void> {
@@ -14,9 +17,10 @@ async function startedActor(fake: ReturnType<typeof fakeClaudeQuery>) {
     cwd: '/repository',
     createQuery: fake.createQuery,
     renameSession: fake.renameSession,
+    sessionService: managedSessionService,
   })
   const actor = createActor(machine, {
-    input: { session: { harness: 'claude', nativeId: 'native-1' } },
+    input: undefined,
   }).start()
   fake.emitInit({ apiKeySource: 'none' })
   await flush()

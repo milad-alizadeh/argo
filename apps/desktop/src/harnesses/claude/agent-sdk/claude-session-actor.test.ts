@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 import { createActor } from 'xstate'
 import {
-  type FakeClaudeQuery,
   fakeClaudeQuery,
+  managedSessionService,
 } from '@/harnesses/claude/agent-sdk/claude-query-fixture'
 import { createClaudeSessionMachine } from '@/harnesses/claude/agent-sdk/claude-session-actor'
 
@@ -10,16 +10,17 @@ function flush(): Promise<void> {
   return new Promise((resolve) => setImmediate(resolve))
 }
 
-function harness(fake: FakeClaudeQuery) {
+function harness(fake: ReturnType<typeof fakeClaudeQuery>, sessionService = managedSessionService) {
   const machine = createClaudeSessionMachine({
-    session: { harness: 'claude', nativeId: 'native-1' },
+    session: null,
     prompt: 'hello',
     cwd: '/repository',
     createQuery: fake.createQuery,
     renameSession: fake.renameSession,
+    sessionService,
   })
   const actor = createActor(machine, {
-    input: { session: { harness: 'claude', nativeId: 'native-1' } },
+    input: undefined,
   })
   actor.start()
   return actor
@@ -35,6 +36,20 @@ describe('claude session actor authorization', () => {
 
     expect(actor.getSnapshot().value).toBe('Managed')
     expect(actor.getSnapshot().context.sourceHealth).toBe('ready')
+    expect(actor.getSnapshot().context.session).toEqual({ harness: 'claude', nativeId: 'native-1' })
+  })
+
+  test('becomes watched when another Argo window holds the Session lease', async () => {
+    const fake = fakeClaudeQuery()
+    const actor = harness(fake, {
+      ...managedSessionService,
+      acquire: () => ({ posture: 'watched' }),
+    })
+
+    fake.emitInit({ apiKeySource: 'none' })
+    await flush()
+
+    expect(actor.getSnapshot().value).toBe('Watched')
   })
 
   test('rejects an inherited API key without falling back to API billing', async () => {
@@ -107,5 +122,28 @@ describe('claude session actor commands', () => {
     actor.stop()
 
     expect(fake.closed).toBe(true)
+  })
+
+  test('releases its lease when the Session closes', async () => {
+    let held = false
+    const fake = fakeClaudeQuery()
+    const actor = harness(fake, {
+      acquire: () => {
+        held = true
+        return { posture: 'managed' }
+      },
+      renew: () => ({ posture: 'managed' }),
+      release: () => {
+        held = false
+      },
+    })
+    fake.emitInit({ apiKeySource: 'none' })
+    await flush()
+
+    actor.send({ type: 'Close' })
+    await flush()
+
+    expect(held).toBe(false)
+    expect(actor.getSnapshot().value).toBe('Closed')
   })
 })

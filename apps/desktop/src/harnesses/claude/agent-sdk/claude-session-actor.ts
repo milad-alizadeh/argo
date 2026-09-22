@@ -1,7 +1,8 @@
 import type { SDKMessage } from '@anthropic-ai/claude-agent-sdk'
-import { assign, sendTo, setup } from 'xstate'
+import { assign, fromPromise, sendTo, setup } from 'xstate'
 import type { SessionIdentity } from '@/domains/sessions/next/contract/session-contract'
 import { claudeQueryLogic } from '@/harnesses/claude/agent-sdk/claude-query-actor'
+import { leaseStates } from '@/harnesses/claude/agent-sdk/claude-session-lease-states'
 import {
   isAuthenticationFailure,
   isInheritedApiCredential,
@@ -19,13 +20,31 @@ const messageParams = ({ event }: { event: { message: SDKMessage } }) => ({
   message: event.message,
 })
 
+function sessionFrom(message: SDKMessage): SessionIdentity | null {
+  if (message.type !== 'system' || message.subtype !== 'init') return null
+  return { harness: 'claude', nativeId: message.session_id }
+}
+
 const claudeSessionSetup = setup({
   types: {
     context: {} as ClaudeSessionContext,
-    input: {} as { session: SessionIdentity },
+    input: {} as never,
     events: {} as ClaudeSessionEvent,
   },
-  actors: { claudeQuery: claudeQueryLogic },
+  actors: {
+    claudeQuery: claudeQueryLogic,
+    acquireLease: fromPromise<
+      ReturnType<ClaudeSessionInput['sessionService']['acquire']>,
+      ClaudeSessionInput
+    >(({ input }) => {
+      if (input.session === null) throw new Error('Claude Session has no identity')
+      return Promise.resolve(input.sessionService.acquire(input.session))
+    }),
+    releaseLease: fromPromise<void, ClaudeSessionInput>(({ input }) => {
+      if (input.session !== null) input.sessionService.release(input.session)
+      return Promise.resolve()
+    }),
+  },
   guards: {
     isSubscriptionAuthorized: (_, params: { message: SDKMessage }) =>
       isSubscriptionAuthorized(params.message),
@@ -37,18 +56,19 @@ const claudeSessionSetup = setup({
   actions: {
     markUnavailable: assign({ sourceHealth: 'unavailable' as const }),
   },
+  delays: {
+    recoveryTimeout: 60_000,
+  },
 })
 
 export function createClaudeSessionMachine(input: ClaudeSessionInput) {
   return claudeSessionSetup.createMachine({
     id: 'claudeManagedSession',
-    context: ({ input: machineInput }) => ({
-      session: machineInput.session,
-      sourceHealth: 'ready',
-    }),
+    context: () => ({ session: input.session, sourceHealth: 'ready', releaseTarget: 'closed' }),
     invoke: { id: 'claudeQuery', src: 'claudeQuery', input: () => input },
     initial: 'Authorizing',
     states: {
+      ...leaseStates(input),
       Authorizing: {
         on: {
           'SDK message': [
@@ -58,7 +78,15 @@ export function createClaudeSessionMachine(input: ClaudeSessionInput) {
             },
             {
               guard: { type: 'isSubscriptionAuthorized', params: messageParams },
-              target: 'Managed',
+              target: 'AcquiringLease',
+              actions: [
+                assign({ session: ({ event }) => sessionFrom(event.message) }),
+                sendTo('claudeQuery', ({ event }) => {
+                  const session = sessionFrom(event.message)
+                  if (session === null) throw new Error('Claude Session has no identity')
+                  return { type: 'Session identified', session }
+                }),
+              ],
             },
           ],
           'SDK failed': 'Unavailable',
@@ -74,13 +102,25 @@ export function createClaudeSessionMachine(input: ClaudeSessionInput) {
           Rename: { actions: sendTo('claudeQuery', ({ event }) => event) },
           'SDK message': {
             guard: { type: 'isAuthenticationFailure', params: messageParams },
-            target: 'Unavailable',
+            target: 'Releasing',
+            actions: assign({ releaseTarget: 'unavailable' }),
           },
-          'SDK failed': 'Unavailable',
-          'SDK ended': 'Closed',
+          'SDK failed': 'Recovering',
+          'SDK ended': 'Releasing',
+          Close: 'Releasing',
         },
       },
+      Recovering: {
+        after: {
+          recoveryTimeout: {
+            target: 'Releasing',
+            actions: assign({ releaseTarget: 'watched' }),
+          },
+        },
+        on: { 'Channel restored': 'Managed' },
+      },
       Unavailable: { type: 'final', entry: 'markUnavailable' },
+      Watched: { type: 'final' },
       Closed: { type: 'final' },
     },
   })
