@@ -14,6 +14,22 @@ function managedAdapter(fake: ReturnType<typeof fakeClaudeQuery>) {
   })
 }
 
+async function startDeferredSession(
+  adapter: ReturnType<typeof managedAdapter>,
+  fake: ReturnType<typeof fakeClaudeQuery>,
+) {
+  const start = adapter.execute({
+    type: 'session.start',
+    harness: 'claude',
+    prompt: 'hello',
+    startTurn: false,
+    workspace: { kind: 'main' },
+  })
+  await new Promise((resolve) => setImmediate(resolve))
+  fake.emitInit({ apiKeySource: 'none' })
+  return start
+}
+
 test('starts Claude after the selected Workspace is ready', async () => {
   const fake = fakeClaudeQuery()
   let releaseWorkspace: (() => void) | undefined
@@ -61,19 +77,26 @@ test('creates a titled Claude Session without sending its first turn', async () 
   const fake = fakeClaudeQuery()
   const adapter = managedAdapter(fake)
 
-  const outcome = adapter.execute({
-    type: 'session.start',
-    harness: 'claude',
-    prompt: 'hello',
-    startTurn: false,
-    workspace: { kind: 'main' },
-  })
-  await new Promise((resolve) => setImmediate(resolve))
-  fake.emitInit({ apiKeySource: 'none' })
-  await outcome
+  await startDeferredSession(adapter, fake)
   await new Promise((resolve) => setImmediate(resolve))
 
   expect(fake.sentPrompts()).toEqual([])
+})
+
+test('waits for the lease before sending a deferred first turn', async () => {
+  const fake = fakeClaudeQuery()
+  const adapter = managedAdapter(fake)
+  const started = await startDeferredSession(adapter, fake)
+  if (started.kind !== 'accepted') throw new Error('Claude Session did not start.')
+
+  await adapter.resume({
+    session: started.projection.session,
+    workspace: { kind: 'main' },
+    prompt: 'hello',
+    cwd: '/repository',
+  })
+
+  expect(fake.sentPrompts()).toEqual(['hello'])
 })
 
 test('notifies roster watchers when the SDK adds a live assistant message', async () => {

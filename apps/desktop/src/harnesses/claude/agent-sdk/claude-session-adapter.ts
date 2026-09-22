@@ -5,15 +5,19 @@ import type {
   Unsubscribe,
 } from '@/domains/sessions/next/contract/session-projection-contract'
 import type { SessionService } from '@/domains/sessions/next/main/session-service'
+import { acceptedSessionOutcome } from '@/harnesses/claude/agent-sdk/accepted-session-outcome'
 import { createClaudeQuery } from '@/harnesses/claude/agent-sdk/claude-agent-sdk'
 import { createClaudeSessionMachine } from '@/harnesses/claude/agent-sdk/claude-session-actor'
 import type { ClaudeSessionAdapter } from '@/harnesses/claude/agent-sdk/claude-session-adapter-contract'
 import { eventFor } from '@/harnesses/claude/agent-sdk/claude-session-command-event'
 import { keyOf } from '@/harnesses/claude/agent-sdk/claude-session-key'
-import type { ClaudeSessionActor } from '@/harnesses/claude/agent-sdk/claude-session-projection'
-import { projectionFrom } from '@/harnesses/claude/agent-sdk/claude-session-projection'
+import {
+  type ClaudeSessionActor,
+  projectionFrom,
+} from '@/harnesses/claude/agent-sdk/claude-session-projection'
 import { sessionRegistry } from '@/harnesses/claude/agent-sdk/claude-session-registry'
 import { watchedChanges } from '@/harnesses/claude/agent-sdk/claude-session-watch'
+import { sendWhenManaged } from '@/harnesses/claude/agent-sdk/send-when-managed'
 import type { ClaudeQueryFactory } from '@/harnesses/claude/agent-sdk/types'
 
 async function openClaudeSession(options: {
@@ -68,18 +72,6 @@ async function openClaudeSession(options: {
     })
   })
 }
-function accepted(
-  entry: ReturnType<typeof sessionRegistry>['requireEntry'] extends (
-    session: SessionContract.SessionIdentity,
-  ) => infer Entry
-    ? Entry
-    : never,
-) {
-  return {
-    kind: 'accepted' as const,
-    projection: projectionFrom(entry.actor.getSnapshot(), entry.revision),
-  }
-}
 export function createClaudeSessionAdapter(deps: {
   sessionService: SessionService
   waitForWorkspaceReady: (workspaceId: string) => Promise<void>
@@ -109,13 +101,13 @@ export function createClaudeSessionAdapter(deps: {
         const entry = registry.requireEntry(command.session)
         entry.actor.send({ type: 'Send', prompt: '/compact' })
         entry.revision += 1
-        return accepted(entry)
+        return acceptedSessionOutcome(entry)
       }
       const entry = registry.requireEntry(command.session)
       entry.actor.send(eventFor(command))
       entry.revision += 1
       if (command.type === 'session.send') return { kind: 'uncertain' }
-      return accepted(entry)
+      return acceptedSessionOutcome(entry)
     },
     subscribe: (session, listener) => {
       const entry = registry.requireEntry(session)
@@ -125,9 +117,11 @@ export function createClaudeSessionAdapter(deps: {
     resume: async ({ session, workspace, prompt, cwd }) => {
       const entry = registry.entries.get(keyOf(session))
       if (entry !== undefined) {
-        entry.actor.send({ type: 'Send', prompt })
+        if (!(await sendWhenManaged(entry.actor, prompt))) {
+          return { kind: 'rejected', reason: 'The Claude Session is no longer managed.' }
+        }
         entry.revision += 1
-        return accepted(entry)
+        return acceptedSessionOutcome(entry)
       }
       return openClaudeSession({
         command: { session, workspace, prompt, cwd },
