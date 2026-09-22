@@ -13,6 +13,7 @@ function flush(): Promise<void> {
 function harness(fake: ReturnType<typeof fakeClaudeQuery>, sessionService = managedSessionService) {
   const machine = createClaudeSessionMachine({
     session: null,
+    workspaceId: 'workspace-1',
     prompt: 'hello',
     cwd: '/repository',
     createQuery: fake.createQuery,

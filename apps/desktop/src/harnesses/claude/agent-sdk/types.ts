@@ -21,6 +21,7 @@ export type ClaudeQueryFactory = (params: {
 
 export type ClaudeSessionInput = {
   session: SessionIdentity | null
+  workspaceId: string
   prompt: string
   cwd: string
   createQuery: ClaudeQueryFactory
@@ -30,6 +31,7 @@ export type ClaudeSessionInput = {
 
 export type ClaudeSessionContext = {
   session: SessionIdentity | null
+  workspaceId: string
   sourceHealth: SourceHealth
   releaseTarget: 'closed' | 'unavailable' | 'watched'
 }

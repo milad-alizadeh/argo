@@ -20,6 +20,15 @@ const messageParams = ({ event }: { event: { message: SDKMessage } }) => ({
   message: event.message,
 })
 
+function initialContext(input: ClaudeSessionInput): ClaudeSessionContext {
+  return {
+    session: input.session,
+    workspaceId: input.workspaceId,
+    sourceHealth: 'ready',
+    releaseTarget: 'closed',
+  }
+}
+
 function sessionFrom(message: SDKMessage): SessionIdentity | null {
   if (message.type !== 'system' || message.subtype !== 'init') return null
   return { harness: 'claude', nativeId: message.session_id }
@@ -64,7 +73,7 @@ const claudeSessionSetup = setup({
 export function createClaudeSessionMachine(input: ClaudeSessionInput) {
   return claudeSessionSetup.createMachine({
     id: 'claudeManagedSession',
-    context: () => ({ session: input.session, sourceHealth: 'ready', releaseTarget: 'closed' }),
+    context: () => initialContext(input),
     invoke: { id: 'claudeQuery', src: 'claudeQuery', input: () => input },
     initial: 'Authorizing',
     states: {

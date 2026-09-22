@@ -13,6 +13,7 @@ function flush(): Promise<void> {
 async function startedActor(fake: ReturnType<typeof fakeClaudeQuery>) {
   const machine = createClaudeSessionMachine({
     session: { harness: 'claude', nativeId: 'native-1' },
+    workspaceId: 'workspace-1',
     prompt: 'hello',
     cwd: '/repository',
     createQuery: fake.createQuery,
