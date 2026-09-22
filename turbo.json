@@ -117,30 +117,6 @@
       "inputs": ["src/**", ".storybook/**", "*.config.ts", "tsconfig*.json", "package.json"],
       "outputs": []
     },
-    "test:darwin-manifest": {
-      "inputs": [
-        "src/**",
-        "!src/**/*.test.ts",
-        "!src/**/*.stories.tsx",
-        "index.html",
-        "public/**",
-        "assets/**",
-        "forge.config.ts",
-        "vite.*.config.ts",
-        "tsconfig.json",
-        "tsconfig.node.json",
-        "tsconfig.web.json",
-        "scripts/desktop-manifest.mts",
-        "scripts/package-manifest.mts",
-        "package-manifest.json",
-        "package.json",
-        "package-lock.json",
-        "$TURBO_ROOT$/package-lock.json",
-        "$TURBO_ROOT$/bun.lock"
-      ],
-      "env": ["ARGO_SIGNING_*", "ARGO_NOTARIZE_*"],
-      "outputs": []
-    },
     "dev": {
       "cache": false,
       "persistent": true
