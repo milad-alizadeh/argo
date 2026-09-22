@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { PassThrough } from 'node:stream'
 import { test } from 'node:test'
 
-import { openCodexChannel } from '@/harnesses/codex/drive/codex-channel.ts'
+import { CodexChannelClosedError, openCodexChannel } from '@/harnesses/codex/drive/codex-channel.ts'
 
 function mockProcess() {
   const stdout = new PassThrough()
@@ -83,5 +83,5 @@ test('rejects every pending request when the process exits', async () => {
   const pending = channel.request('thread/start', { cwd: '/projects/argo' }, (value) => value)
   mock.exit()
 
-  await assert.rejects(pending, /closed/)
+  await assert.rejects(pending, CodexChannelClosedError)
 })
