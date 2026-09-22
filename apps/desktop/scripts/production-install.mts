@@ -32,7 +32,16 @@ const EXECUTABLE_MODE = 0o755
 // directory as a workspace, finds the repository root, and quietly installs there instead —
 // leaving `apps/desktop/node_modules` absent, which is the exact failure this script exists to
 // prevent.
-const NPM_ARGS = ['ci', '--omit=dev', '--workspaces=false', '--no-audit', '--no-fund']
+// Every release ships a darwin arm64 app, including the package CI job that runs on Linux.
+const NPM_ARGS = [
+  'ci',
+  '--omit=dev',
+  '--workspaces=false',
+  '--no-audit',
+  '--no-fund',
+  '--os=darwin',
+  '--cpu=arm64',
+]
 
 export function findSpawnHelpers(dir: string, hits: string[] = []): string[] {
   let entries: import('node:fs').Dirent[]
