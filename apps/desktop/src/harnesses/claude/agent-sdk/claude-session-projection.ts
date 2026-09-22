@@ -9,6 +9,8 @@ export type ClaudeSessionActor = ActorRefFrom<ReturnType<typeof createClaudeSess
 export type ClaudeSessionSnapshot = { context: ClaudeSessionContext; value: unknown }
 
 function statusFrom(snapshot: ClaudeSessionSnapshot): SessionStatus {
+  if (snapshot.context.pendingApprovals.length > 0) return 'awaitingApproval'
+  if (snapshot.context.pendingQuestions.length > 0) return 'awaitingAnswer'
   return snapshot.value === 'Managed' ? 'running' : 'idle'
 }
 
@@ -29,8 +31,8 @@ export function projectionFrom(
     turns: [],
     messages: [],
     toolCalls: [],
-    pendingApprovals: [],
-    pendingQuestions: [],
+    pendingApprovals: context.pendingApprovals,
+    pendingQuestions: context.pendingQuestions,
     usage: { inputTokens: 0, outputTokens: 0 },
   }
 }

@@ -49,7 +49,7 @@ async function resumeTurn(options: {
 }
 
 export function createClaudeSdkDriveAdapter(options: {
-  adapter: Pick<ClaudeSessionAdapter, 'execute' | 'resume'>
+  adapter: Pick<ClaudeSessionAdapter, 'execute' | 'projection' | 'resume'>
   workspaceForCwd: (cwd: string) => Promise<WorkspaceSelection>
 }): SessionDriveAdapter {
   return {
@@ -91,8 +91,14 @@ export function createClaudeSdkDriveAdapter(options: {
     async handoff() {
       return { error: 'not-drivable' }
     },
-    async readPermission() {
-      return { permission: null }
+    async readPermission({ sessionId }) {
+      const approval = options.adapter.projection(identity(sessionId))?.pendingApprovals[0]
+      return {
+        permission:
+          approval === undefined
+            ? null
+            : { id: approval.id, sessionId, description: approval.summary },
+      }
     },
     async decidePermission({ sessionId, permissionId, decision }) {
       const outcome = await options.adapter.execute({

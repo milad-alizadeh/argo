@@ -6,6 +6,7 @@ import type {
 import type {
   SessionAdapter,
   SessionCommandOutcome,
+  SessionProjection,
 } from '@/domains/sessions/next/contract/session-projection-contract'
 import type { watchedChanges } from './claude-session-watch'
 
@@ -13,6 +14,7 @@ export type ClaudeSessionAdapter = SessionAdapter & {
   close: () => void
   roster: () => SessionRosterRow[]
   liveMessages: (sessionId: string) => { id: string; text: string }[]
+  projection: (session: SessionIdentity) => SessionProjection | null
   onRosterChanged: ReturnType<typeof watchedChanges>
   resume: (request: {
     session: SessionIdentity

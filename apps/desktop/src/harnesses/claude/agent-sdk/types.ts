@@ -9,6 +9,10 @@ import type {
   SessionIdentity,
   SourceHealth,
 } from '@/domains/sessions/next/contract/session-contract'
+import type {
+  Approval,
+  Question,
+} from '@/domains/sessions/next/contract/session-projection-contract'
 import type { SessionService } from '@/domains/sessions/next/main/session-service'
 
 const sessionMessageSchema = z.looseObject({
@@ -78,6 +82,8 @@ export type ClaudeSessionContext = {
   cwd: string
   startedAt: string
   liveMessages: { id: string; text: string }[]
+  pendingApprovals: Approval[]
+  pendingQuestions: Question[]
   sourceHealth: SourceHealth
   releaseTarget: 'closed' | 'unavailable' | 'watched'
 }
@@ -88,6 +94,8 @@ export type ClaudeSessionEvent =
   | { type: 'Interrupt' }
   | { type: 'Decide'; approvalId: string; decision: 'approve' | 'reject' }
   | { type: 'Answer'; questionId: string; answer: string }
+  | { type: 'Approval requested'; approval: Approval }
+  | { type: 'Question requested'; question: Question }
   | { type: 'Rename'; title: string }
   | { type: 'SDK message'; message: ClaudeSdkMessage }
   | { type: 'SDK ended' }

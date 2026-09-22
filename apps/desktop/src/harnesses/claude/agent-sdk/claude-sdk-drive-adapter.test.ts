@@ -29,6 +29,7 @@ test('routes a legacy Claude start through the managed adapter', async () => {
       resume: async () => {
         throw new Error('resume should not run for session.start')
       },
+      projection: () => null,
     },
     workspaceForCwd: async () => ({ kind: 'existing', workspaceId: 'workspace-1' }),
   })
@@ -59,6 +60,7 @@ test('resumes an external Claude Session when a queued Turn is steered', async (
         resumes.push(request)
         return { kind: 'accepted', projection: {} as never }
       },
+      projection: () => null,
     },
     workspaceForCwd: async () => ({ kind: 'existing', workspaceId: 'workspace-1' }),
   })
@@ -79,4 +81,19 @@ test('resumes an external Claude Session when a queued Turn is steered', async (
       prompt: 'Continue.',
     },
   ])
+})
+
+test('reads a managed pending approval through the legacy Permission surface', async () => {
+  const adapter = createClaudeSdkDriveAdapter({
+    adapter: {
+      execute: async () => ({ kind: 'uncertain' }),
+      resume: async () => ({ kind: 'uncertain' }),
+      projection: () => ({ pendingApprovals: [{ id: 'approval-1', summary: 'Bash' }] }) as never,
+    },
+    workspaceForCwd: async () => ({ kind: 'existing', workspaceId: 'workspace-1' }),
+  })
+
+  await expect(adapter.readPermission({ sessionId: 'native-1' })).resolves.toEqual({
+    permission: { id: 'approval-1', sessionId: 'native-1', description: 'Bash' },
+  })
 })

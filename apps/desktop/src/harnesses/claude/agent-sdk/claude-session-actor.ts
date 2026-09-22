@@ -1,7 +1,10 @@
 import { assign, fromPromise, sendTo, setup } from 'xstate'
-import type { SessionIdentity } from '@/domains/sessions/next/contract/session-contract'
 import { appendAssistantMessage } from '@/harnesses/claude/agent-sdk/claude-live-messages'
 import { claudeQueryLogic } from '@/harnesses/claude/agent-sdk/claude-query-actor'
+import {
+  initialClaudeSessionContext,
+  sessionFrom,
+} from '@/harnesses/claude/agent-sdk/claude-session-context'
 import { leaseStates } from '@/harnesses/claude/agent-sdk/claude-session-lease-states'
 import { recoveringState } from '@/harnesses/claude/agent-sdk/claude-session-recovery'
 import {
@@ -21,25 +24,6 @@ export type { ClaudeQueryFactory, ClaudeSessionInput } from '@/harnesses/claude/
 const messageParams = ({ event }: { event: { message: ClaudeSdkMessage } }) => ({
   message: event.message,
 })
-
-function initialContext(input: ClaudeSessionInput): ClaudeSessionContext {
-  return {
-    session: input.session,
-    workspaceId: input.workspaceId,
-    prompt: input.prompt,
-    cwd: input.cwd,
-    startedAt: input.startedAt,
-    liveMessages: [],
-    sourceHealth: 'ready',
-    releaseTarget: 'closed',
-  }
-}
-
-function sessionFrom(message: ClaudeSdkMessage): SessionIdentity | null {
-  if (message.type !== 'system' || message.subtype !== 'init') return null
-  return { harness: 'claude', nativeId: message.session_id }
-}
-
 const claudeSessionSetup = setup({
   types: {
     context: {} as ClaudeSessionContext,
@@ -77,6 +61,26 @@ const claudeSessionSetup = setup({
         ? { liveMessages: appendAssistantMessage(context.liveMessages, event.message) }
         : {},
     ),
+    addApproval: assign(({ context, event }) =>
+      event.type === 'Approval requested'
+        ? { pendingApprovals: [...context.pendingApprovals, event.approval] }
+        : {},
+    ),
+    removeApproval: assign(({ context, event }) =>
+      event.type === 'Decide'
+        ? { pendingApprovals: context.pendingApprovals.filter(({ id }) => id !== event.approvalId) }
+        : {},
+    ),
+    addQuestion: assign(({ context, event }) =>
+      event.type === 'Question requested'
+        ? { pendingQuestions: [...context.pendingQuestions, event.question] }
+        : {},
+    ),
+    removeQuestion: assign(({ context, event }) =>
+      event.type === 'Answer'
+        ? { pendingQuestions: context.pendingQuestions.filter(({ id }) => id !== event.questionId) }
+        : {},
+    ),
   },
   delays: {
     recoveryTimeout: 60_000,
@@ -86,7 +90,7 @@ const claudeSessionSetup = setup({
 export function createClaudeSessionMachine(input: ClaudeSessionInput) {
   return claudeSessionSetup.createMachine({
     id: 'claudeManagedSession',
-    context: () => initialContext(input),
+    context: () => initialClaudeSessionContext(input),
     invoke: { id: 'claudeQuery', src: 'claudeQuery', input: () => input },
     initial: 'Authorizing',
     states: {
@@ -119,8 +123,10 @@ export function createClaudeSessionMachine(input: ClaudeSessionInput) {
           Send: { actions: sendTo('claudeQuery', ({ event }) => event) },
           Steer: { actions: sendTo('claudeQuery', ({ event }) => event) },
           Interrupt: { actions: sendTo('claudeQuery', ({ event }) => event) },
-          Decide: { actions: sendTo('claudeQuery', ({ event }) => event) },
-          Answer: { actions: sendTo('claudeQuery', ({ event }) => event) },
+          Decide: { actions: ['removeApproval', sendTo('claudeQuery', ({ event }) => event)] },
+          Answer: { actions: ['removeQuestion', sendTo('claudeQuery', ({ event }) => event)] },
+          'Approval requested': { actions: 'addApproval' },
+          'Question requested': { actions: 'addQuestion' },
           Rename: { actions: sendTo('claudeQuery', ({ event }) => event) },
           'SDK message': [
             {

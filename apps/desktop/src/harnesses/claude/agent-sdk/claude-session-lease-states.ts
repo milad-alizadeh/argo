@@ -15,6 +15,10 @@ export function leaseStates(input: ClaudeSessionInput) {
   ] as const
   return {
     AcquiringLease: {
+      on: {
+        'Approval requested': { actions: 'addApproval' },
+        'Question requested': { actions: 'addQuestion' },
+      },
       invoke: {
         src: 'acquireLease',
         input: ({ context }: { context: ClaudeSessionContext }) => ({

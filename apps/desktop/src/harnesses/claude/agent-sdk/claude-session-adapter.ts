@@ -142,6 +142,7 @@ export function createClaudeSessionAdapter(deps: {
     },
     roster: registry.roster,
     liveMessages: registry.liveMessages,
+    projection: registry.projection,
     onRosterChanged: watchedChanges(changed),
     close: registry.close,
   }

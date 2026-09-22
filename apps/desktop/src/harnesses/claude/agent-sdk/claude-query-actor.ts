@@ -64,7 +64,9 @@ export const claudeQueryLogic = fromCallback<ClaudeSessionEvent, ClaudeSessionIn
     let stopped = false
     let retries = 0
     const session = { current: input.session }
-    const query = { current: createQuery({ input, channel, approvals, dialogs, session }) }
+    const query = {
+      current: createQuery({ input, channel, approvals, dialogs, sendBack, session }),
+    }
     const recover = () => {
       if (stopped) return
       const canRetry = session.current !== null && retries === 0
@@ -74,7 +76,7 @@ export const claudeQueryLogic = fromCallback<ClaudeSessionEvent, ClaudeSessionIn
       }
       retries += 1
       sendBack({ type: 'Channel lost' })
-      query.current = createQuery({ input, channel, approvals, dialogs, session })
+      query.current = createQuery({ input, channel, approvals, dialogs, sendBack, session })
       void read()
     }
 
@@ -116,13 +118,31 @@ function createQuery(options: {
   approvals: ReturnType<typeof createPendingRequestRegistry<PermissionResult | null>>
   dialogs: ReturnType<typeof createPendingRequestRegistry<UserDialogResult>>
   session: { current: ClaudeSessionInput['session'] }
+  sendBack: (event: ClaudeSessionEvent) => void
 }): Query {
-  const { input, channel, approvals, dialogs, session } = options
+  const { input, channel, approvals, dialogs, sendBack, session } = options
   return input.createQuery({
     prompt: channel.iterable,
     cwd: input.cwd,
     resume: session.current?.nativeId,
-    canUseTool: (_toolName, _toolInput, options) => approvals.register(options.toolUseID),
-    onUserDialog: (_request, options) => dialogs.register(options.requestId),
+    canUseTool: (toolName, _toolInput, options) => {
+      sendBack({
+        type: 'Approval requested',
+        approval: {
+          id: options.toolUseID,
+          turnId: options.toolUseID,
+          toolCallId: options.toolUseID,
+          summary: toolName,
+        },
+      })
+      return approvals.register(options.toolUseID)
+    },
+    onUserDialog: (request, options) => {
+      sendBack({
+        type: 'Question requested',
+        question: { id: options.requestId, turnId: options.requestId, prompt: request.dialogKind },
+      })
+      return dialogs.register(options.requestId)
+    },
   })
 }

@@ -38,6 +38,10 @@ export function sessionRegistry(changed: Set<() => void>, sessionService: Sessio
     liveMessages: (sessionId: string) =>
       entries.get(keyOf({ harness: 'claude', nativeId: sessionId }))?.actor.getSnapshot().context
         .liveMessages ?? [],
+    projection: (session: SessionIdentity) => {
+      const entry = entries.get(keyOf(session))
+      return entry === undefined ? null : projectionFrom(entry.actor.getSnapshot(), entry.revision)
+    },
     close: () =>
       [...entries.values()].forEach((entry) => {
         const session = entry.actor.getSnapshot().context.session

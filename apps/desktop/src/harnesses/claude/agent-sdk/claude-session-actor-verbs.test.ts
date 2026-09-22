@@ -21,9 +21,14 @@ describe('claude session actor verb set', () => {
     const actor = await startedClaudeActor(fake)
 
     const pending = fake.requestApproval('tool-use-1', 'Bash')
+    await flush()
+    expect(actor.getSnapshot().context.pendingApprovals).toEqual([
+      { id: 'tool-use-1', turnId: 'tool-use-1', toolCallId: 'tool-use-1', summary: 'Bash' },
+    ])
     actor.send({ type: 'Decide', approvalId: 'tool-use-1', decision: 'approve' })
 
     expect(await pending).toEqual({ behavior: 'allow' })
+    expect(actor.getSnapshot().context.pendingApprovals).toEqual([])
   })
 
   test('resolves a pending tool approval with a denial message when the user rejects', async () => {
