@@ -105,6 +105,8 @@ describe('claude session actor commands', () => {
     const actor = harness(fake)
     fake.emitInit({ apiKeySource: 'none' })
     await flush()
+    actor.send({ type: 'Activate' })
+    await flush()
 
     actor.send({ type: 'Send', prompt: 'second message' })
     await flush()

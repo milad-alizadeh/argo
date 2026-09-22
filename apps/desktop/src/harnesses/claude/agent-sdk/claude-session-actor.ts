@@ -120,6 +120,7 @@ export function createClaudeSessionMachine(input: ClaudeSessionInput) {
       },
       Managed: {
         on: {
+          Activate: { actions: sendTo('claudeQuery', ({ event }) => event) },
           Send: { actions: sendTo('claudeQuery', ({ event }) => event) },
           Steer: { actions: sendTo('claudeQuery', ({ event }) => event) },
           Interrupt: { actions: sendTo('claudeQuery', ({ event }) => event) },

@@ -16,11 +16,10 @@ function handleEvent(options: {
   approvals: ReturnType<typeof createPendingRequestRegistry<PermissionResult | null>>
   channel: ReturnType<typeof createStreamInputChannel>
   dialogs: ReturnType<typeof createPendingRequestRegistry<UserDialogResult>>
-  input: ClaudeSessionInput
   query: { current: Query }
   session: { current: ClaudeSessionInput['session'] }
 }) {
-  const { approvals, channel, dialogs, event, input, query, session } = options
+  const { approvals, channel, dialogs, event, query, session } = options
   switch (event.type) {
     case 'Send':
     case 'Steer':
@@ -45,7 +44,6 @@ function handleEvent(options: {
       return
     case 'Session identified':
       session.current = event.session
-      if (input.session === null) channel.push(userMessage(input.prompt))
       return
     default:
       return
@@ -63,6 +61,7 @@ export const claudeQueryLogic = fromCallback<ClaudeSessionEvent, ClaudeSessionIn
     const dialogs = createPendingRequestRegistry<UserDialogResult>({ behavior: 'cancelled' })
     let stopped = false
     let retries = 0
+    let activated = input.session !== null
     const session = { current: input.session }
     const query = {
       current: createQuery({ input, channel, approvals, dialogs, sendBack, session }),
@@ -98,9 +97,16 @@ export const claudeQueryLogic = fromCallback<ClaudeSessionEvent, ClaudeSessionIn
     }
     void read()
 
-    receive((event: ClaudeSessionEvent) =>
-      handleEvent({ approvals, channel, dialogs, event, input, query, session }),
-    )
+    receive((event: ClaudeSessionEvent) => {
+      if (event.type === 'Activate') {
+        if (!activated) {
+          activated = true
+          channel.push(userMessage(input.prompt))
+        }
+        return
+      }
+      handleEvent({ approvals, channel, dialogs, event, query, session })
+    })
 
     return () => {
       stopped = true

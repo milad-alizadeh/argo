@@ -89,6 +89,7 @@ export type ClaudeSessionContext = {
 }
 
 export type ClaudeSessionEvent =
+  | { type: 'Activate' }
   | { type: 'Send'; prompt: string }
   | { type: 'Steer'; prompt: string }
   | { type: 'Interrupt' }

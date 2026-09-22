@@ -119,6 +119,7 @@ export function createClaudeSessionAdapter(deps: {
     subscribe: (session, listener) => {
       const entry = registry.requireEntry(session)
       entry.listeners.add(listener)
+      entry.actor.send({ type: 'Activate' })
       return (() => entry.listeners.delete(listener)) as Unsubscribe
     },
     resume: async ({ session, workspace, prompt, cwd }) => {

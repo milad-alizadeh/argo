@@ -44,7 +44,7 @@ test('starts Claude after the selected Workspace is ready', async () => {
     },
   })
   expect(queryCalls).toBe(1)
-  expect(fake.sentPrompts()).toEqual(['hello'])
+  expect(fake.sentPrompts()).toEqual([])
 })
 
 test('notifies roster watchers when the SDK adds a live assistant message', async () => {

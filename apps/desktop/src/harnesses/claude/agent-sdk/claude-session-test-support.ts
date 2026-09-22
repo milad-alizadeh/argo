@@ -26,5 +26,7 @@ export async function startedClaudeActor(fake: ReturnType<typeof fakeClaudeQuery
   ).start()
   fake.emitInit({ apiKeySource: 'none' })
   await flush()
+  actor.send({ type: 'Activate' })
+  await flush()
   return actor
 }
