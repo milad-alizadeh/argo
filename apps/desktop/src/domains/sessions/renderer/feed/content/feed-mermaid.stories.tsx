@@ -4,7 +4,7 @@ import { FeedMermaid } from '@/domains/sessions/renderer/feed/content/feed-merma
 
 const FLOWCHART = 'flowchart LR\n  Backlog --> Ticket --> Session'
 
-const meta: Meta<typeof FeedMermaid> = {
+const meta = {
   title: 'Sessions/Feed/Mermaid',
   component: FeedMermaid,
   decorators: [
@@ -15,7 +15,7 @@ const meta: Meta<typeof FeedMermaid> = {
     ),
   ],
   args: { source: FLOWCHART },
-}
+} satisfies Meta<typeof FeedMermaid>
 
 export default meta
 type Story = StoryObj<typeof FeedMermaid>

@@ -16,10 +16,10 @@ function ModeStory() {
   )
 }
 
-const meta: Meta<typeof ModeStory> = {
+const meta = {
   title: 'Sessions/Composer/Mode Menu',
   component: ModeStory,
-}
+} satisfies Meta<typeof ModeStory>
 
 export default meta
 type Story = StoryObj<typeof ModeStory>

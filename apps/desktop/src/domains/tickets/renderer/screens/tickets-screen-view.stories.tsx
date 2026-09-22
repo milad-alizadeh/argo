@@ -79,7 +79,7 @@ function AccountToRepositoryForm() {
   )
 }
 
-const meta: Meta<typeof TicketsScreenStory> = {
+const meta = {
   title: 'Tickets/Screen',
   component: TicketsScreenStory,
   parameters: { layout: 'fullscreen' },
@@ -105,7 +105,7 @@ const meta: Meta<typeof TicketsScreenStory> = {
     ),
   ],
   args: { view: ticketsView() },
-}
+} satisfies Meta<typeof TicketsScreenStory>
 
 export default meta
 type Story = StoryObj<typeof TicketsScreenStory>

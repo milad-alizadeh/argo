@@ -66,11 +66,11 @@ const document = parseSetupDocument({
   progress: { current: 1, total: 3 },
 })
 
-const meta: Meta<typeof SetupDocumentForm> = {
+const meta = {
   title: 'Projects/Setup/Document Form',
   component: SetupDocumentForm,
   parameters: { layout: 'padded' },
-}
+} satisfies Meta<typeof SetupDocumentForm>
 
 export default meta
 type Story = StoryObj<typeof SetupDocumentForm>

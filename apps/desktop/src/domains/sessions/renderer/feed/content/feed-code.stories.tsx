@@ -5,7 +5,7 @@ import { FeedCode } from '@/domains/sessions/renderer/feed/content/feed-code'
 import { SAMPLE_TYPESCRIPT } from '@/domains/sessions/renderer/feed/content/feed-samples'
 import { xcodeCodePalette } from '@/platform/renderer/components/xcode-code-theme'
 
-const meta: Meta<typeof FeedCode> = {
+const meta = {
   title: 'Sessions/Feed/Code',
   component: FeedCode,
   decorators: [
@@ -16,7 +16,7 @@ const meta: Meta<typeof FeedCode> = {
     ),
   ],
   args: { source: SAMPLE_TYPESCRIPT, language: 'ts' },
-}
+} satisfies Meta<typeof FeedCode>
 
 export default meta
 type Story = StoryObj<typeof FeedCode>

@@ -7,7 +7,7 @@ import {
   SAMPLE_PICTURE,
 } from '@/domains/sessions/renderer/feed/content/feed-samples'
 
-const meta: Meta<typeof FeedMarkdown> = {
+const meta = {
   title: 'Sessions/Feed/Markdown',
   component: FeedMarkdown,
   decorators: [
@@ -18,7 +18,7 @@ const meta: Meta<typeof FeedMarkdown> = {
     ),
   ],
   args: { text: RICH_MARKDOWN },
-}
+} satisfies Meta<typeof FeedMarkdown>
 
 export default meta
 type Story = StoryObj<typeof FeedMarkdown>

@@ -2,10 +2,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import { AtlasSidebar } from '@/domains/atlas/renderer/components/atlas-sidebar'
 
-const meta: Meta<typeof AtlasSidebar> = {
+const meta = {
   title: 'Atlas/Atlas Sidebar',
   component: AtlasSidebar,
-}
+} satisfies Meta<typeof AtlasSidebar>
 
 export default meta
 type Story = StoryObj<typeof AtlasSidebar>

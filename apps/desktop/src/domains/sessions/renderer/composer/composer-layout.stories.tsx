@@ -11,7 +11,7 @@ const plan: SessionPlan = {
   entries: [{ content: 'Choose the base layout', position: 0, status: 'in_progress' as const }],
 }
 
-const meta: Meta<typeof ComposerStory> = {
+const meta = {
   title: 'Sessions/Composer/Layout',
   component: ComposerStory,
   decorators: [
@@ -25,7 +25,7 @@ const meta: Meta<typeof ComposerStory> = {
   beforeEach: () => {
     useComposerStore.setState(useComposerStore.getInitialState())
   },
-}
+} satisfies Meta<typeof ComposerStory>
 
 export default meta
 type Story = StoryObj<typeof ComposerStory>

@@ -11,7 +11,7 @@ import { ada, octocat } from '@/domains/tickets/renderer/detail/ticket-fixtures'
 const hubot = { ...octocat, id: 'github:1', login: 'hubot' }
 const repository = (scope: string) => ({ scope, label: scope })
 
-const meta: Meta<typeof ConnectSourceForm> = {
+const meta = {
   title: 'Tickets/Connection/Connect Source Form',
   component: ConnectSourceForm,
   args: {
@@ -28,7 +28,7 @@ const meta: Meta<typeof ConnectSourceForm> = {
     onConnectSource: fn(),
     onConnectAccount: fn(),
   } satisfies ConnectSourceFormProps,
-}
+} satisfies Meta<typeof ConnectSourceForm>
 
 export default meta
 type Story = StoryObj<typeof ConnectSourceForm>

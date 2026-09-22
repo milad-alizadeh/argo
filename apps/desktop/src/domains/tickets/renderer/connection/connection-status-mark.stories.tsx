@@ -4,11 +4,11 @@ import { expect, within } from 'storybook/test'
 import type { ConnectionSummary } from '@/domains/tickets/contract/contract'
 import { ConnectionStatusMark } from '@/domains/tickets/renderer/connection/connection-status-mark'
 
-const meta: Meta<typeof ConnectionStatusMark> = {
+const meta = {
   title: 'Tickets/Connection/Connection Status Mark',
   component: ConnectionStatusMark,
   args: { children: 'GitHub · octocat' },
-}
+} satisfies Meta<typeof ConnectionStatusMark>
 
 export default meta
 type Story = StoryObj<typeof ConnectionStatusMark>

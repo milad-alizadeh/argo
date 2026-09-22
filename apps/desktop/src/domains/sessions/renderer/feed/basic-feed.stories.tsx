@@ -38,7 +38,7 @@ const readFailure = {
 
 const LIVE_FACTS = INACTIVE_FEED_LIVE_FACTS
 
-const meta: Meta<typeof BasicFeed> = {
+const meta = {
   title: 'Sessions/Feed',
   component: BasicFeed,
   parameters: { layout: 'fullscreen' },
@@ -58,7 +58,7 @@ const meta: Meta<typeof BasicFeed> = {
     onOpenEvidence: () => {},
     selectedSessionId: 'prose',
   },
-}
+} satisfies Meta<typeof BasicFeed>
 
 export default meta
 type Story = StoryObj<typeof BasicFeed>

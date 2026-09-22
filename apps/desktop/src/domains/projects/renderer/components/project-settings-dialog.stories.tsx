@@ -16,11 +16,11 @@ function withConnectionHost(handler: (request: { projectId: string }) => Promise
   }
 }
 
-const meta: Meta<typeof ProjectSettingsDialog> = {
+const meta = {
   title: 'Projects/Project Settings Dialog',
   component: ProjectSettingsDialog,
   args: { project: PROJECT, open: true, onOpenChange: fn() },
-}
+} satisfies Meta<typeof ProjectSettingsDialog>
 
 export default meta
 type Story = StoryObj<typeof ProjectSettingsDialog>

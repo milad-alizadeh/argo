@@ -7,7 +7,7 @@ import {
 } from '@/domains/tickets/renderer/sidebar/tickets-sidebar'
 import { useTicketSearch } from '@/domains/tickets/renderer/state/use-ticket-search'
 
-const meta: Meta<typeof TicketsSidebarContent> = {
+const meta = {
   title: 'Tickets/Sidebar',
   component: TicketsSidebarContent,
   parameters: { layout: 'fullscreen' },
@@ -26,7 +26,7 @@ const meta: Meta<typeof TicketsSidebarContent> = {
     openCount: '25+',
     onManageAccounts: fn(),
   } satisfies TicketsSidebarContentProps,
-}
+} satisfies Meta<typeof TicketsSidebarContent>
 
 export default meta
 type Story = StoryObj<typeof TicketsSidebarContent>

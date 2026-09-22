@@ -4,7 +4,7 @@ import { ticketError } from '@/domains/tickets/contract/contract'
 import { SourceSettings } from '@/domains/tickets/renderer/connection/source-settings'
 import { connection } from '@/domains/tickets/renderer/detail/ticket-fixtures'
 
-const meta: Meta<typeof SourceSettings> = {
+const meta = {
   title: 'Tickets/Connection/Source Settings',
   component: SourceSettings,
   decorators: [
@@ -15,7 +15,7 @@ const meta: Meta<typeof SourceSettings> = {
     ),
   ],
   args: { disconnecting: false, error: null, onConnect: fn(), onDisconnect: fn() },
-}
+} satisfies Meta<typeof SourceSettings>
 
 export default meta
 type Story = StoryObj<typeof SourceSettings>

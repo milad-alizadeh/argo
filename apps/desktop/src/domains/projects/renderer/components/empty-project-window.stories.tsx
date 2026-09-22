@@ -2,11 +2,11 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { EmptyProjectWindow } from '@/domains/projects/renderer/components/empty-project-window'
 
-const meta: Meta<typeof EmptyProjectWindow> = {
+const meta = {
   title: 'Projects/Empty Project Window',
   component: EmptyProjectWindow,
   args: { busy: false, onAdd: fn() },
-}
+} satisfies Meta<typeof EmptyProjectWindow>
 
 export default meta
 type Story = StoryObj<typeof EmptyProjectWindow>

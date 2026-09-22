@@ -58,7 +58,7 @@ function CompactingComposerStory() {
   )
 }
 
-const meta: Meta<typeof CompactingComposerStory> = {
+const meta = {
   title: 'Sessions/Composer/Compaction',
   component: CompactingComposerStory,
   decorators: [
@@ -72,7 +72,7 @@ const meta: Meta<typeof CompactingComposerStory> = {
   beforeEach: () => {
     useComposerStore.setState(useComposerStore.getInitialState())
   },
-}
+} satisfies Meta<typeof CompactingComposerStory>
 
 export default meta
 type Story = StoryObj<typeof CompactingComposerStory>

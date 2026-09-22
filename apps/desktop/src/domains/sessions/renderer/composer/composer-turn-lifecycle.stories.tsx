@@ -187,7 +187,7 @@ function SetupComposerStory({
   )
 }
 
-const meta: Meta<typeof ManagedComposerStory> = {
+const meta = {
   title: 'Sessions/Composer/Turn Lifecycle',
   component: ManagedComposerStory,
   decorators: [
@@ -201,7 +201,7 @@ const meta: Meta<typeof ManagedComposerStory> = {
   beforeEach: () => {
     useComposerStore.setState(useComposerStore.getInitialState())
   },
-}
+} satisfies Meta<typeof ManagedComposerStory>
 
 export default meta
 type Story = StoryObj<typeof ManagedComposerStory>

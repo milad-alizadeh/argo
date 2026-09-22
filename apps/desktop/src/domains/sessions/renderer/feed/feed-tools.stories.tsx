@@ -49,11 +49,11 @@ openToolGroups.setOpen('command-1', true)
 openToolGroups.setOpen('command-2', true)
 const closedToolGroups = new ToolGroupState()
 
-const meta: Meta<typeof FeedToolLine> = {
+const meta = {
   title: 'Sessions/Feed/Tool Line',
   component: FeedToolLine,
   args: { activeEvidenceId: null, call: edited, onOpen: () => {} },
-}
+} satisfies Meta<typeof FeedToolLine>
 
 export default meta
 

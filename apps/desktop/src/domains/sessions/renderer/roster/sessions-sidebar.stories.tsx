@@ -116,7 +116,7 @@ function RoutedRoster(args: RosterHarnessArgs) {
   )
 }
 
-const meta: Meta<typeof RosterHarness> = {
+const meta = {
   title: 'Sessions/Roster',
   component: RosterHarness,
   parameters: { layout: 'fullscreen' },
@@ -146,7 +146,7 @@ const meta: Meta<typeof RosterHarness> = {
     onUnlinkTicket: fn(),
     selectedSessionId: null,
   },
-}
+} satisfies Meta<typeof RosterHarness>
 
 export default meta
 type Story = StoryObj<typeof RosterHarness>

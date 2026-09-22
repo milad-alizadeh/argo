@@ -14,7 +14,7 @@ archive.
   Hand-written product modules live in their domain renderer facet. Proven cross-domain modules
   live in `apps/desktop/src/platform/renderer/`. Add a registry shape with
   `npx shadcn@latest add <name>`. Compose the registry shapes when the registry has no matching
-  shape. `bun run quality:components` refuses a second component library. `components.json`
+  shape. A Biome restricted-import rule refuses a second component library. `components.json`
   fixes the primitive path under `ui/` (#1767).
 - **Isolated-state mechanism** — two of them, and they answer different questions. A **story**
   under a renderer facet in `apps/desktop/src/` holds one component in one state, and is
