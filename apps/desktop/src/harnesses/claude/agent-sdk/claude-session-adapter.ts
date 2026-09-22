@@ -16,9 +16,15 @@ import {
   projectionFrom,
 } from '@/harnesses/claude/agent-sdk/claude-session-projection'
 import { sessionRegistry } from '@/harnesses/claude/agent-sdk/claude-session-registry'
-import { watchedChanges } from '@/harnesses/claude/agent-sdk/claude-session-watch'
 import { sendWhenManaged } from '@/harnesses/claude/agent-sdk/send-when-managed'
 import type { ClaudeQueryFactory } from '@/harnesses/claude/agent-sdk/types'
+
+export function watchedChanges(changed: Set<() => void>) {
+  return (listener: () => void) => {
+    changed.add(listener)
+    return () => changed.delete(listener)
+  }
+}
 
 async function openClaudeSession(options: {
   command: {

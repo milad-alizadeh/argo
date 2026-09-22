@@ -9,7 +9,7 @@ import { useSessionComposer } from '@/domains/sessions/renderer/composer/use-ses
 import { useSessionPermission } from '@/domains/sessions/renderer/composer/use-session-permission'
 import { useSessionQuestion } from '@/domains/sessions/renderer/composer/use-session-question'
 import { COMPOSER_FOCUS_STATE } from '@/domains/sessions/renderer/composer-focus-state'
-import type { WorkSelection } from '@/domains/sessions/renderer/inspector/session-inspector'
+import type { WorkSelection } from './work-selection'
 import { workInspectorReveal } from '@/domains/sessions/renderer/inspector/work-inspector-reveal'
 import { sessionHarness } from '@/domains/sessions/renderer/screens/session-screen-state'
 import { useSelectedSession } from '@/domains/sessions/renderer/screens/use-selected-session'

@@ -2,7 +2,7 @@
 // where it fires, because a chord written in the menu and again on an element drifts silently.
 // `commands.test.ts` proves the table holds no chord twice and that the built menu takes every
 // accelerator from it.
-import type { ShortcutLabelKey } from '@/platform/shared/i18n'
+import type { ShortcutLabelKey } from '@/platform/contract/i18n'
 
 // The working surfaces of the cockpit, in sidebar order. The Project is not one of them: it is the
 // window's subject, and the surfaces are what a reader does inside it.

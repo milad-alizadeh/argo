@@ -11,7 +11,7 @@ import {
   project,
   projectSelection,
   projectSetupCheckpoint,
-} from '@/platform/main/storage/database-schema'
+} from '@/domains/projects/main/schema'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 import { identifierSchema } from '@/shared/validation'
 import { createSetupWorktreePromotion } from './project-store-promotion'

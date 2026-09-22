@@ -1,9 +1,9 @@
+import { APPEARANCE_CHANGED_CHANNEL } from '@/platform/contract/appearance'
+import { COMMAND_CHANNEL } from '@/platform/contract/commands'
+import type { DevelopmentIdentity } from '@/platform/contract/development-identity'
+import { WATCHED_CHANGED_CHANNEL } from '@/platform/contract/watch'
 import { type AppearanceClient, createAppearanceClient } from '@/platform/preload/appearance'
 import { createWatchClient, type WatchClient } from '@/platform/preload/watch'
-import { APPEARANCE_CHANGED_CHANNEL } from '@/platform/preload/appearance'
-import { COMMAND_CHANNEL } from '@/platform/contract/commands'
-import type { DevelopmentIdentity } from '@/platform/preload/development-identity'
-import { WATCHED_CHANGED_CHANNEL } from '@/platform/preload/watch'
 
 type Subscribe = (channel: string, listener: (value: unknown) => void) => () => void
 

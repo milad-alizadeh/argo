@@ -1,6 +1,6 @@
 import type { BrowserWindow } from 'electron'
 import type { WatchedSource } from '@/platform/main/watch/watch-source'
-import { WATCHED_CHANGED_CHANNEL, type WatchTopic } from '@/platform/shared/watch'
+import { WATCHED_CHANGED_CHANNEL, type WatchTopic } from '@/platform/contract/watch'
 
 // What stands behind each topic. Trees on disk are the usual source, a Permission in main-process
 // memory is another, and a topic may name several: a module that wants its own topic adds its
@@ -13,7 +13,7 @@ export type WatchedTopics = Partial<Record<WatchTopic, readonly WatchedSource[]>
 // Permission was waiting.
 export function registerWatching(window: BrowserWindow, topics: WatchedTopics) {
   const closers = Object.entries(topics).flatMap(([topic, sources]) =>
-    sources.map((source) =>
+    (sources ?? []).map((source) =>
       source(() => {
         if (window.isDestroyed()) return
         window.webContents.send(WATCHED_CHANGED_CHANNEL, topic)
