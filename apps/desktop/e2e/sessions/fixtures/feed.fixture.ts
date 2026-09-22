@@ -151,8 +151,9 @@ export async function growCodexTranscript(transcripts) {
       timestamp: '2099-01-01T00:00:00.000Z',
       type: 'event_msg',
       payload: {
-        type: 'agent_message',
+        type: 'item_completed',
         thread_id: 'rollout-codexParent',
+        turn_id: 'turn-2',
         item: {
           type: 'AgentMessage',
           id: 'live-codex-message',
