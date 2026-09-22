@@ -11,7 +11,7 @@ const DUPLICATE_PROMPT = 'Reply with one short acknowledgement to this single re
 type BeginRequest = { page: Page; backend: SessionHarnessBackend; prompt: string; sends: number }
 
 async function send(page: Page, prompt: string, times: number) {
-  const composer = page.getByRole('textbox', { name: 'Message' })
+  const composer = page.getByRole('combobox', { name: 'Message' })
   await composer.click()
   await page.keyboard.type(prompt)
   for (let press = 0; press < times; press += 1) await page.keyboard.press('Enter')

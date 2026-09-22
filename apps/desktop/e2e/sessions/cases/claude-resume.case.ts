@@ -10,7 +10,7 @@ import { rosterRow, waitFor } from '../claude-proof-helpers'
 import { createSessionByClick, openSessionByClick } from '../gestures'
 
 async function sendFromComposer(page, text) {
-  const composer = page.getByRole('textbox', { name: 'Message' })
+  const composer = page.getByRole('combobox', { name: 'Message' })
   await composer.click()
   await page.keyboard.type(text)
   await page.getByRole('button', { name: 'Send message' }).click()
