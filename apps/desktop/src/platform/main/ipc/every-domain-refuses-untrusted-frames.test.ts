@@ -5,7 +5,7 @@
 // is registered before the dynamic imports below, since a static import would resolve the real
 // `electron` package first.
 import { mock } from 'bun:test'
-import { electronStandIn } from '@/platform/main/testing/electron-stand-in'
+import { electronStandIn } from '@/platform/main/test-doubles/electron-stand-in'
 
 mock.module('electron', () => electronStandIn)
 
@@ -56,7 +56,7 @@ const [
   import('@/domains/sessions/main/composition/bridge'),
   import('@/domains/sessions/contract/ipc/operations'),
   import('@/platform/main/appearance'),
-  import('@/platform/shared/appearance'),
+  import('@/platform/contract/appearance'),
 ])
 
 type SessionContext = Parameters<typeof attachSessionBridge>[1]

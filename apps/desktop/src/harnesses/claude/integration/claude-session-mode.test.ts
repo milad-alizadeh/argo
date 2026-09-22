@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { CYCLE_MODE, REDRAW } from '@/harnesses/claude/drive/claude-setup.ts'
+import { CYCLE_MODE, REDRAW } from '@/harnesses/claude/drive/turn/claude-setup'
 import {
   FOOTERS,
   OPENING,

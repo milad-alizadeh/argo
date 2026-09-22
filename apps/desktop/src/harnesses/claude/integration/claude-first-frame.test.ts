@@ -3,9 +3,9 @@ import { mkdtempSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { createOwnershipLedger } from '@/domains/sessions/main/lifecycle/ownership-ledger.ts'
+import { createOwnershipLedger } from '@/domains/sessions/main/lifecycle/ownership/ownership-ledger'
+import { FIRST_FRAME_TIMEOUT_MS } from '@/harnesses/claude/drive/channel/first-frame'
 import { createClaudeSessionDriver } from '@/harnesses/claude/drive/claude-session-driver.ts'
-import { FIRST_FRAME_TIMEOUT_MS } from '@/harnesses/claude/drive/first-frame.ts'
 import {
   ledgerFile,
   mockPermissionGate,

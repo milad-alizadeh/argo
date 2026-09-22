@@ -3,7 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import type { LiveMessage } from '@/harnesses/claude/drive/channel/live-messages'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-sessions'
 
 const SESSION = 'c3b0f6a2-5d7e-4f7a-9d61-2f1f3c1d8e10'
 

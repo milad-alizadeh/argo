@@ -3,14 +3,14 @@ import { appendFile, chmod, mkdir, mkdtemp, realpath, rm, symlink } from 'node:f
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader.ts'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader/reader'
 import {
   fixtureRoot,
   LATER_TURN,
   unscopedListing as listing,
   listSessions,
 } from '@/harnesses/claude/integration/session-fixtures'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions.ts'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-sessions'
 import { fixturePath, replaceInFile } from '../../../../mocks/sessions/mock-transcript-files'
 
 const feed = {

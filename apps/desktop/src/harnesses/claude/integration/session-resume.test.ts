@@ -5,8 +5,8 @@ import type { SessionRosterRow } from '@/domains/sessions/contract/model/models.
 import type { SessionReader } from '@/domains/sessions/main/composition/bridge'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { fixtureRoot } from '@/harnesses/claude/integration/session-fixtures'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions.ts'
-import { claudeResumeTarget } from '@/harnesses/claude/sessions/resume-target.ts'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-sessions'
+import { claudeResumeTarget } from '@/harnesses/claude/sessions/discovery/resume-target'
 
 const listing = { version: 1, type: 'session.list', requestId: 'list-1', projectRoot: null }
 

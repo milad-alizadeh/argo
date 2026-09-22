@@ -4,11 +4,14 @@ import os from 'node:os'
 import path from 'node:path'
 import type { TestContext } from 'node:test'
 import type { ClaudeTurnSetup } from '@/domains/sessions/contract/ipc/contract.ts'
-import { createOwnershipLedger } from '@/domains/sessions/main/lifecycle/ownership-ledger.ts'
+import { createOwnershipLedger } from '@/domains/sessions/main/lifecycle/ownership/ownership-ledger'
+import type { ResumeTarget } from '@/harnesses/claude/drive/channel/drive-channel'
 import { createClaudeSessionDriver } from '@/harnesses/claude/drive/claude-session-driver.ts'
-import type { ResumeTarget } from '@/harnesses/claude/drive/drive-channel.ts'
-import { createHandoffLedger, type HandoffLedger } from '@/harnesses/claude/drive/handoff-ledger.ts'
-import type { ClaudePermissionGate } from '@/harnesses/claude/drive/permission-gate.ts'
+import {
+  createHandoffLedger,
+  type HandoffLedger,
+} from '@/harnesses/claude/drive/handoff/handoff-ledger'
+import type { ClaudePermissionGate } from '@/harnesses/claude/drive/permission/permission-gate'
 import { mockPermissionGate } from '@/harnesses/claude/integration/claude-permission-gate-mock.ts'
 import { FOOTERS, terminal } from '@/harnesses/claude/integration/claude-terminal-mock.ts'
 

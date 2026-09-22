@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { claudeTurn } from '@/harnesses/claude/drive/claude-turn.ts'
+import { claudeTurn } from '@/harnesses/claude/drive/turn/claude-turn'
 
 test('sends one normalized prompt as a bracketed paste followed by Return', () => {
   assert.deepEqual(claudeTurn('Review\r\nthe Session shell.'), {

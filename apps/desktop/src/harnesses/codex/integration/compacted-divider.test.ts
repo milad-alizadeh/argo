@@ -8,7 +8,7 @@ import {
   listed,
   tempRoot,
   writeCodexTranscript,
-} from '@/domains/sessions/main/observation/reader-test-helpers'
+} from '@/domains/sessions/main/observation/reader/reader-test-helpers'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 
 const SESSION = '01a0a6eb-56c8-7f93-8820-cc80e2f234d3'

@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
-import { fed, feedRequest, rowsOf } from '@/domains/sessions/main/observation/reader-test-helpers'
+import {
+  fed,
+  feedRequest,
+  rowsOf,
+} from '@/domains/sessions/main/observation/reader/reader-test-helpers'
 import { fixtureRoot } from '@/harnesses/claude/integration/session-fixtures'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-sessions'
 
 test('a written and an edited file arrive as edits with their diffs before any result', async (context) => {
   const root = await fixtureRoot(context, ['parityEdit'])

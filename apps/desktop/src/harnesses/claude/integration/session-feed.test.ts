@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { stitchChains } from '@/domains/sessions/contract/model/chains.ts'
-import { UNREADABLE_ROW, unreadableRowHeight } from '@/domains/sessions/main/projection/feed.ts'
-import { projectFeed } from '@/domains/sessions/main/projection/feed-incremental.ts'
+import { stitchChains } from '@/domains/sessions/contract/model/transcript/chains'
+import { UNREADABLE_ROW, unreadableRowHeight } from '@/domains/sessions/main/projection/feed/feed'
+import { projectFeed } from '@/domains/sessions/main/projection/feed/feed-incremental'
 import { fixtureFiles } from '@/harnesses/claude/integration/session-fixtures'
 
 async function feedOf(names) {

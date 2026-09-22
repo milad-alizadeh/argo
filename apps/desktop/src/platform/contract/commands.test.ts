@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { menuTemplate } from '@/platform/main/menu-template'
 import {
   DESTINATIONS,
   matchesChord,
@@ -11,7 +10,8 @@ import {
   ROSTER_MOVES,
   SEND_MESSAGE_COMMAND,
   SHORTCUTS,
-} from '@/platform/shared/commands'
+} from '@/platform/contract/commands'
+import { menuTemplate } from '@/platform/main/menu-template'
 
 const pressed = (key, modifiers = {}) => ({
   key,

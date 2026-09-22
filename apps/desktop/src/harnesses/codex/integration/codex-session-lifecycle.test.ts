@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-
-import type { CodexChannel } from '@/harnesses/codex/drive/codex-channel.ts'
-import { createCodexSessionDriver } from '@/harnesses/codex/drive/codex-session-driver.ts'
+import { createCodexSessionDriver } from '@/harnesses/codex/drive/session/codex-session-driver'
+import type { CodexChannel } from '@/harnesses/codex/drive/supervision/codex-channel'
 
 function mockLifecycleChannel() {
   const requests: string[] = []
