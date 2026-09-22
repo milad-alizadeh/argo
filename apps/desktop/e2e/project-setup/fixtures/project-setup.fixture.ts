@@ -8,6 +8,7 @@ import {
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
 } from '../../../src/domains/sessions/main/composition/proof-protocol'
 import { test as packagedTest } from '../../packaged-proof'
+import { openHiddenWindow } from '../../packaged-window'
 import { launch, prepareManual } from '../../projects/fixtures/project.fixture'
 
 const VIEWPORT = { height: 860, width: 1440 }
@@ -39,20 +40,7 @@ export const test = packagedTest.extend<{
     }
     const application = await launch(fixture, environment)
     try {
-      application.process().stdout?.on('data', (chunk) => process.stdout.write(chunk))
-      application.process().stderr?.on('data', (chunk) => process.stderr.write(chunk))
-      const page = await application.firstWindow()
-      page.setDefaultTimeout(30_000)
-      await application.evaluate(({ BrowserWindow }, viewport) => {
-        const window = BrowserWindow.getAllWindows()[0]
-        window?.setContentSize(viewport.width, viewport.height)
-        window?.hide()
-      }, VIEWPORT)
-      await page.waitForFunction(
-        (viewport) =>
-          window.innerWidth === viewport.width && window.innerHeight === viewport.height,
-        VIEWPORT,
-      )
+      const page = await openHiddenWindow(application, VIEWPORT)
       await page.waitForFunction(() => typeof window.argo?.projectSetupSnapshot === 'function')
       await use({ application, environment, fixture, page })
     } finally {

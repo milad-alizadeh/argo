@@ -62,6 +62,7 @@ function AccountToRepositoryForm() {
       }
       disconnectError={null}
       disconnecting={null}
+      harnesses={null}
       listError={null}
       listing={{ accounts: [octocat], notice: false, providers: ['github'] }}
       onDisconnect={fn()}

@@ -6,6 +6,7 @@ import { createAccountAccess } from '@/domains/accounts/main/access'
 import { attachAccountBridge } from '@/domains/accounts/main/bridge'
 import { safeStorageCipher } from '@/domains/accounts/main/safe-storage'
 import { createConnectionPort } from '@/domains/connections/main/port'
+import { attachHarnessSignInBridge } from '@/domains/harness-signin/main/bridge'
 import { attachProjectBridge } from '@/domains/projects/main/bridge'
 import { createProjectPort } from '@/domains/projects/main/port'
 import type { OnboardingAgentDriver } from '@/domains/projects/main/setup/onboarding-agent/runtime/run-onboarding-agent'
@@ -13,6 +14,7 @@ import type { SetupDocumentSource } from '@/domains/projects/main/setup/preparat
 import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
 import { attachTicketBridge } from '@/domains/tickets/main/bridge'
 import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
+import { createHarnessReadinessRegistrations } from '@/harnesses/composition/registered-harness-readiness'
 import { attachSessions } from '@/harnesses/composition/session-bridges'
 import { attachAppearanceBridge } from '@/platform/main/appearance'
 import { attachWindowNavigation } from '@/platform/main/security/window-navigation'
@@ -74,6 +76,7 @@ export function attachBridges(
     projects: createProjectPort(projects),
   })
   attachAccountBridge(window, { access, rendererURL })
+  attachHarnessSignIn(window, { rendererURL, proofEnabled })
   attachTicketBridge(window, {
     access,
     connections: createConnectionPort({
@@ -90,6 +93,17 @@ export function attachBridges(
     event.preventDefault()
     ticketLinks.close()
     void Promise.all(harnesses.map((harness) => harness.close())).then(() => app.quit())
+  })
+}
+
+function attachHarnessSignIn(
+  window: BrowserWindow,
+  options: { rendererURL: string; proofEnabled: boolean },
+) {
+  attachHarnessSignInBridge(window, {
+    registrations: createHarnessReadinessRegistrations({ proofEnabled: options.proofEnabled }),
+    rendererURL: options.rendererURL,
+    proofEnabled: options.proofEnabled,
   })
 }
 

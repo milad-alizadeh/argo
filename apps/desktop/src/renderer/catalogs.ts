@@ -5,6 +5,7 @@
 // menu and again on screen is one word from one file.
 import accounts from '@/domains/accounts/renderer/locales/en.json'
 import atlas from '@/domains/atlas/renderer/locales/en.json'
+import harnessSignIn from '@/domains/harness-signin/renderer/locales/en.json'
 import projects from '@/domains/projects/renderer/locales/en.json'
 import sessions from '@/domains/sessions/renderer/locales/en.json'
 import tickets from '@/domains/tickets/renderer/locales/en.json'
@@ -16,6 +17,7 @@ export const CATALOGS = {
   accounts,
   atlas,
   cockpit,
+  harnessSignIn,
   platform,
   projects,
   sessions,

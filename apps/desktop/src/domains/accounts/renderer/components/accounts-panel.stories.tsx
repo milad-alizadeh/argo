@@ -52,6 +52,7 @@ const meta: Meta<typeof AccountsPanel> = {
     disconnecting: null,
     disconnectError: null,
     onDisconnect: fn(),
+    harnesses: null,
   } satisfies AccountsPanelProps,
 }
 
@@ -327,5 +328,19 @@ export const ReadingAccounts: Story = {
       'role',
       'status',
     )
+  },
+}
+
+export const AgentSignIns: Story = {
+  args: {
+    harnesses: [
+      { harness: 'claude', state: 'ready', detail: null },
+      { harness: 'codex', state: 'signed-out', detail: null },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const section = within(canvasElement).getByRole('region', { name: 'Agent sign-ins' })
+    await expect(within(section).getByText('Claude')).toBeInTheDocument()
+    await expect(within(section).getByRole('button', { name: 'Sign in' })).toBeEnabled()
   },
 }

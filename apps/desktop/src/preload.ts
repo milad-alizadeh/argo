@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer, webFrame, webUtils } from 'electron'
 import './platform/preload/zod-jitless'
 import { createAccountClient } from '@/domains/accounts/preload/client'
+import { createHarnessSignInClient } from '@/domains/harness-signin/preload/client'
 import { createProjectClient } from '@/domains/projects/preload/client'
 import { createCodexCompactionClient } from '@/domains/sessions/contract/codex-compaction'
 import { createSessionHarnessent } from '@/domains/sessions/preload/client'
@@ -22,6 +23,7 @@ const subscribe = (channel: string, listener: (value: unknown) => void) => {
 contextBridge.exposeInMainWorld('argo', {
   ...createProjectClient(invoke, subscribe),
   ...createAccountClient(invoke),
+  ...createHarnessSignInClient(invoke),
   ...createTicketClient(invoke),
   ...createSessionHarnessent(invoke),
   ...createCodexCompactionClient(invoke),

@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 import { createHashRouter, Navigate, Outlet, useMatches } from 'react-router'
 import { AtlasSidebar } from '@/domains/atlas/renderer/components/atlas-sidebar'
 import { AtlasPage } from '@/domains/atlas/renderer/pages/atlas-page'
+import { useHarnessReadiness } from '@/domains/harness-signin/renderer/hooks/use-harness-readiness'
+import { NoHarnessReadyScreen } from '@/domains/harness-signin/renderer/screens/no-harness-ready-screen'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { useProjects } from '@/domains/projects/renderer/port'
 import { EmptyProjectScreen } from '@/domains/projects/renderer/screens/empty-project-screen'
@@ -33,6 +35,7 @@ function isCockpitRouteHandle(handle: unknown): handle is CockpitRouteHandle {
 
 export function CockpitRouteLayout() {
   const [cockpit] = useProjects()
+  const readiness = useHarnessReadiness()
   const matches = useMatches()
   useCommands((command) => {
     const destination = DESTINATIONS.find((item) => navigateCommand(item) === command)
@@ -50,6 +53,13 @@ export function CockpitRouteLayout() {
   if (cockpit.status === 'empty') return <EmptyProjectScreen />
   if (cockpit.status === 'setup' && cockpit.project) {
     return <Navigate replace to={`/projects/${cockpit.project.id}/setup`} />
+  }
+  // A Project with no Harness signed in has no way to run a Session, so this precedes the
+  // roster the same way `EmptyProjectScreen` precedes it for no Project. `readiness.data` is
+  // read only once it has landed, so a still-loading first read shows the roster underneath
+  // rather than flashing this screen first.
+  if (readiness.data && !readiness.data.some((harness) => harness.state === 'ready')) {
+    return <NoHarnessReadyScreen harnesses={readiness.data} />
   }
   return (
     <CockpitShell
