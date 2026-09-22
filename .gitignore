@@ -22,7 +22,7 @@ apps/macOS/buildServer.json
 
 # Installed skill copies are throwaway outputs of `npx skills add`. skills-lock.json is
 # committed, and `npx skills@latest add milad-alizadeh/argo --agent claude-code codex --yes`
-# reinstalls from it (AGENTS.md, "Skill bundle").
+# reinstalls from it (packages/argo-skills/README.md).
 # Shared project config (settings.json, output-styles) is real source — allowlisted;
 # settings.local.json stays personal and ignored.
 .agents/

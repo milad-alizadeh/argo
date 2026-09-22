@@ -16,6 +16,8 @@ Monorepo for the Argo skills bundle and the Argo cockpit. `apps/desktop` is the 
   an invented name to reconsider or a gap to record.
 - **Decisions**: `docs/adr/`. Read the ones covering an area before changing it. When your work
   contradicts one, say so: *Contradicts ADR-0026, but worth reopening because…*
+- **Guardrail hooks**: before editing hooks, read the `$comment`s in `hooks.json`.
+- **Skill bundle**: before adding, removing or renaming a skill, read `packages/argo-skills/README.md`.
 - Load `/writing-for-agents` before drafting or materially editing agent instructions
   (`AGENTS.md`, `SKILL.md` and similar).
 - Load `/simple-english` before drafting text for a person: issues, comments, PR titles and
@@ -81,27 +83,6 @@ parent's. Pick the lowest tier that can finish the bounded task: cheap and low e
 research, read-only inspection and mechanical edits; higher only for sustained reasoning, ambiguous
 design, broad code understanding or high-risk verification. The parent model is the ceiling.
 Report model, effort and the task requirement that earns it.
-
-## Cross-CLI guardrail hooks
-
-**Edit `hooks.json`, then run `bun run hooks:sync`**, which regenerates `.claude/settings.json` and
-`.codex/hooks.json`; never hand-edit those. This repo's conventions live in the same file under
-`worktreeGuard` and `worktreeGc.artifactPaths`. **An empty `branchPrefix` silently disables branch
-naming checks.** A namespace in `publishBranches` passes both the naming and push guards.
-
-## Skill bundle
-
-`skills-lock.json` is the manifest. **`skills add` only adds**: a renamed or deleted skill's
-installed copy is removed by hand, and an edited Argo skill needs a push to `main` before a
-reinstall sees it. **Name the agents on every add** (`--agent claude-code codex --yes`). Commands:
-`packages/argo-skills/README.md`.
-
-## Design work
-
-For UI work, read `docs/agents/code-review.md` for the `interface-review` axis, and
-`docs/design-stack.md` for the token contract, the `docs/design/` kit and render commands. The
-implementation ticket records design decisions and their reasons; no separate design ticket is
-needed. `docs/designs/` is a closed `apps/macOS` archive.
 
 ## Visual verification
 
