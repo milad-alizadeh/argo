@@ -113,16 +113,18 @@ export function fakeClaudeQuery() {
   return {
     createQuery,
     renamedTo,
-    renameSession: async (_sessionId, title) => {
+    renameSession: async (_sessionId: string, title: string) => {
       renamedTo.push(title)
     },
-    emitInit: ({ apiKeySource }) => deliver?.(initMessage(apiKeySource)),
-    emitAssistantError: (error) => deliver?.(assistantErrorMessage(error)),
-    requestApproval: (toolUseID, toolName) => {
+    emitInit: ({ apiKeySource }: { apiKeySource: ApiKeySource }) =>
+      deliver?.(initMessage(apiKeySource)),
+    emitAssistantError: (error: SDKAssistantMessageError) =>
+      deliver?.(assistantErrorMessage(error)),
+    requestApproval: (toolUseID: string, toolName: string) => {
       if (callbacks === undefined) throw new Error('createQuery was never called')
       return callbacks.canUseTool(toolName, {}, mockPermissionOptions(toolUseID))
     },
-    requestDialog: (requestId) => {
+    requestDialog: (requestId: string) => {
       if (callbacks === undefined) throw new Error('createQuery was never called')
       return callbacks.onUserDialog(
         { dialogKind: 'test', payload: {} },

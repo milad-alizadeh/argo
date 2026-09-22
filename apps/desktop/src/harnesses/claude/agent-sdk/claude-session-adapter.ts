@@ -76,6 +76,7 @@ async function startClaudeSession(options: {
       renameSession: deps.renameSession,
       sessionService: deps.sessionService,
     }),
+    { input: undefined },
   ).start()
   register(actor)
   return new Promise<SessionCommandOutcome>((resolve) => {

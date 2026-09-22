@@ -35,6 +35,7 @@ export const managedSessionSubscribedSchema = z.strictObject({
   type: z.literal('managed-session.subscribed'),
   requestId: identifierSchema,
 })
+export type ManagedSessionSubscribed = z.infer<typeof managedSessionSubscribedSchema>
 
 export const managedSessionErrorSchema = z.strictObject({
   version: z.literal(1),

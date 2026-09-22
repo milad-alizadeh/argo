@@ -64,6 +64,8 @@ const claudeSessionSetup = setup({
   },
   actions: {
     markUnavailable: assign({ sourceHealth: 'unavailable' as const }),
+    markWatched: assign({ releaseTarget: 'watched' as const }),
+    releaseAsUnavailable: assign({ releaseTarget: 'unavailable' as const }),
   },
   delays: {
     recoveryTimeout: 60_000,
@@ -75,7 +77,7 @@ function recoveringState() {
     after: {
       recoveryTimeout: {
         target: 'Releasing',
-        actions: assign({ releaseTarget: 'watched' }),
+        actions: 'markWatched',
       },
     },
     on: {
@@ -83,7 +85,7 @@ function recoveringState() {
         {
           guard: { type: 'isInheritedApiCredential', params: messageParams },
           target: 'Releasing',
-          actions: assign({ releaseTarget: 'unavailable' }),
+          actions: 'releaseAsUnavailable',
         },
         {
           guard: { type: 'isSubscriptionAuthorized', params: messageParams },
@@ -92,7 +94,7 @@ function recoveringState() {
       ],
       'SDK failed': 'Releasing',
     },
-  }
+  } as const
 }
 
 export function createClaudeSessionMachine(input: ClaudeSessionInput) {

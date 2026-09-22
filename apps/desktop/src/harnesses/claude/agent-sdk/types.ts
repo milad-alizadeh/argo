@@ -46,6 +46,7 @@ export type ClaudeSessionEvent =
   | { type: 'SDK message'; message: SDKMessage }
   | { type: 'SDK ended' }
   | { type: 'SDK failed' }
+  | { type: 'Channel lost' }
   | { type: 'Session identified'; session: SessionIdentity }
   | { type: 'Channel restored' }
   | { type: 'Close' }

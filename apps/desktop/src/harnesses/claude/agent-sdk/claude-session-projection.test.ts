@@ -23,6 +23,7 @@ test('projects the managed Claude Session with its native ID and stable Workspac
       renameSession: fake.renameSession,
       sessionService: managedSessionService,
     }),
+    { input: undefined },
   ).start()
 
   fake.emitInit({ apiKeySource: 'none' })

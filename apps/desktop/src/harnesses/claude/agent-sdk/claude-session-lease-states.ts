@@ -1,19 +1,18 @@
 import type { ClaudeSessionContext, ClaudeSessionInput } from '@/harnesses/claude/agent-sdk/types'
 
-const releaseTargets = [
-  {
-    guard: ({ context }: { context: ClaudeSessionContext }) => context.releaseTarget === 'closed',
-    target: 'Closed',
-  },
-  {
-    guard: ({ context }: { context: ClaudeSessionContext }) =>
-      context.releaseTarget === 'unavailable',
-    target: 'Unavailable',
-  },
-  { target: 'Watched' },
-]
-
 export function leaseStates(input: ClaudeSessionInput) {
+  const releaseTargets = [
+    {
+      guard: ({ context }: { context: ClaudeSessionContext }) => context.releaseTarget === 'closed',
+      target: 'Closed',
+    },
+    {
+      guard: ({ context }: { context: ClaudeSessionContext }) =>
+        context.releaseTarget === 'unavailable',
+      target: 'Unavailable',
+    },
+    { target: 'Watched' },
+  ] as const
   return {
     AcquiringLease: {
       invoke: {
@@ -44,5 +43,5 @@ export function leaseStates(input: ClaudeSessionInput) {
         onError: releaseTargets,
       },
     },
-  }
+  } as const
 }

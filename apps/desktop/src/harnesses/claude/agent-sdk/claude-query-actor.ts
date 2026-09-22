@@ -1,4 +1,9 @@
-import type { PermissionResult, SDKMessage, UserDialogResult } from '@anthropic-ai/claude-agent-sdk'
+import type {
+  PermissionResult,
+  Query,
+  SDKMessage,
+  UserDialogResult,
+} from '@anthropic-ai/claude-agent-sdk'
 import { fromCallback } from 'xstate'
 import { createPendingRequestRegistry } from '@/harnesses/claude/agent-sdk/pending-request-registry'
 import {
