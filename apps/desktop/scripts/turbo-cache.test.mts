@@ -48,7 +48,6 @@ describe('what turbo caches', () => {
       'test',
       'build:storybook',
       'test:storybook',
-      'test:darwin-manifest',
     ])
       expect(cached(name), `${name} is cached`).toBe(true)
   })
@@ -85,7 +84,7 @@ describe('what turbo caches', () => {
   // The Linux darwin package reads the signing and notarizing variables in `forge.config.ts`, and
   // strict env mode hides any variable a task does not name.
   test('hashes the variables that change the darwin package', () => {
-    expect(task('test:darwin-manifest').env).toEqual(['ARGO_SIGNING_*', 'ARGO_NOTARIZE_*'])
+    expect(task('build').env).toEqual(['ARGO_SIGNING_*', 'ARGO_NOTARIZE_*'])
   })
 
   // `tsc --noEmit` and `bun test` write nothing, and a task with no declared outputs is a task
@@ -94,7 +93,6 @@ describe('what turbo caches', () => {
     expect(task('typecheck').outputs).toEqual([])
     expect(task('test').outputs).toEqual([])
     expect(task('test:storybook').outputs).toEqual([])
-    expect(task('test:darwin-manifest').outputs).toEqual([])
     for (const proof of PACKAGED_PROOFS) expect(task(proof).outputs).toEqual([])
   })
 
@@ -114,11 +112,11 @@ describe('what turbo caches', () => {
   })
 })
 
-// `test`, `test:storybook` and `test:darwin-manifest` narrow $TURBO_DEFAULT$ to explicit globs
-// (#2605), so an e2e-only or tools-only change replays their cache instead of invalidating it.
+// `test` and `test:storybook` narrow $TURBO_DEFAULT$ to explicit globs (#2605), so an e2e-only or
+// tools-only change replays their cache instead of invalidating it.
 describe('what the narrowed desktop tasks avoid hashing', () => {
-  test('keeps e2e and tools out of test, test:storybook and test:darwin-manifest', () => {
-    for (const name of ['test', 'test:storybook', 'test:darwin-manifest']) {
+  test('keeps e2e and tools out of test and test:storybook', () => {
+    for (const name of ['test', 'test:storybook']) {
       const leaked = (task(name).inputs ?? []).filter(
         (glob) => glob.startsWith('e2e/') || glob.startsWith('tools/'),
       )

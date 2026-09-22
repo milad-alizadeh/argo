@@ -20,7 +20,6 @@
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.e2e.json",
     "test:packaged-contents": "node scripts/assert-packaged-pty.mts",
     "test:packaged-manifest": "bun run desktop:manifest",
-    "test:darwin-manifest": "electron-forge package --platform darwin --arch arm64 && node scripts/desktop-manifest.mts out/Argo-darwin-arm64/Argo.app",
     "test:packaged-pty": "node scripts/prove-packaged-pty.mts",
     "test:e2e": "playwright test",
     "test:e2e:profile": "ARGO_E2E_PROFILE=1 playwright test",
