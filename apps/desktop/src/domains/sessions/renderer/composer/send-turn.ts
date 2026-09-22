@@ -7,6 +7,7 @@ import {
   type ComposerIdentity,
   findSessionRow,
 } from '@/domains/sessions/renderer/composer/composer-identity'
+import { sendInitialClaudeTurn } from '@/domains/sessions/renderer/composer/send-initial-claude-turn'
 import { sendToSelected } from '@/domains/sessions/renderer/composer/send-selected-turn'
 import type { SendOutcome } from '@/domains/sessions/renderer/composer/use-send'
 import type { Failure } from '@/domains/sessions/renderer/composer/use-session-composer-actions'
@@ -36,6 +37,7 @@ export function sendToNewSession(request: {
   identity: Extract<ComposerIdentity, { kind: 'draft' | 'pending' }>
   navigate: NavigateFunction
   queryClient: ReturnType<typeof useQueryClient>
+  send: ReturnType<typeof useSessionMutations>['send']
   setFailure: (failure: Failure | null) => void
   start: Pick<ReturnType<typeof useSessionMutations>['start'], 'mutateAsync'>
   turn: TurnInput
@@ -51,6 +53,7 @@ export function sendToNewSession(request: {
     identity,
     navigate,
     queryClient,
+    send,
     setFailure,
     start,
     turn,
@@ -67,6 +70,7 @@ export function sendToNewSession(request: {
         if (setup !== null) watchTurn(sessionId, setup, null)
         return invalidateSessionRoster(queryClient)
       },
+      sendInitialTurn: harness === 'claude' ? sendInitialClaudeTurn(send, turn) : undefined,
       onStarted: (sessionId) => {
         onStarted?.(sessionId)
         navigate(`/sessions/${sessionId}`, { replace: true, state: COMPOSER_FOCUS_STATE })

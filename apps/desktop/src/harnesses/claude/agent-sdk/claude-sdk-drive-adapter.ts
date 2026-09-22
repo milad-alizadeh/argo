@@ -56,12 +56,12 @@ export function createClaudeSdkDriveAdapter(options: {
     harness: 'claude',
     failureMessage: (code) => FAILURE_MESSAGES[code],
     turnSetupSchema: ignoredSetupSchema,
-    async start({ cwd, prompt, attachments }) {
+    async start({ cwd, attachments }) {
       if (attachments.length > 0) return { error: 'launch-failed' }
       const outcome = await options.adapter.execute({
         type: 'session.start',
         harness: 'claude',
-        prompt,
+        prompt: '',
         workspace: await options.workspaceForCwd(cwd),
       })
       return outcome.kind === 'accepted'

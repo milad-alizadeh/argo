@@ -45,6 +45,7 @@ export function newSessionDeps(
     identity,
     navigate,
     queryClient: new QueryClient(),
+    send: mockMutation(async () => undefined) as never,
     setFailure: () => {},
     start,
     turn: { prompt: 'hello', setup: SETUP, attachments: [] },

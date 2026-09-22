@@ -89,6 +89,7 @@ export function composerSend(options: ComposerSendOptions): Send {
               )
             },
             queryClient,
+            send,
             setFailure,
             start,
             watchTurn,

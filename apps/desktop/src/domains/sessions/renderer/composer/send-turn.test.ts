@@ -20,6 +20,16 @@ beforeEach(() => {
   useSessionCreationStore.setState({ pending: null })
 })
 
+const draftSendBase = {
+  harness: 'claude' as const,
+  cockpit: COCKPIT,
+  navigate: () => undefined as never,
+  queryClient: new QueryClient(),
+  setFailure: () => {},
+  send: mockMutation(async () => undefined) as never,
+  watchTurn: () => {},
+}
+
 // The identity's session variant routes a Send to that Session, never a new one.
 test('a Send with a selected Session sends to it', async () => {
   const send = mockMutation<{ prompt: string; sessionId: string; setup: unknown }, void>(
@@ -72,14 +82,9 @@ test("a dropped duplicate Send keeps the first Send's Turn Marker", async () => 
   )
   const marker = mockTurnMarker()
   const deps: DraftSendDeps = {
-    harness: 'claude',
-    cockpit: COCKPIT,
-    navigate: () => undefined as never,
-    queryClient: new QueryClient(),
+    ...draftSendBase,
     marker,
-    setFailure: () => {},
     start: start as never,
-    watchTurn: () => {},
   }
   const identity = { kind: 'pending', sessionId: opened.id, projectId: PROJECT.id } as const
   const turn = { prompt: 'hello', setup: null, attachments: [] }
@@ -99,14 +104,9 @@ test('a Send from a pending Composer reports the real Session id after rekeying'
   const started: string[] = []
   const marker = mockTurnMarker()
   const deps: DraftSendDeps = {
-    harness: 'claude',
-    cockpit: COCKPIT,
-    navigate: () => undefined as never,
-    queryClient: new QueryClient(),
+    ...draftSendBase,
     marker,
-    setFailure: () => {},
     start: mockMutation(async () => ({ sessionId: 'session-new' })) as never,
-    watchTurn: () => {},
   }
   const identity = { kind: 'pending', sessionId: opened.id, projectId: PROJECT.id } as const
 
