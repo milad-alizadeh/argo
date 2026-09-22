@@ -70,7 +70,7 @@ function ClosableComposerStory({ harness = 'claude' }: { harness?: 'claude' | 'c
   )
 }
 
-// The send never settles, so the composer proves that an optimistic prompt clears at once.
+// The send never settles, so the composer keeps its draft while delivery is uncertain.
 function UnsettledSendStory() {
   const [sent, setSent] = useState<string[]>([])
 
@@ -287,7 +287,7 @@ export const EnterSends: Story = {
     await userEvent.keyboard('{Enter}')
 
     await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^Send this once\.$/)
-    await expect(composer.innerText).toBe('\n')
+    await expect(composer.innerText).toBe('Send this once.')
   },
 }
 
