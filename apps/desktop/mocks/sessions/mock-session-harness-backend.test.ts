@@ -10,7 +10,7 @@ import type {
 import {
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
-} from '@/domains/sessions/contract/proof-protocol'
+} from '../../src/domains/sessions/contract/proof-protocol'
 import { mockClaudeHarness } from '../cli/claude/mock-claude-cli'
 import { mockCodexHarness } from '../cli/codex/mock-codex-cli'
 import { createMockSessionHarnessBackend } from './mock-session-harness-backend'

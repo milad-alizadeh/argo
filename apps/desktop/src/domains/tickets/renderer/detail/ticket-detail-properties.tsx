@@ -2,8 +2,10 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
 import type { Ticket, TicketPriority, TicketStatus } from '@/domains/tickets/contract/contract'
-import { sourcePresentation } from '../lib'
-import { PriorityMenu, StatusMenu, TicketLabel } from '../status'
+import { sourcePresentation } from '@/domains/tickets/renderer/lib/sources'
+import { PriorityMenu } from '@/domains/tickets/renderer/status/priority-menu'
+import { StatusMenu } from '@/domains/tickets/renderer/status/status-menu'
+import { TicketLabel } from '@/domains/tickets/renderer/status/ticket-label'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 
 function Property({ name, children }: { name: string; children: ReactNode }) {
@@ -35,7 +37,8 @@ export function Properties({
   onChangePriority,
 }: PropertiesProps) {
   const { t } = useTranslation('tickets')
-  const noun = sourcePresentation(provider).statusNoun
+  const presentation = sourcePresentation(provider)
+  const noun = presentation.statusNoun
   return (
     <dl className="grid grid-cols-[var(--size-ticket-property)_minmax(0,1fr)] items-center gap-x-(--spacing-shell-gutter) gap-y-(--spacing-shell-item) type-meta">
       <Property name={noun}>
@@ -47,7 +50,7 @@ export function Properties({
           statuses={statuses}
         />
       </Property>
-      {provider === 'linear' ? (
+      {presentation.hasPriority ? (
         <Property name={t('detail.priority')}>
           <PriorityMenu named onChange={onChangePriority} priority={ticket.priority} />
         </Property>

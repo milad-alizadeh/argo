@@ -5,8 +5,11 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import type { BrowserWindow } from 'electron'
-import type { DevelopmentInstance } from './instance'
-import { reportDevelopmentReadinessFailure, writeDevelopmentReady } from './ready'
+import type { DevelopmentInstance } from '@/platform/main/development/instance'
+import {
+  reportDevelopmentReadinessFailure,
+  writeDevelopmentReady,
+} from '@/platform/main/development/ready'
 
 function developmentInstance(directory: string): DevelopmentInstance {
   return {

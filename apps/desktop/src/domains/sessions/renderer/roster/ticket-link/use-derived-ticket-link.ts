@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
-import type { Session } from '../../types'
 import { ticketKeyInPlace } from '@/domains/tickets/contract/branch-ticket'
 import { settle } from '@/platform/renderer/lib/query-client'
+import type { Session } from '../../types'
 import type { ConnectOutcome, ConnectTicketInput } from './use-session-ticket-link'
 
 function derivedTicket(session: Session): string | null {

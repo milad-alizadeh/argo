@@ -1,4 +1,4 @@
-import type { TicketProblemProps } from '../lib'
+import type { TicketProblemProps } from '@/domains/tickets/renderer/lib/problems'
 import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {

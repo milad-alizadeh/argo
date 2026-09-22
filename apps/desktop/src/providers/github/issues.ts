@@ -8,10 +8,10 @@ import {
   type TicketLabel,
   type TicketLink,
 } from '@/domains/tickets/contract/ticket'
+import type { GitHubEndpoints } from '@/providers/github/endpoints'
+import { failed, type GitHubRead, getAll, getPage } from '@/providers/github/http'
+import { githubStatus } from '@/providers/github/statuses'
 import { isRecord } from '@/shared/validation'
-import type { GitHubEndpoints } from './endpoints'
-import { failed, type GitHubRead, getAll, getPage } from './http'
-import { githubStatus } from './statuses'
 
 // Tickets read at once. Each reads its edges one after another, so this is also the number of
 // requests in flight, bounded because GitHub's secondary limits refuse a wide fan-out.

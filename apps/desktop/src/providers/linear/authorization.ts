@@ -5,8 +5,8 @@ import { createHash, randomBytes } from 'node:crypto'
 import { createServer, type ServerResponse } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import type { GrantOutcome } from '@/providers/grant'
-import { LINEAR_SCOPES, type LinearEndpoints } from './endpoints'
-import { exchangeCode } from './tokens'
+import { LINEAR_SCOPES, type LinearEndpoints } from '@/providers/linear/endpoints'
+import { exchangeCode } from '@/providers/linear/tokens'
 
 const CALLBACK_PATH = '/linear/callback'
 // How long the loopback waits for the browser before the sign-in ends as expired.

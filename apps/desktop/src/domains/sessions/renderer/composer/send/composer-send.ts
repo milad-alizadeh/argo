@@ -1,4 +1,4 @@
-import type { useTurnSetup } from '../../turn-setup'
+import type { useTurnSetup } from '../turn-setup'
 import type { SessionHarness } from '../../harness'
 import type { useQueryClient } from '@tanstack/react-query'
 import type { NavigateFunction } from 'react-router'

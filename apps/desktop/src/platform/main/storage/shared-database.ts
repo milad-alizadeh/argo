@@ -1,10 +1,13 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
-import { createDurableDatabase } from './durable-database'
-import { databaseMigrationsFolder } from './migrations-folder'
-import { sharedDatabaseBackupPath, sharedDatabasePath } from './shared-database-path'
-import { storageRunsPackagedApplication } from './storage-runtime'
+import { createDurableDatabase } from '@/platform/main/storage/durable-database'
+import { databaseMigrationsFolder } from '@/platform/main/storage/migrations-folder'
+import {
+  sharedDatabaseBackupPath,
+  sharedDatabasePath,
+} from '@/platform/main/storage/shared-database-path'
+import { storageRunsPackagedApplication } from '@/platform/main/storage/storage-runtime'
 
 export { sharedDatabaseBackupPath, sharedDatabasePath }
 

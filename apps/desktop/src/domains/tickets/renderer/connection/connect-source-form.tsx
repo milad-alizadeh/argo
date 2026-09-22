@@ -1,9 +1,14 @@
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { AccountSummary } from '@/domains/accounts/contract/contract'
-import { providerPresentation } from '@/domains/accounts/renderer'
+import { providerPresentation } from '@/domains/accounts/renderer/port'
 import type { TicketScope } from '@/domains/tickets/contract/contract'
-import { sourcePresentation } from '../lib'
+import {
+  offered,
+  type SourceDiscovery,
+  SourceField,
+} from '@/domains/tickets/renderer/connection/source-field'
+import { sourcePresentation } from '@/domains/tickets/renderer/lib/sources'
 import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
@@ -31,7 +36,6 @@ import {
 } from '@/platform/renderer/components/ui/select'
 import { contractText } from '@/platform/renderer/i18n/contract-text'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
-import { offered, type SourceDiscovery, SourceField } from './source-field'
 
 export type ConnectTarget = { accountId: string; scope: string }
 

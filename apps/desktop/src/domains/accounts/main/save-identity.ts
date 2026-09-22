@@ -8,10 +8,10 @@ import {
   accountError,
   type Provider,
 } from '@/domains/accounts/contract/contract'
-import type { AccountAccess } from './access'
-import { updateAccounts } from './listing'
-import type { SignedIn } from './providers'
-import { type AccountRecord, accountId } from './registry'
+import type { AccountAccess } from '@/domains/accounts/main/access'
+import { updateAccounts } from '@/domains/accounts/main/listing'
+import type { SignedIn } from '@/domains/accounts/main/providers'
+import { type AccountRecord, accountId } from '@/domains/accounts/main/registry'
 
 export type SavedIdentity =
   | { type: 'account.saved'; listed: AccountListed; outcome: 'added' | 'renewed' }

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
-import { sessionFailureState } from '../../session-failure-state'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
+import { sessionFailureState } from '../../session-failure-state'
 import type { RosterRow } from './roster-rows'
 import { RosterStatusRow } from './roster-status-row'
 

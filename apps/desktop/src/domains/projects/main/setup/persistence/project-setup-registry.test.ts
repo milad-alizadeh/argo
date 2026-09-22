@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
-  acceptedPlanFixture,
-  planFixture,
-} from '../../../../../../test-fixtures/projects/setup/setup-plan.fixture'
-import {
   createProjectSetupRegistry,
   type ProjectSetupRecord,
   type ProjectSetupSnapshot,
-} from './project-setup-registry'
+} from '@/domains/projects/main/setup/persistence/project-setup-registry'
+import {
+  acceptedPlanFixture,
+  planFixture,
+} from '../../../../../../test-fixtures/projects/setup/setup-plan.fixture'
 
 function memoryStore() {
   let saved: ProjectSetupRecord | null = null

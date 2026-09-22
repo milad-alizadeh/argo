@@ -3,10 +3,10 @@ import type {
   Question,
   QuestionAnswer,
   QuestionOption,
-} from '@/domains/sessions/contract/drive'
-import type { SessionStatus } from '@/domains/sessions/contract/model'
-import type { RequestID, WireMessage } from './protocol'
-import { protocolRecord, protocolString } from './protocol'
+} from '@/domains/sessions/contract/drive/question'
+import type { SessionStatus } from '@/domains/sessions/contract/model/models'
+import type { RequestID, WireMessage } from '@/harnesses/codex/drive/protocol/protocol'
+import { protocolRecord, protocolString } from '@/harnesses/codex/drive/protocol/protocol'
 
 // A pending `item/tool/requestUserInput` server request (EXPERIMENTAL, grounded against codex-harness
 // 0.147.0's generated schema behind `features.default_mode_request_user_input`, #1841). Codex asks

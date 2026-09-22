@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import { Button } from '@/platform/renderer/components/ui/button'
 

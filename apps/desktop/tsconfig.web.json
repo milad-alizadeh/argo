@@ -21,7 +21,7 @@
     "src/domains/*/contract/**/*.ts",
     "src/domains/*/renderer/**/*.ts",
     "src/domains/*/renderer/**/*.tsx",
-    "src/platform/shared/**/*.ts",
+    "src/platform/contract/**/*.ts",
     "src/platform/renderer/**/*.ts",
     "src/platform/renderer/**/*.tsx",
     "src/shared/**/*.ts",
@@ -34,7 +34,7 @@
     "src/domains/*/renderer/**/*.test.tsx",
     "src/renderer/**/*.test.ts",
     "src/renderer/**/*.test.tsx",
-    "src/platform/shared/**/*.test.ts",
+    "src/platform/contract/**/*.test.ts",
     "src/platform/renderer/**/*.test.ts",
     "src/platform/renderer/**/*.test.tsx"
   ]

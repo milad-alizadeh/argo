@@ -1,9 +1,9 @@
 // GitHub as a Ticket source: a repository is the scope, and its Issues are the Tickets.
 import type { SourceFailure, TicketSource } from '@/domains/tickets/main/sources'
-import type { GitHubFailure } from './http'
-import { readTicketPage } from './issues'
-import { checkRepository, isRepositoryScope, listRepositories } from './repository'
-import { GITHUB_STATUSES, updateIssueStatus } from './statuses'
+import type { GitHubFailure } from '@/providers/github/http'
+import { readTicketPage } from '@/providers/github/issues'
+import { checkRepository, isRepositoryScope, listRepositories } from '@/providers/github/repository'
+import { GITHUB_STATUSES, updateIssueStatus } from '@/providers/github/statuses'
 
 type Failure = GitHubFailure | 'issues-disabled' | 'status-unknown'
 

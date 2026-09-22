@@ -1,6 +1,8 @@
 import { z } from 'zod'
-import type { AcceptedSetupPlan } from '@/domains/projects/contract/setup'
-import type { SetupApplicationProgressEvent } from '@/domains/projects/contract/setup'
+import type {
+  AcceptedSetupPlan,
+  SetupApplicationProgressEvent,
+} from '@/domains/projects/contract/setup'
 import { parseAgentOutput } from '../protocol/parse-agent-output'
 import { APPLY_MARKER, applicationAgentPrompt } from '../protocol/prompts'
 import { agentTurnObservers, parseApplicationStepEvents } from '../protocol/step-events'

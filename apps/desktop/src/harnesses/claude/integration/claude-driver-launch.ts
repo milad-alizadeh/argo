@@ -3,17 +3,14 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import type { TestContext } from 'node:test'
-import type { ClaudeTurnSetup } from '@/domains/sessions/contract/ipc'
-import { createOwnershipLedger } from '@/domains/sessions/main/lifecycle'
-import {
-  createClaudeSessionDriver,
-  type ResumeTarget,
-  createHandoffLedger,
-  type HandoffLedger,
-  type ClaudePermissionGate,
-} from '../drive'
-import { mockPermissionGate } from './claude-permission-gate-mock.ts'
-import { FOOTERS, terminal } from './claude-terminal-mock.ts'
+import type { ClaudeTurnSetup } from '@/domains/sessions/contract/ipc/contract.ts'
+import { createOwnershipLedger } from '@/domains/sessions/main/lifecycle/ownership-ledger.ts'
+import { createClaudeSessionDriver } from '@/harnesses/claude/drive/claude-session-driver.ts'
+import type { ResumeTarget } from '@/harnesses/claude/drive/drive-channel.ts'
+import { createHandoffLedger, type HandoffLedger } from '@/harnesses/claude/drive/handoff-ledger.ts'
+import type { ClaudePermissionGate } from '@/harnesses/claude/drive/permission-gate.ts'
+import { mockPermissionGate } from '@/harnesses/claude/integration/claude-permission-gate-mock.ts'
+import { FOOTERS, terminal } from '@/harnesses/claude/integration/claude-terminal-mock.ts'
 
 export { FOOTERS, mockPermissionGate }
 export const STARTED_AT = new Date('2026-09-13T15:17:11.000Z')

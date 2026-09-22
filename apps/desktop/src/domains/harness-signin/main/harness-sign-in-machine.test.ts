@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { type ActorLogic, createActor } from 'xstate'
 import { adjacencyMapToArray, getAdjacencyMap, getShortestPaths } from 'xstate/graph'
-import { assertModeledTransitions } from '@/platform/main/testing/xstate-model-transitions'
+import { assertModeledTransitions } from '@/platform/main/test-doubles/xstate-model-transitions'
 import {
   type HarnessSignInModelEvent,
   harnessSignInModelEvents,

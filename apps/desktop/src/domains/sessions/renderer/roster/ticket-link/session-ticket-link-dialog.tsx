@@ -4,7 +4,6 @@
 // one is replaced without asking, since it cost the reader nothing to make.
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Session } from '../../types'
 import { useConnection, useTicketList } from '@/domains/tickets/renderer'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
@@ -15,6 +14,7 @@ import {
   DialogTitle,
 } from '@/platform/renderer/components/ui/dialog'
 import { Input } from '@/platform/renderer/components/ui/input'
+import type { Session } from '../../types'
 import type { ConnectTicketInput } from './use-session-ticket-link'
 
 type PendingRename = { session: Session; ticket: ConnectTicketInput }

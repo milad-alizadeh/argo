@@ -7,7 +7,7 @@
 import { and, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { ticketKey } from '@/domains/tickets/contract/ticket'
-import { sessionTicketLink } from '@/platform/main/storage/database-schema'
+import { sessionTicketLink } from './schema'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 import {
   createWriteQueue,

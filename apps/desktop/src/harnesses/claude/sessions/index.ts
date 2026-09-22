@@ -1,10 +1,10 @@
-export { claudeSessionSource } from './read-sessions'
-export { readTranscriptFile } from './transcript-file'
-export { claudePendingQuestion } from './pending-question'
-export { claudeResumeTarget } from './resume-target'
+export { claudeSessionSource } from './discovery/read-sessions'
+export { readTranscriptFile } from './discovery/transcript-file'
+export { claudePendingQuestion } from './subagents/pending-question'
+export { claudeResumeTarget } from './discovery/resume-target'
 export {
   claudeCompactionStartsRoot,
   claudeProcessesRoot,
   claudeSettingsPath,
   claudeTranscriptsRoot,
-} from './roots'
+} from './discovery/roots'

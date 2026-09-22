@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { getAdjacencyMap, getShortestPaths } from 'xstate/graph'
-import { assertModeledTransitions } from '@/platform/main/testing/xstate-model-transitions'
+import { assertModeledTransitions } from '@/platform/main/test-doubles/xstate-model-transitions'
 import { projectSetupModelEvents } from '../../../../../test-fixtures/projects/setup/project-setup-model.fixture'
 import { projectSetupMachine } from './project-setup-machine'
 import type { ProjectSetupEvent } from './project-setup-machine-types'

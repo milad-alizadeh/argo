@@ -1,8 +1,8 @@
 import { z } from 'zod'
 import type { SessionDriveAdapter } from '@/domains/sessions/contract/session-drive-adapter'
 import type { WorkspaceSelection } from '@/domains/sessions/next/contract/session-contract'
-import type { CodexSessionAdapter } from './codex-session-adapter-contract'
-import { CodexSessionDriverError } from './codex-session-error'
+import type { CodexSessionAdapter } from '@/harnesses/codex/drive/codex-session-adapter-contract'
+import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
 
 const ignoredSetupSchema = z.unknown()
 const FAILURE_MESSAGES = {

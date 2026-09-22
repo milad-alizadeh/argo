@@ -1,20 +1,26 @@
-import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../work'
-import { workInspectorReveal } from '../inspector'
-import type { WorkSelection } from '../inspector'
-import { useSessionQuestion, useSessionPermission, useComposerStore } from '../composer/hooks'
-import { useSessionComposer } from '../composer/use-session-composer'
 // A screen is a thin container: it resolves state here, and SessionScreenView hands a pure render
 // surface the result.
 import { useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
 
-import { useProjects } from '@/domains/projects/renderer'
-import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
-import { readableSessionId } from '../session-creation'
-import type { SessionEvidence } from '../types'
-import { useSessions } from '../use-sessions'
-import { sessionHarness } from './session-screen-state'
-import { useSelectedSession } from './use-selected-session'
+import { useProjects } from '@/domains/projects/renderer/port'
+import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
+import { useSessionComposer } from '@/domains/sessions/renderer/composer/use-session-composer'
+import { useSessionPermission } from '@/domains/sessions/renderer/composer/use-session-permission'
+import { useSessionQuestion } from '@/domains/sessions/renderer/composer/use-session-question'
+import { COMPOSER_FOCUS_STATE } from '@/domains/sessions/renderer/composer-focus-state'
+import type { WorkSelection } from '@/domains/sessions/renderer/inspector/session-inspector'
+import { workInspectorReveal } from '@/domains/sessions/renderer/inspector/work-inspector-reveal'
+import { sessionHarness } from '@/domains/sessions/renderer/screens/session-screen-state'
+import { useSelectedSession } from '@/domains/sessions/renderer/screens/use-selected-session'
+import { readableSessionId } from '@/domains/sessions/renderer/session-creation'
+import type { SessionEvidence } from '@/domains/sessions/renderer/types'
+import { useSessions } from '@/domains/sessions/renderer/use-sessions'
+import {
+  useDelegationFeed,
+  useDelegationUsage,
+  useShellOutput,
+} from '@/domains/sessions/renderer/work/use-session-work'
 
 const NOTHING_PICKED: WorkSelection = { sessionId: null, subagentId: null, shellId: null }
 

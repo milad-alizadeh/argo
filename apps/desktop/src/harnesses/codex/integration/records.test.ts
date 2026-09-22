@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { parseCodexTranscriptLine } from '../sessions/records'
-import { assertUserMessage } from './assert-user-message'
+import { assertUserMessage } from '@/harnesses/codex/integration/assert-user-message'
+import { parseCodexTranscriptLine } from '@/harnesses/codex/sessions/records'
 
 test('keeps malformed Codex evidence visible as unreadable', () => {
   assert.deepEqual(parseCodexTranscriptLine('{'), { kind: 'unreadable', line: '{' })

@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
-import type { SessionError, SessionRoster } from '../../types'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/platform/renderer/components/ui/empty'
+import type { SessionError, SessionRoster } from '../../types'
 import { type RosterStatus, showsActive } from '../hooks'
 import { RosterLoading } from './roster-status-row'
 

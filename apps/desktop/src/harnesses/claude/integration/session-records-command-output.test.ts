@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { fixtureFile } from './session-fixtures'
+import { fixtureFile } from '@/harnesses/claude/integration/session-fixtures'
 
 test('reads a shell command and its result from one transcript-shaped run', async () => {
   const file = await fixtureFile('commandWithResult')

@@ -1,4 +1,4 @@
-import { ContextPopover } from '../../context'
+import { ContextPopover } from '../context-window/context-popover'
 import { useTranslation } from 'react-i18next'
 import {
   Tooltip,

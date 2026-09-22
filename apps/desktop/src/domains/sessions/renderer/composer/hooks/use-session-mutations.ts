@@ -8,7 +8,7 @@ import {
   throwSessionContractError,
   throwUnexpectedSessionReply,
 } from '../../session-contract-error'
-import type { TurnSetup } from '../../turn-setup/turn-setup'
+import type { TurnSetup } from '../turn-setup/turn-setup'
 
 type Turn = { prompt: string; setup: TurnSetup | null; attachments: SessionAttachmentInput[] }
 type StartTurn = Turn & { harness: SessionHarness; cwd: string; deferInitialTurn?: boolean }

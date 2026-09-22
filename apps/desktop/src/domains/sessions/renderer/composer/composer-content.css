@@ -1,0 +1,138 @@
+/* The composer's attachment tray: one card inset from its edges and tucked under its top, holding
+   the Permission above the queue. */
+.session-page__composer-attachments {
+  position: relative;
+  z-index: 0;
+  width: calc(100% - var(--spacing-shell-section));
+  margin-inline: auto;
+  margin-bottom: calc(var(--spacing-shell-item) * -1);
+  padding-bottom: var(--spacing-shell-item);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-start-start-radius: var(--radius-xl);
+  border-start-end-radius: var(--radius-xl);
+  background: var(--card);
+}
+
+.session-page__composer-attachments:empty {
+  display: none;
+}
+
+.session-page__composer-attachments > * + * {
+  border-top: 1px solid var(--border);
+}
+
+.session-page__queued-message {
+  display: flex;
+  height: var(--size-queue-row);
+  align-items: center;
+  gap: var(--spacing-shell-item);
+  padding-inline: var(--spacing-shell-inset) var(--spacing-shell-item);
+}
+
+.session-page__queued-message + .session-page__queued-message {
+  border-top: 1px solid var(--border);
+}
+
+@keyframes session-page-queue-enter {
+  from {
+    height: 0;
+  }
+
+  to {
+    height: var(--size-queue-row);
+  }
+}
+
+@keyframes session-page-queue-exit {
+  from {
+    height: var(--size-queue-row);
+  }
+
+  to {
+    height: 0;
+  }
+}
+
+@keyframes session-page-attachment-enter {
+  from {
+    height: 0;
+  }
+}
+
+@keyframes session-page-attachment-exit {
+  to {
+    height: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .session-page__queued-message--enter {
+    animation: session-page-queue-enter var(--attachment-enter) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .session-page__queued-message--exit {
+    animation: session-page-queue-exit var(--attachment-exit) cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+
+  .session-page__composer-permission {
+    animation: session-page-attachment-enter var(--attachment-enter) cubic-bezier(0.2, 0.8, 0.2, 1)
+      both;
+  }
+
+  .session-page__composer-permission--exit {
+    animation: session-page-attachment-exit var(--attachment-exit) cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+}
+
+.session-page__attachment-tray {
+  display: flex;
+  height: var(--size-attachment-tray);
+  gap: var(--spacing-shell-gutter);
+  margin-inline-end: calc(var(--size-control) * 3);
+  padding: var(--spacing-shell-item) var(--spacing-shell-gutter) 0;
+  overflow: hidden;
+  mask-image: linear-gradient(to right, black 85%, transparent);
+}
+
+.session-page__attachment {
+  display: flex;
+  width: calc(var(--size-attachment-card) * 2.5);
+  height: var(--size-attachment-card);
+  flex: none;
+  align-items: center;
+  gap: var(--spacing-shell-item);
+  padding: var(--spacing-shell-tight);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--muted-foreground);
+  font-size: var(--text-control);
+}
+
+.session-page__attachment b {
+  color: var(--foreground);
+  font-weight: 500;
+}
+.session-page__attachment-thumb {
+  display: grid;
+  width: var(--size-attachment-thumbnail);
+  height: var(--size-attachment-thumbnail);
+  flex: none;
+  place-items: center;
+  border-radius: var(--radius-md);
+  background: var(--muted);
+}
+.session-page__attachment-thumb svg {
+  width: var(--size-icon-control);
+  height: var(--size-icon-control);
+}
+
+.composer-inline-context {
+  font-size: 0;
+}
+.composer-inline-context::after {
+  content: attr(data-context-label);
+  font-size: var(--text-prose);
+  line-height: var(--text-prose--line-height);
+}

@@ -4,18 +4,10 @@ import {
   type ProjectOpenRequest,
   projectError,
 } from '@/domains/projects/contract/contract'
+import { toSummary } from '@/domains/projects/main/presentation'
+import type { ProjectStore } from '@/domains/projects/main/register-project'
+import { isProjectStoreInvalid } from '@/domains/projects/main/sqlite-store'
 import { isRecord } from '@/shared/validation'
-import type { SetupDocument } from '@/domains/projects/contract/setup'
-import { toSummary } from './presentation'
-import { readProjectConfiguration, readProjectConfigurationSource } from './project-configuration'
-import type { ProjectStore } from './register-project'
-import type { SetupCheckpoint } from './sqlite-store'
-import { isProjectStoreInvalid } from './sqlite-store'
-
-type OpenProjectStore = ProjectStore & {
-  projectSetup?: { snapshot: (projectId: string) => { screen: string } }
-  loadSetupDocument?: () => Promise<SetupDocument>
-}
 
 // A store failure prevents Project opening, while `project.list` can still report an empty cockpit.
 function loadProjects(store: ProjectStore) {
@@ -31,7 +23,7 @@ function loadProjects(store: ProjectStore) {
 
 export async function openProject(
   request: ProjectOpenRequest,
-  store: OpenProjectStore,
+  store: ProjectStore,
 ): Promise<ProjectOpenReply> {
   const projects = loadProjects(store)
   if (!Array.isArray(projects)) return { ...projects, requestId: request.requestId }
@@ -42,45 +34,11 @@ export async function openProject(
   // The display name is the registry's, so the cockpit's listing and its opened Project cannot
   // disagree about what a Project is called.
   const summary = toSummary(project)
-  const configuration = await readProjectConfiguration(project.path)
-  const configurationSource = await readProjectConfigurationSource(project.path)
-  const checkpoint = store.projects.readSetupCheckpoint(project.id)
-  const documentChanged = await setupDocumentChanged(checkpoint, store)
-  const setup = store.projectSetup?.snapshot(project.id)
-  if (
-    configuration === null ||
-    documentChanged ||
-    (checkpoint?.phase === 'ready' && checkpoint.configurationSource !== configurationSource) ||
-    (setup !== undefined && setup.screen !== 'ready' && setup.screen !== 'deferred')
-  ) {
-    if (checkpoint) {
-      store.projects.writeSetupCheckpoint({
-        ...checkpoint,
-        phase: 'editing',
-        configurationSource: configurationSource ?? '',
-      })
-    }
-    return {
-      version: 1,
-      type: 'project.setup-required',
-      requestId: request.requestId,
-      project: { id: summary.id, name: summary.name },
-    }
-  }
   return {
     version: 1,
     type: 'project.opened',
     requestId: request.requestId,
     project: { id: summary.id, name: summary.name },
-  }
-}
-
-async function setupDocumentChanged(checkpoint: SetupCheckpoint | null, store: OpenProjectStore) {
-  if (checkpoint?.phase !== 'ready' || store.loadSetupDocument === undefined) return false
-  try {
-    return (await store.loadSetupDocument()).revision !== checkpoint.documentRevision
-  } catch {
-    return false
   }
 }
 

@@ -1,5 +1,5 @@
-import { Icon } from '../../components/icon'
-import { Button } from '../../components/ui/button'
+import { Icon } from '@/platform/renderer/components/icon'
+import { Button } from '@/platform/renderer/components/ui/button'
 
 type InspectorState = 'open' | 'collapsed' | 'expanded'
 

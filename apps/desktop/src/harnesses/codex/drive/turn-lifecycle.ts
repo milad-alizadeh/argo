@@ -3,12 +3,12 @@ import {
   type CodexTurnSetup,
   codexTurnSettings,
 } from '@/domains/sessions/contract/codex-turn-setup'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive'
-import { CodexSessionDriverError } from './codex-session-error'
-import { inputItemsFor } from './input-items'
-import type { ManagedSession, ManagedSessionOptions } from './managed-session'
-import { openManagedChannel, rememberManagedSession } from './managed-session'
-import { readStartedTurn, readThreadId } from './protocol'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
+import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
+import { inputItemsFor } from '@/harnesses/codex/drive/input-items'
+import type { ManagedSession, ManagedSessionOptions } from '@/harnesses/codex/drive/managed-session'
+import { openManagedChannel, rememberManagedSession } from '@/harnesses/codex/drive/managed-session'
+import { readStartedTurn, readThreadId } from '@/harnesses/codex/drive/protocol/protocol'
 
 export async function beginSession(options: {
   driver: ManagedSessionOptions

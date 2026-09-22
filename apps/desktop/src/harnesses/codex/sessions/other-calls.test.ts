@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { fed, feedRequest, rowsOf } from '@/domains/sessions/main/observation/reader-test-helpers'
-import { toolCallsOf } from '@/domains/sessions/main/projection/tool-calls-of'
+import { fed, feedRequest, rowsOf } from '@/domains/sessions/main/observation/reader/reader-test-helpers'
+import { toolCallsOf } from '@/domains/sessions/main/projection/feed/tool-calls-of'
 import { readerOverRollout } from './rollout-reader-test-helper'
 
 test('draws orchestration and unknown tools as other, and no poll or wait', async (context) => {

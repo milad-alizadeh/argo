@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { assertRichResult } from '@/domains/sessions/main/projection/rich-result-test-assertion'
-import { parseTranscriptLine } from '../sessions/records'
+import { parseTranscriptLine } from '@/harnesses/claude/sessions/records'
 
 test('keeps array-valued tool result text and images in source order', () => {
   const record = parseTranscriptLine(

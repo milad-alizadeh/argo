@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionProjection } from '@/domains/sessions/next/contract/session-projection-contract.ts'
+import type { SessionProjection } from '../../../src/domains/sessions/next/contract/session-projection-contract.ts'
 import {
   createAdapter,
   createMockAdapter,

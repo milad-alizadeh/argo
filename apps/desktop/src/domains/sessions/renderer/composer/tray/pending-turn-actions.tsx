@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { PendingTurn } from '@/domains/sessions/renderer/composer/tray/use-pending-turns'
 import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
-import type { PendingTurn } from './use-pending-turns'
 
 export function PendingTurnActions({
   onEdit,

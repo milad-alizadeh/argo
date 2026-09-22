@@ -1,10 +1,10 @@
 // Linear as a Ticket source: a team is the scope, and its open issues are the Tickets.
 import type { SourceFailure, TicketSource } from '@/domains/tickets/main/sources'
-import type { LinearFailure } from './http'
-import { readTicketPage } from './issues'
-import { updateIssuePriority } from './priority'
-import { updateIssueStatus } from './statuses'
-import { checkTeam, listTeams } from './teams'
+import type { LinearFailure } from '@/providers/linear/http'
+import { readTicketPage } from '@/providers/linear/issues'
+import { updateIssuePriority } from '@/providers/linear/priority'
+import { updateIssueStatus } from '@/providers/linear/statuses'
+import { checkTeam, listTeams } from '@/providers/linear/teams'
 
 type Failure = LinearFailure | 'team-not-visible' | 'ticket-not-found' | 'status-unknown'
 

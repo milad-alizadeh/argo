@@ -10,12 +10,16 @@ import assert from 'node:assert/strict'
 import { test } from 'vitest'
 import type { SessionDriveAdapters } from '@/domains/sessions/contract/session-drive-adapter'
 import { compactSession, sendSession } from '@/domains/sessions/main/drive/drive'
-import { createSessionReader } from '@/domains/sessions/main/observation'
-import { listed } from '@/domains/sessions/main/observation'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { listed } from '@/domains/sessions/main/observation/reader-test-helpers'
+import {
+  type FixtureDriver,
+  fixtureHarness,
+  unusedIndex,
+} from '@/harnesses/composition/harness-registration.fixture'
+import { harnessWatchedSources } from '@/harnesses/composition/session-bridges'
 import { registerWatching } from '@/platform/main/watch/bridge'
 import { WATCHED_CHANGED_CHANNEL } from '@/platform/shared/watch'
-import { type FixtureDriver, fixtureHarness, unusedIndex } from './harness-registration.fixture'
-import { harnessWatchedSources } from './session-bridges'
 
 function assertDriveCalls(driver: FixtureDriver) {
   assert.deepEqual(driver.sent, [{ sessionId: 'fixture-1', prompt: 'To fixture.' }])

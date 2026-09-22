@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { launch, ledgerFile, OPENING, settle } from './claude-driver-launch.ts'
+import {
+  launch,
+  ledgerFile,
+  OPENING,
+  settle,
+} from '@/harnesses/claude/integration/claude-driver-launch.ts'
 
 const DOWN = '[B'
 

@@ -1,10 +1,10 @@
-import { SkillBadge } from '../../prompt'
 // A `$skill` mention typed or pasted into the composer decorates as the same badge the Feed and
 // the Roster draw (#2049, prompt-text.tsx). Its text content round-trips to the Harness's own
 // `[$name](path)` markdown-link syntax, so what the composer sends is unchanged.
 import type { EditorConfig, LexicalNode, NodeKey, SerializedLexicalNode } from 'lexical'
 import { DecoratorNode } from 'lexical'
 import type { ReactNode } from 'react'
+import { SkillBadge } from '@/domains/sessions/renderer/prompt/prompt-text'
 
 export type SerializedSkillMentionNode = SerializedLexicalNode & {
   skillName: string

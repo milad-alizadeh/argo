@@ -18,7 +18,7 @@ import {
   createHarnessSignInMachine,
   type HarnessSignInDriver,
   type HarnessSignInOutcome,
-} from './harness-sign-in-machine'
+} from '@/domains/harness-signin/main/harness-sign-in-machine'
 
 export type { HarnessSignInDriver, HarnessSignInOutcome }
 

@@ -1,4 +1,4 @@
-import type { ClaudeSessionContext, ClaudeSessionInput } from './types'
+import type { ClaudeSessionContext, ClaudeSessionInput } from '@/harnesses/claude/agent-sdk/types'
 
 export function leaseStates(input: ClaudeSessionInput) {
   const initialTurn =

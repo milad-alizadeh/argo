@@ -1,4 +1,4 @@
-import { effortChoices } from '../../turn-setup/turn-setup'
+import { effortChoices } from '../turn-setup/turn-setup'
 import type { TurnSetupControlProps } from './run-setup-menu'
 
 // The end labels sit inside the track; the rest centre on their stop.

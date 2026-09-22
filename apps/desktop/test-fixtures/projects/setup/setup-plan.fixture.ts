@@ -1,4 +1,4 @@
-import type { AcceptedSetupPlan, SetupPlan } from '@/domains/projects/contract/setup/setup-plan'
+import type { AcceptedSetupPlan, SetupPlan } from '@/domains/projects/contract/setup'
 
 function source(): SetupPlan['source'] {
   return {

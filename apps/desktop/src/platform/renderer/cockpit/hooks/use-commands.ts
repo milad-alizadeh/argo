@@ -1,7 +1,7 @@
 // Both ways a command reaches the cockpit: the application menu, and the window-scoped chords the
 // menu cannot carry. Both read src/shortcuts.ts, so no chord is written twice (#1786).
 import { useEffect, useRef } from 'react'
-import { matchesChord, pressedKeys, SHORTCUTS } from '@/platform/shared/commands'
+import { matchesChord, pressedKeys, SHORTCUTS } from '@/platform/contract/commands'
 
 export function useCommands(run: (command: string) => void): void {
   const latest = useRef(run)

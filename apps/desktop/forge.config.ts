@@ -133,7 +133,7 @@ const config: ForgeConfig = {
       build: [
         { entry: 'src/main.ts', config: 'vite.main.config.ts', target: 'main' },
         {
-          entry: 'src/domains/sessions/main/index/session-index/session-index-worker.ts',
+          entry: 'src/domains/sessions/main/indexing/session-index/session-index-worker.ts',
           config: 'vite.main.config.ts',
           target: 'main',
         },

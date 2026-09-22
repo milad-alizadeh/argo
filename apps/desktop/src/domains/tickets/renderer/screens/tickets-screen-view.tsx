@@ -1,13 +1,16 @@
 import { useTranslation } from 'react-i18next'
-import { AccountsDialog, useAccountsDialog } from '@/domains/accounts/renderer'
-import { ConnectSourceFields, ConnectSourceForm } from '../connection'
-import { TicketDeck } from '../detail'
+import { AccountsDialog, useAccountsDialog } from '@/domains/accounts/renderer/port'
+import {
+  ConnectSourceFields,
+  ConnectSourceForm,
+} from '@/domains/tickets/renderer/connection/connect-source-form'
+import { TicketDeck } from '@/domains/tickets/renderer/detail/ticket-deck'
 import {
   type TicketsScreenProps,
   type TicketsView,
   useTicketsView,
-} from '../hooks'
-import { TicketProblem } from '../status'
+} from '@/domains/tickets/renderer/hooks/use-tickets-view'
+import { TicketProblem } from '@/domains/tickets/renderer/status/ticket-problem'
 import { Icon } from '@/platform/renderer/components/icon'
 import {
   Empty,

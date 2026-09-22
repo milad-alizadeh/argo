@@ -1,13 +1,13 @@
 import { assertEvent, assign, sendTo, setup } from 'xstate'
-import { projectSetupApplicationInput } from './project-setup-application-logic'
-import { projectSetupCancellationInput } from './project-setup-cancellation-logic'
-import { inactiveProjectSetupLogic } from './project-setup-logic'
+import { inactiveProjectSetupActors } from '@/domains/projects/main/setup/actors/project-setup-actors'
+import { projectSetupApplicationInput } from '@/domains/projects/main/setup/actors/project-setup-application-actor'
+import { projectSetupCancellationInput } from '@/domains/projects/main/setup/actors/project-setup-cancellation-actor'
+import { projectSetupPlanningInput } from '@/domains/projects/main/setup/actors/project-setup-planning-actor'
 import {
   initialProjectSetupContext,
   type ProjectSetupContext,
   type ProjectSetupEvent,
 } from './project-setup-machine-types'
-import { projectSetupPlanningInput } from './project-setup-planning-logic'
 
 export const PROJECT_SETUP_MACHINE_VERSION = 1
 
@@ -33,7 +33,7 @@ const projectSetup = setup({
     events: ProjectSetupEvent
     tags: 'agent-running' | 'busy' | 'permission-capable' | 'recoverable'
   },
-  actors: inactiveProjectSetupLogic,
+  actors: inactiveProjectSetupActors,
   guards: {
     'if an approval is pending': ({ context }) => context.pendingApproval !== null,
   },

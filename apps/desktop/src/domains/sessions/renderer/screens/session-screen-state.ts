@@ -1,6 +1,6 @@
-import type { HarnessControl, SessionHarness } from '../harness'
-import { isOptimisticSessionId } from '../session-creation'
-import type { Session } from '../types'
+import type { HarnessControl, SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
+import { isOptimisticSessionId } from '@/domains/sessions/renderer/session-creation'
+import type { Session } from '@/domains/sessions/renderer/types'
 
 // Roster's open `harness` string narrows to the closed `SessionHarness` union at this adapter boundary (ADR-0021).
 function sessionHarnessOf(session: Pick<Session, 'harness'> | null): SessionHarness {

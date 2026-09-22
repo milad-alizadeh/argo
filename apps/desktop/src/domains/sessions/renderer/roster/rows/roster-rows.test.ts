@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
-import type { RosterStatus } from '../hooks'
 import { SessionContractError } from '../../session-contract-error'
 import type { Session } from '../../types'
+import type { RosterStatus } from '../hooks'
 import { sameRosterRow, sessionName } from './roster-rows'
 import {
   archiveFetchingMore,

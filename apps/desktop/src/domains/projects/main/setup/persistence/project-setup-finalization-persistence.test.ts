@@ -5,7 +5,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { drizzle } from 'drizzle-orm/bun-sqlite'
-import { createProjectStore } from '../../sqlite-store'
+import { createProjectStore } from '@/domains/projects/main/sqlite-store'
 import {
   migrateTestDatabase,
   projectMigrationsFolder,

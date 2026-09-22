@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 import path from 'node:path'
-import { developmentIdentityFromArguments } from '@/platform/preload/development-identity'
 import {
   developmentIdentityArgument,
   developmentInstance,
   developmentReadyRecord,
-} from './instance'
+} from '@/platform/main/development/instance'
+import { developmentIdentityFromArguments } from '@/platform/preload/development-identity'
 
 const directory = path.join(path.sep, 'tmp', 'argo-desktop-dev', 'ticket-2173')
 const environment = {

@@ -2,9 +2,9 @@
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
 import type { Grant } from '@/providers/grant'
+import { beginAuthorization } from '@/providers/linear/authorization'
+import { type LinearEndpoints, linearProofEndpoints } from '@/providers/linear/endpoints'
 import { type MockLinear, startMockLinear } from '../../../mocks/providers/linear/mock-linear'
-import { beginAuthorization } from './authorization'
-import { type LinearEndpoints, linearProofEndpoints } from './endpoints'
 
 export { ADA, HIDDEN, TEAM } from '../../../mocks/providers/linear/mock-linear-cast'
 

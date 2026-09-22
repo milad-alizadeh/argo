@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { codexReadiness } from './codex-readiness'
+import { codexReadiness } from '@/harnesses/codex/readiness/codex-readiness'
 
 const found = () => '/usr/local/bin/codex'
 const missing = () => null

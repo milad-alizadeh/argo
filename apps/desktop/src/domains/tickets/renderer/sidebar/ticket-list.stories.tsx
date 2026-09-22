@@ -5,9 +5,9 @@ import {
   engine,
   standalone,
   wayfinder,
-} from '../detail/ticket-fixtures'
-import { STATUSES } from '../status/status-fixtures'
-import { TicketList } from './ticket-list'
+} from '@/domains/tickets/renderer/detail/ticket-fixtures'
+import { TicketList } from '@/domains/tickets/renderer/sidebar/ticket-list'
+import { STATUSES } from '@/domains/tickets/renderer/status/status-fixtures'
 
 const longTicket = {
   ...wayfinder,

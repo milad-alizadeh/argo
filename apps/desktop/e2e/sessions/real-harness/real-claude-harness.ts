@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { parseTranscriptLine } from '@/harnesses/claude/sessions/records'
+import { parseTranscriptLine } from '../../../src/harnesses/claude/sessions/records'
 import { assistantAfterPrompt, createTranscriptMatcher } from './real-session-transcript'
 
 export const realClaudeCli = {

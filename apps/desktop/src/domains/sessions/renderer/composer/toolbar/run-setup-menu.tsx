@@ -6,8 +6,8 @@ import {
   effortChoices,
   type TurnSetup,
   type TurnSetupChoices,
-} from '../../turn-setup/turn-setup'
-import { Icon } from '@/platform/renderer/components/icon'
+} from '../turn-setup/turn-setup'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 import { Popover, PopoverContent, PopoverTrigger } from '@/platform/renderer/components/ui/popover'
 import { EffortSlider } from './effort-slider'

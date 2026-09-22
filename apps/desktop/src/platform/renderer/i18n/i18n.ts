@@ -1,6 +1,6 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
-import { FALLBACK_LANGUAGE } from '@/platform/shared/i18n'
+import { FALLBACK_LANGUAGE } from '@/platform/contract/i18n'
 
 type Catalogs = Record<string, object>
 

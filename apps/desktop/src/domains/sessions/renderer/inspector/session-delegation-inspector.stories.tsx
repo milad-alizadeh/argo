@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, waitFor, within } from 'storybook/test'
-import { sessionSubagent } from '../session-fixtures'
-import type { SessionFeed } from '../types'
-import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
+import { sessionSubagent } from '@/domains/sessions/renderer/session-fixtures'
+import type { SessionFeed } from '@/domains/sessions/renderer/types'
+import { SessionWorkInspectorHeader } from '@/domains/sessions/renderer/work/session-work-inspector-header'
 import { SessionDelegationInspector } from './session-delegation-inspector'
 
 // A fixed clock, so every duration these stories draw is the same on every run.

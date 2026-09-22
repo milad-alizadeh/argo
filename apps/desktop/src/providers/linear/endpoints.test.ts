@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { availableProviders } from '@/domains/accounts/main/providers'
 import { accountProviders } from '@/providers/composition'
 import { GITHUB_ENDPOINTS } from '@/providers/github/endpoints'
-import { LINEAR_REDIRECT_PORT, linearEndpoints } from './endpoints'
+import { LINEAR_REDIRECT_PORT, linearEndpoints } from '@/providers/linear/endpoints'
 
 // Registering the OAuth App at Linear is a person's act, and until they do it the client id is
 // empty. This is the whole of what their registration turns on.

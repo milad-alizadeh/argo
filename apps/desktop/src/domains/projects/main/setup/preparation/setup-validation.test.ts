@@ -3,7 +3,7 @@ import { access, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promise
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { validateProjectConfiguration } from './setup-validation'
+import { validateProjectConfiguration } from '@/domains/projects/main/setup/preparation/setup-validation'
 
 async function fixture(context: { after: (callback: () => Promise<void>) => void }) {
   const project = await mkdtemp(path.join(os.tmpdir(), 'argo-setup-validation-'))

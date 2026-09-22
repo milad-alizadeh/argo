@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, waitFor, within } from 'storybook/test'
 
-import { App } from './app'
+import { App } from '@/renderer/app'
 
 const meta = {
   title: 'Cockpit/Application',

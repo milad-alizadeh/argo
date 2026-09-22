@@ -1,7 +1,7 @@
-import type { BackgroundTaskRecord } from '../background-task-record'
+import type { BackgroundTaskRecord } from './background-task-record'
 import type { SessionEntry } from '../models'
-import type { SubagentCall, SubagentEvent } from '../subagent-event'
-import type { ToolCall } from '../tool/tool-call'
+import type { SubagentCall, SubagentEvent } from './subagent-event'
+import type { ToolCall } from './tool-call'
 import type { ContentBlock, ToolResult, TranscriptEventKind } from './transcript-content'
 import type { PlanChange } from './transcript-plan'
 import type { TranscriptUsage } from './transcript-usage'
@@ -9,14 +9,14 @@ import type { TranscriptUsage } from './transcript-usage'
 export type {
   BackgroundState,
   BackgroundTaskRecord,
-} from '../background-task-record'
-export { BACKGROUND_STATES } from '../background-task-record'
+} from './background-task-record'
+export { BACKGROUND_STATES } from './background-task-record'
 export {
   SUBAGENT_EVENTS,
   type SubagentEvent,
   type SubagentEventName,
   type SubagentFacts,
-} from '../subagent-event'
+} from './subagent-event'
 export type {
   AskFacts,
   EditedFile,
@@ -30,8 +30,8 @@ export type {
   SubagentControlFacts,
   ToolCall,
   ToolCallStatus,
-} from '../tool/tool-call'
-export { TOOL_CALL_STATUSES } from '../tool/tool-call'
+} from './tool-call'
+export { TOOL_CALL_STATUSES } from './tool-call'
 export type {
   ContentBlock,
   RichResultBlock,

@@ -6,7 +6,7 @@ import type {
 } from '@/domains/projects/contract/contract'
 import { FileDiffList } from '@/platform/renderer/components/file-diff-list'
 import { Button } from '@/platform/renderer/components/ui/button'
-import { projectSetupDiffFiles } from './project-setup-diff-files'
+import { projectSetupDiffFiles } from './editor/project-setup-diff-files'
 import { projectSetupRecoveryText } from './project-setup-recovery-text'
 
 export function Recovery({

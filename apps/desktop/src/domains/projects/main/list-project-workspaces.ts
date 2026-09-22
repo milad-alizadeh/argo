@@ -3,8 +3,9 @@ import type {
   ProjectWorkspaceListed,
   ProjectWorkspaceListRequest,
 } from '@/domains/projects/contract/workspace-messages'
-import { readWorkspaceFacts, reconcileWorkspaces } from './workspaces'
-import { findProject, type ProjectStore } from './register-project'
+import { findProject, type ProjectStore } from '@/domains/projects/main/register-project'
+import { readWorkspaceFacts } from '@/domains/projects/main/workspaces/workspace-facts'
+import { reconcileWorkspaces } from '@/domains/projects/main/workspaces/workspace-reconciliation'
 
 export function relistRequest(projectId: string, requestId: string): ProjectWorkspaceListRequest {
   return { version: 1, type: 'project.workspace.list', requestId, projectId }

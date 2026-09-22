@@ -1,4 +1,4 @@
-import type { ClaudeSessionDriver } from '@/harnesses/claude/drive/claude-session-driver.ts'
+import type { ClaudeSessionDriver } from '../../../src/harnesses/claude/drive/claude-session-driver.ts'
 
 export const sessionId = 'a4d56b96-c754-4cce-a68a-4fdbf41a3e2c'
 

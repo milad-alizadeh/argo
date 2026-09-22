@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { sessionShellCommand } from '../session-fixtures'
-import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
-import { SessionShellInspector } from './session-shell-inspector'
+import { SessionShellInspector } from '@/domains/sessions/renderer/inspector/session-shell-inspector'
+import { sessionShellCommand } from '@/domains/sessions/renderer/session-fixtures'
+import { SessionWorkInspectorHeader } from '@/domains/sessions/renderer/work/session-work-inspector-header'
 
 const NOW = Date.parse('2026-09-02T08:05:00.000Z')
 

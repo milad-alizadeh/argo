@@ -1,7 +1,7 @@
 import type { SessionErrorCode } from '@/domains/sessions/contract/ipc'
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive'
 import { SessionContractError } from '../../session-contract-error'
-import type { TurnSetup } from '../../turn-setup/turn-setup'
+import type { TurnSetup } from '../turn-setup/turn-setup'
 import type { useSessionMutations } from '../hooks'
 
 // A failure belongs to the Session it happened on, so selecting another Session does not show it.

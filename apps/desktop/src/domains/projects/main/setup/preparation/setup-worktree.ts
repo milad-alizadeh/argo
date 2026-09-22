@@ -3,10 +3,22 @@ import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { promisify } from 'node:util'
-import { trustSetupWorktree } from './trust-setup-worktree'
 
 const run = promisify(execFile)
 const SETUP_WORKTREE_DIRECTORY = ['.argo', 'worktrees']
+
+// `claude` shows an interactive trust dialog the first time it launches in a directory, and a
+// disposable setup worktree is always new. No human watches this launch to click through it, so
+// mark the directory trusted the same way accepting that dialog would.
+async function trustSetupWorktree(configPath: string, directory: string): Promise<void> {
+  const raw = await readFile(configPath, 'utf8').catch(() => '{}')
+  const config: { projects?: Record<string, { hasTrustDialogAccepted?: boolean }> } =
+    JSON.parse(raw)
+  config.projects ??= {}
+  if (config.projects[directory]?.hasTrustDialogAccepted) return
+  config.projects[directory] = { ...config.projects[directory], hasTrustDialogAccepted: true }
+  await writeFile(configPath, JSON.stringify(config, null, 2))
+}
 
 export async function prepareSetupWorktree(
   project: { id: string; path: string },

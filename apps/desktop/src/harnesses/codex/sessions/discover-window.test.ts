@@ -8,7 +8,7 @@ import { test } from 'node:test'
 import { ROSTER_PAGE_SIZE } from '@/domains/sessions/main/observation/discover-transcript-sessions'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { assertWindowGrowsToFarSession } from '@/domains/sessions/main/observation/window-proof-helpers'
-import { codexSessionSource } from './read-sessions'
+import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 
 function codexMessage(text: string, updatedAt: string) {
   return `${JSON.stringify({

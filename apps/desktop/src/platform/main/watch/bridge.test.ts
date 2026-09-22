@@ -3,10 +3,10 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import type { BrowserWindow } from 'electron'
+import { registerWatching } from '@/platform/main/watch/bridge'
+import { failableOpener } from '@/platform/main/watch/failable-opener'
+import { SETTLE_MS, watchTrees } from '@/platform/main/watch/watch-paths'
 import { WATCHED_CHANGED_CHANNEL } from '@/platform/shared/watch'
-import { registerWatching } from './bridge'
-import { failableOpener } from './failable-opener'
-import { SETTLE_MS, watchTrees } from './watch-paths'
 
 // Twice the settle window, so a message that has been sent has certainly arrived.
 const QUIET_MS = SETTLE_MS * 2

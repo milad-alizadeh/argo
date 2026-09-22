@@ -2,9 +2,9 @@
 // repository is connected, the only moment a wrong Account and a missing Ticket can be told
 // apart (ADR-0018).
 
+import type { GitHubEndpoints } from '@/providers/github/endpoints'
+import { failed, type GitHubFailure, type GitHubRead, get, getAll } from '@/providers/github/http'
 import { isRecord } from '@/shared/validation'
-import type { GitHubEndpoints } from './endpoints'
-import { failed, type GitHubFailure, type GitHubRead, get, getAll } from './http'
 
 export type RepositoryCheck =
   | { ok: true; fullName: string }

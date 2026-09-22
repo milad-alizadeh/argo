@@ -1,12 +1,12 @@
 import { eq } from 'drizzle-orm'
-import type { ProjectSetupActor } from '../project-setup-actor'
-import { PROJECT_SETUP_MACHINE_VERSION } from '../project-setup-machine'
-import type { ProjectDatabase } from '../../sqlite-store'
+import type { ProjectSetupActor } from '@/domains/projects/main/setup/project-setup-actor'
+import { PROJECT_SETUP_MACHINE_VERSION } from '@/domains/projects/main/setup/project-setup-machine'
+import type { ProjectDatabase } from '@/domains/projects/main/sqlite-store'
 import {
   projectSetupActor,
   projectSetupEffect,
   projectSetupRecovery,
-} from '@/platform/main/storage/database-schema'
+} from '../../schema'
 import {
   persistedSetupContext,
   projectSetupRecordFromDatabase,

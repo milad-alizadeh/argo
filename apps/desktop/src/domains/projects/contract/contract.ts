@@ -2,13 +2,13 @@ import { z } from 'zod'
 import { identifierSchema } from '@/shared/validation'
 import type { ProjectError } from './project-error'
 import {
+  acceptedSetupPlanSchema,
+  projectSetupAnswerSchema,
   projectSetupEffectSchema,
   projectSetupPendingApprovalSchema,
-  projectSetupAnswerSchema,
   projectSetupQuestionSchema,
   projectSetupRecoveryCodeSchema,
   projectSetupScreenSchema,
-  acceptedSetupPlanSchema,
   setupPlanSchema,
   setupStepStatusSchema,
 } from './setup'

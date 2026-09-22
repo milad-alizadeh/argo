@@ -1,5 +1,5 @@
-import type { CodexChannel } from '../drive'
-import { pagesOf, threadOf, turnsOf } from './vendor-convert'
+import type { CodexChannel } from '@/harnesses/codex/drive/codex-channel'
+import { pagesOf, threadOf, turnsOf } from '@/harnesses/codex/history/vendor-convert'
 import {
   CodexHistoryUnavailableError,
   EXPERIMENTAL_TURN_PAGE_METHOD,
@@ -12,20 +12,25 @@ import {
   type StoredTurn,
   threadSchema,
   turnSchema,
-} from './vendor-model'
-import { listParams, loadedParams, readParams, turnsParams } from './vendor-request-params'
+} from '@/harnesses/codex/history/vendor-model'
+import {
+  listParams,
+  loadedParams,
+  readParams,
+  turnsParams,
+} from '@/harnesses/codex/history/vendor-request-params'
 
-export { readResumePermission } from './resume-permission'
+export { readResumePermission } from '@/harnesses/codex/history/resume-permission'
 export type {
   HistoryTransport,
   StoredThread,
   VendorStatus,
-} from './vendor-model'
+} from '@/harnesses/codex/history/vendor-model'
 export {
   CodexHistoryUnavailableError,
   EXPERIMENTAL_TURN_PAGE_METHOD,
   STORED_THREAD_READ_METHOD,
-} from './vendor-model'
+} from '@/harnesses/codex/history/vendor-model'
 
 export async function listStoredThreads(transport: HistoryTransport): Promise<StoredThread[]> {
   try {

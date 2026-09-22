@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { sessionUnreadFocusReplySchema } from '@/domains/sessions/contract/ipc/contract'
-import { createInMemorySessionArchiveStore } from '../archive/archive-store'
-import { createSessionReader } from '../observation/reader'
+import { createInMemorySessionArchiveStore } from '../archive/store/archive-store'
+import { createSessionReader } from '../observation/reader/reader'
 import {
   listed,
   tempRoot,
   writeClaudeTranscript,
-} from '../observation/reader-test-helpers'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+} from '../observation/reader/reader-test-helpers'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-sessions'
 import { createInMemorySessionUnreadStore } from './unread-store'
 
 test('clears unread state when the reader opens a Session', async (context) => {

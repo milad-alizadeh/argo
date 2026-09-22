@@ -4,8 +4,11 @@ import {
   listStoredThreads,
   readStoredThread,
   type StoredThread,
-} from './vendor-history'
-import { matchWorkspace, projectionFromStoredThread } from './watched-projection'
+} from '@/harnesses/codex/history/vendor-history'
+import {
+  matchWorkspace,
+  projectionFromStoredThread,
+} from '@/harnesses/codex/history/watched-projection'
 
 export type WatchedCodexSessions = {
   refresh: () => Promise<SessionProjection[]>

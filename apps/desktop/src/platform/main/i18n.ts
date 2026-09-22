@@ -3,7 +3,7 @@
 // way every other message does (#2130). The renderer registers this same file as its `platform`
 // namespace, so a shortcut the menu names and a renderer surface names later is one word from one
 // place. Every key here is spelled as i18next spells one, which is why none of the leaves is dotted.
-import { FALLBACK_LANGUAGE, PLATFORM_ENGLISH, type PlatformKey } from '@/platform/shared/i18n'
+import { FALLBACK_LANGUAGE, PLATFORM_ENGLISH, type PlatformKey } from '@/platform/contract/i18n'
 
 function flatten(catalog: object, prefix = ''): Record<string, string> {
   return Object.fromEntries(

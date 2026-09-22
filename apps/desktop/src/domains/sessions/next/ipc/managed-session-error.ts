@@ -1,5 +1,5 @@
+import type { ManagedSessionError } from '@/domains/sessions/next/ipc/managed-session-contract'
 import type { ClientErrorCode, MainErrorCode } from '@/shared/ipc/operations'
-import type { ManagedSessionError } from './managed-session-contract'
 
 export function managedSessionError(
   code: ClientErrorCode | MainErrorCode,

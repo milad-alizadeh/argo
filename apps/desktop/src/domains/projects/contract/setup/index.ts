@@ -30,21 +30,12 @@ export {
   type SetupAnswers,
   setupAnswers,
   setupConfiguration,
-} from './setup-configuration'
-
-export {
   setupLocale,
   setupFieldText,
   setupPlanText,
   setupChoiceText,
-} from './setup-document-text'
-
-export {
   SETUP_RENDERER_CAPABILITIES,
   validateSetupDocument,
-} from './setup-document-validation'
-
-export {
   setupFieldSchema,
   setupDocumentSchema,
   parseSetupDocument,
@@ -52,33 +43,20 @@ export {
   type SetupDocument,
 } from './setup-document'
 
-export { findsCycle } from './setup-plan-cycle'
-
 export {
+  findsCycle,
   handoffSchema,
   setupPlanSchema,
   acceptedSetupPlanSchema,
-} from './setup-plan-schema'
-
-export {
   type SetupPlan,
   type AcceptedSetupPlan,
-} from './setup-plan-types'
-
-export {
   validateIdentifiers,
   validateTargetReferences,
   validateDefaultTargets,
   validatePrerequisites,
-} from './setup-plan-validation-rules'
-
-export {
   validateSetupPlan,
   validatePlanRevision,
   type PlanValidationOutcome,
-} from './setup-plan-validation'
-
-export {
   setupPlanningResultSchema,
   parseSetupPlanningResult,
   parseAcceptedSetupPlan,

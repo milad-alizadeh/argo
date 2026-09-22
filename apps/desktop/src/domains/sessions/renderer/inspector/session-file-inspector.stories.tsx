@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 
-import { SessionEvidenceInspector } from './session-evidence-inspector'
+import { SessionEvidenceInspector } from '@/domains/sessions/renderer/inspector/session-evidence-inspector'
 
 const REPORT_PATH = '/storybook/argo/docs/research/app-name-research.md'
 const REPORT_FILE = ['# App name research', '', 'Every name was **screened** twice.'].join('\n')

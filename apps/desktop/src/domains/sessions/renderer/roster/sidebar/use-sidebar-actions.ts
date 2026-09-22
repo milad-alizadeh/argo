@@ -3,10 +3,7 @@ import { useCallback } from 'react'
 import { useNavigate } from 'react-router'
 import { useComposerStore } from '../../composer/hooks'
 import { COMPOSER_FOCUS_STATE } from '../../composer-focus-state'
-import {
-  newSessionTarget,
-  useSessionCreationStore,
-} from '../../session-creation'
+import { newSessionTarget, useSessionCreationStore } from '../../session-creation'
 import { invalidateSessionRoster } from '../../session-queries'
 import type { Session, SessionId } from '../../types'
 

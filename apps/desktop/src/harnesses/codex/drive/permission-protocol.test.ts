@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { codexApprovalDecision, readRequestApproval } from './permission-protocol'
+import {
+  codexApprovalDecision,
+  readRequestApproval,
+} from '@/harnesses/codex/drive/permission-protocol'
 
 test('reads an additional-permissions approval request', () => {
   const permission = readRequestApproval({

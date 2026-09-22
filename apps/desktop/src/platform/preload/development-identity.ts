@@ -3,7 +3,7 @@ import {
   DEVELOPMENT_IDENTITY_ARGUMENT_PREFIX,
   type DevelopmentIdentity,
   developmentIdentitySchema,
-} from '@/platform/shared/development-identity'
+} from '@/platform/contract/development-identity'
 
 export function developmentIdentityFromArguments(
   arguments_: readonly string[],

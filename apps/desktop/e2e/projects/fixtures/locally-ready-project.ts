@@ -1,8 +1,8 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { PACKAGED_PROOF_SETUP_DOCUMENT_REVISION } from '../../../mocks/providers/setup/mock-setup-document-loopback'
-import { createProjectSetupRegistry } from '@/domains/projects/main/setup/persistence/project-setup-registry'
-import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
+import { createProjectSetupRegistry } from '../../../src/domains/projects/main/setup/persistence/project-setup-registry'
+import type { ProjectStore } from '../../../src/domains/projects/main/sqlite-store'
 
 export const LOCALLY_READY_CONFIGURATION = JSON.stringify(
   {

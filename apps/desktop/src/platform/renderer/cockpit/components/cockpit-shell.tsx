@@ -1,15 +1,15 @@
 import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { usePanelRef } from 'react-resizable-panels'
-import { Icon } from '../../components/icon'
-import { Button } from '../../components/ui/button'
+import { CockpitNavigationRail } from '@/platform/renderer/cockpit/components/cockpit-navigation-rail'
+import { Icon } from '@/platform/renderer/components/icon'
+import { Button } from '@/platform/renderer/components/ui/button'
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from '../../components/ui/resizable'
-import { readCssSize } from '../../lib/read-css-size'
-import { CockpitNavigationRail } from './cockpit-navigation-rail'
+} from '@/platform/renderer/components/ui/resizable'
+import { readCssSize } from '@/platform/renderer/lib/read-css-size'
 
 type CockpitShellProps = {
   rail?: ReactNode

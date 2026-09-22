@@ -8,7 +8,7 @@ import {
   restoreSharedDatabase,
   sharedDatabaseBackupPath,
   sharedDatabasePath,
-} from './shared-database'
+} from '@/platform/main/storage/shared-database'
 
 async function temporaryUserData(): Promise<string> {
   return mkdtemp(path.join(os.tmpdir(), 'argo-shared-database-'))

@@ -1,4 +1,4 @@
-import type { CompanionPart } from '../drive'
+import type { CompanionPart } from '@/harnesses/claude/drive/companion-plugin'
 
 // The socket a companion part's shipped hook dials. A proof reads it out of the script itself so it
 // connects where Claude Code would, rather than where the test thinks the part is listening. The

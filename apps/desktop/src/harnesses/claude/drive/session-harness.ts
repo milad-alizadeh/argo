@@ -3,18 +3,18 @@
 // iterates. No file outside `harnesses/claude` names this driver's shape.
 import path from 'node:path'
 import { SESSION_CLAUDE_EXECUTABLE_ENV } from '@/domains/sessions/contract/proof-protocol'
-import { installCompactionHook } from '../compaction'
+import { installCompactionHook } from '@/harnesses/claude/compaction/compaction-hook'
+import { renameClaudeSession } from '@/harnesses/claude/drive/rename-session'
+import { createClaudeDriveAdapter } from '@/harnesses/claude/drive/session-drive-adapter'
+import { createSystemClaudeSessionDriver } from '@/harnesses/claude/drive/system-claude-session-driver'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
 import {
-  claudeSessionSource,
   claudeCompactionStartsRoot,
   claudeProcessesRoot,
   claudeSettingsPath,
   claudeTranscriptsRoot,
-} from '../sessions'
+} from '@/harnesses/claude/sessions/roots'
 import type { HarnessRegistration } from '@/harnesses/composition/harness-registration'
-import { renameClaudeSession } from './rename-session'
-import { createClaudeDriveAdapter } from './session-drive-adapter'
-import { createSystemClaudeSessionDriver } from './system-claude-session-driver'
 
 function renameManagedSession(
   request: Parameters<typeof renameClaudeSession>[0],

@@ -2,7 +2,7 @@ import type {
   SessionProjection,
   SessionStatus,
 } from '@/domains/sessions/next/contract/session-projection-contract'
-import type { StoredThread, VendorStatus } from './vendor-history'
+import type { StoredThread, VendorStatus } from '@/harnesses/codex/history/vendor-history'
 
 function sessionStatus(status: VendorStatus): SessionStatus {
   switch (status.type) {

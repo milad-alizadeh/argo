@@ -1,7 +1,7 @@
 // Every Session linked to one Ticket (CONTEXT.md L1 · Session → Ticket), most recently linked
 // first — the same ordering the Roster's own link store keeps, read here from the Roster the
 // Sessions module already polls rather than a second reader.
-import { useSessions } from '@/domains/sessions/renderer'
+import { useSessions } from '@/domains/sessions/renderer/port'
 
 export type LinkedSession = { id: string; title: string }
 

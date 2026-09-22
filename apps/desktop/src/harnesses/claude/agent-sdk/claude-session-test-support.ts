@@ -1,6 +1,9 @@
 import { createActor } from 'xstate'
-import { fakeClaudeQuery, managedSessionService } from './claude-query-fixture'
-import { createClaudeSessionMachine } from './claude-session-machine'
+import {
+  fakeClaudeQuery,
+  managedSessionService,
+} from '@/harnesses/claude/agent-sdk/claude-query-fixture'
+import { createClaudeSessionMachine } from '@/harnesses/claude/agent-sdk/claude-session-actor'
 
 export { fakeClaudeQuery, managedSessionService }
 

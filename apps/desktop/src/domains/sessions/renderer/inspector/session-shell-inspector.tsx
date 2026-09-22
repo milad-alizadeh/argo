@@ -1,8 +1,8 @@
 // One background Shell's live output, in the Terminal the rest of the app reads command output
 // through (#1582). The pane states the command's own words and its current state.
 import { useTranslation } from 'react-i18next'
-import type { SessionShellCommand } from '@/domains/sessions/contract/model'
-import { InspectorTerminal } from './inspector-terminal'
+import type { SessionShellCommand } from '@/domains/sessions/contract/model/models'
+import { InspectorTerminal } from '@/domains/sessions/renderer/inspector/inspector-terminal'
 
 export function SessionShellInspector({
   command,

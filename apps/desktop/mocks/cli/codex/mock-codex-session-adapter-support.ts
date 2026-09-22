@@ -1,8 +1,8 @@
 import { mkdtemp } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import type { SessionService } from '@/domains/sessions/next/main/session-service.ts'
-import { createCodexSessionAdapter } from '@/harnesses/codex/drive/codex-session-adapter.ts'
+import type { SessionService } from '../../../src/domains/sessions/next/main/session-service.ts'
+import { createCodexSessionAdapter } from '../../../src/harnesses/codex/drive/codex-session-adapter.ts'
 import { writeMockCodex } from './mock-codex-driver.ts'
 
 function sessionService(released: string[] = []): SessionService {

@@ -1,4 +1,4 @@
-import { useTurnSetup } from '../../turn-setup'
+import { useTurnSetup } from '../turn-setup'
 import { HARNESSES, type SessionHarness } from '../../harness'
 import type { Cockpit, ProjectActions } from '@/domains/projects/renderer'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model'

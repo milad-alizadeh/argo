@@ -7,8 +7,8 @@ import type { ProjectSetupContext, ProjectSetupEvent } from './project-setup-mac
 import {
   type ActivePermission,
   projectSetupPermissionDecisionHandler,
-} from './project-setup-permission-decisions'
-import { projectSetupProgressReporter } from './project-setup-progress'
+} from './actors/project-setup-permission-decisions'
+import { projectSetupProgressReporter } from './actors/project-setup-progress'
 import { startProjectSetupTask } from './project-setup-task'
 
 export type ProjectSetupPlanningInput = {

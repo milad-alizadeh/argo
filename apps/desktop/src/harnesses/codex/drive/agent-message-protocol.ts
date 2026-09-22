@@ -1,5 +1,5 @@
-import type { WireMessage } from './protocol'
-import { protocolRecord, protocolString } from './protocol'
+import type { WireMessage } from '@/harnesses/codex/drive/protocol/protocol'
+import { protocolRecord, protocolString } from '@/harnesses/codex/drive/protocol/protocol'
 
 export type AgentMessageText = { threadId: string; turnId: string; itemId: string; text: string }
 

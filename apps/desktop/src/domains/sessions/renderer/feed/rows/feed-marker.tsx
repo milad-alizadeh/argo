@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { SessionFeedRow } from '../../types'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   Collapsible,
   CollapsibleContent,

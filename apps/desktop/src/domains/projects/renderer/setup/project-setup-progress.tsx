@@ -3,7 +3,7 @@ import type {
   ProjectSetupCommand,
   ProjectSetupSnapshot,
 } from '@/domains/projects/contract/contract'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { RunningText } from '@/platform/renderer/components/running-text'
 import { Button } from '@/platform/renderer/components/ui/button'
 

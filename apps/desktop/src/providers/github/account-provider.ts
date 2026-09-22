@@ -2,9 +2,9 @@
 // tokens do not lapse, so there is no renewal.
 import type { AccountErrorCode } from '@/domains/accounts/contract/contract'
 import type { AccountProvider, SignInEnd } from '@/domains/accounts/main/providers'
+import { awaitGrant, readIdentity, requestChallenge } from '@/providers/github/device-flow'
+import type { GitHubFailure } from '@/providers/github/http'
 import type { GrantOutcome } from '@/providers/grant'
-import { awaitGrant, readIdentity, requestChallenge } from './device-flow'
-import type { GitHubFailure } from './http'
 
 const OUTCOME_ERRORS: Record<Exclude<GrantOutcome['kind'], 'granted'>, AccountErrorCode> = {
   declined: 'sign-in-declined',

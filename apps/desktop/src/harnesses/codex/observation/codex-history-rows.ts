@@ -2,10 +2,10 @@ import {
   managedRosterRow,
   type SessionFeedRow,
   sessionRosterRowSchema,
-} from '@/domains/sessions/contract/model'
-import { TranscriptDiscovery } from '@/domains/sessions/main/observation'
+} from '@/domains/sessions/contract/model/models'
+import type { TranscriptDiscovery } from '@/domains/sessions/main/observation/discover-transcript-sessions'
 import type { SessionProjection } from '@/domains/sessions/next/contract/session-projection-contract'
-import { reconcileStoredHistory } from '../history'
+import { reconcileStoredHistory } from '@/harnesses/codex/history/watched-projection'
 
 function statusOf(projection: SessionProjection) {
   if (projection.sourceHealth === 'unavailable') return 'unknown' as const

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { claudeManagedStatus } from './managed-status'
+import { claudeManagedStatus } from '@/harnesses/claude/drive/managed-status'
 
 test('Claude: a Session holding a Permission the person has not answered reads permission', () => {
   assert.equal(claudeManagedStatus(true), 'permission')

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
-import { CLAUDE_TURN_SETUP } from '../../turn-setup/claude-turn-setup'
+import { CLAUDE_TURN_SETUP } from '../turn-setup/claude-turn-setup'
 import { ModeMenu } from './mode-menu'
 
 function ModeStory() {

@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test'
+import { useState } from 'react'
+import { expect, screen, userEvent, waitFor, within } from 'storybook/test'
 
-import { sessionShellCommand, sessionSubagent } from '../session-fixtures'
+import { sessionShellCommand, sessionSubagent } from '@/domains/sessions/renderer/session-fixtures'
 import { SessionWorkButtons } from './session-work-buttons'
 
 // A fixed clock, so every duration these stories draw is the same on every run.
@@ -52,6 +53,8 @@ function expectDotAlignedWithTitle(item: HTMLElement) {
 
 // The header's own selection, so a play function can operate the story the way a reader does.
 function Header(props: Partial<React.ComponentProps<typeof SessionWorkButtons>>) {
+  const [subagentId, setDelegationId] = useState<string | null>(null)
+  const [shellId, setShellId] = useState<string | null>(null)
   return (
     <div className="flex h-(--size-chrome-bar) items-center gap-2 border-b border-border/60 px-3">
       <SessionWorkButtons
@@ -61,13 +64,22 @@ function Header(props: Partial<React.ComponentProps<typeof SessionWorkButtons>>)
           'call-sweep': { tokens: 2700, model: 'gpt-5.6-terra' },
         }}
         now={NOW}
-        onSelectDelegation={fn()}
-        onSelectShell={fn()}
-        selectedDelegationId={null}
-        selectedShellId={null}
+        onSelectDelegation={(id) => {
+          setDelegationId(id)
+          setShellId(null)
+        }}
+        onSelectShell={(id) => {
+          setShellId(id)
+          setDelegationId(null)
+        }}
+        selectedDelegationId={subagentId}
+        selectedShellId={shellId}
         shell={SHELL}
         {...props}
       />
+      <output className="type-meta text-muted-foreground">
+        {`Picked: ${subagentId ?? shellId ?? 'nothing'}`}
+      </output>
     </div>
   )
 }
@@ -146,14 +158,13 @@ export const ShellList: Story = {
 }
 
 // Picking a row is what opens the inspector, so the pick is the whole behaviour to prove here.
-export const PicksASubagent: StoryObj<typeof Header> = {
-  args: { onSelectDelegation: fn() },
-  render: (args) => <Header {...args} />,
-  play: async ({ args, canvasElement }) => {
+export const PicksASubagent: Story = {
+  render: () => <Header />,
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Subagents · 2' }))
     await userEvent.click(await screen.findByRole('menuitem', { name: /Interface review/ }))
-    await expect(args.onSelectDelegation).toHaveBeenCalledWith('call-review')
+    await expect(canvas.getByRole('status')).toHaveTextContent('Picked: call-review')
   },
 }
 

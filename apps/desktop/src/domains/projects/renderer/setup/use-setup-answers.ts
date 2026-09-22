@@ -1,6 +1,5 @@
 import { useRef } from 'react'
-import { setupAnswers } from '../../contract/setup/setup-configuration'
-import type { SetupDocument } from '../../contract/setup/setup-document'
+import { setupAnswers, type SetupDocument } from '@/domains/projects/contract/setup'
 
 export type SetupAnswer = string | boolean
 

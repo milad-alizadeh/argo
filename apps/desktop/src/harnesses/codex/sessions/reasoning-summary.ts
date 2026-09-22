@@ -1,6 +1,6 @@
-import type { TranscriptRecord } from '@/domains/sessions/contract/model'
+import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript/transcript'
+import { messageRecord } from '@/harnesses/codex/sessions/message-record'
 import { isRecord } from '@/shared/validation'
-import { messageRecord } from './message-record'
 
 // Codex writes each summary as a Markdown headline (`**Reading the plan**`); the Feed draws a
 // thought as plain text, so the markers come off here.

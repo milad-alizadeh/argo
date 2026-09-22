@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { afterEach, expect, test } from 'vitest'
-import { databaseMigrationsFolder } from './migrations-folder'
-import { configureStorageRuntime } from './storage-runtime'
+import { databaseMigrationsFolder } from '@/platform/main/storage/migrations-folder'
+import { configureStorageRuntime } from '@/platform/main/storage/storage-runtime'
 
 afterEach(() => configureStorageRuntime(false))
 

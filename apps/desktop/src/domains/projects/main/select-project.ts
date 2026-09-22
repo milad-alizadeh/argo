@@ -2,7 +2,11 @@
 // process reads the same Project a dev-server restart wiped from the renderer's Query cache (#2269).
 import { type ProjectError, projectError } from '@/domains/projects/contract/contract'
 import type { ProjectListed, ProjectSelectRequest } from '@/domains/projects/contract/messages'
-import { commit, currentRegistry, type ProjectStore } from './register-project'
+import {
+  commit,
+  currentRegistry,
+  type ProjectStore,
+} from '@/domains/projects/main/register-project'
 
 export function selectProject(
   request: ProjectSelectRequest,

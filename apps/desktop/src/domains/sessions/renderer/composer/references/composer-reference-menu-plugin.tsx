@@ -1,4 +1,3 @@
-import type { SessionHarness } from '../../harness'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import {
   $getSelection,
@@ -15,7 +14,8 @@ import {
   type ReferenceSuggestion,
   referenceMenu,
   referenceMenuKey,
-} from './composer-reference-menu'
+} from '@/domains/sessions/renderer/composer/references/composer-reference-menu'
+import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 
 function replaceActiveReference(editor: LexicalEditor, source: string) {
   editor.update(() => {

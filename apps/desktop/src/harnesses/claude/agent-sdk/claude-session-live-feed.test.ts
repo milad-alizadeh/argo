@@ -1,5 +1,8 @@
 import { expect, test } from 'bun:test'
-import { fakeClaudeQuery, startedClaudeActor } from './claude-session-test-support'
+import {
+  fakeClaudeQuery,
+  startedClaudeActor,
+} from '@/harnesses/claude/agent-sdk/claude-session-test-support'
 
 test('projects SDK assistant text for the live Session feed', async () => {
   const fake = fakeClaudeQuery()

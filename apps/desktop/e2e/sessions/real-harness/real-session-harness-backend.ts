@@ -2,8 +2,8 @@ import { execFileSync } from 'node:child_process'
 import { copyFile, mkdir, symlink } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
-import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
-import { findExecutableOnLoginShellPath } from '@/harnesses/executable-path'
+import type { SessionHarness } from '../../../src/domains/sessions/renderer/harness/harnesses'
+import { findExecutableOnLoginShellPath } from '../../../src/harnesses/executable-path'
 import type {
   SessionFixture,
   SessionHarnessBackend,

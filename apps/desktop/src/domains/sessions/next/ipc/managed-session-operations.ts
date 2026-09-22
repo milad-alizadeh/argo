@@ -3,7 +3,7 @@ import {
   managedSessionReplySchema,
   managedSessionSubscribeReplySchema,
   managedSessionSubscribeRequestSchema,
-} from './managed-session-contract'
+} from '@/domains/sessions/next/ipc/managed-session-contract'
 
 export const MANAGED_SESSION_OPERATIONS = {
   command: {

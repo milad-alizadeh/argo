@@ -1,4 +1,4 @@
-import { Loader } from '@/platform/renderer/components/loader'
+import { Loader } from '@/platform/renderer/components/loader/loader'
 
 export function HandoffMarker() {
   const { t } = useTranslation('sessions')

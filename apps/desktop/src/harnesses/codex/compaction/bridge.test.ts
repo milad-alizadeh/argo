@@ -7,9 +7,9 @@ import {
   CODEX_COMPACTION_OPERATIONS,
   DEFAULT_AUTO_COMPACT_LIMIT,
 } from '@/domains/sessions/contract/codex-compaction'
+import { attachCodexCompactionBridge } from '@/harnesses/codex/compaction/bridge'
+import { codexConfigPath } from '@/harnesses/codex/compaction/config-file'
 import { createMockIpcWindow, RENDERER_URL } from '../../../../mocks/contract/mock-ipc-window'
-import { attachCodexCompactionBridge } from './bridge'
-import { codexConfigPath } from './config-file'
 
 async function withHome(context: import('node:test').TestContext): Promise<string> {
   const home = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-compaction-bridge-'))

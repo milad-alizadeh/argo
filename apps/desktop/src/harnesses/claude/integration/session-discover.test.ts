@@ -4,14 +4,14 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader.ts'
-import { claudeSessionSource } from '../sessions/read-sessions.ts'
-import { fixturePath, replaceInFile } from '../../../../mocks/sessions/mock-transcript-files'
 import {
   fixtureRoot,
   LATER_TURN,
   unscopedListing as listing,
   listSessions,
-} from './session-fixtures'
+} from '@/harnesses/claude/integration/session-fixtures'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions.ts'
+import { fixturePath, replaceInFile } from '../../../../mocks/sessions/mock-transcript-files'
 
 const feed = {
   version: 1,

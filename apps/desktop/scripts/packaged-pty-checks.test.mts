@@ -20,7 +20,7 @@ const json = (file: string) => JSON.parse(read(file))
 // Both ends of the app-to-driver protocol, across the Vite bundling boundary.
 const PROTOCOL_USERS = [
   'src/main.ts',
-  'src/platform/main/testing/pty-acceptance.ts',
+  'src/platform/main/pty-acceptance/pty-acceptance.ts',
   'scripts/prove-packaged-pty.mts',
   'scripts/packaged-app.mts',
 ]

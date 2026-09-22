@@ -1,8 +1,8 @@
-import type { useTurnSetup } from '../../turn-setup'
+import type { useTurnSetup } from '../turn-setup'
 import type { useQueryClient } from '@tanstack/react-query'
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive'
 import { invalidateSessionRoster } from '../../session-queries'
-import type { TurnSetup } from '../../turn-setup/turn-setup'
+import type { TurnSetup } from '../turn-setup/turn-setup'
 import type { useSessionMutations } from '../hooks'
 import { type Failure, sendMessage } from './session-failure'
 

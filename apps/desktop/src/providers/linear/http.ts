@@ -2,9 +2,9 @@
 // name. Linear refuses a token and throttles a caller with a 400 whose error carries a code, so the
 // code is read here, where the body still exists.
 
+import type { LinearEndpoints } from '@/providers/linear/endpoints'
 import { readJson, send } from '@/providers/request'
 import { isRecord } from '@/shared/validation'
-import type { LinearEndpoints } from './endpoints'
 
 export type LinearFailure = 'unauthorized' | 'forbidden' | 'rate-limited' | 'unreachable'
 export type LinearRead<T> = { ok: true; value: T } | { ok: false; failure: LinearFailure }

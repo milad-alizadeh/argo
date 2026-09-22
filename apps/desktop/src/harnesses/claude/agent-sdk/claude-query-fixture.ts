@@ -8,7 +8,15 @@ import type {
   SDKUserMessage,
 } from '@anthropic-ai/claude-agent-sdk'
 import type { SessionService } from '@/domains/sessions/next/main/session-service'
-import { assistantMessage } from './claude-query-fixture-message'
+
+function assistantMessage(text: string): SDKMessage {
+  return {
+    type: 'assistant',
+    uuid: '00000000-0000-0000-0000-000000000002',
+    session_id: 'native-1',
+    message: { content: [{ type: 'text', text }] },
+  } as unknown as SDKMessage
+}
 
 export const managedSessionService: SessionService = {
   acquire: () => ({ posture: 'managed' }),

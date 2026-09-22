@@ -1,6 +1,6 @@
 import type { AccountState } from '@/domains/accounts/contract/contract'
-import { type AccountAccess, accountState, readAccounts } from '@/domains/accounts/main'
-import type { TicketConnection } from '@/domains/connections/main'
+import { type AccountAccess, accountState, readAccounts } from '@/domains/accounts/main/port'
+import type { TicketConnection } from '@/domains/connections/main/port'
 import type { ConnectionState, ConnectionSummary } from '@/domains/tickets/contract/contract'
 
 const ACCOUNT_STATES: Record<AccountState, ConnectionState> = {

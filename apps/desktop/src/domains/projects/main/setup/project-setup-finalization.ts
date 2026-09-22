@@ -1,4 +1,4 @@
-import type { ProjectStore } from '../sqlite-store'
+import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
 
 export function promoteSetupWorktree(projects: ProjectStore, projectId: string): void {
   const project = projects.read().projects.find((candidate) => candidate.id === projectId)

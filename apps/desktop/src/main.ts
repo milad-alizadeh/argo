@@ -4,13 +4,14 @@ import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, net, protocol } from 'electron'
+import { attachBridges } from '@/bridges'
 import { seedDevelopmentProject } from '@/domains/projects/main/development-seed'
 import { openProjectStore } from '@/domains/projects/main/main-store'
 import { PROJECT_PROOF_STORE_ENV } from '@/domains/projects/main/proof-protocol'
 import {
   ATTACHMENT_SCHEME,
   attachmentPathFromUrl,
-} from '@/domains/sessions/contract/model'
+} from '@/domains/sessions/contract/model/feed/feed-images'
 import { openDurableStores } from '@/main/durable-stores'
 import { startDesktopApplication } from '@/platform/main/application/start'
 import {
@@ -22,11 +23,11 @@ import {
   developmentInstance,
 } from '@/platform/main/development/instance'
 import { writeDevelopmentReady } from '@/platform/main/development/ready'
+import { resetIncompleteDevelopmentDatabase } from '@/platform/main/development/reset-incomplete-database'
 import { installMenu } from '@/platform/main/menu'
 import { configureStorageRuntime } from '@/platform/main/storage/storage-runtime'
 import { createDesktopWindow } from '@/platform/main/window/create-window'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mts'
-import { attachBridges } from './bridges'
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -148,6 +149,7 @@ async function ready(): Promise<void> {
       appData: app.getPath('appData'),
       instance: DEVELOPMENT_INSTANCE,
     })
+    resetIncompleteDevelopmentDatabase(projectData)
     const projects = openProjectStore(projectData)
     await seedDevelopmentProject(projects, DEVELOPMENT_INSTANCE)
     projects.close()
@@ -158,7 +160,9 @@ async function ready(): Promise<void> {
 
   // A window is open and a PTY may still be draining, so this run also stands as the app-shutdown
   // case: the driver outside fails the build if the process does not go away on its own.
-  const { reportAcceptance, runAcceptance } = await import('@/platform/main/testing/pty-acceptance')
+  const { reportAcceptance, runAcceptance } = await import(
+    '@/platform/main/pty-acceptance/pty-acceptance'
+  )
   const result = await runAcceptance(os.homedir())
   await reportAcceptance(result)
   if (result.ok) app.quit()

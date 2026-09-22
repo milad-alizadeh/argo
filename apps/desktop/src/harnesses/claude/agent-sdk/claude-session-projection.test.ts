@@ -1,6 +1,9 @@
 import { expect, test } from 'bun:test'
-import { projectionFrom } from './claude-session-projection'
-import { fakeClaudeQuery, startedClaudeActor } from './claude-session-test-support'
+import { projectionFrom } from '@/harnesses/claude/agent-sdk/claude-session-projection'
+import {
+  fakeClaudeQuery,
+  startedClaudeActor,
+} from '@/harnesses/claude/agent-sdk/claude-session-test-support'
 
 test('projects the managed Claude Session with its native ID and stable Workspace', async () => {
   const fake = fakeClaudeQuery()

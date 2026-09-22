@@ -3,13 +3,13 @@ import { useCallback, useMemo } from 'react'
 import type { ProjectError, ProjectErrorCode } from '@/domains/projects/contract/contract'
 import type { ProjectListed, ProjectSummary } from '@/domains/projects/contract/messages'
 import type { WorkspaceSummary } from '@/domains/projects/contract/workspace-messages'
+import { useProjectMutations } from '@/domains/projects/renderer/hooks/use-project-mutations'
+import { useWorkspaces } from '@/domains/projects/renderer/hooks/use-workspaces'
 import {
   type ProjectContractError,
   throwProjectContractError,
-} from '../project-contract-error'
-import { projectListQueryKey } from '../project-queries'
-import { useProjectMutations } from './use-project-mutations'
-import { useWorkspaces } from './use-workspaces'
+} from '@/domains/projects/renderer/project-contract-error'
+import { projectListQueryKey } from '@/domains/projects/renderer/project-queries'
 
 export type CockpitStatus = 'loading' | 'empty' | 'selected' | 'setup' | 'refused'
 

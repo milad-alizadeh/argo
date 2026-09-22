@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { QuestionAnswer } from '@/domains/sessions/contract/drive'
 import type { SessionEvidence, SessionFeedRow } from '../../types'
 import { isFeedRowStreaming, renderFeedRow } from './feed-row-renderers'
-import { type Reveal, useRevealAnimation } from './reveal'
+import { type Reveal, useRevealAnimation } from '../scroll/reveal'
 import { type RevealCache, type RevealResume, useStreamingText } from './streaming-text'
 import type { ToolGroupState } from './tool-group-state'
 

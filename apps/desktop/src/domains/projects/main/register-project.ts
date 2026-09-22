@@ -9,13 +9,13 @@ import type {
   ProjectRegisterRequest,
   ProjectRelocateRequest,
 } from '@/domains/projects/contract/messages'
-import { listed } from './presentation'
-import { repositoryRoot } from './repository'
+import { listed } from '@/domains/projects/main/presentation'
+import { repositoryRoot } from '@/domains/projects/main/repository'
 import type {
   ProjectRegistration,
   ProjectRegistry,
   ProjectStore as ProjectRegistryStore,
-} from './sqlite-store'
+} from '@/domains/projects/main/sqlite-store'
 
 // The dialog is the main process's own authority. It is passed in so that everything below stays
 // free of Electron and runs in the ordinary suite. `exclusive` serializes registration and

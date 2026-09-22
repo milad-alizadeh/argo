@@ -1,5 +1,5 @@
-import { projectNames } from '@/domains/accounts/main'
-import type { TicketConnection } from '@/domains/connections/main'
+import { projectNames } from '@/domains/accounts/main/port'
+import type { TicketConnection } from '@/domains/connections/main/port'
 import {
   type TicketConnectedReply,
   type TicketDiscoverReply,
@@ -8,8 +8,8 @@ import {
   type TicketUpdateReply,
   ticketError,
 } from '@/domains/tickets/contract/contract'
-import { connectionSummary } from './connection-summary'
-import { type Call, readAs } from './read-as'
+import { connectionSummary } from '@/domains/tickets/main/connection-summary'
+import { type Call, readAs } from '@/domains/tickets/main/read-as'
 
 const STORAGE_ERRORS = { unreadable: 'storage-unavailable', invalid: 'storage-invalid' } as const
 

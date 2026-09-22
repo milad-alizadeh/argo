@@ -1,11 +1,12 @@
-import { FeedJumpToLatest, BasicFeed } from '../feed'
-import type { FeedLiveFacts } from '../feed'
 import { type ReactNode, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import type { QuestionAnswer } from '@/domains/sessions/contract/drive'
-import type { SessionEvidence } from '../types'
-import type { useSessions } from '../use-sessions'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
+import { BasicFeed } from '@/domains/sessions/renderer/feed/basic-feed'
+import { FeedJumpToLatest } from '@/domains/sessions/renderer/feed/feed-jump-to-latest'
+import type { FeedLiveFacts } from '@/domains/sessions/renderer/feed/feed-live-facts'
+import type { SessionEvidence } from '@/domains/sessions/renderer/types'
+import type { useSessions } from '@/domains/sessions/renderer/use-sessions'
 
 export type SessionWorkspaceProps = {
   composer: ReactNode | null

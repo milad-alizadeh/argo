@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict'
-import type { ContentBlock, TranscriptRecord } from '@/domains/sessions/contract/model'
+import type {
+  ContentBlock,
+  TranscriptRecord,
+} from '@/domains/sessions/contract/model/transcript/transcript'
 
 export function assertUserMessage(
   record: TranscriptRecord | null,

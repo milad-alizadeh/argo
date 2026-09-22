@@ -2,9 +2,14 @@ import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
 import { test } from 'node:test'
 
-import { createClaudePermissionGate } from '../drive/permission-gate.ts'
-import { launch, ledgerFile, OPENING, settle } from './claude-driver-launch.ts'
-import { raisePermission } from './claude-permission-hook.ts'
+import { createClaudePermissionGate } from '@/harnesses/claude/drive/permission-gate.ts'
+import {
+  launch,
+  ledgerFile,
+  OPENING,
+  settle,
+} from '@/harnesses/claude/integration/claude-driver-launch.ts'
+import { raisePermission } from '@/harnesses/claude/integration/claude-permission-hook.ts'
 
 const BASH = '{"tool_name":"Bash","tool_input":{}}\n'
 

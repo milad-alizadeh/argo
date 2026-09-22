@@ -3,8 +3,11 @@ import type {
   ProjectWorkspaceListed,
   ProjectWorkspaceSelectRequest,
 } from '@/domains/projects/contract/workspace-messages'
-import { listProjectWorkspaces, relistRequest } from './list-project-workspaces'
-import type { ProjectStore } from './register-project'
+import {
+  listProjectWorkspaces,
+  relistRequest,
+} from '@/domains/projects/main/list-project-workspaces'
+import type { ProjectStore } from '@/domains/projects/main/register-project'
 
 export async function selectProjectWorkspace(
   request: ProjectWorkspaceSelectRequest,

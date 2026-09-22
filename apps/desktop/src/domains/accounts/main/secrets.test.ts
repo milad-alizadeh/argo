@@ -7,7 +7,7 @@ import {
   isAccountConnectReply,
   isAccountListReply,
 } from '@/domains/accounts/contract/contract'
-import { connect, harness, LIST, OCTOCAT } from './harness'
+import { connect, harness, LIST, OCTOCAT } from '@/domains/accounts/main/harness'
 
 // Every token the mock GitHub hands out starts with this.
 const TOKEN = 'token-octocat-'

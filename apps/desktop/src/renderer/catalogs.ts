@@ -1,3 +1,8 @@
+// Every message catalog the renderer draws from, one namespace per module (#2130). A module that
+// gains copy adds its `locales/en.json` and one line here, and nothing else changes.
+//
+// `platform` is the main process's own catalog, read here too: a shortcut named in the application
+// menu and again on screen is one word from one file.
 import accounts from '@/domains/accounts/renderer/locales/en.json'
 import atlas from '@/domains/atlas/renderer/locales/en.json'
 import harnessSignIn from '@/domains/harness-signin/renderer/locales/en.json'
@@ -7,11 +12,6 @@ import tickets from '@/domains/tickets/renderer/locales/en.json'
 import cockpit from '@/platform/renderer/cockpit/locales/en.json'
 import shared from '@/platform/renderer/i18n/locales/en.json'
 import platform from '@/platform/shared/i18n/locales/en.json'
-// Every message catalog the renderer draws from, one namespace per module (#2130). A module that
-// gains copy adds its `locales/en.json` and one line here, and nothing else changes.
-//
-// `platform` is the main process's own catalog, read here too: a shortcut named in the application
-// menu and again on screen is one word from one file.
 
 export const CATALOGS = {
   accounts,

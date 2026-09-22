@@ -9,8 +9,8 @@ import type { TestContext } from 'node:test'
 import { promisify } from 'node:util'
 import { drizzle } from 'drizzle-orm/bun-sqlite'
 import { migrate } from 'drizzle-orm/bun-sqlite/migrator'
-import { createProjectStore } from '@/domains/projects/main/sqlite-store'
-import { createWriteQueue } from '@/platform/main/storage/portable-file'
+import { createProjectStore } from '../../src/domains/projects/main/sqlite-store'
+import { createWriteQueue } from '../../src/platform/main/storage/portable-file'
 
 const run = promisify(execFile)
 

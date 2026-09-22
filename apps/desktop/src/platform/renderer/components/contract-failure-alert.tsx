@@ -1,7 +1,7 @@
-import { Alert, AlertDescription } from './ui/alert'
-import { useContractText } from '../i18n/contract-text'
-import type { ContractFailure } from '../lib/query-client'
-import { Icon } from './icon'
+import { Icon } from '@/platform/renderer/components/icon'
+import { Alert, AlertDescription } from '@/platform/renderer/components/ui/alert'
+import { useContractText } from '@/platform/renderer/i18n/contract-text'
+import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 
 export function ContractFailureAlert({ error }: { error: ContractFailure }) {
   const contractText = useContractText()

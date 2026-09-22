@@ -1,11 +1,5 @@
 import { type RefObject, useCallback, useMemo, useState } from 'react'
-import type {
-  Session,
-  SessionError,
-  SessionId,
-  SessionRoster,
-  SessionsListed,
-} from '../../types'
+import type { Session, SessionError, SessionId, SessionRoster, SessionsListed } from '../../types'
 import { useRosterFilterStore, useRosterFocus, useRosterSelection, useRosterStatus } from '../hooks'
 import { rosterState } from '../rows'
 import { useSessionSearch } from './use-session-search'

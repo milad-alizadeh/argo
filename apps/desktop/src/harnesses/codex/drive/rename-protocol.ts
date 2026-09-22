@@ -1,5 +1,5 @@
-import type { WireMessage } from './protocol'
-import { protocolRecord, protocolString } from './protocol'
+import type { WireMessage } from '@/harnesses/codex/drive/protocol/protocol'
+import { protocolRecord, protocolString } from '@/harnesses/codex/drive/protocol/protocol'
 
 export function readRename(value: unknown): void {
   protocolRecord(value, 'Thread rename result')

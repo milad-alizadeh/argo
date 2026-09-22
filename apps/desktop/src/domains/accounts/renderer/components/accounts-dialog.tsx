@@ -2,15 +2,21 @@ import { type ReactNode, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { AccountConnected } from '@/domains/accounts/contract/contract'
+import { AccountRow } from '@/domains/accounts/renderer/components/account-row'
+import {
+  type SignedIn,
+  SignInPanel,
+  type SignInPanelProps,
+} from '@/domains/accounts/renderer/components/sign-in-panel'
 import {
   type AccountListing,
   useAccounts,
   useDisconnect,
-  useSignIn,
-} from '../hooks'
-import { useAccountsDialog } from '../state'
+} from '@/domains/accounts/renderer/hooks/use-accounts'
+import { useSignIn } from '@/domains/accounts/renderer/hooks/use-sign-in'
+import { useAccountsDialog } from '@/domains/accounts/renderer/state/use-accounts-dialog'
 import type { HarnessReadiness } from '@/domains/harness-signin/contract/contract'
-import { HarnessReadinessList, useHarnessReadiness } from '@/domains/harness-signin/renderer'
+import { HarnessReadinessList, useHarnessReadiness } from '@/domains/harness-signin/renderer/port'
 import { ContractFailureAlert } from '@/platform/renderer/components/contract-failure-alert'
 import {
   Dialog,
@@ -21,8 +27,6 @@ import {
 } from '@/platform/renderer/components/ui/dialog'
 import { firstControl, useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
-import { AccountRow } from './account-row'
-import { type SignedIn, SignInPanel, type SignInPanelProps } from './sign-in-panel'
 
 export type AccountsPanelProps = {
   listing: AccountListing | null

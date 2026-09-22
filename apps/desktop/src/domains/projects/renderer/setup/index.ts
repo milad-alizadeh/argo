@@ -1,1 +1,1 @@
-export { ProjectSetupWindow } from './project-setup-window'
+export { ProjectSetupWindow } from './screens/project-setup-window'

@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { createClaudeSdkDriveAdapter } from './claude-sdk-drive-adapter'
+import { createClaudeSdkDriveAdapter } from '@/harnesses/claude/agent-sdk/claude-sdk-drive-adapter'
 
 test('routes a legacy Claude start through the managed adapter', async () => {
   const commands: unknown[] = []

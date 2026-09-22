@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Session } from '../../types'
 import { ticketKeyInPlace } from '@/domains/tickets/contract/branch-ticket'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
+import type { Session } from '../../types'
 import { sessionTiming } from './session-timing'
 
 function planStepTone(session: Session, step: number) {

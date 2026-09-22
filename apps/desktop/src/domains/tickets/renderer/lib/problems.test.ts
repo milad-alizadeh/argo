@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
-import { connection } from '../detail/ticket-fixtures'
+import { connection } from '@/domains/tickets/renderer/detail/ticket-fixtures'
+import { connectionProblem } from '@/domains/tickets/renderer/lib/problems'
 import { initializeRendererI18n } from '@/platform/renderer/i18n/i18n'
 import { CATALOGS } from '@/renderer/catalogs'
-import { connectionProblem } from './problems'
 
 await initializeRendererI18n({
   catalogs: CATALOGS,

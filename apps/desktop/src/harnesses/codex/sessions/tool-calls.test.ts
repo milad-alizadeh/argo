@@ -11,7 +11,7 @@ import {
   listed,
   rowsOf,
 } from '@/domains/sessions/main/observation/reader-test-helpers'
-import { codexSessionSource } from './read-sessions'
+import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 
 const SESSION = 'codexToolCalls'
 const FIXTURE = fileURLToPath(

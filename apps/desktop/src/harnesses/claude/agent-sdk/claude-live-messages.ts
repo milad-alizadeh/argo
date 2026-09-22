@@ -1,4 +1,4 @@
-import type { ClaudeSdkMessage } from './types'
+import type { ClaudeSdkMessage } from '@/harnesses/claude/agent-sdk/types'
 
 export function appendAssistantMessage(
   messages: { id: string; text: string }[],

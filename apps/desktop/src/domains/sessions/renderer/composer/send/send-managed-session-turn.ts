@@ -1,9 +1,9 @@
-import type { useTurnSetup } from '../../turn-setup'
+import type { useTurnSetup } from '../turn-setup'
 import type { SessionHarness } from '../../harness'
 import type { useQueryClient } from '@tanstack/react-query'
 import type { SessionCommandOutcome } from '@/domains/sessions/next/contract/session-projection-contract'
 import { invalidateSessionRoster } from '../../session-queries'
-import type { TurnSetup } from '../../turn-setup/turn-setup'
+import type { TurnSetup } from '../turn-setup/turn-setup'
 import type { SendOutcome } from '../hooks'
 import type { Failure } from './session-failure'
 

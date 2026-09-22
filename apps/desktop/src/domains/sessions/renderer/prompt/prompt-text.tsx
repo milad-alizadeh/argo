@@ -1,11 +1,15 @@
-import { LINK_CLASS } from '../feed'
 // Renders a stored prompt's skill mentions and links inline (#2049), shared by the Feed, the
 // Roster and the composer (skill-mention-node.tsx decorates with the same SkillBadge).
 import { Fragment, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { LINK_CLASS } from '@/domains/sessions/renderer/feed/content/link-class'
+import {
+  formatSkillLabel,
+  type PromptSegment,
+  parsePromptText,
+} from '@/domains/sessions/renderer/prompt/prompt-segments'
 import { Icon } from '@/platform/renderer/components/icon'
 import { Badge } from '@/platform/renderer/components/ui/badge'
-import { formatSkillLabel, type PromptSegment, parsePromptText } from './prompt-segments'
 
 // Set in its host's type role (the Feed prompt, a Roster title, the composer), so the name
 // reads at the same size as the words beside it. Its baseline is the name's, not the icon's

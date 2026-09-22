@@ -2,12 +2,12 @@
 // and what it spent (#1582). A running row is measured against now, so the caller passes the
 // clock rather than this module reading one.
 import type { TFunction } from 'i18next'
-import type { SubagentUsageFacts } from '@/domains/sessions/contract/model'
+import type { SubagentUsageFacts } from '@/domains/sessions/contract/model/background-work-contract'
 import type {
   SessionShellCommand,
   SessionSubagent,
   ShellState,
-} from '@/domains/sessions/contract/model'
+} from '@/domains/sessions/contract/model/models'
 
 // What a header button or a Feed block opens: a Subagent with what it spent, or a Shell.
 export type SessionWork =

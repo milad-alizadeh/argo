@@ -10,7 +10,7 @@ import {
   STARTED_AT,
   settle,
   startedSession,
-} from './claude-driver-launch.ts'
+} from '@/harnesses/claude/integration/claude-driver-launch.ts'
 
 test('starts a named interactive Claude Session at the chosen setup and sends the opening Turn', async (context) => {
   const { driver, spawned, pluginRoot } = launch(await ledgerFile(context))

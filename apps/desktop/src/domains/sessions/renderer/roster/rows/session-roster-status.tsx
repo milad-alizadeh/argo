@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
+import { Icon } from '@/platform/renderer/components/icon/icon'
+import { Badge } from '@/platform/renderer/components/ui/badge'
 import type { Session } from '../../types'
 import { sessionPostureLocksAnswer } from '../../types'
-import { Icon } from '@/platform/renderer/components/icon'
-import { Badge } from '@/platform/renderer/components/ui/badge'
 
 export type SessionStatusVariant = 'active' | 'attention' | 'failed' | 'idle' | 'unknown' | 'unread'
 

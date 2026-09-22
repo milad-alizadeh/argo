@@ -1,5 +1,5 @@
 import type { ProjectSetupSnapshot as ContractProjectSetupSnapshot } from '@/domains/projects/contract/contract'
-import type { ProjectSetupActor } from './project-setup-actor'
+import type { ProjectSetupActor } from '@/domains/projects/main/setup/project-setup-actor'
 import { setupScreenOf } from './project-setup-screen-of'
 
 export type ProjectSetupSnapshot = Omit<

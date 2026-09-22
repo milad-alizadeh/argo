@@ -2,7 +2,7 @@ import type { LexicalEditor } from 'lexical'
 import { type RefObject, useCallback } from 'react'
 
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive'
-import type { TurnSetup } from '../../turn-setup/turn-setup'
+import type { TurnSetup } from '../turn-setup/turn-setup'
 import { resolveAttachments } from './use-composer-attachments'
 import type { ComposerAttachment } from './use-composer-store'
 

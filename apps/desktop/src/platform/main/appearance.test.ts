@@ -8,7 +8,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { electronStandIn } from './testing/electron-stand-in'
+import { electronStandIn } from '@/platform/main/testing/electron-stand-in'
 
 mock.module('electron', () => electronStandIn)
 
@@ -19,7 +19,7 @@ const [
 ] = await Promise.all([
   import('../../../mocks/contract/mock-ipc-window'),
   import('@/platform/shared/appearance'),
-  import('./appearance'),
+  import('@/platform/main/appearance'),
 ])
 
 test('an untrusted set is refused, and a later trusted get shows the appearance from before', async (context) => {

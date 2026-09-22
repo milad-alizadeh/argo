@@ -1,9 +1,9 @@
 // A Harness exposes one deep startup seam: it binds its driver before shared composition sees it.
 import type { BrowserWindow } from 'electron'
-import type { SessionRosterRow } from '@/domains/sessions/contract/model'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import type { SessionDriveAdapter } from '@/domains/sessions/contract/session-drive-adapter'
-import { SessionIndex } from '@/domains/sessions/main/indexing'
-import { SessionSource } from '@/domains/sessions/main/observation'
+import type { SessionIndex } from '@/domains/sessions/main/indexing/session-index/contract'
+import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
 import type { WatchedSource } from '@/platform/main/watch/watch-source'
 
 export type ManagedSessionBridges = {

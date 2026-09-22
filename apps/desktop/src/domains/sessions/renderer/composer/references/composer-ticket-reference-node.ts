@@ -1,7 +1,7 @@
 import type { EditorConfig, NodeKey, SerializedTextNode } from 'lexical'
 import { TextNode } from 'lexical'
-import type { ComposerTicketContext } from '../hooks'
-import { ticketProviderIconSource } from './ticket-provider-icon'
+import { ticketProviderIconSource } from '@/domains/sessions/renderer/composer/references/ticket-provider-icon'
+import type { ComposerTicketContext } from '@/domains/sessions/renderer/composer/use-composer-store'
 
 function openTicket(ticketKey: string) {
   window.location.hash = `/tickets/${encodeURIComponent(ticketKey)}`

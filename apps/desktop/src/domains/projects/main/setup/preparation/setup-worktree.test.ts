@@ -4,8 +4,8 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
 import { promisify } from 'node:util'
+import { prepareSetupWorktree } from '@/domains/projects/main/setup/preparation/setup-worktree'
 import { setupWorktreeFixture } from '../../../../../../test-fixtures/projects/setup/setup-worktree.fixture'
-import { prepareSetupWorktree } from './setup-worktree'
 
 const run = promisify(execFile)
 

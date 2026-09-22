@@ -1,9 +1,12 @@
 import path from 'node:path'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import type { ProjectSetupRecord } from './setup'
-import { projectSetupStore } from './setup'
-import { createWorkspaceStore, type WorkspaceStore } from './workspaces'
+import type { ProjectSetupRecord } from '@/domains/projects/main/setup/persistence/project-setup-registry'
+import { projectSetupStore } from '@/domains/projects/main/setup/persistence/project-setup-storage'
+import {
+  createWorkspaceStore,
+  type WorkspaceStore,
+} from '@/domains/projects/main/workspaces/workspace-store'
 import {
   project,
   projectSelection,
@@ -14,12 +17,12 @@ import { identifierSchema } from '@/shared/validation'
 import { createSetupWorktreePromotion } from './project-store-promotion'
 import { readSetupCheckpoint, type SetupCheckpoint } from './setup-checkpoint-store'
 
-export type { ProjectSetupRecord } from './setup'
+export type { ProjectSetupRecord } from '@/domains/projects/main/setup/persistence/project-setup-registry'
 export type {
   ManagedWorkspaceRecovery,
   WorkspaceKind,
   WorkspaceRecord,
-} from './workspaces'
+} from '@/domains/projects/main/workspaces/workspace-store'
 export type { SetupCheckpoint } from './setup-checkpoint-store'
 
 export type ProjectRegistration = { id: string; path: string; commonDirectory: string }

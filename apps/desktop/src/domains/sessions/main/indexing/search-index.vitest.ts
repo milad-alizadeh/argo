@@ -8,7 +8,7 @@ import {
   sessionIdAt,
 } from './session-index/roster-fixtures'
 import { createSessionReader } from '../observation'
-import { requestSearch } from '../projection'
+import { requestSearch } from '../projection/search/search-request'
 import {
   createIndexedReadHarness,
   expectAnsweredByIndex,

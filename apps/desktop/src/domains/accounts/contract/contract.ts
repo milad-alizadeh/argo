@@ -10,6 +10,7 @@ import {
   identifier,
   message,
 } from '@/shared/messages'
+import { PROVIDER_OUTAGE_ERRORS } from './provider-outage'
 
 export const PROVIDERS = ['github', 'linear'] as const
 export const provider = z.enum(PROVIDERS)
@@ -93,10 +94,7 @@ export const ACCOUNT_ERRORS = {
   'connection-lost': 'The connection to Argo was lost.',
   'secure-storage-unavailable': 'This computer cannot store a sign-in securely.',
   'provider-unavailable': 'This build of Argo cannot sign in to that service.',
-  'github-unreachable': 'Argo cannot reach GitHub.',
-  'rate-limited': 'GitHub is limiting requests. Try again in a few minutes.',
-  'linear-unreachable': 'Argo cannot reach Linear.',
-  'linear-rate-limited': 'Linear is limiting requests. Try again in a few minutes.',
+  ...PROVIDER_OUTAGE_ERRORS,
   'sign-in-port-busy':
     'Another app is using the port Linear signs in through. Close it and try again.',
   'sign-in-declined': 'The sign-in was declined.',

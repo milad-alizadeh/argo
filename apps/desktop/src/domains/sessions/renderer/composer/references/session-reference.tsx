@@ -1,8 +1,8 @@
-import { HARNESSES, type SessionHarness } from '../../harness'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { InlineContext } from '@/domains/sessions/renderer/composer/references/inline-context'
+import { HARNESSES, type SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import { Icon, type IconName } from '@/platform/renderer/components/icon'
-import { InlineContext } from './inline-context'
 
 export type SessionReferenceKind = 'command' | 'file' | 'plugin' | 'skill'
 

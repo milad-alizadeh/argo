@@ -5,7 +5,7 @@ import {
   createHarnessSignIn,
   type HarnessSignInDriver,
   type HarnessSignInOutcome,
-} from './harness-sign-in'
+} from '@/domains/harness-signin/main/harness-sign-in'
 
 const readyReadiness: HarnessReadiness = { harness: 'claude', state: 'ready', detail: null }
 

@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { storageRunsPackagedApplication } from './storage-runtime'
+import { storageRunsPackagedApplication } from '@/platform/main/storage/storage-runtime'
 
 export function databaseMigrationsFolder(): string {
   return storageRunsPackagedApplication()

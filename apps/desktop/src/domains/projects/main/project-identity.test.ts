@@ -4,8 +4,8 @@ import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
 import { promisify } from 'node:util'
+import { registerProject } from '@/domains/projects/main/register-project'
 import { fixture, register, repository } from '../../../../mocks/projects/mock-registration'
-import { registerProject } from './register-project'
 
 const run = promisify(execFile)
 

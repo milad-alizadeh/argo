@@ -1,5 +1,4 @@
-export { withPromptAttachments } from './prompt-attachments'
-export { steerSession } from './steer-session'
+export { steerSession } from './drive'
 export type { AttachmentsStore } from './attachments'
 export { chooseAttachments } from './attachments'
 export { statAttachments } from './attachments'

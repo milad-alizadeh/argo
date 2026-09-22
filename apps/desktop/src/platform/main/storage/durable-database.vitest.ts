@@ -3,10 +3,10 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'vitest'
-import { project } from './database-schema'
-import { createDurableDatabase } from './durable-database'
-import { databaseMigrationsFolder } from './migrations-folder'
-import { openSharedDatabase } from './shared-database'
+import { project } from '@/platform/main/storage/database-schema'
+import { createDurableDatabase } from '@/platform/main/storage/durable-database'
+import { databaseMigrationsFolder } from '@/platform/main/storage/migrations-folder'
+import { openSharedDatabase } from '@/platform/main/storage/shared-database'
 
 test('pinned node-sqlite adapter reads and writes a migrated durable table', async () => {
   const userData = await mkdtemp(path.join(os.tmpdir(), 'argo-drizzle-contract-'))

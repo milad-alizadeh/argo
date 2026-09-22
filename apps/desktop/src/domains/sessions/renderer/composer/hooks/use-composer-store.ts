@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { sessionAttachmentInputSchema } from '@/domains/sessions/contract/drive'
-import type { TurnSetup } from '../../turn-setup/turn-setup'
+import type { TurnSetup } from '../turn-setup/turn-setup'
 import { composerActions, type ComposerTicketContext, ticketContextSchema } from '../store'
 
 export type { ComposerTicketContext } from '../store'

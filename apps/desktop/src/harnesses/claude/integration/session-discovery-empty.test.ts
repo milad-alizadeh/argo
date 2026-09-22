@@ -2,13 +2,13 @@ import assert from 'node:assert/strict'
 import { appendFile, copyFile, utimes } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
-import { fixturePath } from '../../../../mocks/sessions/mock-transcript-files'
 import {
   LATER_TURN as firstMessage,
   fixtureRoot,
   unscopedListing as listing,
   listSessions,
-} from './session-fixtures'
+} from '@/harnesses/claude/integration/session-fixtures'
+import { fixturePath } from '../../../../mocks/sessions/mock-transcript-files'
 
 test('does not list transcripts without messages, but counts and re-reads them', async (context) => {
   const root = await fixtureRoot(context, [])

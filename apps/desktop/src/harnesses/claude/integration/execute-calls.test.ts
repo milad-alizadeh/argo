@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { fed, feedRequest, rowsOf } from '@/domains/sessions/main/observation/reader-test-helpers'
-import { claudeSessionSource } from '../sessions/read-sessions'
-import { fixtureRoot, fixtureRosterRow } from './session-fixtures'
+import { fixtureRoot, fixtureRosterRow } from '@/harnesses/claude/integration/session-fixtures'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
 
 // A background command runs until something ends it; the Harness's `killed` and a stop call both read
 // as `interrupted`, and the stop call draws no row of its own (#2443).

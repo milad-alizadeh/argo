@@ -1,12 +1,15 @@
-import { sessionName } from '../roster'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Session } from '../types'
+import { sessionName } from '@/domains/sessions/renderer/roster/rows/roster-rows'
+import { SESSION_SPLIT } from '@/domains/sessions/renderer/screens/session-screen-layout'
+import {
+  SessionWorkspace,
+  type SessionWorkspaceProps,
+} from '@/domains/sessions/renderer/screens/session-workspace'
+import { worktreeName } from '@/domains/sessions/renderer/screens/session-worktree'
+import type { Session } from '@/domains/sessions/renderer/types'
 import { InspectorSplit } from '@/platform/renderer/cockpit/inspector-split/inspector-split'
 import { Icon } from '@/platform/renderer/components/icon'
-import { SESSION_SPLIT } from './session-screen-layout'
-import { SessionWorkspace, type SessionWorkspaceProps } from './session-workspace'
-import { worktreeName } from './session-worktree'
 
 import './session-screen.css'
 

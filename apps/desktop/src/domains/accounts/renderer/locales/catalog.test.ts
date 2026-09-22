@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 import { ACCOUNT_ERRORS, PROVIDERS } from '@/domains/accounts/contract/contract'
-import accounts from './en.json'
+import accounts from '@/domains/accounts/renderer/locales/en.json'
 
 test('the Accounts catalog answers every Account error code', () => {
   expect(Object.keys(accounts.error).sort()).toEqual(Object.keys(ACCOUNT_ERRORS).sort())

@@ -1,10 +1,11 @@
 import type {
+  AcceptedSetupPlan,
   ProjectSetupAnswer,
   ProjectSetupQuestion,
+  ProjectSetupRecoveryCode,
+  SetupPlan,
+  SetupStepStatus,
 } from '@/domains/projects/contract/setup'
-import type { ProjectSetupRecoveryCode } from '@/domains/projects/contract/setup'
-import type { AcceptedSetupPlan, SetupPlan } from '@/domains/projects/contract/setup'
-import type { SetupStepStatus } from '@/domains/projects/contract/setup'
 
 export type ProjectSetupEvent =
   | { type: 'Choose manual' }

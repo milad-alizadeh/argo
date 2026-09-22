@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { readTranscriptFile } from '@/domains/sessions/contract/model/transcript'
-import { parseCodexTranscriptLine } from './records'
+import { readTranscriptFile } from '@/domains/sessions/contract/model/transcript/transcript'
+import { parseCodexTranscriptLine } from '@/harnesses/codex/sessions/records'
 
 test('names a voice thread by the first thing the person said', () => {
   const said = (input: string) =>

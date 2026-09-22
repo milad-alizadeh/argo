@@ -1,6 +1,6 @@
-import type { QuestionAnswer } from '@/domains/sessions/contract/drive'
-import type { ClaudePermission } from '@/domains/sessions/contract/ipc'
-import type { SessionRosterRow } from '@/domains/sessions/contract/model'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
+import type { ClaudePermission } from '@/domains/sessions/contract/ipc/contract'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import { managedRow, rollupSessionStatus } from '@/domains/sessions/main'
 import { closeSessions } from './claude-session-close'
 import {
@@ -9,12 +9,12 @@ import {
   compactSession,
   completeCompaction,
 } from './compaction-driver'
-import type { ClaudeTurnRequest } from './deliver-turn'
-import { channelActions, type DriverOptions, type ManagedSession } from './drive-channel'
-import { ClaudeSessionDriverError } from './driver-error'
-import { clearHandoff, completeHandoffs, startHandoff } from './handoff-driver'
-import type { LiveMessage } from './live-messages'
+import { channelActions, type DriverOptions, type ManagedSession } from './channel/drive-channel'
+import { ClaudeSessionDriverError } from './channel/driver-error'
+import type { LiveMessage } from './channel/live-messages'
+import { clearHandoff, completeHandoffs, startHandoff } from './handoff/handoff-driver'
 import { claudeManagedStatus } from './managed-status'
+import type { ClaudeTurnRequest } from './turn/deliver-turn'
 
 export type ClaudeSessionDriver = {
   start: (request: { cwd: string } & ClaudeTurnRequest) => string

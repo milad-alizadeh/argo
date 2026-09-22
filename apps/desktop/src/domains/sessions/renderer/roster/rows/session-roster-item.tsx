@@ -14,7 +14,7 @@ import type { SelectionModifier } from '../hooks'
 import { sessionName } from './roster-rows'
 import { SessionMetadata } from './session-roster-metadata'
 import './session-roster-item.css'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   SessionBlockedBadge,
   SessionLockedMark,

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { compactionHookCommand } from '../compaction/compaction-hook.ts'
-import { parseTranscriptLine } from '../sessions/records.ts'
+import { compactionHookCommand } from '@/harnesses/claude/compaction/compaction-hook.ts'
+import { parseTranscriptLine } from '@/harnesses/claude/sessions/records.ts'
 
 const ESCAPE = String.fromCharCode(27)
 const dim = (text: string) => `${ESCAPE}[2m${text}${ESCAPE}[22m`

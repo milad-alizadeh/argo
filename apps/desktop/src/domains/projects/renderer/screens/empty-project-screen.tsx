@@ -1,7 +1,7 @@
-import { useProjects } from '..'
-import { EmptyProjectWindow } from '../components'
+import { EmptyProjectWindow } from '@/domains/projects/renderer/components/empty-project-window'
+import { useProjects } from '@/domains/projects/renderer/port'
 import { useCommands } from '@/platform/renderer/cockpit/hooks/use-commands'
-import { REGISTER_PROJECT_COMMAND } from '@/platform/shared/commands'
+import { REGISTER_PROJECT_COMMAND } from '@/platform/contract/commands'
 
 // The switcher that answers the add-Project chord is not mounted here, so this window answers it.
 export function EmptyProjectScreen() {

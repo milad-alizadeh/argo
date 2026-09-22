@@ -1,13 +1,13 @@
 import { z } from 'zod'
-import { identifierSchema } from '@/shared/validation'
-import type { SessionCommand } from './session-command-contract'
+import type { SessionCommand } from '@/domains/sessions/next/contract/session-command-contract'
 import {
   type SessionIdentity,
   sessionIdentitySchema,
   sessionPostureSchema,
   sourceHealthSchema,
   workspaceReferenceSchema,
-} from './session-contract'
+} from '@/domains/sessions/next/contract/session-contract'
+import { identifierSchema } from '@/shared/validation'
 
 const turnStatusSchema = z.enum(['running', 'completed', 'interrupted', 'failed'])
 export type TurnStatus = z.infer<typeof turnStatusSchema>

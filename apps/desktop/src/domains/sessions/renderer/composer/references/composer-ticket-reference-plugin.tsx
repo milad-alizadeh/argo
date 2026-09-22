@@ -13,11 +13,11 @@ import {
   type TextNode,
 } from 'lexical'
 import { useEffect } from 'react'
-import type { ComposerTicketContext } from '../hooks'
 import {
   $createComposerTicketReferenceNode,
   ComposerTicketReferenceNode,
-} from './composer-ticket-reference-node'
+} from '@/domains/sessions/renderer/composer/references/composer-ticket-reference-node'
+import type { ComposerTicketContext } from '@/domains/sessions/renderer/composer/use-composer-store'
 
 function ticketMatch(text: string, tickets: ComposerTicketContext[]): EntityMatch | null {
   for (const ticket of tickets) {

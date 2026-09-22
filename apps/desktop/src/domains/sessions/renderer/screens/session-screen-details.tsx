@@ -1,10 +1,10 @@
-import type { HarnessControl } from '../harness'
-import { SessionComposer, COMPOSER_COLUMN } from '../composer'
-import type { useSessionComposer, useSessionPermission } from '../composer'
 import { useTranslation } from 'react-i18next'
-import type { SessionErrorCode } from '@/domains/sessions/contract/ipc'
-import type { SessionRosterRow } from '@/domains/sessions/contract/model'
-import type { SessionRoster } from '../types'
+import type { SessionErrorCode } from '@/domains/sessions/contract/ipc/contract'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { COMPOSER_COLUMN } from '@/domains/sessions/renderer/composer/composer-form'
+import { SessionComposer } from '@/domains/sessions/renderer/composer/session-composer'
+import type { HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
+import type { SessionRoster } from '@/domains/sessions/renderer/types'
 import { Icon } from '@/platform/renderer/components/icon'
 import { PermissionPrompt } from '@/platform/renderer/components/permission-prompt'
 import {
@@ -22,10 +22,14 @@ const OPEN_ELSEWHERE: ReadonlySet<SessionErrorCode> = new Set(['held-elsewhere']
 
 type SessionScreenDetailsProps = {
   composer: Pick<
-    ReturnType<typeof useSessionComposer>,
+    ReturnType<
+      typeof import('@/domains/sessions/renderer/composer/use-session-composer').useSessionComposer
+    >,
     'failure' | 'props' | 'retry'
   >
-  permission: ReturnType<typeof useSessionPermission>
+  permission: ReturnType<
+    typeof import('@/domains/sessions/renderer/composer/use-session-permission').useSessionPermission
+  >
   questionPending: boolean
   session: SessionRosterRow | null
   harness: HarnessControl

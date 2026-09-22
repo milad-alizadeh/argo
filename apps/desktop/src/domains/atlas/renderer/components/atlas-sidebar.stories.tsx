@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { AtlasSidebar } from './atlas-sidebar'
+import { AtlasSidebar } from '@/domains/atlas/renderer/components/atlas-sidebar'
 
 const meta = {
   title: 'Atlas/Atlas Sidebar',

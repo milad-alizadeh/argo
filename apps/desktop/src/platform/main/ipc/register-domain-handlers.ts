@@ -1,5 +1,5 @@
 import type { BrowserWindow } from 'electron'
-import { isTrustedRendererFrame } from '../security/is-trusted-renderer-frame'
+import { isTrustedRendererFrame } from '@/platform/main/security/is-trusted-renderer-frame'
 import type {
   MainErrorCode,
   Operation,

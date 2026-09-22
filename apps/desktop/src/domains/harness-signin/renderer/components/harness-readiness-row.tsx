@@ -3,8 +3,8 @@ import type { HarnessReadiness } from '@/domains/harness-signin/contract/contrac
 import {
   type HarnessSignIn,
   useHarnessSignIn,
-} from '../hooks/use-harness-sign-in'
-import { HarnessLogo } from '@/domains/sessions/renderer'
+} from '@/domains/harness-signin/renderer/hooks/use-harness-sign-in'
+import { HarnessLogo } from '@/domains/sessions/renderer/port'
 import { ContractFailureAlert } from '@/platform/renderer/components/contract-failure-alert'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Button } from '@/platform/renderer/components/ui/button'

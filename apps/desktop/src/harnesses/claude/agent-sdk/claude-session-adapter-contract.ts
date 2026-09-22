@@ -1,4 +1,4 @@
-import type { SessionRosterRow } from '@/domains/sessions/contract/model'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import type {
   SessionIdentity,
   WorkspaceSelection,
@@ -8,7 +8,7 @@ import type {
   SessionCommandOutcome,
   SessionProjection,
 } from '@/domains/sessions/next/contract/session-projection-contract'
-import type { watchedChanges } from './claude-session-watch'
+import type { watchedChanges } from './claude-session-adapter'
 
 export type ClaudeSessionAdapter = SessionAdapter & {
   close: () => void

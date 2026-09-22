@@ -1,7 +1,7 @@
 import type { HarnessControl } from '../../harness'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 import { ModeMenu } from './mode-menu'

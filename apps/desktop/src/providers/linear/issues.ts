@@ -13,10 +13,10 @@ import {
   type TicketState,
   type TicketStatus,
 } from '@/domains/tickets/contract/ticket'
+import type { LinearEndpoints } from '@/providers/linear/endpoints'
+import { failed, type LinearRead, query } from '@/providers/linear/http'
+import { categoryOf, statusOf, TEAM_STATES, teamStatuses } from '@/providers/linear/statuses'
 import { isRecord } from '@/shared/validation'
-import type { LinearEndpoints } from './endpoints'
-import { failed, type LinearRead, query } from './http'
-import { categoryOf, statusOf, TEAM_STATES, teamStatuses } from './statuses'
 
 // Linear serves children and relations as connections of their own; a Ticket with more than this
 // many draws the first ones.

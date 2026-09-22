@@ -2,10 +2,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test'
 import type { Permission } from '@/domains/sessions/contract/ipc/contract'
+import { PendingTurns } from '@/domains/sessions/renderer/composer/tray/pending-turns'
 import { PermissionPrompt } from '@/platform/renderer/components/permission-prompt'
-import { PendingTurns } from './pending-turns'
 import '../composer-content.css'
-import { AttachmentTray } from './attachment-tray'
+import { AttachmentTray } from '@/domains/sessions/renderer/composer/tray/attachment-tray'
 
 const permission: Permission = {
   id: 'permission-one',
@@ -44,11 +44,28 @@ export const Pending: Story = {
 
 // Claude's gate remembers similar calls; the same answer reads as a Session-wide allow for Codex.
 export const AllowSimilar: Story = {
-  play: async ({ args, canvasElement }) => {
+  render: (args) => {
+    const [answer, setAnswer] = useState<string | null>(null)
+    return (
+      <>
+        <PermissionPrompt
+          {...args}
+          onDecide={async (decision) => {
+            setAnswer(decision)
+            return true
+          }}
+        />
+        <output aria-label="Answer">{answer}</output>
+      </>
+    )
+  },
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'More ways to allow' }))
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Allow similar' }))
-    await expect(args.onDecide).toHaveBeenCalledWith('allowForSession')
+    await expect(canvas.getByRole('status', { name: 'Answer' })).toHaveTextContent(
+      'allowForSession',
+    )
   },
 }
 

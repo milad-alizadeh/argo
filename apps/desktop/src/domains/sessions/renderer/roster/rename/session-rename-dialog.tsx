@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Session } from '../../types'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Dialog,
@@ -11,6 +10,7 @@ import {
 } from '@/platform/renderer/components/ui/dialog'
 import { Input } from '@/platform/renderer/components/ui/input'
 import { Label } from '@/platform/renderer/components/ui/label'
+import type { Session } from '../../types'
 
 export function normalizeSessionName(value: string): string {
   return [...value]

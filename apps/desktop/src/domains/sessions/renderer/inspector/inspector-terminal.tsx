@@ -1,4 +1,8 @@
-import { Terminal, TerminalContent, TerminalCopyButton } from '../ai-elements'
+import {
+  Terminal,
+  TerminalContent,
+  TerminalCopyButton,
+} from '@/domains/sessions/renderer/ai-elements/terminal'
 
 // Command output filling the inspector edge to edge; the pane's own header already names it.
 export function InspectorTerminal({

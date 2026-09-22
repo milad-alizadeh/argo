@@ -10,7 +10,7 @@ import { FeedMarker } from './feed-marker'
 import { FeedPrompt } from './feed-prompt'
 import { FeedQuestion } from './feed-question'
 import { FeedSubagent } from './feed-subagent'
-import { FeedToolGroup, FeedToolLine } from './feed-tools'
+import { FeedToolGroup, FeedToolLine } from '../tools/feed-tools'
 import type { ToolGroupState } from './tool-group-state'
 
 type AssistantProseRow = Extract<SessionFeedRow, { shape: 'prose' }> & { role: 'assistant' }

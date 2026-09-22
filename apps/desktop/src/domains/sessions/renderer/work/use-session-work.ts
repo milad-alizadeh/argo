@@ -1,4 +1,3 @@
-import { retrySessionFeed, sessionFeedQuery } from '../feed'
 // The two reads the work rail needs beyond the Roster row it already has (#1582): what each
 // Subagent spent, and what one background Shell has written so far. Neither rides the Roster or
 // Feed reply, and each stops polling once the thing it watches has finished.
@@ -6,15 +5,19 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type {
   SessionShellOutput,
   SubagentUsageFacts,
-} from '@/domains/sessions/contract/model'
-import type { SessionContractError } from '../session-contract-error'
+} from '@/domains/sessions/contract/model/background-work-contract'
+import {
+  retrySessionFeed,
+  sessionFeedQuery,
+} from '@/domains/sessions/renderer/feed/session-feed-query'
+import type { SessionContractError } from '@/domains/sessions/renderer/session-contract-error'
 import {
   SESSION_REFRESH_MS,
   sessionShellOutputQueryKey,
   sessionSubagentUsageQueryKey,
-} from '../session-queries'
-import type { SessionFeed, SessionId } from '../types'
-import { useWatchedQueries } from '../use-watched-topic'
+} from '@/domains/sessions/renderer/session-queries'
+import type { SessionFeed, SessionId } from '@/domains/sessions/renderer/types'
+import { useWatchedQueries } from '@/domains/sessions/renderer/use-watched-topic'
 
 // Each read re-parses every Subagent transcript the Session has, so a Session whose Subagents have
 // all come back is read once rather than on every pass.

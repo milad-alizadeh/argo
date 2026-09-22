@@ -1,6 +1,6 @@
 import { app } from 'electron'
-import { applyStoredAppearance, readAppearance } from '../appearance'
-import { setPlatformLanguage } from '../i18n'
+import { applyStoredAppearance, readAppearance } from '@/platform/main/appearance'
+import { setPlatformLanguage } from '@/platform/main/i18n'
 
 export function startDesktopApplication(request: {
   ready: () => Promise<void> | void

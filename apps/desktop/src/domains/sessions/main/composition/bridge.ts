@@ -30,7 +30,7 @@ import {
 } from '@/domains/sessions/contract/ipc'
 import { SESSION_OPERATIONS } from '@/domains/sessions/contract/ipc'
 import type { SessionDriveAdapters } from '@/domains/sessions/contract/session-drive-adapter'
-import { AttachmentsStore, chooseAttachments, statAttachments } from '../drive'
+import { type AttachmentsStore, chooseAttachments, statAttachments } from '../drive/attachments'
 import {
   compactSession,
   decideSessionPermission,
@@ -41,8 +41,8 @@ import {
   readSessionPermission,
   sendSession,
   startSession,
-} from '../drive'
-import { steerSession } from '../drive'
+} from '../drive/drive'
+import { steerSession } from '../drive/drive'
 import { platformText } from '@/platform/main/i18n'
 import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
 

@@ -12,10 +12,10 @@ import {
   HARNESS_SIGNIN_CLAUDE_EXECUTABLE_ENV,
   HARNESS_SIGNIN_CODEX_EXECUTABLE_ENV,
   HARNESS_SIGNIN_EXPIRES_AFTER_MS_ENV,
-} from '@/domains/harness-signin/contract/proof-protocol'
-import { createProjectStore } from '@/domains/projects/main/sqlite-store'
-import { createDurableDatabase } from '@/platform/main/storage/durable-database'
-import { openSharedDatabase } from '@/platform/main/storage/shared-database'
+} from '../../../src/domains/harness-signin/contract/proof-protocol'
+import { createProjectStore } from '../../../src/domains/projects/main/sqlite-store'
+import { createDurableDatabase } from '../../../src/platform/main/storage/durable-database'
+import { openSharedDatabase } from '../../../src/platform/main/storage/shared-database'
 import { test as packagedTest } from '../../packaged-proof'
 import { openHiddenWindow } from '../../packaged-window'
 import {

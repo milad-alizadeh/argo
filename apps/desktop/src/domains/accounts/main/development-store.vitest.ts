@@ -3,14 +3,14 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'vitest'
+import { createGrantStore } from '@/domains/accounts/main/grants'
+import { readAccounts, writeAccounts } from '@/domains/accounts/main/registry'
 import {
   DEVELOPMENT_APPLICATION_NAME,
   developmentStoreDirectories,
 } from '@/platform/main/development/account-store'
 import { type DevelopmentInstance, developmentInstance } from '@/platform/main/development/instance'
 import { sharedDatabasePath } from '@/platform/main/storage/shared-database'
-import { createGrantStore } from './grants'
-import { readAccounts, writeAccounts } from './registry'
 
 const APP_DATA = '/Users/developer/Library/Application Support'
 

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { sessionListReplySchema } from '@/domains/sessions/contract/ipc/contract.ts'
-import { readSubagentReading } from '@/domains/sessions/main/projection/subagents.ts'
+import { readSubagentReading } from '@/domains/sessions/main/projection/roster/subagents.ts'
 import { fixtureRosterRow as rowOf } from './session-fixtures'
 
 test('reads the Plan entries off the newest snapshot the agent wrote', async () => {

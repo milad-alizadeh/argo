@@ -1,8 +1,8 @@
 import React, { type ComponentProps, useCallback, useContext, useState } from 'react'
+import { CodeBlockContext } from '@/domains/sessions/renderer/ai-elements/code-block'
 import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { cn } from '@/platform/renderer/lib/utils'
-import { CodeBlockContext } from './code-block'
 
 export type CodeBlockCopyButtonProps = ComponentProps<typeof Button> & { timeout?: number }
 

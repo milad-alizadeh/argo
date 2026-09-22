@@ -1,5 +1,5 @@
 import type { HarnessControl } from '../../harness'
-import { DraftContextPicker } from '../../context'
+import { DraftContextPicker } from '../references/context-picker/draft-context-picker'
 import type { LexicalEditor } from 'lexical'
 import type { DragEvent, RefObject } from 'react'
 import { useTranslation } from 'react-i18next'

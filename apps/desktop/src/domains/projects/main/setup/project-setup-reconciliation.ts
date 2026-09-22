@@ -1,8 +1,8 @@
 import type { AcceptedSetupPlan } from '@/domains/projects/contract/setup'
-import type { OnboardingAgentDriver } from './onboarding-agent/runtime/run-onboarding-agent'
-import { reconcileSetupWorktree } from './preparation/setup-worktree'
-import { observeSourceFingerprints } from './preparation/source-fingerprints'
-import type { ProjectStore } from '../sqlite-store'
+import type { OnboardingAgentDriver } from '@/domains/projects/main/setup/onboarding-agent/runtime/run-onboarding-agent'
+import { reconcileSetupWorktree } from '@/domains/projects/main/setup/preparation/setup-worktree'
+import { observeSourceFingerprints } from '@/domains/projects/main/setup/preparation/source-fingerprints'
+import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
 
 export async function reconcileProjectSetupApplication({
   acceptedPlan,

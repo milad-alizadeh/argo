@@ -6,7 +6,7 @@ import {
   type PendingTurn,
   usePendingTurns,
 } from '../tray/use-pending-turns'
-import { supportedSetup, type TurnSetup } from '../../turn-setup/turn-setup'
+import { supportedSetup, type TurnSetup } from '../turn-setup/turn-setup'
 import type { TurnSetupControlProps } from '../toolbar'
 import { useAttachmentTransfer, useComposerAttachments } from './use-composer-attachments'
 import { useComposerStore } from './use-composer-store'

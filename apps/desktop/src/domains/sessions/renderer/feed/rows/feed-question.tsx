@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { Question, QuestionAnswer } from '@/domains/sessions/contract/drive'
 import { FEED_CARD_RADIUS_CLASS } from '../content/feed-surface'
 import type { SessionFeedRow } from '../../types'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import {
   Questionnaire,

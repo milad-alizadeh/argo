@@ -3,9 +3,9 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { SessionAdapter } from '@/domains/sessions/next/contract/session-projection-contract'
 import { MANAGED_SESSION_OPERATIONS } from '@/domains/sessions/next/ipc/managed-session-operations'
+import type { SessionAdapterRegistry } from '@/domains/sessions/next/main/session-adapter-registry'
 import { electronStandIn } from '@/platform/main/testing/electron-stand-in'
 import { createMockIpcWindow, RENDERER_URL } from '../../../../../mocks/contract/mock-ipc-window'
-import type { SessionAdapterRegistry } from './session-adapter-registry'
 
 mock.module('electron', () => electronStandIn)
 const { attachManagedSessionBridge } = await import('./managed-session-bridge')

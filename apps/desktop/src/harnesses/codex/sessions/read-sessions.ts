@@ -1,16 +1,17 @@
 import type {
   SessionRenameReply,
   SessionRenameRequest,
-} from '@/domains/sessions/contract/ipc'
-import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/contract/model'
-import { askRow } from '@/domains/sessions/contract/model'
+} from '@/domains/sessions/contract/ipc/contract'
+import { askRow } from '@/domains/sessions/contract/model/feed/tool-feed'
+import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import {
   discoverRoster,
   type FeedOverlay,
   type SessionIndex,
   type SessionSource,
 } from '@/domains/sessions/main'
-import type { LiveMessage, PendingCodexQuestion } from '../drive'
+import type { LiveMessage } from '@/harnesses/codex/drive/codex-session-driver'
+import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
 import {
   backfillTick,
   clearFullRecords,
@@ -22,13 +23,17 @@ import {
   reconcileAll,
   resolveIds,
   searchIndexed,
-} from './discover'
-import { draftText } from './harness-envelopes'
-import { createHeldRolloutReader, joinHeldRollouts, type OpenFileListing } from './held-rollouts'
-import { createOpenTurnReader, joinOpenTurns } from './open-turns'
-import { readSubagentTokens } from './subagent-tokens'
-import { readSubagentChain } from './subagents'
-import type { ThreadNames } from './thread-names'
+} from './discovery/discover'
+import { readSubagentTokens } from './facts/subagent-tokens'
+import { readSubagentChain } from './facts/subagents'
+import { draftText } from './records/harness-envelopes'
+import {
+  createHeldRolloutReader,
+  joinHeldRollouts,
+  type OpenFileListing,
+} from './records/held-rollouts'
+import { createOpenTurnReader, joinOpenTurns } from './thread/open-turns'
+import type { ThreadNames } from './thread/thread-names'
 
 // The managed Sessions the driver holds, and what their Turns have streamed so far.
 export type ReaderOptions = {
