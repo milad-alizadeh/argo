@@ -20,7 +20,7 @@ const longTicket = {
 }
 
 const meta: Meta<typeof TicketList> = {
-  title: 'Tickets/List',
+  title: 'Tickets/Sidebar/List',
   component: TicketList,
   args: {
     backlog: backlog({ tickets: [wayfinder, standalone] }),

@@ -136,7 +136,7 @@ const story = (change: Partial<ProjectSetupSnapshot>): Story => ({
 })
 
 const meta: Meta<typeof ProjectSetupView> = {
-  title: 'Project onboarding/States',
+  title: 'Projects/Setup/Window',
   component: ProjectSetupView,
   decorators: [(Story) => <div className="h-screen">{Story()}</div>],
   parameters: { layout: 'fullscreen' },

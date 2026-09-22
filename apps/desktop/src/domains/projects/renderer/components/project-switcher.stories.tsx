@@ -16,7 +16,7 @@ function ProjectSwitcherStory() {
 }
 
 const meta: Meta<typeof ProjectSwitcherStory> = {
-  title: 'Cockpit/Project Switcher',
+  title: 'Projects/Project Switcher',
   component: ProjectSwitcherStory,
 }
 
