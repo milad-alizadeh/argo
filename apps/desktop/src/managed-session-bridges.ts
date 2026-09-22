@@ -43,7 +43,7 @@ export function attachManagedSessionHarnesses(
         workspaceForCwd: (cwd) => workspaceSelectionForSessionCwd(cwd, options.projects),
       }),
       codex: createCodexAppServerDriveAdapter({
-        adapter: codex,
+        adapter: codex as CodexSessionAdapter,
         workspaceForCwd: (cwd) => workspaceSelectionForSessionCwd(cwd, options.projects),
       }),
     },

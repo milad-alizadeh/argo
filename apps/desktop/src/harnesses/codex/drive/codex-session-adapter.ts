@@ -1,4 +1,7 @@
-import type { SessionIdentity } from '@/domains/sessions/next/contract/session-contract'
+import type {
+  SessionIdentity,
+  WorkspaceSelection,
+} from '@/domains/sessions/next/contract/session-contract'
 import type { Unsubscribe } from '@/domains/sessions/next/contract/session-projection-contract'
 import type { AppServerSupervisorDeps } from '@/harnesses/codex/drive/app-server-supervisor-machine'
 import type { CodexSessionAdapter } from '@/harnesses/codex/drive/codex-session-adapter-contract'

@@ -10,6 +10,7 @@ import {
 } from '@/domains/sessions/renderer/feed/feed-live-facts'
 import { isFeedRowStreaming } from '@/domains/sessions/renderer/feed/feed-row-renderers'
 import { liveFeedTail } from '@/domains/sessions/renderer/feed/feed-tail'
+import { promptBesideFeed } from '@/domains/sessions/renderer/feed/prompt-beside-feed'
 import { useReveals } from '@/domains/sessions/renderer/feed/reveal'
 import type { RevealCache } from '@/domains/sessions/renderer/feed/streaming-text'
 import { ToolGroupState } from '@/domains/sessions/renderer/feed/tool-group-state'
@@ -78,9 +79,7 @@ function withLiveRows(reading: SessionFeed, facts: NonNullable<FeedLiveFacts>): 
 function liveReading(reading: SessionFeed, liveFacts: FeedLiveFacts) {
   const facts = liveFacts ?? INACTIVE_FEED_LIVE_FACTS
   const settled = withLiveRows(reading, facts)
-  // A settled prompt stays only while the transcript has no rows, so it can never double one.
-  const promptRow =
-    facts.optimisticRow ?? (reading.rows.length === 0 ? facts.settledPromptRow : null)
+  const promptRow = promptBesideFeed(settled.rows, facts.optimisticRow, facts.settledPromptRow)
   const readingWithOptimisticRow =
     promptRow === null
       ? settled

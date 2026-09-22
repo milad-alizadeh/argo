@@ -43,9 +43,17 @@ function promptOf(projection: SessionProjection): string {
   return projection.messages.find((message) => message.role === 'user')?.text ?? 'New Codex Session'
 }
 
+function turnStartedAtOf(projection: SessionProjection): string | null {
+  const startedAt = projection.turns.reduce<number | null>(
+    (latest, turn) => (latest === null || turn.startedAt > latest ? turn.startedAt : latest),
+    null,
+  )
+  return startedAt === null ? null : new Date(startedAt).toISOString()
+}
+
 function rosterRowOf(projection: SessionProjection) {
   const prompt = promptOf(projection)
-  return managedRosterRow({
+  const row = managedRosterRow({
     id: projection.session.nativeId,
     session: {
       harness: 'codex',
@@ -62,6 +70,7 @@ function rosterRowOf(projection: SessionProjection) {
       handoffStartedAt: null,
     },
   })
+  return { ...row, turnStartedAt: turnStartedAtOf(projection) }
 }
 
 function rowsOf(projection: SessionProjection): SessionFeedRow[] {
