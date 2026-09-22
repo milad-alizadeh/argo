@@ -84,5 +84,5 @@ export const CLAUDE_TURN_SETUP: TurnSetupChoices = {
     reads: (reading) => reading === value,
   })),
   modes: MODES,
-  opening: { model: 'opus', effort: 'medium', mode: 'manual' },
+  opening: { model: 'haiku', effort: 'low', mode: 'manual' },
 }

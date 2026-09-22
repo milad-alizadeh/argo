@@ -1,12 +1,6 @@
 import { memo, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  DESTINATION_PATHS,
-  DESTINATIONS,
-  type Destination,
-  navigateCommand,
-  shortcut,
-} from '@/platform/contract/commands'
+import { DESTINATION_PATHS, DESTINATIONS, type Destination } from '@/platform/contract/commands'
 import { Icon, type IconName } from '../../components/icon/icon'
 
 const navigationIcons: Record<Destination, IconName> = {
@@ -14,6 +8,12 @@ const navigationIcons: Record<Destination, IconName> = {
   Tickets: 'ticket',
   Atlas: 'atlas',
 }
+
+const navigationLabelKeys = {
+  Sessions: 'rail.destinations.sessions',
+  Tickets: 'rail.destinations.tickets',
+  Atlas: 'rail.destinations.atlas',
+} as const satisfies Record<Destination, string>
 
 function destinationFromHash(): Destination {
   return (
@@ -24,9 +24,9 @@ function destinationFromHash(): Destination {
 }
 
 export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
-  const { t } = useTranslation(['cockpit', 'platform'])
+  const { t } = useTranslation('cockpit')
   const [destination, setDestination] = useState(destinationFromHash)
-  const settingsLabel = t('cockpit:rail.settings')
+  const settingsLabel = t('rail.settings')
 
   useEffect(() => {
     const updateDestination = () => setDestination(destinationFromHash())
@@ -36,14 +36,14 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
 
   return (
     <nav
-      aria-label={t('cockpit:rail.label')}
+      aria-label={t('rail.label')}
       className="flex h-full min-h-0 w-(--size-navigation-rail) shrink-0 flex-col items-center border-r border-border/60 bg-sidebar [&_svg]:size-(--size-icon-control)"
     >
       <div className="flex flex-col items-center gap-2 pt-(--inset-navigation-rail-item-top)">
         {DESTINATIONS.map((itemDestination) => {
           const iconName = navigationIcons[itemDestination]
           const active = destination === itemDestination
-          const label = t(`platform:${shortcut(navigateCommand(itemDestination)).labelKey}`)
+          const label = t(navigationLabelKeys[itemDestination])
           return (
             <button
               key={itemDestination}

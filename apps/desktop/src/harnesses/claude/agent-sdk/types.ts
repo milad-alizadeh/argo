@@ -1,10 +1,13 @@
 import type {
   CanUseTool,
+  EffortLevel,
   OnUserDialog,
+  PermissionMode,
   Query,
   SDKUserMessage,
 } from '@anthropic-ai/claude-agent-sdk'
 import { z } from 'zod'
+import type { ClaudeTurnSetup } from '@/domains/sessions/contract/claude-turn-setup'
 import type {
   SessionIdentity,
   SourceHealth,
@@ -63,6 +66,9 @@ export type ClaudeQueryFactory = (params: {
   resume: string | undefined
   canUseTool: CanUseTool
   onUserDialog: OnUserDialog
+  model?: string
+  effort?: EffortLevel
+  permissionMode?: PermissionMode
 }) => Query
 
 export type ClaudeSessionInput = {
@@ -74,6 +80,7 @@ export type ClaudeSessionInput = {
   startedAt: string
   createQuery: ClaudeQueryFactory
   sessionService: SessionService
+  setup?: ClaudeTurnSetup
 }
 
 export type ClaudeSessionContext = {

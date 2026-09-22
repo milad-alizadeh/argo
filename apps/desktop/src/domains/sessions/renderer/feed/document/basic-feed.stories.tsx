@@ -1136,6 +1136,40 @@ function SwitchingHistoryHarness() {
   )
 }
 
+function SwitchingHistoryHarnessWithLiveUpdate() {
+  const [selected, setSelected] = useState<'history' | 'second-history'>('history')
+  const [firstFeed, setFirstFeed] = useState<SessionFeed>(historyFeed)
+  const current = selected === 'history' ? firstFeed : secondHistoryFeed
+  return (
+    <div className="flex h-dvh flex-col">
+      <button type="button" onClick={() => setSelected('history')}>
+        Open first Session
+      </button>
+      <button type="button" onClick={() => setSelected('second-history')}>
+        Open second Session
+      </button>
+      <button type="button" onClick={() => setFirstFeed(updatedHistoryFeed)}>
+        Receive update on first Session
+      </button>
+      <div className="min-h-0 flex-1">
+        <BasicFeed
+          activeEvidenceId={null}
+          answeringQuestionId={null}
+          failure={null}
+          feed={current}
+          liveFacts={LIVE_FACTS}
+          onAnswerQuestion={() => {}}
+          onOpenEvidence={() => {}}
+          onOpenSession={() => {}}
+          onRetryFeed={() => {}}
+          questionFailure={() => null}
+          selectedSessionId={selected}
+        />
+      </div>
+    </div>
+  )
+}
+
 function HistoryPrependHarness() {
   const [current, setCurrent] = useState<SessionFeed>(historyFeed)
   return (
@@ -1339,6 +1373,45 @@ export const SessionSwitchRestoresReadingPosition: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Open first Session' }))
     const restored = await canvas.findByLabelText('Session history')
     await waitFor(() => expect(restored.scrollTop).toBeCloseTo(savedPosition, 1))
+  },
+}
+
+// New content landing elsewhere in the Session while the reader is away must not move their
+// place: no snap to the top, no snap to the row, just the same row at the same offset they left
+// it at (#e2e-real-cheap-models).
+export const SessionSwitchRestoresReadingPositionAfterContentChangesWhileAway: Story = {
+  render: () => <SwitchingHistoryHarnessWithLiveUpdate />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const history = await canvas.findByLabelText('Session history')
+    await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(history.clientHeight))
+    history.scrollTop = history.scrollHeight / 2
+    fireEvent.scroll(history)
+    const historyTop = history.getBoundingClientRect().top
+    const anchor = [...history.querySelectorAll<HTMLElement>('[data-feed-row]')].find(
+      (row) => row.getBoundingClientRect().bottom > historyTop,
+    )
+    if (anchor === undefined) throw new Error('Expected a row at the top of the scrolled viewport.')
+    const anchorId = anchor.dataset.feedRow
+    const anchorOffset = anchor.getBoundingClientRect().top - historyTop
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Open second Session' }))
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Session history')).toHaveAttribute(
+        'data-session',
+        'second-history',
+      ),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Receive update on first Session' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Open first Session' }))
+
+    const restored = await canvas.findByLabelText('Session history')
+    await waitFor(() => {
+      const row = restored.querySelector<HTMLElement>(`[data-feed-row="${anchorId}"]`)
+      if (row === null) throw new Error('The row the reader left on no longer renders.')
+      const restoredOffset = row.getBoundingClientRect().top - restored.getBoundingClientRect().top
+      expect(restoredOffset).toBeCloseTo(anchorOffset, 0)
+    })
   },
 }
 

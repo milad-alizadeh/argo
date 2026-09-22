@@ -12,7 +12,7 @@ export type SessionAdapterRuntime = {
 
 export type SessionAdapterInstance = {
   adapter: SessionAdapter
-  close: () => void
+  close: () => void | Promise<void>
   source?: SessionSource
 }
 
@@ -24,7 +24,7 @@ export type SessionAdapterRegistration = {
 export type SessionAdapterRegistry = {
   adapterFor: (harness: Harness) => SessionAdapter | undefined
   sourceFor: (harness: Harness) => SessionSource | undefined
-  close: () => void
+  close: () => Promise<void>
 }
 
 export function createSessionAdapterRegistry(
@@ -41,8 +41,8 @@ export function createSessionAdapterRegistry(
   return {
     adapterFor: (harness) => adapters.get(harness)?.adapter,
     sourceFor: (harness) => adapters.get(harness)?.source,
-    close: () => {
-      for (const instance of adapters.values()) instance.close()
+    close: async () => {
+      await Promise.all([...adapters.values()].map((instance) => instance.close()))
     },
   }
 }

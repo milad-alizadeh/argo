@@ -7,6 +7,9 @@ export default defineConfig<object, SessionBackendOptions>({
   testDir: 'e2e',
   testMatch: '**/*.e2e.ts',
   fullyParallel: true,
+  // A recorded video (electron.launch's recordVideo, wired per case) lives only in a passing
+  // test's own outputDir, which Playwright otherwise deletes on success.
+  preserveOutput: 'always',
   // The default, half the cores, is one worker on the 3-core macOS runner; locally 1 took 130s, 3 took 61s.
   workers: 3,
   // The retry records a second trace, and a test that passes only on the retry still fails CI.
@@ -34,12 +37,14 @@ export default defineConfig<object, SessionBackendOptions>({
     { name: 'sessions', testDir: 'e2e/sessions' },
     { name: 'tickets', testDir: 'e2e/tickets' },
     // The signed-in local CLIs, never CI. A real reply can take the backend's whole 180s budget.
+    // Same file as `sessions`, `sessionBackend` is the only difference (#e2e-real-cheap-models):
+    // a case that never drives a live Turn just passes again, and one that does gets the real CLI.
     ...(process.env.ARGO_E2E_REAL === '1'
       ? [
           {
             name: 'real-sessions',
             testDir: 'e2e/sessions',
-            testMatch: 'journeys.e2e.ts',
+            testMatch: 'feed.e2e.ts',
             // One real Turn at a time, so the subscriptions see one person's pace.
             fullyParallel: false,
             timeout: 240_000,

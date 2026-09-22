@@ -76,10 +76,13 @@ export function useFeedTailFollow(
   )
   const latest = useRef<Virtualizer<HTMLElement, Element> | null>(null)
   const awaitingInitialPosition = initiallyPositionedSessionId !== sessionId
-  const markInitiallyPositioned = useCallback(() => {
-    setAtLatest(true)
-    setInitiallyPositionedSessionId(sessionId)
-  }, [sessionId])
+  const markInitiallyPositioned = useCallback(
+    (positionedAtEnd: boolean) => {
+      setAtLatest(positionedAtEnd)
+      setInitiallyPositionedSessionId(sessionId)
+    },
+    [sessionId],
+  )
   const onChange = useCallback(
     (instance: Virtualizer<HTMLElement, Element>) => {
       latest.current = instance

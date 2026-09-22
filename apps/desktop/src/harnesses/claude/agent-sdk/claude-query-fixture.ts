@@ -8,15 +8,11 @@ import type {
   SDKUserMessage,
 } from '@anthropic-ai/claude-agent-sdk'
 import type { SessionService } from '@/domains/sessions/next/main/session-service'
-
-function assistantMessage(text: string): SDKMessage {
-  return {
-    type: 'assistant',
-    uuid: '00000000-0000-0000-0000-000000000002',
-    session_id: 'native-1',
-    message: { content: [{ type: 'text', text }] },
-  } as unknown as SDKMessage
-}
+import {
+  assistantErrorMessage,
+  assistantMessage,
+  initMessage,
+} from './claude-query-fixture-message'
 
 export const managedSessionService: SessionService = {
   acquire: () => ({ posture: 'managed' }),
@@ -24,54 +20,39 @@ export const managedSessionService: SessionService = {
   release: () => {},
 }
 
-function initMessage(apiKeySource: ApiKeySource): SDKMessage {
-  return {
-    type: 'system',
-    subtype: 'init',
-    apiKeySource,
-    claude_code_version: '0.0.0',
-    cwd: '/repository',
-    tools: [],
-    mcp_servers: [],
-    model: 'claude-fable-5',
-    permissionMode: 'default',
-    slash_commands: [],
-    output_style: 'default',
-    skills: [],
-    plugins: [],
-    uuid: '00000000-0000-0000-0000-000000000000',
-    session_id: 'native-1',
-  } as SDKMessage
-}
-
-function assistantErrorMessage(error: SDKAssistantMessageError): SDKMessage {
-  return {
-    type: 'assistant',
-    error,
-    uuid: '00000000-0000-0000-0000-000000000001',
-    session_id: 'native-1',
-  } as unknown as SDKMessage
-}
-
 function fakeQuery(hooks: {
   sent: SDKUserMessage[]
   onInterrupt: () => void
   onClose: () => void
   setDeliver: (deliver: (message: SDKMessage) => void) => void
+  setFinish: (finish: () => void) => void
   setCallbacks: (callbacks: { canUseTool: CanUseTool; onUserDialog: OnUserDialog }) => void
+  setReceivedOptions: (options: {
+    model: string | undefined
+    effort: string | undefined
+    permissionMode: string | undefined
+  }) => void
 }) {
-  const { sent, onInterrupt, onClose, setDeliver, setCallbacks } = hooks
+  const { sent, onInterrupt, onClose, setDeliver, setFinish, setCallbacks, setReceivedOptions } =
+    hooks
   return function createQuery({
     prompt,
     canUseTool,
     onUserDialog,
+    model,
+    effort,
+    permissionMode,
   }: {
     prompt: AsyncIterable<SDKUserMessage>
     resume: string | undefined
     canUseTool: CanUseTool
     onUserDialog: OnUserDialog
+    model?: string
+    effort?: string
+    permissionMode?: string
   }): Query {
     setCallbacks({ canUseTool, onUserDialog })
+    setReceivedOptions({ model, effort, permissionMode })
     void (async () => {
       for await (const message of prompt) sent.push(message)
     })()
@@ -87,6 +68,7 @@ function fakeQuery(hooks: {
           next(): Promise<IteratorResult<SDKMessage>> {
             return new Promise((resolve) => {
               setDeliver((message) => resolve({ value: message, done: false }))
+              setFinish(() => resolve({ value: undefined as never, done: true }))
             })
           },
         }
@@ -97,7 +79,13 @@ function fakeQuery(hooks: {
 
 export function fakeClaudeQuery() {
   let deliver: ((message: SDKMessage) => void) | undefined
+  let finish: (() => void) | undefined
   let callbacks: { canUseTool: CanUseTool; onUserDialog: OnUserDialog } | undefined
+  let receivedOptions: {
+    model: string | undefined
+    effort: string | undefined
+    permissionMode: string | undefined
+  } = { model: undefined, effort: undefined, permissionMode: undefined }
   const sent: SDKUserMessage[] = []
   let interruptCalls = 0
   let closed = false
@@ -113,8 +101,14 @@ export function fakeClaudeQuery() {
     setDeliver: (next) => {
       deliver = next
     },
+    setFinish: (next) => {
+      finish = next
+    },
     setCallbacks: (next) => {
       callbacks = next
+    },
+    setReceivedOptions: (next) => {
+      receivedOptions = next
     },
   })
 
@@ -126,6 +120,8 @@ export function fakeClaudeQuery() {
       deliver?.(assistantErrorMessage(error)),
     emitAssistant: (text: string) => deliver?.(assistantMessage(text)),
     emitMalformedMessage: () => deliver?.({ type: 'assistant' } as SDKMessage),
+    // A refused `--resume` closes the stream after one error result, never emitting "system"/"init".
+    endStream: () => finish?.(),
     requestApproval: (toolUseID: string, toolName: string) => {
       if (callbacks === undefined) throw new Error('createQuery was never called')
       return callbacks.canUseTool(toolName, {}, mockPermissionOptions(toolUseID))
@@ -146,6 +142,9 @@ export function fakeClaudeQuery() {
     },
     get closed() {
       return closed
+    },
+    get receivedOptions() {
+      return receivedOptions
     },
   }
 }

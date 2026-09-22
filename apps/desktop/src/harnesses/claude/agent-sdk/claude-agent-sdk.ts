@@ -8,6 +8,9 @@ export const createClaudeQuery: ClaudeQueryFactory = ({
   resume,
   canUseTool,
   onUserDialog,
+  model,
+  effort,
+  permissionMode,
 }) =>
   query({
     prompt,
@@ -16,6 +19,9 @@ export const createClaudeQuery: ClaudeQueryFactory = ({
       resume,
       canUseTool,
       onUserDialog,
+      model,
+      effort,
+      permissionMode,
       pathToClaudeCodeExecutable: process.env[SESSION_CLAUDE_EXECUTABLE_ENV],
     },
   })

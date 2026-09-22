@@ -1,3 +1,4 @@
+import type { VirtualItem } from '@tanstack/virtual-core'
 import type { ReactNode } from 'react'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
@@ -16,6 +17,7 @@ import { awaitingAssistantReply, type Settled, type useSettledFeed } from './use
 
 export function feedContent({
   active,
+  initialMeasurementsCache,
   initialScrollPosition,
   settled,
   isRunning,
@@ -23,6 +25,7 @@ export function feedContent({
   posture,
   onRetry,
   onJumpToLatestChange,
+  onMeasurementsChange,
   onScrollPositionChange,
   DrawnRow,
   revealsFor,
@@ -31,6 +34,7 @@ export function feedContent({
   emptyText,
 }: {
   active: boolean
+  initialMeasurementsCache: VirtualItem[]
   initialScrollPosition: number | null
   settled: ReturnType<typeof useSettledFeed>['settled']
   isRunning: boolean
@@ -38,6 +42,7 @@ export function feedContent({
   posture: 'managed' | 'external' | 'watched' | null
   onRetry: () => void
   onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
+  onMeasurementsChange: (sessionId: string, measurements: VirtualItem[]) => void
   onScrollPositionChange: (sessionId: string, position: number) => void
   DrawnRow: (props: DrawnRowProps) => ReactNode
   revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>
@@ -73,11 +78,13 @@ export function feedContent({
   return (
     <AnchoredFeed
       active={active}
+      initialMeasurementsCache={initialMeasurementsCache}
       initialScrollPosition={initialScrollPosition}
       rows={settled.rows}
       settled={settled}
       FeedRow={DrawnRow}
       onJumpToLatestChange={onJumpToLatestChange}
+      onMeasurementsChange={onMeasurementsChange}
       onScrollPositionChange={onScrollPositionChange}
       revealsFor={revealsFor}
       streamingRowId={streamingRowId}

@@ -16,7 +16,7 @@ function rowText(row) {
 }
 
 test('draws one row per content block, not one row per record', async () => {
-  const rows = await feedOf(['externalBasic'])
+  const rows = await feedOf(['11111111-2222-4333-8444-555555555555'])
   assert.deepEqual(
     rows.map((row) => `${row.shape}:${row.role ?? ''}`),
     ['unreadable:', 'prose:user', 'thought:', 'prose:assistant'],
@@ -45,7 +45,7 @@ test('draws a standalone local command once at its prompt boundary', async () =>
 })
 
 test('gives every row an id that is stable and unique', async () => {
-  const rows = await feedOf(['externalBasic'])
+  const rows = await feedOf(['11111111-2222-4333-8444-555555555555'])
   assert.equal(new Set(rows.map((row) => row.id)).size, rows.length)
   assert.equal(rows[2].id, 'u-asst-1:0')
   assert.equal(rows[3].id, 'u-asst-1:1')

@@ -1,4 +1,8 @@
 import { assign, fromPromise, setup } from 'xstate'
+import {
+  CODEX_OPENING_SETUP,
+  codexTurnSettings,
+} from '@/domains/sessions/contract/codex-turn-setup'
 import type { SessionIdentity } from '@/domains/sessions/next/contract/session-contract'
 import type {
   Message,
@@ -239,12 +243,7 @@ function createManagedSessionActors(deps: ManagedSessionDeps) {
               text_elements: [],
             },
           ],
-          model: 'gpt-5-codex',
-          effort: 'medium',
-          approvalPolicy: 'on-request',
-          sandboxPolicy: {
-            type: 'workspaceWrite',
-          },
+          ...codexTurnSettings(CODEX_OPENING_SETUP),
         },
         (value) => value,
       )

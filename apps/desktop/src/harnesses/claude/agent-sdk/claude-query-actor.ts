@@ -1,5 +1,11 @@
-import type { PermissionResult, Query, UserDialogResult } from '@anthropic-ai/claude-agent-sdk'
+import type {
+  PermissionMode,
+  PermissionResult,
+  Query,
+  UserDialogResult,
+} from '@anthropic-ai/claude-agent-sdk'
 import { fromCallback } from 'xstate'
+import type { ClaudeTurnSetup } from '@/domains/sessions/contract/claude-turn-setup'
 import { createPendingRequestRegistry } from './pending-request-registry'
 import { createStreamInputChannel, userMessage } from './stream-input-channel'
 import { type ClaudeSessionEvent, type ClaudeSessionInput, claudeSdkMessageSchema } from './types'
@@ -49,7 +55,14 @@ function handleEvent(options: {
 export const claudeQueryLogic = fromCallback<ClaudeSessionEvent, ClaudeSessionInput>(
   ({ input, sendBack, receive }) => {
     const channel = createStreamInputChannel()
-    if (input.session !== null) channel.push(userMessage(input.prompt))
+    // A resume always pushes its prompt here. A fresh, non-deferred start instead waits and pushes
+    // it once the lease is acquired (`startInitialTurn` in claude-session-lease-states.ts), so the
+    // Managed transition orders it. But a *deferred* fresh start (`startTurn: false`) has no other
+    // trigger at all: the SDK's query() reads nothing — not even the "system"/"init" handshake that
+    // carries the Session's nativeId — until the prompt iterable yields a first message (confirmed
+    // against the installed @anthropic-ai/claude-agent-sdk: given an iterable that never yields, it
+    // never emits anything), so without this push a deferred Session can never even identify.
+    if (input.session !== null || input.startTurn === false) channel.push(userMessage(input.prompt))
     const approvals = createPendingRequestRegistry<PermissionResult | null>(null)
     const dialogs = createPendingRequestRegistry<UserDialogResult>({ behavior: 'cancelled' })
     let stopped = false
@@ -103,6 +116,12 @@ export const claudeQueryLogic = fromCallback<ClaudeSessionEvent, ClaudeSessionIn
   },
 )
 
+// The SDK has no 'manual' permission mode; the app's default Turn mode maps to the SDK's own
+// default instead. Every other mode value is already spelled identically in both vocabularies.
+function permissionModeFor(mode: ClaudeTurnSetup['mode']): PermissionMode {
+  return mode === 'manual' ? 'default' : mode
+}
+
 function createQuery(options: {
   input: ClaudeSessionInput
   channel: ReturnType<typeof createStreamInputChannel>
@@ -116,6 +135,9 @@ function createQuery(options: {
     prompt: channel.iterable,
     cwd: input.cwd,
     resume: session.current?.nativeId,
+    model: input.setup?.model,
+    effort: input.setup?.effort,
+    permissionMode: input.setup === undefined ? undefined : permissionModeFor(input.setup.mode),
     canUseTool: (toolName, _toolInput, options) => {
       sendBack({
         type: 'Approval requested',

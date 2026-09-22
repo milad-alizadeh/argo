@@ -85,9 +85,9 @@ export function createCodexSessionAdapter(deps: {
       if (unsubscribe === undefined) throw new CodexSessionDriverError('missing-session')
       return unsubscribe
     },
-    close: () => {
+    close: async () => {
       stopWatch()
-      closeCodexSessionAdapter(registry, deps.sessionService, detach)
+      await closeCodexSessionAdapter(launch, deps.sessionService, detach)
     },
     projections: appServer.projections,
     refreshHistory: () => watched.refresh(),

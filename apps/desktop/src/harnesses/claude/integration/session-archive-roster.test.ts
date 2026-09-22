@@ -13,7 +13,11 @@ import { fixtureRoot, unscopedListing as listing } from './session-fixtures'
 
 // The shared reader joins an Argo archive flag with the Session's current and retired ids (#2315).
 test('excludes an archived Session from the Roster, under any id it answered to', async (context) => {
-  const root = await fixtureRoot(context, ['resumeParent', 'resumeChild', 'externalBasic'])
+  const root = await fixtureRoot(context, [
+    'resumeParent',
+    'resumeChild',
+    '11111111-2222-4333-8444-555555555555',
+  ])
   const store = await mkdtemp(path.join(os.tmpdir(), 'argo-archive-'))
   context.after(() => rm(store, { recursive: true, force: true }))
   const archive = createSessionArchiveStore(sessionArchivePath(store))
@@ -29,6 +33,6 @@ test('excludes an archived Session from the Roster, under any id it answered to'
   assert.equal(reply.type, 'session.listed')
   assert.deepEqual(
     reply.type === 'session.listed' ? reply.sessions.map((session) => session.id).sort() : [],
-    ['externalBasic'],
+    ['11111111-2222-4333-8444-555555555555'],
   )
 })

@@ -1,6 +1,6 @@
 import type { ReactVirtualizer } from '@tanstack/react-virtual'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import type { Virtualizer } from '@tanstack/virtual-core'
+import type { VirtualItem, Virtualizer } from '@tanstack/virtual-core'
 import { type ReactNode, useCallback, useLayoutEffect, useRef, useState } from 'react'
 import type { SessionFeedRow } from '../../types'
 
@@ -29,6 +29,8 @@ export function useFeedViewport() {
 
 export function useAnchoredVirtualizer({
   following,
+  initialMeasurementsCache,
+  initialScrollPosition,
   rows,
   tail,
   viewport,
@@ -36,6 +38,8 @@ export function useAnchoredVirtualizer({
   onChange,
 }: {
   following: boolean
+  initialMeasurementsCache: VirtualItem[]
+  initialScrollPosition: number | null
   rows: readonly SessionFeedRow[]
   tail: ReactNode
   viewport: HTMLElement | null
@@ -50,6 +54,14 @@ export function useAnchoredVirtualizer({
     followOnAppend: following,
     getItemKey: (index) => (index === rows.length ? TAIL_KEY : feedRowAt(rows, index).id),
     getScrollElement: () => viewport,
+    // Seeds the rendered range at construction, not after (#e2e-real-cheap-models): a fresh
+    // mount's own scroll listener attaches too late to catch a post-mount scrollTop write, so
+    // the range never followed it and the reader landed back at row zero.
+    initialOffset: initialScrollPosition ?? 0,
+    // Without the prior mount's real row heights, a fresh instance settles its estimate sizes
+    // into place after seeding `initialOffset` and drifts the reader off the restored pixel
+    // (#e2e-real-cheap-models). TanStack's own scroll-restoration guide pairs both.
+    initialMeasurementsCache,
     onChange,
     overscan: FEED_OVERSCAN,
     paddingStart: padding.start,
@@ -69,38 +81,34 @@ function feedRowAt(rows: readonly SessionFeedRow[], index: number) {
 // layout so a delayed initial jump cannot override a reader who has already moved into history,
 // and so StrictMode safely skips a position that already happened.
 export function useInitialFeedPosition({
-  active,
-  following,
   initialScrollPosition,
   onPositioned,
   sessionId,
   viewport,
   virtualizer,
 }: {
-  active: boolean
-  following: boolean
   initialScrollPosition: number | null
-  onPositioned: () => void
+  onPositioned: (positionedAtEnd: boolean) => void
   sessionId: string
   viewport: HTMLElement | null
   virtualizer: ReactVirtualizer<HTMLElement, Element>
 }) {
   const openedSession = useRef<string | null>(null)
-  const wasActive = useRef(active)
   useLayoutEffect(() => {
     if (viewport === null || openedSession.current === sessionId) return
     openedSession.current = sessionId
+    // Apply the opening position in layout so a delayed initial jump cannot
+    // override a reader who has already moved into history. This also lets
+    // StrictMode safely skip a position that already happened. The virtualizer's own
+    // rendered range is already seeded correctly by `initialOffset` at construction
+    // (#e2e-real-cheap-models); this write only syncs the visible scrollbar to match it.
     if (initialScrollPosition === null) virtualizer.scrollToEnd()
     else viewport.scrollTop = initialScrollPosition
-    onPositioned()
+    // A restored history position is not the tail: reporting it as "at latest" here (#e2e-real-
+    // cheap-models) turned tail-follow back on, and the virtualizer's own followOnAppend then
+    // snapped a freshly mounted Session straight back to the end on its first render.
+    onPositioned(initialScrollPosition === null)
   }, [initialScrollPosition, onPositioned, sessionId, viewport, virtualizer])
-  useLayoutEffect(() => {
-    const returned = active && !wasActive.current
-    wasActive.current = active
-    // An inactive document is `content-visibility: hidden` and measures 0x0, so a scrollToEnd
-    // made while it was hidden landed at 0; re-pin a following reader once it shows.
-    if (returned && following && viewport !== null) virtualizer.scrollToEnd()
-  }, [active, following, viewport, virtualizer])
 }
 
 // Remembers where the reader left a document's scroller, so reopening it (kept-document.tsx)
@@ -108,7 +116,9 @@ export function useInitialFeedPosition({
 export function useScrollPositionSnapshot(
   sessionId: string,
   viewport: HTMLElement | null,
+  virtualizer: ReactVirtualizer<HTMLElement, Element>,
   onPositionChange: (sessionId: string, position: number) => void,
+  onMeasurementsChange: (sessionId: string, measurements: VirtualItem[]) => void,
 ) {
   useLayoutEffect(() => {
     if (viewport === null) return
@@ -117,6 +127,11 @@ export function useScrollPositionSnapshot(
     return () => {
       viewport.removeEventListener('scroll', rememberPosition)
       rememberPosition()
+      // A fresh remount seeds only `scrollTop` (`initialOffset`); its own estimate-sized rows then
+      // measure for real and drift the reader off the saved pixel (#e2e-real-cheap-models). The
+      // TanStack docs pair `initialOffset` with `initialMeasurementsCache` from `takeSnapshot()`
+      // for exactly this: https://tanstack.com/router/latest/docs/guide/scroll-restoration.
+      onMeasurementsChange(sessionId, virtualizer.takeSnapshot())
     }
-  }, [onPositionChange, sessionId, viewport])
+  }, [onMeasurementsChange, onPositionChange, sessionId, viewport, virtualizer])
 }

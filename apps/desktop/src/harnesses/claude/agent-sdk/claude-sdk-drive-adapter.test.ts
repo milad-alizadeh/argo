@@ -39,7 +39,7 @@ test('routes a legacy Claude start through the managed adapter', async () => {
       cwd: '/repository',
       prompt: 'Hello',
       deferInitialTurn: true,
-      setup: {},
+      setup: { model: 'haiku', effort: 'low', mode: 'manual' },
       attachments: [],
     }),
   ).resolves.toEqual({
@@ -52,6 +52,7 @@ test('routes a legacy Claude start through the managed adapter', async () => {
       prompt: 'Hello',
       startTurn: false,
       workspace: { kind: 'existing', workspaceId: 'workspace-1' },
+      setup: { model: 'haiku', effort: 'low', mode: 'manual' },
     },
   ])
 })

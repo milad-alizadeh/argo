@@ -92,7 +92,7 @@ test('a Send with no prior Session starts one and navigates to it', async () => 
 })
 
 // Rapid Enter presses on a new Session (#2229): the dropped duplicate leaves the first Send's
-// Turn Marker in place, so Starting Session shows until the Session answers.
+// Turn Marker in place, so Working shows until the Session answers.
 test("a dropped duplicate Send keeps the first Send's Turn Marker", async () => {
   const opened = useSessionCreationStore.getState().begin('claude', PROJECT.path)
   let answer: (reply: { sessionId: string }) => void = () => {}

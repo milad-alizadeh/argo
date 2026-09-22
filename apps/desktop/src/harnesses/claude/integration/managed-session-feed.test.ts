@@ -14,7 +14,7 @@ const feed = {
 }
 
 test('answers an empty Feed for a managed Session whose transcript is not written yet', async (context) => {
-  const root = await fixtureRoot(context, ['externalBasic'])
+  const root = await fixtureRoot(context, ['11111111-2222-4333-8444-555555555555'])
   const { driver } = launch(await ledgerFile(context))
   const sessionId = driver.start({
     cwd: '/projects/argo',

@@ -40,5 +40,5 @@ test('keeps every running command and every background one, and drops the rest',
       result: 'Background command "bun run build" completed (exit code 0)',
     },
   ])
-  assert.deepEqual((await rowOf(['externalBasic'])).shell, [])
+  assert.deepEqual((await rowOf(['11111111-2222-4333-8444-555555555555'])).shell, [])
 })

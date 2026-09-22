@@ -74,8 +74,8 @@ export async function proveContract(page) {
   // An archived Session never projects into this active list (#1593): `plannedWork` is read out
   // of it below instead.
   assert.deepEqual(list.sessions.map((session) => session.id).sort(), [
+    '11111111-2222-4333-8444-555555555555',
     'askPending',
-    'externalBasic',
     'harnessNoise',
     'prose',
     'resumeParent',

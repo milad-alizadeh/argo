@@ -13,6 +13,7 @@ const startCommandSchema = z.strictObject({
   prompt: z.string().trim().min(1),
   startTurn: z.boolean().optional(),
   workspace: workspaceSelectionSchema,
+  setup: z.unknown().optional(),
 })
 const sendCommandSchema = z.strictObject({
   type: z.literal('session.send'),

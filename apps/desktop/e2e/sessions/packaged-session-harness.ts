@@ -68,8 +68,10 @@ export async function createPackagedSessionHarness(request: {
   launched: (application: ElectronApplication, page: Page) => Promise<void>
   // Runs before a restart closes the process.
   closing: () => Promise<void>
+  // Set to record a .webm of the window for this run (electron.launch's own recordVideo option).
+  videoDir?: string
 }) {
-  const { root, fixture, backend, launch, launched, closing } = request
+  const { root, fixture, backend, launch, launched, closing, videoDir } = request
   const run = await backend.start({ root, fixture })
   let application: ElectronApplication | undefined
   let page: Page | undefined
@@ -88,6 +90,7 @@ export async function createPackagedSessionHarness(request: {
         [ACCEPTANCE_ENV]: '0',
       },
       timeout: backend.budgetMs,
+      ...(videoDir ? { recordVideo: { dir: videoDir, size: SESSION_VIEWPORT } } : {}),
     })
     const opened = await application.firstWindow()
     opened.setDefaultTimeout(backend.budgetMs)

@@ -16,11 +16,11 @@ import {
 // parsing is kept between them. What is kept is keyed on the mtime it was read at, so a file
 // written since is read again rather than answered from a summary of what it used to say.
 test('re-reads a transcript that was written since the last pass', async (context) => {
-  const root = await fixtureRoot(context, ['externalBasic'])
+  const root = await fixtureRoot(context, ['11111111-2222-4333-8444-555555555555'])
   const first = await listSessions(listing, root)
   assert.equal(first.sessions[0].updatedAt, '2026-07-20T10:00:05.000Z')
 
-  const file = path.join(root, 'project-one', 'externalBasic.jsonl')
+  const file = path.join(root, 'project-one', '11111111-2222-4333-8444-555555555555.jsonl')
   await appendFile(file, LATER_TURN)
   const ahead = new Date(Date.now() + 2000)
   await utimes(file, ahead, ahead)
@@ -33,8 +33,8 @@ test('re-reads a transcript that was written since the last pass', async (contex
 // filesystem whose timestamps are coarser than the write the file reads as untouched. What the
 // summary is keyed on carries the file's size too, so the Roster follows the transcript anyway.
 test('re-reads a transcript that grew without its mtime moving', async (context) => {
-  const root = await fixtureRoot(context, ['externalBasic'])
-  const file = path.join(root, 'project-one', 'externalBasic.jsonl')
+  const root = await fixtureRoot(context, ['11111111-2222-4333-8444-555555555555'])
+  const file = path.join(root, 'project-one', '11111111-2222-4333-8444-555555555555.jsonl')
   // Pinned to a whole second, so restoring it below restores it exactly: a filesystem stamp
   // carries more precision than a `Date` does, and a rounded one would read as a file that moved.
   const stamp = new Date(1_760_000_000_000)
@@ -51,12 +51,12 @@ test('re-reads a transcript that grew without its mtime moving', async (context)
 // The tree is listed every pass, so a Session written since the last one is found. Only the
 // parsing of files that have not moved is reused.
 test('finds a Session written since the last pass', async (context) => {
-  const root = await fixtureRoot(context, ['externalBasic'])
+  const root = await fixtureRoot(context, ['11111111-2222-4333-8444-555555555555'])
   assert.equal((await listSessions(listing, root)).sessions.length, 1)
   await writeFixtureTree(root, ['haltedTurn'], 'project-one')
   const reply = await listSessions(listing, root)
   assert.deepEqual(reply.sessions.map((session) => session.id).sort(), [
-    'externalBasic',
+    '11111111-2222-4333-8444-555555555555',
     'haltedTurn',
   ])
 })

@@ -39,7 +39,14 @@ export const Quiet: Story = {
   },
 }
 
-export const StartingSession: Story = { args: { phase: 'starting' } }
+// A brand-new draft Session reads Working from the first paint too; it never shows a separate
+// starting label (#e2e-real-cheap-models).
+export const StartingPhaseReadsWorking: Story = {
+  args: { phase: 'starting' },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole('status', { name: 'Working' })).toBeVisible()
+  },
+}
 
 export const ResumingSession: Story = { args: { phase: 'resuming' } }
 
