@@ -23,7 +23,7 @@ export function Standing({
   failure: SessionError | null
   selected: boolean
   stalled: boolean
-  posture: 'managed' | 'external' | null
+  posture: 'managed' | 'external' | 'watched' | null
   onRetry: () => void
 }) {
   const { t } = useTranslation('sessions')

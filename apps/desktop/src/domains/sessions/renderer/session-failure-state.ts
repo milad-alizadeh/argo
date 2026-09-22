@@ -7,6 +7,7 @@ export function sessionFailureState(code: SessionErrorCode) {
     case 'held-elsewhere':
     case 'missing-session':
     case 'transcripts-unavailable':
+    case 'vendor-history-unavailable':
       return 'unavailable'
     case 'connection-lost':
     case 'internal-error':

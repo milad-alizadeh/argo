@@ -24,7 +24,7 @@ function projection(): SessionProjection {
   }
 }
 
-test('projects managed Codex app-server state without a transcript', async () => {
+test('projects managed Codex app-server state with its watched history', async () => {
   const commands: unknown[] = []
   const source = createCodexAppServerSessionSource({
     adapter: {
@@ -35,12 +35,18 @@ test('projects managed Codex app-server state without a transcript', async () =>
       subscribe: () => () => {},
     } satisfies SessionAdapter,
     projections: () => [projection()],
+    watchedProjections: () => [{ ...projection(), posture: 'watched' }],
+    refreshHistory: async () => [{ ...projection(), posture: 'watched' }],
+    checkoutFor: () => null,
   })
 
   const listed = await source.discoverSessions()
   assert.equal(listed.rows[0]?.id, 'thread-1')
+  assert.equal(listed.rows[0]?.posture, 'managed')
   assert.equal(listed.rows[0]?.title?.text, 'Inspect the migration')
   assert.equal(listed.rows[0]?.turnStartedAt, new Date(1_700_000_000_000).toISOString())
+  assert.equal(listed.rows[0]?.updatedAt, new Date(1_700_000_000_000).toISOString())
+  assert.equal(source.managedSessions?.()[0]?.posture, 'managed')
 
   assert.deepEqual(source.readManagedFeed?.('thread-1'), {
     chainId: 'thread-1',

@@ -28,7 +28,7 @@ export type CreateRequest = {
   harnessWrote?: () => Promise<boolean>
 }
 
-type CreatedRow = { id: string; label: string; newRows: number }
+type CreatedRow = { id: string; label: string; matchingRows: number }
 
 async function waitForRoute(page: Page, route: string) {
   await page.waitForFunction((hash) => window.location.hash === hash, `#/sessions/${route}`)
@@ -115,10 +115,15 @@ function readCreatedRow(page: Page, known: string[], prompt: string) {
           !(row.dataset.sessionId ?? '').startsWith('optimistic:'),
       )
       if (first === undefined) return null
+      const matchingRows = created.filter(
+        (row) =>
+          row.textContent?.includes(prompt) &&
+          !(row.dataset.sessionId ?? '').startsWith('optimistic:'),
+      )
       return {
         id: first.dataset.sessionId ?? '',
         label: first.textContent ?? '',
-        newRows: created.length,
+        matchingRows: matchingRows.length,
       }
     },
     { selector: ROW, ids: known, prompt },
@@ -159,7 +164,7 @@ export async function createSessionByClick(page: Page, request: CreateRequest): 
   await page.keyboard.press('Enter')
 
   const created = await waitForCreatedRow(page, known, request)
-  // One gesture makes one Session: a second row is the duplicate-start bug this case exists for.
-  assert.equal(created.newRows, 1)
+  // One gesture makes one Session; history refreshes can add unrelated watched rows (#2581).
+  assert.equal(created.matchingRows, 1)
   return created.id
 }

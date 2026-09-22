@@ -1,8 +1,4 @@
-import type {
-  SessionIdentity,
-  WorkspaceSelection,
-} from '@/domains/sessions/next/contract/session-contract'
-import type { Unsubscribe } from '@/domains/sessions/next/contract/session-projection-contract'
+import type { WorkspaceSelection } from '@/domains/sessions/next/contract/session-contract'
 import type { AppServerSupervisorDeps } from '@/harnesses/codex/drive/app-server-supervisor-machine'
 import type { CodexSessionAdapter } from '@/harnesses/codex/drive/codex-session-adapter-contract'
 
@@ -14,17 +10,17 @@ import {
   type SessionRegistry,
 } from '@/harnesses/codex/drive/codex-session-commands'
 import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
+import { createCodexSessionHistory } from '@/harnesses/codex/drive/codex-session-history'
 import { resumeCodexSession, startCodexSession } from '@/harnesses/codex/drive/codex-session-launch'
 import type { ManagedSessionActor } from '@/harnesses/codex/drive/codex-session-projection'
-import { projectionFrom } from '@/harnesses/codex/drive/codex-session-projection'
+import {
+  registerCodexSessionActor,
+  subscribeToCodexSession,
+} from '@/harnesses/codex/drive/codex-session-registration'
 import { sharedAppServerRuntimeFor } from '@/harnesses/codex/drive/codex-shared-app-server-runtime'
 import type { ManagedSessionDeps } from '@/harnesses/codex/drive/managed-session-machine'
 import { createManagedSessionMachine } from '@/harnesses/codex/drive/managed-session-machine'
 import { createWatchedChanges } from '@/harnesses/composition/watched-changes'
-
-function keyOf(session: SessionIdentity): string {
-  return `${session.harness}:${session.nativeId}`
-}
 
 function attachRegistry(
   appServer: ReturnType<typeof sharedAppServerRuntimeFor>,
@@ -49,6 +45,8 @@ export function createCodexSessionAdapter(deps: {
   waitForWorkspaceReady: ManagedSessionDeps['waitForWorkspaceReady']
   now: ManagedSessionDeps['now']
   resolveWorkspace: (selection: WorkspaceSelection) => Promise<{ workspaceId: string; cwd: string }>
+  knownWorkspaces?: () => Promise<readonly { id: string; path: string }[]>
+  transcriptsRoot?: string
 }): CodexSessionAdapter {
   const registry: SessionRegistry = new Map()
   const rosterChanges = createWatchedChanges()
@@ -61,30 +59,21 @@ export function createCodexSessionAdapter(deps: {
     waitForWorkspaceReady: deps.waitForWorkspaceReady,
     now: deps.now,
   })
-  function registerOnceIdentified(actor: ManagedSessionActor) {
-    const notify: Parameters<ManagedSessionActor['subscribe']>[0] = (snapshot) => {
-      if (snapshot.context.sessionId === null) return
-      const key = keyOf(snapshot.context.sessionId)
-      let entry = registry.get(key)
-      if (entry === undefined) {
-        entry = { actor, revision: 0, listeners: new Set(), sendQueue: Promise.resolve() }
-        registry.set(key, entry)
-      }
-      entry.revision += 1
-      const projection = projectionFrom(snapshot, entry.revision)
-      appServer.publish(projection)
-      rosterChanges.notify()
-      for (const listener of entry.listeners) listener(projection)
-    }
-    actor.subscribe(notify)
-    notify(actor.getSnapshot())
-  }
+  const { history, watched, stopWatch } = createCodexSessionHistory({
+    supervisor,
+    knownWorkspaces: deps.knownWorkspaces ?? (async () => []),
+    transcriptsRoot: deps.transcriptsRoot,
+    notify: rosterChanges.notify,
+  })
   const launch = {
     machine,
-    register: registerOnceIdentified,
+    register: (actor: ManagedSessionActor) =>
+      registerCodexSessionActor({ actor, appServer, registry, notify: rosterChanges.notify }),
     registry,
     resolveWorkspace: deps.resolveWorkspace,
     supervisor,
+    sessionService: deps.sessionService,
+    history,
   }
   return {
     execute: (command) =>
@@ -93,18 +82,23 @@ export function createCodexSessionAdapter(deps: {
       ),
     resume: (request) => resumeCodexSession(launch, request),
     subscribe: (session, onProjection) => {
-      const entry = registry.get(keyOf(session))
-      if (entry === undefined) {
-        const unsubscribe = appServer.observe(session, onProjection)
-        if (unsubscribe === undefined) throw new CodexSessionDriverError('missing-session')
-        return unsubscribe
-      }
-      entry.listeners.add(onProjection)
-      const unsubscribe: Unsubscribe = () => entry.listeners.delete(onProjection)
+      const unsubscribe = subscribeToCodexSession({
+        session: { harness: 'codex', nativeId: session.nativeId },
+        onProjection,
+        registry,
+        appServer,
+      })
+      if (unsubscribe === undefined) throw new CodexSessionDriverError('missing-session')
       return unsubscribe
     },
-    close: () => closeCodexSessionAdapter(registry, deps.sessionService, detach),
+    close: () => {
+      stopWatch()
+      closeCodexSessionAdapter(registry, deps.sessionService, detach)
+    },
     projections: appServer.projections,
+    refreshHistory: () => watched.refresh(),
+    watchedProjections: () => watched.projections(),
+    checkoutFor: (nativeId: string) => watched.checkoutFor(nativeId),
     onRosterChanged: rosterChanges.subscribe,
   }
 }

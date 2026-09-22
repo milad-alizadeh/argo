@@ -39,7 +39,7 @@ export function feedContent({
   settled: ReturnType<typeof useSettledFeed>['settled']
   isRunning: boolean
   stalled: boolean
-  posture: 'managed' | 'external' | null
+  posture: 'managed' | 'external' | 'watched' | null
   onRetry: () => void
   onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
   onScrollPositionChange: (sessionId: string, position: number) => void

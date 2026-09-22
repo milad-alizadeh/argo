@@ -1,7 +1,10 @@
 // Session journeys on the project's backend: `sessions` runs the mock, `real-sessions` the CLIs (#2308).
 import { proveClaudeRename } from './cases/claude-rename.case'
 import { provePackagedResume } from './cases/claude-resume.case'
-import { provePackagedCodexResume } from './cases/codex-resume.case'
+import {
+  provePackagedCodexResume,
+  provePackagedCodexResumeRefusal,
+} from './cases/codex-resume.case'
 import { proveCodexThreadName } from './cases/codex-thread-name.case'
 import { proveSessionCreatedByClick } from './cases/create.case'
 import { provePackagedIndexRecovery } from './cases/index-recovery.case'
@@ -45,6 +48,13 @@ test.describe('with seeded transcripts', () => {
     await provePackagedCodexResume(session.page(), { backend, restart: session.restart })
   })
 
+  test('session-codex-resume-refusal', async ({ session }) => {
+    await provePackagedCodexResumeRefusal(session.page(), {
+      restart: session.restart,
+      root: session.root,
+    })
+  })
+
   test('session-claude-rename', async ({ session, backend }) => {
     await proveClaudeRename(session.page(), {
       backend,
@@ -54,7 +64,7 @@ test.describe('with seeded transcripts', () => {
   })
 
   test('session-codex-thread-name', async ({ session }) => {
-    await proveCodexThreadName(session.page(), session.fixture.codexTranscripts)
+    await proveCodexThreadName(session.page(), session.root)
   })
 
   test('session-index-recovery', async ({ session }) => {

@@ -12,6 +12,9 @@ import type { WatchedSource } from '@/platform/main/watch/watch-source'
 export type CodexSessionAdapter = SessionAdapter & {
   close: () => void
   projections: () => readonly SessionProjection[]
+  refreshHistory: () => Promise<readonly SessionProjection[]>
+  watchedProjections: () => readonly SessionProjection[]
+  checkoutFor: (nativeId: string) => string | null
   onRosterChanged: WatchedSource
   // A follow-up after a restart: the Session is on disk, and this window does not hold it yet.
   resume: (request: {

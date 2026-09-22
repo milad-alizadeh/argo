@@ -18,13 +18,8 @@ function identity(sessionId: string) {
   return { harness: 'codex' as const, nativeId: sessionId }
 }
 
-function failed() {
-  return { error: 'not-drivable' as const }
-}
-
-function succeeded() {
-  return { ok: true } as const
-}
+const FAILED = { error: 'not-drivable' as const }
+const SUCCEEDED = { ok: true } as const
 
 function hasAttachments(attachments: readonly unknown[]): boolean {
   return attachments.length > 0
@@ -34,7 +29,7 @@ function failureOf(error: unknown) {
   if (error instanceof CodexSessionDriverError && error.code !== 'missing-session') {
     return { error: error.code } as const
   }
-  return failed()
+  return FAILED
 }
 
 function commandOperations(
@@ -48,7 +43,7 @@ function commandOperations(
       prompt,
       attachments,
     }: Parameters<SessionDriveAdapter['send']>[0]) {
-      if (hasAttachments(attachments)) return failed()
+      if (hasAttachments(attachments)) return FAILED
       try {
         const outcome = await adapter.resume({
           session: identity(sessionId),
@@ -56,7 +51,10 @@ function commandOperations(
           cwd,
           prompt,
         })
-        return outcome.kind === 'accepted' ? succeeded() : failed()
+        if (outcome.kind === 'accepted') return SUCCEEDED
+        if (outcome.kind === 'rejected')
+          return { error: 'not-drivable' as const, message: outcome.reason }
+        return FAILED
       } catch (error) {
         return failureOf(error)
       }
@@ -66,30 +64,30 @@ function commandOperations(
       prompt,
       attachments,
     }: Parameters<NonNullable<SessionDriveAdapter['steer']>>[0]) {
-      if (hasAttachments(attachments)) return failed()
+      if (hasAttachments(attachments)) return FAILED
       const outcome = await adapter.execute({
         type: 'session.steer',
         session: identity(sessionId),
         prompt,
       })
-      return outcome.kind === 'accepted' ? succeeded() : failed()
+      return outcome.kind === 'accepted' ? SUCCEEDED : FAILED
     },
     async interrupt({ sessionId }: Parameters<SessionDriveAdapter['interrupt']>[0]) {
       const outcome = await adapter.execute({
         type: 'session.interrupt',
         session: identity(sessionId),
       })
-      return outcome.kind === 'accepted' ? succeeded() : failed()
+      return outcome.kind === 'accepted' ? SUCCEEDED : FAILED
     },
     async compact({ sessionId }: Parameters<SessionDriveAdapter['compact']>[0]) {
       const outcome = await adapter.execute({
         type: 'session.compact',
         session: identity(sessionId),
       })
-      return outcome.kind === 'accepted' ? succeeded() : failed()
+      return outcome.kind === 'accepted' ? SUCCEEDED : FAILED
     },
     async handoff() {
-      return failed()
+      return FAILED
     },
     async readPermission() {
       return { permission: null }
@@ -110,7 +108,7 @@ function decisionOperations(adapter: CodexSessionAdapter) {
         approvalId: permissionId,
         decision: decision === 'deny' || decision === 'cancel' ? 'reject' : 'approve',
       })
-      return outcome.kind === 'accepted' ? succeeded() : failed()
+      return outcome.kind === 'accepted' ? SUCCEEDED : FAILED
     },
     async decideQuestion({
       sessionId,
@@ -126,7 +124,7 @@ function decisionOperations(adapter: CodexSessionAdapter) {
         questionId,
         answer,
       })
-      return outcome.kind === 'accepted' ? succeeded() : failed()
+      return outcome.kind === 'accepted' ? SUCCEEDED : FAILED
     },
   }
 }
@@ -149,7 +147,7 @@ export function createCodexAppServerDriveAdapter(options: {
       })
       return outcome.kind === 'accepted'
         ? { sessionId: outcome.projection.session.nativeId }
-        : failed()
+        : FAILED
     },
     ...commandOperations(options.adapter, options.workspaceForCwd),
     ...decisionOperations(options.adapter),

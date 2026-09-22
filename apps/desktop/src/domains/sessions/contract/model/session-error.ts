@@ -7,6 +7,7 @@ const SHARED_SESSION_ERRORS = {
   'invalid-request': 'The Session request is invalid.',
   'unsupported-version': 'This Session contract version is not supported.',
   'transcripts-unavailable': 'Argo cannot read this Harness transcript folder.',
+  'vendor-history-unavailable': 'Session history is unavailable.',
   'access-denied': 'Argo cannot access these Sessions.',
   'internal-error': 'Argo could not read these Sessions.',
   'invalid-response': 'Argo received an invalid Session response.',

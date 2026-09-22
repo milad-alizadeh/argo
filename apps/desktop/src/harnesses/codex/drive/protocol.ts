@@ -17,6 +17,16 @@ export type RequestParams = {
   'thread/start': ThreadConfiguration
   'thread/resume': ThreadConfiguration & { threadId: string }
   'thread/unsubscribe': { threadId: string }
+  'thread/list': { cursor?: string; limit?: number }
+  'thread/read': { threadId: string; includeTurns: boolean }
+  'thread/turns/list': {
+    threadId: string
+    cursor?: string
+    limit?: number
+    itemsView: 'full'
+    sortDirection: 'asc'
+  }
+  'thread/loaded/list': { cursor?: string; limit: number }
   'turn/start': {
     threadId: string
     input: Input[]
