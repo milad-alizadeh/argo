@@ -56,6 +56,7 @@ export async function startNewSession(
       harness,
       cwd,
       prompt,
+      deferInitialTurn: harness === 'claude',
       setup,
       attachments,
     })

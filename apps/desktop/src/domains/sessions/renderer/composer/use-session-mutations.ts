@@ -11,6 +11,7 @@ import {
 import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
 
 type Turn = { prompt: string; setup: TurnSetup | null; attachments: SessionAttachmentInput[] }
+type StartTurn = Turn & { harness: SessionHarness; cwd: string; deferInitialTurn?: boolean }
 
 function acceptedOrThrow(reply: SessionAcceptedReply) {
   switch (reply.type) {
@@ -66,16 +67,13 @@ export function useSessionMutations() {
     mutationFn: async ({ prompt, sessionId, attachments }) =>
       acceptedOrThrow(await window.argo.steerSession({ sessionId, prompt, attachments })),
   })
-  const start = useMutation<
-    SessionStarted,
-    SessionContractError,
-    Turn & { harness: SessionHarness; cwd: string }
-  >({
-    mutationFn: async ({ harness, cwd, prompt, setup, attachments }) => {
+  const start = useMutation<SessionStarted, SessionContractError, StartTurn>({
+    mutationFn: async ({ harness, cwd, prompt, setup, attachments, deferInitialTurn }) => {
       const reply = await window.argo.startSession({
         harness,
         cwd,
         prompt,
+        deferInitialTurn,
         setup: setup ?? undefined,
         attachments,
       })

@@ -35,7 +35,13 @@ test('routes a legacy Claude start through the managed adapter', async () => {
   })
 
   await expect(
-    adapter.start({ cwd: '/repository', prompt: 'Hello', setup: {}, attachments: [] }),
+    adapter.start({
+      cwd: '/repository',
+      prompt: 'Hello',
+      deferInitialTurn: true,
+      setup: {},
+      attachments: [],
+    }),
   ).resolves.toEqual({
     sessionId: 'native-1',
   })

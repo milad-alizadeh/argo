@@ -62,6 +62,7 @@ export async function startSession(
   const result = await adapter.start({
     cwd: request.cwd,
     prompt: request.prompt,
+    deferInitialTurn: request.deferInitialTurn,
     setup: request.setup,
     attachments: request.attachments ?? [],
   })

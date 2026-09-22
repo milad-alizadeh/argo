@@ -64,7 +64,14 @@ test('a Send with no prior Session starts one and navigates to it', async () => 
   )
   expect(sent).toBe(true)
   expect(start.calls).toEqual([
-    { harness: 'claude', cwd: '/argo', prompt: 'hello', setup: SETUP, attachments: [] },
+    {
+      harness: 'claude',
+      cwd: '/argo',
+      prompt: 'hello',
+      deferInitialTurn: true,
+      setup: SETUP,
+      attachments: [],
+    },
   ])
   expect(navigated).toEqual([['/sessions/session-new', { replace: true, state: 'focus-composer' }]])
 })

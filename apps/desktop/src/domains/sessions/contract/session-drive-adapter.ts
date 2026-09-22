@@ -18,6 +18,7 @@ export type SessionDriveAdapter = {
   start(request: {
     cwd: string
     prompt: string
+    deferInitialTurn?: boolean
     setup: unknown
     attachments: SessionAttachmentInput[]
   }): Promise<{ sessionId: string } | DriveFailure>
