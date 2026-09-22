@@ -1,0 +1,36 @@
+import type { BrowserWindow } from 'electron'
+import { workspaceSelectionForSessionCwd } from '@/domains/projects/main/resolve-session-workspace'
+import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
+import { attachManagedSessions } from '@/domains/sessions/next/main/managed-session-composition'
+import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
+import { createClaudeSdkDriveAdapter } from '@/harnesses/claude/agent-sdk/claude-sdk-drive-adapter'
+import { attachSessions } from '@/harnesses/composition/session-bridges'
+import type { DurableDatabase } from '@/platform/main/storage/durable-database'
+
+export function attachManagedSessionHarnesses(
+  window: BrowserWindow,
+  options: {
+    acceptance: boolean
+    database: DurableDatabase
+    home: string
+    projects: ProjectStore
+    proofEnabled: boolean
+    rendererURL: string
+    ticketLinks: SessionTicketLinkStore
+    userData: string
+  },
+) {
+  const managedSessions = attachManagedSessions(window, options)
+  const claude = managedSessions.adapterFor('claude')
+  if (claude === undefined) throw new Error('Claude Session adapter is unavailable')
+  const harnesses = attachSessions(window, {
+    ...options,
+    driveAdapters: {
+      claude: createClaudeSdkDriveAdapter({
+        adapter: claude,
+        workspaceForCwd: (cwd) => workspaceSelectionForSessionCwd(cwd, options.projects),
+      }),
+    },
+  })
+  return { harnesses, managedSessions }
+}

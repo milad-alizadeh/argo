@@ -64,6 +64,7 @@ export function attachSessions(
     ticketLinks: SessionTicketLinkStore
     proofEnabled: boolean
     acceptance: boolean
+    driveAdapters?: Partial<SessionDriveAdapters>
     // Defaults to the app's registered list; a test hands its own, including a fixture harness,
     // to prove this composition generalises without touching that list (#2488).
     harnesses?: readonly HarnessRegistration[]
@@ -76,6 +77,7 @@ export function attachSessions(
     ticketLinks,
     proofEnabled,
     acceptance,
+    driveAdapters = {},
     harnesses = sessionHarnesses,
   } = request
   // Argo's own archive flag, for every harness at once (#2315).
@@ -89,9 +91,11 @@ export function attachSessions(
   )
   const sources = runtimes.map((runtime) => runtime.source)
   const reader = createSessionReader(sources, ticketLinks, { ...archive, unread })
-  const adapters: SessionDriveAdapters = Object.fromEntries(
-    runtimes.map((runtime) => [runtime.harness, runtime.driveAdapter]),
-  )
+  const adapters: SessionDriveAdapters = {}
+  for (const runtime of runtimes) adapters[runtime.harness] = runtime.driveAdapter
+  for (const [harness, adapter] of Object.entries(driveAdapters)) {
+    if (adapter !== undefined) adapters[harness] = adapter
+  }
   attachSessionBridge(window, { reader, adapters, rendererURL })
   // A Session written by a Harness outside Argo reaches the roster because the trees the CLIs write to
   // are watched, not because the roster re-reads them on a timer. A Permission is the same idea off

@@ -33,3 +33,16 @@ export async function resolveSessionWorkspace(
     }
   }
 }
+
+export async function workspaceSelectionForSessionCwd(
+  cwd: string,
+  store: ProjectStore,
+): Promise<WorkspaceSelection> {
+  const project = selectedProject(store)
+  const workspaces = await reconcileWorkspaces(store, project)
+  const workspace = workspaces.find((candidate) => candidate.path === cwd)
+  if (workspace === undefined) throw new Error('The selected Workspace is unavailable')
+  return workspace.kind === 'main'
+    ? { kind: 'main' }
+    : { kind: 'existing', workspaceId: workspace.id }
+}

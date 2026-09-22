@@ -12,11 +12,10 @@ import { createProjectPort } from '@/domains/projects/main/port'
 import type { OnboardingAgentDriver } from '@/domains/projects/main/setup/onboarding-agent/runtime/run-onboarding-agent'
 import type { SetupDocumentSource } from '@/domains/projects/main/setup/preparation/setup-bundle'
 import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
-import { attachManagedSessions } from '@/domains/sessions/next/main/managed-session-composition'
 import { attachTicketBridge } from '@/domains/tickets/main/bridge'
 import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
 import { createHarnessReadinessRegistrations } from '@/harnesses/composition/registered-harness-readiness'
-import { attachSessions } from '@/harnesses/composition/session-bridges'
+import { attachManagedSessionHarnesses } from '@/managed-session-bridges'
 import { attachAppearanceBridge } from '@/platform/main/appearance'
 import { attachWindowNavigation } from '@/platform/main/security/window-navigation'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
@@ -50,21 +49,18 @@ export function attachBridges(
   // The CLIs Argo spawns find their stores through HOME; Electron's home path on macOS ignores HOME (#2356).
   const home = os.homedir()
   attachWindowNavigation(window)
-  const harnesses = attachSessions(window, {
-    rendererURL,
-    home,
-    userData,
-    ticketLinks,
-    proofEnabled,
+  const { harnesses, managedSessions } = attachManagedSessionHarnesses(window, {
     acceptance: request.acceptance,
-  })
-  const managedSessions = attachManagedSessions(window, {
     database: request.database,
+    home,
     projects,
+    proofEnabled,
     rendererURL,
+    ticketLinks,
+    userData,
   })
-  const claude = harnesses.find((harness) => harness.harness === 'claude')
-  const onboardingDriver = onboardingDriverFrom(claude?.onboardingDriver)
+  const onboardingHarness = harnesses.find((harness) => harness.harness === 'claude')
+  const onboardingDriver = onboardingDriverFrom(onboardingHarness?.onboardingDriver)
   attachProjectBridge(window, {
     projects,
     rendererURL,
@@ -98,8 +94,8 @@ export function attachBridges(
 }
 
 function attachBridgeShutdown(options: {
-  harnesses: ReturnType<typeof attachSessions>
-  managedSessions: ReturnType<typeof attachManagedSessions>
+  harnesses: ReturnType<typeof attachManagedSessionHarnesses>['harnesses']
+  managedSessions: ReturnType<typeof attachManagedSessionHarnesses>['managedSessions']
   ticketLinks: SessionTicketLinkStore
 }) {
   // `once` removes this listener before it runs, so the `app.quit()` it triggers below proceeds
