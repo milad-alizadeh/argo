@@ -16,6 +16,7 @@ import { codexAnswersFor, settleQuestion } from '@/harnesses/codex/drive/questio
 import { readRename } from '@/harnesses/codex/drive/rename-protocol'
 import { createResumingChannel } from '@/harnesses/codex/drive/resuming-channel'
 import { beginSession, startTurn } from '@/harnesses/codex/drive/turn-lifecycle'
+import { createWatchedChanges } from '@/harnesses/composition/watched-changes'
 
 export type {
   CodexProcess,
@@ -25,19 +26,6 @@ export type {
   LiveMessages,
 } from '@/harnesses/codex/drive/codex-session-driver-types'
 export { CodexSessionDriverError }
-
-function rosterChanges() {
-  const listeners = new Set<() => void>()
-  return {
-    notify: () => {
-      for (const listener of listeners) listener()
-    },
-    subscribe: (listener: () => void) => {
-      listeners.add(listener)
-      return () => listeners.delete(listener)
-    },
-  }
-}
 
 function startManagedSession({
   driver,
@@ -88,8 +76,8 @@ async function steerTurn(options: {
 export function createCodexSessionDriver(options: ManagedSessionOptions): CodexSessionDriver {
   const sessions = new Map<string, ManagedSession>()
   const renameWaiters = new Map<string, (title: string) => void>()
-  const changes = rosterChanges()
-  const driver: ManagedSessionOptions = { ...options, onPlanUpdated: changes.notify }
+  const rosterChanges = createWatchedChanges()
+  const driver: ManagedSessionOptions = { ...options, onPlanUpdated: rosterChanges.notify }
   const held = (sessionId: string) => sessions.get(sessionId)
   const channelFor = createResumingChannel({ driver, renameWaiters, sessions })
 
@@ -127,7 +115,7 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
       return accepted
     },
     roster: () => managedRoster(sessions),
-    onRosterChanged: changes.subscribe,
+    onRosterChanged: rosterChanges.subscribe,
     liveMessages: (sessionId) => held(sessionId)?.messages.list() ?? [],
     isLockedElsewhere: (sessionId) => driver.ownership?.standing(sessionId) === 'held-elsewhere',
     pendingQuestion: (sessionId) => held(sessionId)?.pendingQuestion ?? null,

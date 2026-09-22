@@ -43,8 +43,12 @@ type ReaderState = SessionArchiveStore & { unread?: SessionUnreadStore }
 function createOwnerResolver(sources: SessionSource[]) {
   const owners = new Map<string, SessionSource>()
   const lastDiscoveredHarness = new Map<string, string>()
-  const managedOwner = (sessionId: string) =>
-    sources.find((source) => source.managedSessions?.().some(({ id }) => id === sessionId))
+  const managedOwner = (sessionId: string) => {
+    const managed = sources.filter((source) =>
+      source.managedSessions?.().some(({ id }) => id === sessionId),
+    )
+    return managed.find((source) => source.readManagedFeed !== undefined) ?? managed[0]
+  }
   const ownerFor = async (sessionId: string) => {
     const managed = managedOwner(sessionId)
     if (managed !== undefined) return managed

@@ -19,6 +19,7 @@ export type SessionRegistryEntry = {
   actor: ManagedSessionActor
   revision: number
   listeners: Set<(projection: SessionProjection) => void>
+  sendQueue: Promise<void>
 }
 
 export type SessionRegistry = Map<string, SessionRegistryEntry>
@@ -61,17 +62,41 @@ function waitForCommandSettlement(actor: ManagedSessionActor): Promise<CommandSe
   const baseline = actor.getSnapshot().context.sendSequence
   return new Promise((resolve) => {
     const settle = (snapshot: ManagedSessionSnapshot) => {
-      if (snapshot.context.sendSequence === baseline || snapshot.context.lastSendOutcome === null) {
-        return
-      }
+      const settled =
+        snapshot.context.sendSequence !== baseline && snapshot.context.lastSendOutcome !== null
+      if (!settled && snapshot.status !== 'done' && snapshot.status !== 'stopped') return
       subscription.unsubscribe()
-      resolve({
-        outcome: snapshot.context.lastSendOutcome,
-        rejection: snapshot.context.lastSendRejection,
-      })
+      resolve(
+        settled
+          ? {
+              outcome: snapshot.context.lastSendOutcome as CommandSettlement['outcome'],
+              rejection: snapshot.context.lastSendRejection,
+            }
+          : {
+              outcome: 'rejected',
+              rejection: snapshot.context.lastSendRejection ?? 'Codex closed the thread',
+            },
+      )
     }
     const subscription = actor.subscribe(settle)
     settle(actor.getSnapshot())
+  })
+}
+
+function waitForIdle(actor: ManagedSessionActor): Promise<boolean> {
+  const snapshot = actor.getSnapshot()
+  if (snapshot.matches({ Active: 'Idle' })) return Promise.resolve(true)
+  if (!snapshot.matches('Active')) return Promise.resolve(false)
+  return new Promise((resolve) => {
+    const subscription = actor.subscribe((next) => {
+      if (next.matches({ Active: 'Idle' })) {
+        subscription.unsubscribe()
+        resolve(true)
+      } else if (!next.matches('Active')) {
+        subscription.unsubscribe()
+        resolve(false)
+      }
+    })
   })
 }
 
@@ -95,16 +120,29 @@ export async function executeSend(
   entry: SessionRegistryEntry,
   prompt: string,
 ): Promise<SessionCommandOutcome> {
-  if (!entry.actor.getSnapshot().matches({ Active: 'Idle' })) {
-    return { kind: 'rejected', reason: 'Codex is already running a Turn' }
+  const previous = entry.sendQueue
+  let release: () => void = () => {}
+  entry.sendQueue = new Promise((resolve) => {
+    release = resolve
+  })
+  await previous
+  try {
+    if (!(await waitForIdle(entry.actor))) {
+      return { kind: 'rejected', reason: 'Codex cannot accept a follow-up Turn' }
+    }
+    const settlement = waitForCommandSettlement(entry.actor)
+    entry.actor.send({ type: 'Send', prompt })
+    entry.revision += 1
+    const result = await settlement
+    if (result.outcome === 'uncertain') return { kind: 'uncertain' }
+    if (result.outcome === 'rejected') {
+      return { kind: 'rejected', reason: result.rejection ?? 'Codex rejected the send' }
+    }
+    return {
+      kind: 'accepted',
+      projection: projectionFrom(entry.actor.getSnapshot(), entry.revision),
+    }
+  } finally {
+    release()
   }
-  const settlement = waitForCommandSettlement(entry.actor)
-  entry.actor.send({ type: 'Send', prompt })
-  entry.revision += 1
-  const result = await settlement
-  if (result.outcome === 'uncertain') return { kind: 'uncertain' }
-  if (result.outcome === 'rejected') {
-    return { kind: 'rejected', reason: result.rejection ?? 'Codex rejected the send' }
-  }
-  return { kind: 'accepted', projection: projectionFrom(entry.actor.getSnapshot(), entry.revision) }
 }

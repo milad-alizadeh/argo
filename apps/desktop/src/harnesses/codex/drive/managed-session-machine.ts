@@ -2,6 +2,8 @@ import { assign, fromPromise, setup } from 'xstate'
 import type { SessionIdentity } from '@/domains/sessions/next/contract/session-contract'
 import type {
   Message,
+  SessionUsage,
+  ToolCall,
   Turn,
   TurnStatus,
 } from '@/domains/sessions/next/contract/session-projection-contract'
@@ -12,13 +14,19 @@ import {
   codexApprovalDecision,
   readRequestApproval,
 } from '@/harnesses/codex/drive/permission-protocol'
-import type { WireMessage, TurnStatus as WireTurnStatus } from '@/harnesses/codex/drive/protocol'
+import {
+  readThreadId,
+  type WireMessage,
+  type TurnStatus as WireTurnStatus,
+} from '@/harnesses/codex/drive/protocol'
 import {
   readAgentMessageDelta,
+  readClosedThread,
   readCompletedTurn,
-  readThreadId,
   readThreadStatus,
-} from '@/harnesses/codex/drive/protocol'
+  readThreadTokenUsageUpdated,
+  readToolCallUpdate,
+} from '@/harnesses/codex/drive/protocol-notifications'
 import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
 import { codexAnswersFor, readRequestUserInput } from '@/harnesses/codex/drive/question-protocol'
 import { readUpdatedThreadName } from '@/harnesses/codex/drive/rename-protocol'
@@ -48,6 +56,8 @@ type ManagedSessionContext = {
   turnId: string | null
   turns: Turn[]
   messages: Message[]
+  toolCalls: ToolCall[]
+  usage: SessionUsage
   title: string | null
   pendingApproval: PendingCodexPermission | null
   pendingQuestion: PendingCodexQuestion | null
@@ -65,7 +75,7 @@ type ManagedSessionContext = {
 // response, so lease acquisition (keyed on that ID) cannot run before the thread exists. A
 // `resume` already knows the ID (an app restart reattaching to a still-managed Session) and skips
 // thread creation.
-type ManagedSessionInput =
+export type ManagedSessionInput =
   | {
       kind: 'start'
       workspaceId: string
@@ -128,6 +138,18 @@ function requireChannel(getChannel: () => CodexChannel | null): CodexChannel {
 function threadIdOf(context: ManagedSessionContext): string {
   if (context.sessionId === null) throw new Error('Managed Session has no identity yet')
   return context.sessionId.nativeId
+}
+
+function hasThreadStatus(
+  context: ManagedSessionContext,
+  event: ManagedSessionEvent,
+  type: 'notLoaded' | 'systemError',
+): boolean {
+  if (event.type !== 'Notification') return false
+  const status = readThreadStatus(event.message)
+  return (
+    status !== undefined && status.threadId === threadIdOf(context) && status.status.type === type
+  )
 }
 
 function createManagedSessionActors(deps: ManagedSessionDeps) {
@@ -313,6 +335,20 @@ function createManagedSessionActors(deps: ManagedSessionDeps) {
         (value) => value,
       )
     }),
+    unsubscribeThread: fromPromise<
+      void,
+      {
+        threadId: string
+      }
+    >(async ({ input }) => {
+      await requireChannel(deps.getChannel).request(
+        'thread/unsubscribe',
+        {
+          threadId: input.threadId,
+        },
+        () => undefined,
+      )
+    }),
   }
 }
 
@@ -351,14 +387,34 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
         const delta = readAgentMessageDelta(event.message)
         return delta !== undefined && delta.threadId === threadIdOf(context)
       },
-      isThreadNotLoaded: ({ context, event }) => {
+      hasToolCallUpdateForThread: ({ context, event }) => {
         if (event.type !== 'Notification') return false
-        const status = readThreadStatus(event.message)
+        const update = readToolCallUpdate(event.message)
+        return update !== undefined && update.threadId === threadIdOf(context)
+      },
+      hasTokenUsageForThread: ({ context, event }) => {
+        if (event.type !== 'Notification') return false
+        const usage = readThreadTokenUsageUpdated(event.message)
+        return usage !== undefined && usage.threadId === threadIdOf(context)
+      },
+      isThreadNotLoaded: ({ context, event }) => {
+        return hasThreadStatus(context, event, 'notLoaded')
+      },
+      isThreadSystemError: ({ context, event }) => {
+        return hasThreadStatus(context, event, 'systemError')
+      },
+      isTurnFailedForThread: ({ context, event }) => {
+        if (event.type !== 'Notification') return false
+        const completed = readCompletedTurn(event.message)
         return (
-          status !== undefined &&
-          status.threadId === threadIdOf(context) &&
-          status.status.type === 'notLoaded'
+          completed !== undefined &&
+          completed.threadId === threadIdOf(context) &&
+          completed.turn.status === 'failed'
         )
+      },
+      isThreadClosed: ({ context, event }) => {
+        if (event.type !== 'Notification') return false
+        return readClosedThread(event.message) === threadIdOf(context)
       },
     },
     actions: {
@@ -388,12 +444,26 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
           if (event.type !== 'Notification') return context.turns
           const completed = readCompletedTurn(event.message)
           if (completed === undefined) return context.turns
+          const completedAt = deps.now().getTime()
+          const status = turnStatusFrom(completed.turn.status)
+          const known = context.turns.some((turn) => turn.id === completed.turn.id)
+          if (!known) {
+            return [
+              ...context.turns,
+              {
+                id: completed.turn.id,
+                status,
+                startedAt: completedAt,
+                completedAt,
+              },
+            ]
+          }
           return context.turns.map((turn) =>
             turn.id === completed.turn.id
               ? {
                   ...turn,
-                  status: turnStatusFrom(completed.turn.status),
-                  completedAt: deps.now().getTime(),
+                  status,
+                  completedAt,
                 }
               : turn,
           )
@@ -426,6 +496,59 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
           )
         },
       }),
+      appendUserMessage: assign({
+        messages: ({ context, event }) => {
+          if (event.type !== 'Send') return context.messages
+          const turnId = `pending-${context.sendSequence + 1}`
+          return [
+            ...context.messages,
+            {
+              id: `user-${context.sendSequence + 1}`,
+              turnId,
+              role: 'user',
+              text: event.prompt,
+            },
+          ]
+        },
+      }),
+      updateToolCall: assign({
+        toolCalls: ({ context, event }) => {
+          if (event.type !== 'Notification') return context.toolCalls
+          const update = readToolCallUpdate(event.message)
+          if (update === undefined) return context.toolCalls
+          const existing = context.toolCalls.find((toolCall) => toolCall.id === update.id)
+          if (existing === undefined)
+            return [
+              ...context.toolCalls,
+              {
+                id: update.id,
+                turnId: update.turnId,
+                name: update.name,
+                status: update.status,
+              },
+            ]
+          return context.toolCalls.map((toolCall) =>
+            toolCall.id === update.id
+              ? {
+                  ...toolCall,
+                  name: update.name,
+                  status: update.status,
+                }
+              : toolCall,
+          )
+        },
+      }),
+      assignTokenUsage: assign({
+        usage: ({ context, event }) => {
+          if (event.type !== 'Notification') return context.usage
+          const usage = readThreadTokenUsageUpdated(event.message)
+          if (usage === undefined) return context.usage
+          return {
+            inputTokens: usage.inputTokens,
+            outputTokens: usage.outputTokens,
+          }
+        },
+      }),
       assignTitle: assign({
         title: ({ context, event }) => {
           if (event.type !== 'Notification') return context.title
@@ -445,6 +568,11 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
       turnId: null,
       turns: [],
       messages: [],
+      toolCalls: [],
+      usage: {
+        inputTokens: 0,
+        outputTokens: 0,
+      },
       title: null,
       pendingApproval: null,
       pendingQuestion: null,
@@ -516,7 +644,21 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
         states: {
           Idle: {
             on: {
-              Send: 'Running',
+              Notification: [
+                {
+                  guard: 'isTurnFailedForThread',
+                  target: '#codexManagedSessionMachine.Failed',
+                  actions: 'markTurnCompleted',
+                },
+                {
+                  guard: 'isThreadSystemError',
+                  target: '#codexManagedSessionMachine.Failed',
+                },
+              ],
+              Send: {
+                target: 'Running',
+                actions: 'appendUserMessage',
+              },
             },
           },
           Running: {
@@ -580,6 +722,15 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
               },
               Notification: [
                 {
+                  guard: 'isTurnFailedForThread',
+                  target: '#codexManagedSessionMachine.Failed',
+                  actions: 'markTurnCompleted',
+                },
+                {
+                  guard: 'isThreadSystemError',
+                  target: '#codexManagedSessionMachine.Failed',
+                },
+                {
                   guard: 'isTurnCompletedForThread',
                   target: 'Idle',
                   actions: [
@@ -604,6 +755,14 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
                 {
                   guard: 'hasMessageDeltaForThread',
                   actions: 'appendMessageDelta',
+                },
+                {
+                  guard: 'hasToolCallUpdateForThread',
+                  actions: 'updateToolCall',
+                },
+                {
+                  guard: 'hasTokenUsageForThread',
+                  actions: 'assignTokenUsage',
                 },
               ],
             },
@@ -717,7 +876,11 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
           Notification: [
             {
               guard: 'isThreadNotLoaded',
-              target: 'Watched',
+              target: 'ReleasingLease',
+            },
+            {
+              guard: 'isThreadClosed',
+              target: 'ReleasingLease',
             },
             {
               guard: 'isRenamedForThread',
@@ -727,9 +890,17 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
               guard: 'hasMessageDeltaForThread',
               actions: 'appendMessageDelta',
             },
+            {
+              guard: 'hasToolCallUpdateForThread',
+              actions: 'updateToolCall',
+            },
+            {
+              guard: 'hasTokenUsageForThread',
+              actions: 'assignTokenUsage',
+            },
           ],
           'Channel lost': 'Recovering',
-          Close: 'Closing',
+          Close: 'Unsubscribing',
         },
       },
       Recovering: {
@@ -763,6 +934,16 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
           }),
           onDone: 'Closed',
           onError: 'Closed',
+        },
+      },
+      Unsubscribing: {
+        invoke: {
+          src: 'unsubscribeThread',
+          input: ({ context }) => ({
+            threadId: threadIdOf(context),
+          }),
+          onDone: 'Closing',
+          onError: 'Closing',
         },
       },
       Closed: {

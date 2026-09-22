@@ -1,6 +1,9 @@
 import { z } from 'zod'
 import { liveActivitySchema } from '@/domains/sessions/contract/model/feed-rows'
-import { createSessionRosterRowSchema } from '@/domains/sessions/contract/observation/roster-row-definition'
+import {
+  createSessionRosterRowSchema,
+  managedRosterRow,
+} from '@/domains/sessions/contract/observation/roster-row-definition'
 import { ticketKey } from '@/domains/tickets/contract/ticket'
 import { identifierSchema } from '@/shared/validation'
 
@@ -142,6 +145,7 @@ export type SessionSetup = z.infer<typeof sessionSetupSchema>
 
 export const sessionRosterRowSchema = createSessionRosterRowSchema()
 export type SessionRosterRow = z.infer<typeof sessionRosterRowSchema>
+export { managedRosterRow }
 
 export function currentSessionId<Session extends Pick<SessionRosterRow, 'id' | 'retiredIds'>>(
   sessions: Session[],

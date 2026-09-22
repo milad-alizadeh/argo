@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict'
 
 import type { Input } from '@/harnesses/codex/drive/input-items'
-import type { CodexThreadStatus } from '@/harnesses/codex/drive/managed-status'
 
 // The subset of `codex app-server`'s JSON-RPC protocol this adapter drives, grounded in codex-harness
 // 0.147.0's generated schema (`codex app-server generate-json-schema`) and the live proof recorded
@@ -17,6 +16,7 @@ export type RequestParams = {
   'skills/list': SkillsListRequest
   'thread/start': ThreadConfiguration
   'thread/resume': ThreadConfiguration & { threadId: string }
+  'thread/unsubscribe': { threadId: string }
   'turn/start': {
     threadId: string
     input: Input[]
@@ -100,7 +100,7 @@ export function readThreadId(value: unknown): string {
   return protocolString(thread.id, 'Thread ID')
 }
 
-function readTurn(value: unknown): Turn {
+export function readTurn(value: unknown): Turn {
   const turn = protocolRecord(value, 'Turn')
   const status = turn.status
   assert(
@@ -119,51 +119,4 @@ export function readStartedTurn(value: unknown): Turn {
 
 export function readSteeredTurn(value: unknown): string {
   return protocolString(protocolRecord(value, 'Turn steer result').turnId, 'Steered Turn ID')
-}
-
-export function readCompletedTurn(message: WireMessage) {
-  if (!('method' in message) || message.method !== 'turn/completed') return undefined
-  return {
-    threadId: protocolString(message.params.threadId, 'Completed Turn thread ID'),
-    turn: readTurn(message.params.turn),
-  }
-}
-
-// Validates and reshapes the wire's own `thread/status/changed` envelope; deciding what each
-// shape MEANS for a Session's status is `managed-status.ts`'s job, not this parser's.
-export function readThreadStatus(
-  message: WireMessage,
-): { threadId: string; status: CodexThreadStatus } | undefined {
-  if (!('method' in message) || message.method !== 'thread/status/changed') return undefined
-  const status = protocolRecord(message.params.status, 'Thread status')
-  const threadId = protocolString(message.params.threadId, 'Thread status thread ID')
-  switch (protocolString(status.type, 'Thread status type')) {
-    case 'active':
-      assert(
-        Array.isArray(status.activeFlags) &&
-          status.activeFlags.every((flag) => typeof flag === 'string'),
-        'Active thread status has invalid flags',
-      )
-      return { threadId, status: { type: 'active', activeFlags: status.activeFlags } }
-    case 'idle':
-      return { threadId, status: { type: 'idle' } }
-    case 'systemError':
-      return { threadId, status: { type: 'systemError' } }
-    case 'notLoaded':
-      return { threadId, status: { type: 'notLoaded' } }
-    default:
-      assert.fail('Invalid thread status type')
-  }
-}
-
-export type AgentMessageText = { threadId: string; turnId: string; itemId: string; text: string }
-
-export function readAgentMessageDelta(message: WireMessage): AgentMessageText | undefined {
-  if (!('method' in message) || message.method !== 'item/agentMessage/delta') return undefined
-  return {
-    threadId: protocolString(message.params.threadId, 'Delta thread ID'),
-    turnId: protocolString(message.params.turnId, 'Delta Turn ID'),
-    itemId: protocolString(message.params.itemId, 'Delta item ID'),
-    text: protocolString(message.params.delta, 'Delta text'),
-  }
 }

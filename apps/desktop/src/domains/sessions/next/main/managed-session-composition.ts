@@ -1,7 +1,9 @@
 import type { BrowserWindow } from 'electron'
 import type { ProjectPort } from '@/domains/projects/main/port'
+import { SESSION_CODEX_EXECUTABLE_ENV } from '@/domains/sessions/contract/proof-protocol'
 import { claudeSessionAdapterRegistration } from '@/harnesses/claude/agent-sdk/claude-session-adapter-registration'
 import { createCodexSessionAdapterRegistration } from '@/harnesses/codex/drive/codex-session-adapter-registration'
+import { codexTranscriptsRoot } from '@/harnesses/codex/sessions/roots'
 import { findExecutableOnLoginShellPath } from '@/harnesses/executable-path'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 import { attachManagedSessionBridge } from './managed-session-bridge'
@@ -10,7 +12,13 @@ import { createSessionService } from './session-service'
 
 export function attachManagedSessions(
   window: BrowserWindow,
-  options: { database: DurableDatabase; projects: ProjectPort; rendererURL: string },
+  options: {
+    database: DurableDatabase
+    home: string
+    projects: ProjectPort
+    proofEnabled: boolean
+    rendererURL: string
+  },
 ) {
   const adapters = createSessionAdapterRegistry(
     {
@@ -29,7 +37,11 @@ export function attachManagedSessions(
     [
       claudeSessionAdapterRegistration,
       createCodexSessionAdapterRegistration({
-        findExecutable: () => findExecutableOnLoginShellPath('codex'),
+        transcriptsRoot: codexTranscriptsRoot(options.home),
+        findExecutable: () =>
+          options.proofEnabled
+            ? (process.env[SESSION_CODEX_EXECUTABLE_ENV] ?? null)
+            : findExecutableOnLoginShellPath('codex'),
       }),
     ],
   )

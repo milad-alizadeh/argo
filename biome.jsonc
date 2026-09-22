@@ -89,6 +89,9 @@
       "!**/*.xcassets",
       "!**/ArgoEngine/Companion/Plugin",
       "!**/ArgoFixtures/Fixtures",
+      // KIND — this records a generated package inventory. The manifest gate compares it byte for
+      // byte with the package, so formatting and linting it do not provide a useful code check.
+      "!apps/desktop/package-manifest.json",
       "apps/desktop/src/platform/renderer/components/ui/**"
     ]
   },

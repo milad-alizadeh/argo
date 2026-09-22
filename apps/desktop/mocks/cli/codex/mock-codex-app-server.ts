@@ -1,16 +1,14 @@
-import { appendFileSync } from 'node:fs'
 import { createInterface } from 'node:readline'
 import {
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
 } from '../../../src/domains/sessions/main/composition/proof-protocol.ts'
 import { MOCK_CODEX_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
-import { nextAdversarialTurn, writeSplitReply } from './fixtures/mock-codex-adversarial.ts'
-import { sendPlanUpdate } from './fixtures/mock-codex-plan.ts'
 import { compactionItem, completeTurn } from './fixtures/mock-codex-responses.ts'
-import { recordStalledTurn, recordTurn } from './fixtures/mock-codex-transcript.ts'
-import { askQuestion, handleAskReply } from './mock-ask-question.ts'
+import { rememberThreadCwd } from './fixtures/mock-codex-transcript.ts'
+import { handleAskReply } from './mock-ask-question.ts'
 import { readMockCodexRequest } from './mock-codex-request.ts'
+import { createMockTurnStartHandler } from './mock-codex-turn.ts'
 
 process.title = MOCK_CODEX_PROCESS_TITLE
 let threadCounter = 0
@@ -25,69 +23,14 @@ const threadIdFor = (counter: number) =>
 const send = (message: Record<string, unknown>) =>
   process.stdout.write(`${JSON.stringify(message)}\n`)
 type Request = { id?: unknown; method?: string; params?: Record<string, unknown> }
-function handleTurnStart(message: { id?: unknown; params?: Record<string, unknown> }) {
-  const params = message.params ?? {}
-  const threadId = params.threadId
-  const input = Array.isArray(params.input) ? params.input : []
-  const text = typeof input[0]?.text === 'string' ? input[0].text : ''
-  const plan = nextAdversarialTurn(adversarialSeed, turnIndex++)
-  if (typeof threadId === 'string') {
-    if (plan?.outcome === 'stall') recordStalledTurn(threadId)
-    else recordTurn(threadId, text)
-  }
-  if (echoFile && !text.includes('ASK')) appendFileSync(echoFile, `${JSON.stringify(text)}\n`)
-  const turnId = `mock-turn-${threadCounter}-${Date.now()}`
-  sendPlanUpdate({ text, turnId, send, beforeTurnStart: true })
-  send({ id: message.id, result: { turn: { id: turnId, status: 'inProgress' } } })
-  send({
-    method: 'thread/status/changed',
-    params: { threadId, status: { type: 'active', activeFlags: [] } },
-  })
-  sendPlanUpdate({ text, turnId, send, beforeTurnStart: false })
-  if (text.includes('ASK')) {
-    askQuestion(send, { threadId, turnId, text })
-    return
-  }
-  if (plan?.permissionBeforeReply) {
-    askQuestion(send, { threadId, turnId, text })
-    return
-  }
-  if (plan !== null) {
-    setTimeout(() => {
-      if (plan.outcome === 'stall') return
-      writeSplitReply(
-        {
-          method: 'item/agentMessage/delta',
-          params: {
-            threadId,
-            turnId,
-            itemId: `mock-message-${turnId}`,
-            delta: `Mock Codex read: ${text} 🦜`,
-          },
-        },
-        plan.replySplitByte,
-        (chunk) => process.stdout.write(chunk),
-      )
-      completeTurn({
-        outcome: plan.outcome === 'failure' ? 'failure' : 'reply',
-        send,
-        threadId,
-        turnId,
-      })
-    }, plan.firstReplyDelayMs)
-    return
-  }
-  setTimeout(
-    () =>
-      completeTurn({
-        threadId,
-        turnId,
-        outcome: text.includes('FAIL') ? 'failure' : 'reply',
-        send,
-      }),
-    REPLY_DELAY_MS === 0 ? COMPLETION_DELAY_MS : REPLY_DELAY_MS,
-  )
-}
+const handleTurnStart = createMockTurnStartHandler({
+  adversarialSeed,
+  echoFile,
+  nextThreadCounter: () => threadCounter,
+  nextTurnIndex: () => turnIndex++,
+  replyDelayMs: REPLY_DELAY_MS === 0 ? COMPLETION_DELAY_MS : REPLY_DELAY_MS,
+  send,
+})
 function handleRequest(message: Request) {
   switch (message.method) {
     case 'initialize':
@@ -97,12 +40,23 @@ function handleRequest(message: Request) {
       return
     case 'skills/list':
       return send({ id: message.id, result: { data: [] } })
-    case 'thread/start':
+    case 'thread/start': {
       threadCounter += 1
-      send({ id: message.id, result: { thread: { id: threadIdFor(threadCounter) } } })
+      const threadId = threadIdFor(threadCounter)
+      const cwd = message.params?.cwd
+      if (typeof cwd === 'string') rememberThreadCwd(threadId, cwd)
+      send({ id: message.id, result: { thread: { id: threadId } } })
       return
-    case 'thread/resume':
-      send({ id: message.id, result: { thread: { id: message.params?.threadId } } })
+    }
+    case 'thread/resume': {
+      const threadId = message.params?.threadId
+      const cwd = message.params?.cwd
+      if (typeof threadId === 'string' && typeof cwd === 'string') rememberThreadCwd(threadId, cwd)
+      send({ id: message.id, result: { thread: { id: threadId } } })
+      return
+    }
+    case 'thread/unsubscribe':
+      send({ id: message.id, result: { status: 'unsubscribed' } })
       return
     case 'turn/start':
       handleTurnStart(message)

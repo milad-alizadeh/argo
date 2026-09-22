@@ -11,6 +11,14 @@ import type { SessionHarness } from '@/domains/sessions/renderer/harness/harness
 import { useSessionCreationStore } from '@/domains/sessions/renderer/session-creation'
 import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
 
+async function paintRoster(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  if (typeof requestAnimationFrame !== 'function') return
+  await new Promise((resolve) => {
+    requestAnimationFrame(() => resolve(undefined))
+  })
+}
+
 export async function startNewSession(
   request: {
     harness: SessionHarness
@@ -64,6 +72,8 @@ export async function startNewSession(
     setFailure(null)
     onStarted(reply.sessionId)
     await afterStart(reply.sessionId)
+    // The Roster paints the real Session before the first Turn, so the row precedes the Harness write.
+    await paintRoster()
     await sendInitialTurn?.(reply.sessionId)
     return true
   } catch (error) {

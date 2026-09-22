@@ -25,6 +25,12 @@ export type FeedOverlay = (rows: readonly SessionFeedRow[]) => {
   changes: { rows: SessionFeedRow[]; aliases: [string, string][] }
 }
 
+export type ManagedFeed = {
+  chainId: string
+  revision: string
+  rows: SessionFeedRow[]
+}
+
 // One adapter's page of the active roster (#2239): `cursor` names the window the caller already
 // holds (or `null` for the bounded first page) and `projectRoot` scopes rows to one Project at
 // the discovery boundary, before the reader ever sees a machine-wide list to filter down.
@@ -55,6 +61,9 @@ export type SessionSource = {
   // Harness keeps no ownership ledger.
   isLockedElsewhere?: (sessionId: string) => boolean
   overlayFor?: (sessionId: string) => FeedOverlay | null
+  // A managed Harness can project its live Feed directly, without materialising a private
+  // transcript format for the shared reader to parse.
+  readManagedFeed?: (sessionId: string) => ManagedFeed | null | undefined
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
   // One more batch of this Harness's older history, and a full-tree reconcile (#2373). Present only
   // when the app's Session index is open: without one, discovery parses each window itself and

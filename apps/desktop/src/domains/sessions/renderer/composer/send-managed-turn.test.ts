@@ -3,9 +3,9 @@ import { QueryClient } from '@tanstack/react-query'
 import { sendToSessionIdentity } from '@/domains/sessions/renderer/composer/send-turn'
 import { mockTurnMarker } from '../../../../../mocks/sessions/mock-turn-marker'
 
-function managedClaudeDeps(
+function managedSessionDeps(
   marker: ReturnType<typeof mockTurnMarker>,
-  sendManagedClaude: Parameters<typeof sendToSessionIdentity>[0]['sendManagedClaude'],
+  sendManagedSession: Parameters<typeof sendToSessionIdentity>[0]['sendManagedSession'],
   failures: unknown[],
 ) {
   return {
@@ -15,7 +15,7 @@ function managedClaudeDeps(
       sessions: [{ id: 'session-1', harness: 'claude', posture: 'managed', turnStartedAt: null }],
     } as never,
     send: { mutateAsync: async () => undefined } as never,
-    sendManagedClaude,
+    sendManagedSession,
     setFailure: (failure: unknown) => failures.push(failure),
     watchTurn: () => {},
   }
@@ -27,7 +27,7 @@ test('an uncertain managed Claude Send keeps its Turn Marker and draft state', a
 
   await expect(
     sendToSessionIdentity(
-      managedClaudeDeps(marker, async () => ({ kind: 'uncertain' }), failures),
+      managedSessionDeps(marker, async () => ({ kind: 'uncertain' }), failures),
       'session-1',
       { prompt: 'hello', setup: null, attachments: [] },
     ),
@@ -43,7 +43,7 @@ test('a rejected managed Claude Send clears its Turn Marker and reports the reas
 
   await expect(
     sendToSessionIdentity(
-      managedClaudeDeps(
+      managedSessionDeps(
         marker,
         async () => ({ kind: 'rejected', reason: 'Session is unavailable' }),
         failures,
@@ -59,11 +59,44 @@ test('a rejected managed Claude Send clears its Turn Marker and reports the reas
   ])
 })
 
+test('a managed Codex Session sends through its managed adapter', async () => {
+  const marker = mockTurnMarker()
+  const sent: unknown[] = []
+  const managed: unknown[] = []
+  const deps = managedSessionDeps(
+    marker,
+    async (harness, sessionId, prompt) => {
+      managed.push({ harness, sessionId, prompt })
+      return { kind: 'accepted', projection: {} as never }
+    },
+    [],
+  )
+  deps.roster = {
+    sessions: [{ id: 'session-1', harness: 'codex', posture: 'managed', turnStartedAt: null }],
+  } as never
+  deps.send = {
+    mutateAsync: async (request: unknown) => {
+      sent.push(request)
+    },
+  } as never
+
+  await expect(
+    sendToSessionIdentity(deps, 'session-1', {
+      prompt: 'Fail this Turn.',
+      setup: { model: 'gpt-5.6-sol', effort: 'low', mode: 'workspace-write' },
+      attachments: [],
+    }),
+  ).resolves.toBe('accepted')
+
+  expect(managed).toEqual([{ harness: 'codex', sessionId: 'session-1', prompt: 'Fail this Turn.' }])
+  expect(sent).toEqual([])
+})
+
 test('an external Claude Session uses the drive adapter to establish management', async () => {
   const marker = mockTurnMarker()
   const sent: unknown[] = []
   const managed: unknown[] = []
-  const deps = managedClaudeDeps(
+  const deps = managedSessionDeps(
     marker,
     async (sessionId, prompt) => {
       managed.push({ sessionId, prompt })
