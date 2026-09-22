@@ -14,13 +14,7 @@ import type { HarnessRegistration } from '@/harnesses/composition/harness-regist
 
 export const codexHarness: HarnessRegistration = {
   harness: 'codex',
-  start({
-    userData,
-    home,
-    proofEnabled,
-    index,
-    managedRosterChanges,
-  }) {
+  start({ userData, home, proofEnabled, index, managedRosterChanges }) {
     const codex = createSystemCodexSessionDriver({
       executable: proofEnabled ? process.env[SESSION_CODEX_EXECUTABLE_ENV] : undefined,
       ownership: path.join(userData, 'codex-session-ownership.json'),

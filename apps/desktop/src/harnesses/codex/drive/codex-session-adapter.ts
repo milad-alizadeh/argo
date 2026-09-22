@@ -12,6 +12,7 @@ import type {
   AppServerSupervisor,
   AppServerSupervisorDeps,
 } from '@/harnesses/codex/drive/app-server-supervisor-machine'
+import { createCodexRosterChanges } from '@/harnesses/codex/drive/codex-roster-changes'
 import {
   executeCommand,
   executeSend,
@@ -45,7 +46,6 @@ function waitForIdentity(actor: ManagedSessionActor): Promise<void> {
     })
   })
 }
-
 function waitForChannel(supervisor: AppServerSupervisor): Promise<void> {
   if (supervisor.getChannel() !== null) return Promise.resolve()
   return new Promise((resolve, reject) => {
@@ -64,7 +64,6 @@ function waitForChannel(supervisor: AppServerSupervisor): Promise<void> {
     }
   })
 }
-
 function attachRegistry(
   appServer: ReturnType<typeof sharedAppServerRuntimeFor>,
   registry: SessionRegistry,
@@ -81,33 +80,24 @@ function attachRegistry(
     },
   })
 }
-
-// One Codex `SessionAdapter` per window (ADR-0047): each one contributes child actors keyed by
-// native Session ID to the main-process app-server supervisor. `execute` sends the command and
-// reports the resulting snapshot; ongoing updates stream to subscribers, not through its return.
 export function createCodexSessionAdapter(deps: {
   findExecutable: AppServerSupervisorDeps['findExecutable']
   sessionService: ManagedSessionDeps['sessionService']
   waitForWorkspaceReady: ManagedSessionDeps['waitForWorkspaceReady']
   now: ManagedSessionDeps['now']
-  // Resolving a WorkspaceSelection to a concrete Workspace (creating a Git worktree when the
-  // selection asks for one) is Workspace-domain work, not this Harness actor's (ADR-0024).
   resolveWorkspace: (selection: WorkspaceSelection) => Promise<{ workspaceId: string; cwd: string }>
 }): CodexSessionAdapter {
   const registry: SessionRegistry = new Map()
-  const rosterListeners = new Set<() => void>()
-
+  const rosterChanges = createCodexRosterChanges()
   const appServer = sharedAppServerRuntimeFor(deps.findExecutable)
   const supervisor = appServer.supervisor
   const detach = attachRegistry(appServer, registry)
-
   const machine = createManagedSessionMachine({
     getChannel: supervisor.getChannel,
     sessionService: deps.sessionService,
     waitForWorkspaceReady: deps.waitForWorkspaceReady,
     now: deps.now,
   })
-
   function registerOnceIdentified(actor: ManagedSessionActor) {
     const notify: Parameters<ManagedSessionActor['subscribe']>[0] = (snapshot) => {
       if (snapshot.context.sessionId === null) return
@@ -120,13 +110,12 @@ export function createCodexSessionAdapter(deps: {
       entry.revision += 1
       const projection = projectionFrom(snapshot, entry.revision)
       appServer.publish(projection)
-      for (const listener of rosterListeners) listener()
+      rosterChanges.notify()
       for (const listener of entry.listeners) listener(projection)
     }
     actor.subscribe(notify)
     notify(actor.getSnapshot())
   }
-
   async function start(selection: WorkspaceSelection, prompt: string) {
     const { workspaceId, cwd } = await deps.resolveWorkspace(selection)
     await waitForChannel(supervisor)
@@ -136,7 +125,6 @@ export function createCodexSessionAdapter(deps: {
     const identity = actor.getSnapshot().context.sessionId as SessionIdentity
     return executeSend(requireSessionEntry(registry, identity), prompt)
   }
-
   return {
     execute: (command) => executeCommand(command, registry, start),
     subscribe: (session, onProjection) => {
@@ -159,10 +147,7 @@ export function createCodexSessionAdapter(deps: {
       detach()
     },
     projections: appServer.projections,
-    onRosterChanged: (listener) => {
-      rosterListeners.add(listener)
-      return () => rosterListeners.delete(listener)
-    },
+    onRosterChanged: rosterChanges.subscribe,
   }
 }
 

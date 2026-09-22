@@ -39,20 +39,13 @@ export function combineDiscoveries(
     const harness = clis[index]
     if (harness !== undefined && !isDiscoveryError(reading)) cursors[harness] = reading.nextCursor
   }
-  const seen = new Set<string>()
-  const sessions = successful
-    .flatMap((reading) => reading.rows)
-    .filter((row) => {
-      if (seen.has(row.id)) return false
-      seen.add(row.id)
-      return true
-    })
-    .sort((left, right) => (right.updatedAt ?? '').localeCompare(left.updatedAt ?? ''))
   return {
     version: 1,
     type: 'session.listed',
     requestId,
-    sessions,
+    sessions: successful
+      .flatMap((reading) => reading.rows)
+      .sort((left, right) => (right.updatedAt ?? '').localeCompare(left.updatedAt ?? '')),
     filesFound: successful.reduce((total, reading) => total + reading.filesFound, 0),
     filesRead: successful.reduce((total, reading) => total + reading.filesRead, 0),
     filesUnreadable: successful.reduce((total, reading) => total + reading.filesUnreadable, 0),
