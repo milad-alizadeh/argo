@@ -13,6 +13,7 @@ import type {
   IndexedWindowSource,
 } from '@/domains/sessions/main/index/session-index/indexed-window'
 import { reconcileAll as reconcileCandidates } from '@/domains/sessions/main/index/session-index/reconcile-pass'
+import { isRecord } from '@/shared/validation'
 
 export type IndexedWindowFor = (index: SessionIndex) => ReturnType<typeof createIndexedWindow>
 
@@ -20,8 +21,15 @@ export function createBackgroundIndexing(
   source: IndexedWindowSource,
   indexedWindowFor: IndexedWindowFor,
 ) {
+  // A root that does not exist yet (no history for this Harness on this machine) is nothing to
+  // background-index, not a failure to retry forever over (#2607). The interactive read path
+  // keeps surfacing the same error as `transcripts-unavailable` through `readFailure`; this
+  // helper is reached only from `backfillTick` and `reconcileAll`, never from that path.
   async function listingAt(root: string): Promise<TranscriptFileIdentity[]> {
-    return source.identities(root)
+    return source.identities(root).catch((error) => {
+      if (isRecord(error) && (error.code === 'ENOENT' || error.code === 'ENOTDIR')) return []
+      throw error
+    })
   }
 
   // One more batch of older history: the persisted boundary past the recent window, or nothing

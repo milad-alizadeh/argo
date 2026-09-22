@@ -1,7 +1,5 @@
-import { Ban, ChevronRight } from 'lucide-react'
 import type { CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
-
 import type { Provider } from '@/domains/accounts/contract/contract'
 import type { Ticket, TicketPriority, TicketStatus } from '@/domains/tickets/contract/contract'
 import { ticketAge } from '@/domains/tickets/contract/ticket-age'
@@ -16,6 +14,7 @@ import { TreeRails, TreeStem, TreeTwig } from '@/domains/tickets/renderer/sideba
 import { PriorityMenu } from '@/domains/tickets/renderer/status/priority-menu'
 import { StatusMenu } from '@/domains/tickets/renderer/status/status-menu'
 import { TicketLabel } from '@/domains/tickets/renderer/status/ticket-label'
+import { Icon } from '@/platform/renderer/components/icon'
 
 const markIcon = 'size-(--size-icon-meta) shrink-0'
 type TreeAnchorStyle = CSSProperties & Record<'--ticket-tree-anchor', string>
@@ -35,7 +34,7 @@ function Marks({ ticket }: { ticket: Ticket }) {
     <span className="flex shrink-0 items-center gap-(--spacing-shell-item) type-meta text-muted-foreground">
       {blockers > 0 ? (
         <span className="flex items-center gap-(--spacing-shell-tight) text-danger">
-          <Ban aria-hidden="true" className={markIcon} />
+          <Icon name="blocked" className={markIcon} />
           <span className="sr-only">{t('row.blockedBy', { count: blockers })}</span>
         </span>
       ) : null}
@@ -93,8 +92,8 @@ function Fold({ row, folded, onToggle }: Pick<TicketRowProps, 'row' | 'folded' |
       onClick={onToggle}
       type="button"
     >
-      <ChevronRight
-        aria-hidden="true"
+      <Icon
+        name="chevron-right"
         className={`${markIcon} transition-transform ${folded ? '' : 'rotate-90'}`}
       />
       {folded ? null : <TreeStem />}

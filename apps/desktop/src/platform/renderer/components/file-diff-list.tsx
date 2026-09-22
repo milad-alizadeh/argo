@@ -1,6 +1,6 @@
-import { Check } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 import { diffLines } from '@/platform/renderer/components/file-diff-lines'
+import { Icon } from '@/platform/renderer/components/icon'
 import { cn } from '@/platform/renderer/lib/utils'
 
 export type FileDiff = { diff: string; path: string }
@@ -74,7 +74,7 @@ function FileDiffSection({
               className="grid size-4 place-items-center rounded-sm border border-input data-[checked=true]:border-primary data-[checked=true]:bg-primary data-[checked=true]:text-primary-foreground"
               data-checked={viewed}
             >
-              {viewed ? <Check className="size-3.5" /> : null}
+              {viewed ? <Icon name="confirmed" className="size-3.5" /> : null}
             </span>
           </span>
         </label>

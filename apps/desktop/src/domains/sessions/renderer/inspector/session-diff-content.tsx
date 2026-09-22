@@ -1,4 +1,3 @@
-import { FileText, GitCompareArrows } from 'lucide-react'
 import type { RefObject } from 'react'
 import type { BundledLanguage } from 'shiki/langs'
 import {
@@ -10,6 +9,7 @@ import {
 } from '@/domains/sessions/renderer/ai-elements/code-block'
 import { CodeBlockCopyButton } from '@/domains/sessions/renderer/ai-elements/code-block-copy-button'
 import { diffLineDecoration, diffLines } from '@/platform/renderer/components/file-diff-lines'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 
 type ViewButtonReference = RefObject<HTMLButtonElement | null>
@@ -116,7 +116,7 @@ function DiffHeader({
   path: string
   viewButtonReference: ViewButtonReference
 }) {
-  const Icon = copyLabel === undefined ? GitCompareArrows : FileText
+  const iconName = copyLabel === undefined ? 'diff-view' : 'file-text'
   return (
     <CodeBlockHeader className="shrink-0 bg-sidebar px-4 py-3">
       <CodeBlockTitle className="min-w-0">
@@ -132,7 +132,7 @@ function DiffHeader({
           onClick={onClick}
           ref={viewButtonReference}
         >
-          <Icon className="size-4" />
+          <Icon name={iconName} size="control" />
         </Button>
         {copyLabel === undefined ? null : (
           <CodeBlockCopyButton aria-label={copyLabel} className="size-7" />

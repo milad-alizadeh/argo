@@ -1,7 +1,7 @@
+import { mkdtempSync } from 'node:fs'
 import { rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
 import { pathToFileURL } from 'node:url'
 import { app, net, protocol } from 'electron'
 import { attachBridges } from '@/bridges'
@@ -12,7 +12,7 @@ import {
   ATTACHMENT_SCHEME,
   attachmentPathFromUrl,
 } from '@/domains/sessions/contract/model/feed-images'
-import { createSQLiteSessionTicketLinkStore } from '@/domains/tickets/main/session-links'
+import { openDurableStores } from '@/main/durable-stores'
 import { startDesktopApplication } from '@/platform/main/application/start'
 import {
   DEVELOPMENT_APPLICATION_NAME,
@@ -24,17 +24,9 @@ import {
 } from '@/platform/main/development/instance'
 import { writeDevelopmentReady } from '@/platform/main/development/ready'
 import { installMenu } from '@/platform/main/menu'
-import { recoverDurableStore } from '@/platform/main/storage/durable-store-recovery'
-import {
-  backupSharedDatabase,
-  sharedDatabaseBackupPath,
-  sharedDatabasePath,
-} from '@/platform/main/storage/shared-database'
 import { createDesktopWindow } from '@/platform/main/window/create-window'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mts'
 
-// Registering a privileged scheme is only valid before the app is ready (Electron's own
-// constraint), so this runs at module load, ahead of every other side effect below.
 protocol.registerSchemesAsPrivileged([
   {
     scheme: ATTACHMENT_SCHEME,
@@ -42,7 +34,6 @@ protocol.registerSchemesAsPrivileged([
   },
 ])
 
-// Forge's Vite plugin injects these for each configured renderer.
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined
 declare const MAIN_WINDOW_VITE_NAME: string
 
@@ -55,6 +46,10 @@ declare const MAIN_WINDOW_VITE_NAME: string
 // the `lsof` call are split into a chunk the ordinary launch never touches. A static import would
 // put all of it on the path of every user who opens the app.
 const ACCEPTANCE_ENABLED = process.env[ACCEPTANCE_ENV] === '1'
+const acceptanceUserData = ACCEPTANCE_ENABLED
+  ? mkdtempSync(path.join(os.tmpdir(), 'argo-pty-acceptance-'))
+  : null
+if (acceptanceUserData) app.setPath('userData', acceptanceUserData)
 
 // The Project proof (#1825, extended by #1828) drives the SHIPPED app against its own application
 // data, for the same reason the acceptance harness above lives here: a registry write is only
@@ -65,28 +60,16 @@ const projectProofStore = process.env[PROJECT_PROOF_STORE_ENV]
 const PROOF_ENABLED = Boolean(projectProofStore && path.isAbsolute(projectProofStore))
 if (PROOF_ENABLED && projectProofStore) app.setPath('userData', projectProofStore)
 
-// The launch wrapper supplies these only for Forge's Vite development server. A packaged app
-// never reads them, so production keeps its normal application state and window identity.
+// A window that never shows still stands up a GPU/compositor process to paint it, and closing
+// that process is where Chromium's shutdown occasionally stalls tens of seconds past a CI
+// runner's launch timeout before the SIGKILL that ends #2607's packaged-app hang. Nothing here
+// paints a frame a person will see, so there is no compositor to hang on.
+if (ACCEPTANCE_ENABLED || PROOF_ENABLED) app.disableHardwareAcceleration()
+
 const DEVELOPMENT_INSTANCE = MAIN_WINDOW_VITE_DEV_SERVER_URL
   ? developmentInstance(process.env)
   : null
 
-function openDurableStores(projectData: string) {
-  const databasePath = sharedDatabasePath(projectData)
-  const backupPath = sharedDatabaseBackupPath(projectData)
-  return recoverDurableStore({
-    databasePath,
-    backupPath,
-    open: () => {
-      const projects = openProjectStore(projectData)
-      const ticketLinkDatabase = new DatabaseSync(databasePath)
-      const ticketLinks = createSQLiteSessionTicketLinkStore(ticketLinkDatabase, () =>
-        backupSharedDatabase(ticketLinkDatabase, backupPath),
-      )
-      return { projects, ticketLinks }
-    },
-  })
-}
 let SETUP_DOCUMENT_SOURCE: 'proof' | 'development' | 'production' = 'production'
 if (DEVELOPMENT_INSTANCE) SETUP_DOCUMENT_SOURCE = 'development'
 if (PROOF_ENABLED) SETUP_DOCUMENT_SOURCE = 'proof'
@@ -107,7 +90,7 @@ function createWindow(): void {
     appData: app.getPath('appData'),
     instance: DEVELOPMENT_INSTANCE,
   })
-  const { projects, ticketLinks } = openDurableStores(projectData)
+  const { projects, ticketLinks, close } = openDurableStores(projectData, !ACCEPTANCE_ENABLED)
   createDesktopWindow({
     buildDirectory: __dirname,
     rendererName: MAIN_WINDOW_VITE_NAME,
@@ -136,7 +119,7 @@ function createWindow(): void {
         setupDocumentSource: SETUP_DOCUMENT_SOURCE,
         acceptance: ACCEPTANCE_ENABLED,
       })
-      window.once('closed', () => projects.close())
+      window.once('closed', close)
       installMenu(window)
     },
     loaded: (window) => {
@@ -179,5 +162,6 @@ startDesktopApplication({
   ready,
   willQuit: () => {
     if (DEVELOPMENT_INSTANCE) void rm(DEVELOPMENT_INSTANCE.readyFile, { force: true })
+    if (acceptanceUserData) void rm(acceptanceUserData, { recursive: true, force: true })
   },
 })

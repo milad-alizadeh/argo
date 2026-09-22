@@ -1,19 +1,18 @@
-import { BellRing, FileInput, SlidersHorizontal, SquareTerminal } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
+import { Icon, type IconName } from '@/platform/renderer/components/icon'
 
 type FeedEventRow = Extract<SessionFeedRow, { shape: 'event' }>
 
 const EVENT_PRESENTATION = {
-  command: SquareTerminal,
-  context: SlidersHorizontal,
-  status: BellRing,
-  transcript: FileInput,
-} satisfies Record<FeedEventRow['event'], typeof BellRing>
+  command: 'event-command',
+  context: 'event-context',
+  status: 'event-status',
+  transcript: 'event-transcript',
+} satisfies Record<FeedEventRow['event'], IconName>
 
 export function FeedEvent({ row }: { row: FeedEventRow }) {
   const { t } = useTranslation('sessions')
-  const Icon = EVENT_PRESENTATION[row.event]
   const label = t(`events.${row.event}.label`)
   return (
     <div
@@ -21,8 +20,9 @@ export function FeedEvent({ row }: { row: FeedEventRow }) {
       data-slot="feed-event"
     >
       <Icon
-        aria-hidden="true"
-        className="size-(--size-icon-control) shrink-0 text-muted-foreground"
+        className="shrink-0 text-muted-foreground"
+        name={EVENT_PRESENTATION[row.event]}
+        size="control"
       />
       <span className="shrink-0 font-medium text-foreground">{label}</span>
       {row.text === null ? null : (

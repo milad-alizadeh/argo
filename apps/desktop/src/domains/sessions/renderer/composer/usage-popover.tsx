@@ -1,6 +1,6 @@
-import { CircleGauge } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { HARNESSES } from '@/domains/sessions/renderer/harness/harnesses'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Popover,
@@ -41,7 +41,7 @@ export function UsagePopover({ harness }: { harness: 'claude' | 'codex' }) {
           />
         }
       >
-        <CircleGauge />
+        <Icon name="usage-meter" />
         <span className="inline-flex items-center gap-1">
           {t('composer.allowance.label')}{' '}
           <span className="tabular-nums text-muted-foreground">{primaryPercentage}%</span>

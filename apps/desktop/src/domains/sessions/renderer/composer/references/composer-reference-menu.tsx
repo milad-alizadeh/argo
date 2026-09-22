@@ -1,4 +1,3 @@
-import { TriangleAlert } from 'lucide-react'
 import { Trans, useTranslation } from 'react-i18next'
 import {
   harnessLabel,
@@ -8,6 +7,7 @@ import {
   SessionReferenceIcon,
 } from '@/domains/sessions/renderer/composer/references/session-reference'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
+import { Icon } from '@/platform/renderer/components/icon'
 
 export type ReferenceSuggestion = SessionReference
 type ActiveReference = {
@@ -118,7 +118,7 @@ export function ComposerReferenceMenu({
           >
             <span className="flex size-7 shrink-0 items-center justify-center rounded-md border bg-card">
               {unsupported ? (
-                <TriangleAlert aria-hidden="true" className="size-3.5" />
+                <Icon name="triangle-alert" className="size-3.5" />
               ) : (
                 <SessionReferenceIcon kind={choice.kind} />
               )}

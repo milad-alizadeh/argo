@@ -181,6 +181,26 @@
   //             never add an entry to make a build pass.
   "overrides": [
     {
+      "includes": [
+        "apps/desktop/src/domains/projects/main/**/*.ts",
+        "apps/desktop/src/domains/tickets/main/**/*.ts"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "node:sqlite": "Normal durable repositories use the shared Drizzle adapter."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
       "includes": ["apps/desktop/components.json", "lint/biome/fixtures/components/**/*.json"],
       "plugins": ["./lint/biome/components-style.grit"]
     },
@@ -337,6 +357,26 @@
                       "@/platform/renderer/**"
                     ],
                     "message": "Main facets can import only contract, main, or shared facets."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/desktop/test-fixtures/**/*.{ts,tsx}"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["../*", "./*/*"],
+                    "message": "Test fixtures use @/ for parent or cross-directory source imports."
                   }
                 ]
               }
@@ -524,6 +564,19 @@
     // across files, so its length is not a measure of code complexity.
     {
       "includes": ["apps/desktop/src/platform/renderer/tokens.css"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noExcessiveLinesPerFile": "off"
+          }
+        }
+      }
+    },
+    // KIND: the icon vocabulary is one declarative catalog, one semantic name per lucide glyph.
+    // Splitting it would hide the mapping the house rule ("one new file plus one registration
+    // line") asks a reader to see in one place.
+    {
+      "includes": ["apps/desktop/src/platform/renderer/components/icon-registry.ts"],
       "linter": {
         "rules": {
           "style": {

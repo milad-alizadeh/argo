@@ -1,6 +1,7 @@
 {
   "error": {
     "missing-project": "This Project is not registered.",
+    "missing-workspace": "This Workspace is not available.",
     "access-denied": "Argo cannot access this Project.",
     "invalid-request": "The Project request is invalid.",
     "unsupported-version": "This Project contract version is not supported.",

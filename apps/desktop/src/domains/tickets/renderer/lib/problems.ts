@@ -1,20 +1,9 @@
 // Every reason the Tickets screen cannot show a backlog, resolved into what the one problem state
 // draws: an icon, a title, a sentence and the actions that can clear it.
-import {
-  CloudOff,
-  EyeOff,
-  HardDrive,
-  Hourglass,
-  KeyRound,
-  LockKeyhole,
-  type LucideIcon,
-  TimerOff,
-  TriangleAlert,
-  Unplug,
-} from 'lucide-react'
 import type { Provider } from '@/domains/accounts/contract/contract'
 import { providerPresentation } from '@/domains/accounts/renderer/port'
 import type { ConnectionSummary, TicketErrorCode } from '@/domains/tickets/contract/contract'
+import type { IconName } from '@/platform/renderer/components/icon'
 import { contractText } from '@/platform/renderer/i18n/contract-text'
 import { i18n } from '@/platform/renderer/i18n/i18n'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
@@ -22,7 +11,7 @@ import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 export type ProblemAction = { label: string; onClick: () => void; primary: boolean }
 
 export type TicketProblemProps = {
-  icon: LucideIcon
+  icon: IconName
   title: string
   description: string
   // A failed read is announced; a Connection waiting on its Account is a state, not an event.
@@ -30,20 +19,20 @@ export type TicketProblemProps = {
   actions: readonly ProblemAction[]
 }
 
-const FAILURE_ICONS: Partial<Record<TicketErrorCode, LucideIcon>> = {
-  'github-unreachable': CloudOff,
-  'linear-unreachable': CloudOff,
-  'rate-limited': Hourglass,
-  'linear-rate-limited': Hourglass,
-  'account-expired': TimerOff,
-  'account-revoked': KeyRound,
-  'grant-unreadable': LockKeyhole,
-  'missing-account': Unplug,
-  'repository-not-visible': EyeOff,
-  'team-not-visible': EyeOff,
-  'storage-invalid': HardDrive,
-  'storage-unavailable': HardDrive,
-  'storage-not-written': HardDrive,
+const FAILURE_ICONS: Partial<Record<TicketErrorCode, IconName>> = {
+  'github-unreachable': 'connection-offline',
+  'linear-unreachable': 'connection-offline',
+  'rate-limited': 'rate-limited',
+  'linear-rate-limited': 'rate-limited',
+  'account-expired': 'account-expired',
+  'account-revoked': 'account-revoked',
+  'grant-unreadable': 'account-locked',
+  'missing-account': 'account-disconnected',
+  'repository-not-visible': 'not-visible',
+  'team-not-visible': 'not-visible',
+  'storage-invalid': 'storage-error',
+  'storage-unavailable': 'storage-error',
+  'storage-not-written': 'storage-error',
 }
 
 // A failure the person can clear by signing in again offers that, beside reading again.
@@ -75,7 +64,7 @@ export function failureProblem(
   }
   const reconnect = { label: reconnectLabel(provider), onClick: onReconnect, primary: true }
   return {
-    icon: FAILURE_ICONS[error.code as TicketErrorCode] ?? TriangleAlert,
+    icon: FAILURE_ICONS[error.code as TicketErrorCode] ?? 'warning',
     title,
     description: contractText(error),
     alert: true,
@@ -92,11 +81,11 @@ export const isConnectionProblem = (
 
 type Named = { login: string; name: string; scope: string }
 
-const CONNECTION_ICONS: Record<Problem, LucideIcon> = {
-  'account-missing': Unplug,
-  'account-expired': TimerOff,
-  'account-revoked': KeyRound,
-  'account-unreadable': LockKeyhole,
+const CONNECTION_ICONS: Record<Problem, IconName> = {
+  'account-missing': 'account-disconnected',
+  'account-expired': 'account-expired',
+  'account-revoked': 'account-revoked',
+  'account-unreadable': 'account-locked',
 }
 
 // The Connection stays when its Account goes, so reconnecting the same identity brings it back.

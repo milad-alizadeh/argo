@@ -1,8 +1,8 @@
-import { File } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { attachmentKindOf } from '@/domains/sessions/contract/drive/attachments-contract'
 import { fileImageUrl } from '@/domains/sessions/contract/model/feed-images'
+import { Icon } from '@/platform/renderer/components/icon'
 import {
   Attachment,
   AttachmentContent,
@@ -53,7 +53,7 @@ export function AttachmentChip({
             src={fileImageUrl(path) ?? undefined}
           />
         ) : (
-          <File className="size-6" />
+          <Icon name="file" className="size-6" />
         )}
       </AttachmentMedia>
       <AttachmentContent className="!min-w-0 !max-w-28 self-start overflow-hidden pr-6">

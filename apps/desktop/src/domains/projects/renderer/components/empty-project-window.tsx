@@ -1,6 +1,6 @@
-import { FolderPlus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Empty,
@@ -25,7 +25,7 @@ export function EmptyProjectWindow({ busy, onAdd }: { busy: boolean; onAdd: () =
       <Empty>
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <FolderPlus aria-hidden="true" />
+            <Icon name="new-project" />
           </EmptyMedia>
           <EmptyTitle>{t('empty.title')}</EmptyTitle>
           <EmptyDescription>{t('empty.description')}</EmptyDescription>

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { test } from 'node:test'
+import { test } from 'vitest'
 import { createGrantStore } from '@/domains/accounts/main/grants'
 import { readAccounts, writeAccounts } from '@/domains/accounts/main/registry'
 import {
@@ -98,7 +98,6 @@ async function persistFirstLaunch(first: ReturnType<typeof developmentStoreDirec
     }),
     true,
   )
-  return grants
 }
 
 async function assertSecondLaunch(second: ReturnType<typeof developmentStoreDirectories>) {
@@ -129,18 +128,21 @@ async function assertSecondLaunch(second: ReturnType<typeof developmentStoreDire
   })
 }
 
-test('a second worktree reads the Account grant and selected Project from the first', async (context) => {
+test('a second worktree reads the Account grant and selected Project from the first', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-development-store-'))
-  context.after(() => rm(root, { recursive: true, force: true }))
-  const stores = worktreeStores(path.join(root, 'Application Support'))
-  assert.notEqual(stores.firstInstance.userData, stores.secondInstance.userData)
-  assert.deepEqual(stores.first, stores.second)
-  assert.equal(
-    sharedDatabasePath(stores.first.projectData),
-    sharedDatabasePath(stores.second.projectData),
-  )
-  assert.equal(stores.first.connectionData, stores.second.connectionData)
-  assert.equal(DEVELOPMENT_APPLICATION_NAME, 'Argo Development')
-  await persistFirstLaunch(stores.first)
-  await assertSecondLaunch(stores.second)
+  try {
+    const stores = worktreeStores(path.join(root, 'Application Support'))
+    assert.notEqual(stores.firstInstance.userData, stores.secondInstance.userData)
+    assert.deepEqual(stores.first, stores.second)
+    assert.equal(
+      sharedDatabasePath(stores.first.projectData),
+      sharedDatabasePath(stores.second.projectData),
+    )
+    assert.equal(stores.first.connectionData, stores.second.connectionData)
+    assert.equal(DEVELOPMENT_APPLICATION_NAME, 'Argo Development')
+    await persistFirstLaunch(stores.first)
+    await assertSecondLaunch(stores.second)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
 })

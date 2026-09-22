@@ -1,7 +1,7 @@
 'use client'
 
-import { ChevronDownIcon, SearchIcon } from 'lucide-react'
 import React, { type ComponentProps } from 'react'
+import { Icon } from '@/platform/renderer/components/icon'
 import {
   Collapsible,
   CollapsibleContent,
@@ -47,9 +47,13 @@ export const TaskTrigger = ({ children, className, title, ...props }: TaskTrigge
   <CollapsibleTrigger className={cn('group', className)} {...props}>
     {children ?? (
       <div className="type-body flex w-full cursor-pointer items-center gap-2 text-muted-foreground transition-colors hover:text-foreground">
-        <SearchIcon className="size-4" />
+        <Icon name="search" size="control" />
         <p>{title}</p>
-        <ChevronDownIcon className="size-4 transition-transform group-data-[state=open]:rotate-180" />
+        <Icon
+          name="chevron-down"
+          size="control"
+          className="transition-transform group-data-[state=open]:rotate-180"
+        />
       </div>
     )}
   </CollapsibleTrigger>

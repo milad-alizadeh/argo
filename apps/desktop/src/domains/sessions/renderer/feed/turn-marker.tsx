@@ -1,7 +1,7 @@
-import { Sparkles } from 'lucide-react'
 import { useLayoutEffect, useRef } from 'react'
 import { formatTurnElapsed } from '@/domains/sessions/renderer/feed/elapsed'
 import type { TurnMarkerView } from '@/domains/sessions/renderer/feed/turn-marker-state'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Marker, MarkerContent, MarkerIcon } from '@/platform/renderer/components/ui/marker'
 
 const PHASE_LABEL: Record<TurnMarkerView['phase'], string> = {
@@ -56,7 +56,7 @@ export function TurnMarker({
     >
       {/* A still icon: the shimmering label already moves, and a spinner beside it was two motions. */}
       <MarkerIcon className="text-muted-foreground">
-        <Sparkles />
+        <Icon name="sparkles" />
       </MarkerIcon>
       {/* Label and counter share one shimmer, in the same muted ink as a settled tool group. */}
       <MarkerContent>

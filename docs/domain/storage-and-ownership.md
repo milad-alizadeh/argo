@@ -2,8 +2,8 @@
 
 Every source of truth is external: Tickets live in a project-management provider, Delivery
 truth in a code host, and Sessions behind vendor interfaces. Argo owns only
-the **glue** — the Project registry, the Account registry, and the user-asserted links no
-external signal carries.
+the **glue** — the Project registry, the Account registry, each Project's Workspace registry, and
+the user-asserted links no external signal carries.
 
 - **Argo-owned per-machine state** lives in one SQLite database under `userData`. Durable tables
   are authoritative for registries, global settings, user-asserted links, and resumable setup

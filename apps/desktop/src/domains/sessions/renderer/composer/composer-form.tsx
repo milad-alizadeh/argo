@@ -11,6 +11,7 @@ import type {
   ComposerAttachment,
   ComposerTicketContext,
 } from '@/domains/sessions/renderer/composer/use-composer-store'
+import type { WorkspaceMenuControlProps } from '@/domains/sessions/renderer/composer/workspace-menu'
 import type { HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
 
 // The composer card's column; attached secondary surfaces inset from its edges.
@@ -61,6 +62,7 @@ type ComposerFormProps = {
   sessionId: string
   harness: HarnessControl | null
   setup: TurnSetupControlProps | null
+  workspace: WorkspaceMenuControlProps | null
 }
 
 export function ComposerForm({
@@ -96,6 +98,7 @@ export function ComposerForm({
   sessionId,
   harness,
   setup,
+  workspace,
 }: ComposerFormProps) {
   const interruptRef = useFocusInterruptOnCompactStart(isCompacting)
   return (
@@ -142,6 +145,7 @@ export function ComposerForm({
         plan={plan}
         sessionId={sessionId}
         setup={setup}
+        workspace={workspace}
         tickets={tickets}
         onContextPickerOpenChange={onContextPickerOpenChange}
       />

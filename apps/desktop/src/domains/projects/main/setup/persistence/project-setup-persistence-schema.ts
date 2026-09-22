@@ -19,12 +19,12 @@ const setupProgressSchema = z.array(
   }),
 )
 const projectSetupRowSchema = z.strictObject({
-  checkpoint_version: z.union([z.literal(0), z.literal(1)]),
-  machine_version: z.literal(PROJECT_SETUP_MACHINE_VERSION),
+  checkpointVersion: z.union([z.literal(0), z.literal(1)]),
+  machineVersion: z.literal(PROJECT_SETUP_MACHINE_VERSION),
   revision: z.number().int().nonnegative(),
-  persisted_snapshot: z.string(),
+  persistedSnapshot: z.string(),
   receipts: z.string(),
-  saved_at: z.string().datetime(),
+  savedAt: z.string().datetime(),
 })
 
 const projectSetupSnapshotSchema = z.strictObject({
@@ -133,16 +133,16 @@ export const persistedSetupContext = (value: unknown) =>
 
 export function projectSetupRecordFromDatabase(projectId: string, value: unknown) {
   const row = projectSetupRowSchema.parse(value)
-  const persistedSnapshot = projectSetupSnapshotSchema.parse(JSON.parse(row.persisted_snapshot))
+  const persistedSnapshot = projectSetupSnapshotSchema.parse(JSON.parse(row.persistedSnapshot))
   const receipts = projectSetupReceiptSchema.parse(JSON.parse(row.receipts))
   return {
-    migrated: row.checkpoint_version === 0,
+    migrated: row.checkpointVersion === 0,
     record: {
       checkpointVersion: 1 as const,
-      machineVersion: row.machine_version,
+      machineVersion: row.machineVersion,
       projectId,
       revision: row.revision,
-      savedAt: row.saved_at,
+      savedAt: row.savedAt,
       persistedSnapshot: persistedSnapshot as unknown as ProjectSetupRecord['persistedSnapshot'],
       receipts,
     },

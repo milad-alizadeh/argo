@@ -1,7 +1,7 @@
-import { Info, Layers3 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { ContextDetails } from '@/domains/sessions/renderer/context/context-details'
 import { contextZone } from '@/domains/sessions/renderer/context/context-zone'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Popover,
@@ -88,7 +88,7 @@ function LabelledContextTrigger({ percentage }: ContextTriggerProps) {
         />
       }
     >
-      <Layers3 />
+      <Icon name="context-stack" />
       <span>{t('composer.context')}</span>
     </PopoverTrigger>
   )
@@ -108,7 +108,7 @@ function ContextPopoverTrigger({
         <Button aria-label={t('composer.contextWindow.details')} size="icon-sm" variant="ghost" />
       }
     >
-      <Info />
+      <Icon name="info" />
     </PopoverTrigger>
   )
 }

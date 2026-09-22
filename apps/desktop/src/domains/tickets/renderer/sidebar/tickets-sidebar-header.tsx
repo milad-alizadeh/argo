@@ -1,8 +1,8 @@
-import { Plus, Search, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { type ConnectionSummary, TICKET_QUERY_LIMIT } from '@/domains/tickets/contract/contract'
 import { sourcePresentation } from '@/domains/tickets/renderer/lib/sources'
 import { useTicketSearch } from '@/domains/tickets/renderer/state/use-ticket-search'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   InputGroup,
@@ -19,7 +19,7 @@ function TicketSearchField() {
     <div className="shrink-0 border-b border-border/60 p-(--spacing-shell-item)">
       <InputGroup>
         <InputGroupAddon>
-          <Search aria-hidden="true" />
+          <Icon name="search" />
         </InputGroupAddon>
         <InputGroupInput
           aria-label={t('sidebarHeader.search')}
@@ -40,7 +40,7 @@ function TicketSearchField() {
               onClick={() => setQuery('')}
               size="icon-xs"
             >
-              <X />
+              <Icon name="close" />
             </InputGroupButton>
           </InputGroupAddon>
         )}
@@ -56,7 +56,7 @@ function NewTicket({ connection }: { connection: ConnectionSummary | null }) {
   if (!connection) {
     return (
       <Button aria-label={t('sidebarHeader.newTicket')} disabled size="icon-sm" variant="ghost">
-        <Plus />
+        <Icon name="add" />
       </Button>
     )
   }
@@ -69,7 +69,7 @@ function NewTicket({ connection }: { connection: ConnectionSummary | null }) {
       size="icon-sm"
       variant="ghost"
     >
-      <Plus />
+      <Icon name="add" />
     </Button>
   )
 }
@@ -92,7 +92,7 @@ export function TicketsSidebarHeader({ connection }: { connection: ConnectionSum
             size="icon-sm"
             variant="ghost"
           >
-            <Search />
+            <Icon name="search" />
           </Button>
         </div>
       </header>

@@ -1,5 +1,4 @@
-import { Expand, Minimize2, PanelRight } from 'lucide-react'
-
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 
 type InspectorState = 'open' | 'collapsed' | 'expanded'
@@ -26,7 +25,7 @@ export function InspectorToggles({
           size="icon-sm"
           onClick={onToggle}
         >
-          <PanelRight />
+          <Icon name="panel-right" />
         </Button>
       ) : (
         <>
@@ -36,7 +35,7 @@ export function InspectorToggles({
             size="icon-sm"
             onClick={onToggleExpanded}
           >
-            {expanded ? <Minimize2 /> : <Expand />}
+            {expanded ? <Icon name="restore" /> : <Icon name="expand" />}
           </Button>
           <Button
             aria-label={`Collapse ${noun} inspector`}
@@ -44,7 +43,7 @@ export function InspectorToggles({
             size="icon-sm"
             onClick={onToggle}
           >
-            <PanelRight />
+            <Icon name="panel-right" />
           </Button>
         </>
       )}

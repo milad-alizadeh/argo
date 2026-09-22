@@ -34,8 +34,10 @@ Drizzle Kit generates the shared schema history and normal indexes. Domain table
 beside the domains that own them, and one Drizzle configuration collects them. Custom SQL
 migrations own FTS5 tables, triggers, and data changes that Drizzle cannot express.
 
-Repositories continue to use `node:sqlite` directly until Drizzle's Node SQLite runtime packages
-are stable. This keeps schema management independent from the runtime repository layer.
+The pinned Drizzle release candidate now owns normal durable reads, writes, and transactions
+through `drizzle-orm/node-sqlite`. Repositories import the shared Drizzle adapter, never
+`node:sqlite`. Raw SQLite stays limited to FTS5, required PRAGMAs, and operations Drizzle cannot
+express. Repository contract tests cover the pinned adapter before an upgrade.
 
 ADR-0047 replaces transcript-built Session indexes. Vendor interfaces are the only input to the
 disposable Session metadata and FTS5 tables. The development cutover resets the existing database

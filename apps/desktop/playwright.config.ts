@@ -12,30 +12,26 @@ export default defineConfig<object, SessionBackendOptions>({
   // The retry records a second trace, and a test that passes only on the retry still fails CI.
   retries: process.env.CI ? 1 : 0,
   failOnFlakyTests: Boolean(process.env.CI),
+  // A handful of genuinely broken cases means a broken fixture, not 61 unrelated flakes, so CI
+  // stops there instead of paying every remaining case's retry budget to learn what it already knows.
+  maxFailures: process.env.CI ? 5 : undefined,
   // A case that restarts the app pays the harness's 30s launch budget on top of its own waits.
   timeout: 60_000,
   reporter: process.env.CI
     ? [['line'], ['html', { outputFolder: 'playwright-report', open: 'never' }]]
     : 'line',
   outputDir: 'test-results',
+  // One shard, or the whole suite, is chosen by `--shard` on the CLI (#2605); the config lists
+  // every project unconditionally so a shard's slice is drawn from the full case set.
   projects: [
     { name: 'project-setup', testDir: 'e2e/project-setup' },
     { name: 'projects', testDir: 'e2e/projects' },
-    {
-      name: 'sessions',
-      testDir: 'e2e/sessions',
-      testIgnore: '**/adversarial.e2e.ts',
-    },
+    { name: 'project-workspaces', testDir: 'e2e/project-workspaces' },
+    // The adversarial cases (jitter, split bytes, stalls, seeded failure) run inside this same
+    // project and the same `test:e2e` invocation, not a second `turbo run` (#2605): one packaged
+    // app boot and one Playwright startup covers both.
+    { name: 'sessions', testDir: 'e2e/sessions' },
     { name: 'tickets', testDir: 'e2e/tickets' },
-    ...(process.env.ARGO_E2E_ADVERSARIAL === '1'
-      ? [
-          {
-            name: 'sessions-adversarial',
-            testDir: 'e2e/sessions',
-            testMatch: '**/adversarial.e2e.ts',
-          },
-        ]
-      : []),
     // The signed-in local CLIs, never CI. A real reply can take the backend's whole 180s budget.
     ...(process.env.ARGO_E2E_REAL === '1'
       ? [

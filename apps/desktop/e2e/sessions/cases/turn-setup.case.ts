@@ -18,7 +18,7 @@ async function waitForSetup(page, runSetup, mode) {
 // shipped main process and preload, and a choice made by keyboard outlives a Session switch.
 export async function proveTurnSetup(page) {
   await openSessionByClick(page, 'setupAnswered')
-  await waitForSetup(page, 'Claude Code·Sonnet 5·High', 'Plan')
+  await waitForSetup(page, 'Sonnet 5·High', 'Plan')
 
   await page.locator(RUN_SETUP).focus()
   await page.keyboard.press('Enter')
@@ -42,11 +42,11 @@ export async function proveTurnSetup(page) {
   await auto.focus()
   await page.keyboard.press('Enter')
   await page.getByRole('menu').waitFor({ state: 'detached' })
-  await waitForSetup(page, 'Claude Code·Haiku 4.5·Extra high', 'Auto')
+  await waitForSetup(page, 'Haiku 4.5·Extra high', 'Auto')
 
   await openSessionByClick(page, 'prose')
   await openSessionByClick(page, 'setupAnswered')
-  await waitForSetup(page, 'Claude Code·Haiku 4.5·Extra high', 'Auto')
+  await waitForSetup(page, 'Haiku 4.5·Extra high', 'Auto')
 }
 
 // A draft and the harness a new Session was set to outlive a reload of the window.

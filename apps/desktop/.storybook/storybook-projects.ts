@@ -15,6 +15,26 @@ function listed(selectedId: string) {
   }
 }
 
+const workspaces = [
+  {
+    id: 'storybook-workspace-main',
+    kind: 'main' as const,
+    displayName: 'Main checkout',
+    path: '/storybook/argo',
+    facts: { branch: 'main', headSha: 'storybook-sha', dirty: false },
+  },
+]
+
+function workspacesListed(selectedId: string | null) {
+  return {
+    version: 1 as const,
+    type: 'project.workspace.listed' as const,
+    requestId: 'storybook-workspaces',
+    workspaces,
+    selectedId,
+  }
+}
+
 function setupSnapshot(projectId: string) {
   return {
     version: 1 as const,
@@ -51,4 +71,8 @@ export const storybookProjectBridge: ProjectClient = {
   registerProject: () => Promise.resolve(listed('storybook-worktree')),
   relocateProject: () => Promise.resolve(listed('storybook-worktree')),
   selectProject: ({ projectId }) => Promise.resolve(listed(projectId)),
+  listProjectWorkspaces: () => Promise.resolve(workspacesListed('storybook-workspace-main')),
+  selectProjectWorkspace: ({ workspaceId }) => Promise.resolve(workspacesListed(workspaceId)),
+  createManagedProjectWorkspace: () =>
+    Promise.resolve(workspacesListed('storybook-workspace-main')),
 }

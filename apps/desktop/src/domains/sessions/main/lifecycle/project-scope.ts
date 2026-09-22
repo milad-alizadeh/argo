@@ -1,43 +1,26 @@
 // Scoping one adapter's own rows to a Project; `discover-roster.ts` is the one place it applies.
-import { readdir, readFile, realpath } from 'node:fs/promises'
-import path from 'node:path'
+import { realpath } from 'node:fs/promises'
+import {
+  gitCommonDirectory,
+  linkedWorktreePaths,
+  mainWorktreePath,
+} from '@/platform/main/git-worktrees'
 
 async function pathForms(root: string): Promise<string[]> {
   const resolved = await realpath(root).catch(() => root)
   return resolved === root ? [root] : [root, resolved]
 }
 
-async function gitDirectory(projectRoot: string): Promise<string> {
-  const dotGit = path.join(projectRoot, '.git')
-  const pointer = await readFile(dotGit, 'utf8').catch(() => null)
-  if (pointer === null) return dotGit
-  const gitdir = pointer.match(/^gitdir:\s*(.+)\s*$/)?.[1]
-  return gitdir === undefined ? dotGit : path.resolve(projectRoot, gitdir)
-}
-
-async function commonGitDirectory(projectRoot: string): Promise<string> {
-  const git = await gitDirectory(projectRoot)
-  const common = await readFile(path.join(git, 'commondir'), 'utf8').catch(() => null)
-  return common === null ? git : path.resolve(git, common.trim())
-}
-
 async function linkedWorktreeRoots(projectRoot: string): Promise<string[]> {
-  const common = await commonGitDirectory(projectRoot)
-  const worktrees = path.join(common, 'worktrees')
-  const names = await readdir(worktrees).catch(() => [])
-  const roots = await Promise.all(
-    names.map(async (name) => {
-      const metadata = path.join(worktrees, name)
-      const gitdir = await readFile(path.join(metadata, 'gitdir'), 'utf8').catch(() => null)
-      return gitdir === null ? [] : pathForms(path.dirname(path.resolve(metadata, gitdir.trim())))
-    }),
-  )
+  const common = await gitCommonDirectory(projectRoot)
+  const roots = await Promise.all((await linkedWorktreePaths(common)).map(pathForms))
   return roots.flat()
 }
 
 async function mainWorktreeRoots(projectRoot: string): Promise<string[]> {
-  const common = await commonGitDirectory(projectRoot)
-  return path.basename(common) === '.git' ? pathForms(path.dirname(common)) : []
+  const common = await gitCommonDirectory(projectRoot)
+  const main = mainWorktreePath(common)
+  return main === null ? [] : pathForms(main)
 }
 
 // A Project's root as registered and as the Harness records it: a Harness's cwd has symlinks resolved

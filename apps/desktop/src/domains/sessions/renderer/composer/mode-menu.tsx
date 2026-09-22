@@ -1,6 +1,6 @@
-import { ChevronDown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { TurnSetupControlProps } from '@/domains/sessions/renderer/composer/run-setup-menu'
+import { Icon } from '@/platform/renderer/components/icon'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +16,6 @@ import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 export function ModeMenu({ choices, value, onChange }: TurnSetupControlProps) {
   const { t } = useTranslation('sessions')
   const current = choices.modes.find((mode) => mode.value === value.mode) ?? choices.modes[0]
-  const CurrentIcon = current?.icon
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -28,9 +27,9 @@ export function ModeMenu({ choices, value, onChange }: TurnSetupControlProps) {
           />
         }
       >
-        {CurrentIcon ? <CurrentIcon /> : null}
+        {current === undefined ? null : <Icon name={current.icon} />}
         <span className="hidden @[36rem]:inline">{current?.label}</span>
-        <ChevronDown className="hidden text-muted-foreground @[36rem]:block" />
+        <Icon name="chevron-down" className="hidden text-muted-foreground @[36rem]:block" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="w-(--size-session-menu) p-1.5">
         <DropdownMenuGroup>
@@ -48,7 +47,7 @@ export function ModeMenu({ choices, value, onChange }: TurnSetupControlProps) {
                 closeOnClick
                 className="items-start rounded-md py-1.5 pr-8 pl-2"
               >
-                <mode.icon className="mt-0.5 size-3.5" />
+                <Icon name={mode.icon} className="mt-0.5 size-3.5" />
                 <span className="grid gap-0.5">
                   <span className="type-heading">{mode.label}</span>
                   <span className="type-meta text-muted-foreground">{mode.detail}</span>

@@ -6,10 +6,12 @@ export function recoverDurableStore<Result>(request: {
   databasePath: string
   backupPath: string
   open: () => Result
+  recovery?: boolean
 }): Result {
   try {
     return request.open()
-  } catch {
+  } catch (error) {
+    if (request.recovery === false) throw error
     const restore = dialog.showMessageBoxSync({
       type: 'error',
       title: platformText('dialog.restoreData.title'),

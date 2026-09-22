@@ -70,7 +70,7 @@ export function useSessionScreenModel() {
   const { sessionId } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
-  const [cockpit] = useProjects()
+  const [cockpit, projectActions] = useProjects()
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
   const [evidence, setEvidence] = useState<SessionEvidence | null>(null)
   const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
@@ -86,6 +86,7 @@ export function useSessionScreenModel() {
   const composer = useSessionComposer({
     harness: harness.harness,
     cockpit,
+    projectActions,
     focusOnMount: location.state === COMPOSER_FOCUS_STATE,
     navigate,
     roster,

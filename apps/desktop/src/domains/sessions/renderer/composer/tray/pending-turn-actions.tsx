@@ -1,7 +1,7 @@
-import { Pencil, Route, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PendingTurn } from '@/domains/sessions/renderer/composer/tray/use-pending-turns'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 
 export function PendingTurnActions({
@@ -32,7 +32,7 @@ export function PendingTurnActions({
         type="button"
         variant="ghost"
       >
-        <Route aria-hidden="true" className="size-3.5" />
+        <Icon name="queued-turn-path" className="size-3.5" />
         {t('composer.queued.steer')}
       </Button>
       <Button
@@ -42,7 +42,7 @@ export function PendingTurnActions({
         type="button"
         variant="ghost"
       >
-        <Trash2 aria-hidden="true" className="size-3.5" />
+        <Icon name="delete-queued-turn" className="size-3.5" />
       </Button>
       <Button
         aria-label={`Edit queued message: ${turn.text}`}
@@ -51,7 +51,7 @@ export function PendingTurnActions({
         type="button"
         variant="ghost"
       >
-        <Pencil aria-hidden="true" className="size-3.5" />
+        <Icon name="edit-queued-turn" className="size-3.5" />
       </Button>
     </>
   )

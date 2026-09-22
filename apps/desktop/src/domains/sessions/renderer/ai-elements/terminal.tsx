@@ -1,7 +1,7 @@
 import Ansi from 'ansi-to-react'
-import { CheckIcon, CopyIcon, TerminalIcon } from 'lucide-react'
 import React, { type HTMLAttributes, useCallback, useContext, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { cn } from '@/platform/renderer/lib/utils'
 import './terminal.css'
@@ -40,7 +40,7 @@ export function TerminalTitle({
       className={cn('type-body flex items-center gap-2 text-muted-foreground', className)}
       {...props}
     >
-      <TerminalIcon className="size-4" />
+      <Icon name="shell-output" size="control" />
       {children}
     </div>
   )
@@ -55,7 +55,6 @@ export function TerminalCopyButton() {
     setCopied(true)
     window.setTimeout(() => setCopied(false), 2000)
   }, [output])
-  const Icon = copied ? CheckIcon : CopyIcon
   return (
     <Button
       type="button"
@@ -65,7 +64,7 @@ export function TerminalCopyButton() {
       className="size-7 shrink-0 text-muted-foreground hover:bg-muted hover:text-foreground"
       onClick={copy}
     >
-      <Icon className="size-4" />
+      <Icon name={copied ? 'confirmed' : 'copy'} size="control" />
     </Button>
   )
 }

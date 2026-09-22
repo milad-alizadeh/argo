@@ -1,15 +1,15 @@
-import { DatabaseSync } from 'node:sqlite'
 import { createProjectStore } from '@/domains/projects/main/sqlite-store'
+import { createDurableDatabase } from '@/platform/main/storage/durable-database'
 import {
   backupSharedDatabase,
+  openSharedDatabase,
   sharedDatabaseBackupPath,
-  sharedDatabasePath,
 } from '@/platform/main/storage/shared-database'
 
 export function openProjectStore(projectData: string) {
-  const database = new DatabaseSync(sharedDatabasePath(projectData))
+  const database = openSharedDatabase(projectData)
   const backup = () => {
     void backupSharedDatabase(database, sharedDatabaseBackupPath(projectData)).catch(console.error)
   }
-  return createProjectStore(database, backup)
+  return createProjectStore(createDurableDatabase(database), backup)
 }

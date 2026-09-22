@@ -11,10 +11,8 @@ const COMPOSITION = [
 export function ClaudeContextComposition() {
   const { t } = useTranslation('sessions')
   return (
-    <details className="group type-body">
-      <summary className="cursor-pointer font-medium">
-        {t('composer.contextWindow.loadedContext')}
-      </summary>
+    <div className="type-body">
+      <div className="font-medium">{t('composer.contextWindow.loadedContext')}</div>
       <div className="mt-2 grid gap-2">
         {COMPOSITION.map((item) => (
           <div
@@ -27,7 +25,7 @@ export function ClaudeContextComposition() {
           </div>
         ))}
       </div>
-    </details>
+    </div>
   )
 }
 
