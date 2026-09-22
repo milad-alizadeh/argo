@@ -73,14 +73,6 @@ jobs:
           VERSION: ${{ inputs.version }}
           GH_TOKEN: ${{ github.token }}
 
-      # Also before anything is built. The notes are a committed changelog entry, which is what
-      # lets a release be rebuilt without retyping them; `/release-argo` (#1808) writes it.
-      - name: Read the release notes
-        shell: bash
-        run: node apps/desktop/scripts/changelog-entry.mts "$VERSION" > "$RUNNER_TEMP/release-notes.md"
-        env:
-          VERSION: ${{ inputs.version }}
-
       - uses: ./.github/actions/setup
 
       # Electron 44 ships no `postinstall`, so `bun install` leaves no Electron binary at all.
@@ -242,7 +234,7 @@ jobs:
             --draft \
             --target "$GITHUB_SHA" \
             --title "Argo $VERSION" \
-            --notes-file "$RUNNER_TEMP/release-notes.md" \
+            --generate-notes \
             apps/desktop/out/release-verdict.json \
             "$RELEASE_DIR"/*
         env:

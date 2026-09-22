@@ -4,8 +4,8 @@ import {
   developmentIdentityArgument,
   developmentInstance,
   developmentReadyRecord,
-} from '../src/platform/main/development/instance.ts'
-import { developmentIdentityFromArguments } from '../src/platform/preload/development-identity.ts'
+} from '@/platform/main/development/instance'
+import { developmentIdentityFromArguments } from '@/platform/preload/development-identity'
 
 const directory = path.join(path.sep, 'tmp', 'argo-desktop-dev', 'ticket-2173')
 const environment = {
