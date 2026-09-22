@@ -2,6 +2,8 @@ import { assign, fromPromise, setup } from 'xstate'
 import type { SessionIdentity } from '@/domains/sessions/next/contract/session-contract'
 import type {
   Message,
+  SessionUsage,
+  ToolCall,
   Turn,
   TurnStatus,
 } from '@/domains/sessions/next/contract/session-projection-contract'
@@ -18,6 +20,8 @@ import {
   readCompletedTurn,
   readThreadId,
   readThreadStatus,
+  readThreadTokenUsageUpdated,
+  readToolCallUpdate,
 } from '@/harnesses/codex/drive/protocol'
 import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
 import { codexAnswersFor, readRequestUserInput } from '@/harnesses/codex/drive/question-protocol'
@@ -48,6 +52,8 @@ type ManagedSessionContext = {
   turnId: string | null
   turns: Turn[]
   messages: Message[]
+  toolCalls: ToolCall[]
+  usage: SessionUsage
   title: string | null
   pendingApproval: PendingCodexPermission | null
   pendingQuestion: PendingCodexQuestion | null
@@ -351,6 +357,16 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
         const delta = readAgentMessageDelta(event.message)
         return delta !== undefined && delta.threadId === threadIdOf(context)
       },
+      hasToolCallUpdateForThread: ({ context, event }) => {
+        if (event.type !== 'Notification') return false
+        const update = readToolCallUpdate(event.message)
+        return update !== undefined && update.threadId === threadIdOf(context)
+      },
+      hasTokenUsageForThread: ({ context, event }) => {
+        if (event.type !== 'Notification') return false
+        const usage = readThreadTokenUsageUpdated(event.message)
+        return usage !== undefined && usage.threadId === threadIdOf(context)
+      },
       isThreadNotLoaded: ({ context, event }) => {
         if (event.type !== 'Notification') return false
         const status = readThreadStatus(event.message)
@@ -426,6 +442,37 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
           )
         },
       }),
+      updateToolCall: assign({
+        toolCalls: ({ context, event }) => {
+          if (event.type !== 'Notification') return context.toolCalls
+          const update = readToolCallUpdate(event.message)
+          if (update === undefined) return context.toolCalls
+          const existing = context.toolCalls.find((toolCall) => toolCall.id === update.id)
+          if (existing === undefined)
+            return [
+              ...context.toolCalls,
+              {
+                id: update.id,
+                turnId: update.turnId,
+                name: update.name,
+                status: update.status,
+              },
+            ]
+          return context.toolCalls.map((toolCall) =>
+            toolCall.id === update.id
+              ? { ...toolCall, name: update.name, status: update.status }
+              : toolCall,
+          )
+        },
+      }),
+      assignTokenUsage: assign({
+        usage: ({ context, event }) => {
+          if (event.type !== 'Notification') return context.usage
+          const usage = readThreadTokenUsageUpdated(event.message)
+          if (usage === undefined) return context.usage
+          return { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens }
+        },
+      }),
       assignTitle: assign({
         title: ({ context, event }) => {
           if (event.type !== 'Notification') return context.title
@@ -445,6 +492,8 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
       turnId: null,
       turns: [],
       messages: [],
+      toolCalls: [],
+      usage: { inputTokens: 0, outputTokens: 0 },
       title: null,
       pendingApproval: null,
       pendingQuestion: null,
@@ -605,6 +654,14 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
                   guard: 'hasMessageDeltaForThread',
                   actions: 'appendMessageDelta',
                 },
+                {
+                  guard: 'hasToolCallUpdateForThread',
+                  actions: 'updateToolCall',
+                },
+                {
+                  guard: 'hasTokenUsageForThread',
+                  actions: 'assignTokenUsage',
+                },
               ],
             },
           },
@@ -726,6 +783,14 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
             {
               guard: 'hasMessageDeltaForThread',
               actions: 'appendMessageDelta',
+            },
+            {
+              guard: 'hasToolCallUpdateForThread',
+              actions: 'updateToolCall',
+            },
+            {
+              guard: 'hasTokenUsageForThread',
+              actions: 'assignTokenUsage',
             },
           ],
           'Channel lost': 'Recovering',

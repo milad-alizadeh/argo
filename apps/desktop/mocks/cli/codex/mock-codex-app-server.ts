@@ -44,6 +44,49 @@ function handleTurnStart(message: { id?: unknown; params?: Record<string, unknow
     params: { threadId, status: { type: 'active', activeFlags: [] } },
   })
   sendPlanUpdate({ text, turnId, send, beforeTurnStart: false })
+  if (text.includes('PROJECT_TOOL_USAGE')) {
+    setTimeout(() => {
+      send({
+        method: 'item/started',
+        params: {
+          threadId,
+          turnId,
+          startedAtMs: Date.now(),
+          item: {
+            id: `mock-command-${turnId}`,
+            type: 'commandExecution',
+            command: 'rtk bun run typecheck',
+            commandActions: [],
+            cwd: process.cwd(),
+            status: 'inProgress',
+          },
+        },
+      })
+      send({
+        method: 'thread/tokenUsage/updated',
+        params: {
+          threadId,
+          turnId,
+          tokenUsage: {
+            last: {
+              cachedInputTokens: 0,
+              inputTokens: 23,
+              outputTokens: 5,
+              reasoningOutputTokens: 0,
+              totalTokens: 28,
+            },
+            total: {
+              cachedInputTokens: 0,
+              inputTokens: 23,
+              outputTokens: 5,
+              reasoningOutputTokens: 0,
+              totalTokens: 28,
+            },
+          },
+        },
+      })
+    }, 1)
+  }
   if (text.includes('ASK')) {
     askQuestion(send, { threadId, turnId, text })
     return

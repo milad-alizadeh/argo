@@ -47,8 +47,6 @@ function questionsFrom(context: ManagedSessionSnapshot['context']): Question[] {
   ]
 }
 
-// ToolCall/usage projection fidelity has no grounded live-protocol schema yet (no documented
-// app-server shape for either); those fields report empty until one is found.
 export function projectionFrom(
   snapshot: ManagedSessionSnapshot,
   revision: number,
@@ -66,9 +64,9 @@ export function projectionFrom(
     title: context.title,
     turns: context.turns,
     messages: context.messages,
-    toolCalls: [],
+    toolCalls: context.toolCalls,
     pendingApprovals: approvalsFrom(context),
     pendingQuestions: questionsFrom(context),
-    usage: { inputTokens: 0, outputTokens: 0 },
+    usage: context.usage,
   }
 }
