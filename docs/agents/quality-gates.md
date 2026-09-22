@@ -50,13 +50,23 @@ stays comment-free by convention, with nothing enforcing it.
 **The renderer boundary starts with specifier spelling in each renderer facet.** A
 `noRestrictedImports` override covers the renderer roots under `apps/desktop/src/`. It refuses
 `electron` and `node:*`. It also reads `import type`, because compilation erases a type-only
-import. The domain-facet gate rejects imports into another runtime facet. The preload and main
-facets can import `electron`. The limits worth knowing before trusting these gates:
+import. The preload and main facets can import `electron`. The limits worth knowing before
+trusting this gate:
 
 - **One hop of indirection walks straight through.** A renderer file importing `../preload`,
   which itself imports `electron`, draws no diagnostic and pulls `electron` into the renderer
-  bundle. Nothing reads the import graph, so cycles are unguarded too. A graph tool is the honest
-  fix and wants its own ticket.
+  bundle. A graph tool would close this; the one already running (below) only checks domain
+  boundaries, not this specifier rule.
+
+**A domain reaches another domain's `main` or `renderer` facet only through its `port.ts`**
+(#2623, ADR-0044). This is a separate gate from the specifier rule above, on a separate engine:
+`.dependency-cruiser.json`'s `domain-port-only` rule, run as `quality:boundaries` and in CI as its
+own step. Biome cannot express it as one rule (no regex backreference between `from` and `to`), so
+it moved out rather than becoming six near-identical `noRestrictedImports` overrides. Two files
+are exempt by name because they reach across domains on purpose to build test fixtures:
+`accounts/main/harness-fixtures.ts` and `sessions/main/index/session-index/roster-fixtures.ts`.
+`*.test.ts`/`*.stories.tsx` files are exempt too, matching the same allowance the old
+`biome.jsonc` matrix made. Nothing reads the import graph for cycles.
 - **`tsconfig.web.json` sets `"types": []`**, and it is load-bearing. Without it the renderer
   inherits every package in the root `@types`, `node` among them, and `process.env.SOME_TOKEN`
   type-checks clean in the one process that must never hold a token, with no import statement for

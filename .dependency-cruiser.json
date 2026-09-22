@@ -1,0 +1,39 @@
+{
+  "forbidden": [
+    {
+      "name": "domain-port-only",
+      "comment": "A domain reaches another domain's main or renderer facet only through that domain's port.ts (ADR-0044).",
+      "severity": "error",
+      "from": {
+        "path": "^apps/desktop/src/domains/([^/]+)/",
+        "pathNot": [
+          "\\.(test|stories)\\.(ts|tsx)$",
+          "^apps/desktop/src/domains/accounts/main/harness-fixtures\\.ts$",
+          "^apps/desktop/src/domains/sessions/main/index/session-index/roster-fixtures\\.ts$"
+        ]
+      },
+      "to": {
+        "path": "^apps/desktop/src/domains/[^/]+/(main|renderer)/",
+        "pathNot": [
+          "^apps/desktop/src/domains/$1/",
+          "/port\\.tsx?$",
+          "^apps/desktop/src/domains/accounts/main/harness-fixtures\\.ts$",
+          "^apps/desktop/src/domains/sessions/main/index/session-index/roster-fixtures\\.ts$"
+        ]
+      }
+    }
+  ],
+  "options": {
+    "doNotFollow": {
+      "path": "node_modules"
+    },
+    "tsPreCompilationDeps": true,
+    "tsConfig": {
+      "fileName": "apps/desktop/tsconfig.json"
+    },
+    "enhancedResolveOptions": {
+      "exportsFields": ["exports"],
+      "conditionNames": ["import", "require", "node", "default", "types"]
+    }
+  }
+}

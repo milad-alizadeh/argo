@@ -89,12 +89,12 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run quality:duplication
 
-      # A domain facet may import only its declared set of other facets (#2505). Node reads every
-      # source file under apps/desktop/src and flags an import that crosses a facet boundary; this
-      # step also runs the checker's own tests over synthetic files.
-      - name: Domain facet boundaries
+      # A domain reaches another domain's main or renderer facet only through that domain's
+      # port.ts (ADR-0044). dependency-cruiser expresses this as one rule via a regex
+      # backreference between `from.path` and `to.pathNot`; Biome has no such primitive.
+      - name: Domain boundary gate
         if: ${{ !cancelled() }}
-        run: bun run quality:facets
+        run: bun run quality:boundaries
 
       # The workspace suites. `apps/desktop` now answers `test` with the SOURCE tier of #1769:
       # everything about the packaged PTY that can be judged without a Mac — the yauzl override,
