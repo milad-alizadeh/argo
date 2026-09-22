@@ -1,5 +1,6 @@
 import type { BrowserWindow } from 'electron'
 import type { SessionCommand } from '@/domains/sessions/next/contract/session-command-contract'
+import type { SessionIdentity } from '@/domains/sessions/next/contract/session-contract'
 import { managedSessionError } from '@/domains/sessions/next/ipc/managed-session-error'
 import { MANAGED_SESSION_OPERATIONS } from '@/domains/sessions/next/ipc/managed-session-operations'
 import type { SessionAdapterRegistry } from '@/domains/sessions/next/main/session-adapter-registry'
@@ -10,12 +11,17 @@ function adapterFor(command: SessionCommand, adapters: SessionAdapterRegistry) {
   return adapters.adapterFor(harness)
 }
 
+function sessionKey(session: SessionIdentity): string {
+  return `${session.harness}:${session.nativeId}`
+}
+
 // Managed adapters stay in main. The renderer submits validated product commands and receives
 // product projections; it never sees an actor, an SDK channel, or a harness connection.
 export function attachManagedSessionBridge(
   window: BrowserWindow,
   options: { adapters: SessionAdapterRegistry; rendererURL: string },
 ): void {
+  const subscriptions = new Map<string, () => void>()
   registerDomainHandlers({
     window,
     rendererURL: options.rendererURL,
@@ -47,6 +53,24 @@ export function attachManagedSessionBridge(
             outcome: { kind: 'rejected', reason: 'Argo could not execute this Session command.' },
           }
         }
+      },
+      subscribe: (request, adapters) => {
+        const adapter = adapters.adapterFor(request.session.harness)
+        if (adapter === undefined) return managedSessionError('invalid-request', request.requestId)
+        const key = sessionKey(request.session)
+        subscriptions.get(key)?.()
+        subscriptions.set(
+          key,
+          adapter.subscribe(request.session, (projection) => {
+            window.webContents.send('argo:managed-session:projection', {
+              version: 1,
+              type: 'managed-session.projection',
+              requestId: 'subscription',
+              projection,
+            })
+          }),
+        )
+        return { version: 1, type: 'managed-session.subscribed', requestId: request.requestId }
       },
     },
     error: managedSessionError,

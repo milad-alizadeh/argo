@@ -27,7 +27,7 @@ contextBridge.exposeInMainWorld('argo', {
   ...createHarnessSignInClient(invoke),
   ...createTicketClient(invoke),
   ...createSessionHarnessent(invoke),
-  ...createManagedSessionClient(invoke),
+  ...createManagedSessionClient(invoke, subscribe),
   ...createCodexCompactionClient(invoke),
   ...createPlatformClient({
     invoke,
