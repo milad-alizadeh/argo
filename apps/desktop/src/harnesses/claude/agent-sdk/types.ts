@@ -69,6 +69,7 @@ export type ClaudeSessionInput = {
   session: SessionIdentity | null
   workspaceId: string
   prompt: string
+  startTurn?: boolean
   cwd: string
   startedAt: string
   createQuery: ClaudeQueryFactory

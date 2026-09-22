@@ -61,9 +61,9 @@ export async function startNewSession(
     })
     creation.resolved(pending.id, reply.sessionId)
     setFailure(null)
+    onStarted(reply.sessionId)
     await afterStart(reply.sessionId)
     await sendInitialTurn?.(reply.sessionId)
-    onStarted(reply.sessionId)
     return true
   } catch (error) {
     creation.failed(pending.id)

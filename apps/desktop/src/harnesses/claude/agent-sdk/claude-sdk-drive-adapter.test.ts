@@ -43,7 +43,8 @@ test('routes a legacy Claude start through the managed adapter', async () => {
     {
       type: 'session.start',
       harness: 'claude',
-      prompt: '',
+      prompt: 'Hello',
+      startTurn: false,
       workspace: { kind: 'existing', workspaceId: 'workspace-1' },
     },
   ])

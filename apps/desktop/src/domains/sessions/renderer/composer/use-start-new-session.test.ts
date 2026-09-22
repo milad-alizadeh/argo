@@ -1,7 +1,13 @@
 import { beforeEach, expect, test } from 'bun:test'
 import { sendToNewSession } from '@/domains/sessions/renderer/composer/send-turn'
+import { startNewSession } from '@/domains/sessions/renderer/composer/use-start-new-session'
 import { useSessionCreationStore } from '@/domains/sessions/renderer/session-creation'
-import { mockStart, newSessionDeps, PROJECT } from '../../../../../mocks/sessions/mock-send-turn'
+import {
+  COCKPIT,
+  mockStart,
+  newSessionDeps,
+  PROJECT,
+} from '../../../../../mocks/sessions/mock-send-turn'
 
 beforeEach(() => {
   useSessionCreationStore.setState({ pending: null })
@@ -54,4 +60,30 @@ test('a failed start clears the pending row and leaves the composer navigable ag
   expect(sent).toBe(false)
   expect(useSessionCreationStore.getState().pending).toBeNull()
   expect(navigated).toEqual([['/sessions/new', { replace: true }]])
+})
+
+test('selects the real Session before releasing its first Claude turn', async () => {
+  const events: string[] = []
+  const started = await startNewSession(
+    {
+      harness: 'claude',
+      cockpit: COCKPIT,
+      identity: { kind: 'draft', projectId: PROJECT.id },
+      prompt: 'hello',
+      setup: null,
+      attachments: [],
+      start: mockStart(async () => ({ sessionId: 'session-new' })),
+      setFailure: () => {},
+    },
+    {
+      onSubmitted: () => events.push('submitted'),
+      onStarted: () => events.push('selected'),
+      afterStart: async () => events.push('refreshed'),
+      sendInitialTurn: async () => events.push('sent'),
+      onFailed: () => {},
+    },
+  )
+
+  expect(started).toBe(true)
+  expect(events).toEqual(['submitted', 'selected', 'refreshed', 'sent'])
 })

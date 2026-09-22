@@ -2,7 +2,7 @@ import type { ClaudeSessionContext, ClaudeSessionInput } from '@/harnesses/claud
 
 export function leaseStates(input: ClaudeSessionInput) {
   const initialTurn =
-    input.session === null && input.prompt.length > 0 ? 'startInitialTurn' : undefined
+    input.session === null && input.startTurn !== false ? 'startInitialTurn' : undefined
   const releaseTargets = [
     {
       guard: ({ context }: { context: ClaudeSessionContext }) => context.releaseTarget === 'closed',

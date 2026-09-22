@@ -1,8 +1,5 @@
 import { createActor } from 'xstate'
-import type {
-  SessionIdentity,
-  WorkspaceSelection,
-} from '@/domains/sessions/next/contract/session-contract'
+import type * as SessionContract from '@/domains/sessions/next/contract/session-contract'
 import type {
   SessionCommandOutcome,
   Unsubscribe,
@@ -21,25 +18,26 @@ import type { ClaudeQueryFactory } from '@/harnesses/claude/agent-sdk/types'
 
 async function openClaudeSession(options: {
   command: {
-    session: SessionIdentity | null
+    session: SessionContract.SessionIdentity | null
     prompt: string
-    workspace: WorkspaceSelection
+    startTurn?: boolean
+    workspace: SessionContract.WorkspaceSelection
     cwd?: string
   }
   deps: {
     sessionService: SessionService
     waitForWorkspaceReady: (workspaceId: string) => Promise<void>
     resolveWorkspace: (
-      selection: WorkspaceSelection,
+      selection: SessionContract.WorkspaceSelection,
     ) => Promise<{ workspaceId: string; cwd: string }>
     createQuery: ClaudeQueryFactory
     now: () => Date
   }
   register: (actor: ClaudeSessionActor) => void
   requireEntry: (
-    session: SessionIdentity,
+    session: SessionContract.SessionIdentity,
   ) => ReturnType<typeof sessionRegistry>['requireEntry'] extends (
-    session: SessionIdentity,
+    session: SessionContract.SessionIdentity,
   ) => infer Entry
     ? Entry
     : never
@@ -52,6 +50,7 @@ async function openClaudeSession(options: {
       session: command.session,
       workspaceId,
       prompt: command.prompt,
+      startTurn: command.startTurn,
       cwd: command.cwd ?? workspaceCwd,
       startedAt: deps.now().toISOString(),
       createQuery: deps.createQuery,
@@ -71,7 +70,7 @@ async function openClaudeSession(options: {
 }
 function accepted(
   entry: ReturnType<typeof sessionRegistry>['requireEntry'] extends (
-    session: SessionIdentity,
+    session: SessionContract.SessionIdentity,
   ) => infer Entry
     ? Entry
     : never,
@@ -84,7 +83,9 @@ function accepted(
 export function createClaudeSessionAdapter(deps: {
   sessionService: SessionService
   waitForWorkspaceReady: (workspaceId: string) => Promise<void>
-  resolveWorkspace: (selection: WorkspaceSelection) => Promise<{ workspaceId: string; cwd: string }>
+  resolveWorkspace: (
+    selection: SessionContract.WorkspaceSelection,
+  ) => Promise<{ workspaceId: string; cwd: string }>
   createQuery?: ClaudeQueryFactory
   now?: () => Date
 }): ClaudeSessionAdapter {

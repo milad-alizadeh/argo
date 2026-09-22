@@ -57,14 +57,15 @@ test('starts Claude after the selected Workspace is ready', async () => {
   expect(fake.sentPrompts()).toEqual(['hello'])
 })
 
-test('creates a Claude Session without sending an empty first turn', async () => {
+test('creates a titled Claude Session without sending its first turn', async () => {
   const fake = fakeClaudeQuery()
   const adapter = managedAdapter(fake)
 
   const outcome = adapter.execute({
     type: 'session.start',
     harness: 'claude',
-    prompt: '',
+    prompt: 'hello',
+    startTurn: false,
     workspace: { kind: 'main' },
   })
   await new Promise((resolve) => setImmediate(resolve))

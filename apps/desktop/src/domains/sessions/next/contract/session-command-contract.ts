@@ -11,6 +11,7 @@ const startCommandSchema = z.strictObject({
   type: z.literal('session.start'),
   harness: harnessSchema,
   prompt: z.string().trim().min(1),
+  startTurn: z.boolean().optional(),
   workspace: workspaceSelectionSchema,
 })
 const sendCommandSchema = z.strictObject({
