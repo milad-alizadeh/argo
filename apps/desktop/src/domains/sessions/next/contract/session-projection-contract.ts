@@ -83,11 +83,19 @@ export const sessionProjectionSchema = z.strictObject({
 })
 export type SessionProjection = z.infer<typeof sessionProjectionSchema>
 
+// Distinguishes whether a command definitely landed from whether it definitely didn't, so a
+// composer can clear its draft only on acceptance, restore it only on definite rejection, and
+// never resend on its own when the outcome is unknown (a dropped channel mid-request).
+export type SessionCommandOutcome =
+  | { kind: 'accepted'; projection: SessionProjection }
+  | { kind: 'rejected'; reason: string }
+  | { kind: 'uncertain' }
+
 // A Harness owns its vendor integration; shared Session code sees only validated product messages.
 // subscribe's onProjection fires from inside the Harness's own invoked-actor boundary (ADR-0047):
 // a parsed SessionProjection crosses, never a raw vendor or XState event.
 export type SessionAdapter = {
-  execute: (command: SessionCommand) => Promise<SessionProjection>
+  execute: (command: SessionCommand) => Promise<SessionCommandOutcome>
   subscribe: (
     session: SessionIdentity,
     onProjection: (projection: SessionProjection) => void,
