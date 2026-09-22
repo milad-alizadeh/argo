@@ -14,6 +14,7 @@ import {
 } from '@/domains/sessions/contract/model/feed-images'
 import { openDurableStores } from '@/main/durable-stores'
 import { startDesktopApplication } from '@/platform/main/application/start'
+import { configureStorageRuntime } from '@/platform/main/storage/storage-runtime'
 import {
   DEVELOPMENT_APPLICATION_NAME,
   developmentStoreDirectories,
@@ -33,6 +34,8 @@ protocol.registerSchemesAsPrivileged([
     privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
   },
 ])
+
+configureStorageRuntime(app.isPackaged)
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined
 declare const MAIN_WINDOW_VITE_NAME: string
