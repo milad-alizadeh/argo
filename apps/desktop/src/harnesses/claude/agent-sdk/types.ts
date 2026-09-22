@@ -68,7 +68,6 @@ export type ClaudeSessionInput = {
   cwd: string
   startedAt: string
   createQuery: ClaudeQueryFactory
-  renameSession: (sessionId: string, title: string) => Promise<void>
   sessionService: SessionService
 }
 

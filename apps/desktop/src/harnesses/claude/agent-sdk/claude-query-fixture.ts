@@ -91,7 +91,6 @@ export function fakeClaudeQuery() {
   let deliver: ((message: SDKMessage) => void) | undefined
   let callbacks: { canUseTool: CanUseTool; onUserDialog: OnUserDialog } | undefined
   const sent: SDKUserMessage[] = []
-  const renamedTo: string[] = []
   let interruptCalls = 0
   let closed = false
 
@@ -113,10 +112,6 @@ export function fakeClaudeQuery() {
 
   return {
     createQuery,
-    renamedTo,
-    renameSession: async (_sessionId: string, title: string) => {
-      renamedTo.push(title)
-    },
     emitInit: ({ apiKeySource }: { apiKeySource: ApiKeySource }) =>
       deliver?.(initMessage(apiKeySource)),
     emitAssistantError: (error: SDKAssistantMessageError) =>

@@ -55,7 +55,6 @@ async function openClaudeSession(options: {
       cwd: command.cwd ?? workspaceCwd,
       startedAt: deps.now().toISOString(),
       createQuery: deps.createQuery,
-      renameSession: async () => {},
       sessionService: deps.sessionService,
     }),
     { input: undefined },

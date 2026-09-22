@@ -36,7 +36,7 @@ test('a Codex Turn still carries the shared editor markdown to the transport whe
         sessionId: startReply.type === 'session.started' ? startReply.sessionId : '',
         prompt: 'Continue without asking.',
       },
-      { adapters, ownerHarnessFor: async () => 'codex' },
+      { adapters, ownerHarnessFor: async () => 'codex', sessionCwdFor: async () => process.cwd() },
     )
     assert.equal(sendReply.type, 'session.accepted')
     const lines = readFileSync(echoFile, 'utf8').trim().split('\n')
