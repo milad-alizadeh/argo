@@ -61,6 +61,19 @@ test('a rejected Send restores its draft', async () => {
   expect(restored).toEqual(['hello'])
 })
 
+test('an uncertain Send keeps its draft and does not clear attachments', async () => {
+  const restored: string[] = []
+  const { calls, input } = fixture({
+    onSend: async () => 'uncertain',
+    restoreDraft: (draft) => restored.push(draft),
+  })
+
+  await performSend(input)
+
+  expect(restored).toEqual([])
+  expect(calls.cleared).toEqual([])
+})
+
 test('an empty draft with no attachments does neither', async () => {
   const { calls, input } = fixture({ draft: '   ', isRunning: false })
   await performSend(input)

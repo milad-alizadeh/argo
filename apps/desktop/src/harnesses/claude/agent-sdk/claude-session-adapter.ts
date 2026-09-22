@@ -138,7 +138,11 @@ export function createClaudeSessionAdapter(deps: {
       return (() => entry.listeners.delete(listener)) as Unsubscribe
     },
     close: () => {
-      for (const entry of registry.values()) entry.actor.stop()
+      for (const entry of registry.values()) {
+        const session = entry.actor.getSnapshot().context.session
+        if (session !== null) deps.sessionService.release(session)
+        entry.actor.stop()
+      }
     },
   }
 }

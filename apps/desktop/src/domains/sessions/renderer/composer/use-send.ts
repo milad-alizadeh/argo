@@ -6,11 +6,18 @@ import { resolveAttachments } from '@/domains/sessions/renderer/composer/use-com
 import type { ComposerAttachment } from '@/domains/sessions/renderer/composer/use-composer-store'
 import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
 
+export type SendOutcome = 'accepted' | 'rejected' | 'uncertain'
 export type Send = (
   text: string,
   setup: TurnSetup | null,
   attachments: SessionAttachmentInput[],
-) => Promise<boolean>
+) => Promise<SendOutcome | boolean>
+
+function outcomeFor(result: SendOutcome | boolean): SendOutcome {
+  if (result === true) return 'accepted'
+  if (result === false) return 'rejected'
+  return result
+}
 
 // The draft/attachments state a Send needs, resolved and dispatched as either a queued Turn
 // (running) or the live Turn, then cleared only for what actually left the composer.
@@ -44,13 +51,16 @@ export async function performSend(input: {
     clear(resolved.sentIds)
     return
   }
-  const send = onSend(resolved.prompt, setupValue ?? null, resolved.attachments)
-  // Clear the editor with the optimistic prompt so its Lexical document does not outlive the prompt.
-  clearDraft(editor)
-  if (await send) {
-    clear(resolved.sentIds)
-  } else {
-    input.restoreDraft(draft, editor)
+  switch (outcomeFor(await onSend(resolved.prompt, setupValue ?? null, resolved.attachments))) {
+    case 'accepted':
+      clearDraft(editor)
+      clear(resolved.sentIds)
+      return
+    case 'rejected':
+      input.restoreDraft(draft, editor)
+      return
+    case 'uncertain':
+      return
   }
 }
 

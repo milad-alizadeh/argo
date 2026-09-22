@@ -90,7 +90,10 @@ function createWindow(): void {
     appData: app.getPath('appData'),
     instance: DEVELOPMENT_INSTANCE,
   })
-  const { projects, ticketLinks, close } = openDurableStores(projectData, !ACCEPTANCE_ENABLED)
+  const { database, projects, ticketLinks, close } = openDurableStores(
+    projectData,
+    !ACCEPTANCE_ENABLED,
+  )
   createDesktopWindow({
     buildDirectory: __dirname,
     rendererName: MAIN_WINDOW_VITE_NAME,
@@ -112,6 +115,7 @@ function createWindow(): void {
         userData,
         accountData,
         connectionData,
+        database,
         projects,
         ticketLinks,
         rendererURL,
