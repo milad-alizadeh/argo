@@ -3,7 +3,7 @@
 // directly. Each adapter still owns its own fixture; only this assertion shape is common.
 import assert from 'node:assert/strict'
 import { sessionFeedReplySchema, sessionListReplySchema } from '@/domains/sessions/contract/ipc'
-import type { SessionReader } from '../../composition'
+import type { SessionReader } from '../../composition/bridge'
 
 const listing = {
   version: 1 as const,

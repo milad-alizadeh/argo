@@ -9,14 +9,13 @@ import {
 } from '@/domains/sessions/contract/ipc'
 import {
   appendedReply,
-  type FeedProjectionState,
   feedReply,
   type HeldFeed,
   keepFeed,
-  projectFeed,
   stableChain,
   unchangedReply,
-} from '../../projection'
+} from '../../projection/feed/feed-cache'
+import { type FeedProjectionState, projectFeed } from '../../projection/feed/feed-incremental'
 import type { SessionSource } from './session-source'
 
 // `key` is the document's own key in the cache. A Session's Feed and each of its Subagents'

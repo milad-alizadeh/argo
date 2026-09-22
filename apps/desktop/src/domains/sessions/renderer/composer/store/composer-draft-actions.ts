@@ -1,5 +1,5 @@
 import type { StoreApi } from 'zustand'
-import type { ComposerState } from '../hooks'
+import type { ComposerState } from '../hooks/use-composer-store'
 
 type ComposerSet = StoreApi<ComposerState>['setState']
 

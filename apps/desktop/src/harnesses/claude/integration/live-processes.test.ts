@@ -6,7 +6,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import { managedRow } from '@/domains/sessions/main/lifecycle/status/managed-row'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader/reader'
 import { claudeSessionSource } from '../sessions/discovery/read-sessions'
 import { fixtureRoot, unscopedListing } from './session-fixtures'
 

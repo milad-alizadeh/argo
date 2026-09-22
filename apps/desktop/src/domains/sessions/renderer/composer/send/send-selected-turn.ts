@@ -1,9 +1,9 @@
 import type { useQueryClient } from '@tanstack/react-query'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import { invalidateSessionRoster } from '../../session-queries'
-import type { useSessionMutations } from '../hooks'
-import type { useTurnSetup } from '../turn-setup'
+import type { useSessionMutations } from '../hooks/use-session-mutations'
 import type { TurnSetup } from '../turn-setup/turn-setup'
+import type { useTurnSetup } from '../turn-setup/use-turn-setup'
 import { type Failure, sendMessage } from './session-failure'
 
 export function sendToSelected(request: {

@@ -1,5 +1,5 @@
 import { fromCallback } from 'xstate'
-import type { ProjectSetupServices } from './project-setup-logic'
+import type { ProjectSetupServices } from './actors/project-setup-actors'
 import type { ProjectSetupContext, ProjectSetupEvent } from './project-setup-machine-types'
 import { startProjectSetupTask } from './project-setup-task'
 

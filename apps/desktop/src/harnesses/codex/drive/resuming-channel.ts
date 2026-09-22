@@ -1,5 +1,5 @@
-import type { OwnershipStanding } from '@/domains/sessions/main'
-import { readThreadId } from './protocol'
+import type { OwnershipStanding } from '@/domains/sessions/main/lifecycle/ownership/ownership-ledger'
+import { readThreadId } from './protocol/protocol'
 import { CodexSessionDriverError } from './session/codex-session-error'
 import {
   type ManagedSession,

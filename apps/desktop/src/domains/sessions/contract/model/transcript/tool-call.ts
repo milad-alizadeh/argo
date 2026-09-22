@@ -1,4 +1,4 @@
-import type { Question } from '../../drive'
+import type { Question } from '../../drive/question'
 
 // Where a Tool Call stands (CONTEXT.md L3 · Tool Call). A call the person declines on Codex is
 // `failed` with the reason as its text; a call stopped before it finished is `interrupted`.

@@ -1,7 +1,8 @@
 import { stat } from 'node:fs/promises'
 import path from 'node:path'
 import type { SessionFeedRequest } from '@/domains/sessions/contract/ipc'
-import type { SessionChain, SessionFeedRow } from '@/domains/sessions/contract/model'
+import type { SessionFeedRow } from '@/domains/sessions/contract/model/feed/feed-rows'
+import type { SessionChain } from '@/domains/sessions/contract/model/transcript/chains'
 
 export type HeldFeed = {
   chainId: string

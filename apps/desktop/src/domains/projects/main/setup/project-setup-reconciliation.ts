@@ -1,4 +1,4 @@
-import type { AcceptedSetupPlan } from '@/domains/projects/contract/setup'
+import type { AcceptedSetupPlan } from '@/domains/projects/contract/setup/setup-plan'
 import type { ProjectStore } from '../sqlite-store'
 import type { OnboardingAgentDriver } from './onboarding-agent/runtime/run-onboarding-agent'
 import { reconcileSetupWorktree } from './preparation/setup-worktree'

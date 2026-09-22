@@ -1,11 +1,11 @@
 import type * as SessionContract from '@/domains/sessions/contract/ipc'
 import { sessionError } from '@/domains/sessions/contract/ipc'
-import { driveSessionErrorWithMessage } from '@/domains/sessions/contract/model'
 import type {
   DriveFailureCode,
   SessionDriveAdapter,
   SessionDriveAdapters,
 } from '@/domains/sessions/contract/session-drive-adapter'
+import { driveSessionErrorWithMessage } from '@/domains/sessions/contract/session-error'
 
 export type OwnerContext = {
   adapters: SessionDriveAdapters

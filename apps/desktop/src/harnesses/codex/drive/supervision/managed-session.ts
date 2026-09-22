@@ -1,12 +1,10 @@
 import type { SessionPlan, SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import { managedRow, type OwnershipLedger } from '@/domains/sessions/main'
+import type { OwnershipLedger } from '@/domains/sessions/main/lifecycle/ownership/ownership-ledger'
+import { managedRow } from '@/domains/sessions/main/lifecycle/status/managed-row'
 import { codexLaunchEnvironment } from '../launch-environment'
 import { createLiveMessages, type LiveMessages } from '../live-messages'
-import {
-  codexApprovalDecision,
-  type PendingCodexPermission,
-  type PendingCodexQuestion,
-} from '../protocol'
+import { codexApprovalDecision, type PendingCodexPermission } from '../protocol/permission-protocol'
+import type { PendingCodexQuestion } from '../protocol/question-protocol'
 import { codexNotificationRecorder } from '../protocol/record-notification'
 import { CodexSessionDriverError } from '../session/codex-session-error'
 import type { CodexChannel } from './codex-channel'

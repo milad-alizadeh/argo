@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next'
-import type { ProjectSetupRecoveryCode } from '@/domains/projects/contract/setup'
+import type { ProjectSetupRecoveryCode } from '@/domains/projects/contract/setup/project-setup-recovery'
 
 export const PROJECT_SETUP_RECOVERY_KEYS = {
   interrupted: 'setup.actor.recovery.interrupted',

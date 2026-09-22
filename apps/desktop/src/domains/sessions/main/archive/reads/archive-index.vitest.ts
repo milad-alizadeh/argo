@@ -7,11 +7,13 @@ import {
   createIndexedReadHarness,
   expectAnsweredByIndex,
   finishBackfill,
+} from '../../indexing/indexed-read-test-harness'
+import {
   indexedAdapters,
   manyTranscripts,
   sessionIdAt,
-} from '../../indexing'
-import type { createSessionReader } from '../../observation'
+} from '../../indexing/session-index/roster-fixtures'
+import type { createSessionReader } from '../../observation/reader/reader'
 import { requestArchiveList } from './archive-list-request'
 
 const { harness } = createIndexedReadHarness()

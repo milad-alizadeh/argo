@@ -1,12 +1,12 @@
 import type { Cockpit, ProjectActions } from '@/domains/projects/renderer'
-import type { SessionRosterRow } from '@/domains/sessions/contract/model'
-import { HARNESSES, type SessionHarness } from '../../harness'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { HARNESSES, type SessionHarness } from '../../harness/harnesses'
 import { useSessionCreationStore } from '../../session-creation'
 import type { useSessions } from '../../use-sessions'
-import { composerIdentityOf, findSessionRow } from '../identity'
-import type { Failure } from '../send'
-import type { WorkspaceMenuControlProps } from '../toolbar'
-import { useTurnSetup } from '../turn-setup'
+import { composerIdentityOf, findSessionRow } from '../identity/composer-identity'
+import type { Failure } from '../send/session-failure'
+import type { WorkspaceMenuControlProps } from '../toolbar/workspace-menu'
+import { useTurnSetup } from '../turn-setup/use-turn-setup'
 import { useTurnMarker } from './use-turn-marker'
 
 const NO_ROWS: SessionRosterRow[] = []

@@ -4,9 +4,12 @@
 // machine's whole history. Split out of discover-transcript-sessions.ts to keep it under the file
 // line ceiling.
 
-import type { SessionRosterRow } from '@/domains/sessions/contract/model'
-import type { createTitleLedger } from '../lifecycle'
-import { nextCursorFor, type TranscriptDiscovery } from '../observation'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import type { createTitleLedger } from '../lifecycle/status/title-ledger'
+import {
+  nextCursorFor,
+  type TranscriptDiscovery,
+} from '../observation/reader/discover-transcript-sessions'
 import type { SessionIndex } from './session-index/contract'
 import { createIndexedWindow } from './session-index/indexed-window'
 

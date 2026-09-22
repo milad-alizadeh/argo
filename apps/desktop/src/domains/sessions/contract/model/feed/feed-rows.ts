@@ -1,12 +1,9 @@
 import { z } from 'zod'
 import { identifierSchema } from '@/shared/validation'
-import { questionSchema } from '../../drive'
-import {
-  BACKGROUND_STATES,
-  SUBAGENT_EVENTS,
-  TRANSCRIPT_EVENT_KINDS,
-  type TranscriptEventKind,
-} from '../transcript'
+import { questionSchema } from '../../drive/question'
+import { BACKGROUND_STATES } from '../transcript/background-task-record'
+import { SUBAGENT_EVENTS } from '../transcript/subagent-event'
+import { TRANSCRIPT_EVENT_KINDS, type TranscriptEventKind } from '../transcript/transcript-content'
 import { feedImageUrlSchema } from './feed-images'
 
 export const FEED_MARKERS = ['compacted', 'interrupted'] as const

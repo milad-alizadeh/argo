@@ -6,8 +6,8 @@
 
 import { sessionError } from '@/domains/sessions/contract/ipc'
 import { isRecord } from '@/shared/validation'
-import type { SessionArchiveStore } from '../../archive'
-import type { SessionUnreadStore } from '../../unread'
+import type { SessionArchiveStore } from '../../archive/store/archive-store'
+import type { SessionUnreadStore } from '../../unread/unread-store'
 import type { SessionSource } from './session-source'
 
 export type OwnerFor = (sessionId: string) => Promise<SessionSource | undefined>

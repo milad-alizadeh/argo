@@ -1,11 +1,12 @@
-import type { createChainCache, SessionChain } from '@/domains/sessions/contract/model'
-import { currentSessionId } from '@/domains/sessions/contract/model'
-import {
-  type createFullRecordTracker,
-  type createIndexedWindow,
-  isSessionIndexFallback,
-  type SessionIndex,
-} from '../../indexing'
+import { currentSessionId } from '@/domains/sessions/contract/model/models'
+import type {
+  createChainCache,
+  SessionChain,
+} from '@/domains/sessions/contract/model/transcript/chains'
+import type { createFullRecordTracker } from '../../indexing/full-record-tracker'
+import type { SessionIndex } from '../../indexing/session-index/contract'
+import type { createIndexedWindow } from '../../indexing/session-index/indexed-window'
+import { isSessionIndexFallback } from '../../indexing/session-index/recovery'
 import type {
   createTranscriptSummariser,
   TranscriptDiscoverySource,

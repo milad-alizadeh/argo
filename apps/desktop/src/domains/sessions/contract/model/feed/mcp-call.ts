@@ -1,4 +1,4 @@
-import type { OtherFacts } from '../transcript'
+import type { OtherFacts } from '../transcript/tool-call'
 
 // `mcp__<server>__<tool>`, the name both harnesses give an MCP tool; a tool name may hold `__`
 // itself, so only the first split counts.

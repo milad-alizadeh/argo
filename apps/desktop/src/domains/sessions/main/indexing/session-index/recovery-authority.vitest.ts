@@ -5,8 +5,10 @@ import os from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, test } from 'vitest'
 import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main'
-import { createSessionArchiveStore, requestArchiveList, sessionArchivePath } from '../../archive'
-import { createSessionReader, feedRequest, listing } from '../../observation'
+import { requestArchiveList } from '../../archive/reads/archive-list-request'
+import { createSessionArchiveStore, sessionArchivePath } from '../../archive/store/archive-store'
+import { createSessionReader } from '../../observation/reader/reader'
+import { feedRequest, listing } from '../../observation/reader/reader-test-helpers'
 import { openSessionIndex } from './open-index'
 import {
   type IndexedAdapter,

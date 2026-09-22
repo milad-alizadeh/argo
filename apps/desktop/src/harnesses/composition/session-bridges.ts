@@ -18,7 +18,7 @@ import {
   createSessionUnreadStore,
   sessionUnreadPath,
 } from '@/domains/sessions/main/unread/unread-store'
-import type { SessionTicketLinkStore } from '@/domains/tickets/main'
+import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
 import { registerWatching } from '@/platform/main/watch/bridge'
 import { watchTrees } from '@/platform/main/watch/watch-paths'
 import {

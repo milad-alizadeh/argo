@@ -1,6 +1,6 @@
 // What the Session index answers, and what one indexing pass writes back. Shared Session code and
 // the Harness adapters speak only this; the SQL that serves it lives behind one worker (#2372).
-import type { SessionRosterRow } from '@/domains/sessions/contract/model'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 
 // A transcript file addressed for parsing: where it is, and the Session it belongs to.
 export type TranscriptPath = { path: string; sessionId: string }

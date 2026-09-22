@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { readCall } from '../model/feed/tool-feed-test-fixtures'
-import type { ToolCall, ToolResult, TranscriptMessage } from '../model/transcript'
+import type { ToolCall } from '../model/transcript/tool-call'
+import type { TranscriptMessage } from '../model/transcript/transcript'
+import type { ToolResult } from '../model/transcript/transcript-content'
 import { readActivity } from './signals'
 
 function promptMessage(): TranscriptMessage {

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import type { PlanEntryStatus, SessionPlan } from '@/domains/sessions/contract/model'
+import type { PlanEntryStatus, SessionPlan } from '@/domains/sessions/contract/model/models'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {

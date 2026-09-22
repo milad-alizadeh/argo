@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { type SetupDocument, setupAnswers } from '@/domains/projects/contract/setup'
+import { type SetupDocument, setupAnswers } from '@/domains/projects/contract/setup/setup-document'
 
 export type SetupAnswer = string | boolean
 

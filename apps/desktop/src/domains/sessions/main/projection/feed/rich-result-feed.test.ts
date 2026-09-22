@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionChain } from '@/domains/sessions/contract/model'
-import { checkedDataImageUrl } from '@/domains/sessions/contract/model/feed'
+import { checkedDataImageUrl } from '@/domains/sessions/contract/model/feed/feed-images'
 import { readCall } from '@/domains/sessions/contract/model/feed/tool-feed-test-fixtures'
+import type { SessionChain } from '@/domains/sessions/contract/model/transcript/chains'
 import { transcriptMessage as message } from '../../observation/tail/transcript-test-fixtures'
 import { projectFeed } from './feed-incremental'
 

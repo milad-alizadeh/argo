@@ -1,7 +1,9 @@
 import { type RefObject, useCallback, useMemo, useState } from 'react'
 import type { Session, SessionError, SessionId, SessionRoster, SessionsListed } from '../../types'
-import { useRosterFilterStore, useRosterFocus, useRosterSelection, useRosterStatus } from '../hooks'
-import { rosterState } from '../rows'
+import { useRosterFilterStore, useRosterStatus } from '../hooks/use-roster-filter-store'
+import { useRosterFocus } from '../hooks/use-roster-focus'
+import { useRosterSelection } from '../hooks/use-roster-selection'
+import { rosterState } from '../rows/roster-status-row'
 import { useSessionSearch } from './use-session-search'
 
 const NO_SESSIONS: SessionsListed['sessions'] = []

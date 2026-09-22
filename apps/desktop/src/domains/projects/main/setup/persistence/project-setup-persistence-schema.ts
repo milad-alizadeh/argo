@@ -1,12 +1,14 @@
 import { z } from 'zod'
 import {
-  acceptedSetupPlanSchema,
   projectSetupEffectSchema,
   projectSetupPendingApprovalSchema,
-  projectSetupQuestionSchema,
-  projectSetupRecoveryCodeSchema,
+} from '@/domains/projects/contract/setup/project-setup-approval'
+import { projectSetupQuestionSchema } from '@/domains/projects/contract/setup/project-setup-question'
+import { projectSetupRecoveryCodeSchema } from '@/domains/projects/contract/setup/project-setup-recovery'
+import {
+  acceptedSetupPlanSchema,
   setupPlanSchema,
-} from '@/domains/projects/contract/setup'
+} from '@/domains/projects/contract/setup/setup-plan'
 import { PROJECT_SETUP_MACHINE_VERSION } from '../project-setup-machine'
 import type { ProjectSetupRecord } from './project-setup-registry'
 

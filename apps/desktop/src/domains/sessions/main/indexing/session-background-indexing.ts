@@ -4,8 +4,8 @@
 // races the file it is reading. Split from `session-bridges.ts` to keep that composition root short.
 import type { BrowserWindow } from 'electron'
 import type { WatchedSource } from '@/platform/main/watch/watch-source'
-import type { SessionReader } from '../composition'
-import type { SessionSource } from '../observation'
+import type { SessionReader } from '../composition/bridge'
+import type { SessionSource } from '../observation/reader/reader'
 import { createBackfillScheduler } from './session-index/backfill-scheduler'
 import type { BackfillProgress } from './session-index/contract'
 

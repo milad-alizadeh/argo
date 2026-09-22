@@ -10,7 +10,8 @@ import {
   AlertTitle,
 } from '@/platform/renderer/components/ui/alert'
 import { Button } from '@/platform/renderer/components/ui/button'
-import { COMPOSER_COLUMN, SessionComposer } from '../composer'
+import { SessionComposer } from '../composer/editor/session-composer'
+import { COMPOSER_COLUMN } from '../composer/layout/composer-form'
 import type { HarnessControl } from '../harness/harnesses'
 import type { SessionRoster } from '../types'
 

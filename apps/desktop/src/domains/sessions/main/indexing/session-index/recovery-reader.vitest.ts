@@ -2,7 +2,7 @@
 import { rmSync, writeFileSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
 import { afterEach, describe, expect, test } from 'vitest'
-import { feedRequest } from '../../observation'
+import { feedRequest } from '../../observation/reader/reader-test-helpers'
 import {
   type IndexedAdapter,
   indexedAdapters,

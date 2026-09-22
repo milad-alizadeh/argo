@@ -8,7 +8,7 @@ import {
 import { sessionSearchQueryKey } from '../../session-queries'
 import type { SessionSearched } from '../../types'
 import { useWatchedQueries } from '../../use-watched-topic'
-import type { RosterStatus } from '../hooks'
+import type { RosterStatus } from '../hooks/use-roster-filter-store'
 
 const SEARCH_DEBOUNCE_MS = 250
 

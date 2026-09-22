@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 import { Popover, PopoverContent, PopoverTrigger } from '@/platform/renderer/components/ui/popover'
-import { HARNESSES, type HarnessControl, HarnessLogo, HarnessTabs } from '../../harness'
+import { HarnessLogo } from '../../harness/harness-logo'
+import { HarnessTabs } from '../../harness/harness-tabs'
+import { HARNESSES, type HarnessControl } from '../../harness/harnesses'
 import {
   choiceLabel,
   effortChoices,

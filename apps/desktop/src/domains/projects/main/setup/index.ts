@@ -1,3 +1,4 @@
+export { projectSetupRuntime } from './actors/project-setup-actors'
 export type { OnboardingAgentDriver } from './onboarding-agent/runtime/run-onboarding-agent'
 export {
   createProjectSetupRegistry,
@@ -11,4 +12,3 @@ export {
   setupDocumentURL,
 } from './preparation/setup-bundle'
 export { createProjectSetupBridge } from './project-setup-bridge'
-export { projectSetupRuntime } from './project-setup-logic'

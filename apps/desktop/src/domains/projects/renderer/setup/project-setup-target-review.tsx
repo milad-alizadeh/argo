@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import type { SetupPlan } from '@/domains/projects/contract/setup'
+import type { SetupPlan } from '@/domains/projects/contract/setup/setup-plan'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   Fact,

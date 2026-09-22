@@ -1,20 +1,21 @@
-import type { SessionRosterRow, TranscriptFile } from '@/domains/sessions/contract/model'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import {
   createChainCache,
   createChainHistory,
   type SessionChain,
-} from '@/domains/sessions/contract/model'
-import {
-  type BackfillProgress,
-  boundIndexedWindow,
-  createBackgroundIndexing,
-  createFullRecordTracker,
-  presentedRows,
-  type SessionIndex,
-  type TranscriptPath,
-} from '../../indexing'
-import { createTitleLedger } from '../../lifecycle'
-import { projectRosterRow, rosterMetadata } from '../../projection'
+} from '@/domains/sessions/contract/model/transcript/chains'
+import type { TranscriptFile } from '@/domains/sessions/contract/model/transcript/transcript'
+import { boundIndexedWindow, presentedRows } from '../../indexing/discover-indexed-window'
+import { createFullRecordTracker } from '../../indexing/full-record-tracker'
+import { createBackgroundIndexing } from '../../indexing/session-index/backfill-reconcile'
+import type {
+  BackfillProgress,
+  SessionIndex,
+  TranscriptPath,
+} from '../../indexing/session-index/contract'
+import { createTitleLedger } from '../../lifecycle/status/title-ledger'
+import { projectRosterRow } from '../../projection/roster/roster'
+import { rosterMetadata } from '../../projection/roster/roster-metadata'
 import {
   createFileReader,
   createTranscriptParser,

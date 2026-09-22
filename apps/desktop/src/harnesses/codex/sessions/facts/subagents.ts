@@ -1,6 +1,6 @@
 import type { SessionChain } from '@/domains/sessions/contract/model/transcript/chains'
 import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript/transcript'
-import { createTranscriptRecordReader } from '@/domains/sessions/main'
+import { createTranscriptRecordReader } from '@/domains/sessions/main/observation/tail/transcript-lines'
 import { normalizeCodexMessageRecords } from '../discovery/discover'
 import { transcriptPaths } from '../discovery/transcript-paths'
 import { parseCodexTranscriptLine } from '../records/records'

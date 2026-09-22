@@ -8,13 +8,9 @@ import {
   type SessionFeedRequest,
   sessionError,
 } from '@/domains/sessions/contract/ipc'
-import {
-  type OwnerFor,
-  readFailure,
-  readFeedWithOverlay,
-  readOwnedFeed,
-  type SessionSource,
-} from '../../observation'
+import { type OwnerFor, readFailure } from '../../observation/reader/read-declaration'
+import { readFeedWithOverlay, readOwnedFeed } from '../../observation/reader/read-owned-feed'
+import type { SessionSource } from '../../observation/reader/reader'
 import { disposeFeed, type HeldFeed } from './feed-cache'
 import type { FeedProjectionState } from './feed-incremental'
 

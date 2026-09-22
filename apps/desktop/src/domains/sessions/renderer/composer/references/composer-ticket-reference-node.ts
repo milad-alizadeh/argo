@@ -1,6 +1,6 @@
 import type { EditorConfig, NodeKey, SerializedTextNode } from 'lexical'
 import { TextNode } from 'lexical'
-import type { ComposerTicketContext } from '../store'
+import type { ComposerTicketContext } from '../store/composer-ticket-context'
 import { ticketProviderIconSource } from './ticket-provider-icon'
 
 function openTicket(ticketKey: string) {

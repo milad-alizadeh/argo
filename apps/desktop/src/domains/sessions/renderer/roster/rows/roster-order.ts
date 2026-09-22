@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import type { SessionId, SessionRoster, SessionsListed } from '../../types'
 import { useSessions } from '../../use-sessions'
-import { useRememberedRosterOrder, useRosterWindowStore } from '../hooks'
+import { useRememberedRosterOrder, useRosterWindowStore } from '../hooks/use-roster-window-store'
 
 type Sessions = SessionsListed['sessions']
 

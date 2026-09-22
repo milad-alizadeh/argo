@@ -3,7 +3,7 @@ import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/platform/renderer/components/ui/empty'
 import type { SessionError, SessionRoster } from '../../types'
-import { type RosterStatus, showsActive } from '../hooks'
+import { type RosterStatus, showsActive } from '../hooks/use-roster-filter-store'
 import { RosterLoading } from './roster-status-row'
 
 function NoSessionsFound() {

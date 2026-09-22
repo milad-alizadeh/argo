@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { parseCodexTranscriptLine } from '../sessions/records'
+import { parseCodexTranscriptLine } from '../sessions/records/records'
 
 test('reads completed and aborted root Turns as neutral lifecycle records', () => {
   const completed = parseCodexTranscriptLine(

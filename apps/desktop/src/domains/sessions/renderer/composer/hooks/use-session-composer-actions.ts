@@ -1,8 +1,8 @@
 import type { QueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import { invalidateSessionRoster } from '../../session-queries'
-import { codeFrom, type Failure, messageFrom } from '../send'
+import { codeFrom, type Failure, messageFrom } from '../send/session-failure'
 import type { useSessionMutations } from './use-session-mutations'
 
 export function useInterrupt(

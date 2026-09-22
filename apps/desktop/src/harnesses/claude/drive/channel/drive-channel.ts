@@ -1,5 +1,8 @@
 import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
-import type { OwnershipLedger, OwnershipStanding } from '@/domains/sessions/main'
+import type {
+  OwnershipLedger,
+  OwnershipStanding,
+} from '@/domains/sessions/main/lifecycle/ownership/ownership-ledger'
 import type { HandoffLedger } from '../handoff/handoff-ledger'
 import type { ClaudePermissionGate } from '../permission/permission-gate'
 import {

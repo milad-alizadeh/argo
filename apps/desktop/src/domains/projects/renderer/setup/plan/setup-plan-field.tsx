@@ -3,7 +3,7 @@ import {
   type SetupDocument,
   setupChoiceText,
   setupFieldText,
-} from '@/domains/projects/contract/setup'
+} from '@/domains/projects/contract/setup/setup-document'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Input } from '@/platform/renderer/components/ui/input'

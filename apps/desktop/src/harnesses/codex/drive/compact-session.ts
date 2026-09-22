@@ -1,4 +1,4 @@
-import { readCompactStart } from './protocol'
+import { readCompactStart } from './protocol/compact-protocol'
 import { CodexSessionDriverError } from './session/codex-session-error'
 import type { ManagedSession } from './supervision/managed-session'
 

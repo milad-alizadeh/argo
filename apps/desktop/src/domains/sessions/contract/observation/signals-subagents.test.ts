@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SubagentEvent } from '../model/transcript'
+import type { SubagentEvent } from '../model/transcript/subagent-event'
 import { readSubagents } from './signals'
 
 function event(

@@ -1,15 +1,11 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { sessionFeedReplySchema } from '../index'
-import type { ToolCall } from '../transcript'
-import {
-  groupToolRuns,
-  type SessionFeedRow,
-  sessionFeedRowSchema,
-  TOOL_KIND_PRESENTATION,
-  toolRows,
-} from './index'
+import type { ToolCall } from '../transcript/tool-call'
+import { sessionFeedReplySchema } from '../wire/feed-contract'
+import { type SessionFeedRow, sessionFeedRowSchema } from './feed-rows'
+import { toolRows } from './tool-feed'
 import { editCall, fetchCall, searchCall } from './tool-feed-test-fixtures'
+import { groupToolRuns, TOOL_KIND_PRESENTATION } from './tool-groups'
 
 function bash(id: string, command: string): ToolCall {
   return { id, kind: 'execute', command, label: null, text: command, background: false }

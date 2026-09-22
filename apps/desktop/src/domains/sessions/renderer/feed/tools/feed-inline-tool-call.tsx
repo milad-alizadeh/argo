@@ -1,14 +1,14 @@
 import { useTranslation } from 'react-i18next'
-import { displayedToolLabel } from '@/domains/sessions/contract/model'
+import { displayedToolLabel } from '@/domains/sessions/contract/model/feed/tool-feed'
 import { RunningText } from '@/platform/renderer/components/running-text'
 import {
   CodeBlock,
   CodeBlockActions,
-  CodeBlockCopyButton,
   CodeBlockFilename,
   CodeBlockHeader,
   CodeBlockTitle,
-} from '../../ai-elements'
+} from '../../ai-elements/code-block'
+import { CodeBlockCopyButton } from '../../ai-elements/code-block-copy-button'
 import { codeLanguageLabel, detectCodeLanguage } from '../content/code-language'
 import { CodeLanguageIcon } from '../content/code-language-icon'
 import { FeedMarkdown } from '../content/feed-markdown'

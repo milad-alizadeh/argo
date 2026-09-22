@@ -11,7 +11,7 @@ import {
   transcriptFileFrom,
 } from '@/domains/sessions/contract/model/transcript/transcript'
 import type { SessionSubagentUsage } from '@/domains/sessions/contract/model/wire/background-work-contract'
-import { createTranscriptRecordReader } from '@/domains/sessions/main'
+import { createTranscriptRecordReader } from '@/domains/sessions/main/observation/tail/transcript-lines'
 import { isRecord } from '@/shared/validation'
 import { normalizeClaudeRecords } from '../discovery/normalize-records'
 import { parseTranscriptLine } from '../records/records'

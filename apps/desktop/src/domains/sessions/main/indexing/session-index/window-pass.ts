@@ -1,12 +1,10 @@
 // One indexing pass over the bounded recent window: what it must parse, and what it writes back.
 // Split from `indexed-window.ts` so the pass's arithmetic can be read without the index calls
 // around it.
-import type {
-  SessionChain,
-  SessionRosterRow,
-  TranscriptFile,
-} from '@/domains/sessions/contract/model'
-import { projectFeed } from '../../projection'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import type { SessionChain } from '@/domains/sessions/contract/model/transcript/chains'
+import type { TranscriptFile } from '@/domains/sessions/contract/model/transcript/transcript'
+import { projectFeed } from '../../projection/feed/feed-incremental'
 import {
   type IndexedSessionChain,
   type IndexedTranscriptFile,

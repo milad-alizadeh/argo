@@ -1,5 +1,5 @@
 import type { StoreApi } from 'zustand'
-import type { ComposerState } from '../hooks'
+import type { ComposerState } from '../hooks/use-composer-store'
 import { draftActions } from './composer-draft-actions'
 import { updateComposerEntries } from './composer-entry-records'
 import { turnActions } from './composer-turn-actions'

@@ -1,6 +1,9 @@
 import { randomUUID } from 'node:crypto'
 import process from 'node:process'
-import { createOwnershipLedger, isProcessAlive } from '@/domains/sessions/main'
+import {
+  createOwnershipLedger,
+  isProcessAlive,
+} from '@/domains/sessions/main/lifecycle/ownership/ownership-ledger'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 import { codexResumeTarget } from '../../sessions/discovery/resume-target'
 import { openAppServer } from '../supervision/open-app-server'

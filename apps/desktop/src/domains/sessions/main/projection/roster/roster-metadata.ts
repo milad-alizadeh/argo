@@ -1,9 +1,6 @@
-import type {
-  ContentBlock,
-  EditFacts,
-  ToolCall,
-  TranscriptRecord,
-} from '@/domains/sessions/contract/model'
+import type { EditFacts, ToolCall } from '@/domains/sessions/contract/model/transcript/tool-call'
+import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript/transcript'
+import type { ContentBlock } from '@/domains/sessions/contract/model/transcript/transcript-content'
 
 function openingLine(blocks: ContentBlock[]): ContentBlock[] {
   for (const block of blocks) {

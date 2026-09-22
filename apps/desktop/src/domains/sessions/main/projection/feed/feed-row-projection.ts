@@ -1,12 +1,12 @@
+import type { SessionFeedRow } from '@/domains/sessions/contract/model/feed/feed-rows'
+import { type ToolEvidence, toolRows } from '@/domains/sessions/contract/model/feed/tool-feed'
+import type { SubagentEvent } from '@/domains/sessions/contract/model/transcript/subagent-event'
+import type { ToolCall } from '@/domains/sessions/contract/model/transcript/tool-call'
 import type {
-  ContentBlock,
-  SessionFeedRow,
-  SubagentEvent,
-  ToolCall,
   TranscriptMessage,
   TranscriptRecord,
-} from '@/domains/sessions/contract/model'
-import { type ToolEvidence, toolRows } from '@/domains/sessions/contract/model'
+} from '@/domains/sessions/contract/model/transcript/transcript'
+import type { ContentBlock } from '@/domains/sessions/contract/model/transcript/transcript-content'
 import { withPromptAttachments } from './prompt-attachments'
 
 function resultImageRows(record: TranscriptMessage): SessionFeedRow[] {

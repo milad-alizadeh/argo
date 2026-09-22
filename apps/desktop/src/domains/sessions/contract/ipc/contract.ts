@@ -3,8 +3,9 @@
 // operations only: the renderer never receives the IPC object or picks a channel.
 import { z } from 'zod'
 import { identifierSchema } from '@/shared/validation'
-import { permissionSchema, READER_DECISIONS, sessionAttachmentInputSchema } from '../drive'
-import { sessionErrorSchema } from '../model'
+import { sessionAttachmentInputSchema } from '../drive/attachments-contract'
+import { permissionSchema, READER_DECISIONS } from '../drive/permission'
+import { sessionErrorSchema } from '../session-error'
 
 export * from '../claude-turn-setup'
 export * from '../drive'

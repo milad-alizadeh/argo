@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { AttachmentChip } from '../../attachment-chip'
-import { PromptText } from '../../prompt'
+import { PromptText } from '../../prompt/prompt-text'
 import type { SessionEvidence } from '../../types'
 import { FeedImage } from '../content/feed-images'
 

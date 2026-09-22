@@ -1,7 +1,7 @@
 import { rmSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
-import type { SessionRosterRow } from '@/domains/sessions/contract/model'
-import { matchesSearchQuery } from '../../projection'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { matchesSearchQuery } from '../../projection/search/search-match'
 import {
   type BackfillProgress,
   type IndexedTranscriptFile,

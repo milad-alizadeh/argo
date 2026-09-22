@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import type { SetupDocument } from '@/domains/projects/contract/setup'
+import type { SetupDocument } from '@/domains/projects/contract/setup/setup-document'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { SetupPlanCustomization } from '../plan/setup-plan-customization'
 import type { SetupSectionModel } from '../plan/setup-plan-sections'

@@ -7,8 +7,9 @@ import type {
   SessionRenameRequest,
 } from '@/domains/sessions/contract/ipc/contract'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import type { SessionIndex, SessionSource } from '@/domains/sessions/main'
-import { discoverRoster } from '@/domains/sessions/main'
+import type { SessionIndex } from '@/domains/sessions/main/indexing/session-index/contract'
+import { discoverRoster } from '@/domains/sessions/main/observation/reader/discover-roster'
+import type { SessionSource } from '@/domains/sessions/main/observation/reader/reader'
 import { compactionEndedAt, markCompactingRows } from '../../compaction/compaction-roster'
 import type { LiveMessage } from '../../drive/channel/live-messages'
 import { readShellOutput } from '../records/shell-output'

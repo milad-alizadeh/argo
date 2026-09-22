@@ -1,4 +1,4 @@
-import type { useSessionMutations } from '../hooks'
+import type { useSessionMutations } from '../hooks/use-session-mutations'
 import { afterRosterPaint } from './after-roster-paint'
 import type { TurnInput } from './send-turn'
 

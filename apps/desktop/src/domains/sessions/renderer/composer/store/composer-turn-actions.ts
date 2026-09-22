@@ -1,5 +1,5 @@
 import type { StoreApi } from 'zustand'
-import type { ComposerState, PendingTurn } from '../hooks'
+import type { ComposerState, PendingTurn } from '../hooks/use-composer-store'
 import { updateComposerEntries } from './composer-entry-records'
 import { rekeyComposerRecords } from './rekey-composer-records'
 

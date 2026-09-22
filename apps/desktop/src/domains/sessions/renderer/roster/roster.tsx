@@ -1,18 +1,18 @@
 import { type RefObject, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Session, SessionId } from '../types'
-import { useArchivedSection } from './archived'
-import { useRosterStatus } from './hooks'
-import { RenameDialog, useRenameDialog } from './rename'
-import {
-  type RosterActions,
-  RosterOutcome,
-  RosterVirtualList,
-  rosterRows,
-  rosterState,
-  useOrderedSessions,
-} from './rows'
-import { SessionsSidebarHeader, useSidebarRoster } from './sidebar'
+import { useArchivedSection } from './archived/use-archived-section'
+import { useRosterStatus } from './hooks/use-roster-filter-store'
+import { RenameDialog } from './rename/rename-dialog'
+import { useRenameDialog } from './rename/use-rename-dialog'
+import type { RosterActions } from './rows/roster-actions'
+import { useOrderedSessions } from './rows/roster-order'
+import { RosterOutcome } from './rows/roster-outcome'
+import { rosterRows } from './rows/roster-rows'
+import { rosterState } from './rows/roster-status-row'
+import { RosterVirtualList } from './rows/roster-virtual-list'
+import { SessionsSidebarHeader } from './sidebar/sessions-sidebar-chrome'
+import { useSidebarRoster } from './sidebar/use-sidebar-roster'
 
 export type { RosterActions } from './rows'
 

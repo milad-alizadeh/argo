@@ -9,23 +9,29 @@ import type {
 } from '@/domains/sessions/next/contract/session-projection-contract'
 import type { SessionService } from '@/domains/sessions/next/main/session-service'
 import {
-  codexAnswersFor,
   codexApprovalDecision,
   type PendingCodexPermission,
-  type PendingCodexQuestion,
+  readRequestApproval,
+} from '../protocol/permission-protocol'
+import {
+  readThreadId,
+  type WireMessage,
+  type TurnStatus as WireTurnStatus,
+} from '../protocol/protocol'
+import {
   readAgentMessageDelta,
   readClosedThread,
   readCompletedTurn,
-  readRequestApproval,
-  readRequestUserInput,
-  readThreadId,
   readThreadStatus,
   readThreadTokenUsageUpdated,
   readToolCallUpdate,
-  readUpdatedThreadName,
-  type WireMessage,
-  type TurnStatus as WireTurnStatus,
-} from '../protocol'
+} from '../protocol/protocol-notifications'
+import {
+  codexAnswersFor,
+  type PendingCodexQuestion,
+  readRequestUserInput,
+} from '../protocol/question-protocol'
+import { readUpdatedThreadName } from '../protocol/rename-protocol'
 import { type CodexChannel, CodexChannelClosedError } from './codex-channel'
 
 function turnStatusFrom(status: WireTurnStatus): TurnStatus {

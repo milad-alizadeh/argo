@@ -25,7 +25,7 @@
       "entry": [
         "src/main.ts",
         "src/preload.ts",
-        "src/domains/sessions/main/index/session-index/session-index-worker.ts",
+        "src/domains/sessions/main/indexing/session-index/session-index-worker.ts",
         "forge.config.ts",
         // forge.config.ts names these by string path (its Vite plugin's `build` entries), not by
         // import, and Knip's own Vite plugin only auto-detects a single "vite.config.ts".

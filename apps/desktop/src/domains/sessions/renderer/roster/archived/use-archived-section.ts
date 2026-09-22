@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef } from 'react'
 import type { SessionId } from '../../types'
-import { showsArchived, useRosterFilterStore, useRosterStatus } from '../hooks'
+import {
+  showsArchived,
+  useRosterFilterStore,
+  useRosterStatus,
+} from '../hooks/use-roster-filter-store'
 import { useArchivedSessions } from './use-archived-sessions'
 
 // Ids the archive query has already surfaced, so a click on a row already on screen never counts

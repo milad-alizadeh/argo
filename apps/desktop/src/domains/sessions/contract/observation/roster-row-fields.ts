@@ -12,7 +12,7 @@ import {
   sessionSubagentSchema,
   sessionTicketSchema,
   sessionTitleSchema,
-} from '../model'
+} from '../model/models'
 import { rosterRowField as field } from './roster-row-field'
 
 export type { RosterRowField } from './roster-row-field'

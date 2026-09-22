@@ -1,7 +1,10 @@
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { QuestionAnswer } from '@/domains/sessions/contract/drive'
-import { foldSettledToolRuns, withHeadline } from '@/domains/sessions/contract/model'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
+import {
+  foldSettledToolRuns,
+  withHeadline,
+} from '@/domains/sessions/contract/model/feed/tool-groups'
 import type { SessionEvidence, SessionFeed, SessionFeedRow } from '../../types'
 import { sessionPostureLocksAnswer } from '../../types'
 import { isFeedRowStreaming } from '../rows/feed-row-renderers'

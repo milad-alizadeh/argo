@@ -4,12 +4,10 @@ import { useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
 
 import { useProjects } from '@/domains/projects/renderer'
-import {
-  useComposerStore,
-  useSessionComposer,
-  useSessionPermission,
-  useSessionQuestion,
-} from '../composer'
+import { useComposerStore } from '../composer/hooks/use-composer-store'
+import { useSessionComposer } from '../composer/hooks/use-session-composer'
+import { useSessionPermission } from '../composer/hooks/use-session-permission'
+import { useSessionQuestion } from '../composer/hooks/use-session-question'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
 import { readableSessionId } from '../session-creation'
@@ -18,28 +16,7 @@ import { useSessions } from '../use-sessions'
 import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../work/use-session-work'
 import { sessionHarness } from './session-screen-state'
 import { useSelectedSession } from './use-selected-session'
-import type { WorkSelection } from './work-selection'
-
-const NOTHING_PICKED: WorkSelection = { sessionId: null, subagentId: null, shellId: null }
-
-function pickedIn(selection: WorkSelection, sessionId: string | null): WorkSelection {
-  return selection.sessionId === sessionId ? selection : { ...NOTHING_PICKED, sessionId }
-}
-
-// Each pick counts, so picking the same row again reopens an inspector the reader collapsed.
-function useWorkPick(sessionId: string | null, onPick: () => void) {
-  const [picked, setPicked] = useState({ selection: NOTHING_PICKED, count: 0 })
-  const work = pickedIn(picked.selection, sessionId)
-  const pickedId = work.subagentId ?? work.shellId
-  return {
-    work,
-    pick: (selection: WorkSelection) => {
-      onPick()
-      setPicked(({ count }) => ({ selection, count: count + 1 }))
-    },
-    workReveal: pickedId === null ? null : `${pickedId}#${picked.count}`,
-  }
-}
+import { useWorkPick, type WorkSelection } from './work-selection'
 
 function useWorkArtifacts(
   session: ReturnType<typeof useSelectedSession>,

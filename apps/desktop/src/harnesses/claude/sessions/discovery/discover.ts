@@ -3,7 +3,10 @@
 // every launch (ADR-0004, ADR-0008).
 import { readdir } from 'node:fs/promises'
 import path from 'node:path'
-import { createTranscriptDiscoverer, type TranscriptDiscovery } from '@/domains/sessions/main'
+import {
+  createTranscriptDiscoverer,
+  type TranscriptDiscovery,
+} from '@/domains/sessions/main/observation/reader/discover-transcript-sessions'
 import { parseTranscriptLine } from '../records/records'
 import { normalizeClaudeRecords } from './normalize-records'
 

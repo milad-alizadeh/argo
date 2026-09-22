@@ -6,7 +6,7 @@ import type {
   PlanChange,
   TranscriptRecord,
 } from '@/domains/sessions/contract/model/transcript/transcript'
-import { readPlanSnapshot } from '@/domains/sessions/main'
+import { readPlanSnapshot } from '@/domains/sessions/main/projection/roster/plan'
 import { isRecord } from '@/shared/validation'
 import {
   JAVASCRIPT_IDENTIFIER_SOURCE,

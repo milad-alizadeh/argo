@@ -1,6 +1,6 @@
 import { type ActorRefFrom, assign, createActor, fromPromise, setup } from 'xstate'
 import { codexLaunchEnvironment } from '../launch-environment'
-import type { WireMessage } from '../protocol'
+import type { WireMessage } from '../protocol/protocol'
 import { CodexSessionDriverError } from '../session/codex-session-error'
 import type { CodexChannel } from './codex-channel'
 import { openAppServer } from './open-app-server'

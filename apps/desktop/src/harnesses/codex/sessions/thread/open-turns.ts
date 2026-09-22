@@ -4,13 +4,13 @@
 import { stat } from 'node:fs/promises'
 import { z } from 'zod'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { isLiveElsewhere } from '@/domains/sessions/main/lifecycle/status/live-elsewhere'
+import { LIVE_ACTIVITY_SILENCE_MS } from '@/domains/sessions/main/lifecycle/status/liveness'
 import {
   createTranscriptRecordReader,
-  hasOpenSubagent,
-  isLiveElsewhere,
-  LIVE_ACTIVITY_SILENCE_MS,
   ROSTER_FILE_LIMIT,
-} from '@/domains/sessions/main'
+} from '@/domains/sessions/main/observation/tail/transcript-lines'
+import { hasOpenSubagent } from '@/domains/sessions/main/projection/roster/subagents'
 import { transcriptPaths } from '../discovery/transcript-paths'
 
 // The Turn marks codex-harness 0.147.0 writes as `event_msg` payloads.

@@ -4,7 +4,7 @@ import {
   setupChoiceText,
   setupFieldText,
   setupPlanText,
-} from '@/domains/projects/contract/setup'
+} from '@/domains/projects/contract/setup/setup-document'
 import type { SetupAnswer } from '../use-setup-answers'
 import { fieldsForSection, SectionIcon, type SetupSectionModel } from './setup-plan-sections'
 

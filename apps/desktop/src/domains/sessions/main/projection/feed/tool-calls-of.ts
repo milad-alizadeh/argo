@@ -1,4 +1,4 @@
-import type { SessionFeedRow } from '@/domains/sessions/contract/model'
+import type { SessionFeedRow } from '@/domains/sessions/contract/model/feed/feed-rows'
 
 // The kind, status, label and text of every Tool Call a Feed draws, in order, however grouped.
 export function toolCallsOf(rows: SessionFeedRow[]) {

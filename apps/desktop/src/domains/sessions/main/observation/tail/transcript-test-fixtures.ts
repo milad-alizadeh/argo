@@ -1,4 +1,4 @@
-import type { TranscriptMessage } from '@/domains/sessions/contract/model'
+import type { TranscriptMessage } from '@/domains/sessions/contract/model/transcript/transcript'
 
 export function transcriptMessage(
   overrides: Partial<TranscriptMessage> & { uuid: string },

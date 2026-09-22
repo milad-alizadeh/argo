@@ -1,4 +1,4 @@
-import type { SessionRosterRow } from '@/domains/sessions/contract/model'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 
 // Another process runs this Session live, read off whatever the Harness itself records (ADR-0040,
 // CONTEXT.md L2 · Session). A `managed` row is the one this Argo holds, so nothing observed locks it,

@@ -1,12 +1,11 @@
 import type { SessionFeedRow } from '../models'
+import { searchLabel, searchOutcome } from '../tool-changes'
+import type { BackgroundState } from '../transcript/background-task-record'
+import type { AskFacts, ExecuteFacts, ToolCall } from '../transcript/tool-call'
 import {
-  type AskFacts,
-  type BackgroundState,
-  type ExecuteFacts,
   resultText,
-  type ToolCall,
   type ToolResult as TranscriptToolResult,
-} from '../transcript'
+} from '../transcript/transcript-content'
 import { editPresentation, fileName } from './file-presentation'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
@@ -15,21 +14,6 @@ type AskRow = Extract<SessionFeedRow, { shape: 'ask' }>
 export type ToolResult = Pick<TranscriptToolResult, 'blocks' | 'failed'> & {
   background?: true
   ended?: BackgroundState
-}
-
-// What a web Tool Call fetched or searched, read off the facts its adapter filled.
-function searchLabel(call: Extract<ToolCall, { kind: 'search' | 'fetch' }>) {
-  if (call.kind === 'fetch') return `Fetched ${call.url ?? 'a page'}`
-  return `Searched ${call.query ?? (call.scope === 'web' ? 'the web' : 'files')}`
-}
-
-// A web call's outcome is the first line of its output, which the Codex app shows beside the
-// query. Codex writes no HTTP status: a fetch that failed says so in words instead.
-const SEARCH_OUTCOMES = /^(Internal Error|Script error|Empty search results|Failed to fetch)/
-function searchOutcome(result: Pick<TranscriptToolResult, 'blocks'> | undefined): string | null {
-  const source = result === undefined ? null : resultText(result.blocks)
-  const outcome = source?.split('\n').find((line) => SEARCH_OUTCOMES.test(line)) ?? null
-  return outcome === null ? null : outcome.replace(/\s*\(\)\s*$/, '')
 }
 
 export function displayedToolLabel(

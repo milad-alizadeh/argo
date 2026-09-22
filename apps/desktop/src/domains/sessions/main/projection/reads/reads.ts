@@ -10,8 +10,9 @@ import type {
   SessionSkillRequest,
   SessionSubagentUsageRequest,
 } from '@/domains/sessions/contract/ipc'
-import type { SessionChain } from '@/domains/sessions/contract/model'
-import { fromNothing, fromOwner, MISSING_SESSION, type SessionSource } from '../../observation'
+import type { SessionChain } from '@/domains/sessions/contract/model/transcript/chains'
+import { fromNothing, fromOwner, MISSING_SESSION } from '../../observation/reader/read-declaration'
+import type { SessionSource } from '../../observation/reader/reader'
 import { skillFileContent } from './read-skill-file'
 
 // A relative path resolves against the workspace, and an absolute one must already lie inside

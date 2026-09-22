@@ -6,7 +6,7 @@ import {
   AttachmentGroup,
 } from '@/platform/renderer/components/ui/attachment'
 import { AttachmentChip, parseFilename } from '../../attachment-chip'
-import type { ComposerAttachment } from '../hooks'
+import type { ComposerAttachment } from '../hooks/use-composer-store'
 
 export type ComposerAttachmentsProps = {
   attachments: ComposerAttachment[]

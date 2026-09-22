@@ -6,9 +6,9 @@ import type {
   TranscriptFile,
   TranscriptParser,
   TranscriptRecord,
-} from '@/domains/sessions/contract/model'
-import { transcriptFileFrom } from '@/domains/sessions/contract/model'
-import { createTranscriptRecordReader } from '../observation'
+} from '@/domains/sessions/contract/model/transcript/transcript'
+import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript/transcript'
+import { createTranscriptRecordReader } from '../observation/tail/transcript-lines'
 
 // The chain shape this tracker needs: a member's path and the id its transcript is named for.
 // Narrower than `SessionChain` so a caller that resolved a chain's files straight from the

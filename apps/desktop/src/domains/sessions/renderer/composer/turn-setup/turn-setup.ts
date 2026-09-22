@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import type { SessionSetup } from '@/domains/sessions/contract/model/models'
 import type { IconName } from '@/platform/renderer/components/icon/icon'
-import { type ComposerIdentity, composerIdentityKey } from '../identity'
+import { type ComposerIdentity, composerIdentityKey } from '../identity/composer-identity'
 
 // The Model, Effort and Mode a composer sends with its next Turn (CONTEXT.md L2 · Model and Effort).
 export const turnSetupSchema = z.strictObject({

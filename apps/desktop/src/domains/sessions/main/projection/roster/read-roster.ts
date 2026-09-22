@@ -4,14 +4,11 @@
 
 import { type SessionListRequest, sessionError } from '@/domains/sessions/contract/ipc'
 import type { SessionTicketLinkStore } from '@/domains/tickets/main'
-import { isArchivedSession, type SessionArchiveStore } from '../../archive'
-import {
-  combineDiscoveries,
-  type Discovered,
-  readFailure,
-  type SessionSource,
-} from '../../observation'
-import type { SessionUnreadStore } from '../../unread'
+import { isArchivedSession, type SessionArchiveStore } from '../../archive/store/archive-store'
+import { combineDiscoveries, type Discovered } from '../../observation/reader/merge-discovery'
+import { readFailure } from '../../observation/reader/read-declaration'
+import type { SessionSource } from '../../observation/reader/reader'
+import type { SessionUnreadStore } from '../../unread/unread-store'
 import { decodeRosterCursor } from './roster-cursor'
 
 // Project scope is applied inside each adapter's own `discoverSessions` (#2239), at the boundary

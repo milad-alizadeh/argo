@@ -5,7 +5,7 @@ import type {
   SessionRosterRow,
   SessionStatus,
   SessionTitle,
-} from '@/domains/sessions/contract/model'
+} from '@/domains/sessions/contract/model/models'
 import {
   reconcileRosterRow,
   rosterRowFields,

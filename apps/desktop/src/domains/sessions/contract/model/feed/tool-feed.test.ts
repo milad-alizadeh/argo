@@ -5,7 +5,7 @@
 // read by its kind (`execute`); how each harness fills it is tested at that harness's Session source.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { displayedToolLabel, type ToolResult } from './index'
+import { displayedToolLabel, type ToolResult } from './tool-feed'
 import { executeCall as command, onlyToolRow } from './tool-feed-test-fixtures'
 
 test('a command with no result yet is running with no evidence', () => {

@@ -1,6 +1,6 @@
 import { type FileHandle, open } from 'node:fs/promises'
 
-import type { TranscriptRecord } from '@/domains/sessions/contract/model'
+import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript/transcript'
 
 // How many recent transcript files createTranscriptRecordReader itself scans, for a caller that
 // bounds its own read a different way than the Roster's own paged discovery (#2239) does.

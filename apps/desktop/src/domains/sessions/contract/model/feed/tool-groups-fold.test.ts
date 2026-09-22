@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { ToolCall } from '../transcript'
-import type { SessionFeedRow } from './index'
-import { foldSettledToolRuns, groupToolRuns, type ToolResult, toolRows } from './index'
+import type { ToolCall } from '../transcript/tool-call'
+import type { SessionFeedRow } from './feed-rows'
+import { type ToolResult, toolRows } from './tool-feed'
 import { searchCall } from './tool-feed-test-fixtures'
+import { foldSettledToolRuns, groupToolRuns } from './tool-groups'
 
 function bash(id: string, command: string): ToolCall {
   return { id, kind: 'execute', command, label: null, text: command, background: false }

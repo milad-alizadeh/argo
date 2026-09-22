@@ -7,29 +7,11 @@
 // lightweight parser test ends up loading the `node:sqlite` Session index.
 //
 // Usage: bunx tsx scripts/generate-entry-point.mts <folder> [more folders] [--dry]
-import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-
-const SOURCE_ROOT = 'apps/desktop/src'
-const ROOTS = [SOURCE_ROOT, 'apps/desktop/mocks', 'apps/desktop/e2e']
-
-function walk(directory: string): string[] {
-  const found: string[] = []
-  for (const entry of readdirSync(directory)) {
-    if (entry === 'node_modules') continue
-    const full = path.join(directory, entry)
-    if (statSync(full).isDirectory()) found.push(...walk(full))
-    else if (/\.(ts|tsx|mts)$/.test(entry)) found.push(full)
-  }
-  return found
-}
+import { ROOTS, specifierPathFor, walk } from './import-paths.mts'
 
 const allFiles = ROOTS.flatMap(walk)
-
-function specifierPathFor(from: string, specifier: string): string {
-  if (specifier.startsWith('@/')) return path.join(SOURCE_ROOT, specifier.slice(2))
-  return path.join(path.dirname(from), specifier)
-}
 
 // One brace list, as the name an importer binds it to. `type` can sit on the whole clause or on
 // the single name, and `as` renames only what the importer calls it, never what the folder exports.

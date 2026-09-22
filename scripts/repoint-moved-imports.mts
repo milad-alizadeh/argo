@@ -6,23 +6,11 @@
 // the candidate sharing the longest run of trailing path segments with the dead specifier wins,
 // which is what makes `drive/session-drive-adapter` resolve to `drive/session/...` rather than to
 // another harness's file of the same name. Anything still ambiguous is reported, never guessed.
-import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { readFileSync, statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
+import { ROOTS, SOURCE_ROOT, specifierPathFor, walk, withoutExtension } from './import-paths.mts'
 
-const SOURCE_ROOT = 'apps/desktop/src'
-const ROOTS = [SOURCE_ROOT, 'apps/desktop/mocks', 'apps/desktop/e2e']
 const EXTENSIONS = ['', '.ts', '.tsx', '.mts', '/index.ts', '/index.tsx']
-
-function walk(directory: string): string[] {
-  const found: string[] = []
-  for (const entry of readdirSync(directory)) {
-    if (entry === 'node_modules') continue
-    const full = path.join(directory, entry)
-    if (statSync(full).isDirectory()) found.push(...walk(full))
-    else if (/\.(ts|tsx|mts)$/.test(entry)) found.push(full)
-  }
-  return found
-}
 
 function resolves(specifierPath: string): boolean {
   return EXTENSIONS.some((extension) => {
@@ -33,15 +21,6 @@ function resolves(specifierPath: string): boolean {
       return false
     }
   })
-}
-
-function specifierPathFor(from: string, specifier: string): string {
-  if (specifier.startsWith('@/')) return path.join(SOURCE_ROOT, specifier.slice(2))
-  return path.join(path.dirname(from), specifier)
-}
-
-function withoutExtension(value: string): string {
-  return value.replace(/\.(ts|tsx|mts)$/, '').replace(/\/index$/, '')
 }
 
 function sharedRun(left: string[], right: string[]): number {

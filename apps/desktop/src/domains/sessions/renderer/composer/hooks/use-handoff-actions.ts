@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
-import type { SessionRosterRow } from '@/domains/sessions/contract/model'
-import { codeFrom, type Failure, messageFrom } from '../send'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { codeFrom, type Failure, messageFrom } from '../send/session-failure'
 import type { useSessionMutations } from './use-session-mutations'
 
 export function useHandoff(

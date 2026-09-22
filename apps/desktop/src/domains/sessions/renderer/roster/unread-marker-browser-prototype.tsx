@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { MemoryRouter } from 'react-router'
 import { Loader, type LoaderSize } from '@/platform/renderer/components/loader/loader'
 import { sessionRosterRow } from '../session-fixtures'
-import { SessionRosterItem } from './rows'
-import { SessionsSidebarHeader } from './sidebar'
+import { SessionRosterItem } from './rows/session-roster-item'
+import { SessionsSidebarHeader } from './sidebar/sessions-sidebar-chrome'
 
 const LOADER_SIZES = [
   { key: 'meta', name: 'Meta', pixels: 12, use: 'Session rows and metadata' },

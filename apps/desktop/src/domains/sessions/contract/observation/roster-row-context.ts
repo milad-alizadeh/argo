@@ -1,4 +1,5 @@
-import type { SessionChain, TranscriptMessage } from '../model'
+import type { SessionChain } from '../model/transcript/chains'
+import type { TranscriptMessage } from '../model/transcript/transcript'
 import type { BackgroundTask } from './signals'
 
 export type RosterRowContext = {

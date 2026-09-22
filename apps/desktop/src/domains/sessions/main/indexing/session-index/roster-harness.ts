@@ -3,7 +3,7 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { createSessionReader } from '../../observation'
+import { createSessionReader } from '../../observation/reader/reader'
 import type { SessionIndex } from './contract'
 import { openSessionIndex } from './open-index'
 import type { IndexedAdapter } from './roster-fixtures'

@@ -8,7 +8,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
-import type { RosterStatus } from '../hooks'
+import type { RosterStatus } from '../hooks/use-roster-filter-store'
 
 // The closed set of filters, each with the catalog key that names it to the reader.
 const STATUS_LABELS = {

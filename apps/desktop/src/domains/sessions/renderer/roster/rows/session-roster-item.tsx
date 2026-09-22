@@ -1,16 +1,12 @@
 import { type MouseEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { SessionReferenceText } from '../../composer/references/session-reference'
-import { useLiveActivityText } from '../../feed'
-import {
-  HarnessLogo,
-  SESSION_HARNESSES,
-  type SessionHarness,
-  sessionHarnessOf,
-} from '../../harness'
-import { PromptText } from '../../prompt'
+import { useLiveActivityText } from '../../feed/rows/live-activity-text'
+import { HarnessLogo } from '../../harness/harness-logo'
+import { SESSION_HARNESSES, type SessionHarness, sessionHarnessOf } from '../../harness/harnesses'
+import { PromptText } from '../../prompt/prompt-text'
 import type { Session } from '../../types'
-import type { SelectionModifier } from '../hooks'
+import type { SelectionModifier } from '../hooks/roster-selection'
 import { sessionName } from './roster-rows'
 import { SessionMetadata } from './session-roster-metadata'
 import './session-roster-item.css'

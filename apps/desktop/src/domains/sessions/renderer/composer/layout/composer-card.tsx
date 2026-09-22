@@ -1,16 +1,14 @@
 import type { LexicalEditor } from 'lexical'
 import type { DragEvent, RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { SessionPlan } from '@/domains/sessions/contract/model'
-import type { HarnessControl } from '../../harness'
-import { SessionContextBar } from '../context-bar'
-import type { ComposerAttachment, ComposerTicketContext } from '../hooks'
+import type { SessionPlan } from '@/domains/sessions/contract/model/models'
+import type { HarnessControl } from '../../harness/harnesses'
+import { SessionContextBar } from '../context-bar/session-context-bar'
+import type { ComposerAttachment, ComposerTicketContext } from '../hooks/use-composer-store'
 import { DraftContextPicker } from '../references/context-picker/draft-context-picker'
-import {
-  ComposerToolbar,
-  type TurnSetupControlProps,
-  type WorkspaceMenuControlProps,
-} from '../toolbar'
+import { ComposerToolbar } from '../toolbar/composer-toolbar'
+import type { TurnSetupControlProps } from '../toolbar/run-setup-menu'
+import type { WorkspaceMenuControlProps } from '../toolbar/workspace-menu'
 import { ComposerEditorArea } from './composer-editor-area'
 
 type ComposerCardProps = {

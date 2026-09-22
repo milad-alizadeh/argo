@@ -1,5 +1,5 @@
 import type { Snapshot } from 'xstate'
-import { validateAcceptedSetupPlan } from '@/domains/projects/contract/setup'
+import { validateAcceptedSetupPlan } from '@/domains/projects/contract/setup/setup-plan'
 import {
   inactiveProjectSetupRuntime,
   type ProjectSetupRuntime,

@@ -10,7 +10,7 @@ import {
   PopoverTrigger,
 } from '@/platform/renderer/components/ui/popover'
 import { Progress } from '@/platform/renderer/components/ui/progress'
-import { HARNESSES } from '../../harness'
+import { HARNESSES } from '../../harness/harnesses'
 
 const PLAN_USAGE = {
   claude: [

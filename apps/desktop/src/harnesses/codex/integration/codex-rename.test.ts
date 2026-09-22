@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { RequestParams } from '../drive/protocol'
+import type { RequestParams } from '../drive/protocol/protocol'
 import { createCodexSessionDriver } from '../drive/session/codex-session-driver'
 import type { CodexChannel } from '../drive/supervision/codex-channel'
 

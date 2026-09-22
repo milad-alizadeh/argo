@@ -2,16 +2,17 @@ import { z } from 'zod'
 import { identifierSchema } from '@/shared/validation'
 import type { ProjectError } from './project-error'
 import {
-  acceptedSetupPlanSchema,
-  projectSetupAnswerSchema,
   projectSetupEffectSchema,
   projectSetupPendingApprovalSchema,
+} from './setup/project-setup-approval'
+import {
+  projectSetupAnswerSchema,
   projectSetupQuestionSchema,
-  projectSetupRecoveryCodeSchema,
-  projectSetupScreenSchema,
-  setupPlanSchema,
-  setupStepStatusSchema,
-} from './setup'
+} from './setup/project-setup-question'
+import { projectSetupRecoveryCodeSchema } from './setup/project-setup-recovery'
+import { projectSetupScreenSchema } from './setup/project-setup-screen'
+import { acceptedSetupPlanSchema, setupPlanSchema } from './setup/setup-plan'
+import { setupStepStatusSchema } from './setup/setup-progress'
 
 export {
   PROJECT_ERROR_CODES,

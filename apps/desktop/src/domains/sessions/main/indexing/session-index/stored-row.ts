@@ -1,4 +1,7 @@
-import { type SessionRosterRow, sessionRosterRowSchema } from '@/domains/sessions/contract/model'
+import {
+  type SessionRosterRow,
+  sessionRosterRowSchema,
+} from '@/domains/sessions/contract/model/models'
 
 // A malformed cache projection is never partial: the transcript pass will recreate it on the
 // next bounded discovery, while this index read treats it as absent.

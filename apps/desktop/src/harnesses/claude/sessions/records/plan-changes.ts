@@ -6,7 +6,7 @@ import type {
   PlanChange,
   ToolResult,
 } from '@/domains/sessions/contract/model/transcript/transcript'
-import { readPlanSnapshot, readPlanStatus } from '@/domains/sessions/main'
+import { readPlanSnapshot, readPlanStatus } from '@/domains/sessions/main/projection/roster/plan'
 import { isRecord } from '@/shared/validation'
 
 const DELETED = 'deleted'

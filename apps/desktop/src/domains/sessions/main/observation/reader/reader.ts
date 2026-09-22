@@ -8,27 +8,31 @@ import {
   createInMemorySessionTicketLinkStore,
   type SessionTicketLinkStore,
 } from '@/domains/tickets/main'
+import { archiveListRead, archiveSetWrite } from '../../archive/reads/archive-reads'
 import {
-  archiveListRead,
-  archiveSetWrite,
   createInMemorySessionArchiveStore,
   type SessionArchiveStore,
-} from '../../archive'
-import type { SessionReader } from '../../composition'
+} from '../../archive/store/archive-store'
+import type { SessionReader } from '../../composition/bridge'
+import type { HeldFeed } from '../../projection/feed/feed-cache'
+import type { FeedProjectionState } from '../../projection/feed/feed-incremental'
+import { createFeedReader } from '../../projection/feed/read-session-feed'
 import {
-  connectTicketReply,
-  createFeedReader,
   delegationUsageRead,
-  disconnectTicketReply,
-  type FeedProjectionState,
-  type HeldFeed,
-  listReply,
-  searchRead,
   shellOutputRead,
   skillFileRead,
   workspaceFileRead,
-} from '../../projection'
-import { createInMemorySessionUnreadStore, type SessionUnreadStore } from '../../unread'
+} from '../../projection/reads/reads'
+import {
+  connectTicketReply,
+  disconnectTicketReply,
+} from '../../projection/reads/ticket-link-reader'
+import { listReply } from '../../projection/roster/read-roster'
+import { searchRead } from '../../projection/search/search-reads'
+import {
+  createInMemorySessionUnreadStore,
+  type SessionUnreadStore,
+} from '../../unread/unread-store'
 import type { OwnerFor, ReadContext } from './read-declaration'
 import type { SessionSource } from './session-source'
 

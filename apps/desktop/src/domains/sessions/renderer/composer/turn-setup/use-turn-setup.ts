@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState } from 'react'
 import { z } from 'zod'
 
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import { useComposerStore } from '../hooks'
-import { type ComposerIdentity, composerIdentityKey } from '../identity'
-import type { TurnSetupControlProps } from '../toolbar'
+import { useComposerStore } from '../hooks/use-composer-store'
+import { type ComposerIdentity, composerIdentityKey } from '../identity/composer-identity'
+import type { TurnSetupControlProps } from '../toolbar/run-setup-menu'
 import {
   refusalOf,
   resolvedTurnSetup,

@@ -1,4 +1,4 @@
-import type { SetupDocument } from '@/domains/projects/contract/setup'
+import type { SetupDocument } from '@/domains/projects/contract/setup/setup-document'
 import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
 
 export type SetupSectionModel = SetupDocument['plan'][number] & { fieldIds: readonly string[] }

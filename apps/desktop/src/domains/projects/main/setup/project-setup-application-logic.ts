@@ -1,7 +1,8 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { fromCallback } from 'xstate'
-import type { AcceptedSetupPlan } from '@/domains/projects/contract/setup'
+import type { AcceptedSetupPlan } from '@/domains/projects/contract/setup/setup-plan'
+import type { ProjectSetupServices } from './actors/project-setup-actors'
 import {
   type ActivePermission,
   projectSetupPermissionDecisionHandler,
@@ -9,7 +10,6 @@ import {
 import { projectSetupProgressReporter } from './actors/project-setup-progress'
 import { runApplicationAgent } from './onboarding-agent/application/run-application-agent'
 import { prepareSetupWorktree } from './preparation/setup-worktree'
-import type { ProjectSetupServices } from './project-setup-logic'
 import type { ProjectSetupContext, ProjectSetupEvent } from './project-setup-machine-types'
 import { findProjectSetupApplicationDrift } from './project-setup-reconciliation'
 import { startProjectSetupTask } from './project-setup-task'

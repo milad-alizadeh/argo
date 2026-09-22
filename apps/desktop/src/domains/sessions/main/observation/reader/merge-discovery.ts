@@ -4,7 +4,7 @@ import {
   type SessionListReply,
   sessionError,
 } from '@/domains/sessions/contract/ipc'
-import { encodeRosterCursor, type RosterCursorMap } from '../../projection'
+import { encodeRosterCursor, type RosterCursorMap } from '../../projection/roster/roster-cursor'
 import type { TranscriptDiscovery } from './discover-transcript-sessions'
 
 export type Discovered = TranscriptDiscovery | { error: SessionError }

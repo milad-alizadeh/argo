@@ -1,9 +1,9 @@
 // The one order every adapter's discovery ends in: observed joins, the managed merge, the joins
 // that read posture, then Project scope (CONTEXT.md L2 · Roster).
 
-import type { SessionRosterRow } from '@/domains/sessions/contract/model'
-import { mergeManagedRoster } from '../../lifecycle'
-import { belongsToProject, projectRootsOf } from '../../project-scope'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { mergeManagedRoster } from '../../lifecycle/status/managed-row'
+import { belongsToProject, projectRootsOf } from '../../project-scope/project-scope'
 import type { TranscriptDiscovery } from './discover-transcript-sessions'
 
 export type RosterJoin = (

@@ -1,6 +1,7 @@
 import type { SessionContractError } from '../../session-contract-error'
 import type { Session, SessionId } from '../../types'
-import { type RosterStatus, type SelectionModifier, showsActive, showsArchived } from '../hooks'
+import type { SelectionModifier } from '../hooks/roster-selection'
+import { type RosterStatus, showsActive, showsArchived } from '../hooks/use-roster-filter-store'
 import { type SearchRosterState, searchRosterRows } from './search-roster-rows'
 
 // What the one roster context menu does to the row under the pointer.

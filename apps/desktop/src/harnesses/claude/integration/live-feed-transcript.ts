@@ -1,7 +1,7 @@
 import { appendFile, mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader/reader'
 import type { LiveMessage } from '../drive/channel/live-messages'
 import { claudeSessionSource } from '../sessions/discovery/read-sessions'
 

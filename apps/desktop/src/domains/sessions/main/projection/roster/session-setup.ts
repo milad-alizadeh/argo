@@ -1,8 +1,8 @@
+import type { SessionSetup } from '@/domains/sessions/contract/model/models'
 import type {
-  SessionSetup,
   TranscriptMessage,
   TranscriptRecord,
-} from '@/domains/sessions/contract/model'
+} from '@/domains/sessions/contract/model/transcript/transcript'
 
 type SetupState = { setup: SessionSetup; pendingTurnSetup: boolean }
 

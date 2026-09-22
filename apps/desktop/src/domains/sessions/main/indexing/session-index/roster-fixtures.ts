@@ -2,9 +2,9 @@
 // runs over both adapters rather than over shared code with a stub Harness beneath it (#2372).
 import { mkdir, utimes, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { claudeSessionSource } from '@/harnesses/claude/sessions'
-import { codexSessionSource } from '@/harnesses/codex/sessions'
-import type { SessionSource } from '../../observation'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-sessions'
+import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+import type { SessionSource } from '../../observation/reader/reader'
 import type { SessionIndex } from './contract'
 
 // `resumeOf` is the Session this transcript continues, written the way each Harness writes a resume:

@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import type { SessionId } from '../../types'
-import type { SelectionModifier } from '../hooks'
+import type { SelectionModifier } from '../hooks/roster-selection'
 import { ArchivedSectionRow } from './archived-status-row'
 import { type RosterRow, renamedSession, sameRosterRow } from './roster-rows'
 import { RosterLoadingMoreRow } from './roster-status-row'

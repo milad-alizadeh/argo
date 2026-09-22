@@ -11,9 +11,10 @@ import type {
   SessionArchiveListRequest,
   SessionArchiveSetRequest,
 } from '@/domains/sessions/contract/ipc'
-import { newestFirst, type SessionRosterRow } from '@/domains/sessions/contract/model'
-import { fromContext, type ReadContext, type SessionSource } from '../../observation'
-import { rosterCursorMapSchema } from '../../projection'
+import { newestFirst, type SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { fromContext, type ReadContext } from '../../observation/reader/read-declaration'
+import type { SessionSource } from '../../observation/reader/reader'
+import { rosterCursorMapSchema } from '../../projection/roster/roster-cursor'
 import { isArchivedSession } from '../store/archive-store'
 import { indexedResolution } from './archive-index-resolution'
 import { growWindow } from './archive-window'

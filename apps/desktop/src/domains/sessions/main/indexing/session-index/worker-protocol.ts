@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { sessionRosterRowSchema } from '@/domains/sessions/contract/model'
+import { sessionRosterRowSchema } from '@/domains/sessions/contract/model/models'
 
 const harnesseschema = z.string().min(1)
 const identifiersSchema = z.array(z.string().min(1))

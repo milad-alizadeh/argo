@@ -3,14 +3,11 @@ import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/a
 import { createWatchedChanges } from '@/harnesses/composition/watched-changes'
 import { compactCodexSession } from '../compact-session'
 import { inputItemsFor } from '../input-items'
-import {
-  codexAnswersFor,
-  decidePendingPermission,
-  readInterrupt,
-  readRename,
-  readSteeredTurn,
-  settleQuestion,
-} from '../protocol'
+import { readInterrupt } from '../protocol/interrupt-protocol'
+import { decidePendingPermission } from '../protocol/permission-protocol'
+import { readSteeredTurn } from '../protocol/protocol'
+import { codexAnswersFor, settleQuestion } from '../protocol/question-protocol'
+import { readRename } from '../protocol/rename-protocol'
 import { createResumingChannel } from '../resuming-channel'
 import {
   type ManagedSession,

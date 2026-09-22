@@ -1,6 +1,6 @@
-import type { SessionRosterRow } from '@/domains/sessions/contract/model'
-import { isSessionIndexFallback } from '../../indexing'
-import type { SessionSource } from '../../observation'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { isSessionIndexFallback } from '../../indexing/session-index/recovery'
+import type { SessionSource } from '../../observation/reader/reader'
 
 export type IndexedResolution = {
   rows: SessionRosterRow[]

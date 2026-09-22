@@ -10,7 +10,7 @@ import {
   writeManySessions,
   writeMockTranscript,
 } from '../../../../../../mocks/sessions/mock-discover-transcript-sessions'
-import { openSessionIndex } from '../../indexing'
+import { openSessionIndex } from '../../indexing/session-index/open-index'
 import { ROSTER_PAGE_SIZE } from './discover-transcript-sessions'
 
 const cleanUp: (() => Promise<void>)[] = []

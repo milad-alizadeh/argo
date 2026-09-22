@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { sessionRosterRowSchema } from '../model'
+import { sessionRosterRowSchema } from '../model/models'
 import { rosterRowFields } from './roster-row-definition'
 
 test('declares every Roster row field exactly once', () => {

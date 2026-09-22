@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive'
-import { type PendingTurn, type Send, useComposerStore } from '../hooks'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
+import { type PendingTurn, useComposerStore } from '../hooks/use-composer-store'
+import type { Send } from '../hooks/use-send'
 import type { TurnSetup } from '../turn-setup/turn-setup'
 
 export type { PendingTurn } from '../hooks'

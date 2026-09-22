@@ -1,4 +1,4 @@
-import type { SetupStepStatus } from '@/domains/projects/contract/setup'
+import type { SetupStepStatus } from '@/domains/projects/contract/setup/setup-progress'
 
 export type ProjectSetupProgress = Array<{
   stepId: string

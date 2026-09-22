@@ -1,5 +1,8 @@
 import { useState } from 'react'
-import { type SetupDocument, setupConfiguration } from '@/domains/projects/contract/setup'
+import {
+  type SetupDocument,
+  setupConfiguration,
+} from '@/domains/projects/contract/setup/setup-document'
 import { setupSections } from '../plan/setup-plan-sections'
 import { CustomizeSetup } from '../screens/customize-setup'
 import { ImportSetup } from '../screens/import-setup'

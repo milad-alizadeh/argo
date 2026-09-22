@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
-import type { SessionRosterRow } from '@/domains/sessions/contract/model'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import {
   optimisticRowFor,
   runningTurnView,
@@ -8,9 +8,13 @@ import {
   type TurnMarkerRow,
   turnEnded,
   turnMarkerView,
-} from '../../feed'
+} from '../../feed/rows/turn-marker-state'
 import type { useSessions } from '../../use-sessions'
-import { type ComposerIdentity, composerIdentityKey, findSessionRow } from '../identity'
+import {
+  type ComposerIdentity,
+  composerIdentityKey,
+  findSessionRow,
+} from '../identity/composer-identity'
 import { useComposerStore } from './use-composer-store'
 import type { useTurnMarker } from './use-turn-marker'
 

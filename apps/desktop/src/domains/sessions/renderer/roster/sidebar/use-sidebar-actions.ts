@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { useNavigate } from 'react-router'
-import { useComposerStore } from '../../composer/hooks'
+import { useComposerStore } from '../../composer/hooks/use-composer-store'
 import { COMPOSER_FOCUS_STATE } from '../../composer-focus-state'
 import { newSessionTarget, useSessionCreationStore } from '../../session-creation'
 import { invalidateSessionRoster } from '../../session-queries'

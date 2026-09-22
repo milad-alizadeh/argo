@@ -1,5 +1,5 @@
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive'
-import type { TurnSetupControlProps } from '../toolbar'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
+import type { TurnSetupControlProps } from '../toolbar/run-setup-menu'
 import type { Send } from './use-send'
 import { useSessionComposerState } from './use-session-composer-state'
 

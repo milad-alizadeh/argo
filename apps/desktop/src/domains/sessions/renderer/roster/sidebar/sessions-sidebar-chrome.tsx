@@ -6,8 +6,8 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from '@/platform/renderer/components/ui/input-group'
-import type { RosterStatus } from '../hooks'
-import { RosterFilterMenu } from '../rows'
+import type { RosterStatus } from '../hooks/use-roster-filter-store'
+import { RosterFilterMenu } from '../rows/roster-filter-menu'
 
 export function SessionsSidebarHeader({
   onNew,

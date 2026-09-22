@@ -1,4 +1,4 @@
-import type { TurnMarkerEntry } from '../../feed'
+import type { TurnMarkerEntry } from '../../feed/rows/turn-marker-state'
 import { useComposerStore } from './use-composer-store'
 
 export type TurnMarkerEntries = Map<string, TurnMarkerEntry>

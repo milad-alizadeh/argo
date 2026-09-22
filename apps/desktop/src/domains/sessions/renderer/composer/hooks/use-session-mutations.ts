@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive'
-import type { SessionAcceptedReply, SessionStarted } from '@/domains/sessions/contract/ipc'
-import type { SessionHarness } from '../../harness'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
+import type { SessionAcceptedReply, SessionStarted } from '@/domains/sessions/contract/ipc/contract'
+import type { SessionHarness } from '../../harness/harnesses'
 import {
   type SessionContractError,
   throwSessionContractError,

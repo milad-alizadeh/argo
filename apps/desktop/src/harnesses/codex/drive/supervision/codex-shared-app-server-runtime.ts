@@ -2,7 +2,7 @@ import type {
   SessionProjection,
   Unsubscribe,
 } from '@/domains/sessions/next/contract/session-projection-contract'
-import type { WireMessage } from '../protocol'
+import type { WireMessage } from '../protocol/protocol'
 import type { AppServerSupervisor, AppServerSupervisorDeps } from './app-server-supervisor-machine'
 import { createAppServerSupervisor } from './app-server-supervisor-machine'
 

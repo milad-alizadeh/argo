@@ -1,13 +1,14 @@
 import { type ReactNode, useEffect, useState } from 'react'
-import type { SessionPlan } from '@/domains/sessions/contract/model'
-import type { HarnessControl } from '../../harness'
-import type { Send } from '../hooks'
-import { useComposer } from '../hooks'
-import { ComposerForm } from '../layout'
+import type { SessionPlan } from '@/domains/sessions/contract/model/models'
+import type { HarnessControl } from '../../harness/harnesses'
+import { useComposer } from '../hooks/use-composer'
+import type { Send } from '../hooks/use-send'
+import { ComposerForm } from '../layout/composer-form'
 import { activeReference } from '../references/composer-reference-menu'
-import type { TurnSetupControlProps, WorkspaceMenuControlProps } from '../toolbar'
+import type { TurnSetupControlProps } from '../toolbar/run-setup-menu'
+import type { WorkspaceMenuControlProps } from '../toolbar/workspace-menu'
 import './composer-content.css'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 
 export type SessionComposerProps = {
   contextTokens?: number | null

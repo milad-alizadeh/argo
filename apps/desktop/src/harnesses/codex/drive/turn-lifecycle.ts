@@ -5,7 +5,7 @@ import {
 } from '@/domains/sessions/contract/codex-turn-setup'
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import { inputItemsFor } from './input-items'
-import { readStartedTurn, readThreadId } from './protocol'
+import { readStartedTurn, readThreadId } from './protocol/protocol'
 import { CodexSessionDriverError } from './session/codex-session-error'
 import type { ManagedSession, ManagedSessionOptions } from './supervision/managed-session'
 import { openManagedChannel, rememberManagedSession } from './supervision/managed-session'

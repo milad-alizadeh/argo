@@ -1,9 +1,9 @@
 import type { LexicalEditor } from 'lexical'
 import type { RefObject } from 'react'
-import type { SessionPlan } from '@/domains/sessions/contract/model'
-import type { SessionHarness } from '../../harness'
+import type { SessionPlan } from '@/domains/sessions/contract/model/models'
+import type { SessionHarness } from '../../harness/harnesses'
 import { ComposerEditor } from '../editor/session-composer-editor'
-import type { ComposerAttachment, ComposerTicketContext } from '../hooks'
+import type { ComposerAttachment, ComposerTicketContext } from '../hooks/use-composer-store'
 import { ComposerAttachments } from './composer-attachments'
 import { SessionPlanPopover } from './session-plan-popover'
 

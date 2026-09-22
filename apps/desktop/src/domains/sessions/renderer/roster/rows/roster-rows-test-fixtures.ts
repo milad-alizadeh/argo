@@ -1,6 +1,6 @@
 import { SessionContractError } from '../../session-contract-error'
 import type { Session } from '../../types'
-import type { RosterStatus } from '../hooks'
+import type { RosterStatus } from '../hooks/use-roster-filter-store'
 import { rosterRows } from './roster-rows'
 import type { SearchRosterState } from './search-roster-rows'
 
