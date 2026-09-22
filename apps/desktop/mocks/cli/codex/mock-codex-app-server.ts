@@ -5,6 +5,7 @@ import {
 } from '../../../src/domains/sessions/main/composition/proof-protocol.ts'
 import { MOCK_CODEX_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
 import { compactionItem, completeTurn } from './fixtures/mock-codex-responses.ts'
+import { rememberThreadCwd } from './fixtures/mock-codex-transcript.ts'
 import { handleAskReply } from './mock-ask-question.ts'
 import { readMockCodexRequest } from './mock-codex-request.ts'
 import { createMockTurnStartHandler } from './mock-codex-turn.ts'
@@ -39,13 +40,21 @@ function handleRequest(message: Request) {
       return
     case 'skills/list':
       return send({ id: message.id, result: { data: [] } })
-    case 'thread/start':
+    case 'thread/start': {
       threadCounter += 1
-      send({ id: message.id, result: { thread: { id: threadIdFor(threadCounter) } } })
+      const threadId = threadIdFor(threadCounter)
+      const cwd = message.params?.cwd
+      if (typeof cwd === 'string') rememberThreadCwd(threadId, cwd)
+      send({ id: message.id, result: { thread: { id: threadId } } })
       return
-    case 'thread/resume':
-      send({ id: message.id, result: { thread: { id: message.params?.threadId } } })
+    }
+    case 'thread/resume': {
+      const threadId = message.params?.threadId
+      const cwd = message.params?.cwd
+      if (typeof threadId === 'string' && typeof cwd === 'string') rememberThreadCwd(threadId, cwd)
+      send({ id: message.id, result: { thread: { id: threadId } } })
       return
+    }
     case 'thread/unsubscribe':
       send({ id: message.id, result: { status: 'unsubscribed' } })
       return

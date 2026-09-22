@@ -7,9 +7,8 @@ import { attachCodexCompactionBridge } from '@/harnesses/codex/compaction/bridge
 import { renameCodexSession } from '@/harnesses/codex/drive/rename-session'
 import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session-drive-adapter'
 import { createSystemCodexSessionDriver } from '@/harnesses/codex/drive/system-codex-session-driver'
-import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
-import { codexStatePath, codexTranscriptsRoot } from '@/harnesses/codex/sessions/roots'
-import { codexThreadNames } from '@/harnesses/codex/sessions/state-store'
+import { codexTranscriptsRoot } from '@/harnesses/codex/sessions/roots'
+import { codexTranscriptSource } from '@/harnesses/codex/sessions/transcript-source'
 import type { HarnessRegistration } from '@/harnesses/composition/harness-registration'
 
 export const codexHarness: HarnessRegistration = {
@@ -23,13 +22,12 @@ export const codexHarness: HarnessRegistration = {
     const transcripts = codexTranscriptsRoot(home)
     return {
       harness: 'codex',
-      source: codexSessionSource(transcripts, {
+      source: codexTranscriptSource(transcripts, {
         roster: codex.roster,
         liveMessages: codex.liveMessages,
         pendingQuestion: codex.pendingQuestion,
         rename: (request) => renameCodexSession(request, codex),
         isLockedElsewhere: codex.isLockedElsewhere,
-        threadNames: codexThreadNames(codexStatePath(transcripts)),
         index,
       }),
       driveAdapter: createCodexDriveAdapter(codex),

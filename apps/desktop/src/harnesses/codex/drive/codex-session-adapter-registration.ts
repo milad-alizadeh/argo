@@ -1,7 +1,7 @@
 import type { SessionAdapterRegistration } from '@/domains/sessions/next/main/session-adapter-registry'
 import { createCodexSessionAdapter } from '@/harnesses/codex/drive/codex-session-adapter'
 import { createCodexAppServerSessionSource } from '@/harnesses/codex/observation/app-server-session-source'
-import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+import { codexTranscriptSource } from '@/harnesses/codex/sessions/transcript-source'
 
 export function createCodexSessionAdapterRegistration(options: {
   findExecutable: () => string | null
@@ -22,7 +22,7 @@ export function createCodexSessionAdapterRegistration(options: {
         close: adapter.close,
         source: createCodexAppServerSessionSource({
           adapter,
-          fallback: codexSessionSource(options.transcriptsRoot),
+          fallback: codexTranscriptSource(options.transcriptsRoot),
           projections: adapter.projections,
         }),
       }

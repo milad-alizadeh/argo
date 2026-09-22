@@ -91,7 +91,8 @@ export const claudeHarness: HarnessRegistration = {
       onboardingDriver: claude,
       watchedTranscriptRoots: [claudeTranscriptsRoot(home)],
       close: () => claude.close(),
-      onPermissionsChanged: claude.onPermissionsChanged,
+      onPermissionsChanged:
+        managedRosterChanges?.[claudeHarness.harness] ?? claude.onPermissionsChanged,
       onRosterChanged: managedRosterChanges?.[claudeHarness.harness],
     }
   },

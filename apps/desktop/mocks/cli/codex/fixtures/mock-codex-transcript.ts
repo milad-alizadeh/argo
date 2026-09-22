@@ -1,6 +1,13 @@
 import { appendFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 
+const threadCwds = new Map<string, string>()
+
+// `thread/start` names the Project folder. The mock process's own folder is not that folder.
+export function rememberThreadCwd(threadId: string, cwd: string) {
+  threadCwds.set(threadId, cwd)
+}
+
 function record(threadId: string, records: unknown[]) {
   const transcripts = process.env.ARGO_CODEX_TRANSCRIPTS
   if (transcripts === undefined) return
@@ -14,7 +21,7 @@ function meta(threadId: string) {
   return {
     timestamp: new Date().toISOString(),
     type: 'session_meta',
-    payload: { id: threadId, cwd: process.cwd() },
+    payload: { id: threadId, cwd: threadCwds.get(threadId) ?? process.cwd() },
   }
 }
 
