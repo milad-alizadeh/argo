@@ -61,7 +61,7 @@ test.describe('canceled', () => {
     await page.getByRole('button', { name: 'Sign in' }).click()
     await expect(page.getByRole('status').filter({ hasText: 'Waiting for Claude' })).toBeVisible()
     await page.getByRole('button', { name: 'Cancel' }).click()
-    await expect(page.getByText('Sign-in cancelled.')).toBeVisible()
+    await expect(page.getByText('Sign-in canceled.')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible()
   })
 })

@@ -3,6 +3,7 @@
 export const PROJECT_PROOF_SURFACE = [
   'awaitAccount',
   'cancelAccount',
+  'cancelHarnessSignIn',
   'cancelSessionFeed',
   'chooseSessionAttachments',
   'compactSession',
@@ -25,6 +26,7 @@ export const PROJECT_PROOF_SURFACE = [
   'interruptSession',
   'listAccounts',
   'listArchivedSessions',
+  'listHarnessReadiness',
   'listProjectWorkspaces',
   'listProjects',
   'listSessions',
@@ -53,6 +55,7 @@ export const PROJECT_PROOF_SURFACE = [
   'setAppearance',
   'setCodexAutoCompactLimit',
   'setSessionsArchived',
+  'startHarnessSignIn',
   'startSession',
   'statSessionAttachments',
   'steerSession',
@@ -61,5 +64,6 @@ export const PROJECT_PROOF_SURFACE = [
   'updateStatus',
   'verifyAccount',
   'versions',
+  'waitHarnessSignIn',
   'zoomFactor',
 ]

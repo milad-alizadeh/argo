@@ -3,7 +3,6 @@
 // regardless of which Claude state the case is proving.
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
 import { expect as baseExpect } from '@playwright/test'
 import type { ElectronApplication, Page } from 'playwright-core'
 import { writeMockClaudeReadinessCli } from '../../../mocks/cli/claude/mock-claude-readiness-cli'
@@ -15,7 +14,8 @@ import {
   HARNESS_SIGNIN_EXPIRES_AFTER_MS_ENV,
 } from '../../../src/domains/harness-signin/contract/proof-protocol'
 import { createProjectStore } from '../../../src/domains/projects/main/sqlite-store'
-import { sharedDatabasePath } from '../../../src/platform/main/storage/shared-database'
+import { createDurableDatabase } from '../../../src/platform/main/storage/durable-database'
+import { openSharedDatabase } from '../../../src/platform/main/storage/shared-database'
 import { test as packagedTest } from '../../packaged-proof'
 import { openHiddenWindow } from '../../packaged-window'
 import {
@@ -42,8 +42,7 @@ async function prepareReadyProject(
   await mkdir(userData, { recursive: true })
   await repository(projectPath)
   await makeProjectLocallyReady(projectPath)
-  const databasePath = sharedDatabasePath(userData)
-  const projects = createProjectStore(new DatabaseSync(databasePath))
+  const projects = createProjectStore(createDurableDatabase(openSharedDatabase(userData)))
   projects.replace({
     projects: [
       { id: PROOF_PROJECT_ID, path: projectPath, commonDirectory: path.join(projectPath, '.git') },
