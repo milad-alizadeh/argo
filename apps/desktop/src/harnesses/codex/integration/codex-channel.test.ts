@@ -83,5 +83,5 @@ test('rejects every pending request when the process exits', async () => {
   const pending = channel.request('thread/start', { cwd: '/projects/argo' }, (value) => value)
   mock.exit()
 
-  await assert.rejects(pending, /exited/)
+  await assert.rejects(pending, /closed/)
 })
