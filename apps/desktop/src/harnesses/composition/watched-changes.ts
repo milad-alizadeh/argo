@@ -1,13 +1,13 @@
 import type { WatchedSource } from '@/platform/main/watch/watch-source'
 
-export function watchedChanges(changed: Set<() => void>): WatchedSource {
+function watchedChanges(changed: Set<() => void>): WatchedSource {
   return (listener) => {
     changed.add(listener)
     return () => changed.delete(listener)
   }
 }
 
-export function notifyWatchedChanges(changed: Set<() => void>) {
+function notifyWatchedChanges(changed: Set<() => void>) {
   for (const listener of changed) listener()
 }
 
