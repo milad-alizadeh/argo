@@ -6,8 +6,8 @@ import { chmod, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import type { OwnershipLedger } from '../../../src/domains/sessions/main/lifecycle/ownership-ledger.ts'
-import { openCodexChannel } from '../../../src/harnesses/codex/drive/codex-channel.ts'
 import { createCodexSessionDriver } from '../../../src/harnesses/codex/drive/codex-session-driver.ts'
+import { channelForAppServerProcess } from '../../../src/harnesses/codex/drive/open-app-server.ts'
 
 // The proof always starts in `apps/desktop`, as `session-resume-case.ts`'s mock Claude notes:
 // `import.meta.url` is unavailable once the Playwright test runner loads this module as CommonJS.
@@ -31,15 +31,7 @@ export function driverBackedByFixture(
         env: { ...options.env, ...driverOptions.env },
       })
       child.stderr.on('data', () => {})
-      return openCodexChannel({
-        stdout: child.stdout,
-        write: (line) => child.stdin.write(line),
-        kill: () => child.kill(),
-        onExit: (listener) => {
-          child.on('close', listener)
-          child.on('error', listener)
-        },
-      })
+      return channelForAppServerProcess(child)
     },
   })
 }

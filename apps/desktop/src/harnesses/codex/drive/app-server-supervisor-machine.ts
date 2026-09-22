@@ -1,9 +1,8 @@
-import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process'
 import { type ActorRefFrom, assign, createActor, fromPromise, setup } from 'xstate'
 import type { CodexChannel } from '@/harnesses/codex/drive/codex-channel'
-import { openCodexChannel } from '@/harnesses/codex/drive/codex-channel'
 import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
 import { codexLaunchEnvironment } from '@/harnesses/codex/drive/launch-environment'
+import { openAppServer } from '@/harnesses/codex/drive/open-app-server'
 import type { WireMessage } from '@/harnesses/codex/drive/protocol'
 
 // ADR-0047: one shared `codex app-server` process per window, multiplexing every managed Codex
@@ -17,50 +16,6 @@ export type AppServerSupervisorDeps = {
 }
 
 export type CodexSessionPort = Pick<CodexChannel, 'request' | 'notify' | 'respond'>
-
-function spawnAppServerProcess(executable: string): {
-  process: ChildProcessWithoutNullStreams
-  channel: CodexChannel
-} {
-  const child = spawn(
-    executable,
-    [
-      'app-server',
-      '--listen',
-      'stdio://',
-      '-c',
-      'features.default_mode_request_user_input=true',
-    ],
-    {
-      env: codexLaunchEnvironment(),
-      stdio: [
-        'pipe',
-        'pipe',
-        'pipe',
-      ],
-    },
-  )
-  child.stderr.on('data', (chunk: Buffer) => {
-    console.error(`codex app-server stderr: ${chunk.toString('utf8').trimEnd()}`)
-  })
-  const channel = openCodexChannel({
-    stdout: child.stdout,
-    write: (line) => {
-      child.stdin.write(line)
-    },
-    kill: () => {
-      child.kill()
-    },
-    onExit: (listener) => {
-      child.on('close', listener)
-      child.on('error', listener)
-    },
-  })
-  return {
-    process: child,
-    channel,
-  }
-}
 
 async function handshake(channel: CodexChannel) {
   await channel.request(
@@ -111,7 +66,10 @@ function createAppServerProcessActor(deps: AppServerSupervisorDeps) {
     }
   >(async ({ input, signal }) => {
     if (input.executable === '') throw new CodexSessionDriverError('harness-unavailable')
-    const { process: child, channel } = spawnAppServerProcess(input.executable)
+    const { process: child, channel } = openAppServer({
+      executable: input.executable,
+      env: codexLaunchEnvironment(),
+    })
     channel.onNotification((message) => {
       deps.dispatchNotification(message)
       return undefined

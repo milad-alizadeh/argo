@@ -14,6 +14,29 @@ function adapterRegistry(adapter: SessionAdapter | undefined): SessionAdapterReg
   return { adapterFor: () => adapter, close: () => {} }
 }
 
+function startCommand() {
+  return {
+    version: 1,
+    type: 'managed-session.command',
+    requestId: 'request-1',
+    command: {
+      type: 'session.start',
+      harness: 'claude',
+      prompt: 'Hello',
+      workspace: { kind: 'main' },
+    },
+  }
+}
+
+function expectedOutcome(outcome: unknown) {
+  return {
+    version: 1,
+    type: 'managed-session.outcome',
+    requestId: 'request-1',
+    outcome,
+  }
+}
+
 test('executes a validated command through its harness adapter', async () => {
   const ipc = createMockIpcWindow()
   const adapter: SessionAdapter = {
@@ -24,23 +47,8 @@ test('executes a validated command through its harness adapter', async () => {
     adapters: adapterRegistry(adapter),
     rendererURL: RENDERER_URL,
   })
-  const reply = await ipc.trustedInvoke(MANAGED_SESSION_OPERATIONS.command.channel, {
-    version: 1,
-    type: 'managed-session.command',
-    requestId: 'request-1',
-    command: {
-      type: 'session.start',
-      harness: 'claude',
-      prompt: 'Hello',
-      workspace: { kind: 'main' },
-    },
-  })
-  assert.deepEqual(reply, {
-    version: 1,
-    type: 'managed-session.outcome',
-    requestId: 'request-1',
-    outcome: { kind: 'uncertain' },
-  })
+  const reply = await ipc.trustedInvoke(MANAGED_SESSION_OPERATIONS.command.channel, startCommand())
+  assert.deepEqual(reply, expectedOutcome({ kind: 'uncertain' }))
 })
 
 test('rejects a command when its harness adapter is unavailable', async () => {
@@ -49,21 +57,9 @@ test('rejects a command when its harness adapter is unavailable', async () => {
     adapters: adapterRegistry(undefined),
     rendererURL: RENDERER_URL,
   })
-  const reply = await ipc.trustedInvoke(MANAGED_SESSION_OPERATIONS.command.channel, {
-    version: 1,
-    type: 'managed-session.command',
-    requestId: 'request-1',
-    command: {
-      type: 'session.start',
-      harness: 'claude',
-      prompt: 'Hello',
-      workspace: { kind: 'main' },
-    },
-  })
-  assert.deepEqual(reply, {
-    version: 1,
-    type: 'managed-session.outcome',
-    requestId: 'request-1',
-    outcome: { kind: 'rejected', reason: 'This Session Harness is unavailable.' },
-  })
+  const reply = await ipc.trustedInvoke(MANAGED_SESSION_OPERATIONS.command.channel, startCommand())
+  assert.deepEqual(
+    reply,
+    expectedOutcome({ kind: 'rejected', reason: 'This Session Harness is unavailable.' }),
+  )
 })
