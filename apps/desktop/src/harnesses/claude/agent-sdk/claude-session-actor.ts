@@ -70,6 +70,31 @@ const claudeSessionSetup = setup({
   },
 })
 
+function recoveringState() {
+  return {
+    after: {
+      recoveryTimeout: {
+        target: 'Releasing',
+        actions: assign({ releaseTarget: 'watched' }),
+      },
+    },
+    on: {
+      'SDK message': [
+        {
+          guard: { type: 'isInheritedApiCredential', params: messageParams },
+          target: 'Releasing',
+          actions: assign({ releaseTarget: 'unavailable' }),
+        },
+        {
+          guard: { type: 'isSubscriptionAuthorized', params: messageParams },
+          target: 'Managed',
+        },
+      ],
+      'SDK failed': 'Releasing',
+    },
+  }
+}
+
 export function createClaudeSessionMachine(input: ClaudeSessionInput) {
   return claudeSessionSetup.createMachine({
     id: 'claudeManagedSession',
@@ -114,20 +139,13 @@ export function createClaudeSessionMachine(input: ClaudeSessionInput) {
             target: 'Releasing',
             actions: assign({ releaseTarget: 'unavailable' }),
           },
-          'SDK failed': 'Recovering',
+          'Channel lost': 'Recovering',
+          'SDK failed': 'Releasing',
           'SDK ended': 'Releasing',
           Close: 'Releasing',
         },
       },
-      Recovering: {
-        after: {
-          recoveryTimeout: {
-            target: 'Releasing',
-            actions: assign({ releaseTarget: 'watched' }),
-          },
-        },
-        on: { 'Channel restored': 'Managed' },
-      },
+      Recovering: recoveringState(),
       Unavailable: { type: 'final', entry: 'markUnavailable' },
       Watched: { type: 'final' },
       Closed: { type: 'final' },

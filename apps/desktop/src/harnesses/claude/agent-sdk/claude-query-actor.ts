@@ -13,7 +13,7 @@ function handleEvent(options: {
   channel: ReturnType<typeof createStreamInputChannel>
   dialogs: ReturnType<typeof createPendingRequestRegistry<UserDialogResult>>
   input: ClaudeSessionInput
-  query: Query
+  query: { current: Query }
   session: { current: ClaudeSessionInput['session'] }
 }) {
   const { approvals, channel, dialogs, event, input, query, session } = options
@@ -23,7 +23,7 @@ function handleEvent(options: {
       channel.push(userMessage(event.prompt))
       return
     case 'Interrupt':
-      void query.interrupt()
+      void query.current.interrupt()
       return
     case 'Decide':
       approvals.resolve(
@@ -56,27 +56,35 @@ export const claudeQueryLogic = fromCallback<ClaudeSessionEvent, ClaudeSessionIn
     channel.push(userMessage(input.prompt))
     const approvals = createPendingRequestRegistry<PermissionResult | null>(null)
     const dialogs = createPendingRequestRegistry<UserDialogResult>({ behavior: 'cancelled' })
-    const query = input.createQuery({
-      prompt: channel.iterable,
-      cwd: input.cwd,
-      resume: input.session?.nativeId,
-      canUseTool: (_toolName, _toolInput, options) => approvals.register(options.toolUseID),
-      onUserDialog: (_request, options) => dialogs.register(options.requestId),
-    })
     let stopped = false
+    let retries = 0
     const session = { current: input.session }
+    const query = { current: createQuery({ input, channel, approvals, dialogs, session }) }
+    const recover = () => {
+      if (stopped) return
+      const canRetry = session.current !== null && retries === 0
+      if (!canRetry) {
+        sendBack({ type: 'SDK failed' })
+        return
+      }
+      retries += 1
+      sendBack({ type: 'Channel lost' })
+      query.current = createQuery({ input, channel, approvals, dialogs, session })
+      void read()
+    }
 
-    void (async () => {
+    const read = async (): Promise<void> => {
       try {
-        for await (const message of query) {
+        for await (const message of query.current) {
           if (stopped) return
           sendBack({ type: 'SDK message', message: message as SDKMessage })
         }
         if (!stopped) sendBack({ type: 'SDK ended' })
       } catch {
-        if (!stopped) sendBack({ type: 'SDK failed' })
+        recover()
       }
-    })()
+    }
+    void read()
 
     receive((event: ClaudeSessionEvent) =>
       handleEvent({ approvals, channel, dialogs, event, input, query, session }),
@@ -87,7 +95,24 @@ export const claudeQueryLogic = fromCallback<ClaudeSessionEvent, ClaudeSessionIn
       approvals.cancelAll()
       dialogs.cancelAll()
       channel.close()
-      query.close()
+      query.current.close()
     }
   },
 )
+
+function createQuery(options: {
+  input: ClaudeSessionInput
+  channel: ReturnType<typeof createStreamInputChannel>
+  approvals: ReturnType<typeof createPendingRequestRegistry<PermissionResult | null>>
+  dialogs: ReturnType<typeof createPendingRequestRegistry<UserDialogResult>>
+  session: { current: ClaudeSessionInput['session'] }
+}): Query {
+  const { input, channel, approvals, dialogs, session } = options
+  return input.createQuery({
+    prompt: channel.iterable,
+    cwd: input.cwd,
+    resume: session.current?.nativeId,
+    canUseTool: (_toolName, _toolInput, options) => approvals.register(options.toolUseID),
+    onUserDialog: (_request, options) => dialogs.register(options.requestId),
+  })
+}
