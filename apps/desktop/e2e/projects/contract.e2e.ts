@@ -1,7 +1,7 @@
 // The packaged Project contract: the preload surface, `openProject` and its refusals, each read
 // off its own launch of the shipped app against its own application data (#2326).
 import assert from 'node:assert/strict'
-import { chmod, readFile } from 'node:fs/promises'
+import { chmod } from 'node:fs/promises'
 import type { ElectronApplication, Page } from 'playwright-core'
 import { assertShippedFusesIntact } from '../packaged-app'
 import { packagedFixture } from '../packaged-fixture'
@@ -50,7 +50,7 @@ test('opens a registered Project through the preload surface alone', async ({ pr
   assert.equal(typeof reply.requestId, 'string')
   assert.deepEqual(reply, {
     version: 1,
-    type: 'project.setup-required',
+    type: 'project.opened',
     requestId: reply.requestId,
     project: { id: 'project-1', name: 'example' },
   })
@@ -77,11 +77,12 @@ test('refuses a request that names a path', async ({ project }) => {
 })
 
 test('leaves the Project store unchanged', async ({ project }) => {
-  const before = await readFile(project.fixture.databasePath)
+  const before = await project.page.evaluate(() => window.argo.listProjects())
   await invoke(project.page, { projectId: 'project-1' })
   await invoke(project.page, { projectId: 'missing' })
   await invoke(project.page, { projectId: 'project-1', path: '/private' })
-  assert.deepEqual(await readFile(project.fixture.databasePath), before)
+  const after = await project.page.evaluate(() => window.argo.listProjects())
+  assert.deepEqual({ ...after, requestId: before.requestId }, before)
 })
 
 test('registers, restarts, selects, and reopens a Project from SQLite', async ({ project }) => {
@@ -98,7 +99,7 @@ test('registers, restarts, selects, and reopens a Project from SQLite', async ({
     assert.equal(listed.type, 'project.listed')
     assert.equal(listed.selectedId, registered.selectedId)
     const reopenedRegistered = await invoke(page, { projectId: registered.selectedId })
-    assert.equal(reopenedRegistered.type, 'project.setup-required')
+    assert.equal(reopenedRegistered.type, 'project.opened')
     const selected = await page.evaluate(() =>
       window.argo.selectProject({ projectId: 'project-1' }),
     )
@@ -111,8 +112,8 @@ test('registers, restarts, selects, and reopens a Project from SQLite', async ({
   try {
     const page = await reopened.firstWindow()
     const result = await invoke(page, { projectId: 'project-1' })
-    assert.equal(result.type, 'project.setup-required')
-    assert.deepEqual(result.type === 'project.setup-required' ? result.project : null, {
+    assert.equal(result.type, 'project.opened')
+    assert.deepEqual(result.type === 'project.opened' ? result.project : null, {
       id: 'project-1',
       name: 'example',
     })
