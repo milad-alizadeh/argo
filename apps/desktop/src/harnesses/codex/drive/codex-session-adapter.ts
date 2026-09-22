@@ -95,6 +95,7 @@ export function createCodexSessionAdapter(deps: {
   resolveWorkspace: (selection: WorkspaceSelection) => Promise<{ workspaceId: string; cwd: string }>
 }): CodexSessionAdapter {
   const registry: SessionRegistry = new Map()
+  const rosterListeners = new Set<() => void>()
 
   const appServer = sharedAppServerRuntimeFor(deps.findExecutable)
   const supervisor = appServer.supervisor
@@ -119,6 +120,7 @@ export function createCodexSessionAdapter(deps: {
       entry.revision += 1
       const projection = projectionFrom(snapshot, entry.revision)
       appServer.publish(projection)
+      for (const listener of rosterListeners) listener()
       for (const listener of entry.listeners) listener(projection)
     }
     actor.subscribe(notify)
@@ -157,10 +159,15 @@ export function createCodexSessionAdapter(deps: {
       detach()
     },
     projections: appServer.projections,
+    onRosterChanged: (listener) => {
+      rosterListeners.add(listener)
+      return () => rosterListeners.delete(listener)
+    },
   }
 }
 
 export type CodexSessionAdapter = SessionAdapter & {
   close: () => void
   projections: () => readonly SessionProjection[]
+  onRosterChanged: (listener: () => void) => () => void
 }

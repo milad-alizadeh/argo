@@ -75,14 +75,16 @@ function attachWatching(options: {
   sources: SessionSource[]
   reader: ReturnType<typeof createSessionReader>
   userData: string
+  managedRosterChanges?: Readonly<Record<string, WatchedSource>>
 }) {
-  const { window, runtimes, sources, reader, userData } = options
+  const { window, runtimes, sources, reader, userData, managedRosterChanges = {} } = options
   const transcriptRoots = runtimes.flatMap((runtime) => runtime.watchedTranscriptRoots)
   const harnessSources = harnessWatchedSources(runtimes)
   registerWatching(window, {
     permissions: harnessSources.permissions,
     sessions: [
       ...harnessSources.sessions,
+      ...Object.values(managedRosterChanges),
       withReconcile(
         watchTrees([...transcriptRoots, sessionArchivePath(userData)]),
         sources,
@@ -138,7 +140,7 @@ export function attachSessions(window: BrowserWindow, request: AttachSessionsReq
     if (adapter !== undefined) adapters[harness] = adapter
   }
   attachSessionBridge(window, { reader, adapters, rendererURL })
-  attachWatching({ window, runtimes, sources, reader, userData })
+  attachWatching({ window, runtimes, sources, reader, userData, managedRosterChanges })
   // Backfill starts on attach; its first completed pass reconciles launch changes (#2373).
   startBackfill(window, sources, reader)
   return runtimes

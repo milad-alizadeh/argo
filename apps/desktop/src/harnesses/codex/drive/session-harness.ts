@@ -14,7 +14,13 @@ import type { HarnessRegistration } from '@/harnesses/composition/harness-regist
 
 export const codexHarness: HarnessRegistration = {
   harness: 'codex',
-  start({ userData, home, proofEnabled, index }) {
+  start({
+    userData,
+    home,
+    proofEnabled,
+    index,
+    managedRosterChanges,
+  }) {
     const codex = createSystemCodexSessionDriver({
       executable: proofEnabled ? process.env[SESSION_CODEX_EXECUTABLE_ENV] : undefined,
       ownership: path.join(userData, 'codex-session-ownership.json'),
@@ -35,7 +41,7 @@ export const codexHarness: HarnessRegistration = {
       driveAdapter: createCodexDriveAdapter(codex),
       watchedTranscriptRoots: [transcripts],
       close: () => Promise.resolve(codex.close()),
-      onRosterChanged: codex.onRosterChanged,
+      onRosterChanged: managedRosterChanges?.[codexHarness.harness] ?? codex.onRosterChanged,
       attachSettingsBridge: attachCodexCompactionBridge,
     }
   },
