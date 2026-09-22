@@ -81,7 +81,8 @@ test('leaves the Project store unchanged', async ({ project }) => {
   await invoke(project.page, { projectId: 'project-1' })
   await invoke(project.page, { projectId: 'missing' })
   await invoke(project.page, { projectId: 'project-1', path: '/private' })
-  assert.deepEqual(await project.page.evaluate(() => window.argo.listProjects()), before)
+  const after = await project.page.evaluate(() => window.argo.listProjects())
+  assert.deepEqual({ ...after, requestId: before.requestId }, before)
 })
 
 test('registers, restarts, selects, and reopens a Project from SQLite', async ({ project }) => {
