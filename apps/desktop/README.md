@@ -80,10 +80,6 @@ button appears beside the GitHub one on the next launch.
 - Components, locally: `bun run storybook` from the repository root
 - Build the site: `bun run build:storybook` from the repository root, output
   `apps/desktop/storybook-static`
-- Render one PNG: `cd apps/desktop && bun run design:render`
-
-Every PNG these commands write is disposable. Look at it and delete it: no gate reads one and no
-ref holds one ([#1910](https://github.com/milad-alizadeh/argo/issues/1910)).
 
 ## Build a local release
 
