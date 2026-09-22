@@ -21,7 +21,6 @@
   "scripts": {
     "build": "turbo run build test:packaged-pty --filter=@argo/desktop",
     "build:storybook": "turbo run build:storybook",
-    "design:tokens": "node scripts/design-token-mirror.mts && node scripts/design-token-class-groups.mts",
     "dev": "turbo run dev",
     "desktop:status": "bun run --cwd apps/desktop dev:status",
     "desktop:stop": "bun run --cwd apps/desktop dev:stop",

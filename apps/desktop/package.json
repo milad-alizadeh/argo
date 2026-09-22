@@ -15,7 +15,6 @@
     "storybook": "storybook dev -p 6006",
     "build:storybook": "storybook build",
     "test:storybook": "vitest run --project=storybook-dark --project=storybook-light",
-    "design:render": "node scripts/render-desktop-state.mts",
     "build": "electron-forge package --arch arm64",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.e2e.json",
     "test:packaged-contents": "node scripts/assert-packaged-pty.mts",
