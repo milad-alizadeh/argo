@@ -5,6 +5,15 @@ import {
 } from '@/harnesses/claude/agent-sdk/claude-query-fixture'
 import { createClaudeSessionAdapter } from '@/harnesses/claude/agent-sdk/claude-session-adapter'
 
+function managedAdapter(fake: ReturnType<typeof fakeClaudeQuery>) {
+  return createClaudeSessionAdapter({
+    sessionService: managedSessionService,
+    waitForWorkspaceReady: async () => {},
+    resolveWorkspace: async () => ({ workspaceId: 'workspace-1', cwd: '/repository' }),
+    createQuery: fake.createQuery,
+  })
+}
+
 test('starts Claude after the selected Workspace is ready', async () => {
   const fake = fakeClaudeQuery()
   let releaseWorkspace: (() => void) | undefined
@@ -48,14 +57,27 @@ test('starts Claude after the selected Workspace is ready', async () => {
   expect(fake.sentPrompts()).toEqual(['hello'])
 })
 
+test('creates a Claude Session without sending an empty first turn', async () => {
+  const fake = fakeClaudeQuery()
+  const adapter = managedAdapter(fake)
+
+  const outcome = adapter.execute({
+    type: 'session.start',
+    harness: 'claude',
+    prompt: '',
+    workspace: { kind: 'main' },
+  })
+  await new Promise((resolve) => setImmediate(resolve))
+  fake.emitInit({ apiKeySource: 'none' })
+  await outcome
+  await new Promise((resolve) => setImmediate(resolve))
+
+  expect(fake.sentPrompts()).toEqual([])
+})
+
 test('notifies roster watchers when the SDK adds a live assistant message', async () => {
   const fake = fakeClaudeQuery()
-  const adapter = createClaudeSessionAdapter({
-    sessionService: managedSessionService,
-    waitForWorkspaceReady: async () => {},
-    resolveWorkspace: async () => ({ workspaceId: 'workspace-1', cwd: '/repository' }),
-    createQuery: fake.createQuery,
-  })
+  const adapter = managedAdapter(fake)
   let changes = 0
   const close = adapter.onRosterChanged(() => {
     changes += 1

@@ -1,7 +1,8 @@
 import type { ClaudeSessionContext, ClaudeSessionInput } from '@/harnesses/claude/agent-sdk/types'
 
 export function leaseStates(input: ClaudeSessionInput) {
-  const initialTurn = input.session === null ? 'startInitialTurn' : undefined
+  const initialTurn =
+    input.session === null && input.prompt.length > 0 ? 'startInitialTurn' : undefined
   const releaseTargets = [
     {
       guard: ({ context }: { context: ClaudeSessionContext }) => context.releaseTarget === 'closed',
