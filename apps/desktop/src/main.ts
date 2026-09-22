@@ -23,6 +23,7 @@ import {
   developmentInstance,
 } from '@/platform/main/development/instance'
 import { writeDevelopmentReady } from '@/platform/main/development/ready'
+import { resetIncompleteDevelopmentDatabase } from '@/platform/main/development/reset-incomplete-database'
 import { installMenu } from '@/platform/main/menu'
 import { configureStorageRuntime } from '@/platform/main/storage/storage-runtime'
 import { createDesktopWindow } from '@/platform/main/window/create-window'
@@ -148,6 +149,7 @@ async function ready(): Promise<void> {
       appData: app.getPath('appData'),
       instance: DEVELOPMENT_INSTANCE,
     })
+    resetIncompleteDevelopmentDatabase(projectData)
     const projects = openProjectStore(projectData)
     await seedDevelopmentProject(projects, DEVELOPMENT_INSTANCE)
     projects.close()

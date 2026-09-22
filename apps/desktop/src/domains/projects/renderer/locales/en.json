@@ -220,8 +220,8 @@
     },
     "shell": {
       "agentTitle": "Project setup agent",
-      "agentSubtitle": "Argo · preview, then connect",
-      "introduction": "Preview the Project setup flow. No files or saved Projects change in this UI ticket.",
+      "agentSubtitle": "Argo · plan, then connect",
+      "introduction": "Choose how Argo sets up this Project. Files change only after you approve the setup.",
       "reviewTitle": "Setup review",
       "reviewDisclosure": "Setup review and progress"
     },
