@@ -47,20 +47,16 @@ async function fixture(context: TestContext) {
     projects,
     chooseFolder: async () => null,
     exclusive: async <T>(work: () => Promise<T>) => work(),
-    // No fixture here ever leaves a checkpoint at `ready`, the only phase `openProject` reads it in.
-    loadSetupDocument: async (): Promise<never> => {
-      throw new Error('no fixture reads a setup document')
-    },
   }
   context.after(() => projects.close())
   return { database, projectPath, store }
 }
 
-test('routes an unconfigured Project to setup by stable ID with presentation data only', async (context) => {
+test('opens an unconfigured Project by stable ID with presentation data only', async (context) => {
   const { store } = await fixture(context)
   assert.deepEqual(await openProject(request, store), {
     version: 1,
-    type: 'project.setup-required',
+    type: 'project.opened',
     requestId: 'open-1',
     project: { id: 'project-1', name: 'example' },
   })
