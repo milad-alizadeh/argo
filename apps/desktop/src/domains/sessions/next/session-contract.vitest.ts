@@ -1,13 +1,15 @@
 import { expect, test } from 'vitest'
 import {
-  agentSchema,
   capabilitiesFor,
-  HARNESSES,
   sessionCommandSchema,
+} from '@/domains/sessions/next/contract/session-command-contract'
+import {
+  agentSchema,
+  HARNESSES,
   sessionIdentitySchema,
-  sessionProjectionSchema,
   workspaceForAgent,
 } from '@/domains/sessions/next/contract/session-contract'
+import { sessionProjectionSchema } from '@/domains/sessions/next/contract/session-projection-contract'
 
 test('keeps native Session IDs separate by Harness', () => {
   const claude = sessionIdentitySchema.parse({ harness: 'claude', nativeId: 'shared' })
@@ -27,6 +29,17 @@ test('inherits a Workspace reference from a parent Agent', () => {
   expect(workspaceForAgent(child, [root, child])).toEqual({ id: 'workspace-1' })
 })
 
+const emptyProjectionFields = {
+  status: 'idle' as const,
+  title: null,
+  turns: [],
+  messages: [],
+  toolCalls: [],
+  pendingApprovals: [],
+  pendingQuestions: [],
+  usage: { inputTokens: 0, outputTokens: 0 },
+}
+
 test('keeps Workspace identity stable when its branch changes', () => {
   const session = { harness: 'claude', nativeId: 'native-1' }
   const before = sessionProjectionSchema.parse({
@@ -35,6 +48,7 @@ test('keeps Workspace identity stable when its branch changes', () => {
     sourceHealth: 'ready',
     revision: 1,
     workspace: { id: 'workspace-1' },
+    ...emptyProjectionFields,
   })
   const after = sessionProjectionSchema.parse({
     session,
@@ -42,6 +56,7 @@ test('keeps Workspace identity stable when its branch changes', () => {
     sourceHealth: 'ready',
     revision: 2,
     workspace: { id: 'workspace-1' },
+    ...emptyProjectionFields,
   })
 
   expect(before.workspace).toEqual(after.workspace)
@@ -119,11 +134,23 @@ test.each([
   ).toBe(true)
 })
 
+const commandVerbCapabilities = {
+  start: true,
+  send: true,
+  steer: true,
+  interrupt: true,
+  decide: true,
+  answer: true,
+  rename: true,
+  close: true,
+}
+
 test('maps every capability for every supported Harness', () => {
   expect(
     Object.fromEntries(HARNESSES.map((harness) => [harness, capabilitiesFor(harness)])),
   ).toEqual({
-    claude: { start: true, send: true, interrupt: true },
-    codex: { start: true, send: true, interrupt: true },
+    // The Agent SDK has no manual compact control (autonomous/hook-driven), unlike Codex.
+    claude: { ...commandVerbCapabilities, compact: false },
+    codex: { ...commandVerbCapabilities, compact: true },
   })
 })

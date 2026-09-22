@@ -16,6 +16,7 @@ function harness(fake: FakeClaudeQuery) {
     prompt: 'hello',
     cwd: '/repository',
     createQuery: fake.createQuery,
+    renameSession: fake.renameSession,
   })
   const actor = createActor(machine, {
     input: { session: { harness: 'claude', nativeId: 'native-1' } },
@@ -79,7 +80,7 @@ describe('claude session actor commands', () => {
     fake.emitInit({ apiKeySource: 'none' })
     await flush()
 
-    actor.send({ type: 'session.send', prompt: 'second message' })
+    actor.send({ type: 'Send', prompt: 'second message' })
     await flush()
 
     expect(fake.sentPrompts()).toEqual(['hello', 'second message'])
@@ -91,7 +92,7 @@ describe('claude session actor commands', () => {
     fake.emitInit({ apiKeySource: 'none' })
     await flush()
 
-    actor.send({ type: 'session.interrupt' })
+    actor.send({ type: 'Interrupt' })
     await flush()
 
     expect(fake.interruptCalls).toBe(1)
