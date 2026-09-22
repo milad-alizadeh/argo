@@ -18,7 +18,7 @@ import {
 } from '@/domains/sessions/renderer/feed/content/markdown-evidence'
 import { feedUrlTransform } from '@/domains/sessions/renderer/feed/content/markdown-urls'
 import { MermaidFence } from '@/domains/sessions/renderer/feed/content/mermaid-fence'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 
 type MarkdownNode = ExtraProps['node']
 

@@ -1,5 +1,5 @@
 import { skillTitle } from '@/domains/sessions/contract/model/feed/tool-feed'
-import { mcpOther } from '@/domains/sessions/contract/model/mcp-call'
+import { mcpOther } from '@/domains/sessions/contract/model/feed/mcp-call'
 import type {
   OtherFacts,
   SkillFacts,

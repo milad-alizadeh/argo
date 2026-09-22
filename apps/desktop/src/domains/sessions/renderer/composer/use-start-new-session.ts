@@ -9,7 +9,7 @@ import {
 import type { useSessionMutations } from '@/domains/sessions/renderer/composer/use-session-mutations'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import { useSessionCreationStore } from '@/domains/sessions/renderer/session-creation'
-import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
+import type { TurnSetup } from '@/domains/sessions/renderer/composer/turn-setup/turn-setup'
 
 async function paintRoster(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 0))

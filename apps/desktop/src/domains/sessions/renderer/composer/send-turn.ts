@@ -22,8 +22,8 @@ import {
   sessionHarnessOf,
 } from '@/domains/sessions/renderer/harness/harnesses'
 import { invalidateSessionRoster } from '@/domains/sessions/renderer/session-queries'
-import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
-import type { useTurnSetup } from '@/domains/sessions/renderer/turn-setup/use-turn-setup'
+import type { TurnSetup } from '@/domains/sessions/renderer/composer/turn-setup/turn-setup'
+import type { useTurnSetup } from '@/domains/sessions/renderer/composer/turn-setup/use-turn-setup'
 import type { SessionRoster } from '@/domains/sessions/renderer/types'
 
 export type TurnInput = {

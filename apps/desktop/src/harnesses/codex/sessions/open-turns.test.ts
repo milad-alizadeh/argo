@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import { appendFile, utimes } from 'node:fs/promises'
 import { test } from 'node:test'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { managedRow } from '@/domains/sessions/main/lifecycle/status/managed-row'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader/reader'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 import {
   OPEN_TURN_COMPLETE,

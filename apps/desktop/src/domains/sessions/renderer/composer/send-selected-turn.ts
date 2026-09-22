@@ -4,8 +4,8 @@ import type { Failure } from '@/domains/sessions/renderer/composer/use-session-c
 import { sendMessage } from '@/domains/sessions/renderer/composer/use-session-composer-actions'
 import type { useSessionMutations } from '@/domains/sessions/renderer/composer/use-session-mutations'
 import { invalidateSessionRoster } from '@/domains/sessions/renderer/session-queries'
-import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
-import type { useTurnSetup } from '@/domains/sessions/renderer/turn-setup/use-turn-setup'
+import type { TurnSetup } from '@/domains/sessions/renderer/composer/turn-setup/turn-setup'
+import type { useTurnSetup } from '@/domains/sessions/renderer/composer/turn-setup/use-turn-setup'
 
 export function sendToSelected(request: {
   queryClient: ReturnType<typeof useQueryClient>

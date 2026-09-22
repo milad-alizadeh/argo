@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { embedAttachments } from '@/harnesses/claude/drive/turn/attachment-prompt'
-import { promptRows } from '@/harnesses/claude/sessions/prompt-fixture'
+import { promptRows } from '@/harnesses/claude/sessions/records/prompt-fixture'
 
 test('draws attached image files from the @path mentions Argo appends', () => {
   const rows = promptRows('Review this.\n\n@/Users/x/shot#1.png @/Users/x/notes.md @/Users/x/b.JPG')

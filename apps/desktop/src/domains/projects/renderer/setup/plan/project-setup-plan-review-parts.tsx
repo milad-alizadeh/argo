@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react'
 import type { SetupPlan } from '@/domains/projects/contract/setup'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   Collapsible,
   CollapsibleContent,

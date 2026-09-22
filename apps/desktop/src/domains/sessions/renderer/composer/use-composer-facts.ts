@@ -9,7 +9,7 @@ import { useTurnMarker } from '@/domains/sessions/renderer/composer/use-turn-mar
 import type { WorkspaceMenuControlProps } from '@/domains/sessions/renderer/composer/workspace-menu'
 import { HARNESSES, type SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import { useSessionCreationStore } from '@/domains/sessions/renderer/session-creation'
-import { useTurnSetup } from '@/domains/sessions/renderer/turn-setup/use-turn-setup'
+import { useTurnSetup } from '@/domains/sessions/renderer/composer/turn-setup/use-turn-setup'
 import type { useSessions } from '@/domains/sessions/renderer/use-sessions'
 
 const NO_ROWS: SessionRosterRow[] = []

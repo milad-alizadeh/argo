@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { TurnSetupControlProps } from '@/domains/sessions/renderer/composer/run-setup-menu'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   DropdownMenu,
   DropdownMenuContent,

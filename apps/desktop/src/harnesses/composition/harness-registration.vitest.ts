@@ -10,8 +10,8 @@ import assert from 'node:assert/strict'
 import { test } from 'vitest'
 import type { SessionDriveAdapters } from '@/domains/sessions/contract/session-drive-adapter'
 import { compactSession, sendSession } from '@/domains/sessions/main/drive/drive'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
-import { listed } from '@/domains/sessions/main/observation/reader-test-helpers'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader/reader'
+import { listed } from '@/domains/sessions/main/observation/reader/reader-test-helpers'
 import {
   type FixtureDriver,
   fixtureHarness,

@@ -2,7 +2,7 @@
 // opening its own list (#1582). The button is the whole permanent footprint: nothing is parked in
 // the inspector, so the Feed keeps its width until the reader asks for something.
 import type { WorkEntry } from '@/domains/sessions/renderer/work/session-work-entries'
-import { Icon, type IconName } from '@/platform/renderer/components/icon'
+import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
 import {
   DropdownMenu,
   DropdownMenuContent,

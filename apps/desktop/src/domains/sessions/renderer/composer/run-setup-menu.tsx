@@ -9,8 +9,8 @@ import {
   effortChoices,
   type TurnSetup,
   type TurnSetupChoices,
-} from '@/domains/sessions/renderer/turn-setup/turn-setup'
-import { Icon } from '@/platform/renderer/components/icon'
+} from '@/domains/sessions/renderer/composer/turn-setup/turn-setup'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 import { Popover, PopoverContent, PopoverTrigger } from '@/platform/renderer/components/ui/popover'
 

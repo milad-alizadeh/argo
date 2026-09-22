@@ -2,7 +2,7 @@
 // else to itself (#2304). Each cockpit here is one app: its own application data, one store.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { connect, harness, OCTOCAT } from '@/domains/accounts/main/harness'
+import { connect, harness, OCTOCAT } from '@/domains/accounts/main/test-support/harness'
 
 test('an Account connected in one cockpit is listed by another over the same Account store', async (context) => {
   const cockpit = await harness(context)

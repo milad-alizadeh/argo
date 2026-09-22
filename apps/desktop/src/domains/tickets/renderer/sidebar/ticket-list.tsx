@@ -10,8 +10,8 @@ import {
 } from '@/domains/tickets/renderer/lib/backlog'
 import { sourcePresentation } from '@/domains/tickets/renderer/lib/sources'
 import { TicketRow } from '@/domains/tickets/renderer/sidebar/ticket-row'
-import { Icon } from '@/platform/renderer/components/icon'
-import { Loader } from '@/platform/renderer/components/loader'
+import { Icon } from '@/platform/renderer/components/icon/icon'
+import { Loader } from '@/platform/renderer/components/loader/loader'
 import {
   Empty,
   EmptyDescription,

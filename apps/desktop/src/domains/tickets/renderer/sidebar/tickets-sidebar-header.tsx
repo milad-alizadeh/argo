@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { type ConnectionSummary, TICKET_QUERY_LIMIT } from '@/domains/tickets/contract/contract'
 import { sourcePresentation } from '@/domains/tickets/renderer/lib/sources'
 import { useTicketSearch } from '@/domains/tickets/renderer/state/use-ticket-search'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   InputGroup,

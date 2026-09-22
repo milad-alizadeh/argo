@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { HARNESSES } from '@/domains/sessions/renderer/harness/harnesses'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Popover,

@@ -3,9 +3,9 @@ import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Button } from '@/platform/renderer/components/ui/button'
 import type { SetupDocument } from '@/domains/projects/contract/setup'
 import { isJson, SetupPage } from './setup-page'
-import type { SetupSectionModel } from './setup-plan-sections'
-import { SetupPlanSummary } from './setup-plan-summary'
-import type { SetupAnswer } from './use-setup-answers'
+import type { SetupSectionModel } from '../plan/setup-plan-sections'
+import { SetupPlanSummary } from '../plan/setup-plan-summary'
+import type { SetupAnswer } from '../use-setup-answers'
 
 export function RecommendedSetup({
   answers,

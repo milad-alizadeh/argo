@@ -5,8 +5,8 @@ import { COMPOSER_COLUMN } from '@/domains/sessions/renderer/composer/composer-f
 import { SessionComposer } from '@/domains/sessions/renderer/composer/session-composer'
 import type { HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
 import type { SessionRoster } from '@/domains/sessions/renderer/types'
-import { Icon } from '@/platform/renderer/components/icon'
-import { PermissionPrompt } from '@/platform/renderer/components/permission-prompt'
+import { Icon } from '@/platform/renderer/components/icon/icon'
+import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
 import {
   Alert,
   AlertAction,

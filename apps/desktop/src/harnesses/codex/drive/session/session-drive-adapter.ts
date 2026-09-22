@@ -5,8 +5,8 @@ import type {
   DriveFailure,
   SessionDriveAdapter,
 } from '@/domains/sessions/contract/session-drive-adapter'
-import type { CodexSessionDrive } from '@/harnesses/codex/drive/codex-session-driver'
-import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
+import type { CodexSessionDrive } from '@/harnesses/codex/drive/session/codex-session-driver'
+import { CodexSessionDriverError } from '@/harnesses/codex/drive/session/codex-session-error'
 
 const FAILURE_MESSAGES = {
   'harness-unavailable': 'Codex is not available. Run codex doctor to repair it.',

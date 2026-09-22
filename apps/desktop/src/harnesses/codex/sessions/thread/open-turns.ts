@@ -11,7 +11,7 @@ import {
   LIVE_ACTIVITY_SILENCE_MS,
   ROSTER_FILE_LIMIT,
 } from '@/domains/sessions/main'
-import { transcriptPaths } from './transcript-paths'
+import { transcriptPaths } from '../discovery/transcript-paths'
 
 // The Turn marks codex-harness 0.147.0 writes as `event_msg` payloads.
 const TURN_MARK_TYPES = ['task_started', 'task_complete', 'turn_aborted'] as const

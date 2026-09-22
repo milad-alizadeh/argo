@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type {
   SessionShellOutput,
   SubagentUsageFacts,
-} from '@/domains/sessions/contract/model/background-work-contract'
+} from '@/domains/sessions/contract/model/wire/background-work-contract'
 import {
   retrySessionFeed,
   sessionFeedQuery,

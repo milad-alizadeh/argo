@@ -3,7 +3,7 @@ import type { BrowserWindow } from 'electron'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import type { SessionDriveAdapter } from '@/domains/sessions/contract/session-drive-adapter'
 import type { SessionIndex } from '@/domains/sessions/main/indexing/session-index/contract'
-import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
+import type { SessionSource } from '@/domains/sessions/main/observation/reader/session-source'
 import type { WatchedSource } from '@/platform/main/watch/watch-source'
 
 export type ManagedSessionBridges = {

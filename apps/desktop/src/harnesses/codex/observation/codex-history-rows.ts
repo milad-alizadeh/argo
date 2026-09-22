@@ -3,7 +3,7 @@ import {
   type SessionFeedRow,
   sessionRosterRowSchema,
 } from '@/domains/sessions/contract/model/models'
-import type { TranscriptDiscovery } from '@/domains/sessions/main/observation/discover-transcript-sessions'
+import type { TranscriptDiscovery } from '@/domains/sessions/main/observation/reader/discover-transcript-sessions'
 import type { SessionProjection } from '@/domains/sessions/next/contract/session-projection-contract'
 import { reconcileStoredHistory } from '@/harnesses/codex/history/watched-projection'
 

@@ -18,7 +18,7 @@ import {
 import { TicketDetailSection } from '@/domains/tickets/renderer/detail/ticket-detail-section'
 import type { LinkedSession } from '@/domains/tickets/renderer/hooks/use-linked-sessions'
 import { closedChildren } from '@/domains/tickets/renderer/lib/backlog'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 
 const keyText = 'font-mono type-meta'
 

@@ -12,7 +12,7 @@ import {
   SESSION_HARNESSES,
   type SessionHarness,
 } from '@/domains/sessions/renderer/harness/harnesses'
-import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
+import type { TurnSetup } from '@/domains/sessions/renderer/composer/turn-setup/turn-setup'
 
 export type { ComposerTicketContext } from '@/domains/sessions/renderer/composer/composer-ticket-context'
 

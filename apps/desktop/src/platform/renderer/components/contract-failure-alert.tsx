@@ -1,4 +1,4 @@
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Alert, AlertDescription } from '@/platform/renderer/components/ui/alert'
 import { useContractText } from '@/platform/renderer/i18n/contract-text'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'

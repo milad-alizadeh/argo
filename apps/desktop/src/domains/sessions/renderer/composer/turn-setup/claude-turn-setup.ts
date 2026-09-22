@@ -7,7 +7,7 @@ import type {
   ModeChoice,
   SetupChoice,
   TurnSetupChoices,
-} from '@/domains/sessions/renderer/turn-setup/turn-setup'
+} from '@/domains/sessions/renderer/composer/turn-setup/turn-setup'
 
 type ClaudeModel = ClaudeTurnSetup['model']
 type ClaudeEffort = ClaudeTurnSetup['effort']

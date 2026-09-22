@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 import { RunSetupMenu } from '@/domains/sessions/renderer/composer/run-setup-menu'
 import { HARNESSES, type SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
-import { CLAUDE_TURN_SETUP } from '@/domains/sessions/renderer/turn-setup/claude-turn-setup'
+import { CLAUDE_TURN_SETUP } from '@/domains/sessions/renderer/composer/turn-setup/claude-turn-setup'
 
 // A started Session keeps its harness; a new one offers the harness tabs.
 function RunSetupStory({ started = true }: { started?: boolean }) {

@@ -31,8 +31,8 @@ import {
   type ProcessState,
   readLiveProcesses,
 } from './live-processes'
-import { readShellOutput } from './shell-output'
-import { readSubagentChain, readSubagentTokens } from './subagents'
+import { readShellOutput } from '../records/shell-output'
+import { readSubagentChain, readSubagentTokens } from '../subagents/subagents'
 
 async function completeCompactions(options: {
   transcripts: string

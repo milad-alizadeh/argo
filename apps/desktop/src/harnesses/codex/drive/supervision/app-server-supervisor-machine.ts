@@ -1,8 +1,8 @@
 import { type ActorRefFrom, assign, createActor, fromPromise, setup } from 'xstate'
-import type { CodexChannel } from '@/harnesses/codex/drive/codex-channel'
-import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
+import type { CodexChannel } from '@/harnesses/codex/drive/supervision/codex-channel'
+import { CodexSessionDriverError } from '@/harnesses/codex/drive/session/codex-session-error'
 import { codexLaunchEnvironment } from '@/harnesses/codex/drive/launch-environment'
-import { openAppServer } from '@/harnesses/codex/drive/open-app-server'
+import { openAppServer } from '@/harnesses/codex/drive/supervision/open-app-server'
 import type { WireMessage } from '@/harnesses/codex/drive/protocol/protocol'
 
 // ADR-0047: one shared `codex app-server` process per window, multiplexing every managed Codex

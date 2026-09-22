@@ -6,7 +6,7 @@ import {
   type SetupDocument,
 } from '@/domains/projects/contract/setup'
 import { fieldsForSection, SectionIcon, type SetupSectionModel } from './setup-plan-sections'
-import type { SetupAnswer } from './use-setup-answers'
+import type { SetupAnswer } from '../use-setup-answers'
 
 export function SetupPlanSummary({
   answers,

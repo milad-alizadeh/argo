@@ -3,9 +3,9 @@ import type {
   TranscriptMessage,
   TranscriptRecord,
 } from '@/domains/sessions/contract/model/transcript/transcript'
-import { taggedField } from '@/harnesses/envelope-tags'
-import { mentionedBlocks, readMentionedFiles } from './mentioned-files'
-import { withoutChannelTag } from './realtime-replies'
+import { taggedField } from '@/harnesses/host/envelope-tags'
+import { mentionedBlocks, readMentionedFiles } from '../mentioned-files'
+import { withoutChannelTag } from '../thread/realtime-replies'
 
 // The envelopes a user message can carry that `userRecord` reads.
 export const USER_HARNESS_ENVELOPES = new Set([

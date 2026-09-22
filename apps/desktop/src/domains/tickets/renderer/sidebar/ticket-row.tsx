@@ -14,7 +14,7 @@ import { TreeRails, TreeStem, TreeTwig } from '@/domains/tickets/renderer/sideba
 import { PriorityMenu } from '@/domains/tickets/renderer/status/priority-menu'
 import { StatusMenu } from '@/domains/tickets/renderer/status/status-menu'
 import { TicketLabel } from '@/domains/tickets/renderer/status/ticket-label'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 
 const markIcon = 'size-(--size-icon-meta) shrink-0'
 type TreeAnchorStyle = CSSProperties & Record<'--ticket-tree-anchor', string>

@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto'
 import process from 'node:process'
 import { createOwnershipLedger, isProcessAlive } from '@/domains/sessions/main'
-import { createCodexSessionDriver } from '@/harnesses/codex/drive/codex-session-driver'
-import { openAppServer } from '@/harnesses/codex/drive/open-app-server'
-import { codexResumeTarget } from '@/harnesses/codex/sessions/resume-target'
-import { findExecutableOnLoginShellPath } from '@/harnesses/executable-path'
+import { createCodexSessionDriver } from '@/harnesses/codex/drive/session/codex-session-driver'
+import { openAppServer } from '@/harnesses/codex/drive/supervision/open-app-server'
+import { codexResumeTarget } from '@/harnesses/codex/sessions/discovery/resume-target'
+import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 
 // The transport ADR-0024 and #1826 resolved: `codex app-server --listen stdio://`, spawned with
 // separate stdin/stdout/stderr pipes. Terminal escapes, bracketed paste and resize do not belong

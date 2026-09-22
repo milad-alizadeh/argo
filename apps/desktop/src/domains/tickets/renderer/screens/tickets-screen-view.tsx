@@ -11,7 +11,7 @@ import {
   useTicketsView,
 } from '@/domains/tickets/renderer/hooks/use-tickets-view'
 import { TicketProblem } from '@/domains/tickets/renderer/status/ticket-problem'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   Empty,
   EmptyDescription,

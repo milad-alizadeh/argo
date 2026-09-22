@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import type { HarnessReadiness } from '@/domains/harness-signin/contract/contract'
 import { codexReadiness } from '@/harnesses/codex/readiness/codex-readiness'
-import { findExecutableOnLoginShellPath } from '@/harnesses/executable-path'
+import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 
 const execFileAsync = promisify(execFile)
 

@@ -9,7 +9,7 @@ import {
   SourceField,
 } from '@/domains/tickets/renderer/connection/source-field'
 import { sourcePresentation } from '@/domains/tickets/renderer/lib/sources'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Card,

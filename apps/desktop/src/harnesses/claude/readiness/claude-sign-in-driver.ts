@@ -5,8 +5,8 @@ import { type ChildProcess, spawn } from 'node:child_process'
 import type { HarnessSignInDriver } from '@/domains/harness-signin/main/port'
 import { claudeCliEnvironment } from '@/harnesses/claude/cli-environment'
 import { createSystemClaudeReadiness } from '@/harnesses/claude/readiness/system-claude-readiness'
-import { findExecutableOnLoginShellPath } from '@/harnesses/executable-path'
-import { runLoginProcess } from '@/harnesses/run-login-process'
+import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
+import { runLoginProcess } from '@/harnesses/host/run-login-process'
 
 export type ClaudeLoginSpawn = (executable: string, args: string[]) => ChildProcess
 

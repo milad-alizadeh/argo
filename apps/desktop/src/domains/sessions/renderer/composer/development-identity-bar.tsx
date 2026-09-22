@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { SessionTicket } from '@/domains/sessions/contract/model/models'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import type { DevelopmentIdentity } from '@/platform/shared/development-identity'
 
 type DevelopmentIdentityBarProps = {

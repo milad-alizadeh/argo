@@ -3,13 +3,13 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader/reader'
 import {
   fed,
   feedRequest,
   listed,
   rowsOf,
-} from '@/domains/sessions/main/observation/reader-test-helpers'
+} from '@/domains/sessions/main/observation/reader/reader-test-helpers'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 
 async function readerFor(

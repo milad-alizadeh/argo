@@ -5,20 +5,20 @@ import type {
   TranscriptMessage,
   TranscriptRecord,
 } from '@/domains/sessions/contract/model/transcript/transcript'
-import { readBackgroundTask } from '@/harnesses/claude/sessions/background-task'
+import { readBackgroundTask } from '@/harnesses/claude/sessions/subagents/background-task'
 import {
   readBlocks,
   readToolCalls,
   readToolResults,
-} from '@/harnesses/claude/sessions/block-reader'
-import { readCommandEnvelope } from '@/harnesses/claude/sessions/command-envelope'
-import { commandSource } from '@/harnesses/claude/sessions/command-source'
-import { messageEnvelope } from '@/harnesses/claude/sessions/message-envelope'
-import { readPlanChanges } from '@/harnesses/claude/sessions/plan-changes'
-import { promptBlocks } from '@/harnesses/claude/sessions/prompt-images'
-import { queuedPromptRecord } from '@/harnesses/claude/sessions/queued-prompt'
-import { readSkillBody } from '@/harnesses/claude/sessions/skill-body'
-import { readStandaloneRecord } from '@/harnesses/claude/sessions/standalone-records'
+} from '@/harnesses/claude/sessions/records/block-reader'
+import { readCommandEnvelope } from '@/harnesses/claude/sessions/records/command-envelope'
+import { commandSource } from '@/harnesses/claude/sessions/records/command-source'
+import { messageEnvelope } from '@/harnesses/claude/sessions/records/message-envelope'
+import { readPlanChanges } from '@/harnesses/claude/sessions/records/plan-changes'
+import { promptBlocks } from '@/harnesses/claude/sessions/records/prompt-images'
+import { queuedPromptRecord } from '@/harnesses/claude/sessions/records/queued-prompt'
+import { readSkillBody } from '@/harnesses/claude/sessions/records/skill-body'
+import { readStandaloneRecord } from '@/harnesses/claude/sessions/records/standalone-records'
 import { isRecord } from '@/shared/validation'
 
 export type { ContentBlock, SessionEntry, ToolCall, TranscriptMessage, TranscriptRecord }

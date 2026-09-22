@@ -5,7 +5,7 @@ import {
   ImageLightbox,
   type ImageSize,
 } from '@/domains/sessions/renderer/feed/content/image-lightbox'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 
 export function FeedGallery({ children }: { children: ReactNode }) {
   return (

@@ -5,8 +5,8 @@ import type { PendingTurn } from '@/domains/sessions/renderer/composer/tray/use-
 import {
   attachmentExitDelay,
   focusMessageField,
-} from '@/platform/renderer/components/exit-presence'
-import { Icon } from '@/platform/renderer/components/icon'
+} from '@/platform/renderer/components/permission/exit-presence'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 
 function queuedMessageClassName(
   id: string,

@@ -2,9 +2,9 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/platform/renderer/components/ui/button'
 import type { SetupDocument } from '@/domains/projects/contract/setup'
 import { BackButton, isJson, SetupPage } from './setup-page'
-import { SetupPlanCustomization } from './setup-plan-customization'
-import type { SetupSectionModel } from './setup-plan-sections'
-import type { SetupAnswer } from './use-setup-answers'
+import { SetupPlanCustomization } from '../plan/setup-plan-customization'
+import type { SetupSectionModel } from '../plan/setup-plan-sections'
+import type { SetupAnswer } from '../use-setup-answers'
 
 export function CustomizeSetup({
   answers,

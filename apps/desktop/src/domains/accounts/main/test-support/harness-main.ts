@@ -6,7 +6,7 @@ import type { Cipher } from '@/domains/accounts/main/grants'
 import type {
   AccountDispatchClient,
   TicketDispatchClient,
-} from '@/domains/accounts/main/harness-dispatch'
+} from '@/domains/accounts/main/test-support/harness-dispatch'
 import { createConnectionPort } from '@/domains/connections/main/port'
 import { createProjectPort } from '@/domains/projects/main/port'
 import { ticketError } from '@/domains/tickets/contract/contract'
@@ -16,9 +16,9 @@ import { accountProviders, ticketSources } from '@/providers/composition'
 import { proofEndpoints } from '@/providers/github/endpoints'
 import { linearProofEndpoints } from '@/providers/linear/endpoints'
 import { createDomainClient } from '@/shared/ipc/client'
-import { createMockIpcWindow, RENDERER_URL } from '../../../../mocks/contract/mock-ipc-window'
-import type { MockGitHub } from '../../../../mocks/providers/github/mock-github'
-import type { MockLinear } from '../../../../mocks/providers/linear/mock-linear'
+import { createMockIpcWindow, RENDERER_URL } from '../../../../../mocks/contract/mock-ipc-window'
+import type { MockGitHub } from '../../../../../mocks/providers/github/mock-github'
+import type { MockLinear } from '../../../../../mocks/providers/linear/mock-linear'
 
 const unreachable = (provider: string): never => {
   throw new Error(`The mock ${provider} is not on a loopback origin`)
@@ -38,7 +38,7 @@ export function bootMain(options: {
   endpoints: ReturnType<typeof accessEndpoints>
   cipher: Cipher
   openExternal: (url: string) => Promise<void>
-  projects: ReturnType<typeof import('@/domains/accounts/main/harness-fixtures').projectStore>
+  projects: ReturnType<typeof import('@/domains/accounts/main/test-support/harness-fixtures').projectStore>
 }) {
   const { userData, accountData, endpoints, cipher, openExternal, projects } = options
   const access = createAccountAccess({

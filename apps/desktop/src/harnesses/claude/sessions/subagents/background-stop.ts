@@ -5,7 +5,7 @@ import type {
   ToolCall,
   TranscriptRecord,
 } from '@/domains/sessions/contract/model/transcript/transcript'
-import { withoutCalls } from '@/harnesses/claude/sessions/spawned-agents'
+import { withoutCalls } from '@/harnesses/claude/sessions/subagents/spawned-agents'
 
 function isStop(call: ToolCall): call is Extract<ToolCall, { kind: 'subagent-control' }> {
   return call.kind === 'subagent-control' && call.intent === 'stop'

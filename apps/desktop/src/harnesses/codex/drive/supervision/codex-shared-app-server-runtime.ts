@@ -5,8 +5,8 @@ import type {
 import type {
   AppServerSupervisor,
   AppServerSupervisorDeps,
-} from '@/harnesses/codex/drive/app-server-supervisor-machine'
-import { createAppServerSupervisor } from '@/harnesses/codex/drive/app-server-supervisor-machine'
+} from '@/harnesses/codex/drive/supervision/app-server-supervisor-machine'
+import { createAppServerSupervisor } from '@/harnesses/codex/drive/supervision/app-server-supervisor-machine'
 import type { WireMessage } from '@/harnesses/codex/drive/protocol/protocol'
 
 type ManagedSessionRegistry = {

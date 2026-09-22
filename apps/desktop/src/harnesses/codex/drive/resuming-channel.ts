@@ -1,11 +1,11 @@
 import type { OwnershipStanding } from '@/domains/sessions/main'
-import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
+import { CodexSessionDriverError } from '@/harnesses/codex/drive/session/codex-session-error'
 import {
   type ManagedSession,
   type ManagedSessionOptions,
   openManagedChannel,
   rememberManagedSession,
-} from '@/harnesses/codex/drive/managed-session'
+} from '@/harnesses/codex/drive/supervision/managed-session'
 import { readThreadId } from '@/harnesses/codex/drive/protocol/protocol'
 
 function refuseUnlessResumable(standing: OwnershipStanding) {

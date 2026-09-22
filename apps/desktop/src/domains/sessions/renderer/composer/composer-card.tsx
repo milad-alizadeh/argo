@@ -12,7 +12,7 @@ import type {
   ComposerTicketContext,
 } from '@/domains/sessions/renderer/composer/use-composer-store'
 import type { WorkspaceMenuControlProps } from '@/domains/sessions/renderer/composer/workspace-menu'
-import { DraftContextPicker } from '@/domains/sessions/renderer/context/draft-context-picker'
+import { DraftContextPicker } from '@/domains/sessions/renderer/composer/references/context-picker/draft-context-picker'
 import type { HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
 
 type ComposerCardProps = {

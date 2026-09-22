@@ -5,7 +5,7 @@ import type { SessionPlan } from '@/domains/sessions/contract/model/models'
 import { SessionComposer } from '@/domains/sessions/renderer/composer/session-composer'
 import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
-import { CLAUDE_TURN_SETUP } from '@/domains/sessions/renderer/turn-setup/claude-turn-setup'
+import { CLAUDE_TURN_SETUP } from '@/domains/sessions/renderer/composer/turn-setup/claude-turn-setup'
 
 const FRAME = 'mx-auto max-w-4xl p-8'
 

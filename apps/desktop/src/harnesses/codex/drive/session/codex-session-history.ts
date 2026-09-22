@@ -1,5 +1,5 @@
-import type { AppServerSupervisor } from '@/harnesses/codex/drive/app-server-supervisor-machine'
-import { waitForChannel } from '@/harnesses/codex/drive/codex-session-launch'
+import type { AppServerSupervisor } from '@/harnesses/codex/drive/supervision/app-server-supervisor-machine'
+import { waitForChannel } from '@/harnesses/codex/drive/session/codex-session-launch'
 import {
   createRolloutInvalidation,
   watchRolloutSignals,

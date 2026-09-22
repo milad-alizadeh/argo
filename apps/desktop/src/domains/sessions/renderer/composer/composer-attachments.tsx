@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { AttachmentChip, parseFilename } from '@/domains/sessions/renderer/attachment-chip'
 import type { ComposerAttachment } from '@/domains/sessions/renderer/composer/use-composer-store'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   AttachmentAction,
   AttachmentActions,

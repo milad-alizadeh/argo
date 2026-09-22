@@ -3,7 +3,7 @@ import {
   type OpenStateStore,
   readThreadNames,
   type ThreadNames,
-} from '@/harnesses/codex/sessions/thread-names'
+} from '@/harnesses/codex/sessions/thread/thread-names'
 
 // Electron's Node ships `node:sqlite`; Bun, which runs the tests, does not, so only main imports this.
 // No busy wait (`timeout` 0): 23,811 reads of the live store while Codex committed 67 times never

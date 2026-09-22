@@ -1,7 +1,7 @@
 import { CODEX_OPENING_SETUP } from '@/domains/sessions/contract/codex-turn-setup'
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
-import type { CodexSessionDriver } from '@/harnesses/codex/drive/codex-session-driver-types'
-import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
+import type { CodexSessionDriver } from '@/harnesses/codex/drive/session/codex-session-driver-types'
+import { CodexSessionDriverError } from '@/harnesses/codex/drive/session/codex-session-error'
 import { compactCodexSession } from '@/harnesses/codex/drive/compact-session'
 import { inputItemsFor } from '@/harnesses/codex/drive/input-items'
 import { readInterrupt } from '@/harnesses/codex/drive/interrupt-protocol'
@@ -9,7 +9,7 @@ import {
   type ManagedSession,
   type ManagedSessionOptions,
   managedRoster,
-} from '@/harnesses/codex/drive/managed-session'
+} from '@/harnesses/codex/drive/supervision/managed-session'
 import { decidePendingPermission } from '@/harnesses/codex/drive/permission-protocol'
 import { readSteeredTurn } from '@/harnesses/codex/drive/protocol/protocol'
 import { codexAnswersFor, settleQuestion } from '@/harnesses/codex/drive/question-protocol'
@@ -24,7 +24,7 @@ export type {
   CodexSessionDriver,
   LiveMessage,
   LiveMessages,
-} from '@/harnesses/codex/drive/codex-session-driver-types'
+} from '@/harnesses/codex/drive/session/codex-session-driver-types'
 export { CodexSessionDriverError }
 
 function startManagedSession({

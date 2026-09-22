@@ -3,7 +3,7 @@ import type { Provider } from '@/domains/accounts/contract/contract'
 import type { Ticket, TicketLink, TicketState } from '@/domains/tickets/contract/contract'
 import { TicketDetailSection } from '@/domains/tickets/renderer/detail/ticket-detail-section'
 import { sourcePresentation } from '@/domains/tickets/renderer/lib/sources'
-import { Icon, type IconName } from '@/platform/renderer/components/icon'
+import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
 
 const STATE_ICONS: Record<TicketState, { icon: IconName; tone: string }> = {
   open: { icon: 'ticket-link-open', tone: 'text-active' },

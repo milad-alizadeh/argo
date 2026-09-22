@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { parseTranscriptLine } from '@/harnesses/claude/sessions/records'
+import { parseTranscriptLine } from '@/harnesses/claude/sessions/records/records'
 
 function notification(uuid: string, body: string) {
   return JSON.stringify({ type: 'user', uuid, message: { role: 'user', content: body } })

@@ -2,7 +2,7 @@ import type {
   TranscriptMessage,
   TranscriptRecord,
 } from '@/domains/sessions/contract/model/transcript/transcript'
-import { taggedField } from '@/harnesses/envelope-tags'
+import { taggedField } from '@/harnesses/host/envelope-tags'
 import { isIdentifier } from '@/shared/validation'
 import { backgroundState, readTaskEnding } from './background-task'
 import { replyLine } from './subagent-events'

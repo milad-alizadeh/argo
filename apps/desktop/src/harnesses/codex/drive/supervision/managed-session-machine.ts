@@ -8,7 +8,7 @@ import type {
   TurnStatus,
 } from '@/domains/sessions/next/contract/session-projection-contract'
 import type { SessionService } from '@/domains/sessions/next/main/session-service'
-import { type CodexChannel, CodexChannelClosedError } from '@/harnesses/codex/drive/codex-channel'
+import { type CodexChannel, CodexChannelClosedError } from '@/harnesses/codex/drive/supervision/codex-channel'
 import type { PendingCodexPermission } from '@/harnesses/codex/drive/permission-protocol'
 import {
   codexApprovalDecision,
@@ -26,7 +26,7 @@ import {
   readThreadStatus,
   readThreadTokenUsageUpdated,
   readToolCallUpdate,
-} from '@/harnesses/codex/drive/protocol-notifications'
+} from '@/harnesses/codex/drive/protocol/protocol-notifications'
 import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
 import { codexAnswersFor, readRequestUserInput } from '@/harnesses/codex/drive/question-protocol'
 import { readUpdatedThreadName } from '@/harnesses/codex/drive/rename-protocol'

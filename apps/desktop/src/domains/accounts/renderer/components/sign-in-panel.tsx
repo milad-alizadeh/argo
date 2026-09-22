@@ -7,7 +7,7 @@ import type {
 } from '@/domains/accounts/contract/contract'
 import type { SignIn } from '@/domains/accounts/renderer/hooks/use-sign-in'
 import { providerPresentation } from '@/domains/accounts/renderer/lib/providers'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Alert, AlertDescription } from '@/platform/renderer/components/ui/alert'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { useContractText } from '@/platform/renderer/i18n/contract-text'

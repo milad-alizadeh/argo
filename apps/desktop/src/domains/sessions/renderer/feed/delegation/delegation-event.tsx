@@ -6,7 +6,7 @@ import {
 import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
 import { WORK_STATE_MARKS } from '@/domains/sessions/renderer/work/session-work'
 import { readableWorkTitle } from '@/domains/sessions/renderer/work/work-presentation'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 
 type SubagentRow = Extract<SessionFeedRow, { shape: 'subagent' }>
 

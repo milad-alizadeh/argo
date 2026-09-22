@@ -13,7 +13,7 @@ import type { Failure } from '@/domains/sessions/renderer/composer/use-session-c
 import type { useSessionMutations } from '@/domains/sessions/renderer/composer/use-session-mutations'
 import type { TurnMarkerApi } from '@/domains/sessions/renderer/composer/use-turn-marker'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
-import type { useTurnSetup } from '@/domains/sessions/renderer/turn-setup/use-turn-setup'
+import type { useTurnSetup } from '@/domains/sessions/renderer/composer/turn-setup/use-turn-setup'
 import type { useSessions } from '@/domains/sessions/renderer/use-sessions'
 
 type ComposerSendOptions = {

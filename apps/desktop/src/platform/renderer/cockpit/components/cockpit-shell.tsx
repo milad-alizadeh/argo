@@ -2,7 +2,7 @@ import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'rea
 import { useTranslation } from 'react-i18next'
 import { usePanelRef } from 'react-resizable-panels'
 import { CockpitNavigationRail } from '@/platform/renderer/cockpit/components/cockpit-navigation-rail'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   ResizableHandle,

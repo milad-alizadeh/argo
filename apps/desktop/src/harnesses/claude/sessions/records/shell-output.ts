@@ -3,7 +3,7 @@
 // the command means reading that file. The renderer names the CALL; the path is resolved here,
 // from the Session's own transcript, and never accepted from outside the main process.
 import { open, stat } from 'node:fs/promises'
-import type { SessionChain } from '@/domains/sessions/contract/model/chains'
+import type { SessionChain } from '@/domains/sessions/contract/model/transcript/chains'
 import { readShellCommands } from '@/domains/sessions/contract/observation/signals'
 import { chainBackgroundTasks, chainMessages } from '@/domains/sessions/main'
 

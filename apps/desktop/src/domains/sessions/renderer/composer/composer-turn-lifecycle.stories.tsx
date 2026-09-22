@@ -4,7 +4,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { SessionComposer } from '@/domains/sessions/renderer/composer/session-composer'
 import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
-import { CLAUDE_TURN_SETUP } from '@/domains/sessions/renderer/turn-setup/claude-turn-setup'
+import { CLAUDE_TURN_SETUP } from '@/domains/sessions/renderer/composer/turn-setup/claude-turn-setup'
 import { Button } from '@/platform/renderer/components/ui/button'
 
 const FRAME = 'mx-auto max-w-4xl p-8'

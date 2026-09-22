@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { SessionContextActions } from '@/domains/sessions/renderer/composer/session-context-actions'
 import { UsagePopover } from '@/domains/sessions/renderer/composer/usage-popover'
-import { ContextPopover } from '@/domains/sessions/renderer/context/context-popover'
+import { ContextPopover } from '@/domains/sessions/renderer/composer/context-window/context-popover'
 import {
   Tooltip,
   TooltipContent,

@@ -1,4 +1,4 @@
-import { Icon, type IconName } from '@/platform/renderer/components/icon'
+import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 
 type ContextAction = {

@@ -1,5 +1,5 @@
 import { driveSessionError } from '@/domains/sessions/contract/ipc/contract'
-import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
+import type { SessionSource } from '@/domains/sessions/main/observation/reader/session-source'
 import type {
   SessionAdapter,
   SessionProjection,

@@ -1,14 +1,14 @@
 import { useTranslation } from 'react-i18next'
 import type { SetupPlan } from '@/domains/projects/contract/setup'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   joinOrNone,
   PlanSection,
   planDependencies,
   SummaryRow,
 } from './project-setup-plan-review-parts'
-import { RecommendationGroup } from './project-setup-recommendation-group'
-import { TargetReview } from './project-setup-target-review'
+import { RecommendationGroup } from '../project-setup-recommendation-group'
+import { TargetReview } from '../project-setup-target-review'
 
 export function ProjectSetupPlanReview({ plan }: { plan: SetupPlan }) {
   const { t } = useTranslation('projects')

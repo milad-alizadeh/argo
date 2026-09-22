@@ -7,7 +7,7 @@ import {
   SessionReferenceIcon,
 } from '@/domains/sessions/renderer/composer/references/session-reference'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 
 export type ReferenceSuggestion = SessionReference
 type ActiveReference = {

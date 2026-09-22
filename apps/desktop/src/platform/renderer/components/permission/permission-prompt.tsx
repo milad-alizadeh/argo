@@ -1,12 +1,12 @@
 import { type ReactNode, type RefObject, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { focusAfterLeaving, useExitPresence } from '@/platform/renderer/components/exit-presence'
-import { Icon } from '@/platform/renderer/components/icon'
+import { focusAfterLeaving, useExitPresence } from '@/platform/renderer/components/permission/exit-presence'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   AllowButton,
   type PermissionAnswer,
   type SessionHarness,
-} from '@/platform/renderer/components/permission-allow-button'
+} from '@/platform/renderer/components/permission/permission-allow-button'
 import { Button } from '@/platform/renderer/components/ui/button'
 
 type Permission = { description: string; id: string }

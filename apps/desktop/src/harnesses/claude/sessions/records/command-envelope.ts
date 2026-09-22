@@ -3,10 +3,10 @@ import type {
   TranscriptMessage,
   TranscriptRecord,
 } from '@/domains/sessions/contract/model/transcript/transcript'
-import { taggedField, taggedText } from '@/harnesses/envelope-tags'
+import { taggedField, taggedText } from '@/harnesses/host/envelope-tags'
 import { isRecord } from '@/shared/validation'
 import { readableCommandOutput } from './command-output'
-import { readTaskDelivery } from './task-notification'
+import { readTaskDelivery } from '../subagents/task-notification'
 
 function envelopeText(content: unknown): string | null {
   if (typeof content === 'string') return content

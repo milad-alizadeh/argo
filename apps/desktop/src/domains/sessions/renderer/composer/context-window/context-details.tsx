@@ -5,9 +5,9 @@ import {
   AUTO_COMPACT_LIMIT_MAX,
   AUTO_COMPACT_LIMIT_MIN,
 } from '@/domains/sessions/contract/codex-compaction'
-import { ClaudeContextComposition } from '@/domains/sessions/renderer/context/claude-context-composition'
-import { contextZone } from '@/domains/sessions/renderer/context/context-zone'
-import { useCodexAutoCompactThreshold } from '@/domains/sessions/renderer/context/use-codex-auto-compact-threshold'
+import { ClaudeContextComposition } from '@/domains/sessions/renderer/composer/context-window/claude-context-composition'
+import { contextZone } from '@/domains/sessions/renderer/composer/context-window/context-zone'
+import { useCodexAutoCompactThreshold } from '@/domains/sessions/renderer/composer/context-window/use-codex-auto-compact-threshold'
 
 // Codex is the only harness with a real lever: the threshold lives in the person's own
 // `~/.codex/config.toml`, custom per machine and never committed (#1904). Claude Code offers no

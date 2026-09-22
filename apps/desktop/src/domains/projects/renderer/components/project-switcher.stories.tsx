@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
-import { REGISTER_PROJECT_COMMAND } from '@/platform/shared/commands'
+import { REGISTER_PROJECT_COMMAND } from '@/platform/contract/commands'
 import { STORYBOOK_COMMAND_EVENT } from '../../../../../.storybook/storybook-commands'
 
 function ProjectSwitcherStory() {

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
-import { ContextDetails } from '@/domains/sessions/renderer/context/context-details'
-import { contextZone } from '@/domains/sessions/renderer/context/context-zone'
-import { Icon } from '@/platform/renderer/components/icon'
+import { ContextDetails } from '@/domains/sessions/renderer/composer/context-window/context-details'
+import { contextZone } from '@/domains/sessions/renderer/composer/context-window/context-zone'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Popover,

@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next'
 import {
   ContextPickerContents,
   type TicketChoice,
-} from '@/domains/sessions/renderer/context/context-picker-contents'
-import { useContextPickerFocus } from '@/domains/sessions/renderer/context/use-context-picker-focus'
+} from '@/domains/sessions/renderer/composer/references/context-picker/context-picker-contents'
+import { useContextPickerFocus } from '@/domains/sessions/renderer/composer/references/context-picker/use-context-picker-focus'
 
 type TicketTextKey =
   | 'composer.contextPicker.ticket.sharedPicker'

@@ -5,7 +5,7 @@ import {
   useComposerStore,
 } from '@/domains/sessions/renderer/composer/use-composer-store'
 import type { Send } from '@/domains/sessions/renderer/composer/use-send'
-import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
+import type { TurnSetup } from '@/domains/sessions/renderer/composer/turn-setup/turn-setup'
 
 export type { PendingTurn } from '@/domains/sessions/renderer/composer/use-composer-store'
 

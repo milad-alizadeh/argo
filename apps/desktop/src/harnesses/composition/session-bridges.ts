@@ -4,7 +4,7 @@ import type { SessionDriveAdapters } from '@/domains/sessions/contract/session-d
 import {
   createSessionArchiveStore,
   sessionArchivePath,
-} from '@/domains/sessions/main/archive/archive-store'
+} from '@/domains/sessions/main/archive/store/archive-store'
 import { attachSessionBridge } from '@/domains/sessions/main/composition/bridge'
 import {
   startBackfill,
@@ -12,8 +12,8 @@ import {
 } from '@/domains/sessions/main/indexing/session-background-indexing'
 import { sessionIndexPath } from '@/domains/sessions/main/indexing/session-index/open-index'
 import { createWorkerSessionIndex } from '@/domains/sessions/main/indexing/session-index/worker-index'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
-import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader/reader'
+import type { SessionSource } from '@/domains/sessions/main/observation/reader/session-source'
 import {
   createSessionUnreadStore,
   sessionUnreadPath,

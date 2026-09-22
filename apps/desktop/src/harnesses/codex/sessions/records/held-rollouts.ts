@@ -7,7 +7,7 @@ import path from 'node:path'
 import { promisify } from 'node:util'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import { isLiveElsewhere } from '@/domains/sessions/main'
-import { sessionIdFromFileName } from '@/harnesses/codex/sessions/transcript-paths'
+import { sessionIdFromFileName } from '@/harnesses/codex/sessions/discovery/transcript-paths'
 
 const run = promisify(execFile)
 

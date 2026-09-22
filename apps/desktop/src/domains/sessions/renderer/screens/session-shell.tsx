@@ -9,7 +9,7 @@ import {
 import { worktreeName } from '@/domains/sessions/renderer/screens/session-worktree'
 import type { Session } from '@/domains/sessions/renderer/types'
 import { InspectorSplit } from '@/platform/renderer/cockpit/inspector-split/inspector-split'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 
 import './session-screen.css'
 

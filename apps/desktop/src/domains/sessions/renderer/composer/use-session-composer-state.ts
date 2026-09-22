@@ -13,7 +13,7 @@ import {
 } from '@/domains/sessions/renderer/composer/use-composer-attachments'
 import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
 import { type Send, useSend } from '@/domains/sessions/renderer/composer/use-send'
-import { supportedSetup, type TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
+import { supportedSetup, type TurnSetup } from '@/domains/sessions/renderer/composer/turn-setup/turn-setup'
 
 // The setup a queued Turn was written with, narrowed to the choices still offered.
 function turnSetupOf(setup: TurnSetupControlProps | null, turnSetup: TurnSetup | undefined) {

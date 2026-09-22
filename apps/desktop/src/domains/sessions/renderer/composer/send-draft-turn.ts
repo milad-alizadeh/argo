@@ -11,7 +11,7 @@ import type { useSessionMutations } from '@/domains/sessions/renderer/composer/u
 import type { TurnMarkerApi } from '@/domains/sessions/renderer/composer/use-turn-marker'
 import { promptOf } from '@/domains/sessions/renderer/feed/rows/turn-marker-state'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
-import type { useTurnSetup } from '@/domains/sessions/renderer/turn-setup/use-turn-setup'
+import type { useTurnSetup } from '@/domains/sessions/renderer/composer/turn-setup/use-turn-setup'
 
 export type DraftSendDeps = {
   harness: SessionHarness

@@ -2,7 +2,7 @@ import type {
   BackgroundState,
   BackgroundTaskRecord,
 } from '@/domains/sessions/contract/model/transcript/transcript'
-import { taggedField } from '@/harnesses/envelope-tags'
+import { taggedField } from '@/harnesses/host/envelope-tags'
 import { isRecord } from '@/shared/validation'
 
 // The Harness's notification words, folded into the states the contract holds.

@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionChain } from '@/domains/sessions/contract/model/chains'
+import type { SessionChain } from '@/domains/sessions/contract/model/transcript/chains'
 import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript/transcript'
 import { readShellCommands } from '@/domains/sessions/contract/observation/signals'
-import { chainBackgroundTasks, chainMessages } from '@/domains/sessions/main/projection/roster'
-import { parseTranscriptLine } from '@/harnesses/claude/sessions/records'
+import { chainBackgroundTasks, chainMessages } from '@/domains/sessions/main/projection/roster/roster'
+import { parseTranscriptLine } from '@/harnesses/claude/sessions/records/records'
 
 test('ends a background command whose notice arrived while the Session was idle', () => {
   const call = JSON.stringify({

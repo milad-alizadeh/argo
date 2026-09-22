@@ -10,7 +10,7 @@ import { bashFacts } from '@/harnesses/claude/sessions/bash-facts'
 import { editFacts } from '@/harnesses/claude/sessions/edit-facts'
 import { lookupFacts } from '@/harnesses/claude/sessions/lookup-facts'
 import { isRecord } from '@/shared/validation'
-import { POLL_TOOLS, skillOrOtherFacts } from './other-facts'
+import { POLL_TOOLS, skillOrOtherFacts } from '../other-facts'
 
 // The receipt's own sentence: "Output is being written to: <path>. You will be notified ...".
 const OUTPUT_FILE = /Output is being written to: (\S+?)\.?(?:\s|$)/

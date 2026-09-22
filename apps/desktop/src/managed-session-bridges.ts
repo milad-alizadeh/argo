@@ -7,7 +7,7 @@ import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-link
 import { createClaudeSdkDriveAdapter } from '@/harnesses/claude/agent-sdk/claude-sdk-drive-adapter'
 import type { ClaudeSessionAdapter } from '@/harnesses/claude/agent-sdk/claude-session-adapter'
 import { createCodexAppServerDriveAdapter } from '@/harnesses/codex/drive/codex-app-server-drive-adapter'
-import type { CodexSessionAdapter } from '@/harnesses/codex/drive/codex-session-adapter-contract'
+import type { CodexSessionAdapter } from '@/harnesses/codex/drive/session/codex-session-adapter-contract'
 import { sessionHarnesses } from '@/harnesses/composition/registered-harnesses'
 import { attachSessions } from '@/harnesses/composition/session-bridges'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'

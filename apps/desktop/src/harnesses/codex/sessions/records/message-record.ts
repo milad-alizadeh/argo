@@ -4,7 +4,7 @@ import type {
   ToolResult,
   TranscriptRecord,
 } from '@/domains/sessions/contract/model/transcript/transcript'
-import { readHarnessEnvelopes } from '@/harnesses/codex/sessions/harness-envelopes'
+import { readHarnessEnvelopes } from '@/harnesses/codex/sessions/records/harness-envelopes'
 import { readImage } from '@/harnesses/codex/sessions/prompt-images'
 import { isRecord } from '@/shared/validation'
 

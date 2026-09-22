@@ -8,7 +8,7 @@ import {
   type PromptSegment,
   parsePromptText,
 } from '@/domains/sessions/renderer/prompt/prompt-segments'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 
 // Set in its host's type role (the Feed prompt, a Roster title, the composer), so the name

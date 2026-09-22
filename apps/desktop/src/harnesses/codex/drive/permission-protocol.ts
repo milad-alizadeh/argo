@@ -1,4 +1,4 @@
-import type { ManagedSession } from '@/harnesses/codex/drive/managed-session'
+import type { ManagedSession } from '@/harnesses/codex/drive/supervision/managed-session'
 import {
   protocolRecord,
   protocolString,

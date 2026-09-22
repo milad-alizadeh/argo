@@ -6,7 +6,7 @@ import {
 import type {
   ModeChoice,
   TurnSetupChoices,
-} from '@/domains/sessions/renderer/turn-setup/turn-setup'
+} from '@/domains/sessions/renderer/composer/turn-setup/turn-setup'
 
 const effortLabels: Record<(typeof CODEX_EFFORTS)[number], string> = {
   low: 'Low',

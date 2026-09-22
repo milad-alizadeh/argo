@@ -8,7 +8,7 @@ import {
   sessionFeedReplySchema,
   sessionListReplySchema,
 } from '@/domains/sessions/contract/ipc/contract'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader/reader'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 
 const listing = {

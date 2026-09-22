@@ -12,7 +12,7 @@ import { useEffect, useState } from 'react'
 import { activeReference } from '@/domains/sessions/renderer/composer/references/composer-reference-menu'
 import { $createComposerTicketReferenceNode } from '@/domains/sessions/renderer/composer/references/composer-ticket-reference-node'
 import type { ComposerTicketContext } from '@/domains/sessions/renderer/composer/use-composer-store'
-import { ContextPicker } from '@/domains/sessions/renderer/context/context-picker'
+import { ContextPicker } from '@/domains/sessions/renderer/composer/references/context-picker/context-picker'
 
 function contextTicketButtons() {
   return [...document.querySelectorAll<HTMLButtonElement>('[data-context-ticket="true"]')]

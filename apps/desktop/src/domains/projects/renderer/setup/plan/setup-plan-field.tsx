@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Input } from '@/platform/renderer/components/ui/input'
 import {
@@ -14,7 +14,7 @@ import {
   setupFieldText,
   type SetupDocument,
 } from '@/domains/projects/contract/setup'
-import type { SetupAnswer } from './use-setup-answers'
+import type { SetupAnswer } from '../use-setup-answers'
 
 export function SetupPlanField({
   document,

@@ -5,13 +5,13 @@ import os from 'node:os'
 import path from 'node:path'
 import type { TestContext } from 'node:test'
 import type { Cipher } from '@/domains/accounts/main/grants'
-import { dispatchAccount, dispatchTicket } from '@/domains/accounts/main/harness-dispatch'
-import { PROJECT_ID, projectStore } from '@/domains/accounts/main/harness-fixtures'
-import { accessEndpoints, bootMain } from '@/domains/accounts/main/harness-main'
-import { type MockGitHub, startMockGitHub } from '../../../../mocks/providers/github/mock-github'
-import { type MockLinear, startMockLinear } from '../../../../mocks/providers/linear/mock-linear'
+import { dispatchAccount, dispatchTicket } from '@/domains/accounts/main/test-support/harness-dispatch'
+import { PROJECT_ID, projectStore } from '@/domains/accounts/main/test-support/harness-fixtures'
+import { accessEndpoints, bootMain } from '@/domains/accounts/main/test-support/harness-main'
+import { type MockGitHub, startMockGitHub } from '../../../../../mocks/providers/github/mock-github'
+import { type MockLinear, startMockLinear } from '../../../../../mocks/providers/linear/mock-linear'
 
-export { LIST, OCTOCAT, PROJECT_ID } from '@/domains/accounts/main/harness-fixtures'
+export { LIST, OCTOCAT, PROJECT_ID } from '@/domains/accounts/main/test-support/harness-fixtures'
 
 // Reversible and never the plaintext, so a test can look for the token in every byte written.
 export function testCipher(): Cipher & { enabled: boolean } {

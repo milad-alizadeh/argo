@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { TicketProviderIcon } from '@/domains/sessions/renderer/composer/references/ticket-provider-icon'
 import type { ComposerTicketContext } from '@/domains/sessions/renderer/composer/use-composer-store'
-import { Icon, type IconName } from '@/platform/renderer/components/icon'
+import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
 
 export type TicketChoice = Omit<ComposerTicketContext, 'id'>
 
