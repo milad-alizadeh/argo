@@ -71,7 +71,7 @@ export function createMockSessionHarnessBackend(): SessionHarnessBackend {
         },
       }
     },
-    waitForReply: (page, reply) => feedMark(page, reply).waitFor({ timeout: BUDGET_MS }),
+    waitForReply: (page, reply) => feedMark(page, reply).first().waitFor({ timeout: BUDGET_MS }),
     replied: async (page, reply) => (await feedMark(page, reply).count()) > 0,
     recorded: (reply) => transcriptHolds(folders[reply.harness], mark(reply)),
   }
