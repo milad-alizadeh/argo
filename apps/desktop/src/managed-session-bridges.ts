@@ -50,7 +50,7 @@ export function attachManagedSessionHarnesses(
     managedLiveMessages: { claude: (claude as ClaudeSessionAdapter).liveMessages },
     managedRosterChanges: { claude: (claude as ClaudeSessionAdapter).onRosterChanged },
     managedRename: { claude: (claude as ClaudeSessionAdapter).rename },
-    harnesses: sessionHarnesses.filter((harness) => harness.harness !== 'codex'),
+    harnesses: sessionHarnesses,
     sources: [codexSource],
   })
   return { harnesses, managedSessions }
