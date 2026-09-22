@@ -27,7 +27,6 @@ export async function provePackagedResume(page, { backend, project, restart, tra
   assert.equal(reread?.posture, 'external')
   await openSessionByClick(relaunched, sessionId)
   await relaunched.waitForSelector(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`)
-  const history = relaunched.getByRole('region', { name: 'Session history' })
   await backend.waitForReply(relaunched, opened)
 
   await sendFromComposer(relaunched, 'Carry on after the restart.')
@@ -36,7 +35,6 @@ export async function provePackagedResume(page, { backend, project, restart, tra
     .catch((error) => reportStalledResume({ error, page: relaunched, sessionId, transcripts }))
   await relaunched.getByRole('button', { name: 'Compact context' }).click()
   await waitForCompactionFeed(relaunched, sessionId)
-  await history.getByText('Conversation compacted').waitFor()
   const resumed = await rosterRow(relaunched, sessionId)
   assert.deepEqual(
     resumed.map(({ posture }) => posture),

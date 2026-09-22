@@ -4,6 +4,7 @@ import { createAccountClient } from '@/domains/accounts/preload/client'
 import { createHarnessSignInClient } from '@/domains/harness-signin/preload/client'
 import { createProjectClient } from '@/domains/projects/preload/client'
 import { createCodexCompactionClient } from '@/domains/sessions/contract/codex-compaction'
+import { createManagedSessionClient } from '@/domains/sessions/next/preload/managed-session-client'
 import { createSessionHarnessent } from '@/domains/sessions/preload/client'
 import { createTicketClient } from '@/domains/tickets/preload/client'
 import { createPlatformClient } from '@/platform/preload/client'
@@ -26,6 +27,7 @@ contextBridge.exposeInMainWorld('argo', {
   ...createHarnessSignInClient(invoke),
   ...createTicketClient(invoke),
   ...createSessionHarnessent(invoke),
+  ...createManagedSessionClient(invoke, subscribe),
   ...createCodexCompactionClient(invoke),
   ...createPlatformClient({
     invoke,

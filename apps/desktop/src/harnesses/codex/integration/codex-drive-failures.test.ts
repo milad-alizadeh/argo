@@ -21,7 +21,7 @@ test('driving a Session with no findable transcript reports a drivable failure, 
       sessionId: 'never-started',
       prompt: 'x',
     },
-    { adapters, ownerHarnessFor },
+    { adapters, ownerHarnessFor, sessionCwdFor: async () => process.cwd() },
   )
   assert.equal(reply.type, 'session.error')
   assert.equal(reply.code, 'missing-session')

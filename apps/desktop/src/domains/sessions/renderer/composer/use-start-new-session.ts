@@ -26,12 +26,13 @@ export async function startNewSession(
     // Fires once this Send is the row's one submission, so a dropped duplicate never reaches it.
     onSubmitted: () => void
     afterStart: (sessionId: string) => Promise<void>
+    sendInitialTurn?: (sessionId: string) => Promise<void>
     onStarted: (sessionId: string) => void
     onFailed: () => void
   },
 ) {
   const { harness, cockpit, identity, prompt, setup, attachments, start, setFailure } = request
-  const { onSubmitted, afterStart, onStarted, onFailed } = callbacks
+  const { onSubmitted, afterStart, sendInitialTurn, onStarted, onFailed } = callbacks
   if (cockpit.project === null) {
     setFailure({
       sessionId: null,
@@ -55,13 +56,15 @@ export async function startNewSession(
       harness,
       cwd,
       prompt,
+      deferInitialTurn: harness === 'claude',
       setup,
       attachments,
     })
     creation.resolved(pending.id, reply.sessionId)
     setFailure(null)
-    await afterStart(reply.sessionId)
     onStarted(reply.sessionId)
+    await afterStart(reply.sessionId)
+    await sendInitialTurn?.(reply.sessionId)
     return true
   } catch (error) {
     creation.failed(pending.id)

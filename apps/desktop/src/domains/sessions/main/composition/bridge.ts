@@ -66,6 +66,7 @@ export type SessionReader = {
   connectTicket(request: SessionTicketConnectRequest): Promise<SessionAcceptedReply>
   disconnectTicket(request: SessionTicketDisconnectRequest): Promise<SessionAcceptedReply>
   ownerHarnessFor(sessionId: string): Promise<string | undefined>
+  sessionCwdFor(sessionId: string): Promise<string | undefined>
   // A selected Feed still reading, so background indexing (#2373) can pause rather than race it.
   isFeedReadActive(): boolean
 }
@@ -89,7 +90,11 @@ async function chooseAttachmentFiles(window: BrowserWindow): Promise<string[]> {
 }
 
 function ownerContext(context: SessionContext): OwnerContext {
-  return { adapters: context.adapters, ownerHarnessFor: context.reader.ownerHarnessFor }
+  return {
+    adapters: context.adapters,
+    ownerHarnessFor: context.reader.ownerHarnessFor,
+    sessionCwdFor: context.reader.sessionCwdFor,
+  }
 }
 
 // The same renderer authority the Project bridge asserts: the main frame of this window, on the

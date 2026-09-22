@@ -2,6 +2,14 @@ import { createInterface } from 'node:readline'
 import type { RequestID, RequestParams, WireMessage } from '@/harnesses/codex/drive/protocol'
 import { readMessage } from '@/harnesses/codex/drive/protocol'
 
+// Distinguishes "the channel dropped before we got an answer" from an ordinary JSON-RPC error
+// response, so a caller can tell an uncertain outcome from a definite rejection (#2580).
+export class CodexChannelClosedError extends Error {
+  constructor() {
+    super('Codex app-server channel closed before this request settled')
+  }
+}
+
 export type CodexProcess = {
   stdout: NodeJS.ReadableStream
   write: (line: string) => void
@@ -72,7 +80,7 @@ function wireInbound(process: CodexProcess, state: ChannelState) {
   const lines = createInterface({ input: process.stdout })
   lines.on('line', (line) => handleLine(process, state, line))
   process.onExit(() => {
-    for (const waiting of state.pending.values()) waiting.reject(new Error('Codex exited'))
+    for (const waiting of state.pending.values()) waiting.reject(new CodexChannelClosedError())
     state.pending.clear()
     for (const listener of state.exitListeners) listener()
   })

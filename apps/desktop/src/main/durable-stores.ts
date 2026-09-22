@@ -23,7 +23,7 @@ export function openDurableStores(projectData: string, recovery: boolean) {
       const ticketLinks = createSessionTicketLinkStoreFromDatabase(database, () =>
         backup().catch(console.error),
       )
-      return { projects, ticketLinks, close: () => client.close() }
+      return { database, projects, ticketLinks, close: () => client.close() }
     },
   })
 }

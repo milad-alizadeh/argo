@@ -1,18 +1,21 @@
 // A stand-in `claude` for the packaged resume proof, run by node's type stripping. It answers the
 // flags Argo launches with and writes each Turn it is sent where the real CLI writes transcripts.
 
-import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { once } from 'node:events'
 import { appendFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import {
+  SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
 } from '../../../src/domains/sessions/main/composition/proof-protocol.ts'
 import { type AdversarialTurn, adversarialTurn } from '../../sessions/adversarial-turns.ts'
 import { MOCK_CLAUDE_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
+import { createMockClaudeHooks } from './mock-claude-hooks.ts'
+import { replyToSdkPrompt } from './mock-claude-sdk-reply.ts'
+import { startMockClaudeSdkStream } from './mock-claude-sdk-stream.ts'
+import { settleMockClaudeTurn } from './mock-claude-turn.ts'
 import { projectSetupReply } from './mock-project-setup.ts'
 
 process.title = MOCK_CLAUDE_PROCESS_TITLE
@@ -34,23 +37,28 @@ const adversarialSeed = process.env[SESSION_MOCK_ADVERSARIAL_SEED_ENV]
 const projectSetupScenario = process.env.ARGO_PROJECT_SETUP_MOCK_SCENARIO
 let turnIndex = 0
 
-const [transcripts, ...flags] = process.argv.slice(2)
+const arguments_ = process.argv.slice(2)
+const [transcriptRoot] = arguments_
+const agentSdk = arguments_.includes('stream-json')
+const transcripts = agentSdk ? process.env[SESSION_CLAUDE_TRANSCRIPTS_ENV] : transcriptRoot
 
 function flagValue(flag: string): string | null {
-  const index = flags.indexOf(flag)
-  return index === -1 ? null : (flags[index + 1] ?? null)
+  const index = arguments_.indexOf(flag)
+  if (index !== -1) return arguments_[index + 1] ?? null
+  const assignment = arguments_.find((argument_) => argument_.startsWith(`${flag}=`))
+  return assignment === undefined ? null : assignment.slice(flag.length + 1)
 }
 
 // claude 2.1.270 continues `--resume <id>` in that id's own transcript file (ADR-0026).
-const sessionId = flagValue('--session-id') ?? flagValue('--resume')
+const sessionId =
+  flagValue('--session-id') ?? flagValue('--resume') ?? (agentSdk ? randomUUID() : null)
 const pluginRoot = flagValue('--plugin-dir')
 if (transcripts === undefined || sessionId === null) process.exit(2)
-
+const { displayReply, waitForPermission } = createMockClaudeHooks(pluginRoot)
 const folder = path.join(transcripts, 'mock-claude')
 mkdirSync(folder, { recursive: true })
 const transcript = path.join(folder, `${sessionId}.jsonl`)
 let parentUuid: string | null = null
-
 function record(type: 'user' | 'assistant', message: Record<string, unknown>) {
   const uuid = randomUUID()
   const record = {
@@ -65,19 +73,15 @@ function record(type: 'user' | 'assistant', message: Record<string, unknown>) {
   parentUuid = uuid
   return `${JSON.stringify(record)}\n`
 }
-
-function write(type: 'user' | 'assistant', message: Record<string, unknown>) {
+const write = (type: 'user' | 'assistant', message: Record<string, unknown>) =>
   appendFileSync(transcript, record(type, message))
-}
-
-function compact() {
+const compact = () => {
   const uuid = randomUUID()
   appendFileSync(
     transcript,
     `${JSON.stringify({ type: 'system', subtype: 'compact_boundary', uuid, timestamp: new Date().toISOString() })}\n`,
   )
 }
-
 function writeReply(text: string, plan: AdversarialTurn | null) {
   const response =
     projectSetupReply(text, projectSetupScenario) ?? `Mock Claude read: ${text}${plan ? ' 🦜' : ''}`
@@ -97,53 +101,27 @@ function writeReply(text: string, plan: AdversarialTurn | null) {
   setTimeout(() => appendFileSync(transcript, bytes.subarray(splitAt)), 1)
   return response
 }
-
-async function runHook(file: string, input: unknown) {
-  if (pluginRoot === null) return
-  const hook = spawn('/bin/sh', [path.join(pluginRoot, file)], {
-    stdio: ['pipe', 'ignore', 'ignore'],
-  })
-  hook.stdin.end(`${JSON.stringify(input)}\n`)
-  await once(hook, 'exit')
-}
-
-async function waitForPermission() {
-  await runHook('permission-hook.sh', {
-    tool_name: 'Bash',
-    tool_input: { command: 'bun test' },
-  })
-}
-
-async function displayReply(text: string) {
-  await runHook('display-hook.sh', {
-    turn_id: randomUUID(),
-    message_id: randomUUID(),
-    index: 0,
-    delta: text,
-  })
-}
-
-async function settleTurn(text: string, plan: AdversarialTurn | null) {
-  if (
-    plan?.permissionBeforeReply ||
-    (projectSetupScenario === 'permission' && text.includes('ARGO_SETUP_PLAN'))
-  )
-    await waitForPermission()
-  if (plan?.outcome === 'stall') return
-  const delay = plan?.firstReplyDelayMs ?? REPLY_DELAY_MS
-  if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay))
-  if (plan?.outcome === 'failure') {
-    process.stdout.write('Mock Claude failed a Turn.\r\n')
-    process.exit(1)
-  }
-  await displayReply(writeReply(text, plan))
-}
-
 let pending = ''
 if (process.stdin.isTTY) process.stdin.setRawMode(true)
 process.stdin.setEncoding('utf8')
-// The end of a synchronized frame, which is what Argo waits for before it sends a Turn (#2002).
-process.stdout.write(`${ESCAPE}[?2026h> ${ESCAPE}[?2026l`)
+if (agentSdk)
+  startMockClaudeSdkStream(sessionId, (prompt, sdkWaitForPermission) =>
+    replyToSdkPrompt({
+      prompt,
+      waitForPermission: sdkWaitForPermission,
+      compact,
+      rename: RENAME,
+      transcript,
+      recordUser: (text) => write('user', { role: 'user', content: text }),
+      nextPlan: () =>
+        adversarialSeed === undefined ? null : adversarialTurn(adversarialSeed, turnIndex++),
+      projectSetupScenario,
+      replyDelayMs: REPLY_DELAY_MS,
+      writeReply,
+    }),
+  )
+// The terminal frame is not valid stream JSON, so only the PTY protocol receives it.
+if (!agentSdk) process.stdout.write(`${ESCAPE}[?2026h> ${ESCAPE}[?2026l`)
 process.stdin.on('data', (chunk: string) => {
   pending += chunk
   if (COMPACT.test(pending)) {
@@ -165,6 +143,14 @@ process.stdin.on('data', (chunk: string) => {
     write('user', { role: 'user', content: text })
     const plan =
       adversarialSeed === undefined ? null : adversarialTurn(adversarialSeed, turnIndex++)
-    void settleTurn(text, plan)
+    void settleMockClaudeTurn({
+      text,
+      plan,
+      projectSetupScenario,
+      replyDelayMs: REPLY_DELAY_MS,
+      waitForPermission,
+      writeReply,
+      displayReply,
+    })
   }
 })

@@ -15,9 +15,10 @@ import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
 import { attachTicketBridge } from '@/domains/tickets/main/bridge'
 import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
 import { createHarnessReadinessRegistrations } from '@/harnesses/composition/registered-harness-readiness'
-import { attachSessions } from '@/harnesses/composition/session-bridges'
+import { attachManagedSessionHarnesses } from '@/managed-session-bridges'
 import { attachAppearanceBridge } from '@/platform/main/appearance'
 import { attachWindowNavigation } from '@/platform/main/security/window-navigation'
+import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 import { accountProviders, ticketSources } from '@/providers/composition'
 import { providerEndpoints } from '@/providers/endpoints'
 
@@ -27,6 +28,7 @@ export function attachBridges(
     userData: string
     accountData: string
     connectionData: string
+    database: DurableDatabase
     projects: ProjectStore
     ticketLinks: SessionTicketLinkStore
     rendererURL: string
@@ -47,16 +49,18 @@ export function attachBridges(
   // The CLIs Argo spawns find their stores through HOME; Electron's home path on macOS ignores HOME (#2356).
   const home = os.homedir()
   attachWindowNavigation(window)
-  const harnesses = attachSessions(window, {
-    rendererURL,
-    home,
-    userData,
-    ticketLinks,
-    proofEnabled,
+  const { harnesses, managedSessions } = attachManagedSessionHarnesses(window, {
     acceptance: request.acceptance,
+    database: request.database,
+    home,
+    projects,
+    proofEnabled,
+    rendererURL,
+    ticketLinks,
+    userData,
   })
-  const claude = harnesses.find((harness) => harness.harness === 'claude')
-  const onboardingDriver = onboardingDriverFrom(claude?.onboardingDriver)
+  const onboardingHarness = harnesses.find((harness) => harness.harness === 'claude')
+  const onboardingDriver = onboardingDriverFrom(onboardingHarness?.onboardingDriver)
   attachProjectBridge(window, {
     projects,
     rendererURL,
@@ -86,13 +90,22 @@ export function attachBridges(
     rendererURL,
     sources: ticketSources,
   })
+  attachBridgeShutdown({ harnesses, managedSessions, ticketLinks })
+}
+
+function attachBridgeShutdown(options: {
+  harnesses: ReturnType<typeof attachManagedSessionHarnesses>['harnesses']
+  managedSessions: ReturnType<typeof attachManagedSessionHarnesses>['managedSessions']
+  ticketLinks: SessionTicketLinkStore
+}) {
   // `once` removes this listener before it runs, so the `app.quit()` it triggers below proceeds
   // straight to quitting rather than re-entering here (#2494: a killed PTY's exit lands
   // asynchronously, and quitting before it does can abort the process).
   app.once('before-quit', (event) => {
     event.preventDefault()
-    ticketLinks.close()
-    void Promise.all(harnesses.map((harness) => harness.close())).then(() => app.quit())
+    options.ticketLinks.close()
+    options.managedSessions.close()
+    void Promise.all(options.harnesses.map((harness) => harness.close())).then(() => app.quit())
   })
 }
 

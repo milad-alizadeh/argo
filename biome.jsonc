@@ -22,6 +22,7 @@
       "**",
       "!docs",
       "!lint/biome/fixtures",
+      "!apps/desktop/package-manifest.json",
       "!apps/desktop/src/platform/renderer/components/ui/accordion.tsx",
       "!apps/desktop/src/platform/renderer/components/ui/alert-dialog.tsx",
       "!apps/desktop/src/platform/renderer/components/ui/alert.tsx",

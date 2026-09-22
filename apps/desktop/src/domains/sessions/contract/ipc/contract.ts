@@ -25,16 +25,20 @@ export * from '@/domains/sessions/contract/ticket-link-contract'
 
 // One drive request table for every Harness (#2030): `start` names its Harness, and every other drive
 // operation routes by the Session's owner, resolved from the reader's owner lookup.
+const turnRequestFields = {
+  version: z.literal(1),
+  requestId: identifierSchema,
+  prompt: z.string(),
+  setup: z.unknown().optional(),
+  attachments: z.array(sessionAttachmentInputSchema).optional(),
+}
 export const sessionStartRequestSchema = z
   .strictObject({
-    version: z.literal(1),
+    ...turnRequestFields,
     type: z.literal('session.start'),
-    requestId: identifierSchema,
     harness: z.string().min(1),
     cwd: z.string().min(1),
-    prompt: z.string(),
-    setup: z.unknown().optional(),
-    attachments: z.array(sessionAttachmentInputSchema).optional(),
+    deferInitialTurn: z.boolean().optional(),
   })
   .refine(({ prompt, attachments }) => prompt.trim().length > 0 || (attachments?.length ?? 0) > 0)
 export type SessionStartRequest = z.infer<typeof sessionStartRequestSchema>
@@ -49,13 +53,9 @@ export type SessionStarted = z.infer<typeof sessionStartedSchema>
 
 export const sessionSendRequestSchema = z
   .strictObject({
-    version: z.literal(1),
+    ...turnRequestFields,
     type: z.literal('session.send'),
-    requestId: identifierSchema,
     sessionId: identifierSchema,
-    prompt: z.string(),
-    setup: z.unknown().optional(),
-    attachments: z.array(sessionAttachmentInputSchema).optional(),
   })
   .refine(({ prompt, attachments }) => prompt.trim().length > 0 || (attachments?.length ?? 0) > 0)
 export type SessionSendRequest = z.infer<typeof sessionSendRequestSchema>

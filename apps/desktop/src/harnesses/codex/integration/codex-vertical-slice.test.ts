@@ -63,7 +63,7 @@ test('starting a Codex Session over the real transport makes it appear in the sh
         sessionId,
         prompt: 'Continue with the next Turn.',
       },
-      { adapters, ownerHarnessFor: async () => 'codex' },
+      { adapters, ownerHarnessFor: async () => 'codex', sessionCwdFor: async () => process.cwd() },
     )
     assert.equal(sendReply.type, 'session.accepted')
   } finally {

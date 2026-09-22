@@ -31,12 +31,10 @@ async function closeRuntimes(runtimes: { close(): Promise<void> }[], driver: Fix
   assert.equal(driver.closed, true)
 }
 
-test('a fixture harness reaches driver setup, observation, drive routing, watcher registration and shutdown', async () => {
+function startFixtureRuntime() {
   const { harness, driver } = fixtureHarness()
-  const harnesses = [harness]
-
-  const runtimes = harnesses.map((harness) =>
-    harness.start({
+  const runtimes = [harness].map((registration) =>
+    registration.start({
       userData: '/unused-userData',
       home: '/unused-home',
       proofEnabled: false,
@@ -45,6 +43,33 @@ test('a fixture harness reaches driver setup, observation, drive routing, watche
     }),
   )
   assert.equal(runtimes[0]?.harness, 'fixture')
+  return { driver, harness, runtimes }
+}
+
+function assertSessionWatcher(
+  runtimes: ReturnType<typeof startFixtureRuntime>['runtimes'],
+  driver: FixtureDriver,
+) {
+  const watched = harnessWatchedSources(runtimes)
+  assert.equal(watched.sessions.length, 1)
+  const sent: unknown[] = []
+  const closedListeners: (() => void)[] = []
+  const fakeWindow = {
+    webContents: { send: (channel: string, topic: unknown) => sent.push([channel, topic]) },
+    isDestroyed: () => false,
+    on: (event: string, listener: () => void) => {
+      if (event === 'closed') closedListeners.push(listener)
+    },
+  }
+  registerWatching(fakeWindow as unknown as Parameters<typeof registerWatching>[0], watched)
+  assert.equal(driver.rosterChangedListeners.size, 1)
+  for (const listener of driver.rosterChangedListeners) listener()
+  assert.deepEqual(sent, [[WATCHED_CHANGED_CHANNEL, 'sessions']])
+  for (const listener of closedListeners) listener()
+}
+
+test('a fixture harness reaches driver setup, observation, drive routing, watcher registration and shutdown', async () => {
+  const { driver, harness, runtimes } = startFixtureRuntime()
 
   const sources = runtimes.map((runtime) => runtime.source)
   const reader = createSessionReader(sources)
@@ -54,7 +79,11 @@ test('a fixture harness reaches driver setup, observation, drive routing, watche
   const runtime = runtimes.at(0)
   assert.ok(runtime)
   const adapters: SessionDriveAdapters = { [harness.harness]: runtime.driveAdapter }
-  const context = { adapters, ownerHarnessFor: reader.ownerHarnessFor }
+  const context = {
+    adapters,
+    ownerHarnessFor: reader.ownerHarnessFor,
+    sessionCwdFor: reader.sessionCwdFor,
+  }
   const sendReply = await sendSession(
     {
       version: 1,
@@ -73,25 +102,7 @@ test('a fixture harness reaches driver setup, observation, drive routing, watche
   assert.equal(compactReply.type, 'session.accepted')
   assertDriveCalls(driver)
 
-  const watched = harnessWatchedSources(runtimes)
-  assert.equal(watched.sessions.length, 1)
-  const sent: unknown[] = []
-  const closedListeners: (() => void)[] = []
-  const fakeWindow = {
-    webContents: { send: (channel: string, topic: unknown) => sent.push([channel, topic]) },
-    isDestroyed: () => false,
-    on: (event: string, listener: () => void) => {
-      if (event === 'closed') closedListeners.push(listener)
-    },
-  }
-  registerWatching(fakeWindow as unknown as Parameters<typeof registerWatching>[0], {
-    permissions: watched.permissions,
-    sessions: watched.sessions,
-  })
-  assert.equal(driver.rosterChangedListeners.size, 1)
-  for (const listener of driver.rosterChangedListeners) listener()
-  assert.deepEqual(sent, [[WATCHED_CHANGED_CHANNEL, 'sessions']])
-  for (const listener of closedListeners) listener()
+  assertSessionWatcher(runtimes, driver)
 
   await closeRuntimes(runtimes, driver)
 })

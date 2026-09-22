@@ -29,6 +29,7 @@ export type SessionHarnessent = {
     harness: string
     cwd: string
     prompt: string
+    deferInitialTurn?: boolean
     setup?: unknown
     attachments?: SessionAttachmentInput[]
   }): Promise<SessionStartReply>
