@@ -1,10 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { detectCodeLanguageFromPath } from '@/domains/sessions/renderer/feed/content/code-language'
-import {
-  CurrentFileContent,
-  DiffContent,
-} from '@/domains/sessions/renderer/inspector/session-diff-content'
+import { detectCodeLanguageFromPath } from '../feed/content/code-language'
+import { CurrentFileContent, DiffContent } from './session-diff-content'
 
 export function SessionDiffViewer({
   path,

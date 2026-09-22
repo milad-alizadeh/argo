@@ -5,7 +5,6 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { drizzle } from 'drizzle-orm/bun-sqlite'
-import { createProjectStore } from '@/domains/projects/main/sqlite-store'
 import {
   migrateTestDatabase,
   projectMigrationsFolder,
@@ -14,6 +13,7 @@ import {
   acceptedPlanFixture,
   planFixture,
 } from '../../../../../../test-fixtures/projects/setup/setup-plan.fixture'
+import { createProjectStore } from '../../sqlite-store'
 import { createProjectSetupRegistry } from './project-setup-registry'
 
 test('recovers a completed worktree promotion without promoting it twice after a crash', async (context) => {

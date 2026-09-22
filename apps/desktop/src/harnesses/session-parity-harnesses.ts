@@ -3,14 +3,14 @@ import { copyFile, mkdir, mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader/reader'
 import {
   fed,
   feedRequest,
   listed,
   rowsOf,
-} from '@/domains/sessions/main/observation/reader-test-helpers'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+} from '@/domains/sessions/main/observation/reader/reader-test-helpers'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-sessions'
 import { readerOverRollout } from '@/harnesses/codex/sessions/rollout-reader-test-helper'
 
 const SESSIONS = fileURLToPath(new URL('../../mocks/cli', import.meta.url))

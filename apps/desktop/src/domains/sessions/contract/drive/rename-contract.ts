@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { sessionErrorSchema } from '@/domains/sessions/contract/model/session-error'
 import { identifierSchema } from '@/shared/validation'
+import { sessionErrorSchema } from '../session-error'
 
 function safeName(name: string): boolean {
   return [...name].every((character) => {

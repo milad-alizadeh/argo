@@ -1,4 +1,4 @@
-import { SESSION_ARCHIVE_SEARCH_OPERATIONS } from '@/domains/sessions/contract/ipc/archive-search-operations'
+import { SESSION_ARCHIVE_SEARCH_OPERATIONS } from './archive-search-operations'
 import {
   sessionAcceptedReplySchema,
   sessionChooseAttachmentsReplySchema,
@@ -26,9 +26,9 @@ import {
   sessionSubagentUsageRequestSchema,
   sessionTicketConnectRequestSchema,
   sessionTicketDisconnectRequestSchema,
-} from '@/domains/sessions/contract/ipc/contract'
-import { SESSION_READ_OPERATIONS } from '@/domains/sessions/contract/ipc/read-operations'
-import { SESSION_UNREAD_OPERATIONS } from '@/domains/sessions/contract/ipc/unread-operations'
+} from './contract'
+import { SESSION_READ_OPERATIONS } from './read-operations'
+import { SESSION_UNREAD_OPERATIONS } from './unread-operations'
 
 // One drive table for every Harness (#2030): `start` names its Harness, and the rest carry only a
 // sessionId, routed by the Session's owner.

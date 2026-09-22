@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { SessionDriveAdapter } from '@/domains/sessions/contract/session-drive-adapter'
 import type { WorkspaceSelection } from '@/domains/sessions/next/contract/session-contract'
-import type { ClaudeSessionAdapter } from '@/harnesses/claude/agent-sdk/claude-session-adapter'
+import type { ClaudeSessionAdapter } from './claude-session-adapter'
 
 const ignoredSetupSchema = z.unknown()
 const FAILURE_MESSAGES = {

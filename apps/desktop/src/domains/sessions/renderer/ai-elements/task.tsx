@@ -1,7 +1,7 @@
 'use client'
 
 import React, { type ComponentProps } from 'react'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   Collapsible,
   CollapsibleContent,

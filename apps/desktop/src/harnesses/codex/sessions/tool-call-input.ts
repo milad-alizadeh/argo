@@ -25,6 +25,12 @@ function assignedString(value: string, name: string): string | null {
   return quotedAfter(value, String.raw`(?:const|let|var)\s+${name}\s*=`)
 }
 
+// `function_call`'s arguments are a JSON object serialised as a string; a `custom_tool_call`'s
+// `input` is the bare string the model wrote (a script), so it is kept as a single field rather
+// than parsed, matching how `toolPresentation()`'s fallback reads a one-field input.
+// A script often writes its arguments as JavaScript, not JSON (`"workdir":wd`, `cmd:\`…\``); the
+// command, or a web search's first query (`q:"…"`) or opened page (`ref_id:"https://…"`), is
+// still one quoted string, and it is the one the Feed labels the call by.
 export function readToolCallInput(
   value: unknown,
   script = typeof value === 'string' ? value : '',

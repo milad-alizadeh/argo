@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ProjectSettingsDialog } from '@/domains/projects/renderer/components/project-settings-dialog'
-import { useProjects } from '@/domains/projects/renderer/port'
+import { REGISTER_PROJECT_COMMAND } from '@/platform/contract/commands'
 import { useCommands } from '@/platform/renderer/cockpit/hooks/use-commands'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   DropdownMenu,
@@ -14,7 +13,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
-import { REGISTER_PROJECT_COMMAND } from '@/platform/shared/commands'
+import { useProjects } from '../hooks/use-projects'
+import { ProjectSettingsDialog } from './project-settings-dialog'
 
 export function ProjectSwitcher() {
   const { t } = useTranslation('projects')

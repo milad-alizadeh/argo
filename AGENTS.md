@@ -224,8 +224,16 @@ fires, fix the code or ratchet the exemption where the config keeps it, never in
   once; a cast or an all-optional model standing in for a check is a bug moved inward.
 - **One source of truth.** A literal in two call sites is extracted before the second paste.
   A new variant of an existing kind is one new file plus one registration line.
-- **Group by domain, never by kind.** `Tickets/`, not `Helpers/` or `Utils/`; a helper is born
-  beside its only caller and hoists on the third.
+- **Group by domain, never by kind.** `Tickets/`, not `Helpers/` or `Utils/`. A helper is born
+  inside its only caller, a function in the same file, and becomes a file of its own when a
+  second caller appears.
+- **One folder, one secret.** A folder holds one decision that could change, which everything
+  inside it knows and nothing outside it needs to know (Parnas 1972). The same test runs at every
+  depth, so a feature folder and a folder three levels under it are judged the same way. Finish
+  the sentence "everything in here knows X, and nothing outside knows X", then name one change to
+  X and check that it touches only this folder. A sentence that needs an "and" to finish describes
+  a pile, not a module. The name is the cheap version of the same check: `util`, `common`,
+  `shared`, `helpers`, `components` and `hooks` all name a folder that hides nothing.
 - **Tokens by name.** Production visual values use shared tokens or intentional named component-local tokens.
   Resolve experimental values into those tokens before review.
 - **Typed script source.** A Node script uses `.mts`. Only the two `.mjs` files named in

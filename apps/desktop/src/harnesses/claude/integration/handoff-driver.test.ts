@@ -9,7 +9,7 @@ import {
   STARTED_AT,
   settle,
   startedSession,
-} from '@/harnesses/claude/integration/claude-driver-launch.ts'
+} from './claude-driver-launch'
 
 test('typing /handoff starts the wait and names the exact brief path', async (context) => {
   const { driver, sessionId, writes } = await startedSession(context)

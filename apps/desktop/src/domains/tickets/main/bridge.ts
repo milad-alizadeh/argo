@@ -1,11 +1,12 @@
 import type { BrowserWindow } from 'electron'
 import type { Provider } from '@/domains/accounts/contract/contract'
-import type { AccountAccess } from '@/domains/accounts/main/port'
-import type { ConnectionPort } from '@/domains/connections/main/port'
+import type { AccountAccess } from '@/domains/accounts/main'
+import type { ConnectionPort } from '@/domains/connections/main'
 import { ticketError } from '@/domains/tickets/contract/contract'
 import { TICKET_OPERATIONS } from '@/domains/tickets/contract/operations'
-import { updatePriority } from '@/domains/tickets/main/priority-service'
-import type { Call } from '@/domains/tickets/main/read-as'
+import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
+import { updatePriority } from './priority-service'
+import type { Call } from './read-as'
 import {
   connectSource,
   disconnectSource,
@@ -13,9 +14,8 @@ import {
   listTickets,
   readConnection,
   updateStatus,
-} from '@/domains/tickets/main/service'
-import type { TicketSource } from '@/domains/tickets/main/sources'
-import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
+} from './service'
+import type { TicketSource } from './sources'
 
 type TicketContext = {
   access: AccountAccess

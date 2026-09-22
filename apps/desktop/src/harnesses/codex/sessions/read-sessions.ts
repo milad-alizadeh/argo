@@ -2,16 +2,14 @@ import type {
   SessionRenameReply,
   SessionRenameRequest,
 } from '@/domains/sessions/contract/ipc/contract'
+import { askRow } from '@/domains/sessions/contract/model/feed/tool-feed'
 import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import { askRow } from '@/domains/sessions/contract/model/tool-feed'
-import {
-  discoverRoster,
-  type FeedOverlay,
-  type SessionIndex,
-  type SessionSource,
-} from '@/domains/sessions/main/port'
-import type { LiveMessage } from '@/harnesses/codex/drive/codex-session-driver'
-import type { PendingCodexQuestion } from '@/harnesses/codex/drive/question-protocol'
+import type { SessionIndex } from '@/domains/sessions/main/indexing/session-index/contract'
+import { discoverRoster } from '@/domains/sessions/main/observation/reader/discover-roster'
+import type { SessionSource } from '@/domains/sessions/main/observation/reader/reader'
+import type { FeedOverlay } from '@/domains/sessions/main/observation/reader/session-source'
+import type { PendingCodexQuestion } from '../drive/protocol/question-protocol'
+import type { LiveMessage } from '../drive/session/codex-session-driver'
 import {
   backfillTick,
   clearFullRecords,
@@ -23,13 +21,17 @@ import {
   reconcileAll,
   resolveIds,
   searchIndexed,
-} from './discover'
-import { draftText } from './harness-envelopes'
-import { createHeldRolloutReader, joinHeldRollouts, type OpenFileListing } from './held-rollouts'
-import { createOpenTurnReader, joinOpenTurns } from './open-turns'
-import { readSubagentTokens } from './subagent-tokens'
-import { readSubagentChain } from './subagents'
-import type { ThreadNames } from './thread-names'
+} from './discovery/discover'
+import { readSubagentTokens } from './facts/subagent-tokens'
+import { readSubagentChain } from './facts/subagents'
+import { draftText } from './records/harness-envelopes'
+import {
+  createHeldRolloutReader,
+  joinHeldRollouts,
+  type OpenFileListing,
+} from './records/held-rollouts'
+import { createOpenTurnReader, joinOpenTurns } from './thread/open-turns'
+import type { ThreadNames } from './thread/thread-names'
 
 // The managed Sessions the driver holds, and what their Turns have streamed so far.
 export type ReaderOptions = {

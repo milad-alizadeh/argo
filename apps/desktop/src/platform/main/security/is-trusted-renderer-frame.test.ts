@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { isRendererDocument } from '@/platform/main/security/is-trusted-renderer-frame'
+import { isRendererDocument } from './is-trusted-renderer-frame'
 
 test('the dev-server renderer is trusted on every route', () => {
   for (const frameURL of [

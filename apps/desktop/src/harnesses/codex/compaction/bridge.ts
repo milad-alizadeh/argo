@@ -6,11 +6,8 @@ import {
   type CodexCompactionReply,
   codexCompactionError,
 } from '@/domains/sessions/contract/codex-compaction'
-import {
-  readAutoCompactLimit,
-  writeAutoCompactLimit,
-} from '@/harnesses/codex/compaction/config-file'
 import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
+import { readAutoCompactLimit, writeAutoCompactLimit } from './config-file'
 
 function reply(requestId: string, limit: number): CodexCompactionReply {
   return { version: 1, type: 'codex-compaction.state', requestId, limit }

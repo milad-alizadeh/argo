@@ -11,7 +11,7 @@ import { PROJECT_PROOF_STORE_ENV } from '@/domains/projects/main/proof-protocol'
 import {
   ATTACHMENT_SCHEME,
   attachmentPathFromUrl,
-} from '@/domains/sessions/contract/model/feed-images'
+} from '@/domains/sessions/contract/model/feed/feed-images'
 import { openDurableStores } from '@/main/durable-stores'
 import { startDesktopApplication } from '@/platform/main/application/start'
 import {
@@ -160,7 +160,9 @@ async function ready(): Promise<void> {
 
   // A window is open and a PTY may still be draining, so this run also stands as the app-shutdown
   // case: the driver outside fails the build if the process does not go away on its own.
-  const { reportAcceptance, runAcceptance } = await import('@/platform/main/testing/pty-acceptance')
+  const { reportAcceptance, runAcceptance } = await import(
+    '@/platform/main/pty-acceptance/pty-acceptance'
+  )
   const result = await runAcceptance(os.homedir())
   await reportAcceptance(result)
   if (result.ok) app.quit()

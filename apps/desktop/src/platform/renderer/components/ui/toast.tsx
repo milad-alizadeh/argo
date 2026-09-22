@@ -10,8 +10,8 @@ import {
   XIcon,
 } from 'lucide-react'
 import type * as React from 'react'
-import { Loader } from '@/platform/renderer/components/loader'
-import { Button } from '@/platform/renderer/components/ui/button'
+import { Loader } from '../loader/loader'
+import { Button } from './button'
 
 const toast = ToastPrimitive.createToastManager()
 

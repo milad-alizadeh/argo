@@ -1,22 +1,20 @@
 import { type RefObject, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { RenameDialog } from '@/domains/sessions/renderer/roster/rename-dialog'
-import type { RosterActions } from '@/domains/sessions/renderer/roster/roster-actions'
-import { useOrderedSessions } from '@/domains/sessions/renderer/roster/roster-order'
-import { RosterOutcome } from '@/domains/sessions/renderer/roster/roster-outcome'
-import { rosterRows } from '@/domains/sessions/renderer/roster/roster-rows'
-import { RosterVirtualList } from '@/domains/sessions/renderer/roster/roster-virtual-list'
-import {
-  rosterState,
-  SessionsSidebarHeader,
-} from '@/domains/sessions/renderer/roster/sessions-sidebar-chrome'
-import { useArchivedSection } from '@/domains/sessions/renderer/roster/use-archived-section'
-import { useRenameDialog } from '@/domains/sessions/renderer/roster/use-rename-dialog'
-import { useRosterStatus } from '@/domains/sessions/renderer/roster/use-roster-filter-store'
-import { useSidebarRoster } from '@/domains/sessions/renderer/roster/use-sidebar-roster'
-import type { Session, SessionId } from '@/domains/sessions/renderer/types'
+import type { Session, SessionId } from '../types'
+import { useArchivedSection } from './archived/use-archived-section'
+import { useRosterStatus } from './hooks/use-roster-filter-store'
+import { RenameDialog } from './rename/rename-dialog'
+import { useRenameDialog } from './rename/use-rename-dialog'
+import type { RosterActions } from './rows/roster-actions'
+import { useOrderedSessions } from './rows/roster-order'
+import { RosterOutcome } from './rows/roster-outcome'
+import { rosterRows } from './rows/roster-rows'
+import { rosterState } from './rows/roster-status-row'
+import { RosterVirtualList } from './rows/roster-virtual-list'
+import { SessionsSidebarHeader } from './sidebar/sessions-sidebar-chrome'
+import { useSidebarRoster } from './sidebar/use-sidebar-roster'
 
-export type { RosterActions } from '@/domains/sessions/renderer/roster/roster-actions'
+export type { RosterActions } from './rows'
 
 const NOOP = () => {}
 

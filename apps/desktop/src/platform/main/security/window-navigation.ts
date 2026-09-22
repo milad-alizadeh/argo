@@ -1,5 +1,5 @@
 import { type BrowserWindow, shell } from 'electron'
-import { isExternalLink } from '@/platform/shared/urls'
+import { isExternalLink } from '@/platform/contract/urls'
 
 // The window never leaves the renderer. A new-window request for a web or mail link goes to the
 // default browser instead, which is how a Feed link opens.

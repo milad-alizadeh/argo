@@ -3,6 +3,15 @@
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { type ElectronApplication, _electron as electron } from 'playwright-core'
+import {
+  PROJECT_PROOF_STORE_ENV,
+  SETUP_DOCUMENT_PROOF_URL_ENV,
+} from '@/domains/projects/main/proof-protocol'
+import {
+  SESSION_CLAUDE_TRANSCRIPTS_ENV,
+  SESSION_CODEX_TRANSCRIPTS_ENV,
+} from '@/domains/sessions/contract/proof-protocol'
+import { GITHUB_PROOF_ORIGIN_ENV, LINEAR_PROOF_ORIGIN_ENV } from '@/providers/proof-protocol'
 import type { MockGitHub } from '../../../mocks/providers/github/mock-github'
 import { startMockGitHubLoopback } from '../../../mocks/providers/github/mock-github-loopback'
 import type { MockLinear } from '../../../mocks/providers/linear/mock-linear'
@@ -10,18 +19,6 @@ import { HIDDEN, TEAM } from '../../../mocks/providers/linear/mock-linear-cast'
 import { startMockLinearLoopback } from '../../../mocks/providers/linear/mock-linear-loopback'
 import type { MockSetupDocument } from '../../../mocks/providers/setup/mock-setup-document-loopback'
 import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mts'
-import {
-  PROJECT_PROOF_STORE_ENV,
-  SETUP_DOCUMENT_PROOF_URL_ENV,
-} from '../../../src/domains/projects/main/proof-protocol'
-import {
-  SESSION_CLAUDE_TRANSCRIPTS_ENV,
-  SESSION_CODEX_TRANSCRIPTS_ENV,
-} from '../../../src/domains/sessions/main/composition/proof-protocol'
-import {
-  GITHUB_PROOF_ORIGIN_ENV,
-  LINEAR_PROOF_ORIGIN_ENV,
-} from '../../../src/providers/proof-protocol'
 import { appExecutable } from '../../packaged-app'
 import {
   makeProjectLocallyReady,

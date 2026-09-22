@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { type TestContext, test } from 'node:test'
-import { connect, harness, LIST, OCTOCAT } from '@/domains/accounts/main/harness'
+import { connect, harness, LIST, OCTOCAT } from '@/domains/accounts/main/test-support/harness'
 import { ADA, HIDDEN, TEAM } from '@/providers/linear/harness'
 import type { MockIssue } from '../../../../mocks/providers/github/mock-github'
 

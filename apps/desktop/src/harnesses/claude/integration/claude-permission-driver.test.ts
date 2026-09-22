@@ -3,18 +3,9 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { test } from 'node:test'
 
-import { createClaudePermissionGate } from '@/harnesses/claude/drive/permission-gate.ts'
-import {
-  launch,
-  ledgerFile,
-  OPENING,
-  ownedBeforeRestart,
-  settle,
-} from '@/harnesses/claude/integration/claude-driver-launch.ts'
-import {
-  hookSocket,
-  raisePermission,
-} from '@/harnesses/claude/integration/claude-permission-hook.ts'
+import { createClaudePermissionGate } from '../drive/permission/permission-gate'
+import { launch, ledgerFile, OPENING, ownedBeforeRestart, settle } from './claude-driver-launch'
+import { hookSocket, raisePermission } from './claude-permission-hook'
 
 test('a started Session with a pending Permission reads `permission` in the Roster and reports it', async (context) => {
   const gate = createClaudePermissionGate()

@@ -1,13 +1,13 @@
 import { Trans, useTranslation } from 'react-i18next'
+import { Icon } from '@/platform/renderer/components/icon/icon'
+import type { SessionHarness } from '../../harness/harnesses'
 import {
   harnessLabel,
   referenceSuggestions,
   referenceSupportsHarness,
   type SessionReference,
   SessionReferenceIcon,
-} from '@/domains/sessions/renderer/composer/references/session-reference'
-import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
-import { Icon } from '@/platform/renderer/components/icon'
+} from './session-reference'
 
 export type ReferenceSuggestion = SessionReference
 type ActiveReference = {

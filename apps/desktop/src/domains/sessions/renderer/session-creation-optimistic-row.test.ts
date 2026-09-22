@@ -6,7 +6,7 @@ import {
   newSessionTarget,
   optimisticSessionRow,
   useSessionCreationStore,
-} from '@/domains/sessions/renderer/session-creation'
+} from './session-creation'
 
 beforeEach(() => {
   useSessionCreationStore.setState({ pending: null })

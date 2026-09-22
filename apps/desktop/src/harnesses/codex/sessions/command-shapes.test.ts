@@ -5,8 +5,8 @@ import {
   feedRequest,
   listed,
   rowsOf,
-} from '@/domains/sessions/main/observation/reader-test-helpers'
-import { readerOverRollout } from '@/harnesses/codex/sessions/rollout-reader-test-helper'
+} from '@/domains/sessions/main/observation/reader/reader-test-helpers'
+import { readerOverRollout } from './rollout-reader-test-helper'
 
 const SESSION = 'codexLegacyShell'
 

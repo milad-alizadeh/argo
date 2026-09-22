@@ -2,15 +2,15 @@ import { expect, test } from 'bun:test'
 import { mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import {
+  SESSION_MOCK_ADVERSARIAL_SEED_ENV,
+  SESSION_MOCK_REPLY_DELAY_MS_ENV,
+} from '@/domains/sessions/contract/proof-protocol'
 import type {
   SessionFixture,
   SessionHarnessBackend,
   SessionHarnessRun,
 } from '../../e2e/sessions/session-harness-backend'
-import {
-  SESSION_MOCK_ADVERSARIAL_SEED_ENV,
-  SESSION_MOCK_REPLY_DELAY_MS_ENV,
-} from '../../src/domains/sessions/main/composition/proof-protocol'
 import { mockClaudeHarness } from '../cli/claude/mock-claude-cli'
 import { mockCodexHarness } from '../cli/codex/mock-codex-cli'
 import { createMockSessionHarnessBackend } from './mock-session-harness-backend'

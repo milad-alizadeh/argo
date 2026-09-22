@@ -1,15 +1,11 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { sessionUnreadFocusReplySchema } from '@/domains/sessions/contract/ipc/contract'
-import { createInMemorySessionArchiveStore } from '@/domains/sessions/main/archive/archive-store'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
-import {
-  listed,
-  tempRoot,
-  writeClaudeTranscript,
-} from '@/domains/sessions/main/observation/reader-test-helpers'
-import { createInMemorySessionUnreadStore } from '@/domains/sessions/main/unread/unread-store'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-sessions'
+import { createInMemorySessionArchiveStore } from '../archive/store/archive-store'
+import { createSessionReader } from '../observation/reader/reader'
+import { listed, tempRoot, writeClaudeTranscript } from '../observation/reader/reader-test-helpers'
+import { createInMemorySessionUnreadStore } from './unread-store'
 
 test('clears unread state when the reader opens a Session', async (context) => {
   const unread = createInMemorySessionUnreadStore()

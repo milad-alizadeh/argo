@@ -8,15 +8,10 @@ import {
   type AccountSummary,
   accountError,
 } from '@/domains/accounts/contract/contract'
-import { type AccountAccess, accountState, projectNames } from '@/domains/accounts/main/access'
-import { availableProviders } from '@/domains/accounts/main/providers'
-import {
-  type AccountRecord,
-  type AccountRegistry,
-  readAccounts,
-  writeAccounts,
-} from '@/domains/accounts/main/registry'
-import { readConnections } from '@/domains/connections/main/port'
+import { readConnections } from '@/domains/connections/main'
+import { type AccountAccess, accountState, projectNames } from './access'
+import { availableProviders } from './providers'
+import { type AccountRecord, type AccountRegistry, readAccounts, writeAccounts } from './registry'
 
 // Named field by field, so a field added to the stored record never reaches the renderer by
 // accident; the grant lives in another file entirely.

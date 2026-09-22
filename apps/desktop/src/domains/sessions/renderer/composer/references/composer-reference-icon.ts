@@ -1,4 +1,4 @@
-import type { SessionReferenceKind } from '@/domains/sessions/renderer/composer/references/session-reference'
+import type { SessionReferenceKind } from './session-reference'
 
 const iconPaths: Record<SessionReferenceKind, readonly string[]> = {
   command: ['M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3'],

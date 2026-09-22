@@ -4,14 +4,11 @@ import {
   CodeBlockFilename,
   CodeBlockHeader,
   CodeBlockTitle,
-} from '@/domains/sessions/renderer/ai-elements/code-block'
-import { CodeBlockCopyButton } from '@/domains/sessions/renderer/ai-elements/code-block-copy-button'
-import {
-  codeLanguageLabel,
-  detectCodeLanguage,
-} from '@/domains/sessions/renderer/feed/content/code-language'
-import { CodeLanguageIcon } from '@/domains/sessions/renderer/feed/content/code-language-icon'
-import { FEED_CARD_RADIUS_CLASS } from '@/domains/sessions/renderer/feed/content/feed-surface'
+} from '../../ai-elements/code-block'
+import { CodeBlockCopyButton } from '../../ai-elements/code-block-copy-button'
+import { codeLanguageLabel, detectCodeLanguage } from './code-language'
+import { CodeLanguageIcon } from './code-language-icon'
+import { FEED_CARD_RADIUS_CLASS } from './feed-surface'
 
 export function FeedCode({ source, language }: { source: string; language?: string }) {
   const detectedLanguage = detectCodeLanguage(source, language)

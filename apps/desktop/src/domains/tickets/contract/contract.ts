@@ -3,14 +3,7 @@
 // Shared by main and renderer, so it imports neither Electron nor Node.
 import { z } from 'zod'
 import { displayName, provider } from '@/domains/accounts/contract/contract'
-import {
-  priorityLevel,
-  statusId,
-  ticket,
-  ticketKey,
-  ticketPriority,
-  ticketStatus,
-} from '@/domains/tickets/contract/ticket'
+import { PROVIDER_OUTAGE_ERRORS } from '@/domains/accounts/contract/provider-outage'
 import {
   type ContractError,
   errorFactory,
@@ -18,6 +11,7 @@ import {
   identifier,
   message,
 } from '@/shared/messages'
+import { priorityLevel, statusId, ticket, ticketKey, ticketPriority, ticketStatus } from './ticket'
 
 export type {
   Ticket,
@@ -26,7 +20,7 @@ export type {
   TicketPriority,
   TicketState,
   TicketStatus,
-} from '@/domains/tickets/contract/ticket'
+} from './ticket'
 
 // One screenful: small enough that its edge reads land before a person scrolls to the next.
 export const TICKET_PAGE_SIZE = 25
@@ -154,10 +148,7 @@ export const TICKET_ERRORS = {
   'ticket-not-found': 'That Ticket is no longer in this repository or team.',
   'ticket-not-writable': 'This Account is not allowed to change that Ticket.',
   'status-unknown': 'That status is not one this Ticket can move to.',
-  'rate-limited': 'GitHub is limiting requests. Try again in a few minutes.',
-  'github-unreachable': 'Argo cannot reach GitHub.',
-  'linear-rate-limited': 'Linear is limiting requests. Try again in a few minutes.',
-  'linear-unreachable': 'Argo cannot reach Linear.',
+  ...PROVIDER_OUTAGE_ERRORS,
   'grant-unreadable': 'Argo cannot read the stored sign-in. Reconnect the Account.',
   'storage-invalid': 'The store of connected Ticket sources cannot be read in this format.',
   'storage-unavailable': 'Argo cannot access the store of connected Ticket sources.',

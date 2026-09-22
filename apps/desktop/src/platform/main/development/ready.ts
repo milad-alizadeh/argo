@@ -1,10 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { createConnection } from 'node:net'
 import type { BrowserWindow } from 'electron'
-import {
-  type DevelopmentInstance,
-  developmentReadyRecord,
-} from '@/platform/main/development/instance'
+import { type DevelopmentInstance, developmentReadyRecord } from './instance'
 
 type DevelopmentReadinessFailureReporter = (message: string) => void
 

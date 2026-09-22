@@ -5,16 +5,11 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SessionSubagent } from '@/domains/sessions/contract/model/models'
-import { BasicFeed } from '@/domains/sessions/renderer/feed/basic-feed'
-import { INACTIVE_FEED_LIVE_FACTS } from '@/domains/sessions/renderer/feed/feed-live-facts'
-import type {
-  SessionError,
-  SessionEvidence,
-  SessionFeed,
-  SessionFeedRow,
-} from '@/domains/sessions/renderer/types'
+import { BasicFeed } from '../feed/document/basic-feed'
+import { INACTIVE_FEED_LIVE_FACTS } from '../feed/document/feed-live-facts'
+import type { SessionError, SessionEvidence, SessionFeed, SessionFeedRow } from '../types'
 
-import '@/domains/sessions/renderer/feed/feed.css'
+import '../feed/feed.css'
 
 function useVisibleInspector() {
   const inspector = useRef<HTMLElement>(null)

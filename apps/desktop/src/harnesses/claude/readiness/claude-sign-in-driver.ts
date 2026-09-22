@@ -2,11 +2,11 @@
 // `claude auth login --help`, 2.1.278: `--claudeai` is already its default). The process opens
 // the browser itself and blocks until the flow ends, so login() resolves only then.
 import { type ChildProcess, spawn } from 'node:child_process'
-import type { HarnessSignInDriver } from '@/domains/harness-signin/main/port'
-import { claudeCliEnvironment } from '@/harnesses/claude/cli-environment'
-import { createSystemClaudeReadiness } from '@/harnesses/claude/readiness/system-claude-readiness'
-import { findExecutableOnLoginShellPath } from '@/harnesses/executable-path'
-import { runLoginProcess } from '@/harnesses/run-login-process'
+import type { HarnessSignInDriver } from '@/domains/harness-signin/main/harness-sign-in'
+import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
+import { runLoginProcess } from '@/harnesses/host/run-login-process'
+import { claudeCliEnvironment } from '../cli-environment'
+import { createSystemClaudeReadiness } from './system-claude-readiness'
 
 export type ClaudeLoginSpawn = (executable: string, args: string[]) => ChildProcess
 

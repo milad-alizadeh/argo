@@ -4,15 +4,15 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { SessionDriveAdapters } from '@/domains/sessions/contract/session-drive-adapter'
-import { compactSession, sendSession } from '@/domains/sessions/main/drive/drive'
-import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
-import { tempRoot } from '@/domains/sessions/main/observation/reader-test-helpers'
 import { createClaudeDriveAdapter } from '@/harnesses/claude/drive/session-drive-adapter'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
-import type { CodexSessionDrive } from '@/harnesses/codex/drive/codex-session-driver'
-import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session-drive-adapter'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-sessions'
+import type { CodexSessionDrive } from '@/harnesses/codex/drive/session/codex-session-driver'
+import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session/session-drive-adapter'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+import { managedRow } from '../lifecycle/status/managed-row'
+import { createSessionReader } from '../observation/reader/reader'
+import { tempRoot } from '../observation/reader/reader-test-helpers'
+import { compactSession, sendSession } from './drive'
 
 const setup = { model: null, effort: null, mode: null } as const
 const noOp = async () => {}

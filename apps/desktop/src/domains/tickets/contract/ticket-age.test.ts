@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { ticketAge } from '@/domains/tickets/contract/ticket-age'
+import { ticketAge } from './ticket-age'
 
 const NOW = Date.parse('2026-09-13T12:00:00Z')
 

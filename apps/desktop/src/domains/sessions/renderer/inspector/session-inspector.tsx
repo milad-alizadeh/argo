@@ -1,19 +1,10 @@
 import type { ReactNode } from 'react'
-import type { SessionShellOutput } from '@/domains/sessions/contract/model/background-work-contract'
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/model/models'
-import type { SessionError, SessionEvidence, SessionFeed } from '@/domains/sessions/renderer/types'
+import type { SessionShellOutput } from '@/domains/sessions/contract/model/wire/background-work-contract'
+import type { SessionError, SessionEvidence, SessionFeed } from '../types'
 import { SessionDelegationInspector } from './session-delegation-inspector'
 import { SessionEvidenceInspector } from './session-evidence-inspector'
 import { SessionShellInspector } from './session-shell-inspector'
-
-// What the reader picked out of the header's work buttons, held against the Session it was picked
-// in: a selection made in one Session says nothing about the next, and keying it this way retires
-// it without an effect that fires a frame late (#1582).
-export type WorkSelection = {
-  sessionId: string | null
-  subagentId: string | null
-  shellId: string | null
-}
 
 // What the inspector shows, in the order the reader's own last act put it: recorded evidence they
 // opened from the Feed, then the background work they picked in the header.

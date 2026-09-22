@@ -6,7 +6,7 @@ import { mkdtemp, rm, stat } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
-import { openSessionIndex } from '@/domains/sessions/main/index/session-index/open-index'
+import { openSessionIndex } from '@/domains/sessions/main/indexing/session-index/open-index'
 import {
   backfillTick,
   discoverSessions,

@@ -4,10 +4,15 @@ import type { ProjectError } from './project-error'
 import {
   projectSetupEffectSchema,
   projectSetupPendingApprovalSchema,
-} from './project-setup-approval'
-import { projectSetupAnswerSchema, projectSetupQuestionSchema } from './project-setup-question'
-import { projectSetupRecoveryCodeSchema } from './project-setup-recovery'
-import { projectSetupScreenSchema } from './project-setup-screen'
+} from './setup/project-setup-approval'
+import {
+  projectSetupAnswerSchema,
+  projectSetupQuestionSchema,
+} from './setup/project-setup-question'
+import { projectSetupRecoveryCodeSchema } from './setup/project-setup-recovery'
+import { projectSetupScreenSchema } from './setup/project-setup-screen'
+import { acceptedSetupPlanSchema, setupPlanSchema } from './setup/setup-plan'
+import { setupStepStatusSchema } from './setup/setup-progress'
 
 export {
   PROJECT_ERROR_CODES,
@@ -16,9 +21,6 @@ export {
   projectError,
   projectErrorSchema,
 } from './project-error'
-
-import { acceptedSetupPlanSchema, setupPlanSchema } from './setup-plan'
-import { setupStepStatusSchema } from './setup-progress'
 
 export const projectOpenRequestSchema = z.strictObject({
   version: z.literal(1),

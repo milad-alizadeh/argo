@@ -1,6 +1,6 @@
 import { type QueryKey, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
-import type { WatchTopic } from '@/platform/shared/watch'
+import type { WatchTopic } from '@/platform/contract/watch'
 
 // Runs when the main process says the files behind a topic changed. Any module can name its own
 // topic; the roster and the Feed are the first callers, and each reads itself again.

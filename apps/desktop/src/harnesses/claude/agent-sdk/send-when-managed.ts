@@ -1,4 +1,4 @@
-import type { ClaudeSessionActor } from '@/harnesses/claude/agent-sdk/claude-session-projection'
+import type { ClaudeSessionActor } from './claude-session-projection'
 
 export function sendWhenManaged(actor: ClaudeSessionActor, prompt: string) {
   return new Promise<boolean>((resolve) => {

@@ -2,23 +2,23 @@
   "forbidden": [
     {
       "name": "domain-port-only",
-      "comment": "A domain reaches another domain's main or renderer facet only through that domain's port.ts (ADR-0044).",
+      "comment": "A domain reaches another domain's main or renderer facet only through that domain's index.ts (ADR-0044).",
       "severity": "error",
       "from": {
         "path": "^apps/desktop/src/domains/([^/]+)/",
         "pathNot": [
           "\\.(test|stories)\\.(ts|tsx)$",
-          "^apps/desktop/src/domains/accounts/main/harness-fixtures\\.ts$",
-          "^apps/desktop/src/domains/sessions/main/index/session-index/roster-fixtures\\.ts$"
+          "^apps/desktop/src/domains/accounts/main/test-support/harness-fixtures\\.ts$",
+          "^apps/desktop/src/domains/sessions/main/indexing/session-index/roster-fixtures\\.ts$"
         ]
       },
       "to": {
         "path": "^apps/desktop/src/domains/[^/]+/(main|renderer)/",
         "pathNot": [
           "^apps/desktop/src/domains/$1/",
-          "/port\\.tsx?$",
-          "^apps/desktop/src/domains/accounts/main/harness-fixtures\\.ts$",
-          "^apps/desktop/src/domains/sessions/main/index/session-index/roster-fixtures\\.ts$"
+          "/index\\.tsx?$",
+          "^apps/desktop/src/domains/accounts/main/test-support/harness-fixtures\\.ts$",
+          "^apps/desktop/src/domains/sessions/main/indexing/session-index/roster-fixtures\\.ts$"
         ]
       }
     },
@@ -32,6 +32,61 @@
       },
       "to": {
         "path": "^apps/desktop/src/harnesses/codex/sessions/"
+      }
+    },
+    {
+      "name": "feature-entry-point-only",
+      "comment": "One folder, one secret (AGENTS.md): a feature folder directly under a domain facet or a harness is reached through its entry point, never past it. The entry point is index.ts, or the file named after the folder, and the four of the latter that exist today are listed below. Parked at info for a follow-up ticket: 754 edges still breach it, so as an error it would gate every PR on finishing the whole restructure. The count is the distance to the target. Shrink it by adding entry points and raise this back to error at zero, never widen the rule to fit.",
+      "severity": "info",
+      "from": {
+        "path": "^apps/desktop/src/((?:domains/[^/]+/(?:contract|main|preload|renderer)|harnesses/[^/]+)/[^/]+|[^/]+)",
+        "pathNot": ["\\.(test|stories)\\.(ts|tsx)$"]
+      },
+      "to": {
+        "path": "^apps/desktop/src/(?:domains/[^/]+/(?:contract|main|preload|renderer)|harnesses/[^/]+)/[^/]+/",
+        "pathNot": [
+          "^apps/desktop/src/$1/",
+          "/index\\.tsx?$",
+          "^apps/desktop/src/domains/sessions/renderer/composer/composer\\.ts$",
+          "^apps/desktop/src/domains/sessions/renderer/roster/roster\\.ts$",
+          "^apps/desktop/src/domains/sessions/renderer/turn-setup/turn-setup\\.ts$",
+          "^apps/desktop/src/domains/sessions/main/drive/drive\\.ts$"
+        ]
+      }
+    },
+    {
+      "name": "no-aliased-same-facet-import",
+      "comment": "A file inside one domain facet, platform facet, or harness reaches another file in that same facet with a relative path; @/ is reserved for crossing to another facet, domain, or harness.",
+      "severity": "error",
+      "from": {
+        "path": "^(apps/desktop/src/(?:domains/[^/]+/(?:contract|main|preload|renderer)|platform/(?:main|preload|renderer|shared)|harnesses/[^/]+|renderer|shared))/"
+      },
+      "to": {
+        "dependencyTypes": ["aliased-tsconfig"],
+        "path": "^$1/"
+      }
+    },
+    {
+      "name": "no-relative-cross-facet-import",
+      "comment": "A relative import stays inside its own domain facet, platform facet, or harness. Reaching another one uses @/ (pairs with no-aliased-same-facet-import).",
+      "severity": "error",
+      "from": {
+        "path": "^(apps/desktop/src/(?:domains/[^/]+/(?:contract|main|preload|renderer)|platform/(?:main|preload|renderer|shared)|harnesses/[^/]+|renderer|shared))/"
+      },
+      "to": {
+        "path": "^apps/desktop/src/",
+        "pathNot": "^$1/",
+        "dependencyTypesNot": ["aliased-tsconfig"]
+      }
+    },
+    {
+      "name": "mocks-and-e2e-reach-src-through-alias",
+      "comment": "mocks/ and e2e/ live outside apps/desktop/src (AGENTS.md), so reaching into src is always a crossing: it uses @/, never a relative path.",
+      "severity": "error",
+      "from": { "path": "^apps/desktop/(mocks|e2e)/" },
+      "to": {
+        "path": "^apps/desktop/src/",
+        "dependencyTypesNot": ["aliased-tsconfig"]
       }
     }
   ],

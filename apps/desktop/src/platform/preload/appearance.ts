@@ -8,7 +8,7 @@ import {
   DEFAULT_APPEARANCE,
   isAppearance,
   isAppearanceState,
-} from '@/platform/shared/appearance'
+} from '@/platform/contract/appearance'
 import { createDomainClient } from '@/shared/ipc/client'
 
 export type AppearanceClient = {

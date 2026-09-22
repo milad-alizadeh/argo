@@ -1,7 +1,6 @@
 import { PlugZap } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { HarnessReadiness } from '@/domains/harness-signin/contract/contract'
-import { HarnessSignInCards } from '@/domains/harness-signin/renderer/components/harness-sign-in-cards'
 import {
   Empty,
   EmptyContent,
@@ -10,6 +9,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/platform/renderer/components/ui/empty'
+import { HarnessSignInCards } from '../components/harness-sign-in-cards'
 
 // Nothing in the cockpit can run a Session with no Harness signed in, so this replaces the whole
 // window rather than sitting inside the Roster (#2579, gated the way `EmptyProjectScreen` is).

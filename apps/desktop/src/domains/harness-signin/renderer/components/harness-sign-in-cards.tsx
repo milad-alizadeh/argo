@@ -1,13 +1,10 @@
 import { useTranslation } from 'react-i18next'
 import type { HarnessReadiness } from '@/domains/harness-signin/contract/contract'
-import {
-  HarnessStateBody,
-  STATE_BADGE_VARIANT,
-} from '@/domains/harness-signin/renderer/components/harness-readiness-row'
-import { useHarnessSignIn } from '@/domains/harness-signin/renderer/hooks/use-harness-sign-in'
-import { HarnessLogo } from '@/domains/sessions/renderer/port'
+import { HarnessLogo } from '@/domains/sessions/renderer'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Card, CardContent } from '@/platform/renderer/components/ui/card'
+import { useHarnessSignIn } from '../hooks/use-harness-sign-in'
+import { HarnessStateBody, STATE_BADGE_VARIANT } from './harness-readiness-row'
 
 // One card per Harness, wired to its own sign-in attempt, so the panel below stays presentational:
 // it only ever hands out a `HarnessReadiness`, never a mutation.

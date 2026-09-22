@@ -1,7 +1,7 @@
 import { useContext } from 'react'
 import type { ExtraProps } from 'react-markdown'
-import { FeedMermaid } from '@/domains/sessions/renderer/feed/content/feed-mermaid'
-import { MarkdownEvidence } from '@/domains/sessions/renderer/feed/content/markdown-evidence'
+import { FeedMermaid } from './feed-mermaid'
+import { MarkdownEvidence } from './markdown-evidence'
 
 type MarkdownNode = ExtraProps['node']
 

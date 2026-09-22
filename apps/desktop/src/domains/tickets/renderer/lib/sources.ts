@@ -16,20 +16,31 @@ export type SourcePresentation = {
   keyColumn: string
   // The provider's word for a Ticket's status: GitHub's open or closed, Linear's workflow state.
   statusNoun: string
+  // Whether the provider carries a Priority a Ticket can hold.
+  hasPriority: boolean
 }
 
 // Neither a URL builder nor a CSS token is user-facing text, so both stay static per provider.
 const STATIC: Record<
   Provider,
-  { newTicketURL: SourcePresentation['newTicketURL']; keyColumn: string }
+  {
+    newTicketURL: SourcePresentation['newTicketURL']
+    keyColumn: string
+    hasPriority: boolean
+    statusNounKey: 'tickets:status.noun.state' | 'tickets:status.noun.status'
+  }
 > = {
   github: {
     newTicketURL: (scope) => `https://github.com/${scope}/issues/new`,
     keyColumn: 'w-(--size-ticket-key)',
+    hasPriority: false,
+    statusNounKey: 'tickets:status.noun.state',
   },
   linear: {
     newTicketURL: null,
     keyColumn: 'w-(--size-ticket-key-long)',
+    hasPriority: true,
+    statusNounKey: 'tickets:status.noun.status',
   },
 }
 
@@ -42,9 +53,6 @@ export function sourcePresentation(provider: Provider): SourcePresentation {
     scopePlaceholder: i18n.t(`tickets:source.${provider}.scopePlaceholder`),
     noScopes: (login) => i18n.t(`tickets:source.${provider}.noScopes`, { login }),
     noDependencies: i18n.t(`tickets:source.${provider}.noDependencies`),
-    statusNoun:
-      provider === 'github'
-        ? i18n.t('tickets:status.noun.state')
-        : i18n.t('tickets:status.noun.status'),
+    statusNoun: i18n.t(STATIC[provider].statusNounKey),
   }
 }

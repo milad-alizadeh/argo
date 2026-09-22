@@ -2,17 +2,14 @@
 // callers share this so the revision handshake, which answers `session.feed.unchanged` and expects
 // the holder to keep what it already has, is written once.
 import type { QueryClient, QueryKey, UseQueryOptions } from '@tanstack/react-query'
-import { mergeAppendedFeed } from '@/domains/sessions/contract/model/feed-contract'
+import { mergeAppendedFeed } from '@/domains/sessions/contract/model/wire/feed-contract'
 import {
   type SessionContractError,
   throwSessionContractError,
   throwUnexpectedSessionReply,
-} from '@/domains/sessions/renderer/session-contract-error'
-import {
-  SESSION_REFRESH_MS,
-  sessionFeedQueryKey,
-} from '@/domains/sessions/renderer/session-queries'
-import type { SessionFeed, SessionId } from '@/domains/sessions/renderer/types'
+} from '../session-contract-error'
+import { SESSION_REFRESH_MS, sessionFeedQueryKey } from '../session-queries'
+import type { SessionFeed, SessionId } from '../types'
 
 export async function retrySessionFeed(
   queryClient: QueryClient,

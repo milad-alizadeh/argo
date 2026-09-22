@@ -1,7 +1,7 @@
 import { QueryClient } from '@tanstack/react-query'
-import type { ProjectSummary } from '../../src/domains/projects/contract/messages'
-import type { sendToNewSession } from '../../src/domains/sessions/renderer/composer/send-turn'
-import type { TurnSetup } from '../../src/domains/sessions/renderer/turn-setup/turn-setup'
+import type { ProjectSummary } from '@/domains/projects/contract/messages'
+import type { sendToNewSession } from '@/domains/sessions/renderer/composer/send/send-turn'
+import type { TurnSetup } from '@/domains/sessions/renderer/composer/turn-setup/turn-setup'
 
 export const PROJECT: ProjectSummary = { id: 'project-1', name: 'argo', path: '/argo' }
 export const SETUP: TurnSetup = { model: 'sonnet', effort: 'high', mode: 'default' }

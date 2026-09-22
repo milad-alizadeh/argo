@@ -1,4 +1,4 @@
-import type { ClaudeSdkMessage } from '@/harnesses/claude/agent-sdk/types'
+import type { ClaudeSdkMessage } from './types'
 
 export function recoveringState(
   messageParams: ({ event }: { event: { message: ClaudeSdkMessage } }) => {

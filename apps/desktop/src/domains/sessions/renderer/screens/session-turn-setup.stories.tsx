@@ -3,9 +3,9 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionSetup } from '@/domains/sessions/contract/model/models'
-import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
-import { SessionScreenView } from '@/domains/sessions/renderer/screens/session-screen-view'
-import { sessionRosterRow } from '@/domains/sessions/renderer/session-fixtures'
+import { useComposerStore } from '../composer'
+import { sessionRosterRow } from '../session-fixtures'
+import { SessionScreenView } from './session-screen-view'
 
 const SESSION_ID = 'managed-turn-setup'
 const OPENING_TURN = '2026-09-13T10:00:00.000Z'

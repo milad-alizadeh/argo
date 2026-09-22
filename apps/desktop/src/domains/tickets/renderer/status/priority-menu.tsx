@@ -1,12 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
 import type { TicketPriority } from '@/domains/tickets/contract/contract'
-import {
-  NO_PRIORITY_LABEL,
-  PRIORITY_OPTIONS,
-  PriorityIcon,
-  priorityName,
-} from '@/domains/tickets/renderer/status/ticket-status'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   DropdownMenu,
@@ -15,6 +9,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
+import { NO_PRIORITY_LABEL, PRIORITY_OPTIONS, PriorityIcon, priorityName } from './ticket-status'
 
 export type PriorityMenuProps = {
   priority: TicketPriority | null

@@ -8,7 +8,7 @@ import {
   harnessSignInStartedSchema,
   harnessSignInStartRequestSchema,
   harnessSignInWaitRequestSchema,
-} from '@/domains/harness-signin/contract/contract'
+} from './contract'
 
 // The Harness sign-in IPC contract: one channel for the readiness reading and one triad
 // (start/wait/cancel) for a Harness's own sign-in flow, mirroring the Account operations table.

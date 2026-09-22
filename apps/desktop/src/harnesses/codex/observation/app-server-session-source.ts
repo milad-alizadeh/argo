@@ -1,15 +1,10 @@
 import { driveSessionError } from '@/domains/sessions/contract/ipc/contract'
-import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
+import type { SessionSource } from '@/domains/sessions/main/observation/reader/session-source'
 import type {
   SessionAdapter,
   SessionProjection,
 } from '@/domains/sessions/next/contract/session-projection-contract'
-import {
-  discovery,
-  mergedProjections,
-  rosterRowOf,
-  rowsOf,
-} from '@/harnesses/codex/observation/codex-history-rows'
+import { discovery, mergedProjections, rosterRowOf, rowsOf } from './codex-history-rows'
 
 export function createCodexAppServerSessionSource(options: {
   projections: () => readonly SessionProjection[]

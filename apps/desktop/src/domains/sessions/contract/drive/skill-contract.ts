@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { sessionErrorSchema } from '@/domains/sessions/contract/model/session-error'
 import { identifierSchema } from '@/shared/validation'
+import { sessionErrorSchema } from '../session-error'
 
 // A skill a prompt mentions, read by the absolute path the Harness wrote into the prompt.
 export const sessionSkillRequestSchema = z.strictObject({

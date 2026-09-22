@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { ticketError } from '@/domains/tickets/contract/contract'
-import { SourceSettings } from '@/domains/tickets/renderer/connection/source-settings'
-import { connection } from '@/domains/tickets/renderer/detail/ticket-fixtures'
+import { connection } from '../detail/ticket-fixtures'
+import { SourceSettings } from './source-settings'
 
 const meta = {
   title: 'Tickets/Connection/Source Settings',

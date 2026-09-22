@@ -1,8 +1,8 @@
 import { assertEvent, assign, sendTo, setup } from 'xstate'
-import { inactiveProjectSetupActors } from '@/domains/projects/main/setup/actors/project-setup-actors'
-import { projectSetupApplicationInput } from '@/domains/projects/main/setup/actors/project-setup-application-actor'
-import { projectSetupCancellationInput } from '@/domains/projects/main/setup/actors/project-setup-cancellation-actor'
-import { projectSetupPlanningInput } from '@/domains/projects/main/setup/actors/project-setup-planning-actor'
+import { inactiveProjectSetupActors } from './actors/project-setup-actors'
+import { projectSetupApplicationInput } from './actors/project-setup-application-actor'
+import { projectSetupCancellationInput } from './actors/project-setup-cancellation-actor'
+import { projectSetupPlanningInput } from './actors/project-setup-planning-actor'
 import {
   initialProjectSetupContext,
   type ProjectSetupContext,

@@ -1,7 +1,7 @@
 import { type RefObject, useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { usePanelRef } from 'react-resizable-panels'
 
-import { readCssSize } from '@/platform/renderer/lib/read-css-size'
+import { readCssSize } from '../../lib/read-css-size'
 
 type InspectorState = 'open' | 'collapsed' | 'expanded'
 

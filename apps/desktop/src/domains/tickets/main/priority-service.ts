@@ -1,8 +1,8 @@
 // A Ticket's priority write, split out of service.ts to keep that file under its line cap.
 import type { TicketPriorityReply } from '@/domains/tickets/contract/contract'
 import type { PriorityChange } from '@/domains/tickets/contract/ticket'
-import { type Call, readAs } from '@/domains/tickets/main/read-as'
-import { writeTicketField } from '@/domains/tickets/main/service'
+import { type Call, readAs } from './read-as'
+import { writeTicketField } from './service'
 
 export async function updatePriority(
   call: Call,

@@ -1,12 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import type { SessionErrorCode } from '@/domains/sessions/contract/ipc/contract'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import { COMPOSER_COLUMN } from '@/domains/sessions/renderer/composer/composer-form'
-import { SessionComposer } from '@/domains/sessions/renderer/composer/session-composer'
-import type { HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
-import type { SessionRoster } from '@/domains/sessions/renderer/types'
-import { Icon } from '@/platform/renderer/components/icon'
-import { PermissionPrompt } from '@/platform/renderer/components/permission-prompt'
+import { Icon } from '@/platform/renderer/components/icon/icon'
+import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
 import {
   Alert,
   AlertAction,
@@ -14,6 +10,10 @@ import {
   AlertTitle,
 } from '@/platform/renderer/components/ui/alert'
 import { Button } from '@/platform/renderer/components/ui/button'
+import { SessionComposer } from '../composer/editor/session-composer'
+import { COMPOSER_COLUMN } from '../composer/layout/composer-form'
+import type { HarnessControl } from '../harness/harnesses'
+import type { SessionRoster } from '../types'
 
 // Only this code means "open elsewhere": no Turn here can ever succeed, so the composer gives
 // way to the lock card instead of sitting under it (#2053, #2092). Every other failure code keeps
@@ -22,14 +22,10 @@ const OPEN_ELSEWHERE: ReadonlySet<SessionErrorCode> = new Set(['held-elsewhere']
 
 type SessionScreenDetailsProps = {
   composer: Pick<
-    ReturnType<
-      typeof import('@/domains/sessions/renderer/composer/use-session-composer').useSessionComposer
-    >,
+    ReturnType<typeof import('../composer').useSessionComposer>,
     'failure' | 'props' | 'retry'
   >
-  permission: ReturnType<
-    typeof import('@/domains/sessions/renderer/composer/use-session-permission').useSessionPermission
-  >
+  permission: ReturnType<typeof import('../composer').useSessionPermission>
   questionPending: boolean
   session: SessionRosterRow | null
   harness: HarnessControl

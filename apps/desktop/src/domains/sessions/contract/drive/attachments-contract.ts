@@ -2,8 +2,8 @@
 // only each Harness's own adapter (agents/<harness>/) turns a readable path into that Harness's wire
 // representation of an attachment (#1886).
 import { z } from 'zod'
-import { sessionErrorSchema } from '@/domains/sessions/contract/model/session-error'
 import { identifierSchema } from '@/shared/validation'
+import { sessionErrorSchema } from '../session-error'
 
 // The formats every adapter's own image input variant accepts (Codex's `localImage`, e.g.);
 // anything else is a generic file reference. Kept as one classifier so the composer's preview

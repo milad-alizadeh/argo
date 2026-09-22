@@ -3,10 +3,10 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'vitest'
-import { createProjectStore, type ProjectStore } from '@/domains/projects/main/sqlite-store'
 import { createDurableDatabase } from '@/platform/main/storage/durable-database'
 import { databaseMigrationsFolder } from '@/platform/main/storage/migrations-folder'
 import { openSharedDatabase } from '@/platform/main/storage/shared-database'
+import { createProjectStore, type ProjectStore } from '../sqlite-store'
 
 function writeWorkspaces(store: ProjectStore): void {
   store.replace({

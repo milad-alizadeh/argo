@@ -3,16 +3,16 @@
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { Page } from 'playwright-core'
+import {
+  SESSION_MOCK_ADVERSARIAL_SEED_ENV,
+  SESSION_MOCK_REPLY_DELAY_MS_ENV,
+} from '@/domains/sessions/contract/proof-protocol'
+import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import type {
   SessionFixture,
   SessionHarnessBackend,
   SessionReply,
 } from '../../e2e/sessions/session-harness-backend'
-import {
-  SESSION_MOCK_ADVERSARIAL_SEED_ENV,
-  SESSION_MOCK_REPLY_DELAY_MS_ENV,
-} from '../../src/domains/sessions/main/composition/proof-protocol'
-import type { SessionHarness } from '../../src/domains/sessions/renderer/harness/harnesses'
 import { mockClaudeHarness } from '../cli/claude/mock-claude-cli'
 import { mockCodexHarness } from '../cli/codex/mock-codex-cli'
 import type { MockHarness } from '../cli/mock-cli'

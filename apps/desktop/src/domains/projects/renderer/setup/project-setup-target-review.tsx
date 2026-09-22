@@ -1,13 +1,13 @@
 import { useTranslation } from 'react-i18next'
-import type { SetupPlan } from '@/domains/projects/contract/setup-plan'
-import { Icon } from '@/platform/renderer/components/icon'
+import type { SetupPlan } from '@/domains/projects/contract/setup/setup-plan'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   Fact,
   joinOrNone,
   PackageNames,
   PlanSection,
   ToolIcon,
-} from './project-setup-plan-review-parts'
+} from './plan/project-setup-plan-review-parts'
 
 export function TargetReview({
   recommendations,

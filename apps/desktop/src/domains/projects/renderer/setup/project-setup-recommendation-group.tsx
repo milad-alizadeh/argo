@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Switch } from '@/platform/renderer/components/ui/switch'
-import { PackageNames, PlanSection, ToolIcon } from './project-setup-plan-review-parts'
+import { PackageNames, PlanSection, ToolIcon } from './plan/project-setup-plan-review-parts'
 
 export function RecommendationGroup({
   fallbackIcon,

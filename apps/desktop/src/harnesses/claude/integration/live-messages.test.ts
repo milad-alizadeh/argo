@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { createLiveMessages } from '@/harnesses/claude/drive/live-messages'
+import { createLiveMessages } from '../drive/channel/live-messages'
 
 // The fields of a MessageDisplay hook input claude 2.1.270 sends, one batch of lines per call.
 const batch = (turn: string) => (message: string, index: number, delta: string) => ({

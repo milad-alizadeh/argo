@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createCodexAppServerDriveAdapter } from '../../../src/harnesses/codex/drive/codex-app-server-drive-adapter.ts'
+import { createCodexAppServerDriveAdapter } from '@/harnesses/codex/drive/codex-app-server-drive-adapter'
 import { createAdapter, mockCodexExecutable } from './mock-codex-session-adapter-support.ts'
 
 test('sends a follow-up Turn to a Codex Session this window does not hold yet', async () => {

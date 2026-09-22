@@ -3,14 +3,14 @@ import { appendFile, mkdir, readdir, utimes, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { type TestContext, test } from 'node:test'
 import type { SessionReader } from '@/domains/sessions/main/composition/bridge'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader/reader'
 import {
   listed,
   tempRoot,
   writeClaudeTranscript,
-} from '@/domains/sessions/main/observation/reader-test-helpers'
-import { startedSession } from '@/harnesses/claude/integration/claude-driver-launch.ts'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+} from '@/domains/sessions/main/observation/reader/reader-test-helpers'
+import { claudeSessionSource } from '../sessions/discovery/read-sessions'
+import { startedSession } from './claude-driver-launch'
 
 const SESSION = 'session-a'
 const MINUTE = 60_000

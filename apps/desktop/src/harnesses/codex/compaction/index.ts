@@ -1,0 +1,1 @@
+export { attachCodexCompactionBridge } from './bridge'

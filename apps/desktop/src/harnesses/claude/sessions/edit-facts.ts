@@ -1,4 +1,4 @@
-import type { EditedFile, EditFacts } from '@/domains/sessions/contract/model/transcript'
+import type { EditedFile, EditFacts } from '@/domains/sessions/contract/model/transcript/transcript'
 import { createdPatch, unifiedPatch } from '@/domains/sessions/contract/model/unified-patch'
 
 type Input = Record<string, unknown>

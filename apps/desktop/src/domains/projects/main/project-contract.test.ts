@@ -11,9 +11,9 @@ import type {
   ProjectOpenReply,
   ProjectOpenRequest,
 } from '@/domains/projects/contract/contract'
-import { openProject } from '@/domains/projects/main/open-project'
-import { createProjectStore } from '@/domains/projects/main/sqlite-store'
 import { databaseMigrationsFolder } from '@/platform/main/storage/migrations-folder'
+import { openProject } from './open-project'
+import { createProjectStore } from './sqlite-store'
 
 const request: ProjectOpenRequest = {
   version: 1,

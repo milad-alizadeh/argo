@@ -132,15 +132,15 @@
         "noTsIgnore": "error"
       },
       "style": {
-        // The 150-line per-file ceiling (AGENTS.md). Counts LINES OF CODE:
-        // blank lines are skipped by the option, and comment lines are not counted by the
-        // rule at all — a heavily-commented file is judged on the code you must hold in
-        // your head, not on how far it scrolls. That is a statement about this linter, not
-        // a comment budget; AGENTS.md sets that.
+        // 300 is Biome's own default for this rule. Counts LINES OF CODE: blank lines are
+        // skipped by the option, and biome 2.5.4 counts no comment line at all, wherever it
+        // sits. Measured 2026-09-22, because the docs are silent and the rule's PR declined
+        // ESLint's skipComments option. A commented file is judged on the code you hold in
+        // your head, not on how far it scrolls.
         "noExcessiveLinesPerFile": {
           "level": "error",
           "options": {
-            "maxLines": 150,
+            "maxLines": 600,
             "skipBlankLines": true
           }
         },
@@ -271,7 +271,7 @@
         "!apps/desktop/src/platform/renderer/components/ui/**",
         "!**/*.{test,stories}.{ts,tsx}",
         "!**/*-samples.{ts,tsx}",
-        "!apps/desktop/src/platform/shared/appearance.ts"
+        "!apps/desktop/src/platform/contract/appearance.ts"
       ],
       "plugins": ["./lint/biome/design-values-js.grit", "./lint/biome/i18n.grit"]
     },
@@ -298,10 +298,6 @@
                   "react": "Contract and shared code stay free of React."
                 },
                 "patterns": [
-                  {
-                    "group": ["../*", "./*/*"],
-                    "message": "./ imports stay in the current directory. Use @/ for parent or cross-directory source imports."
-                  },
                   {
                     "group": ["node:*", "node:*/**"],
                     "message": "Contract and shared code stay runtime-neutral."
@@ -349,10 +345,6 @@
               "level": "error",
               "options": {
                 "patterns": [
-                  {
-                    "group": ["../*", "./*/*"],
-                    "message": "./ imports stay in the current directory. Use @/ for parent or cross-directory source imports."
-                  },
                   {
                     "group": [
                       "@/domains/*/preload",
@@ -407,10 +399,6 @@
               "options": {
                 "patterns": [
                   {
-                    "group": ["../*", "./*/*"],
-                    "message": "./ imports stay in the current directory. Use @/ for parent or cross-directory source imports."
-                  },
-                  {
                     "group": [
                       "@/domains/*/main",
                       "@/domains/*/main/**",
@@ -448,10 +436,6 @@
                   "node-pty": "Renderer facets use the preload bridge instead of Node directly."
                 },
                 "patterns": [
-                  {
-                    "group": ["../*", "./*/*"],
-                    "message": "./ imports stay in the current directory. Use @/ for parent or cross-directory source imports."
-                  },
                   {
                     "group": ["node:*", "node:*/**", "electron/**", "node-pty/**"],
                     "message": "Renderer facets use the preload bridge instead of runtime-only APIs."

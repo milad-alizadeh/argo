@@ -19,7 +19,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '@/platform/renderer/components/ui/dropdown-menu'
+} from './dropdown-menu'
 
 function Menubar({ className, ...props }: MenubarPrimitive.Props) {
   return (

@@ -1,4 +1,4 @@
-import type { ClaudeSdkMessage } from '@/harnesses/claude/agent-sdk/types'
+import type { ClaudeSdkMessage } from './types'
 
 // Claude Code CLIs that predate this field never emit it, but every CLI a subscription-only
 // launch can reach does, so absence here would be a launch bug, not a legitimate unknown.

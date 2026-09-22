@@ -2,7 +2,7 @@ import type {
   FetchFacts,
   ReadFacts,
   SearchFacts,
-} from '@/domains/sessions/contract/model/transcript'
+} from '@/domains/sessions/contract/model/transcript/transcript'
 
 type Input = Record<string, unknown>
 type LookupFacts = ReadFacts | SearchFacts | FetchFacts

@@ -1,4 +1,4 @@
-import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
+import type { SessionSource } from '@/domains/sessions/main/observation/reader/session-source'
 import type { Harness, WorkspaceSelection } from '@/domains/sessions/next/contract/session-contract'
 import type { SessionAdapter } from '@/domains/sessions/next/contract/session-projection-contract'
 import type { SessionService } from '@/domains/sessions/next/main/session-service'

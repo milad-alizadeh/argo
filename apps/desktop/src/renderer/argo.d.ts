@@ -5,8 +5,8 @@ import type { CodexCompactionClient } from '@/domains/sessions/contract/codex-co
 import type { ManagedSessionClient } from '@/domains/sessions/next/preload/managed-session-client'
 import type { SessionHarnessent } from '@/domains/sessions/preload/client'
 import type { TicketClient } from '@/domains/tickets/preload/client'
+import type { DevelopmentIdentity } from '@/platform/contract/development-identity'
 import type { PlatformClient } from '@/platform/preload/client'
-import type { DevelopmentIdentity } from '@/platform/shared/development-identity'
 
 declare global {
   interface Window {

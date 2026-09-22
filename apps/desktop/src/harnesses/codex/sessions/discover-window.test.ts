@@ -5,10 +5,10 @@ import { mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { ROSTER_PAGE_SIZE } from '@/domains/sessions/main/observation/discover-transcript-sessions'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
-import { assertWindowGrowsToFarSession } from '@/domains/sessions/main/observation/window-proof-helpers'
-import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+import { ROSTER_PAGE_SIZE } from '@/domains/sessions/main/observation/reader/discover-transcript-sessions'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader/reader'
+import { assertWindowGrowsToFarSession } from '@/domains/sessions/main/observation/reader/window-proof-helpers'
+import { codexSessionSource } from './read-sessions'
 
 function codexMessage(text: string, updatedAt: string) {
   return `${JSON.stringify({

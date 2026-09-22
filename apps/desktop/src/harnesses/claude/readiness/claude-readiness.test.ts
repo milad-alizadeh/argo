@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { claudeReadiness } from '@/harnesses/claude/readiness/claude-readiness'
+import { claudeReadiness } from './claude-readiness'
 
 const found = () => '/usr/local/bin/claude'
 const missing = () => null

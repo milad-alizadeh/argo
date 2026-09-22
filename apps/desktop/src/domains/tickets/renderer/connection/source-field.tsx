@@ -1,8 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
-import { capitalized, providerPresentation } from '@/domains/accounts/renderer/port'
+import { capitalized, providerPresentation } from '@/domains/accounts/renderer'
 import type { TicketScope } from '@/domains/tickets/contract/contract'
-import { sourcePresentation } from '@/domains/tickets/renderer/lib/sources'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Combobox,
@@ -18,6 +17,7 @@ import {
   FieldError,
   FieldLabel,
 } from '@/platform/renderer/components/ui/field'
+import { sourcePresentation } from '../lib/sources'
 
 // The sources the chosen Account can see, read from its provider before the form can offer one.
 export type SourceDiscovery =

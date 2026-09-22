@@ -1,9 +1,9 @@
 import { appendFile, mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
-import type { LiveMessage } from '@/harnesses/claude/drive/live-messages'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader/reader'
+import type { LiveMessage } from '../drive/channel/live-messages'
+import { claudeSessionSource } from '../sessions/discovery/read-sessions'
 
 const SESSION = 'c3b0f6a2-5d7e-4f7a-9d61-2f1f3c1d8e10'
 

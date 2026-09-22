@@ -1,7 +1,7 @@
 import Ansi from 'ansi-to-react'
 import React, { type HTMLAttributes, useCallback, useContext, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { cn } from '@/platform/renderer/lib/utils'
 import './terminal.css'

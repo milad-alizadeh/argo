@@ -1,10 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { createActor } from 'xstate'
-import {
-  fakeClaudeQuery,
-  managedSessionService,
-} from '@/harnesses/claude/agent-sdk/claude-query-fixture'
-import { createClaudeSessionMachine } from '@/harnesses/claude/agent-sdk/claude-session-actor'
+import { fakeClaudeQuery, managedSessionService } from './claude-query-fixture'
+import { createClaudeSessionMachine } from './claude-session-actor'
 
 function flush(): Promise<void> {
   return new Promise((resolve) => setImmediate(resolve))

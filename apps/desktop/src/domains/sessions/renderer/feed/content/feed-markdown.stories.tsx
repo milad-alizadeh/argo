@@ -1,11 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { roleColors } from '@/domains/sessions/renderer/feed/content/appearance-probe'
-import { FeedMarkdown } from '@/domains/sessions/renderer/feed/content/feed-markdown'
-import {
-  RICH_MARKDOWN,
-  SAMPLE_PICTURE,
-} from '@/domains/sessions/renderer/feed/content/feed-samples'
+import { roleColors } from './appearance-probe'
+import { FeedMarkdown } from './feed-markdown'
+import { RICH_MARKDOWN, SAMPLE_PICTURE } from './feed-samples'
 
 const meta = {
   title: 'Sessions/Feed/Markdown',

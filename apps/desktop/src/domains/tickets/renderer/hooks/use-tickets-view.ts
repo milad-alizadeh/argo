@@ -2,27 +2,23 @@
 // the Tickets, resolved into the single view the screen draws.
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router'
-import { useAccounts } from '@/domains/accounts/renderer/port'
-import { useSelectedProject } from '@/domains/projects/renderer/port'
-import { useConnectForm } from '@/domains/tickets/renderer/hooks/use-connect-form'
+import { useAccounts } from '@/domains/accounts/renderer'
+import { useSelectedProject } from '@/domains/projects/renderer'
+import { useSettledQuery } from '../state/use-ticket-search'
+import { useConnectForm } from './use-connect-form'
 import {
   connectedView,
   failure,
   loading,
   type TicketsView,
   unconnectedView,
-} from '@/domains/tickets/renderer/hooks/use-tickets-view-derive'
-import { useSettledQuery } from '@/domains/tickets/renderer/state/use-ticket-search'
+} from './use-tickets-view-derive'
 
-export type { TicketsView } from '@/domains/tickets/renderer/hooks/use-tickets-view-derive'
+export type { TicketsView } from './use-tickets-view-derive'
 
-import {
-  useConnection,
-  useDisconnectSource,
-  useTicketList,
-} from '@/domains/tickets/renderer/hooks/use-tickets'
-import { useUpdatePriority } from '@/domains/tickets/renderer/hooks/use-update-priority'
-import { useUpdateStatus } from '@/domains/tickets/renderer/hooks/use-update-status'
+import { useConnection, useDisconnectSource, useTicketList } from './use-tickets'
+import { useUpdatePriority } from './use-update-priority'
+import { useUpdateStatus } from './use-update-status'
 
 export type TicketsScreenProps = { view: TicketsView }
 

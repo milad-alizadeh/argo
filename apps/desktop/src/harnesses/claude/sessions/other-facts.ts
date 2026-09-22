@@ -1,6 +1,9 @@
-import { mcpOther } from '@/domains/sessions/contract/model/mcp-call'
-import { skillTitle } from '@/domains/sessions/contract/model/tool-feed'
-import type { OtherFacts, SkillFacts } from '@/domains/sessions/contract/model/transcript'
+import { mcpOther } from '@/domains/sessions/contract/model/feed/mcp-call'
+import { skillTitle } from '@/domains/sessions/contract/model/feed/tool-feed'
+import type {
+  OtherFacts,
+  SkillFacts,
+} from '@/domains/sessions/contract/model/transcript/transcript'
 
 type Input = Record<string, unknown>
 type SkillOrOther = SkillFacts | OtherFacts

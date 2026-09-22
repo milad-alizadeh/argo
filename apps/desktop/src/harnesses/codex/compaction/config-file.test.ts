@@ -4,11 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { DEFAULT_AUTO_COMPACT_LIMIT } from '@/domains/sessions/contract/codex-compaction'
-import {
-  codexConfigPath,
-  readAutoCompactLimit,
-  writeAutoCompactLimit,
-} from '@/harnesses/codex/compaction/config-file'
+import { codexConfigPath, readAutoCompactLimit, writeAutoCompactLimit } from './config-file'
 
 async function withHome(context: import('node:test').TestContext): Promise<string> {
   const home = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-compaction-'))

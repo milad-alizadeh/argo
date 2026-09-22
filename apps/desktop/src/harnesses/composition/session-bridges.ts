@@ -4,27 +4,21 @@ import type { SessionDriveAdapters } from '@/domains/sessions/contract/session-d
 import {
   createSessionArchiveStore,
   sessionArchivePath,
-} from '@/domains/sessions/main/archive/archive-store'
+} from '@/domains/sessions/main/archive/store/archive-store'
 import { attachSessionBridge } from '@/domains/sessions/main/composition/bridge'
 import {
   startBackfill,
   withReconcile,
-} from '@/domains/sessions/main/index/session-background-indexing'
-import { sessionIndexPath } from '@/domains/sessions/main/index/session-index/open-index'
-import { createWorkerSessionIndex } from '@/domains/sessions/main/index/session-index/worker-index'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
-import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
+} from '@/domains/sessions/main/indexing/session-background-indexing'
+import { sessionIndexPath } from '@/domains/sessions/main/indexing/session-index/open-index'
+import { createWorkerSessionIndex } from '@/domains/sessions/main/indexing/session-index/worker-index'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader/reader'
+import type { SessionSource } from '@/domains/sessions/main/observation/reader/session-source'
 import {
   createSessionUnreadStore,
   sessionUnreadPath,
 } from '@/domains/sessions/main/unread/unread-store'
-import type { SessionTicketLinkStore } from '@/domains/tickets/main/port'
-import type {
-  HarnessRegistration,
-  HarnessRuntime,
-  ManagedSessionBridges,
-} from '@/harnesses/composition/harness-registration'
-import { sessionHarnesses } from '@/harnesses/composition/registered-harnesses'
+import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
 import { registerWatching } from '@/platform/main/watch/bridge'
 import { watchTrees } from '@/platform/main/watch/watch-paths'
 import {
@@ -33,6 +27,12 @@ import {
   watchWindowFocus,
 } from '@/platform/main/watch/watch-signals'
 import type { WatchedSource } from '@/platform/main/watch/watch-source'
+import type {
+  HarnessRegistration,
+  HarnessRuntime,
+  ManagedSessionBridges,
+} from './harness-registration'
+import { sessionHarnesses } from './registered-harnesses'
 
 // A Harness callback reaches `registerWatching` raw when its own runtime already reconciles it.
 export function harnessWatchedSources(harnesses: readonly HarnessRuntime[]): {

@@ -1,16 +1,9 @@
 import { type ReactNode, useLayoutEffect } from 'react'
-import { InspectorToggles } from '@/platform/renderer/cockpit/inspector-split/inspector-toggles'
-import {
-  type InspectorSizes,
-  useInspectorPanels,
-} from '@/platform/renderer/cockpit/inspector-split/use-inspector-panels'
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from '@/platform/renderer/components/ui/resizable'
-import { readCssSize } from '@/platform/renderer/lib/read-css-size'
-import { cn } from '@/platform/renderer/lib/utils'
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../components/ui/resizable'
+import { readCssSize } from '../../lib/read-css-size'
+import { cn } from '../../lib/utils'
+import { InspectorToggles } from './inspector-toggles'
+import { type InspectorSizes, useInspectorPanels } from './use-inspector-panels'
 
 export type InspectorSplitProps = {
   // Names the panels and their controls: `Collapse ${noun} inspector`, `Expand ${noun} sidebar`.

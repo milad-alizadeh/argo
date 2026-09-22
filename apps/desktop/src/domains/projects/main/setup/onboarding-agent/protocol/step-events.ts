@@ -5,7 +5,7 @@ import {
   type SetupPlanningProgressEvent,
   setupApplicationProgressEventSchema,
   setupPlanningProgressEventSchema,
-} from '@/domains/projects/contract/setup-progress'
+} from '@/domains/projects/contract/setup/setup-progress'
 
 const STEP_LINE = /^ARGO_STEP (\{.*\})$/gm
 

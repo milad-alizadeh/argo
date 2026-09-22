@@ -1,5 +1,24 @@
 {
   "terminal": {
     "copy": "Copy terminal output"
+  },
+  "shortcut": {
+    "project": {
+      "register": "Add project"
+    },
+    "navigate": {
+      "sessions": "Go to Sessions",
+      "tickets": "Go to Tickets",
+      "atlas": "Go to Atlas"
+    },
+    "roster": {
+      "next": "Select next session",
+      "previous": "Select previous session",
+      "first": "Select first session",
+      "last": "Select last session"
+    },
+    "composer": {
+      "send": "Send message"
+    }
   }
 }

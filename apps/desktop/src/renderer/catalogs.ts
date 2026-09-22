@@ -11,7 +11,7 @@ import sessions from '@/domains/sessions/renderer/locales/en.json'
 import tickets from '@/domains/tickets/renderer/locales/en.json'
 import cockpit from '@/platform/renderer/cockpit/locales/en.json'
 import shared from '@/platform/renderer/i18n/locales/en.json'
-import platform from '@/platform/shared/i18n/locales/en.json'
+import platform from '@/platform/renderer/i18n/locales/en.json'
 
 export const CATALOGS = {
   accounts,

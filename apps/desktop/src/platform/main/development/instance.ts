@@ -2,7 +2,7 @@ import path from 'node:path'
 import {
   DEVELOPMENT_IDENTITY_ARGUMENT_PREFIX,
   type DevelopmentIdentity,
-} from '@/platform/shared/development-identity'
+} from '@/platform/contract/development-identity'
 
 const INSTANCE_DIRECTORY_ENV = 'ARGO_DESKTOP_INSTANCE_DIRECTORY'
 const INSTANCE_ID_ENV = 'ARGO_DESKTOP_INSTANCE_ID'

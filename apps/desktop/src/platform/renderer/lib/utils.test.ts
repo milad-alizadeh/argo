@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { cn } from '@/platform/renderer/lib/utils'
+import { cn } from './utils'
 
 test('keeps custom text sizes and colors in either order', () => {
   expect(cn('bg-primary text-primary-foreground', 'px-3 text-body')).toBe(

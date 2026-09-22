@@ -3,9 +3,9 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { openProject } from '@/domains/projects/main/open-project'
-import type { ProjectStore } from '@/domains/projects/main/register-project'
 import { projectConfigurationSource } from '../../../../test-fixtures/projects/project-configuration.fixture'
+import { openProject } from './open-project'
+import type { ProjectStore } from './register-project'
 
 async function fixture(context: { after: (callback: () => Promise<void>) => void }) {
   const project = await mkdtemp(path.join(os.tmpdir(), 'argo-open-project-'))

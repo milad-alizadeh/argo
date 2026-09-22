@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { stitchChains } from '@/domains/sessions/contract/model/chains.ts'
-import { projectRosterRow } from '@/domains/sessions/main/projection/roster.ts'
-import { fixtureFile } from '@/harnesses/claude/integration/session-fixtures'
+import { stitchChains } from '@/domains/sessions/contract/model/transcript/chains'
+import { projectRosterRow } from '@/domains/sessions/main/projection/roster/roster'
+import { fixtureFile } from './session-fixtures'
 
 test("reads the newest Turn's Model and Effort off its reply and its Mode off its prompt", async () => {
   const file = await fixtureFile('turnSetup')

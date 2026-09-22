@@ -10,8 +10,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/platform/renderer/components/ui/dialog'
-import { InputGroup, InputGroupAddon } from '@/platform/renderer/components/ui/input-group'
+} from './dialog'
+import { InputGroup, InputGroupAddon } from './input-group'
 
 function Command({ className, ...props }: React.ComponentProps<typeof CommandPrimitive>) {
   return (

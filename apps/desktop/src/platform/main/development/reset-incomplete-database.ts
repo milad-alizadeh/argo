@@ -1,9 +1,6 @@
 import { existsSync, rmSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
-import {
-  sharedDatabaseBackupPath,
-  sharedDatabasePath,
-} from '@/platform/main/storage/shared-database-path'
+import { sharedDatabaseBackupPath, sharedDatabasePath } from '../storage/shared-database-path'
 
 export function resetIncompleteDevelopmentDatabase(projectData: string): boolean {
   const databasePath = sharedDatabasePath(projectData)

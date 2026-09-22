@@ -1,9 +1,6 @@
 import { QueryClient, QueryObserver } from '@tanstack/react-query'
 import { describe, expect, test, vi } from 'vitest'
-import {
-  retrySessionFeed,
-  sessionFeedQuery,
-} from '@/domains/sessions/renderer/feed/session-feed-query'
+import { retrySessionFeed, sessionFeedQuery } from './session-feed-query'
 
 function feedReply(sessionId: string, requestId: string, revision: string) {
   return {

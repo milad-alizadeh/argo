@@ -5,8 +5,8 @@ import {
   type SessionPosture,
   sessionIdentitySchema,
 } from '@/domains/sessions/next/contract/session-contract'
-import { managedSessionLease } from '@/platform/main/storage/database-schema'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
+import { managedSessionLease } from './schema'
 
 type ManagedSessionLease = {
   acquire: (request: {

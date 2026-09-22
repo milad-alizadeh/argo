@@ -1,4 +1,4 @@
-import { isWatchTopic, type WatchTopic } from '@/platform/shared/watch'
+import { isWatchTopic, type WatchTopic } from '@/platform/contract/watch'
 
 export type WatchClient = {
   onWatchedChanged(listener: (topic: WatchTopic) => void): () => void

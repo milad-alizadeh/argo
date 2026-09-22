@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session-drive-adapter.ts'
+import { createCodexDriveAdapter } from '../drive/session/session-drive-adapter'
 
 const sessionId = 'thread-1'
 

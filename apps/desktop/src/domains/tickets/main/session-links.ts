@@ -7,7 +7,6 @@
 import { and, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { ticketKey } from '@/domains/tickets/contract/ticket'
-import { sessionTicketLink } from '@/platform/main/storage/database-schema'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 import {
   createWriteQueue,
@@ -15,6 +14,7 @@ import {
   writeDocument,
 } from '@/platform/main/storage/portable-file'
 import { identifierSchema } from '@/shared/validation'
+import { sessionTicketLink } from './schema'
 
 const linkedTicketSchema = z.strictObject({
   projectId: identifierSchema,

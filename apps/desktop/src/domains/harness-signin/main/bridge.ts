@@ -5,18 +5,11 @@ import type { Harness } from '@/domains/harness-signin/contract/contract'
 import { harnessSignInError } from '@/domains/harness-signin/contract/contract'
 import { HARNESS_SIGN_IN_OPERATIONS } from '@/domains/harness-signin/contract/operations'
 import { HARNESS_SIGNIN_EXPIRES_AFTER_MS_ENV } from '@/domains/harness-signin/contract/proof-protocol'
-import { listHarnessReadiness } from '@/domains/harness-signin/main/harness-readiness-list'
-import {
-  createHarnessSignIn,
-  type HarnessSignInDriver,
-} from '@/domains/harness-signin/main/harness-sign-in'
-import {
-  canceledReply,
-  resolvedReply,
-  startedReply,
-} from '@/domains/harness-signin/main/harness-sign-in-replies'
-import type { HarnessReadinessRegistration } from '@/domains/harness-signin/main/port'
 import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
+import { listHarnessReadiness } from './harness-readiness-list'
+import type { HarnessReadinessRegistration } from './harness-readiness-registration'
+import { createHarnessSignIn, type HarnessSignInDriver } from './harness-sign-in'
+import { canceledReply, resolvedReply, startedReply } from './harness-sign-in-replies'
 
 export type HarnessSignInContext = {
   registrations: readonly HarnessReadinessRegistration[]

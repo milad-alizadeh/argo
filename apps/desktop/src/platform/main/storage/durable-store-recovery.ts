@@ -1,6 +1,6 @@
 import { app, dialog } from 'electron'
-import { platformText } from '@/platform/main/i18n'
-import { restoreSharedDatabase } from '@/platform/main/storage/shared-database'
+import { platformText } from '../i18n'
+import { restoreSharedDatabase } from './shared-database'
 
 export function recoverDurableStore<Result>(request: {
   databasePath: string

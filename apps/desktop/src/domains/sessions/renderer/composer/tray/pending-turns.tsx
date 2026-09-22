@@ -1,12 +1,12 @@
 import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { PendingTurnActions } from '@/domains/sessions/renderer/composer/tray/pending-turn-actions'
-import type { PendingTurn } from '@/domains/sessions/renderer/composer/tray/use-pending-turns'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   attachmentExitDelay,
   focusMessageField,
-} from '@/platform/renderer/components/exit-presence'
-import { Icon } from '@/platform/renderer/components/icon'
+} from '@/platform/renderer/components/permission/exit-presence'
+import { PendingTurnActions } from './pending-turn-actions'
+import type { PendingTurn } from './use-pending-turns'
 
 function queuedMessageClassName(
   id: string,

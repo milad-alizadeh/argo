@@ -1,9 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { FeedLoading } from '@/domains/sessions/renderer/feed/feed-loading'
-import { StalledFeed } from '@/domains/sessions/renderer/feed/stalled-feed'
-import { sessionFailureState } from '@/domains/sessions/renderer/session-failure-state'
-import type { SessionError } from '@/domains/sessions/renderer/types'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import {
   Empty,
@@ -12,6 +8,10 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/platform/renderer/components/ui/empty'
+import { sessionFailureState } from '../session-failure-state'
+import type { SessionError } from '../types'
+import { FeedLoading } from './feed-loading'
+import { StalledFeed } from './stalled-feed'
 
 export function Standing({
   failure,

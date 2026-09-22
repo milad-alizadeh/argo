@@ -68,7 +68,7 @@ instead of fixing it.
 
 ## Shortcuts (#1786)
 
-One table: `src/platform/shared/commands.ts`. Every chord in the app is an entry there, and every
+One table: `src/platform/contract/commands.ts`. Every chord in the app is an entry there, and every
 entry says where it fires.
 
 | Scope | Where it fires |

@@ -5,7 +5,7 @@ import {
   openFromSource,
   prefersReducedMotion,
   transitionElements,
-} from '@/domains/sessions/renderer/feed/content/image-lightbox-animation'
+} from './image-lightbox-animation'
 
 type TransitionState = {
   closing: boolean

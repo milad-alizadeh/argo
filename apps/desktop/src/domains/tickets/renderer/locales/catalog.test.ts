@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 import { PROVIDERS } from '@/domains/accounts/contract/contract'
 import { CONNECTION_STATES, TICKET_ERRORS } from '@/domains/tickets/contract/contract'
-import tickets from '@/domains/tickets/renderer/locales/en.json'
+import tickets from './en.json'
 
 test('the Tickets catalog answers every Ticket error code', () => {
   expect(Object.keys(tickets.error).sort()).toEqual(Object.keys(TICKET_ERRORS).sort())

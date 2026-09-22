@@ -1,8 +1,6 @@
 import type { ReactEventHandler } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FEED_CARD_RADIUS_CLASS } from '@/domains/sessions/renderer/feed/content/feed-surface'
-import { useImageLightboxTransition } from '@/domains/sessions/renderer/feed/content/image-lightbox-transition'
-import { Icon } from '@/platform/renderer/components/icon'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Dialog,
@@ -11,6 +9,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/platform/renderer/components/ui/dialog'
+import { FEED_CARD_RADIUS_CLASS } from './feed-surface'
+import { useImageLightboxTransition } from './image-lightbox-transition'
 
 export type ImageSize = { width: number; height: number }
 

@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { BrowserWindow, nativeTheme } from 'electron'
-import { WINDOW_MINIMUM_WIDTH } from '@/platform/main/window/minimum-width'
-import { windowBackground } from '@/platform/shared/appearance'
+import { windowBackground } from '@/platform/contract/appearance'
+import { WINDOW_MINIMUM_WIDTH } from '@/platform/contract/minimum-width'
 
 export function createDesktopWindow(request: {
   buildDirectory: string

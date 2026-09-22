@@ -2,15 +2,15 @@ import assert from 'node:assert/strict'
 import { appendFile, utimes } from 'node:fs/promises'
 import { test } from 'node:test'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
-import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+import { managedRow } from '@/domains/sessions/main/lifecycle/status/managed-row'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader/reader'
+import { codexSessionSource } from './read-sessions'
 import {
   OPEN_TURN_COMPLETE,
   openTurnRolloutRoot as rolloutRoot,
   rosterRows as rows,
   OPEN_TURN_THREAD as THREAD,
-} from '@/harnesses/codex/sessions/rollout-test-helpers'
+} from './rollout-test-helpers'
 
 const DELEGATION = '01a0b000-0000-7000-8000-000000000002'
 

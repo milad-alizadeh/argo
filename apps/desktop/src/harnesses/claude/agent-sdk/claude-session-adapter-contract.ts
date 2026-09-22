@@ -8,7 +8,7 @@ import type {
   SessionCommandOutcome,
   SessionProjection,
 } from '@/domains/sessions/next/contract/session-projection-contract'
-import type { watchedChanges } from './claude-session-watch'
+import type { watchedChanges } from './claude-session-adapter'
 
 export type ClaudeSessionAdapter = SessionAdapter & {
   close: () => void

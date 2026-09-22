@@ -8,9 +8,9 @@ import {
   sessionListReplySchema,
 } from '@/domains/sessions/contract/ipc/contract'
 import type { SessionReader } from '@/domains/sessions/main/composition/bridge'
-import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
-import { feedRequest } from '@/domains/sessions/main/observation/reader-test-helpers'
+import { managedRow } from '@/domains/sessions/main/lifecycle/status/managed-row'
+import { createSessionReader } from '@/domains/sessions/main/observation/reader/reader'
+import { feedRequest } from '@/domains/sessions/main/observation/reader/reader-test-helpers'
 import { codexSessionSource } from './read-sessions'
 
 const listing = {

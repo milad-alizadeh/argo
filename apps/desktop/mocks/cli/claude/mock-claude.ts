@@ -9,7 +9,7 @@ import {
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
-} from '../../../src/domains/sessions/main/composition/proof-protocol.ts'
+} from '@/domains/sessions/contract/proof-protocol'
 import { type AdversarialTurn, adversarialTurn } from '../../sessions/adversarial-turns.ts'
 import { MOCK_CLAUDE_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
 import { createMockClaudeHooks } from './mock-claude-hooks.ts'

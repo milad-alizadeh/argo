@@ -4,11 +4,8 @@ import os from 'node:os'
 import path from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { afterEach, expect, test } from 'vitest'
-import { resetIncompleteDevelopmentDatabase } from '@/platform/main/development/reset-incomplete-database'
-import {
-  sharedDatabaseBackupPath,
-  sharedDatabasePath,
-} from '@/platform/main/storage/shared-database-path'
+import { sharedDatabaseBackupPath, sharedDatabasePath } from '../storage/shared-database-path'
+import { resetIncompleteDevelopmentDatabase } from './reset-incomplete-database'
 
 const roots: string[] = []
 
