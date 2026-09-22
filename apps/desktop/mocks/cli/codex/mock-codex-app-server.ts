@@ -46,6 +46,9 @@ function handleRequest(message: Request) {
     case 'thread/resume':
       send({ id: message.id, result: { thread: { id: message.params?.threadId } } })
       return
+    case 'thread/unsubscribe':
+      send({ id: message.id, result: { status: 'unsubscribed' } })
+      return
     case 'turn/start':
       handleTurnStart(message)
       return

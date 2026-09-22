@@ -40,6 +40,11 @@ export function readThreadStatus(
   }
 }
 
+export function readClosedThread(message: WireMessage): string | undefined {
+  if (!('method' in message) || message.method !== 'thread/closed') return undefined
+  return protocolString(message.params.threadId, 'Closed thread ID')
+}
+
 export type AgentMessageText = { threadId: string; turnId: string; itemId: string; text: string }
 
 export type ToolCallUpdate = {

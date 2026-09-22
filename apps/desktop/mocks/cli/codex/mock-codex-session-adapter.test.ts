@@ -1,33 +1,11 @@
 import assert from 'node:assert/strict'
-import { mkdtemp } from 'node:fs/promises'
-import os from 'node:os'
-import path from 'node:path'
 import { test } from 'node:test'
 import type { SessionProjection } from '../../../src/domains/sessions/next/contract/session-projection-contract.ts'
-import type { SessionService } from '../../../src/domains/sessions/next/main/session-service.ts'
-import { createCodexSessionAdapter } from '../../../src/harnesses/codex/drive/codex-session-adapter.ts'
-import { writeMockCodex } from './mock-codex-driver.ts'
-
-function sessionService(): SessionService {
-  return {
-    acquire: () => ({ posture: 'managed' }),
-    renew: () => ({ posture: 'managed' }),
-    release: () => {},
-  }
-}
-
-async function createMockAdapter() {
-  const executable = await writeMockCodex(
-    await mkdtemp(path.join(os.tmpdir(), 'argo-codex-adapter-')),
-  )
-  return createCodexSessionAdapter({
-    findExecutable: () => executable,
-    sessionService: sessionService(),
-    waitForWorkspaceReady: async () => {},
-    now: () => new Date(),
-    resolveWorkspace: async () => ({ workspaceId: 'workspace-1', cwd: process.cwd() }),
-  })
-}
+import {
+  createAdapter,
+  createMockAdapter,
+  mockCodexExecutable,
+} from './mock-codex-session-adapter-support.ts'
 
 test('starts a managed Session after the shared app-server handshake', async () => {
   const adapter = await createMockAdapter()
@@ -51,6 +29,35 @@ test('starts a managed Session after the shared app-server handshake', async () 
     }
   } finally {
     adapter.close()
+  }
+})
+
+test('shares one app-server process across managed Session windows', async () => {
+  const executable = await mockCodexExecutable()
+  const first = createAdapter(executable)
+  const second = createAdapter(executable)
+  try {
+    const [one, two] = await Promise.all([
+      first.execute({
+        type: 'session.start',
+        harness: 'codex',
+        prompt: 'First Session.',
+        workspace: { kind: 'main' },
+      }),
+      second.execute({
+        type: 'session.start',
+        harness: 'codex',
+        prompt: 'Second Session.',
+        workspace: { kind: 'main' },
+      }),
+    ])
+    assert.equal(one.kind, 'accepted')
+    assert.equal(two.kind, 'accepted')
+    if (one.kind !== 'accepted' || two.kind !== 'accepted') return
+    assert.notEqual(one.projection.session.nativeId, two.projection.session.nativeId)
+  } finally {
+    first.close()
+    second.close()
   }
 })
 

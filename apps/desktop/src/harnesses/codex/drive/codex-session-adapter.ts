@@ -11,7 +11,6 @@ import type {
   AppServerSupervisor,
   AppServerSupervisorDeps,
 } from '@/harnesses/codex/drive/app-server-supervisor-machine'
-import { createAppServerSupervisor } from '@/harnesses/codex/drive/app-server-supervisor-machine'
 import {
   executeCommand,
   executeSend,
@@ -21,6 +20,7 @@ import {
 import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
 import type { ManagedSessionActor } from '@/harnesses/codex/drive/codex-session-projection'
 import { projectionFrom } from '@/harnesses/codex/drive/codex-session-projection'
+import { sharedAppServerRuntimeFor } from '@/harnesses/codex/drive/codex-shared-app-server-runtime'
 import type { ManagedSessionDeps } from '@/harnesses/codex/drive/managed-session-machine'
 import { createManagedSessionMachine } from '@/harnesses/codex/drive/managed-session-machine'
 
@@ -64,10 +64,9 @@ function waitForChannel(supervisor: AppServerSupervisor): Promise<void> {
   })
 }
 
-// One Codex `SessionAdapter` per window (ADR-0047): it owns the shared app-server supervisor and
-// every managed-Session child actor, keyed by native Session ID. `execute` sends the command and
-// reports the resulting snapshot; ongoing updates (Turn completion, approvals, etc.) stream to
-// whoever last called `subscribe` for that Session, not through `execute`'s return value.
+// One Codex `SessionAdapter` per window (ADR-0047): each one contributes child actors keyed by
+// native Session ID to the main-process app-server supervisor. `execute` sends the command and
+// reports the resulting snapshot; ongoing updates stream to subscribers, not through its return.
 export function createCodexSessionAdapter(deps: {
   findExecutable: AppServerSupervisorDeps['findExecutable']
   sessionService: ManagedSessionDeps['sessionService']
@@ -79,19 +78,19 @@ export function createCodexSessionAdapter(deps: {
 }): CodexSessionAdapter {
   const registry: SessionRegistry = new Map()
 
-  const supervisor = createAppServerSupervisor({
-    findExecutable: deps.findExecutable,
+  const appServer = sharedAppServerRuntimeFor(deps.findExecutable)
+  const supervisor = appServer.supervisor
+  const detach = appServer.attach({
     dispatchNotification: (message) => {
       for (const entry of registry.values()) entry.actor.send({ type: 'Notification', message })
     },
-    onChannelLost: () => {
+    notifyChannelLost: () => {
       for (const entry of registry.values()) entry.actor.send({ type: 'Channel lost' })
     },
-    onChannelRestored: () => {
+    notifyChannelRestored: () => {
       for (const entry of registry.values()) entry.actor.send({ type: 'Channel restored' })
     },
   })
-  supervisor.actor.start()
 
   const machine = createManagedSessionMachine({
     getChannel: supervisor.getChannel,
@@ -141,7 +140,7 @@ export function createCodexSessionAdapter(deps: {
         if (session !== null) deps.sessionService.release(session)
         entry.actor.stop()
       }
-      supervisor.close()
+      detach()
     },
   }
 }

@@ -16,6 +16,7 @@ export type RequestParams = {
   'skills/list': SkillsListRequest
   'thread/start': ThreadConfiguration
   'thread/resume': ThreadConfiguration & { threadId: string }
+  'thread/unsubscribe': { threadId: string }
   'turn/start': {
     threadId: string
     input: Input[]

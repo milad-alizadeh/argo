@@ -21,6 +21,7 @@ import {
 } from '@/harnesses/codex/drive/protocol'
 import {
   readAgentMessageDelta,
+  readClosedThread,
   readCompletedTurn,
   readThreadStatus,
   readThreadTokenUsageUpdated,
@@ -322,6 +323,20 @@ function createManagedSessionActors(deps: ManagedSessionDeps) {
         (value) => value,
       )
     }),
+    unsubscribeThread: fromPromise<
+      void,
+      {
+        threadId: string
+      }
+    >(async ({ input }) => {
+      await requireChannel(deps.getChannel).request(
+        'thread/unsubscribe',
+        {
+          threadId: input.threadId,
+        },
+        () => undefined,
+      )
+    }),
   }
 }
 
@@ -378,6 +393,10 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
           status.threadId === threadIdOf(context) &&
           status.status.type === 'notLoaded'
         )
+      },
+      isThreadClosed: ({ context, event }) => {
+        if (event.type !== 'Notification') return false
+        return readClosedThread(event.message) === threadIdOf(context)
       },
     },
     actions: {
@@ -787,7 +806,11 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
           Notification: [
             {
               guard: 'isThreadNotLoaded',
-              target: 'Watched',
+              target: 'ReleasingLease',
+            },
+            {
+              guard: 'isThreadClosed',
+              target: 'ReleasingLease',
             },
             {
               guard: 'isRenamedForThread',
@@ -807,7 +830,7 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
             },
           ],
           'Channel lost': 'Recovering',
-          Close: 'Closing',
+          Close: 'Unsubscribing',
         },
       },
       Recovering: {
@@ -841,6 +864,16 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
           }),
           onDone: 'Closed',
           onError: 'Closed',
+        },
+      },
+      Unsubscribing: {
+        invoke: {
+          src: 'unsubscribeThread',
+          input: ({ context }) => ({
+            threadId: threadIdOf(context),
+          }),
+          onDone: 'Closing',
+          onError: 'Closing',
         },
       },
       Closed: {
