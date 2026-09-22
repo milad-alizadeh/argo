@@ -1,5 +1,5 @@
 // The main process owns the appearance choice: it holds `nativeTheme.themeSource`, so the native
-// window frame follows the page, and it writes the choice to `userData` (apps/desktop/AGENTS.md).
+// window frame follows the page, and it writes the choice to `userData`.
 import path from 'node:path'
 import { type BrowserWindow, nativeTheme } from 'electron'
 import {

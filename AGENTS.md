@@ -1,273 +1,163 @@
 # Argo
 
-Monorepo for the Argo skills/plugin **and** the Argo cockpit app. The cockpit is mid-migration:
-`apps/macOS` is the deprecated Swift app, kept for reference, and `apps/desktop` is the Electron
-replacement being built on #1730. Read by both Claude Code and Codex.
-
-Everything here is a fact about this repository. Process belongs to the skill that owns it.
+Monorepo for the Argo skills bundle and the Argo cockpit. `apps/desktop` is the Electron cockpit;
+`apps/macOS` is the deprecated Swift app, kept for reference only.
 
 ## Where things are written down
 
-- **Issues, PRDs and triage labels** — GitHub Issues on `milad-alizadeh/argo`, via `gh`. An
-  agent attaches a screenshot to a body itself, through github.com in Chrome, and keeps no
-  capture in git. Every issue is
-  labelled in the `gh issue create` call and never afterwards, and each label string equals its
-  role name, so a vendored skill naming a role names our label. `docs/agents/issue-tracker.md`.
-  Before triage, read `docs/agents/triage-labels.md`.
-- **House engineering rules** — *House rules* below, for every path. `apps/desktop` adds its own
-  in `apps/desktop/AGENTS.md`: **read it before your first edit there.** Claude Code loads it
-  when it reads a file there, and Codex only when started inside it. Rules for another directory
-  go in an `AGENTS.md` there, beside a `CLAUDE.md` holding only `@AGENTS.md`.
-- **Domain model** — `docs/domain/`, indexed by `CONTEXT.md`.
-  Before domain exploration, read `docs/agents/domain.md`. Read the one
-  section you need before naming or changing a term, and use its words rather than a synonym.
-  Code comments cite it as `CONTEXT.md L1 · Connection`. Change a term only after
-  `docs/domain/rationale.md`. A concept the model does not name is a signal: either the name is
-  invented and wants reconsidering, or the gap is real and wants recording.
-- **Decisions** — `docs/adr/`. Nothing loads these. Read the ones covering an area before
-  changing it, and when your work contradicts one, **say so rather than quietly overriding it**:
-  *Contradicts ADR-0026, but worth reopening because…*
-- Load `/writing-for-agents` immediately before you draft or materially edit instructions for
-  agents. This includes `AGENTS.md`, `CLAUDE.md`, `SKILL.md`, and similar files. Ordinary code edits
-  do not trigger it.
-- Load `/simple-english` immediately before you draft text for a person. This includes issue titles
-  and bodies, comments, close messages, PR titles and bodies, user questions, and grilling rounds.
-  Also load it for agent-facing Markdown that people will read. Ordinary implementation work and
-  progress commentary do not trigger it. Apply it while you draft, not as cleanup.
-- Task tracking applies to work with at least three steps, multiple changed files, or an approved
-  plan. Before the first edit, read `packages/argo-skills/skills/setup-argo-skills/templates/task-tracking.md`
-  and start its live tracker.
-
-## Desktop Session adapters
-
-Before changing desktop Session observation, transcript discovery, or a Harness parser, read
-`docs/adr/0024-session-drive-port-two-adapters.md`. A Harness owns one adapter under
-`apps/desktop/src/harnesses/<harness>/`: its filesystem layout and parser live there. Shared
-Session code holds only the IPC contract and projections. Register an adapter once, and keep
-shared code free of Harness and filename branches.
-
-Test assets live outside `apps/desktop/src/`, and a mock is called a mock. `e2e/<flow>/` holds
-the Playwright flows (`*.e2e.ts`, `cases/*.case.ts`, `fixtures/*.fixture.ts`), one project per
-flow in `playwright.config.ts`, run by `bun run test:e2e`; add a flow as a project, never a script.
-Each flow builds its cases on the `test` in `e2e/packaged-proof.ts`: a case declares its starting
-state as a fixture option (`test.use`), never as a case that runs before it. A variant of a flow,
-such as the real-Harness Session backend, is a project `use` option on the same file, never a copy.
-`mocks/` holds `mock-*` CLIs, providers and their transcripts; `tools/` holds capture, measure
-and repro scripts. `apps/desktop/scripts/` holds runtime wrappers only.
+- **Issues and triage labels**: GitHub Issues on `milad-alizadeh/argo`, via `gh`. Label every
+  issue in the `gh issue create` call. Attach screenshots through github.com in Chrome. Read
+  `docs/agents/issue-tracker.md`, and `docs/agents/triage-labels.md` before triage.
+- **House rules**: below, for every path. `apps/desktop/AGENTS.md` adds its own: **read it before
+  your first edit there.** Rules for another directory go in an `AGENTS.md` there.
+- **Domain model**: `docs/domain/`, indexed by `CONTEXT.md`; read `docs/agents/domain.md` first.
+  Use the model's words, not synonyms, and cite it in comments as `CONTEXT.md L1 · Connection`.
+  Change a term only after `docs/domain/rationale.md`. A concept the model does not name is either
+  an invented name to reconsider or a gap to record.
+- **Decisions**: `docs/adr/`. Read the ones covering an area before changing it. When your work
+  contradicts one, say so: *Contradicts ADR-0026, but worth reopening because…*
+- Load `/writing-for-agents` before drafting or materially editing agent instructions
+  (`AGENTS.md`, `SKILL.md` and similar).
+- Load `/simple-english` before drafting text for a person: issues, comments, PR titles and
+  bodies, user questions, grilling rounds, and agent Markdown people read.
+- For work with three or more steps, several changed files, or an approved plan, read
+  `packages/argo-skills/skills/setup-argo-skills/templates/task-tracking.md` before the first edit.
 
 ## Gates
 
-Before code review, read `docs/agents/code-review.md` for repository references and focused-test boundaries.
+Before code review, read `docs/agents/code-review.md`.
 
-**CI is the only gate.** There is no git hook: no pre-push, and no pre-commit since #1911 took
-husky and lint-staged out. `.github/workflows/ci.yml` names every
-step it runs on Linux and `bun run quality` is the local subset; read the step list there, never
-a copy of it. `quality` is wider than biome, so biome alone leaves a typecheck or a duplication
-breach for CI. A `macos-26` job packages and tests `apps/desktop` (#1769) when the PR touches
-`apps/desktop`, the root manifest, the lockfile or `.github/`.
+**CI is the only gate**; there are no git hooks. `.github/workflows/ci.yml` lists every step, and
+`bun run quality` is the local subset, wider than biome alone. A `macos-26` job packages and tests
+`apps/desktop` when a PR touches it, the root manifest, the lockfile or `.github/`.
 
 When a gate fires, fix it or ratchet it in `biome.jsonc`: **never suppress inline, never raise a
-global cap.** Both configs fail open when commented, so no gate is proved by exit code alone.
+global cap.** Both configs fail open when commented, so exit code alone proves nothing. Where each
+gate fails open: `docs/agents/quality-gates.md`.
 
-**Node 24 is the minimum**, declared in the root `package.json` `engines` and checked by nothing
-(#1951). CI installs the version in `.node-version` through `node-version-file:`, the one place
-it is written. After switching Node's major version, delete `node_modules` and reinstall:
-`node-pty` is a native addon bound to the ABI.
+**Node 24 is the minimum**; `.node-version` holds the exact pin. After a Node major switch, delete
+`node_modules` and reinstall: `node-pty` is bound to the ABI.
 
-**A desktop release publishes only on a passing verdict** (#1807, ADR-0036). `release.yml` is
-`workflow_dispatch` only, signs and notarizes, writes one `release-verdict.json` naming the SHA-256
-of every artifact it judged, and creates the release as a draft that a later step flips. A
-published release cannot be unpublished — GitHub freezes `draft` and `tag_name`, so `DELETE` is the
-only removal and it burns the tag name forever — so `release-backstop.yml` runs on
-`release: [published]`, files an issue with the evidence and then deletes the release. The
-certificate, the App Store Connect key, the `release` Environment and the immutable-releases
-setting are the human's, and the checklist is in `apps/desktop/README.md`. None of them exists
-yet; what distribution does in the meantime is ADR-0037, still proposed.
+Desktop releases: ADR-0036 and `apps/desktop/README.md`.
 
-**`apps/macOS` is deprecated and verified by nothing.** No build, test, screenshot or render. A
-Swift change says in the PR body that it was checked by hand, or not at all.
+**`apps/macOS` is verified by nothing.** A Swift change says in the PR body whether it was checked
+by hand.
 
-**macOS runners are free** on public repos, `argo` included (#1758): billed is $0, and the "99%
-of the Actions spend" figure still quoted in older notes read the gross column. Never repeat it.
-The real limits: 5 concurrent macOS jobs on GitHub Free, and no secrets on a fork PR.
-
-Where each gate fails open, and what none of them proves: `docs/agents/quality-gates.md`.
+macOS CI runners are free for this repo. The limits are 5 concurrent macOS jobs and no secrets on
+fork PRs.
 
 ## Landing
 
-**Pushing a work branch and opening the PR are `/ship`'s step** (#1669), and an agent invokes it
-as readily as the user types it. Every other run therefore ends at the reviewed diff, committed
-on its branch; the review is `/ship`'s precondition, never its job. A `PreToolUse` hook denies
-both commands and cannot tell which skill is running, so `/ship` claims the exemption by
-prefixing its own commands with `ARGO_SHIP=1`.
+**Only `/ship` pushes a work branch or opens a PR**, and an agent may invoke it. Every other run
+ends at the reviewed diff, committed on its branch. A hook denies both commands unless prefixed
+`ARGO_SHIP=1`, which only `/ship` writes.
 
-**What leaves the base says so in a trailer**, one line in the commit that does it:
-`Removes-test: <name>`, `Removes-file: <path>`, `Reverts-file: <path>` (or `*`). Nothing enforces
-it; a reviewer is the check. Why a green suite cannot be:
+**What leaves the base says so in a commit trailer**: `Removes-test: <name>`,
+`Removes-file: <path>`, `Reverts-file: <path>` (or `*`). A reviewer is the check:
 `docs/agents/landing.md`.
 
-**Merging is the human's** (#1577). Nothing here does it for them.
+**Merging is the human's.**
 
 ## Session isolation
 
-**Every** change runs in a worktree under `.claude/worktrees/`, never in the shared main
-checkout, a doc or config fix as much as a ticket build. From the repo root, unprompted:
+**Every** change, a doc or config fix included, runs in a worktree under `.claude/worktrees/`.
+From the repo root:
 
 ```bash
 git worktree add -b 'argo/#<N>-<slug>' .claude/worktrees/ticket-<N>-<slug>
 ```
 
-then `EnterWorktree { path: ".claude/worktrees/ticket-<N>-<slug>" }`, or `cd` into it elsewhere.
-**`EnterWorktree` creates no tree here: every call without a `path` is refused.** It names the
-branch `worktree-<name>` and its `name` cannot hold a `#`, so no tree it creates reaches
-`argo/#<N>-<slug>` and `/ship` cannot write `Closes #<N>` off one (#1684).
+then `EnterWorktree { path: ".claude/worktrees/ticket-<N>-<slug>" }`, or `cd` into it.
+`EnterWorktree` without a `path` is refused.
 
-Only read-only work may stay in the main checkout, and only while it stays read-only. A write
-through `Bash` counts as a change, and so does a commit: the guard reads both, and a deliberate
-main-checkout commit says so with an `ARGO_MAIN_COMMIT=1` prefix (#1911). Naming, resuming, recovery and the
-sub-agent rule: `docs/agents/worktrees.md`.
+Read-only work may stay in the main checkout. A `Bash` write or a commit counts as a change; a
+deliberate main-checkout commit takes an `ARGO_MAIN_COMMIT=1` prefix. No-ticket naming, resuming,
+recovery and subagents: `docs/agents/worktrees.md`.
 
 ## Subagents
 
-Every dispatch must earn its tier: set the model and reasoning effort explicitly. An omitted
-value inherits the parent configuration. Choose the lowest tier that can complete the bounded
-task. Use a cheaper, faster tier with minimal or low effort for contained research, read-only
-inspection, and localized mechanical file changes. Use a higher tier only for sustained reasoning,
-ambiguous design judgment, broad code understanding, or high-risk verification.
-
-The parent model is the ceiling. A subagent uses that model or a cheaper one. For example, Sol can
-dispatch Sol or a cheaper model, but not Astra. Report the model, effort, and task-specific basis.
-If a dispatch uses the parent model or more than low effort, name the task requirement that earns
-the tier.
+Set model and reasoning effort explicitly on every dispatch; an omitted value inherits the
+parent's. Pick the lowest tier that can finish the bounded task: cheap and low effort for contained
+research, read-only inspection and mechanical edits; higher only for sustained reasoning, ambiguous
+design, broad code understanding or high-risk verification. The parent model is the ceiling.
+Report model, effort and the task requirement that earns it.
 
 ## Cross-CLI guardrail hooks
 
-`hooks.json` (repo root) is the neutral SSOT for the four cross-CLI hook behaviours, projected per-harness.
-**Edit `hooks.json`, then run `bun run hooks:sync`**, which regenerates `.claude/settings.json`
-and `.codex/hooks.json`; never hand-edit those blocks. The hooks carry no convention of their own:
-this repo's live in the same file, under `worktreeGuard` (`roots`, `dir`, `branchPrefix`,
-`docs`, `publishBranches`) and `worktreeGc.artifactPaths`. **Unset `branchPrefix` and the guard
-stops judging branch names at all**, so an edit that empties it silently retires the naming
-rule. `publishBranches` is the other side of it: a namespace listed there joins to no ticket, so
-the naming guard and the push guard both let it through.
+**Edit `hooks.json`, then run `bun run hooks:sync`**, which regenerates `.claude/settings.json` and
+`.codex/hooks.json`; never hand-edit those. This repo's conventions live in the same file under
+`worktreeGuard` and `worktreeGc.artifactPaths`. **An empty `branchPrefix` silently disables branch
+naming checks.** A namespace in `publishBranches` passes both the naming and push guards.
 
 ## Skill bundle
 
-`skills-lock.json` is the bundle manifest and this repo's install record. **`skills add` only
-adds**, so renaming or deleting a skill means deleting the installed copy by hand, and editing
-one of Argo's own skills needs a push to `main` before a reinstall sees it. **Name the agents on
-every add** (`--agent claude-code codex --yes`), or `--yes` installs for every agent the machine
-has: the exact commands and the add/sweep workflow are `packages/argo-skills/README.md`.
+`skills-lock.json` is the manifest. **`skills add` only adds**: a renamed or deleted skill's
+installed copy is removed by hand, and an edited Argo skill needs a push to `main` before a
+reinstall sees it. **Name the agents on every add** (`--agent claude-code codex --yes`). Commands:
+`packages/argo-skills/README.md`.
 
 ## Design work
 
-For UI work, read `docs/agents/code-review.md` for the third review axis, `interface-review`.
-The implementation ticket records selected decisions and their reasons.
-
-Existing design tickets remain optional specification inputs.
-Their `design/#<N>-<screen>` branches remain readable until cleanup removes them after ticket closure.
-New UI work needs no separate design ticket or permanent design page.
-
-`docs/design-stack.md` is the stack: the token contract, the `docs/design/` kit, where components
-live, and the render commands. Interface review reads it rather than guessing the stack.
-
-**`docs/designs/` is a closed archive.** Everything in it is for `apps/macOS`, and nothing new
-goes there.
-
-A story's `title:` nests under its owning parent component's Storybook group, one level per
-parent, matching the file's folder placement (`Sessions/Composer/*`, #2619); a shared
-cross-domain primitive stays under `Components/`.
+For UI work, read `docs/agents/code-review.md` for the `interface-review` axis, and
+`docs/design-stack.md` for the token contract, the `docs/design/` kit and render commands. The
+implementation ticket records design decisions and their reasons; no separate design ticket is
+needed. `docs/designs/` is a closed `apps/macOS` archive.
 
 ## Visual verification
 
-**A component is reviewed in Storybook, and a screen is reviewed by running a render command.**
-Vercel owns Storybook preview deployments. Its project configuration and credentials stay outside
-this repository. When a preview finishes, `storybook-links.yml` writes every story that renders a
-file the PR changed, linked to that commit's preview, between the `storybook-links` markers in the
-PR body (#1953): that section is CI's, and the rest of the body is the author's. The local
-commands are in `docs/design-stack.md` and `apps/desktop/README.md`.
-
-**Every capture is disposable**: a temp dir, looked at, deleted. No gate takes a screenshot and no
-ref holds one, because a PNG in a git object carries no version.
-`docs/agents/visual-verification.md` describes `apps/macOS` commands that no longer exist.
-
-One rule outlives the tooling: **an e2e run holds the real keyboard and mouse for its whole
-length, so say so and wait before starting one.** The desktop render commands do not: every key
-and click they send goes into the renderer over the debugging protocol.
-
-**Test the running desktop app through its worktree's debugging port.** From that worktree run
-`bun run dev`, read its `debugPort` with `bun run desktop:status`, then run
-`npx -y agent-browser@0.37.1 connect <debugPort>`. This attaches to that exact Electron window;
-never select a generic Electron process or invent a separate CDP client.
-
-**Profile** a desktop screen's jank, dropped frames, re-renders or white flashes with
-agent-browser, and read `docs/agents/profiling.md` first.
+Every capture is disposable: a temp dir, looked at, deleted. No gate or git ref holds a screenshot.
+The `storybook-links` section of a PR body belongs to CI; the rest is the author's.
+`docs/agents/visual-verification.md` is `apps/macOS`-only.
 
 ## House rules
 
-What no linter checks and a model does not do unprompted. Every cap, escape-hatch ban and
-formatting rule is a build failure in `biome.jsonc`, so none is restated here; when a gate
-fires, fix the code or ratchet the exemption where the config keeps it, never inline
-(`docs/agents/quality-gates.md`).
+What no linter checks. Caps and formatting are `biome.jsonc`'s.
 
 ### Code
 
-- **Ground external calls.** Every call into an API you don't own is written against a source
-  opened this session: the installed dependency's own declarations, an existing call site, or
-  the current docs. If it can't be grounded, say so instead of shipping it.
+- **Ground external calls.** Write every call into an API you don't own against a source opened
+  this session: installed declarations, an existing call site, or current docs. If you can't,
+  say so.
 - **Names are words.** `percentage` not `pct`, `context` not `ctx`, `repository` not `repo`,
-  user-visible labels included. Exceptions: an acronym that is the domain's own name (`URL`,
-  `ID`) and a name the platform fixes.
-- **Branch on a closed set with the exhaustive construct**, and reserve chained `if` for open
-  conditions. When the discriminant only picks a value, a lookup keyed by it beats both.
-- **Validate at the boundary.** Data from outside is parsed into a known shape at the edge,
-  once; a cast or an all-optional model standing in for a check is a bug moved inward.
-- **One source of truth.** A literal in two call sites is extracted before the second paste.
-  A new variant of an existing kind is one new file plus one registration line.
-- **Group by domain, never by kind.** `Tickets/`, not `Helpers/` or `Utils/`. A helper is born
-  inside its only caller, a function in the same file, and becomes a file of its own when a
-  second caller appears.
-- **One folder, one secret.** A folder holds one decision that could change, which everything
-  inside it knows and nothing outside it needs to know (Parnas 1972). The same test runs at every
-  depth, so a feature folder and a folder three levels under it are judged the same way. Finish
-  the sentence "everything in here knows X, and nothing outside knows X", then name one change to
-  X and check that it touches only this folder. A sentence that needs an "and" to finish describes
-  a pile, not a module. The name is the cheap version of the same check: `util`, `common`,
-  `shared`, `helpers`, `components` and `hooks` all name a folder that hides nothing.
-- **Tokens by name.** Production visual values use shared tokens or intentional named component-local tokens.
-  Resolve experimental values into those tokens before review.
-- **Typed script source.** A Node script uses `.mts`. Only the two `.mjs` files named in
-  `biome.jsonc` are exempt.
-- **Reader text uses i18n.** Move each new production UI label, message, or accessible name into its locale catalog.
-- **Only what's needed.** No config knob, layer or hook for a need that doesn't exist yet.
-  Delete dead code on sight.
+  labels included. Exceptions: a domain acronym (`URL`, `ID`) and a platform-fixed name.
+- **Branch on a closed set with the exhaustive construct**; chained `if` is for open conditions.
+  When the discriminant only picks a value, use a lookup.
+- **Validate at the boundary.** Parse outside data into a known shape once, at the edge; a cast or
+  all-optional model in place of a check is a bug moved inward.
+- **One source of truth.** Extract a literal before its second paste. A new variant of an existing
+  kind is one new file plus one registration line.
+- **Group by domain, never by kind.** `Tickets/`, not `Helpers/`. A helper starts in its only
+  caller's file and moves out when a second caller appears.
+- **One folder, one secret.** A folder hides one decision that could change (Parnas 1972), at every
+  depth. Finish "everything in here knows X, and nothing outside knows X", then check one change to
+  X touches only this folder. Needing an "and" means a pile. `util`, `common`, `shared`,
+  `helpers`, `components` and `hooks` name folders that hide nothing.
+- **Typed script source.** Node scripts are `.mts`; only the two `.mjs` files in `biome.jsonc` are
+  exempt.
+- **Only what's needed.** No knob, layer or hook for a need that doesn't exist yet. Delete dead
+  code on sight.
 
 ### Comments
 
-An ordinary comment is one line, for `//`, `///` and `#` alike; nothing here is published,
-so a doc marker buys no room. Keep a fact a future edit could falsify (a measured number, a
-framework behaviour, a defence of code that looks wrong) at whatever length it needs. Cut an
-argument, a rejected alternative, a WHAT-restatement, a tombstone, or the story of how a
-constraint got here; a bare `#412` on the constraint line is enough.
+One line, for `//`, `///` and `#` alike. A fact a future edit could falsify (a measured number, a
+framework behaviour, a defence of odd-looking code) takes the length it needs. Cut arguments,
+rejected alternatives, WHAT-restatements, tombstones and history; a bare `#412` on the line is
+enough.
 
 ### Tests
 
-- **Assert what happened, never that a function was called.** A refactor that preserves
-  behaviour leaves the suite green.
-- **Model XState paths.** Test a bounded state machine with model-based paths generated through
-  `xstate/graph`. Assert observable outcomes along those paths, and add focused tests for
-  behaviour that path generation cannot express.
-- **Mock only what you don't control and can't afford live**: a paid API, a clock, a network
-  CI can't reach. Everything you own runs for real.
-- **Name the claim in the domain's words** (`rejects an expired token`), one behaviour per
-  test, and the same behaviour over several inputs is one parameterised case.
+- **Assert what happened, never that a function was called.**
+- **Model XState paths**: test a bounded machine with paths from `xstate/graph`, asserting
+  observable outcomes; add focused tests for what paths cannot express.
+- **Mock only what you don't control and can't afford live**: a paid API, a clock, an unreachable
+  network.
+- **Name the claim in the domain's words** (`rejects an expired token`), one behaviour per test;
+  several inputs for one behaviour is one parameterised case.
 - **Each test builds its own state** and passes alone, in any order, in parallel.
 
 ## Tooling (RTK)
 
-**Always prefix shell commands with `rtk`** so output is filtered before it reaches context. The
-global hook auto-wraps `git`, `grep`, `gh`, `ls` and `find`, and `.rtk/filters.toml` covers this
-repo's noisy entrypoints. Two silent traps: rtk reads that file from the working directory only,
-so a new run location needs a `.rtk` symlink back to the root, and the filters are inert until
-`rtk trust --yes`, re-run per checkout and after any edit. A review's input diff must be
-complete: `RTK_DISABLED=1 git diff`. Why: `docs/agents/rtk-filters.md`.
+**Prefix shell commands with `rtk`.** rtk reads `.rtk/filters.toml` from the working directory
+only, so a new run location needs a `.rtk` symlink to the root, and filters are inert until
+`rtk trust --yes`, re-run per checkout and after any edit. A review's diff must be complete:
+`RTK_DISABLED=1 git diff`. Details: `docs/agents/rtk-filters.md`.

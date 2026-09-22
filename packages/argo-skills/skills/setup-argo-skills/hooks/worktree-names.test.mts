@@ -92,7 +92,7 @@ test('an unset branchPrefix stops the guard judging branch names at all', () => 
 })
 
 test('a publish namespace joins to no ticket, so the naming rule lets it through', () => {
-  // A design page's branch carries a screen, not work (AGENTS.md, Design work). Without the
+  // A design page's branch carries a screen, not work (AGENTS.md, Cross-CLI guardrail hooks). Without the
   // exemption the ticket-join rule below refuses every one of them.
   configureNaming({ dir: '.claude/worktrees', branchPrefix: 'argo/', publishBranches: ['design/'] })
   assert.equal(

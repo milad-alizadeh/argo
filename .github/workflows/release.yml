@@ -10,7 +10,7 @@
 # workflow run is the permanent record.
 #
 # The macOS runner is free: standard GitHub-hosted runners are unlimited on public repositories,
-# and `argo` is public. AGENTS.md holds that correction in full.
+# and `argo` is public.
 #
 name: release desktop
 
