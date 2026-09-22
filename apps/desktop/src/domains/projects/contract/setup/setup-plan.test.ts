@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { planFixture } from '../../../../test-fixtures/projects/setup/setup-plan.fixture'
+import { planFixture } from '../../../../../test-fixtures/projects/setup/setup-plan.fixture'
 import { parseSetupPlanningResult } from './setup-plan'
 
 function first<T>(items: T[]): T {

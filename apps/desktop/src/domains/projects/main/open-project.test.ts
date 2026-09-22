@@ -8,7 +8,7 @@ import {
   SETUP_DOCUMENT_REVISION,
   setupDocumentFixture,
 } from '../../../../test-fixtures/projects/setup-document.fixture'
-import { parseSetupDocument, type SetupDocument } from '../contract/setup-document'
+import { parseSetupDocument, type SetupDocument } from '../contract/setup/setup-document'
 import { openProject } from './open-project'
 import { readProjectConfigurationSource } from './project-configuration'
 import type { ProjectStore } from './register-project'

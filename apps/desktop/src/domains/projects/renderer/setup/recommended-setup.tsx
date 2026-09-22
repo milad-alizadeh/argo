@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Button } from '@/platform/renderer/components/ui/button'
-import type { SetupDocument } from '../../contract/setup-document'
+import type { SetupDocument } from '../../contract/setup/setup-document'
 import { isJson, SetupPage } from './setup-page'
 import type { SetupSectionModel } from './setup-plan-sections'
 import { SetupPlanSummary } from './setup-plan-summary'

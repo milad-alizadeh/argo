@@ -44,28 +44,11 @@ export const Pending: Story = {
 
 // Claude's gate remembers similar calls; the same answer reads as a Session-wide allow for Codex.
 export const AllowSimilar: Story = {
-  render: (args) => {
-    const [answer, setAnswer] = useState<string | null>(null)
-    return (
-      <>
-        <PermissionPrompt
-          {...args}
-          onDecide={async (decision) => {
-            setAnswer(decision)
-            return true
-          }}
-        />
-        <output aria-label="Answer">{answer}</output>
-      </>
-    )
-  },
-  play: async ({ canvasElement }) => {
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'More ways to allow' }))
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Allow similar' }))
-    await expect(canvas.getByRole('status', { name: 'Answer' })).toHaveTextContent(
-      'allowForSession',
-    )
+    await expect(args.onDecide).toHaveBeenCalledWith('allowForSession')
   },
 }
 

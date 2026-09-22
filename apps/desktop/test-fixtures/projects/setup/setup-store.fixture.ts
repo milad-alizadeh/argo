@@ -1,4 +1,4 @@
-import type { SetupDocument } from '@/domains/projects/contract/setup-document'
+import type { SetupDocument } from '@/domains/projects/contract/setup/setup-document'
 import type { SetupCheckpoint } from '@/domains/projects/main/sqlite-store'
 
 export function setupStoreFixture(

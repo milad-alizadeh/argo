@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import {
   acceptedPlanFixture,
   planFixture,
-} from '../../../../test-fixtures/projects/setup/setup-plan.fixture'
+} from '../../../../../test-fixtures/projects/setup/setup-plan.fixture'
 import { validateAcceptedSetupPlan } from './setup-plan'
 import { validatePlanRevision } from './setup-plan-validation'
 

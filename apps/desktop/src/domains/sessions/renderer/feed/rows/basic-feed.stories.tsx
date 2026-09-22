@@ -369,8 +369,10 @@ const REVIEW_AGENT = {
 }
 
 // The Session screen's links, reduced to the command and the Subagent this Feed names.
-function LinkedFeed(args: React.ComponentProps<typeof BasicFeed>) {
-  const [opened, setOpened] = useState<string | null>(null)
+function LinkedFeed({
+  onOpen,
+  ...args
+}: React.ComponentProps<typeof BasicFeed> & { onOpen: BackgroundWorkLinks['open'] }) {
   const links: BackgroundWorkLinks = {
     find: ({ name }) => {
       if (name !== REVIEW_AGENT.label) return null
@@ -380,22 +382,20 @@ function LinkedFeed(args: React.ComponentProps<typeof BasicFeed>) {
         usage: { tokens: 4200, model: 'gpt-5.6-terra' },
       }
     },
-    open: (target) =>
-      setOpened(target.kind === 'shell' ? target.command.command : target.delegation.label),
+    open: onOpen,
   }
   return (
     <BackgroundWork.Provider value={links}>
-      <output className="sr-only">{opened === null ? '' : `Opened ${opened}`}</output>
       <BasicFeed {...args} />
     </BackgroundWork.Provider>
   )
 }
 
 // Each event's title opens the child Session without expanding the parent Feed.
-export const DelegationEvents: Story = {
-  args: { feed: delegationFeed, selectedSessionId: 'subagents' },
+export const DelegationEvents: StoryObj<typeof LinkedFeed> = {
+  args: { feed: delegationFeed, onOpen: fn(), selectedSessionId: 'subagents' },
   render: (args) => <LinkedFeed {...args} />,
-  play: async ({ canvasElement }) => {
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     // Each event's region is now named for that event (#2623), not the shared generic label.
     await expect(
@@ -412,9 +412,11 @@ export const DelegationEvents: Story = {
         name: 'Review the Feed disclosure for keyboard access. sent a reply to the main Session',
       }),
     )
-    await expect(
-      canvas.getByText('Opened Review the Feed disclosure for keyboard access.'),
-    ).toBeInTheDocument()
+    await expect(args.onOpen).toHaveBeenCalledWith({
+      kind: 'delegation',
+      delegation: REVIEW_AGENT,
+      usage: { tokens: 4200, model: 'gpt-5.6-terra' },
+    })
   },
 }
 
@@ -1547,15 +1549,13 @@ export const Stalled: Story = {
 // A Session whose read never answers at all (no SessionFeed ever arrives, #2111's repro):
 // `feed` stays null instead of arriving with empty `rows`. Retry calls `onRetryFeed`, the
 // reader's hook into a fresh IPC attempt, not just the local bound.
-function NeverArrivesHarness() {
-  const [retries, setRetries] = useState(0)
+function NeverArrivesHarness({ onRetryFeed }: { onRetryFeed: () => void }) {
   const [otherClicks, setOtherClicks] = useState(0)
   return (
     <div className="flex h-dvh flex-col">
       <button type="button" onClick={() => setOtherClicks((count) => count + 1)}>
         Other window control ({otherClicks})
       </button>
-      <span>Retries: {retries}</span>
       <div className="min-h-0 flex-1">
         <BasicFeed
           activeEvidenceId={null}
@@ -1565,7 +1565,7 @@ function NeverArrivesHarness() {
           selectedSessionId="never-arrives"
           onOpenEvidence={() => {}}
           onOpenSession={() => {}}
-          onRetryFeed={() => setRetries((count) => count + 1)}
+          onRetryFeed={onRetryFeed}
           onAnswerQuestion={() => {}}
           answeringQuestionId={null}
           questionFailure={() => null}
@@ -1578,9 +1578,10 @@ function NeverArrivesHarness() {
 
 // The window stays live while the read is stuck (nothing else stops responding), and the reader
 // gets a retry that reaches the actual read, not a reload (#2102).
-export const NeverArrives: Story = {
-  render: () => <NeverArrivesHarness />,
-  play: async ({ canvasElement }) => {
+export const NeverArrives: StoryObj<typeof NeverArrivesHarness> = {
+  args: { onRetryFeed: fn() },
+  render: (args) => <NeverArrivesHarness {...args} />,
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await waitFor(() => expect(canvas.getByText('Could not load this Session')).toBeInTheDocument())
     await expect(canvas.getByText(/This Session is external/)).toBeInTheDocument()
@@ -1592,7 +1593,7 @@ export const NeverArrives: Story = {
     ).toBeInTheDocument()
 
     await userEvent.click(canvas.getByRole('button', { name: 'Retry' }))
-    await waitFor(() => expect(canvas.getByText('Retries: 1')).toBeInTheDocument())
+    await waitFor(() => expect(args.onRetryFeed).toHaveBeenCalledTimes(1))
   },
 }
 

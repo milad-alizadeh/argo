@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { setupConfiguration } from '../../contract/setup-configuration'
-import type { SetupDocument } from '../../contract/setup-document'
+import { setupConfiguration } from '../../contract/setup/setup-configuration'
+import type { SetupDocument } from '../../contract/setup/setup-document'
 import { CustomizeSetup } from './customize-setup'
 import { ImportSetup } from './import-setup'
 import { RecommendedSetup } from './recommended-setup'

@@ -1,5 +1,5 @@
 import { Icon, type IconName } from '@/platform/renderer/components/icon'
-import type { SetupDocument } from '../../contract/setup-document'
+import type { SetupDocument } from '../../contract/setup/setup-document'
 
 export type SetupSectionModel = SetupDocument['plan'][number] & { fieldIds: readonly string[] }
 

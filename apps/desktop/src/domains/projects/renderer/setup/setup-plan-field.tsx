@@ -9,8 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/platform/renderer/components/ui/select'
-import type { SetupDocument } from '../../contract/setup-document'
-import { setupChoiceText, setupFieldText } from '../../contract/setup-document-text'
+import type { SetupDocument } from '../../contract/setup/setup-document'
+import { setupChoiceText, setupFieldText } from '../../contract/setup/setup-document-text'
 import type { SetupAnswer } from './use-setup-answers'
 
 export function SetupPlanField({

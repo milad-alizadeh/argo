@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { setupDocumentFixture } from '../../../../test-fixtures/projects/setup-document.fixture'
+import { setupDocumentFixture } from '../../../../../test-fixtures/projects/setup-document.fixture'
 import { setupAnswers, setupConfiguration } from './setup-configuration'
 import { parseSetupDocument } from './setup-document'
 

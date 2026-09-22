@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { type ComponentProps, useState } from 'react'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { parseSetupDocument } from '../../contract/setup-document'
+import { parseSetupDocument } from '../../contract/setup/setup-document'
 import { SetupDocumentForm } from './setup-document-form'
 
 const document = parseSetupDocument({

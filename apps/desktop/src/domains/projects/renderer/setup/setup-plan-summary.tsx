@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import type { SetupDocument } from '../../contract/setup-document'
-import { setupChoiceText, setupFieldText, setupPlanText } from '../../contract/setup-document-text'
+import type { SetupDocument } from '../../contract/setup/setup-document'
+import { setupChoiceText, setupFieldText, setupPlanText } from '../../contract/setup/setup-document-text'
 import { fieldsForSection, SectionIcon, type SetupSectionModel } from './setup-plan-sections'
 import type { SetupAnswer } from './use-setup-answers'
 
