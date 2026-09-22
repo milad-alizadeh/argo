@@ -50,12 +50,19 @@ export async function provePackagedResume(page, { backend, project, restart, tra
   )
 
   await openSessionByClick(relaunched, '11111111-2222-4333-8444-555555555555')
-  await relaunched.waitForSelector('.feed__viewport[data-session="11111111-2222-4333-8444-555555555555"] [data-feed-row]')
+  await relaunched.waitForSelector(
+    '.feed__viewport[data-session="11111111-2222-4333-8444-555555555555"] [data-feed-row]',
+  )
   await sendFromComposer(relaunched, 'Take this one over.')
   await backend
     .waitForReply(relaunched, { harness: 'claude', prompt: 'Take this one over.' })
     .catch((error) =>
-      reportStalledResume({ error, page: relaunched, sessionId: '11111111-2222-4333-8444-555555555555', transcripts }),
+      reportStalledResume({
+        error,
+        page: relaunched,
+        sessionId: '11111111-2222-4333-8444-555555555555',
+        transcripts,
+      }),
     )
   return relaunched
 }

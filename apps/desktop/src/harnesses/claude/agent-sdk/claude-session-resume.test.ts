@@ -4,12 +4,8 @@
 // after that one error result, never emitting the "system"/"init" handshake.
 import { expect, test } from 'bun:test'
 import { createActor } from 'xstate'
-import { createClaudeSessionMachine } from '@/harnesses/claude/agent-sdk/claude-session-actor'
-import {
-  fakeClaudeQuery,
-  flush,
-  managedSessionService,
-} from '@/harnesses/claude/agent-sdk/claude-session-test-support'
+import { createClaudeSessionMachine } from './claude-session-actor'
+import { fakeClaudeQuery, flush, managedSessionService } from './claude-session-test-support'
 
 function resumingActor(fake: ReturnType<typeof fakeClaudeQuery>) {
   return createActor(

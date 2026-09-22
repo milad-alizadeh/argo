@@ -2,8 +2,8 @@ import {
   isAuthenticationFailure,
   isInheritedApiCredential,
   isSubscriptionAuthorized,
-} from '@/harnesses/claude/agent-sdk/subscription-authorization'
-import type { ClaudeSdkMessage } from '@/harnesses/claude/agent-sdk/types'
+} from './subscription-authorization'
+import type { ClaudeSdkMessage } from './types'
 
 type MessageParams = { message: ClaudeSdkMessage }
 

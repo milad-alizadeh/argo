@@ -3,13 +3,10 @@ import type { ClaudeTurnSetup } from '@/domains/sessions/contract/claude-turn-se
 import type * as SessionContract from '@/domains/sessions/next/contract/session-contract'
 import type { SessionCommandOutcome } from '@/domains/sessions/next/contract/session-projection-contract'
 import type { SessionService } from '@/domains/sessions/next/main/session-service'
-import { createClaudeSessionMachine } from '@/harnesses/claude/agent-sdk/claude-session-actor'
-import {
-  type ClaudeSessionActor,
-  projectionFrom,
-} from '@/harnesses/claude/agent-sdk/claude-session-projection'
-import type { sessionRegistry } from '@/harnesses/claude/agent-sdk/claude-session-registry'
-import type { ClaudeQueryFactory } from '@/harnesses/claude/agent-sdk/types'
+import { createClaudeSessionMachine } from './claude-session-actor'
+import { type ClaudeSessionActor, projectionFrom } from './claude-session-projection'
+import type { sessionRegistry } from './claude-session-registry'
+import type { ClaudeQueryFactory } from './types'
 
 export async function openClaudeSession(options: {
   command: {
