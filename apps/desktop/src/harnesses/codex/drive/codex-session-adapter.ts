@@ -64,6 +64,23 @@ function waitForChannel(supervisor: AppServerSupervisor): Promise<void> {
   })
 }
 
+function attachRegistry(
+  appServer: ReturnType<typeof sharedAppServerRuntimeFor>,
+  registry: SessionRegistry,
+) {
+  return appServer.attach({
+    dispatchNotification: (message) => {
+      for (const entry of registry.values()) entry.actor.send({ type: 'Notification', message })
+    },
+    notifyChannelLost: () => {
+      for (const entry of registry.values()) entry.actor.send({ type: 'Channel lost' })
+    },
+    notifyChannelRestored: () => {
+      for (const entry of registry.values()) entry.actor.send({ type: 'Channel restored' })
+    },
+  })
+}
+
 // One Codex `SessionAdapter` per window (ADR-0047): each one contributes child actors keyed by
 // native Session ID to the main-process app-server supervisor. `execute` sends the command and
 // reports the resulting snapshot; ongoing updates stream to subscribers, not through its return.
@@ -80,17 +97,7 @@ export function createCodexSessionAdapter(deps: {
 
   const appServer = sharedAppServerRuntimeFor(deps.findExecutable)
   const supervisor = appServer.supervisor
-  const detach = appServer.attach({
-    dispatchNotification: (message) => {
-      for (const entry of registry.values()) entry.actor.send({ type: 'Notification', message })
-    },
-    notifyChannelLost: () => {
-      for (const entry of registry.values()) entry.actor.send({ type: 'Channel lost' })
-    },
-    notifyChannelRestored: () => {
-      for (const entry of registry.values()) entry.actor.send({ type: 'Channel restored' })
-    },
-  })
+  const detach = attachRegistry(appServer, registry)
 
   const machine = createManagedSessionMachine({
     getChannel: supervisor.getChannel,
@@ -110,6 +117,7 @@ export function createCodexSessionAdapter(deps: {
       }
       entry.revision += 1
       const projection = projectionFrom(snapshot, entry.revision)
+      appServer.publish(projection)
       for (const listener of entry.listeners) listener(projection)
     }
     actor.subscribe(notify)
@@ -129,7 +137,12 @@ export function createCodexSessionAdapter(deps: {
   return {
     execute: (command) => executeCommand(command, registry, start),
     subscribe: (session, onProjection) => {
-      const entry = requireSessionEntry(registry, session)
+      const entry = registry.get(keyOf(session))
+      if (entry === undefined) {
+        const unsubscribe = appServer.observe(session, onProjection)
+        if (unsubscribe === undefined) throw new CodexSessionDriverError('missing-session')
+        return unsubscribe
+      }
       entry.listeners.add(onProjection)
       const unsubscribe: Unsubscribe = () => entry.listeners.delete(onProjection)
       return unsubscribe

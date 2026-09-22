@@ -61,6 +61,30 @@ test('shares one app-server process across managed Session windows', async () =>
   }
 })
 
+test('shows a managed Session as watched in a second window', async () => {
+  const executable = await mockCodexExecutable()
+  const owner = createAdapter(executable)
+  const observer = createAdapter(executable)
+  try {
+    const started = await owner.execute({
+      type: 'session.start',
+      harness: 'codex',
+      prompt: 'Observe this managed Session.',
+      workspace: { kind: 'main' },
+    })
+    assert.equal(started.kind, 'accepted')
+    if (started.kind !== 'accepted') return
+    const projection = await new Promise<SessionProjection>((resolve) => {
+      observer.subscribe(started.projection.session, resolve)
+    })
+    assert.equal(projection.posture, 'watched')
+    assert.equal(projection.session.nativeId, started.projection.session.nativeId)
+  } finally {
+    owner.close()
+    observer.close()
+  }
+})
+
 test('projects app-server tool calls and cumulative token usage', async () => {
   const adapter = await createMockAdapter()
   try {
