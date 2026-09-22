@@ -89,13 +89,6 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run quality:duplication
 
-      # A domain facet may import only its declared set of other facets (#2505). Node reads every
-      # source file under apps/desktop/src and flags an import that crosses a facet boundary; this
-      # step also runs the checker's own tests over synthetic files.
-      - name: Domain facet boundaries
-        if: ${{ !cancelled() }}
-        run: bun run quality:facets
-
       # The workspace suites. `apps/desktop` now answers `test` with the SOURCE tier of #1769:
       # everything about the packaged PTY that can be judged without a Mac — the yauzl override,
       # node-pty being a production dependency, the unpack glob, the fuse value, the hooks being

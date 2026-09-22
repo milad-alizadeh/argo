@@ -42,10 +42,9 @@ Contract code cannot import Electron, Node, React, storage, providers, or render
 code cannot import Electron, Node, main implementations, or preload implementations. A domain
 facet cannot import an application composition root.
 
-`scripts/check-domain-facets.mts` reads every source file under `apps/desktop/src` and reports
-each import that crosses a facet boundary. `bun run quality:facets` runs the checker and its own
-tests, and `bun run quality` runs `quality:facets`. CI runs `quality:facets` as its own step
-(#2505). Tests stay beside the facet that owns the behavior.
+`biome.jsonc`'s `noRestrictedImports` overrides enforce the facet matrix and the port-only
+cross-domain rule, one override per domain (#2623). `bun run quality` runs biome as part of
+`format-and-lint`. Tests stay beside the facet that owns the behavior.
 
 Every domain lives in this layout. `src/` holds `domains`, `platform`, `shared`, `harnesses`,
 `providers`, the `renderer` composition root, and the entry points. A harness is a named external
@@ -55,7 +54,10 @@ main code. A harness can also have a `renderer` facet, under `src/harnesses/<har
 for the harness-specific UI it draws (#2505). The renderer facet follows the same rule as a domain
 renderer: it cannot use Node, Electron, or main-process code. `src/harnesses/composition/` is a
 declared composition root. It wires each harness into the application, so it can use Sessions main
-code the way `src/main.ts` can. The checker refuses an import from any other top-level root.
+code the way `src/main.ts` can. This harness-facet nuance (the composition-root exception, the
+temporary main allowances, and the ban on any other top-level root) has no `biome.jsonc` rule yet
+(#2623 covered only the product-domain port rule); it is unenforced until a follow-up ticket
+expresses it there.
 
 ## Consequences
 

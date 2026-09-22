@@ -472,6 +472,265 @@
         }
       }
     },
+    // A domain is reached only through its port.ts, one override per domain, each banning the
+    // other domains' main and renderer facets and re-admitting their port files by negated
+    // pattern. This is sound only because the ./ and ../ ban above forces every cross-directory
+    // import into the @/ form these patterns match; relaxing that ban silently voids every rule
+    // below it.
+    {
+      "includes": [
+        "apps/desktop/src/domains/accounts/**",
+        "!**/*.{test,stories}.{ts,tsx}",
+        "!**/harness-fixtures.ts"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "@/domains/atlas/main/**",
+                      "!@/domains/atlas/main/port",
+                      "@/domains/atlas/renderer/**",
+                      "!@/domains/atlas/renderer/port",
+                      "@/domains/connections/main/**",
+                      "!@/domains/connections/main/port",
+                      "@/domains/connections/renderer/**",
+                      "!@/domains/connections/renderer/port",
+                      "@/domains/projects/main/**",
+                      "!@/domains/projects/main/port",
+                      "@/domains/projects/renderer/**",
+                      "!@/domains/projects/renderer/port",
+                      "@/domains/sessions/main/**",
+                      "!@/domains/sessions/main/port",
+                      "@/domains/sessions/renderer/**",
+                      "!@/domains/sessions/renderer/port",
+                      "@/domains/tickets/main/**",
+                      "!@/domains/tickets/main/port",
+                      "@/domains/tickets/renderer/**",
+                      "!@/domains/tickets/renderer/port"
+                    ],
+                    "message": "Reach another domain only through its port.ts."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/desktop/src/domains/atlas/**", "!**/*.{test,stories}.{ts,tsx}"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "@/domains/accounts/main/**",
+                      "!@/domains/accounts/main/port",
+                      "@/domains/accounts/renderer/**",
+                      "!@/domains/accounts/renderer/port",
+                      "@/domains/connections/main/**",
+                      "!@/domains/connections/main/port",
+                      "@/domains/connections/renderer/**",
+                      "!@/domains/connections/renderer/port",
+                      "@/domains/projects/main/**",
+                      "!@/domains/projects/main/port",
+                      "@/domains/projects/renderer/**",
+                      "!@/domains/projects/renderer/port",
+                      "@/domains/sessions/main/**",
+                      "!@/domains/sessions/main/port",
+                      "@/domains/sessions/renderer/**",
+                      "!@/domains/sessions/renderer/port",
+                      "@/domains/tickets/main/**",
+                      "!@/domains/tickets/main/port",
+                      "@/domains/tickets/renderer/**",
+                      "!@/domains/tickets/renderer/port"
+                    ],
+                    "message": "Reach another domain only through its port.ts."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/desktop/src/domains/connections/**", "!**/*.{test,stories}.{ts,tsx}"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "@/domains/accounts/main/**",
+                      "!@/domains/accounts/main/port",
+                      "@/domains/accounts/renderer/**",
+                      "!@/domains/accounts/renderer/port",
+                      "@/domains/atlas/main/**",
+                      "!@/domains/atlas/main/port",
+                      "@/domains/atlas/renderer/**",
+                      "!@/domains/atlas/renderer/port",
+                      "@/domains/projects/main/**",
+                      "!@/domains/projects/main/port",
+                      "@/domains/projects/renderer/**",
+                      "!@/domains/projects/renderer/port",
+                      "@/domains/sessions/main/**",
+                      "!@/domains/sessions/main/port",
+                      "@/domains/sessions/renderer/**",
+                      "!@/domains/sessions/renderer/port",
+                      "@/domains/tickets/main/**",
+                      "!@/domains/tickets/main/port",
+                      "@/domains/tickets/renderer/**",
+                      "!@/domains/tickets/renderer/port"
+                    ],
+                    "message": "Reach another domain only through its port.ts."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/desktop/src/domains/projects/**", "!**/*.{test,stories}.{ts,tsx}"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "@/domains/accounts/main/**",
+                      "!@/domains/accounts/main/port",
+                      "@/domains/accounts/renderer/**",
+                      "!@/domains/accounts/renderer/port",
+                      "@/domains/atlas/main/**",
+                      "!@/domains/atlas/main/port",
+                      "@/domains/atlas/renderer/**",
+                      "!@/domains/atlas/renderer/port",
+                      "@/domains/connections/main/**",
+                      "!@/domains/connections/main/port",
+                      "@/domains/connections/renderer/**",
+                      "!@/domains/connections/renderer/port",
+                      "@/domains/sessions/main/**",
+                      "!@/domains/sessions/main/port",
+                      "@/domains/sessions/renderer/**",
+                      "!@/domains/sessions/renderer/port",
+                      "@/domains/tickets/main/**",
+                      "!@/domains/tickets/main/port",
+                      "@/domains/tickets/renderer/**",
+                      "!@/domains/tickets/renderer/port"
+                    ],
+                    "message": "Reach another domain only through its port.ts."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "apps/desktop/src/domains/sessions/**",
+        "!**/*.{test,stories}.{ts,tsx}",
+        "!**/roster-fixtures.ts"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "@/domains/accounts/main/**",
+                      "!@/domains/accounts/main/port",
+                      "@/domains/accounts/renderer/**",
+                      "!@/domains/accounts/renderer/port",
+                      "@/domains/atlas/main/**",
+                      "!@/domains/atlas/main/port",
+                      "@/domains/atlas/renderer/**",
+                      "!@/domains/atlas/renderer/port",
+                      "@/domains/connections/main/**",
+                      "!@/domains/connections/main/port",
+                      "@/domains/connections/renderer/**",
+                      "!@/domains/connections/renderer/port",
+                      "@/domains/projects/main/**",
+                      "!@/domains/projects/main/port",
+                      "@/domains/projects/renderer/**",
+                      "!@/domains/projects/renderer/port",
+                      "@/domains/tickets/main/**",
+                      "!@/domains/tickets/main/port",
+                      "@/domains/tickets/renderer/**",
+                      "!@/domains/tickets/renderer/port"
+                    ],
+                    "message": "Reach another domain only through its port.ts."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/desktop/src/domains/tickets/**", "!**/*.{test,stories}.{ts,tsx}"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "@/domains/accounts/main/**",
+                      "!@/domains/accounts/main/port",
+                      "@/domains/accounts/renderer/**",
+                      "!@/domains/accounts/renderer/port",
+                      "@/domains/atlas/main/**",
+                      "!@/domains/atlas/main/port",
+                      "@/domains/atlas/renderer/**",
+                      "!@/domains/atlas/renderer/port",
+                      "@/domains/connections/main/**",
+                      "!@/domains/connections/main/port",
+                      "@/domains/connections/renderer/**",
+                      "!@/domains/connections/renderer/port",
+                      "@/domains/projects/main/**",
+                      "!@/domains/projects/main/port",
+                      "@/domains/projects/renderer/**",
+                      "!@/domains/projects/renderer/port",
+                      "@/domains/sessions/main/**",
+                      "!@/domains/sessions/main/port",
+                      "@/domains/sessions/renderer/**",
+                      "!@/domains/sessions/renderer/port"
+                    ],
+                    "message": "Reach another domain only through its port.ts."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     // KIND: throwaway research prototypes (output of the `prototype` skill). Deliberately
     // quick, deleted rather than maintained — the caps would tax exploration for no return.
     {

@@ -50,8 +50,10 @@ stays comment-free by convention, with nothing enforcing it.
 **The renderer boundary starts with specifier spelling in each renderer facet.** A
 `noRestrictedImports` override covers the renderer roots under `apps/desktop/src/`. It refuses
 `electron` and `node:*`. It also reads `import type`, because compilation erases a type-only
-import. The domain-facet gate rejects imports into another runtime facet. The preload and main
-facets can import `electron`. The limits worth knowing before trusting these gates:
+import. A second override, one per domain, rejects a deep import into another domain's `main` or
+`renderer` facet and re-admits its `port.ts` (#2623, ADR-0044); this is the same engine and the
+same step as the specifier rule above, not a separate gate. The preload and main facets can import
+`electron`. The limits worth knowing before trusting these gates:
 
 - **One hop of indirection walks straight through.** A renderer file importing `../preload`,
   which itself imports `electron`, draws no diagnostic and pulls `electron` into the renderer
