@@ -50,7 +50,7 @@ test('opens a registered Project through the preload surface alone', async ({ pr
   assert.equal(typeof reply.requestId, 'string')
   assert.deepEqual(reply, {
     version: 1,
-    type: 'project.setup-required',
+    type: 'project.opened',
     requestId: reply.requestId,
     project: { id: 'project-1', name: 'example' },
   })
@@ -98,7 +98,7 @@ test('registers, restarts, selects, and reopens a Project from SQLite', async ({
     assert.equal(listed.type, 'project.listed')
     assert.equal(listed.selectedId, registered.selectedId)
     const reopenedRegistered = await invoke(page, { projectId: registered.selectedId })
-    assert.equal(reopenedRegistered.type, 'project.setup-required')
+    assert.equal(reopenedRegistered.type, 'project.opened')
     const selected = await page.evaluate(() =>
       window.argo.selectProject({ projectId: 'project-1' }),
     )
@@ -111,8 +111,8 @@ test('registers, restarts, selects, and reopens a Project from SQLite', async ({
   try {
     const page = await reopened.firstWindow()
     const result = await invoke(page, { projectId: 'project-1' })
-    assert.equal(result.type, 'project.setup-required')
-    assert.deepEqual(result.type === 'project.setup-required' ? result.project : null, {
+    assert.equal(result.type, 'project.opened')
+    assert.deepEqual(result.type === 'project.opened' ? result.project : null, {
       id: 'project-1',
       name: 'example',
     })
