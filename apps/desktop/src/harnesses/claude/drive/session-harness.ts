@@ -4,16 +4,16 @@
 import path from 'node:path'
 import { SESSION_CLAUDE_EXECUTABLE_ENV } from '@/domains/sessions/contract/proof-protocol'
 import { installCompactionHook } from '@/harnesses/claude/compaction/compaction-hook'
-import { renameClaudeSession } from '@/harnesses/claude/drive/rename-session'
-import { createClaudeDriveAdapter } from '@/harnesses/claude/drive/session-drive-adapter'
-import { createSystemClaudeSessionDriver } from '@/harnesses/claude/drive/system-claude-session-driver'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import { renameClaudeSession } from './rename-session'
+import { createClaudeDriveAdapter } from './session-drive-adapter'
+import { createSystemClaudeSessionDriver } from './system-claude-session-driver'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-sessions'
 import {
   claudeCompactionStartsRoot,
   claudeProcessesRoot,
   claudeSettingsPath,
   claudeTranscriptsRoot,
-} from '@/harnesses/claude/sessions/roots'
+} from '@/harnesses/claude/sessions/discovery/roots'
 import type { HarnessRegistration } from '@/harnesses/composition/harness-registration'
 
 function renameManagedSession(

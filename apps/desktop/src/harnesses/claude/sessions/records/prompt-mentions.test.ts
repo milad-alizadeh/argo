@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { embedAttachments } from '@/harnesses/claude/drive/attachment-prompt'
+import { embedAttachments } from '@/harnesses/claude/drive/turn/attachment-prompt'
 import { promptRows } from '@/harnesses/claude/sessions/prompt-fixture'
 
 test('draws attached image files from the @path mentions Argo appends', () => {

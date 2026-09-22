@@ -1,4 +1,4 @@
-import type { DriverOptions, ManagedSession } from '@/harnesses/claude/drive/drive-channel'
+import type { DriverOptions, ManagedSession } from './channel/drive-channel'
 
 type Sessions = Map<string, ManagedSession>
 

@@ -1,11 +1,11 @@
 import { claudeCliEnvironment } from '@/harnesses/claude/cli-environment'
-import { compactionProgress, launchArguments } from '@/harnesses/claude/drive/claude-setup'
-import { type CompanionPart, openCompanionPlugin } from '@/harnesses/claude/drive/companion-plugin'
-import type { ClaudeTurnRequest } from '@/harnesses/claude/drive/deliver-turn'
-import type { DriverOptions, ManagedSession } from '@/harnesses/claude/drive/drive-channel'
-import { ClaudeSessionDriverError } from '@/harnesses/claude/drive/driver-error'
-import { firstFrame } from '@/harnesses/claude/drive/first-frame'
-import { createLiveMessages } from '@/harnesses/claude/drive/live-messages'
+import { compactionProgress, launchArguments } from '../turn/claude-setup'
+import { type CompanionPart, openCompanionPlugin } from './companion-plugin'
+import type { ClaudeTurnRequest } from '../turn/deliver-turn'
+import type { DriverOptions, ManagedSession } from './drive-channel'
+import { ClaudeSessionDriverError } from './driver-error'
+import { firstFrame } from './first-frame'
+import { createLiveMessages } from './live-messages'
 
 export type ClaudeProcess = {
   write: (text: string) => void

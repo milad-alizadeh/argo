@@ -13,7 +13,7 @@ import {
   compactionEndedAt,
   markCompactingRows,
 } from '@/harnesses/claude/compaction/compaction-roster'
-import type { LiveMessage } from '@/harnesses/claude/drive/live-messages'
+import type { LiveMessage } from '@/harnesses/claude/drive/channel/live-messages'
 import {
   backfillTick,
   clearFullRecords,

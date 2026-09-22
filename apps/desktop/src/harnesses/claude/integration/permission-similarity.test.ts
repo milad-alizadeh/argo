@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { similarityKey } from '@/harnesses/claude/drive/permission-similarity'
+import { similarityKey } from '@/harnesses/claude/drive/permission/permission-similarity'
 
 function request(toolName: string, input: Record<string, unknown>) {
   return { id: 'permission', sessionId: 'session', toolName, input }

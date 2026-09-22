@@ -1,18 +1,18 @@
 import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import type { OwnershipLedger, OwnershipStanding } from '@/domains/sessions/main'
-import type { CompanionPart } from '@/harnesses/claude/drive/companion-plugin'
+import type { CompanionPart } from './companion-plugin'
 import {
   type ClaudeTurnRequest,
   deliverTurn,
   type TurnTarget,
   type Wait,
-} from '@/harnesses/claude/drive/deliver-turn'
-import { ClaudeSessionDriverError } from '@/harnesses/claude/drive/driver-error'
-import type { HandoffLedger } from '@/harnesses/claude/drive/handoff-ledger'
-import type { LiveMessages } from '@/harnesses/claude/drive/live-messages'
-import { type ClaudeProcess, openChannel, type Seed } from '@/harnesses/claude/drive/open-channel'
-import type { ClaudePermissionGate } from '@/harnesses/claude/drive/permission-gate'
-import { deliverAnswer } from '@/harnesses/claude/drive/question-answer'
+} from '../turn/deliver-turn'
+import { ClaudeSessionDriverError } from './driver-error'
+import type { HandoffLedger } from '../handoff/handoff-ledger'
+import type { LiveMessages } from './live-messages'
+import { type ClaudeProcess, openChannel, type Seed } from './open-channel'
+import type { ClaudePermissionGate } from '../permission/permission-gate'
+import { deliverAnswer } from '../turn/question-answer'
 
 // ADR-0026: `--resume` takes the chain's LATEST link, while the Roster and the ledger key the
 // Session by its chain id. Held together so a caller cannot name one without the other.

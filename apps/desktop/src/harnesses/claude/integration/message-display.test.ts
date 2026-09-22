@@ -5,8 +5,8 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 
-import type { CompanionPart } from '@/harnesses/claude/drive/companion-plugin'
-import { createMessageDisplay } from '@/harnesses/claude/drive/message-display'
+import type { CompanionPart } from '@/harnesses/claude/drive/channel/companion-plugin'
+import { createMessageDisplay } from '@/harnesses/claude/drive/turn/message-display'
 import { hookSocketPath } from '@/harnesses/claude/integration/hook-socket'
 
 const BATCH = {

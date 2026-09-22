@@ -6,7 +6,7 @@ import { test } from 'node:test'
 import {
   embedAttachments,
   mentionableAttachments,
-} from '@/harnesses/claude/drive/attachment-prompt'
+} from './attachment-prompt'
 
 test('mentions a file whose path has a space and a quote through a link Claude Code can read', async () => {
   const root = await mkdtemp(join(tmpdir(), 'argo-mention-'))

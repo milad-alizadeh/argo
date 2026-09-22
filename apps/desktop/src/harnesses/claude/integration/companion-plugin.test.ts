@@ -5,9 +5,9 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 
-import { openCompanionPlugin } from '@/harnesses/claude/drive/companion-plugin'
-import { createMessageDisplay } from '@/harnesses/claude/drive/message-display'
-import { createClaudePermissionGate } from '@/harnesses/claude/drive/permission-gate'
+import { openCompanionPlugin } from '@/harnesses/claude/drive/channel/companion-plugin'
+import { createMessageDisplay } from '@/harnesses/claude/drive/turn/message-display'
+import { createClaudePermissionGate } from '@/harnesses/claude/drive/permission/permission-gate'
 
 type Registered = { matcher?: string; hooks: { command: string }[] }
 

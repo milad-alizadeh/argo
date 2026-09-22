@@ -4,8 +4,8 @@ import {
   footerMode,
   REDRAW,
   setupCommands,
-} from '@/harnesses/claude/drive/claude-setup'
-import { claudeTurn } from '@/harnesses/claude/drive/claude-turn'
+} from './claude-setup'
+import { claudeTurn } from './claude-turn'
 
 export type Wait = (milliseconds: number) => Promise<void>
 export type ClaudeTurnRequest = { prompt: string; setup: ClaudeTurnSetup }

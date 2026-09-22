@@ -10,10 +10,10 @@ import type {
 import {
   embedAttachments,
   mentionableAttachments,
-} from '@/harnesses/claude/drive/attachment-prompt'
-import type { ClaudeSessionDriver } from '@/harnesses/claude/drive/claude-session-driver'
-import { ClaudeSessionDriverError } from '@/harnesses/claude/drive/driver-error'
-import type { ClaudePermissionDecision } from '@/harnesses/claude/drive/permission-gate'
+} from './turn/attachment-prompt'
+import type { ClaudeSessionDriver } from './claude-session-driver'
+import { ClaudeSessionDriverError } from './channel/driver-error'
+import type { ClaudePermissionDecision } from './permission/permission-gate'
 
 const FAILURE_MESSAGES = {
   'harness-unavailable': 'Claude Code is not available. Run claude doctor to repair it.',

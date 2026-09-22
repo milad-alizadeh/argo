@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import type { LiveMessage } from '@/harnesses/claude/drive/live-messages'
+import type { LiveMessage } from '@/harnesses/claude/drive/channel/live-messages'
 import {
   feedOf,
   type Row,

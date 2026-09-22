@@ -1,5 +1,5 @@
 import { projectRosterRow } from '@/domains/sessions/main'
-import type { ResumeTarget } from '@/harnesses/claude/drive/drive-channel'
+import type { ResumeTarget } from '@/harnesses/claude/drive/channel/drive-channel'
 import { readSessionFiles } from '@/harnesses/claude/sessions/discover'
 
 // ADR-0026: a resume continues the chain's latest link, in the folder that link last worked in.
