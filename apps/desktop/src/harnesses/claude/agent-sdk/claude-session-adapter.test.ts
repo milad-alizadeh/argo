@@ -7,11 +7,19 @@ import { createClaudeSessionAdapter } from '@/harnesses/claude/agent-sdk/claude-
 
 test('starts Claude after the selected Workspace is ready', async () => {
   const fake = fakeClaudeQuery()
+  let releaseWorkspace: (() => void) | undefined
+  let queryCalls = 0
   const adapter = createClaudeSessionAdapter({
     sessionService: managedSessionService,
-    waitForWorkspaceReady: async () => {},
+    waitForWorkspaceReady: () =>
+      new Promise<void>((resolve) => {
+        releaseWorkspace = resolve
+      }),
     resolveWorkspace: async () => ({ workspaceId: 'workspace-1', cwd: '/repository' }),
-    createQuery: fake.createQuery,
+    createQuery: (params) => {
+      queryCalls += 1
+      return fake.createQuery(params)
+    },
     renameSession: fake.renameSession,
   })
   const outcome = adapter.execute({
@@ -20,6 +28,10 @@ test('starts Claude after the selected Workspace is ready', async () => {
     prompt: 'hello',
     workspace: { kind: 'main' },
   })
+  await new Promise((resolve) => setImmediate(resolve))
+
+  expect(queryCalls).toBe(0)
+  releaseWorkspace?.()
   await new Promise((resolve) => setImmediate(resolve))
 
   fake.emitInit({ apiKeySource: 'none' })
@@ -31,4 +43,5 @@ test('starts Claude after the selected Workspace is ready', async () => {
       workspace: { id: 'workspace-1' },
     },
   })
+  expect(queryCalls).toBe(1)
 })

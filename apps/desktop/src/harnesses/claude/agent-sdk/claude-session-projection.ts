@@ -8,8 +8,8 @@ import type { ClaudeSessionContext } from '@/harnesses/claude/agent-sdk/types'
 export type ClaudeSessionActor = ActorRefFrom<ReturnType<typeof createClaudeSessionMachine>>
 export type ClaudeSessionSnapshot = { context: ClaudeSessionContext; value: unknown }
 
-function statusFrom(_snapshot: ClaudeSessionSnapshot): SessionStatus {
-  return 'idle'
+function statusFrom(snapshot: ClaudeSessionSnapshot): SessionStatus {
+  return snapshot.value === 'Managed' ? 'running' : 'idle'
 }
 
 export function projectionFrom(

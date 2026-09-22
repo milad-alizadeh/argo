@@ -14,6 +14,6 @@ test('projects the managed Claude Session with its native ID and stable Workspac
     posture: 'managed',
     revision: 3,
     workspace: { id: 'workspace-1' },
-    status: 'idle',
+    status: 'running',
   })
 })
