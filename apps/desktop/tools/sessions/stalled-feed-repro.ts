@@ -12,7 +12,7 @@ import { spawn } from 'node:child_process'
 import { mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { createSessionReader } from '../../src/domains/sessions/main/reader'
+import { createSessionReader } from '../../src/domains/sessions/main/observation/reader'
 import { claudeSessionSource } from '../../src/harnesses/claude/sessions/read-sessions'
 
 const SESSION = 'external-live'

@@ -95,6 +95,15 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run quality:boundaries
 
+      # Files, exports, types and dependencies nothing reaches (#2623). Its own step so a
+      # dead-code failure is not buried under the lint step's output. `--max-issues 279` is a
+      # ratchet at the count the triaged adoption run left, the same shape as jscpd's
+      # `--fail-on-new-clones=0`: the number may only fall as findings are cleared, and any
+      # newly-introduced dead code on top of that baseline fails the build.
+      - name: Dead-code gate
+        if: ${{ !cancelled() }}
+        run: bun run quality:dead-code
+
       # The workspace suites. `apps/desktop` now answers `test` with the SOURCE tier of #1769:
       # everything about the packaged PTY that can be judged without a Mac — the yauzl override,
       # node-pty being a production dependency, the unpack glob, the fuse value, the hooks being

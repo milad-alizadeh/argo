@@ -1,0 +1,76 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // Electron has no Knip plugin (electron-vite is a different build tool from
+  // @electron-forge/plugin-vite), so the main and preload bundle entries are listed by hand,
+  // matching forge.config.ts's own `build` entries.
+  "workspaces": {
+    ".": {
+      "entry": [
+        "scripts/profiling/*.mts",
+        "prototypes/codex-transport/channel.ts",
+        "prototypes/codex-transport/prove.ts"
+      ],
+      "project": ["scripts/**/*.mts", "prototypes/codex-transport/**/*.ts"]
+    },
+    "packages/argo-skills": {
+      "entry": ["bin/*.mts", "skills/**/hooks/*.mts"],
+      "project": ["bin/**/*.mts", "skills/**/*.mts"]
+    },
+    "apps/desktop": {
+      "bun": true,
+      "vite": true,
+      "storybook": true,
+      "vitest": true,
+      "playwright": true,
+      "entry": [
+        "src/main.ts",
+        "src/preload.ts",
+        "src/domains/sessions/main/index/session-index/session-index-worker.ts",
+        "forge.config.ts",
+        // forge.config.ts names these by string path (its Vite plugin's `build` entries), not by
+        // import, and Knip's own Vite plugin only auto-detects a single "vite.config.ts".
+        "vite.main.config.ts",
+        "vite.preload.config.ts",
+        "vite.renderer.config.ts",
+        "scripts/*.mts",
+        "tools/**/*.ts",
+        "mocks/**/*.ts",
+        "e2e/**/*.e2e.ts",
+        "e2e/**/*.case.ts",
+        "e2e/**/*.fixture.ts"
+      ],
+      "project": ["src/**/*.{ts,tsx}", "scripts/**/*.mts", "tools/**/*.ts", "mocks/**/*.ts"],
+      // `drizzle.config.ts` needs no entry of its own: Knip auto-enables its own Drizzle
+      // plugin because `drizzle-kit` is a devDependency, and that plugin reads the config
+      // file and its `schema` field as production entries on its own. Do not add
+      // `drizzle.config.ts` to `entry` (Knip reports that as a redundant pattern) or to
+      // `ignore` (Knip reports that as unused, since the plugin already covers it) —
+      // either edit here is a sign the plugin stopped being enabled, not a bug in this file.
+      "ignore": [
+        // Vendored shadcn components, excluded from lint and duplication the same way
+        // (biome.jsonc, vitest.config.ts coverage.exclude): not code this repo authors,
+        // kept as a generated primitive kit rather than pruned to only what's wired up today.
+        "src/platform/renderer/components/ui/**"
+      ],
+      // A macOS system binary read by signing-readback.mts, not an npm-installed dependency.
+      "ignoreBinaries": ["plutil"],
+      "ignoreDependencies": [
+        // Native-module build-time header for node-pty; nothing imports it from TypeScript.
+        "node-addon-api",
+        // Used only by vendored, ignored shadcn primitives (calendar, chart, command, carousel,
+        // input-otp) that this app does not currently wire up.
+        "cmdk",
+        "embla-carousel-react",
+        "input-otp",
+        "react-day-picker",
+        "recharts",
+        // The shadcn CLI, run by hand (`bunx shadcn add …`) against components.json; never
+        // imported.
+        "shadcn",
+        // Reached only through a CSS `@import`, which Knip does not follow.
+        "tailwindcss",
+        "tw-animate-css"
+      ]
+    }
+  }
+}

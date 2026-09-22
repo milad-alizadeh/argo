@@ -82,6 +82,53 @@ are exempt by name because they reach across domains on purpose to build test fi
 would otherwise stay out of the duplication scan only through `apps/desktop/.gitignore` plus
 jscpd's `gitignore: true`, which is a nested ignore file two tools deep.
 
+## The dead-code gate (#2623)
+
+Knip finds the files, exports, types and dependencies that nothing in the repository reaches.
+`knip.jsonc` at the repository root holds one workspace block for `.`, `packages/argo-skills` and
+`apps/desktop`. It runs as `quality:dead-code`, in `quality`, and as its own CI step, so a
+dead-code failure does not hide under the lint step's output.
+
+**Electron has no Knip plugin.** `apps/desktop`'s main and preload bundle entries, and its three
+split Vite configs (`vite.main.config.ts`, `vite.preload.config.ts`,
+`vite.renderer.config.ts`), are named by hand in `entry`. Knip's own Vite plugin only finds a
+single `vite.config.ts`, and `forge.config.ts` names the three split files as strings, not as
+imports, so Knip cannot find them on its own either.
+
+**The gate does not fail on day one.** A first triaged run found 5 unused files, 6 unused
+dependencies, 5 unused devDependencies, 11 unlisted dependencies, 1 unlisted binary, 6 unresolved
+imports and 1 duplicate export. Working through that list found:
+
+- Four real bugs: stale relative imports in `apps/desktop/mocks/` and `apps/desktop/tools/` left
+  over from a facet reorganisation, pointing at files that had moved or never existed at that
+  path. `tsconfig.e2e.json` sets `noCheck: true` over those directories, so nothing else in the
+  repository would have caught them. Knip's own resolution run found these; a person did not.
+- Three stories importing `Meta`/`StoryObj` from `@storybook/react` instead of this repository's
+  own `@storybook/react-vite`, out of step with every other story file. Knip's Storybook plugin
+  would have covered the framework's own package.
+- Five files with zero importers, deleted: a setup-context helper, a renderer store, a lib
+  helper and a reasoning component under `apps/desktop/src`, none of them wired to anything.
+- One duplicate export (`DEVELOPMENT_SHARED_STORE`, an alias for `DEVELOPMENT_APPLICATION_NAME`)
+  used only inside its own file: the `export` keyword came off it.
+- One unused root-level `drizzle-orm` devDependency, a leftover copy of the same package
+  `apps/desktop` already declares for itself: removed.
+- The rest of the list is `knip.jsonc`'s own `ignore`/`ignoreBinaries`/`ignoreDependencies`
+  entries, each with the reason attached: a vendored, unauthored shadcn component kit; a native
+  module's build-time header; a CLI tool invoked by hand; and two packages reached only through a
+  CSS `@import`, which Knip does not follow. `drizzle.config.ts` needs no entry of its own: Knip
+  auto-enables its Drizzle plugin because `drizzle-kit` is a devDependency, and that plugin reads
+  the config file and its `schema` field as production entries on its own; adding the file to
+  either `entry` or `ignore` only earns a configuration hint asking for it to be removed again.
+
+**What the gate does not do.** Adopting Knip and reaching a clean, triaged run is what this ticket
+covers. It does not act on the whole report: `quality:dead-code` runs `knip --max-issues 279`, a
+**RATCHET** at the exact count the triaged run left across unused exports and unused exported
+types (161 and 118). The number may only fall as that list is worked down in its own reviewed
+change; it never rises, because one more finding than the ceiling fails the build the same way a
+new jscpd clone does. A tool that reports nothing because it resolved nothing looks exactly like
+a clean repository, so the gate is proved by planting a deliberately orphaned file and confirming
+Knip reports it, then removing that file again.
+
 ## What no gate can reach
 
 **The skill bundle is a property of a checkout, not of a commit.** The install writes
@@ -113,13 +160,14 @@ nvm reads `.nvmrc` and not `.node-version`, so to run CI's version locally name 
 
 ## Where an exemption goes
 
-Exemptions live in **two** files, each entry labelled **KIND** (permanent — the rule doesn't
+Exemptions live in **three** files, each entry labelled **KIND** (permanent — the rule doesn't
 apply to that category) or **RATCHET** (debt; the list may only shrink):
 
 | File | Covers |
 |---|---|
 | `biome.jsonc` `overrides` | every lint cap, the line ceiling included |
 | `.jscpd.json` `ignore` | duplication — reasons in `scripts/jscpd-ignore-reasons.txt`, one per glob |
+| `knip.jsonc` `ignore`/`ignoreBinaries`/`ignoreDependencies`, and `quality:dead-code`'s `--max-issues` | dead code — each entry carries its own reason inline; `--max-issues` is the one RATCHET, at the triaged baseline |
 
 Two rules have no linter and live in `AGENTS.md` prose only: a cast standing in for a
 check, and the exhaustive construct over a closed set.
