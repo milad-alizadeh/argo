@@ -82,7 +82,7 @@ test('an off-convention branch name is refused', () => {
 })
 
 test('an unset branchPrefix stops the guard judging branch names at all', () => {
-  // What a consumer who has declared no convention gets (AGENTS.md, Cross-CLI guardrail hooks).
+  // What a consumer who has declared no convention gets (hooks.json top-level $comment).
   configureNaming({ dir: '.claude/worktrees' })
   assert.equal(
     decideName(bash('git worktree add -b fix-stuff .claude/worktrees/ticket-x')).block,
@@ -92,7 +92,7 @@ test('an unset branchPrefix stops the guard judging branch names at all', () => 
 })
 
 test('a publish namespace joins to no ticket, so the naming rule lets it through', () => {
-  // A design page's branch carries a screen, not work (AGENTS.md, Design work). Without the
+  // A design page's branch carries a screen, not work (hooks.json top-level $comment). Without the
   // exemption the ticket-join rule below refuses every one of them.
   configureNaming({ dir: '.claude/worktrees', branchPrefix: 'argo/', publishBranches: ['design/'] })
   assert.equal(

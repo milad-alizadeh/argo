@@ -1,7 +1,7 @@
 /* The desktop app's own inks and scale. The inks below are the approved Session design's, and the
    design is graphite: it has no light appearance. The app offers one (#1820), so the block after
    `@theme` gives each ink a light value. Those values are not the design's; they are chosen here
-   to keep the same order of contrast on the shadcn light grounds. Read `AGENTS.md` · Appearance
+   to keep the same order of contrast on the shadcn light grounds. Read `apps/desktop/AGENTS.md` · Tokens
    before extending either. */
 @theme {
   /* Transcribed from the approved roster row design (#1310, `cockpit-roster-row.html`) and the

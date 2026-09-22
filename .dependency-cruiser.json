@@ -81,7 +81,7 @@
     },
     {
       "name": "mocks-and-e2e-reach-src-through-alias",
-      "comment": "mocks/ and e2e/ live outside apps/desktop/src (AGENTS.md), so reaching into src is always a crossing: it uses @/, never a relative path.",
+      "comment": "mocks/ and e2e/ live outside apps/desktop/src (apps/desktop/AGENTS.md), so reaching into src is always a crossing: it uses @/, never a relative path.",
       "severity": "error",
       "from": { "path": "^apps/desktop/(mocks|e2e)/" },
       "to": {
