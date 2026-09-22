@@ -3,9 +3,7 @@ import type {
   SessionIdentity,
   WorkspaceSelection,
 } from '@/domains/sessions/next/contract/session-contract'
-import type {
-  Unsubscribe,
-} from '@/domains/sessions/next/contract/session-projection-contract'
+import type { Unsubscribe } from '@/domains/sessions/next/contract/session-projection-contract'
 import type {
   AppServerSupervisor,
   AppServerSupervisorDeps,
