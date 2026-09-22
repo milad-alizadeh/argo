@@ -1,0 +1,43 @@
+{
+  "harness": {
+    "claude": "Claude",
+    "codex": "Codex"
+  },
+  "list": {
+    "label": "Harness sign-ins"
+  },
+  "row": {
+    "label": "{{harness}}, {{state}}",
+    "state": {
+      "ready": "Ready",
+      "signed-out": "Not signed in",
+      "missing": "Not installed",
+      "policy-blocked": "Blocked by policy"
+    },
+    "install": "Install the {{harness}} CLI, then sign in.",
+    "signIn": "Sign in",
+    "waiting": "Waiting for {{harness}}…",
+    "cancel": "Cancel",
+    "outcome": {
+      "canceled": "Sign-in canceled.",
+      "expired": "The sign-in expired. Try again.",
+      "failed": "The sign-in failed. Try again."
+    }
+  },
+  "empty": {
+    "title": "Sign in to a Harness",
+    "description": "Argo needs one signed-in Harness to run a Session."
+  },
+  "accounts": {
+    "title": "Agent sign-ins",
+    "description": "Claude and Codex sign in to their own CLI. This is separate from the Accounts above."
+  },
+  "error": {
+    "access-denied": "Argo cannot manage Harness sign-in for this window.",
+    "invalid-request": "The Harness sign-in request is invalid.",
+    "unsupported-version": "This Harness sign-in contract version is not supported.",
+    "invalid-response": "Argo received an invalid Harness sign-in response.",
+    "connection-lost": "The connection to Argo was lost.",
+    "no-sign-in": "No sign-in is in progress for this Harness."
+  }
+}

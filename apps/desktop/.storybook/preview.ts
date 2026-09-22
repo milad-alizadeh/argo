@@ -7,6 +7,7 @@ import '../src/renderer/i18n'
 import '../src/platform/renderer/styles/globals.css'
 import { sessionRosterRow } from '../src/domains/sessions/renderer/session-fixtures'
 import { subscribeToStorybookCommands } from './storybook-commands'
+import { storybookHarnessSignInBridge } from './storybook-harness-signin'
 import { storybookProjectBridge } from './storybook-projects'
 import { ticketsHost } from './tickets-host'
 
@@ -96,6 +97,7 @@ host.argo = {
     }),
   ...storybookProjectBridge,
   ...ticketsHost,
+  ...storybookHarnessSignInBridge,
   zoomFactor: () => 1,
 }
 

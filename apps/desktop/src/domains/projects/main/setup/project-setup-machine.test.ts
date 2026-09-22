@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createActor } from 'xstate'
 import { getAdjacencyMap, getShortestPaths } from 'xstate/graph'
+import { assertModeledTransitions } from '@/platform/main/testing/xstate-model-transitions'
 import { projectSetupModelEvents } from '../../../../../test-fixtures/projects/setup/project-setup-model.fixture'
 import { projectSetupMachine } from './project-setup-machine'
 import type { ProjectSetupEvent } from './project-setup-machine-types'
@@ -56,18 +56,11 @@ test('the model reaches every declared state', () => {
 
 for (const transitionCase of transitionCases) {
   test(`model: ${transitionCase.description}`, () => {
-    const actor = createActor(modeledMachine)
-    actor.start()
-    for (const step of transitionCase.steps) {
-      actor.send(step.event)
-      const actual = actor.getSnapshot()
-      assert.equal(actual.value, step.state.value)
-      assert.deepEqual(JSON.parse(JSON.stringify(actual.context)), actual.context)
+    assertModeledTransitions(modeledMachine, transitionCase, (actual) => {
       if (actual.context.pendingApproval) {
         assert.ok(actual.matches('Planning') || actual.matches('Applying'))
         assert.equal(actual.context.pendingApproval.effect, actual.context.activeEffect)
       }
-    }
-    actor.stop()
+    })
   })
 }

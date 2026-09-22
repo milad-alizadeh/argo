@@ -21,6 +21,7 @@ export default defineConfig<object, SessionBackendOptions>({
   projects: [
     { name: 'project-setup', testDir: 'e2e/project-setup' },
     { name: 'projects', testDir: 'e2e/projects' },
+    { name: 'harness-signin', testDir: 'e2e/harness-signin' },
     {
       name: 'sessions',
       testDir: 'e2e/sessions',

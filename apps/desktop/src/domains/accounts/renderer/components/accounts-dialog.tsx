@@ -1,4 +1,3 @@
-import { TriangleAlert } from 'lucide-react'
 import { type ReactNode, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -16,7 +15,9 @@ import {
 } from '@/domains/accounts/renderer/hooks/use-accounts'
 import { useSignIn } from '@/domains/accounts/renderer/hooks/use-sign-in'
 import { useAccountsDialog } from '@/domains/accounts/renderer/state/use-accounts-dialog'
-import { Alert, AlertDescription } from '@/platform/renderer/components/ui/alert'
+import type { HarnessReadiness } from '@/domains/harness-signin/contract/contract'
+import { HarnessReadinessList, useHarnessReadiness } from '@/domains/harness-signin/renderer/port'
+import { ContractFailureAlert } from '@/platform/renderer/components/contract-failure-alert'
 import {
   Dialog,
   DialogContent,
@@ -24,7 +25,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/platform/renderer/components/ui/dialog'
-import { useContractText } from '@/platform/renderer/i18n/contract-text'
 import { firstControl, useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 
@@ -37,15 +37,25 @@ export type AccountsPanelProps = {
   // The repository-connect form's fields, drawn by the caller so this module names no Ticket type.
   connect?: ReactNode
   onDisconnect: (accountId: string) => void
+  // Null while the first read has not landed. Claude and Codex sign in to their own CLI, never an
+  // Account (ADR-0047), so this draws as its own section rather than joining the list above.
+  harnesses: HarnessReadiness[] | null
 }
 
-function Failure({ error }: { error: ContractFailure }) {
-  const contractText = useContractText()
+function AgentSignIns({ harnesses }: { harnesses: HarnessReadiness[] | null }) {
+  const { t } = useTranslation('harnessSignIn')
+  if (!harnesses) return null
   return (
-    <Alert className="border-destructive/50 bg-destructive/10" variant="destructive">
-      <TriangleAlert aria-hidden="true" />
-      <AlertDescription>{contractText(error)}</AlertDescription>
-    </Alert>
+    <section
+      aria-label={t('accounts.title')}
+      className="grid gap-(--spacing-shell-item) border-t border-border/60 pt-(--spacing-shell-inset)"
+    >
+      <div>
+        <h3 className="type-heading">{t('accounts.title')}</h3>
+        <p className="type-meta text-muted-foreground">{t('accounts.description')}</p>
+      </div>
+      <HarnessReadinessList harnesses={harnesses} />
+    </section>
   )
 }
 
@@ -57,6 +67,7 @@ export function AccountsPanel({
   disconnectError,
   connect,
   onDisconnect,
+  harnesses,
 }: AccountsPanelProps) {
   const { t } = useTranslation('accounts')
   const panel = useRef<HTMLDivElement>(null)
@@ -65,7 +76,7 @@ export function AccountsPanel({
   useFocusRescue(panel, accounts.length)
   return (
     <div className="grid gap-(--spacing-shell-inset)" ref={panel}>
-      {listError ? <Failure error={listError} /> : null}
+      {listError ? <ContractFailureAlert error={listError} /> : null}
       {listing === null && listError === null ? (
         <p className="type-meta text-muted-foreground" role="status">
           {t('list.reading')}
@@ -92,8 +103,9 @@ export function AccountsPanel({
           {connect ? <div className="p-(--spacing-shell-gutter)">{connect}</div> : null}
         </div>
       ) : null}
-      {disconnectError ? <Failure error={disconnectError} /> : null}
+      {disconnectError ? <ContractFailureAlert error={disconnectError} /> : null}
       <SignInPanel {...signIn} providers={listing?.providers ?? []} />
+      <AgentSignIns harnesses={harnesses} />
     </div>
   )
 }
@@ -115,6 +127,7 @@ export function AccountsDialog({ connect }: { connect?: ReactNode }) {
   const { t } = useTranslation('accounts')
   const { open, opener, setOpen } = useAccountsDialog()
   const accounts = useAccounts()
+  const harnesses = useHarnessReadiness()
   const { connected, ...signIn } = useSignIn()
   const disconnect = useDisconnect()
   const onOpenChange = (next: boolean) => {
@@ -144,6 +157,7 @@ export function AccountsDialog({ connect }: { connect?: ReactNode }) {
           connect={connect}
           disconnectError={disconnect.error}
           disconnecting={disconnect.isPending ? (disconnect.variables ?? null) : null}
+          harnesses={harnesses.data ?? null}
           listError={accounts.error}
           listing={accounts.data ?? null}
           onDisconnect={(accountId) => disconnect.mutate(accountId)}

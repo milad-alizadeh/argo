@@ -1,3 +1,4 @@
+import { claudeCliEnvironment } from '@/harnesses/claude/cli-environment'
 import { compactionProgress, launchArguments } from '@/harnesses/claude/drive/claude-setup'
 import { type CompanionPart, openCompanionPlugin } from '@/harnesses/claude/drive/companion-plugin'
 import type { ClaudeTurnRequest } from '@/harnesses/claude/drive/deliver-turn'
@@ -20,7 +21,8 @@ export type Seed = { sessionId: string; cwd: string; sessionFlags: string[] } & 
 const SCREEN_LIMIT = 8000
 
 function launchEnvironment(): NodeJS.ProcessEnv {
-  const environment: NodeJS.ProcessEnv = { ...process.env, TERM: 'xterm-256color' }
+  const environment = claudeCliEnvironment()
+  environment.TERM = 'xterm-256color'
   delete environment.CLAUDE_CODE_CHILD_SESSION
   return environment
 }

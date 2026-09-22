@@ -22,6 +22,9 @@ const [
   { createConnectionPort },
   { attachAccountBridge },
   { ACCOUNT_OPERATIONS },
+  { attachHarnessSignInBridge },
+  { HARNESS_SIGN_IN_OPERATIONS },
+  { createHarnessReadinessRegistrations },
   { attachTicketBridge },
   { TICKET_OPERATIONS },
   { attachProjectBridge },
@@ -43,6 +46,9 @@ const [
   import('@/domains/connections/main/port'),
   import('@/domains/accounts/main/bridge'),
   import('@/domains/accounts/contract/operations'),
+  import('@/domains/harness-signin/main/bridge'),
+  import('@/domains/harness-signin/contract/operations'),
+  import('@/harnesses/composition/registered-harness-readiness'),
   import('@/domains/tickets/main/bridge'),
   import('@/domains/tickets/contract/operations'),
   import('@/domains/projects/main/bridge'),
@@ -68,19 +74,7 @@ function neverCalled<T>(): T {
   ) as T
 }
 
-async function domains(userData: string) {
-  const rendererURL = RENDERER_URL
-  const projectMock = createMockIpcWindow()
-  Object.assign(projectMock.window, { once: () => undefined })
-  attachProjectBridge(projectMock.window, {
-    projects: neverCalled(),
-    rendererURL,
-    onboardingDriver: neverCalled(),
-  })
-
-  const sessionMock = createMockIpcWindow()
-  attachSessionBridge(sessionMock.window, { ...neverCalled<SessionContext>(), rendererURL })
-
+function accountAndTicketMocks(userData: string, rendererURL: string) {
   const access = createAccountAccess({
     userData,
     accountData: userData,
@@ -104,36 +98,47 @@ async function domains(userData: string) {
     sources: ticketSources,
   })
 
+  return { accountMock, ticketMock }
+}
+
+async function domains(userData: string) {
+  const rendererURL = RENDERER_URL
+  const projectMock = createMockIpcWindow()
+  Object.assign(projectMock.window, { once: () => undefined })
+  attachProjectBridge(projectMock.window, {
+    projects: neverCalled(),
+    rendererURL,
+    onboardingDriver: neverCalled(),
+  })
+
+  const sessionMock = createMockIpcWindow()
+  attachSessionBridge(sessionMock.window, { ...neverCalled<SessionContext>(), rendererURL })
+
+  const { accountMock, ticketMock } = accountAndTicketMocks(userData, rendererURL)
+
+  const harnessSignInMock = createMockIpcWindow()
+  attachHarnessSignInBridge(harnessSignInMock.window, {
+    registrations: createHarnessReadinessRegistrations({ proofEnabled: false }),
+    rendererURL,
+  })
+
   const appearanceMock = createMockIpcWindow()
   attachAppearanceBridge(appearanceMock.window, { userData, rendererURL })
 
-  return [
-    {
-      name: 'project',
-      mock: projectMock,
-      operations: PROJECT_OPERATIONS,
-      errorType: 'project.error',
-    },
-    {
-      name: 'session',
-      mock: sessionMock,
-      operations: SESSION_OPERATIONS,
-      errorType: 'session.error',
-    },
-    {
-      name: 'account',
-      mock: accountMock,
-      operations: ACCOUNT_OPERATIONS,
-      errorType: 'account.error',
-    },
-    { name: 'ticket', mock: ticketMock, operations: TICKET_OPERATIONS, errorType: 'ticket.error' },
-    {
-      name: 'appearance',
-      mock: appearanceMock,
-      operations: APPEARANCE_OPERATIONS,
-      errorType: 'appearance.error',
-    },
+  const descriptors = [
+    ['project', projectMock, PROJECT_OPERATIONS, 'project.error'],
+    ['session', sessionMock, SESSION_OPERATIONS, 'session.error'],
+    ['account', accountMock, ACCOUNT_OPERATIONS, 'account.error'],
+    ['harness-sign-in', harnessSignInMock, HARNESS_SIGN_IN_OPERATIONS, 'harness-sign-in.error'],
+    ['ticket', ticketMock, TICKET_OPERATIONS, 'ticket.error'],
+    ['appearance', appearanceMock, APPEARANCE_OPERATIONS, 'appearance.error'],
   ] as const
+  return descriptors.map(([name, mock, operations, errorType]) => ({
+    name,
+    mock,
+    operations,
+    errorType,
+  }))
 }
 
 test('every operation of every domain refuses an untrusted frame', async (context) => {
