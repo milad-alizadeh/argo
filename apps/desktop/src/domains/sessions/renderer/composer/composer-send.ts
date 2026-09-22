@@ -33,6 +33,14 @@ type ComposerSendOptions = {
   watchTurn: ReturnType<typeof useTurnSetup>['watchTurn']
 }
 
+function sendManagedClaude(sessionId: string, prompt: string) {
+  return window.argo.executeManagedSessionCommand({
+    type: 'session.send',
+    session: { harness: 'claude', nativeId: sessionId },
+    prompt,
+  })
+}
+
 export function composerSend(options: ComposerSendOptions): Send {
   const {
     harness,
@@ -54,7 +62,15 @@ export function composerSend(options: ComposerSendOptions): Send {
     const turn = { prompt, setup, attachments }
     return identity.kind === 'session'
       ? sendToSessionIdentity(
-          { queryClient, roster, marker, send, setFailure, watchTurn },
+          {
+            queryClient,
+            roster,
+            marker,
+            send,
+            sendManagedClaude,
+            setFailure,
+            watchTurn,
+          },
           identity.sessionId,
           turn,
         )

@@ -2,11 +2,13 @@ import type { useQueryClient } from '@tanstack/react-query'
 import type { NavigateFunction } from 'react-router'
 import type { Cockpit } from '@/domains/projects/renderer/port'
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
+import type { SessionCommandOutcome } from '@/domains/sessions/next/contract/session-projection-contract'
 import {
   type ComposerIdentity,
   findSessionRow,
 } from '@/domains/sessions/renderer/composer/composer-identity'
 import { sendToSelected } from '@/domains/sessions/renderer/composer/send-selected-turn'
+import type { SendOutcome } from '@/domains/sessions/renderer/composer/use-send'
 import type { Failure } from '@/domains/sessions/renderer/composer/use-session-composer-actions'
 import type { useSessionMutations } from '@/domains/sessions/renderer/composer/use-session-mutations'
 import { startNewSession } from '@/domains/sessions/renderer/composer/use-start-new-session'
@@ -89,7 +91,12 @@ export type SendDeps = {
 }
 
 export async function sendToSessionIdentity(
-  deps: Pick<SendDeps, 'marker' | 'queryClient' | 'roster' | 'send' | 'setFailure' | 'watchTurn'>,
+  deps: Pick<
+    SendDeps,
+    'marker' | 'queryClient' | 'roster' | 'send' | 'setFailure' | 'watchTurn'
+  > & {
+    sendManagedClaude: (sessionId: string, prompt: string) => Promise<SessionCommandOutcome>
+  },
   sessionId: string,
   turn: TurnInput,
 ) {
@@ -101,15 +108,42 @@ export async function sendToSessionIdentity(
     since,
     ...promptOf(turn),
   })
-  const sent = await sendToSelected({
-    queryClient,
-    since,
-    selectedSessionId: sessionId,
-    send,
-    setFailure,
-    turn,
-    watchTurn,
-  })
-  if (!sent) marker.clear(sessionId)
+  const sendManaged = row?.harness === 'claude' && turn.attachments.length === 0
+  const sent: SendOutcome | boolean = sendManaged
+    ? await sendManagedClaudeTurn({ deps, sessionId, turn, since })
+    : await sendToSelected({
+        queryClient,
+        since,
+        selectedSessionId: sessionId,
+        send,
+        setFailure,
+        turn,
+        watchTurn,
+      })
+  if (sent === false) marker.clear(sessionId)
   return sent
+}
+
+async function sendManagedClaudeTurn(options: {
+  deps: Pick<SendDeps, 'queryClient' | 'setFailure' | 'watchTurn'> & {
+    sendManagedClaude: (sessionId: string, prompt: string) => Promise<SessionCommandOutcome>
+  }
+  sessionId: string
+  since: string | null
+  turn: TurnInput
+}): Promise<SendOutcome> {
+  const { deps, sessionId, since, turn } = options
+  const outcome = await deps.sendManagedClaude(sessionId, turn.prompt)
+  switch (outcome.kind) {
+    case 'accepted':
+      if (turn.setup !== null) deps.watchTurn(sessionId, turn.setup, since)
+      await invalidateSessionRoster(deps.queryClient)
+      deps.setFailure(null)
+      return 'accepted'
+    case 'rejected':
+      deps.setFailure({ sessionId, message: outcome.reason, code: null })
+      return 'rejected'
+    case 'uncertain':
+      return 'uncertain'
+  }
 }
