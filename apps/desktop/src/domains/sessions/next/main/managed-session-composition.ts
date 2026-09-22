@@ -1,6 +1,5 @@
 import type { BrowserWindow } from 'electron'
-import { resolveSessionWorkspace } from '@/domains/projects/main/resolve-session-workspace'
-import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
+import type { ProjectPort } from '@/domains/projects/main/port'
 import { claudeSessionAdapterRegistration } from '@/harnesses/claude/agent-sdk/claude-session-adapter-registration'
 import { createCodexSessionAdapterRegistration } from '@/harnesses/codex/drive/codex-session-adapter-registration'
 import { findExecutableOnLoginShellPath } from '@/harnesses/executable-path'
@@ -11,7 +10,7 @@ import { createSessionService } from './session-service'
 
 export function attachManagedSessions(
   window: BrowserWindow,
-  options: { database: DurableDatabase; projects: ProjectStore; rendererURL: string },
+  options: { database: DurableDatabase; projects: ProjectPort; rendererURL: string },
 ) {
   const adapters = createSessionAdapterRegistry(
     {
@@ -24,7 +23,7 @@ export function attachManagedSessions(
       // Workspace resolution returns only a reconciled, materialised checkout. This boundary
       // remains explicit so adapter startup cannot race future asynchronous preparation.
       waitForWorkspaceReady: async () => {},
-      resolveWorkspace: (selection) => resolveSessionWorkspace(selection, options.projects),
+      resolveWorkspace: (selection) => options.projects.resolveWorkspace(selection),
       now: () => new Date(),
     },
     [

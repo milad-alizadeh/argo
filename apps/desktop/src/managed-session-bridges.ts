@@ -1,4 +1,5 @@
 import type { BrowserWindow } from 'electron'
+import { createProjectPort } from '@/domains/projects/main/port'
 import { workspaceSelectionForSessionCwd } from '@/domains/projects/main/resolve-session-workspace'
 import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
 import { attachManagedSessions } from '@/domains/sessions/next/main/managed-session-composition'
@@ -21,7 +22,10 @@ export function attachManagedSessionHarnesses(
     userData: string
   },
 ) {
-  const managedSessions = attachManagedSessions(window, options)
+  const managedSessions = attachManagedSessions(window, {
+    ...options,
+    projects: createProjectPort(options.projects),
+  })
   const claude = managedSessions.adapterFor('claude')
   if (claude === undefined) throw new Error('Claude Session adapter is unavailable')
   const harnesses = attachSessions(window, {
