@@ -57,7 +57,11 @@ export function projectionFrom(
     session: context.sessionId,
     posture: snapshot.matches('Watched') ? 'watched' : 'managed',
     sourceHealth:
-      snapshot.matches('Recovering') || snapshot.matches('Failed') ? 'unavailable' : 'ready',
+      snapshot.matches('Recovering') ||
+      snapshot.matches('Failed') ||
+      context.lastSendOutcome === 'rejected'
+        ? 'unavailable'
+        : 'ready',
     revision,
     workspace: { id: context.workspaceId },
     status: statusFrom(snapshot),

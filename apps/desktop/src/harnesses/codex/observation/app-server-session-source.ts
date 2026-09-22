@@ -34,6 +34,7 @@ type AppServerSessionSource = {
 }
 
 function statusOf(projection: SessionProjection) {
+  if (projection.sourceHealth === 'unavailable') return 'unknown' as const
   switch (projection.status) {
     case 'idle':
       return 'idle' as const

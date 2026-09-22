@@ -464,6 +464,16 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
           )
         },
       }),
+      appendUserMessage: assign({
+        messages: ({ context, event }) => {
+          if (event.type !== 'Send') return context.messages
+          const turnId = `pending-${context.sendSequence + 1}`
+          return [
+            ...context.messages,
+            { id: `user-${context.sendSequence + 1}`, turnId, role: 'user', text: event.prompt },
+          ]
+        },
+      }),
       updateToolCall: assign({
         toolCalls: ({ context, event }) => {
           if (event.type !== 'Notification') return context.toolCalls
@@ -597,7 +607,7 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
         states: {
           Idle: {
             on: {
-              Send: 'Running',
+              Send: { target: 'Running', actions: 'appendUserMessage' },
             },
           },
           Running: {
