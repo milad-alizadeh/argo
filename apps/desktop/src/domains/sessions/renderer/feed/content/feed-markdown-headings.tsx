@@ -4,7 +4,7 @@ import type { Components } from 'react-markdown'
 const HEADING_TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const
 
 // The wrapper carries `type-prose`: on the heading itself its doubled selector drops the weight.
-export const HEADING_CLASS = 'mb-2 font-medium'
+const HEADING_CLASS = 'mb-2 font-medium'
 
 // Markdown arrives at whatever level the author picked (`#` through `######`), but the DOM
 // heading it lands in has to continue the surrounding screen's own outline, not restart one.
