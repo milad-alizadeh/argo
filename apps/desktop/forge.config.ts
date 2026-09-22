@@ -38,7 +38,11 @@ const KEPT_IN_PACKAGE = [/^\/\.vite($|\/)/, /^\/drizzle($|\/)/, /^\/node_modules
 // cannot see, and 72 KB is not worth a rule that guesses.
 const DROPPED_FROM_PACKAGE = [
   /^\/node_modules\/\.cache($|\/)/,
+  /^\/node_modules\/\.bin\/anthropic-ai-sdk$/,
   /\.d\.(?:m)?ts$/,
+  // The Agent SDK names these as peers but its runtime does not import either package.
+  /^\/node_modules\/@anthropic-ai\/sdk($|\/)/,
+  /^\/node_modules\/@modelcontextprotocol\/sdk($|\/)/,
   /^\/node_modules\/node-pty\/prebuilds\/(?!darwin-)/,
   /^\/node_modules\/node-pty\/(src|deps|third_party|scripts|bin|build)($|\/)/,
 ]

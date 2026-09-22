@@ -18340,7 +18340,5 @@
     "node_modules/node-pty/prebuilds/darwin-x64/pty.node",
     "node_modules/node-pty/prebuilds/darwin-x64/spawn-helper"
   ],
-  "extraResources": [
-    "electron.icns"
-  ]
+  "extraResources": ["electron.icns"]
 }
