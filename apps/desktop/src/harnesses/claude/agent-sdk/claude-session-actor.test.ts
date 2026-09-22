@@ -16,6 +16,7 @@ function harness(fake: ReturnType<typeof fakeClaudeQuery>, sessionService = mana
     workspaceId: 'workspace-1',
     prompt: 'hello',
     cwd: '/repository',
+    startedAt: '2026-09-22T00:00:00.000Z',
     createQuery: fake.createQuery,
     renameSession: fake.renameSession,
     sessionService,

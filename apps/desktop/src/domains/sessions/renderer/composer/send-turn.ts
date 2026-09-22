@@ -108,7 +108,8 @@ export async function sendToSessionIdentity(
     since,
     ...promptOf(turn),
   })
-  const sendManaged = row?.harness === 'claude' && turn.attachments.length === 0
+  const sendManaged =
+    row?.harness === 'claude' && row.posture === 'managed' && turn.attachments.length === 0
   const sent: SendOutcome | boolean = sendManaged
     ? await sendManagedClaudeTurn({ deps, sessionId, turn, since })
     : await sendToSelected({

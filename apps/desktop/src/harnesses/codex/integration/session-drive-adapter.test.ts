@@ -87,9 +87,12 @@ test('does not accept a Turn Codex could not be given', async () => {
 test('does not accept a Steer when the Codex driver cannot steer', async () => {
   const adapter = createCodexDriveAdapter(mockDriver())
 
-  assert.deepEqual(await adapter.steer?.({ attachments: [], sessionId, prompt: 'Continue.' }), {
-    error: 'not-drivable',
-  })
+  assert.deepEqual(
+    await adapter.steer?.({ attachments: [], sessionId, cwd: '/repository', prompt: 'Continue.' }),
+    {
+      error: 'not-drivable',
+    },
+  )
 })
 
 test('refuses a malformed Turn setup before it reaches the driver', async () => {

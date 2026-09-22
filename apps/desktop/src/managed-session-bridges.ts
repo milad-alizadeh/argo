@@ -4,6 +4,7 @@ import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
 import { attachManagedSessions } from '@/domains/sessions/next/main/managed-session-composition'
 import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
 import { createClaudeSdkDriveAdapter } from '@/harnesses/claude/agent-sdk/claude-sdk-drive-adapter'
+import type { ClaudeSessionAdapter } from '@/harnesses/claude/agent-sdk/claude-session-adapter'
 import { attachSessions } from '@/harnesses/composition/session-bridges'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 
@@ -27,10 +28,14 @@ export function attachManagedSessionHarnesses(
     ...options,
     driveAdapters: {
       claude: createClaudeSdkDriveAdapter({
-        adapter: claude,
+        adapter: claude as ClaudeSessionAdapter,
         workspaceForCwd: (cwd) => workspaceSelectionForSessionCwd(cwd, options.projects),
       }),
     },
+    managedSessions: { claude: (claude as ClaudeSessionAdapter).roster },
+    managedLiveMessages: { claude: (claude as ClaudeSessionAdapter).liveMessages },
+    managedRosterChanges: { claude: (claude as ClaudeSessionAdapter).onRosterChanged },
+    managedRename: { claude: (claude as ClaudeSessionAdapter).rename },
   })
   return { harnesses, managedSessions }
 }

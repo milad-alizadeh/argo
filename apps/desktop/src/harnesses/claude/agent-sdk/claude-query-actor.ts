@@ -20,7 +20,7 @@ function handleEvent(options: {
   query: { current: Query }
   session: { current: ClaudeSessionInput['session'] }
 }) {
-  const { approvals, channel, dialogs, event, input, query, session } = options
+  const { approvals, channel, dialogs, event, query, session } = options
   switch (event.type) {
     case 'Send':
     case 'Steer':
@@ -41,7 +41,7 @@ function handleEvent(options: {
       dialogs.resolve(event.questionId, { behavior: 'completed', result: event.answer })
       return
     case 'Rename':
-      if (session.current !== null) void input.renameSession(session.current.nativeId, event.title)
+      channel.push(userMessage(`/rename ${event.title}`))
       return
     case 'Session identified':
       session.current = event.session

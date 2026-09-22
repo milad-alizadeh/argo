@@ -149,8 +149,7 @@ test('maps every capability for every supported Harness', () => {
   expect(
     Object.fromEntries(HARNESSES.map((harness) => [harness, capabilitiesFor(harness)])),
   ).toEqual({
-    // The Agent SDK has no manual compact control (autonomous/hook-driven), unlike Codex.
-    claude: { ...commandVerbCapabilities, compact: false },
+    claude: { ...commandVerbCapabilities, compact: true },
     codex: { ...commandVerbCapabilities, compact: true },
   })
 })

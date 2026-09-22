@@ -20,7 +20,6 @@ test('starts Claude after the selected Workspace is ready', async () => {
       queryCalls += 1
       return fake.createQuery(params)
     },
-    renameSession: fake.renameSession,
   })
   const outcome = adapter.execute({
     type: 'session.start',
@@ -44,4 +43,34 @@ test('starts Claude after the selected Workspace is ready', async () => {
     },
   })
   expect(queryCalls).toBe(1)
+})
+
+test('notifies roster watchers when the SDK adds a live assistant message', async () => {
+  const fake = fakeClaudeQuery()
+  const adapter = createClaudeSessionAdapter({
+    sessionService: managedSessionService,
+    waitForWorkspaceReady: async () => {},
+    resolveWorkspace: async () => ({ workspaceId: 'workspace-1', cwd: '/repository' }),
+    createQuery: fake.createQuery,
+  })
+  let changes = 0
+  const close = adapter.onRosterChanged(() => {
+    changes += 1
+  })
+  const outcome = adapter.execute({
+    type: 'session.start',
+    harness: 'claude',
+    prompt: 'hello',
+    workspace: { kind: 'main' },
+  })
+  await new Promise((resolve) => setImmediate(resolve))
+  fake.emitInit({ apiKeySource: 'none' })
+  await outcome
+
+  changes = 0
+  fake.emitAssistant('Hello from Claude')
+  await new Promise((resolve) => setImmediate(resolve))
+
+  expect(changes).toBe(1)
+  close()
 })

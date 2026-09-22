@@ -1,3 +1,4 @@
+import { realpath } from 'node:fs/promises'
 import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
 import { createManagedWorkspace } from '@/domains/projects/main/workspaces/create-managed-workspace'
 import { reconcileWorkspaces } from '@/domains/projects/main/workspaces/workspace-reconciliation'
@@ -40,8 +41,21 @@ export async function workspaceSelectionForSessionCwd(
 ): Promise<WorkspaceSelection> {
   const project = selectedProject(store)
   const workspaces = await reconcileWorkspaces(store, project)
-  const workspace = workspaces.find((candidate) => candidate.path === cwd)
-  if (workspace === undefined) throw new Error('The selected Workspace is unavailable')
+  const resolvedCwd = await realpath(cwd).catch(() => cwd)
+  const resolvedWorkspaces = await Promise.all(
+    workspaces.map(async (candidate) => ({
+      candidate,
+      path: await realpath(candidate.path).catch(() => candidate.path),
+    })),
+  )
+  const workspace = resolvedWorkspaces.find(
+    (candidate) => candidate.path === resolvedCwd,
+  )?.candidate
+  if (workspace === undefined) {
+    const resolvedProject = await realpath(project.path).catch(() => project.path)
+    if (resolvedProject === resolvedCwd) return { kind: 'main' }
+    throw new Error('The selected Workspace is unavailable')
+  }
   return workspace.kind === 'main'
     ? { kind: 'main' }
     : { kind: 'existing', workspaceId: workspace.id }

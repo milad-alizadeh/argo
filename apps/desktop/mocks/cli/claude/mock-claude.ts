@@ -1,18 +1,18 @@
 // A stand-in `claude` for the packaged resume proof, run by node's type stripping. It answers the
 // flags Argo launches with and writes each Turn it is sent where the real CLI writes transcripts.
 
-import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { once } from 'node:events'
 import { appendFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import {
+  SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
 } from '../../../src/domains/sessions/main/composition/proof-protocol.ts'
 import { type AdversarialTurn, adversarialTurn } from '../../sessions/adversarial-turns.ts'
 import { MOCK_CLAUDE_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
+import { createMockClaudeHooks } from './mock-claude-hooks.ts'
 import { startMockClaudeSdkStream } from './mock-claude-sdk-stream.ts'
 import { projectSetupReply } from './mock-project-setup.ts'
 
@@ -35,12 +35,16 @@ const adversarialSeed = process.env[SESSION_MOCK_ADVERSARIAL_SEED_ENV]
 const projectSetupScenario = process.env.ARGO_PROJECT_SETUP_MOCK_SCENARIO
 let turnIndex = 0
 
-const [transcripts, ...flags] = process.argv.slice(2)
-const agentSdk = flags.includes('stream-json')
+const arguments_ = process.argv.slice(2)
+const [transcriptRoot] = arguments_
+const agentSdk = arguments_.includes('stream-json')
+const transcripts = agentSdk ? process.env[SESSION_CLAUDE_TRANSCRIPTS_ENV] : transcriptRoot
 
 function flagValue(flag: string): string | null {
-  const index = flags.indexOf(flag)
-  return index === -1 ? null : (flags[index + 1] ?? null)
+  const index = arguments_.indexOf(flag)
+  if (index !== -1) return arguments_[index + 1] ?? null
+  const assignment = arguments_.find((argument_) => argument_.startsWith(`${flag}=`))
+  return assignment === undefined ? null : assignment.slice(flag.length + 1)
 }
 
 // claude 2.1.270 continues `--resume <id>` in that id's own transcript file (ADR-0026).
@@ -48,6 +52,7 @@ const sessionId =
   flagValue('--session-id') ?? flagValue('--resume') ?? (agentSdk ? randomUUID() : null)
 const pluginRoot = flagValue('--plugin-dir')
 if (transcripts === undefined || sessionId === null) process.exit(2)
+const { displayReply, waitForPermission } = createMockClaudeHooks(pluginRoot)
 
 const folder = path.join(transcripts, 'mock-claude')
 mkdirSync(folder, { recursive: true })
@@ -101,31 +106,6 @@ function writeReply(text: string, plan: AdversarialTurn | null) {
   return response
 }
 
-async function runHook(file: string, input: unknown) {
-  if (pluginRoot === null) return
-  const hook = spawn('/bin/sh', [path.join(pluginRoot, file)], {
-    stdio: ['pipe', 'ignore', 'ignore'],
-  })
-  hook.stdin.end(`${JSON.stringify(input)}\n`)
-  await once(hook, 'exit')
-}
-
-async function waitForPermission() {
-  await runHook('permission-hook.sh', {
-    tool_name: 'Bash',
-    tool_input: { command: 'bun test' },
-  })
-}
-
-async function displayReply(text: string) {
-  await runHook('display-hook.sh', {
-    turn_id: randomUUID(),
-    message_id: randomUUID(),
-    index: 0,
-    delta: text,
-  })
-}
-
 async function settleTurn(text: string, plan: AdversarialTurn | null) {
   if (
     plan?.permissionBeforeReply ||
@@ -145,9 +125,25 @@ async function settleTurn(text: string, plan: AdversarialTurn | null) {
 let pending = ''
 if (process.stdin.isTTY) process.stdin.setRawMode(true)
 process.stdin.setEncoding('utf8')
-if (agentSdk) startMockClaudeSdkStream(sessionId, (prompt) => writeReply(prompt, null))
-// The end of a synchronized frame, which is what Argo waits for before it sends a Turn (#2002).
-process.stdout.write(`${ESCAPE}[?2026h> ${ESCAPE}[?2026l`)
+if (agentSdk)
+  startMockClaudeSdkStream(sessionId, (prompt) => {
+    if (prompt === '/compact') {
+      compact()
+      return 'Conversation compacted'
+    }
+    const rename = RENAME.exec(prompt)
+    if (rename !== null) {
+      appendFileSync(
+        transcript,
+        `${JSON.stringify({ type: 'custom-title', customTitle: rename[1] })}\n`,
+      )
+      return 'Conversation renamed'
+    }
+    write('user', { role: 'user', content: prompt })
+    return writeReply(prompt, null)
+  })
+// The terminal frame is not valid stream JSON, so only the PTY protocol receives it.
+if (!agentSdk) process.stdout.write(`${ESCAPE}[?2026h> ${ESCAPE}[?2026l`)
 process.stdin.on('data', (chunk: string) => {
   pending += chunk
   if (COMPACT.test(pending)) {

@@ -114,7 +114,7 @@ test('routes a send to only the adapter that owns the Session, with a Claude and
       prompt: 'To Claude.',
       setup: { model: 'sonnet', effort: 'medium', mode: 'manual' },
     },
-    { adapters, ownerHarnessFor: reader.ownerHarnessFor },
+    { adapters, ownerHarnessFor: reader.ownerHarnessFor, sessionCwdFor: reader.sessionCwdFor },
   )
   const codexReply = await sendSession(
     {
@@ -124,7 +124,7 @@ test('routes a send to only the adapter that owns the Session, with a Claude and
       sessionId: 'codex-1',
       prompt: 'To Codex.',
     },
-    { adapters, ownerHarnessFor: reader.ownerHarnessFor },
+    { adapters, ownerHarnessFor: reader.ownerHarnessFor, sessionCwdFor: reader.sessionCwdFor },
   )
 
   assert.equal(claudeReply.type, 'session.accepted')
@@ -146,7 +146,7 @@ test('routes compaction to its Claude Session owner', async (context) => {
 
   const reply = await compactSession(
     { version: 1, type: 'session.compact', requestId: 'compact-claude', sessionId: 'claude-1' },
-    { adapters, ownerHarnessFor: reader.ownerHarnessFor },
+    { adapters, ownerHarnessFor: reader.ownerHarnessFor, sessionCwdFor: reader.sessionCwdFor },
   )
 
   assert.equal(reply.type, 'session.accepted')

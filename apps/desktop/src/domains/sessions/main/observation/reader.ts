@@ -73,6 +73,12 @@ function createOwnerResolver(sources: SessionSource[]) {
   return {
     managed: (source: SessionSource, id: string) => managedOwner(id) === source,
     ownerFor,
+    async sessionCwdFor(sessionId: string) {
+      const owner = await ownerFor(sessionId)
+      if (owner === undefined) return undefined
+      const discovery = await owner.discoverSessions()
+      return discovery.rows.find((session) => session.id === sessionId)?.cwd ?? undefined
+    },
     rememberDiscoveries,
   }
 }
@@ -107,6 +113,7 @@ export function createSessionReader(
       const owner = await ownership.ownerFor(sessionId)
       return owner?.harness
     },
+    sessionCwdFor: ownership.sessionCwdFor,
     listSessions: (request) =>
       listReply(sources, ownership, { ticketLinks, archive, unread, request }),
     connectTicket: (request) => connectTicketReply(ticketLinks, request),

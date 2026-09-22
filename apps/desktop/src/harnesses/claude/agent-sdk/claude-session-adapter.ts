@@ -1,56 +1,31 @@
 import { createActor } from 'xstate'
-import type { SessionCommand } from '@/domains/sessions/next/contract/session-command-contract'
 import type {
   SessionIdentity,
   WorkspaceSelection,
 } from '@/domains/sessions/next/contract/session-contract'
 import type {
-  SessionAdapter,
   SessionCommandOutcome,
-  SessionProjection,
   Unsubscribe,
 } from '@/domains/sessions/next/contract/session-projection-contract'
 import type { SessionService } from '@/domains/sessions/next/main/session-service'
-import { createClaudeQuery, renameSession } from '@/harnesses/claude/agent-sdk/claude-agent-sdk'
+import { createClaudeQuery } from '@/harnesses/claude/agent-sdk/claude-agent-sdk'
 import { createClaudeSessionMachine } from '@/harnesses/claude/agent-sdk/claude-session-actor'
-import {
-  type ClaudeSessionActor,
-  projectionFrom,
-} from '@/harnesses/claude/agent-sdk/claude-session-projection'
+import type { ClaudeSessionAdapter } from '@/harnesses/claude/agent-sdk/claude-session-adapter-contract'
+import { eventFor } from '@/harnesses/claude/agent-sdk/claude-session-command-event'
+import { keyOf } from '@/harnesses/claude/agent-sdk/claude-session-key'
+import type { ClaudeSessionActor } from '@/harnesses/claude/agent-sdk/claude-session-projection'
+import { projectionFrom } from '@/harnesses/claude/agent-sdk/claude-session-projection'
+import { sessionRegistry } from '@/harnesses/claude/agent-sdk/claude-session-registry'
+import { watchedChanges } from '@/harnesses/claude/agent-sdk/claude-session-watch'
 import type { ClaudeQueryFactory } from '@/harnesses/claude/agent-sdk/types'
 
-type RegistryEntry = {
-  actor: ClaudeSessionActor
-  revision: number
-  listeners: Set<(projection: SessionProjection) => void>
-}
-type Registry = Map<string, RegistryEntry>
-
-function keyOf(session: SessionIdentity): string {
-  return `${session.harness}:${session.nativeId}`
-}
-
-function eventFor(command: Exclude<SessionCommand, { type: 'session.start' | 'session.compact' }>) {
-  switch (command.type) {
-    case 'session.send':
-      return { type: 'Send', prompt: command.prompt } as const
-    case 'session.steer':
-      return { type: 'Steer', prompt: command.prompt } as const
-    case 'session.interrupt':
-      return { type: 'Interrupt' } as const
-    case 'session.decide':
-      return { type: 'Decide', approvalId: command.approvalId, decision: command.decision } as const
-    case 'session.answer':
-      return { type: 'Answer', questionId: command.questionId, answer: command.answer } as const
-    case 'session.rename':
-      return { type: 'Rename', title: command.title } as const
-    case 'session.close':
-      return { type: 'Close' } as const
+async function openClaudeSession(options: {
+  command: {
+    session: SessionIdentity | null
+    prompt: string
+    workspace: WorkspaceSelection
+    cwd?: string
   }
-}
-
-async function startClaudeSession(options: {
-  command: Extract<SessionCommand, { type: 'session.start' }>
   deps: {
     sessionService: SessionService
     waitForWorkspaceReady: (workspaceId: string) => Promise<void>
@@ -58,22 +33,29 @@ async function startClaudeSession(options: {
       selection: WorkspaceSelection,
     ) => Promise<{ workspaceId: string; cwd: string }>
     createQuery: ClaudeQueryFactory
-    renameSession: (sessionId: string, title: string) => Promise<void>
+    now: () => Date
   }
   register: (actor: ClaudeSessionActor) => void
-  requireEntry: (session: SessionIdentity) => RegistryEntry
+  requireEntry: (
+    session: SessionIdentity,
+  ) => ReturnType<typeof sessionRegistry>['requireEntry'] extends (
+    session: SessionIdentity,
+  ) => infer Entry
+    ? Entry
+    : never
 }) {
   const { command, deps, register, requireEntry } = options
-  const { workspaceId, cwd } = await deps.resolveWorkspace(command.workspace)
+  const { workspaceId, cwd: workspaceCwd } = await deps.resolveWorkspace(command.workspace)
   await deps.waitForWorkspaceReady(workspaceId)
   const actor = createActor(
     createClaudeSessionMachine({
-      session: null,
+      session: command.session,
       workspaceId,
       prompt: command.prompt,
-      cwd,
+      cwd: command.cwd ?? workspaceCwd,
+      startedAt: deps.now().toISOString(),
       createQuery: deps.createQuery,
-      renameSession: deps.renameSession,
+      renameSession: async () => {},
       sessionService: deps.sessionService,
     }),
     { input: undefined },
@@ -88,64 +70,82 @@ async function startClaudeSession(options: {
     })
   })
 }
-
+function accepted(
+  entry: ReturnType<typeof sessionRegistry>['requireEntry'] extends (
+    session: SessionIdentity,
+  ) => infer Entry
+    ? Entry
+    : never,
+) {
+  return {
+    kind: 'accepted' as const,
+    projection: projectionFrom(entry.actor.getSnapshot(), entry.revision),
+  }
+}
 export function createClaudeSessionAdapter(deps: {
   sessionService: SessionService
   waitForWorkspaceReady: (workspaceId: string) => Promise<void>
   resolveWorkspace: (selection: WorkspaceSelection) => Promise<{ workspaceId: string; cwd: string }>
   createQuery?: ClaudeQueryFactory
-  renameSession?: (sessionId: string, title: string) => Promise<void>
+  now?: () => Date
 }): ClaudeSessionAdapter {
   const runtime = {
     ...deps,
     createQuery: deps.createQuery ?? createClaudeQuery,
-    renameSession: deps.renameSession ?? renameSession,
+    now: deps.now ?? (() => new Date()),
   }
-  const registry: Registry = new Map()
-  const requireEntry = (session: SessionIdentity) => {
-    const entry = registry.get(keyOf(session))
-    if (entry === undefined) throw new Error('Claude Session is not managed')
-    return entry
-  }
-  const register = (actor: ClaudeSessionActor) => {
-    actor.subscribe((snapshot) => {
-      if (snapshot.context.session === null) return
-      const key = keyOf(snapshot.context.session)
-      const entry = registry.get(key) ?? { actor, revision: 0, listeners: new Set() }
-      registry.set(key, entry)
-      entry.revision += 1
-      const projection = projectionFrom(snapshot, entry.revision)
-      for (const listener of entry.listeners) listener(projection)
-    })
-  }
+  const changed = new Set<() => void>()
+  const registry = sessionRegistry(changed, deps.sessionService)
   return {
     execute: async (command) => {
       if (command.type === 'session.start')
-        return startClaudeSession({ command, deps: runtime, register, requireEntry })
-      if (command.type === 'session.compact')
-        return { kind: 'rejected', reason: 'Claude does not support manual compaction' }
-      const entry = requireEntry(command.session)
+        return openClaudeSession({
+          command: { ...command, session: null },
+          deps: runtime,
+          register: registry.register,
+          requireEntry: registry.requireEntry,
+        })
+      if (command.type === 'session.compact') {
+        const entry = registry.requireEntry(command.session)
+        entry.actor.send({ type: 'Send', prompt: '/compact' })
+        entry.revision += 1
+        return accepted(entry)
+      }
+      const entry = registry.requireEntry(command.session)
       entry.actor.send(eventFor(command))
       entry.revision += 1
       if (command.type === 'session.send') return { kind: 'uncertain' }
-      return {
-        kind: 'accepted',
-        projection: projectionFrom(entry.actor.getSnapshot(), entry.revision),
-      }
+      return accepted(entry)
     },
     subscribe: (session, listener) => {
-      const entry = requireEntry(session)
+      const entry = registry.requireEntry(session)
       entry.listeners.add(listener)
       return (() => entry.listeners.delete(listener)) as Unsubscribe
     },
-    close: () => {
-      for (const entry of registry.values()) {
-        const session = entry.actor.getSnapshot().context.session
-        if (session !== null) deps.sessionService.release(session)
-        entry.actor.stop()
+    resume: async ({ session, workspace, prompt, cwd }) => {
+      const entry = registry.entries.get(keyOf(session))
+      if (entry !== undefined) {
+        entry.actor.send({ type: 'Send', prompt })
+        entry.revision += 1
+        return accepted(entry)
       }
+      return openClaudeSession({
+        command: { session, workspace, prompt, cwd },
+        deps: runtime,
+        register: registry.register,
+        requireEntry: registry.requireEntry,
+      })
     },
+    rename: async (sessionId, title) => {
+      const entry = registry.requireEntry({ harness: 'claude', nativeId: sessionId })
+      entry.actor.send({ type: 'Rename', title })
+      entry.revision += 1
+    },
+    roster: registry.roster,
+    liveMessages: registry.liveMessages,
+    onRosterChanged: watchedChanges(changed),
+    close: registry.close,
   }
 }
 
-export type ClaudeSessionAdapter = SessionAdapter & { close: () => void }
+export type { ClaudeSessionAdapter } from './claude-session-adapter-contract'

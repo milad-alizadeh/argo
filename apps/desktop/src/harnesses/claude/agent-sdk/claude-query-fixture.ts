@@ -8,6 +8,7 @@ import type {
   SDKUserMessage,
 } from '@anthropic-ai/claude-agent-sdk'
 import type { SessionService } from '@/domains/sessions/next/main/session-service'
+import { assistantMessage } from './claude-query-fixture-message'
 
 export const managedSessionService: SessionService = {
   acquire: () => ({ posture: 'managed' }),
@@ -120,6 +121,7 @@ export function fakeClaudeQuery() {
       deliver?.(initMessage(apiKeySource)),
     emitAssistantError: (error: SDKAssistantMessageError) =>
       deliver?.(assistantErrorMessage(error)),
+    emitAssistant: (text: string) => deliver?.(assistantMessage(text)),
     emitMalformedMessage: () => deliver?.({ type: 'assistant' } as SDKMessage),
     requestApproval: (toolUseID: string, toolName: string) => {
       if (callbacks === undefined) throw new Error('createQuery was never called')

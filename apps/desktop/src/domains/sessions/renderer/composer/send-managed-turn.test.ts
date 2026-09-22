@@ -58,3 +58,43 @@ test('a rejected managed Claude Send clears its Turn Marker and reports the reas
     { sessionId: 'session-1', message: 'Session is unavailable', code: null },
   ])
 })
+
+test('an external Claude Session uses the drive adapter to establish management', async () => {
+  const marker = mockTurnMarker()
+  const sent: unknown[] = []
+  const managed: unknown[] = []
+  const deps = managedClaudeDeps(
+    marker,
+    async (sessionId, prompt) => {
+      managed.push({ sessionId, prompt })
+      return { kind: 'accepted', projection: {} as never }
+    },
+    [],
+  )
+  deps.roster = {
+    sessions: [{ id: 'session-1', harness: 'claude', posture: 'external', turnStartedAt: null }],
+  } as never
+  deps.send = {
+    mutateAsync: async (request: unknown) => {
+      sent.push(request)
+    },
+  } as never
+
+  await expect(
+    sendToSessionIdentity(deps, 'session-1', {
+      prompt: 'Resume this Session.',
+      setup: null,
+      attachments: [],
+    }),
+  ).resolves.toBe(true)
+
+  expect(sent).toEqual([
+    {
+      sessionId: 'session-1',
+      prompt: 'Resume this Session.',
+      setup: null,
+      attachments: [],
+    },
+  ])
+  expect(managed).toEqual([])
+})

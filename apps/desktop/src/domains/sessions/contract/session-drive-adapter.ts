@@ -23,12 +23,14 @@ export type SessionDriveAdapter = {
   }): Promise<{ sessionId: string } | DriveFailure>
   send(request: {
     sessionId: string
+    cwd: string
     prompt: string
     setup: unknown
     attachments: SessionAttachmentInput[]
   }): Promise<DriveOk | DriveFailure>
   steer?(request: {
     sessionId: string
+    cwd: string
     prompt: string
     attachments: SessionAttachmentInput[]
   }): Promise<DriveOk | DriveFailure>

@@ -80,9 +80,8 @@ export const sessionCapabilitiesSchema = z.strictObject({
 export type SessionCapabilities = z.infer<typeof sessionCapabilitiesSchema>
 
 const capabilitiesByHarness = {
-  // Grounded in node_modules/@anthropic-ai/claude-agent-sdk/sdk.d.ts's `Query` interface:
-  // `compact` has no manual control there — compaction is autonomous/hook-driven
-  // (`PreCompact`/`PostCompact`), so it stays unsupported rather than invented.
+  // The SDK has no dedicated compact method, but the managed Claude channel accepts Claude's
+  // `/compact` command through the same user-message stream as the interactive CLI.
   claude: {
     start: true,
     send: true,
@@ -91,7 +90,7 @@ const capabilitiesByHarness = {
     decide: true,
     answer: true,
     rename: true,
-    compact: false,
+    compact: true,
     close: true,
   },
   codex: {

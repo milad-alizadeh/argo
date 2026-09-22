@@ -1,7 +1,9 @@
 import { assign, fromPromise, sendTo, setup } from 'xstate'
 import type { SessionIdentity } from '@/domains/sessions/next/contract/session-contract'
+import { appendAssistantMessage } from '@/harnesses/claude/agent-sdk/claude-live-messages'
 import { claudeQueryLogic } from '@/harnesses/claude/agent-sdk/claude-query-actor'
 import { leaseStates } from '@/harnesses/claude/agent-sdk/claude-session-lease-states'
+import { recoveringState } from '@/harnesses/claude/agent-sdk/claude-session-recovery'
 import {
   isAuthenticationFailure,
   isInheritedApiCredential,
@@ -24,6 +26,10 @@ function initialContext(input: ClaudeSessionInput): ClaudeSessionContext {
   return {
     session: input.session,
     workspaceId: input.workspaceId,
+    prompt: input.prompt,
+    cwd: input.cwd,
+    startedAt: input.startedAt,
+    liveMessages: [],
     sourceHealth: 'ready',
     releaseTarget: 'closed',
   }
@@ -66,36 +72,16 @@ const claudeSessionSetup = setup({
     markUnavailable: assign({ sourceHealth: 'unavailable' as const }),
     markWatched: assign({ releaseTarget: 'watched' as const }),
     releaseAsUnavailable: assign({ releaseTarget: 'unavailable' as const }),
+    recordAssistantMessage: assign(({ context, event }) =>
+      event.type === 'SDK message'
+        ? { liveMessages: appendAssistantMessage(context.liveMessages, event.message) }
+        : {},
+    ),
   },
   delays: {
     recoveryTimeout: 60_000,
   },
 })
-
-function recoveringState() {
-  return {
-    after: {
-      recoveryTimeout: {
-        target: 'Releasing',
-        actions: 'markWatched',
-      },
-    },
-    on: {
-      'SDK message': [
-        {
-          guard: { type: 'isInheritedApiCredential', params: messageParams },
-          target: 'Releasing',
-          actions: 'releaseAsUnavailable',
-        },
-        {
-          guard: { type: 'isSubscriptionAuthorized', params: messageParams },
-          target: 'Managed',
-        },
-      ],
-      'SDK failed': { target: 'Releasing', actions: 'markWatched' },
-    },
-  } as const
-}
 
 export function createClaudeSessionMachine(input: ClaudeSessionInput) {
   return claudeSessionSetup.createMachine({
@@ -136,18 +122,21 @@ export function createClaudeSessionMachine(input: ClaudeSessionInput) {
           Decide: { actions: sendTo('claudeQuery', ({ event }) => event) },
           Answer: { actions: sendTo('claudeQuery', ({ event }) => event) },
           Rename: { actions: sendTo('claudeQuery', ({ event }) => event) },
-          'SDK message': {
-            guard: { type: 'isAuthenticationFailure', params: messageParams },
-            target: 'Releasing',
-            actions: assign({ releaseTarget: 'unavailable' }),
-          },
+          'SDK message': [
+            {
+              guard: { type: 'isAuthenticationFailure', params: messageParams },
+              target: 'Releasing',
+              actions: assign({ releaseTarget: 'unavailable' }),
+            },
+            { actions: 'recordAssistantMessage' },
+          ],
           'Channel lost': 'Recovering',
           'SDK failed': 'Releasing',
           'SDK ended': 'Releasing',
           Close: 'Releasing',
         },
       },
-      Recovering: recoveringState(),
+      Recovering: recoveringState(messageParams),
       Unavailable: { type: 'final', entry: 'markUnavailable' },
       Watched: { type: 'final' },
       Closed: { type: 'final' },

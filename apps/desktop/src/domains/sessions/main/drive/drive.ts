@@ -10,6 +10,7 @@ import type {
 export type OwnerContext = {
   adapters: SessionDriveAdapters
   ownerHarnessFor: (sessionId: string) => Promise<string | undefined>
+  sessionCwdFor: (sessionId: string) => Promise<string | undefined>
 }
 type Owned = { adapter: SessionDriveAdapter; harness: string }
 
@@ -81,9 +82,12 @@ export async function sendSession(
   if (!owned.adapter.turnSetupSchema.safeParse(request.setup).success) {
     return sessionError('invalid-request', request.requestId)
   }
+  const cwd = await context.sessionCwdFor(request.sessionId)
+  if (cwd === undefined) return sessionError('missing-session', request.requestId)
   return ownedAccepted(context, request, (owned) =>
     owned.adapter.send({
       sessionId: request.sessionId,
+      cwd,
       prompt: request.prompt,
       setup: request.setup,
       attachments: request.attachments ?? [],
@@ -111,44 +115,8 @@ export const handoffSession = (
   request: SessionContract.SessionHandoffRequest,
   context: OwnerContext,
 ) => singleArgAccepted('handoff', request, context)
-export async function readSessionPermission(
-  request: SessionContract.SessionPermissionRequest,
-  context: OwnerContext,
-): Promise<SessionContract.SessionPermissionReply> {
-  const owned = await ownedAdapter(context, request.sessionId)
-  if (owned === undefined) return sessionError('missing-session', request.requestId)
-  const { permission } = await owned.adapter.readPermission({ sessionId: request.sessionId })
-  return {
-    version: 1,
-    type: 'session.permission.read',
-    requestId: request.requestId,
-    sessionId: request.sessionId,
-    permission,
-  }
-}
-
-export function decideSessionPermission(
-  request: SessionContract.SessionPermissionDecisionRequest,
-  context: OwnerContext,
-): Promise<SessionContract.SessionAcceptedReply> {
-  return ownedAccepted(context, request, (owned) =>
-    owned.adapter.decidePermission({
-      sessionId: request.sessionId,
-      permissionId: request.permissionId,
-      decision: request.decision,
-    }),
-  )
-}
-
-export function decideSessionQuestion(
-  request: SessionContract.SessionQuestionDecisionRequest,
-  context: OwnerContext,
-): Promise<SessionContract.SessionAcceptedReply> {
-  return ownedAccepted(context, request, (owned) =>
-    owned.adapter.decideQuestion({
-      sessionId: request.sessionId,
-      questionId: request.questionId,
-      answers: request.answers,
-    }),
-  )
-}
+export {
+  decideSessionPermission,
+  decideSessionQuestion,
+  readSessionPermission,
+} from './drive-decisions'

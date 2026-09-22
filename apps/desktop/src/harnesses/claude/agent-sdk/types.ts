@@ -66,6 +66,7 @@ export type ClaudeSessionInput = {
   workspaceId: string
   prompt: string
   cwd: string
+  startedAt: string
   createQuery: ClaudeQueryFactory
   renameSession: (sessionId: string, title: string) => Promise<void>
   sessionService: SessionService
@@ -74,6 +75,10 @@ export type ClaudeSessionInput = {
 export type ClaudeSessionContext = {
   session: SessionIdentity | null
   workspaceId: string
+  prompt: string
+  cwd: string
+  startedAt: string
+  liveMessages: { id: string; text: string }[]
   sourceHealth: SourceHealth
   releaseTarget: 'closed' | 'unavailable' | 'watched'
 }

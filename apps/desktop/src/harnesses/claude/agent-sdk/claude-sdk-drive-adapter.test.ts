@@ -26,7 +26,9 @@ test('routes a legacy Claude start through the managed adapter', async () => {
           },
         }
       },
-      subscribe: () => () => {},
+      resume: async () => {
+        throw new Error('resume should not run for session.start')
+      },
     },
     workspaceForCwd: async () => ({ kind: 'existing', workspaceId: 'workspace-1' }),
   })
@@ -42,6 +44,39 @@ test('routes a legacy Claude start through the managed adapter', async () => {
       harness: 'claude',
       prompt: 'Hello',
       workspace: { kind: 'existing', workspaceId: 'workspace-1' },
+    },
+  ])
+})
+
+test('resumes an external Claude Session when a queued Turn is steered', async () => {
+  const resumes: unknown[] = []
+  const adapter = createClaudeSdkDriveAdapter({
+    adapter: {
+      execute: async () => {
+        throw new Error('execute should not run for session.steer')
+      },
+      resume: async (request) => {
+        resumes.push(request)
+        return { kind: 'accepted', projection: {} as never }
+      },
+    },
+    workspaceForCwd: async () => ({ kind: 'existing', workspaceId: 'workspace-1' }),
+  })
+
+  await expect(
+    adapter.steer?.({
+      attachments: [],
+      sessionId: 'native-1',
+      cwd: '/repository',
+      prompt: 'Continue.',
+    }),
+  ).resolves.toEqual({ ok: true })
+  expect(resumes).toEqual([
+    {
+      session: { harness: 'claude', nativeId: 'native-1' },
+      workspace: { kind: 'existing', workspaceId: 'workspace-1' },
+      cwd: '/repository',
+      prompt: 'Continue.',
     },
   ])
 })
