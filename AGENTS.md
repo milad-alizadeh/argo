@@ -226,6 +226,11 @@ fires, fix the code or ratchet the exemption where the config keeps it, never in
   A new variant of an existing kind is one new file plus one registration line.
 - **Group by domain, never by kind.** `Tickets/`, not `Helpers/` or `Utils/`; a helper is born
   beside its only caller and hoists on the third.
+- **Move or rename a TypeScript file or folder with `move-ts-path`, not grep.**
+  `bun scripts/move-ts-path.mts <source> <destination>` rewrites every import and export path
+  that references it, path aliases included, in both `apps/desktop` and `packages/*`. It does
+  not rewrite a comment, a string literal, or a non-TypeScript file that names the old path;
+  grep for those after the move.
 - **Tokens by name.** Production visual values use shared tokens or intentional named component-local tokens.
   Resolve experimental values into those tokens before review.
 - **Typed script source.** A Node script uses `.mts`. Only the two `.mjs` files named in

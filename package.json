@@ -8,6 +8,7 @@
     "drizzle-kit": "^1.0.0-rc.4",
     "jscpd": "^5.0.12",
     "knip": "6.37.0",
+    "ts-morph": "^28.0.0",
     "turbo": "2.10.13",
     "typescript": "5.9.3"
   },

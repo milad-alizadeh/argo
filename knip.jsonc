@@ -7,6 +7,7 @@
     ".": {
       "entry": [
         "scripts/profiling/*.mts",
+        "scripts/move-ts-path.mts",
         "prototypes/codex-transport/channel.ts",
         "prototypes/codex-transport/prove.ts"
       ],
