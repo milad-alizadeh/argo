@@ -50,13 +50,28 @@ stays comment-free by convention, with nothing enforcing it.
 **The renderer boundary starts with specifier spelling in each renderer facet.** A
 `noRestrictedImports` override covers the renderer roots under `apps/desktop/src/`. It refuses
 `electron` and `node:*`. It also reads `import type`, because compilation erases a type-only
-import. The domain-facet gate rejects imports into another runtime facet. The preload and main
-facets can import `electron`. The limits worth knowing before trusting these gates:
+import. The preload and main facets can import `electron`. The limits worth knowing before
+trusting this gate:
 
 - **One hop of indirection walks straight through.** A renderer file importing `../preload`,
   which itself imports `electron`, draws no diagnostic and pulls `electron` into the renderer
-  bundle. Nothing reads the import graph, so cycles are unguarded too. A graph tool is the honest
-  fix and wants its own ticket.
+  bundle. A graph tool would close this; the one already running (below) only checks domain
+  boundaries, not this specifier rule.
+- **Biome's `overrides` array does not merge one rule's config across two blocks that both match
+  a file — only the last matching block wins, whole.** Three `noRestrictedImports` overrides in
+  `biome.jsonc` have overlapping `includes` under the renderer roots, so an ordinary renderer
+  file gets only the last one's patterns; the earlier ones' bans are silently dropped for it.
+  Tracked, unfixed: #2624.
+
+**A domain reaches another domain's `main` or `renderer` facet only through its `port.ts`**
+(#2623, ADR-0044). This is a separate gate from the specifier rule above, on a separate engine:
+`.dependency-cruiser.json`'s `domain-port-only` rule, run as `quality:boundaries` and in CI as its
+own step. Biome cannot express it as one rule (no regex backreference between `from` and `to`), so
+it moved out rather than becoming six near-identical `noRestrictedImports` overrides. Two files
+are exempt by name because they reach across domains on purpose to build test fixtures:
+`accounts/main/harness-fixtures.ts` and `sessions/main/index/session-index/roster-fixtures.ts`.
+`*.test.ts`/`*.stories.tsx` files are exempt too, matching the same allowance the old
+`biome.jsonc` matrix made. Nothing reads the import graph for cycles.
 - **`tsconfig.web.json` sets `"types": []`**, and it is load-bearing. Without it the renderer
   inherits every package in the root `@types`, `node` among them, and `process.env.SOME_TOKEN`
   type-checks clean in the one process that must never hold a token, with no import statement for
@@ -71,6 +86,53 @@ facets can import `electron`. The limits worth knowing before trusting these gat
 **`.jscpd.json` ignores `.vite` explicitly**, beside `dist`, `out` and `build`. A packaged bundle
 would otherwise stay out of the duplication scan only through `apps/desktop/.gitignore` plus
 jscpd's `gitignore: true`, which is a nested ignore file two tools deep.
+
+## The dead-code gate (#2623)
+
+Knip finds the files, exports, types and dependencies that nothing in the repository reaches.
+`knip.jsonc` at the repository root holds one workspace block for `.`, `packages/argo-skills` and
+`apps/desktop`. It runs as `quality:dead-code`, in `quality`, and as its own CI step, so a
+dead-code failure does not hide under the lint step's output.
+
+**Electron has no Knip plugin.** `apps/desktop`'s main and preload bundle entries, and its three
+split Vite configs (`vite.main.config.ts`, `vite.preload.config.ts`,
+`vite.renderer.config.ts`), are named by hand in `entry`. Knip's own Vite plugin only finds a
+single `vite.config.ts`, and `forge.config.ts` names the three split files as strings, not as
+imports, so Knip cannot find them on its own either.
+
+**The gate does not fail on day one.** A first triaged run found 5 unused files, 6 unused
+dependencies, 5 unused devDependencies, 11 unlisted dependencies, 1 unlisted binary, 6 unresolved
+imports and 1 duplicate export. Working through that list found:
+
+- Four real bugs: stale relative imports in `apps/desktop/mocks/` and `apps/desktop/tools/` left
+  over from a facet reorganisation, pointing at files that had moved or never existed at that
+  path. `tsconfig.e2e.json` sets `noCheck: true` over those directories, so nothing else in the
+  repository would have caught them. Knip's own resolution run found these; a person did not.
+- Three stories importing `Meta`/`StoryObj` from `@storybook/react` instead of this repository's
+  own `@storybook/react-vite`, out of step with every other story file. Knip's Storybook plugin
+  would have covered the framework's own package.
+- Five files with zero importers, deleted: a setup-context helper, a renderer store, a lib
+  helper and a reasoning component under `apps/desktop/src`, none of them wired to anything.
+- One duplicate export (`DEVELOPMENT_SHARED_STORE`, an alias for `DEVELOPMENT_APPLICATION_NAME`)
+  used only inside its own file: the `export` keyword came off it.
+- One unused root-level `drizzle-orm` devDependency, a leftover copy of the same package
+  `apps/desktop` already declares for itself: removed.
+- The rest of the list is `knip.jsonc`'s own `ignore`/`ignoreBinaries`/`ignoreDependencies`
+  entries, each with the reason attached: a vendored, unauthored shadcn component kit; a native
+  module's build-time header; a CLI tool invoked by hand; and two packages reached only through a
+  CSS `@import`, which Knip does not follow. `drizzle.config.ts` needs no entry of its own: Knip
+  auto-enables its Drizzle plugin because `drizzle-kit` is a devDependency, and that plugin reads
+  the config file and its `schema` field as production entries on its own; adding the file to
+  either `entry` or `ignore` only earns a configuration hint asking for it to be removed again.
+
+**What the gate does not do.** Adopting Knip and reaching a clean, triaged run is what this ticket
+covers. It does not act on the whole report: `quality:dead-code` runs `knip --max-issues 279`, a
+**RATCHET** at the exact count the triaged run left across unused exports and unused exported
+types (161 and 118). The number may only fall as that list is worked down in its own reviewed
+change; it never rises, because one more finding than the ceiling fails the build the same way a
+new jscpd clone does. A tool that reports nothing because it resolved nothing looks exactly like
+a clean repository, so the gate is proved by planting a deliberately orphaned file and confirming
+Knip reports it, then removing that file again.
 
 ## What no gate can reach
 
@@ -101,15 +163,48 @@ version. After switching Node's major version, delete `node_modules` and install
 nvm reads `.nvmrc` and not `.node-version`, so to run CI's version locally name it:
 `nvm install "$(cat .node-version)" && nvm use "$(cat .node-version)"`.
 
+## The Storybook accessibility gate (#2623)
+
+`@storybook/addon-a11y` runs an axe scan after every story's `play` function, wired to
+`a11y: { test: 'error' }` in `apps/desktop/.storybook/preview.ts`. A violation fails that story's
+test, inside the same `test:storybook` run CI already gates on — there is no separate step, and
+no separate place it can fail open other than that file itself.
+
+**It proves only what a story renders and only what axe's ruleset checks.** A screen no story
+covers, a state only a real click sequence reaches, and anything axe does not test (focus order,
+keyboard operability beyond a scan, screen-reader phrasing) get none of this gate's coverage;
+`docs/agents/visual-verification.md` and the `apps/desktop/AGENTS.md` accessible-names section
+carry those by hand.
+
+**The staged rollout is the one honest way to turn a gate like this on.** `test: 'todo'` reports
+without failing, so the addon shipped, every existing story ran once at that grade, and only the
+triaged, clean result moved the grade to `'error'`. Skipping the `'todo'` step would have turned
+on a gate already red, which teaches everyone to ignore its failures.
+
+**One rule is disabled, and it names the vendored markup it exists for**: `aria-hidden-focus`,
+because Base UI's own portalled popovers render an `aria-hidden="true"` focus-guard span
+(`data-base-ui-focus-guard`) that this repository does not author. Disabling a rule for
+first-party code instead would hide a real finding behind the same mechanism; the reason this one
+is safe is that it names a specific third-party element, not a whole rule class waived on trust.
+
+Fixing what the gate finds is design-token work, not exception work: several shared color tokens
+(`--muted-foreground`, `--destructive`, `--color-warn`, `--color-faint`, a language badge's fill)
+cleared contrast against `--background` but not against a tinted fill, a hover state, or an
+opacity-blended variant of themselves — the actual grounds a reader sees the text on. The fix
+darkens or lightens the token by the smallest step that clears the tightest of those grounds,
+recorded as a comment on the changed line, never a per-component override.
+
 ## Where an exemption goes
 
-Exemptions live in **two** files, each entry labelled **KIND** (permanent — the rule doesn't
+Exemptions live in **four** files, each entry labelled **KIND** (permanent — the rule doesn't
 apply to that category) or **RATCHET** (debt; the list may only shrink):
 
 | File | Covers |
 |---|---|
 | `biome.jsonc` `overrides` | every lint cap, the line ceiling included |
 | `.jscpd.json` `ignore` | duplication — reasons in `scripts/jscpd-ignore-reasons.txt`, one per glob |
+| `knip.jsonc` `ignore`/`ignoreBinaries`/`ignoreDependencies`, and `quality:dead-code`'s `--max-issues` | dead code — each entry carries its own reason inline; `--max-issues` is the one RATCHET, at the triaged baseline |
+| `apps/desktop/.storybook/preview.ts` `a11y.options.rules` | Storybook axe rules — **KIND** only, named to the vendored element it exempts, never a rule waived on trust |
 
 Two rules have no linter and live in `AGENTS.md` prose only: a cast standing in for a
 check, and the exhaustive construct over a closed set.

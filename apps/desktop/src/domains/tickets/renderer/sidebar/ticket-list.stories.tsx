@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import {
   backlog,
@@ -19,7 +19,7 @@ const longTicket = {
   ],
 }
 
-const meta: Meta<typeof TicketList> = {
+const meta = {
   title: 'Tickets/Sidebar/List',
   component: TicketList,
   args: {
@@ -28,7 +28,7 @@ const meta: Meta<typeof TicketList> = {
     // Fixed, so a Ticket's age reads the same however long this story sits open.
     now: new Date('2026-06-15T12:00:00Z').getTime(),
   },
-}
+} satisfies Meta<typeof TicketList>
 
 export default meta
 type Story = StoryObj<typeof TicketList>

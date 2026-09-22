@@ -177,7 +177,7 @@ function MarkdownShortcutsStory() {
   )
 }
 
-const meta: Meta<typeof ComposerStory> = {
+const meta = {
   title: 'Sessions/Composer/Text Editor',
   component: ComposerStory,
   decorators: [
@@ -191,7 +191,7 @@ const meta: Meta<typeof ComposerStory> = {
   beforeEach: () => {
     useComposerStore.setState(useComposerStore.getInitialState())
   },
-}
+} satisfies Meta<typeof ComposerStory>
 
 export default meta
 type Story = StoryObj<typeof ComposerStory>

@@ -78,10 +78,11 @@ function CockpitSidebar({
 }: SidebarHeaderProps & { isCollapsed: boolean; sidebar: ReactNode }) {
   if (isCollapsed) return null
   return (
-    <aside className="flex h-full min-h-0 flex-col overflow-hidden bg-sidebar">
+    // A layout wrapper only: the labelled landmark lives one level in, on the content it holds.
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-sidebar">
       <SidebarHeader header={header} onToggle={onToggle} toggleRef={toggleRef} />
       <div className="min-h-0 flex-1">{sidebar}</div>
-    </aside>
+    </div>
   )
 }
 
@@ -92,9 +93,10 @@ function CockpitRail({ rail }: Pick<CockpitShellProps, 'rail'>) {
         data-component="CockpitRailChrome"
         className="drag-region h-(--size-chrome-bar) shrink-0 border-b border-border/60 bg-sidebar"
       />
-      <aside className="min-h-0 flex-1 border-r border-border/60">
+      {/* A layout wrapper only: `CockpitNavigationRail` (or a story's `rail` override) is its own labelled `nav`. */}
+      <div className="min-h-0 flex-1 border-r border-border/60">
         {rail ?? <CockpitNavigationRail />}
-      </aside>
+      </div>
     </div>
   )
 }

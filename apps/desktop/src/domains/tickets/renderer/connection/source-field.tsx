@@ -108,7 +108,7 @@ export function SourceField(props: SourceFieldProps) {
         />
         <ComboboxContent>
           <ComboboxEmpty>{t('connect.field.noMatches', { noun: noun.one })}</ComboboxEmpty>
-          <ComboboxList>
+          <ComboboxList aria-label={capitalized(noun.one)}>
             {(item: TicketScope) => (
               <ComboboxItem key={item.scope} value={item}>
                 {item.label}

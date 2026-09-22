@@ -29,7 +29,7 @@ function answerSkillReads(content: string | null) {
   }
 }
 
-const meta: Meta<typeof SessionEvidenceInspector> = {
+const meta = {
   title: 'Sessions/Screen/Skill Inspector',
   component: SessionEvidenceInspector,
   parameters: { layout: 'fullscreen' },
@@ -40,7 +40,7 @@ const meta: Meta<typeof SessionEvidenceInspector> = {
       </div>
     ),
   ],
-}
+} satisfies Meta<typeof SessionEvidenceInspector>
 
 export default meta
 type Story = StoryObj<typeof SessionEvidenceInspector>

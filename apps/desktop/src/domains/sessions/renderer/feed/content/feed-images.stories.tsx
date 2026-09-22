@@ -12,7 +12,7 @@ import {
 } from '@/domains/sessions/renderer/feed/content/feed-samples'
 import { ImageLightbox } from '@/domains/sessions/renderer/feed/content/image-lightbox'
 
-const meta: Meta<typeof FeedImage> = {
+const meta = {
   title: 'Sessions/Feed/Images',
   component: FeedImage,
   decorators: [
@@ -25,7 +25,7 @@ const meta: Meta<typeof FeedImage> = {
     ),
   ],
   args: { source: SAMPLE_PICTURE, alt: 'The attached reference' },
-}
+} satisfies Meta<typeof FeedImage>
 
 export default meta
 type Story = StoryObj<typeof FeedImage>

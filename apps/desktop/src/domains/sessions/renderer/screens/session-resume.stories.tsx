@@ -51,7 +51,7 @@ function restartedHost(refusal: DriveSessionErrorCode | null, row = resumable) {
   }
 }
 
-const meta: Meta<typeof SessionScreenView> = {
+const meta = {
   title: 'Sessions/Screen/Resume',
   component: SessionScreenView,
   parameters: { layout: 'fullscreen' },
@@ -68,7 +68,7 @@ const meta: Meta<typeof SessionScreenView> = {
       </div>
     ),
   ],
-}
+} satisfies Meta<typeof SessionScreenView>
 
 export default meta
 type Story = StoryObj<typeof SessionScreenView>

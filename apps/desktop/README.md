@@ -80,10 +80,6 @@ button appears beside the GitHub one on the next launch.
 - Components, locally: `bun run storybook` from the repository root
 - Build the site: `bun run build:storybook` from the repository root, output
   `apps/desktop/storybook-static`
-- Render one PNG: `cd apps/desktop && bun run design:render`
-
-Every PNG these commands write is disposable. Look at it and delete it: no gate reads one and no
-ref holds one ([#1910](https://github.com/milad-alizadeh/argo/issues/1910)).
 
 ## Build a local release
 
@@ -285,9 +281,9 @@ proposes building from source and publishing nothing, and is not accepted yet.
 4. **Turn on immutable releases** — Settings → General → Releases. There is no API for this
    setting, so nothing here can check it before the fact; the workflow reads the per-release
    `immutable` boolean back after publishing and warns in the job summary if it is false.
-5. **A `CHANGELOG.md` in this directory**, whose `## <version>` heading the workflow reads for the
-   release notes. `/release-argo` ([#1808](https://github.com/milad-alizadeh/argo/issues/1808))
-   writes it; until then, by hand.
+
+Release notes are generated from the commits on the tag (`gh release create --generate-notes`),
+so there is no committed changelog to keep in step with a release.
 
 Everything else stays working without any of it: signing is driven by the environment, so a Linux
 CI job or a fork pull request still packages, and its verdict simply records `signed: false` — a

@@ -50,7 +50,7 @@ async function armWatch(page: Page, prompt: string) {
 }
 
 async function sendWatched(page: Page, prompt: string) {
-  const composer = page.getByRole('textbox', { name: 'Message' })
+  const composer = page.getByRole('combobox', { name: 'Message' })
   await composer.click()
   await page.keyboard.type(prompt)
   await armWatch(page, prompt)

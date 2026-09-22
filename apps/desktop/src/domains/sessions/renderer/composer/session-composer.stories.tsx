@@ -66,7 +66,7 @@ function EverythingComposerStory() {
   )
 }
 
-const meta: Meta<typeof EverythingComposerStory> = {
+const meta = {
   title: 'Sessions/Composer',
   component: EverythingComposerStory,
   decorators: [
@@ -80,7 +80,7 @@ const meta: Meta<typeof EverythingComposerStory> = {
   beforeEach: () => {
     useComposerStore.setState(useComposerStore.getInitialState())
   },
-}
+} satisfies Meta<typeof EverythingComposerStory>
 
 export default meta
 type Story = StoryObj<typeof EverythingComposerStory>
@@ -88,4 +88,4 @@ type Story = StoryObj<typeof EverythingComposerStory>
 // A single visual reference showing every composer control together: plan, harness, turn setup
 // and the Workspace picker. Manual/visual review, not a behaviour assertion (each control already
 // has its own dedicated story above).
-export const Everything: Story = {}
+export const Everything: Story = { tags: ['view-only'] }

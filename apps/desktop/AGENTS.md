@@ -58,6 +58,14 @@ For rendered UI work, use a Storybook `play` function as the TDD seam. The funct
 story through visible controls and asserts the resulting screen behavior.
 Assert reader-visible behavior and accessible semantics. Do not assert CSS classes or computed styles.
 
+Every story also runs an axe accessibility scan (#2623), required, no separate opt-in. A story
+that exists only to be looked at, not tested, takes the `view-only` tag rather than an empty
+`play`. Fix a real finding: reach for a shared token first, since most findings are a shared token
+failing contrast against a ground the token's own definition never listed. Disable an axe rule
+only for markup you did not author (an example already lives in `.storybook/preview.ts`), and name
+the vendored element in the same line; disabling a rule for first-party code hides the finding
+instead of fixing it.
+
 ## Shortcuts (#1786)
 
 One table: `src/platform/shared/commands.ts`. Every chord in the app is an entry there, and every

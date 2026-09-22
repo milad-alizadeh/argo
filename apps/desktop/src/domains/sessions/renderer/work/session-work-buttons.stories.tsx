@@ -84,11 +84,11 @@ function Header(props: Partial<React.ComponentProps<typeof SessionWorkButtons>>)
   )
 }
 
-const meta: Meta<typeof SessionWorkButtons> = {
+const meta = {
   title: 'Sessions/Screen/Work Buttons',
   component: SessionWorkButtons,
   parameters: { layout: 'fullscreen' },
-}
+} satisfies Meta<typeof SessionWorkButtons>
 
 export default meta
 type Story = StoryObj<typeof SessionWorkButtons>

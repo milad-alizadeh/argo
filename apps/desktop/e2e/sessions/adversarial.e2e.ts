@@ -22,7 +22,7 @@ test.describe('session-adversarial', () => {
     })
     await expect(page.getByText(`Mock Codex read: ${firstPrompt} 🦜`)).toBeVisible()
 
-    const composer = page.getByRole('textbox', { name: 'Message' })
+    const composer = page.getByRole('combobox', { name: 'Message' })
     await composer.click()
     await page.keyboard.type('Fail this Turn.')
     await page.keyboard.press('Enter')
@@ -52,7 +52,7 @@ test.describe('session-adversarial-permission', () => {
       harness: 'claude',
       prompt: 'Wait for Permission.',
     })
-    const composer = page.getByRole('textbox', { name: 'Message' })
+    const composer = page.getByRole('combobox', { name: 'Message' })
     // Under parallel workers the seeded Claude start alone measured past the 5s default.
     await expect(page.getByRole('region', { name: 'Permission needed' })).toBeVisible({
       timeout: 15_000,

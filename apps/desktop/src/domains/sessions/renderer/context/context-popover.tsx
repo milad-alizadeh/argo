@@ -82,7 +82,7 @@ function LabelledContextTrigger({ percentage }: ContextTriggerProps) {
       render={
         <Button
           aria-label={accessibleName}
-          className={`shrink-0 gap-1.5 px-2 type-label font-medium ${percentage !== null && percentage >= 40 ? 'text-red-600' : 'text-foreground'}`}
+          className={`shrink-0 gap-1.5 px-2 type-label font-medium ${percentage !== null && percentage >= 40 ? 'text-destructive' : 'text-foreground'}`}
           size="sm"
           variant="ghost"
         />

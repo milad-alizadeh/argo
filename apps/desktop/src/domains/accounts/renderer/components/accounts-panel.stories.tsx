@@ -34,7 +34,7 @@ const connected = {
 }
 const revoked = { ...octocat, id: 'github:1', login: 'hubot', state: 'revoked' as const }
 
-const meta: Meta<typeof AccountsPanel> = {
+const meta = {
   title: 'Accounts/Accounts Panel',
   component: AccountsPanel,
   // The panel lives in a `sm:max-w-md` dialog, so the story draws it at that width.
@@ -54,7 +54,7 @@ const meta: Meta<typeof AccountsPanel> = {
     onDisconnect: fn(),
     harnesses: null,
   } satisfies AccountsPanelProps,
-}
+} satisfies Meta<typeof AccountsPanel>
 
 export default meta
 type Story = StoryObj<typeof AccountsPanel>

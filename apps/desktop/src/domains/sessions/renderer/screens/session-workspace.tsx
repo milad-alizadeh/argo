@@ -97,10 +97,9 @@ export function SessionWorkspace({
   return (
     <section aria-label={t('workspaceLabel')} className="relative flex h-full min-h-0 flex-col">
       {header}
-      <section
-        aria-label={t('feedRegionLabel')}
-        className="session-screen__feed min-h-0 flex-1 overflow-hidden"
-      >
+      {/* A layout wrapper only: `BasicFeed` is its own labelled landmark, so this stays a plain `div` to
+          avoid a second "Session Feed" region with the same name. */}
+      <div className="session-screen__feed min-h-0 flex-1 overflow-hidden">
         <BasicFeed
           activeEvidenceId={activeEvidenceId}
           answeringQuestionId={answeringQuestionId}
@@ -116,7 +115,7 @@ export function SessionWorkspace({
           stallTimeoutMs={stallTimeoutMs}
           liveFacts={liveFacts}
         />
-      </section>
+      </div>
       <ComposerSection composer={composer} onJumpToLatest={jumpToLatest?.action ?? null} />
     </section>
   )

@@ -3,7 +3,7 @@ import { expect, waitFor, within } from 'storybook/test'
 
 import { App } from '@/renderer/app'
 
-const meta: Meta<typeof App> = {
+const meta = {
   title: 'Cockpit/Application',
   component: App,
   parameters: { layout: 'fullscreen' },
@@ -14,7 +14,7 @@ const meta: Meta<typeof App> = {
       </div>
     ),
   ],
-}
+} satisfies Meta<typeof App>
 
 export default meta
 type Story = StoryObj<typeof App>

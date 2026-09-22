@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import { PromptText } from '@/domains/sessions/renderer/prompt/prompt-text'
 
-const meta: Meta<typeof PromptText> = {
+const meta = {
   title: 'Sessions/Prompt/Prompt Text',
   component: PromptText,
   decorators: [
@@ -12,7 +12,7 @@ const meta: Meta<typeof PromptText> = {
       </p>
     ),
   ],
-}
+} satisfies Meta<typeof PromptText>
 
 export default meta
 type Story = StoryObj<typeof PromptText>

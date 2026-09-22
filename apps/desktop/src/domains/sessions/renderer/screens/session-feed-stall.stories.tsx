@@ -51,7 +51,7 @@ function stalledFeedHost() {
   }
 }
 
-const meta: Meta<typeof SessionScreenView> = {
+const meta = {
   title: 'Sessions/Screen/Feed Stall',
   component: SessionScreenView,
   parameters: { layout: 'fullscreen' },
@@ -68,7 +68,7 @@ const meta: Meta<typeof SessionScreenView> = {
       </div>
     ),
   ],
-}
+} satisfies Meta<typeof SessionScreenView>
 
 export default meta
 type Story = StoryObj<typeof SessionScreenView>

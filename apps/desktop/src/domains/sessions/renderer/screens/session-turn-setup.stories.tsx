@@ -65,7 +65,7 @@ function withBridge(reply: SessionSetup) {
   }
 }
 
-const meta: Meta<typeof SessionScreenView> = {
+const meta = {
   title: 'Sessions/Screen/Turn Setup',
   component: SessionScreenView,
   parameters: { layout: 'fullscreen' },
@@ -83,7 +83,7 @@ const meta: Meta<typeof SessionScreenView> = {
       </div>
     ),
   ],
-}
+} satisfies Meta<typeof SessionScreenView>
 
 export default meta
 type Story = StoryObj<typeof SessionScreenView>

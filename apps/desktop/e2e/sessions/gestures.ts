@@ -152,7 +152,7 @@ export async function createSessionByClick(page: Page, request: CreateRequest): 
   const known = await rosterIds(page)
   await openNewSessionByClick(page)
   await chooseHarness(page, request.harness)
-  const composer = page.getByRole('textbox', { name: 'Message' })
+  const composer = page.getByRole('combobox', { name: 'Message' })
   await composer.click()
   await expect(composer).toHaveText('')
   await page.keyboard.type(request.prompt)

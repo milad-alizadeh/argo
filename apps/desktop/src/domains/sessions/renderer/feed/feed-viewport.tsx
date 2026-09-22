@@ -1,5 +1,5 @@
 import type { ReactVirtualizer } from '@tanstack/react-virtual'
-import type { ReactNode } from 'react'
+import { type ReactNode, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Reveal } from '@/domains/sessions/renderer/feed/reveal'
 import { feedContentHeight } from '@/domains/sessions/renderer/feed/use-prompt-at-top'
@@ -39,13 +39,26 @@ export function FeedViewport({
   virtualizer,
 }: FeedViewportProps) {
   const { t } = useTranslation('sessions')
+  // A scrollable region needs its own tab stop so keyboard-only reading (arrow keys, Page Up/Down)
+  // reaches it even before any row inside becomes focusable (#2623: scrollable-region-focusable).
+  // Set by hand on the node rather than a `tabIndex` prop: biome's `noNoninteractiveTabindex`
+  // flatly rejects a positive `tabIndex` on a native `section`, with no role-based exception.
+  // Memoized so its identity is stable across renders: a fresh function every render would make
+  // React detach and reattach the ref (and re-run `setViewport`) on every commit.
+  const setScrollableViewport = useCallback(
+    (node: HTMLElement | null) => {
+      if (node) node.tabIndex = 0
+      setViewport(node)
+    },
+    [setViewport],
+  )
   return (
     <section
       aria-label={t('historyLabel')}
       className="feed__viewport"
       data-reading-revision={settled.reading.revision}
       data-session={settled.reading.sessionId}
-      ref={setViewport}
+      ref={setScrollableViewport}
     >
       <div
         className="feed__content"

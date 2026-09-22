@@ -19,6 +19,7 @@ export function Approval({ command, snapshot }: ApprovalScreenProps) {
     <section className="mt-6" aria-label={t('setup.actor.awaiting-approval.label')}>
       <PermissionPrompt
         harness={snapshot.attempt?.applicationHarness ?? snapshot.attempt?.planningHarness}
+        headingLevel={2}
         permission={{ description: approval.description, id: approval.permissionId }}
         onDecide={async (decision) => {
           await command({ type: decision === 'allow' ? 'approve-effect' : 'reject-effect' })

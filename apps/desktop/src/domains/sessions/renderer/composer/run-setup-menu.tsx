@@ -23,6 +23,7 @@ export type TurnSetupControlProps = {
 type RunSetupMenuProps = { harness: HarnessControl; setup: TurnSetupControlProps | null }
 
 export function RunSetupMenu({ harness, setup }: RunSetupMenuProps) {
+  const { t } = useTranslation('sessions')
   const harnessLabel = HARNESSES[harness.harness].label
   const facts = setupFacts(setup)
   const body = <SetupBody harness={harness} setup={setup} />
@@ -51,6 +52,7 @@ export function RunSetupMenu({ harness, setup }: RunSetupMenuProps) {
         <Icon name="chevron-down" className="hidden text-muted-foreground @[36rem]:block" />
       </PopoverTrigger>
       <PopoverContent
+        aria-label={t('composer.setup.title')}
         align="start"
         side="top"
         className="w-(--size-session-menu) gap-0 overflow-hidden p-0"

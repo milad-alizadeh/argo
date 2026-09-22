@@ -8,7 +8,7 @@ import { TicketProblem } from '@/domains/tickets/renderer/status/ticket-problem'
 
 const recovery = { onRetry: fn(), onReconnect: fn(), onDisconnectSource: fn(), provider: null }
 
-const meta: Meta<typeof TicketProblem> = {
+const meta = {
   title: 'Tickets/Ticket Problem',
   component: TicketProblem,
   parameters: { layout: 'fullscreen' },
@@ -19,7 +19,7 @@ const meta: Meta<typeof TicketProblem> = {
       </div>
     ),
   ],
-}
+} satisfies Meta<typeof TicketProblem>
 
 export default meta
 type Story = StoryObj<typeof TicketProblem>

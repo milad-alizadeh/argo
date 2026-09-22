@@ -1,4 +1,4 @@
-import type { Meta } from '@storybook/react'
+import type { Meta } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { FeedToolGroup, FeedToolLine } from '@/domains/sessions/renderer/feed/feed-tools'
 import { ToolGroupState } from '@/domains/sessions/renderer/feed/tool-group-state'
@@ -49,11 +49,11 @@ openToolGroups.setOpen('command-1', true)
 openToolGroups.setOpen('command-2', true)
 const closedToolGroups = new ToolGroupState()
 
-const meta: Meta<typeof FeedToolLine> = {
+const meta = {
   title: 'Sessions/Feed/Tool Line',
   component: FeedToolLine,
   args: { activeEvidenceId: null, call: edited, onOpen: () => {} },
-}
+} satisfies Meta<typeof FeedToolLine>
 
 export default meta
 

@@ -17,7 +17,7 @@ const RESPONDED_ROW: Row = {
   tokens: 18_400,
 }
 
-const meta: Meta<typeof DelegationEvent> = {
+const meta = {
   title: 'Sessions/Feed/Delegation',
   component: DelegationEvent,
   parameters: { layout: 'fullscreen' },
@@ -26,7 +26,7 @@ const meta: Meta<typeof DelegationEvent> = {
       <DelegationEvent {...args} />
     </div>
   ),
-}
+} satisfies Meta<typeof DelegationEvent>
 
 export default meta
 type Story = StoryObj<typeof DelegationEvent>

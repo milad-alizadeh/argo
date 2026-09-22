@@ -6,6 +6,10 @@ import {
   GalleryImage,
   GalleryParagraph,
 } from '@/domains/sessions/renderer/feed/content/feed-markdown-gallery'
+import {
+  type HeadingTag,
+  headingComponents,
+} from '@/domains/sessions/renderer/feed/content/feed-markdown-headings'
 import { FEED_CARD_RADIUS_CLASS } from '@/domains/sessions/renderer/feed/content/feed-surface'
 import { LINK_CLASS } from '@/domains/sessions/renderer/feed/content/link-class'
 import {
@@ -19,8 +23,6 @@ import { Icon } from '@/platform/renderer/components/icon'
 type MarkdownNode = ExtraProps['node']
 
 const REMARK_PLUGINS = [remarkGfm]
-// The wrapper carries `type-prose`: on the heading itself its doubled selector drops the weight.
-const HEADING_CLASS = 'mb-2 font-medium'
 const LANGUAGE_CLASS = 'language-'
 
 // A fence reaches `pre` as one `code` element holding the text, with its word as `language-*`.
@@ -92,17 +94,11 @@ function ListItem({ node, children }: { node?: MarkdownNode; children?: ReactNod
   )
 }
 
-const COMPONENTS: Components = {
+const COMPONENTS: Omit<Components, HeadingTag> = {
   p: GalleryParagraph,
   img: GalleryImage,
   a: Link,
   li: ListItem,
-  h1: ({ children }) => <h3 className={HEADING_CLASS}>{children}</h3>,
-  h2: ({ children }) => <h4 className={HEADING_CLASS}>{children}</h4>,
-  h3: ({ children }) => <h5 className={HEADING_CLASS}>{children}</h5>,
-  h4: ({ children }) => <h6 className={HEADING_CLASS}>{children}</h6>,
-  h5: ({ children }) => <h6 className={HEADING_CLASS}>{children}</h6>,
-  h6: ({ children }) => <h6 className={HEADING_CLASS}>{children}</h6>,
   ul: ({ className, children }) => (
     <ul
       className={
@@ -160,11 +156,15 @@ export const FeedMarkdown = memo(function FeedMarkdown({
   text,
   rowId,
   activeEvidenceId = null,
+  headingOffset = 1,
   onOpenEvidence,
 }: {
   text: string
   rowId?: string
   activeEvidenceId?: string | null
+  // The Session screen's own heading is a lone `h1` (`session-shell.tsx`), so the default nests
+  // markdown one level under it. A caller with a deeper ancestor passes a larger offset.
+  headingOffset?: number
   onOpenEvidence?: MarkdownEvidenceContextValue['onOpenEvidence']
 }) {
   // A fresh value here re-renders every fence and file link below it, whatever the text did.
@@ -175,12 +175,16 @@ export const FeedMarkdown = memo(function FeedMarkdown({
         : { rowId, activeEvidenceId, onOpenEvidence },
     [activeEvidenceId, onOpenEvidence, rowId],
   )
+  const components = useMemo(
+    () => ({ ...COMPONENTS, ...headingComponents(headingOffset) }),
+    [headingOffset],
+  )
   return (
     <div className="space-y-4 break-words type-prose [overflow-wrap:anywhere]">
       <MarkdownEvidence.Provider value={markdownEvidence}>
         <Markdown
           remarkPlugins={REMARK_PLUGINS}
-          components={COMPONENTS}
+          components={components}
           urlTransform={feedUrlTransform}
         >
           {text}

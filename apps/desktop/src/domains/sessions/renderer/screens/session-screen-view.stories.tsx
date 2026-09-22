@@ -544,7 +544,7 @@ async function expectShellReopensWithOutput(canvasElement: HTMLElement) {
   await expect(within(shellInspector).getByText(/Checked 187 files\./)).toBeVisible()
 }
 
-const meta: Meta<typeof SessionScreenView> = {
+const meta = {
   title: 'Sessions/Screen',
   component: SessionScreenView,
   parameters: {
@@ -557,7 +557,7 @@ const meta: Meta<typeof SessionScreenView> = {
       </div>
     ),
   ],
-}
+} satisfies Meta<typeof SessionScreenView>
 
 export default meta
 type Story = StoryObj<typeof SessionScreenView>

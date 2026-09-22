@@ -21,7 +21,7 @@ function answerWorkspaceReads(files: Record<string, string>) {
   }
 }
 
-const meta: Meta<typeof SessionEvidenceInspector> = {
+const meta = {
   title: 'Sessions/Screen/File Inspector',
   component: SessionEvidenceInspector,
   parameters: { layout: 'fullscreen' },
@@ -32,7 +32,7 @@ const meta: Meta<typeof SessionEvidenceInspector> = {
       </div>
     ),
   ],
-}
+} satisfies Meta<typeof SessionEvidenceInspector>
 
 export default meta
 type Story = StoryObj<typeof SessionEvidenceInspector>

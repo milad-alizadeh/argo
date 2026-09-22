@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import { InspectorSplit } from '@/platform/renderer/cockpit/inspector-split/inspector-split'
@@ -10,7 +10,7 @@ const SIZES = {
   workspaceMin: '--size-ticket-workspace-min',
 }
 
-const meta: Meta<typeof InspectorSplit> = {
+const meta = {
   title: 'Components/Inspector Split',
   component: InspectorSplit,
   parameters: { layout: 'fullscreen' },
@@ -27,7 +27,7 @@ const meta: Meta<typeof InspectorSplit> = {
     workspace: <section aria-label="Workspace" className="h-full" />,
     inspector: <section aria-label="Panel contents" className="h-full" />,
   },
-}
+} satisfies Meta<typeof InspectorSplit>
 
 export default meta
 type Story = StoryObj<typeof InspectorSplit>

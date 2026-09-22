@@ -10,9 +10,10 @@ import type {
   ProjectError,
   ProjectOpenReply,
   ProjectOpenRequest,
-} from '../src/domains/projects/contract/contract.ts'
-import { openProject } from '../src/domains/projects/main/open-project.ts'
-import { createProjectStore } from '../src/domains/projects/main/sqlite-store.ts'
+} from '@/domains/projects/contract/contract'
+import { openProject } from '@/domains/projects/main/open-project'
+import { createProjectStore } from '@/domains/projects/main/sqlite-store'
+import { databaseMigrationsFolder } from '@/platform/main/storage/migrations-folder'
 
 const request: ProjectOpenRequest = {
   version: 1,
@@ -34,9 +35,7 @@ async function fixture(context: TestContext) {
   const projectPath = path.join(root, 'example')
   await mkdir(projectPath)
   const database = new Database(path.join(root, 'argo.sqlite'))
-  migrate(drizzle({ client: database }), {
-    migrationsFolder: path.resolve(import.meta.dirname, '../drizzle'),
-  })
+  migrate(drizzle({ client: database }), { migrationsFolder: databaseMigrationsFolder() })
   const projects = createProjectStore(drizzle({ client: database }))
   projects.replace({
     projects: [
@@ -47,7 +46,7 @@ async function fixture(context: TestContext) {
   const store = {
     projects,
     chooseFolder: async () => null,
-    exclusive: async <T,>(work: () => Promise<T>) => work(),
+    exclusive: async <T>(work: () => Promise<T>) => work(),
     // No fixture here ever leaves a checkpoint at `ready`, the only phase `openProject` reads it in.
     loadSetupDocument: async (): Promise<never> => {
       throw new Error('no fixture reads a setup document')

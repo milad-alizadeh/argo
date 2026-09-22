@@ -6,7 +6,7 @@ import { STATUSES } from '@/domains/tickets/renderer/status/status-fixtures'
 
 const URL_BODY = `See https://github.com/octocat/hello-world/blob/main/${'deeply-nested-'.repeat(12)}path.md`
 
-const meta: Meta<typeof TicketDetail> = {
+const meta = {
   title: 'Tickets/Ticket Detail',
   component: TicketDetail,
   parameters: { layout: 'fullscreen' },
@@ -28,7 +28,7 @@ const meta: Meta<typeof TicketDetail> = {
     onChangeStatus: fn(),
     onChangePriority: fn(),
   },
-}
+} satisfies Meta<typeof TicketDetail>
 
 export default meta
 type Story = StoryObj<typeof TicketDetail>
