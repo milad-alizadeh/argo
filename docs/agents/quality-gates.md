@@ -57,6 +57,11 @@ trusting this gate:
   which itself imports `electron`, draws no diagnostic and pulls `electron` into the renderer
   bundle. A graph tool would close this; the one already running (below) only checks domain
   boundaries, not this specifier rule.
+- **Biome's `overrides` array does not merge one rule's config across two blocks that both match
+  a file — only the last matching block wins, whole.** Three `noRestrictedImports` overrides in
+  `biome.jsonc` have overlapping `includes` under the renderer roots, so an ordinary renderer
+  file gets only the last one's patterns; the earlier ones' bans are silently dropped for it.
+  Tracked, unfixed: #2624.
 
 **A domain reaches another domain's `main` or `renderer` facet only through its `port.ts`**
 (#2623, ADR-0044). This is a separate gate from the specifier rule above, on a separate engine:

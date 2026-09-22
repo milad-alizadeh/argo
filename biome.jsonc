@@ -215,6 +215,10 @@
       "plugins": ["./lint/biome/no-new-mjs.grit"]
     },
     {
+      // #2624: this block's noRestrictedImports below is silently dropped for any file also
+      // matched by a later overlapping override, because `overrides` does not merge one rule's
+      // config across blocks — the last match wins whole. Unfixed; read the issue before adding
+      // another override under this path.
       "includes": ["apps/desktop/src/platform/renderer/components/ui/**"],
       "formatter": { "enabled": false },
       "linter": {

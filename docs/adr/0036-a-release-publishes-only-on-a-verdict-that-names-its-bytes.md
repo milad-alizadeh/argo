@@ -224,9 +224,9 @@ matching asset — so "take `latest` away" was never a lever, and GitHub documen
 for *Get the latest release*.
 
 **The cost accepted is the burned version number.** `v1.2.0` is gone and the retry is `v1.2.1`. The
-version scheme tolerates gaps, and `/release-argo` (#1808) reads the existing tags and proposes the
-next unused patch, so a retry after a burn is arithmetic rather than a rule somebody has to
-remember. A version number is cheap; a downloadable release carrying a failing verdict is not.
+version scheme tolerates gaps, so a retry after a burn is arithmetic rather than a rule somebody
+has to remember. A version number is cheap; a downloadable release carrying a failing verdict is
+not.
 
 **Two different failures share one message.** A tag name burned by an immutable release and a tag
 ruleset restricting creation both return `pre_receive Repository rule violations found ... Cannot
@@ -250,11 +250,13 @@ failure and not a normal path.
 - **The verdict's schema, field by field.** The rules above say what it must carry and what must be
   a boolean; the document's shape is written once, with #1807, and every later assertion is added
   to it rather than beside it.
-- **Where the release notes come from.** They are a committed `CHANGELOG.md` entry the workflow
-  reads for the version it is building, drafted by `/release-argo`
-  ([#1808](https://github.com/milad-alizadeh/argo/issues/1808)), which pushes nothing. That the
-  notes are tracked rather than typed at dispatch is what lets a release be rebuilt without
-  retyping them.
+- **Where the release notes come from.** `gh release create --generate-notes` builds them from
+  the commits on the tag at publish time; there is no committed `CHANGELOG.md` and no
+  `/release-argo` drafting step to keep in sync with a release (#2623 removed both — the
+  changelog script duplicated GitHub's own commit-log generation for no reading it did not
+  already give a reviewer). **Contradicts this ADR's original text, updating because** the
+  drafted-and-committed-changelog design this paragraph described was never built the way it
+  is written here, and the workflow that shipped reads the tag instead.
 - **Windows and Linux.** The asset-shape rule above is the macOS ZIP. The other platforms have no
   package, no signing and no update path yet.
 
