@@ -92,7 +92,7 @@ function recoveringState() {
           target: 'Managed',
         },
       ],
-      'SDK failed': 'Releasing',
+      'SDK failed': { target: 'Releasing', actions: 'markWatched' },
     },
   } as const
 }

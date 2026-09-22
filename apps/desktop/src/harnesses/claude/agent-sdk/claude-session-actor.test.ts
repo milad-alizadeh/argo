@@ -158,3 +158,26 @@ describe('claude session actor commands', () => {
     expect(actor.getSnapshot().value).toBe('Closed')
   })
 })
+
+describe('claude session actor recovery', () => {
+  test('releases its lease and becomes watched when recovery fails', async () => {
+    let released = false
+    const fake = fakeClaudeQuery()
+    const actor = harness(fake, {
+      ...managedSessionService,
+      release: () => {
+        released = true
+      },
+    })
+    fake.emitInit({ apiKeySource: 'none' })
+    await flush()
+
+    actor.send({ type: 'Channel lost' })
+    await flush()
+    actor.send({ type: 'SDK failed' })
+    await flush()
+
+    expect(released).toBe(true)
+    expect(actor.getSnapshot().value).toBe('Watched')
+  })
+})
