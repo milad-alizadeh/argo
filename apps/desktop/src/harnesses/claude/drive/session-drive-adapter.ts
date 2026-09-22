@@ -1,8 +1,8 @@
-import type { Permission, PermissionDecision } from '@/domains/sessions/contract/drive/permission'
+import type { Permission, PermissionDecision } from '@/domains/sessions/contract/drive'
 import {
   type ClaudePermission,
   claudeTurnSetupSchema,
-} from '@/domains/sessions/contract/ipc/contract'
+} from '@/domains/sessions/contract/ipc'
 import type {
   DriveFailure,
   SessionDriveAdapter,

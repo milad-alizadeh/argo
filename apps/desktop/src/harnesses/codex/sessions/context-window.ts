@@ -1,4 +1,4 @@
-import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
+import type { TranscriptRecord } from '@/domains/sessions/contract/model'
 
 export function taskStartedContextWindow(
   payload: Record<string, unknown>,

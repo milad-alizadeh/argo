@@ -5,8 +5,8 @@ import path from 'node:path'
 import {
   sessionFeedReplySchema,
   sessionListReplySchema,
-} from '@/domains/sessions/contract/ipc/contract'
-import { mergeAppendedFeed } from '@/domains/sessions/contract/model/feed-contract'
+} from '@/domains/sessions/contract/ipc'
+import { mergeAppendedFeed } from '@/domains/sessions/contract/model'
 import type { createSessionReader } from './reader'
 
 export {

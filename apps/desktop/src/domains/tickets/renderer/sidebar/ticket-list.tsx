@@ -7,8 +7,8 @@ import {
   backlogRows,
   treeRails,
   unfoldedRows,
-} from '@/domains/tickets/renderer/lib/backlog'
-import { sourcePresentation } from '@/domains/tickets/renderer/lib/sources'
+} from '../lib'
+import { sourcePresentation } from '../lib'
 import { Icon } from '@/platform/renderer/components/icon'
 import { Loader } from '@/platform/renderer/components/loader'
 import {

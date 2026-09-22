@@ -2,7 +2,7 @@ import type {
   TranscriptEventKind,
   TranscriptMessage,
   TranscriptRecord,
-} from '@/domains/sessions/contract/model/transcript'
+} from '@/domains/sessions/contract/model'
 import { taggedField, taggedText } from '@/harnesses/envelope-tags'
 import { isRecord } from '@/shared/validation'
 import { readableCommandOutput } from './command-output'

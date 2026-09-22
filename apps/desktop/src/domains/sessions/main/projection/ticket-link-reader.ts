@@ -6,7 +6,7 @@ import {
   type SessionTicketConnectRequest,
   type SessionTicketDisconnectRequest,
   sessionAcceptedSchema,
-} from '@/domains/sessions/contract/ipc/contract'
+} from '@/domains/sessions/contract/ipc'
 import type { SessionTicketLinkStore } from '@/domains/tickets/main'
 
 function accepted(request: { requestId: string; sessionId: string }) {

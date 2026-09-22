@@ -4,9 +4,9 @@
 // not here at all — the IPC operation table does both before a body runs (ADR-0039) — so a body
 // takes its parsed request type and `reads.ts` declares nothing but resolution and body.
 
-import { sessionError } from '@/domains/sessions/contract/ipc/contract'
-import type { SessionArchiveStore } from '@/domains/sessions/main/archive/archive-store'
-import type { SessionUnreadStore } from '@/domains/sessions/main/unread/unread-store'
+import { sessionError } from '@/domains/sessions/contract/ipc'
+import { SessionArchiveStore } from '../archive'
+import { SessionUnreadStore } from '../unread'
 import { isRecord } from '@/shared/validation'
 import type { SessionSource } from './session-source'
 

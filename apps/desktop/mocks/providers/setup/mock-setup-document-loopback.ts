@@ -2,11 +2,11 @@ import { readFile } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import path from 'node:path'
-import { setupConfiguration } from '../../../src/domains/projects/contract/setup-configuration'
+import { setupConfiguration } from '@/domains/projects/contract/setup-configuration'
 import {
   parseSetupDocument,
   type SetupDocument,
-} from '../../../src/domains/projects/contract/setup-document'
+} from '@/domains/projects/contract/setup-document'
 
 const documentPath = path.resolve(
   process.cwd(),

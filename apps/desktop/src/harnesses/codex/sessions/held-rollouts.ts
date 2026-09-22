@@ -5,7 +5,7 @@
 import { execFile } from 'node:child_process'
 import path from 'node:path'
 import { promisify } from 'node:util'
-import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model'
 import { isLiveElsewhere } from '@/domains/sessions/main'
 import { sessionIdFromFileName } from './transcript-paths'
 

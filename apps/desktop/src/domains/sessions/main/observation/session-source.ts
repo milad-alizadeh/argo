@@ -6,14 +6,14 @@
 import type {
   SessionRenameReply,
   SessionRenameRequest,
-} from '@/domains/sessions/contract/ipc/contract'
+} from '@/domains/sessions/contract/ipc'
 import type {
   SessionShellOutput,
   SessionSubagentUsage,
-} from '@/domains/sessions/contract/model/background-work-contract'
-import type { SessionChain } from '@/domains/sessions/contract/model/chains'
-import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import type { ResolvedIndexedIds } from '@/domains/sessions/main/index/resolve-indexed-ids'
+} from '@/domains/sessions/contract/model'
+import type { SessionChain } from '@/domains/sessions/contract/model'
+import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/contract/model'
+import { ResolvedIndexedIds } from '../indexing'
 import type { BackfillProgress, TranscriptDiscovery } from './discover-transcript-sessions'
 
 // What a driver shows over one Session's recorded Feed while a Turn streams: the rows to draw, and

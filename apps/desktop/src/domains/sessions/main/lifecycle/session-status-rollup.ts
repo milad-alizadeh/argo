@@ -11,7 +11,7 @@
 // definite floor (`idle`, `asking`, `stopped`) is never overridden by a managed `running` just
 // because it is held.
 
-import type { SessionPosture, SessionStatus } from '@/domains/sessions/contract/model/models'
+import type { SessionPosture, SessionStatus } from '@/domains/sessions/contract/model'
 
 export function rollupSessionStatus(
   floor: SessionStatus,

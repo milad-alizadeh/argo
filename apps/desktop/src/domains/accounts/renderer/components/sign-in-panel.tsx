@@ -5,8 +5,8 @@ import type {
   AccountConnected,
   Provider,
 } from '@/domains/accounts/contract/contract'
-import type { SignIn } from '@/domains/accounts/renderer/hooks/use-sign-in'
-import { providerPresentation } from '@/domains/accounts/renderer/lib/providers'
+import type { SignIn } from '../hooks'
+import { providerPresentation } from '../lib'
 import { Icon } from '@/platform/renderer/components/icon'
 import { Alert, AlertDescription } from '@/platform/renderer/components/ui/alert'
 import { Button } from '@/platform/renderer/components/ui/button'

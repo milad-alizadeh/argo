@@ -1,4 +1,4 @@
-import type { OnboardingAgentDriver } from '@/domains/projects/main/setup/onboarding-agent/runtime/run-onboarding-agent'
+import type { OnboardingAgentDriver } from './onboarding-agent/runtime/run-onboarding-agent'
 import type { ProjectSetupEvent } from './project-setup-machine-types'
 
 export type ActivePermission = {

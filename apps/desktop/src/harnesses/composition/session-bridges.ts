@@ -1,23 +1,14 @@
 // Wiring the Sessions room to a window. Every Harness starts itself and exposes only its bound runtime.
 import { type BrowserWindow, powerMonitor } from 'electron'
 import type { SessionDriveAdapters } from '@/domains/sessions/contract/session-drive-adapter'
-import {
-  createSessionArchiveStore,
-  sessionArchivePath,
-} from '@/domains/sessions/main/archive/archive-store'
-import { attachSessionBridge } from '@/domains/sessions/main/composition/bridge'
-import {
-  startBackfill,
-  withReconcile,
-} from '@/domains/sessions/main/index/session-background-indexing'
-import { sessionIndexPath } from '@/domains/sessions/main/index/session-index/open-index'
-import { createWorkerSessionIndex } from '@/domains/sessions/main/index/session-index/worker-index'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
-import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
-import {
-  createSessionUnreadStore,
-  sessionUnreadPath,
-} from '@/domains/sessions/main/unread/unread-store'
+import { createSessionArchiveStore, sessionArchivePath } from '@/domains/sessions/main/archive'
+import { attachSessionBridge } from '@/domains/sessions/main/composition'
+import { startBackfill, withReconcile } from '@/domains/sessions/main/indexing'
+import { sessionIndexPath } from '@/domains/sessions/main/indexing'
+import { createWorkerSessionIndex } from '@/domains/sessions/main/indexing'
+import { createSessionReader } from '@/domains/sessions/main/observation'
+import { SessionSource } from '@/domains/sessions/main/observation'
+import { createSessionUnreadStore, sessionUnreadPath } from '@/domains/sessions/main/unread'
 import type { SessionTicketLinkStore } from '@/domains/tickets/main'
 import { registerWatching } from '@/platform/main/watch/bridge'
 import { watchTrees } from '@/platform/main/watch/watch-paths'

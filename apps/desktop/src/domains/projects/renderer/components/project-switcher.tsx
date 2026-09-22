@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useProjects } from '@/domains/projects/renderer'
+import { useProjects } from '..'
 import { useCommands } from '@/platform/renderer/cockpit/hooks/use-commands'
 import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'

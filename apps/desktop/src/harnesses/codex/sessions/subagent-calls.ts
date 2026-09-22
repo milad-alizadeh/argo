@@ -2,7 +2,7 @@
 // on the call and nowhere else, and `interrupt_agent` names its target by path or by name while its
 // activity records only the thread, so the fold reads both across the whole rollout.
 import { elapsedMilliseconds } from '@/domains/sessions/contract/duration'
-import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
+import type { TranscriptRecord } from '@/domains/sessions/contract/model'
 import { agentLabel } from './subagent-activity'
 
 type SubagentCall = NonNullable<Extract<TranscriptRecord, { kind: 'trace' }>['subagentCall']>

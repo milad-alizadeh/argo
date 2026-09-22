@@ -1,4 +1,4 @@
-import type { SessionPlan, SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import type { SessionPlan, SessionRosterRow } from '@/domains/sessions/contract/model'
 import { rollupSessionStatus } from '@/domains/sessions/main'
 import { readCompletedCompaction, readStartedCompaction } from './compact-protocol'
 import type { LiveMessages } from './live-messages'

@@ -1,6 +1,6 @@
-import { useLinkedSessions } from '@/domains/tickets/renderer/hooks/use-linked-sessions'
-import type { Backlog } from '@/domains/tickets/renderer/lib/backlog'
-import { TicketList } from '@/domains/tickets/renderer/sidebar/ticket-list'
+import { useLinkedSessions } from '../hooks'
+import type { Backlog } from '../lib'
+import { TicketList } from '../sidebar'
 import { InspectorSplit } from '@/platform/renderer/cockpit/inspector-split/inspector-split'
 import { TicketDetail } from './ticket-detail'
 

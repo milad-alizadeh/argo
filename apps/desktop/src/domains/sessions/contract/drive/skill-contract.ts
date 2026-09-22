@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { sessionErrorSchema } from '@/domains/sessions/contract/model/session-error'
+import { sessionErrorSchema } from '../session-error'
 import { identifierSchema } from '@/shared/validation'
 
 // A skill a prompt mentions, read by the absolute path the Harness wrote into the prompt.

@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router'
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
 import { AccountsPanel } from '@/domains/accounts/renderer'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
-import { ConnectSourceFields } from '@/domains/tickets/renderer/connection/connect-source-form'
+import { ConnectSourceFields } from '../connection/connect-source-form'
 import {
   backlog,
   connection,
@@ -13,10 +13,10 @@ import {
   octocat,
   standalone,
   ticketsView,
-} from '@/domains/tickets/renderer/detail/ticket-fixtures'
-import type { TicketsScreenProps } from '@/domains/tickets/renderer/hooks/use-tickets-view'
-import { TicketsSidebarContent } from '@/domains/tickets/renderer/sidebar/tickets-sidebar'
-import { STATUSES } from '@/domains/tickets/renderer/status/status-fixtures'
+} from '../detail/ticket-fixtures'
+import type { TicketsScreenProps } from '../hooks/use-tickets-view'
+import { TicketsSidebarContent } from '../sidebar/tickets-sidebar'
+import { STATUSES } from '../status/status-fixtures'
 import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
 import { TicketsScreen } from './tickets-screen-view'
 

@@ -3,8 +3,8 @@ import {
   checkedDataImageUrl,
   fileImageUrl,
   imageBlocks,
-} from '@/domains/sessions/contract/model/feed-images'
-import type { ContentBlock } from '@/domains/sessions/contract/model/transcript'
+} from '@/domains/sessions/contract/model'
+import type { ContentBlock } from '@/domains/sessions/contract/model'
 import { isRecord } from '@/shared/validation'
 
 // A `UserMessage` item's own image inputs: a pasted `image` as a data URL, a `local_image` by path.

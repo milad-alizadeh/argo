@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import type { ProjectDatabase } from '@/domains/projects/main/sqlite-store'
+import type { ProjectDatabase } from '../sqlite-store'
 import {
   managedWorkspaceRecovery,
   projectWorkspaceSelection,

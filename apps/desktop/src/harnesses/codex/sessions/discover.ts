@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
-import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
-import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model'
+import type { TranscriptRecord } from '@/domains/sessions/contract/model'
+import { transcriptFileFrom } from '@/domains/sessions/contract/model'
 import {
   createTranscriptDiscoverer,
   createTranscriptRecordReader,

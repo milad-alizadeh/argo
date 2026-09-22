@@ -11,7 +11,7 @@ import {
   sessionSubagentSchema,
   sessionTicketSchema,
   sessionTitleSchema,
-} from '@/domains/sessions/contract/model/models'
+} from '../model'
 import { identifierSchema } from '@/shared/validation'
 import { rosterRowField as field } from './roster-row-field'
 

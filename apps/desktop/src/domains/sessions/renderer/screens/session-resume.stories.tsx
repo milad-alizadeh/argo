@@ -6,8 +6,8 @@ import {
   type DriveSessionErrorCode,
   driveSessionError,
 } from '@/domains/sessions/contract/ipc/contract'
-import { SessionsSidebar } from '@/domains/sessions/renderer/roster/sessions-sidebar'
-import { sessionRosterRow } from '@/domains/sessions/renderer/session-fixtures'
+import { SessionsSidebar } from '../roster/sidebar/sessions-sidebar'
+import { sessionRosterRow } from '../session-fixtures'
 import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
 import { SessionScreenView } from './session-screen-view'
 

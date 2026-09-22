@@ -5,8 +5,8 @@ import {
   PLAN_ENTRY_STATUSES,
   type SessionPlan,
   type SessionPlanEntry,
-} from '@/domains/sessions/contract/model/models'
-import type { PlanChange, TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
+} from '@/domains/sessions/contract/model'
+import type { PlanChange, TranscriptRecord } from '@/domains/sessions/contract/model'
 
 type PlanStep = Omit<SessionPlanEntry, 'position'>
 

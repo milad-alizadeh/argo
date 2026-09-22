@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { RequestParams } from '@/harnesses/codex/drive/protocol'
+import type { RequestParams } from '../drive'
 
 const cursorSchema = z.object({ cursor: z.string().optional(), limit: z.number().int().positive() })
 

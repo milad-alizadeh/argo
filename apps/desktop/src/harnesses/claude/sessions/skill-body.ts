@@ -1,4 +1,4 @@
-import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
+import type { TranscriptRecord } from '@/domains/sessions/contract/model'
 import { isRecord } from '@/shared/validation'
 
 const SKILL_BODY_PREFIX = 'Base directory for this skill:'

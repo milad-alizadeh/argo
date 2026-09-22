@@ -3,7 +3,7 @@ import {
   type CodexTurnSetup,
   codexTurnSettings,
 } from '@/domains/sessions/contract/codex-turn-setup'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive'
 import { CodexSessionDriverError } from './codex-session-error'
 import { inputItemsFor } from './input-items'
 import type { ManagedSession, ManagedSessionOptions } from './managed-session'

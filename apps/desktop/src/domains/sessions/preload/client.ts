@@ -1,5 +1,5 @@
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
-import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive'
 import {
   type SessionAcceptedReply,
   type SessionArchiveListReply,
@@ -19,9 +19,9 @@ import {
   type SessionSubagentUsageReply,
   type SessionUnreadFocusReply,
   sessionError,
-} from '@/domains/sessions/contract/ipc/contract'
-import { SESSION_OPERATIONS } from '@/domains/sessions/contract/ipc/operations'
-import type { RosterStatus } from '@/domains/sessions/contract/ipc/search-contract'
+} from '@/domains/sessions/contract/ipc'
+import { SESSION_OPERATIONS } from '@/domains/sessions/contract/ipc'
+import type { RosterStatus } from '@/domains/sessions/contract/ipc'
 import { createDomainClient } from '@/shared/ipc/client'
 
 export type SessionHarnessent = {

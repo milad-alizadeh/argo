@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { compactionProgress, footerMode } from '@/harnesses/claude/drive/claude-setup.ts'
+import { compactionProgress, footerMode } from '../drive/claude-setup.ts'
 
 // Bytes Claude Code 2.1.270 drew across two Shift+Tab presses.
 const CYCLED_SCREEN =

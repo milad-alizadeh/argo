@@ -1,14 +1,7 @@
+import { useRosterWindowCursor, useRosterWindowStore, sessionRosterQuery } from './roster'
+import { retrySessionFeed, sessionFeedQuery } from './feed'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo } from 'react'
-import {
-  retrySessionFeed,
-  sessionFeedQuery,
-} from '@/domains/sessions/renderer/feed/session-feed-query'
-import { sessionRosterQuery } from '@/domains/sessions/renderer/roster/session-roster-query'
-import {
-  useRosterWindowCursor,
-  useRosterWindowStore,
-} from '@/domains/sessions/renderer/roster/use-roster-window-store'
 import type { SessionContractError } from './session-contract-error'
 import { mergeOptimisticRow, readableSessionId, useSessionCreationStore } from './session-creation'
 import { invalidateSessionRoster } from './session-queries'

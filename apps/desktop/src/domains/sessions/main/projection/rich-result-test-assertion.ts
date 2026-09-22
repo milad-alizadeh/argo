@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import type { RichResultBlock } from '@/domains/sessions/contract/model/transcript'
+import type { RichResultBlock } from '@/domains/sessions/contract/model'
 
 export function assertRichResult(blocks: RichResultBlock[] | undefined): void {
   assert.deepEqual(blocks, [

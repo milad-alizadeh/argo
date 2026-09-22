@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { stitchChains } from '@/domains/sessions/contract/model/chains.ts'
+import { stitchChains } from '@/domains/sessions/contract/model'
 import { UNREADABLE_ROW, unreadableRowHeight } from '@/domains/sessions/main/projection/feed.ts'
 import { projectFeed } from '@/domains/sessions/main/projection/feed-incremental.ts'
 import { fixtureFiles } from './session-fixtures'

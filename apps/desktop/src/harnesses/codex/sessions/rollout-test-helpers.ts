@@ -2,8 +2,8 @@ import { copyFile, mkdir, mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { createSessionReader } from '@/domains/sessions/main/observation/reader'
-import { listed } from '@/domains/sessions/main/observation/reader-test-helpers'
+import { createSessionReader } from '@/domains/sessions/main/observation'
+import { listed } from '@/domains/sessions/main/observation'
 
 export const OPEN_TURN_THREAD = '01a0b000-0000-7000-8000-000000000001'
 

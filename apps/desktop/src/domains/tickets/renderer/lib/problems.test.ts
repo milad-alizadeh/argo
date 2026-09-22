@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { connection } from '@/domains/tickets/renderer/detail/ticket-fixtures'
+import { connection } from '../detail/ticket-fixtures'
 import { initializeRendererI18n } from '@/platform/renderer/i18n/i18n'
 import { CATALOGS } from '@/renderer/catalogs'
 import { connectionProblem } from './problems'

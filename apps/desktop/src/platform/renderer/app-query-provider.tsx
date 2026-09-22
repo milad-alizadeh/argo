@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { type ReactNode, useState } from 'react'
 
-import { Toaster } from '@/platform/renderer/components/ui/toast'
+import { Toaster } from './components/ui/toast'
 
 export function AppQueryProvider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(

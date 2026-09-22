@@ -5,8 +5,8 @@ import assert from 'node:assert/strict'
 import {
   sessionFeedReplySchema,
   sessionListReplySchema,
-} from '@/domains/sessions/contract/ipc/contract'
-import type { SessionReader } from '@/domains/sessions/main/composition/bridge'
+} from '@/domains/sessions/contract/ipc'
+import { SessionReader } from '../composition'
 
 const listing = {
   version: 1 as const,

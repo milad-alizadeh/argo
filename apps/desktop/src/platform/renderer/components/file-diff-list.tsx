@@ -1,5 +1,5 @@
 import { type ReactNode, useState } from 'react'
-import { cn } from '@/platform/renderer/lib/utils'
+import { cn } from '../lib/utils'
 import { diffLines } from './file-diff-lines'
 import { Icon } from './icon'
 

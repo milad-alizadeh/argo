@@ -1,4 +1,4 @@
-import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive'
 import type { OwnershipLedger, OwnershipStanding } from '@/domains/sessions/main'
 import type { CompanionPart } from './companion-plugin'
 import { type ClaudeTurnRequest, deliverTurn, type TurnTarget, type Wait } from './deliver-turn'

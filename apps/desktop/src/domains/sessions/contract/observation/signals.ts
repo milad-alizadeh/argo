@@ -3,18 +3,18 @@
 // `plan.ts`'s. Every one is DERIVED from Tool Calls the transcript names, and each is absent
 // rather than guessed where the records do not carry it (CONTEXT.md L1 · degrade down).
 
-import { fileName } from '@/domains/sessions/contract/model/file-presentation'
+import { fileName } from '../model'
 import type {
   SessionActivity,
   SessionShellCommand,
   SessionSubagent,
-} from '@/domains/sessions/contract/model/models'
-import { toolPresentation } from '@/domains/sessions/contract/model/tool-feed'
+} from '../model'
+import { toolPresentation } from '../model'
 import type {
   ToolCall,
   TranscriptMessage,
   TranscriptRecord,
-} from '@/domains/sessions/contract/model/transcript'
+} from '../model'
 
 export type BackgroundTask = Extract<TranscriptRecord, { kind: 'background-task' }>
 

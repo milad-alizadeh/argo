@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionFeedRow } from '@/domains/sessions/contract/model/feed-rows'
-import { type ToolResult, toolRows } from '@/domains/sessions/contract/model/tool-feed'
-import { foldSettledToolRuns, groupToolRuns } from '@/domains/sessions/contract/model/tool-groups'
+import type { SessionFeedRow } from '@/domains/sessions/contract/model/feed'
+import { type ToolResult, toolRows } from '@/domains/sessions/contract/model/tool'
+import { foldSettledToolRuns, groupToolRuns } from '@/domains/sessions/contract/model/tool'
 import type { ToolCall } from '@/domains/sessions/contract/model/transcript'
 import { searchCall } from './tool-feed-test-fixtures'
 

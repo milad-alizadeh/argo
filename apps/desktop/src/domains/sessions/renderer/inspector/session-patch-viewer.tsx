@@ -1,7 +1,7 @@
+import { detectCodeLanguageFromPath } from '../feed'
+import { CodeBlock } from '../ai-elements'
 import { useTranslation } from 'react-i18next'
-import type { PatchFile } from '@/domains/sessions/contract/model/patch-files'
-import { CodeBlock } from '@/domains/sessions/renderer/ai-elements/code-block'
-import { detectCodeLanguageFromPath } from '@/domains/sessions/renderer/feed/content/code-language'
+import type { PatchFile } from '@/domains/sessions/contract/model'
 import { diffLineDecoration, diffLines } from '@/platform/renderer/components/file-diff-lines'
 import { type FileDiff, FileDiffList } from '@/platform/renderer/components/file-diff-list'
 

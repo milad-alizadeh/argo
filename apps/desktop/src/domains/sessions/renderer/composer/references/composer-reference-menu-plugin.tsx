@@ -1,3 +1,4 @@
+import type { SessionHarness } from '../../harness'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import {
   $getSelection,
@@ -8,7 +9,6 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import { useEffect, useRef, useState } from 'react'
-import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import {
   activeReference,
   ComposerReferenceMenu,

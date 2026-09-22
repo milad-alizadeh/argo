@@ -1,5 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query'
-import type { RosterStatus } from '@/domains/sessions/contract/ipc/contract'
+import type { RosterStatus } from '@/domains/sessions/contract/ipc'
 import type { SessionId } from './types'
 
 export const SESSION_REFRESH_MS = 500

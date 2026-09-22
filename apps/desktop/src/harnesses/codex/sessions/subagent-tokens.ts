@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises'
 import type {
   SessionSubagentUsage,
   SubagentUsageFacts,
-} from '@/domains/sessions/contract/model/background-work-contract'
+} from '@/domains/sessions/contract/model'
 import { isRecord } from '@/shared/validation'
 import { transcriptPaths } from './transcript-paths'
 

@@ -1,10 +1,10 @@
-import { dataImageUrl, imageBlocks } from '@/domains/sessions/contract/model/feed-images'
+import { dataImageUrl, imageBlocks } from '@/domains/sessions/contract/model'
 import type {
   ContentBlock,
   RichResultBlock,
   ToolCall,
   ToolResult,
-} from '@/domains/sessions/contract/model/transcript'
+} from '@/domains/sessions/contract/model'
 import { isRecord } from '@/shared/validation'
 import { askFacts } from './ask-facts'
 import { bashFacts } from './bash-facts'

@@ -1,4 +1,6 @@
 // The renderer capabilities other product domains may use. Harness sign-in feature internals
 // stay private.
-export { HarnessReadinessList } from '@/domains/harness-signin/renderer/components/harness-readiness-row'
-export { useHarnessReadiness } from '@/domains/harness-signin/renderer/hooks/use-harness-readiness'
+export { default as catalog } from './locales/en.json'
+export { HarnessReadinessList } from './components/harness-readiness-row'
+export { NoHarnessReadyScreen } from './screens/no-harness-ready-screen'
+export { useHarnessReadiness } from './hooks/use-harness-readiness'

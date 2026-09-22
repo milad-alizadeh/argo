@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { sessionRosterRowSchema } from '@/domains/sessions/contract/model/models'
-import { sessionErrorSchema } from '@/domains/sessions/contract/model/session-error'
+import { sessionRosterRowSchema } from '../model'
+import { sessionErrorSchema } from '../model'
 import { identifierSchema } from '@/shared/validation'
 
 // Which Sessions a reading scopes to: the Roster's own filter (`use-roster-filter-store.ts`

@@ -5,15 +5,12 @@
 import type {
   SessionRenameReply,
   SessionRenameRequest,
-} from '@/domains/sessions/contract/ipc/contract'
-import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+} from '@/domains/sessions/contract/ipc'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model'
 import type { SessionIndex, SessionSource } from '@/domains/sessions/main'
 import { discoverRoster } from '@/domains/sessions/main'
-import {
-  compactionEndedAt,
-  markCompactingRows,
-} from '@/harnesses/claude/compaction/compaction-roster'
-import type { LiveMessage } from '@/harnesses/claude/drive/live-messages'
+import { compactionEndedAt, markCompactingRows } from '../compaction'
+import type { LiveMessage } from '../drive'
 import {
   backfillTick,
   clearFullRecords,

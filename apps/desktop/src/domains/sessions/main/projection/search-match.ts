@@ -1,6 +1,6 @@
 // The one title/id match rule search reads by (#2375), shared by the indexed path
 // (`store-search.ts`) and the window-fallback path (`search-reads.ts`) so they can't drift apart.
-import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model'
 
 export function matchesSearchQuery(row: SessionRosterRow, query: string): boolean {
   const needle = query.trim().toLocaleLowerCase()

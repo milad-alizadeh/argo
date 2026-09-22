@@ -3,7 +3,7 @@
 // set, and `session-status-rollup.ts` folds that reading against the transcript-derived floor
 // without ever learning a Codex word.
 
-import type { SessionStatus } from '@/domains/sessions/contract/model/models'
+import type { SessionStatus } from '@/domains/sessions/contract/model'
 
 // The wire's own thread-status shape (`thread/status/changed`), read raw by `protocol.ts`, which
 // validates the shape and leaves the meaning to this module.

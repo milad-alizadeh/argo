@@ -1,10 +1,10 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MemoryRouter } from 'react-router'
-import { sessionRosterRow } from '@/domains/sessions/renderer/session-fixtures'
+import { sessionRosterRow } from '../session-fixtures'
 import { Loader, type LoaderSize } from '@/platform/renderer/components/loader'
-import { SessionRosterItem } from './session-roster-item'
-import { SessionsSidebarHeader } from './sessions-sidebar-chrome'
+import { SessionRosterItem } from './rows'
+import { SessionsSidebarHeader } from './sidebar'
 
 const LOADER_SIZES = [
   { key: 'meta', name: 'Meta', pixels: 12, use: 'Session rows and metadata' },

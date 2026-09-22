@@ -3,9 +3,9 @@ import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from '@/platform/renderer/components/ui/resizable'
-import { readCssSize } from '@/platform/renderer/lib/read-css-size'
-import { cn } from '@/platform/renderer/lib/utils'
+} from '../../components/ui/resizable'
+import { readCssSize } from '../../lib/read-css-size'
+import { cn } from '../../lib/utils'
 import { InspectorToggles } from './inspector-toggles'
 import { type InspectorSizes, useInspectorPanels } from './use-inspector-panels'
 

@@ -6,7 +6,7 @@ import { writeMockClaude } from '../../../mocks/cli/claude/mock-claude-cli'
 import {
   SESSION_CLAUDE_EXECUTABLE_ENV,
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
-} from '../../../src/domains/sessions/contract/proof-protocol'
+} from '@/domains/sessions/contract/proof-protocol'
 import { test as packagedTest } from '../../packaged-proof'
 import { openHiddenWindow } from '../../packaged-window'
 import { launch, prepareManual } from '../../projects/fixtures/project.fixture'

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader.ts'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions.ts'
+import { claudeSessionSource } from '../sessions/read-sessions.ts'
 import { fixtureRoot } from './session-fixtures'
 
 // The `Task` call in `subagentTail`, and the Subagent transcript its meta file joins to it.

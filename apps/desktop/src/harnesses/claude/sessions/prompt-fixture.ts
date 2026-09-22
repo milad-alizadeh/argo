@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { rowsOfRecord } from '@/domains/sessions/main/projection/feed'
+import { rowsOfRecord } from '@/domains/sessions/main/projection'
 import { parseTranscriptLine } from './records'
 
 // The Feed rows one transcript message draws, read through the real parser.

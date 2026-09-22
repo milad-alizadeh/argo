@@ -1,6 +1,6 @@
 import type { BrowserWindow } from 'electron'
-import { createProjectSetupRegistry } from '@/domains/projects/main/setup/persistence/project-setup-registry'
-import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
+import { createProjectSetupRegistry } from './persistence/project-setup-registry'
+import type { ProjectStore } from '../sqlite-store'
 import { projectSetupBridgeApi } from './project-setup-bridge-api'
 import type { ProjectSetupRuntime } from './project-setup-logic'
 

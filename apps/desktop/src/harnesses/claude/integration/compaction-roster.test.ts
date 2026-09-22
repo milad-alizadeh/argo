@@ -9,7 +9,7 @@ import {
   tempRoot,
   writeClaudeTranscript,
 } from '@/domains/sessions/main/observation/reader-test-helpers'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
+import { claudeSessionSource } from '../sessions/read-sessions'
 import { startedSession } from './claude-driver-launch.ts'
 
 const SESSION = 'session-a'

@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import {
   sessionFeedRowSchema,
   sessionRosterRowSchema,
-} from '@/domains/sessions/contract/model/models'
+} from '@/domains/sessions/contract/model'
 import { rosterRow } from '@/domains/sessions/contract/observation/roster-row-test-fixture'
 
 const roster = rosterRow()

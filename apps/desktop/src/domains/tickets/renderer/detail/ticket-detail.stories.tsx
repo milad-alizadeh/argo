@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { STATUSES } from '@/domains/tickets/renderer/status/status-fixtures'
+import { STATUSES } from '../status/status-fixtures'
 import { TicketDetail } from './ticket-detail'
 import { engine, prototype, wayfinder } from './ticket-fixtures'
 

@@ -6,8 +6,8 @@ import type { WorkspaceSummary } from '@/domains/projects/contract/workspace-mes
 import {
   type ProjectContractError,
   throwProjectContractError,
-} from '@/domains/projects/renderer/project-contract-error'
-import { projectListQueryKey } from '@/domains/projects/renderer/project-queries'
+} from '../project-contract-error'
+import { projectListQueryKey } from '../project-queries'
 import { useProjectMutations } from './use-project-mutations'
 import { useWorkspaces } from './use-workspaces'
 

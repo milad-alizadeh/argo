@@ -1,5 +1,5 @@
-import type { SessionChain } from '@/domains/sessions/contract/model/chains'
-import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript'
+import type { SessionChain } from '@/domains/sessions/contract/model'
+import { transcriptFileFrom } from '@/domains/sessions/contract/model'
 import { createTranscriptRecordReader } from '@/domains/sessions/main'
 import { normalizeCodexMessageRecords } from './discover'
 import { parseCodexTranscriptLine } from './records'

@@ -1,4 +1,4 @@
-import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model'
 import type { ClaudeSessionSnapshot } from './claude-session-projection'
 
 export function rosterFrom(snapshot: ClaudeSessionSnapshot): SessionRosterRow | null {

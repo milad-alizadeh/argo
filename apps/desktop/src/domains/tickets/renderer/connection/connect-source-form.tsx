@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { AccountSummary } from '@/domains/accounts/contract/contract'
 import { providerPresentation } from '@/domains/accounts/renderer'
 import type { TicketScope } from '@/domains/tickets/contract/contract'
-import { sourcePresentation } from '@/domains/tickets/renderer/lib/sources'
+import { sourcePresentation } from '../lib'
 import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {

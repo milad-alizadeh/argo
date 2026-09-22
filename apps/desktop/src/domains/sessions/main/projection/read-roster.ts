@@ -2,16 +2,12 @@
 // pieces of Session state that are Argo's own rather than any Harness's — the Ticket link and the
 // archive flag (#2315).
 
-import { type SessionListRequest, sessionError } from '@/domains/sessions/contract/ipc/contract'
-import {
-  isArchivedSession,
-  type SessionArchiveStore,
-} from '@/domains/sessions/main/archive/archive-store'
-import type { Discovered } from '@/domains/sessions/main/observation/merge-discovery'
-import { combineDiscoveries } from '@/domains/sessions/main/observation/merge-discovery'
-import { readFailure } from '@/domains/sessions/main/observation/read-declaration'
-import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
-import type { SessionUnreadStore } from '@/domains/sessions/main/unread/unread-store'
+import { type SessionListRequest, sessionError } from '@/domains/sessions/contract/ipc'
+import { isArchivedSession, SessionArchiveStore } from '../archive'
+import { Discovered, combineDiscoveries } from '../observation'
+import { readFailure } from '../observation'
+import { SessionSource } from '../observation'
+import { SessionUnreadStore } from '../unread'
 import type { SessionTicketLinkStore } from '@/domains/tickets/main'
 import { decodeRosterCursor } from './roster-cursor'
 

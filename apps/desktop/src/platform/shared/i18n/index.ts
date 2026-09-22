@@ -1,4 +1,4 @@
-import en from '@/platform/shared/i18n/locales/en.json'
+import en from './locales/en.json'
 
 export type PlatformCatalog = typeof en
 

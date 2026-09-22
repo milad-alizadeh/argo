@@ -2,8 +2,8 @@ import {
   type SessionFeedRow,
   UNREADABLE_ROW,
   unreadableRowHeight,
-} from '@/domains/sessions/contract/model/models'
-import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
+} from '@/domains/sessions/contract/model'
+import type { TranscriptRecord } from '@/domains/sessions/contract/model'
 import { isHiddenToolRunBoundary, rowsOfRecord } from './feed-row-projection'
 
 export { isHiddenToolRunBoundary, rowsOfRecord, UNREADABLE_ROW, unreadableRowHeight }

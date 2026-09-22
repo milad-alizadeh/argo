@@ -1,3 +1,5 @@
+import { $createComposerTicketReferenceNode, activeReference } from '../composer'
+import type { ComposerTicketContext } from '../composer'
 import {
   $createTextNode,
   $getSelection,
@@ -9,9 +11,6 @@ import {
 } from 'lexical'
 import type { RefObject } from 'react'
 import { useEffect, useState } from 'react'
-import { activeReference } from '@/domains/sessions/renderer/composer/references/composer-reference-menu'
-import { $createComposerTicketReferenceNode } from '@/domains/sessions/renderer/composer/references/composer-ticket-reference-node'
-import type { ComposerTicketContext } from '@/domains/sessions/renderer/composer/use-composer-store'
 import { ContextPicker } from './context-picker'
 
 function contextTicketButtons() {

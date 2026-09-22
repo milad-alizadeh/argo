@@ -5,7 +5,7 @@ import {
   projectError,
 } from '@/domains/projects/contract/contract'
 import { isRecord } from '@/shared/validation'
-import type { SetupDocument } from '../contract/setup-document'
+import type { SetupDocument } from '@/domains/projects/contract/setup'
 import { toSummary } from './presentation'
 import { readProjectConfiguration, readProjectConfigurationSource } from './project-configuration'
 import type { ProjectStore } from './register-project'

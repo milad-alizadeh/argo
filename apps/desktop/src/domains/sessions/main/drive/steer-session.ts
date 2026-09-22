@@ -1,5 +1,5 @@
-import type * as SessionContract from '@/domains/sessions/contract/ipc/contract'
-import { sessionError } from '@/domains/sessions/contract/ipc/contract'
+import type * as SessionContract from '@/domains/sessions/contract/ipc'
+import { sessionError } from '@/domains/sessions/contract/ipc'
 import { type OwnerContext, ownedAccepted } from './drive'
 
 export async function steerSession(

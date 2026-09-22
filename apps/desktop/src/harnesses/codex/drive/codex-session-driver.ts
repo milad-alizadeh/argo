@@ -1,5 +1,5 @@
 import { CODEX_OPENING_SETUP } from '@/domains/sessions/contract/codex-turn-setup'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive'
 import { createWatchedChanges } from '@/harnesses/composition/watched-changes'
 import type { CodexSessionDriver } from './codex-session-driver-types'
 import { CodexSessionDriverError } from './codex-session-error'

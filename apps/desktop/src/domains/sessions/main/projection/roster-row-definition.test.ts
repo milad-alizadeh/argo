@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { sessionRosterRowSchema } from '@/domains/sessions/contract/model/models'
+import { sessionRosterRowSchema } from '@/domains/sessions/contract/model'
 import { rosterRowFields } from '@/domains/sessions/contract/observation/roster-row-definition'
 
 test('declares every Roster row field exactly once', () => {

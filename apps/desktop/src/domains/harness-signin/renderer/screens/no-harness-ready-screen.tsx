@@ -1,7 +1,7 @@
 import { PlugZap } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { HarnessReadiness } from '@/domains/harness-signin/contract/contract'
-import { HarnessSignInCards } from '@/domains/harness-signin/renderer/components/harness-sign-in-cards'
+import { HarnessSignInCards } from '../components/harness-sign-in-cards'
 import {
   Empty,
   EmptyContent,

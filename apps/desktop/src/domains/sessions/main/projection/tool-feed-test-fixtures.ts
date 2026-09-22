@@ -1,6 +1,6 @@
-import type { SessionFeedRow } from '@/domains/sessions/contract/model/feed-rows'
-import { type ToolResult, toolRows } from '@/domains/sessions/contract/model/tool-feed'
-import type { ToolCall } from '@/domains/sessions/contract/model/transcript'
+import type { SessionFeedRow } from '@/domains/sessions/contract/model'
+import { type ToolResult, toolRows } from '@/domains/sessions/contract/model'
+import type { ToolCall } from '@/domains/sessions/contract/model'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 

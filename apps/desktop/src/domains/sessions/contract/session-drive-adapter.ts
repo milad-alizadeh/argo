@@ -1,9 +1,9 @@
 // One shape every Harness's drive adapter fills in (ADR-0024, #2030). Shared code calls only this
 // port; it never branches on which Harness it is talking to.
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
-import type { Permission, PermissionDecision } from '@/domains/sessions/contract/drive/permission'
-import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
-import type { DriveSessionErrorCode } from '@/domains/sessions/contract/model/session-error'
+import type { SessionAttachmentInput } from './drive'
+import type { Permission, PermissionDecision } from './drive'
+import type { QuestionAnswer } from './drive'
+import type { DriveSessionErrorCode } from './model'
 
 export type DriveFailureCode = DriveSessionErrorCode | 'missing-session'
 export type DriveFailure = { error: DriveFailureCode; message?: string }

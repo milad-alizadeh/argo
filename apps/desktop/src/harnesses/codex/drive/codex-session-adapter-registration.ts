@@ -1,5 +1,5 @@
 import type { SessionAdapterRegistration } from '@/domains/sessions/next/main/session-adapter-registry'
-import { createCodexAppServerSessionSource } from '@/harnesses/codex/observation/app-server-session-source'
+import { createCodexAppServerSessionSource } from '../observation'
 import { createCodexSessionAdapter } from './codex-session-adapter'
 
 export function createCodexSessionAdapterRegistration(options: {

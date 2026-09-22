@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { identifierSchema } from '@/shared/validation'
-import { sessionErrorSchema } from './session-error'
+import { sessionErrorSchema } from '../session-error'
 
 export const sessionUnreadFocusRequestSchema = z.strictObject({
   version: z.literal(1),

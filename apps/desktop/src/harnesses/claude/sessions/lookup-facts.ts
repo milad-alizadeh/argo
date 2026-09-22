@@ -2,7 +2,7 @@ import type {
   FetchFacts,
   ReadFacts,
   SearchFacts,
-} from '@/domains/sessions/contract/model/transcript'
+} from '@/domains/sessions/contract/model'
 
 function text(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value : null

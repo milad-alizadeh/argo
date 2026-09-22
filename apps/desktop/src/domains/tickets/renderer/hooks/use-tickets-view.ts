@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router'
 import { useAccounts } from '@/domains/accounts/renderer'
 import { useSelectedProject } from '@/domains/projects/renderer'
-import { useSettledQuery } from '@/domains/tickets/renderer/state/use-ticket-search'
+import { useSettledQuery } from '../state'
 import { useConnectForm } from './use-connect-form'
 import {
   connectedView,

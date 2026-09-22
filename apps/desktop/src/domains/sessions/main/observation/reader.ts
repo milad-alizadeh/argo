@@ -3,32 +3,18 @@ import {
   type SessionRenameRequest,
   type SessionUnreadFocusRequest,
   sessionError,
-} from '@/domains/sessions/contract/ipc/contract'
-import { archiveListRead, archiveSetWrite } from '@/domains/sessions/main/archive/archive-reads'
-import {
-  createInMemorySessionArchiveStore,
-  type SessionArchiveStore,
-} from '@/domains/sessions/main/archive/archive-store'
-import type { SessionReader } from '@/domains/sessions/main/composition/bridge'
-import type { HeldFeed } from '@/domains/sessions/main/projection/feed-cache'
-import type { FeedProjectionState } from '@/domains/sessions/main/projection/feed-incremental'
-import { listReply } from '@/domains/sessions/main/projection/read-roster'
-import { createFeedReader } from '@/domains/sessions/main/projection/read-session-feed'
-import {
-  delegationUsageRead,
-  shellOutputRead,
-  skillFileRead,
-  workspaceFileRead,
-} from '@/domains/sessions/main/projection/reads'
-import { searchRead } from '@/domains/sessions/main/projection/search-reads'
-import {
-  connectTicketReply,
-  disconnectTicketReply,
-} from '@/domains/sessions/main/projection/ticket-link-reader'
-import {
-  createInMemorySessionUnreadStore,
-  type SessionUnreadStore,
-} from '@/domains/sessions/main/unread/unread-store'
+} from '@/domains/sessions/contract/ipc'
+import { archiveListRead, archiveSetWrite } from '../archive'
+import { createInMemorySessionArchiveStore, SessionArchiveStore } from '../archive'
+import { SessionReader } from '../composition'
+import { HeldFeed } from '../projection'
+import { FeedProjectionState } from '../projection'
+import { listReply } from '../projection'
+import { createFeedReader } from '../projection'
+import { delegationUsageRead, shellOutputRead, skillFileRead, workspaceFileRead } from '../projection'
+import { searchRead } from '../projection'
+import { connectTicketReply, disconnectTicketReply } from '../projection'
+import { createInMemorySessionUnreadStore, SessionUnreadStore } from '../unread'
 import {
   createInMemorySessionTicketLinkStore,
   type SessionTicketLinkStore,

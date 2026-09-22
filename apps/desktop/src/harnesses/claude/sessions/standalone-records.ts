@@ -1,7 +1,7 @@
 import type {
   TranscriptMessage,
   TranscriptRecord,
-} from '@/domains/sessions/contract/model/transcript'
+} from '@/domains/sessions/contract/model'
 import { commandSource } from './command-source'
 import { messageEnvelope } from './message-envelope'
 

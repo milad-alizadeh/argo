@@ -1,4 +1,4 @@
-import type { SessionPlan, SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import type { SessionPlan, SessionRosterRow } from '@/domains/sessions/contract/model'
 import { managedRow, type OwnershipLedger } from '@/domains/sessions/main'
 import type { CodexChannel } from './codex-channel'
 import { CodexSessionDriverError } from './codex-session-error'

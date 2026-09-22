@@ -3,7 +3,7 @@ import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader.ts'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions.ts'
+import { claudeSessionSource } from '../sessions/read-sessions.ts'
 import { fixtureRoot } from './session-fixtures'
 
 function readFeed(value: unknown, root: string) {

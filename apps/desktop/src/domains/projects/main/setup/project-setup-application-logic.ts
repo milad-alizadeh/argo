@@ -1,9 +1,9 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { fromCallback } from 'xstate'
-import type { AcceptedSetupPlan } from '@/domains/projects/contract/setup-plan'
-import { runApplicationAgent } from '@/domains/projects/main/setup/onboarding-agent/application/run-application-agent'
-import { prepareSetupWorktree } from '@/domains/projects/main/setup/preparation/setup-worktree'
+import type { AcceptedSetupPlan } from '@/domains/projects/contract/setup'
+import { runApplicationAgent } from './onboarding-agent/application/run-application-agent'
+import { prepareSetupWorktree } from './preparation/setup-worktree'
 import type { ProjectSetupServices } from './project-setup-logic'
 import type { ProjectSetupContext, ProjectSetupEvent } from './project-setup-machine-types'
 import {

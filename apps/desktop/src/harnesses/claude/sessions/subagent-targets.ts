@@ -2,7 +2,7 @@
 import type {
   SubagentControlFacts,
   SubagentEvent,
-} from '@/domains/sessions/contract/model/transcript'
+} from '@/domains/sessions/contract/model'
 import { facts, responded } from './subagent-events'
 
 type Control = SubagentControlFacts & { id: string }

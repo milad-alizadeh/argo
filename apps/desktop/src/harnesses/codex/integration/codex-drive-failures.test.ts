@@ -3,8 +3,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { sendSession, startSession } from '@/domains/sessions/main/drive/drive.ts'
-import { createCodexSessionDriver } from '@/harnesses/codex/drive/codex-session-driver.ts'
-import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session-drive-adapter.ts'
+import { createCodexSessionDriver } from '../drive/codex-session-driver.ts'
+import { createCodexDriveAdapter } from '../drive/session-drive-adapter.ts'
 import {
   driverBackedByFixture,
   ownerHarnessFor,

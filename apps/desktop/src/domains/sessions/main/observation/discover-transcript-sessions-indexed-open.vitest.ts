@@ -5,7 +5,7 @@ import { appendFile, mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, test } from 'vitest'
-import { openSessionIndex } from '@/domains/sessions/main/index/session-index/open-index'
+import { openSessionIndex } from '../indexing'
 import {
   mockDiscoverer,
   writeManySessions,

@@ -1,6 +1,5 @@
 import { realpath } from 'node:fs/promises'
-import { createManagedWorkspace } from '@/domains/projects/main/workspaces/create-managed-workspace'
-import { reconcileWorkspaces } from '@/domains/projects/main/workspaces/workspace-reconciliation'
+import { createManagedWorkspace, reconcileWorkspaces } from './workspaces'
 import type { WorkspaceSelection } from '@/domains/sessions/next/contract/session-contract'
 import type { ProjectStore } from './sqlite-store'
 

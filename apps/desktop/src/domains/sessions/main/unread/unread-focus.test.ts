@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { sessionUnreadFocusReplySchema } from '@/domains/sessions/contract/ipc/contract'
-import { createInMemorySessionArchiveStore } from '@/domains/sessions/main/archive/archive-store'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { createInMemorySessionArchiveStore } from '../archive/archive-store'
+import { createSessionReader } from '../observation/reader'
 import {
   listed,
   tempRoot,
   writeClaudeTranscript,
-} from '@/domains/sessions/main/observation/reader-test-helpers'
+} from '../observation/reader-test-helpers'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
 import { createInMemorySessionUnreadStore } from './unread-store'
 

@@ -1,15 +1,15 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { sessionFeedReplySchema } from '@/domains/sessions/contract/model/feed-contract'
+import { sessionFeedReplySchema } from '@/domains/sessions/contract/model/feed'
 import {
   type SessionFeedRow,
   sessionFeedRowSchema,
-} from '@/domains/sessions/contract/model/feed-rows'
-import { toolRows } from '@/domains/sessions/contract/model/tool-feed'
+} from '@/domains/sessions/contract/model/feed'
+import { toolRows } from '@/domains/sessions/contract/model/tool'
 import {
   groupToolRuns,
   TOOL_KIND_PRESENTATION,
-} from '@/domains/sessions/contract/model/tool-groups'
+} from '@/domains/sessions/contract/model/tool'
 import type { ToolCall } from '@/domains/sessions/contract/model/transcript'
 import { editCall, fetchCall, searchCall } from './tool-feed-test-fixtures'
 

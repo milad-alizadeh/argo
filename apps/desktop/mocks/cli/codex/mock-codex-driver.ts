@@ -5,9 +5,9 @@ import { spawn } from 'node:child_process'
 import { chmod, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
-import type { OwnershipLedger } from '../../../src/domains/sessions/main/lifecycle/ownership-ledger.ts'
-import { createCodexSessionDriver } from '../../../src/harnesses/codex/drive/codex-session-driver.ts'
-import { channelForAppServerProcess } from '../../../src/harnesses/codex/drive/open-app-server.ts'
+import type { OwnershipLedger } from '@/domains/sessions/main/lifecycle/ownership-ledger.ts'
+import { createCodexSessionDriver } from '@/harnesses/codex/drive/codex-session-driver.ts'
+import { channelForAppServerProcess } from '@/harnesses/codex/drive/open-app-server.ts'
 
 // The proof always starts in `apps/desktop`, as `session-resume-case.ts`'s mock Claude notes:
 // `import.meta.url` is unavailable once the Playwright test runner loads this module as CommonJS.

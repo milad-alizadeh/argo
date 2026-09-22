@@ -7,7 +7,7 @@ import type {
 import {
   defaultProjectSetupHarnesses,
   type ProjectSetupHarness,
-} from '@/domains/projects/contract/project-setup-harness'
+} from '@/domains/projects/contract/setup'
 import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { RadioGroup, RadioGroupItem } from '@/platform/renderer/components/ui/radio-group'

@@ -1,6 +1,6 @@
-import { sessionSearchReplySchema } from '@/domains/sessions/contract/ipc/contract'
-import type { RosterStatus } from '@/domains/sessions/contract/ipc/search-contract'
-import type { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { sessionSearchReplySchema } from '@/domains/sessions/contract/ipc'
+import type { RosterStatus } from '@/domains/sessions/contract/ipc'
+import { createSessionReader } from '../observation'
 
 // The one `session.search` request shape both the Bun and Node search suites build, shared so a
 // test-runner split (#2372) does not also duplicate the request itself.

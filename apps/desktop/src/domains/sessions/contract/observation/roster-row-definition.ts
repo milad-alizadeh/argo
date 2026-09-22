@@ -3,7 +3,7 @@ import {
   type SessionRosterRow,
   type SessionTitle,
   sessionRosterRowSchema,
-} from '@/domains/sessions/contract/model/models'
+} from '../model'
 import type { RosterRowContext } from './roster-row-context'
 import { type RosterRowField, rosterRowFields } from './roster-row-fields'
 

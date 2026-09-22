@@ -10,9 +10,9 @@ import {
 } from '@/domains/accounts/renderer'
 import { useSelectedProject } from '@/domains/projects/renderer'
 import type { ConnectionSummary } from '@/domains/tickets/contract/contract'
-import { ConnectionStatusMark } from '@/domains/tickets/renderer/connection/connection-status-mark'
-import { useConnection, useTicketList } from '@/domains/tickets/renderer/hooks/use-tickets'
-import { uniqueTickets } from '@/domains/tickets/renderer/lib/backlog'
+import { ConnectionStatusMark } from '../connection'
+import { useConnection, useTicketList } from '../hooks'
+import { uniqueTickets } from '../lib'
 import { useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
 import { TicketsSidebarHeader } from './tickets-sidebar-header'
 

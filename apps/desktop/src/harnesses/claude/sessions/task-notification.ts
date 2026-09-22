@@ -1,7 +1,7 @@
 import type {
   TranscriptMessage,
   TranscriptRecord,
-} from '@/domains/sessions/contract/model/transcript'
+} from '@/domains/sessions/contract/model'
 import { taggedField } from '@/harnesses/envelope-tags'
 import { isIdentifier } from '@/shared/validation'
 import { backgroundState, readTaskEnding } from './background-task'

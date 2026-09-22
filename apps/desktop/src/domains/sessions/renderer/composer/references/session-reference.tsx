@@ -1,6 +1,6 @@
+import { HARNESSES, type SessionHarness } from '../../harness'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { HARNESSES, type SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import { Icon, type IconName } from '@/platform/renderer/components/icon'
 import { InlineContext } from './inline-context'
 

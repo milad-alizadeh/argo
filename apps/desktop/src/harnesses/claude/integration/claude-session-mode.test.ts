@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { CYCLE_MODE, REDRAW } from '@/harnesses/claude/drive/claude-setup.ts'
+import { CYCLE_MODE, REDRAW } from '../drive/claude-setup.ts'
 import { FOOTERS, OPENING, startedSession } from './claude-driver-launch.ts'
 
 test('cycles the Mode until the Claude footer shows the chosen Mode, then sends the Turn', async (context) => {

@@ -10,11 +10,11 @@ import { z } from 'zod'
 import type {
   SessionArchiveListRequest,
   SessionArchiveSetRequest,
-} from '@/domains/sessions/contract/ipc/contract'
-import { newestFirst, type SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import { fromContext, type ReadContext } from '@/domains/sessions/main/observation/read-declaration'
-import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
-import { rosterCursorMapSchema } from '@/domains/sessions/main/projection/roster-cursor'
+} from '@/domains/sessions/contract/ipc'
+import { newestFirst, type SessionRosterRow } from '@/domains/sessions/contract/model'
+import { fromContext, ReadContext } from '../observation'
+import { SessionSource } from '../observation'
+import { rosterCursorMapSchema } from '../projection'
 import { indexedResolution } from './archive-index-resolution'
 import { isArchivedSession } from './archive-store'
 import { growWindow } from './archive-window'

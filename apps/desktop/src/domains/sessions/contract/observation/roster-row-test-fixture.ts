@@ -1,4 +1,4 @@
-import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import type { SessionRosterRow } from '../model'
 
 // A complete Roster row: a test names only what it reads.
 export function rosterRow(overrides: Partial<SessionRosterRow> = {}): SessionRosterRow {

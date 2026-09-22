@@ -1,4 +1,4 @@
-import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
+import type { TranscriptRecord } from '@/domains/sessions/contract/model'
 import { isRecord } from '@/shared/validation'
 
 export function readTurnRecord(

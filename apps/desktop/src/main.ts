@@ -10,7 +10,7 @@ import { PROJECT_PROOF_STORE_ENV } from '@/domains/projects/main/proof-protocol'
 import {
   ATTACHMENT_SCHEME,
   attachmentPathFromUrl,
-} from '@/domains/sessions/contract/model/feed-images'
+} from '@/domains/sessions/contract/model'
 import { openDurableStores } from '@/main/durable-stores'
 import { startDesktopApplication } from '@/platform/main/application/start'
 import {

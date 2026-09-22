@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { appendFile } from 'node:fs/promises'
 import { test } from 'node:test'
-import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model'
 import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { createHeldRolloutReader, heldRolloutIds } from './held-rollouts'

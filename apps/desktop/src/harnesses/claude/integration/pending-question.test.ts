@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { claudePendingQuestion } from '@/harnesses/claude/sessions/pending-question'
+import { claudePendingQuestion } from '../sessions/pending-question'
 import { fixtureRoot } from './session-fixtures'
 
 test('reads the tool call id of a question still waiting on a person', async (context) => {

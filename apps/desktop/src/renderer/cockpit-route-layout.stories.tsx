@@ -4,8 +4,8 @@ import { useState } from 'react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { expect, userEvent, within } from 'storybook/test'
 import type { Harness, HarnessReadinessState } from '@/domains/harness-signin/contract/contract'
-import { SessionsSidebar } from '@/domains/sessions/renderer/roster/sessions-sidebar'
-import { SELECTED_SESSION_KEY } from '@/domains/sessions/renderer/roster/use-sidebar-actions'
+import { SessionsSidebar } from '@/domains/sessions/renderer/roster/sidebar/sessions-sidebar'
+import { SELECTED_SESSION_KEY } from '@/domains/sessions/renderer/roster/sidebar/use-sidebar-actions'
 import { CockpitRouteLayout } from './cockpit-router'
 
 function CockpitRouteLayoutStory() {

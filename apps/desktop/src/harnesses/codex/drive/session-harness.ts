@@ -3,9 +3,8 @@
 // iterates. No file outside `harnesses/codex` names this driver's shape.
 import path from 'node:path'
 import { SESSION_CODEX_EXECUTABLE_ENV } from '@/domains/sessions/contract/proof-protocol'
-import { attachCodexCompactionBridge } from '@/harnesses/codex/compaction/bridge'
-import { codexTranscriptsRoot } from '@/harnesses/codex/sessions/roots'
-import { codexTranscriptSource } from '@/harnesses/codex/sessions/transcript-source'
+import { attachCodexCompactionBridge } from '../compaction'
+import { codexTranscriptsRoot, codexTranscriptSource } from '../sessions'
 import type { HarnessRegistration } from '@/harnesses/composition/harness-registration'
 import { renameCodexSession } from './rename-session'
 import { createCodexDriveAdapter } from './session-drive-adapter'

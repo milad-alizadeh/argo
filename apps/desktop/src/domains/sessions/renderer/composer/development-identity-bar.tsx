@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import type { SessionTicket } from '@/domains/sessions/contract/model/models'
+import type { SessionTicket } from '@/domains/sessions/contract/model'
 import { Icon } from '@/platform/renderer/components/icon'
 import type { DevelopmentIdentity } from '@/platform/shared/development-identity'
 

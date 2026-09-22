@@ -4,7 +4,7 @@ import type {
   TranscriptMessage,
   TranscriptRecord,
 } from '@/domains/sessions/contract/model/transcript'
-import { rosterMetadata } from '@/domains/sessions/main/projection/roster-metadata'
+import { rosterMetadata } from '../projection/roster-metadata'
 import { transcriptMessage } from './transcript-test-fixtures'
 
 function message(overrides: Partial<TranscriptMessage>): TranscriptMessage {

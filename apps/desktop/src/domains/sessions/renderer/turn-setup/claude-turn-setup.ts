@@ -2,7 +2,7 @@ import {
   CLAUDE_EFFORTS,
   CLAUDE_MODELS,
   type ClaudeTurnSetup,
-} from '@/domains/sessions/contract/ipc/contract'
+} from '@/domains/sessions/contract/ipc'
 import type { ModeChoice, SetupChoice, TurnSetupChoices } from './turn-setup'
 
 type ClaudeModel = ClaudeTurnSetup['model']

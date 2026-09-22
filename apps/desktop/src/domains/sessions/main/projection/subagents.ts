@@ -1,6 +1,6 @@
 // One reading of a Session's Subagents for the row's dots and the Agents rail (#1269); an open one is running only while its Session is live (#1076).
-import type { SessionStatus, SessionSubagent } from '@/domains/sessions/contract/model/models'
-import { LIVE_ACTIVITY_SILENCE_MS } from '@/domains/sessions/main/lifecycle/liveness'
+import type { SessionStatus, SessionSubagent } from '@/domains/sessions/contract/model'
+import { LIVE_ACTIVITY_SILENCE_MS } from '../lifecycle'
 
 const LIVE: readonly SessionStatus[] = ['starting', 'running', 'permission', 'asking']
 

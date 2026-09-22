@@ -3,7 +3,7 @@ import { elapsedMilliseconds } from '@/domains/sessions/contract/duration'
 import type {
   SubagentControlFacts,
   SubagentEvent,
-} from '@/domains/sessions/contract/model/transcript'
+} from '@/domains/sessions/contract/model'
 
 // The first line of a reply, with the Markdown marks a reader would not want stripped.
 export function replyLine(reply: string): string | undefined {

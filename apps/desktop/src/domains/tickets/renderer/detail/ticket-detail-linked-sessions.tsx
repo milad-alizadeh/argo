@@ -1,4 +1,4 @@
-import type { LinkedSession } from '@/domains/tickets/renderer/hooks/use-linked-sessions'
+import type { LinkedSession } from '../hooks'
 import { Icon } from '@/platform/renderer/components/icon'
 import { linkRow, stateIcon } from './ticket-detail-links'
 import { TicketDetailSection } from './ticket-detail-section'

@@ -5,11 +5,11 @@ import type {
 } from '@/domains/sessions/next/contract/session-contract'
 import type { SessionCommandOutcome } from '@/domains/sessions/next/contract/session-projection-contract'
 import type { SessionService } from '@/domains/sessions/next/main/session-service'
-import { beginWatchedResume } from '@/harnesses/codex/history/resume-watched'
 import {
+  beginWatchedResume,
   type HistoryTransport,
   readResumePermission,
-} from '@/harnesses/codex/history/vendor-history'
+} from '../history'
 import type { AppServerSupervisor } from './app-server-supervisor-machine'
 import { executeSend, requireSessionEntry, type SessionRegistry } from './codex-session-commands'
 import { CodexSessionDriverError } from './codex-session-error'

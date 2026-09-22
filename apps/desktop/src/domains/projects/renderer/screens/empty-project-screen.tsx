@@ -1,5 +1,5 @@
-import { useProjects } from '@/domains/projects/renderer'
-import { EmptyProjectWindow } from '@/domains/projects/renderer/components/empty-project-window'
+import { useProjects } from '..'
+import { EmptyProjectWindow } from '../components'
 import { useCommands } from '@/platform/renderer/cockpit/hooks/use-commands'
 import { REGISTER_PROJECT_COMMAND } from '@/platform/shared/commands'
 

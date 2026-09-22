@@ -6,8 +6,8 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { sessionArchiveListReplySchema } from '@/domains/sessions/contract/ipc/contract'
-import { ROSTER_PAGE_SIZE } from '@/domains/sessions/main/observation/discover-transcript-sessions'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { ROSTER_PAGE_SIZE } from '../observation/discover-transcript-sessions'
+import { createSessionReader } from '../observation/reader'
 import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main'
 import {
   claudeRoot,

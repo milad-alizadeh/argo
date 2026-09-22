@@ -13,7 +13,7 @@ import {
   type TextNode,
 } from 'lexical'
 import { useEffect } from 'react'
-import type { ComposerTicketContext } from '@/domains/sessions/renderer/composer/use-composer-store'
+import type { ComposerTicketContext } from '../hooks'
 import {
   $createComposerTicketReferenceNode,
   ComposerTicketReferenceNode,

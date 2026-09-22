@@ -6,7 +6,7 @@
 // renderer's own registration, so a namespace is added in one place.
 import { expect, test } from 'bun:test'
 import { PROJECT_ERROR_CODES } from '@/domains/projects/contract/contract'
-import { PROJECT_SETUP_RECOVERY_CODES } from '@/domains/projects/contract/project-setup-recovery'
+import { PROJECT_SETUP_RECOVERY_CODES } from '@/domains/projects/contract/setup'
 import { PROJECT_SETUP_RECOVERY_KEYS } from '@/domains/projects/renderer/setup/project-setup-recovery-text'
 import { CATALOGS } from './catalogs'
 

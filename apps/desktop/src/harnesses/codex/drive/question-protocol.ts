@@ -3,8 +3,8 @@ import type {
   Question,
   QuestionAnswer,
   QuestionOption,
-} from '@/domains/sessions/contract/drive/question'
-import type { SessionStatus } from '@/domains/sessions/contract/model/models'
+} from '@/domains/sessions/contract/drive'
+import type { SessionStatus } from '@/domains/sessions/contract/model'
 import type { RequestID, WireMessage } from './protocol'
 import { protocolRecord, protocolString } from './protocol'
 

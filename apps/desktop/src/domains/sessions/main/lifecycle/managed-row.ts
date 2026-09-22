@@ -1,11 +1,11 @@
-import type { SessionRosterRow, SessionTitle } from '@/domains/sessions/contract/model/models'
-import { TITLE_SOURCES } from '@/domains/sessions/contract/model/models'
+import type { SessionRosterRow, SessionTitle } from '@/domains/sessions/contract/model'
+import { TITLE_SOURCES } from '@/domains/sessions/contract/model'
 import {
   type ManagedRosterSeed,
   managedRosterRow,
   reconcileRosterRow,
-} from '@/domains/sessions/contract/observation/roster-row-definition'
-import type { TranscriptDiscovery } from '@/domains/sessions/main/observation/discover-transcript-sessions'
+} from '@/domains/sessions/contract/observation'
+import { TranscriptDiscovery } from '../observation'
 import { rollupSessionStatus } from './session-status-rollup'
 
 function titleRank(title: SessionTitle | null): number {

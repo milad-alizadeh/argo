@@ -1,10 +1,10 @@
-import { SESSION_ENTRIES, type SessionEntry } from '@/domains/sessions/contract/model/models'
+import { SESSION_ENTRIES, type SessionEntry } from '@/domains/sessions/contract/model'
 import type {
   ContentBlock,
   ToolCall,
   TranscriptMessage,
   TranscriptRecord,
-} from '@/domains/sessions/contract/model/transcript'
+} from '@/domains/sessions/contract/model'
 import { isRecord } from '@/shared/validation'
 import { readBackgroundTask } from './background-task'
 import { readBlocks, readToolCalls, readToolResults } from './block-reader'

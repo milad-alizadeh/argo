@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { z } from 'zod'
 import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
-import { errorFactory, errorSchema, message } from '@/shared/messages'
+import { errorFactory, errorSchema, message } from '../messages'
 import { createMockIpcWindow, RENDERER_URL } from '../../../mocks/contract/mock-ipc-window'
 import { createDomainClient } from './client'
 

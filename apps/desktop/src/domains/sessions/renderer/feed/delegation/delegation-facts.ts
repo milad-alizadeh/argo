@@ -1,5 +1,5 @@
+import type { WorkState } from '../../work'
 // The Feed uses the same state names and status marks as the Roster.
-import type { WorkState } from '@/domains/sessions/renderer/work/session-work'
 
 export type DelegationPhase = 'running' | 'succeeded' | 'failed' | 'interrupted'
 

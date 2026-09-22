@@ -1,12 +1,12 @@
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/platform/renderer/components/ui/button'
-import { ButtonGroup, ButtonGroupSeparator } from '@/platform/renderer/components/ui/button-group'
+import { Button } from './ui/button'
+import { ButtonGroup, ButtonGroupSeparator } from './ui/button-group'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/platform/renderer/components/ui/dropdown-menu'
+} from './ui/dropdown-menu'
 import { Icon } from './icon'
 
 // What each Harness's standing allow covers: Claude's gate remembers similar calls, Codex the Session.

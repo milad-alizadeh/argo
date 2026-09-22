@@ -1,13 +1,6 @@
+import { CodeBlock, CodeBlockActions, CodeBlockFilename, CodeBlockHeader, CodeBlockTitle, CodeBlockCopyButton } from '../ai-elements'
 import type { RefObject } from 'react'
 import type { BundledLanguage } from 'shiki/langs'
-import {
-  CodeBlock,
-  CodeBlockActions,
-  CodeBlockFilename,
-  CodeBlockHeader,
-  CodeBlockTitle,
-} from '@/domains/sessions/renderer/ai-elements/code-block'
-import { CodeBlockCopyButton } from '@/domains/sessions/renderer/ai-elements/code-block-copy-button'
 import { diffLineDecoration, diffLines } from '@/platform/renderer/components/file-diff-lines'
 import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'

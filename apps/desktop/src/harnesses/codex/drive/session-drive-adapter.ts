@@ -1,6 +1,6 @@
 import { codexTurnSetupSchema } from '@/domains/sessions/contract/codex-turn-setup'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
-import type { Permission } from '@/domains/sessions/contract/drive/permission'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive'
+import type { Permission } from '@/domains/sessions/contract/drive'
 import type {
   DriveFailure,
   SessionDriveAdapter,

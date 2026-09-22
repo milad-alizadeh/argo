@@ -1,7 +1,7 @@
 import type {
   BackgroundState,
   BackgroundTaskRecord,
-} from '@/domains/sessions/contract/model/transcript'
+} from '@/domains/sessions/contract/model'
 import { taggedField } from '@/harnesses/envelope-tags'
 import { isRecord } from '@/shared/validation'
 

@@ -3,7 +3,7 @@
 // the browser itself and blocks until the flow ends, so login() resolves only then.
 import { type ChildProcess, spawn } from 'node:child_process'
 import type { HarnessSignInDriver } from '@/domains/harness-signin/main'
-import { claudeCliEnvironment } from '@/harnesses/claude/cli-environment'
+import { claudeCliEnvironment } from '../cli-environment'
 import { findExecutableOnLoginShellPath } from '@/harnesses/executable-path'
 import { runLoginProcess } from '@/harnesses/run-login-process'
 import { createSystemClaudeReadiness } from './system-claude-readiness'

@@ -1,20 +1,22 @@
+import type { SessionHarness } from '../harness'
+import type { TurnMarkerView } from '../feed'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { NavigateFunction } from 'react-router'
 import type { Cockpit, ProjectActions } from '@/domains/projects/renderer'
-import type { SessionErrorCode } from '@/domains/sessions/contract/ipc/contract'
-import type { TurnMarkerView } from '@/domains/sessions/renderer/feed/turn-marker-state'
-import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
-import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
-import type { useSessions } from '@/domains/sessions/renderer/use-sessions'
-import { composerIdentityKey } from './composer-identity'
-import { composerSend } from './composer-send'
-import type { SessionComposerProps } from './session-composer'
-import { managedSessionIsRunning, useComposerActions } from './use-composer-actions'
-import { useComposerFacts } from './use-composer-facts'
-import { useComposerStore } from './use-composer-store'
-import type { Failure } from './use-session-composer-actions'
-import { useSessionMutations } from './use-session-mutations'
+import type { SessionErrorCode } from '@/domains/sessions/contract/ipc'
+import type { SessionFeedRow } from '../types'
+import type { useSessions } from '../use-sessions'
+import { composerIdentityKey } from './identity'
+import { composerSend, type Failure } from './send'
+import type { SessionComposerProps } from './editor'
+import {
+  managedSessionIsRunning,
+  useComposerActions,
+  useComposerFacts,
+  useComposerStore,
+  useSessionMutations,
+} from './hooks'
 
 type SessionComposerOptions = {
   harness: SessionHarness

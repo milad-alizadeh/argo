@@ -8,8 +8,8 @@ import { mock } from 'bun:test'
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { SESSION_OPERATIONS } from '@/domains/sessions/contract/ipc/operations'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
-import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
+import { createSessionReader } from '../observation/reader'
+import type { SessionSource } from '../observation/session-source'
 import { electronStandIn } from '@/platform/main/testing/electron-stand-in'
 import { createMockIpcWindow, RENDERER_URL } from '../../../../../mocks/contract/mock-ipc-window'
 import { DECLARATIONS, type Declaration, owningSource, type Reply } from './reads-failure-cases'
@@ -18,7 +18,7 @@ import { DECLARATIONS, type Declaration, owningSource, type Reply } from './read
 // reaches. The stand-in goes in before the bridge is imported, as a static import would resolve
 // the real `electron` package first.
 mock.module('electron', () => electronStandIn)
-const { attachSessionBridge } = await import('@/domains/sessions/main/composition/bridge')
+const { attachSessionBridge } = await import('../composition/bridge')
 
 function invoking(sources: SessionSource[]) {
   const ipc = createMockIpcWindow()

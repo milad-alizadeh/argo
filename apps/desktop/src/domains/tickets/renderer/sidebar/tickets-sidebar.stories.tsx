@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { connection } from '@/domains/tickets/renderer/detail/ticket-fixtures'
-import { useTicketSearch } from '@/domains/tickets/renderer/state/use-ticket-search'
+import { connection } from '../detail/ticket-fixtures'
+import { useTicketSearch } from '../state/use-ticket-search'
 import { TicketsSidebarContent, type TicketsSidebarContentProps } from './tickets-sidebar'
 
 const meta = {

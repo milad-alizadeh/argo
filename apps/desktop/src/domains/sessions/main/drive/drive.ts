@@ -1,6 +1,6 @@
-import type * as SessionContract from '@/domains/sessions/contract/ipc/contract'
-import { sessionError } from '@/domains/sessions/contract/ipc/contract'
-import { driveSessionErrorWithMessage } from '@/domains/sessions/contract/model/session-error'
+import type * as SessionContract from '@/domains/sessions/contract/ipc'
+import { sessionError } from '@/domains/sessions/contract/ipc'
+import { driveSessionErrorWithMessage } from '@/domains/sessions/contract/model'
 import type {
   DriveFailureCode,
   SessionDriveAdapter,

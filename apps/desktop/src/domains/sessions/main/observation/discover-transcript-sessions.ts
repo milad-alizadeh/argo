@@ -2,23 +2,16 @@ import {
   createChainCache,
   createChainHistory,
   type SessionChain,
-} from '@/domains/sessions/contract/model/chains'
-import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import type { TranscriptFile } from '@/domains/sessions/contract/model/transcript'
-import {
-  boundIndexedWindow,
-  presentedRows,
-} from '@/domains/sessions/main/index/discover-indexed-window'
-import { createFullRecordTracker } from '@/domains/sessions/main/index/full-record-tracker'
-import { createBackgroundIndexing } from '@/domains/sessions/main/index/session-index/background-indexing'
-import type {
-  BackfillProgress,
-  SessionIndex,
-  TranscriptPath,
-} from '@/domains/sessions/main/index/session-index/contract'
-import { createTitleLedger } from '@/domains/sessions/main/lifecycle/title-ledger'
-import { projectRosterRow } from '@/domains/sessions/main/projection/roster'
-import { rosterMetadata } from '@/domains/sessions/main/projection/roster-metadata'
+} from '@/domains/sessions/contract/model'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model'
+import type { TranscriptFile } from '@/domains/sessions/contract/model'
+import { boundIndexedWindow, presentedRows } from '../indexing'
+import { createFullRecordTracker } from '../indexing'
+import { createBackgroundIndexing } from '../indexing'
+import { BackfillProgress, SessionIndex, TranscriptPath } from '../indexing'
+import { createTitleLedger } from '../lifecycle'
+import { projectRosterRow } from '../projection'
+import { rosterMetadata } from '../projection'
 import { createChainReader } from './chain-reader'
 import {
   discoverSessionsWith,

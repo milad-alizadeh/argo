@@ -10,12 +10,12 @@ import { sessionArchiveSetReplySchema } from '@/domains/sessions/contract/ipc/co
 import {
   createSessionArchiveStore,
   sessionArchivePath,
-} from '@/domains/sessions/main/archive/archive-store'
+} from '../archive/archive-store'
 import {
   indexedAdapters,
   sessionIdAt,
-} from '@/domains/sessions/main/index/session-index/roster-fixtures'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+} from '../indexing/session-index/roster-fixtures'
+import { createSessionReader } from '../observation/reader'
 import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'

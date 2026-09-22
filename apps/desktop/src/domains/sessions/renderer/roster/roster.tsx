@@ -1,19 +1,20 @@
 import { type RefObject, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Session, SessionId } from '@/domains/sessions/renderer/types'
-import { RenameDialog } from './rename-dialog'
-import type { RosterActions } from './roster-actions'
-import { useOrderedSessions } from './roster-order'
-import { RosterOutcome } from './roster-outcome'
-import { rosterRows } from './roster-rows'
-import { RosterVirtualList } from './roster-virtual-list'
-import { rosterState, SessionsSidebarHeader } from './sessions-sidebar-chrome'
-import { useArchivedSection } from './use-archived-section'
-import { useRenameDialog } from './use-rename-dialog'
-import { useRosterStatus } from './use-roster-filter-store'
-import { useSidebarRoster } from './use-sidebar-roster'
+import type { Session, SessionId } from '../types'
+import { useArchivedSection } from './archived'
+import { useRosterStatus } from './hooks'
+import { RenameDialog, useRenameDialog } from './rename'
+import {
+  type RosterActions,
+  RosterOutcome,
+  RosterVirtualList,
+  rosterRows,
+  rosterState,
+  useOrderedSessions,
+} from './rows'
+import { SessionsSidebarHeader, useSidebarRoster } from './sidebar'
 
-export type { RosterActions } from './roster-actions'
+export type { RosterActions } from './rows'
 
 const NOOP = () => {}
 

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { parseCodexTranscriptLine } from '@/harnesses/codex/sessions/records'
+import { parseCodexTranscriptLine } from '../sessions/records'
 import { assertUserMessage } from './assert-user-message'
 
 test('keeps malformed Codex evidence visible as unreadable', () => {

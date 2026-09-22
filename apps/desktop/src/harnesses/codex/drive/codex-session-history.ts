@@ -1,13 +1,11 @@
 import {
-  createRolloutInvalidation,
-  watchRolloutSignals,
-} from '@/harnesses/codex/history/rollout-signal'
-import {
   CodexHistoryUnavailableError,
+  createRolloutInvalidation,
+  createWatchedCodexSessions,
   type HistoryTransport,
   requestStoredHistory,
-} from '@/harnesses/codex/history/vendor-history'
-import { createWatchedCodexSessions } from '@/harnesses/codex/history/watched-session'
+  watchRolloutSignals,
+} from '../history'
 import type { AppServerSupervisor } from './app-server-supervisor-machine'
 import { waitForChannel } from './codex-session-launch'
 

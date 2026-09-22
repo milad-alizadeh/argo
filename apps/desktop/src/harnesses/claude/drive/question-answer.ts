@@ -1,4 +1,4 @@
-import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
+import type { QuestionAnswer } from '@/domains/sessions/contract/drive'
 import type { Wait } from './deliver-turn'
 
 export type AnswerTarget = { process: { write: (text: string) => void } }

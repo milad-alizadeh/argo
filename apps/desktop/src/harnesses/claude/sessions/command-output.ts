@@ -1,4 +1,4 @@
-import { TAG } from '@/harnesses/claude/compaction/compaction-hook'
+import { TAG } from '../compaction'
 
 const COLOUR = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, 'g')
 // The Harness's own report of a `/compact`, which the Feed's compaction divider already makes.

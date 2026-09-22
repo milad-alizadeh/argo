@@ -1,6 +1,6 @@
+import type { SessionHarness } from '../../harness'
 import type { EditorConfig, NodeKey, SerializedTextNode } from 'lexical'
 import { TextNode } from 'lexical'
-import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import { composerReferenceIcon } from './composer-reference-icon'
 import { harnessLabel, referenceBySource, referenceSupportsHarness } from './session-reference'
 

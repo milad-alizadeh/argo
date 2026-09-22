@@ -2,7 +2,7 @@ import {
   type DriveSessionErrorCode,
   driveSessionError,
   sessionError,
-} from '@/domains/sessions/contract/model/session-error'
+} from '@/domains/sessions/contract/model'
 
 export type CodexDriverErrorCode = DriveSessionErrorCode | 'missing-session'
 

@@ -1,6 +1,6 @@
+import type { SessionHarness } from './harness'
 import { create } from 'zustand'
-import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model'
 
 // A tempId names the Roster row before the backend has ever heard of it, so a reader can tell it
 // apart from a real Session id on sight (`isOptimisticSessionId`).

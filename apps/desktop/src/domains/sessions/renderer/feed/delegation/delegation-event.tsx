@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
-import { WORK_STATE_MARKS } from '@/domains/sessions/renderer/work/session-work'
-import { readableWorkTitle } from '@/domains/sessions/renderer/work/work-presentation'
+import type { SessionFeedRow } from '../../types'
+import { readableWorkTitle, WORK_STATE_MARKS } from '../../work'
 import { Icon } from '@/platform/renderer/components/icon'
 import { DELEGATION_PHASE_WORK_STATES, type DelegationPhase } from './delegation-facts'
 

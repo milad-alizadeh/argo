@@ -8,15 +8,11 @@ import type {
   SessionShellOutputRequest,
   SessionSkillRequest,
   SessionSubagentUsageRequest,
-} from '@/domains/sessions/contract/ipc/contract'
-import type { SessionChain } from '@/domains/sessions/contract/model/chains'
-import {
-  fromNothing,
-  fromOwner,
-  MISSING_SESSION,
-} from '@/domains/sessions/main/observation/read-declaration'
-import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
-import { fileInWorkspace } from '@/domains/sessions/main/observation/workspace-file'
+} from '@/domains/sessions/contract/ipc'
+import type { SessionChain } from '@/domains/sessions/contract/model'
+import { fromNothing, fromOwner, MISSING_SESSION } from '../observation'
+import { SessionSource } from '../observation'
+import { fileInWorkspace } from '../observation'
 import { skillFileContent } from './read-skill-file'
 
 // The workspace one Session ran in, as its last record named it.

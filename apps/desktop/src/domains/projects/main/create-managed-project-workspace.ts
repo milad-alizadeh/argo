@@ -3,7 +3,7 @@ import type {
   ProjectWorkspaceCreateManagedRequest,
   ProjectWorkspaceListed,
 } from '@/domains/projects/contract/workspace-messages'
-import { createManagedWorkspace } from '@/domains/projects/main/workspaces/create-managed-workspace'
+import { createManagedWorkspace } from './workspaces'
 import { listProjectWorkspaces, relistRequest } from './list-project-workspaces'
 import { findProject, type ProjectStore } from './register-project'
 

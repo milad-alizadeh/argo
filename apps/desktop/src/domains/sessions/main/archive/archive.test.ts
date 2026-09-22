@@ -2,13 +2,13 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { sessionArchiveSetReplySchema } from '@/domains/sessions/contract/ipc/contract'
-import { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { createSessionReader } from '../observation/reader'
 import {
   listed,
   tempRoot,
   writeClaudeTranscript,
   writeCodexTranscript,
-} from '@/domains/sessions/main/observation/reader-test-helpers'
+} from '../observation/reader-test-helpers'
 import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'

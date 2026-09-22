@@ -7,13 +7,10 @@ import {
   type SessionFeedReply,
   type SessionFeedRequest,
   sessionError,
-} from '@/domains/sessions/contract/ipc/contract'
-import { type OwnerFor, readFailure } from '@/domains/sessions/main/observation/read-declaration'
-import {
-  readFeedWithOverlay,
-  readOwnedFeed,
-} from '@/domains/sessions/main/observation/read-owned-feed'
-import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
+} from '@/domains/sessions/contract/ipc'
+import { OwnerFor, readFailure } from '../observation'
+import { readFeedWithOverlay, readOwnedFeed } from '../observation'
+import { SessionSource } from '../observation'
 import { disposeFeed, type HeldFeed } from './feed-cache'
 import type { FeedProjectionState } from './feed-incremental'
 import { createFeedReads, isAbortError } from './feed-reads'

@@ -1,6 +1,6 @@
 import { type ReactNode, type RefObject, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/platform/renderer/components/ui/button'
+import { Button } from './ui/button'
 import { focusAfterLeaving, useExitPresence } from './exit-presence'
 import { Icon } from './icon'
 import { AllowButton, type PermissionAnswer, type SessionHarness } from './permission-allow-button'

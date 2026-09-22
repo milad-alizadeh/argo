@@ -1,20 +1,17 @@
+import { INACTIVE_FEED_LIVE_FACTS, BasicFeed } from '../feed'
 // One Subagent's own transcript, drawn in the inspector beside the Session's own Feed rather than
 // in place of it (#1582). The document is the Feed's, so a Subagent reads exactly the way the
 // Session it belongs to reads.
 
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { SessionSubagent } from '@/domains/sessions/contract/model/models'
-import { BasicFeed } from '@/domains/sessions/renderer/feed/basic-feed'
-import { INACTIVE_FEED_LIVE_FACTS } from '@/domains/sessions/renderer/feed/feed-live-facts'
+import type { SessionSubagent } from '@/domains/sessions/contract/model'
 import type {
   SessionError,
   SessionEvidence,
   SessionFeed,
   SessionFeedRow,
-} from '@/domains/sessions/renderer/types'
-
-import '@/domains/sessions/renderer/feed/feed.css'
+} from '../types'
 
 function useVisibleInspector() {
   const inspector = useRef<HTMLElement>(null)

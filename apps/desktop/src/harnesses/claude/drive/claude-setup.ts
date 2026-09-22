@@ -1,4 +1,4 @@
-import { CLAUDE_MODES, type ClaudeTurnSetup } from '@/domains/sessions/contract/ipc/contract'
+import { CLAUDE_MODES, type ClaudeTurnSetup } from '@/domains/sessions/contract/ipc'
 
 type ClaudeMode = ClaudeTurnSetup['mode']
 

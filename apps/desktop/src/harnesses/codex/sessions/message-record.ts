@@ -3,7 +3,7 @@ import type {
   ToolCall,
   ToolResult,
   TranscriptRecord,
-} from '@/domains/sessions/contract/model/transcript'
+} from '@/domains/sessions/contract/model'
 import { isRecord } from '@/shared/validation'
 import { readHarnessEnvelopes } from './harness-envelopes'
 import { readImage } from './prompt-images'

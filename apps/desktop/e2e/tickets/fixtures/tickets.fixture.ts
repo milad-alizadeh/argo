@@ -13,15 +13,15 @@ import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mts'
 import {
   PROJECT_PROOF_STORE_ENV,
   SETUP_DOCUMENT_PROOF_URL_ENV,
-} from '../../../src/domains/projects/main/proof-protocol'
+} from '@/domains/projects/main/proof-protocol'
 import {
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
-} from '../../../src/domains/sessions/contract/proof-protocol'
+} from '@/domains/sessions/contract/proof-protocol'
 import {
   GITHUB_PROOF_ORIGIN_ENV,
   LINEAR_PROOF_ORIGIN_ENV,
-} from '../../../src/providers/proof-protocol'
+} from '@/providers/proof-protocol'
 import { appExecutable } from '../../packaged-app'
 import {
   makeProjectLocallyReady,

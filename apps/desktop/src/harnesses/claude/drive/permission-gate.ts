@@ -1,6 +1,6 @@
 import net from 'node:net'
 import { z } from 'zod'
-import type { ClaudePermission } from '@/domains/sessions/contract/ipc/contract'
+import type { ClaudePermission } from '@/domains/sessions/contract/ipc'
 import { type CompanionPart, createSocketFolder } from './companion-plugin'
 import { similarityKey } from './permission-similarity'
 

@@ -1,5 +1,5 @@
-import { mcpOther } from '@/domains/sessions/contract/model/mcp-call'
-import type { OtherFacts } from '@/domains/sessions/contract/model/transcript'
+import { mcpOther } from '@/domains/sessions/contract/model'
+import type { OtherFacts } from '@/domains/sessions/contract/model'
 
 // Orchestration tools, each with the words its row says.
 const ORCHESTRATION_LABELS: Record<string, string> = {

@@ -7,11 +7,11 @@
 // which this slice does not observe, so an open Turn reads `unknown`. `starting`, `permission`
 // and `ended` are managed-only or need an exit Argo witnessed, and no external posture has one.
 
-import { SESSION_STATUSES, type SessionStatus } from '@/domains/sessions/contract/model/models'
+import { SESSION_STATUSES, type SessionStatus } from '@/domains/sessions/contract/model'
 import type {
   TranscriptMessage,
   TranscriptRecord,
-} from '@/domains/sessions/contract/model/transcript'
+} from '@/domains/sessions/contract/model'
 
 export type { SessionStatus }
 // The closed set, written once. The type is derived from it rather than restated beside it, so a

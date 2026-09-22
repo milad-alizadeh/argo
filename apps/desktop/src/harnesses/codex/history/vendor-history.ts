@@ -1,4 +1,4 @@
-import type { CodexChannel } from '@/harnesses/codex/drive/codex-channel'
+import type { CodexChannel } from '../drive'
 import { pagesOf, threadOf, turnsOf } from './vendor-convert'
 import {
   CodexHistoryUnavailableError,

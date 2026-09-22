@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef } from 'react'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive'
 import {
   type PendingTurn,
+  type Send,
   useComposerStore,
-} from '@/domains/sessions/renderer/composer/use-composer-store'
-import type { Send } from '@/domains/sessions/renderer/composer/use-send'
-import type { TurnSetup } from '@/domains/sessions/renderer/turn-setup/turn-setup'
+} from '../hooks'
+import type { TurnSetup } from '../../turn-setup/turn-setup'
 
-export type { PendingTurn } from '@/domains/sessions/renderer/composer/use-composer-store'
+export type { PendingTurn } from '../hooks'
 
 const NO_PENDING_TURNS: PendingTurn[] = []
 

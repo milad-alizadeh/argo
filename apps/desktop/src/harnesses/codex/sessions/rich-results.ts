@@ -1,9 +1,9 @@
-import { dataImageUrl } from '@/domains/sessions/contract/model/feed-images'
+import { dataImageUrl } from '@/domains/sessions/contract/model'
 import {
   type RichResultBlock,
   resultText,
   type ToolResult,
-} from '@/domains/sessions/contract/model/transcript'
+} from '@/domains/sessions/contract/model'
 import { isRecord } from '@/shared/validation'
 import { readImage } from './prompt-images'
 

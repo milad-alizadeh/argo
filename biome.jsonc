@@ -299,10 +299,6 @@
                 },
                 "patterns": [
                   {
-                    "group": ["../*", "./*/*"],
-                    "message": "./ imports stay in the current directory. Use @/ for parent or cross-directory source imports."
-                  },
-                  {
                     "group": ["node:*", "node:*/**"],
                     "message": "Contract and shared code stay runtime-neutral."
                   },
@@ -349,10 +345,6 @@
               "level": "error",
               "options": {
                 "patterns": [
-                  {
-                    "group": ["../*", "./*/*"],
-                    "message": "./ imports stay in the current directory. Use @/ for parent or cross-directory source imports."
-                  },
                   {
                     "group": [
                       "@/domains/*/preload",
@@ -407,10 +399,6 @@
               "options": {
                 "patterns": [
                   {
-                    "group": ["../*", "./*/*"],
-                    "message": "./ imports stay in the current directory. Use @/ for parent or cross-directory source imports."
-                  },
-                  {
                     "group": [
                       "@/domains/*/main",
                       "@/domains/*/main/**",
@@ -449,10 +437,6 @@
                 },
                 "patterns": [
                   {
-                    "group": ["../*", "./*/*"],
-                    "message": "./ imports stay in the current directory. Use @/ for parent or cross-directory source imports."
-                  },
-                  {
                     "group": ["node:*", "node:*/**", "electron/**", "node-pty/**"],
                     "message": "Renderer facets use the preload bridge instead of runtime-only APIs."
                   },
@@ -472,30 +456,6 @@
                       "@/core/**"
                     ],
                     "message": "Renderer facets can import only contract, renderer, or shared facets."
-                  }
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "includes": [
-        "apps/desktop/src/harnesses/**",
-        "!**/*.{test,stories}.{ts,tsx}",
-        "!**/session-fixtures.ts"
-      ],
-      "linter": {
-        "rules": {
-          "style": {
-            "noRestrictedImports": {
-              "level": "error",
-              "options": {
-                "patterns": [
-                  {
-                    "group": ["../*", "./*/*"],
-                    "message": "./ imports stay in the current directory. Use @/ for parent or cross-directory source imports."
                   }
                 ]
               }

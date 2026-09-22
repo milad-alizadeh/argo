@@ -1,4 +1,4 @@
-import type { EditedFile } from '@/domains/sessions/contract/model/transcript'
+import type { EditedFile } from '@/domains/sessions/contract/model'
 
 // Codex's `apply_patch` carries its change as one text (codex-rs/apply-patch): `*** Begin Patch`,
 // then per file `*** Add File: p`, `*** Update File: p` (optionally `*** Move to: p`) or

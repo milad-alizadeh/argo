@@ -1,8 +1,8 @@
 import {
   type SetupPlanningResult,
   setupPlanningResultSchema,
-} from '@/domains/projects/contract/setup-plan'
-import type { SetupPlanningProgressEvent } from '@/domains/projects/contract/setup-progress'
+} from '@/domains/projects/contract/setup'
+import type { SetupPlanningProgressEvent } from '@/domains/projects/contract/setup'
 import type { ClaudeTurnSetup } from '@/domains/sessions/contract/claude-turn-setup'
 import { parseAgentOutput } from '../protocol/parse-agent-output'
 import { PLAN_MARKER, planningAgentPrompt } from '../protocol/prompts'

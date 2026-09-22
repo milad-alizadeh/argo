@@ -1,15 +1,15 @@
 import { type BrowserWindow, dialog, net } from 'electron'
 import { projectError } from '@/domains/projects/contract/contract'
 import { PROJECT_OPERATIONS } from '@/domains/projects/contract/operations'
-import type { OnboardingAgentDriver } from '@/domains/projects/main/setup/onboarding-agent/runtime/run-onboarding-agent'
 import {
+  type OnboardingAgentDriver,
+  createProjectSetupBridge,
   loadSetupDocument,
+  projectSetupRuntime,
   type SetupDocumentSource,
   setupDocumentRequest,
   setupDocumentURL,
-} from '@/domains/projects/main/setup/preparation/setup-bundle'
-import { createProjectSetupBridge } from '@/domains/projects/main/setup/project-setup-bridge'
-import { projectSetupRuntime } from '@/domains/projects/main/setup/project-setup-logic'
+} from './setup'
 import { platformText } from '@/platform/main/i18n'
 import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
 import { createWriteQueue } from '@/platform/main/storage/portable-file'

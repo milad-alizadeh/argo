@@ -1,5 +1,5 @@
+import type { SessionHarness } from '../../harness'
 import { Trans, useTranslation } from 'react-i18next'
-import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import { Icon } from '@/platform/renderer/components/icon'
 import {
   harnessLabel,

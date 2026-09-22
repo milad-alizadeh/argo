@@ -3,7 +3,7 @@ import type {
   EditFacts,
   ToolCall,
   TranscriptRecord,
-} from '@/domains/sessions/contract/model/transcript'
+} from '@/domains/sessions/contract/model'
 
 function openingLine(blocks: ContentBlock[]): ContentBlock[] {
   for (const block of blocks) {

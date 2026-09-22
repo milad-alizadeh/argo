@@ -3,17 +3,9 @@
 // the same reason `indexed-roster.vitest.ts` does: the index reaches `node:sqlite`, which Bun does
 // not ship.
 import { describe, expect, test } from 'vitest'
-import {
-  createIndexedReadHarness,
-  expectAnsweredByIndex,
-  finishBackfill,
-} from '@/domains/sessions/main/index/indexed-read-test-harness'
-import {
-  indexedAdapters,
-  manyTranscripts,
-  sessionIdAt,
-} from '@/domains/sessions/main/index/session-index/roster-fixtures'
-import type { createSessionReader } from '@/domains/sessions/main/observation/reader'
+import { createIndexedReadHarness, expectAnsweredByIndex, finishBackfill } from '../indexing'
+import { indexedAdapters, manyTranscripts, sessionIdAt } from '../indexing'
+import { createSessionReader } from '../observation'
 import { requestArchiveList } from './archive-list-request'
 
 const { harness } = createIndexedReadHarness()

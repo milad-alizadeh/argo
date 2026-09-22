@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionChain } from '@/domains/sessions/contract/model/chains'
+import type { SessionChain } from '@/domains/sessions/contract/model'
 import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript'
 import { readShellCommands } from '@/domains/sessions/contract/observation/signals'
 import { chainBackgroundTasks, chainMessages } from '@/domains/sessions/main/projection/roster'

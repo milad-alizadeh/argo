@@ -1,4 +1,4 @@
-import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
+import type { TranscriptRecord } from '@/domains/sessions/contract/model'
 import { isRecord } from '@/shared/validation'
 import { taskStartedContextWindow } from './context-window'
 import { currentUserBlocks } from './current-user-blocks'

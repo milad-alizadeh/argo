@@ -9,7 +9,7 @@ import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-hand
 import { listHarnessReadiness } from './harness-readiness-list'
 import { createHarnessSignIn, type HarnessSignInDriver } from './harness-sign-in'
 import { canceledReply, resolvedReply, startedReply } from './harness-sign-in-replies'
-import type { HarnessReadinessRegistration } from './index'
+import type { HarnessReadinessRegistration } from '.'
 
 export type HarnessSignInContext = {
   registrations: readonly HarnessReadinessRegistration[]

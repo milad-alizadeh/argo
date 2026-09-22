@@ -3,7 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { type TestContext, test } from 'node:test'
-import { createSessionTicketLinkStore } from './index'
+import { createSessionTicketLinkStore } from '.'
 
 async function store(context: TestContext) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-session-links-'))

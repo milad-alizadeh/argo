@@ -5,7 +5,7 @@
 import { readdir } from 'node:fs/promises'
 import path from 'node:path'
 import { z } from 'zod'
-import type { SessionRosterRow, SessionStatus } from '@/domains/sessions/contract/model/models'
+import type { SessionRosterRow, SessionStatus } from '@/domains/sessions/contract/model'
 import { isLiveElsewhere } from '@/domains/sessions/main'
 import { readJsonFile } from './json-file'
 

@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
-import type { SessionSetup } from '@/domains/sessions/contract/model/models'
-import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
-import { sessionRosterRow } from '@/domains/sessions/renderer/session-fixtures'
+import type { SessionSetup } from '@/domains/sessions/contract/model'
+import { useComposerStore } from '../composer'
+import { sessionRosterRow } from '../session-fixtures'
 import { SessionScreenView } from './session-screen-view'
 
 const SESSION_ID = 'managed-turn-setup'

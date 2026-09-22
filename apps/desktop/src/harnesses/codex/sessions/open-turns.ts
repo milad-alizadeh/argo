@@ -3,7 +3,7 @@
 // in a rollout written to recently, is live elsewhere. Read-only, and read by appends only.
 import { stat } from 'node:fs/promises'
 import { z } from 'zod'
-import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model'
 import {
   createTranscriptRecordReader,
   hasOpenSubagent,

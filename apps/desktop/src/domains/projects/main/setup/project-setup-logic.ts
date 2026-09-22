@@ -1,8 +1,8 @@
 import { fromCallback } from 'xstate'
-import { defaultProjectSetupHarnesses } from '@/domains/projects/contract/project-setup-harness'
-import type { SetupDocument } from '@/domains/projects/contract/setup-document'
-import type { OnboardingAgentDriver } from '@/domains/projects/main/setup/onboarding-agent/runtime/run-onboarding-agent'
-import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
+import { defaultProjectSetupHarnesses } from '@/domains/projects/contract/setup'
+import type { SetupDocument } from '@/domains/projects/contract/setup'
+import type { OnboardingAgentDriver } from './onboarding-agent/runtime/run-onboarding-agent'
+import type { ProjectStore } from '../sqlite-store'
 import {
   type ProjectSetupApplicationInput,
   projectSetupApplicationLogic,

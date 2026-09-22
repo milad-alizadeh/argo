@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { test } from 'node:test'
 
-import { createClaudePermissionGate } from '@/harnesses/claude/drive/permission-gate.ts'
+import { createClaudePermissionGate } from '../drive/permission-gate.ts'
 import { launch, ledgerFile, OPENING, ownedBeforeRestart, settle } from './claude-driver-launch.ts'
 import { hookSocket, raisePermission } from './claude-permission-hook.ts'
 

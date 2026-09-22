@@ -1,7 +1,7 @@
 import { fromCallback } from 'xstate'
-import type { ProjectSetupAnswer } from '@/domains/projects/contract/project-setup-question'
-import { runPlanningAgent } from '@/domains/projects/main/setup/onboarding-agent/planning/run-planning-agent'
-import { prepareSetupWorktree } from '@/domains/projects/main/setup/preparation/setup-worktree'
+import type { ProjectSetupAnswer } from '@/domains/projects/contract/setup'
+import { runPlanningAgent } from './onboarding-agent/planning/run-planning-agent'
+import { prepareSetupWorktree } from './preparation/setup-worktree'
 import type { ProjectSetupServices } from './project-setup-logic'
 import type { ProjectSetupContext, ProjectSetupEvent } from './project-setup-machine-types'
 import {

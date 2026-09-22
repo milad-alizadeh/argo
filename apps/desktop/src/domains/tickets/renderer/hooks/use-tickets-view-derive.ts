@@ -11,14 +11,14 @@ import type {
   TicketPriority,
   TicketStatus,
 } from '@/domains/tickets/contract/contract'
-import type { ConnectSourceFormProps } from '@/domains/tickets/renderer/connection/connect-source-form'
-import type { TicketDeckProps } from '@/domains/tickets/renderer/detail/ticket-deck'
+import type { ConnectSourceFormProps } from '../connection'
+import type { TicketDeckProps } from '../detail'
 import {
   connectionProblem,
   failureProblem,
   isConnectionProblem,
   type TicketProblemProps,
-} from '@/domains/tickets/renderer/lib/problems'
+} from '../lib'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 import { listedBacklog, type TicketListing } from './listed-backlog'
 import type { ConnectForm } from './use-connect-form'

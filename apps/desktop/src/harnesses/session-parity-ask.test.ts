@@ -6,7 +6,7 @@ import { copyFile, mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import type { SessionFeedRow } from '@/domains/sessions/contract/model/models'
+import type { SessionFeedRow } from '@/domains/sessions/contract/model'
 import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import {

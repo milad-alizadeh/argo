@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { sessionErrorSchema } from '@/domains/sessions/contract/model/session-error'
+import { sessionErrorSchema } from '../session-error'
 import { identifierSchema } from '@/shared/validation'
 
 function safeName(name: string): boolean {

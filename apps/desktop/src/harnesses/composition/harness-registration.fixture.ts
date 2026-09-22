@@ -1,8 +1,8 @@
 // The fixture harness `harness-registration.vitest.ts` registers to prove #2488's generalisation
 // without touching `registered-harnesses.ts`.
-import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import type { SessionIndex } from '@/domains/sessions/main/index/session-index/contract'
-import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model'
+import { SessionIndex } from '@/domains/sessions/main/indexing'
+import { managedRow } from '@/domains/sessions/main/lifecycle'
 import type { HarnessRegistration } from './harness-registration'
 
 const setup = { model: null, effort: null, mode: null } as const

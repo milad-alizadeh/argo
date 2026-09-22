@@ -1,7 +1,7 @@
+import { SKILL_MENTION_SOURCE } from '../../prompt'
 // Recognises a skill mention while typing (the trigger is the same closing `)` the stock LINK
 // transformer uses) and on paste, converting `[$name](path)` into a SkillMentionNode.
 import type { TextMatchTransformer } from '@lexical/markdown'
-import { SKILL_MENTION_SOURCE } from '@/domains/sessions/renderer/prompt/prompt-segments'
 import {
   $createSkillMentionNode,
   $isSkillMentionNode,

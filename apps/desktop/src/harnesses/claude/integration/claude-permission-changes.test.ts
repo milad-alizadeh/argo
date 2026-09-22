@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
 import { test } from 'node:test'
 
-import { createClaudePermissionGate } from '@/harnesses/claude/drive/permission-gate.ts'
+import { createClaudePermissionGate } from '../drive/permission-gate.ts'
 import { launch, ledgerFile, OPENING, settle } from './claude-driver-launch.ts'
 import { raisePermission } from './claude-permission-hook.ts'
 

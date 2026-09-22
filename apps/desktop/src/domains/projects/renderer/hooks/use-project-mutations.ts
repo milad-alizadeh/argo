@@ -4,11 +4,11 @@ import type { ProjectListReply } from '@/domains/projects/contract/messages'
 import {
   type ProjectContractError,
   throwProjectContractError,
-} from '@/domains/projects/renderer/project-contract-error'
+} from '../project-contract-error'
 import {
   projectListQueryKey,
   projectMutationKey,
-} from '@/domains/projects/renderer/project-queries'
+} from '../project-queries'
 import type { ProjectCockpit } from './use-projects'
 
 export function useProjectMutations(options: {

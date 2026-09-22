@@ -8,14 +8,14 @@
 import type {
   RosterStatus,
   SessionSearchRequest,
-} from '@/domains/sessions/contract/ipc/search-contract'
-import { newestFirst, type SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import { isArchivedSession } from '@/domains/sessions/main/archive/archive-store'
-import { growWindow } from '@/domains/sessions/main/archive/archive-window'
-import { isSessionIndexFallback } from '@/domains/sessions/main/index/session-index/recovery'
-import { belongsToProject, projectRootsOf } from '@/domains/sessions/main/lifecycle/project-scope'
-import { fromContext, type ReadContext } from '@/domains/sessions/main/observation/read-declaration'
-import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
+} from '@/domains/sessions/contract/ipc'
+import { newestFirst, type SessionRosterRow } from '@/domains/sessions/contract/model'
+import { isArchivedSession } from '../archive'
+import { growWindow } from '../archive'
+import { isSessionIndexFallback } from '../indexing'
+import { belongsToProject, projectRootsOf } from '../lifecycle'
+import { fromContext, ReadContext } from '../observation'
+import { SessionSource } from '../observation'
 import { matchesSearchQuery } from './search-match'
 
 export const SEARCH_PAGE_LIMIT = 20

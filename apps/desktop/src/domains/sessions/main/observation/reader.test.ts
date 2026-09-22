@@ -3,8 +3,8 @@
 // bridge calls, so a refactor inside it leaves these green.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import { managedRow } from '@/domains/sessions/main/lifecycle/managed-row'
+import type { SessionRosterRow } from '@/domains/sessions/contract/model'
+import { managedRow } from '../lifecycle/managed-row'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 import { createSessionReader } from './reader'
