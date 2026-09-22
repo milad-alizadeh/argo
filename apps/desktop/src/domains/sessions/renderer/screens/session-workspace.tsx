@@ -2,9 +2,9 @@ import { type ReactNode, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
-import { BasicFeed } from '@/domains/sessions/renderer/feed/basic-feed'
-import { FeedJumpToLatest } from '@/domains/sessions/renderer/feed/feed-jump-to-latest'
-import type { FeedLiveFacts } from '@/domains/sessions/renderer/feed/feed-live-facts'
+import { BasicFeed } from '@/domains/sessions/renderer/feed/document/basic-feed'
+import { FeedJumpToLatest } from '@/domains/sessions/renderer/feed/rows/feed-jump-to-latest'
+import type { FeedLiveFacts } from '@/domains/sessions/renderer/feed/document/feed-live-facts'
 import type { SessionEvidence } from '@/domains/sessions/renderer/types'
 import type { useSessions } from '@/domains/sessions/renderer/use-sessions'
 

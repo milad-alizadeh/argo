@@ -16,7 +16,7 @@ import type { useSessionMutations } from '@/domains/sessions/renderer/composer/u
 import { startNewSession } from '@/domains/sessions/renderer/composer/use-start-new-session'
 import type { TurnMarkerApi } from '@/domains/sessions/renderer/composer/use-turn-marker'
 import { COMPOSER_FOCUS_STATE } from '@/domains/sessions/renderer/composer-focus-state'
-import { promptOf, stageFor } from '@/domains/sessions/renderer/feed/turn-marker-state'
+import { promptOf, stageFor } from '@/domains/sessions/renderer/feed/rows/turn-marker-state'
 import {
   type SessionHarness,
   sessionHarnessOf,

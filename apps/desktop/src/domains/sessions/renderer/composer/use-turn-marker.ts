@@ -1,5 +1,5 @@
 import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
-import type { TurnMarkerEntry } from '@/domains/sessions/renderer/feed/turn-marker-state'
+import type { TurnMarkerEntry } from '@/domains/sessions/renderer/feed/rows/turn-marker-state'
 
 export type TurnMarkerEntries = Map<string, TurnMarkerEntry>
 

@@ -9,7 +9,7 @@ import { sendToNewSession, type TurnInput } from '@/domains/sessions/renderer/co
 import type { Failure } from '@/domains/sessions/renderer/composer/use-session-composer-actions'
 import type { useSessionMutations } from '@/domains/sessions/renderer/composer/use-session-mutations'
 import type { TurnMarkerApi } from '@/domains/sessions/renderer/composer/use-turn-marker'
-import { promptOf } from '@/domains/sessions/renderer/feed/turn-marker-state'
+import { promptOf } from '@/domains/sessions/renderer/feed/rows/turn-marker-state'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import type { useTurnSetup } from '@/domains/sessions/renderer/turn-setup/use-turn-setup'
 

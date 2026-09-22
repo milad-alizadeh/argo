@@ -6,7 +6,7 @@ import type { SessionShellOutput } from '@/domains/sessions/contract/model/backg
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/model/models'
 import { SessionComposer } from '@/domains/sessions/renderer/composer/session-composer'
 import { RICH_MARKDOWN } from '@/domains/sessions/renderer/feed/content/feed-samples'
-import { INACTIVE_FEED_LIVE_FACTS } from '@/domains/sessions/renderer/feed/feed-live-facts'
+import { INACTIVE_FEED_LIVE_FACTS } from '@/domains/sessions/renderer/feed/document/feed-live-facts'
 import { SessionInspector } from '@/domains/sessions/renderer/inspector/session-inspector'
 import { workInspectorReveal } from '@/domains/sessions/renderer/inspector/work-inspector-reveal'
 import { Roster, type RosterActions } from '@/domains/sessions/renderer/roster/roster'

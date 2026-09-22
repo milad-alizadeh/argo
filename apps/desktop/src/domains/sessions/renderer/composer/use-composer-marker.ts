@@ -15,7 +15,7 @@ import {
   type TurnMarkerRow,
   turnEnded,
   turnMarkerView,
-} from '@/domains/sessions/renderer/feed/turn-marker-state'
+} from '@/domains/sessions/renderer/feed/rows/turn-marker-state'
 import type { useSessions } from '@/domains/sessions/renderer/use-sessions'
 
 // The Turn Marker's lifecycle (#2099): retire an entry on a successful interrupt or once the

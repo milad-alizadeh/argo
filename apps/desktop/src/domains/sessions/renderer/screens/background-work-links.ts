@@ -1,4 +1,4 @@
-import type { BackgroundWorkLinks } from '@/domains/sessions/renderer/feed/background-work'
+import type { BackgroundWorkLinks } from '@/domains/sessions/renderer/feed/rows/background-work'
 import type { SessionScreenModel } from '@/domains/sessions/renderer/screens/use-session-screen-model'
 
 export function backgroundWorkLinks(model: SessionScreenModel): BackgroundWorkLinks {

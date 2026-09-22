@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import type { LiveActivity } from '@/domains/sessions/contract/model'
 import {
   displayedToolLabel,
   standsAlone,
@@ -12,27 +11,12 @@ import { RunningText } from '@/platform/renderer/components/running-text'
 import { LiveActivityText } from '../rows/live-activity-text'
 import { type ToolGroupState, useToolGroupOpen } from '../rows/tool-group-state'
 import { CollapsibleText } from './collapsible-text'
+import { groupIcon, liveActivity } from './feed-group-title'
 import { FeedInlineToolCall, FeedInlineToolCallItem } from './feed-inline-tool-call'
 import { StatusIcon } from './feed-tool-status'
 
 export type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 export type ToolCall = Extract<SessionFeedRow, { shape: 'tool-group' }>['calls'][number]
-type ToolGroup = Extract<SessionFeedRow, { shape: 'tool-group' }>
-type ToolKind = ToolGroup['calls'][number]['kind']
-
-// While the group is the running Turn's tail it carries the Session's activity as its headline,
-// the same fact the roster draws. A group with a call still running names that call.
-function liveActivity(group: ToolGroup): LiveActivity | null {
-  if (group.headline !== undefined) return group.headline
-  const call = group.calls.findLast((call) => call.status === 'running')
-  return call === undefined ? null : { kind: call.kind, label: call.label, open: true }
-}
-
-// A thought titles under a spark; a call under its own kind; a settled count under the terminal.
-function groupIcon(activity: LiveActivity | null, titleKind: ToolKind | undefined): IconName {
-  if (activity?.kind === 'thought') return 'sparkles'
-  return toolPresentation(titleKind ?? activity?.kind ?? 'command').icon
-}
 
 const TOOL_ICONS = {
   terminal: 'tool-terminal',

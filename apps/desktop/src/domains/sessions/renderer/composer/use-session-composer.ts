@@ -14,7 +14,7 @@ import { useComposerFacts } from '@/domains/sessions/renderer/composer/use-compo
 import { useComposerStore } from '@/domains/sessions/renderer/composer/use-composer-store'
 import type { Failure } from '@/domains/sessions/renderer/composer/use-session-composer-actions'
 import { useSessionMutations } from '@/domains/sessions/renderer/composer/use-session-mutations'
-import type { TurnMarkerView } from '@/domains/sessions/renderer/feed/turn-marker-state'
+import type { TurnMarkerView } from '@/domains/sessions/renderer/feed/rows/turn-marker-state'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
 import type { useSessions } from '@/domains/sessions/renderer/use-sessions'

@@ -7,7 +7,7 @@ import {
   type ComposerTicketContext,
   ticketContextSchema,
 } from '@/domains/sessions/renderer/composer/composer-ticket-context'
-import type { TurnMarkerEntry } from '@/domains/sessions/renderer/feed/turn-marker-state'
+import type { TurnMarkerEntry } from '@/domains/sessions/renderer/feed/rows/turn-marker-state'
 import {
   SESSION_HARNESSES,
   type SessionHarness,

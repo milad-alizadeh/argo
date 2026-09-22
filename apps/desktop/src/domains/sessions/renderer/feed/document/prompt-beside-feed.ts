@@ -1,4 +1,4 @@
-import type { SessionFeedRow } from '@/domains/sessions/renderer/types'
+import type { SessionFeedRow } from '../../types'
 
 // The optimistic bubble retires once the Feed already shows those words. A managed projection can
 // carry the prompt before the roster's turn start moves, and drawing both is two copies of one Send.

@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import type { SessionFeedRow } from '../../types'
-import { promptBesideFeed } from './feed-document'
+import { promptBesideFeed } from './prompt-beside-feed'
 
 const prompt = (text: string, id = 'optimistic-turn:1'): SessionFeedRow => ({
   shape: 'prose',
