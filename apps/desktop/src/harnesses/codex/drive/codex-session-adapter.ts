@@ -12,6 +12,7 @@ import type { CodexSessionAdapter } from '@/harnesses/codex/drive/codex-session-
 
 export type { CodexSessionAdapter } from '@/harnesses/codex/drive/codex-session-adapter-contract'
 
+import { closeCodexSessionAdapter } from '@/harnesses/codex/drive/codex-session-adapter-close'
 import {
   executeCommand,
   executeSend,
@@ -24,6 +25,7 @@ import { projectionFrom } from '@/harnesses/codex/drive/codex-session-projection
 import { sharedAppServerRuntimeFor } from '@/harnesses/codex/drive/codex-shared-app-server-runtime'
 import type { ManagedSessionDeps } from '@/harnesses/codex/drive/managed-session-machine'
 import { createManagedSessionMachine } from '@/harnesses/codex/drive/managed-session-machine'
+import { createWatchedChanges } from '@/harnesses/composition/watched-changes'
 
 function keyOf(session: SessionIdentity): string {
   return `${session.harness}:${session.nativeId}`
@@ -79,6 +81,7 @@ function attachRegistry(
     },
   })
 }
+
 export function createCodexSessionAdapter(deps: {
   findExecutable: AppServerSupervisorDeps['findExecutable']
   sessionService: ManagedSessionDeps['sessionService']
@@ -87,6 +90,7 @@ export function createCodexSessionAdapter(deps: {
   resolveWorkspace: (selection: WorkspaceSelection) => Promise<{ workspaceId: string; cwd: string }>
 }): CodexSessionAdapter {
   const registry: SessionRegistry = new Map()
+  const rosterChanges = createWatchedChanges()
   const appServer = sharedAppServerRuntimeFor(deps.findExecutable)
   const supervisor = appServer.supervisor
   const detach = attachRegistry(appServer, registry)
@@ -108,6 +112,7 @@ export function createCodexSessionAdapter(deps: {
       entry.revision += 1
       const projection = projectionFrom(snapshot, entry.revision)
       appServer.publish(projection)
+      rosterChanges.notify()
       for (const listener of entry.listeners) listener(projection)
     }
     actor.subscribe(notify)
@@ -135,14 +140,8 @@ export function createCodexSessionAdapter(deps: {
       const unsubscribe: Unsubscribe = () => entry.listeners.delete(onProjection)
       return unsubscribe
     },
-    close: () => {
-      for (const entry of registry.values()) {
-        const session = entry.actor.getSnapshot().context.sessionId
-        if (session !== null) deps.sessionService.release(session)
-        entry.actor.stop()
-      }
-      detach()
-    },
+    close: () => closeCodexSessionAdapter(registry, deps.sessionService, detach),
     projections: appServer.projections,
+    onRosterChanged: rosterChanges.subscribe,
   }
 }

@@ -140,6 +140,18 @@ function threadIdOf(context: ManagedSessionContext): string {
   return context.sessionId.nativeId
 }
 
+function hasThreadStatus(
+  context: ManagedSessionContext,
+  event: ManagedSessionEvent,
+  type: 'notLoaded' | 'systemError',
+): boolean {
+  if (event.type !== 'Notification') return false
+  const status = readThreadStatus(event.message)
+  return (
+    status !== undefined && status.threadId === threadIdOf(context) && status.status.type === type
+  )
+}
+
 function createManagedSessionActors(deps: ManagedSessionDeps) {
   return {
     waitForWorkspace: fromPromise<
@@ -386,12 +398,18 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
         return usage !== undefined && usage.threadId === threadIdOf(context)
       },
       isThreadNotLoaded: ({ context, event }) => {
+        return hasThreadStatus(context, event, 'notLoaded')
+      },
+      isThreadSystemError: ({ context, event }) => {
+        return hasThreadStatus(context, event, 'systemError')
+      },
+      isTurnFailedForThread: ({ context, event }) => {
         if (event.type !== 'Notification') return false
-        const status = readThreadStatus(event.message)
+        const completed = readCompletedTurn(event.message)
         return (
-          status !== undefined &&
-          status.threadId === threadIdOf(context) &&
-          status.status.type === 'notLoaded'
+          completed !== undefined &&
+          completed.threadId === threadIdOf(context) &&
+          completed.turn.status === 'failed'
         )
       },
       isThreadClosed: ({ context, event }) => {
@@ -426,12 +444,26 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
           if (event.type !== 'Notification') return context.turns
           const completed = readCompletedTurn(event.message)
           if (completed === undefined) return context.turns
+          const completedAt = deps.now().getTime()
+          const status = turnStatusFrom(completed.turn.status)
+          const known = context.turns.some((turn) => turn.id === completed.turn.id)
+          if (!known) {
+            return [
+              ...context.turns,
+              {
+                id: completed.turn.id,
+                status,
+                startedAt: completedAt,
+                completedAt,
+              },
+            ]
+          }
           return context.turns.map((turn) =>
             turn.id === completed.turn.id
               ? {
                   ...turn,
-                  status: turnStatusFrom(completed.turn.status),
-                  completedAt: deps.now().getTime(),
+                  status,
+                  completedAt,
                 }
               : turn,
           )
@@ -612,6 +644,17 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
         states: {
           Idle: {
             on: {
+              Notification: [
+                {
+                  guard: 'isTurnFailedForThread',
+                  target: '#codexManagedSessionMachine.Failed',
+                  actions: 'markTurnCompleted',
+                },
+                {
+                  guard: 'isThreadSystemError',
+                  target: '#codexManagedSessionMachine.Failed',
+                },
+              ],
               Send: {
                 target: 'Running',
                 actions: 'appendUserMessage',
@@ -678,6 +721,15 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
                 target: 'Interrupting',
               },
               Notification: [
+                {
+                  guard: 'isTurnFailedForThread',
+                  target: '#codexManagedSessionMachine.Failed',
+                  actions: 'markTurnCompleted',
+                },
+                {
+                  guard: 'isThreadSystemError',
+                  target: '#codexManagedSessionMachine.Failed',
+                },
                 {
                   guard: 'isTurnCompletedForThread',
                   target: 'Idle',

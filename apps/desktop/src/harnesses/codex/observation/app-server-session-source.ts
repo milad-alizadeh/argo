@@ -1,9 +1,6 @@
-import {
-  driveSessionError,
-  type SessionRenameReply,
-  type SessionRenameRequest,
-} from '@/domains/sessions/contract/ipc/contract'
+import { driveSessionError } from '@/domains/sessions/contract/ipc/contract'
 import { managedRosterRow, type SessionFeedRow } from '@/domains/sessions/contract/model/models'
+import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
 import type {
   SessionAdapter,
   SessionProjection,
@@ -17,20 +14,6 @@ type AppServerDiscovery = {
   filesParsed: number
   nextCursor: null
   historyComplete: true
-}
-
-type AppServerSessionSource = {
-  harness: 'codex'
-  discoverSessions: () => Promise<AppServerDiscovery>
-  managedSessions: () => ReturnType<typeof rosterRowOf>[]
-  readSessionFiles: () => Promise<null>
-  readManagedFeed: (sessionId: string) => {
-    chainId: string
-    revision: string
-    rows: SessionFeedRow[]
-  } | null
-  readShellOutput: () => Promise<{ state: 'absent' }>
-  rename: (request: SessionRenameRequest) => Promise<SessionRenameReply>
 }
 
 function statusOf(projection: SessionProjection) {
@@ -118,26 +101,37 @@ function discovery(projections: readonly SessionProjection[]): AppServerDiscover
 export function createCodexAppServerSessionSource(options: {
   projections: () => readonly SessionProjection[]
   adapter: SessionAdapter
-}): AppServerSessionSource {
+  fallback?: SessionSource
+}): SessionSource & Required<Pick<SessionSource, 'rename'>> {
   const projectionFor = (sessionId: string) =>
     options.projections().find((projection) => projection.session.nativeId === sessionId) ?? null
+  const fallback = options.fallback
   return {
+    ...fallback,
     harness: 'codex',
-    discoverSessions: async () => discovery(options.projections()),
+    discoverSessions: async (request) => {
+      const persisted =
+        fallback === undefined ? discovery([]) : await fallback.discoverSessions(request)
+      const rows = new Map(persisted.rows.map((row) => [row.id, row]))
+      for (const row of discovery(options.projections()).rows) rows.set(row.id, row)
+      return { ...persisted, rows: [...rows.values()] }
+    },
     managedSessions: () => options.projections().map(rosterRowOf),
-    readSessionFiles: async () => null,
+    readSessionFiles: fallback?.readSessionFiles ?? (async () => null),
     readManagedFeed: (sessionId) => {
       const projection = projectionFor(sessionId)
-      return projection === null
-        ? null
-        : {
-            chainId: projection.session.nativeId,
-            revision: String(projection.revision),
-            rows: rowsOf(projection),
-          }
+      if (projection === null) return undefined
+      return {
+        chainId: projection.session.nativeId,
+        revision: String(projection.revision),
+        rows: rowsOf(projection),
+      }
     },
-    readShellOutput: async () => ({ state: 'absent' }),
+    readShellOutput: fallback?.readShellOutput ?? (async () => ({ state: 'absent' })),
     rename: async (request) => {
+      if (projectionFor(request.sessionId) === null && fallback?.rename !== undefined) {
+        return fallback.rename(request)
+      }
       const outcome = await options.adapter.execute({
         type: 'session.rename',
         session: { harness: 'codex', nativeId: request.sessionId },

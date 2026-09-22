@@ -59,7 +59,8 @@ export function projectionFrom(
     sourceHealth:
       snapshot.matches('Recovering') ||
       snapshot.matches('Failed') ||
-      context.lastSendOutcome === 'rejected'
+      context.lastSendOutcome === 'rejected' ||
+      context.turns.at(-1)?.status === 'failed'
         ? 'unavailable'
         : 'ready',
     revision,
