@@ -132,15 +132,15 @@
         "noTsIgnore": "error"
       },
       "style": {
-        // The 150-line per-file ceiling (AGENTS.md). Counts LINES OF CODE:
-        // blank lines are skipped by the option, and comment lines are not counted by the
-        // rule at all — a heavily-commented file is judged on the code you must hold in
-        // your head, not on how far it scrolls. That is a statement about this linter, not
-        // a comment budget; AGENTS.md sets that.
+        // 300 is Biome's own default for this rule. Counts LINES OF CODE: blank lines are
+        // skipped by the option, and biome 2.5.4 counts no comment line at all, wherever it
+        // sits. Measured 2026-09-22, because the docs are silent and the rule's PR declined
+        // ESLint's skipComments option. A commented file is judged on the code you hold in
+        // your head, not on how far it scrolls.
         "noExcessiveLinesPerFile": {
           "level": "error",
           "options": {
-            "maxLines": 150,
+            "maxLines": 300,
             "skipBlankLines": true
           }
         },

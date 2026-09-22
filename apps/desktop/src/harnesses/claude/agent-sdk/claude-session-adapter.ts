@@ -7,7 +7,7 @@ import type {
 import type { SessionService } from '@/domains/sessions/next/main/session-service'
 import { acceptedSessionOutcome } from '@/harnesses/claude/agent-sdk/accepted-session-outcome'
 import { createClaudeQuery } from '@/harnesses/claude/agent-sdk/claude-agent-sdk'
-import { createClaudeSessionMachine } from '@/harnesses/claude/agent-sdk/claude-session-actor'
+import { createClaudeSessionMachine } from '@/harnesses/claude/agent-sdk/claude-session-machine'
 import type { ClaudeSessionAdapter } from '@/harnesses/claude/agent-sdk/claude-session-adapter-contract'
 import { eventFor } from '@/harnesses/claude/agent-sdk/claude-session-command-event'
 import { keyOf } from '@/harnesses/claude/agent-sdk/claude-session-key'

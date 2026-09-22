@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
-import { useProjects, useSelectedProject } from '@/domains/projects/renderer/port'
+import { useProjects, useSelectedProject } from '@/domains/projects/renderer'
 import { currentSessionId } from '@/domains/sessions/contract/model/models'
 import { Roster, type RosterActions } from '@/domains/sessions/renderer/roster/roster'
 import { useOrderedSessions } from '@/domains/sessions/renderer/roster/roster-order'

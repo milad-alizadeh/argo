@@ -48,8 +48,9 @@
       // either edit here is a sign the plugin stopped being enabled, not a bug in this file.
       "ignore": [
         // Vendored shadcn components, excluded from lint and duplication the same way
-        // (biome.jsonc, vitest.config.ts coverage.exclude): not code this repo authors,
-        // kept as a generated primitive kit rather than pruned to only what's wired up today.
+        // (biome.jsonc, vitest.config.ts coverage.exclude): not code this repo authors. Pruned to
+        // what the app wires up (#2637), so a browse of the kit shows components in use; add one
+        // back with `bunx shadcn add` when a screen needs it.
         "src/platform/renderer/components/ui/**"
       ],
       // A macOS system binary read by signing-readback.mts, not an npm-installed dependency.
@@ -57,13 +58,6 @@
       "ignoreDependencies": [
         // Native-module build-time header for node-pty; nothing imports it from TypeScript.
         "node-addon-api",
-        // Used only by vendored, ignored shadcn primitives (calendar, chart, command, carousel,
-        // input-otp) that this app does not currently wire up.
-        "cmdk",
-        "embla-carousel-react",
-        "input-otp",
-        "react-day-picker",
-        "recharts",
         // The shadcn CLI, run by hand (`bunx shadcn add …`) against components.json; never
         // imported.
         "shadcn",

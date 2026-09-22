@@ -5,7 +5,7 @@
 import { open, stat } from 'node:fs/promises'
 import type { SessionChain } from '@/domains/sessions/contract/model/chains'
 import { readShellCommands } from '@/domains/sessions/contract/observation/signals'
-import { chainBackgroundTasks, chainMessages } from '@/domains/sessions/main/port'
+import { chainBackgroundTasks, chainMessages } from '@/domains/sessions/main'
 
 // How much of the tail one read carries. A watcher left running for an hour writes more than a
 // pane can draw, and the end is the part a reader is watching.

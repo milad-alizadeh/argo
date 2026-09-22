@@ -46,10 +46,6 @@
     "articleLabel": "Ticket {{key}}"
   },
   "status": {
-    "noun": {
-      "state": "State",
-      "status": "Status"
-    },
     "trigger": "{{noun}}: {{status}}"
   },
   "priority": {
@@ -69,13 +65,15 @@
       "items": "GitHub Issues",
       "scopePlaceholder": "Search owner/name",
       "noScopes": "{{login}} cannot see any repository with GitHub Issues turned on.",
-      "noDependencies": "GitHub gives no dependency information for this Ticket."
+      "noDependencies": "GitHub gives no dependency information for this Ticket.",
+      "statusNoun": "State"
     },
     "linear": {
       "items": "Linear issues",
       "scopePlaceholder": "Search teams",
       "noScopes": "{{login}} cannot see any Linear team.",
-      "noDependencies": "Linear gives no dependency information for this Ticket."
+      "noDependencies": "Linear gives no dependency information for this Ticket.",
+      "statusNoun": "Status"
     }
   },
   "connect": {
@@ -157,10 +155,18 @@
     "reconnectDescription": "Reconnect it to read {{label}} again.",
     "noAccount": "this Account",
     "connection": {
-      "account-missing": { "title": "The {{name}} Account for this {{scope}} is disconnected" },
-      "account-expired": { "title": "The sign-in for {{login}} expired" },
-      "account-revoked": { "title": "{{name}} no longer accepts {{login}}" },
-      "account-unreadable": { "title": "Argo cannot read the sign-in for {{login}}" }
+      "account-missing": {
+        "title": "The {{name}} Account for this {{scope}} is disconnected"
+      },
+      "account-expired": {
+        "title": "The sign-in for {{login}} expired"
+      },
+      "account-revoked": {
+        "title": "{{name}} no longer accepts {{login}}"
+      },
+      "account-unreadable": {
+        "title": "Argo cannot read the sign-in for {{login}}"
+      }
     }
   },
   "error": {

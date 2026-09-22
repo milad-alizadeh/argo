@@ -10,7 +10,7 @@ import {
   isLiveElsewhere,
   LIVE_ACTIVITY_SILENCE_MS,
   ROSTER_FILE_LIMIT,
-} from '@/domains/sessions/main/port'
+} from '@/domains/sessions/main'
 import { transcriptPaths } from './transcript-paths'
 
 // The Turn marks codex-harness 0.147.0 writes as `event_msg` payloads.

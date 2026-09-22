@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { providerPresentation } from '@/domains/accounts/renderer/port'
+import { providerPresentation } from '@/domains/accounts/renderer'
 import {
   type Backlog,
   backlogRows,

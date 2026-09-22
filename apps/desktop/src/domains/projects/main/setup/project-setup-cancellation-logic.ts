@@ -3,8 +3,8 @@ import type {
   ProjectSetupContext,
   ProjectSetupEvent,
 } from '@/domains/projects/main/setup/project-setup-machine-types'
-import { startProjectSetupActorTask } from './project-setup-actor-task'
-import type { ProjectSetupServices } from './project-setup-actors'
+import { startProjectSetupTask } from './project-setup-task'
+import type { ProjectSetupServices } from './project-setup-logic'
 
 export type ProjectSetupCancellationInput = {
   effect: 'planning' | 'application' | null
@@ -23,10 +23,10 @@ export function projectSetupCancellationInput(
   }
 }
 
-export function projectSetupCancellationActor(services: ProjectSetupServices) {
+export function projectSetupCancellationLogic(services: ProjectSetupServices) {
   return fromCallback<ProjectSetupEvent, ProjectSetupCancellationInput, ProjectSetupEvent>(
     ({ input, sendBack }) =>
-      startProjectSetupActorTask(async () => {
+      startProjectSetupTask(async () => {
         if (!input.effect || !input.sessionId) return
         try {
           await services.driver.interrupt(input.sessionId)

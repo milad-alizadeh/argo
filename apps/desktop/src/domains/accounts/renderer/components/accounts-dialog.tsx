@@ -16,7 +16,7 @@ import {
 import { useSignIn } from '@/domains/accounts/renderer/hooks/use-sign-in'
 import { useAccountsDialog } from '@/domains/accounts/renderer/state/use-accounts-dialog'
 import type { HarnessReadiness } from '@/domains/harness-signin/contract/contract'
-import { HarnessReadinessList, useHarnessReadiness } from '@/domains/harness-signin/renderer/port'
+import { HarnessReadinessList, useHarnessReadiness } from '@/domains/harness-signin/renderer'
 import { ContractFailureAlert } from '@/platform/renderer/components/contract-failure-alert'
 import {
   Dialog,

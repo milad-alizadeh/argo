@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import process from 'node:process'
-import { createOwnershipLedger, isProcessAlive } from '@/domains/sessions/main/port'
+import { createOwnershipLedger, isProcessAlive } from '@/domains/sessions/main'
 import { createCodexSessionDriver } from '@/harnesses/codex/drive/codex-session-driver'
 import { openAppServer } from '@/harnesses/codex/drive/open-app-server'
 import { codexResumeTarget } from '@/harnesses/codex/sessions/resume-target'

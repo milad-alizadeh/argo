@@ -1,5 +1,5 @@
 import type { BrowserWindow } from 'electron'
-import type { ProjectSetupRuntime } from '@/domains/projects/main/setup/actors/project-setup-actors'
+import type { ProjectSetupRuntime } from '@/domains/projects/main/setup/project-setup-logic'
 import { createProjectSetupRegistry } from '@/domains/projects/main/setup/persistence/project-setup-registry'
 import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
 import { projectSetupBridgeApi } from './project-setup-bridge-api'

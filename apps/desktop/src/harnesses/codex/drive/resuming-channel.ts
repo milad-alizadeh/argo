@@ -1,4 +1,4 @@
-import type { OwnershipStanding } from '@/domains/sessions/main/port'
+import type { OwnershipStanding } from '@/domains/sessions/main'
 import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
 import {
   type ManagedSession,

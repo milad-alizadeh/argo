@@ -34,7 +34,7 @@ import {
 import {
   createInMemorySessionTicketLinkStore,
   type SessionTicketLinkStore,
-} from '@/domains/tickets/main/port'
+} from '@/domains/tickets/main'
 
 export type { FeedOverlay, SessionSource } from '@/domains/sessions/main/observation/session-source'
 

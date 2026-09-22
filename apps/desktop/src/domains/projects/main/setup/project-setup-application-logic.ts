@@ -9,8 +9,8 @@ import type {
   ProjectSetupEvent,
 } from '@/domains/projects/main/setup/project-setup-machine-types'
 import { findProjectSetupApplicationDrift } from '@/domains/projects/main/setup/project-setup-reconciliation'
-import { startProjectSetupActorTask } from './project-setup-actor-task'
-import type { ProjectSetupServices } from './project-setup-actors'
+import { startProjectSetupTask } from './project-setup-task'
+import type { ProjectSetupServices } from './project-setup-logic'
 import {
   type ActivePermission,
   projectSetupPermissionDecisionHandler,
@@ -41,7 +41,7 @@ export function projectSetupApplicationInput(
   }
 }
 
-export function projectSetupApplicationActor(services: ProjectSetupServices, projectId: string) {
+export function projectSetupApplicationLogic(services: ProjectSetupServices, projectId: string) {
   return fromCallback<ProjectSetupEvent, ProjectSetupApplicationInput, ProjectSetupEvent>(
     ({ input, receive, sendBack }) => {
       const activePermission: ActivePermission = {
@@ -49,7 +49,7 @@ export function projectSetupApplicationActor(services: ProjectSetupServices, pro
         sessionId: input.sessionId ?? null,
       }
       receive(projectSetupPermissionDecisionHandler(services.driver, activePermission))
-      return startProjectSetupActorTask(() =>
+      return startProjectSetupTask(() =>
         runApplication({ activePermission, input, projectId, sendBack, services }),
       )
     },

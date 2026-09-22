@@ -4,7 +4,7 @@ import {
   fakeClaudeQuery,
   managedSessionService,
 } from '@/harnesses/claude/agent-sdk/claude-query-fixture'
-import { createClaudeSessionMachine } from '@/harnesses/claude/agent-sdk/claude-session-actor'
+import { createClaudeSessionMachine } from '@/harnesses/claude/agent-sdk/claude-session-machine'
 
 function flush(): Promise<void> {
   return new Promise((resolve) => setImmediate(resolve))

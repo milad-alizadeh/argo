@@ -24,7 +24,7 @@ import {
 } from '@/domains/sessions/main/index/session-index/worker-index'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import { feedRequest, listing } from '@/domains/sessions/main/observation/reader-test-helpers'
-import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main/port'
+import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main'
 
 const rosters = rosterHarness()
 afterEach(rosters.cleanUp)

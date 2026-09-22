@@ -5,7 +5,7 @@ import type { AccountState } from '@/domains/accounts/contract/contract'
 import { type Cipher, createGrantStore, type GrantStore } from '@/domains/accounts/main/grants'
 import type { AccountProvider } from '@/domains/accounts/main/providers'
 import { type AccountRecord, readAccounts, writeAccounts } from '@/domains/accounts/main/registry'
-import type { ProjectPort } from '@/domains/projects/main/port'
+import type { ProjectPort } from '@/domains/projects/main'
 import { createWriteQueue, portablePath } from '@/platform/main/storage/portable-file'
 import type { ProviderEndpoints } from '@/providers/endpoints'
 

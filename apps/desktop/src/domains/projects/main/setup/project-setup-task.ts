@@ -1,4 +1,4 @@
-export function startProjectSetupActorTask(task: () => Promise<void>): () => void {
+export function startProjectSetupTask(task: () => Promise<void>): () => void {
   let active = true
   void Promise.resolve().then(async () => {
     if (active) await task()

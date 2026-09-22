@@ -1,4 +1,4 @@
-import type { Cockpit, ProjectActions } from '@/domains/projects/renderer/port'
+import type { Cockpit, ProjectActions } from '@/domains/projects/renderer'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import {
   composerIdentityOf,

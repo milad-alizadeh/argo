@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
-import { capitalized, providerPresentation } from '@/domains/accounts/renderer/port'
+import { capitalized, providerPresentation } from '@/domains/accounts/renderer'
 import type { TicketScope } from '@/domains/tickets/contract/contract'
 import { sourcePresentation } from '@/domains/tickets/renderer/lib/sources'
 import { Button } from '@/platform/renderer/components/ui/button'

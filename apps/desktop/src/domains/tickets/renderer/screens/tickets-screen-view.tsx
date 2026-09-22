@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { AccountsDialog, useAccountsDialog } from '@/domains/accounts/renderer/port'
+import { AccountsDialog, useAccountsDialog } from '@/domains/accounts/renderer'
 import {
   ConnectSourceFields,
   ConnectSourceForm,

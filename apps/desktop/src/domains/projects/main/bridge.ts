@@ -8,7 +8,7 @@ import { openProject } from '@/domains/projects/main/open-project'
 import { registerProject, relocateProject } from '@/domains/projects/main/register-project'
 import { selectProject } from '@/domains/projects/main/select-project'
 import { selectProjectWorkspace } from '@/domains/projects/main/select-project-workspace'
-import { projectSetupRuntime } from '@/domains/projects/main/setup/actors/project-setup-actors'
+import { projectSetupRuntime } from '@/domains/projects/main/setup/project-setup-logic'
 import type { OnboardingAgentDriver } from '@/domains/projects/main/setup/onboarding-agent/runtime/run-onboarding-agent'
 import {
   loadSetupDocument,

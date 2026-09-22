@@ -1,6 +1,6 @@
 import { assign, fromPromise, sendTo, setup } from 'xstate'
 import { appendAssistantMessage } from '@/harnesses/claude/agent-sdk/claude-live-messages'
-import { claudeQueryLogic } from '@/harnesses/claude/agent-sdk/claude-query-actor'
+import { claudeQueryLogic } from '@/harnesses/claude/agent-sdk/claude-query-logic'
 import {
   initialClaudeSessionContext,
   sessionFrom,

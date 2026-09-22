@@ -6,8 +6,8 @@ import type {
   ProjectSetupContext,
   ProjectSetupEvent,
 } from '@/domains/projects/main/setup/project-setup-machine-types'
-import { startProjectSetupActorTask } from './project-setup-actor-task'
-import type { ProjectSetupServices } from './project-setup-actors'
+import { startProjectSetupTask } from './project-setup-task'
+import type { ProjectSetupServices } from './project-setup-logic'
 import {
   type ActivePermission,
   projectSetupPermissionDecisionHandler,
@@ -55,7 +55,7 @@ function formatAnswer(answer: ProjectSetupAnswer) {
   return `- ${answer.id}: selected [${selected}]; other: ${custom}`
 }
 
-export function projectSetupPlanningActor(services: ProjectSetupServices, projectId: string) {
+export function projectSetupPlanningLogic(services: ProjectSetupServices, projectId: string) {
   return fromCallback<ProjectSetupEvent, ProjectSetupPlanningInput, ProjectSetupEvent>(
     ({ input, receive, sendBack }) => {
       const activePermission: ActivePermission = {
@@ -63,7 +63,7 @@ export function projectSetupPlanningActor(services: ProjectSetupServices, projec
         sessionId: input.continuation?.sessionId ?? null,
       }
       receive(projectSetupPermissionDecisionHandler(services.driver, activePermission))
-      return startProjectSetupActorTask(() =>
+      return startProjectSetupTask(() =>
         runPlanning({ activePermission, input, projectId, sendBack, services }),
       )
     },

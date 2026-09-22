@@ -43,7 +43,7 @@ const [
   import('@/providers/github/endpoints'),
   import('@/providers/composition'),
   import('@/domains/accounts/main/access'),
-  import('@/domains/connections/main/port'),
+  import('@/domains/connections/main'),
   import('@/domains/accounts/main/bridge'),
   import('@/domains/accounts/contract/operations'),
   import('@/domains/harness-signin/main/bridge'),

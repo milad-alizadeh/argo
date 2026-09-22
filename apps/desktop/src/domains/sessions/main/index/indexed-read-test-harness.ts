@@ -13,7 +13,7 @@ import { openSessionIndex } from '@/domains/sessions/main/index/session-index/op
 import type { IndexedAdapter } from '@/domains/sessions/main/index/session-index/roster-fixtures'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
 import type { SessionSource } from '@/domains/sessions/main/observation/session-source'
-import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main/port'
+import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main'
 
 // Counts every call to the underlying adapter's own scan, the one `archive-window.ts` falls back
 // to growing: an indexed read that never calls it proves the index answered alone.

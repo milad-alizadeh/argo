@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { MemoryRouter } from 'react-router'
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
-import { AccountsPanel } from '@/domains/accounts/renderer/port'
+import { AccountsPanel } from '@/domains/accounts/renderer'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { ConnectSourceFields } from '@/domains/tickets/renderer/connection/connect-source-form'
 import {

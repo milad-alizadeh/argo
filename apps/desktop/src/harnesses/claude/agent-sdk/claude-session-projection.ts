@@ -2,7 +2,7 @@ import type {
   SessionProjection,
   SessionStatus,
 } from '@/domains/sessions/next/contract/session-projection-contract'
-import type { createClaudeSessionMachine } from '@/harnesses/claude/agent-sdk/claude-session-actor'
+import type { createClaudeSessionMachine } from '@/harnesses/claude/agent-sdk/claude-session-machine'
 import type { ClaudeSessionContext } from '@/harnesses/claude/agent-sdk/types'
 
 export type ClaudeSessionActor = ActorRefFrom<ReturnType<typeof createClaudeSessionMachine>>

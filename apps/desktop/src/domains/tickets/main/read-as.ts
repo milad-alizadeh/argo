@@ -3,8 +3,8 @@
 
 import type { Provider } from '@/domains/accounts/contract/contract'
 import { providerOf } from '@/domains/accounts/contract/provider'
-import { type AccountAccess, asAccount, type TokenFailure } from '@/domains/accounts/main/port'
-import type { ConnectionPort } from '@/domains/connections/main/port'
+import { type AccountAccess, asAccount, type TokenFailure } from '@/domains/accounts/main'
+import type { ConnectionPort } from '@/domains/connections/main'
 import {
   type TicketError,
   type TicketErrorCode,

@@ -3,7 +3,7 @@ import { validateAcceptedSetupPlan } from '@/domains/projects/contract/setup-pla
 import {
   inactiveProjectSetupRuntime,
   type ProjectSetupRuntime,
-} from '@/domains/projects/main/setup/actors/project-setup-actors'
+} from '@/domains/projects/main/setup/project-setup-logic'
 import { isManualProjectDetails } from '@/domains/projects/main/setup/preparation/project-setup-manual-details'
 import type { ProjectSetupEvent } from '@/domains/projects/main/setup/project-setup-machine-types'
 import {

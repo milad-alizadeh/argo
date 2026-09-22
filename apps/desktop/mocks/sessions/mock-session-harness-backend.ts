@@ -11,7 +11,7 @@ import type {
 import {
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
-} from '../../src/domains/sessions/main/composition/proof-protocol'
+} from '../../src/domains/sessions/contract/proof-protocol'
 import type { SessionHarness } from '../../src/domains/sessions/renderer/harness/harnesses'
 import { mockClaudeHarness } from '../cli/claude/mock-claude-cli'
 import { mockCodexHarness } from '../cli/codex/mock-codex-cli'

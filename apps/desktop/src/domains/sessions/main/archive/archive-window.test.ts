@@ -13,7 +13,7 @@ import {
 } from '@/domains/sessions/main/archive/archive-store'
 import { ROSTER_PAGE_SIZE } from '@/domains/sessions/main/observation/discover-transcript-sessions'
 import { createSessionReader } from '@/domains/sessions/main/observation/reader'
-import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main/port'
+import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main'
 import {
   claudeRoot,
   writeManySessions,

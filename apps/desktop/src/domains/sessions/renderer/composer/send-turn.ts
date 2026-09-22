@@ -1,6 +1,6 @@
 import type { useQueryClient } from '@tanstack/react-query'
 import type { NavigateFunction } from 'react-router'
-import type { Cockpit } from '@/domains/projects/renderer/port'
+import type { Cockpit } from '@/domains/projects/renderer'
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import type { SessionCommandOutcome } from '@/domains/sessions/next/contract/session-projection-contract'
 import {

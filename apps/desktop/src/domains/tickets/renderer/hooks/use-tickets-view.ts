@@ -2,8 +2,8 @@
 // the Tickets, resolved into the single view the screen draws.
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router'
-import { useAccounts } from '@/domains/accounts/renderer/port'
-import { useSelectedProject } from '@/domains/projects/renderer/port'
+import { useAccounts } from '@/domains/accounts/renderer'
+import { useSelectedProject } from '@/domains/projects/renderer'
 import { useConnectForm } from '@/domains/tickets/renderer/hooks/use-connect-form'
 import {
   connectedView,

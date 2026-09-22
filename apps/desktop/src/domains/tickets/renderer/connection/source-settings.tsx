@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { providerPresentation } from '@/domains/accounts/renderer/port'
+import { providerPresentation } from '@/domains/accounts/renderer'
 import type { ConnectionSummary } from '@/domains/tickets/contract/contract'
 import { ConnectionStatusMark } from '@/domains/tickets/renderer/connection/connection-status-mark'
 import { Icon } from '@/platform/renderer/components/icon'

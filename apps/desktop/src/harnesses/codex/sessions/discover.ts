@@ -7,7 +7,7 @@ import {
   createTranscriptRecordReader,
   type TranscriptDiscovery,
   type TranscriptDiscoveryOptions,
-} from '@/domains/sessions/main/port'
+} from '@/domains/sessions/main'
 import { isRecord } from '@/shared/validation'
 import { withoutModelInputCopies } from './model-input-copies'
 import { answeringEveryNestedCall } from './nested-results'

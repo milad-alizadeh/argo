@@ -2,7 +2,7 @@
   "forbidden": [
     {
       "name": "domain-port-only",
-      "comment": "A domain reaches another domain's main or renderer facet only through that domain's port.ts (ADR-0044).",
+      "comment": "A domain reaches another domain's main or renderer facet only through that domain's index.ts (ADR-0044).",
       "severity": "error",
       "from": {
         "path": "^apps/desktop/src/domains/([^/]+)/",
@@ -16,7 +16,7 @@
         "path": "^apps/desktop/src/domains/[^/]+/(main|renderer)/",
         "pathNot": [
           "^apps/desktop/src/domains/$1/",
-          "/port\\.tsx?$",
+          "/index\\.tsx?$",
           "^apps/desktop/src/domains/accounts/main/harness-fixtures\\.ts$",
           "^apps/desktop/src/domains/sessions/main/index/session-index/roster-fixtures\\.ts$"
         ]
@@ -32,6 +32,26 @@
       },
       "to": {
         "path": "^apps/desktop/src/harnesses/codex/sessions/"
+      }
+    },
+    {
+      "name": "feature-entry-point-only",
+      "comment": "One folder, one secret (AGENTS.md): a feature folder directly under a domain facet or a harness is reached through its entry point, never past it. The entry point is index.ts, or the file named after the folder, and the four of the latter that exist today are listed below. FAILING ON PURPOSE as of 2026-09-22: 746 edges from 346 files breach this, in 64 of the 66 folders it covers, because the app was never built with one entry point per folder. That number is the distance to the target. Shrink it by adding entry points, never by widening this rule.",
+      "severity": "error",
+      "from": {
+        "path": "^apps/desktop/src/((?:domains/[^/]+/(?:contract|main|preload|renderer)|harnesses/[^/]+)/[^/]+|[^/]+)",
+        "pathNot": ["\\.(test|stories)\\.(ts|tsx)$"]
+      },
+      "to": {
+        "path": "^apps/desktop/src/(?:domains/[^/]+/(?:contract|main|preload|renderer)|harnesses/[^/]+)/[^/]+/",
+        "pathNot": [
+          "^apps/desktop/src/$1/",
+          "/index\\.tsx?$",
+          "^apps/desktop/src/domains/sessions/renderer/composer/composer\\.ts$",
+          "^apps/desktop/src/domains/sessions/renderer/roster/roster\\.ts$",
+          "^apps/desktop/src/domains/sessions/renderer/turn-setup/turn-setup\\.ts$",
+          "^apps/desktop/src/domains/sessions/main/drive/drive\\.ts$"
+        ]
       }
     }
   ],

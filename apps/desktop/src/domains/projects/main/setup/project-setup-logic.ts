@@ -6,19 +6,19 @@ import type { ProjectSetupEvent } from '@/domains/projects/main/setup/project-se
 import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
 import {
   type ProjectSetupApplicationInput,
-  projectSetupApplicationActor,
-} from './project-setup-application-actor'
+  projectSetupApplicationLogic,
+} from './project-setup-application-logic'
 import {
   type ProjectSetupCancellationInput,
-  projectSetupCancellationActor,
-} from './project-setup-cancellation-actor'
-import { projectSetupFinalizationActor } from './project-setup-finalization-actor'
+  projectSetupCancellationLogic,
+} from './project-setup-cancellation-logic'
+import { projectSetupFinalizationLogic } from './project-setup-finalization-logic'
 import {
   type ProjectSetupPlanningInput,
-  projectSetupPlanningActor,
-} from './project-setup-planning-actor'
+  projectSetupPlanningLogic,
+} from './project-setup-planning-logic'
 
-export const inactiveProjectSetupActors = {
+export const inactiveProjectSetupLogic = {
   cancellation: fromCallback<ProjectSetupEvent, ProjectSetupCancellationInput, ProjectSetupEvent>(
     () => undefined,
   ),
@@ -40,12 +40,12 @@ export type ProjectSetupServices = {
 }
 
 export type ProjectSetupRuntime = {
-  actors: (projectId: string) => typeof inactiveProjectSetupActors
+  actors: (projectId: string) => typeof inactiveProjectSetupLogic
   harnesses: typeof defaultProjectSetupHarnesses
 }
 
 export const inactiveProjectSetupRuntime: ProjectSetupRuntime = {
-  actors: () => inactiveProjectSetupActors,
+  actors: () => inactiveProjectSetupLogic,
   harnesses: defaultProjectSetupHarnesses,
 }
 
@@ -53,10 +53,10 @@ export function projectSetupRuntime(services: ProjectSetupServices): ProjectSetu
   return {
     harnesses: defaultProjectSetupHarnesses,
     actors: (projectId) => ({
-      cancellation: projectSetupCancellationActor(services),
-      finalization: projectSetupFinalizationActor(services, projectId),
-      onboardingApplication: projectSetupApplicationActor(services, projectId),
-      onboardingPlanning: projectSetupPlanningActor(services, projectId),
+      cancellation: projectSetupCancellationLogic(services),
+      finalization: projectSetupFinalizationLogic(services, projectId),
+      onboardingApplication: projectSetupApplicationLogic(services, projectId),
+      onboardingPlanning: projectSetupPlanningLogic(services, projectId),
     }),
   }
 }

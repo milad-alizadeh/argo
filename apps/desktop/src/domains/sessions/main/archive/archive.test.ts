@@ -14,7 +14,7 @@ import {
   writeClaudeTranscript,
   writeCodexTranscript,
 } from '@/domains/sessions/main/observation/reader-test-helpers'
-import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main/port'
+import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 

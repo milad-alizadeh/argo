@@ -15,7 +15,7 @@ import {
   resolvedReply,
   startedReply,
 } from '@/domains/harness-signin/main/harness-sign-in-replies'
-import type { HarnessReadinessRegistration } from '@/domains/harness-signin/main/port'
+import type { HarnessReadinessRegistration } from '@/domains/harness-signin/main'
 import { registerDomainHandlers } from '@/platform/main/ipc/register-domain-handlers'
 
 export type HarnessSignInContext = {

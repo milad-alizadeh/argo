@@ -3,7 +3,7 @@
 // is plan mode's written proposal, not this list, so it is not read here.
 
 import type { PlanChange, TranscriptRecord } from '@/domains/sessions/contract/model/transcript'
-import { readPlanSnapshot } from '@/domains/sessions/main/port'
+import { readPlanSnapshot } from '@/domains/sessions/main'
 import {
   JAVASCRIPT_IDENTIFIER_SOURCE,
   nextQuotedState,

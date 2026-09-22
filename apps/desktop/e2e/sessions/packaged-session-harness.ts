@@ -9,7 +9,7 @@ import {
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_EXECUTABLE_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
-} from '../../src/domains/sessions/main/composition/proof-protocol'
+} from '../../src/domains/sessions/contract/proof-protocol'
 import { appExecutable } from '../packaged-app'
 import type {
   SessionFixture,

@@ -7,11 +7,11 @@ import type {
   AccountDispatchClient,
   TicketDispatchClient,
 } from '@/domains/accounts/main/harness-dispatch'
-import { createConnectionPort } from '@/domains/connections/main/port'
-import { createProjectPort } from '@/domains/projects/main/port'
+import { createConnectionPort } from '@/domains/connections/main'
+import { createProjectPort } from '@/domains/projects/main'
 import { ticketError } from '@/domains/tickets/contract/contract'
 import { TICKET_OPERATIONS } from '@/domains/tickets/contract/operations'
-import { attachTicketBridge } from '@/domains/tickets/main/port'
+import { attachTicketBridge } from '@/domains/tickets/main'
 import { accountProviders, ticketSources } from '@/providers/composition'
 import { proofEndpoints } from '@/providers/github/endpoints'
 import { linearProofEndpoints } from '@/providers/linear/endpoints'

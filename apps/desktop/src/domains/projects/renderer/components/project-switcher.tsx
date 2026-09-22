@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ProjectSettingsDialog } from '@/domains/projects/renderer/components/project-settings-dialog'
-import { useProjects } from '@/domains/projects/renderer/port'
+import { useProjects } from '@/domains/projects/renderer'
 import { useCommands } from '@/platform/renderer/cockpit/hooks/use-commands'
 import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'

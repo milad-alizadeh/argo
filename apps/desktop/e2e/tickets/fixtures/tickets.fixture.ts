@@ -17,7 +17,7 @@ import {
 import {
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
-} from '../../../src/domains/sessions/main/composition/proof-protocol'
+} from '../../../src/domains/sessions/contract/proof-protocol'
 import {
   GITHUB_PROOF_ORIGIN_ENV,
   LINEAR_PROOF_ORIGIN_ENV,

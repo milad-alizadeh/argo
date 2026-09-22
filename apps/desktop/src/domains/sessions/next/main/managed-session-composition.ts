@@ -1,5 +1,5 @@
 import type { BrowserWindow } from 'electron'
-import type { ProjectPort } from '@/domains/projects/main/port'
+import type { ProjectPort } from '@/domains/projects/main'
 import { SESSION_CODEX_EXECUTABLE_ENV } from '@/domains/sessions/contract/proof-protocol'
 import { claudeSessionAdapterRegistration } from '@/harnesses/claude/agent-sdk/claude-session-adapter-registration'
 import { createCodexSessionAdapterRegistration } from '@/harnesses/codex/drive/codex-session-adapter-registration'

@@ -7,8 +7,8 @@ import type {
   SessionRenameRequest,
 } from '@/domains/sessions/contract/ipc/contract'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import type { SessionIndex, SessionSource } from '@/domains/sessions/main/port'
-import { discoverRoster } from '@/domains/sessions/main/port'
+import type { SessionIndex, SessionSource } from '@/domains/sessions/main'
+import { discoverRoster } from '@/domains/sessions/main'
 import {
   compactionEndedAt,
   markCompactingRows,

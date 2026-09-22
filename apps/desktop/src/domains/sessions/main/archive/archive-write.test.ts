@@ -12,7 +12,7 @@ import {
   tempRoot,
   writeClaudeTranscript,
 } from '@/domains/sessions/main/observation/reader-test-helpers'
-import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main/port'
+import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/read-sessions'
 
 // `failed` is a storage failure alone (#2315): the flag is Argo's own, so the only reason a

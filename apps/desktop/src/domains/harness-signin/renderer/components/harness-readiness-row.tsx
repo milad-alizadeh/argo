@@ -4,7 +4,7 @@ import {
   type HarnessSignIn,
   useHarnessSignIn,
 } from '@/domains/harness-signin/renderer/hooks/use-harness-sign-in'
-import { HarnessLogo } from '@/domains/sessions/renderer/port'
+import { HarnessLogo } from '@/domains/sessions/renderer'
 import { ContractFailureAlert } from '@/platform/renderer/components/contract-failure-alert'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Button } from '@/platform/renderer/components/ui/button'

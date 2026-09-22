@@ -42,9 +42,6 @@ export function sourcePresentation(provider: Provider): SourcePresentation {
     scopePlaceholder: i18n.t(`tickets:source.${provider}.scopePlaceholder`),
     noScopes: (login) => i18n.t(`tickets:source.${provider}.noScopes`, { login }),
     noDependencies: i18n.t(`tickets:source.${provider}.noDependencies`),
-    statusNoun:
-      provider === 'github'
-        ? i18n.t('tickets:status.noun.state')
-        : i18n.t('tickets:status.noun.status'),
+    statusNoun: i18n.t(`tickets:source.${provider}.statusNoun`),
   }
 }

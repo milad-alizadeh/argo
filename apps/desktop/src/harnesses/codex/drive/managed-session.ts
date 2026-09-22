@@ -1,5 +1,5 @@
 import type { SessionPlan, SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import { managedRow, type OwnershipLedger } from '@/domains/sessions/main/port'
+import { managedRow, type OwnershipLedger } from '@/domains/sessions/main'
 import type { CodexChannel } from '@/harnesses/codex/drive/codex-channel'
 import { CodexSessionDriverError } from '@/harnesses/codex/drive/codex-session-error'
 import { codexLaunchEnvironment } from '@/harnesses/codex/drive/launch-environment'

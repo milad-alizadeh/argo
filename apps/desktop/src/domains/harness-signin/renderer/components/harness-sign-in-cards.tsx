@@ -5,7 +5,7 @@ import {
   STATE_BADGE_VARIANT,
 } from '@/domains/harness-signin/renderer/components/harness-readiness-row'
 import { useHarnessSignIn } from '@/domains/harness-signin/renderer/hooks/use-harness-sign-in'
-import { HarnessLogo } from '@/domains/sessions/renderer/port'
+import { HarnessLogo } from '@/domains/sessions/renderer'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Card, CardContent } from '@/platform/renderer/components/ui/card'
 

@@ -1,8 +1,8 @@
 import { assertEvent, assign, sendTo, setup } from 'xstate'
-import { inactiveProjectSetupActors } from '@/domains/projects/main/setup/actors/project-setup-actors'
-import { projectSetupApplicationInput } from '@/domains/projects/main/setup/actors/project-setup-application-actor'
-import { projectSetupCancellationInput } from '@/domains/projects/main/setup/actors/project-setup-cancellation-actor'
-import { projectSetupPlanningInput } from '@/domains/projects/main/setup/actors/project-setup-planning-actor'
+import { inactiveProjectSetupLogic } from '@/domains/projects/main/setup/project-setup-logic'
+import { projectSetupApplicationInput } from '@/domains/projects/main/setup/project-setup-application-logic'
+import { projectSetupCancellationInput } from '@/domains/projects/main/setup/project-setup-cancellation-logic'
+import { projectSetupPlanningInput } from '@/domains/projects/main/setup/project-setup-planning-logic'
 import {
   initialProjectSetupContext,
   type ProjectSetupContext,
@@ -33,7 +33,7 @@ const projectSetup = setup({
     events: ProjectSetupEvent
     tags: 'agent-running' | 'busy' | 'permission-capable' | 'recoverable'
   },
-  actors: inactiveProjectSetupActors,
+  actors: inactiveProjectSetupLogic,
   guards: {
     'if an approval is pending': ({ context }) => context.pendingApproval !== null,
   },

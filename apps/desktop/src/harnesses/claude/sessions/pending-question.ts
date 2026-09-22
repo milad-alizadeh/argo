@@ -1,4 +1,4 @@
-import { chainMessages, pendingAskCall } from '@/domains/sessions/main/port'
+import { chainMessages, pendingAskCall } from '@/domains/sessions/main'
 import { readSessionFiles } from '@/harnesses/claude/sessions/discover'
 
 // The same confirmability status.ts's `isAskPending` reads externally, via the shared

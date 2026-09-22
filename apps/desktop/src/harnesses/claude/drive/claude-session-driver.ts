@@ -1,7 +1,7 @@
 import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import type { ClaudePermission } from '@/domains/sessions/contract/ipc/contract'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import { managedRow, rollupSessionStatus } from '@/domains/sessions/main/port'
+import { managedRow, rollupSessionStatus } from '@/domains/sessions/main'
 import { closeSessions } from '@/harnesses/claude/drive/claude-session-close'
 import {
   beginCompaction,
