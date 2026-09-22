@@ -33,6 +33,7 @@ test('starts Claude after the selected Workspace is ready', async () => {
   releaseWorkspace?.()
   await new Promise((resolve) => setImmediate(resolve))
 
+  expect(fake.sentPrompts()).toEqual([])
   fake.emitInit({ apiKeySource: 'none' })
 
   await expect(outcome).resolves.toMatchObject({
@@ -43,6 +44,7 @@ test('starts Claude after the selected Workspace is ready', async () => {
     },
   })
   expect(queryCalls).toBe(1)
+  expect(fake.sentPrompts()).toEqual(['hello'])
 })
 
 test('notifies roster watchers when the SDK adds a live assistant message', async () => {

@@ -20,7 +20,7 @@ function handleEvent(options: {
   query: { current: Query }
   session: { current: ClaudeSessionInput['session'] }
 }) {
-  const { approvals, channel, dialogs, event, query, session } = options
+  const { approvals, channel, dialogs, event, input, query, session } = options
   switch (event.type) {
     case 'Send':
     case 'Steer':
@@ -45,6 +45,7 @@ function handleEvent(options: {
       return
     case 'Session identified':
       session.current = event.session
+      if (input.session === null) channel.push(userMessage(input.prompt))
       return
     default:
       return
@@ -57,7 +58,7 @@ function handleEvent(options: {
 export const claudeQueryLogic = fromCallback<ClaudeSessionEvent, ClaudeSessionInput>(
   ({ input, sendBack, receive }) => {
     const channel = createStreamInputChannel()
-    channel.push(userMessage(input.prompt))
+    if (input.session !== null) channel.push(userMessage(input.prompt))
     const approvals = createPendingRequestRegistry<PermissionResult | null>(null)
     const dialogs = createPendingRequestRegistry<UserDialogResult>({ behavior: 'cancelled' })
     let stopped = false
