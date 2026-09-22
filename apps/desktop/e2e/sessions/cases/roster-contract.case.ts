@@ -69,15 +69,17 @@ async function proveBulkArchive(page) {
 export async function proveContract(page) {
   const list = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
   assert.equal(list.type, 'session.listed')
-  assert.deepEqual({ found: list.filesFound, read: list.filesRead }, { found: 15, read: 15 })
-  // Discovery still reads every transcript file (`filesRead` above), but an archived Session
-  // never projects into this active list (#1593): `plannedWork` is read out of it below instead.
+  // Codex history now comes from its app server, so only the 13 Claude transcript files count.
+  assert.deepEqual({ found: list.filesFound, read: list.filesRead }, { found: 13, read: 13 })
+  // An archived Session never projects into this active list (#1593): `plannedWork` is read out
+  // of it below instead.
   assert.deepEqual(list.sessions.map((session) => session.id).sort(), [
     'askPending',
     'externalBasic',
     'harnessNoise',
     'prose',
     'resumeParent',
+    'rollout-codexChild',
     'rollout-codexParent',
     'setupAnswered',
     'shellRunning',
@@ -95,7 +97,10 @@ export async function proveContract(page) {
     list.sessions.filter((session) => session.originUnread).map((session) => session.id),
     ['strandedResume'],
   )
-  assert.deepEqual([...new Set(list.sessions.map((session) => session.posture))], ['external'])
+  assert.deepEqual(
+    [...new Set(list.sessions.map((session) => session.posture))],
+    ['external', 'watched'],
+  )
   const read = await page.evaluate(
     (value) => window.argo.readSessionFeed(value),
     CLAUDE_FEED_REQUEST,
@@ -106,8 +111,8 @@ export async function proveContract(page) {
     (value) => window.argo.readSessionFeed(value),
     CODEX_FEED_REQUEST,
   )
-  assert.equal(codexRead.chainId, 'rollout-codexParent')
-  assert.equal(codexRead.rows.length, 4)
+  assert.equal(codexRead.chainId, 'rollout-codexChild')
+  assert.equal(codexRead.rows.length, 2)
   const missing = await page.evaluate((value) => window.argo.readSessionFeed(value), {
     ...CLAUDE_FEED_REQUEST,
     sessionId: 'not-a-session',
