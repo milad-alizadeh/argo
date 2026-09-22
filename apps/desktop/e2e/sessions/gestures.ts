@@ -118,7 +118,8 @@ function readCreatedRow(page: Page, known: string[], prompt: string) {
       return {
         id: first.dataset.sessionId ?? '',
         label: first.textContent ?? '',
-        newRows: created.length,
+        newRows: created.filter((row) => !(row.dataset.sessionId ?? '').startsWith('optimistic:'))
+          .length,
       }
     },
     { selector: ROW, ids: known, prompt },

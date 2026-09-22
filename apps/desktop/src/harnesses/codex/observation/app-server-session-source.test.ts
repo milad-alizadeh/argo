@@ -44,6 +44,7 @@ test('projects managed Codex app-server state without a transcript', async () =>
   assert.equal(listed.rows[0]?.id, 'thread-1')
   assert.equal(listed.rows[0]?.title?.text, 'Inspect the migration')
   assert.equal(listed.rows[0]?.turnStartedAt, new Date(1_700_000_000_000).toISOString())
+  assert.equal(listed.rows[0]?.updatedAt, new Date(1_700_000_000_000).toISOString())
 
   assert.deepEqual(source.readManagedFeed?.('thread-1'), {
     chainId: 'thread-1',
