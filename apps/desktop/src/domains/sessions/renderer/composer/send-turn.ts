@@ -120,7 +120,7 @@ export async function sendToSessionIdentity(
         turn,
         watchTurn,
       })
-  if (sent === false) marker.clear(sessionId)
+  if (sent === false || sent === 'rejected') marker.clear(sessionId)
   return sent
 }
 

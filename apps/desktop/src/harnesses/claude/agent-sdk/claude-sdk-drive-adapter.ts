@@ -17,10 +17,8 @@ function identity(sessionId: string) {
   return { harness: 'claude' as const, nativeId: sessionId }
 }
 
-function failed(outcome: Awaited<ReturnType<SessionAdapter['execute']>>) {
-  return outcome.kind === 'rejected'
-    ? { error: 'not-drivable' as const }
-    : { error: 'not-drivable' as const }
+function failed(): { error: 'not-drivable' } {
+  return { error: 'not-drivable' }
 }
 
 export function createClaudeSdkDriveAdapter(options: {
@@ -41,7 +39,7 @@ export function createClaudeSdkDriveAdapter(options: {
       })
       return outcome.kind === 'accepted'
         ? { sessionId: outcome.projection.session.nativeId }
-        : failed(outcome)
+        : failed()
     },
     async send({ sessionId, prompt, attachments }) {
       if (attachments.length > 0) return { error: 'not-drivable' }
@@ -50,7 +48,7 @@ export function createClaudeSdkDriveAdapter(options: {
         session: identity(sessionId),
         prompt,
       })
-      return outcome.kind === 'accepted' ? { ok: true } : failed(outcome)
+      return outcome.kind === 'accepted' ? { ok: true } : failed()
     },
     async steer({ sessionId, prompt, attachments }) {
       if (attachments.length > 0) return { error: 'not-drivable' }
@@ -59,14 +57,14 @@ export function createClaudeSdkDriveAdapter(options: {
         session: identity(sessionId),
         prompt,
       })
-      return outcome.kind === 'accepted' ? { ok: true } : failed(outcome)
+      return outcome.kind === 'accepted' ? { ok: true } : failed()
     },
     async interrupt({ sessionId }) {
       const outcome = await options.adapter.execute({
         type: 'session.interrupt',
         session: identity(sessionId),
       })
-      return outcome.kind === 'accepted' ? { ok: true } : failed(outcome)
+      return outcome.kind === 'accepted' ? { ok: true } : failed()
     },
     async compact() {
       return { error: 'not-drivable' }
@@ -84,7 +82,7 @@ export function createClaudeSdkDriveAdapter(options: {
         approvalId: permissionId,
         decision: decision === 'deny' || decision === 'cancel' ? 'reject' : 'approve',
       })
-      return outcome.kind === 'accepted' ? { ok: true } : failed(outcome)
+      return outcome.kind === 'accepted' ? { ok: true } : failed()
     },
     async decideQuestion() {
       return { error: 'stale-question' }
