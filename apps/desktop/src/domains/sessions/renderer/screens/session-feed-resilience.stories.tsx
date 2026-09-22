@@ -112,7 +112,7 @@ function flakyFirstOpenHost() {
 }
 
 const meta: Meta<typeof SessionScreenView> = {
-  title: 'Sessions/Screen/FeedResilience',
+  title: 'Sessions/Screen/Feed Resilience',
   component: SessionScreenView,
   parameters: { layout: 'fullscreen' },
   decorators: [

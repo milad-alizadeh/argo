@@ -52,7 +52,7 @@ function stalledFeedHost() {
 }
 
 const meta: Meta<typeof SessionScreenView> = {
-  title: 'Sessions/Screen/FeedStall',
+  title: 'Sessions/Screen/Feed Stall',
   component: SessionScreenView,
   parameters: { layout: 'fullscreen' },
   decorators: [
