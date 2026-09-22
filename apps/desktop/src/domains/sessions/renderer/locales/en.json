@@ -133,6 +133,12 @@
       "ownSettings": "{{harness}} runs at the Model and Effort in its own settings.",
       "model": "Model"
     },
+    "workspace": {
+      "choose": "Choose Workspace",
+      "chooseLabel": "Choose Workspace: {{workspace}}",
+      "label": "Workspace",
+      "createManaged": "New managed Workspace"
+    },
     "references": {
       "label": "References",
       "unavailable": "Not available for {{harness}}",

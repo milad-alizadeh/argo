@@ -32,7 +32,7 @@ const meta = {
       </div>
     ),
   ],
-  title: 'Sessions/DevelopmentIdentityBar',
+  title: 'Sessions/Composer/Development Identity Bar',
 } satisfies Meta<typeof DevelopmentIdentityBar>
 
 export default meta

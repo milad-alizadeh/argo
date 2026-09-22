@@ -1,6 +1,5 @@
 // Renders a stored prompt's skill mentions and links inline (#2049), shared by the Feed, the
 // Roster and the composer (skill-mention-node.tsx decorates with the same SkillBadge).
-import { WandSparkles } from 'lucide-react'
 import { Fragment, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LINK_CLASS } from '@/domains/sessions/renderer/feed/content/link-class'
@@ -9,6 +8,7 @@ import {
   type PromptSegment,
   parsePromptText,
 } from '@/domains/sessions/renderer/prompt/prompt-segments'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 
 // Set in its host's type role (the Feed prompt, a Roster title, the composer), so the name
@@ -28,7 +28,7 @@ export type PromptSkill = { name: string; path: string }
 export function SkillBadge({ name }: { name: string }) {
   return (
     <Badge variant="secondary" className={SKILL_BADGE_CLASS}>
-      <WandSparkles data-icon="inline-start" />
+      <Icon name="skill-invocation" data-icon="inline-start" />
       {formatSkillLabel(name)}
     </Badge>
   )
@@ -37,7 +37,7 @@ export function SkillBadge({ name }: { name: string }) {
 function SkillLabel({ name }: { name: string }) {
   return (
     <span className={SKILL_LABEL_CLASS}>
-      <WandSparkles aria-hidden="true" data-icon="inline-start" />
+      <Icon name="skill-invocation" data-icon="inline-start" />
       {formatSkillLabel(name)}
     </span>
   )
@@ -62,7 +62,7 @@ function SkillButton({
       render={<button type="button" />}
       variant="outline"
     >
-      <WandSparkles data-icon="inline-start" />
+      <Icon name="skill-invocation" data-icon="inline-start" />
       {label}
     </Badge>
   )

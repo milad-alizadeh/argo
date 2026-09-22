@@ -3,6 +3,7 @@ import { identifierSchema } from '@/shared/validation'
 
 export const PROJECT_ERROR_CODES = [
   'missing-project',
+  'missing-workspace',
   'access-denied',
   'invalid-request',
   'unsupported-version',

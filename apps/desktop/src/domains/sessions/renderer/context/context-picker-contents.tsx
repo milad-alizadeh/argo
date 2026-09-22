@@ -1,15 +1,15 @@
-import { Ban, CheckCircle2, Circle, CircleDotDashed, Folder, type LucideIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { TicketProviderIcon } from '@/domains/sessions/renderer/composer/references/ticket-provider-icon'
 import type { ComposerTicketContext } from '@/domains/sessions/renderer/composer/use-composer-store'
+import { Icon, type IconName } from '@/platform/renderer/components/icon'
 
 export type TicketChoice = Omit<ComposerTicketContext, 'id'>
 
-const statusIcon: Record<string, LucideIcon> = {
-  Closed: CheckCircle2,
-  Done: CheckCircle2,
-  'In Progress': CircleDotDashed,
-  Open: Circle,
+const statusIcon: Record<string, IconName> = {
+  Closed: 'ticket-closed',
+  Done: 'ticket-done',
+  'In Progress': 'ticket-in-progress',
+  Open: 'ticket-open',
 }
 
 function TicketResult({
@@ -24,7 +24,7 @@ function TicketResult({
   ticket: TicketChoice
 }) {
   const { t } = useTranslation('sessions')
-  const StatusIcon = statusIcon[ticket.status] ?? Circle
+  const statusIconName = statusIcon[ticket.status] ?? 'ticket-open'
   return (
     <button
       data-selected={selected || undefined}
@@ -41,7 +41,7 @@ function TicketResult({
         <span
           className={`flex shrink-0 ${ticket.terminal ? 'text-danger' : 'text-muted-foreground'}`}
         >
-          <StatusIcon aria-hidden="true" className="size-3.5" />
+          <Icon name={statusIconName} className="size-3.5" />
           <span className="sr-only">
             {ticket.terminal
               ? t('composer.contextPicker.terminal', { status: ticket.status })
@@ -51,7 +51,7 @@ function TicketResult({
         <span className="min-w-0 truncate">{ticket.title}</span>
         {ticket.blocked ? (
           <span className="flex shrink-0 items-center text-danger">
-            <Ban aria-hidden="true" className="size-3.5" />
+            <Icon name="blocked" size="control" />
             <span className="sr-only">{t('composer.contextPicker.blocked')}</span>
           </span>
         ) : null}
@@ -85,7 +85,7 @@ export function ContextPickerContents({
             onClick={onAttach}
             type="button"
           >
-            <Folder aria-hidden="true" className="size-4" />
+            <Icon name="folder" size="control" />
             <span className="type-control">{t('composer.contextPicker.filesAndFolders')}</span>
           </button>
         </div>

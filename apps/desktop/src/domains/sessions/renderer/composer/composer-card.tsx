@@ -11,6 +11,7 @@ import type {
   ComposerAttachment,
   ComposerTicketContext,
 } from '@/domains/sessions/renderer/composer/use-composer-store'
+import type { WorkspaceMenuControlProps } from '@/domains/sessions/renderer/composer/workspace-menu'
 import { DraftContextPicker } from '@/domains/sessions/renderer/context/draft-context-picker'
 import type { HarnessControl } from '@/domains/sessions/renderer/harness/harnesses'
 
@@ -42,6 +43,7 @@ type ComposerCardProps = {
   plan: SessionPlan | null
   sessionId: string
   setup: TurnSetupControlProps | null
+  workspace: WorkspaceMenuControlProps | null
 }
 
 function closeContextPicker(
@@ -86,6 +88,7 @@ export function ComposerCard({
   plan,
   sessionId,
   setup,
+  workspace,
 }: ComposerCardProps) {
   const { t } = useTranslation('sessions')
   return (
@@ -123,6 +126,7 @@ export function ComposerCard({
           onOpenContextPicker={() => onContextPickerOpenChange(true)}
           onInterrupt={onInterrupt}
           setup={setup}
+          workspace={workspace}
         />
       </fieldset>
       {contextPickerOpen ? (

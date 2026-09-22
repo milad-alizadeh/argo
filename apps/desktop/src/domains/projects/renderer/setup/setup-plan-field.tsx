@@ -1,5 +1,5 @@
-import { Check } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Input } from '@/platform/renderer/components/ui/input'
 import {
@@ -152,7 +152,7 @@ function BooleanChoice({
         aria-hidden="true"
         className={`mt-0.5 grid size-4 shrink-0 place-items-center rounded-sm border ${checked ? 'border-foreground bg-foreground text-background' : 'border-input bg-background'}`}
       >
-        {checked ? <Check className="size-3" /> : null}
+        {checked ? <Icon name="confirmed" className="size-3" /> : null}
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2 type-body font-medium">

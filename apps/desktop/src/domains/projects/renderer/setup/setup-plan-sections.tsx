@@ -1,4 +1,4 @@
-import { Folder, SquareTerminal, Wrench } from 'lucide-react'
+import { Icon, type IconName } from '@/platform/renderer/components/icon'
 import type { SetupDocument } from '../../contract/setup-document'
 
 export type SetupSectionModel = SetupDocument['plan'][number] & { fieldIds: readonly string[] }
@@ -13,13 +13,17 @@ export function setupSections(document: SetupDocument): readonly SetupSectionMod
   ]
 }
 
-const sectionIcons = { folder: Folder, wrench: Wrench, terminal: SquareTerminal } as const
+const sectionIcons = {
+  folder: 'folder',
+  wrench: 'tooling',
+  terminal: 'tool-terminal',
+} satisfies Record<string, IconName>
 
 export function SectionIcon({ icon }: { icon: SetupSectionModel['icon'] }) {
-  const Icon = icon ? sectionIcons[icon] : Folder
+  const iconName = icon ? sectionIcons[icon] : 'folder'
   return (
     <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted">
-      <Icon aria-hidden="true" className="size-4" />
+      <Icon name={iconName} className="size-4" />
     </div>
   )
 }

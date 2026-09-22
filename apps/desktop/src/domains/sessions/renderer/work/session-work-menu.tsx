@@ -1,8 +1,8 @@
 // One button in the Session header per kind of background work, each carrying its own count and
 // opening its own list (#1582). The button is the whole permanent footprint: nothing is parked in
 // the inspector, so the Feed keeps its width until the reader asks for something.
-import type { LucideIcon } from 'lucide-react'
 import type { WorkEntry } from '@/domains/sessions/renderer/work/session-work-entries'
+import { Icon, type IconName } from '@/platform/renderer/components/icon'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -97,13 +97,13 @@ function Badge({ count, running }: { count: number; running: boolean }) {
 
 export function SessionWorkMenu({
   entries,
-  icon: Icon,
+  icon,
   label,
   onSelect,
   selectedId,
 }: {
   entries: readonly WorkEntry[]
-  icon: LucideIcon
+  icon: IconName
   // What the button is called out loud, and what its two groups are called under it.
   label: string
   onSelect: (id: string) => void
@@ -118,7 +118,7 @@ export function SessionWorkMenu({
         aria-label={`${label} · ${entries.length}`}
         className="relative flex size-(--size-control) shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground data-[popup-open]:bg-accent data-[popup-open]:text-foreground"
       >
-        <Icon aria-hidden="true" className="size-(--size-icon-control)" />
+        <Icon name={icon} className="size-(--size-icon-control)" />
         <Badge count={entries.length} running={running.length > 0} />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-(--size-session-popover)">

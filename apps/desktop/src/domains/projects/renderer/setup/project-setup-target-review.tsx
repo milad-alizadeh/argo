@@ -1,6 +1,6 @@
-import { Code2, Package, Sparkles } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { SetupPlan } from '@/domains/projects/contract/setup-plan'
+import { Icon } from '@/platform/renderer/components/icon'
 import {
   Fact,
   joinOrNone,
@@ -18,10 +18,14 @@ export function TargetReview({
 }) {
   const { t } = useTranslation('projects')
   return (
-    <PlanSection icon={<Package />} subtitle={target.path} title={target.name}>
+    <PlanSection
+      icon={<Icon name="target-repository" />}
+      subtitle={target.path}
+      title={target.name}
+    >
       <div className="grid gap-3 border-b bg-muted/20 px-3.5 py-3">
         <h3 className="flex items-center gap-2 type-heading">
-          <Code2 className="size-4 text-muted-foreground" />
+          <Icon name="source-code" className="text-muted-foreground" size="control" />
           {t('setup.actor.reviewing-plan.currentSetup')}
         </h3>
         <div className="grid grid-cols-2 gap-2">
@@ -43,7 +47,7 @@ export function TargetReview({
       </div>
       <div className="px-3.5 py-3">
         <h3 className="flex items-center gap-2 type-heading">
-          <Sparkles className="size-4 text-muted-foreground" />
+          <Icon name="sparkles" className="text-muted-foreground" size="control" />
           {t('setup.actor.reviewing-plan.agentWillAdd')}
         </h3>
         {recommendations.length ? (
@@ -63,7 +67,7 @@ function CommandList({ commands }: { commands: SetupPlan['targets'][number]['com
   return (
     <div>
       <h4 className="flex items-center gap-2 type-label font-semibold">
-        <Code2 className="size-4 text-muted-foreground" />
+        <Icon name="source-code" className="text-muted-foreground" size="control" />
         {t('setup.actor.reviewing-plan.commands')}
       </h4>
       <dl className="mt-2 grid grid-cols-3 gap-2">

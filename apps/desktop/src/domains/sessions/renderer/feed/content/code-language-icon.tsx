@@ -1,6 +1,6 @@
-import { FileCode2, Gem } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { CodeLanguage } from '@/domains/sessions/renderer/feed/content/code-language'
+import { Icon } from '@/platform/renderer/components/icon'
 
 export function CodeLanguageIcon({ language }: { language: CodeLanguage | null }) {
   const { t } = useTranslation('sessions')
@@ -19,8 +19,10 @@ export function CodeLanguageIcon({ language }: { language: CodeLanguage | null }
         </span>
       )
     case 'ruby':
-      return <Gem className="!size-5 fill-language-ruby/20 text-language-ruby" />
+      return (
+        <Icon name="language-ruby" className="!size-5 fill-language-ruby/20 text-language-ruby" />
+      )
     default:
-      return <FileCode2 className="!size-(--size-icon-inline)" />
+      return <Icon name="language-generic" className="!size-(--size-icon-inline)" />
   }
 }

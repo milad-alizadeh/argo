@@ -1,13 +1,13 @@
-import { Bot, ChevronDown, Sparkles } from 'lucide-react'
 import type { ReactNode, RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Icon } from '@/platform/renderer/components/icon'
 
 export function ProjectSetupAgentHeader() {
   const { t } = useTranslation('projects')
   return (
     <div className="no-drag-region flex items-center gap-3">
       <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">
-        <Bot className="size-4" />
+        <Icon name="agent" size="control" />
       </span>
       <div>
         <p className="type-heading">{t('setup.shell.agentTitle')}</p>
@@ -22,7 +22,7 @@ export function ProjectSetupIntroduction() {
   return (
     <>
       <span className="grid size-8 place-items-center rounded-full bg-muted">
-        <Sparkles className="size-4" />
+        <Icon name="sparkles" size="control" />
       </span>
       <p>{t('setup.shell.introduction')}</p>
     </>
@@ -70,7 +70,7 @@ export function ProjectSetupShell({
           <details className="mt-4 hidden max-w-3xl overflow-hidden rounded-xl border bg-sidebar max-lg:block">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3.5 py-3 type-body font-semibold [&::-webkit-details-marker]:hidden [&_svg]:size-4">
               <span>{sidebarDisclosureLabel}</span>
-              <ChevronDown aria-hidden="true" />
+              <Icon name="chevron-down" size="control" />
             </summary>
             <div className="border-t p-3.5">{sidebar}</div>
           </details>

@@ -1,4 +1,3 @@
-import { Check, ChevronDown } from 'lucide-react'
 import { Fragment, useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { EffortSlider } from '@/domains/sessions/renderer/composer/effort-slider'
@@ -11,6 +10,7 @@ import {
   type TurnSetup,
   type TurnSetupChoices,
 } from '@/domains/sessions/renderer/turn-setup/turn-setup'
+import { Icon } from '@/platform/renderer/components/icon'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 import { Popover, PopoverContent, PopoverTrigger } from '@/platform/renderer/components/ui/popover'
 
@@ -21,8 +21,6 @@ export type TurnSetupControlProps = {
 }
 
 type RunSetupMenuProps = { harness: HarnessControl; setup: TurnSetupControlProps | null }
-
-const WIDE_ONLY = 'hidden @[36rem]:inline'
 
 export function RunSetupMenu({ harness, setup }: RunSetupMenuProps) {
   const harnessLabel = HARNESSES[harness.harness].label
@@ -41,18 +39,16 @@ export function RunSetupMenu({ harness, setup }: RunSetupMenuProps) {
       >
         <HarnessLogo harness={harness.harness} />
         <span className="min-w-0 truncate">
-          {/* The logo names the harness, so its word waits for room; the Model and Effort never do. */}
-          <span className={WIDE_ONLY}>{harnessLabel}</span>
+          {/* The logo names the harness, so its word only shows when there's no Model and Effort to say instead. */}
+          {facts.length === 0 ? <span>{harnessLabel}</span> : null}
           {facts.map((fact, index) => (
             <Fragment key={fact}>
-              <span className={`mx-1.5 text-muted-foreground ${index === 0 ? WIDE_ONLY : ''}`}>
-                ·
-              </span>
+              {index > 0 ? <span className="mx-1.5 text-muted-foreground">·</span> : null}
               <span>{fact}</span>
             </Fragment>
           ))}
         </span>
-        <ChevronDown className="hidden text-muted-foreground @[36rem]:block" />
+        <Icon name="chevron-down" className="hidden text-muted-foreground @[36rem]:block" />
       </PopoverTrigger>
       <PopoverContent
         align="start"
@@ -136,7 +132,7 @@ function ModelOptions({ choices, value, onChange }: TurnSetupControlProps) {
                   </span>
                 ) : null}
               </span>
-              {active ? <Check className="ml-auto size-4" /> : null}
+              {active ? <Icon name="confirmed" className="ml-auto size-4" /> : null}
             </label>
           )
         })}

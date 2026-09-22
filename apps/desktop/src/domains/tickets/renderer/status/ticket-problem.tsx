@@ -1,4 +1,5 @@
 import type { TicketProblemProps } from '@/domains/tickets/renderer/lib/problems'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Empty,
@@ -9,18 +10,12 @@ import {
   EmptyTitle,
 } from '@/platform/renderer/components/ui/empty'
 
-export function TicketProblem({
-  icon: Icon,
-  title,
-  description,
-  alert,
-  actions,
-}: TicketProblemProps) {
+export function TicketProblem({ icon, title, description, alert, actions }: TicketProblemProps) {
   return (
     <Empty className="h-full" role={alert ? 'alert' : undefined}>
       <EmptyHeader>
         <EmptyMedia className={alert ? 'text-danger' : undefined} variant="icon">
-          <Icon aria-hidden="true" />
+          <Icon name={icon} />
         </EmptyMedia>
         <EmptyTitle>{title}</EmptyTitle>
         <EmptyDescription>{description}</EmptyDescription>

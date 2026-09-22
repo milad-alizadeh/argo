@@ -4,7 +4,12 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { type TestContext, test } from 'node:test'
+import { drizzle } from 'drizzle-orm/bun-sqlite'
 import { createProjectStore } from '@/domains/projects/main/sqlite-store'
+import {
+  migrateTestDatabase,
+  projectMigrationsFolder,
+} from '../../../../../../test-fixtures/projects/migrate-test-database'
 import { createProjectSetupRegistry } from './project-setup-registry'
 
 test('restores the exact ready manual setup after a restart', async (context) => {
@@ -56,11 +61,7 @@ test('maps an active durable effect to interrupted before a restored actor start
 })
 
 test('writes an effect intent before an external effect can begin', async (context) => {
-  const directory = await mkdtemp(path.join(os.tmpdir(), 'argo-project-setup-'))
-  context.after(() => rm(directory, { recursive: true, force: true }))
-  const databasePath = path.join(directory, 'argo.sqlite')
-  const database = new Database(databasePath)
-  const store = createProjectStore(database)
+  const { database, store } = await temporarySetup(context)
   const setup = createProjectSetupRegistry(store)
   setup.transition('project-1', { type: 'Choose agent', harness: 'claude' })
 
@@ -129,7 +130,8 @@ test('preserves a corrupt checkpoint as recovery evidence and starts a safe repl
 
 function setupStore(databasePath: string) {
   const database = new Database(databasePath)
-  return createProjectStore(database)
+  migrateDatabase(database)
+  return createProjectStore(drizzle({ client: database }))
 }
 
 async function temporarySetup(context: TestContext) {
@@ -137,5 +139,10 @@ async function temporarySetup(context: TestContext) {
   context.after(() => rm(directory, { recursive: true, force: true }))
   const databasePath = path.join(directory, 'argo.sqlite')
   const database = new Database(databasePath)
-  return { database, databasePath, store: createProjectStore(database) }
+  migrateDatabase(database)
+  return { database, databasePath, store: createProjectStore(drizzle({ client: database })) }
+}
+
+function migrateDatabase(database: Database): void {
+  migrateTestDatabase(database, projectMigrationsFolder())
 }

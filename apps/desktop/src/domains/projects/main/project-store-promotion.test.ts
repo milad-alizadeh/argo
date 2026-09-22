@@ -4,6 +4,9 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
+import { drizzle } from 'drizzle-orm/bun-sqlite'
+import { migrate } from 'drizzle-orm/bun-sqlite/migrator'
+import { databaseMigrationsFolder } from '@/platform/main/storage/migrations-folder'
 import { SETUP_DOCUMENT_REVISION } from '../../../../test-fixtures/projects/setup-document.fixture'
 import { createProjectStore } from './sqlite-store'
 
@@ -11,7 +14,11 @@ test('promotes the approved worktree and its checkpoint in one store transition'
   const directory = await mkdtemp(path.join(os.tmpdir(), 'argo-project-store-'))
   context.after(() => rm(directory, { recursive: true, force: true }))
   const database = new Database(path.join(directory, 'argo.sqlite'))
-  const store = createProjectStore(database)
+  const durableDatabase = drizzle({ client: database })
+  migrate(durableDatabase, {
+    migrationsFolder: databaseMigrationsFolder(),
+  })
+  const store = createProjectStore(durableDatabase)
   const worktreePath = '/tmp/project/.argo/worktrees/setup-project-1'
   store.replace({
     projects: [{ id: 'project-1', path: '/tmp/project', commonDirectory: '/tmp/project/.git' }],

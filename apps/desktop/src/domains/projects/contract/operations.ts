@@ -15,12 +15,19 @@ import {
   projectRelocateRequestSchema,
   projectSelectRequestSchema,
 } from '@/domains/projects/contract/messages'
+import {
+  projectWorkspaceCreateManagedRequestSchema,
+  projectWorkspaceListedSchema,
+  projectWorkspaceListRequestSchema,
+  projectWorkspaceSelectRequestSchema,
+} from '@/domains/projects/contract/workspace-messages'
 
 const projectListReplySchema = projectListedSchema.or(projectCancelledSchema).or(projectErrorSchema)
+const projectWorkspaceReplySchema = projectWorkspaceListedSchema.or(projectErrorSchema)
 
-// The Project IPC contract has five named operations, each on its own channel. The table is
-// consumed by the client, the preload bridge and the main-process registration, so an operation
-// cannot acquire a second hand-maintained channel.
+// The Project IPC contract's named operations, each on its own channel. The table is consumed by
+// the client, the preload bridge and the main-process registration, so an operation cannot
+// acquire a second hand-maintained channel.
 export const PROJECT_OPERATIONS = {
   open: {
     name: 'project.open',
@@ -63,5 +70,23 @@ export const PROJECT_OPERATIONS = {
     channel: 'argo:project:select',
     request: projectSelectRequestSchema,
     reply: projectListedSchema.or(projectErrorSchema),
+  },
+  workspaceList: {
+    name: 'project.workspace.list',
+    channel: 'argo:project:workspace:list',
+    request: projectWorkspaceListRequestSchema,
+    reply: projectWorkspaceReplySchema,
+  },
+  workspaceSelect: {
+    name: 'project.workspace.select',
+    channel: 'argo:project:workspace:select',
+    request: projectWorkspaceSelectRequestSchema,
+    reply: projectWorkspaceReplySchema,
+  },
+  workspaceCreateManaged: {
+    name: 'project.workspace.createManaged',
+    channel: 'argo:project:workspace:create-managed',
+    request: projectWorkspaceCreateManagedRequestSchema,
+    reply: projectWorkspaceReplySchema,
   },
 } as const

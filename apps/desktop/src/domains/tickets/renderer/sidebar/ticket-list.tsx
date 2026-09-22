@@ -1,5 +1,4 @@
 import type { TFunction } from 'i18next'
-import { SearchX, Ticket as TicketMark } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { providerPresentation } from '@/domains/accounts/renderer/port'
@@ -11,6 +10,7 @@ import {
 } from '@/domains/tickets/renderer/lib/backlog'
 import { sourcePresentation } from '@/domains/tickets/renderer/lib/sources'
 import { TicketRow } from '@/domains/tickets/renderer/sidebar/ticket-row'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Loader } from '@/platform/renderer/components/loader'
 import {
   Empty,
@@ -95,7 +95,7 @@ function NoTickets({ query, provider }: Pick<Backlog, 'query' | 'provider'>) {
     <Empty className="flex-none">
       <EmptyHeader>
         <EmptyMedia variant="icon">
-          {query === '' ? <TicketMark aria-hidden="true" /> : <SearchX aria-hidden="true" />}
+          {query === '' ? <Icon name="ticket" /> : <Icon name="no-search-results" />}
         </EmptyMedia>
         <EmptyTitle>
           {query === '' ? t('backlog.empty.title') : t('backlog.empty.titleFiltered')}

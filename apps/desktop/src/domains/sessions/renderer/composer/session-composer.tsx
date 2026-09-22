@@ -8,6 +8,7 @@ import './composer-content.css'
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import type { TurnSetupControlProps } from '@/domains/sessions/renderer/composer/run-setup-menu'
 import type { Send } from '@/domains/sessions/renderer/composer/use-send'
+import type { WorkspaceMenuControlProps } from '@/domains/sessions/renderer/composer/workspace-menu'
 
 export type SessionComposerProps = {
   contextTokens?: number | null
@@ -27,6 +28,7 @@ export type SessionComposerProps = {
   plan?: SessionPlan | null
   harness?: HarnessControl | null
   setup?: TurnSetupControlProps | null
+  workspace?: WorkspaceMenuControlProps | null
 }
 
 export function SessionComposer({
@@ -47,6 +49,7 @@ export function SessionComposer({
   plan = null,
   harness = null,
   setup = null,
+  workspace = null,
 }: SessionComposerProps) {
   const [contextPickerOpen, setContextPickerOpen] = useState(false)
   const state = useComposer({ identity: sessionId, isRunning, send: onSend, steer: onSteer, setup })
@@ -87,6 +90,7 @@ export function SessionComposer({
       plan={plan}
       sessionId={sessionId}
       setup={setup}
+      workspace={workspace}
       tickets={state.tickets}
       onContextPickerOpenChange={setContextPickerOpen}
     />

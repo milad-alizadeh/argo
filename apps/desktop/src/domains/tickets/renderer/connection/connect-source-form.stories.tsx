@@ -12,7 +12,7 @@ const hubot = { ...octocat, id: 'github:1', login: 'hubot' }
 const repository = (scope: string) => ({ scope, label: scope })
 
 const meta: Meta<typeof ConnectSourceForm> = {
-  title: 'Tickets/Connect Source Form',
+  title: 'Tickets/Connection/Connect Source Form',
   component: ConnectSourceForm,
   args: {
     projectName: 'argo',

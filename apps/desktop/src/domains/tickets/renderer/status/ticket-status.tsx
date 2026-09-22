@@ -1,9 +1,9 @@
 // A Ticket's status and priority, drawn where the provider keeps them. Only Linear keeps a priority.
 // The icon's shape carries the category, so a status is never its colour alone.
-import { OctagonAlert } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { TicketPriority, TicketStatus } from '@/domains/tickets/contract/contract'
 import { StatusGlyph } from '@/domains/tickets/renderer/status/status-glyph'
+import { Icon } from '@/platform/renderer/components/icon'
 
 const markIcon = 'size-(--size-icon-meta) shrink-0'
 
@@ -59,7 +59,7 @@ function startedShare(status: TicketStatus, statuses: readonly TicketStatus[]) {
 // Level 1 is the most urgent; null is Linear's own "No priority".
 const PRIORITY_MARKS: Record<TicketPriority['level'], Mark> = {
   1: {
-    render: () => <OctagonAlert aria-hidden="true" className={markIcon} />,
+    render: () => <Icon name="octagon-alert" className={markIcon} />,
     tone: 'text-danger',
   },
   2: { render: () => <PriorityBars filled={3} />, tone: 'text-muted-foreground' },

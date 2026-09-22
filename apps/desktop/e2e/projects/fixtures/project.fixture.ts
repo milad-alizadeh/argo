@@ -14,11 +14,27 @@ import {
   SETUP_DOCUMENT_PROOF_URL_ENV,
 } from '../../../src/domains/projects/main/proof-protocol'
 import { createProjectStore } from '../../../src/domains/projects/main/sqlite-store'
-import { sharedDatabasePath } from '../../../src/platform/main/storage/shared-database'
+import { createDurableDatabase } from '../../../src/platform/main/storage/durable-database'
+import { openSharedDatabase } from '../../../src/platform/main/storage/shared-database'
+import { sharedDatabasePath } from '../../../src/platform/main/storage/shared-database-path'
 import { appExecutable, packagedTestCopy } from '../../packaged-app'
 import { makeProjectLocallyReady } from './locally-ready-project'
 
 const run = promisify(execFile)
+
+// The one project entry every fixture in this proof suite seeds before it launches the app.
+export function seedSingleProject(
+  userData: string,
+  project: { id: string; path: string; selectedId?: string | null },
+) {
+  const { id, path: projectPath, selectedId = id } = project
+  const projects = createProjectStore(createDurableDatabase(openSharedDatabase(userData)))
+  projects.replace({
+    projects: [{ id, path: projectPath, commonDirectory: path.join(projectPath, '.git') }],
+    selectedId,
+  })
+  return projects
+}
 
 export async function repository(folder) {
   await mkdir(folder, { recursive: true })
@@ -42,14 +58,7 @@ export async function prepare(root, application?) {
   await mkdir(projectPath)
   await makeProjectLocallyReady(projectPath)
   const databasePath = sharedDatabasePath(userData)
-  const projects = createProjectStore(new DatabaseSync(databasePath))
-  projects.replace({
-    projects: [
-      { id: 'project-1', path: projectPath, commonDirectory: path.join(projectPath, '.git') },
-    ],
-    selectedId: 'project-1',
-  })
-  projects.close()
+  seedSingleProject(userData, { id: 'project-1', path: projectPath }).close()
   return {
     application,
     userData,
@@ -92,14 +101,7 @@ export async function prepareManual(
   await run('git', ['-C', projectPath, 'push', '--quiet', '-u', 'origin', branch])
   await run('git', ['-C', remote, 'symbolic-ref', 'HEAD', `refs/heads/${branch}`])
   const databasePath = sharedDatabasePath(userData)
-  const projects = createProjectStore(new DatabaseSync(databasePath))
-  projects.replace({
-    projects: [
-      { id: 'project-setup', path: projectPath, commonDirectory: path.join(projectPath, '.git') },
-    ],
-    selectedId: 'project-setup',
-  })
-  projects.close()
+  seedSingleProject(userData, { id: 'project-setup', path: projectPath }).close()
   return {
     application,
     databasePath,
@@ -110,7 +112,7 @@ export async function prepareManual(
 }
 
 export async function readManualSetupConfiguration(fixture: { databasePath: string }) {
-  const projects = createProjectStore(new DatabaseSync(fixture.databasePath))
+  const projects = createProjectStore(createDurableDatabase(new DatabaseSync(fixture.databasePath)))
   try {
     const checkpoint = projects.readSetupCheckpoint('project-setup')
     if (!checkpoint) throw new Error('Manual setup checkpoint is unavailable.')

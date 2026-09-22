@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import type { ProjectListReply } from '@/domains/projects/contract/messages'
-import type { Cockpit } from '@/domains/projects/renderer/hooks/use-projects'
+import type { ProjectCockpit } from '@/domains/projects/renderer/hooks/use-projects'
 import {
   type ProjectContractError,
   throwProjectContractError,
@@ -14,9 +14,9 @@ import {
 export function useProjectMutations(options: {
   cockpitForListing: (
     reply: Extract<ProjectListReply, { type: 'project.listed' }>,
-  ) => Promise<Cockpit>
-  fallback: Cockpit
-  refuse: (previous: Cockpit, reply: ProjectContractError) => Cockpit
+  ) => Promise<ProjectCockpit>
+  fallback: ProjectCockpit
+  refuse: (previous: ProjectCockpit, reply: ProjectContractError) => ProjectCockpit
 }) {
   const { cockpitForListing, fallback, refuse } = options
   const queryClient = useQueryClient()
@@ -37,7 +37,7 @@ export function useProjectMutations(options: {
   const mutationOptions = {
     onSuccess: settleMutation,
     onError: (error: ProjectContractError) => {
-      queryClient.setQueryData<Cockpit>(projectListQueryKey, (current) =>
+      queryClient.setQueryData<ProjectCockpit>(projectListQueryKey, (current) =>
         refuse(current ?? fallback, error),
       )
     },

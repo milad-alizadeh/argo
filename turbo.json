@@ -83,23 +83,6 @@
       "env": ["CI", "ARGO_SESSION_SHOTS"],
       "outputs": []
     },
-    "test:e2e:adversarial": {
-      "dependsOn": ["build"],
-      "inputs": [
-        "e2e/**",
-        "mocks/**",
-        "src/**",
-        "!src/**/*.test.ts",
-        "!src/**/*.stories.tsx",
-        "scripts/acceptance-protocol.mts",
-        "scripts/fuse-profile.mts",
-        "playwright.config.ts",
-        "tsconfig*.json",
-        "package.json"
-      ],
-      "env": ["CI", "ARGO_SESSION_SHOTS"],
-      "outputs": []
-    },
     "build:storybook": {
       "inputs": ["$TURBO_DEFAULT$", "!*.md"],
       "outputs": ["storybook-static/**"]
@@ -119,19 +102,42 @@
     },
     "test": {
       "inputs": [
-        "$TURBO_DEFAULT$",
-        "!*.md",
+        "src/**",
+        "mocks/**",
+        "scripts/**/*.mts",
+        "*.config.ts",
+        "tsconfig*.json",
+        "package.json",
         "$TURBO_ROOT$/docs/design/tokens.css",
         "$TURBO_ROOT$/scripts/design-token-*.mts"
       ],
       "outputs": []
     },
     "test:storybook": {
-      "inputs": ["$TURBO_DEFAULT$", "!*.md"],
+      "inputs": ["src/**", ".storybook/**", "*.config.ts", "tsconfig*.json", "package.json"],
       "outputs": []
     },
     "test:darwin-manifest": {
-      "inputs": ["$TURBO_DEFAULT$", "!*.md", "$TURBO_ROOT$/package-lock.json"],
+      "inputs": [
+        "src/**",
+        "!src/**/*.test.ts",
+        "!src/**/*.stories.tsx",
+        "index.html",
+        "public/**",
+        "assets/**",
+        "forge.config.ts",
+        "vite.*.config.ts",
+        "tsconfig.json",
+        "tsconfig.node.json",
+        "tsconfig.web.json",
+        "scripts/desktop-manifest.mts",
+        "scripts/package-manifest.mts",
+        "package-manifest.json",
+        "package.json",
+        "package-lock.json",
+        "$TURBO_ROOT$/package-lock.json",
+        "$TURBO_ROOT$/bun.lock"
+      ],
       "env": ["ARGO_SIGNING_*", "ARGO_NOTARIZE_*"],
       "outputs": []
     },

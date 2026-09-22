@@ -1,6 +1,7 @@
 ## Relationships (the whole graph)
 
-- **Project** `1—N` **Session**, `1—N` **Delivery**; holds **`0..1` Connection per port** (Work
+- **Project** `1—N` **Session**, `1—N` **Delivery**, `1—N` **Workspace** (its registry: main,
+  imported, managed — durable identity, never deleted); holds **`0..1` Connection per port** (Work
   Item, Code host), which is what scopes the providers it reads.
 - **Account** `0—N` **Connection**, across any number of Projects; a **Connection** names exactly
   **one Account** and **one port**. A provider has `0—N` **Accounts** on this machine, so

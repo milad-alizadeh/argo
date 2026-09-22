@@ -1,6 +1,6 @@
-import { ChevronDown, Sparkles } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 import type { SetupPlan } from '@/domains/projects/contract/setup-plan'
+import { Icon } from '@/platform/renderer/components/icon'
 import {
   Collapsible,
   CollapsibleContent,
@@ -42,7 +42,11 @@ export function PlanSection({
             <small className="mt-0.5 block type-control text-muted-foreground">{subtitle}</small>
           ) : null}
         </span>
-        <ChevronDown className="ml-auto size-4 shrink-0 text-muted-foreground transition-transform group-data-[open]:rotate-180" />
+        <Icon
+          name="chevron-down"
+          className="ml-auto size-4 shrink-0 text-muted-foreground transition-transform group-data-[open]:rotate-180"
+          size="control"
+        />
       </CollapsibleTrigger>
       <CollapsibleContent className="border-t">{children}</CollapsibleContent>
     </Collapsible>
@@ -50,7 +54,7 @@ export function PlanSection({
 }
 
 export function ToolIcon({
-  fallback = <Sparkles />,
+  fallback = <Icon name="sparkles" />,
   iconUrl,
 }: {
   fallback?: ReactNode

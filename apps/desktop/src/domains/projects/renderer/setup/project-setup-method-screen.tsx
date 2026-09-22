@@ -1,4 +1,3 @@
-import { FileJson, Sparkles } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
@@ -9,6 +8,7 @@ import {
   defaultProjectSetupHarnesses,
   type ProjectSetupHarness,
 } from '@/domains/projects/contract/project-setup-harness'
+import { Icon } from '@/platform/renderer/components/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { RadioGroup, RadioGroupItem } from '@/platform/renderer/components/ui/radio-group'
 import {
@@ -58,7 +58,7 @@ export function ProjectSetupMethodScreen({
         {selectedHarness ? (
           <MethodChoice
             description={t('setup.actor.choosing-method.agent.description')}
-            icon={<Sparkles />}
+            icon={<Icon name="sparkles" />}
             selected={method === 'agent'}
             title={t('setup.actor.choosing-method.agent.title')}
             value="agent"
@@ -95,7 +95,7 @@ export function ProjectSetupMethodScreen({
         ) : null}
         <MethodChoice
           description={t('setup.actor.choosing-method.manual.description')}
-          icon={<FileJson />}
+          icon={<Icon name="config-file" />}
           selected={method === 'manual'}
           title={t('setup.actor.choosing-method.manual.title')}
           value="manual"
