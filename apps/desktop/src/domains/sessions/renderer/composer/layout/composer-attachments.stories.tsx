@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { ComposerStory } from '../editor'
 import { useComposerStore } from '../hooks'
 
@@ -69,6 +69,7 @@ const meta = {
   beforeEach: () => {
     useComposerStore.setState(useComposerStore.getInitialState())
   },
+  args: { onSend: fn(async () => true) },
 } satisfies Meta<typeof ComposerStory>
 
 export default meta
@@ -191,8 +192,8 @@ export const FailedAttachmentStaysAfterSend: Story = {
       chosenPaths: ['/repo/notes.md', '/repo/gone.md'],
       readablePaths: (paths) => paths.filter((path) => path !== '/repo/gone.md'),
     }),
-  render: () => <ComposerStory />,
-  play: async ({ canvasElement }) => {
+  render: (args) => <ComposerStory {...args} />,
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')
 
@@ -202,9 +203,9 @@ export const FailedAttachmentStaysAfterSend: Story = {
     await canvas.findByText('notes')
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
 
-    await expect(canvas.getByTestId('sent-message')).toHaveTextContent(
-      'Review these. @/repo/notes.md',
-    )
+    await expect(args.onSend).toHaveBeenCalledWith('Review these.', null, [
+      { path: '/repo/notes.md', kind: 'file' },
+    ])
     await expect(await canvas.findByText('Not found')).toBeVisible()
     await expect(canvas.getByText('gone')).toBeVisible()
   },

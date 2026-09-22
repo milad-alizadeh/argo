@@ -1,7 +1,8 @@
 import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../work'
 import { workInspectorReveal } from '../inspector'
 import type { WorkSelection } from '../inspector'
-import { useSessionQuestion, useSessionPermission, useSessionComposer, useComposerStore } from '../composer'
+import { useSessionQuestion, useSessionPermission, useComposerStore } from '../composer/hooks'
+import { useSessionComposer } from '../composer/use-session-composer'
 // A screen is a thin container: it resolves state here, and SessionScreenView hands a pure render
 // surface the result.
 import { useState } from 'react'

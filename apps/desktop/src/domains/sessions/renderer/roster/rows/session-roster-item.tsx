@@ -1,6 +1,6 @@
 import { type MouseEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { SessionReferenceText } from '../../composer'
+import { SessionReferenceText } from '../../composer/references/session-reference'
 import { useLiveActivityText } from '../../feed'
 import {
   HarnessLogo,

@@ -9,9 +9,6 @@ function ModeStory() {
   return (
     <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
       <ModeMenu choices={CLAUDE_TURN_SETUP} value={setup} onChange={setSetup} />
-      <output hidden data-testid="chosen-mode">
-        {setup.mode}
-      </output>
     </div>
   )
 }
@@ -53,7 +50,6 @@ export const OffersEveryMode: Story = {
     await waitFor(() => expect(page().queryByRole('menu')).toBeNull())
     await expect(trigger).toHaveTextContent('Bypass')
     await expect(trigger).toHaveAccessibleName('Choose permission mode: Bypass')
-    await expect(canvas.getByTestId('chosen-mode')).toHaveTextContent('bypassPermissions')
   },
 }
 
@@ -75,6 +71,5 @@ export const ChoosesByKeyboard: Story = {
     await waitFor(() => expect(page().queryByRole('menu')).toBeNull())
     await expect(trigger).toHaveFocus()
     await expect(trigger).toHaveTextContent('Plan')
-    await expect(canvas.getByTestId('chosen-mode')).toHaveTextContent('plan')
   },
 }

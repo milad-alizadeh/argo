@@ -1,5 +1,6 @@
-import { $createComposerTicketReferenceNode, activeReference } from '../composer'
-import type { ComposerTicketContext } from '../composer'
+import { $createComposerTicketReferenceNode } from '../composer/references/composer-ticket-reference-node'
+import { activeReference } from '../composer/references/composer-reference-menu'
+import type { ComposerTicketContext } from '../composer/hooks'
 import {
   $createTextNode,
   $getSelection,

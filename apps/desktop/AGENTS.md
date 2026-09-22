@@ -58,6 +58,11 @@ For rendered UI work, use a Storybook `play` function as the TDD seam. The funct
 story through visible controls and asserts the resulting screen behavior.
 Assert reader-visible behavior and accessible semantics. Do not assert CSS classes or computed styles.
 
+A component whose contract is a callback (`onClick`, `onDecide`, `onSelect`) is proved by that
+callback: wire it in `args` with `fn()` and assert `toHaveBeenCalledWith(...)` after the
+interaction. That call is the component's reader-visible behavior. Never invent on-screen marker
+text whose only job is to give the `play` function something to read.
+
 Every story also runs an axe accessibility scan (#2623), required, no separate opt-in. A story
 that exists only to be looked at, not tested, takes the `view-only` tag rather than an empty
 `play`. Fix a real finding: reach for a shared token first, since most findings are a shared token

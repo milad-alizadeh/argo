@@ -1,5 +1,6 @@
-import { useComposerStore, type ComposerIdentity, composerIdentityKey } from '../composer'
-import type { TurnSetupControlProps } from '../composer'
+import { useComposerStore } from '../composer/hooks'
+import { type ComposerIdentity, composerIdentityKey } from '../composer/identity'
+import type { TurnSetupControlProps } from '../composer/toolbar'
 import { useCallback, useEffect, useState } from 'react'
 import { z } from 'zod'
 

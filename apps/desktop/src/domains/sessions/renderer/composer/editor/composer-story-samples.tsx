@@ -3,11 +3,16 @@
 import { useState } from 'react'
 import type { SessionPlan } from '@/domains/sessions/contract/model'
 import { Button } from '@/platform/renderer/components/ui/button'
-import { SessionComposer } from './session-composer'
+import { SessionComposer, type SessionComposerProps } from './session-composer'
 
-export function ComposerStory({ plan = null }: { plan?: SessionPlan | null }) {
+export function ComposerStory({
+  onSend,
+  plan = null,
+}: {
+  onSend: SessionComposerProps['onSend']
+  plan?: SessionPlan | null
+}) {
   const [sessionId, setSessionId] = useState('session-one')
-  const [sent, setSent] = useState<string | null>(null)
 
   return (
     <>
@@ -19,18 +24,7 @@ export function ComposerStory({ plan = null }: { plan?: SessionPlan | null }) {
           Session two
         </Button>
       </div>
-      <SessionComposer
-        onSend={async (text, _setup, attachments) => {
-          const refs = attachments.map(({ path }) => `@${path}`).join(' ')
-          setSent(refs.length > 0 ? `${text} ${refs}`.trim() : text)
-          return true
-        }}
-        plan={plan}
-        sessionId={sessionId}
-      />
-      <output className="mt-4 block type-body" data-testid="sent-message">
-        {sent}
-      </output>
+      <SessionComposer onSend={onSend} plan={plan} sessionId={sessionId} />
     </>
   )
 }

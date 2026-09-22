@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import type { SessionPlan } from '@/domains/sessions/contract/model'
 import { ComposerStory } from './composer-story-samples'
 import { useComposerStore } from '../hooks'
@@ -25,6 +25,7 @@ const meta = {
   beforeEach: () => {
     useComposerStore.setState(useComposerStore.getInitialState())
   },
+  args: { onSend: fn(async () => true) },
 } satisfies Meta<typeof ComposerStory>
 
 export default meta
@@ -43,7 +44,7 @@ export const WithPlan: Story = {
 
 export const Narrow: Story = {
   parameters: { frame: 'w-(--size-session-feed-min)' },
-  play: async ({ canvasElement }) => {
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')
     const composerForm = composer.closest('form')
@@ -52,8 +53,10 @@ export const Narrow: Story = {
     await userEvent.click(composer)
     await userEvent.type(composer, 'Keep the composer usable at narrow widths.')
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
-    await expect(canvas.getByTestId('sent-message')).toHaveTextContent(
+    await expect(args.onSend).toHaveBeenCalledWith(
       'Keep the composer usable at narrow widths.',
+      null,
+      [],
     )
     await expect(composerForm.scrollWidth).toBeLessThanOrEqual(composerForm.clientWidth)
   },

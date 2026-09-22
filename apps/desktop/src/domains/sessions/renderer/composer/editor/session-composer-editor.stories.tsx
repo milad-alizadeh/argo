@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { ComposerStory } from './composer-story-samples'
-import { SessionComposer } from './session-composer'
+import { SessionComposer, type SessionComposerProps } from './session-composer'
 import { useComposerStore } from '../hooks'
 
 const FRAME = 'mx-auto max-w-4xl p-8'
@@ -44,9 +44,14 @@ const CODEX_REFERENCE_DRAFT =
   'Run `bun run quality` before @argo-plugin reviews it. See [notes](https://example.com/notes).'
 
 // Closing the composer stands in for leaving the Session page and coming back to it.
-function ClosableComposerStory({ harness = 'claude' }: { harness?: 'claude' | 'codex' }) {
+function ClosableComposerStory({
+  harness = 'claude',
+  onSend,
+}: {
+  harness?: 'claude' | 'codex'
+  onSend: SessionComposerProps['onSend']
+}) {
   const [open, setOpen] = useState(true)
-  const [sent, setSent] = useState<string | null>(null)
 
   return (
     <>
@@ -54,59 +59,19 @@ function ClosableComposerStory({ harness = 'claude' }: { harness?: 'claude' | 'c
         {open ? 'Leave the Session' : 'Return to the Session'}
       </Button>
       {open ? (
-        <SessionComposer
-          harness={{ harness }}
-          onSend={async (text) => {
-            setSent(text)
-            return true
-          }}
-          sessionId="closable-session"
-        />
+        <SessionComposer harness={{ harness }} onSend={onSend} sessionId="closable-session" />
       ) : null}
-      <output className="mt-4 block text-sm" data-testid="sent-message">
-        {sent}
-      </output>
     </>
   )
 }
 
 // The send never settles, so the composer keeps its draft while delivery is uncertain.
-function UnsettledSendStory() {
-  const [sent, setSent] = useState<string[]>([])
-
-  return (
-    <>
-      <SessionComposer
-        onSend={(text) => {
-          setSent((current) => [...current, text])
-          return new Promise<boolean>(() => {})
-        }}
-        plan={null}
-        sessionId="unsettled-session"
-      />
-      <output data-testid="sent-messages">{sent.join(' · ')}</output>
-    </>
-  )
+function UnsettledSendStory({ onSend }: { onSend: SessionComposerProps['onSend'] }) {
+  return <SessionComposer onSend={onSend} plan={null} sessionId="unsettled-session" />
 }
 
-function CodexComposerStory() {
-  const [sent, setSent] = useState<string | null>(null)
-
-  return (
-    <>
-      <SessionComposer
-        harness={{ harness: 'codex' }}
-        onSend={async (text) => {
-          setSent(text)
-          return true
-        }}
-        sessionId="codex-session"
-      />
-      <output className="mt-4 block text-sm" data-testid="sent-message">
-        {sent}
-      </output>
-    </>
-  )
+function CodexComposerStory({ onSend }: { onSend: SessionComposerProps['onSend'] }) {
+  return <SessionComposer harness={{ harness: 'codex' }} onSend={onSend} sessionId="codex-session" />
 }
 
 const MARKDOWN_SHORTCUTS: Array<{
@@ -191,22 +156,21 @@ const meta = {
   beforeEach: () => {
     useComposerStore.setState(useComposerStore.getInitialState())
   },
+  args: { onSend: fn(async () => true) },
 } satisfies Meta<typeof ComposerStory>
 
 export default meta
 type Story = StoryObj<typeof ComposerStory>
 
 export const PlainText: Story = {
-  play: async ({ canvasElement }) => {
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')
 
     await userEvent.click(composer)
     await userEvent.type(composer, 'Review the new Session shell.')
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
-    await expect(canvas.getByTestId('sent-message')).toHaveTextContent(
-      'Review the new Session shell.',
-    )
+    await expect(args.onSend).toHaveBeenCalledWith('Review the new Session shell.', null, [])
     await expect(composer.textContent).toBe('')
   },
 }
@@ -214,21 +178,23 @@ export const PlainText: Story = {
 // The sent draft is the mention's own markdown-link syntax, unchanged by the badge it decorates
 // as (#2049): the Harness on the other end still reads `[$implement](path)`.
 export const SkillMentionSendsItsMarkdown: Story = {
-  play: async ({ canvasElement }) => {
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')
 
     await userEvent.click(composer)
     await userEvent.type(composer, '[[$implement](/skills/implement/SKILL.md) go')
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
-    await expect(canvas.getByTestId('sent-message')).toHaveTextContent(
+    await expect(args.onSend).toHaveBeenCalledWith(
       '[$implement](/skills/implement/SKILL.md) go',
+      null,
+      [],
     )
   },
 }
 
 export const DraftOutlivesItsComposer: Story = {
-  render: () => <ClosableComposerStory />,
+  render: (args) => <ClosableComposerStory onSend={args.onSend} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
@@ -243,8 +209,9 @@ export const DraftOutlivesItsComposer: Story = {
 }
 
 export const ShiftEnterAddsANewLine: Story = {
-  render: () => <UnsettledSendStory />,
-  play: async ({ canvasElement }) => {
+  render: (args) => <UnsettledSendStory onSend={args.onSend} />,
+  args: { onSend: fn(() => new Promise<boolean>(() => {})) },
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')
 
@@ -253,13 +220,14 @@ export const ShiftEnterAddsANewLine: Story = {
     await userEvent.keyboard('{Shift>}{Enter}{/Shift}')
     await userEvent.keyboard('Then this.')
 
-    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^$/)
+    await expect(args.onSend).not.toHaveBeenCalled()
     await expect(composer.innerText).toBe('Send this once.\nThen this.')
   },
 }
 
 export const ShiftEnterContinuesANumberedList: Story = {
-  render: () => <UnsettledSendStory />,
+  render: (args) => <UnsettledSendStory onSend={args.onSend} />,
+  args: { onSend: fn(() => new Promise<boolean>(() => {})) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')
@@ -277,8 +245,9 @@ export const ShiftEnterContinuesANumberedList: Story = {
 }
 
 export const EnterSends: Story = {
-  render: () => <UnsettledSendStory />,
-  play: async ({ canvasElement }) => {
+  render: (args) => <UnsettledSendStory onSend={args.onSend} />,
+  args: { onSend: fn(() => new Promise<boolean>(() => {})) },
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')
 
@@ -286,14 +255,15 @@ export const EnterSends: Story = {
     await userEvent.keyboard('Send this once.')
     await userEvent.keyboard('{Enter}')
 
-    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^Send this once\.$/)
+    await expect(args.onSend).toHaveBeenCalledWith('Send this once.', null, [])
     await expect(composer.innerText).toBe('Send this once.')
   },
 }
 
 export const EnterOnAnEmptyOrWhitespaceComposerSendsNothing: Story = {
-  render: () => <UnsettledSendStory />,
-  play: async ({ canvasElement }) => {
+  render: (args) => <UnsettledSendStory onSend={args.onSend} />,
+  args: { onSend: fn(() => new Promise<boolean>(() => {})) },
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')
 
@@ -303,15 +273,17 @@ export const EnterOnAnEmptyOrWhitespaceComposerSendsNothing: Story = {
     await userEvent.keyboard('{Backspace}{Backspace}{Backspace}')
     await userEvent.keyboard('Send this once.{Enter}')
 
-    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^Send this once\.$/)
+    await expect(args.onSend).toHaveBeenCalledTimes(1)
+    await expect(args.onSend).toHaveBeenCalledWith('Send this once.', null, [])
   },
 }
 
 // An Enter that confirms an IME composition belongs to the input method, not to the send, and the
 // browser marks that press `isComposing`.
 export const EnterConfirmingAnImeCompositionSendsNothing: Story = {
-  render: () => <UnsettledSendStory />,
-  play: async ({ canvasElement }) => {
+  render: (args) => <UnsettledSendStory onSend={args.onSend} />,
+  args: { onSend: fn(() => new Promise<boolean>(() => {})) },
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')
 
@@ -320,17 +292,17 @@ export const EnterConfirmingAnImeCompositionSendsNothing: Story = {
     fireEvent.keyDown(composer, { key: 'Enter', isComposing: true })
     await userEvent.keyboard(' The rest of it.{Enter}')
 
-    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(
-      /^Half a thought\. The rest of it\.$/,
-    )
+    await expect(args.onSend).toHaveBeenCalledTimes(1)
+    await expect(args.onSend).toHaveBeenCalledWith('Half a thought. The rest of it.', null, [])
   },
 }
 
 // The /-reference menu claims Enter ahead of the send: the press that picks a reference is not
 // also the press that sends the draft it went into.
 export const EnterPicksASlashReferenceWhileTheMenuIsOpen: Story = {
-  render: () => <UnsettledSendStory />,
-  play: async ({ canvasElement }) => {
+  render: (args) => <UnsettledSendStory onSend={args.onSend} />,
+  args: { onSend: fn(() => new Promise<boolean>(() => {})) },
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')
 
@@ -347,7 +319,7 @@ export const EnterPicksASlashReferenceWhileTheMenuIsOpen: Story = {
     await userEvent.keyboard('{Enter}')
     await waitFor(() => expect(canvas.queryByRole('option')).toBeNull())
     await userEvent.keyboard('{Enter}')
-    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(/^Read \/implement$/)
+    await expect(args.onSend).toHaveBeenCalledWith('Read /implement', null, [])
   },
 }
 
@@ -371,8 +343,8 @@ export const RichFormatting: Story = {
 // #1887: a Claude-only reference typed into a Codex Session shows as unsupported, and the exact
 // markdown Codex receives is never rewritten to compensate.
 export const CodexUnsupportedReferenceIsHonest: Story = {
-  render: () => <CodexComposerStory />,
-  play: async ({ canvasElement }) => {
+  render: (args) => <CodexComposerStory onSend={args.onSend} />,
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')
 
@@ -385,15 +357,15 @@ export const CodexUnsupportedReferenceIsHonest: Story = {
     await expect(reference.querySelector('.sr-only')).toHaveTextContent('— not available for Codex')
 
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
-    await expect(canvas.getByTestId('sent-message')).toHaveTextContent(CODEX_REFERENCE_DRAFT)
+    await expect(args.onSend).toHaveBeenCalledWith(CODEX_REFERENCE_DRAFT, null, [])
   },
 }
 
 // #1887: leaving and returning to a Codex Session restores the exact draft, unsupported
 // reference included, not a document that lost its honest state along the way.
 export const CodexDraftRestoresUnsupportedReference: Story = {
-  render: () => <ClosableComposerStory harness="codex" />,
-  play: async ({ canvasElement }) => {
+  render: (args) => <ClosableComposerStory harness="codex" onSend={args.onSend} />,
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
 
     await userEvent.click(canvas.getByLabelText('Message'))
@@ -410,12 +382,12 @@ export const CodexDraftRestoresUnsupportedReference: Story = {
     await expect(reference.querySelector('.sr-only')).toHaveTextContent('— not available for Codex')
 
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
-    await expect(canvas.getByTestId('sent-message')).toHaveTextContent(CODEX_REFERENCE_DRAFT)
+    await expect(args.onSend).toHaveBeenCalledWith(CODEX_REFERENCE_DRAFT, null, [])
   },
 }
 
 export const AtTicketQueryShowsTicketsForCodex: Story = {
-  render: () => <CodexComposerStory />,
+  render: (args) => <CodexComposerStory onSend={args.onSend} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')

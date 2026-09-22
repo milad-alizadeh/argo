@@ -1,4 +1,4 @@
-import { type ComposerIdentity, composerIdentityKey } from '../composer'
+import { type ComposerIdentity, composerIdentityKey } from '../composer/identity'
 import { z } from 'zod'
 
 import type { SessionSetup } from '@/domains/sessions/contract/model'

@@ -1,4 +1,5 @@
-import { CODEX_TURN_SETUP, CLAUDE_TURN_SETUP } from '../turn-setup'
+import { CLAUDE_TURN_SETUP } from '../turn-setup/claude-turn-setup'
+import { CODEX_TURN_SETUP } from '../turn-setup/codex-turn-setup'
 import type { TurnSetupChoices } from '../turn-setup/turn-setup'
 
 export const SESSION_HARNESSES = ['claude', 'codex'] as const

@@ -1,5 +1,5 @@
-import { TicketProviderIcon } from '../composer'
-import type { ComposerTicketContext } from '../composer'
+import { TicketProviderIcon } from '../composer/references/ticket-provider-icon'
+import type { ComposerTicketContext } from '../composer/hooks'
 import { useTranslation } from 'react-i18next'
 import { Icon, type IconName } from '@/platform/renderer/components/icon'
 

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import type { WorkspaceSummary } from '@/domains/projects/contract/workspace-messages'
 import { WorkspaceMenu } from './workspace-menu'
 
@@ -28,22 +28,18 @@ const WORKSPACE_CANDIDATES: [WorkspaceSummary, WorkspaceSummary, WorkspaceSummar
   },
 ]
 
-function WorkspaceStory() {
+function WorkspaceStory({ onCreateManaged }: { onCreateManaged: () => void }) {
   const [selectedId, setSelectedId] = useState(WORKSPACE_CANDIDATES[0].id)
-  const [createdCount, setCreatedCount] = useState(0)
   const selected = WORKSPACE_CANDIDATES.find((candidate) => candidate.id === selectedId) ?? null
 
   return (
     <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
       <WorkspaceMenu
-        onCreateManaged={() => setCreatedCount((count) => count + 1)}
+        onCreateManaged={onCreateManaged}
         onSelect={setSelectedId}
         workspace={selected}
         workspaces={WORKSPACE_CANDIDATES}
       />
-      <output className="mt-4 block type-body" data-testid="created-count">
-        {createdCount}
-      </output>
     </div>
   )
 }
@@ -51,6 +47,7 @@ function WorkspaceStory() {
 const meta = {
   title: 'Sessions/Composer/Workspace Menu',
   component: WorkspaceStory,
+  args: { onCreateManaged: fn() },
 } satisfies Meta<typeof WorkspaceStory>
 
 export default meta
@@ -59,7 +56,7 @@ type Story = StoryObj<typeof WorkspaceStory>
 const page = () => within(document.body)
 
 export const WorkspacePicker: Story = {
-  play: async ({ canvasElement }) => {
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const trigger = canvas.getByRole('button', { name: 'Choose Workspace: argo' })
 
@@ -83,6 +80,6 @@ export const WorkspacePicker: Story = {
     const reopened = await page().findByRole('menu')
     await userEvent.click(within(reopened).getByRole('menuitem', { name: 'New managed Workspace' }))
     await waitFor(() => expect(page().queryByRole('menu')).toBeNull())
-    await expect(canvas.getByTestId('created-count')).toHaveTextContent('1')
+    await expect(args.onCreateManaged).toHaveBeenCalledTimes(1)
   },
 }

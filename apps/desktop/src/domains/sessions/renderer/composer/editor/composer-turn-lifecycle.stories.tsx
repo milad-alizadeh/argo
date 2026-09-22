@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useRef, useState } from 'react'
-import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import type { SessionHarness } from '../../harness/harnesses'
 import { CLAUDE_TURN_SETUP } from '../../turn-setup/claude-turn-setup'
 import { Button } from '@/platform/renderer/components/ui/button'
-import { SessionComposer } from './session-composer'
+import { SessionComposer, type SessionComposerProps } from './session-composer'
 import { useComposerStore } from '../hooks'
 
 const FRAME = 'mx-auto max-w-4xl p-8'
@@ -45,44 +45,31 @@ function ManagedComposerStory() {
   )
 }
 
-function QueuedComposerStory() {
+function QueuedComposerStory({ onSend }: { onSend: SessionComposerProps['onSend'] }) {
   const [running, setRunning] = useState(true)
-  const [sent, setSent] = useState<string[]>([])
 
   return (
     <>
       <Button onClick={() => setRunning(false)} type="button" variant="outline">
         Finish turn
       </Button>
-      <SessionComposer
-        isRunning={running}
-        onSend={async (text) => {
-          setSent((current) => [...current, text])
-          return true
-        }}
-        sessionId="queued-session"
-      />
-      <output data-testid="sent-messages">{sent.join(' · ')}</output>
+      <SessionComposer isRunning={running} onSend={onSend} sessionId="queued-session" />
     </>
   )
 }
 
-function SteeredQueuedComposerStory() {
-  const [steered, setSteered] = useState<string | null>(null)
-
+function SteeredQueuedComposerStory({
+  onSteer,
+}: {
+  onSteer: NonNullable<SessionComposerProps['onSteer']>
+}) {
   return (
-    <>
-      <SessionComposer
-        isRunning
-        onSend={async () => true}
-        onSteer={async (text) => {
-          setSteered(text)
-          return true
-        }}
-        sessionId="steered-queued-session"
-      />
-      <output data-testid="steered-message">{steered}</output>
-    </>
+    <SessionComposer
+      isRunning
+      onSend={async () => true}
+      onSteer={onSteer}
+      sessionId="steered-queued-session"
+    />
   )
 }
 
@@ -131,38 +118,30 @@ function PendingSendStory() {
   )
 }
 
-function NewSessionHarnessestory() {
+function NewSessionHarnessestory({ onSend }: { onSend: SessionComposerProps['onSend'] }) {
   const [harness, setHarness] = useState<SessionHarness>('claude')
-  const [started, setStarted] = useState<string | null>(null)
 
   return (
-    <>
-      <SessionComposer
-        harness={{ harness, onChange: setHarness }}
-        onSend={async (text) => {
-          setStarted(`${harness}: ${text}`)
-          return true
-        }}
-        plan={null}
-        sessionId="new:project-one"
-      />
-      <output className="mt-4 block text-sm" data-testid="started-session">
-        {started}
-      </output>
-    </>
+    <SessionComposer
+      harness={{ harness, onChange: setHarness }}
+      onSend={onSend}
+      plan={null}
+      sessionId="new:project-one"
+    />
   )
 }
 
 function SetupComposerStory({
+  onSend,
   running = false,
   sessionId,
 }: {
+  onSend: SessionComposerProps['onSend']
   running?: boolean
   sessionId: string
 }) {
   const [isRunning, setRunning] = useState(running)
   const [setup, setSetup] = useState(CLAUDE_TURN_SETUP.opening)
-  const [sent, setSent] = useState<string[]>([])
 
   return (
     <>
@@ -171,18 +150,11 @@ function SetupComposerStory({
       </Button>
       <SessionComposer
         isRunning={isRunning}
-        onSend={async (text, turnSetup) => {
-          setSent((current) => [
-            ...current,
-            `${text} (${turnSetup?.model} ${turnSetup?.effort} ${turnSetup?.mode})`,
-          ])
-          return true
-        }}
+        onSend={onSend}
         sessionId={sessionId}
         harness={{ harness: 'claude' }}
         setup={{ choices: CLAUDE_TURN_SETUP, value: setup, onChange: setSetup }}
       />
-      <output data-testid="sent-messages">{sent.join(' · ')}</output>
     </>
   )
 }
@@ -220,9 +192,10 @@ export const ManagedTurn: Story = {
   },
 }
 
-export const NewSessionChoosesCli: Story = {
-  render: () => <NewSessionHarnessestory />,
-  play: async ({ canvasElement }) => {
+export const NewSessionChoosesCli: StoryObj<typeof NewSessionHarnessestory> = {
+  render: (args) => <NewSessionHarnessestory {...args} />,
+  args: { onSend: fn(async () => true) },
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const trigger = canvas.getByRole('button', { name: /^Choose run setup/ })
     await expect(trigger).toHaveAccessibleName('Choose run setup: Claude Code')
@@ -233,9 +206,7 @@ export const NewSessionChoosesCli: Story = {
     await expect(trigger).toHaveAccessibleName('Choose run setup: Codex')
 
     await sendDraft(canvas, 'Fix the flaky test.')
-    await expect(canvas.getByTestId('started-session')).toHaveTextContent(
-      'codex: Fix the flaky test.',
-    )
+    await expect(args.onSend).toHaveBeenCalledWith('Fix the flaky test.', null, [])
   },
 }
 
@@ -253,9 +224,10 @@ export const SendFinishesInAnotherSession: Story = {
   },
 }
 
-export const QueuedTurn: Story = {
-  render: () => <QueuedComposerStory />,
-  play: async ({ canvasElement }) => {
+export const QueuedTurn: StoryObj<typeof QueuedComposerStory> = {
+  render: (args) => <QueuedComposerStory {...args} />,
+  args: { onSend: fn(async () => true) },
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')
 
@@ -264,7 +236,7 @@ export const QueuedTurn: Story = {
     await expect(canvas.getByRole('region', { name: 'Pending Turns' })).toHaveTextContent(
       'Run the focused checks after this Turn.',
     )
-    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent('')
+    await expect(args.onSend).not.toHaveBeenCalled()
     await sendDraft(canvas, 'Then prepare the release notes.')
     await expect(canvas.getAllByRole('listitem')[1]).toHaveClass(
       'session-page__queued-message--enter',
@@ -292,22 +264,21 @@ export const QueuedTurn: Story = {
     await expect(composer).toHaveTextContent('Then prepare the release notes.')
     await expect(composer).toHaveFocus()
     await userEvent.click(canvas.getByRole('button', { name: 'Finish turn' }))
-    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(
-      'Then prepare the release notes.',
-    )
+    await expect(args.onSend).toHaveBeenCalledWith('Then prepare the release notes.', null, [])
   },
 }
 
-export const SteeredQueuedTurn: Story = {
-  render: () => <SteeredQueuedComposerStory />,
-  play: async ({ canvasElement }) => {
+export const SteeredQueuedTurn: StoryObj<typeof SteeredQueuedComposerStory> = {
+  render: (args) => <SteeredQueuedComposerStory {...args} />,
+  args: { onSteer: fn(async () => true) },
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const message = 'Steer this queued message.'
 
     await sendDraft(canvas, message)
     await userEvent.click(canvas.getByRole('button', { name: `Steer queued message: ${message}` }))
 
-    await expect(canvas.getByTestId('steered-message')).toHaveTextContent(message)
+    await expect(args.onSteer).toHaveBeenCalledWith(message, [])
     await expect(canvas.queryByRole('listitem')).toBeNull()
     await expect(canvas.getByLabelText('Message')).not.toHaveTextContent(message)
   },
@@ -326,10 +297,11 @@ export const FailedQueuedTurn: Story = {
   },
 }
 
-export const SendsTheChosenSetup: Story = {
-  render: () => <SetupComposerStory sessionId="setup-session" />,
+export const SendsTheChosenSetup: StoryObj<typeof SetupComposerStory> = {
+  render: (args) => <SetupComposerStory {...args} sessionId="setup-session" />,
+  args: { onSend: fn(async () => true) },
   parameters: { frame: SETUP_FRAME },
-  play: async ({ canvasElement }) => {
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const placeholder = canvas.getAllByText('Direct the next move…')[0]?.getBoundingClientRect()
     const controls = canvas
@@ -345,16 +317,19 @@ export const SendsTheChosenSetup: Story = {
     )
 
     await sendDraft(canvas, 'Plan the migration.')
-    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(
-      'Plan the migration. (sonnet medium plan)',
+    await expect(args.onSend).toHaveBeenCalledWith(
+      'Plan the migration.',
+      { model: 'sonnet', effort: 'medium', mode: 'plan' },
+      [],
     )
   },
 }
 
-export const QueuedTurnKeepsItsSetup: Story = {
-  render: () => <SetupComposerStory running sessionId="queued-setup-session" />,
+export const QueuedTurnKeepsItsSetup: StoryObj<typeof SetupComposerStory> = {
+  render: (args) => <SetupComposerStory {...args} running sessionId="queued-setup-session" />,
+  args: { onSend: fn(async () => true) },
   parameters: { frame: SETUP_FRAME },
-  play: async ({ canvasElement }) => {
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')
     const mode = canvas.getByRole('button', { name: /^Choose permission mode/ })
@@ -372,14 +347,17 @@ export const QueuedTurnKeepsItsSetup: Story = {
 
     await chooseMode(canvasElement, /Auto/)
     await userEvent.click(canvas.getByRole('button', { name: 'Finish turn' }))
-    await expect(canvas.getByTestId('sent-messages')).toHaveTextContent(
-      'Plan the release. (opus medium plan)',
+    await expect(args.onSend).toHaveBeenCalledWith(
+      'Plan the release.',
+      { model: 'opus', effort: 'medium', mode: 'plan' },
+      [],
     )
   },
 }
 
-export const NarrowShowsModelAndEffort: Story = {
-  render: () => <SetupComposerStory sessionId="setup-narrow" />,
+export const NarrowShowsModelAndEffort: StoryObj<typeof SetupComposerStory> = {
+  render: (args) => <SetupComposerStory {...args} sessionId="setup-narrow" />,
+  args: { onSend: fn(async () => true) },
   parameters: { frame: 'w-(--size-session-feed-min) pt-96' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

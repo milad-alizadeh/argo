@@ -21,9 +21,6 @@ function RunSetupStory({ started = true }: { started?: boolean }) {
         harness={started ? { harness } : { harness, onChange: chooseHarness }}
         setup={choices ? { choices, value: setup, onChange: setSetup } : null}
       />
-      <output hidden data-testid="chosen-setup">
-        {`${harness} ${setup.model} ${setup.effort}`}
-      </output>
     </div>
   )
 }
@@ -71,7 +68,6 @@ export const ChoosesModelAndEffort: Story = {
     const effortScale = effort.parentElement
     if (!effortScale) throw new Error('Effort scale is missing.')
     await expect(within(effortScale).getByText('Extra high')).toHaveClass('font-semibold')
-    await expect(canvas.getByTestId('chosen-setup')).toHaveTextContent('claude sonnet xhigh')
     const harnesses = page().getByRole('tablist', { name: 'Harness' })
     for (const label of ['Claude Code', 'Codex']) {
       const tab = within(harnesses).getByRole('tab', { name: label })
@@ -101,7 +97,6 @@ export const ChoosesByKeyboard: Story = {
     const haiku = within(models).getByRole('radio', { name: /Haiku 4.5/ })
     await expect(haiku).toHaveFocus()
     await expect(haiku).toBeChecked()
-    await expect(canvas.getByTestId('chosen-setup')).toHaveTextContent('claude haiku medium')
     await userEvent.tab()
     await expect(page().getByRole('slider', { name: 'Effort' })).toHaveFocus()
 
@@ -142,7 +137,6 @@ export const NewSessionChoosesHarness: Story = {
     await expect(within(codexModels).getAllByRole('radio')).toHaveLength(5)
     await expect(within(codexModels).getByRole('radio', { name: /Gpt 5.6 Sol/ })).toBeChecked()
     await expect(trigger).toHaveAccessibleName('Choose run setup: Codex, Gpt 5.6 Sol, Low')
-    await expect(canvas.getByTestId('chosen-setup')).toHaveTextContent('codex gpt-5.6-sol low')
 
     await userEvent.click(within(harnesses).getByRole('tab', { name: 'Claude Code' }))
     await expect(page().getByRole('radiogroup', { name: 'Model' })).toBeVisible()
