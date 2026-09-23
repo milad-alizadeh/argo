@@ -42,7 +42,7 @@ test('adds a watched Claude SDK Session and its vendor history to the roster', a
   expect(listed.rows).toMatchObject([
     { id: 'claude-1', harness: 'claude', posture: 'watched', cwd: '/repository' },
   ])
-  const feed = source.readObservedFeed?.('claude-1')
+  const feed = await source.readObservedFeed?.('claude-1')
   expect(feed?.chainId).toBe('claude-1')
   expect(feed?.rows).toContainEqual({
     shape: 'prose',
@@ -56,6 +56,21 @@ test('adds a watched Claude SDK Session and its vendor history to the roster', a
     role: 'assistant',
     text: 'SDK block reply',
   })
+})
+
+test('lists Claude Sessions without waiting for their message histories', async () => {
+  const source = createClaudeSdkHistorySource({
+    history: {
+      listSessions: async () => [
+        { sessionId: 'claude-ready', summary: 'Ready now', lastModified: 1 },
+      ],
+      getSessionMessages: async () => await new Promise<never>(() => {}),
+    },
+  })
+
+  const listed = await source.discoverSessions()
+
+  expect(listed.rows.map((row) => row.id)).toEqual(['claude-ready'])
 })
 
 test('paginates watched Claude Sessions without merging them outside the source boundary', async () => {
@@ -77,8 +92,8 @@ test('paginates watched Claude Sessions without merging them outside the source 
   const second = await source.discoverSessions({ cursor: first.nextCursor })
 
   expect(first.rows).toHaveLength(50)
-  expect(first.nextCursor).toBe('100')
-  expect(second.rows).toHaveLength(51)
+  expect(first.nextCursor).toBe('50')
+  expect(second.rows).toHaveLength(1)
   expect(second.nextCursor).toBeNull()
 })
 
