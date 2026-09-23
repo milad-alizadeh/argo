@@ -27,8 +27,6 @@ Monorepo for the Argo skills bundle and the Argo cockpit. `apps/desktop` is the 
 
 ## Gates
 
-Before code review, read `docs/agents/code-review.md`.
-
 **CI is the only gate**; there are no git hooks. `.github/workflows/ci.yml` lists every step, and
 `bun run quality` is the local subset, wider than biome alone. A `macos-26` job packages and tests
 `apps/desktop` when a PR touches it, the root manifest, the lockfile or `.github/`.
@@ -53,6 +51,9 @@ fork PRs.
 **Only `/ship` pushes a work branch or opens a PR**, and an agent may invoke it. Every other run
 ends at the reviewed diff, committed on its branch. A hook denies both commands unless prefixed
 `ARGO_SHIP=1`, which only `/ship` writes.
+
+An implementation gets one review pass. Fix its actionable findings, then commit without starting
+another review pass just to check those fixes.
 
 **What leaves the base says so in a commit trailer**: `Removes-test: <name>`,
 `Removes-file: <path>`, `Reverts-file: <path>` (or `*`). A reviewer is the check:
