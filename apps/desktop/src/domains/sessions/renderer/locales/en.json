@@ -132,7 +132,10 @@
       "permissions": "{{harness}} permissions",
       "ownSettings": "{{harness}} runs at the Model and Effort in its own settings.",
       "loadingModels": "Loading Codex models…",
+      "fallbackModels": "Using a limited fallback model and effort.",
+      "fallbackShort": "Fallback",
       "modelCatalogError": "Argo could not load the Codex models.",
+      "claudeCatalogError": "Argo could not load Claude models.",
       "refreshModels": "Refresh models",
       "model": "Model"
     },

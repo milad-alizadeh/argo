@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
 import { createManagedSessionClient } from '@/domains/sessions/next/preload/managed-session-client'
+import { claudeModelCatalogFixture } from '../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
 import { codexModelCatalogFixture } from '../../../../../test-fixtures/sessions/codex-model-catalog.fixture'
 
 const start = {
@@ -40,4 +41,15 @@ test('reads the validated Codex catalog from the main process', async () => {
     catalog,
   }))
   await expect(client.readCodexModelCatalog()).resolves.toEqual(catalog)
+})
+
+test('reads the validated Claude catalog from the main process', async () => {
+  const catalog = claudeModelCatalogFixture()
+  const client = createManagedSessionClient(async (_channel, request) => ({
+    version: 1,
+    type: 'managed-session.claude-catalog.result',
+    requestId: (request as { requestId: string }).requestId,
+    catalog,
+  }))
+  await expect(client.readClaudeModelCatalog()).resolves.toEqual(catalog)
 })

@@ -37,6 +37,8 @@ export function RunSetupMenu({
   const { t } = useTranslation('sessions')
   const harnessLabel = HARNESSES[harness.harness].label
   const facts = setupFacts(setup)
+  const fallbackLabel =
+    setup?.choices.source === 'fallback' ? t('composer.setup.fallbackShort') : null
   const body = (
     <SetupBody
       harness={harness}
@@ -52,7 +54,7 @@ export function RunSetupMenu({
           <InputGroupButton
             variant="ghost"
             className="max-w-80 min-w-0 type-control text-foreground"
-            aria-label={`Choose run setup: ${[harnessLabel, ...facts].join(', ')}`}
+            aria-label={`Choose run setup: ${[harnessLabel, ...facts, ...(fallbackLabel ? [fallbackLabel] : [])].join(', ')}`}
           />
         }
       >
@@ -66,6 +68,11 @@ export function RunSetupMenu({
               <span>{fact}</span>
             </Fragment>
           ))}
+          {fallbackLabel ? (
+            <span className="ml-1.5 rounded-sm bg-muted px-1.5 py-0.5 type-meta text-muted-foreground">
+              {fallbackLabel}
+            </span>
+          ) : null}
         </span>
         <Icon name="chevron-down" className="hidden text-muted-foreground @[36rem]:block" />
       </PopoverTrigger>
@@ -116,6 +123,21 @@ function SetupBody({ harness, setup, catalogError, refreshCatalog }: RunSetupMen
     )
   return (
     <>
+      {harness.harness === 'claude' && catalogError ? (
+        <div className="flex items-center gap-2 px-3.5 pt-3.5" role="alert">
+          <p className="type-meta text-muted-foreground">
+            {t('composer.setup.claudeCatalogError')}
+          </p>
+          <Button onClick={refreshCatalog} size="sm" type="button" variant="outline">
+            {t('composer.setup.refreshModels')}
+          </Button>
+        </div>
+      ) : null}
+      {setup.choices.source === 'fallback' ? (
+        <p className="px-3.5 pt-3.5 type-meta text-muted-foreground" role="status">
+          {t('composer.setup.fallbackModels')}
+        </p>
+      ) : null}
       <ModelOptions {...setup} />
       <EffortSlider {...setup} />
     </>

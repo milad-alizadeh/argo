@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { claudeModelCatalogSchema } from '@/domains/sessions/contract/claude-model-catalog'
 import { codexModelCatalogSchema } from '@/domains/sessions/contract/codex-model-catalog'
 import { sessionCommandSchema } from '@/domains/sessions/next/contract/session-command-contract'
 import { sessionIdentitySchema } from '@/domains/sessions/next/contract/session-contract'
@@ -27,6 +28,17 @@ export const managedSessionCatalogRequestSchema = z.strictObject({
   version: z.literal(1),
   type: z.literal('managed-session.catalog'),
   requestId: identifierSchema,
+})
+export const managedClaudeCatalogRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('managed-session.claude-catalog'),
+  requestId: identifierSchema,
+})
+const managedClaudeCatalogReplySchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('managed-session.claude-catalog.result'),
+  requestId: identifierSchema,
+  catalog: claudeModelCatalogSchema.nullable(),
 })
 const managedSessionCatalogReplySchema = z.strictObject({
   version: z.literal(1),
@@ -71,6 +83,8 @@ export const managedSessionSubscribeReplySchema =
   managedSessionSubscribedSchema.or(managedSessionErrorSchema)
 export const managedSessionCatalogReply =
   managedSessionCatalogReplySchema.or(managedSessionErrorSchema)
+export const managedClaudeCatalogReply =
+  managedClaudeCatalogReplySchema.or(managedSessionErrorSchema)
 
 export const managedSessionProjectionEventSchema = z.strictObject({
   version: z.literal(1),

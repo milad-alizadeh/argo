@@ -1,5 +1,6 @@
 import { query } from '@anthropic-ai/claude-agent-sdk'
 import { SESSION_CLAUDE_EXECUTABLE_ENV } from '@/domains/sessions/contract/proof-protocol'
+import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 import type { ClaudeQueryFactory } from './types'
 
 export const createClaudeQuery: ClaudeQueryFactory = ({
@@ -22,6 +23,9 @@ export const createClaudeQuery: ClaudeQueryFactory = ({
       model,
       effort,
       permissionMode,
-      pathToClaudeCodeExecutable: process.env[SESSION_CLAUDE_EXECUTABLE_ENV],
+      pathToClaudeCodeExecutable:
+        process.env[SESSION_CLAUDE_EXECUTABLE_ENV] ??
+        findExecutableOnLoginShellPath('claude') ??
+        undefined,
     },
   })

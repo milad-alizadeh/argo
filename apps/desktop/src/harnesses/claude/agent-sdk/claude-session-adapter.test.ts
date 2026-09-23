@@ -9,6 +9,17 @@ function managedAdapter(fake: ReturnType<typeof fakeClaudeQuery>) {
     resolveWorkspace: async () => ({ workspaceId: 'workspace-1', cwd: '/repository' }),
     createQuery: fake.createQuery,
     readResumePermission: async () => ({ resumable: true }),
+    readModelCatalog: async () => ({
+      data: [
+        {
+          value: 'haiku',
+          resolvedModel: 'claude-haiku-4-5',
+          displayName: 'Haiku',
+          description: '',
+          supportedEffortLevels: ['low'],
+        },
+      ],
+    }),
   })
 }
 

@@ -1,3 +1,4 @@
+import type { ClaudeModelCatalog } from '@/domains/sessions/contract/claude-model-catalog'
 import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
 import type { SessionCommand } from '@/domains/sessions/next/contract/session-command-contract'
 import type { SessionIdentity } from '@/domains/sessions/next/contract/session-contract'
@@ -12,6 +13,7 @@ import { createDomainClient } from '@/shared/ipc/client'
 
 export type ManagedSessionClient = {
   readCodexModelCatalog: () => Promise<CodexModelCatalog | null>
+  readClaudeModelCatalog: () => Promise<ClaudeModelCatalog | null>
   executeManagedSessionCommand: (command: SessionCommand) => Promise<SessionCommandOutcome>
   subscribeManagedSession: (
     session: SessionIdentity,
@@ -28,6 +30,10 @@ export function createManagedSessionClient(
     async readCodexModelCatalog() {
       const reply = await client.catalog({})
       return reply.type === 'managed-session.catalog.result' ? reply.catalog : null
+    },
+    async readClaudeModelCatalog() {
+      const reply = await client.claudeCatalog({})
+      return reply.type === 'managed-session.claude-catalog.result' ? reply.catalog : null
     },
     async executeManagedSessionCommand(command) {
       const reply = await client.command({ command })

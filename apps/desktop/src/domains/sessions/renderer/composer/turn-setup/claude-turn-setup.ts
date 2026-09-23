@@ -1,22 +1,12 @@
 import {
-  CLAUDE_EFFORTS,
-  CLAUDE_MODELS,
-  type ClaudeTurnSetup,
-} from '@/domains/sessions/contract/ipc/contract'
-import type { ModeChoice, SetupChoice, TurnSetupChoices } from './turn-setup'
-
-type ClaudeModel = ClaudeTurnSetup['model']
-type ClaudeEffort = ClaudeTurnSetup['effort']
+  type ClaudeModelCatalog,
+  claudeModelsWithEffort,
+} from '@/domains/sessions/contract/claude-model-catalog'
+import { CLAUDE_FALLBACK_SETUP } from '@/domains/sessions/contract/ipc/contract'
+import type { ModeChoice, TurnSetupChoices } from './turn-setup'
 
 // An alias names a family, and the transcript names the model id it resolved to.
-const MODELS: Record<ClaudeModel, Omit<SetupChoice, 'value' | 'reads'>> = {
-  fable: { label: 'Fable 5.1', detail: 'Deepest reasoning for long, open-ended work' },
-  opus: { label: 'Opus 5', detail: 'Most capable for architecture and hard problems' },
-  sonnet: { label: 'Sonnet 5', detail: 'Balanced for daily coding and review' },
-  haiku: { label: 'Haiku 4.5', detail: 'Fast for small changes and quick answers' },
-}
-
-const EFFORTS: Record<ClaudeEffort, string> = {
+const EFFORTS: Record<string, string> = {
   low: 'Low',
   medium: 'Medium',
   high: 'High',
@@ -70,19 +60,63 @@ const MODES: ModeChoice[] = [
   },
 ]
 
-export const CLAUDE_TURN_SETUP: TurnSetupChoices = {
-  agent: 'Claude',
-  label: 'Claude Code',
-  models: CLAUDE_MODELS.map((value) => ({
-    value,
-    ...MODELS[value],
-    reads: (reading) => reading === value || reading.startsWith(`claude-${value}-`),
-  })),
-  efforts: CLAUDE_EFFORTS.map((value) => ({
-    value,
-    label: EFFORTS[value],
-    reads: (reading) => reading === value,
-  })),
-  modes: MODES,
-  opening: { model: 'opus', effort: 'medium', mode: 'manual' },
+export function claudeTurnSetup(catalog: ClaudeModelCatalog | null): TurnSetupChoices {
+  if (catalog === null) {
+    return {
+      agent: 'Claude',
+      label: 'Claude Code',
+      models: [
+        {
+          value: CLAUDE_FALLBACK_SETUP.model,
+          label: 'Sonnet',
+          efforts: [CLAUDE_FALLBACK_SETUP.effort],
+          defaultEffort: CLAUDE_FALLBACK_SETUP.effort,
+          reads: (reading) => reading === CLAUDE_FALLBACK_SETUP.model,
+        },
+      ],
+      efforts: [
+        {
+          value: CLAUDE_FALLBACK_SETUP.effort,
+          label: 'Medium',
+          reads: (reading) => reading === CLAUDE_FALLBACK_SETUP.effort,
+        },
+      ],
+      modes: MODES,
+      opening: { ...CLAUDE_FALLBACK_SETUP, mode: 'manual' },
+      source: 'fallback',
+    }
+  }
+  const models = claudeModelsWithEffort(catalog)
+  const openingModel = models.find(({ value }) => value === 'opus') ?? models[0]
+  if (openingModel === undefined) return claudeTurnSetup(null)
+  const openingEffort = openingModel.supportedEffortLevels.includes('medium')
+    ? 'medium'
+    : (openingModel.supportedEffortLevels[0] ?? CLAUDE_FALLBACK_SETUP.effort)
+  return {
+    agent: 'Claude',
+    label: 'Claude Code',
+    models: models.map(
+      ({ value, resolvedModel, displayName, description, supportedEffortLevels }) => ({
+        value,
+        label: displayName,
+        detail: description || undefined,
+        efforts: supportedEffortLevels,
+        defaultEffort: supportedEffortLevels.includes('medium')
+          ? 'medium'
+          : supportedEffortLevels[0],
+        reads: (reading) => reading === value || reading === resolvedModel,
+      }),
+    ),
+    efforts: [...new Set(models.flatMap(({ supportedEffortLevels }) => supportedEffortLevels))].map(
+      (value) => ({
+        value,
+        label: EFFORTS[value] ?? value,
+        reads: (reading) => reading === value,
+      }),
+    ),
+    modes: MODES,
+    opening: { model: openingModel.value, effort: openingEffort, mode: 'manual' },
+  }
 }
+
+export const CLAUDE_TURN_SETUP = claudeTurnSetup(null)
