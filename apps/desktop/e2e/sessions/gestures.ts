@@ -28,6 +28,7 @@ export type CreateRequest = {
   harness: SessionHarness
   prompt: string
   budgetRunSetup?: boolean
+  permissionMode?: 'auto'
   // Read on every poll while the Roster row is still absent. A true reading fails the case: the
   // row a managed Session stands on must not wait for the Harness to write (managed-row.ts).
   harnessWrote?: () => Promise<boolean>
@@ -114,6 +115,17 @@ async function chooseBudgetRunSetup(page: Page, harness: SessionHarness) {
   await models.waitFor({ state: 'detached' })
 }
 
+async function chooseAutoPermissionMode(page: Page) {
+  const mode = page.getByRole('button', { name: /Choose permission mode/ })
+  await mode.focus()
+  await page.keyboard.press('Enter')
+  await page
+    .getByRole('menuitemradio', { name: 'Auto Claude handles permission decisions' })
+    .click()
+  await page.keyboard.press('Escape')
+  await expect(mode).toContainText('Auto')
+}
+
 // The Roster ids the shipped app answers with. Reading is an assertion, not a gesture: nothing a
 // person does is injected here.
 export async function rosterIds(page: Page): Promise<string[]> {
@@ -179,6 +191,7 @@ export async function createSessionByClick(page: Page, request: CreateRequest): 
   await openNewSessionByClick(page)
   await chooseHarness(page, request.harness)
   if (request.budgetRunSetup === true) await chooseBudgetRunSetup(page, request.harness)
+  if (request.permissionMode === 'auto') await chooseAutoPermissionMode(page)
   const composer = page.getByRole('combobox', { name: 'Message' })
   await composer.click()
   await expect(composer).toHaveText('')

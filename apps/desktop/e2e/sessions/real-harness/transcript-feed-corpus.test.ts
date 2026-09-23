@@ -66,10 +66,10 @@ test('audits Claude and Codex transcript records through their Feed projections'
     payload: {
       type: 'message',
       id: 'codex-notice',
-      role: 'user',
+      role: 'assistant',
       content: [
         {
-          type: 'input_text',
+          type: 'output_text',
           text: '<task-notification><task-id>t2</task-id><status>completed</status><summary>Task finished</summary></task-notification>',
         },
       ],

@@ -15,9 +15,10 @@ export async function proveSessionCreatedByClick(
     harness?: SessionHarness
     prompt?: string
     budgetRunSetup?: boolean
+    permissionMode?: 'auto'
   } = {},
 ) {
-  const { harness = 'claude', prompt = PROMPT, budgetRunSetup = false } = options
+  const { harness = 'claude', prompt = PROMPT, budgetRunSetup = false, permissionMode } = options
   const reply = { harness, prompt }
   assert.equal(await backend.recorded(reply), false)
   const known = await rosterIds(page)
@@ -25,6 +26,7 @@ export async function proveSessionCreatedByClick(
     harness,
     prompt,
     budgetRunSetup,
+    permissionMode,
     harnessWrote: () => backend.recorded(reply),
   })
 

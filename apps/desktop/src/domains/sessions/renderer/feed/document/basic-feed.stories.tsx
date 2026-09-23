@@ -370,17 +370,20 @@ export const PastedContent: Story = {
     await expect(disclosures).toHaveLength(2)
     await expect(disclosures[0]).toHaveAttribute('aria-expanded', 'false')
     await expect(disclosures[1]).toHaveAttribute('aria-expanded', 'false')
-    await expect(
-      [...canvasElement.querySelectorAll<HTMLElement>('[data-feed-row]')].map((row) =>
-        row.getAttribute('data-feed-row'),
-      ),
-    ).toEqual([
-      'pasted-content-before',
-      'pasted-content-1',
-      'pasted-content-between',
-      'pasted-content-2',
-      'pasted-content-after',
-    ])
+    const visibleContent = canvasElement.textContent ?? ''
+    const phrases = [
+      'Review this snippet:',
+      'Pasted content',
+      'Then use this result:',
+      'Pasted content',
+      'Finish after both snippets.',
+    ]
+    let visiblePosition = -1
+    for (const phrase of phrases) {
+      const phrasePosition = visibleContent.indexOf(phrase, visiblePosition + 1)
+      await expect(phrasePosition).toBeGreaterThan(visiblePosition)
+      visiblePosition = phrasePosition
+    }
     await disclosures[0]?.focus()
     await userEvent.keyboard('{Enter}')
     await expect(disclosures[0]).toHaveAttribute('aria-expanded', 'true')

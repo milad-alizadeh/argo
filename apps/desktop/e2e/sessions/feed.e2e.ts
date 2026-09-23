@@ -186,11 +186,12 @@ test.describe('with real Session transcript corpora', () => {
       prompt:
         'Use Bash to run `printf hello; printf warning >&2`. Start one short Task agent in the background that returns READY, wait for its completion notification, then report the command output and task result.',
       budgetRunSetup: true,
+      permissionMode: 'auto',
     })
     const codexSessionId = await proveSessionCreatedByClick(session.page(), backend, {
       harness: 'codex',
       prompt:
-        '<task-notification><task-id>corpus-task</task-id><status>completed</status><summary>Task finished</summary></task-notification>',
+        'Reply with one XML status envelope named task-notification. Include task-id corpus-task, status completed, and summary Task finished. Do not add prose.',
       budgetRunSetup: true,
     })
     const home = path.join(session.root, 'home')

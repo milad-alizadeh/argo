@@ -29,6 +29,11 @@ const REQUIRED_ENVELOPES = {
   codex: ['task-notification'],
 } as const
 type RequiredEnvelope = (typeof REQUIRED_ENVELOPES)[SessionHarness][number]
+type EnvelopeRecord = {
+  envelope: RequiredEnvelope
+  line: string
+  record: TranscriptRecord
+}
 
 function envelopeIn(line: string, envelope: string) {
   return new RegExp(`<${envelope}(?:\\s|>)`, 'i').test(line)
@@ -92,7 +97,8 @@ function assertKnownRecords(
   harness: SessionHarness,
   lines: string[],
   observed: Set<RequiredEnvelope>,
-) {
+): EnvelopeRecord[] {
+  const envelopeRecords: EnvelopeRecord[] = []
   for (const line of lines) {
     const source: unknown = JSON.parse(line)
     assert.ok(isRecord(source), `${harness} transcript line was not an object: ${line}`)
@@ -102,6 +108,7 @@ function assertKnownRecords(
     for (const envelope of REQUIRED_ENVELOPES[harness]) {
       if (!envelopeIn(line, envelope)) continue
       observed.add(envelope)
+      envelopeRecords.push({ envelope, line, record })
       switch (envelope) {
         case 'task-notification':
           assertTaskNotification(harness, line, record)
@@ -118,6 +125,102 @@ function assertKnownRecords(
     }
     if (REQUIRED_ENVELOPES[harness].some((envelope) => envelopeIn(line, envelope)))
       assertNoProseFallback(harness, line, record)
+  }
+  return envelopeRecords
+}
+
+function toolRows(rows: ReturnType<typeof projectFeed>['rows']) {
+  return rows.flatMap((row) => {
+    if (row.shape === 'tool') return [row]
+    if (row.shape === 'tool-group') return row.calls
+    return []
+  })
+}
+
+function hasStatusRow(record: TranscriptRecord, rows: ReturnType<typeof projectFeed>['rows']) {
+  if (record.kind === 'event')
+    return rows.some(
+      (row) => row.shape === 'event' && row.id === record.uuid && row.event === 'status',
+    )
+  if (record.kind === 'subagent')
+    return rows.some((row) => row.shape === 'subagent' && row.id === record.uuid)
+  if (record.kind === 'background-task') {
+    const status = {
+      completed: 'succeeded',
+      failed: 'failed',
+      interrupted: 'interrupted',
+    }[record.state]
+    return toolRows(rows).some(
+      (row) => row.id === record.callId && row.kind === 'command' && row.status === status,
+    )
+  }
+  if (record.kind !== 'message') return false
+  return record.blocks.some(
+    (block, index) =>
+      block.shape === 'event' &&
+      block.event === 'status' &&
+      rows.some(
+        (row) =>
+          row.shape === 'event' && row.id === `${record.uuid}:${index}` && row.event === 'status',
+      ),
+  )
+}
+
+function hasEnvelopeFeedRow(
+  { envelope, record }: EnvelopeRecord,
+  rows: ReturnType<typeof projectFeed>['rows'],
+) {
+  switch (envelope) {
+    case 'task-notification':
+      return hasStatusRow(record, rows)
+    case 'pasted_content':
+      return (
+        record.kind === 'message' &&
+        record.blocks.some(
+          (block) =>
+            block.shape === 'pasted-content' &&
+            rows.some(
+              (row) =>
+                row.shape === 'prose' &&
+                row.pastedContent?.some((content) => content.id === block.id) === true,
+            ),
+        )
+      )
+    case 'bash-input':
+      return (
+        record.kind === 'message' &&
+        record.blocks.some(
+          (block, index) =>
+            block.shape === 'event' &&
+            block.event === 'command' &&
+            rows.some(
+              (row) =>
+                row.shape === 'event' &&
+                row.id === `${record.uuid}:${index}` &&
+                row.event === 'command',
+            ),
+        )
+      )
+    case 'bash-stdout':
+    case 'bash-stderr':
+      return (
+        record.kind === 'command-output' &&
+        rows.some((row) => row.shape === 'command-output' && row.id === record.uuid)
+      )
+  }
+}
+
+function assertEnvelopeFeedRows(
+  harness: SessionHarness,
+  envelopeRecords: EnvelopeRecord[],
+  rows: ReturnType<typeof projectFeed>['rows'],
+) {
+  for (const envelopeRecord of envelopeRecords) {
+    assert.equal(
+      hasEnvelopeFeedRow(envelopeRecord, rows),
+      true,
+      `${harness} ${envelopeRecord.envelope} record produced no required Feed row: ${envelopeRecord.line}`,
+    )
   }
 }
 
@@ -173,7 +276,7 @@ async function auditTranscript(
   observed: Set<RequiredEnvelope>,
 ) {
   const lines = (await readFile(filePath, 'utf8')).split('\n').filter((line) => line.trim() !== '')
-  assertKnownRecords(harness, lines, observed)
+  const envelopeRecords = assertKnownRecords(harness, lines, observed)
   const file = readTranscriptFile(filePath, {
     sessionId: path.basename(filePath, '.jsonl'),
     lines,
@@ -183,6 +286,7 @@ async function auditTranscript(
   assert.ok(chain, `${harness} transcript ${filePath} did not form a Session chain`)
   const rows = projectFeed(chain, undefined).rows
   assertFeedRows(harness, rows)
+  assertEnvelopeFeedRows(harness, envelopeRecords, rows)
   assertPastedContentOrder(harness, file.records, rows)
 }
 
