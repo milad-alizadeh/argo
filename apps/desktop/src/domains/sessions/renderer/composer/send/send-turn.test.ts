@@ -209,7 +209,18 @@ test('a managed Codex Session sends through its managed adapter', async () => {
     }),
   ).resolves.toBe('accepted')
 
-  expect(managed).toEqual([{ harness: 'codex', sessionId: 'session-1', prompt: 'Fail this Turn.' }])
+  expect(managed).toEqual([
+    {
+      harness: {
+        harness: 'codex',
+        sessionId: 'session-1',
+        prompt: 'Fail this Turn.',
+        setup: { model: 'gpt-5.6-sol', effort: 'low', mode: 'workspace-write' },
+      },
+      sessionId: undefined,
+      prompt: undefined,
+    },
+  ])
   expect(sent).toEqual([])
 })
 

@@ -55,6 +55,7 @@ export function RunSetupMenu({ harness, setup }: RunSetupMenuProps) {
         aria-label={t('composer.setup.title')}
         align="start"
         side="top"
+        tabIndex={0}
         className="max-h-(--size-session-menu-max-height) w-(--size-session-menu) gap-0 overflow-y-auto p-0"
       >
         <HarnessTabs harness={harness.harness} onChange={harness.onChange}>

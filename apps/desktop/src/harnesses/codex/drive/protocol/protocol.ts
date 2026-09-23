@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { z } from 'zod'
 import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
 import type { Input } from '../input-items'
 
@@ -70,57 +71,56 @@ export function protocolString(value: unknown, label: string): string {
   return value
 }
 
-function protocolNonemptyString(value: unknown, label: string): string {
-  const text = protocolString(value, label)
-  assert(text.length > 0, `${label} must not be empty`)
-  return text
-}
+const modelListResponseSchema = z.object({
+  data: z.array(
+    z
+      .object({
+        id: z.string().min(1),
+        model: z.string().min(1),
+        displayName: z.string().min(1),
+        description: z.string().nullable().optional(),
+        defaultReasoningEffort: z.string().min(1),
+        isDefault: z.boolean(),
+        hidden: z.boolean(),
+        supportedReasoningEfforts: z
+          .array(
+            z.object({
+              reasoningEffort: z.string().min(1),
+              description: z.string().nullable().optional(),
+            }),
+          )
+          .min(1),
+      })
+      .superRefine((model, context) => {
+        if (
+          !model.supportedReasoningEfforts.some(
+            ({ reasoningEffort }) => reasoningEffort === model.defaultReasoningEffort,
+          )
+        ) {
+          context.addIssue({
+            code: 'custom',
+            message: 'Default reasoning effort must be advertised.',
+            path: ['defaultReasoningEffort'],
+          })
+        }
+      }),
+  ),
+  nextCursor: z.string().nullable().optional(),
+})
 
 export function readModelCatalog(value: unknown): CodexModelCatalog {
-  const response = protocolRecord(value, 'Model list result')
-  assert(Array.isArray(response.data), 'Model list data must be an array')
-  assert(
-    response.nextCursor === undefined ||
-      response.nextCursor === null ||
-      typeof response.nextCursor === 'string',
-    'Model list nextCursor must be a string or null',
-  )
-  const data = response.data.map((raw, index) => {
-    const model = protocolRecord(raw, `Model ${index}`)
-    assert(typeof model.isDefault === 'boolean', `Model ${index} isDefault must be boolean`)
-    assert(typeof model.hidden === 'boolean', `Model ${index} hidden must be boolean`)
-    assert(
-      Array.isArray(model.supportedReasoningEfforts),
-      `Model ${index} efforts must be an array`,
-    )
-    const efforts = model.supportedReasoningEfforts.map((rawEffort, effortIndex) => {
-      const effort = protocolRecord(rawEffort, `Model ${index} effort ${effortIndex}`)
-      return {
-        reasoningEffort: protocolNonemptyString(effort.reasoningEffort, 'Reasoning effort'),
-        description: typeof effort.description === 'string' ? effort.description : '',
-      }
-    })
-    assert(efforts.length > 0, `Model ${index} must advertise a reasoning effort`)
-    const defaultReasoningEffort = protocolNonemptyString(
-      model.defaultReasoningEffort,
-      'Default reasoning effort',
-    )
-    assert(
-      efforts.some(({ reasoningEffort }) => reasoningEffort === defaultReasoningEffort),
-      `Model ${index} default effort must be advertised`,
-    )
-    return {
-      id: protocolNonemptyString(model.id, 'Model ID'),
-      model: protocolNonemptyString(model.model, 'Model name'),
-      displayName: protocolNonemptyString(model.displayName, 'Model display name'),
-      description: typeof model.description === 'string' ? model.description : '',
-      defaultReasoningEffort,
-      isDefault: model.isDefault,
-      hidden: model.hidden,
-      supportedReasoningEfforts: efforts,
-    }
-  })
-  return { data, nextCursor: (response.nextCursor as string | null | undefined) ?? null }
+  const response = modelListResponseSchema.parse(value)
+  return {
+    data: response.data.map((model) => ({
+      ...model,
+      description: model.description ?? '',
+      supportedReasoningEfforts: model.supportedReasoningEfforts.map((effort) => ({
+        reasoningEffort: effort.reasoningEffort,
+        description: effort.description ?? '',
+      })),
+    })),
+    nextCursor: response.nextCursor ?? null,
+  }
 }
 
 export function readMessage(line: string): WireMessage {
