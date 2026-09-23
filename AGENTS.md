@@ -27,8 +27,6 @@ Monorepo for the Argo skills bundle and the Argo cockpit. `apps/desktop` is the 
 
 ## Gates
 
-Before code review, read `docs/agents/code-review.md`.
-
 **CI is the only gate**; there are no git hooks. `.github/workflows/ci.yml` lists every step, and
 `bun run quality` is the local subset, wider than biome alone. A `macos-26` job packages and tests
 `apps/desktop` when a PR touches it, the root manifest, the lockfile or `.github/`.
@@ -83,6 +81,9 @@ parent's. Pick the lowest tier that can finish the bounded task: cheap and low e
 research, read-only inspection and mechanical edits; higher only for sustained reasoning, ambiguous
 design, broad code understanding or high-risk verification. The parent model is the ceiling.
 Report model, effort and the task requirement that earns it.
+
+The parent owns all delegation. A subagent completes its assigned task and reports back without
+creating child agents.
 
 ## Visual verification
 

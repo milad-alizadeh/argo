@@ -1,5 +1,8 @@
 ## Choosing a subagent's model
 
+The parent owns all delegation. A subagent completes its assigned task and reports back without
+creating child agents.
+
 **A subagent's model is a decision per dispatch**, never inherited from the session that spawns
 it. A fan-out pays that decision once per agent, so it is where the wrong default costs most.
 

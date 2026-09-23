@@ -79,10 +79,9 @@ Enter and Escape inside a dialog are DOM semantics, not entries.
 
 ## Design work
 
-For UI work, read `docs/agents/code-review.md` for the `interface-review` axis, and
-`docs/design-stack.md` for the token contract, the `docs/design/` kit and render commands. The
-implementation ticket records design decisions and their reasons; no separate design ticket is
-needed. `docs/designs/` is a closed `apps/macOS` archive.
+For UI work, read `docs/design-stack.md` for the token contract, the `docs/design/` kit and render
+commands. The implementation ticket records design decisions and their reasons; no separate
+design ticket is needed. `docs/designs/` is a closed `apps/macOS` archive.
 
 ## Storybook
 
