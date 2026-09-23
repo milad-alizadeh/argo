@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
+import { createActor } from 'xstate'
+import { feedStallMachine } from './feed-stall-machine'
 
 // How long a Session may sit with no progress — no Feed yet, or a Feed that has not settled —
 // before the reader sees a stalled state instead of an indefinite spinner (#2102). Every caller
@@ -12,14 +14,28 @@ export const FEED_STALL_TIMEOUT_MS = 8000
 // also still awaiting (cancel-on-navigate, #2102) — so a caller with nothing to show passes an
 // identity for what it is waiting on instead of `true`.
 export function useStallTimer(awaiting: string | false, timeoutMs: number) {
-  const [stalled, setStalled] = useState(false)
+  const [actor] = useState(() => createActor(feedStallMachine))
+  const stalled = useSyncExternalStore(
+    (onChange) => {
+      const subscription = actor.subscribe(onChange)
+      return () => subscription.unsubscribe()
+    },
+    () => actor.getSnapshot().context.stalled,
+    () => actor.getSnapshot().context.stalled,
+  )
+
+  useEffect(() => {
+    actor.start()
+  }, [actor])
+
   useEffect(() => {
     if (awaiting === false) {
-      setStalled(false)
+      actor.send({ type: 'Settled' })
       return
     }
-    const timer = window.setTimeout(() => setStalled(true), timeoutMs)
+    actor.send({ type: 'Awaiting', identity: awaiting })
+    const timer = window.setTimeout(() => actor.send({ type: 'Timed out' }), timeoutMs)
     return () => window.clearTimeout(timer)
-  }, [awaiting, timeoutMs])
-  return stalled
+  }, [actor, awaiting, timeoutMs])
+  return stalled && awaiting !== false && actor.getSnapshot().context.identity === awaiting
 }

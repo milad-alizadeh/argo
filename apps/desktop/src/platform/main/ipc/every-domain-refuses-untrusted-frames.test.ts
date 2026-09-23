@@ -107,6 +107,7 @@ async function domains(userData: string) {
   Object.assign(projectMock.window, { once: () => undefined })
   attachProjectBridge(projectMock.window, {
     projects: neverCalled(),
+    archive: neverCalled(),
     rendererURL,
     onboardingDriver: neverCalled(),
   })

@@ -1,4 +1,5 @@
 type Send = (message: Record<string, unknown>) => void
+const LIFECYCLE_NOTIFICATION_DELAY_MS = 25
 
 export function scheduleThreadLifecycle(text: string, threadId: unknown, send: Send): boolean {
   if (text.includes('NOT_LOADED')) {
@@ -7,7 +8,7 @@ export function scheduleThreadLifecycle(text: string, threadId: unknown, send: S
         method: 'thread/status/changed',
         params: { threadId, status: { type: 'notLoaded' } },
       })
-    }, 1)
+    }, LIFECYCLE_NOTIFICATION_DELAY_MS)
     return true
   }
   if (text.includes('CLOSED')) {
@@ -16,7 +17,7 @@ export function scheduleThreadLifecycle(text: string, threadId: unknown, send: S
         method: 'thread/closed',
         params: { threadId },
       })
-    }, 1)
+    }, LIFECYCLE_NOTIFICATION_DELAY_MS)
     return true
   }
   return false
