@@ -59,7 +59,7 @@ function ComposerSection({
   return (
     <section
       aria-label={t('composerRegionLabel')}
-      className="absolute inset-x-0 bottom-0 z-20 isolate px-(--spacing-session-gutter)"
+      className="relative z-20 isolate shrink-0 px-(--spacing-session-gutter)"
     >
       <ComposerFade onJumpToLatest={onJumpToLatest} />
       {composer}

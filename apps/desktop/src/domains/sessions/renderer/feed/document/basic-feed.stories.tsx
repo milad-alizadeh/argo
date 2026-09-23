@@ -338,7 +338,7 @@ const pastedContentFeed = {
       id: 'pasted-content-1',
       role: 'user' as const,
       text: '',
-      pastedContent: [{ id: 'a', text: 'const answer = 42' }],
+      pastedContent: [{ id: 'a', text: 'a'.repeat(256) }],
     },
     {
       shape: 'prose' as const,
@@ -387,7 +387,11 @@ export const PastedContent: Story = {
     await disclosures[0]?.focus()
     await userEvent.keyboard('{Enter}')
     await expect(disclosures[0]).toHaveAttribute('aria-expanded', 'true')
-    await waitFor(() => expect(canvas.getByText('const answer = 42')).toBeVisible())
+    const longPastedText = 'a'.repeat(256)
+    const longPastedParagraph = await canvas.findByText(longPastedText)
+    await waitFor(() =>
+      expect(longPastedParagraph.scrollWidth).toBeLessThanOrEqual(longPastedParagraph.clientWidth),
+    )
     await disclosures[1]?.focus()
     await userEvent.keyboard('{Enter}')
     await expect(disclosures[1]).toHaveAttribute('aria-expanded', 'true')

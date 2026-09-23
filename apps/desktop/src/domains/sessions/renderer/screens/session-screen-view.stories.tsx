@@ -421,12 +421,20 @@ async function expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement: HTML
 
   expect(history.scrollHeight).toBeGreaterThan(history.clientHeight)
   expect(history.scrollTop).toBeGreaterThan(0)
-  expect(history.getBoundingClientRect().bottom).toBeGreaterThan(before.top)
+  expectFeedDoesNotOverlapComposer(canvasElement)
   history.scrollTo({ top: 0 })
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
 
   expect(history.scrollTop).toBe(0)
   expect(composer.getBoundingClientRect()).toEqual(before)
+}
+
+function expectFeedDoesNotOverlapComposer(canvasElement: HTMLElement) {
+  const composer = within(canvasElement).getByLabelText('Session composer')
+  const history = within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)
+  expect(history.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+    composer.getBoundingClientRect().top,
+  )
 }
 
 function expectContextBarInset(canvasElement: HTMLElement) {
@@ -746,6 +754,13 @@ export const NarrowHeader: Story = {
       canvas.getByRole('heading', { name: 'Finish Session composer review' }),
     ).toBeVisible()
     await expect(canvas.getByText('ticket-1846-composer')).toBeVisible()
+    await waitFor(() =>
+      expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
+        'data-session',
+        'composer-review',
+      ),
+    )
+    expectFeedDoesNotOverlapComposer(canvasElement)
     expectHeaderActionsAtTrailingEdge(canvasElement)
   },
 }
