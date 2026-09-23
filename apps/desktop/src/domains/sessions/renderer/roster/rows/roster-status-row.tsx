@@ -37,15 +37,27 @@ export function RosterLoadingMoreRow() {
   return <RosterStatusRow label={t('loadingMoreSessions')} />
 }
 
+// A skeleton row previews the shape of the Session row it is about to become
+// (session-roster-item.tsx): the same icon mark, gap and padding, at the same
+// ROSTER_ROW_HEIGHT, so nothing reflows once real rows arrive.
+function RosterLoadingRow() {
+  return (
+    <div className="flex items-start gap-2 px-2 py-2" style={{ height: ROSTER_ROW_HEIGHT }}>
+      <Skeleton className="mt-0.5 size-4 shrink-0 rounded-full" />
+      <div className="min-w-0 flex-1">
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="mt-1.5 h-3 w-1/3" />
+      </div>
+    </div>
+  )
+}
+
 export function RosterLoading() {
   const { t } = useTranslation('sessions')
   return (
-    <div aria-label={t('readingSessions')} className="space-y-4 px-5 py-4" role="status">
+    <div aria-label={t('readingSessions')} role="status">
       {[0, 1, 2].map((index) => (
-        <div key={index}>
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="mt-2 h-3 w-1/3" />
-        </div>
+        <RosterLoadingRow key={index} />
       ))}
     </div>
   )
