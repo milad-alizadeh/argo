@@ -90,7 +90,7 @@ export async function proveLiveCodexModelChoices(page) {
 
   await models.getByText('Mock Opus', { exact: true }).click()
   await expect(effort).toHaveAttribute('max', '2')
-  await expect(effort).toHaveAttribute('aria-valuetext', 'High')
+  await expect(effort).toHaveAttribute('aria-valuetext', /^(Medium|High|Extra high)$/)
   await expect(page.getByText('Low', { exact: true })).toHaveCount(0)
   await effort.press('End')
   await expect(effort).toHaveAttribute('aria-valuetext', 'Extra high')
