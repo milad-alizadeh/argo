@@ -19,24 +19,34 @@ export function commandSource(text: string) {
   return argumentsText === null || argumentsText.length === 0 ? name : `${name} ${argumentsText}`
 }
 
-export function commandSourceBlocks(text: string) {
-  if (tagContents(text, 'command-name') !== null || tagContents(text, 'command-message') !== null)
-    return [{ shape: 'prose' as const, text: commandSource(text) }]
-  const blocks: (
-    | { shape: 'prose'; text: string }
-    | { shape: 'pasted-content'; id: string; text: string }
-  )[] = []
+type CommandSourceBlock =
+  | { shape: 'prose'; text: string }
+  | { shape: 'pasted-content'; id: string; text: string }
+
+function proseBlock(text: string): CommandSourceBlock[] {
+  const prose = text.replace(commandTags, '').trim()
+  return prose === '' ? [] : [{ shape: 'prose', text: prose }]
+}
+
+function pastedContentBlocks(text: string, matches: RegExpMatchArray[]): CommandSourceBlock[] {
+  const blocks: CommandSourceBlock[] = []
   let offset = 0
-  for (const match of text.matchAll(pastedBlock)) {
+  for (const match of matches) {
     const start = match.index ?? 0
-    const before = text.slice(offset, start).replace(commandTags, '').trim()
-    if (before !== '') blocks.push({ shape: 'prose', text: before })
+    blocks.push(...proseBlock(text.slice(offset, start)))
     const pasted = match[2]?.trim() ?? ''
     if (pasted !== '') blocks.push({ shape: 'pasted-content', id: match[1] ?? '', text: pasted })
     offset = start + match[0].length
   }
-  if (offset === 0) return [{ shape: 'prose' as const, text: commandSource(text) }]
-  const after = text.slice(offset).replace(commandTags, '').trim()
-  if (after !== '') blocks.push({ shape: 'prose', text: after })
+  blocks.push(...proseBlock(text.slice(offset)))
   return blocks
+}
+
+export function commandSourceBlocks(text: string): CommandSourceBlock[] {
+  if (tagContents(text, 'command-name') !== null || tagContents(text, 'command-message') !== null)
+    return [{ shape: 'prose', text: commandSource(text) }]
+  const matches = [...text.matchAll(pastedBlock)]
+  return matches.length === 0
+    ? [{ shape: 'prose', text: commandSource(text) }]
+    : pastedContentBlocks(text, matches)
 }
