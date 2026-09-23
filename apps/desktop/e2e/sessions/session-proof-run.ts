@@ -74,6 +74,7 @@ export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>(
       closing: async () => {
         await performanceProfile?.stop()
       },
+      videoDir: process.env.ARGO_E2E_VIDEO === '1' ? testInfo.outputPath('video') : undefined,
     })
     try {
       await session.launch()

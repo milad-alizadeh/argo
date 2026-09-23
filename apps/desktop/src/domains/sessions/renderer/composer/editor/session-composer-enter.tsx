@@ -40,11 +40,17 @@ export function SendOnEnterPlugin({ onSend }: { onSend: () => void }) {
       editor.registerCommand(
         KEY_ENTER_COMMAND,
         (event) => {
-          if (event?.shiftKey === true && !event.isComposing && selectionIsInListItem()) {
+          // An IME confirms its composed text with this Enter; it is not a real keystroke the
+          // reader typed, so it must neither send nor open a new paragraph (#e2e-real-cheap-models).
+          if (event?.isComposing) {
+            event.preventDefault()
+            return true
+          }
+          if (event?.shiftKey === true && selectionIsInListItem()) {
             event.preventDefault()
             return editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined)
           }
-          if (!event || event.isComposing || !matchesChord(SEND_CHORD, pressedKeys(event))) {
+          if (!event || !matchesChord(SEND_CHORD, pressedKeys(event))) {
             return false
           }
           event.preventDefault()

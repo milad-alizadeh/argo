@@ -10,7 +10,7 @@ import type {
 import type { WatchedSource } from '@/platform/main/watch/watch-source'
 
 export type CodexSessionAdapter = SessionAdapter & {
-  close: () => void
+  close: () => Promise<void>
   projections: () => readonly SessionProjection[]
   refreshHistory: () => Promise<readonly SessionProjection[]>
   watchedProjections: () => readonly SessionProjection[]

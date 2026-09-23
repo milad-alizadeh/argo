@@ -1,9 +1,8 @@
-import { z } from 'zod'
+import { claudeTurnSetupSchema } from '@/domains/sessions/contract/claude-turn-setup'
 import type { SessionDriveAdapter } from '@/domains/sessions/contract/session-drive-adapter'
 import type { WorkspaceSelection } from '@/domains/sessions/next/contract/session-contract'
 import type { ClaudeSessionAdapter } from './claude-session-adapter'
 
-const ignoredSetupSchema = z.unknown()
 const FAILURE_MESSAGES = {
   'harness-unavailable': 'Claude Code is not available. Run claude doctor to repair it.',
   'launch-failed': 'Argo could not start Claude Code.',
@@ -55,8 +54,8 @@ export function createClaudeSdkDriveAdapter(options: {
   return {
     harness: 'claude',
     failureMessage: (code) => FAILURE_MESSAGES[code],
-    turnSetupSchema: ignoredSetupSchema,
-    async start({ cwd, prompt, deferInitialTurn, attachments }) {
+    turnSetupSchema: claudeTurnSetupSchema,
+    async start({ cwd, prompt, deferInitialTurn, setup, attachments }) {
       if (attachments.length > 0) return { error: 'launch-failed' }
       const outcome = await options.adapter.execute({
         type: 'session.start',
@@ -64,6 +63,7 @@ export function createClaudeSdkDriveAdapter(options: {
         prompt,
         startTurn: !deferInitialTurn,
         workspace: await options.workspaceForCwd(cwd),
+        setup: claudeTurnSetupSchema.parse(setup),
       })
       return outcome.kind === 'accepted'
         ? { sessionId: outcome.projection.session.nativeId }

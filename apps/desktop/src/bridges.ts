@@ -104,8 +104,11 @@ function attachBridgeShutdown(options: {
   app.once('before-quit', (event) => {
     event.preventDefault()
     options.ticketLinks.close()
-    options.managedSessions.close()
-    void Promise.all(options.harnesses.map((harness) => harness.close())).then(() => app.quit())
+    const closed = [
+      options.managedSessions.close(),
+      ...options.harnesses.map((harness) => harness.close()),
+    ]
+    void Promise.all(closed).then(() => app.quit())
   })
 }
 

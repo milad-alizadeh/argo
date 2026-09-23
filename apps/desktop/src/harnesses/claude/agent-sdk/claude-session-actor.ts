@@ -2,13 +2,9 @@ import { assign, fromPromise, sendTo, setup } from 'xstate'
 import { appendAssistantMessage } from './claude-live-messages'
 import { claudeQueryLogic } from './claude-query-actor'
 import { initialClaudeSessionContext, sessionFrom } from './claude-session-context'
+import { claudeSessionGuards } from './claude-session-guards'
 import { leaseStates } from './claude-session-lease-states'
 import { recoveringState } from './claude-session-recovery'
-import {
-  isAuthenticationFailure,
-  isInheritedApiCredential,
-  isSubscriptionAuthorized,
-} from './subscription-authorization'
 import type {
   ClaudeSdkMessage,
   ClaudeSessionContext,
@@ -41,14 +37,7 @@ const claudeSessionSetup = setup({
       return Promise.resolve()
     }),
   },
-  guards: {
-    isSubscriptionAuthorized: (_, params: { message: ClaudeSdkMessage }) =>
-      isSubscriptionAuthorized(params.message),
-    isInheritedApiCredential: (_, params: { message: ClaudeSdkMessage }) =>
-      isInheritedApiCredential(params.message),
-    isAuthenticationFailure: (_, params: { message: ClaudeSdkMessage }) =>
-      isAuthenticationFailure(params.message),
-  },
+  guards: claudeSessionGuards,
   actions: {
     startInitialTurn: sendTo('claudeQuery', ({ context }) => ({
       type: 'Send',
@@ -114,6 +103,7 @@ export function createClaudeSessionMachine(input: ClaudeSessionInput) {
               ],
             },
           ],
+          'SDK ended': 'Unavailable',
           'SDK failed': 'Unavailable',
         },
       },

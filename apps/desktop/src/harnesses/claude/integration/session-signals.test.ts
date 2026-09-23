@@ -14,7 +14,7 @@ test('reads the Plan entries off the newest snapshot the agent wrote', async () 
       { content: 'Check the ceiling', position: 3, status: 'pending' },
     ],
   })
-  assert.equal((await rowOf(['externalBasic'])).plan, null)
+  assert.equal((await rowOf(['11111111-2222-4333-8444-555555555555'])).plan, null)
 })
 
 test('starts the Turn at the last prompt, never at a tool result', async () => {
@@ -73,7 +73,7 @@ test('reads every delegation with its own label, and which of them came back', a
       endedAt: '2026-08-01T09:02:00.000Z',
     },
   ])
-  assert.deepEqual((await rowOf(['externalBasic'])).subagents, [])
+  assert.deepEqual((await rowOf(['11111111-2222-4333-8444-555555555555'])).subagents, [])
 })
 
 const open = { id: 'open', label: null, state: 'running', startedAt: null, endedAt: null }
@@ -101,7 +101,7 @@ test('reads the newest pull request the Harness linked, and none where it linked
     url: 'https://github.com/x/marks/pull/1312',
     repository: null,
   })
-  assert.equal((await rowOf(['externalBasic'])).pullRequest, null)
+  assert.equal((await rowOf(['11111111-2222-4333-8444-555555555555'])).pullRequest, null)
 })
 
 test('reads no delegation at all for a Session whose own state is unknown', () => {

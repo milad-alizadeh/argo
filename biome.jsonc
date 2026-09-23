@@ -503,6 +503,34 @@
         }
       }
     },
+    // RATCHET: BasicFeed, FeedDocument and AnchoredFeed crossed the 50-line function cap, and
+    // useScrollPositionSnapshot crossed the 3-param cap, when #e2e-real-cheap-models's scroll
+    // and measurement-cache fixes landed on top of #2637's restructure. Each needs extraction
+    // or an options object, none is a quick fix. Split the file, then delete its line here.
+    {
+      "includes": [
+        "apps/desktop/src/domains/sessions/renderer/feed/document/basic-feed.tsx",
+        "apps/desktop/src/domains/sessions/renderer/feed/document/feed-document.tsx",
+        "apps/desktop/src/domains/sessions/renderer/feed/scroll/anchored-feed.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveLinesPerFunction": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/desktop/src/domains/sessions/renderer/feed/scroll/anchoring.ts"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "useMaxParams": "off"
+          }
+        }
+      }
+    },
     // KIND: a Playwright fixture reads the fixtures it depends on off the literal destructuring
     // pattern in its first parameter (#2325, #2326): Playwright's own docs write one that needs
     // none as `async ({}, use) => {`, and a named parameter in its place breaks that reading

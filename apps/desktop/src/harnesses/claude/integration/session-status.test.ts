@@ -9,7 +9,7 @@ async function rowOf(names) {
 }
 
 test('reads a closed Turn as idle and a Turn inside the vocabulary as stopped', async () => {
-  assert.equal((await rowOf(['externalBasic'])).status, 'idle')
+  assert.equal((await rowOf(['11111111-2222-4333-8444-555555555555'])).status, 'idle')
   assert.equal((await rowOf(['haltedTurn'])).status, 'stopped')
 })
 
@@ -28,7 +28,7 @@ test('reads asking only where the pending question is still the last thing said'
 })
 
 test('projects every row as external, because ownership is not observed here', async () => {
-  const row = await rowOf(['externalBasic'])
+  const row = await rowOf(['11111111-2222-4333-8444-555555555555'])
   assert.equal(row.posture, 'external')
   assert.equal(row.harness, 'claude')
 })
@@ -38,7 +38,7 @@ test('titles a Session by what a person typed over what the Harness summarised',
     text: 'The name a person typed',
     source: 'custom',
   })
-  assert.deepEqual((await rowOf(['externalBasic'])).title, {
+  assert.deepEqual((await rowOf(['11111111-2222-4333-8444-555555555555'])).title, {
     text: 'Refactor the auth module',
     source: 'first-prompt',
   })
@@ -54,7 +54,7 @@ test('reads interactive entries and the newest place', async () => {
 })
 
 test('counts the unreadable lines of every file in the Session', async () => {
-  assert.equal((await rowOf(['externalBasic'])).unreadableLines, 1)
+  assert.equal((await rowOf(['11111111-2222-4333-8444-555555555555'])).unreadableLines, 1)
   assert.equal((await rowOf(['unparseableBody'])).unreadableLines, 5)
 })
 

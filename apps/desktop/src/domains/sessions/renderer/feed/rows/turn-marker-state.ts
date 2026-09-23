@@ -1,5 +1,6 @@
-// The Marker's label state machine (#2099): Starting Session -> Resuming Session -> Working ->
-// gone. A presentation-layer label only (no new Session status), driven off the Session's existing
+// The Marker's label state machine (#2099): Working -> Resuming Session -> Working -> gone (a new
+// draft Session reads Working from the start; only a resumed external Session gets its own label).
+// A presentation-layer label only (no new Session status), driven off the Session's existing
 // posture and the client-owned Send that opened this Turn optimistically, before any record
 // confirms it.
 

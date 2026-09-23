@@ -1,3 +1,4 @@
+import type { VirtualItem } from '@tanstack/virtual-core'
 import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import type { SessionError, SessionEvidence, SessionFeed, SessionId } from '../../types'
 import type { FeedDocumentContext } from './feed-document'
@@ -19,8 +20,10 @@ export type KeptDocumentShared = {
   liveFacts: FeedLiveFacts
   activeEvidenceId: string | null
   failure: SessionError | null
+  initialMeasurementsCache: (sessionId: string) => VirtualItem[]
   initialScrollPosition: (sessionId: string) => number | null
   onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
+  onMeasurementsChange: (sessionId: string, measurements: VirtualItem[]) => void
   onOpenSession: (sessionId: string) => void
   onScrollPositionChange: (sessionId: string, position: number) => void
   onOpenEvidence: (evidence: SessionEvidence) => void
@@ -35,8 +38,10 @@ export function keptDocument(id: SessionId, document: SessionFeed, shared: KeptD
   const actions: FeedDocumentContext = {
     active: shared.failure === null && id === shared.selectedSessionId,
     activeEvidenceId: shared.activeEvidenceId,
+    initialMeasurementsCache: shared.initialMeasurementsCache(id),
     initialScrollPosition: shared.initialScrollPosition(id),
     onJumpToLatestChange: shared.onJumpToLatestChange,
+    onMeasurementsChange: shared.onMeasurementsChange,
     onOpenSession: shared.onOpenSession,
     onScrollPositionChange: shared.onScrollPositionChange,
     onOpenEvidence: shared.onOpenEvidence,

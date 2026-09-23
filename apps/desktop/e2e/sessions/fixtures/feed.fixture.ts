@@ -21,7 +21,7 @@ import { repository, seedSingleProject } from '../../projects/fixtures/project.f
 export const FIXTURES = [
   'resumeParent',
   'resumeChild',
-  'externalBasic',
+  '11111111-2222-4333-8444-555555555555',
   'unparseableBody',
   'askPending',
   'prose',

@@ -1,3 +1,4 @@
+import type { VirtualItem } from '@tanstack/virtual-core'
 import type { ReactNode } from 'react'
 import type { SessionFeedRow } from '../../types'
 import type { Settled } from '../document/use-settled-feed'
@@ -15,8 +16,10 @@ import { useFeedTailFollow, useJumpToLatest } from './tail-follow'
 type AnchoredFeedProps = {
   active: boolean
   FeedRow: FeedRowComponent
+  initialMeasurementsCache: VirtualItem[]
   initialScrollPosition: number | null
   onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
+  onMeasurementsChange: (sessionId: string, measurements: VirtualItem[]) => void
   onScrollPositionChange: (sessionId: string, position: number) => void
   rows: readonly SessionFeedRow[]
   settled: Settled
@@ -30,8 +33,10 @@ type AnchoredFeedProps = {
 export function AnchoredFeed({
   active,
   FeedRow,
+  initialMeasurementsCache,
   initialScrollPosition,
   onJumpToLatestChange,
+  onMeasurementsChange,
   onScrollPositionChange,
   rows,
   settled,
@@ -44,6 +49,8 @@ export function AnchoredFeed({
   const { following, update: updatePromptHold } = usePromptHold(tailFollow.shouldFollow)
   const virtualizer = useAnchoredVirtualizer({
     following,
+    initialMeasurementsCache,
+    initialScrollPosition,
     rows,
     tail,
     viewport,
@@ -51,15 +58,19 @@ export function AnchoredFeed({
     onChange: tailFollow.onChange,
   })
   useInitialFeedPosition({
-    active,
-    following: tailFollow.atLatest,
     initialScrollPosition,
     onPositioned: tailFollow.markInitiallyPositioned,
     sessionId: settled.reading.sessionId,
     viewport,
     virtualizer,
   })
-  useScrollPositionSnapshot(settled.reading.sessionId, viewport, onScrollPositionChange)
+  useScrollPositionSnapshot(
+    settled.reading.sessionId,
+    viewport,
+    virtualizer,
+    onScrollPositionChange,
+    onMeasurementsChange,
+  )
   const promptIndex = useFeedPrompt({
     positioned: !tailFollow.awaitingInitialPosition,
     rows,

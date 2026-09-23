@@ -27,3 +27,20 @@ export async function waitForActiveSessions(page, expected: readonly string[]) {
     throw new Error(`Roster order: expected ${expected.join('|')}, read ${read}`, { cause })
   }
 }
+
+// A caller with no fixed target order (an already-discovered id whose row a click must land on,
+// not a freshly-created one `waitForCreatedRow` already guards) still races the same virtualized
+// reflow: a row a background history rescan is still discovering shifts every row below it by one
+// translateY step, and a click Playwright already resolved lands on whichever row is there once
+// the shift commits. Two reads the same, a beat apart, is the roster no longer mid-shift.
+export async function waitForRosterSettled(page, timeout = 30_000) {
+  const deadline = Date.now() + timeout
+  let last = (await readRosterIds(page)).join('|')
+  for (;;) {
+    await new Promise((resolve) => setTimeout(resolve, 200))
+    const read = (await readRosterIds(page)).join('|')
+    if (read === last) return
+    if (Date.now() > deadline) throw new Error(`Roster order never settled, last read: ${read}`)
+    last = read
+  }
+}

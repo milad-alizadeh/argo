@@ -8,13 +8,15 @@ import { mockClaudeFolder } from './mock-claude-transcripts'
 
 // A run always starts in `apps/desktop`; `import.meta` is unavailable once Playwright loads this as CommonJS.
 const MOCK_CLAUDE = path.join(process.cwd(), 'mocks', 'cli', 'claude', 'mock-claude.ts')
+// Resolves the fixture's `@/` import, which nothing else does for a file plain `node` runs directly.
+const ALIAS_HOOKS = path.join(process.cwd(), 'mocks', 'cli', 'mock-cli-alias-hooks.mts')
 
 // An executable `claude` the packaged app can spawn: this node, running the mock beside this file.
 export async function writeMockClaude(root: string, transcripts: string) {
   const executable = path.join(root, 'claude')
   await writeFile(
     executable,
-    `#!/bin/sh\nexec "${process.execPath}" --no-warnings "${MOCK_CLAUDE}" "${transcripts}" "$@"\n`,
+    `#!/bin/sh\nexec "${process.execPath}" --no-warnings --import "${ALIAS_HOOKS}" "${MOCK_CLAUDE}" "${transcripts}" "$@"\n`,
   )
   await chmod(executable, 0o755)
   return executable

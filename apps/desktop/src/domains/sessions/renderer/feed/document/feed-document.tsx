@@ -1,3 +1,4 @@
+import type { VirtualItem } from '@tanstack/virtual-core'
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
@@ -11,6 +12,7 @@ import { isFeedRowStreaming } from '../rows/feed-row-renderers'
 import type { RevealCache } from '../rows/streaming-text'
 import { ToolGroupState } from '../rows/tool-group-state'
 import { useReveals } from '../scroll/reveal'
+import { NO_MEASUREMENTS } from '../use-feed-measurements-cache'
 import { useDrawnRow } from './drawn-row'
 import { feedContent } from './feed-content'
 import { type FeedLiveFacts, INACTIVE_FEED_LIVE_FACTS } from './feed-live-facts'
@@ -30,8 +32,10 @@ export type FeedQuestionHandlers = {
 export type FeedDocumentContext = {
   active: boolean
   activeEvidenceId: string | null
+  initialMeasurementsCache?: VirtualItem[] | undefined
   initialScrollPosition?: number | null
   onJumpToLatestChange?: (sessionId: string, action: (() => void) | null) => void
+  onMeasurementsChange?: (sessionId: string, measurements: VirtualItem[]) => void
   onOpenSession: (sessionId: string) => void
   onScrollPositionChange?: (sessionId: string, position: number) => void
 } & FeedQuestionHandlers
@@ -44,6 +48,7 @@ export type FeedDocumentProps = {
 
 function ignoreJumpToLatestChange(_sessionId: string, _action: (() => void) | null) {}
 function ignoreScrollPositionChange(_sessionId: string, _position: number) {}
+function ignoreMeasurementsChange(_sessionId: string, _measurements: VirtualItem[]) {}
 
 function liveRows(reading: SessionFeed, facts: NonNullable<FeedLiveFacts>): SessionFeedRow[] {
   const rows = foldSettledToolRuns(reading.rows.filter((row) => row.shape !== 'thought'))
@@ -122,6 +127,7 @@ export function FeedDocument({ reading, liveFacts, actions }: FeedDocumentProps)
   const tail = liveFeedTail(live, lastRow, actions.onOpenSession)
   const content = feedContent({
     active: actions.active,
+    initialMeasurementsCache: actions.initialMeasurementsCache ?? NO_MEASUREMENTS,
     initialScrollPosition: actions.initialScrollPosition ?? null,
     settled,
     isRunning: live.isRunning,
@@ -129,6 +135,7 @@ export function FeedDocument({ reading, liveFacts, actions }: FeedDocumentProps)
     posture: live.posture,
     onRetry: retry,
     onJumpToLatestChange,
+    onMeasurementsChange: actions.onMeasurementsChange ?? ignoreMeasurementsChange,
     onScrollPositionChange: actions.onScrollPositionChange ?? ignoreScrollPositionChange,
     DrawnRow,
     revealsFor,

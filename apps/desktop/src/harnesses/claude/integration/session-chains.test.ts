@@ -20,7 +20,7 @@ test('stitches a resume onto the file whose leaf it names', async () => {
 
 test('stitches a resume onto local command output', async () => {
   const parent = await fixtureFile('harnessNoise')
-  const source = await fixtureFile('externalBasic')
+  const source = await fixtureFile('11111111-2222-4333-8444-555555555555')
   const child = {
     ...source,
     path: '/tmp/resumed-from-command-output.jsonl',
@@ -42,8 +42,15 @@ test('stitches a relocated half onto its origin through session_id', async () =>
 })
 
 test('leaves an unrelated file as its own Session', async () => {
-  const chains = await chainsOf(['externalBasic', 'resumeParent', 'resumeChild'])
-  assert.deepEqual(chains.map((chain) => chain.id).sort(), ['externalBasic', 'resumeParent'])
+  const chains = await chainsOf([
+    '11111111-2222-4333-8444-555555555555',
+    'resumeParent',
+    'resumeChild',
+  ])
+  assert.deepEqual(chains.map((chain) => chain.id).sort(), [
+    '11111111-2222-4333-8444-555555555555',
+    'resumeParent',
+  ])
 })
 
 // A resume whose predecessor was not read is not evidence of a Session Argo cannot see: the file

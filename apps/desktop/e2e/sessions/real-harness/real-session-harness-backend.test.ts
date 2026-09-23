@@ -27,13 +27,27 @@ async function writeSubscriptionCredentials(root: string) {
   return sourceHome
 }
 
+async function fixtureTranscriptRoots(root: string) {
+  const claudeTranscripts = path.join(root, 'fixture-claude-transcripts')
+  const codexTranscripts = path.join(root, 'fixture-codex-transcripts')
+  await mkdir(claudeTranscripts, { recursive: true })
+  await mkdir(codexTranscripts, { recursive: true })
+  return { claudeTranscripts, codexTranscripts } satisfies Partial<SessionFixture>
+}
+
 async function startedRealBackend(root: string) {
   const backend = createRealSessionHarnessBackend({
     findExecutable: (name) => `/bin/${name}`,
     home: await writeSubscriptionCredentials(root),
     verifyAuthentication: () => undefined,
   })
-  return { backend, run: await backend.start({ root, fixture: {} as SessionFixture }) }
+  return {
+    backend,
+    run: await backend.start({
+      root,
+      fixture: { ...(await fixtureTranscriptRoots(root)) } as SessionFixture,
+    }),
+  }
 }
 
 test('resolves both real CLIs before it starts the packaged app', () => {

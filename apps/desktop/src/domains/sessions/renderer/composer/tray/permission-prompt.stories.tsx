@@ -4,7 +4,7 @@ import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test'
 import type { Permission } from '@/domains/sessions/contract/ipc/contract'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
 import { PendingTurns } from './pending-turns'
-import '../composer-content.css'
+import '../editor/composer-content.css'
 import { AttachmentTray } from './attachment-tray'
 
 const permission: Permission = {

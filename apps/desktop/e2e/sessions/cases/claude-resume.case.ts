@@ -8,6 +8,7 @@ import path from 'node:path'
 import { fixturePath, proofCwd, replaceInFile } from '../../../mocks/sessions/mock-transcript-files'
 import { rosterRow, waitFor } from '../claude-proof-helpers'
 import { createSessionByClick, openSessionByClick } from '../gestures'
+import { waitForRosterSettled } from '../roster-facts'
 
 async function sendFromComposer(page, text) {
   const composer = page.getByRole('combobox', { name: 'Message' })
@@ -25,6 +26,10 @@ export async function provePackagedResume(page, { backend, project, restart, tra
   const relaunched = await restart()
   const [reread] = await rosterRow(relaunched, sessionId)
   assert.equal(reread?.posture, 'external')
+  // A fresh launch is still discovering the fixture pool off disk; a row that click resolves
+  // before that settles can have another row's translateY shift onto it before the dispatched
+  // click lands (#2650).
+  await waitForRosterSettled(relaunched)
   await openSessionByClick(relaunched, sessionId)
   await relaunched.waitForSelector(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`)
   await backend.waitForReply(relaunched, opened)
@@ -41,21 +46,31 @@ export async function provePackagedResume(page, { backend, project, restart, tra
     ['managed'],
   )
 
-  // externalBasic's fixture cwd is a folder under the Project that no one created; a real send
+  // 11111111-2222-4333-8444-555555555555's fixture cwd is a folder under the Project that no one created; a real send
   // resumes a real process, so it needs a directory that exists on this machine.
   await replaceInFile(
-    fixturePath(transcripts, 'externalBasic'),
+    fixturePath(transcripts, '11111111-2222-4333-8444-555555555555'),
     proofCwd(transcripts, 'proj'),
     project,
   )
 
-  await openSessionByClick(relaunched, 'externalBasic')
-  await relaunched.waitForSelector('.feed__viewport[data-session="externalBasic"] [data-feed-row]')
+  // The rewrite above touches disk under the same watched tree; the resulting rescan can still
+  // be shifting rows when the click below would otherwise fire (#2650).
+  await waitForRosterSettled(relaunched)
+  await openSessionByClick(relaunched, '11111111-2222-4333-8444-555555555555')
+  await relaunched.waitForSelector(
+    '.feed__viewport[data-session="11111111-2222-4333-8444-555555555555"] [data-feed-row]',
+  )
   await sendFromComposer(relaunched, 'Take this one over.')
   await backend
     .waitForReply(relaunched, { harness: 'claude', prompt: 'Take this one over.' })
     .catch((error) =>
-      reportStalledResume({ error, page: relaunched, sessionId: 'externalBasic', transcripts }),
+      reportStalledResume({
+        error,
+        page: relaunched,
+        sessionId: '11111111-2222-4333-8444-555555555555',
+        transcripts,
+      }),
     )
   return relaunched
 }

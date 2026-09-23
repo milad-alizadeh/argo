@@ -51,8 +51,15 @@ export async function provePackagedCodexResume(
   { backend, restart }: { backend: SessionHarnessBackend; restart: Restart },
 ) {
   const sessionId = await createSessionByClick(page, { harness: 'codex', prompt: OPENING_PROMPT })
+  // Restarting kills the spawned Codex CLI process, so its rollout file holds whatever it
+  // flushed by then. Wait for the opening reply to land before restarting, or the file is still
+  // empty when the app reopens and the index never picks the session up as a row at all (it has
+  // no message record to stitch into a chain, so `reread` comes back `undefined`, not merely a
+  // different posture).
+  await backend.waitForReply(page, { harness: 'codex', prompt: OPENING_PROMPT })
 
   const relaunched = await restart()
+
   const [reread] = await rosterRow(relaunched, sessionId)
   assert.equal(reread?.posture, 'watched')
   await openSessionByClick(relaunched, sessionId)

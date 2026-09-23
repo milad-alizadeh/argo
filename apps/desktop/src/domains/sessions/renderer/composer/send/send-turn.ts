@@ -14,7 +14,6 @@ import type { TurnMarkerApi } from '../hooks/use-turn-marker'
 import { type ComposerIdentity, findSessionRow } from '../identity/composer-identity'
 import type { TurnSetup } from '../turn-setup/turn-setup'
 import type { useTurnSetup } from '../turn-setup/use-turn-setup'
-import { sendInitialClaudeTurn } from './send-initial-claude-turn'
 import { sendManagedSessionTurn } from './send-managed-session-turn'
 import { sendToSelected } from './send-selected-turn'
 import type { Failure } from './session-failure'
@@ -51,7 +50,6 @@ export function sendToNewSession(request: {
     identity,
     navigate,
     queryClient,
-    send,
     setFailure,
     start,
     turn,
@@ -68,7 +66,10 @@ export function sendToNewSession(request: {
         if (setup !== null) watchTurn(sessionId, setup, null)
         return invalidateSessionRoster(queryClient)
       },
-      sendInitialTurn: harness === 'claude' ? sendInitialClaudeTurn(send, turn) : undefined,
+      // The SDK-backed Claude adapter delivers `turn.prompt` as part of `start` itself now (it has
+      // to: the SDK only identifies a session once it has read a first prompt off the stream), so a
+      // second send here would resubmit the same turn (#e2e-real-cheap-models).
+      sendInitialTurn: undefined,
       onStarted: (sessionId) => {
         onStarted?.(sessionId)
         navigate(`/sessions/${sessionId}`, { replace: true, state: COMPOSER_FOCUS_STATE })

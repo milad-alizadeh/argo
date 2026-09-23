@@ -5,7 +5,7 @@ import { formatTurnElapsed } from './elapsed'
 import type { TurnMarkerView } from './turn-marker-state'
 
 const PHASE_LABEL: Record<TurnMarkerView['phase'], string> = {
-  starting: 'Starting Session',
+  starting: 'Working',
   resuming: 'Resuming Session',
   working: 'Working',
 }

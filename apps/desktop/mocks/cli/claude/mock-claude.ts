@@ -33,6 +33,15 @@ const TURN = new RegExp(`${ESCAPE}\\[200~([\\s\\S]*?)${ESCAPE}\\[201~[\\r\\n]`)
 const RENAME = /^\/rename (.+)$/
 const replyDelay = Number(process.env[SESSION_MOCK_REPLY_DELAY_MS_ENV] ?? '0')
 const REPLY_DELAY_MS = Number.isFinite(replyDelay) && replyDelay > 0 ? replyDelay : 0
+// A fresh SDK session has to push its opening prompt before the SDK will even identify it
+// (mock-claude-sdk-stream.ts's own comment on that constraint), so this process can otherwise
+// record that prompt's reply before the app's own identify → authorize → paint round trip
+// finishes and the Roster shows the row (`session-created-by-click`, #e2e-real-cheap-models). A
+// resumed session's row already exists, so only a session this process is creating fresh needs
+// the floor. 50ms cleared 0/50 on a local machine but still lost the race twice in one CI run
+// (once on the initial attempt, once on its retry), so a loaded CI runner's own round trip is
+// routinely slower than that; 300ms is still negligible next to a real CLI's reply time.
+const SDK_FRESH_SESSION_REPLY_FLOOR_MS = 300
 const adversarialSeed = process.env[SESSION_MOCK_ADVERSARIAL_SEED_ENV]
 const projectSetupScenario = process.env.ARGO_PROJECT_SETUP_MOCK_SCENARIO
 let turnIndex = 0
@@ -104,7 +113,11 @@ function writeReply(text: string, plan: AdversarialTurn | null) {
 let pending = ''
 if (process.stdin.isTTY) process.stdin.setRawMode(true)
 process.stdin.setEncoding('utf8')
-if (agentSdk)
+if (agentSdk) {
+  const isFreshSession = flagValue('--resume') === null
+  const sdkReplyDelayMs = isFreshSession
+    ? Math.max(REPLY_DELAY_MS, SDK_FRESH_SESSION_REPLY_FLOOR_MS)
+    : REPLY_DELAY_MS
   startMockClaudeSdkStream(sessionId, (prompt, sdkWaitForPermission) =>
     replyToSdkPrompt({
       prompt,
@@ -116,10 +129,11 @@ if (agentSdk)
       nextPlan: () =>
         adversarialSeed === undefined ? null : adversarialTurn(adversarialSeed, turnIndex++),
       projectSetupScenario,
-      replyDelayMs: REPLY_DELAY_MS,
+      replyDelayMs: sdkReplyDelayMs,
       writeReply,
     }),
   )
+}
 // The terminal frame is not valid stream JSON, so only the PTY protocol receives it.
 if (!agentSdk) process.stdout.write(`${ESCAPE}[?2026h> ${ESCAPE}[?2026l`)
 process.stdin.on('data', (chunk: string) => {

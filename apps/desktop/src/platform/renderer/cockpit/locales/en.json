@@ -1,7 +1,12 @@
 {
   "rail": {
     "label": "Main navigation",
-    "settings": "Settings"
+    "settings": "Settings",
+    "destinations": {
+      "sessions": "Sessions",
+      "tickets": "Tickets",
+      "atlas": "Atlas"
+    }
   },
   "shell": {
     "collapseSidebar": "Collapse sidebar",

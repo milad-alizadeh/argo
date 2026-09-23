@@ -12,6 +12,8 @@ import { channelForAppServerProcess } from '@/harnesses/codex/drive/supervision/
 // The proof always starts in `apps/desktop`, as `session-resume-case.ts`'s mock Claude notes:
 // `import.meta.url` is unavailable once the Playwright test runner loads this module as CommonJS.
 const fixture = path.join(process.cwd(), 'mocks', 'cli', 'codex', 'mock-codex-app-server.ts')
+// Resolves the fixture's `@/` import, which nothing else does for a file plain `node` runs directly.
+const aliasHooks = path.join(process.cwd(), 'mocks', 'cli', 'mock-cli-alias-hooks.mts')
 
 export function driverBackedByFixture(
   driverOptions: {
@@ -45,7 +47,7 @@ export async function writeMockCodex(root: string) {
   const vendorHistory = path.join(root, 'argo-vendor-history.json')
   await writeFile(
     executable,
-    `#!/bin/sh\nARGO_CODEX_VENDOR_HISTORY="${vendorHistory}" exec "${process.execPath}" --no-warnings "${fixture}" "$@"\n`,
+    `#!/bin/sh\nARGO_CODEX_VENDOR_HISTORY="${vendorHistory}" exec "${process.execPath}" --no-warnings --import "${aliasHooks}" "${fixture}" "$@"\n`,
   )
   await chmod(executable, 0o755)
   return executable

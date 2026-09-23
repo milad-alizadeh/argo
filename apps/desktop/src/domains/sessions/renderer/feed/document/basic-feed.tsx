@@ -3,6 +3,7 @@ import { isOptimisticSessionId } from '../../session-creation'
 import type { SessionError, SessionFeed, SessionId } from '../../types'
 import { FEED_STALL_TIMEOUT_MS, useStallTimer } from '../feed-stall'
 import { Standing } from '../standing'
+import { useFeedMeasurementsCache } from '../use-feed-measurements-cache'
 import type { FeedQuestionHandlers } from './feed-document'
 import {
   useFeedRetry,
@@ -80,6 +81,7 @@ export function BasicFeed({
 }: BasicFeedProps) {
   const { t } = useTranslation('sessions')
   const { initialPosition, savePosition } = useFeedScrollPositions()
+  const { initialMeasurementsCache, saveMeasurementsCache } = useFeedMeasurementsCache()
   const { current, ordered } = useKeptDocuments(feed, selectedSessionId)
   const liveFacts = useHeldPrompt(selectedSessionId, reportedLiveFacts)
   // The Standing spinner (below) has no bound of its own: a Session whose read never answers
@@ -112,8 +114,10 @@ export function BasicFeed({
     liveFacts,
     activeEvidenceId,
     failure,
+    initialMeasurementsCache,
     initialScrollPosition: initialPosition,
     onOpenSession,
+    onMeasurementsChange: saveMeasurementsCache,
     onScrollPositionChange: savePosition,
     onJumpToLatestChange,
     onOpenEvidence,

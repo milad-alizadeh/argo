@@ -70,17 +70,21 @@ test('starts Claude after the selected Workspace is ready', async () => {
   expect(fake.sentPrompts()).toEqual(['hello'])
 })
 
-test('creates a titled Claude Session without sending its first turn', async () => {
+// The SDK only reports a Session's nativeId once it has read a first prompt off the stream
+// (confirmed against the real @anthropic-ai/claude-agent-sdk: a query given a prompt iterable
+// that never yields never emits even its "system"/"init" handshake), so `startTurn: false` can
+// no longer withhold that first turn — only a caller resuming an already-identified Session can.
+test('starting a Claude Session sends its first turn immediately, even when deferred', async () => {
   const fake = fakeClaudeQuery()
   const adapter = managedAdapter(fake)
 
   await startDeferredSession(adapter, fake)
   await new Promise((resolve) => setImmediate(resolve))
 
-  expect(fake.sentPrompts()).toEqual([])
+  expect(fake.sentPrompts()).toEqual(['hello'])
 })
 
-test('waits for the lease before sending a deferred first turn', async () => {
+test('waits for the lease before sending a resumed turn', async () => {
   const fake = fakeClaudeQuery()
   const adapter = managedAdapter(fake)
   const started = await startDeferredSession(adapter, fake)
@@ -89,11 +93,51 @@ test('waits for the lease before sending a deferred first turn', async () => {
   await adapter.resume({
     session: started.projection.session,
     workspace: { kind: 'main' },
-    prompt: 'hello',
+    prompt: 'hello again',
     cwd: '/repository',
   })
 
-  expect(fake.sentPrompts()).toEqual(['hello'])
+  expect(fake.sentPrompts()).toEqual(['hello', 'hello again'])
+})
+
+// The real CLI refuses `--resume` for an id it cannot find and closes the stream after one error
+// result, so the Session is never identified: the composer has to hear that the Turn did not land.
+test('rejects a resume the Claude SDK never opens', async () => {
+  const fake = fakeClaudeQuery()
+  const adapter = managedAdapter(fake)
+
+  const outcome = adapter.resume({
+    session: { harness: 'claude', nativeId: 'never-resumable' },
+    workspace: { kind: 'main' },
+    prompt: 'Take this one over.',
+    cwd: '/repository',
+  })
+  await new Promise((resolve) => setImmediate(resolve))
+  fake.endStream()
+
+  await expect(outcome).resolves.toMatchObject({ kind: 'rejected' })
+  expect(adapter.roster()).toEqual([])
+})
+
+test('forwards the requested Turn setup to the Claude SDK query', async () => {
+  const fake = fakeClaudeQuery()
+  const adapter = managedAdapter(fake)
+  const outcome = adapter.execute({
+    type: 'session.start',
+    harness: 'claude',
+    prompt: 'hello',
+    workspace: { kind: 'main' },
+    setup: { model: 'haiku', effort: 'low', mode: 'manual' },
+  })
+  await new Promise((resolve) => setImmediate(resolve))
+  fake.emitInit({ apiKeySource: 'none' })
+  await outcome
+
+  expect(fake.receivedOptions).toEqual({
+    model: 'haiku',
+    effort: 'low',
+    permissionMode: 'default',
+  })
 })
 
 test('notifies roster watchers when the SDK adds a live assistant message', async () => {

@@ -33,13 +33,17 @@ test('finds nothing to resume for a Session with no transcript', async (context)
 })
 
 test('reads a Session Argo held before a restart as external, same as every other', async (context) => {
-  const root = await fixtureRoot(context, ['resumeParent', 'resumeChild', 'externalBasic'])
+  const root = await fixtureRoot(context, [
+    'resumeParent',
+    'resumeChild',
+    '11111111-2222-4333-8444-555555555555',
+  ])
   const reader = createSessionReader([claudeSessionSource({ transcripts: root })])
 
   const roster = await rosterOf(reader)
 
   assert.deepEqual(roster.map(({ id, posture }) => [id, posture]).sort(), [
-    ['externalBasic', 'external'],
+    ['11111111-2222-4333-8444-555555555555', 'external'],
     ['resumeParent', 'external'],
   ])
 })

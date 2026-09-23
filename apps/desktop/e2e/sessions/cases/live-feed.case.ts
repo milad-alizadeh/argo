@@ -114,7 +114,7 @@ export async function proveLiveFeed(page, fixture: LiveFixture) {
   assert.equal(Math.abs(held - before.offset) <= 1, true)
 
   // An inactive feed is disposed on a switch (#2177), so a Session opened again starts at its tail.
-  await openSession(page, 'Refactor the auth module', 'externalBasic')
+  await openSession(page, 'Refactor the auth module', '11111111-2222-4333-8444-555555555555')
   await openSession(page, 'read this file', 'prose')
   await waitForTailSettled(page)
 

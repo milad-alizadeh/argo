@@ -41,12 +41,12 @@ function rowOf(reply: Awaited<ReturnType<typeof listed>>, sessionId: string) {
 }
 
 test('a managed Session with a transcript and a pending Permission reads `permission` in the Roster, and the transcript status once it is answered', async (context) => {
-  // `externalBasic` closes its Turn with `end_turn`, so its own reading is `idle` (session-status.test.ts).
-  const root = await fixtureRoot(context, ['externalBasic'])
+  // `11111111-2222-4333-8444-555555555555` closes its Turn with `end_turn`, so its own reading is `idle` (session-status.test.ts).
+  const root = await fixtureRoot(context, ['11111111-2222-4333-8444-555555555555'])
   const gate = heldPermissionGate()
   const { driver } = launch(await ledgerFile(context), {
     gate,
-    mintSessionId: () => 'externalBasic',
+    mintSessionId: () => '11111111-2222-4333-8444-555555555555',
   })
   const sessionId = driver.start({ cwd: '/projects/argo', prompt: 'Start.', setup: OPENING })
   const reader = managedReader(root, driver.roster)
@@ -67,8 +67,10 @@ test('a managed Session with a transcript and a pending Permission reads `permis
 })
 
 test('a managed Session that discovery found keeps the `managed` posture, and a running but idle one does not read `running` only because the driver holds it', async (context) => {
-  const root = await fixtureRoot(context, ['externalBasic'])
-  const { driver } = launch(await ledgerFile(context), { mintSessionId: () => 'externalBasic' })
+  const root = await fixtureRoot(context, ['11111111-2222-4333-8444-555555555555'])
+  const { driver } = launch(await ledgerFile(context), {
+    mintSessionId: () => '11111111-2222-4333-8444-555555555555',
+  })
   const sessionId = driver.start({ cwd: '/projects/argo', prompt: 'Start.', setup: OPENING })
   const reader = managedReader(root, driver.roster)
 
@@ -93,9 +95,9 @@ test('a managed Session with no transcript yet appears in the Roster with the `m
 })
 
 test('a Claude Session Argo does not currently drive still reads `external`', async (context) => {
-  const root = await fixtureRoot(context, ['externalBasic'])
+  const root = await fixtureRoot(context, ['11111111-2222-4333-8444-555555555555'])
   const reader = createSessionReader([claudeSessionSource({ transcripts: root })])
 
   const reply = await listed(reader)
-  assert.equal(rowOf(reply, 'externalBasic')?.posture, 'external')
+  assert.equal(rowOf(reply, '11111111-2222-4333-8444-555555555555')?.posture, 'external')
 })

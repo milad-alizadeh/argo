@@ -38,7 +38,7 @@ const codexSelectedTurnSetupSchema = z
 export const codexTurnSetupSchema = z.union([z.undefined(), codexSelectedTurnSetupSchema])
 export type CodexTurnSetup = z.infer<typeof codexSelectedTurnSetupSchema>
 export const CODEX_OPENING_SETUP: CodexTurnSetup = {
-  model: 'gpt-5.6-sol',
+  model: 'gpt-5.6-luna',
   effort: 'low',
   mode: 'workspace-write',
 }
