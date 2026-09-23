@@ -5,6 +5,7 @@ export const PROJECT_SETUP_RECOVERY_CODES = [
   'application-drift',
   'cancelled',
   'cancel-failed',
+  'restart-failed',
   'finalization-failed',
   'restart-interrupted',
   'restart-finalization-unconfirmed',

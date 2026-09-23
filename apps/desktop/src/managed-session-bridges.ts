@@ -2,6 +2,7 @@ import type { BrowserWindow } from 'electron'
 import { createProjectPort } from '@/domains/projects/main'
 import { workspaceSelectionForSessionCwd } from '@/domains/projects/main/resolve-session-workspace'
 import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
+import type { SessionArchiveStore } from '@/domains/sessions/main/archive'
 import { attachManagedSessions } from '@/domains/sessions/next/main/managed-session-composition'
 import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
 import { createClaudeSdkDriveAdapter } from '@/harnesses/claude/agent-sdk/claude-sdk-drive-adapter'
@@ -24,6 +25,7 @@ export function attachManagedSessionHarnesses(
     rendererURL: string
     ticketLinks: SessionTicketLinkStore
     userData: string
+    archive: SessionArchiveStore
   },
 ) {
   const managedSessions = attachManagedSessions(window, {

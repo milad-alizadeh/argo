@@ -4,6 +4,8 @@ export const projectSetupScreenSchema = z.enum([
   'choosing-method',
   'manual',
   'planning',
+  'restarting',
+  'restart-failed',
   'questions',
   'reviewing-plan',
   'customizing-project-setup',

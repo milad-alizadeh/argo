@@ -6,6 +6,7 @@ export const PROJECT_SETUP_RECOVERY_KEYS = {
   'application-drift': 'setup.actor.recovery.application-drift',
   cancelled: 'setup.actor.recovery.cancelled',
   'cancel-failed': null,
+  'restart-failed': 'setup.actor.recovery.restart-failed',
   'finalization-failed': 'setup.actor.recovery.finalization-failed',
   'restart-interrupted': null,
   'restart-finalization-unconfirmed': 'setup.actor.recovery.restart-finalization-unconfirmed',
