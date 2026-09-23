@@ -7,7 +7,7 @@ import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcr
 import { readTranscriptFile } from '@/domains/sessions/contract/model/transcript/transcript-file'
 import { projectFeed } from '@/domains/sessions/main/projection/feed/feed-incremental'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
-import { parseTranscriptLine } from '@/harnesses/claude/sessions/records'
+import { parseTranscriptLine } from '@/harnesses/claude/transcript'
 import { parseCodexTranscriptLine } from '@/harnesses/codex/sessions/records'
 import { isRecord } from '@/shared/validation'
 

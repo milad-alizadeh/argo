@@ -4,6 +4,7 @@ import { stitchChains } from '@/domains/sessions/contract/model/transcript/chain
 import { readTranscriptFile } from '@/domains/sessions/contract/model/transcript/transcript'
 import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript/transcript-file'
 import { projectFeed } from '@/domains/sessions/main/projection/feed/feed-incremental'
+import { readTranscriptFile as readClaudeTranscriptFile } from '../../sessions/discovery/transcript-file'
 import { parseTranscriptLine } from './records'
 
 test('reads a sent command as its visible source text', () => {
@@ -103,6 +104,60 @@ test('keeps a command receipt as the Session opening prompt', () => {
     parse: parseTranscriptLine,
   })
   assert.equal(file.openingPrompt, '/implement 2178')
+})
+
+test('projects a skill invocation and a task notification from transcript files', () => {
+  const file = readClaudeTranscriptFile('/tmp/envelopes.jsonl', {
+    sessionId: 'envelopes',
+    lines: [
+      JSON.stringify({
+        type: 'user',
+        uuid: 'skill-command',
+        message: {
+          role: 'user',
+          content:
+            '<command-name>/to-spec</command-name><command-message>to-spec</command-message><command-args>https://github.com/milad-alizadeh/argo/issues/2669</command-args>',
+        },
+      }),
+      JSON.stringify({
+        type: 'user',
+        uuid: 'task-delivery',
+        userType: 'external',
+        sourceToolAssistantUUID: 'task-call',
+        message: {
+          role: 'user',
+          content:
+            '<task-notification><task-id>a64dd851fde47a6f0</task-id><tool-use-id>toolu_016x6ep9fsq1pPsDheEqy92</tool-use-id><status>completed</status><summary>Agent "Explore turn setup and harness code for issue 2669" finished</summary><result>Issue is understood.</result></task-notification>',
+        },
+      }),
+    ],
+  })
+  const chain = stitchChains([file])[0]
+  assert.ok(chain)
+  const rows = projectFeed(chain, undefined).rows
+
+  assert.deepEqual(
+    rows.map((row) => {
+      switch (row.shape) {
+        case 'event':
+          return `${row.event}:${row.text}`
+        case 'subagent':
+          return `${row.event}:${row.subagentId}:${row.name}`
+        default:
+          return row.shape
+      }
+    }),
+    [
+      'skill-invocation:/to-spec https://github.com/milad-alizadeh/argo/issues/2669',
+      'responded:toolu_016x6ep9fsq1pPsDheEqy92:Explore turn setup and harness code for issue 2669',
+    ],
+  )
+  assert.equal(
+    rows.some((row) =>
+      /<\/?(?:command-name|task-notification|task-id|status)>/.test(JSON.stringify(row)),
+    ),
+    false,
+  )
 })
 
 test('suppresses harness envelopes while preserving their Tool Call boundary', () => {
