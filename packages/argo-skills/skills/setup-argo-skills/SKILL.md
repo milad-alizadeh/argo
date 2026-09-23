@@ -246,19 +246,7 @@ than invent one; where no tracker is detected, skip the section.
 
 Done when the installed Labels section has zero hits for `{{`.
 
-### Connect interface review
-
-When the project has UI and `interface-review` is installed, read `templates/ui-workflow.md`.
-Install its `UI work` section in `docs/agents/code-review.md`, replacing that section on repeat runs.
-Preserve the document's other sections. Create the document if it is absent.
-Add a pointer in `AGENTS.md` to read that section for UI work.
-Update `CLAUDE.md` only when it carries independent instructions rather than importing `AGENTS.md`.
-
-Keep the installed review and implementation skills unchanged.
-Done when UI work reaches the third review axis and non-UI work retains the existing route.
-
 ## Phase 4: report
 
 Skills installed or updated (lock delta), infra installed per piece, anything deferred with
 the reason, and how to re-run each selected skill by its actual name.
-For UI work, point to the installed section in `docs/agents/code-review.md`.

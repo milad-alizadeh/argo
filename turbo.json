@@ -108,7 +108,6 @@
         "*.config.ts",
         "tsconfig*.json",
         "package.json",
-        "$TURBO_ROOT$/docs/design/tokens.css",
         "$TURBO_ROOT$/scripts/design-token-*.mts"
       ],
       "outputs": []
