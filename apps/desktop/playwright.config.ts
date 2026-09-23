@@ -10,8 +10,10 @@ export default defineConfig<object, SessionBackendOptions>({
   // A recorded video (electron.launch's recordVideo, wired per case) lives only in a passing
   // test's own outputDir, which Playwright otherwise deletes on success.
   preserveOutput: 'always',
-  // The default, half the cores, is one worker on the 3-core macOS runner; locally 1 took 130s, 3 took 61s.
-  workers: 3,
+  // Full width (3 on the 3-core macOS runner) leaves no core free for a worker's own app-server
+  // child process, so three Electron apps and their spawns fight for three cores and whichever
+  // one is scheduled last hits its timeout. CI keeps one core free; locally 1 took 130s, 3 took 61s.
+  workers: process.env.CI ? 2 : 3,
   // The retry records a second trace, and a test that passes only on the retry still fails CI.
   retries: process.env.CI ? 1 : 0,
   failOnFlakyTests: Boolean(process.env.CI),
