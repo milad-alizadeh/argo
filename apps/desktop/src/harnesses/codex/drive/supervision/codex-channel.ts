@@ -14,6 +14,18 @@ export class CodexChannelClosedError extends Error {
   }
 }
 
+// A spawned app-server that never replies to a request left the Roster stuck on its loading
+// skeletons forever (#2653): nothing bounded how long a caller could wait on `request`, whether
+// for the initial handshake or an ordinary call like `thread/list`. Twenty seconds is generous
+// for a local process.
+export class CodexRequestTimeoutError extends Error {
+  constructor(method: string) {
+    super(`Codex app-server did not answer ${method} in time`)
+  }
+}
+
+export const REQUEST_TIMEOUT_MS = 20_000
+
 export type CodexProcess = {
   stdout: NodeJS.ReadableStream
   write: (line: string) => void
@@ -96,7 +108,10 @@ function wireInbound(process: CodexProcess, state: ChannelState) {
 // refused rather than left open, because an unanswered approval holds the Turn forever
 // (openai/codex#11816); `item/tool/requestUserInput` is claimed and answered for real (#1841),
 // while approval requests still go unclaimed and so are still refused (#549).
-export function openCodexChannel(process: CodexProcess): CodexChannel {
+export function openCodexChannel(
+  process: CodexProcess,
+  requestTimeoutMs = REQUEST_TIMEOUT_MS,
+): CodexChannel {
   let sequence = 0
   const state: ChannelState = { pending: new Map(), notificationListeners: [], exitListeners: [] }
   const { pending, notificationListeners, exitListeners } = state
@@ -114,15 +129,24 @@ export function openCodexChannel(process: CodexProcess): CodexChannel {
     request(method, params, decode) {
       const id = ++sequence
       return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+          pending.delete(id)
+          reject(new CodexRequestTimeoutError(method))
+        }, requestTimeoutMs)
+        timer.unref()
         pending.set(id, {
           resolve: (value) => {
+            clearTimeout(timer)
             try {
               resolve(decode(value))
             } catch (error) {
               reject(error)
             }
           },
-          reject,
+          reject: (error) => {
+            clearTimeout(timer)
+            reject(error)
+          },
         })
         send({ id, method, params })
       })
