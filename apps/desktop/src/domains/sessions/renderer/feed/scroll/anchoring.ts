@@ -46,7 +46,7 @@ export function useAnchoredVirtualizer({
   padding: { start: number; end: number }
   onChange: (instance: Virtualizer<HTMLElement, Element>, sync: boolean) => void
 }) {
-  return useVirtualizer({
+  return suppressRestoredScrollDrift(useVirtualizer({
     anchorTo: following ? 'end' : 'start',
     count: rows.length + (tail === null ? 0 : 1),
     estimateSize: () => FEED_ROW_ESTIMATE_PX,
@@ -68,7 +68,23 @@ export function useAnchoredVirtualizer({
     paddingEnd: padding.end,
     scrollPaddingStart: padding.start,
     scrollEndThreshold: TAIL_THRESHOLD_PX,
-  })
+  }), initialScrollPosition)
+}
+
+// TanStack Virtual takes this only as a direct instance assignment, not a construction option
+// (virtual-core's own VirtualizerOptions never lists it). A restored row still measures itself
+// for real once mounted, and any real-vs-cached rounding delta above the fold otherwise reads as
+// "old content resized" and nudges scrollTop to compensate (#e2e-real-cheap-models) — wrong right
+// after `useInitialFeedPosition` set that same scrollTop on purpose. A session with nothing to
+// restore keeps the default compensation, which anchorTo: 'end' needs to stay pinned as later
+// rows are measured.
+function suppressRestoredScrollDrift(
+  virtualizer: ReactVirtualizer<HTMLElement, Element>,
+  initialScrollPosition: number | null,
+) {
+  virtualizer.shouldAdjustScrollPositionOnItemSizeChange =
+    initialScrollPosition === null ? undefined : () => false
+  return virtualizer
 }
 
 function feedRowAt(rows: readonly SessionFeedRow[], index: number) {
