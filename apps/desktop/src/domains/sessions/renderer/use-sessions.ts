@@ -1,10 +1,6 @@
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { useTranslation } from 'react-i18next'
-import { useToastManager } from '@/platform/renderer/components/ui/toast'
-import { harnessLabel } from './composer/references/session-reference'
+import { useCallback, useEffect, useMemo } from 'react'
 import { retrySessionFeed, sessionFeedQuery } from './feed/session-feed-query'
-import { sessionHarnessOf } from './harness/harnesses'
 import { sessionRosterQuery } from './roster/rows/session-roster-query'
 import type { SessionContractError } from './session-contract-error'
 import { mergeOptimisticRow, readableSessionId, useSessionCreationStore } from './session-creation'
@@ -23,22 +19,6 @@ function useRosterQuery(enabled: boolean, projectRoot: string | null) {
     if (enabled) void invalidateSessionRoster(queryClient)
   })
 
-  const { add } = useToastManager()
-  const { t } = useTranslation('sessions')
-  const notifiedHarnesses = useRef(new Set<string>())
-  useEffect(() => {
-    const failures = query.data?.pages.flatMap((page) => page.partialFailures) ?? []
-    for (const failure of failures) {
-      if (notifiedHarnesses.current.has(failure.harness)) continue
-      notifiedHarnesses.current.add(failure.harness)
-      add({
-        title: t('roster.sourceFailed', {
-          harness: harnessLabel(sessionHarnessOf({ harness: failure.harness })),
-        }),
-        type: 'error',
-      })
-    }
-  }, [query.data?.pages, add, t])
   const lastPage = query.data?.pages.at(-1)
   const roster = useMemo(() => {
     if (lastPage === undefined) return null
