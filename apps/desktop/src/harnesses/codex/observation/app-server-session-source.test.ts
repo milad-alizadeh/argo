@@ -5,6 +5,7 @@ import type {
   SessionProjection,
 } from '@/domains/sessions/next/contract/session-projection-contract'
 import { createCodexAppServerSessionSource } from './app-server-session-source'
+import { discovery } from './codex-history-rows'
 
 function projection(): SessionProjection {
   return {
@@ -89,4 +90,30 @@ test('projects managed Codex app-server state with its watched history', async (
       title: 'Renamed by Argo',
     },
   ])
+})
+
+test('falls back to the local Codex record reader when app-server history does not answer', async () => {
+  const fallback = {
+    harness: 'codex',
+    discoverSessions: async () =>
+      discovery([{ ...projection(), posture: 'watched' }], () => '/repository'),
+    readSessionFiles: async () => null,
+    readShellOutput: async () => ({ state: 'absent' as const }),
+  }
+  const source = createCodexAppServerSessionSource({
+    adapter: {
+      execute: async () => ({ kind: 'rejected', reason: 'not used' }),
+      subscribe: () => () => {},
+    },
+    projections: () => [],
+    watchedProjections: () => [],
+    refreshHistory: async () => await new Promise<never>(() => {}),
+    checkoutFor: () => null,
+    fallback,
+  })
+
+  const listed = await source.discoverSessions()
+
+  assert.equal(listed.rows[0]?.id, 'thread-1')
+  assert.equal(listed.rows[0]?.posture, 'watched')
 })

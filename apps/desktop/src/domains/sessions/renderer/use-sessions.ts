@@ -25,16 +25,12 @@ function useRosterQuery(enabled: boolean, projectRoot: string | null) {
 
   const { add } = useToastManager()
   const { t } = useTranslation('sessions')
-  const notifiedFailures = useRef('')
+  const notifiedHarnesses = useRef(new Set<string>())
   useEffect(() => {
     const failures = query.data?.pages.flatMap((page) => page.partialFailures) ?? []
-    const key = failures
-      .map((failure) => failure.harness)
-      .sort()
-      .join(',')
-    if (key === notifiedFailures.current) return
-    notifiedFailures.current = key
     for (const failure of failures) {
+      if (notifiedHarnesses.current.has(failure.harness)) continue
+      notifiedHarnesses.current.add(failure.harness)
       add({
         title: t('roster.sourceFailed', {
           harness: harnessLabel(sessionHarnessOf({ harness: failure.harness })),

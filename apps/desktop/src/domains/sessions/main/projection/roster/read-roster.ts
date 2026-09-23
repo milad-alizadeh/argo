@@ -25,7 +25,7 @@ import { mergeRosterPage, type UnifiedRosterSource } from './unified-roster-page
 
 // A Harness that cannot answer its current window must not keep another Harness's ready rows off
 // the Roster (ADR-0008): the renderer can show the partial reply and retry this source next poll.
-const SOURCE_READ_BUDGET_MS = 750
+const SOURCE_READ_BUDGET_MS = 1_500
 
 // Project scope is applied inside each adapter's own `discoverSessions` (#2239), at the boundary
 // where that adapter's rows are built — never here, after every adapter has already read a
