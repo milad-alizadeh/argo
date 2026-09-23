@@ -23,6 +23,31 @@ const threadIdFor = (counter: number) =>
   `00000000-0000-4000-8000-${String(counter).padStart(12, '0')}`
 const send = (message: Record<string, unknown>) =>
   process.stdout.write(`${JSON.stringify(message)}\n`)
+const modelCatalog = {
+  data: [
+    {
+      id: 'gpt-5.6-luna',
+      model: 'gpt-5.6-luna',
+      displayName: 'GPT-5.6 Luna',
+      description: 'Fast and affordable agentic coding model.',
+      defaultReasoningEffort: 'low',
+      isDefault: true,
+      hidden: false,
+      supportedReasoningEfforts: [{ reasoningEffort: 'low', description: 'Low' }],
+    },
+    {
+      id: 'gpt-5.6-sol',
+      model: 'gpt-5.6-sol',
+      displayName: 'GPT-5.6 Sol',
+      description: 'Mock Codex model for composer proof.',
+      defaultReasoningEffort: 'low',
+      isDefault: false,
+      hidden: false,
+      supportedReasoningEfforts: [{ reasoningEffort: 'low', description: 'Low' }],
+    },
+  ],
+  nextCursor: null,
+}
 type Request = { id?: unknown; method?: string; params?: Record<string, unknown> }
 const handleTurnStart = createMockTurnStartHandler({
   adversarialSeed,
@@ -43,24 +68,7 @@ function handleRequest(message: Request) {
     case 'skills/list':
       return send({ id: message.id, result: { data: [] } })
     case 'model/list':
-      return send({
-        id: message.id,
-        result: {
-          data: [
-            {
-              id: 'gpt-5.6-luna',
-              model: 'gpt-5.6-luna',
-              displayName: 'GPT-5.6 Luna',
-              description: 'Fast and affordable agentic coding model.',
-              defaultReasoningEffort: 'low',
-              isDefault: true,
-              hidden: false,
-              supportedReasoningEfforts: [{ reasoningEffort: 'low', description: 'Low' }],
-            },
-          ],
-          nextCursor: null,
-        },
-      })
+      return send({ id: message.id, result: modelCatalog })
     case 'thread/start':
       return startThread(message)
     case 'thread/resume':

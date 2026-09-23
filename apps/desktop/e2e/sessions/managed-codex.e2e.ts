@@ -9,6 +9,11 @@ test.beforeEach(() => {
 })
 
 test('starts a managed Codex Session through app-server', async ({ session }) => {
+  await session
+    .page()
+    .waitForFunction(async () => (await window.argo.readCodexModelCatalog()) !== null, null, {
+      timeout: 15_000,
+    })
   const outcome = await session.page().evaluate(() =>
     window.argo.executeManagedSessionCommand({
       type: 'session.start',

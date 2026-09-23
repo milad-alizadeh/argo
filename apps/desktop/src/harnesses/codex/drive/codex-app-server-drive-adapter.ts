@@ -146,9 +146,14 @@ export function createCodexAppServerDriveAdapter(options: {
         workspace: await options.workspaceForCwd(cwd),
         setup,
       })
-      return outcome.kind === 'accepted'
-        ? { sessionId: outcome.projection.session.nativeId }
-        : FAILED
+      switch (outcome.kind) {
+        case 'accepted':
+          return { sessionId: outcome.projection.session.nativeId }
+        case 'rejected':
+          return { error: 'not-drivable', message: outcome.reason }
+        case 'uncertain':
+          return FAILED
+      }
     },
     ...commandOperations(options.adapter, options.workspaceForCwd),
     ...decisionOperations(options.adapter),
