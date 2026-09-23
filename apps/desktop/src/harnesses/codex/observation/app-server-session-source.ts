@@ -7,21 +7,22 @@ import type {
 import { CodexHistoryUnavailableError } from '../history/vendor-history'
 import { discovery, mergedProjections, rosterRowOf, rowsOf } from './codex-history-rows'
 
-const APP_SERVER_HISTORY_BUDGET_MS = 200
+const APP_SERVER_HISTORY_BUDGET_MS = 1_500
 
 async function refreshWithinBudget(
-  refreshHistory: () => Promise<readonly SessionProjection[]>,
+  refreshHistory: (notifyLateSuccess: () => boolean) => Promise<readonly SessionProjection[]>,
 ): Promise<readonly SessionProjection[]> {
   let timeout: ReturnType<typeof setTimeout> | undefined
+  let timedOut = false
+  const refreshed = refreshHistory(() => timedOut)
   try {
     return await Promise.race([
-      refreshHistory(),
+      refreshed,
       new Promise<never>((_resolve, reject) => {
-        timeout = setTimeout(
-          () =>
-            reject(new CodexHistoryUnavailableError('Codex app-server history did not answer.')),
-          APP_SERVER_HISTORY_BUDGET_MS,
-        )
+        timeout = setTimeout(() => {
+          timedOut = true
+          reject(new CodexHistoryUnavailableError('Codex app-server history did not answer.'))
+        }, APP_SERVER_HISTORY_BUDGET_MS)
       }),
     ])
   } finally {
@@ -32,7 +33,7 @@ async function refreshWithinBudget(
 export function createCodexAppServerSessionSource(options: {
   projections: () => readonly SessionProjection[]
   watchedProjections: () => readonly SessionProjection[]
-  refreshHistory: () => Promise<readonly SessionProjection[]>
+  refreshHistory: (notifyLateSuccess: () => boolean) => Promise<readonly SessionProjection[]>
   readHistoryProjection: (sessionId: string) => Promise<SessionProjection | null>
   checkoutFor: (nativeId: string) => string | null
   adapter: SessionAdapter

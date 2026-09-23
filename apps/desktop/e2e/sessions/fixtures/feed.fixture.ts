@@ -143,23 +143,3 @@ async function writeProjectStore(userData, project, selectedId) {
   markProjectSetupLocallyReady(projects, PROOF_PROJECT_ID, project)
   projects.close()
 }
-
-export async function growCodexTranscript(transcripts) {
-  await appendFile(
-    path.join(transcripts, '2026', '09', '10', 'rollout-codexParent.jsonl'),
-    `${JSON.stringify({
-      timestamp: '2099-01-01T00:00:00.000Z',
-      type: 'event_msg',
-      payload: {
-        type: 'item_completed',
-        thread_id: 'rollout-codexParent',
-        turn_id: 'turn-2',
-        item: {
-          type: 'AgentMessage',
-          id: 'live-codex-message',
-          content: [{ type: 'text', text: 'The Codex transcript changed while Argo was open.' }],
-        },
-      },
-    })}\n`,
-  )
-}

@@ -52,7 +52,7 @@ async function rosterTitle(page: Page) {
 
 // ADR-0042: the packaged main process opens the store through Electron's own `node:sqlite`.
 export async function proveCodexThreadName(page: Page, codexTranscripts: string) {
-  assert.deepEqual(await rosterTitle(page), { text: 'Run Codex check', source: 'first-prompt' })
+  assert.deepEqual(await rosterTitle(page), { text: 'Run Codex check', source: 'custom' })
   writeStateStore(codexTranscripts)
   const deadline = Date.now() + 10_000
   let title = await rosterTitle(page)
