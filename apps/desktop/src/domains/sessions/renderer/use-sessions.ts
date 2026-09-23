@@ -1,11 +1,10 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
 import { harnessLabel } from './composer/references/session-reference'
 import { retrySessionFeed, sessionFeedQuery } from './feed/session-feed-query'
 import { sessionHarnessOf } from './harness/harnesses'
-import { useRosterWindowCursor, useRosterWindowStore } from './roster/hooks/use-roster-window-store'
 import { sessionRosterQuery } from './roster/rows/session-roster-query'
 import type { SessionContractError } from './session-contract-error'
 import { mergeOptimisticRow, readableSessionId, useSessionCreationStore } from './session-creation'
@@ -13,15 +12,9 @@ import { invalidateSessionRoster } from './session-queries'
 import type { SessionFeed, SessionId } from './types'
 import { useWatchedQueries, useWatchedTopic } from './use-watched-topic'
 
-// A refresh must refresh only the window this reader has already loaded, never regrow it (#2239),
-// and every consumer of the roster must agree on which window that is: the cursor therefore lives in
-// a store all of them read, and in the query key, so growing the window is a different cached read
-// rather than a refetch of the same one.
 function useRosterQuery(enabled: boolean, projectRoot: string | null) {
-  const cursor = useRosterWindowCursor(projectRoot)
-  const grow = useRosterWindowStore((state) => state.grow)
   const queryClient = useQueryClient()
-  const query = useQuery(sessionRosterQuery(enabled, { projectRoot, cursor }))
+  const query = useInfiniteQuery(sessionRosterQuery(enabled, { projectRoot }))
 
   // A Session written by a Harness outside Argo appears because the transcript trees are watched. The
   // roster used to notice it only by re-reading every file twice a second, and only while a Session
@@ -32,12 +25,9 @@ function useRosterQuery(enabled: boolean, projectRoot: string | null) {
 
   const { add } = useToastManager()
   const { t } = useTranslation('sessions')
-  // A failing source (#2653) would otherwise toast on every re-render this hook takes, since the
-  // roster reply carries the same failures again on each poll; only the failing set CHANGING is
-  // worth telling the reader about.
   const notifiedFailures = useRef('')
   useEffect(() => {
-    const failures = query.data?.partialFailures ?? []
+    const failures = query.data?.pages.flatMap((page) => page.partialFailures) ?? []
     const key = failures
       .map((failure) => failure.harness)
       .sort()
@@ -52,19 +42,18 @@ function useRosterQuery(enabled: boolean, projectRoot: string | null) {
         type: 'error',
       })
     }
-  }, [query.data?.partialFailures, add, t])
-
-  const nextCursor = query.data?.nextCursor ?? null
+  }, [query.data?.pages, add, t])
+  const lastPage = query.data?.pages.at(-1)
+  const roster =
+    lastPage === undefined
+      ? null
+      : { ...lastPage, sessions: query.data?.pages.flatMap((page) => page.sessions) ?? [] }
   return {
     query,
-    hasMore: nextCursor !== null,
-    // `isPlaceholderData` is true while a larger window is in flight and the previous one is still on
-    // screen, which is what the list draws as its loading-more row.
-    isFetchingMore: query.isPlaceholderData,
-    fetchMore: useCallback(() => {
-      if (nextCursor === null) return
-      grow(projectRoot, nextCursor)
-    }, [grow, nextCursor, projectRoot]),
+    roster,
+    hasMore: query.hasNextPage,
+    isFetchingMore: query.isFetchingNextPage,
+    fetchMore: useCallback(() => void query.fetchNextPage(), [query]),
   }
 }
 
@@ -84,6 +73,7 @@ export function useSessions(
   const selectedFeedId = readableSessionId(selectedSessionId)
   const {
     query: roster,
+    roster: rosterPage,
     hasMore: hasMoreSessions,
     isFetchingMore: isFetchingMoreSessions,
     fetchMore: fetchMoreSessions,
@@ -102,7 +92,7 @@ export function useSessions(
   }, [selectedFeedId])
 
   const pending = useSessionCreationStore((state) => state.pending)
-  const rosterData = roster.error === null ? (roster.data ?? null) : null
+  const rosterData = roster.error === null ? rosterPage : null
   const mergedRoster = useMemo(() => {
     if (rosterData === null) return null
     return { ...rosterData, sessions: mergeOptimisticRow(rosterData.sessions, pending) }

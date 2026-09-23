@@ -113,10 +113,8 @@ test('includes the main and sibling worktrees when the selected Project is a lin
   )
 })
 
-// The Roster merges every adapter's own window (#2239): the wire cursor is one opaque value, but
-// it carries each adapter's own continuation independently, so growing it never disturbs an
-// adapter that already read everything it has.
-test('grows only the adapter with more to read when the merged cursor is echoed back', async (context) => {
+// The opaque Roster cursor retains rows that lost the first cross-Harness merge (#2584).
+test('reads the next merged page without repeating an exhausted Harness', async (context) => {
   const claudeRoot = await tempRoot(context)
   const codexRoot = await tempRoot(context)
   const claudeCount = ROSTER_PAGE_SIZE + 15
@@ -144,7 +142,11 @@ test('grows only the adapter with more to read when the merged cursor is echoed 
   assert.notEqual(first?.nextCursor, null)
 
   const second = await listed(reader, 'list-2', { cursor: first?.nextCursor })
-  assert.equal(second?.filesRead, claudeCount + 1)
+  assert.equal(second?.filesRead, claudeCount)
   assert.equal(second?.nextCursor, null)
-  assert.equal(second?.sessions.length, claudeCount + 1)
+  assert.equal(second?.sessions.length, claudeCount + 1 - ROSTER_PAGE_SIZE)
+  assert.equal(
+    second?.sessions.some((session) => session.id === 'codexOnly'),
+    false,
+  )
 })
