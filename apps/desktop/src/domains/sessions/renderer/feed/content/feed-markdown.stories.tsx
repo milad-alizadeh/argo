@@ -49,6 +49,19 @@ export const Formatted: Story = {
   },
 }
 
+export const UnlabelledFence: Story = {
+  args: { text: '```\nconst answer = 42\n```' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('img', { name: 'JavaScript file' })).toBeVisible()
+    await waitFor(() =>
+      expect(canvasElement.querySelector('code[data-highlighted="true"]')).not.toBeNull(),
+    )
+    await expect(canvasElement.querySelector('pre')).toHaveTextContent('const answer = 42')
+    await expect(canvasElement).not.toHaveTextContent('```')
+  },
+}
+
 export const RawHtmlStaysText: Story = {
   args: {
     text: 'Before <script>window.feedHacked = true</script> and <img src="x" onerror="window.feedHacked = true"> after.',
