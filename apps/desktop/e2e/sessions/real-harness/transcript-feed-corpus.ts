@@ -8,6 +8,7 @@ import { projectFeed } from '@/domains/sessions/main/projection/feed/feed-increm
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import { parseTranscriptLine } from '@/harnesses/claude/sessions/records'
 import { parseCodexTranscriptLine } from '@/harnesses/codex/sessions/records'
+import { isRecord } from '@/shared/validation'
 
 async function transcriptPaths(root: string): Promise<string[]> {
   const entries = await readdir(root, { withFileTypes: true }).catch(() => [])
@@ -31,7 +32,8 @@ const KNOWN_SHAPES: Record<SessionHarness, (source: Record<string, unknown>) => 
 
 function assertKnownRecords(harness: SessionHarness, lines: string[]) {
   for (const line of lines) {
-    const source = JSON.parse(line) as Record<string, unknown>
+    const source: unknown = JSON.parse(line)
+    assert.ok(isRecord(source), `${harness} transcript line was not an object: ${line}`)
     const record = PARSERS[harness](line)
     if (KNOWN_SHAPES[harness](source)) {
       assert.ok(record, `${harness} record was dropped: ${line}`)

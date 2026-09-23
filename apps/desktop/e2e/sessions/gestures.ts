@@ -13,6 +13,10 @@ import type { SessionHarness } from '@/domains/sessions/renderer/harness/harness
 // the driver bundle cannot import: the path there runs through the `@/` alias, and the bundler CI
 // runs leaves that unresolved.
 const HARNESS_TABS: Record<SessionHarness, string> = { claude: 'Claude Code', codex: 'Codex' }
+const BUDGET_MODELS: Record<SessionHarness, RegExp> = {
+  claude: /Haiku 4\.5/,
+  codex: /Gpt 5\.6 Luna/,
+}
 
 const ROW = 'nav[aria-label="Sessions"] button[data-session-id]'
 const FILTER = 'button[aria-label="Filter Sessions"]'
@@ -98,7 +102,7 @@ async function chooseBudgetRunSetup(page: Page, harness: SessionHarness) {
   await page.locator(RUN_SETUP).click()
   const models = page.getByRole('radiogroup', { name: 'Model' })
   const model = models.getByRole('radio', {
-    name: harness === 'claude' ? /Haiku 4\.5/ : /Gpt 5\.6 Luna/,
+    name: BUDGET_MODELS[harness],
   })
   await model.focus()
   await page.keyboard.press('Space')
