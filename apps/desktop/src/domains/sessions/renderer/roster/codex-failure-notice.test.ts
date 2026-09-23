@@ -6,8 +6,7 @@ test('reports one Codex outage when multiple roster consumers receive the same f
   const notices: Array<{ description: string; title: string }> = []
   const notice = {
     title: 'Codex Sessions did not load',
-    description:
-      'Another Codex app may be using the local session database. Close Codex Desktop or Codex in VS Code, then retry.',
+    description: 'Another Codex app is using the database. Close it, then retry.',
   }
   const notify = (nextNotice: { description: string; title: string }) => notices.push(nextNotice)
   const failures = [{ harness: 'codex' }]
