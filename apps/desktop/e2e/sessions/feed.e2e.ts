@@ -40,7 +40,7 @@ import { updatePlan } from './fixtures/plan.fixture'
 import { rosterOrderMutations } from './fixtures/roster-order.fixture'
 import { writeWindowFillerSessions } from './fixtures/roster-window.fixture'
 import { writeBuriedSearchTarget } from './fixtures/search-window.fixture'
-import { createSessionByClick, openSessionByClick } from './gestures'
+import { openSessionByClick } from './gestures'
 import { assertTranscriptFeedCorpus } from './real-harness/transcript-feed-corpus'
 import { expect, test } from './session-proof-run'
 
@@ -180,13 +180,13 @@ test.describe('with a real Codex', () => {
 test.describe('with real Session transcript corpora', () => {
   test.skip(({ sessionBackend }) => sessionBackend !== 'real', 'Requires both signed-in CLIs.')
 
-  test('session-feed-transcript-corpus', async ({ session }) => {
-    const claudeSessionId = await createSessionByClick(session.page(), {
+  test('session-feed-transcript-corpus', async ({ session, backend }) => {
+    const claudeSessionId = await proveSessionCreatedByClick(session.page(), backend, {
       harness: 'claude',
       prompt: 'Use a shell command to print hello, then report the output.',
       budgetRunSetup: true,
     })
-    const codexSessionId = await createSessionByClick(session.page(), {
+    const codexSessionId = await proveSessionCreatedByClick(session.page(), backend, {
       harness: 'codex',
       prompt: 'Use a shell command to print hello, then report the output.',
       budgetRunSetup: true,
