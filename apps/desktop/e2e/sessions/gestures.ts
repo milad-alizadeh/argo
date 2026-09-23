@@ -72,7 +72,7 @@ export async function openArchivedSessionByClick(page: Page, sessionId: string) 
 
 // The plus control above the Roster: the only way to the new Session composer.
 export async function openNewSessionByClick(page: Page) {
-  await page.getByRole('button', { name: 'New Session' }).click()
+  await page.getByRole('button', { name: 'New Session', exact: true }).click()
   await waitForNewSessionRoute(page)
 }
 

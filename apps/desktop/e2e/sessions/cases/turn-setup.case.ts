@@ -102,4 +102,16 @@ export async function proveLiveCodexModelChoices(page) {
   await expect(
     page.getByRole('radiogroup', { name: 'Model' }).getByRole('radio', { name: /Mock Opus/ }),
   ).toHaveCount(0)
+  await page.keyboard.press('Escape')
+
+  await openNewSessionByClick(page)
+  await chooseHarness(page, 'codex')
+  await page.locator(RUN_SETUP).click()
+  await expect(
+    page.getByRole('radiogroup', { name: 'Model' }).getByRole('radio', { name: /Mock Opus/ }),
+  ).toBeChecked()
+  await expect(page.getByRole('slider', { name: 'Effort' })).toHaveAttribute(
+    'aria-valuetext',
+    'Extra high',
+  )
 }
