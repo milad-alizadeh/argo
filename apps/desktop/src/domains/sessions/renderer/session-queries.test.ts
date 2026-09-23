@@ -47,4 +47,21 @@ describe('the Session roster queries', () => {
     expect(roster?.pages[0]?.sessions).toHaveLength(1)
     expect(roster?.pages[0]?.sessions[0]?.unread).toBe(false)
   })
+
+  test('opening a resumed Session clears its retired row in every cached roster', () => {
+    const queryClient = new QueryClient()
+    const retired = rosterRow({ id: 'retired', unread: true })
+    queryClient.setQueryData([...sessionRosterQueryKey, '/workspace/one'], {
+      pages: [{ sessions: [retired] }],
+      pageParams: [null],
+    })
+
+    markSessionRead(queryClient, 'resumed', ['retired'])
+
+    const roster = queryClient.getQueryData<{ pages: { sessions: (typeof retired)[] }[] }>([
+      ...sessionRosterQueryKey,
+      '/workspace/one',
+    ])
+    expect(roster?.pages[0]?.sessions[0]?.unread).toBe(false)
+  })
 })

@@ -57,7 +57,7 @@ export function markSessionRead(
         pages: roster.pages.map((page) => ({
           ...page,
           sessions: page.sessions.map((session) =>
-            session.id === sessionId || session.retiredIds.some((id) => identities.has(id))
+            identities.has(session.id) || session.retiredIds.some((id) => identities.has(id))
               ? { ...session, unread: false }
               : session,
           ),
