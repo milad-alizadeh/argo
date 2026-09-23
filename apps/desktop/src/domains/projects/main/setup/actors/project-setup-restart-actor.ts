@@ -1,5 +1,6 @@
 import { fromCallback } from 'xstate'
 import type { ProjectSetupEvent } from '../project-setup-machine-types'
+import { interruptAndWaitForProjectSetupSession } from '../project-setup-session-lifecycle'
 import { startProjectSetupTask } from '../project-setup-task'
 import type { ProjectSetupServices } from './project-setup-actors'
 
@@ -14,8 +15,7 @@ export function projectSetupRestartActor(
         try {
           for (const sessionId of input.sessionIds) {
             if (services.driver.hasSession?.(sessionId) !== false) {
-              await services.driver.interrupt(sessionId)
-              await services.driver.waitForStop?.(sessionId)
+              await interruptAndWaitForProjectSetupSession(services.driver, sessionId)
             }
             const archived = await services.archiveSession(sessionId)
             if (!archived) {
