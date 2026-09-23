@@ -104,7 +104,8 @@ What no linter checks. Caps and formatting are `biome.jsonc`'s.
 - **Branch on a closed set with the exhaustive construct**; chained `if` is for open conditions.
   When the discriminant only picks a value, use a lookup.
 - **Validate at the boundary.** Parse outside data into a known shape once, at the edge; a cast or
-  all-optional model in place of a check is a bug moved inward.
+  all-optional model in place of a check is a bug moved inward. A shape the parser does not
+  recognise is reported and counted, never passed on as a fallback or dropped.
 - **One source of truth.** Extract a literal before its second paste. A new variant of an existing
   kind is one new file plus one registration line.
 - **Group by domain, never by kind.** `Tickets/`, not `Helpers/`. A helper starts in its only
@@ -138,6 +139,11 @@ enough.
 - **Prove a regression test by reverting the fix.** It goes red on the bug with the reported
   symptom, green with the fix, then red again with only the fix reverted and green once restored.
   Revert with `git apply -R` on a patch of the fix: the stash stack is shared across worktrees.
+- **A repeated symptom is a missing invariant.** Before fixing a bug, search closed issues for
+  its symptom. On a match, link them, name the invariant every cause broke, and test that
+  invariant across every path that reaches the symptom, not the new cause alone.
+- **Test an outside format against recorded real data.** A hand-written fixture holds only the
+  shapes you already knew; a recorded corpus from the real producer catches the next one.
 
 ## Tooling (RTK)
 
