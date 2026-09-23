@@ -76,6 +76,12 @@ export function attachManagedSessionBridge(
         )
         return subscribedReply(request.requestId)
       },
+      catalog: async (request, adapters) => ({
+        version: 1 as const,
+        type: 'managed-session.catalog.result' as const,
+        requestId: request.requestId,
+        catalog: await adapters.readModelCatalog('codex'),
+      }),
     },
     error: managedSessionError,
   })

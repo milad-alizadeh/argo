@@ -1,4 +1,6 @@
 import {
+  managedSessionCatalogReply,
+  managedSessionCatalogRequestSchema,
   managedSessionCommandRequestSchema,
   managedSessionReplySchema,
   managedSessionSubscribeReplySchema,
@@ -17,5 +19,11 @@ export const MANAGED_SESSION_OPERATIONS = {
     channel: 'argo:managed-session:subscribe',
     request: managedSessionSubscribeRequestSchema,
     reply: managedSessionSubscribeReplySchema,
+  },
+  catalog: {
+    name: 'managed-session.catalog',
+    channel: 'argo:managed-session:catalog',
+    request: managedSessionCatalogRequestSchema,
+    reply: managedSessionCatalogReply,
   },
 } as const

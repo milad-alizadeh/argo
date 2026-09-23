@@ -89,6 +89,19 @@ test('a draft survives before a Session exists, keyed by its own identity', () =
   useComposerStore.getState().setDraft('new:project-1', '')
 })
 
+test('a harness remembers its Model and Effort in the persisted composer state', () => {
+  useComposerStore.getState().rememberSetup('codex', { model: 'gpt-6', effort: 'high' })
+  useComposerStore.getState().rememberSetup('claude', { model: 'opus', effort: 'medium' })
+
+  const persisted = useComposerStore.persist.getOptions().partialize?.(useComposerStore.getState())
+  expect(persisted).toMatchObject({
+    rememberedSetup: {
+      codex: { model: 'gpt-6', effort: 'high' },
+      claude: { model: 'opus', effort: 'medium' },
+    },
+  })
+})
+
 test('a draft becoming a Session moves every unsent-Turn fact together', () => {
   const composer = useComposerStore.getState()
   composer.setDraft('new:project-1', 'still writing this')

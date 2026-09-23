@@ -1,18 +1,21 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
+import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
 import { HARNESSES, type SessionHarness } from '../../harness/harnesses'
 import { CLAUDE_TURN_SETUP } from '../turn-setup/claude-turn-setup'
+import { codexTurnSetup } from '../turn-setup/codex-turn-setup'
 import { RunSetupMenu } from './run-setup-menu'
 
 // A started Session keeps its harness; a new one offers the harness tabs.
 function RunSetupStory({ started = true }: { started?: boolean }) {
   const [harness, setHarness] = useState<SessionHarness>('claude')
   const [setup, setSetup] = useState(CLAUDE_TURN_SETUP.opening)
-  const choices = HARNESSES[harness].setup
+  const choices = harness === 'codex' ? codexTurnSetup(liveCatalog) : HARNESSES[harness].setup
   const chooseHarness = (nextHarness: SessionHarness) => {
     setHarness(nextHarness)
-    const nextSetup = HARNESSES[nextHarness].setup
+    const nextSetup =
+      nextHarness === 'codex' ? codexTurnSetup(liveCatalog) : HARNESSES[nextHarness].setup
     if (nextSetup !== null) setSetup(nextSetup.opening)
   }
   return (
@@ -20,6 +23,49 @@ function RunSetupStory({ started = true }: { started?: boolean }) {
       <RunSetupMenu
         harness={started ? { harness } : { harness, onChange: chooseHarness }}
         setup={choices ? { choices, value: setup, onChange: setSetup } : null}
+      />
+    </div>
+  )
+}
+
+const liveCatalog: CodexModelCatalog = {
+  data: [
+    {
+      id: 'provider/live-codex',
+      model: 'provider/live-codex',
+      displayName: 'Live Codex Model',
+      description: 'Current model reported by the running app-server',
+      defaultReasoningEffort: 'focused',
+      isDefault: true,
+      hidden: false,
+      supportedReasoningEfforts: [{ reasoningEffort: 'focused', description: 'Focused reasoning' }],
+    },
+  ],
+  nextCursor: null,
+}
+
+function CodexCatalogStory({
+  catalog: initialCatalog,
+  failed = false,
+}: {
+  catalog: CodexModelCatalog | null
+  failed?: boolean
+}) {
+  const [catalog, setCatalog] = useState(initialCatalog)
+  const choices = codexTurnSetup(catalog)
+  const [setup, setSetup] = useState(choices?.opening ?? CLAUDE_TURN_SETUP.opening)
+  const [catalogError, setCatalogError] = useState(failed)
+  return (
+    <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
+      <RunSetupMenu
+        harness={{ harness: 'codex' }}
+        setup={choices === null ? null : { choices, value: setup, onChange: setSetup }}
+        catalogError={catalogError}
+        refreshCatalog={() => {
+          setCatalog(liveCatalog)
+          setSetup(codexTurnSetup(liveCatalog)?.opening ?? CLAUDE_TURN_SETUP.opening)
+          setCatalogError(false)
+        }}
       />
     </div>
   )
@@ -82,6 +128,53 @@ export const ChoosesModelAndEffort: Story = {
   },
 }
 
+export const UsesLiveCodexCatalog: Story = {
+  render: () => <CodexCatalogStory catalog={liveCatalog} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const trigger = canvas.getByRole('button', { name: TRIGGER })
+    await expect(trigger).toHaveAccessibleName('Choose run setup: Codex, Live Codex Model, Focused')
+    await userEvent.click(trigger)
+    const models = await page().findByRole('radiogroup', { name: 'Model' })
+    await expect(within(models).getAllByRole('radio')).toHaveLength(1)
+    await expect(within(models).getByRole('radio', { name: /Live Codex Model/ })).toBeChecked()
+    await expect(page().getByRole('slider', { name: 'Effort' })).toHaveAttribute(
+      'aria-valuetext',
+      'Focused',
+    )
+    await expect(page().queryByRole('status')).toBeNull()
+  },
+}
+
+export const RetriesUnavailableCatalog: Story = {
+  render: () => <CodexCatalogStory catalog={null} failed />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const trigger = canvas.getByRole('button', { name: TRIGGER })
+    await userEvent.click(trigger)
+    await expect(page().getByRole('alert')).toHaveTextContent(
+      'Argo could not load the Codex models.',
+    )
+    await expect(page().queryByRole('radiogroup', { name: 'Model' })).toBeNull()
+    await userEvent.click(page().getByRole('button', { name: 'Refresh models' }))
+    await expect(canvas.getByRole('button', { name: TRIGGER })).toHaveAccessibleName(
+      'Choose run setup: Codex, Live Codex Model, Focused',
+    )
+    await userEvent.click(canvas.getByRole('button', { name: TRIGGER }))
+    await expect(page().getByRole('radiogroup', { name: 'Model' })).toBeVisible()
+    await expect(page().getByRole('radio', { name: /Live Codex Model/ })).toBeChecked()
+  },
+}
+
+export const LoadsCatalog: Story = {
+  render: () => <CodexCatalogStory catalog={null} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: TRIGGER }))
+    await expect(page().getByRole('status')).toHaveTextContent('Loading Codex models…')
+  },
+}
+
 export const ChoosesByKeyboard: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -134,9 +227,9 @@ export const NewSessionChoosesHarness: Story = {
     const codex = within(harnesses).getByRole('tab', { name: 'Codex' })
     await expect(codex).toHaveAttribute('aria-selected', 'true')
     const codexModels = page().getByRole('radiogroup', { name: 'Model' })
-    await expect(within(codexModels).getAllByRole('radio')).toHaveLength(5)
-    await expect(within(codexModels).getByRole('radio', { name: /Gpt 5.6 Sol/ })).toBeChecked()
-    await expect(trigger).toHaveAccessibleName('Choose run setup: Codex, Gpt 5.6 Sol, Low')
+    await expect(within(codexModels).getAllByRole('radio')).toHaveLength(1)
+    await expect(within(codexModels).getByRole('radio', { name: /Live Codex Model/ })).toBeChecked()
+    await expect(trigger).toHaveAccessibleName('Choose run setup: Codex, Live Codex Model, Focused')
 
     await userEvent.click(within(harnesses).getByRole('tab', { name: 'Claude Code' }))
     await expect(page().getByRole('radiogroup', { name: 'Model' })).toBeVisible()

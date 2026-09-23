@@ -1,3 +1,4 @@
+import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
 import type { CodexTurnSetup } from '@/domains/sessions/contract/codex-turn-setup'
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
@@ -43,6 +44,7 @@ export type CodexSessionDriver = {
   ) => boolean
   decideQuestion: (sessionId: string, questionId: string, answers: QuestionAnswer[]) => boolean
   close: () => void
+  readModelCatalog: () => Promise<CodexModelCatalog | null>
 }
 
 export type CodexSessionDrive = Pick<
@@ -60,4 +62,5 @@ export type CodexSessionDrive = Pick<
   | 'pendingPermission'
   | 'decidePermission'
   | 'close'
+  | 'readModelCatalog'
 >

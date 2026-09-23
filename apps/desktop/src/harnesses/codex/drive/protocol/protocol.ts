@@ -1,4 +1,10 @@
 import assert from 'node:assert/strict'
+import { z } from 'zod'
+import {
+  type CodexModelCatalog,
+  codexModelCatalogSchema,
+  codexModelSchema,
+} from '@/domains/sessions/contract/codex-model-catalog'
 import type { Input } from '../input-items'
 
 // The subset of `codex app-server`'s JSON-RPC protocol this adapter drives, grounded in codex-harness
@@ -9,6 +15,7 @@ export type ThreadConfiguration = { cwd: string }
 export type SkillsListRequest = { cwds: string[]; forceReload: boolean }
 export type ThreadSourceKind = 'appServer' | 'cli' | 'exec' | 'subAgent' | 'vscode'
 export type RequestParams = {
+  'model/list': { cursor?: string; limit?: number; includeHidden?: boolean }
   initialize: {
     clientInfo: { name: string; title: string; version: string }
     capabilities: { experimentalApi: boolean; requestAttestation: boolean }
@@ -45,6 +52,8 @@ export type RequestParams = {
   'thread/name/set': { threadId: string; name: string }
   'thread/compact/start': { threadId: string }
 }
+
+export type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
 export type WireMessage =
   | { method: string; params: Record<string, unknown>; id?: RequestID }
   | { id: RequestID; result: unknown }
@@ -64,6 +73,57 @@ export function protocolRecord(value: unknown, label: string): Record<string, un
 export function protocolString(value: unknown, label: string): string {
   assert(typeof value === 'string', `${label} must be a string`)
   return value
+}
+
+const modelListEntrySchema = codexModelSchema
+  .extend({
+    displayName: z.string().min(1),
+    description: z.string().nullable().optional(),
+    supportedReasoningEfforts: z
+      .array(
+        codexModelSchema.shape.supportedReasoningEfforts.element.extend({
+          description: z.string().nullable().optional(),
+        }),
+      )
+      .min(1),
+  })
+  .passthrough()
+  .superRefine((model, context) => {
+    if (
+      !model.supportedReasoningEfforts.some(
+        ({ reasoningEffort }) => reasoningEffort === model.defaultReasoningEffort,
+      )
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Default reasoning effort must be advertised.',
+        path: ['defaultReasoningEffort'],
+      })
+    }
+  })
+const modelListResponseSchema = codexModelCatalogSchema.extend({
+  data: z.array(modelListEntrySchema),
+  nextCursor: z.string().nullable().optional(),
+})
+
+export function readModelCatalog(value: unknown): CodexModelCatalog {
+  const response = modelListResponseSchema.parse(value)
+  return {
+    data: response.data.map((model) => ({
+      id: model.id,
+      model: model.model,
+      displayName: model.displayName,
+      description: model.description ?? '',
+      defaultReasoningEffort: model.defaultReasoningEffort,
+      isDefault: model.isDefault,
+      hidden: model.hidden,
+      supportedReasoningEfforts: model.supportedReasoningEfforts.map((effort) => ({
+        reasoningEffort: effort.reasoningEffort,
+        description: effort.description ?? '',
+      })),
+    })),
+    nextCursor: response.nextCursor ?? null,
+  }
 }
 
 export function readMessage(line: string): WireMessage {

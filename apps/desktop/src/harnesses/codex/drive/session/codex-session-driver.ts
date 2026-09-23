@@ -78,10 +78,9 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
   const renameWaiters = new Map<string, (title: string) => void>()
   const rosterChanges = createWatchedChanges()
   const driver: ManagedSessionOptions = { ...options, onPlanUpdated: rosterChanges.notify }
-  const held = (sessionId: string) => sessions.get(sessionId)
   const channelFor = createResumingChannel({ driver, renameWaiters, sessions })
-
   return {
+    readModelCatalog: options.readModelCatalog,
     start: startManagedSession({ driver, sessions, renameWaiters }),
     async send({ sessionId, text, setup, attachments }) {
       const session = await channelFor(sessionId)
@@ -95,10 +94,10 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
       })
     },
     async steer({ sessionId, text, attachments }) {
-      await steerTurn({ session: held(sessionId), sessionId, text, attachments })
+      await steerTurn({ session: sessions.get(sessionId), sessionId, text, attachments })
     },
     async interrupt(sessionId) {
-      const session = held(sessionId)
+      const session = sessions.get(sessionId)
       if (session?.status !== 'running' || session.turnId === null) return
       await session.channel.request(
         'turn/interrupt',
@@ -108,7 +107,7 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
     },
     compact: (sessionId) => compactCodexSession(sessions, driver.now, sessionId),
     async rename(sessionId, name) {
-      const session = held(sessionId)
+      const session = sessions.get(sessionId)
       if (!session) throw new Error('Codex Session is no longer running.')
       const accepted = new Promise<string>((resolve) => renameWaiters.set(sessionId, resolve))
       await session.channel.request('thread/name/set', { threadId: sessionId, name }, readRename)
@@ -116,14 +115,14 @@ export function createCodexSessionDriver(options: ManagedSessionOptions): CodexS
     },
     roster: () => managedRoster(sessions),
     onRosterChanged: rosterChanges.subscribe,
-    liveMessages: (sessionId) => held(sessionId)?.messages.list() ?? [],
+    liveMessages: (sessionId) => sessions.get(sessionId)?.messages.list() ?? [],
     isLockedElsewhere: (sessionId) => driver.ownership?.standing(sessionId) === 'held-elsewhere',
-    pendingQuestion: (sessionId) => held(sessionId)?.pendingQuestion ?? null,
-    pendingPermission: (sessionId) => held(sessionId)?.pendingPermission ?? null,
+    pendingQuestion: (sessionId) => sessions.get(sessionId)?.pendingQuestion ?? null,
+    pendingPermission: (sessionId) => sessions.get(sessionId)?.pendingPermission ?? null,
     decidePermission: (sessionId, permissionId, decision) =>
-      decidePendingPermission(held(sessionId), permissionId, decision),
+      decidePendingPermission(sessions.get(sessionId), permissionId, decision),
     decideQuestion(sessionId, questionId, answers) {
-      const session = held(sessionId)
+      const session = sessions.get(sessionId)
       if (session === undefined || session.pendingQuestion === null) return false
       const pending = session.pendingQuestion
       if (pending.itemId !== questionId) return false

@@ -1,3 +1,4 @@
+import type { CodexTurnSetup } from '@/domains/sessions/contract/codex-turn-setup'
 import type { SessionCommand } from '@/domains/sessions/next/contract/session-command-contract'
 import type {
   SessionIdentity,
@@ -35,7 +36,11 @@ function eventFor(
 ): ManagedSessionEvent {
   switch (command.type) {
     case 'session.send':
-      return { type: 'Send', prompt: command.prompt }
+      return {
+        type: 'Send',
+        prompt: command.prompt,
+        setup: command.setup as CodexTurnSetup | undefined,
+      }
     case 'session.steer':
       return { type: 'Steer', prompt: command.prompt }
     case 'session.interrupt':
@@ -103,11 +108,16 @@ function waitForIdle(actor: ManagedSessionActor): Promise<boolean> {
 export async function executeCommand(
   command: SessionCommand,
   registry: SessionRegistry,
-  start: (selection: WorkspaceSelection, prompt: string) => Promise<SessionCommandOutcome>,
+  start: (
+    selection: WorkspaceSelection,
+    prompt: string,
+    setup?: unknown,
+  ) => Promise<SessionCommandOutcome>,
 ): Promise<SessionCommandOutcome> {
-  if (command.type === 'session.start') return start(command.workspace, command.prompt)
+  if (command.type === 'session.start')
+    return start(command.workspace, command.prompt, command.setup)
   const entry = requireSessionEntry(registry, command.session)
-  if (command.type === 'session.send') return executeSend(entry, command.prompt)
+  if (command.type === 'session.send') return executeSend(entry, command.prompt, command.setup)
   entry.actor.send(eventFor(command))
   entry.revision += 1
   return {
@@ -119,6 +129,7 @@ export async function executeCommand(
 export async function executeSend(
   entry: SessionRegistryEntry,
   prompt: string,
+  setup?: unknown,
 ): Promise<SessionCommandOutcome> {
   const previous = entry.sendQueue
   let release: () => void = () => {}
@@ -131,7 +142,7 @@ export async function executeSend(
       return { kind: 'rejected', reason: 'Codex cannot accept a follow-up Turn' }
     }
     const settlement = waitForCommandSettlement(entry.actor)
-    entry.actor.send({ type: 'Send', prompt })
+    entry.actor.send({ type: 'Send', prompt, setup: setup as CodexTurnSetup | undefined })
     entry.revision += 1
     const result = await settlement
     if (result.outcome === 'uncertain') return { kind: 'uncertain' }

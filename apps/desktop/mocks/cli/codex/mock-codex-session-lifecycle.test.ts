@@ -14,7 +14,7 @@ async function start(adapter: Awaited<ReturnType<typeof createMockAdapter>>, pro
     prompt,
     workspace: { kind: 'main' },
   })
-  assert.equal(outcome.kind, 'accepted')
+  assert.equal(outcome.kind, 'accepted', JSON.stringify(outcome))
   if (outcome.kind !== 'accepted') throw new Error('Codex did not start the managed Session')
   return outcome.projection.session
 }

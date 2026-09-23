@@ -32,6 +32,8 @@ export function ComposerToolbar({
   onOpenContextPicker,
   harness,
   setup,
+  catalogError = false,
+  refreshCatalog,
   workspace,
   isRunning,
   onInterrupt,
@@ -43,6 +45,8 @@ export function ComposerToolbar({
   onOpenContextPicker: () => void
   harness: HarnessControl | null
   setup: TurnSetupControlProps | null
+  catalogError?: boolean
+  refreshCatalog?: () => void
   workspace: WorkspaceMenuControlProps | null
   isRunning: boolean
   onInterrupt?: () => Promise<boolean>
@@ -53,7 +57,14 @@ export function ComposerToolbar({
   return (
     <div className="flex items-center gap-1 p-(--spacing-shell-item) @[36rem]:gap-2">
       <AddContextButton onOpen={onOpenContextPicker} />
-      {harness ? <RunSetupMenu harness={harness} setup={setup} /> : null}
+      {harness ? (
+        <RunSetupMenu
+          harness={harness}
+          setup={setup}
+          catalogError={catalogError}
+          refreshCatalog={refreshCatalog}
+        />
+      ) : null}
       {workspace ? <WorkspaceMenu {...workspace} /> : null}
       <div className="ml-auto flex items-center gap-1">
         {setup ? <ModeMenu {...setup} /> : null}

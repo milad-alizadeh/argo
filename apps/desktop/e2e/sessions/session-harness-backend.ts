@@ -16,7 +16,10 @@ export type SessionFixture = {
 
 // What one launch asks of the Harness. A slow reply is the state the wait cases read (#2119): a Harness
 // that answers instantly never shows the app waiting.
-export type SessionHarnessLaunch = { slowReply: boolean; adversarialSeed?: string }
+export type SessionHarnessLaunch = {
+  slowReply: boolean
+  adversarialSeed?: string
+}
 
 // The Turn a case is waiting on, named the way the case sent it.
 export type SessionReply = { harness: SessionHarness; prompt: string }

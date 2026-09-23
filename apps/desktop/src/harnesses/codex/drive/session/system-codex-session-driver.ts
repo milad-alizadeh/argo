@@ -6,8 +6,10 @@ import {
 } from '@/domains/sessions/main/lifecycle/ownership/ownership-ledger'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 import { codexResumeTarget } from '../../sessions/discovery/resume-target'
+import { sharedAppServerRuntimeFor } from '../supervision/codex-shared-app-server-runtime'
 import { openAppServer } from '../supervision/open-app-server'
 import { createCodexSessionDriver } from './codex-session-driver'
+import { CodexSessionDriverError } from './codex-session-error'
 
 // The transport ADR-0024 and #1826 resolved: `codex app-server --listen stdio://`, spawned with
 // separate stdin/stdout/stderr pipes. Terminal escapes, bracketed paste and resize do not belong
@@ -22,17 +24,24 @@ export function createSystemCodexSessionDriver(paths: {
   ownership: string
   transcripts: string
 }) {
-  return createCodexSessionDriver({
-    findExecutable: () => paths.executable ?? findExecutableOnLoginShellPath('codex'),
-    now: () => new Date(),
-    ownership: createOwnershipLedger({
-      path: paths.ownership,
-      window: { pid: process.pid, registry: randomUUID() },
-      isAlive: isProcessAlive,
+  const findExecutable = () => paths.executable ?? findExecutableOnLoginShellPath('codex')
+  return {
+    ...createCodexSessionDriver({
+      findExecutable,
+      readModelCatalog: async () => {
+        if (findExecutable() === null) throw new CodexSessionDriverError('harness-unavailable')
+        return sharedAppServerRuntimeFor(findExecutable).readModelCatalog()
+      },
+      now: () => new Date(),
+      ownership: createOwnershipLedger({
+        path: paths.ownership,
+        window: { pid: process.pid, registry: randomUUID() },
+        isAlive: isProcessAlive,
+      }),
+      resumeTarget: (sessionId) => codexResumeTarget(paths.transcripts, sessionId),
+      openChannel: (executable, options) => {
+        return openAppServer({ executable, cwd: options.cwd, env: options.env }).channel
+      },
     }),
-    resumeTarget: (sessionId) => codexResumeTarget(paths.transcripts, sessionId),
-    openChannel: (executable, options) => {
-      return openAppServer({ executable, cwd: options.cwd, env: options.env }).channel
-    },
-  })
+  }
 }
