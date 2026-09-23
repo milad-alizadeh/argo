@@ -3,7 +3,7 @@ import type { SessionMessage } from '@anthropic-ai/claude-agent-sdk'
 import { managedRosterRow, type SessionFeedRow } from '@/domains/sessions/contract/model/models'
 import { stitchChains } from '@/domains/sessions/contract/model/transcript/chains'
 import { projectFeed } from '@/domains/sessions/main/projection/feed/feed-incremental'
-import { readTranscriptFile } from '@/harnesses/claude/sessions/discovery/transcript-file'
+import { readTranscriptFile } from '../sessions/discovery/transcript-file'
 import { createClaudeSdkHistorySource } from './claude-sdk-history-source'
 
 function envelopeMessages(): SessionMessage[] {
