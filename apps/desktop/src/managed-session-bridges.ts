@@ -6,7 +6,6 @@ import { attachManagedSessions } from '@/domains/sessions/next/main/managed-sess
 import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
 import { createClaudeSdkDriveAdapter } from '@/harnesses/claude/agent-sdk/claude-sdk-drive-adapter'
 import type { ClaudeSessionAdapter } from '@/harnesses/claude/agent-sdk/claude-session-adapter'
-import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-sessions'
 import { claudeTranscriptsRoot } from '@/harnesses/claude/sessions/discovery/roots'
 import { createCodexAppServerDriveAdapter } from '@/harnesses/codex/drive/codex-app-server-drive-adapter'
 import type { CodexSessionAdapter } from '@/harnesses/codex/drive/session/codex-session-adapter-contract'
@@ -40,20 +39,16 @@ export function attachManagedSessionHarnesses(
   const registeredClaudeSource = managedSessions.sourceFor('claude')
   if (registeredClaudeSource === undefined) throw new Error('Claude Session source is unavailable')
   // Packaged proof uses the mock CLI's transcript fixtures. Production reads the Agent SDK.
-  const claudeSource = options.proofEnabled
-    ? claudeSessionSource({
-        transcripts: claudeTranscriptsRoot(options.home),
-        managedSessions: (claude as ClaudeSessionAdapter).roster,
-        liveMessages: (claude as ClaudeSessionAdapter).liveMessages,
-      })
-    : registeredClaudeSource
+  const claudeSource = registeredClaudeSource
   const harnesses = attachSessions(window, {
     ...options,
     driveAdapters: {
-      claude: createClaudeSdkDriveAdapter({
-        adapter: claude as ClaudeSessionAdapter,
-        workspaceForCwd: (cwd) => workspaceSelectionForSessionCwd(cwd, options.projects),
-      }),
+      claude: options.proofEnabled
+        ? undefined
+        : createClaudeSdkDriveAdapter({
+            adapter: claude as ClaudeSessionAdapter,
+            workspaceForCwd: (cwd) => workspaceSelectionForSessionCwd(cwd, options.projects),
+          }),
       codex: createCodexAppServerDriveAdapter({
         adapter: codex as CodexSessionAdapter,
         workspaceForCwd: (cwd) => workspaceSelectionForSessionCwd(cwd, options.projects),
@@ -68,9 +63,9 @@ export function attachManagedSessionHarnesses(
     managedRename: { claude: (claude as ClaudeSessionAdapter).rename },
     watchedRoots: [claudeTranscriptsRoot(options.home)],
     harnesses: sessionHarnesses.filter((harness) => harness.harness !== 'codex'),
-    excludedSourceHarnesses: ['claude'],
+    excludedSourceHarnesses: options.proofEnabled ? [] : ['claude'],
     polledSources: [codexSource],
-    sources: [claudeSource, codexSource],
+    sources: options.proofEnabled ? [codexSource] : [claudeSource, codexSource],
   })
   return { harnesses, managedSessions }
 }

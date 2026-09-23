@@ -1,3 +1,4 @@
+import { PROJECT_PROOF_STORE_ENV } from '@/domains/projects/main/proof-protocol'
 import { claudeTurnSetupSchema } from '@/domains/sessions/contract/claude-turn-setup'
 import type { SessionCommand } from '@/domains/sessions/next/contract/session-command-contract'
 import type { WorkspaceSelection } from '@/domains/sessions/next/contract/session-contract'
@@ -63,11 +64,15 @@ export function createClaudeSessionAdapter(deps: {
   ) => Promise<{ resumable: true } | { resumable: false; reason: string }>
   now?: () => Date
 }): ClaudeSessionAdapter {
+  // The packaged proof mock stores sessions only in its transcript fixture, not the Agent SDK.
+  const defaultReadResumePermission = process.env[PROJECT_PROOF_STORE_ENV]
+    ? async () => ({ resumable: true as const })
+    : readClaudeResumePermission
   const runtime = {
     ...deps,
     createQuery: deps.createQuery ?? createClaudeQuery,
     now: deps.now ?? (() => new Date()),
-    readResumePermission: deps.readResumePermission ?? readClaudeResumePermission,
+    readResumePermission: deps.readResumePermission ?? defaultReadResumePermission,
   }
   const changed = new Set<() => void>()
   const registry = sessionRegistry(changed, deps.sessionService)

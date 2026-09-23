@@ -6,11 +6,13 @@ import { SESSION_CLAUDE_EXECUTABLE_ENV } from '@/domains/sessions/contract/proof
 import type { HarnessRegistration } from '@/harnesses/composition/harness-registration'
 import { createClaudeSdkHistorySource } from '../agent-sdk/claude-sdk-history-source'
 import { installCompactionHook } from '../compaction/compaction-hook'
+import { claudeSessionSource } from '../sessions/discovery/read-sessions'
 import {
   claudeCompactionStartsRoot,
   claudeSettingsPath,
   claudeTranscriptsRoot,
 } from '../sessions/discovery/roots'
+import { renameClaudeSession } from './rename-session'
 import { createClaudeDriveAdapter } from './session-drive-adapter'
 import { createSystemClaudeSessionDriver } from './system-claude-session-driver'
 
@@ -39,8 +41,14 @@ export const claudeHarness: HarnessRegistration = {
     }
     return {
       harness: 'claude',
-      // This driver's source is never registered: managed composition registers the SDK source.
-      source: createClaudeSdkHistorySource(),
+      source: proofEnabled
+        ? claudeSessionSource({
+            transcripts: claudeTranscriptsRoot(home),
+            managedSessions: claude.roster,
+            liveMessages: claude.liveMessages,
+            rename: (request) => renameClaudeSession(request, claude),
+          })
+        : createClaudeSdkHistorySource(),
       driveAdapter: createClaudeDriveAdapter(claude),
       onboardingDriver: claude,
       watchedTranscriptRoots: [claudeTranscriptsRoot(home)],
