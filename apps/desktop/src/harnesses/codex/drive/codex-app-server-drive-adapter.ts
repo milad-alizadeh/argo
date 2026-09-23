@@ -137,13 +137,14 @@ export function createCodexAppServerDriveAdapter(options: {
     harness: 'codex',
     failureMessage: (code) => FAILURE_MESSAGES[code],
     turnSetupSchema: ignoredSetupSchema,
-    async start({ cwd, prompt, attachments }) {
+    async start({ cwd, prompt, setup, attachments }) {
       if (hasAttachments(attachments)) return { error: 'launch-failed' }
       const outcome = await options.adapter.execute({
         type: 'session.start',
         harness: 'codex',
         prompt,
         workspace: await options.workspaceForCwd(cwd),
+        setup,
       })
       return outcome.kind === 'accepted'
         ? { sessionId: outcome.projection.session.nativeId }

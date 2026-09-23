@@ -19,6 +19,7 @@ const sendCommandSchema = z.strictObject({
   type: z.literal('session.send'),
   session: sessionIdentitySchema,
   prompt: z.string().trim().min(1),
+  setup: z.unknown().optional(),
 })
 const steerCommandSchema = z.strictObject({
   type: z.literal('session.steer'),

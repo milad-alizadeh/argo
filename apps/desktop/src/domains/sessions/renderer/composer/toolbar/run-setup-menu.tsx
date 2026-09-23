@@ -55,7 +55,7 @@ export function RunSetupMenu({ harness, setup }: RunSetupMenuProps) {
         aria-label={t('composer.setup.title')}
         align="start"
         side="top"
-        className="w-(--size-session-menu) gap-0 overflow-hidden p-0"
+        className="max-h-(--size-session-menu-max-height) w-(--size-session-menu) gap-0 overflow-y-auto p-0"
       >
         <HarnessTabs harness={harness.harness} onChange={harness.onChange}>
           {body}
@@ -80,8 +80,14 @@ function SetupBody({ harness, setup }: RunSetupMenuProps) {
         {t('composer.setup.ownSettings', { harness: HARNESSES[harness.harness].label })}
       </p>
     )
+  const { choices } = setup
   return (
     <>
+      {choices.source === 'fallback' ? (
+        <p className="px-3.5 pt-3.5 type-meta text-muted-foreground" role="status">
+          {t('composer.setup.modelCatalogFallback')}
+        </p>
+      ) : null}
       <ModelOptions {...setup} />
       <EffortSlider {...setup} />
     </>

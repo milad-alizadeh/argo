@@ -131,6 +131,7 @@
       "choosePermissionMode": "Choose permission mode: {{mode}}",
       "permissions": "{{harness}} permissions",
       "ownSettings": "{{harness}} runs at the Model and Effort in its own settings.",
+      "modelCatalogFallback": "Using a fallback model list because the live Codex catalog is unavailable.",
       "model": "Model"
     },
     "workspace": {

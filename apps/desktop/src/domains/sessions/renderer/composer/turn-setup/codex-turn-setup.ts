@@ -1,11 +1,13 @@
+import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
 import {
   CODEX_EFFORTS,
   CODEX_MODELS,
   codexEfforts,
+  codexOpeningSetupFor,
 } from '@/domains/sessions/contract/codex-turn-setup'
 import type { ModeChoice, TurnSetupChoices } from './turn-setup'
 
-const effortLabels: Record<(typeof CODEX_EFFORTS)[number], string> = {
+const effortLabels: Record<string, string> = {
   low: 'Low',
   medium: 'Medium',
   high: 'High',
@@ -14,7 +16,7 @@ const effortLabels: Record<(typeof CODEX_EFFORTS)[number], string> = {
   ultra: 'Ultra',
 }
 
-const modelDetails: Record<(typeof CODEX_MODELS)[number], string> = {
+const modelDetails: Record<string, string> = {
   'gpt-5.6-sol': 'Reliable agentic workhorse for everyday tasks',
   'gpt-5.6-terra': 'Balanced agentic coding model for everyday work',
   'gpt-5.6-luna': 'Fast and affordable agentic coding model',
@@ -46,7 +48,41 @@ const MODES: ModeChoice[] = [
   },
 ]
 
-export const CODEX_TURN_SETUP: TurnSetupChoices = {
+export function codexTurnSetup(catalog: CodexModelCatalog | null): TurnSetupChoices {
+  const models = catalog?.data.filter(({ hidden }) => !hidden) ?? []
+  if (models.length === 0) return CODEX_FALLBACK_TURN_SETUP
+  const efforts = [
+    ...new Set(
+      models.flatMap(({ supportedReasoningEfforts }) =>
+        supportedReasoningEfforts.map(({ reasoningEffort }) => reasoningEffort),
+      ),
+    ),
+  ]
+  const opening = codexOpeningSetupFor(catalog)
+  return {
+    agent: 'Codex',
+    label: 'Codex',
+    models: models.map(({ model, displayName, description, supportedReasoningEfforts }) => ({
+      value: model,
+      label: displayName,
+      detail: description,
+      efforts: supportedReasoningEfforts.map(({ reasoningEffort }) => reasoningEffort),
+      reads: (reading) => reading === model,
+    })),
+    efforts: efforts.map((value) => ({
+      value,
+      label:
+        effortLabels[value] ??
+        value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()),
+      reads: (reading) => reading === value,
+    })),
+    modes: MODES,
+    opening,
+  }
+}
+
+export const CODEX_FALLBACK_TURN_SETUP: TurnSetupChoices = {
+  source: 'fallback',
   agent: 'Codex',
   label: 'Codex',
   models: CODEX_MODELS.map((value) => ({
@@ -58,9 +94,11 @@ export const CODEX_TURN_SETUP: TurnSetupChoices = {
   })),
   efforts: CODEX_EFFORTS.map((value) => ({
     value,
-    label: effortLabels[value],
+    label: effortLabels[value] ?? value,
     reads: (reading) => reading === value,
   })),
   modes: MODES,
   opening: { model: 'gpt-5.6-sol', effort: 'low', mode: 'workspace-write' },
 }
+
+export const CODEX_TURN_SETUP = CODEX_FALLBACK_TURN_SETUP

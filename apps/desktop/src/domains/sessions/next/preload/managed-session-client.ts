@@ -1,3 +1,4 @@
+import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
 import type { SessionCommand } from '@/domains/sessions/next/contract/session-command-contract'
 import type { SessionIdentity } from '@/domains/sessions/next/contract/session-contract'
 import type {
@@ -10,6 +11,7 @@ import { MANAGED_SESSION_OPERATIONS } from '@/domains/sessions/next/ipc/managed-
 import { createDomainClient } from '@/shared/ipc/client'
 
 export type ManagedSessionClient = {
+  readCodexModelCatalog: () => Promise<CodexModelCatalog | null>
   executeManagedSessionCommand: (command: SessionCommand) => Promise<SessionCommandOutcome>
   subscribeManagedSession: (
     session: SessionIdentity,
@@ -23,6 +25,10 @@ export function createManagedSessionClient(
 ): ManagedSessionClient {
   const client = createDomainClient(MANAGED_SESSION_OPERATIONS, invoke, managedSessionError)
   return {
+    async readCodexModelCatalog() {
+      const reply = await client.catalog({})
+      return reply.type === 'managed-session.catalog.result' ? reply.catalog : null
+    },
     async executeManagedSessionCommand(command) {
       const reply = await client.command({ command })
       switch (reply.type) {

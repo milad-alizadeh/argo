@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
-
+import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
+import { codexTurnSetupSchemaFor } from '@/domains/sessions/contract/codex-turn-setup'
 import {
   CLAUDE_EFFORTS,
   CLAUDE_MODELS,
@@ -7,6 +8,7 @@ import {
   claudeTurnSetupSchema,
 } from '@/domains/sessions/contract/ipc/contract'
 import { CLAUDE_TURN_SETUP } from './claude-turn-setup'
+import { codexTurnSetup } from './codex-turn-setup'
 import {
   refusalOf,
   resolvedTurnSetup,
@@ -72,6 +74,67 @@ test('offers exactly the Models, Efforts and Modes the Claude contract accepts',
   expect(values(CLAUDE_TURN_SETUP.efforts)).toEqual([...CLAUDE_EFFORTS].sort())
   expect(values(CLAUDE_TURN_SETUP.modes)).toEqual([...CLAUDE_MODES].sort())
   expect(claudeTurnSetupSchema.safeParse(CLAUDE_TURN_SETUP.opening).success).toBe(true)
+})
+
+test('advertised models and efforts become the Codex composer choices and schema rules', () => {
+  const catalog: CodexModelCatalog = {
+    data: [
+      {
+        id: 'gpt-live',
+        model: 'gpt-live',
+        displayName: 'Live model',
+        description: 'Advertised by app-server',
+        defaultReasoningEffort: 'focused',
+        isDefault: true,
+        hidden: false,
+        supportedReasoningEfforts: [{ reasoningEffort: 'focused', description: 'Focused' }],
+      },
+    ],
+    nextCursor: null,
+  }
+  const choices = codexTurnSetup(catalog)
+  expect(choices.models.map(({ value }) => value)).toEqual(['gpt-live'])
+  expect(choices.models[0]?.efforts).toEqual(['focused'])
+  expect(choices.opening).toEqual({
+    model: 'gpt-live',
+    effort: 'focused',
+    mode: 'workspace-write',
+  })
+  const schema = codexTurnSetupSchemaFor(catalog)
+  expect(
+    schema.safeParse({ model: 'gpt-live', effort: 'focused', mode: 'workspace-write' }).success,
+  ).toBe(true)
+  expect(
+    schema.safeParse({ model: 'gpt-live', effort: 'high', mode: 'workspace-write' }).success,
+  ).toBe(false)
+})
+
+test('replaces an explicit model and effort removed by a live catalog refresh', () => {
+  const identity = { kind: 'draft', projectId: 'project-1' } as const
+  const choices = codexTurnSetup({
+    data: [
+      {
+        id: 'gpt-current',
+        model: 'gpt-current',
+        displayName: 'Current model',
+        description: '',
+        defaultReasoningEffort: 'low',
+        isDefault: true,
+        hidden: false,
+        supportedReasoningEfforts: [{ reasoningEffort: 'low', description: 'Low' }],
+      },
+    ],
+    nextCursor: null,
+  })
+  const next = resolvedTurnSetup(choices, {
+    identity,
+    chosen: new Map([
+      ['new:project-1', { model: 'retired-model', effort: 'max', mode: 'workspace-write' }],
+    ]),
+    rows: [],
+    remembered: {},
+  })
+  expect(next).toEqual(choices.opening)
 })
 
 test('keeps each restored choice Argo still offers and replaces the rest', () => {

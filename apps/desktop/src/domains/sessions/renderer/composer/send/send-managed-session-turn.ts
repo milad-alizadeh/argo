@@ -12,11 +12,12 @@ export async function sendManagedSessionTurn(options: {
     queryClient: ReturnType<typeof useQueryClient>
     setFailure: (failure: Failure | null) => void
     watchTurn: ReturnType<typeof useTurnSetup>['watchTurn']
-    sendManagedSession: (
-      harness: SessionHarness,
-      sessionId: string,
-      prompt: string,
-    ) => Promise<SessionCommandOutcome>
+    sendManagedSession: (request: {
+      harness: SessionHarness
+      sessionId: string
+      prompt: string
+      setup?: TurnSetup | null
+    }) => Promise<SessionCommandOutcome>
   }
   harness: SessionHarness
   sessionId: string
@@ -24,7 +25,12 @@ export async function sendManagedSessionTurn(options: {
   turn: { prompt: string; setup: TurnSetup | null }
 }): Promise<SendOutcome> {
   const { deps, harness, sessionId, since, turn } = options
-  const outcome = await deps.sendManagedSession(harness, sessionId, turn.prompt)
+  const outcome = await deps.sendManagedSession({
+    harness,
+    sessionId,
+    prompt: turn.prompt,
+    setup: turn.setup,
+  })
   switch (outcome.kind) {
     case 'accepted':
       if (turn.setup !== null) deps.watchTurn(sessionId, turn.setup, since)

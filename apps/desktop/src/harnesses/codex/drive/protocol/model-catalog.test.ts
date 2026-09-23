@@ -1,0 +1,44 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+import { CodexModelCatalogCache, readModelCatalog } from './model-catalog'
+
+const catalog = {
+  data: [
+    {
+      id: 'gpt-live',
+      model: 'gpt-live',
+      displayName: 'Live model',
+      description: 'Advertised by app-server',
+      defaultReasoningEffort: 'focused',
+      isDefault: true,
+      hidden: false,
+      supportedReasoningEfforts: [{ reasoningEffort: 'focused', description: 'Focused' }],
+    },
+  ],
+  nextCursor: null,
+}
+
+test('decodes the advertised model names and reasoning efforts', () => {
+  assert.deepEqual(readModelCatalog(catalog), catalog)
+})
+
+test('rejects an unrecognized model/list response', () => {
+  assert.throws(() => readModelCatalog({ data: [{ id: 'unknown-shape' }] }))
+})
+
+test('caches model/list by executable path and version', async () => {
+  const cache = new CodexModelCatalogCache()
+  let calls = 0
+  const request = async () => {
+    calls += 1
+    return catalog
+  }
+  const key = { executablePath: '/codex', version: '1.0' }
+  await cache.get(key, request)
+  await cache.get(key, request)
+  assert.equal(calls, 1)
+  await cache.get({ ...key, version: '2.0' }, request)
+  assert.equal(calls, 2)
+  await cache.get({ ...key, executablePath: '/other-codex' }, request)
+  assert.equal(calls, 3)
+})

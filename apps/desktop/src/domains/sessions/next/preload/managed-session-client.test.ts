@@ -29,3 +29,28 @@ test('returns the adapter outcome without rewriting it', async () => {
     reason: 'The Session is watched elsewhere.',
   })
 })
+
+test('reads the validated Codex catalog from the main process', async () => {
+  const catalog = {
+    data: [
+      {
+        id: 'gpt-live',
+        model: 'gpt-live',
+        displayName: 'Live model',
+        description: 'Advertised by app-server',
+        defaultReasoningEffort: 'focused',
+        isDefault: true,
+        hidden: false,
+        supportedReasoningEfforts: [{ reasoningEffort: 'focused', description: 'Focused' }],
+      },
+    ],
+    nextCursor: null,
+  }
+  const client = createManagedSessionClient(async (_channel, request) => ({
+    version: 1,
+    type: 'managed-session.catalog.result',
+    requestId: (request as { requestId: string }).requestId,
+    catalog,
+  }))
+  await expect(client.readCodexModelCatalog()).resolves.toEqual(catalog)
+})

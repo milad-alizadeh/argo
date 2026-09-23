@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
 import type { Input } from '../input-items'
 
 // The subset of `codex app-server`'s JSON-RPC protocol this adapter drives, grounded in codex-harness
@@ -9,6 +10,7 @@ export type ThreadConfiguration = { cwd: string }
 export type SkillsListRequest = { cwds: string[]; forceReload: boolean }
 export type ThreadSourceKind = 'appServer' | 'cli' | 'exec' | 'subAgent' | 'vscode'
 export type RequestParams = {
+  'model/list': { cursor?: string; limit?: number; includeHidden?: boolean }
   initialize: {
     clientInfo: { name: string; title: string; version: string }
     capabilities: { experimentalApi: boolean; requestAttestation: boolean }
@@ -45,6 +47,8 @@ export type RequestParams = {
   'thread/name/set': { threadId: string; name: string }
   'thread/compact/start': { threadId: string }
 }
+
+export type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
 export type WireMessage =
   | { method: string; params: Record<string, unknown>; id?: RequestID }
   | { id: RequestID; result: unknown }
@@ -64,6 +68,47 @@ export function protocolRecord(value: unknown, label: string): Record<string, un
 export function protocolString(value: unknown, label: string): string {
   assert(typeof value === 'string', `${label} must be a string`)
   return value
+}
+
+export function readModelCatalog(value: unknown): CodexModelCatalog {
+  const response = protocolRecord(value, 'Model list result')
+  assert(Array.isArray(response.data), 'Model list data must be an array')
+  assert(
+    response.nextCursor === undefined ||
+      response.nextCursor === null ||
+      typeof response.nextCursor === 'string',
+    'Model list nextCursor must be a string or null',
+  )
+  const data = response.data.map((raw, index) => {
+    const model = protocolRecord(raw, `Model ${index}`)
+    assert(typeof model.isDefault === 'boolean', `Model ${index} isDefault must be boolean`)
+    assert(typeof model.hidden === 'boolean', `Model ${index} hidden must be boolean`)
+    assert(
+      Array.isArray(model.supportedReasoningEfforts),
+      `Model ${index} efforts must be an array`,
+    )
+    const efforts = model.supportedReasoningEfforts.map((rawEffort, effortIndex) => {
+      const effort = protocolRecord(rawEffort, `Model ${index} effort ${effortIndex}`)
+      return {
+        reasoningEffort: protocolString(effort.reasoningEffort, 'Reasoning effort'),
+        description: protocolString(effort.description, 'Reasoning effort description'),
+      }
+    })
+    return {
+      id: protocolString(model.id, 'Model ID'),
+      model: protocolString(model.model, 'Model name'),
+      displayName: protocolString(model.displayName, 'Model display name'),
+      description: protocolString(model.description, 'Model description'),
+      defaultReasoningEffort: protocolString(
+        model.defaultReasoningEffort,
+        'Default reasoning effort',
+      ),
+      isDefault: model.isDefault,
+      hidden: model.hidden,
+      supportedReasoningEfforts: efforts,
+    }
+  })
+  return { data, nextCursor: (response.nextCursor as string | null | undefined) ?? null }
 }
 
 export function readMessage(line: string): WireMessage {

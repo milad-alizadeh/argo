@@ -1,4 +1,6 @@
+import { useEffect, useMemo, useState } from 'react'
 import type { Cockpit, ProjectActions } from '@/domains/projects/renderer'
+import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import { HARNESSES, type SessionHarness } from '../../harness/harnesses'
 import { useSessionCreationStore } from '../../session-creation'
@@ -6,6 +8,7 @@ import type { useSessions } from '../../use-sessions'
 import { composerIdentityOf, findSessionRow } from '../identity/composer-identity'
 import type { Failure } from '../send/session-failure'
 import type { WorkspaceMenuControlProps } from '../toolbar/workspace-menu'
+import { codexTurnSetup } from '../turn-setup/codex-turn-setup'
 import { useTurnSetup } from '../turn-setup/use-turn-setup'
 import { useTurnMarker } from './use-turn-marker'
 
@@ -42,6 +45,26 @@ export function useComposerFacts(
   setFailure: (failure: Failure | null) => void,
 ) {
   const { harness, cockpit, projectActions, roster, selectedSessionId } = options
+  const [catalog, setCatalog] = useState<CodexModelCatalog | null>(null)
+  useEffect(() => {
+    if (harness !== 'codex') {
+      setCatalog(null)
+      return
+    }
+    let active = true
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const readCatalog = async () => {
+      const result = await window.argo.readCodexModelCatalog().catch(() => null)
+      if (!active) return
+      setCatalog(result)
+      timer = setTimeout(readCatalog, result === null ? 2_000 : 30_000)
+    }
+    void readCatalog()
+    return () => {
+      active = false
+      if (timer !== undefined) clearTimeout(timer)
+    }
+  }, [harness])
   // The "+" click already gave this row a pending identity (#2109); a bare selection has none.
   const pending = useSessionCreationStore((state) => state.pending)
   const pendingSessionId = pending?.stage === 'draft' ? pending.id : null
@@ -51,9 +74,13 @@ export function useComposerFacts(
     pendingSessionId,
   )
   const sessionId = identity.kind === 'session' ? identity.sessionId : null
+  const choices = useMemo(
+    () => (harness === 'codex' ? codexTurnSetup(catalog) : HARNESSES[harness].setup),
+    [catalog, harness],
+  )
   const { control, watchTurn } = useTurnSetup({
     harness,
-    choices: HARNESSES[harness].setup,
+    choices,
     identity,
     rows: roster?.sessions ?? NO_ROWS,
     onRefusal: (refusal) => setFailure({ ...refusal, code: null }),
