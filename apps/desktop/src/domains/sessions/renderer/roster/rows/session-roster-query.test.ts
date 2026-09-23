@@ -107,9 +107,12 @@ describe('caching the Session roster read by its stable identity', () => {
     await observeRoster(async (observer) => {
       await observer.refetch()
       await observer.fetchNextPage()
-      pages = observer
-        .getCurrentResult()
-        .data?.pages.flatMap((page) => page.sessions.map((session) => session.title?.text ?? '')) ?? []
+      pages =
+        observer
+          .getCurrentResult()
+          .data?.pages.flatMap((page) =>
+            page.sessions.map((session) => session.title?.text ?? ''),
+          ) ?? []
     })
 
     expect(pages).toEqual(['Read the Feed', 'Fix the Feed'])
