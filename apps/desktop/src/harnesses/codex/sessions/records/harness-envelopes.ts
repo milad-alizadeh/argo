@@ -117,8 +117,7 @@ export function delegatedRequest(output: string): string | null {
 // Codex and its desktop app write their own machinery into message text as XML envelopes; this
 // reads each one as the Feed should show it instead of as the person's or the agent's words.
 export function readHarnessEnvelopes(message: TranscriptMessage): TranscriptRecord {
-  const normalized = taskNotifications(message)
-  return normalized.role === 'user' ? userRecord(normalized) : assistantRecord(normalized)
+  return message.role === 'user' ? userRecord(taskNotifications(message)) : assistantRecord(message)
 }
 
 const HEARTBEAT_TAG = '<heartbeat'

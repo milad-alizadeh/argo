@@ -2,7 +2,10 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
+import { fileURLToPath } from 'node:url'
 import { assertTranscriptFeedCorpus } from './transcript-feed-corpus'
+
+const CORPUS_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), 'corpus')
 
 function jsonLines(records: object[]) {
   return records.map((record) => JSON.stringify(record)).join('\n')
@@ -11,12 +14,12 @@ function jsonLines(records: object[]) {
 async function writeCorpus(
   roots: { claude: string; codex: string },
   claude: object[],
-  codex: object,
+  codex: object[],
 ) {
   await Promise.all([
     writeFile(path.join(roots.claude, 'claude-session-main.jsonl'), jsonLines(claude.slice(0, 2))),
     writeFile(path.join(roots.claude, 'claude-session-task.jsonl'), jsonLines(claude.slice(2))),
-    writeFile(path.join(roots.codex, 'codex-session.jsonl'), JSON.stringify(codex)),
+    writeFile(path.join(roots.codex, 'codex-session.jsonl'), jsonLines(codex)),
   ])
 }
 
@@ -60,25 +63,50 @@ test('audits Claude and Codex transcript records through their Feed projections'
       },
     },
   ]
-  const codex = {
-    timestamp: '2026-09-23T12:00:00.000Z',
-    type: 'response_item',
-    payload: {
-      type: 'message',
-      id: 'codex-notice',
-      role: 'assistant',
-      content: [
-        {
-          type: 'output_text',
-          text: '<task-notification><task-id>t2</task-id><status>completed</status><summary>Task finished</summary></task-notification>',
-        },
-      ],
+  const codex = [
+    {
+      timestamp: '2026-09-23T12:00:00.000Z',
+      type: 'event_msg',
+      payload: { type: 'agent_message', message: 'The following response_item repeats this.' },
     },
-  }
+    {
+      timestamp: '2026-09-23T12:00:01.000Z',
+      type: 'event_msg',
+      payload: {
+        type: 'item_completed',
+        item: {
+          type: 'UserMessage',
+          id: 'codex-notice',
+          content: [
+            {
+              type: 'text',
+              text: '<task-notification><task-id>t2</task-id><status>completed</status><summary>Task finished</summary></task-notification>',
+            },
+          ],
+        },
+      },
+    },
+  ]
   try {
     await writeCorpus(roots, claude, codex)
-    await assertTranscriptFeedCorpus(roots, { claude: 'claude-session', codex: 'codex-session' })
+    await assertTranscriptFeedCorpus({
+      roots,
+      sessionIds: { claude: 'claude-session', codex: 'codex-session' },
+    })
   } finally {
     await rm(root, { recursive: true, force: true })
   }
+})
+
+test('audits redacted transcript lines recorded from both real CLIs', async () => {
+  // These lines retain real Claude Code and Codex CLI transcript shapes with private values removed.
+  await assertTranscriptFeedCorpus({
+    roots: { claude: CORPUS_ROOT, codex: CORPUS_ROOT },
+    sessionIds: { claude: 'recorded-claude', codex: 'recorded-codex' },
+    expectedEnvelopes: {
+      claude: ['bash-input', 'bash-stdout', 'bash-stderr'],
+      codex: ['task-notification'],
+    },
+    waitMs: 0,
+  })
 })

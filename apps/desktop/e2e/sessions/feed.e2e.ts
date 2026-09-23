@@ -184,24 +184,28 @@ test.describe('with real Session transcript corpora', () => {
     const claudeSessionId = await proveSessionCreatedByClick(session.page(), backend, {
       harness: 'claude',
       prompt:
-        'Use Bash to run `printf hello; printf warning >&2`. Start one short Task agent in the background that returns READY, wait for its completion notification, then report the command output and task result.',
+        'Review this pasted snippet: <pasted_content id="corpus-paste">const answer = 42</pasted_content id="corpus-paste">. Start one short Task agent in the background that returns READY. Wait for its completion notification, then acknowledge the result in one sentence.',
       budgetRunSetup: true,
       permissionMode: 'auto',
     })
+    const composer = session.page().getByRole('combobox', { name: 'Message' })
+    await composer.click()
+    await session.page().keyboard.type('!printf hello; printf warning >&2')
+    await session.page().getByRole('button', { name: 'Send message' }).click()
     const codexSessionId = await proveSessionCreatedByClick(session.page(), backend, {
       harness: 'codex',
       prompt:
-        'Reply with one XML status envelope named task-notification. Include task-id corpus-task, status completed, and summary Task finished. Do not add prose.',
+        '<task-notification><task-id>corpus-task</task-id><status>completed</status><summary>Task finished</summary></task-notification>',
       budgetRunSetup: true,
     })
     const home = path.join(session.root, 'home')
-    await assertTranscriptFeedCorpus(
-      {
+    await assertTranscriptFeedCorpus({
+      roots: {
         claude: path.join(home, '.claude', 'projects'),
         codex: path.join(home, '.codex', 'sessions'),
       },
-      { claude: claudeSessionId, codex: codexSessionId },
-    )
+      sessionIds: { claude: claudeSessionId, codex: codexSessionId },
+    })
   })
 })
 

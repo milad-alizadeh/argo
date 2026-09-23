@@ -28,6 +28,8 @@ const REQUIRED_ENVELOPES = {
   claude: ['task-notification', 'pasted_content', 'bash-input', 'bash-stdout', 'bash-stderr'],
   codex: ['task-notification'],
 } as const
+const ENVELOPE_WAIT_MS = 120_000
+const ENVELOPE_POLL_MS = 250
 type RequiredEnvelope = (typeof REQUIRED_ENVELOPES)[SessionHarness][number]
 type EnvelopeRecord = {
   envelope: RequiredEnvelope
@@ -77,19 +79,22 @@ function assertBashEnvelope({
   record: TranscriptRecord
   envelope: 'bash-input' | 'bash-stdout' | 'bash-stderr'
 }) {
-  if (envelope === 'bash-input') {
-    assert.equal(
-      record.kind === 'message' &&
-        record.blocks.some((block) => block.shape === 'event' && block.event === 'command'),
-      true,
-      `${harness} Bash input was not structured: ${line}`,
-    )
-  } else {
-    assert.equal(
-      record.kind === 'command-output',
-      true,
-      `${harness} Bash output was not structured: ${line}`,
-    )
+  switch (envelope) {
+    case 'bash-input':
+      assert.equal(
+        record.kind === 'message' &&
+          record.blocks.some((block) => block.shape === 'event' && block.event === 'command'),
+        true,
+        `${harness} Bash input was not structured: ${line}`,
+      )
+      return
+    case 'bash-stdout':
+    case 'bash-stderr':
+      assert.equal(
+        record.kind === 'command-output',
+        true,
+        `${harness} Bash output was not structured: ${line}`,
+      )
   }
 }
 
@@ -103,10 +108,11 @@ function assertKnownRecords(
     const source: unknown = JSON.parse(line)
     assert.ok(isRecord(source), `${harness} transcript line was not an object: ${line}`)
     const record = PARSERS[harness](line)
-    assert.ok(record, `${harness} record was dropped: ${line}`)
+    const envelopes = REQUIRED_ENVELOPES[harness].filter((envelope) => envelopeIn(line, envelope))
+    assert.ok(record || envelopes.length === 0, `${harness} known envelope was dropped: ${line}`)
+    if (record === null) continue
     assert.notEqual(record.kind, 'unreadable', `${harness} record was unreadable: ${line}`)
-    for (const envelope of REQUIRED_ENVELOPES[harness]) {
-      if (!envelopeIn(line, envelope)) continue
+    for (const envelope of envelopes) {
       observed.add(envelope)
       envelopeRecords.push({ envelope, line, record })
       switch (envelope) {
@@ -123,8 +129,7 @@ function assertKnownRecords(
           break
       }
     }
-    if (REQUIRED_ENVELOPES[harness].some((envelope) => envelopeIn(line, envelope)))
-      assertNoProseFallback(harness, line, record)
+    if (envelopes.length > 0) assertNoProseFallback(harness, line, record)
   }
   return envelopeRecords
 }
@@ -138,32 +143,50 @@ function toolRows(rows: ReturnType<typeof projectFeed>['rows']) {
 }
 
 function hasStatusRow(record: TranscriptRecord, rows: ReturnType<typeof projectFeed>['rows']) {
-  if (record.kind === 'event')
-    return rows.some(
-      (row) => row.shape === 'event' && row.id === record.uuid && row.event === 'status',
-    )
-  if (record.kind === 'subagent')
-    return rows.some((row) => row.shape === 'subagent' && row.id === record.uuid)
-  if (record.kind === 'background-task') {
-    const status = {
-      completed: 'succeeded',
-      failed: 'failed',
-      interrupted: 'interrupted',
-    }[record.state]
-    return toolRows(rows).some(
-      (row) => row.id === record.callId && row.kind === 'command' && row.status === status,
-    )
+  switch (record.kind) {
+    case 'event':
+      return rows.some(
+        (row) => row.shape === 'event' && row.id === record.uuid && row.event === 'status',
+      )
+    case 'subagent':
+      return rows.some((row) => row.shape === 'subagent' && row.id === record.uuid)
+    case 'background-task': {
+      const status = {
+        completed: 'succeeded',
+        failed: 'failed',
+        interrupted: 'interrupted',
+      }[record.state]
+      return toolRows(rows).some(
+        (row) => row.id === record.callId && row.kind === 'command' && row.status === status,
+      )
+    }
+    case 'message':
+      return record.blocks.some(
+        (block, index) =>
+          block.shape === 'event' &&
+          block.event === 'status' &&
+          rows.some(
+            (row) =>
+              row.shape === 'event' &&
+              row.id === `${record.uuid}:${index}` &&
+              row.event === 'status',
+          ),
+      )
+    case 'command-output':
+    case 'link':
+    case 'title':
+    case 'skill-body':
+    case 'trace':
+    case 'pull-request':
+    case 'plan':
+    case 'compaction':
+    case 'compaction-summary':
+    case 'setup':
+    case 'usage':
+    case 'turn':
+    case 'unreadable':
+      return false
   }
-  if (record.kind !== 'message') return false
-  return record.blocks.some(
-    (block, index) =>
-      block.shape === 'event' &&
-      block.event === 'status' &&
-      rows.some(
-        (row) =>
-          row.shape === 'event' && row.id === `${record.uuid}:${index}` && row.event === 'status',
-      ),
-  )
 }
 
 function hasEnvelopeFeedRow(
@@ -224,12 +247,45 @@ function assertEnvelopeFeedRows(
   }
 }
 
-function assertRequiredEnvelopes(harness: SessionHarness, observed: Set<RequiredEnvelope>) {
+function assertRequiredEnvelopes(
+  harness: SessionHarness,
+  observed: Set<RequiredEnvelope>,
+  expected: readonly RequiredEnvelope[] = REQUIRED_ENVELOPES[harness],
+) {
   assert.deepEqual(
     [...observed].sort(),
-    [...REQUIRED_ENVELOPES[harness]].sort(),
+    [...expected].sort(),
     `${harness} transcript corpus did not exercise every required raw-tag shape`,
   )
+}
+
+async function waitForRequiredEnvelopes(options: {
+  roots: Record<SessionHarness, string>
+  sessionIds: Record<SessionHarness, string>
+  expectedEnvelopes: Partial<Record<SessionHarness, readonly RequiredEnvelope[]>>
+  waitMs: number
+}) {
+  const { roots, sessionIds, expectedEnvelopes, waitMs } = options
+  const deadline = Date.now() + waitMs
+  for (;;) {
+    const missing: string[] = []
+    for (const harness of ['claude', 'codex'] as const) {
+      const files = (await transcriptPaths(roots[harness])).filter((filePath) =>
+        filePath.includes(sessionIds[harness]),
+      )
+      const lines = await Promise.all(
+        files.map((filePath) => readFile(filePath, 'utf8').catch(() => '')),
+      )
+      const expected = expectedEnvelopes[harness] ?? REQUIRED_ENVELOPES[harness]
+      for (const envelope of expected)
+        if (!lines.some((text) => envelopeIn(text, envelope)))
+          missing.push(`${harness}:${envelope}`)
+    }
+    if (missing.length === 0) return
+    if (Date.now() >= deadline)
+      throw new Error(`Real transcript corpus missed required envelopes: ${missing.join(', ')}`)
+    await new Promise((resolve) => setTimeout(resolve, ENVELOPE_POLL_MS))
+  }
 }
 
 function assertPastedContentOrder(
@@ -290,10 +346,19 @@ async function auditTranscript(
   assertPastedContentOrder(harness, file.records, rows)
 }
 
-export async function assertTranscriptFeedCorpus(
-  roots: Record<SessionHarness, string>,
-  sessionIds: Record<SessionHarness, string>,
-): Promise<void> {
+export async function assertTranscriptFeedCorpus(options: {
+  roots: Record<SessionHarness, string>
+  sessionIds: Record<SessionHarness, string>
+  expectedEnvelopes?: Partial<Record<SessionHarness, readonly RequiredEnvelope[]>>
+  waitMs?: number
+}): Promise<void> {
+  const {
+    roots,
+    sessionIds,
+    expectedEnvelopes = REQUIRED_ENVELOPES,
+    waitMs = ENVELOPE_WAIT_MS,
+  } = options
+  await waitForRequiredEnvelopes({ roots, sessionIds, expectedEnvelopes, waitMs })
   for (const harness of ['claude', 'codex'] as const) {
     const files = (await transcriptPaths(roots[harness])).filter((filePath) =>
       filePath.includes(sessionIds[harness]),
@@ -301,6 +366,6 @@ export async function assertTranscriptFeedCorpus(
     assert.ok(files.length > 0, `the real ${harness} CLI recorded no transcript corpus`)
     const observed = new Set<RequiredEnvelope>()
     for (const filePath of files) await auditTranscript(harness, filePath, observed)
-    assertRequiredEnvelopes(harness, observed)
+    assertRequiredEnvelopes(harness, observed, expectedEnvelopes[harness])
   }
 }

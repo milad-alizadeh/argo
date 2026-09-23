@@ -20,6 +20,19 @@ test('keeps pasted text separate from prompt prose without its harness wrapper',
   ])
 })
 
+test('keeps an empty pasted block structured', () => {
+  const record = parseTranscriptLine(
+    JSON.stringify({
+      type: 'user',
+      uuid: 'empty-paste',
+      message: { role: 'user', content: '<pasted_content id="empty"></pasted_content id="empty">' },
+    }),
+  )
+  assert.deepEqual(record?.kind === 'message' ? record.blocks : null, [
+    { shape: 'pasted-content', id: 'empty', text: '' },
+  ])
+})
+
 test('keeps prose around multiple pasted blocks in its original order', () => {
   const record = parseTranscriptLine(
     JSON.stringify({

@@ -23,30 +23,23 @@ type CommandSourceBlock =
   | { shape: 'prose'; text: string }
   | { shape: 'pasted-content'; id: string; text: string }
 
-function proseBlock(text: string): CommandSourceBlock[] {
-  const prose = text.replace(commandTags, '').trim()
-  return prose === '' ? [] : [{ shape: 'prose', text: prose }]
-}
-
-function pastedContentBlocks(text: string, matches: RegExpMatchArray[]): CommandSourceBlock[] {
-  const blocks: CommandSourceBlock[] = []
-  let offset = 0
-  for (const match of matches) {
-    const start = match.index ?? 0
-    blocks.push(...proseBlock(text.slice(offset, start)))
-    const pasted = match[2]?.trim() ?? ''
-    if (pasted !== '') blocks.push({ shape: 'pasted-content', id: match[1] ?? '', text: pasted })
-    offset = start + match[0].length
-  }
-  blocks.push(...proseBlock(text.slice(offset)))
-  return blocks
-}
-
 export function commandSourceBlocks(text: string): CommandSourceBlock[] {
   if (tagContents(text, 'command-name') !== null || tagContents(text, 'command-message') !== null)
     return [{ shape: 'prose', text: commandSource(text) }]
-  const matches = [...text.matchAll(pastedBlock)]
-  return matches.length === 0
-    ? [{ shape: 'prose', text: commandSource(text) }]
-    : pastedContentBlocks(text, matches)
+
+  const blocks: CommandSourceBlock[] = []
+  let offset = 0
+  let foundPastedBlock = false
+  for (const match of text.matchAll(pastedBlock)) {
+    foundPastedBlock = true
+    const start = match.index ?? 0
+    const prose = text.slice(offset, start).replace(commandTags, '').trim()
+    if (prose !== '') blocks.push({ shape: 'prose', text: prose })
+    const pasted = match[2]?.trim() ?? ''
+    blocks.push({ shape: 'pasted-content', id: match[1] ?? '', text: pasted })
+    offset = start + match[0].length
+  }
+  const trailingProse = text.slice(offset).replace(commandTags, '').trim()
+  if (trailingProse !== '') blocks.push({ shape: 'prose', text: trailingProse })
+  return foundPastedBlock ? blocks : [{ shape: 'prose', text: commandSource(text) }]
 }

@@ -64,6 +64,12 @@ test('reads a task notification as a Feed status event', () => {
   assert.deepEqual(blocksOf(transcriptUserMessage(notice)), expected)
 })
 
+test('keeps an assistant task-notification example as the assistant wrote it', () => {
+  const notice =
+    '<task-notification><task-id>task-1</task-id><status>completed</status><summary>Task finished</summary></task-notification>'
+  assert.deepEqual(blocksOf(agentMessage(notice)), [{ shape: 'prose', text: notice }])
+})
+
 test('reads a voice reply without the channel tag that routes it to the voice frontend', () => {
   const replies: [string, string][] = [
     ['[STATUS] Checking the tests now.', 'Checking the tests now.'],
