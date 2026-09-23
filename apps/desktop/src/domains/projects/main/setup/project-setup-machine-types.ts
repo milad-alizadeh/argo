@@ -33,6 +33,8 @@ export type ProjectSetupEvent =
   | { type: 'Resume planning' }
   | { type: 'Resume application' }
   | { type: 'Restart attempt' }
+  | { type: 'Restart attempt completed' }
+  | { type: 'Restart attempt failed' }
   | { type: 'Defer' }
   | { type: 'Back' }
   | { type: 'Save manual'; source: string }

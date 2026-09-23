@@ -12,6 +12,7 @@ import { attachProjectBridge } from '@/domains/projects/main/bridge'
 import type { OnboardingAgentDriver } from '@/domains/projects/main/setup/onboarding-agent/runtime/run-onboarding-agent'
 import type { SetupDocumentSource } from '@/domains/projects/main/setup/preparation/setup-bundle'
 import type { ProjectStore } from '@/domains/projects/main/sqlite-store'
+import { createSessionArchiveStore, sessionArchivePath } from '@/domains/sessions/main/archive'
 import { attachTicketBridge } from '@/domains/tickets/main/bridge'
 import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
 import { createHarnessReadinessRegistrations } from '@/harnesses/composition/registered-harness-readiness'
@@ -48,6 +49,7 @@ export function attachBridges(
   } = request
   // The CLIs Argo spawns find their stores through HOME; Electron's home path on macOS ignores HOME (#2356).
   const home = os.homedir()
+  const archive = createSessionArchiveStore(sessionArchivePath(userData))
   attachWindowNavigation(window)
   const { harnesses, managedSessions } = attachManagedSessionHarnesses(window, {
     acceptance: request.acceptance,
@@ -58,11 +60,13 @@ export function attachBridges(
     rendererURL,
     ticketLinks,
     userData,
+    archive,
   })
   const onboardingHarness = harnesses.find((harness) => harness.harness === 'claude')
   const onboardingDriver = onboardingDriverFrom(onboardingHarness?.onboardingDriver)
   attachProjectBridge(window, {
     projects,
+    archive,
     rendererURL,
     setupDocumentSource: request.setupDocumentSource,
     onboardingDriver,

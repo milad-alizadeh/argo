@@ -1,6 +1,7 @@
 import { fromCallback } from 'xstate'
 import type { ProjectSetupServices } from './actors/project-setup-actors'
 import type { ProjectSetupContext, ProjectSetupEvent } from './project-setup-machine-types'
+import { interruptAndWaitForProjectSetupSession } from './project-setup-session-lifecycle'
 import { startProjectSetupTask } from './project-setup-task'
 
 export type ProjectSetupCancellationInput = {
@@ -26,8 +27,7 @@ export function projectSetupCancellationLogic(services: ProjectSetupServices) {
       startProjectSetupTask(async () => {
         if (!input.effect || !input.sessionId) return
         try {
-          await services.driver.interrupt(input.sessionId)
-          await services.driver.waitForStop?.(input.sessionId)
+          await interruptAndWaitForProjectSetupSession(services.driver, input.sessionId)
           sendBack({ type: 'Cancel setup confirmed' })
         } catch {
           sendBack({

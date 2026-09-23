@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { isOptimisticSessionId } from '../../session-creation'
 import type { SessionError, SessionFeed, SessionId } from '../../types'
@@ -62,6 +63,7 @@ type BasicFeedProps = {
   onRetryFeed: () => void
   onJumpToLatestChange?: (sessionId: string, action: (() => void) | null) => void
   selectedSessionId: SessionId | null
+  onStalledChange?: (sessionId: SessionId | null) => void
 } & FeedQuestionHandlers
 
 export function BasicFeed({
@@ -73,6 +75,7 @@ export function BasicFeed({
   onRetryFeed,
   onJumpToLatestChange = ignoreJumpToLatestChange,
   selectedSessionId,
+  onStalledChange,
   onOpenEvidence,
   onAnswerQuestion,
   answeringQuestionId,
@@ -109,6 +112,9 @@ export function BasicFeed({
     awaitingFeed ? `${selectedSessionId}:${retryToken}` : false,
     stallTimeoutMs,
   )
+  useEffect(() => {
+    onStalledChange?.(stalled ? selectedSessionId : null)
+  }, [onStalledChange, selectedSessionId, stalled])
   const shared = {
     selectedSessionId,
     liveFacts,
