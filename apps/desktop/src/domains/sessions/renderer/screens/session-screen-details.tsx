@@ -29,6 +29,7 @@ type SessionScreenDetailsProps = {
   questionPending: boolean
   session: SessionRosterRow | null
   harness: HarnessControl
+  suppressMissingSessionFailure?: boolean
 }
 
 export function SessionComposerArea({
@@ -37,6 +38,7 @@ export function SessionComposerArea({
   questionPending,
   session,
   harness,
+  suppressMissingSessionFailure = false,
 }: SessionScreenDetailsProps) {
   // The Roster already knows another process runs it live, so no Send is offered at all (ADR-0040).
   if (session?.locked === true) return <OpenElsewhere onRetry={null} />
@@ -45,7 +47,10 @@ export function SessionComposerArea({
   }
   return (
     <>
-      {composer.failure ? <Failure message={composer.failure.message} /> : null}
+      {composer.failure &&
+      !(suppressMissingSessionFailure && composer.failure.code === 'missing-session') ? (
+        <Failure message={composer.failure.message} />
+      ) : null}
       {permission.failure ? <Failure message={permission.failure} /> : null}
       <SessionComposer
         {...composer.props}
