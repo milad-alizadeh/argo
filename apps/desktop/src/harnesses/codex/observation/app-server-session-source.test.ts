@@ -116,4 +116,5 @@ test('falls back to the local Codex record reader when app-server history does n
 
   assert.equal(listed.rows[0]?.id, 'thread-1')
   assert.equal(listed.rows[0]?.posture, 'watched')
+  assert.equal(source.readManagedFeed?.('thread-1'), undefined)
 })

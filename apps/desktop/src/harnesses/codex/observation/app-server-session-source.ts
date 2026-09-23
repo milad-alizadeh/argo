@@ -35,6 +35,7 @@ export function createCodexAppServerSessionSource(options: {
   adapter: SessionAdapter
   fallback?: SessionSource
 }): SessionSource & Required<Pick<SessionSource, 'rename'>> {
+  let readingFallback = false
   const projectionFor = (sessionId: string) =>
     mergedProjections(options.watchedProjections(), options.projections()).find(
       (projection) => projection.session.nativeId === sessionId,
@@ -44,9 +45,11 @@ export function createCodexAppServerSessionSource(options: {
     discoverSessions: async (request) => {
       try {
         const stored = await refreshWithinBudget(options.refreshHistory)
+        readingFallback = false
         return discovery(mergedProjections(stored, options.projections()), options.checkoutFor)
       } catch (error) {
         if (options.fallback === undefined) throw error
+        readingFallback = true
         return options.fallback.discoverSessions(request)
       }
     },
@@ -59,6 +62,7 @@ export function createCodexAppServerSessionSource(options: {
           rosterRowOf(projection, options.checkoutFor(projection.session.nativeId)),
         ),
     readManagedFeed: (sessionId) => {
+      if (readingFallback) return undefined
       const projection = projectionFor(sessionId)
       if (projection === null) return null
       return {
