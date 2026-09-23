@@ -90,7 +90,12 @@ export function createCodexSessionAdapter(deps: {
       await closeCodexSessionAdapter(launch, deps.sessionService, detach)
     },
     projections: appServer.projections,
-    refreshHistory: () => watched.refresh(),
+    refreshHistory: async (notifyLateSuccess) => {
+      const projections = await watched.refresh()
+      if (notifyLateSuccess()) rosterChanges.notify()
+      return projections
+    },
+    readHistoryProjection: (nativeId) => watched.readProjection(nativeId),
     watchedProjections: () => watched.projections(),
     checkoutFor: (nativeId: string) => watched.checkoutFor(nativeId),
     onRosterChanged: rosterChanges.subscribe,

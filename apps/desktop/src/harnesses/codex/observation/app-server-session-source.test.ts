@@ -37,6 +37,7 @@ test('projects managed Codex app-server state with its watched history', async (
     projections: () => [projection()],
     watchedProjections: () => [{ ...projection(), posture: 'watched' }],
     refreshHistory: async () => [{ ...projection(), posture: 'watched' }],
+    readHistoryProjection: async () => ({ ...projection(), posture: 'watched' }),
     checkoutFor: () => null,
   })
 
@@ -89,4 +90,31 @@ test('projects managed Codex app-server state with its watched history', async (
       title: 'Renamed by Argo',
     },
   ])
+})
+
+test('reports an app-server history timeout', async () => {
+  let complete: ((value: readonly SessionProjection[]) => void) | undefined
+  let ready = 0
+  const source = createCodexAppServerSessionSource({
+    adapter: {
+      execute: async () => ({ kind: 'rejected', reason: 'not used' }),
+      subscribe: () => () => {},
+    },
+    projections: () => [],
+    watchedProjections: () => [],
+    refreshHistory: (notifyLateSuccess) =>
+      new Promise<readonly SessionProjection[]>((resolve) => {
+        complete = (value) => {
+          if (notifyLateSuccess()) ready += 1
+          resolve(value)
+        }
+      }),
+    readHistoryProjection: async () => null,
+    checkoutFor: () => null,
+  })
+
+  await assert.rejects(source.discoverSessions(), /app-server history did not answer/)
+  complete?.([])
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  assert.equal(ready, 1)
 })

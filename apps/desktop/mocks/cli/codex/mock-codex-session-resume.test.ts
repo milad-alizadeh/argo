@@ -15,7 +15,7 @@ test('sends a follow-up Turn to a Codex Session this window does not hold yet', 
   assert.equal(started.kind, 'accepted')
   if (started.kind !== 'accepted') return
   const sessionId = started.projection.session.nativeId
-  first.close()
+  await first.close()
   const resumed = createAdapter(executable)
   try {
     const sent = await createCodexAppServerDriveAdapter({
@@ -35,6 +35,6 @@ test('sends a follow-up Turn to a Codex Session this window does not hold yet', 
       true,
     )
   } finally {
-    resumed.close()
+    await resumed.close()
   }
 })

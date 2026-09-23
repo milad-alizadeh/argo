@@ -64,7 +64,9 @@ export type SessionSource = {
   readManagedFeed?: (sessionId: string) => ManagedFeed | null | undefined
   // A watched Harness can project vendor history directly. It is deliberately separate from a
   // managed Feed so history reads never make the shared reader treat the Session as owned.
-  readObservedFeed?: (sessionId: string) => ManagedFeed | null | undefined
+  readObservedFeed?: (
+    sessionId: string,
+  ) => ManagedFeed | null | undefined | Promise<ManagedFeed | null | undefined>
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
   // One more batch of this Harness's older history, and a full-tree reconcile (#2373). Present only
   // when the app's Session index is open: without one, discovery parses each window itself and

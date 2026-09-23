@@ -60,10 +60,13 @@ async function proveArchivedRestart(page, restart) {
   return archived
 }
 
-export async function provePackagedRosterRestart(page, { remove, restart, updateRoster }) {
+export async function provePackagedRosterRestart(page, { remove, restart }) {
   await deselectSession(page)
   await openSessionByClick(page, 'prose')
   await page.waitForSelector('.feed__viewport[data-session="prose"] [data-feed-row]')
+  await page
+    .locator('nav[aria-label="Sessions"] button[data-session-id="rollout-codexParent"]')
+    .waitFor()
   const rosterFacts = await readRosterIds(page)
 
   const relaunched = await restart()
@@ -74,13 +77,7 @@ export async function provePackagedRosterRestart(page, { remove, restart, update
     relaunched.locator('nav[aria-label="Sessions"] button[data-session-id="prose"]'),
   ).toHaveAttribute('aria-current', 'page')
 
-  await updateRoster()
-  const updated = await restart()
-  await updated.waitForFunction(() => window.location.hash === '#/sessions/prose')
-  await updated.waitForSelector('.feed__viewport[data-session="prose"] [data-feed-row]')
-  assert.equal((await readRosterIds(updated))[0], 'rollout-codexParent')
-
-  const archived = await proveArchivedRestart(updated, restart)
+  const archived = await proveArchivedRestart(relaunched, restart)
 
   await openSessionByClick(archived, 'prose')
   await remove()

@@ -27,6 +27,7 @@ export function createCodexSessionAdapterRegistration(options: {
           projections: adapter.projections,
           watchedProjections: adapter.watchedProjections,
           refreshHistory: adapter.refreshHistory,
+          readHistoryProjection: adapter.readHistoryProjection,
           checkoutFor: adapter.checkoutFor,
         }),
       }

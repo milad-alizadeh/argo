@@ -128,8 +128,54 @@ test('a restarted catalog reads surviving Sessions as watched', async () => {
     transport: transport(),
     knownWorkspaces: async () => [],
   })
-  const [session] = await restarted.refresh()
+  const [listed] = await restarted.refresh()
+  const session = await restarted.readProjection('thread-1')
+  assert.equal(listed?.posture, 'watched')
   assert.equal(session?.posture, 'watched')
   assert.equal(session?.messages[0]?.text, 'Remember this')
   assert.equal(session?.workspace, null)
+})
+
+test('lists Codex thread summaries without requesting their turns', async () => {
+  const calls: string[] = []
+  const sessions = createWatchedCodexSessions({
+    transport: {
+      request: (method) => {
+        calls.push(method)
+        if (method === 'thread/list') return Promise.resolve({ data: [THREAD], nextCursor: null })
+        throw new Error(`unexpected ${method}`)
+      },
+    },
+    knownWorkspaces: async () => [],
+  })
+
+  await sessions.refresh()
+
+  assert.deepEqual(calls, ['thread/list'])
+})
+
+test('shares one stalled roster request across overlapping reads', async () => {
+  let resolve: ((value: unknown) => void) | undefined
+  let calls = 0
+  const sessions = createWatchedCodexSessions({
+    transport: {
+      request: (method) => {
+        assert.equal(method, 'thread/list')
+        calls += 1
+        return new Promise((done) => {
+          resolve = done
+        })
+      },
+    },
+    knownWorkspaces: async () => [],
+  })
+
+  const first = sessions.refresh()
+  const second = sessions.refresh()
+  while (resolve === undefined) await new Promise((done) => setTimeout(done, 0))
+  resolve({ data: [THREAD], nextCursor: null })
+
+  await Promise.all([first, second])
+
+  assert.equal(calls, 1)
 })

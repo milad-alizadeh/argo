@@ -12,7 +12,8 @@ import type { WatchedSource } from '@/platform/main/watch/watch-source'
 export type CodexSessionAdapter = SessionAdapter & {
   close: () => Promise<void>
   projections: () => readonly SessionProjection[]
-  refreshHistory: () => Promise<readonly SessionProjection[]>
+  refreshHistory: (notifyLateSuccess: () => boolean) => Promise<readonly SessionProjection[]>
+  readHistoryProjection: (nativeId: string) => Promise<SessionProjection | null>
   watchedProjections: () => readonly SessionProjection[]
   checkoutFor: (nativeId: string) => string | null
   onRosterChanged: WatchedSource

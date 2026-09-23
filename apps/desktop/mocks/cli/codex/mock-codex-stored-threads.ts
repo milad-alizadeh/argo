@@ -94,6 +94,11 @@ export function recordPrompt(threadId: string, text: string) {
   })
 }
 
+function previewOf(thread: StoredThread): string | undefined {
+  return thread.turns.flatMap((turn) => turn.items).find((item) => item.type === 'userMessage')
+    ?.text
+}
+
 function promptText(input: unknown): string {
   if (!Array.isArray(input)) return ''
   return input
@@ -109,13 +114,17 @@ export function answerStoredHistory(message: Request, send: Send): boolean {
       send({
         id: message.id,
         result: {
-          data: storedThreads().map((thread) => ({
-            id: thread.id,
-            cwd: thread.cwd,
-            name: thread.name,
-            updatedAt: thread.updatedAt,
-            status: thread.status,
-          })),
+          data: storedThreads().map((thread) => {
+            const preview = previewOf(thread)
+            return {
+              id: thread.id,
+              cwd: thread.cwd,
+              name: thread.name,
+              ...(thread.name === null && preview !== undefined ? { preview } : {}),
+              updatedAt: thread.updatedAt,
+              status: thread.status,
+            }
+          }),
           nextCursor: null,
         },
       })

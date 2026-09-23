@@ -1,11 +1,9 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
-import { harnessLabel } from './composer/references/session-reference'
 import { retrySessionFeed, sessionFeedQuery } from './feed/session-feed-query'
-import { sessionHarnessOf } from './harness/harnesses'
-import { useRosterWindowCursor, useRosterWindowStore } from './roster/hooks/use-roster-window-store'
+import { reportCodexFailure } from './roster/codex-failure-notice'
 import { sessionRosterQuery } from './roster/rows/session-roster-query'
 import type { SessionContractError } from './session-contract-error'
 import { mergeOptimisticRow, readableSessionId, useSessionCreationStore } from './session-creation'
@@ -13,15 +11,9 @@ import { invalidateSessionRoster } from './session-queries'
 import type { SessionFeed, SessionId } from './types'
 import { useWatchedQueries, useWatchedTopic } from './use-watched-topic'
 
-// A refresh must refresh only the window this reader has already loaded, never regrow it (#2239),
-// and every consumer of the roster must agree on which window that is: the cursor therefore lives in
-// a store all of them read, and in the query key, so growing the window is a different cached read
-// rather than a refetch of the same one.
 function useRosterQuery(enabled: boolean, projectRoot: string | null) {
-  const cursor = useRosterWindowCursor(projectRoot)
-  const grow = useRosterWindowStore((state) => state.grow)
   const queryClient = useQueryClient()
-  const query = useQuery(sessionRosterQuery(enabled, { projectRoot, cursor }))
+  const query = useInfiniteQuery(sessionRosterQuery(enabled, { projectRoot }))
 
   // A Session written by a Harness outside Argo appears because the transcript trees are watched. The
   // roster used to notice it only by re-reading every file twice a second, and only while a Session
@@ -30,41 +22,20 @@ function useRosterQuery(enabled: boolean, projectRoot: string | null) {
     if (enabled) void invalidateSessionRoster(queryClient)
   })
 
-  const { add } = useToastManager()
-  const { t } = useTranslation('sessions')
-  // A failing source (#2653) would otherwise toast on every re-render this hook takes, since the
-  // roster reply carries the same failures again on each poll; only the failing set CHANGING is
-  // worth telling the reader about.
-  const notifiedFailures = useRef('')
-  useEffect(() => {
-    const failures = query.data?.partialFailures ?? []
-    const key = failures
-      .map((failure) => failure.harness)
-      .sort()
-      .join(',')
-    if (key === notifiedFailures.current) return
-    notifiedFailures.current = key
-    for (const failure of failures) {
-      add({
-        title: t('roster.sourceFailed', {
-          harness: harnessLabel(sessionHarnessOf({ harness: failure.harness })),
-        }),
-        type: 'error',
-      })
-    }
-  }, [query.data?.partialFailures, add, t])
-
-  const nextCursor = query.data?.nextCursor ?? null
+  const lastPage = query.data?.pages.at(-1)
+  const roster = useMemo(() => {
+    if (lastPage === undefined) return null
+    return { ...lastPage, sessions: query.data?.pages.flatMap((page) => page.sessions) ?? [] }
+  }, [lastPage, query.data?.pages])
   return {
     query,
-    hasMore: nextCursor !== null,
-    // `isPlaceholderData` is true while a larger window is in flight and the previous one is still on
-    // screen, which is what the list draws as its loading-more row.
-    isFetchingMore: query.isPlaceholderData,
+    roster,
+    hasMore: query.hasNextPage,
+    isFetchingMore: query.isFetchingNextPage,
     fetchMore: useCallback(() => {
-      if (nextCursor === null) return
-      grow(projectRoot, nextCursor)
-    }, [grow, nextCursor, projectRoot]),
+      if (!query.hasNextPage || query.isFetchingNextPage) return
+      void query.fetchNextPage()
+    }, [query.fetchNextPage, query.hasNextPage, query.isFetchingNextPage]),
   }
 }
 
@@ -81,9 +52,12 @@ export function useSessions(
   projectRoot: string | null = null,
 ) {
   const queryClient = useQueryClient()
+  const { t } = useTranslation('sessions')
+  const { add } = useToastManager()
   const selectedFeedId = readableSessionId(selectedSessionId)
   const {
     query: roster,
+    roster: rosterPage,
     hasMore: hasMoreSessions,
     isFetchingMore: isFetchingMoreSessions,
     fetchMore: fetchMoreSessions,
@@ -102,11 +76,23 @@ export function useSessions(
   }, [selectedFeedId])
 
   const pending = useSessionCreationStore((state) => state.pending)
-  const rosterData = roster.error === null ? (roster.data ?? null) : null
+  const rosterData = roster.error === null ? rosterPage : null
   const mergedRoster = useMemo(() => {
     if (rosterData === null) return null
     return { ...rosterData, sessions: mergeOptimisticRow(rosterData.sessions, pending) }
   }, [rosterData, pending])
+
+  // A partial Codex failure must leave Claude usable. One toast marks the outage for this app run.
+  useEffect(() => {
+    reportCodexFailure(
+      rosterData?.partialFailures ?? [],
+      {
+        title: t('roster.sourceFailed', { harness: 'Codex' }),
+        description: t('roster.codexSourceFailedDescription'),
+      },
+      (notice) => add({ ...notice, type: 'error', priority: 'high' }),
+    )
+  }, [add, rosterData?.partialFailures, t])
 
   // The reader reported the real Session for itself: the synthetic row has done its job.
   useEffect(() => {

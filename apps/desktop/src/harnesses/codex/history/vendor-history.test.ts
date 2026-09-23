@@ -135,4 +135,29 @@ test('lists stored threads through app-server pages', async () => {
     threads.map((thread) => thread.id),
     ['thread-1', 'thread-2'],
   )
+  assert.deepEqual(vendor.calls[0]?.params, {
+    limit: 50,
+    sourceKinds: ['appServer', 'cli', 'vscode'],
+    useStateDbOnly: true,
+  })
+})
+
+test('asks app-server to repair an empty state database without reading rollouts in Argo', async () => {
+  const vendor = transport({
+    'thread/list': (params) =>
+      params.useStateDbOnly === true
+        ? { data: [], nextCursor: null }
+        : { data: [THREAD], nextCursor: null },
+  })
+
+  const threads = await listStoredThreads(vendor.client)
+
+  assert.deepEqual(
+    threads.map((thread) => thread.id),
+    ['thread-1'],
+  )
+  assert.deepEqual(
+    vendor.calls.map((call) => call.params.useStateDbOnly),
+    [true, undefined],
+  )
 })

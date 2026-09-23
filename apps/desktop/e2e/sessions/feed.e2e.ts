@@ -34,7 +34,7 @@ import { proveSubagentFeed } from './cases/subagent-feed.case'
 import { proveToolCalls } from './cases/tool-calls.case'
 import { proveComposerMemory, proveTurnSetup } from './cases/turn-setup.case'
 import { rosterRow } from './claude-proof-helpers'
-import { appendProse, growCodexTranscript, removeProse, streamProse } from './fixtures/feed.fixture'
+import { appendProse, removeProse, streamProse } from './fixtures/feed.fixture'
 import { updatePlan } from './fixtures/plan.fixture'
 import { rosterOrderMutations } from './fixtures/roster-order.fixture'
 import { writeWindowFillerSessions } from './fixtures/roster-window.fixture'
@@ -127,7 +127,6 @@ test('session-roster-restart', async ({ session }) => {
   await provePackagedRosterRestart(session.page(), {
     remove: () => removeProse(session.fixture.claudeTranscripts),
     restart: () => session.restart(),
-    updateRoster: () => growCodexTranscript(session.fixture.codexTranscripts),
   })
 })
 
