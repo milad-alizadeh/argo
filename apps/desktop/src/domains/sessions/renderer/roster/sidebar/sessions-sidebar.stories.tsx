@@ -870,7 +870,7 @@ export const Failure: Story = {
     await expect(alert).toHaveTextContent('Read failed on attempt 1.')
     await userEvent.click(within(alert).getByRole('button', { name: 'Retry' }))
     await expect(
-      await canvas.findByRole('button', { name: 'Read the Session transcript' }),
+      await canvas.findByRole('button', { name: /Read the Session transcript/ }),
     ).toBeVisible()
   },
 }
