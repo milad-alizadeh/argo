@@ -99,7 +99,7 @@ export function SessionScreenView() {
   const failure = model.composer.failure
   const suppressFailure = isMissingSessionFailureSuppressed({
     failure,
-    feedFailed: feedError !== null,
+    feedFailureSessionId: feedError === null ? null : selectedSessionId,
     feedStalledSessionId,
     selectedSessionId,
   })

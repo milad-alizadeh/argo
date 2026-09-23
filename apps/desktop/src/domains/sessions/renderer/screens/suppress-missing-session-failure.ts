@@ -1,18 +1,18 @@
 import type { Failure } from '../composer/send/session-failure'
 export function suppressMissingSessionFailure({
   failure,
-  feedFailed,
+  feedFailureSessionId,
   feedStalledSessionId,
   selectedSessionId,
 }: {
   failure: Pick<Failure, 'code'> | null
-  feedFailed: boolean
+  feedFailureSessionId: string | null
   feedStalledSessionId: string | null
   selectedSessionId: string | null
 }) {
   return (
     selectedSessionId !== null &&
     failure?.code === 'missing-session' &&
-    (feedStalledSessionId === selectedSessionId || feedFailed)
+    (feedStalledSessionId === selectedSessionId || feedFailureSessionId === selectedSessionId)
   )
 }
