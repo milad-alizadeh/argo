@@ -2,7 +2,7 @@
 import { type BrowserWindow, powerMonitor } from 'electron'
 import type { SessionDriveAdapters } from '@/domains/sessions/contract/session-drive-adapter'
 import {
-  createSessionArchiveStore,
+  type SessionArchiveStore,
   sessionArchivePath,
 } from '@/domains/sessions/main/archive/store/archive-store'
 import { attachSessionBridge } from '@/domains/sessions/main/composition/bridge'
@@ -61,6 +61,7 @@ type AttachSessionsRequest = ManagedSessionBridges & {
   rendererURL: string
   home: string
   userData: string
+  archive: SessionArchiveStore
   ticketLinks: SessionTicketLinkStore
   proofEnabled: boolean
   acceptance: boolean
@@ -129,6 +130,7 @@ export function attachSessions(window: BrowserWindow, request: AttachSessionsReq
     rendererURL,
     home,
     userData,
+    archive,
     ticketLinks,
     proofEnabled,
     acceptance,
@@ -144,7 +146,6 @@ export function attachSessions(window: BrowserWindow, request: AttachSessionsReq
     harnesses = sessionHarnesses,
   } = request
   // Argo's own archive flag, for every harness at once (#2315).
-  const archive = createSessionArchiveStore(sessionArchivePath(userData))
   const unread = createSessionUnreadStore(sessionUnreadPath(userData))
   // Both adapters read their bounded window through one index, so a warm Roster reopens no
   // transcript the last pass already projected (#2372).

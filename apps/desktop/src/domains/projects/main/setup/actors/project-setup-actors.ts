@@ -17,9 +17,16 @@ import {
   type ProjectSetupPlanningInput,
   projectSetupPlanningActor,
 } from './project-setup-planning-actor'
+import {
+  type ProjectSetupRestartInput,
+  projectSetupRestartActor,
+} from './project-setup-restart-actor'
 
 export const inactiveProjectSetupActors = {
   cancellation: fromCallback<ProjectSetupEvent, ProjectSetupCancellationInput, ProjectSetupEvent>(
+    () => undefined,
+  ),
+  restart: fromCallback<ProjectSetupEvent, ProjectSetupRestartInput, ProjectSetupEvent>(
     () => undefined,
   ),
   finalization: fromCallback<ProjectSetupEvent, undefined, ProjectSetupEvent>(() => undefined),
@@ -34,6 +41,7 @@ export const inactiveProjectSetupActors = {
 }
 
 export type ProjectSetupServices = {
+  archiveSession: (sessionId: string) => Promise<boolean>
   driver: OnboardingAgentDriver
   loadSetupDocument: () => Promise<SetupDocument>
   projects: ProjectStore
@@ -54,6 +62,7 @@ export function projectSetupRuntime(services: ProjectSetupServices): ProjectSetu
     harnesses: defaultProjectSetupHarnesses,
     actors: (projectId) => ({
       cancellation: projectSetupCancellationActor(services),
+      restart: projectSetupRestartActor(services),
       finalization: projectSetupFinalizationActor(services, projectId),
       onboardingApplication: projectSetupApplicationActor(services, projectId),
       onboardingPlanning: projectSetupPlanningActor(services, projectId),

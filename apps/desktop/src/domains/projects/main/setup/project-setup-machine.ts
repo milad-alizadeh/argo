@@ -205,6 +205,9 @@ const projectSetup = setup({
       progress: [],
       recoveryMessage: null,
     }),
+    recordRestartFailure: assign({
+      recoveryMessage: 'cancel-failed',
+    }),
     beginFinalization: assign({
       pendingFinalization: true,
     }),
@@ -417,9 +420,39 @@ export const projectSetupMachine = projectSetup.createMachine({
           actions: 'clearRecoveryMessage',
         },
         'Restart attempt': {
+          target: 'Restarting attempt',
+        },
+      },
+    },
+    'Restarting attempt': {
+      invoke: {
+        id: 'restart',
+        src: 'restart',
+        input: ({ context }) => ({
+          sessionIds: [
+            ...new Set([
+              context.planningSessionId,
+              context.applicationSessionId,
+            ]),
+          ].filter((sessionId): sessionId is string => sessionId !== null),
+        }),
+      },
+      on: {
+        'Restart attempt completed': {
           target: 'Choosing setup method',
           actions: 'restartAttempt',
         },
+        'Restart attempt failed': {
+          target: 'Restart failed',
+          actions: 'recordRestartFailure',
+        },
+      },
+    },
+    'Restart failed': {
+      tags: 'recoverable',
+      on: {
+        'Restart attempt': 'Restarting attempt',
+        Defer: 'Deferred',
       },
     },
     'Reviewing changes': {

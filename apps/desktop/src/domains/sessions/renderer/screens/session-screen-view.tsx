@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import type { FeedLiveFacts } from '../feed/document/feed-live-facts'
 import { BackgroundWork } from '../feed/rows/background-work'
@@ -8,6 +9,7 @@ import { SessionWorkInspectorHeader } from '../work/session-work-inspector-heade
 import { backgroundWorkLinks } from './background-work-links'
 import { SessionComposerArea, SessionHandoffFacts } from './session-screen-details'
 import { SessionShell } from './session-shell'
+import { suppressMissingSessionFailure as isMissingSessionFailureSuppressed } from './suppress-missing-session-failure'
 import { type SessionScreenModel, useSessionScreenModel } from './use-session-screen-model'
 
 // An unanswered ask row, if the Feed is currently showing one.
@@ -93,6 +95,14 @@ export function SessionScreenView() {
   const model = useSessionScreenModel()
   const { evidence, feed, feedError, isNewSession, question, session } = model
   const { navigate, retryFeed, selectedSessionId, setEvidence, workReveal } = model
+  const [feedStalledSessionId, setFeedStalledSessionId] = useState<string | null>(null)
+  const failure = model.composer.failure
+  const suppressFailure = isMissingSessionFailureSuppressed({
+    failure,
+    feedError,
+    feedStalledSessionId,
+    selectedSessionId,
+  })
   const openSession = (sessionId: string) => navigate(`/sessions/${sessionId}`)
   const answerQuestion = (_sessionId: string, questionId: string, answers: QuestionAnswer[]) =>
     void question.decide(questionId, answers)
@@ -110,6 +120,7 @@ export function SessionScreenView() {
         onAnswerQuestion={answerQuestion}
         answeringQuestionId={model.question.answeringId}
         questionFailure={model.question.failureFor}
+        onFeedStalledChange={setFeedStalledSessionId}
         composer={
           selectedSessionId === null && !isNewSession ? null : (
             <SessionComposerArea
@@ -118,6 +129,7 @@ export function SessionScreenView() {
               questionPending={pendingQuestionId(feed) !== null}
               session={session}
               harness={model.harness}
+              suppressMissingSessionFailure={suppressFailure}
             />
           )
         }
