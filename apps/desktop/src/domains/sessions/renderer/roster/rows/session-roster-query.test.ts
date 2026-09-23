@@ -20,6 +20,9 @@ function listedReply(requestId: string, title: string) {
     filesRead: 1,
     filesUnreadable: 0,
     filesParsed: 0,
+    nextCursor: null,
+    historyComplete: true,
+    partialFailures: [],
   }
 }
 

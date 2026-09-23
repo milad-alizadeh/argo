@@ -1,6 +1,10 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useToastManager } from '@/platform/renderer/components/ui/toast'
+import { harnessLabel } from './composer/references/session-reference'
 import { retrySessionFeed, sessionFeedQuery } from './feed/session-feed-query'
+import { sessionHarnessOf } from './harness/harnesses'
 import { useRosterWindowCursor, useRosterWindowStore } from './roster/hooks/use-roster-window-store'
 import { sessionRosterQuery } from './roster/rows/session-roster-query'
 import type { SessionContractError } from './session-contract-error'
@@ -25,6 +29,30 @@ function useRosterQuery(enabled: boolean, projectRoot: string | null) {
   useWatchedTopic('sessions', () => {
     if (enabled) void invalidateSessionRoster(queryClient)
   })
+
+  const { add } = useToastManager()
+  const { t } = useTranslation('sessions')
+  // A failing source (#2653) would otherwise toast on every re-render this hook takes, since the
+  // roster reply carries the same failures again on each poll; only the failing set CHANGING is
+  // worth telling the reader about.
+  const notifiedFailures = useRef('')
+  useEffect(() => {
+    const failures = query.data?.partialFailures ?? []
+    const key = failures
+      .map((failure) => failure.harness)
+      .sort()
+      .join(',')
+    if (key === notifiedFailures.current) return
+    notifiedFailures.current = key
+    for (const failure of failures) {
+      add({
+        title: t('roster.sourceFailed', {
+          harness: harnessLabel(sessionHarnessOf({ harness: failure.harness })),
+        }),
+        type: 'error',
+      })
+    }
+  }, [query.data?.partialFailures, add, t])
 
   const nextCursor = query.data?.nextCursor ?? null
   return {

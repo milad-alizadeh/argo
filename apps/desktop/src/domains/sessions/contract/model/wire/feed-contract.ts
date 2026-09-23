@@ -62,6 +62,9 @@ export const sessionsListedSchema = z.strictObject({
   // False while any adapter's Session index is still backfilling older history (#2373), so a
   // reader never mistakes an index still catching up for the machine's whole history.
   historyComplete: z.boolean(),
+  // Every adapter whose own `discoverSessions` failed on this pass, dropped from `sessions`
+  // rather than shown, so the reader can still be told which Harness went missing (#2653 follow-up).
+  partialFailures: z.array(z.strictObject({ harness: z.string(), code: z.string() })),
 })
 export type SessionsListed = z.infer<typeof sessionsListedSchema>
 

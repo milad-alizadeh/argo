@@ -195,7 +195,8 @@
   },
   "roster": {
     "planProgress": "{{completed}} of {{total}} steps completed",
-    "planUnreadable": "Plan unreadable"
+    "planUnreadable": "Plan unreadable",
+    "sourceFailed": "{{harness}} Sessions did not load"
   },
   "inspector": {
     "diagramLabel": "Diagram inspector",

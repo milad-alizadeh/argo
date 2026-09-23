@@ -121,6 +121,7 @@ test('refuses a row whose signals are missing or malformed at the boundary', asy
     filesParsed: 0,
     nextCursor: null,
     historyComplete: true,
+    partialFailures: [],
   })
   assert.equal(sessionListReplySchema.safeParse(reply([row])).success, true)
   const { plan: _plan, ...planless } = row

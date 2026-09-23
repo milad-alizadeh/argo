@@ -179,6 +179,7 @@ function withListedSessions(sessions: Session[]) {
         filesParsed: 0,
         nextCursor: null,
         historyComplete: true,
+        partialFailures: [],
       }) satisfies SessionsListed,
   }
   return () => {

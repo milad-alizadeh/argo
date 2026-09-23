@@ -43,6 +43,7 @@ function stalledFeedHost() {
       filesParsed: 0,
       nextCursor: null,
       historyComplete: true,
+      partialFailures: [],
     }),
     readSessionFeed: () => new Promise(() => {}),
   }
