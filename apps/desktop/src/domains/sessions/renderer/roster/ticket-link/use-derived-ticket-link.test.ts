@@ -113,3 +113,35 @@ test('retries ticket auto-rename after a watched Session becomes managed', async
 
   expect(renamedTitle).toBe(TICKET.title)
 })
+
+test('discards a pending auto-rename when the Session links a different Ticket', async () => {
+  let renamedTitle: string | null = null
+  installTicketHost((name) => {
+    renamedTitle = name
+  })
+  const pendingRenames = createPendingTicketRenames()
+  pendingRenames.queue('session-1', TICKET)
+
+  await processDerivedSession({
+    attempted: new Set(),
+    connect: async () => {
+      throw new Error('A Session with another linked Ticket must not be connected again.')
+    },
+    pendingRenames,
+    projectId: TICKET.projectId,
+    reportFailure: () => {},
+    session: {
+      ...session('first-prompt'),
+      ticket: {
+        projectId: TICKET.projectId,
+        key: 'ARGO-2',
+        title: 'Different Ticket',
+        state: 'open',
+        createdAt: '2026-09-23T00:00:00.000Z',
+      },
+    },
+  })
+
+  expect(renamedTitle).toBeNull()
+  expect(pendingRenames.takeWhenManaged('session-1', 'managed', null)).toBeUndefined()
+})

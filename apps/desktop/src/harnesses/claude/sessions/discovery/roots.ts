@@ -1,10 +1,4 @@
 import path from 'node:path'
-import process from 'node:process'
-import { SESSION_CLAUDE_TRANSCRIPTS_ENV } from '@/domains/sessions/contract/proof-protocol'
-
-export function claudeTranscriptsRoot(home: string): string {
-  return process.env[SESSION_CLAUDE_TRANSCRIPTS_ENV] ?? path.join(home, '.claude', 'projects')
-}
 
 // The user-level settings Argo adds its one `PreCompact` hook to (ADR-0041).
 export function claudeSettingsPath(home: string): string {

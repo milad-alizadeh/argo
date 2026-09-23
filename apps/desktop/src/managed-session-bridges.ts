@@ -7,7 +7,7 @@ import { attachManagedSessions } from '@/domains/sessions/next/main/managed-sess
 import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
 import { createClaudeSdkDriveAdapter } from '@/harnesses/claude/agent-sdk/claude-sdk-drive-adapter'
 import type { ClaudeSessionAdapter } from '@/harnesses/claude/agent-sdk/claude-session-adapter'
-import { claudeTranscriptsRoot } from '@/harnesses/claude/sessions/discovery/roots'
+import { claudeTranscriptsRoot } from '@/harnesses/claude/transcript-files'
 import { createCodexAppServerDriveAdapter } from '@/harnesses/codex/drive/codex-app-server-drive-adapter'
 import type { CodexSessionAdapter } from '@/harnesses/codex/drive/session/codex-session-adapter-contract'
 import { sessionHarnesses } from '@/harnesses/composition/registered-harnesses'

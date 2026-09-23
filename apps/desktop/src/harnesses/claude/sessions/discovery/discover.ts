@@ -5,9 +5,9 @@ import {
   createTranscriptDiscoverer,
   type TranscriptDiscovery,
 } from '@/domains/sessions/main/observation/reader/discover-transcript-sessions'
+import { transcriptPaths } from '../../transcript-files'
 import { parseTranscriptLine } from '../records/records'
 import { normalizeClaudeRecords } from './normalize-records'
-import { transcriptPaths } from './transcript-paths'
 
 export type Discovery = TranscriptDiscovery
 

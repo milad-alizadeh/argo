@@ -101,6 +101,40 @@ test('paginates watched Claude Sessions without merging them outside the source 
   expect(second.nextCursor).toBeNull()
 })
 
+test('counts only the current SDK pass and does not mark later pages unreadable', async () => {
+  const records = Array.from({ length: 200 }, (_, index) => ({
+    sessionId: `claude-${index}`,
+    summary: `Session ${index}`,
+    lastModified: 200 - index,
+  }))
+  const source = createClaudeSdkHistorySource({
+    countTranscriptFiles: async () => records.length,
+    history: {
+      listSessions: async ({ offset }) => records.slice(offset, offset + 50),
+      getSessionMessages: async () => [],
+    },
+  })
+
+  const first = await source.discoverSessions({ cursor: null })
+
+  expect(first.filesFound).toBe(200)
+  expect(first.filesRead).toBe(50)
+  expect(first.filesUnreadable).toBe(0)
+  expect(first.filesParsed).toBe(50)
+  expect(first.historyComplete).toBe(false)
+
+  let page = first
+  while (page.nextCursor !== null) {
+    page = await source.discoverSessions({ cursor: page.nextCursor })
+  }
+
+  expect(page.filesFound).toBe(200)
+  expect(page.filesRead).toBe(200)
+  expect(page.filesUnreadable).toBe(0)
+  expect(page.filesParsed).toBe(200)
+  expect(page.historyComplete).toBe(true)
+})
+
 test('keeps a Session under its Project when Claude records a nested working directory', async () => {
   const source = createClaudeSdkHistorySource({
     history: {
@@ -212,4 +246,27 @@ test('reports transcript records omitted by the Claude SDK', async () => {
   } finally {
     await rm(transcriptsRoot, { recursive: true, force: true })
   }
+})
+
+test('compares transcript omissions with the current SDK pass, not cached history', async () => {
+  let sdkRecords = [{ sessionId: 'stale-session', summary: 'Session title', lastModified: 1 }]
+  const source = createClaudeSdkHistorySource({
+    countTranscriptFiles: async () => 1,
+    history: {
+      listSessions: async () => sdkRecords,
+      getSessionMessages: async () => [],
+    },
+  })
+
+  const first = await source.discoverSessions()
+  sdkRecords = []
+  const second = await source.discoverSessions()
+
+  expect(first.historyComplete).toBe(true)
+  expect(second.filesFound).toBe(1)
+  expect(second.filesRead).toBe(0)
+  expect(second.filesUnreadable).toBe(1)
+  expect(second.filesParsed).toBe(0)
+  expect(second.historyComplete).toBe(false)
+  expect(await source.readObservedFeed?.('stale-session')).not.toBeNull()
 })

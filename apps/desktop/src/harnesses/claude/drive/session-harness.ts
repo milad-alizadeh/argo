@@ -7,12 +7,8 @@ import type { HarnessRegistration } from '@/harnesses/composition/harness-regist
 import { createClaudeSdkHistorySource } from '../agent-sdk/claude-sdk-history-source'
 import { installCompactionHook } from '../compaction/compaction-hook'
 import { claudeSessionSource } from '../sessions/discovery/read-sessions'
-import {
-  claudeCompactionStartsRoot,
-  claudeSettingsPath,
-  claudeTranscriptsRoot,
-} from '../sessions/discovery/roots'
-import { transcriptPaths } from '../sessions/discovery/transcript-paths'
+import { claudeCompactionStartsRoot, claudeSettingsPath } from '../sessions/discovery/roots'
+import { claudeTranscriptsRoot, transcriptPaths } from '../transcript-files'
 import { renameClaudeSession } from './rename-session'
 import { createClaudeDriveAdapter } from './session-drive-adapter'
 import { createSystemClaudeSessionDriver } from './system-claude-session-driver'

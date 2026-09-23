@@ -2,8 +2,6 @@ import type { BrowserWindow } from 'electron'
 import type { ProjectPort } from '@/domains/projects/main'
 import { SESSION_CODEX_EXECUTABLE_ENV } from '@/domains/sessions/contract/proof-protocol'
 import { createClaudeSessionAdapterRegistration } from '@/harnesses/claude/agent-sdk/claude-session-adapter-registration'
-import { claudeTranscriptsRoot } from '@/harnesses/claude/sessions/discovery/roots'
-import { transcriptPaths } from '@/harnesses/claude/sessions/discovery/transcript-paths'
 import { createCodexSessionAdapterRegistration } from '@/harnesses/codex/drive/session/codex-session-adapter-registration'
 import { codexTranscriptsRoot } from '@/harnesses/codex/sessions/discovery/roots'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
@@ -37,9 +35,7 @@ export function attachManagedSessions(
       now: () => new Date(),
     },
     [
-      createClaudeSessionAdapterRegistration(
-        async () => (await transcriptPaths(claudeTranscriptsRoot(options.home))).length,
-      ),
+      createClaudeSessionAdapterRegistration(options.home),
       createCodexSessionAdapterRegistration({
         transcriptsRoot: codexTranscriptsRoot(options.home),
         knownWorkspaces: () => options.projects.knownWorkspaces(),

@@ -66,11 +66,17 @@ export function createPendingTicketRenames() {
   const pending = new Map<string, ConnectTicketInput>()
   return {
     queue: (sessionId: string, ticket: ConnectTicketInput) => pending.set(sessionId, ticket),
-    takeWhenManaged: (sessionId: string, posture: Session['posture']) => {
+    takeWhenManaged: (
+      sessionId: string,
+      posture: Session['posture'],
+      linkedTicket: Session['ticket'],
+    ) => {
       const ticket = pending.get(sessionId)
       if (ticket === undefined) return undefined
       if (posture !== 'managed') return null
       pending.delete(sessionId)
+      if (linkedTicket?.projectId !== ticket.projectId || linkedTicket.key !== ticket.key)
+        return null
       return ticket
     },
   }
@@ -85,7 +91,7 @@ export async function processDerivedSession(options: {
   session: Session
 }) {
   const { attempted, connect, pendingRenames, projectId, reportFailure, session } = options
-  const pendingRename = pendingRenames.takeWhenManaged(session.id, session.posture)
+  const pendingRename = pendingRenames.takeWhenManaged(session.id, session.posture, session.ticket)
   if (pendingRename !== undefined) {
     if (pendingRename !== null) await retryPendingRename(session.id, pendingRename, reportFailure)
     return

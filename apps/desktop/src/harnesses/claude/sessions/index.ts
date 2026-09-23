@@ -4,7 +4,6 @@ export {
   claudeCompactionStartsRoot,
   claudeProcessesRoot,
   claudeSettingsPath,
-  claudeTranscriptsRoot,
 } from './discovery/roots'
 export { readTranscriptFile } from './discovery/transcript-file'
 export { claudePendingQuestion } from './subagents/pending-question'

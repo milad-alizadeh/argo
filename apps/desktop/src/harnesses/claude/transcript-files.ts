@@ -1,5 +1,11 @@
 import { readdir } from 'node:fs/promises'
 import path from 'node:path'
+import process from 'node:process'
+import { SESSION_CLAUDE_TRANSCRIPTS_ENV } from '@/domains/sessions/contract/proof-protocol'
+
+export function claudeTranscriptsRoot(home: string): string {
+  return process.env[SESSION_CLAUDE_TRANSCRIPTS_ENV] ?? path.join(home, '.claude', 'projects')
+}
 
 function sessionIdFromFileName(fileName: string) {
   return fileName.replace(/\.jsonl$/, '')

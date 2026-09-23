@@ -1,10 +1,9 @@
 import type { SessionAdapterRegistration } from '@/domains/sessions/next/main/session-adapter-registry'
+import { claudeTranscriptsRoot, transcriptPaths } from '../transcript-files'
 import { createClaudeSdkHistorySource } from './claude-sdk-history-source'
 import { createClaudeSessionAdapter } from './claude-session-adapter'
 
-export function createClaudeSessionAdapterRegistration(
-  countTranscriptFiles: () => Promise<number>,
-): SessionAdapterRegistration {
+export function createClaudeSessionAdapterRegistration(home: string): SessionAdapterRegistration {
   return {
     harness: 'claude',
     create: (runtime) => {
@@ -14,7 +13,8 @@ export function createClaudeSessionAdapterRegistration(
         close: adapter.close,
         source: createClaudeSdkHistorySource({
           managedSessions: adapter.roster,
-          countTranscriptFiles,
+          countTranscriptFiles: async () =>
+            (await transcriptPaths(claudeTranscriptsRoot(home))).length,
         }),
       }
     },

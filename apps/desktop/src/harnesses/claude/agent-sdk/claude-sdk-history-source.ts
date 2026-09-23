@@ -74,29 +74,37 @@ function rowOf(session: StoredSession) {
   })
 }
 
-function recordPageIssues(sessions: StoredSession[], filesFound = sessions.length) {
-  const untitled = sessions.filter(
-    (session) => !session.customTitle && !session.summary && !session.firstPrompt,
-  ).length
-  const missingTimestamps = sessions.filter((session) => timestampOf(session) === null).length
+function rosterStatistics(
+  sessions: StoredSession[],
+  filesFound = sessions.length,
+  filesOmitted = 0,
+) {
   const relayOutput = sessions.filter(isRelayOutput).length
   const rejected = sessions.filter(
     (session) =>
       timestampOf(session) === null ||
       (!session.customTitle && !session.summary && !session.firstPrompt),
   ).length
+  return {
+    filesFound,
+    filesRead: sessions.length,
+    filesUnreadable: rejected + filesOmitted,
+    filesParsed: sessions.length - rejected - relayOutput,
+  }
+}
+
+function reportPageIssues(sessions: StoredSession[]) {
+  const untitled = sessions.filter(
+    (session) => !session.customTitle && !session.summary && !session.firstPrompt,
+  ).length
+  const missingTimestamps = sessions.filter((session) => timestampOf(session) === null).length
+  const relayOutput = sessions.filter(isRelayOutput).length
   if (untitled + missingTimestamps + relayOutput > 0) {
     console.warn('Claude SDK Session boundary rejected records', {
       untitled,
       missingTimestamps,
       relayOutput,
     })
-  }
-  return {
-    filesFound,
-    filesRead: sessions.length,
-    filesUnreadable: rejected + Math.max(0, filesFound - sessions.length),
-    filesParsed: sessions.length - rejected - relayOutput,
   }
 }
 
@@ -133,11 +141,14 @@ export function createClaudeSdkHistorySource(
 ): SessionSource {
   const history: ClaudeSdkHistory = options.history ?? { listSessions, getSessionMessages }
   const sessions = new Map<string, StoredSession>()
+  const currentRoster = new Map<string, StoredSession>()
   let revision = 0
   const refresh = async (options?: Parameters<SessionSource['discoverSessions']>[0]) => {
     const offset = offsetFor(options?.cursor)
     const page = await readClaudeSessionPage(history, offset)
+    if (offset === 0) currentRoster.clear()
     for (const session of page) sessions.set(session.sessionId, session)
+    for (const session of page) currentRoster.set(session.sessionId, session)
     revision += 1
     return { sessions: page, offset }
   }
@@ -146,12 +157,13 @@ export function createClaudeSdkHistorySource(
     discoverSessions: async (request) => {
       const { sessions: sessionsOnPage, offset } = await refresh(request)
       const pageComplete = sessionsOnPage.length < ROSTER_PAGE_SIZE
-      const sessionsToCount = pageComplete ? Array.from(sessions.values()) : sessionsOnPage
+      const sessionsToCount = Array.from(currentRoster.values())
       const filesFound = options.countTranscriptFiles
         ? await options.countTranscriptFiles()
-        : sessionsOnPage.length
-      const pageStats = recordPageIssues(sessionsToCount, Math.max(filesFound, sessions.size))
-      const sdkOmitted = Math.max(0, filesFound - sessions.size)
+        : currentRoster.size
+      const sdkOmitted = pageComplete ? Math.max(0, filesFound - currentRoster.size) : 0
+      reportPageIssues(sessionsOnPage)
+      const pageStats = rosterStatistics(sessionsToCount, filesFound, sdkOmitted)
       if (pageComplete && sdkOmitted > 0) {
         console.warn('Claude SDK omitted transcript records from the Session roster', {
           sdkOmitted,
