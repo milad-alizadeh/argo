@@ -42,6 +42,25 @@ function handleRequest(message: Request) {
       return
     case 'skills/list':
       return send({ id: message.id, result: { data: [] } })
+    case 'model/list':
+      return send({
+        id: message.id,
+        result: {
+          data: [
+            {
+              id: 'gpt-5.6-luna',
+              model: 'gpt-5.6-luna',
+              displayName: 'GPT-5.6 Luna',
+              description: 'Fast and affordable agentic coding model.',
+              defaultReasoningEffort: 'low',
+              isDefault: true,
+              hidden: false,
+              supportedReasoningEfforts: [{ reasoningEffort: 'low', description: 'Low' }],
+            },
+          ],
+          nextCursor: null,
+        },
+      })
     case 'thread/start':
       return startThread(message)
     case 'thread/resume':

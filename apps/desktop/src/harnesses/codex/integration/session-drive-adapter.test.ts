@@ -95,8 +95,8 @@ test('does not accept a Steer when the Codex driver cannot steer', async () => {
   )
 })
 
-test('refuses a malformed Turn setup before it reaches the driver', async () => {
-  const setup = { model: 'gpt-5.6-luna', effort: 'ultra', mode: 'workspace-write' }
+test('refuses an empty Turn setup before it reaches the driver', async () => {
+  const setup = { model: '', effort: '', mode: 'workspace-write' }
   const adapter = createCodexDriveAdapter(mockDriver())
   assert.deepEqual(
     await adapter.start({ attachments: [], cwd: '/projects/argo', prompt: 'x', setup }),

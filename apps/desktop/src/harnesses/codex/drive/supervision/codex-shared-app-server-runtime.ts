@@ -106,15 +106,36 @@ async function readCatalogForExecutablePath(
       options.onExecutableChanged(executablePath)
       options.supervisor.refreshExecutable(executablePath)
     }
-    return null
+  } else {
+    state.update(identity, null)
+    options.onExecutableChanged(executablePath)
   }
+  const channel = await waitForMatchingChannel(options.supervisor, identity)
+  if (channel === null) return null
   state.update(identity, null)
-  options.onExecutableChanged(executablePath)
-  const channel = options.supervisor.getChannel()
-  if (runningIdentity === null || channel === null) return null
   return options.cache.get(identity, (params, decode) =>
     channel.request('model/list', params, decode),
   )
+}
+
+async function waitForMatchingChannel(
+  supervisor: AppServerSupervisor,
+  identity: { executablePath: string; version: string },
+) {
+  const deadline = Date.now() + 3_000
+  while (Date.now() < deadline) {
+    const running = supervisor.getRunningIdentity()
+    const channel = supervisor.getChannel()
+    if (
+      channel !== null &&
+      running?.executablePath === identity.executablePath &&
+      running.version === identity.version
+    ) {
+      return channel
+    }
+    await new Promise((resolve) => setTimeout(resolve, 10))
+  }
+  return null
 }
 
 function shouldStopForUnavailableExecutable(
