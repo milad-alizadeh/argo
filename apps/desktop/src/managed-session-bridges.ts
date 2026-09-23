@@ -6,6 +6,7 @@ import { attachManagedSessions } from '@/domains/sessions/next/main/managed-sess
 import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
 import { createClaudeSdkDriveAdapter } from '@/harnesses/claude/agent-sdk/claude-sdk-drive-adapter'
 import type { ClaudeSessionAdapter } from '@/harnesses/claude/agent-sdk/claude-session-adapter'
+import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-sessions'
 import { claudeTranscriptsRoot } from '@/harnesses/claude/sessions/discovery/roots'
 import { createCodexAppServerDriveAdapter } from '@/harnesses/codex/drive/codex-app-server-drive-adapter'
 import type { CodexSessionAdapter } from '@/harnesses/codex/drive/session/codex-session-adapter-contract'
@@ -36,8 +37,16 @@ export function attachManagedSessionHarnesses(
   if (codex === undefined) throw new Error('Codex Session adapter is unavailable')
   const codexSource = managedSessions.sourceFor('codex')
   if (codexSource === undefined) throw new Error('Codex Session source is unavailable')
-  const claudeSource = managedSessions.sourceFor('claude')
-  if (claudeSource === undefined) throw new Error('Claude Session source is unavailable')
+  const registeredClaudeSource = managedSessions.sourceFor('claude')
+  if (registeredClaudeSource === undefined) throw new Error('Claude Session source is unavailable')
+  // Packaged proof uses the mock CLI's transcript fixtures. Production reads the Agent SDK.
+  const claudeSource = options.proofEnabled
+    ? claudeSessionSource({
+        transcripts: claudeTranscriptsRoot(options.home),
+        managedSessions: (claude as ClaudeSessionAdapter).roster,
+        liveMessages: (claude as ClaudeSessionAdapter).liveMessages,
+      })
+    : registeredClaudeSource
   const harnesses = attachSessions(window, {
     ...options,
     driveAdapters: {
