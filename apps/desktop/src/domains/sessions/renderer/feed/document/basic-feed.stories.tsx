@@ -346,7 +346,7 @@ export const PastedContent: Story = {
     await disclosure.focus()
     await userEvent.keyboard('{Enter}')
     await expect(disclosure).toHaveAttribute('aria-expanded', 'true')
-    await expect(canvas.getByText('const answer = 42')).toBeVisible()
+    await waitFor(() => expect(canvas.getByText('const answer = 42')).toBeVisible())
     await userEvent.keyboard('{Space}')
     await expect(disclosure).toHaveAttribute('aria-expanded', 'false')
   },
