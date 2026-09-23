@@ -46,7 +46,9 @@ test("scopes each Harness's reply to the requested Project rather than merging e
     codexSessionSource(codexRoot),
   ])
 
-  const scoped = await listed(reader, 'list-scoped', { projectRoot: '/projects/a' })
+  const scoped = await listed(reader, 'list-scoped', {
+    projectRoot: '/projects/a',
+  })
   assert.deepEqual(
     scoped?.sessions.map((session) => session.id),
     ['claudeInA'],
@@ -105,12 +107,45 @@ test('includes the main and sibling worktrees when the selected Project is a lin
   }
   const reader = createSessionReader([codexSessionSource(codexRoot)])
 
-  const scoped = await listed(reader, 'list-from-linked', { projectRoot: selectedWorktree })
+  const scoped = await listed(reader, 'list-from-linked', {
+    projectRoot: selectedWorktree,
+  })
 
   assert.deepEqual(
     scoped?.sessions.map((session) => session.id),
     ['codexSibling', 'codexSelected', 'codexMain'],
   )
+})
+
+// A blocked vendor read is a partial Roster failure, not a reason to withhold another Harness's
+// rows (ADR-0008): the renderer can render Claude now and retry Codex on its next poll.
+test('publishes a ready Harness while another Harness does not answer', async (context) => {
+  const claudeRoot = await tempRoot(context)
+  const codexRoot = await tempRoot(context)
+  await writeClaudeTranscript({
+    root: claudeRoot,
+    sessionId: 'claudeReady',
+    text: 'Hi.',
+    updatedAt: '2026-09-13T10:00:00.000Z',
+  })
+  const codex = codexSessionSource(codexRoot)
+  const reader = createSessionReader([
+    claudeSessionSource({ transcripts: claudeRoot }),
+    {
+      ...codex,
+      discoverSessions: async () => await new Promise<never>(() => {}),
+    },
+  ])
+
+  const reply = await listed(reader)
+
+  assert.deepEqual(
+    reply?.sessions.map((session) => session.id),
+    ['claudeReady'],
+  )
+  assert.deepEqual(reply?.partialFailures, [
+    { harness: 'codex', code: 'vendor-history-unavailable' },
+  ])
 })
 
 // The opaque Roster cursor retains rows that lost the first cross-Harness merge (#2584).

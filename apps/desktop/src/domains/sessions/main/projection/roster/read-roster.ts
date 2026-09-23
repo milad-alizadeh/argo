@@ -23,6 +23,10 @@ import {
 } from './unified-roster-cursor'
 import { mergeRosterPage, type UnifiedRosterSource } from './unified-roster-page'
 
+// A Harness that cannot answer its current window must not keep another Harness's ready rows off
+// the Roster (ADR-0008): the renderer can show the partial reply and retry this source next poll.
+const SOURCE_READ_BUDGET_MS = 750
+
 // Project scope is applied inside each adapter's own `discoverSessions` (#2239), at the boundary
 // where that adapter's rows are built — never here, after every adapter has already read a
 // machine-wide window only to have most of it discarded.
@@ -46,6 +50,30 @@ async function discoverFromSource(
     }
   } catch (error) {
     return { error: sessionError(readFailure(error), requestId) }
+  }
+}
+
+async function discoverWithinBudget(
+  source: SessionSource,
+  requestId: string,
+  options: { cursor: string | null; projectRoot: string | null },
+): Promise<Discovered> {
+  let timeout: ReturnType<typeof setTimeout> | undefined
+  try {
+    return await Promise.race([
+      discoverFromSource(source, requestId, options),
+      new Promise<Discovered>((resolve) => {
+        timeout = setTimeout(
+          () =>
+            resolve({
+              error: sessionError('vendor-history-unavailable', requestId),
+            }),
+          SOURCE_READ_BUDGET_MS,
+        )
+      }),
+    ])
+  } finally {
+    if (timeout !== undefined) clearTimeout(timeout)
   }
 }
 
@@ -78,7 +106,7 @@ async function readSources(
         previous === undefined ||
         (previous.cursor !== null && previous.buffer.length < ROSTER_PAGE_SIZE)
       if (!needsProviderPage) return { previous, source, discovery: null }
-      const discovery = await discoverFromSource(source, request.requestId, {
+      const discovery = await discoverWithinBudget(source, request.requestId, {
         cursor: previous?.cursor ?? null,
         projectRoot: request.projectRoot,
       })
@@ -88,7 +116,10 @@ async function readSources(
       return {
         previous,
         source,
-        discovery: { ...discovery, rows: discovery.rows.filter((row) => !known.has(row.id)) },
+        discovery: {
+          ...discovery,
+          rows: discovery.rows.filter((row) => !known.has(row.id)),
+        },
       }
     }),
   )
@@ -117,7 +148,10 @@ function combinedDiscovery(
       historyComplete: true,
     }
   if (isDiscoveryError(discovery)) return discovery
-  return { ...discovery, rows: [...(previous?.buffer ?? []), ...discovery.rows] }
+  return {
+    ...discovery,
+    rows: [...(previous?.buffer ?? []), ...discovery.rows],
+  }
 }
 
 function pageFor(sources: SessionSource[], readings: ReadSource[], sessions: SessionRosterRow[]) {
@@ -157,7 +191,9 @@ function nextCursorForPage(readings: ReadSource[], page: ReturnType<typeof merge
 
 export async function listReply(
   sources: SessionSource[],
-  ownership: { rememberDiscoveries: (sessions: { id: string; harness: string }[]) => void },
+  ownership: {
+    rememberDiscoveries: (sessions: { id: string; harness: string }[]) => void
+  },
   {
     ticketLinks,
     archive,
