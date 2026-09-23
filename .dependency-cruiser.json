@@ -35,6 +35,18 @@
       }
     },
     {
+      "name": "claude-sdk-history-does-not-import-retired-readers",
+      "comment": "Claude SDK history reads the supported SDK. Transcript files are invalidation signals only (#2583).",
+      "severity": "error",
+      "from": {
+        "path": "^apps/desktop/src/harnesses/claude/agent-sdk/",
+        "pathNot": "\\.(test|stories)\\.(ts|tsx)$"
+      },
+      "to": {
+        "path": "^apps/desktop/src/harnesses/claude/sessions/"
+      }
+    },
+    {
       "name": "feature-entry-point-only",
       "comment": "One folder, one secret (AGENTS.md): a feature folder directly under a domain facet or a harness is reached through its entry point, never past it. The entry point is index.ts, or the file named after the folder, and the four of the latter that exist today are listed below. Parked at info for a follow-up ticket: 754 edges still breach it, so as an error it would gate every PR on finishing the whole restructure. The count is the distance to the target. Shrink it by adding entry points and raise this back to error at zero, never widen the rule to fit.",
       "severity": "info",

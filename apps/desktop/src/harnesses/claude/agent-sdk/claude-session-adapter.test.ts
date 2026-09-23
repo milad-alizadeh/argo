@@ -8,6 +8,7 @@ function managedAdapter(fake: ReturnType<typeof fakeClaudeQuery>) {
     waitForWorkspaceReady: async () => {},
     resolveWorkspace: async () => ({ workspaceId: 'workspace-1', cwd: '/repository' }),
     createQuery: fake.createQuery,
+    readResumePermission: async () => ({ resumable: true }),
   })
 }
 

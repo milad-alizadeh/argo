@@ -33,12 +33,14 @@ import { proveSessionShell } from './cases/shell.case'
 import { proveSubagentFeed } from './cases/subagent-feed.case'
 import { proveToolCalls } from './cases/tool-calls.case'
 import { proveComposerMemory, proveTurnSetup } from './cases/turn-setup.case'
+import { rosterRow } from './claude-proof-helpers'
 import { appendProse, growCodexTranscript, removeProse, streamProse } from './fixtures/feed.fixture'
 import { updatePlan } from './fixtures/plan.fixture'
 import { rosterOrderMutations } from './fixtures/roster-order.fixture'
 import { writeWindowFillerSessions } from './fixtures/roster-window.fixture'
 import { writeBuriedSearchTarget } from './fixtures/search-window.fixture'
-import { test } from './session-proof-run'
+import { openSessionByClick } from './gestures'
+import { expect, test } from './session-proof-run'
 
 test.describe('with no Project selected', () => {
   test.use({ projectSelected: false })
@@ -142,6 +144,27 @@ test('session-search', async ({ session }) => {
 
 test('session-created-by-click', async ({ session, backend }) => {
   await proveSessionCreatedByClick(session.page(), backend)
+})
+
+test.describe('with the real Claude SDK history', () => {
+  test.skip(({ sessionBackend }) => sessionBackend !== 'real', 'Requires a signed-in Claude CLI.')
+
+  test('session-sdk-history-real', async ({ session, backend }) => {
+    const sessionId = await proveSessionCreatedByClick(session.page(), backend)
+    const restarted = await session.restart()
+    const [watched] = await rosterRow(restarted, sessionId)
+    expect(watched?.posture).toBe('watched')
+    await openSessionByClick(restarted, sessionId)
+    await restarted.waitForSelector(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`)
+    const prompt = 'Continue the watched SDK history with one short acknowledgement.'
+    const composer = restarted.getByRole('combobox', { name: 'Message' })
+    await composer.click()
+    await restarted.keyboard.type(prompt)
+    await restarted.getByRole('button', { name: 'Send message' }).click()
+    await backend.waitForReply(restarted, { harness: 'claude', prompt })
+    const [managed] = await rosterRow(restarted, sessionId)
+    expect(managed?.posture).toBe('managed')
+  })
 })
 
 // A skip that reads only the worker's backend decides before the case launches anything.

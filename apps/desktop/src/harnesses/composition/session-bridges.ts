@@ -67,6 +67,9 @@ type AttachSessionsRequest = ManagedSessionBridges & {
   driveAdapters?: Partial<SessionDriveAdapters>
   harnesses?: readonly HarnessRegistration[]
   sources?: readonly SessionSource[]
+  excludedSourceHarnesses?: readonly string[]
+  polledSources?: readonly SessionSource[]
+  watchedRoots?: readonly string[]
 }
 
 function attachWatching(options: {
@@ -76,8 +79,19 @@ function attachWatching(options: {
   reader: ReturnType<typeof createSessionReader>
   userData: string
   managedRosterChanges?: Readonly<Record<string, WatchedSource>>
+  polledSources?: readonly SessionSource[]
+  watchedRoots?: readonly string[]
 }) {
-  const { window, runtimes, sources, reader, userData, managedRosterChanges = {} } = options
+  const {
+    window,
+    runtimes,
+    sources,
+    reader,
+    userData,
+    managedRosterChanges = {},
+    polledSources = sources,
+    watchedRoots = [],
+  } = options
   const transcriptRoots = runtimes.flatMap((runtime) => runtime.watchedTranscriptRoots)
   const harnessSources = harnessWatchedSources(runtimes)
   registerWatching(window, {
@@ -86,15 +100,28 @@ function attachWatching(options: {
       ...harnessSources.sessions,
       ...Object.values(managedRosterChanges),
       withReconcile(
-        watchTrees([...transcriptRoots, sessionArchivePath(userData)]),
+        watchTrees([...transcriptRoots, ...watchedRoots, sessionArchivePath(userData)]),
         sources,
         reader,
       ),
       withReconcile(watchWindowFocus(window), sources, reader),
       withReconcile(watchSystemResume(powerMonitor), sources, reader),
-      withReconcile(watchPeriodically(), sources, reader),
+      withReconcile(watchPeriodically(), polledSources, reader),
     ],
   })
+}
+
+function sourcesFor(
+  runtimes: readonly HarnessRuntime[],
+  additionalSources: readonly SessionSource[],
+  excludedHarnesses: readonly string[],
+) {
+  return [
+    ...runtimes
+      .filter((runtime) => !excludedHarnesses.includes(runtime.harness))
+      .map((runtime) => runtime.source),
+    ...additionalSources,
+  ]
 }
 
 export function attachSessions(window: BrowserWindow, request: AttachSessionsRequest) {
@@ -110,7 +137,10 @@ export function attachSessions(window: BrowserWindow, request: AttachSessionsReq
     managedLiveMessages,
     managedRosterChanges,
     managedRename,
+    watchedRoots,
     sources: additionalSources = [],
+    excludedSourceHarnesses = [],
+    polledSources,
     harnesses = sessionHarnesses,
   } = request
   // Argo's own archive flag, for every harness at once (#2315).
@@ -132,7 +162,7 @@ export function attachSessions(window: BrowserWindow, request: AttachSessionsReq
       managedRename,
     }),
   )
-  const sources = [...runtimes.map((runtime) => runtime.source), ...additionalSources]
+  const sources = sourcesFor(runtimes, additionalSources, excludedSourceHarnesses)
   const reader = createSessionReader(sources, ticketLinks, { ...archive, unread })
   const adapters: SessionDriveAdapters = {}
   for (const runtime of runtimes) adapters[runtime.harness] = runtime.driveAdapter
@@ -140,7 +170,16 @@ export function attachSessions(window: BrowserWindow, request: AttachSessionsReq
     if (adapter !== undefined) adapters[harness] = adapter
   }
   attachSessionBridge(window, { reader, adapters, rendererURL })
-  attachWatching({ window, runtimes, sources, reader, userData, managedRosterChanges })
+  attachWatching({
+    window,
+    runtimes,
+    sources,
+    reader,
+    userData,
+    managedRosterChanges,
+    polledSources,
+    watchedRoots,
+  })
   // Backfill starts on attach; its first completed pass reconciles launch changes (#2373).
   startBackfill(window, sources, reader)
   return runtimes
