@@ -3,6 +3,16 @@
   --inset-session-sidebar-toggle: calc(var(--size-control) + var(--spacing-shell-tight));
 }
 
+.session-screen__composer {
+  --session-screen-composer-limit: min(var(--size-session-composer-overlay), 50%);
+  max-height: var(--session-screen-composer-limit);
+}
+
+.session-screen__composer-scroll {
+  min-height: 0;
+  overflow-y: auto;
+}
+
 [data-component="CockpitContent"][data-sidebar-state="collapsed"]
   .session-screen__shell
   [data-component="SessionHeader"] {
