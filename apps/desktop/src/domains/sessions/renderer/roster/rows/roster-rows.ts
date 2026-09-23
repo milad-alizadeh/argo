@@ -18,7 +18,7 @@ export type RosterMenuHandlers = {
 export type RosterRowHandlers = RosterMenuHandlers & {
   onFetchMoreSessions: () => void
   onFocus: (sessionId: SessionId) => void
-  onSelect: (sessionId: SessionId) => void
+  onSelect: (sessionId: SessionId, retiredIds?: SessionId[]) => void
   onToggleSelect: (sessionId: SessionId, modifier: SelectionModifier) => void
 }
 

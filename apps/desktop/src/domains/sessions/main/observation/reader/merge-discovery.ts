@@ -13,6 +13,19 @@ export function isDiscoveryError(discovered: Discovered): discovered is { error:
   return 'error' in discovered
 }
 
+function rowsById(discoveries: readonly TranscriptDiscovery[]) {
+  const sessions = new Map<string, TranscriptDiscovery['rows'][number]>()
+  for (const discovery of discoveries) {
+    for (const row of discovery.rows) {
+      const previous = sessions.get(row.id)
+      if (previous === undefined || (row.updatedAt ?? '') > (previous.updatedAt ?? '')) {
+        sessions.set(row.id, row)
+      }
+    }
+  }
+  return [...sessions.values()]
+}
+
 // Today's aggregation, kept: the Sessions and counts of every adapter that answered, and the
 // first adapter's error only when every adapter failed. `clis` is `discovered`'s own sources, in
 // the same order, so each adapter's `nextCursor` can be named in the merged cursor (#2239) without
@@ -43,9 +56,9 @@ export function combineDiscoveries(
     version: 1,
     type: 'session.listed',
     requestId,
-    sessions: successful
-      .flatMap((reading) => reading.rows)
-      .sort((left, right) => (right.updatedAt ?? '').localeCompare(left.updatedAt ?? '')),
+    sessions: rowsById(successful).sort((left, right) =>
+      (right.updatedAt ?? '').localeCompare(left.updatedAt ?? ''),
+    ),
     filesFound: successful.reduce((total, reading) => total + reading.filesFound, 0),
     filesRead: successful.reduce((total, reading) => total + reading.filesRead, 0),
     filesUnreadable: successful.reduce((total, reading) => total + reading.filesUnreadable, 0),

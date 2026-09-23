@@ -201,11 +201,17 @@ const NOOP_ROSTER_ACTIONS: RosterActions = {
 function ReviewSidebar({
   onSelect,
   selectedSessionId,
+  titleText,
 }: {
   onSelect: (sessionId: string) => void
   selectedSessionId: string
+  titleText?: string
 }) {
-  withListedSessions(SESSION_ROSTER)
+  withListedSessions(
+    SESSION_ROSTER.map((session) =>
+      sessionWithTitle(session, session.id === 'composer-review' ? titleText : undefined),
+    ),
+  )
   return (
     <Roster
       actions={{ ...NOOP_ROSTER_ACTIONS, onSelect }}
@@ -280,12 +286,14 @@ function ReviewScreen({
   shellOutput = { state: 'available', tail: 'Checked 187 files.\ncheck:design-tokens — clean.\n' },
   showPlan = true,
   composerRunning = false,
+  titleText,
 }: {
   initialSessionId?: string
   rows?: SessionFeed['rows'] | null
   shellOutput?: SessionShellOutput
   showPlan?: boolean
   composerRunning?: boolean
+  titleText?: string
 }) {
   const [selectedSessionId, setSelectedSessionId] = useState(initialSessionId)
   // The header's picks drive a real inspector, so the story shows what picking a row opens.
@@ -294,15 +302,14 @@ function ReviewScreen({
   const session = SESSION_ROSTER.find(({ id }) => id === selectedSessionId)
   const feed = rows === null ? feedFor(selectedSessionId) : { ...feedFor(selectedSessionId), rows }
   if (session === undefined) return null
+  const headerSession = sessionWithTitle(session, titleText)
   const delegation = session.subagents.find(({ id }) => id === picked?.id) ?? null
   const shell = session.shell.find(({ id }) => id === picked?.id) ?? null
 
   return (
     <CockpitShell
       header={<ProjectSwitcher />}
-      sidebar={
-        <ReviewSidebar onSelect={setSelectedSessionId} selectedSessionId={selectedSessionId} />
-      }
+      sidebar={reviewSidebar(selectedSessionId, setSelectedSessionId, titleText)}
     >
       <SessionShell
         activeEvidenceId={null}
@@ -328,7 +335,7 @@ function ReviewScreen({
             shell={session.shell}
           />
         }
-        session={session}
+        session={headerSession}
         inspector={
           <ReviewInspector delegation={delegation} shell={shell} shellOutput={shellOutput} />
         }
@@ -345,6 +352,26 @@ function ReviewScreen({
       />
     </CockpitShell>
   )
+}
+
+function reviewSidebar(
+  selectedSessionId: string,
+  onSelect: (sessionId: string) => void,
+  titleText: string | undefined,
+) {
+  return (
+    <ReviewSidebar
+      onSelect={onSelect}
+      selectedSessionId={selectedSessionId}
+      titleText={titleText}
+    />
+  )
+}
+
+function sessionWithTitle(session: Session, titleText: string | undefined): Session {
+  return titleText === undefined
+    ? session
+    : { ...session, title: { text: titleText, source: 'first-prompt' } }
 }
 
 function NewSessionScreen() {
@@ -643,6 +670,24 @@ export const Open: Story = {
     await expectDelegatedFeedSurvivesCollapse(canvas)
 
     await expectShellReopensWithOutput(canvasElement)
+  },
+}
+
+export const FormattedHeaderTitle: Story = {
+  render: () => (
+    <ReviewScreen titleText="[$implement](/skills/implement/SKILL.md) [https://example.com/guide](https://example.com/guide)" />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const header = canvas.getByRole('heading', { name: /Implement/ })
+    const row = canvas.getByRole('button', {
+      name: /Implement https:\/\/example\.com\/guide/,
+    })
+    await expect(header).not.toHaveTextContent('[$implement]')
+    await expect(header).toHaveTextContent('https://example.com/guide')
+    await expect(header.querySelector('a')).toBeNull()
+    await expect(row).not.toHaveTextContent('[$implement]')
+    await expect(row).toHaveTextContent('https://example.com/guide')
   },
 }
 

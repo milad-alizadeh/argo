@@ -1,10 +1,9 @@
 import { type MouseEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { SessionReferenceText } from '../../composer/references/session-reference'
 import { useLiveActivityText } from '../../feed/rows/live-activity-text'
 import { HarnessLogo } from '../../harness/harness-logo'
-import { SESSION_HARNESSES, type SessionHarness, sessionHarnessOf } from '../../harness/harnesses'
-import { PromptText } from '../../prompt/prompt-text'
+import { SESSION_HARNESSES, type SessionHarness } from '../../harness/harnesses'
+import { SessionTitle } from '../../prompt/session-title'
 import type { Session } from '../../types'
 import type { SelectionModifier } from '../hooks/roster-selection'
 import { sessionName } from './roster-rows'
@@ -130,13 +129,7 @@ export function SessionRosterItem({
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
             <span className="block min-w-0 truncate type-body font-medium text-foreground">
-              <PromptText
-                interactiveLinks={false}
-                renderText={(value) => (
-                  <SessionReferenceText harness={sessionHarnessOf(session)} text={value} />
-                )}
-                text={sessionName(session, t('newSession'))}
-              />
+              <SessionTitle session={session} text={sessionName(session, t('newSession'))} />
             </span>
             {archived ? (
               <span
