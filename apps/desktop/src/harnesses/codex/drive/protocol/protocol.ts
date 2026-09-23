@@ -70,6 +70,12 @@ export function protocolString(value: unknown, label: string): string {
   return value
 }
 
+function protocolNonemptyString(value: unknown, label: string): string {
+  const text = protocolString(value, label)
+  assert(text.length > 0, `${label} must not be empty`)
+  return text
+}
+
 export function readModelCatalog(value: unknown): CodexModelCatalog {
   const response = protocolRecord(value, 'Model list result')
   assert(Array.isArray(response.data), 'Model list data must be an array')
@@ -90,19 +96,25 @@ export function readModelCatalog(value: unknown): CodexModelCatalog {
     const efforts = model.supportedReasoningEfforts.map((rawEffort, effortIndex) => {
       const effort = protocolRecord(rawEffort, `Model ${index} effort ${effortIndex}`)
       return {
-        reasoningEffort: protocolString(effort.reasoningEffort, 'Reasoning effort'),
-        description: protocolString(effort.description, 'Reasoning effort description'),
+        reasoningEffort: protocolNonemptyString(effort.reasoningEffort, 'Reasoning effort'),
+        description: typeof effort.description === 'string' ? effort.description : '',
       }
     })
+    assert(efforts.length > 0, `Model ${index} must advertise a reasoning effort`)
+    const defaultReasoningEffort = protocolNonemptyString(
+      model.defaultReasoningEffort,
+      'Default reasoning effort',
+    )
+    assert(
+      efforts.some(({ reasoningEffort }) => reasoningEffort === defaultReasoningEffort),
+      `Model ${index} default effort must be advertised`,
+    )
     return {
-      id: protocolString(model.id, 'Model ID'),
-      model: protocolString(model.model, 'Model name'),
-      displayName: protocolString(model.displayName, 'Model display name'),
-      description: protocolString(model.description, 'Model description'),
-      defaultReasoningEffort: protocolString(
-        model.defaultReasoningEffort,
-        'Default reasoning effort',
-      ),
+      id: protocolNonemptyString(model.id, 'Model ID'),
+      model: protocolNonemptyString(model.model, 'Model name'),
+      displayName: protocolNonemptyString(model.displayName, 'Model display name'),
+      description: typeof model.description === 'string' ? model.description : '',
+      defaultReasoningEffort,
       isDefault: model.isDefault,
       hidden: model.hidden,
       supportedReasoningEfforts: efforts,

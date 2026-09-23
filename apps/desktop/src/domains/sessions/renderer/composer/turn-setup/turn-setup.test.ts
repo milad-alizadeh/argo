@@ -7,6 +7,7 @@ import {
   CLAUDE_MODES,
   claudeTurnSetupSchema,
 } from '@/domains/sessions/contract/ipc/contract'
+import { CodexModelCatalogCache } from '@/harnesses/codex/drive/protocol/model-catalog'
 import { CLAUDE_TURN_SETUP } from './claude-turn-setup'
 import { codexTurnSetup } from './codex-turn-setup'
 import {
@@ -16,6 +17,13 @@ import {
   supportedSetup,
   turnSettled,
 } from './turn-setup'
+
+const recordedCodexCatalog: unknown = await Bun.file(
+  new URL(
+    '../../../../../../mocks/cli/codex/fixtures/model-list-codex-0.147.0.json',
+    import.meta.url,
+  ),
+).json()
 
 const requested = { model: 'opus', effort: 'max', mode: 'bypassPermissions' }
 
@@ -107,6 +115,29 @@ test('advertised models and efforts become the Codex composer choices and schema
   expect(
     schema.safeParse({ model: 'gpt-live', effort: 'high', mode: 'workspace-write' }).success,
   ).toBe(false)
+})
+
+test('a mocked app-server catalog request reaches the composer choices', async () => {
+  const cache = new CodexModelCatalogCache()
+  const catalog = await cache.get(
+    { executablePath: '/codex', version: 'codex-cli 0.147.0' },
+    async (_params, decode) => decode(recordedCodexCatalog),
+  )
+  const choices = codexTurnSetup(catalog)
+  expect(choices.models.map(({ value }) => value)).toEqual([
+    'gpt-5.6-sol',
+    'gpt-5.6-terra',
+    'gpt-5.6-luna',
+    'gpt-5.5',
+    'gpt-5.2',
+  ])
+  expect(choices.models.find(({ value }) => value === 'gpt-5.6-luna')?.efforts).toEqual([
+    'low',
+    'medium',
+    'high',
+    'xhigh',
+    'max',
+  ])
 })
 
 test('replaces an explicit model and effort removed by a live catalog refresh', () => {

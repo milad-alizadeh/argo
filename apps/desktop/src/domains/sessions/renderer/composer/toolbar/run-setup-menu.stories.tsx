@@ -142,6 +142,12 @@ export const LabelsFallbackCatalog: Story = {
       'Using a fallback model list because the live Codex catalog is unavailable.',
     )
     await expect(page().getByRole('radiogroup', { name: 'Model' })).toBeVisible()
+    await expect(
+      within(page().getByRole('radiogroup', { name: 'Model' })).getByRole('radio', {
+        name: /Gpt 5.6 Sol/,
+      }),
+    ).toBeDisabled()
+    await expect(page().getByRole('slider', { name: 'Effort' })).toBeDisabled()
   },
 }
 

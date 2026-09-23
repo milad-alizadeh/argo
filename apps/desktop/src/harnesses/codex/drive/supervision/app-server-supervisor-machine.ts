@@ -1,3 +1,4 @@
+import { execFile } from 'node:child_process'
 import { type ActorRefFrom, assign, createActor, fromPromise, setup } from 'xstate'
 import { codexLaunchEnvironment } from '../launch-environment'
 import type { WireMessage } from '../protocol/protocol'
@@ -42,6 +43,10 @@ type SupervisorContext = {
 }
 type SupervisorEvent =
   | {
+      type: 'Executable changed'
+      executable: string | null
+    }
+  | {
       type: 'Process exited'
     }
   | {
@@ -55,17 +60,41 @@ type SupervisorEvent =
 // `getChannel`, never copied into XState context (channels are not serializable, ADR-0047).
 function createAppServerProcessActor(deps: AppServerSupervisorDeps) {
   let liveChannel: CodexChannel | null = null
+  let runningIdentity: {
+    executablePath: string
+    version: string
+  } | null = null
   let notifyProcessExited: (() => void) | null = null
 
   const runAppServerProcess = fromPromise<
     {
       channel: CodexChannel
+      identity: {
+        executablePath: string
+        version: string
+      }
     },
     {
       executable: string
     }
   >(async ({ input, signal }) => {
     if (input.executable === '') throw new CodexSessionDriverError('harness-unavailable')
+    const version = await new Promise<string>((resolve, reject) => {
+      execFile(
+        input.executable,
+        [
+          '--version',
+        ],
+        {
+          encoding: 'utf8',
+          timeout: 3_000,
+        },
+        (error, stdout) => {
+          if (error !== null) reject(error)
+          else resolve(stdout.trim())
+        },
+      )
+    })
     const { process: child, channel } = openAppServer({
       executable: input.executable,
       env: codexLaunchEnvironment(),
@@ -84,19 +113,27 @@ function createAppServerProcessActor(deps: AppServerSupervisorDeps) {
       throw error instanceof Error ? error : new CodexSessionDriverError('launch-failed')
     }
     liveChannel = channel
+    const identity = {
+      executablePath: input.executable,
+      version,
+    }
+    runningIdentity = identity
     channel.onExit(() => {
       liveChannel = null
+      runningIdentity = null
       notifyProcessExited?.()
     })
     void child
     return {
       channel,
+      identity,
     }
   })
 
   return {
     runAppServerProcess,
     getChannel: () => liveChannel,
+    getRunningIdentity: () => runningIdentity,
     // The invoked actor's own lifecycle ends once the promise resolves (Ready), so a later
     // process exit can't reach the machine through onDone/onError — it has to reach the running
     // actor directly. The supervisor actor doesn't exist yet when this closure is built, so it
@@ -110,6 +147,11 @@ function createAppServerProcessActor(deps: AppServerSupervisorDeps) {
 export type AppServerSupervisor = {
   actor: ReturnType<typeof createActor<ReturnType<typeof createAppServerSupervisorMachine>>>
   getChannel: () => CodexChannel | null
+  getRunningIdentity: () => {
+    executablePath: string
+    version: string
+  } | null
+  refreshExecutable: (executable: string | null) => void
   close: () => void
 }
 
@@ -137,6 +179,13 @@ function createAppServerSupervisorMachine(
       }),
       notifyChannelLost: () => deps.onChannelLost(),
       notifyChannelRestored: () => deps.onChannelRestored(),
+      updateExecutable: assign(({ event }) =>
+        event.type === 'Executable changed'
+          ? {
+              executable: event.executable,
+            }
+          : {},
+      ),
     },
     delays: {
       retryDelay: ({ context }) => Math.min(1_000 * 2 ** context.retryCount, 30_000),
@@ -150,6 +199,13 @@ function createAppServerSupervisorMachine(
     initial: 'Starting',
     states: {
       Starting: {
+        on: {
+          'Executable changed': {
+            target: 'Starting',
+            reenter: true,
+            actions: 'updateExecutable',
+          },
+        },
         invoke: {
           src: 'runAppServerProcess',
           input: ({ context }) => ({
@@ -166,6 +222,10 @@ function createAppServerSupervisorMachine(
         entry: 'notifyChannelRestored',
         on: {
           'Process exited': 'Backoff',
+          'Executable changed': {
+            target: 'Starting',
+            actions: 'updateExecutable',
+          },
           Shutdown: 'ShuttingDown',
         },
       },
@@ -179,6 +239,10 @@ function createAppServerSupervisorMachine(
         },
         on: {
           'Retry now': 'Starting',
+          'Executable changed': {
+            target: 'Starting',
+            actions: 'updateExecutable',
+          },
           Shutdown: 'ShuttingDown',
         },
       },
@@ -194,7 +258,7 @@ function createAppServerSupervisorMachine(
 // fan out to whichever managed-Session child actors are registered; the caller (the Session
 // adapter) owns that registry, not the supervisor.
 export function createAppServerSupervisor(deps: AppServerSupervisorDeps): AppServerSupervisor {
-  const { getChannel, runAppServerProcess, setProcessExitedListener } =
+  const { getChannel, getRunningIdentity, runAppServerProcess, setProcessExitedListener } =
     createAppServerProcessActor(deps)
   const machine = createAppServerSupervisorMachine(runAppServerProcess, deps)
   const actor = createActor(machine, {
@@ -210,6 +274,14 @@ export function createAppServerSupervisor(deps: AppServerSupervisorDeps): AppSer
   return {
     actor,
     getChannel,
+    getRunningIdentity,
+    refreshExecutable: (executable) => {
+      getChannel()?.close()
+      actor.send({
+        type: 'Executable changed',
+        executable,
+      })
+    },
     close: () => {
       actor.send({
         type: 'Shutdown',

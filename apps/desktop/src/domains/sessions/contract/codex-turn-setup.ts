@@ -49,7 +49,7 @@ export function codexTurnSetupSchemaFor(catalog: CodexModelCatalog | null) {
   ])
 }
 
-export const codexTurnSetupSchema = codexTurnSetupSchemaFor(null)
+export const codexTurnSetupSchema = z.union([z.undefined(), codexSelectedTurnSetupBaseSchema])
 export const CODEX_OPENING_SETUP: CodexTurnSetup = {
   model: 'gpt-5.6-luna',
   effort: 'low',

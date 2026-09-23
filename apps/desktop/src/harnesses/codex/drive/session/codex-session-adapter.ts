@@ -6,7 +6,6 @@ import type { CodexSessionAdapter } from './codex-session-adapter-contract'
 export type { CodexSessionAdapter } from './codex-session-adapter-contract'
 
 import {
-  CODEX_OPENING_SETUP,
   type CodexTurnSetup,
   codexOpeningSetupFor,
   codexTurnSetupSchemaFor,
@@ -57,8 +56,11 @@ async function executeCodexCommand(options: {
     return executeCommand(command, registry, startWithSetup)
   }
   const catalog = await appServer.readModelCatalog()
+  if (catalog === null) {
+    return { kind: 'rejected', reason: 'Codex model catalog is unavailable.' }
+  }
   const parsed = codexTurnSetupSchemaFor(catalog).safeParse(
-    command.setup ?? (catalog === null ? CODEX_OPENING_SETUP : codexOpeningSetupFor(catalog)),
+    command.setup ?? codexOpeningSetupFor(catalog),
   )
   if (!parsed.success || parsed.data === undefined) {
     return { kind: 'rejected', reason: 'Codex does not support the selected Model and Effort.' }
@@ -114,8 +116,16 @@ function createHistoryReads(watched: ReturnType<typeof createAdapterHistory>['wa
   }
 }
 
-function createCatalogReads(appServer: ReturnType<typeof sharedAppServerRuntimeFor>) {
-  return { projections: appServer.projections, readModelCatalog: appServer.readModelCatalog }
+function closeAdapter(options: {
+  stopWatch: () => void
+  launch: Parameters<typeof closeCodexSessionAdapter>[0]
+  sessionService: ManagedSessionDeps['sessionService']
+  detach: () => void
+}) {
+  return async () => {
+    options.stopWatch()
+    await closeCodexSessionAdapter(options.launch, options.sessionService, options.detach)
+  }
 }
 
 export function createCodexSessionAdapter(deps: {
@@ -173,11 +183,9 @@ export function createCodexSessionAdapter(deps: {
       if (unsubscribe === undefined) throw new CodexSessionDriverError('missing-session')
       return unsubscribe
     },
-    close: async () => {
-      stopWatch()
-      await closeCodexSessionAdapter(launch, deps.sessionService, detach)
-    },
-    ...createCatalogReads(appServer),
+    close: closeAdapter({ stopWatch, launch, sessionService: deps.sessionService, detach }),
+    projections: appServer.projections,
+    readModelCatalog: appServer.readModelCatalog,
     refreshHistory: async (notifyLateSuccess) => {
       const projections = await watched.refresh()
       if (notifyLateSuccess()) rosterChanges.notify()

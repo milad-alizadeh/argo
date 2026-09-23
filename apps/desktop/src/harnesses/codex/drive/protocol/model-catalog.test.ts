@@ -1,6 +1,17 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { CodexModelCatalogCache, readModelCatalog } from './model-catalog'
+
+const recordedResponse: unknown = JSON.parse(
+  readFileSync(
+    new URL(
+      '../../../../../mocks/cli/codex/fixtures/model-list-codex-0.147.0.json',
+      import.meta.url,
+    ),
+    'utf8',
+  ),
+)
 
 const catalog = {
   data: [
@@ -24,6 +35,13 @@ test('decodes the advertised model names and reasoning efforts', () => {
 
 test('rejects an unrecognized model/list response', () => {
   assert.throws(() => readModelCatalog({ data: [{ id: 'unknown-shape' }] }))
+})
+
+test('decodes a recorded response from codex 0.147.0', () => {
+  const decoded = readModelCatalog(recordedResponse)
+  assert.equal(decoded.data[0]?.model, 'gpt-5.6-sol')
+  assert.equal(decoded.data[0]?.supportedReasoningEfforts[0]?.reasoningEffort, 'low')
+  assert.equal(decoded.data.length, 5)
 })
 
 test('caches model/list by executable path and version', async () => {

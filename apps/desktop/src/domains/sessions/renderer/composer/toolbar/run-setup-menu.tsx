@@ -109,12 +109,13 @@ function ModelOptions({ choices, value, onChange }: TurnSetupControlProps) {
             // A native radio group: arrows move both focus and the choice, and only the checked one is a Tab stop.
             <label
               key={model.value}
-              className={`flex min-h-12 w-full cursor-pointer items-center rounded-md px-2.5 py-1.5 text-left transition-colors has-focus-visible:ring-3 has-focus-visible:ring-ring/50 ${
+              className={`flex min-h-12 w-full items-center rounded-md px-2.5 py-1.5 text-left transition-colors has-focus-visible:ring-3 has-focus-visible:ring-ring/50 ${choices.source === 'fallback' ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} ${
                 active ? 'bg-foreground text-background' : 'hover:bg-muted'
               }`}
             >
               <input
                 type="radio"
+                disabled={choices.source === 'fallback'}
                 name={name}
                 value={model.value}
                 checked={active}
