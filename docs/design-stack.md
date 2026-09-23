@@ -6,8 +6,6 @@ archive.
 - **Token contract** — `apps/desktop/src/platform/renderer/tokens.css`. All design tokens live there.
   `:root` supplies shared values and the light appearance. `.dark` overrides appearance values.
   `globals.css` imports the contract and defines global styles only.
-- **Token mirror** — `docs/design/tokens.css`. Change values in the contract, then edit this
-  file to match by hand.
 - **Components live with their owner**. The shadcn CLI writes
   `apps/desktop/src/platform/renderer/components/ui/`, which authors never edit by hand.
   Hand-written product modules live in their domain renderer facet. Proven cross-domain modules

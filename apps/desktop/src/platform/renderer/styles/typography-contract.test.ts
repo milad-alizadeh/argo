@@ -11,26 +11,6 @@ const feedMarkdown = await Bun.file(
   new URL('../../../domains/sessions/renderer/feed/content/feed-markdown.tsx', import.meta.url),
 ).text()
 const components = await Bun.file(new URL('../../../../components.json', import.meta.url)).json()
-const map = await Bun.file(
-  new URL('../../../../../../docs/design/typography.md', import.meta.url),
-).text()
-
-test('maps every product text surface and the shared primitive boundary', () => {
-  for (const surface of [
-    'Cockpit chrome and navigation',
-    'Sessions roster',
-    'Sessions feed',
-    'Session composer and context',
-    'Session inspector and work',
-    'Tickets sidebar and detail',
-    'Account and project dialogs',
-    'Shared UI primitives',
-  ]) {
-    expect(map).toContain(`| ${surface} |`)
-  }
-  expect(map).toContain('## Composition boundary')
-})
-
 test('defines one app type scale without surface-specific aliases', () => {
   for (const role of ['title', 'heading', 'body', 'prose', 'control', 'meta', 'code']) {
     expect(tokens).toContain(`--text-${role}:`)

@@ -52,6 +52,9 @@ fork PRs.
 ends at the reviewed diff, committed on its branch. A hook denies both commands unless prefixed
 `ARGO_SHIP=1`, which only `/ship` writes.
 
+An implementation gets one review pass. Fix its actionable findings, then commit without starting
+another review pass just to check those fixes.
+
 **What leaves the base says so in a commit trailer**: `Removes-test: <name>`,
 `Removes-file: <path>`, `Reverts-file: <path>` (or `*`). A reviewer is the check:
 `docs/agents/landing.md`.
@@ -81,9 +84,6 @@ parent's. Pick the lowest tier that can finish the bounded task: cheap and low e
 research, read-only inspection and mechanical edits; higher only for sustained reasoning, ambiguous
 design, broad code understanding or high-risk verification. The parent model is the ceiling.
 Report model, effort and the task requirement that earns it.
-
-The parent owns all delegation. A subagent completes its assigned task and reports back without
-creating child agents.
 
 ## Visual verification
 
