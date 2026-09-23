@@ -11,7 +11,7 @@ import { SessionRosterItem } from './session-roster-item'
 type RosterRowViewProps = {
   checked: boolean
   onFocus: (sessionId: SessionId) => void
-  onSelect: (sessionId: SessionId) => void
+  onSelect: (sessionId: SessionId, retiredIds?: SessionId[]) => void
   onToggleSelect: (sessionId: SessionId, modifier: SelectionModifier) => void
   renamedTitles: Record<string, string>
   row: RosterRow
@@ -64,7 +64,7 @@ export const RosterRowView = memo(function RosterRowView({
       archived={archived}
       checked={checked}
       onFocus={() => onFocus(session.id)}
-      onSelect={() => onSelect(session.id)}
+      onSelect={() => onSelect(session.id, session.retiredIds)}
       onToggleSelect={(modifier) => onToggleSelect(session.id, modifier)}
       selectable={selectable}
       selected={selected}

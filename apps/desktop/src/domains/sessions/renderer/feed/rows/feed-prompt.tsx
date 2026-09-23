@@ -36,7 +36,7 @@ export function FeedPrompt({
   const { t } = useTranslation('sessions')
   return (
     <div
-      className="flex max-w-full flex-col items-end gap-(--spacing-tight) rounded-xl border border-transparent bg-muted px-3 py-2 type-prose sm:max-w-4/5"
+      className="flex min-w-0 max-w-full flex-col items-end gap-(--spacing-tight) rounded-xl border border-transparent bg-muted px-3 py-2 type-prose sm:max-w-4/5"
       data-slot="bubble"
       data-variant="muted"
     >
@@ -72,20 +72,21 @@ export function FeedPrompt({
         </p>
       )}
       {pastedContent.map(({ id, text: content }) => (
-        <CollapsibleText
-          key={`${rowId}:${id}`}
-          content={
-            <FeedMarkdown
-              activeEvidenceId={activeEvidenceId}
-              onOpenEvidence={onOpenEvidence}
-              rowId={`${rowId}:pasted-content:${id}`}
-              text={content}
-            />
-          }
-          contentVariant="flush"
-          icon="file"
-          title={t('pastedContent')}
-        />
+        <div className="w-full min-w-0" key={`${rowId}:${id}`}>
+          <CollapsibleText
+            content={
+              <FeedMarkdown
+                activeEvidenceId={activeEvidenceId}
+                onOpenEvidence={onOpenEvidence}
+                rowId={`${rowId}:pasted-content:${id}`}
+                text={content}
+              />
+            }
+            contentVariant="flush"
+            icon="file"
+            title={t('pastedContent')}
+          />
+        </div>
       ))}
     </div>
   )
