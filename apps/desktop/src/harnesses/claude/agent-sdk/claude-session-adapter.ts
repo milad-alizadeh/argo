@@ -1,6 +1,9 @@
 import { PROJECT_PROOF_STORE_ENV } from '@/domains/projects/main/proof-protocol'
 import type { ClaudeModelCatalog } from '@/domains/sessions/contract/claude-model-catalog'
-import { claudeTurnSetupSchemaFor } from '@/domains/sessions/contract/claude-turn-setup'
+import {
+  claudeOpeningSetupFor,
+  claudeTurnSetupSchemaFor,
+} from '@/domains/sessions/contract/claude-turn-setup'
 import type { SessionCommand } from '@/domains/sessions/next/contract/session-command-contract'
 import type { WorkspaceSelection } from '@/domains/sessions/next/contract/session-contract'
 import type {
@@ -34,20 +37,25 @@ async function executeCommand(options: {
   readModelCatalog: () => ReturnType<typeof readClaudeModelCatalog>
 }): Promise<SessionCommandOutcome> {
   const { command, runtime, registry, readModelCatalog } = options
-  if (command.type === 'session.start')
+  if (command.type === 'session.start') {
+    const catalog = await readModelCatalog()
+    if (catalog === null)
+      return { kind: 'rejected', reason: 'Claude model catalog is unavailable.' }
+    const setup = command.setup ?? claudeOpeningSetupFor(catalog)
+    const parsed = claudeTurnSetupSchemaFor(catalog).safeParse(setup)
+    if (!parsed.success || parsed.data === undefined)
+      return { kind: 'rejected', reason: 'Claude does not support the selected Model and Effort.' }
     return openClaudeSession({
       command: {
         ...command,
         session: null,
-        setup:
-          command.setup === undefined
-            ? undefined
-            : claudeTurnSetupSchemaFor(await readModelCatalog()).parse(command.setup),
+        setup: parsed.data,
       },
       deps: runtime,
       register: registry.register,
       requireEntry: registry.requireEntry,
     })
+  }
   if (command.type === 'session.compact') {
     const entry = registry.requireEntry(command.session)
     entry.actor.send({ type: 'Send', prompt: '/compact' })

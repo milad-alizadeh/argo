@@ -6,12 +6,14 @@ import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-
 import type { SessionHarness } from '../../harness/harnesses'
 import { claudeTurnSetup } from '../turn-setup/claude-turn-setup'
 import { codexTurnSetup } from '../turn-setup/codex-turn-setup'
+import type { TurnSetup } from '../turn-setup/turn-setup'
 import { RunSetupMenu } from './run-setup-menu'
 
 // A started Session keeps its harness; a new one offers the harness tabs.
 function RunSetupStory({ started = true }: { started?: boolean }) {
   const [harness, setHarness] = useState<SessionHarness>('claude')
   const claudeChoices = claudeTurnSetup(liveClaudeCatalog)
+  if (claudeChoices === null) throw new Error('The Claude story catalog has no usable model.')
   const [setup, setSetup] = useState(claudeChoices.opening)
   const choices = harness === 'codex' ? codexTurnSetup(liveCatalog) : claudeChoices
   const chooseHarness = (nextHarness: SessionHarness) => {
@@ -30,19 +32,22 @@ function RunSetupStory({ started = true }: { started?: boolean }) {
   )
 }
 
-function ClaudeFallbackStory({ failed = false }: { failed?: boolean }) {
+function ClaudeCatalogStory({ failed = false }: { failed?: boolean }) {
   const [catalog, setCatalog] = useState<ClaudeModelCatalog | null>(null)
   const [catalogError, setCatalogError] = useState(failed)
   const choices = claudeTurnSetup(catalog)
-  const [setup, setSetup] = useState(choices.opening)
+  const [setup, setSetup] = useState<TurnSetup | null>(null)
   return (
     <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
       <RunSetupMenu
         harness={{ harness: 'claude' }}
-        setup={{ choices, value: setup, onChange: setSetup }}
+        setup={
+          choices === null || setup === null ? null : { choices, value: setup, onChange: setSetup }
+        }
         catalogError={catalogError}
         refreshCatalog={() => {
           setCatalog(liveClaudeCatalog)
+          setSetup(claudeTurnSetup(liveClaudeCatalog)?.opening ?? null)
           setCatalogError(false)
         }}
       />
@@ -108,17 +113,19 @@ function CodexCatalogStory({
 }) {
   const [catalog, setCatalog] = useState(initialCatalog)
   const choices = codexTurnSetup(catalog)
-  const [setup, setSetup] = useState(choices?.opening ?? claudeTurnSetup(null).opening)
+  const [setup, setSetup] = useState<TurnSetup | null>(choices?.opening ?? null)
   const [catalogError, setCatalogError] = useState(failed)
   return (
     <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
       <RunSetupMenu
         harness={{ harness: 'codex' }}
-        setup={choices === null ? null : { choices, value: setup, onChange: setSetup }}
+        setup={
+          choices === null || setup === null ? null : { choices, value: setup, onChange: setSetup }
+        }
         catalogError={catalogError}
         refreshCatalog={() => {
           setCatalog(liveCatalog)
-          setSetup(codexTurnSetup(liveCatalog)?.opening ?? claudeTurnSetup(null).opening)
+          setSetup(codexTurnSetup(liveCatalog)?.opening ?? null)
           setCatalogError(false)
         }}
       />
@@ -218,37 +225,25 @@ export const UsesLiveClaudeCatalog: Story = {
   },
 }
 
-export const UsesLabeledClaudeFallback: Story = {
-  render: () => <ClaudeFallbackStory />,
+export const LoadsClaudeCatalog: Story = {
+  render: () => <ClaudeCatalogStory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const trigger = canvas.getByRole('button', { name: TRIGGER })
-    await expect(trigger).toHaveTextContent('Fallback')
-    await expect(trigger).toHaveAccessibleName(
-      'Choose run setup: Claude Code, Sonnet, Medium, Fallback',
-    )
-    await userEvent.click(trigger)
-    await expect(page().getByRole('status')).toHaveTextContent(
-      'Using a limited fallback model and effort.',
-    )
-    await expect(
-      page().getByRole('radiogroup', { name: 'Model' }).querySelectorAll('input'),
-    ).toHaveLength(1)
-    await expect(page().getByRole('slider', { name: 'Effort' })).toHaveAttribute(
-      'aria-valuetext',
-      'Medium',
-    )
+    await userEvent.click(canvas.getByRole('button', { name: TRIGGER }))
+    await expect(page().getByRole('status')).toHaveTextContent('Loading Claude Code models…')
+    await expect(page().queryByRole('radiogroup', { name: 'Model' })).toBeNull()
   },
 }
 
 export const RetriesClaudeCatalog: Story = {
-  render: () => <ClaudeFallbackStory failed />,
+  render: () => <ClaudeCatalogStory failed />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: TRIGGER }))
-    await expect(page().getByRole('alert')).toHaveTextContent('Argo could not load Claude models.')
-    await expect(page().getByRole('status')).toHaveTextContent('Using a limited fallback model')
-    await waitFor(() => expect(page().getByRole('radiogroup', { name: 'Model' })).toBeVisible())
+    await expect(page().getByRole('alert')).toHaveTextContent(
+      'Argo could not load Claude Code models.',
+    )
+    await expect(page().queryByRole('radiogroup', { name: 'Model' })).toBeNull()
     await expect(page().getByRole('button', { name: 'Refresh models' })).toBeEnabled()
     await userEvent.click(page().getByRole('button', { name: 'Refresh models' }))
     await expect(page().queryByRole('alert')).toBeNull()
@@ -265,9 +260,7 @@ export const RetriesUnavailableCatalog: Story = {
     const canvas = within(canvasElement)
     const trigger = canvas.getByRole('button', { name: TRIGGER })
     await userEvent.click(trigger)
-    await expect(page().getByRole('alert')).toHaveTextContent(
-      'Argo could not load the Codex models.',
-    )
+    await expect(page().getByRole('alert')).toHaveTextContent('Argo could not load Codex models.')
     await expect(page().queryByRole('radiogroup', { name: 'Model' })).toBeNull()
     await userEvent.click(page().getByRole('button', { name: 'Refresh models' }))
     await expect(canvas.getByRole('button', { name: TRIGGER })).toHaveAccessibleName(

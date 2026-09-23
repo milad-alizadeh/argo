@@ -37,8 +37,6 @@ export function RunSetupMenu({
   const { t } = useTranslation('sessions')
   const harnessLabel = HARNESSES[harness.harness].label
   const facts = setupFacts(setup)
-  const fallbackLabel =
-    setup?.choices.source === 'fallback' ? t('composer.setup.fallbackShort') : null
   const body = (
     <SetupBody
       harness={harness}
@@ -54,7 +52,7 @@ export function RunSetupMenu({
           <InputGroupButton
             variant="ghost"
             className="max-w-80 min-w-0 type-control text-foreground"
-            aria-label={`Choose run setup: ${[harnessLabel, ...facts, ...(fallbackLabel ? [fallbackLabel] : [])].join(', ')}`}
+            aria-label={`Choose run setup: ${[harnessLabel, ...facts].join(', ')}`}
           />
         }
       >
@@ -68,11 +66,6 @@ export function RunSetupMenu({
               <span>{fact}</span>
             </Fragment>
           ))}
-          {fallbackLabel ? (
-            <span className="ml-1.5 rounded-sm bg-muted px-1.5 py-0.5 type-meta text-muted-foreground">
-              {fallbackLabel}
-            </span>
-          ) : null}
         </span>
         <Icon name="chevron-down" className="hidden text-muted-foreground @[36rem]:block" />
       </PopoverTrigger>
@@ -97,47 +90,27 @@ function setupFacts(setup: TurnSetupControlProps | null) {
   return [choiceLabel(choices, 'model', value.model), choiceLabel(choices, 'effort', value.effort)]
 }
 
-// A harness that declares no choices runs at its own configured ones.
 function SetupBody({ harness, setup, catalogError, refreshCatalog }: RunSetupMenuProps) {
   const { t } = useTranslation('sessions')
-  if (harness.harness === 'codex' && catalogError)
+  if (catalogError)
     return (
       <div className="space-y-2 p-3.5" role="alert">
-        <p className="type-meta text-muted-foreground">{t('composer.setup.modelCatalogError')}</p>
+        <p className="type-meta text-muted-foreground">
+          {t('composer.setup.modelCatalogError', { harness: HARNESSES[harness.harness].label })}
+        </p>
         <Button onClick={refreshCatalog} size="sm" type="button" variant="outline">
           {t('composer.setup.refreshModels')}
         </Button>
       </div>
     )
-  if (harness.harness === 'codex' && setup === null)
-    return (
-      <p className="p-3.5 type-meta text-muted-foreground" role="status">
-        {t('composer.setup.loadingModels')}
-      </p>
-    )
   if (setup === null)
     return (
-      <p className="p-3.5 type-meta text-muted-foreground">
-        {t('composer.setup.ownSettings', { harness: HARNESSES[harness.harness].label })}
+      <p className="p-3.5 type-meta text-muted-foreground" role="status">
+        {t('composer.setup.loadingModels', { harness: HARNESSES[harness.harness].label })}
       </p>
     )
   return (
     <>
-      {harness.harness === 'claude' && catalogError ? (
-        <div className="flex items-center gap-2 px-3.5 pt-3.5" role="alert">
-          <p className="type-meta text-muted-foreground">
-            {t('composer.setup.claudeCatalogError')}
-          </p>
-          <Button onClick={refreshCatalog} size="sm" type="button" variant="outline">
-            {t('composer.setup.refreshModels')}
-          </Button>
-        </div>
-      ) : null}
-      {setup.choices.source === 'fallback' ? (
-        <p className="px-3.5 pt-3.5 type-meta text-muted-foreground" role="status">
-          {t('composer.setup.fallbackModels')}
-        </p>
-      ) : null}
       <ModelOptions {...setup} />
       <EffortSlider {...setup} />
     </>

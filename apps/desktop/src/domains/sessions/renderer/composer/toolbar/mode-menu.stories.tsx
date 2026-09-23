@@ -1,8 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
-import { CLAUDE_TURN_SETUP } from '../turn-setup/claude-turn-setup'
+import { claudeComposerModelCatalogFixture } from '../../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
+import { claudeTurnSetup } from '../turn-setup/claude-turn-setup'
+import type { TurnSetupChoices } from '../turn-setup/turn-setup'
 import { ModeMenu } from './mode-menu'
+
+const CLAUDE_TURN_SETUP = (() => {
+  const choices = claudeTurnSetup(claudeComposerModelCatalogFixture())
+  if (choices === null) throw new Error('The Claude story catalog has no usable model.')
+  return choices
+})() satisfies TurnSetupChoices
 
 function ModeStory() {
   const [setup, setSetup] = useState(CLAUDE_TURN_SETUP.opening)

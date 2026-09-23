@@ -31,7 +31,6 @@ export type TurnSetupChoices = {
   efforts: SetupChoice[]
   modes: ModeChoice[]
   opening: TurnSetup
-  source?: 'fallback'
 }
 
 const FIELDS = ['model', 'effort', 'mode'] as const

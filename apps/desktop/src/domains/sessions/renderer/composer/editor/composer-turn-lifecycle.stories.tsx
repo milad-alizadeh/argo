@@ -2,10 +2,18 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useRef, useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { Button } from '@/platform/renderer/components/ui/button'
+import { claudeComposerModelCatalogFixture } from '../../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
 import type { SessionHarness } from '../../harness/harnesses'
 import { useComposerStore } from '../hooks'
-import { CLAUDE_TURN_SETUP } from '../turn-setup/claude-turn-setup'
+import { claudeTurnSetup } from '../turn-setup/claude-turn-setup'
+import type { TurnSetupChoices } from '../turn-setup/turn-setup'
 import { SessionComposer, type SessionComposerProps } from './session-composer'
+
+const CLAUDE_TURN_SETUP = (() => {
+  const choices = claudeTurnSetup(claudeComposerModelCatalogFixture())
+  if (choices === null) throw new Error('The Claude story catalog has no usable model.')
+  return choices
+})() satisfies TurnSetupChoices
 
 const FRAME = 'mx-auto max-w-4xl p-8'
 const SETUP_FRAME = 'mx-auto max-w-4xl p-8 pt-96'

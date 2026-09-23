@@ -54,6 +54,17 @@ test('starts Claude after the selected Workspace is ready', async () => {
       queryCalls += 1
       return fake.createQuery(params)
     },
+    readModelCatalog: async () => ({
+      data: [
+        {
+          value: 'haiku',
+          resolvedModel: 'claude-haiku-4-5',
+          displayName: 'Haiku',
+          description: '',
+          supportedEffortLevels: ['low'],
+        },
+      ],
+    }),
   })
   const outcome = adapter.execute({
     type: 'session.start',

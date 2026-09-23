@@ -2,7 +2,7 @@ import {
   type ClaudeModelCatalog,
   claudeModelsWithEffort,
 } from '@/domains/sessions/contract/claude-model-catalog'
-import { CLAUDE_FALLBACK_SETUP } from '@/domains/sessions/contract/ipc/contract'
+import { claudeOpeningSetupFor } from '@/domains/sessions/contract/claude-turn-setup'
 import type { ModeChoice, TurnSetupChoices } from './turn-setup'
 
 // An alias names a family, and the transcript names the model id it resolved to.
@@ -60,38 +60,12 @@ const MODES: ModeChoice[] = [
   },
 ]
 
-export function claudeTurnSetup(catalog: ClaudeModelCatalog | null): TurnSetupChoices {
-  if (catalog === null) {
-    return {
-      agent: 'Claude',
-      label: 'Claude Code',
-      models: [
-        {
-          value: CLAUDE_FALLBACK_SETUP.model,
-          label: 'Sonnet',
-          efforts: [CLAUDE_FALLBACK_SETUP.effort],
-          defaultEffort: CLAUDE_FALLBACK_SETUP.effort,
-          reads: (reading) => reading === CLAUDE_FALLBACK_SETUP.model,
-        },
-      ],
-      efforts: [
-        {
-          value: CLAUDE_FALLBACK_SETUP.effort,
-          label: 'Medium',
-          reads: (reading) => reading === CLAUDE_FALLBACK_SETUP.effort,
-        },
-      ],
-      modes: MODES,
-      opening: { ...CLAUDE_FALLBACK_SETUP, mode: 'manual' },
-      source: 'fallback',
-    }
-  }
+export function claudeTurnSetup(catalog: ClaudeModelCatalog | null): TurnSetupChoices | null {
+  if (catalog === null) return null
   const models = claudeModelsWithEffort(catalog)
-  const openingModel = models.find(({ value }) => value === 'opus') ?? models[0]
-  if (openingModel === undefined) return claudeTurnSetup(null)
-  const openingEffort = openingModel.supportedEffortLevels.includes('medium')
-    ? 'medium'
-    : (openingModel.supportedEffortLevels[0] ?? CLAUDE_FALLBACK_SETUP.effort)
+  if (models.length === 0) return null
+  const opening = claudeOpeningSetupFor(catalog)
+  if (opening === null) return null
   return {
     agent: 'Claude',
     label: 'Claude Code',
@@ -115,8 +89,6 @@ export function claudeTurnSetup(catalog: ClaudeModelCatalog | null): TurnSetupCh
       }),
     ),
     modes: MODES,
-    opening: { model: openingModel.value, effort: openingEffort, mode: 'manual' },
+    opening,
   }
 }
-
-export const CLAUDE_TURN_SETUP = claudeTurnSetup(null)

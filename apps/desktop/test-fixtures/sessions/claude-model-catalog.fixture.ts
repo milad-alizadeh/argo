@@ -12,3 +12,15 @@ export function claudeModelCatalogFixture(): ClaudeModelCatalog {
     ],
   }
 }
+
+export function claudeComposerModelCatalogFixture(): ClaudeModelCatalog {
+  return {
+    data: ['opus', 'sonnet'].map((value) => ({
+      value,
+      resolvedModel: `claude-${value}-5`,
+      displayName: value === 'opus' ? 'Opus 5' : 'Sonnet 5',
+      description: `${value} catalog model`,
+      supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+    })),
+  }
+}

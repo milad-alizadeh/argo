@@ -11,10 +11,7 @@ import { ClaudeModelCatalogCache } from '@/harnesses/claude/agent-sdk/model-cata
 import { CodexModelCatalogCache } from '@/harnesses/codex/drive/protocol/model-catalog'
 import { claudeModelCatalogFixture } from '../../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
 import { codexModelCatalogFixture } from '../../../../../../test-fixtures/sessions/codex-model-catalog.fixture'
-import {
-  CLAUDE_TURN_SETUP as CLAUDE_FALLBACK_TURN_SETUP,
-  claudeTurnSetup,
-} from './claude-turn-setup'
+import { claudeTurnSetup } from './claude-turn-setup'
 import { codexTurnSetup } from './codex-turn-setup'
 import {
   refusalOf,
@@ -48,6 +45,7 @@ const CLAUDE_TURN_SETUP = claudeTurnSetup({
     supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
   })),
 })
+if (CLAUDE_TURN_SETUP === null) throw new Error('The Claude test catalog has no usable model.')
 
 test('reads a Session setup off the Harness words its transcript wrote', () => {
   expect(
@@ -98,21 +96,19 @@ test('names a model Argo does not offer verbatim and keeps the choice it cannot 
   ).toEqual({ setup: requested, message: 'Claude used claude-mythos-1, not Opus 5.' })
 })
 
-test('offers exactly the Models, Efforts and Modes the Claude contract accepts', () => {
-  const fallback = claudeTurnSetup(null)
-  expect(fallback.source).toBe('fallback')
-  expect(fallback.models.map(({ value }) => value)).toEqual(['sonnet'])
-  expect(fallback.models[0]?.efforts).toEqual(['medium'])
-  expect(claudeTurnSetupSchema.safeParse(fallback.opening).success).toBe(true)
+test('offers no Claude setup before a live model catalog is available', () => {
+  expect(claudeTurnSetup(null)).toBe(null)
+  expect(claudeTurnSetupSchema.safeParse(undefined).success).toBe(false)
+  expect(claudeTurnSetupSchemaFor(null).safeParse(undefined).success).toBe(true)
   expect(
-    claudeTurnSetupSchemaFor(null).safeParse({ ...fallback.opening, effort: 'high' }).success,
+    claudeTurnSetupSchemaFor(null).safeParse({ model: 'sonnet', effort: 'medium', mode: 'manual' })
+      .success,
   ).toBe(false)
-  expect(CLAUDE_FALLBACK_TURN_SETUP.source).toBe('fallback')
-  expect(CLAUDE_EFFORTS).toContain(fallback.opening.effort)
-  expect(CLAUDE_MODES).toContain(fallback.opening.mode)
+  expect(CLAUDE_EFFORTS).toContain('medium')
+  expect(CLAUDE_MODES).toContain('manual')
 })
 
-test('uses the safe fallback when the live catalog has no model with a supported effort', () => {
+test('offers no Claude setup when the live catalog has no model with a supported effort', () => {
   const catalog = {
     data: [
       {
@@ -124,15 +120,20 @@ test('uses the safe fallback when the live catalog has no model with a supported
       },
     ],
   }
-  const choices = claudeTurnSetup(catalog)
-  expect(choices.source).toBe('fallback')
-  expect(choices.opening).toEqual({ model: 'sonnet', effort: 'medium', mode: 'manual' })
-  expect(claudeTurnSetupSchemaFor(catalog).safeParse(choices.opening).success).toBe(true)
+  expect(claudeTurnSetup(catalog)).toBe(null)
+  expect(
+    claudeTurnSetupSchemaFor(catalog).safeParse({
+      model: 'sonnet',
+      effort: 'medium',
+      mode: 'manual',
+    }).success,
+  ).toBe(false)
 })
 
 test('uses the live Claude catalog for composer choices and setup validation', () => {
   const catalog = claudeModelCatalogFixture()
   const choices = claudeTurnSetup(catalog)
+  if (choices === null) throw new Error('The mock Claude catalog has no usable model.')
   expect(choices.models.map(({ value }) => value)).toEqual(['sonnet-live'])
   expect(choices.models[0]?.efforts).toEqual(['low', 'high'])
   expect(choices.opening).toEqual({ model: 'sonnet-live', effort: 'low', mode: 'manual' })

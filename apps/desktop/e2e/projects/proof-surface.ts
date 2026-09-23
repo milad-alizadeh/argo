@@ -39,6 +39,7 @@ export const PROJECT_PROOF_SURFACE = [
   'pathForFile',
   'projectSetupSnapshot',
   'readCodexModelCatalog',
+  'readClaudeModelCatalog',
   'readConnection',
   'readSessionFeed',
   'readSessionPermission',

@@ -47,6 +47,10 @@ const projectSetupScenario = process.env.ARGO_PROJECT_SETUP_MOCK_SCENARIO
 let turnIndex = 0
 
 const arguments_ = process.argv.slice(2)
+if (arguments_.includes('--version')) {
+  process.stdout.write('2.1.0\n')
+  process.exit(0)
+}
 const [transcriptRoot] = arguments_
 const agentSdk = arguments_.includes('stream-json')
 const transcripts = agentSdk ? process.env[SESSION_CLAUDE_TRANSCRIPTS_ENV] : transcriptRoot
