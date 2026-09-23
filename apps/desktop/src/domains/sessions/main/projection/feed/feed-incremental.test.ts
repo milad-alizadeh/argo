@@ -101,6 +101,45 @@ test('a frozen row is the same object a later poll returns, not rebuilt', () => 
   assert.equal(secondRows[1], firstRows[1])
 })
 
+test('keeps pasted prompt folds between the prose that surrounds them', () => {
+  const chain = chainOf('s', [
+    message({
+      uuid: 'prompt',
+      role: 'user',
+      blocks: [
+        { shape: 'prose', text: 'Review this:' },
+        { shape: 'pasted-content', id: 'first', text: 'first paste' },
+        { shape: 'prose', text: 'then' },
+        { shape: 'pasted-content', id: 'second', text: 'second paste' },
+      ],
+    }),
+  ])
+
+  const { rows } = projectFeed(chain, undefined)
+
+  assert.deepEqual(
+    rows.map((row) =>
+      row.shape === 'prose'
+        ? { shape: row.shape, text: row.text, pastedContent: row.pastedContent }
+        : { shape: row.shape },
+    ),
+    [
+      { shape: 'prose', text: 'Review this:', pastedContent: undefined },
+      {
+        shape: 'prose',
+        text: '',
+        pastedContent: [{ id: 'first', text: 'first paste' }],
+      },
+      { shape: 'prose', text: 'then', pastedContent: undefined },
+      {
+        shape: 'prose',
+        text: '',
+        pastedContent: [{ id: 'second', text: 'second paste' }],
+      },
+    ],
+  )
+})
+
 test('a file rewritten in place resets rather than misreading the old cursor as still valid', () => {
   const chain = chainOf('s', [prose('a', 'First.')])
   const { state } = projectFeed(chain, undefined)

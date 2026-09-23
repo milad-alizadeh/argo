@@ -14,7 +14,8 @@ test('audits Claude and Codex transcript records through their Feed projections'
       uuid: 'claude-pasted',
       message: {
         role: 'user',
-        content: '<pasted_content id="p1">const answer = 42</pasted_content id="p1">',
+        content:
+          'Review this: <pasted_content id="p1">const answer = 42</pasted_content id="p1"> then <pasted_content id="p2">return answer</pasted_content id="p2"> finish.',
       },
     },
     {

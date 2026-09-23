@@ -26,6 +26,14 @@ const RAW_TAG = /<\/?[a-z][a-z0-9_-]*(?:\s[^>]*)?>/i
 const KNOWN_ENVELOPES =
   /<(?:task-notification|pasted_content|bash-input|bash-stdout|bash-stderr)(?:\s|>)/i
 const PARSERS = { claude: parseTranscriptLine, codex: parseCodexTranscriptLine }
+const REQUIRED_ENVELOPES = {
+  claude: ['task-notification', 'pasted_content', 'bash-input', 'bash-stdout', 'bash-stderr'],
+  codex: ['task-notification'],
+} as const
+
+function envelopeIn(line: string, envelope: string) {
+  return new RegExp(`<${envelope}(?:\\s|>)`, 'i').test(line)
+}
 
 function assertNoProseFallback(harness: SessionHarness, line: string, record: TranscriptRecord) {
   if (record.kind !== 'message') return
@@ -75,6 +83,7 @@ function assertBashEnvelope(harness: SessionHarness, line: string, record: Trans
 }
 
 function assertKnownRecords(harness: SessionHarness, lines: string[]) {
+  const observed = new Set<string>()
   for (const line of lines) {
     const source: unknown = JSON.parse(line)
     assert.ok(isRecord(source), `${harness} transcript line was not an object: ${line}`)
@@ -82,10 +91,41 @@ function assertKnownRecords(harness: SessionHarness, lines: string[]) {
     assert.ok(record, `${harness} record was dropped: ${line}`)
     assert.notEqual(record.kind, 'unreadable', `${harness} record was unreadable: ${line}`)
     if (!KNOWN_ENVELOPES.test(line)) continue
+    for (const envelope of REQUIRED_ENVELOPES[harness]) {
+      if (envelopeIn(line, envelope)) observed.add(envelope)
+    }
     assertNoProseFallback(harness, line, record)
     assertTaskNotification(harness, line, record)
     assertPastedContent(harness, line, record)
     assertBashEnvelope(harness, line, record)
+  }
+  assert.deepEqual(
+    [...observed].sort(),
+    [...REQUIRED_ENVELOPES[harness]].sort(),
+    `${harness} transcript corpus did not exercise every required raw-tag shape`,
+  )
+}
+
+function assertPastedContentOrder(
+  harness: SessionHarness,
+  records: TranscriptRecord[],
+  rows: ReturnType<typeof projectFeed>['rows'],
+) {
+  for (const record of records) {
+    if (record.kind !== 'message' || record.role !== 'user') continue
+    const expected = record.blocks.flatMap((block) => {
+      if (block.shape === 'prose' && block.text !== '') return [`prose:${block.text}`]
+      if (block.shape === 'pasted-content') return [`pasted:${block.id}`]
+      return []
+    })
+    if (!expected.some((item) => item.startsWith('pasted:'))) continue
+    const actual = rows
+      .filter((row) => row.id.startsWith(`${record.uuid}:`) && row.shape === 'prose')
+      .flatMap((row) => [
+        ...(row.text === '' ? [] : [`prose:${row.text}`]),
+        ...(row.pastedContent ?? []).map((content) => `pasted:${content.id}`),
+      ])
+    assert.deepEqual(actual, expected, `${harness} Feed reordered pasted content around prose`)
   }
 }
 
@@ -114,7 +154,9 @@ async function auditTranscript(harness: SessionHarness, filePath: string) {
   })
   const chain = stitchChains([file])[0]
   assert.ok(chain, `${harness} transcript ${filePath} did not form a Session chain`)
-  assertFeedRows(harness, projectFeed(chain, undefined).rows)
+  const rows = projectFeed(chain, undefined).rows
+  assertFeedRows(harness, rows)
+  assertPastedContentOrder(harness, file.records, rows)
 }
 
 export async function assertTranscriptFeedCorpus(

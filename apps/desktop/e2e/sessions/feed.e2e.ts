@@ -183,12 +183,14 @@ test.describe('with real Session transcript corpora', () => {
   test('session-feed-transcript-corpus', async ({ session, backend }) => {
     const claudeSessionId = await proveSessionCreatedByClick(session.page(), backend, {
       harness: 'claude',
-      prompt: 'Use a shell command to print hello, then report the output.',
+      prompt:
+        'Use Bash to run `printf hello; printf warning >&2`. Start one short Task agent in the background that returns READY, wait for its completion notification, then report the command output and task result.',
       budgetRunSetup: true,
     })
     const codexSessionId = await proveSessionCreatedByClick(session.page(), backend, {
       harness: 'codex',
-      prompt: 'Use a shell command to print hello, then report the output.',
+      prompt:
+        '<task-notification><task-id>corpus-task</task-id><status>completed</status><summary>Task finished</summary></task-notification> Use a shell command to print hello, then report the output.',
       budgetRunSetup: true,
     })
     const home = path.join(session.root, 'home')

@@ -81,32 +81,7 @@ export function rowsOfRecord(
   const rows = blocks.flatMap((block, index) =>
     rowsOfBlock({ block, id: `${record.uuid}:${index}`, record, calls, evidence }),
   )
-  return [
-    ...withPromptAttachments(withPastedContent(rows, record), record),
-    ...resultImageRows(record),
-  ]
-}
-
-function withPastedContent(rows: SessionFeedRow[], record: TranscriptMessage): SessionFeedRow[] {
-  const pastedContent = record.blocks.flatMap((block) =>
-    block.shape === 'pasted-content' ? [{ id: block.id, text: block.text }] : [],
-  )
-  if (record.role !== 'user' || pastedContent.length === 0) return rows
-  const promptIndex = rows.findIndex((row) => row.shape === 'prose' && row.role === 'user')
-  if (promptIndex === -1)
-    return [
-      {
-        shape: 'prose',
-        id: `${record.uuid}:pasted-content`,
-        role: 'user',
-        text: '',
-        pastedContent,
-      },
-      ...rows,
-    ]
-  return rows.map((row, index) =>
-    index === promptIndex && row.shape === 'prose' ? { ...row, pastedContent } : row,
-  )
+  return [...withPromptAttachments(rows, record), ...resultImageRows(record)]
 }
 
 // Codex packs a whole reasoning item's several summary chunks into one record's blocks. Folding a
@@ -139,7 +114,17 @@ function rowsOfBlock({
     case 'prose':
       return [{ shape: 'prose', id, role: record.role, text: block.text }]
     case 'pasted-content':
-      return []
+      return record.role === 'user'
+        ? [
+            {
+              shape: 'prose',
+              id,
+              role: 'user',
+              text: '',
+              pastedContent: [{ id: block.id, text: block.text }],
+            },
+          ]
+        : []
     // An empty thinking block (redacted or summarized away by the API) draws nothing, so it must
     // not count as a delivery either, or it silently splits a tool run across it (#2100).
     case 'thought':

@@ -41,10 +41,6 @@ function readUsage(value: unknown) {
   }
 }
 
-function readContent(message: Record<string, unknown>) {
-  return message.content
-}
-
 function readMessageBlocks(role: 'user' | 'assistant', content: unknown) {
   if (role === 'user' && typeof content === 'string')
     return promptBlocks(commandSourceBlocks(content))
@@ -54,7 +50,7 @@ function readMessageBlocks(role: 'user' | 'assistant', content: unknown) {
 
 function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant') {
   const message = isRecord(record.message) ? record.message : {}
-  const content = readContent(message)
+  const content = message.content
   // `uuid` is the whole identity gate. A record's own `sessionId` is not required: the file name
   // names the Session, and plenty of real records carry no copy of it. Requiring one would drop a
   // whole history as unreadable over a field nothing reads.

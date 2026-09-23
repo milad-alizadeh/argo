@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from './session-proof-run'
 
+test.describe.configure({ mode: 'default' })
+
 // Every case here spawns a real Codex app-server child process on top of the packaged app's own
 // 30s launch budget (playwright.config.ts), so the suite's general 60s timeout leaves little
 // margin; a busy CI runner pushed the app-server handshake past it (#2653 follow-up).
