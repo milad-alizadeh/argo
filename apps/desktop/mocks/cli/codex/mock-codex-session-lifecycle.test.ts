@@ -26,7 +26,7 @@ test('releases the lease when app-server unloads a managed thread', async () => 
     const session = await start(adapter, 'NOT_LOADED')
     await waitFor(() => released.includes(session.nativeId))
   } finally {
-    adapter.close()
+    await adapter.close()
   }
 })
 
@@ -37,7 +37,7 @@ test('releases the lease when app-server closes a managed thread', async () => {
     const session = await start(adapter, 'CLOSED')
     await waitFor(() => released.includes(session.nativeId))
   } finally {
-    adapter.close()
+    await adapter.close()
   }
 })
 
@@ -50,7 +50,7 @@ test('unsubscribes before it releases a closed managed Session lease', async () 
     assert.equal(closed.kind, 'accepted')
     await waitFor(() => released.includes(session.nativeId))
   } finally {
-    adapter.close()
+    await adapter.close()
   }
 })
 
@@ -64,7 +64,7 @@ test('does not share an app-server process between different executables', async
     ])
     assert.equal(one.nativeId, two.nativeId)
   } finally {
-    first.close()
-    second.close()
+    await first.close()
+    await second.close()
   }
 })

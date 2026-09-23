@@ -28,7 +28,7 @@ test('queues a follow-up Send until the active Turn settles', async () => {
       assert.equal(followUp.kind, 'accepted')
     }
   } finally {
-    adapter.close()
+    await adapter.close()
   }
 })
 
@@ -56,8 +56,8 @@ test('shares one app-server process across managed Session windows', async () =>
     if (one.kind !== 'accepted' || two.kind !== 'accepted') return
     assert.notEqual(one.projection.session.nativeId, two.projection.session.nativeId)
   } finally {
-    first.close()
-    second.close()
+    await first.close()
+    await second.close()
   }
 })
 
@@ -80,8 +80,8 @@ test('shows a managed Session as watched in a second window', async () => {
     assert.equal(projection.posture, 'watched')
     assert.equal(projection.session.nativeId, started.projection.session.nativeId)
   } finally {
-    owner.close()
-    observer.close()
+    await owner.close()
+    await observer.close()
   }
 })
 
@@ -114,6 +114,6 @@ test('projects app-server tool calls and cumulative token usage', async () => {
     assert.equal(projection.toolCalls[0]?.status, 'running')
     assert.deepEqual(projection.usage, { inputTokens: 23, outputTokens: 5 })
   } finally {
-    adapter.close()
+    await adapter.close()
   }
 })
