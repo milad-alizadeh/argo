@@ -329,10 +329,35 @@ const pastedContentFeed = {
   rows: [
     {
       shape: 'prose' as const,
+      id: 'pasted-content-before',
+      role: 'user' as const,
+      text: 'Review this snippet:',
+    },
+    {
+      shape: 'prose' as const,
       id: 'pasted-content-1',
       role: 'user' as const,
-      text: 'Review this snippet.',
+      text: '',
       pastedContent: [{ id: 'a', text: 'const answer = 42' }],
+    },
+    {
+      shape: 'prose' as const,
+      id: 'pasted-content-between',
+      role: 'user' as const,
+      text: 'Then use this result:',
+    },
+    {
+      shape: 'prose' as const,
+      id: 'pasted-content-2',
+      role: 'user' as const,
+      text: '',
+      pastedContent: [{ id: 'b', text: 'return answer' }],
+    },
+    {
+      shape: 'prose' as const,
+      id: 'pasted-content-after',
+      role: 'user' as const,
+      text: 'Finish after both snippets.',
     },
   ],
 } satisfies SessionFeed
@@ -341,15 +366,33 @@ export const PastedContent: Story = {
   args: { feed: pastedContentFeed, selectedSessionId: 'pasted-content' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const disclosure = canvas.getByRole('button', { name: 'Pasted content' })
-    await expect(disclosure).toHaveAttribute('aria-expanded', 'false')
-    await disclosure.focus()
+    const disclosures = canvas.getAllByRole('button', { name: 'Pasted content' })
+    await expect(disclosures).toHaveLength(2)
+    await expect(disclosures[0]).toHaveAttribute('aria-expanded', 'false')
+    await expect(disclosures[1]).toHaveAttribute('aria-expanded', 'false')
+    await expect(
+      [...canvasElement.querySelectorAll<HTMLElement>('[data-feed-row]')].map((row) =>
+        row.getAttribute('data-feed-row'),
+      ),
+    ).toEqual([
+      'pasted-content-before',
+      'pasted-content-1',
+      'pasted-content-between',
+      'pasted-content-2',
+      'pasted-content-after',
+    ])
+    await disclosures[0]?.focus()
     await userEvent.keyboard('{Enter}')
-    await expect(disclosure).toHaveAttribute('aria-expanded', 'true')
+    await expect(disclosures[0]).toHaveAttribute('aria-expanded', 'true')
     await waitFor(() => expect(canvas.getByText('const answer = 42')).toBeVisible())
-    await disclosure.focus()
+    await disclosures[1]?.focus()
+    await userEvent.keyboard('{Enter}')
+    await expect(disclosures[1]).toHaveAttribute('aria-expanded', 'true')
+    await waitFor(() => expect(canvas.getByText('return answer')).toBeVisible())
+    await disclosures[0]?.focus()
     await userEvent.keyboard(' ')
-    await waitFor(() => expect(disclosure).toHaveAttribute('aria-expanded', 'false'))
+    await waitFor(() => expect(disclosures[0]).toHaveAttribute('aria-expanded', 'false'))
+    await expect(disclosures[1]).toHaveAttribute('aria-expanded', 'true')
   },
 }
 
