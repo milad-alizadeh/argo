@@ -16,10 +16,11 @@ export class CodexChannelClosedError extends Error {
 
 // A spawned app-server that never replies to a request left the Roster stuck on its loading
 // skeletons forever (#2653): nothing bounded how long a caller could wait on `request`, whether
-// for the initial handshake or an ordinary call like `thread/list`. The app-server's own SQLite
-// state (shared with every other codex process on the machine, ChatGPT desktop included) opens
-// with a 5-second busy_timeout, so a request stuck on that lock never takes longer than that to
-// clear; eight seconds gives it that plus headroom, rather than an arbitrary round number.
+// for the initial handshake or an ordinary call like `thread/list`. Two codex app-server
+// processes sharing one CODEX_HOME (ours and, say, the ChatGPT desktop app's) can take
+// conflicting locks on the same SQLite state; this is an open, unfixed upstream defect
+// (openai/codex#21782) with no client-side workaround, so a bound here is a mitigation for a
+// real external failure mode, not an arbitrary number.
 export class CodexRequestTimeoutError extends Error {
   constructor(method: string) {
     super(`Codex app-server did not answer ${method} in time`)
