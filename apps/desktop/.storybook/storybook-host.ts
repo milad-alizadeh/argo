@@ -19,6 +19,8 @@ const storybookSession = sessionRosterRow({
 })
 host.argo = {
   ...host.argo,
+  readCodexModelCatalog: () => Promise.resolve(null),
+  readClaudeModelCatalog: () => Promise.resolve(null),
   getAppearance: () => Promise.resolve({ appearance: 'system', dark: true }),
   setAppearance: () => Promise.resolve({ appearance: 'system', dark: true }),
   onAppearanceChanged: () => () => {},
