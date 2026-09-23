@@ -1,3 +1,4 @@
+import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
 import type { SessionPlan, SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import type { OwnershipLedger } from '@/domains/sessions/main/lifecycle/ownership/ownership-ledger'
 import { managedRow } from '@/domains/sessions/main/lifecycle/status/managed-row'
@@ -28,6 +29,7 @@ export type ManagedSession = {
 
 export type ManagedSessionOptions = {
   findExecutable: () => string | null
+  readModelCatalog: () => Promise<CodexModelCatalog | null>
   now: () => Date
   onPlanUpdated?: () => void
   permissionTimeoutMs?: number

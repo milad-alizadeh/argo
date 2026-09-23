@@ -46,6 +46,7 @@ export function attachManagedSessions(
       }),
     ],
   )
+  void adapters.readModelCatalog('codex')
   attachManagedSessionBridge(window, { adapters, rendererURL: options.rendererURL })
   return adapters
 }

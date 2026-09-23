@@ -33,7 +33,11 @@ import { proveSearchFindsABuriedSession } from './cases/search.case'
 import { proveSessionShell } from './cases/shell.case'
 import { proveSubagentFeed } from './cases/subagent-feed.case'
 import { proveToolCalls } from './cases/tool-calls.case'
-import { proveComposerMemory, proveTurnSetup } from './cases/turn-setup.case'
+import {
+  proveComposerMemory,
+  proveLiveCodexModelChoices,
+  proveTurnSetup,
+} from './cases/turn-setup.case'
 import { rosterRow } from './claude-proof-helpers'
 import { appendProse, removeProse, streamProse } from './fixtures/feed.fixture'
 import { updatePlan } from './fixtures/plan.fixture'
@@ -116,6 +120,10 @@ test('session-plan', async ({ session }) => {
 
 test('session-turn-setup', async ({ session }) => {
   await proveTurnSetup(session.page())
+})
+
+test('session-live-codex-model-choices', async ({ session }) => {
+  await proveLiveCodexModelChoices(session.page())
 })
 
 test('session-roster-stable-polling', async ({ session }) => {

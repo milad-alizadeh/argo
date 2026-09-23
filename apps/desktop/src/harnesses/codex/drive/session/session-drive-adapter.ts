@@ -1,4 +1,8 @@
-import { codexTurnSetupSchema } from '@/domains/sessions/contract/codex-turn-setup'
+import {
+  codexOpeningSetupFor,
+  codexTurnSetupSchema,
+  codexTurnSetupSchemaFor,
+} from '@/domains/sessions/contract/codex-turn-setup'
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import type { Permission } from '@/domains/sessions/contract/drive/permission'
 import type {
@@ -70,15 +74,21 @@ function permissionOperations(driver: CodexSessionDrive) {
   }
 }
 
+async function parseSetup(driver: CodexSessionDrive, setup: unknown) {
+  const catalog = await driver.readModelCatalog()
+  const selectedSetup = setup ?? (catalog === null ? null : codexOpeningSetupFor(catalog))
+  return codexTurnSetupSchemaFor(catalog).safeParse(selectedSetup)
+}
+
 export function createCodexDriveAdapter(driver: CodexSessionDrive): SessionDriveAdapter {
   return {
     harness: 'codex',
     failureMessage: (code) => FAILURE_MESSAGES[code],
     turnSetupSchema: codexTurnSetupSchema,
     async start({ cwd, prompt, setup, attachments }) {
-      const parsedSetup = codexTurnSetupSchema.safeParse(setup)
-      if (!parsedSetup.success) return { error: 'launch-failed' }
       try {
+        const parsedSetup = await parseSetup(driver, setup)
+        if (!parsedSetup.success) return { error: 'launch-failed' }
         return {
           sessionId: await driver.start({
             attachments,
@@ -92,9 +102,9 @@ export function createCodexDriveAdapter(driver: CodexSessionDrive): SessionDrive
       }
     },
     async send({ sessionId, prompt, setup, attachments }) {
-      const parsedSetup = codexTurnSetupSchema.safeParse(setup)
-      if (!parsedSetup.success) return { error: 'not-drivable' }
       try {
+        const parsedSetup = await parseSetup(driver, setup)
+        if (!parsedSetup.success) return { error: 'not-drivable' }
         await driver.send({ sessionId, text: prompt, setup: parsedSetup.data, attachments })
         return { ok: true }
       } catch (error) {

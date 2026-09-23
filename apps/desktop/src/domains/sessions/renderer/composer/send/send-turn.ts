@@ -98,11 +98,12 @@ export async function sendToSessionIdentity(
     SendDeps,
     'marker' | 'queryClient' | 'roster' | 'send' | 'setFailure' | 'watchTurn'
   > & {
-    sendManagedSession: (
-      harness: SessionHarness,
-      sessionId: string,
-      prompt: string,
-    ) => Promise<SessionCommandOutcome>
+    sendManagedSession: (request: {
+      harness: SessionHarness
+      sessionId: string
+      prompt: string
+      setup?: TurnSetup | null
+    }) => Promise<SessionCommandOutcome>
   },
   sessionId: string,
   turn: TurnInput,

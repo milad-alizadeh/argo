@@ -19,6 +19,7 @@ export type SetupChoice = {
   detail?: string
   reads: (reading: string) => boolean
   efforts?: readonly string[]
+  defaultEffort?: string
 }
 export type ModeChoice = SetupChoice & { detail: string; icon: IconName }
 
@@ -30,6 +31,7 @@ export type TurnSetupChoices = {
   efforts: SetupChoice[]
   modes: ModeChoice[]
   opening: TurnSetup
+  source?: 'fallback'
 }
 
 const FIELDS = ['model', 'effort', 'mode'] as const
@@ -95,7 +97,7 @@ export function resolvedTurnSetup(
 ): TurnSetup {
   const { identity, chosen, rows, remembered } = request
   const explicit = chosen.get(composerIdentityKey(identity))
-  if (explicit !== undefined) return explicit
+  if (explicit !== undefined) return supportedSetup(choices, explicit, choices.opening)
   const row =
     identity.kind === 'session' ? rows.find(({ id }) => id === identity.sessionId) : undefined
   return row === undefined

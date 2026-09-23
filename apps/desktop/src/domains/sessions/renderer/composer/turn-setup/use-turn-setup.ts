@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import { z } from 'zod'
 
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import type { SessionHarness } from '../../harness/harnesses'
 import { useComposerStore } from '../hooks/use-composer-store'
 import { type ComposerIdentity, composerIdentityKey } from '../identity/composer-identity'
 import type { TurnSetupControlProps } from '../toolbar/run-setup-menu'
@@ -13,32 +13,7 @@ import {
   turnSettled,
 } from './turn-setup'
 
-// Each harness remembers its own Model and Effort for a new composer (CONTEXT.md L2 · Model and Effort).
-const REMEMBERED_STORAGE_KEY = 'argo.composer-model-effort'
-const rememberedSchema = z.record(
-  z.string(),
-  z.strictObject({ model: z.string(), effort: z.string() }),
-)
-type Remembered = z.infer<typeof rememberedSchema>
-
 type Expectation = { requested: TurnSetup; since: string | null }
-
-function restoredRemembered(): Remembered {
-  try {
-    const parsed = rememberedSchema.safeParse(
-      JSON.parse(window.localStorage.getItem(REMEMBERED_STORAGE_KEY) ?? '{}'),
-    )
-    return parsed.success ? parsed.data : {}
-  } catch {
-    return {}
-  }
-}
-
-function persistRemembered(remembered: Remembered) {
-  try {
-    window.localStorage.setItem(REMEMBERED_STORAGE_KEY, JSON.stringify(remembered))
-  } catch {}
-}
 
 export function useTurnSetup({
   harness,
@@ -47,28 +22,24 @@ export function useTurnSetup({
   rows,
   onRefusal,
 }: {
-  harness: string
+  harness: SessionHarness
   choices: TurnSetupChoices | null
   identity: ComposerIdentity
   rows: SessionRosterRow[]
   onRefusal: (refusal: { sessionId: string; message: string }) => void
 }) {
-  const [remembered, setRemembered] = useState(restoredRemembered)
   const [expectations, setExpectations] = useState(() => new Map<string, Expectation>())
   const chosen = useComposerStore(({ setup }) => setup)
   const chooseSetup = useComposerStore(({ chooseSetup }) => chooseSetup)
-
-  useEffect(() => persistRemembered(remembered), [remembered])
+  const remembered = useComposerStore(({ rememberedSetup }) => rememberedSetup[harness])
+  const rememberSetup = useComposerStore(({ rememberSetup }) => rememberSetup)
 
   const choose = useCallback(
     (key: string, setup: TurnSetup) => {
       chooseSetup(key, setup)
-      setRemembered((current) => ({
-        ...current,
-        [harness]: { model: setup.model, effort: setup.effort },
-      }))
+      rememberSetup(harness, { model: setup.model, effort: setup.effort })
     },
-    [chooseSetup, harness],
+    [chooseSetup, harness, rememberSetup],
   )
 
   const watchTurn = useCallback(
@@ -102,7 +73,6 @@ export function useTurnSetup({
     identity,
     rows,
     remembered,
-    harness,
     choose,
   })
   return { control, watchTurn }
@@ -114,15 +84,13 @@ function useComposerControl({
   identity,
   rows,
   remembered,
-  harness,
   choose,
 }: {
   choices: TurnSetupChoices | null
   chosen: Map<string, TurnSetup>
   identity: ComposerIdentity
   rows: SessionRosterRow[]
-  remembered: Remembered
-  harness: string
+  remembered: Pick<TurnSetup, 'model' | 'effort'> | undefined
   choose: (key: string, setup: TurnSetup) => void
 }): TurnSetupControlProps | null {
   const onChange = useCallback(
@@ -134,7 +102,7 @@ function useComposerControl({
     identity,
     chosen,
     rows,
-    remembered: remembered[harness] ?? {},
+    remembered: remembered ?? {},
   })
   return { choices, value, onChange }
 }

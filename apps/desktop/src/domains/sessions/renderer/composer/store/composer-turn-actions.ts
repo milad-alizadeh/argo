@@ -7,6 +7,13 @@ type ComposerSet = StoreApi<ComposerState>['setState']
 
 export function turnActions(set: ComposerSet) {
   return {
+    rememberSetup: (
+      harness: ComposerState['harness'],
+      setup: Pick<ComposerState['setup'][string], 'model' | 'effort'>,
+    ) =>
+      set(({ rememberedSetup }) => ({
+        rememberedSetup: { ...rememberedSetup, [harness]: setup },
+      })),
     chooseSetup: (composerKey: string, setup: ComposerState['setup'][string]) =>
       set(({ setup: choices }) => ({ setup: { ...choices, [composerKey]: setup } })),
     addPendingTurn: (composerKey: string, turn: PendingTurn) =>

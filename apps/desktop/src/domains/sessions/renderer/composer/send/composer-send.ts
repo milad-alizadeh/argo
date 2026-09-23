@@ -30,11 +30,22 @@ type ComposerSendOptions = {
   watchTurn: ReturnType<typeof useTurnSetup>['watchTurn']
 }
 
-function sendManagedSession(harness: SessionHarness, sessionId: string, prompt: string) {
+function sendManagedSession({
+  harness,
+  sessionId,
+  prompt,
+  setup,
+}: {
+  harness: SessionHarness
+  sessionId: string
+  prompt: string
+  setup?: import('../turn-setup/turn-setup').TurnSetup | null
+}) {
   return window.argo.executeManagedSessionCommand({
     type: 'session.send',
     session: { harness, nativeId: sessionId },
     prompt,
+    ...(!setup ? {} : { setup }),
   })
 }
 

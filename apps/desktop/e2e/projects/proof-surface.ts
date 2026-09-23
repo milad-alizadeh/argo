@@ -38,6 +38,7 @@ export const PROJECT_PROOF_SURFACE = [
   'openProject',
   'pathForFile',
   'projectSetupSnapshot',
+  'readCodexModelCatalog',
   'readConnection',
   'readSessionFeed',
   'readSessionPermission',

@@ -21,6 +21,7 @@ export function createCodexSessionAdapterRegistration(options: {
       })
       return {
         adapter,
+        readModelCatalog: adapter.readModelCatalog,
         close: adapter.close,
         source: createCodexAppServerSessionSource({
           adapter,

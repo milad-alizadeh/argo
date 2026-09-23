@@ -131,6 +131,9 @@
       "choosePermissionMode": "Choose permission mode: {{mode}}",
       "permissions": "{{harness}} permissions",
       "ownSettings": "{{harness}} runs at the Model and Effort in its own settings.",
+      "loadingModels": "Loading Codex models…",
+      "modelCatalogError": "Argo could not load the Codex models.",
+      "refreshModels": "Refresh models",
       "model": "Model"
     },
     "workspace": {
