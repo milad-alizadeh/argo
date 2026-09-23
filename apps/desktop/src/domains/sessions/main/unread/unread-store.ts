@@ -22,11 +22,14 @@ const storedUnreadSessionSchema = z.strictObject({
 const unreadDocumentSchema = z.record(z.string(), storedUnreadSessionSchema)
 
 export type SessionUnreadStore = {
-  focus: (sessionId: string) => Promise<boolean>
+  focus: (session: Pick<UnreadSession, 'id' | 'retiredIds'>) => Promise<boolean>
   project: <Row extends UnreadSession>(
     rows: readonly Row[],
   ) => Promise<(Row & { unread: boolean })[]>
-  setUnread: (sessionIds: readonly string[], unread: boolean) => Promise<boolean>
+  setUnread: (
+    sessions: readonly Pick<UnreadSession, 'id' | 'retiredIds'>[],
+    unread: boolean,
+  ) => Promise<boolean>
 }
 
 export function sessionUnreadPath(userData: string): string {
@@ -72,10 +75,11 @@ function projected<Row extends UnreadSession>(
 function inMemory(initial: Record<string, StoredUnreadSession> = {}): SessionUnreadStore {
   let entries = initial
   return {
-    async focus(sessionId) {
-      const current = entries[sessionId]
+    async focus(session) {
+      const key = keyFor(session, entries)
+      const current = entries[key]
       if (current === undefined || !current.unread) return true
-      entries = { ...entries, [sessionId]: { ...current, unread: false } }
+      entries = { ...entries, [key]: { ...current, unread: false } }
       return true
     },
     async project(rows) {
@@ -90,11 +94,12 @@ function inMemory(initial: Record<string, StoredUnreadSession> = {}): SessionUnr
         : entries
       return result.sessions
     },
-    async setUnread(sessionIds, unread) {
+    async setUnread(sessions, unread) {
+      const keys = new Set(sessions.map((session) => keyFor(session, entries)))
       entries = Object.fromEntries(
         Object.entries(entries).map(([id, value]) => [
           id,
-          sessionIds.includes(id) ? { ...value, unread } : value,
+          keys.has(id) ? { ...value, unread } : value,
         ]),
       )
       return true
@@ -124,11 +129,12 @@ export function createSessionUnreadStore(path: string): SessionUnreadStore {
       return wrote
     })
   return {
-    async focus(sessionId) {
+    async focus(session) {
       const current = await entries()
-      const value = current[sessionId]
+      const key = keyFor(session, current)
+      const value = current[key]
       if (value === undefined || !value.unread) return true
-      return save({ ...current, [sessionId]: { ...value, unread: false } })
+      return save({ ...current, [key]: { ...value, unread: false } })
     },
     async project(rows) {
       const current = await entries()
@@ -141,12 +147,13 @@ export function createSessionUnreadStore(path: string): SessionUnreadStore {
       }
       return result.sessions
     },
-    async setUnread(sessionIds, unread) {
+    async setUnread(sessions, unread) {
       const current = await entries()
+      const keys = new Set(sessions.map((session) => keyFor(session, current)))
       const next = Object.fromEntries(
         Object.entries(current).map(([id, value]) => [
           id,
-          sessionIds.includes(id) ? { ...value, unread } : value,
+          keys.has(id) ? { ...value, unread } : value,
         ]),
       )
       return save(next)

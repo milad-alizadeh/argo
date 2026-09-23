@@ -134,7 +134,7 @@ export function createSessionReader(
     readSubagentUsage: (request) => delegationUsageRead(reads, request),
     renameSession: (request) => renameReply(ownership.ownerFor, request),
     async focusSessionUnread(request: SessionUnreadFocusRequest) {
-      const focused = await unread.focus(request.sessionId)
+      const focused = await unread.focus({ id: request.sessionId, retiredIds: request.retiredIds })
       return focused
         ? {
             version: 1,

@@ -22,7 +22,7 @@ test('clears unread state when the reader opens a Session', async (context) => {
   }
   const reader = createSessionReader([claudeSessionSource({ transcripts: root })], undefined, state)
   await unread.project((await listed(reader, 'initial'))?.sessions ?? [])
-  await unread.setUnread(['session-1'], true)
+  await unread.setUnread([{ id: 'session-1', retiredIds: [] }], true)
 
   const reply = sessionUnreadFocusReplySchema.parse(
     await reader.focusSessionUnread({
@@ -30,6 +30,7 @@ test('clears unread state when the reader opens a Session', async (context) => {
       type: 'session.unread.focus',
       requestId: 'focus-unread',
       sessionId: 'session-1',
+      retiredIds: [],
     }),
   )
 

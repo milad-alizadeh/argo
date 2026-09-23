@@ -7,6 +7,7 @@ export const sessionUnreadFocusRequestSchema = z.strictObject({
   type: z.literal('session.unread.focus'),
   requestId: identifierSchema,
   sessionId: identifierSchema,
+  retiredIds: z.array(identifierSchema),
 })
 export type SessionUnreadFocusRequest = z.infer<typeof sessionUnreadFocusRequestSchema>
 

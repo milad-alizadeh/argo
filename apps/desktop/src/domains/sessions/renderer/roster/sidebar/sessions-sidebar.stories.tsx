@@ -716,6 +716,32 @@ export const WithArchive: Story = {
   },
 }
 
+export const ArchivedRowsCanBeOpened: Story = {
+  render: (args) => <RosterHarness {...args} />,
+  beforeEach: () =>
+    withArchiveHost(async () =>
+      archiveReply({
+        sessions: [
+          {
+            ...session,
+            id: 'archived-session',
+            retiredIds: ['archived-parent'],
+            archived: true,
+            title: { text: 'Open the archived transcript', source: 'first-prompt' },
+          },
+        ],
+      }),
+    ),
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    await chooseStatus(canvasElement, 'Archived')
+    await userEvent.click(
+      await canvas.findByRole('button', { name: /Open the archived transcript/ }),
+    )
+    await expect(args.onSelect).toHaveBeenCalledWith('archived-session', ['archived-parent'])
+  },
+}
+
 export const ArchiveEmpty: Story = {
   beforeEach: () => withArchiveHost(async () => archiveReply({})),
   play: async ({ canvasElement }) => {
