@@ -36,7 +36,7 @@ test('keeps an unseen result through its next running turn and after it settles'
   }
 
   await unread.project([result])
-  await unread.setUnread(['session-1'], true)
+  await unread.setUnread([result], true)
   assert.equal(
     (
       await unread.project([
@@ -61,10 +61,29 @@ test('focus and explicit actions set persisted reader state', async () => {
   }
 
   await unread.project([row])
-  await unread.setUnread(['session-1'], true)
+  await unread.setUnread([row], true)
   assert.equal((await unread.project([row]))[0]?.unread, true)
-  await unread.focus('session-1')
+  await unread.focus(row)
   assert.equal((await unread.project([row]))[0]?.unread, false)
-  await unread.setUnread(['session-1'], false)
+  await unread.setUnread([row], false)
   assert.equal((await unread.project([row]))[0]?.unread, false)
+})
+
+test('focus and explicit updates resolve a Session through its retired ids', async () => {
+  const unread = createInMemorySessionUnreadStore()
+  const retired = { id: 'old-session', retiredIds: [], status: 'idle' as const, updatedAt: null }
+  const resumed = {
+    ...retired,
+    id: 'resumed-session',
+    retiredIds: ['old-session'],
+  }
+
+  await unread.project([retired])
+  await unread.setUnread([retired], true)
+  await unread.setUnread([resumed], false)
+  assert.equal((await unread.project([retired]))[0]?.unread, false)
+
+  await unread.setUnread([retired], true)
+  await unread.focus(resumed)
+  assert.equal((await unread.project([retired]))[0]?.unread, false)
 })
