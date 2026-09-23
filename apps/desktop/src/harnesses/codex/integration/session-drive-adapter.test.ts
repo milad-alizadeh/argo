@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-
+import { MOCK_CODEX_MODEL_CATALOG } from '../../../../mocks/cli/codex/fixtures/mock-codex-model-catalog'
 import { CodexSessionDriverError } from '../drive/session/codex-session-error'
 import { createCodexDriveAdapter } from '../drive/session/session-drive-adapter'
 
@@ -10,6 +10,7 @@ function mockDriver(overrides: Partial<Parameters<typeof createCodexDriveAdapter
   return {
     start: async () => sessionId,
     send: async () => {},
+    readModelCatalog: async () => MOCK_CODEX_MODEL_CATALOG,
     interrupt: async () => {},
     compact: async () => {},
     pendingPermission: () => null,
@@ -29,7 +30,7 @@ test('starts a Codex Session', async () => {
     }),
   )
 
-  const setup = { model: 'gpt-5.6-sol', effort: 'high', mode: 'workspace-write' } as const
+  const setup = { model: 'mock-haiku', effort: 'high', mode: 'workspace-write' } as const
   const result = await adapter.start({
     attachments: [],
     cwd: '/projects/argo',
@@ -65,7 +66,7 @@ test('sends a Turn to the selected managed Codex Session', async () => {
     attachments: [],
     sessionId,
     prompt: 'Continue.',
-    setup: { model: 'gpt-5.6-sol', effort: 'high', mode: 'workspace-write' },
+    setup: { model: 'mock-haiku', effort: 'high', mode: 'workspace-write' },
   })
   assert.deepEqual(result, { ok: true })
   assert.deepEqual(sent, [[sessionId, 'Continue.']])

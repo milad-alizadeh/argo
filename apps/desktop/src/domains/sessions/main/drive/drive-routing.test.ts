@@ -9,6 +9,7 @@ import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-
 import type { CodexSessionDrive } from '@/harnesses/codex/drive/session/codex-session-driver'
 import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session/session-drive-adapter'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
+import { MOCK_CODEX_MODEL_CATALOG } from '../../../../../mocks/cli/codex/fixtures/mock-codex-model-catalog'
 import { managedRow } from '../lifecycle/status/managed-row'
 import { createSessionReader } from '../observation/reader/reader'
 import { tempRoot } from '../observation/reader/reader-test-helpers'
@@ -51,6 +52,7 @@ function mockCodexDriver() {
     sent,
     driver: {
       start: async () => 'codex-1',
+      readModelCatalog: async () => MOCK_CODEX_MODEL_CATALOG,
       send: async ({ sessionId, text }: { sessionId: string; text: string }) => {
         sent.push({ sessionId, prompt: text })
       },

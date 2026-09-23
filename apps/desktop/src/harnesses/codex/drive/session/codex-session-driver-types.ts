@@ -44,7 +44,7 @@ export type CodexSessionDriver = {
   ) => boolean
   decideQuestion: (sessionId: string, questionId: string, answers: QuestionAnswer[]) => boolean
   close: () => void
-  readModelCatalog?: () => Promise<CodexModelCatalog | null>
+  readModelCatalog: () => Promise<CodexModelCatalog | null>
 }
 
 export type CodexSessionDrive = Pick<

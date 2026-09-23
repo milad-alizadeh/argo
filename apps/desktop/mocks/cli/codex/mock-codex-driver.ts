@@ -8,6 +8,7 @@ import process from 'node:process'
 import type { OwnershipLedger } from '@/domains/sessions/main/lifecycle/ownership/ownership-ledger'
 import { createCodexSessionDriver } from '@/harnesses/codex/drive/session/codex-session-driver'
 import { channelForAppServerProcess } from '@/harnesses/codex/drive/supervision/open-app-server'
+import { MOCK_CODEX_MODEL_CATALOG } from './fixtures/mock-codex-model-catalog.ts'
 
 // The proof always starts in `apps/desktop`, as `session-resume-case.ts`'s mock Claude notes:
 // `import.meta.url` is unavailable once the Playwright test runner loads this module as CommonJS.
@@ -24,6 +25,7 @@ export function driverBackedByFixture(
 ) {
   return createCodexSessionDriver({
     findExecutable: () => process.execPath,
+    readModelCatalog: async () => MOCK_CODEX_MODEL_CATALOG,
     now: () => new Date(),
     ownership: driverOptions.ownership,
     resumeTarget: driverOptions.resumeTarget ?? (async () => null),
