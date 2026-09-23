@@ -44,16 +44,19 @@ function useRosterQuery(enabled: boolean, projectRoot: string | null) {
     }
   }, [query.data?.pages, add, t])
   const lastPage = query.data?.pages.at(-1)
-  const roster =
-    lastPage === undefined
-      ? null
-      : { ...lastPage, sessions: query.data?.pages.flatMap((page) => page.sessions) ?? [] }
+  const roster = useMemo(() => {
+    if (lastPage === undefined) return null
+    return { ...lastPage, sessions: query.data?.pages.flatMap((page) => page.sessions) ?? [] }
+  }, [lastPage, query.data?.pages])
   return {
     query,
     roster,
     hasMore: query.hasNextPage,
     isFetchingMore: query.isFetchingNextPage,
-    fetchMore: useCallback(() => void query.fetchNextPage(), [query]),
+    fetchMore: useCallback(() => {
+      if (!query.hasNextPage || query.isFetchingNextPage) return
+      void query.fetchNextPage()
+    }, [query.fetchNextPage, query.hasNextPage, query.isFetchingNextPage]),
   }
 }
 
