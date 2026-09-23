@@ -1,6 +1,9 @@
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useToastManager } from '@/platform/renderer/components/ui/toast'
 import { retrySessionFeed, sessionFeedQuery } from './feed/session-feed-query'
+import { reportCodexFailure } from './roster/codex-failure-notice'
 import { sessionRosterQuery } from './roster/rows/session-roster-query'
 import type { SessionContractError } from './session-contract-error'
 import { mergeOptimisticRow, readableSessionId, useSessionCreationStore } from './session-creation'
@@ -49,6 +52,8 @@ export function useSessions(
   projectRoot: string | null = null,
 ) {
   const queryClient = useQueryClient()
+  const { t } = useTranslation('sessions')
+  const { add } = useToastManager()
   const selectedFeedId = readableSessionId(selectedSessionId)
   const {
     query: roster,
@@ -76,6 +81,18 @@ export function useSessions(
     if (rosterData === null) return null
     return { ...rosterData, sessions: mergeOptimisticRow(rosterData.sessions, pending) }
   }, [rosterData, pending])
+
+  // A partial Codex failure must leave Claude usable. One toast marks the outage for this app run.
+  useEffect(() => {
+    reportCodexFailure(
+      rosterData?.partialFailures ?? [],
+      {
+        title: t('roster.sourceFailed', { harness: 'Codex' }),
+        description: t('roster.codexSourceFailedDescription'),
+      },
+      (notice) => add({ ...notice, type: 'error', priority: 'high' }),
+    )
+  }, [add, rosterData?.partialFailures, t])
 
   // The reader reported the real Session for itself: the synthetic row has done its job.
   useEffect(() => {

@@ -29,8 +29,20 @@ export {
 
 export async function listStoredThreads(transport: HistoryTransport): Promise<StoredThread[]> {
   try {
-    const pages = await pagesOf(transport, STORED_THREAD_LIST_METHOD, { limit: 50 })
-    return pages.flatMap((page) =>
+    const statePages = await pagesOf(transport, STORED_THREAD_LIST_METHOD, {
+      limit: 50,
+      sourceKinds: ['appServer', 'cli', 'vscode'],
+      useStateDbOnly: true,
+    })
+    const stateThreads = statePages.flatMap((page) =>
+      page.data.map((entry) => threadOf(threadSchema.parse(entry), undefined)),
+    )
+    if (stateThreads.length > 0) return stateThreads
+    const repairedPages = await pagesOf(transport, STORED_THREAD_LIST_METHOD, {
+      limit: 50,
+      sourceKinds: ['appServer', 'cli', 'vscode'],
+    })
+    return repairedPages.flatMap((page) =>
       page.data.map((entry) => threadOf(threadSchema.parse(entry), undefined)),
     )
   } catch (error) {

@@ -1,6 +1,5 @@
 import type { SessionAdapterRegistration } from '@/domains/sessions/next/main/session-adapter-registry'
 import { createCodexAppServerSessionSource } from '../../observation/app-server-session-source'
-import { codexSessionSource } from '../../sessions/read-sessions'
 import { createCodexSessionAdapter } from './codex-session-adapter'
 
 export function createCodexSessionAdapterRegistration(options: {
@@ -28,8 +27,8 @@ export function createCodexSessionAdapterRegistration(options: {
           projections: adapter.projections,
           watchedProjections: adapter.watchedProjections,
           refreshHistory: adapter.refreshHistory,
+          readHistoryProjection: adapter.readHistoryProjection,
           checkoutFor: adapter.checkoutFor,
-          fallback: codexSessionSource(options.transcriptsRoot),
         }),
       }
     },

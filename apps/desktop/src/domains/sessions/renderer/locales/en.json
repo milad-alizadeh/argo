@@ -196,7 +196,8 @@
   "roster": {
     "planProgress": "{{completed}} of {{total}} steps completed",
     "planUnreadable": "Plan unreadable",
-    "sourceFailed": "{{harness}} Sessions did not load"
+    "sourceFailed": "{{harness}} Sessions did not load",
+    "codexSourceFailedDescription": "Another Codex app may be using the local session database. Close Codex Desktop or Codex in VS Code, then retry."
   },
   "inspector": {
     "diagramLabel": "Diagram inspector",

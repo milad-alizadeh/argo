@@ -5,7 +5,6 @@ import type {
   SessionProjection,
 } from '@/domains/sessions/next/contract/session-projection-contract'
 import { createCodexAppServerSessionSource } from './app-server-session-source'
-import { discovery } from './codex-history-rows'
 
 function projection(): SessionProjection {
   return {
@@ -38,6 +37,7 @@ test('projects managed Codex app-server state with its watched history', async (
     projections: () => [projection()],
     watchedProjections: () => [{ ...projection(), posture: 'watched' }],
     refreshHistory: async () => [{ ...projection(), posture: 'watched' }],
+    readHistoryProjection: async () => ({ ...projection(), posture: 'watched' }),
     checkoutFor: () => null,
   })
 
@@ -92,14 +92,7 @@ test('projects managed Codex app-server state with its watched history', async (
   ])
 })
 
-test('falls back to the local Codex record reader when app-server history does not answer', async () => {
-  const fallback = {
-    harness: 'codex',
-    discoverSessions: async () =>
-      discovery([{ ...projection(), posture: 'watched' }], () => '/repository'),
-    readSessionFiles: async () => null,
-    readShellOutput: async () => ({ state: 'absent' as const }),
-  }
+test('reports an app-server history timeout', async () => {
   const source = createCodexAppServerSessionSource({
     adapter: {
       execute: async () => ({ kind: 'rejected', reason: 'not used' }),
@@ -108,13 +101,9 @@ test('falls back to the local Codex record reader when app-server history does n
     projections: () => [],
     watchedProjections: () => [],
     refreshHistory: async () => await new Promise<never>(() => {}),
+    readHistoryProjection: async () => null,
     checkoutFor: () => null,
-    fallback,
   })
 
-  const listed = await source.discoverSessions()
-
-  assert.equal(listed.rows[0]?.id, 'thread-1')
-  assert.equal(listed.rows[0]?.posture, 'watched')
-  assert.equal(source.readManagedFeed?.('thread-1'), undefined)
+  await assert.rejects(source.discoverSessions(), /app-server history did not answer/)
 })

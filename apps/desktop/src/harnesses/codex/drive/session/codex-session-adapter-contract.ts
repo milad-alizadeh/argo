@@ -13,6 +13,7 @@ export type CodexSessionAdapter = SessionAdapter & {
   close: () => Promise<void>
   projections: () => readonly SessionProjection[]
   refreshHistory: () => Promise<readonly SessionProjection[]>
+  readHistoryProjection: (nativeId: string) => Promise<SessionProjection | null>
   watchedProjections: () => readonly SessionProjection[]
   checkoutFor: (nativeId: string) => string | null
   onRosterChanged: WatchedSource

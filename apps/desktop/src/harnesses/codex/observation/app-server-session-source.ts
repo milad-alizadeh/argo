@@ -4,6 +4,7 @@ import type {
   SessionAdapter,
   SessionProjection,
 } from '@/domains/sessions/next/contract/session-projection-contract'
+import { CodexHistoryUnavailableError } from '../history/vendor-history'
 import { discovery, mergedProjections, rosterRowOf, rowsOf } from './codex-history-rows'
 
 const APP_SERVER_HISTORY_BUDGET_MS = 200
@@ -17,7 +18,8 @@ async function refreshWithinBudget(
       refreshHistory(),
       new Promise<never>((_resolve, reject) => {
         timeout = setTimeout(
-          () => reject(new Error('Codex app-server history did not answer.')),
+          () =>
+            reject(new CodexHistoryUnavailableError('Codex app-server history did not answer.')),
           APP_SERVER_HISTORY_BUDGET_MS,
         )
       }),
@@ -31,30 +33,19 @@ export function createCodexAppServerSessionSource(options: {
   projections: () => readonly SessionProjection[]
   watchedProjections: () => readonly SessionProjection[]
   refreshHistory: () => Promise<readonly SessionProjection[]>
+  readHistoryProjection: (sessionId: string) => Promise<SessionProjection | null>
   checkoutFor: (nativeId: string) => string | null
   adapter: SessionAdapter
-  fallback?: SessionSource
 }): SessionSource & Required<Pick<SessionSource, 'rename'>> {
-  let readingFallback = false
-  const projectionFor = (sessionId: string) =>
-    mergedProjections(options.watchedProjections(), options.projections()).find(
-      (projection) => projection.session.nativeId === sessionId,
-    ) ?? null
+  const managedProjectionFor = (sessionId: string) =>
+    options.projections().find((projection) => projection.session.nativeId === sessionId) ?? null
   return {
     harness: 'codex',
-    discoverSessions: async (request) => {
-      try {
-        const stored = await refreshWithinBudget(options.refreshHistory)
-        readingFallback = false
-        return discovery(mergedProjections(stored, options.projections()), options.checkoutFor)
-      } catch (error) {
-        if (options.fallback === undefined) throw error
-        readingFallback = true
-        return options.fallback.discoverSessions(request)
-      }
+    discoverSessions: async (_request) => {
+      const stored = await refreshWithinBudget(options.refreshHistory)
+      return discovery(mergedProjections(stored, options.projections()), options.checkoutFor)
     },
-    readSessionFiles: (sessionId) =>
-      options.fallback?.readSessionFiles(sessionId) ?? Promise.resolve(null),
+    readSessionFiles: async () => null,
     managedSessions: () =>
       options
         .projections()
@@ -62,8 +53,16 @@ export function createCodexAppServerSessionSource(options: {
           rosterRowOf(projection, options.checkoutFor(projection.session.nativeId)),
         ),
     readManagedFeed: (sessionId) => {
-      if (readingFallback) return undefined
-      const projection = projectionFor(sessionId)
+      const projection = managedProjectionFor(sessionId)
+      if (projection === null) return undefined
+      return {
+        chainId: projection.session.nativeId,
+        revision: String(projection.revision),
+        rows: rowsOf(projection),
+      }
+    },
+    readObservedFeed: async (sessionId) => {
+      const projection = await options.readHistoryProjection(sessionId)
       if (projection === null) return null
       return {
         chainId: projection.session.nativeId,

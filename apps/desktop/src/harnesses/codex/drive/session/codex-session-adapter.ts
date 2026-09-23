@@ -91,6 +91,7 @@ export function createCodexSessionAdapter(deps: {
     },
     projections: appServer.projections,
     refreshHistory: () => watched.refresh(),
+    readHistoryProjection: (nativeId) => watched.readProjection(nativeId),
     watchedProjections: () => watched.projections(),
     checkoutFor: (nativeId: string) => watched.checkoutFor(nativeId),
     onRosterChanged: rosterChanges.subscribe,

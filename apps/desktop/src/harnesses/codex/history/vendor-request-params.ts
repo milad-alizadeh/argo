@@ -1,7 +1,12 @@
 import { z } from 'zod'
 import type { RequestParams } from '../drive/protocol/protocol'
 
-const cursorSchema = z.object({ cursor: z.string().optional(), limit: z.number().int().positive() })
+const cursorSchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.number().int().positive(),
+  sourceKinds: z.array(z.enum(['appServer', 'cli', 'exec', 'subAgent', 'vscode'])).optional(),
+  useStateDbOnly: z.boolean().optional(),
+})
 
 export function listParams(value: unknown): RequestParams['thread/list'] {
   return cursorSchema.parse(value)

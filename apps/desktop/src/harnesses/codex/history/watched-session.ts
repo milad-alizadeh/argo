@@ -10,6 +10,7 @@ import { matchWorkspace, projectionFromStoredThread } from './watched-projection
 export type WatchedCodexSessions = {
   refresh: () => Promise<SessionProjection[]>
   refreshThread: (threadId: string) => Promise<void>
+  readProjection: (threadId: string) => Promise<SessionProjection | null>
   projections: () => SessionProjection[]
   checkoutFor: (nativeId: string) => string | null
 }
@@ -26,6 +27,7 @@ class WatchedCodexHistory implements WatchedCodexSessions {
   private knownWorkspaces: readonly { id: string; path: string }[] = []
   private revision = 0
   private pending = Promise.resolve()
+  private refreshInFlight: Promise<SessionProjection[]> | null = null
   private readonly options: WatchedCodexSessionOptions
 
   constructor(options: WatchedCodexSessionOptions) {
@@ -65,40 +67,16 @@ class WatchedCodexHistory implements WatchedCodexSessions {
     const next = new Map<string, SessionProjection>()
     const nextStored = new Map<string, StoredThread>()
     this.checkouts.clear()
-    for (const summary of threads) {
-      try {
-        const thread = await readStoredThread(this.options.transport, summary.id)
-        this.revision += 1
-        const cwd = thread.cwd ?? summary.cwd
-        const merged = {
-          ...summary,
-          ...thread,
-          cwd,
-          title: thread.title ?? summary.title,
-          branch: thread.branch ?? summary.branch,
-          updatedAt: thread.updatedAt ?? summary.updatedAt,
-          status: thread.status.type === 'unknown' ? summary.status : thread.status,
-        }
-        this.checkouts.set(thread.id, cwd)
-        nextStored.set(thread.id, merged)
-        next.set(
-          thread.id,
-          projectionFromStoredThread(merged, matchWorkspace(cwd, this.knownWorkspaces), {
-            revision: this.revision,
-          }),
-        )
-      } catch {
-        this.revision += 1
-        this.checkouts.set(summary.id, summary.cwd)
-        nextStored.set(summary.id, summary)
-        next.set(
-          summary.id,
-          projectionFromStoredThread(summary, matchWorkspace(summary.cwd, this.knownWorkspaces), {
-            revision: this.revision,
-            sourceHealth: 'unavailable',
-          }),
-        )
-      }
+    for (const thread of threads) {
+      this.revision += 1
+      this.checkouts.set(thread.id, thread.cwd)
+      nextStored.set(thread.id, thread)
+      next.set(
+        thread.id,
+        projectionFromStoredThread(thread, matchWorkspace(thread.cwd, this.knownWorkspaces), {
+          revision: this.revision,
+        }),
+      )
     }
     this.storedThreads = nextStored
     this.projectionsById = next
@@ -106,11 +84,17 @@ class WatchedCodexHistory implements WatchedCodexSessions {
   }
 
   refresh() {
+    if (this.refreshInFlight !== null) return this.refreshInFlight
     const run = this.pending.then(() => this.refreshNow())
+    this.refreshInFlight = run
     this.pending = run.then(
       () => undefined,
       () => undefined,
     )
+    const clear = () => {
+      if (this.refreshInFlight === run) this.refreshInFlight = null
+    }
+    run.then(clear, clear)
     return run
   }
 
@@ -124,6 +108,11 @@ class WatchedCodexHistory implements WatchedCodexSessions {
       () => undefined,
     )
     return run
+  }
+
+  async readProjection(threadId: string) {
+    await this.refreshThread(threadId)
+    return this.projectionsById.get(threadId) ?? null
   }
 
   projections() {

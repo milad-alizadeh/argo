@@ -7,6 +7,7 @@ import type { Input } from '../input-items'
 export type RequestID = string | number
 export type ThreadConfiguration = { cwd: string }
 export type SkillsListRequest = { cwds: string[]; forceReload: boolean }
+export type ThreadSourceKind = 'appServer' | 'cli' | 'exec' | 'subAgent' | 'vscode'
 export type RequestParams = {
   initialize: {
     clientInfo: { name: string; title: string; version: string }
@@ -16,7 +17,12 @@ export type RequestParams = {
   'thread/start': ThreadConfiguration
   'thread/resume': ThreadConfiguration & { threadId: string }
   'thread/unsubscribe': { threadId: string }
-  'thread/list': { cursor?: string; limit?: number }
+  'thread/list': {
+    cursor?: string
+    limit?: number
+    sourceKinds?: ThreadSourceKind[]
+    useStateDbOnly?: boolean
+  }
   'thread/read': { threadId: string; includeTurns: boolean }
   'thread/turns/list': {
     threadId: string
