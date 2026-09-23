@@ -28,6 +28,8 @@ export function setupScreenOf(actor: ProjectSetupActor) {
       return 'cancelling' as const
     case 'Cancel failed':
       return 'cancel-failed' as const
+    case 'Restart failed':
+      return 'restart-failed' as const
     case 'Finalizing':
       return 'finalizing' as const
     case 'Review required':

@@ -243,6 +243,14 @@ export const RestartingAttempt = story(
   { screen: 'restarting', attempt, activeEffect: 'planning' },
   VIEW_ONLY,
 )
+export const RestartAttemptFailed = story(
+  {
+    screen: 'restart-failed',
+    attempt,
+    recoveryMessage: 'restart-failed',
+  },
+  VIEW_ONLY,
+)
 export const CancelFailed = story(
   {
     screen: 'cancel-failed',

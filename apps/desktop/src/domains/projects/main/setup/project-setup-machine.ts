@@ -206,7 +206,7 @@ const projectSetup = setup({
       recoveryMessage: null,
     }),
     recordRestartFailure: assign({
-      recoveryMessage: 'cancel-failed',
+      recoveryMessage: 'restart-failed',
     }),
     beginFinalization: assign({
       pendingFinalization: true,

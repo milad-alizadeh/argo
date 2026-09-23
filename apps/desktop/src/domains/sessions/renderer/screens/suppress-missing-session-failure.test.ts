@@ -7,7 +7,7 @@ test('suppresses a missing-Session composer banner when that Session Feed has st
   expect(
     suppressMissingSessionFailure({
       failure: missingSessionFailure,
-      feedError: null,
+      feedFailed: false,
       feedStalledSessionId: 'session-one',
       selectedSessionId: 'session-one',
     }),
@@ -18,19 +18,19 @@ test('suppresses a missing-Session composer banner when that Session Feed has fa
   expect(
     suppressMissingSessionFailure({
       failure: missingSessionFailure,
-      feedError: { requestId: 'session-one' },
+      feedFailed: true,
       feedStalledSessionId: null,
       selectedSessionId: 'session-one',
     }),
   ).toBe(true)
 })
 
-test('keeps a missing-Session composer banner when the Feed problem belongs to another Session', () => {
+test('keeps a missing-Session composer banner when a different Session Feed stalled', () => {
   expect(
     suppressMissingSessionFailure({
       failure: missingSessionFailure,
-      feedError: { requestId: 'session-two' },
-      feedStalledSessionId: null,
+      feedFailed: false,
+      feedStalledSessionId: 'session-two',
       selectedSessionId: 'session-one',
     }),
   ).toBe(false)
