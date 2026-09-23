@@ -71,6 +71,7 @@ export function indexedChains(
       .rows.flatMap((feedRow) => {
         switch (feedRow.shape) {
           case 'prose':
+            return [feedRow.text, ...(feedRow.pastedContent ?? []).map(({ text }) => text)]
           case 'thought':
           case 'command-output':
             return [feedRow.text]

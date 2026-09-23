@@ -11,14 +11,20 @@ const PROMPT = 'Reply with one short acknowledgement.'
 export async function proveSessionCreatedByClick(
   page: Page,
   backend: SessionHarnessBackend,
-  harness: SessionHarness = 'claude',
+  options: {
+    harness?: SessionHarness
+    prompt?: string
+    budgetRunSetup?: boolean
+  } = {},
 ) {
-  const reply = { harness, prompt: PROMPT }
+  const { harness = 'claude', prompt = PROMPT, budgetRunSetup = false } = options
+  const reply = { harness, prompt }
   assert.equal(await backend.recorded(reply), false)
   const known = await rosterIds(page)
   const sessionId = await createSessionByClick(page, {
     harness,
-    prompt: PROMPT,
+    prompt,
+    budgetRunSetup,
     harnessWrote: () => backend.recorded(reply),
   })
 

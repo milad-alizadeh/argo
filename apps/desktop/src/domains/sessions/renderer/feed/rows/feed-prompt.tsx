@@ -3,6 +3,8 @@ import { AttachmentChip } from '../../attachment-chip'
 import { PromptText } from '../../prompt/prompt-text'
 import type { SessionEvidence } from '../../types'
 import { FeedImage } from '../content/feed-images'
+import { FeedMarkdown } from '../content/feed-markdown'
+import { CollapsibleText } from '../tools/collapsible-text'
 
 // Biome refuses a position key, and the same file can be attached twice: count earlier copies.
 function keyedAttachments(sources: readonly string[]) {
@@ -15,15 +17,21 @@ function keyedAttachments(sources: readonly string[]) {
 }
 
 export function FeedPrompt({
+  activeEvidenceId,
   onOpenEvidence,
+  rowId,
   text,
   images = [],
   files = [],
+  pastedContent = [],
 }: {
+  activeEvidenceId: string | null
   onOpenEvidence: (evidence: SessionEvidence) => void
+  rowId: string
   text: string
   images?: readonly string[]
   files?: readonly string[]
+  pastedContent?: readonly { id: string; text: string }[]
 }) {
   const { t } = useTranslation('sessions')
   return (
@@ -63,6 +71,22 @@ export function FeedPrompt({
           />
         </p>
       )}
+      {pastedContent.map(({ id, text: content }) => (
+        <CollapsibleText
+          key={`${rowId}:${id}`}
+          content={
+            <FeedMarkdown
+              activeEvidenceId={activeEvidenceId}
+              onOpenEvidence={onOpenEvidence}
+              rowId={`${rowId}:pasted-content:${id}`}
+              text={content}
+            />
+          }
+          contentVariant="flush"
+          icon="file"
+          title={t('pastedContent')}
+        />
+      ))}
     </div>
   )
 }

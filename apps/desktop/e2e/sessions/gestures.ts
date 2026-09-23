@@ -23,6 +23,7 @@ const POLL_MS = 25
 export type CreateRequest = {
   harness: SessionHarness
   prompt: string
+  budgetRunSetup?: boolean
   // Read on every poll while the Roster row is still absent. A true reading fails the case: the
   // row a managed Session stands on must not wait for the Harness to write (managed-row.ts).
   harnessWrote?: () => Promise<boolean>
@@ -93,6 +94,22 @@ export async function chooseHarness(page: Page, harness: SessionHarness) {
   await page.getByRole('tablist', { name: 'Harness' }).waitFor({ state: 'detached' })
 }
 
+async function chooseBudgetRunSetup(page: Page, harness: SessionHarness) {
+  await page.locator(RUN_SETUP).click()
+  const models = page.getByRole('radiogroup', { name: 'Model' })
+  const model = models.getByRole('radio', {
+    name: harness === 'claude' ? /Haiku 4\.5/ : /Gpt 5\.6 Luna/,
+  })
+  await model.focus()
+  await page.keyboard.press('Space')
+  const effort = page.getByRole('slider', { name: 'Effort' })
+  await effort.focus()
+  await page.keyboard.press('Home')
+  await expect(effort).toHaveAttribute('aria-valuetext', 'Low')
+  await page.keyboard.press('Escape')
+  await models.waitFor({ state: 'detached' })
+}
+
 // The Roster ids the shipped app answers with. Reading is an assertion, not a gesture: nothing a
 // person does is injected here.
 export async function rosterIds(page: Page): Promise<string[]> {
@@ -157,6 +174,7 @@ export async function createSessionByClick(page: Page, request: CreateRequest): 
   const known = await rosterIds(page)
   await openNewSessionByClick(page)
   await chooseHarness(page, request.harness)
+  if (request.budgetRunSetup === true) await chooseBudgetRunSetup(page, request.harness)
   const composer = page.getByRole('combobox', { name: 'Message' })
   await composer.click()
   await expect(composer).toHaveText('')

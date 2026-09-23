@@ -1,3 +1,4 @@
+import path from 'node:path'
 // Session Feed and Roster contracts over the packaged app's real preload (#1910).
 // One file, one `test`: `sessionBackend` (`session-proof-run.ts`) is the only difference between
 // a mock and a real Claude/Codex CLI, so a case that drives a live Turn just names the backend it
@@ -39,7 +40,8 @@ import { updatePlan } from './fixtures/plan.fixture'
 import { rosterOrderMutations } from './fixtures/roster-order.fixture'
 import { writeWindowFillerSessions } from './fixtures/roster-window.fixture'
 import { writeBuriedSearchTarget } from './fixtures/search-window.fixture'
-import { openSessionByClick } from './gestures'
+import { createSessionByClick, openSessionByClick } from './gestures'
+import { assertTranscriptFeedCorpus } from './real-harness/transcript-feed-corpus'
 import { expect, test } from './session-proof-run'
 
 test.describe('with no Project selected', () => {
@@ -171,7 +173,32 @@ test.describe('with a real Codex', () => {
   test.skip(({ sessionBackend }) => sessionBackend === 'mock', 'session-codex-resume creates one.')
 
   test('session-codex-created-by-click', async ({ session, backend }) => {
-    await proveSessionCreatedByClick(session.page(), backend, 'codex')
+    await proveSessionCreatedByClick(session.page(), backend, { harness: 'codex' })
+  })
+})
+
+test.describe('with real Session transcript corpora', () => {
+  test.skip(({ sessionBackend }) => sessionBackend !== 'real', 'Requires both signed-in CLIs.')
+
+  test('session-feed-transcript-corpus', async ({ session }) => {
+    const claudeSessionId = await createSessionByClick(session.page(), {
+      harness: 'claude',
+      prompt: 'Use a shell command to print hello, then report the output.',
+      budgetRunSetup: true,
+    })
+    const codexSessionId = await createSessionByClick(session.page(), {
+      harness: 'codex',
+      prompt: 'Use a shell command to print hello, then report the output.',
+      budgetRunSetup: true,
+    })
+    const home = path.join(session.root, 'home')
+    await assertTranscriptFeedCorpus(
+      {
+        claude: path.join(home, '.claude', 'projects'),
+        codex: path.join(home, '.codex', 'sessions'),
+      },
+      { claude: claudeSessionId, codex: codexSessionId },
+    )
   })
 })
 

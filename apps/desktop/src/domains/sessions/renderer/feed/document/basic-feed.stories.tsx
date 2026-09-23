@@ -321,6 +321,37 @@ export const TaskNotification: Story = {
   },
 }
 
+const pastedContentFeed = {
+  ...feed,
+  sessionId: 'pasted-content',
+  chainId: 'pasted-content',
+  revision: 'pasted-content-one',
+  rows: [
+    {
+      shape: 'prose' as const,
+      id: 'pasted-content-1',
+      role: 'user' as const,
+      text: 'Review this snippet.',
+      pastedContent: [{ id: 'a', text: 'const answer = 42' }],
+    },
+  ],
+} satisfies SessionFeed
+
+export const PastedContent: Story = {
+  args: { feed: pastedContentFeed, selectedSessionId: 'pasted-content' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const disclosure = canvas.getByRole('button', { name: 'Pasted content' })
+    await expect(disclosure).toHaveAttribute('aria-expanded', 'false')
+    await disclosure.focus()
+    await userEvent.keyboard('{Enter}')
+    await expect(disclosure).toHaveAttribute('aria-expanded', 'true')
+    await expect(canvas.getByText('const answer = 42')).toBeVisible()
+    await userEvent.keyboard('{Space}')
+    await expect(disclosure).toHaveAttribute('aria-expanded', 'false')
+  },
+}
+
 const delegationFeed = {
   ...feed,
   chainId: 'subagents',
