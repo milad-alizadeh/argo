@@ -5,11 +5,15 @@ import os from 'node:os'
 import path from 'node:path'
 import { type TestContext, test } from 'node:test'
 import { drizzle } from 'drizzle-orm/bun-sqlite'
+import { fromCallback } from 'xstate'
+import { defaultProjectSetupHarnesses } from '@/domains/projects/contract/setup/project-setup-harness'
 import {
   migrateTestDatabase,
   projectMigrationsFolder,
 } from '../../../../../../test-fixtures/projects/migrate-test-database'
 import { createProjectStore } from '../../sqlite-store'
+import { inactiveProjectSetupActors } from '../actors/project-setup-actors'
+import type { ProjectSetupEvent } from '../project-setup-machine-types'
 import { createProjectSetupRegistry } from './project-setup-registry'
 
 test('restores the exact ready manual setup after a restart', async (context) => {
@@ -83,11 +87,30 @@ test('persists immutable evidence for each restarted Attempt', async (context) =
   context.after(() => rm(directory, { recursive: true, force: true }))
   const databasePath = path.join(directory, 'argo.sqlite')
   const store = setupStore(databasePath)
-  const setup = createProjectSetupRegistry(store)
+  const setup = createProjectSetupRegistry(store, {
+    harnesses: defaultProjectSetupHarnesses,
+    actors: () => ({
+      ...inactiveProjectSetupActors,
+      restart: fromCallback<ProjectSetupEvent, { sessionIds: string[] }, ProjectSetupEvent>(
+        ({ sendBack }) => {
+          sendBack({ type: 'Restart attempt completed' })
+        },
+      ),
+    }),
+  })
   setup.transition('project-1', { type: 'Choose agent', harness: 'claude' })
   setup.transition('project-1', { type: 'Planning session started', sessionId: 'planning-1' })
   setup.transition('project-1', { type: 'Effect interrupted', reason: 'interrupted' })
-  setup.transition('project-1', { type: 'Restart attempt' })
+  const restarted = new Promise<void>((resolve) => {
+    let unsubscribe = () => {}
+    unsubscribe = setup.subscribe('project-1', (snapshot) => {
+      if (snapshot.screen !== 'choosing-method') return
+      unsubscribe()
+      resolve()
+    })
+    setup.transition('project-1', { type: 'Restart attempt' })
+  })
+  await restarted
   setup.transition('project-1', { type: 'Choose agent', harness: 'claude' })
   const persisted = store.readProjectSetup('project-1')?.persistedSnapshot as {
     context: { attemptEvidence: Array<{ number: number; planningSessionId: string | null }> }

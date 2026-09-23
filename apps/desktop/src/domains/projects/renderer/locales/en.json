@@ -155,6 +155,10 @@
         "title": "Stopping Project setup",
         "description": "Argo is waiting for the active agent Session to stop."
       },
+      "restarting": {
+        "title": "Starting a new setup Attempt",
+        "description": "Argo is retiring the prior setup Session."
+      },
       "cancel-failed": {
         "title": "Project setup may still be running",
         "description": "Argo could not confirm that the active agent Session stopped.",
@@ -229,6 +233,7 @@
       "applyStarted": "Applying setup",
       "permissionPending": "Waiting for permission",
       "interrupted": "Project setup was interrupted",
+      "restarting": "Restarting Project setup",
       "reviewingChanges": "Reviewing setup changes",
       "planReady": "Setup plan ready",
       "planningStarted": "Planning Project setup"

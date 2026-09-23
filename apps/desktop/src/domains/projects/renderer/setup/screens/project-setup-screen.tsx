@@ -25,6 +25,7 @@ export function ProjectSetupScreen({ command, snapshot }: ProjectSetupScreenProp
     case 'applying':
       return <Progress command={command} snapshot={snapshot} />
     case 'cancelling':
+    case 'restarting':
     case 'finalizing':
       return <Busy />
     case 'cancel-failed':

@@ -239,6 +239,10 @@ export const Cancelling = story(
   { screen: 'cancelling', attempt, activeEffect: 'planning' },
   VIEW_ONLY,
 )
+export const RestartingAttempt = story(
+  { screen: 'restarting', attempt, activeEffect: 'planning' },
+  VIEW_ONLY,
+)
 export const CancelFailed = story(
   {
     screen: 'cancel-failed',

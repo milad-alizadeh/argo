@@ -134,6 +134,8 @@ function setupEvent(snapshot: ProjectSetupSnapshot) {
       return 'setup.event.permissionPending'
     case 'interrupted':
       return 'setup.event.interrupted'
+    case 'restarting':
+      return 'setup.event.restarting'
     case 'reviewing-diff':
       return 'setup.event.reviewingChanges'
     case 'reviewing-plan':
