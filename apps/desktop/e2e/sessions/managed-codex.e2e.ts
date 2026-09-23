@@ -27,6 +27,9 @@ test('starts a managed Codex Session through app-server', async ({ session }) =>
 })
 
 test('starts Codex through the existing composer command boundary', async ({ session }) => {
+  await session
+    .page()
+    .waitForFunction(async () => (await window.argo.readCodexModelCatalog()) !== null)
   const reply = await session.page().evaluate(async () => {
     const projects = await window.argo.listProjects()
     if (projects.type !== 'project.listed' || projects.selectedId === null) return projects
@@ -34,11 +37,18 @@ test('starts Codex through the existing composer command boundary', async ({ ses
     if (workspaces.type !== 'project.workspace.listed') return workspaces
     const workspace = workspaces.workspaces.find(({ kind }) => kind === 'main')
     if (workspace === undefined) return { type: 'workspace-missing' }
+    const catalog = await window.argo.readCodexModelCatalog()
+    const model = catalog?.data.find(({ hidden }) => !hidden)
+    if (model === undefined) return { type: 'model-catalog-unavailable' }
     return window.argo.startSession({
       harness: 'codex',
       cwd: workspace.path,
       prompt: 'Start through the composer boundary.',
-      setup: { model: 'gpt-5.6-sol', effort: 'low', mode: 'workspace-write' },
+      setup: {
+        model: model.model,
+        effort: model.defaultReasoningEffort,
+        mode: 'workspace-write',
+      },
     })
   })
 
@@ -48,16 +58,26 @@ test('starts Codex through the existing composer command boundary', async ({ ses
 test('starts Codex from the selected Project root when no Workspace is chosen', async ({
   session,
 }) => {
+  await session
+    .page()
+    .waitForFunction(async () => (await window.argo.readCodexModelCatalog()) !== null)
   const reply = await session.page().evaluate(async () => {
     const projects = await window.argo.listProjects()
     if (projects.type !== 'project.listed' || projects.selectedId === null) return projects
     const project = projects.projects.find(({ id }) => id === projects.selectedId)
     if (project === undefined) return { type: 'project-missing' }
+    const catalog = await window.argo.readCodexModelCatalog()
+    const model = catalog?.data.find(({ hidden }) => !hidden)
+    if (model === undefined) return { type: 'model-catalog-unavailable' }
     return window.argo.startSession({
       harness: 'codex',
       cwd: project.path,
       prompt: 'Start from the selected Project root.',
-      setup: { model: 'gpt-5.6-sol', effort: 'low', mode: 'workspace-write' },
+      setup: {
+        model: model.model,
+        effort: model.defaultReasoningEffort,
+        mode: 'workspace-write',
+      },
     })
   })
 

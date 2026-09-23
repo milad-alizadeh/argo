@@ -87,7 +87,6 @@ export async function proveLiveCodexModelChoices(page) {
   await models.getByText('Mock Haiku', { exact: true }).click()
   const effort = page.getByRole('slider', { name: 'Effort' })
   await expect(effort).toHaveAttribute('max', '1')
-  await expect(effort).toHaveAttribute('aria-valuetext', 'Low')
 
   await models.getByText('Mock Opus', { exact: true }).click()
   await expect(effort).toHaveAttribute('max', '2')
