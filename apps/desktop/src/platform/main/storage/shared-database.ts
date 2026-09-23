@@ -22,6 +22,10 @@ function databaseRequire() {
 }
 
 const SESSION_SEARCH_MIGRATION = '20260921153755_session_search'
+// Every worktree's dev instance opens this same file (account-store.ts): WAL lets a reader never
+// block a writer, and the timeout makes a second writer wait out a lock instead of throwing
+// SQLITE_BUSY immediately, the default with zero worktrees open concurrently.
+const BUSY_TIMEOUT_MS = 5000
 
 function sqliteRuntime() {
   return databaseRequire()('node:sqlite') as typeof import('node:sqlite')
@@ -45,6 +49,8 @@ export function openSharedDatabase(
   mkdirSync(userData, { recursive: true })
   const { DatabaseSync } = sqliteRuntime()
   const database = new DatabaseSync(sharedDatabasePath(userData))
+  database.exec('PRAGMA journal_mode = WAL')
+  database.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`)
   migrateDatabase(database, migrationsFolder)
   return database
 }
