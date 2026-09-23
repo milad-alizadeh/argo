@@ -58,6 +58,8 @@ type ComposerFormProps = {
   sessionId: string
   harness: HarnessControl | null
   setup: TurnSetupControlProps | null
+  catalogError?: boolean
+  refreshCatalog?: () => void
   workspace: WorkspaceMenuControlProps | null
 }
 
@@ -94,6 +96,8 @@ export function ComposerForm({
   sessionId,
   harness,
   setup,
+  catalogError = false,
+  refreshCatalog,
   workspace,
 }: ComposerFormProps) {
   const interruptRef = useFocusInterruptOnCompactStart(isCompacting)
@@ -141,6 +145,7 @@ export function ComposerForm({
         plan={plan}
         sessionId={sessionId}
         setup={setup}
+        catalogState={{ catalogError, refreshCatalog }}
         workspace={workspace}
         tickets={tickets}
         onContextPickerOpenChange={onContextPickerOpenChange}

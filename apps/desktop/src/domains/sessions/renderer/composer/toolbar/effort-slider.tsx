@@ -29,7 +29,6 @@ export function EffortSlider({ choices, value, onChange }: TurnSetupControlProps
       </div>
       <input
         type="range"
-        disabled={choices.source === 'fallback'}
         min={0}
         max={Math.max(0, efforts.length - 1)}
         step={1}

@@ -1,6 +1,7 @@
 import { Fragment, useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/platform/renderer/components/icon/icon'
+import { Button } from '@/platform/renderer/components/ui/button'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 import { Popover, PopoverContent, PopoverTrigger } from '@/platform/renderer/components/ui/popover'
 import { HarnessLogo } from '../../harness/harness-logo'
@@ -20,13 +21,30 @@ export type TurnSetupControlProps = {
   onChange: (setup: TurnSetup) => void
 }
 
-type RunSetupMenuProps = { harness: HarnessControl; setup: TurnSetupControlProps | null }
+type RunSetupMenuProps = {
+  harness: HarnessControl
+  setup: TurnSetupControlProps | null
+  catalogError?: boolean
+  refreshCatalog?: () => void
+}
 
-export function RunSetupMenu({ harness, setup }: RunSetupMenuProps) {
+export function RunSetupMenu({
+  harness,
+  setup,
+  catalogError = false,
+  refreshCatalog,
+}: RunSetupMenuProps) {
   const { t } = useTranslation('sessions')
   const harnessLabel = HARNESSES[harness.harness].label
   const facts = setupFacts(setup)
-  const body = <SetupBody harness={harness} setup={setup} />
+  const body = (
+    <SetupBody
+      harness={harness}
+      setup={setup}
+      catalogError={catalogError}
+      refreshCatalog={refreshCatalog}
+    />
+  )
   return (
     <Popover>
       <PopoverTrigger
@@ -73,22 +91,31 @@ function setupFacts(setup: TurnSetupControlProps | null) {
 }
 
 // A harness that declares no choices runs at its own configured ones.
-function SetupBody({ harness, setup }: RunSetupMenuProps) {
+function SetupBody({ harness, setup, catalogError, refreshCatalog }: RunSetupMenuProps) {
   const { t } = useTranslation('sessions')
+  if (harness.harness === 'codex' && catalogError)
+    return (
+      <div className="space-y-2 p-3.5" role="alert">
+        <p className="type-meta text-muted-foreground">{t('composer.setup.modelCatalogError')}</p>
+        <Button onClick={refreshCatalog} size="sm" type="button" variant="outline">
+          {t('composer.setup.refreshModels')}
+        </Button>
+      </div>
+    )
+  if (harness.harness === 'codex' && setup === null)
+    return (
+      <p className="p-3.5 type-meta text-muted-foreground" role="status">
+        {t('composer.setup.loadingModels')}
+      </p>
+    )
   if (setup === null)
     return (
       <p className="p-3.5 type-meta text-muted-foreground">
         {t('composer.setup.ownSettings', { harness: HARNESSES[harness.harness].label })}
       </p>
     )
-  const { choices } = setup
   return (
     <>
-      {choices.source === 'fallback' ? (
-        <p className="px-3.5 pt-3.5 type-meta text-muted-foreground" role="status">
-          {t('composer.setup.modelCatalogFallback')}
-        </p>
-      ) : null}
       <ModelOptions {...setup} />
       <EffortSlider {...setup} />
     </>
@@ -110,24 +137,24 @@ function ModelOptions({ choices, value, onChange }: TurnSetupControlProps) {
             // A native radio group: arrows move both focus and the choice, and only the checked one is a Tab stop.
             <label
               key={model.value}
-              className={`flex min-h-12 w-full items-center rounded-md px-2.5 py-1.5 text-left transition-colors has-focus-visible:ring-3 has-focus-visible:ring-ring/50 ${choices.source === 'fallback' ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} ${
+              className={`flex min-h-12 w-full items-center rounded-md px-2.5 py-1.5 text-left transition-colors has-focus-visible:ring-3 has-focus-visible:ring-ring/50 ${
                 active ? 'bg-foreground text-background' : 'hover:bg-muted'
               }`}
             >
               <input
                 type="radio"
-                disabled={choices.source === 'fallback'}
                 name={name}
                 value={model.value}
                 checked={active}
                 onChange={() => {
                   const efforts = effortChoices(choices, model.value)
+                  const currentEffort = efforts.find((effort) => effort.value === value.effort)
+                  const nextEffort =
+                    currentEffort ?? closestEffort(value.effort, efforts, model.defaultEffort)
                   onChange({
                     ...value,
                     model: model.value,
-                    effort: efforts.some((effort) => effort.value === value.effort)
-                      ? value.effort
-                      : (efforts[0]?.value ?? value.effort),
+                    effort: nextEffort?.value ?? value.effort,
                   })
                 }}
                 className="sr-only"
@@ -148,5 +175,29 @@ function ModelOptions({ choices, value, onChange }: TurnSetupControlProps) {
         })}
       </div>
     </div>
+  )
+}
+
+function closestEffort(
+  current: string,
+  choices: ReturnType<typeof effortChoices>,
+  defaultEffort?: string,
+) {
+  const order = ['low', 'medium', 'high', 'xhigh', 'max', 'ultra']
+  const currentRank = order.indexOf(current)
+  if (currentRank === -1) return choices.find(({ value }) => value === defaultEffort) ?? choices[0]
+  return (
+    choices.reduce<(typeof choices)[number] | undefined>((closest, choice) => {
+      const rank = order.indexOf(choice.value)
+      if (rank === -1) return closest
+      if (
+        closest === undefined ||
+        Math.abs(rank - currentRank) < Math.abs(order.indexOf(closest.value) - currentRank)
+      )
+        return choice
+      return closest
+    }, undefined) ??
+    choices.find(({ value }) => value === defaultEffort) ??
+    choices[0]
   )
 }

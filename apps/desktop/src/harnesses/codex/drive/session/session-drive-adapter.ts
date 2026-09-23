@@ -1,4 +1,8 @@
-import { codexTurnSetupSchema } from '@/domains/sessions/contract/codex-turn-setup'
+import {
+  codexOpeningSetupFor,
+  codexTurnSetupSchema,
+  codexTurnSetupSchemaFor,
+} from '@/domains/sessions/contract/codex-turn-setup'
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import type { Permission } from '@/domains/sessions/contract/drive/permission'
 import type {
@@ -76,7 +80,9 @@ export function createCodexDriveAdapter(driver: CodexSessionDrive): SessionDrive
     failureMessage: (code) => FAILURE_MESSAGES[code],
     turnSetupSchema: codexTurnSetupSchema,
     async start({ cwd, prompt, setup, attachments }) {
-      const parsedSetup = codexTurnSetupSchema.safeParse(setup)
+      const catalog = (await driver.readModelCatalog?.()) ?? null
+      const selectedSetup = setup ?? (catalog === null ? null : codexOpeningSetupFor(catalog))
+      const parsedSetup = codexTurnSetupSchemaFor(catalog).safeParse(selectedSetup)
       if (!parsedSetup.success) return { error: 'launch-failed' }
       try {
         return {
@@ -92,7 +98,9 @@ export function createCodexDriveAdapter(driver: CodexSessionDrive): SessionDrive
       }
     },
     async send({ sessionId, prompt, setup, attachments }) {
-      const parsedSetup = codexTurnSetupSchema.safeParse(setup)
+      const catalog = (await driver.readModelCatalog?.()) ?? null
+      const selectedSetup = setup ?? (catalog === null ? null : codexOpeningSetupFor(catalog))
+      const parsedSetup = codexTurnSetupSchemaFor(catalog).safeParse(selectedSetup)
       if (!parsedSetup.success) return { error: 'not-drivable' }
       try {
         await driver.send({ sessionId, text: prompt, setup: parsedSetup.data, attachments })

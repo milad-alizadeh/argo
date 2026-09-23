@@ -11,10 +11,11 @@ import { RunSetupMenu } from './run-setup-menu'
 function RunSetupStory({ started = true }: { started?: boolean }) {
   const [harness, setHarness] = useState<SessionHarness>('claude')
   const [setup, setSetup] = useState(CLAUDE_TURN_SETUP.opening)
-  const choices = HARNESSES[harness].setup
+  const choices = harness === 'codex' ? codexTurnSetup(liveCatalog) : HARNESSES[harness].setup
   const chooseHarness = (nextHarness: SessionHarness) => {
     setHarness(nextHarness)
-    const nextSetup = HARNESSES[nextHarness].setup
+    const nextSetup =
+      nextHarness === 'codex' ? codexTurnSetup(liveCatalog) : HARNESSES[nextHarness].setup
     if (nextSetup !== null) setSetup(nextSetup.opening)
   }
   return (
@@ -43,14 +44,28 @@ const liveCatalog: CodexModelCatalog = {
   nextCursor: null,
 }
 
-function CodexCatalogStory({ catalog }: { catalog: CodexModelCatalog | null }) {
+function CodexCatalogStory({
+  catalog: initialCatalog,
+  failed = false,
+}: {
+  catalog: CodexModelCatalog | null
+  failed?: boolean
+}) {
+  const [catalog, setCatalog] = useState(initialCatalog)
   const choices = codexTurnSetup(catalog)
-  const [setup, setSetup] = useState(choices.opening)
+  const [setup, setSetup] = useState(choices?.opening ?? CLAUDE_TURN_SETUP.opening)
+  const [catalogError, setCatalogError] = useState(failed)
   return (
     <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
       <RunSetupMenu
         harness={{ harness: 'codex' }}
-        setup={{ choices, value: setup, onChange: setSetup }}
+        setup={choices === null ? null : { choices, value: setup, onChange: setSetup }}
+        catalogError={catalogError}
+        refreshCatalog={() => {
+          setCatalog(liveCatalog)
+          setSetup(codexTurnSetup(liveCatalog)?.opening ?? CLAUDE_TURN_SETUP.opening)
+          setCatalogError(false)
+        }}
       />
     </div>
   )
@@ -131,21 +146,32 @@ export const UsesLiveCodexCatalog: Story = {
   },
 }
 
-export const LabelsFallbackCatalog: Story = {
-  render: () => <CodexCatalogStory catalog={null} />,
+export const RetriesUnavailableCatalog: Story = {
+  render: () => <CodexCatalogStory catalog={null} failed />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const trigger = canvas.getByRole('button', { name: TRIGGER })
     await userEvent.click(trigger)
-    const status = await page().findByRole('status')
-    await expect(status).toHaveTextContent(
-      'Using a fallback model list because the live Codex catalog is unavailable.',
+    await expect(page().getByRole('alert')).toHaveTextContent(
+      'Argo could not load the Codex models.',
     )
-    const models = page().getByRole('radiogroup', { name: 'Model' })
-    models.scrollIntoView({ block: 'nearest' })
-    await waitFor(() => expect(models).toBeVisible())
-    await expect(within(models).getByRole('radio', { name: /Gpt 5.6 Sol/ })).toBeDisabled()
-    await expect(page().getByRole('slider', { name: 'Effort' })).toBeDisabled()
+    await expect(page().queryByRole('radiogroup', { name: 'Model' })).toBeNull()
+    await userEvent.click(page().getByRole('button', { name: 'Refresh models' }))
+    await expect(canvas.getByRole('button', { name: TRIGGER })).toHaveAccessibleName(
+      'Choose run setup: Codex, Live Codex Model, Focused',
+    )
+    await userEvent.click(canvas.getByRole('button', { name: TRIGGER }))
+    await expect(page().getByRole('radiogroup', { name: 'Model' })).toBeVisible()
+    await expect(page().getByRole('radio', { name: /Live Codex Model/ })).toBeChecked()
+  },
+}
+
+export const LoadsCatalog: Story = {
+  render: () => <CodexCatalogStory catalog={null} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: TRIGGER }))
+    await expect(page().getByRole('status')).toHaveTextContent('Loading Codex models…')
   },
 }
 
@@ -201,9 +227,9 @@ export const NewSessionChoosesHarness: Story = {
     const codex = within(harnesses).getByRole('tab', { name: 'Codex' })
     await expect(codex).toHaveAttribute('aria-selected', 'true')
     const codexModels = page().getByRole('radiogroup', { name: 'Model' })
-    await expect(within(codexModels).getAllByRole('radio')).toHaveLength(5)
-    await expect(within(codexModels).getByRole('radio', { name: /Gpt 5.6 Sol/ })).toBeChecked()
-    await expect(trigger).toHaveAccessibleName('Choose run setup: Codex, Gpt 5.6 Sol, Low')
+    await expect(within(codexModels).getAllByRole('radio')).toHaveLength(1)
+    await expect(within(codexModels).getByRole('radio', { name: /Live Codex Model/ })).toBeChecked()
+    await expect(trigger).toHaveAccessibleName('Choose run setup: Codex, Live Codex Model, Focused')
 
     await userEvent.click(within(harnesses).getByRole('tab', { name: 'Claude Code' }))
     await expect(page().getByRole('radiogroup', { name: 'Model' })).toBeVisible()

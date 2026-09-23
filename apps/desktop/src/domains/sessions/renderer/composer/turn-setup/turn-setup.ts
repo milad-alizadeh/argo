@@ -19,6 +19,7 @@ export type SetupChoice = {
   detail?: string
   reads: (reading: string) => boolean
   efforts?: readonly string[]
+  defaultEffort?: string
 }
 export type ModeChoice = SetupChoice & { detail: string; icon: IconName }
 

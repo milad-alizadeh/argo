@@ -100,6 +100,7 @@ export function useSessionComposer(options: SessionComposerOptions): ComposerRes
     retry: () => setFailure(null),
     ...marks,
     props: {
+      disabled: harness === 'codex' && facts.catalog === null,
       focusOnMount,
       isCompacting,
       isHandingOff,
@@ -111,6 +112,8 @@ export function useSessionComposer(options: SessionComposerOptions): ComposerRes
       onSend,
       sessionId: composerIdentityKey(identity),
       setup: control,
+      catalogError: harness === 'codex' && facts.catalogError,
+      refreshCatalog: facts.refreshCatalog,
       workspace,
     },
   }

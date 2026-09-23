@@ -45,7 +45,7 @@ function sendManagedSession({
     type: 'session.send',
     session: { harness, nativeId: sessionId },
     prompt,
-    ...(setup === null || setup === undefined ? {} : { setup }),
+    ...(!setup ? {} : { setup }),
   })
 }
 

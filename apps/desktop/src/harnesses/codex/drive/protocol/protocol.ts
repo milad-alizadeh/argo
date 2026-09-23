@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict'
 import { z } from 'zod'
-import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
+import {
+  type CodexModelCatalog,
+  codexModelCatalogSchema,
+  codexModelSchema,
+} from '@/domains/sessions/contract/codex-model-catalog'
 import type { Input } from '../input-items'
 
 // The subset of `codex app-server`'s JSON-RPC protocol this adapter drives, grounded in codex-harness
@@ -71,40 +75,34 @@ export function protocolString(value: unknown, label: string): string {
   return value
 }
 
-const modelListResponseSchema = z.object({
-  data: z.array(
-    z
-      .object({
-        id: z.string().min(1),
-        model: z.string().min(1),
-        displayName: z.string().min(1),
-        description: z.string().nullable().optional(),
-        defaultReasoningEffort: z.string().min(1),
-        isDefault: z.boolean(),
-        hidden: z.boolean(),
-        supportedReasoningEfforts: z
-          .array(
-            z.object({
-              reasoningEffort: z.string().min(1),
-              description: z.string().nullable().optional(),
-            }),
-          )
-          .min(1),
+const modelListEntrySchema = codexModelSchema
+  .extend({
+    displayName: z.string().min(1),
+    description: z.string().nullable().optional(),
+    supportedReasoningEfforts: z
+      .array(
+        codexModelSchema.shape.supportedReasoningEfforts.element.extend({
+          description: z.string().nullable().optional(),
+        }),
+      )
+      .min(1),
+  })
+  .passthrough()
+  .superRefine((model, context) => {
+    if (
+      !model.supportedReasoningEfforts.some(
+        ({ reasoningEffort }) => reasoningEffort === model.defaultReasoningEffort,
+      )
+    ) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Default reasoning effort must be advertised.',
+        path: ['defaultReasoningEffort'],
       })
-      .superRefine((model, context) => {
-        if (
-          !model.supportedReasoningEfforts.some(
-            ({ reasoningEffort }) => reasoningEffort === model.defaultReasoningEffort,
-          )
-        ) {
-          context.addIssue({
-            code: 'custom',
-            message: 'Default reasoning effort must be advertised.',
-            path: ['defaultReasoningEffort'],
-          })
-        }
-      }),
-  ),
+    }
+  })
+const modelListResponseSchema = codexModelCatalogSchema.extend({
+  data: z.array(modelListEntrySchema),
   nextCursor: z.string().nullable().optional(),
 })
 
@@ -112,8 +110,13 @@ export function readModelCatalog(value: unknown): CodexModelCatalog {
   const response = modelListResponseSchema.parse(value)
   return {
     data: response.data.map((model) => ({
-      ...model,
+      id: model.id,
+      model: model.model,
+      displayName: model.displayName,
       description: model.description ?? '',
+      defaultReasoningEffort: model.defaultReasoningEffort,
+      isDefault: model.isDefault,
+      hidden: model.hidden,
       supportedReasoningEfforts: model.supportedReasoningEfforts.map((effort) => ({
         reasoningEffort: effort.reasoningEffort,
         description: effort.description ?? '',

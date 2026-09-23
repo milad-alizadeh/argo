@@ -6,6 +6,7 @@ import {
 } from '@/domains/sessions/main/lifecycle/ownership/ownership-ledger'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 import { codexResumeTarget } from '../../sessions/discovery/resume-target'
+import { sharedAppServerRuntimeFor } from '../supervision/codex-shared-app-server-runtime'
 import { openAppServer } from '../supervision/open-app-server'
 import { createCodexSessionDriver } from './codex-session-driver'
 
@@ -22,17 +23,21 @@ export function createSystemCodexSessionDriver(paths: {
   ownership: string
   transcripts: string
 }) {
-  return createCodexSessionDriver({
-    findExecutable: () => paths.executable ?? findExecutableOnLoginShellPath('codex'),
-    now: () => new Date(),
-    ownership: createOwnershipLedger({
-      path: paths.ownership,
-      window: { pid: process.pid, registry: randomUUID() },
-      isAlive: isProcessAlive,
+  const findExecutable = () => paths.executable ?? findExecutableOnLoginShellPath('codex')
+  return {
+    ...createCodexSessionDriver({
+      findExecutable,
+      now: () => new Date(),
+      ownership: createOwnershipLedger({
+        path: paths.ownership,
+        window: { pid: process.pid, registry: randomUUID() },
+        isAlive: isProcessAlive,
+      }),
+      resumeTarget: (sessionId) => codexResumeTarget(paths.transcripts, sessionId),
+      openChannel: (executable, options) => {
+        return openAppServer({ executable, cwd: options.cwd, env: options.env }).channel
+      },
     }),
-    resumeTarget: (sessionId) => codexResumeTarget(paths.transcripts, sessionId),
-    openChannel: (executable, options) => {
-      return openAppServer({ executable, cwd: options.cwd, env: options.env }).channel
-    },
-  })
+    readModelCatalog: () => sharedAppServerRuntimeFor(findExecutable).readModelCatalog(),
+  }
 }

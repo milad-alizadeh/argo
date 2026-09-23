@@ -7,6 +7,7 @@ import { CodexModelCatalogCache } from '../protocol/model-catalog'
 import type { WireMessage } from '../protocol/protocol'
 import type { AppServerSupervisor, AppServerSupervisorDeps } from './app-server-supervisor-machine'
 import { createAppServerSupervisor } from './app-server-supervisor-machine'
+import { executableVersion } from './executable-version'
 
 type ManagedSessionRegistry = {
   dispatchNotification: (message: WireMessage) => void
@@ -31,21 +32,6 @@ const runtimesByExecutable = new Map<string, SharedAppServerRuntime>()
 function registerRuntime(key: string, runtime: SharedAppServerRuntime) {
   runtimesByExecutable.set(key, runtime)
   return runtime
-}
-
-async function executableVersion(executablePath: string): Promise<string> {
-  const { execFile } = await import('node:child_process')
-  return new Promise((resolve, reject) => {
-    execFile(
-      executablePath,
-      ['--version'],
-      { encoding: 'utf8', timeout: 3_000 },
-      (error, stdout) => {
-        if (error !== null) reject(error)
-        else resolve(stdout.trim())
-      },
-    )
-  })
 }
 
 function createModelCatalogReader(options: {

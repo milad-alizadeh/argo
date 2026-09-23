@@ -1,23 +1,7 @@
 import { z } from 'zod'
 import type { CodexModelCatalog } from './codex-model-catalog'
 
-export const CODEX_MODELS = [
-  'gpt-5.6-sol',
-  'gpt-5.6-terra',
-  'gpt-5.6-luna',
-  'gpt-5.5',
-  'gpt-5.3-codex-spark',
-] as const
-export const CODEX_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max', 'ultra'] as const
 export const CODEX_MODES = ['read-only', 'workspace-write', 'danger-full-access'] as const
-
-const effortsByModel: Record<string, readonly string[]> = {
-  'gpt-5.6-sol': CODEX_EFFORTS,
-  'gpt-5.6-terra': CODEX_EFFORTS,
-  'gpt-5.6-luna': ['low', 'medium', 'high', 'xhigh', 'max'],
-  'gpt-5.5': ['low', 'medium', 'high', 'xhigh'],
-  'gpt-5.3-codex-spark': ['low', 'medium', 'high', 'xhigh'],
-}
 
 const codexSelectedTurnSetupBaseSchema = z.strictObject({
   model: z.string().min(1),
@@ -25,17 +9,21 @@ const codexSelectedTurnSetupBaseSchema = z.strictObject({
   mode: z.enum(CODEX_MODES),
 })
 export type CodexTurnSetup = z.infer<typeof codexSelectedTurnSetupBaseSchema>
+export const codexTurnSetupSchema = z.union([z.undefined(), codexSelectedTurnSetupBaseSchema])
+export const CODEX_OPENING_SETUP: CodexTurnSetup = {
+  model: 'gpt-5.6-luna',
+  effort: 'low',
+  mode: 'workspace-write',
+}
 
 export function codexTurnSetupSchemaFor(catalog: CodexModelCatalog | null) {
-  const efforts = new Map<string, readonly string[]>(
-    catalog === null
-      ? Object.entries(effortsByModel)
-      : catalog.data
-          .filter(({ hidden }) => !hidden)
-          .map(({ model, supportedReasoningEfforts }) => [
-            model,
-            supportedReasoningEfforts.map(({ reasoningEffort }) => reasoningEffort),
-          ]),
+  const efforts = new Map(
+    catalog?.data
+      .filter(({ hidden }) => !hidden)
+      .map(({ model, supportedReasoningEfforts }) => [
+        model,
+        supportedReasoningEfforts.map(({ reasoningEffort }) => reasoningEffort),
+      ]) ?? [],
   )
   return z.union([
     z.undefined(),
@@ -49,14 +37,7 @@ export function codexTurnSetupSchemaFor(catalog: CodexModelCatalog | null) {
   ])
 }
 
-export const codexTurnSetupSchema = z.union([z.undefined(), codexSelectedTurnSetupBaseSchema])
-export const CODEX_OPENING_SETUP: CodexTurnSetup = {
-  model: 'gpt-5.6-luna',
-  effort: 'low',
-  mode: 'workspace-write',
-}
-
-export function codexOpeningSetupFor(catalog: CodexModelCatalog | null): CodexTurnSetup {
+export function codexOpeningSetupFor(catalog: CodexModelCatalog): CodexTurnSetup | null {
   const model =
     catalog?.data.find(({ isDefault, hidden }) => isDefault && !hidden) ??
     catalog?.data.find(({ hidden }) => !hidden)
@@ -65,12 +46,8 @@ export function codexOpeningSetupFor(catalog: CodexModelCatalog | null): CodexTu
   )
     ? model.defaultReasoningEffort
     : model?.supportedReasoningEfforts[0]?.reasoningEffort
-  if (model === undefined || effort === undefined) return CODEX_OPENING_SETUP
+  if (model === undefined || effort === undefined) return null
   return { model: model.model, effort, mode: 'workspace-write' }
-}
-
-export function codexEfforts(model: CodexTurnSetup['model']) {
-  return effortsByModel[model]
 }
 
 export function codexTurnSettings(setup: CodexTurnSetup) {

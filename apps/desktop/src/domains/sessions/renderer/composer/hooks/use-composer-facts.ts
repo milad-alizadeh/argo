@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Cockpit, ProjectActions } from '@/domains/projects/renderer'
 import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
@@ -13,6 +13,42 @@ import { useTurnSetup } from '../turn-setup/use-turn-setup'
 import { useTurnMarker } from './use-turn-marker'
 
 const NO_ROWS: SessionRosterRow[] = []
+
+function useCodexCatalog(harness: SessionHarness) {
+  const [catalog, setCatalog] = useState<CodexModelCatalog | null>(null)
+  const [catalogError, setCatalogError] = useState(false)
+  const [catalogRequest, setCatalogRequest] = useState(0)
+  const catalogRequestRef = useRef(catalogRequest)
+  catalogRequestRef.current = catalogRequest
+  useEffect(() => {
+    if (harness !== 'codex') {
+      setCatalog(null)
+      setCatalogError(false)
+      return
+    }
+    let active = true
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const request = catalogRequest
+    const readCatalog = async () => {
+      const result = await window.argo.readCodexModelCatalog().catch(() => null)
+      if (!active || request !== catalogRequestRef.current) return
+      const usableCatalog = result?.data.some(({ hidden }) => !hidden) ? result : null
+      setCatalog(usableCatalog)
+      setCatalogError(usableCatalog === null)
+      if (usableCatalog !== null) timer = setTimeout(readCatalog, 30_000)
+    }
+    void readCatalog()
+    return () => {
+      active = false
+      if (timer !== undefined) clearTimeout(timer)
+    }
+  }, [catalogRequest, harness])
+  return {
+    catalog,
+    catalogError,
+    refreshCatalog: () => setCatalogRequest((current) => current + 1),
+  }
+}
 
 export type ComposerFactsOptions = {
   harness: SessionHarness
@@ -45,26 +81,7 @@ export function useComposerFacts(
   setFailure: (failure: Failure | null) => void,
 ) {
   const { harness, cockpit, projectActions, roster, selectedSessionId } = options
-  const [catalog, setCatalog] = useState<CodexModelCatalog | null>(null)
-  useEffect(() => {
-    if (harness !== 'codex') {
-      setCatalog(null)
-      return
-    }
-    let active = true
-    let timer: ReturnType<typeof setTimeout> | undefined
-    const readCatalog = async () => {
-      const result = await window.argo.readCodexModelCatalog().catch(() => null)
-      if (!active) return
-      setCatalog(result)
-      timer = setTimeout(readCatalog, result === null ? 2_000 : 30_000)
-    }
-    void readCatalog()
-    return () => {
-      active = false
-      if (timer !== undefined) clearTimeout(timer)
-    }
-  }, [harness])
+  const { catalog, catalogError, refreshCatalog } = useCodexCatalog(harness)
   // The "+" click already gave this row a pending identity (#2109); a bare selection has none.
   const pending = useSessionCreationStore((state) => state.pending)
   const pendingSessionId = pending?.stage === 'draft' ? pending.id : null
@@ -93,6 +110,9 @@ export function useComposerFacts(
     control,
     workspace: workspaceControl(identity, cockpit, projectActions),
     watchTurn,
+    catalogError,
+    catalog,
+    refreshCatalog,
     marker,
     selectedRow,
     isCompacting: (selectedRow?.compactionStartedAt ?? null) !== null,

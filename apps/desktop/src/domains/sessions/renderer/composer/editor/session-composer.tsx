@@ -28,6 +28,8 @@ export type SessionComposerProps = {
   plan?: SessionPlan | null
   harness?: HarnessControl | null
   setup?: TurnSetupControlProps | null
+  catalogError?: boolean
+  refreshCatalog?: () => void
   workspace?: WorkspaceMenuControlProps | null
 }
 
@@ -49,6 +51,8 @@ export function SessionComposer({
   plan = null,
   harness = null,
   setup = null,
+  catalogError = false,
+  refreshCatalog,
   workspace = null,
 }: SessionComposerProps) {
   const [contextPickerOpen, setContextPickerOpen] = useState(false)
@@ -90,6 +94,8 @@ export function SessionComposer({
       plan={plan}
       sessionId={sessionId}
       setup={setup}
+      catalogError={catalogError}
+      refreshCatalog={refreshCatalog}
       workspace={workspace}
       tickets={state.tickets}
       onContextPickerOpenChange={setContextPickerOpen}

@@ -39,6 +39,7 @@ type ComposerCardProps = {
   plan: SessionPlan | null
   sessionId: string
   setup: TurnSetupControlProps | null
+  catalogState?: { catalogError: boolean; refreshCatalog?: () => void }
   workspace: WorkspaceMenuControlProps | null
 }
 
@@ -53,6 +54,90 @@ function closeContextPicker(
 function dropFiles(event: DragEvent<HTMLFieldSetElement>, onDropFiles: (files: FileList) => void) {
   event.preventDefault()
   if (event.dataTransfer.files.length > 0) onDropFiles(event.dataTransfer.files)
+}
+
+function CardToolbar(
+  props: Pick<
+    ComposerCardProps,
+    | 'attachments'
+    | 'disabled'
+    | 'draft'
+    | 'harness'
+    | 'interruptRef'
+    | 'isRunning'
+    | 'onContextPickerOpenChange'
+    | 'onInterrupt'
+    | 'setup'
+    | 'workspace'
+    | 'catalogState'
+  >,
+) {
+  return (
+    <ComposerToolbar
+      attachments={props.attachments}
+      disabled={props.disabled}
+      draft={props.draft}
+      harness={props.harness}
+      interruptRef={props.interruptRef}
+      isRunning={props.isRunning}
+      onOpenContextPicker={() => props.onContextPickerOpenChange(true)}
+      onInterrupt={props.onInterrupt}
+      setup={props.setup}
+      workspace={props.workspace}
+      catalogError={props.catalogState?.catalogError}
+      refreshCatalog={props.catalogState?.refreshCatalog}
+    />
+  )
+}
+
+function ComposerContextBar(
+  props: Pick<
+    ComposerCardProps,
+    | 'contextTokens'
+    | 'contextWindowTokens'
+    | 'harness'
+    | 'isCompacting'
+    | 'isHandingOff'
+    | 'onCompact'
+    | 'onHandoff'
+  >,
+) {
+  return (
+    <div className="absolute inset-x-(--spacing-shell-gutter) top-full z-0 -mt-2">
+      <SessionContextBar
+        contextTokens={props.contextTokens}
+        contextWindowTokens={props.contextWindowTokens}
+        harness={props.harness?.harness}
+        isCompacting={props.isCompacting}
+        isHandingOff={props.isHandingOff}
+        onCompact={props.onCompact}
+        onHandoff={props.onHandoff}
+      />
+    </div>
+  )
+}
+
+function ComposerContextPicker(
+  props: Pick<
+    ComposerCardProps,
+    | 'contextPickerOpen'
+    | 'draft'
+    | 'onAddTicket'
+    | 'onAttach'
+    | 'onContextPickerOpenChange'
+    | 'editorRef'
+  >,
+) {
+  if (!props.contextPickerOpen) return null
+  return (
+    <DraftContextPicker
+      draft={props.draft}
+      onAddTicket={props.onAddTicket}
+      onAttach={props.onAttach}
+      onClose={() => closeContextPicker(props.editorRef, props.onContextPickerOpenChange)}
+      editorRef={props.editorRef}
+    />
+  )
 }
 
 // The card and the context bar pinned under it: everything below the pending-turns list.
@@ -85,6 +170,7 @@ export function ComposerCard({
   sessionId,
   setup,
   workspace,
+  catalogState,
 }: ComposerCardProps) {
   const { t } = useTranslation('sessions')
   return (
@@ -112,39 +198,41 @@ export function ComposerCard({
           plan={plan}
           sessionId={sessionId}
         />
-        <ComposerToolbar
-          attachments={attachments}
-          disabled={disabled}
-          draft={draft}
-          harness={harness}
-          interruptRef={interruptRef}
-          isRunning={isRunning}
-          onOpenContextPicker={() => onContextPickerOpenChange(true)}
-          onInterrupt={onInterrupt}
-          setup={setup}
-          workspace={workspace}
+        <CardToolbar
+          {...{
+            attachments,
+            disabled,
+            draft,
+            harness,
+            interruptRef,
+            isRunning,
+            onContextPickerOpenChange,
+            onInterrupt,
+            setup,
+            workspace,
+            catalogState,
+          }}
         />
       </fieldset>
-      {contextPickerOpen ? (
-        <DraftContextPicker
-          draft={draft}
-          onAddTicket={onAddTicket}
-          onAttach={onAttach}
-          onClose={() => closeContextPicker(editorRef, onContextPickerOpenChange)}
-          editorRef={editorRef}
-        />
-      ) : null}
-      <div className="absolute inset-x-(--spacing-shell-gutter) top-full z-0 -mt-2">
-        <SessionContextBar
-          contextTokens={contextTokens}
-          contextWindowTokens={contextWindowTokens}
-          harness={harness?.harness}
-          isCompacting={isCompacting}
-          isHandingOff={isHandingOff}
-          onCompact={onCompact}
-          onHandoff={onHandoff}
-        />
-      </div>
+      <ComposerContextPicker
+        {...{
+          contextPickerOpen,
+          draft,
+          onAddTicket,
+          onAttach,
+          onContextPickerOpenChange,
+          editorRef,
+        }}
+      />
+      <ComposerContextBar
+        contextTokens={contextTokens}
+        contextWindowTokens={contextWindowTokens}
+        harness={harness}
+        isCompacting={isCompacting}
+        isHandingOff={isHandingOff}
+        onCompact={onCompact}
+        onHandoff={onHandoff}
+      />
     </div>
   )
 }

@@ -1,5 +1,4 @@
 import { CLAUDE_TURN_SETUP } from '../composer/turn-setup/claude-turn-setup'
-import { CODEX_TURN_SETUP } from '../composer/turn-setup/codex-turn-setup'
 import type { TurnSetupChoices } from '../composer/turn-setup/turn-setup'
 
 export const SESSION_HARNESSES = ['claude', 'codex'] as const
@@ -9,7 +8,7 @@ export type SessionHarness = (typeof SESSION_HARNESSES)[number]
 export const HARNESSES: Record<SessionHarness, { label: string; setup: TurnSetupChoices | null }> =
   {
     claude: { label: CLAUDE_TURN_SETUP.label, setup: CLAUDE_TURN_SETUP },
-    codex: { label: CODEX_TURN_SETUP.label, setup: CODEX_TURN_SETUP },
+    codex: { label: 'Codex', setup: null },
   }
 
 // Only a Session not yet started can change the harness it runs on.

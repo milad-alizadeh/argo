@@ -103,6 +103,17 @@ test('advertised models and efforts become the Codex composer choices and schema
   ).toBe(false)
 })
 
+test('offers no Codex setup while the live model catalog is unavailable', () => {
+  expect(codexTurnSetup(null)).toBe(null)
+  expect(
+    codexTurnSetupSchemaFor(null).safeParse({
+      model: 'unverified-model',
+      effort: 'unverified-effort',
+      mode: 'workspace-write',
+    }).success,
+  ).toBe(false)
+})
+
 test('a mocked app-server catalog request reaches the composer choices', async () => {
   const cache = new CodexModelCatalogCache()
   const catalog = await cache.get(

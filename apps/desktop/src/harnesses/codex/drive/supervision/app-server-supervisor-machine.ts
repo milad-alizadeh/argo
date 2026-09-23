@@ -1,9 +1,9 @@
-import { execFile } from 'node:child_process'
 import { type ActorRefFrom, assign, createActor, fromPromise, setup } from 'xstate'
 import { codexLaunchEnvironment } from '../launch-environment'
 import type { WireMessage } from '../protocol/protocol'
 import { CodexSessionDriverError } from '../session/codex-session-error'
 import type { CodexChannel } from './codex-channel'
+import { executableVersion } from './executable-version'
 import { openAppServer } from './open-app-server'
 
 // ADR-0047: one shared `codex app-server` process per window, multiplexing every managed Codex
@@ -17,6 +17,10 @@ export type AppServerSupervisorDeps = {
 }
 
 export type CodexSessionPort = Pick<CodexChannel, 'request' | 'notify' | 'respond'>
+
+export function processExitIsCurrent(channel: CodexChannel, current: CodexChannel | null) {
+  return channel === current
+}
 
 async function handshake(channel: CodexChannel) {
   await channel.request(
@@ -79,22 +83,7 @@ function createAppServerProcessActor(deps: AppServerSupervisorDeps) {
     }
   >(async ({ input, signal }) => {
     if (input.executable === '') throw new CodexSessionDriverError('harness-unavailable')
-    const version = await new Promise<string>((resolve, reject) => {
-      execFile(
-        input.executable,
-        [
-          '--version',
-        ],
-        {
-          encoding: 'utf8',
-          timeout: 3_000,
-        },
-        (error, stdout) => {
-          if (error !== null) reject(error)
-          else resolve(stdout.trim())
-        },
-      )
-    })
+    const version = await executableVersion(input.executable)
     const { process: child, channel } = openAppServer({
       executable: input.executable,
       env: codexLaunchEnvironment(),
@@ -119,6 +108,7 @@ function createAppServerProcessActor(deps: AppServerSupervisorDeps) {
     }
     runningIdentity = identity
     channel.onExit(() => {
+      if (!processExitIsCurrent(channel, liveChannel)) return
       liveChannel = null
       runningIdentity = null
       notifyProcessExited?.()
