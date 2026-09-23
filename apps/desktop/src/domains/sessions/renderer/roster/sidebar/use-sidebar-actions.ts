@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router'
 import { useComposerStore } from '../../composer/hooks/use-composer-store'
 import { COMPOSER_FOCUS_STATE } from '../../composer-focus-state'
 import { newSessionTarget, useSessionCreationStore } from '../../session-creation'
-import { invalidateSessionRoster } from '../../session-queries'
+import { markSessionRead } from '../../session-queries'
 import type { Session, SessionId } from '../../types'
 
 export const SELECTED_SESSION_KEY = 'argo.selected-session-id'
@@ -46,7 +46,7 @@ export function useSidebarActions(options: {
     }, []),
 
     select: useCallback(
-      async (selectedSessionId: SessionId) => {
+      async (selectedSessionId: SessionId, retiredIds: SessionId[] = []) => {
         // Picking a different row abandons an un-sent draft rather than leaving it a ghost row
         // nobody will ever send (#2109).
         if (pending?.stage === 'draft' && pending.id !== selectedSessionId) {
@@ -54,9 +54,12 @@ export function useSidebarActions(options: {
         }
         window.localStorage.setItem(SELECTED_SESSION_KEY, selectedSessionId)
         navigate(`/sessions/${selectedSessionId}`)
-        const reply = await window.argo.focusSessionUnread({ sessionId: selectedSessionId })
+        const reply = await window.argo.focusSessionUnread({
+          sessionId: selectedSessionId,
+          retiredIds,
+        })
         if (reply.type === 'session.unread.focused') {
-          await invalidateSessionRoster(queryClient)
+          markSessionRead(queryClient, selectedSessionId, retiredIds)
         }
       },
       [navigate, pending, queryClient],
