@@ -59,10 +59,12 @@ function ComposerSection({
   return (
     <section
       aria-label={t('composerRegionLabel')}
-      className="relative z-20 isolate shrink-0 px-(--spacing-session-gutter)"
+      className="session-screen__composer relative z-20 isolate flex shrink-0 flex-col px-(--spacing-session-gutter)"
     >
       <ComposerFade onJumpToLatest={onJumpToLatest} />
-      {composer}
+      <div className="session-screen__composer-scroll" data-component="SessionComposerScroll">
+        {composer}
+      </div>
     </section>
   )
 }
