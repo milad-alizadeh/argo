@@ -159,8 +159,10 @@ export const Diagram: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getAllByText('Diagram')).toHaveLength(2)
+    // Mermaid loads on first use in the whole file; under a full suite run that import plus its
+    // own parse/render can outrun 5s, same cold-start cost the highlighter comment above notes.
     await waitFor(() => expect(canvasElement.querySelector('svg')).not.toBeNull(), {
-      timeout: 5000,
+      timeout: 10000,
     })
   },
 }

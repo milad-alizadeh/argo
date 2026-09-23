@@ -126,7 +126,9 @@ export const Diagram: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const diagram = canvas.getByRole('figure')
-    await waitFor(() => expect(diagram.querySelector('svg')).not.toBeNull(), { timeout: 5000 })
+    // Mermaid loads on first use in the whole file; under a full suite run that import plus its
+    // own parse/render can outrun 5s, same cold-start cost the highlighter pays elsewhere.
+    await waitFor(() => expect(diagram.querySelector('svg')).not.toBeNull(), { timeout: 10000 })
     await expect(diagram).toHaveTextContent('Session')
   },
 }

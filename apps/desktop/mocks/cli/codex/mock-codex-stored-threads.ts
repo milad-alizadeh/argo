@@ -1,7 +1,19 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { historyFile, type StoredThread } from './mock-codex-history-types.ts'
+import { codexStatePath } from '@/harnesses/codex/sessions/discovery/roots'
+import { codexThreadNames } from '@/harnesses/codex/sessions/records/state-store'
+import { historyFile, type StoredThread, transcriptsRoot } from './mock-codex-history-types.ts'
 import { scanRollouts } from './mock-codex-rollout-history.ts'
+
+// Codex Desktop's own app renames a thread by writing straight into its state store
+// (`state_5.sqlite`), outside Argo's own rename channel: the real `codex` app-server reads that
+// store when it answers `thread/list`/`thread/read`, so this stand-in reads it too, rather than
+// only the rollout scan and Argo's own overlay (#2650).
+function stateStoreNameFor(threadId: string): string | undefined {
+  const root = transcriptsRoot()
+  if (root === '') return undefined
+  return codexThreadNames(codexStatePath(root))([threadId]).get(threadId)
+}
 
 type Request = { id?: unknown; method?: string; params?: Record<string, unknown> }
 type Send = (message: Record<string, unknown>) => void
@@ -46,6 +58,10 @@ export function storedThreads(): StoredThread[] {
       ...overlay,
       turns: overlay.turns.length > 0 ? overlay.turns : (scanned?.turns ?? []),
     })
+  }
+  for (const [id, thread] of threads) {
+    const stateStoreName = stateStoreNameFor(id)
+    if (stateStoreName !== undefined) threads.set(id, { ...thread, name: stateStoreName })
   }
   return [...threads.values()]
 }

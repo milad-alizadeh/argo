@@ -26,7 +26,10 @@ function useComposerDraft(sessionId: string, editorRef: RefObject<LexicalEditor 
   )
   const clearDraft = useCallback(
     (editor = editorRef.current) => {
-      editor?.update(() => $getRoot().clear().append($createParagraphNode()))
+      // Selecting the fresh paragraph matters: without it, the next keystroke finds no
+      // selection to type into and Lexical opens a second paragraph instead, so the composer's
+      // next Send carries a leading blank line (#e2e-real-cheap-models).
+      editor?.update(() => $getRoot().clear().append($createParagraphNode()).selectEnd())
       setDraft(sessionId, '')
     },
     [editorRef, sessionId, setDraft],
