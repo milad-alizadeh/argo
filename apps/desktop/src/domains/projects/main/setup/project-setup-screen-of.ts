@@ -4,6 +4,8 @@ export function setupScreenOf(actor: ProjectSetupActor) {
   switch (actor.getSnapshot().value) {
     case 'Choosing setup method':
       return 'choosing-method' as const
+    case 'Restarting attempt':
+      return 'restarting' as const
     case 'Manual setup':
       return 'manual' as const
     case 'Deferred':
@@ -26,6 +28,8 @@ export function setupScreenOf(actor: ProjectSetupActor) {
       return 'cancelling' as const
     case 'Cancel failed':
       return 'cancel-failed' as const
+    case 'Restart failed':
+      return 'restart-failed' as const
     case 'Finalizing':
       return 'finalizing' as const
     case 'Review required':

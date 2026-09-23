@@ -8,6 +8,7 @@ import {
   ownerHarnessFor,
 } from '../../../../mocks/cli/codex/mock-codex-driver.ts'
 import { createCodexSessionDriver } from '../drive/session/codex-session-driver'
+import { CodexSessionDriverError } from '../drive/session/codex-session-error'
 import { createCodexDriveAdapter } from '../drive/session/session-drive-adapter'
 
 test('driving a Session with no findable transcript reports a drivable failure, not a stall', async () => {
@@ -30,6 +31,9 @@ test('driving a Session with no findable transcript reports a drivable failure, 
 test('Codex being unavailable on the machine reports an honest start failure', async () => {
   const driver = createCodexSessionDriver({
     findExecutable: () => null,
+    readModelCatalog: async () => {
+      throw new CodexSessionDriverError('harness-unavailable')
+    },
     now: () => new Date(),
     resumeTarget: async () => null,
     openChannel: () => {

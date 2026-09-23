@@ -94,6 +94,7 @@ export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
     id: identifierSchema,
     role: z.enum(['user', 'assistant']),
     text: z.string(),
+    pastedContent: z.array(z.strictObject({ id: z.string(), text: z.string() })).optional(),
     // The images the same message carries, drawn inside its bubble; absent when there are none.
     images: z.array(feedImageUrlSchema).min(1).optional(),
     // The other files it attached, by absolute path; absent when there are none.

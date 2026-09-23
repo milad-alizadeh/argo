@@ -321,6 +321,84 @@ export const TaskNotification: Story = {
   },
 }
 
+const pastedContentFeed = {
+  ...feed,
+  sessionId: 'pasted-content',
+  chainId: 'pasted-content',
+  revision: 'pasted-content-one',
+  rows: [
+    {
+      shape: 'prose' as const,
+      id: 'pasted-content-before',
+      role: 'user' as const,
+      text: 'Review this snippet:',
+    },
+    {
+      shape: 'prose' as const,
+      id: 'pasted-content-1',
+      role: 'user' as const,
+      text: '',
+      pastedContent: [{ id: 'a', text: 'const answer = 42' }],
+    },
+    {
+      shape: 'prose' as const,
+      id: 'pasted-content-between',
+      role: 'user' as const,
+      text: 'Then use this result:',
+    },
+    {
+      shape: 'prose' as const,
+      id: 'pasted-content-2',
+      role: 'user' as const,
+      text: '',
+      pastedContent: [{ id: 'b', text: 'return answer' }],
+    },
+    {
+      shape: 'prose' as const,
+      id: 'pasted-content-after',
+      role: 'user' as const,
+      text: 'Finish after both snippets.',
+    },
+  ],
+} satisfies SessionFeed
+
+export const PastedContent: Story = {
+  args: { feed: pastedContentFeed, selectedSessionId: 'pasted-content' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const disclosures = canvas.getAllByRole('button', { name: 'Pasted content' })
+    await expect(disclosures).toHaveLength(2)
+    await expect(disclosures[0]).toHaveAttribute('aria-expanded', 'false')
+    await expect(disclosures[1]).toHaveAttribute('aria-expanded', 'false')
+    const visibleContent = canvasElement.textContent ?? ''
+    const phrases = [
+      'Review this snippet:',
+      'Pasted content',
+      'Then use this result:',
+      'Pasted content',
+      'Finish after both snippets.',
+    ]
+    let visiblePosition = -1
+    for (const phrase of phrases) {
+      const phrasePosition = visibleContent.indexOf(phrase, visiblePosition + 1)
+      await expect(phrasePosition).toBeGreaterThan(visiblePosition)
+      visiblePosition = phrasePosition
+    }
+    await disclosures[0]?.focus()
+    await userEvent.keyboard('{Enter}')
+    await expect(disclosures[0]).toHaveAttribute('aria-expanded', 'true')
+    await waitFor(() => expect(canvas.getByText('const answer = 42')).toBeVisible())
+    await disclosures[1]?.focus()
+    await userEvent.keyboard('{Enter}')
+    await expect(disclosures[1]).toHaveAttribute('aria-expanded', 'true')
+    await waitFor(() => expect(canvas.getByText('return answer')).toBeVisible())
+    await disclosures[0]?.focus()
+    await userEvent.keyboard(' ')
+    await waitFor(() => expect(disclosures[0]).toHaveAttribute('aria-expanded', 'false'))
+    await expect(disclosures[1]).toHaveAttribute('aria-expanded', 'true')
+  },
+}
+
 const delegationFeed = {
   ...feed,
   chainId: 'subagents',

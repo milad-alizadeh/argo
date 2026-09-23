@@ -1,6 +1,6 @@
-import type { QueryClient } from '@tanstack/react-query'
+import type { InfiniteData, QueryClient } from '@tanstack/react-query'
 import type { RosterStatus } from '@/domains/sessions/contract/ipc/contract'
-import type { SessionId } from './types'
+import type { SessionId, SessionRoster } from './types'
 
 export const SESSION_REFRESH_MS = 500
 export const sessionRosterQueryKey = ['sessions', 'roster'] as const
@@ -40,4 +40,29 @@ export function invalidateSessionRoster(queryClient: QueryClient) {
   })
   pendingRosterInvalidations.set(queryClient, invalidation)
   return invalidation
+}
+
+export function markSessionRead(
+  queryClient: QueryClient,
+  sessionId: SessionId,
+  retiredIds: readonly SessionId[],
+) {
+  const identities = new Set([sessionId, ...retiredIds])
+  queryClient.setQueriesData<InfiniteData<SessionRoster>>(
+    { queryKey: sessionRosterQueryKey },
+    (roster) => {
+      if (roster === undefined) return roster
+      return {
+        ...roster,
+        pages: roster.pages.map((page) => ({
+          ...page,
+          sessions: page.sessions.map((session) =>
+            session.id === sessionId || session.retiredIds.some((id) => identities.has(id))
+              ? { ...session, unread: false }
+              : session,
+          ),
+        })),
+      }
+    },
+  )
 }

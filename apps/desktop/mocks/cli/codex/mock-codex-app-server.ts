@@ -4,6 +4,7 @@ import {
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
 } from '@/domains/sessions/contract/proof-protocol'
 import { MOCK_CODEX_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
+import { MOCK_CODEX_MODEL_CATALOG } from './fixtures/mock-codex-model-catalog.ts'
 import { compactionItem, completeTurn } from './fixtures/mock-codex-responses.ts'
 import { rememberThreadCwd } from './fixtures/mock-codex-transcript.ts'
 import { handleAskReply } from './mock-ask-question.ts'
@@ -42,6 +43,8 @@ function handleRequest(message: Request) {
       return
     case 'skills/list':
       return send({ id: message.id, result: { data: [] } })
+    case 'model/list':
+      return send({ id: message.id, result: MOCK_CODEX_MODEL_CATALOG })
     case 'thread/start':
       return startThread(message)
     case 'thread/resume':

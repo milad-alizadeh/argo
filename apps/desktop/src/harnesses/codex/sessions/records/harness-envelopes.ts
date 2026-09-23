@@ -12,6 +12,7 @@ export const USER_HARNESS_ENVELOPES = new Set([
   'heartbeat',
   'realtime_delegation',
   'in-app-browser-context',
+  'task-notification',
 ])
 
 function wholeEnvelope(text: string, name: string): string | null {
@@ -22,6 +23,25 @@ function wholeEnvelope(text: string, name: string): string | null {
 // for the person is allowed only before a `NOTIFY` block, and a `DONT_NOTIFY` turn stays quiet.
 const HEARTBEAT_REPLY =
   /<heartbeat>([\s\S]*?<decision>\s*(?:NOTIFY|DONT_NOTIFY)\s*<\/decision>[\s\S]*?)<\/heartbeat>/
+
+function taskNotificationBlock(text: string): ContentBlock | null {
+  const body = wholeEnvelope(text, 'task-notification')
+  if (body === null) return null
+  const details = [taggedField(body, 'status'), taggedField(body, 'summary')].filter(
+    (value): value is string => value !== null,
+  )
+  return { shape: 'event', event: 'status', text: details.join(': ') || null }
+}
+
+function taskNotifications(message: TranscriptMessage): TranscriptMessage {
+  return {
+    ...message,
+    blocks: message.blocks.map((block) => {
+      if (block.shape !== 'prose') return block
+      return taskNotificationBlock(block.text) ?? block
+    }),
+  }
+}
 
 function replyBlocks(text: string): ContentBlock[] {
   const reply = HEARTBEAT_REPLY.exec(text)
@@ -97,7 +117,7 @@ export function delegatedRequest(output: string): string | null {
 // Codex and its desktop app write their own machinery into message text as XML envelopes; this
 // reads each one as the Feed should show it instead of as the person's or the agent's words.
 export function readHarnessEnvelopes(message: TranscriptMessage): TranscriptRecord {
-  return message.role === 'user' ? userRecord(message) : assistantRecord(message)
+  return message.role === 'user' ? userRecord(taskNotifications(message)) : assistantRecord(message)
 }
 
 const HEARTBEAT_TAG = '<heartbeat'

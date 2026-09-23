@@ -1,4 +1,5 @@
 import { assign, fromPromise, setup } from 'xstate'
+import type { CodexTurnSetup } from '@/domains/sessions/contract/codex-turn-setup'
 import {
   CODEX_OPENING_SETUP,
   codexTurnSettings,
@@ -87,6 +88,7 @@ export type ManagedSessionInput =
       kind: 'start'
       workspaceId: string
       cwd: string
+      setup: CodexTurnSetup
     }
   | {
       kind: 'resume'
@@ -99,6 +101,7 @@ export type ManagedSessionEvent =
   | {
       type: 'Send'
       prompt: string
+      setup?: CodexTurnSetup
     }
   | {
       type: 'Steer'
@@ -230,6 +233,7 @@ function createManagedSessionActors(deps: ManagedSessionDeps) {
       {
         threadId: string
         prompt: string
+        setup: CodexTurnSetup
       }
     >(async ({ input }) => {
       const turn = await requireChannel(deps.getChannel).request(
@@ -243,7 +247,7 @@ function createManagedSessionActors(deps: ManagedSessionDeps) {
               text_elements: [],
             },
           ],
-          ...codexTurnSettings(CODEX_OPENING_SETUP),
+          ...codexTurnSettings(input.setup),
         },
         (value) => value,
       )
@@ -715,6 +719,10 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
               input: ({ context, event }) => ({
                 threadId: threadIdOf(context),
                 prompt: event.type === 'Send' ? event.prompt : '',
+                setup:
+                  event.type === 'Send' && event.setup !== undefined
+                    ? event.setup
+                    : CODEX_OPENING_SETUP,
               }),
               onDone: {
                 actions: assign({

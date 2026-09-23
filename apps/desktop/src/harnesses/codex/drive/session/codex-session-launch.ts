@@ -1,4 +1,5 @@
 import { createActor } from 'xstate'
+import type { CodexTurnSetup } from '@/domains/sessions/contract/codex-turn-setup'
 import type {
   SessionIdentity,
   WorkspaceSelection,
@@ -84,18 +85,20 @@ async function open(launch: Launch, input: ManagedSessionInput) {
   return actor.getSnapshot().context.sessionId as SessionIdentity
 }
 
-export async function startCodexSession(
+export async function startCodexSession(options: {
   launch: Launch & {
     resolveWorkspace: (
       selection: WorkspaceSelection,
     ) => Promise<{ workspaceId: string; cwd: string }>
-  },
-  selection: WorkspaceSelection,
-  prompt: string,
-) {
+  }
+  selection: WorkspaceSelection
+  prompt: string
+  setup: CodexTurnSetup
+}) {
+  const { launch, selection, prompt, setup } = options
   const { workspaceId, cwd } = await launch.resolveWorkspace(selection)
-  const identity = await open(launch, { kind: 'start', workspaceId, cwd })
-  return executeSend(requireSessionEntry(launch.registry, identity), prompt)
+  const identity = await open(launch, { kind: 'start', workspaceId, cwd, setup })
+  return executeSend(requireSessionEntry(launch.registry, identity), prompt, setup)
 }
 
 export async function resumeCodexSession(

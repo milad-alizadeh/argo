@@ -42,7 +42,7 @@ export function EffortSlider({ choices, value, onChange }: TurnSetupControlProps
         style={{
           background: `linear-gradient(to right, var(--foreground) 0%, var(--foreground) ${effortPercent}%, var(--muted) ${effortPercent}%, var(--muted) 100%)`,
         }}
-        className="mt-3 h-1.5 w-full cursor-pointer appearance-none rounded-full border-0 outline-none [&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:border-0 [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:mt-(--inset-slider-thumb-lift) [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:bg-foreground focus-visible:[&::-webkit-slider-thumb]:ring-3 focus-visible:[&::-webkit-slider-thumb]:ring-ring/50"
+        className={`mt-3 h-1.5 w-full appearance-none rounded-full border-0 outline-none [&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:border-0 [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:mt-(--inset-slider-thumb-lift) [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:bg-foreground focus-visible:[&::-webkit-slider-thumb]:ring-3 focus-visible:[&::-webkit-slider-thumb]:ring-ring/50 ${choices.source === 'fallback' ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
       />
       <div className="relative mt-2 h-4 type-meta text-muted-foreground">
         {efforts.map((effort, index) => (

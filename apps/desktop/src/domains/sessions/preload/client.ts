@@ -87,7 +87,10 @@ export type SessionHarnessent = {
   readShellOutput(request: { sessionId: string; shellId: string }): Promise<SessionShellOutputReply>
   readSubagentUsage(request: { sessionId: string }): Promise<SessionSubagentUsageReply>
   renameSession(request: { sessionId: string; name: string }): Promise<SessionRenameReply>
-  focusSessionUnread(request: { sessionId: string }): Promise<SessionUnreadFocusReply>
+  focusSessionUnread(request: {
+    sessionId: string
+    retiredIds: string[]
+  }): Promise<SessionUnreadFocusReply>
   connectSessionTicket(request: {
     sessionId: string
     projectId: string

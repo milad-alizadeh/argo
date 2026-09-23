@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
 import { createManagedSessionClient } from '@/domains/sessions/next/preload/managed-session-client'
+import { codexModelCatalogFixture } from '../../../../../test-fixtures/sessions/codex-model-catalog.fixture'
 
 const start = {
   type: 'session.start' as const,
@@ -28,4 +29,15 @@ test('returns the adapter outcome without rewriting it', async () => {
     kind: 'rejected',
     reason: 'The Session is watched elsewhere.',
   })
+})
+
+test('reads the validated Codex catalog from the main process', async () => {
+  const catalog = codexModelCatalogFixture()
+  const client = createManagedSessionClient(async (_channel, request) => ({
+    version: 1,
+    type: 'managed-session.catalog.result',
+    requestId: (request as { requestId: string }).requestId,
+    catalog,
+  }))
+  await expect(client.readCodexModelCatalog()).resolves.toEqual(catalog)
 })

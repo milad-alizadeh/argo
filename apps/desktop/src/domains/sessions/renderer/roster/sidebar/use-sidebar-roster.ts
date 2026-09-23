@@ -47,7 +47,7 @@ export function useSidebarRoster({
   sidebar,
 }: {
   onArchiveSelected: (sessionIds: SessionId[]) => void
-  onSelect: (sessionId: SessionId) => void
+  onSelect: (sessionId: SessionId, retiredIds?: SessionId[]) => void
   projectRoot: string | null
   roster: SessionRoster | null
   rosterError: SessionError | null
@@ -81,10 +81,12 @@ export function useSidebarRoster({
   )
   const select = useCallback(
     (sessionId: SessionId) => {
+      const session = visible.find((candidate) => candidate.id === sessionId)
+      if (session === undefined) return
       selection.clear()
-      onSelect(sessionId)
+      onSelect(sessionId, session.retiredIds)
     },
-    [onSelect, selection],
+    [onSelect, selection, visible],
   )
 
   return {

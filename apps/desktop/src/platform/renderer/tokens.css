@@ -116,6 +116,7 @@
   --inset-composer-plan: var(--size-composer-plan-trigger);
   /* A dropdown or popover menu hung off the composer's toolbar: mode, permission and run setup. */
   --size-session-menu: 23rem;
+  --size-session-menu-max-height: calc(100dvh - 2rem);
   /* A wider popover carrying prose and a meter: context and usage. */
   --size-session-popover: 26rem;
   /* The composer's file/skill autocomplete popover. */

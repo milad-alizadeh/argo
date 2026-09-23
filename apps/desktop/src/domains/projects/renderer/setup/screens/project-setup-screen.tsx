@@ -7,6 +7,7 @@ import { RunningText } from '@/platform/renderer/components/running-text'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { Progress } from '../project-setup-progress'
 import { Recovery } from '../project-setup-recovery'
+import { projectSetupRecoveryText } from '../project-setup-recovery-text'
 import { Approval, CancelFailed } from './project-setup-approval-screen'
 import { InputScreen } from './project-setup-input-screen'
 import { ProjectSetupMethodScreen } from './project-setup-method-screen'
@@ -25,10 +26,13 @@ export function ProjectSetupScreen({ command, snapshot }: ProjectSetupScreenProp
     case 'applying':
       return <Progress command={command} snapshot={snapshot} />
     case 'cancelling':
+    case 'restarting':
     case 'finalizing':
       return <Busy />
     case 'cancel-failed':
       return <CancelFailed command={command} snapshot={snapshot} />
+    case 'restart-failed':
+      return <RestartFailed command={command} snapshot={snapshot} />
     case 'awaiting-approval':
       return <Approval command={command} snapshot={snapshot} />
     case 'questions':
@@ -47,6 +51,23 @@ export function ProjectSetupScreen({ command, snapshot }: ProjectSetupScreenProp
     case 'ready':
       return <Ready command={command} />
   }
+}
+
+function RestartFailed({ command, snapshot }: ProjectSetupScreenProps) {
+  const { t } = useTranslation('projects')
+  return (
+    <section className="mt-6 grid gap-3" aria-label={t('setup.actor.restart-failed.label')}>
+      <p className="type-body">{projectSetupRecoveryText(t, snapshot.recoveryMessage)}</p>
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button onClick={() => void command({ type: 'defer' })} variant="outline">
+          {t('setup.actor.restart-failed.defer')}
+        </Button>
+        <Button onClick={() => void command({ type: 'restart-attempt' })}>
+          {t('setup.actor.restart-failed.retry')}
+        </Button>
+      </div>
+    </section>
+  )
 }
 
 function Busy() {

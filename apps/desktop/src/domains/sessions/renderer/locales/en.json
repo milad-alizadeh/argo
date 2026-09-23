@@ -131,6 +131,9 @@
       "choosePermissionMode": "Choose permission mode: {{mode}}",
       "permissions": "{{harness}} permissions",
       "ownSettings": "{{harness}} runs at the Model and Effort in its own settings.",
+      "loadingModels": "Loading Codex models…",
+      "modelCatalogError": "Argo could not load the Codex models.",
+      "refreshModels": "Refresh models",
       "model": "Model"
     },
     "workspace": {
@@ -174,6 +177,7 @@
     }
   },
   "rowUnreadable": "Part of this transcript is damaged, so Argo cannot show it.",
+  "pastedContent": "Pasted content",
   "rename": {
     "title": "Rename Session",
     "name": "Name",

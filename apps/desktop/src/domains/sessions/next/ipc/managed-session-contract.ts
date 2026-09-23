@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { codexModelCatalogSchema } from '@/domains/sessions/contract/codex-model-catalog'
 import { sessionCommandSchema } from '@/domains/sessions/next/contract/session-command-contract'
 import { sessionIdentitySchema } from '@/domains/sessions/next/contract/session-contract'
 import {
@@ -20,6 +21,18 @@ export const managedSessionSubscribeRequestSchema = z.strictObject({
   type: z.literal('managed-session.subscribe'),
   requestId: identifierSchema,
   session: sessionIdentitySchema,
+})
+
+export const managedSessionCatalogRequestSchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('managed-session.catalog'),
+  requestId: identifierSchema,
+})
+const managedSessionCatalogReplySchema = z.strictObject({
+  version: z.literal(1),
+  type: z.literal('managed-session.catalog.result'),
+  requestId: identifierSchema,
+  catalog: codexModelCatalogSchema.nullable(),
 })
 
 const managedSessionOutcomeSchema = z.strictObject({
@@ -56,6 +69,8 @@ export type ManagedSessionReply = z.infer<typeof managedSessionReplySchema>
 
 export const managedSessionSubscribeReplySchema =
   managedSessionSubscribedSchema.or(managedSessionErrorSchema)
+export const managedSessionCatalogReply =
+  managedSessionCatalogReplySchema.or(managedSessionErrorSchema)
 
 export const managedSessionProjectionEventSchema = z.strictObject({
   version: z.literal(1),

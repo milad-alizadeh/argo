@@ -1,0 +1,2 @@
+{"type":"user","uuid":"claude-shell-input","parentUuid":null,"sessionId":"recorded-claude","timestamp":"2026-09-23T12:00:00.000Z","cwd":"/workspace","message":{"role":"user","content":"<bash-input>printf hello; printf warning >&2</bash-input>"}}
+{"type":"user","uuid":"claude-shell-output","parentUuid":"claude-shell-input","sessionId":"recorded-claude","timestamp":"2026-09-23T12:00:00.000Z","cwd":"/workspace","message":{"role":"user","content":"<bash-stdout>hellowarning</bash-stdout><bash-stderr></bash-stderr>"}}

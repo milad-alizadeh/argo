@@ -5,11 +5,15 @@ import os from 'node:os'
 import path from 'node:path'
 import { type TestContext, test } from 'node:test'
 import { drizzle } from 'drizzle-orm/bun-sqlite'
+import { fromCallback } from 'xstate'
+import { defaultProjectSetupHarnesses } from '@/domains/projects/contract/setup/project-setup-harness'
 import {
   migrateTestDatabase,
   projectMigrationsFolder,
 } from '../../../../../../test-fixtures/projects/migrate-test-database'
 import { createProjectStore } from '../../sqlite-store'
+import { inactiveProjectSetupActors } from '../actors/project-setup-actors'
+import type { ProjectSetupEvent } from '../project-setup-machine-types'
 import { createProjectSetupRegistry } from './project-setup-registry'
 
 test('restores the exact ready manual setup after a restart', async (context) => {
@@ -83,11 +87,8 @@ test('persists immutable evidence for each restarted Attempt', async (context) =
   context.after(() => rm(directory, { recursive: true, force: true }))
   const databasePath = path.join(directory, 'argo.sqlite')
   const store = setupStore(databasePath)
-  const setup = createProjectSetupRegistry(store)
-  setup.transition('project-1', { type: 'Choose agent', harness: 'claude' })
-  setup.transition('project-1', { type: 'Planning session started', sessionId: 'planning-1' })
-  setup.transition('project-1', { type: 'Effect interrupted', reason: 'interrupted' })
-  setup.transition('project-1', { type: 'Restart attempt' })
+  const setup = createRestartRegistry(store, { type: 'Restart attempt completed' })
+  await startRestartAttempt(setup, 'choosing-method')
   setup.transition('project-1', { type: 'Choose agent', harness: 'claude' })
   const persisted = store.readProjectSetup('project-1')?.persistedSnapshot as {
     context: { attemptEvidence: Array<{ number: number; planningSessionId: string | null }> }
@@ -111,6 +112,22 @@ test('persists immutable evidence for each restarted Attempt', async (context) =
   store.close()
 })
 
+test('persists a retryable restart failure', async (context) => {
+  const { databasePath, store } = await temporarySetup(context)
+  const setup = createRestartRegistry(store, { type: 'Restart attempt failed' })
+  await startRestartAttempt(setup, 'restart-failed')
+  const persisted = store.readProjectSetup('project-1')
+  assert.equal(persisted?.persistedSnapshot.value, 'Restart failed')
+  assert.equal(setup.snapshot('project-1').recoveryMessage, 'restart-failed')
+  store.close()
+
+  const reopenedStore = setupStore(databasePath)
+  const restored = createProjectSetupRegistry(reopenedStore).snapshot('project-1')
+  assert.equal(restored.screen, 'restart-failed')
+  assert.equal(restored.recoveryMessage, 'restart-failed')
+  reopenedStore.close()
+})
+
 test('preserves a corrupt checkpoint as recovery evidence and starts a safe replacement actor', async (context) => {
   const { database, store } = await temporarySetup(context)
   const setup = createProjectSetupRegistry(store)
@@ -132,6 +149,44 @@ function setupStore(databasePath: string) {
   const database = new Database(databasePath)
   migrateDatabase(database)
   return createProjectStore(drizzle({ client: database }))
+}
+
+function createRestartRegistry(
+  store: ReturnType<typeof setupStore>,
+  result: Extract<
+    ProjectSetupEvent,
+    { type: 'Restart attempt completed' | 'Restart attempt failed' }
+  >,
+) {
+  return createProjectSetupRegistry(store, {
+    harnesses: defaultProjectSetupHarnesses,
+    actors: () => ({
+      ...inactiveProjectSetupActors,
+      restart: fromCallback<ProjectSetupEvent, { sessionIds: string[] }, ProjectSetupEvent>(
+        ({ sendBack }) => {
+          sendBack(result)
+        },
+      ),
+    }),
+  })
+}
+
+function startRestartAttempt(
+  setup: ReturnType<typeof createProjectSetupRegistry>,
+  resultScreen: 'choosing-method' | 'restart-failed',
+) {
+  setup.transition('project-1', { type: 'Choose agent', harness: 'claude' })
+  setup.transition('project-1', { type: 'Planning session started', sessionId: 'planning-1' })
+  setup.transition('project-1', { type: 'Effect interrupted', reason: 'interrupted' })
+  return new Promise<void>((resolve) => {
+    let unsubscribe = () => {}
+    unsubscribe = setup.subscribe('project-1', (snapshot) => {
+      if (snapshot.screen !== resultScreen) return
+      unsubscribe()
+      resolve()
+    })
+    setup.transition('project-1', { type: 'Restart attempt' })
+  })
 }
 
 async function temporarySetup(context: TestContext) {

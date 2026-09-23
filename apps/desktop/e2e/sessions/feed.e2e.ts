@@ -1,3 +1,4 @@
+import path from 'node:path'
 // Session Feed and Roster contracts over the packaged app's real preload (#1910).
 // One file, one `test`: `sessionBackend` (`session-proof-run.ts`) is the only difference between
 // a mock and a real Claude/Codex CLI, so a case that drives a live Turn just names the backend it
@@ -32,7 +33,11 @@ import { proveSearchFindsABuriedSession } from './cases/search.case'
 import { proveSessionShell } from './cases/shell.case'
 import { proveSubagentFeed } from './cases/subagent-feed.case'
 import { proveToolCalls } from './cases/tool-calls.case'
-import { proveComposerMemory, proveTurnSetup } from './cases/turn-setup.case'
+import {
+  proveComposerMemory,
+  proveLiveCodexModelChoices,
+  proveTurnSetup,
+} from './cases/turn-setup.case'
 import { rosterRow } from './claude-proof-helpers'
 import { appendProse, removeProse, streamProse } from './fixtures/feed.fixture'
 import { updatePlan } from './fixtures/plan.fixture'
@@ -40,6 +45,7 @@ import { rosterOrderMutations } from './fixtures/roster-order.fixture'
 import { writeWindowFillerSessions } from './fixtures/roster-window.fixture'
 import { writeBuriedSearchTarget } from './fixtures/search-window.fixture'
 import { openSessionByClick } from './gestures'
+import { assertTranscriptFeedCorpus } from './real-harness/transcript-feed-corpus'
 import { expect, test } from './session-proof-run'
 
 test.describe('with no Project selected', () => {
@@ -116,6 +122,10 @@ test('session-turn-setup', async ({ session }) => {
   await proveTurnSetup(session.page())
 })
 
+test('session-live-codex-model-choices', async ({ session }) => {
+  await proveLiveCodexModelChoices(session.page())
+})
+
 test('session-roster-stable-polling', async ({ session }) => {
   await proveStableRosterPolling(
     session.page(),
@@ -171,7 +181,39 @@ test.describe('with a real Codex', () => {
   test.skip(({ sessionBackend }) => sessionBackend === 'mock', 'session-codex-resume creates one.')
 
   test('session-codex-created-by-click', async ({ session, backend }) => {
-    await proveSessionCreatedByClick(session.page(), backend, 'codex')
+    await proveSessionCreatedByClick(session.page(), backend, { harness: 'codex' })
+  })
+})
+
+test.describe('with real Session transcript corpora', () => {
+  test.skip(({ sessionBackend }) => sessionBackend !== 'real', 'Requires both signed-in CLIs.')
+
+  test('session-feed-transcript-corpus', async ({ session, backend }) => {
+    const claudeSessionId = await proveSessionCreatedByClick(session.page(), backend, {
+      harness: 'claude',
+      prompt:
+        'Review this pasted snippet: <pasted_content id="corpus-paste">const answer = 42</pasted_content id="corpus-paste">. Start one short Task agent in the background that returns READY. Wait for its completion notification, then acknowledge the result in one sentence.',
+      budgetRunSetup: true,
+      permissionMode: 'auto',
+    })
+    const composer = session.page().getByRole('combobox', { name: 'Message' })
+    await composer.click()
+    await session.page().keyboard.type('!printf hello; printf warning >&2')
+    await session.page().getByRole('button', { name: 'Send message' }).click()
+    const codexSessionId = await proveSessionCreatedByClick(session.page(), backend, {
+      harness: 'codex',
+      prompt:
+        '<task-notification><task-id>corpus-task</task-id><status>completed</status><summary>Task finished</summary></task-notification>',
+      budgetRunSetup: true,
+    })
+    const home = path.join(session.root, 'home')
+    await assertTranscriptFeedCorpus({
+      roots: {
+        claude: path.join(home, '.claude', 'projects'),
+        codex: path.join(home, '.codex', 'sessions'),
+      },
+      sessionIds: { claude: claudeSessionId, codex: codexSessionId },
+    })
   })
 })
 

@@ -1,3 +1,4 @@
+import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
 import type {
   SessionIdentity,
   WorkspaceSelection,
@@ -17,6 +18,7 @@ export type CodexSessionAdapter = SessionAdapter & {
   watchedProjections: () => readonly SessionProjection[]
   checkoutFor: (nativeId: string) => string | null
   onRosterChanged: WatchedSource
+  readModelCatalog: () => Promise<CodexModelCatalog | null>
   // A follow-up after a restart: the Session is on disk, and this window does not hold it yet.
   resume: (request: {
     session: SessionIdentity

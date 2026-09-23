@@ -14,7 +14,7 @@ async function start(adapter: Awaited<ReturnType<typeof createMockAdapter>>, pro
     prompt,
     workspace: { kind: 'main' },
   })
-  assert.equal(outcome.kind, 'accepted')
+  assert.equal(outcome.kind, 'accepted', JSON.stringify(outcome))
   if (outcome.kind !== 'accepted') throw new Error('Codex did not start the managed Session')
   return outcome.projection.session
 }
@@ -23,7 +23,8 @@ test('releases the lease when app-server unloads a managed thread', async () => 
   const released: string[] = []
   const adapter = await createMockAdapter(released)
   try {
-    const session = await start(adapter, 'NOT_LOADED')
+    const session = await start(adapter, 'Start before app-server unloads the managed thread.')
+    await adapter.execute({ type: 'session.send', session, prompt: 'NOT_LOADED' })
     await waitFor(() => released.includes(session.nativeId))
   } finally {
     await adapter.close()
@@ -34,7 +35,8 @@ test('releases the lease when app-server closes a managed thread', async () => {
   const released: string[] = []
   const adapter = await createMockAdapter(released)
   try {
-    const session = await start(adapter, 'CLOSED')
+    const session = await start(adapter, 'Start before app-server closes the managed thread.')
+    await adapter.execute({ type: 'session.send', session, prompt: 'CLOSED' })
     await waitFor(() => released.includes(session.nativeId))
   } finally {
     await adapter.close()
