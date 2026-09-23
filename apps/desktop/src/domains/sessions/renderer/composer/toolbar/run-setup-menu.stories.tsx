@@ -56,6 +56,14 @@ function ClaudeCatalogStory({ failed = false }: { failed?: boolean }) {
 }
 
 const liveClaudeCatalog: ClaudeModelCatalog = {
+  supportedPermissionModes: [
+    'manual',
+    'acceptEdits',
+    'plan',
+    'auto',
+    'dontAsk',
+    'bypassPermissions',
+  ],
   data: [
     {
       value: 'fable',

@@ -1,12 +1,9 @@
 import { expect, test } from 'bun:test'
 import type { ModelInfo } from '@anthropic-ai/claude-agent-sdk'
+import { claudeModelCatalogSchema } from '@/domains/sessions/contract/claude-model-catalog'
 import { claudeTurnSetupSchemaFor } from '@/domains/sessions/contract/claude-turn-setup'
 import { codexTurnSetupSchemaFor } from '@/domains/sessions/contract/codex-turn-setup'
-import {
-  CLAUDE_EFFORTS,
-  CLAUDE_MODES,
-  claudeTurnSetupSchema,
-} from '@/domains/sessions/contract/ipc/contract'
+import { claudeTurnSetupSchema } from '@/domains/sessions/contract/ipc/contract'
 import { ClaudeModelCatalogCache } from '@/harnesses/claude/agent-sdk/model-catalog'
 import { CodexModelCatalogCache } from '@/harnesses/codex/drive/protocol/model-catalog'
 import { claudeModelCatalogFixture } from '../../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
@@ -30,6 +27,14 @@ const recordedCodexCatalog: unknown = await Bun.file(
 
 const requested = { model: 'opus', effort: 'max', mode: 'bypassPermissions' }
 const CLAUDE_TURN_SETUP = claudeTurnSetup({
+  supportedPermissionModes: [
+    'manual',
+    'acceptEdits',
+    'plan',
+    'auto',
+    'dontAsk',
+    'bypassPermissions',
+  ],
   data: (
     [
       ['fable', 'Fable 5.1', 'Deepest reasoning for long, open-ended work'],
@@ -104,12 +109,12 @@ test('offers no Claude setup before a live model catalog is available', () => {
     claudeTurnSetupSchemaFor(null).safeParse({ model: 'sonnet', effort: 'medium', mode: 'manual' })
       .success,
   ).toBe(false)
-  expect(CLAUDE_EFFORTS).toContain('medium')
-  expect(CLAUDE_MODES).toContain('manual')
+  expect(CLAUDE_TURN_SETUP.modes.map(({ value }) => value)).toContain('manual')
 })
 
 test('offers no Claude setup when the live catalog has no model with a supported effort', () => {
   const catalog = {
+    supportedPermissionModes: ['manual'],
     data: [
       {
         value: 'sonnet-live',
@@ -146,19 +151,70 @@ test('uses the live Claude catalog for composer choices and setup validation', (
   )
 })
 
+test('accepts effort values supplied by the Claude model catalog', () => {
+  const parsed = claudeModelCatalogSchema.safeParse({
+    supportedPermissionModes: ['manual'],
+    data: [
+      {
+        value: 'sonnet-live',
+        displayName: 'Sonnet Live',
+        description: '',
+        supportedEffortLevels: ['ultra'],
+      },
+    ],
+  })
+  expect(parsed.success).toBe(true)
+  if (!parsed.success) throw new Error('The Claude model catalog rejected its advertised effort.')
+  const choices = claudeTurnSetup(parsed.data)
+  if (choices === null) throw new Error('The Claude catalog has no usable model.')
+  expect(choices.models[0]?.efforts).toEqual(['ultra'])
+  expect(
+    claudeTurnSetupSchemaFor(parsed.data).safeParse({
+      model: 'sonnet-live',
+      effort: 'ultra',
+      mode: 'manual',
+    }).success,
+  ).toBe(true)
+  expect(choices.modes.map(({ value }) => value)).toEqual(['manual'])
+})
+
+test('accepts permission modes supplied by the Claude CLI', () => {
+  const catalog = {
+    supportedPermissionModes: ['workspaceAudit'],
+    data: [
+      {
+        value: 'sonnet-live',
+        displayName: 'Sonnet Live',
+        description: '',
+        supportedEffortLevels: ['ultra'],
+      },
+    ],
+  }
+  const choices = claudeTurnSetup(catalog)
+  if (choices === null) throw new Error('The Claude catalog has no usable choices.')
+  expect(choices.modes.map(({ value }) => value)).toEqual(['workspaceAudit'])
+  expect(
+    claudeTurnSetupSchemaFor(catalog).safeParse({
+      model: 'sonnet-live',
+      effort: 'ultra',
+      mode: 'workspaceAudit',
+    }).success,
+  ).toBe(true)
+})
+
 test('a mockable SDK model query reaches Claude model and effort choices', async () => {
   const cache = new ClaudeModelCatalogCache()
-  const catalog = await cache.get(
-    { executablePath: '/claude', version: '2.1.1' },
-    async (): Promise<readonly ModelInfo[]> => [
+  const catalog = await cache.get({ executablePath: '/claude', version: '2.1.1' }, async () => ({
+    models: [
       {
         value: 'sonnet-query',
         displayName: 'Sonnet Query',
         description: 'Queried from the SDK',
         supportedEffortLevels: ['low', 'high'],
-      },
+      } satisfies ModelInfo,
     ],
-  )
+    permissionModes: ['manual'],
+  }))
   const choices = claudeTurnSetup(catalog)
   expect(choices.models.map(({ value }) => value)).toEqual(['sonnet-query'])
   expect(choices.models[0]?.efforts).toEqual(['low', 'high'])

@@ -19,6 +19,7 @@ function managedAdapter(fake: ReturnType<typeof fakeClaudeQuery>) {
           supportedEffortLevels: ['low'],
         },
       ],
+      supportedPermissionModes: ['manual'],
     }),
   })
 }
@@ -55,6 +56,7 @@ test('starts Claude after the selected Workspace is ready', async () => {
       return fake.createQuery(params)
     },
     readModelCatalog: async () => ({
+      supportedPermissionModes: ['manual'],
       data: [
         {
           value: 'haiku',

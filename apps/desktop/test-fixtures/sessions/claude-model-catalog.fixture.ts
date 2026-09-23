@@ -10,6 +10,14 @@ export function claudeModelCatalogFixture(): ClaudeModelCatalog {
         supportedEffortLevels: ['low', 'high'],
       },
     ],
+    supportedPermissionModes: [
+      'manual',
+      'acceptEdits',
+      'plan',
+      'auto',
+      'dontAsk',
+      'bypassPermissions',
+    ],
   }
 }
 
@@ -22,5 +30,13 @@ export function claudeComposerModelCatalogFixture(): ClaudeModelCatalog {
       description: `${value} catalog model`,
       supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
     })),
+    supportedPermissionModes: [
+      'manual',
+      'acceptEdits',
+      'plan',
+      'auto',
+      'dontAsk',
+      'bypassPermissions',
+    ],
   }
 }

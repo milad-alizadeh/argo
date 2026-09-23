@@ -1,6 +1,7 @@
 import {
   type ClaudeModelCatalog,
   claudeModelsWithEffort,
+  claudePermissionModes,
 } from '@/domains/sessions/contract/claude-model-catalog'
 import { claudeOpeningSetupFor } from '@/domains/sessions/contract/claude-turn-setup'
 import type { ModeChoice, TurnSetupChoices } from './turn-setup'
@@ -14,56 +15,32 @@ const EFFORTS: Record<string, string> = {
   max: 'Max',
 }
 
-// Claude writes `default` for the Mode its flag calls `manual`.
-const MODES: ModeChoice[] = [
-  {
-    value: 'auto',
-    label: 'Auto',
-    detail: 'Claude handles permission decisions',
-    icon: 'mode-auto',
-    reads: (reading) => reading === 'auto',
-  },
-  {
-    value: 'manual',
-    label: 'Manual',
-    detail: 'Ask before making changes',
-    icon: 'mode-manual',
-    reads: (reading) => reading === 'manual' || reading === 'default',
-  },
-  {
-    value: 'acceptEdits',
+const MODE_PRESENTATION: Record<string, Pick<ModeChoice, 'label' | 'detail' | 'icon'>> = {
+  auto: { label: 'Auto', detail: 'Claude handles permission decisions', icon: 'mode-auto' },
+  manual: { label: 'Manual', detail: 'Ask before making changes', icon: 'mode-manual' },
+  acceptEdits: {
     label: 'Accept edits',
     detail: 'Accept file edits automatically',
     icon: 'mode-accept-edits',
-    reads: (reading) => reading === 'acceptEdits',
   },
-  {
-    value: 'plan',
-    label: 'Plan',
-    detail: 'Create a plan before making changes',
-    icon: 'mode-plan',
-    reads: (reading) => reading === 'plan',
-  },
-  {
-    value: 'dontAsk',
+  plan: { label: 'Plan', detail: 'Create a plan before making changes', icon: 'mode-plan' },
+  dontAsk: {
     label: "Don't ask",
     detail: 'Deny anything not approved in advance',
     icon: 'mode-dont-ask',
-    reads: (reading) => reading === 'dontAsk',
   },
-  {
-    value: 'bypassPermissions',
+  bypassPermissions: {
     label: 'Bypass',
     detail: 'Run without permission checks',
     icon: 'mode-bypass-permissions',
-    reads: (reading) => reading === 'bypassPermissions',
   },
-]
+}
 
 export function claudeTurnSetup(catalog: ClaudeModelCatalog | null): TurnSetupChoices | null {
   if (catalog === null) return null
   const models = claudeModelsWithEffort(catalog)
-  if (models.length === 0) return null
+  const modes = claudePermissionModes(catalog)
+  if (models.length === 0 || modes.length === 0) return null
   const opening = claudeOpeningSetupFor(catalog)
   if (opening === null) return null
   return {
@@ -88,7 +65,18 @@ export function claudeTurnSetup(catalog: ClaudeModelCatalog | null): TurnSetupCh
         reads: (reading) => reading === value,
       }),
     ),
-    modes: MODES,
+    modes: modes.map((value) => {
+      const presentation = MODE_PRESENTATION[value] ?? {
+        label: value,
+        detail: 'Permission mode reported by Claude Code',
+        icon: 'mode-manual',
+      }
+      return {
+        value,
+        ...presentation,
+        reads: (reading) => reading === value || (value === 'manual' && reading === 'default'),
+      }
+    }),
     opening,
   }
 }

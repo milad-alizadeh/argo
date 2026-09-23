@@ -1,3 +1,4 @@
+import { execFile } from 'node:child_process'
 import { type ModelInfo, type Query, query } from '@anthropic-ai/claude-agent-sdk'
 import {
   type ClaudeModelCatalog,
@@ -6,7 +7,8 @@ import {
 import { executableVersion } from '@/harnesses/cli/executable-version'
 
 type ExecutableIdentity = { executablePath: string; version: string }
-export type ClaudeModelQuery = () => Promise<readonly ModelInfo[]>
+type ClaudeCapabilities = { models: readonly ModelInfo[]; permissionModes: readonly string[] }
+export type ClaudeModelQuery = () => Promise<ClaudeCapabilities>
 
 export class ClaudeModelCatalogCache {
   private identity: ExecutableIdentity | null = null
@@ -33,7 +35,7 @@ export class ClaudeModelCatalogCache {
     }
     if (this.pending !== null) return this.pending
     const pending = read()
-      .then((models) => {
+      .then(({ models, permissionModes }) => {
         const parsed = claudeModelCatalogSchema.safeParse({
           data: models.map(
             ({ value, resolvedModel, displayName, description, supportedEffortLevels }) => ({
@@ -44,6 +46,7 @@ export class ClaudeModelCatalogCache {
               supportedEffortLevels: supportedEffortLevels ?? [],
             }),
           ),
+          supportedPermissionModes: permissionModes,
         })
         const catalog = parsed.success && parsed.data.data.length > 0 ? parsed.data : null
         if (
@@ -72,12 +75,41 @@ export async function readClaudeModelCatalog(options: {
   if (executablePath === null) return null
   try {
     const version = await executableVersion(executablePath)
-    return options.cache.get({ executablePath, version }, () =>
-      (options.readModels ?? readSupportedModels)(executablePath),
-    )
+    return options.cache.get({ executablePath, version }, async () => {
+      const [models, permissionModes] = await Promise.all([
+        (options.readModels ?? readSupportedModels)(executablePath),
+        readSupportedPermissionModes(executablePath),
+      ])
+      return { models, permissionModes }
+    })
   } catch {
     return null
   }
+}
+
+function readSupportedPermissionModes(executablePath: string): Promise<string[]> {
+  return new Promise((resolve, reject) => {
+    execFile(executablePath, ['--help'], { encoding: 'utf8', timeout: 3_000 }, (error, stdout) => {
+      if (error !== null) {
+        reject(error)
+        return
+      }
+      const modes = permissionModesFromHelp(stdout)
+      if (modes.length === 0) {
+        reject(new Error('Claude help does not list permission modes.'))
+        return
+      }
+      resolve(modes)
+    })
+  })
+}
+
+export function permissionModesFromHelp(help: string): string[] {
+  const section = help.split('--permission-mode <mode>')[1]?.split(/\n {2}--/)[0]
+  const choices = section?.match(/\(choices:\s*([^)]*)\)/)?.[1]
+  return choices === undefined
+    ? []
+    : [...choices.matchAll(/"([^"]+)"/g)].flatMap(([, mode]) => (mode ? [mode] : []))
 }
 
 async function readSupportedModels(executablePath: string): Promise<readonly ModelInfo[]> {

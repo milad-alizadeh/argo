@@ -47,10 +47,10 @@ export const OffersEveryMode: Story = {
         .getAllByRole('menuitemradio')
         .map((item) => item.textContent),
     ).toEqual([
-      'AutoClaude handles permission decisions',
       'ManualAsk before making changes',
       'Accept editsAccept file edits automatically',
       'PlanCreate a plan before making changes',
+      'AutoClaude handles permission decisions',
       "Don't askDeny anything not approved in advance",
       'BypassRun without permission checks',
     ])

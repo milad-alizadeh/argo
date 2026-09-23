@@ -3,6 +3,7 @@ import type { Cockpit, ProjectActions } from '@/domains/projects/renderer'
 import {
   type ClaudeModelCatalog,
   claudeModelsWithEffort,
+  claudePermissionModes,
 } from '@/domains/sessions/contract/claude-model-catalog'
 import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
@@ -106,7 +107,8 @@ export function useComposerFacts(
     harness,
     targetHarness: 'claude',
     readCatalog: () => window.argo.readClaudeModelCatalog(),
-    isUsable: (value) => claudeModelsWithEffort(value).length > 0,
+    isUsable: (value) =>
+      claudeModelsWithEffort(value).length > 0 && claudePermissionModes(value).length > 0,
   })
   // The "+" click already gave this row a pending identity (#2109); a bare selection has none.
   const pending = useSessionCreationStore((state) => state.pending)

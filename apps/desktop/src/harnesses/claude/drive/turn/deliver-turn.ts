@@ -1,4 +1,4 @@
-import { CLAUDE_MODES, type ClaudeTurnSetup } from '@/domains/sessions/contract/ipc/contract'
+import type { ClaudeTurnSetup } from '@/domains/sessions/contract/ipc/contract'
 import { CYCLE_MODE, footerMode, REDRAW, setupCommands } from './claude-setup'
 import { claudeTurn } from './claude-turn'
 
@@ -18,6 +18,7 @@ const COMMAND_SUBMIT_DELAY_MS = 300
 const COMMAND_SETTLE_MS = 1500
 const MODE_PRESS_DELAY_MS = 400
 const MODE_REDRAW_DELAY_MS = 800
+const MAX_MODE_CYCLE_ATTEMPTS = 16
 
 export async function deliverTurn(session: TurnTarget, turn: ClaudeTurnRequest, wait: Wait) {
   for (const command of setupCommands(session.applied, turn.setup)) {
@@ -39,7 +40,7 @@ export async function deliverTurn(session: TurnTarget, turn: ClaudeTurnRequest, 
 // Stops on the chosen Mode, or back where it began when Claude does not offer it.
 async function cycleMode(session: TurnTarget, target: ClaudeTurnSetup['mode'], wait: Wait) {
   const starting = session.applied.mode
-  for (const _press of CLAUDE_MODES) {
+  for (let attempt = 0; attempt < MAX_MODE_CYCLE_ATTEMPTS; attempt += 1) {
     session.process.write(CYCLE_MODE)
     await wait(MODE_PRESS_DELAY_MS)
     session.screen = ''
