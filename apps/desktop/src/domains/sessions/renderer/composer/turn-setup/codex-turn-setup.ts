@@ -62,5 +62,5 @@ export const CODEX_TURN_SETUP: TurnSetupChoices = {
     reads: (reading) => reading === value,
   })),
   modes: MODES,
-  opening: { model: 'gpt-5.6-luna', effort: 'low', mode: 'workspace-write' },
+  opening: { model: 'gpt-5.6-sol', effort: 'low', mode: 'workspace-write' },
 }
