@@ -135,6 +135,9 @@ enough.
 - **Name the claim in the domain's words** (`rejects an expired token`), one behaviour per test;
   several inputs for one behaviour is one parameterised case.
 - **Each test builds its own state** and passes alone, in any order, in parallel.
+- **Prove a regression test by reverting the fix.** It goes red on the bug with the reported
+  symptom, green with the fix, then red again with only the fix reverted and green once restored.
+  Revert with `git apply -R` on a patch of the fix: the stash stack is shared across worktrees.
 
 ## Tooling (RTK)
 
