@@ -1,5 +1,4 @@
 import { expect, test } from 'bun:test'
-import { codexModelCatalogFixture } from '@/domains/sessions/contract/codex-model-catalog.test-fixture'
 import { codexTurnSetupSchemaFor } from '@/domains/sessions/contract/codex-turn-setup'
 import {
   CLAUDE_EFFORTS,
@@ -8,6 +7,7 @@ import {
   claudeTurnSetupSchema,
 } from '@/domains/sessions/contract/ipc/contract'
 import { CodexModelCatalogCache } from '@/harnesses/codex/drive/protocol/model-catalog'
+import { codexModelCatalogFixture } from '../../../../../../test-fixtures/sessions/codex-model-catalog.fixture'
 import { CLAUDE_TURN_SETUP } from './claude-turn-setup'
 import { codexTurnSetup } from './codex-turn-setup'
 import {

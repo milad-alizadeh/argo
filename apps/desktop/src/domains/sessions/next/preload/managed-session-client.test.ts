@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
-import { codexModelCatalogFixture } from '@/domains/sessions/contract/codex-model-catalog.test-fixture'
 import { createManagedSessionClient } from '@/domains/sessions/next/preload/managed-session-client'
+import { codexModelCatalogFixture } from '../../../../../test-fixtures/sessions/codex-model-catalog.fixture'
 
 const start = {
   type: 'session.start' as const,

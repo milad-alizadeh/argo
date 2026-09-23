@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { codexModelCatalogFixture } from '@/domains/sessions/contract/codex-model-catalog.test-fixture'
+import { codexModelCatalogFixture } from '../../../../../test-fixtures/sessions/codex-model-catalog.fixture'
 import { CodexModelCatalogCache, readModelCatalog } from './model-catalog'
 
 const recordedResponse: unknown = JSON.parse(
