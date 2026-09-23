@@ -72,7 +72,8 @@ test('reads slash commands as the words the person typed', async () => {
     .filter((record) => record.kind === 'message' && record.role === 'user')
     .flatMap((record) => record.blocks)
     .flatMap((block) =>
-      block.shape === 'prose' || (block.shape === 'event' && block.event === 'command')
+      block.shape === 'prose' ||
+      (block.shape === 'event' && (block.event === 'command' || block.event === 'skill-invocation'))
         ? [block.text]
         : [],
     )

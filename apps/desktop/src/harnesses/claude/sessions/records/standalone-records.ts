@@ -39,7 +39,13 @@ function localCommandRecord(record: Record<string, unknown>): TranscriptRecord |
     effort: null,
     mode: null,
     usage: null,
-    blocks: [{ shape: 'event', event: 'command', text: command }],
+    blocks: [
+      {
+        shape: 'event',
+        event: command.startsWith('/') ? 'skill-invocation' : 'command',
+        text: command,
+      },
+    ],
     toolCalls: [],
     toolResults: [],
     answeredCalls: [],

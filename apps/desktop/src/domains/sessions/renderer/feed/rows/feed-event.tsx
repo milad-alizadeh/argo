@@ -9,6 +9,7 @@ const EVENT_PRESENTATION = {
   context: 'event-context',
   status: 'event-status',
   transcript: 'event-transcript',
+  'skill-invocation': 'skill-invocation',
 } satisfies Record<FeedEventRow['event'], IconName>
 
 export function FeedEvent({ row }: { row: FeedEventRow }) {

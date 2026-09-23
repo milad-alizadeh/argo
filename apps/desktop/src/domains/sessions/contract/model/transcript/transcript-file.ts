@@ -23,13 +23,15 @@ function firstLine(text: string | null | undefined): string | undefined {
 function promptLine(record: TranscriptRecord): string | undefined {
   // A voice thread opens on what the person said, handed over as a voice request rather than a prompt.
   if (record.kind === 'event')
-    return record.event === 'command' ? firstLine(record.text) : undefined
+    return record.event === 'command' || record.event === 'skill-invocation'
+      ? firstLine(record.text)
+      : undefined
   if (record.kind !== 'message' || record.role !== 'user') return undefined
   return record.blocks
     .map((block) =>
       block.shape === 'prose' ||
       block.shape === 'pasted-content' ||
-      (block.shape === 'event' && block.event === 'command')
+      (block.shape === 'event' && (block.event === 'command' || block.event === 'skill-invocation'))
         ? firstLine(block.text)
         : undefined,
     )

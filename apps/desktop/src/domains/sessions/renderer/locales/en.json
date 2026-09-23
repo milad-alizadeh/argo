@@ -322,6 +322,7 @@
   },
   "events": {
     "command": { "label": "Command received" },
+    "skill-invocation": { "label": "Skill invoked" },
     "context": { "label": "System context updated" },
     "status": { "label": "Status updated" },
     "transcript": { "label": "Transcript delivered" },

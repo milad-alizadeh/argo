@@ -31,5 +31,7 @@ test('reads a standalone local command at its prompt boundary', () => {
   )
   assert.equal(record?.kind, 'message')
   if (record?.kind !== 'message') assert.fail('expected a local command message')
-  assert.deepEqual(record.blocks, [{ shape: 'event', event: 'command', text: '/implement 2389' }])
+  assert.deepEqual(record.blocks, [
+    { shape: 'event', event: 'skill-invocation', text: '/implement 2389' },
+  ])
 })

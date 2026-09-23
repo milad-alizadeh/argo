@@ -11,21 +11,32 @@ import { useSessionQuestion } from '../composer/hooks/use-session-question'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
 import { readableSessionId } from '../session-creation'
-import type { SessionEvidence } from '../types'
+import type { SessionEvidence, SessionFeedRow } from '../types'
 import { useSessions } from '../use-sessions'
 import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../work/use-session-work'
 import { sessionHarness } from './session-screen-state'
+import { sessionScreenSubagents } from './session-screen-subagents'
 import { useSelectedSession } from './use-selected-session'
 import { useWorkPick, type WorkSelection } from './work-selection'
 
-function useWorkArtifacts(
-  session: ReturnType<typeof useSelectedSession>,
-  selectedSessionId: string | null,
-  work: WorkSelection,
-) {
+function useScreenSessionFeed(sessionId: string | null, projectPath: string | null) {
+  return useSessions(sessionId, true, projectPath)
+}
+
+function useWorkArtifacts({
+  session,
+  selectedSessionId,
+  work,
+  feedRows,
+}: {
+  session: ReturnType<typeof useSelectedSession>
+  selectedSessionId: string | null
+  work: WorkSelection
+  feedRows: readonly SessionFeedRow[]
+}) {
+  const subagents = sessionScreenSubagents(feedRows, session?.subagents ?? [])
   const shell = session?.shell.find((command) => command.id === work.shellId) ?? null
-  const delegation =
-    session?.subagents.find((candidate) => candidate.id === work.subagentId) ?? null
+  const delegation = subagents.find((candidate) => candidate.id === work.subagentId) ?? null
   const delegationFeed = useDelegationFeed(selectedSessionId, delegation?.id ?? null)
   return {
     shell,
@@ -34,10 +45,11 @@ function useWorkArtifacts(
     delegationFeedError: delegationFeed.feedError,
     retryDelegationFeed: delegationFeed.retry,
     subagentUsage: useDelegationUsage(
-      session === null || session.subagents.length === 0 ? null : selectedSessionId,
-      session?.subagents.some((candidate) => candidate.state === 'running') === true,
+      subagents.length === 0 ? null : selectedSessionId,
+      subagents.some((candidate) => candidate.state === 'running'),
     ),
     shellOutput: useShellOutput(selectedSessionId, shell?.id ?? null, shell?.state === 'running'),
+    subagents,
   }
 }
 
@@ -49,9 +61,8 @@ export function useSessionScreenModel() {
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
   const [evidence, setEvidence] = useState<SessionEvidence | null>(null)
   const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
-  const { feed, feedError, roster, retryFeed } = useSessions(
+  const { feed, feedError, roster, retryFeed } = useScreenSessionFeed(
     selectedSessionId,
-    true,
     cockpit.project?.path ?? null,
   )
   const lastHarness = useComposerStore(({ harness }) => harness)
@@ -67,11 +78,15 @@ export function useSessionScreenModel() {
     roster,
     selectedSessionId,
   })
-  // A Session that only exists as an optimistic Roster row has no backend record to poll yet
-  // (#2109): the reader is asked for a Permission or a Question only once the id is a real one.
-  const permission = useSessionPermission(readableSessionId(selectedSessionId))
-  const question = useSessionQuestion(readableSessionId(selectedSessionId))
-  const artifacts = useWorkArtifacts(session, selectedSessionId, work)
+  // Ask only real Session ids; an optimistic Roster row has no backend record yet (#2109).
+  const permission = useSessionPermission(readableSessionId(selectedSessionId)),
+    question = useSessionQuestion(readableSessionId(selectedSessionId))
+  const artifacts = useWorkArtifacts({
+    session,
+    selectedSessionId,
+    work,
+    feedRows: feed?.rows ?? [],
+  })
   const inspectorReveal = workInspectorReveal(workReveal, artifacts.shell, artifacts.shellOutput)
   return {
     isNewSession: sessionId === 'new',

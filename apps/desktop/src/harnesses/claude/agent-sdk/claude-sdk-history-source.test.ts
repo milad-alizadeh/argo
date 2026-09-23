@@ -58,10 +58,13 @@ function expectEnvelopesAreStructured(rows: SessionFeedRow[]) {
   expect(rows).toContainEqual(
     expect.objectContaining({
       shape: 'event',
+      event: 'skill-invocation',
       text: '/to-spec https://github.com/milad-alizadeh/argo/issues/2669',
     }),
   )
-  expect(rows).toContainEqual(expect.objectContaining({ shape: 'event', text: '/to-tickets' }))
+  expect(rows).toContainEqual(
+    expect.objectContaining({ shape: 'event', event: 'skill-invocation', text: '/to-tickets' }),
+  )
   expect(
     rows.some((row) => JSON.stringify(row).includes('literal <status>completed</status> tag')),
   ).toBe(true)

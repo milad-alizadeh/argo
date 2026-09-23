@@ -20,7 +20,7 @@ test('reads a sent command as its visible source text', () => {
   })
   const record = parseTranscriptLine(line)
   assert.deepEqual(record?.kind === 'message' ? record.blocks : null, [
-    { shape: 'event', event: 'command', text: '/implement 1847' },
+    { shape: 'event', event: 'skill-invocation', text: '/implement 1847' },
   ])
   assert.equal(record?.kind === 'message' ? record.cwd : null, '/tmp/project')
   assert.equal(record?.kind === 'message' ? record.timestamp : null, '2026-09-15T06:00:00.000Z')
