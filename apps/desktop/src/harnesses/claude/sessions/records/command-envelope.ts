@@ -90,6 +90,22 @@ function readCommandOutput(message: TranscriptMessage, text: string): Transcript
   return { kind: 'command-output', uuid: message.uuid, timestamp: message.timestamp, text: output }
 }
 
+function readBashEnvelope(message: TranscriptMessage, text: string): TranscriptRecord | null {
+  const input = taggedText(text, 'bash-input')
+  if (input !== null) {
+    return { ...message, blocks: [{ shape: 'event', event: 'command', text: `> ${input}` }] }
+  }
+  const streams = ['bash-stdout', 'bash-stderr'].map((tag) => taggedText(text, tag))
+  if (streams.every((stream) => stream === null)) return null
+  const output = streams.filter((stream): stream is string => stream !== null && stream !== '')
+  return {
+    kind: 'command-output',
+    uuid: message.uuid,
+    timestamp: message.timestamp,
+    text: output.join('\n'),
+  }
+}
+
 export function readCommandEnvelope(
   record: Record<string, unknown>,
   message: TranscriptMessage,
@@ -103,6 +119,12 @@ export function readCommandEnvelope(
       ? { ...event, uuid: message.uuid }
       : { ...message, blocks: [{ shape: 'event', event: event.event, text: event.text }] }
   if (text.startsWith('<local-command-stdout>')) return readCommandOutput(message, text)
+  if (
+    text.startsWith('<bash-input>') ||
+    text.startsWith('<bash-stdout>') ||
+    text.startsWith('<bash-stderr>')
+  )
+    return readBashEnvelope(message, text)
   if (text.startsWith('<task-notification>')) return readTaskDelivery(record, message, text)
   // The harness re-delivers the compaction summary as a synthetic user turn so the model can
   // resume from it. `readTranscriptFile` folds this into the 'compacted' marker it follows

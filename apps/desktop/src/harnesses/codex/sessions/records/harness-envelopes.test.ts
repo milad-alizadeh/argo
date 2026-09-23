@@ -35,6 +35,41 @@ function userMessage(text: string, attached: Record<string, unknown>[] = []) {
 const blocksOf = (record: ReturnType<typeof parseCodexTranscriptLine>) =>
   record?.kind === 'message' ? record.blocks : null
 
+function transcriptUserMessage(text: string) {
+  return parseCodexTranscriptLine(
+    JSON.stringify({
+      timestamp: '2026-09-15T02:00:10.000Z',
+      type: 'response_item',
+      payload: {
+        type: 'message',
+        id: 'msg-user-1',
+        role: 'user',
+        content: [{ type: 'input_text', text }],
+      },
+    }),
+  )
+}
+
+test('reads a task notification as a Feed status event', () => {
+  const notice =
+    '<task-notification><task-id>task-1</task-id><status>completed</status><summary>Background command "Run tests" completed</summary></task-notification>'
+  const expected = [
+    {
+      shape: 'event',
+      event: 'status',
+      text: 'completed: Background command "Run tests" completed',
+    },
+  ]
+  assert.deepEqual(blocksOf(userMessage(notice)), expected)
+  assert.deepEqual(blocksOf(transcriptUserMessage(notice)), expected)
+})
+
+test('keeps an assistant task-notification example as the assistant wrote it', () => {
+  const notice =
+    '<task-notification><task-id>task-1</task-id><status>completed</status><summary>Task finished</summary></task-notification>'
+  assert.deepEqual(blocksOf(agentMessage(notice)), [{ shape: 'prose', text: notice }])
+})
+
 test('reads a voice reply without the channel tag that routes it to the voice frontend', () => {
   const replies: [string, string][] = [
     ['[STATUS] Checking the tests now.', 'Checking the tests now.'],

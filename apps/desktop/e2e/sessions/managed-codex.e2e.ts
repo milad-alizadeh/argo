@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'
 import type { Page } from '@playwright/test'
 import { test } from './session-proof-run'
 
+test.describe.configure({ mode: 'default' })
+
 async function defaultCodexModel(page: Page) {
   await page.waitForFunction(
     async () => (await window.argo.readCodexModelCatalog()) !== null,

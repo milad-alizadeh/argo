@@ -3,6 +3,7 @@ import type { FeedMarker } from '../models'
 
 export type ContentBlock =
   | { shape: 'prose'; text: string }
+  | { shape: 'pasted-content'; id: string; text: string }
   | { shape: 'thought'; text: string }
   | { shape: 'marker'; marker: FeedMarker }
   | { shape: 'event'; event: TranscriptEventKind; text: string | null; raw?: string | null }

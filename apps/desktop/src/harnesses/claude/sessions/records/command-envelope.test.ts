@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { stitchChains } from '@/domains/sessions/contract/model/transcript/chains'
 import { readTranscriptFile } from '@/domains/sessions/contract/model/transcript/transcript'
+import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript/transcript-file'
+import { projectFeed } from '@/domains/sessions/main/projection/feed/feed-incremental'
 import { parseTranscriptLine } from './records'
 
 test('reads a sent command as its visible source text', () => {
@@ -33,6 +36,55 @@ test('does not expose incomplete command tags', () => {
   assert.deepEqual(record?.kind === 'message' ? record.blocks : null, [
     { shape: 'event', event: 'command', text: 'implement' },
   ])
+})
+
+test('reads Bash input and both output streams as structured records', () => {
+  const parse = (uuid: string, content: string) =>
+    parseTranscriptLine(
+      JSON.stringify({
+        type: 'user',
+        uuid,
+        timestamp: '2026-09-23T12:00:00.000Z',
+        message: { role: 'user', content },
+      }),
+    )
+
+  const input = parse('bash-input', '<bash-input>printf hello</bash-input>')
+  const output = parse(
+    'bash-output',
+    '<bash-stdout>hello</bash-stdout><bash-stderr>warning</bash-stderr>',
+  )
+
+  assert.equal(
+    input?.kind === 'message' ? input.blocks[0]?.shape === 'event' && input.blocks[0].text : null,
+    '> printf hello',
+  )
+  assert.deepEqual(output, {
+    kind: 'command-output',
+    uuid: 'bash-output',
+    timestamp: '2026-09-23T12:00:00.000Z',
+    text: 'hello\nwarning',
+  })
+  const chain = stitchChains([
+    transcriptFileFrom('bash.jsonl', {
+      sessionId: 'bash',
+      records: [input, output].filter(
+        (record): record is NonNullable<typeof record> => record !== null,
+      ),
+    }),
+  ])[0]
+  assert.ok(chain)
+  const rows = projectFeed(chain, undefined).rows
+  assert.deepEqual(
+    rows.map((row) => row.shape),
+    ['event', 'command-output'],
+  )
+  assert.equal(
+    rows.some((row) => /<\/?bash-/.test(JSON.stringify(row))),
+    false,
+  )
+  const emptyOutput = parse('bash-empty', '<bash-stdout></bash-stdout>')
+  assert.deepEqual(emptyOutput?.kind === 'command-output' ? emptyOutput.text : null, '')
 })
 
 test('keeps a command receipt as the Session opening prompt', () => {

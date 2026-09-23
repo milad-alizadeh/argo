@@ -177,6 +177,7 @@
     }
   },
   "rowUnreadable": "Part of this transcript is damaged, so Argo cannot show it.",
+  "pastedContent": "Pasted content",
   "rename": {
     "title": "Rename Session",
     "name": "Name",

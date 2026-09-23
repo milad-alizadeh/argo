@@ -78,9 +78,12 @@ export const FEED_ROW_RENDERERS = {
   prose: ({ row, activeEvidenceId, onOpenEvidence, streamingText }) =>
     isFeedRowPrompt(row) ? (
       <FeedPrompt
+        activeEvidenceId={activeEvidenceId}
         files={row.files}
         images={row.images}
+        pastedContent={row.pastedContent}
         onOpenEvidence={onOpenEvidence}
+        rowId={row.id}
         text={row.text}
       />
     ) : (

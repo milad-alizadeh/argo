@@ -9,7 +9,7 @@ import { isRecord } from '@/shared/validation'
 import { readBackgroundTask } from '../subagents/background-task'
 import { readBlocks, readToolCalls, readToolResults } from './block-reader'
 import { readCommandEnvelope } from './command-envelope'
-import { commandSource } from './command-source'
+import { commandSourceBlocks } from './command-source'
 import { messageEnvelope } from './message-envelope'
 import { readPlanChanges } from './plan-changes'
 import { promptBlocks } from './prompt-images'
@@ -41,20 +41,16 @@ function readUsage(value: unknown) {
   }
 }
 
-function readContent(role: 'user' | 'assistant', message: Record<string, unknown>) {
-  return role === 'user' && typeof message.content === 'string'
-    ? commandSource(message.content)
-    : message.content
-}
-
 function readMessageBlocks(role: 'user' | 'assistant', content: unknown) {
+  if (role === 'user' && typeof content === 'string')
+    return promptBlocks(commandSourceBlocks(content))
   const blocks = readBlocks(content)
   return role === 'user' ? promptBlocks(blocks) : blocks
 }
 
 function readMessage(record: Record<string, unknown>, role: 'user' | 'assistant') {
   const message = isRecord(record.message) ? record.message : {}
-  const content = readContent(role, message)
+  const content = message.content
   // `uuid` is the whole identity gate. A record's own `sessionId` is not required: the file name
   // names the Session, and plenty of real records carry no copy of it. Requiring one would drop a
   // whole history as unreadable over a field nothing reads.

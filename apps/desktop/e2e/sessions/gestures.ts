@@ -13,6 +13,10 @@ import type { SessionHarness } from '@/domains/sessions/renderer/harness/harness
 // the driver bundle cannot import: the path there runs through the `@/` alias, and the bundler CI
 // runs leaves that unresolved.
 const HARNESS_TABS: Record<SessionHarness, string> = { claude: 'Claude Code', codex: 'Codex' }
+const BUDGET_MODELS: Record<SessionHarness, RegExp> = {
+  claude: /Haiku 4\.5/,
+  codex: /Gpt 5\.6 Luna/,
+}
 
 const ROW = 'nav[aria-label="Sessions"] button[data-session-id]'
 const FILTER = 'button[aria-label="Filter Sessions"]'
@@ -23,6 +27,8 @@ const POLL_MS = 25
 export type CreateRequest = {
   harness: SessionHarness
   prompt: string
+  budgetRunSetup?: boolean
+  permissionMode?: 'auto'
   // Read on every poll while the Roster row is still absent. A true reading fails the case: the
   // row a managed Session stands on must not wait for the Harness to write (managed-row.ts).
   harnessWrote?: () => Promise<boolean>
@@ -93,6 +99,33 @@ export async function chooseHarness(page: Page, harness: SessionHarness) {
   await page.getByRole('tablist', { name: 'Harness' }).waitFor({ state: 'detached' })
 }
 
+async function chooseBudgetRunSetup(page: Page, harness: SessionHarness) {
+  await page.locator(RUN_SETUP).click()
+  const models = page.getByRole('radiogroup', { name: 'Model' })
+  const model = models.getByRole('radio', {
+    name: BUDGET_MODELS[harness],
+  })
+  await model.focus()
+  await page.keyboard.press('Space')
+  const effort = page.getByRole('slider', { name: 'Effort' })
+  await effort.focus()
+  await page.keyboard.press('Home')
+  await expect(effort).toHaveAttribute('aria-valuetext', 'Low')
+  await page.keyboard.press('Escape')
+  await models.waitFor({ state: 'detached' })
+}
+
+async function chooseAutoPermissionMode(page: Page) {
+  const mode = page.getByRole('button', { name: /Choose permission mode/ })
+  await mode.focus()
+  await page.keyboard.press('Enter')
+  await page
+    .getByRole('menuitemradio', { name: 'Auto Claude handles permission decisions' })
+    .click()
+  await page.keyboard.press('Escape')
+  await expect(mode).toContainText('Auto')
+}
+
 // The Roster ids the shipped app answers with. Reading is an assertion, not a gesture: nothing a
 // person does is injected here.
 export async function rosterIds(page: Page): Promise<string[]> {
@@ -157,6 +190,8 @@ export async function createSessionByClick(page: Page, request: CreateRequest): 
   const known = await rosterIds(page)
   await openNewSessionByClick(page)
   await chooseHarness(page, request.harness)
+  if (request.budgetRunSetup === true) await chooseBudgetRunSetup(page, request.harness)
+  if (request.permissionMode === 'auto') await chooseAutoPermissionMode(page)
   const composer = page.getByRole('combobox', { name: 'Message' })
   await composer.click()
   await expect(composer).toHaveText('')

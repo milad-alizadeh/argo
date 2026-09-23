@@ -113,6 +113,18 @@ function rowsOfBlock({
   switch (block.shape) {
     case 'prose':
       return [{ shape: 'prose', id, role: record.role, text: block.text }]
+    case 'pasted-content':
+      return record.role === 'user'
+        ? [
+            {
+              shape: 'prose',
+              id,
+              role: 'user',
+              text: '',
+              pastedContent: [{ id: block.id, text: block.text }],
+            },
+          ]
+        : []
     // An empty thinking block (redacted or summarized away by the API) draws nothing, so it must
     // not count as a delivery either, or it silently splits a tool run across it (#2100).
     case 'thought':

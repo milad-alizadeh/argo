@@ -27,7 +27,9 @@ function promptLine(record: TranscriptRecord): string | undefined {
   if (record.kind !== 'message' || record.role !== 'user') return undefined
   return record.blocks
     .map((block) =>
-      block.shape === 'prose' || (block.shape === 'event' && block.event === 'command')
+      block.shape === 'prose' ||
+      block.shape === 'pasted-content' ||
+      (block.shape === 'event' && block.event === 'command')
         ? firstLine(block.text)
         : undefined,
     )
