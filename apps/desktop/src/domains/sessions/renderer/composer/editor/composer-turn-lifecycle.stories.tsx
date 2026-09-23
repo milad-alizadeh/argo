@@ -7,6 +7,7 @@ import type { SessionHarness } from '../../harness/harnesses'
 import { useComposerStore } from '../hooks'
 import { claudeTurnSetup } from '../turn-setup/claude-turn-setup'
 import type { TurnSetupChoices } from '../turn-setup/turn-setup'
+import { setupFromReading } from '../turn-setup/turn-setup'
 import { SessionComposer, type SessionComposerProps } from './session-composer'
 
 const CLAUDE_TURN_SETUP = (() => {
@@ -164,6 +165,25 @@ function SetupComposerStory({
         setup={{ choices: CLAUDE_TURN_SETUP, value: setup, onChange: setSetup }}
       />
     </>
+  )
+}
+
+function HistoricalResolvedModelStory({ onSend }: { onSend: SessionComposerProps['onSend'] }) {
+  const [setup, setSetup] = useState(() =>
+    setupFromReading(CLAUDE_TURN_SETUP, {
+      model: 'claude-sonnet-4-5',
+      effort: 'medium',
+      mode: 'default',
+    }),
+  )
+
+  return (
+    <SessionComposer
+      onSend={onSend}
+      sessionId="historical-sonnet-session"
+      harness={{ harness: 'claude' }}
+      setup={{ choices: CLAUDE_TURN_SETUP, value: setup, onChange: setSetup }}
+    />
   )
 }
 
@@ -379,5 +399,21 @@ export const NarrowShowsModelAndEffort: StoryObj<typeof SetupComposerStory> = {
     await expect(trigger).toHaveAccessibleName('Choose run setup: Claude Code, Opus 5, Medium')
     await expect(canvas.getByRole('button', { name: 'Send message' })).toBeVisible()
     await expect(row.scrollWidth).toBeLessThanOrEqual(row.clientWidth)
+  },
+}
+
+export const HistoricalSonnetIdKeepsSonnet: StoryObj<typeof HistoricalResolvedModelStory> = {
+  render: (args) => <HistoricalResolvedModelStory {...args} />,
+  args: { onSend: fn(async () => true) },
+  parameters: { frame: SETUP_FRAME },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const setup = canvas.getByRole('button', { name: /^Choose run setup/ })
+
+    await expect(setup).toHaveTextContent('Sonnet 5')
+    await userEvent.click(setup)
+    await expect(
+      await within(document.body).findByRole('radio', { name: /Sonnet 5/ }),
+    ).toBeChecked()
   },
 }
