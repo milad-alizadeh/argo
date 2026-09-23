@@ -188,6 +188,7 @@
     "failure": "Argo could not rename this Session."
   },
   "ticketLink": {
+    "autoRenameFailed": "Ticket linked, but Session rename failed",
     "title": "Link Ticket",
     "renameTitle": "Rename Session?",
     "search": "Search Tickets",
@@ -198,6 +199,8 @@
     "rename": "Rename"
   },
   "roster": {
+    "failureCount": "Read failed on attempt {{count}}.",
+    "retry": "Retry",
     "planProgress": "{{completed}} of {{total}} steps completed",
     "planUnreadable": "Plan unreadable",
     "sourceFailed": "{{harness}} Sessions did not load",

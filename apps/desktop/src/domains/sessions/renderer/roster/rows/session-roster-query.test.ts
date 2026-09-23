@@ -6,7 +6,10 @@ const originalWindow = globalThis.window
 
 type RosterObserver = {
   fetchNextPage: () => Promise<unknown>
-  getCurrentResult: () => { data: InfiniteData<ReturnType<typeof listedReply>> | undefined }
+  getCurrentResult: () => {
+    data: InfiniteData<ReturnType<typeof listedReply>> | undefined
+    failureCount: number
+  }
   refetch: () => Promise<unknown>
 }
 
@@ -76,6 +79,24 @@ describe('caching the Session roster read by its stable identity', () => {
     const options = sessionRosterQuery(true, { projectRoot: null })
 
     expect(options.refetchInterval).toBeUndefined()
+  })
+
+  test('counts a failed roster read for the error alert', async () => {
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: {
+        argo: {
+          listSessions: async () => {
+            throw new Error('Session read failed.')
+          },
+        },
+      },
+    })
+
+    await observeRoster(async (observer) => {
+      await observer.refetch()
+      expect(observer.getCurrentResult().failureCount).toBe(1)
+    })
   })
 
   test('keeps the roster it already published when a read finds the same Sessions', async () => {

@@ -31,11 +31,13 @@ function useRosterQuery(enabled: boolean, projectRoot: string | null) {
     query,
     roster,
     hasMore: query.hasNextPage,
+    failureCount: query.failureCount,
     isFetchingMore: query.isFetchingNextPage,
     fetchMore: useCallback(() => {
       if (!query.hasNextPage || query.isFetchingNextPage) return
       void query.fetchNextPage()
     }, [query.fetchNextPage, query.hasNextPage, query.isFetchingNextPage]),
+    retry: useCallback(() => query.refetch(), [query.refetch]),
   }
 }
 
@@ -61,6 +63,7 @@ export function useSessions(
     hasMore: hasMoreSessions,
     isFetchingMore: isFetchingMoreSessions,
     fetchMore: fetchMoreSessions,
+    retry: retryRoster,
   } = useRosterQuery(rosterEnabled, projectRoot)
   const feedQuery = sessionFeedQuery(queryClient, selectedFeedId, null)
   const feed = useQuery<SessionFeed | null, SessionContractError>(feedQuery)
@@ -110,6 +113,11 @@ export function useSessions(
   return {
     roster: mergedRoster,
     rosterError: roster.error,
+    rosterFailure: {
+      error: roster.error,
+      failureCount: roster.failureCount,
+      retry: retryRoster,
+    },
     // A poll racing the transcript another live process is actively writing can fail once and
     // recover on the next, whether or not a prior read already landed: the first open of an
     // actively driven Session races the same writer every other poll does (#2053, #2071).

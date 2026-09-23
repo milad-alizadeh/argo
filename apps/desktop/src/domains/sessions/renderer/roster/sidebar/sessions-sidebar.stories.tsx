@@ -828,13 +828,24 @@ export const ArchiveFromContextMenu: Story = {
 }
 
 export const Failure: Story = {
-  beforeEach: () => withRosterHost(async () => readFailure),
+  beforeEach: () => {
+    let reads = 0
+    return withRosterHost(async () => {
+      reads += 1
+      return reads === 1 ? readFailure : listed
+    })
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const alert = await canvas.findByRole('alert')
     await expect(alert).toHaveAttribute('data-slot', 'alert')
     await expect(alert).toHaveTextContent('Unable to load Sessions')
     await expect(alert).toHaveTextContent('Argo could not read these Sessions.')
+    await expect(alert).toHaveTextContent('Read failed on attempt 1.')
+    await userEvent.click(within(alert).getByRole('button', { name: 'Retry' }))
+    await expect(
+      await canvas.findByRole('button', { name: 'Read the Session transcript' }),
+    ).toBeVisible()
   },
 }
 

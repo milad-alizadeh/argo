@@ -88,7 +88,6 @@ export function Roster({
   const sidebar = useRef<HTMLElement>(null)
   const read = useOrderedSessions(projectRoot)
   const sessions = useRosterSessions({ actions, projectRoot, read, selectedSessionId, sidebar })
-  const { focus, selection } = sessions
   const { onFetchNextPage, onFetchNextSearchPage, rows } = useRosterRows({
     read,
     search: sessions.searching ? sessions.searched : null,
@@ -115,8 +114,8 @@ export function Roster({
       />
       <RosterOutcome
         count={sessions.sessionCount}
+        queryFailure={read.rosterFailure}
         roster={read.roster}
-        rosterError={read.rosterError}
         status={sessions.status}
       />
       <RosterVirtualList
@@ -125,18 +124,18 @@ export function Roster({
         onFetchMoreSessions={read.fetchMoreSessions}
         onFetchNextPage={onFetchNextPage}
         onFetchNextSearchPage={onFetchNextSearchPage}
-        onFocus={focus.setFocusedSessionId}
+        onFocus={sessions.focus.setFocusedSessionId}
         onLinkTicket={actions.onLinkTicket}
         onOpenTicket={actions.onOpenTicket}
         onRename={setRenameTarget}
         onSelect={sessions.select}
-        onToggleSelect={selection.toggle}
+        onToggleSelect={sessions.selection.toggle}
         onUnlinkTicket={actions.onUnlinkTicket}
         renamedTitles={sessions.renamedTitles}
         rows={rows}
-        selectedIds={selection.selectedIds}
+        selectedIds={sessions.selection.selectedIds}
         selectedSessionId={selectedSessionId}
-        tabStop={focus.tabStop}
+        tabStop={sessions.focus.tabStop}
       />
       <RenameDialog onRename={handleRename} session={renameTarget} setSession={setRenameTarget} />
     </aside>

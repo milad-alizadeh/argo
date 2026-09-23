@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
+import { Button } from '@/platform/renderer/components/ui/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/platform/renderer/components/ui/empty'
 import type { SessionError, SessionRoster } from '../../types'
 import { type RosterStatus, showsActive } from '../hooks/use-roster-filter-store'
@@ -20,7 +21,15 @@ function NoSessionsFound() {
   )
 }
 
-function RosterErrorAlert({ error }: { error: SessionError }) {
+function RosterErrorAlert({
+  error,
+  failureCount,
+  onRetry,
+}: {
+  error: SessionError
+  failureCount: number
+  onRetry: () => void
+}) {
   const { t } = useTranslation('sessions')
   return (
     <Alert
@@ -29,7 +38,12 @@ function RosterErrorAlert({ error }: { error: SessionError }) {
     >
       <Icon name="triangle-alert" />
       <AlertTitle>{t('unableToLoadSessions')}</AlertTitle>
-      <AlertDescription>{error.message}</AlertDescription>
+      <AlertDescription>
+        {error.message} {t('roster.failureCount', { count: failureCount })}
+        <Button className="mt-2" onClick={onRetry} size="sm" variant="outline">
+          {t('roster.retry')}
+        </Button>
+      </AlertDescription>
     </Alert>
   )
 }
@@ -40,15 +54,22 @@ function RosterErrorAlert({ error }: { error: SessionError }) {
 export function RosterOutcome({
   count,
   roster,
-  rosterError,
+  queryFailure,
   status,
 }: {
   count: number
   roster: SessionRoster | null
-  rosterError: SessionError | null
+  queryFailure: { error: SessionError | null; failureCount: number; retry: () => void }
   status: RosterStatus
 }) {
-  if (rosterError !== null) return <RosterErrorAlert error={rosterError} />
+  if (queryFailure.error !== null)
+    return (
+      <RosterErrorAlert
+        error={queryFailure.error}
+        failureCount={queryFailure.failureCount}
+        onRetry={queryFailure.retry}
+      />
+    )
   if (roster === null) return <RosterLoading />
   if (count === 0 && showsActive(status)) return <NoSessionsFound />
   return null

@@ -12,6 +12,7 @@ import {
   claudeSettingsPath,
   claudeTranscriptsRoot,
 } from '../sessions/discovery/roots'
+import { transcriptPaths } from '../sessions/discovery/transcript-paths'
 import { renameClaudeSession } from './rename-session'
 import { createClaudeDriveAdapter } from './session-drive-adapter'
 import { createSystemClaudeSessionDriver } from './system-claude-session-driver'
@@ -48,7 +49,10 @@ export const claudeHarness: HarnessRegistration = {
             liveMessages: claude.liveMessages,
             rename: (request) => renameClaudeSession(request, claude),
           })
-        : createClaudeSdkHistorySource(),
+        : createClaudeSdkHistorySource({
+            countTranscriptFiles: async () =>
+              (await transcriptPaths(claudeTranscriptsRoot(home))).length,
+          }),
       driveAdapter: createClaudeDriveAdapter(claude),
       onboardingDriver: claude,
       watchedTranscriptRoots: [claudeTranscriptsRoot(home)],

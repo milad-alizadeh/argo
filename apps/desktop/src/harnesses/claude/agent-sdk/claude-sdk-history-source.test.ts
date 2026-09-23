@@ -1,4 +1,8 @@
 import { expect, test } from 'bun:test'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+import type { SDKSessionInfo } from '@anthropic-ai/claude-agent-sdk'
 import { managedRosterRow } from '@/domains/sessions/contract/model/models'
 import { createClaudeSdkHistorySource } from './claude-sdk-history-source'
 
@@ -151,4 +155,61 @@ test('keeps watched history while a resumed Claude Session has a new managed nat
     { id: 'watched-id', posture: 'watched' },
     { id: 'managed-id', posture: 'managed' },
   ])
+})
+
+test('reports and filters Claude SDK records with invalid roster data', async () => {
+  const records = [
+    { sessionId: 'untitled', summary: '', lastModified: 1 },
+    { sessionId: 'missing-time', summary: 'Missing time', createdAt: null, lastModified: null },
+    {
+      sessionId: 'relay-output',
+      summary: 'Relay',
+      firstPrompt: 'AGENT OUTPUT: generated',
+      lastModified: 1,
+    },
+    { sessionId: 'valid', summary: 'Known Session', lastModified: 1 },
+  ] as unknown as SDKSessionInfo[]
+  const source = createClaudeSdkHistorySource({
+    history: {
+      listSessions: async () => records,
+      getSessionMessages: async () => [],
+    },
+  })
+
+  const listed = await source.discoverSessions()
+
+  expect(listed.rows.map((row) => row.id)).toEqual(['untitled', 'valid'])
+  expect(listed.filesFound).toBe(4)
+  expect(listed.filesRead).toBe(4)
+  expect(listed.filesUnreadable).toBe(2)
+  expect(listed.filesParsed).toBe(1)
+})
+
+test('reports transcript records omitted by the Claude SDK', async () => {
+  const transcriptsRoot = await mkdtemp(path.join(os.tmpdir(), 'argo-claude-roster-'))
+  const projectDirectory = path.join(transcriptsRoot, 'repository')
+  await mkdir(projectDirectory)
+  await writeFile(path.join(projectDirectory, 'sdk-session.jsonl'), '')
+  await writeFile(path.join(projectDirectory, 'omitted-session.jsonl'), '')
+  try {
+    const source = createClaudeSdkHistorySource({
+      countTranscriptFiles: async () => 2,
+      history: {
+        listSessions: async () => [
+          { sessionId: 'sdk-session', summary: 'Visible Session', lastModified: 1 },
+        ],
+        getSessionMessages: async () => [],
+      },
+    })
+
+    const listed = await source.discoverSessions()
+
+    expect(listed.filesFound).toBe(2)
+    expect(listed.filesRead).toBe(1)
+    expect(listed.filesUnreadable).toBe(1)
+    expect(listed.filesParsed).toBe(1)
+    expect(listed.historyComplete).toBe(false)
+  } finally {
+    await rm(transcriptsRoot, { recursive: true, force: true })
+  }
 })
