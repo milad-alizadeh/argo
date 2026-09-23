@@ -638,7 +638,7 @@ export const Loading: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('status', { name: 'Reading Sessions' })).toBeInTheDocument()
-    await expect(canvasElement.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(6)
+    await expect(canvasElement.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(9)
   },
 }
 export const Empty: Story = {

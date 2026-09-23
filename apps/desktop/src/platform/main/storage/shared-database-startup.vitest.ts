@@ -67,6 +67,18 @@ test('starts a clean database with every ordered migration', async () => {
   }
 })
 
+test('opens in WAL mode with a busy timeout, so a second worktree waits out a lock', async () => {
+  const userData = await temporaryUserData()
+  try {
+    const database = openSharedDatabase(userData, migrationsFolder)
+    expect(database.prepare('PRAGMA journal_mode').get()).toEqual({ journal_mode: 'wal' })
+    expect(database.prepare('PRAGMA busy_timeout').get()).toEqual({ timeout: 5000 })
+    database.close()
+  } finally {
+    await rm(userData, { recursive: true, force: true })
+  }
+})
+
 test('keeps a migrated database on a normal restart', async () => {
   const userData = await temporaryUserData()
   try {
