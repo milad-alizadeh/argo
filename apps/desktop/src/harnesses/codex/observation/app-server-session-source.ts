@@ -5,7 +5,7 @@ import type {
   SessionProjection,
 } from '@/domains/sessions/next/contract/session-projection-contract'
 import { CodexHistoryUnavailableError } from '../history/vendor-history'
-import { discovery, mergedProjections, rosterRowOf, rowsOf } from './codex-history-rows'
+import { discovery, mergedProjections, rosterRows, rowsOf } from './codex-history-rows'
 
 const APP_SERVER_HISTORY_BUDGET_MS = 1_500
 
@@ -47,12 +47,7 @@ export function createCodexAppServerSessionSource(options: {
       return discovery(mergedProjections(stored, options.projections()), options.checkoutFor)
     },
     readSessionFiles: async () => null,
-    managedSessions: () =>
-      options
-        .projections()
-        .map((projection) =>
-          rosterRowOf(projection, options.checkoutFor(projection.session.nativeId)),
-        ),
+    managedSessions: () => rosterRows(options.projections(), options.checkoutFor).rows,
     readManagedFeed: (sessionId) => {
       const projection = managedProjectionFor(sessionId)
       if (projection === null) return undefined

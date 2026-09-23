@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ticketKeyInPlace } from '@/domains/tickets/contract/branch-ticket'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import type { Session } from '../../types'
+import { ticketKeyForSession } from '../ticket-link/ticket-key-for-session'
 import { sessionTiming } from './session-timing'
 
 function planStepTone(session: Session, step: number) {
@@ -57,8 +57,7 @@ export function SessionMetadata({ session }: { session: Session }) {
     return () => window.clearInterval(timer)
   }, [])
   const timing = sessionTiming(session, now)
-  // An asserted link outranks the key the branch or worktree carries (CONTEXT.md L1 · Session → Ticket).
-  const ticketKey = session.ticket?.key ?? ticketKeyInPlace(session.branch, session.cwd)
+  const ticketKey = ticketKeyForSession(session)
   const hasMetadata =
     session.plan?.state === 'available' ||
     session.plan?.state === 'malformed' ||

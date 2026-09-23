@@ -10,6 +10,7 @@ import {
   ContextMenuTrigger,
 } from '@/platform/renderer/components/ui/context-menu'
 import type { Session } from '../../types'
+import { ticketRouteForSession } from '../ticket-link/ticket-key-for-session'
 import { type RosterMenuHandlers, type RosterRow, renamedSession, sessionName } from './roster-rows'
 
 type RosterMenuTarget = { session: Session; archived: boolean }
@@ -82,14 +83,16 @@ export function RosterContextMenu({
             <ContextMenuItem onClick={() => onRename(target.session)}>
               {t('contextMenu.rename')}
             </ContextMenuItem>
-            {target.session.ticket !== null ? (
+            {ticketRouteForSession(target.session) !== null ? (
               <>
                 <ContextMenuItem onClick={() => onOpenTicket(target.session)}>
                   {t('contextMenu.openTicket')}
                 </ContextMenuItem>
-                <ContextMenuItem onClick={() => onUnlinkTicket(target.session)}>
-                  {t('contextMenu.unlinkTicket')}
-                </ContextMenuItem>
+                {target.session.ticket === null ? null : (
+                  <ContextMenuItem onClick={() => onUnlinkTicket(target.session)}>
+                    {t('contextMenu.unlinkTicket')}
+                  </ContextMenuItem>
+                )}
               </>
             ) : (
               <ContextMenuItem onClick={() => onLinkTicket(target.session)}>

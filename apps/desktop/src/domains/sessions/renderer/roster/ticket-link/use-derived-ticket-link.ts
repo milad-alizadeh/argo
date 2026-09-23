@@ -1,16 +1,15 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ticketKeyInPlace } from '@/domains/tickets/contract/branch-ticket'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
 import { settle } from '@/platform/renderer/lib/query-client'
 import type { Session } from '../../types'
+import { ticketKeyForSession } from './ticket-key-for-session'
 import type { ConnectOutcome, ConnectTicketInput } from './use-session-ticket-link'
 
 type ReportRenameFailure = (message: string) => void
 
 function derivedTicket(session: Session): string | null {
-  if (session.ticket !== null) return null
-  return ticketKeyInPlace(session.branch, session.cwd)
+  return session.ticket === null ? ticketKeyForSession(session) : null
 }
 
 async function retryPendingRename(

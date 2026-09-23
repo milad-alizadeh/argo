@@ -6,6 +6,7 @@ import { COMPOSER_FOCUS_STATE } from '../../composer-focus-state'
 import { newSessionTarget, useSessionCreationStore } from '../../session-creation'
 import { markSessionRead } from '../../session-queries'
 import type { Session, SessionId } from '../../types'
+import { ticketRouteForSession } from '../ticket-link/ticket-key-for-session'
 
 export const SELECTED_SESSION_KEY = 'argo.selected-session-id'
 
@@ -34,7 +35,8 @@ export function useSidebarActions(options: {
 
     openTicket: useCallback(
       (session: Session) => {
-        if (session.ticket !== null) navigate(`/tickets/${session.ticket.key}`)
+        const route = ticketRouteForSession(session)
+        if (route !== null) navigate(route)
       },
       [navigate],
     ),

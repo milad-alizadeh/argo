@@ -21,29 +21,56 @@ function statusOf(projection: SessionProjection) {
   }
 }
 
-function startedAtOf(projection: SessionProjection): string {
-  const startedAt = projection.turns.reduce<number | null>(
-    (earliest, turn) =>
-      earliest === null || turn.startedAt < earliest ? turn.startedAt : earliest,
-    null,
-  )
-  return new Date(startedAt ?? 0).toISOString()
-}
-
 function promptOf(projection: SessionProjection): string {
-  return projection.messages.find((message) => message.role === 'user')?.text ?? 'New Codex Session'
+  return projection.messages.find((message) => message.role === 'user')?.text ?? ''
 }
 
-function turnStartedAtOf(projection: SessionProjection): string | null {
-  const startedAt = projection.turns.reduce<number | null>(
-    (latest, turn) => (latest === null || turn.startedAt > latest ? turn.startedAt : latest),
-    null,
+function validTimestamp(timestamp: number): boolean {
+  return (
+    Number.isFinite(timestamp) && timestamp > 0 && Number.isFinite(new Date(timestamp).getTime())
   )
-  return startedAt === null ? null : new Date(startedAt).toISOString()
 }
 
-export function rosterRowOf(projection: SessionProjection, cwd: string | null) {
-  const prompt = promptOf(projection)
+function timestampsOf(projection: SessionProjection) {
+  if (projection.turns.length === 0) return null
+  let first = Number.POSITIVE_INFINITY
+  let last = Number.NEGATIVE_INFINITY
+  for (const turn of projection.turns) {
+    if (!validTimestamp(turn.startedAt)) return null
+    first = Math.min(first, turn.startedAt)
+    last = Math.max(last, turn.startedAt)
+  }
+  return { startedAt: new Date(first).toISOString(), turnStartedAt: new Date(last).toISOString() }
+}
+
+function relayOutput(projection: SessionProjection, prompt: string): boolean {
+  return (
+    projection.title?.trimStart().startsWith('AGENT OUTPUT:') === true ||
+    prompt.trimStart().startsWith('AGENT OUTPUT:')
+  )
+}
+
+type RosterIssue = 'missingTitle' | 'invalidTimestamp' | 'relayOutput'
+
+function rosterIssues(
+  projection: SessionProjection,
+  prompt: string,
+  timestamps: ReturnType<typeof timestampsOf>,
+): RosterIssue[] {
+  const issues: RosterIssue[] = []
+  if (!(projection.title?.trim() || prompt.trim())) issues.push('missingTitle')
+  if (timestamps === null) issues.push('invalidTimestamp')
+  if (relayOutput(projection, prompt)) issues.push('relayOutput')
+  return issues
+}
+
+function rowFrom(options: {
+  projection: SessionProjection
+  cwd: string | null
+  prompt: string
+  timestamps: NonNullable<ReturnType<typeof timestampsOf>>
+}) {
+  const { projection, cwd, prompt, timestamps } = options
   const row = managedRosterRow({
     id: projection.session.nativeId,
     session: {
@@ -51,12 +78,11 @@ export function rosterRowOf(projection: SessionProjection, cwd: string | null) {
       cwd,
       prompt,
       setup: { model: null, effort: null, mode: null },
-      startedAt: startedAtOf(projection),
+      startedAt: timestamps.startedAt,
       status: statusOf(projection),
-      title:
-        projection.title === null
-          ? undefined
-          : { text: projection.title, source: 'custom' as const },
+      title: projection.title?.trim()
+        ? { text: projection.title, source: 'custom' as const }
+        : undefined,
       compactionPercentage: null,
       compactionStartedAt: null,
       compactionTokens: null,
@@ -67,9 +93,42 @@ export function rosterRowOf(projection: SessionProjection, cwd: string | null) {
   return sessionRosterRowSchema.parse({
     ...row,
     posture: projection.posture === 'watched' ? 'watched' : 'managed',
-    turnStartedAt: turnStartedAtOf(projection),
-    updatedAt: turnStartedAtOf(projection) ?? startedAtOf(projection),
+    turnStartedAt: timestamps.turnStartedAt,
+    updatedAt: timestamps.turnStartedAt,
   })
+}
+
+export function rosterRows(
+  projections: readonly SessionProjection[],
+  checkoutFor: (nativeId: string) => string | null,
+) {
+  const inspected = projections.map((projection) => {
+    const prompt = promptOf(projection)
+    const timestamps = timestampsOf(projection)
+    const issues = rosterIssues(projection, prompt, timestamps)
+    return {
+      issues,
+      row:
+        issues.length === 0 && timestamps !== null
+          ? rowFrom({
+              projection,
+              cwd: checkoutFor(projection.session.nativeId),
+              prompt,
+              timestamps,
+            })
+          : null,
+    }
+  })
+  const counts = {
+    missingTitle: inspected.filter(({ issues }) => issues.includes('missingTitle')).length,
+    invalidTimestamp: inspected.filter(({ issues }) => issues.includes('invalidTimestamp')).length,
+    relayOutput: inspected.filter(({ issues }) => issues.includes('relayOutput')).length,
+  }
+  const unreadable = inspected.filter(({ row }) => row === null).length
+  if (unreadable > 0) {
+    console.warn('Codex app-server Session boundary rejected records', { unreadable, ...counts })
+  }
+  return { rows: inspected.flatMap(({ row }) => (row === null ? [] : [row])), unreadable }
 }
 
 export function rowsOf(projection: SessionProjection): SessionFeedRow[] {
@@ -96,16 +155,15 @@ export function discovery(
   projections: readonly SessionProjection[],
   checkoutFor: (nativeId: string) => string | null,
 ): TranscriptDiscovery {
+  const roster = rosterRows(projections, checkoutFor)
   return {
-    rows: projections.map((projection) =>
-      rosterRowOf(projection, checkoutFor(projection.session.nativeId)),
-    ),
-    filesFound: 0,
-    filesRead: 0,
-    filesUnreadable: 0,
-    filesParsed: 0,
+    rows: roster.rows,
+    filesFound: projections.length,
+    filesRead: projections.length,
+    filesUnreadable: roster.unreadable,
+    filesParsed: roster.rows.length,
     nextCursor: null,
-    historyComplete: true,
+    historyComplete: roster.unreadable === 0,
   }
 }
 

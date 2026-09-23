@@ -5,6 +5,7 @@ import { sessionRosterRow, sessionSubagent } from '../../session-fixtures'
 import type { SessionError, SessionId, SessionsListed } from '../../types'
 import { useRosterFilterStore, useRosterWindowStore } from '../hooks'
 import { Roster, type RosterActions } from '../roster'
+import { ticketRouteForSession } from '../ticket-link/ticket-key-for-session'
 
 const session = sessionRosterRow({
   id: 'prose',
@@ -108,6 +109,11 @@ function RoutedRoster(args: RosterHarnessArgs) {
         onSelect={(sessionId) => {
           navigate(`/sessions/${sessionId}`)
           args.onSelect(sessionId)
+        }}
+        onOpenTicket={(session) => {
+          const route = ticketRouteForSession(session)
+          if (route !== null) navigate(route)
+          args.onOpenTicket(session)
         }}
         selectedSessionId={location.pathname === '/sessions' ? null : selectedSessionId}
       />
@@ -850,6 +856,36 @@ export const ArchiveFromContextMenu: Story = {
     const archive = await within(document.body).findByRole('menuitem', { name: 'Archive' })
     await userEvent.click(archive)
     await expect(args.onArchiveSelected).toHaveBeenCalledWith(['prose'])
+  },
+}
+
+export const OpenBranchTicketFromContextMenu: Story = {
+  render: (args) => <RoutedRoster {...args} />,
+  beforeEach: () =>
+    withRosterHost(async () =>
+      listedReply({
+        ...listed,
+        sessions: [
+          {
+            ...session,
+            id: 'branch-ticket-session',
+            branch: 'argo/#2582-model-based-testing',
+            cwd: '/workspace/argo',
+          },
+        ],
+      }),
+    ),
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    const row = await canvas.findByRole('button', { name: /Read the Session transcript/ })
+    await userEvent.pointer({ keys: '[MouseRight]', target: row })
+    await userEvent.click(
+      await within(document.body).findByRole('menuitem', { name: 'Open ticket' }),
+    )
+    await expect(canvas.getByLabelText('Session route')).toHaveTextContent('/tickets/%232582')
+    await expect(args.onOpenTicket).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'branch-ticket-session' }),
+    )
   },
 }
 

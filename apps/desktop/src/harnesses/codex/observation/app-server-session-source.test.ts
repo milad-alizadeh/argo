@@ -118,3 +118,59 @@ test('reports an app-server history timeout', async () => {
   await new Promise((resolve) => setTimeout(resolve, 0))
   assert.equal(ready, 1)
 })
+
+test('counts and filters Codex Sessions without a valid title or timestamp', async () => {
+  const valid = projection()
+  const relay = {
+    ...projection(),
+    session: { harness: 'codex' as const, nativeId: 'relay' },
+    title: null,
+    messages: [
+      {
+        id: 'relay-message',
+        turnId: 'turn-1',
+        role: 'user' as const,
+        text: 'AGENT OUTPUT: warm-up',
+      },
+    ],
+  }
+  const missingTimestamp = {
+    ...projection(),
+    session: { harness: 'codex' as const, nativeId: 'missing-timestamp' },
+    turns: [],
+  }
+  const missingTitle = {
+    ...projection(),
+    session: { harness: 'codex' as const, nativeId: 'missing-title' },
+    title: null,
+    messages: [],
+  }
+  const records = [valid, relay, missingTimestamp, missingTitle]
+  const source = createCodexAppServerSessionSource({
+    adapter: {
+      execute: async () => ({ kind: 'rejected', reason: 'not used' }),
+      subscribe: () => () => {},
+    },
+    projections: () => records,
+    watchedProjections: () => [],
+    refreshHistory: async () => records,
+    readHistoryProjection: async () => null,
+    checkoutFor: () => null,
+  })
+
+  const result = await source.discoverSessions()
+
+  assert.deepEqual(
+    result.rows.map((row) => row.id),
+    ['thread-1'],
+  )
+  assert.equal(result.filesFound, 4)
+  assert.equal(result.filesRead, 4)
+  assert.equal(result.filesUnreadable, 3)
+  assert.equal(result.filesParsed, 1)
+  assert.equal(result.historyComplete, false)
+  assert.deepEqual(
+    source.managedSessions?.().map((row) => row.id),
+    ['thread-1'],
+  )
+})
