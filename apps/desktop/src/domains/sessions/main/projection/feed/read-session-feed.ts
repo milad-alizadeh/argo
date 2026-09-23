@@ -85,8 +85,9 @@ async function cancelFeed({
   }
 }
 
-function readDirectManagedFeed(source: SessionSource, request: SessionFeedRequest) {
-  const feed = source.readManagedFeed?.(request.sessionId)
+function readDirectFeed(source: SessionSource, request: SessionFeedRequest) {
+  const feed =
+    source.readManagedFeed?.(request.sessionId) ?? source.readObservedFeed?.(request.sessionId)
   if (feed === undefined) return undefined
   if (feed === null) return sessionError('missing-session', request.requestId)
   if (feed.revision === request.revision) {
@@ -135,7 +136,7 @@ export function createFeedReader(
           }
           reply = await readOwnedFeed(context, request)
         } else {
-          const direct = readDirectManagedFeed(owner, request)
+          const direct = readDirectFeed(owner, request)
           if (direct !== undefined) reply = direct
           else {
             const managed = ownership.managed(owner, sessionId)

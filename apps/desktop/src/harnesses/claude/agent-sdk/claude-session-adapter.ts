@@ -1,3 +1,4 @@
+import { PROJECT_PROOF_STORE_ENV } from '@/domains/projects/main/proof-protocol'
 import { claudeTurnSetupSchema } from '@/domains/sessions/contract/claude-turn-setup'
 import type { SessionCommand } from '@/domains/sessions/next/contract/session-command-contract'
 import type { WorkspaceSelection } from '@/domains/sessions/next/contract/session-contract'
@@ -13,6 +14,7 @@ import { eventFor } from './claude-session-command-event'
 import { keyOf } from './claude-session-key'
 import { openClaudeSession } from './claude-session-open'
 import { sessionRegistry } from './claude-session-registry'
+import { beginWatchedClaudeResume, readClaudeResumePermission } from './claude-watched-resume'
 import { sendWhenManaged } from './send-when-managed'
 import type { ClaudeQueryFactory } from './types'
 
@@ -57,12 +59,20 @@ export function createClaudeSessionAdapter(deps: {
   waitForWorkspaceReady: (workspaceId: string) => Promise<void>
   resolveWorkspace: (selection: WorkspaceSelection) => Promise<{ workspaceId: string; cwd: string }>
   createQuery?: ClaudeQueryFactory
+  readResumePermission?: (
+    sessionId: string,
+  ) => Promise<{ resumable: true } | { resumable: false; reason: string }>
   now?: () => Date
 }): ClaudeSessionAdapter {
+  // The packaged proof mock stores sessions only in its transcript fixture, not the Agent SDK.
+  const defaultReadResumePermission = process.env[PROJECT_PROOF_STORE_ENV]
+    ? async () => ({ resumable: true as const })
+    : readClaudeResumePermission
   const runtime = {
     ...deps,
     createQuery: deps.createQuery ?? createClaudeQuery,
     now: deps.now ?? (() => new Date()),
+    readResumePermission: deps.readResumePermission ?? defaultReadResumePermission,
   }
   const changed = new Set<() => void>()
   const registry = sessionRegistry(changed, deps.sessionService)
@@ -82,11 +92,17 @@ export function createClaudeSessionAdapter(deps: {
         entry.revision += 1
         return acceptedSessionOutcome(entry)
       }
-      return openClaudeSession({
-        command: { session, workspace, prompt, cwd },
-        deps: runtime,
-        register: registry.register,
-        requireEntry: registry.requireEntry,
+      return beginWatchedClaudeResume({
+        readPermission: () => runtime.readResumePermission(session.nativeId),
+        acquireLease: () => runtime.sessionService.acquire(session),
+        releaseLease: () => runtime.sessionService.release(session),
+        openManaged: () =>
+          openClaudeSession({
+            command: { session, workspace, prompt, cwd },
+            deps: runtime,
+            register: registry.register,
+            requireEntry: registry.requireEntry,
+          }),
       })
     },
     rename: async (sessionId, title) => {

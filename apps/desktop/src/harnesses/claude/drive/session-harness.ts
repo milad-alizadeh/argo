@@ -4,11 +4,11 @@
 import path from 'node:path'
 import { SESSION_CLAUDE_EXECUTABLE_ENV } from '@/domains/sessions/contract/proof-protocol'
 import type { HarnessRegistration } from '@/harnesses/composition/harness-registration'
+import { createClaudeSdkHistorySource } from '../agent-sdk/claude-sdk-history-source'
 import { installCompactionHook } from '../compaction/compaction-hook'
 import { claudeSessionSource } from '../sessions/discovery/read-sessions'
 import {
   claudeCompactionStartsRoot,
-  claudeProcessesRoot,
   claudeSettingsPath,
   claudeTranscriptsRoot,
 } from '../sessions/discovery/roots'
@@ -16,34 +16,9 @@ import { renameClaudeSession } from './rename-session'
 import { createClaudeDriveAdapter } from './session-drive-adapter'
 import { createSystemClaudeSessionDriver } from './system-claude-session-driver'
 
-function renameManagedSession(
-  request: Parameters<typeof renameClaudeSession>[0],
-  rename: ((sessionId: string, title: string) => Promise<void>) | undefined,
-  claude: ReturnType<typeof createSystemClaudeSessionDriver>,
-) {
-  if (rename === undefined) return renameClaudeSession(request, claude)
-  return rename(request.sessionId, request.name).then(() => ({
-    version: 1 as const,
-    type: 'session.renamed' as const,
-    requestId: request.requestId,
-    sessionId: request.sessionId,
-    title: request.name,
-  }))
-}
-
 export const claudeHarness: HarnessRegistration = {
   harness: 'claude',
-  start({
-    userData,
-    home,
-    proofEnabled,
-    acceptance,
-    index,
-    managedSessions,
-    managedLiveMessages,
-    managedRosterChanges,
-    managedRename,
-  }) {
+  start({ userData, home, proofEnabled, acceptance, managedRosterChanges }) {
     const claude = createSystemClaudeSessionDriver({
       permissions: path.join(userData, 'claude-permission-plugins'),
       ledger: path.join(userData, 'claude-session-ownership.json'),
@@ -66,34 +41,22 @@ export const claudeHarness: HarnessRegistration = {
     }
     return {
       harness: 'claude',
-      source: claudeSessionSource({
-        transcripts: claudeTranscriptsRoot(home),
-        processes: claudeProcessesRoot(home),
-        managedSessions: () => [
-          ...claude.roster(),
-          ...(managedSessions?.[claudeHarness.harness]?.() ?? []),
-        ],
-        compactionStarts,
-        beginCompaction: claude.beginCompaction,
-        completeCompaction: claude.completeCompaction,
-        completeHandoffs: claude.completeHandoffs,
-        handoffEdges: claude.handoffEdges,
-        liveMessages: (sessionId) => [
-          ...claude.liveMessages(sessionId),
-          ...(managedLiveMessages?.[claudeHarness.harness]?.(sessionId) ?? []),
-        ],
-        rename: (request) =>
-          renameManagedSession(request, managedRename?.[claudeHarness.harness], claude),
-        isLockedElsewhere: claude.isLockedElsewhere,
-        index,
-      }),
+      source: proofEnabled
+        ? claudeSessionSource({
+            transcripts: claudeTranscriptsRoot(home),
+            managedSessions: claude.roster,
+            liveMessages: claude.liveMessages,
+            rename: (request) => renameClaudeSession(request, claude),
+          })
+        : createClaudeSdkHistorySource(),
       driveAdapter: createClaudeDriveAdapter(claude),
       onboardingDriver: claude,
       watchedTranscriptRoots: [claudeTranscriptsRoot(home)],
       close: () => claude.close(),
-      onPermissionsChanged:
-        managedRosterChanges?.[claudeHarness.harness] ?? claude.onPermissionsChanged,
-      onRosterChanged: managedRosterChanges?.[claudeHarness.harness],
+      onPermissionsChanged: proofEnabled
+        ? claude.onPermissionsChanged
+        : (managedRosterChanges?.[claudeHarness.harness] ?? claude.onPermissionsChanged),
+      onRosterChanged: proofEnabled ? undefined : managedRosterChanges?.[claudeHarness.harness],
     }
   },
 }

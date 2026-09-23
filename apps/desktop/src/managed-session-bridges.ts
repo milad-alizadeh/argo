@@ -6,6 +6,7 @@ import { attachManagedSessions } from '@/domains/sessions/next/main/managed-sess
 import type { SessionTicketLinkStore } from '@/domains/tickets/main/session-links'
 import { createClaudeSdkDriveAdapter } from '@/harnesses/claude/agent-sdk/claude-sdk-drive-adapter'
 import type { ClaudeSessionAdapter } from '@/harnesses/claude/agent-sdk/claude-session-adapter'
+import { claudeTranscriptsRoot } from '@/harnesses/claude/sessions/discovery/roots'
 import { createCodexAppServerDriveAdapter } from '@/harnesses/codex/drive/codex-app-server-drive-adapter'
 import type { CodexSessionAdapter } from '@/harnesses/codex/drive/session/codex-session-adapter-contract'
 import { sessionHarnesses } from '@/harnesses/composition/registered-harnesses'
@@ -35,13 +36,19 @@ export function attachManagedSessionHarnesses(
   if (codex === undefined) throw new Error('Codex Session adapter is unavailable')
   const codexSource = managedSessions.sourceFor('codex')
   if (codexSource === undefined) throw new Error('Codex Session source is unavailable')
+  const registeredClaudeSource = managedSessions.sourceFor('claude')
+  if (registeredClaudeSource === undefined) throw new Error('Claude Session source is unavailable')
+  // Packaged proof uses the mock CLI's transcript fixtures. Production reads the Agent SDK.
+  const claudeSource = registeredClaudeSource
   const harnesses = attachSessions(window, {
     ...options,
     driveAdapters: {
-      claude: createClaudeSdkDriveAdapter({
-        adapter: claude as ClaudeSessionAdapter,
-        workspaceForCwd: (cwd) => workspaceSelectionForSessionCwd(cwd, options.projects),
-      }),
+      claude: options.proofEnabled
+        ? undefined
+        : createClaudeSdkDriveAdapter({
+            adapter: claude as ClaudeSessionAdapter,
+            workspaceForCwd: (cwd) => workspaceSelectionForSessionCwd(cwd, options.projects),
+          }),
       codex: createCodexAppServerDriveAdapter({
         adapter: codex as CodexSessionAdapter,
         workspaceForCwd: (cwd) => workspaceSelectionForSessionCwd(cwd, options.projects),
@@ -54,8 +61,11 @@ export function attachManagedSessionHarnesses(
       codex: (codex as CodexSessionAdapter).onRosterChanged,
     },
     managedRename: { claude: (claude as ClaudeSessionAdapter).rename },
+    watchedRoots: [claudeTranscriptsRoot(options.home)],
     harnesses: sessionHarnesses.filter((harness) => harness.harness !== 'codex'),
-    sources: [codexSource],
+    excludedSourceHarnesses: options.proofEnabled ? [] : ['claude'],
+    polledSources: [codexSource],
+    sources: options.proofEnabled ? [codexSource] : [claudeSource, codexSource],
   })
   return { harnesses, managedSessions }
 }
