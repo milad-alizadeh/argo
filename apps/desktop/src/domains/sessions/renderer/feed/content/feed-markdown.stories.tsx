@@ -57,7 +57,8 @@ export const UnlabelledFence: Story = {
     await waitFor(() =>
       expect(canvasElement.querySelector('code[data-highlighted="true"]')).not.toBeNull(),
     )
-    await expect(canvasElement.querySelector('pre')).toHaveTextContent(SAMPLE_TYPESCRIPT)
+    const renderedCode = canvasElement.querySelector('pre')?.textContent
+    await expect(renderedCode).toBe(SAMPLE_TYPESCRIPT.split('\n').join(''))
     await expect(canvasElement).not.toHaveTextContent('```')
   },
 }
