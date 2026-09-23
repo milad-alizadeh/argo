@@ -86,35 +86,6 @@ export const GuessedLanguage: Story = {
   },
 }
 
-export const UnlabelledJson: Story = {
-  args: { source: '{\n  "name": "Argo"\n}', language: undefined },
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('JSON')).toBeInTheDocument()
-    await waitFor(() => expect(highlightedCode(canvasElement)).not.toBeNull())
-  },
-}
-
-export const UnlabelledJavaScript: Story = {
-  args: { source: 'const answer = 42', language: undefined },
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('JavaScript')).toBeInTheDocument()
-    await waitFor(() => expect(highlightedCode(canvasElement)).not.toBeNull())
-  },
-}
-
-export const UnrecognisedSourceStaysPlain: Story = {
-  args: { source: 'Attach the image, then send the Turn.', language: undefined },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await expect(canvas.getByRole('img', { name: 'Code file' })).toBeInTheDocument()
-    await expect(canvasElement.querySelector('[data-language]')).toHaveAttribute(
-      'data-language',
-      'plain',
-    )
-    await expect(canvasElement.querySelector('code')).toHaveAttribute('data-highlighted', 'false')
-  },
-}
-
 export const CopyFromKeyboard: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.tab()

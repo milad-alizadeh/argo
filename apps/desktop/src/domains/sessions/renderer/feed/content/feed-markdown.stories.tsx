@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { roleColors } from './appearance-probe'
 import { FeedMarkdown } from './feed-markdown'
-import { RICH_MARKDOWN, SAMPLE_PICTURE } from './feed-samples'
+import { RICH_MARKDOWN, SAMPLE_PICTURE, SAMPLE_TYPESCRIPT } from './feed-samples'
 
 const meta = {
   title: 'Sessions/Feed/Markdown',
@@ -50,14 +50,28 @@ export const Formatted: Story = {
 }
 
 export const UnlabelledFence: Story = {
-  args: { text: '```\nconst answer = 42\n```' },
+  args: { text: ['```', SAMPLE_TYPESCRIPT, '```'].join('\n') },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('img', { name: 'JavaScript file' })).toBeVisible()
+    await expect(canvas.getByRole('img', { name: 'TypeScript file' })).toBeVisible()
     await waitFor(() =>
       expect(canvasElement.querySelector('code[data-highlighted="true"]')).not.toBeNull(),
     )
-    await expect(canvasElement.querySelector('pre')).toHaveTextContent('const answer = 42')
+    await expect(canvasElement.querySelector('pre')).toHaveTextContent(SAMPLE_TYPESCRIPT)
+    await expect(canvasElement).not.toHaveTextContent('```')
+  },
+}
+
+export const UnrecognisedUnlabelledFence: Story = {
+  args: { text: ['```', 'Attach the image, then send the Turn.', '```'].join('\n') },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('img', { name: 'Code file' })).toBeVisible()
+    await expect(canvasElement.querySelector('[data-language]')).toHaveAttribute(
+      'data-language',
+      'plain',
+    )
+    await expect(canvasElement.querySelector('code')).toHaveAttribute('data-highlighted', 'false')
     await expect(canvasElement).not.toHaveTextContent('```')
   },
 }

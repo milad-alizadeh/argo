@@ -19,60 +19,15 @@ function languageNamed(name: string): CodeLanguage | null {
   return LANGUAGES.get(name.toLowerCase()) ?? null
 }
 
-function isJson(source: string): boolean {
-  const trimmed = source.trim()
-  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return false
-  try {
-    JSON.parse(trimmed)
-    return true
-  } catch {
-    return false
-  }
-}
-
-function guessedLanguage(source: string): string | null {
-  if (isJson(source)) return 'json'
-  if (
-    /^\s*(?:#!.*\b(?:ba)?sh\b|set\s+-[a-z]+\b|(?:npm|bun|pnpm|yarn|git|docker)\s+\S+)/m.test(source)
-  )
-    return 'bash'
-  if (
-    /^\s*(?:def\s+\w+\s*\(|class\s+\w+\s*(?:\([^)]*\))?\s*:|if\s+__name__\s*==|from\s+[\w.]+\s+import\b|import\s+[\w.]+\s*$)/m.test(
-      source,
-    )
-  )
-    return 'python'
-  if (/^\s*(?:package\s+\w+|func\s+\w+\s*\()/m.test(source)) return 'go'
-  if (/^\s*(?:fn\s+\w+\s*\(|let\s+mut\s+\w+\s*=)/m.test(source)) return 'rust'
-  if (/^\s*(?:class|def|module|require)\b/m.test(source) && /^\s*end\s*$/m.test(source))
-    return 'ruby'
-  if (/^\s*(?:#include\s*[<"]|int\s+main\s*\()/m.test(source)) return 'cpp'
-  if (/\b(?:interface|type)\s+[A-Z]\w*|:\s*[A-Z]\w*(?:<[^>]+>)?|<\/?[A-Z][\w.]*/m.test(source))
-    return 'typescript'
-  if (
-    /^\s*(?:const|let|var)\s+[\w$]+\s*=|^\s*function\s+[\w$]+\s*\(|^\s*import\s+.*\s+from\s+['"]|=>/m.test(
-      source,
-    )
-  )
-    return 'javascript'
-  if (
-    /^\s*(?:SELECT\b.*\bFROM\b|INSERT\s+INTO\b|UPDATE\s+\w+\s+SET\b|CREATE\s+TABLE\b)/im.test(
-      source,
-    )
-  )
-    return 'sql'
-  if (
-    /^\s*(?:@(?:media|supports|keyframes|import)\b|(?:[.#][\w-]+|[a-z][\w-]*)\s*\{)/im.test(source)
-  )
-    return 'css'
-  return null
-}
-
-// An explicit fence label wins; otherwise a distinctive source shape supplies a likely language.
+// The fence's own word wins; an unlabelled fence is guessed only among the prototype's three.
 export function detectCodeLanguage(source: string, language?: string): CodeLanguage | null {
   if (language) return languageNamed(language)
-  const guess = guessedLanguage(source)
-  return guess === null ? null : languageNamed(guess)
+  if (/^\s*(?:package\s+\w+|func\s+\w+\s*\()/m.test(source)) return languageNamed('go')
+  if (/^\s*(?:class|def|module|require)\b/m.test(source) && /^\s*end\s*$/m.test(source))
+    return languageNamed('ruby')
+  if (/\b(?:interface|type)\s+[A-Z]\w*|:\s*[A-Z]\w*(?:<[^>]+>)?|<\/?[A-Z][\w.]*/m.test(source))
+    return languageNamed('typescript')
+  return null
 }
 
 // A File's suffix is the declared language for an inspector. Unlike a fence, a File does not
