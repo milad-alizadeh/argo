@@ -35,6 +35,7 @@ function managedSession(reply: SessionSetup, sent: unknown[]) {
         filesParsed: 0,
         nextCursor: null,
         historyComplete: true,
+        partialFailures: [],
       }),
     sendSession: (request: { sessionId: string }) => {
       sent.push(request)

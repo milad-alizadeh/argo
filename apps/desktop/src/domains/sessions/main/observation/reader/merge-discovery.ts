@@ -32,9 +32,12 @@ export function combineDiscoveries(
       : sessionError('internal-error', requestId)
   }
   const cursors: RosterCursorMap = {}
+  const partialFailures: { harness: string; code: string }[] = []
   for (const [index, reading] of discovered.entries()) {
     const harness = clis[index]
-    if (harness !== undefined && !isDiscoveryError(reading)) cursors[harness] = reading.nextCursor
+    if (harness === undefined) continue
+    if (isDiscoveryError(reading)) partialFailures.push({ harness, code: reading.error.code })
+    else cursors[harness] = reading.nextCursor
   }
   return {
     version: 1,
@@ -51,5 +54,6 @@ export function combineDiscoveries(
     // False the moment any adapter's older history is still backfilling (#2373), so the reply
     // never claims a Session index still catching up already holds the whole machine.
     historyComplete: successful.every((reading) => reading.historyComplete),
+    partialFailures,
   }
 }

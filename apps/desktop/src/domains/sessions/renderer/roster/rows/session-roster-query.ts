@@ -46,6 +46,7 @@ export function sessionRosterQuery(
             filesParsed: reply.filesParsed,
             nextCursor: reply.nextCursor,
             historyComplete: reply.historyComplete,
+            partialFailures: reply.partialFailures,
           }
         case 'session.error':
           return throwSessionContractError(reply)
