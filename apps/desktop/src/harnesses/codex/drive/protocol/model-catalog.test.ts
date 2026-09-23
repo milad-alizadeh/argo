@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
+import { codexModelCatalogFixture } from '@/domains/sessions/contract/codex-model-catalog.test-fixture'
 import { CodexModelCatalogCache, readModelCatalog } from './model-catalog'
 
 const recordedResponse: unknown = JSON.parse(
@@ -12,22 +13,7 @@ const recordedResponse: unknown = JSON.parse(
     'utf8',
   ),
 )
-
-const catalog = {
-  data: [
-    {
-      id: 'gpt-live',
-      model: 'gpt-live',
-      displayName: 'Live model',
-      description: 'Advertised by app-server',
-      defaultReasoningEffort: 'focused',
-      isDefault: true,
-      hidden: false,
-      supportedReasoningEfforts: [{ reasoningEffort: 'focused', description: 'Focused' }],
-    },
-  ],
-  nextCursor: null,
-}
+const catalog = codexModelCatalogFixture()
 
 test('decodes the advertised model names and reasoning efforts', () => {
   assert.deepEqual(readModelCatalog(catalog), catalog)

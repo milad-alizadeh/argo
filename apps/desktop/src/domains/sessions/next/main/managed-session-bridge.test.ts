@@ -2,6 +2,7 @@ import { mock } from 'bun:test'
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
+import { codexModelCatalogFixture } from '@/domains/sessions/contract/codex-model-catalog.test-fixture'
 import type { SessionAdapter } from '@/domains/sessions/next/contract/session-projection-contract'
 import { MANAGED_SESSION_OPERATIONS } from '@/domains/sessions/next/ipc/managed-session-operations'
 import type { SessionAdapterRegistry } from '@/domains/sessions/next/main/session-adapter-registry'
@@ -75,21 +76,7 @@ test('rejects a command when its harness adapter is unavailable', async () => {
 
 test('returns the validated Codex catalog through the catalog channel', async () => {
   const ipc = createMockIpcWindow()
-  const catalog: CodexModelCatalog = {
-    data: [
-      {
-        id: 'gpt-live',
-        model: 'gpt-live',
-        displayName: 'Live model',
-        description: 'Advertised by app-server',
-        defaultReasoningEffort: 'focused',
-        isDefault: true,
-        hidden: false,
-        supportedReasoningEfforts: [{ reasoningEffort: 'focused', description: 'Focused' }],
-      },
-    ],
-    nextCursor: null,
-  }
+  const catalog = codexModelCatalogFixture()
   attachManagedSessionBridge(ipc.window, {
     adapters: adapterRegistry(undefined, catalog),
     rendererURL: RENDERER_URL,

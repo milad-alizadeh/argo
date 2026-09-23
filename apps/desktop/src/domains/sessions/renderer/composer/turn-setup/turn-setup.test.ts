@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
+import { codexModelCatalogFixture } from '@/domains/sessions/contract/codex-model-catalog.test-fixture'
 import { codexTurnSetupSchemaFor } from '@/domains/sessions/contract/codex-turn-setup'
 import {
   CLAUDE_EFFORTS,
@@ -85,21 +85,7 @@ test('offers exactly the Models, Efforts and Modes the Claude contract accepts',
 })
 
 test('advertised models and efforts become the Codex composer choices and schema rules', () => {
-  const catalog: CodexModelCatalog = {
-    data: [
-      {
-        id: 'gpt-live',
-        model: 'gpt-live',
-        displayName: 'Live model',
-        description: 'Advertised by app-server',
-        defaultReasoningEffort: 'focused',
-        isDefault: true,
-        hidden: false,
-        supportedReasoningEfforts: [{ reasoningEffort: 'focused', description: 'Focused' }],
-      },
-    ],
-    nextCursor: null,
-  }
+  const catalog = codexModelCatalogFixture()
   const choices = codexTurnSetup(catalog)
   expect(choices.models.map(({ value }) => value)).toEqual(['gpt-live'])
   expect(choices.models[0]?.efforts).toEqual(['focused'])

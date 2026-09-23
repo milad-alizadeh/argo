@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test'
+import { codexModelCatalogFixture } from '@/domains/sessions/contract/codex-model-catalog.test-fixture'
 import { createManagedSessionClient } from '@/domains/sessions/next/preload/managed-session-client'
 
 const start = {
@@ -31,21 +32,7 @@ test('returns the adapter outcome without rewriting it', async () => {
 })
 
 test('reads the validated Codex catalog from the main process', async () => {
-  const catalog = {
-    data: [
-      {
-        id: 'gpt-live',
-        model: 'gpt-live',
-        displayName: 'Live model',
-        description: 'Advertised by app-server',
-        defaultReasoningEffort: 'focused',
-        isDefault: true,
-        hidden: false,
-        supportedReasoningEfforts: [{ reasoningEffort: 'focused', description: 'Focused' }],
-      },
-    ],
-    nextCursor: null,
-  }
+  const catalog = codexModelCatalogFixture()
   const client = createManagedSessionClient(async (_channel, request) => ({
     version: 1,
     type: 'managed-session.catalog.result',
