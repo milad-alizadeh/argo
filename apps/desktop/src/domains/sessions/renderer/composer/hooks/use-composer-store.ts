@@ -45,6 +45,7 @@ const pendingTurnSchema = z
 // attachments, and the harness the last new Session was set to, app-wide.
 export type ComposerState = {
   harness: SessionHarness
+  rememberedSetup: Partial<Record<SessionHarness, Pick<TurnSetup, 'model' | 'effort'>>>
   drafts: Record<string, string>
   attachments: Record<string, ComposerAttachment[]>
   tickets: Record<string, ComposerTicketContext[]>
@@ -52,6 +53,7 @@ export type ComposerState = {
   markers: Record<string, TurnMarkerEntry>
   setup: Record<string, TurnSetup>
   chooseHarness: (harness: SessionHarness) => void
+  rememberSetup: (harness: SessionHarness, setup: Pick<TurnSetup, 'model' | 'effort'>) => void
   setDraft: (composerKey: string, text: string) => void
   addAttachments: (composerKey: string, paths: string[]) => void
   removeAttachment: (composerKey: string, id: string) => void
@@ -72,6 +74,10 @@ export type ComposerState = {
 const storedSchema = z
   .object({
     harness: z.enum(SESSION_HARNESSES),
+    rememberedSetup: z.partialRecord(
+      z.enum(SESSION_HARNESSES),
+      z.strictObject({ model: z.string(), effort: z.string() }),
+    ),
     drafts: z.record(z.string(), z.string()),
     attachments: z.record(z.string(), z.array(attachmentSchema)),
     pendingTurns: z.record(z.string(), z.array(pendingTurnSchema)),
@@ -94,6 +100,7 @@ export const useComposerStore = create<ComposerState>()(
   persist(
     (set) => ({
       harness: 'claude',
+      rememberedSetup: {},
       drafts: {},
       attachments: {},
       tickets: {},
@@ -105,8 +112,9 @@ export const useComposerStore = create<ComposerState>()(
     {
       name: 'argo.composer',
       storage: createJSONStorage(() => composerStorage),
-      partialize: ({ harness, drafts, attachments, pendingTurns, tickets }) => ({
+      partialize: ({ harness, rememberedSetup, drafts, attachments, pendingTurns, tickets }) => ({
         harness,
+        rememberedSetup,
         drafts,
         attachments,
         pendingTurns,
