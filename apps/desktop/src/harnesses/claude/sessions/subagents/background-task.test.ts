@@ -7,7 +7,7 @@ import {
   chainBackgroundTasks,
   chainMessages,
 } from '@/domains/sessions/main/projection/roster/roster'
-import { parseTranscriptLine } from '../records/records'
+import { parseTranscriptLine } from '../../transcript'
 
 test('ends a background command whose notice arrived while the Session was idle', () => {
   const call = JSON.stringify({

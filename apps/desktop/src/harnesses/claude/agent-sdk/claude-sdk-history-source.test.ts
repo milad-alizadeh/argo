@@ -152,6 +152,58 @@ test('parses Claude SDK history envelopes before showing them in the Feed', asyn
   expectEnvelopesAreStructured(transcriptRows)
 })
 
+test('keeps SDK compaction boundaries and folds their continuation summary', async () => {
+  const boundary = {
+    type: 'system',
+    subtype: 'compact_boundary',
+    uuid: 'compact-1',
+    session_id: 'claude-compaction',
+    compact_metadata: { trigger: 'auto', pre_tokens: 180_000 },
+    parent_tool_use_id: null,
+    parent_agent_id: null,
+    message: {},
+  } as SessionMessage
+  const source = createClaudeSdkHistorySource({
+    history: {
+      listSessions: async () => [
+        {
+          sessionId: 'claude-compaction',
+          summary: 'Compaction history',
+          firstPrompt: 'Compaction history',
+          lastModified: 2,
+          createdAt: 1,
+          cwd: '/repository',
+        },
+      ],
+      getSessionMessages: async () => [
+        boundary,
+        {
+          type: 'user',
+          uuid: 'summary-1',
+          session_id: 'claude-compaction',
+          message: {
+            content:
+              'This session is being continued from a previous conversation, resuming with the existing task.',
+          },
+          parent_tool_use_id: null,
+          parent_agent_id: null,
+        },
+      ],
+    },
+  })
+
+  await source.discoverSessions()
+  const feed = await source.readObservedFeed?.('claude-compaction')
+
+  expect(feed?.rows).toContainEqual({
+    shape: 'marker',
+    id: 'compact-1:compacted',
+    marker: 'compacted',
+    summary:
+      'This session is being continued from a previous conversation, resuming with the existing task.',
+  })
+})
+
 test('lists Claude Sessions without waiting for their message histories', async () => {
   const source = createClaudeSdkHistorySource({
     history: {

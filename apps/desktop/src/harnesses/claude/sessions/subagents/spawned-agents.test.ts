@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript/transcript'
 import { readSubagents } from '@/domains/sessions/contract/observation/signals'
 import { projectFeed } from '@/domains/sessions/main/projection/feed/feed-incremental'
-import { parseTranscriptLine } from '../records/records'
+import { parseTranscriptLine } from '../../transcript'
 import { readingSpawnedAgents } from './spawned-agents'
 
 const SPAWN = {

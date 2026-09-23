@@ -5,7 +5,7 @@ import type {
 } from '@/domains/sessions/contract/model/transcript/transcript'
 import { taggedField, taggedText } from '@/harnesses/host/envelope-tags'
 import { isRecord } from '@/shared/validation'
-import { readTaskDelivery } from '../subagents/task-notification'
+import { readTaskDelivery } from '../../sessions/subagents/task-notification'
 import { readableCommandOutput } from './command-output'
 
 function envelopeText(content: unknown): string | null {

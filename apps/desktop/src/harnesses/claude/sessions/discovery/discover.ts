@@ -7,8 +7,7 @@ import {
   createTranscriptDiscoverer,
   type TranscriptDiscovery,
 } from '@/domains/sessions/main/observation/reader/discover-transcript-sessions'
-import { parseTranscriptLine } from '../records/records'
-import { normalizeClaudeRecords } from './normalize-records'
+import { normalizeClaudeRecords, parseTranscriptLine } from '../../transcript'
 
 export type Discovery = TranscriptDiscovery
 

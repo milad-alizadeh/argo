@@ -9,8 +9,7 @@ import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript
 import { discoverRoster } from '@/domains/sessions/main/observation/reader/discover-roster'
 import type { SessionSource } from '@/domains/sessions/main/observation/reader/session-source'
 import { projectFeed } from '@/domains/sessions/main/projection/feed/feed-incremental'
-import { normalizeClaudeRecords } from '../sessions/discovery/normalize-records'
-import { parseTranscriptLine } from '../sessions/records/records'
+import { normalizeClaudeRecords, parseTranscriptLine } from '../transcript'
 import {
   type ClaudeSdkHistory,
   readClaudeSessionMessages,
@@ -58,9 +57,7 @@ function feedOf(
   sessionId: string,
   messages: Awaited<ReturnType<typeof readClaudeSessionMessages>>,
 ): SessionFeedRow[] {
-  const records = messages
-    .filter((message) => message.type !== 'system')
-    .flatMap((message) => parseTranscriptLine(JSON.stringify(message)) ?? [])
+  const records = messages.flatMap((message) => parseTranscriptLine(JSON.stringify(message)) ?? [])
   const file = transcriptFileFrom(`sdk://${sessionId}`, {
     sessionId,
     records: normalizeClaudeRecords(records),

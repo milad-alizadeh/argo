@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { withoutBlocks } from '../sessions/discovery/transcript-file'
-import { parseTranscriptLine } from '../sessions/records/records'
+import { parseTranscriptLine } from '../transcript'
 import { fixtureFile } from './session-fixtures'
 
 test('names the Session from the file name, not from a record inside it', async () => {

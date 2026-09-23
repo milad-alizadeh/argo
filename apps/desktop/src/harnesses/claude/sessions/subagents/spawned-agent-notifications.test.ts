@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { readSubagents } from '@/domains/sessions/contract/observation/signals'
-import { parseTranscriptLine } from '../records/records'
+import { parseTranscriptLine } from '../../transcript'
 import { readingSpawnedAgents } from './spawned-agents'
 
 const SPAWN = {
