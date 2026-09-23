@@ -46,16 +46,73 @@ test('adds a watched Claude SDK Session and its vendor history to the roster', a
   expect(feed?.chainId).toBe('claude-1')
   expect(feed?.rows).toContainEqual({
     shape: 'prose',
-    id: 'message-1',
+    id: 'message-1:0',
     role: 'user',
     text: 'Review this change',
   })
   expect(feed?.rows).toContainEqual({
     shape: 'prose',
-    id: 'message-2',
+    id: 'message-2:0',
     role: 'assistant',
     text: 'SDK block reply',
   })
+})
+
+test('parses Claude SDK history envelopes before showing them in the Feed', async () => {
+  const source = createClaudeSdkHistorySource({
+    history: {
+      listSessions: async () => [
+        { sessionId: 'claude-envelope', summary: 'Envelope history', lastModified: 1 },
+      ],
+      getSessionMessages: async () => [
+        {
+          type: 'user',
+          uuid: 'command-spec',
+          session_id: 'claude-envelope',
+          message: {
+            content:
+              '<command-message>to-spec</command-message><command-name>/to-spec</command-name><command-args>https://github.com/milad-alizadeh/argo/issues/2669</command-args>',
+          },
+          parent_tool_use_id: null,
+          parent_agent_id: null,
+        },
+        {
+          type: 'user',
+          uuid: 'task-notification',
+          session_id: 'claude-envelope',
+          message: {
+            content:
+              '<task-notification><task-id>agent-9</task-id><tool-use-id>toolu_1</tool-use-id><status>completed</status><summary>Agent "Explore turn-setup and harness code for issue 2669" finished</summary><note>Done.</note><result>Found the cause.</result></task-notification>',
+          },
+          parent_tool_use_id: null,
+          parent_agent_id: null,
+        },
+        {
+          type: 'user',
+          uuid: 'literal-tags',
+          session_id: 'claude-envelope',
+          message: { content: 'The literal <status>completed</status> tag is documented.' },
+          parent_tool_use_id: null,
+          parent_agent_id: null,
+        },
+      ],
+    },
+  })
+
+  await source.discoverSessions()
+  const rows = (await source.readObservedFeed?.('claude-envelope'))?.rows ?? []
+
+  expect(rows.some((row) => JSON.stringify(row).includes('<command-message>'))).toBe(false)
+  expect(rows.some((row) => JSON.stringify(row).includes('<task-notification>'))).toBe(false)
+  expect(rows).toContainEqual(
+    expect.objectContaining({
+      shape: 'event',
+      text: '/to-spec https://github.com/milad-alizadeh/argo/issues/2669',
+    }),
+  )
+  expect(
+    rows.some((row) => JSON.stringify(row).includes('literal <status>completed</status> tag')),
+  ).toBe(true)
 })
 
 test('lists Claude Sessions without waiting for their message histories', async () => {

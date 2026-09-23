@@ -36,14 +36,18 @@
     },
     {
       "name": "claude-sdk-history-does-not-import-retired-readers",
-      "comment": "Claude SDK history reads the supported SDK. Transcript files are invalidation signals only (#2583).",
+      "comment": "Claude SDK history reads the supported SDK; it shares record parsing and normalization with transcript history (#2583).",
       "severity": "error",
       "from": {
         "path": "^apps/desktop/src/harnesses/claude/agent-sdk/",
         "pathNot": "\\.(test|stories)\\.(ts|tsx)$"
       },
       "to": {
-        "path": "^apps/desktop/src/harnesses/claude/sessions/"
+        "path": "^apps/desktop/src/harnesses/claude/sessions/",
+        "pathNot": [
+          "^apps/desktop/src/harnesses/claude/sessions/discovery/normalize-records\\.ts$",
+          "^apps/desktop/src/harnesses/claude/sessions/records/records\\.ts$"
+        ]
       }
     },
     {

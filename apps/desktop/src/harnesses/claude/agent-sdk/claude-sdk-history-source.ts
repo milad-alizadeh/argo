@@ -1,28 +1,21 @@
 import { getSessionMessages, listSessions } from '@anthropic-ai/claude-agent-sdk'
-import { z } from 'zod'
 import {
   managedRosterRow,
   type SessionFeedRow,
   type SessionRosterRow,
 } from '@/domains/sessions/contract/model/models'
+import { stitchChains } from '@/domains/sessions/contract/model/transcript/chains'
+import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript/transcript-file'
 import { discoverRoster } from '@/domains/sessions/main/observation/reader/discover-roster'
 import type { SessionSource } from '@/domains/sessions/main/observation/reader/session-source'
+import { projectFeed } from '@/domains/sessions/main/projection/feed/feed-incremental'
+import { normalizeClaudeRecords } from '../sessions/discovery/normalize-records'
+import { parseTranscriptLine } from '../sessions/records/records'
 import {
   type ClaudeSdkHistory,
   readClaudeSessionMessages,
   readClaudeSessionPage,
 } from './claude-sdk-history'
-
-const messageText = z
-  .object({
-    content: z.union([
-      z.string(),
-      z
-        .array(z.object({ type: z.literal('text'), text: z.string() }))
-        .transform((blocks) => blocks.map((block) => block.text).join('')),
-    ]),
-  })
-  .transform(({ content }) => content)
 
 type StoredSession = Awaited<ReturnType<typeof readClaudeSessionPage>>[number]
 
@@ -61,20 +54,19 @@ function rowOf(session: StoredSession) {
   })
 }
 
-function feedOf(messages: Awaited<ReturnType<typeof readClaudeSessionMessages>>): SessionFeedRow[] {
-  return messages.flatMap((message) => {
-    if (message.type === 'system') return []
-    const text = messageText.safeParse(message.message)
-    if (!text.success) return []
-    return [
-      {
-        shape: 'prose' as const,
-        id: message.uuid,
-        role: message.type === 'user' ? 'user' : 'assistant',
-        text: text.data,
-      },
-    ]
+function feedOf(
+  sessionId: string,
+  messages: Awaited<ReturnType<typeof readClaudeSessionMessages>>,
+): SessionFeedRow[] {
+  const records = messages
+    .filter((message) => message.type !== 'system')
+    .flatMap((message) => parseTranscriptLine(JSON.stringify(message)) ?? [])
+  const file = transcriptFileFrom(`sdk://${sessionId}`, {
+    sessionId,
+    records: normalizeClaudeRecords(records),
   })
+  const chain = stitchChains([file])[0]
+  return chain === undefined ? [] : projectFeed(chain, undefined).rows
 }
 
 export function createClaudeSdkHistorySource(
@@ -120,7 +112,10 @@ export function createClaudeSdkHistorySource(
         : {
             chainId: sessionId,
             revision: String(revision),
-            rows: feedOf(await readClaudeSessionMessages(history, session.sessionId)),
+            rows: feedOf(
+              session.sessionId,
+              await readClaudeSessionMessages(history, session.sessionId),
+            ),
           }
     },
     readShellOutput: async () => ({ state: 'absent' }),
