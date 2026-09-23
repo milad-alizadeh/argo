@@ -23,13 +23,12 @@ async function transcriptPaths(root: string): Promise<string[]> {
 }
 
 const RAW_TAG = /<\/?[a-z][a-z0-9_-]*(?:\s[^>]*)?>/i
-const KNOWN_ENVELOPES =
-  /<(?:task-notification|pasted_content|bash-input|bash-stdout|bash-stderr)(?:\s|>)/i
 const PARSERS = { claude: parseTranscriptLine, codex: parseCodexTranscriptLine }
 const REQUIRED_ENVELOPES = {
   claude: ['task-notification', 'pasted_content', 'bash-input', 'bash-stdout', 'bash-stderr'],
   codex: ['task-notification'],
 } as const
+type RequiredEnvelope = (typeof REQUIRED_ENVELOPES)[SessionHarness][number]
 
 function envelopeIn(line: string, envelope: string) {
   return new RegExp(`<${envelope}(?:\\s|>)`, 'i').test(line)
@@ -45,7 +44,6 @@ function assertNoProseFallback(harness: SessionHarness, line: string, record: Tr
 }
 
 function assertTaskNotification(harness: SessionHarness, line: string, record: TranscriptRecord) {
-  if (!/<task-notification(?:\s|>)/i.test(line)) return
   const isStructured =
     record.kind === 'event' ||
     record.kind === 'background-task' ||
@@ -56,7 +54,6 @@ function assertTaskNotification(harness: SessionHarness, line: string, record: T
 }
 
 function assertPastedContent(harness: SessionHarness, line: string, record: TranscriptRecord) {
-  if (!/<pasted_content(?:\s|>)/i.test(line)) return
   assert.equal(
     record.kind === 'message' && record.blocks.some((block) => block.shape === 'pasted-content'),
     true,
@@ -64,16 +61,25 @@ function assertPastedContent(harness: SessionHarness, line: string, record: Tran
   )
 }
 
-function assertBashEnvelope(harness: SessionHarness, line: string, record: TranscriptRecord) {
-  if (/<bash-input(?:\s|>)/i.test(line)) {
+function assertBashEnvelope({
+  harness,
+  line,
+  record,
+  envelope,
+}: {
+  harness: SessionHarness
+  line: string
+  record: TranscriptRecord
+  envelope: 'bash-input' | 'bash-stdout' | 'bash-stderr'
+}) {
+  if (envelope === 'bash-input') {
     assert.equal(
       record.kind === 'message' &&
         record.blocks.some((block) => block.shape === 'event' && block.event === 'command'),
       true,
       `${harness} Bash input was not structured: ${line}`,
     )
-  }
-  if (/<bash-(?:stdout|stderr)(?:\s|>)/i.test(line)) {
+  } else {
     assert.equal(
       record.kind === 'command-output',
       true,
@@ -82,23 +88,40 @@ function assertBashEnvelope(harness: SessionHarness, line: string, record: Trans
   }
 }
 
-function assertKnownRecords(harness: SessionHarness, lines: string[]) {
-  const observed = new Set<string>()
+function assertKnownRecords(
+  harness: SessionHarness,
+  lines: string[],
+  observed: Set<RequiredEnvelope>,
+) {
   for (const line of lines) {
     const source: unknown = JSON.parse(line)
     assert.ok(isRecord(source), `${harness} transcript line was not an object: ${line}`)
     const record = PARSERS[harness](line)
     assert.ok(record, `${harness} record was dropped: ${line}`)
     assert.notEqual(record.kind, 'unreadable', `${harness} record was unreadable: ${line}`)
-    if (!KNOWN_ENVELOPES.test(line)) continue
     for (const envelope of REQUIRED_ENVELOPES[harness]) {
-      if (envelopeIn(line, envelope)) observed.add(envelope)
+      if (!envelopeIn(line, envelope)) continue
+      observed.add(envelope)
+      switch (envelope) {
+        case 'task-notification':
+          assertTaskNotification(harness, line, record)
+          break
+        case 'pasted_content':
+          assertPastedContent(harness, line, record)
+          break
+        case 'bash-input':
+        case 'bash-stdout':
+        case 'bash-stderr':
+          assertBashEnvelope({ harness, line, record, envelope })
+          break
+      }
     }
-    assertNoProseFallback(harness, line, record)
-    assertTaskNotification(harness, line, record)
-    assertPastedContent(harness, line, record)
-    assertBashEnvelope(harness, line, record)
+    if (REQUIRED_ENVELOPES[harness].some((envelope) => envelopeIn(line, envelope)))
+      assertNoProseFallback(harness, line, record)
   }
+}
+
+function assertRequiredEnvelopes(harness: SessionHarness, observed: Set<RequiredEnvelope>) {
   assert.deepEqual(
     [...observed].sort(),
     [...REQUIRED_ENVELOPES[harness]].sort(),
@@ -144,9 +167,13 @@ function assertFeedRows(harness: SessionHarness, rows: ReturnType<typeof project
   }
 }
 
-async function auditTranscript(harness: SessionHarness, filePath: string) {
+async function auditTranscript(
+  harness: SessionHarness,
+  filePath: string,
+  observed: Set<RequiredEnvelope>,
+) {
   const lines = (await readFile(filePath, 'utf8')).split('\n').filter((line) => line.trim() !== '')
-  assertKnownRecords(harness, lines)
+  assertKnownRecords(harness, lines, observed)
   const file = readTranscriptFile(filePath, {
     sessionId: path.basename(filePath, '.jsonl'),
     lines,
@@ -168,6 +195,8 @@ export async function assertTranscriptFeedCorpus(
       filePath.includes(sessionIds[harness]),
     )
     assert.ok(files.length > 0, `the real ${harness} CLI recorded no transcript corpus`)
-    for (const filePath of files) await auditTranscript(harness, filePath)
+    const observed = new Set<RequiredEnvelope>()
+    for (const filePath of files) await auditTranscript(harness, filePath, observed)
+    assertRequiredEnvelopes(harness, observed)
   }
 }

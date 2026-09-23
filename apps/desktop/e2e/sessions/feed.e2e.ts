@@ -190,7 +190,7 @@ test.describe('with real Session transcript corpora', () => {
     const codexSessionId = await proveSessionCreatedByClick(session.page(), backend, {
       harness: 'codex',
       prompt:
-        '<task-notification><task-id>corpus-task</task-id><status>completed</status><summary>Task finished</summary></task-notification> Use a shell command to print hello, then report the output.',
+        '<task-notification><task-id>corpus-task</task-id><status>completed</status><summary>Task finished</summary></task-notification>',
       budgetRunSetup: true,
     })
     const home = path.join(session.root, 'home')

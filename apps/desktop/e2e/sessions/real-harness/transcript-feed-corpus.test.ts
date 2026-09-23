@@ -4,6 +4,22 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { assertTranscriptFeedCorpus } from './transcript-feed-corpus'
 
+function jsonLines(records: object[]) {
+  return records.map((record) => JSON.stringify(record)).join('\n')
+}
+
+async function writeCorpus(
+  roots: { claude: string; codex: string },
+  claude: object[],
+  codex: object,
+) {
+  await Promise.all([
+    writeFile(path.join(roots.claude, 'claude-session-main.jsonl'), jsonLines(claude.slice(0, 2))),
+    writeFile(path.join(roots.claude, 'claude-session-task.jsonl'), jsonLines(claude.slice(2))),
+    writeFile(path.join(roots.codex, 'codex-session.jsonl'), JSON.stringify(codex)),
+  ])
+}
+
 test('audits Claude and Codex transcript records through their Feed projections', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-feed-corpus-'))
   const roots = { claude: path.join(root, 'claude'), codex: path.join(root, 'codex') }
@@ -60,13 +76,7 @@ test('audits Claude and Codex transcript records through their Feed projections'
     },
   }
   try {
-    await Promise.all([
-      writeFile(
-        path.join(roots.claude, 'claude-session.jsonl'),
-        claude.map((line) => JSON.stringify(line)).join('\n'),
-      ),
-      writeFile(path.join(roots.codex, 'codex-session.jsonl'), JSON.stringify(codex)),
-    ])
+    await writeCorpus(roots, claude, codex)
     await assertTranscriptFeedCorpus(roots, { claude: 'claude-session', codex: 'codex-session' })
   } finally {
     await rm(root, { recursive: true, force: true })
