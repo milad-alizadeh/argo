@@ -55,7 +55,10 @@ export function claudeTurnSetup(catalog: ClaudeModelCatalog | null): TurnSetupCh
         defaultEffort: supportedEffortLevels.includes('medium')
           ? 'medium'
           : supportedEffortLevels[0],
-        reads: (reading) => reading === value || reading === resolvedModel,
+        reads: (reading) =>
+          reading === value ||
+          reading === resolvedModel ||
+          (resolvedModel !== undefined && reading.startsWith(`claude-${value}-`)),
       }),
     ),
     efforts: [...new Set(models.flatMap(({ supportedEffortLevels }) => supportedEffortLevels))].map(

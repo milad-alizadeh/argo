@@ -62,6 +62,16 @@ test('reads a Session setup off the Harness words its transcript wrote', () => {
   ).toEqual({ model: 'sonnet', effort: 'xhigh', mode: 'manual' })
 })
 
+test('keeps a stable model alias for historical resolved IDs', () => {
+  expect(
+    setupFromReading(CLAUDE_TURN_SETUP, {
+      model: 'claude-sonnet-4-5',
+      effort: 'high',
+      mode: 'manual',
+    }),
+  ).toEqual({ model: 'sonnet', effort: 'high', mode: 'manual' })
+})
+
 test('keeps the opening choice for what the transcript has not stated or Argo does not offer', () => {
   expect(
     setupFromReading(CLAUDE_TURN_SETUP, { model: 'claude-mythos-1', effort: null, mode: null }),
