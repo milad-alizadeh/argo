@@ -3,9 +3,11 @@ import { useState } from 'react'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 import type { ClaudeModelCatalog } from '@/harnesses/claude/catalog'
 import type { CodexModelCatalog } from '@/harnesses/codex/catalog'
+import {
+  claudeChoices,
+  codexChoices,
+} from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
 import type { SessionHarness } from '../../harness/harnesses'
-import { claudeChoices } from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
-import { codexChoices } from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
 import type { TurnSetup } from '../turn-setup/turn-setup'
 import { RunSetupMenu } from './run-setup-menu'
 
