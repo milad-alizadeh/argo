@@ -126,6 +126,12 @@ test('renames a managed Claude Session through the SDK without adding a prompt',
   expect(renames).toEqual([
     { sessionId: 'native-1', title: 'Loud boundaries + close known silent-failure bugs' },
   ])
+  expect(adapter.roster()).toMatchObject([
+    {
+      id: 'native-1',
+      title: { text: 'Loud boundaries + close known silent-failure bugs', source: 'custom' },
+    },
+  ])
   expect(fake.sentPrompts()).toEqual(['hello'])
   adapter.close()
 })

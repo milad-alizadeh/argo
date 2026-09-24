@@ -33,24 +33,50 @@ export function watchedChanges(changed: Set<() => void>) {
 
 async function renameManagedSession(options: {
   registry: ReturnType<typeof sessionRegistry>
+  renamedTitles: Map<string, string>
   renameSession: typeof renameClaudeSession
   sessionId: string
   title: string
 }) {
-  const { registry, renameSession, sessionId, title } = options
+  const { registry, renamedTitles, renameSession, sessionId, title } = options
   const entry = registry.requireEntry({ harness: 'claude', nativeId: sessionId })
   await renameSession(sessionId, title)
+  renamedTitles.set(sessionId, title)
   entry.revision += 1
+}
+
+function rosterWithRenamedTitles(
+  registry: ReturnType<typeof sessionRegistry>,
+  renamedTitles: Map<string, string>,
+) {
+  return () =>
+    registry.roster().map((row) => {
+      const text = renamedTitles.get(row.id)
+      return text === undefined ? row : { ...row, title: { text, source: 'custom' as const } }
+    })
+}
+
+function createRuntime(deps: Parameters<typeof createClaudeSessionAdapter>[0]) {
+  const defaultReadResumePermission = process.env[PROJECT_PROOF_STORE_ENV]
+    ? async () => ({ resumable: true as const })
+    : readClaudeResumePermission
+  return {
+    ...deps,
+    createQuery: deps.createQuery ?? createClaudeQuery,
+    now: deps.now ?? (() => new Date()),
+    readResumePermission: deps.readResumePermission ?? defaultReadResumePermission,
+  }
 }
 
 async function executeCommand(options: {
   command: SessionCommand
   runtime: Parameters<typeof openClaudeSession>[0]['deps']
   registry: ReturnType<typeof sessionRegistry>
+  renamedTitles: Map<string, string>
   readModelCatalog: () => ReturnType<typeof readClaudeModelCatalog>
   renameSession: typeof renameClaudeSession
 }): Promise<SessionCommandOutcome> {
-  const { command, runtime, registry, readModelCatalog, renameSession } = options
+  const { command, runtime, registry, renamedTitles, readModelCatalog, renameSession } = options
   if (command.type === 'session.start') {
     const catalog = await readModelCatalog()
     if (catalog === null)
@@ -79,6 +105,7 @@ async function executeCommand(options: {
   const entry = registry.requireEntry(command.session)
   if (command.type === 'session.rename') {
     await renameSession(command.session.nativeId, command.title)
+    renamedTitles.set(command.session.nativeId, command.title)
     entry.revision += 1
     return acceptedSessionOutcome(entry)
   }
@@ -101,18 +128,10 @@ export function createClaudeSessionAdapter(deps: {
   readModelCatalog?: () => Promise<ClaudeModelCatalog | null>
   renameSession?: typeof renameClaudeSession
 }): ClaudeSessionAdapter {
-  // The packaged proof mock stores sessions only in its transcript fixture, not the Agent SDK.
-  const defaultReadResumePermission = process.env[PROJECT_PROOF_STORE_ENV]
-    ? async () => ({ resumable: true as const })
-    : readClaudeResumePermission
-  const runtime = {
-    ...deps,
-    createQuery: deps.createQuery ?? createClaudeQuery,
-    now: deps.now ?? (() => new Date()),
-    readResumePermission: deps.readResumePermission ?? defaultReadResumePermission,
-  }
+  const runtime = createRuntime(deps)
   const changed = new Set<() => void>()
   const registry = sessionRegistry(changed, deps.sessionService)
+  const renamedTitles = new Map<string, string>()
   const renameSession = deps.renameSession ?? renameClaudeSession
   const catalogCache = new ClaudeModelCatalogCache()
   const readModelCatalog =
@@ -124,7 +143,14 @@ export function createClaudeSessionAdapter(deps: {
       }))
   return {
     execute: (command) =>
-      executeCommand({ command, runtime, registry, readModelCatalog, renameSession }),
+      executeCommand({
+        command,
+        runtime,
+        registry,
+        renamedTitles,
+        readModelCatalog,
+        renameSession,
+      }),
     readModelCatalog,
     subscribe: (session, listener) => {
       const entry = registry.requireEntry(session)
@@ -154,8 +180,8 @@ export function createClaudeSessionAdapter(deps: {
       })
     },
     rename: (sessionId, title) =>
-      renameManagedSession({ registry, renameSession, sessionId, title }),
-    roster: registry.roster,
+      renameManagedSession({ registry, renamedTitles, renameSession, sessionId, title }),
+    roster: rosterWithRenamedTitles(registry, renamedTitles),
     liveMessages: registry.liveMessages,
     projection: registry.projection,
     onRosterChanged: watchedChanges(changed),
