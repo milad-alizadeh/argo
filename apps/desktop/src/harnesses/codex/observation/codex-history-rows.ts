@@ -52,6 +52,9 @@ function relayOutput(projection: SessionProjection, prompt: string): boolean {
 
 type RosterIssue = 'missingTitle' | 'invalidTimestamp' | 'relayOutput'
 
+const BOUNDARY_REPORT_INTERVAL_MS = 30_000
+let lastBoundaryReportAt = Number.NEGATIVE_INFINITY
+
 function rosterIssues(
   projection: SessionProjection,
   prompt: string,
@@ -125,8 +128,10 @@ export function rosterRows(
     relayOutput: inspected.filter(({ issues }) => issues.includes('relayOutput')).length,
   }
   const unreadable = inspected.filter(({ issues }) => issues.length > 0).length
-  if (unreadable > 0) {
+  const now = Date.now()
+  if (unreadable > 0 && now - lastBoundaryReportAt >= BOUNDARY_REPORT_INTERVAL_MS) {
     console.warn('Codex app-server Session records have boundary issues', { unreadable, ...counts })
+    lastBoundaryReportAt = now
   }
   return { rows: inspected.flatMap(({ row }) => (row === null ? [] : [row])), unreadable }
 }

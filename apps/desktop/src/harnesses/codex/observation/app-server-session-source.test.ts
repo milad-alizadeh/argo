@@ -5,6 +5,7 @@ import type {
   SessionProjection,
 } from '@/domains/sessions/next/contract/session-projection-contract'
 import { createCodexAppServerSessionSource } from './app-server-session-source'
+import { discovery } from './codex-history-rows'
 
 function projection(): SessionProjection {
   return {
@@ -258,4 +259,46 @@ test('reports missing Codex timestamps and filters rows without titles or with r
     source.managedSessions?.().map((row) => row.id),
     ['thread-1', 'missing-timestamp'],
   )
+})
+
+test('limits repeated Codex boundary warnings while retaining unreadable counts', () => {
+  const originalWarn = console.warn
+  const originalNow = Date.now
+  const warnings: unknown[][] = []
+  let now = originalNow() + 31_000
+  Date.now = () => now
+  console.warn = (...values: unknown[]) => warnings.push(values)
+  try {
+    const invalid = { ...projection(), turns: [] }
+    let records: SessionProjection[] = [
+      { ...invalid, session: { ...invalid.session, nativeId: 'invalid-1' } },
+    ]
+    const first = discovery(records, () => null)
+    records = [
+      { ...invalid, session: { ...invalid.session, nativeId: 'invalid-2' } },
+      { ...invalid, session: { ...invalid.session, nativeId: 'invalid-3' } },
+    ]
+    const second = discovery(records, () => null)
+    assert.equal(first.filesUnreadable, 1)
+    assert.equal(second.filesUnreadable, 2)
+    assert.equal(warnings.length, 1)
+    assert.deepEqual(warnings[0], [
+      'Codex app-server Session records have boundary issues',
+      { unreadable: 1, missingTitle: 0, invalidTimestamp: 1, relayOutput: 0 },
+    ])
+
+    now += 30_000
+    const later = discovery(records, () => null)
+    assert.equal(later.filesUnreadable, 2)
+    assert.equal(warnings.length, 2)
+    assert.deepEqual(warnings[1]?.[1], {
+      unreadable: 2,
+      missingTitle: 0,
+      invalidTimestamp: 2,
+      relayOutput: 0,
+    })
+  } finally {
+    Date.now = originalNow
+    console.warn = originalWarn
+  }
 })
