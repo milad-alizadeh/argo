@@ -2,9 +2,7 @@
   "version": "7",
   "dialect": "sqlite",
   "id": "541c9b55-22b7-4a66-ac5b-70a44528339d",
-  "prevIds": [
-    "982b4998-6c3b-4349-9bf5-10a382807afa"
-  ],
+  "prevIds": ["982b4998-6c3b-4349-9bf5-10a382807afa"],
   "ddl": [
     {
       "name": "managed_workspace_recovery",
@@ -575,13 +573,9 @@
       "table": "session"
     },
     {
-      "columns": [
-        "workspace_id"
-      ],
+      "columns": ["workspace_id"],
       "tableTo": "workspace",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -590,13 +584,9 @@
       "table": "managed_workspace_recovery"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "nameExplicit": false,
@@ -605,13 +595,9 @@
       "table": "project_selection"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "nameExplicit": false,
@@ -620,13 +606,9 @@
       "table": "project_setup_actor"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "nameExplicit": false,
@@ -635,13 +617,9 @@
       "table": "project_setup_checkpoint"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "nameExplicit": false,
@@ -650,13 +628,9 @@
       "table": "project_setup_effect"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "NO ACTION",
       "nameExplicit": false,
@@ -665,13 +639,9 @@
       "table": "project_setup_recovery"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -680,13 +650,9 @@
       "table": "project_workspace_selection"
     },
     {
-      "columns": [
-        "workspace_id"
-      ],
+      "columns": ["workspace_id"],
       "tableTo": "workspace",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -695,13 +661,9 @@
       "table": "project_workspace_selection"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -710,13 +672,9 @@
       "table": "workspace"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
       "nameExplicit": false,
@@ -725,108 +683,84 @@
       "table": "session"
     },
     {
-      "columns": [
-        "workspace_id"
-      ],
+      "columns": ["workspace_id"],
       "nameExplicit": false,
       "name": "managed_workspace_recovery_pk",
       "table": "managed_workspace_recovery",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "project_pk",
       "table": "project",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "singleton"
-      ],
+      "columns": ["singleton"],
       "nameExplicit": false,
       "name": "project_selection_pk",
       "table": "project_selection",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "nameExplicit": false,
       "name": "project_setup_actor_pk",
       "table": "project_setup_actor",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "nameExplicit": false,
       "name": "project_setup_checkpoint_pk",
       "table": "project_setup_checkpoint",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "nameExplicit": false,
       "name": "project_setup_effect_pk",
       "table": "project_setup_effect",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "nameExplicit": false,
       "name": "project_setup_recovery_pk",
       "table": "project_setup_recovery",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "nameExplicit": false,
       "name": "project_workspace_selection_pk",
       "table": "project_workspace_selection",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "workspace_pk",
       "table": "workspace",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "session_id"
-      ],
+      "columns": ["session_id"],
       "nameExplicit": false,
       "name": "session_ticket_link_pk",
       "table": "session_ticket_link",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "argo_id"
-      ],
+      "columns": ["argo_id"],
       "nameExplicit": false,
       "name": "session_preference_pk",
       "table": "session_preference",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "argo_id"
-      ],
+      "columns": ["argo_id"],
       "nameExplicit": false,
       "name": "session_pk",
       "table": "session",
@@ -873,9 +807,7 @@
       "table": "session"
     },
     {
-      "columns": [
-        "common_directory"
-      ],
+      "columns": ["common_directory"],
       "nameExplicit": false,
       "name": "project_common_directory_unique",
       "entityType": "uniques",
