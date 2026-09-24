@@ -100,8 +100,11 @@ export async function proveLiveCodexModelChoices(page) {
     page.getByRole('radiogroup', { name: 'Model' }).getByRole('radio', { name: /Sonnet/ }),
   ).toBeVisible()
   await expect(
-    page.getByRole('radiogroup', { name: 'Model' }).getByRole('radio', { name: /Mock Opus/ }),
-  ).toHaveCount(0)
+    page.getByRole('radiogroup', { name: 'Model' }).getByRole('radio'),
+  ).toHaveCount(4)
+  await expect(
+    page.getByRole('radiogroup', { name: 'Model' }).getByRole('radio', { name: 'Opus 5' }),
+  ).toBeVisible()
   await page.keyboard.press('Escape')
 
   await openNewSessionByClick(page)
