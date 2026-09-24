@@ -26,6 +26,16 @@ test('rejects an unrecognized Claude catalog response', () => {
   expect(claudeModelCatalogSchema.safeParse({ data: [{ value: 'unknown-shape' }] }).success).toBe(
     false,
   )
+  const info = claudeHarnessInfo({
+    data: [{ value: 'unknown-shape' }],
+    supportedPermissionModes: ['manual'],
+  })
+  expect(info).toMatchObject({
+    harness: 'claude',
+    availability: 'unavailable',
+    reason: 'invalid-response',
+  })
+  if (info.availability === 'unavailable') expect(info.detail).toContain('displayName')
 })
 
 test('normalizes Claude defaults and model-specific permission modes at the Harness boundary', () => {

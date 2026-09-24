@@ -20,8 +20,10 @@ function selectedSnapshot(actor: CatalogActor, harness: Harness) {
   return { info, failure: snapshot.context.failure }
 }
 
-export function readCatalogSnapshot(actor: CatalogActor, harness: Harness) {
-  actor.send({ type: 'Catalog requested' })
+export function readCatalogSnapshot(actor: CatalogActor, harness: Harness, refresh = false) {
+  const before = actor.getSnapshot()
+  if (refresh) actor.send({ type: before.matches('Failed') ? 'Retry' : 'Refresh' })
+  else if (before.matches('Idle')) actor.send({ type: 'Catalog requested' })
   const current = actor.getSnapshot()
   if (current.matches('Ready') || current.matches('Failed'))
     return Promise.resolve(selectedSnapshot(actor, harness))
@@ -44,4 +46,11 @@ export function catalogSnapshotProcedure(actor: CatalogActor) {
     .input(inputSchema)
     .output(outputSchema)
     .query(({ input }) => readCatalogSnapshot(actor, input.harness))
+}
+
+export function catalogRefreshProcedure(actor: CatalogActor) {
+  return t.procedure
+    .input(inputSchema)
+    .output(outputSchema)
+    .mutation(({ input }) => readCatalogSnapshot(actor, input.harness, true))
 }

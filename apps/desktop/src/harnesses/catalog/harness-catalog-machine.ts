@@ -61,8 +61,10 @@ const unavailableHarnessSchema = z.strictObject({
   reason: z.enum([
     'not-installed',
     'not-signed-in',
+    'invalid-response',
     'unavailable',
   ]),
+  detail: z.string().optional(),
 })
 export const harnessInfoSchema = z.union([
   availableHarnessSchema,
@@ -111,6 +113,17 @@ export function unavailable(harness: HarnessInfo['harness']): HarnessInfo {
     reason: 'unavailable',
   }
 }
+export function invalidCatalogResponse(
+  harness: HarnessInfo['harness'],
+  error: z.ZodError,
+): HarnessInfo {
+  return {
+    harness,
+    availability: 'unavailable',
+    reason: 'invalid-response',
+    detail: error.message,
+  }
+}
 export function createHarnessCatalogMachine(load: HarnessCatalogLoad) {
   const loadCatalog = fromPromise(load)
   return setup({
@@ -118,6 +131,7 @@ export function createHarnessCatalogMachine(load: HarnessCatalogLoad) {
       context: {} as {
         catalog: HarnessCatalog
         failure: string | null
+        invalidResponseCount: number
       },
       events: {} as HarnessCatalogEvent,
     },
@@ -140,6 +154,7 @@ export function createHarnessCatalogMachine(load: HarnessCatalogLoad) {
         ],
       },
       failure: null,
+      invalidResponseCount: 0,
     },
     states: {
       Idle: {
@@ -157,6 +172,12 @@ export function createHarnessCatalogMachine(load: HarnessCatalogLoad) {
             target: 'Ready',
             actions: assign({
               catalog: ({ event }) => event.output,
+              invalidResponseCount: ({ context, event }) =>
+                context.invalidResponseCount +
+                event.output.harnesses.filter(
+                  (info) =>
+                    info.availability === 'unavailable' && info.reason === 'invalid-response',
+                ).length,
             }),
           },
           onError: {
@@ -174,14 +195,12 @@ export function createHarnessCatalogMachine(load: HarnessCatalogLoad) {
       },
       Ready: {
         on: {
-          'Catalog requested': 'Loading',
           Refresh: 'Loading',
           Retry: 'Loading',
         },
       },
       Failed: {
         on: {
-          'Catalog requested': 'Loading',
           Refresh: 'Loading',
           Retry: 'Loading',
         },

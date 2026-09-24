@@ -2,6 +2,7 @@ import { z } from 'zod'
 import {
   type HarnessInfo,
   harnessInfoSchema,
+  invalidCatalogResponse,
   unavailable,
 } from '@/harnesses/catalog/harness-catalog-machine'
 import type { CodexRequest } from './app-server/codex-app-server-machine'
@@ -136,7 +137,8 @@ export async function readCodexHarnessInfo(request: CodexRequest): Promise<Harne
       cursor = page.nextCursor ?? undefined
     } while (cursor !== undefined)
     return codexHarnessInfo({ data, nextCursor: null })
-  } catch {
+  } catch (error) {
+    if (error instanceof z.ZodError) return invalidCatalogResponse('codex', error)
     return unavailable('codex')
   }
 }

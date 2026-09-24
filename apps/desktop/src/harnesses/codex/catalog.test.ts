@@ -33,6 +33,17 @@ test('rejects an unrecognized model/list response', () => {
   assert.throws(() => readModelCatalog({ data: [{ id: 'unknown-shape' }] }))
 })
 
+test('reports an unrecognized model/list response as a counted Harness failure', async () => {
+  const request: CodexRequest = async (_method, _params, parse) =>
+    parse({ data: [{ id: 'unknown-shape' }] })
+  const info = await readCodexHarnessInfo(request)
+  assert.equal(info.availability, 'unavailable')
+  if (info.availability === 'unavailable') {
+    assert.equal(info.reason, 'invalid-response')
+    assert.match(info.detail ?? '', /model/)
+  }
+})
+
 test('decodes a recorded response from codex 0.147.0', () => {
   const decoded = readModelCatalog(recordedResponse)
   assert.equal(decoded.data[0]?.model, 'gpt-5.6-sol')

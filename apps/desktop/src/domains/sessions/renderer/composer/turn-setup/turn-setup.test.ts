@@ -125,6 +125,44 @@ test('replaces an explicit model and effort removed by a live catalog refresh', 
   expect(next).toEqual(choices.opening)
 })
 
+test('keeps a valid Model and uses its own Effort when a remembered Effort disappears', () => {
+  const choices = claudeChoices({
+    supportedPermissionModes: ['manual'],
+    data: [
+      {
+        value: 'opening',
+        displayName: 'Opening',
+        description: '',
+        supportedEffortLevels: ['medium'],
+      },
+      {
+        value: 'retained',
+        displayName: 'Retained',
+        description: '',
+        supportedEffortLevels: ['high'],
+      },
+    ],
+  })
+  if (choices === null) throw new Error('The test catalog has no choices.')
+  const identity = { kind: 'draft', projectId: 'project-1' } as const
+  expect(choices.opening.effort).toBe('medium')
+  expect(
+    resolvedTurnSetup(choices, {
+      identity,
+      chosen: new Map(),
+      rows: [],
+      remembered: { model: 'retained', effort: 'retired' },
+    }),
+  ).toEqual({ model: 'retained', effort: 'high', mode: 'manual' })
+  expect(
+    setupFromReading(choices, {
+      model: 'retained',
+      effort: 'retired',
+      mode: 'manual',
+    }),
+  ).toEqual({ model: 'retained', effort: 'high', mode: 'manual' })
+})
+
 test('keeps each restored choice Argo still offers and replaces the rest', () => {
   expect(
     supportedSetup(

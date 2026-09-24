@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router'
 import type { Cockpit, ProjectActions } from '@/domains/projects/renderer'
@@ -47,6 +47,7 @@ export function SessionComposerArea({
   const catalogQuery = useQuery(
     trpc.harnessCatalogSnapshot.queryOptions({ harness: harness.harness }),
   )
+  const catalogRefresh = useMutation(trpc.harnessCatalogRefresh.mutationOptions())
   const catalog = catalogQuery.data?.info ?? null
   const pending = useSessionCreationStore((state) => state.pending)
   const identity = composerIdentityOf(
@@ -73,7 +74,12 @@ export function SessionComposerArea({
           catalogQuery.isError || (catalogQuery.isSuccess && catalog?.availability !== 'available')
         }
         refreshCatalog={() => {
-          void catalogQuery.refetch()
+          catalogRefresh.mutate(
+            { harness: harness.harness },
+            {
+              onSettled: () => void catalogQuery.refetch(),
+            },
+          )
         }}
         workspace={
           identity.kind === 'draft'

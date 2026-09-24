@@ -41,7 +41,7 @@ function fieldChoices(choices: TurnSetupChoices, field: SetupField, model?: stri
   const supported = choices.models.find((choice) => choice.value === model)?.efforts
   return supported === undefined
     ? choices.efforts
-    : choices.efforts.filter((choice) => supported.includes(choice.value))
+    : supported.flatMap((value) => choices.efforts.filter((choice) => choice.value === value))
 }
 
 export function modeChoices(choices: TurnSetupChoices, model: string) {
@@ -83,12 +83,9 @@ export function setupFromReading(choices: TurnSetupChoices, reading: SessionSetu
   const model =
     choiceRead(choices, { field: 'model', reading: reading.model })?.value ?? choices.opening.model
   const effort =
-    choiceRead(choices, { field: 'effort', reading: reading.effort, model })?.value ??
-    choices.opening.effort
-  const mode =
-    choiceRead(choices, { field: 'mode', reading: reading.mode, model })?.value ??
-    choices.opening.mode
-  return { model, effort, mode }
+    choiceRead(choices, { field: 'effort', reading: reading.effort, model })?.value ?? ''
+  const mode = choiceRead(choices, { field: 'mode', reading: reading.mode, model })?.value ?? ''
+  return supportedSetup(choices, { model, effort, mode }, choices.opening)
 }
 
 // A stored setup can name a choice Argo no longer offers, and that one field takes the fallback.
@@ -100,19 +97,20 @@ export function supportedSetup(
   const model = fieldChoices(choices, 'model').some((choice) => choice.value === setup.model)
     ? setup.model
     : fallback.model
-  const keep = (field: SetupField) =>
-    fieldChoices(choices, field, field === 'effort' ? model : undefined).some(
-      (choice) => choice.value === setup[field],
-    )
-      ? setup[field]
-      : fallback[field]
+  const modelChoice = choices.models.find((choice) => choice.value === model)
+  const efforts = effortChoices(choices, model)
+  const effort = efforts.some((choice) => choice.value === setup.effort)
+    ? setup.effort
+    : (efforts.find((choice) => choice.value === modelChoice?.defaultEffort)?.value ??
+      efforts[0]?.value ??
+      fallback.effort)
   const modes = modeChoices(choices, model)
   const mode = modes.some((choice) => choice.value === setup.mode)
     ? setup.mode
     : (modes.find((choice) => choice.value === fallback.mode)?.value ??
       modes[0]?.value ??
       fallback.mode)
-  return { model, effort: keep('effort'), mode }
+  return { model, effort, mode }
 }
 
 // What a composer shows: an explicit choice wins; a draft with none falls to the remembered

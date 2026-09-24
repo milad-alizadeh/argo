@@ -44,6 +44,30 @@ test('keeps an available Harness visible when the other catalog is unavailable',
   expect(catalog.harnesses[1]).toEqual(unavailable('codex'))
 })
 
+test('counts invalid vendor responses in the catalog actor', async () => {
+  const actor = createActor(
+    createHarnessCatalogMachine(async () =>
+      harnessCatalogSchema.parse({
+        harnesses: [
+          claudeHarnessInfo({
+            data: [{ value: 'unknown-shape' }],
+            supportedPermissionModes: ['manual'],
+          }),
+          codexHarnessInfo(null),
+        ],
+      }),
+    ),
+  ).start()
+  try {
+    actor.send({ type: 'Catalog requested' })
+    const ready = await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
+    expect(ready.context.invalidResponseCount).toBe(1)
+    expect(ready.context.catalog.harnesses[0]).toMatchObject({ reason: 'invalid-response' })
+  } finally {
+    actor.stop()
+  }
+})
+
 test('loads on request and retries a failed catalog load', async () => {
   let attempts = 0
   const machine = createHarnessCatalogMachine(async () => {

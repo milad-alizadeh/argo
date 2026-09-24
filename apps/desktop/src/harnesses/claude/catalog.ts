@@ -4,6 +4,7 @@ import { z } from 'zod'
 import {
   type HarnessInfo,
   harnessInfoSchema,
+  invalidCatalogResponse,
   unavailable,
 } from '@/harnesses/catalog/harness-catalog-machine'
 
@@ -49,14 +50,16 @@ const permissionModePresentation: Record<
   },
 }
 
-const claudeModelSchema = z.strictObject({
-  value: z.string().min(1),
-  resolvedModel: z.string().min(1).optional(),
-  displayName: z.string().min(1),
-  description: z.string(),
-  supportedEffortLevels: z.array(z.string().min(1)),
-  supportsAutoMode: z.boolean().optional(),
-})
+const claudeModelSchema = z
+  .object({
+    value: z.string().min(1),
+    resolvedModel: z.string().min(1).optional(),
+    displayName: z.string().min(1),
+    description: z.string(),
+    supportedEffortLevels: z.array(z.string().min(1)).optional(),
+    supportsAutoMode: z.boolean().optional(),
+  })
+  .transform((model) => ({ ...model, supportedEffortLevels: model.supportedEffortLevels ?? [] }))
 
 export const claudeModelCatalogSchema = z.strictObject({
   data: z.array(claudeModelSchema),
@@ -87,11 +90,14 @@ function claudeModelChoice(
   }
 }
 
-export function claudeHarnessInfo(catalog: ClaudeModelCatalog | null): HarnessInfo {
-  const models =
-    catalog?.data.filter(({ supportedEffortLevels }) => supportedEffortLevels.length > 0) ?? []
+export function claudeHarnessInfo(response: unknown): HarnessInfo {
+  if (response === null) return unavailable('claude')
+  const parsed = claudeModelCatalogSchema.safeParse(response)
+  if (!parsed.success) return invalidCatalogResponse('claude', parsed.error)
+  const catalog = parsed.data
+  const models = catalog.data.filter((model) => model.supportedEffortLevels.length > 0)
   const defaultModel = models.find(({ value }) => value === 'opus') ?? models[0]
-  const permissionModes = catalog?.supportedPermissionModes ?? []
+  const permissionModes = catalog.supportedPermissionModes
   if (defaultModel === undefined || permissionModes.length === 0) return unavailable('claude')
   const defaultEffort = defaultModel.supportedEffortLevels.includes('medium')
     ? 'medium'
@@ -148,28 +154,9 @@ export async function readClaudeHarnessInfo(executablePath: string | null): Prom
       readSupportedModels(executablePath),
       readSupportedPermissionModes(executablePath),
     ])
-    const catalog = claudeModelCatalogSchema.parse({
-      data: models.map(
-        ({
-          value,
-          resolvedModel,
-          displayName,
-          description,
-          supportedEffortLevels,
-          supportsAutoMode,
-        }) => ({
-          value,
-          resolvedModel,
-          displayName,
-          description,
-          supportedEffortLevels: supportedEffortLevels ?? [],
-          supportsAutoMode,
-        }),
-      ),
-      supportedPermissionModes: permissionModes,
-    })
-    return claudeHarnessInfo(catalog)
-  } catch {
+    return claudeHarnessInfo({ data: models, supportedPermissionModes: permissionModes })
+  } catch (error) {
+    if (error instanceof z.ZodError) return invalidCatalogResponse('claude', error)
     return unavailable('claude')
   }
 }

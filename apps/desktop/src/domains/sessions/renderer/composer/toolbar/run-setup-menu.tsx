@@ -150,8 +150,7 @@ function ModelOptions({ choices, value, onChange }: TurnSetupControlProps) {
                   const modes = modeChoices(choices, model.value)
                   const currentEffort = efforts.find((effort) => effort.value === value.effort)
                   const currentMode = modes.find((mode) => mode.value === value.mode)
-                  const nextEffort =
-                    currentEffort ?? closestEffort(value.effort, efforts, model.defaultEffort)
+                  const nextEffort = currentEffort ?? closestEffort(value.effort, choices, model)
                   onChange({
                     ...value,
                     model: model.value,
@@ -182,14 +181,16 @@ function ModelOptions({ choices, value, onChange }: TurnSetupControlProps) {
 
 function closestEffort(
   current: string,
-  choices: ReturnType<typeof effortChoices>,
-  defaultEffort?: string,
+  choices: TurnSetupChoices,
+  model: TurnSetupChoices['models'][number],
 ) {
-  const order = ['low', 'medium', 'high', 'xhigh', 'max', 'ultra']
+  const order = choices.efforts.map(({ value }) => value)
+  const efforts = effortChoices(choices, model.value)
   const currentRank = order.indexOf(current)
-  if (currentRank === -1) return choices.find(({ value }) => value === defaultEffort) ?? choices[0]
+  if (currentRank === -1)
+    return efforts.find(({ value }) => value === model.defaultEffort) ?? efforts[0]
   return (
-    choices.reduce<(typeof choices)[number] | undefined>((closest, choice) => {
+    efforts.reduce<(typeof efforts)[number] | undefined>((closest, choice) => {
       const rank = order.indexOf(choice.value)
       if (rank === -1) return closest
       if (
@@ -199,7 +200,7 @@ function closestEffort(
         return choice
       return closest
     }, undefined) ??
-    choices.find(({ value }) => value === defaultEffort) ??
-    choices[0]
+    efforts.find(({ value }) => value === model.defaultEffort) ??
+    efforts[0]
   )
 }
