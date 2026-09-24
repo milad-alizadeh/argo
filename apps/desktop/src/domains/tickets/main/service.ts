@@ -4,7 +4,6 @@ import {
   type TicketConnectedReply,
   type TicketDiscoverReply,
   type TicketError,
-  type TicketListReply,
   type TicketUpdateReply,
   ticketError,
 } from '@/domains/tickets/contract/contract'
@@ -92,21 +91,6 @@ export async function connectSource(
 export async function disconnectSource(call: Call): Promise<TicketConnectedReply> {
   if (!(await projectExists(call))) return ticketError('missing-project', call.requestId)
   return saveConnection(call, null)
-}
-
-export async function listTickets(
-  call: Call,
-  request: { query: string; cursor: string | null },
-): Promise<TicketListReply> {
-  const { requestId, projectId } = call
-  const target = await writableConnection(call)
-  if (!target.ok) return target.error
-  const { accountId, scope } = target
-  const page = await readAs(call, accountId, (source, reader) =>
-    source.page(reader, { scope, ...request }),
-  )
-  if (!page.ok) return page.error
-  return { version: 1, type: 'ticket.listed', requestId, projectId, scope, ...page.value }
 }
 
 export async function discoverSources(call: Call, accountId: string): Promise<TicketDiscoverReply> {

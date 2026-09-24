@@ -7,10 +7,8 @@ import { type SearchRosterState, searchRosterRows } from './search-roster-rows'
 // What the one roster context menu does to the row under the pointer.
 export type RosterMenuHandlers = {
   onArchive: (sessionId: SessionId) => void
-  onLinkTicket: (session: Session) => void
   onOpenTicket: (session: Session) => void
   onRename: (session: Session) => void
-  onUnlinkTicket: (session: Session) => void
 }
 
 // Every row-level handler the roster's render chain threads down, named once so no module between

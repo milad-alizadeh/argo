@@ -22,6 +22,8 @@ export {
   projectErrorSchema,
 } from './project-error'
 
+export const PROJECT_SETUP_CHANGED_CHANNEL = 'argo:project:setup:changed'
+
 export const projectOpenRequestSchema = z.strictObject({
   version: z.literal(1),
   type: z.literal('project.open'),

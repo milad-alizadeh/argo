@@ -1,6 +1,6 @@
 # 0039 · Desktop IPC uses an operation table per domain
 
-Status: accepted · 2026-09-13
+Status: superseded by ADR-0048 · 2026-09-24
 
 ## Context
 

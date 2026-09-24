@@ -1,6 +1,5 @@
 import type { ClaudeModelCatalog } from '@/domains/sessions/contract/claude-model-catalog'
 import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
-import type { SessionSource } from '@/domains/sessions/main/observation/reader/session-source'
 import type { Harness, WorkspaceSelection } from '@/domains/sessions/next/contract/session-contract'
 import type { SessionAdapter } from '@/domains/sessions/next/contract/session-projection-contract'
 import type { SessionService } from '@/domains/sessions/next/main/session-service'
@@ -15,7 +14,6 @@ export type SessionAdapterRuntime = {
 export type SessionAdapterInstance = {
   adapter: SessionAdapter
   close: () => void | Promise<void>
-  source?: SessionSource
   readModelCatalog?: () => Promise<CodexModelCatalog | null>
   readClaudeModelCatalog?: () => Promise<ClaudeModelCatalog | null>
 }
@@ -27,7 +25,6 @@ export type SessionAdapterRegistration = {
 
 export type SessionAdapterRegistry = {
   adapterFor: (harness: Harness) => SessionAdapter | undefined
-  sourceFor: (harness: Harness) => SessionSource | undefined
   readModelCatalog: (harness: Harness) => Promise<CodexModelCatalog | null>
   readClaudeModelCatalog: () => Promise<ClaudeModelCatalog | null>
   close: () => Promise<void>
@@ -46,7 +43,6 @@ export function createSessionAdapterRegistry(
   }
   return {
     adapterFor: (harness) => adapters.get(harness)?.adapter,
-    sourceFor: (harness) => adapters.get(harness)?.source,
     readModelCatalog: (harness) =>
       adapters.get(harness)?.readModelCatalog?.() ?? Promise.resolve(null),
     readClaudeModelCatalog: () =>

@@ -37,10 +37,8 @@ function targetOf(
 export function RosterContextMenu({
   children,
   onArchive,
-  onLinkTicket,
   onOpenTicket,
   onRename,
-  onUnlinkTicket,
   renamedTitles,
   rows,
 }: RosterMenuHandlers & {
@@ -83,19 +81,10 @@ export function RosterContextMenu({
               {t('contextMenu.rename')}
             </ContextMenuItem>
             {target.session.ticket !== null ? (
-              <>
-                <ContextMenuItem onClick={() => onOpenTicket(target.session)}>
-                  {t('contextMenu.openTicket')}
-                </ContextMenuItem>
-                <ContextMenuItem onClick={() => onUnlinkTicket(target.session)}>
-                  {t('contextMenu.unlinkTicket')}
-                </ContextMenuItem>
-              </>
-            ) : (
-              <ContextMenuItem onClick={() => onLinkTicket(target.session)}>
-                {t('contextMenu.linkTicket')}
+              <ContextMenuItem onClick={() => onOpenTicket(target.session)}>
+                {t('contextMenu.openTicket')}
               </ContextMenuItem>
-            )}
+            ) : null}
             {target.archived ? null : (
               <>
                 <ContextMenuSeparator />

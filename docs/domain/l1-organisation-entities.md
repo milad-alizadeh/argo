@@ -33,11 +33,19 @@
   Account that cannot see the scope is a connect-time refusal, never a run of reads that 404 and
   read as "the ticket does not exist." Health is keyed here, not on the Project (#260).
 
-- **Ticket** — intent. One unit of work owned by a Ticket provider; **Argo stores only the link**
-  (provider id + which port), never the content (title/status/body/blockers are read-through,
-  cached but never authoritative). **No stored type** — "PRD" and "Task" are *roles*, taken from
-  the **provider's declared type when it has one** and **falling back to hierarchy** (has
-  children / is a leaf) only when the provider carries none. `blockedBy` is a provider-sourced
+- **Ticket** — intent. One unit of work owned by a Ticket provider, identified in Argo by a UUID
+  and at the provider by a unique **provider + provider scope + native Ticket ID** tuple. Two
+  Connections to the same scope see one Ticket; reconnecting does not change its Argo UUID. Argo
+  owns the user-asserted link and keeps provider content (title/status/body/blockers) in a
+  disposable query index. The provider remains authoritative for that content. The index covers
+  the active backlog and Tickets linked to Argo work; search reports when older Ticket history is
+  not indexed. When the provider confirms deletion, Argo retains the Ticket UUID, last known title,
+  and asserted links with a local `deleted` availability reason. The UI groups that Ticket with
+  closed work but does not turn the provider's last status into `closed`. A lost Connection or
+  failed read does not establish deletion. **No stored type** — "PRD" and "Task" are *roles*, taken
+  from the **provider's declared type when it has one** and **falling back to hierarchy** (has
+  children / is a leaf) only when the provider carries none.
+  `blockedBy` is a provider-sourced
   dependency DAG, Argo-normalized, with blocker states **verified per-blocker** (the provider's
   summary count is stale).
 
@@ -60,8 +68,9 @@
   reads `unknown`; a blocker closed with an **unreadable kind satisfies**, so ruling-out
   detection degrades to a chrome notice rather than stranding a map.
 
-  **Every provider is remote** — GitHub Issues / Linear via OAuth; no provider connected → no
-  Tickets → all sessions unlinked.
+  **Every provider is remote** — GitHub Issues / Linear via OAuth. Losing a Connection stops
+  provider reads and writes but does not erase indexed Tickets or Argo-owned asserted links.
+  Their availability is unknown until the provider can be read again.
 
 - **Delivery** — the product in flight: a **derived, branch-keyed** entity assembled per branch
   from local git facts ∪ code-host facts (PR/CI/review/merge). Comes into existence **at branch

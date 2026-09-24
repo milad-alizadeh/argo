@@ -104,10 +104,16 @@ both postures. Managed adds an Argo-owned live channel. Watched means read-only 
 forever. After restart, a Session becomes watched because the channel died; native resume can open
 a new managed channel (ADR-0047).
 
-**Native identity replaces resume-chain reconstruction.** A Harness and its native Session ID
-already name the conversation that its API can list, read, and resume. Rebuilding a second identity
-from files makes Argo responsible for vendor storage details and creates aliases that every store
-must preserve. A fork therefore has its own native ID and is a separate Session.
+**Native identity and Argo identity serve different boundaries.** A Harness and its native Session
+ID name the conversation that its API can list, read, and resume. The unique pair prevents duplicate
+ingestion. An Argo UUID gives local titles, pins, and Ticket links a stable key without spreading
+vendor IDs through the renderer. Argo does not reconstruct identity from files or merge forks; a
+fork has its own native ID and Argo UUID.
+
+**Argo title is a local choice.** A reader's Argo title outranks vendor names. A linked Ticket's
+current indexed title supplies a name only when the reader has not chosen one; Argo never copies
+that title into the Session. Vendor title and first prompt follow. This makes Ticket renames visible
+without a Session mutation and lets names entered in other apps remain vendor facts.
 
 **Status comes from the vendor boundary.** Managed actors know when their own start, Turn, gate,
 and close transitions occur. Watched Sessions use only vendor history and liveness. Process

@@ -4,7 +4,6 @@ import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, net, protocol } from 'electron'
-import { attachBridges } from '@/bridges'
 import { seedDevelopmentProject } from '@/domains/projects/main/development-seed'
 import { openProjectStore } from '@/domains/projects/main/main-store'
 import { PROJECT_PROOF_STORE_ENV } from '@/domains/projects/main/proof-protocol'
@@ -13,6 +12,7 @@ import {
   attachmentPathFromUrl,
 } from '@/domains/sessions/contract/model/feed/feed-images'
 import { openDurableStores } from '@/main/durable-stores'
+import { attachAppearanceWatch } from '@/platform/main/appearance'
 import { startDesktopApplication } from '@/platform/main/application/start'
 import {
   DEVELOPMENT_APPLICATION_NAME,
@@ -74,9 +74,6 @@ const DEVELOPMENT_INSTANCE = MAIN_WINDOW_VITE_DEV_SERVER_URL
   ? developmentInstance(process.env)
   : null
 
-let SETUP_DOCUMENT_SOURCE: 'proof' | 'development' | 'production' = 'production'
-if (DEVELOPMENT_INSTANCE) SETUP_DOCUMENT_SOURCE = 'development'
-if (PROOF_ENABLED) SETUP_DOCUMENT_SOURCE = 'proof'
 if (DEVELOPMENT_INSTANCE) {
   // safeStorage keys belong to an app, so every development worktree must keep one app identity.
   app.setName(DEVELOPMENT_APPLICATION_NAME)
@@ -89,15 +86,12 @@ if (DEVELOPMENT_INSTANCE) {
 
 function createWindow(): void {
   const userData = app.getPath('userData')
-  const { accountData, connectionData, projectData } = developmentStoreDirectories({
+  const { projectData } = developmentStoreDirectories({
     userData,
     appData: app.getPath('appData'),
     instance: DEVELOPMENT_INSTANCE,
   })
-  const { database, projects, ticketLinks, close } = openDurableStores(
-    projectData,
-    !ACCEPTANCE_ENABLED,
-  )
+  const { close } = openDurableStores(projectData, !ACCEPTANCE_ENABLED)
   createDesktopWindow({
     buildDirectory: __dirname,
     rendererName: MAIN_WINDOW_VITE_NAME,
@@ -114,19 +108,8 @@ function createWindow(): void {
           }),
         ]
       : undefined,
-    attach: (window, rendererURL) => {
-      attachBridges(window, {
-        userData,
-        accountData,
-        connectionData,
-        database,
-        projects,
-        ticketLinks,
-        rendererURL,
-        proofEnabled: PROOF_ENABLED,
-        setupDocumentSource: SETUP_DOCUMENT_SOURCE,
-        acceptance: ACCEPTANCE_ENABLED,
-      })
+    attach: (window) => {
+      attachAppearanceWatch(window)
       window.once('closed', close)
       installMenu(window)
     },
