@@ -9,9 +9,9 @@ import { useProjects } from '@/domains/projects/renderer/hooks/use-projects'
 import { EmptyProjectScreen } from '@/domains/projects/renderer/screens/empty-project-screen'
 import { ProjectSetupWindow } from '@/domains/projects/renderer/setup/screens/project-setup-window'
 import { DevelopmentIdentityBar } from '@/domains/sessions/renderer/composer/identity/development-identity-bar'
-import { SessionPage } from '@/domains/sessions/renderer/pages/session-page'
 import { SessionsPage } from '@/domains/sessions/renderer/pages/sessions-page'
 import { SessionsSidebar } from '@/domains/sessions/renderer/roster/sidebar/sessions-sidebar'
+import { SessionScreenView } from '@/domains/sessions/renderer/screens'
 import { TicketsPage } from '@/domains/tickets/renderer/pages/tickets-page'
 import { TicketsScreenView } from '@/domains/tickets/renderer/screens/tickets-screen-view'
 import { TicketsSidebar } from '@/domains/tickets/renderer/sidebar/tickets-sidebar'
@@ -83,8 +83,8 @@ export const cockpitRouter = createHashRouter([
         handle: { sidebar: sidebarByPage.sessions } satisfies CockpitRouteHandle,
         element: <SessionsPage />,
         children: [
-          { index: true, element: <SessionPage /> },
-          { path: ':sessionId', element: <SessionPage /> },
+          { index: true, element: <SessionScreenView /> },
+          { path: ':sessionId', element: <SessionScreenView /> },
         ],
       },
       {
