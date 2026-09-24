@@ -1,7 +1,7 @@
 // GitHub as a Ticket source: a repository is the scope, and its Issues are the Tickets.
 import type { SourceFailure, TicketSource } from '@/domains/tickets/main/sources'
 import type { GitHubFailure } from '@/providers/github/http'
-import { readTicketPage } from '@/providers/github/issues'
+import { readTicket as readIssueByKey, readTicketPage } from '@/providers/github/issues'
 import { checkRepository, isRepositoryScope, listRepositories } from '@/providers/github/repository'
 import { GITHUB_STATUSES, updateIssueStatus } from '@/providers/github/statuses'
 
@@ -55,6 +55,11 @@ export const githubTickets: TicketSource = {
     const { tickets, nextPage, total } = read.value
     const nextCursor = nextPage === null ? null : String(nextPage)
     return { ok: true, value: { tickets, statuses: [...GITHUB_STATUSES], nextCursor, total } }
+  },
+
+  async read({ endpoints, token }, request) {
+    const read = await readIssueByKey(endpoints.github, token, request)
+    return read.ok ? read : failed(read.failure)
   },
 
   async update({ endpoints, token }, change) {

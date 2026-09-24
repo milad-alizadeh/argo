@@ -4,6 +4,8 @@ import {
   type TicketListReply,
   type TicketPriority,
   type TicketPriorityReply,
+  type TicketReadReply,
+  type TicketReadRequest,
   type TicketUpdateReply,
   ticketError,
 } from '@/domains/tickets/contract/contract'
@@ -24,6 +26,7 @@ export type TicketClient = {
     query: string
     cursor: string | null
   }): Promise<TicketListReply>
+  readTicket(request: Pick<TicketReadRequest, 'projectId' | 'key'>): Promise<TicketReadReply>
   discoverSources(request: { projectId: string; accountId: string }): Promise<TicketDiscoverReply>
   updateStatus(request: {
     projectId: string
@@ -46,6 +49,7 @@ export function createTicketClient(
     T extends
       | TicketConnectedReply
       | TicketListReply
+      | TicketReadReply
       | TicketDiscoverReply
       | TicketUpdateReply
       | TicketPriorityReply,
@@ -62,6 +66,7 @@ export function createTicketClient(
     connectSource: (request) => forProject(request, client.connect(request)),
     disconnectSource: (request) => forProject(request, client.disconnect(request)),
     listTickets: (request) => forProject(request, client.list(request)),
+    readTicket: (request) => forProject(request, client.read(request)),
     discoverSources: (request) => forProject(request, client.discover(request)),
     updateStatus: (request) => forProject(request, client.update(request)),
     updatePriority: (request) => forProject(request, client.priority(request)),

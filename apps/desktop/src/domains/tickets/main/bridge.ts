@@ -13,6 +13,7 @@ import {
   discoverSources,
   listTickets,
   readConnection,
+  readTicket,
   updateStatus,
 } from './service'
 import type { TicketSource } from './sources'
@@ -52,6 +53,7 @@ export function attachTicketBridge(
       discover: (request, context) => discoverSources(callFor(context, request), request.accountId),
       list: (request, context) =>
         listTickets(callFor(context, request), { query: request.query, cursor: request.cursor }),
+      read: (request, context) => readTicket(callFor(context, request), { key: request.key }),
       update: (request, context) =>
         updateStatus(callFor(context, request), { key: request.key, statusId: request.statusId }),
       priority: (request, context) =>

@@ -69,6 +69,7 @@ const ROUTES = [
   'GET /user/repos',
   'GET /repos/:owner/:repo',
   'GET /repos/:owner/:repo/issues',
+  'GET /repos/:owner/:repo/issues/:number',
   'GET /repos/:owner/:repo/issues/:number/sub_issues',
   'GET /repos/:owner/:repo/issues/:number/dependencies/blocked_by',
   'PATCH /repos/:owner/:repo/issues/:number',

@@ -29,6 +29,10 @@ export type TicketSource = {
   check(reader: Reader, scope: string): Promise<SourceRead<TicketScope>>
   discover(reader: Reader): Promise<SourceRead<TicketScope[]>>
   page(reader: Reader, request: PageRequest): Promise<SourceRead<TicketPage>>
+  read(
+    reader: Reader,
+    request: { scope: string; key: string },
+  ): Promise<SourceRead<{ ticket: Ticket | null; statuses: TicketStatus[] }>>
   // Moves one Ticket of the scope to one of its statuses, and answers the status it now has.
   update(reader: Reader, change: StatusChange): Promise<SourceRead<TicketStatus>>
   // Moves one Ticket of the scope to another priority level, and answers the priority it now

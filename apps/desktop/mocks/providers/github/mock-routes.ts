@@ -79,6 +79,15 @@ const REPOSITORY_PATH =
 
 function repositoryRead(exchange: Exchange, user: MockUser) {
   const { state, response, url } = exchange
+  const single = url.pathname.match(/^\/repos\/([^/]+\/[^/]+)\/issues\/(\d+)$/)
+  if (single) {
+    const repository = state.repositories.get(single[1]?.toLowerCase() ?? '')
+    const issue = repository?.issues.find((candidate) => candidate.number === Number(single[2]))
+    if (!(repository?.visibleTo.includes(user.id) && issue)) {
+      return send(response, 404, { message: 'Not Found' })
+    }
+    return send(response, 200, issueJson(repository, issue))
+  }
   const match = url.pathname.match(REPOSITORY_PATH)
   const repository = match?.[1] ? state.repositories.get(match[1].toLowerCase()) : undefined
   if (!(match && repository?.visibleTo.includes(user.id))) {

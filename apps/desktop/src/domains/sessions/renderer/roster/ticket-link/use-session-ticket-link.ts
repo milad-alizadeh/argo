@@ -15,6 +15,7 @@ export type ConnectTicketInput = {
 }
 
 export type ConnectOutcome = {
+  failure: string | null
   renamed: boolean
   // Set only when the current title is `custom` and a reader has not yet said whether to
   // replace it: the caller asks, then calls `connect` again with `confirmedRename: true`.
@@ -39,23 +40,38 @@ export async function connectTicket(request: {
   const source = session.title?.source ?? null
   if (source === 'custom' && confirmedRename !== true) {
     return {
-      outcome: { renamed: false, needsRenameConfirmation: true, renameFailure: null },
+      outcome: {
+        failure: null,
+        renamed: false,
+        needsRenameConfirmation: true,
+        renameFailure: null,
+      },
       failure: null,
       invalidate: false,
     }
   }
-  const reply = await argo.connectSessionTicket({ sessionId: session.id, ...ticket })
-  if (reply.type === 'session.error') {
-    return {
-      outcome: { renamed: false, needsRenameConfirmation: false, renameFailure: null },
-      failure: reply.message,
-      invalidate: false,
+  const alreadyLinked =
+    session.ticket?.projectId === ticket.projectId && session.ticket.key === ticket.key
+  if (!alreadyLinked) {
+    const reply = await argo.connectSessionTicket({ sessionId: session.id, ...ticket })
+    if (reply.type === 'session.error') {
+      return {
+        outcome: {
+          failure: reply.message,
+          renamed: false,
+          needsRenameConfirmation: false,
+          renameFailure: null,
+        },
+        failure: reply.message,
+        invalidate: false,
+      }
     }
   }
   const renameReply = await argo.renameSession({ sessionId: session.id, name: ticket.title })
   if (renameReply.type === 'session.error') {
     return {
       outcome: {
+        failure: null,
         renamed: false,
         needsRenameConfirmation: false,
         renameFailure: renameReply.message,
@@ -65,7 +81,7 @@ export async function connectTicket(request: {
     }
   }
   return {
-    outcome: { renamed: true, needsRenameConfirmation: false, renameFailure: null },
+    outcome: { failure: null, renamed: true, needsRenameConfirmation: false, renameFailure: null },
     failure: null,
     invalidate: true,
   }

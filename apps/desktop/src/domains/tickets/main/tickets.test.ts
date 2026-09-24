@@ -97,6 +97,19 @@ test('a connected Project lists its open Tickets with hierarchy and dependencies
   assert.deepEqual(tickets[1]?.blockedBy, [{ key: '#3', title: 'Done', state: 'closed' }])
 })
 
+test('a Ticket route reads a closed GitHub Ticket by key', async (context) => {
+  const cockpit = await connected(context)
+  await cockpit.ticket('ticket.connect', { accountId: ACCOUNT, scope: 'Octo/Hello' })
+
+  const read = await cockpit.ticket('ticket.read', { key: '#3' })
+
+  assert.equal(read.type, 'ticket.read')
+  const ticket = read.ticket as { key: string; title: string; state: string }
+  assert.equal(ticket.key, '#3')
+  assert.equal(ticket.title, 'Done')
+  assert.equal(ticket.state, 'closed')
+})
+
 test('an unconnected Project, or one no longer registered, is refused by name', async (context) => {
   const cockpit = await connected(context)
   assert.equal((await cockpit.ticket('ticket.list', LIST)).code, 'not-connected')

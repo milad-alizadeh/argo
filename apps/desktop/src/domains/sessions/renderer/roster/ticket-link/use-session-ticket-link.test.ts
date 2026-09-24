@@ -6,6 +6,7 @@ test('connecting a Ticket renames a first-prompt Session without asking', async 
   const argo = mockArgo()
   const result = await connectTicket({ argo, session: session('first-prompt'), ticket: TICKET })
   expect(result.outcome).toEqual({
+    failure: null,
     renamed: true,
     needsRenameConfirmation: false,
     renameFailure: null,
@@ -20,10 +21,36 @@ test('connecting a Ticket renames a summarised Session without asking', async ()
   expect(result.outcome.renamed).toBe(true)
 })
 
+test('renames an already-linked Session without writing the link again', async () => {
+  const argo = mockArgo()
+  const existing = {
+    ...session('custom'),
+    ticket: {
+      projectId: TICKET.projectId,
+      key: TICKET.key,
+      title: 'Old Ticket title',
+      state: 'open' as const,
+      createdAt: '2026-09-23T00:00:00.000Z',
+    },
+  }
+
+  const result = await connectTicket({
+    argo,
+    session: existing,
+    ticket: TICKET,
+    confirmedRename: true,
+  })
+
+  expect(result.outcome.renamed).toBe(true)
+  expect(argo.calls.connectSessionTicket).toEqual([])
+  expect(argo.calls.renameSession).toEqual([{ sessionId: 'session-1', name: TICKET.title }])
+})
+
 test('connecting a Ticket with a custom title asks before renaming', async () => {
   const argo = mockArgo()
   const result = await connectTicket({ argo, session: session('custom'), ticket: TICKET })
   expect(result.outcome).toEqual({
+    failure: null,
     renamed: false,
     needsRenameConfirmation: true,
     renameFailure: null,
@@ -63,6 +90,7 @@ test('connecting a Ticket while a Turn is running renames the Session', async ()
   expect(argo.calls.connectSessionTicket).toHaveLength(1)
   expect(argo.calls.renameSession).toEqual([{ sessionId: 'session-1', name: TICKET.title }])
   expect(result.outcome).toEqual({
+    failure: null,
     renamed: true,
     needsRenameConfirmation: false,
     renameFailure: null,
@@ -76,6 +104,7 @@ test('a link write that the Harness refuses never calls rename', async () => {
   })
   const result = await connectTicket({ argo, session: session('first-prompt'), ticket: TICKET })
   expect(result.failure).toBe('no ticket')
+  expect(result.outcome.failure).toBe('no ticket')
   expect(argo.calls.renameSession).toEqual([])
   expect(result.invalidate).toBe(false)
 })
@@ -87,6 +116,7 @@ test('a rename the Harness refuses leaves the link in place and reports the fail
   const result = await connectTicket({ argo, session: session('first-prompt'), ticket: TICKET })
   expect(argo.calls.connectSessionTicket).toHaveLength(1)
   expect(result.outcome).toEqual({
+    failure: null,
     renamed: false,
     needsRenameConfirmation: false,
     renameFailure: 'Harness busy',

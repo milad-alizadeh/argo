@@ -15,6 +15,7 @@ import type {
   TicketConnected,
   TicketConnectedReply,
   TicketListed,
+  TicketRead,
   TicketScope,
 } from '@/domains/tickets/contract/contract'
 import { type ContractFailure, QUERY_KEYS, settle } from '@/platform/renderer/lib/query-client'
@@ -70,6 +71,25 @@ export function useTicketList(
     initialPageParam: null,
     getNextPageParam: (last) => last.nextCursor ?? undefined,
     placeholderData: keepPreviousData,
+  })
+}
+
+export function useTicket(
+  projectId: string | null,
+  connection: ConnectionSummary | null,
+  key: string | null,
+) {
+  const client = useQueryClient()
+  const ready = projectId !== null && connection?.state === 'ready' && key !== null
+  return useQuery<TicketRead, ContractFailure>({
+    queryKey: [...QUERY_KEYS.tickets, projectId, 'ticket', key],
+    queryFn: ready
+      ? () =>
+          settle(window.argo.readTicket({ projectId, key })).catch((failure: ContractFailure) => {
+            onRefused(client, projectId, failure)
+            throw failure
+          })
+      : skipToken,
   })
 }
 

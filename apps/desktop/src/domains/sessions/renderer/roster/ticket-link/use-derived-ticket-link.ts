@@ -7,28 +7,36 @@ import { ticketKeyForSession } from './ticket-key-for-session'
 import type { ConnectOutcome, ConnectTicketInput } from './use-session-ticket-link'
 
 type ReportRenameFailure = (message: string) => void
+type Connect = (
+  session: Session,
+  ticket: ConnectTicketInput,
+  options?: { confirmedRename?: boolean },
+) => Promise<ConnectOutcome>
 
 function derivedTicket(session: Session): string | null {
-  return session.ticket === null ? ticketKeyForSession(session) : null
+  if (session.ticket === null) return ticketKeyForSession(session)
+  return session.ticket.key
 }
 
-async function retryPendingRename(
-  sessionId: string,
-  ticket: ConnectTicketInput,
-  reportFailure: ReportRenameFailure,
-) {
-  try {
-    const reply = await window.argo.renameSession({ sessionId, name: ticket.title })
-    if (reply.type === 'session.error') reportFailure(reply.message)
-  } catch (error) {
-    reportFailure(error instanceof Error ? error.message : String(error))
-  }
+async function retryPendingRename(options: {
+  session: Session
+  ticket: ConnectTicketInput
+  connect: Connect
+  pendingRenames: ReturnType<typeof createPendingTicketRenames>
+  reportFailure: ReportRenameFailure
+}) {
+  const { session, ticket, connect, pendingRenames, reportFailure } = options
+  const outcome = await connect(session, ticket, { confirmedRename: true })
+  if (outcome.failure !== null) reportFailure(outcome.failure)
+  if (outcome.renameFailure === null) return
+  reportFailure(outcome.renameFailure)
+  pendingRenames.queue(session.id, ticket, Date.now() + 5_000)
 }
 
 async function connectDerivedTicket(options: {
   attempt: string
   attempted: Set<string>
-  connect: (session: Session, ticket: ConnectTicketInput) => Promise<ConnectOutcome>
+  connect: Connect
   pendingRenames: ReturnType<typeof createPendingTicketRenames>
   projectId: string
   reportFailure: ReportRenameFailure
@@ -46,34 +54,43 @@ async function connectDerivedTicket(options: {
     ticketKey,
   } = options
   try {
-    const listed = await settle(
-      window.argo.listTickets({ projectId, query: ticketKey, cursor: null }),
-    )
-    const ticket = listed.tickets.find((entry) => entry.key === ticketKey)
-    if (ticket === undefined) return
+    const resolved = await settle(window.argo.readTicket({ projectId, key: ticketKey }))
+    const ticket = resolved.ticket
+    if (ticket === null) return
+    if (session.ticket?.key === ticket.key && session.title?.text === ticket.title) return
     const input = { projectId, key: ticket.key, title: ticket.title, state: ticket.state }
-    const outcome = await connect(session, input)
+    const outcome = await connect(session, input, { confirmedRename: true })
+    if (outcome.failure !== null) {
+      reportFailure(outcome.failure)
+      return
+    }
     if (outcome.renameFailure === null) return
     reportFailure(outcome.renameFailure)
-    if (session.posture === 'watched') pendingRenames.queue(session.id, input)
-  } catch {
+    pendingRenames.queue(session.id, input, session.posture === 'managed' ? Date.now() + 5_000 : 0)
+  } catch (error) {
+    reportFailure(error instanceof Error ? error.message : String(error))
     attempted.delete(attempt)
   }
 }
 
 export function createPendingTicketRenames() {
-  const pending = new Map<string, ConnectTicketInput>()
+  const pending = new Map<string, { ticket: ConnectTicketInput; retryAt: number }>()
   return {
-    queue: (sessionId: string, ticket: ConnectTicketInput) => pending.set(sessionId, ticket),
-    takeWhenManaged: (
-      sessionId: string,
-      posture: Session['posture'],
-      linkedTicket: Session['ticket'],
-    ) => {
-      const ticket = pending.get(sessionId)
-      if (ticket === undefined) return undefined
+    queue: (sessionId: string, ticket: ConnectTicketInput, retryAt = 0) =>
+      pending.set(sessionId, { ticket, retryAt }),
+    takeWhenManaged: (options: {
+      sessionId: string
+      posture: Session['posture']
+      linkedTicket: Session['ticket']
+      now?: number
+    }) => {
+      const { sessionId, posture, linkedTicket, now = Date.now() } = options
+      const entry = pending.get(sessionId)
+      if (entry === undefined) return undefined
       if (posture !== 'managed') return null
+      if (now < entry.retryAt) return null
       pending.delete(sessionId)
+      const { ticket } = entry
       if (linkedTicket?.projectId !== ticket.projectId || linkedTicket.key !== ticket.key)
         return null
       return ticket
@@ -83,16 +100,28 @@ export function createPendingTicketRenames() {
 
 export async function processDerivedSession(options: {
   attempted: Set<string>
-  connect: (session: Session, ticket: ConnectTicketInput) => Promise<ConnectOutcome>
+  connect: Connect
   pendingRenames: ReturnType<typeof createPendingTicketRenames>
   projectId: string
   reportFailure: ReportRenameFailure
   session: Session
 }) {
   const { attempted, connect, pendingRenames, projectId, reportFailure, session } = options
-  const pendingRename = pendingRenames.takeWhenManaged(session.id, session.posture, session.ticket)
+  const pendingRename = pendingRenames.takeWhenManaged({
+    sessionId: session.id,
+    posture: session.posture,
+    linkedTicket: session.ticket,
+  })
   if (pendingRename !== undefined) {
-    if (pendingRename !== null) await retryPendingRename(session.id, pendingRename, reportFailure)
+    if (pendingRename !== null) {
+      await retryPendingRename({
+        session,
+        ticket: pendingRename,
+        connect,
+        pendingRenames,
+        reportFailure,
+      })
+    }
     return
   }
   const key = derivedTicket(session)

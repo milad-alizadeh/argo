@@ -125,6 +125,19 @@ const ANSWERS: Record<string, Answer> = {
     )
     return { searchIssues: paged(matches, variables), team: workflow(state, user, variables) }
   },
+  TicketByKey: (state, user, variables) => {
+    const found = findIssue(state, variables.key ?? '')
+    const selected =
+      found !== undefined &&
+      found.team.id === variables.teamId &&
+      found.team.visibleTo.includes(user.id)
+        ? {
+            ...issueJSON(state, { team: found.team, user }, found.issue),
+            team: { id: found.team.id },
+          }
+        : null
+    return { issue: selected, team: workflow(state, user, variables) }
+  },
   Target: (state, user, variables) => ({ issue: target(state, user, variables.key ?? '') }),
   Move: (state, _user, variables) => {
     const moved = moveIssue(state, variables.id ?? '', variables.state ?? '')

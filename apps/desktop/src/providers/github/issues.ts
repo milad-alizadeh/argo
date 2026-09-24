@@ -7,10 +7,11 @@ import {
   type Ticket,
   type TicketLabel,
   type TicketLink,
+  type TicketStatus,
 } from '@/domains/tickets/contract/ticket'
 import type { GitHubEndpoints } from '@/providers/github/endpoints'
-import { failed, type GitHubRead, getAll, getPage } from '@/providers/github/http'
-import { githubStatus } from '@/providers/github/statuses'
+import { failed, type GitHubRead, get, getAll, getPage } from '@/providers/github/http'
+import { GITHUB_STATUSES, githubStatus } from '@/providers/github/statuses'
 import { isRecord } from '@/shared/validation'
 
 // Tickets read at once. Each reads its edges one after another, so this is also the number of
@@ -141,6 +142,7 @@ function listing(body: unknown): Listing | null {
 }
 
 export type TicketPageRequest = { scope: string; query: string; page: number }
+export type TicketReadRequest = { scope: string; key: string }
 
 function pageURL(endpoints: GitHubEndpoints, { scope, query, page }: TicketPageRequest): string {
   const paging = `per_page=${TICKET_PAGE_SIZE}&page=${page}`
@@ -167,4 +169,25 @@ export async function readTicketPage(
   if (!tickets.ok) return tickets
   const nextPage = read.value.next ? request.page + 1 : null
   return { ok: true, value: { tickets: tickets.value, nextPage, total: served.total } }
+}
+
+export async function readTicket(
+  endpoints: GitHubEndpoints,
+  token: string,
+  request: TicketReadRequest,
+): Promise<GitHubRead<{ ticket: Ticket | null; statuses: TicketStatus[] }>> {
+  const match = request.key.match(/^#([1-9]\d{0,8})$/)
+  if (!match?.[1]) return { ok: true, value: { ticket: null, statuses: [...GITHUB_STATUSES] } }
+  const response = await get(`${endpoints.api}/repos/${request.scope}/issues/${match[1]}`, token)
+  if (!response.ok) {
+    return response.failure === 'not-found'
+      ? { ok: true, value: { ticket: null, statuses: [...GITHUB_STATUSES] } }
+      : response
+  }
+  const found = issue(response.value, `${endpoints.web}/${request.scope}/issues`)
+  if (found === null) return { ok: true, value: { ticket: null, statuses: [...GITHUB_STATUSES] } }
+  const detail = await withEdges({ base: `${endpoints.api}/repos/${request.scope}`, token }, found)
+  return detail.ok
+    ? { ok: true, value: { ticket: detail.value, statuses: [...GITHUB_STATUSES] } }
+    : detail
 }

@@ -10,11 +10,13 @@ import {
   ticketListRequestSchema,
   ticketPrioritizedSchema,
   ticketPriorityRequestSchema,
+  ticketReadRequestSchema,
+  ticketReadSchema,
   ticketUpdatedSchema,
   ticketUpdateRequestSchema,
 } from './contract'
 
-// The Ticket IPC contract has seven named operations, each on its own channel. The table is
+// The Ticket IPC contract has eight named operations, each on its own channel. The table is
 // consumed by the client, the preload bridge and the main-process registration, so an operation
 // cannot acquire a second hand-maintained channel.
 export const TICKET_OPERATIONS = {
@@ -47,6 +49,12 @@ export const TICKET_OPERATIONS = {
     channel: 'argo:ticket:list',
     request: ticketListRequestSchema,
     reply: ticketListedSchema.or(ticketErrorSchema),
+  },
+  read: {
+    name: 'ticket.read',
+    channel: 'argo:ticket:read',
+    request: ticketReadRequestSchema,
+    reply: ticketReadSchema.or(ticketErrorSchema),
   },
   update: {
     name: 'ticket.update',

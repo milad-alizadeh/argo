@@ -72,6 +72,10 @@ export const ticketListRequestSchema = message('ticket.list', {
   query: z.string().max(TICKET_QUERY_LIMIT),
   cursor: cursor.nullable(),
 })
+export const ticketReadRequestSchema = message('ticket.read', {
+  ...project,
+  key: ticketKey,
+})
 // Moves one Ticket to one of the statuses its listing offered.
 export const ticketUpdateRequestSchema = message('ticket.update', {
   ...project,
@@ -102,6 +106,12 @@ export const ticketListedSchema = message('ticket.listed', {
   nextCursor: cursor.nullable(),
   total: z.int().nonnegative().nullable(),
 })
+export const ticketReadSchema = message('ticket.read', {
+  ...project,
+  scope: identifier,
+  ticket: ticket.nullable(),
+  statuses: z.array(ticketStatus),
+})
 export const ticketUpdatedSchema = message('ticket.updated', {
   ...project,
   key: ticketKey,
@@ -119,6 +129,7 @@ export type TicketConnectionRequest = z.infer<typeof ticketConnectionRequestSche
 export type TicketConnectRequest = z.infer<typeof ticketConnectRequestSchema>
 export type TicketDisconnectRequest = z.infer<typeof ticketDisconnectRequestSchema>
 export type TicketListRequest = z.infer<typeof ticketListRequestSchema>
+export type TicketReadRequest = z.infer<typeof ticketReadRequestSchema>
 export type TicketUpdateRequest = z.infer<typeof ticketUpdateRequestSchema>
 export type TicketUpdated = z.infer<typeof ticketUpdatedSchema>
 export type TicketPriorityRequest = z.infer<typeof ticketPriorityRequestSchema>
@@ -128,6 +139,7 @@ export type TicketDiscovered = z.infer<typeof ticketDiscoveredSchema>
 export type TicketScope = TicketDiscovered['scopes'][number]
 export type TicketConnected = z.infer<typeof ticketConnectedSchema>
 export type TicketListed = z.infer<typeof ticketListedSchema>
+export type TicketRead = z.infer<typeof ticketReadSchema>
 
 export const TICKET_ERRORS = {
   'access-denied': 'Argo cannot read Tickets for this window.',
@@ -159,6 +171,7 @@ export type TicketErrorCode = keyof typeof TICKET_ERRORS
 export type TicketError = ContractError<'ticket.error', TicketErrorCode>
 export type TicketConnectedReply = TicketConnected | TicketError
 export type TicketListReply = TicketListed | TicketError
+export type TicketReadReply = TicketRead | TicketError
 export type TicketDiscoverReply = TicketDiscovered | TicketError
 export type TicketUpdateReply = TicketUpdated | TicketError
 export type TicketPriorityReply = TicketPrioritized | TicketError

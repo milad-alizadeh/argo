@@ -8,6 +8,7 @@ import { openAccountsDialog } from '@/domains/accounts/renderer'
 import type { ProjectSummary } from '@/domains/projects/contract/messages'
 import type {
   ConnectionSummary,
+  Ticket,
   TicketPriority,
   TicketStatus,
 } from '@/domains/tickets/contract/contract'
@@ -83,6 +84,8 @@ export type Connected = {
   onChangeStatus: (key: string, status: TicketStatus) => void
   onChangePriority: (key: string, priority: TicketPriority | null) => void
   selectedKey: string | null
+  resolvedTicket: Ticket | null
+  resolvedStatuses: TicketStatus[]
   onSelect: (key: string) => void
   onOpenSession: (id: string) => void
 }
@@ -94,6 +97,8 @@ export function connectedView(
     connection,
     onDisconnectSource,
     selectedKey,
+    resolvedTicket,
+    resolvedStatuses,
     onSelect,
     onOpenSession,
     ...listing
@@ -117,6 +122,8 @@ export function connectedView(
     kind: 'tickets',
     projectId,
     selectedKey,
+    resolvedTicket,
+    resolvedStatuses,
     onSelect,
     onOpenSession,
     backlog: { ...listedBacklog(list.data, listing), provider: connection.provider },

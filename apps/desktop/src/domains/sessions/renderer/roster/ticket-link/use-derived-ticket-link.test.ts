@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from 'bun:test'
-import { ticketListedSchema } from '@/domains/tickets/contract/contract'
+import { ticketReadSchema } from '@/domains/tickets/contract/contract'
 import { createPendingTicketRenames, processDerivedSession } from './use-derived-ticket-link'
 import { session, TICKET } from './use-session-ticket-link-fixtures'
 
@@ -13,32 +13,28 @@ function installTicketHost(rename: (name: string) => void) {
     configurable: true,
     value: {
       argo: {
-        listTickets: async () =>
-          ticketListedSchema.parse({
+        readTicket: async () =>
+          ticketReadSchema.parse({
             version: 1,
-            type: 'ticket.listed',
+            type: 'ticket.read',
             requestId: 'tickets-1',
             projectId: TICKET.projectId,
             scope: 'repository',
-            tickets: [
-              {
-                key: TICKET.key,
-                url: null,
-                title: TICKET.title,
-                body: null,
-                state: 'open',
-                status: { id: 'open', name: 'Open', category: 'unstarted' },
-                priority: null,
-                createdAt: '2026-09-23T00:00:00.000Z',
-                labels: [],
-                type: null,
-                children: [],
-                blockedBy: null,
-              },
-            ],
+            ticket: {
+              key: TICKET.key,
+              url: null,
+              title: TICKET.title,
+              body: null,
+              state: 'open',
+              status: { id: 'open', name: 'Open', category: 'unstarted' },
+              priority: null,
+              createdAt: '2026-09-23T00:00:00.000Z',
+              labels: [],
+              type: null,
+              children: [],
+              blockedBy: null,
+            },
             statuses: [],
-            nextCursor: null,
-            total: 1,
           }),
         renameSession: async ({ sessionId, name }: { sessionId: string; name: string }) => {
           rename(name)
@@ -55,9 +51,44 @@ function installTicketHost(rename: (name: string) => void) {
   })
 }
 
+async function retryManagedRename(options: {
+  session: ReturnType<typeof session>
+  attempted: Set<string>
+  pendingRenames: ReturnType<typeof createPendingTicketRenames>
+  renamed: (title: string, confirmed: boolean) => void
+}) {
+  const { session: managed, attempted, pendingRenames, renamed } = options
+  await processDerivedSession({
+    attempted,
+    pendingRenames,
+    projectId: TICKET.projectId,
+    reportFailure: () => {},
+    connect: async (_current, ticket, connectOptions) => {
+      renamed(ticket.title, connectOptions?.confirmedRename === true)
+      return { failure: null, renamed: true, needsRenameConfirmation: false, renameFailure: null }
+    },
+    session: managed,
+  })
+}
+
+function managedSession(watched: ReturnType<typeof session>) {
+  return {
+    ...watched,
+    posture: 'managed' as const,
+    ticket: {
+      projectId: TICKET.projectId,
+      key: TICKET.key,
+      title: TICKET.title,
+      state: 'open' as const,
+      createdAt: '2026-09-23T00:00:00.000Z',
+    },
+  }
+}
+
 test('retries ticket auto-rename after a watched Session becomes managed', async () => {
   let linked = false
   let renamedTitle: string | null = null
+  let confirmedRename = false
   const reportedFailures: string[] = []
   installTicketHost((name) => {
     renamedTitle = name
@@ -78,9 +109,20 @@ test('retries ticket auto-rename after a watched Session becomes managed', async
   }
   await processDerivedSession({
     ...shared,
-    connect: async () => {
+    connect: async (_current, ticket, options) => {
+      if (_current.posture === 'managed') {
+        confirmedRename = options?.confirmedRename === true
+        renamedTitle = ticket.title
+        return {
+          failure: null,
+          renamed: true,
+          needsRenameConfirmation: false,
+          renameFailure: null,
+        }
+      }
       linked = true
       return {
+        failure: null,
         renamed: false,
         needsRenameConfirmation: false,
         renameFailure: 'Session is not drivable',
@@ -92,26 +134,153 @@ test('retries ticket auto-rename after a watched Session becomes managed', async
   expect(renamedTitle).toBeNull()
   expect(reportedFailures).toEqual(['Session is not drivable'])
 
-  const managed = {
-    ...watched,
-    posture: 'managed' as const,
-    ticket: {
-      projectId: TICKET.projectId,
-      key: TICKET.key,
-      title: TICKET.title,
-      state: 'open' as const,
-      createdAt: '2026-09-23T00:00:00.000Z',
-    },
-  }
-  await processDerivedSession({
-    ...shared,
-    connect: async () => {
-      throw new Error('The linked Ticket must not be connected again.')
-    },
+  const managed = managedSession(watched)
+  await retryManagedRename({
     session: managed,
+    attempted,
+    pendingRenames,
+    renamed: (title, confirmed) => {
+      renamedTitle = title
+      confirmedRename = confirmed
+    },
   })
 
   expect(renamedTitle).toBe(TICKET.title)
+  expect(confirmedRename).toBe(true)
+})
+
+test('links a closed branch Ticket with its exact title', async () => {
+  const closedTicket = {
+    key: '#2582',
+    url: 'https://github.com/milad-alizadeh/argo/issues/2582',
+    title: 'Drive managed Claude Sessions',
+    body: null,
+    state: 'closed',
+    status: { id: 'closed', name: 'Closed', category: 'completed' },
+    priority: null,
+    createdAt: '2026-09-23T00:00:00.000Z',
+    labels: [],
+    type: null,
+    children: [],
+    blockedBy: [],
+  }
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: {
+      argo: {
+        readTicket: async () =>
+          ticketReadSchema.parse({
+            version: 1,
+            type: 'ticket.read',
+            requestId: 'ticket-1',
+            projectId: TICKET.projectId,
+            scope: 'milad-alizadeh/argo',
+            ticket: closedTicket,
+            statuses: [],
+          }),
+      },
+    },
+  })
+  let linked: { key: string; title: string; state: 'open' | 'closed' } | null = null
+  let renameConfirmed = false
+
+  await processDerivedSession({
+    attempted: new Set(),
+    pendingRenames: createPendingTicketRenames(),
+    projectId: TICKET.projectId,
+    reportFailure: () => {},
+    session: { ...session('custom'), branch: 'argo/#2582-drive-managed-claude-sessions' },
+    connect: async (_session, ticket, options) => {
+      linked = ticket
+      renameConfirmed = options?.confirmedRename === true
+      return { failure: null, renamed: true, needsRenameConfirmation: false, renameFailure: null }
+    },
+  })
+
+  expect(linked).toEqual({
+    projectId: TICKET.projectId,
+    key: '#2582',
+    title: 'Drive managed Claude Sessions',
+    state: 'closed',
+  })
+  expect(renameConfirmed).toBe(true)
+})
+
+test('renames a linked non-custom Session when its title differs from the Ticket', async () => {
+  let linked: { key: string; title: string; state: 'open' | 'closed' } | null = null
+  let renamedTitle: string | null = null
+  installTicketHost((name) => {
+    renamedTitle = name
+  })
+
+  await processDerivedSession({
+    attempted: new Set(),
+    pendingRenames: createPendingTicketRenames(),
+    projectId: TICKET.projectId,
+    reportFailure: () => {},
+    session: {
+      ...session('summarised'),
+      title: { text: 'Old Ticket title', source: 'summarised' },
+      ticket: {
+        ...TICKET,
+        title: 'Old Ticket title',
+        createdAt: '2026-09-23T00:00:00.000Z',
+      },
+    },
+    connect: async (_session, ticket) => {
+      linked = ticket
+      renamedTitle = ticket.title
+      return { failure: null, renamed: true, needsRenameConfirmation: false, renameFailure: null }
+    },
+  })
+
+  expect(linked?.title).toBe(TICKET.title)
+  expect(renamedTitle).toBe(TICKET.title)
+})
+
+test('renames a custom Session when its existing Ticket link has another title', async () => {
+  let confirmation: { confirmedRename?: boolean } | undefined
+  installTicketHost(() => {})
+  await processDerivedSession({
+    attempted: new Set(),
+    pendingRenames: createPendingTicketRenames(),
+    projectId: TICKET.projectId,
+    reportFailure: () => {},
+    session: {
+      ...session('custom'),
+      ticket: { ...TICKET, title: 'Old Ticket title', createdAt: '2026-09-23T00:00:00.000Z' },
+    },
+    connect: async (_session, _ticket, options) => {
+      confirmation = options
+      return { failure: null, renamed: true, needsRenameConfirmation: false, renameFailure: null }
+    },
+  })
+
+  expect(confirmation).toEqual({ confirmedRename: true })
+})
+
+test('reports a failed Ticket read while syncing a linked Session title', async () => {
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: { argo: { readTicket: async () => Promise.reject(new Error('Ticket read failed')) } },
+  })
+  const reported: string[] = []
+
+  await processDerivedSession({
+    attempted: new Set(),
+    pendingRenames: createPendingTicketRenames(),
+    projectId: TICKET.projectId,
+    reportFailure: (message) => reported.push(message),
+    session: {
+      ...session('summarised'),
+      ticket: { ...TICKET, title: 'Old Ticket title', createdAt: '2026-09-23T00:00:00.000Z' },
+    },
+    connect: async () => {
+      throw new Error('A Session cannot be renamed without a Ticket read.')
+    },
+  })
+
+  expect(reported).toEqual(['Ticket read failed'])
 })
 
 test('discards a pending auto-rename when the Session links a different Ticket', async () => {
@@ -143,5 +312,11 @@ test('discards a pending auto-rename when the Session links a different Ticket',
   })
 
   expect(renamedTitle).toBeNull()
-  expect(pendingRenames.takeWhenManaged('session-1', 'managed', null)).toBeUndefined()
+  expect(
+    pendingRenames.takeWhenManaged({
+      sessionId: 'session-1',
+      posture: 'managed',
+      linkedTicket: null,
+    }),
+  ).toBeUndefined()
 })

@@ -1,13 +1,17 @@
+import type { Ticket, TicketStatus } from '@/domains/tickets/contract/contract'
 import { InspectorSplit } from '@/platform/renderer/cockpit/inspector-split/inspector-split'
 import { useLinkedSessions } from '../hooks/use-linked-sessions'
 import type { Backlog } from '../lib/backlog'
 import { TicketList } from '../sidebar/ticket-list'
+import { ticketForSelection } from './selected-ticket'
 import { TicketDetail } from './ticket-detail'
 
 export type TicketDeckProps = {
   backlog: Backlog
   projectId: string
   selectedKey: string | null
+  resolvedTicket: Ticket | null
+  resolvedStatuses: TicketStatus[]
   onSelect: (key: string) => void
   onOpenSession: (id: string) => void
 }
@@ -25,10 +29,13 @@ export function TicketDeck({
   backlog,
   projectId,
   selectedKey,
+  resolvedTicket,
+  resolvedStatuses,
   onSelect,
   onOpenSession,
 }: TicketDeckProps) {
-  const selected = backlog.tickets.find((ticket) => ticket.key === selectedKey) ?? null
+  const selected = ticketForSelection(backlog.tickets, selectedKey, resolvedTicket)
+  const statuses = selected === resolvedTicket ? resolvedStatuses : backlog.statuses
   const listed = new Set(backlog.tickets.map((ticket) => ticket.key))
   const linkedSessions = useLinkedSessions(projectId, selected?.key ?? null)
   return (
@@ -45,7 +52,7 @@ export function TicketDeck({
           onOpenSession={onOpenSession}
           onSelect={onSelect}
           provider={backlog.provider}
-          statuses={backlog.statuses}
+          statuses={statuses}
           ticket={selected}
         />
       }

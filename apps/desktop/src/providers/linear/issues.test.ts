@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { type TestContext, test } from 'node:test'
 import { ADA, HIDDEN, linear, signIn, TEAM } from '@/providers/linear/harness'
-import { readTicketPage } from '@/providers/linear/issues'
+import { readTicket, readTicketPage } from '@/providers/linear/issues'
 import { checkTeam, listTeams } from '@/providers/linear/teams'
 import type { MockLinearTeam } from '../../../mocks/providers/linear/mock-linear'
 import { assertUnstubbedRequestFails } from '../../../mocks/providers/msw-node-bridge'
@@ -67,6 +67,19 @@ test('a search reads matching open Tickets and counts them', async (context) => 
     ['ENG-1', 'ENG-2'],
   )
   assert.equal(page.value.total, 2)
+})
+
+test('reads a closed Ticket by key when it is absent from the open backlog', async (context) => {
+  const { endpoints, accessToken } = await signedIn(context, [
+    { ...TEAM, issues: [{ identifier: 'ENG-9', title: 'Close the mill', stateType: 'completed' }] },
+  ])
+
+  const read = await readTicket(endpoints, accessToken, { scope: TEAM.id, key: 'ENG-9' })
+
+  assert.ok(read.ok)
+  assert.equal(read.value.ticket?.key, 'ENG-9')
+  assert.equal(read.value.ticket?.title, 'Close the mill')
+  assert.equal(read.value.ticket?.state, 'closed')
 })
 
 test('a backlog longer than a page is read on by its cursor', async (context) => {

@@ -47,6 +47,11 @@ const SEARCH = `query Search($team: ID!, $teamId: String!, $term: String!, $firs
   ${TEAM_STATES}
 }`
 
+const READ_BY_KEY = `query TicketByKey($key: String!, $teamId: String!) {
+  issue(id: $key) { team { id } ${FIELDS} }
+  ${TEAM_STATES}
+}`
+
 const stateOf = (value: unknown): TicketState | null => {
   const category = categoryOf(value)
   return category ? closureOf(category) : null
@@ -149,5 +154,23 @@ export async function readTicketPage(
       nextCursor,
       total: typeof total === 'number' && Number.isInteger(total) && total >= 0 ? total : null,
     },
+  }
+}
+
+export async function readTicket(
+  endpoints: LinearEndpoints,
+  token: string,
+  request: { scope: string; key: string },
+): Promise<LinearRead<{ ticket: Ticket | null; statuses: TicketStatus[] }>> {
+  const { scope, key } = request
+  const reply = await query({ endpoints, token }, READ_BY_KEY, { key, teamId: scope })
+  if (!reply.ok) return reply
+  const found = reply.value.issue
+  if (!isRecord(found) || !isRecord(found.team) || found.team.id !== scope) {
+    return { ok: true, value: { ticket: null, statuses: teamStatuses(reply.value.team) } }
+  }
+  return {
+    ok: true,
+    value: { ticket: ticket(endpoints, found), statuses: teamStatuses(reply.value.team) },
   }
 }

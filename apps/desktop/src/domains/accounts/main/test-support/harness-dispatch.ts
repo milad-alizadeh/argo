@@ -60,6 +60,8 @@ export async function dispatchTicket(
         query: typeof fields.query === 'string' ? fields.query : '',
         cursor: typeof fields.cursor === 'string' ? fields.cursor : null,
       })
+    case 'ticket.read':
+      return tickets.read({ projectId, key: String(fields.key) })
     case 'ticket.update':
       return tickets.update({
         projectId,

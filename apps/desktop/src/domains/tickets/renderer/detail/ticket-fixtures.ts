@@ -155,6 +155,8 @@ export const ticketsView = (overrides: Partial<Backlog> = {}): TicketsView => ({
   projectId: 'storybook-project',
   backlog: backlog(overrides),
   selectedKey: null,
+  resolvedTicket: null,
+  resolvedStatuses: [],
   onSelect: fn(),
   onOpenSession: fn(),
 })

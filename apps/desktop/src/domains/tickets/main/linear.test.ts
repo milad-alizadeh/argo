@@ -78,6 +78,18 @@ test('a bound team lists its open Tickets with Linear’s status, after a restar
   )
 })
 
+test('a Ticket route reads a closed Linear Ticket by key', async (context) => {
+  const cockpit = await bound(context)
+
+  const read = await cockpit.ticket('ticket.read', { key: 'ENG-3' })
+
+  assert.equal(read.type, 'ticket.read')
+  const ticket = read.ticket as { key: string; title: string; state: string }
+  assert.equal(ticket.key, 'ENG-3')
+  assert.equal(ticket.title, 'Cast the gears')
+  assert.equal(ticket.state, 'closed')
+})
+
 // Inside the renewal margin: every read renews first.
 const DUE = 60
 

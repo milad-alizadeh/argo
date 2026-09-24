@@ -1,7 +1,7 @@
 // Linear as a Ticket source: a team is the scope, and its open issues are the Tickets.
 import type { SourceFailure, TicketSource } from '@/domains/tickets/main/sources'
 import type { LinearFailure } from '@/providers/linear/http'
-import { readTicketPage } from '@/providers/linear/issues'
+import { readTicket as readIssueByKey, readTicketPage } from '@/providers/linear/issues'
 import { updateIssuePriority } from '@/providers/linear/priority'
 import { updateIssueStatus } from '@/providers/linear/statuses'
 import { checkTeam, listTeams } from '@/providers/linear/teams'
@@ -51,6 +51,12 @@ export const linearTickets: TicketSource = {
   async page({ endpoints, token }, request) {
     if (!endpoints.linear) return UNREACHABLE
     const read = await readTicketPage(endpoints.linear, token, request)
+    return read.ok ? read : failed(read.failure)
+  },
+
+  async read({ endpoints, token }, request) {
+    if (!endpoints.linear) return UNREACHABLE
+    const read = await readIssueByKey(endpoints.linear, token, request)
     return read.ok ? read : failed(read.failure)
   },
 

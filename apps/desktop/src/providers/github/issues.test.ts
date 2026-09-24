@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { github, githubWithRepository, OCTOCAT, signIn } from '@/providers/github/harness'
-import { readTicketPage } from '@/providers/github/issues'
+import { readTicket, readTicketPage } from '@/providers/github/issues'
 import { checkRepository, isRepositoryScope } from '@/providers/github/repository'
 import type { MockIssue } from '../../../mocks/providers/github/mock-github'
 
@@ -65,6 +65,21 @@ test('a repository scope is owner/name and nothing that could leave the path', (
 })
 
 const FIRST = { query: '', page: 1 }
+
+test('reads a closed Ticket by key when it is absent from the open backlog', async (context) => {
+  const { mock, endpoints, token } = await githubWithRepository(context, {
+    fullName: 'octo/hello',
+    issues: [{ number: 2582, title: 'Drive managed Claude Sessions', state: 'closed' }],
+  })
+
+  const read = await readTicket(endpoints, token, { scope: 'octo/hello', key: '#2582' })
+
+  assert.ok(read.ok)
+  assert.equal(read.value.ticket?.key, '#2582')
+  assert.equal(read.value.ticket?.title, 'Drive managed Claude Sessions')
+  assert.equal(read.value.ticket?.state, 'closed')
+  assert.ok(mock.requests.some((request) => request.includes('/issues/2582')))
+})
 
 const BACKLOG: MockIssue[] = [
   { number: 1, title: 'Parent', body: '  The whole thing.  ', children: [2, 3], type: 'PRD' },

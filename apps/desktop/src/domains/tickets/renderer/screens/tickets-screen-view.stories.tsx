@@ -179,6 +179,8 @@ export const MoreTicketsUnavailable: Story = {
         onRetryLoadMore: retryLoadMore,
       }),
       selectedKey: null,
+      resolvedTicket: null,
+      resolvedStatuses: [],
       onSelect: fn(),
       onOpenSession: fn(),
     },
