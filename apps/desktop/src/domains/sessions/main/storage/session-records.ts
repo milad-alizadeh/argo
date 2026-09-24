@@ -11,7 +11,7 @@ export type SessionIdentity = {
   workingDirectory: string | null
 }
 
-export type SessionPage = {
+export type SessionList = {
   page: number
   pageSize: number
   indexedTotal: number
@@ -27,7 +27,7 @@ export type SessionPage = {
   }>
 }
 
-type SessionPageRequest = {
+type SessionListRequest = {
   page: number
   pageSize: number
   projectId: string | null
@@ -62,10 +62,10 @@ export function readSessionIdentity(
   return row === null ? null : sessionIdentity(row)
 }
 
-export function readSessionPage(
+export function readSessionList(
   database: DurableDatabase,
-  request: SessionPageRequest,
-): SessionPage {
+  request: SessionListRequest,
+): SessionList {
   const { page, pageSize, projectId } = request
   const where = projectId === null ? undefined : eq(sessionTable.projectId, projectId)
   const total =

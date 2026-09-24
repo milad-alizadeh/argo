@@ -16,9 +16,9 @@ import type {
   SessionStartInput,
 } from '../../contract/session-start'
 import { readSessionIdentity, type SessionIdentity } from '../storage/session-records'
-import { createSessionUpsert } from '../storage/session-upsert'
+import { upsertSession } from '../storage/session-upsert'
 import type { sessionSyncMachine } from '../sync/session-sync-machine'
-import { sessionMachine } from './session-machine'
+import { type SessionPersistInput, sessionMachine } from './session-machine'
 
 type SessionActor = ActorRefFrom<typeof sessionMachine>
 type StartReply = {
@@ -292,14 +292,9 @@ export const sessionSupervisorMachine = setup({
           sessionMachine.provide({
             actors: {
               harness,
-              persist: fromPromise(({ input: record }) => {
-                if (record.nativeId === null)
-                  throw new Error('Session has no native ID to persist.')
+              persist: fromPromise<string, SessionPersistInput>(({ input: record }) => {
                 return Promise.resolve(
-                  createSessionUpsert(context.database)({
-                    ...record,
-                    nativeId: record.nativeId,
-                  }),
+                  upsertSession(context.database, record.session, record.projectId),
                 )
               }),
             },
@@ -423,16 +418,7 @@ export const sessionSupervisorMachine = setup({
             sessionMachine.provide({
               actors: {
                 harness,
-                persist: fromPromise<
-                  string,
-                  {
-                    projectId: string
-                    harness: string
-                    nativeId: string | null
-                    firstPrompt: string
-                    workingDirectory: string
-                  }
-                >(async () => {
+                persist: fromPromise<string, SessionPersistInput>(async () => {
                   throw new Error('An existing Session must not create another identity.')
                 }),
               },

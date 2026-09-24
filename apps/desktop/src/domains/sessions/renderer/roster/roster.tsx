@@ -27,7 +27,7 @@ export function Roster({
   const { t } = useTranslation('sessions')
   const [page, setPage] = useState(1)
   const roster = useQuery(
-    trpc.sessionPage.queryOptions({ page, pageSize: PAGE_SIZE, projectId: null }),
+    trpc.sessions.list.queryOptions({ page, pageSize: PAGE_SIZE, projectId: null }),
   )
   const sessions = roster.data?.sessions ?? []
   const canGoBack = page > 1

@@ -3,7 +3,7 @@ import type { ActorRefFrom } from 'xstate'
 import type { SessionSupervisorActor } from '@/domains/sessions/main/live/session-supervisor-machine'
 import {
   sessionFeedProcedure,
-  sessionPageProcedure,
+  sessionListProcedure,
   sessionSubmitProcedure,
 } from '@/domains/sessions/main/session-procedures'
 import {
@@ -31,7 +31,7 @@ export function createAppRouter({
     harnessCatalogRead: catalogReadProcedure(actor),
     harnessCatalogRefresh: catalogRefreshProcedure(actor),
     sessionSubmit: sessionSubmitProcedure(sessions),
-    sessionPage: sessionPageProcedure(database),
+    sessions: t.router({ list: sessionListProcedure(database) }),
     sessionFeed: sessionFeedProcedure(database, codex, sessions),
   })
 }

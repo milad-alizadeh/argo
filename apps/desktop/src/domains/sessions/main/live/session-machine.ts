@@ -1,18 +1,16 @@
 import { assign, enqueueActions, fromPromise, type SnapshotFrom, sendTo, setup } from 'xstate'
 import { claudeSessionMachine } from '@/harnesses/claude/session/claude-session-machine'
 import type { codexSessionMachine } from '@/harnesses/codex/session/codex-session-machine'
+import type { SessionIngestion } from '../../contract/session-index'
 import type { SessionMachineInput, SessionStartInput } from '../../contract/session-start'
 
 export type QueuedSessionCommand = Pick<
   SessionStartInput,
   'commandId' | 'prompt' | 'attachments' | 'setup'
 >
-type SessionPersistInput = {
-  harness: string
+export type SessionPersistInput = {
+  session: SessionIngestion
   projectId: string
-  nativeId: string | null
-  firstPrompt: string
-  workingDirectory: string
 }
 
 function persistenceInput(
@@ -20,12 +18,17 @@ function persistenceInput(
   nativeId: string | null,
 ): SessionPersistInput {
   if ('argoId' in first) throw new Error('An existing Session must not create another identity.')
+  if (nativeId === null) throw new Error('Session has no native ID to persist.')
   return {
-    harness: first.harness,
     projectId: first.projectId,
-    nativeId,
-    firstPrompt: first.prompt,
-    workingDirectory: first.cwd,
+    session: {
+      harness: first.harness,
+      nativeId,
+      vendorTitle: null,
+      firstPrompt: first.prompt,
+      updatedAt: Date.now(),
+      workingDirectory: first.cwd,
+    },
   }
 }
 

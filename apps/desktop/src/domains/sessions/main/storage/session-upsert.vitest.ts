@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict'
 import { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
+import type { SessionIngestion } from '@/domains/sessions/contract/session-index'
 import { createDurableDatabase } from '@/platform/main/storage/durable-database'
-import { createSessionUpsert } from './session-upsert'
+import { upsertSession } from './session-upsert'
 
 function database() {
   const client = new DatabaseSync(':memory:')
@@ -16,24 +17,30 @@ function database() {
     first_prompt TEXT,
     updated_at INTEGER NOT NULL
   ); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);`)
-  return { client, upsert: createSessionUpsert(createDurableDatabase(client)) }
+  return { client, database: createDurableDatabase(client) }
+}
+
+function discoveredSession(overrides: Partial<SessionIngestion>): SessionIngestion {
+  return {
+    harness: 'claude',
+    nativeId: 'native-1',
+    vendorTitle: null,
+    firstPrompt: null,
+    updatedAt: 0,
+    workingDirectory: null,
+    ...overrides,
+  }
 }
 
 test('preserves one Argo ID for repeated vendor identity', () => {
-  const { client, upsert } = database()
+  const { client, database: durable } = database()
   try {
-    const first = upsert({
-      harness: 'claude',
-      nativeId: 'native-1',
-      projectId: 'project-1',
-      firstPrompt: 'first',
-    })
-    const repeated = upsert({
-      harness: 'claude',
-      nativeId: 'native-1',
-      projectId: 'project-1',
-      firstPrompt: 'later',
-    })
+    const first = upsertSession(durable, discoveredSession({ firstPrompt: 'first' }), 'project-1')
+    const repeated = upsertSession(
+      durable,
+      discoveredSession({ firstPrompt: 'later' }),
+      'project-1',
+    )
     assert.equal(repeated, first)
     const row = client.prepare('SELECT project_id FROM session WHERE argo_id = ?').get(first)
     assert.equal(row?.project_id, 'project-1')
@@ -43,22 +50,18 @@ test('preserves one Argo ID for repeated vendor identity', () => {
 })
 
 test('keeps sparse discovery from erasing indexed vendor facts', () => {
-  const { client, upsert } = database()
+  const { client, database: durable } = database()
   try {
-    const id = upsert({
-      harness: 'claude',
-      nativeId: 'native-1',
-      projectId: null,
-      firstPrompt: 'first',
-      vendorTitle: 'A vendor title',
-      workingDirectory: '/repo',
-    })
-    upsert({
-      harness: 'claude',
-      nativeId: 'native-1',
-      projectId: null,
-      firstPrompt: null,
-    })
+    const id = upsertSession(
+      durable,
+      discoveredSession({
+        firstPrompt: 'first',
+        vendorTitle: 'A vendor title',
+        workingDirectory: '/repo',
+      }),
+      null,
+    )
+    upsertSession(durable, discoveredSession({ firstPrompt: null }), null)
     const row = client
       .prepare('SELECT argo_id, first_prompt, vendor_title, working_directory FROM session')
       .get()
@@ -77,29 +80,15 @@ test('keeps sparse discovery from erasing indexed vendor facts', () => {
 })
 
 test('orders discovery by vendor activity rather than scan time', () => {
-  const { client, upsert } = database()
+  const { client, database: durable } = database()
   try {
-    upsert({
-      harness: 'claude',
-      nativeId: 'older',
-      projectId: null,
-      firstPrompt: null,
-      updatedAt: 10,
-    })
-    upsert({
-      harness: 'codex',
-      nativeId: 'newer',
-      projectId: null,
-      firstPrompt: null,
-      updatedAt: 20,
-    })
-    upsert({
-      harness: 'claude',
-      nativeId: 'older',
-      projectId: null,
-      firstPrompt: null,
-      updatedAt: 10,
-    })
+    upsertSession(durable, discoveredSession({ nativeId: 'older', updatedAt: 10 }), null)
+    upsertSession(
+      durable,
+      discoveredSession({ harness: 'codex', nativeId: 'newer', updatedAt: 20 }),
+      null,
+    )
+    upsertSession(durable, discoveredSession({ nativeId: 'older', updatedAt: 10 }), null)
     assert.deepEqual(
       client
         .prepare('SELECT native_id FROM session ORDER BY updated_at DESC')
@@ -113,20 +102,18 @@ test('orders discovery by vendor activity rather than scan time', () => {
 })
 
 test('assigns a separate Argo ID to a fork native ID', () => {
-  const { client, upsert } = database()
+  const { client, database: durable } = database()
   try {
-    const original = upsert({
-      harness: 'codex',
-      nativeId: 'thread-1',
-      projectId: 'project-1',
-      firstPrompt: 'first',
-    })
-    const fork = upsert({
-      harness: 'codex',
-      nativeId: 'thread-2',
-      projectId: 'project-1',
-      firstPrompt: 'first',
-    })
+    const original = upsertSession(
+      durable,
+      discoveredSession({ harness: 'codex', nativeId: 'thread-1', firstPrompt: 'first' }),
+      'project-1',
+    )
+    const fork = upsertSession(
+      durable,
+      discoveredSession({ harness: 'codex', nativeId: 'thread-2', firstPrompt: 'first' }),
+      'project-1',
+    )
     assert.notEqual(fork, original)
   } finally {
     client.close()

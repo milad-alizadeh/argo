@@ -10,7 +10,7 @@ import type {
 import { createDurableDatabase } from '@/platform/main/storage/durable-database'
 import { createAppRouter } from './trpc-router'
 
-test('serves one validated indexed Session page', async () => {
+test('lists validated indexed Sessions', async () => {
   const client = new DatabaseSync(':memory:')
   client.exec(`CREATE TABLE session (
     argo_id TEXT PRIMARY KEY,
@@ -41,23 +41,25 @@ test('serves one validated indexed Session page', async () => {
       database: createDurableDatabase(client),
       codex: {} as ActorRefFrom<typeof codexAppServerMachine>,
     }).createCaller({})
-    await expect(caller.sessionPage({ page: 1, pageSize: 50, projectId: null })).resolves.toEqual({
-      page: 1,
-      pageSize: 50,
-      indexedTotal: 1,
-      sessions: [
-        {
-          argoId: '00000000-0000-4000-8000-000000000001',
-          harness: 'claude',
-          nativeId: 'vendor-session',
-          projectId: null,
-          vendorTitle: 'Indexed Session',
-          firstPrompt: 'Review the change.',
-          updatedAt: 42,
-          workingDirectory: '/repo',
-        },
-      ],
-    })
+    await expect(caller.sessions.list({ page: 1, pageSize: 50, projectId: null })).resolves.toEqual(
+      {
+        page: 1,
+        pageSize: 50,
+        indexedTotal: 1,
+        sessions: [
+          {
+            argoId: '00000000-0000-4000-8000-000000000001',
+            harness: 'claude',
+            nativeId: 'vendor-session',
+            projectId: null,
+            vendorTitle: 'Indexed Session',
+            firstPrompt: 'Review the change.',
+            updatedAt: 42,
+            workingDirectory: '/repo',
+          },
+        ],
+      },
+    )
   } finally {
     client.close()
   }

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
 import { createDurableDatabase } from '@/platform/main/storage/durable-database'
-import { readSessionPage } from './session-records'
+import { readSessionList } from './session-records'
 
 function database() {
   const client = new DatabaseSync(':memory:')
@@ -19,14 +19,14 @@ function database() {
   return { client, database: createDurableDatabase(client) }
 }
 
-test('returns exact numbered SQL pages in stable activity order', () => {
+test('lists a numbered SQL window in stable activity order', () => {
   const { client, database: durable } = database()
   try {
     const insert = client.prepare('INSERT INTO session VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
     insert.run('00000000-0000-4000-8000-000000000001', 'claude', 'one', null, null, null, null, 2)
     insert.run('00000000-0000-4000-8000-000000000002', 'codex', 'two', null, null, null, null, 3)
     insert.run('00000000-0000-4000-8000-000000000003', 'claude', 'three', null, null, null, null, 2)
-    assert.deepEqual(readSessionPage(durable, { page: 1, pageSize: 2, projectId: null }), {
+    assert.deepEqual(readSessionList(durable, { page: 1, pageSize: 2, projectId: null }), {
       page: 1,
       pageSize: 2,
       indexedTotal: 3,

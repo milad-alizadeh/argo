@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import {
-  type DiscoveredSession,
-  discoveredSessionSchema,
+  type SessionIngestion,
+  sessionIngestionSchema,
 } from '@/domains/sessions/contract/session-index'
 import type { CodexRequest } from '../app-server/codex-app-server-machine'
 
@@ -17,7 +17,7 @@ const codexThreadPageSchema = z.object({
 })
 
 export type CodexDiscoveryResult = {
-  sessions: DiscoveredSession[]
+  sessions: SessionIngestion[]
   nextCursor: string | null
   invalidRecordCount: number
 }
@@ -46,7 +46,7 @@ export async function readCodexSessions(
       invalidRecordCount += 1
       return []
     }
-    const parsed = discoveredSessionSchema.safeParse({
+    const parsed = sessionIngestionSchema.safeParse({
       harness: 'codex',
       nativeId: thread.data.id,
       vendorTitle: thread.data.name,

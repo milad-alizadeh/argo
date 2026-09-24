@@ -8,10 +8,10 @@ import {
 import { readCodexHistory } from '@/harnesses/codex/session/codex-history'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 import { sessionFeedInputSchema, sessionFeedOutputSchema } from '../contract/session-history'
-import { sessionPageInputSchema, sessionPageOutputSchema } from '../contract/session-index'
+import { sessionListInputSchema, sessionListOutputSchema } from '../contract/session-list'
 import { sessionAcceptedOutputSchema, sessionSubmitInputSchema } from '../contract/session-start'
 import type { SessionSupervisorActor } from './live/session-supervisor-machine'
-import { readSessionIdentity, readSessionPage } from './storage/session-records'
+import { readSessionIdentity, readSessionList } from './storage/session-records'
 
 const t = initTRPC.create()
 
@@ -37,11 +37,11 @@ export function sessionSubmitProcedure(supervisor: SessionSupervisorActor) {
     )
 }
 
-export function sessionPageProcedure(database: DurableDatabase) {
+export function sessionListProcedure(database: DurableDatabase) {
   return t.procedure
-    .input(sessionPageInputSchema)
-    .output(sessionPageOutputSchema)
-    .query(({ input }) => sessionPageOutputSchema.parse(readSessionPage(database, input)))
+    .input(sessionListInputSchema)
+    .output(sessionListOutputSchema)
+    .query(({ input }) => sessionListOutputSchema.parse(readSessionList(database, input)))
 }
 
 export function sessionFeedProcedure(

@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { project, workspace } from '@/domains/projects/main/schema'
-import type { DiscoveredSession } from '@/domains/sessions/contract/session-index'
+import type { SessionIngestion } from '@/domains/sessions/contract/session-index'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
-import { createSessionUpsert } from './session-upsert'
+import { upsertSession } from './session-upsert'
 
 type ProjectPath = {
   id: string
@@ -20,16 +20,10 @@ function projectAtPath(projects: ProjectPath[], workingDirectory: string | null)
   return match?.id ?? null
 }
 
-export function indexDiscoveredSession(
-  database: DurableDatabase,
-  record: DiscoveredSession,
-): string {
+export function indexSessionIngestion(database: DurableDatabase, record: SessionIngestion): string {
   const projectPaths = [
     ...database.select({ id: project.id, path: project.path }).from(project).all(),
     ...database.select({ id: workspace.projectId, path: workspace.path }).from(workspace).all(),
   ]
-  return createSessionUpsert(database)({
-    ...record,
-    projectId: projectAtPath(projectPaths, record.workingDirectory),
-  })
+  return upsertSession(database, record, projectAtPath(projectPaths, record.workingDirectory))
 }

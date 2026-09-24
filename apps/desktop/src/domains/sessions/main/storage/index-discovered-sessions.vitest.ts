@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
 import { createDurableDatabase } from '@/platform/main/storage/durable-database'
-import { indexDiscoveredSession } from './index-discovered-sessions'
+import { indexSessionIngestion } from './index-discovered-sessions'
 import { readSessionIdentity } from './session-records'
 
 function database() {
@@ -50,7 +50,7 @@ test('maps an indexed working directory to its most specific Project path', () =
         '/repo/worktree',
         'main',
       )
-    const id = indexDiscoveredSession(durable, {
+    const id = indexSessionIngestion(durable, {
       harness: 'codex',
       nativeId: 'thread-1',
       vendorTitle: 'Continue work',
@@ -73,7 +73,7 @@ test('maps an indexed working directory to its most specific Project path', () =
 test('keeps Sessions outside a known Project unassigned', () => {
   const { client, database: durable } = database()
   try {
-    const id = indexDiscoveredSession(durable, {
+    const id = indexSessionIngestion(durable, {
       harness: 'claude',
       nativeId: '00000000-0000-4000-8000-000000000001',
       vendorTitle: null,

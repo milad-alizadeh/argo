@@ -1,8 +1,8 @@
 import { listSessions } from '@anthropic-ai/claude-agent-sdk'
 import { z } from 'zod'
 import {
-  type DiscoveredSession,
-  discoveredSessionSchema,
+  type SessionIngestion,
+  sessionIngestionSchema,
 } from '@/domains/sessions/contract/session-index'
 
 const claudeSessionInfoSchema = z.object({
@@ -14,7 +14,7 @@ const claudeSessionInfoSchema = z.object({
 })
 
 export type ClaudeDiscoveryResult = {
-  sessions: DiscoveredSession[]
+  sessions: SessionIngestion[]
   recordCount: number
   invalidRecordCount: number
 }
@@ -27,7 +27,7 @@ export function parseClaudeSessions(records: unknown[]): ClaudeDiscoveryResult {
       invalidRecordCount += 1
       return []
     }
-    const session = discoveredSessionSchema.safeParse({
+    const session = sessionIngestionSchema.safeParse({
       harness: 'claude',
       nativeId: parsed.data.sessionId,
       vendorTitle: parsed.data.summary || null,

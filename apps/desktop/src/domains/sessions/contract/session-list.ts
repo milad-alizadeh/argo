@@ -1,24 +1,26 @@
 import { z } from 'zod'
 import { harnessSchema } from '@/harnesses/harness'
-import { identifierSchema } from '@/shared/validation'
 
 export const sessionListInputSchema = z.strictObject({
-  page: z.number().int().positive(),
-  pageSize: z.number().int().positive().max(100),
-})
-
-export const sessionListItemSchema = z.strictObject({
-  argoId: identifierSchema,
-  harness: harnessSchema,
-  nativeId: identifierSchema,
-  title: z.string().nullable(),
+  page: z.number().int().positive().default(1),
+  pageSize: z.number().int().min(1).max(100).default(50),
+  projectId: z.string().uuid().nullable().default(null),
 })
 
 export const sessionListOutputSchema = z.strictObject({
   page: z.number().int().positive(),
   pageSize: z.number().int().positive(),
-  total: z.number().int().nonnegative(),
-  items: z.array(sessionListItemSchema),
+  indexedTotal: z.number().int().nonnegative(),
+  sessions: z.array(
+    z.strictObject({
+      argoId: z.string().uuid(),
+      harness: harnessSchema,
+      nativeId: z.string().min(1),
+      projectId: z.string().uuid().nullable(),
+      vendorTitle: z.string().nullable(),
+      firstPrompt: z.string().nullable(),
+      updatedAt: z.number().int().nonnegative(),
+      workingDirectory: z.string().nullable(),
+    }),
+  ),
 })
-
-export type SessionListResult = z.infer<typeof sessionListOutputSchema>

@@ -1,5 +1,5 @@
 import { type ActorRefFrom, assign, fromPromise, setup } from 'xstate'
-import type { DiscoveredSession } from '@/domains/sessions/contract/session-index'
+import type { SessionIngestion } from '@/domains/sessions/contract/session-index'
 import type { sessionIndexActor } from '../storage/session-index-actor'
 
 export type SessionSyncInput = Record<string, never>
@@ -17,7 +17,7 @@ export type SessionSyncResult = {
   indexedCount: number
   invalidRecordCount: number
   page: number
-  sessions: DiscoveredSession[]
+  sessions: SessionIngestion[]
 }
 
 export const sessionSyncPageSize = 50
