@@ -109,6 +109,42 @@ test('starting a Claude Session sends its first turn immediately, even when defe
   expect(fake.sentPrompts()).toEqual(['hello'])
 })
 
+test('renames a managed Claude Session through the SDK without adding a prompt', async () => {
+  const fake = fakeClaudeQuery()
+  const renames: { sessionId: string; title: string }[] = []
+  const adapter = createClaudeSessionAdapter({
+    sessionService: managedSessionService,
+    waitForWorkspaceReady: async () => {},
+    resolveWorkspace: async () => ({ workspaceId: 'workspace-1', cwd: '/repository' }),
+    createQuery: fake.createQuery,
+    readResumePermission: async () => ({ resumable: true }),
+    renameSession: async (sessionId: string, title: string) => {
+      renames.push({ sessionId, title })
+    },
+    readModelCatalog: async () => ({
+      data: [
+        {
+          value: 'haiku',
+          resolvedModel: 'claude-haiku-4-5',
+          displayName: 'Haiku',
+          description: '',
+          supportedEffortLevels: ['low'],
+        },
+      ],
+      supportedPermissionModes: ['manual'],
+    }),
+  })
+
+  await startDeferredSession(adapter, fake)
+  await adapter.rename('native-1', 'Loud boundaries + close known silent-failure bugs')
+
+  expect(renames).toEqual([
+    { sessionId: 'native-1', title: 'Loud boundaries + close known silent-failure bugs' },
+  ])
+  expect(fake.sentPrompts()).toEqual(['hello'])
+  adapter.close()
+})
+
 test('waits for the lease before sending a resumed turn', async () => {
   const fake = fakeClaudeQuery()
   const adapter = managedAdapter(fake)
