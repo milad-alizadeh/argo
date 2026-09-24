@@ -26,22 +26,53 @@ its row is committed. A vendor-confirmed permanently unrecoverable Session is re
 local title, pin, and user-asserted Ticket link. A failed scan, omitted list item, or temporary
 resume refusal does not establish permanent loss.
 
+Every Ticket also has an Argo UUID and a unique `(provider, provider scope, native Ticket ID)`
+identity. Connections provide current access but do not define the Ticket: two Projects connected
+to the same provider scope see one Ticket and keep its Argo UUID after reconnect. When a provider
+confirms deletion, Argo keeps that UUID, the last known title, and user-asserted links. The UI
+groups the Ticket with closed work and gives the reason `deleted`; this does not claim that the
+provider reported a closed status. A lost Connection or failed read does not establish deletion.
+
 ## Sync and reads
 
 Background workers regularly ingest Sessions and Tickets per Harness or Connection. They index all
 listed Sessions, recent first, and continue older history in the background. Session search covers
-full conversation text read through vendor interfaces. Ingestion is idempotent, reports progress
-and freshness per source, and commits each usable result independently. One source failing leaves
-other indexed data available and shows a toast for that source's failure episode. Incomplete scans
-never delete durable Argo state or imply that an unseen vendor item is gone.
+visible user and assistant text plus visible tool summaries read through vendor interfaces.
+Ingestion is idempotent, reports progress and freshness per source, and commits each usable result
+independently. One source failing leaves other indexed data available and shows a toast for that
+source's failure episode. Incomplete scans never delete durable Argo state or imply that an unseen
+vendor item is gone.
 
-One validated, API-style IPC contract is the renderer's interface for Session and Ticket reads and
-commands. Read operations query SQLite for lists, search, and indexed detail. The backend gives
-the renderer one Argo-shaped response and owns pagination; vendor cursors and payload shapes stop
-at the adapter boundary. A separate Feed operation reads vendor history and transforms it into the
-same validated Feed shape as live events. Selecting a watched Session shows that history without
-opening a live channel. The first new prompt attempts native resume. Live status and events
-continue to come from the managed channel and are reconciled with vendor history.
+Main schedules source jobs on a bounded set of worker threads. Each source retains separate
+priority, progress, retry, and failure state; the number of Connections does not create an
+unbounded number of threads. Workers write disposable indexes through their own SQLite connections
+to the one per-machine database. Main owns durable Argo writes. The renderer shows already indexed
+rows while sync runs, and typed per-domain sync-status reads report freshness, progress, and errors.
+After a committed change, a named event invalidates the affected TanStack queries.
+
+tRPC is the renderer's typed API for all request-response operations, including domain and platform
+commands. Domain routers own their procedures and call domain services; a root router only composes
+them. Shared Zod schemas validate inputs and outputs. The renderer uses tRPC's TanStack Query
+options directly, with custom hooks only for composed view behavior. Each domain owns its SQLite
+tables, queries, migrations, and sync rules; shared infrastructure opens the database and schedules
+worker jobs. Vendor adapters retain vendor calls and parsing. The Electron transport must preserve
+Argo's trusted-frame authorization; its exact mechanism requires a real Electron security proof.
+
+Read operations query SQLite for lists, search, and indexed detail. The backend adds current live
+Session projections to those rows and returns one Argo-shaped response; the renderer does not merge
+sources. List operations expose numbered pages, page size, indexed total, and stable SQL order.
+Pages can shift when sync adds rows, so refresh preserves selection by Argo UUID. Pinned Sessions
+come from a separate query and do not appear in the ordinary Session pages. Vendor cursors and
+payload shapes stop at the adapter boundary. A separate Feed operation reads vendor history and
+transforms it into the same validated Feed shape as live events. Selecting a watched Session shows
+that history without opening a live channel. The first new prompt attempts native resume. Live
+status and events continue to come from the managed channel and are reconciled with vendor history.
+
+Phase one removes the old operation tables, preload client maps, per-operation channels, and
+pass-through renderer hooks as their request-response operations move to tRPC. Named live-stream
+channels remain an explicit current boundary. Phase two moves those streams and change events to
+tRPC subscriptions. Managed status transitions invalidate Roster queries; token and Feed events do
+not refetch the Roster.
 
 Argo allows one application instance and one window; a second launch focuses the first. A separate
 SQLite Session lease retains an owner token and expiry. Managed or watched posture comes from the
@@ -58,11 +89,18 @@ provider outcome is uncertain, or it accepts a mutation but SQLite cannot commit
 marks the value as syncing until reconciliation determines the provider state. An unsafe durable
 database blocks further mutations and uses ADR-0043 recovery.
 
+Procedures return structured domain error codes; tRPC handles transport failures. Session creation
+is atomic from the renderer's point of view: success appears only after the vendor returns and
+SQLite commits the Argo identity and native ID. If the vendor starts a Session but the database
+commit fails, Argo keeps the vendor Session for reconciliation, reports an uncertain result, and
+never resends the first prompt automatically. Vendor and SQLite writes do not share a transaction.
+
 ## Changes to earlier decisions
 
 This decision extends ADR-0043's authority split: durable Argo Session identity and local fields
 coexist with disposable Session and Ticket indexes. It keeps ADR-0047's vendor interface, Feed,
 actor, and `managed | watched` boundaries. It replaces ADR-0047's vendor-paged Roster merge and
 cursor recovery with SQLite paging. It changes the lease's reason from protecting multiple Argo
-windows to protecting one instance against overlap and crash. It follows ADR-0039's operation-table
-IPC boundary; no HTTP server is required.
+windows to protecting one instance against overlap and crash. It supersedes ADR-0039's operation
+tables with domain-owned tRPC routers, while retaining the validated boundary and trusted-frame
+requirement. No public HTTP server is required.
