@@ -71,7 +71,7 @@ test('focuses the existing window when Argo launches a second time', async ({
     await launchSecondProcess(packagedApplication, userData)
 
     await page.waitForFunction(() => document.visibilityState === 'visible')
-    assert.equal(
+    assert.deepEqual(
       await application.evaluate(({ BrowserWindow }) => {
         const windows = BrowserWindow.getAllWindows()
         return {
