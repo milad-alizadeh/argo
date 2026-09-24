@@ -85,4 +85,15 @@ test('focuses the existing window when Argo launches a second time', async ({
   } finally {
     await application.close()
   }
+
+  const reopened = await launch(packagedApplication, userData)
+  try {
+    await reopened.firstWindow()
+    assert.equal(
+      await reopened.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length),
+      1,
+    )
+  } finally {
+    await reopened.close()
+  }
 })
