@@ -16,6 +16,11 @@ export const projectSelection = sqliteTable(
   (table) => [check('project_selection_singleton', sql`${table.singleton} = 1`)],
 )
 
+export const developmentProjectSelection = sqliteTable('development_project_selection', {
+  instanceId: text('instance_id').primaryKey(),
+  projectId: text('project_id').references(() => project.id),
+})
+
 export const projectSetupCheckpoint = sqliteTable(
   'project_setup_checkpoint',
   {

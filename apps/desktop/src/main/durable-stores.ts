@@ -9,7 +9,11 @@ import {
   sharedDatabasePath,
 } from '@/platform/main/storage/shared-database'
 
-export function openDurableStores(projectData: string, recovery: boolean) {
+export function openDurableStores(
+  projectData: string,
+  recovery: boolean,
+  developmentInstanceId: string | null = null,
+) {
   const backupPath = sharedDatabaseBackupPath(projectData)
   return recoverDurableStore({
     databasePath: sharedDatabasePath(projectData),
@@ -19,7 +23,11 @@ export function openDurableStores(projectData: string, recovery: boolean) {
       const client = openSharedDatabase(projectData)
       const database = createDurableDatabase(client)
       const backup = () => backupSharedDatabase(client, backupPath)
-      const projects = createProjectStore(database, () => void backup().catch(console.error))
+      const projects = createProjectStore(
+        database,
+        () => void backup().catch(console.error),
+        developmentInstanceId,
+      )
       const ticketLinks = createSessionTicketLinkStoreFromDatabase(database, () =>
         backup().catch(console.error),
       )

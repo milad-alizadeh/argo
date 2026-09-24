@@ -12,9 +12,12 @@ import { createProjectStore } from './sqlite-store'
 
 const migrationsFolder = databaseMigrationsFolder()
 
-function openStore(userData: string) {
+function openStore(userData: string, developmentInstanceId: string | null = null) {
   const database = openSharedDatabase(userData, migrationsFolder)
-  return { database, store: createProjectStore(createDurableDatabase(database)) }
+  return {
+    database,
+    store: createProjectStore(createDurableDatabase(database), () => {}, developmentInstanceId),
+  }
 }
 
 async function temporaryUserData(): Promise<string> {
@@ -36,6 +39,40 @@ test('keeps registered Projects and the selected Project after the store reopens
       projects: [{ id: 'project-1', path: '/tmp/example', commonDirectory: '/tmp/example/.git' }],
       selectedId: 'project-1',
     })
+    reopened.close()
+  } finally {
+    await rm(userData, { recursive: true, force: true })
+  }
+})
+
+test('keeps the selected Project separate for each development window', async () => {
+  const userData = await temporaryUserData()
+  try {
+    const { store: production } = openStore(userData)
+    const { store: first } = openStore(userData, 'development-window-1')
+    const { store: second } = openStore(userData, 'development-window-2')
+    production.replace({
+      projects: [
+        { id: 'project-1', path: '/tmp/one', commonDirectory: '/tmp/one/.git' },
+        { id: 'project-2', path: '/tmp/two', commonDirectory: '/tmp/two/.git' },
+      ],
+      selectedId: 'project-1',
+    })
+    production.selectProject('project-2')
+    first.selectProject('project-1')
+    second.selectProject('project-2')
+
+    assert.deepEqual(first.read().projects, second.read().projects)
+    assert.equal(first.read().selectedId, 'project-1')
+    assert.equal(second.read().selectedId, 'project-2')
+    assert.equal(production.read().selectedId, 'project-2')
+
+    first.close()
+    second.close()
+    production.close()
+
+    const { store: reopened } = openStore(userData, 'development-window-1')
+    assert.equal(reopened.read().selectedId, 'project-1')
     reopened.close()
   } finally {
     await rm(userData, { recursive: true, force: true })

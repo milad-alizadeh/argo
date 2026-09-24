@@ -4,7 +4,12 @@ import { z } from 'zod'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 import { identifierSchema } from '@/shared/validation'
 import { createSetupWorktreePromotion } from './project-store-promotion'
-import { project, projectSelection, projectSetupCheckpoint } from './schema'
+import {
+  developmentProjectSelection,
+  project,
+  projectSelection,
+  projectSetupCheckpoint,
+} from './schema'
 import type { ProjectSetupRecord } from './setup/persistence/project-setup-registry'
 import { projectSetupStore } from './setup/persistence/project-setup-storage'
 import { readSetupCheckpoint, type SetupCheckpoint } from './setup-checkpoint-store'
@@ -46,26 +51,12 @@ export const isProjectStoreInvalid = (error: unknown): boolean => error instance
 export function createProjectStore(
   database: ProjectDatabase,
   afterWrite: () => void = () => {},
+  developmentInstanceId: string | null = null,
 ): ProjectStore {
-  const writeSelection = (projectId: string) =>
-    database
-      .insert(projectSelection)
-      .values({ singleton: 1, projectId })
-      .onConflictDoUpdate({ target: projectSelection.singleton, set: { projectId } })
-      .run()
   return {
-    read: () => readRegistry(database),
+    read: () => readRegistry(database, developmentInstanceId),
     replace(registry) {
-      database.transaction((transaction) => {
-        transaction.delete(projectSelection).run()
-        transaction.delete(project).run()
-        if (registry.projects.length) transaction.insert(project).values(registry.projects).run()
-        if (registry.selectedId !== null)
-          transaction
-            .insert(projectSelection)
-            .values({ singleton: 1, projectId: registry.selectedId })
-            .run()
-      })
+      persistRegistry(database, registry, developmentInstanceId)
       afterWrite()
     },
     insertProject: (registration) => {
@@ -73,7 +64,7 @@ export function createProjectStore(
       afterWrite()
     },
     selectProject: (projectId) => {
-      writeSelection(projectId)
+      writeProjectSelection(database, projectId, developmentInstanceId)
       afterWrite()
     },
     updateProjectPath: (projectId, projectPath) => {
@@ -96,14 +87,85 @@ export function createProjectStore(
   }
 }
 
-function readRegistry(database: ProjectDatabase): ProjectRegistry {
+function persistRegistry(
+  database: ProjectDatabase,
+  registry: ProjectRegistry,
+  developmentInstanceId: string | null,
+) {
+  database.transaction((transaction) => {
+    if (developmentInstanceId === null) {
+      transaction.delete(projectSelection).run()
+      transaction.delete(project).run()
+      if (registry.projects.length) transaction.insert(project).values(registry.projects).run()
+      if (registry.selectedId !== null)
+        transaction
+          .insert(projectSelection)
+          .values({ singleton: 1, projectId: registry.selectedId })
+          .run()
+      return
+    }
+    for (const registration of registry.projects) {
+      transaction
+        .insert(project)
+        .values(registration)
+        .onConflictDoUpdate({
+          target: project.id,
+          set: { path: registration.path, commonDirectory: registration.commonDirectory },
+        })
+        .run()
+    }
+    writeDevelopmentProjectSelection(transaction, developmentInstanceId, registry.selectedId)
+  })
+}
+
+function writeProjectSelection(
+  database: ProjectDatabase,
+  projectId: string,
+  developmentInstanceId: string | null,
+) {
+  if (developmentInstanceId !== null) {
+    writeDevelopmentProjectSelection(database, developmentInstanceId, projectId)
+    return
+  }
+  database
+    .insert(projectSelection)
+    .values({ singleton: 1, projectId })
+    .onConflictDoUpdate({ target: projectSelection.singleton, set: { projectId } })
+    .run()
+}
+
+function writeDevelopmentProjectSelection(
+  database: Pick<ProjectDatabase, 'insert'>,
+  developmentInstanceId: string,
+  projectId: string | null,
+) {
+  database
+    .insert(developmentProjectSelection)
+    .values({ instanceId: developmentInstanceId, projectId })
+    .onConflictDoUpdate({
+      target: developmentProjectSelection.instanceId,
+      set: { projectId },
+    })
+    .run()
+}
+
+function readRegistry(
+  database: ProjectDatabase,
+  developmentInstanceId: string | null,
+): ProjectRegistry {
   const registered = projectRowSchema.array().parse(database.select().from(project).all())
   const selected =
-    database
-      .select({ projectId: projectSelection.projectId })
-      .from(projectSelection)
-      .where(eq(projectSelection.singleton, 1))
-      .get()?.projectId ?? null
+    developmentInstanceId === null
+      ? (database
+          .select({ projectId: projectSelection.projectId })
+          .from(projectSelection)
+          .where(eq(projectSelection.singleton, 1))
+          .get()?.projectId ?? null)
+      : (database
+          .select({ projectId: developmentProjectSelection.projectId })
+          .from(developmentProjectSelection)
+          .where(eq(developmentProjectSelection.instanceId, developmentInstanceId))
+          .get()?.projectId ?? null)
   return {
     projects: registered,
     selectedId: registered.some((entry) => entry.id === selected) ? selected : null,

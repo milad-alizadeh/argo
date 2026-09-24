@@ -97,6 +97,7 @@ function createWindow(): void {
   const { database, projects, ticketLinks, close } = openDurableStores(
     projectData,
     !ACCEPTANCE_ENABLED,
+    DEVELOPMENT_INSTANCE?.id ?? null,
   )
   createDesktopWindow({
     buildDirectory: __dirname,
@@ -150,7 +151,7 @@ async function ready(): Promise<void> {
       instance: DEVELOPMENT_INSTANCE,
     })
     resetIncompleteDevelopmentDatabase(projectData)
-    const projects = openProjectStore(projectData)
+    const projects = openProjectStore(projectData, DEVELOPMENT_INSTANCE.id)
     await seedDevelopmentProject(projects, DEVELOPMENT_INSTANCE)
     projects.close()
   }

@@ -23,6 +23,7 @@ test('starts a clean database with every ordered migration', async () => {
         { name: '__drizzle_migrations' },
         { name: 'project' },
         { name: 'project_selection' },
+        { name: 'development_project_selection' },
         { name: 'project_setup_checkpoint' },
         { name: 'project_setup_actor' },
         { name: 'project_setup_effect' },
@@ -47,6 +48,7 @@ test('starts a clean database with every ordered migration', async () => {
       { name: '20260921173714_demonic_meteorite' },
       { name: '20260921194635_worried_gargoyle' },
       { name: '20260921223050_tiresome_the_initiative' },
+      { name: '20260924031516_natural_terror' },
     ])
     database
       .prepare('INSERT INTO project (id, path, common_directory) VALUES (?, ?, ?)')
