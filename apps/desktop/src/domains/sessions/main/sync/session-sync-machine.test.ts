@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import type { ActorLogic } from 'xstate'
 import { createActor, fromPromise, waitFor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
-import { sessionSyncMachine } from './session-sync-machine'
+import { sessionSyncMachine, sessionSyncMaxRetries } from './session-sync-machine'
 
 const modeledEvents = [
   {
@@ -52,7 +52,7 @@ test('models a successful sync, retry, and priority refresh', () => {
   )
 })
 
-test('continues from the next bounded discovery page before restarting', async () => {
+test('continues through older discovery pages before waiting to poll again', async () => {
   const jobs: Array<{ generation: number; page: number }> = []
   const machine = sessionSyncMachine.provide({
     actors: {
@@ -72,11 +72,13 @@ test('continues from the next bounded discovery page before restarting', async (
   })
   const actor = createActor(machine, { input: {} }).start()
   try {
-    await waitFor(actor, (snapshot) => snapshot.matches('Waiting') && snapshot.context.page === 1)
+    await waitFor(actor, (snapshot) => snapshot.matches('Waiting') && snapshot.context.page === 0)
     actor.send({ type: 'Refresh' })
     await waitFor(actor, (snapshot) => snapshot.matches('Waiting') && snapshot.context.page === 0)
     assert.deepEqual(jobs, [
       { generation: 0, page: 0 },
+      { generation: 0, page: 1 },
+      { generation: 1, page: 0 },
       { generation: 1, page: 1 },
     ])
   } finally {
@@ -86,12 +88,13 @@ test('continues from the next bounded discovery page before restarting', async (
 
 test('priority refresh restarts discovery from the recent page', async () => {
   const jobs: number[] = []
+  let call = 0
   const machine = sessionSyncMachine.provide({
     actors: {
       sync: fromPromise(async ({ input }) => {
         jobs.push(input.page)
         return {
-          complete: false,
+          complete: call++ > 0,
           cursor: 'older',
           generation: input.generation,
           indexedCount: 1,
@@ -104,10 +107,35 @@ test('priority refresh restarts discovery from the recent page', async () => {
   })
   const actor = createActor(machine, { input: {} }).start()
   try {
-    await waitFor(actor, (snapshot) => snapshot.matches('Waiting') && snapshot.context.page === 1)
+    await waitFor(actor, (snapshot) => snapshot.matches('Waiting') && snapshot.context.page === 0)
     actor.send({ type: 'Priority sync' })
-    await waitFor(actor, () => jobs.length === 2)
-    assert.deepEqual(jobs, [0, 0])
+    await waitFor(actor, () => jobs.length === 3)
+    assert.deepEqual(jobs, [0, 1, 0])
+  } finally {
+    actor.stop()
+  }
+})
+
+test('waits for the next poll after a bounded number of failed attempts', async () => {
+  let attempts = 0
+  const machine = sessionSyncMachine.provide({
+    actors: {
+      sync: fromPromise(async () => {
+        attempts += 1
+        throw new Error('Harness unavailable.')
+      }),
+    },
+    delays: { retry: 0 },
+  })
+  const actor = createActor(machine, { input: {} }).start()
+  try {
+    await waitFor(
+      actor,
+      (snapshot) =>
+        snapshot.matches('Waiting') && snapshot.context.retryCount === sessionSyncMaxRetries + 1,
+    )
+    assert.equal(attempts, sessionSyncMaxRetries + 1)
+    assert.equal(actor.getSnapshot().context.failure, 'Error: Harness unavailable.')
   } finally {
     actor.stop()
   }

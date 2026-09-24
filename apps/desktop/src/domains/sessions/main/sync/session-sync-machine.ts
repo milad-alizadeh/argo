@@ -21,6 +21,7 @@ export type SessionSyncResult = {
 }
 
 export const sessionSyncPageSize = 50
+export const sessionSyncMaxRetries = 3
 
 function isSessionSyncResult(value: unknown): value is SessionSyncResult {
   return (
@@ -54,6 +55,7 @@ export const sessionSyncMachine = setup({
       page: number
       failure: string | null
       refreshedAt: number | null
+      retryCount: number
     },
     events: {} as
       | {
@@ -69,6 +71,12 @@ export const sessionSyncMachine = setup({
     }),
   },
   guards: {
+    canRetry: ({ context }) => context.retryCount < sessionSyncMaxRetries,
+    isCurrentCompleteGeneration: ({ context, event }) =>
+      'output' in event &&
+      isSessionSyncResult(event.output) &&
+      event.output.generation === context.generation &&
+      event.output.complete,
     isCurrentGeneration: ({ context, event }) =>
       'output' in event &&
       isSessionSyncResult(event.output) &&
@@ -84,10 +92,12 @@ export const sessionSyncMachine = setup({
         page: event.output.complete ? 0 : event.output.page + 1,
         failure: null,
         refreshedAt: Date.now(),
+        retryCount: 0,
       }
     }),
     rememberFailure: assign(({ context, event }) => ({
       failure: 'error' in event ? String(event.error) : context.failure,
+      retryCount: context.retryCount + 1,
     })),
     advanceGeneration: assign(({ context }) => ({
       generation: context.generation + 1,
@@ -96,6 +106,11 @@ export const sessionSyncMachine = setup({
       cursor: null,
       generation: context.generation + 1,
       page: 0,
+      retryCount: 0,
+    })),
+    beginRefresh: assign(({ context }) => ({
+      generation: context.generation + 1,
+      retryCount: 0,
     })),
     indexResult: ({ event, self }) => {
       if (!('output' in event) || !isSessionSyncResult(event.output)) return
@@ -122,6 +137,7 @@ export const sessionSyncMachine = setup({
     page: 0,
     failure: null,
     refreshedAt: null,
+    retryCount: 0,
   }),
   states: {
     Syncing: {
@@ -134,8 +150,17 @@ export const sessionSyncMachine = setup({
         }),
         onDone: [
           {
-            guard: 'isCurrentGeneration',
+            guard: 'isCurrentCompleteGeneration',
             target: 'Waiting',
+            actions: [
+              'indexResult',
+              'rememberResult',
+            ],
+          },
+          {
+            guard: 'isCurrentGeneration',
+            target: 'Syncing',
+            reenter: true,
             actions: [
               'indexResult',
               'rememberResult',
@@ -145,10 +170,17 @@ export const sessionSyncMachine = setup({
             target: 'Waiting',
           },
         ],
-        onError: {
-          target: 'Retrying',
-          actions: 'rememberFailure',
-        },
+        onError: [
+          {
+            guard: 'canRetry',
+            target: 'Retrying',
+            actions: 'rememberFailure',
+          },
+          {
+            target: 'Waiting',
+            actions: 'rememberFailure',
+          },
+        ],
       },
       on: {
         'Priority sync': {
@@ -162,13 +194,13 @@ export const sessionSyncMachine = setup({
       after: {
         poll: {
           target: 'Syncing',
-          actions: 'advanceGeneration',
+          actions: 'beginRefresh',
         },
       },
       on: {
         Refresh: {
           target: 'Syncing',
-          actions: 'advanceGeneration',
+          actions: 'beginRefresh',
         },
         'Priority sync': {
           target: 'Syncing',
@@ -186,7 +218,7 @@ export const sessionSyncMachine = setup({
       on: {
         Refresh: {
           target: 'Syncing',
-          actions: 'advanceGeneration',
+          actions: 'beginRefresh',
         },
         'Priority sync': {
           target: 'Syncing',
