@@ -1,8 +1,67 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createActor, waitFor } from 'xstate'
+import { getShortestPaths } from 'xstate/graph'
 import type { CodexRequest } from '../app-server/codex-app-server-machine'
-import { createCodexSessionMachine } from './codex-session-machine'
+import { codexSessionActors, codexSessionMachine } from './codex-session-machine'
+
+function machineFor(request: CodexRequest) {
+  return codexSessionMachine.provide({ actors: codexSessionActors(request) })
+}
+
+test('models Codex opening, first turn, later turn, failure, and close paths', () => {
+  const paths = getShortestPaths(codexSessionMachine, {
+    input: {
+      commandId: '00000000-0000-4000-8000-000000000001',
+      harness: 'codex',
+      cwd: '/repo',
+      prompt: 'first',
+      attachments: [],
+      setup: { model: 'model', effort: 'medium', mode: 'workspace-write' },
+    },
+    events: (snapshot) => {
+      if (snapshot.matches('Opening'))
+        return [
+          { type: 'xstate.done.actor.startThread' as const, output: 'thread-1' },
+          { type: 'xstate.error.actor.startThread' as const, error: 'failed' },
+        ]
+      if (snapshot.matches('Starting first prompt'))
+        return [
+          { type: 'xstate.done.actor.startFirstTurn' as const, output: 'turn-1' },
+          { type: 'xstate.error.actor.startFirstTurn' as const, error: 'failed' },
+        ]
+      if (snapshot.matches('Ready'))
+        return [
+          {
+            type: 'Send' as const,
+            command: {
+              prompt: 'second',
+              attachments: [],
+              setup: { model: 'model', effort: 'medium', mode: 'workspace-write' },
+            },
+          },
+          { type: 'Close' as const },
+        ]
+      if (snapshot.matches('Starting next prompt'))
+        return [
+          { type: 'xstate.done.actor.startNextTurn' as const, output: 'turn-2' },
+          { type: 'xstate.error.actor.startNextTurn' as const, error: 'failed' },
+        ]
+      return snapshot.matches('Failed') ? [{ type: 'Close' as const }] : []
+    },
+  })
+  assert.deepEqual(
+    new Set(paths.map(({ state }) => String(state.value))),
+    new Set([
+      'Opening',
+      'Starting first prompt',
+      'Ready',
+      'Starting next prompt',
+      'Failed',
+      'Closed',
+    ]),
+  )
+})
 
 test('converts text, files, and images at the Codex Session boundary', async () => {
   let sentInput: unknown
@@ -12,7 +71,7 @@ test('converts text, files, and images at the Codex Session boundary', async () 
       method === 'thread/start' ? { thread: { id: 'thread-1' } } : { turn: { id: 'turn-1' } },
     )
   }
-  const actor = createActor(createCodexSessionMachine(request), {
+  const actor = createActor(machineFor(request), {
     input: {
       commandId: '00000000-0000-4000-8000-000000000001',
       harness: 'codex',
@@ -46,7 +105,7 @@ test('starts the first Codex turn before becoming ready', async () => {
       method === 'thread/start' ? { thread: { id: 'thread-1' } } : { turn: { id: 'turn-1' } },
     )
   }
-  const actor = createActor(createCodexSessionMachine(request), {
+  const actor = createActor(machineFor(request), {
     input: {
       commandId: '00000000-0000-4000-8000-000000000001',
       harness: 'codex',
@@ -72,7 +131,7 @@ test('starts later Codex prompts on the persisted thread', async () => {
       method === 'thread/start' ? { thread: { id: 'thread-1' } } : { turn: { id: 'turn-1' } },
     )
   }
-  const actor = createActor(createCodexSessionMachine(request), {
+  const actor = createActor(machineFor(request), {
     input: {
       commandId: '00000000-0000-4000-8000-000000000001',
       harness: 'codex',

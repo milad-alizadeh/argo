@@ -2,7 +2,10 @@ import { createActor, fromPromise, waitFor } from 'xstate'
 import type { AvailableHarness } from '@/harnesses/catalog/harness-catalog-machine'
 import { claudeSessionMachine } from '@/harnesses/claude/session/claude-session-machine'
 import type { CodexRequest } from '@/harnesses/codex/app-server/codex-app-server-machine'
-import { createCodexSessionMachine } from '@/harnesses/codex/session/codex-session-machine'
+import {
+  codexSessionActors,
+  codexSessionMachine,
+} from '@/harnesses/codex/session/codex-session-machine'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 import type { SessionSendInput, SessionStartInput } from '../../contract/session-start'
 import { createSessionUpsert } from '../storage/session-upsert'
@@ -59,7 +62,9 @@ function createVendorSession(start: SessionStartInput, codexRequest: CodexReques
       )
     case 'codex':
       return waitForVendor(
-        createActor(createCodexSessionMachine(codexRequest), { input: start }).start(),
+        createActor(codexSessionMachine.provide({ actors: codexSessionActors(codexRequest) }), {
+          input: start,
+        }).start(),
         'Codex Session start failed.',
         'Codex Session send failed.',
       )
