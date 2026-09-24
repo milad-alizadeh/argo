@@ -1,18 +1,14 @@
 import { expect, test } from 'bun:test'
 import assert from 'node:assert/strict'
 import type { ActorLogic } from 'xstate'
-import { createActor, waitFor } from 'xstate'
+import { createActor, fromPromise, waitFor } from 'xstate'
 import { adjacencyMapToArray, getAdjacencyMap, getShortestPaths } from 'xstate/graph'
 import { claudeHarnessInfo } from '@/harnesses/claude/catalog'
 import { codexHarnessInfo } from '@/harnesses/codex/catalog'
 import { assertModeledTransitions } from '@/platform/main/test-doubles/xstate-model-transitions'
 import { claudeModelCatalogFixture } from '../../../test-fixtures/sessions/claude-model-catalog.fixture'
 import { codexModelCatalogFixture } from '../../../test-fixtures/sessions/codex-model-catalog.fixture'
-import {
-  createHarnessCatalogMachine,
-  harnessCatalogSchema,
-  unavailable,
-} from './harness-catalog-machine'
+import { harnessCatalogMachine, harnessCatalogSchema, unavailable } from './harness-catalog-machine'
 
 test('publishes a serializable catalog with Model-specific Efforts and defaults', () => {
   const catalog = harnessCatalogSchema.parse({
@@ -46,17 +42,21 @@ test('keeps an available Harness visible when the other catalog is unavailable',
 
 test('counts invalid vendor responses in the catalog actor', async () => {
   const actor = createActor(
-    createHarnessCatalogMachine(async () =>
-      harnessCatalogSchema.parse({
-        harnesses: [
-          claudeHarnessInfo({
-            data: [{ value: 'unknown-shape' }],
-            supportedPermissionModes: ['manual'],
+    harnessCatalogMachine.provide({
+      actors: {
+        loadCatalog: fromPromise(async () =>
+          harnessCatalogSchema.parse({
+            harnesses: [
+              claudeHarnessInfo({
+                data: [{ value: 'unknown-shape' }],
+                supportedPermissionModes: ['manual'],
+              }),
+              codexHarnessInfo(null),
+            ],
           }),
-          codexHarnessInfo(null),
-        ],
-      }),
-    ),
+        ),
+      },
+    }),
   ).start()
   try {
     actor.send({ type: 'Catalog requested' })
@@ -70,12 +70,16 @@ test('counts invalid vendor responses in the catalog actor', async () => {
 
 test('loads on request and retries a failed catalog load', async () => {
   let attempts = 0
-  const machine = createHarnessCatalogMachine(async () => {
-    attempts += 1
-    if (attempts === 1) throw new Error('temporary catalog failure')
-    return harnessCatalogSchema.parse({
-      harnesses: [claudeHarnessInfo(claudeModelCatalogFixture()), codexHarnessInfo(null)],
-    })
+  const machine = harnessCatalogMachine.provide({
+    actors: {
+      loadCatalog: fromPromise(async () => {
+        attempts += 1
+        if (attempts === 1) throw new Error('temporary catalog failure')
+        return harnessCatalogSchema.parse({
+          harnesses: [claudeHarnessInfo(claudeModelCatalogFixture()), codexHarnessInfo(null)],
+        })
+      }),
+    },
   })
   const actor = createActor(machine).start()
   actor.send({ type: 'Catalog requested' })
@@ -99,7 +103,9 @@ const modeledEvents = [
   { type: 'xstate.error.actor.0.harnessCatalog.Loading' as const, error: 'modeled failure' },
   { type: 'xstate.init' as const },
 ]
-const modeledMachine = createHarnessCatalogMachine(() => new Promise(() => undefined))
+const modeledMachine = harnessCatalogMachine.provide({
+  actors: { loadCatalog: fromPromise(() => new Promise(() => undefined)) },
+})
 type ModeledSnapshot = ReturnType<typeof modeledMachine.getInitialSnapshot>
 const modeledLogic = modeledMachine as unknown as ActorLogic<
   ModeledSnapshot,

@@ -3,7 +3,7 @@ import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { type ActorLogic, createActor, fromCallback, waitFor } from 'xstate'
+import { type ActorLogic, createActor, fromCallback, fromPromise, waitFor } from 'xstate'
 import { adjacencyMapToArray, getAdjacencyMap, getShortestPaths } from 'xstate/graph'
 import { codexModelCatalogFixture } from '../../../../test-fixtures/sessions/codex-model-catalog.fixture'
 import { readCodexHarnessInfo } from '../catalog'
@@ -156,6 +156,52 @@ test('restarts when the executable version changes', () => {
   }
 })
 
+test('dispatches a same-version call without restarting the ready process', async () => {
+  const commands: string[] = []
+  const machine = codexAppServerMachine.provide({
+    actors: {
+      processActor: fromCallback(({ receive }) =>
+        receive((command) => {
+          commands.push(command.type)
+          if (command.type === 'Dispatch') command.request.run({} as CodexChannel)
+        }),
+      ),
+      discoverExecutable: fromPromise(({ input }) =>
+        Promise.resolve({
+          type: 'Request' as const,
+          executable: 'codex',
+          version: '0.147.0',
+          run: input.run,
+          reject: input.reject,
+        }),
+      ),
+    },
+  })
+  const actor = createActor(machine, { input: { executable: 'codex' } }).start()
+  try {
+    actor.send({ type: 'Process ready', version: '0.147.0' })
+    await waitFor(actor, (snapshot) => snapshot.matches({ Active: { Connected: 'Ready' } }))
+    commands.length = 0
+    let dispatched = false
+    actor.send({
+      type: 'Call',
+      run: () => {
+        dispatched = true
+      },
+      reject: assert.fail,
+    })
+    await waitFor(actor, (snapshot) => snapshot.matches({ Active: { Connected: 'Ready' } }))
+    assert.equal(dispatched, true)
+    assert.ok(commands.includes('Dispatch'))
+    assert.equal(
+      commands.some((command) => command === 'Open' || command === 'Close'),
+      false,
+    )
+  } finally {
+    actor.stop()
+  }
+})
+
 test('rejects waiting requests when the app-server actor stops', () => {
   const machine = codexAppServerMachine.provide({
     actors: { processActor: codexAppServerProcessActor },
@@ -213,16 +259,15 @@ test('rejects a request sent after shutdown', async () => {
 
 test('reports an executable lookup failure through the machine', async () => {
   const machine = codexAppServerMachine.provide({
-    actors: { processActor: fromCallback(() => () => {}) },
-    actions: {
-      inspectExecutable: ({ self, event }) => {
-        if (event.type !== 'Call') return
-        self.send({
+    actors: {
+      processActor: fromCallback(() => () => {}),
+      discoverExecutable: fromPromise(({ input }) =>
+        Promise.resolve({
           type: 'Executable check failed',
           detail: 'Executable lookup failed.',
-          reject: event.reject,
-        })
-      },
+          reject: input.reject,
+        }),
+      ),
     },
   })
   const actor = createActor(machine, { input: { executable: null } }).start()
@@ -232,6 +277,44 @@ test('reports an executable lookup failure through the machine', async () => {
       /Executable lookup failed/,
     )
     assert.match(actor.getSnapshot().context.failure ?? '', /Executable lookup failed/)
+  } finally {
+    actor.stop()
+  }
+})
+
+test('settles concurrent executable checks and cancels the active check on shutdown', async () => {
+  let release!: () => void
+  const machine = codexAppServerMachine.provide({
+    actors: {
+      processActor: fromCallback(() => () => {}),
+      discoverExecutable: fromPromise(
+        ({ input, signal }) =>
+          new Promise((resolve) => {
+            signal.addEventListener(
+              'abort',
+              () => input.reject(new Error('Codex app-server closed during executable discovery.')),
+              { once: true },
+            )
+            release = () =>
+              resolve({
+                type: 'Request',
+                executable: null,
+                version: null,
+                run: input.run,
+                reject: input.reject,
+              })
+          }),
+      ),
+    },
+  })
+  const actor = createActor(machine, { input: { executable: null } }).start()
+  try {
+    const first = requestCodexAppServer(actor)('model/list', {}, (value) => value)
+    const second = requestCodexAppServer(actor)('model/list', {}, (value) => value)
+    await assert.rejects(second, /discovery is in progress/)
+    actor.send({ type: 'Shutdown' })
+    await assert.rejects(first, /closed during executable discovery/)
+    release()
   } finally {
     actor.stop()
   }
@@ -258,18 +341,17 @@ createInterface({ input: process.stdin }).on('line', (line) => {
   )
   await chmod(executable, 0o755)
   const machine = codexAppServerMachine.provide({
-    actors: { processActor: codexAppServerProcessActor },
-    actions: {
-      inspectExecutable: ({ self, event }) => {
-        if (event.type !== 'Call') return
-        self.send({
+    actors: {
+      processActor: codexAppServerProcessActor,
+      discoverExecutable: fromPromise(({ input }) =>
+        Promise.resolve({
           type: 'Request',
           executable,
           version: 'codex 0.147.0',
-          run: event.run,
-          reject: event.reject,
-        })
-      },
+          run: input.run,
+          reject: input.reject,
+        }),
+      ),
     },
   })
   const actor = createActor(machine, { input: { executable } }).start()

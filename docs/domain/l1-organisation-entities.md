@@ -98,8 +98,7 @@ Three independent, optional, many-to-many edges:
   session's own end; there is no TTL. Across a restart the Argo-owned durable link survives, but
   liveness drops to DERIVED — so the claim degrades to **stale** rather than reading as held:
   stale-on-open is takeable with a warning, stale-on-closed is inert (closure is read before
-  claims). A Session Argo **managed** before — now `watched` with no live channel — keeps its
-  durable link. The
+  claims). A Session that lost its live channel keeps its durable link. The
   provider assignee is a **visible echo** for teammates, never the lease — it carries no age,
   nothing releases it, and it is written by the **agent** under `/wayfinder`, not by Argo.
 - **Session → Delivery** — "which branch / product am I moving."

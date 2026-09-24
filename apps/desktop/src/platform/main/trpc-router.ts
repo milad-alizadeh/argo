@@ -1,4 +1,6 @@
 import { initTRPC } from '@trpc/server'
+import type { SessionSupervisorActor } from '@/domains/sessions/main/live/session-supervisor-machine'
+import { sessionSubmitProcedure } from '@/domains/sessions/main/session-procedures'
 import {
   type CatalogActor,
   catalogReadProcedure,
@@ -7,10 +9,11 @@ import {
 
 const t = initTRPC.create()
 
-export function createAppRouter(actor: CatalogActor) {
+export function createAppRouter(actor: CatalogActor, sessions: SessionSupervisorActor) {
   return t.router({
     harnessCatalogRead: catalogReadProcedure(actor),
     harnessCatalogRefresh: catalogRefreshProcedure(actor),
+    sessionSubmit: sessionSubmitProcedure(sessions),
   })
 }
 

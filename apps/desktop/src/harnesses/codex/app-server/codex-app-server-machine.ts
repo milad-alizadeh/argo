@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { createInterface } from 'node:readline'
-import { type ActorRefFrom, assign, fromCallback, sendTo, setup } from 'xstate'
+import { type ActorRefFrom, assign, fromCallback, fromPromise, raise, sendTo, setup } from 'xstate'
+import { SESSION_CODEX_EXECUTABLE_ENV } from '@/domains/sessions/contract/proof-protocol'
 import { executableVersion } from '@/harnesses/cli/executable-version'
+import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 
 // The subset of `codex app-server`'s JSON-RPC protocol this adapter drives, grounded in codex-harness
 // 0.147.0's generated schema (`codex app-server generate-json-schema`) and the live proof recorded
@@ -340,6 +342,19 @@ type RequestEvent = {
   run: (channel: CodexChannel) => void
   reject: (error: Error) => void
 }
+type ExecutableCheckFailure = {
+  type: 'Executable check failed'
+  detail: string
+  reject: (error: Error) => void
+}
+
+function checkedOutput(event: unknown): RequestEvent | ExecutableCheckFailure | null {
+  if (typeof event !== 'object' || event === null || !('output' in event)) return null
+  const output = event.output
+  return typeof output === 'object' && output !== null && 'type' in output
+    ? (output as RequestEvent | ExecutableCheckFailure)
+    : null
+}
 type ProcessCommand =
   | {
       type: 'Open'
@@ -373,11 +388,7 @@ type Context = {
 type Event =
   | CallEvent
   | RequestEvent
-  | {
-      type: 'Executable check failed'
-      detail: string
-      reject: (error: Error) => void
-    }
+  | ExecutableCheckFailure
   | {
       type: 'Process ready'
       version: string
@@ -582,6 +593,34 @@ export const codexAppServerMachine = setup({
     >(() => {
       throw new Error('The application must provide the Codex process actor.')
     }),
+    discoverExecutable: fromPromise<RequestEvent | ExecutableCheckFailure, CallEvent>(
+      async ({ input, signal }) => {
+        const rejectOnStop = () =>
+          input.reject(new Error('Codex app-server closed during executable discovery.'))
+        signal.addEventListener('abort', rejectOnStop, {
+          once: true,
+        })
+        try {
+          const executable =
+            process.env[SESSION_CODEX_EXECUTABLE_ENV] ?? findExecutableOnLoginShellPath('codex')
+          return {
+            type: 'Request',
+            executable,
+            version: executable === null ? null : await executableVersion(executable),
+            run: input.run,
+            reject: input.reject,
+          }
+        } catch (error) {
+          return {
+            type: 'Executable check failed',
+            detail: String(error),
+            reject: input.reject,
+          }
+        } finally {
+          signal.removeEventListener('abort', rejectOnStop)
+        }
+      },
+    ),
   },
   guards: {
     hasExecutable: ({ context }) => context.executable !== null,
@@ -594,11 +633,23 @@ export const codexAppServerMachine = setup({
     readyVersionMatches: ({ context, event }) =>
       event.type === 'Process ready' &&
       (context.expectedVersion === null || context.expectedVersion === event.version),
+    checkedFailure: ({ event }) => checkedOutput(event)?.type === 'Executable check failed',
+    checkedMissingExecutable: ({ event }) => {
+      const output = checkedOutput(event)
+      return output?.type === 'Request' && output.executable === null
+    },
+    checkedSameExecutable: ({ context, event }) => {
+      const output = checkedOutput(event)
+      return (
+        output?.type === 'Request' &&
+        output.executable !== null &&
+        context.executable === output.executable &&
+        context.version !== null &&
+        context.version === output.version
+      )
+    },
   },
   actions: {
-    inspectExecutable: () => {
-      throw new Error('The application must provide Codex executable discovery.')
-    },
     openProcess: sendTo('processActor', ({ context }) => ({
       type: 'Open',
       executable: context.executable,
@@ -677,6 +728,10 @@ export const codexAppServerMachine = setup({
     rejectRequest: ({ event }) => {
       if (event.type === 'Request') event.reject(new Error('Codex executable is unavailable.'))
     },
+    rejectConcurrentCheck: ({ event }) => {
+      if (event.type === 'Call')
+        event.reject(new Error('Codex executable discovery is in progress.'))
+    },
   },
   delays: {
     retryDelay: ({ context }) => Math.min(1_000 * 2 ** context.retryCount, 30_000),
@@ -706,7 +761,7 @@ export const codexAppServerMachine = setup({
       initial: 'Unavailable',
       on: {
         Call: {
-          actions: 'inspectExecutable',
+          target: '.Checking',
         },
         'Executable check failed': {
           actions: [
@@ -737,6 +792,41 @@ export const codexAppServerMachine = setup({
         ],
       },
       states: {
+        Checking: {
+          invoke: {
+            src: 'discoverExecutable',
+            input: ({ event }) => {
+              if (event.type !== 'Call') throw new Error('Expected a Codex app-server call.')
+              return event
+            },
+            onDone: [
+              {
+                guard: 'checkedFailure',
+                target: 'Unavailable',
+                actions: raise(({ event }) => event.output),
+              },
+              {
+                guard: 'checkedMissingExecutable',
+                target: 'Unavailable',
+                actions: raise(({ event }) => event.output),
+              },
+              {
+                guard: 'checkedSameExecutable',
+                target: 'Connected.Ready',
+                actions: raise(({ event }) => event.output),
+              },
+              {
+                target: 'Connected.Starting',
+                actions: raise(({ event }) => event.output),
+              },
+            ],
+          },
+          on: {
+            Call: {
+              actions: 'rejectConcurrentCheck',
+            },
+          },
+        },
         Unavailable: {
           always: {
             guard: 'hasExecutable',

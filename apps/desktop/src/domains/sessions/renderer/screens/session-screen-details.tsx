@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router'
 import type { Cockpit, ProjectActions } from '@/domains/projects/renderer'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import type { SessionSubmitInput } from '@/domains/sessions/contract/session-start'
 import type { CatalogReadResult } from '@/harnesses/catalog/catalog-read'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
@@ -44,6 +45,64 @@ function catalogFailureOf(
   return null
 }
 
+function workspaceControl(
+  identity: ReturnType<typeof composerIdentityOf>,
+  cockpit: Cockpit,
+  projectActions: SessionScreenDetailsProps['projectActions'],
+) {
+  if (identity.kind !== 'draft') return null
+  return {
+    workspaces: cockpit.workspaces,
+    workspace: cockpit.workspace,
+    onSelect: projectActions.selectWorkspace,
+    onCreateManaged: () => projectActions.createManagedWorkspace('HEAD'),
+  }
+}
+
+async function submitFromComposer({
+  submit,
+  identity,
+  harness,
+  cockpit,
+  prompt,
+  setup,
+  attachments,
+}: {
+  submit: (input: SessionSubmitInput) => Promise<{ sessionId: string }>
+  identity: ReturnType<typeof composerIdentityOf>
+  harness: HarnessControl
+  cockpit: Cockpit
+  prompt: string
+  setup: SessionSubmitInput['setup'] | null
+  attachments: SessionSubmitInput['attachments']
+}) {
+  if (setup === null) return false
+  const commandId =
+    identity.kind === 'pending'
+      ? useSessionCreationStore.getState().startSubmission(identity.sessionId, prompt)
+      : crypto.randomUUID()
+  if (commandId === null) return false
+  try {
+    const submitted = await submit({
+      commandId,
+      harness: harness.harness,
+      projectId: cockpit.project?.id ?? '',
+      cwd: cockpit.workspace?.path ?? cockpit.project?.path ?? '',
+      sessionId: identity.kind === 'session' ? identity.sessionId : null,
+      pendingId: identity.kind === 'pending' ? identity.sessionId : null,
+      prompt,
+      attachments,
+      setup,
+    })
+    if (identity.kind === 'pending')
+      useSessionCreationStore.getState().resolved(identity.sessionId, submitted.sessionId)
+    return true
+  } catch {
+    if (identity.kind === 'pending') useSessionCreationStore.getState().failed(identity.sessionId)
+    return false
+  }
+}
+
 export function SessionComposerArea({
   permission,
   questionPending,
@@ -54,9 +113,10 @@ export function SessionComposerArea({
   cockpit,
   projectActions,
 }: SessionScreenDetailsProps) {
-  const location = useLocation()
   const catalogQuery = useQuery(trpc.harnessCatalogRead.queryOptions({ harness: harness.harness }))
   const catalogRefresh = useMutation(trpc.harnessCatalogRefresh.mutationOptions())
+  const sessionSubmit = useMutation(trpc.sessionSubmit.mutationOptions())
+  const location = useLocation()
   const catalog = catalogQuery.data?.info ?? null
   const catalogFailure = catalogFailureOf(catalogQuery.data, catalogQuery.isError)
   const pending = useSessionCreationStore((state) => state.pending)
@@ -73,6 +133,12 @@ export function SessionComposerArea({
   })
   // The Roster already knows another process runs it live, so no Send is offered at all (ADR-0040).
   if (session?.locked === true) return <OpenElsewhere onRetry={null} />
+  const refreshCatalog = () =>
+    catalogRefresh.mutate(
+      { harness: harness.harness },
+      { onSettled: () => void catalogQuery.refetch() },
+    )
+  const submit = (input: SessionSubmitInput) => sessionSubmit.mutateAsync(input)
   return (
     <>
       {permission.failure ? <Failure message={permission.failure} /> : null}
@@ -81,22 +147,8 @@ export function SessionComposerArea({
         focusOnMount={location.state === COMPOSER_FOCUS_STATE}
         setup={control}
         catalogFailure={catalogFailure}
-        refreshCatalog={() =>
-          catalogRefresh.mutate(
-            { harness: harness.harness },
-            { onSettled: () => void catalogQuery.refetch() },
-          )
-        }
-        workspace={
-          identity.kind === 'draft'
-            ? {
-                workspaces: cockpit.workspaces,
-                workspace: cockpit.workspace,
-                onSelect: projectActions.selectWorkspace,
-                onCreateManaged: () => projectActions.createManagedWorkspace('HEAD'),
-              }
-            : null
-        }
+        refreshCatalog={refreshCatalog}
+        workspace={workspaceControl(identity, cockpit, projectActions)}
         contextTokens={session?.contextTokens}
         contextWindowTokens={session?.contextWindowTokens}
         disabled={questionPending}
@@ -109,6 +161,9 @@ export function SessionComposerArea({
           />
         }
         plan={session?.plan ?? null}
+        onSend={(prompt, setup, attachments) =>
+          submitFromComposer({ submit, identity, harness, cockpit, prompt, setup, attachments })
+        }
       />
     </>
   )

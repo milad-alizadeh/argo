@@ -99,10 +99,10 @@ silently empties for ordinary hand-named branches with no PR — the common case
 
 ## L2
 
-**`managed | watched` names channel ownership, not Session kind.** Vendor history is the floor for
-both postures. Managed adds an Argo-owned live channel. Watched means read-only now, not read-only
-forever. After restart, a Session becomes watched because the channel died; native resume can open
-a new managed channel (ADR-0047).
+**A live channel is runtime state, not a Session posture.** Vendor history remains available after
+an Argo restart, while the Session actor and its Harness child do not. A new prompt can attempt
+native resume. ADR-0048 removes ADR-0047's `managed | watched` posture and SQLite lease from the
+Session model.
 
 **Native identity and Argo identity serve different boundaries.** A Harness and its native Session
 ID name the conversation that its API can list, read, and resume. The unique pair prevents duplicate
@@ -115,14 +115,14 @@ current indexed title supplies a name only when the reader has not chosen one; A
 that title into the Session. Vendor title and first prompt follow. This makes Ticket renames visible
 without a Session mutation and lets names entered in other apps remain vendor facts.
 
-**Status comes from the vendor boundary.** Managed actors know when their own start, Turn, gate,
-and close transitions occur. Watched Sessions use only vendor history and liveness. Process
+**Status comes from the vendor boundary.** Live actors know when their own start, Turn, gate,
+and close transitions occur. Sessions without a live channel use only vendor history and liveness. Process
 matching, file age, and unfinished records no longer stand in for liveness.
 
 **Entry is a fact about the process, not a kind of Session.** A `claude -p` run is one logical
 vendor Session and the root Agent, so #1073 declined to carve out a second kind for it. What is
 true of it is narrower: nobody is at the terminal. That is a property of how the process was
-started, so it sits beside `harness` and `cwd` rather than beside `managed | watched`, and it
+started, so it sits beside `harness` and `cwd` rather than beside live-channel state, and it
 changes what the Roster draws without changing what a Session is.
 
 **And the folded row is not one either.** A row standing for 180 Sessions is not a Session, so
