@@ -119,87 +119,85 @@ export function invalidCatalogResponse(
     detail: error.message,
   }
 }
-export function createHarnessCatalogMachine(load: HarnessCatalogLoad) {
-  const loadCatalog = fromPromise(load)
-  return setup({
-    types: {
-      context: {} as {
-        catalog: HarnessCatalog
-        failure: string | null
-        invalidResponseCount: number
-      },
-      events: {} as HarnessCatalogEvent,
+export const harnessCatalogMachine = setup({
+  types: {
+    context: {} as {
+      catalog: HarnessCatalog
+      failure: string | null
+      invalidResponseCount: number
     },
-    actors: {
-      loadCatalog,
+    events: {} as HarnessCatalogEvent,
+  },
+  actors: {
+    loadCatalog: fromPromise<HarnessCatalog>(async () => {
+      throw new Error('Harness catalog load actor was not provided.')
+    }),
+  },
+  actions: {
+    clearFailure: assign({
+      failure: () => null,
+    }),
+  },
+}).createMachine({
+  id: 'harnessCatalog',
+  initial: 'Idle',
+  context: {
+    catalog: {
+      harnesses: [
+        unavailable('claude'),
+        unavailable('codex'),
+      ],
     },
-    actions: {
-      clearFailure: assign({
-        failure: () => null,
-      }),
-    },
-  }).createMachine({
-    id: 'harnessCatalog',
-    initial: 'Idle',
-    context: {
-      catalog: {
-        harnesses: [
-          unavailable('claude'),
-          unavailable('codex'),
-        ],
-      },
-      failure: null,
-      invalidResponseCount: 0,
-    },
-    states: {
-      Idle: {
-        on: {
-          'Catalog requested': 'Loading',
-          Refresh: 'Loading',
-          Retry: 'Loading',
-        },
-      },
-      Loading: {
-        entry: 'clearFailure',
-        invoke: {
-          src: 'loadCatalog',
-          onDone: {
-            target: 'Ready',
-            actions: assign({
-              catalog: ({ event }) => event.output,
-              invalidResponseCount: ({ context, event }) =>
-                context.invalidResponseCount +
-                event.output.harnesses.filter(
-                  (info) =>
-                    info.availability === 'unavailable' && info.reason === 'invalid-response',
-                ).length,
-            }),
-          },
-          onError: {
-            target: 'Failed',
-            actions: assign({
-              failure: ({ event }) => String(event.error),
-            }),
-          },
-        },
-        on: {
-          Refresh: 'Loading',
-          Retry: 'Loading',
-          'Catalog requested': {},
-        },
-      },
-      Ready: {
-        on: {
-          Refresh: 'Loading',
-          Retry: 'Loading',
-        },
-      },
-      Failed: {
-        on: {
-          Refresh: 'Loading',
-          Retry: 'Loading',
-        },
+    failure: null,
+    invalidResponseCount: 0,
+  },
+  states: {
+    Idle: {
+      on: {
+        'Catalog requested': 'Loading',
+        Refresh: 'Loading',
+        Retry: 'Loading',
       },
     },
-  })
-}
+    Loading: {
+      entry: 'clearFailure',
+      invoke: {
+        src: 'loadCatalog',
+        onDone: {
+          target: 'Ready',
+          actions: assign({
+            catalog: ({ event }) => event.output,
+            invalidResponseCount: ({ context, event }) =>
+              context.invalidResponseCount +
+              event.output.harnesses.filter(
+                (info) => info.availability === 'unavailable' && info.reason === 'invalid-response',
+              ).length,
+          }),
+        },
+        onError: {
+          target: 'Failed',
+          actions: assign({
+            failure: ({ event }) => String(event.error),
+          }),
+        },
+      },
+      on: {
+        Refresh: 'Loading',
+        Retry: 'Loading',
+        'Catalog requested': {},
+      },
+    },
+    Ready: {
+      on: {
+        Refresh: 'Loading',
+        Retry: 'Loading',
+      },
+    },
+    Failed: {
+      on: {
+        Refresh: 'Loading',
+        Retry: 'Loading',
+      },
+    },
+  },
+})

@@ -1,4 +1,6 @@
-import { assign, fromPromise, setup } from 'xstate'
+import { assign, enqueueActions, fromPromise, type SnapshotFrom, sendTo, setup } from 'xstate'
+import { claudeSessionMachine } from '@/harnesses/claude/session/claude-session-machine'
+import type { codexSessionMachine } from '@/harnesses/codex/session/codex-session-machine'
 import type { SessionStartInput } from '../../contract/session-start'
 
 export type QueuedSessionCommand = Pick<
@@ -10,10 +12,6 @@ type SessionPersistInput = {
   projectId: string
   nativeId: string | null
   firstPrompt: string
-}
-export type SessionDrainInput = {
-  nativeId: string | null
-  command: QueuedSessionCommand | null
 }
 
 export const sessionMachine = setup({
@@ -35,63 +33,57 @@ export const sessionMachine = setup({
           type: 'Close'
         }
       | {
-          type: 'xstate.done.actor.start'
-          output: {
-            nativeId: string
-          }
+          type: 'Harness ready'
+          nativeId: string
+        }
+      | {
+          type: 'Harness failed'
+          failure: string
         }
       | {
           type: 'xstate.done.actor.persist'
           output: string
         }
       | {
-          type: 'xstate.done.actor.drain'
-          output: undefined
-        }
-      | {
-          type: 'xstate.error.actor.start'
-          error: unknown
-        }
-      | {
           type: 'xstate.error.actor.persist'
           error: unknown
         }
       | {
-          type: 'xstate.error.actor.drain'
-          error: unknown
+          type: 'xstate.snapshot.harness'
+          snapshot: SnapshotFrom<typeof claudeSessionMachine | typeof codexSessionMachine>
         },
   },
   actors: {
-    start: fromPromise<
-      {
-        nativeId: string
-      },
-      SessionStartInput
-    >(async () => {
-      throw new Error('Session start actor was not provided.')
-    }),
-    persist: fromPromise<string, SessionPersistInput>(
-      ({ input }: { input: SessionPersistInput }) => {
-        void input
-        throw new Error('Session persistence actor was not provided.')
-      },
-    ),
-    drain: fromPromise<void, SessionDrainInput>(({ input }: { input: SessionDrainInput }) => {
-      void input
-      throw new Error('Session delivery actor was not provided.')
+    harness: claudeSessionMachine as typeof claudeSessionMachine | typeof codexSessionMachine,
+    persist: fromPromise<string, SessionPersistInput>(async () => {
+      throw new Error('Session persistence actor was not provided.')
     }),
   },
   actions: {
+    reportHarnessSnapshot: enqueueActions(({ event, enqueue }) => {
+      if (event.type !== 'xstate.snapshot.harness') return
+      const snapshot = event.snapshot
+      if (snapshot.matches('Failed'))
+        enqueue.raise({
+          type: 'Harness failed',
+          failure: snapshot.context.failure ?? 'Harness failed.',
+        })
+      else if (snapshot.hasTag('ready') && snapshot.context.nativeId !== null)
+        enqueue.raise({
+          type: 'Harness ready',
+          nativeId: snapshot.context.nativeId,
+        })
+    }),
     queueDistinct: assign({
       queue: ({ context, event }) =>
-        event.type !== 'Send' ||
-        event.command.commandId === context.first.commandId ||
-        context.queue.some(({ commandId }) => commandId === event.command.commandId)
-          ? context.queue
-          : [
+        event.type === 'Send' &&
+        event.command.commandId !== context.first.commandId &&
+        !context.queue.some(({ commandId }) => commandId === event.command.commandId)
+          ? [
               ...context.queue,
               event.command,
-            ],
+            ]
+          : context.queue,
     }),
     dequeue: assign({
       queue: ({ context }) => context.queue.slice(1),
@@ -102,26 +94,26 @@ export const sessionMachine = setup({
     }),
     rememberNativeId: assign({
       nativeId: ({ context, event }) =>
-        'output' in event &&
-        typeof event.output === 'object' &&
-        event.output !== null &&
-        'nativeId' in event.output &&
-        typeof event.output.nativeId === 'string'
-          ? event.output.nativeId
-          : context.nativeId,
+        event.type === 'Harness ready' ? event.nativeId : context.nativeId,
+    }),
+    rememberHarnessFailure: assign({
+      failure: ({ context, event }) =>
+        event.type === 'Harness failed' ? event.failure : context.failure,
     }),
     rememberPersistFailure: assign({
       failure: ({ context, event }) => ('error' in event ? String(event.error) : context.failure),
     }),
-    rememberSendFailure: assign({
-      failure: ({ context, event }) => ('error' in event ? String(event.error) : context.failure),
-    }),
-    rememberStartFailure: assign({
-      failure: ({ context, event }) => ('error' in event ? String(event.error) : context.failure),
-    }),
+    sendQueuedCommand: sendTo('harness', ({ context }) => ({
+      type: 'Send',
+      command: context.queue[0],
+    })),
   },
   guards: {
-    hasMoreQueuedSends: ({ context }) => context.queue.length > 1,
+    hasQueuedCommand: ({ context }) => context.queue.length > 0,
+    isNewCommand: ({ context, event }) =>
+      event.type === 'Send' &&
+      event.command.commandId !== context.first.commandId &&
+      !context.queue.some(({ commandId }) => commandId === event.command.commandId),
   },
 }).createMachine({
   id: 'session',
@@ -133,28 +125,24 @@ export const sessionMachine = setup({
     queue: [],
     failure: null,
   }),
+  invoke: {
+    id: 'harness',
+    src: 'harness',
+    input: ({ context }) => context.first,
+    onSnapshot: {
+      actions: 'reportHarnessSnapshot',
+    },
+  },
   states: {
     Starting: {
-      invoke: {
-        src: 'start',
-        input: ({ context }) => context.first,
-        onDone: {
-          target: 'Persisting',
-          actions: 'rememberNativeId',
-        },
-        onError: {
-          target: 'Failed',
-          actions: 'rememberStartFailure',
-        },
-      },
       on: {
-        'xstate.done.actor.start': {
+        'Harness ready': {
           target: 'Persisting',
           actions: 'rememberNativeId',
         },
-        'xstate.error.actor.start': {
+        'Harness failed': {
           target: 'Failed',
-          actions: 'rememberStartFailure',
+          actions: 'rememberHarnessFailure',
         },
         Send: {
           actions: 'queueDistinct',
@@ -164,6 +152,7 @@ export const sessionMachine = setup({
     },
     Persisting: {
       invoke: {
+        id: 'persist',
         src: 'persist',
         input: ({ context }) => ({
           harness: context.first.harness,
@@ -181,13 +170,9 @@ export const sessionMachine = setup({
         },
       },
       on: {
-        'xstate.done.actor.persist': {
-          target: 'Draining',
-          actions: 'rememberArgoId',
-        },
-        'xstate.error.actor.persist': {
+        'Harness failed': {
           target: 'Failed',
-          actions: 'rememberPersistFailure',
+          actions: 'rememberHarnessFailure',
         },
         Send: {
           actions: 'queueDistinct',
@@ -196,45 +181,36 @@ export const sessionMachine = setup({
       },
     },
     Draining: {
-      invoke: {
-        src: 'drain',
-        input: ({ context }) => ({
-          nativeId: context.nativeId,
-          command: context.queue[0] ?? null,
-        }),
-        onDone: [
-          {
-            target: 'Draining',
-            reenter: true,
-            guard: 'hasMoreQueuedSends',
-            actions: 'dequeue',
-          },
-          {
-            target: 'Ready',
-            actions: 'dequeue',
-          },
-        ],
-        onError: {
-          target: 'Failed',
-          actions: 'rememberSendFailure',
+      always: [
+        {
+          guard: 'hasQueuedCommand',
+          target: 'Sending',
         },
-      },
+        {
+          target: 'Ready',
+        },
+      ],
       on: {
-        'xstate.done.actor.drain': [
-          {
-            target: 'Draining',
-            reenter: true,
-            guard: 'hasMoreQueuedSends',
-            actions: 'dequeue',
-          },
-          {
-            target: 'Ready',
-            actions: 'dequeue',
-          },
-        ],
-        'xstate.error.actor.drain': {
+        'Harness failed': {
           target: 'Failed',
-          actions: 'rememberSendFailure',
+          actions: 'rememberHarnessFailure',
+        },
+        Send: {
+          actions: 'queueDistinct',
+        },
+        Close: 'Closed',
+      },
+    },
+    Sending: {
+      entry: 'sendQueuedCommand',
+      on: {
+        'Harness ready': {
+          target: 'Draining',
+          actions: 'dequeue',
+        },
+        'Harness failed': {
+          target: 'Failed',
+          actions: 'rememberHarnessFailure',
         },
         Send: {
           actions: 'queueDistinct',
@@ -246,7 +222,12 @@ export const sessionMachine = setup({
       on: {
         Send: {
           target: 'Draining',
+          guard: 'isNewCommand',
           actions: 'queueDistinct',
+        },
+        'Harness failed': {
+          target: 'Failed',
+          actions: 'rememberHarnessFailure',
         },
         Close: 'Closed',
       },

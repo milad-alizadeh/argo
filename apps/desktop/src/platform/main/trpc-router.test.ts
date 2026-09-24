@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
-import { createActor } from 'xstate'
-import type { SessionRuntime } from '@/domains/sessions/main/live/session-runtime'
+import { createActor, fromPromise } from 'xstate'
+import type { SessionSupervisorActor } from '@/domains/sessions/main/live/session-supervisor-machine'
 import {
-  createHarnessCatalogMachine,
+  harnessCatalogMachine,
   harnessCatalogSchema,
 } from '@/harnesses/catalog/harness-catalog-machine'
 import { claudeHarnessInfo } from '@/harnesses/claude/catalog'
@@ -11,23 +11,28 @@ import { claudeModelCatalogFixture } from '../../../test-fixtures/sessions/claud
 import { codexModelCatalogFixture } from '../../../test-fixtures/sessions/codex-model-catalog.fixture'
 import { createAppRouter } from './trpc-router'
 
+type SupervisorEvent = Parameters<SessionSupervisorActor['send']>[0]
 const sessions = {
-  start: async () => ({ sessionId: '00000000-0000-4000-8000-000000000001' }),
-  send: async () => ({ sessionId: '00000000-0000-4000-8000-000000000001' }),
-  submit: async () => ({ sessionId: '00000000-0000-4000-8000-000000000001' }),
-  stop: () => {},
-} as SessionRuntime
+  send: (event: SupervisorEvent) => {
+    if (event.type === 'Start' || event.type === 'Send')
+      event.reply.resolve({ sessionId: '00000000-0000-4000-8000-000000000001' })
+  },
+} as SessionSupervisorActor
 
 test('returns only the selected Harness as serializable composer choices', async () => {
   const actor = createActor(
-    createHarnessCatalogMachine(async () =>
-      harnessCatalogSchema.parse({
-        harnesses: [
-          claudeHarnessInfo(claudeModelCatalogFixture()),
-          codexHarnessInfo(codexModelCatalogFixture()),
-        ],
-      }),
-    ),
+    harnessCatalogMachine.provide({
+      actors: {
+        loadCatalog: fromPromise(async () =>
+          harnessCatalogSchema.parse({
+            harnesses: [
+              claudeHarnessInfo(claudeModelCatalogFixture()),
+              codexHarnessInfo(codexModelCatalogFixture()),
+            ],
+          }),
+        ),
+      },
+    }),
   ).start()
   try {
     const caller = createAppRouter(actor, sessions).createCaller({})
@@ -47,14 +52,18 @@ test('returns only the selected Harness as serializable composer choices', async
 test('repeated reads reuse the settled catalog until an explicit refresh', async () => {
   let loads = 0
   const actor = createActor(
-    createHarnessCatalogMachine(async () => {
-      loads += 1
-      return harnessCatalogSchema.parse({
-        harnesses: [
-          claudeHarnessInfo(claudeModelCatalogFixture()),
-          codexHarnessInfo(codexModelCatalogFixture()),
-        ],
-      })
+    harnessCatalogMachine.provide({
+      actors: {
+        loadCatalog: fromPromise(async () => {
+          loads += 1
+          return harnessCatalogSchema.parse({
+            harnesses: [
+              claudeHarnessInfo(claudeModelCatalogFixture()),
+              codexHarnessInfo(codexModelCatalogFixture()),
+            ],
+          })
+        }),
+      },
     }),
   ).start()
   try {
@@ -74,12 +83,16 @@ test('repeated reads reuse the settled catalog until an explicit refresh', async
 test('retry reloads a failed catalog once', async () => {
   let loads = 0
   const actor = createActor(
-    createHarnessCatalogMachine(async () => {
-      loads += 1
-      if (loads === 1) throw new Error('Catalog unavailable')
-      return harnessCatalogSchema.parse({
-        harnesses: [claudeHarnessInfo(claudeModelCatalogFixture()), codexHarnessInfo(null)],
-      })
+    harnessCatalogMachine.provide({
+      actors: {
+        loadCatalog: fromPromise(async () => {
+          loads += 1
+          if (loads === 1) throw new Error('Catalog unavailable')
+          return harnessCatalogSchema.parse({
+            harnesses: [claudeHarnessInfo(claudeModelCatalogFixture()), codexHarnessInfo(null)],
+          })
+        }),
+      },
     }),
   ).start()
   try {
@@ -98,18 +111,23 @@ test('retry reloads a failed catalog once', async () => {
 
 test('routes composer commands through the single Session submission mutation', async () => {
   const submitted: Array<{ sessionId: string | null; prompt: string }> = []
-  const runtime = {
-    ...sessions,
-    submit: async (input: { sessionId: string | null; prompt: string }) => {
-      submitted.push(input)
-      return { sessionId: '00000000-0000-4000-8000-000000000001' }
+  const supervisor = {
+    send: (event: SupervisorEvent) => {
+      if (event.type === 'Start') {
+        submitted.push({ sessionId: null, prompt: event.input.prompt })
+        event.reply.resolve({ sessionId: '00000000-0000-4000-8000-000000000001' })
+      }
     },
-  } as SessionRuntime
+  } as SessionSupervisorActor
   const actor = createActor(
-    createHarnessCatalogMachine(async () => harnessCatalogSchema.parse({ harnesses: [] })),
+    harnessCatalogMachine.provide({
+      actors: {
+        loadCatalog: fromPromise(async () => harnessCatalogSchema.parse({ harnesses: [] })),
+      },
+    }),
   ).start()
   try {
-    const caller = createAppRouter(actor, runtime).createCaller({})
+    const caller = createAppRouter(actor, supervisor).createCaller({})
     await caller.sessionSubmit({
       commandId: '00000000-0000-4000-8000-000000000002',
       harness: 'claude',
@@ -129,18 +147,23 @@ test('routes composer commands through the single Session submission mutation', 
 
 test('rejects Claude attachments before a Session reaches a vendor', async () => {
   let submissions = 0
-  const runtime = {
-    ...sessions,
-    submit: async () => {
-      submissions += 1
-      return { sessionId: '00000000-0000-4000-8000-000000000001' }
+  const supervisor = {
+    send: (event: SupervisorEvent) => {
+      if (event.type === 'Start' || event.type === 'Send') {
+        submissions += 1
+        event.reply.resolve({ sessionId: '00000000-0000-4000-8000-000000000001' })
+      }
     },
-  } as SessionRuntime
+  } as SessionSupervisorActor
   const actor = createActor(
-    createHarnessCatalogMachine(async () => harnessCatalogSchema.parse({ harnesses: [] })),
+    harnessCatalogMachine.provide({
+      actors: {
+        loadCatalog: fromPromise(async () => harnessCatalogSchema.parse({ harnesses: [] })),
+      },
+    }),
   ).start()
   try {
-    const caller = createAppRouter(actor, runtime).createCaller({})
+    const caller = createAppRouter(actor, supervisor).createCaller({})
     await expect(
       caller.sessionSubmit({
         commandId: '00000000-0000-4000-8000-000000000002',

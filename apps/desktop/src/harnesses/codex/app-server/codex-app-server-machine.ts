@@ -2,7 +2,9 @@ import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { createInterface } from 'node:readline'
 import { type ActorRefFrom, assign, fromCallback, sendTo, setup } from 'xstate'
+import { SESSION_CODEX_EXECUTABLE_ENV } from '@/domains/sessions/contract/proof-protocol'
 import { executableVersion } from '@/harnesses/cli/executable-version'
+import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 
 // The subset of `codex app-server`'s JSON-RPC protocol this adapter drives, grounded in codex-harness
 // 0.147.0's generated schema (`codex app-server generate-json-schema`) and the live proof recorded
@@ -596,8 +598,44 @@ export const codexAppServerMachine = setup({
       (context.expectedVersion === null || context.expectedVersion === event.version),
   },
   actions: {
-    inspectExecutable: () => {
-      throw new Error('The application must provide Codex executable discovery.')
+    inspectExecutable: ({ self, event }) => {
+      if (event.type !== 'Call') return
+      const reportFailure = (error: unknown) => {
+        if (self.getSnapshot().status !== 'active') {
+          event.reject(new Error('Codex app-server is closed.'))
+          return
+        }
+        self.send({
+          type: 'Executable check failed',
+          detail: String(error),
+          reject: event.reject,
+        })
+      }
+      const reportExecutable = (executable: string | null, version: string | null) => {
+        if (self.getSnapshot().status !== 'active') {
+          event.reject(new Error('Codex app-server is closed.'))
+          return
+        }
+        self.send({
+          type: 'Request',
+          executable,
+          version,
+          run: event.run,
+          reject: event.reject,
+        })
+      }
+      try {
+        const executable =
+          process.env[SESSION_CODEX_EXECUTABLE_ENV] ?? findExecutableOnLoginShellPath('codex')
+        if (executable === null) reportExecutable(null, null)
+        else
+          void executableVersion(executable).then(
+            (version) => reportExecutable(executable, version),
+            reportFailure,
+          )
+      } catch (error) {
+        reportFailure(error)
+      }
     },
     openProcess: sendTo('processActor', ({ context }) => ({
       type: 'Open',

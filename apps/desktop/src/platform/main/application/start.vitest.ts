@@ -17,7 +17,7 @@ vi.mock('../appearance', () => ({
   applyStoredAppearance: vi.fn(),
   readAppearance: vi.fn(async () => 'system'),
 }))
-vi.mock('../i18n', () => ({ setPlatformLanguage: vi.fn() }))
+vi.mock('../i18n', () => ({ setPlatformLanguage: vi.fn(), platformText: (key: string) => key }))
 
 const { startDesktopApplication } = await import('./start')
 
@@ -30,6 +30,7 @@ test('does not start a second Argo application instance', async () => {
   const ready = vi.fn()
 
   startDesktopApplication({
+    prepare: vi.fn(async () => ({ database: {} as never })),
     ready,
     focusExistingWindow: vi.fn(),
     willQuit: vi.fn(),
@@ -47,6 +48,7 @@ test('focuses the existing window when a second instance is launched', async () 
   const ready = vi.fn()
 
   startDesktopApplication({
+    prepare: vi.fn(async () => ({ database: {} as never })),
     ready,
     focusExistingWindow,
     willQuit: vi.fn(),

@@ -1,10 +1,13 @@
 import { app } from 'electron'
+import { createActor } from 'xstate'
+import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 import { applyStoredAppearance, readAppearance } from '../appearance'
 import { setPlatformLanguage } from '../i18n'
-import { type ApplicationActors, startApplicationActors } from './actors'
+import { type AppActor, appMachine } from './app-machine'
 
 export function startDesktopApplication(request: {
-  ready: (actors: ApplicationActors) => Promise<void> | void
+  prepare: () => Promise<{ database: DurableDatabase }>
+  ready: (actor: AppActor) => Promise<void> | void
   willQuit: () => void
   focusExistingWindow: () => void
 }): void {
@@ -13,11 +16,11 @@ export function startDesktopApplication(request: {
     return
   }
 
-  let actors: ApplicationActors | undefined
+  let actor: AppActor | undefined
   app.on('second-instance', request.focusExistingWindow)
   app.on('window-all-closed', () => app.quit())
   app.on('will-quit', () => {
-    actors?.stop()
+    actor?.send({ type: 'Shutdown' })
     request.willQuit()
   })
 
@@ -25,8 +28,9 @@ export function startDesktopApplication(request: {
     await app.whenReady()
     setPlatformLanguage(app.getLocale())
     applyStoredAppearance(await readAppearance(app.getPath('userData')))
-    actors = startApplicationActors()
-    await request.ready(actors)
+    const input = await request.prepare()
+    actor = createActor(appMachine, { input }).start()
+    await request.ready(actor)
   }
 
   void initialize().catch((error: unknown) => {
