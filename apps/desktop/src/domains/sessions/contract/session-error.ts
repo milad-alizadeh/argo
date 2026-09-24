@@ -3,7 +3,7 @@ import { identifierSchema } from '@/shared/validation'
 
 // Codes a Harness cannot cause: reading the Roster, an untrusted caller, a stale contract version.
 const SHARED_SESSION_ERRORS = {
-  'missing-session': 'Argo cannot find this Session.',
+  'missing-session': 'This Session is unavailable from its Harness.',
   'invalid-request': 'The Session request is invalid.',
   'unsupported-version': 'This Session contract version is not supported.',
   'transcripts-unavailable': 'Argo cannot read this Harness transcript folder.',

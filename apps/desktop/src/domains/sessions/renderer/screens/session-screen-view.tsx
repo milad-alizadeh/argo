@@ -122,7 +122,8 @@ export function SessionScreenView() {
         questionFailure={model.question.failureFor}
         onFeedStalledChange={setFeedStalledSessionId}
         composer={
-          selectedSessionId === null && !isNewSession ? null : (
+          (selectedSessionId === null && !isNewSession) ||
+          feedError?.code === 'missing-session' ? null : (
             <SessionComposerArea
               composer={model.composer}
               permission={model.permission}

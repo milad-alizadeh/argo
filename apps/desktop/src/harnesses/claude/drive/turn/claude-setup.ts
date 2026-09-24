@@ -1,4 +1,4 @@
-import { CLAUDE_MODES, type ClaudeTurnSetup } from '@/domains/sessions/contract/ipc/contract'
+import type { ClaudeTurnSetup } from '@/domains/sessions/contract/ipc/contract'
 
 type ClaudeMode = ClaudeTurnSetup['mode']
 
@@ -13,7 +13,7 @@ const MODE_FOOTERS = {
   auto: 'auto mode on',
   dontAsk: "don't ask on",
   bypassPermissions: 'bypass permissions on',
-} satisfies Record<ClaudeMode, string>
+} satisfies Record<string, string>
 
 const ESCAPE = '\u001b'
 const BELL = '\u0007'
@@ -38,7 +38,8 @@ export function setupCommands(applied: ClaudeTurnSetup, requested: ClaudeTurnSet
 
 export function footerMode(screen: string): ClaudeMode | null {
   const text = terminalText(screen)
-  const shown = CLAUDE_MODES.map((mode) => ({ mode, index: text.lastIndexOf(MODE_FOOTERS[mode]) }))
+  const shown = Object.entries(MODE_FOOTERS)
+    .map(([mode, footer]) => ({ mode, index: text.lastIndexOf(footer) }))
     .filter(({ index }) => index >= 0)
     .sort((left, right) => right.index - left.index)
   return shown[0]?.mode ?? null

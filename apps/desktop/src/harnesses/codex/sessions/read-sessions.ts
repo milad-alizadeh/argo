@@ -98,7 +98,7 @@ function indexCapabilities(root: string, index: SessionIndex | undefined) {
     reconcileAll: () => reconcileAll(root, index),
     resolveIndexedIds: (ids: readonly string[]) => resolveIds(index, ids),
     historyComplete: () => historyComplete(index),
-    searchIndexed: (query: string) => searchIndexed(index, query),
+    searchSessions: (query: string) => searchIndexed(index, query),
   }
 }
 

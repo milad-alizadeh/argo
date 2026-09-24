@@ -1,15 +1,11 @@
-import { CLAUDE_TURN_SETUP } from '../composer/turn-setup/claude-turn-setup'
-import type { TurnSetupChoices } from '../composer/turn-setup/turn-setup'
-
 export const SESSION_HARNESSES = ['claude', 'codex'] as const
 export type SessionHarness = (typeof SESSION_HARNESSES)[number]
 
-// What each harness is called, and what it lets a person set for its next Turn.
-export const HARNESSES: Record<SessionHarness, { label: string; setup: TurnSetupChoices | null }> =
-  {
-    claude: { label: CLAUDE_TURN_SETUP.label, setup: CLAUDE_TURN_SETUP },
-    codex: { label: 'Codex', setup: null },
-  }
+// What each harness is called.
+export const HARNESSES: Record<SessionHarness, { label: string }> = {
+  claude: { label: 'Claude Code' },
+  codex: { label: 'Codex' },
+}
 
 // Only a Session not yet started can change the harness it runs on.
 export type HarnessControl = {

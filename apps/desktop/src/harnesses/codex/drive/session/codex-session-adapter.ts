@@ -108,11 +108,19 @@ function createAdapterLaunch(options: {
   }
 }
 
-function createHistoryReads(watched: ReturnType<typeof createAdapterHistory>['watched']) {
+function createHistoryReads(
+  watched: ReturnType<typeof createAdapterHistory>['watched'],
+  notify: () => void,
+) {
   return {
     readHistoryProjection: (nativeId: string) => watched.readProjection(nativeId),
     watchedProjections: () => watched.projections(),
     checkoutFor: (nativeId: string) => watched.checkoutFor(nativeId),
+    refreshSearchHistory: async () => {
+      const projections = await watched.refreshForSearch()
+      notify()
+      return projections
+    },
   }
 }
 
@@ -191,7 +199,7 @@ export function createCodexSessionAdapter(deps: {
       if (notifyLateSuccess()) rosterChanges.notify()
       return projections
     },
-    ...createHistoryReads(watched),
+    ...createHistoryReads(watched, rosterChanges.notify),
     onRosterChanged: rosterChanges.subscribe,
   }
 }

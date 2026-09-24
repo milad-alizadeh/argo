@@ -3,11 +3,11 @@ import type {
   SessionProjection,
   Unsubscribe,
 } from '@/domains/sessions/next/contract/session-projection-contract'
+import { executableVersion } from '@/harnesses/cli/executable-version'
 import { CodexModelCatalogCache } from '../protocol/model-catalog'
 import type { WireMessage } from '../protocol/protocol'
 import type { AppServerSupervisor, AppServerSupervisorDeps } from './app-server-supervisor-machine'
 import { createAppServerSupervisor } from './app-server-supervisor-machine'
-import { executableVersion } from './executable-version'
 
 type ManagedSessionRegistry = {
   dispatchNotification: (message: WireMessage) => void

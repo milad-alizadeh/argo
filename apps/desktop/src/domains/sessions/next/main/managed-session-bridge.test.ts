@@ -1,12 +1,14 @@
 import { mock } from 'bun:test'
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import type { ClaudeModelCatalog } from '@/domains/sessions/contract/claude-model-catalog'
 import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
 import type { SessionAdapter } from '@/domains/sessions/next/contract/session-projection-contract'
 import { MANAGED_SESSION_OPERATIONS } from '@/domains/sessions/next/ipc/managed-session-operations'
 import type { SessionAdapterRegistry } from '@/domains/sessions/next/main/session-adapter-registry'
 import { electronStandIn } from '@/platform/main/test-doubles/electron-stand-in'
 import { createMockIpcWindow, RENDERER_URL } from '../../../../../mocks/contract/mock-ipc-window'
+import { claudeModelCatalogFixture } from '../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
 import { codexModelCatalogFixture } from '../../../../../test-fixtures/sessions/codex-model-catalog.fixture'
 
 mock.module('electron', () => electronStandIn)
@@ -15,11 +17,13 @@ const { attachManagedSessionBridge } = await import('./managed-session-bridge')
 function adapterRegistry(
   adapter: SessionAdapter | undefined,
   catalog: CodexModelCatalog | null = null,
+  claudeCatalog: ClaudeModelCatalog | null = null,
 ): SessionAdapterRegistry {
   return {
     adapterFor: () => adapter,
     sourceFor: () => undefined,
     readModelCatalog: async () => catalog,
+    readClaudeModelCatalog: async () => claudeCatalog,
     close: async () => {},
   }
 }
@@ -90,6 +94,26 @@ test('returns the validated Codex catalog through the catalog channel', async ()
     version: 1,
     type: 'managed-session.catalog.result',
     requestId: 'catalog-1',
+    catalog,
+  })
+})
+
+test('returns the validated Claude catalog through the Claude catalog channel', async () => {
+  const ipc = createMockIpcWindow()
+  const catalog = claudeModelCatalogFixture()
+  attachManagedSessionBridge(ipc.window, {
+    adapters: adapterRegistry(undefined, null, catalog),
+    rendererURL: RENDERER_URL,
+  })
+  const reply = await ipc.trustedInvoke(MANAGED_SESSION_OPERATIONS.claudeCatalog.channel, {
+    version: 1,
+    type: 'managed-session.claude-catalog',
+    requestId: 'claude-catalog-1',
+  })
+  assert.deepEqual(reply, {
+    version: 1,
+    type: 'managed-session.claude-catalog.result',
+    requestId: 'claude-catalog-1',
     catalog,
   })
 })

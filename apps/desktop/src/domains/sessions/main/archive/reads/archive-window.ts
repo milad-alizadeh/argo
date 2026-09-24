@@ -5,7 +5,7 @@
 // at a time, and stops as soon as its own predicate is satisfied. A predicate no row can satisfy
 // grows to the whole tree, which is what restoring an id that is no longer on disk costs.
 import { sessionError } from '@/domains/sessions/contract/ipc'
-import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { newestFirst, type SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import { combineDiscoveries, type Discovered } from '../../observation/reader/merge-discovery'
 import { readFailure } from '../../observation/reader/read-declaration'
 import type { SessionSource } from '../../observation/reader/reader'
@@ -64,8 +64,10 @@ export async function growWindow(
   satisfied: (rows: SessionRosterRow[]) => boolean,
 ): Promise<SessionWindow> {
   let read = await readWindow(sources, windows)
-  while (!read.window.exhausted && !satisfied(read.window.rows)) {
+  const rows = new Map(read.window.rows.map((row) => [row.id, row]))
+  while (!read.window.exhausted && !satisfied([...rows.values()])) {
     read = await readWindow(sources, read.next)
+    for (const row of read.window.rows) rows.set(row.id, row)
   }
-  return read.window
+  return { ...read.window, rows: [...rows.values()].sort(newestFirst) }
 }

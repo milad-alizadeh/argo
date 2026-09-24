@@ -17,6 +17,7 @@ type RosterRowViewProps = {
   row: RosterRow
   selected: boolean
   tabbable: boolean
+  unavailable: boolean
 }
 
 // Everything but the row is compared by identity, and each of those is held stable by the hook that
@@ -30,7 +31,8 @@ function sameRowView(left: RosterRowViewProps, right: RosterRowViewProps): boole
     left.onToggleSelect === right.onToggleSelect &&
     left.renamedTitles === right.renamedTitles &&
     left.selected === right.selected &&
-    left.tabbable === right.tabbable
+    left.tabbable === right.tabbable &&
+    left.unavailable === right.unavailable
   )
 }
 
@@ -47,6 +49,7 @@ export const RosterRowView = memo(function RosterRowView({
   row,
   selected,
   tabbable,
+  unavailable,
 }: RosterRowViewProps) {
   if (
     row.kind === 'archivedSentinel' ||
@@ -70,6 +73,7 @@ export const RosterRowView = memo(function RosterRowView({
       selected={selected}
       session={renamedSession(session, renamedTitles)}
       tabIndex={tabbable ? 0 : -1}
+      unavailable={unavailable}
     />
   )
 }, sameRowView)

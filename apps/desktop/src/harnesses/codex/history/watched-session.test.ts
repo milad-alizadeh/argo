@@ -154,6 +154,33 @@ test('lists Codex thread summaries without requesting their turns', async () => 
   assert.deepEqual(calls, ['thread/list'])
 })
 
+test('search refresh includes a thread missing from a nonempty state database', async () => {
+  const sessions = createWatchedCodexSessions({
+    transport: {
+      request: async (method, params) => {
+        assert.equal(method, 'thread/list')
+        return {
+          data:
+            params.useStateDbOnly === true
+              ? [THREAD]
+              : [THREAD, { ...THREAD, id: 'repaired-thread', name: 'Repaired match' }],
+          nextCursor: null,
+        }
+      },
+    },
+    knownWorkspaces: async () => [],
+  })
+
+  assert.deepEqual(
+    (await sessions.refresh()).map((row) => row.session.nativeId),
+    ['thread-1'],
+  )
+  assert.deepEqual(
+    (await sessions.refreshForSearch()).map((row) => row.session.nativeId),
+    ['thread-1', 'repaired-thread'],
+  )
+})
+
 test('shares one stalled roster request across overlapping reads', async () => {
   let resolve: ((value: unknown) => void) | undefined
   let calls = 0

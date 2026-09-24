@@ -39,6 +39,8 @@ async function scrollUntilVisible(page: Page, selector: string) {
 export async function proveRosterWindow(page: Page) {
   await page.reload()
   await page.locator(ROW).first().waitFor()
+  const firstSessionId = await page.locator(ROW).first().getAttribute('data-session-id')
+  assert.notEqual(firstSessionId, null)
 
   // The farthest filler Session sits well outside the first bounded window (#2239): it is not in
   // the document at all until scrolling grows the window past it.
@@ -68,4 +70,14 @@ export async function proveRosterWindow(page: Page) {
   await page.waitForSelector(
     `.feed__viewport[data-session="${FARTHEST_WINDOW_FILLER_ID}"] [data-feed-row]`,
   )
+
+  // The first page stays selectable after a later page names a different owner window.
+  await page.evaluate((selector) => {
+    const scroller = document.querySelector(selector)
+    if (scroller !== null) scroller.scrollTop = 0
+  }, SCROLLER)
+  const first = page.locator(`${ROW}[data-session-id="${firstSessionId}"]`)
+  await first.waitFor()
+  await first.click()
+  await page.waitForSelector(`.feed__viewport[data-session="${firstSessionId}"] [data-feed-row]`)
 }

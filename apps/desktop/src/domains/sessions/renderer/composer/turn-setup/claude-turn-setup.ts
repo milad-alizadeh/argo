@@ -1,22 +1,14 @@
 import {
-  CLAUDE_EFFORTS,
-  CLAUDE_MODELS,
-  type ClaudeTurnSetup,
-} from '@/domains/sessions/contract/ipc/contract'
-import type { ModeChoice, SetupChoice, TurnSetupChoices } from './turn-setup'
-
-type ClaudeModel = ClaudeTurnSetup['model']
-type ClaudeEffort = ClaudeTurnSetup['effort']
+  type ClaudeModelCatalog,
+  claudeModelsWithEffort,
+  claudePermissionModes,
+  claudePermissionModesForModel,
+} from '@/domains/sessions/contract/claude-model-catalog'
+import { claudeOpeningSetupFor } from '@/domains/sessions/contract/claude-turn-setup'
+import type { ModeChoice, TurnSetupChoices } from './turn-setup'
 
 // An alias names a family, and the transcript names the model id it resolved to.
-const MODELS: Record<ClaudeModel, Omit<SetupChoice, 'value' | 'reads'>> = {
-  fable: { label: 'Fable 5.1', detail: 'Deepest reasoning for long, open-ended work' },
-  opus: { label: 'Opus 5', detail: 'Most capable for architecture and hard problems' },
-  sonnet: { label: 'Sonnet 5', detail: 'Balanced for daily coding and review' },
-  haiku: { label: 'Haiku 4.5', detail: 'Fast for small changes and quick answers' },
-}
-
-const EFFORTS: Record<ClaudeEffort, string> = {
+const EFFORTS: Record<string, string> = {
   low: 'Low',
   medium: 'Medium',
   high: 'High',
@@ -24,65 +16,72 @@ const EFFORTS: Record<ClaudeEffort, string> = {
   max: 'Max',
 }
 
-// Claude writes `default` for the Mode its flag calls `manual`.
-const MODES: ModeChoice[] = [
-  {
-    value: 'auto',
-    label: 'Auto',
-    detail: 'Claude handles permission decisions',
-    icon: 'mode-auto',
-    reads: (reading) => reading === 'auto',
-  },
-  {
-    value: 'manual',
-    label: 'Manual',
-    detail: 'Ask before making changes',
-    icon: 'mode-manual',
-    reads: (reading) => reading === 'manual' || reading === 'default',
-  },
-  {
-    value: 'acceptEdits',
+const MODE_PRESENTATION: Record<string, Pick<ModeChoice, 'label' | 'detail' | 'icon'>> = {
+  auto: { label: 'Auto', detail: 'Claude handles permission decisions', icon: 'mode-auto' },
+  manual: { label: 'Manual', detail: 'Ask before making changes', icon: 'mode-manual' },
+  acceptEdits: {
     label: 'Accept edits',
     detail: 'Accept file edits automatically',
     icon: 'mode-accept-edits',
-    reads: (reading) => reading === 'acceptEdits',
   },
-  {
-    value: 'plan',
-    label: 'Plan',
-    detail: 'Create a plan before making changes',
-    icon: 'mode-plan',
-    reads: (reading) => reading === 'plan',
-  },
-  {
-    value: 'dontAsk',
+  plan: { label: 'Plan', detail: 'Create a plan before making changes', icon: 'mode-plan' },
+  dontAsk: {
     label: "Don't ask",
     detail: 'Deny anything not approved in advance',
     icon: 'mode-dont-ask',
-    reads: (reading) => reading === 'dontAsk',
   },
-  {
-    value: 'bypassPermissions',
+  bypassPermissions: {
     label: 'Bypass',
     detail: 'Run without permission checks',
     icon: 'mode-bypass-permissions',
-    reads: (reading) => reading === 'bypassPermissions',
   },
-]
+}
 
-export const CLAUDE_TURN_SETUP: TurnSetupChoices = {
-  agent: 'Claude',
-  label: 'Claude Code',
-  models: CLAUDE_MODELS.map((value) => ({
-    value,
-    ...MODELS[value],
-    reads: (reading) => reading === value || reading.startsWith(`claude-${value}-`),
-  })),
-  efforts: CLAUDE_EFFORTS.map((value) => ({
-    value,
-    label: EFFORTS[value],
-    reads: (reading) => reading === value,
-  })),
-  modes: MODES,
-  opening: { model: 'opus', effort: 'medium', mode: 'manual' },
+export function claudeTurnSetup(catalog: ClaudeModelCatalog | null): TurnSetupChoices | null {
+  if (catalog === null) return null
+  const models = claudeModelsWithEffort(catalog).filter(
+    (model) => claudePermissionModesForModel(catalog, model).length > 0,
+  )
+  const modes = claudePermissionModes(catalog)
+  if (models.length === 0 || modes.length === 0) return null
+  const opening = claudeOpeningSetupFor(catalog)
+  if (opening === null) return null
+  return {
+    agent: 'Claude',
+    label: 'Claude Code',
+    models: models.map((model) => ({
+      value: model.value,
+      label: model.displayName,
+      detail: model.description || undefined,
+      efforts: model.supportedEffortLevels,
+      supportedModes: claudePermissionModesForModel(catalog, model),
+      defaultEffort: model.supportedEffortLevels.includes('medium')
+        ? 'medium'
+        : model.supportedEffortLevels[0],
+      reads: (reading) =>
+        reading === model.value ||
+        reading === model.resolvedModel ||
+        (model.resolvedModel !== undefined && reading.startsWith(`claude-${model.value}-`)),
+    })),
+    efforts: [...new Set(models.flatMap(({ supportedEffortLevels }) => supportedEffortLevels))].map(
+      (value) => ({
+        value,
+        label: EFFORTS[value] ?? value,
+        reads: (reading) => reading === value,
+      }),
+    ),
+    modes: modes.map((value) => {
+      const presentation = MODE_PRESENTATION[value] ?? {
+        label: value,
+        detail: 'Permission mode reported by Claude Code',
+        icon: 'mode-manual',
+      }
+      return {
+        value,
+        ...presentation,
+        reads: (reading) => reading === value || (value === 'manual' && reading === 'default'),
+      }
+    }),
+    opening,
+  }
 }

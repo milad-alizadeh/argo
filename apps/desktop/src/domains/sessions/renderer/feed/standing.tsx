@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
+import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Empty,
   EmptyDescription,
@@ -27,6 +28,20 @@ export function Standing({
   onRetry: () => void
 }) {
   const { t } = useTranslation('sessions')
+  if (failure?.code === 'missing-session')
+    return (
+      <section className="grid h-full place-items-center p-6" data-state="unavailable">
+        <div className="flex max-w-sm flex-col items-center gap-3 text-center">
+          <h2 className="type-title text-foreground">{t('standing.missingHistoryTitle')}</h2>
+          <p className="type-body text-muted-foreground">
+            {t('standing.missingHistoryDescription')}
+          </p>
+          <Button className="mt-2" onClick={onRetry} type="button" variant="outline">
+            {t('standing.retry')}
+          </Button>
+        </div>
+      </section>
+    )
   if (failure !== null)
     return (
       <section

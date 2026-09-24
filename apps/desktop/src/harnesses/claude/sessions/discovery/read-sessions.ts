@@ -138,7 +138,7 @@ export function claudeSessionSource(roots: ClaudeSessionRoots): SessionSource {
     reconcileAll: index === undefined ? undefined : () => reconcileAll(roots.transcripts, index),
     resolveIndexedIds: index === undefined ? undefined : (ids) => resolveIds(index, ids),
     historyComplete: index === undefined ? undefined : () => historyComplete(index),
-    searchIndexed: index === undefined ? undefined : (query) => searchIndexed(index, query),
+    searchSessions: index === undefined ? undefined : (query) => searchIndexed(index, query),
     disposeFullRecords: (sessionId) => clearFullRecords(sessionId),
     readShellOutput: async (sessionId, shellId) => {
       const tail = await readShellOutput(await readChain(sessionId), shellId)

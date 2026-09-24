@@ -1,4 +1,5 @@
 import type {
+  EffortLevel,
   PermissionMode,
   PermissionResult,
   Query,
@@ -119,7 +120,7 @@ export const claudeQueryLogic = fromCallback<ClaudeSessionEvent, ClaudeSessionIn
 // The SDK has no 'manual' permission mode; the app's default Turn mode maps to the SDK's own
 // default instead. Every other mode value is already spelled identically in both vocabularies.
 function permissionModeFor(mode: ClaudeTurnSetup['mode']): PermissionMode {
-  return mode === 'manual' ? 'default' : mode
+  return mode === 'manual' ? 'default' : (mode as PermissionMode)
 }
 
 function createQuery(options: {
@@ -136,7 +137,7 @@ function createQuery(options: {
     cwd: input.cwd,
     resume: session.current?.nativeId,
     model: input.setup?.model,
-    effort: input.setup?.effort,
+    effort: input.setup?.effort as EffortLevel | undefined,
     permissionMode: input.setup === undefined ? undefined : permissionModeFor(input.setup.mode),
     canUseTool: (toolName, _toolInput, options) => {
       sendBack({
