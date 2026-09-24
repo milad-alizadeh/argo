@@ -23,3 +23,43 @@ test('maps recorded Claude user and assistant text to stable history entries', (
     ],
   )
 })
+
+test('keeps assistant prose beside tool use and counts unsupported blocks', () => {
+  const warnings: string[] = []
+  const originalWarn = console.warn
+  console.warn = (message: string) => warnings.push(message)
+  try {
+    assert.deepEqual(
+      parseClaudeHistory([
+        {
+          type: 'assistant',
+          uuid: 'mixed-answer',
+          message: {
+            content: [
+              { type: 'text', text: 'I will check this. ' },
+              {
+                type: 'tool_use',
+                id: 'toolu_recorded',
+                name: 'Read',
+                input: { file_path: 'a.ts' },
+              },
+              { type: 'text', text: 'The result is clear.' },
+              { type: 'text', text: 42 },
+              { type: 'future_block', value: 'unrecognized' },
+            ],
+          },
+        },
+      ]),
+      [
+        {
+          sourceId: 'mixed-answer',
+          role: 'assistant',
+          text: 'I will check this. The result is clear.',
+        },
+      ],
+    )
+    assert.deepEqual(warnings, ['Claude history contained 2 unsupported record or content shapes'])
+  } finally {
+    console.warn = originalWarn
+  }
+})
