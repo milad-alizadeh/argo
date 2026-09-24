@@ -1,4 +1,5 @@
 import { fromPromise } from 'xstate'
+import { indexSessionsInWorker } from '@/domains/sessions/main/sync/session-index-worker-client'
 import {
   type SessionSyncJobInput,
   type SessionSyncResult,
@@ -6,21 +7,26 @@ import {
 } from '@/domains/sessions/main/sync/session-sync-machine'
 import { readClaudeSessions } from './claude-discovery'
 
-export const claudeSessionSync = fromPromise<SessionSyncResult, SessionSyncJobInput>(
-  async ({ input, signal }) => {
+export function createClaudeSessionSync(databasePath: string) {
+  return fromPromise<SessionSyncResult, SessionSyncJobInput>(async ({ input, signal }) => {
     const result = await readClaudeSessions({
       limit: sessionSyncPageSize,
       offset: input.page * sessionSyncPageSize,
     })
     if (signal.aborted) throw new Error('Claude Session sync was cancelled.')
+    const indexed = await indexSessionsInWorker({
+      databasePath,
+      sessions: result.sessions,
+      signal,
+    })
     return {
+      argoIds: indexed.argoIds,
       complete: result.recordCount < sessionSyncPageSize,
       cursor: null,
       generation: input.generation,
-      indexedCount: result.sessions.length,
+      indexedCount: indexed.indexedCount,
       invalidRecordCount: result.invalidRecordCount,
       page: input.page,
-      sessions: result.sessions,
     }
-  },
-)
+  })
+}

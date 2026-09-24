@@ -11,8 +11,9 @@ import {
 
 export function openDurableStores(projectData: string, recovery: boolean) {
   const backupPath = sharedDatabaseBackupPath(projectData)
+  const databasePath = sharedDatabasePath(projectData)
   return recoverDurableStore({
-    databasePath: sharedDatabasePath(projectData),
+    databasePath,
     backupPath,
     recovery,
     open: () => {
@@ -23,7 +24,7 @@ export function openDurableStores(projectData: string, recovery: boolean) {
       const ticketLinks = createSessionTicketLinkStoreFromDatabase(database, () =>
         backup().catch(console.error),
       )
-      return { database, projects, ticketLinks, close: () => client.close() }
+      return { database, databasePath, projects, ticketLinks, close: () => client.close() }
     },
   })
 }

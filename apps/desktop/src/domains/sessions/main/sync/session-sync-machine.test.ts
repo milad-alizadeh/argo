@@ -3,7 +3,12 @@ import { test } from 'node:test'
 import type { ActorLogic } from 'xstate'
 import { createActor, fromPromise, waitFor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
-import { sessionSyncMachine, sessionSyncMaxRetries } from './session-sync-machine'
+import {
+  type SessionSyncJobInput,
+  type SessionSyncResult,
+  sessionSyncMachine,
+  sessionSyncMaxRetries,
+} from './session-sync-machine'
 
 const modeledEvents = [
   {
@@ -15,7 +20,7 @@ const modeledEvents = [
       indexedCount: 2,
       invalidRecordCount: 1,
       page: 0,
-      sessions: [],
+      argoIds: [],
     },
   },
   {
@@ -65,7 +70,7 @@ test('continues through older discovery pages before waiting to poll again', asy
           indexedCount: 1,
           invalidRecordCount: 0,
           page: input.page,
-          sessions: [],
+          argoIds: [],
         }
       }),
     },
@@ -100,7 +105,7 @@ test('priority refresh restarts discovery from the recent page', async () => {
           indexedCount: 1,
           invalidRecordCount: 0,
           page: input.page,
-          sessions: [],
+          argoIds: [],
         }
       }),
     },
@@ -120,7 +125,7 @@ test('waits for the next poll after a bounded number of failed attempts', async 
   let attempts = 0
   const machine = sessionSyncMachine.provide({
     actors: {
-      sync: fromPromise(async () => {
+      sync: fromPromise<SessionSyncResult, SessionSyncJobInput>(async () => {
         attempts += 1
         throw new Error('Harness unavailable.')
       }),

@@ -182,7 +182,7 @@ async function prepare() {
     instance: DEVELOPMENT_INSTANCE,
   })
   applicationStores = openDurableStores(projectData, !ACCEPTANCE_ENABLED)
-  return { database: applicationStores.database }
+  return { database: applicationStores.database, databasePath: applicationStores.databasePath }
 }
 
 async function ready(actor: AppActor): Promise<void> {

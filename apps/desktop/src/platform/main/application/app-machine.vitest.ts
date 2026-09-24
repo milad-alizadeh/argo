@@ -5,7 +5,7 @@ import { getShortestPaths } from 'xstate/graph'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 import { appMachine } from './app-machine'
 
-const input = { database: {} as DurableDatabase }
+const input = { database: {} as DurableDatabase, databasePath: ':memory:' }
 
 test('models application startup and shutdown', () => {
   const paths = getShortestPaths(appMachine, {
@@ -23,19 +23,16 @@ test('owns catalog, Session supervisor, Codex, and sync children until shutdown'
   const catalog = actor.system.get('catalog')
   const sessions = actor.system.get('sessions')
   const codex = actor.system.get('codex')
-  const sessionIndex = actor.system.get('sessionIndex')
   const claudeSync = actor.system.get('claudeSync')
   const codexSync = actor.system.get('codexSync')
   assert.ok(catalog)
   assert.ok(sessions)
   assert.ok(codex)
-  assert.ok(sessionIndex)
   assert.ok(claudeSync)
   assert.ok(codexSync)
   assert.equal(catalog.getSnapshot().status, 'active')
   assert.equal(sessions.getSnapshot().status, 'active')
   assert.equal(codex.getSnapshot().status, 'active')
-  assert.equal(sessionIndex.getSnapshot().status, 'active')
   assert.equal(claudeSync.getSnapshot().status, 'active')
   assert.equal(codexSync.getSnapshot().status, 'active')
   actor.send({ type: 'Shutdown' })
@@ -43,7 +40,6 @@ test('owns catalog, Session supervisor, Codex, and sync children until shutdown'
   assert.equal(catalog.getSnapshot().status, 'stopped')
   assert.equal(sessions.getSnapshot().status, 'stopped')
   assert.equal(codex.getSnapshot().status, 'stopped')
-  assert.equal(sessionIndex.getSnapshot().status, 'stopped')
   assert.equal(claudeSync.getSnapshot().status, 'stopped')
   assert.equal(codexSync.getSnapshot().status, 'stopped')
 })

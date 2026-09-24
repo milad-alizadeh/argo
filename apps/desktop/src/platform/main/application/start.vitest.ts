@@ -30,7 +30,7 @@ test('does not start a second Argo application instance', async () => {
   const ready = vi.fn()
 
   startDesktopApplication({
-    prepare: vi.fn(async () => ({ database: {} as never })),
+    prepare: vi.fn(async () => ({ database: {} as never, databasePath: ':memory:' })),
     ready,
     focusExistingWindow: vi.fn(),
     willQuit: vi.fn(),
@@ -48,7 +48,7 @@ test('focuses the existing window when a second instance is launched', async () 
   const ready = vi.fn()
 
   startDesktopApplication({
-    prepare: vi.fn(async () => ({ database: {} as never })),
+    prepare: vi.fn(async () => ({ database: {} as never, databasePath: ':memory:' })),
     ready,
     focusExistingWindow,
     willQuit: vi.fn(),

@@ -3,10 +3,10 @@ import { createActor } from 'xstate'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 import { applyStoredAppearance, readAppearance } from '../appearance'
 import { setPlatformLanguage } from '../i18n'
-import { type AppActor, appMachine } from './app-machine'
+import { type AppActor, createApplicationMachine } from './app-machine'
 
 export function startDesktopApplication(request: {
-  prepare: () => Promise<{ database: DurableDatabase }>
+  prepare: () => Promise<{ database: DurableDatabase; databasePath: string }>
   ready: (actor: AppActor) => Promise<void> | void
   willQuit: () => void
   focusExistingWindow: () => void
@@ -29,7 +29,7 @@ export function startDesktopApplication(request: {
     setPlatformLanguage(app.getLocale())
     applyStoredAppearance(await readAppearance(app.getPath('userData')))
     const input = await request.prepare()
-    actor = createActor(appMachine, { input }).start()
+    actor = createActor(createApplicationMachine(input.databasePath), { input }).start()
     await request.ready(actor)
   }
 

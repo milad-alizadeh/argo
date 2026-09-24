@@ -1,6 +1,4 @@
-import { type ActorRefFrom, assign, fromPromise, setup } from 'xstate'
-import type { SessionIngestion } from '@/domains/sessions/contract/session-index'
-import type { sessionIndexActor } from '../storage/session-index-actor'
+import { assign, fromPromise, setup } from 'xstate'
 
 export type SessionSyncInput = Record<string, never>
 
@@ -11,13 +9,13 @@ export type SessionSyncJobInput = {
 }
 
 export type SessionSyncResult = {
+  argoIds: string[]
   complete: boolean
   cursor: string | null
   generation: number
   indexedCount: number
   invalidRecordCount: number
   page: number
-  sessions: SessionIngestion[]
 }
 
 export const sessionSyncPageSize = 50
@@ -27,6 +25,8 @@ function isSessionSyncResult(value: unknown): value is SessionSyncResult {
   return (
     typeof value === 'object' &&
     value !== null &&
+    'argoIds' in value &&
+    Array.isArray(value.argoIds) &&
     'complete' in value &&
     typeof value.complete === 'boolean' &&
     'cursor' in value &&
@@ -38,9 +38,7 @@ function isSessionSyncResult(value: unknown): value is SessionSyncResult {
     'invalidRecordCount' in value &&
     typeof value.invalidRecordCount === 'number' &&
     'page' in value &&
-    typeof value.page === 'number' &&
-    'sessions' in value &&
-    Array.isArray(value.sessions)
+    typeof value.page === 'number'
   )
 }
 
@@ -112,15 +110,6 @@ export const sessionSyncMachine = setup({
       generation: context.generation + 1,
       retryCount: 0,
     })),
-    indexResult: ({ event, self }) => {
-      if (!('output' in event) || !isSessionSyncResult(event.output)) return
-      if (event.output.sessions.length === 0) return
-      const index = self.system.get('sessionIndex') as ActorRefFrom<typeof sessionIndexActor>
-      index.send({
-        type: 'Index',
-        sessions: event.output.sessions,
-      })
-    },
   },
   delays: {
     poll: 30_000,
@@ -152,19 +141,13 @@ export const sessionSyncMachine = setup({
           {
             guard: 'isCurrentCompleteGeneration',
             target: 'Waiting',
-            actions: [
-              'indexResult',
-              'rememberResult',
-            ],
+            actions: 'rememberResult',
           },
           {
             guard: 'isCurrentGeneration',
             target: 'Syncing',
             reenter: true,
-            actions: [
-              'indexResult',
-              'rememberResult',
-            ],
+            actions: 'rememberResult',
           },
           {
             target: 'Waiting',

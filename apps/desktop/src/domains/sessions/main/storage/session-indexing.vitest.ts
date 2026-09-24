@@ -2,8 +2,14 @@ import assert from 'node:assert/strict'
 import { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
 import { createDurableDatabase } from '@/platform/main/storage/durable-database'
-import { indexSessionIngestion } from './index-discovered-sessions'
 import { readSessionIdentity } from './session-records'
+import { indexSessionIngestions } from './session-upsert'
+
+function indexedId(result: ReturnType<typeof indexSessionIngestions>): string {
+  const id = result.argoIds[0]
+  if (id === undefined) throw new Error('Session ingestion returned no Argo ID.')
+  return id
+}
 
 function database() {
   const client = new DatabaseSync(':memory:')
@@ -50,14 +56,18 @@ test('maps an indexed working directory to its most specific Project path', () =
         '/repo/worktree',
         'main',
       )
-    const id = indexSessionIngestion(durable, {
-      harness: 'codex',
-      nativeId: 'thread-1',
-      vendorTitle: 'Continue work',
-      firstPrompt: null,
-      updatedAt: 42,
-      workingDirectory: '/repo/worktree/packages/desktop',
-    })
+    const id = indexedId(
+      indexSessionIngestions(durable, [
+        {
+          harness: 'codex',
+          nativeId: 'thread-1',
+          vendorTitle: 'Continue work',
+          firstPrompt: null,
+          updatedAt: 42,
+          workingDirectory: '/repo/worktree/packages/desktop',
+        },
+      ]),
+    )
     assert.deepEqual(readSessionIdentity(durable, id), {
       argoId: id,
       harness: 'codex',
@@ -73,14 +83,18 @@ test('maps an indexed working directory to its most specific Project path', () =
 test('keeps Sessions outside a known Project unassigned', () => {
   const { client, database: durable } = database()
   try {
-    const id = indexSessionIngestion(durable, {
-      harness: 'claude',
-      nativeId: '00000000-0000-4000-8000-000000000001',
-      vendorTitle: null,
-      firstPrompt: 'Continue work',
-      updatedAt: 42,
-      workingDirectory: '/outside',
-    })
+    const id = indexedId(
+      indexSessionIngestions(durable, [
+        {
+          harness: 'claude',
+          nativeId: '00000000-0000-4000-8000-000000000001',
+          vendorTitle: null,
+          firstPrompt: 'Continue work',
+          updatedAt: 42,
+          workingDirectory: '/outside',
+        },
+      ]),
+    )
     assert.equal(readSessionIdentity(durable, id)?.projectId, null)
   } finally {
     client.close()
@@ -98,14 +112,14 @@ test('attaches a later discovered Project without changing the Argo ID', () => {
       updatedAt: 42,
       workingDirectory: '/external/repository',
     }
-    const originalId = indexSessionIngestion(durable, record)
+    const originalId = indexedId(indexSessionIngestions(durable, [record]))
     client
       .prepare('INSERT INTO project VALUES (?, ?, ?)')
       .run('00000000-0000-4000-8000-000000000099', '/external', '/external')
-    const indexedId = indexSessionIngestion(durable, record)
-    assert.equal(indexedId, originalId)
+    const laterId = indexedId(indexSessionIngestions(durable, [record]))
+    assert.equal(laterId, originalId)
     assert.equal(
-      readSessionIdentity(durable, indexedId)?.projectId,
+      readSessionIdentity(durable, laterId)?.projectId,
       '00000000-0000-4000-8000-000000000099',
     )
   } finally {

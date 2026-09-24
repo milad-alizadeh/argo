@@ -1,15 +1,14 @@
 import { type ActorRefFrom, assertEvent, setup } from 'xstate'
 import { sessionSupervisorMachine } from '@/domains/sessions/main/live/session-supervisor-machine'
-import { sessionIndexActor } from '@/domains/sessions/main/storage/session-index-actor'
 import { sessionSyncMachine } from '@/domains/sessions/main/sync/session-sync-machine'
 import { harnessCatalogMachine } from '@/harnesses/catalog/harness-catalog-machine'
 import { harnessCatalogLoadActor } from '@/harnesses/catalog/runtime'
-import { claudeSessionSync } from '@/harnesses/claude/session/claude-sync'
+import { createClaudeSessionSync } from '@/harnesses/claude/session/claude-sync'
 import {
   codexAppServerMachine,
   codexAppServerProcessActor,
 } from '@/harnesses/codex/app-server/codex-app-server-machine'
-import { codexSessionSync } from '@/harnesses/codex/session/codex-sync'
+import { createCodexSessionSync } from '@/harnesses/codex/session/codex-sync'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 
 const codexMachine = codexAppServerMachine.provide({
@@ -22,21 +21,11 @@ const catalogMachine = harnessCatalogMachine.provide({
     loadCatalog: harnessCatalogLoadActor,
   },
 })
-const claudeSyncMachine = sessionSyncMachine.provide({
-  actors: {
-    sync: claudeSessionSync,
-  },
-})
-const codexSyncMachine = sessionSyncMachine.provide({
-  actors: {
-    sync: codexSessionSync,
-  },
-})
-
 export const appMachine = setup({
   types: {
     input: {} as {
       database: DurableDatabase
+      databasePath: string
     },
     context: {} as Record<string, never>,
     events: {} as
@@ -47,6 +36,7 @@ export const appMachine = setup({
           type: 'xstate.init'
           input: {
             database: DurableDatabase
+            databasePath: string
           }
         },
   },
@@ -54,9 +44,8 @@ export const appMachine = setup({
     codex: codexMachine,
     catalog: catalogMachine,
     sessions: sessionSupervisorMachine,
-    sessionIndex: sessionIndexActor,
-    claudeSync: claudeSyncMachine,
-    codexSync: codexSyncMachine,
+    claudeSync: sessionSyncMachine,
+    codexSync: sessionSyncMachine,
   },
 }).createMachine({
   id: 'application',
@@ -80,17 +69,6 @@ export const appMachine = setup({
       id: 'sessions',
       systemId: 'sessions',
       src: 'sessions',
-      input: ({ event }) => {
-        assertEvent(event, 'xstate.init')
-        return {
-          database: event.input.database,
-        }
-      },
-    },
-    {
-      id: 'sessionIndex',
-      systemId: 'sessionIndex',
-      src: 'sessionIndex',
       input: ({ event }) => {
         assertEvent(event, 'xstate.init')
         return {
@@ -130,3 +108,20 @@ export const appMachine = setup({
 })
 
 export type AppActor = ActorRefFrom<typeof appMachine>
+
+export function createApplicationMachine(databasePath: string) {
+  return appMachine.provide({
+    actors: {
+      claudeSync: sessionSyncMachine.provide({
+        actors: {
+          sync: createClaudeSessionSync(databasePath),
+        },
+      }),
+      codexSync: sessionSyncMachine.provide({
+        actors: {
+          sync: createCodexSessionSync(databasePath),
+        },
+      }),
+    },
+  })
+}

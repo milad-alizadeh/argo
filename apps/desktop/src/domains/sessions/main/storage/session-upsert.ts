@@ -1,9 +1,33 @@
+import path from 'node:path'
 import { sql } from 'drizzle-orm'
+import { project, workspace } from '@/domains/projects/main/schema'
 import type { SessionIngestion } from '@/domains/sessions/contract/session-index'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 import { sessionTable } from './session-table'
+
+type SessionDatabase =
+  | DurableDatabase
+  | Parameters<Parameters<DurableDatabase['transaction']>[0]>[0]
+type ProjectPath = { id: string; path: string }
+
+export type SessionIndexResult = {
+  argoIds: string[]
+  indexedCount: number
+}
+
+function projectAtPath(projects: ProjectPath[], workingDirectory: string | null): string | null {
+  if (workingDirectory === null) return null
+  const match = projects
+    .filter(({ path: root }) => {
+      const relative = path.relative(root, workingDirectory)
+      return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative))
+    })
+    .sort((left, right) => right.path.length - left.path.length)[0]
+  return match?.id ?? null
+}
+
 export function upsertSession(
-  database: DurableDatabase,
+  database: SessionDatabase,
   session: SessionIngestion,
   projectId: string | null,
 ): string {
@@ -35,4 +59,20 @@ export function upsertSession(
     .get()
   if (row === undefined) throw new Error('Session identity did not persist.')
   return row.argoId
+}
+
+export function indexSessionIngestions(
+  database: DurableDatabase,
+  sessions: SessionIngestion[],
+): SessionIndexResult {
+  const projectPaths = [
+    ...database.select({ id: project.id, path: project.path }).from(project).all(),
+    ...database.select({ id: workspace.projectId, path: workspace.path }).from(workspace).all(),
+  ]
+  return database.transaction((transaction) => {
+    const argoIds = sessions.map((session) =>
+      upsertSession(transaction, session, projectAtPath(projectPaths, session.workingDirectory)),
+    )
+    return { argoIds, indexedCount: argoIds.length }
+  })
 }
