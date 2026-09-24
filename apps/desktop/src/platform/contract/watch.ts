@@ -4,7 +4,7 @@
 // renderer reads it back the same way whichever it is.
 export const WATCHED_CHANGED_CHANNEL = 'argo:watch:changed'
 
-export const WATCH_TOPICS = ['permissions', 'sessions'] as const
+export const WATCH_TOPICS = ['permissions', 'sessions', 'session-live'] as const
 
 export type WatchTopic = (typeof WATCH_TOPICS)[number]
 

@@ -29,13 +29,11 @@ import type { SessionRoster } from '../types'
 type SessionScreenDetailsProps = {
   permission: ReturnType<typeof import('../composer').useSessionPermission>
   questionPending: boolean
-  session: SessionRosterRow | null
   indexedSession: SessionListItem | null
   availability: SessionAvailability | null
   retryAvailability: () => void
   harness: HarnessControl
   selectedSessionId: string | null
-  roster: SessionRoster | null
   cockpit: Cockpit
   projectActions: Pick<ProjectActions, 'selectWorkspace' | 'createManagedWorkspace'>
 }
@@ -138,18 +136,16 @@ function useComposerControl({
   identity,
   harness,
   catalog,
-  roster,
 }: {
   identity: ReturnType<typeof composerIdentityOf>
   harness: HarnessControl
   catalog: CatalogReadResult['info'] | null
-  roster: SessionRoster | null
 }) {
   return useTurnSetup({
     harness: harness.harness,
     choices: catalog?.availability === 'available' ? catalog : null,
     identity,
-    rows: roster?.sessions ?? [],
+    rows: [],
   })
 }
 
@@ -168,13 +164,11 @@ function composerIdentity(
 export function SessionComposerArea({
   permission,
   questionPending,
-  session,
   indexedSession,
   availability,
   retryAvailability,
   harness,
   selectedSessionId,
-  roster,
   cockpit,
   projectActions,
 }: SessionScreenDetailsProps) {
@@ -190,11 +184,8 @@ export function SessionComposerArea({
     identity,
     harness,
     catalog: catalogQuery.data?.info ?? null,
-    roster,
   })
-  // The Roster already knows another process runs it live, so no Send is offered at all (ADR-0040).
-  if (session?.locked === true || availability?.state === 'unavailable')
-    return <OpenElsewhere onRetry={retryAvailability} />
+  if (availability?.state === 'unavailable') return <OpenElsewhere onRetry={retryAvailability} />
   const refreshCatalog = () =>
     catalogRefresh.mutate(
       { harness: harness.harness },
@@ -210,8 +201,6 @@ export function SessionComposerArea({
         catalogFailure={catalogFailure}
         refreshCatalog={refreshCatalog}
         workspace={workspaceControl(identity, cockpit, projectActions)}
-        contextTokens={session?.contextTokens}
-        contextWindowTokens={session?.contextWindowTokens}
         disabled={questionPending}
         harness={harness}
         permissionPrompt={
@@ -221,7 +210,7 @@ export function SessionComposerArea({
             onDecide={permission.decide}
           />
         }
-        plan={session?.plan ?? null}
+        plan={null}
         onSend={(prompt, setup, attachments) =>
           submitFromComposer({
             submit,
@@ -274,7 +263,8 @@ export function SessionHandoffFacts({
   session,
   roster = null,
   onNavigate,
-}: Pick<SessionScreenDetailsProps, 'session'> & {
+}: {
+  session: SessionRosterRow | null
   roster?: SessionRoster | null
   onNavigate?: (path: string) => void
 }) {

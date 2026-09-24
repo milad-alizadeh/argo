@@ -31,11 +31,14 @@ test('models Codex opening, first turn, later turn, failure, and close paths', (
           { type: 'xstate.done.actor.startFirstTurn' as const, output: 'turn-1' },
           { type: 'xstate.error.actor.startFirstTurn' as const, error: 'failed' },
         ]
+      if (snapshot.matches('Running'))
+        return [{ type: 'Turn completed' as const, turnId: 'turn-1' }, { type: 'Close' as const }]
       if (snapshot.matches('Ready'))
         return [
           {
             type: 'Send' as const,
             command: {
+              commandId: 'second',
               prompt: 'second',
               attachments: [],
               setup: { model: 'model', effort: 'medium', mode: 'workspace-write' },
@@ -56,6 +59,7 @@ test('models Codex opening, first turn, later turn, failure, and close paths', (
     new Set([
       'Opening',
       'Starting first prompt',
+      'Running',
       'Ready',
       'Starting next prompt',
       'Failed',
@@ -86,7 +90,7 @@ test('converts text, files, and images at the Codex Session boundary', async () 
       setup: { model: 'model', effort: 'medium', mode: 'workspace-write' },
     },
   }).start()
-  await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
+  await waitFor(actor, (snapshot) => snapshot.matches('Running'))
   assert.deepEqual(sentInput, [
     { type: 'text', text: 'Read these.', text_elements: [] },
     {
@@ -118,7 +122,7 @@ test('starts the first Codex turn before becoming ready', async () => {
       setup: { model: 'model', effort: 'medium', mode: 'workspace-write' },
     },
   }).start()
-  await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
+  await waitFor(actor, (snapshot) => snapshot.matches('Running'))
   assert.deepEqual(calls, ['thread/start', 'turn/start'])
   actor.stop()
 })
@@ -145,16 +149,22 @@ test('starts later Codex prompts on the persisted thread', async () => {
       setup: { model: 'model', effort: 'medium', mode: 'workspace-write' },
     },
   }).start()
-  await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
+  await waitFor(actor, (snapshot) => snapshot.matches('Running'))
   actor.send({
     type: 'Send',
     command: {
+      commandId: 'second',
       prompt: 'second',
       attachments: [],
       setup: { model: 'model', effort: 'medium', mode: 'workspace-write' },
     },
   })
-  await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
+  assert.deepEqual(calls, [
+    { method: 'thread/start', threadId: undefined },
+    { method: 'turn/start', threadId: 'thread-1' },
+  ])
+  actor.send({ type: 'Turn completed', turnId: 'turn-1' })
+  await waitFor(actor, (snapshot) => snapshot.context.acceptedCommandId === 'second')
   assert.deepEqual(calls, [
     { method: 'thread/start', threadId: undefined },
     { method: 'turn/start', threadId: 'thread-1' },

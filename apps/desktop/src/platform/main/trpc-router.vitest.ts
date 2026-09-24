@@ -100,7 +100,7 @@ function codexHistoryActor() {
     invalidMessageCount: () => 0,
     notify: () => {},
     respond: () => {},
-    onNotification: () => {},
+    onNotification: () => undefined,
     onExit: () => {},
     close: () => {},
   }
@@ -137,7 +137,7 @@ test('returns selected Codex history and an unavailable composer state', async (
   const codex = codexHistoryActor()
   const sessions = {
     getSnapshot: () => ({ context: { sessions: {} } }),
-  } as SessionSupervisorActor
+  } as unknown as SessionSupervisorActor
   try {
     const caller = createAppRouter({
       actor: {} as CatalogActor,
@@ -162,6 +162,57 @@ test('returns selected Codex history and an unavailable composer state', async (
         reason: 'This Codex Session is active in another app.',
       },
       live: false,
+      working: false,
+    })
+  } finally {
+    client.close()
+  }
+})
+
+test('reads live child entries without a vendor history request', async () => {
+  const client = new DatabaseSync(':memory:')
+  client.exec(`CREATE TABLE session (
+    argo_id TEXT PRIMARY KEY,
+    harness TEXT NOT NULL,
+    native_id TEXT NOT NULL,
+    project_id TEXT,
+    vendor_title TEXT,
+    working_directory TEXT,
+    first_prompt TEXT,
+    updated_at INTEGER NOT NULL
+  );`)
+  const sessionId = '00000000-0000-4000-8000-000000000001'
+  client
+    .prepare('INSERT INTO session VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(sessionId, 'codex', 'thread-1', null, null, '/repo', null, 42)
+  const sessions = {
+    getSnapshot: () => ({
+      context: {
+        sessions: {
+          [sessionId]: {
+            getSnapshot: () => ({
+              context: {
+                entries: [{ sourceId: 'item-1', role: 'assistant', text: 'Live reply' }],
+                working: true,
+              },
+              matches: () => false,
+            }),
+          },
+        },
+      },
+    }),
+  } as unknown as SessionSupervisorActor
+  try {
+    const caller = createAppRouter({
+      actor: {} as CatalogActor,
+      sessions,
+      database: createDurableDatabase(client),
+      codex: {} as ActorRefFrom<typeof codexAppServerMachine>,
+      sync: {} as Record<'claude' | 'codex', ActorRefFrom<typeof sessionSyncMachine>>,
+    }).createCaller({})
+    await expect(caller.sessionFeed({ sessionId, source: 'live' })).resolves.toMatchObject({
+      rows: [{ shape: 'prose', id: 'item-1', role: 'assistant', text: 'Live reply' }],
+      live: true,
     })
   } finally {
     client.close()

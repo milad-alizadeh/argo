@@ -1,6 +1,7 @@
 import { assign, enqueueActions, fromPromise, type SnapshotFrom, sendTo, setup } from 'xstate'
 import { claudeSessionMachine } from '@/harnesses/claude/session/claude-session-machine'
 import type { codexSessionMachine } from '@/harnesses/codex/session/codex-session-machine'
+import type { SessionHistoryEntry } from '../../contract/session-history'
 import type { SessionIngestion } from '../../contract/session-index'
 import type { SessionMachineInput, SessionStartInput } from '../../contract/session-start'
 
@@ -42,6 +43,8 @@ export const sessionMachine = setup({
       nativeId: string | null
       queue: QueuedSessionCommand[]
       failure: string | null
+      entries: SessionHistoryEntry[]
+      working: boolean
     },
     events: {} as
       | {
@@ -54,6 +57,7 @@ export const sessionMachine = setup({
       | {
           type: 'Harness ready'
           nativeId: string
+          commandId?: string
         }
       | {
           type: 'Harness failed'
@@ -79,7 +83,15 @@ export const sessionMachine = setup({
     }),
   },
   actions: {
-    reportHarnessSnapshot: enqueueActions(({ event, enqueue }) => {
+    rememberHarnessEntries: assign({
+      entries: ({ context, event }) =>
+        event.type === 'xstate.snapshot.harness' ? event.snapshot.context.entries : context.entries,
+    }),
+    rememberHarnessWorking: assign({
+      working: ({ context, event }) =>
+        event.type === 'xstate.snapshot.harness' ? event.snapshot.context.working : context.working,
+    }),
+    reportHarnessSnapshot: enqueueActions(({ context, event, enqueue }) => {
       if (event.type !== 'xstate.snapshot.harness') return
       const snapshot = event.snapshot
       if (snapshot.matches('Failed'))
@@ -87,10 +99,17 @@ export const sessionMachine = setup({
           type: 'Harness failed',
           failure: snapshot.context.failure ?? 'Harness failed.',
         })
-      else if (snapshot.hasTag('ready') && snapshot.context.nativeId !== null)
+      else if (
+        snapshot.context.nativeId !== null &&
+        snapshot.context.acceptedCommandId ===
+          (context.acceptedCommandIds.includes(context.first.commandId)
+            ? context.queue[0]?.commandId
+            : context.first.commandId)
+      )
         enqueue.raise({
           type: 'Harness ready',
           nativeId: snapshot.context.nativeId,
+          commandId: snapshot.context.acceptedCommandId,
         })
     }),
     queueDistinct: assign({
@@ -109,10 +128,15 @@ export const sessionMachine = setup({
       queue: ({ context }) => context.queue.slice(1),
     }),
     rememberAcceptedCommand: assign({
-      acceptedCommandIds: ({ context }) => {
+      acceptedCommandIds: ({ context, event }) => {
         const commandId =
-          context.queue[0]?.commandId ??
-          (context.acceptedCommandIds.length === 0 ? context.first.commandId : null)
+          event.type === 'Harness ready'
+            ? (event.commandId ??
+              (context.acceptedCommandIds.length === 0
+                ? context.first.commandId
+                : context.queue[0]?.commandId) ??
+              null)
+            : null
         return commandId === null || context.acceptedCommandIds.includes(commandId)
           ? context.acceptedCommandIds
           : [
@@ -160,13 +184,19 @@ export const sessionMachine = setup({
     nativeId: null,
     queue: [],
     failure: null,
+    entries: [],
+    working: true,
   }),
   invoke: {
     id: 'harness',
     src: 'harness',
     input: ({ context }) => context.first,
     onSnapshot: {
-      actions: 'reportHarnessSnapshot',
+      actions: [
+        'rememberHarnessEntries',
+        'rememberHarnessWorking',
+        'reportHarnessSnapshot',
+      ],
     },
   },
   states: {

@@ -117,19 +117,32 @@ function watchSessionSync(
 function watchLiveSessions(window: BrowserWindow, supervisor: SessionSupervisorActor | undefined) {
   if (supervisor === undefined) return () => {}
   const children = new Map<string, { unsubscribe: () => void }>()
-  const changed = () => window.webContents.send(WATCHED_CHANGED_CHANNEL, 'sessions')
+  const statuses = new Map<string, string>()
+  const changed = (topic: 'sessions' | 'session-live') =>
+    window.webContents.send(WATCHED_CHANGED_CHANNEL, topic)
   const parent = supervisor.subscribe((snapshot) => {
     const current = snapshot.context.sessions
     for (const [id, subscription] of children) {
       if (current[id] !== undefined) continue
       subscription.unsubscribe()
       children.delete(id)
+      statuses.delete(id)
+      changed('sessions')
     }
     for (const [id, session] of Object.entries(current)) {
       if (children.has(id)) continue
-      children.set(id, session.subscribe(changed))
+      children.set(
+        id,
+        session.subscribe((child) => {
+          changed('session-live')
+          const status = JSON.stringify(child.value)
+          if (statuses.get(id) === status) return
+          statuses.set(id, status)
+          changed('sessions')
+        }),
+      )
     }
-    changed()
+    changed('session-live')
   })
   return () => {
     parent.unsubscribe()

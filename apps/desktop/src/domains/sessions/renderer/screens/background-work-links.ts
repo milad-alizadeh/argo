@@ -2,16 +2,11 @@ import type { BackgroundWorkLinks } from '../feed/rows/background-work'
 import type { SessionScreenModel } from './use-session-screen-model'
 
 export function backgroundWorkLinks(
-  model: Pick<
-    SessionScreenModel,
-    'pick' | 'selectedSessionId' | 'session' | 'subagents' | 'subagentUsage'
-  >,
+  model: Pick<SessionScreenModel, 'pick' | 'selectedSessionId' | 'subagents' | 'subagentUsage'>,
 ): BackgroundWorkLinks {
-  const { pick, selectedSessionId, session } = model
+  const { pick, selectedSessionId } = model
   return {
     find: ({ callId, name }) => {
-      const command = session?.shell.find((entry) => entry.id === callId)
-      if (command !== undefined) return { kind: 'shell', command }
       // A realtime delegation's envelope names no call, only the name the agent was sent with.
       const delegation =
         model.subagents.find((entry) => entry.id === callId) ??

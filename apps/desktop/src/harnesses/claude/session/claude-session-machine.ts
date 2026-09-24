@@ -2,18 +2,25 @@ import {
   type PermissionMode,
   type Query,
   query,
+  type SDKMessage,
   type SDKUserMessage,
 } from '@anthropic-ai/claude-agent-sdk'
 import { assign, fromCallback, sendTo, setup } from 'xstate'
+import type { SessionHistoryEntry } from '@/domains/sessions/contract/session-history'
 import type { SessionMachineInput } from '@/domains/sessions/contract/session-start'
 import { claudeCliEnvironment } from '../cli-environment'
+import { parseClaudeHistory } from './claude-history'
 
-type Send = Pick<SessionMachineInput, 'prompt'>
+type Send = Pick<SessionMachineInput, 'prompt' | 'commandId'>
 type QueryCommand = {
   type: 'Send to Query'
   prompt: string
 }
 type QueryEvent =
+  | {
+      type: 'Feed entry'
+      entry: SessionHistoryEntry
+    }
   | {
       type: 'Opened'
       nativeId: string
@@ -44,6 +51,10 @@ export const claudeSessionMachine = setup({
       mode: PermissionMode | null
       nativeId: string | null
       failure: string | null
+      entries: SessionHistoryEntry[]
+      acceptedCommandId: string | null
+      pendingCommandId: string | null
+      working: boolean
     },
     events: {} as
       | QueryEvent
@@ -116,11 +127,22 @@ export const claudeSessionMachine = setup({
         })
         return true
       }
+      const publishEntries = (message: SDKMessage) => {
+        if (message.type !== 'assistant' && message.type !== 'user') return
+        for (const entry of parseClaudeHistory([
+          message,
+        ]))
+          sendBack({
+            type: 'Feed entry',
+            entry,
+          })
+      }
       async function readResults(querySession: Query) {
         let opened = false
         for await (const message of querySession) {
-          if (!open || message.type !== 'result') continue
-          opened = reportResult(message, opened)
+          if (!open) continue
+          publishEntries(message)
+          if (message.type === 'result') opened = reportResult(message, opened)
         }
         if (open) throw new Error('Claude Session ended before the turn completed.')
       }
@@ -178,6 +200,37 @@ export const claudeSessionMachine = setup({
     rememberFailure: assign({
       failure: ({ event }) => (event.type === 'Query failed' ? event.detail : null),
     }),
+    rememberEntry: assign({
+      entries: ({ context, event }) => {
+        if (event.type !== 'Feed entry') return context.entries
+        const position = context.entries.findIndex(
+          ({ sourceId }) => sourceId === event.entry.sourceId,
+        )
+        if (position < 0)
+          return [
+            ...context.entries,
+            event.entry,
+          ]
+        return context.entries.map((entry, index) => (index === position ? event.entry : entry))
+      },
+    }),
+    rememberPendingCommand: assign({
+      pendingCommandId: ({ event }) => (event.type === 'Send' ? event.command.commandId : null),
+      working: () => true,
+    }),
+    rememberAcceptedCommand: assign({
+      acceptedCommandId: ({ context, event }) => {
+        switch (event.type) {
+          case 'Opened':
+            return context.input.commandId
+          case 'Sent':
+            return context.pendingCommandId
+          default:
+            return context.acceptedCommandId
+        }
+      },
+      working: () => false,
+    }),
     forwardSend: sendTo('queryActor', ({ event }) => {
       if (event.type !== 'Send') throw new Error('Expected a Claude Session send.')
       return {
@@ -197,6 +250,10 @@ export const claudeSessionMachine = setup({
     mode: null,
     nativeId: null,
     failure: null,
+    entries: [],
+    acceptedCommandId: null,
+    pendingCommandId: null,
+    working: true,
   }),
   states: {
     Preparing: {
@@ -228,7 +285,10 @@ export const claudeSessionMachine = setup({
           on: {
             Opened: {
               target: 'Ready',
-              actions: 'rememberNativeId',
+              actions: [
+                'rememberNativeId',
+                'rememberAcceptedCommand',
+              ],
             },
           },
         },
@@ -237,17 +297,26 @@ export const claudeSessionMachine = setup({
           on: {
             Send: {
               target: 'Sending',
-              actions: 'forwardSend',
+              actions: [
+                'rememberPendingCommand',
+                'forwardSend',
+              ],
             },
           },
         },
         Sending: {
           on: {
-            Sent: 'Ready',
+            Sent: {
+              target: 'Ready',
+              actions: 'rememberAcceptedCommand',
+            },
           },
         },
       },
       on: {
+        'Feed entry': {
+          actions: 'rememberEntry',
+        },
         'Query failed': {
           target: 'Failed',
           actions: 'rememberFailure',

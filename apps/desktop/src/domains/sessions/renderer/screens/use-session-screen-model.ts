@@ -2,7 +2,7 @@
 // surface the result.
 
 import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 
 import { useProjects } from '@/domains/projects/renderer'
@@ -15,29 +15,42 @@ import { useSessionQuestion } from '../composer/hooks/use-session-question'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
 import { SessionContractError as SessionReadError } from '../session-contract-error'
 import { readableSessionId } from '../session-creation'
-import type { Session, SessionEvidence, SessionFeedRow, SessionRoster } from '../types'
+import type { SessionEvidence, SessionFeedRow } from '../types'
 import { useWatchedQueries } from '../use-watched-topic'
+import { mergeSessionFeed } from './merge-session-feed'
 import { sessionHarness } from './session-screen-state'
 import { sessionScreenSubagents } from './session-screen-subagents'
 import { useWorkPick, type WorkSelection } from './work-selection'
 
 function useIndexedSessionFeed(selectedSessionId: string | null) {
   const sessionId = readableSessionId(selectedSessionId)
+  const querySessionId = sessionId ?? '00000000-0000-4000-8000-000000000000'
+  useWatchedQueries('session-live', [
+    trpc.sessionFeed.queryKey({ sessionId: querySessionId, source: 'live' }),
+  ])
   useWatchedQueries('sessions', [
-    trpc.sessionFeed.queryKey({ sessionId: sessionId ?? '00000000-0000-4000-8000-000000000000' }),
     trpc.sessions.get.queryKey({ argoId: sessionId ?? '00000000-0000-4000-8000-000000000000' }),
   ])
   const history = useQuery({
     ...trpc.sessionFeed.queryOptions({
-      sessionId: sessionId ?? '00000000-0000-4000-8000-000000000000',
+      sessionId: querySessionId,
+      source: 'history',
     }),
     enabled: sessionId !== null,
     refetchOnWindowFocus: true,
-    refetchInterval: (query) => (query.state.data?.live ? 1_000 : false),
   })
+  const live = useQuery({
+    ...trpc.sessionFeed.queryOptions({ sessionId: querySessionId, source: 'live' }),
+    enabled: sessionId !== null,
+  })
+  const wasLive = useRef(false)
+  useEffect(() => {
+    if (wasLive.current && live.data?.live === false) void history.refetch()
+    wasLive.current = live.data?.live ?? false
+  }, [history.refetch, live.data?.live])
   return {
     history,
-    feed: sessionId === null ? null : (history.data ?? null),
+    feed: sessionId === null ? null : mergeSessionFeed(history.data ?? null, live.data ?? null),
   }
 }
 
@@ -52,16 +65,14 @@ function useIndexedSession(selectedSessionId: string | null) {
 }
 
 function useWorkArtifacts({
-  session,
   work,
   feedRows,
 }: {
-  session: Session | null
   work: WorkSelection
   feedRows: readonly SessionFeedRow[]
 }) {
-  const subagents = sessionScreenSubagents(feedRows, session?.subagents ?? [])
-  const shell = session?.shell.find((command) => command.id === work.shellId) ?? null
+  const subagents = sessionScreenSubagents(feedRows, [])
+  const shell = null
   const delegation = subagents.find((candidate) => candidate.id === work.subagentId) ?? null
   return {
     shell,
@@ -87,7 +98,6 @@ export function useSessionScreenModel() {
   const selected = useIndexedSession(selectedSessionId)
   const lastHarness = useComposerStore(({ harness }) => harness)
   const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
-  const session = null as Session | null
   const indexedIdentity = selected.data ?? indexed.history.data ?? null
   const harness = sessionHarness({
     selectedSessionId,
@@ -98,7 +108,6 @@ export function useSessionScreenModel() {
   const permission = useSessionPermission(readableSessionId(selectedSessionId))
   const question = useSessionQuestion(readableSessionId(selectedSessionId))
   const artifacts = useWorkArtifacts({
-    session: session as Session | null,
     work,
     feedRows: indexed.feed?.rows ?? [],
   })
@@ -112,11 +121,9 @@ export function useSessionScreenModel() {
         ? new SessionReadError(sessionError('vendor-history-unavailable', readableId))
         : null,
     retryFeed: () => void indexed.history.refetch(),
-    roster: null as SessionRoster | null,
     indexedSession: selected.data ?? null,
     availability: indexed.history.data?.availability ?? null,
     navigate,
-    session,
     evidence,
     setEvidence,
     harness,

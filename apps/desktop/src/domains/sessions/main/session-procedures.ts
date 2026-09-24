@@ -124,12 +124,14 @@ function feedResponse({
   entries,
   availability,
   live,
+  working,
 }: {
   sessionId: string
   harness: 'claude' | 'codex'
   entries: SessionHistoryEntry[]
   availability: SessionAvailability
   live: boolean
+  working: boolean
 }) {
   return {
     version: 1 as const,
@@ -147,6 +149,7 @@ function feedResponse({
     harness,
     availability,
     live,
+    working,
   }
 }
 
@@ -173,6 +176,7 @@ export function sessionFeedProcedure(
           entries: liveEntries,
           availability: { state: 'available', reason: null },
           live: hasLiveChild,
+          working: hasLiveChild && snapshot.context.working,
         })
       }
       switch (identity.harness) {
@@ -184,6 +188,7 @@ export function sessionFeedProcedure(
             entries,
             availability: { state: 'available', reason: null },
             live: hasLiveChild,
+            working: hasLiveChild && snapshot.context.working,
           })
         }
         case 'codex': {
@@ -197,6 +202,7 @@ export function sessionFeedProcedure(
             entries: history.entries,
             availability,
             live: hasLiveChild,
+            working: hasLiveChild && snapshot.context.working,
           })
         }
         default:

@@ -3,7 +3,10 @@ import { harnessSchema } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
 import { sessionFeedReadSchema } from './model/wire/feed-contract'
 
-export const sessionFeedInputSchema = z.strictObject({ sessionId: identifierSchema })
+export const sessionFeedInputSchema = z.strictObject({
+  sessionId: identifierSchema,
+  source: z.enum(['history', 'live']).default('history'),
+})
 
 export const sessionHistoryEntrySchema = z.strictObject({
   sourceId: z.string().min(1),
@@ -21,6 +24,7 @@ export const sessionFeedOutputSchema = sessionFeedReadSchema.extend({
   harness: harnessSchema,
   availability: sessionAvailabilitySchema,
   live: z.boolean(),
+  working: z.boolean(),
 })
 
 export type SessionFeedOutput = z.infer<typeof sessionFeedOutputSchema>

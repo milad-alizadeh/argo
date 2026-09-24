@@ -3,6 +3,7 @@ import type { harnessCatalogMachine } from '@/harnesses/catalog/harness-catalog-
 import { claudeSessionMachine } from '@/harnesses/claude/session/claude-session-machine'
 import {
   type codexAppServerMachine,
+  observeCodexAppServer,
   requestCodexAppServer,
 } from '@/harnesses/codex/app-server/codex-app-server-machine'
 import {
@@ -114,7 +115,9 @@ function resumedHarness(
       return codex === undefined
         ? null
         : codexSessionMachine.provide({
-            actors: codexSessionActors(requestCodexAppServer(codex)),
+            actors: codexSessionActors(requestCodexAppServer(codex), (listener) =>
+              observeCodexAppServer(codex, listener),
+            ),
           })
   }
 }
@@ -210,12 +213,13 @@ export const sessionSupervisorMachine = setup({
       {
         session: SessionActor
         reply: StartReply
+        commandId: string
       }
     >(({ input }) => {
       let settled = false
       const subscription = input.session.subscribe((snapshot) => {
         if (settled) return
-        if (snapshot.matches('Ready')) {
+        if (snapshot.context.acceptedCommandIds.includes(input.commandId)) {
           settled = true
           const sessionId = snapshot.context.argoId
           if (sessionId === null) input.reply.reject(new Error('Session resume lost its identity.'))
@@ -277,7 +281,9 @@ export const sessionSupervisorMachine = setup({
               | undefined
             if (codex === undefined) throw new Error('Codex app-server actor is unavailable.')
             harness = codexSessionMachine.provide({
-              actors: codexSessionActors(requestCodexAppServer(codex)),
+              actors: codexSessionActors(requestCodexAppServer(codex), (listener) =>
+                observeCodexAppServer(codex, listener),
+              ),
             })
             break
           }
@@ -414,6 +420,7 @@ export const sessionSupervisorMachine = setup({
             input: {
               session: resumed,
               reply: event.reply,
+              commandId: event.input.commandId,
             },
           })
           return {
@@ -454,6 +461,7 @@ export const sessionSupervisorMachine = setup({
           input: {
             session: actor,
             reply: event.reply,
+            commandId: event.input.commandId,
           },
         })
         return context.sessions

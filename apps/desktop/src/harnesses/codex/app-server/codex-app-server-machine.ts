@@ -195,7 +195,9 @@ export type CodexChannel = {
   respond: (id: RequestID, result: unknown) => void
   // A listener returns `true` when it has claimed a server request and answered (or will answer)
   // it itself; the channel auto-refuses only a request no listener claims.
-  onNotification: (listener: (message: WireMessage) => boolean | undefined) => void
+  onNotification: (
+    listener: (message: WireMessage) => boolean | undefined,
+  ) => undefined | (() => void)
   onExit: (listener: () => void) => void
   close: () => void
 }
@@ -338,6 +340,10 @@ export function openCodexChannel(
     },
     onNotification(listener) {
       notificationListeners.push(listener)
+      return () => {
+        const index = notificationListeners.indexOf(listener)
+        if (index >= 0) notificationListeners.splice(index, 1)
+      }
     },
     onExit(listener) {
       exitListeners.push(listener)
@@ -376,6 +382,15 @@ function checkedOutput(event: unknown): RequestEvent | ExecutableCheckFailure | 
 }
 type ProcessCommand =
   | {
+      type: 'Observe'
+      id: string
+      listener: (message: WireMessage) => boolean | undefined
+    }
+  | {
+      type: 'Unobserve'
+      id: string
+    }
+  | {
       type: 'Open'
       executable: string | null
     }
@@ -405,6 +420,15 @@ type Context = {
   failure: string | null
 }
 type Event =
+  | {
+      type: 'Observe notification'
+      id: string
+      listener: (message: WireMessage) => boolean | undefined
+    }
+  | {
+      type: 'Unobserve notification'
+      id: string
+    }
   | CallEvent
   | RequestEvent
   | ExecutableCheckFailure
@@ -493,6 +517,8 @@ export const codexAppServerProcessActor = fromCallback<
   let channel: CodexChannel | null = null
   let generation = 0
   const waiting = new Map<RequestEvent, ReturnType<typeof setTimeout>>()
+  const observers = new Map<string, (message: WireMessage) => boolean | undefined>()
+  const subscriptions = new Map<string, () => void>()
   const rejectWaiting = (detail: string) => {
     for (const [request, timer] of waiting) {
       clearTimeout(timer)
@@ -512,6 +538,8 @@ export const codexAppServerProcessActor = fromCallback<
   }
   const close = () => {
     generation += 1
+    for (const unsubscribe of subscriptions.values()) unsubscribe()
+    subscriptions.clear()
     const current = channel
     channel = null
     current?.close()
@@ -548,6 +576,8 @@ export const codexAppServerProcessActor = fromCallback<
         if (generation !== currentGeneration) return
         const opened = openProcess(executable)
         channel = opened
+        for (const [id, listener] of observers)
+          subscriptions.set(id, opened.onNotification(listener) ?? (() => {}))
         opened.onExit(() => reportExit(currentGeneration))
         await handshake(opened)
         if (generation !== currentGeneration) return
@@ -562,6 +592,16 @@ export const codexAppServerProcessActor = fromCallback<
   }
   receive((command) => {
     switch (command.type) {
+      case 'Observe':
+        observers.set(command.id, command.listener)
+        if (channel !== null)
+          subscriptions.set(command.id, channel.onNotification(command.listener) ?? (() => {}))
+        return
+      case 'Unobserve':
+        observers.delete(command.id)
+        subscriptions.get(command.id)?.()
+        subscriptions.delete(command.id)
+        return
       case 'Open':
         open(command.executable)
         return
@@ -751,6 +791,22 @@ export const codexAppServerMachine = setup({
       if (event.type === 'Call')
         event.reject(new Error('Codex executable discovery is in progress.'))
     },
+    observeNotification: sendTo('processActor', ({ event }) => {
+      if (event.type !== 'Observe notification')
+        throw new Error('Expected a notification observer.')
+      return {
+        type: 'Observe' as const,
+        id: event.id,
+        listener: event.listener,
+      }
+    }),
+    unobserveNotification: sendTo('processActor', ({ event }) => {
+      if (event.type !== 'Unobserve notification') throw new Error('Expected notification removal.')
+      return {
+        type: 'Unobserve' as const,
+        id: event.id,
+      }
+    }),
   },
   delays: {
     retryDelay: ({ context }) => Math.min(1_000 * 2 ** context.retryCount, 30_000),
@@ -779,6 +835,12 @@ export const codexAppServerMachine = setup({
       },
       initial: 'Unavailable',
       on: {
+        'Observe notification': {
+          actions: 'observeNotification',
+        },
+        'Unobserve notification': {
+          actions: 'unobserveNotification',
+        },
         Call: {
           target: '.Checking',
         },
@@ -962,5 +1024,25 @@ export function requestCodexAppServer(
         run: (channel) => void channel.request(method, params, parse).then(resolve, reject),
         reject,
       })
+    })
+}
+
+export function observeCodexAppServer(
+  actor: ActorRefFrom<typeof codexAppServerMachine>,
+  listener: (message: WireMessage) => void,
+): () => void {
+  const id = crypto.randomUUID()
+  actor.send({
+    type: 'Observe notification',
+    id,
+    listener: (message) => {
+      listener(message)
+      return undefined
+    },
+  })
+  return () =>
+    actor.send({
+      type: 'Unobserve notification',
+      id,
     })
 }

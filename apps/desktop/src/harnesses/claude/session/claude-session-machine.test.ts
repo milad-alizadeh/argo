@@ -26,7 +26,7 @@ test('models opening, later sends, failure, and close paths', () => {
         ]
       if (snapshot.matches({ Active: 'Ready' }))
         return [
-          { type: 'Send' as const, command: { prompt: 'second' } },
+          { type: 'Send' as const, command: { commandId: 'second', prompt: 'second' } },
           { type: 'Query failed' as const, detail: 'later failure' },
           { type: 'Close' as const },
         ]
@@ -74,7 +74,7 @@ test('keeps the Claude query alive for later sends and closes it with the Sessio
   })
   const actor = createActor(machine, { input: first }).start()
   await waitFor(actor, (snapshot) => snapshot.hasTag('ready'))
-  actor.send({ type: 'Send', command: { prompt: 'second' } })
+  actor.send({ type: 'Send', command: { commandId: 'second', prompt: 'second' } })
   await waitFor(actor, (snapshot) => snapshot.hasTag('ready') && delivered.length === 2)
   assert.deepEqual(delivered, ['first', 'second'])
   assert.equal(closed, 0)
