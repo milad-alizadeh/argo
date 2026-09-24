@@ -18,6 +18,7 @@ import { createSessionStarter } from '@/domains/sessions/main/start-session'
 import { attachManagedSessions } from '@/domains/sessions/next/main/managed-session-composition'
 import { createSessionTicketLinkStoreFromDatabase } from '@/domains/tickets/main/session-links'
 import { openDurableStores } from '@/main/durable-stores'
+import { closeSessionResources } from '@/main/session-shutdown'
 import { attachAppearanceWatch } from '@/platform/main/appearance'
 import { startDesktopApplication } from '@/platform/main/application/start'
 import {
@@ -110,7 +111,7 @@ function attachSessionTransport(
   window: BrowserWindow,
   rendererURL: string,
   stores: ReturnType<typeof openDurableStores>,
-): () => void {
+): () => Promise<void> {
   const projects = createProjectPort(stores.projects)
   const adapters = attachManagedSessions(window, {
     database: stores.database,
@@ -120,17 +121,16 @@ function attachSessionTransport(
   })
   const ticketLinks = createSessionTicketLinkStoreFromDatabase(stores.database)
   const identity = createSessionIdentityService(stores.database, ticketLinks.disconnect)
-  let recovering = false
-  const recover = async () => {
-    if (recovering) return
-    recovering = true
-    try {
-      await recoverSessionState(identity, adapters)
-    } catch (error) {
-      console.error(error)
-    } finally {
-      recovering = false
-    }
+  let stopping = false
+  let recoveryInFlight: Promise<void> | null = null
+  const recover = () => {
+    if (stopping || recoveryInFlight !== null) return
+    const pending = recoverSessionState(identity, adapters)
+      .catch(console.error)
+      .finally(() => {
+        if (recoveryInFlight === pending) recoveryInFlight = null
+      })
+    recoveryInFlight = pending
   }
   void recover()
   const recoveryInterval = setInterval(() => void recover(), 30_000)
@@ -145,10 +145,19 @@ function attachSessionTransport(
       hasLiveChannel: adapters.hasLiveChannel,
     },
   })
+  let shutdown: Promise<void> | null = null
   return () => {
-    clearInterval(recoveryInterval)
-    detachTrpc()
-    void adapters.close()
+    shutdown ??= closeSessionResources({
+      stopNewWork: () => {
+        stopping = true
+        clearInterval(recoveryInterval)
+        detachTrpc()
+      },
+      waitForRecovery: () => recoveryInFlight ?? Promise.resolve(),
+      closeAdapters: adapters.close,
+      closeStores: stores.close,
+    })
+    return shutdown
   }
 }
 
@@ -180,10 +189,22 @@ function createWindow(): void {
       attachWindowNavigation(window)
       const detachTrpc = attachSessionTransport(window, rendererURL, stores)
       attachAppearanceWatch(window)
+      let shuttingDown = false
+      let readyToDestroy = false
+      window.on('close', (event) => {
+        if (readyToDestroy) return
+        event.preventDefault()
+        if (shuttingDown) return
+        shuttingDown = true
+        void detachTrpc()
+          .catch(console.error)
+          .finally(() => {
+            readyToDestroy = true
+            window.destroy()
+          })
+      })
       window.once('closed', () => {
         desktopWindow = undefined
-        detachTrpc()
-        stores.close()
       })
       installMenu(window)
     },

@@ -28,9 +28,16 @@ export function createSessionStarter(options: {
     if (options.identity.isUnsafe()) return { kind: 'rejected', reason: 'Argo storage is unsafe.' }
     const adapter = options.adapters.adapterFor(input.harness)
     if (adapter === undefined) return { kind: 'rejected', reason: 'The Harness is unavailable.' }
-    const resolved = await options.projects.resolveWorkspace(input.workspace)
-    const projectId = options.projects.projectForWorkspace(resolved.workspaceId)
-    if (projectId === null) return { kind: 'rejected', reason: 'The Workspace is unavailable.' }
+    const resolved = await options.projects
+      .resolveWorkspace(input.workspace)
+      .then((workspace) => ({
+        ...workspace,
+        projectId: options.projects.projectForWorkspace(workspace.workspaceId),
+      }))
+      .catch(() => null)
+    if (resolved?.projectId == null)
+      return { kind: 'rejected', reason: 'The Workspace is unavailable.' }
+    const projectId = resolved.projectId
     let intentId: string
     try {
       intentId = options.identity.beginLaunch({

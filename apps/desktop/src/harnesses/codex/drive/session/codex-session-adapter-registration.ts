@@ -1,3 +1,4 @@
+import { discoverStartedSession } from '@/domains/sessions/main/launch-discovery'
 import type { SessionAdapterRegistration } from '@/domains/sessions/next/main/session-adapter-registry'
 import { createCodexSessionAdapter } from './codex-session-adapter'
 
@@ -43,19 +44,23 @@ export function createCodexSessionAdapterRegistration(options: {
         discoverLaunch: async (intent) => {
           try {
             const sessions = await adapter.refreshHistory(() => false)
-            const matches = sessions.filter((session) => {
-              const firstTurn = session.turns[0]
-              const firstUserMessage = session.messages.find((message) => message.role === 'user')
-              return (
-                session.workspace?.id === intent.workspaceId &&
-                firstUserMessage?.text === intent.prompt &&
-                firstTurn !== undefined &&
-                firstTurn.startedAt >= intent.createdAt - 120_000
-              )
-            })
-            return matches.length === 1 && matches[0] !== undefined
-              ? { kind: 'found', nativeId: matches[0].session.nativeId }
-              : { kind: 'ambiguous' }
+            return discoverStartedSession(
+              intent,
+              sessions.flatMap((session) => {
+                const firstTurn = session.turns[0]
+                const firstUserMessage = session.messages.find((message) => message.role === 'user')
+                return session.workspace?.id !== undefined && firstTurn !== undefined
+                  ? [
+                      {
+                        nativeId: session.session.nativeId,
+                        workspaceId: session.workspace.id,
+                        firstPrompt: firstUserMessage?.text ?? null,
+                        startedAt: firstTurn.startedAt,
+                      },
+                    ]
+                  : []
+              }),
+            )
           } catch {
             return { kind: 'unavailable' }
           }

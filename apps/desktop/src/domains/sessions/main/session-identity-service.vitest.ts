@@ -283,6 +283,44 @@ test('typed start commits one Argo UUID visible in Roster and detail', async () 
   }
 })
 
+test.each(['missing-workspace', 'missing-project'] as const)(
+  'typed start rejects %s before a launch intent or Harness send',
+  async (caseName) => {
+    const fixture = await harness()
+    try {
+      const identity = fixture.create()
+      let sends = 0
+      const start = createSessionStarter({
+        identity,
+        projects: {
+          resolveWorkspace: async () => {
+            if (caseName === 'missing-workspace') throw new Error('Workspace removed')
+            return { workspaceId: 'workspace-1', cwd: '/tmp/project-1' }
+          },
+          projectForWorkspace: () => null,
+        } as never,
+        adapters: {
+          adapterFor: () => ({
+            execute: async () => {
+              sends += 1
+              return accepted
+            },
+          }),
+        } as never,
+      })
+      const caller = appRouter.createCaller({ database: fixture.database, startSession: start })
+      await expect(caller.sessions.start(command)).resolves.toEqual({
+        kind: 'rejected',
+        reason: 'The Workspace is unavailable.',
+      })
+      expect(fixture.database.select().from(sessionLaunchIntent).all()).toEqual([])
+      expect(sends).toBe(0)
+    } finally {
+      fixture.client.close()
+    }
+  },
+)
+
 test('a committed vendor start with failed SQLite returns uncertain and never replays', async () => {
   const fixture = await harness()
   try {
