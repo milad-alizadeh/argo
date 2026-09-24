@@ -69,8 +69,9 @@ async function proveBulkArchive(page) {
 export async function proveContract(page) {
   const list = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
   assert.equal(list.type, 'session.listed')
-  // Codex history now comes from its app server, so only the 13 Claude transcript files count.
-  assert.deepEqual({ found: list.filesFound, read: list.filesRead }, { found: 13, read: 13 })
+  // Earlier E2E cases can create more Claude transcripts before this shared roster check.
+  assert.ok(list.filesFound >= 13)
+  assert.equal(list.filesRead, list.filesFound)
   // An archived Session never projects into this active list (#1593): `plannedWork` is read out
   // of it below instead.
   assert.deepEqual(list.sessions.map((session) => session.id).sort(), [

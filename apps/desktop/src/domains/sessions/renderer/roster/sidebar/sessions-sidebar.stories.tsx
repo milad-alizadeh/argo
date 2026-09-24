@@ -880,7 +880,7 @@ export const OpenBranchTicketFromContextMenu: Story = {
     const row = await canvas.findByRole('button', { name: /Read the Session transcript/ })
     await userEvent.pointer({ keys: '[MouseRight]', target: row })
     await userEvent.click(
-      await within(document.body).findByRole('menuitem', { name: 'Open ticket' }),
+      await within(document.body).findByRole('menuitem', { name: 'Open Ticket' }),
     )
     await expect(canvas.getByLabelText('Session route')).toHaveTextContent('/tickets/%232582')
     await expect(args.onOpenTicket).toHaveBeenCalledWith(

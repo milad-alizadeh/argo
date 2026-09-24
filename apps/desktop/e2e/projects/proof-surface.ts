@@ -45,6 +45,7 @@ export const PROJECT_PROOF_SURFACE = [
   'readShellOutput',
   'readSkillFile',
   'readSubagentUsage',
+  'readTicket',
   'readWorkspaceFile',
   'registerProject',
   'relocateProject',
