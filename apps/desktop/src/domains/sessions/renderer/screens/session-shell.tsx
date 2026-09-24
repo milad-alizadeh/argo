@@ -1,10 +1,6 @@
 import type { ReactNode } from 'react'
-import { useTranslation } from 'react-i18next'
 import { InspectorSplit } from '@/platform/renderer/cockpit/inspector-split/inspector-split'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import { SessionTitle } from '../prompt/session-title'
-import { sessionName } from '../session-name'
-import type { Session } from '../types'
 import { SESSION_SPLIT } from './session-screen-layout'
 import { SessionWorkspace, type SessionWorkspaceProps } from './session-workspace'
 import { worktreeName } from './session-worktree'
@@ -15,7 +11,6 @@ type SessionShellProps = Omit<SessionWorkspaceProps, 'header'> & {
   // The workspace header's own controls, drawn leading. A Session with no background work hands
   // nothing here and the bar stays empty (#1582).
   headerControls?: ReactNode
-  session?: Pick<Session, 'cwd' | 'harness' | 'id' | 'status' | 'title'> | null
   headerTitle?: string | null
   headerWorkingDirectory?: string | null
   inspector: ReactNode
@@ -25,26 +20,17 @@ type SessionShellProps = Omit<SessionWorkspaceProps, 'header'> & {
 }
 
 function SessionHeader({
-  session,
   title,
   workingDirectory,
 }: {
-  session: SessionShellProps['session']
   title: string | null
   workingDirectory: string | null
 }) {
-  const { t } = useTranslation('sessions')
-  if ((session === null || session === undefined) && title === null) return null
-  const worktree = worktreeName(workingDirectory ?? session?.cwd ?? null)
+  if (title === null) return null
+  const worktree = worktreeName(workingDirectory)
   return (
     <div className="min-w-0 flex-1 overflow-hidden">
-      <h1 className="truncate type-heading">
-        {session === null || session === undefined ? (
-          title
-        ) : (
-          <SessionTitle session={session} text={sessionName(session, t('newSession'))} />
-        )}
-      </h1>
+      <h1 className="truncate type-heading">{title}</h1>
       {worktree ? (
         <p className="mt-1 flex min-w-0 items-center gap-1 type-meta text-muted-foreground">
           <Icon name="worktree" className="size-(--size-icon-inline) shrink-0" />
@@ -68,7 +54,6 @@ function SessionHeaderControls({ children }: { children: ReactNode }) {
 
 export function SessionShell({
   headerControls = null,
-  session = null,
   headerTitle = null,
   headerWorkingDirectory = null,
   inspector,
@@ -97,11 +82,7 @@ export function SessionShell({
                 data-component="SessionHeader"
                 className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center gap-2 border-b border-border/60 bg-background px-(--spacing-shell-gutter)"
               >
-                <SessionHeader
-                  session={session}
-                  title={headerTitle}
-                  workingDirectory={headerWorkingDirectory}
-                />
+                <SessionHeader title={headerTitle} workingDirectory={headerWorkingDirectory} />
                 <SessionHeaderControls>{headerControls}</SessionHeaderControls>
               </header>
             }

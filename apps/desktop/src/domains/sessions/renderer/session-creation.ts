@@ -1,8 +1,7 @@
 import { create } from 'zustand'
-import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import type { SessionHarness } from './harness/harnesses'
 
-// A tempId names the Roster row before the backend has ever heard of it, so a reader can tell it
+// A tempId names the Session list row before the backend has ever heard of it, so a reader can tell it
 // apart from a real Session id on sight (`isOptimisticSessionId`).
 const TEMP_ID_PREFIX = 'optimistic:'
 
@@ -17,7 +16,7 @@ export function readableSessionId(id: string | null): string | null {
 }
 
 // `draft`: no `session.start` call fired yet, `id` is the tempId. `reconciling`: `start` answered
-// with a real Session id, `id` becomes that real id, and the row stays synthetic until the Roster
+// with a real Session id, `id` becomes that real id, and the row stays synthetic until the Session list
 // reader reports it for real (CONTEXT.md L2 · Session, `starting` status).
 export type PendingSession =
   | {
@@ -47,13 +46,13 @@ type SessionCreationState = {
   resolved: (id: string, realId: string) => void
   // The `start` call failed: the row is gone, never a lingering `starting` ghost.
   failed: (id: string) => void
-  // The Roster reader reported the real Session for itself: the synthetic row is no longer needed.
+  // The Session list reported the real Session for itself: the synthetic row is no longer needed.
   confirmed: (realId: string) => void
   // The person moved on without sending anything on this draft row.
   abandon: (id: string) => void
 }
 
-// The prompt's first line names the row until a ranked title replaces it (core/sessions/roster.ts readTitle).
+// The prompt's first line names the row until an Argo or vendor title replaces it.
 function promptTitle(prompt: string): string | null {
   const line = prompt.split('\n').find((candidate) => candidate.trim() !== '')
   return line === undefined ? null : line.trim()
@@ -107,17 +106,6 @@ export const useSessionCreationStore = create<SessionCreationState>()((set, get)
   },
 }))
 
-// Puts the optimistic row at the top of a real Roster read (a new Session is the newest), in place of the real Session until the reader
-// reports it: never a second entry once that id shows up for real (#2109).
-export function mergeOptimisticRow(
-  sessions: SessionRosterRow[],
-  pending: PendingSession | null,
-): SessionRosterRow[] {
-  if (pending === null) return sessions
-  if (sessions.some((session) => session.id === pending.id)) return sessions
-  return [optimisticSessionRow(pending), ...sessions]
-}
-
 // The "+" action's own dedup: a repeat activation while one row is already pending refocuses it
 // rather than starting a second Session (#2109 AC: N rapid clicks still produce exactly one).
 // `cwd` is the last-used Project's path; with none open yet there is nothing to create on.
@@ -126,33 +114,4 @@ export function newSessionTarget(harness: SessionHarness, cwd: string | null): s
   if (existing !== null) return existing.id
   if (cwd === null) return null
   return useSessionCreationStore.getState().begin(harness, cwd).id
-}
-
-// The Roster row a pending Session renders as, until the reader reports its real one. Every field
-// a fresh, untouched Session would carry: no title, no activity, no work.
-export function optimisticSessionRow(pending: PendingSession): SessionRosterRow {
-  return {
-    id: pending.id,
-    retiredIds: [],
-    harness: pending.harness,
-    posture: 'managed',
-    title: pending.prompt === null ? null : { text: pending.prompt, source: 'first-prompt' },
-    ticket: null,
-    status: 'starting',
-    entry: 'interactive',
-    cwd: pending.cwd,
-    branch: null,
-    updatedAt: null,
-    unreadableLines: 0,
-    originUnread: false,
-    turnStartedAt: null,
-    activity: null,
-    plan: null,
-    subagents: [],
-    shell: [],
-    pullRequest: null,
-    archived: false,
-    unread: false,
-    setup: { model: null, effort: null, mode: null },
-  }
 }

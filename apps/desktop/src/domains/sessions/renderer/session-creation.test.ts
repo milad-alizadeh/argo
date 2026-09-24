@@ -2,7 +2,6 @@ import { beforeEach, expect, test } from 'bun:test'
 
 import {
   isOptimisticSessionId,
-  optimisticSessionRow,
   readableSessionId,
   useSessionCreationStore,
 } from './session-creation'
@@ -56,22 +55,6 @@ test('resolving moves the row to the real Session id, still pending confirmation
     cwd: '/argo',
     prompt: 'hello',
   })
-})
-
-test('the row is named by the first line of the prompt sent, until the Harness names it', () => {
-  const created = useSessionCreationStore.getState().begin('claude', '/argo')
-  expect(optimisticSessionRow(created).title).toBeNull()
-  useSessionCreationStore
-    .getState()
-    .startSubmission(created.id, '\n  Fix the login bug \nthen test')
-  const submitted = useSessionCreationStore.getState().pending
-  expect(submitted && optimisticSessionRow(submitted).title).toEqual({
-    text: 'Fix the login bug',
-    source: 'first-prompt',
-  })
-  useSessionCreationStore.getState().resolved(created.id, 'session-real')
-  const reconciling = useSessionCreationStore.getState().pending
-  expect(reconciling && optimisticSessionRow(reconciling).title?.text).toBe('Fix the login bug')
 })
 
 test('a failure clears the row rather than leaving a starting ghost', () => {

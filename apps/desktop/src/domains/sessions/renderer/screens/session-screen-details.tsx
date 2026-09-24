@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router'
 import type { Cockpit, ProjectActions } from '@/domains/projects/renderer'
-import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import type { SessionAvailability } from '@/domains/sessions/contract/session-history'
 import type { SessionListItem } from '@/domains/sessions/contract/session-list'
 import type { SessionSubmitInput } from '@/domains/sessions/contract/session-start'
@@ -24,7 +23,6 @@ import { useTurnSetup } from '../composer/turn-setup/use-turn-setup'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import type { HarnessControl } from '../harness/harnesses'
 import { useSessionCreationStore } from '../session-creation'
-import type { SessionRoster } from '../types'
 
 type SessionScreenDetailsProps = {
   permission: ReturnType<typeof import('../composer').useSessionPermission>
@@ -226,70 +224,6 @@ export function SessionComposerArea({
         }
       />
     </>
-  )
-}
-
-function handoffTitle(roster: SessionRoster | null, sessionId: string) {
-  const row = roster?.sessions.find(({ id }) => id === sessionId)
-  return row?.title?.text ?? sessionId
-}
-
-function HandoffLink({
-  label,
-  sessionId,
-  roster,
-  onNavigate,
-}: {
-  label: string
-  sessionId: string
-  roster: SessionRoster | null
-  onNavigate: (path: string) => void
-}) {
-  return (
-    <p className="mt-2">
-      {label}{' '}
-      <button
-        className="text-foreground underline underline-offset-2"
-        onClick={() => onNavigate(`/sessions/${sessionId}`)}
-        type="button"
-      >
-        {handoffTitle(roster, sessionId)}
-      </button>
-    </p>
-  )
-}
-
-export function SessionHandoffFacts({
-  session,
-  roster = null,
-  onNavigate,
-}: {
-  session: SessionRosterRow | null
-  roster?: SessionRoster | null
-  onNavigate?: (path: string) => void
-}) {
-  const { t } = useTranslation('sessions')
-  if (session === null || (!session.handoffTo && !session.handoffFrom) || !onNavigate) return null
-  return (
-    <section aria-label={t('handoff.label')} className="p-4 type-meta text-muted-foreground">
-      <h2 className="font-medium text-foreground">{t('handoff.title')}</h2>
-      {session.handoffTo ? (
-        <HandoffLink
-          label={t('handoff.to')}
-          onNavigate={onNavigate}
-          roster={roster}
-          sessionId={session.handoffTo}
-        />
-      ) : null}
-      {session.handoffFrom ? (
-        <HandoffLink
-          label={t('handoff.from')}
-          onNavigate={onNavigate}
-          roster={roster}
-          sessionId={session.handoffFrom}
-        />
-      ) : null}
-    </section>
   )
 }
 

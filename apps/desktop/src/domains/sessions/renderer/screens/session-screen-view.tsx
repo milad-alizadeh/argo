@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
 import type { FeedLiveFacts } from '../feed/document/feed-live-facts'
 import { BackgroundWork } from '../feed/rows/background-work'
@@ -92,7 +91,6 @@ export function SessionScreenView() {
   const model = useSessionScreenModel()
   const { evidence, feed, feedError, isNewSession, question } = model
   const { navigate, retryFeed, selectedSessionId, setEvidence, workReveal } = model
-  const [, setFeedStalledSessionId] = useState<string | null>(null)
   const openSession = (sessionId: string) => navigate(`/sessions/${sessionId}`)
   const answerQuestion = (_sessionId: string, questionId: string, answers: QuestionAnswer[]) =>
     void question.decide(questionId, answers)
@@ -112,7 +110,6 @@ export function SessionScreenView() {
         onAnswerQuestion={answerQuestion}
         answeringQuestionId={model.question.answeringId}
         questionFailure={model.question.failureFor}
-        onFeedStalledChange={setFeedStalledSessionId}
         composer={
           (selectedSessionId === null && !isNewSession) ||
           feedError?.code === 'missing-session' ? null : (

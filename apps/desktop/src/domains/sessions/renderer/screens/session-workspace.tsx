@@ -23,7 +23,6 @@ export type SessionWorkspaceProps = {
   onAnswerQuestion: (sessionId: string, questionId: string, answers: QuestionAnswer[]) => void
   answeringQuestionId: string | null
   questionFailure: (questionId: string) => string | null
-  onFeedStalledChange?: (sessionId: string | null) => void
 }
 
 function ComposerFade({ onJumpToLatest }: { onJumpToLatest: (() => void) | null }) {
@@ -84,7 +83,6 @@ export function SessionWorkspace({
   onAnswerQuestion,
   answeringQuestionId,
   questionFailure,
-  onFeedStalledChange,
 }: SessionWorkspaceProps) {
   const [jumpToLatest, setJumpToLatest] = useState<{
     action: () => void
@@ -116,7 +114,6 @@ export function SessionWorkspace({
           onRetryFeed={onRetryFeed}
           questionFailure={questionFailure}
           selectedSessionId={selectedSessionId}
-          onStalledChange={onFeedStalledChange}
           stallTimeoutMs={stallTimeoutMs}
           liveFacts={liveFacts}
         />
