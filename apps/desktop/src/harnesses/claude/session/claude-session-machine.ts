@@ -36,41 +36,12 @@ const permissionModes: Record<string, PermissionMode> = {
   auto: 'auto',
 }
 
-function permissionMode(value: string): PermissionMode {
-  const mode = permissionModes[value]
-  if (mode !== undefined) return mode
-  throw new Error(`Unsupported Claude permission mode: ${value}`)
-}
-
-async function readClaudeResults(
-  session: Query,
-  isOpen: () => boolean,
-  sendBack: (event: QueryEvent) => void,
-) {
-  let opened = false
-  for await (const message of session) {
-    if (!isOpen() || message.type !== 'result') continue
-    if (message.is_error) throw new Error('Claude Session turn failed.')
-    if (opened)
-      sendBack({
-        type: 'Sent',
-      })
-    else {
-      opened = true
-      sendBack({
-        type: 'Opened',
-        nativeId: message.session_id,
-      })
-    }
-  }
-  if (isOpen()) throw new Error('Claude Session ended before the turn completed.')
-}
-
 export const claudeSessionMachine = setup({
   types: {
     input: {} as SessionStartInput,
     context: {} as {
       input: SessionStartInput
+      mode: PermissionMode | null
       nativeId: string | null
       failure: string | null
     },
@@ -85,71 +56,102 @@ export const claudeSessionMachine = setup({
         },
   },
   actors: {
-    queryActor: fromCallback<QueryCommand, SessionStartInput, QueryEvent>(
-      ({ input, receive, sendBack }) => {
-        const prompts: string[] = []
-        let wake: (() => void) | null = null
-        let session: Query | null = null
-        let open = true
-        const wakeInput = () => {
-          wake?.()
-          wake = null
-        }
-        async function* messages(): AsyncGenerator<SDKUserMessage> {
-          while (open) {
-            if (prompts.length === 0)
-              await new Promise<void>((resolve) => {
-                wake = resolve
-              })
-            const prompt = prompts.shift()
-            if (prompt === undefined) continue
-            yield {
-              type: 'user',
-              message: {
-                role: 'user',
-                content: prompt,
-              },
-              parent_tool_use_id: null,
-            }
-          }
-        }
-        receive((event) => {
-          prompts.push(event.prompt)
-          wakeInput()
-        })
-        void (async () => {
-          try {
-            session = query({
-              prompt: messages(),
-              options: {
-                cwd: input.cwd,
-                model: input.setup.model,
-                permissionMode: permissionMode(input.setup.mode),
-                env: claudeCliEnvironment(),
-              },
+    queryActor: fromCallback<
+      QueryCommand,
+      {
+        command: SessionStartInput
+        mode: PermissionMode | null
+      },
+      QueryEvent
+    >(({ input, receive, sendBack }) => {
+      const prompts: string[] = []
+      let wake: (() => void) | null = null
+      let session: Query | null = null
+      let open = true
+      const wakeInput = () => {
+        wake?.()
+        wake = null
+      }
+      async function* messages(): AsyncGenerator<SDKUserMessage> {
+        while (open) {
+          if (prompts.length === 0)
+            await new Promise<void>((resolve) => {
+              wake = resolve
             })
-            await readClaudeResults(session, () => open, sendBack)
-          } catch (error) {
-            if (open)
-              sendBack({
-                type: 'Query failed',
-                detail: String(error),
-              })
-          } finally {
-            open = false
-            wakeInput()
-            session?.close()
+          const prompt = prompts.shift()
+          if (prompt === undefined) continue
+          yield {
+            type: 'user',
+            message: {
+              role: 'user',
+              content: prompt,
+            },
+            parent_tool_use_id: null,
           }
-        })()
-        return () => {
+        }
+      }
+      receive((event) => {
+        prompts.push(event.prompt)
+        wakeInput()
+      })
+      async function readResults(querySession: Query) {
+        let opened = false
+        for await (const message of querySession) {
+          if (!open || message.type !== 'result') continue
+          if (message.is_error) throw new Error('Claude Session turn failed.')
+          if (opened)
+            sendBack({
+              type: 'Sent',
+            })
+          else {
+            opened = true
+            sendBack({
+              type: 'Opened',
+              nativeId: message.session_id,
+            })
+          }
+        }
+        if (open) throw new Error('Claude Session ended before the turn completed.')
+      }
+      void (async () => {
+        try {
+          if (input.mode === null) throw new Error('Unsupported Claude permission mode.')
+          session = query({
+            prompt: messages(),
+            options: {
+              cwd: input.command.cwd,
+              model: input.command.setup.model,
+              permissionMode: input.mode,
+              env: claudeCliEnvironment(),
+            },
+          })
+          await readResults(session)
+        } catch (error) {
+          if (open)
+            sendBack({
+              type: 'Query failed',
+              detail: String(error),
+            })
+        } finally {
           open = false
           wakeInput()
           session?.close()
         }
-      },
-    ),
+      })()
+      return () => {
+        open = false
+        wakeInput()
+        session?.close()
+      }
+    }),
   },
   actions: {
+    preparePermissionMode: assign({
+      mode: ({ context }) => permissionModes[context.input.setup.mode] ?? null,
+    }),
+    rejectUnsupportedMode: assign({
+      failure: ({ context }) => `Unsupported Claude permission mode: ${context.input.setup.mode}`,
+    }),
     submitFirstPrompt: sendTo('queryActor', ({ context }) => ({
       type: 'Send to Query',
       prompt: context.input.prompt,
@@ -168,20 +170,40 @@ export const claudeSessionMachine = setup({
       }
     }),
   },
+  guards: {
+    hasPermissionMode: ({ context }) => context.mode !== null,
+  },
 }).createMachine({
   id: 'claudeSession',
-  initial: 'Active',
+  initial: 'Preparing',
   context: ({ input }) => ({
     input,
+    mode: null,
     nativeId: null,
     failure: null,
   }),
   states: {
+    Preparing: {
+      entry: 'preparePermissionMode',
+      always: [
+        {
+          guard: 'hasPermissionMode',
+          target: 'Active',
+        },
+        {
+          target: 'Failed',
+          actions: 'rejectUnsupportedMode',
+        },
+      ],
+    },
     Active: {
       invoke: {
         id: 'queryActor',
         src: 'queryActor',
-        input: ({ context }) => context.input,
+        input: ({ context }) => ({
+          command: context.input,
+          mode: context.mode,
+        }),
       },
       initial: 'Opening',
       states: {
