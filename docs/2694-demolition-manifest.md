@@ -50,6 +50,7 @@ move with platform requests in #2711.
 | Codex app-server supervisor and managed Session child actors | Codex Harness; #2687, #2699, #2702 |
 | Claude and Codex vendor history interfaces | Harness adapters; #2688, #2690, #2696, #2697 |
 | Claude SDK list and message history; Codex app-server history read-one and refresh | Harness adapters; #2688, #2690, #2696, #2697 |
+| Claude transcript envelope parser and recorded producer corpus | Claude Harness; #2684, #2690, #2697 |
 | ProjectSetup durable actor | Project domain; #2709 |
 | Account provider sign-in actor and Harness sign-in actors | Account and Harness sign-in domains; #2707, #2710 |
 | Supported GitHub and Linear provider adapters | Provider modules; #2689, #2703, #2715, #2716 |
@@ -70,9 +71,10 @@ from access loss and temporary failure.
 
 Remove vendor-page Roster merging, transcript and rollout file readers, duplicate Ticket list
 reads, operation tables and their per-domain preload clients, and renderer hooks that only forward
-those calls. Remove the Ticket-link flow that renames a vendor Session; a linked Ticket title is a
-display projection owned by #2704. Remove multiwindow behavior; #2695 establishes one application
-window and second-launch focus.
+those calls. Keep the Claude transcript envelope parser as a Harness boundary; it parses SDK and
+recorded producer messages and does not discover or read transcript files. Remove the Ticket-link
+flow that renames a vendor Session; a linked Ticket title is a display projection owned by #2704.
+Remove multiwindow behavior; #2695 establishes one application window and second-launch focus.
 
 Keep durable Argo Session identity and local title, pin, and Ticket-link data. Keep the Session
 actors, supported vendor adapters, Ticket provider adapters, ProjectSetup, sign-in actors, and

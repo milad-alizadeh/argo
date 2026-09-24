@@ -1,6 +1,40 @@
 import { randomUUID } from 'node:crypto'
 
 const INITIALIZATION_DELAY_MS = 50
+const MODELS = [
+  {
+    value: 'fable',
+    resolvedModel: 'claude-fable-5-1',
+    displayName: 'Fable 5.1',
+    description: 'Mock Fable model',
+    supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+    supportsAutoMode: true,
+  },
+  {
+    value: 'opus',
+    resolvedModel: 'claude-opus-5',
+    displayName: 'Opus 5',
+    description: 'Mock Opus model',
+    supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+    supportsAutoMode: true,
+  },
+  {
+    value: 'sonnet',
+    resolvedModel: 'claude-sonnet-5',
+    displayName: 'Sonnet 5',
+    description: 'Mock Sonnet model',
+    supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+    supportsAutoMode: false,
+  },
+  {
+    value: 'haiku',
+    resolvedModel: 'claude-haiku-4-5',
+    displayName: 'Haiku 4.5',
+    description: 'Mock Haiku model',
+    supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+    supportsAutoMode: false,
+  },
+]
 
 export function promptText(input: unknown): string | null {
   if (typeof input !== 'object' || input === null || !('message' in input)) return null
@@ -26,9 +60,7 @@ export function startMockClaudeSdkStream(
   sessionId: string,
   reply: (prompt: string, waitForPermission: WaitForPermission) => Promise<string>,
 ) {
-  process.stdout.write(
-    `${JSON.stringify({ type: 'system', subtype: 'init', apiKeySource: 'none', claude_code_version: '2.1.0', cwd: process.cwd(), tools: [], mcp_servers: [], model: 'claude-opus-4-6', permissionMode: 'default', slash_commands: [], output_style: 'default', skills: [], plugins: [], session_id: sessionId, uuid: randomUUID() })}\n`,
-  )
+  writeInitialization(sessionId)
   let pending = ''
   const pendingPermissions = new Map<string, () => void>()
   const waitForPermission: WaitForPermission = () => {
@@ -45,7 +77,7 @@ export function startMockClaudeSdkStream(
       const initializationId = initializationRequestId(input)
       if (initializationId !== null) {
         process.stdout.write(
-          `${JSON.stringify({ type: 'control_response', response: { subtype: 'success', request_id: initializationId, response: {} } })}\n`,
+          `${JSON.stringify({ type: 'control_response', response: { subtype: 'success', request_id: initializationId, response: { models: MODELS } } })}\n`,
         )
         continue
       }
@@ -63,6 +95,29 @@ export function startMockClaudeSdkStream(
     }
     pending = pending.includes('\n') ? pending.slice(pending.lastIndexOf('\n') + 1) : pending
   })
+}
+
+function writeInitialization(sessionId: string) {
+  process.stdout.write(
+    `${JSON.stringify({
+      type: 'system',
+      subtype: 'init',
+      apiKeySource: 'none',
+      claude_code_version: '2.1.0',
+      cwd: process.cwd(),
+      tools: [],
+      mcp_servers: [],
+      model: 'claude-opus-5',
+      models: MODELS,
+      permissionMode: 'default',
+      slash_commands: [],
+      output_style: 'default',
+      skills: [],
+      plugins: [],
+      session_id: sessionId,
+      uuid: randomUUID(),
+    })}\n`,
+  )
 }
 
 export function initializationRequestId(input: unknown): string | null {

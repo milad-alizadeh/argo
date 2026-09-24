@@ -32,6 +32,7 @@ export function feedContent({
   streamingRowId,
   tail,
   emptyText,
+  historyLabel,
 }: {
   active: boolean
   initialMeasurementsCache: VirtualItem[]
@@ -49,6 +50,7 @@ export function feedContent({
   streamingRowId: string | null
   tail: ReactNode
   emptyText: readonly [title: string, description: string]
+  historyLabel: string
 }) {
   const noRows = settled === null || settled.rows.length === 0
   const awaitingReply = isRunning && (noRows || awaitingAssistantReply(settled.rows))
@@ -89,6 +91,7 @@ export function feedContent({
       revealsFor={revealsFor}
       streamingRowId={streamingRowId}
       tail={tail}
+      historyLabel={historyLabel}
     />
   )
 }

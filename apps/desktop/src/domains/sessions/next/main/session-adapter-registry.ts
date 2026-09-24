@@ -1,3 +1,4 @@
+import type { ClaudeModelCatalog } from '@/domains/sessions/contract/claude-model-catalog'
 import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
 import type { Harness, WorkspaceSelection } from '@/domains/sessions/next/contract/session-contract'
 import type { SessionAdapter } from '@/domains/sessions/next/contract/session-projection-contract'
@@ -14,6 +15,7 @@ export type SessionAdapterInstance = {
   adapter: SessionAdapter
   close: () => void | Promise<void>
   readModelCatalog?: () => Promise<CodexModelCatalog | null>
+  readClaudeModelCatalog?: () => Promise<ClaudeModelCatalog | null>
 }
 
 export type SessionAdapterRegistration = {
@@ -24,6 +26,7 @@ export type SessionAdapterRegistration = {
 export type SessionAdapterRegistry = {
   adapterFor: (harness: Harness) => SessionAdapter | undefined
   readModelCatalog: (harness: Harness) => Promise<CodexModelCatalog | null>
+  readClaudeModelCatalog: () => Promise<ClaudeModelCatalog | null>
   close: () => Promise<void>
 }
 
@@ -42,6 +45,8 @@ export function createSessionAdapterRegistry(
     adapterFor: (harness) => adapters.get(harness)?.adapter,
     readModelCatalog: (harness) =>
       adapters.get(harness)?.readModelCatalog?.() ?? Promise.resolve(null),
+    readClaudeModelCatalog: () =>
+      adapters.get('claude')?.readClaudeModelCatalog?.() ?? Promise.resolve(null),
     close: async () => {
       await Promise.all([...adapters.values()].map((instance) => instance.close()))
     },

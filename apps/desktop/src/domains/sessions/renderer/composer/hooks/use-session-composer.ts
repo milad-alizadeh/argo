@@ -112,8 +112,8 @@ export function useSessionComposer(options: SessionComposerOptions): ComposerRes
       onSend,
       sessionId: composerIdentityKey(identity),
       setup: control,
-      catalogError: harness === 'codex' && facts.catalogError,
-      refreshCatalog: facts.refreshCatalog,
+      catalogError: harness === 'codex' ? facts.catalogError : facts.claudeCatalogError,
+      refreshCatalog: harness === 'codex' ? facts.refreshCatalog : facts.refreshClaudeCatalog,
       workspace,
     },
   }

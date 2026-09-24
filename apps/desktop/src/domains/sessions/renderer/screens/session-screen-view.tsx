@@ -22,7 +22,7 @@ function WorkButtons({ model }: { model: SessionScreenModel }) {
   const { pick, selectedSessionId, session, work } = model
   return (
     <SessionWorkButtons
-      subagents={session?.subagents ?? []}
+      subagents={model.subagents}
       subagentUsage={model.subagentUsage}
       onSelectDelegation={(subagentId) =>
         pick({ sessionId: selectedSessionId, subagentId, shellId: null })
@@ -122,7 +122,8 @@ export function SessionScreenView() {
         questionFailure={model.question.failureFor}
         onFeedStalledChange={setFeedStalledSessionId}
         composer={
-          selectedSessionId === null && !isNewSession ? null : (
+          (selectedSessionId === null && !isNewSession) ||
+          feedError?.code === 'missing-session' ? null : (
             <SessionComposerArea
               composer={model.composer}
               permission={model.permission}

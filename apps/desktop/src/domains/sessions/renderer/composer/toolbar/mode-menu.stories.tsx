@@ -1,14 +1,33 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
-import { CLAUDE_TURN_SETUP } from '../turn-setup/claude-turn-setup'
+import { claudeComposerModelCatalogFixture } from '../../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
+import { claudeTurnSetup } from '../turn-setup/claude-turn-setup'
+import type { TurnSetupChoices } from '../turn-setup/turn-setup'
 import { ModeMenu } from './mode-menu'
+
+const CLAUDE_TURN_SETUP = (() => {
+  const choices = claudeTurnSetup(claudeComposerModelCatalogFixture())
+  if (choices === null) throw new Error('The Claude story catalog has no usable model.')
+  return choices
+})() satisfies TurnSetupChoices
 
 function ModeStory() {
   const [setup, setSetup] = useState(CLAUDE_TURN_SETUP.opening)
   return (
     <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
       <ModeMenu choices={CLAUDE_TURN_SETUP} value={setup} onChange={setSetup} />
+    </div>
+  )
+}
+
+function AutoRestrictedModeStory() {
+  const choices = claudeTurnSetup(claudeComposerModelCatalogFixture())
+  if (choices === null) throw new Error('The Claude story catalog has no usable model.')
+  const [setup, setSetup] = useState({ model: 'sonnet', effort: 'medium', mode: 'manual' })
+  return (
+    <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
+      <ModeMenu choices={choices} value={setup} onChange={setSetup} />
     </div>
   )
 }
@@ -39,10 +58,10 @@ export const OffersEveryMode: Story = {
         .getAllByRole('menuitemradio')
         .map((item) => item.textContent),
     ).toEqual([
-      'AutoClaude handles permission decisions',
       'ManualAsk before making changes',
       'Accept editsAccept file edits automatically',
       'PlanCreate a plan before making changes',
+      'AutoClaude handles permission decisions',
       "Don't askDeny anything not approved in advance",
       'BypassRun without permission checks',
     ])
@@ -50,6 +69,19 @@ export const OffersEveryMode: Story = {
     await waitFor(() => expect(page().queryByRole('menu')).toBeNull())
     await expect(trigger).toHaveTextContent('Bypass')
     await expect(trigger).toHaveAccessibleName('Choose permission mode: Bypass')
+  },
+}
+
+export const HidesAutoWhenTheModelDoesNotSupportIt: Story = {
+  render: () => <AutoRestrictedModeStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const trigger = canvas.getByRole('button', { name: /^Choose permission mode/ })
+    await expect(trigger).toHaveTextContent('Manual')
+    await userEvent.click(trigger)
+    const menu = await page().findByRole('menu')
+    await expect(within(menu).queryByRole('menuitemradio', { name: /Auto/ })).toBeNull()
+    await expect(within(menu).getAllByRole('menuitemradio')).toHaveLength(5)
   },
 }
 

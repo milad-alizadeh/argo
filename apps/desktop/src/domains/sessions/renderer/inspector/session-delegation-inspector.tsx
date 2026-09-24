@@ -87,6 +87,8 @@ export function SessionDelegationInspector({
         answeringQuestionId={null}
         failure={failure}
         feed={reading}
+        feedLabel={t('subagentFeedLabel')}
+        historyLabel={t('subagentHistoryLabel')}
         liveFacts={{ ...INACTIVE_FEED_LIVE_FACTS, isRunning: delegation.state === 'running' }}
         onAnswerQuestion={() => {}}
         onOpenEvidence={onOpenEvidence}

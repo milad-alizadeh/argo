@@ -23,7 +23,13 @@ export type ToolResult = {
   background?: { taskId: string; outputPath: string | null }
 }
 
-export const TRANSCRIPT_EVENT_KINDS = ['status', 'transcript', 'context', 'command'] as const
+export const TRANSCRIPT_EVENT_KINDS = [
+  'status',
+  'transcript',
+  'context',
+  'command',
+  'skill-invocation',
+] as const
 export type TranscriptEventKind = (typeof TRANSCRIPT_EVENT_KINDS)[number]
 
 export function resultText(blocks: readonly RichResultBlock[]): string | null {

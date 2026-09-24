@@ -38,6 +38,7 @@ export type FeedDocumentContext = {
   onMeasurementsChange?: (sessionId: string, measurements: VirtualItem[]) => void
   onOpenSession: (sessionId: string) => void
   onScrollPositionChange?: (sessionId: string, position: number) => void
+  historyLabel: string
 } & FeedQuestionHandlers
 
 export type FeedDocumentProps = {
@@ -142,6 +143,7 @@ export function FeedDocument({ reading, liveFacts, actions }: FeedDocumentProps)
     streamingRowId,
     tail,
     emptyText: [t('empty.blank.title'), t('empty.blank.description')],
+    historyLabel: actions.historyLabel,
   })
   return (
     <div

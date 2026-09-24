@@ -10,6 +10,7 @@ import { HARNESSES, type HarnessControl } from '../../harness/harnesses'
 import {
   choiceLabel,
   effortChoices,
+  modeChoices,
   type TurnSetup,
   type TurnSetupChoices,
 } from '../turn-setup/turn-setup'
@@ -87,31 +88,29 @@ export function RunSetupMenu({
 function setupFacts(setup: TurnSetupControlProps | null) {
   if (setup === null) return []
   const { choices, value } = setup
-  return [choiceLabel(choices, 'model', value.model), choiceLabel(choices, 'effort', value.effort)]
+  return [
+    choiceLabel(choices, { field: 'model', value: value.model }),
+    choiceLabel(choices, { field: 'effort', value: value.effort, model: value.model }),
+  ]
 }
 
-// A harness that declares no choices runs at its own configured ones.
 function SetupBody({ harness, setup, catalogError, refreshCatalog }: RunSetupMenuProps) {
   const { t } = useTranslation('sessions')
-  if (harness.harness === 'codex' && catalogError)
+  if (catalogError)
     return (
       <div className="space-y-2 p-3.5" role="alert">
-        <p className="type-meta text-muted-foreground">{t('composer.setup.modelCatalogError')}</p>
+        <p className="type-meta text-muted-foreground">
+          {t('composer.setup.modelCatalogError', { harness: HARNESSES[harness.harness].label })}
+        </p>
         <Button onClick={refreshCatalog} size="sm" type="button" variant="outline">
           {t('composer.setup.refreshModels')}
         </Button>
       </div>
     )
-  if (harness.harness === 'codex' && setup === null)
-    return (
-      <p className="p-3.5 type-meta text-muted-foreground" role="status">
-        {t('composer.setup.loadingModels')}
-      </p>
-    )
   if (setup === null)
     return (
-      <p className="p-3.5 type-meta text-muted-foreground">
-        {t('composer.setup.ownSettings', { harness: HARNESSES[harness.harness].label })}
+      <p className="p-3.5 type-meta text-muted-foreground" role="status">
+        {t('composer.setup.loadingModels', { harness: HARNESSES[harness.harness].label })}
       </p>
     )
   return (
@@ -148,13 +147,16 @@ function ModelOptions({ choices, value, onChange }: TurnSetupControlProps) {
                 checked={active}
                 onChange={() => {
                   const efforts = effortChoices(choices, model.value)
+                  const modes = modeChoices(choices, model.value)
                   const currentEffort = efforts.find((effort) => effort.value === value.effort)
+                  const currentMode = modes.find((mode) => mode.value === value.mode)
                   const nextEffort =
                     currentEffort ?? closestEffort(value.effort, efforts, model.defaultEffort)
                   onChange({
                     ...value,
                     model: model.value,
                     effort: nextEffort?.value ?? value.effort,
+                    mode: currentMode?.value ?? modes[0]?.value ?? value.mode,
                   })
                 }}
                 className="sr-only"

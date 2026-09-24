@@ -1,27 +1,43 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Cockpit, ProjectActions } from '@/domains/projects/renderer'
+import {
+  type ClaudeModelCatalog,
+  claudeModelsWithEffort,
+  claudePermissionModes,
+} from '@/domains/sessions/contract/claude-model-catalog'
 import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
-import { HARNESSES, type SessionHarness } from '../../harness/harnesses'
+import type { SessionHarness } from '../../harness/harnesses'
 import { useSessionCreationStore } from '../../session-creation'
 import type { useSessions } from '../../use-sessions'
 import { composerIdentityOf, findSessionRow } from '../identity/composer-identity'
 import type { Failure } from '../send/session-failure'
 import type { WorkspaceMenuControlProps } from '../toolbar/workspace-menu'
+import { claudeTurnSetup } from '../turn-setup/claude-turn-setup'
 import { codexTurnSetup } from '../turn-setup/codex-turn-setup'
 import { useTurnSetup } from '../turn-setup/use-turn-setup'
 import { useTurnMarker } from './use-turn-marker'
 
 const NO_ROWS: SessionRosterRow[] = []
 
-function useCodexCatalog(harness: SessionHarness) {
-  const [catalog, setCatalog] = useState<CodexModelCatalog | null>(null)
+function useModelCatalog<Catalog>(options: {
+  harness: SessionHarness
+  targetHarness: SessionHarness
+  readCatalog: () => Promise<Catalog | null>
+  isUsable?: (catalog: Catalog) => boolean
+}) {
+  const { harness, targetHarness, readCatalog, isUsable = () => true } = options
+  const [catalog, setCatalog] = useState<Catalog | null>(null)
   const [catalogError, setCatalogError] = useState(false)
   const [catalogRequest, setCatalogRequest] = useState(0)
   const catalogRequestRef = useRef(catalogRequest)
+  const readCatalogRef = useRef(readCatalog)
+  const isUsableRef = useRef(isUsable)
   catalogRequestRef.current = catalogRequest
+  readCatalogRef.current = readCatalog
+  isUsableRef.current = isUsable
   useEffect(() => {
-    if (harness !== 'codex') {
+    if (harness !== targetHarness) {
       setCatalog(null)
       setCatalogError(false)
       return
@@ -29,20 +45,20 @@ function useCodexCatalog(harness: SessionHarness) {
     let active = true
     let timer: ReturnType<typeof setTimeout> | undefined
     const request = catalogRequest
-    const readCatalog = async () => {
-      const result = await window.argo.readCodexModelCatalog().catch(() => null)
+    const readOnce = async () => {
+      const result = await readCatalogRef.current().catch(() => null)
       if (!active || request !== catalogRequestRef.current) return
-      const usableCatalog = result?.data.some(({ hidden }) => !hidden) ? result : null
+      const usableCatalog = result !== null && isUsableRef.current(result) ? result : null
       setCatalog(usableCatalog)
       setCatalogError(usableCatalog === null)
-      if (usableCatalog !== null) timer = setTimeout(readCatalog, 30_000)
+      if (usableCatalog !== null) timer = setTimeout(readOnce, 30_000)
     }
-    void readCatalog()
+    void readOnce()
     return () => {
       active = false
       if (timer !== undefined) clearTimeout(timer)
     }
-  }, [catalogRequest, harness])
+  }, [catalogRequest, harness, targetHarness])
   return {
     catalog,
     catalogError,
@@ -81,7 +97,19 @@ export function useComposerFacts(
   setFailure: (failure: Failure | null) => void,
 ) {
   const { harness, cockpit, projectActions, roster, selectedSessionId } = options
-  const { catalog, catalogError, refreshCatalog } = useCodexCatalog(harness)
+  const codex = useModelCatalog<CodexModelCatalog>({
+    harness,
+    targetHarness: 'codex',
+    readCatalog: () => window.argo.readCodexModelCatalog(),
+    isUsable: (value) => value.data.some(({ hidden }) => !hidden),
+  })
+  const claude = useModelCatalog<ClaudeModelCatalog>({
+    harness,
+    targetHarness: 'claude',
+    readCatalog: () => window.argo.readClaudeModelCatalog(),
+    isUsable: (value) =>
+      claudeModelsWithEffort(value).length > 0 && claudePermissionModes(value).length > 0,
+  })
   // The "+" click already gave this row a pending identity (#2109); a bare selection has none.
   const pending = useSessionCreationStore((state) => state.pending)
   const pendingSessionId = pending?.stage === 'draft' ? pending.id : null
@@ -92,8 +120,8 @@ export function useComposerFacts(
   )
   const sessionId = identity.kind === 'session' ? identity.sessionId : null
   const choices = useMemo(
-    () => (harness === 'codex' ? codexTurnSetup(catalog) : HARNESSES[harness].setup),
-    [catalog, harness],
+    () => (harness === 'codex' ? codexTurnSetup(codex.catalog) : claudeTurnSetup(claude.catalog)),
+    [codex.catalog, claude.catalog, harness],
   )
   const { control, watchTurn } = useTurnSetup({
     harness,
@@ -110,9 +138,11 @@ export function useComposerFacts(
     control,
     workspace: workspaceControl(identity, cockpit, projectActions),
     watchTurn,
-    catalogError,
-    catalog,
-    refreshCatalog,
+    catalogError: codex.catalogError,
+    claudeCatalogError: claude.catalogError,
+    catalog: codex.catalog,
+    refreshCatalog: codex.refreshCatalog,
+    refreshClaudeCatalog: claude.refreshCatalog,
     marker,
     selectedRow,
     isCompacting: (selectedRow?.compactionStartedAt ?? null) !== null,
