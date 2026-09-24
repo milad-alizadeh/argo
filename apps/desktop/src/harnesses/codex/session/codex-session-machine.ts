@@ -1,6 +1,5 @@
 import { assign, fromPromise, setup } from 'xstate'
 import { z } from 'zod'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import type { SessionStartInput } from '@/domains/sessions/contract/session-start'
 import type { CodexRequest } from '../app-server/codex-app-server-machine'
 
@@ -20,43 +19,6 @@ export type CodexInputItem =
       type: 'localImage'
       path: string
     }
-
-export function codexInputItems(
-  prompt: string,
-  attachments: SessionAttachmentInput[],
-): CodexInputItem[] {
-  const items: CodexInputItem[] = [
-    {
-      type: 'text' as const,
-      text: prompt,
-      text_elements: [],
-    },
-  ]
-  for (const attachment of attachments) {
-    if (attachment.kind === 'image')
-      items.push({
-        type: 'localImage',
-        path: attachment.path,
-      })
-    else {
-      const byteLength = Buffer.byteLength(attachment.path)
-      items.push({
-        type: 'text',
-        text: attachment.path,
-        text_elements: [
-          {
-            byteRange: {
-              start: 0,
-              end: byteLength,
-            },
-            placeholder: attachment.path,
-          },
-        ],
-      })
-    }
-  }
-  return items
-}
 
 export type CodexSessionResult = {
   nativeId: string
@@ -83,6 +45,7 @@ export function createCodexSessionMachine(request: CodexRequest) {
         input: SessionStartInput
         nativeId: string | null
         pending: TurnCommand | null
+        inputItems: CodexInputItem[]
         failure: string | null
       },
       events: {} as
@@ -114,6 +77,7 @@ export function createCodexSessionMachine(request: CodexRequest) {
           input: {
             command: TurnCommand | null
             nativeId: string | null
+            inputItems: CodexInputItem[]
           }
         }) => {
           if (input.nativeId === null || input.command === null)
@@ -122,7 +86,7 @@ export function createCodexSessionMachine(request: CodexRequest) {
             'turn/start',
             {
               threadId: input.nativeId,
-              input: codexInputItems(input.command.prompt, input.command.attachments),
+              input: input.inputItems,
               model: input.command.setup.model,
               effort: input.command.setup.effort,
             },
@@ -145,6 +109,41 @@ export function createCodexSessionMachine(request: CodexRequest) {
       clearPending: assign({
         pending: () => null,
       }),
+      prepareInput: assign({
+        inputItems: ({ context }) => {
+          const command = context.pending
+          if (command === null) throw new Error('Codex Session has no turn to prepare.')
+          const items: CodexInputItem[] = [
+            {
+              type: 'text',
+              text: command.prompt,
+              text_elements: [],
+            },
+          ]
+          for (const attachment of command.attachments) {
+            if (attachment.kind === 'image')
+              items.push({
+                type: 'localImage',
+                path: attachment.path,
+              })
+            else
+              items.push({
+                type: 'text',
+                text: attachment.path,
+                text_elements: [
+                  {
+                    byteRange: {
+                      start: 0,
+                      end: Buffer.byteLength(attachment.path),
+                    },
+                    placeholder: attachment.path,
+                  },
+                ],
+              })
+          }
+          return items
+        },
+      }),
     },
   }).createMachine({
     id: 'codexSession',
@@ -152,7 +151,8 @@ export function createCodexSessionMachine(request: CodexRequest) {
     context: ({ input }) => ({
       input,
       nativeId: null,
-      pending: null,
+      pending: input,
+      inputItems: [],
       failure: null,
     }),
     states: {
@@ -171,11 +171,13 @@ export function createCodexSessionMachine(request: CodexRequest) {
         },
       },
       'Starting first prompt': {
+        entry: 'prepareInput',
         invoke: {
           src: 'startTurn',
           input: ({ context }) => ({
             command: context.input,
             nativeId: context.nativeId,
+            inputItems: context.inputItems,
           }),
           onDone: {
             target: 'Ready',
@@ -198,11 +200,13 @@ export function createCodexSessionMachine(request: CodexRequest) {
         },
       },
       'Starting next prompt': {
+        entry: 'prepareInput',
         invoke: {
           src: 'startTurn',
           input: ({ context }) => ({
             command: context.pending,
             nativeId: context.nativeId,
+            inputItems: context.inputItems,
           }),
           onDone: {
             target: 'Ready',
