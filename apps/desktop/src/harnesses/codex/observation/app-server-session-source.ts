@@ -35,6 +35,7 @@ type AppServerSourceOptions = {
   projections: () => readonly SessionProjection[]
   watchedProjections: () => readonly SessionProjection[]
   refreshHistory: (notifyLateSuccess: () => boolean) => Promise<readonly SessionProjection[]>
+  refreshSearchHistory: () => Promise<readonly SessionProjection[]>
   readHistoryProjection: (sessionId: string) => Promise<SessionProjection | null>
   checkoutFor: (nativeId: string) => string | null
   adapter: SessionAdapter
@@ -65,7 +66,7 @@ export function createCodexAppServerSessionSource(
       return discovery(mergedProjections(stored, options.projections()), options.checkoutFor)
     },
     searchSessions: async (query) => {
-      const stored = await refreshWithinBudget(options.refreshHistory)
+      const stored = await options.refreshSearchHistory()
       return mergedProjections(stored, options.projections())
         .map((projection) =>
           rosterRowOf(projection, options.checkoutFor(projection.session.nativeId)),

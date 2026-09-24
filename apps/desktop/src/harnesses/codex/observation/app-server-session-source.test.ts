@@ -31,6 +31,35 @@ function mockAdapter(): SessionAdapter {
   }
 }
 
+async function assertRenameForwarded(
+  source: ReturnType<typeof createCodexAppServerSessionSource>,
+  commands: unknown[],
+) {
+  assert.deepEqual(
+    await source.rename({
+      version: 1,
+      type: 'session.rename',
+      requestId: 'request-1',
+      sessionId: 'thread-1',
+      name: 'Renamed by Argo',
+    }),
+    {
+      version: 1,
+      type: 'session.renamed',
+      requestId: 'request-1',
+      sessionId: 'thread-1',
+      title: 'Renamed by Argo',
+    },
+  )
+  assert.deepEqual(commands, [
+    {
+      type: 'session.rename',
+      session: { harness: 'codex', nativeId: 'thread-1' },
+      title: 'Renamed by Argo',
+    },
+  ])
+}
+
 test('projects managed Codex app-server state with its watched history', async () => {
   const commands: unknown[] = []
   const source = createCodexAppServerSessionSource({
@@ -44,6 +73,7 @@ test('projects managed Codex app-server state with its watched history', async (
     projections: () => [projection()],
     watchedProjections: () => [{ ...projection(), posture: 'watched' }],
     refreshHistory: async () => [{ ...projection(), posture: 'watched' }],
+    refreshSearchHistory: async () => [{ ...projection(), posture: 'watched' }],
     readHistoryProjection: async () => ({ ...projection(), posture: 'watched' }),
     checkoutFor: () => null,
   })
@@ -74,29 +104,7 @@ test('projects managed Codex app-server state with its watched history', async (
     ],
   })
 
-  assert.deepEqual(
-    await source.rename({
-      version: 1,
-      type: 'session.rename',
-      requestId: 'request-1',
-      sessionId: 'thread-1',
-      name: 'Renamed by Argo',
-    }),
-    {
-      version: 1,
-      type: 'session.renamed',
-      requestId: 'request-1',
-      sessionId: 'thread-1',
-      title: 'Renamed by Argo',
-    },
-  )
-  assert.deepEqual(commands, [
-    {
-      type: 'session.rename',
-      session: { harness: 'codex', nativeId: 'thread-1' },
-      title: 'Renamed by Argo',
-    },
-  ])
+  await assertRenameForwarded(source, commands)
 })
 
 test('searches Codex app-server history with one refresh', async () => {
@@ -105,7 +113,8 @@ test('searches Codex app-server history with one refresh', async () => {
     adapter: mockAdapter(),
     projections: () => [],
     watchedProjections: () => [],
-    refreshHistory: async () => {
+    refreshHistory: async () => [],
+    refreshSearchHistory: async () => {
       refreshes += 1
       return [projection()]
     },
@@ -122,12 +131,43 @@ test('searches Codex app-server history with one refresh', async () => {
   assert.equal(await source.historyComplete?.(), true)
 })
 
+test('finds a Codex Session omitted by a nonempty state database', async () => {
+  let repairedReads = 0
+  const source = createCodexAppServerSessionSource({
+    adapter: mockAdapter(),
+    projections: () => [],
+    watchedProjections: () => [],
+    refreshHistory: async () => [projection()],
+    refreshSearchHistory: async () => {
+      repairedReads += 1
+      return [
+        projection(),
+        {
+          ...projection(),
+          session: { harness: 'codex', nativeId: 'repaired' },
+          title: 'Repaired match',
+        },
+      ]
+    },
+    readHistoryProjection: async () => null,
+    checkoutFor: () => null,
+  })
+
+  assert.deepEqual(
+    (await source.searchSessions?.('Repaired'))?.map((row) => row.id),
+    ['repaired'],
+  )
+  assert.equal(repairedReads, 1)
+  assert.equal(await source.historyComplete?.(), true)
+})
+
 test('reports an unknown Codex Session as missing after app-server history confirms its absence', async () => {
   const source = createCodexAppServerSessionSource({
     adapter: mockAdapter(),
     projections: () => [],
     watchedProjections: () => [],
     refreshHistory: async () => [],
+    refreshSearchHistory: async () => [],
     readHistoryProjection: async () => {
       throw new Error('thread/read failed')
     },
@@ -151,6 +191,7 @@ test('reports an app-server history timeout', async () => {
           resolve(value)
         }
       }),
+    refreshSearchHistory: async () => [],
     readHistoryProjection: async () => null,
     checkoutFor: () => null,
   })

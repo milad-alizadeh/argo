@@ -16,16 +16,17 @@ import {
   readClaudeSessions,
 } from './claude-sdk-history'
 
+const textBlock = z.object({ type: z.literal('text'), text: z.string() })
 const messageText = z
-  .object({
-    content: z.union([
-      z.string(),
-      z
-        .array(z.object({ type: z.literal('text'), text: z.string() }))
-        .transform((blocks) => blocks.map((block) => block.text).join('')),
-    ]),
+  .object({ content: z.union([z.string(), z.array(z.unknown())]) })
+  .transform(({ content }) => {
+    if (typeof content === 'string') return content
+    const parts = content.flatMap((block) => {
+      const text = textBlock.safeParse(block)
+      return text.success ? [text.data.text] : []
+    })
+    return parts.length > 0 ? parts.join('') : null
   })
-  .transform(({ content }) => content)
 
 type StoredSession = Awaited<ReturnType<typeof readClaudeSessionPage>>[number]
 
@@ -94,7 +95,7 @@ function feedOf(messages: Awaited<ReturnType<typeof readClaudeSessionMessages>>)
   return messages.flatMap((message) => {
     if (message.type === 'system') return []
     const text = messageText.safeParse(message.message)
-    if (!text.success) return []
+    if (!text.success || text.data === null) return []
     return [
       {
         shape: 'prose' as const,
@@ -148,12 +149,10 @@ export function createClaudeSdkHistorySource(
     readSessionFiles: async () => null,
     readObservedFeed: async (sessionId) => {
       const managed = options.managedSessions?.().some((row) => row.id === sessionId) === true
-      if (!managed && history.getSessionInfo !== undefined) {
-        const info = await history.getSessionInfo(sessionId)
-        if (info === undefined) return null
-      }
       const messages = await readClaudeSessionMessages(history, sessionId)
-      if (!managed && messages.length === 0 && history.getSessionInfo === undefined) return null
+      const info =
+        !managed && messages.length === 0 ? await history.getSessionInfo?.(sessionId) : undefined
+      if (!managed && messages.length === 0 && info === undefined) return null
       const rows = feedOf(messages)
       return {
         chainId: sessionId,

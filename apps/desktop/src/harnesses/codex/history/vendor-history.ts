@@ -27,24 +27,26 @@ export {
   STORED_THREAD_READ_METHOD,
 } from './vendor-model'
 
-export async function listStoredThreads(transport: HistoryTransport): Promise<StoredThread[]> {
+async function readThreadList(transport: HistoryTransport, useStateDbOnly: boolean) {
+  const pages = await pagesOf(transport, STORED_THREAD_LIST_METHOD, {
+    limit: 50,
+    sourceKinds: ['appServer', 'cli', 'vscode'],
+    ...(useStateDbOnly ? { useStateDbOnly: true } : {}),
+  })
+  return pages.flatMap((page) =>
+    page.data.map((entry) => threadOf(threadSchema.parse(entry), undefined)),
+  )
+}
+
+export async function listStoredThreads(
+  transport: HistoryTransport,
+  mode: 'fast' | 'complete' = 'fast',
+): Promise<StoredThread[]> {
   try {
-    const statePages = await pagesOf(transport, STORED_THREAD_LIST_METHOD, {
-      limit: 50,
-      sourceKinds: ['appServer', 'cli', 'vscode'],
-      useStateDbOnly: true,
-    })
-    const stateThreads = statePages.flatMap((page) =>
-      page.data.map((entry) => threadOf(threadSchema.parse(entry), undefined)),
-    )
+    if (mode === 'complete') return await readThreadList(transport, false)
+    const stateThreads = await readThreadList(transport, true)
     if (stateThreads.length > 0) return stateThreads
-    const repairedPages = await pagesOf(transport, STORED_THREAD_LIST_METHOD, {
-      limit: 50,
-      sourceKinds: ['appServer', 'cli', 'vscode'],
-    })
-    return repairedPages.flatMap((page) =>
-      page.data.map((entry) => threadOf(threadSchema.parse(entry), undefined)),
-    )
+    return await readThreadList(transport, false)
   } catch (error) {
     if (error instanceof CodexHistoryUnavailableError) throw error
     throw new CodexHistoryUnavailableError(

@@ -33,6 +33,63 @@ test('reads a Claude Session by native ID before its Roster page loads', async (
   })
 })
 
+test('reads a Claude sidechain Session when summary metadata is absent', async () => {
+  const source = createClaudeSdkHistorySource({
+    history: {
+      listSessions: async () => [],
+      getSessionInfo: async () => undefined,
+      getSessionMessages: async (sessionId) => [
+        {
+          type: 'assistant',
+          uuid: 'sidechain-message',
+          session_id: sessionId,
+          message: { content: [{ type: 'text', text: 'The sidechain reply' }] },
+          parent_tool_use_id: null,
+          parent_agent_id: null,
+        },
+      ],
+    },
+  })
+
+  expect((await source.readObservedFeed?.('sidechain-session'))?.rows).toContainEqual({
+    shape: 'prose',
+    id: 'sidechain-message',
+    role: 'assistant',
+    text: 'The sidechain reply',
+  })
+})
+
+test('keeps Claude text beside a tool-use block in one message', async () => {
+  const source = createClaudeSdkHistorySource({
+    history: {
+      listSessions: async () => [],
+      getSessionMessages: async (sessionId) => [
+        {
+          type: 'assistant',
+          uuid: 'mixed-message',
+          session_id: sessionId,
+          message: {
+            content: [
+              { type: 'text', text: 'I will inspect it.' },
+              { type: 'tool_use', id: 'tool-1', name: 'Read', input: {} },
+              { type: 'text', text: 'Done.' },
+            ],
+          },
+          parent_tool_use_id: null,
+          parent_agent_id: null,
+        },
+      ],
+    },
+  })
+
+  expect((await source.readObservedFeed?.('mixed-session'))?.rows).toContainEqual({
+    shape: 'prose',
+    id: 'mixed-message',
+    role: 'assistant',
+    text: 'I will inspect it.Done.',
+  })
+})
+
 test('searches Claude vendor history without growing roster pages', async () => {
   let rosterPages = 0
   const history = {
@@ -71,14 +128,12 @@ test('reports missing history when a listed watched Session disappears from Clau
   expect(await source.readObservedFeed?.('removed-session')).toBeNull()
 })
 
-test('rejects an unknown Claude Session before reading its messages', async () => {
+test('reports a Claude Session missing when neither metadata nor messages exist', async () => {
   const source = createClaudeSdkHistorySource({
     history: {
       listSessions: async () => [],
       getSessionInfo: async () => undefined,
-      getSessionMessages: async () => {
-        throw new Error('No transcript for this Session')
-      },
+      getSessionMessages: async () => [],
     },
   })
 
