@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
 import { createDurableDatabase } from '@/platform/main/storage/durable-database'
-import { readSession, readSessionList } from './session-records'
+import { readSession, readSessionList, renameSession, setSessionsArchived } from './session-records'
 
 function database() {
   const client = new DatabaseSync(':memory:')
@@ -15,6 +15,10 @@ function database() {
     working_directory TEXT,
     first_prompt TEXT,
     updated_at INTEGER NOT NULL
+  ); CREATE TABLE session_preference (
+    argo_id TEXT PRIMARY KEY,
+    archived INTEGER NOT NULL DEFAULT 0,
+    argo_title TEXT
   );`)
   return { client, database: createDurableDatabase(client) }
 }
@@ -38,6 +42,8 @@ test('lists a numbered SQL window in stable activity order', () => {
             harness: 'codex',
             nativeId: 'two',
             projectId: null,
+            archived: false,
+            argoTitle: null,
             vendorTitle: null,
             firstPrompt: null,
             updatedAt: 3,
@@ -48,6 +54,8 @@ test('lists a numbered SQL window in stable activity order', () => {
             harness: 'claude',
             nativeId: 'one',
             projectId: null,
+            archived: false,
+            argoTitle: null,
             vendorTitle: null,
             firstPrompt: null,
             updatedAt: 2,
@@ -81,6 +89,8 @@ test('reads the selected Session by its Argo ID outside the loaded page', () => 
       harness: 'claude',
       nativeId: 'native-three',
       projectId: null,
+      archived: false,
+      argoTitle: null,
       vendorTitle: 'Vendor title',
       firstPrompt: 'First prompt',
       updatedAt: 5,
@@ -126,6 +136,56 @@ test('searches all indexed Session metadata before paging', () => {
     assert.deepEqual(
       page.sessions.map(({ nativeId }) => nativeId),
       ['three'],
+    )
+  } finally {
+    client.close()
+  }
+})
+
+test('filters archived Sessions in SQL before paging and searches Argo titles', () => {
+  const { client, database: durable } = database()
+  try {
+    const insert = client.prepare('INSERT INTO session VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    insert.run('00000000-0000-4000-8000-000000000001', 'claude', 'one', null, null, null, null, 3)
+    insert.run('00000000-0000-4000-8000-000000000002', 'claude', 'two', null, null, null, null, 2)
+    insert.run('00000000-0000-4000-8000-000000000003', 'claude', 'three', null, null, null, null, 1)
+    setSessionsArchived(durable, ['00000000-0000-4000-8000-000000000002'], true)
+    renameSession(durable, '00000000-0000-4000-8000-000000000002', 'Named by reader')
+    const archived = readSessionList(durable, {
+      page: 1,
+      pageSize: 1,
+      projectId: null,
+      search: '',
+      status: 'archived',
+    })
+    assert.equal(archived.indexedTotal, 1)
+    assert.deepEqual(
+      archived.sessions.map(({ nativeId, archived, argoTitle }) => ({
+        nativeId,
+        archived,
+        argoTitle,
+      })),
+      [{ nativeId: 'two', archived: true, argoTitle: 'Named by reader' }],
+    )
+    assert.deepEqual(
+      readSessionList(durable, {
+        page: 1,
+        pageSize: 1,
+        projectId: null,
+        search: '',
+        status: 'active',
+      }).sessions.map(({ nativeId }) => nativeId),
+      ['one'],
+    )
+    assert.equal(
+      readSessionList(durable, {
+        page: 1,
+        pageSize: 1,
+        projectId: null,
+        search: 'reader',
+        status: 'all',
+      }).indexedTotal,
+      1,
     )
   } finally {
     client.close()

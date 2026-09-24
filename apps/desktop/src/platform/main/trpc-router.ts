@@ -6,6 +6,8 @@ import {
   sessionFeedProcedure,
   sessionGetProcedure,
   sessionListProcedure,
+  sessionRenameProcedure,
+  sessionSetArchivedProcedure,
   sessionSubmitProcedure,
 } from '@/domains/sessions/main/session-procedures'
 import {
@@ -44,6 +46,8 @@ export function createAppRouter({
       ensure: sessionEnsureProcedure(database, sync),
       get: sessionGetProcedure(database),
       list: sessionListProcedure(database),
+      rename: sessionRenameProcedure(database),
+      setArchived: sessionSetArchivedProcedure(database),
     },
     sessionFeed: sessionFeedProcedure(database, codex, sessions),
   })

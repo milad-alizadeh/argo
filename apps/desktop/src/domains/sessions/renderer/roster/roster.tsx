@@ -1,18 +1,18 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
-import { trpc, trpcClient } from '@/platform/renderer/trpc-client'
-import { useSessionCreationStore } from '../session-creation'
-import { useWatchedQueries } from '../use-watched-topic'
-import { useRosterFilterStore } from './hooks/use-roster-filter-store'
+import type { trpcClient } from '@/platform/renderer/trpc-client'
+import { useArchiveAction } from './hooks/use-archive-action'
+import { useRosterPage } from './hooks/use-roster-page'
+import {
+  IndexedSessionRenameDialog,
+  useIndexedRename,
+} from './rename/indexed-session-rename-dialog'
 import type { RosterActions } from './rows/roster-actions'
 import { RosterVirtualList } from './rows/roster-virtual-list'
 import { SessionsSidebarHeader } from './sidebar/sessions-sidebar-chrome'
 
 export type { RosterActions } from './rows'
-
-const PAGE_SIZE = 50
 
 function useSyncFailure(harness: 'Claude' | 'Codex', failure: string | null) {
   const { add, close } = useToastManager()
@@ -69,15 +69,10 @@ function SyncFooter({ status }: { status: SyncStatusResult | undefined }) {
   )
 }
 
-function sessionListOptions(projectId: string | null, search: string) {
-  return {
-    queryKey: trpc.sessions.list.queryKey({ projectId, search }),
-    initialPageParam: 1,
-    queryFn: ({ pageParam }: { pageParam: number }) =>
-      trpcClient.sessions.list.query({ page: pageParam, pageSize: PAGE_SIZE, projectId, search }),
-    getNextPageParam: (lastPage: Awaited<ReturnType<typeof trpcClient.sessions.list.query>>) =>
-      lastPage.page * lastPage.pageSize < lastPage.indexedTotal ? lastPage.page + 1 : undefined,
-  }
+function emptyListKey(status: 'active' | 'archived' | 'all', search: string) {
+  if (status === 'archived') return 'archivedEmpty'
+  if (search.trim().length > 0) return 'noSearchResults'
+  return 'empty.roster.title'
 }
 
 export function Roster({
@@ -90,36 +85,12 @@ export function Roster({
   selectedSessionId: string | null
 }) {
   const { t } = useTranslation('sessions')
-  const [search, setSearch] = useState('')
-  const status = useRosterFilterStore((state) => state.status)
-  const pending = useSessionCreationStore((state) => state.pending)
-  const setStatus = useRosterFilterStore((state) => state.setStatus)
-  useWatchedQueries('sessions', [
-    trpc.sessions.list.queryKey({ projectId, search }),
-    trpc.sessionSyncStatus.queryKey(),
-  ])
-  const syncStatus = useQuery(trpc.sessionSyncStatus.queryOptions())
+  const { search, setSearch, status, setStatus, syncStatus, roster, visible, selection } =
+    useRosterPage(projectId, selectedSessionId)
   useSyncFailure('Claude', syncStatus.data?.claude.failure ?? null)
   useSyncFailure('Codex', syncStatus.data?.codex.failure ?? null)
-  const roster = useInfiniteQuery(sessionListOptions(projectId, search))
-  const indexed = useMemo(
-    () => roster.data?.pages.flatMap((page) => page.sessions) ?? [],
-    [roster.data],
-  )
-  useEffect(() => {
-    if (pending?.stage === 'reconciling' && indexed.some(({ argoId }) => argoId === pending.id))
-      useSessionCreationStore.getState().confirmed(pending.id)
-  }, [indexed, pending])
-  const visible = useMemo(() => {
-    if (status === 'archived') return []
-    if (
-      pending === null ||
-      search.trim().length > 0 ||
-      indexed.some(({ argoId }) => argoId === pending.id)
-    )
-      return indexed
-    return [pending, ...indexed]
-  }, [indexed, pending, search, status])
+  const rename = useIndexedRename()
+  const archive = useArchiveAction(selection.clear)
   return (
     <aside
       aria-label={t('sidebarLabel')}
@@ -136,13 +107,28 @@ export function Roster({
       {roster.isError ? (
         <p className="p-3 type-meta text-danger">{t('roster.readFailure')}</p>
       ) : null}
+      {roster.isSuccess && visible.length === 0 ? (
+        <p className="p-3 type-body text-muted-foreground">{t(emptyListKey(status, search))}</p>
+      ) : null}
       <RosterVirtualList
         sessions={visible}
         selectedSessionId={selectedSessionId}
-        onSelect={actions.onSelect}
-        hasNextPage={roster.hasNextPage && status !== 'archived'}
+        onSelect={(sessionId) => {
+          selection.clear()
+          actions.onSelect(sessionId)
+        }}
+        selectedIds={selection.selectedIds}
+        onToggleSelect={selection.toggle}
+        onArchive={(sessionIds, archived) => void archive(sessionIds, archived)}
+        onRename={rename.open}
+        hasNextPage={roster.hasNextPage}
         isFetchingNextPage={roster.isFetchingNextPage}
         onFetchNextPage={() => void roster.fetchNextPage()}
+      />
+      <IndexedSessionRenameDialog
+        key={rename.key}
+        session={rename.session}
+        onClose={rename.close}
       />
       <SyncFooter status={syncStatus.data} />
     </aside>

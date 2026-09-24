@@ -22,7 +22,7 @@ test('lists validated indexed Sessions', async () => {
     working_directory TEXT,
     first_prompt TEXT,
     updated_at INTEGER NOT NULL
-  );`)
+  ); CREATE TABLE session_preference (argo_id TEXT PRIMARY KEY, archived INTEGER NOT NULL DEFAULT 0, argo_title TEXT);`)
   client
     .prepare('INSERT INTO session VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
     .run(
@@ -54,6 +54,8 @@ test('lists validated indexed Sessions', async () => {
             harness: 'claude',
             nativeId: 'vendor-session',
             projectId: null,
+            archived: false,
+            argoTitle: null,
             vendorTitle: 'Indexed Session',
             firstPrompt: 'Review the change.',
             updatedAt: 42,
@@ -152,7 +154,7 @@ test('returns selected Codex history and an unavailable composer state', async (
       requestId: '00000000-0000-4000-8000-000000000001',
       sessionId: '00000000-0000-4000-8000-000000000001',
       chainId: '00000000-0000-4000-8000-000000000001',
-      revision: '["user-1"]',
+      revision: '[["user-1","Review."]]',
       rows: [{ shape: 'prose', id: 'user-1', role: 'user', text: 'Review.' }],
       harness: 'codex',
       availability: {

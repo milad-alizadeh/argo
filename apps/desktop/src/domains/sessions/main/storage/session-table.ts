@@ -14,3 +14,10 @@ export const sessionTable = sqliteTable(
   },
   (table) => [uniqueIndex('session_harness_native').on(table.harness, table.nativeId)],
 )
+
+// Reader-owned settings survive a rebuild of the disposable vendor Session index.
+export const sessionPreferenceTable = sqliteTable('session_preference', {
+  argoId: text('argo_id').primaryKey(),
+  archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
+  argoTitle: text('argo_title'),
+})

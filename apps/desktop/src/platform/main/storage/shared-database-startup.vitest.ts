@@ -30,8 +30,8 @@ test('starts a clean database with every ordered migration', async () => {
         { name: 'workspace' },
         { name: 'project_workspace_selection' },
         { name: 'managed_workspace_recovery' },
-        { name: 'managed_session_lease' },
         { name: 'session_ticket_link' },
+        { name: 'session_preference' },
       ]),
     )
     expect(
@@ -47,6 +47,11 @@ test('starts a clean database with every ordered migration', async () => {
       { name: '20260921173714_demonic_meteorite' },
       { name: '20260921194635_worried_gargoyle' },
       { name: '20260921223050_tiresome_the_initiative' },
+      { name: '20260924095908_wonderful_viper' },
+      { name: '20260924100017_freezing_calypso' },
+      { name: '20260924104032_bored_vulture' },
+      { name: '20260924190835_aromatic_redwing' },
+      { name: '20260924224126_woozy_satana' },
     ])
     database
       .prepare('INSERT INTO project (id, path, common_directory) VALUES (?, ?, ?)')

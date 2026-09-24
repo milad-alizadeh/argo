@@ -20,6 +20,8 @@ import {
   sessionGetOutputSchema,
   sessionListInputSchema,
   sessionListOutputSchema,
+  sessionRenameInputSchema,
+  sessionSetArchivedInputSchema,
 } from '../contract/session-list'
 import { sessionAcceptedOutputSchema, sessionSubmitInputSchema } from '../contract/session-start'
 import type { SessionSupervisorActor } from './live/session-supervisor-machine'
@@ -28,6 +30,8 @@ import {
   readSession,
   readSessionIdentity,
   readSessionList,
+  renameSession,
+  setSessionsArchived,
 } from './storage/session-records'
 import type { SessionSyncActors } from './sync/session-sync-status'
 
@@ -67,6 +71,18 @@ export function sessionListProcedure(database: DurableDatabase) {
     .input(sessionListInputSchema)
     .output(sessionListOutputSchema)
     .query(({ input }) => sessionListOutputSchema.parse(readSessionList(database, input)))
+}
+
+export function sessionSetArchivedProcedure(database: DurableDatabase) {
+  return t.procedure.input(sessionSetArchivedInputSchema).mutation(({ input }) => {
+    setSessionsArchived(database, input.argoIds, input.archived)
+  })
+}
+
+export function sessionRenameProcedure(database: DurableDatabase) {
+  return t.procedure.input(sessionRenameInputSchema).mutation(({ input }) => {
+    renameSession(database, input.argoId, input.title)
+  })
 }
 
 export function sessionGetProcedure(database: DurableDatabase) {
@@ -121,7 +137,7 @@ function feedResponse({
     requestId: sessionId,
     sessionId,
     chainId: sessionId,
-    revision: JSON.stringify(entries.map(({ sourceId }) => sourceId)),
+    revision: JSON.stringify(entries.map(({ sourceId, text }) => [sourceId, text])),
     rows: entries.map(({ sourceId, role, text }) => ({
       shape: 'prose' as const,
       id: sourceId,
@@ -146,6 +162,19 @@ export function sessionFeedProcedure(
       const identity = readSessionIdentity(database, input.sessionId)
       if (identity === null) throw new Error('Session is not indexed.')
       const live = supervisor.getSnapshot().context.sessions[input.sessionId]
+      const snapshot = live?.getSnapshot()
+      const liveEntries = snapshot?.context.entries ?? []
+      const hasLiveChild =
+        snapshot !== undefined && !snapshot.matches('Failed') && !snapshot.matches('Closed')
+      if (input.source === 'live') {
+        return feedResponse({
+          sessionId: input.sessionId,
+          harness: identity.harness,
+          entries: liveEntries,
+          availability: { state: 'available', reason: null },
+          live: hasLiveChild,
+        })
+      }
       switch (identity.harness) {
         case 'claude': {
           const entries = await readClaudeHistory(identity.nativeId)
@@ -154,21 +183,20 @@ export function sessionFeedProcedure(
             harness: identity.harness,
             entries,
             availability: { state: 'available', reason: null },
-            live: live !== undefined,
+            live: hasLiveChild,
           })
         }
         case 'codex': {
           const history = await readCodexHistory(requestCodexAppServer(codex), identity.nativeId)
-          const availability =
-            live === undefined
-              ? history.availability
-              : { state: 'available' as const, reason: null }
+          const availability = !hasLiveChild
+            ? history.availability
+            : { state: 'available' as const, reason: null }
           return feedResponse({
             sessionId: input.sessionId,
             harness: identity.harness,
             entries: history.entries,
             availability,
-            live: live !== undefined,
+            live: hasLiveChild,
           })
         }
         default:
