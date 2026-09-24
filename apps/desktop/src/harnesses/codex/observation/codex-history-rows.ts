@@ -32,11 +32,11 @@ function validTimestamp(timestamp: number): boolean {
 }
 
 function timestampsOf(projection: SessionProjection) {
-  if (projection.turns.length === 0) return null
+  if (projection.turns.length === 0) return { startedAt: null, turnStartedAt: null }
   let first = Number.POSITIVE_INFINITY
   let last = Number.NEGATIVE_INFINITY
   for (const turn of projection.turns) {
-    if (!validTimestamp(turn.startedAt)) return null
+    if (!validTimestamp(turn.startedAt)) return { startedAt: null, turnStartedAt: null }
     first = Math.min(first, turn.startedAt)
     last = Math.max(last, turn.startedAt)
   }
@@ -59,7 +59,7 @@ function rosterIssues(
 ): RosterIssue[] {
   const issues: RosterIssue[] = []
   if (!(projection.title?.trim() || prompt.trim())) issues.push('missingTitle')
-  if (timestamps === null) issues.push('invalidTimestamp')
+  if (timestamps.startedAt === null) issues.push('invalidTimestamp')
   if (relayOutput(projection, prompt)) issues.push('relayOutput')
   return issues
 }
@@ -68,7 +68,7 @@ function rowFrom(options: {
   projection: SessionProjection
   cwd: string | null
   prompt: string
-  timestamps: NonNullable<ReturnType<typeof timestampsOf>>
+  timestamps: ReturnType<typeof timestampsOf>
 }) {
   const { projection, cwd, prompt, timestamps } = options
   const row = managedRosterRow({
@@ -109,7 +109,7 @@ export function rosterRows(
     return {
       issues,
       row:
-        issues.length === 0 && timestamps !== null
+        !issues.includes('missingTitle') && !issues.includes('relayOutput')
           ? rowFrom({
               projection,
               cwd: checkoutFor(projection.session.nativeId),
@@ -124,9 +124,9 @@ export function rosterRows(
     invalidTimestamp: inspected.filter(({ issues }) => issues.includes('invalidTimestamp')).length,
     relayOutput: inspected.filter(({ issues }) => issues.includes('relayOutput')).length,
   }
-  const unreadable = inspected.filter(({ row }) => row === null).length
+  const unreadable = inspected.filter(({ issues }) => issues.length > 0).length
   if (unreadable > 0) {
-    console.warn('Codex app-server Session boundary rejected records', { unreadable, ...counts })
+    console.warn('Codex app-server Session records have boundary issues', { unreadable, ...counts })
   }
   return { rows: inspected.flatMap(({ row }) => (row === null ? [] : [row])), unreadable }
 }

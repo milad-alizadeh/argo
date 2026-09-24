@@ -34,7 +34,7 @@ export type ManagedRosterSeed = {
     'plan'
   > & {
     prompt: string
-    startedAt: string
+    startedAt: string | null
     title?: SessionTitle
     plan?: SessionRosterRow['plan']
   }

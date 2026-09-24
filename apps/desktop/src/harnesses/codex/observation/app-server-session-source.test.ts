@@ -119,7 +119,7 @@ test('reports an app-server history timeout', async () => {
   assert.equal(ready, 1)
 })
 
-test('counts and filters Codex Sessions without a valid title or timestamp', async () => {
+test('reports missing Codex timestamps and filters rows without titles or with relay output', async () => {
   const valid = projection()
   const relay = {
     ...projection(),
@@ -162,15 +162,16 @@ test('counts and filters Codex Sessions without a valid title or timestamp', asy
 
   assert.deepEqual(
     result.rows.map((row) => row.id),
-    ['thread-1'],
+    ['thread-1', 'missing-timestamp'],
   )
+  assert.equal(result.rows[1]?.updatedAt, null)
   assert.equal(result.filesFound, 4)
   assert.equal(result.filesRead, 4)
   assert.equal(result.filesUnreadable, 3)
-  assert.equal(result.filesParsed, 1)
+  assert.equal(result.filesParsed, 2)
   assert.equal(result.historyComplete, false)
   assert.deepEqual(
     source.managedSessions?.().map((row) => row.id),
-    ['thread-1'],
+    ['thread-1', 'missing-timestamp'],
   )
 })

@@ -69,9 +69,10 @@ async function proveBulkArchive(page) {
 export async function proveContract(page) {
   const list = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
   assert.equal(list.type, 'session.listed')
-  // Earlier E2E cases can create more Claude transcripts before this shared roster check.
-  assert.ok(list.filesFound >= 13)
+  // Earlier cases add Claude transcripts; two Codex fixtures also lack valid turn timestamps.
+  assert.ok(list.filesFound >= 15)
   assert.equal(list.filesRead, list.filesFound)
+  assert.ok(list.filesUnreadable >= 2)
   // An archived Session never projects into this active list (#1593): `plannedWork` is read out
   // of it below instead.
   assert.deepEqual(list.sessions.map((session) => session.id).sort(), [
