@@ -7,9 +7,13 @@ import { type ActorLogic, createActor, fromCallback, waitFor } from 'xstate'
 import { adjacencyMapToArray, getAdjacencyMap, getShortestPaths } from 'xstate/graph'
 import { codexModelCatalogFixture } from '../../../../test-fixtures/sessions/codex-model-catalog.fixture'
 import { readCodexHarnessInfo } from '../catalog'
-import { createCodexAppServerMachine } from './codex-app-server-machine'
+import {
+  codexAppServerMachine,
+  codexAppServerProcessActor,
+  requestCodexAppServer,
+} from './codex-app-server-machine'
 
-const modeledMachine = createCodexAppServerMachine(() => 'codex').machine.provide({
+const modeledMachine = codexAppServerMachine.provide({
   actors: { processActor: fromCallback(() => () => {}) },
   actions: {
     openProcess: () => {},
@@ -102,7 +106,7 @@ test('records process failure before retrying', () => {
 })
 
 test('starts after an executable appears and rejects a request without one', () => {
-  const machine = createCodexAppServerMachine(() => 'codex').machine.provide({
+  const machine = codexAppServerMachine.provide({
     actors: { processActor: fromCallback(() => () => {}) },
   })
   const actor = createActor(machine, { input: { executable: null } }).start()
@@ -132,7 +136,7 @@ test('starts after an executable appears and rejects a request without one', () 
 })
 
 test('restarts when the executable version changes', () => {
-  const machine = createCodexAppServerMachine(() => 'codex').machine.provide({
+  const machine = codexAppServerMachine.provide({
     actors: { processActor: fromCallback(() => () => {}) },
   })
   const actor = createActor(machine, { input: { executable: 'codex' } }).start()
@@ -153,7 +157,9 @@ test('restarts when the executable version changes', () => {
 })
 
 test('rejects waiting requests when the app-server actor stops', () => {
-  const machine = createCodexAppServerMachine(() => '/nonexistent-codex').machine
+  const machine = codexAppServerMachine.provide({
+    actors: { processActor: codexAppServerProcessActor },
+  })
   const actor = createActor(machine, { input: { executable: '/nonexistent-codex' } }).start()
   const failures: string[] = []
   actor.send({
@@ -168,7 +174,7 @@ test('rejects waiting requests when the app-server actor stops', () => {
 })
 
 test('does not dispatch a queued request to an older process version', () => {
-  const machine = createCodexAppServerMachine(() => 'codex').machine.provide({
+  const machine = codexAppServerMachine.provide({
     actors: { processActor: fromCallback(() => () => {}) },
   })
   const actor = createActor(machine, { input: { executable: 'codex' } }).start()
@@ -194,23 +200,35 @@ test('does not dispatch a queued request to an older process version', () => {
 })
 
 test('rejects a request sent after shutdown', async () => {
-  const runtime = createCodexAppServerMachine(() => null)
-  const actor = createActor(runtime.machine, { input: { executable: null } }).start()
+  const machine = codexAppServerMachine.provide({
+    actors: { processActor: fromCallback(() => () => {}) },
+  })
+  const actor = createActor(machine, { input: { executable: null } }).start()
   actor.send({ type: 'Shutdown' })
   await assert.rejects(
-    runtime.request(actor)('model/list', {}, (value) => value),
+    requestCodexAppServer(actor)('model/list', {}, (value) => value),
     /Codex app-server is closed/,
   )
 })
 
 test('reports an executable lookup failure through the machine', async () => {
-  const runtime = createCodexAppServerMachine(() => {
-    throw new Error('Executable lookup failed.')
+  const machine = codexAppServerMachine.provide({
+    actors: { processActor: fromCallback(() => () => {}) },
+    actions: {
+      inspectExecutable: ({ self, event }) => {
+        if (event.type !== 'Call') return
+        self.send({
+          type: 'Executable check failed',
+          detail: 'Executable lookup failed.',
+          reject: event.reject,
+        })
+      },
+    },
   })
-  const actor = createActor(runtime.machine, { input: { executable: null } }).start()
+  const actor = createActor(machine, { input: { executable: null } }).start()
   try {
     await assert.rejects(
-      runtime.request(actor)('model/list', {}, (value) => value),
+      requestCodexAppServer(actor)('model/list', {}, (value) => value),
       /Executable lookup failed/,
     )
     assert.match(actor.getSnapshot().context.failure ?? '', /Executable lookup failed/)
@@ -239,11 +257,25 @@ createInterface({ input: process.stdin }).on('line', (line) => {
     `#!/bin/sh\nif [ "$1" = "--version" ]; then echo 'codex 0.147.0'; exit 0; fi\nexec "${process.execPath}" "${server}"\n`,
   )
   await chmod(executable, 0o755)
-  const runtime = createCodexAppServerMachine(() => executable)
-  const actor = createActor(runtime.machine, { input: { executable } }).start()
+  const machine = codexAppServerMachine.provide({
+    actors: { processActor: codexAppServerProcessActor },
+    actions: {
+      inspectExecutable: ({ self, event }) => {
+        if (event.type !== 'Call') return
+        self.send({
+          type: 'Request',
+          executable,
+          version: 'codex 0.147.0',
+          run: event.run,
+          reject: event.reject,
+        })
+      },
+    },
+  })
+  const actor = createActor(machine, { input: { executable } }).start()
   try {
-    const info = await readCodexHarnessInfo(runtime.request(actor))
-    assert.equal(info.availability, 'available')
+    const info = await readCodexHarnessInfo(requestCodexAppServer(actor))
+    assert.equal(info.availability, 'available', JSON.stringify(actor.getSnapshot().context))
     assert.equal(info.harness, 'codex')
     actor.send({ type: 'Shutdown' })
     await waitFor(actor, (snapshot) => snapshot.matches('Closed'))
