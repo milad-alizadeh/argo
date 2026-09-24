@@ -81,7 +81,6 @@ export type SessionSource = {
   // backfill (#2373) still has older history left, so a caller resolving an id through the index
   // knows an unresolved id may only be un-indexed rather than truly gone.
   historyComplete?: () => Promise<boolean>
-  // Every Session this Harness's index title, current id, or a retired id matches (#2375). Present
-  // only alongside `resolveIndexedIds`: title/id search reads the same index backfill fills.
-  searchIndexed?: (query: string) => Promise<SessionRosterRow[]>
+  // Search this Harness's history by title or id directly through its index or vendor API (#2375).
+  searchSessions?: (query: string) => Promise<SessionRosterRow[]>
 }

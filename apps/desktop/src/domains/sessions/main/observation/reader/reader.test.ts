@@ -4,6 +4,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import { rosterRow } from '@/domains/sessions/contract/observation/roster-row-test-fixture'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-sessions'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 import { managedRow } from '../../lifecycle/status/managed-row'
@@ -16,6 +17,7 @@ import {
   writeClaudeTranscript,
   writeCodexTranscript,
 } from './reader-test-helpers'
+import type { SessionSource } from './session-source'
 
 async function writeDuplicateTranscripts(
   claudeRoot: string,
@@ -85,6 +87,109 @@ test('reads a Feed from the Harness the most recent listing named as owner, with
 
   await listed(reader)
   await assertCodexFeed(reader)
+})
+
+function observedFeed(sessionId: string) {
+  return {
+    chainId: sessionId,
+    revision: '1',
+    rows: [{ shape: 'prose' as const, id: 'message', role: 'user' as const, text: 'Hello.' }],
+  }
+}
+
+test('a Session on an earlier Roster page keeps its Feed owner after another page loads', async () => {
+  const session = rosterRow({
+    id: 'older-codex-session',
+    harness: 'codex',
+    cwd: '/project',
+    posture: 'watched',
+    status: 'idle',
+    title: { text: 'Older Codex Session', source: 'custom' },
+  })
+  const source: SessionSource = {
+    harness: 'codex',
+    discoverSessions: async (options) => ({
+      rows: options?.cursor === null || options?.cursor === undefined ? [session] : [],
+      filesFound: 0,
+      filesRead: 0,
+      filesUnreadable: 0,
+      filesParsed: 0,
+      nextCursor: options?.cursor ? null : 'next',
+      historyComplete: options?.cursor !== null,
+    }),
+    readSessionFiles: async () => null,
+    readObservedFeed: async (id) => (id === session.id ? observedFeed(id) : null),
+    readShellOutput: async () => ({ state: 'absent' }),
+  }
+  const reader = createSessionReader([source])
+  const first = await listed(reader)
+  assert.deepEqual(
+    first?.sessions.map(({ id }) => id),
+    [session.id],
+  )
+  await listed(reader, 'next-page', { cursor: first?.nextCursor })
+
+  const feed = await fed(reader, feedRequest(session.id))
+  assert.equal(feed.type, 'session.feed.read')
+  assert.deepEqual(feed.type === 'session.feed.read' ? feed.rows.map((row) => row.id) : [], [
+    'message',
+  ])
+})
+
+test('opens a vendor-backed Session directly before its Roster page loads', async () => {
+  let feedReads = 0
+  const source: SessionSource = {
+    harness: 'codex',
+    discoverSessions: async () => ({
+      rows: [],
+      filesFound: 0,
+      filesRead: 0,
+      filesUnreadable: 0,
+      filesParsed: 0,
+      nextCursor: null,
+      historyComplete: true,
+    }),
+    readSessionFiles: async () => null,
+    readObservedFeed: async (id) => {
+      feedReads += 1
+      if (feedReads > 1) throw new Error('The vendor read failed after ownership was confirmed')
+      return id === 'linked-codex-session' ? observedFeed(id) : null
+    },
+    readShellOutput: async () => ({ state: 'absent' }),
+  }
+  const reader = createSessionReader([source])
+
+  const feed = await fed(reader, feedRequest('linked-codex-session'))
+  assert.equal(feed.type, 'session.feed.read')
+  assert.equal(feedReads, 1)
+})
+
+test('reports unavailable history when a listed Session disappears from its Harness', async () => {
+  const session = rosterRow({ id: 'vanished-session', harness: 'claude' })
+  const source: SessionSource = {
+    harness: 'claude',
+    discoverSessions: async () => ({
+      rows: [session],
+      filesFound: 1,
+      filesRead: 1,
+      filesUnreadable: 0,
+      filesParsed: 1,
+      nextCursor: null,
+      historyComplete: true,
+    }),
+    readSessionFiles: async () => null,
+    readObservedFeed: async () => null,
+    readShellOutput: async () => ({ state: 'absent' }),
+  }
+  const reader = createSessionReader([source])
+  assert.deepEqual(
+    (await listed(reader))?.sessions.map(({ id }) => id),
+    [session.id],
+  )
+
+  const feed = await fed(reader, feedRequest(session.id))
+  assert.equal(feed.type, 'session.error')
+  if (feed.type === 'session.error') assert.equal(feed.code, 'missing-session')
 })
 
 test('lists Sessions from both CLIs, newest first', async (context) => {

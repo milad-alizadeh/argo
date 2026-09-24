@@ -7,12 +7,14 @@ import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { sessionArchiveSetReplySchema } from '@/domains/sessions/contract/ipc/contract'
+import { rosterRow } from '@/domains/sessions/contract/observation/roster-row-test-fixture'
 import { createInMemorySessionTicketLinkStore } from '@/domains/tickets/main'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-sessions'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 import { createSessionArchiveStore, sessionArchivePath } from '../../archive/store/archive-store'
 import { indexedAdapters, sessionIdAt } from '../../indexing/session-index/roster-fixtures'
 import { createSessionReader } from '../../observation/reader/reader'
+import type { SessionSource } from '../../observation/reader/session-source'
 
 function adapter(harness: string) {
   const found = indexedAdapters.find((candidate) => candidate.harness === harness)
@@ -102,6 +104,75 @@ test('finds a Session by a Session id substring', async (context) => {
     page.sessions.map((row) => row.id),
     [CLAUDE_ONE],
   )
+})
+
+test('finds a visible Session from an earlier vendor page after search grows the window', async () => {
+  const matching = rosterRow({
+    id: 'duplicate-investigation',
+    harness: 'claude',
+    title: { text: 'Duplicate ticket investigation', source: 'custom' },
+  })
+  const later = rosterRow({ id: 'later-page', harness: 'claude' })
+  const source: SessionSource = {
+    harness: 'claude',
+    discoverSessions: async (request) => ({
+      rows: request?.cursor === null || request?.cursor === undefined ? [matching] : [later],
+      filesFound: 0,
+      filesRead: 0,
+      filesUnreadable: 0,
+      filesParsed: 0,
+      nextCursor: request?.cursor ? null : 'next',
+      historyComplete: request?.cursor !== null,
+    }),
+    readSessionFiles: async () => null,
+    readShellOutput: async () => ({ state: 'absent' }),
+  }
+  const reader = createSessionReader([source])
+  const roster = await reader.listSessions({
+    version: 1,
+    type: 'session.list',
+    requestId: 'roster-before-search',
+    projectRoot: null,
+    cursor: null,
+  })
+  assert.equal(roster.type, 'session.listed')
+  if (roster.type === 'session.listed') {
+    assert.deepEqual(
+      roster.sessions.map((row) => row.id),
+      [matching.id],
+    )
+  }
+
+  const found = await search(reader, 'Duplicate')
+  assert.deepEqual(
+    found.sessions.map((row) => row.id),
+    [matching.id],
+  )
+})
+
+test('searches vendor history without paging the roster', async () => {
+  const matching = rosterRow({
+    id: 'direct-search-match',
+    harness: 'claude',
+    title: { text: 'Session not showing in dev server', source: 'custom' },
+  })
+  const source: SessionSource = {
+    harness: 'claude',
+    discoverSessions: async () => {
+      throw new Error('Search must not grow the roster')
+    },
+    searchSessions: async () => [matching],
+    historyComplete: async () => true,
+    readSessionFiles: async () => null,
+    readShellOutput: async () => ({ state: 'absent' }),
+  }
+
+  const found = await search(createSessionReader([source]), 'Session not showing')
+  assert.deepEqual(
+    found.sessions.map((row) => row.id),
+    [matching.id],
+  )
+  assert.equal(found.historyComplete, true)
 })
 
 test('answers no matches for a query nothing holds', async (context) => {

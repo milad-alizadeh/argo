@@ -62,6 +62,7 @@ export function SessionRosterItem({
   selected,
   session,
   tabIndex,
+  unavailable = false,
 }: {
   archived: boolean
   checked: boolean
@@ -72,6 +73,7 @@ export function SessionRosterItem({
   selected: boolean
   session: Session
   tabIndex: number
+  unavailable?: boolean
 }) {
   const { t } = useTranslation('sessions')
   const [pointerFocused, setPointerFocused] = useState(false)
@@ -80,7 +82,7 @@ export function SessionRosterItem({
     ? 'focus-visible:outline-2 focus-visible:outline-transparent focus-visible:ring-0'
     : 'focus-visible:ring-2 focus-visible:ring-ring'
   const running = session.status === 'running'
-  const statusVariant = statusVariantOf(session)
+  const statusVariant = unavailable ? 'failed' : statusVariantOf(session)
   // A shift- or platform-modifier click selects (ranges or adds to the bulk selection) instead of
   // opening the Session, so no checkbox is needed for multi-select (#2194, dropped per review). A
   // plain click keeps opening the Session, as it did before selection existed.
@@ -98,6 +100,7 @@ export function SessionRosterItem({
         className={`group relative flex w-full select-none items-start gap-2 overflow-hidden rounded-lg px-2 py-2 text-left ${focusHighlight} ${rowHighlight}`}
         data-archived={archived}
         data-session-id={session.id}
+        data-history-unavailable={unavailable}
         onBlur={() => setPointerFocused(false)}
         onClick={handleRowClick}
         onFocus={onFocus}
@@ -124,7 +127,7 @@ export function SessionRosterItem({
             data-slot="session-status"
           />
         </span>
-        <span className="sr-only">{STATUS_LABELS[session.status]}</span>
+        {unavailable ? null : <span className="sr-only">{STATUS_LABELS[session.status]}</span>}
         {checked ? <span className="sr-only">{t('bulkSelect.selected')}</span> : null}
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
@@ -138,6 +141,11 @@ export function SessionRosterItem({
               >
                 <Icon name="archive-session" className="size-3" />
                 {t('rosterStatusArchived')}
+              </span>
+            ) : null}
+            {unavailable ? (
+              <span className="inline-flex shrink-0 rounded-full border border-danger/50 px-1.5 py-0.5 type-meta text-danger">
+                {t('standing.missingHistoryBadge')}
               </span>
             ) : null}
             <SessionBlockedBadge session={session} />

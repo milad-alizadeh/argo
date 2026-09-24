@@ -9,6 +9,7 @@ import { matchWorkspace, projectionFromStoredThread } from './watched-projection
 
 export type WatchedCodexSessions = {
   refresh: () => Promise<SessionProjection[]>
+  refreshForSearch: () => Promise<SessionProjection[]>
   refreshThread: (threadId: string) => Promise<void>
   readProjection: (threadId: string) => Promise<SessionProjection | null>
   projections: () => SessionProjection[]
@@ -61,9 +62,9 @@ class WatchedCodexHistory implements WatchedCodexSessions {
     )
   }
 
-  private async refreshNow() {
+  private async refreshNow(mode: 'fast' | 'complete' = 'fast') {
     this.knownWorkspaces = await this.options.knownWorkspaces()
-    const threads = await listStoredThreads(this.options.transport)
+    const threads = await listStoredThreads(this.options.transport, mode)
     const next = new Map<string, SessionProjection>()
     const nextStored = new Map<string, StoredThread>()
     this.checkouts.clear()
@@ -95,6 +96,15 @@ class WatchedCodexHistory implements WatchedCodexSessions {
       if (this.refreshInFlight === run) this.refreshInFlight = null
     }
     run.then(clear, clear)
+    return run
+  }
+
+  refreshForSearch() {
+    const run = this.pending.then(() => this.refreshNow('complete'))
+    this.pending = run.then(
+      () => undefined,
+      () => undefined,
+    )
     return run
   }
 

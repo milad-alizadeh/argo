@@ -227,6 +227,10 @@
   },
   "standing": {
     "failure": "Unable to load Session",
+    "missingHistoryTitle": "Session history is unavailable",
+    "missingHistoryDescription": "Argo cannot open this Session's history. Retry, or archive it from the roster menu if it appears there.",
+    "missingHistoryBadge": "Unavailable",
+    "retry": "Retry",
     "unselectedTitle": "No Session selected",
     "unselectedDescription": "Choose a Session from the Roster to read its history."
   },
