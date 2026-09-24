@@ -31,6 +31,9 @@ export async function proveTurnSetup(page) {
   await page.keyboard.press('Tab')
   await page.keyboard.press('End')
   await page.keyboard.press('ArrowLeft')
+  await page.keyboard.press('Shift+Tab')
+  await page.keyboard.press('ArrowUp')
+  await page.keyboard.press('ArrowUp')
   await page.keyboard.press('Escape')
   await models.waitFor({ state: 'detached' })
   await expect(page.locator(RUN_SETUP)).toBeFocused()
@@ -42,11 +45,11 @@ export async function proveTurnSetup(page) {
   await auto.focus()
   await page.keyboard.press('Enter')
   await page.getByRole('menu').waitFor({ state: 'detached' })
-  await waitForSetup(page, 'Haiku 4.5·Extra high', 'Auto')
+  await waitForSetup(page, 'Opus 5·Extra high', 'Auto')
 
   await openSessionByClick(page, 'prose')
   await openSessionByClick(page, 'setupAnswered')
-  await waitForSetup(page, 'Haiku 4.5·Extra high', 'Auto')
+  await waitForSetup(page, 'Opus 5·Extra high', 'Auto')
 }
 
 // A draft and the harness a new Session was set to outlive a reload of the window.
