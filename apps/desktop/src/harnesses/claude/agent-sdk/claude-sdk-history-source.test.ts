@@ -6,6 +6,25 @@ import type { SDKSessionInfo } from '@anthropic-ai/claude-agent-sdk'
 import { managedRosterRow } from '@/domains/sessions/contract/model/models'
 import { createClaudeSdkHistorySource } from './claude-sdk-history-source'
 
+function managedClaudeSession(id: string) {
+  return managedRosterRow({
+    id,
+    session: {
+      harness: 'claude',
+      cwd: '/repository',
+      prompt: 'Continue old history',
+      setup: { model: null, effort: null, mode: null },
+      startedAt: new Date(1).toISOString(),
+      status: 'running',
+      compactionPercentage: null,
+      compactionStartedAt: null,
+      compactionTokens: null,
+      handoffFailure: null,
+      handoffStartedAt: null,
+    },
+  })
+}
+
 test('reads a Claude Session by native ID before its Roster page loads', async () => {
   const source = createClaudeSdkHistorySource({
     history: {
@@ -121,6 +140,7 @@ test('searches Claude vendor history without growing roster pages', async () => 
 test('routes a managed Claude Session rename through its adapter', async () => {
   const renameRequests: { sessionId: string; title: string }[] = []
   const source = createClaudeSdkHistorySource({
+    managedSessions: () => [managedClaudeSession('native-session')],
     renameManagedSession: async (sessionId: string, title: string) => {
       renameRequests.push({ sessionId, title })
     },
@@ -369,24 +389,7 @@ test('keeps watched history while a resumed Claude Session has a new managed nat
       ],
       getSessionMessages: async () => [],
     },
-    managedSessions: () => [
-      managedRosterRow({
-        id: 'managed-id',
-        session: {
-          harness: 'claude',
-          cwd: '/repository',
-          prompt: 'Continue old history',
-          setup: { model: null, effort: null, mode: null },
-          startedAt: new Date(1).toISOString(),
-          status: 'running',
-          compactionPercentage: null,
-          compactionStartedAt: null,
-          compactionTokens: null,
-          handoffFailure: null,
-          handoffStartedAt: null,
-        },
-      }),
-    ],
+    managedSessions: () => [managedClaudeSession('managed-id')],
   })
 
   const pending = await source.readObservedFeed?.('managed-id')

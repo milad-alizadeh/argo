@@ -2,12 +2,16 @@ import { expect, test } from 'bun:test'
 import { fakeClaudeQuery, managedSessionService } from './claude-query-fixture'
 import { createClaudeSessionAdapter } from './claude-session-adapter'
 
-function managedAdapter(fake: ReturnType<typeof fakeClaudeQuery>) {
+function managedAdapter(
+  fake: ReturnType<typeof fakeClaudeQuery>,
+  renameSession?: (sessionId: string, title: string) => Promise<void>,
+) {
   return createClaudeSessionAdapter({
     sessionService: managedSessionService,
     waitForWorkspaceReady: async () => {},
     resolveWorkspace: async () => ({ workspaceId: 'workspace-1', cwd: '/repository' }),
     createQuery: fake.createQuery,
+    ...(renameSession === undefined ? {} : { renameSession }),
     readResumePermission: async () => ({ resumable: true }),
     readModelCatalog: async () => ({
       data: [
@@ -112,27 +116,8 @@ test('starting a Claude Session sends its first turn immediately, even when defe
 test('renames a managed Claude Session through the SDK without adding a prompt', async () => {
   const fake = fakeClaudeQuery()
   const renames: { sessionId: string; title: string }[] = []
-  const adapter = createClaudeSessionAdapter({
-    sessionService: managedSessionService,
-    waitForWorkspaceReady: async () => {},
-    resolveWorkspace: async () => ({ workspaceId: 'workspace-1', cwd: '/repository' }),
-    createQuery: fake.createQuery,
-    readResumePermission: async () => ({ resumable: true }),
-    renameSession: async (sessionId: string, title: string) => {
-      renames.push({ sessionId, title })
-    },
-    readModelCatalog: async () => ({
-      data: [
-        {
-          value: 'haiku',
-          resolvedModel: 'claude-haiku-4-5',
-          displayName: 'Haiku',
-          description: '',
-          supportedEffortLevels: ['low'],
-        },
-      ],
-      supportedPermissionModes: ['manual'],
-    }),
+  const adapter = managedAdapter(fake, async (sessionId, title) => {
+    renames.push({ sessionId, title })
   })
 
   await startDeferredSession(adapter, fake)

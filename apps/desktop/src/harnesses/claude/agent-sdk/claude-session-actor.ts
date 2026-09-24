@@ -116,7 +116,6 @@ export function createClaudeSessionMachine(input: ClaudeSessionInput) {
           Answer: { actions: ['removeQuestion', sendTo('claudeQuery', ({ event }) => event)] },
           'Approval requested': { actions: 'addApproval' },
           'Question requested': { actions: 'addQuestion' },
-          Rename: { actions: sendTo('claudeQuery', ({ event }) => event) },
           'SDK message': [
             {
               guard: { type: 'isAuthenticationFailure', params: messageParams },

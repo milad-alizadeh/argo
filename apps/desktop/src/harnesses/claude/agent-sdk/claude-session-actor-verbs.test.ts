@@ -56,14 +56,4 @@ describe('claude session actor verb set', () => {
 
     expect(await pending).toBeNull()
   })
-
-  test('sends the rename command through the SDK stream', async () => {
-    const fake = fakeClaudeQuery()
-    const actor = await startedClaudeActor(fake)
-
-    actor.send({ type: 'Rename', title: 'New title' })
-    await flush()
-
-    expect(fake.sentPrompts()).toEqual(['hello', '/rename New title'])
-  })
 })

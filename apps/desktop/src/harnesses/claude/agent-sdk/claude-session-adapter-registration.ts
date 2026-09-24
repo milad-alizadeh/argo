@@ -20,6 +20,7 @@ export function createClaudeSessionAdapterRegistration(home: string): SessionAda
         close: adapter.close,
         source: createClaudeSdkHistorySource({
           managedSessions: adapter.roster,
+          renameManagedSession: (sessionId, title) => adapter.rename(sessionId, title),
           countTranscriptFiles: async () =>
             (await transcriptPaths(claudeTranscriptsRoot(home))).length,
         }),

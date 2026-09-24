@@ -1,3 +1,4 @@
+import { renameSession as renameClaudeSession } from '@anthropic-ai/claude-agent-sdk'
 import { PROJECT_PROOF_STORE_ENV } from '@/domains/projects/main/proof-protocol'
 import type { ClaudeModelCatalog } from '@/domains/sessions/contract/claude-model-catalog'
 import {
@@ -30,13 +31,26 @@ export function watchedChanges(changed: Set<() => void>) {
   }
 }
 
+async function renameManagedSession(options: {
+  registry: ReturnType<typeof sessionRegistry>
+  renameSession: typeof renameClaudeSession
+  sessionId: string
+  title: string
+}) {
+  const { registry, renameSession, sessionId, title } = options
+  const entry = registry.requireEntry({ harness: 'claude', nativeId: sessionId })
+  await renameSession(sessionId, title)
+  entry.revision += 1
+}
+
 async function executeCommand(options: {
   command: SessionCommand
   runtime: Parameters<typeof openClaudeSession>[0]['deps']
   registry: ReturnType<typeof sessionRegistry>
   readModelCatalog: () => ReturnType<typeof readClaudeModelCatalog>
+  renameSession: typeof renameClaudeSession
 }): Promise<SessionCommandOutcome> {
-  const { command, runtime, registry, readModelCatalog } = options
+  const { command, runtime, registry, readModelCatalog, renameSession } = options
   if (command.type === 'session.start') {
     const catalog = await readModelCatalog()
     if (catalog === null)
@@ -63,6 +77,11 @@ async function executeCommand(options: {
     return acceptedSessionOutcome(entry)
   }
   const entry = registry.requireEntry(command.session)
+  if (command.type === 'session.rename') {
+    await renameSession(command.session.nativeId, command.title)
+    entry.revision += 1
+    return acceptedSessionOutcome(entry)
+  }
   entry.actor.send(eventFor(command))
   entry.revision += 1
   if (command.type === 'session.send') return { kind: 'uncertain' }
@@ -80,6 +99,7 @@ export function createClaudeSessionAdapter(deps: {
   now?: () => Date
   findExecutablePath?: () => string | null
   readModelCatalog?: () => Promise<ClaudeModelCatalog | null>
+  renameSession?: typeof renameClaudeSession
 }): ClaudeSessionAdapter {
   // The packaged proof mock stores sessions only in its transcript fixture, not the Agent SDK.
   const defaultReadResumePermission = process.env[PROJECT_PROOF_STORE_ENV]
@@ -93,6 +113,7 @@ export function createClaudeSessionAdapter(deps: {
   }
   const changed = new Set<() => void>()
   const registry = sessionRegistry(changed, deps.sessionService)
+  const renameSession = deps.renameSession ?? renameClaudeSession
   const catalogCache = new ClaudeModelCatalogCache()
   const readModelCatalog =
     deps.readModelCatalog ??
@@ -102,7 +123,8 @@ export function createClaudeSessionAdapter(deps: {
         cache: catalogCache,
       }))
   return {
-    execute: (command) => executeCommand({ command, runtime, registry, readModelCatalog }),
+    execute: (command) =>
+      executeCommand({ command, runtime, registry, readModelCatalog, renameSession }),
     readModelCatalog,
     subscribe: (session, listener) => {
       const entry = registry.requireEntry(session)
@@ -131,11 +153,8 @@ export function createClaudeSessionAdapter(deps: {
           }),
       })
     },
-    rename: async (sessionId, title) => {
-      const entry = registry.requireEntry({ harness: 'claude', nativeId: sessionId })
-      entry.actor.send({ type: 'Rename', title })
-      entry.revision += 1
-    },
+    rename: (sessionId, title) =>
+      renameManagedSession({ registry, renameSession, sessionId, title }),
     roster: registry.roster,
     liveMessages: registry.liveMessages,
     projection: registry.projection,

@@ -6,6 +6,7 @@ import {
   type SessionFeedRow,
   type SessionRosterRow,
 } from '@/domains/sessions/contract/model/models'
+import { driveSessionError } from '@/domains/sessions/contract/session-error'
 import { discoverRoster } from '@/domains/sessions/main/observation/reader/discover-roster'
 import type { SessionSource } from '@/domains/sessions/main/observation/reader/session-source'
 import { matchesSearchQuery } from '@/domains/sessions/main/projection/search/search-match'
@@ -233,6 +234,7 @@ export function createClaudeSdkHistorySource(
     history?: ClaudeSdkHistory
     managedSessions?: () => SessionRosterRow[]
     countTranscriptFiles?: () => Promise<number>
+    renameManagedSession?: (sessionId: string, title: string) => Promise<void>
   } = {},
 ): SessionSource {
   const history: ClaudeSdkHistory = options.history ?? {
@@ -277,5 +279,29 @@ export function createClaudeSdkHistorySource(
         sessionId,
       }),
     readShellOutput: async () => ({ state: 'absent' }),
+    ...createRenameOperation(options),
+  }
+}
+
+function createRenameOperation(options: {
+  managedSessions?: () => SessionRosterRow[]
+  renameManagedSession?: (sessionId: string, title: string) => Promise<void>
+}): Pick<SessionSource, 'rename'> {
+  if (options.renameManagedSession === undefined) return {}
+  return {
+    rename: async (request) => {
+      const managed = options
+        .managedSessions?.()
+        .some((session) => session.id === request.sessionId)
+      if (!managed) return driveSessionError('not-drivable', 'claude', request.requestId)
+      await options.renameManagedSession?.(request.sessionId, request.name)
+      return {
+        version: 1,
+        type: 'session.renamed',
+        requestId: request.requestId,
+        sessionId: request.sessionId,
+        title: request.name,
+      }
+    },
   }
 }

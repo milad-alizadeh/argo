@@ -39,9 +39,6 @@ function handleEvent(options: {
     case 'Answer':
       dialogs.resolve(event.questionId, { behavior: 'completed', result: event.answer })
       return
-    case 'Rename':
-      channel.push(userMessage(`/rename ${event.title}`))
-      return
     case 'Session identified':
       session.current = event.session
       return

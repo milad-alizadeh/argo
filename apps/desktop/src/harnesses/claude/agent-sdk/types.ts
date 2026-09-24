@@ -104,7 +104,6 @@ export type ClaudeSessionEvent =
   | { type: 'Answer'; questionId: string; answer: string }
   | { type: 'Approval requested'; approval: Approval }
   | { type: 'Question requested'; question: Question }
-  | { type: 'Rename'; title: string }
   | { type: 'SDK message'; message: ClaudeSdkMessage }
   | { type: 'SDK ended' }
   | { type: 'SDK failed' }
