@@ -6,6 +6,7 @@ import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/co
 import type { SessionShellOutput } from '@/domains/sessions/contract/model/wire/background-work-contract'
 import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
 import { SessionComposer } from '../composer'
+import { useComposerStore } from '../composer/hooks'
 import { RICH_MARKDOWN } from '../feed/content/feed-samples'
 import { INACTIVE_FEED_LIVE_FACTS } from '../feed/document/feed-live-facts'
 import { SessionInspector } from '../inspector/session-inspector'
@@ -284,12 +285,14 @@ function ReviewScreen({
   rows = null,
   shellOutput = { state: 'available', tail: 'Checked 187 files.\ncheck:design-tokens — clean.\n' },
   showPlan = true,
+  composerRunning = false,
   titleText,
 }: {
   initialSessionId?: string
   rows?: SessionFeed['rows'] | null
   shellOutput?: SessionShellOutput
   showPlan?: boolean
+  composerRunning?: boolean
   titleText?: string
 }) {
   const [selectedSessionId, setSelectedSessionId] = useState(initialSessionId)
@@ -312,6 +315,8 @@ function ReviewScreen({
         activeEvidenceId={null}
         composer={
           <SessionComposer
+            isRunning={composerRunning}
+            onInterrupt={async () => true}
             onSend={async () => true}
             plan={showPlan ? session.plan : null}
             sessionId={selectedSessionId}
@@ -448,12 +453,20 @@ async function expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement: HTML
 
   expect(history.scrollHeight).toBeGreaterThan(history.clientHeight)
   expect(history.scrollTop).toBeGreaterThan(0)
-  expect(history.getBoundingClientRect().bottom).toBeGreaterThan(before.top)
+  expectFeedDoesNotOverlapComposer(canvasElement)
   history.scrollTo({ top: 0 })
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
 
   expect(history.scrollTop).toBe(0)
   expect(composer.getBoundingClientRect()).toEqual(before)
+}
+
+function expectFeedDoesNotOverlapComposer(canvasElement: HTMLElement) {
+  const composer = within(canvasElement).getByLabelText('Session composer')
+  const history = within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)
+  expect(history.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+    composer.getBoundingClientRect().top,
+  )
 }
 
 function expectContextBarInset(canvasElement: HTMLElement) {
@@ -581,6 +594,9 @@ const meta = {
       </div>
     ),
   ],
+  beforeEach: () => {
+    useComposerStore.setState(useComposerStore.getInitialState())
+  },
 } satisfies Meta<typeof SessionScreenView>
 
 export default meta
@@ -701,6 +717,40 @@ export const ComposerStaysFixed: Story = {
   },
 }
 
+export const TallQueuedComposerRemainsReachable: Story = {
+  render: () => <ReviewScreen composerRunning />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() =>
+      expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
+        'data-session',
+        'composer-review',
+      ),
+    )
+    const message = canvas.getByLabelText('Message')
+    for (let position = 1; position <= 10; position += 1) {
+      await userEvent.click(message)
+      await userEvent.type(message, `Queued step ${position}.`)
+      await userEvent.keyboard('{Enter}')
+    }
+
+    const pendingTurns = canvas.getByRole('region', { name: 'Pending Turns' })
+    await waitFor(() => expect(within(pendingTurns).getAllByRole('listitem')).toHaveLength(10))
+    await expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toBeVisible()
+    const composerScroll = canvasElement.querySelector<HTMLElement>(
+      '[data-component="SessionComposerScroll"]',
+    )
+    if (composerScroll === null) throw new Error('The Session composer scroll region is absent.')
+    await userEvent.tab()
+    await expect(canvas.getByRole('button', { name: 'Add context' })).toHaveFocus()
+    await userEvent.tab()
+    const interrupt = canvas.getByRole('button', { name: 'Interrupt' })
+    await expect(interrupt).toHaveFocus()
+    await expect(interrupt).toBeVisible()
+    expect(composerScroll.scrollTop).toBeGreaterThan(0)
+  },
+}
+
 export const NewSessionDoesNotStall: Story = {
   render: () => <NewSessionScreen />,
   play: async ({ canvasElement }) => {
@@ -791,6 +841,13 @@ export const NarrowHeader: Story = {
       canvas.getByRole('heading', { name: 'Finish Session composer review' }),
     ).toBeVisible()
     await expect(canvas.getByText('ticket-1846-composer')).toBeVisible()
+    await waitFor(() =>
+      expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
+        'data-session',
+        'composer-review',
+      ),
+    )
+    expectFeedDoesNotOverlapComposer(canvasElement)
     expectHeaderActionsAtTrailingEdge(canvasElement)
   },
 }
