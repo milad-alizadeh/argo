@@ -2,9 +2,9 @@ import { initTRPC } from '@trpc/server'
 import { count, desc, eq } from 'drizzle-orm'
 import { projectSelection } from '@/domains/projects/main/schema'
 import {
-  sessionPageInputSchema,
-  sessionPageOutputSchema,
-} from '@/domains/sessions/contract/session-page'
+  sessionListInputSchema,
+  sessionListOutputSchema,
+} from '@/domains/sessions/contract/session-list'
 import { harnessSchema } from '@/domains/sessions/next/contract/session-contract'
 import { session } from '@/domains/sessions/next/main/schema'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
@@ -14,9 +14,9 @@ export type SessionRouterContext = { database: DurableDatabase }
 const t = initTRPC.context<SessionRouterContext>().create()
 
 export const sessionRouter = t.router({
-  page: t.procedure
-    .input(sessionPageInputSchema)
-    .output(sessionPageOutputSchema)
+  list: t.procedure
+    .input(sessionListInputSchema)
+    .output(sessionListOutputSchema)
     .query(({ ctx, input }) => {
       const offset = (input.page - 1) * input.pageSize
       const selectedProjectId = ctx.database

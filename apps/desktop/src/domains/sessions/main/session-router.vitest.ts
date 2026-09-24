@@ -11,7 +11,7 @@ import { appRouter } from '@/platform/main/trpc-router'
 
 const folders: string[] = []
 
-function seedSessionPageDatabase(database: ReturnType<typeof createDurableDatabase>): void {
+function seedSessionListDatabase(database: ReturnType<typeof createDurableDatabase>): void {
   database
     .insert(project)
     .values([
@@ -63,11 +63,11 @@ test('reads a typed Session page from SQLite through the domain router', async (
   folders.push(folder)
   const client = openSharedDatabase(folder, databaseMigrationsFolder())
   const database = createDurableDatabase(client)
-  seedSessionPageDatabase(database)
+  seedSessionListDatabase(database)
 
   try {
     await expect(
-      appRouter.createCaller({ database }).sessions.page({ page: 1, pageSize: 1 }),
+      appRouter.createCaller({ database }).sessions.list({ page: 1, pageSize: 1 }),
     ).resolves.toEqual({
       page: 1,
       pageSize: 1,
@@ -82,7 +82,7 @@ test('reads a typed Session page from SQLite through the domain router', async (
       ],
     })
     await expect(
-      appRouter.createCaller({ database }).sessions.page({ page: 2, pageSize: 1 }),
+      appRouter.createCaller({ database }).sessions.list({ page: 2, pageSize: 1 }),
     ).resolves.toEqual({
       page: 2,
       pageSize: 1,
@@ -126,10 +126,10 @@ test('rejects malformed Session input and output at the tRPC boundary', async ()
 
   try {
     await expect(
-      appRouter.createCaller({ database }).sessions.page({ page: 0, pageSize: 20 }),
+      appRouter.createCaller({ database }).sessions.list({ page: 0, pageSize: 20 }),
     ).rejects.toThrow()
     await expect(
-      appRouter.createCaller({ database }).sessions.page({ page: 1, pageSize: 20 }),
+      appRouter.createCaller({ database }).sessions.list({ page: 1, pageSize: 20 }),
     ).rejects.toThrow()
   } finally {
     client.close()
