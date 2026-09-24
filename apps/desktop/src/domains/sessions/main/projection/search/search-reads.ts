@@ -20,23 +20,27 @@ import { matchesSearchQuery } from './search-match'
 
 export const SEARCH_PAGE_LIMIT = 20
 
+async function searchDiscoveryWindow(source: SessionSource, query: string) {
+  const window = await growWindow([source], {}, () => false)
+  return {
+    rows: window.rows.filter((row) => matchesSearchQuery(row, query)),
+    historyComplete: true,
+  }
+}
+
 // Search each source through its own capability; one missing capability must not grow every source.
 async function searchSource(
   source: SessionSource,
   query: string,
 ): Promise<{ rows: SessionRosterRow[]; historyComplete: boolean }> {
   const search = source.searchSessions
-  if (search === undefined) {
-    const window = await growWindow([source], {}, () => false)
-    return { rows: window.rows, historyComplete: true }
-  }
+  if (search === undefined) return searchDiscoveryWindow(source, query)
   try {
     const [rows, historyComplete] = await Promise.all([search(query), source.historyComplete?.()])
     return { rows, historyComplete: historyComplete ?? true }
   } catch (error) {
     if (!isSessionIndexFallback(error)) throw error
-    const window = await growWindow([source], {}, () => false)
-    return { rows: window.rows, historyComplete: true }
+    return searchDiscoveryWindow(source, query)
   }
 }
 
@@ -86,8 +90,7 @@ export const searchRead = fromContext(
       projectRootsOf(request.projectRoot),
     ])
     const result = await searchSources(context.sources, request.query)
-    const matchedRows = result.rows.filter((row) => matchesSearchQuery(row, request.query))
-    const found = scoped(matchedRows, { status: request.status, archivedIds, projectRoots })
+    const found = scoped(result.rows, { status: request.status, archivedIds, projectRoots })
     const offset = decodeOffset(request.cursor)
     return {
       sessions: found.slice(offset, offset + SEARCH_PAGE_LIMIT),
