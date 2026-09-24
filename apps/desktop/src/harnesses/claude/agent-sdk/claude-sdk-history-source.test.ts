@@ -118,6 +118,38 @@ test('searches Claude vendor history without growing roster pages', async () => 
   expect(await source.historyComplete?.()).toBe(true)
 })
 
+test('routes a managed Claude Session rename through its adapter', async () => {
+  const renameRequests: { sessionId: string; title: string }[] = []
+  const source = createClaudeSdkHistorySource({
+    renameManagedSession: async (sessionId: string, title: string) => {
+      renameRequests.push({ sessionId, title })
+    },
+  })
+  if (source.rename === undefined) throw new Error('Claude Session rename is not connected.')
+
+  const reply = await source.rename({
+    version: 1,
+    type: 'session.rename',
+    requestId: 'rename-1',
+    sessionId: 'native-session',
+    name: 'Loud boundaries + close known silent-failure bugs',
+  })
+
+  expect(reply).toEqual({
+    version: 1,
+    type: 'session.renamed',
+    requestId: 'rename-1',
+    sessionId: 'native-session',
+    title: 'Loud boundaries + close known silent-failure bugs',
+  })
+  expect(renameRequests).toEqual([
+    {
+      sessionId: 'native-session',
+      title: 'Loud boundaries + close known silent-failure bugs',
+    },
+  ])
+})
+
 test('reports missing history when a listed watched Session disappears from Claude', async () => {
   const source = createClaudeSdkHistorySource({
     history: {
