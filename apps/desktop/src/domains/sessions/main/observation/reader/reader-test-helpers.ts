@@ -2,7 +2,11 @@ import assert from 'node:assert/strict'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { sessionFeedReplySchema, sessionListReplySchema } from '@/domains/sessions/contract/ipc'
+import {
+  type SessionFeedRequest,
+  sessionFeedReplySchema,
+  sessionListReplySchema,
+} from '@/domains/sessions/contract/ipc'
 import { mergeAppendedFeed } from '@/domains/sessions/contract/model/wire/feed-contract'
 import type { createSessionReader } from './reader'
 
@@ -89,7 +93,7 @@ export async function listed(
 
 export async function fed(
   reader: ReturnType<typeof createSessionReader>,
-  request: ReturnType<typeof feedRequest>,
+  request: SessionFeedRequest,
 ) {
   return sessionFeedReplySchema.parse(await reader.readSessionFeed(request))
 }

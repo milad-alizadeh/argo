@@ -41,6 +41,7 @@
     }
   },
   "feedLabel": "Session Feed",
+  "subagentFeedLabel": "Subagent Feed",
   "workspaceLabel": "Session workspace",
   "composerRegionLabel": "Session composer",
   "development": {
@@ -48,6 +49,7 @@
     "shortLabel": "Dev"
   },
   "historyLabel": "Session history",
+  "subagentHistoryLabel": "Subagent history",
   "jumpToLatest": "Jump to latest",
   "composer": {
     "label": "Session input",
@@ -325,6 +327,10 @@
   },
   "events": {
     "command": { "label": "Command received" },
+    "skill-invocation": {
+      "label": "Skill invoked",
+      "title": "{{label}} {{invocation}}"
+    },
     "context": { "label": "System context updated" },
     "status": { "label": "Status updated" },
     "transcript": { "label": "Transcript delivered" },

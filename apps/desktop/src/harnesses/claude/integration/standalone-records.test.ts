@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { parseTranscriptLine } from '../sessions/records/records'
+import { parseTranscriptLine } from '../transcript'
 
 test('reads a standalone permission mode as neutral Session setup', () => {
   assert.deepEqual(
@@ -31,5 +31,7 @@ test('reads a standalone local command at its prompt boundary', () => {
   )
   assert.equal(record?.kind, 'message')
   if (record?.kind !== 'message') assert.fail('expected a local command message')
-  assert.deepEqual(record.blocks, [{ shape: 'event', event: 'command', text: '/implement 2389' }])
+  assert.deepEqual(record.blocks, [
+    { shape: 'event', event: 'skill-invocation', text: '/implement 2389' },
+  ])
 })

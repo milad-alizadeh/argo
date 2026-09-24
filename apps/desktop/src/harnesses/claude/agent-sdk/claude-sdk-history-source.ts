@@ -1,32 +1,30 @@
 import { createHash } from 'node:crypto'
-import { getSessionInfo, getSessionMessages, listSessions } from '@anthropic-ai/claude-agent-sdk'
-import { z } from 'zod'
+import {
+  getSessionInfo,
+  getSessionMessages,
+  getSubagentMessages,
+  listSessions,
+} from '@anthropic-ai/claude-agent-sdk'
 import {
   managedRosterRow,
   type SessionFeedRow,
   type SessionRosterRow,
 } from '@/domains/sessions/contract/model/models'
+import { stitchChains } from '@/domains/sessions/contract/model/transcript/chains'
+import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript/transcript-file'
 import { discoverRoster } from '@/domains/sessions/main/observation/reader/discover-roster'
 import type { SessionSource } from '@/domains/sessions/main/observation/reader/session-source'
+import { projectFeed } from '@/domains/sessions/main/projection/feed/feed-incremental'
 import { matchesSearchQuery } from '@/domains/sessions/main/projection/search/search-match'
+import { isRecord } from '@/shared/validation'
+import { identifierTag, normalizeClaudeRecords, parseTranscriptLine } from '../transcript'
 import {
   type ClaudeSdkHistory,
   readClaudeSessionMessages,
   readClaudeSessionPage,
   readClaudeSessions,
+  readClaudeSubagentMessages,
 } from './claude-sdk-history'
-
-const textBlock = z.object({ type: z.literal('text'), text: z.string() })
-const messageText = z
-  .object({ content: z.union([z.string(), z.array(z.unknown())]) })
-  .transform(({ content }) => {
-    if (typeof content === 'string') return content
-    const parts = content.flatMap((block) => {
-      const text = textBlock.safeParse(block)
-      return text.success ? [text.data.text] : []
-    })
-    return parts.length > 0 ? parts.join('') : null
-  })
 
 type StoredSession = Awaited<ReturnType<typeof readClaudeSessionPage>>[number]
 
@@ -91,20 +89,130 @@ async function searchClaudeHistory(
   return discovered.rows.filter((row) => matchesSearchQuery(row, query))
 }
 
-function feedOf(messages: Awaited<ReturnType<typeof readClaudeSessionMessages>>): SessionFeedRow[] {
-  return messages.flatMap((message) => {
-    if (message.type === 'system') return []
-    const text = messageText.safeParse(message.message)
-    if (!text.success || text.data === null) return []
-    return [
-      {
-        shape: 'prose' as const,
-        id: message.uuid,
-        role: message.type === 'user' ? 'user' : 'assistant',
-        text: text.data,
-      },
-    ]
+function feedOf(
+  sessionId: string,
+  messages: Awaited<ReturnType<typeof readClaudeSessionMessages>>,
+  cwd: string | null,
+): SessionFeedRow[] {
+  const records = messages
+    .flatMap((message) => parseTranscriptLine(JSON.stringify(message)) ?? [])
+    .map((record) =>
+      record.kind === 'message' && record.cwd === null && cwd !== null
+        ? { ...record, cwd }
+        : record,
+    )
+  const file = transcriptFileFrom(`sdk://${sessionId}`, {
+    sessionId,
+    records: normalizeClaudeRecords(records),
   })
+  const chain = stitchChains([file])[0]
+  return chain === undefined ? [] : projectFeed(chain, undefined).rows
+}
+
+function subagentAgentIds(messages: Awaited<ReturnType<typeof readClaudeSessionMessages>>) {
+  const identifiers = new Map<string, string>()
+  for (const message of messages) {
+    const raw =
+      isRecord(message.message) && typeof message.message.content === 'string'
+        ? message.message.content
+        : ''
+    const callId = identifierTag(raw, 'tool-use-id')
+    const agentId = identifierTag(raw, 'task-id')
+    if (callId !== null && agentId !== null) identifiers.set(callId, agentId)
+  }
+  return identifiers
+}
+
+async function readSubagent(options: {
+  history: ClaudeSdkHistory
+  subagents: Map<string, Map<string, string>>
+  sessionId: string
+  subagentId: string
+}) {
+  const { history, subagents, sessionId, subagentId } = options
+  const agentId = subagents.get(sessionId)?.get(subagentId)
+  if (agentId === undefined) return null
+  const messages = await readClaudeSubagentMessages(history, sessionId, agentId)
+  if (messages === null) return null
+  const records = messages.flatMap((message) => parseTranscriptLine(JSON.stringify(message)) ?? [])
+  const file = transcriptFileFrom(`sdk://${sessionId}/${agentId}`, {
+    sessionId: agentId,
+    records: normalizeClaudeRecords(records),
+  })
+  return stitchChains([file])[0] ?? null
+}
+
+async function readObservedSubagentFeed(options: {
+  history: ClaudeSdkHistory
+  subagents: Map<string, Map<string, string>>
+  sessionId: string
+  subagentId: string
+}) {
+  const { history, subagents, sessionId, subagentId } = options
+  const child = await readSubagent({ history, subagents, sessionId, subagentId })
+  if (child === null) return null
+  const rows = projectFeed(child, undefined).rows
+  return {
+    chainId: child.id,
+    revision: createHash('sha256').update(JSON.stringify(rows)).digest('hex'),
+    rows,
+  }
+}
+
+function createFeedReaders(
+  history: ClaudeSdkHistory,
+  sessions: Map<string, StoredSession>,
+  managedSessions: () => SessionRosterRow[],
+) {
+  const subagents = new Map<string, Map<string, string>>()
+  return {
+    readObservedFeed: async (sessionId: string) => {
+      const managed = managedSessions().some((row) => row.id === sessionId)
+      const messages = await readClaudeSessionMessages(history, sessionId)
+      const info =
+        !managed && messages.length === 0 ? await history.getSessionInfo?.(sessionId) : undefined
+      if (!managed && messages.length === 0 && info === undefined) return null
+      subagents.set(sessionId, subagentAgentIds(messages))
+      const cwd = sessions.get(sessionId)?.cwd ?? info?.cwd ?? null
+      const rows = feedOf(sessionId, messages, cwd)
+      return {
+        chainId: sessionId,
+        revision: createHash('sha256').update(JSON.stringify(rows)).digest('hex'),
+        rows,
+      }
+    },
+    readObservedSubagentFeed: (sessionId: string, subagentId: string) =>
+      readObservedSubagentFeed({ history, subagents, sessionId, subagentId }),
+    readSubagentFiles: (sessionId: string, subagentId: string) =>
+      readSubagent({ history, subagents, sessionId, subagentId }),
+  }
+}
+
+function createSessionRosterReader(
+  history: ClaudeSdkHistory,
+  sessions: Map<string, StoredSession>,
+  managedSessions: () => SessionRosterRow[],
+) {
+  return async (request?: Parameters<SessionSource['discoverSessions']>[0]) => {
+    const offset = offsetFor(request?.cursor)
+    const sessionsOnPage = await readClaudeSessionPage(history, offset)
+    for (const session of sessionsOnPage) sessions.set(session.sessionId, session)
+    return discoverRoster({
+      discovery: {
+        rows: watchedRows(sessionsOnPage),
+        filesFound: 0,
+        filesRead: 0,
+        filesUnreadable: 0,
+        filesParsed: 0,
+        nextCursor:
+          sessionsOnPage.length < ROSTER_PAGE_SIZE ? null : String(offset + sessionsOnPage.length),
+        historyComplete: sessionsOnPage.length < ROSTER_PAGE_SIZE,
+      },
+      managed: managedSessions(),
+      joins: {},
+      projectRoot: request?.projectRoot,
+    })
+  }
 }
 
 export function createClaudeSdkHistorySource(
@@ -115,51 +223,19 @@ export function createClaudeSdkHistorySource(
     listAllSessions: () => listSessions(),
     getSessionInfo,
     getSessionMessages,
+    getSubagentMessages,
   }
-  const refresh = async (options?: Parameters<SessionSource['discoverSessions']>[0]) => {
-    const offset = offsetFor(options?.cursor)
-    const page = await readClaudeSessionPage(history, offset)
-    return { sessions: page, offset }
-  }
+  const sessions = new Map<string, StoredSession>()
+  const managedSessions = options.managedSessions ?? (() => [])
+  const rosterReader = createSessionRosterReader(history, sessions, managedSessions)
+  const feedReaders = createFeedReaders(history, sessions, managedSessions)
   return {
     harness: 'claude',
-    discoverSessions: async (request) => {
-      const { sessions: sessionsOnPage, offset } = await refresh(request)
-      return discoverRoster({
-        discovery: {
-          rows: watchedRows(sessionsOnPage),
-          filesFound: 0,
-          filesRead: 0,
-          filesUnreadable: 0,
-          filesParsed: 0,
-          nextCursor:
-            sessionsOnPage.length < ROSTER_PAGE_SIZE
-              ? null
-              : String(offset + sessionsOnPage.length),
-          historyComplete: sessionsOnPage.length < ROSTER_PAGE_SIZE,
-        },
-        managed: options.managedSessions?.() ?? [],
-        joins: {},
-        projectRoot: request?.projectRoot,
-      })
-    },
-    searchSessions: (query) =>
-      searchClaudeHistory(history, options.managedSessions?.() ?? [], query),
+    discoverSessions: rosterReader,
+    searchSessions: (query) => searchClaudeHistory(history, managedSessions(), query),
     historyComplete: async () => true,
     readSessionFiles: async () => null,
-    readObservedFeed: async (sessionId) => {
-      const managed = options.managedSessions?.().some((row) => row.id === sessionId) === true
-      const messages = await readClaudeSessionMessages(history, sessionId)
-      const info =
-        !managed && messages.length === 0 ? await history.getSessionInfo?.(sessionId) : undefined
-      if (!managed && messages.length === 0 && info === undefined) return null
-      const rows = feedOf(messages)
-      return {
-        chainId: sessionId,
-        revision: createHash('sha256').update(JSON.stringify(rows)).digest('hex'),
-        rows,
-      }
-    },
+    ...feedReaders,
     readShellOutput: async () => ({ state: 'absent' }),
   }
 }

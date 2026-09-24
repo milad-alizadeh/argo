@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript/transcript'
 import { readSubagents } from '@/domains/sessions/contract/observation/signals'
 import { projectFeed } from '@/domains/sessions/main/projection/feed/feed-incremental'
-import { parseTranscriptLine } from '../records/records'
+import { parseTranscriptLine } from '../../transcript'
 import { readingSpawnedAgents } from './spawned-agents'
 
 const SPAWN = {
@@ -40,6 +40,8 @@ function answer(content: string, toolUseResult?: Record<string, unknown>) {
 const NOTIFICATION = {
   type: 'user',
   uuid: 'u-2',
+  userType: 'external',
+  sourceToolAssistantUUID: 'task-call',
   timestamp: '2026-09-18T10:03:00.000Z',
   message: {
     role: 'user',

@@ -85,10 +85,10 @@ async function cancelFeed({
   }
 }
 
-async function readDirectFeed(source: SessionSource, request: SessionFeedRequest) {
-  const feed =
-    source.readManagedFeed?.(request.sessionId) ??
-    (await source.readObservedFeed?.(request.sessionId))
+function directFeedReply(
+  feed: Awaited<ReturnType<NonNullable<SessionSource['readObservedFeed']>>>,
+  request: SessionFeedRequest,
+) {
   if (feed === undefined) return undefined
   if (feed === null) return sessionError('missing-session', request.requestId)
   if (feed.revision === request.revision) {
@@ -112,6 +112,44 @@ async function readDirectFeed(source: SessionSource, request: SessionFeedRequest
   }
 }
 
+async function readDirectFeed(source: SessionSource, request: SessionFeedRequest) {
+  const feed =
+    source.readManagedFeed?.(request.sessionId) ??
+    (await source.readObservedFeed?.(request.sessionId))
+  return directFeedReply(feed, request)
+}
+
+async function readDirectSubagentFeed(source: SessionSource, request: SessionFeedRequest) {
+  if (request.subagentId === null) return undefined
+  const feed = await source.readObservedSubagentFeed?.(request.sessionId, request.subagentId)
+  return directFeedReply(feed, request)
+}
+
+async function readSubagentFeed(options: {
+  owner: SessionSource
+  request: SessionFeedRequest
+  subagentId: string
+  feeds: Map<string, HeldFeed>
+  projections: Map<string, FeedProjectionState>
+  signal: AbortSignal
+}): Promise<SessionFeedReply> {
+  const { owner, request, subagentId, feeds, projections, signal } = options
+  const childRequest = { ...request, subagentId }
+  const direct = await readDirectSubagentFeed(owner, childRequest)
+  if (direct !== undefined) return direct
+  return readOwnedFeed(
+    {
+      source: delegationSource(owner, subagentId),
+      feeds,
+      projections,
+      managed: false,
+      key: `${request.sessionId}#${subagentId}`,
+      signal,
+    },
+    childRequest,
+  )
+}
+
 export function createFeedReader(
   ownership: Ownership,
   feeds: Map<string, HeldFeed>,
@@ -120,22 +158,21 @@ export function createFeedReader(
   const reads = createFeedReads()
   return {
     async readSessionFeed(request: SessionFeedRequest) {
-      const { sessionId, subagentId } = request
+      const { sessionId } = request
       const controller = reads.start(sessionId)
       try {
         const owner = await ownership.ownerFor(sessionId)
         if (owner === undefined) return sessionError('missing-session', request.requestId)
         let reply: SessionFeedReply
-        if (subagentId !== null) {
-          const context = {
-            source: delegationSource(owner, subagentId),
+        if (request.subagentId !== null) {
+          reply = await readSubagentFeed({
+            owner,
+            request,
+            subagentId: request.subagentId,
             feeds,
             projections,
-            managed: false,
-            key: `${sessionId}#${subagentId}`,
             signal: controller.signal,
-          }
-          reply = await readOwnedFeed(context, request)
+          })
         } else {
           const direct = await readDirectFeed(owner, request)
           if (direct !== undefined) reply = direct

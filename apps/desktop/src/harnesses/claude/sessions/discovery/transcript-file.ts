@@ -3,8 +3,7 @@ import {
   type TranscriptFile,
   withoutBlocks,
 } from '@/domains/sessions/contract/model/transcript/transcript'
-import { parseTranscriptLine } from '../records/records'
-import { normalizeClaudeRecords } from './normalize-records'
+import { normalizeClaudeRecords, parseTranscriptLine } from '../../transcript'
 
 export type { TranscriptFile }
 export { withoutBlocks }

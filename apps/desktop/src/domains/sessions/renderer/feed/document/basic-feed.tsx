@@ -64,6 +64,8 @@ type BasicFeedProps = {
   onJumpToLatestChange?: (sessionId: string, action: (() => void) | null) => void
   selectedSessionId: SessionId | null
   onStalledChange?: (sessionId: SessionId | null) => void
+  feedLabel?: string
+  historyLabel?: string
 } & FeedQuestionHandlers
 
 export function BasicFeed({
@@ -76,6 +78,8 @@ export function BasicFeed({
   onJumpToLatestChange = ignoreJumpToLatestChange,
   selectedSessionId,
   onStalledChange,
+  feedLabel,
+  historyLabel,
   onOpenEvidence,
   onAnswerQuestion,
   answeringQuestionId,
@@ -131,10 +135,11 @@ export function BasicFeed({
     answeringQuestionId,
     questionFailure,
     stallTimeoutMs,
+    historyLabel: historyLabel ?? t('historyLabel'),
   }
 
   return (
-    <section aria-label={t('feedLabel')} className="feed">
+    <section aria-label={feedLabel ?? t('feedLabel')} className="feed">
       {!stalled && documents.map(([id, document]) => keptDocument(id, document, shared))}
       {failure !== null || stalled || (current === null && !optimisticSession && !holdsPrompt) ? (
         <Standing

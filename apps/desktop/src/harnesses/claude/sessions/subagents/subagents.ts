@@ -13,8 +13,7 @@ import {
 import type { SessionSubagentUsage } from '@/domains/sessions/contract/model/wire/background-work-contract'
 import { createTranscriptRecordReader } from '@/domains/sessions/main/observation/tail/transcript-lines'
 import { isRecord } from '@/shared/validation'
-import { normalizeClaudeRecords } from '../discovery/normalize-records'
-import { parseTranscriptLine } from '../records/records'
+import { normalizeClaudeRecords, parseTranscriptLine } from '../../transcript'
 
 const META = '.meta.json'
 const { readRecords } = createTranscriptRecordReader(parseTranscriptLine)

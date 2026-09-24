@@ -112,7 +112,7 @@ export const RunningSubagent: Story = {
       { timeout: 3000 },
     )
     const inspector = canvas.getByLabelText('Subagent')
-    const history = canvas.getByLabelText('Session history')
+    const history = canvas.getByLabelText('Subagent history')
     expect(history.getBoundingClientRect().bottom).toBe(inspector.getBoundingClientRect().bottom)
   },
 }

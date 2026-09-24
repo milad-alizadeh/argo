@@ -22,7 +22,7 @@ function WorkButtons({ model }: { model: SessionScreenModel }) {
   const { pick, selectedSessionId, session, work } = model
   return (
     <SessionWorkButtons
-      subagents={session?.subagents ?? []}
+      subagents={model.subagents}
       subagentUsage={model.subagentUsage}
       onSelectDelegation={(subagentId) =>
         pick({ sessionId: selectedSessionId, subagentId, shellId: null })

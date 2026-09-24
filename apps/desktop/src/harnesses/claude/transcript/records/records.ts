@@ -6,7 +6,7 @@ import type {
   TranscriptRecord,
 } from '@/domains/sessions/contract/model/transcript/transcript'
 import { isRecord } from '@/shared/validation'
-import { readBackgroundTask } from '../subagents/background-task'
+import { readBackgroundTask } from '../../sessions/subagents/background-task'
 import { readBlocks, readToolCalls, readToolResults } from './block-reader'
 import { readCommandEnvelope } from './command-envelope'
 import { commandSourceBlocks } from './command-source'

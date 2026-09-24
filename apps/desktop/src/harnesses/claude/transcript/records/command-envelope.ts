@@ -5,7 +5,8 @@ import type {
 } from '@/domains/sessions/contract/model/transcript/transcript'
 import { taggedField, taggedText } from '@/harnesses/host/envelope-tags'
 import { isRecord } from '@/shared/validation'
-import { readTaskDelivery } from '../subagents/task-notification'
+import { readTaskDelivery } from '../../sessions/subagents/task-notification'
+import { commandEventKind } from './command-event-kind'
 import { readableCommandOutput } from './command-output'
 
 function envelopeText(content: unknown): string | null {
@@ -54,6 +55,11 @@ function envelopeName(text: string): string | null {
 
 function isHarnessDelivery(record: Record<string, unknown>): boolean {
   return record.userType === 'external' && typeof record.sourceToolAssistantUUID === 'string'
+}
+
+function isHarnessTaskDelivery(record: Record<string, unknown>): boolean {
+  const origin = isRecord(record.origin) ? record.origin.kind : null
+  return isHarnessDelivery(record) || origin === 'task-notification'
 }
 
 function completeEnvelope(text: string, name: string): string | null {
@@ -125,7 +131,8 @@ export function readCommandEnvelope(
     text.startsWith('<bash-stderr>')
   )
     return readBashEnvelope(message, text)
-  if (text.startsWith('<task-notification>')) return readTaskDelivery(record, message, text)
+  if (text.startsWith('<task-notification>'))
+    return isHarnessTaskDelivery(record) ? readTaskDelivery(record, message, text) : null
   // The harness re-delivers the compaction summary as a synthetic user turn so the model can
   // resume from it. `readTranscriptFile` folds this into the 'compacted' marker it follows
   // rather than letting it fall through to a prose prompt bubble (#2206).
@@ -136,5 +143,14 @@ export function readCommandEnvelope(
   // The Harness echoes `/compact` after the boundary; the person's own `/compact` prompt precedes it.
   if (prompt === null || prompt.split(' ')[0] === '/compact')
     return { kind: 'trace', uuid: message.uuid }
-  return { ...message, blocks: [{ shape: 'event', event: 'command', text: prompt }] }
+  return {
+    ...message,
+    blocks: [
+      {
+        shape: 'event',
+        event: commandEventKind(prompt),
+        text: prompt,
+      },
+    ],
+  }
 }

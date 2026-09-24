@@ -1,6 +1,108 @@
 import { expect, test } from 'bun:test'
-import { managedRosterRow } from '@/domains/sessions/contract/model/models'
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
+import type { SessionMessage } from '@anthropic-ai/claude-agent-sdk'
+import { managedRosterRow, type SessionFeedRow } from '@/domains/sessions/contract/model/models'
+import { stitchChains } from '@/domains/sessions/contract/model/transcript/chains'
+import { projectFeed } from '@/domains/sessions/main/projection/feed/feed-incremental'
+import { isRecord } from '@/shared/validation'
+import { readTranscriptFile } from '../sessions/discovery/transcript-file'
 import { createClaudeSdkHistorySource } from './claude-sdk-history-source'
+
+function envelopeMessages(): SessionMessage[] {
+  return [
+    {
+      type: 'user',
+      uuid: 'command-spec',
+      session_id: 'claude-envelope',
+      message: {
+        content:
+          '<command-message>to-spec</command-message><command-name>/to-spec</command-name><command-args>https://github.com/milad-alizadeh/argo/issues/2669</command-args>',
+      },
+      parent_tool_use_id: null,
+      parent_agent_id: null,
+      ...({ origin: { kind: 'human' } } as const),
+    },
+    {
+      type: 'user',
+      uuid: 'command-tickets',
+      session_id: 'claude-envelope',
+      message: {
+        content:
+          '<command-message>to-tickets</command-message><command-name>/to-tickets</command-name><command-args></command-args>',
+      },
+      parent_tool_use_id: null,
+      parent_agent_id: null,
+      ...({ origin: { kind: 'human' } } as const),
+    },
+    {
+      type: 'user',
+      uuid: 'task-notification',
+      session_id: 'claude-envelope',
+      message: {
+        content:
+          '<task-notification><task-id>agent-9</task-id><tool-use-id>toolu_1</tool-use-id><status>completed</status><summary>Agent "Explore turn-setup and harness code for issue 2669" finished</summary><note>Done.</note><result>Found the cause.</result></task-notification>',
+      },
+      parent_tool_use_id: null,
+      parent_agent_id: null,
+      ...({ origin: { kind: 'task-notification' } } as const),
+    },
+    {
+      type: 'user',
+      uuid: 'literal-tags',
+      session_id: 'claude-envelope',
+      message: { content: 'The literal <status>completed</status> tag is documented.' },
+      parent_tool_use_id: null,
+      parent_agent_id: null,
+    },
+  ]
+}
+
+function isSessionMessage(value: unknown): value is SessionMessage {
+  return (
+    isRecord(value) &&
+    (value.type === 'user' || value.type === 'assistant' || value.type === 'system') &&
+    typeof value.uuid === 'string' &&
+    typeof value.session_id === 'string' &&
+    'message' in value &&
+    (value.parent_tool_use_id === null || typeof value.parent_tool_use_id === 'string') &&
+    (value.parent_agent_id === null || typeof value.parent_agent_id === 'string')
+  )
+}
+
+async function recordedSdkMessages(): Promise<SessionMessage[]> {
+  // Recorded from getSessionMessages; message text and identifiers are scrubbed in the fixture.
+  const fixturePath = path.resolve(
+    import.meta.dir,
+    '../../../../mocks/cli/claude/fixtures/session-history-envelope-corpus.jsonl',
+  )
+  const lines = (await readFile(fixturePath, 'utf8')).trim().split('\n')
+  const records: unknown[] = lines.map((line) => JSON.parse(line))
+  if (!records.every(isSessionMessage)) throw new Error('Recorded SDK history shape is invalid.')
+  return records
+}
+
+function expectEnvelopesAreStructured(rows: SessionFeedRow[]) {
+  expect(rows.some((row) => JSON.stringify(row).includes('<command-message>'))).toBe(false)
+  expect(rows.some((row) => JSON.stringify(row).includes('<task-notification>'))).toBe(false)
+  expect(rows).toContainEqual(
+    expect.objectContaining({
+      shape: 'event',
+      event: 'skill-invocation',
+      text: '/to-spec https://github.com/milad-alizadeh/argo/issues/2669',
+      skill: {
+        name: 'to-spec',
+        path: '/repository/.agents/skills/to-spec/SKILL.md',
+      },
+    }),
+  )
+  expect(rows).toContainEqual(
+    expect.objectContaining({ shape: 'event', event: 'skill-invocation', text: '/to-tickets' }),
+  )
+  expect(
+    rows.some((row) => JSON.stringify(row).includes('literal <status>completed</status> tag')),
+  ).toBe(true)
+}
 
 test('reads a Claude Session by native ID before its Roster page loads', async () => {
   const source = createClaudeSdkHistorySource({
@@ -25,12 +127,13 @@ test('reads a Claude Session by native ID before its Roster page loads', async (
   })
 
   const feed = await source.readObservedFeed?.('direct-session')
-  expect(feed?.rows).toContainEqual({
-    shape: 'prose',
-    id: 'direct-message',
-    role: 'user',
-    text: 'Open this Session directly',
-  })
+  expect(feed?.rows).toContainEqual(
+    expect.objectContaining({
+      shape: 'prose',
+      role: 'user',
+      text: 'Open this Session directly',
+    }),
+  )
 })
 
 test('reads a Claude sidechain Session when summary metadata is absent', async () => {
@@ -51,15 +154,16 @@ test('reads a Claude sidechain Session when summary metadata is absent', async (
     },
   })
 
-  expect((await source.readObservedFeed?.('sidechain-session'))?.rows).toContainEqual({
-    shape: 'prose',
-    id: 'sidechain-message',
-    role: 'assistant',
-    text: 'The sidechain reply',
-  })
+  expect((await source.readObservedFeed?.('sidechain-session'))?.rows).toContainEqual(
+    expect.objectContaining({
+      shape: 'prose',
+      role: 'assistant',
+      text: 'The sidechain reply',
+    }),
+  )
 })
 
-test('keeps Claude text beside a tool-use block in one message', async () => {
+test('keeps Claude text before and after a tool-use block in the Feed', async () => {
   const source = createClaudeSdkHistorySource({
     history: {
       listSessions: async () => [],
@@ -82,12 +186,12 @@ test('keeps Claude text beside a tool-use block in one message', async () => {
     },
   })
 
-  expect((await source.readObservedFeed?.('mixed-session'))?.rows).toContainEqual({
-    shape: 'prose',
-    id: 'mixed-message',
-    role: 'assistant',
-    text: 'I will inspect it.Done.',
-  })
+  const rows = (await source.readObservedFeed?.('mixed-session'))?.rows ?? []
+  expect(rows.flatMap((row) => (row.shape === 'prose' ? [row.text] : []))).toEqual([
+    'I will inspect it.',
+    'Done.',
+  ])
+  expect(rows.some((row) => row.shape === 'tool-group')).toBe(true)
 })
 
 test('searches Claude vendor history without growing roster pages', async () => {
@@ -182,18 +286,20 @@ test('adds a watched Claude SDK Session and its vendor history to the roster', a
   ])
   const feed = await source.readObservedFeed?.('claude-1')
   expect(feed?.chainId).toBe('claude-1')
-  expect(feed?.rows).toContainEqual({
-    shape: 'prose',
-    id: 'message-1',
-    role: 'user',
-    text: 'Review this change',
-  })
-  expect(feed?.rows).toContainEqual({
-    shape: 'prose',
-    id: 'message-2',
-    role: 'assistant',
-    text: 'SDK block reply',
-  })
+  expect(feed?.rows).toContainEqual(
+    expect.objectContaining({
+      shape: 'prose',
+      role: 'user',
+      text: 'Review this change',
+    }),
+  )
+  expect(feed?.rows).toContainEqual(
+    expect.objectContaining({
+      shape: 'prose',
+      role: 'assistant',
+      text: 'SDK block reply',
+    }),
+  )
 })
 
 test('updates a Claude Feed when vendor messages grow between Roster reads', async () => {
@@ -229,7 +335,10 @@ test('updates a Claude Feed when vendor messages grow between Roster reads', asy
   const second = await source.readObservedFeed?.('claude-growing')
 
   expect(second?.revision).not.toBe(first?.revision)
-  expect(second?.rows.map((row) => row.id)).toEqual(['first-message', 'second-message'])
+  expect(second?.rows.flatMap((row) => (row.shape === 'prose' ? [row.text] : []))).toEqual([
+    'First turn',
+    'Second turn',
+  ])
 })
 
 test('lists Claude Sessions without waiting for their message histories', async () => {
@@ -327,4 +436,177 @@ test('keeps watched history while a resumed Claude Session has a new managed nat
     { id: 'watched-id', posture: 'watched' },
     { id: 'managed-id', posture: 'managed' },
   ])
+})
+
+test('parses Claude SDK history envelopes before showing them in the Feed', async () => {
+  const messages = envelopeMessages()
+  const source = createClaudeSdkHistorySource({
+    history: {
+      listSessions: async () => [
+        {
+          sessionId: 'claude-envelope',
+          summary: 'Envelope history',
+          lastModified: 1,
+          cwd: '/repository',
+        },
+      ],
+      getSessionMessages: async () => messages,
+    },
+  })
+
+  await source.discoverSessions()
+  const rows = (await source.readObservedFeed?.('claude-envelope'))?.rows ?? []
+
+  expectEnvelopesAreStructured(rows)
+
+  const transcript = readTranscriptFile('/transcript.jsonl', {
+    sessionId: 'claude-envelope',
+    lines: messages.map((message, index) =>
+      JSON.stringify(index === 0 ? { ...message, cwd: '/repository' } : message),
+    ),
+  })
+  const chain = stitchChains([transcript])[0]
+  const transcriptRows = chain === undefined ? [] : projectFeed(chain, undefined).rows
+
+  expectEnvelopesAreStructured(transcriptRows)
+})
+
+test('projects recorded Claude SDK history through both Feed paths', async () => {
+  const messages = await recordedSdkMessages()
+  const source = createClaudeSdkHistorySource({
+    history: {
+      listSessions: async () => [
+        { sessionId: 'recorded-session', summary: 'Recorded envelopes', lastModified: 1 },
+      ],
+      getSessionMessages: async () => messages,
+    },
+  })
+  const sdkRows = (await source.readObservedFeed?.('recorded-session'))?.rows ?? []
+  const transcript = readTranscriptFile('/recorded-session.jsonl', {
+    sessionId: 'recorded-session',
+    lines: messages.map((message) => JSON.stringify(message)),
+  })
+  const chain = stitchChains([transcript])[0]
+  const transcriptRows = chain === undefined ? [] : projectFeed(chain, undefined).rows
+
+  for (const rows of [sdkRows, transcriptRows]) {
+    expect(rows).toContainEqual(
+      expect.objectContaining({
+        shape: 'event',
+        event: 'skill-invocation',
+        text: '/to-spec https://example.invalid/issues/1',
+      }),
+    )
+    expect(rows).toContainEqual(
+      expect.objectContaining({
+        shape: 'subagent',
+        subagentId: 'toolu_recorded',
+        name: 'Review the Feed card',
+      }),
+    )
+    expect(rows.some((row) => JSON.stringify(row).includes('<task-notification>'))).toBe(false)
+  }
+})
+
+test('reads the SDK child transcript by the task id while the Feed keeps its tool call id', async () => {
+  const childMessages: SessionMessage[] = [
+    {
+      type: 'user',
+      uuid: 'child-message',
+      session_id: 'claude-parent',
+      message: { content: 'Child work' },
+      parent_tool_use_id: null,
+      parent_agent_id: 'agent-9',
+    },
+  ]
+  let requestedAgentId: string | undefined
+  const source = createClaudeSdkHistorySource({
+    history: {
+      listSessions: async () => [
+        { sessionId: 'claude-parent', summary: 'Parent', lastModified: 1 },
+      ],
+      getSessionMessages: async () => [
+        {
+          type: 'user',
+          uuid: 'task-notification',
+          session_id: 'claude-parent',
+          message: {
+            content:
+              '<task-notification><task-id>agent-9</task-id><tool-use-id>toolu_1</tool-use-id><status>completed</status><summary>Agent "Child" finished</summary></task-notification>',
+          },
+          parent_tool_use_id: null,
+          parent_agent_id: null,
+          ...({ origin: { kind: 'task-notification' } } as const),
+        },
+      ],
+      getSubagentMessages: async (_sessionId, agentId) => {
+        requestedAgentId = agentId
+        return childMessages
+      },
+    },
+  })
+
+  await source.discoverSessions()
+  const parentFeed = await source.readObservedFeed?.('claude-parent')
+  const child = await source.readSubagentFiles?.('claude-parent', 'toolu_1')
+
+  expect(parentFeed?.rows).toContainEqual(
+    expect.objectContaining({ shape: 'subagent', subagentId: 'toolu_1' }),
+  )
+  expect(requestedAgentId).toBe('agent-9')
+  expect(child?.files.flatMap((file) => file.records)).toContainEqual(
+    expect.objectContaining({ kind: 'message', uuid: 'child-message' }),
+  )
+})
+
+test('keeps SDK compaction boundaries and folds their continuation summary', async () => {
+  const boundary = {
+    type: 'system',
+    subtype: 'compact_boundary',
+    uuid: 'compact-1',
+    session_id: 'claude-compaction',
+    compact_metadata: { trigger: 'auto', pre_tokens: 180_000 },
+    parent_tool_use_id: null,
+    parent_agent_id: null,
+    message: {},
+  } as SessionMessage
+  const source = createClaudeSdkHistorySource({
+    history: {
+      listSessions: async () => [
+        {
+          sessionId: 'claude-compaction',
+          summary: 'Compaction history',
+          firstPrompt: 'Compaction history',
+          lastModified: 2,
+          createdAt: 1,
+          cwd: '/repository',
+        },
+      ],
+      getSessionMessages: async () => [
+        boundary,
+        {
+          type: 'user',
+          uuid: 'summary-1',
+          session_id: 'claude-compaction',
+          message: {
+            content:
+              'This session is being continued from a previous conversation, resuming with the existing task.',
+          },
+          parent_tool_use_id: null,
+          parent_agent_id: null,
+        },
+      ],
+    },
+  })
+
+  await source.discoverSessions()
+  const feed = await source.readObservedFeed?.('claude-compaction')
+
+  expect(feed?.rows).toContainEqual({
+    shape: 'marker',
+    id: 'compact-1:compacted',
+    marker: 'compacted',
+    summary:
+      'This session is being continued from a previous conversation, resuming with the existing task.',
+  })
 })

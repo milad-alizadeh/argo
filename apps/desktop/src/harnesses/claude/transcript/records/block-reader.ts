@@ -6,11 +6,11 @@ import type {
   ToolResult,
 } from '@/domains/sessions/contract/model/transcript/transcript'
 import { isRecord } from '@/shared/validation'
-import { askFacts } from '../ask-facts'
-import { bashFacts } from '../bash-facts'
-import { editFacts } from '../edit-facts'
-import { lookupFacts } from '../lookup-facts'
-import { POLL_TOOLS, skillOrOtherFacts } from '../other-facts'
+import { askFacts } from '../../sessions/ask-facts'
+import { bashFacts } from '../../sessions/bash-facts'
+import { editFacts } from '../../sessions/edit-facts'
+import { lookupFacts } from '../../sessions/lookup-facts'
+import { POLL_TOOLS, skillOrOtherFacts } from '../../sessions/other-facts'
 
 // The receipt's own sentence: "Output is being written to: <path>. You will be notified ...".
 const OUTPUT_FILE = /Output is being written to: (\S+?)\.?(?:\s|$)/

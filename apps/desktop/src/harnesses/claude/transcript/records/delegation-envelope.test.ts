@@ -3,7 +3,13 @@ import { test } from 'node:test'
 import { parseTranscriptLine } from './records'
 
 function notification(uuid: string, body: string) {
-  return JSON.stringify({ type: 'user', uuid, message: { role: 'user', content: body } })
+  return JSON.stringify({
+    type: 'user',
+    uuid,
+    userType: 'external',
+    sourceToolAssistantUUID: 'tool-1',
+    message: { role: 'user', content: body },
+  })
 }
 
 test('reads a background command notification as the end of its call, never a Subagent', () => {
