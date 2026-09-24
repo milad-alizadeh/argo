@@ -45,6 +45,49 @@ function catalogFailureOf(
   return null
 }
 
+async function submitFromComposer({
+  submit,
+  identity,
+  harness,
+  cockpit,
+  prompt,
+  setup,
+  attachments,
+}: {
+  submit: (input: SessionSubmitInput) => Promise<{ sessionId: string }>
+  identity: ReturnType<typeof composerIdentityOf>
+  harness: HarnessControl
+  cockpit: Cockpit
+  prompt: string
+  setup: SessionSubmitInput['setup'] | null
+  attachments: SessionSubmitInput['attachments']
+}) {
+  if (setup === null) return false
+  if (
+    identity.kind === 'pending' &&
+    !useSessionCreationStore.getState().startSubmission(identity.sessionId, prompt)
+  )
+    return false
+  try {
+    const submitted = await submit({
+      commandId: crypto.randomUUID(),
+      harness: harness.harness,
+      projectId: cockpit.project?.id ?? '',
+      cwd: cockpit.workspace?.path ?? cockpit.project?.path ?? '',
+      sessionId: identity.kind === 'session' ? identity.sessionId : null,
+      prompt,
+      attachments,
+      setup,
+    })
+    if (identity.kind === 'pending')
+      useSessionCreationStore.getState().resolved(identity.sessionId, submitted.sessionId)
+    return true
+  } catch {
+    if (identity.kind === 'pending') useSessionCreationStore.getState().failed(identity.sessionId)
+    return false
+  }
+}
+
 export function SessionComposerArea({
   permission,
   questionPending,
@@ -153,27 +196,9 @@ function SessionComposerForm({
           />
         }
         plan={session?.plan ?? null}
-        onSend={async (prompt, setup, attachments) => {
-          if (setup === null) return false
-          try {
-            const submitted = await submit({
-              commandId: crypto.randomUUID(),
-              harness: harness.harness,
-              cwd: cockpit.workspace?.path ?? cockpit.project?.path ?? '',
-              sessionId: identity.kind === 'session' ? identity.sessionId : null,
-              prompt,
-              attachments,
-              setup,
-            })
-            if (identity.kind === 'pending')
-              useSessionCreationStore.getState().resolved(identity.sessionId, submitted.sessionId)
-            return true
-          } catch {
-            if (identity.kind === 'pending')
-              useSessionCreationStore.getState().failed(identity.sessionId)
-            return false
-          }
-        }}
+        onSend={(prompt, setup, attachments) =>
+          submitFromComposer({ submit, identity, harness, cockpit, prompt, setup, attachments })
+        }
       />
     </>
   )

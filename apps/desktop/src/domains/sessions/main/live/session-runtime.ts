@@ -133,6 +133,12 @@ export function createSessionRuntime(input: {
     async send(command: SessionSendInput) {
       const session = actors.get(command.sessionId)
       if (session === undefined) throw new Error('Session is not live.')
+      const snapshot = session.actor.getSnapshot()
+      if (snapshot.matches('Failed') || snapshot.matches('Closed'))
+        throw new Error(snapshot.context.failure ?? 'Session is not available for sends.')
+      const catalog = input.catalog(snapshot.context.first.harness)
+      if (catalog === null || !validSetup(catalog, command))
+        throw new Error('The selected Session setup is no longer available.')
       session.actor.send({ type: 'Send', command })
       return { sessionId: command.sessionId }
     },

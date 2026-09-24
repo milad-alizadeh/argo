@@ -14,6 +14,7 @@ test('models Codex opening, first turn, later turn, failure, and close paths', (
     input: {
       commandId: '00000000-0000-4000-8000-000000000001',
       harness: 'codex',
+      projectId: '00000000-0000-4000-8000-000000000099',
       cwd: '/repo',
       prompt: 'first',
       attachments: [],
@@ -75,6 +76,7 @@ test('converts text, files, and images at the Codex Session boundary', async () 
     input: {
       commandId: '00000000-0000-4000-8000-000000000001',
       harness: 'codex',
+      projectId: '00000000-0000-4000-8000-000000000099',
       cwd: '/repo',
       prompt: 'Read these.',
       attachments: [
@@ -109,6 +111,7 @@ test('starts the first Codex turn before becoming ready', async () => {
     input: {
       commandId: '00000000-0000-4000-8000-000000000001',
       harness: 'codex',
+      projectId: '00000000-0000-4000-8000-000000000099',
       cwd: '/repo',
       prompt: 'first',
       attachments: [],
@@ -135,6 +138,7 @@ test('starts later Codex prompts on the persisted thread', async () => {
     input: {
       commandId: '00000000-0000-4000-8000-000000000001',
       harness: 'codex',
+      projectId: '00000000-0000-4000-8000-000000000099',
       cwd: '/repo',
       prompt: 'first',
       attachments: [],

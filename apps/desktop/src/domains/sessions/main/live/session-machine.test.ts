@@ -8,6 +8,7 @@ import { type QueuedSessionCommand, sessionMachine } from './session-machine'
 const first = {
   commandId: '00000000-0000-4000-8000-000000000001',
   harness: 'claude' as const,
+  projectId: '00000000-0000-4000-8000-000000000099',
   cwd: '/repo',
   prompt: 'first',
   attachments: [],
@@ -18,6 +19,7 @@ function sessionForTest(services: {
   start: (input: SessionStartInput) => Promise<{ nativeId: string }>
   persist: (input: {
     harness: string
+    projectId: string
     nativeId: string | null
     firstPrompt: string
   }) => Promise<string>
@@ -27,8 +29,16 @@ function sessionForTest(services: {
     actors: {
       start: fromPromise(({ input }: { input: SessionStartInput }) => services.start(input)),
       persist: fromPromise(
-        ({ input }: { input: { harness: string; nativeId: string | null; firstPrompt: string } }) =>
-          services.persist(input),
+        ({
+          input,
+        }: {
+          input: {
+            harness: string
+            projectId: string
+            nativeId: string | null
+            firstPrompt: string
+          }
+        }) => services.persist(input),
       ),
       drain: fromPromise(
         ({ input }: { input: { nativeId: string | null; command: QueuedSessionCommand | null } }) =>

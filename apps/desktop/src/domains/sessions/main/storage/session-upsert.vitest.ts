@@ -10,6 +10,7 @@ function database() {
     argo_id TEXT PRIMARY KEY,
     harness TEXT NOT NULL,
     native_id TEXT NOT NULL,
+    project_id TEXT NOT NULL,
     first_prompt TEXT,
     updated_at INTEGER NOT NULL
   ); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);`)
@@ -19,8 +20,18 @@ function database() {
 test('preserves one Argo ID for repeated vendor identity', () => {
   const { client, upsert } = database()
   try {
-    const first = upsert({ harness: 'claude', nativeId: 'native-1', firstPrompt: 'first' })
-    const repeated = upsert({ harness: 'claude', nativeId: 'native-1', firstPrompt: 'later' })
+    const first = upsert({
+      harness: 'claude',
+      nativeId: 'native-1',
+      projectId: 'project-1',
+      firstPrompt: 'first',
+    })
+    const repeated = upsert({
+      harness: 'claude',
+      nativeId: 'native-1',
+      projectId: 'project-1',
+      firstPrompt: 'later',
+    })
     assert.equal(repeated, first)
   } finally {
     client.close()
@@ -30,8 +41,18 @@ test('preserves one Argo ID for repeated vendor identity', () => {
 test('assigns a separate Argo ID to a fork native ID', () => {
   const { client, upsert } = database()
   try {
-    const original = upsert({ harness: 'codex', nativeId: 'thread-1', firstPrompt: 'first' })
-    const fork = upsert({ harness: 'codex', nativeId: 'thread-2', firstPrompt: 'first' })
+    const original = upsert({
+      harness: 'codex',
+      nativeId: 'thread-1',
+      projectId: 'project-1',
+      firstPrompt: 'first',
+    })
+    const fork = upsert({
+      harness: 'codex',
+      nativeId: 'thread-2',
+      projectId: 'project-1',
+      firstPrompt: 'first',
+    })
     assert.notEqual(fork, original)
   } finally {
     client.close()

@@ -113,6 +113,7 @@ test('routes composer commands through the single Session submission mutation', 
     await caller.sessionSubmit({
       commandId: '00000000-0000-4000-8000-000000000002',
       harness: 'claude',
+      projectId: '00000000-0000-4000-8000-000000000099',
       cwd: '/repo',
       sessionId: null,
       prompt: 'Start a Session.',

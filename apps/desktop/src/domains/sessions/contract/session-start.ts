@@ -16,14 +16,25 @@ const commandSchema = z.strictObject({
 })
 export const sessionStartInputSchema = commandSchema.extend({
   harness: harnessSchema,
+  projectId: identifierSchema,
   cwd: z.string().min(1),
 })
 export const sessionSendInputSchema = commandSchema.extend({ sessionId: identifierSchema })
-export const sessionSubmitInputSchema = commandSchema.extend({
-  harness: harnessSchema,
-  cwd: z.string().min(1),
-  sessionId: identifierSchema.nullable(),
-})
+export const sessionSubmitInputSchema = commandSchema
+  .extend({
+    harness: harnessSchema,
+    projectId: identifierSchema,
+    cwd: z.string().min(1),
+    sessionId: identifierSchema.nullable(),
+  })
+  .superRefine((input, context) => {
+    if (input.harness === 'claude' && input.attachments.length > 0)
+      context.addIssue({
+        code: 'custom',
+        path: ['attachments'],
+        message: 'Claude Session attachments are not supported.',
+      })
+  })
 export const sessionStartedOutputSchema = z.strictObject({ sessionId: identifierSchema })
 export const sessionAcceptedOutputSchema = z.strictObject({ sessionId: identifierSchema })
 export type SessionStartInput = z.infer<typeof sessionStartInputSchema>

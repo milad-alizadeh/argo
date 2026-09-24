@@ -7,6 +7,7 @@ export type QueuedSessionCommand = Pick<
 >
 type SessionPersistInput = {
   harness: string
+  projectId: string
   nativeId: string | null
   firstPrompt: string
 }
@@ -166,6 +167,7 @@ export const sessionMachine = setup({
         src: 'persist',
         input: ({ context }) => ({
           harness: context.first.harness,
+          projectId: context.first.projectId,
           nativeId: context.nativeId,
           firstPrompt: context.first.prompt,
         }),

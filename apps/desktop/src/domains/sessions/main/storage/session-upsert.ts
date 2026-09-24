@@ -3,14 +3,15 @@ import { sessionTable } from './session-table'
 export type SessionUpsert = (input: {
   harness: string
   nativeId: string
+  projectId: string
   firstPrompt: string
 }) => string
 export function createSessionUpsert(database: DurableDatabase): SessionUpsert {
-  return ({ harness, nativeId, firstPrompt }) => {
+  return ({ harness, nativeId, projectId, firstPrompt }) => {
     const argoId = crypto.randomUUID()
     const row = database
       .insert(sessionTable)
-      .values({ argoId, harness, nativeId, firstPrompt, updatedAt: Date.now() })
+      .values({ argoId, harness, nativeId, projectId, firstPrompt, updatedAt: Date.now() })
       .onConflictDoUpdate({
         target: [sessionTable.harness, sessionTable.nativeId],
         set: { nativeId },
