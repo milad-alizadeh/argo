@@ -19,6 +19,13 @@ export const sessionStartInputSchema = commandSchema.extend({
   projectId: identifierSchema,
   cwd: z.string().min(1),
 })
+export const existingSessionInputSchema = commandSchema.extend({
+  argoId: identifierSchema,
+  harness: harnessSchema,
+  nativeId: z.string().min(1),
+  projectId: identifierSchema.nullable(),
+  cwd: z.string().min(1),
+})
 export const sessionSendInputSchema = commandSchema.extend({ sessionId: identifierSchema })
 export const sessionSubmitInputSchema = commandSchema
   .extend({
@@ -51,5 +58,7 @@ export const sessionSubmitInputSchema = commandSchema
 export const sessionStartedOutputSchema = z.strictObject({ sessionId: identifierSchema })
 export const sessionAcceptedOutputSchema = z.strictObject({ sessionId: identifierSchema })
 export type SessionStartInput = z.infer<typeof sessionStartInputSchema>
+export type ExistingSessionInput = z.infer<typeof existingSessionInputSchema>
+export type SessionMachineInput = SessionStartInput | ExistingSessionInput
 export type SessionSendInput = z.infer<typeof sessionSendInputSchema>
 export type SessionSubmitInput = z.infer<typeof sessionSubmitInputSchema>

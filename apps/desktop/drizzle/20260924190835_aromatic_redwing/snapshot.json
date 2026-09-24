@@ -1,0 +1,819 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "982b4998-6c3b-4349-9bf5-10a382807afa",
+  "prevIds": ["aed42e35-c771-440a-b8d0-85ad8a72b58f"],
+  "ddl": [
+    {
+      "name": "managed_workspace_recovery",
+      "entityType": "tables"
+    },
+    {
+      "name": "project",
+      "entityType": "tables"
+    },
+    {
+      "name": "project_selection",
+      "entityType": "tables"
+    },
+    {
+      "name": "project_setup_actor",
+      "entityType": "tables"
+    },
+    {
+      "name": "project_setup_checkpoint",
+      "entityType": "tables"
+    },
+    {
+      "name": "project_setup_effect",
+      "entityType": "tables"
+    },
+    {
+      "name": "project_setup_recovery",
+      "entityType": "tables"
+    },
+    {
+      "name": "project_workspace_selection",
+      "entityType": "tables"
+    },
+    {
+      "name": "workspace",
+      "entityType": "tables"
+    },
+    {
+      "name": "session_ticket_link",
+      "entityType": "tables"
+    },
+    {
+      "name": "session",
+      "entityType": "tables"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "workspace_id",
+      "entityType": "columns",
+      "table": "managed_workspace_recovery"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "checkout_removed_at",
+      "entityType": "columns",
+      "table": "managed_workspace_recovery"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "project"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "path",
+      "entityType": "columns",
+      "table": "project"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "common_directory",
+      "entityType": "columns",
+      "table": "project"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "singleton",
+      "entityType": "columns",
+      "table": "project_selection"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "project_id",
+      "entityType": "columns",
+      "table": "project_selection"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "project_id",
+      "entityType": "columns",
+      "table": "project_setup_actor"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "checkpoint_version",
+      "entityType": "columns",
+      "table": "project_setup_actor"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "machine_version",
+      "entityType": "columns",
+      "table": "project_setup_actor"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "revision",
+      "entityType": "columns",
+      "table": "project_setup_actor"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "persisted_snapshot",
+      "entityType": "columns",
+      "table": "project_setup_actor"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "receipts",
+      "entityType": "columns",
+      "table": "project_setup_actor"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "saved_at",
+      "entityType": "columns",
+      "table": "project_setup_actor"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "project_id",
+      "entityType": "columns",
+      "table": "project_setup_checkpoint"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "worktree_path",
+      "entityType": "columns",
+      "table": "project_setup_checkpoint"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "phase",
+      "entityType": "columns",
+      "table": "project_setup_checkpoint"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "configuration_source",
+      "entityType": "columns",
+      "table": "project_setup_checkpoint"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "document_revision",
+      "entityType": "columns",
+      "table": "project_setup_checkpoint"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "project_id",
+      "entityType": "columns",
+      "table": "project_setup_effect"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "intent_json",
+      "entityType": "columns",
+      "table": "project_setup_effect"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "result_json",
+      "entityType": "columns",
+      "table": "project_setup_effect"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "saved_at",
+      "entityType": "columns",
+      "table": "project_setup_effect"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "project_id",
+      "entityType": "columns",
+      "table": "project_setup_recovery"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "raw_record",
+      "entityType": "columns",
+      "table": "project_setup_recovery"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "reason",
+      "entityType": "columns",
+      "table": "project_setup_recovery"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "saved_at",
+      "entityType": "columns",
+      "table": "project_setup_recovery"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "project_id",
+      "entityType": "columns",
+      "table": "project_workspace_selection"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "workspace_id",
+      "entityType": "columns",
+      "table": "project_workspace_selection"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "workspace"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "project_id",
+      "entityType": "columns",
+      "table": "workspace"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "kind",
+      "entityType": "columns",
+      "table": "workspace"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "display_name",
+      "entityType": "columns",
+      "table": "workspace"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "path",
+      "entityType": "columns",
+      "table": "workspace"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "base_ref",
+      "entityType": "columns",
+      "table": "workspace"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "session_id",
+      "entityType": "columns",
+      "table": "session_ticket_link"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "project_id",
+      "entityType": "columns",
+      "table": "session_ticket_link"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ticket_key",
+      "entityType": "columns",
+      "table": "session_ticket_link"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "title",
+      "entityType": "columns",
+      "table": "session_ticket_link"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "state",
+      "entityType": "columns",
+      "table": "session_ticket_link"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "session_ticket_link"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "argo_id",
+      "entityType": "columns",
+      "table": "session"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "harness",
+      "entityType": "columns",
+      "table": "session"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "native_id",
+      "entityType": "columns",
+      "table": "session"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "project_id",
+      "entityType": "columns",
+      "table": "session"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "vendor_title",
+      "entityType": "columns",
+      "table": "session"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "working_directory",
+      "entityType": "columns",
+      "table": "session"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "first_prompt",
+      "entityType": "columns",
+      "table": "session"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "session"
+    },
+    {
+      "columns": ["workspace_id"],
+      "tableTo": "workspace",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_managed_workspace_recovery_workspace_id_workspace_id_fk",
+      "entityType": "fks",
+      "table": "managed_workspace_recovery"
+    },
+    {
+      "columns": ["project_id"],
+      "tableTo": "project",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_project_selection_project_id_project_id_fk",
+      "entityType": "fks",
+      "table": "project_selection"
+    },
+    {
+      "columns": ["project_id"],
+      "tableTo": "project",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_project_setup_actor_project_id_project_id_fk",
+      "entityType": "fks",
+      "table": "project_setup_actor"
+    },
+    {
+      "columns": ["project_id"],
+      "tableTo": "project",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_project_setup_checkpoint_project_id_project_id_fk",
+      "entityType": "fks",
+      "table": "project_setup_checkpoint"
+    },
+    {
+      "columns": ["project_id"],
+      "tableTo": "project",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_project_setup_effect_project_id_project_id_fk",
+      "entityType": "fks",
+      "table": "project_setup_effect"
+    },
+    {
+      "columns": ["project_id"],
+      "tableTo": "project",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_project_setup_recovery_project_id_project_id_fk",
+      "entityType": "fks",
+      "table": "project_setup_recovery"
+    },
+    {
+      "columns": ["project_id"],
+      "tableTo": "project",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_project_workspace_selection_project_id_project_id_fk",
+      "entityType": "fks",
+      "table": "project_workspace_selection"
+    },
+    {
+      "columns": ["workspace_id"],
+      "tableTo": "workspace",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_project_workspace_selection_workspace_id_workspace_id_fk",
+      "entityType": "fks",
+      "table": "project_workspace_selection"
+    },
+    {
+      "columns": ["project_id"],
+      "tableTo": "project",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_workspace_project_id_project_id_fk",
+      "entityType": "fks",
+      "table": "workspace"
+    },
+    {
+      "columns": ["project_id"],
+      "tableTo": "project",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "nameExplicit": false,
+      "name": "fk_session_project_id_project_id_fk",
+      "entityType": "fks",
+      "table": "session"
+    },
+    {
+      "columns": ["workspace_id"],
+      "nameExplicit": false,
+      "name": "managed_workspace_recovery_pk",
+      "table": "managed_workspace_recovery",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["id"],
+      "nameExplicit": false,
+      "name": "project_pk",
+      "table": "project",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["singleton"],
+      "nameExplicit": false,
+      "name": "project_selection_pk",
+      "table": "project_selection",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["project_id"],
+      "nameExplicit": false,
+      "name": "project_setup_actor_pk",
+      "table": "project_setup_actor",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["project_id"],
+      "nameExplicit": false,
+      "name": "project_setup_checkpoint_pk",
+      "table": "project_setup_checkpoint",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["project_id"],
+      "nameExplicit": false,
+      "name": "project_setup_effect_pk",
+      "table": "project_setup_effect",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["project_id"],
+      "nameExplicit": false,
+      "name": "project_setup_recovery_pk",
+      "table": "project_setup_recovery",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["project_id"],
+      "nameExplicit": false,
+      "name": "project_workspace_selection_pk",
+      "table": "project_workspace_selection",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["id"],
+      "nameExplicit": false,
+      "name": "workspace_pk",
+      "table": "workspace",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["session_id"],
+      "nameExplicit": false,
+      "name": "session_ticket_link_pk",
+      "table": "session_ticket_link",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["argo_id"],
+      "nameExplicit": false,
+      "name": "session_pk",
+      "table": "session",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        {
+          "value": "project_id",
+          "isExpression": false
+        },
+        {
+          "value": "ticket_key",
+          "isExpression": false
+        },
+        {
+          "value": "created_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "session_ticket_link_ticket",
+      "entityType": "indexes",
+      "table": "session_ticket_link"
+    },
+    {
+      "columns": [
+        {
+          "value": "harness",
+          "isExpression": false
+        },
+        {
+          "value": "native_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "session_harness_native",
+      "entityType": "indexes",
+      "table": "session"
+    },
+    {
+      "columns": ["common_directory"],
+      "nameExplicit": false,
+      "name": "project_common_directory_unique",
+      "entityType": "uniques",
+      "table": "project"
+    },
+    {
+      "value": "\"singleton\" = 1",
+      "name": "project_selection_singleton",
+      "entityType": "checks",
+      "table": "project_selection"
+    },
+    {
+      "value": "\"checkpoint_version\" = 1",
+      "name": "project_setup_actor_checkpoint_version",
+      "entityType": "checks",
+      "table": "project_setup_actor"
+    },
+    {
+      "value": "\"machine_version\" > 0",
+      "name": "project_setup_actor_machine_version",
+      "entityType": "checks",
+      "table": "project_setup_actor"
+    },
+    {
+      "value": "\"revision\" >= 0",
+      "name": "project_setup_actor_revision",
+      "entityType": "checks",
+      "table": "project_setup_actor"
+    },
+    {
+      "value": "\"phase\" IN ('editing', 'validating', 'ready', 'failed', 'cancelled')",
+      "name": "project_setup_checkpoint_phase",
+      "entityType": "checks",
+      "table": "project_setup_checkpoint"
+    },
+    {
+      "value": "\"kind\" IN ('main', 'imported', 'managed')",
+      "name": "workspace_kind",
+      "entityType": "checks",
+      "table": "workspace"
+    },
+    {
+      "value": "length(\"display_name\") > 0",
+      "name": "workspace_display_name",
+      "entityType": "checks",
+      "table": "workspace"
+    }
+  ],
+  "renames": []
+}

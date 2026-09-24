@@ -37,7 +37,7 @@ const first: SessionStartInput = {
 async function supervisorFor(request: CodexRequest, catalogValue = catalog) {
   const client = new DatabaseSync(':memory:')
   client.exec(
-    'CREATE TABLE session (argo_id TEXT PRIMARY KEY, harness TEXT NOT NULL, native_id TEXT NOT NULL, project_id TEXT NOT NULL, first_prompt TEXT, updated_at INTEGER NOT NULL); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);',
+    'CREATE TABLE session (argo_id TEXT PRIMARY KEY, harness TEXT NOT NULL, native_id TEXT NOT NULL, project_id TEXT, vendor_title TEXT, working_directory TEXT, first_prompt TEXT, updated_at INTEGER NOT NULL); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);',
   )
   const database = createDurableDatabase(client)
   const channel: CodexChannel = {
@@ -252,6 +252,60 @@ test('settles start before a queued turn fails', async () => {
     const child = supervisor.getSnapshot().context.sessions[firstResult.sessionId]
     assert.ok(child)
     await waitFor(child, (snapshot) => snapshot.matches('Failed'))
+  } finally {
+    root.send({ type: 'Shutdown' })
+    client.close()
+  }
+})
+
+test('resumes an indexed Session through its existing supervisor child', async () => {
+  const methods: string[] = []
+  const { root, supervisor, client } = await supervisorFor(async (method, _params, parse) => {
+    methods.push(method)
+    if (method === 'thread/read' || method === 'thread/resume')
+      return parse({ thread: { id: 'native-1' } })
+    return parse({ turn: { id: 'turn-1' } })
+  })
+  try {
+    client
+      .prepare(
+        'INSERT INTO session (argo_id, harness, native_id, project_id, working_directory, first_prompt, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      )
+      .run('00000000-0000-4000-8000-000000000001', 'codex', 'native-1', null, '/repo', null, 1)
+    const result = await send(supervisor, {
+      ...first,
+      commandId: 'resume-command',
+      sessionId: '00000000-0000-4000-8000-000000000001',
+      prompt: 'Continue this Session.',
+    })
+    assert.equal(result.sessionId, '00000000-0000-4000-8000-000000000001')
+    assert.deepEqual(methods, ['thread/read', 'thread/resume', 'turn/start'])
+  } finally {
+    root.send({ type: 'Shutdown' })
+    client.close()
+  }
+})
+
+test('reports a definite live vendor refusal instead of accepting the prompt early', async () => {
+  let turns = 0
+  const { root, supervisor, client } = await supervisorFor(async (method, _params, parse) => {
+    if (method === 'thread/start') return parse({ thread: { id: 'native-1' } })
+    if (method === 'turn/start') {
+      turns += 1
+      if (turns === 2) throw new Error('vendor refused the prompt')
+      return parse({ turn: { id: 'turn-1' } })
+    }
+    throw new Error(`Unexpected method: ${method}`)
+  })
+  try {
+    const { sessionId } = await start(supervisor, first)
+    const child = supervisor.getSnapshot().context.sessions[sessionId]
+    assert.ok(child)
+    await waitFor(child, (snapshot) => snapshot.matches('Ready'))
+    await assert.rejects(
+      send(supervisor, { ...first, commandId: 'refused', sessionId, prompt: 'Refuse this.' }),
+      /vendor refused the prompt/,
+    )
   } finally {
     root.send({ type: 'Shutdown' })
     client.close()

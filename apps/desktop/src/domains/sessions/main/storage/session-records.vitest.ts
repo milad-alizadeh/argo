@@ -1,0 +1,59 @@
+import assert from 'node:assert/strict'
+import { DatabaseSync } from 'node:sqlite'
+import { test } from 'vitest'
+import { createDurableDatabase } from '@/platform/main/storage/durable-database'
+import { readSessionPage } from './session-records'
+
+function database() {
+  const client = new DatabaseSync(':memory:')
+  client.exec(`CREATE TABLE session (
+    argo_id TEXT PRIMARY KEY,
+    harness TEXT NOT NULL,
+    native_id TEXT NOT NULL,
+    project_id TEXT,
+    vendor_title TEXT,
+    working_directory TEXT,
+    first_prompt TEXT,
+    updated_at INTEGER NOT NULL
+  );`)
+  return { client, database: createDurableDatabase(client) }
+}
+
+test('returns exact numbered SQL pages in stable activity order', () => {
+  const { client, database: durable } = database()
+  try {
+    const insert = client.prepare('INSERT INTO session VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    insert.run('00000000-0000-4000-8000-000000000001', 'claude', 'one', null, null, null, null, 2)
+    insert.run('00000000-0000-4000-8000-000000000002', 'codex', 'two', null, null, null, null, 3)
+    insert.run('00000000-0000-4000-8000-000000000003', 'claude', 'three', null, null, null, null, 2)
+    assert.deepEqual(readSessionPage(durable, { page: 1, pageSize: 2, projectId: null }), {
+      page: 1,
+      pageSize: 2,
+      indexedTotal: 3,
+      sessions: [
+        {
+          argoId: '00000000-0000-4000-8000-000000000002',
+          harness: 'codex',
+          nativeId: 'two',
+          projectId: null,
+          vendorTitle: null,
+          firstPrompt: null,
+          updatedAt: 3,
+          workingDirectory: null,
+        },
+        {
+          argoId: '00000000-0000-4000-8000-000000000001',
+          harness: 'claude',
+          nativeId: 'one',
+          projectId: null,
+          vendorTitle: null,
+          firstPrompt: null,
+          updatedAt: 2,
+          workingDirectory: null,
+        },
+      ],
+    })
+  } finally {
+    client.close()
+  }
+})

@@ -1,169 +1,78 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { type RefObject, useEffect, useMemo, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { sessionFeedQuery } from '../feed/session-feed-query'
-import type { Session, SessionId } from '../types'
-import { useConsecutiveFeedFailures } from '../use-sessions'
-import { useArchivedSection } from './archived/use-archived-section'
-import { useRosterStatus } from './hooks/use-roster-filter-store'
-import { RenameDialog } from './rename/rename-dialog'
-import { useRenameDialog } from './rename/use-rename-dialog'
+import { trpc } from '@/platform/renderer/trpc-client'
 import type { RosterActions } from './rows/roster-actions'
-import { useOrderedSessions } from './rows/roster-order'
-import { RosterOutcome } from './rows/roster-outcome'
-import { rosterRows } from './rows/roster-rows'
-import { rosterState } from './rows/roster-status-row'
-import { RosterVirtualList } from './rows/roster-virtual-list'
-import { SessionsSidebarHeader } from './sidebar/sessions-sidebar-chrome'
-import { useSidebarRoster } from './sidebar/use-sidebar-roster'
 
 export type { RosterActions } from './rows'
 
-const NOOP = () => {}
+const PAGE_SIZE = 50
 
-function useRosterRows(options: {
-  read: ReturnType<typeof useOrderedSessions>
-  search: ReturnType<typeof useSidebarRoster>['searched'] | null
-  selectedSessionId: SessionId | null
-  visible: readonly Session[]
-}) {
-  const { read, search, selectedSessionId, visible } = options
-  const visibleSessionIds = useMemo(() => visible.map((session) => session.id), [visible])
-  const status = useRosterStatus()
-  const archived = useArchivedSection(selectedSessionId, visibleSessionIds, read.roster !== null)
-  const rows = useMemo(
-    () =>
-      rosterRows({
-        active: visible,
-        archived,
-        hasMoreSessions: read.hasMoreSessions,
-        isFetchingMoreSessions: read.isFetchingMoreSessions,
-        search,
-        showArchive: read.roster !== null,
-        status,
-      }),
-    [
-      archived,
-      read.hasMoreSessions,
-      read.isFetchingMoreSessions,
-      read.roster,
-      search,
-      visible,
-      status,
-    ],
-  )
-  return {
-    rows,
-    onFetchNextPage: archived.fetchNextPage,
-    onFetchNextSearchPage: search?.fetchNextPage ?? NOOP,
-  }
+function sessionTitle(session: {
+  vendorTitle: string | null
+  firstPrompt: string | null
+  nativeId: string
+}): string {
+  return session.vendorTitle ?? session.firstPrompt ?? session.nativeId
 }
 
-function useRosterSessions(options: {
-  actions: RosterActions
-  projectRoot: string | null
-  read: ReturnType<typeof useOrderedSessions>
-  selectedSessionId: SessionId | null
-  sidebar: RefObject<HTMLElement | null>
-}) {
-  const { actions, projectRoot, read, selectedSessionId, sidebar } = options
-  const sessions = useSidebarRoster({
-    onArchiveSelected: actions.onArchiveSelected,
-    onSelect: actions.onSelect,
-    projectRoot,
-    roster: read.roster,
-    rosterError: read.rosterError,
-    selectedSessionId,
-    sidebar,
-  })
-  const rows = useRosterRows({
-    read,
-    search: sessions.searching ? sessions.searched : null,
-    selectedSessionId,
-    visible: sessions.visible,
-  })
-  return { ...sessions, ...rows }
-}
-
-function useUnavailableSessionIds(selectedSessionId: SessionId | null) {
-  const queryClient = useQueryClient()
-  const selectedFeed = useQuery(sessionFeedQuery(queryClient, selectedSessionId, null))
-  const failedFeedReads = useConsecutiveFeedFailures(selectedSessionId, selectedFeed)
-  const [unavailableSessionIds, setUnavailableSessionIds] = useState<ReadonlySet<SessionId>>(
-    () => new Set(),
-  )
-  useEffect(() => {
-    if (selectedSessionId === null) return
-    const unavailable = failedFeedReads > 1 && selectedFeed.error?.code === 'missing-session'
-    if (!unavailable && !selectedFeed.isSuccess) return
-    setUnavailableSessionIds((current) => {
-      if (unavailable === current.has(selectedSessionId)) return current
-      const next = new Set(current)
-      if (unavailable) next.add(selectedSessionId)
-      else next.delete(selectedSessionId)
-      return next
-    })
-  }, [failedFeedReads, selectedFeed.error?.code, selectedFeed.isSuccess, selectedSessionId])
-  return unavailableSessionIds
-}
-
-// The sidebar header, outcome and rows, under one named record of row actions (#2284).
 export function Roster({
   actions,
-  projectRoot,
   selectedSessionId,
 }: {
-  actions: RosterActions
+  actions: Pick<RosterActions, 'onNew' | 'onSelect'>
   projectRoot: string | null
-  selectedSessionId: SessionId | null
+  selectedSessionId: string | null
 }) {
-  const sidebar = useRef<HTMLElement>(null)
-  const unavailableSessionIds = useUnavailableSessionIds(selectedSessionId)
-  const read = useOrderedSessions(projectRoot)
-  const sessions = useRosterSessions({ actions, projectRoot, read, selectedSessionId, sidebar })
-  const { renameTarget, setRenameTarget, handleRename } = useRenameDialog(
-    sessions.rename,
-    actions.onRename,
+  const { t } = useTranslation('sessions')
+  const [page, setPage] = useState(1)
+  const roster = useQuery(
+    trpc.sessionPage.queryOptions({ page, pageSize: PAGE_SIZE, projectId: null }),
   )
+  const sessions = roster.data?.sessions ?? []
+  const canGoBack = page > 1
+  const canGoForward = roster.data !== undefined && page * PAGE_SIZE < roster.data.indexedTotal
   return (
-    <aside
-      aria-label={useTranslation('sessions').t('sidebarLabel')}
-      className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-sidebar"
-      data-state={rosterState(read.roster, read.rosterError, sessions.sessionCount)}
-      ref={sidebar}
-    >
-      <SessionsSidebarHeader
-        onNew={actions.onNew}
-        onSearch={sessions.setSearch}
-        onStatusChange={sessions.setStatus}
-        search={sessions.search}
-        status={sessions.status}
-      />
-      <RosterOutcome
-        count={sessions.sessionCount}
-        roster={read.roster}
-        rosterError={read.rosterError}
-        status={sessions.status}
-      />
-      <RosterVirtualList
-        label="Sessions"
-        unavailableSessionIds={unavailableSessionIds}
-        onArchive={sessions.archive}
-        onFetchMoreSessions={read.fetchMoreSessions}
-        onFetchNextPage={sessions.onFetchNextPage}
-        onFetchNextSearchPage={sessions.onFetchNextSearchPage}
-        onFocus={sessions.focus.setFocusedSessionId}
-        onOpenTicket={actions.onOpenTicket}
-        onRename={setRenameTarget}
-        onSelect={sessions.select}
-        onToggleSelect={sessions.selection.toggle}
-        renamedTitles={sessions.renamedTitles}
-        rows={sessions.rows}
-        selectedIds={sessions.selection.selectedIds}
-        selectedSessionId={selectedSessionId}
-        tabStop={sessions.focus.tabStop}
-      />
-      <RenameDialog onRename={handleRename} session={renameTarget} setSession={setRenameTarget} />
+    <aside aria-label={t('sidebarLabel')} className="flex h-full min-h-0 flex-col bg-sidebar">
+      <div className="flex items-center justify-between gap-2 border-b p-2">
+        <span className="text-sm font-medium">{t('title')}</span>
+        <button onClick={actions.onNew} type="button">
+          {t('newSession')}
+        </button>
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {roster.isLoading ? <p className="p-3 text-sm">{t('loading')}</p> : null}
+        {roster.isError ? <p className="p-3 text-sm">{t('roster.readFailure')}</p> : null}
+        {sessions.map((session) => (
+          <button
+            aria-current={session.argoId === selectedSessionId ? 'page' : undefined}
+            className="block w-full border-b px-3 py-2 text-left"
+            key={session.argoId}
+            onClick={() => actions.onSelect(session.argoId)}
+            type="button"
+          >
+            <span className="block truncate text-sm">{sessionTitle(session)}</span>
+            <span className="block text-xs text-muted-foreground">{session.harness}</span>
+          </button>
+        ))}
+      </div>
+      <div className="flex justify-between border-t p-2">
+        <button
+          disabled={!canGoBack}
+          onClick={() => setPage((current) => current - 1)}
+          type="button"
+        >
+          {t('roster.previousPage')}
+        </button>
+        <span className="text-xs">{t('roster.page', { page })}</span>
+        <button
+          disabled={!canGoForward}
+          onClick={() => setPage((current) => current + 1)}
+          type="button"
+        >
+          {t('roster.nextPage')}
+        </button>
+      </div>
     </aside>
   )
 }

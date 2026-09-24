@@ -5,10 +5,10 @@ import {
   type SDKUserMessage,
 } from '@anthropic-ai/claude-agent-sdk'
 import { assign, fromCallback, sendTo, setup } from 'xstate'
-import type { SessionStartInput } from '@/domains/sessions/contract/session-start'
+import type { SessionMachineInput } from '@/domains/sessions/contract/session-start'
 import { claudeCliEnvironment } from '../cli-environment'
 
-type Send = Pick<SessionStartInput, 'prompt'>
+type Send = Pick<SessionMachineInput, 'prompt'>
 type QueryCommand = {
   type: 'Send to Query'
   prompt: string
@@ -38,9 +38,9 @@ const permissionModes: Record<string, PermissionMode> = {
 
 export const claudeSessionMachine = setup({
   types: {
-    input: {} as SessionStartInput,
+    input: {} as SessionMachineInput,
     context: {} as {
-      input: SessionStartInput
+      input: SessionMachineInput
       mode: PermissionMode | null
       nativeId: string | null
       failure: string | null
@@ -59,7 +59,7 @@ export const claudeSessionMachine = setup({
     queryActor: fromCallback<
       QueryCommand,
       {
-        command: SessionStartInput
+        command: SessionMachineInput
         mode: PermissionMode | null
       },
       QueryEvent
@@ -94,22 +94,33 @@ export const claudeSessionMachine = setup({
         prompts.push(event.prompt)
         wakeInput()
       })
+      const reportResult = (
+        message: {
+          is_error: boolean
+          session_id: string
+        },
+        opened: boolean,
+      ) => {
+        if (message.is_error) throw new Error('Claude Session turn failed.')
+        if (opened) {
+          sendBack({
+            type: 'Sent',
+          })
+          return true
+        }
+        if ('argoId' in input.command && message.session_id !== input.command.nativeId)
+          throw new Error('Claude resumed a different Session.')
+        sendBack({
+          type: 'Opened',
+          nativeId: message.session_id,
+        })
+        return true
+      }
       async function readResults(querySession: Query) {
         let opened = false
         for await (const message of querySession) {
           if (!open || message.type !== 'result') continue
-          if (message.is_error) throw new Error('Claude Session turn failed.')
-          if (opened)
-            sendBack({
-              type: 'Sent',
-            })
-          else {
-            opened = true
-            sendBack({
-              type: 'Opened',
-              nativeId: message.session_id,
-            })
-          }
+          opened = reportResult(message, opened)
         }
         if (open) throw new Error('Claude Session ended before the turn completed.')
       }
@@ -122,6 +133,11 @@ export const claudeSessionMachine = setup({
               cwd: input.command.cwd,
               model: input.command.setup.model,
               permissionMode: input.mode,
+              ...('argoId' in input.command
+                ? {
+                    resume: input.command.nativeId,
+                  }
+                : {}),
               env: claudeCliEnvironment(),
             },
           })

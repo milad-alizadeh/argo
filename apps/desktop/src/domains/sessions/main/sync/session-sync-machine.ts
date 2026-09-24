@@ -1,0 +1,198 @@
+import { type ActorRefFrom, assign, fromPromise, setup } from 'xstate'
+import type { DiscoveredSession } from '@/domains/sessions/contract/session-index'
+import type { sessionIndexActor } from '../storage/session-index-actor'
+
+export type SessionSyncInput = Record<string, never>
+
+export type SessionSyncJobInput = {
+  cursor: string | null
+  generation: number
+  page: number
+}
+
+export type SessionSyncResult = {
+  complete: boolean
+  cursor: string | null
+  generation: number
+  indexedCount: number
+  invalidRecordCount: number
+  page: number
+  sessions: DiscoveredSession[]
+}
+
+export const sessionSyncPageSize = 50
+
+function isSessionSyncResult(value: unknown): value is SessionSyncResult {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'complete' in value &&
+    typeof value.complete === 'boolean' &&
+    'cursor' in value &&
+    (typeof value.cursor === 'string' || value.cursor === null) &&
+    'generation' in value &&
+    typeof value.generation === 'number' &&
+    'indexedCount' in value &&
+    typeof value.indexedCount === 'number' &&
+    'invalidRecordCount' in value &&
+    typeof value.invalidRecordCount === 'number' &&
+    'page' in value &&
+    typeof value.page === 'number' &&
+    'sessions' in value &&
+    Array.isArray(value.sessions)
+  )
+}
+
+export const sessionSyncMachine = setup({
+  types: {
+    input: {} as SessionSyncInput,
+    context: {} as {
+      cursor: string | null
+      generation: number
+      indexedCount: number
+      invalidRecordCount: number
+      page: number
+      failure: string | null
+      refreshedAt: number | null
+    },
+    events: {} as
+      | {
+          type: 'Refresh'
+        }
+      | {
+          type: 'Priority sync'
+        },
+  },
+  actors: {
+    sync: fromPromise<SessionSyncResult, SessionSyncJobInput>(async () => {
+      throw new Error('The Harness must provide Session sync.')
+    }),
+  },
+  guards: {
+    isCurrentGeneration: ({ context, event }) =>
+      'output' in event &&
+      isSessionSyncResult(event.output) &&
+      event.output.generation === context.generation,
+  },
+  actions: {
+    rememberResult: assign(({ event }) => {
+      if (!('output' in event) || !isSessionSyncResult(event.output)) return {}
+      return {
+        cursor: event.output.complete ? null : event.output.cursor,
+        indexedCount: event.output.indexedCount,
+        invalidRecordCount: event.output.invalidRecordCount,
+        page: event.output.complete ? 0 : event.output.page + 1,
+        failure: null,
+        refreshedAt: Date.now(),
+      }
+    }),
+    rememberFailure: assign(({ context, event }) => ({
+      failure: 'error' in event ? String(event.error) : context.failure,
+    })),
+    advanceGeneration: assign(({ context }) => ({
+      generation: context.generation + 1,
+    })),
+    restartAtRecent: assign(({ context }) => ({
+      cursor: null,
+      generation: context.generation + 1,
+      page: 0,
+    })),
+    indexResult: ({ event, self }) => {
+      if (!('output' in event) || !isSessionSyncResult(event.output)) return
+      if (event.output.sessions.length === 0) return
+      const index = self.system.get('sessionIndex') as ActorRefFrom<typeof sessionIndexActor>
+      index.send({
+        type: 'Index',
+        sessions: event.output.sessions,
+      })
+    },
+  },
+  delays: {
+    poll: 30_000,
+    retry: 5_000,
+  },
+}).createMachine({
+  id: 'sessionSync',
+  initial: 'Syncing',
+  context: () => ({
+    cursor: null,
+    generation: 0,
+    indexedCount: 0,
+    invalidRecordCount: 0,
+    page: 0,
+    failure: null,
+    refreshedAt: null,
+  }),
+  states: {
+    Syncing: {
+      invoke: {
+        src: 'sync',
+        input: ({ context }) => ({
+          cursor: context.cursor,
+          generation: context.generation,
+          page: context.page,
+        }),
+        onDone: [
+          {
+            guard: 'isCurrentGeneration',
+            target: 'Waiting',
+            actions: [
+              'indexResult',
+              'rememberResult',
+            ],
+          },
+          {
+            target: 'Waiting',
+          },
+        ],
+        onError: {
+          target: 'Retrying',
+          actions: 'rememberFailure',
+        },
+      },
+      on: {
+        'Priority sync': {
+          target: 'Syncing',
+          reenter: true,
+          actions: 'restartAtRecent',
+        },
+      },
+    },
+    Waiting: {
+      after: {
+        poll: {
+          target: 'Syncing',
+          actions: 'advanceGeneration',
+        },
+      },
+      on: {
+        Refresh: {
+          target: 'Syncing',
+          actions: 'advanceGeneration',
+        },
+        'Priority sync': {
+          target: 'Syncing',
+          actions: 'restartAtRecent',
+        },
+      },
+    },
+    Retrying: {
+      after: {
+        retry: {
+          target: 'Syncing',
+          actions: 'advanceGeneration',
+        },
+      },
+      on: {
+        Refresh: {
+          target: 'Syncing',
+          actions: 'advanceGeneration',
+        },
+        'Priority sync': {
+          target: 'Syncing',
+          actions: 'restartAtRecent',
+        },
+      },
+    },
+  },
+})

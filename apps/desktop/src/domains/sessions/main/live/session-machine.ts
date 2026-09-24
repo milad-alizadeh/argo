@@ -1,7 +1,7 @@
 import { assign, enqueueActions, fromPromise, type SnapshotFrom, sendTo, setup } from 'xstate'
 import { claudeSessionMachine } from '@/harnesses/claude/session/claude-session-machine'
 import type { codexSessionMachine } from '@/harnesses/codex/session/codex-session-machine'
-import type { SessionStartInput } from '../../contract/session-start'
+import type { SessionMachineInput, SessionStartInput } from '../../contract/session-start'
 
 export type QueuedSessionCommand = Pick<
   SessionStartInput,
@@ -12,14 +12,30 @@ type SessionPersistInput = {
   projectId: string
   nativeId: string | null
   firstPrompt: string
+  workingDirectory: string
+}
+
+function persistenceInput(
+  first: SessionMachineInput,
+  nativeId: string | null,
+): SessionPersistInput {
+  if ('argoId' in first) throw new Error('An existing Session must not create another identity.')
+  return {
+    harness: first.harness,
+    projectId: first.projectId,
+    nativeId,
+    firstPrompt: first.prompt,
+    workingDirectory: first.cwd,
+  }
 }
 
 export const sessionMachine = setup({
   types: {
-    input: {} as SessionStartInput,
+    input: {} as SessionMachineInput,
     context: {} as {
       argoId: string | null
-      first: SessionStartInput
+      acceptedCommandIds: string[]
+      first: SessionMachineInput
       nativeId: string | null
       queue: QueuedSessionCommand[]
       failure: string | null
@@ -78,6 +94,7 @@ export const sessionMachine = setup({
       queue: ({ context, event }) =>
         event.type === 'Send' &&
         event.command.commandId !== context.first.commandId &&
+        !context.acceptedCommandIds.includes(event.command.commandId) &&
         !context.queue.some(({ commandId }) => commandId === event.command.commandId)
           ? [
               ...context.queue,
@@ -87,6 +104,19 @@ export const sessionMachine = setup({
     }),
     dequeue: assign({
       queue: ({ context }) => context.queue.slice(1),
+    }),
+    rememberAcceptedCommand: assign({
+      acceptedCommandIds: ({ context }) => {
+        const commandId =
+          context.queue[0]?.commandId ??
+          (context.acceptedCommandIds.length === 0 ? context.first.commandId : null)
+        return commandId === null || context.acceptedCommandIds.includes(commandId)
+          ? context.acceptedCommandIds
+          : [
+              ...context.acceptedCommandIds,
+              commandId,
+            ]
+      },
     }),
     rememberArgoId: assign({
       argoId: ({ context, event }) =>
@@ -110,16 +140,19 @@ export const sessionMachine = setup({
   },
   guards: {
     hasQueuedCommand: ({ context }) => context.queue.length > 0,
+    hasArgoId: ({ context }) => context.argoId !== null,
     isNewCommand: ({ context, event }) =>
       event.type === 'Send' &&
       event.command.commandId !== context.first.commandId &&
+      !context.acceptedCommandIds.includes(event.command.commandId) &&
       !context.queue.some(({ commandId }) => commandId === event.command.commandId),
   },
 }).createMachine({
   id: 'session',
   initial: 'Starting',
   context: ({ input }) => ({
-    argoId: null,
+    argoId: 'argoId' in input ? input.argoId : null,
+    acceptedCommandIds: [],
     first: input,
     nativeId: null,
     queue: [],
@@ -136,10 +169,23 @@ export const sessionMachine = setup({
   states: {
     Starting: {
       on: {
-        'Harness ready': {
-          target: 'Persisting',
-          actions: 'rememberNativeId',
-        },
+        'Harness ready': [
+          {
+            guard: 'hasArgoId',
+            target: 'Draining',
+            actions: [
+              'rememberNativeId',
+              'rememberAcceptedCommand',
+            ],
+          },
+          {
+            target: 'Persisting',
+            actions: [
+              'rememberNativeId',
+              'rememberAcceptedCommand',
+            ],
+          },
+        ],
         'Harness failed': {
           target: 'Failed',
           actions: 'rememberHarnessFailure',
@@ -154,12 +200,7 @@ export const sessionMachine = setup({
       invoke: {
         id: 'persist',
         src: 'persist',
-        input: ({ context }) => ({
-          harness: context.first.harness,
-          projectId: context.first.projectId,
-          nativeId: context.nativeId,
-          firstPrompt: context.first.prompt,
-        }),
+        input: ({ context }) => persistenceInput(context.first, context.nativeId),
         onDone: {
           target: 'Draining',
           actions: 'rememberArgoId',
@@ -206,7 +247,10 @@ export const sessionMachine = setup({
       on: {
         'Harness ready': {
           target: 'Draining',
-          actions: 'dequeue',
+          actions: [
+            'rememberAcceptedCommand',
+            'dequeue',
+          ],
         },
         'Harness failed': {
           target: 'Failed',

@@ -9,7 +9,7 @@ import {
   turnEnded,
   turnMarkerView,
 } from '../../feed/rows/turn-marker-state'
-import type { useSessions } from '../../use-sessions'
+import type { SessionRoster } from '../../types'
 import {
   type ComposerIdentity,
   composerIdentityKey,
@@ -33,7 +33,7 @@ export function canRestoreInterruptedMarker(
 
 export function useComposerMarker(options: {
   marker: ReturnType<typeof useTurnMarker>
-  roster: ReturnType<typeof useSessions>['roster']
+  roster: SessionRoster | null
   identity: ComposerIdentity
   selectedRow: SessionRosterRow | null
   sessionId: string | null

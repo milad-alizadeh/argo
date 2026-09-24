@@ -103,6 +103,21 @@ async function submitFromComposer({
   }
 }
 
+function useSessionAvailability(selectedSessionId: string | null) {
+  const indexedSessionId =
+    selectedSessionId !== null &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(selectedSessionId)
+      ? selectedSessionId
+      : null
+  return useQuery({
+    ...trpc.sessionFeed.queryOptions({
+      sessionId: indexedSessionId ?? '00000000-0000-4000-8000-000000000000',
+    }),
+    enabled: indexedSessionId !== null,
+    refetchOnWindowFocus: true,
+  })
+}
+
 export function SessionComposerArea({
   permission,
   questionPending,
@@ -116,6 +131,7 @@ export function SessionComposerArea({
   const catalogQuery = useQuery(trpc.harnessCatalogRead.queryOptions({ harness: harness.harness }))
   const catalogRefresh = useMutation(trpc.harnessCatalogRefresh.mutationOptions())
   const sessionSubmit = useMutation(trpc.sessionSubmit.mutationOptions())
+  const history = useSessionAvailability(selectedSessionId)
   const location = useLocation()
   const catalog = catalogQuery.data?.info ?? null
   const catalogFailure = catalogFailureOf(catalogQuery.data, catalogQuery.isError)
@@ -132,7 +148,8 @@ export function SessionComposerArea({
     rows: roster?.sessions ?? [],
   })
   // The Roster already knows another process runs it live, so no Send is offered at all (ADR-0040).
-  if (session?.locked === true) return <OpenElsewhere onRetry={null} />
+  if (session?.locked === true || history.data?.availability.state === 'unavailable')
+    return <OpenElsewhere onRetry={() => void history.refetch()} />
   const refreshCatalog = () =>
     catalogRefresh.mutate(
       { harness: harness.harness },

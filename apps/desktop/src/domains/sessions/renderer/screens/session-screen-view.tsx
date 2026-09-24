@@ -5,7 +5,6 @@ import { BackgroundWork } from '../feed/rows/background-work'
 import { SessionInspector } from '../inspector/session-inspector'
 import type { SessionFeed } from '../types'
 import { SessionWorkButtons } from '../work/session-work-buttons'
-import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
 import { backgroundWorkLinks } from './background-work-links'
 import { SessionComposerArea, SessionHandoffFacts } from './session-screen-details'
 import { SessionShell } from './session-shell'
@@ -54,22 +53,7 @@ function Inspector({ model }: { model: SessionScreenModel }) {
   )
 }
 
-function InspectorBar({ model }: { model: SessionScreenModel }) {
-  if (model.evidence !== null) return null
-  if (model.shell !== null && model.shellOutput?.state === 'available') {
-    return <SessionWorkInspectorHeader work={{ kind: 'shell', command: model.shell }} />
-  }
-  if (model.delegation !== null) {
-    return (
-      <SessionWorkInspectorHeader
-        work={{
-          kind: 'delegation',
-          delegation: model.delegation,
-          usage: model.subagentUsage[model.delegation.id] ?? { tokens: null, model: null },
-        }}
-      />
-    )
-  }
+function InspectorBar() {
   return null
 }
 
@@ -131,7 +115,7 @@ export function SessionScreenView() {
         headerControls={<WorkButtons model={model} />}
         session={session}
         inspector={<Inspector model={model} />}
-        inspectorBar={<InspectorBar model={model} />}
+        inspectorBar={<InspectorBar />}
         defaultInspectorCollapsed={true}
         // Picking work in the header opens the inspector, the way opening recorded evidence does.
         // Nothing opens it on its own any more: the header buttons are what say a Session has

@@ -6,9 +6,9 @@ export const sessionTable = sqliteTable(
     argoId: text('argo_id').primaryKey(),
     harness: text('harness').notNull(),
     nativeId: text('native_id').notNull(),
-    projectId: text('project_id')
-      .notNull()
-      .references(() => project.id, { onDelete: 'cascade' }),
+    projectId: text('project_id').references(() => project.id, { onDelete: 'set null' }),
+    vendorTitle: text('vendor_title'),
+    workingDirectory: text('working_directory'),
     firstPrompt: text('first_prompt'),
     updatedAt: integer('updated_at').notNull(),
   },

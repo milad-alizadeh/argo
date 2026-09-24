@@ -21,4 +21,3 @@ export {
   turnEnded,
   turnMarkerView,
 } from './rows/turn-marker-state'
-export { retrySessionFeed, sessionFeedQuery } from './session-feed-query'

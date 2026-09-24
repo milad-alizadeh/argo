@@ -1,6 +1,6 @@
 import { assign, fromPromise, setup } from 'xstate'
 import { z } from 'zod'
-import type { SessionStartInput } from '@/domains/sessions/contract/session-start'
+import type { SessionMachineInput } from '@/domains/sessions/contract/session-start'
 import type { CodexRequest } from '../app-server/codex-app-server-machine'
 
 export type CodexInputItem =
@@ -24,7 +24,7 @@ export type CodexSessionResult = {
   nativeId: string
 }
 
-type TurnCommand = Pick<SessionStartInput, 'attachments' | 'prompt' | 'setup'>
+type TurnCommand = Pick<SessionMachineInput, 'attachments' | 'prompt' | 'setup'>
 
 const threadStartResultSchema = z.object({
   thread: z.object({
@@ -38,8 +38,30 @@ const turnStartResultSchema = z.object({
 })
 
 export const codexSessionActors = (request: CodexRequest) => ({
-  startThread: fromPromise(({ input }: { input: SessionStartInput }) =>
-    request(
+  startThread: fromPromise(async ({ input }: { input: SessionMachineInput }) => {
+    if ('argoId' in input) {
+      const inspectedId = await request(
+        'thread/read',
+        {
+          threadId: input.nativeId,
+          includeTurns: false,
+        },
+        (value) => threadStartResultSchema.parse(value).thread.id,
+      )
+      if (inspectedId !== input.nativeId) throw new Error('Codex read a different Session.')
+      return request(
+        'thread/resume',
+        {
+          threadId: input.nativeId,
+        },
+        (value) => {
+          const nativeId = threadStartResultSchema.parse(value).thread.id
+          if (nativeId !== input.nativeId) throw new Error('Codex resumed a different Session.')
+          return nativeId
+        },
+      )
+    }
+    return request(
       'thread/start',
       {
         cwd: input.cwd,
@@ -48,8 +70,8 @@ export const codexSessionActors = (request: CodexRequest) => ({
         sandbox: input.setup.mode,
       },
       (value) => threadStartResultSchema.parse(value).thread.id,
-    ),
-  ),
+    )
+  }),
   startTurn: fromPromise(
     ({
       input,
@@ -78,9 +100,9 @@ export const codexSessionActors = (request: CodexRequest) => ({
 
 export const codexSessionMachine = setup({
   types: {
-    input: {} as SessionStartInput,
+    input: {} as SessionMachineInput,
     context: {} as {
-      input: SessionStartInput
+      input: SessionMachineInput
       nativeId: string | null
       pending: TurnCommand | null
       inputItems: CodexInputItem[]
@@ -120,7 +142,7 @@ export const codexSessionMachine = setup({
         },
   },
   actors: {
-    startThread: fromPromise<string, SessionStartInput>(async () => {
+    startThread: fromPromise<string, SessionMachineInput>(async () => {
       throw new Error('Codex thread actor was not provided.')
     }),
     startTurn: fromPromise<

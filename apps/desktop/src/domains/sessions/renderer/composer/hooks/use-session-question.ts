@@ -8,8 +8,6 @@ import {
 } from '../../session-contract-error'
 import { invalidateSessionRoster } from '../../session-queries'
 
-// A pending question already reaches the renderer through the Feed's own `ask` row (tool-feed.ts),
-// so this hook only decides — there is nothing to poll (unlike `useSessionPermission`).
 export function useSessionQuestion(sessionId: string | null) {
   const [failure, setFailure] = useState<{ questionId: string; message: string } | null>(null)
   const queryClient = useQueryClient()
@@ -30,8 +28,6 @@ export function useSessionQuestion(sessionId: string | null) {
   }
   return {
     decide,
-    // Kept in the retry: a failed answer stays exactly as the reader composed it, so this names
-    // which row's answer is still available rather than clearing it.
     failureFor: (questionId: string) =>
       failure?.questionId === questionId ? failure.message : null,
     answeringId: decision.isPending ? (decision.variables?.questionId ?? null) : null,

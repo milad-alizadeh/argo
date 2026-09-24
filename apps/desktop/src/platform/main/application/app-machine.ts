@@ -1,11 +1,15 @@
 import { type ActorRefFrom, assertEvent, setup } from 'xstate'
 import { sessionSupervisorMachine } from '@/domains/sessions/main/live/session-supervisor-machine'
+import { sessionIndexActor } from '@/domains/sessions/main/storage/session-index-actor'
+import { sessionSyncMachine } from '@/domains/sessions/main/sync/session-sync-machine'
 import { harnessCatalogMachine } from '@/harnesses/catalog/harness-catalog-machine'
 import { harnessCatalogLoadActor } from '@/harnesses/catalog/runtime'
+import { claudeSessionSync } from '@/harnesses/claude/session/claude-sync'
 import {
   codexAppServerMachine,
   codexAppServerProcessActor,
 } from '@/harnesses/codex/app-server/codex-app-server-machine'
+import { codexSessionSync } from '@/harnesses/codex/session/codex-sync'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 
 const codexMachine = codexAppServerMachine.provide({
@@ -16,6 +20,16 @@ const codexMachine = codexAppServerMachine.provide({
 const catalogMachine = harnessCatalogMachine.provide({
   actors: {
     loadCatalog: harnessCatalogLoadActor,
+  },
+})
+const claudeSyncMachine = sessionSyncMachine.provide({
+  actors: {
+    sync: claudeSessionSync,
+  },
+})
+const codexSyncMachine = sessionSyncMachine.provide({
+  actors: {
+    sync: codexSessionSync,
   },
 })
 
@@ -40,6 +54,9 @@ export const appMachine = setup({
     codex: codexMachine,
     catalog: catalogMachine,
     sessions: sessionSupervisorMachine,
+    sessionIndex: sessionIndexActor,
+    claudeSync: claudeSyncMachine,
+    codexSync: codexSyncMachine,
   },
 }).createMachine({
   id: 'application',
@@ -68,6 +85,35 @@ export const appMachine = setup({
         return {
           database: event.input.database,
         }
+      },
+    },
+    {
+      id: 'sessionIndex',
+      systemId: 'sessionIndex',
+      src: 'sessionIndex',
+      input: ({ event }) => {
+        assertEvent(event, 'xstate.init')
+        return {
+          database: event.input.database,
+        }
+      },
+    },
+    {
+      id: 'claudeSync',
+      systemId: 'claudeSync',
+      src: 'claudeSync',
+      input: ({ event }) => {
+        assertEvent(event, 'xstate.init')
+        return {}
+      },
+    },
+    {
+      id: 'codexSync',
+      systemId: 'codexSync',
+      src: 'codexSync',
+      input: ({ event }) => {
+        assertEvent(event, 'xstate.init')
+        return {}
       },
     },
   ],

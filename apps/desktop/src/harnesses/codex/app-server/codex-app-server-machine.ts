@@ -17,6 +17,21 @@ export type RequestParams = {
     approvalPolicy: string
     sandbox: string
   }
+  'thread/resume': {
+    threadId: string
+  }
+  'thread/list': {
+    cursor: string | null
+    limit: number
+    sourceKinds: string[]
+    sortKey: 'updated_at'
+    sortDirection: 'desc'
+    useStateDbOnly: boolean
+  }
+  'thread/read': {
+    threadId: string
+    includeTurns: boolean
+  }
   'turn/start': {
     threadId: string
     input: Array<unknown>

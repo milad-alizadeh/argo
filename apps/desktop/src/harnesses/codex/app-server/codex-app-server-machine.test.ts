@@ -8,6 +8,7 @@ import { adjacencyMapToArray, getAdjacencyMap, getShortestPaths } from 'xstate/g
 import { codexModelCatalogFixture } from '../../../../test-fixtures/sessions/codex-model-catalog.fixture'
 import { readCodexHarnessInfo } from '../catalog'
 import {
+  type CodexChannel,
   codexAppServerMachine,
   codexAppServerProcessActor,
   requestCodexAppServer,

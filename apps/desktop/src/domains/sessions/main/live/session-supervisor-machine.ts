@@ -10,8 +10,14 @@ import {
   codexSessionMachine,
 } from '@/harnesses/codex/session/codex-session-machine'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
-import type { SessionSendInput, SessionStartInput } from '../../contract/session-start'
+import type {
+  ExistingSessionInput,
+  SessionSendInput,
+  SessionStartInput,
+} from '../../contract/session-start'
+import { readSessionIdentity, type SessionIdentity } from '../storage/session-records'
 import { createSessionUpsert } from '../storage/session-upsert'
+import type { sessionSyncMachine } from '../sync/session-sync-machine'
 import { sessionMachine } from './session-machine'
 
 type SessionActor = ActorRefFrom<typeof sessionMachine>
@@ -76,6 +82,43 @@ function acceptsSetupChange(actor: SessionActor, setup: SessionSendInput['setup'
       opening.mode === setup.mode
     )
   return opening.mode === setup.mode
+}
+
+function existingSessionInput(
+  identity: SessionIdentity,
+  command: SessionSendInput,
+): ExistingSessionInput | null {
+  if (identity.workingDirectory === null) return null
+  switch (identity.harness) {
+    case 'claude':
+    case 'codex':
+      return {
+        ...command,
+        argoId: identity.argoId,
+        harness: identity.harness,
+        nativeId: identity.nativeId,
+        projectId: identity.projectId,
+        cwd: identity.workingDirectory,
+      }
+    default:
+      return null
+  }
+}
+
+function resumedHarness(
+  harness: ExistingSessionInput['harness'],
+  codex: ActorRefFrom<typeof codexAppServerMachine> | undefined,
+) {
+  switch (harness) {
+    case 'claude':
+      return claudeSessionMachine
+    case 'codex':
+      return codex === undefined
+        ? null
+        : codexSessionMachine.provide({
+            actors: codexSessionActors(requestCodexAppServer(codex)),
+          })
+  }
 }
 
 export const sessionSupervisorMachine = setup({
@@ -155,6 +198,36 @@ export const sessionSupervisorMachine = setup({
         } else if (snapshot.matches('Failed')) {
           settled = true
           input.reply.reject(new Error(snapshot.context.failure ?? 'Session start failed.'))
+        }
+      })
+      return () => {
+        subscription.unsubscribe()
+        if (!settled) input.reply.reject(new Error('Session supervisor is closed.'))
+      }
+    }),
+    replyWhenReady: fromCallback<
+      {
+        type: 'Stop'
+      },
+      {
+        session: SessionActor
+        reply: StartReply
+      }
+    >(({ input }) => {
+      let settled = false
+      const subscription = input.session.subscribe((snapshot) => {
+        if (settled) return
+        if (snapshot.matches('Ready')) {
+          settled = true
+          const sessionId = snapshot.context.argoId
+          if (sessionId === null) input.reply.reject(new Error('Session resume lost its identity.'))
+          else
+            input.reply.resolve({
+              sessionId,
+            })
+        } else if (snapshot.matches('Failed') || snapshot.matches('Closed')) {
+          settled = true
+          input.reply.reject(new Error(snapshot.context.failure ?? 'Session resume failed.'))
         }
       })
       return () => {
@@ -298,44 +371,125 @@ export const sessionSupervisorMachine = setup({
             }
       },
     }),
-    forwardSend: ({ context, event, self }) => {
-      if (event.type !== 'Send') return
-      const actor = context.sessions[event.input.sessionId]
-      if (actor === undefined) {
-        event.reply.reject(new Error('Session is not live.'))
-        return
-      }
-      if (
-        !setupIsAvailable(
-          self.system.get('catalog') as ActorRefFrom<typeof harnessCatalogMachine> | undefined,
-          actor.getSnapshot().context.first.harness,
-          event.input.setup,
-        )
-      ) {
-        event.reply.reject(new Error('The selected Session setup is no longer available.'))
-        return
-      }
-      if (!acceptsSetupChange(actor, event.input.setup)) {
-        event.reply.reject(
-          new Error('Changing this Session setup requires starting a new Session.'),
-        )
-        return
-      }
-      const snapshot = actor.getSnapshot()
-      if (snapshot.matches('Failed') || snapshot.matches('Closed')) {
-        event.reply.reject(
-          new Error(snapshot.context.failure ?? 'Session is not available for sends.'),
-        )
-        return
-      }
-      actor.send({
-        type: 'Send',
-        command: event.input,
-      })
-      event.reply.resolve({
-        sessionId: event.input.sessionId,
-      })
-    },
+    forwardSend: assign({
+      sessions: ({ context, event, self, spawn }) => {
+        if (event.type !== 'Send') return context.sessions
+        const actor = context.sessions[event.input.sessionId]
+        const resumeIndexedSession = () => {
+          const identity = readSessionIdentity(context.database, event.input.sessionId)
+          if (identity === null) {
+            event.reply.reject(new Error('Session is not indexed.'))
+            return context.sessions
+          }
+          switch (identity.harness) {
+            case 'claude':
+            case 'codex': {
+              const syncId = `${identity.harness}Sync` as 'claudeSync' | 'codexSync'
+              const sync = self.system.get(syncId) as
+                | ActorRefFrom<typeof sessionSyncMachine>
+                | undefined
+              sync?.send({
+                type: 'Priority sync',
+              })
+              break
+            }
+            default:
+              break
+          }
+          const input = existingSessionInput(identity, event.input)
+          if (input === null) {
+            event.reply.reject(new Error('Session has no supported vendor resume location.'))
+            return context.sessions
+          }
+          if (
+            !setupIsAvailable(
+              self.system.get('catalog') as ActorRefFrom<typeof harnessCatalogMachine> | undefined,
+              input.harness,
+              input.setup,
+            )
+          ) {
+            event.reply.reject(new Error('The selected Session setup is no longer available.'))
+            return context.sessions
+          }
+          const harness = resumedHarness(
+            input.harness,
+            self.system.get('codex') as ActorRefFrom<typeof codexAppServerMachine> | undefined,
+          )
+          if (harness === null) {
+            event.reply.reject(new Error('Codex app-server actor is unavailable.'))
+            return context.sessions
+          }
+          const resumed = spawn(
+            sessionMachine.provide({
+              actors: {
+                harness,
+                persist: fromPromise<
+                  string,
+                  {
+                    projectId: string
+                    harness: string
+                    nativeId: string | null
+                    firstPrompt: string
+                    workingDirectory: string
+                  }
+                >(async () => {
+                  throw new Error('An existing Session must not create another identity.')
+                }),
+              },
+            }),
+            {
+              input,
+            },
+          )
+          spawn('replyWhenReady', {
+            input: {
+              session: resumed,
+              reply: event.reply,
+            },
+          })
+          return {
+            ...context.sessions,
+            [identity.argoId]: resumed,
+          }
+        }
+        if (actor === undefined) return resumeIndexedSession()
+        if (
+          !setupIsAvailable(
+            self.system.get('catalog') as ActorRefFrom<typeof harnessCatalogMachine> | undefined,
+            actor.getSnapshot().context.first.harness,
+            event.input.setup,
+          )
+        ) {
+          event.reply.reject(new Error('The selected Session setup is no longer available.'))
+          return context.sessions
+        }
+        if (!acceptsSetupChange(actor, event.input.setup)) {
+          event.reply.reject(
+            new Error('Changing this Session setup requires starting a new Session.'),
+          )
+          return context.sessions
+        }
+        const snapshot = actor.getSnapshot()
+        if (snapshot.matches('Failed') || snapshot.matches('Closed')) {
+          event.reply.reject(
+            new Error(snapshot.context.failure ?? 'Session is not available for sends.'),
+          )
+          const { [event.input.sessionId]: _closed, ...remaining } = context.sessions
+          return remaining
+        }
+        actor.send({
+          type: 'Send',
+          command: event.input,
+        })
+        spawn('replyWhenReady', {
+          input: {
+            session: actor,
+            reply: event.reply,
+          },
+        })
+        return context.sessions
+      },
+    }),
   },
 }).createMachine({
   id: 'sessionSupervisor',
