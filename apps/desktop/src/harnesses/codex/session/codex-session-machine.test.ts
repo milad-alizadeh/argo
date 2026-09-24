@@ -26,7 +26,9 @@ test('starts the first Codex turn before becoming ready', async () => {
   const calls: string[] = []
   const request: CodexRequest = async (method, _params, parse) => {
     calls.push(method)
-    return parse(method === 'thread/start' ? { thread: { id: 'thread-1' } } : {})
+    return parse(
+      method === 'thread/start' ? { thread: { id: 'thread-1' } } : { turn: { id: 'turn-1' } },
+    )
   }
   const actor = createActor(createCodexSessionMachine(request), {
     input: {
@@ -50,7 +52,9 @@ test('starts later Codex prompts on the persisted thread', async () => {
       method,
       threadId: method === 'turn/start' && 'threadId' in params ? params.threadId : undefined,
     })
-    return parse(method === 'thread/start' ? { thread: { id: 'thread-1' } } : {})
+    return parse(
+      method === 'thread/start' ? { thread: { id: 'thread-1' } } : { turn: { id: 'turn-1' } },
+    )
   }
   const actor = createActor(createCodexSessionMachine(request), {
     input: {

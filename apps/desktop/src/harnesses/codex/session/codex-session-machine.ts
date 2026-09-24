@@ -69,6 +69,11 @@ const threadStartResultSchema = z.object({
     id: z.string().min(1),
   }),
 })
+const turnStartResultSchema = z.object({
+  turn: z.object({
+    id: z.string().min(1),
+  }),
+})
 
 export function createCodexSessionMachine(request: CodexRequest) {
   return setup({
@@ -121,7 +126,7 @@ export function createCodexSessionMachine(request: CodexRequest) {
               model: input.command.setup.model,
               effort: input.command.setup.effort,
             },
-            (value) => value,
+            (value) => turnStartResultSchema.parse(value).turn.id,
           )
         },
       ),

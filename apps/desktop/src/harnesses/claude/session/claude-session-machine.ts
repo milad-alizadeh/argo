@@ -1,9 +1,29 @@
-import { type Query, query, type SDKUserMessage } from '@anthropic-ai/claude-agent-sdk'
+import {
+  type PermissionMode,
+  type Query,
+  query,
+  type SDKUserMessage,
+} from '@anthropic-ai/claude-agent-sdk'
 import { assign, fromPromise, setup } from 'xstate'
 import type { SessionStartInput } from '@/domains/sessions/contract/session-start'
 import { claudeCliEnvironment } from '../cli-environment'
 
 type Send = Pick<SessionStartInput, 'prompt'>
+
+const permissionModes: Record<string, PermissionMode> = {
+  default: 'default',
+  acceptEdits: 'acceptEdits',
+  bypassPermissions: 'bypassPermissions',
+  plan: 'plan',
+  dontAsk: 'dontAsk',
+  auto: 'auto',
+}
+
+function permissionMode(value: string): PermissionMode {
+  const mode = permissionModes[value]
+  if (mode !== undefined) return mode
+  throw new Error(`Unsupported Claude permission mode: ${value}`)
+}
 
 function userMessage(prompt: string): SDKUserMessage {
   return {
@@ -49,7 +69,7 @@ export function createClaudeSessionMachine() {
             cwd: input.cwd,
             sessionId: nativeId,
             model: input.setup.model,
-            permissionMode: input.setup.mode as never,
+            permissionMode: permissionMode(input.setup.mode),
             env: claudeCliEnvironment(),
           },
         })

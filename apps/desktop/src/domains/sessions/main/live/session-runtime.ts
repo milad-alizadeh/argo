@@ -50,17 +50,20 @@ function waitForVendor(
 }
 
 function createVendorSession(start: SessionStartInput, codexRequest: CodexRequest): VendorSession {
-  if (start.harness === 'claude')
-    return waitForVendor(
-      createActor(createClaudeSessionMachine(), { input: start }).start(),
-      'Claude Session start failed.',
-      'Claude Session send failed.',
-    )
-  return waitForVendor(
-    createActor(createCodexSessionMachine(codexRequest), { input: start }).start(),
-    'Codex Session start failed.',
-    'Codex Session send failed.',
-  )
+  switch (start.harness) {
+    case 'claude':
+      return waitForVendor(
+        createActor(createClaudeSessionMachine(), { input: start }).start(),
+        'Claude Session start failed.',
+        'Claude Session send failed.',
+      )
+    case 'codex':
+      return waitForVendor(
+        createActor(createCodexSessionMachine(codexRequest), { input: start }).start(),
+        'Codex Session start failed.',
+        'Codex Session send failed.',
+      )
+  }
 }
 
 function createLiveSession(
