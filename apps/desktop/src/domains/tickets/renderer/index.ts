@@ -1,9 +1,2 @@
-// The renderer capabilities other product domains may use. Ticket feature internals stay private.
+// The Ticket settings surface stays available while its request hooks are rebuilt.
 export { SourceSettings } from './connection'
-export {
-  useConnection,
-  useConnectSource,
-  useDisconnectSource,
-  useSources,
-  useTicketList,
-} from './hooks'

@@ -1,11 +1,11 @@
 import type { BrowserWindow } from 'electron'
+import { PROJECT_SETUP_CHANGED_CHANNEL } from '@/domains/projects/contract/contract'
 import type { ProjectStore } from '../sqlite-store'
 import type { ProjectSetupRuntime } from './actors/project-setup-actors'
 import { createProjectSetupRegistry } from './persistence/project-setup-registry'
 import { projectSetupBridgeApi } from './project-setup-bridge-api'
 
 const registries = new WeakMap<object, ReturnType<typeof createProjectSetupRegistry>>()
-const changedChannel = 'argo:project:setup:changed'
 
 export function createProjectSetupBridge(
   window: BrowserWindow,
@@ -14,7 +14,7 @@ export function createProjectSetupBridge(
 ) {
   const registry = registryFor(projects, runtime)
   const unsubscribe = registry.subscribeAll((_projectId, snapshot) => {
-    window.webContents.send(changedChannel, {
+    window.webContents.send(PROJECT_SETUP_CHANGED_CHANNEL, {
       version: 1,
       type: 'project.setup.snapshot',
       requestId: 'subscription',

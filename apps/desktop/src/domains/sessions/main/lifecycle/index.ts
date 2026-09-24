@@ -2,6 +2,6 @@ export type { OwnershipLedger, OwnershipStanding } from './ownership/ownership-l
 export { createOwnershipLedger, isProcessAlive } from './ownership/ownership-ledger'
 export { isLiveElsewhere } from './status/live-elsewhere'
 export { LIVE_ACTIVITY_SILENCE_MS } from './status/liveness'
-export { managedRow, mergeManagedRoster } from './status/managed-row'
+export { managedRow } from './status/managed-row'
 export { rollupSessionStatus } from './status/session-status-rollup'
 export { createTitleLedger } from './status/title-ledger'

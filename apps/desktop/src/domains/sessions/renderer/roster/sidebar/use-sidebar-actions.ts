@@ -12,11 +12,8 @@ export const SELECTED_SESSION_KEY = 'argo.selected-session-id'
 // What a row's menu and a row's click do, each with one identity for as long as its inputs hold. The
 // roster's rows are memoized, so a handler rebuilt on every render would re-render all of them on
 // each read of the open Session.
-export function useSidebarActions(options: {
-  disconnectTicket: (sessionId: string) => void
-  projectPath: string | null
-}) {
-  const { projectPath, disconnectTicket: disconnect } = options
+export function useSidebarActions(options: { projectPath: string | null }) {
+  const { projectPath } = options
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const lastHarness = useComposerStore(({ harness }) => harness)
@@ -64,7 +61,5 @@ export function useSidebarActions(options: {
       },
       [navigate, pending, queryClient],
     ),
-
-    unlinkTicket: useCallback((session: Session) => void disconnect(session.id), [disconnect]),
   }
 }

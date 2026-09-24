@@ -138,12 +138,10 @@ const meta = {
   },
   args: {
     onArchiveSelected: fn(),
-    onLinkTicket: fn(),
     onNew: fn(),
     onOpenTicket: fn(),
     onRename: fn(async (_session, name) => name),
     onSelect: fn(),
-    onUnlinkTicket: fn(),
     selectedSessionId: null,
   },
 } satisfies Meta<typeof RosterHarness>

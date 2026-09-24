@@ -20,8 +20,6 @@ export * from '../model'
 export * from '../model'
 export * from '../model'
 export * from '../model'
-export * from '../ticket-link-contract'
-export * from './search-contract'
 
 // One drive request table for every Harness (#2030): `start` names its Harness, and every other drive
 // operation routes by the Session's owner, resolved from the reader's owner lookup.

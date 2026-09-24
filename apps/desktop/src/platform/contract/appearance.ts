@@ -1,7 +1,6 @@
 // The appearance contract, shared by the bundled main process and renderer. System, Light and
 // Dark, with System the default and System following the operating system (#1820).
 import { z } from 'zod'
-import { type ContractError, errorFactory, errorSchema, message } from '@/shared/messages'
 
 export const APPEARANCE_CHANGED_CHANNEL = 'argo:appearance:changed'
 
@@ -21,41 +20,6 @@ export const appearanceStateSchema = z.strictObject({
   dark: z.boolean(),
 })
 export type AppearanceState = z.infer<typeof appearanceStateSchema>
-
-export const appearanceReplySchema = message('appearance.state', {
-  appearance: appearanceSchema,
-  dark: z.boolean(),
-})
-export type AppearanceReply = z.infer<typeof appearanceReplySchema>
-
-export const APPEARANCE_ERRORS = {
-  'access-denied': 'Argo cannot change the appearance from here.',
-  'unsupported-version': 'This Appearance contract version is not supported.',
-  'invalid-request': 'The Appearance request is invalid.',
-  'invalid-response': 'Argo received an invalid Appearance response.',
-  'connection-lost': 'The connection to Argo was lost.',
-} as const
-export type AppearanceErrorCode = keyof typeof APPEARANCE_ERRORS
-export type AppearanceError = ContractError<'appearance.error', AppearanceErrorCode>
-export const appearanceError = errorFactory('appearance.error', APPEARANCE_ERRORS)
-const appearanceErrorSchema = errorSchema('appearance.error', APPEARANCE_ERRORS)
-
-// Appearance has two operations on their own channels: `get` reads the current state, `set`
-// changes it. Both reply with the same state shape, or the domain's own error.
-export const APPEARANCE_OPERATIONS = {
-  get: {
-    name: 'appearance.get',
-    channel: 'argo:appearance:get',
-    request: message('appearance.get', {}),
-    reply: appearanceReplySchema.or(appearanceErrorSchema),
-  },
-  set: {
-    name: 'appearance.set',
-    channel: 'argo:appearance:set',
-    request: message('appearance.set', { appearance: appearanceSchema }),
-    reply: appearanceReplySchema.or(appearanceErrorSchema),
-  },
-} as const
 
 export const DEFAULT_APPEARANCE: Appearance = 'system'
 

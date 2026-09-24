@@ -126,12 +126,10 @@ export function Roster({
         onFetchNextPage={onFetchNextPage}
         onFetchNextSearchPage={onFetchNextSearchPage}
         onFocus={focus.setFocusedSessionId}
-        onLinkTicket={actions.onLinkTicket}
         onOpenTicket={actions.onOpenTicket}
         onRename={setRenameTarget}
         onSelect={sessions.select}
         onToggleSelect={selection.toggle}
-        onUnlinkTicket={actions.onUnlinkTicket}
         renamedTitles={sessions.renamedTitles}
         rows={rows}
         selectedIds={selection.selectedIds}

@@ -19,12 +19,10 @@ export function RosterVirtualList({
   onFetchNextPage,
   onFetchNextSearchPage,
   onFocus,
-  onLinkTicket,
   onOpenTicket,
   onRename,
   onSelect,
   onToggleSelect,
-  onUnlinkTicket,
   renamedTitles,
   rows,
   selectedIds,
@@ -62,10 +60,8 @@ export function RosterVirtualList({
     >
       <RosterContextMenu
         onArchive={onArchive}
-        onLinkTicket={onLinkTicket}
         onOpenTicket={onOpenTicket}
         onRename={onRename}
-        onUnlinkTicket={onUnlinkTicket}
         renamedTitles={renamedTitles}
         rows={rows}
       >

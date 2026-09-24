@@ -1,40 +1,57 @@
 import { contextBridge, ipcRenderer, webFrame, webUtils } from 'electron'
 import './platform/preload/zod-jitless'
-import { createAccountClient } from '@/domains/accounts/preload/client'
-import { createHarnessSignInClient } from '@/domains/harness-signin/preload/client'
-import { createProjectClient } from '@/domains/projects/preload/client'
-import { createCodexCompactionClient } from '@/domains/sessions/contract/codex-compaction'
-import { createManagedSessionClient } from '@/domains/sessions/next/preload/managed-session-client'
-import { createSessionHarnessent } from '@/domains/sessions/preload/client'
-import { createTicketClient } from '@/domains/tickets/preload/client'
-import { createPlatformClient } from '@/platform/preload/client'
+import {
+  PROJECT_SETUP_CHANGED_CHANNEL,
+  type ProjectSetupSnapshot,
+  projectSetupSnapshotSchema,
+} from '@/domains/projects/contract/contract'
+import type { SessionProjection } from '@/domains/sessions/next/contract/session-projection-contract'
+import {
+  MANAGED_SESSION_PROJECTION_CHANNEL,
+  managedSessionProjectionEventSchema,
+} from '@/domains/sessions/next/ipc/managed-session-contract'
+import type { AppearanceState } from '@/platform/contract/appearance'
+import { APPEARANCE_CHANGED_CHANNEL, isAppearanceState } from '@/platform/contract/appearance'
+import { COMMAND_CHANNEL } from '@/platform/contract/commands'
+import { isWatchTopic, WATCHED_CHANGED_CHANNEL, type WatchTopic } from '@/platform/contract/watch'
 import { developmentIdentityFromArguments } from '@/platform/preload/development-identity'
 
-const invoke = (channel: string, request: unknown) => ipcRenderer.invoke(channel, request)
-
-const subscribe = (channel: string, listener: (value: unknown) => void) => {
-  const forward = (_event: unknown, value: unknown) => listener(value)
+function subscribe<Value>(channel: string, listener: (value: Value) => void): () => void {
+  const forward = (_event: Electron.IpcRendererEvent, value: Value) => listener(value)
   ipcRenderer.on(channel, forward)
-  return () => {
-    ipcRenderer.off(channel, forward)
-  }
+  return () => ipcRenderer.off(channel, forward)
 }
 
-// The renderer receives named operations, never the IPC object or a caller-selected channel.
 contextBridge.exposeInMainWorld('argo', {
-  ...createProjectClient(invoke, subscribe),
-  ...createAccountClient(invoke),
-  ...createHarnessSignInClient(invoke),
-  ...createTicketClient(invoke),
-  ...createSessionHarnessent(invoke),
-  ...createManagedSessionClient(invoke, subscribe),
-  ...createCodexCompactionClient(invoke),
-  ...createPlatformClient({
-    invoke,
-    subscribe,
-    zoomFactor: () => webFrame.getZoomFactor(),
-    pathForFile: (file) => webUtils.getPathForFile(file),
-    versions: { electron: process.versions.electron, chrome: process.versions.chrome },
-    development: developmentIdentityFromArguments(process.argv),
-  }),
+  onWatchedChanged(listener: (topic: WatchTopic) => void) {
+    return subscribe<unknown>(WATCHED_CHANGED_CHANNEL, (value) => {
+      if (isWatchTopic(value)) listener(value)
+    })
+  },
+  onAppearanceChanged(listener: (state: AppearanceState) => void) {
+    return subscribe<unknown>(APPEARANCE_CHANGED_CHANNEL, (value) => {
+      if (isAppearanceState(value)) listener(value)
+    })
+  },
+  onCommand(listener: (command: string) => void) {
+    return subscribe<unknown>(COMMAND_CHANNEL, (value) => {
+      if (typeof value === 'string') listener(value)
+    })
+  },
+  onProjectSetupChanged(listener: (snapshot: ProjectSetupSnapshot) => void) {
+    return subscribe<unknown>(PROJECT_SETUP_CHANGED_CHANNEL, (value) => {
+      const parsed = projectSetupSnapshotSchema.safeParse(value)
+      if (parsed.success) listener(parsed.data)
+    })
+  },
+  onManagedSessionProjection(listener: (projection: SessionProjection) => void) {
+    return subscribe<unknown>(MANAGED_SESSION_PROJECTION_CHANNEL, (value) => {
+      const parsed = managedSessionProjectionEventSchema.safeParse(value)
+      if (parsed.success) listener(parsed.data.projection)
+    })
+  },
+  zoomFactor: () => webFrame.getZoomFactor(),
+  pathForFile: (file: File) => webUtils.getPathForFile(file),
+  versions: { electron: process.versions.electron, chrome: process.versions.chrome },
+  development: developmentIdentityFromArguments(process.argv),
 })

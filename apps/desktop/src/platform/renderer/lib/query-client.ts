@@ -20,7 +20,7 @@ const isFailure = (reply: { type: string }): reply is ContractFailure =>
   reply.type === 'ticket.error' ||
   reply.type === 'harness-sign-in.error'
 
-// The clients never reject (`createDomainClient`), so a thrown value is always a contract error.
+// A structured failure reply becomes a rejected query state.
 export async function settle<Success extends { type: string }>(
   pending: Promise<Success | ContractFailure>,
 ): Promise<Success> {

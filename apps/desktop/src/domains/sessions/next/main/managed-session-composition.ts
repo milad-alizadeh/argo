@@ -3,10 +3,9 @@ import type { ProjectPort } from '@/domains/projects/main'
 import { SESSION_CODEX_EXECUTABLE_ENV } from '@/domains/sessions/contract/proof-protocol'
 import { claudeSessionAdapterRegistration } from '@/harnesses/claude/agent-sdk/claude-session-adapter-registration'
 import { createCodexSessionAdapterRegistration } from '@/harnesses/codex/drive/session/codex-session-adapter-registration'
-import { codexTranscriptsRoot } from '@/harnesses/codex/sessions/discovery/roots'
+import { codexTranscriptsRoot } from '@/harnesses/codex/history/roots'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
-import { attachManagedSessionBridge } from './managed-session-bridge'
 import { createSessionAdapterRegistry } from './session-adapter-registry'
 import { createSessionService } from './session-service'
 
@@ -17,7 +16,6 @@ export function attachManagedSessions(
     home: string
     projects: ProjectPort
     proofEnabled: boolean
-    rendererURL: string
   },
 ) {
   const adapters = createSessionAdapterRegistry(
@@ -47,6 +45,5 @@ export function attachManagedSessions(
     ],
   )
   void adapters.readModelCatalog('codex')
-  attachManagedSessionBridge(window, { adapters, rendererURL: options.rendererURL })
   return adapters
 }
