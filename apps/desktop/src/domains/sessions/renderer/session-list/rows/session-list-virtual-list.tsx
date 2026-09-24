@@ -13,6 +13,7 @@ import {
 import { HarnessLogo } from '../../harness/harness-logo'
 import type { PendingSession } from '../../session-creation'
 import type { SelectionModifier } from '../hooks/session-list-selection'
+import type { SessionListLiveStatus } from '../hooks/use-session-list-page'
 import { moveFocus } from './session-list-arrow-keys'
 import './session-list-item.css'
 
@@ -44,6 +45,7 @@ function SessionButton({
   onSelect,
   checked,
   onToggleSelect,
+  liveStatus,
 }: {
   session: SessionListItemOrPending
   selected: boolean
@@ -51,8 +53,14 @@ function SessionButton({
   onSelect: (sessionId: string) => void
   checked: boolean
   onToggleSelect: (sessionId: string, modifier: SelectionModifier) => void
+  liveStatus: SessionListLiveStatus
 }) {
   const { t } = useTranslation('sessions')
+  const statusLabels: Record<SessionListLiveStatus, string> = {
+    running: t('sessionListStatusRunning'),
+    idle: t('sessionListStatusIdle'),
+    unknown: t('sessionListStatusUnknown'),
+  }
   const id = idOf(session)
   const archived = 'argoId' in session && session.archived
   function handleClick(event: MouseEvent<HTMLButtonElement>) {
@@ -74,18 +82,18 @@ function SessionButton({
     >
       <span aria-hidden="true" className="relative flex h-5 w-4 shrink-0 items-center">
         <span className="session-list-harness-mark">
-          <span data-slot="harness-logo">
+          <span data-active={liveStatus === 'running'} data-slot="harness-logo">
             <HarnessLogo harness={session.harness} />
           </span>
         </span>
         <span
           className="session-list-session-status absolute -right-0.5 bottom-0 size-(--size-state-dot) rounded-full"
-          data-variant={'argoId' in session ? 'unknown' : 'idle'}
+          data-variant={'argoId' in session ? liveStatus : 'idle'}
           data-slot="session-status"
         />
       </span>
       <span className="sr-only">
-        {'argoId' in session ? t('sessionListStatusUnknown') : t('sessionListStatusStarting')}
+        {'argoId' in session ? statusLabels[liveStatus] : t('sessionListStatusStarting')}
       </span>
       {checked ? <span className="sr-only">{t('bulkSelect.selected')}</span> : null}
       <span className="min-w-0 flex-1">
@@ -121,6 +129,7 @@ function VirtualRows({
   selectedIds,
   onSelect,
   onToggleSelect,
+  liveStatuses,
   items,
   totalSize,
   measureElement,
@@ -130,6 +139,7 @@ function VirtualRows({
   selectedIds: ReadonlySet<string>
   onSelect: (sessionId: string) => void
   onToggleSelect: (sessionId: string, modifier: SelectionModifier) => void
+  liveStatuses: ReadonlyMap<string, SessionListLiveStatus>
   items: VirtualItem[]
   totalSize: number
   measureElement: (element: Element | null) => void
@@ -165,6 +175,9 @@ function VirtualRows({
                   onSelect={onSelect}
                   checked={selectedIds.has(idOf(session))}
                   onToggleSelect={onToggleSelect}
+                  liveStatus={
+                    'argoId' in session ? (liveStatuses.get(session.argoId) ?? 'unknown') : 'idle'
+                  }
                 />
               )}
             </li>
@@ -223,6 +236,7 @@ export function SessionListVirtualList({
   hasNextPage,
   isFetchingNextPage,
   onFetchNextPage,
+  liveStatuses,
 }: {
   sessions: readonly SessionListItemOrPending[]
   selectedSessionId: string | null
@@ -234,6 +248,7 @@ export function SessionListVirtualList({
   hasNextPage: boolean
   isFetchingNextPage: boolean
   onFetchNextPage: () => void
+  liveStatuses: ReadonlyMap<string, SessionListLiveStatus>
 }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [target, setTarget] = useState<SessionListItem | null>(null)
@@ -280,6 +295,7 @@ export function SessionListVirtualList({
             selectedIds={selectedIds}
             onSelect={onSelect}
             onToggleSelect={onToggleSelect}
+            liveStatuses={liveStatuses}
             items={items}
             totalSize={virtualizer.getTotalSize()}
             measureElement={virtualizer.measureElement}

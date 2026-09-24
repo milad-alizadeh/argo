@@ -12,7 +12,6 @@ import { trpc } from '@/platform/renderer/trpc-client'
 import { useComposerStore } from '../composer/hooks/use-composer-store'
 import { useSessionPermission } from '../composer/hooks/use-session-permission'
 import { useSessionQuestion } from '../composer/hooks/use-session-question'
-import { workInspectorReveal } from '../inspector/work-inspector-reveal'
 import { SessionContractError as SessionReadError } from '../session-contract-error'
 import { readableSessionId } from '../session-creation'
 import type { SessionEvidence, SessionFeedRow } from '../types'
@@ -107,11 +106,7 @@ export function useSessionScreenModel() {
   })
   const permission = useSessionPermission(readableSessionId(selectedSessionId))
   const question = useSessionQuestion(readableSessionId(selectedSessionId))
-  const artifacts = useWorkArtifacts({
-    work,
-    feedRows: indexed.feed?.rows ?? [],
-  })
-  const inspectorReveal = workInspectorReveal(workReveal, artifacts.shell, artifacts.shellOutput)
+  const artifacts = useWorkArtifacts({ work, feedRows: indexed.feed?.rows ?? [] })
   return {
     isNewSession: sessionId === 'new',
     selectedSessionId,
@@ -133,7 +128,7 @@ export function useSessionScreenModel() {
     question,
     work,
     pick,
-    workReveal: inspectorReveal,
+    workReveal,
     ...artifacts,
   }
 }

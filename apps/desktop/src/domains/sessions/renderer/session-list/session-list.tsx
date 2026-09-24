@@ -89,8 +89,17 @@ export function SessionList({
   selectedSessionId: string | null
 }) {
   const { t } = useTranslation('sessions')
-  const { search, setSearch, status, setStatus, syncStatus, sessionList, visible, selection } =
-    useSessionListPage(projectId, selectedSessionId)
+  const {
+    search,
+    setSearch,
+    status,
+    setStatus,
+    syncStatus,
+    sessionList,
+    visible,
+    selection,
+    liveStatuses,
+  } = useSessionListPage(projectId, selectedSessionId)
   useSyncFailure('Claude', syncStatus.data?.claude.failure ?? null)
   useSyncFailure('Codex', syncStatus.data?.codex.failure ?? null)
   const rename = useIndexedRename()
@@ -116,6 +125,7 @@ export function SessionList({
       ) : null}
       <SessionListVirtualList
         sessions={visible}
+        liveStatuses={liveStatuses}
         selectedSessionId={selectedSessionId}
         onSelect={(sessionId) => {
           selection.clear()

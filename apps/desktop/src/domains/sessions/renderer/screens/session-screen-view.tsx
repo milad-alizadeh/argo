@@ -3,7 +3,6 @@ import type { FeedLiveFacts } from '../feed/document/feed-live-facts'
 import { BackgroundWork } from '../feed/rows/background-work'
 import { SessionInspector } from '../inspector/session-inspector'
 import type { SessionFeed } from '../types'
-import { SessionWorkButtons } from '../work/session-work-buttons'
 import { backgroundWorkLinks } from './background-work-links'
 import { SessionComposerArea } from './session-screen-details'
 import { SessionShell } from './session-shell'
@@ -15,39 +14,22 @@ function pendingQuestionId(feed: SessionFeed | null): string | null {
   return row?.id ?? null
 }
 
-function WorkButtons({ model }: { model: SessionScreenModel }) {
-  const { pick, selectedSessionId, work } = model
-  return (
-    <SessionWorkButtons
-      subagents={model.subagents}
-      subagentUsage={model.subagentUsage}
-      onSelectDelegation={(subagentId) =>
-        pick({ sessionId: selectedSessionId, subagentId, shellId: null })
-      }
-      onSelectShell={(shellId) => pick({ sessionId: selectedSessionId, subagentId: null, shellId })}
-      selectedDelegationId={work.subagentId}
-      selectedShellId={work.shellId}
-      shell={[]}
-    />
-  )
-}
-
 function Inspector({ model }: { model: SessionScreenModel }) {
   const { evidence, navigate, setEvidence } = model
   return (
     <SessionInspector
       activeEvidenceId={evidence?.id ?? null}
-      delegation={model.delegation}
-      delegationFeed={model.delegationFeed}
-      delegationFeedError={model.delegationFeedError}
+      delegation={null}
+      delegationFeed={null}
+      delegationFeedError={null}
       evidence={evidence}
       sessionId={model.selectedSessionId}
       handoff={null}
       onOpenEvidence={setEvidence}
       onOpenSession={(sessionId) => navigate(`/sessions/${sessionId}`)}
-      onRetryDelegationFeed={model.retryDelegationFeed}
-      shell={model.shell}
-      shellOutput={model.shellOutput}
+      onRetryDelegationFeed={() => {}}
+      shell={null}
+      shellOutput={null}
     />
   )
 }
@@ -90,7 +72,7 @@ function indexedTitle({ indexedSession }: SessionScreenModel): string | null {
 export function SessionScreenView() {
   const model = useSessionScreenModel()
   const { evidence, feed, feedError, isNewSession, question } = model
-  const { navigate, retryFeed, selectedSessionId, setEvidence, workReveal } = model
+  const { navigate, retryFeed, selectedSessionId, setEvidence } = model
   const openSession = (sessionId: string) => navigate(`/sessions/${sessionId}`)
   const answerQuestion = (_sessionId: string, questionId: string, answers: QuestionAnswer[]) =>
     void question.decide(questionId, answers)
@@ -126,14 +108,10 @@ export function SessionScreenView() {
             />
           )
         }
-        headerControls={<WorkButtons model={model} />}
         inspector={<Inspector model={model} />}
         inspectorBar={<InspectorBar />}
         defaultInspectorCollapsed={true}
-        // Picking work in the header opens the inspector, the way opening recorded evidence does.
-        // Nothing opens it on its own any more: the header buttons are what say a Session has
-        // background work (#1582 AC1).
-        inspectorReveal={evidence?.id ?? workReveal ?? undefined}
+        inspectorReveal={evidence?.id ?? undefined}
       />
     </BackgroundWork.Provider>
   )

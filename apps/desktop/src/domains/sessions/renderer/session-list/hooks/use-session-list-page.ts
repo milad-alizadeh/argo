@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useQueries, useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { trpc, trpcClient } from '@/platform/renderer/trpc-client'
 import { useSessionCreationStore } from '../../session-creation'
@@ -7,6 +7,35 @@ import { useSessionListFilterStore } from './use-session-list-filter-store'
 import { useSessionListSelection } from './use-session-list-selection'
 
 const PAGE_SIZE = 50
+
+export type SessionListLiveStatus = 'idle' | 'running' | 'unknown'
+
+function liveStatusOf(
+  reading: { live: boolean; working: boolean } | undefined,
+): SessionListLiveStatus {
+  if (reading?.working) return 'running'
+  if (reading?.live) return 'idle'
+  return 'unknown'
+}
+
+function useSessionListLiveStatuses(sessionIds: readonly string[]) {
+  const live = useQueries({
+    queries: sessionIds.map((sessionId) => ({
+      ...trpc.sessionFeed.queryOptions({ sessionId, source: 'live' }),
+      staleTime: Infinity,
+    })),
+  })
+  return useMemo(
+    () =>
+      new Map(
+        sessionIds.map((sessionId, index) => {
+          const reading = live[index]?.data
+          return [sessionId, liveStatusOf(reading)] as const
+        }),
+      ),
+    [live, sessionIds],
+  )
+}
 
 function sessionListOptions(
   projectId: string | null,
@@ -62,5 +91,24 @@ export function useSessionListPage(projectId: string | null, selectedSessionId: 
     .filter((session) => 'argoId' in session && !session.archived)
     .map((session) => ('argoId' in session ? session.argoId : session.id))
   const selection = useSessionListSelection(selectableIds, selectedSessionId)
-  return { search, setSearch, status, setStatus, syncStatus, sessionList, visible, selection }
+  const liveStatuses = useSessionListLiveStatuses(
+    visible.filter((session) => 'argoId' in session).map((session) => session.argoId),
+  )
+  useWatchedQueries(
+    'session-live',
+    [...liveStatuses.keys()].map((sessionId) =>
+      trpc.sessionFeed.queryKey({ sessionId, source: 'live' }),
+    ),
+  )
+  return {
+    search,
+    setSearch,
+    status,
+    setStatus,
+    syncStatus,
+    sessionList,
+    visible,
+    selection,
+    liveStatuses,
+  }
 }

@@ -273,6 +273,8 @@
   "sessionListStatusAll": "All",
   "sessionListStatusUnknown": "Status unknown",
   "sessionListStatusStarting": "Starting",
+  "sessionListStatusRunning": "Running",
+  "sessionListStatusIdle": "Idle",
   "loaderPrototype": {
     "sessions": "Sessions",
     "label": "{{name}} loader",
