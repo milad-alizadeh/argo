@@ -4,7 +4,7 @@ import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 import type { HarnessControl } from '../../harness/harnesses'
-import type { ComposerAttachment } from '../hooks/use-composer-store'
+import { EMPTY_COMPOSER_ATTACHMENTS, useComposerStore } from '../hooks/use-composer-store'
 import { ModeMenu } from './mode-menu'
 import { RunSetupMenu, type TurnSetupControlProps } from './run-setup-menu'
 import { WorkspaceMenu, type WorkspaceMenuControlProps } from './workspace-menu'
@@ -26,8 +26,7 @@ function AddContextButton({ onOpen }: { onOpen: () => void }) {
 }
 
 export function ComposerToolbar({
-  draft,
-  attachments,
+  sessionId,
   disabled = false,
   sendAvailable = true,
   onOpenContextPicker,
@@ -40,8 +39,7 @@ export function ComposerToolbar({
   onInterrupt,
   interruptRef,
 }: {
-  draft: string
-  attachments: ComposerAttachment[]
+  sessionId: string
   disabled?: boolean
   sendAvailable?: boolean
   onOpenContextPicker: () => void
@@ -55,6 +53,10 @@ export function ComposerToolbar({
   interruptRef: Parameters<typeof Button>[0]['ref']
 }) {
   const { t } = useTranslation('sessions')
+  const draft = useComposerStore(({ drafts }) => drafts[sessionId] ?? '')
+  const attachments = useComposerStore(
+    ({ attachments }) => attachments[sessionId] ?? EMPTY_COMPOSER_ATTACHMENTS,
+  )
   const [isInterrupting, setInterrupting] = useState(false)
   return (
     <div className="flex items-center gap-1 p-(--spacing-shell-item) @[36rem]:gap-2">

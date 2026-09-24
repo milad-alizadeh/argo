@@ -26,6 +26,10 @@ export type PendingTurn = {
   attachments: import('@/domains/sessions/contract/drive').SessionAttachmentInput[]
 }
 
+export const EMPTY_COMPOSER_ATTACHMENTS: ComposerAttachment[] = []
+export const EMPTY_COMPOSER_TICKETS: ComposerTicketContext[] = []
+export const EMPTY_PENDING_TURNS: PendingTurn[] = []
+
 const attachmentSchema = z.object({
   id: z.string(),
   path: z.string(),

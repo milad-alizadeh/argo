@@ -1,30 +1,25 @@
 import { useCallback, useEffect, useRef } from 'react'
 import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
-import { type PendingTurn, useComposerStore } from '../hooks/use-composer-store'
+import { EMPTY_PENDING_TURNS, useComposerStore } from '../hooks/use-composer-store'
 import type { Send } from '../hooks/use-send'
 import type { TurnSetup } from '../turn-setup/turn-setup'
 
 export type { PendingTurn } from '../hooks'
 
-const NO_PENDING_TURNS: PendingTurn[] = []
-
 export function usePendingTurns({
   isRunning,
   onSend,
-  onSteer,
   sessionId,
 }: {
   isRunning: boolean
   onSend?: Send
-  onSteer?: (text: string, attachments: SessionAttachmentInput[]) => Promise<boolean>
   sessionId: string
 }) {
   const pendingTurns = useComposerStore(
-    ({ pendingTurns }) => pendingTurns[sessionId] ?? NO_PENDING_TURNS,
+    ({ pendingTurns }) => pendingTurns[sessionId] ?? EMPTY_PENDING_TURNS,
   )
   const add = useComposerStore(({ addPendingTurn }) => addPendingTurn)
   const remove = useComposerStore(({ removePendingTurn }) => removePendingTurn)
-  const reorder = useComposerStore(({ reorderPendingTurn }) => reorderPendingTurn)
   const wasRunning = useRef(isRunning)
 
   const addPendingTurn = useCallback(
@@ -34,22 +29,6 @@ export function usePendingTurns({
   )
 
   const removePendingTurn = useCallback((id: string) => remove(sessionId, id), [remove, sessionId])
-
-  const reorderPendingTurn = useCallback(
-    (sourceId: string, targetId: string) => {
-      reorder(sessionId, sourceId, targetId)
-    },
-    [reorder, sessionId],
-  )
-  const steerPendingTurn = useCallback(
-    async (turn: PendingTurn) => {
-      if (onSteer === undefined) return false
-      const steered = await onSteer(turn.text, turn.attachments)
-      if (steered) removePendingTurn(turn.id)
-      return steered
-    },
-    [onSteer, removePendingTurn],
-  )
 
   useEffect(() => {
     const becameIdle = wasRunning.current && !isRunning
@@ -61,5 +40,5 @@ export function usePendingTurns({
     })
   }, [isRunning, onSend, pendingTurns, removePendingTurn])
 
-  return { addPendingTurn, pendingTurns, removePendingTurn, reorderPendingTurn, steerPendingTurn }
+  return { addPendingTurn }
 }
