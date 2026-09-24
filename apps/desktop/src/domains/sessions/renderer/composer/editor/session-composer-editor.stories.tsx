@@ -3,8 +3,8 @@ import { useState } from 'react'
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { useComposerStore } from '../hooks'
+import { ComposerForm, type ComposerFormProps } from '../layout/composer-form'
 import { ComposerStory } from './composer-story-samples'
-import { SessionComposer, type SessionComposerProps } from './session-composer'
 
 const FRAME = 'mx-auto max-w-4xl p-8'
 
@@ -49,7 +49,7 @@ function ClosableComposerStory({
   onSend,
 }: {
   harness?: 'claude' | 'codex'
-  onSend: SessionComposerProps['onSend']
+  onSend: ComposerFormProps['onSend']
 }) {
   const [open, setOpen] = useState(true)
 
@@ -59,21 +59,19 @@ function ClosableComposerStory({
         {open ? 'Leave the Session' : 'Return to the Session'}
       </Button>
       {open ? (
-        <SessionComposer harness={{ harness }} onSend={onSend} sessionId="closable-session" />
+        <ComposerForm harness={{ harness }} onSend={onSend} sessionId="closable-session" />
       ) : null}
     </>
   )
 }
 
 // The send never settles, so the composer keeps its draft while delivery is uncertain.
-function UnsettledSendStory({ onSend }: { onSend: SessionComposerProps['onSend'] }) {
-  return <SessionComposer onSend={onSend} plan={null} sessionId="unsettled-session" />
+function UnsettledSendStory({ onSend }: { onSend: ComposerFormProps['onSend'] }) {
+  return <ComposerForm onSend={onSend} plan={null} sessionId="unsettled-session" />
 }
 
-function CodexComposerStory({ onSend }: { onSend: SessionComposerProps['onSend'] }) {
-  return (
-    <SessionComposer harness={{ harness: 'codex' }} onSend={onSend} sessionId="codex-session" />
-  )
+function CodexComposerStory({ onSend }: { onSend: ComposerFormProps['onSend'] }) {
+  return <ComposerForm harness={{ harness: 'codex' }} onSend={onSend} sessionId="codex-session" />
 }
 
 const MARKDOWN_SHORTCUTS: Array<{
@@ -138,7 +136,7 @@ function MarkdownShortcutsStory() {
   return (
     <>
       {MARKDOWN_SHORTCUTS.map(({ sessionId }) => (
-        <SessionComposer key={sessionId} onSend={async () => true} sessionId={sessionId} />
+        <ComposerForm key={sessionId} onSend={async () => true} sessionId={sessionId} />
       ))}
     </>
   )

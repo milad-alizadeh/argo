@@ -1,11 +1,10 @@
 import { $convertFromMarkdownString, TRANSFORMERS } from '@lexical/markdown'
 import { $createParagraphNode, $getRoot, type LexicalEditor } from 'lexical'
 import { type RefObject, useCallback, useRef } from 'react'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import type { TurnSetupControlProps } from '../toolbar/run-setup-menu'
-import { type PendingTurn, usePendingTurns } from '../tray/use-pending-turns'
+import { usePendingTurns } from '../tray/use-pending-turns'
 import { supportedSetup, type TurnSetup } from '../turn-setup/turn-setup'
-import { useAttachmentTransfer, useComposerAttachments } from './use-composer-attachments'
+import { useComposerAttachments } from './use-composer-attachments'
 import { useComposerStore } from './use-composer-store'
 import { type Send, useSend } from './use-send'
 
@@ -20,10 +19,6 @@ function turnSetupOf(setup: TurnSetupControlProps | null, turnSetup: TurnSetup |
 function useComposerDraft(sessionId: string, editorRef: RefObject<LexicalEditor | null>) {
   const draft = useComposerStore(({ drafts }) => drafts[sessionId] ?? '')
   const setDraft = useComposerStore(({ setDraft }) => setDraft)
-  const changeDraft = useCallback(
-    (text: string) => setDraft(sessionId, text),
-    [sessionId, setDraft],
-  )
   const clearDraft = useCallback(
     (editor = editorRef.current) => {
       // Selecting the fresh paragraph matters: without it, the next keystroke finds no
@@ -42,55 +37,30 @@ function useComposerDraft(sessionId: string, editorRef: RefObject<LexicalEditor 
     },
     [editorRef, sessionId, setDraft],
   )
-  return { changeDraft, clearDraft, draft, restoreDraft }
+  return { clearDraft, draft, restoreDraft }
 }
 
-// A queued Turn brought back to edit restores its text and, where still offered, its own setup
-// choices rather than the composer's current ones.
-function useEditPendingTurn(
-  editorRef: RefObject<LexicalEditor | null>,
-  changeDraft: (text: string) => void,
-  setup: TurnSetupControlProps | null,
-) {
-  return useCallback(
-    (turn: PendingTurn) => {
-      changeDraft(turn.text)
-      editorRef.current?.update(() => $convertFromMarkdownString(turn.text, TRANSFORMERS))
-      window.requestAnimationFrame(() => editorRef.current?.focus())
-      if (setup && turn.setup !== undefined)
-        setup.onChange(supportedSetup(setup.choices, turn.setup, setup.value))
-    },
-    [changeDraft, editorRef, setup],
-  )
-}
-
-// Everything a SessionComposer render needs: the draft, the attachment strip, the pending-turn
-// queue and the callbacks that tie them together, so the component itself is just prop wiring.
 export function useSessionComposerState({
   isRunning,
   onSend,
-  onSteer,
   sessionId,
   setup,
 }: {
   isRunning: boolean
-  onSend: Send
-  onSteer?: (text: string, attachments: SessionAttachmentInput[]) => Promise<boolean>
+  onSend?: Send
   sessionId: string
   setup: TurnSetupControlProps | null
 }) {
   const editorRef = useRef<LexicalEditor>(null)
-  const { changeDraft, clearDraft, draft, restoreDraft } = useComposerDraft(sessionId, editorRef)
-  const { attachments, attach, remove, markError, clear, tickets, addTicket, removeTicket } =
-    useComposerAttachments(sessionId)
-  const onEdit = useEditPendingTurn(editorRef, changeDraft, setup)
+  const { clearDraft, draft, restoreDraft } = useComposerDraft(sessionId, editorRef)
+  const { attachments, markError, clear } = useComposerAttachments(sessionId)
   const sendPendingTurn: Send = useCallback(
     (text, turnSetup, pendingAttachments) =>
-      onSend(text, turnSetupOf(setup, turnSetup ?? undefined), pendingAttachments),
+      onSend?.(text, turnSetupOf(setup, turnSetup ?? undefined), pendingAttachments) ??
+      Promise.resolve(false),
     [onSend, setup],
   )
-  const { addPendingTurn, pendingTurns, removePendingTurn, reorderPendingTurn, steerPendingTurn } =
-    usePendingTurns({ isRunning, onSend: sendPendingTurn, onSteer, sessionId })
+  const { addPendingTurn } = usePendingTurns({ isRunning, onSend: sendPendingTurn, sessionId })
   const send = useSend({
     addPendingTurn,
     attachments,
@@ -104,23 +74,5 @@ export function useSessionComposerState({
     restoreDraft,
     setupValue: setup?.value,
   })
-  const { attachFiles, dropFiles } = useAttachmentTransfer(attach)
-  return {
-    attachments,
-    tickets,
-    addTicket,
-    attachFiles,
-    changeDraft,
-    draft,
-    dropFiles,
-    editorRef,
-    onEdit,
-    pendingTurns,
-    removeAttachment: remove,
-    removeTicket,
-    removePendingTurn,
-    reorderPendingTurn,
-    steerPendingTurn,
-    send,
-  }
+  return { editorRef, send }
 }

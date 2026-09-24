@@ -2,12 +2,12 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { claudeComposerModelCatalogFixture } from '../../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
-import { claudeTurnSetup } from '../turn-setup/claude-turn-setup'
+import { claudeChoices } from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
 import type { TurnSetupChoices } from '../turn-setup/turn-setup'
 import { ModeMenu } from './mode-menu'
 
 const CLAUDE_TURN_SETUP = (() => {
-  const choices = claudeTurnSetup(claudeComposerModelCatalogFixture())
+  const choices = claudeChoices(claudeComposerModelCatalogFixture())
   if (choices === null) throw new Error('The Claude story catalog has no usable model.')
   return choices
 })() satisfies TurnSetupChoices
@@ -22,7 +22,7 @@ function ModeStory() {
 }
 
 function AutoRestrictedModeStory() {
-  const choices = claudeTurnSetup(claudeComposerModelCatalogFixture())
+  const choices = claudeChoices(claudeComposerModelCatalogFixture())
   if (choices === null) throw new Error('The Claude story catalog has no usable model.')
   const [setup, setSetup] = useState({ model: 'sonnet', effort: 'medium', mode: 'manual' })
   return (

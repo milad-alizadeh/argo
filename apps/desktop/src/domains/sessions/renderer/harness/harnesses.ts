@@ -1,4 +1,6 @@
-export const SESSION_HARNESSES = ['claude', 'codex'] as const
+import { harnessSchema } from '@/harnesses/harness'
+
+export const SESSION_HARNESSES = harnessSchema.options
 export type SessionHarness = (typeof SESSION_HARNESSES)[number]
 
 // What each harness is called.

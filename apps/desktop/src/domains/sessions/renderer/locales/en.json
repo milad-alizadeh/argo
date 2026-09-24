@@ -134,6 +134,13 @@
       "permissions": "{{harness}} permissions",
       "loadingModels": "Loading {{harness}} models…",
       "modelCatalogError": "Argo could not load {{harness}} models.",
+      "catalogFailure": {
+        "not-installed": "{{harness}} is not installed.",
+        "not-signed-in": "Sign in to {{harness}} to load its models.",
+        "invalid-response": "{{harness}} returned model data that Argo cannot read.",
+        "unavailable": "{{harness}} is unavailable. Try again.",
+        "load-failed": "Argo could not load {{harness}} models. Try again."
+      },
       "refreshModels": "Refresh models",
       "model": "Model"
     },

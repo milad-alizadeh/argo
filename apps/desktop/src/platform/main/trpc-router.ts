@@ -1,8 +1,17 @@
 import { initTRPC } from '@trpc/server'
-import { type SessionRouterContext, sessionRouter } from '@/domains/sessions/main/session-router'
+import {
+  type CatalogActor,
+  catalogReadProcedure,
+  catalogRefreshProcedure,
+} from '@/harnesses/catalog/catalog-read'
 
-const t = initTRPC.context<SessionRouterContext>().create()
+const t = initTRPC.create()
 
-export const appRouter = t.router({ sessions: sessionRouter })
+export function createAppRouter(actor: CatalogActor) {
+  return t.router({
+    harnessCatalogRead: catalogReadProcedure(actor),
+    harnessCatalogRefresh: catalogRefreshProcedure(actor),
+  })
+}
 
-export type AppRouter = typeof appRouter
+export type AppRouter = ReturnType<typeof createAppRouter>

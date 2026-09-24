@@ -1,10 +1,12 @@
 import type { LexicalEditor } from 'lexical'
-import type { DragEvent, RefObject } from 'react'
+import { type DragEvent, type RefObject, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SessionPlan } from '@/domains/sessions/contract/model/models'
 import type { HarnessControl } from '../../harness/harnesses'
 import { SessionContextBar } from '../context-bar/session-context-bar'
-import type { ComposerAttachment, ComposerTicketContext } from '../hooks/use-composer-store'
+import { useAttachmentTransfer } from '../hooks/use-composer-attachments'
+import { useComposerStore } from '../hooks/use-composer-store'
+import { activeReference } from '../references/composer-reference-menu'
 import { DraftContextPicker } from '../references/context-picker/draft-context-picker'
 import { ComposerToolbar } from '../toolbar/composer-toolbar'
 import type { TurnSetupControlProps } from '../toolbar/run-setup-menu'
@@ -12,35 +14,46 @@ import type { WorkspaceMenuControlProps } from '../toolbar/workspace-menu'
 import { ComposerEditorArea } from './composer-editor-area'
 
 type ComposerCardProps = {
-  attachments: ComposerAttachment[]
-  tickets: ComposerTicketContext[]
-  contextPickerOpen: boolean
   contextTokens: number | null | undefined
   contextWindowTokens: number | null | undefined
   disabled?: boolean
-  draft: string
   editorRef: RefObject<LexicalEditor | null>
   focusOnMount: boolean
   harness: HarnessControl | null
-  interruptRef: RefObject<HTMLButtonElement | null>
   isCompacting: boolean
   isHandingOff?: boolean
   isRunning: boolean
-  onAttach: () => void
-  onAddTicket: (ticket: Omit<ComposerTicketContext, 'id'>) => void
-  onContextPickerOpenChange: (open: boolean) => void
-  onChange: (text: string) => void
   onCompact?: () => Promise<boolean>
-  onDropFiles: (files: FileList) => void
   onHandoff?: () => Promise<boolean>
   onInterrupt?: () => Promise<boolean>
-  onRemoveAttachment: (id: string) => void
   onSend: () => void
   plan: SessionPlan | null
   sessionId: string
   setup: TurnSetupControlProps | null
-  catalogState?: { catalogError: boolean; refreshCatalog?: () => void }
+  catalogState?: {
+    catalogFailure: import('../toolbar/run-setup-menu').CatalogFailure | null
+    refreshCatalog?: () => void
+    sendAvailable?: boolean
+  }
   workspace: WorkspaceMenuControlProps | null
+}
+
+function useFocusInterruptOnCompactStart(isCompacting: boolean) {
+  const interruptRef = useRef<HTMLButtonElement>(null)
+  const wasCompacting = useRef(isCompacting)
+  useEffect(() => {
+    if (isCompacting && !wasCompacting.current) interruptRef.current?.focus()
+    wasCompacting.current = isCompacting
+  }, [isCompacting])
+  return interruptRef
+}
+
+function useContextPicker(draft: string) {
+  const [open, setOpen] = useState(false)
+  useEffect(() => {
+    if (activeReference(draft)?.trigger === '@') setOpen(true)
+  }, [draft])
+  return [open, setOpen] as const
 }
 
 function closeContextPicker(
@@ -54,40 +67,6 @@ function closeContextPicker(
 function dropFiles(event: DragEvent<HTMLFieldSetElement>, onDropFiles: (files: FileList) => void) {
   event.preventDefault()
   if (event.dataTransfer.files.length > 0) onDropFiles(event.dataTransfer.files)
-}
-
-function CardToolbar(
-  props: Pick<
-    ComposerCardProps,
-    | 'attachments'
-    | 'disabled'
-    | 'draft'
-    | 'harness'
-    | 'interruptRef'
-    | 'isRunning'
-    | 'onContextPickerOpenChange'
-    | 'onInterrupt'
-    | 'setup'
-    | 'workspace'
-    | 'catalogState'
-  >,
-) {
-  return (
-    <ComposerToolbar
-      attachments={props.attachments}
-      disabled={props.disabled}
-      draft={props.draft}
-      harness={props.harness}
-      interruptRef={props.interruptRef}
-      isRunning={props.isRunning}
-      onOpenContextPicker={() => props.onContextPickerOpenChange(true)}
-      onInterrupt={props.onInterrupt}
-      setup={props.setup}
-      workspace={props.workspace}
-      catalogError={props.catalogState?.catalogError}
-      refreshCatalog={props.catalogState?.refreshCatalog}
-    />
-  )
 }
 
 function ComposerContextBar(
@@ -117,62 +96,43 @@ function ComposerContextBar(
   )
 }
 
-function ComposerContextPicker(
-  props: Pick<
-    ComposerCardProps,
-    | 'contextPickerOpen'
-    | 'draft'
-    | 'onAddTicket'
-    | 'onAttach'
-    | 'onContextPickerOpenChange'
-    | 'editorRef'
-  >,
-) {
-  if (!props.contextPickerOpen) return null
+function ComposerContextPicker({
+  editorRef,
+  open,
+  sessionId,
+  setOpen,
+}: {
+  editorRef: RefObject<LexicalEditor | null>
+  open: boolean
+  sessionId: string
+  setOpen: (open: boolean) => void
+}) {
+  const draft = useComposerStore(({ drafts }) => drafts[sessionId] ?? '')
+  const addTicket = useComposerStore(({ addTicket }) => addTicket)
+  const addAttachments = useComposerStore(({ addAttachments }) => addAttachments)
+  const { attachFiles } = useAttachmentTransfer((paths) => addAttachments(sessionId, paths))
+  if (!open) return null
   return (
     <DraftContextPicker
-      draft={props.draft}
-      onAddTicket={props.onAddTicket}
-      onAttach={props.onAttach}
-      onClose={() => closeContextPicker(props.editorRef, props.onContextPickerOpenChange)}
-      editorRef={props.editorRef}
+      draft={draft}
+      onAddTicket={(ticket) => addTicket(sessionId, ticket)}
+      onAttach={() => void attachFiles()}
+      onClose={() => closeContextPicker(editorRef, setOpen)}
+      editorRef={editorRef}
     />
   )
 }
 
 // The card and the context bar pinned under it: everything below the pending-turns list.
-export function ComposerCard({
-  attachments,
-  tickets,
-  contextPickerOpen,
-  contextTokens,
-  contextWindowTokens,
-  disabled,
-  draft,
-  editorRef,
-  focusOnMount,
-  harness,
-  interruptRef,
-  isCompacting,
-  isHandingOff,
-  isRunning,
-  onAttach,
-  onAddTicket,
-  onContextPickerOpenChange,
-  onChange,
-  onCompact,
-  onDropFiles,
-  onHandoff,
-  onInterrupt,
-  onRemoveAttachment,
-  onSend,
-  plan,
-  sessionId,
-  setup,
-  workspace,
-  catalogState,
-}: ComposerCardProps) {
+export function ComposerCard(props: ComposerCardProps) {
   const { t } = useTranslation('sessions')
+  const draft = useComposerStore(({ drafts }) => drafts[props.sessionId] ?? '')
+  const addAttachments = useComposerStore(({ addAttachments }) => addAttachments)
+  const { dropFiles: dropAttachedFiles } = useAttachmentTransfer((paths) =>
+    addAttachments(props.sessionId, paths),
+  )
+  const [contextPickerOpen, setContextPickerOpen] = useContextPicker(draft)
+  const interruptRef = useFocusInterruptOnCompactStart(props.isCompacting)
   return (
     <div className="relative">
       {/* The editor takes the focus but the card wears the ring, so the ring follows the card's
@@ -180,59 +140,41 @@ export function ComposerCard({
       <fieldset
         aria-label={t('composer.cardLabel')}
         data-component="ComposerCard"
-        className={`@container relative z-10 flex min-w-0 flex-col overflow-visible rounded-xl border border-border bg-card shadow-(--shadow-surface) has-[[data-keyboard-focus=true]]:ring-2 has-[[data-keyboard-focus=true]]:ring-ring${plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}${disabled ? ' opacity-60' : ''}`}
+        className={`@container relative z-10 flex min-w-0 flex-col overflow-visible rounded-xl border border-border bg-card shadow-(--shadow-surface) has-[[data-keyboard-focus=true]]:ring-2 has-[[data-keyboard-focus=true]]:ring-ring${props.plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}${props.disabled ? ' opacity-60' : ''}`}
         onDragOver={(event: DragEvent<HTMLFieldSetElement>) => event.preventDefault()}
-        onDrop={(event) => dropFiles(event, onDropFiles)}
+        onDrop={(event) => dropFiles(event, dropAttachedFiles)}
       >
         <ComposerEditorArea
-          attachments={attachments}
           contextPickerOpen={contextPickerOpen}
-          tickets={tickets}
-          harness={harness?.harness ?? null}
-          draft={draft}
-          editorRef={editorRef}
-          focusOnMount={focusOnMount}
-          onChange={onChange}
-          onRemoveAttachment={onRemoveAttachment}
-          onSend={onSend}
-          plan={plan}
-          sessionId={sessionId}
+          harness={props.harness?.harness ?? null}
+          editorRef={props.editorRef}
+          focusOnMount={props.focusOnMount}
+          onSend={props.onSend}
+          plan={props.plan}
+          sessionId={props.sessionId}
         />
-        <CardToolbar
-          {...{
-            attachments,
-            disabled,
-            draft,
-            harness,
-            interruptRef,
-            isRunning,
-            onContextPickerOpenChange,
-            onInterrupt,
-            setup,
-            workspace,
-            catalogState,
-          }}
+        <ComposerToolbar
+          sessionId={props.sessionId}
+          disabled={props.disabled}
+          sendAvailable={props.catalogState?.sendAvailable}
+          harness={props.harness}
+          interruptRef={interruptRef}
+          isRunning={props.isRunning}
+          onOpenContextPicker={() => setContextPickerOpen(true)}
+          onInterrupt={props.onInterrupt}
+          setup={props.setup}
+          workspace={props.workspace}
+          catalogFailure={props.catalogState?.catalogFailure}
+          refreshCatalog={props.catalogState?.refreshCatalog}
         />
       </fieldset>
       <ComposerContextPicker
-        {...{
-          contextPickerOpen,
-          draft,
-          onAddTicket,
-          onAttach,
-          onContextPickerOpenChange,
-          editorRef,
-        }}
+        editorRef={props.editorRef}
+        open={contextPickerOpen}
+        sessionId={props.sessionId}
+        setOpen={setContextPickerOpen}
       />
-      <ComposerContextBar
-        contextTokens={contextTokens}
-        contextWindowTokens={contextWindowTokens}
-        harness={harness}
-        isCompacting={isCompacting}
-        isHandingOff={isHandingOff}
-        onCompact={onCompact}
-        onHandoff={onHandoff}
-      />
+      <ComposerContextBar {...props} />
     </div>
   )
 }

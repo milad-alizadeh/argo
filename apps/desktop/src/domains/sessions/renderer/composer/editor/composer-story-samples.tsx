@@ -3,13 +3,13 @@
 import { useState } from 'react'
 import type { SessionPlan } from '@/domains/sessions/contract/model/models'
 import { Button } from '@/platform/renderer/components/ui/button'
-import { SessionComposer, type SessionComposerProps } from './session-composer'
+import { ComposerForm, type ComposerFormProps } from '../layout/composer-form'
 
 export function ComposerStory({
   onSend,
   plan = null,
 }: {
-  onSend: SessionComposerProps['onSend']
+  onSend: ComposerFormProps['onSend']
   plan?: SessionPlan | null
 }) {
   const [sessionId, setSessionId] = useState('session-one')
@@ -24,7 +24,7 @@ export function ComposerStory({
           Session two
         </Button>
       </div>
-      <SessionComposer onSend={onSend} plan={plan} sessionId={sessionId} />
+      <ComposerForm onSend={onSend} plan={plan} sessionId={sessionId} />
     </>
   )
 }

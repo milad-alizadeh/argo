@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test'
 import type { Permission } from '@/domains/sessions/contract/ipc/contract'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
-import { PendingTurns } from './pending-turns'
+import { PendingTurnsView } from './pending-turns'
 import '../editor/composer-content.css'
 import { AttachmentTray } from './attachment-tray'
 
@@ -84,7 +84,7 @@ export const AboveTheQueue: Story = {
   render: (args) => (
     <>
       <PermissionPrompt {...args} />
-      <PendingTurns
+      <PendingTurnsView
         turns={[{ id: 'queued', text: 'Then run the linter', attachments: [] }]}
         onEdit={() => {}}
         onRemove={() => {}}
@@ -140,7 +140,7 @@ export const HandsFocusOn: Story = {
             return true
           }}
         />
-        <PendingTurns
+        <PendingTurnsView
           turns={[{ id: 'queued', text: 'Then run the linter', attachments: [] }]}
           onEdit={() => {}}
           onRemove={() => {}}

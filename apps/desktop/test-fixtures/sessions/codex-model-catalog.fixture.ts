@@ -1,4 +1,4 @@
-import type { CodexModelCatalog } from '../../src/domains/sessions/contract/codex-model-catalog'
+import type { CodexModelCatalog } from '@/harnesses/codex/catalog'
 
 export function codexModelCatalogFixture(): CodexModelCatalog {
   return {
