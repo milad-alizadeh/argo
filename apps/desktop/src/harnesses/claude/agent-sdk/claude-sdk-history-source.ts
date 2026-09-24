@@ -1,4 +1,5 @@
-import { getSessionMessages, listSessions } from '@anthropic-ai/claude-agent-sdk'
+import { createHash } from 'node:crypto'
+import { getSessionInfo, getSessionMessages, listSessions } from '@anthropic-ai/claude-agent-sdk'
 import { z } from 'zod'
 import {
   managedRosterRow,
@@ -7,22 +8,25 @@ import {
 } from '@/domains/sessions/contract/model/models'
 import { discoverRoster } from '@/domains/sessions/main/observation/reader/discover-roster'
 import type { SessionSource } from '@/domains/sessions/main/observation/reader/session-source'
+import { matchesSearchQuery } from '@/domains/sessions/main/projection/search/search-match'
 import {
   type ClaudeSdkHistory,
   readClaudeSessionMessages,
   readClaudeSessionPage,
+  readClaudeSessions,
 } from './claude-sdk-history'
 
+const textBlock = z.object({ type: z.literal('text'), text: z.string() })
 const messageText = z
-  .object({
-    content: z.union([
-      z.string(),
-      z
-        .array(z.object({ type: z.literal('text'), text: z.string() }))
-        .transform((blocks) => blocks.map((block) => block.text).join('')),
-    ]),
+  .object({ content: z.union([z.string(), z.array(z.unknown())]) })
+  .transform(({ content }) => {
+    if (typeof content === 'string') return content
+    const parts = content.flatMap((block) => {
+      const text = textBlock.safeParse(block)
+      return text.success ? [text.data.text] : []
+    })
+    return parts.length > 0 ? parts.join('') : null
   })
-  .transform(({ content }) => content)
 
 type StoredSession = Awaited<ReturnType<typeof readClaudeSessionPage>>[number]
 
@@ -116,11 +120,31 @@ function rosterRows(sessions: StoredSession[]) {
     .map((row) => ({ ...row, posture: 'watched' as const }))
 }
 
+async function searchClaudeHistory(
+  history: ClaudeSdkHistory,
+  managed: SessionRosterRow[],
+  query: string,
+) {
+  const sessions = await readClaudeSessions(history)
+  const discovered = await discoverRoster({
+    discovery: {
+      rows: rosterRows(sessions),
+      ...rosterStatistics(sessions),
+      nextCursor: null,
+      historyComplete: true,
+    },
+    managed,
+    joins: {},
+    projectRoot: null,
+  })
+  return discovered.rows.filter((row) => matchesSearchQuery(row, query))
+}
+
 function feedOf(messages: Awaited<ReturnType<typeof readClaudeSessionMessages>>): SessionFeedRow[] {
   return messages.flatMap((message) => {
     if (message.type === 'system') return []
     const text = messageText.safeParse(message.message)
-    if (!text.success) return []
+    if (!text.success || text.data === null) return []
     return [
       {
         shape: 'prose' as const,
@@ -132,6 +156,78 @@ function feedOf(messages: Awaited<ReturnType<typeof readClaudeSessionMessages>>)
   })
 }
 
+function discoverClaudeRosterPage(options: {
+  sessions: StoredSession[]
+  managed: SessionRosterRow[]
+  projectRoot: string | null | undefined
+  offset: number
+  pageComplete: boolean
+  pageStats: ReturnType<typeof rosterStatistics>
+  sdkOmitted: number
+}) {
+  const { sessions, managed, projectRoot, offset, pageComplete, pageStats, sdkOmitted } = options
+  reportPageIssues(sessions)
+  if (pageComplete && sdkOmitted > 0) {
+    console.warn('Claude SDK omitted transcript records from the Session roster', { sdkOmitted })
+  }
+  return discoverRoster({
+    discovery: {
+      rows: rosterRows(sessions),
+      ...pageStats,
+      nextCursor: pageComplete ? null : String(offset + sessions.length),
+      historyComplete: pageComplete && sdkOmitted === 0,
+    },
+    managed,
+    joins: {},
+    projectRoot,
+  })
+}
+
+function createRosterRefresh(
+  history: ClaudeSdkHistory,
+  sessions: Map<string, StoredSession>,
+  currentRoster: Map<string, StoredSession>,
+) {
+  return async (request?: Parameters<SessionSource['discoverSessions']>[0]) => {
+    const offset = offsetFor(request?.cursor)
+    const page = await readClaudeSessionPage(history, offset)
+    if (offset === 0) currentRoster.clear()
+    for (const session of page) {
+      sessions.set(session.sessionId, session)
+      currentRoster.set(session.sessionId, session)
+    }
+    return { sessions: page, offset }
+  }
+}
+
+async function readObservedClaudeFeed(options: {
+  history: ClaudeSdkHistory
+  managedSessions: SessionRosterRow[]
+  sessions: Map<string, StoredSession>
+  sessionId: string
+}) {
+  const { history, managedSessions, sessions, sessionId } = options
+  const managed = managedSessions.some((row) => row.id === sessionId)
+  const messages = await readClaudeSessionMessages(history, sessionId)
+  const info =
+    !managed && messages.length === 0 ? await history.getSessionInfo?.(sessionId) : undefined
+  const cachedSession = sessions.get(sessionId)
+  const cachedTitle = cachedSession === undefined ? '' : titleOf(cachedSession).text
+  if (
+    !managed &&
+    messages.length === 0 &&
+    info === undefined &&
+    (!cachedSession || cachedTitle.length === 0)
+  )
+    return null
+  const rows = feedOf(messages)
+  return {
+    chainId: sessionId,
+    revision: createHash('sha256').update(JSON.stringify(rows)).digest('hex'),
+    rows,
+  }
+}
+
 export function createClaudeSdkHistorySource(
   options: {
     history?: ClaudeSdkHistory
@@ -139,19 +235,15 @@ export function createClaudeSdkHistorySource(
     countTranscriptFiles?: () => Promise<number>
   } = {},
 ): SessionSource {
-  const history: ClaudeSdkHistory = options.history ?? { listSessions, getSessionMessages }
+  const history: ClaudeSdkHistory = options.history ?? {
+    listSessions,
+    listAllSessions: () => listSessions(),
+    getSessionInfo,
+    getSessionMessages,
+  }
   const sessions = new Map<string, StoredSession>()
   const currentRoster = new Map<string, StoredSession>()
-  let revision = 0
-  const refresh = async (options?: Parameters<SessionSource['discoverSessions']>[0]) => {
-    const offset = offsetFor(options?.cursor)
-    const page = await readClaudeSessionPage(history, offset)
-    if (offset === 0) currentRoster.clear()
-    for (const session of page) sessions.set(session.sessionId, session)
-    for (const session of page) currentRoster.set(session.sessionId, session)
-    revision += 1
-    return { sessions: page, offset }
-  }
+  const refresh = createRosterRefresh(history, sessions, currentRoster)
   return {
     harness: 'claude',
     discoverSessions: async (request) => {
@@ -162,36 +254,28 @@ export function createClaudeSdkHistorySource(
         ? await options.countTranscriptFiles()
         : currentRoster.size
       const sdkOmitted = pageComplete ? Math.max(0, filesFound - currentRoster.size) : 0
-      reportPageIssues(sessionsOnPage)
       const pageStats = rosterStatistics(sessionsToCount, filesFound, sdkOmitted)
-      if (pageComplete && sdkOmitted > 0) {
-        console.warn('Claude SDK omitted transcript records from the Session roster', {
-          sdkOmitted,
-        })
-      }
-      return discoverRoster({
-        discovery: {
-          rows: rosterRows(sessionsOnPage),
-          ...pageStats,
-          nextCursor: pageComplete ? null : String(offset + sessionsOnPage.length),
-          historyComplete: pageComplete && sdkOmitted === 0,
-        },
+      return discoverClaudeRosterPage({
+        sessions: sessionsOnPage,
         managed: options.managedSessions?.() ?? [],
-        joins: {},
         projectRoot: request?.projectRoot,
+        offset,
+        pageComplete,
+        pageStats,
+        sdkOmitted,
       })
     },
+    searchSessions: (query) =>
+      searchClaudeHistory(history, options.managedSessions?.() ?? [], query),
+    historyComplete: async () => true,
     readSessionFiles: async () => null,
-    readObservedFeed: async (sessionId) => {
-      const session = sessions.get(sessionId)
-      return session === undefined
-        ? null
-        : {
-            chainId: sessionId,
-            revision: String(revision),
-            rows: feedOf(await readClaudeSessionMessages(history, session.sessionId)),
-          }
-    },
+    readObservedFeed: (sessionId) =>
+      readObservedClaudeFeed({
+        history,
+        managedSessions: options.managedSessions?.() ?? [],
+        sessions,
+        sessionId,
+      }),
     readShellOutput: async () => ({ state: 'absent' }),
   }
 }

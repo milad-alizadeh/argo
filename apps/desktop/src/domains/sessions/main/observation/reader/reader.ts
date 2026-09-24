@@ -49,6 +49,16 @@ function createOwnerResolver(sources: SessionSource[]) {
     )
     return managed.find((source) => source.readManagedFeed !== undefined) ?? managed[0]
   }
+  const sourceHasSession = async (source: SessionSource, sessionId: string) => {
+    if ((await source.readSessionFiles(sessionId).catch(() => null)) !== null) return source
+    const feed = await source.readObservedFeed?.(sessionId)
+    if (feed == null) return undefined
+    return {
+      ...source,
+      readObservedFeed: (requestedId: string) =>
+        requestedId === sessionId ? feed : source.readObservedFeed?.(requestedId),
+    }
+  }
   const ownerFor = async (sessionId: string) => {
     const managed = managedOwner(sessionId)
     if (managed !== undefined) return managed
@@ -59,19 +69,17 @@ function createOwnerResolver(sources: SessionSource[]) {
     const known = owners.get(sessionId)
     if (known !== undefined) return known
     for (const source of sources) {
-      if ((await source.readSessionFiles(sessionId).catch(() => null)) !== null) {
+      const found = await sourceHasSession(source, sessionId)
+      if (found !== undefined) {
         owners.set(sessionId, source)
-        return source
+        return found
       }
     }
     return undefined
   }
   const rememberDiscoveries = (sessions: { id: string; harness: string }[]) => {
-    lastDiscoveredHarness.clear()
     for (const session of sessions) {
-      if (!lastDiscoveredHarness.has(session.id)) {
-        lastDiscoveredHarness.set(session.id, session.harness)
-      }
+      lastDiscoveredHarness.set(session.id, session.harness)
     }
   }
   return {

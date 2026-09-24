@@ -1,5 +1,6 @@
 import { driveSessionError } from '@/domains/sessions/contract/ipc/contract'
 import type { SessionSource } from '@/domains/sessions/main/observation/reader/session-source'
+import { matchesSearchQuery } from '@/domains/sessions/main/projection/search/search-match'
 import type {
   SessionAdapter,
   SessionProjection,
@@ -30,14 +31,32 @@ async function refreshWithinBudget(
   }
 }
 
-export function createCodexAppServerSessionSource(options: {
+type AppServerSourceOptions = {
   projections: () => readonly SessionProjection[]
   watchedProjections: () => readonly SessionProjection[]
   refreshHistory: (notifyLateSuccess: () => boolean) => Promise<readonly SessionProjection[]>
+  refreshSearchHistory: () => Promise<readonly SessionProjection[]>
   readHistoryProjection: (sessionId: string) => Promise<SessionProjection | null>
   checkoutFor: (nativeId: string) => string | null
   adapter: SessionAdapter
-}): SessionSource & Required<Pick<SessionSource, 'rename'>> {
+}
+
+async function readObservedProjection(options: AppServerSourceOptions, sessionId: string) {
+  try {
+    return await options.readHistoryProjection(sessionId)
+  } catch (error) {
+    const stored = await refreshWithinBudget(options.refreshHistory)
+    const listed = mergedProjections(stored, options.projections()).some(
+      (candidate) => candidate.session.nativeId === sessionId,
+    )
+    if (!listed) return null
+    throw error
+  }
+}
+
+export function createCodexAppServerSessionSource(
+  options: AppServerSourceOptions,
+): SessionSource & Required<Pick<SessionSource, 'rename'>> {
   const managedProjectionFor = (sessionId: string) =>
     options.projections().find((projection) => projection.session.nativeId === sessionId) ?? null
   return {
@@ -46,6 +65,13 @@ export function createCodexAppServerSessionSource(options: {
       const stored = await refreshWithinBudget(options.refreshHistory)
       return discovery(mergedProjections(stored, options.projections()), options.checkoutFor)
     },
+    searchSessions: async (query) => {
+      const stored = await options.refreshSearchHistory()
+      return mergedProjections(stored, options.projections())
+        .flatMap((projection) => rosterRows([projection], options.checkoutFor).rows)
+        .filter((row) => matchesSearchQuery(row, query))
+    },
+    historyComplete: async () => true,
     readSessionFiles: async () => null,
     managedSessions: () => rosterRows(options.projections(), options.checkoutFor).rows,
     readManagedFeed: (sessionId) => {
@@ -58,7 +84,7 @@ export function createCodexAppServerSessionSource(options: {
       }
     },
     readObservedFeed: async (sessionId) => {
-      const projection = await options.readHistoryProjection(sessionId)
+      const projection = await readObservedProjection(options, sessionId)
       if (projection === null) return null
       return {
         chainId: projection.session.nativeId,

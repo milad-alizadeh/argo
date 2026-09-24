@@ -1,6 +1,9 @@
-import { type RefObject, useMemo, useRef } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { type RefObject, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { sessionFeedQuery } from '../feed/session-feed-query'
 import type { Session, SessionId } from '../types'
+import { useConsecutiveFeedFailures } from '../use-sessions'
 import { useArchivedSection } from './archived/use-archived-section'
 import { useRosterStatus } from './hooks/use-roster-filter-store'
 import { RenameDialog } from './rename/rename-dialog'
@@ -64,7 +67,7 @@ function useRosterSessions(options: {
   sidebar: RefObject<HTMLElement | null>
 }) {
   const { actions, projectRoot, read, selectedSessionId, sidebar } = options
-  return useSidebarRoster({
+  const sessions = useSidebarRoster({
     onArchiveSelected: actions.onArchiveSelected,
     onSelect: actions.onSelect,
     projectRoot,
@@ -73,6 +76,35 @@ function useRosterSessions(options: {
     selectedSessionId,
     sidebar,
   })
+  const rows = useRosterRows({
+    read,
+    search: sessions.searching ? sessions.searched : null,
+    selectedSessionId,
+    visible: sessions.visible,
+  })
+  return { ...sessions, ...rows }
+}
+
+function useUnavailableSessionIds(selectedSessionId: SessionId | null) {
+  const queryClient = useQueryClient()
+  const selectedFeed = useQuery(sessionFeedQuery(queryClient, selectedSessionId, null))
+  const failedFeedReads = useConsecutiveFeedFailures(selectedSessionId, selectedFeed)
+  const [unavailableSessionIds, setUnavailableSessionIds] = useState<ReadonlySet<SessionId>>(
+    () => new Set(),
+  )
+  useEffect(() => {
+    if (selectedSessionId === null) return
+    const unavailable = failedFeedReads > 1 && selectedFeed.error?.code === 'missing-session'
+    if (!unavailable && !selectedFeed.isSuccess) return
+    setUnavailableSessionIds((current) => {
+      if (unavailable === current.has(selectedSessionId)) return current
+      const next = new Set(current)
+      if (unavailable) next.add(selectedSessionId)
+      else next.delete(selectedSessionId)
+      return next
+    })
+  }, [failedFeedReads, selectedFeed.error?.code, selectedFeed.isSuccess, selectedSessionId])
+  return unavailableSessionIds
 }
 
 // The sidebar header, outcome and rows, under one named record of row actions (#2284).
@@ -86,14 +118,9 @@ export function Roster({
   selectedSessionId: SessionId | null
 }) {
   const sidebar = useRef<HTMLElement>(null)
+  const unavailableSessionIds = useUnavailableSessionIds(selectedSessionId)
   const read = useOrderedSessions(projectRoot)
   const sessions = useRosterSessions({ actions, projectRoot, read, selectedSessionId, sidebar })
-  const { onFetchNextPage, onFetchNextSearchPage, rows } = useRosterRows({
-    read,
-    search: sessions.searching ? sessions.searched : null,
-    selectedSessionId,
-    visible: sessions.visible,
-  })
   const { renameTarget, setRenameTarget, handleRename } = useRenameDialog(
     sessions.rename,
     actions.onRename,
@@ -120,10 +147,11 @@ export function Roster({
       />
       <RosterVirtualList
         label="Sessions"
+        unavailableSessionIds={unavailableSessionIds}
         onArchive={sessions.archive}
         onFetchMoreSessions={read.fetchMoreSessions}
-        onFetchNextPage={onFetchNextPage}
-        onFetchNextSearchPage={onFetchNextSearchPage}
+        onFetchNextPage={sessions.onFetchNextPage}
+        onFetchNextSearchPage={sessions.onFetchNextSearchPage}
         onFocus={sessions.focus.setFocusedSessionId}
         onLinkTicket={actions.onLinkTicket}
         onOpenTicket={actions.onOpenTicket}
@@ -132,7 +160,7 @@ export function Roster({
         onToggleSelect={sessions.selection.toggle}
         onUnlinkTicket={actions.onUnlinkTicket}
         renamedTitles={sessions.renamedTitles}
-        rows={rows}
+        rows={sessions.rows}
         selectedIds={sessions.selection.selectedIds}
         selectedSessionId={selectedSessionId}
         tabStop={sessions.focus.tabStop}

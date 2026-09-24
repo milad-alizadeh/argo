@@ -20,16 +20,16 @@ import { matchesSearchQuery } from './search-match'
 
 export const SEARCH_PAGE_LIMIT = 20
 
-// Every match across every source, when each has an index open. `null` means at least one source
-// has none, so the caller must grow a window and filter it itself instead.
-async function indexedSearch(
+// Every match across every source, when each can search its history directly. `null` means at
+// least one source needs its discovery window grown instead.
+async function directSearch(
   sources: readonly SessionSource[],
   query: string,
 ): Promise<{ rows: SessionRosterRow[]; historyComplete: boolean } | null> {
-  if (sources.some((source) => source.searchIndexed === undefined)) return null
+  if (sources.some((source) => source.searchSessions === undefined)) return null
   try {
     const [matched, completeness] = await Promise.all([
-      Promise.all(sources.map((source) => source.searchIndexed?.(query))),
+      Promise.all(sources.map((source) => source.searchSessions?.(query))),
       Promise.all(sources.map((source) => source.historyComplete?.())),
     ])
     return {
@@ -79,20 +79,20 @@ export const searchRead = fromContext(
       context.archive.archivedIds(),
       projectRootsOf(request.projectRoot),
     ])
-    const indexed = await indexedSearch(context.sources, request.query)
+    const direct = await directSearch(context.sources, request.query)
     const matched =
-      indexed === null
+      direct === null
         ? (await growWindow(context.sources, {}, () => false)).rows.filter((row) =>
             matchesSearchQuery(row, request.query),
           )
-        : indexed.rows
+        : direct.rows
     const found = scoped(matched, { status: request.status, archivedIds, projectRoots })
     const offset = decodeOffset(request.cursor)
     return {
       sessions: found.slice(offset, offset + SEARCH_PAGE_LIMIT),
       nextCursor:
         found.length > offset + SEARCH_PAGE_LIMIT ? String(offset + SEARCH_PAGE_LIMIT) : null,
-      historyComplete: indexed?.historyComplete ?? true,
+      historyComplete: direct?.historyComplete ?? true,
     }
   },
 )

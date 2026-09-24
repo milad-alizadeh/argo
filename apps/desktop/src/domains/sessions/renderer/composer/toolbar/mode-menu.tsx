@@ -10,12 +10,14 @@ import {
   DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
+import { modeChoices } from '../turn-setup/turn-setup'
 import type { TurnSetupControlProps } from './run-setup-menu'
 
 // Extracted from the prototype's PermissionMenu (602bcce2); CONTEXT.md L2 · Session Mode.
 export function ModeMenu({ choices, value, onChange }: TurnSetupControlProps) {
   const { t } = useTranslation('sessions')
-  const current = choices.modes.find((mode) => mode.value === value.mode) ?? choices.modes[0]
+  const modes = modeChoices(choices, value.model)
+  const current = modes.find((mode) => mode.value === value.mode) ?? modes[0]
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -37,10 +39,10 @@ export function ModeMenu({ choices, value, onChange }: TurnSetupControlProps) {
             {t('composer.setup.permissions', { harness: choices.label })}
           </DropdownMenuLabel>
           <DropdownMenuRadioGroup
-            value={value.mode}
+            value={current?.value ?? ''}
             onValueChange={(mode: string) => onChange({ ...value, mode })}
           >
-            {choices.modes.map((mode) => (
+            {modes.map((mode) => (
               <DropdownMenuRadioItem
                 key={mode.value}
                 value={mode.value}

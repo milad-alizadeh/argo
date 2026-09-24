@@ -2,10 +2,19 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useRef, useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { Button } from '@/platform/renderer/components/ui/button'
+import { claudeComposerModelCatalogFixture } from '../../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
 import type { SessionHarness } from '../../harness/harnesses'
 import { useComposerStore } from '../hooks'
-import { CLAUDE_TURN_SETUP } from '../turn-setup/claude-turn-setup'
+import { claudeTurnSetup } from '../turn-setup/claude-turn-setup'
+import type { TurnSetupChoices } from '../turn-setup/turn-setup'
+import { setupFromReading } from '../turn-setup/turn-setup'
 import { SessionComposer, type SessionComposerProps } from './session-composer'
+
+const CLAUDE_TURN_SETUP = (() => {
+  const choices = claudeTurnSetup(claudeComposerModelCatalogFixture())
+  if (choices === null) throw new Error('The Claude story catalog has no usable model.')
+  return choices
+})() satisfies TurnSetupChoices
 
 const FRAME = 'mx-auto max-w-4xl p-8'
 const SETUP_FRAME = 'mx-auto max-w-4xl p-8 pt-96'
@@ -156,6 +165,25 @@ function SetupComposerStory({
         setup={{ choices: CLAUDE_TURN_SETUP, value: setup, onChange: setSetup }}
       />
     </>
+  )
+}
+
+function HistoricalResolvedModelStory({ onSend }: { onSend: SessionComposerProps['onSend'] }) {
+  const [setup, setSetup] = useState(() =>
+    setupFromReading(CLAUDE_TURN_SETUP, {
+      model: 'claude-sonnet-4-5',
+      effort: 'medium',
+      mode: 'default',
+    }),
+  )
+
+  return (
+    <SessionComposer
+      onSend={onSend}
+      sessionId="historical-sonnet-session"
+      harness={{ harness: 'claude' }}
+      setup={{ choices: CLAUDE_TURN_SETUP, value: setup, onChange: setSetup }}
+    />
   )
 }
 
@@ -371,5 +399,21 @@ export const NarrowShowsModelAndEffort: StoryObj<typeof SetupComposerStory> = {
     await expect(trigger).toHaveAccessibleName('Choose run setup: Claude Code, Opus 5, Medium')
     await expect(canvas.getByRole('button', { name: 'Send message' })).toBeVisible()
     await expect(row.scrollWidth).toBeLessThanOrEqual(row.clientWidth)
+  },
+}
+
+export const HistoricalSonnetIdKeepsSonnet: StoryObj<typeof HistoricalResolvedModelStory> = {
+  render: (args) => <HistoricalResolvedModelStory {...args} />,
+  args: { onSend: fn(async () => true) },
+  parameters: { frame: SETUP_FRAME },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const setup = canvas.getByRole('button', { name: /^Choose run setup/ })
+
+    await expect(setup).toHaveTextContent('Sonnet 5')
+    await userEvent.click(setup)
+    await expect(
+      await within(document.body).findByRole('radio', { name: /Sonnet 5/ }),
+    ).toBeChecked()
   },
 }

@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
+import { sessionError } from '@/domains/sessions/contract/ipc/contract'
 import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
 import { SessionsSidebar } from '../roster/sidebar/sessions-sidebar'
 import { sessionRosterRow } from '../session-fixtures'
@@ -113,6 +114,51 @@ function flakyFirstOpenHost() {
   }
 }
 
+let historyReady = false
+
+function missingHistoryHost(listed = true) {
+  historyReady = false
+  const before = window.argo
+  window.argo = {
+    ...before,
+    listSessions: async () => ({
+      version: 1,
+      type: 'session.listed',
+      requestId: 'storybook-sessions',
+      sessions: listed ? [session] : [],
+      filesFound: 1,
+      filesRead: 1,
+      filesUnreadable: 0,
+      filesParsed: 0,
+      nextCursor: null,
+      historyComplete: true,
+      partialFailures: [],
+    }),
+    readSessionFeed: async (request) =>
+      historyReady
+        ? {
+            version: 1,
+            type: 'session.feed.read',
+            requestId: 'storybook-feed',
+            sessionId: request.sessionId,
+            chainId: request.sessionId,
+            revision: 'recovered',
+            rows: [
+              {
+                shape: 'prose',
+                id: 'recovered-row',
+                role: 'assistant',
+                text: 'History recovered.',
+              },
+            ],
+          }
+        : sessionError('missing-session', 'storybook-feed-error'),
+  }
+  return () => {
+    window.argo = before
+  }
+}
+
 const meta = {
   title: 'Sessions/Screen/Feed Resilience',
   component: SessionScreenView,
@@ -164,5 +210,38 @@ export const SurvivesATransientPollOnFirstOpen: Story = {
         .filter((node) => node.closest('[aria-hidden]') === null)
     await waitFor(() => expect(visible()).toHaveLength(1))
     await expect(canvas.queryByRole('alert')).toBeNull()
+  },
+}
+
+export const MissingHistoryCanBeRecovered: Story = {
+  beforeEach: () => missingHistoryHost(),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() => expect(canvas.getByText('Session history is unavailable')).toBeVisible(), {
+      timeout: 5000,
+    })
+    await expect(canvas.getByText(/Retry, or archive it from the roster menu/)).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Retry' })).toBeVisible()
+    await expect(canvas.queryByRole('alert')).toBeNull()
+    await expect(canvas.queryByText('Argo cannot find this Session.')).toBeNull()
+    await expect(canvas.queryByLabelText('Message')).toBeNull()
+    historyReady = true
+    await canvas.getByRole('button', { name: 'Retry' }).click()
+    await waitFor(() => expect(canvas.getByText('History recovered.')).toBeVisible())
+    await expect(canvas.getByLabelText('Message')).toBeVisible()
+  },
+}
+
+export const UnknownSessionHasTruthfulRecovery: Story = {
+  beforeEach: () => missingHistoryHost(false),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() => expect(canvas.getByText('Session history is unavailable')).toBeVisible(), {
+      timeout: 5000,
+    })
+    await expect(
+      canvas.getByText(/archive it from the roster menu if it appears there/),
+    ).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Retry' })).toBeVisible()
   },
 }

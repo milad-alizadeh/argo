@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionSetup } from '@/domains/sessions/contract/model/models'
+import { claudeComposerModelCatalogFixture } from '../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
 import { useComposerStore } from '../composer'
 import { sessionRosterRow } from '../session-fixtures'
 import { SessionScreenView } from './session-screen-view'
@@ -47,6 +48,7 @@ function managedSession(reply: SessionSetup, sent: unknown[]) {
         sessionId: request.sessionId,
       })
     },
+    readClaudeModelCatalog: () => Promise.resolve(claudeComposerModelCatalogFixture()),
   }
 }
 

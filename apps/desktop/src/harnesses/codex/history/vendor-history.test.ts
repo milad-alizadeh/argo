@@ -161,3 +161,24 @@ test('asks app-server to repair an empty state database without reading rollouts
     [true, undefined],
   )
 })
+
+test('complete Codex history repairs a nonempty state database', async () => {
+  const vendor = transport({
+    'thread/list': (params) =>
+      params.useStateDbOnly === true
+        ? { data: [THREAD], nextCursor: null }
+        : {
+            data: [THREAD, { ...THREAD, id: 'repaired-thread', name: 'Repaired match' }],
+            nextCursor: null,
+          },
+  })
+
+  assert.deepEqual(
+    (await listStoredThreads(vendor.client, 'complete')).map((thread) => thread.id),
+    ['thread-1', 'repaired-thread'],
+  )
+  assert.deepEqual(
+    vendor.calls.map((call) => call.params.useStateDbOnly),
+    [undefined],
+  )
+})

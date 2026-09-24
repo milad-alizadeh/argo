@@ -16,7 +16,7 @@ export async function writeMockClaude(root: string, transcripts: string) {
   const executable = path.join(root, 'claude')
   await writeFile(
     executable,
-    `#!/bin/sh\nexec "${process.execPath}" --no-warnings --import "${ALIAS_HOOKS}" "${MOCK_CLAUDE}" "${transcripts}" "$@"\n`,
+    `#!/bin/sh\nexport ARGO_CLAUDE_TRANSCRIPTS="${transcripts}"\nexec "${process.execPath}" --no-warnings --import "${ALIAS_HOOKS}" "${MOCK_CLAUDE}" "${transcripts}" "$@"\n`,
   )
   await chmod(executable, 0o755)
   return executable

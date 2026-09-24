@@ -145,7 +145,7 @@ test('says a Session is missing rather than answering with an empty Feed', async
     requestId: 'feed-1',
     code: 'missing-session',
     harness: null,
-    message: 'Argo cannot find this Session.',
+    message: 'This Session is unavailable from its Harness.',
   })
 })
 
