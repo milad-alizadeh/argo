@@ -1,50 +1,47 @@
 ## L2 · Session
 
-- **Session** — one vendor conversation, keyed by **Harness + native Session ID** (ADR-0047). A
+- **Session** — one vendor conversation with an Argo UUID and a unique **Harness + native Session
+  ID** pair. The UUID identifies the Session in Argo; the pair identifies it at the vendor. A
   Claude Session and a Codex Session never merge, even if their titles or Project match. A fork is
-  a separate Session with its own native ID.
+  a separate Session with its own Argo UUID and native ID.
 
   A Session has one current posture: **`managed | watched`**. `managed` means Argo owns its live
   channel and can drive it through the Harness adapter. `watched` means Argo owns no live channel;
   the Session is readable but not drivable. A live channel is not durable across an Argo restart,
-  so every surviving Session starts watched and can become managed through native resume.
+  so every surviving Session starts watched and can become managed through native resume. Opening a
+  watched Session reads its history without acquiring a live channel; the first new prompt attempts
+  native resume.
 
   Vendor history is the source of Feed truth for both postures. Managed vendor events add immediate
   updates. For watched Sessions, a filesystem watcher can signal that history changed, but the
   adapter reads the change through the vendor interface. A transcript or rollout file is never an
   Argo domain object or input.
 
-  Origin does not gate resume (ADR-0040). A SQLite lease stops two Argo windows from managing the
-  same `(Harness, native Session ID)`. The lease does not prove that an external client is absent,
-  so the adapter checks vendor liveness before resume. A watched Session that cannot be resumed
-  stays readable and reports the vendor reason.
+  Origin does not gate resume (ADR-0040). Argo has one application window. The adapter checks
+  vendor liveness before resume because another vendor client can still hold the Session. A
+  separate SQLite lease has an owner token and expiry; it is not a Boolean Session attribute and
+  does not prove that an external vendor client is absent. A watched Session that cannot be
+  resumed because of a temporary condition stays readable and reports the vendor reason. Argo
+  removes a Session only when its Harness confirms that the vendor conversation cannot be resumed
+  again. Removing it also removes its Argo title, pin, and user-asserted Ticket link.
 
   A Session **is the root Agent** (`parentId: null`). Key attributes are **`harness`**
   (`claude | codex | …`), native ID, Project, and **`cwd`**. Managed facts are DIRECT when Argo
   observes them through its channel. Watched facts are vendor-sourced.
 
-- **CLI title** — a name for the Session that the Harness itself holds, and that every surface
-  the Harness draws already shows. DERIVED: Argo reads it through the vendor interface and never
-  owns it. Two kinds, and the reader's outranks the summariser's whichever order they arrive in
-  (#1623):
+- **Vendor title** — a name for the Session that the Harness itself holds. DERIVED: Argo reads it
+  through the vendor interface and never owns it. Two kinds, and the reader's outranks the
+  summariser's whichever order they arrive in (#1623):
   - **summarised** — the Harness's own summariser wrote it from the conversation.
-  - **custom** — a person entered it through the Harness or Argo's native rename operation.
+  - **custom** — a person entered it through the Harness.
 
-  The first prompt is an Argo-derived name: the first thing the Session was asked, without the
-  text the harness injects around it. A name that a reader enters in Argo travels to the CLI.
-  It replaces a derived name because the reader chose it.
-
-  Claude and Codex provide native rename operations through their adapters. A rename becomes
-  visible only after the vendor accepts it.
-
-  **Connecting a Ticket can rename the Session** (#2134), the same way a reader's own typed name
-  does: Argo sends the Ticket's title through the native rename path and reads the accepted title
-  back, so the result is indistinguishable from a person having typed it. The honesty tier decides
-  whether Argo asks
-  first: a `first-prompt` or `summarised` title cost the reader nothing to make, so it is replaced
-  without asking; a `custom` title is a reader's own word and is only replaced with their
-  confirmation. A rename the CLI refuses leaves the link in place — the link and the rename are
-  two separate outcomes, and the link is never undone by a refused or skipped rename.
+  **Argo title** — an optional, Argo-owned name for the Session. It takes precedence over every
+  vendor title in Argo, including one changed later in another app. Renaming in Argo changes this
+  title and does not rename the vendor Session. The displayed name is the Argo title, then the
+  current title of a linked Ticket, then the vendor title, then the first prompt. The first prompt
+  is the first thing the Session was asked, without text the Harness injects. Connecting a Ticket
+  changes the displayed name only while no reader has set an Argo title; Argo does not copy the
+  Ticket title into the Session.
 
 - **Session status** — the adapter's validated rollup of vendor lifecycle facts:
   - **starting** — Argo accepted a start or resume command and the managed channel is opening.

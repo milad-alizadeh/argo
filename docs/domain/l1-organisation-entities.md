@@ -33,11 +33,13 @@
   Account that cannot see the scope is a connect-time refusal, never a run of reads that 404 and
   read as "the ticket does not exist." Health is keyed here, not on the Project (#260).
 
-- **Ticket** — intent. One unit of work owned by a Ticket provider; **Argo stores only the link**
-  (provider id + which port), never the content (title/status/body/blockers are read-through,
-  cached but never authoritative). **No stored type** — "PRD" and "Task" are *roles*, taken from
-  the **provider's declared type when it has one** and **falling back to hierarchy** (has
-  children / is a leaf) only when the provider carries none. `blockedBy` is a provider-sourced
+- **Ticket** — intent. One unit of work owned by a Ticket provider. Argo owns the user-asserted
+  link and keeps provider content (title/status/body/blockers) in a disposable query index. The
+  provider remains authoritative for that content. The index covers the active backlog and Tickets
+  linked to Argo work; search reports when older Ticket history is not indexed. **No stored type**
+  — "PRD" and "Task" are *roles*, taken from the **provider's declared type when it has one** and
+  **falling back to hierarchy** (has children / is a leaf) only when the provider carries none.
+  `blockedBy` is a provider-sourced
   dependency DAG, Argo-normalized, with blocker states **verified per-blocker** (the provider's
   summary count is stale).
 
