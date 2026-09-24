@@ -16,33 +16,43 @@ const PAGE_SIZE = 50
 
 function useSyncFailure(harness: 'Claude' | 'Codex', failure: string | null) {
   const { add, close } = useToastManager()
+  const { t } = useTranslation('sessions')
   useEffect(() => {
     if (failure === null) return
     const id = add({
-      title: `${harness} Session sync failed`,
+      title: t('roster.syncFailed', { harness }),
       description: failure,
       type: 'error',
       priority: 'high',
       timeout: 0,
     })
     return () => close(id)
-  }, [add, close, failure, harness])
+  }, [add, close, failure, harness, t])
 }
 
 function SyncStatus({
   harness,
   state,
   refreshedAt,
+  indexedCount,
+  invalidRecordCount,
 }: {
   harness: string
   state: string
   refreshedAt: number | null
+  indexedCount: number
+  invalidRecordCount: number
 }) {
   const { t } = useTranslation('sessions')
   return (
     <span>
       {harness}: {state === 'syncing' ? t('roster.syncing') : t('roster.lastSynced')}{' '}
       {refreshedAt === null ? t('roster.neverSynced') : new Date(refreshedAt).toLocaleTimeString()}
+      {' · '}
+      {t('roster.indexedCount', { count: indexedCount })}
+      {invalidRecordCount > 0
+        ? ` · ${t('roster.invalidCount', { count: invalidRecordCount })}`
+        : null}
     </span>
   )
 }

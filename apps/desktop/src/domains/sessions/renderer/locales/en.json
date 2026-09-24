@@ -207,6 +207,9 @@
   },
   "roster": {
     "readFailure": "Argo could not read Sessions.",
+    "syncFailed": "{{harness}} Session sync failed",
+    "indexedCount": "{{count}} indexed",
+    "invalidCount": "{{count}} skipped",
     "syncing": "Syncing, last updated",
     "lastSynced": "Last updated",
     "neverSynced": "not yet",

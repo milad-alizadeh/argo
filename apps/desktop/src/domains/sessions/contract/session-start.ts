@@ -24,14 +24,14 @@ export const existingSessionInputSchema = commandSchema.extend({
   harness: harnessSchema,
   nativeId: z.string().min(1),
   projectId: identifierSchema.nullable(),
-  cwd: z.string().min(1),
+  cwd: z.string().min(1).nullable(),
 })
 export const sessionSendInputSchema = commandSchema.extend({ sessionId: identifierSchema })
 export const sessionSubmitInputSchema = commandSchema
   .extend({
     harness: harnessSchema,
     projectId: identifierSchema.nullable(),
-    cwd: z.string().min(1),
+    cwd: z.string().min(1).nullable(),
     sessionId: identifierSchema.nullable(),
     pendingId: z.string().min(1).nullable(),
   })
@@ -47,6 +47,12 @@ export const sessionSubmitInputSchema = commandSchema
         code: 'custom',
         path: ['projectId'],
         message: 'A new Session requires a Project.',
+      })
+    if (input.sessionId === null && input.cwd === null)
+      context.addIssue({
+        code: 'custom',
+        path: ['cwd'],
+        message: 'A new Session requires a working directory.',
       })
     if (input.sessionId !== null && input.pendingId !== null)
       context.addIssue({

@@ -258,7 +258,7 @@ test('settles start before a queued turn fails', async () => {
   }
 })
 
-test('resumes an indexed Session through its existing supervisor child', async () => {
+test('resumes an indexed Session without a recorded working directory', async () => {
   const methods: string[] = []
   const { root, supervisor, client } = await supervisorFor(async (method, _params, parse) => {
     methods.push(method)
@@ -271,7 +271,7 @@ test('resumes an indexed Session through its existing supervisor child', async (
       .prepare(
         'INSERT INTO session (argo_id, harness, native_id, project_id, working_directory, first_prompt, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
       )
-      .run('00000000-0000-4000-8000-000000000001', 'codex', 'native-1', null, '/repo', null, 1)
+      .run('00000000-0000-4000-8000-000000000001', 'codex', 'native-1', null, null, null, 1)
     const result = await send(supervisor, {
       ...first,
       commandId: 'resume-command',

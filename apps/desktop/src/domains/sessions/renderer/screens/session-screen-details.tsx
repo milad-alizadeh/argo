@@ -101,8 +101,8 @@ async function submitFromComposer({
           : (cockpit.project?.id ?? null),
       cwd:
         identity.kind === 'session'
-          ? (indexedSession?.workingDirectory ?? '')
-          : (cockpit.workspace?.path ?? cockpit.project?.path ?? ''),
+          ? (indexedSession?.workingDirectory ?? null)
+          : (cockpit.workspace?.path ?? cockpit.project?.path ?? null),
       sessionId: identity.kind === 'session' ? identity.sessionId : null,
       pendingId: identity.kind === 'pending' ? identity.sessionId : null,
       prompt,

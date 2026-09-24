@@ -87,7 +87,6 @@ function existingSessionInput(
   identity: SessionIdentity,
   command: SessionSendInput,
 ): ExistingSessionInput | null {
-  if (identity.workingDirectory === null) return null
   switch (identity.harness) {
     case 'claude':
     case 'codex':

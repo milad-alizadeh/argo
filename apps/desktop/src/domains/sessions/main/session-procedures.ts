@@ -42,11 +42,13 @@ export function sessionSubmitProcedure(supervisor: SessionSupervisorActor) {
         new Promise<{ sessionId: string }>((resolve, reject) => {
           const reply = { resolve, reject }
           if (input.sessionId === null) {
-            if (input.pendingId === null || input.projectId === null)
-              throw new Error('A new Session requires a Project and pending identity.')
+            if (input.pendingId === null || input.projectId === null || input.cwd === null)
+              throw new Error(
+                'A new Session requires a Project, working directory, and pending identity.',
+              )
             supervisor.send({
               type: 'Start',
-              input: { ...input, projectId: input.projectId },
+              input: { ...input, projectId: input.projectId, cwd: input.cwd },
               pendingId: input.pendingId,
               reply,
             })

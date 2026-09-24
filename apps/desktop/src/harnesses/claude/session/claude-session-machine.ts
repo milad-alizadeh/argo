@@ -130,7 +130,7 @@ export const claudeSessionMachine = setup({
           session = query({
             prompt: messages(),
             options: {
-              cwd: input.command.cwd,
+              cwd: input.command.cwd ?? undefined,
               model: input.command.setup.model,
               permissionMode: input.mode,
               ...('argoId' in input.command
