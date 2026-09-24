@@ -188,6 +188,7 @@ export function createCodexSessionMachine(request: CodexRequest) {
         },
       },
       Ready: {
+        tags: 'ready',
         on: {
           Send: {
             target: 'Starting next prompt',

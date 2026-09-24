@@ -1,6 +1,6 @@
 import { createActor, fromPromise, waitFor } from 'xstate'
 import type { AvailableHarness } from '@/harnesses/catalog/harness-catalog-machine'
-import { createClaudeSessionMachine } from '@/harnesses/claude/session/claude-session-machine'
+import { claudeSessionMachine } from '@/harnesses/claude/session/claude-session-machine'
 import type { CodexRequest } from '@/harnesses/codex/app-server/codex-app-server-machine'
 import { createCodexSessionMachine } from '@/harnesses/codex/session/codex-session-machine'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
@@ -31,7 +31,7 @@ function waitForVendor(
     async nativeId() {
       const snapshot = await waitFor(
         actor,
-        (candidate) => candidate.matches('Ready') || candidate.matches('Failed'),
+        (candidate) => candidate.hasTag('ready') || candidate.matches('Failed'),
       )
       if (snapshot.matches('Failed') || snapshot.context.nativeId === null)
         throw new Error(snapshot.context.failure ?? startFailure)
@@ -41,7 +41,7 @@ function waitForVendor(
       actor.send({ type: 'Send', command })
       const snapshot = await waitFor(
         actor,
-        (candidate) => candidate.matches('Ready') || candidate.matches('Failed'),
+        (candidate) => candidate.hasTag('ready') || candidate.matches('Failed'),
       )
       if (snapshot.matches('Failed')) throw new Error(snapshot.context.failure ?? sendFailure)
     },
@@ -53,7 +53,7 @@ function createVendorSession(start: SessionStartInput, codexRequest: CodexReques
   switch (start.harness) {
     case 'claude':
       return waitForVendor(
-        createActor(createClaudeSessionMachine(), { input: start }).start(),
+        createActor(claudeSessionMachine, { input: start }).start(),
         'Claude Session start failed.',
         'Claude Session send failed.',
       )
