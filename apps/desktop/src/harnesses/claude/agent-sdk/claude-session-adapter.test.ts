@@ -9,6 +9,18 @@ function managedAdapter(fake: ReturnType<typeof fakeClaudeQuery>) {
     resolveWorkspace: async () => ({ workspaceId: 'workspace-1', cwd: '/repository' }),
     createQuery: fake.createQuery,
     readResumePermission: async () => ({ resumable: true }),
+    readModelCatalog: async () => ({
+      data: [
+        {
+          value: 'haiku',
+          resolvedModel: 'claude-haiku-4-5',
+          displayName: 'Haiku',
+          description: '',
+          supportedEffortLevels: ['low'],
+        },
+      ],
+      supportedPermissionModes: ['manual'],
+    }),
   })
 }
 
@@ -43,6 +55,18 @@ test('starts Claude after the selected Workspace is ready', async () => {
       queryCalls += 1
       return fake.createQuery(params)
     },
+    readModelCatalog: async () => ({
+      supportedPermissionModes: ['manual'],
+      data: [
+        {
+          value: 'haiku',
+          resolvedModel: 'claude-haiku-4-5',
+          displayName: 'Haiku',
+          description: '',
+          supportedEffortLevels: ['low'],
+        },
+      ],
+    }),
   })
   const outcome = adapter.execute({
     type: 'session.start',

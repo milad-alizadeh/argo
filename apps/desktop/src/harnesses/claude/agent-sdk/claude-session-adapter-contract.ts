@@ -1,3 +1,4 @@
+import type { ClaudeModelCatalog } from '@/domains/sessions/contract/claude-model-catalog'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import type {
   SessionIdentity,
@@ -12,6 +13,7 @@ import type { watchedChanges } from './claude-session-adapter'
 
 export type ClaudeSessionAdapter = SessionAdapter & {
   close: () => void
+  readModelCatalog: () => Promise<ClaudeModelCatalog | null>
   roster: () => SessionRosterRow[]
   liveMessages: (sessionId: string) => { id: string; text: string }[]
   projection: (session: SessionIdentity) => SessionProjection | null

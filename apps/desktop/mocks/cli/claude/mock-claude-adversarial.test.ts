@@ -7,11 +7,47 @@ import path from 'node:path'
 import { test } from 'node:test'
 
 import { SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/domains/sessions/contract/proof-protocol'
+import {
+  ClaudeModelCatalogCache,
+  readClaudeModelCatalog,
+} from '@/harnesses/claude/agent-sdk/model-catalog'
 import { writeMockClaude } from './mock-claude-cli.ts'
 
 const ESCAPE = String.fromCharCode(27)
 
 type Prepared = { environment?: NodeJS.ProcessEnv; pluginRoot?: string }
+
+test('the Claude mock exposes models and modes through the SDK catalog reader', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'argo-claude-catalog-'))
+  try {
+    const transcripts = path.join(root, 'transcripts')
+    const executablePath = await writeMockClaude(root, transcripts)
+    const catalog = await readClaudeModelCatalog({
+      executablePath,
+      cache: new ClaudeModelCatalogCache(),
+    })
+
+    assert.deepEqual(
+      catalog?.data.map(({ value, supportedEffortLevels }) => ({ value, supportedEffortLevels })),
+      [
+        { value: 'fable', supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'] },
+        { value: 'opus', supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'] },
+        { value: 'sonnet', supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'] },
+        { value: 'haiku', supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'] },
+      ],
+    )
+    assert.deepEqual(catalog?.supportedPermissionModes, [
+      'acceptEdits',
+      'auto',
+      'bypassPermissions',
+      'manual',
+      'dontAsk',
+      'plan',
+    ])
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
 
 async function started(seed: string, prepare?: (root: string) => Promise<Prepared>) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-adversarial-claude-'))

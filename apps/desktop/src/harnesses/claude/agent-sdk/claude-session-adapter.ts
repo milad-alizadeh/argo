@@ -1,5 +1,9 @@
 import { PROJECT_PROOF_STORE_ENV } from '@/domains/projects/main/proof-protocol'
-import { claudeTurnSetupSchema } from '@/domains/sessions/contract/claude-turn-setup'
+import type { ClaudeModelCatalog } from '@/domains/sessions/contract/claude-model-catalog'
+import {
+  claudeOpeningSetupFor,
+  claudeTurnSetupSchemaFor,
+} from '@/domains/sessions/contract/claude-turn-setup'
 import type { SessionCommand } from '@/domains/sessions/next/contract/session-command-contract'
 import type { WorkspaceSelection } from '@/domains/sessions/next/contract/session-contract'
 import type {
@@ -15,6 +19,7 @@ import { keyOf } from './claude-session-key'
 import { openClaudeSession } from './claude-session-open'
 import { sessionRegistry } from './claude-session-registry'
 import { beginWatchedClaudeResume, readClaudeResumePermission } from './claude-watched-resume'
+import { ClaudeModelCatalogCache, readClaudeModelCatalog } from './model-catalog'
 import { sendWhenManaged } from './send-when-managed'
 import type { ClaudeQueryFactory } from './types'
 
@@ -25,22 +30,32 @@ export function watchedChanges(changed: Set<() => void>) {
   }
 }
 
-async function executeCommand(
-  command: SessionCommand,
-  runtime: Parameters<typeof openClaudeSession>[0]['deps'],
-  registry: ReturnType<typeof sessionRegistry>,
-): Promise<SessionCommandOutcome> {
-  if (command.type === 'session.start')
+async function executeCommand(options: {
+  command: SessionCommand
+  runtime: Parameters<typeof openClaudeSession>[0]['deps']
+  registry: ReturnType<typeof sessionRegistry>
+  readModelCatalog: () => ReturnType<typeof readClaudeModelCatalog>
+}): Promise<SessionCommandOutcome> {
+  const { command, runtime, registry, readModelCatalog } = options
+  if (command.type === 'session.start') {
+    const catalog = await readModelCatalog()
+    if (catalog === null)
+      return { kind: 'rejected', reason: 'Claude model catalog is unavailable.' }
+    const setup = command.setup ?? claudeOpeningSetupFor(catalog)
+    const parsed = claudeTurnSetupSchemaFor(catalog).safeParse(setup)
+    if (!parsed.success || parsed.data === undefined)
+      return { kind: 'rejected', reason: 'Claude does not support the selected Model and Effort.' }
     return openClaudeSession({
       command: {
         ...command,
         session: null,
-        setup: command.setup === undefined ? undefined : claudeTurnSetupSchema.parse(command.setup),
+        setup: parsed.data,
       },
       deps: runtime,
       register: registry.register,
       requireEntry: registry.requireEntry,
     })
+  }
   if (command.type === 'session.compact') {
     const entry = registry.requireEntry(command.session)
     entry.actor.send({ type: 'Send', prompt: '/compact' })
@@ -63,6 +78,8 @@ export function createClaudeSessionAdapter(deps: {
     sessionId: string,
   ) => Promise<{ resumable: true } | { resumable: false; reason: string }>
   now?: () => Date
+  findExecutablePath?: () => string | null
+  readModelCatalog?: () => Promise<ClaudeModelCatalog | null>
 }): ClaudeSessionAdapter {
   // The packaged proof mock stores sessions only in its transcript fixture, not the Agent SDK.
   const defaultReadResumePermission = process.env[PROJECT_PROOF_STORE_ENV]
@@ -76,8 +93,17 @@ export function createClaudeSessionAdapter(deps: {
   }
   const changed = new Set<() => void>()
   const registry = sessionRegistry(changed, deps.sessionService)
+  const catalogCache = new ClaudeModelCatalogCache()
+  const readModelCatalog =
+    deps.readModelCatalog ??
+    (() =>
+      readClaudeModelCatalog({
+        executablePath: deps.findExecutablePath?.() ?? null,
+        cache: catalogCache,
+      }))
   return {
-    execute: (command) => executeCommand(command, runtime, registry),
+    execute: (command) => executeCommand({ command, runtime, registry, readModelCatalog }),
+    readModelCatalog,
     subscribe: (session, listener) => {
       const entry = registry.requireEntry(session)
       entry.listeners.add(listener)

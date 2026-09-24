@@ -1,4 +1,6 @@
 import {
+  managedClaudeCatalogReply,
+  managedClaudeCatalogRequestSchema,
   managedSessionCatalogReply,
   managedSessionCatalogRequestSchema,
   managedSessionCommandRequestSchema,
@@ -25,5 +27,11 @@ export const MANAGED_SESSION_OPERATIONS = {
     channel: 'argo:managed-session:catalog',
     request: managedSessionCatalogRequestSchema,
     reply: managedSessionCatalogReply,
+  },
+  claudeCatalog: {
+    name: 'managed-session.claude-catalog',
+    channel: 'argo:managed-session:claude-catalog',
+    request: managedClaudeCatalogRequestSchema,
+    reply: managedClaudeCatalogReply,
   },
 } as const

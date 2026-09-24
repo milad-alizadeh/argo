@@ -82,6 +82,12 @@ export function attachManagedSessionBridge(
         requestId: request.requestId,
         catalog: await adapters.readModelCatalog('codex'),
       }),
+      claudeCatalog: async (request, adapters) => ({
+        version: 1 as const,
+        type: 'managed-session.claude-catalog.result' as const,
+        requestId: request.requestId,
+        catalog: await adapters.readClaudeModelCatalog(),
+      }),
     },
     error: managedSessionError,
   })

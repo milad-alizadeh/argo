@@ -1,9 +1,9 @@
 import { type ActorRefFrom, assign, createActor, fromPromise, setup } from 'xstate'
+import { executableVersion } from '@/harnesses/cli/executable-version'
 import { codexLaunchEnvironment } from '../launch-environment'
 import type { WireMessage } from '../protocol/protocol'
 import { CodexSessionDriverError } from '../session/codex-session-error'
 import type { CodexChannel } from './codex-channel'
-import { executableVersion } from './executable-version'
 import { openAppServer } from './open-app-server'
 
 // ADR-0047: one shared `codex app-server` process per window, multiplexing every managed Codex

@@ -130,9 +130,8 @@
       "effortDescription": "More effort trades speed for deeper reasoning.",
       "choosePermissionMode": "Choose permission mode: {{mode}}",
       "permissions": "{{harness}} permissions",
-      "ownSettings": "{{harness}} runs at the Model and Effort in its own settings.",
-      "loadingModels": "Loading Codex models…",
-      "modelCatalogError": "Argo could not load the Codex models.",
+      "loadingModels": "Loading {{harness}} models…",
+      "modelCatalogError": "Argo could not load {{harness}} models.",
       "refreshModels": "Refresh models",
       "model": "Model"
     },
