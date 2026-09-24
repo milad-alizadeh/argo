@@ -45,7 +45,7 @@ export const sessionMachine = setup({
         }
       | {
           type: 'xstate.done.actor.drain'
-          output: void
+          output: undefined
         }
       | {
           type: 'xstate.error.actor.start'

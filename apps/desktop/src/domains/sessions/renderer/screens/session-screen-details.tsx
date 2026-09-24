@@ -54,7 +54,6 @@ export function SessionComposerArea({
   cockpit,
   projectActions,
 }: SessionScreenDetailsProps) {
-  const location = useLocation()
   const catalogQuery = useQuery(trpc.harnessCatalogRead.queryOptions({ harness: harness.harness }))
   const catalogRefresh = useMutation(trpc.harnessCatalogRefresh.mutationOptions())
   const sessionSubmit = useMutation(trpc.sessionSubmit.mutationOptions())
@@ -74,6 +73,51 @@ export function SessionComposerArea({
   })
   // The Roster already knows another process runs it live, so no Send is offered at all (ADR-0040).
   if (session?.locked === true) return <OpenElsewhere onRetry={null} />
+  return (
+    <SessionComposerForm
+      catalogFailure={catalogFailure}
+      catalogRefresh={catalogRefresh}
+      catalogQuery={catalogQuery}
+      cockpit={cockpit}
+      control={control}
+      harness={harness}
+      identity={identity}
+      permission={permission}
+      projectActions={projectActions}
+      questionPending={questionPending}
+      session={session}
+      sessionSubmit={sessionSubmit}
+    />
+  )
+}
+
+type SessionComposerFormProps = Pick<
+  SessionScreenDetailsProps,
+  'cockpit' | 'harness' | 'permission' | 'projectActions' | 'questionPending' | 'session'
+> & {
+  catalogFailure: CatalogFailure | null
+  catalogQuery: ReturnType<typeof useQuery<CatalogReadResult>>
+  catalogRefresh: ReturnType<typeof useMutation>
+  control: ReturnType<typeof useTurnSetup>
+  identity: ReturnType<typeof composerIdentityOf>
+  sessionSubmit: ReturnType<typeof useMutation>
+}
+
+function SessionComposerForm({
+  catalogFailure,
+  catalogQuery,
+  catalogRefresh,
+  cockpit,
+  control,
+  harness,
+  identity,
+  permission,
+  projectActions,
+  questionPending,
+  session,
+  sessionSubmit,
+}: SessionComposerFormProps) {
+  const location = useLocation()
   return (
     <>
       {permission.failure ? <Failure message={permission.failure} /> : null}

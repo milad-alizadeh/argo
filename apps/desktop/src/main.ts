@@ -11,8 +11,8 @@ import {
   ATTACHMENT_SCHEME,
   attachmentPathFromUrl,
 } from '@/domains/sessions/contract/model/feed/feed-images'
-import { openDurableStores } from '@/main/durable-stores'
 import { createSessionRuntime } from '@/domains/sessions/main/live/session-runtime'
+import { openDurableStores } from '@/main/durable-stores'
 import { attachAppearanceWatch } from '@/platform/main/appearance'
 import type { ApplicationActors } from '@/platform/main/application/actors'
 import { startDesktopApplication } from '@/platform/main/application/start'
@@ -29,7 +29,7 @@ import { resetIncompleteDevelopmentDatabase } from '@/platform/main/development/
 import { installMenu } from '@/platform/main/menu'
 import { attachWindowNavigation } from '@/platform/main/security/window-navigation'
 import { configureStorageRuntime } from '@/platform/main/storage/storage-runtime'
-import { type AppRouter, createAppRouter } from '@/platform/main/trpc-router'
+import { createAppRouter } from '@/platform/main/trpc-router'
 import { attachTrpcTransport } from '@/platform/main/trpc-transport'
 import { createDesktopWindow } from '@/platform/main/window/create-window'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mts'

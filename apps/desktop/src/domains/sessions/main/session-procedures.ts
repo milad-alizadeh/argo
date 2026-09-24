@@ -1,6 +1,6 @@
 import { initTRPC } from '@trpc/server'
-import type { SessionRuntime } from './live/session-runtime'
 import { sessionAcceptedOutputSchema, sessionSubmitInputSchema } from '../contract/session-start'
+import type { SessionRuntime } from './live/session-runtime'
 
 const t = initTRPC.create()
 

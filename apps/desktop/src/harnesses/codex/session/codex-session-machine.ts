@@ -25,26 +25,22 @@ export function codexInputItems(
   prompt: string,
   attachments: SessionAttachmentInput[],
 ): CodexInputItem[] {
-  const text = [
+  const items: CodexInputItem[] = [
     {
       type: 'text' as const,
       text: prompt,
       text_elements: [],
     },
   ]
-  return attachments.reduce<CodexInputItem[]>((items, attachment) => {
+  for (const attachment of attachments) {
     if (attachment.kind === 'image')
-      return [
-        ...items,
-        {
-          type: 'localImage',
-          path: attachment.path,
-        },
-      ]
-    const byteLength = Buffer.byteLength(attachment.path)
-    return [
-      ...items,
-      {
+      items.push({
+        type: 'localImage',
+        path: attachment.path,
+      })
+    else {
+      const byteLength = Buffer.byteLength(attachment.path)
+      items.push({
         type: 'text',
         text: attachment.path,
         text_elements: [
@@ -56,9 +52,10 @@ export function codexInputItems(
             placeholder: attachment.path,
           },
         ],
-      },
-    ]
-  }, text)
+      })
+    }
+  }
+  return items
 }
 
 export type CodexSessionResult = {

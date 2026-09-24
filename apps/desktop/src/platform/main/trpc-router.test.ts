@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
 import { createActor } from 'xstate'
+import type { SessionRuntime } from '@/domains/sessions/main/live/session-runtime'
 import {
   createHarnessCatalogMachine,
   harnessCatalogSchema,
@@ -9,7 +10,6 @@ import { codexHarnessInfo } from '@/harnesses/codex/catalog'
 import { claudeModelCatalogFixture } from '../../../test-fixtures/sessions/claude-model-catalog.fixture'
 import { codexModelCatalogFixture } from '../../../test-fixtures/sessions/codex-model-catalog.fixture'
 import { createAppRouter } from './trpc-router'
-import type { SessionRuntime } from '@/domains/sessions/main/live/session-runtime'
 
 const sessions = {
   start: async () => ({ sessionId: '00000000-0000-4000-8000-000000000001' }),
