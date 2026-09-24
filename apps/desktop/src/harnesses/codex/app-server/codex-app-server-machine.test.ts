@@ -3,7 +3,7 @@ import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { type ActorLogic, createActor, fromCallback, waitFor } from 'xstate'
+import { type ActorLogic, createActor, fromCallback, fromPromise, waitFor } from 'xstate'
 import { adjacencyMapToArray, getAdjacencyMap, getShortestPaths } from 'xstate/graph'
 import { codexModelCatalogFixture } from '../../../../test-fixtures/sessions/codex-model-catalog.fixture'
 import { readCodexHarnessInfo } from '../catalog'
@@ -213,16 +213,15 @@ test('rejects a request sent after shutdown', async () => {
 
 test('reports an executable lookup failure through the machine', async () => {
   const machine = codexAppServerMachine.provide({
-    actors: { processActor: fromCallback(() => () => {}) },
-    actions: {
-      inspectExecutable: ({ self, event }) => {
-        if (event.type !== 'Call') return
-        self.send({
+    actors: {
+      processActor: fromCallback(() => () => {}),
+      discoverExecutable: fromPromise(({ input }) =>
+        Promise.resolve({
           type: 'Executable check failed',
           detail: 'Executable lookup failed.',
-          reject: event.reject,
-        })
-      },
+          reject: input.reject,
+        }),
+      ),
     },
   })
   const actor = createActor(machine, { input: { executable: null } }).start()
@@ -258,18 +257,17 @@ createInterface({ input: process.stdin }).on('line', (line) => {
   )
   await chmod(executable, 0o755)
   const machine = codexAppServerMachine.provide({
-    actors: { processActor: codexAppServerProcessActor },
-    actions: {
-      inspectExecutable: ({ self, event }) => {
-        if (event.type !== 'Call') return
-        self.send({
+    actors: {
+      processActor: codexAppServerProcessActor,
+      discoverExecutable: fromPromise(({ input }) =>
+        Promise.resolve({
           type: 'Request',
           executable,
           version: 'codex 0.147.0',
-          run: event.run,
-          reject: event.reject,
-        })
-      },
+          run: input.run,
+          reject: input.reject,
+        }),
+      ),
     },
   })
   const actor = createActor(machine, { input: { executable } }).start()

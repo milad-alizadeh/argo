@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { createInterface } from 'node:readline'
-import { type ActorRefFrom, assign, fromCallback, sendTo, setup } from 'xstate'
+import { type ActorRefFrom, assign, fromCallback, fromPromise, raise, sendTo, setup } from 'xstate'
 import { SESSION_CODEX_EXECUTABLE_ENV } from '@/domains/sessions/contract/proof-protocol'
 import { executableVersion } from '@/harnesses/cli/executable-version'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
@@ -342,6 +342,11 @@ type RequestEvent = {
   run: (channel: CodexChannel) => void
   reject: (error: Error) => void
 }
+type ExecutableCheckFailure = {
+  type: 'Executable check failed'
+  detail: string
+  reject: (error: Error) => void
+}
 type ProcessCommand =
   | {
       type: 'Open'
@@ -375,11 +380,7 @@ type Context = {
 type Event =
   | CallEvent
   | RequestEvent
-  | {
-      type: 'Executable check failed'
-      detail: string
-      reject: (error: Error) => void
-    }
+  | ExecutableCheckFailure
   | {
       type: 'Process ready'
       version: string
@@ -584,6 +585,27 @@ export const codexAppServerMachine = setup({
     >(() => {
       throw new Error('The application must provide the Codex process actor.')
     }),
+    discoverExecutable: fromPromise<RequestEvent | ExecutableCheckFailure, CallEvent>(
+      async ({ input }) => {
+        try {
+          const executable =
+            process.env[SESSION_CODEX_EXECUTABLE_ENV] ?? findExecutableOnLoginShellPath('codex')
+          return {
+            type: 'Request',
+            executable,
+            version: executable === null ? null : await executableVersion(executable),
+            run: input.run,
+            reject: input.reject,
+          }
+        } catch (error) {
+          return {
+            type: 'Executable check failed',
+            detail: String(error),
+            reject: input.reject,
+          }
+        }
+      },
+    ),
   },
   guards: {
     hasExecutable: ({ context }) => context.executable !== null,
@@ -598,45 +620,6 @@ export const codexAppServerMachine = setup({
       (context.expectedVersion === null || context.expectedVersion === event.version),
   },
   actions: {
-    inspectExecutable: ({ self, event }) => {
-      if (event.type !== 'Call') return
-      const reportFailure = (error: unknown) => {
-        if (self.getSnapshot().status !== 'active') {
-          event.reject(new Error('Codex app-server is closed.'))
-          return
-        }
-        self.send({
-          type: 'Executable check failed',
-          detail: String(error),
-          reject: event.reject,
-        })
-      }
-      const reportExecutable = (executable: string | null, version: string | null) => {
-        if (self.getSnapshot().status !== 'active') {
-          event.reject(new Error('Codex app-server is closed.'))
-          return
-        }
-        self.send({
-          type: 'Request',
-          executable,
-          version,
-          run: event.run,
-          reject: event.reject,
-        })
-      }
-      try {
-        const executable =
-          process.env[SESSION_CODEX_EXECUTABLE_ENV] ?? findExecutableOnLoginShellPath('codex')
-        if (executable === null) reportExecutable(null, null)
-        else
-          void executableVersion(executable).then(
-            (version) => reportExecutable(executable, version),
-            reportFailure,
-          )
-      } catch (error) {
-        reportFailure(error)
-      }
-    },
     openProcess: sendTo('processActor', ({ context }) => ({
       type: 'Open',
       executable: context.executable,
@@ -744,7 +727,7 @@ export const codexAppServerMachine = setup({
       initial: 'Unavailable',
       on: {
         Call: {
-          actions: 'inspectExecutable',
+          target: '.Checking',
         },
         'Executable check failed': {
           actions: [
@@ -775,6 +758,19 @@ export const codexAppServerMachine = setup({
         ],
       },
       states: {
+        Checking: {
+          invoke: {
+            src: 'discoverExecutable',
+            input: ({ event }) => {
+              if (event.type !== 'Call') throw new Error('Expected a Codex app-server call.')
+              return event
+            },
+            onDone: {
+              target: 'Unavailable',
+              actions: raise(({ event }) => event.output),
+            },
+          },
+        },
         Unavailable: {
           always: {
             guard: 'hasExecutable',

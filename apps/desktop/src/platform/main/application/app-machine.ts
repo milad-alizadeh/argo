@@ -45,34 +45,34 @@ export const appMachine = setup({
   id: 'application',
   initial: 'Running',
   context: {},
+  invoke: [
+    {
+      id: 'codex',
+      systemId: 'codex',
+      src: 'codex',
+      input: {
+        executable: null,
+      },
+    },
+    {
+      id: 'catalog',
+      systemId: 'catalog',
+      src: 'catalog',
+    },
+    {
+      id: 'sessions',
+      systemId: 'sessions',
+      src: 'sessions',
+      input: ({ event }) => {
+        assertEvent(event, 'xstate.init')
+        return {
+          database: event.input.database,
+        }
+      },
+    },
+  ],
   states: {
     Running: {
-      invoke: [
-        {
-          id: 'codex',
-          systemId: 'codex',
-          src: 'codex',
-          input: {
-            executable: null,
-          },
-        },
-        {
-          id: 'catalog',
-          systemId: 'catalog',
-          src: 'catalog',
-        },
-        {
-          id: 'sessions',
-          systemId: 'sessions',
-          src: 'sessions',
-          input: ({ event }) => {
-            assertEvent(event, 'xstate.init')
-            return {
-              database: event.input.database,
-            }
-          },
-        },
-      ],
       on: {
         Shutdown: 'Closed',
       },
