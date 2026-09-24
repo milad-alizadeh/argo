@@ -73,7 +73,7 @@ export function startMockClaudeSdkStream(
       const initializationId = initializationRequestId(input)
       if (initializationId !== null) {
         process.stdout.write(
-          `${JSON.stringify({ type: 'control_response', response: { subtype: 'success', request_id: initializationId, response: {} } })}\n`,
+          `${JSON.stringify({ type: 'control_response', response: { subtype: 'success', request_id: initializationId, response: { models: MODELS } } })}\n`,
         )
         continue
       }
