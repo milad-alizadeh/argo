@@ -10,11 +10,6 @@ type SessionDatabase =
   | Parameters<Parameters<DurableDatabase['transaction']>[0]>[0]
 type ProjectPath = { id: string; path: string }
 
-export type SessionIndexResult = {
-  argoIds: string[]
-  indexedCount: number
-}
-
 function projectAtPath(projects: ProjectPath[], workingDirectory: string | null): string | null {
   if (workingDirectory === null) return null
   const match = projects
@@ -64,15 +59,17 @@ export function upsertSession(
 export function indexSessionIngestions(
   database: DurableDatabase,
   sessions: SessionIngestion[],
-): SessionIndexResult {
+  isCancelled: () => boolean = () => false,
+) {
   const projectPaths = [
     ...database.select({ id: project.id, path: project.path }).from(project).all(),
     ...database.select({ id: workspace.projectId, path: workspace.path }).from(workspace).all(),
   ]
   return database.transaction((transaction) => {
-    const argoIds = sessions.map((session) =>
-      upsertSession(transaction, session, projectAtPath(projectPaths, session.workingDirectory)),
-    )
-    return { argoIds, indexedCount: argoIds.length }
+    for (const session of sessions) {
+      if (isCancelled()) throw new Error('Session index worker was cancelled.')
+      upsertSession(transaction, session, projectAtPath(projectPaths, session.workingDirectory))
+    }
+    if (isCancelled()) throw new Error('Session index worker was cancelled.')
   })
 }

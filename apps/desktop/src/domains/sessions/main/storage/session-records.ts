@@ -1,45 +1,34 @@
-import { and, count, desc, eq } from 'drizzle-orm'
-import { type Harness, harnessSchema } from '@/harnesses/harness'
+import { and, count, desc, eq, or, sql } from 'drizzle-orm'
+import { harnessSchema } from '@/harnesses/harness'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
+import type { SessionList, SessionListItem } from '../../contract/session-list'
 import { sessionTable } from './session-table'
 
-export type SessionIdentity = {
-  argoId: string
-  harness: Harness
-  nativeId: string
-  projectId: string | null
-  workingDirectory: string | null
+const sessionListColumns = {
+  argoId: sessionTable.argoId,
+  harness: sessionTable.harness,
+  nativeId: sessionTable.nativeId,
+  projectId: sessionTable.projectId,
+  vendorTitle: sessionTable.vendorTitle,
+  firstPrompt: sessionTable.firstPrompt,
+  updatedAt: sessionTable.updatedAt,
+  workingDirectory: sessionTable.workingDirectory,
 }
 
-export type SessionList = {
-  page: number
-  pageSize: number
-  indexedTotal: number
-  sessions: Array<{
-    argoId: string
-    harness: Harness
-    nativeId: string
-    projectId: string | null
-    vendorTitle: string | null
-    firstPrompt: string | null
-    updatedAt: number
-    workingDirectory: string | null
-  }>
+function sessionListItem(
+  row: Omit<SessionListItem, 'harness'> & { harness: string },
+): SessionListItem {
+  return { ...row, harness: harnessSchema.parse(row.harness) }
 }
 
-type SessionListRequest = {
-  page: number
-  pageSize: number
-  projectId: string | null
-}
+export type SessionIdentity = Pick<
+  SessionListItem,
+  'argoId' | 'harness' | 'nativeId' | 'projectId' | 'workingDirectory'
+>
 
-function sessionIdentity(row: {
-  argoId: string
-  harness: string
-  nativeId: string
-  projectId: string | null
-  workingDirectory: string | null
-}): SessionIdentity {
+function sessionIdentity(
+  row: Omit<SessionIdentity, 'harness'> & { harness: string },
+): SessionIdentity {
   return { ...row, harness: harnessSchema.parse(row.harness) }
 }
 
@@ -64,10 +53,19 @@ export function readSessionIdentity(
 
 export function readSessionList(
   database: DurableDatabase,
-  request: SessionListRequest,
+  request: Pick<SessionList, 'page' | 'pageSize'> & { projectId: string | null; search: string },
 ): SessionList {
-  const { page, pageSize, projectId } = request
-  const where = projectId === null ? undefined : eq(sessionTable.projectId, projectId)
+  const { page, pageSize, projectId, search } = request
+  const needle = search.trim()
+  const matches =
+    needle.length === 0
+      ? undefined
+      : or(
+          sql`instr(lower(${sessionTable.vendorTitle}), lower(${needle})) > 0`,
+          sql`instr(lower(${sessionTable.firstPrompt}), lower(${needle})) > 0`,
+          sql`instr(lower(${sessionTable.nativeId}), lower(${needle})) > 0`,
+        )
+  const where = and(projectId === null ? undefined : eq(sessionTable.projectId, projectId), matches)
   const total =
     database.select({ total: count() }).from(sessionTable).where(where).get()?.total ?? 0
   return {
@@ -75,24 +73,24 @@ export function readSessionList(
     pageSize,
     indexedTotal: total,
     sessions: database
-      .select({
-        argoId: sessionTable.argoId,
-        harness: sessionTable.harness,
-        nativeId: sessionTable.nativeId,
-        projectId: sessionTable.projectId,
-        vendorTitle: sessionTable.vendorTitle,
-        firstPrompt: sessionTable.firstPrompt,
-        updatedAt: sessionTable.updatedAt,
-        workingDirectory: sessionTable.workingDirectory,
-      })
+      .select(sessionListColumns)
       .from(sessionTable)
       .where(where)
       .orderBy(desc(sessionTable.updatedAt), sessionTable.argoId)
       .limit(pageSize)
       .offset((page - 1) * pageSize)
       .all()
-      .map((session) => ({ ...session, harness: harnessSchema.parse(session.harness) })),
+      .map(sessionListItem),
   }
+}
+
+export function readSession(database: DurableDatabase, argoId: string): SessionListItem | null {
+  const row = database
+    .select(sessionListColumns)
+    .from(sessionTable)
+    .where(eq(sessionTable.argoId, argoId))
+    .get()
+  return row === undefined ? null : sessionListItem(row)
 }
 
 export function findSessionByVendorIdentity(

@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test'
 import { type ActorRefFrom, createActor, fromPromise } from 'xstate'
 import type { SessionSubmitInput } from '@/domains/sessions/contract/session-start'
 import type { SessionSupervisorActor } from '@/domains/sessions/main/live/session-supervisor-machine'
+import type { sessionSyncMachine } from '@/domains/sessions/main/sync/session-sync-machine'
 import {
   harnessCatalogMachine,
   harnessCatalogSchema,
@@ -22,6 +23,7 @@ const sessions = {
   },
 } as SessionSupervisorActor
 const codexActor = {} as ActorRefFrom<typeof codexAppServerMachine>
+const syncActors = {} as Record<'claude' | 'codex', ActorRefFrom<typeof sessionSyncMachine>>
 
 test('returns only the selected Harness as serializable composer choices', async () => {
   const actor = createActor(
@@ -44,6 +46,7 @@ test('returns only the selected Harness as serializable composer choices', async
       sessions,
       database: {} as DurableDatabase,
       codex: codexActor,
+      sync: syncActors,
     }).createCaller({})
     const claude = await caller.harnessCatalogRead({ harness: 'claude' })
     const codex = await caller.harnessCatalogRead({ harness: 'codex' })
@@ -81,6 +84,7 @@ test('repeated reads reuse the settled catalog until an explicit refresh', async
       sessions,
       database: {} as DurableDatabase,
       codex: codexActor,
+      sync: syncActors,
     }).createCaller({})
     await caller.harnessCatalogRead({ harness: 'claude' })
     await caller.harnessCatalogRead({ harness: 'codex' })
@@ -115,6 +119,7 @@ test('retry reloads a failed catalog once', async () => {
       sessions,
       database: {} as DurableDatabase,
       codex: codexActor,
+      sync: syncActors,
     }).createCaller({})
     const failed = await caller.harnessCatalogRead({ harness: 'claude' })
     expect(failed.failure).toContain('Catalog unavailable')
@@ -151,6 +156,7 @@ test('routes a second optimistic composer command to the same pending Session', 
       sessions: supervisor,
       database: {} as DurableDatabase,
       codex: codexActor,
+      sync: syncActors,
     }).createCaller({})
     const initial: SessionSubmitInput = {
       commandId: '00000000-0000-4000-8000-000000000002',
@@ -203,6 +209,7 @@ test('rejects Claude attachments before a Session reaches a vendor', async () =>
       sessions: supervisor,
       database: {} as DurableDatabase,
       codex: codexActor,
+      sync: syncActors,
     }).createCaller({})
     await expect(
       caller.sessionSubmit({

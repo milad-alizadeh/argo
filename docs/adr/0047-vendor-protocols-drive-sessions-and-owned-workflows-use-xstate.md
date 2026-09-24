@@ -3,19 +3,17 @@
 Status: accepted · 2026-09-21
 
 Argo reads and drives Sessions through supported vendor interfaces. Claude uses the Claude Agent
-SDK. Codex uses `codex app-server`. Argo does not parse transcript or rollout files. A filesystem
-watcher can invalidate a watched Session, but the adapter must then read that Session through the
-vendor interface.
+SDK. Codex uses `codex app-server`. Argo does not parse transcript or rollout files. Harness
+readers obtain discovery and history through vendor interfaces. ADR-0048 owns Session indexing.
 
-A Session is keyed by its Harness and native vendor ID. Its posture is `managed | watched`.
-Argo owns the live channel of a managed Session. A watched Session has no Argo-owned live channel
-and is read-only until the user resumes it. After an application restart, every surviving Session
-starts watched. A SQLite lease prevents two Argo windows from managing one Session, but it does
-not claim control over an external client.
+A Session has an Argo UUID and a unique Harness and native vendor ID pair. A live Session actor
+owns its vendor channel. A Session without one remains readable through vendor history and resumes
+on the first new prompt. The channel ends with the application. Argo allows one window and uses no
+Session lease.
 
-Each Harness owns one adapter. Shared Session code owns only validated commands, projections, and
-application rules. Claude has one ephemeral main-process actor per managed Session. Codex has one
-main-process app-server supervisor and one child actor per managed Session. Invoked actors own
+Each Harness owns its vendor reader and Session machine. Shared Session code owns validated
+commands, SQL reads, and application rules. Claude has one ephemeral main-process actor per live
+Session. Codex has one main-process app-server actor and one child actor per live Session. Invoked actors own
 SDK clients, processes, streams, sockets, timers, and cancellation handles. Machine context holds
 only serializable identifiers and validated facts. Live Session actor snapshots are not persisted.
 
@@ -24,9 +22,9 @@ events or XState snapshots. The renderer owns view state only. It does not own c
 approval, retry, or resume state.
 
 Vendor events are the immediate Feed source. Vendor history reconciles gaps and uncertain sends.
-Argo never resends an uncertain Turn automatically. The renderer does not create optimistic Feed
-rows, optimistic Turns, temporary Session IDs, or a pending-Turn queue. It keeps the draft until
-main accepts the send command and restores it after a definite rejection.
+Argo never resends an uncertain Turn automatically. A temporary UI row can hold an unsent new
+Session, but only SQLite assigns its durable Argo UUID after vendor acceptance. The renderer keeps
+the draft until main accepts the send command and restores it after a definite rejection.
 
 Claude authorization is subscription-only. Argo does not accept an Anthropic API key or select
 API billing. Anthropic's paused billing change means that Agent SDK and third-party app usage
@@ -38,10 +36,9 @@ contract.
 
 ## Roster and search
 
-The renderer requests one merged Roster page. The backend merges Claude and Codex pages by
-activity and preserves `(Harness, native Session ID)` as identity. A source failure leaves the
-other source visible. Refresh patches loaded rows. A truly stale cursor causes a background reload
-that preserves the visible scroll anchor.
+The renderer reads numbered Session pages from SQLite. Each Harness sync worker writes its parsed
+Sessions to that table, and a source failure leaves already indexed rows available. The Roster
+keeps its virtual list and selection by Argo UUID. ADR-0048 defines SQL paging and sync.
 
 SQLite owns user pins and pinned order. `Pinned Sessions` and `Sessions` are sections of one
 virtual list. Only pinned rows can be reordered. Vendor pins and tags do not change Argo's order.
@@ -68,15 +65,16 @@ GitHub or Linear OAuth for all windows. Tokens and PKCE material stay outside se
 context. Claude and Codex sign-ins use separate Harness-specific actors and are not Account
 entities.
 
-Tickets remain provider-owned query data. One Ticket observer actor per Connection owns initial
+Tickets remain provider-owned facts with a SQLite read index. One Ticket observer actor per Connection owns initial
 sync, invalidation, refresh, reconnect, backoff, and reconciliation. A GitHub webhook-forwarder
 socket can be a fast invalidation path, with a conditional API read as the correctness floor.
-Linear uses polling until Argo has a secure webhook relay. Push never writes Ticket truth directly.
+Linear uses polling until Argo has a secure webhook relay. Provider responses update the Ticket
+index; a local write never claims provider acceptance before confirmation.
 
 ## Consequences
 
 - Delete transcript and rollout parsers, resume-chain reconstruction, private vendor database
-  reads, temporary Session identity, and their compatibility paths.
+  reads, and their compatibility paths.
 - Reset the development database. There are no users and no legacy migration is required.
 - Keep PTY support out of the first adapter contract. Add it later only as another Harness-owned
   adapter if subscription access or metering changes. Keep the existing PTY runtime dependencies
@@ -85,7 +83,7 @@ Linear uses polling until Argo has a secure webhook relay. Push never writes Tic
   active SDK path must not import it or branch on PTY behavior.
 - Test adapters with recorded vendor streams and contract tests. Test XState outcomes rather than
   implementation calls.
-- Keep managed work alive across renderer reloads. Treat application-process loss as interruption,
+- Keep live work alive across renderer reloads. Treat application-process loss as interruption,
   then reconcile before resume.
 
 ## Superseded decisions
@@ -96,15 +94,15 @@ driver, separate Agent SDK billing claim, and transcript-observation decisions.
 It supersedes ADR-0008's files-only store, transcript discovery, resume-chain construction, and
 file-derived liveness. ADR-0043 now governs the shared SQLite store.
 
-It keeps ADR-0013's rule that Sessions have no kinds. It supersedes the `managed | external`
-posture with `managed | watched`.
+It keeps ADR-0013's rule that Sessions have no kinds. ADR-0048 supersedes all durable Session
+posture fields.
 
 It keeps ADR-0026's distinction between a temporary channel and a durable Session. It supersedes
 resume-chain identity, transcript-derived liveness, the ownership JSON ledger, and transcript-tip
 resume.
 
-It keeps ADR-0040's rule that origin does not gate resume. It supersedes the JSON ownership ledger
-and file/process liveness checks with a SQLite lease and vendor liveness.
+It keeps ADR-0040's rule that origin does not gate resume. ADR-0048 supersedes the JSON ownership
+ledger, file/process liveness checks, and Session lease with vendor availability reads.
 
 It supersedes ADR-0041's user-level compaction hook. Compaction comes from vendor events and
 history.

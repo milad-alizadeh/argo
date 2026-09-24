@@ -10,25 +10,24 @@ import {
   sessionSyncMaxRetries,
 } from './session-sync-machine'
 
+const result = (input: SessionSyncJobInput, cursor: string | null): SessionSyncResult => ({
+  cursor,
+  generation: input.generation,
+  indexedCount: 1,
+  invalidRecordCount: 0,
+})
+
 const modeledEvents = [
   {
     type: 'xstate.done.actor.0.sessionSync.Syncing' as const,
-    output: {
-      complete: true,
-      cursor: null,
-      generation: 0,
-      indexedCount: 2,
-      invalidRecordCount: 1,
-      page: 0,
-      argoIds: [],
-    },
+    output: result({ cursor: null, generation: 0, priorityNativeId: null }, null),
   },
   {
     type: 'xstate.error.actor.0.sessionSync.Syncing' as const,
     error: 'temporary failure',
   },
   { type: 'Refresh' as const },
-  { type: 'Priority sync' as const },
+  { type: 'Priority sync' as const, nativeId: 'native-1' },
 ]
 const modeledMachine = sessionSyncMachine.provide({
   actors: { sync: fromPromise(() => new Promise(() => undefined)) },
@@ -39,7 +38,7 @@ const modeledLogic = modeledMachine as unknown as ActorLogic<
   (typeof modeledEvents)[number]
 >
 
-test('models a successful sync, retry, and priority refresh', () => {
+test('models successful sync, retry, and priority paths', () => {
   const paths = getShortestPaths(modeledLogic, {
     input: {},
     serializeState: (snapshot) => String(snapshot.value),
@@ -57,71 +56,56 @@ test('models a successful sync, retry, and priority refresh', () => {
   )
 })
 
-test('continues through older discovery pages before waiting to poll again', async () => {
-  const jobs: Array<{ generation: number; page: number }> = []
+test('continues older discovery pages and restarts at recent on refresh', async () => {
+  const cursors: Array<string | null> = []
   const machine = sessionSyncMachine.provide({
     actors: {
       sync: fromPromise(async ({ input }) => {
-        jobs.push({ generation: input.generation, page: input.page })
-        return {
-          complete: input.page === 1,
-          cursor: input.page === 0 ? 'older' : null,
-          generation: input.generation,
-          indexedCount: 1,
-          invalidRecordCount: 0,
-          page: input.page,
-          argoIds: [],
-        }
+        cursors.push(input.cursor)
+        return result(input, input.cursor === null ? '50' : null)
       }),
     },
   })
   const actor = createActor(machine, { input: {} }).start()
   try {
-    await waitFor(actor, (snapshot) => snapshot.matches('Waiting') && snapshot.context.page === 0)
+    await waitFor(actor, (snapshot) => snapshot.matches('Waiting'))
     actor.send({ type: 'Refresh' })
-    await waitFor(actor, (snapshot) => snapshot.matches('Waiting') && snapshot.context.page === 0)
+    await waitFor(actor, (snapshot) => snapshot.matches('Waiting') && cursors.length === 4)
+    assert.deepEqual(cursors, [null, '50', null, '50'])
+  } finally {
+    actor.stop()
+  }
+})
+
+test('looks up a priority Session and resumes the older page', async () => {
+  const jobs: Array<{ cursor: string | null; priorityNativeId: string | null }> = []
+  const machine = sessionSyncMachine.provide({
+    actors: {
+      sync: fromPromise(async ({ input }) => {
+        jobs.push({ cursor: input.cursor, priorityNativeId: input.priorityNativeId })
+        if (jobs.length === 2) return new Promise<SessionSyncResult>(() => undefined)
+        if (input.priorityNativeId !== null) return result(input, null)
+        return result(input, input.cursor === null ? '50' : null)
+      }),
+    },
+  })
+  const actor = createActor(machine, { input: {} }).start()
+  try {
+    await waitFor(actor, () => jobs.length === 2)
+    actor.send({ type: 'Priority sync', nativeId: 'old-native-id' })
+    await waitFor(actor, (snapshot) => snapshot.matches('Waiting') && jobs.length === 4)
     assert.deepEqual(jobs, [
-      { generation: 0, page: 0 },
-      { generation: 0, page: 1 },
-      { generation: 1, page: 0 },
-      { generation: 1, page: 1 },
+      { cursor: null, priorityNativeId: null },
+      { cursor: '50', priorityNativeId: null },
+      { cursor: '50', priorityNativeId: 'old-native-id' },
+      { cursor: '50', priorityNativeId: null },
     ])
   } finally {
     actor.stop()
   }
 })
 
-test('priority refresh restarts discovery from the recent page', async () => {
-  const jobs: number[] = []
-  let call = 0
-  const machine = sessionSyncMachine.provide({
-    actors: {
-      sync: fromPromise(async ({ input }) => {
-        jobs.push(input.page)
-        return {
-          complete: call++ > 0,
-          cursor: 'older',
-          generation: input.generation,
-          indexedCount: 1,
-          invalidRecordCount: 0,
-          page: input.page,
-          argoIds: [],
-        }
-      }),
-    },
-  })
-  const actor = createActor(machine, { input: {} }).start()
-  try {
-    await waitFor(actor, (snapshot) => snapshot.matches('Waiting') && snapshot.context.page === 0)
-    actor.send({ type: 'Priority sync' })
-    await waitFor(actor, () => jobs.length === 3)
-    assert.deepEqual(jobs, [0, 1, 0])
-  } finally {
-    actor.stop()
-  }
-})
-
-test('waits for the next poll after a bounded number of failed attempts', async () => {
+test('waits for the next poll after bounded failed attempts', async () => {
   let attempts = 0
   const machine = sessionSyncMachine.provide({
     actors: {

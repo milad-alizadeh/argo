@@ -74,6 +74,12 @@ function liveFactsOf({ session }: SessionScreenModel): NonNullable<FeedLiveFacts
   }
 }
 
+function indexedTitle({ indexedSession }: SessionScreenModel): string | null {
+  return (
+    indexedSession?.vendorTitle ?? indexedSession?.firstPrompt ?? indexedSession?.nativeId ?? null
+  )
+}
+
 export function SessionScreenView() {
   const model = useSessionScreenModel()
   const { evidence, feed, feedError, isNewSession, question, session } = model
@@ -86,6 +92,8 @@ export function SessionScreenView() {
     <BackgroundWork.Provider value={backgroundWorkLinks(model)}>
       <SessionShell
         feed={feed}
+        headerTitle={indexedTitle(model)}
+        headerWorkingDirectory={model.indexedSession?.workingDirectory ?? null}
         feedError={feedError}
         onRetryFeed={retryFeed}
         liveFacts={liveFactsOf(model)}
@@ -102,6 +110,9 @@ export function SessionScreenView() {
           feedError?.code === 'missing-session' ? null : (
             <SessionComposerArea
               permission={model.permission}
+              indexedSession={model.indexedSession}
+              availability={model.availability}
+              retryAvailability={retryFeed}
               questionPending={pendingQuestionId(feed) !== null}
               session={session}
               harness={model.harness}

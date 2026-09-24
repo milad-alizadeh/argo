@@ -13,9 +13,11 @@ import {
   attachmentPathFromUrl,
 } from '@/domains/sessions/contract/model/feed/feed-images'
 import type { SessionSupervisorActor } from '@/domains/sessions/main/live/session-supervisor-machine'
+import type { sessionSyncMachine } from '@/domains/sessions/main/sync/session-sync-machine'
 import type { CatalogActor } from '@/harnesses/catalog/catalog-read'
 import type { codexAppServerMachine } from '@/harnesses/codex/app-server/codex-app-server-machine'
 import { openDurableStores } from '@/main/durable-stores'
+import { WATCHED_CHANGED_CHANNEL } from '@/platform/contract/watch'
 import { attachAppearanceWatch } from '@/platform/main/appearance'
 import type { AppActor } from '@/platform/main/application/app-machine'
 import { startDesktopApplication } from '@/platform/main/application/start'
@@ -105,20 +107,74 @@ function focusWindow(): void {
   desktopWindow.focus()
 }
 
-function createWindow(actor: AppActor, stores: ReturnType<typeof openDurableStores>): void {
+function watchSessionSync(
+  window: BrowserWindow,
+  sync: ActorRefFrom<typeof sessionSyncMachine> | undefined,
+) {
+  return sync?.subscribe(() => window.webContents.send(WATCHED_CHANGED_CHANNEL, 'sessions'))
+}
+
+function watchLiveSessions(window: BrowserWindow, supervisor: SessionSupervisorActor | undefined) {
+  if (supervisor === undefined) return () => {}
+  const children = new Map<string, { unsubscribe: () => void }>()
+  const changed = () => window.webContents.send(WATCHED_CHANGED_CHANNEL, 'sessions')
+  const parent = supervisor.subscribe((snapshot) => {
+    const current = snapshot.context.sessions
+    for (const [id, subscription] of children) {
+      if (current[id] !== undefined) continue
+      subscription.unsubscribe()
+      children.delete(id)
+    }
+    for (const [id, session] of Object.entries(current)) {
+      if (children.has(id)) continue
+      children.set(id, session.subscribe(changed))
+    }
+    changed()
+  })
+  return () => {
+    parent.unsubscribe()
+    for (const subscription of children.values()) subscription.unsubscribe()
+  }
+}
+
+function routerForApplication(actor: AppActor, stores: ReturnType<typeof openDurableStores>) {
   const catalogActor = actor.system.get('catalog') as CatalogActor | undefined
   const sessionsActor = actor.system.get('sessions') as SessionSupervisorActor | undefined
   const codexActor = actor.system.get('codex') as
     | ActorRefFrom<typeof codexAppServerMachine>
     | undefined
-  if (catalogActor === undefined || sessionsActor === undefined || codexActor === undefined)
+  const claudeSync = actor.system.get('claudeSync') as
+    | ActorRefFrom<typeof sessionSyncMachine>
+    | undefined
+  const codexSync = actor.system.get('codexSync') as
+    | ActorRefFrom<typeof sessionSyncMachine>
+    | undefined
+  if (
+    catalogActor === undefined ||
+    sessionsActor === undefined ||
+    codexActor === undefined ||
+    claudeSync === undefined ||
+    codexSync === undefined
+  )
     throw new Error('Application child actors are unavailable.')
-  const router = createAppRouter({
+  return createAppRouter({
     actor: catalogActor,
     sessions: sessionsActor,
     database: stores.database,
     codex: codexActor,
+    sync: { claude: claudeSync, codex: codexSync },
   })
+}
+
+function createWindow(actor: AppActor, stores: ReturnType<typeof openDurableStores>): void {
+  const claudeSync = actor.system.get('claudeSync') as
+    | ActorRefFrom<typeof sessionSyncMachine>
+    | undefined
+  const codexSync = actor.system.get('codexSync') as
+    | ActorRefFrom<typeof sessionSyncMachine>
+    | undefined
+  const sessions = actor.system.get('sessions') as SessionSupervisorActor | undefined
+  const router = routerForApplication(actor, stores)
   desktopWindow = createDesktopWindow({
     buildDirectory: __dirname,
     rendererName: MAIN_WINDOW_VITE_NAME,
@@ -144,7 +200,13 @@ function createWindow(actor: AppActor, stores: ReturnType<typeof openDurableStor
         context: undefined,
       })
       attachAppearanceWatch(window)
+      const claudeWatch = watchSessionSync(window, claudeSync)
+      const codexWatch = watchSessionSync(window, codexSync)
+      const stopLiveWatch = watchLiveSessions(window, sessions)
       window.once('closed', () => {
+        claudeWatch?.unsubscribe()
+        codexWatch?.unsubscribe()
+        stopLiveWatch()
         desktopWindow = undefined
         detachTrpc()
         actor.send({ type: 'Shutdown' })

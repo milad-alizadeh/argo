@@ -16,20 +16,34 @@ type SessionShellProps = Omit<SessionWorkspaceProps, 'header'> & {
   // nothing here and the bar stays empty (#1582).
   headerControls?: ReactNode
   session?: Pick<Session, 'cwd' | 'harness' | 'id' | 'status' | 'title'> | null
+  headerTitle?: string | null
+  headerWorkingDirectory?: string | null
   inspector: ReactNode
   inspectorBar?: ReactNode
   defaultInspectorCollapsed?: boolean
   inspectorReveal?: string | null
 }
 
-function SessionHeader({ session }: { session: SessionShellProps['session'] }) {
+function SessionHeader({
+  session,
+  title,
+  workingDirectory,
+}: {
+  session: SessionShellProps['session']
+  title: string | null
+  workingDirectory: string | null
+}) {
   const { t } = useTranslation('sessions')
-  if (session === null || session === undefined) return null
-  const worktree = worktreeName(session.cwd)
+  if ((session === null || session === undefined) && title === null) return null
+  const worktree = worktreeName(workingDirectory ?? session?.cwd ?? null)
   return (
     <div className="min-w-0 flex-1 overflow-hidden">
       <h1 className="truncate type-heading">
-        <SessionTitle session={session} text={sessionName(session, t('newSession'))} />
+        {session === null || session === undefined ? (
+          title
+        ) : (
+          <SessionTitle session={session} text={sessionName(session, t('newSession'))} />
+        )}
       </h1>
       {worktree ? (
         <p className="mt-1 flex min-w-0 items-center gap-1 type-meta text-muted-foreground">
@@ -55,6 +69,8 @@ function SessionHeaderControls({ children }: { children: ReactNode }) {
 export function SessionShell({
   headerControls = null,
   session = null,
+  headerTitle = null,
+  headerWorkingDirectory = null,
   inspector,
   inspectorBar = null,
   defaultInspectorCollapsed = false,
@@ -81,7 +97,11 @@ export function SessionShell({
                 data-component="SessionHeader"
                 className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center gap-2 border-b border-border/60 bg-background px-(--spacing-shell-gutter)"
               >
-                <SessionHeader session={session} />
+                <SessionHeader
+                  session={session}
+                  title={headerTitle}
+                  workingDirectory={headerWorkingDirectory}
+                />
                 <SessionHeaderControls>{headerControls}</SessionHeaderControls>
               </header>
             }

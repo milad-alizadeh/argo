@@ -54,7 +54,7 @@ test('decodes a recorded response from codex 0.147.0', () => {
 test('reads every model/list page before publishing Codex choices', async () => {
   const cursors: Array<string | undefined> = []
   const request: CodexRequest = async (_method, params, parse) => {
-    const cursor = 'cursor' in params ? params.cursor : undefined
+    const cursor = 'cursor' in params ? (params.cursor ?? undefined) : undefined
     cursors.push(cursor)
     const page =
       cursor === undefined

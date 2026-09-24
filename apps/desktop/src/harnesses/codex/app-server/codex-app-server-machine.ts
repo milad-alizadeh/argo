@@ -32,6 +32,10 @@ export type RequestParams = {
     threadId: string
     includeTurns: boolean
   }
+  'thread/loaded/list': {
+    cursor: string | null
+    limit: number
+  }
   'turn/start': {
     threadId: string
     input: Array<unknown>

@@ -1,8 +1,10 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { useLocation } from 'react-router'
+import { useLocation, useNavigate } from 'react-router'
 import type { Cockpit, ProjectActions } from '@/domains/projects/renderer'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import type { SessionAvailability } from '@/domains/sessions/contract/session-history'
+import type { SessionListItem } from '@/domains/sessions/contract/session-list'
 import type { SessionSubmitInput } from '@/domains/sessions/contract/session-start'
 import type { CatalogReadResult } from '@/harnesses/catalog/catalog-read'
 import { Icon } from '@/platform/renderer/components/icon/icon'
@@ -28,6 +30,9 @@ type SessionScreenDetailsProps = {
   permission: ReturnType<typeof import('../composer').useSessionPermission>
   questionPending: boolean
   session: SessionRosterRow | null
+  indexedSession: SessionListItem | null
+  availability: SessionAvailability | null
+  retryAvailability: () => void
   harness: HarnessControl
   selectedSessionId: string | null
   roster: SessionRoster | null
@@ -64,17 +69,21 @@ async function submitFromComposer({
   identity,
   harness,
   cockpit,
+  indexedSession,
   prompt,
   setup,
   attachments,
+  onResolved,
 }: {
   submit: (input: SessionSubmitInput) => Promise<{ sessionId: string }>
   identity: ReturnType<typeof composerIdentityOf>
   harness: HarnessControl
   cockpit: Cockpit
+  indexedSession: SessionListItem | null
   prompt: string
   setup: SessionSubmitInput['setup'] | null
   attachments: SessionSubmitInput['attachments']
+  onResolved: (sessionId: string) => void
 }) {
   if (setup === null) return false
   const commandId =
@@ -86,16 +95,24 @@ async function submitFromComposer({
     const submitted = await submit({
       commandId,
       harness: harness.harness,
-      projectId: cockpit.project?.id ?? '',
-      cwd: cockpit.workspace?.path ?? cockpit.project?.path ?? '',
+      projectId:
+        identity.kind === 'session'
+          ? (indexedSession?.projectId ?? null)
+          : (cockpit.project?.id ?? null),
+      cwd:
+        identity.kind === 'session'
+          ? (indexedSession?.workingDirectory ?? '')
+          : (cockpit.workspace?.path ?? cockpit.project?.path ?? ''),
       sessionId: identity.kind === 'session' ? identity.sessionId : null,
       pendingId: identity.kind === 'pending' ? identity.sessionId : null,
       prompt,
       attachments,
       setup,
     })
-    if (identity.kind === 'pending')
+    if (identity.kind === 'pending') {
       useSessionCreationStore.getState().resolved(identity.sessionId, submitted.sessionId)
+      onResolved(submitted.sessionId)
+    }
     return true
   } catch {
     if (identity.kind === 'pending') useSessionCreationStore.getState().failed(identity.sessionId)
@@ -103,25 +120,58 @@ async function submitFromComposer({
   }
 }
 
-function useSessionAvailability(selectedSessionId: string | null) {
-  const indexedSessionId =
-    selectedSessionId !== null &&
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(selectedSessionId)
-      ? selectedSessionId
-      : null
-  return useQuery({
-    ...trpc.sessionFeed.queryOptions({
-      sessionId: indexedSessionId ?? '00000000-0000-4000-8000-000000000000',
-    }),
-    enabled: indexedSessionId !== null,
-    refetchOnWindowFocus: true,
+function useSessionSubmit() {
+  const mutation = useMutation(trpc.sessionSubmit.mutationOptions())
+  const queryClient = useQueryClient()
+  return async (input: SessionSubmitInput) => {
+    const result = await mutation.mutateAsync(input)
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: trpc.sessions.list.queryKey() }),
+      queryClient.invalidateQueries({ queryKey: trpc.sessions.get.queryKey() }),
+      queryClient.invalidateQueries({ queryKey: trpc.sessionFeed.queryKey() }),
+    ])
+    return result
+  }
+}
+
+function useComposerControl({
+  identity,
+  harness,
+  catalog,
+  roster,
+}: {
+  identity: ReturnType<typeof composerIdentityOf>
+  harness: HarnessControl
+  catalog: CatalogReadResult['info'] | null
+  roster: SessionRoster | null
+}) {
+  return useTurnSetup({
+    harness: harness.harness,
+    choices: catalog?.availability === 'available' ? catalog : null,
+    identity,
+    rows: roster?.sessions ?? [],
   })
+}
+
+function composerIdentity(
+  selectedSessionId: string | null,
+  cockpit: Cockpit,
+  pending: ReturnType<typeof useSessionCreationStore.getState>['pending'],
+) {
+  return composerIdentityOf(
+    selectedSessionId,
+    cockpit.project?.id ?? null,
+    pending?.stage === 'draft' ? pending.id : null,
+  )
 }
 
 export function SessionComposerArea({
   permission,
   questionPending,
   session,
+  indexedSession,
+  availability,
+  retryAvailability,
   harness,
   selectedSessionId,
   roster,
@@ -130,32 +180,26 @@ export function SessionComposerArea({
 }: SessionScreenDetailsProps) {
   const catalogQuery = useQuery(trpc.harnessCatalogRead.queryOptions({ harness: harness.harness }))
   const catalogRefresh = useMutation(trpc.harnessCatalogRefresh.mutationOptions())
-  const sessionSubmit = useMutation(trpc.sessionSubmit.mutationOptions())
-  const history = useSessionAvailability(selectedSessionId)
+  const submit = useSessionSubmit()
+  const navigate = useNavigate()
   const location = useLocation()
-  const catalog = catalogQuery.data?.info ?? null
   const catalogFailure = catalogFailureOf(catalogQuery.data, catalogQuery.isError)
   const pending = useSessionCreationStore((state) => state.pending)
-  const identity = composerIdentityOf(
-    selectedSessionId,
-    cockpit.project?.id ?? null,
-    pending?.stage === 'draft' ? pending.id : null,
-  )
-  const control = useTurnSetup({
-    harness: harness.harness,
-    choices: catalog?.availability === 'available' ? catalog : null,
+  const identity = composerIdentity(selectedSessionId, cockpit, pending)
+  const control = useComposerControl({
     identity,
-    rows: roster?.sessions ?? [],
+    harness,
+    catalog: catalogQuery.data?.info ?? null,
+    roster,
   })
   // The Roster already knows another process runs it live, so no Send is offered at all (ADR-0040).
-  if (session?.locked === true || history.data?.availability.state === 'unavailable')
-    return <OpenElsewhere onRetry={() => void history.refetch()} />
+  if (session?.locked === true || availability?.state === 'unavailable')
+    return <OpenElsewhere onRetry={retryAvailability} />
   const refreshCatalog = () =>
     catalogRefresh.mutate(
       { harness: harness.harness },
       { onSettled: () => void catalogQuery.refetch() },
     )
-  const submit = (input: SessionSubmitInput) => sessionSubmit.mutateAsync(input)
   return (
     <>
       {permission.failure ? <Failure message={permission.failure} /> : null}
@@ -179,7 +223,17 @@ export function SessionComposerArea({
         }
         plan={session?.plan ?? null}
         onSend={(prompt, setup, attachments) =>
-          submitFromComposer({ submit, identity, harness, cockpit, prompt, setup, attachments })
+          submitFromComposer({
+            submit,
+            identity,
+            harness,
+            cockpit,
+            indexedSession,
+            prompt,
+            setup,
+            attachments,
+            onResolved: (sessionId) => navigate(`/sessions/${sessionId}`, { replace: true }),
+          })
         }
       />
     </>

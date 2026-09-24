@@ -17,7 +17,6 @@ import type {
 } from '../../contract/session-start'
 import { readSessionIdentity, type SessionIdentity } from '../storage/session-records'
 import { upsertSession } from '../storage/session-upsert'
-import type { sessionSyncMachine } from '../sync/session-sync-machine'
 import { type SessionPersistInput, sessionMachine } from './session-machine'
 
 type SessionActor = ActorRefFrom<typeof sessionMachine>
@@ -375,21 +374,6 @@ export const sessionSupervisorMachine = setup({
           if (identity === null) {
             event.reply.reject(new Error('Session is not indexed.'))
             return context.sessions
-          }
-          switch (identity.harness) {
-            case 'claude':
-            case 'codex': {
-              const syncId = `${identity.harness}Sync` as 'claudeSync' | 'codexSync'
-              const sync = self.system.get(syncId) as
-                | ActorRefFrom<typeof sessionSyncMachine>
-                | undefined
-              sync?.send({
-                type: 'Priority sync',
-              })
-              break
-            }
-            default:
-              break
           }
           const input = existingSessionInput(identity, event.input)
           if (input === null) {

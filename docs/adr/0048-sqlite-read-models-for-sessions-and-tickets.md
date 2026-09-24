@@ -54,20 +54,21 @@ XState actors remain the owners of ongoing workflows. A Ticket observer actor pe
 own scheduling, invalidation, retry, and reconciliation; main-process per-Harness coordination
 owns Session sync. Main schedules their ingestion jobs on a bounded set of worker threads. Each
 source retains separate priority, progress, retry, and failure state; the number of Connections
-does not create an unbounded number of threads. Workers write disposable indexes through their own
-SQLite connections to the one per-machine database. Main owns durable Argo writes. The renderer
+does not create an unbounded number of threads. Workers write Session rows through their own
+SQLite connections to the one per-machine database. The shared upsert assigns or finds the durable
+Argo UUID in that transaction. The renderer
 shows already indexed rows while sync runs, and typed per-domain sync-status reads report
 freshness, progress, and errors. After a committed change, a named event invalidates the affected
 TanStack queries.
 Jobs carry a source generation so results from a disconnected or replaced source cannot commit.
-Worker failure retains committed rows and retries with bounded backoff. Workers receive validated
-data and no persistent credentials. Main assigns or finds a durable Session UUID before an index
-row uses it; a worker crash cannot create a second identity. Priority opens take precedence without
+Worker failure retains committed rows and retries with bounded backoff. Workers receive no
+persistent credentials. A worker uses the same upsert as Argo-created Sessions; a crash cannot
+create a second identity. Priority opens take precedence without
 starving background scans.
 
 tRPC is the renderer's typed API for all request-response operations, including domain and platform
-commands. Domain routers own their procedures and call domain services; a root router only composes
-them. Shared Zod schemas validate inputs and outputs. The renderer uses tRPC's TanStack Query
+commands. One global router registers procedures whose handlers and schemas live with their owning
+modules. Zod schemas validate inputs and outputs. The renderer uses tRPC's TanStack Query
 options directly, with custom hooks only for composed view behavior. Each domain owns its SQLite
 tables, queries, migrations, and sync rules; shared infrastructure opens the database and schedules
 worker jobs. Vendor adapters retain vendor calls and parsing. The Electron transport must preserve
@@ -83,15 +84,15 @@ Session projections to those rows and returns one Argo-shaped response; the rend
 sources. List operations expose numbered pages, page size, indexed total, and stable SQL order.
 Pages can shift when sync adds rows, so refresh preserves selection by Argo UUID. Pinned Sessions
 come from a separate query and do not appear in the ordinary Session pages. Vendor cursors and
-payload shapes stop at the adapter boundary. A separate Feed operation reads vendor history and
-transforms it into the same validated Feed shape as live events. Selecting a watched Session shows
-that history without opening a live channel. The first new prompt attempts native resume. Live
-status and events continue to come from the managed channel and are reconciled with vendor history.
+payload shapes stop at the Harness boundary. A separate Feed operation reads vendor history and
+transforms it into the same validated Feed shape as live events. Selecting a Session with no live
+child shows that history without opening a channel. The first new prompt attempts native resume.
+Live status and events come from that Session child and reconcile with vendor history.
 
 Phase one removes the old operation tables, preload client maps, per-operation channels, and
 pass-through renderer hooks as their request-response operations move to tRPC. Named live-stream
 channels remain an explicit current boundary. Phase two moves those streams and change events to
-tRPC subscriptions. Managed status transitions invalidate Roster queries; token and Feed events do
+tRPC subscriptions. Live status transitions invalidate Roster queries; token and Feed events do
 not refetch the Roster.
 A committed Session or Ticket index change invalidates affected lists and selected detail after
 the transaction, never before it. Vendor history and live events use stable source event identity

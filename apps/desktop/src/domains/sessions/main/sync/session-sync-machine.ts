@@ -1,45 +1,27 @@
 import { assign, fromPromise, setup } from 'xstate'
+import { z } from 'zod'
 
 export type SessionSyncInput = Record<string, never>
 
 export type SessionSyncJobInput = {
   cursor: string | null
   generation: number
-  page: number
+  priorityNativeId: string | null
 }
 
-export type SessionSyncResult = {
-  argoIds: string[]
-  complete: boolean
-  cursor: string | null
-  generation: number
-  indexedCount: number
-  invalidRecordCount: number
-  page: number
-}
+export const sessionSyncResultSchema = z.strictObject({
+  cursor: z.string().nullable(),
+  generation: z.number().int().nonnegative(),
+  indexedCount: z.number().int().nonnegative(),
+  invalidRecordCount: z.number().int().nonnegative(),
+})
+export type SessionSyncResult = z.infer<typeof sessionSyncResultSchema>
 
 export const sessionSyncPageSize = 50
 export const sessionSyncMaxRetries = 3
 
 function isSessionSyncResult(value: unknown): value is SessionSyncResult {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'argoIds' in value &&
-    Array.isArray(value.argoIds) &&
-    'complete' in value &&
-    typeof value.complete === 'boolean' &&
-    'cursor' in value &&
-    (typeof value.cursor === 'string' || value.cursor === null) &&
-    'generation' in value &&
-    typeof value.generation === 'number' &&
-    'indexedCount' in value &&
-    typeof value.indexedCount === 'number' &&
-    'invalidRecordCount' in value &&
-    typeof value.invalidRecordCount === 'number' &&
-    'page' in value &&
-    typeof value.page === 'number'
-  )
+  return sessionSyncResultSchema.safeParse(value).success
 }
 
 export const sessionSyncMachine = setup({
@@ -50,7 +32,7 @@ export const sessionSyncMachine = setup({
       generation: number
       indexedCount: number
       invalidRecordCount: number
-      page: number
+      priorityNativeId: string | null
       failure: string | null
       refreshedAt: number | null
       retryCount: number
@@ -61,6 +43,7 @@ export const sessionSyncMachine = setup({
         }
       | {
           type: 'Priority sync'
+          nativeId: string
         },
   },
   actors: {
@@ -70,26 +53,31 @@ export const sessionSyncMachine = setup({
   },
   guards: {
     canRetry: ({ context }) => context.retryCount < sessionSyncMaxRetries,
+    isPriority: ({ context }) => context.priorityNativeId !== null,
+    isCurrentPriority: ({ context, event }) =>
+      'output' in event &&
+      isSessionSyncResult(event.output) &&
+      event.output.generation === context.generation &&
+      context.priorityNativeId !== null,
     isCurrentCompleteGeneration: ({ context, event }) =>
       'output' in event &&
       isSessionSyncResult(event.output) &&
       event.output.generation === context.generation &&
-      event.output.complete,
+      event.output.cursor === null,
     isCurrentGeneration: ({ context, event }) =>
       'output' in event &&
       isSessionSyncResult(event.output) &&
       event.output.generation === context.generation,
   },
   actions: {
-    rememberResult: assign(({ event }) => {
+    rememberResult: assign(({ context, event }) => {
       if (!('output' in event) || !isSessionSyncResult(event.output)) return {}
       return {
-        cursor: event.output.complete ? null : event.output.cursor,
+        cursor: context.priorityNativeId === null ? event.output.cursor : context.cursor,
         indexedCount: event.output.indexedCount,
         invalidRecordCount: event.output.invalidRecordCount,
-        page: event.output.complete ? 0 : event.output.page + 1,
         failure: null,
-        refreshedAt: Date.now(),
+        refreshedAt: Math.max(Date.now(), (context.refreshedAt ?? 0) + 1),
         retryCount: 0,
       }
     }),
@@ -100,13 +88,16 @@ export const sessionSyncMachine = setup({
     advanceGeneration: assign(({ context }) => ({
       generation: context.generation + 1,
     })),
-    restartAtRecent: assign(({ context }) => ({
-      cursor: null,
+    prioritize: assign(({ context, event }) => ({
       generation: context.generation + 1,
-      page: 0,
+      priorityNativeId: event.type === 'Priority sync' ? event.nativeId : null,
       retryCount: 0,
     })),
+    clearPriority: assign({
+      priorityNativeId: null,
+    }),
     beginRefresh: assign(({ context }) => ({
+      cursor: null,
       generation: context.generation + 1,
       retryCount: 0,
     })),
@@ -123,7 +114,7 @@ export const sessionSyncMachine = setup({
     generation: 0,
     indexedCount: 0,
     invalidRecordCount: 0,
-    page: 0,
+    priorityNativeId: null,
     failure: null,
     refreshedAt: null,
     retryCount: 0,
@@ -135,9 +126,18 @@ export const sessionSyncMachine = setup({
         input: ({ context }) => ({
           cursor: context.cursor,
           generation: context.generation,
-          page: context.page,
+          priorityNativeId: context.priorityNativeId,
         }),
         onDone: [
+          {
+            guard: 'isCurrentPriority',
+            target: 'Syncing',
+            reenter: true,
+            actions: [
+              'rememberResult',
+              'clearPriority',
+            ],
+          },
           {
             guard: 'isCurrentCompleteGeneration',
             target: 'Waiting',
@@ -160,6 +160,15 @@ export const sessionSyncMachine = setup({
             actions: 'rememberFailure',
           },
           {
+            guard: 'isPriority',
+            target: 'Syncing',
+            reenter: true,
+            actions: [
+              'rememberFailure',
+              'clearPriority',
+            ],
+          },
+          {
             target: 'Waiting',
             actions: 'rememberFailure',
           },
@@ -169,7 +178,7 @@ export const sessionSyncMachine = setup({
         'Priority sync': {
           target: 'Syncing',
           reenter: true,
-          actions: 'restartAtRecent',
+          actions: 'prioritize',
         },
       },
     },
@@ -187,7 +196,7 @@ export const sessionSyncMachine = setup({
         },
         'Priority sync': {
           target: 'Syncing',
-          actions: 'restartAtRecent',
+          actions: 'prioritize',
         },
       },
     },
@@ -205,7 +214,7 @@ export const sessionSyncMachine = setup({
         },
         'Priority sync': {
           target: 'Syncing',
-          actions: 'restartAtRecent',
+          actions: 'prioritize',
         },
       },
     },

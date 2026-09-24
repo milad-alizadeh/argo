@@ -37,7 +37,11 @@ export function SessionsSidebar() {
 
   return (
     <>
-      <Roster actions={actions} projectRoot={projectRoot} selectedSessionId={sessionId ?? null} />
+      <Roster
+        actions={actions}
+        projectId={cockpit.project?.id ?? null}
+        selectedSessionId={sessionId ?? null}
+      />
       <UnreadMarkerPrototypeSwitcher />
     </>
   )

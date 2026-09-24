@@ -29,7 +29,13 @@ const threadReadSchema = z.object({
 export type CodexHistory = {
   availability: SessionAvailability
   entries: SessionHistoryEntry[]
+  active: boolean
 }
+
+const loadedListSchema = z.object({
+  data: z.array(z.string().min(1)),
+  nextCursor: z.string().nullable().optional(),
+})
 
 function availability(
   status: z.infer<typeof threadReadSchema>['thread']['status'],
@@ -38,7 +44,7 @@ function availability(
     case 'idle':
       return { state: 'available', reason: null }
     case 'active':
-      return { state: 'unavailable', reason: 'This Codex Session is active in another app.' }
+      return { state: 'unknown', reason: 'Codex is checking where this Session is active.' }
     case 'notLoaded':
     case 'systemError':
       return { state: 'unknown', reason: 'Codex could not confirm this Session availability.' }
@@ -65,14 +71,55 @@ export function parseCodexHistory(value: unknown, nativeId: string): CodexHistor
       return []
     }),
   )
-  return { availability: availability(result.thread.status), entries }
+  return {
+    availability: availability(result.thread.status),
+    entries,
+    active: result.thread.status.type === 'active',
+  }
+}
+
+async function loadedThreadIds(request: CodexRequest): Promise<Set<string>> {
+  const ids = new Set<string>()
+  const cursors = new Set<string>()
+  let cursor: string | null = null
+  do {
+    const page: z.infer<typeof loadedListSchema> = await request(
+      'thread/loaded/list',
+      { cursor, limit: 100 },
+      (value) => loadedListSchema.parse(value),
+    )
+    for (const id of page.data) ids.add(id)
+    cursor = page.nextCursor ?? null
+    if (cursor !== null) {
+      if (cursors.has(cursor)) throw new Error('Codex repeated a loaded-thread cursor.')
+      cursors.add(cursor)
+    }
+  } while (cursor !== null)
+  return ids
 }
 
 export async function readCodexHistory(
   request: CodexRequest,
   nativeId: string,
 ): Promise<CodexHistory> {
-  return request('thread/read', { threadId: nativeId, includeTurns: true }, (value) =>
-    parseCodexHistory(value, nativeId),
+  const history = await request(
+    'thread/read',
+    { threadId: nativeId, includeTurns: true },
+    (value) => parseCodexHistory(value, nativeId),
   )
+  if (!history.active) return history
+  try {
+    const loaded = await loadedThreadIds(request)
+    return {
+      ...history,
+      availability: loaded.has(nativeId)
+        ? { state: 'unknown', reason: 'Codex has not confirmed whether this Session can resume.' }
+        : { state: 'unavailable', reason: 'This Codex Session is active in another app.' },
+    }
+  } catch {
+    return {
+      ...history,
+      availability: { state: 'unknown', reason: 'Codex could not confirm Session availability.' },
+    }
+  }
 }

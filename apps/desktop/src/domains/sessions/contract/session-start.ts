@@ -30,7 +30,7 @@ export const sessionSendInputSchema = commandSchema.extend({ sessionId: identifi
 export const sessionSubmitInputSchema = commandSchema
   .extend({
     harness: harnessSchema,
-    projectId: identifierSchema,
+    projectId: identifierSchema.nullable(),
     cwd: z.string().min(1),
     sessionId: identifierSchema.nullable(),
     pendingId: z.string().min(1).nullable(),
@@ -41,6 +41,12 @@ export const sessionSubmitInputSchema = commandSchema
         code: 'custom',
         path: ['pendingId'],
         message: 'A new Session requires its pending identity.',
+      })
+    if (input.sessionId === null && input.projectId === null)
+      context.addIssue({
+        code: 'custom',
+        path: ['projectId'],
+        message: 'A new Session requires a Project.',
       })
     if (input.sessionId !== null && input.pendingId !== null)
       context.addIssue({
@@ -55,7 +61,6 @@ export const sessionSubmitInputSchema = commandSchema
         message: 'Claude Session attachments are not supported.',
       })
   })
-export const sessionStartedOutputSchema = z.strictObject({ sessionId: identifierSchema })
 export const sessionAcceptedOutputSchema = z.strictObject({ sessionId: identifierSchema })
 export type SessionStartInput = z.infer<typeof sessionStartInputSchema>
 export type ExistingSessionInput = z.infer<typeof existingSessionInputSchema>

@@ -206,10 +206,10 @@
     "rename": "Rename"
   },
   "roster": {
-    "previousPage": "Previous",
-    "nextPage": "Next",
-    "page": "Page {{page}}",
     "readFailure": "Argo could not read Sessions.",
+    "syncing": "Syncing, last updated",
+    "lastSynced": "Last updated",
+    "neverSynced": "not yet",
     "planProgress": "{{completed}} of {{total}} steps completed",
     "planUnreadable": "Plan unreadable",
     "sourceFailed": "{{harness}} Sessions did not load",
