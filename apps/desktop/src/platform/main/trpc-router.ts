@@ -1,15 +1,15 @@
 import { initTRPC } from '@trpc/server'
 import {
   type CatalogActor,
+  catalogReadProcedure,
   catalogRefreshProcedure,
-  catalogSnapshotProcedure,
-} from '@/harnesses/catalog/catalog-snapshot'
+} from '@/harnesses/catalog/catalog-read'
 
 const t = initTRPC.create()
 
 export function createAppRouter(actor: CatalogActor) {
   return t.router({
-    harnessCatalogSnapshot: catalogSnapshotProcedure(actor),
+    harnessCatalogRead: catalogReadProcedure(actor),
     harnessCatalogRefresh: catalogRefreshProcedure(actor),
   })
 }

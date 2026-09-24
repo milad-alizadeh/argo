@@ -44,9 +44,7 @@ export function SessionComposerArea({
   projectActions,
 }: SessionScreenDetailsProps) {
   const location = useLocation()
-  const catalogQuery = useQuery(
-    trpc.harnessCatalogSnapshot.queryOptions({ harness: harness.harness }),
-  )
+  const catalogQuery = useQuery(trpc.harnessCatalogRead.queryOptions({ harness: harness.harness }))
   const catalogRefresh = useMutation(trpc.harnessCatalogRefresh.mutationOptions())
   const catalog = catalogQuery.data?.info ?? null
   const pending = useSessionCreationStore((state) => state.pending)

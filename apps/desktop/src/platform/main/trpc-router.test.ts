@@ -23,8 +23,8 @@ test('returns only the selected Harness as serializable composer choices', async
   ).start()
   try {
     const caller = createAppRouter(actor).createCaller({})
-    const claude = await caller.harnessCatalogSnapshot({ harness: 'claude' })
-    const codex = await caller.harnessCatalogSnapshot({ harness: 'codex' })
+    const claude = await caller.harnessCatalogRead({ harness: 'claude' })
+    const codex = await caller.harnessCatalogRead({ harness: 'codex' })
     expect(claude.info.harness).toBe('claude')
     expect(codex.info.harness).toBe('codex')
     expect(claude.info.availability).toBe('available')
@@ -51,12 +51,12 @@ test('repeated reads reuse the settled catalog until an explicit refresh', async
   ).start()
   try {
     const caller = createAppRouter(actor).createCaller({})
-    await caller.harnessCatalogSnapshot({ harness: 'claude' })
-    await caller.harnessCatalogSnapshot({ harness: 'codex' })
+    await caller.harnessCatalogRead({ harness: 'claude' })
+    await caller.harnessCatalogRead({ harness: 'codex' })
     expect(loads).toBe(1)
     await caller.harnessCatalogRefresh({ harness: 'claude' })
     expect(loads).toBe(2)
-    await caller.harnessCatalogSnapshot({ harness: 'claude' })
+    await caller.harnessCatalogRead({ harness: 'claude' })
     expect(loads).toBe(2)
   } finally {
     actor.stop()
@@ -76,9 +76,9 @@ test('retry reloads a failed catalog once', async () => {
   ).start()
   try {
     const caller = createAppRouter(actor).createCaller({})
-    const failed = await caller.harnessCatalogSnapshot({ harness: 'claude' })
+    const failed = await caller.harnessCatalogRead({ harness: 'claude' })
     expect(failed.failure).toContain('Catalog unavailable')
-    await caller.harnessCatalogSnapshot({ harness: 'claude' })
+    await caller.harnessCatalogRead({ harness: 'claude' })
     expect(loads).toBe(1)
     const retried = await caller.harnessCatalogRefresh({ harness: 'claude' })
     expect(retried.failure).toBe(null)
