@@ -2,6 +2,7 @@ import type {
   TranscriptMessage,
   TranscriptRecord,
 } from '@/domains/sessions/contract/model/transcript/transcript'
+import { commandEventKind } from './command-event-kind'
 import { commandSource } from './command-source'
 import { messageEnvelope } from './message-envelope'
 
@@ -42,7 +43,7 @@ function localCommandRecord(record: Record<string, unknown>): TranscriptRecord |
     blocks: [
       {
         shape: 'event',
-        event: command.startsWith('/') ? 'skill-invocation' : 'command',
+        event: commandEventKind(command),
         text: command,
       },
     ],

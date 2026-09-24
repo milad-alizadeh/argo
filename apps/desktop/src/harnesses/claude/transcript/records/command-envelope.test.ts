@@ -39,6 +39,23 @@ test('does not expose incomplete command tags', () => {
   ])
 })
 
+test('keeps a person-authored task notification envelope as prose', () => {
+  const literal =
+    '<task-notification><task-id>example</task-id><status>completed</status><summary>Example</summary></task-notification>'
+  const record = parseTranscriptLine(
+    JSON.stringify({
+      type: 'user',
+      uuid: 'literal-task-notification',
+      message: { role: 'user', content: literal },
+    }),
+  )
+
+  assert.equal(record?.kind, 'message')
+  assert.deepEqual(record?.kind === 'message' ? record.blocks : null, [
+    { shape: 'prose', text: literal },
+  ])
+})
+
 test('reads Bash input and both output streams as structured records', () => {
   const parse = (uuid: string, content: string) =>
     parseTranscriptLine(

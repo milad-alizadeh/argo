@@ -1,8 +1,11 @@
 import { expect, test } from 'bun:test'
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
 import type { SessionMessage } from '@anthropic-ai/claude-agent-sdk'
 import { managedRosterRow, type SessionFeedRow } from '@/domains/sessions/contract/model/models'
 import { stitchChains } from '@/domains/sessions/contract/model/transcript/chains'
 import { projectFeed } from '@/domains/sessions/main/projection/feed/feed-incremental'
+import { isRecord } from '@/shared/validation'
 import { readTranscriptFile } from '../sessions/discovery/transcript-file'
 import { createClaudeSdkHistorySource } from './claude-sdk-history-source'
 
@@ -18,6 +21,7 @@ function envelopeMessages(): SessionMessage[] {
       },
       parent_tool_use_id: null,
       parent_agent_id: null,
+      ...({ origin: { kind: 'human' } } as const),
     },
     {
       type: 'user',
@@ -29,6 +33,7 @@ function envelopeMessages(): SessionMessage[] {
       },
       parent_tool_use_id: null,
       parent_agent_id: null,
+      ...({ origin: { kind: 'human' } } as const),
     },
     {
       type: 'user',
@@ -40,6 +45,7 @@ function envelopeMessages(): SessionMessage[] {
       },
       parent_tool_use_id: null,
       parent_agent_id: null,
+      ...({ origin: { kind: 'task-notification' } } as const),
     },
     {
       type: 'user',
@@ -50,6 +56,30 @@ function envelopeMessages(): SessionMessage[] {
       parent_agent_id: null,
     },
   ]
+}
+
+function isSessionMessage(value: unknown): value is SessionMessage {
+  return (
+    isRecord(value) &&
+    (value.type === 'user' || value.type === 'assistant' || value.type === 'system') &&
+    typeof value.uuid === 'string' &&
+    typeof value.session_id === 'string' &&
+    'message' in value &&
+    (value.parent_tool_use_id === null || typeof value.parent_tool_use_id === 'string') &&
+    (value.parent_agent_id === null || typeof value.parent_agent_id === 'string')
+  )
+}
+
+async function recordedSdkMessages(): Promise<SessionMessage[]> {
+  // Recorded from getSessionMessages; message text and identifiers are scrubbed in the fixture.
+  const fixturePath = path.resolve(
+    import.meta.dir,
+    '../../../../mocks/cli/claude/fixtures/session-history-envelope-corpus.jsonl',
+  )
+  const lines = (await readFile(fixturePath, 'utf8')).trim().split('\n')
+  const records: unknown[] = lines.map((line) => JSON.parse(line))
+  if (!records.every(isSessionMessage)) throw new Error('Recorded SDK history shape is invalid.')
+  return records
 }
 
 function expectEnvelopesAreStructured(rows: SessionFeedRow[]) {
@@ -163,6 +193,44 @@ test('parses Claude SDK history envelopes before showing them in the Feed', asyn
   expectEnvelopesAreStructured(transcriptRows)
 })
 
+test('projects recorded Claude SDK history through both Feed paths', async () => {
+  const messages = await recordedSdkMessages()
+  const source = createClaudeSdkHistorySource({
+    history: {
+      listSessions: async () => [
+        { sessionId: 'recorded-session', summary: 'Recorded envelopes', lastModified: 1 },
+      ],
+      getSessionMessages: async () => messages,
+    },
+  })
+  await source.discoverSessions()
+  const sdkRows = (await source.readObservedFeed?.('recorded-session'))?.rows ?? []
+  const transcript = readTranscriptFile('/recorded-session.jsonl', {
+    sessionId: 'recorded-session',
+    lines: messages.map((message) => JSON.stringify(message)),
+  })
+  const chain = stitchChains([transcript])[0]
+  const transcriptRows = chain === undefined ? [] : projectFeed(chain, undefined).rows
+
+  for (const rows of [sdkRows, transcriptRows]) {
+    expect(rows).toContainEqual(
+      expect.objectContaining({
+        shape: 'event',
+        event: 'skill-invocation',
+        text: '/to-spec https://example.invalid/issues/1',
+      }),
+    )
+    expect(rows).toContainEqual(
+      expect.objectContaining({
+        shape: 'subagent',
+        subagentId: 'toolu_recorded',
+        name: 'Review the Feed card',
+      }),
+    )
+    expect(rows.some((row) => JSON.stringify(row).includes('<task-notification>'))).toBe(false)
+  }
+})
+
 test('reads the SDK child transcript by the task id while the Feed keeps its tool call id', async () => {
   const childMessages: SessionMessage[] = [
     {
@@ -191,6 +259,7 @@ test('reads the SDK child transcript by the task id while the Feed keeps its too
           },
           parent_tool_use_id: null,
           parent_agent_id: null,
+          ...({ origin: { kind: 'task-notification' } } as const),
         },
       ],
       getSubagentMessages: async (_sessionId, agentId) => {

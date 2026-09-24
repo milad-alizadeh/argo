@@ -40,6 +40,8 @@ function answer(content: string, toolUseResult?: Record<string, unknown>) {
 const NOTIFICATION = {
   type: 'user',
   uuid: 'u-2',
+  userType: 'external',
+  sourceToolAssistantUUID: 'task-call',
   timestamp: '2026-09-18T10:03:00.000Z',
   message: {
     role: 'user',
