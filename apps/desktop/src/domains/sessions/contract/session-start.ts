@@ -28,3 +28,4 @@ export const sessionStartedOutputSchema = z.strictObject({ sessionId: identifier
 export const sessionAcceptedOutputSchema = z.strictObject({ sessionId: identifierSchema })
 export type SessionStartInput = z.infer<typeof sessionStartInputSchema>
 export type SessionSendInput = z.infer<typeof sessionSendInputSchema>
+export type SessionSubmitInput = z.infer<typeof sessionSubmitInputSchema>

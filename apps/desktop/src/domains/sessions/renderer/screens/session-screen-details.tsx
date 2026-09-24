@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router'
 import type { Cockpit, ProjectActions } from '@/domains/projects/renderer'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import type { SessionSubmitInput } from '@/domains/sessions/contract/session-start'
 import type { CatalogReadResult } from '@/harnesses/catalog/catalog-read'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
@@ -73,11 +74,12 @@ export function SessionComposerArea({
   })
   // The Roster already knows another process runs it live, so no Send is offered at all (ADR-0040).
   if (session?.locked === true) return <OpenElsewhere onRetry={null} />
+  const refreshCatalog = () =>
+    catalogRefresh.mutate({ harness: harness.harness }, { onSettled: () => void catalogQuery.refetch() })
+  const submit = (input: SessionSubmitInput) => sessionSubmit.mutateAsync(input)
   return (
     <SessionComposerForm
       catalogFailure={catalogFailure}
-      catalogRefresh={catalogRefresh}
-      catalogQuery={catalogQuery}
       cockpit={cockpit}
       control={control}
       harness={harness}
@@ -86,7 +88,8 @@ export function SessionComposerArea({
       projectActions={projectActions}
       questionPending={questionPending}
       session={session}
-      sessionSubmit={sessionSubmit}
+      refreshCatalog={refreshCatalog}
+      submit={submit}
     />
   )
 }
@@ -96,17 +99,14 @@ type SessionComposerFormProps = Pick<
   'cockpit' | 'harness' | 'permission' | 'projectActions' | 'questionPending' | 'session'
 > & {
   catalogFailure: CatalogFailure | null
-  catalogQuery: ReturnType<typeof useQuery<CatalogReadResult>>
-  catalogRefresh: ReturnType<typeof useMutation>
   control: ReturnType<typeof useTurnSetup>
   identity: ReturnType<typeof composerIdentityOf>
-  sessionSubmit: ReturnType<typeof useMutation>
+  refreshCatalog: () => void
+  submit: (input: SessionSubmitInput) => Promise<{ sessionId: string }>
 }
 
 function SessionComposerForm({
   catalogFailure,
-  catalogQuery,
-  catalogRefresh,
   cockpit,
   control,
   harness,
@@ -115,7 +115,8 @@ function SessionComposerForm({
   projectActions,
   questionPending,
   session,
-  sessionSubmit,
+  refreshCatalog,
+  submit,
 }: SessionComposerFormProps) {
   const location = useLocation()
   return (
@@ -126,12 +127,7 @@ function SessionComposerForm({
         focusOnMount={location.state === COMPOSER_FOCUS_STATE}
         setup={control}
         catalogFailure={catalogFailure}
-        refreshCatalog={() =>
-          catalogRefresh.mutate(
-            { harness: harness.harness },
-            { onSettled: () => void catalogQuery.refetch() },
-          )
-        }
+        refreshCatalog={refreshCatalog}
         workspace={
           identity.kind === 'draft'
             ? {
@@ -157,7 +153,7 @@ function SessionComposerForm({
         onSend={async (prompt, setup, attachments) => {
           if (setup === null) return false
           try {
-            const submitted = await sessionSubmit.mutateAsync({
+            const submitted = await submit({
               commandId: crypto.randomUUID(),
               harness: harness.harness,
               cwd: cockpit.workspace?.path ?? cockpit.project?.path ?? '',
