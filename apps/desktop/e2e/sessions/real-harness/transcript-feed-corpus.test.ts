@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { assertTranscriptFeedCorpus } from './transcript-feed-corpus'
 
 const CORPUS_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), 'corpus')
+const CLAUDE_TASK_DELIVERY = { userType: 'external', sourceToolAssistantUUID: 'task-call' }
 
 function jsonLines(records: object[]) {
   return records.map((record) => JSON.stringify(record)).join('\n')
@@ -40,7 +41,7 @@ test('audits Claude and Codex transcript records through their Feed projections'
     {
       type: 'user',
       uuid: 'claude-notice',
-      parentUuid: 'claude-pasted',
+      ...CLAUDE_TASK_DELIVERY,
       message: {
         role: 'user',
         content:

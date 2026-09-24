@@ -619,13 +619,13 @@ async function expectDelegatedFeedSurvivesCollapse(canvas: ReturnType<typeof wit
     .find((message) => message.getBoundingClientRect().height > 0)
   if (subagentMessage === undefined) throw new Error('The Subagent transcript is absent.')
   await expect(subagentMessage).toBeVisible()
-  expectVisibleFeedRowsDoNotOverlap(within(inspector).getByLabelText(SESSION_HISTORY_LABEL))
+  expectVisibleFeedRowsDoNotOverlap(within(inspector).getByLabelText('Subagent history'))
 
   await userEvent.click(canvas.getByRole('button', { name: 'Collapse Session inspector' }))
   await waitFor(() => expect(inspector.querySelector('.feed__document')).toBeNull())
   await pickSubagent(canvas)
   const reopenedInspector = await canvas.findByRole('region', { name: 'Subagent' })
-  expectVisibleFeedRowsDoNotOverlap(within(reopenedInspector).getByLabelText(SESSION_HISTORY_LABEL))
+  expectVisibleFeedRowsDoNotOverlap(within(reopenedInspector).getByLabelText('Subagent history'))
 }
 
 export const Open: Story = {
