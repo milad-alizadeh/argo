@@ -8,6 +8,7 @@ export function claudeModelCatalogFixture(): ClaudeModelCatalog {
         displayName: 'Sonnet Live',
         description: 'Live catalog model',
         supportedEffortLevels: ['low', 'high'],
+        supportsAutoMode: false,
       },
     ],
     supportedPermissionModes: [
@@ -29,6 +30,7 @@ export function claudeComposerModelCatalogFixture(): ClaudeModelCatalog {
       displayName: value === 'opus' ? 'Opus 5' : 'Sonnet 5',
       description: `${value} catalog model`,
       supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+      supportsAutoMode: value === 'opus',
     })),
     supportedPermissionModes: [
       'manual',

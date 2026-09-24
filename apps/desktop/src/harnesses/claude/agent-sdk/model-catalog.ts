@@ -38,12 +38,20 @@ export class ClaudeModelCatalogCache {
       .then(({ models, permissionModes }) => {
         const parsed = claudeModelCatalogSchema.safeParse({
           data: models.map(
-            ({ value, resolvedModel, displayName, description, supportedEffortLevels }) => ({
+            ({
+              value,
+              resolvedModel,
+              displayName,
+              description,
+              supportedEffortLevels,
+              supportsAutoMode,
+            }) => ({
               value,
               resolvedModel,
               displayName,
               description,
               supportedEffortLevels: supportedEffortLevels ?? [],
+              supportsAutoMode,
             }),
           ),
           supportedPermissionModes: permissionModes,

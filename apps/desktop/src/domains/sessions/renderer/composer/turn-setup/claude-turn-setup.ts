@@ -2,6 +2,7 @@ import {
   type ClaudeModelCatalog,
   claudeModelsWithEffort,
   claudePermissionModes,
+  claudePermissionModesForModel,
 } from '@/domains/sessions/contract/claude-model-catalog'
 import { claudeOpeningSetupFor } from '@/domains/sessions/contract/claude-turn-setup'
 import type { ModeChoice, TurnSetupChoices } from './turn-setup'
@@ -38,7 +39,9 @@ const MODE_PRESENTATION: Record<string, Pick<ModeChoice, 'label' | 'detail' | 'i
 
 export function claudeTurnSetup(catalog: ClaudeModelCatalog | null): TurnSetupChoices | null {
   if (catalog === null) return null
-  const models = claudeModelsWithEffort(catalog)
+  const models = claudeModelsWithEffort(catalog).filter(
+    (model) => claudePermissionModesForModel(catalog, model).length > 0,
+  )
   const modes = claudePermissionModes(catalog)
   if (models.length === 0 || modes.length === 0) return null
   const opening = claudeOpeningSetupFor(catalog)
@@ -46,21 +49,20 @@ export function claudeTurnSetup(catalog: ClaudeModelCatalog | null): TurnSetupCh
   return {
     agent: 'Claude',
     label: 'Claude Code',
-    models: models.map(
-      ({ value, resolvedModel, displayName, description, supportedEffortLevels }) => ({
-        value,
-        label: displayName,
-        detail: description || undefined,
-        efforts: supportedEffortLevels,
-        defaultEffort: supportedEffortLevels.includes('medium')
-          ? 'medium'
-          : supportedEffortLevels[0],
-        reads: (reading) =>
-          reading === value ||
-          reading === resolvedModel ||
-          (resolvedModel !== undefined && reading.startsWith(`claude-${value}-`)),
-      }),
-    ),
+    models: models.map((model) => ({
+      value: model.value,
+      label: model.displayName,
+      detail: model.description || undefined,
+      efforts: model.supportedEffortLevels,
+      supportedModes: claudePermissionModesForModel(catalog, model),
+      defaultEffort: model.supportedEffortLevels.includes('medium')
+        ? 'medium'
+        : model.supportedEffortLevels[0],
+      reads: (reading) =>
+        reading === model.value ||
+        reading === model.resolvedModel ||
+        (model.resolvedModel !== undefined && reading.startsWith(`claude-${model.value}-`)),
+    })),
     efforts: [...new Set(models.flatMap(({ supportedEffortLevels }) => supportedEffortLevels))].map(
       (value) => ({
         value,

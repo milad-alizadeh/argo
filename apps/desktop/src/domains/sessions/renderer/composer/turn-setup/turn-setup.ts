@@ -19,6 +19,7 @@ export type SetupChoice = {
   detail?: string
   reads: (reading: string) => boolean
   efforts?: readonly string[]
+  supportedModes?: readonly string[]
   defaultEffort?: string
 }
 export type ModeChoice = SetupChoice & { detail: string; icon: IconName }
@@ -37,6 +38,7 @@ const FIELDS = ['model', 'effort', 'mode'] as const
 type SetupField = (typeof FIELDS)[number]
 
 function fieldChoices(choices: TurnSetupChoices, field: SetupField, model?: string): SetupChoice[] {
+  if (field === 'mode' && model !== undefined) return modeChoices(choices, model)
   if (field !== 'effort' || model === undefined)
     return { model: choices.models, effort: choices.efforts, mode: choices.modes }[field]
   const supported = choices.models.find((choice) => choice.value === model)?.efforts
@@ -45,24 +47,47 @@ function fieldChoices(choices: TurnSetupChoices, field: SetupField, model?: stri
     : choices.efforts.filter((choice) => supported.includes(choice.value))
 }
 
+export function modeChoices(choices: TurnSetupChoices, model: string) {
+  const supported = choices.models.find((choice) => choice.value === model)?.supportedModes
+  return supported === undefined
+    ? choices.modes
+    : choices.modes.filter((choice) => supported.includes(choice.value))
+}
+
 export function effortChoices(choices: TurnSetupChoices, model: string) {
   return fieldChoices(choices, 'effort', model)
 }
 
-function choiceRead(choices: TurnSetupChoices, field: SetupField, reading: string | null) {
+function choiceRead(
+  choices: TurnSetupChoices,
+  request: { field: SetupField; reading: string | null; model?: string },
+) {
+  const { field, reading, model } = request
   return reading === null
     ? undefined
-    : fieldChoices(choices, field).find((choice) => choice.reads(reading))
+    : fieldChoices(choices, field, model).find((choice) => choice.reads(reading))
 }
 
-export function choiceLabel(choices: TurnSetupChoices, field: SetupField, value: string) {
-  return fieldChoices(choices, field).find((choice) => choice.value === value)?.label ?? value
+export function choiceLabel(
+  choices: TurnSetupChoices,
+  request: { field: SetupField; value: string; model?: string },
+) {
+  const { field, value, model } = request
+  return (
+    fieldChoices(choices, field, model).find((choice) => choice.value === value)?.label ?? value
+  )
 }
 
 export function setupFromReading(choices: TurnSetupChoices, reading: SessionSetup): TurnSetup {
-  const read = (field: SetupField) =>
-    choiceRead(choices, field, reading[field])?.value ?? choices.opening[field]
-  return { model: read('model'), effort: read('effort'), mode: read('mode') }
+  const model =
+    choiceRead(choices, { field: 'model', reading: reading.model })?.value ?? choices.opening.model
+  const effort =
+    choiceRead(choices, { field: 'effort', reading: reading.effort, model })?.value ??
+    choices.opening.effort
+  const mode =
+    choiceRead(choices, { field: 'mode', reading: reading.mode, model })?.value ??
+    choices.opening.mode
+  return { model, effort, mode }
 }
 
 // A stored setup can name a choice Argo no longer offers, and that one field takes the fallback.
@@ -80,7 +105,13 @@ export function supportedSetup(
     )
       ? setup[field]
       : fallback[field]
-  return { model, effort: keep('effort'), mode: keep('mode') }
+  const modes = modeChoices(choices, model)
+  const mode = modes.some((choice) => choice.value === setup.mode)
+    ? setup.mode
+    : (modes.find((choice) => choice.value === fallback.mode)?.value ??
+      modes[0]?.value ??
+      fallback.mode)
+  return { model, effort: keep('effort'), mode }
 }
 
 // What a composer shows: an explicit choice wins; a draft with none falls to the remembered
@@ -122,7 +153,9 @@ export function refusalOf(
   const refused = FIELDS.flatMap((field) => {
     const used = reading[field]
     if (used === null) return []
-    const choice = choiceRead(choices, field, used)
+    const model =
+      choiceRead(choices, { field: 'model', reading: reading.model })?.value ?? requested.model
+    const choice = choiceRead(choices, { field, reading: used, model })
     if (choice?.value === requested[field]) return []
     return [{ field, used: choice?.value ?? null, label: choice?.label ?? used }]
   })
@@ -134,7 +167,7 @@ export function refusalOf(
     message: refused
       .map(
         ({ field, label }) =>
-          `${choices.agent} used ${label}, not ${choiceLabel(choices, field, requested[field])}.`,
+          `${choices.agent} used ${label}, not ${choiceLabel(choices, { field, value: requested[field], model: requested.model })}.`,
       )
       .join(' '),
   }

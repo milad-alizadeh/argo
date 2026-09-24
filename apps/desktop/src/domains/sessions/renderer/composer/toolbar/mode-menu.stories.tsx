@@ -21,6 +21,17 @@ function ModeStory() {
   )
 }
 
+function AutoRestrictedModeStory() {
+  const choices = claudeTurnSetup(claudeComposerModelCatalogFixture())
+  if (choices === null) throw new Error('The Claude story catalog has no usable model.')
+  const [setup, setSetup] = useState({ model: 'sonnet', effort: 'medium', mode: 'manual' })
+  return (
+    <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
+      <ModeMenu choices={choices} value={setup} onChange={setSetup} />
+    </div>
+  )
+}
+
 const meta = {
   title: 'Sessions/Composer/Mode Menu',
   component: ModeStory,
@@ -58,6 +69,19 @@ export const OffersEveryMode: Story = {
     await waitFor(() => expect(page().queryByRole('menu')).toBeNull())
     await expect(trigger).toHaveTextContent('Bypass')
     await expect(trigger).toHaveAccessibleName('Choose permission mode: Bypass')
+  },
+}
+
+export const HidesAutoWhenTheModelDoesNotSupportIt: Story = {
+  render: () => <AutoRestrictedModeStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const trigger = canvas.getByRole('button', { name: /^Choose permission mode/ })
+    await expect(trigger).toHaveTextContent('Manual')
+    await userEvent.click(trigger)
+    const menu = await page().findByRole('menu')
+    await expect(within(menu).queryByRole('menuitemradio', { name: /Auto/ })).toBeNull()
+    await expect(within(menu).getAllByRole('menuitemradio')).toHaveLength(5)
   },
 }
 

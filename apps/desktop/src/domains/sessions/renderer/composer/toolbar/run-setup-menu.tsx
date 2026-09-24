@@ -10,6 +10,7 @@ import { HARNESSES, type HarnessControl } from '../../harness/harnesses'
 import {
   choiceLabel,
   effortChoices,
+  modeChoices,
   type TurnSetup,
   type TurnSetupChoices,
 } from '../turn-setup/turn-setup'
@@ -87,7 +88,10 @@ export function RunSetupMenu({
 function setupFacts(setup: TurnSetupControlProps | null) {
   if (setup === null) return []
   const { choices, value } = setup
-  return [choiceLabel(choices, 'model', value.model), choiceLabel(choices, 'effort', value.effort)]
+  return [
+    choiceLabel(choices, { field: 'model', value: value.model }),
+    choiceLabel(choices, { field: 'effort', value: value.effort, model: value.model }),
+  ]
 }
 
 function SetupBody({ harness, setup, catalogError, refreshCatalog }: RunSetupMenuProps) {
@@ -143,13 +147,16 @@ function ModelOptions({ choices, value, onChange }: TurnSetupControlProps) {
                 checked={active}
                 onChange={() => {
                   const efforts = effortChoices(choices, model.value)
+                  const modes = modeChoices(choices, model.value)
                   const currentEffort = efforts.find((effort) => effort.value === value.effort)
+                  const currentMode = modes.find((mode) => mode.value === value.mode)
                   const nextEffort =
                     currentEffort ?? closestEffort(value.effort, efforts, model.defaultEffort)
                   onChange({
                     ...value,
                     model: model.value,
                     effort: nextEffort?.value ?? value.effort,
+                    mode: currentMode?.value ?? modes[0]?.value ?? value.mode,
                   })
                 }}
                 className="sr-only"

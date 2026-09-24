@@ -8,6 +8,7 @@ const MODELS = [
     displayName: 'Fable 5.1',
     description: 'Mock Fable model',
     supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+    supportsAutoMode: true,
   },
   {
     value: 'opus',
@@ -15,6 +16,7 @@ const MODELS = [
     displayName: 'Opus 5',
     description: 'Mock Opus model',
     supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+    supportsAutoMode: true,
   },
   {
     value: 'sonnet',
@@ -22,6 +24,7 @@ const MODELS = [
     displayName: 'Sonnet 5',
     description: 'Mock Sonnet model',
     supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+    supportsAutoMode: false,
   },
   {
     value: 'haiku',
@@ -29,6 +32,7 @@ const MODELS = [
     displayName: 'Haiku 4.5',
     description: 'Mock Haiku model',
     supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
+    supportsAutoMode: false,
   },
 ]
 

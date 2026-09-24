@@ -6,6 +6,7 @@ const claudeModelSchema = z.strictObject({
   displayName: z.string().min(1),
   description: z.string(),
   supportedEffortLevels: z.array(z.string().min(1)),
+  supportsAutoMode: z.boolean().optional(),
 })
 
 export const claudeModelCatalogSchema = z.strictObject({
@@ -20,4 +21,13 @@ export function claudeModelsWithEffort(catalog: ClaudeModelCatalog | null) {
 
 export function claudePermissionModes(catalog: ClaudeModelCatalog | null) {
   return catalog?.supportedPermissionModes ?? []
+}
+
+export function claudePermissionModesForModel(
+  catalog: ClaudeModelCatalog,
+  model: ClaudeModelCatalog['data'][number],
+) {
+  return claudePermissionModes(catalog).filter(
+    (mode) => mode !== 'auto' || model.supportsAutoMode === true,
+  )
 }

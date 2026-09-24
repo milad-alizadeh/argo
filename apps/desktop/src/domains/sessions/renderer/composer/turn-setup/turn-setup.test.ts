@@ -212,6 +212,42 @@ test('accepts permission modes supplied by the Claude CLI', () => {
   ).toBe(true)
 })
 
+test('omits auto mode for a Claude model that does not support it', async () => {
+  const catalog = await new ClaudeModelCatalogCache().get(
+    { executablePath: '/claude', version: '2.1.1' },
+    async () => ({
+      permissionModes: ['manual', 'auto'],
+      models: [
+        {
+          value: 'sonnet-no-auto',
+          displayName: 'Sonnet without auto mode',
+          description: '',
+          supportedEffortLevels: ['low'],
+          supportsAutoMode: false,
+        } satisfies ModelInfo,
+      ],
+    }),
+  )
+  if (catalog === null) throw new Error('The SDK returned no usable model catalog.')
+  const choices = claudeTurnSetup(catalog)
+  if (choices === null) throw new Error('The Claude catalog has no usable choices.')
+  expect(
+    claudeTurnSetupSchemaFor(catalog).safeParse({
+      model: 'sonnet-no-auto',
+      effort: 'low',
+      mode: 'auto',
+    }).success,
+  ).toBe(false)
+  expect(choices.models[0]?.supportedModes).toEqual(['manual'])
+  expect(
+    supportedSetup(
+      choices,
+      { model: 'sonnet-no-auto', effort: 'low', mode: 'auto' },
+      choices.opening,
+    ),
+  ).toEqual({ model: 'sonnet-no-auto', effort: 'low', mode: 'manual' })
+})
+
 test('a mockable SDK model query reaches Claude model and effort choices', async () => {
   const cache = new ClaudeModelCatalogCache()
   const catalog = await cache.get({ executablePath: '/claude', version: '2.1.1' }, async () => ({
