@@ -104,6 +104,15 @@ function start(
   )
 }
 
+function send(
+  actor: ActorRefFrom<typeof sessionSupervisorMachine>,
+  input: SessionStartInput & { sessionId: string },
+) {
+  return new Promise<{ sessionId: string }>((resolve, reject) =>
+    actor.send({ type: 'Send', input, reply: { resolve, reject } }),
+  )
+}
+
 test('models supervisor lifetime', () => {
   const paths = getShortestPaths(sessionSupervisorMachine, {
     input: { database: {} as never },
@@ -153,6 +162,35 @@ test('cancels an unsettled start when its supervisor stops', async () => {
     root.send({ type: 'Shutdown' })
     await assert.rejects(pending, /supervisor is closed/)
   } finally {
+    client.close()
+  }
+})
+
+test('rejects a changed Codex stance instead of silently retaining the opening stance', async () => {
+  let calls = 0
+  const { root, supervisor, client } = await supervisorFor(async (method, _params, parse) => {
+    calls += 1
+    return parse(
+      method === 'thread/start' ? { thread: { id: 'native-1' } } : { turn: { id: 'turn-1' } },
+    )
+  })
+  try {
+    const { sessionId } = await start(supervisor, first)
+    const child = supervisor.getSnapshot().context.sessions[sessionId]
+    assert.ok(child)
+    await waitFor(child, (snapshot) => snapshot.matches('Ready'))
+    await assert.rejects(
+      send(supervisor, {
+        ...first,
+        commandId: 'changed-stance',
+        sessionId,
+        setup: { ...first.setup, mode: 'read-only' },
+      }),
+      /requires starting a new Session/,
+    )
+    assert.equal(calls, 2)
+  } finally {
+    root.send({ type: 'Shutdown' })
     client.close()
   }
 })

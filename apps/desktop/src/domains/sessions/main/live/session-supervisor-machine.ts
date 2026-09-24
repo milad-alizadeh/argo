@@ -67,6 +67,17 @@ function setupIsAvailable(
   )
 }
 
+function acceptsSetupChange(actor: SessionActor, setup: SessionSendInput['setup']): boolean {
+  const opening = actor.getSnapshot().context.first.setup
+  if (actor.getSnapshot().context.first.harness === 'claude')
+    return (
+      opening.model === setup.model &&
+      opening.effort === setup.effort &&
+      opening.mode === setup.mode
+    )
+  return opening.mode === setup.mode
+}
+
 export const sessionSupervisorMachine = setup({
   types: {
     input: {} as SupervisorInput,
@@ -302,6 +313,12 @@ export const sessionSupervisorMachine = setup({
         )
       ) {
         event.reply.reject(new Error('The selected Session setup is no longer available.'))
+        return
+      }
+      if (!acceptsSetupChange(actor, event.input.setup)) {
+        event.reply.reject(
+          new Error('Changing this Session setup requires starting a new Session.'),
+        )
         return
       }
       const snapshot = actor.getSnapshot()
