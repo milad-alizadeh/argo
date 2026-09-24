@@ -120,3 +120,18 @@ test('keeps a command receipt as the lightweight opening prompt', () => {
   )
   assert.deepEqual(metadata.blocks, [{ shape: 'event', event: 'command', text: '/implement 2178' }])
 })
+
+test('keeps a skill invocation as the lightweight opening prompt', () => {
+  const metadata = messageMetadata(
+    message({
+      role: 'user',
+      blocks: [
+        { shape: 'event', event: 'skill-invocation', text: '/effort' },
+        { shape: 'prose', text: 'A later prompt' },
+      ],
+    }),
+  )
+  assert.deepEqual(metadata.blocks, [
+    { shape: 'event', event: 'skill-invocation', text: '/effort' },
+  ])
+})

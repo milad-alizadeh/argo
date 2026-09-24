@@ -5,7 +5,8 @@ import type { ContentBlock } from '@/domains/sessions/contract/model/transcript/
 function openingLine(blocks: ContentBlock[]): ContentBlock[] {
   for (const block of blocks) {
     const acceptsOpeningPrompt =
-      block.shape === 'prose' || (block.shape === 'event' && block.event === 'command')
+      block.shape === 'prose' ||
+      (block.shape === 'event' && (block.event === 'command' || block.event === 'skill-invocation'))
     if (!acceptsOpeningPrompt || block.text === null) continue
     const line = block.text.split('\n').find((text) => text.trim().length > 0)
     if (line !== undefined) return [{ ...block, text: line }]

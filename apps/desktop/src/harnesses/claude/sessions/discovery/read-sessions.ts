@@ -12,7 +12,7 @@ import { discoverRoster } from '@/domains/sessions/main/observation/reader/disco
 import type { SessionSource } from '@/domains/sessions/main/observation/reader/reader'
 import { compactionEndedAt, markCompactingRows } from '../../compaction/compaction-roster'
 import type { LiveMessage } from '../../drive/channel/live-messages'
-import { readShellOutput } from '../records/shell-output'
+import { readShellOutput } from '../../transcript'
 import { readSubagentChain, readSubagentTokens } from '../subagents/subagents'
 import {
   backfillTick,

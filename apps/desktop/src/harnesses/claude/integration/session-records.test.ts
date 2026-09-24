@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { withoutBlocks } from '../sessions/discovery/transcript-file'
-import { parseTranscriptLine } from '../sessions/records/records'
+import { parseTranscriptLine } from '../transcript'
 import { fixtureFile } from './session-fixtures'
 
 test('names the Session from the file name, not from a record inside it', async () => {
@@ -72,7 +72,8 @@ test('reads slash commands as the words the person typed', async () => {
     .filter((record) => record.kind === 'message' && record.role === 'user')
     .flatMap((record) => record.blocks)
     .flatMap((block) =>
-      block.shape === 'prose' || (block.shape === 'event' && block.event === 'command')
+      block.shape === 'prose' ||
+      (block.shape === 'event' && (block.event === 'command' || block.event === 'skill-invocation'))
         ? [block.text]
         : [],
     )

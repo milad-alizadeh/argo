@@ -67,6 +67,11 @@ export type SessionSource = {
   readObservedFeed?: (
     sessionId: string,
   ) => ManagedFeed | null | undefined | Promise<ManagedFeed | null | undefined>
+  // One watched Subagent's vendor history projected directly, where its transcript is virtual.
+  readObservedSubagentFeed?: (
+    sessionId: string,
+    subagentId: string,
+  ) => ManagedFeed | null | undefined | Promise<ManagedFeed | null | undefined>
   rename?: (request: SessionRenameRequest) => Promise<SessionRenameReply>
   // One more batch of this Harness's older history, and a full-tree reconcile (#2373). Present only
   // when the app's Session index is open: without one, discovery parses each window itself and

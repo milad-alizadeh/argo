@@ -22,7 +22,7 @@ function useSkillContent(path: string) {
   return content?.path === path ? content : null
 }
 
-function SkillBody({ path }: { path: string }) {
+export function SessionSkillBody({ path }: { path: string }) {
   const { t } = useTranslation('sessions')
   const content = useSkillContent(path)
   if (content === null)
@@ -37,7 +37,7 @@ export function SessionSkillInspector({ evidence }: { evidence: SessionSkillEvid
   return (
     <section className="flex min-h-0 flex-1 flex-col" aria-label={t('skill.inspector')}>
       <div className="min-h-0 flex-1 overflow-auto p-4">
-        <SkillBody path={evidence.path} />
+        <SessionSkillBody path={evidence.path} />
       </div>
     </section>
   )

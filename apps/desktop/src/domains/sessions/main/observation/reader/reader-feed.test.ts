@@ -3,7 +3,9 @@
 import assert from 'node:assert/strict'
 import { chmod } from 'node:fs/promises'
 import { test } from 'node:test'
+import type { SessionMessage } from '@anthropic-ai/claude-agent-sdk'
 import { sessionListReplySchema } from '@/domains/sessions/contract/ipc/contract'
+import { createClaudeSdkHistorySource } from '@/harnesses/claude/agent-sdk/claude-sdk-history-source'
 import { claudeSessionSource } from '@/harnesses/claude/sessions/discovery/read-sessions'
 import { codexSessionSource } from '@/harnesses/codex/sessions/read-sessions'
 import { createSessionReader } from './reader'
@@ -84,6 +86,56 @@ test('reads a Session’s Feed as unchanged, and with a new revision once it gro
   assert.notEqual(
     grown.type === 'session.feed.read' ? grown.revision : null,
     first.type === 'session.feed.read' ? first.revision : null,
+  )
+})
+
+test('reads an SDK Subagent Feed without statting its virtual transcript path', async () => {
+  const sessionId = 'claude-parent'
+  const subagentId = 'toolu_spawn'
+  const parentMessages: SessionMessage[] = [
+    {
+      type: 'user',
+      uuid: 'task-notification',
+      session_id: sessionId,
+      message: {
+        content:
+          '<task-notification><task-id>agent-child</task-id><tool-use-id>toolu_spawn</tool-use-id><status>completed</status><summary>Agent "Child" finished</summary></task-notification>',
+      },
+      parent_tool_use_id: null,
+      parent_agent_id: null,
+    },
+  ]
+  const source = createClaudeSdkHistorySource({
+    history: {
+      listSessions: async () => [{ sessionId, summary: 'Parent', lastModified: 1 }],
+      getSessionMessages: async () => parentMessages,
+      getSubagentMessages: async () => [
+        {
+          type: 'user',
+          uuid: 'child-message',
+          session_id: sessionId,
+          message: { content: 'Child transcript loaded.' },
+          parent_tool_use_id: null,
+          parent_agent_id: 'agent-child',
+        },
+      ],
+    },
+  })
+  const reader = createSessionReader([source])
+  await listed(reader)
+  const parent = await fed(reader, feedRequest(sessionId))
+  assert.equal(parent.type, 'session.feed.read')
+
+  const child = await fed(reader, {
+    ...feedRequest(sessionId, 'child-feed'),
+    subagentId,
+  })
+
+  assert.equal(child.type, 'session.feed.read')
+  assert.equal(
+    child.type === 'session.feed.read' &&
+      child.rows.some((row) => row.shape === 'prose' && row.text === 'Child transcript loaded.'),
+    true,
   )
 })
 

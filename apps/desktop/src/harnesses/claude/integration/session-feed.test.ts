@@ -39,7 +39,7 @@ test('draws a standalone local command once at its prompt boundary', async () =>
   assert.deepEqual(rows.map(rowText), [
     'Prepare the work.',
     'Ready.',
-    'command:/implement 2389',
+    'skill-invocation:/implement 2389',
     'Implemented.',
   ])
 })

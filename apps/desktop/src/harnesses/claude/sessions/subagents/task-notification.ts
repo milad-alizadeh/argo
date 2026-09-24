@@ -3,14 +3,9 @@ import type {
   TranscriptRecord,
 } from '@/domains/sessions/contract/model/transcript/transcript'
 import { taggedField } from '@/harnesses/host/envelope-tags'
-import { isIdentifier } from '@/shared/validation'
+import { identifierTag } from '../../transcript/identifier-tag'
 import { backgroundState, readTaskEnding } from './background-task'
 import { replyLine } from './subagent-events'
-
-export function identifierTag(text: string, tag: string): string | null {
-  const value = taggedField(text, tag)
-  return value !== null && isIdentifier(value) ? value : null
-}
 
 // An agent's result is its own report; a workflow's is JSON meant for the model.
 function reportText(text: string): string | null {

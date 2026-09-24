@@ -321,6 +321,61 @@ export const TaskNotification: Story = {
   },
 }
 
+const skillInvocationPath = '/repository/.agents/skills/to-spec/SKILL.md'
+const skillInvocationMarkdown = [
+  '---',
+  'name: to-spec',
+  'description: Inspect an issue.',
+  '---',
+  '',
+  '# To spec',
+  '',
+  'Check the **acceptance criteria**.',
+].join('\n')
+
+const skillInvocationFeed = {
+  ...feed,
+  chainId: 'skill-invocation',
+  revision: 'skill-invocation-one',
+  sessionId: 'skill-invocation',
+  rows: [
+    {
+      shape: 'event' as const,
+      id: 'skill-invocation-row',
+      event: 'skill-invocation' as const,
+      text: '/to-spec https://github.com/milad-alizadeh/argo/issues/2682',
+      skill: { name: 'to-spec', path: skillInvocationPath },
+    },
+  ],
+} satisfies SessionFeed
+
+export const SkillInvocation: Story = {
+  args: { feed: skillInvocationFeed, selectedSessionId: 'skill-invocation' },
+  beforeEach: () => {
+    const previous = window.argo
+    window.argo = {
+      ...previous,
+      readSkillFile: (request: { path: string }) =>
+        Promise.resolve({
+          version: 1,
+          type: 'session.skill.read',
+          requestId: 'storybook-skill-invocation',
+          content: request.path === skillInvocationPath ? skillInvocationMarkdown : null,
+        }),
+    }
+    return () => {
+      window.argo = previous
+    }
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: /Skill invoked \/to-spec/ }))
+    await waitFor(() => expect(canvas.getByRole('heading', { name: 'To spec' })).toBeVisible())
+    await expect(canvas.getByText('acceptance criteria').tagName).toBe('STRONG')
+    await expect(canvasElement).not.toHaveTextContent('description: Inspect an issue.')
+  },
+}
+
 const pastedContentFeed = {
   ...feed,
   sessionId: 'pasted-content',

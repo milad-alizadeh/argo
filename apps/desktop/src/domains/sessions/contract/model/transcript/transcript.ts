@@ -118,7 +118,7 @@ export type TranscriptRecord =
       state: 'completed' | 'aborted'
       timestamp: string | null
     }
-  // `readTranscriptFile` folds the later compaction summary into its boundary (#2206).
+  // `transcriptFileFrom` folds the later compaction summary into its boundary (#2206).
   | { kind: 'compaction-summary'; uuid: string; text: string }
   | BackgroundTaskRecord
   | { kind: 'unreadable'; line: string }
