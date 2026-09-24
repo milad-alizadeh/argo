@@ -236,6 +236,44 @@ test('reports an executable lookup failure through the machine', async () => {
   }
 })
 
+test('settles concurrent executable checks and cancels the active check on shutdown', async () => {
+  let release!: () => void
+  const machine = codexAppServerMachine.provide({
+    actors: {
+      processActor: fromCallback(() => () => {}),
+      discoverExecutable: fromPromise(
+        ({ input, signal }) =>
+          new Promise((resolve) => {
+            signal.addEventListener(
+              'abort',
+              () => input.reject(new Error('Codex app-server closed during executable discovery.')),
+              { once: true },
+            )
+            release = () =>
+              resolve({
+                type: 'Request',
+                executable: null,
+                version: null,
+                run: input.run,
+                reject: input.reject,
+              })
+          }),
+      ),
+    },
+  })
+  const actor = createActor(machine, { input: { executable: null } }).start()
+  try {
+    const first = requestCodexAppServer(actor)('model/list', {}, (value) => value)
+    const second = requestCodexAppServer(actor)('model/list', {}, (value) => value)
+    await assert.rejects(second, /discovery is in progress/)
+    actor.send({ type: 'Shutdown' })
+    await assert.rejects(first, /closed during executable discovery/)
+    release()
+  } finally {
+    actor.stop()
+  }
+})
+
 test('owns model/list and closes its child process on shutdown', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'argo-codex-catalog-'))
   const executable = path.join(directory, 'codex')

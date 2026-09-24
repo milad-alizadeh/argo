@@ -26,8 +26,21 @@ export const sessionSubmitInputSchema = commandSchema
     projectId: identifierSchema,
     cwd: z.string().min(1),
     sessionId: identifierSchema.nullable(),
+    pendingId: z.string().min(1).nullable(),
   })
   .superRefine((input, context) => {
+    if (input.sessionId === null && input.pendingId === null)
+      context.addIssue({
+        code: 'custom',
+        path: ['pendingId'],
+        message: 'A new Session requires its pending identity.',
+      })
+    if (input.sessionId !== null && input.pendingId !== null)
+      context.addIssue({
+        code: 'custom',
+        path: ['pendingId'],
+        message: 'An existing Session cannot use a pending identity.',
+      })
     if (input.harness === 'claude' && input.attachments.length > 0)
       context.addIssue({
         code: 'custom',

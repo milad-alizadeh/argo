@@ -1,15 +1,7 @@
 import assert from 'node:assert/strict'
 import { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
-import {
-  type ActorRefFrom,
-  createActor,
-  type EventFromLogic,
-  fromCallback,
-  fromPromise,
-  setup,
-  waitFor,
-} from 'xstate'
+import { type ActorRefFrom, createActor, fromCallback, fromPromise, setup, waitFor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
 import {
   harnessCatalogMachine,
@@ -33,25 +25,20 @@ const model = available.models[0]
 if (model === undefined) throw new Error('Codex fixture needs a model.')
 const catalog = harnessCatalogSchema.parse({ harnesses: [unavailable('claude'), available] })
 const first: SessionStartInput = {
-  commandId: '00000000-0000-4000-8000-000000000001',
+  commandId: 'first-command',
   harness: 'codex',
-  projectId: '00000000-0000-4000-8000-000000000099',
+  projectId: 'project-1',
   cwd: '/repo',
   prompt: 'first',
   attachments: [],
   setup: { model: model.value, effort: model.defaultEffort, mode: 'workspace-write' },
 }
 
-async function supervisorForTest(request: CodexRequest) {
+async function supervisorFor(request: CodexRequest, catalogValue = catalog) {
   const client = new DatabaseSync(':memory:')
-  client.exec(`CREATE TABLE session (
-    argo_id TEXT PRIMARY KEY,
-    harness TEXT NOT NULL,
-    native_id TEXT NOT NULL,
-    project_id TEXT NOT NULL,
-    first_prompt TEXT,
-    updated_at INTEGER NOT NULL
-  ); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);`)
+  client.exec(
+    'CREATE TABLE session (argo_id TEXT PRIMARY KEY, harness TEXT NOT NULL, native_id TEXT NOT NULL, project_id TEXT NOT NULL, first_prompt TEXT, updated_at INTEGER NOT NULL); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);',
+  )
   const database = createDurableDatabase(client)
   const channel: CodexChannel = {
     request: (method, params, parse) => request(method, params, parse),
@@ -62,20 +49,20 @@ async function supervisorForTest(request: CodexRequest) {
     onExit: () => {},
     close: () => {},
   }
-  type CodexCall = Extract<EventFromLogic<typeof codexAppServerMachine>, { type: 'Call' }>
-  const fakeCodex = fromCallback<CodexCall>(({ receive }) => {
-    receive((event) => event.run(channel))
-  })
-  const machine = setup({
+  type Call = Extract<
+    Parameters<ActorRefFrom<typeof codexAppServerMachine>['send']>[0],
+    { type: 'Call' }
+  >
+  const rootMachine = setup({
     types: {
       input: {} as { database: typeof database },
       context: {} as { database: typeof database },
       events: {} as { type: 'Shutdown' },
     },
     actors: {
-      codex: fakeCodex,
+      codex: fromCallback<Call>(({ receive }) => receive((event) => event.run(channel))),
       catalog: harnessCatalogMachine.provide({
-        actors: { loadCatalog: fromPromise(async () => catalog) },
+        actors: { loadCatalog: fromPromise(async () => catalogValue) },
       }),
       sessions: sessionSupervisorMachine,
     },
@@ -99,134 +86,134 @@ async function supervisorForTest(request: CodexRequest) {
       Closed: { type: 'final' },
     },
   })
-  const root = createActor(machine, { input: { database } }).start()
-  const catalogActor = root.system.get('catalog') as
-    | ActorRefFrom<typeof harnessCatalogMachine>
-    | undefined
-  const actor = root.system.get('sessions') as
-    | ActorRefFrom<typeof sessionSupervisorMachine>
-    | undefined
-  if (catalogActor === undefined || actor === undefined)
-    throw new Error('Test actors did not start.')
+  const root = createActor(rootMachine, { input: { database } }).start()
+  const catalogActor = root.system.get('catalog') as ActorRefFrom<typeof harnessCatalogMachine>
+  const supervisor = root.system.get('sessions') as ActorRefFrom<typeof sessionSupervisorMachine>
   catalogActor.send({ type: 'Catalog requested' })
   await waitFor(catalogActor, (snapshot) => snapshot.matches('Ready'))
-  return { actor, root, client }
+  return { root, supervisor, client }
 }
 
-function start(actor: ActorRefFrom<typeof sessionSupervisorMachine>, input = first) {
-  return new Promise<{ sessionId: string }>((resolve, reject) => {
-    actor.send({ type: 'Start', input, reply: { resolve, reject } })
+function start(
+  actor: ActorRefFrom<typeof sessionSupervisorMachine>,
+  input: SessionStartInput,
+  pendingId = 'optimistic:one',
+) {
+  return new Promise<{ sessionId: string }>((resolve, reject) =>
+    actor.send({ type: 'Start', input, pendingId, reply: { resolve, reject } }),
+  )
+}
+
+test('models supervisor lifetime', () => {
+  const paths = getShortestPaths(sessionSupervisorMachine, {
+    input: { database: {} as never },
+    events: (state) => (state.matches('Running') ? [{ type: 'Shutdown' as const }] : []),
   })
-}
+  assert.deepEqual(
+    new Set(paths.map(({ state }) => String(state.value))),
+    new Set(['Running', 'Closed']),
+  )
+})
 
-test('models idle, running, and shutdown paths', async () => {
-  const request: CodexRequest = async (_method, _params, parse) => parse({})
-  const { actor, root, client } = await supervisorForTest(request)
-  try {
-    const paths = getShortestPaths(sessionSupervisorMachine, {
-      input: actor.getSnapshot().context.services,
-      events: (snapshot) => {
-        if (snapshot.matches('Idle'))
-          return [
-            { type: 'Started' as const, commandId: first.commandId, sessionId: 'argo-1' },
-            { type: 'Shutdown' as const },
-          ]
-        return snapshot.matches('Running') ? [{ type: 'Shutdown' as const }] : []
+test('rejects a model mode that the catalog does not support before calling Codex', async () => {
+  let called = false
+  const restrictedCatalog = harnessCatalogSchema.parse({
+    harnesses: [
+      unavailable('claude'),
+      {
+        ...available,
+        models: [{ ...model, supportedModes: ['workspace-write'] }],
       },
-    })
-    assert.deepEqual(
-      new Set(paths.map(({ state }) => String(state.value))),
-      new Set(['Idle', 'Running', 'Closed']),
+    ],
+  })
+  const { root, supervisor, client } = await supervisorFor(async () => {
+    called = true
+    throw new Error('Codex must not be called.')
+  }, restrictedCatalog)
+  try {
+    await assert.rejects(
+      start(supervisor, { ...first, setup: { ...first.setup, mode: 'read-only' } }),
+      /no longer available/,
     )
-    const running = paths.find(({ state }) => state.matches('Running'))?.state
-    assert.deepEqual(running?.context.completed[first.commandId], { sessionId: 'argo-1' })
+    assert.equal(called, false)
   } finally {
     root.send({ type: 'Shutdown' })
     client.close()
   }
 })
 
-test('deduplicates one first command and owns its Session child', async () => {
-  const calls: string[] = []
-  const request: CodexRequest = async (method, _params, parse) => {
-    calls.push(method)
-    return parse(
-      method === 'thread/start' ? { thread: { id: 'native-1' } } : { turn: { id: 'turn-1' } },
-    )
-  }
-  const { actor, root, client } = await supervisorForTest(request)
+test('cancels an unsettled start when its supervisor stops', async () => {
+  const never = new Promise<never>(() => {})
+  const { root, supervisor, client } = await supervisorFor(async (method, _params, parse) => {
+    if (method === 'thread/start') return parse({ thread: { id: 'native-1' } })
+    return never
+  })
   try {
-    const [one, two] = await Promise.all([start(actor), start(actor)])
-    assert.equal(two.sessionId, one.sessionId)
-    assert.deepEqual(calls, ['thread/start', 'turn/start'])
-    assert.equal((await start(actor)).sessionId, one.sessionId)
-    const child = actor.getSnapshot().context.sessions[one.sessionId]
-    assert.equal(child?.getSnapshot().matches('Ready'), true)
+    const pending = start(supervisor, first)
     root.send({ type: 'Shutdown' })
-    assert.equal(child?.getSnapshot().status, 'stopped')
+    await assert.rejects(pending, /supervisor is closed/)
+  } finally {
+    client.close()
+  }
+})
+
+test('queues a distinct startup command and settles both calls after persistence', async () => {
+  const turns: string[] = []
+  let releaseFirst!: () => void
+  const firstTurn = new Promise<void>((resolve) => {
+    releaseFirst = resolve
+  })
+  const request: CodexRequest = async (method, params, parse) => {
+    if (method === 'thread/start') return parse({ thread: { id: 'native-1' } })
+    turns.push(((params as { input: Array<{ text: string }> }).input[0] as { text: string }).text)
+    if (turns.length === 1) await firstTurn
+    return parse({ turn: { id: `turn-${turns.length}` } })
+  }
+  const { root, supervisor, client } = await supervisorFor(request)
+  try {
+    const one = start(supervisor, first)
+    const two = start(supervisor, { ...first, commandId: 'second-command', prompt: 'second' })
+    releaseFirst()
+    const [firstResult, secondResult] = await Promise.all([one, two])
+    assert.equal(secondResult.sessionId, firstResult.sessionId)
+    const child = supervisor.getSnapshot().context.sessions[firstResult.sessionId]
+    assert.ok(child)
+    await waitFor(child, (snapshot) => snapshot.matches('Ready'))
+    assert.deepEqual(turns, ['first', 'second'])
   } finally {
     root.send({ type: 'Shutdown' })
     client.close()
   }
 })
 
-test('forwards a later send and rejects it after the child fails', async () => {
-  const calls: string[] = []
+test('settles start before a queued turn fails', async () => {
+  let turns = 0
+  let releaseFirst!: () => void
+  const firstTurn = new Promise<void>((resolve) => {
+    releaseFirst = resolve
+  })
   const request: CodexRequest = async (method, _params, parse) => {
-    calls.push(method)
-    if (method === 'turn/start' && calls.filter((call) => call === 'turn/start').length > 1)
-      throw new Error('turn failed')
-    return parse(
-      method === 'thread/start' ? { thread: { id: 'native-1' } } : { turn: { id: 'turn-1' } },
-    )
+    if (method === 'thread/start') return parse({ thread: { id: 'native-1' } })
+    turns += 1
+    if (turns === 1) await firstTurn
+    if (turns === 2) throw new Error('second turn failed')
+    return parse({ turn: { id: 'turn-1' } })
   }
-  const { actor, root, client } = await supervisorForTest(request)
+  const { root, supervisor, client } = await supervisorFor(request)
   try {
-    const { sessionId } = await start(actor)
-    await new Promise<{ sessionId: string }>((resolve, reject) => {
-      actor.send({
-        type: 'Send',
-        input: { ...first, commandId: 'second', sessionId },
-        reply: { resolve, reject },
-      })
+    const firstStart = start(supervisor, first)
+    const queuedStart = start(supervisor, {
+      ...first,
+      commandId: 'second-command',
+      prompt: 'second',
     })
-    const child = actor.getSnapshot().context.sessions[sessionId]
+    releaseFirst()
+    const [firstResult, queuedResult] = await Promise.all([firstStart, queuedStart])
+    assert.ok(firstResult.sessionId)
+    assert.equal(queuedResult.sessionId, firstResult.sessionId)
+    const child = supervisor.getSnapshot().context.sessions[firstResult.sessionId]
     assert.ok(child)
     await waitFor(child, (snapshot) => snapshot.matches('Failed'))
-    await assert.rejects(
-      new Promise<{ sessionId: string }>((resolve, reject) => {
-        actor.send({
-          type: 'Send',
-          input: { ...first, commandId: 'third', sessionId },
-          reply: { resolve, reject },
-        })
-      }),
-      /turn failed/,
-    )
-  } finally {
-    root.send({ type: 'Shutdown' })
-    client.close()
-  }
-})
-
-test('retains the vendor child and does not resend after persistence fails', async () => {
-  const calls: string[] = []
-  const request: CodexRequest = async (method, _params, parse) => {
-    calls.push(method)
-    return parse(
-      method === 'thread/start' ? { thread: { id: 'native-1' } } : { turn: { id: 'turn-1' } },
-    )
-  }
-  const { actor, root, client } = await supervisorForTest(request)
-  try {
-    client.exec('DROP TABLE session')
-    await assert.rejects(start(actor), /Failed query/)
-    assert.equal(
-      actor.getSnapshot().context.failed[first.commandId]?.getSnapshot().matches('Failed'),
-      true,
-    )
-    await assert.rejects(start(actor), /Failed query/)
-    assert.deepEqual(calls, ['thread/start', 'turn/start'])
   } finally {
     root.send({ type: 'Shutdown' })
     client.close()

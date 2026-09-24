@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
 import { createActor, fromPromise } from 'xstate'
+import type { SessionSubmitInput } from '@/domains/sessions/contract/session-start'
 import type { SessionSupervisorActor } from '@/domains/sessions/main/live/session-supervisor-machine'
 import {
   harnessCatalogMachine,
@@ -109,12 +110,12 @@ test('retry reloads a failed catalog once', async () => {
   }
 })
 
-test('routes composer commands through the single Session submission mutation', async () => {
-  const submitted: Array<{ sessionId: string | null; prompt: string }> = []
+test('routes a second optimistic composer command to the same pending Session', async () => {
+  const submitted: Array<{ pendingId: string; prompt: string }> = []
   const supervisor = {
     send: (event: SupervisorEvent) => {
       if (event.type === 'Start') {
-        submitted.push({ sessionId: null, prompt: event.input.prompt })
+        submitted.push({ pendingId: event.pendingId, prompt: event.input.prompt })
         event.reply.resolve({ sessionId: '00000000-0000-4000-8000-000000000001' })
       }
     },
@@ -128,18 +129,29 @@ test('routes composer commands through the single Session submission mutation', 
   ).start()
   try {
     const caller = createAppRouter(actor, supervisor).createCaller({})
-    await caller.sessionSubmit({
+    const initial: SessionSubmitInput = {
       commandId: '00000000-0000-4000-8000-000000000002',
       harness: 'claude',
       projectId: '00000000-0000-4000-8000-000000000099',
       cwd: '/repo',
       sessionId: null,
+      pendingId: 'optimistic:session-1',
       prompt: 'Start a Session.',
       attachments: [],
       setup: { model: 'claude-sonnet', effort: 'medium', mode: 'default' },
-    })
-    expect(submitted).toHaveLength(1)
-    expect(submitted[0]).toMatchObject({ sessionId: null, prompt: 'Start a Session.' })
+    }
+    await Promise.all([
+      caller.sessionSubmit(initial),
+      caller.sessionSubmit({
+        ...initial,
+        commandId: '00000000-0000-4000-8000-000000000003',
+        prompt: 'Continue the plan.',
+      }),
+    ])
+    expect(submitted).toEqual([
+      { pendingId: 'optimistic:session-1', prompt: 'Start a Session.' },
+      { pendingId: 'optimistic:session-1', prompt: 'Continue the plan.' },
+    ])
   } finally {
     actor.stop()
   }
@@ -171,6 +183,7 @@ test('rejects Claude attachments before a Session reaches a vendor', async () =>
         projectId: '00000000-0000-4000-8000-000000000099',
         cwd: '/repo',
         sessionId: null,
+        pendingId: 'optimistic:session-1',
         prompt: 'Read this image.',
         attachments: [{ kind: 'image', path: '/repo/image.png' }],
         setup: { model: 'claude-sonnet', effort: 'medium', mode: 'default' },

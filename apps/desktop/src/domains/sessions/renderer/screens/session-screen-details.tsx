@@ -45,6 +45,20 @@ function catalogFailureOf(
   return null
 }
 
+function workspaceControl(
+  identity: ReturnType<typeof composerIdentityOf>,
+  cockpit: Cockpit,
+  projectActions: SessionScreenDetailsProps['projectActions'],
+) {
+  if (identity.kind !== 'draft') return null
+  return {
+    workspaces: cockpit.workspaces,
+    workspace: cockpit.workspace,
+    onSelect: projectActions.selectWorkspace,
+    onCreateManaged: () => projectActions.createManagedWorkspace('HEAD'),
+  }
+}
+
 async function submitFromComposer({
   submit,
   identity,
@@ -63,18 +77,19 @@ async function submitFromComposer({
   attachments: SessionSubmitInput['attachments']
 }) {
   if (setup === null) return false
-  if (
-    identity.kind === 'pending' &&
-    !useSessionCreationStore.getState().startSubmission(identity.sessionId, prompt)
-  )
-    return false
+  const commandId =
+    identity.kind === 'pending'
+      ? useSessionCreationStore.getState().startSubmission(identity.sessionId, prompt)
+      : crypto.randomUUID()
+  if (commandId === null) return false
   try {
     const submitted = await submit({
-      commandId: crypto.randomUUID(),
+      commandId,
       harness: harness.harness,
       projectId: cockpit.project?.id ?? '',
       cwd: cockpit.workspace?.path ?? cockpit.project?.path ?? '',
       sessionId: identity.kind === 'session' ? identity.sessionId : null,
+      pendingId: identity.kind === 'pending' ? identity.sessionId : null,
       prompt,
       attachments,
       setup,
@@ -101,6 +116,7 @@ export function SessionComposerArea({
   const catalogQuery = useQuery(trpc.harnessCatalogRead.queryOptions({ harness: harness.harness }))
   const catalogRefresh = useMutation(trpc.harnessCatalogRefresh.mutationOptions())
   const sessionSubmit = useMutation(trpc.sessionSubmit.mutationOptions())
+  const location = useLocation()
   const catalog = catalogQuery.data?.info ?? null
   const catalogFailure = catalogFailureOf(catalogQuery.data, catalogQuery.isError)
   const pending = useSessionCreationStore((state) => state.pending)
@@ -124,48 +140,6 @@ export function SessionComposerArea({
     )
   const submit = (input: SessionSubmitInput) => sessionSubmit.mutateAsync(input)
   return (
-    <SessionComposerForm
-      catalogFailure={catalogFailure}
-      cockpit={cockpit}
-      control={control}
-      harness={harness}
-      identity={identity}
-      permission={permission}
-      projectActions={projectActions}
-      questionPending={questionPending}
-      session={session}
-      refreshCatalog={refreshCatalog}
-      submit={submit}
-    />
-  )
-}
-
-type SessionComposerFormProps = Pick<
-  SessionScreenDetailsProps,
-  'cockpit' | 'harness' | 'permission' | 'projectActions' | 'questionPending' | 'session'
-> & {
-  catalogFailure: CatalogFailure | null
-  control: ReturnType<typeof useTurnSetup>
-  identity: ReturnType<typeof composerIdentityOf>
-  refreshCatalog: () => void
-  submit: (input: SessionSubmitInput) => Promise<{ sessionId: string }>
-}
-
-function SessionComposerForm({
-  catalogFailure,
-  cockpit,
-  control,
-  harness,
-  identity,
-  permission,
-  projectActions,
-  questionPending,
-  session,
-  refreshCatalog,
-  submit,
-}: SessionComposerFormProps) {
-  const location = useLocation()
-  return (
     <>
       {permission.failure ? <Failure message={permission.failure} /> : null}
       <ComposerForm
@@ -174,16 +148,7 @@ function SessionComposerForm({
         setup={control}
         catalogFailure={catalogFailure}
         refreshCatalog={refreshCatalog}
-        workspace={
-          identity.kind === 'draft'
-            ? {
-                workspaces: cockpit.workspaces,
-                workspace: cockpit.workspace,
-                onSelect: projectActions.selectWorkspace,
-                onCreateManaged: () => projectActions.createManagedWorkspace('HEAD'),
-              }
-            : null
-        }
+        workspace={workspaceControl(identity, cockpit, projectActions)}
         contextTokens={session?.contextTokens}
         contextWindowTokens={session?.contextWindowTokens}
         disabled={questionPending}

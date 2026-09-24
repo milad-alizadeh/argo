@@ -12,8 +12,11 @@ export function sessionSubmitProcedure(supervisor: SessionSupervisorActor) {
       ({ input }) =>
         new Promise<{ sessionId: string }>((resolve, reject) => {
           const reply = { resolve, reject }
-          if (input.sessionId === null) supervisor.send({ type: 'Start', input, reply })
-          else
+          if (input.sessionId === null) {
+            if (input.pendingId === null)
+              throw new Error('A new Session requires its pending identity.')
+            supervisor.send({ type: 'Start', input, pendingId: input.pendingId, reply })
+          } else
             supervisor.send({
               type: 'Send',
               input: { ...input, sessionId: input.sessionId },

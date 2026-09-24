@@ -1,4 +1,4 @@
-import { type ActorRefFrom, assign, fromPromise, setup, waitFor } from 'xstate'
+import { type ActorRefFrom, assign, fromCallback, fromPromise, setup } from 'xstate'
 import type { harnessCatalogMachine } from '@/harnesses/catalog/harness-catalog-machine'
 import { claudeSessionMachine } from '@/harnesses/claude/session/claude-session-machine'
 import {
@@ -26,6 +26,7 @@ type SupervisorEvent =
   | {
       type: 'Start'
       input: SessionStartInput
+      pendingId: string
       reply: StartReply
     }
   | {
@@ -34,110 +35,167 @@ type SupervisorEvent =
       reply: StartReply
     }
   | {
-      type: 'Started'
-      commandId: string
+      type: 'Session persisted'
+      pendingId: string
       sessionId: string
     }
   | {
-      type: 'Start failed'
-      commandId: string
-      error: Error
+      type: 'Session failed'
+      pendingId: string
+      failure: string
     }
   | {
       type: 'Shutdown'
     }
 
+function setupIsAvailable(
+  catalog: ActorRefFrom<typeof harnessCatalogMachine> | undefined,
+  harness: SessionStartInput['harness'],
+  setup: SessionStartInput['setup'],
+) {
+  const entry = catalog
+    ?.getSnapshot()
+    .context.catalog.harnesses.find(
+      (candidate) => candidate.harness === harness && candidate.availability === 'available',
+    )
+  if (entry?.availability !== 'available') return false
+  const model = entry.models.find((candidate) => candidate.value === setup.model)
+  return Boolean(
+    model?.efforts.includes(setup.effort) &&
+      entry.modes.some((mode) => mode.value === setup.mode) &&
+      (model.supportedModes === undefined || model.supportedModes.includes(setup.mode)),
+  )
+}
+
 export const sessionSupervisorMachine = setup({
   types: {
     input: {} as SupervisorInput,
     context: {} as {
-      services: SupervisorInput
+      database: DurableDatabase
       sessions: Record<string, SessionActor>
-      starts: Record<
-        string,
-        {
-          actor: SessionActor
-          replies: StartReply[]
-        }
-      >
+      starts: Record<string, SessionActor>
       completed: Record<
         string,
         | {
             sessionId: string
           }
         | {
-            error: Error
+            failure: string
           }
       >
       failed: Record<string, SessionActor>
     },
     events: {} as SupervisorEvent,
   },
-  guards: {
-    isCompletedStart: ({ context, event }) =>
-      event.type === 'Start' && context.completed[event.input.commandId] !== undefined,
+  actors: {
+    observeSession: fromCallback<
+      {
+        type: 'Stop'
+      },
+      {
+        pendingId: string
+        session: SessionActor
+      },
+      Extract<
+        SupervisorEvent,
+        {
+          type: 'Session persisted' | 'Session failed'
+        }
+      >
+    >(({ input, sendBack }) => {
+      let settled = false
+      const subscription = input.session.subscribe((snapshot) => {
+        if (settled) return
+        if (snapshot.context.argoId !== null) {
+          settled = true
+          sendBack({
+            type: 'Session persisted',
+            pendingId: input.pendingId,
+            sessionId: snapshot.context.argoId,
+          })
+        } else if (snapshot.matches('Failed')) {
+          settled = true
+          sendBack({
+            type: 'Session failed',
+            pendingId: input.pendingId,
+            failure: snapshot.context.failure ?? 'Session start failed.',
+          })
+        }
+      })
+      return () => subscription.unsubscribe()
+    }),
+    replyWhenPersisted: fromCallback<
+      {
+        type: 'Stop'
+      },
+      {
+        session: SessionActor
+        reply: StartReply
+      }
+    >(({ input }) => {
+      let settled = false
+      const subscription = input.session.subscribe((snapshot) => {
+        if (settled) return
+        if (snapshot.context.argoId !== null) {
+          settled = true
+          input.reply.resolve({
+            sessionId: snapshot.context.argoId,
+          })
+        } else if (snapshot.matches('Failed')) {
+          settled = true
+          input.reply.reject(new Error(snapshot.context.failure ?? 'Session start failed.'))
+        }
+      })
+      return () => {
+        subscription.unsubscribe()
+        if (!settled) input.reply.reject(new Error('Session supervisor is closed.'))
+      }
+    }),
   },
   actions: {
-    replyToCompletedStart: ({ context, event }) => {
-      if (event.type !== 'Start') return
-      const completed = context.completed[event.input.commandId]
-      if (completed === undefined) return
-      if ('error' in completed) event.reply.reject(completed.error)
-      else event.reply.resolve(completed)
-    },
-    rejectPendingOnShutdown: ({ context }) => {
-      for (const pending of Object.values(context.starts))
-        for (const reply of pending.replies)
-          reply.reject(new Error('Session supervisor is closed.'))
-    },
-    rememberStart: assign({
-      starts: ({ context, event, spawn, self }) => {
+    startOrQueue: assign({
+      starts: ({ context, event, self, spawn }) => {
         if (event.type !== 'Start') return context.starts
-        const catalogActor = self.system.get('catalog') as
+        const catalog = self.system.get('catalog') as
           | ActorRefFrom<typeof harnessCatalogMachine>
           | undefined
-        const catalog = catalogActor
-          ?.getSnapshot()
-          .context.catalog.harnesses.find(
-            (candidate) =>
-              candidate.harness === event.input.harness && candidate.availability === 'available',
-          )
-        const model =
-          catalog?.availability === 'available'
-            ? catalog.models.find((candidate) => candidate.value === event.input.setup.model)
-            : undefined
-        if (
-          catalog?.availability !== 'available' ||
-          !model?.efforts.includes(event.input.setup.effort) ||
-          !catalog.modes.some((mode) => mode.value === event.input.setup.mode)
-        ) {
+        if (!setupIsAvailable(catalog, event.input.harness, event.input.setup)) {
           event.reply.reject(new Error('The selected Session setup is no longer available.'))
           return context.starts
         }
-        const pending = context.starts[event.input.commandId]
-        if (pending !== undefined)
-          return {
-            ...context.starts,
-            [event.input.commandId]: {
-              ...pending,
-              replies: [
-                ...pending.replies,
-                event.reply,
-              ],
+        const completed = context.completed[event.pendingId]
+        if (completed !== undefined) {
+          if ('sessionId' in completed) event.reply.resolve(completed)
+          else event.reply.reject(new Error(completed.failure))
+          return context.starts
+        }
+        const existing = context.starts[event.pendingId]
+        if (existing !== undefined) {
+          if (existing.getSnapshot().context.first.commandId !== event.input.commandId)
+            existing.send({
+              type: 'Send',
+              command: event.input,
+            })
+          spawn('replyWhenPersisted', {
+            input: {
+              session: existing,
+              reply: event.reply,
             },
-          }
+          })
+          return context.starts
+        }
         let harness: typeof claudeSessionMachine | typeof codexSessionMachine
         switch (event.input.harness) {
           case 'claude':
             harness = claudeSessionMachine
             break
           case 'codex': {
-            const codexActor = self.system.get('codex') as
+            const codex = self.system.get('codex') as
               | ActorRefFrom<typeof codexAppServerMachine>
               | undefined
-            if (codexActor === undefined) throw new Error('Codex app-server actor is unavailable.')
+            if (codex === undefined) throw new Error('Codex app-server actor is unavailable.')
             harness = codexSessionMachine.provide({
-              actors: codexSessionActors(requestCodexAppServer(codexActor)),
+              actors: codexSessionActors(requestCodexAppServer(codex)),
             })
             break
           }
@@ -146,105 +204,48 @@ export const sessionSupervisorMachine = setup({
             throw new Error(`Unsupported Harness: ${unknownHarness}`)
           }
         }
-        const machine = sessionMachine.provide({
-          actors: {
-            harness,
-            persist: fromPromise(({ input: record }) => {
-              if (record.nativeId === null) throw new Error('Session has no native ID to persist.')
-              return Promise.resolve(
-                createSessionUpsert(context.services.database)({
-                  ...record,
-                  nativeId: record.nativeId,
-                }),
-              )
-            }),
+        const actor = spawn(
+          sessionMachine.provide({
+            actors: {
+              harness,
+              persist: fromPromise(({ input: record }) => {
+                if (record.nativeId === null)
+                  throw new Error('Session has no native ID to persist.')
+                return Promise.resolve(
+                  createSessionUpsert(context.database)({
+                    ...record,
+                    nativeId: record.nativeId,
+                  }),
+                )
+              }),
+            },
+          }),
+          {
+            input: event.input,
+          },
+        )
+        spawn('observeSession', {
+          input: {
+            pendingId: event.pendingId,
+            session: actor,
           },
         })
-        const actor = spawn(machine, {
-          input: event.input,
+        spawn('replyWhenPersisted', {
+          input: {
+            session: actor,
+            reply: event.reply,
+          },
         })
         return {
           ...context.starts,
-          [event.input.commandId]: {
-            actor,
-            replies: [
-              event.reply,
-            ],
-          },
+          [event.pendingId]: actor,
         }
       },
     }),
-    awaitStart: ({ context, event, self }) => {
-      if (event.type !== 'Start') return
-      const pending = context.starts[event.input.commandId]
-      if (pending === undefined || pending.replies.length !== 1) return
-      void waitFor(
-        pending.actor,
-        (snapshot) => snapshot.matches('Ready') || snapshot.matches('Failed'),
-      ).then(
-        (snapshot) => {
-          if (snapshot.matches('Failed'))
-            self.send({
-              type: 'Start failed',
-              commandId: event.input.commandId,
-              error: new Error(snapshot.context.failure ?? 'Session start failed.'),
-            })
-          else if (snapshot.context.argoId !== null)
-            self.send({
-              type: 'Started',
-              commandId: event.input.commandId,
-              sessionId: snapshot.context.argoId,
-            })
-          else
-            self.send({
-              type: 'Start failed',
-              commandId: event.input.commandId,
-              error: new Error('Session identity did not persist.'),
-            })
-        },
-        (error) =>
-          self.send({
-            type: 'Start failed',
-            commandId: event.input.commandId,
-            error: new Error(String(error)),
-          }),
-      )
-    },
-    finishStart: ({ context, event }) => {
-      if (event.type !== 'Started') return
-      for (const reply of context.starts[event.commandId]?.replies ?? [])
-        reply.resolve({
-          sessionId: event.sessionId,
-        })
-    },
-    failStart: ({ context, event }) => {
-      if (event.type !== 'Start failed') return
-      for (const reply of context.starts[event.commandId]?.replies ?? []) reply.reject(event.error)
-    },
-    rememberResult: assign({
-      completed: ({ context, event }) => {
-        switch (event.type) {
-          case 'Started':
-            return {
-              ...context.completed,
-              [event.commandId]: {
-                sessionId: event.sessionId,
-              },
-            }
-          case 'Start failed':
-            return {
-              ...context.completed,
-              [event.commandId]: {
-                error: event.error,
-              },
-            }
-          default:
-            return context.completed
-        }
-      },
+    rememberPersisted: assign({
       sessions: ({ context, event }) => {
-        if (event.type !== 'Started') return context.sessions
-        const actor = context.starts[event.commandId]?.actor
+        if (event.type !== 'Session persisted') return context.sessions
+        const actor = context.starts[event.pendingId]
         return actor === undefined
           ? context.sessions
           : {
@@ -252,20 +253,38 @@ export const sessionSupervisorMachine = setup({
               [event.sessionId]: actor,
             }
       },
+      starts: ({ context, event }) => {
+        if (event.type !== 'Session persisted' && event.type !== 'Session failed')
+          return context.starts
+        const { [event.pendingId]: _session, ...remaining } = context.starts
+        return remaining
+      },
+      completed: ({ context, event }) => {
+        if (event.type === 'Session persisted')
+          return {
+            ...context.completed,
+            [event.pendingId]: {
+              sessionId: event.sessionId,
+            },
+          }
+        if (event.type === 'Session failed')
+          return {
+            ...context.completed,
+            [event.pendingId]: {
+              failure: event.failure,
+            },
+          }
+        return context.completed
+      },
       failed: ({ context, event }) => {
-        if (event.type !== 'Start failed') return context.failed
-        const actor = context.starts[event.commandId]?.actor
+        if (event.type !== 'Session failed') return context.failed
+        const actor = context.starts[event.pendingId]
         return actor === undefined
           ? context.failed
           : {
               ...context.failed,
-              [event.commandId]: actor,
+              [event.pendingId]: actor,
             }
-      },
-      starts: ({ context, event }) => {
-        if (event.type !== 'Started' && event.type !== 'Start failed') return context.starts
-        const { [event.commandId]: _finished, ...remaining } = context.starts
-        return remaining
       },
     }),
     forwardSend: ({ context, event, self }) => {
@@ -275,33 +294,21 @@ export const sessionSupervisorMachine = setup({
         event.reply.reject(new Error('Session is not live.'))
         return
       }
+      if (
+        !setupIsAvailable(
+          self.system.get('catalog') as ActorRefFrom<typeof harnessCatalogMachine> | undefined,
+          actor.getSnapshot().context.first.harness,
+          event.input.setup,
+        )
+      ) {
+        event.reply.reject(new Error('The selected Session setup is no longer available.'))
+        return
+      }
       const snapshot = actor.getSnapshot()
       if (snapshot.matches('Failed') || snapshot.matches('Closed')) {
         event.reply.reject(
           new Error(snapshot.context.failure ?? 'Session is not available for sends.'),
         )
-        return
-      }
-      const catalogActor = self.system.get('catalog') as
-        | ActorRefFrom<typeof harnessCatalogMachine>
-        | undefined
-      const catalog = catalogActor
-        ?.getSnapshot()
-        .context.catalog.harnesses.find(
-          (candidate) =>
-            candidate.harness === snapshot.context.first.harness &&
-            candidate.availability === 'available',
-        )
-      if (catalog?.availability !== 'available') {
-        event.reply.reject(new Error('The selected Session setup is no longer available.'))
-        return
-      }
-      const model = catalog?.models.find((candidate) => candidate.value === event.input.setup.model)
-      if (
-        !model?.efforts.includes(event.input.setup.effort) ||
-        !catalog?.modes.some((mode) => mode.value === event.input.setup.mode)
-      ) {
-        event.reply.reject(new Error('The selected Session setup is no longer available.'))
         return
       }
       actor.send({
@@ -315,66 +322,34 @@ export const sessionSupervisorMachine = setup({
   },
 }).createMachine({
   id: 'sessionSupervisor',
-  initial: 'Idle',
+  initial: 'Running',
   context: ({ input }) => ({
-    services: input,
+    database: input.database,
     sessions: {},
     starts: {},
     completed: {},
     failed: {},
   }),
   states: {
-    Idle: {
-      on: {
-        Started: {
-          target: 'Running',
-          actions: [
-            'finishStart',
-            'rememberResult',
-          ],
-        },
-      },
-    },
-    Running: {
-      on: {
-        Started: {
-          actions: [
-            'finishStart',
-            'rememberResult',
-          ],
-        },
-      },
-    },
+    Running: {},
     Closed: {
       type: 'final',
     },
   },
   on: {
-    Start: [
-      {
-        guard: 'isCompletedStart',
-        actions: 'replyToCompletedStart',
-      },
-      {
-        actions: [
-          'rememberStart',
-          'awaitStart',
-        ],
-      },
-    ],
+    Start: {
+      actions: 'startOrQueue',
+    },
     Send: {
       actions: 'forwardSend',
     },
-    'Start failed': {
-      actions: [
-        'failStart',
-        'rememberResult',
-      ],
+    'Session persisted': {
+      actions: 'rememberPersisted',
     },
-    Shutdown: {
-      target: '.Closed',
-      actions: 'rejectPendingOnShutdown',
+    'Session failed': {
+      actions: 'rememberPersisted',
     },
+    Shutdown: '.Closed',
   },
 })
 

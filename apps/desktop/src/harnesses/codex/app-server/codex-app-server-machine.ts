@@ -586,7 +586,12 @@ export const codexAppServerMachine = setup({
       throw new Error('The application must provide the Codex process actor.')
     }),
     discoverExecutable: fromPromise<RequestEvent | ExecutableCheckFailure, CallEvent>(
-      async ({ input }) => {
+      async ({ input, signal }) => {
+        const rejectOnStop = () =>
+          input.reject(new Error('Codex app-server closed during executable discovery.'))
+        signal.addEventListener('abort', rejectOnStop, {
+          once: true,
+        })
         try {
           const executable =
             process.env[SESSION_CODEX_EXECUTABLE_ENV] ?? findExecutableOnLoginShellPath('codex')
@@ -603,6 +608,8 @@ export const codexAppServerMachine = setup({
             detail: String(error),
             reject: input.reject,
           }
+        } finally {
+          signal.removeEventListener('abort', rejectOnStop)
         }
       },
     ),
@@ -698,6 +705,10 @@ export const codexAppServerMachine = setup({
     rejectRequest: ({ event }) => {
       if (event.type === 'Request') event.reject(new Error('Codex executable is unavailable.'))
     },
+    rejectConcurrentCheck: ({ event }) => {
+      if (event.type === 'Call')
+        event.reject(new Error('Codex executable discovery is in progress.'))
+    },
   },
   delays: {
     retryDelay: ({ context }) => Math.min(1_000 * 2 ** context.retryCount, 30_000),
@@ -768,6 +779,11 @@ export const codexAppServerMachine = setup({
             onDone: {
               target: 'Unavailable',
               actions: raise(({ event }) => event.output),
+            },
+          },
+          on: {
+            Call: {
+              actions: 'rejectConcurrentCheck',
             },
           },
         },
