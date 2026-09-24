@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { createInterface } from 'node:readline'
-import { type ActorRefFrom, assign, fromCallback, setup, waitFor } from 'xstate'
+import { type ActorRefFrom, assign, fromCallback, sendTo, setup } from 'xstate'
 import { executableVersion } from '@/harnesses/cli/executable-version'
 
 // The subset of `codex app-server`'s JSON-RPC protocol this adapter drives, grounded in codex-harness
@@ -9,6 +9,18 @@ import { executableVersion } from '@/harnesses/cli/executable-version'
 // in docs/research/2026-09-09-codex-transport.md.
 export type RequestID = string | number
 export type RequestParams = {
+  'thread/start': {
+    cwd: string
+    model: string
+    approvalPolicy: string
+    sandbox: string
+  }
+  'turn/start': {
+    threadId: string
+    input: Array<unknown>
+    model: string
+    effort: string
+  }
   'model/list': {
     cursor?: string
     limit?: number
@@ -316,29 +328,67 @@ export function openCodexChannel(
   }
 }
 
-type Identity = {
-  executablePath: string
-  version: string
+type CallEvent = {
+  type: 'Call'
+  run: (channel: CodexChannel) => void
+  reject: (error: Error) => void
 }
+type RequestEvent = {
+  type: 'Request'
+  executable: string | null
+  version: string | null
+  run: (channel: CodexChannel) => void
+  reject: (error: Error) => void
+}
+type ProcessCommand =
+  | {
+      type: 'Open'
+      executable: string | null
+    }
+  | {
+      type: 'Close'
+    }
+  | {
+      type: 'Queue'
+      request: RequestEvent
+    }
+  | {
+      type: 'Dispatch'
+      request: RequestEvent
+    }
+  | {
+      type: 'Dispatch waiting'
+    }
+  | {
+      type: 'Reject waiting'
+      detail: string
+    }
 type Context = {
   executable: string | null
   version: string | null
+  expectedVersion: string | null
   retryCount: number
+  failure: string | null
 }
 type Event =
+  | CallEvent
+  | RequestEvent
+  | {
+      type: 'Executable check failed'
+      detail: string
+      reject: (error: Error) => void
+    }
   | {
       type: 'Process ready'
       version: string
     }
   | {
       type: 'Process failed'
+      detail?: string
     }
   | {
       type: 'Process exited'
-    }
-  | {
-      type: 'Executable changed'
-      executable: string | null
+      detail?: string
     }
   | {
       type: 'Retry now'
@@ -346,10 +396,6 @@ type Event =
   | {
       type: 'Shutdown'
     }
-
-export function processExitIsCurrent(channel: CodexChannel, current: CodexChannel | null) {
-  return channel === current
-}
 
 function openProcess(executable: string): CodexChannel {
   const environment = {
@@ -408,201 +454,404 @@ async function handshake(channel: CodexChannel) {
   channel.notify('initialized')
 }
 
-export function createCodexAppServerMachine(findExecutable: () => string | null) {
-  let liveChannel: CodexChannel | null = null
-  const processActor = fromCallback<
-    Event,
-    {
-      executable: string
+export const codexAppServerProcessActor = fromCallback<
+  ProcessCommand,
+  {
+    executable: string | null
+  }
+>(({ receive, sendBack, input }) => {
+  let channel: CodexChannel | null = null
+  let generation = 0
+  const waiting = new Map<RequestEvent, ReturnType<typeof setTimeout>>()
+  const rejectWaiting = (detail: string) => {
+    for (const [request, timer] of waiting) {
+      clearTimeout(timer)
+      request.reject(new Error(detail))
     }
-  >(({ input, sendBack }) => {
-    let disposed = false
-    let channel: CodexChannel | null = null
+    waiting.clear()
+  }
+  const dispatch = (request: RequestEvent) => {
+    const timer = waiting.get(request)
+    if (timer !== undefined) clearTimeout(timer)
+    waiting.delete(request)
+    if (channel === null) {
+      request.reject(new Error('Codex app-server is unavailable.'))
+      return
+    }
+    request.run(channel)
+  }
+  const close = () => {
+    generation += 1
+    const current = channel
+    channel = null
+    current?.close()
+  }
+  const reportExit = (currentGeneration: number) => {
+    if (generation !== currentGeneration) return
+    channel = null
+    sendBack({
+      type: 'Process exited',
+      detail: 'Codex app-server process exited.',
+    })
+  }
+  const reportFailure = (currentGeneration: number, error: unknown) => {
+    if (generation !== currentGeneration) return
+    close()
+    sendBack({
+      type: 'Process failed',
+      detail: String(error),
+    })
+  }
+  const open = (executable: string | null) => {
+    close()
+    if (executable === null) {
+      sendBack({
+        type: 'Process failed',
+        detail: 'Codex executable is unavailable.',
+      })
+      return
+    }
+    const currentGeneration = generation
     void (async () => {
       try {
-        const version = await executableVersion(input.executable)
-        if (disposed) return
-        channel = openProcess(input.executable)
-        channel.onExit(() => {
-          if (!processExitIsCurrent(channel as CodexChannel, liveChannel)) return
-          liveChannel = null
-          sendBack({
-            type: 'Process exited',
-          })
-        })
-        await handshake(channel)
-        if (disposed) {
-          channel.close()
-          return
-        }
-        liveChannel = channel
+        const version = await executableVersion(executable)
+        if (generation !== currentGeneration) return
+        const opened = openProcess(executable)
+        channel = opened
+        opened.onExit(() => reportExit(currentGeneration))
+        await handshake(opened)
+        if (generation !== currentGeneration) return
         sendBack({
           type: 'Process ready',
           version,
         })
-      } catch {
-        channel?.close()
-        if (!disposed)
-          sendBack({
-            type: 'Process failed',
-          })
+      } catch (error) {
+        reportFailure(currentGeneration, error)
       }
     })()
-    return () => {
-      disposed = true
-      if (liveChannel === channel) liveChannel = null
-      channel?.close()
+  }
+  receive((command) => {
+    switch (command.type) {
+      case 'Open':
+        open(command.executable)
+        return
+      case 'Close':
+        close()
+        return
+      case 'Queue': {
+        const timer = setTimeout(() => {
+          waiting.delete(command.request)
+          command.request.reject(new Error('Codex app-server did not become ready in time.'))
+        }, 3_000)
+        timer.unref()
+        waiting.set(command.request, timer)
+        return
+      }
+      case 'Dispatch':
+        dispatch(command.request)
+        return
+      case 'Dispatch waiting':
+        for (const request of waiting.keys()) dispatch(request)
+        return
+      case 'Reject waiting':
+        rejectWaiting(command.detail)
+        return
     }
   })
-  const machine = setup({
-    types: {
-      context: {} as Context,
-      events: {} as Event,
-      input: {} as {
-        executable: string | null
-      },
-    },
-    actors: {
-      processActor,
-    },
-    actions: {
-      changed: assign(({ event }) =>
-        event.type === 'Executable changed'
-          ? {
-              executable: event.executable,
-              version: null,
-              retryCount: 0,
-            }
-          : {},
-      ),
-      ready: assign(({ event }) =>
-        event.type === 'Process ready'
-          ? {
-              version: event.version,
-              retryCount: 0,
-            }
-          : {},
-      ),
-      failed: assign({
-        retryCount: ({ context }) => context.retryCount + 1,
-      }),
-    },
-    delays: {
-      retryDelay: ({ context }) => Math.min(1_000 * 2 ** context.retryCount, 30_000),
-    },
-  }).createMachine({
-    id: 'codexAppServerMachine',
-    context: ({ input }) => ({
-      executable: input.executable,
-      version: null,
-      retryCount: 0,
-    }),
-    initial: 'Connected',
-    on: {
-      Shutdown: '.Closed',
-    },
-    states: {
-      Connected: {
-        initial: 'Starting',
-        invoke: {
-          src: 'processActor',
-          input: ({ context }) => ({
-            executable: context.executable ?? '',
-          }),
-        },
-        on: {
-          'Executable changed': {
-            target: 'Connected',
-            reenter: true,
-            actions: 'changed',
-          },
-        },
-        states: {
-          Starting: {
-            on: {
-              'Process ready': {
-                target: 'Ready',
-                actions: 'ready',
-              },
-              'Process failed': {
-                target: '#codexAppServerMachine.Backoff',
-                actions: 'failed',
-              },
-              'Process exited': {
-                target: '#codexAppServerMachine.Backoff',
-                actions: 'failed',
-              },
-            },
-          },
-          Ready: {
-            on: {
-              'Process exited': {
-                target: '#codexAppServerMachine.Backoff',
-                actions: 'failed',
-              },
-            },
-          },
-        },
-      },
-      Backoff: {
-        after: {
-          retryDelay: 'Connected',
-        },
-        on: {
-          'Retry now': 'Connected',
-          'Executable changed': {
-            target: 'Connected',
-            actions: 'changed',
-          },
-        },
-      },
-      Closed: {
-        type: 'final',
-      },
-    },
-  })
-  return {
-    machine,
-    request(actor: ActorRefFrom<typeof machine>): CodexRequest {
-      return async (method, params, parse) => {
-        const executablePath = findExecutable()
-        if (executablePath === null) {
-          if (actor.getSnapshot().context.executable !== null)
-            actor.send({
-              type: 'Executable changed',
-              executable: null,
-            })
-          throw new Error('Codex executable is unavailable.')
-        }
-        const identity: Identity = {
-          executablePath,
-          version: await executableVersion(executablePath),
-        }
-        const current = actor.getSnapshot().context
-        if (
-          current.executable !== identity.executablePath ||
-          (current.version !== null && current.version !== identity.version)
-        ) {
-          actor.send({
-            type: 'Executable changed',
-            executable: identity.executablePath,
-          })
-        }
-        await waitFor(
-          actor,
-          (state) =>
-            state.matches({
-              Connected: 'Ready',
-            }) &&
-            state.context.executable === identity.executablePath &&
-            state.context.version === identity.version,
-          {
-            timeout: 3_000,
-          },
-        )
-        if (liveChannel === null) throw new Error('Codex app-server is unavailable.')
-        return liveChannel.request(method, params, parse)
-      }
-    },
+  if (input.executable !== null) open(input.executable)
+  return () => {
+    close()
+    rejectWaiting('Codex app-server closed before the request was sent.')
   }
+})
+
+export const codexAppServerMachine = setup({
+  types: {
+    context: {} as Context,
+    events: {} as Event,
+    input: {} as {
+      executable: string | null
+    },
+  },
+  actors: {
+    processActor: fromCallback<
+      ProcessCommand,
+      {
+        executable: string | null
+      }
+    >(() => {
+      throw new Error('The application must provide the Codex process actor.')
+    }),
+  },
+  guards: {
+    hasExecutable: ({ context }) => context.executable !== null,
+    missingExecutable: ({ event }) => event.type === 'Request' && event.executable === null,
+    sameExecutable: ({ context, event }) =>
+      event.type === 'Request' &&
+      event.executable !== null &&
+      context.executable === event.executable &&
+      (context.version ?? context.expectedVersion ?? event.version) === event.version,
+    readyVersionMatches: ({ context, event }) =>
+      event.type === 'Process ready' &&
+      (context.expectedVersion === null || context.expectedVersion === event.version),
+  },
+  actions: {
+    inspectExecutable: () => {
+      throw new Error('The application must provide Codex executable discovery.')
+    },
+    openProcess: sendTo('processActor', ({ context }) => ({
+      type: 'Open',
+      executable: context.executable,
+    })),
+    closeProcess: sendTo('processActor', () => ({
+      type: 'Close',
+    })),
+    queueRequest: sendTo('processActor', ({ event }) => {
+      if (event.type !== 'Request') throw new Error('Expected a Codex request.')
+      return {
+        type: 'Queue',
+        request: event,
+      }
+    }),
+    dispatchRequest: sendTo('processActor', ({ event }) => {
+      if (event.type !== 'Request') throw new Error('Expected a Codex request.')
+      return {
+        type: 'Dispatch',
+        request: event,
+      }
+    }),
+    dispatchWaiting: sendTo('processActor', () => ({
+      type: 'Dispatch waiting',
+    })),
+    rejectChangedRequests: sendTo('processActor', () => ({
+      type: 'Reject waiting',
+      detail: 'Codex executable changed before the request was sent.',
+    })),
+    setExecutable: assign(({ event }) => {
+      if (event.type !== 'Request') return {}
+      return {
+        executable: event.executable,
+        version: null,
+        expectedVersion: event.version,
+        retryCount: 0,
+        failure: null,
+      }
+    }),
+    setExpectedVersion: assign(({ event }) =>
+      event.type === 'Request'
+        ? {
+            expectedVersion: event.version,
+          }
+        : {},
+    ),
+    recordReady: assign(({ event }) =>
+      event.type === 'Process ready'
+        ? {
+            version: event.version,
+            expectedVersion: event.version,
+            retryCount: 0,
+            failure: null,
+          }
+        : {},
+    ),
+    recordFailure: assign(({ context, event }) => ({
+      retryCount: context.retryCount + 1,
+      failure:
+        event.type === 'Process failed' || event.type === 'Process exited'
+          ? (event.detail ?? 'Codex app-server is unavailable.')
+          : context.failure,
+    })),
+    recordVersionMismatch: assign(({ context, event }) => ({
+      retryCount: context.retryCount + 1,
+      failure:
+        event.type === 'Process ready'
+          ? `Codex app-server version ${event.version} did not match ${context.expectedVersion}.`
+          : context.failure,
+    })),
+    recordCheckFailure: assign(({ event }) => ({
+      failure: event.type === 'Executable check failed' ? event.detail : null,
+    })),
+    rejectCheckRequest: ({ event }) => {
+      if (event.type === 'Executable check failed') event.reject(new Error(event.detail))
+    },
+    rejectRequest: ({ event }) => {
+      if (event.type === 'Request') event.reject(new Error('Codex executable is unavailable.'))
+    },
+  },
+  delays: {
+    retryDelay: ({ context }) => Math.min(1_000 * 2 ** context.retryCount, 30_000),
+  },
+}).createMachine({
+  id: 'codexAppServerMachine',
+  context: ({ input }) => ({
+    executable: input.executable,
+    version: null,
+    expectedVersion: null,
+    retryCount: 0,
+    failure: null,
+  }),
+  initial: 'Active',
+  on: {
+    Shutdown: '.Closed',
+  },
+  states: {
+    Active: {
+      invoke: {
+        id: 'processActor',
+        src: 'processActor',
+        input: ({ context }) => ({
+          executable: context.executable,
+        }),
+      },
+      initial: 'Unavailable',
+      on: {
+        Call: {
+          actions: 'inspectExecutable',
+        },
+        'Executable check failed': {
+          actions: [
+            'recordCheckFailure',
+            'rejectCheckRequest',
+          ],
+        },
+        Request: [
+          {
+            guard: 'missingExecutable',
+            target: '.Unavailable',
+            actions: [
+              'closeProcess',
+              'rejectChangedRequests',
+              'setExecutable',
+              'rejectRequest',
+            ],
+          },
+          {
+            target: '.Connected.Starting',
+            actions: [
+              'rejectChangedRequests',
+              'setExecutable',
+              'queueRequest',
+              'openProcess',
+            ],
+          },
+        ],
+      },
+      states: {
+        Unavailable: {
+          always: {
+            guard: 'hasExecutable',
+            target: 'Connected',
+          },
+          on: {
+            Request: [
+              {
+                guard: 'missingExecutable',
+                actions: 'rejectRequest',
+              },
+              {
+                target: 'Connected',
+                actions: [
+                  'setExecutable',
+                  'queueRequest',
+                  'openProcess',
+                ],
+              },
+            ],
+          },
+        },
+        Connected: {
+          initial: 'Starting',
+          states: {
+            Starting: {
+              on: {
+                Request: {
+                  guard: 'sameExecutable',
+                  actions: [
+                    'setExpectedVersion',
+                    'queueRequest',
+                  ],
+                },
+                'Process ready': [
+                  {
+                    guard: 'readyVersionMatches',
+                    target: 'Ready',
+                    actions: 'recordReady',
+                  },
+                  {
+                    target: '#codexAppServerMachine.Active.Backoff',
+                    actions: 'recordVersionMismatch',
+                  },
+                ],
+                'Process failed': {
+                  target: '#codexAppServerMachine.Active.Backoff',
+                  actions: 'recordFailure',
+                },
+                'Process exited': {
+                  target: '#codexAppServerMachine.Active.Backoff',
+                  actions: 'recordFailure',
+                },
+              },
+            },
+            Ready: {
+              entry: 'dispatchWaiting',
+              on: {
+                Request: {
+                  guard: 'sameExecutable',
+                  actions: 'dispatchRequest',
+                },
+                'Process exited': {
+                  target: '#codexAppServerMachine.Active.Backoff',
+                  actions: 'recordFailure',
+                },
+              },
+            },
+          },
+        },
+        Backoff: {
+          entry: 'closeProcess',
+          after: {
+            retryDelay: {
+              target: 'Connected',
+              actions: 'openProcess',
+            },
+          },
+          on: {
+            'Retry now': {
+              target: 'Connected',
+              actions: 'openProcess',
+            },
+            Request: {
+              guard: 'sameExecutable',
+              target: 'Connected',
+              actions: [
+                'setExpectedVersion',
+                'queueRequest',
+                'openProcess',
+              ],
+            },
+          },
+        },
+      },
+    },
+    Closed: {
+      type: 'final',
+    },
+  },
+})
+
+export function requestCodexAppServer(
+  actor: ActorRefFrom<typeof codexAppServerMachine>,
+): CodexRequest {
+  return (method, params, parse) =>
+    new Promise((resolve, reject) => {
+      if (actor.getSnapshot().status !== 'active') {
+        reject(new Error('Codex app-server is closed.'))
+        return
+      }
+      actor.send({
+        type: 'Call',
+        run: (channel) => void channel.request(method, params, parse).then(resolve, reject),
+        reject,
+      })
+    })
 }
