@@ -38,10 +38,7 @@ test('a foreign WebContents or child frame is refused', () => {
 test('a packaged renderer is trusted on every route', () => {
   const rendererURL = 'file:///Applications/Argo.app/Contents/Resources/app.asar/index.html'
   assert.equal(isRendererDocument(`${rendererURL}#/sessions`, rendererURL), true)
-  assert.equal(
-    isRendererDocument('file:///tmp/foreign.html', rendererURL),
-    false,
-  )
+  assert.equal(isRendererDocument('file:///tmp/foreign.html', rendererURL), false)
 })
 
 test('a document other than the renderer is refused', () => {
