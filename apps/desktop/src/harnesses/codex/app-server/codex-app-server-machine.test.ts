@@ -7,18 +7,31 @@ import { type ActorLogic, createActor, fromCallback, waitFor } from 'xstate'
 import { adjacencyMapToArray, getAdjacencyMap, getShortestPaths } from 'xstate/graph'
 import { codexModelCatalogFixture } from '../../../../test-fixtures/sessions/codex-model-catalog.fixture'
 import { readCodexHarnessInfo } from '../catalog'
-import type { CodexChannel } from './codex-app-server-machine'
-import { createCodexAppServerMachine, processExitIsCurrent } from './codex-app-server-machine'
+import { createCodexAppServerMachine } from './codex-app-server-machine'
 
 const modeledMachine = createCodexAppServerMachine(() => 'codex').machine.provide({
   actors: { processActor: fromCallback(() => () => {}) },
+  actions: {
+    openProcess: () => {},
+    closeProcess: () => {},
+    queueRequest: () => {},
+    dispatchRequest: () => {},
+    dispatchWaiting: () => {},
+    rejectChangedRequests: () => {},
+  },
 })
 const modeledEvents = [
   { type: 'Process ready' as const, version: '0.147.0' },
   { type: 'Process failed' as const },
   { type: 'Process exited' as const },
   { type: 'Retry now' as const },
-  { type: 'Executable changed' as const, executable: 'replacement-codex' },
+  {
+    type: 'Request' as const,
+    executable: 'replacement-codex',
+    version: '0.147.0',
+    run: () => {},
+    reject: () => {},
+  },
   { type: 'Shutdown' as const },
   { type: 'xstate.after.retryDelay.codexAppServerMachine.Backoff' as const },
 ]
@@ -31,9 +44,9 @@ const modeledLogic = modeledMachine as unknown as ActorLogic<
 
 function stateName(snapshot: ModeledSnapshot): string {
   if (snapshot.matches('Closed')) return 'Closed'
-  if (snapshot.matches('Backoff')) return 'Backoff'
-  if (snapshot.matches({ Connected: 'Ready' })) return 'Connected.Ready'
-  return 'Connected.Starting'
+  if (snapshot.matches({ Active: 'Backoff' })) return 'Active.Backoff'
+  if (snapshot.matches({ Active: { Connected: 'Ready' } })) return 'Active.Connected.Ready'
+  return 'Active.Connected.Starting'
 }
 
 const traversal = {
@@ -42,7 +55,7 @@ const traversal = {
     const name = stateName(snapshot)
     const node = modeledMachine.getStateNodeById(`${modeledMachine.id}.${name}`)
     const accepted = new Set<string>(node.ownEvents)
-    if (name.startsWith('Connected')) accepted.add('Executable changed')
+    if (name.startsWith('Active')) accepted.add('Request')
     if (name !== 'Closed') accepted.add('Shutdown')
     return modeledEvents.filter(({ type }) => accepted.has(type))
   },
@@ -54,7 +67,7 @@ test('models the Codex process states and their transitions', () => {
   const paths = getShortestPaths(modeledLogic, traversal)
   assert.deepEqual(
     new Set(paths.map(({ state }) => stateName(state))),
-    new Set(['Connected.Starting', 'Connected.Ready', 'Backoff', 'Closed']),
+    new Set(['Active.Connected.Starting', 'Active.Connected.Ready', 'Active.Backoff', 'Closed']),
   )
   const pathByState = new Map(paths.map((path) => [stateName(path.state), path]))
   const transitions = adjacencyMapToArray(getAdjacencyMap(modeledLogic, traversal))
@@ -77,12 +90,133 @@ test('models the Codex process states and their transitions', () => {
   }
 })
 
-test('ignores the exit of a superseded app-server channel', () => {
-  const oldChannel = {} as CodexChannel
-  const replacement = {} as CodexChannel
+test('records process failure before retrying', () => {
+  const actor = createActor(modeledMachine, { input: { executable: 'codex' } }).start()
+  try {
+    actor.send({ type: 'Process failed', detail: 'handshake rejected' })
+    assert.equal(actor.getSnapshot().matches({ Active: 'Backoff' }), true)
+    assert.equal(actor.getSnapshot().context.failure, 'handshake rejected')
+  } finally {
+    actor.stop()
+  }
+})
 
-  assert.equal(processExitIsCurrent(oldChannel, replacement), false)
-  assert.equal(processExitIsCurrent(replacement, replacement), true)
+test('starts after an executable appears and rejects a request without one', () => {
+  const machine = createCodexAppServerMachine(() => 'codex').machine.provide({
+    actors: { processActor: fromCallback(() => () => {}) },
+  })
+  const actor = createActor(machine, { input: { executable: null } }).start()
+  const failures: string[] = []
+  try {
+    assert.equal(actor.getSnapshot().matches({ Active: 'Unavailable' }), true)
+    actor.send({
+      type: 'Request',
+      executable: null,
+      version: null,
+      run: () => {},
+      reject: (error) => failures.push(error.message),
+    })
+    assert.deepEqual(failures, ['Codex executable is unavailable.'])
+    actor.send({
+      type: 'Request',
+      executable: 'codex',
+      version: '0.147.0',
+      run: () => {},
+      reject: (error) => failures.push(error.message),
+    })
+    assert.equal(actor.getSnapshot().matches({ Active: { Connected: 'Starting' } }), true)
+    assert.equal(actor.getSnapshot().context.executable, 'codex')
+  } finally {
+    actor.stop()
+  }
+})
+
+test('restarts when the executable version changes', () => {
+  const machine = createCodexAppServerMachine(() => 'codex').machine.provide({
+    actors: { processActor: fromCallback(() => () => {}) },
+  })
+  const actor = createActor(machine, { input: { executable: 'codex' } }).start()
+  try {
+    actor.send({ type: 'Process ready', version: '0.147.0' })
+    actor.send({
+      type: 'Request',
+      executable: 'codex',
+      version: '0.148.0',
+      run: () => {},
+      reject: () => {},
+    })
+    assert.equal(actor.getSnapshot().matches({ Active: { Connected: 'Starting' } }), true)
+    assert.equal(actor.getSnapshot().context.version, null)
+  } finally {
+    actor.stop()
+  }
+})
+
+test('rejects waiting requests when the app-server actor stops', () => {
+  const machine = createCodexAppServerMachine(() => '/nonexistent-codex').machine
+  const actor = createActor(machine, { input: { executable: '/nonexistent-codex' } }).start()
+  const failures: string[] = []
+  actor.send({
+    type: 'Request',
+    executable: '/nonexistent-codex',
+    version: '0.148.0',
+    run: () => {},
+    reject: (error) => failures.push(error.message),
+  })
+  actor.send({ type: 'Shutdown' })
+  assert.deepEqual(failures, ['Codex app-server closed before the request was sent.'])
+})
+
+test('does not dispatch a queued request to an older process version', () => {
+  const machine = createCodexAppServerMachine(() => 'codex').machine.provide({
+    actors: { processActor: fromCallback(() => () => {}) },
+  })
+  const actor = createActor(machine, { input: { executable: 'codex' } }).start()
+  const failures: string[] = []
+  let dispatched = false
+  try {
+    actor.send({
+      type: 'Request',
+      executable: 'codex',
+      version: '0.148.0',
+      run: () => {
+        dispatched = true
+      },
+      reject: (error) => failures.push(error.message),
+    })
+    actor.send({ type: 'Process ready', version: '0.147.0' })
+    assert.equal(actor.getSnapshot().matches({ Active: 'Backoff' }), true)
+    assert.match(actor.getSnapshot().context.failure ?? '', /did not match 0.148.0/)
+    assert.equal(dispatched, false)
+  } finally {
+    actor.stop()
+  }
+})
+
+test('rejects a request sent after shutdown', async () => {
+  const runtime = createCodexAppServerMachine(() => null)
+  const actor = createActor(runtime.machine, { input: { executable: null } }).start()
+  actor.send({ type: 'Shutdown' })
+  await assert.rejects(
+    runtime.request(actor)('model/list', {}, (value) => value),
+    /Codex app-server is closed/,
+  )
+})
+
+test('reports an executable lookup failure through the machine', async () => {
+  const runtime = createCodexAppServerMachine(() => {
+    throw new Error('Executable lookup failed.')
+  })
+  const actor = createActor(runtime.machine, { input: { executable: null } }).start()
+  try {
+    await assert.rejects(
+      runtime.request(actor)('model/list', {}, (value) => value),
+      /Executable lookup failed/,
+    )
+    assert.match(actor.getSnapshot().context.failure ?? '', /Executable lookup failed/)
+  } finally {
+    actor.stop()
+  }
 })
 
 test('owns model/list and closes its child process on shutdown', async () => {
