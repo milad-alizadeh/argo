@@ -66,6 +66,12 @@ async function proveBulkArchive(page) {
   )
 }
 
+function proveCodexBoundary(list) {
+  const codex = list.sessions.find((session) => session.id === 'rollout-codexParent')
+  assert.equal(codex?.title?.text, 'Run Codex check')
+  assert.equal(codex?.updatedAt, null)
+}
+
 export async function proveContract(page) {
   const list = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
   assert.equal(list.type, 'session.listed')
@@ -73,6 +79,7 @@ export async function proveContract(page) {
   assert.ok(list.filesFound >= 15)
   assert.equal(list.filesRead, list.filesFound)
   assert.ok(list.filesUnreadable >= 2)
+  proveCodexBoundary(list)
   // An archived Session never projects into this active list (#1593): `plannedWork` is read out
   // of it below instead.
   assert.deepEqual(list.sessions.map((session) => session.id).sort(), [
