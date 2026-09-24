@@ -12,6 +12,7 @@ import {
   attachmentPathFromUrl,
 } from '@/domains/sessions/contract/model/feed/feed-images'
 import { openDurableStores } from '@/main/durable-stores'
+import { createSessionRuntime } from '@/domains/sessions/main/live/session-runtime'
 import { attachAppearanceWatch } from '@/platform/main/appearance'
 import type { ApplicationActors } from '@/platform/main/application/actors'
 import { startDesktopApplication } from '@/platform/main/application/start'
@@ -101,7 +102,7 @@ function focusWindow(): void {
   desktopWindow.focus()
 }
 
-function createWindow(router: AppRouter): void {
+function createWindow(actors: ApplicationActors): void {
   const userData = app.getPath('userData')
   const { projectData } = developmentStoreDirectories({
     userData,
@@ -109,6 +110,17 @@ function createWindow(router: AppRouter): void {
     instance: DEVELOPMENT_INSTANCE,
   })
   const stores = openDurableStores(projectData, !ACCEPTANCE_ENABLED)
+  const sessions = createSessionRuntime({
+    database: stores.database,
+    codexRequest: actors.codexRequest,
+    catalog: (harness) => {
+      const entry = actors.catalogActor
+        .getSnapshot()
+        .context.catalog.harnesses.find((candidate) => candidate.harness === harness)
+      return entry?.availability === 'available' ? entry : null
+    },
+  })
+  const router = createAppRouter(actors.catalogActor, sessions)
   desktopWindow = createDesktopWindow({
     buildDirectory: __dirname,
     rendererName: MAIN_WINDOW_VITE_NAME,
@@ -137,6 +149,7 @@ function createWindow(router: AppRouter): void {
       window.once('closed', () => {
         desktopWindow = undefined
         detachTrpc()
+        sessions.stop()
         stores.close()
       })
       installMenu(window)
@@ -169,7 +182,7 @@ async function ready(actors: ApplicationActors): Promise<void> {
     await seedDevelopmentProject(projects, DEVELOPMENT_INSTANCE)
     projects.close()
   }
-  createWindow(createAppRouter(actors.catalogActor))
+  createWindow(actors)
 
   if (!ACCEPTANCE_ENABLED) return
 

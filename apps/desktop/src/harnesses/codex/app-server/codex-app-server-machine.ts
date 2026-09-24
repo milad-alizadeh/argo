@@ -14,6 +14,18 @@ export type RequestParams = {
     limit?: number
     includeHidden?: boolean
   }
+  'thread/start': {
+    cwd: string
+    model: string
+    approvalPolicy: string
+    sandbox: string
+  }
+  'turn/start': {
+    threadId: string
+    input: Array<unknown>
+    model: string
+    effort: string
+  }
   initialize: {
     clientInfo: {
       name: string

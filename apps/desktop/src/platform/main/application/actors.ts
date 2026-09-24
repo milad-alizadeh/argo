@@ -20,6 +20,7 @@ export function startApplicationActors() {
   ).start()
   return {
     catalogActor,
+    codexRequest: codex.request(codexActor),
     stop: () => {
       catalogActor.stop()
       codexActor.send({ type: 'Shutdown' })

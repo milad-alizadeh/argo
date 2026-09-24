@@ -57,6 +57,7 @@ export function SessionComposerArea({
   const location = useLocation()
   const catalogQuery = useQuery(trpc.harnessCatalogRead.queryOptions({ harness: harness.harness }))
   const catalogRefresh = useMutation(trpc.harnessCatalogRefresh.mutationOptions())
+  const sessionSubmit = useMutation(trpc.sessionSubmit.mutationOptions())
   const catalog = catalogQuery.data?.info ?? null
   const catalogFailure = catalogFailureOf(catalogQuery.data, catalogQuery.isError)
   const pending = useSessionCreationStore((state) => state.pending)
@@ -109,6 +110,27 @@ export function SessionComposerArea({
           />
         }
         plan={session?.plan ?? null}
+        onSend={async (prompt, setup, attachments) => {
+          if (setup === null) return false
+          try {
+            const submitted = await sessionSubmit.mutateAsync({
+              commandId: crypto.randomUUID(),
+              harness: harness.harness,
+              cwd: cockpit.workspace?.path ?? cockpit.project?.path ?? '',
+              sessionId: identity.kind === 'session' ? identity.sessionId : null,
+              prompt,
+              attachments,
+              setup,
+            })
+            if (identity.kind === 'pending')
+              useSessionCreationStore.getState().resolved(identity.sessionId, submitted.sessionId)
+            return true
+          } catch {
+            if (identity.kind === 'pending')
+              useSessionCreationStore.getState().failed(identity.sessionId)
+            return false
+          }
+        }}
       />
     </>
   )
