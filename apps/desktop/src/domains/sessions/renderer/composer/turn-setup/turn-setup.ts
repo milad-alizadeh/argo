@@ -3,7 +3,6 @@ import { z } from 'zod'
 import type { SessionSetup } from '@/domains/sessions/contract/model/models'
 import type { AvailableHarness, CatalogReading } from '@/harnesses/catalog/harness-catalog-machine'
 import type { IconName } from '@/platform/renderer/components/icon/icon'
-import { type ComposerIdentity, composerIdentityKey } from '../identity/composer-identity'
 
 // The Model, Effort and Mode a composer sends with its next Turn (CONTEXT.md L2 · Model and Effort).
 export const turnSetupSchema = z.strictObject({
@@ -111,63 +110,4 @@ export function supportedSetup(
       modes[0]?.value ??
       fallback.mode)
   return { model, effort, mode }
-}
-
-// What a composer shows: an explicit choice wins; a draft with none falls to the remembered
-// Model and Effort; a Session with none reads what its roster row last settled on.
-export function resolvedTurnSetup(
-  choices: TurnSetupChoices,
-  request: {
-    identity: ComposerIdentity
-    chosen: Map<string, TurnSetup>
-    rows: readonly { id: string; setup: SessionSetup }[]
-    remembered: Partial<Pick<TurnSetup, 'model' | 'effort'>>
-  },
-): TurnSetup {
-  const { identity, chosen, rows, remembered } = request
-  const explicit = chosen.get(composerIdentityKey(identity))
-  if (explicit !== undefined) return supportedSetup(choices, explicit, choices.opening)
-  const row =
-    identity.kind === 'session' ? rows.find(({ id }) => id === identity.sessionId) : undefined
-  return row === undefined
-    ? supportedSetup(choices, { ...choices.opening, ...remembered }, choices.opening)
-    : setupFromReading(choices, row.setup)
-}
-
-// Model and Effort land only with a reply, so a Turn is judged once it replied or stopped.
-export function turnSettled(
-  row: { turnStartedAt: string | null; status: string; setup: SessionSetup },
-  since: string | null,
-): boolean {
-  if (row.turnStartedAt === null || row.turnStartedAt === since) return false
-  return row.status !== 'running' || (row.setup.model !== null && row.setup.effort !== null)
-}
-
-// A choice the reading contradicts goes back to what the Harness used, and the message says which.
-export function refusalOf(
-  choices: TurnSetupChoices,
-  requested: TurnSetup,
-  reading: SessionSetup,
-): { setup: TurnSetup; message: string } | null {
-  const refused = FIELDS.flatMap((field) => {
-    const used = reading[field]
-    if (used === null) return []
-    const model =
-      choiceRead(choices, { field: 'model', reading: reading.model })?.value ?? requested.model
-    const choice = choiceRead(choices, { field, reading: used, model })
-    if (choice?.value === requested[field]) return []
-    return [{ field, used: choice?.value ?? null, label: choice?.label ?? used }]
-  })
-  if (refused.length === 0) return null
-  const setup = { ...requested }
-  for (const { field, used } of refused) if (used !== null) setup[field] = used
-  return {
-    setup,
-    message: refused
-      .map(
-        ({ field, label }) =>
-          `${choices.agent} used ${label}, not ${choiceLabel(choices, { field, value: requested[field], model: requested.model })}.`,
-      )
-      .join(' '),
-  }
 }

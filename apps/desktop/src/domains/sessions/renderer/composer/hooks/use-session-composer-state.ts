@@ -64,8 +64,6 @@ function useEditPendingTurn(
   )
 }
 
-// Everything a SessionComposer render needs: the draft, the attachment strip, the pending-turn
-// queue and the callbacks that tie them together, so the component itself is just prop wiring.
 export function useSessionComposerState({
   isRunning,
   onSend,

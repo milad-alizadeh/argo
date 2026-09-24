@@ -1,7 +1,6 @@
 import { z } from 'zod'
+import { harnessSchema } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
-
-const harnessSchema = z.enum(['claude', 'codex'])
 
 export const sessionListInputSchema = z.strictObject({
   page: z.number().int().positive(),

@@ -15,13 +15,13 @@ import {
 } from './harness-catalog-machine'
 
 test('publishes a serializable catalog with Model-specific Efforts and defaults', () => {
-  const snapshot = harnessCatalogSchema.parse({
+  const catalog = harnessCatalogSchema.parse({
     harnesses: [
       claudeHarnessInfo(claudeModelCatalogFixture()),
       codexHarnessInfo(codexModelCatalogFixture()),
     ],
   })
-  const parsed = JSON.parse(JSON.stringify(snapshot))
+  const parsed = JSON.parse(JSON.stringify(catalog))
   expect(parsed.harnesses[0]).toMatchObject({
     harness: 'claude',
     availability: 'available',

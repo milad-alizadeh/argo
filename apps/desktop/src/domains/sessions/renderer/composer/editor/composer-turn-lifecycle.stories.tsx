@@ -6,9 +6,9 @@ import { claudeComposerModelCatalogFixture } from '../../../../../../test-fixtur
 import { claudeChoices } from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
 import type { SessionHarness } from '../../harness/harnesses'
 import { useComposerStore } from '../hooks'
+import { ComposerForm, type ComposerFormProps } from '../layout/composer-form'
 import type { TurnSetupChoices } from '../turn-setup/turn-setup'
 import { setupFromReading } from '../turn-setup/turn-setup'
-import { SessionComposer, type SessionComposerProps } from './session-composer'
 
 const CLAUDE_TURN_SETUP = (() => {
   const choices = claudeChoices(claudeComposerModelCatalogFixture())
@@ -41,7 +41,7 @@ function ManagedComposerStory() {
   const [running, setRunning] = useState(true)
 
   return (
-    <SessionComposer
+    <ComposerForm
       isRunning={running}
       onInterrupt={async () => {
         setRunning(false)
@@ -54,7 +54,7 @@ function ManagedComposerStory() {
   )
 }
 
-function QueuedComposerStory({ onSend }: { onSend: SessionComposerProps['onSend'] }) {
+function QueuedComposerStory({ onSend }: { onSend: ComposerFormProps['onSend'] }) {
   const [running, setRunning] = useState(true)
 
   return (
@@ -62,7 +62,7 @@ function QueuedComposerStory({ onSend }: { onSend: SessionComposerProps['onSend'
       <Button onClick={() => setRunning(false)} type="button" variant="outline">
         Finish turn
       </Button>
-      <SessionComposer isRunning={running} onSend={onSend} sessionId="queued-session" />
+      <ComposerForm isRunning={running} onSend={onSend} sessionId="queued-session" />
     </>
   )
 }
@@ -70,10 +70,10 @@ function QueuedComposerStory({ onSend }: { onSend: SessionComposerProps['onSend'
 function SteeredQueuedComposerStory({
   onSteer,
 }: {
-  onSteer: NonNullable<SessionComposerProps['onSteer']>
+  onSteer: NonNullable<ComposerFormProps['onSteer']>
 }) {
   return (
-    <SessionComposer
+    <ComposerForm
       isRunning
       onSend={async () => true}
       onSteer={onSteer}
@@ -90,7 +90,7 @@ function FailedQueuedComposerStory() {
       <Button onClick={() => setRunning(false)} type="button" variant="outline">
         Finish turn
       </Button>
-      <SessionComposer
+      <ComposerForm
         isRunning={running}
         onSend={async () => false}
         sessionId="failed-queued-session"
@@ -114,7 +114,7 @@ function PendingSendStory() {
           Finish send
         </Button>
       </div>
-      <SessionComposer
+      <ComposerForm
         onSend={() =>
           new Promise<boolean>((resolve) => {
             finish.current = resolve
@@ -127,11 +127,11 @@ function PendingSendStory() {
   )
 }
 
-function NewSessionHarnessestory({ onSend }: { onSend: SessionComposerProps['onSend'] }) {
+function NewSessionHarnessestory({ onSend }: { onSend: ComposerFormProps['onSend'] }) {
   const [harness, setHarness] = useState<SessionHarness>('claude')
 
   return (
-    <SessionComposer
+    <ComposerForm
       harness={{ harness, onChange: setHarness }}
       onSend={onSend}
       plan={null}
@@ -145,7 +145,7 @@ function SetupComposerStory({
   running = false,
   sessionId,
 }: {
-  onSend: SessionComposerProps['onSend']
+  onSend: ComposerFormProps['onSend']
   running?: boolean
   sessionId: string
 }) {
@@ -157,7 +157,7 @@ function SetupComposerStory({
       <Button onClick={() => setRunning(false)} type="button" variant="outline">
         Finish turn
       </Button>
-      <SessionComposer
+      <ComposerForm
         isRunning={isRunning}
         onSend={onSend}
         sessionId={sessionId}
@@ -168,7 +168,7 @@ function SetupComposerStory({
   )
 }
 
-function HistoricalResolvedModelStory({ onSend }: { onSend: SessionComposerProps['onSend'] }) {
+function HistoricalResolvedModelStory({ onSend }: { onSend: ComposerFormProps['onSend'] }) {
   const [setup, setSetup] = useState(() =>
     setupFromReading(CLAUDE_TURN_SETUP, {
       model: 'claude-sonnet-4-5',
@@ -178,7 +178,7 @@ function HistoricalResolvedModelStory({ onSend }: { onSend: SessionComposerProps
   )
 
   return (
-    <SessionComposer
+    <ComposerForm
       onSend={onSend}
       sessionId="historical-sonnet-session"
       harness={{ harness: 'claude' }}

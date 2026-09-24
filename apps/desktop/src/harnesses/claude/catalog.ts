@@ -161,6 +161,7 @@ export async function readClaudeHarnessInfo(executablePath: string | null): Prom
   }
 }
 
+// SDK 0.3.278 initializes with models but does not list supported modes; ask the installed CLI.
 function readSupportedPermissionModes(executablePath: string): Promise<string[]> {
   return new Promise((resolve, reject) => {
     execFile(executablePath, ['--help'], { encoding: 'utf8', timeout: 3_000 }, (error, stdout) => {

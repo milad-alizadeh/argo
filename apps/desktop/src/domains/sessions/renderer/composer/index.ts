@@ -1,4 +1,3 @@
-export { SessionComposer } from './editor'
 export {
   type ComposerTicketContext,
   useComposerStore,

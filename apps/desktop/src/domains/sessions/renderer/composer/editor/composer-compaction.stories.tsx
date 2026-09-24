@@ -4,7 +4,7 @@ import { expect, userEvent, within } from 'storybook/test'
 import { BasicFeed, INACTIVE_FEED_LIVE_FACTS } from '../../feed'
 import type { SessionFeed } from '../../types'
 import { useComposerStore } from '../hooks'
-import { SessionComposer } from './session-composer'
+import { ComposerForm } from '../layout/composer-form'
 
 const COMPACTION_FEED = {
   version: 1,
@@ -42,7 +42,7 @@ function CompactingComposerStory() {
           selectedSessionId="compacting-session"
         />
       </div>
-      <SessionComposer
+      <ComposerForm
         contextTokens={148_000}
         isCompacting={compacting}
         isRunning={compacting}

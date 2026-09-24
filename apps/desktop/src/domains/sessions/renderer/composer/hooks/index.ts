@@ -1,4 +1,3 @@
-export { useComposer } from './use-composer'
 export {
   type ComposerAttachment,
   type ComposerState,

@@ -1,20 +1,42 @@
-import type { LexicalEditor } from 'lexical'
-import { type ReactNode, type RefObject, useEffect, useRef } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import type { SessionPlan } from '@/domains/sessions/contract/model/models'
 import type { HarnessControl } from '../../harness/harnesses'
-import type { ComposerAttachment, ComposerTicketContext } from '../hooks/use-composer-store'
+import type { Send } from '../hooks/use-send'
+import { useSessionComposerState } from '../hooks/use-session-composer-state'
+import { activeReference } from '../references/composer-reference-menu'
 import type { TurnSetupControlProps } from '../toolbar/run-setup-menu'
 import type { WorkspaceMenuControlProps } from '../toolbar/workspace-menu'
 import { AttachmentTray } from '../tray/attachment-tray'
 import { PendingTurns } from '../tray/pending-turns'
-import type { usePendingTurns } from '../tray/use-pending-turns'
 import { ComposerCard } from './composer-card'
+import '../editor/composer-content.css'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 
-// The composer card's column; attached secondary surfaces inset from its edges.
 export const COMPOSER_COLUMN = 'mx-auto w-full max-w-(--size-session-column)'
 
-// Compacting steals focus onto Interrupt the moment it starts, so a keyboard user lands on the
-// one control that matters without having to tab there.
+export type ComposerFormProps = {
+  contextTokens?: number | null
+  contextWindowTokens?: number | null
+  disabled?: boolean
+  focusOnMount?: boolean
+  isCompacting?: boolean
+  isHandingOff?: boolean
+  isRunning?: boolean
+  onCompact?: () => Promise<boolean>
+  onHandoff?: () => Promise<boolean>
+  onInterrupt?: () => Promise<boolean>
+  sessionId: string
+  onSend?: Send
+  onSteer?: (text: string, attachments: SessionAttachmentInput[]) => Promise<boolean>
+  permissionPrompt?: ReactNode
+  plan?: SessionPlan | null
+  harness?: HarnessControl | null
+  setup?: TurnSetupControlProps | null
+  catalogError?: boolean
+  refreshCatalog?: () => void
+  workspace?: WorkspaceMenuControlProps | null
+}
+
 function useFocusInterruptOnCompactStart(isCompacting: boolean) {
   const interruptRef = useRef<HTMLButtonElement>(null)
   const wasCompacting = useRef(isCompacting)
@@ -25,132 +47,90 @@ function useFocusInterruptOnCompactStart(isCompacting: boolean) {
   return interruptRef
 }
 
-type ComposerFormProps = {
-  attachments: ComposerAttachment[]
-  tickets: ComposerTicketContext[]
-  contextPickerOpen: boolean
-  disabled?: boolean
-  sendAvailable?: boolean
-  draft: string
-  editorRef: RefObject<LexicalEditor | null>
-  focusOnMount: boolean
-  contextTokens: number | null | undefined
-  contextWindowTokens: number | null | undefined
-  isCompacting: boolean
-  onAttach: () => void
-  onAddTicket: (ticket: Omit<ComposerTicketContext, 'id'>) => void
-  onContextPickerOpenChange: (open: boolean) => void
-  isHandingOff?: boolean
-  onCompact?: () => Promise<boolean>
-  onHandoff?: () => Promise<boolean>
-  isRunning: boolean
-  onChange: (text: string) => void
-  onDropFiles: (files: FileList) => void
-  onEdit: (turn: ReturnType<typeof usePendingTurns>['pendingTurns'][number]) => void
-  onInterrupt?: () => Promise<boolean>
-  onRemove: (id: string) => void
-  onSteer: (turn: ReturnType<typeof usePendingTurns>['pendingTurns'][number]) => Promise<boolean>
-  onRemoveAttachment: (id: string) => void
-  onReorder: (sourceId: string, targetId: string) => void
-  onSend: () => void
-  pendingTurns: ReturnType<typeof usePendingTurns>['pendingTurns']
-  permissionPrompt?: ReactNode
-  plan: SessionPlan | null
-  sessionId: string
-  harness: HarnessControl | null
-  setup: TurnSetupControlProps | null
-  catalogError?: boolean
-  refreshCatalog?: () => void
-  workspace: WorkspaceMenuControlProps | null
+function useContextPicker(draft: string) {
+  const [open, setOpen] = useState(false)
+  useEffect(() => {
+    if (activeReference(draft)?.trigger === '@') setOpen(true)
+  }, [draft])
+  return [open, setOpen] as const
 }
 
 export function ComposerForm({
-  attachments,
-  tickets,
-  contextPickerOpen,
-  disabled = false,
-  sendAvailable = true,
-  draft,
-  editorRef,
-  focusOnMount,
   contextTokens,
   contextWindowTokens,
-  isCompacting,
-  onAttach,
-  onAddTicket,
-  onContextPickerOpenChange,
-  isHandingOff,
+  disabled = false,
+  focusOnMount = false,
+  isCompacting = false,
+  isHandingOff = false,
+  isRunning = false,
   onCompact,
   onHandoff,
-  isRunning,
-  onChange,
-  onDropFiles,
-  onEdit,
   onInterrupt,
-  onRemove,
-  onSteer,
-  onRemoveAttachment,
-  onReorder,
-  onSend,
-  pendingTurns,
-  permissionPrompt,
-  plan,
   sessionId,
-  harness,
-  setup,
+  onSend,
+  onSteer,
+  permissionPrompt,
+  plan = null,
+  harness = null,
+  setup = null,
   catalogError = false,
   refreshCatalog,
-  workspace,
+  workspace = null,
 }: ComposerFormProps) {
+  const state = useSessionComposerState({ sessionId, isRunning, onSend, onSteer, setup })
+  const [contextPickerOpen, setContextPickerOpen] = useContextPicker(state.draft)
   const interruptRef = useFocusInterruptOnCompactStart(isCompacting)
+  const send = () => {
+    if (!disabled && onSend) void state.send()
+  }
   return (
     <form
       className={`${COMPOSER_COLUMN} @container pt-(--spacing-shell-section) pb-(--spacing-session-composer-bottom)`}
       onSubmit={(event) => {
         event.preventDefault()
-        onSend()
+        send()
       }}
     >
       <AttachmentTray>
         {permissionPrompt}
         <PendingTurns
-          turns={pendingTurns}
-          onEdit={onEdit}
-          onRemove={onRemove}
-          onReorder={onReorder}
-          onSteer={onSteer}
+          turns={state.pendingTurns}
+          onEdit={state.onEdit}
+          onRemove={state.removePendingTurn}
+          onReorder={state.reorderPendingTurn}
+          onSteer={state.steerPendingTurn}
         />
       </AttachmentTray>
       <ComposerCard
-        attachments={attachments}
+        attachments={state.attachments}
         contextPickerOpen={contextPickerOpen}
         contextTokens={contextTokens}
         contextWindowTokens={contextWindowTokens}
         disabled={disabled}
-        draft={draft}
-        editorRef={editorRef}
+        draft={state.draft}
+        editorRef={state.editorRef}
         focusOnMount={focusOnMount}
         harness={harness}
         interruptRef={interruptRef}
         isCompacting={isCompacting}
         isHandingOff={isHandingOff}
         isRunning={isRunning}
-        onAttach={onAttach}
-        onAddTicket={onAddTicket}
-        onChange={onChange}
+        onAttach={() => void state.attachFiles()}
+        onAddTicket={state.addTicket}
+        onChange={state.changeDraft}
         onCompact={onCompact}
-        onDropFiles={onDropFiles}
+        onDropFiles={state.dropFiles}
         onHandoff={onHandoff}
         onInterrupt={onInterrupt}
-        onRemoveAttachment={onRemoveAttachment}
-        onSend={onSend}
+        onRemoveAttachment={state.removeAttachment}
+        onSend={send}
         plan={plan}
         sessionId={sessionId}
         setup={setup}
-        catalogState={{ catalogError, refreshCatalog, sendAvailable }}
+        catalogState={{ catalogError, refreshCatalog, sendAvailable: onSend !== undefined }}
         workspace={workspace}
-        tickets={tickets}
-        onContextPickerOpenChange={onContextPickerOpenChange}
+        tickets={state.tickets}
+        onContextPickerOpenChange={setContextPickerOpen}
       />
     </form>
   )

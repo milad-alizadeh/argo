@@ -1,11 +1,36 @@
 import { useCallback } from 'react'
 
-import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import type { SessionRosterRow, SessionSetup } from '@/domains/sessions/contract/model/models'
 import type { SessionHarness } from '../../harness/harnesses'
 import { useComposerStore } from '../hooks/use-composer-store'
 import { type ComposerIdentity, composerIdentityKey } from '../identity/composer-identity'
 import type { TurnSetupControlProps } from '../toolbar/run-setup-menu'
-import { resolvedTurnSetup, type TurnSetup, type TurnSetupChoices } from './turn-setup'
+import {
+  setupFromReading,
+  supportedSetup,
+  type TurnSetup,
+  type TurnSetupChoices,
+} from './turn-setup'
+
+// A draft uses its stored choice, then its remembered Model and Effort. A Session uses the roster.
+export function resolvedTurnSetup(
+  choices: TurnSetupChoices,
+  request: {
+    identity: ComposerIdentity
+    chosen: Map<string, TurnSetup>
+    rows: readonly { id: string; setup: SessionSetup }[]
+    remembered: Partial<Pick<TurnSetup, 'model' | 'effort'>>
+  },
+): TurnSetup {
+  const { identity, chosen, rows, remembered } = request
+  const explicit = chosen.get(composerIdentityKey(identity))
+  if (explicit !== undefined) return supportedSetup(choices, explicit, choices.opening)
+  const row =
+    identity.kind === 'session' ? rows.find(({ id }) => id === identity.sessionId) : undefined
+  return row === undefined
+    ? supportedSetup(choices, { ...choices.opening, ...remembered }, choices.opening)
+    : setupFromReading(choices, row.setup)
+}
 
 export function useTurnSetup({
   harness,
@@ -17,54 +42,23 @@ export function useTurnSetup({
   choices: TurnSetupChoices | null
   identity: ComposerIdentity
   rows: SessionRosterRow[]
-}) {
+}): TurnSetupControlProps | null {
   const chosen = useComposerStore(({ setup }) => setup)
   const chooseSetup = useComposerStore(({ chooseSetup }) => chooseSetup)
   const remembered = useComposerStore(({ rememberedSetup }) => rememberedSetup[harness])
   const rememberSetup = useComposerStore(({ rememberSetup }) => rememberSetup)
 
-  const choose = useCallback(
-    (key: string, setup: TurnSetup) => {
-      chooseSetup(key, setup)
+  const onChange = useCallback(
+    (setup: TurnSetup) => {
+      chooseSetup(composerIdentityKey(identity), setup)
       rememberSetup(harness, { model: setup.model, effort: setup.effort })
     },
-    [chooseSetup, harness, rememberSetup],
-  )
-
-  const control = useComposerControl({
-    choices,
-    chosen: new Map(Object.entries(chosen)),
-    identity,
-    rows,
-    remembered,
-    choose,
-  })
-  return control
-}
-
-function useComposerControl({
-  choices,
-  chosen,
-  identity,
-  rows,
-  remembered,
-  choose,
-}: {
-  choices: TurnSetupChoices | null
-  chosen: Map<string, TurnSetup>
-  identity: ComposerIdentity
-  rows: SessionRosterRow[]
-  remembered: Pick<TurnSetup, 'model' | 'effort'> | undefined
-  choose: (key: string, setup: TurnSetup) => void
-}): TurnSetupControlProps | null {
-  const onChange = useCallback(
-    (setup: TurnSetup) => choose(composerIdentityKey(identity), setup),
-    [choose, identity],
+    [chooseSetup, harness, identity, rememberSetup],
   )
   if (choices === null) return null
   const value = resolvedTurnSetup(choices, {
     identity,
-    chosen,
+    chosen: new Map(Object.entries(chosen)),
     rows,
     remembered: remembered ?? {},
   })

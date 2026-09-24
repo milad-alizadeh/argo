@@ -13,9 +13,8 @@ import {
 } from '@/platform/renderer/components/ui/alert'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { trpc } from '@/platform/renderer/trpc-client'
-import { SessionComposer } from '../composer/editor/session-composer'
 import { composerIdentityKey, composerIdentityOf } from '../composer/identity/composer-identity'
-import { COMPOSER_COLUMN } from '../composer/layout/composer-form'
+import { COMPOSER_COLUMN, ComposerForm } from '../composer/layout/composer-form'
 import { useTurnSetup } from '../composer/turn-setup/use-turn-setup'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import type { HarnessControl } from '../harness/harnesses'
@@ -64,7 +63,7 @@ export function SessionComposerArea({
   return (
     <>
       {permission.failure ? <Failure message={permission.failure} /> : null}
-      <SessionComposer
+      <ComposerForm
         sessionId={composerIdentityKey(identity)}
         focusOnMount={location.state === COMPOSER_FOCUS_STATE}
         setup={control}

@@ -3,13 +3,8 @@ import {
   claudeChoices,
   codexChoices,
 } from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
-import {
-  refusalOf,
-  resolvedTurnSetup,
-  setupFromReading,
-  supportedSetup,
-  turnSettled,
-} from './turn-setup'
+import { setupFromReading, supportedSetup } from './turn-setup'
+import { resolvedTurnSetup } from './use-turn-setup'
 
 const requested = { model: 'opus', effort: 'max', mode: 'bypassPermissions' }
 const CLAUDE_TURN_SETUP = claudeChoices({
@@ -62,39 +57,6 @@ test('keeps the opening choice for what the transcript has not stated or Argo do
   expect(
     setupFromReading(CLAUDE_TURN_SETUP, { model: 'claude-mythos-1', effort: null, mode: null }),
   ).toEqual(CLAUDE_TURN_SETUP.opening)
-})
-
-test('accepts a Turn whose reading matches every choice', () => {
-  expect(
-    refusalOf(CLAUDE_TURN_SETUP, requested, {
-      model: 'claude-opus-5',
-      effort: 'max',
-      mode: 'bypassPermissions',
-    }),
-  ).toBe(null)
-})
-
-test('reverts each refused choice to what Claude used and says so', () => {
-  expect(
-    refusalOf(CLAUDE_TURN_SETUP, requested, {
-      model: 'claude-opus-5',
-      effort: 'high',
-      mode: 'default',
-    }),
-  ).toEqual({
-    setup: { model: 'opus', effort: 'high', mode: 'manual' },
-    message: 'Claude used High, not Max. Claude used Manual, not Bypass.',
-  })
-})
-
-test('names a model Argo does not offer verbatim and keeps the choice it cannot show', () => {
-  expect(
-    refusalOf(CLAUDE_TURN_SETUP, requested, {
-      model: 'claude-mythos-1',
-      effort: null,
-      mode: 'bypassPermissions',
-    }),
-  ).toEqual({ setup: requested, message: 'Claude used claude-mythos-1, not Opus 5.' })
 })
 
 test('replaces an explicit model and effort removed by a live catalog refresh', () => {
@@ -208,19 +170,4 @@ test('carries a draft choice into the Session it started, and reads the roster o
   expect(
     resolvedTurnSetup(CLAUDE_TURN_SETUP, { identity, chosen, rows: [], remembered: {} }),
   ).toEqual(CLAUDE_TURN_SETUP.opening)
-})
-
-test('judges a Turn once it has started after the send and either replied or stopped', () => {
-  const since = '2026-09-13T10:00:00.000Z'
-  const later = '2026-09-13T10:01:00.000Z'
-  const replied = { model: 'claude-opus-5', effort: 'high', mode: 'default' }
-  const unanswered = { model: null, effort: null, mode: 'default' }
-  const cases = [
-    { turnStartedAt: since, status: 'idle', setup: replied, settled: false },
-    { turnStartedAt: null, status: 'idle', setup: replied, settled: false },
-    { turnStartedAt: later, status: 'running', setup: unanswered, settled: false },
-    { turnStartedAt: later, status: 'running', setup: replied, settled: true },
-    { turnStartedAt: later, status: 'idle', setup: unanswered, settled: true },
-  ] as const
-  for (const { settled, ...row } of cases) expect(turnSettled(row, since)).toBe(settled)
 })

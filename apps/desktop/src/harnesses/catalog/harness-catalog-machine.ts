@@ -1,5 +1,6 @@
 import { assign, fromPromise, setup } from 'xstate'
 import { z } from 'zod'
+import { harnessSchema } from '@/harnesses/harness'
 
 const readingSchema = z.strictObject({
   exact: z.array(z.string()),
@@ -35,10 +36,7 @@ const setupChoiceSchema = z.strictObject({
   readings: readingSchema,
 })
 const availableHarnessSchema = z.strictObject({
-  harness: z.enum([
-    'claude',
-    'codex',
-  ]),
+  harness: harnessSchema,
   availability: z.literal('available'),
   agent: z.string().min(1),
   label: z.string().min(1),
@@ -53,10 +51,7 @@ const availableHarnessSchema = z.strictObject({
   }),
 })
 const unavailableHarnessSchema = z.strictObject({
-  harness: z.enum([
-    'claude',
-    'codex',
-  ]),
+  harness: harnessSchema,
   availability: z.literal('unavailable'),
   reason: z.enum([
     'not-installed',
