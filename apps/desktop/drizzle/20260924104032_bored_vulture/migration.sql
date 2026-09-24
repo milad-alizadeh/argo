@@ -1,0 +1,1 @@
+ALTER TABLE `session` ADD `project_id` text NOT NULL REFERENCES project(id) ON DELETE CASCADE;

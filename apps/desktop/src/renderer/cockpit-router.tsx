@@ -11,7 +11,7 @@ import { ProjectSetupWindow } from '@/domains/projects/renderer/setup/screens/pr
 import { DevelopmentIdentityBar } from '@/domains/sessions/renderer/composer/identity/development-identity-bar'
 import { SessionsPage } from '@/domains/sessions/renderer/pages/sessions-page'
 import { SessionsSidebar } from '@/domains/sessions/renderer/roster/sidebar/sessions-sidebar'
-import { SessionScreenView } from '@/domains/sessions/renderer/screens/session-screen-view'
+import { SessionScreenView } from '@/domains/sessions/renderer/screens'
 import { TicketsPage } from '@/domains/tickets/renderer/pages/tickets-page'
 import { TicketsScreenView } from '@/domains/tickets/renderer/screens/tickets-screen-view'
 import { TicketsSidebar } from '@/domains/tickets/renderer/sidebar/tickets-sidebar'

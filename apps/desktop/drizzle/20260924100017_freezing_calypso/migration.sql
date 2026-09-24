@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `session_harness_native` ON `session` (`harness`,`native_id`);
