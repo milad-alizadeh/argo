@@ -1,39 +1,39 @@
 import { and, count, desc, eq, or, sql } from 'drizzle-orm'
-import { harnessSchema } from '@/harnesses/harness'
+import type { z } from 'zod'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 import type { SessionListStatus } from '../../contract/model/session-list-status'
-import type { SessionList, SessionListItem } from '../../contract/session-list'
+import {
+  type SessionList,
+  type SessionListItem,
+  sessionListItemSchema,
+} from '../../contract/session-list'
 import { sessionPreferenceTable, sessionTable } from './session-table'
 
-const sessionListColumns = {
+const sessionIdentityColumns = {
   argoId: sessionTable.argoId,
   harness: sessionTable.harness,
   nativeId: sessionTable.nativeId,
   projectId: sessionTable.projectId,
+  workingDirectory: sessionTable.workingDirectory,
+}
+
+const sessionListColumns = {
+  ...sessionIdentityColumns,
   archived: sql<boolean>`coalesce(${sessionPreferenceTable.archived}, 0)`.mapWith(Boolean),
   argoTitle: sessionPreferenceTable.argoTitle,
   vendorTitle: sessionTable.vendorTitle,
   firstPrompt: sessionTable.firstPrompt,
   updatedAt: sessionTable.updatedAt,
-  workingDirectory: sessionTable.workingDirectory,
 }
 
-function sessionListItem(
-  row: Omit<SessionListItem, 'harness'> & { harness: string },
-): SessionListItem {
-  return { ...row, harness: harnessSchema.parse(row.harness) }
-}
-
-export type SessionIdentity = Pick<
-  SessionListItem,
-  'argoId' | 'harness' | 'nativeId' | 'projectId' | 'workingDirectory'
->
-
-function sessionIdentity(
-  row: Omit<SessionIdentity, 'harness'> & { harness: string },
-): SessionIdentity {
-  return { ...row, harness: harnessSchema.parse(row.harness) }
-}
+const sessionIdentitySchema = sessionListItemSchema.pick({
+  argoId: true,
+  harness: true,
+  nativeId: true,
+  projectId: true,
+  workingDirectory: true,
+})
+export type SessionIdentity = z.infer<typeof sessionIdentitySchema>
 
 export function readSessionIdentity(
   database: DurableDatabase,
@@ -41,17 +41,11 @@ export function readSessionIdentity(
 ): SessionIdentity | null {
   const row =
     database
-      .select({
-        argoId: sessionTable.argoId,
-        harness: sessionTable.harness,
-        nativeId: sessionTable.nativeId,
-        projectId: sessionTable.projectId,
-        workingDirectory: sessionTable.workingDirectory,
-      })
+      .select(sessionIdentityColumns)
       .from(sessionTable)
       .where(eq(sessionTable.argoId, argoId))
       .get() ?? null
-  return row === null ? null : sessionIdentity(row)
+  return row === null ? null : sessionIdentitySchema.parse(row)
 }
 
 export function readSessionList(
@@ -104,7 +98,7 @@ export function readSessionList(
       .limit(pageSize)
       .offset((page - 1) * pageSize)
       .all()
-      .map(sessionListItem),
+      .map((row) => sessionListItemSchema.parse(row)),
   }
 }
 
@@ -115,7 +109,7 @@ export function readSession(database: DurableDatabase, argoId: string): SessionL
     .leftJoin(sessionPreferenceTable, eq(sessionPreferenceTable.argoId, sessionTable.argoId))
     .where(eq(sessionTable.argoId, argoId))
     .get()
-  return row === undefined ? null : sessionListItem(row)
+  return row === undefined ? null : sessionListItemSchema.parse(row)
 }
 
 export function setSessionsArchived(
@@ -149,15 +143,9 @@ export function findSessionByVendorIdentity(
 ): SessionIdentity | null {
   const row =
     database
-      .select({
-        argoId: sessionTable.argoId,
-        harness: sessionTable.harness,
-        nativeId: sessionTable.nativeId,
-        projectId: sessionTable.projectId,
-        workingDirectory: sessionTable.workingDirectory,
-      })
+      .select(sessionIdentityColumns)
       .from(sessionTable)
       .where(and(eq(sessionTable.harness, harness), eq(sessionTable.nativeId, nativeId)))
       .get() ?? null
-  return row === null ? null : sessionIdentity(row)
+  return row === null ? null : sessionIdentitySchema.parse(row)
 }

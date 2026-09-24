@@ -14,24 +14,24 @@ const commandSchema = z.strictObject({
   attachments: z.array(sessionAttachmentInputSchema).default([]),
   setup: sessionSetupSchema,
 })
-export const sessionStartInputSchema = commandSchema.extend({
-  harness: harnessSchema,
+const sessionCommandWithHarnessSchema = commandSchema.extend({ harness: harnessSchema })
+const workingDirectorySchema = z.string().min(1)
+
+export const sessionStartInputSchema = sessionCommandWithHarnessSchema.extend({
   projectId: identifierSchema,
-  cwd: z.string().min(1),
+  cwd: workingDirectorySchema,
 })
-export const existingSessionInputSchema = commandSchema.extend({
+export const existingSessionInputSchema = sessionCommandWithHarnessSchema.extend({
   argoId: identifierSchema,
-  harness: harnessSchema,
   nativeId: z.string().min(1),
   projectId: identifierSchema.nullable(),
-  cwd: z.string().min(1).nullable(),
+  cwd: workingDirectorySchema.nullable(),
 })
 export const sessionSendInputSchema = commandSchema.extend({ sessionId: identifierSchema })
-export const sessionSubmitInputSchema = commandSchema
+export const sessionSubmitInputSchema = sessionCommandWithHarnessSchema
   .extend({
-    harness: harnessSchema,
     projectId: identifierSchema.nullable(),
-    cwd: z.string().min(1).nullable(),
+    cwd: workingDirectorySchema.nullable(),
     sessionId: identifierSchema.nullable(),
     pendingId: z.string().min(1).nullable(),
   })
