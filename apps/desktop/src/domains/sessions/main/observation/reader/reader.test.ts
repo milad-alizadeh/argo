@@ -137,6 +137,7 @@ test('a Session on an earlier Roster page keeps its Feed owner after another pag
 })
 
 test('opens a vendor-backed Session directly before its Roster page loads', async () => {
+  let feedReads = 0
   const source: SessionSource = {
     harness: 'codex',
     discoverSessions: async () => ({
@@ -149,13 +150,18 @@ test('opens a vendor-backed Session directly before its Roster page loads', asyn
       historyComplete: true,
     }),
     readSessionFiles: async () => null,
-    readObservedFeed: async (id) => (id === 'linked-codex-session' ? observedFeed(id) : null),
+    readObservedFeed: async (id) => {
+      feedReads += 1
+      if (feedReads > 1) throw new Error('The vendor read failed after ownership was confirmed')
+      return id === 'linked-codex-session' ? observedFeed(id) : null
+    },
     readShellOutput: async () => ({ state: 'absent' }),
   }
   const reader = createSessionReader([source])
 
   const feed = await fed(reader, feedRequest('linked-codex-session'))
   assert.equal(feed.type, 'session.feed.read')
+  assert.equal(feedReads, 1)
 })
 
 test('reports unavailable history when a listed Session disappears from its Harness', async () => {

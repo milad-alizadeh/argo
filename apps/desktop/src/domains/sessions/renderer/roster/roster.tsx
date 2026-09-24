@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { type RefObject, useMemo, useRef } from 'react'
+import { type RefObject, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { sessionFeedQuery } from '../feed/session-feed-query'
 import type { Session, SessionId } from '../types'
@@ -85,13 +85,26 @@ function useRosterSessions(options: {
   return { ...sessions, ...rows }
 }
 
-function useUnavailableSessionId(selectedSessionId: SessionId | null) {
+function useUnavailableSessionIds(selectedSessionId: SessionId | null) {
   const queryClient = useQueryClient()
   const selectedFeed = useQuery(sessionFeedQuery(queryClient, selectedSessionId, null))
   const failedFeedReads = useConsecutiveFeedFailures(selectedSessionId, selectedFeed)
-  return failedFeedReads > 1 && selectedFeed.error?.code === 'missing-session'
-    ? selectedSessionId
-    : null
+  const [unavailableSessionIds, setUnavailableSessionIds] = useState<ReadonlySet<SessionId>>(
+    () => new Set(),
+  )
+  useEffect(() => {
+    if (selectedSessionId === null) return
+    const unavailable = failedFeedReads > 1 && selectedFeed.error?.code === 'missing-session'
+    if (!unavailable && !selectedFeed.isSuccess) return
+    setUnavailableSessionIds((current) => {
+      if (unavailable === current.has(selectedSessionId)) return current
+      const next = new Set(current)
+      if (unavailable) next.add(selectedSessionId)
+      else next.delete(selectedSessionId)
+      return next
+    })
+  }, [failedFeedReads, selectedFeed.error?.code, selectedFeed.isSuccess, selectedSessionId])
+  return unavailableSessionIds
 }
 
 // The sidebar header, outcome and rows, under one named record of row actions (#2284).
@@ -105,7 +118,7 @@ export function Roster({
   selectedSessionId: SessionId | null
 }) {
   const sidebar = useRef<HTMLElement>(null)
-  const unavailableSessionId = useUnavailableSessionId(selectedSessionId)
+  const unavailableSessionIds = useUnavailableSessionIds(selectedSessionId)
   const read = useOrderedSessions(projectRoot)
   const sessions = useRosterSessions({ actions, projectRoot, read, selectedSessionId, sidebar })
   const { renameTarget, setRenameTarget, handleRename } = useRenameDialog(
@@ -134,7 +147,7 @@ export function Roster({
       />
       <RosterVirtualList
         label="Sessions"
-        unavailableSessionId={unavailableSessionId}
+        unavailableSessionIds={unavailableSessionIds}
         onArchive={sessions.archive}
         onFetchMoreSessions={read.fetchMoreSessions}
         onFetchNextPage={sessions.onFetchNextPage}

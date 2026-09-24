@@ -30,7 +30,7 @@ export function RosterVirtualList({
   selectedIds,
   selectedSessionId,
   tabStop,
-  unavailableSessionId,
+  unavailableSessionIds,
 }: RosterRowHandlers & {
   label: string
   onFetchNextPage: () => void
@@ -40,7 +40,7 @@ export function RosterVirtualList({
   selectedIds: ReadonlySet<SessionId>
   selectedSessionId: SessionId | null
   tabStop: SessionId | null
-  unavailableSessionId: SessionId | null
+  unavailableSessionIds: ReadonlySet<SessionId>
 }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const virtualizer = useVirtualizer({
@@ -95,7 +95,7 @@ export function RosterVirtualList({
                       renamedTitles={renamedTitles}
                       row={row}
                       unavailable={
-                        row.kind === 'session' && row.session.id === unavailableSessionId
+                        row.kind === 'session' && unavailableSessionIds.has(row.session.id)
                       }
                       {...rowPlace(row, { selectedIds, selectedSessionId, tabStop })}
                     />

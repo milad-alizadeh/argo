@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useState } from 'react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { sessionRosterRow, sessionSubagent } from '../../session-fixtures'
@@ -97,6 +98,20 @@ function RosterHarness({ selectedSessionId, ...actions }: RosterHarnessArgs) {
   return <Roster actions={actions} projectRoot={null} selectedSessionId={selectedSessionId} />
 }
 
+function SelectableRoster(args: RosterHarnessArgs) {
+  const [selectedSessionId, setSelectedSessionId] = useState(args.selectedSessionId)
+  return (
+    <RosterHarness
+      {...args}
+      onSelect={(sessionId) => {
+        setSelectedSessionId(sessionId)
+        args.onSelect(sessionId)
+      }}
+      selectedSessionId={selectedSessionId}
+    />
+  )
+}
+
 function RoutedRoster(args: RosterHarnessArgs) {
   const location = useLocation()
   const navigate = useNavigate()
@@ -155,6 +170,7 @@ let recoverMissingHistory = () => {}
 
 export const UnavailableHistoryRecovers: Story = {
   args: { selectedSessionId: session.id },
+  render: (args) => <SelectableRoster {...args} />,
   beforeEach: () => {
     const before = window.argo
     let historyAvailable = false
@@ -165,7 +181,7 @@ export const UnavailableHistoryRecovers: Story = {
       ...before,
       listSessions: async () => listedReply(listed),
       readSessionFeed: async (request) =>
-        historyAvailable
+        historyAvailable || request.sessionId !== session.id
           ? {
               version: 1,
               type: 'session.feed.read',
@@ -189,7 +205,10 @@ export const UnavailableHistoryRecovers: Story = {
       timeout: 5000,
     })
     await expect(row).toHaveTextContent('Unavailable')
+    await userEvent.click(within(canvasElement).getByRole('button', { name: /A second Session/ }))
+    await expect(row).toHaveAttribute('data-history-unavailable', 'true')
     recoverMissingHistory()
+    await userEvent.click(row)
     await waitFor(() => expect(row).toHaveAttribute('data-history-unavailable', 'false'))
     await expect(row).not.toHaveTextContent('Unavailable')
   },
