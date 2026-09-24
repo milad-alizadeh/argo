@@ -175,6 +175,63 @@ test('searches vendor history without paging the roster', async () => {
   assert.equal(found.historyComplete, true)
 })
 
+test('searches capable Session sources without growing their windows for other sources', async () => {
+  const claudeMatch = rosterRow({
+    id: 'claude-direct-match',
+    harness: 'claude',
+    title: { text: 'Claude search result', source: 'custom' },
+  })
+  const codexMatch = rosterRow({
+    id: 'codex-index-match',
+    harness: 'codex',
+    title: { text: 'Codex search result', source: 'custom' },
+  })
+  let claudeSearches = 0
+  let claudeDiscoveries = 0
+  let codexDiscoveries = 0
+  const claudeSource: SessionSource = {
+    harness: 'claude',
+    discoverSessions: async () => {
+      claudeDiscoveries += 1
+      throw new Error('Search must use Claude direct search')
+    },
+    searchSessions: async () => {
+      claudeSearches += 1
+      return [claudeMatch]
+    },
+    historyComplete: async () => true,
+    readSessionFiles: async () => null,
+    readShellOutput: async () => ({ state: 'absent' }),
+  }
+  const codexSource: SessionSource = {
+    harness: 'codex',
+    discoverSessions: async () => {
+      codexDiscoveries += 1
+      return {
+        rows: [codexMatch],
+        filesFound: 1,
+        filesRead: 1,
+        filesUnreadable: 0,
+        filesParsed: 1,
+        nextCursor: null,
+        historyComplete: true,
+      }
+    },
+    readSessionFiles: async () => null,
+    readShellOutput: async () => ({ state: 'absent' }),
+  }
+
+  const found = await search(createSessionReader([claudeSource, codexSource]), 'search result')
+
+  assert.deepEqual(found.sessions.map((row) => row.id).sort(), [
+    'claude-direct-match',
+    'codex-index-match',
+  ])
+  assert.equal(claudeSearches, 1)
+  assert.equal(claudeDiscoveries, 0)
+  assert.equal(codexDiscoveries, 1)
+})
+
 test('answers no matches for a query nothing holds', async (context) => {
   const { reader } = await twoHarnessReader(context)
 

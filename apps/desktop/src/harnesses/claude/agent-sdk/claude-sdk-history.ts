@@ -12,7 +12,6 @@ export class ClaudeSdkHistoryUnavailableError extends Error {
 
 export type ClaudeSdkHistory = {
   listSessions: (options: { limit: number; offset: number }) => Promise<SDKSessionInfo[]>
-  listAllSessions?: () => Promise<SDKSessionInfo[]>
   getSessionInfo?: (sessionId: string) => Promise<SDKSessionInfo | undefined>
   getSessionMessages: (
     sessionId: string,
@@ -41,13 +40,6 @@ async function readPages<Value>(readPage: (offset: number) => Promise<Value[]>):
 }
 
 export async function readClaudeSessions(history: ClaudeSdkHistory): Promise<SDKSessionInfo[]> {
-  if (history.listAllSessions !== undefined) {
-    try {
-      return await history.listAllSessions()
-    } catch (error) {
-      throw new ClaudeSdkHistoryUnavailableError(error instanceof Error ? error.message : undefined)
-    }
-  }
   return readPages((offset) => history.listSessions({ limit: PAGE_SIZE, offset }))
 }
 

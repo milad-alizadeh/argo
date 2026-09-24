@@ -194,27 +194,39 @@ test('keeps Claude text before and after a tool-use block in the Feed', async ()
   expect(rows.some((row) => row.shape === 'tool-group')).toBe(true)
 })
 
-test('searches Claude vendor history without growing roster pages', async () => {
-  let rosterPages = 0
+test('searches Claude vendor history through bounded Session pages', async () => {
+  const requestedPages: { limit: number; offset: number }[] = []
   const history = {
-    listSessions: async () => {
-      rosterPages += 1
-      return []
+    listSessions: async (options: { limit: number; offset: number }) => {
+      requestedPages.push(options)
+      if (options.offset === 0) {
+        return Array.from({ length: options.limit }, (_, index) => ({
+          sessionId: `vendor-search-${index}`,
+          summary: `Other investigation ${index}`,
+          lastModified: index,
+        }))
+      }
+      return [
+        {
+          sessionId: 'vendor-search-match',
+          summary: 'Duplicate ticket investigation',
+          lastModified: 51,
+        },
+      ]
     },
-    listAllSessions: async () => [
-      {
-        sessionId: 'vendor-search-match',
-        summary: 'Duplicate ticket investigation',
-        lastModified: 1,
-      },
-    ],
+    listAllSessions: async () => {
+      throw new Error('Session search must not list all vendor history at once')
+    },
     getSessionMessages: async () => [],
   }
   const source = createClaudeSdkHistorySource({ history })
 
   const matches = await source.searchSessions?.('Duplicate')
   expect(matches?.map((row) => row.id)).toEqual(['vendor-search-match'])
-  expect(rosterPages).toBe(0)
+  expect(requestedPages).toEqual([
+    { limit: 50, offset: 0 },
+    { limit: 50, offset: 50 },
+  ])
   expect(await source.historyComplete?.()).toBe(true)
 })
 

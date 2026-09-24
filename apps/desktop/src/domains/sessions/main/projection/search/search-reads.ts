@@ -20,25 +20,31 @@ import { matchesSearchQuery } from './search-match'
 
 export const SEARCH_PAGE_LIMIT = 20
 
-// Every match across every source, when each can search its history directly. `null` means at
-// least one source needs its discovery window grown instead.
-async function directSearch(
-  sources: readonly SessionSource[],
+// Search each source through its own capability; one missing capability must not grow every source.
+async function searchSource(
+  source: SessionSource,
   query: string,
-): Promise<{ rows: SessionRosterRow[]; historyComplete: boolean } | null> {
-  if (sources.some((source) => source.searchSessions === undefined)) return null
+): Promise<{ rows: SessionRosterRow[]; historyComplete: boolean }> {
+  const search = source.searchSessions
+  if (search === undefined) {
+    const window = await growWindow([source], {}, () => false)
+    return { rows: window.rows, historyComplete: true }
+  }
   try {
-    const [matched, completeness] = await Promise.all([
-      Promise.all(sources.map((source) => source.searchSessions?.(query))),
-      Promise.all(sources.map((source) => source.historyComplete?.())),
-    ])
-    return {
-      rows: matched.flatMap((rows) => rows ?? []),
-      historyComplete: completeness.every(Boolean),
-    }
+    const [rows, historyComplete] = await Promise.all([search(query), source.historyComplete?.()])
+    return { rows, historyComplete: historyComplete ?? true }
   } catch (error) {
-    if (isSessionIndexFallback(error)) return null
-    throw error
+    if (!isSessionIndexFallback(error)) throw error
+    const window = await growWindow([source], {}, () => false)
+    return { rows: window.rows, historyComplete: true }
+  }
+}
+
+async function searchSources(sources: readonly SessionSource[], query: string) {
+  const results = await Promise.all(sources.map((source) => searchSource(source, query)))
+  return {
+    rows: results.flatMap((result) => result.rows),
+    historyComplete: results.every((result) => result.historyComplete),
   }
 }
 
@@ -79,20 +85,15 @@ export const searchRead = fromContext(
       context.archive.archivedIds(),
       projectRootsOf(request.projectRoot),
     ])
-    const direct = await directSearch(context.sources, request.query)
-    const matched =
-      direct === null
-        ? (await growWindow(context.sources, {}, () => false)).rows.filter((row) =>
-            matchesSearchQuery(row, request.query),
-          )
-        : direct.rows
-    const found = scoped(matched, { status: request.status, archivedIds, projectRoots })
+    const result = await searchSources(context.sources, request.query)
+    const fallbackRows = result.rows.filter((row) => matchesSearchQuery(row, request.query))
+    const found = scoped(fallbackRows, { status: request.status, archivedIds, projectRoots })
     const offset = decodeOffset(request.cursor)
     return {
       sessions: found.slice(offset, offset + SEARCH_PAGE_LIMIT),
       nextCursor:
         found.length > offset + SEARCH_PAGE_LIMIT ? String(offset + SEARCH_PAGE_LIMIT) : null,
-      historyComplete: direct?.historyComplete ?? true,
+      historyComplete: result.historyComplete,
     }
   },
 )

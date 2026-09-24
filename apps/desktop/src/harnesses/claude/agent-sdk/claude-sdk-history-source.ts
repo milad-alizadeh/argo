@@ -22,7 +22,6 @@ import {
   type ClaudeSdkHistory,
   readClaudeSessionMessages,
   readClaudeSessionPage,
-  readClaudeSessions,
   readClaudeSubagentMessages,
 } from './claude-sdk-history'
 
@@ -72,21 +71,29 @@ async function searchClaudeHistory(
   managed: SessionRosterRow[],
   query: string,
 ) {
-  const discovered = await discoverRoster({
-    discovery: {
-      rows: watchedRows(await readClaudeSessions(history)),
-      filesFound: 0,
-      filesRead: 0,
-      filesUnreadable: 0,
-      filesParsed: 0,
-      nextCursor: null,
-      historyComplete: true,
-    },
-    managed,
-    joins: {},
-    projectRoot: null,
-  })
-  return discovered.rows.filter((row) => matchesSearchQuery(row, query))
+  const matches = new Map<string, SessionRosterRow>()
+  for (let offset = 0; ; ) {
+    const sessions = await readClaudeSessionPage(history, offset)
+    const discovered = await discoverRoster({
+      discovery: {
+        rows: watchedRows(sessions),
+        filesFound: 0,
+        filesRead: 0,
+        filesUnreadable: 0,
+        filesParsed: 0,
+        nextCursor: sessions.length < ROSTER_PAGE_SIZE ? null : String(offset + sessions.length),
+        historyComplete: sessions.length < ROSTER_PAGE_SIZE,
+      },
+      managed,
+      joins: {},
+      projectRoot: null,
+    })
+    for (const row of discovered.rows) {
+      if (matchesSearchQuery(row, query)) matches.set(row.id, row)
+    }
+    if (sessions.length < ROSTER_PAGE_SIZE) return [...matches.values()]
+    offset += sessions.length
+  }
 }
 
 function feedOf(
@@ -220,7 +227,6 @@ export function createClaudeSdkHistorySource(
 ): SessionSource {
   const history: ClaudeSdkHistory = options.history ?? {
     listSessions,
-    listAllSessions: () => listSessions(),
     getSessionInfo,
     getSessionMessages,
     getSubagentMessages,
