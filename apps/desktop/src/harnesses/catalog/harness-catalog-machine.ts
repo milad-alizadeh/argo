@@ -111,17 +111,6 @@ export function unavailable(harness: HarnessInfo['harness']): HarnessInfo {
     reason: 'unavailable',
   }
 }
-export function catalogSnapshot(
-  harnesses: readonly [
-    HarnessInfo,
-    HarnessInfo,
-  ],
-): HarnessCatalog {
-  return harnessCatalogSchema.parse({
-    harnesses,
-  })
-}
-
 export function createHarnessCatalogMachine(load: HarnessCatalogLoad) {
   const loadCatalog = fromPromise(load)
   return setup({

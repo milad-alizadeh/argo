@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 import { createActor } from 'xstate'
 import {
-  catalogSnapshot,
   createHarnessCatalogMachine,
+  harnessCatalogSchema,
 } from '@/harnesses/catalog/harness-catalog-machine'
 import { claudeHarnessInfo } from '@/harnesses/claude/catalog'
 import { codexHarnessInfo } from '@/harnesses/codex/catalog'
@@ -13,10 +13,12 @@ import { createAppRouter } from './trpc-router'
 test('returns only the selected Harness as serializable composer choices', async () => {
   const actor = createActor(
     createHarnessCatalogMachine(async () =>
-      catalogSnapshot([
-        claudeHarnessInfo(claudeModelCatalogFixture()),
-        codexHarnessInfo(codexModelCatalogFixture()),
-      ]),
+      harnessCatalogSchema.parse({
+        harnesses: [
+          claudeHarnessInfo(claudeModelCatalogFixture()),
+          codexHarnessInfo(codexModelCatalogFixture()),
+        ],
+      }),
     ),
   ).start()
   try {
@@ -27,6 +29,7 @@ test('returns only the selected Harness as serializable composer choices', async
     expect(codex.info.harness).toBe('codex')
     expect(claude.info.availability).toBe('available')
     expect(codex.info.availability).toBe('available')
+    expect('loading' in codex).toBe(false)
     expect(JSON.parse(JSON.stringify(codex))).toEqual(codex)
   } finally {
     actor.stop()

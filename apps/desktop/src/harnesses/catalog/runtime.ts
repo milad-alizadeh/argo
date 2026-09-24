@@ -1,7 +1,7 @@
 import { SESSION_CLAUDE_EXECUTABLE_ENV } from '@/domains/sessions/contract/proof-protocol'
 import { readClaudeHarnessInfo } from '@/harnesses/claude/catalog'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
-import { catalogSnapshot, type HarnessInfo, unavailable } from './harness-catalog-machine'
+import { type HarnessInfo, harnessCatalogSchema, unavailable } from './harness-catalog-machine'
 
 export function createHarnessCatalogLoad(readCodex: () => Promise<HarnessInfo>) {
   return async () => {
@@ -13,7 +13,7 @@ export function createHarnessCatalogLoad(readCodex: () => Promise<HarnessInfo>) 
           claudeResult.status === 'fulfilled' ? claudeResult.value : unavailable('claude')
         const codexInfo =
           codexResult.status === 'fulfilled' ? codexResult.value : unavailable('codex')
-        return catalogSnapshot([claudeInfo, codexInfo])
+        return harnessCatalogSchema.parse({ harnesses: [claudeInfo, codexInfo] })
       },
     )
   }

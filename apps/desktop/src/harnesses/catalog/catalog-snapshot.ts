@@ -8,7 +8,6 @@ const inputSchema = z.strictObject({ harness: z.enum(['claude', 'codex']) })
 const outputSchema = z.strictObject({
   info: harnessInfoSchema,
   failure: z.string().nullable(),
-  loading: z.boolean(),
 })
 
 export type CatalogActor = ActorRefFrom<ReturnType<typeof createHarnessCatalogMachine>>
@@ -18,7 +17,7 @@ function selectedSnapshot(actor: CatalogActor, harness: Harness) {
   const snapshot = actor.getSnapshot()
   const info = snapshot.context.catalog.harnesses.find((entry) => entry.harness === harness)
   if (info === undefined) throw new Error(`The ${harness} Harness is missing from the catalog.`)
-  return { info, failure: snapshot.context.failure, loading: snapshot.matches('Loading') }
+  return { info, failure: snapshot.context.failure }
 }
 
 export function readCatalogSnapshot(actor: CatalogActor, harness: Harness) {

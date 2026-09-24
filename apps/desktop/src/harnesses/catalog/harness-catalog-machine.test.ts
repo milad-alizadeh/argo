@@ -9,16 +9,18 @@ import { assertModeledTransitions } from '@/platform/main/test-doubles/xstate-mo
 import { claudeModelCatalogFixture } from '../../../test-fixtures/sessions/claude-model-catalog.fixture'
 import { codexModelCatalogFixture } from '../../../test-fixtures/sessions/codex-model-catalog.fixture'
 import {
-  catalogSnapshot,
   createHarnessCatalogMachine,
+  harnessCatalogSchema,
   unavailable,
 } from './harness-catalog-machine'
 
 test('publishes a serializable catalog with Model-specific Efforts and defaults', () => {
-  const snapshot = catalogSnapshot([
-    claudeHarnessInfo(claudeModelCatalogFixture()),
-    codexHarnessInfo(codexModelCatalogFixture()),
-  ])
+  const snapshot = harnessCatalogSchema.parse({
+    harnesses: [
+      claudeHarnessInfo(claudeModelCatalogFixture()),
+      codexHarnessInfo(codexModelCatalogFixture()),
+    ],
+  })
   const parsed = JSON.parse(JSON.stringify(snapshot))
   expect(parsed.harnesses[0]).toMatchObject({
     harness: 'claude',
@@ -35,10 +37,9 @@ test('publishes a serializable catalog with Model-specific Efforts and defaults'
 })
 
 test('keeps an available Harness visible when the other catalog is unavailable', () => {
-  const catalog = catalogSnapshot([
-    claudeHarnessInfo(claudeModelCatalogFixture()),
-    codexHarnessInfo(null),
-  ])
+  const catalog = harnessCatalogSchema.parse({
+    harnesses: [claudeHarnessInfo(claudeModelCatalogFixture()), codexHarnessInfo(null)],
+  })
   expect(catalog.harnesses[0]?.availability).toBe('available')
   expect(catalog.harnesses[1]).toEqual(unavailable('codex'))
 })
@@ -48,7 +49,9 @@ test('loads on request and retries a failed catalog load', async () => {
   const machine = createHarnessCatalogMachine(async () => {
     attempts += 1
     if (attempts === 1) throw new Error('temporary catalog failure')
-    return catalogSnapshot([claudeHarnessInfo(claudeModelCatalogFixture()), codexHarnessInfo(null)])
+    return harnessCatalogSchema.parse({
+      harnesses: [claudeHarnessInfo(claudeModelCatalogFixture()), codexHarnessInfo(null)],
+    })
   })
   const actor = createActor(machine).start()
   actor.send({ type: 'Catalog requested' })
@@ -61,7 +64,9 @@ test('loads on request and retries a failed catalog load', async () => {
   actor.stop()
 })
 
-const catalog = catalogSnapshot([claudeHarnessInfo(null), codexHarnessInfo(null)])
+const catalog = harnessCatalogSchema.parse({
+  harnesses: [claudeHarnessInfo(null), codexHarnessInfo(null)],
+})
 const modeledEvents = [
   { type: 'Catalog requested' as const },
   { type: 'Refresh' as const },
