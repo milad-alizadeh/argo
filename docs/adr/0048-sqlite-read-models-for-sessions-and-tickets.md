@@ -43,12 +43,15 @@ independently. One source failing leaves other indexed data available and shows 
 source's failure episode. Incomplete scans never delete durable Argo state or imply that an unseen
 vendor item is gone.
 
-Main schedules source jobs on a bounded set of worker threads. Each source retains separate
-priority, progress, retry, and failure state; the number of Connections does not create an
-unbounded number of threads. Workers write disposable indexes through their own SQLite connections
-to the one per-machine database. Main owns durable Argo writes. The renderer shows already indexed
-rows while sync runs, and typed per-domain sync-status reads report freshness, progress, and errors.
-After a committed change, a named event invalidates the affected TanStack queries.
+XState actors remain the owners of ongoing workflows. The Ticket observer actor per Connection
+retains scheduling, invalidation, retry, and reconciliation; equivalent per-Harness coordination
+owns Session sync. Main schedules their ingestion jobs on a bounded set of worker threads. Each
+source retains separate priority, progress, retry, and failure state; the number of Connections
+does not create an unbounded number of threads. Workers write disposable indexes through their own
+SQLite connections to the one per-machine database. Main owns durable Argo writes. The renderer
+shows already indexed rows while sync runs, and typed per-domain sync-status reads report
+freshness, progress, and errors. After a committed change, a named event invalidates the affected
+TanStack queries.
 
 tRPC is the renderer's typed API for all request-response operations, including domain and platform
 commands. Domain routers own their procedures and call domain services; a root router only composes
@@ -57,6 +60,9 @@ options directly, with custom hooks only for composed view behavior. Each domain
 tables, queries, migrations, and sync rules; shared infrastructure opens the database and schedules
 worker jobs. Vendor adapters retain vendor calls and parsing. The Electron transport must preserve
 Argo's trusted-frame authorization; its exact mechanism requires a real Electron security proof.
+Procedures carry product commands and projections, never raw XState events or actor snapshots.
+Claude's managed Session actor, Codex's supervisor and child actors, the durable ProjectSetup actor,
+and the sign-in actors remain as ADR-0047 defines them.
 
 Read operations query SQLite for lists, search, and indexed detail. The backend adds current live
 Session projections to those rows and returns one Argo-shaped response; the renderer does not merge
