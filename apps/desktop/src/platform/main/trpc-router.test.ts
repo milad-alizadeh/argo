@@ -126,3 +126,35 @@ test('routes composer commands through the single Session submission mutation', 
     actor.stop()
   }
 })
+
+test('rejects Claude attachments before a Session reaches a vendor', async () => {
+  let submissions = 0
+  const runtime = {
+    ...sessions,
+    submit: async () => {
+      submissions += 1
+      return { sessionId: '00000000-0000-4000-8000-000000000001' }
+    },
+  } as SessionRuntime
+  const actor = createActor(
+    createHarnessCatalogMachine(async () => harnessCatalogSchema.parse({ harnesses: [] })),
+  ).start()
+  try {
+    const caller = createAppRouter(actor, runtime).createCaller({})
+    await expect(
+      caller.sessionSubmit({
+        commandId: '00000000-0000-4000-8000-000000000002',
+        harness: 'claude',
+        projectId: '00000000-0000-4000-8000-000000000099',
+        cwd: '/repo',
+        sessionId: null,
+        prompt: 'Read this image.',
+        attachments: [{ kind: 'image', path: '/repo/image.png' }],
+        setup: { model: 'claude-sonnet', effort: 'medium', mode: 'default' },
+      }),
+    ).rejects.toThrow('Claude Session attachments are not supported.')
+    expect(submissions).toBe(0)
+  } finally {
+    actor.stop()
+  }
+})

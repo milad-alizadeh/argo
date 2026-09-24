@@ -33,6 +33,8 @@ test('preserves one Argo ID for repeated vendor identity', () => {
       firstPrompt: 'later',
     })
     assert.equal(repeated, first)
+    const row = client.prepare('SELECT project_id FROM session WHERE argo_id = ?').get(first)
+    assert.equal(row?.project_id, 'project-1')
   } finally {
     client.close()
   }
