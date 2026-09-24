@@ -17,6 +17,9 @@ titles, pins, pinned order, and user-asserted Ticket links. These survive rebuil
 index. Argo title wins over linked Ticket title, vendor title, and first prompt, in that order.
 Linking a Ticket changes the displayed name only when no Argo title is set; it does not copy the
 Ticket title or rename the vendor Session.
+The effective Ticket link follows ADR-0017: a positive branch-derived Delivery-to-Ticket link wins;
+an asserted Delivery-to-Ticket link fills only an unlinked derivation; a branchless Session can
+assert its own Ticket link. An asserted link survives provider disconnection and Ticket deletion.
 
 Vendor Session metadata, searchable history text, and Ticket content live in disposable SQLite
 query tables. Their providers remain authoritative. The Ticket index covers the active backlog and
@@ -32,6 +35,10 @@ to the same provider scope see one Ticket and keep its Argo UUID after reconnect
 confirms deletion, Argo keeps that UUID, the last known title, and user-asserted links. The UI
 groups the Ticket with closed work and gives the reason `deleted`; this does not claim that the
 provider reported a closed status. A lost Connection or failed read does not establish deletion.
+Adapters distinguish verified permanent loss or deletion from authorization failure, inaccessible
+scope, rate limiting, list omission, and transient failure. Only an authenticated native read with
+sufficient provider evidence establishes permanent loss or deletion. If the provider cannot prove
+which outcome occurred, Argo keeps the local identity and reports uncertainty.
 
 ## Sync and reads
 
@@ -43,8 +50,8 @@ independently. One source failing leaves other indexed data available and shows 
 source's failure episode. Incomplete scans never delete durable Argo state or imply that an unseen
 vendor item is gone.
 
-XState actors remain the owners of ongoing workflows. The Ticket observer actor per Connection
-retains scheduling, invalidation, retry, and reconciliation; equivalent per-Harness coordination
+XState actors remain the owners of ongoing workflows. A Ticket observer actor per Connection will
+own scheduling, invalidation, retry, and reconciliation; main-process per-Harness coordination
 owns Session sync. Main schedules their ingestion jobs on a bounded set of worker threads. Each
 source retains separate priority, progress, retry, and failure state; the number of Connections
 does not create an unbounded number of threads. Workers write disposable indexes through their own
@@ -52,6 +59,11 @@ SQLite connections to the one per-machine database. Main owns durable Argo write
 shows already indexed rows while sync runs, and typed per-domain sync-status reads report
 freshness, progress, and errors. After a committed change, a named event invalidates the affected
 TanStack queries.
+Jobs carry a source generation so results from a disconnected or replaced source cannot commit.
+Worker failure retains committed rows and retries with bounded backoff. Workers receive validated
+data and no persistent credentials. Main assigns or finds a durable Session UUID before an index
+row uses it; a worker crash cannot create a second identity. Priority opens take precedence without
+starving background scans.
 
 tRPC is the renderer's typed API for all request-response operations, including domain and platform
 commands. Domain routers own their procedures and call domain services; a root router only composes
@@ -79,6 +91,9 @@ pass-through renderer hooks as their request-response operations move to tRPC. N
 channels remain an explicit current boundary. Phase two moves those streams and change events to
 tRPC subscriptions. Managed status transitions invalidate Roster queries; token and Feed events do
 not refetch the Roster.
+A committed Session or Ticket index change invalidates affected lists and selected detail after
+the transaction, never before it. Vendor history and live events use stable source event identity
+and order so reconciliation fills gaps without duplicate Feed rows.
 
 Argo allows one application instance and one window; a second launch focuses the first. A separate
 SQLite Session lease retains an owner token and expiry. Managed or watched posture comes from the
@@ -94,12 +109,24 @@ accepted result to SQLite. A definite rejection reverts the view and shows an er
 provider outcome is uncertain, or it accepts a mutation but SQLite cannot commit it, the view
 marks the value as syncing until reconciliation determines the provider state. An unsafe durable
 database blocks further mutations and uses ADR-0043 recovery.
+Before a provider Ticket write, Argo durably records an intent ID, target Ticket, base version, and
+requested value. The intent is control state, not a claim that the Ticket changed. Conflicting
+writes to one Ticket are serialized. Uncertain writes are never
+automatically retried; a provider read by immutable native ID reconciles them after failure or
+restart. A late response or stale sync result cannot overwrite a newer accepted edit. The syncing
+state clears only when the matching provider fact is committed to SQLite.
 
 Procedures return structured domain error codes; tRPC handles transport failures. Session creation
 is atomic from the renderer's point of view: success appears only after the vendor returns and
 SQLite commits the Argo identity and native ID. If the vendor starts a Session but the database
 commit fails, Argo keeps the vendor Session for reconciliation, reports an uncertain result, and
 never resends the first prompt automatically. Vendor and SQLite writes do not share a transaction.
+Argo writes a launch intent before asking the vendor to start; if durable storage is already unsafe,
+it refuses the start. If the vendor starts but the identity commit fails, Argo retains the native ID
+for same-process reconciliation. After process loss it rediscovers through the vendor interface and
+keeps the outcome uncertain until a matching Session is established. If no recoverable native ID
+can be established, it does not claim success or automatically send again. Lease acquire, renewal,
+and release are token-conditional so an expired owner cannot release a successor's lease.
 
 ## Changes to earlier decisions
 

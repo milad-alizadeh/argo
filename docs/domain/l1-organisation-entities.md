@@ -68,8 +68,9 @@
   reads `unknown`; a blocker closed with an **unreadable kind satisfies**, so ruling-out
   detection degrades to a chrome notice rather than stranding a map.
 
-  **Every provider is remote** — GitHub Issues / Linear via OAuth; no provider connected → no
-  Tickets → all sessions unlinked.
+  **Every provider is remote** — GitHub Issues / Linear via OAuth. Losing a Connection stops
+  provider reads and writes but does not erase indexed Tickets or Argo-owned asserted links.
+  Their availability is unknown until the provider can be read again.
 
 - **Delivery** — the product in flight: a **derived, branch-keyed** entity assembled per branch
   from local git facts ∪ code-host facts (PR/CI/review/merge). Comes into existence **at branch
