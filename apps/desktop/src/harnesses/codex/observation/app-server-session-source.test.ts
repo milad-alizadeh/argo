@@ -24,6 +24,13 @@ function projection(): SessionProjection {
   }
 }
 
+function mockAdapter(): SessionAdapter {
+  return {
+    execute: async () => ({ kind: 'rejected', reason: 'not used' }),
+    subscribe: () => () => {},
+  }
+}
+
 test('projects managed Codex app-server state with its watched history', async () => {
   const commands: unknown[] = []
   const source = createCodexAppServerSessionSource({
@@ -92,14 +99,49 @@ test('projects managed Codex app-server state with its watched history', async (
   ])
 })
 
+test('searches Codex app-server history with one refresh', async () => {
+  let refreshes = 0
+  const source = createCodexAppServerSessionSource({
+    adapter: mockAdapter(),
+    projections: () => [],
+    watchedProjections: () => [],
+    refreshHistory: async () => {
+      refreshes += 1
+      return [projection()]
+    },
+    readHistoryProjection: async () => null,
+    checkoutFor: () => null,
+  })
+
+  const matches = await source.searchSessions?.('migration')
+  assert.deepEqual(
+    matches?.map((row) => row.id),
+    ['thread-1'],
+  )
+  assert.equal(refreshes, 1)
+  assert.equal(await source.historyComplete?.(), true)
+})
+
+test('reports an unknown Codex Session as missing after app-server history confirms its absence', async () => {
+  const source = createCodexAppServerSessionSource({
+    adapter: mockAdapter(),
+    projections: () => [],
+    watchedProjections: () => [],
+    refreshHistory: async () => [],
+    readHistoryProjection: async () => {
+      throw new Error('thread/read failed')
+    },
+    checkoutFor: () => null,
+  })
+
+  assert.equal(await source.readObservedFeed?.('not-a-session'), null)
+})
+
 test('reports an app-server history timeout', async () => {
   let complete: ((value: readonly SessionProjection[]) => void) | undefined
   let ready = 0
   const source = createCodexAppServerSessionSource({
-    adapter: {
-      execute: async () => ({ kind: 'rejected', reason: 'not used' }),
-      subscribe: () => () => {},
-    },
+    adapter: mockAdapter(),
     projections: () => [],
     watchedProjections: () => [],
     refreshHistory: (notifyLateSuccess) =>

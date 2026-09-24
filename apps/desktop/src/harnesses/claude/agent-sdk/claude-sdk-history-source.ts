@@ -1,4 +1,5 @@
-import { getSessionMessages, listSessions } from '@anthropic-ai/claude-agent-sdk'
+import { createHash } from 'node:crypto'
+import { getSessionInfo, getSessionMessages, listSessions } from '@anthropic-ai/claude-agent-sdk'
 import { z } from 'zod'
 import {
   managedRosterRow,
@@ -7,10 +8,12 @@ import {
 } from '@/domains/sessions/contract/model/models'
 import { discoverRoster } from '@/domains/sessions/main/observation/reader/discover-roster'
 import type { SessionSource } from '@/domains/sessions/main/observation/reader/session-source'
+import { matchesSearchQuery } from '@/domains/sessions/main/projection/search/search-match'
 import {
   type ClaudeSdkHistory,
   readClaudeSessionMessages,
   readClaudeSessionPage,
+  readClaudeSessions,
 } from './claude-sdk-history'
 
 const messageText = z
@@ -61,6 +64,32 @@ function rowOf(session: StoredSession) {
   })
 }
 
+function watchedRows(sessions: StoredSession[]) {
+  return sessions.map(rowOf).map((row) => ({ ...row, posture: 'watched' as const }))
+}
+
+async function searchClaudeHistory(
+  history: ClaudeSdkHistory,
+  managed: SessionRosterRow[],
+  query: string,
+) {
+  const discovered = await discoverRoster({
+    discovery: {
+      rows: watchedRows(await readClaudeSessions(history)),
+      filesFound: 0,
+      filesRead: 0,
+      filesUnreadable: 0,
+      filesParsed: 0,
+      nextCursor: null,
+      historyComplete: true,
+    },
+    managed,
+    joins: {},
+    projectRoot: null,
+  })
+  return discovered.rows.filter((row) => matchesSearchQuery(row, query))
+}
+
 function feedOf(messages: Awaited<ReturnType<typeof readClaudeSessionMessages>>): SessionFeedRow[] {
   return messages.flatMap((message) => {
     if (message.type === 'system') return []
@@ -80,14 +109,15 @@ function feedOf(messages: Awaited<ReturnType<typeof readClaudeSessionMessages>>)
 export function createClaudeSdkHistorySource(
   options: { history?: ClaudeSdkHistory; managedSessions?: () => SessionRosterRow[] } = {},
 ): SessionSource {
-  const history: ClaudeSdkHistory = options.history ?? { listSessions, getSessionMessages }
-  const sessions = new Map<string, StoredSession>()
-  let revision = 0
+  const history: ClaudeSdkHistory = options.history ?? {
+    listSessions,
+    listAllSessions: () => listSessions(),
+    getSessionInfo,
+    getSessionMessages,
+  }
   const refresh = async (options?: Parameters<SessionSource['discoverSessions']>[0]) => {
     const offset = offsetFor(options?.cursor)
     const page = await readClaudeSessionPage(history, offset)
-    for (const session of page) sessions.set(session.sessionId, session)
-    revision += 1
     return { sessions: page, offset }
   }
   return {
@@ -96,7 +126,7 @@ export function createClaudeSdkHistorySource(
       const { sessions: sessionsOnPage, offset } = await refresh(request)
       return discoverRoster({
         discovery: {
-          rows: sessionsOnPage.map(rowOf).map((row) => ({ ...row, posture: 'watched' as const })),
+          rows: watchedRows(sessionsOnPage),
           filesFound: 0,
           filesRead: 0,
           filesUnreadable: 0,
@@ -112,16 +142,24 @@ export function createClaudeSdkHistorySource(
         projectRoot: request?.projectRoot,
       })
     },
+    searchSessions: (query) =>
+      searchClaudeHistory(history, options.managedSessions?.() ?? [], query),
+    historyComplete: async () => true,
     readSessionFiles: async () => null,
     readObservedFeed: async (sessionId) => {
-      const session = sessions.get(sessionId)
-      return session === undefined
-        ? null
-        : {
-            chainId: sessionId,
-            revision: String(revision),
-            rows: feedOf(await readClaudeSessionMessages(history, session.sessionId)),
-          }
+      const managed = options.managedSessions?.().some((row) => row.id === sessionId) === true
+      if (!managed && history.getSessionInfo !== undefined) {
+        const info = await history.getSessionInfo(sessionId)
+        if (info === undefined) return null
+      }
+      const messages = await readClaudeSessionMessages(history, sessionId)
+      if (!managed && messages.length === 0 && history.getSessionInfo === undefined) return null
+      const rows = feedOf(messages)
+      return {
+        chainId: sessionId,
+        revision: createHash('sha256').update(JSON.stringify(rows)).digest('hex'),
+        rows,
+      }
     },
     readShellOutput: async () => ({ state: 'absent' }),
   }

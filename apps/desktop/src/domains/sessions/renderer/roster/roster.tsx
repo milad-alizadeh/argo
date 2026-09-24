@@ -1,6 +1,9 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { type RefObject, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { sessionFeedQuery } from '../feed/session-feed-query'
 import type { Session, SessionId } from '../types'
+import { useConsecutiveFeedFailures } from '../use-sessions'
 import { useArchivedSection } from './archived/use-archived-section'
 import { useRosterStatus } from './hooks/use-roster-filter-store'
 import { RenameDialog } from './rename/rename-dialog'
@@ -64,7 +67,7 @@ function useRosterSessions(options: {
   sidebar: RefObject<HTMLElement | null>
 }) {
   const { actions, projectRoot, read, selectedSessionId, sidebar } = options
-  return useSidebarRoster({
+  const sessions = useSidebarRoster({
     onArchiveSelected: actions.onArchiveSelected,
     onSelect: actions.onSelect,
     projectRoot,
@@ -73,6 +76,22 @@ function useRosterSessions(options: {
     selectedSessionId,
     sidebar,
   })
+  const rows = useRosterRows({
+    read,
+    search: sessions.searching ? sessions.searched : null,
+    selectedSessionId,
+    visible: sessions.visible,
+  })
+  return { ...sessions, ...rows }
+}
+
+function useUnavailableSessionId(selectedSessionId: SessionId | null) {
+  const queryClient = useQueryClient()
+  const selectedFeed = useQuery(sessionFeedQuery(queryClient, selectedSessionId, null))
+  const failedFeedReads = useConsecutiveFeedFailures(selectedSessionId, selectedFeed)
+  return failedFeedReads > 1 && selectedFeed.error?.code === 'missing-session'
+    ? selectedSessionId
+    : null
 }
 
 // The sidebar header, outcome and rows, under one named record of row actions (#2284).
@@ -86,15 +105,9 @@ export function Roster({
   selectedSessionId: SessionId | null
 }) {
   const sidebar = useRef<HTMLElement>(null)
+  const unavailableSessionId = useUnavailableSessionId(selectedSessionId)
   const read = useOrderedSessions(projectRoot)
   const sessions = useRosterSessions({ actions, projectRoot, read, selectedSessionId, sidebar })
-  const { focus, selection } = sessions
-  const { onFetchNextPage, onFetchNextSearchPage, rows } = useRosterRows({
-    read,
-    search: sessions.searching ? sessions.searched : null,
-    selectedSessionId,
-    visible: sessions.visible,
-  })
   const { renameTarget, setRenameTarget, handleRename } = useRenameDialog(
     sessions.rename,
     actions.onRename,
@@ -121,22 +134,23 @@ export function Roster({
       />
       <RosterVirtualList
         label="Sessions"
+        unavailableSessionId={unavailableSessionId}
         onArchive={sessions.archive}
         onFetchMoreSessions={read.fetchMoreSessions}
-        onFetchNextPage={onFetchNextPage}
-        onFetchNextSearchPage={onFetchNextSearchPage}
-        onFocus={focus.setFocusedSessionId}
+        onFetchNextPage={sessions.onFetchNextPage}
+        onFetchNextSearchPage={sessions.onFetchNextSearchPage}
+        onFocus={sessions.focus.setFocusedSessionId}
         onLinkTicket={actions.onLinkTicket}
         onOpenTicket={actions.onOpenTicket}
         onRename={setRenameTarget}
         onSelect={sessions.select}
-        onToggleSelect={selection.toggle}
+        onToggleSelect={sessions.selection.toggle}
         onUnlinkTicket={actions.onUnlinkTicket}
         renamedTitles={sessions.renamedTitles}
-        rows={rows}
-        selectedIds={selection.selectedIds}
+        rows={sessions.rows}
+        selectedIds={sessions.selection.selectedIds}
         selectedSessionId={selectedSessionId}
-        tabStop={focus.tabStop}
+        tabStop={sessions.focus.tabStop}
       />
       <RenameDialog onRename={handleRename} session={renameTarget} setSession={setRenameTarget} />
     </aside>

@@ -2,6 +2,89 @@ import { expect, test } from 'bun:test'
 import { managedRosterRow } from '@/domains/sessions/contract/model/models'
 import { createClaudeSdkHistorySource } from './claude-sdk-history-source'
 
+test('reads a Claude Session by native ID before its Roster page loads', async () => {
+  const source = createClaudeSdkHistorySource({
+    history: {
+      listSessions: async () => {
+        throw new Error('Roster paging is unavailable')
+      },
+      getSessionMessages: async (id) =>
+        id === 'direct-session'
+          ? [
+              {
+                type: 'user',
+                uuid: 'direct-message',
+                session_id: id,
+                message: { content: 'Open this Session directly' },
+                parent_tool_use_id: null,
+                parent_agent_id: null,
+              },
+            ]
+          : [],
+    },
+  })
+
+  const feed = await source.readObservedFeed?.('direct-session')
+  expect(feed?.rows).toContainEqual({
+    shape: 'prose',
+    id: 'direct-message',
+    role: 'user',
+    text: 'Open this Session directly',
+  })
+})
+
+test('searches Claude vendor history without growing roster pages', async () => {
+  let rosterPages = 0
+  const history = {
+    listSessions: async () => {
+      rosterPages += 1
+      return []
+    },
+    listAllSessions: async () => [
+      {
+        sessionId: 'vendor-search-match',
+        summary: 'Duplicate ticket investigation',
+        lastModified: 1,
+      },
+    ],
+    getSessionMessages: async () => [],
+  }
+  const source = createClaudeSdkHistorySource({ history })
+
+  const matches = await source.searchSessions?.('Duplicate')
+  expect(matches?.map((row) => row.id)).toEqual(['vendor-search-match'])
+  expect(rosterPages).toBe(0)
+  expect(await source.historyComplete?.()).toBe(true)
+})
+
+test('reports missing history when a listed watched Session disappears from Claude', async () => {
+  const source = createClaudeSdkHistorySource({
+    history: {
+      listSessions: async () => [{ sessionId: 'removed-session', summary: '', lastModified: 1 }],
+      getSessionInfo: async () => undefined,
+      getSessionMessages: async () => [],
+    },
+  })
+  const listed = await source.discoverSessions()
+  expect(listed.rows.map((row) => row.id)).toEqual(['removed-session'])
+
+  expect(await source.readObservedFeed?.('removed-session')).toBeNull()
+})
+
+test('rejects an unknown Claude Session before reading its messages', async () => {
+  const source = createClaudeSdkHistorySource({
+    history: {
+      listSessions: async () => [],
+      getSessionInfo: async () => undefined,
+      getSessionMessages: async () => {
+        throw new Error('No transcript for this Session')
+      },
+    },
+  })
+
+  expect(await source.readObservedFeed?.('not-a-session')).toBeNull()
+})
+
 test('adds a watched Claude SDK Session and its vendor history to the roster', async () => {
   const source = createClaudeSdkHistorySource({
     history: {
@@ -56,6 +139,42 @@ test('adds a watched Claude SDK Session and its vendor history to the roster', a
     role: 'assistant',
     text: 'SDK block reply',
   })
+})
+
+test('updates a Claude Feed when vendor messages grow between Roster reads', async () => {
+  let messages = [
+    {
+      type: 'user' as const,
+      uuid: 'first-message',
+      session_id: 'claude-growing',
+      message: { content: 'First turn' },
+      parent_tool_use_id: null,
+      parent_agent_id: null,
+    },
+  ]
+  const source = createClaudeSdkHistorySource({
+    history: {
+      listSessions: async () => [{ sessionId: 'claude-growing', summary: '', lastModified: 1 }],
+      getSessionMessages: async () => messages,
+    },
+  })
+  await source.discoverSessions()
+  const first = await source.readObservedFeed?.('claude-growing')
+  messages = [
+    ...messages,
+    {
+      type: 'user',
+      uuid: 'second-message',
+      session_id: 'claude-growing',
+      message: { content: 'Second turn' },
+      parent_tool_use_id: null,
+      parent_agent_id: null,
+    },
+  ]
+  const second = await source.readObservedFeed?.('claude-growing')
+
+  expect(second?.revision).not.toBe(first?.revision)
+  expect(second?.rows.map((row) => row.id)).toEqual(['first-message', 'second-message'])
 })
 
 test('lists Claude Sessions without waiting for their message histories', async () => {
@@ -145,6 +264,8 @@ test('keeps watched history while a resumed Claude Session has a new managed nat
     ],
   })
 
+  const pending = await source.readObservedFeed?.('managed-id')
+  expect(pending?.rows).toEqual([])
   const listed = await source.discoverSessions()
 
   expect(listed.rows).toMatchObject([

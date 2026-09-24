@@ -151,6 +151,50 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof RosterHarness>
 
+let recoverMissingHistory = () => {}
+
+export const UnavailableHistoryRecovers: Story = {
+  args: { selectedSessionId: session.id },
+  beforeEach: () => {
+    const before = window.argo
+    let historyAvailable = false
+    recoverMissingHistory = () => {
+      historyAvailable = true
+    }
+    window.argo = {
+      ...before,
+      listSessions: async () => listedReply(listed),
+      readSessionFeed: async (request) =>
+        historyAvailable
+          ? {
+              version: 1,
+              type: 'session.feed.read',
+              requestId: 'storybook-feed',
+              sessionId: request.sessionId,
+              chainId: request.sessionId,
+              revision: 'recovered',
+              rows: [],
+            }
+          : { ...readFailure, code: 'missing-session' },
+    }
+    return () => {
+      window.argo = before
+    }
+  },
+  play: async ({ canvasElement }) => {
+    const row = await within(canvasElement).findByRole('button', {
+      name: /Read the Session transcript/,
+    })
+    await waitFor(() => expect(row).toHaveAttribute('data-history-unavailable', 'true'), {
+      timeout: 5000,
+    })
+    await expect(row).toHaveTextContent('Unavailable')
+    recoverMissingHistory()
+    await waitFor(() => expect(row).toHaveAttribute('data-history-unavailable', 'false'))
+    await expect(row).not.toHaveTextContent('Unavailable')
+  },
+}
+
 export const Discovered: Story = {
   render: (args) => <RoutedRoster {...args} />,
   // The trailing search interaction below reads through `window.argo.searchSessions` (#2375), not
