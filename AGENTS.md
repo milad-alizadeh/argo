@@ -8,8 +8,7 @@ Argo contains the skills bundle and the Electron cockpit in `apps/desktop`.
 - For `apps/desktop` changes, read `apps/desktop/AGENTS.md` before editing.
 - For issue work, use `gh`; read `docs/agents/issue-tracker.md`. For triage, also read
   `docs/agents/triage-labels.md`. Label an issue in its `gh issue create` call.
-- For domain terms, read `docs/agents/domain.md` and `CONTEXT.md`. Use the model's words;
-  consult `docs/domain/rationale.md` before changing a term.
+- For domain terms, read `docs/agents/domain.md` and `CONTEXT.md`. Use the model's words.
 - For decisions, read the relevant `docs/adr/` files. Name any ADR your change contradicts.
 - Before editing hooks, read the `$comment` fields in `hooks.json`.
 - Before adding, removing, or renaming a skill, read `packages/argo-skills/README.md`.
@@ -48,8 +47,7 @@ For a Swift change, state in the PR body whether it was checked by hand;
 - Keep one source of truth. Add no knob, layer, or hook without a current need.
 - Write Node scripts as `.mts`, apart from the exceptions in `biome.jsonc`.
 
-When adding or moving modules, read `docs/agents/module-design.md`. When writing
-tests or fixing a bug, read `docs/agents/testing.md`.
+When writing tests or fixing a bug, read `docs/agents/testing.md`.
 
 Keep comments to one line unless a falsifiable fact needs more. Cut history and
 restatements; a bare issue number is enough for an issue reference.
