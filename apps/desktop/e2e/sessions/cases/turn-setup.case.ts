@@ -99,9 +99,7 @@ export async function proveLiveCodexModelChoices(page) {
   await expect(
     page.getByRole('radiogroup', { name: 'Model' }).getByRole('radio', { name: /Sonnet/ }),
   ).toBeVisible()
-  await expect(
-    page.getByRole('radiogroup', { name: 'Model' }).getByRole('radio'),
-  ).toHaveCount(4)
+  await expect(page.getByRole('radiogroup', { name: 'Model' }).getByRole('radio')).toHaveCount(4)
   await expect(
     page.getByRole('radiogroup', { name: 'Model' }).getByRole('radio', { name: 'Opus 5' }),
   ).toBeVisible()
