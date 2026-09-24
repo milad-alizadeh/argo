@@ -347,6 +347,14 @@ type ExecutableCheckFailure = {
   detail: string
   reject: (error: Error) => void
 }
+
+function checkedOutput(event: unknown): RequestEvent | ExecutableCheckFailure | null {
+  if (typeof event !== 'object' || event === null || !('output' in event)) return null
+  const output = event.output
+  return typeof output === 'object' && output !== null && 'type' in output
+    ? (output as RequestEvent | ExecutableCheckFailure)
+    : null
+}
 type ProcessCommand =
   | {
       type: 'Open'
@@ -625,6 +633,21 @@ export const codexAppServerMachine = setup({
     readyVersionMatches: ({ context, event }) =>
       event.type === 'Process ready' &&
       (context.expectedVersion === null || context.expectedVersion === event.version),
+    checkedFailure: ({ event }) => checkedOutput(event)?.type === 'Executable check failed',
+    checkedMissingExecutable: ({ event }) => {
+      const output = checkedOutput(event)
+      return output?.type === 'Request' && output.executable === null
+    },
+    checkedSameExecutable: ({ context, event }) => {
+      const output = checkedOutput(event)
+      return (
+        output?.type === 'Request' &&
+        output.executable !== null &&
+        context.executable === output.executable &&
+        context.version !== null &&
+        context.version === output.version
+      )
+    },
   },
   actions: {
     openProcess: sendTo('processActor', ({ context }) => ({
@@ -776,10 +799,27 @@ export const codexAppServerMachine = setup({
               if (event.type !== 'Call') throw new Error('Expected a Codex app-server call.')
               return event
             },
-            onDone: {
-              target: 'Unavailable',
-              actions: raise(({ event }) => event.output),
-            },
+            onDone: [
+              {
+                guard: 'checkedFailure',
+                target: 'Unavailable',
+                actions: raise(({ event }) => event.output),
+              },
+              {
+                guard: 'checkedMissingExecutable',
+                target: 'Unavailable',
+                actions: raise(({ event }) => event.output),
+              },
+              {
+                guard: 'checkedSameExecutable',
+                target: 'Connected.Ready',
+                actions: raise(({ event }) => event.output),
+              },
+              {
+                target: 'Connected.Starting',
+                actions: raise(({ event }) => event.output),
+              },
+            ],
           },
           on: {
             Call: {

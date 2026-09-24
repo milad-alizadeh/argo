@@ -156,6 +156,52 @@ test('restarts when the executable version changes', () => {
   }
 })
 
+test('dispatches a same-version call without restarting the ready process', async () => {
+  const commands: string[] = []
+  const machine = codexAppServerMachine.provide({
+    actors: {
+      processActor: fromCallback(({ receive }) =>
+        receive((command) => {
+          commands.push(command.type)
+          if (command.type === 'Dispatch') command.request.run({} as CodexChannel)
+        }),
+      ),
+      discoverExecutable: fromPromise(({ input }) =>
+        Promise.resolve({
+          type: 'Request' as const,
+          executable: 'codex',
+          version: '0.147.0',
+          run: input.run,
+          reject: input.reject,
+        }),
+      ),
+    },
+  })
+  const actor = createActor(machine, { input: { executable: 'codex' } }).start()
+  try {
+    actor.send({ type: 'Process ready', version: '0.147.0' })
+    await waitFor(actor, (snapshot) => snapshot.matches({ Active: { Connected: 'Ready' } }))
+    commands.length = 0
+    let dispatched = false
+    actor.send({
+      type: 'Call',
+      run: () => {
+        dispatched = true
+      },
+      reject: assert.fail,
+    })
+    await waitFor(actor, (snapshot) => snapshot.matches({ Active: { Connected: 'Ready' } }))
+    assert.equal(dispatched, true)
+    assert.ok(commands.includes('Dispatch'))
+    assert.equal(
+      commands.some((command) => command === 'Open' || command === 'Close'),
+      false,
+    )
+  } finally {
+    actor.stop()
+  }
+})
+
 test('rejects waiting requests when the app-server actor stops', () => {
   const machine = codexAppServerMachine.provide({
     actors: { processActor: codexAppServerProcessActor },
