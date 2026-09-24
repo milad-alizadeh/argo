@@ -25,7 +25,10 @@ import {
 import { writeDevelopmentReady } from '@/platform/main/development/ready'
 import { resetIncompleteDevelopmentDatabase } from '@/platform/main/development/reset-incomplete-database'
 import { installMenu } from '@/platform/main/menu'
+import { attachWindowNavigation } from '@/platform/main/security/window-navigation'
 import { configureStorageRuntime } from '@/platform/main/storage/storage-runtime'
+import { appRouter } from '@/platform/main/trpc-router'
+import { attachTrpcTransport } from '@/platform/main/trpc-transport'
 import { createDesktopWindow } from '@/platform/main/window/create-window'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mts'
 
@@ -91,7 +94,7 @@ function createWindow(): void {
     appData: app.getPath('appData'),
     instance: DEVELOPMENT_INSTANCE,
   })
-  const { close } = openDurableStores(projectData, !ACCEPTANCE_ENABLED)
+  const stores = openDurableStores(projectData, !ACCEPTANCE_ENABLED)
   createDesktopWindow({
     buildDirectory: __dirname,
     rendererName: MAIN_WINDOW_VITE_NAME,
@@ -108,9 +111,19 @@ function createWindow(): void {
           }),
         ]
       : undefined,
-    attach: (window) => {
+    attach: (window, rendererURL) => {
+      attachWindowNavigation(window)
+      const detachTrpc = attachTrpcTransport({
+        window,
+        rendererURL,
+        router: appRouter,
+        context: { database: stores.database },
+      })
       attachAppearanceWatch(window)
-      window.once('closed', close)
+      window.once('closed', () => {
+        detachTrpc()
+        stores.close()
+      })
       installMenu(window)
     },
     loaded: (window) => {
