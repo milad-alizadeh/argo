@@ -1,14 +1,13 @@
 // A screen is a thin container: it resolves state here, and SessionScreenView hands a pure render
 // surface the result.
+
 import { useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 
 import { useProjects } from '@/domains/projects/renderer'
 import { useComposerStore } from '../composer/hooks/use-composer-store'
-import { useSessionComposer } from '../composer/hooks/use-session-composer'
 import { useSessionPermission } from '../composer/hooks/use-session-permission'
 import { useSessionQuestion } from '../composer/hooks/use-session-question'
-import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
 import { readableSessionId } from '../session-creation'
 import type { SessionEvidence, SessionFeedRow } from '../types'
@@ -55,7 +54,6 @@ function useWorkArtifacts({
 
 export function useSessionScreenModel() {
   const { sessionId } = useParams()
-  const location = useLocation()
   const navigate = useNavigate()
   const [cockpit, projectActions] = useProjects()
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
@@ -69,15 +67,6 @@ export function useSessionScreenModel() {
   const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
   const session = useSelectedSession(selectedSessionId, roster)
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
-  const composer = useSessionComposer({
-    harness: harness.harness,
-    cockpit,
-    projectActions,
-    focusOnMount: location.state === COMPOSER_FOCUS_STATE,
-    navigate,
-    roster,
-    selectedSessionId,
-  })
   // Ask only real Session ids; an optimistic Roster row has no backend record yet (#2109).
   const permission = useSessionPermission(readableSessionId(selectedSessionId)),
     question = useSessionQuestion(readableSessionId(selectedSessionId))
@@ -100,7 +89,8 @@ export function useSessionScreenModel() {
     evidence,
     setEvidence,
     harness,
-    composer,
+    cockpit,
+    projectActions,
     permission,
     question,
     work,

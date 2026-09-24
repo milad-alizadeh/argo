@@ -11,6 +11,7 @@ import {
   ATTACHMENT_SCHEME,
   attachmentPathFromUrl,
 } from '@/domains/sessions/contract/model/feed/feed-images'
+import { stopHarnessCatalog } from '@/harnesses/catalog/runtime'
 import { openDurableStores } from '@/main/durable-stores'
 import { attachAppearanceWatch } from '@/platform/main/appearance'
 import { startDesktopApplication } from '@/platform/main/application/start'
@@ -130,7 +131,7 @@ function createWindow(): void {
         window,
         rendererURL,
         router: appRouter,
-        context: { database: stores.database },
+        context: undefined,
       })
       attachAppearanceWatch(window)
       window.once('closed', () => {
@@ -187,6 +188,7 @@ startDesktopApplication({
   ready,
   focusExistingWindow: focusWindow,
   willQuit: () => {
+    stopHarnessCatalog()
     if (DEVELOPMENT_INSTANCE) void rm(DEVELOPMENT_INSTANCE.readyFile, { force: true })
     if (acceptanceUserData) void rm(acceptanceUserData, { recursive: true, force: true })
   },

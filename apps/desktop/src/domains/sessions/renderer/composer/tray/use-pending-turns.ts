@@ -15,7 +15,7 @@ export function usePendingTurns({
   sessionId,
 }: {
   isRunning: boolean
-  onSend: Send
+  onSend?: Send
   onSteer?: (text: string, attachments: SessionAttachmentInput[]) => Promise<boolean>
   sessionId: string
 }) {
@@ -55,7 +55,7 @@ export function usePendingTurns({
     const becameIdle = wasRunning.current && !isRunning
     wasRunning.current = isRunning
     const nextTurn = pendingTurns[0]
-    if (!becameIdle || !nextTurn) return
+    if (!becameIdle || !nextTurn || onSend === undefined) return
     void onSend(nextTurn.text, nextTurn.setup ?? null, nextTurn.attachments).then((sent) => {
       if (sent) removePendingTurn(nextTurn.id)
     })

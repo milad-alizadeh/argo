@@ -39,7 +39,7 @@ type ComposerCardProps = {
   plan: SessionPlan | null
   sessionId: string
   setup: TurnSetupControlProps | null
-  catalogState?: { catalogError: boolean; refreshCatalog?: () => void }
+  catalogState?: { catalogError: boolean; refreshCatalog?: () => void; sendAvailable?: boolean }
   workspace: WorkspaceMenuControlProps | null
 }
 
@@ -76,6 +76,7 @@ function CardToolbar(
     <ComposerToolbar
       attachments={props.attachments}
       disabled={props.disabled}
+      sendAvailable={props.catalogState?.sendAvailable}
       draft={props.draft}
       harness={props.harness}
       interruptRef={props.interruptRef}

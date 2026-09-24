@@ -2,7 +2,6 @@ export { SessionComposer } from './editor'
 export {
   type ComposerTicketContext,
   useComposerStore,
-  useSessionComposer,
   useSessionPermission,
   useSessionQuestion,
 } from './hooks'

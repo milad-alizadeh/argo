@@ -6,7 +6,7 @@ import { useSessionComposerState } from './use-session-composer-state'
 type ComposerOptions = {
   identity: string
   isRunning: boolean
-  send: Send
+  send?: Send
   steer?: (text: string, attachments: SessionAttachmentInput[]) => Promise<boolean>
   setup: TurnSetupControlProps | null
 }

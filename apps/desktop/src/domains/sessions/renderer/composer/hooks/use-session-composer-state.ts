@@ -74,7 +74,7 @@ export function useSessionComposerState({
   setup,
 }: {
   isRunning: boolean
-  onSend: Send
+  onSend?: Send
   onSteer?: (text: string, attachments: SessionAttachmentInput[]) => Promise<boolean>
   sessionId: string
   setup: TurnSetupControlProps | null
@@ -86,7 +86,8 @@ export function useSessionComposerState({
   const onEdit = useEditPendingTurn(editorRef, changeDraft, setup)
   const sendPendingTurn: Send = useCallback(
     (text, turnSetup, pendingAttachments) =>
-      onSend(text, turnSetupOf(setup, turnSetup ?? undefined), pendingAttachments),
+      onSend?.(text, turnSetupOf(setup, turnSetup ?? undefined), pendingAttachments) ??
+      Promise.resolve(false),
     [onSend, setup],
   )
   const { addPendingTurn, pendingTurns, removePendingTurn, reorderPendingTurn, steerPendingTurn } =

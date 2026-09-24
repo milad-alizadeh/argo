@@ -1,11 +1,10 @@
 import { callTRPCProcedure, getTRPCErrorShape, TRPCError } from '@trpc/server'
 import { type BrowserWindow, ipcMain } from 'electron'
-import type { SessionRouterContext } from '@/domains/sessions/main/session-router'
 import { TRPC_CHANNEL, trpcRequestSchema } from '@/platform/contract/trpc'
 import { isTrustedRendererFrame } from './security/is-trusted-renderer-frame'
 import type { AppRouter } from './trpc-router'
 
-type Context = SessionRouterContext
+type Context = undefined
 
 export function attachTrpcTransport(request: {
   window: BrowserWindow

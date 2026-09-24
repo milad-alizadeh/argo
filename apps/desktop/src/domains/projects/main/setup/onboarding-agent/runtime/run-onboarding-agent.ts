@@ -1,6 +1,5 @@
-// Runs one onboarding turn (planning or application) against the app's real, already-composed
-// Claude Session driver (see harnesses/composition/session-bridges.ts) — the same driver that
-// drives ordinary managed Sessions. ADR-0024 rules out `claude -p`/Agent SDK for billing reasons,
+// Runs one onboarding turn (planning or application) against the app's configured Claude driver.
+// ADR-0024 rules out `claude -p`/Agent SDK for billing reasons,
 // so this stays on the interactive subscription path: it starts a normal managed Session, feeds
 // it one prompt, and reads its streamed output until the prompt's own completion marker appears.
 import type { ClaudeTurnSetup } from '@/domains/sessions/contract/claude-turn-setup'

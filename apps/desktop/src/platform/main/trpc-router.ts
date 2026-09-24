@@ -1,8 +1,12 @@
 import { initTRPC } from '@trpc/server'
-import { type SessionRouterContext, sessionRouter } from '@/domains/sessions/main/session-router'
+import { catalogSnapshotProcedure } from '@/harnesses/catalog/catalog-snapshot'
+import { harnessCatalogActor } from '@/harnesses/catalog/runtime'
 
-const t = initTRPC.context<SessionRouterContext>().create()
+const t = initTRPC.create()
 
-export const appRouter = t.router({ sessions: sessionRouter })
+export function createAppRouter(actor: typeof harnessCatalogActor) {
+  return t.router({ harnessCatalogSnapshot: catalogSnapshotProcedure(actor) })
+}
 
+export const appRouter = createAppRouter(harnessCatalogActor)
 export type AppRouter = typeof appRouter

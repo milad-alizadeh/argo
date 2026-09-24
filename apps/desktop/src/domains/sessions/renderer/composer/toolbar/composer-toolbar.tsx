@@ -29,6 +29,7 @@ export function ComposerToolbar({
   draft,
   attachments,
   disabled = false,
+  sendAvailable = true,
   onOpenContextPicker,
   harness,
   setup,
@@ -42,6 +43,7 @@ export function ComposerToolbar({
   draft: string
   attachments: ComposerAttachment[]
   disabled?: boolean
+  sendAvailable?: boolean
   onOpenContextPicker: () => void
   harness: HarnessControl | null
   setup: TurnSetupControlProps | null
@@ -86,7 +88,7 @@ export function ComposerToolbar({
         ) : (
           <Button
             aria-label={t('composer.sendMessage')}
-            disabled={disabled || (!draft.trim() && attachments.length === 0)}
+            disabled={disabled || !sendAvailable || (!draft.trim() && attachments.length === 0)}
             size="icon-sm"
             type="submit"
           >

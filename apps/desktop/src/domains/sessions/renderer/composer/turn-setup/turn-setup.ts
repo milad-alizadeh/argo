@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import type { SessionSetup } from '@/domains/sessions/contract/model/models'
+import type { AvailableHarness, CatalogReading } from '@/harnesses/catalog/harness-catalog-machine'
 import type { IconName } from '@/platform/renderer/components/icon/icon'
 import { type ComposerIdentity, composerIdentityKey } from '../identity/composer-identity'
 
@@ -17,7 +18,7 @@ export type SetupChoice = {
   value: string
   label: string
   detail?: string
-  reads: (reading: string) => boolean
+  readings: CatalogReading
   efforts?: readonly string[]
   supportedModes?: readonly string[]
   defaultEffort?: string
@@ -25,14 +26,10 @@ export type SetupChoice = {
 export type ModeChoice = SetupChoice & { detail: string; icon: IconName }
 
 // What one adapter lets a person set; an adapter that declares none draws no control.
-export type TurnSetupChoices = {
-  agent: string
-  label: string
-  models: SetupChoice[]
-  efforts: SetupChoice[]
-  modes: ModeChoice[]
-  opening: TurnSetup
-}
+export type TurnSetupChoices = Pick<
+  AvailableHarness,
+  'agent' | 'label' | 'models' | 'efforts' | 'modes' | 'opening'
+>
 
 const FIELDS = ['model', 'effort', 'mode'] as const
 type SetupField = (typeof FIELDS)[number]
@@ -65,7 +62,11 @@ function choiceRead(
   const { field, reading, model } = request
   return reading === null
     ? undefined
-    : fieldChoices(choices, field, model).find((choice) => choice.reads(reading))
+    : fieldChoices(choices, field, model).find(
+        (choice) =>
+          choice.readings.exact.includes(reading) ||
+          choice.readings.prefixes.some((prefix) => reading.startsWith(prefix)),
+      )
 }
 
 export function choiceLabel(

@@ -5,12 +5,12 @@ import type { SessionPlan } from '@/domains/sessions/contract/model'
 import { claudeComposerModelCatalogFixture } from '../../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
 import type { SessionHarness } from '../../harness/harnesses'
 import { useComposerStore } from '../hooks'
-import { claudeTurnSetup } from '../turn-setup/claude-turn-setup'
+import { claudeChoices } from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
 import type { TurnSetupChoices } from '../turn-setup/turn-setup'
 import { SessionComposer } from './session-composer'
 
 const CLAUDE_TURN_SETUP = (() => {
-  const choices = claudeTurnSetup(claudeComposerModelCatalogFixture())
+  const choices = claudeChoices(claudeComposerModelCatalogFixture())
   if (choices === null) throw new Error('The Claude story catalog has no usable model.')
   return choices
 })() satisfies TurnSetupChoices

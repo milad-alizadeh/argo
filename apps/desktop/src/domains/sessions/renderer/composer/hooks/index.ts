@@ -1,6 +1,4 @@
 export { useComposer } from './use-composer'
-export { managedSessionIsRunning, useComposerActions } from './use-composer-actions'
-export { useComposerFacts } from './use-composer-facts'
 export {
   type ComposerAttachment,
   type ComposerState,
@@ -9,9 +7,7 @@ export {
   useComposerStore,
 } from './use-composer-store'
 export type { Send, SendOutcome } from './use-send'
-export { useSessionComposer } from './use-session-composer'
 export { useSessionComposerState } from './use-session-composer-state'
-export { useSessionMutations } from './use-session-mutations'
 export { useSessionPermission } from './use-session-permission'
 export { useSessionQuestion } from './use-session-question'
 export type { TurnMarkerApi } from './use-turn-marker'

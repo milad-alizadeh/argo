@@ -5,7 +5,7 @@ import {
   claudeModelsWithEffort,
   claudePermissionModes,
   claudePermissionModesForModel,
-} from './claude-model-catalog'
+} from '@/harnesses/claude/catalog'
 
 const claudeSelectedTurnSetupSchema = z.strictObject({
   model: z.string().min(1),

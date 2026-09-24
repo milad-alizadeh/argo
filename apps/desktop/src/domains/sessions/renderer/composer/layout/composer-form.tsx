@@ -30,6 +30,7 @@ type ComposerFormProps = {
   tickets: ComposerTicketContext[]
   contextPickerOpen: boolean
   disabled?: boolean
+  sendAvailable?: boolean
   draft: string
   editorRef: RefObject<LexicalEditor | null>
   focusOnMount: boolean
@@ -68,6 +69,7 @@ export function ComposerForm({
   tickets,
   contextPickerOpen,
   disabled = false,
+  sendAvailable = true,
   draft,
   editorRef,
   focusOnMount,
@@ -145,7 +147,7 @@ export function ComposerForm({
         plan={plan}
         sessionId={sessionId}
         setup={setup}
-        catalogState={{ catalogError, refreshCatalog }}
+        catalogState={{ catalogError, refreshCatalog, sendAvailable }}
         workspace={workspace}
         tickets={tickets}
         onContextPickerOpenChange={onContextPickerOpenChange}

@@ -22,7 +22,7 @@ export type SessionComposerProps = {
   onHandoff?: () => Promise<boolean>
   onInterrupt?: () => Promise<boolean>
   sessionId: string
-  onSend: Send
+  onSend?: Send
   onSteer?: (text: string, attachments: SessionAttachmentInput[]) => Promise<boolean>
   permissionPrompt?: ReactNode
   plan?: SessionPlan | null
@@ -87,8 +87,9 @@ export function SessionComposer({
       onRemoveAttachment={state.removeAttachment}
       onReorder={state.reorderPendingTurn}
       onSend={() => {
-        if (!disabled) void state.send()
+        if (!disabled && onSend) void state.send()
       }}
+      sendAvailable={onSend !== undefined}
       pendingTurns={state.pendingTurns}
       permissionPrompt={permissionPrompt}
       plan={plan}

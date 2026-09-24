@@ -34,7 +34,7 @@ export async function performSend(input: {
     attachments: SessionAttachmentInput[],
   ) => void
   editor: LexicalEditor | null
-  onSend: Send
+  onSend?: Send
   setupValue: TurnSetup | null | undefined
   clearDraft: (editor?: LexicalEditor | null) => void
   restoreDraft: (text: string, editor?: LexicalEditor | null) => void
@@ -42,7 +42,7 @@ export async function performSend(input: {
 }) {
   const { draft, attachments, markError, isRunning, addPendingTurn, editor, onSend } = input
   const { setupValue, clearDraft, clear } = input
-  if (!draft.trim() && attachments.length === 0) return
+  if (onSend === undefined || (!draft.trim() && attachments.length === 0)) return
   const resolved = await resolveAttachments(draft, attachments, markError)
   if (!resolved.prompt.trim() && resolved.attachments.length === 0) return
   if (isRunning) {
@@ -79,7 +79,7 @@ export function useSend(input: {
     setup: TurnSetup | undefined,
     attachments: SessionAttachmentInput[],
   ) => void
-  onSend: Send
+  onSend?: Send
   setupValue: TurnSetup | null | undefined
 }) {
   const { editorRef, draft, attachments, clear, clearDraft, isRunning, restoreDraft } = input

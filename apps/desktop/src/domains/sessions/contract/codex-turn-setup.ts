@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { CodexModelCatalog } from './codex-model-catalog'
+import type { CodexModelCatalog } from '@/harnesses/codex/catalog'
 
 export const CODEX_MODES = ['read-only', 'workspace-write', 'danger-full-access'] as const
 

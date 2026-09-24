@@ -10,7 +10,11 @@ const electronLink: TRPCLink<AppRouter> =
   ({ op }) =>
     observable((observer) => {
       if (op.type === 'subscription') {
-        observer.error(new Error('tRPC subscriptions are not available on the Electron transport.'))
+        observer.error(
+          TRPCClientError.from<AppRouter>(
+            new Error('tRPC subscriptions are not available on the Electron transport.'),
+          ),
+        )
         return
       }
       const request: TrpcRequest = { id: op.id, path: op.path, type: op.type, input: op.input }

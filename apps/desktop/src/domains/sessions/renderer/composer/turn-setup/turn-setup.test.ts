@@ -1,15 +1,11 @@
 import { expect, test } from 'bun:test'
-import type { ModelInfo } from '@anthropic-ai/claude-agent-sdk'
-import { claudeModelCatalogSchema } from '@/domains/sessions/contract/claude-model-catalog'
+import { claudeModelCatalogSchema } from '@/harnesses/claude/catalog'
 import { claudeTurnSetupSchemaFor } from '@/domains/sessions/contract/claude-turn-setup'
 import { codexTurnSetupSchemaFor } from '@/domains/sessions/contract/codex-turn-setup'
 import { claudeTurnSetupSchema } from '@/domains/sessions/contract/ipc/contract'
-import { ClaudeModelCatalogCache } from '@/harnesses/claude/agent-sdk/model-catalog'
-import { CodexModelCatalogCache } from '@/harnesses/codex/drive/protocol/model-catalog'
 import { claudeModelCatalogFixture } from '../../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
 import { codexModelCatalogFixture } from '../../../../../../test-fixtures/sessions/codex-model-catalog.fixture'
-import { claudeTurnSetup } from './claude-turn-setup'
-import { codexTurnSetup } from './codex-turn-setup'
+import { claudeChoices, codexChoices } from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
 import {
   refusalOf,
   resolvedTurnSetup,
@@ -18,15 +14,8 @@ import {
   turnSettled,
 } from './turn-setup'
 
-const recordedCodexCatalog: unknown = await Bun.file(
-  new URL(
-    '../../../../../../mocks/cli/codex/fixtures/model-list-codex-0.147.0.json',
-    import.meta.url,
-  ),
-).json()
-
 const requested = { model: 'opus', effort: 'max', mode: 'bypassPermissions' }
-const CLAUDE_TURN_SETUP = claudeTurnSetup({
+const CLAUDE_TURN_SETUP = claudeChoices({
   supportedPermissionModes: [
     'manual',
     'acceptEdits',
@@ -112,7 +101,7 @@ test('names a model Argo does not offer verbatim and keeps the choice it cannot 
 })
 
 test('offers no Claude setup before a live model catalog is available', () => {
-  expect(claudeTurnSetup(null)).toBe(null)
+  expect(claudeChoices(null)).toBe(null)
   expect(claudeTurnSetupSchema.safeParse(undefined).success).toBe(false)
   expect(claudeTurnSetupSchemaFor(null).safeParse(undefined).success).toBe(true)
   expect(
@@ -135,7 +124,7 @@ test('offers no Claude setup when the live catalog has no model with a supported
       },
     ],
   }
-  expect(claudeTurnSetup(catalog)).toBe(null)
+  expect(claudeChoices(catalog)).toBe(null)
   expect(
     claudeTurnSetupSchemaFor(catalog).safeParse({
       model: 'sonnet',
@@ -147,7 +136,7 @@ test('offers no Claude setup when the live catalog has no model with a supported
 
 test('uses the live Claude catalog for composer choices and setup validation', () => {
   const catalog = claudeModelCatalogFixture()
-  const choices = claudeTurnSetup(catalog)
+  const choices = claudeChoices(catalog)
   if (choices === null) throw new Error('The mock Claude catalog has no usable model.')
   expect(choices.models.map(({ value }) => value)).toEqual(['sonnet-live'])
   expect(choices.models[0]?.efforts).toEqual(['low', 'high'])
@@ -175,7 +164,7 @@ test('accepts effort values supplied by the Claude model catalog', () => {
   })
   expect(parsed.success).toBe(true)
   if (!parsed.success) throw new Error('The Claude model catalog rejected its advertised effort.')
-  const choices = claudeTurnSetup(parsed.data)
+  const choices = claudeChoices(parsed.data)
   if (choices === null) throw new Error('The Claude catalog has no usable model.')
   expect(choices.models[0]?.efforts).toEqual(['ultra'])
   expect(
@@ -200,7 +189,7 @@ test('accepts permission modes supplied by the Claude CLI', () => {
       },
     ],
   }
-  const choices = claudeTurnSetup(catalog)
+  const choices = claudeChoices(catalog)
   if (choices === null) throw new Error('The Claude catalog has no usable choices.')
   expect(choices.modes.map(({ value }) => value)).toEqual(['workspaceAudit'])
   expect(
@@ -212,63 +201,9 @@ test('accepts permission modes supplied by the Claude CLI', () => {
   ).toBe(true)
 })
 
-test('omits auto mode for a Claude model that does not support it', async () => {
-  const catalog = await new ClaudeModelCatalogCache().get(
-    { executablePath: '/claude', version: '2.1.1' },
-    async () => ({
-      permissionModes: ['manual', 'auto'],
-      models: [
-        {
-          value: 'sonnet-no-auto',
-          displayName: 'Sonnet without auto mode',
-          description: '',
-          supportedEffortLevels: ['low'],
-          supportsAutoMode: false,
-        } satisfies ModelInfo,
-      ],
-    }),
-  )
-  if (catalog === null) throw new Error('The SDK returned no usable model catalog.')
-  const choices = claudeTurnSetup(catalog)
-  if (choices === null) throw new Error('The Claude catalog has no usable choices.')
-  expect(
-    claudeTurnSetupSchemaFor(catalog).safeParse({
-      model: 'sonnet-no-auto',
-      effort: 'low',
-      mode: 'auto',
-    }).success,
-  ).toBe(false)
-  expect(choices.models[0]?.supportedModes).toEqual(['manual'])
-  expect(
-    supportedSetup(
-      choices,
-      { model: 'sonnet-no-auto', effort: 'low', mode: 'auto' },
-      choices.opening,
-    ),
-  ).toEqual({ model: 'sonnet-no-auto', effort: 'low', mode: 'manual' })
-})
-
-test('a mockable SDK model query reaches Claude model and effort choices', async () => {
-  const cache = new ClaudeModelCatalogCache()
-  const catalog = await cache.get({ executablePath: '/claude', version: '2.1.1' }, async () => ({
-    models: [
-      {
-        value: 'sonnet-query',
-        displayName: 'Sonnet Query',
-        description: 'Queried from the SDK',
-        supportedEffortLevels: ['low', 'high'],
-      } satisfies ModelInfo,
-    ],
-    permissionModes: ['manual'],
-  }))
-  const choices = claudeTurnSetup(catalog)
-  expect(choices.models.map(({ value }) => value)).toEqual(['sonnet-query'])
-  expect(choices.models[0]?.efforts).toEqual(['low', 'high'])
-})
-
 test('advertised models and efforts become the Codex composer choices and schema rules', () => {
   const catalog = codexModelCatalogFixture()
-  const choices = codexTurnSetup(catalog)
+  const choices = codexChoices(catalog)
   expect(choices.models.map(({ value }) => value)).toEqual(['gpt-live'])
   expect(choices.models[0]?.efforts).toEqual(['focused'])
   expect(choices.opening).toEqual({
@@ -286,7 +221,7 @@ test('advertised models and efforts become the Codex composer choices and schema
 })
 
 test('offers no Codex setup while the live model catalog is unavailable', () => {
-  expect(codexTurnSetup(null)).toBe(null)
+  expect(codexChoices(null)).toBe(null)
   expect(
     codexTurnSetupSchemaFor(null).safeParse({
       model: 'unverified-model',
@@ -296,32 +231,9 @@ test('offers no Codex setup while the live model catalog is unavailable', () => 
   ).toBe(false)
 })
 
-test('a mocked app-server catalog request reaches the composer choices', async () => {
-  const cache = new CodexModelCatalogCache()
-  const catalog = await cache.get(
-    { executablePath: '/codex', version: 'codex-cli 0.147.0' },
-    async (_params, decode) => decode(recordedCodexCatalog),
-  )
-  const choices = codexTurnSetup(catalog)
-  expect(choices.models.map(({ value }) => value)).toEqual([
-    'gpt-5.6-sol',
-    'gpt-5.6-terra',
-    'gpt-5.6-luna',
-    'gpt-5.5',
-    'gpt-5.2',
-  ])
-  expect(choices.models.find(({ value }) => value === 'gpt-5.6-luna')?.efforts).toEqual([
-    'low',
-    'medium',
-    'high',
-    'xhigh',
-    'max',
-  ])
-})
-
 test('replaces an explicit model and effort removed by a live catalog refresh', () => {
   const identity = { kind: 'draft', projectId: 'project-1' } as const
-  const choices = codexTurnSetup({
+  const choices = codexChoices({
     data: [
       {
         id: 'gpt-current',

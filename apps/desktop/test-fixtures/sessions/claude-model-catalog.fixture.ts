@@ -1,4 +1,4 @@
-import type { ClaudeModelCatalog } from '@/domains/sessions/contract/claude-model-catalog'
+import type { ClaudeModelCatalog } from '@/harnesses/claude/catalog'
 
 export function claudeModelCatalogFixture(): ClaudeModelCatalog {
   return {

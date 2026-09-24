@@ -1,25 +1,25 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
-import type { ClaudeModelCatalog } from '@/domains/sessions/contract/claude-model-catalog'
-import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
+import type { ClaudeModelCatalog } from '@/harnesses/claude/catalog'
+import type { CodexModelCatalog } from '@/harnesses/codex/catalog'
 import type { SessionHarness } from '../../harness/harnesses'
-import { claudeTurnSetup } from '../turn-setup/claude-turn-setup'
-import { codexTurnSetup } from '../turn-setup/codex-turn-setup'
+import { claudeChoices } from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
+import { codexChoices } from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
 import type { TurnSetup } from '../turn-setup/turn-setup'
 import { RunSetupMenu } from './run-setup-menu'
 
 // A started Session keeps its harness; a new one offers the harness tabs.
 function RunSetupStory({ started = true }: { started?: boolean }) {
   const [harness, setHarness] = useState<SessionHarness>('claude')
-  const claudeChoices = claudeTurnSetup(liveClaudeCatalog)
-  if (claudeChoices === null) throw new Error('The Claude story catalog has no usable model.')
-  const [setup, setSetup] = useState(claudeChoices.opening)
-  const choices = harness === 'codex' ? codexTurnSetup(liveCatalog) : claudeChoices
+  const initialChoices = claudeChoices(liveClaudeCatalog)
+  if (initialChoices === null) throw new Error('The Claude story catalog has no usable model.')
+  const [setup, setSetup] = useState(initialChoices.opening)
+  const choices = harness === 'codex' ? codexChoices(liveCatalog) : initialChoices
   const chooseHarness = (nextHarness: SessionHarness) => {
     setHarness(nextHarness)
     const nextSetup =
-      nextHarness === 'codex' ? codexTurnSetup(liveCatalog) : claudeTurnSetup(liveClaudeCatalog)
+      nextHarness === 'codex' ? codexChoices(liveCatalog) : claudeChoices(liveClaudeCatalog)
     if (nextSetup !== null) setSetup(nextSetup.opening)
   }
   return (
@@ -35,7 +35,7 @@ function RunSetupStory({ started = true }: { started?: boolean }) {
 function ClaudeCatalogStory({ failed = false }: { failed?: boolean }) {
   const [catalog, setCatalog] = useState<ClaudeModelCatalog | null>(null)
   const [catalogError, setCatalogError] = useState(failed)
-  const choices = claudeTurnSetup(catalog)
+  const choices = claudeChoices(catalog)
   const [setup, setSetup] = useState<TurnSetup | null>(null)
   return (
     <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
@@ -47,7 +47,7 @@ function ClaudeCatalogStory({ failed = false }: { failed?: boolean }) {
         catalogError={catalogError}
         refreshCatalog={() => {
           setCatalog(liveClaudeCatalog)
-          setSetup(claudeTurnSetup(liveClaudeCatalog)?.opening ?? null)
+          setSetup(claudeChoices(liveClaudeCatalog)?.opening ?? null)
           setCatalogError(false)
         }}
       />
@@ -120,7 +120,7 @@ function CodexCatalogStory({
   failed?: boolean
 }) {
   const [catalog, setCatalog] = useState(initialCatalog)
-  const choices = codexTurnSetup(catalog)
+  const choices = codexChoices(catalog)
   const [setup, setSetup] = useState<TurnSetup | null>(choices?.opening ?? null)
   const [catalogError, setCatalogError] = useState(failed)
   return (
@@ -133,7 +133,7 @@ function CodexCatalogStory({
         catalogError={catalogError}
         refreshCatalog={() => {
           setCatalog(liveCatalog)
-          setSetup(codexTurnSetup(liveCatalog)?.opening ?? null)
+          setSetup(codexChoices(liveCatalog)?.opening ?? null)
           setCatalogError(false)
         }}
       />
