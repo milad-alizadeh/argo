@@ -50,7 +50,7 @@
   stored registry. **The join key `branch` lives here** — Delivery is keyed by
   `Workspace.branch`. Node-scoped (ADR-0010): an Agent has **`0..1` owned** Workspace and
   otherwise **inherits its parent's** — a Subagent without its own worktree renders no second
-  chip. DIRECT for a managed Agent, DERIVED for watched. Every owned Workspace branches from the
+  chip. DIRECT with a live Agent channel, DERIVED without one. Every owned Workspace branches from the
   Project's shared base ref.
 - **Compaction** — a marker in an Agent's Turn sequence where history was condensed; the
   native Session continues across it.

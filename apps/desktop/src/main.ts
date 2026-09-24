@@ -11,8 +11,11 @@ import {
   ATTACHMENT_SCHEME,
   attachmentPathFromUrl,
 } from '@/domains/sessions/contract/model/feed/feed-images'
+import type { SessionSupervisorActor } from '@/domains/sessions/main/live/session-supervisor-machine'
+import type { CatalogActor } from '@/harnesses/catalog/catalog-read'
 import { openDurableStores } from '@/main/durable-stores'
 import { attachAppearanceWatch } from '@/platform/main/appearance'
+import type { AppActor } from '@/platform/main/application/app-machine'
 import { startDesktopApplication } from '@/platform/main/application/start'
 import {
   DEVELOPMENT_APPLICATION_NAME,
@@ -27,7 +30,7 @@ import { resetIncompleteDevelopmentDatabase } from '@/platform/main/development/
 import { installMenu } from '@/platform/main/menu'
 import { attachWindowNavigation } from '@/platform/main/security/window-navigation'
 import { configureStorageRuntime } from '@/platform/main/storage/storage-runtime'
-import { appRouter } from '@/platform/main/trpc-router'
+import { createAppRouter } from '@/platform/main/trpc-router'
 import { attachTrpcTransport } from '@/platform/main/trpc-transport'
 import { createDesktopWindow } from '@/platform/main/window/create-window'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mts'
@@ -100,14 +103,12 @@ function focusWindow(): void {
   desktopWindow.focus()
 }
 
-function createWindow(): void {
-  const userData = app.getPath('userData')
-  const { projectData } = developmentStoreDirectories({
-    userData,
-    appData: app.getPath('appData'),
-    instance: DEVELOPMENT_INSTANCE,
-  })
-  const stores = openDurableStores(projectData, !ACCEPTANCE_ENABLED)
+function createWindow(actor: AppActor, stores: ReturnType<typeof openDurableStores>): void {
+  const catalogActor = actor.system.get('catalog') as CatalogActor | undefined
+  const sessionsActor = actor.system.get('sessions') as SessionSupervisorActor | undefined
+  if (catalogActor === undefined || sessionsActor === undefined)
+    throw new Error('Application child actors are unavailable.')
+  const router = createAppRouter(catalogActor, sessionsActor)
   desktopWindow = createDesktopWindow({
     buildDirectory: __dirname,
     rendererName: MAIN_WINDOW_VITE_NAME,
@@ -129,13 +130,14 @@ function createWindow(): void {
       const detachTrpc = attachTrpcTransport({
         window,
         rendererURL,
-        router: appRouter,
-        context: { database: stores.database },
+        router,
+        context: undefined,
       })
       attachAppearanceWatch(window)
       window.once('closed', () => {
         desktopWindow = undefined
         detachTrpc()
+        actor.send({ type: 'Shutdown' })
         stores.close()
       })
       installMenu(window)
@@ -150,13 +152,9 @@ function createWindow(): void {
   }
 }
 
-async function ready(): Promise<void> {
-  // Main-process `net.fetch` reads `file://` directly, unlike a renderer's own subresource
-  // requests, so this is immune to the restriction the scheme itself exists to route around.
-  protocol.handle(ATTACHMENT_SCHEME, (request) => {
-    const filePath = attachmentPathFromUrl(request.url)
-    return filePath ? net.fetch(pathToFileURL(filePath).href) : new Response(null, { status: 400 })
-  })
+let applicationStores: ReturnType<typeof openDurableStores> | undefined
+
+async function prepare() {
   if (DEVELOPMENT_INSTANCE) {
     const { projectData } = developmentStoreDirectories({
       userData: app.getPath('userData'),
@@ -168,22 +166,47 @@ async function ready(): Promise<void> {
     await seedDevelopmentProject(projects, DEVELOPMENT_INSTANCE)
     projects.close()
   }
-  createWindow()
+  const { projectData } = developmentStoreDirectories({
+    userData: app.getPath('userData'),
+    appData: app.getPath('appData'),
+    instance: DEVELOPMENT_INSTANCE,
+  })
+  applicationStores = openDurableStores(projectData, !ACCEPTANCE_ENABLED)
+  return { database: applicationStores.database }
+}
 
-  if (!ACCEPTANCE_ENABLED) return
+async function ready(actor: AppActor): Promise<void> {
+  // Main-process `net.fetch` reads `file://` directly, unlike a renderer's own subresource
+  // requests, so this is immune to the restriction the scheme itself exists to route around.
+  protocol.handle(ATTACHMENT_SCHEME, (request) => {
+    const filePath = attachmentPathFromUrl(request.url)
+    return filePath ? net.fetch(pathToFileURL(filePath).href) : new Response(null, { status: 400 })
+  })
+  if (applicationStores === undefined) throw new Error('Application stores are unavailable.')
+  createWindow(actor, applicationStores)
 
-  // A window is open and a PTY may still be draining, so this run also stands as the app-shutdown
-  // case: the driver outside fails the build if the process does not go away on its own.
-  const { reportAcceptance, runAcceptance } = await import(
-    '@/platform/main/pty-acceptance/pty-acceptance'
-  )
-  const result = await runAcceptance(os.homedir())
-  await reportAcceptance(result)
-  if (result.ok) app.quit()
-  else app.exit(1)
+  if (ACCEPTANCE_ENABLED) {
+    // A window is open and a PTY may still be draining, so this run also stands as the app-shutdown
+    // case: the driver outside fails the build if the process does not go away on its own.
+    void (async () => {
+      try {
+        const { reportAcceptance, runAcceptance } = await import(
+          '@/platform/main/pty-acceptance/pty-acceptance'
+        )
+        const result = await runAcceptance(os.homedir())
+        await reportAcceptance(result)
+        if (result.ok) app.quit()
+        else app.exit(1)
+      } catch (error) {
+        console.error(error)
+        app.exit(1)
+      }
+    })()
+  }
 }
 
 startDesktopApplication({
+  prepare,
   ready,
   focusExistingWindow: focusWindow,
   willQuit: () => {

@@ -2,8 +2,8 @@
 
 - **Concierge** — the voice interface + its router/brain (ADR-0007, spike-gated, **unbuilt**;
   only the orb *visual* exists). Deferred for v1.
-- **Companion plugin** — the bundled plugin a managed adapter can load to emit the **CONVENTION**
-  tier (ADR-0016). Channel ownership, not the plugin, makes a Session managed. Note: subagent
+- **Companion plugin** — the bundled plugin a live Harness can load to emit the **CONVENTION**
+  tier (ADR-0016). The plugin does not establish live-channel ownership. Note: subagent
   `label`/`group` are **not exclusively
   CONVENTION** — their tier follows their source (CONVENTION when the plugin reports them;
   DERIVED when the vendor interface carries them).

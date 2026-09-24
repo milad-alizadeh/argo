@@ -5,11 +5,6 @@ import {
   type ProjectSetupSnapshot,
   projectSetupSnapshotSchema,
 } from '@/domains/projects/contract/contract'
-import type { SessionProjection } from '@/domains/sessions/next/contract/session-projection-contract'
-import {
-  MANAGED_SESSION_PROJECTION_CHANNEL,
-  managedSessionProjectionEventSchema,
-} from '@/domains/sessions/next/ipc/managed-session-contract'
 import type { AppearanceState } from '@/platform/contract/appearance'
 import { APPEARANCE_CHANGED_CHANNEL, isAppearanceState } from '@/platform/contract/appearance'
 import { COMMAND_CHANNEL } from '@/platform/contract/commands'
@@ -43,12 +38,6 @@ contextBridge.exposeInMainWorld('argo', {
     return subscribe<unknown>(PROJECT_SETUP_CHANGED_CHANNEL, (value) => {
       const parsed = projectSetupSnapshotSchema.safeParse(value)
       if (parsed.success) listener(parsed.data)
-    })
-  },
-  onManagedSessionProjection(listener: (projection: SessionProjection) => void) {
-    return subscribe<unknown>(MANAGED_SESSION_PROJECTION_CHANNEL, (value) => {
-      const parsed = managedSessionProjectionEventSchema.safeParse(value)
-      if (parsed.success) listener(parsed.data.projection)
     })
   },
   zoomFactor: () => webFrame.getZoomFactor(),

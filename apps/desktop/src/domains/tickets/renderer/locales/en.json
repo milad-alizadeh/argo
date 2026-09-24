@@ -139,16 +139,6 @@
       "description": "A Project reads its Tickets from the GitHub repository or Linear team it is connected to."
     }
   },
-  "loading": {
-    "accounts": "Reading Accounts",
-    "tickets": "Reading Tickets",
-    "connection": "Reading the connected Ticket source"
-  },
-  "failure": {
-    "accounts": "Unable to read Accounts",
-    "tickets": "Unable to read Tickets",
-    "connection": "Unable to read the connected Ticket source"
-  },
   "problem": {
     "tryAgain": "Try again",
     "openAccounts": "Open Accounts",

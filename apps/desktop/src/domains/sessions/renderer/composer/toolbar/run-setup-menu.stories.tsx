@@ -1,26 +1,81 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
-import type { ClaudeModelCatalog } from '@/domains/sessions/contract/claude-model-catalog'
-import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
+import type { CatalogReadResult } from '@/harnesses/catalog/catalog-read'
+import type { AvailableHarness } from '@/harnesses/catalog/harness-catalog-machine'
+import {
+  claudeHarnessInfoFixture,
+  codexHarnessInfoFixture,
+} from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
 import type { SessionHarness } from '../../harness/harnesses'
-import { claudeTurnSetup } from '../turn-setup/claude-turn-setup'
-import { codexTurnSetup } from '../turn-setup/codex-turn-setup'
 import type { TurnSetup } from '../turn-setup/turn-setup'
-import { RunSetupMenu } from './run-setup-menu'
+import { type CatalogFailure, RunSetupMenu } from './run-setup-menu'
+
+const claudeFixture = claudeHarnessInfoFixture()
+const liveClaudeInfo: AvailableHarness = {
+  ...claudeFixture,
+  models: (
+    [
+      ['fable', 'Fable 5.1', 'Deepest reasoning for long, open-ended work'],
+      ['opus', 'Opus 5', 'Most capable for architecture and hard problems'],
+      ['sonnet', 'Sonnet 5', 'Balanced for daily coding and review'],
+      ['haiku', 'Haiku 4.5', 'Fast for small changes and quick answers'],
+    ] as const
+  ).map(([value, label, detail]) => ({
+    value,
+    label,
+    detail,
+    defaultEffort: 'medium',
+    efforts: value === 'haiku' ? ['low', 'medium'] : ['low', 'medium', 'high', 'xhigh', 'max'],
+    supportedModes: claudeFixture.modes.map((mode) => mode.value),
+    readings: { exact: [value], prefixes: [] },
+  })),
+  opening: { model: 'opus', effort: 'medium', mode: 'manual' },
+}
+const codexFixture = codexHarnessInfoFixture()
+const liveCodexInfo: AvailableHarness = {
+  ...codexFixture,
+  models: [
+    {
+      value: 'provider/live-codex',
+      label: 'Live Codex Model',
+      detail: 'Current model reported by the running app-server',
+      defaultEffort: 'focused',
+      efforts: ['focused'],
+      readings: { exact: ['provider/live-codex'], prefixes: [] },
+    },
+  ],
+  efforts: [{ value: 'focused', label: 'Focused', readings: { exact: ['focused'], prefixes: [] } }],
+  opening: { model: 'provider/live-codex', effort: 'focused', mode: 'workspace-write' },
+}
+const readyClaude: CatalogReadResult = { info: liveClaudeInfo, failure: null }
+const readyCodex: CatalogReadResult = { info: liveCodexInfo, failure: null }
+const unavailableClaude: CatalogReadResult = {
+  info: { harness: 'claude', availability: 'unavailable', reason: 'invalid-response' },
+  failure: null,
+}
+const unavailableCodex: CatalogReadResult = {
+  info: { harness: 'codex', availability: 'unavailable', reason: 'unavailable' },
+  failure: null,
+}
+
+function availableInfo(result: CatalogReadResult | null): AvailableHarness | null {
+  return result?.info.availability === 'available' ? result.info : null
+}
+function failureOf(result: CatalogReadResult | null): CatalogFailure | null {
+  if (result?.failure) return { reason: 'load-failed' }
+  return result?.info.availability === 'unavailable' ? { reason: result.info.reason } : null
+}
 
 // A started Session keeps its harness; a new one offers the harness tabs.
 function RunSetupStory({ started = true }: { started?: boolean }) {
   const [harness, setHarness] = useState<SessionHarness>('claude')
-  const claudeChoices = claudeTurnSetup(liveClaudeCatalog)
-  if (claudeChoices === null) throw new Error('The Claude story catalog has no usable model.')
-  const [setup, setSetup] = useState(claudeChoices.opening)
-  const choices = harness === 'codex' ? codexTurnSetup(liveCatalog) : claudeChoices
+  const [setup, setSetup] = useState(liveClaudeInfo.opening)
+  const result = harness === 'codex' ? readyCodex : readyClaude
+  const choices = availableInfo(result)
   const chooseHarness = (nextHarness: SessionHarness) => {
     setHarness(nextHarness)
-    const nextSetup =
-      nextHarness === 'codex' ? codexTurnSetup(liveCatalog) : claudeTurnSetup(liveClaudeCatalog)
-    if (nextSetup !== null) setSetup(nextSetup.opening)
+    setSetup(nextHarness === 'codex' ? liveCodexInfo.opening : liveClaudeInfo.opening)
   }
   return (
     <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
@@ -32,109 +87,34 @@ function RunSetupStory({ started = true }: { started?: boolean }) {
   )
 }
 
-function ClaudeCatalogStory({ failed = false }: { failed?: boolean }) {
-  const [catalog, setCatalog] = useState<ClaudeModelCatalog | null>(null)
-  const [catalogError, setCatalogError] = useState(failed)
-  const choices = claudeTurnSetup(catalog)
-  const [setup, setSetup] = useState<TurnSetup | null>(null)
-  return (
-    <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
-      <RunSetupMenu
-        harness={{ harness: 'claude' }}
-        setup={
-          choices === null || setup === null ? null : { choices, value: setup, onChange: setSetup }
-        }
-        catalogError={catalogError}
-        refreshCatalog={() => {
-          setCatalog(liveClaudeCatalog)
-          setSetup(claudeTurnSetup(liveClaudeCatalog)?.opening ?? null)
-          setCatalogError(false)
-        }}
-      />
-    </div>
-  )
-}
-
-const liveClaudeCatalog: ClaudeModelCatalog = {
-  supportedPermissionModes: [
-    'manual',
-    'acceptEdits',
-    'plan',
-    'auto',
-    'dontAsk',
-    'bypassPermissions',
-  ],
-  data: [
-    {
-      value: 'fable',
-      resolvedModel: 'claude-fable-5-1',
-      displayName: 'Fable 5.1',
-      description: 'Deepest reasoning for long, open-ended work',
-      supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
-    },
-    {
-      value: 'opus',
-      resolvedModel: 'claude-opus-5',
-      displayName: 'Opus 5',
-      description: 'Most capable for architecture and hard problems',
-      supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
-    },
-    {
-      value: 'sonnet',
-      resolvedModel: 'claude-sonnet-5',
-      displayName: 'Sonnet 5',
-      description: 'Balanced for daily coding and review',
-      supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
-    },
-    {
-      value: 'haiku',
-      resolvedModel: 'claude-haiku-4-5',
-      displayName: 'Haiku 4.5',
-      description: 'Fast for small changes and quick answers',
-      supportedEffortLevels: ['low', 'medium'],
-    },
-  ],
-}
-
-const liveCatalog: CodexModelCatalog = {
-  data: [
-    {
-      id: 'provider/live-codex',
-      model: 'provider/live-codex',
-      displayName: 'Live Codex Model',
-      description: 'Current model reported by the running app-server',
-      defaultReasoningEffort: 'focused',
-      isDefault: true,
-      hidden: false,
-      supportedReasoningEfforts: [{ reasoningEffort: 'focused', description: 'Focused reasoning' }],
-    },
-  ],
-  nextCursor: null,
-}
-
-function CodexCatalogStory({
-  catalog: initialCatalog,
+function CatalogStory({
+  harness,
   failed = false,
+  initialReady = false,
 }: {
-  catalog: CodexModelCatalog | null
+  harness: SessionHarness
   failed?: boolean
+  initialReady?: boolean
 }) {
-  const [catalog, setCatalog] = useState(initialCatalog)
-  const choices = codexTurnSetup(catalog)
-  const [setup, setSetup] = useState<TurnSetup | null>(choices?.opening ?? null)
-  const [catalogError, setCatalogError] = useState(failed)
+  const ready = harness === 'codex' ? readyCodex : readyClaude
+  const unavailable = harness === 'codex' ? unavailableCodex : unavailableClaude
+  let initialResult: CatalogReadResult | null = null
+  if (initialReady) initialResult = ready
+  else if (failed) initialResult = unavailable
+  const [result, setResult] = useState<CatalogReadResult | null>(initialResult)
+  const [setup, setSetup] = useState<TurnSetup | null>(
+    initialReady ? (availableInfo(ready)?.opening ?? null) : null,
+  )
+  const choices = availableInfo(result)
   return (
     <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
       <RunSetupMenu
-        harness={{ harness: 'codex' }}
-        setup={
-          choices === null || setup === null ? null : { choices, value: setup, onChange: setSetup }
-        }
-        catalogError={catalogError}
+        harness={{ harness }}
+        setup={choices && setup ? { choices, value: setup, onChange: setSetup } : null}
+        catalogFailure={failureOf(result)}
         refreshCatalog={() => {
-          setCatalog(liveCatalog)
-          setSetup(codexTurnSetup(liveCatalog)?.opening ?? null)
-          setCatalogError(false)
+          setResult(ready)
+          setSetup(availableInfo(ready)?.opening ?? null)
         }}
       />
     </div>
@@ -199,7 +179,7 @@ export const ChoosesModelAndEffort: Story = {
 }
 
 export const UsesLiveCodexCatalog: Story = {
-  render: () => <CodexCatalogStory catalog={liveCatalog} />,
+  render: () => <CatalogStory harness="codex" initialReady />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const trigger = canvas.getByRole('button', { name: TRIGGER })
@@ -234,7 +214,7 @@ export const UsesLiveClaudeCatalog: Story = {
 }
 
 export const LoadsClaudeCatalog: Story = {
-  render: () => <ClaudeCatalogStory />,
+  render: () => <CatalogStory harness="claude" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: TRIGGER }))
@@ -244,12 +224,12 @@ export const LoadsClaudeCatalog: Story = {
 }
 
 export const RetriesClaudeCatalog: Story = {
-  render: () => <ClaudeCatalogStory failed />,
+  render: () => <CatalogStory harness="claude" failed />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: TRIGGER }))
     await expect(page().getByRole('alert')).toHaveTextContent(
-      'Argo could not load Claude Code models.',
+      'Claude Code returned model data that Argo cannot read.',
     )
     await expect(page().queryByRole('radiogroup', { name: 'Model' })).toBeNull()
     await expect(page().getByRole('button', { name: 'Refresh models' })).toBeEnabled()
@@ -263,12 +243,12 @@ export const RetriesClaudeCatalog: Story = {
 }
 
 export const RetriesUnavailableCatalog: Story = {
-  render: () => <CodexCatalogStory catalog={null} failed />,
+  render: () => <CatalogStory harness="codex" failed />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const trigger = canvas.getByRole('button', { name: TRIGGER })
     await userEvent.click(trigger)
-    await expect(page().getByRole('alert')).toHaveTextContent('Argo could not load Codex models.')
+    await expect(page().getByRole('alert')).toHaveTextContent('Codex is unavailable. Try again.')
     await expect(page().queryByRole('radiogroup', { name: 'Model' })).toBeNull()
     await userEvent.click(page().getByRole('button', { name: 'Refresh models' }))
     await expect(canvas.getByRole('button', { name: TRIGGER })).toHaveAccessibleName(
@@ -281,7 +261,7 @@ export const RetriesUnavailableCatalog: Story = {
 }
 
 export const LoadsCatalog: Story = {
-  render: () => <CodexCatalogStory catalog={null} />,
+  render: () => <CatalogStory harness="codex" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: TRIGGER }))

@@ -5,7 +5,7 @@ export default defineConfig({
   schema: [
     './src/domains/projects/main/schema.ts',
     './src/domains/tickets/main/schema.ts',
-    './src/domains/sessions/next/main/schema.ts',
+    './src/domains/sessions/main/storage/session-table.ts',
   ],
   out: './drizzle',
 })

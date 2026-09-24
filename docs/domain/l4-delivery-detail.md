@@ -27,5 +27,5 @@ renamed or normalized).
   live-derived, branch-keyed Delivery. The `produces` edge made concrete, pointing at a **typed
   target**, each addressed in *its own* space: **code** (a Diff/Delivery, git-addressed by SHA),
   **ticket** (one the Session filed, provider-id-addressed), or **artifact** (a plan/research
-  file, path-addressed, possibly uncommitted). v1: **watched Sessions have no Outcome** — an
+  file, path-addressed, possibly uncommitted). v1: **Sessions without a live channel have no Outcome** — an
   honest gap, not a fabricated record.

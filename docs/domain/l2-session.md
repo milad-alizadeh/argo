@@ -5,22 +5,21 @@
   Claude Session and a Codex Session never merge, even if their titles or Project match. A fork is
   a separate Session with its own Argo UUID and native ID.
 
-  A Session has one current posture: **`managed | watched`**. `managed` means Argo owns its live
-  channel and can drive it through the Harness adapter. `watched` means Argo owns no live channel;
-  the Session is readable but not drivable. A live channel is not durable across an Argo restart,
-  so every surviving Session starts watched and can become managed through native resume. Opening a
-  watched Session reads its history without acquiring a live channel; the first new prompt attempts
-  native resume.
+  A Session has no durable live-channel posture. An app-scoped Session supervisor actor owns the
+  live Session actors. Each Session actor invokes one Harness machine, owns prompt order, and
+  stops with the application. A Session without a live actor remains readable through vendor
+  history; the first new prompt attempts native resume. A live channel is not durable across an
+  Argo restart.
 
-  Vendor history is the source of Feed truth for both postures. Managed vendor events add immediate
-  updates. For watched Sessions, a filesystem watcher can signal that history changed, but the
+  Vendor history is the source of Feed truth. Live vendor events add immediate updates. For
+  Sessions without a live channel, a filesystem watcher can signal that history changed, but the
   adapter reads the change through the vendor interface. A transcript or rollout file is never an
   Argo domain object or input.
 
   Origin does not gate resume (ADR-0040). Argo has one application window. The adapter checks
   vendor liveness before resume because another vendor client can still hold the Session. A
-  separate SQLite lease has an owner token and expiry; it is not a Boolean Session attribute and
-  does not prove that an external vendor client is absent. A watched Session that cannot be
+  Session actor has no SQLite lease and cannot prove that an external vendor client is absent. A
+  Session that cannot be
   resumed because of a temporary condition stays readable and reports the vendor reason. Argo
   removes a Session only when its Harness confirms that the vendor conversation cannot be resumed
   again. Removing it also removes its Argo title, pin, and user-asserted Ticket link.
@@ -44,16 +43,16 @@
   Ticket title into the Session.
 
 - **Session status** — the adapter's validated rollup of vendor lifecycle facts:
-  - **starting** — Argo accepted a start or resume command and the managed channel is opening.
+  - **starting** — Argo accepted a start or resume command and a live channel is opening.
   - **running** — the vendor reports an active Turn.
-  - **permission** — the managed Session waits for a permission decision.
+  - **permission** — the live Session waits for a permission decision.
   - **asking** — the Session waits for a structured answer.
   - **idle** — the vendor reports no active Turn.
   - **stopped** — the vendor ended the Turn with a stop reason such as a limit or refusal.
-  - **ended** — the managed channel closed normally or after cancellation.
+  - **ended** — the live channel closed normally or after cancellation.
   - **unknown** — the vendor interface does not establish a more specific state.
 
-  `starting` and `permission` require a managed channel. Watched status is only as specific as the
+  `starting` and `permission` require a live channel. Status without one is only as specific as the
   vendor history and liveness interface allows. Argo never infers liveness from file age, process
   working directory, or an unfinished transcript record. An unsupported vendor value becomes
   `unknown`, not the nearest familiar value.
@@ -63,8 +62,8 @@
   from a transcript or hide the Session because of it.
 
 - **Session Mode** — the Session's *standing autonomy stance*; defined once in the Autonomy
-  cluster below. A Session (root-Agent) fact, not per-Subagent. DIRECT for managed, tier-gated
-  for watched.
+  cluster below. A Session (root-Agent) fact, not per-Subagent. DIRECT while Argo owns the live
+  channel, and tier-gated when it does not.
 
 - **Model** and **Effort** — the Harness's own two knobs, which Argo states and sets and never
   interprets: which model the Session runs on, and how hard it is told to think. The adapter reads
@@ -72,8 +71,8 @@
   readable table has never heard of is a model, not an error. The same rule applies to a new
   effort value.
 
-  A managed Session can show the launch value Argo sent until the vendor reports the accepted
-  value. A watched Session shows only a value the vendor interface supplies. Missing remains
+  A live Session can show the launch value Argo sent until the vendor reports the accepted
+  value. A Session without a live channel shows only a value the vendor interface supplies. Missing remains
   `unknown`; Argo never fills it with a plausible default.
 
   The last chosen harness is remembered app-wide. Each harness remembers its own Model and Effort

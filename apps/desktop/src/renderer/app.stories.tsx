@@ -38,7 +38,6 @@ async function routeByShortcut(canvasElement: HTMLElement, key: string, destinat
 export const KeyboardRoutes: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(window.argo.readClaudeModelCatalog()).resolves.toBeNull()
     await expect(canvas.getByRole('button', { name: 'Sessions' })).toHaveAttribute(
       'aria-current',
       'page',

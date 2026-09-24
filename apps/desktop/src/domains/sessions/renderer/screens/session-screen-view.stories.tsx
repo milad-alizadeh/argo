@@ -5,8 +5,8 @@ import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/model/models'
 import type { SessionShellOutput } from '@/domains/sessions/contract/model/wire/background-work-contract'
 import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
-import { SessionComposer } from '../composer'
 import { useComposerStore } from '../composer/hooks'
+import { ComposerForm } from '../composer/layout/composer-form'
 import { RICH_MARKDOWN } from '../feed/content/feed-samples'
 import { INACTIVE_FEED_LIVE_FACTS } from '../feed/document/feed-live-facts'
 import { SessionInspector } from '../inspector/session-inspector'
@@ -314,7 +314,7 @@ function ReviewScreen({
       <SessionShell
         activeEvidenceId={null}
         composer={
-          <SessionComposer
+          <ComposerForm
             isRunning={composerRunning}
             onInterrupt={async () => true}
             onSend={async () => true}
@@ -397,7 +397,7 @@ function NewSessionScreen() {
         answeringQuestionId={null}
         composer={
           selectedSessionId === null ? null : (
-            <SessionComposer onSend={async () => true} sessionId={selectedSessionId} />
+            <ComposerForm onSend={async () => true} sessionId={selectedSessionId} />
           )
         }
         feed={null}

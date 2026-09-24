@@ -25,14 +25,19 @@ export type TurnSetupControlProps = {
 type RunSetupMenuProps = {
   harness: HarnessControl
   setup: TurnSetupControlProps | null
-  catalogError?: boolean
+  catalogFailure?: CatalogFailure | null
   refreshCatalog?: () => void
+}
+
+export type CatalogFailure = {
+  reason: 'not-installed' | 'not-signed-in' | 'invalid-response' | 'unavailable' | 'load-failed'
+  detail?: string
 }
 
 export function RunSetupMenu({
   harness,
   setup,
-  catalogError = false,
+  catalogFailure = null,
   refreshCatalog,
 }: RunSetupMenuProps) {
   const { t } = useTranslation('sessions')
@@ -42,7 +47,7 @@ export function RunSetupMenu({
     <SetupBody
       harness={harness}
       setup={setup}
-      catalogError={catalogError}
+      catalogFailure={catalogFailure}
       refreshCatalog={refreshCatalog}
     />
   )
@@ -94,13 +99,15 @@ function setupFacts(setup: TurnSetupControlProps | null) {
   ]
 }
 
-function SetupBody({ harness, setup, catalogError, refreshCatalog }: RunSetupMenuProps) {
+function SetupBody({ harness, setup, catalogFailure, refreshCatalog }: RunSetupMenuProps) {
   const { t } = useTranslation('sessions')
-  if (catalogError)
+  if (catalogFailure)
     return (
       <div className="space-y-2 p-3.5" role="alert">
         <p className="type-meta text-muted-foreground">
-          {t('composer.setup.modelCatalogError', { harness: HARNESSES[harness.harness].label })}
+          {t(`composer.setup.catalogFailure.${catalogFailure.reason}`, {
+            harness: HARNESSES[harness.harness].label,
+          })}
         </p>
         <Button onClick={refreshCatalog} size="sm" type="button" variant="outline">
           {t('composer.setup.refreshModels')}
@@ -150,8 +157,7 @@ function ModelOptions({ choices, value, onChange }: TurnSetupControlProps) {
                   const modes = modeChoices(choices, model.value)
                   const currentEffort = efforts.find((effort) => effort.value === value.effort)
                   const currentMode = modes.find((mode) => mode.value === value.mode)
-                  const nextEffort =
-                    currentEffort ?? closestEffort(value.effort, efforts, model.defaultEffort)
+                  const nextEffort = currentEffort ?? closestEffort(value.effort, choices, model)
                   onChange({
                     ...value,
                     model: model.value,
@@ -182,14 +188,16 @@ function ModelOptions({ choices, value, onChange }: TurnSetupControlProps) {
 
 function closestEffort(
   current: string,
-  choices: ReturnType<typeof effortChoices>,
-  defaultEffort?: string,
+  choices: TurnSetupChoices,
+  model: TurnSetupChoices['models'][number],
 ) {
-  const order = ['low', 'medium', 'high', 'xhigh', 'max', 'ultra']
+  const order = choices.efforts.map(({ value }) => value)
+  const efforts = effortChoices(choices, model.value)
   const currentRank = order.indexOf(current)
-  if (currentRank === -1) return choices.find(({ value }) => value === defaultEffort) ?? choices[0]
+  if (currentRank === -1)
+    return efforts.find(({ value }) => value === model.defaultEffort) ?? efforts[0]
   return (
-    choices.reduce<(typeof choices)[number] | undefined>((closest, choice) => {
+    efforts.reduce<(typeof efforts)[number] | undefined>((closest, choice) => {
       const rank = order.indexOf(choice.value)
       if (rank === -1) return closest
       if (
@@ -199,7 +207,7 @@ function closestEffort(
         return choice
       return closest
     }, undefined) ??
-    choices.find(({ value }) => value === defaultEffort) ??
-    choices[0]
+    efforts.find(({ value }) => value === model.defaultEffort) ??
+    efforts[0]
   )
 }

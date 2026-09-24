@@ -24,8 +24,8 @@
 - **Delivery detail**: **Delivery** `1—1` **Diff**, `0—N` **Review** (`0—N` **Finding**), `0—N`
   **Check**, and `1—N` **Gate** (per automatable step).
 - **Session** `0—N` **Outcome** (the `produces` link; each refs a typed target —
-  **Diff/Delivery** | **Ticket** | **artifact**). Watched Sessions: none in v1.
-- **Session** `0..1` **managed channel** (SDK or app-server, managed-only) and `0—N` **MCP server**
+  **Diff/Delivery** | **Ticket** | **artifact**). Sessions without a live channel: none in v1.
+- **Session** `0..1` **live channel** (SDK or app-server, owned by its Session actor) and `0—N` **MCP server**
   (observed attribute, deferred); a **Workspace** additionally has `0—N` agent-less scratch
   **Terminal**.
 - **Person** (`me | other`) authors a **Review** and owns the teammate-PR distinction on a

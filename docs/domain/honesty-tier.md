@@ -2,12 +2,12 @@
 
 A property **of each rendered fact**, not a session-wide mode — one Session mixes tiers.
 
-- **DIRECT** — Argo owns the fact (managed pid, a mode Argo set).
+- **DIRECT** — Argo owns the fact (a live process ID, a mode Argo set).
 - **DERIVED** — observed from outside Argo, whether **inferred** from a signal (the `~n%` context
   estimate) **or read verbatim** from an
   external authority (a code-host Review or Check; a Ticket's Answer prose). Verbatim reads
   are **never reworded or summarized**.
-- **CONVENTION** — arrived over the companion-plugin/MCP channel (managed-only, e.g.
+- **CONVENTION** — arrived over the companion-plugin/MCP channel (live-channel only, e.g.
   `report_status`); not part of native vendor history.
 
 **INFERRED is the Atlas's own mark on a DERIVED fact, not a fourth tier** (#1157). Everything the

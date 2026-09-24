@@ -6,37 +6,20 @@ import {
 } from '@/domains/sessions/contract/drive/attachments-contract'
 import {
   type ComposerAttachment,
-  type ComposerTicketContext,
+  EMPTY_COMPOSER_ATTACHMENTS,
   useComposerStore,
 } from './use-composer-store'
 
 // A stable reference for "no attachments yet": the selector below must return the same array on
 // every call with no entry, or zustand's useSyncExternalStore snapshot never settles (#1845).
-const NO_ATTACHMENTS: ComposerAttachment[] = []
-const NO_TICKETS: ComposerTicketContext[] = []
-
 export function useComposerAttachments(sessionId: string) {
   const attachments = useComposerStore(
-    ({ attachments }) => attachments[sessionId] ?? NO_ATTACHMENTS,
+    ({ attachments }) => attachments[sessionId] ?? EMPTY_COMPOSER_ATTACHMENTS,
   )
-  const tickets = useComposerStore(({ tickets }) => tickets[sessionId] ?? NO_TICKETS)
-  const addAttachments = useComposerStore(({ addAttachments }) => addAttachments)
-  const removeAttachment = useComposerStore(({ removeAttachment }) => removeAttachment)
   const markAttachmentsError = useComposerStore(({ markAttachmentsError }) => markAttachmentsError)
   const removeAttachments = useComposerStore(({ removeAttachments }) => removeAttachments)
-  const addTicket = useComposerStore(({ addTicket }) => addTicket)
-  const removeTicket = useComposerStore(({ removeTicket }) => removeTicket)
   return {
     attachments,
-    tickets,
-    attach: useCallback(
-      (paths: string[]) => addAttachments(sessionId, paths),
-      [sessionId, addAttachments],
-    ),
-    remove: useCallback(
-      (id: string) => removeAttachment(sessionId, id),
-      [sessionId, removeAttachment],
-    ),
     markError: useCallback(
       (ids: string[]) => markAttachmentsError(sessionId, ids),
       [sessionId, markAttachmentsError],
@@ -44,14 +27,6 @@ export function useComposerAttachments(sessionId: string) {
     clear: useCallback(
       (ids: string[]) => removeAttachments(sessionId, ids),
       [sessionId, removeAttachments],
-    ),
-    addTicket: useCallback(
-      (ticket: Omit<ComposerTicketContext, 'id'>) => addTicket(sessionId, ticket),
-      [sessionId, addTicket],
-    ),
-    removeTicket: useCallback(
-      (id: string) => removeTicket(sessionId, id),
-      [sessionId, removeTicket],
     ),
   }
 }

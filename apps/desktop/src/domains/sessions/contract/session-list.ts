@@ -1,6 +1,6 @@
 import { z } from 'zod'
+import { harnessSchema } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
-import { harnessSchema } from '../next/contract/session-contract'
 
 export const sessionListInputSchema = z.strictObject({
   page: z.number().int().positive(),

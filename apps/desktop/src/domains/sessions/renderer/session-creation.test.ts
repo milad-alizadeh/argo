@@ -30,16 +30,18 @@ test('a fresh begin after the prior row cleared starts a new one', () => {
   expect(second.id).not.toBe(first.id)
 })
 
-test('claims the one submission for a draft row', () => {
+test('gives each draft-row submission a command identity', () => {
   const created = useSessionCreationStore.getState().begin('claude', '/argo')
-  expect(useSessionCreationStore.getState().startSubmission(created.id, 'hello')).toBe(true)
-  // A rapid second Enter/"+" finds it already submitting and no-ops (#2109).
-  expect(useSessionCreationStore.getState().startSubmission(created.id, 'hello')).toBe(false)
+  const first = useSessionCreationStore.getState().startSubmission(created.id, 'hello')
+  const second = useSessionCreationStore.getState().startSubmission(created.id, 'another prompt')
+  expect(first).toEqual(expect.any(String))
+  expect(second).toEqual(expect.any(String))
+  expect(second).not.toBe(first)
 })
 
 test('an unknown id never claims a submission', () => {
   expect(useSessionCreationStore.getState().startSubmission('optimistic:missing', 'hello')).toBe(
-    false,
+    null,
   )
 })
 

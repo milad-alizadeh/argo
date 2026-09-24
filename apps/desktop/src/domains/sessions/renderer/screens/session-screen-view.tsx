@@ -9,7 +9,6 @@ import { SessionWorkInspectorHeader } from '../work/session-work-inspector-heade
 import { backgroundWorkLinks } from './background-work-links'
 import { SessionComposerArea, SessionHandoffFacts } from './session-screen-details'
 import { SessionShell } from './session-shell'
-import { suppressMissingSessionFailure as isMissingSessionFailureSuppressed } from './suppress-missing-session-failure'
 import { type SessionScreenModel, useSessionScreenModel } from './use-session-screen-model'
 
 // An unanswered ask row, if the Feed is currently showing one.
@@ -74,7 +73,7 @@ function InspectorBar({ model }: { model: SessionScreenModel }) {
   return null
 }
 
-function liveFactsOf({ composer, session }: SessionScreenModel): NonNullable<FeedLiveFacts> {
+function liveFactsOf({ session }: SessionScreenModel): NonNullable<FeedLiveFacts> {
   return {
     compactionStartedAt: session?.compactionStartedAt ?? null,
     compactionPercentage: session?.compactionPercentage ?? null,
@@ -84,10 +83,10 @@ function liveFactsOf({ composer, session }: SessionScreenModel): NonNullable<Fee
     isRunning: session?.status === 'running' || session?.status === 'permission',
     status: session?.status ?? null,
     activity: session?.activity ?? null,
-    optimisticRow: composer.optimisticRow,
-    settledPromptRow: composer.settledPromptRow,
+    optimisticRow: null,
+    settledPromptRow: null,
     posture: session?.posture ?? null,
-    turnMarker: composer.markerView,
+    turnMarker: null,
   }
 }
 
@@ -95,14 +94,7 @@ export function SessionScreenView() {
   const model = useSessionScreenModel()
   const { evidence, feed, feedError, isNewSession, question, session } = model
   const { navigate, retryFeed, selectedSessionId, setEvidence, workReveal } = model
-  const [feedStalledSessionId, setFeedStalledSessionId] = useState<string | null>(null)
-  const failure = model.composer.failure
-  const suppressFailure = isMissingSessionFailureSuppressed({
-    failure,
-    feedFailureSessionId: feedError === null ? null : selectedSessionId,
-    feedStalledSessionId,
-    selectedSessionId,
-  })
+  const [, setFeedStalledSessionId] = useState<string | null>(null)
   const openSession = (sessionId: string) => navigate(`/sessions/${sessionId}`)
   const answerQuestion = (_sessionId: string, questionId: string, answers: QuestionAnswer[]) =>
     void question.decide(questionId, answers)
@@ -125,12 +117,14 @@ export function SessionScreenView() {
           (selectedSessionId === null && !isNewSession) ||
           feedError?.code === 'missing-session' ? null : (
             <SessionComposerArea
-              composer={model.composer}
               permission={model.permission}
               questionPending={pendingQuestionId(feed) !== null}
               session={session}
               harness={model.harness}
-              suppressMissingSessionFailure={suppressFailure}
+              selectedSessionId={selectedSessionId}
+              roster={model.roster}
+              cockpit={model.cockpit}
+              projectActions={model.projectActions}
             />
           )
         }

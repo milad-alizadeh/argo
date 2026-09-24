@@ -1,12 +1,59 @@
+import { $convertFromMarkdownString, TRANSFORMERS } from '@lexical/markdown'
+import type { LexicalEditor } from 'lexical'
 import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   attachmentExitDelay,
   focusMessageField,
 } from '@/platform/renderer/components/permission/exit-presence'
+import { EMPTY_PENDING_TURNS, useComposerStore } from '../hooks/use-composer-store'
+import type { TurnSetupControlProps } from '../toolbar/run-setup-menu'
+import { supportedSetup } from '../turn-setup/turn-setup'
 import { PendingTurnActions } from './pending-turn-actions'
 import type { PendingTurn } from './use-pending-turns'
+
+export function PendingTurns({
+  editorRef,
+  onSteer,
+  sessionId,
+  setup,
+}: {
+  editorRef: RefObject<LexicalEditor | null>
+  onSteer?: (text: string, attachments: SessionAttachmentInput[]) => Promise<boolean>
+  sessionId: string
+  setup: TurnSetupControlProps | null
+}) {
+  const turns = useComposerStore(
+    ({ pendingTurns }) => pendingTurns[sessionId] ?? EMPTY_PENDING_TURNS,
+  )
+  const setDraft = useComposerStore(({ setDraft }) => setDraft)
+  const removePendingTurn = useComposerStore(({ removePendingTurn }) => removePendingTurn)
+  const reorderPendingTurn = useComposerStore(({ reorderPendingTurn }) => reorderPendingTurn)
+  const onEdit = (turn: PendingTurn) => {
+    setDraft(sessionId, turn.text)
+    editorRef.current?.update(() => $convertFromMarkdownString(turn.text, TRANSFORMERS))
+    window.requestAnimationFrame(() => editorRef.current?.focus())
+    if (setup && turn.setup !== undefined)
+      setup.onChange(supportedSetup(setup.choices, turn.setup, setup.value))
+  }
+  const steer = async (turn: PendingTurn) => {
+    if (onSteer === undefined) return false
+    const steered = await onSteer(turn.text, turn.attachments)
+    if (steered) removePendingTurn(sessionId, turn.id)
+    return steered
+  }
+  return (
+    <PendingTurnsView
+      turns={turns}
+      onEdit={onEdit}
+      onSteer={steer}
+      onRemove={(id) => removePendingTurn(sessionId, id)}
+      onReorder={(sourceId, targetId) => reorderPendingTurn(sessionId, sourceId, targetId)}
+    />
+  )
+}
 
 function queuedMessageClassName(
   id: string,
@@ -74,7 +121,7 @@ function useQueueAnimations(
   return { enteringTurnId, exitingTurnId, removeTurn }
 }
 
-export function PendingTurns({
+export function PendingTurnsView({
   turns,
   onEdit,
   onSteer,
