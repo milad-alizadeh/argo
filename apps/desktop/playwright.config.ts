@@ -29,6 +29,7 @@ export default defineConfig<object, SessionBackendOptions>({
   // One shard, or the whole suite, is chosen by `--shard` on the CLI (#2605); the config lists
   // every project unconditionally so a shard's slice is drawn from the full case set.
   projects: [
+    { name: 'application', testDir: 'e2e/application' },
     { name: 'project-setup', testDir: 'e2e/project-setup' },
     { name: 'projects', testDir: 'e2e/projects' },
     { name: 'harness-signin', testDir: 'e2e/harness-signin' },

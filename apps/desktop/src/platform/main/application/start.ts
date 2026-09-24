@@ -5,7 +5,14 @@ import { setPlatformLanguage } from '../i18n'
 export function startDesktopApplication(request: {
   ready: () => Promise<void> | void
   willQuit: () => void
+  focusExistingWindow: () => void
 }): void {
+  if (!app.requestSingleInstanceLock()) {
+    app.quit()
+    return
+  }
+
+  app.on('second-instance', request.focusExistingWindow)
   void app
     .whenReady()
     .then(async () => {
