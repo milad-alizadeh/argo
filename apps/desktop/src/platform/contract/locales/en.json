@@ -21,6 +21,33 @@
   "menu": {
     "file": "File"
   },
+  "harnessCatalog": {
+    "effort": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "xhigh": "Extra high",
+      "max": "Max",
+      "ultra": "Ultra"
+    },
+    "claudeMode": {
+      "auto": { "label": "Auto", "detail": "Claude handles permission decisions" },
+      "manual": { "label": "Manual", "detail": "Ask before making changes" },
+      "acceptEdits": { "label": "Accept edits", "detail": "Accept file edits automatically" },
+      "plan": { "label": "Plan", "detail": "Create a plan before making changes" },
+      "dontAsk": { "label": "Don't ask", "detail": "Deny anything not approved in advance" },
+      "bypassPermissions": { "label": "Bypass", "detail": "Run without permission checks" },
+      "unknownModeDetail": "Permission mode reported by Claude Code"
+    },
+    "codexMode": {
+      "readOnly": { "label": "Ask first", "detail": "Read-only work asks before any change" },
+      "workspaceWrite": {
+        "label": "Approve safely",
+        "detail": "Work in this project, asking at the boundary"
+      },
+      "fullAccess": { "label": "Full access", "detail": "Work without permission prompts" }
+    }
+  },
   "dialog": {
     "openProject": {
       "title": "Open Project",

@@ -6,7 +6,7 @@ import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 import type { HarnessControl } from '../../harness/harnesses'
 import { EMPTY_COMPOSER_ATTACHMENTS, useComposerStore } from '../hooks/use-composer-store'
 import { ModeMenu } from './mode-menu'
-import { RunSetupMenu, type TurnSetupControlProps } from './run-setup-menu'
+import { type CatalogFailure, RunSetupMenu, type TurnSetupControlProps } from './run-setup-menu'
 import { WorkspaceMenu, type WorkspaceMenuControlProps } from './workspace-menu'
 
 function AddContextButton({ onOpen }: { onOpen: () => void }) {
@@ -32,7 +32,7 @@ export function ComposerToolbar({
   onOpenContextPicker,
   harness,
   setup,
-  catalogError = false,
+  catalogFailure = null,
   refreshCatalog,
   workspace,
   isRunning,
@@ -45,7 +45,7 @@ export function ComposerToolbar({
   onOpenContextPicker: () => void
   harness: HarnessControl | null
   setup: TurnSetupControlProps | null
-  catalogError?: boolean
+  catalogFailure?: CatalogFailure | null
   refreshCatalog?: () => void
   workspace: WorkspaceMenuControlProps | null
   isRunning: boolean
@@ -65,7 +65,7 @@ export function ComposerToolbar({
         <RunSetupMenu
           harness={harness}
           setup={setup}
-          catalogError={catalogError}
+          catalogFailure={catalogFailure}
           refreshCatalog={refreshCatalog}
         />
       ) : null}

@@ -4,24 +4,18 @@ import { type CodexModelCatalog, codexHarnessInfo } from '@/harnesses/codex/cata
 import { claudeComposerModelCatalogFixture } from './claude-model-catalog.fixture'
 import { codexModelCatalogFixture } from './codex-model-catalog.fixture'
 
-function availableInfo(info: HarnessInfo, harness: 'claude' | 'codex'): HarnessInfo {
+function availableInfo(info: HarnessInfo, harness: 'claude' | 'codex'): AvailableHarness {
   if (info === undefined || info.availability !== 'available')
     throw new Error(`The ${harness} catalog fixture is unavailable.`)
   return info
 }
 
-export function claudeHarnessInfoFixture(): Extract<HarnessInfo, { harness: 'claude' }> {
-  return availableInfo(claudeHarnessInfo(claudeComposerModelCatalogFixture()), 'claude') as Extract<
-    HarnessInfo,
-    { harness: 'claude' }
-  >
+export function claudeHarnessInfoFixture(): AvailableHarness {
+  return availableInfo(claudeHarnessInfo(claudeComposerModelCatalogFixture()), 'claude')
 }
 
-export function codexHarnessInfoFixture(): Extract<HarnessInfo, { harness: 'codex' }> {
-  return availableInfo(codexHarnessInfo(codexModelCatalogFixture()), 'codex') as Extract<
-    HarnessInfo,
-    { harness: 'codex' }
-  >
+export function codexHarnessInfoFixture(): AvailableHarness {
+  return availableInfo(codexHarnessInfo(codexModelCatalogFixture()), 'codex')
 }
 
 export function claudeChoices(catalog: ClaudeModelCatalog | null): AvailableHarness | null {

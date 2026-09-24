@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router'
 import type { Cockpit, ProjectActions } from '@/domains/projects/renderer'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
+import type { CatalogReadResult } from '@/harnesses/catalog/catalog-read'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
 import {
@@ -15,6 +16,7 @@ import { Button } from '@/platform/renderer/components/ui/button'
 import { trpc } from '@/platform/renderer/trpc-client'
 import { composerIdentityKey, composerIdentityOf } from '../composer/identity/composer-identity'
 import { COMPOSER_COLUMN, ComposerForm } from '../composer/layout/composer-form'
+import type { CatalogFailure } from '../composer/toolbar/run-setup-menu'
 import { useTurnSetup } from '../composer/turn-setup/use-turn-setup'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import type { HarnessControl } from '../harness/harnesses'
@@ -32,6 +34,16 @@ type SessionScreenDetailsProps = {
   projectActions: Pick<ProjectActions, 'selectWorkspace' | 'createManagedWorkspace'>
 }
 
+function catalogFailureOf(
+  result: CatalogReadResult | undefined,
+  queryFailed: boolean,
+): CatalogFailure | null {
+  if (queryFailed || result?.failure) return { reason: 'load-failed' }
+  const info = result?.info
+  if (info?.availability === 'unavailable') return { reason: info.reason, detail: info.detail }
+  return null
+}
+
 export function SessionComposerArea({
   permission,
   questionPending,
@@ -46,6 +58,7 @@ export function SessionComposerArea({
   const catalogQuery = useQuery(trpc.harnessCatalogRead.queryOptions({ harness: harness.harness }))
   const catalogRefresh = useMutation(trpc.harnessCatalogRefresh.mutationOptions())
   const catalog = catalogQuery.data?.info ?? null
+  const catalogFailure = catalogFailureOf(catalogQuery.data, catalogQuery.isError)
   const pending = useSessionCreationStore((state) => state.pending)
   const identity = composerIdentityOf(
     selectedSessionId,
@@ -67,17 +80,13 @@ export function SessionComposerArea({
         sessionId={composerIdentityKey(identity)}
         focusOnMount={location.state === COMPOSER_FOCUS_STATE}
         setup={control}
-        catalogError={
-          catalogQuery.isError || (catalogQuery.isSuccess && catalog?.availability !== 'available')
-        }
-        refreshCatalog={() => {
+        catalogFailure={catalogFailure}
+        refreshCatalog={() =>
           catalogRefresh.mutate(
             { harness: harness.harness },
-            {
-              onSettled: () => void catalogQuery.refetch(),
-            },
+            { onSettled: () => void catalogQuery.refetch() },
           )
-        }}
+        }
         workspace={
           identity.kind === 'draft'
             ? {

@@ -5,11 +5,8 @@ import {
   invalidCatalogResponse,
   unavailable,
 } from '@/harnesses/catalog/harness-catalog-machine'
+import { platformText } from '@/platform/main/i18n'
 import type { CodexRequest } from './app-server/codex-app-server-machine'
-
-function effortLabel(value: string): string {
-  return value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
-}
 
 export const codexModelEffortSchema = z.object({
   reasoningEffort: z.string().min(1),
@@ -48,20 +45,20 @@ export type CodexModelCatalog = z.infer<typeof codexModelCatalogSchema>
 const SANDBOX_MODES = [
   {
     value: 'read-only',
-    label: 'Ask first',
-    detail: 'Read-only work asks before any change',
+    label: platformText('harnessCatalog.codexMode.readOnly.label'),
+    detail: platformText('harnessCatalog.codexMode.readOnly.detail'),
     icon: 'mode-manual',
   },
   {
     value: 'workspace-write',
-    label: 'Approve safely',
-    detail: 'Work in this project, asking at the boundary',
+    label: platformText('harnessCatalog.codexMode.workspaceWrite.label'),
+    detail: platformText('harnessCatalog.codexMode.workspaceWrite.detail'),
     icon: 'mode-approve-safely',
   },
   {
     value: 'danger-full-access',
-    label: 'Full access',
-    detail: 'Work without permission prompts',
+    label: platformText('harnessCatalog.codexMode.fullAccess.label'),
+    detail: platformText('harnessCatalog.codexMode.fullAccess.detail'),
     icon: 'mode-bypass-permissions',
   },
 ] as const
@@ -108,7 +105,7 @@ export function codexHarnessInfo(catalog: CodexModelCatalog | null): HarnessInfo
       ).values(),
     ].map((effort) => ({
       value: effort.reasoningEffort,
-      label: effort.description || effortLabel(effort.reasoningEffort),
+      label: effort.description || effort.reasoningEffort,
       readings: { exact: [effort.reasoningEffort], prefixes: [] },
     })),
     modes: SANDBOX_MODES.map((mode) => ({

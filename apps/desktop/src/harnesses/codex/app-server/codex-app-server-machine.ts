@@ -150,6 +150,7 @@ export type CodexProcess = {
 }
 
 export type CodexChannel = {
+  invalidMessageCount: () => number
   notify: (method: 'initialized') => void
   request: <Method extends keyof RequestParams & string, Result>(
     method: Method,
@@ -175,6 +176,8 @@ type PendingRequests = Map<
 >
 
 type ChannelState = {
+  invalidMessageCount: number
+  reportInvalidMessage: (error: unknown) => void
   pending: PendingRequests
   notificationListeners: Array<(message: WireMessage) => boolean | undefined>
   exitListeners: Array<() => void>
@@ -196,7 +199,9 @@ function handleLine(process: CodexProcess, state: ChannelState, line: string) {
   let message: WireMessage
   try {
     message = readMessage(line)
-  } catch {
+  } catch (error) {
+    state.invalidMessageCount += 1
+    state.reportInvalidMessage(error)
     return
   }
   if ('method' in message) {
@@ -235,9 +240,13 @@ function wireInbound(process: CodexProcess, state: ChannelState) {
 export function openCodexChannel(
   process: CodexProcess,
   requestTimeoutMs = REQUEST_TIMEOUT_MS,
+  reportInvalidMessage = (error: unknown) =>
+    console.error('Codex app-server sent an invalid protocol message:', error),
 ): CodexChannel {
   let sequence = 0
   const state: ChannelState = {
+    invalidMessageCount: 0,
+    reportInvalidMessage,
     pending: new Map(),
     notificationListeners: [],
     exitListeners: [],
@@ -251,6 +260,7 @@ export function openCodexChannel(
   const lines = wireInbound(process, state)
 
   return {
+    invalidMessageCount: () => state.invalidMessageCount,
     notify(method) {
       send({
         method,

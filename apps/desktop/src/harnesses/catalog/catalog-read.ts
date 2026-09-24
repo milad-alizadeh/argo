@@ -10,6 +10,7 @@ const outputSchema = z.strictObject({
   info: harnessInfoSchema,
   failure: z.string().nullable(),
 })
+export type CatalogReadResult = z.infer<typeof outputSchema>
 
 export type CatalogActor = ActorRefFrom<ReturnType<typeof createHarnessCatalogMachine>>
 type Harness = z.infer<typeof inputSchema>['harness']

@@ -31,3 +31,16 @@ test('resolves a request that gets an answer before its timeout', async () => {
 
   assert.deepEqual(await request, { data: [] })
 })
+
+test('reports and counts an invalid protocol line while keeping the channel open', async () => {
+  const process = silentProcess()
+  const reports: unknown[] = []
+  const channel = openCodexChannel(process, 20, (error) => reports.push(error))
+  const request = channel.request('model/list', {}, (value) => value)
+  process.stdout.write('{invalid JSON}\n')
+  process.stdout.write(`${JSON.stringify({ id: 1, result: { data: [] } })}\n`)
+  assert.deepEqual(await request, { data: [] })
+  assert.equal(channel.invalidMessageCount(), 1)
+  assert.equal(reports.length, 1)
+  assert.match(String(reports[0]), /SyntaxError/)
+})

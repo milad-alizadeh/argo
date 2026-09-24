@@ -25,14 +25,19 @@ export type TurnSetupControlProps = {
 type RunSetupMenuProps = {
   harness: HarnessControl
   setup: TurnSetupControlProps | null
-  catalogError?: boolean
+  catalogFailure?: CatalogFailure | null
   refreshCatalog?: () => void
+}
+
+export type CatalogFailure = {
+  reason: 'not-installed' | 'not-signed-in' | 'invalid-response' | 'unavailable' | 'load-failed'
+  detail?: string
 }
 
 export function RunSetupMenu({
   harness,
   setup,
-  catalogError = false,
+  catalogFailure = null,
   refreshCatalog,
 }: RunSetupMenuProps) {
   const { t } = useTranslation('sessions')
@@ -42,7 +47,7 @@ export function RunSetupMenu({
     <SetupBody
       harness={harness}
       setup={setup}
-      catalogError={catalogError}
+      catalogFailure={catalogFailure}
       refreshCatalog={refreshCatalog}
     />
   )
@@ -94,13 +99,15 @@ function setupFacts(setup: TurnSetupControlProps | null) {
   ]
 }
 
-function SetupBody({ harness, setup, catalogError, refreshCatalog }: RunSetupMenuProps) {
+function SetupBody({ harness, setup, catalogFailure, refreshCatalog }: RunSetupMenuProps) {
   const { t } = useTranslation('sessions')
-  if (catalogError)
+  if (catalogFailure)
     return (
       <div className="space-y-2 p-3.5" role="alert">
         <p className="type-meta text-muted-foreground">
-          {t('composer.setup.modelCatalogError', { harness: HARNESSES[harness.harness].label })}
+          {t(`composer.setup.catalogFailure.${catalogFailure.reason}`, {
+            harness: HARNESSES[harness.harness].label,
+          })}
         </p>
         <Button onClick={refreshCatalog} size="sm" type="button" variant="outline">
           {t('composer.setup.refreshModels')}

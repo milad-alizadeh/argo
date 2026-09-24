@@ -30,7 +30,11 @@ type ComposerCardProps = {
   plan: SessionPlan | null
   sessionId: string
   setup: TurnSetupControlProps | null
-  catalogState?: { catalogError: boolean; refreshCatalog?: () => void; sendAvailable?: boolean }
+  catalogState?: {
+    catalogFailure: import('../toolbar/run-setup-menu').CatalogFailure | null
+    refreshCatalog?: () => void
+    sendAvailable?: boolean
+  }
   workspace: WorkspaceMenuControlProps | null
 }
 
@@ -160,7 +164,7 @@ export function ComposerCard(props: ComposerCardProps) {
           onInterrupt={props.onInterrupt}
           setup={props.setup}
           workspace={props.workspace}
-          catalogError={props.catalogState?.catalogError}
+          catalogFailure={props.catalogState?.catalogFailure}
           refreshCatalog={props.catalogState?.refreshCatalog}
         />
       </fieldset>

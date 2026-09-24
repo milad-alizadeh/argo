@@ -7,14 +7,15 @@ import {
   invalidCatalogResponse,
   unavailable,
 } from '@/harnesses/catalog/harness-catalog-machine'
+import { platformText } from '@/platform/main/i18n'
 
 const effortLabels: Record<string, string> = {
-  low: 'Low',
-  medium: 'Medium',
-  high: 'High',
-  xhigh: 'Extra high',
-  max: 'Max',
-  ultra: 'Ultra',
+  low: platformText('harnessCatalog.effort.low'),
+  medium: platformText('harnessCatalog.effort.medium'),
+  high: platformText('harnessCatalog.effort.high'),
+  xhigh: platformText('harnessCatalog.effort.xhigh'),
+  max: platformText('harnessCatalog.effort.max'),
+  ultra: platformText('harnessCatalog.effort.ultra'),
 }
 const permissionModePresentation: Record<
   string,
@@ -30,22 +31,34 @@ const permissionModePresentation: Record<
       | 'mode-bypass-permissions'
   }
 > = {
-  auto: { label: 'Auto', detail: 'Claude handles permission decisions', icon: 'mode-auto' },
-  manual: { label: 'Manual', detail: 'Ask before making changes', icon: 'mode-manual' },
+  auto: {
+    label: platformText('harnessCatalog.claudeMode.auto.label'),
+    detail: platformText('harnessCatalog.claudeMode.auto.detail'),
+    icon: 'mode-auto',
+  },
+  manual: {
+    label: platformText('harnessCatalog.claudeMode.manual.label'),
+    detail: platformText('harnessCatalog.claudeMode.manual.detail'),
+    icon: 'mode-manual',
+  },
   acceptEdits: {
-    label: 'Accept edits',
-    detail: 'Accept file edits automatically',
+    label: platformText('harnessCatalog.claudeMode.acceptEdits.label'),
+    detail: platformText('harnessCatalog.claudeMode.acceptEdits.detail'),
     icon: 'mode-accept-edits',
   },
-  plan: { label: 'Plan', detail: 'Create a plan before making changes', icon: 'mode-plan' },
+  plan: {
+    label: platformText('harnessCatalog.claudeMode.plan.label'),
+    detail: platformText('harnessCatalog.claudeMode.plan.detail'),
+    icon: 'mode-plan',
+  },
   dontAsk: {
-    label: "Don't ask",
-    detail: 'Deny anything not approved in advance',
+    label: platformText('harnessCatalog.claudeMode.dontAsk.label'),
+    detail: platformText('harnessCatalog.claudeMode.dontAsk.detail'),
     icon: 'mode-dont-ask',
   },
   bypassPermissions: {
-    label: 'Bypass',
-    detail: 'Run without permission checks',
+    label: platformText('harnessCatalog.claudeMode.bypassPermissions.label'),
+    detail: platformText('harnessCatalog.claudeMode.bypassPermissions.detail'),
     icon: 'mode-bypass-permissions',
   },
 }
@@ -124,7 +137,7 @@ export function claudeHarnessInfo(response: unknown): HarnessInfo {
       value,
       ...(permissionModePresentation[value] ?? {
         label: value,
-        detail: 'Permission mode reported by Claude Code',
+        detail: platformText('harnessCatalog.claudeMode.unknownModeDetail'),
         icon: 'mode-manual' as const,
       }),
       readings: { exact: value === 'manual' ? [value, 'default'] : [value], prefixes: [] },
@@ -157,6 +170,13 @@ export async function readClaudeHarnessInfo(executablePath: string | null): Prom
     return claudeHarnessInfo({ data: models, supportedPermissionModes: permissionModes })
   } catch (error) {
     if (error instanceof z.ZodError) return invalidCatalogResponse('claude', error)
+    if (error instanceof InvalidPermissionModesError)
+      return {
+        harness: 'claude',
+        availability: 'unavailable',
+        reason: 'invalid-response',
+        detail: error.message,
+      }
     return unavailable('claude')
   }
 }
@@ -171,12 +191,18 @@ function readSupportedPermissionModes(executablePath: string): Promise<string[]>
       }
       const modes = permissionModesFromHelp(stdout)
       if (modes.length === 0) {
-        reject(new Error('Claude help does not list permission modes.'))
+        reject(new InvalidPermissionModesError())
         return
       }
       resolve(modes)
     })
   })
+}
+
+export class InvalidPermissionModesError extends Error {
+  constructor() {
+    super('Claude help does not list permission modes.')
+  }
 }
 
 export function permissionModesFromHelp(help: string): string[] {

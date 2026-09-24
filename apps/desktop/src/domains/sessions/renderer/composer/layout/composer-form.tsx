@@ -3,7 +3,7 @@ import type { SessionPlan } from '@/domains/sessions/contract/model/models'
 import type { HarnessControl } from '../../harness/harnesses'
 import type { Send } from '../hooks/use-send'
 import { useSessionComposerState } from '../hooks/use-session-composer-state'
-import type { TurnSetupControlProps } from '../toolbar/run-setup-menu'
+import type { CatalogFailure, TurnSetupControlProps } from '../toolbar/run-setup-menu'
 import type { WorkspaceMenuControlProps } from '../toolbar/workspace-menu'
 import { AttachmentTray } from '../tray/attachment-tray'
 import { PendingTurns } from '../tray/pending-turns'
@@ -31,7 +31,7 @@ export type ComposerFormProps = {
   plan?: SessionPlan | null
   harness?: HarnessControl | null
   setup?: TurnSetupControlProps | null
-  catalogError?: boolean
+  catalogFailure?: CatalogFailure | null
   refreshCatalog?: () => void
   workspace?: WorkspaceMenuControlProps | null
 }
@@ -54,7 +54,7 @@ export function ComposerForm({
   plan = null,
   harness = null,
   setup = null,
-  catalogError = false,
+  catalogFailure = null,
   refreshCatalog,
   workspace = null,
 }: ComposerFormProps) {
@@ -96,7 +96,7 @@ export function ComposerForm({
         plan={plan}
         sessionId={sessionId}
         setup={setup}
-        catalogState={{ catalogError, refreshCatalog, sendAvailable: onSend !== undefined }}
+        catalogState={{ catalogFailure, refreshCatalog, sendAvailable: onSend !== undefined }}
         workspace={workspace}
       />
     </form>
