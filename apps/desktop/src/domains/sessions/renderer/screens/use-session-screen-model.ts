@@ -30,9 +30,7 @@ function useIndexedSessionFeed(selectedSessionId: string | null) {
   useWatchedQueries('session-live', [
     trpc.sessionFeed.queryKey({ sessionId: querySessionId, source: 'live' }),
   ])
-  useWatchedQueries('sessions', [
-    trpc.sessions.get.queryKey({ argoId: querySessionId }),
-  ])
+  useWatchedQueries('sessions', [trpc.sessions.get.queryKey({ argoId: querySessionId })])
   const history = useQuery({
     ...trpc.sessionFeed.queryOptions({
       sessionId: querySessionId,
