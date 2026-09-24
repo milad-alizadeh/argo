@@ -25,6 +25,7 @@ import {
 import { writeDevelopmentReady } from '@/platform/main/development/ready'
 import { resetIncompleteDevelopmentDatabase } from '@/platform/main/development/reset-incomplete-database'
 import { installMenu } from '@/platform/main/menu'
+import { attachWindowNavigation } from '@/platform/main/security/window-navigation'
 import { configureStorageRuntime } from '@/platform/main/storage/storage-runtime'
 import { appRouter } from '@/platform/main/trpc-router'
 import { attachTrpcTransport } from '@/platform/main/trpc-transport'
@@ -111,6 +112,7 @@ function createWindow(): void {
         ]
       : undefined,
     attach: (window, rendererURL) => {
+      attachWindowNavigation(window)
       const detachTrpc = attachTrpcTransport({
         window,
         rendererURL,

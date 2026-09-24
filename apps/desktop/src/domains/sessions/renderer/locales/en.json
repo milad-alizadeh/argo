@@ -13,6 +13,12 @@
   "noSessionsFound": "No Sessions found",
   "loadingMoreSessions": "Loading more Sessions",
   "unableToLoadSessions": "Unable to load Sessions",
+  "pagination": {
+    "label": "Session pages",
+    "next": "Next page",
+    "page": "Page {{current}} of {{total}}",
+    "previous": "Previous page"
+  },
   "errors": {
     "roster": "Argo could not read the Sessions again.",
     "feed": "Argo cannot read this Session's history."

@@ -1,5 +1,6 @@
 import { initTRPC } from '@trpc/server'
-import { asc, count } from 'drizzle-orm'
+import { count, desc, eq } from 'drizzle-orm'
+import { projectSelection } from '@/domains/projects/main/schema'
 import {
   sessionPageInputSchema,
   sessionPageOutputSchema,
@@ -18,6 +19,13 @@ export const sessionRouter = t.router({
     .output(sessionPageOutputSchema)
     .query(({ ctx, input }) => {
       const offset = (input.page - 1) * input.pageSize
+      const selectedProjectId = ctx.database
+        .select({ projectId: projectSelection.projectId })
+        .from(projectSelection)
+        .where(eq(projectSelection.singleton, 1))
+        .get()?.projectId
+      if (!selectedProjectId) return { ...input, total: 0, items: [] }
+      const projectFilter = eq(session.projectId, selectedProjectId)
       const rows = ctx.database
         .select({
           argoId: session.argoId,
@@ -26,12 +34,14 @@ export const sessionRouter = t.router({
           title: session.title,
         })
         .from(session)
-        .orderBy(asc(session.updatedAt), asc(session.argoId))
+        .where(projectFilter)
+        .orderBy(desc(session.updatedAt), desc(session.argoId))
         .limit(input.pageSize)
         .offset(offset)
         .all()
       const items = rows.map((row) => ({ ...row, harness: harnessSchema.parse(row.harness) }))
-      const total = ctx.database.select({ total: count() }).from(session).get()?.total ?? 0
+      const total =
+        ctx.database.select({ total: count() }).from(session).where(projectFilter).get()?.total ?? 0
       return { ...input, total, items }
     }),
 })
