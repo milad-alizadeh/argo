@@ -9,10 +9,8 @@ function documentURL(url: string): string {
   return parsed.href
 }
 
-// Packaged file URLs are normalized by Electron, so trust their scheme; the navigation guard keeps
-// other local documents out. A dev-server document must match exactly.
+// Both packaged and development documents must match the one document the window was opened with.
 export function isRendererDocument(frameURL: string, rendererURL: string): boolean {
-  if (rendererURL.startsWith('file:')) return frameURL.startsWith('file:')
   if (!(URL.canParse(frameURL) && URL.canParse(rendererURL))) return false
   return documentURL(frameURL) === documentURL(rendererURL)
 }

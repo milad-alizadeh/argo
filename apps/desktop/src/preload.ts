@@ -13,6 +13,7 @@ import {
 import type { AppearanceState } from '@/platform/contract/appearance'
 import { APPEARANCE_CHANGED_CHANNEL, isAppearanceState } from '@/platform/contract/appearance'
 import { COMMAND_CHANNEL } from '@/platform/contract/commands'
+import { TRPC_CHANNEL } from '@/platform/contract/trpc'
 import { isWatchTopic, WATCHED_CHANGED_CHANNEL, type WatchTopic } from '@/platform/contract/watch'
 import { developmentIdentityFromArguments } from '@/platform/preload/development-identity'
 
@@ -54,4 +55,5 @@ contextBridge.exposeInMainWorld('argo', {
   pathForFile: (file: File) => webUtils.getPathForFile(file),
   versions: { electron: process.versions.electron, chrome: process.versions.chrome },
   development: developmentIdentityFromArguments(process.argv),
+  trpc: (request: unknown) => ipcRenderer.invoke(TRPC_CHANNEL, request),
 })
