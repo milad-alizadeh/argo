@@ -10,9 +10,9 @@ import {
   type SessionFeedRow,
   type SessionRosterRow,
 } from '@/domains/sessions/contract/model/models'
-import { driveSessionError } from '@/domains/sessions/contract/session-error'
 import { stitchChains } from '@/domains/sessions/contract/model/transcript/chains'
 import { transcriptFileFrom } from '@/domains/sessions/contract/model/transcript/transcript-file'
+import { driveSessionError } from '@/domains/sessions/contract/session-error'
 import { discoverRoster } from '@/domains/sessions/main/observation/reader/discover-roster'
 import type { SessionSource } from '@/domains/sessions/main/observation/reader/session-source'
 import { projectFeed } from '@/domains/sessions/main/projection/feed/feed-incremental'
@@ -85,7 +85,11 @@ function watchedRows(sessions: StoredSession[]) {
     .map((row) => ({ ...row, posture: 'watched' as const }))
 }
 
-function rosterStatistics(sessions: StoredSession[], filesFound = sessions.length, filesOmitted = 0) {
+function rosterStatistics(
+  sessions: StoredSession[],
+  filesFound = sessions.length,
+  filesOmitted = 0,
+) {
   const relayOutput = sessions.filter(isRelayOutput).length
   const rejected = sessions.filter(
     (session) =>
@@ -243,13 +247,14 @@ function createFeedReaders(
   }
 }
 
-function createSessionRosterReader(
-  history: ClaudeSdkHistory,
-  sessions: Map<string, StoredSession>,
-  currentRoster: Map<string, StoredSession>,
-  managedSessions: () => SessionRosterRow[],
-  countTranscriptFiles: (() => Promise<number>) | undefined,
-) {
+function createSessionRosterReader(options: {
+  history: ClaudeSdkHistory
+  sessions: Map<string, StoredSession>
+  currentRoster: Map<string, StoredSession>
+  managedSessions: () => SessionRosterRow[]
+  countTranscriptFiles: (() => Promise<number>) | undefined
+}) {
+  const { history, sessions, currentRoster, managedSessions, countTranscriptFiles } = options
   return async (request?: Parameters<SessionSource['discoverSessions']>[0]) => {
     const offset = offsetFor(request?.cursor)
     const sessionsOnPage = await readClaudeSessionPage(history, offset)
@@ -260,9 +265,7 @@ function createSessionRosterReader(
     }
     const pageComplete = sessionsOnPage.length < ROSTER_PAGE_SIZE
     const sessionsToCount = Array.from(currentRoster.values())
-    const filesFound = countTranscriptFiles
-      ? await countTranscriptFiles()
-      : currentRoster.size
+    const filesFound = countTranscriptFiles ? await countTranscriptFiles() : currentRoster.size
     const sdkOmitted = pageComplete ? Math.max(0, filesFound - currentRoster.size) : 0
     const pageStats = rosterStatistics(sessionsToCount, filesFound, sdkOmitted)
     reportPageIssues(sessionsOnPage)
@@ -301,13 +304,13 @@ export function createClaudeSdkHistorySource(
   const sessions = new Map<string, StoredSession>()
   const currentRoster = new Map<string, StoredSession>()
   const managedSessions = options.managedSessions ?? (() => [])
-  const rosterReader = createSessionRosterReader(
+  const rosterReader = createSessionRosterReader({
     history,
     sessions,
     currentRoster,
     managedSessions,
-    options.countTranscriptFiles,
-  )
+    countTranscriptFiles: options.countTranscriptFiles,
+  })
   const feedReaders = createFeedReaders(history, sessions, managedSessions)
   return {
     harness: 'claude',
