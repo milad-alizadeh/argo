@@ -60,6 +60,10 @@ function expectEnvelopesAreStructured(rows: SessionFeedRow[]) {
       shape: 'event',
       event: 'skill-invocation',
       text: '/to-spec https://github.com/milad-alizadeh/argo/issues/2669',
+      skill: {
+        name: 'to-spec',
+        path: '/repository/.agents/skills/to-spec/SKILL.md',
+      },
     }),
   )
   expect(rows).toContainEqual(
@@ -131,7 +135,12 @@ test('parses Claude SDK history envelopes before showing them in the Feed', asyn
   const source = createClaudeSdkHistorySource({
     history: {
       listSessions: async () => [
-        { sessionId: 'claude-envelope', summary: 'Envelope history', lastModified: 1 },
+        {
+          sessionId: 'claude-envelope',
+          summary: 'Envelope history',
+          lastModified: 1,
+          cwd: '/repository',
+        },
       ],
       getSessionMessages: async () => messages,
     },
@@ -144,12 +153,64 @@ test('parses Claude SDK history envelopes before showing them in the Feed', asyn
 
   const transcript = readTranscriptFile('/transcript.jsonl', {
     sessionId: 'claude-envelope',
-    lines: messages.map((message) => JSON.stringify(message)),
+    lines: messages.map((message, index) =>
+      JSON.stringify(index === 0 ? { ...message, cwd: '/repository' } : message),
+    ),
   })
   const chain = stitchChains([transcript])[0]
   const transcriptRows = chain === undefined ? [] : projectFeed(chain, undefined).rows
 
   expectEnvelopesAreStructured(transcriptRows)
+})
+
+test('reads the SDK child transcript by the task id while the Feed keeps its tool call id', async () => {
+  const childMessages: SessionMessage[] = [
+    {
+      type: 'user',
+      uuid: 'child-message',
+      session_id: 'claude-parent',
+      message: { content: 'Child work' },
+      parent_tool_use_id: null,
+      parent_agent_id: 'agent-9',
+    },
+  ]
+  let requestedAgentId: string | undefined
+  const source = createClaudeSdkHistorySource({
+    history: {
+      listSessions: async () => [
+        { sessionId: 'claude-parent', summary: 'Parent', lastModified: 1 },
+      ],
+      getSessionMessages: async () => [
+        {
+          type: 'user',
+          uuid: 'task-notification',
+          session_id: 'claude-parent',
+          message: {
+            content:
+              '<task-notification><task-id>agent-9</task-id><tool-use-id>toolu_1</tool-use-id><status>completed</status><summary>Agent "Child" finished</summary></task-notification>',
+          },
+          parent_tool_use_id: null,
+          parent_agent_id: null,
+        },
+      ],
+      getSubagentMessages: async (_sessionId, agentId) => {
+        requestedAgentId = agentId
+        return childMessages
+      },
+    },
+  })
+
+  await source.discoverSessions()
+  const parentFeed = await source.readObservedFeed?.('claude-parent')
+  const child = await source.readSubagentFiles?.('claude-parent', 'toolu_1')
+
+  expect(parentFeed?.rows).toContainEqual(
+    expect.objectContaining({ shape: 'subagent', subagentId: 'toolu_1' }),
+  )
+  expect(requestedAgentId).toBe('agent-9')
+  expect(child?.files.flatMap((file) => file.records)).toContainEqual(
+    expect.objectContaining({ kind: 'message', uuid: 'child-message' }),
+  )
 })
 
 test('keeps SDK compaction boundaries and folds their continuation summary', async () => {

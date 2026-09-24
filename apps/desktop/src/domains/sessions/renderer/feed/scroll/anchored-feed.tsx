@@ -27,6 +27,7 @@ type AnchoredFeedProps = {
   streamingRowId: string | null
   // Markers after the last row (Working, compaction, handoff), scrolled with it clear of the composer.
   tail: ReactNode
+  historyLabel: string
 }
 
 // TanStack chat pattern: https://tanstack.com/virtual/latest/docs/chat.
@@ -43,6 +44,7 @@ export function AnchoredFeed({
   revealsFor,
   streamingRowId,
   tail,
+  historyLabel,
 }: AnchoredFeedProps) {
   const { attachViewport, padding, viewport } = useFeedViewport()
   const tailFollow = useFeedTailFollow(settled.reading.sessionId, { active, viewport })
@@ -99,6 +101,7 @@ export function AnchoredFeed({
         settled={settled}
         streamingRowId={streamingRowId}
         tail={tail}
+        historyLabel={historyLabel}
         virtualizer={virtualizer}
       />
     </div>

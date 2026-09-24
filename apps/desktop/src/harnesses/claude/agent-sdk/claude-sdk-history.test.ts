@@ -3,6 +3,7 @@ import {
   ClaudeSdkHistoryUnavailableError,
   readClaudeSessionMessages,
   readClaudeSessions,
+  readClaudeSubagentMessages,
 } from './claude-sdk-history'
 
 test('reads every Claude SDK history page without inspecting transcript files', async () => {
@@ -71,4 +72,53 @@ test('reads every SDK message page for a watched Session', async () => {
 
   expect(offsets).toEqual([0, 50])
   expect(messages).toHaveLength(51)
+})
+
+test('reads every SDK message page for a Subagent', async () => {
+  const offsets: number[] = []
+  const messages = await readClaudeSubagentMessages(
+    {
+      listSessions: async () => [],
+      getSessionMessages: async () => [],
+      getSubagentMessages: async (sessionId, agentId, { offset }) => {
+        expect(sessionId).toBe('session-1')
+        expect(agentId).toBe('agent-1')
+        offsets.push(offset)
+        return offset === 0
+          ? Array.from({ length: 50 }, (_, index) => ({
+              type: 'user' as const,
+              uuid: `child-${index}`,
+              session_id: 'session-1',
+              message: { content: 'Page one' },
+              parent_tool_use_id: null,
+              parent_agent_id: 'agent-1',
+            }))
+          : [
+              {
+                type: 'assistant' as const,
+                uuid: 'child-50',
+                session_id: 'session-1',
+                message: { content: 'Page two' },
+                parent_tool_use_id: null,
+                parent_agent_id: 'agent-1',
+              },
+            ]
+      },
+    },
+    'session-1',
+    'agent-1',
+  )
+
+  expect(offsets).toEqual([0, 50])
+  expect(messages).toHaveLength(51)
+})
+
+test('returns no Subagent history when the source lacks the SDK capability', async () => {
+  const messages = await readClaudeSubagentMessages(
+    { listSessions: async () => [], getSessionMessages: async () => [] },
+    'session-1',
+    'agent-1',
+  )
+
+  expect(messages).toBeNull()
 })

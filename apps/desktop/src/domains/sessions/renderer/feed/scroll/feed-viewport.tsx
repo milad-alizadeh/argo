@@ -1,6 +1,5 @@
 import type { ReactVirtualizer } from '@tanstack/react-virtual'
 import { type ReactNode, useCallback } from 'react'
-import { useTranslation } from 'react-i18next'
 import type { SessionFeedRow } from '../../types'
 import type { Settled } from '../document/use-settled-feed'
 import { feedContentHeight } from './prompt-pin'
@@ -22,6 +21,7 @@ type FeedViewportProps = {
   setViewport: (viewport: HTMLElement | null) => void
   streamingRowId: string | null
   tail: ReactNode
+  historyLabel: string
   virtualizer: ReactVirtualizer<HTMLElement, Element>
 }
 
@@ -36,9 +36,9 @@ export function FeedViewport({
   setViewport,
   streamingRowId,
   tail,
+  historyLabel,
   virtualizer,
 }: FeedViewportProps) {
-  const { t } = useTranslation('sessions')
   // A scrollable region needs its own tab stop so keyboard-only reading (arrow keys, Page Up/Down)
   // reaches it even before any row inside becomes focusable (#2623: scrollable-region-focusable).
   // Set by hand on the node rather than a `tabIndex` prop: biome's `noNoninteractiveTabindex`
@@ -54,7 +54,7 @@ export function FeedViewport({
   )
   return (
     <section
-      aria-label={t('historyLabel')}
+      aria-label={historyLabel}
       className="feed__viewport"
       data-reading-revision={settled.reading.revision}
       data-session={settled.reading.sessionId}

@@ -16,6 +16,11 @@ export type ClaudeSdkHistory = {
     sessionId: string,
     options: { limit: number; offset: number },
   ) => Promise<SessionMessage[]>
+  getSubagentMessages?: (
+    sessionId: string,
+    agentId: string,
+    options: { limit: number; offset: number },
+  ) => Promise<SessionMessage[]>
 }
 
 // The SDK owns its storage format. Argo only requests complete pages of vendor history (#2583).
@@ -53,4 +58,17 @@ export async function readClaudeSessionMessages(
   sessionId: string,
 ): Promise<SessionMessage[]> {
   return readPages((offset) => history.getSessionMessages(sessionId, { limit: PAGE_SIZE, offset }))
+}
+
+export async function readClaudeSubagentMessages(
+  history: ClaudeSdkHistory,
+  sessionId: string,
+  agentId: string,
+): Promise<SessionMessage[] | null> {
+  if (history.getSubagentMessages === undefined) return null
+  return readPages(
+    (offset) =>
+      history.getSubagentMessages?.(sessionId, agentId, { limit: PAGE_SIZE, offset }) ??
+      Promise.resolve([]),
+  )
 }

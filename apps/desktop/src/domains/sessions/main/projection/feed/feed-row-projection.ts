@@ -1,3 +1,4 @@
+import path from 'node:path'
 import type { SessionFeedRow } from '@/domains/sessions/contract/model/feed/feed-rows'
 import { type ToolEvidence, toolRows } from '@/domains/sessions/contract/model/feed/tool-feed'
 import type { SubagentEvent } from '@/domains/sessions/contract/model/transcript/subagent-event'
@@ -42,6 +43,40 @@ function subagentRow(record: SubagentEvent): SessionFeedRow {
   }
 }
 
+type FeedEvent = Extract<SessionFeedRow, { shape: 'event' }>
+
+function skillOf(event: FeedEvent['event'], text: string | null, cwd: string | null) {
+  if (event !== 'skill-invocation' || text === null || cwd === null) return undefined
+  const name = /^\/([\w-]+)(?:\s|$)/u.exec(text)?.[1]
+  if (name === undefined) return undefined
+  // Project skills live at this path; the renderer reads this exact file through the existing skill reader.
+  return { name, path: path.join(cwd, '.agents', 'skills', name, 'SKILL.md') }
+}
+
+function eventRow({
+  id,
+  event,
+  text,
+  raw,
+  cwd,
+}: {
+  id: string
+  event: FeedEvent['event']
+  text: string | null
+  raw?: string | null
+  cwd: string | null
+}): SessionFeedRow {
+  const skill = skillOf(event, text, cwd)
+  return {
+    shape: 'event',
+    id,
+    event,
+    text,
+    ...(skill === undefined ? {} : { skill }),
+    raw: raw ?? null,
+  }
+}
+
 export function rowsOfRecord(
   record: TranscriptRecord,
   position: string,
@@ -70,8 +105,7 @@ export function rowsOfRecord(
       : []
   if (record.kind === 'command-output')
     return [{ shape: 'command-output', id: record.uuid, text: record.text }]
-  if (record.kind === 'event')
-    return [{ shape: 'event', id: record.uuid, event: record.event, text: record.text, raw: null }]
+  if (record.kind === 'event') return [eventRow({ ...record, id: record.uuid, cwd: null })]
   if (record.kind === 'subagent') return [subagentRow(record)]
   // A subagent's turn is not this Session's history. The Harness nests it; Argo leaves it out rather
   // than drawing another agent's work as the reader's own (see `chainMessages`).
@@ -132,7 +166,7 @@ function rowsOfBlock({
     case 'marker':
       return [{ shape: 'marker', id, marker: block.marker, summary: null }]
     case 'event':
-      return [{ shape: 'event', id, event: block.event, text: block.text, raw: block.raw ?? null }]
+      return [eventRow({ ...block, id, cwd: record.cwd })]
     case 'tool': {
       const call = calls.get(block.callId)
       return call === undefined ? [] : toolRows([call], evidence)

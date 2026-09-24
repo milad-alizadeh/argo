@@ -31,6 +31,7 @@ export type KeptDocumentShared = {
   answeringQuestionId: string | null
   questionFailure: (questionId: string) => string | null
   stallTimeoutMs: number
+  historyLabel: string
 }
 
 export function keptDocument(id: SessionId, document: SessionFeed, shared: KeptDocumentShared) {
@@ -49,6 +50,7 @@ export function keptDocument(id: SessionId, document: SessionFeed, shared: KeptD
     answeringQuestionId: shared.answeringQuestionId,
     questionFailure: shared.questionFailure,
     stallTimeoutMs: shared.stallTimeoutMs,
+    historyLabel: shared.historyLabel,
   }
   return <FeedDocument actions={actions} key={id} liveFacts={liveFacts} reading={document} />
 }
