@@ -2,6 +2,7 @@ import { beforeEach, expect, test } from 'bun:test'
 
 import {
   isOptimisticSessionId,
+  newSessionTarget,
   readableSessionId,
   useSessionCreationStore,
 } from './session-creation'
@@ -20,6 +21,22 @@ test('a second begin while one is pending returns the same row, not a second one
   const first = useSessionCreationStore.getState().begin('claude', '/argo')
   const second = useSessionCreationStore.getState().begin('codex', '/other')
   expect(second).toEqual(first)
+})
+
+test('a new Session action targets the pending row', () => {
+  const target = newSessionTarget('claude', '/argo')
+  expect(target).toBe(useSessionCreationStore.getState().pending?.id)
+})
+
+test('repeated new Session actions target one pending row', () => {
+  const first = newSessionTarget('claude', '/argo')
+  expect(newSessionTarget('claude', '/argo')).toBe(first)
+  expect(newSessionTarget('codex', '/other')).toBe(first)
+})
+
+test('a new Session action without an open Project creates no row', () => {
+  expect(newSessionTarget('claude', null)).toBeNull()
+  expect(useSessionCreationStore.getState().pending).toBeNull()
 })
 
 test('a fresh begin after the prior row cleared starts a new one', () => {
