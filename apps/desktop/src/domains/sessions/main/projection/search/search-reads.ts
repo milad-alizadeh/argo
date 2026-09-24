@@ -86,8 +86,8 @@ export const searchRead = fromContext(
       projectRootsOf(request.projectRoot),
     ])
     const result = await searchSources(context.sources, request.query)
-    const fallbackRows = result.rows.filter((row) => matchesSearchQuery(row, request.query))
-    const found = scoped(fallbackRows, { status: request.status, archivedIds, projectRoots })
+    const matchedRows = result.rows.filter((row) => matchesSearchQuery(row, request.query))
+    const found = scoped(matchedRows, { status: request.status, archivedIds, projectRoots })
     const offset = decodeOffset(request.cursor)
     return {
       sessions: found.slice(offset, offset + SEARCH_PAGE_LIMIT),
