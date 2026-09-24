@@ -7,12 +7,29 @@ const sessionIndexResultSchema = z.strictObject({
   argoIds: z.array(z.string().uuid()),
   indexedCount: z.number().int().nonnegative(),
 })
+const claudeDiscoveryResultSchema = sessionIndexResultSchema.extend({
+  complete: z.boolean(),
+  invalidRecordCount: z.number().int().nonnegative(),
+})
 
-export function indexSessionsInWorker(input: {
-  databasePath: string
-  sessions: SessionIngestion[]
-  signal: AbortSignal
-}): Promise<SessionIndexResult> {
+type WorkerInput =
+  | {
+      databasePath: string
+      kind: 'claude-discovery'
+      limit: number
+      offset: number
+    }
+  | {
+      databasePath: string
+      kind: 'index'
+      sessions: SessionIngestion[]
+    }
+
+function runSessionIndexWorker<Result>(
+  input: WorkerInput,
+  signal: AbortSignal,
+  parse: (value: unknown) => Result,
+): Promise<Result> {
   return new Promise((resolve, reject) => {
     const cancelFlag = new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT)
     const worker = new Worker(new URL('./session-index-worker.ts', import.meta.url), {
@@ -22,7 +39,7 @@ export function indexSessionsInWorker(input: {
     const finish = (outcome: () => void) => {
       if (settled) return
       settled = true
-      input.signal.removeEventListener('abort', cancel)
+      signal.removeEventListener('abort', cancel)
       void worker.terminate()
       outcome()
     }
@@ -34,14 +51,42 @@ export function indexSessionsInWorker(input: {
     worker.once('exit', (code) => {
       if (code !== 0) finish(() => reject(new Error(`Session index worker stopped with ${code}.`)))
     })
-    worker.once('message', (value: unknown) =>
-      finish(() => resolve(sessionIndexResultSchema.parse(value))),
-    )
-    input.signal.addEventListener('abort', cancel, { once: true })
-    if (input.signal.aborted) {
+    worker.once('message', (value: unknown) => finish(() => resolve(parse(value))))
+    signal.addEventListener('abort', cancel, { once: true })
+    if (signal.aborted) {
       cancel()
       return
     }
-    worker.postMessage({ cancelFlag, databasePath: input.databasePath, sessions: input.sessions })
+    worker.postMessage({ ...input, cancelFlag })
   })
+}
+
+export function indexSessionsInWorker(input: {
+  databasePath: string
+  sessions: SessionIngestion[]
+  signal: AbortSignal
+}): Promise<SessionIndexResult> {
+  return runSessionIndexWorker(
+    { databasePath: input.databasePath, kind: 'index', sessions: input.sessions },
+    input.signal,
+    sessionIndexResultSchema.parse,
+  )
+}
+
+export function discoverClaudeSessionsInWorker(input: {
+  databasePath: string
+  limit: number
+  offset: number
+  signal: AbortSignal
+}) {
+  return runSessionIndexWorker(
+    {
+      databasePath: input.databasePath,
+      kind: 'claude-discovery',
+      limit: input.limit,
+      offset: input.offset,
+    },
+    input.signal,
+    claudeDiscoveryResultSchema.parse,
+  )
 }

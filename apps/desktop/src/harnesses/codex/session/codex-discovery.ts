@@ -11,7 +11,7 @@ const codexThreadSchema = z.object({
   updatedAt: z.number().int().nonnegative(),
   cwd: z.string().min(1).optional(),
 })
-const codexThreadPageSchema = z.object({
+export const codexThreadPageSchema = z.object({
   data: z.array(z.unknown()),
   nextCursor: z.string().nullable(),
 })
@@ -22,23 +22,9 @@ export type CodexDiscoveryResult = {
   invalidRecordCount: number
 }
 
-export async function readCodexSessions(
-  request: CodexRequest,
-  cursor: string | null,
-  limit: number,
-): Promise<CodexDiscoveryResult> {
-  const page = await request(
-    'thread/list',
-    {
-      cursor,
-      limit,
-      sourceKinds: ['cli', 'vscode', 'appServer'],
-      sortKey: 'updated_at',
-      sortDirection: 'desc',
-      useStateDbOnly: true,
-    },
-    (value) => codexThreadPageSchema.parse(value),
-  )
+export function parseCodexSessionPage(
+  page: z.infer<typeof codexThreadPageSchema>,
+): CodexDiscoveryResult {
   let invalidRecordCount = 0
   const sessions = page.data.flatMap((record) => {
     const thread = codexThreadSchema.safeParse(record)
@@ -61,4 +47,31 @@ export async function readCodexSessions(
     return [parsed.data]
   })
   return { sessions, nextCursor: page.nextCursor, invalidRecordCount }
+}
+
+export async function readCodexSessionPage(
+  request: CodexRequest,
+  cursor: string | null,
+  limit: number,
+): Promise<z.infer<typeof codexThreadPageSchema>> {
+  return request(
+    'thread/list',
+    {
+      cursor,
+      limit,
+      sourceKinds: ['cli', 'vscode', 'appServer'],
+      sortKey: 'updated_at',
+      sortDirection: 'desc',
+      useStateDbOnly: true,
+    },
+    (value) => codexThreadPageSchema.parse(value),
+  )
+}
+
+export async function readCodexSessions(
+  request: CodexRequest,
+  cursor: string | null,
+  limit: number,
+): Promise<CodexDiscoveryResult> {
+  return parseCodexSessionPage(await readCodexSessionPage(request, cursor, limit))
 }
