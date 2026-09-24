@@ -22,14 +22,16 @@ import { sessionHarness } from './session-screen-state'
 import { sessionScreenSubagents } from './session-screen-subagents'
 import { useWorkPick, type WorkSelection } from './work-selection'
 
+const UNSELECTED_SESSION_ID = '00000000-0000-4000-8000-000000000000'
+
 function useIndexedSessionFeed(selectedSessionId: string | null) {
   const sessionId = readableSessionId(selectedSessionId)
-  const querySessionId = sessionId ?? '00000000-0000-4000-8000-000000000000'
+  const querySessionId = sessionId ?? UNSELECTED_SESSION_ID
   useWatchedQueries('session-live', [
     trpc.sessionFeed.queryKey({ sessionId: querySessionId, source: 'live' }),
   ])
   useWatchedQueries('sessions', [
-    trpc.sessions.get.queryKey({ argoId: sessionId ?? '00000000-0000-4000-8000-000000000000' }),
+    trpc.sessions.get.queryKey({ argoId: querySessionId }),
   ])
   const history = useQuery({
     ...trpc.sessionFeed.queryOptions({
@@ -58,7 +60,7 @@ function useIndexedSession(selectedSessionId: string | null) {
   const argoId = readableSessionId(selectedSessionId)
   return useQuery({
     ...trpc.sessions.get.queryOptions({
-      argoId: argoId ?? '00000000-0000-4000-8000-000000000000',
+      argoId: argoId ?? UNSELECTED_SESSION_ID,
     }),
     enabled: argoId !== null,
   })
