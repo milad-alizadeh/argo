@@ -29,7 +29,7 @@ export type CreateRequest = {
   prompt: string
   budgetRunSetup?: boolean
   permissionMode?: 'auto'
-  // Read on every poll while the Roster row is still absent. A true reading fails the case: the
+  // Read on every poll while the SessionList row is still absent. A true reading fails the case: the
   // row a managed Session stands on must not wait for the Harness to write (managed-row.ts).
   harnessWrote?: () => Promise<boolean>
 }
@@ -46,7 +46,7 @@ async function waitForNewSessionRoute(page: Page) {
   await page.waitForFunction(() => /^#\/sessions\/(new|optimistic:)/.test(window.location.hash))
 }
 
-// Opening a Session is a click on its Roster row, the way a person opens one.
+// Opening a Session is a click on its SessionList row, the way a person opens one.
 export async function openSessionByClick(page: Page, sessionId: string) {
   await page.locator(`${ROW}[data-session-id="${sessionId}"]`).click()
   await waitForRoute(page, sessionId)
@@ -59,7 +59,7 @@ export function visibleArchiveMenuItem(page: Page) {
 // Which Sessions the list holds is a status the reader picks in the header's filter (#2239). "All"
 // is the reading that keeps the active rows beside the archived ones, which is what the disclosure
 // the filter replaced did.
-export async function chooseRosterStatus(page: Page, status: 'Active' | 'Archived' | 'All') {
+export async function chooseSessionListStatus(page: Page, status: 'Active' | 'Archived' | 'All') {
   await page.locator(FILTER).click()
   const choice = page.getByRole('menuitemradio', { name: status })
   await choice.click()
@@ -71,18 +71,18 @@ export async function chooseRosterStatus(page: Page, status: 'Active' | 'Archive
 }
 
 export async function openArchivedSessionByClick(page: Page, sessionId: string) {
-  await chooseRosterStatus(page, 'All')
+  await chooseSessionListStatus(page, 'All')
   await page.locator(`${ROW}[data-session-id="${sessionId}"]`).click()
   await waitForRoute(page, sessionId)
 }
 
-// The plus control above the Roster: the only way to the new Session composer.
+// The plus control above the SessionList: the only way to the new Session composer.
 export async function openNewSessionByClick(page: Page) {
   await page.getByRole('button', { name: 'New Session', exact: true }).click()
   await waitForNewSessionRoute(page)
 }
 
-// No affordance reaches the Roster with nothing selected: a person lands there by launching, and
+// No affordance reaches the SessionList with nothing selected: a person lands there by launching, and
 // several cases need that state mid-run.
 export async function deselectSession(page: Page) {
   await page.evaluate(() => {
@@ -126,9 +126,9 @@ async function chooseAutoPermissionMode(page: Page) {
   await expect(mode).toContainText('Auto')
 }
 
-// The Roster ids the shipped app answers with. Reading is an assertion, not a gesture: nothing a
+// The SessionList ids the shipped app answers with. Reading is an assertion, not a gesture: nothing a
 // person does is injected here.
-export async function rosterIds(page: Page): Promise<string[]> {
+export async function sessionListIds(page: Page): Promise<string[]> {
   const reply = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
   assert.equal(reply.type, 'session.listed')
   return reply.sessions.map(({ id }: { id: string }) => id)
@@ -176,7 +176,7 @@ async function waitForCreatedRow(
       assert.equal(
         await request.harnessWrote(),
         false,
-        'the Harness wrote before the new Session reached the Roster',
+        'the Harness wrote before the new Session reached the SessionList',
       )
     }
     if (Date.now() > deadline) throw new Error('Sending from the new Session composer made no row.')
@@ -187,7 +187,7 @@ async function waitForCreatedRow(
 // Clicks the plus control, picks the harness, types the prompt and sends it, then answers with the
 // id of the Session that gesture made.
 export async function createSessionByClick(page: Page, request: CreateRequest): Promise<string> {
-  const known = await rosterIds(page)
+  const known = await sessionListIds(page)
   await openNewSessionByClick(page)
   await chooseHarness(page, request.harness)
   if (request.budgetRunSetup === true) await chooseBudgetRunSetup(page, request.harness)

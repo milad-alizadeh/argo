@@ -11,7 +11,7 @@ import {
   EmptyTitle,
 } from '@/platform/renderer/components/ui/empty'
 
-// Every cockpit surface reads one Project, so with none selected there is no roster to show: the
+// Every cockpit surface reads one Project, so with none selected there is no Session list to show: the
 // window names the one next step instead (#2307).
 export function EmptyProjectWindow({ busy, onAdd }: { busy: boolean; onAdd: () => void }) {
   const { t } = useTranslation('projects')

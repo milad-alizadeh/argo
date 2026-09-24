@@ -9,7 +9,7 @@ const NEW_PROMPT = 'Say hello to a brand new Session.'
 const EXISTING_PROMPT = 'Say hello again to this same Session.'
 // Far under the 3.5 s the blocked pane took, and loose enough for a loaded machine.
 const PROMPT_BUDGET_MS = 1000
-// The unfixed pane sat blank for over 100 frames; one frame of roster-versus-transcript skew is not a gap.
+// The unfixed pane sat blank for over 100 frames; one frame of session-list-versus-transcript skew is not a gap.
 const MAX_BLANK_FRAMES = 3
 // Long enough to span the hand-off from the temporary id to the real Session.
 const WATCH_MS = 2000

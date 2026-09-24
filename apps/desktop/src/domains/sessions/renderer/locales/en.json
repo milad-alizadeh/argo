@@ -14,7 +14,7 @@
   "loadingMoreSessions": "Loading more Sessions",
   "unableToLoadSessions": "Unable to load Sessions",
   "errors": {
-    "roster": "Argo could not read the Sessions again.",
+    "sessionList": "Argo could not read the Sessions again.",
     "feed": "Argo cannot read this Session's history."
   },
   "stalled": {
@@ -205,7 +205,7 @@
     "keepName": "Keep name",
     "rename": "Rename"
   },
-  "roster": {
+  "sessionList": {
     "readFailure": "Argo could not read Sessions.",
     "syncFailed": "{{harness}} Session sync failed",
     "indexedCount": "{{count}} indexed",
@@ -267,12 +267,12 @@
     "complete": "Assistant response complete."
   },
   "filterSessions": "Filter Sessions",
-  "rosterStatusActive": "Active",
-  "rosterStatusUnread": "Unread",
-  "rosterStatusArchived": "Archived",
-  "rosterStatusAll": "All",
-  "rosterStatusUnknown": "Status unknown",
-  "rosterStatusStarting": "Starting",
+  "sessionListStatusActive": "Active",
+  "sessionListStatusUnread": "Unread",
+  "sessionListStatusArchived": "Archived",
+  "sessionListStatusAll": "All",
+  "sessionListStatusUnknown": "Status unknown",
+  "sessionListStatusStarting": "Starting",
   "loaderPrototype": {
     "sessions": "Sessions",
     "label": "{{name}} loader",
@@ -325,7 +325,7 @@
       "title": "No Sessions on this machine",
       "description": "Argo lists a Session here as soon as a Harness writes one."
     },
-    "roster": {
+    "sessionList": {
       "title": "No Sessions on this machine",
       "description": "Argo lists a Session here as soon as a Harness writes one."
     },

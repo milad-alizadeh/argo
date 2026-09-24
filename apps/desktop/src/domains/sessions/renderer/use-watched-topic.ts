@@ -3,9 +3,9 @@ import { useEffect, useRef } from 'react'
 import type { WatchTopic } from '@/platform/contract/watch'
 
 // Runs when the main process says the files behind a topic changed. Any module can name its own
-// topic; the roster and the Feed are the first callers, and each reads itself again.
+// topic; the Session list and the Feed are the first callers, and each reads itself again.
 //
-// This is what replaces polling: the roster used to re-read every transcript file twice a second to
+// This is what replaces polling: the Session list used to re-read every transcript file twice a second to
 // notice a Session a Harness had written outside Argo, and only while a Session was selected.
 export function useWatchedTopic(topic: WatchTopic, onChanged: () => void) {
   // The latest callback is read through a ref, so a caller passing an inline closure does not

@@ -125,6 +125,9 @@ true of it is narrower: nobody is at the terminal. That is a property of how the
 started, so it sits beside `harness` and `cwd` rather than beside live-channel state, and it
 changes what the Roster draws without changing what a Session is.
 
+Issue #2723 replaced the Roster with the SQL-backed Session list. The Fold discussion below records the
+earlier design and does not describe the current list.
+
 **And the folded row is not one either.** A row standing for 180 Sessions is not a Session, so
 #1073 named it in "Not domain entities" beside Cockpit and Roster rather than in L2 — it belongs to
 the projection, and nothing about it reaches `HubSession`. Two alternatives were on the table and

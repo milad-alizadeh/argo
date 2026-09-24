@@ -1,7 +1,7 @@
 import { and, count, desc, eq, or, sql } from 'drizzle-orm'
 import { harnessSchema } from '@/harnesses/harness'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
-import type { RosterStatus } from '../../contract/model/roster-status'
+import type { SessionListStatus } from '../../contract/model/session-list-status'
 import type { SessionList, SessionListItem } from '../../contract/session-list'
 import { sessionPreferenceTable, sessionTable } from './session-table'
 
@@ -59,7 +59,7 @@ export function readSessionList(
   request: Pick<SessionList, 'page' | 'pageSize'> & {
     projectId: string | null
     search: string
-    status?: RosterStatus
+    status?: SessionListStatus
   },
 ): SessionList {
   const { page, pageSize, projectId, search, status = 'active' } = request

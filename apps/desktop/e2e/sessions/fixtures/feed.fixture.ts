@@ -26,10 +26,10 @@ export const FIXTURES = [
   'askPending',
   'prose',
   'toolCalls',
-  // Resumes a leaf that is in no file here, which is what a chain looks like when the Roster's
+  // Resumes a leaf that is in no file here, which is what a chain looks like when the SessionList's
   // file cap stops short of its origin. Its row has to say so.
   'strandedResume',
-  // Archived in the desktop app's store below, so the Roster has to keep it out of the list and
+  // Archived in the desktop app's store below, so the SessionList has to keep it out of the list and
   // in the Archived section at its foot.
   'plannedWork',
   // Names a Model, Effort and Mode the composer has to state.
@@ -101,7 +101,7 @@ export async function streamProse(transcripts, text) {
   )
 }
 
-// The Roster shows only for a selected Project (#2307), so only the empty-window case leaves it unset.
+// The SessionList shows only for a selected Project (#2307), so only the empty-window case leaves it unset.
 export async function prepare(
   root,
   application,

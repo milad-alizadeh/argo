@@ -4,8 +4,8 @@ import { useState } from 'react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { expect, userEvent, within } from 'storybook/test'
 import type { Harness, HarnessReadinessState } from '@/domains/harness-signin/contract/contract'
-import { SessionsSidebar } from '@/domains/sessions/renderer/roster/sidebar/sessions-sidebar'
-import { SELECTED_SESSION_KEY } from '@/domains/sessions/renderer/roster/sidebar/use-sidebar-actions'
+import { SessionsSidebar } from '@/domains/sessions/renderer/session-list/sidebar/sessions-sidebar'
+import { SELECTED_SESSION_KEY } from '@/domains/sessions/renderer/session-list/sidebar/use-sidebar-actions'
 import { CockpitRouteLayout } from './cockpit-router'
 
 function CockpitRouteLayoutStory() {
@@ -61,7 +61,7 @@ function listed(projects: (typeof PROJECT)[], selectedId: string | null) {
   }
 }
 
-// With no Project the cockpit has nothing to show a roster for: the window names the next step, and
+// With no Project the cockpit has nothing to show a session list for: the window names the next step, and
 // adding a Project from it opens guided Project setup (#2381).
 export const NoProject: Story = {
   beforeEach: () => {
@@ -99,7 +99,7 @@ function readinessListed(harnesses: Array<{ harness: Harness; state: HarnessRead
   }
 }
 
-// A Project with no ready Harness has nothing to run a Session on, so the roster this Project
+// A Project with no ready Harness has nothing to run a Session on, so the session list this Project
 // would otherwise show is replaced by a picker over every supported Harness and how to sign in
 // to whichever one is selected (#2579).
 export const NoHarnessReady: Story = {

@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { rosterRow, waitFor } from '../claude-proof-helpers'
+import { sessionListRow, waitFor } from '../claude-proof-helpers'
 
 export async function proveClaudeRename(page, { backend, project, transcripts }) {
   const prompt = 'Open the rename proof.'
@@ -24,17 +24,19 @@ export async function proveClaudeRename(page, { backend, project, transcripts })
   const transcript = path.join(transcripts, 'mock-claude', `${sessionId}.jsonl`)
   await waitFor(() => backend.recorded({ harness: 'claude', prompt }))
 
-  const [beforeRename] = await rosterRow(page, sessionId)
+  const [beforeRename] = await sessionListRow(page, sessionId)
   assert.deepEqual(beforeRename?.title, { text: prompt, source: 'first-prompt' })
 
   const renamed = await page.evaluate(
-    (id) => window.argo.renameSession({ sessionId: id, name: 'Ticket: fix the roster badge' }),
+    (id) => window.argo.renameSession({ sessionId: id, name: 'Ticket: fix the sessionList badge' }),
     sessionId,
   )
   assert.equal(renamed.type, 'session.renamed')
 
   await waitFor(async () =>
-    (await readFile(transcript, 'utf8')).includes('"customTitle":"Ticket: fix the roster badge"'),
+    (await readFile(transcript, 'utf8')).includes(
+      '"customTitle":"Ticket: fix the sessionList badge"',
+    ),
   )
   await page.waitForFunction(async (id) => {
     const reply = await window.argo.listSessions({ projectRoot: null })
@@ -42,6 +44,9 @@ export async function proveClaudeRename(page, { backend, project, transcripts })
     const [row] = sessions.filter((session) => session.id === id)
     return row?.title?.source === 'custom'
   }, sessionId)
-  const [afterRename] = await rosterRow(page, sessionId)
-  assert.deepEqual(afterRename?.title, { text: 'Ticket: fix the roster badge', source: 'custom' })
+  const [afterRename] = await sessionListRow(page, sessionId)
+  assert.deepEqual(afterRename?.title, {
+    text: 'Ticket: fix the sessionList badge',
+    source: 'custom',
+  })
 }

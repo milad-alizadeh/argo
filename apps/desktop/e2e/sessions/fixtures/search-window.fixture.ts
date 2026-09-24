@@ -1,9 +1,9 @@
 // A buried Session for the packaged search proof (#2375): older than enough filler Sessions to
-// sit outside the Roster's bounded window, findable only if search reaches the full indexed
-// history rather than filtering what the Roster already loaded.
+// sit outside the SessionList's bounded window, findable only if search reaches the full indexed
+// history rather than filtering what the SessionList already loaded.
 import { utimes, writeFile } from 'node:fs/promises'
 import { fixturePath } from '../../../mocks/sessions/mock-transcript-files'
-import { WINDOW_FILLER_COUNT } from './roster-window.fixture'
+import { WINDOW_FILLER_COUNT } from './session-list-window.fixture'
 
 export const BURIED_SEARCH_TARGET_ID = 'buriedSearchTarget'
 export const BURIED_SEARCH_TITLE = 'Unearthed plan for the quarry expansion'

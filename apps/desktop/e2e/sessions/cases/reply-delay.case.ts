@@ -2,7 +2,7 @@
 // The backend decides what a reply looks like; this proof holds no reply string (#2308).
 import assert from 'node:assert/strict'
 import type { Page } from 'playwright-core'
-import { chooseHarness, openNewSessionByClick, rosterIds } from '../gestures'
+import { chooseHarness, openNewSessionByClick, sessionListIds } from '../gestures'
 import type { SessionHarnessBackend } from '../session-harness-backend'
 
 const WAITING_PROMPT = 'Reply with one short acknowledgement after this wait.'
@@ -18,7 +18,7 @@ async function send(page: Page, prompt: string, times: number) {
 }
 
 async function begin({ page, backend, prompt, sends }: BeginRequest) {
-  const known = await rosterIds(page)
+  const known = await sessionListIds(page)
   await openNewSessionByClick(page)
   await chooseHarness(page, 'claude')
   await send(page, prompt, sends)
@@ -40,6 +40,6 @@ export async function proveDuplicateSend(page: Page, backend: SessionHarnessBack
   const prompt = DUPLICATE_PROMPT
   const known = await begin({ page, backend, prompt, sends: 5 })
   await backend.waitForReply(page, { harness: 'claude', prompt })
-  const created = (await rosterIds(page)).filter((id) => !known.includes(id))
+  const created = (await sessionListIds(page)).filter((id) => !known.includes(id))
   assert.equal(created.length, 1)
 }

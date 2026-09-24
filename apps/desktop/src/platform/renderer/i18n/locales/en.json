@@ -11,7 +11,7 @@
       "tickets": "Go to Tickets",
       "atlas": "Go to Atlas"
     },
-    "roster": {
+    "sessionList": {
       "next": "Select next session",
       "previous": "Select previous session",
       "first": "Select first session",

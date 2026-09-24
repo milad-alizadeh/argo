@@ -8,7 +8,7 @@ import type { WatchedSource } from './watch-source'
 export type WatchedTopics = Partial<Record<WatchTopic, readonly WatchedSource[]>>
 
 // Tells one window that a body of data it may be showing has changed underneath it. This replaces
-// polling: the roster used to re-read every transcript file twice a second to notice a Session that
+// polling: the Session list used to re-read every transcript file twice a second to notice a Session that
 // had been written by a Harness outside Argo, and the Session screen asked twice a second whether a
 // Permission was waiting.
 export function registerWatching(window: BrowserWindow, topics: WatchedTopics) {

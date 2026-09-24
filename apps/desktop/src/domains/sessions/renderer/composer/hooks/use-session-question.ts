@@ -6,7 +6,7 @@ import {
   throwSessionContractError,
   throwUnexpectedSessionReply,
 } from '../../session-contract-error'
-import { invalidateSessionRoster } from '../../session-queries'
+import { invalidateSessionList } from '../../session-queries'
 
 export function useSessionQuestion(sessionId: string | null) {
   const [failure, setFailure] = useState<{ questionId: string; message: string } | null>(null)
@@ -16,7 +16,7 @@ export function useSessionQuestion(sessionId: string | null) {
     try {
       await decision.mutateAsync({ questionId, answers })
       setFailure(null)
-      await invalidateSessionRoster(queryClient)
+      await invalidateSessionList(queryClient)
       return true
     } catch (error) {
       setFailure({

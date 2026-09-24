@@ -32,12 +32,12 @@ const realInterval: IntervalScheduler = (callback, ms) => {
 
 // A read a reader never triggers: focus and resume are both moments a person is present for, but a
 // Session left running while Argo sits untouched in the background gets neither. FSEvents can lose
-// the one notification that would have told the roster about it (#2414), so this is the backstop
+// the one notification that would have told the Session list about it (#2414), so this is the backstop
 // that bounds how long that loss can hide a Session, whether or not anyone looks at the window again.
-export const ROSTER_BACKSTOP_MS = 60_000
+export const SESSION_LIST_BACKSTOP_MS = 60_000
 
 export function watchPeriodically(
-  intervalMs: number = ROSTER_BACKSTOP_MS,
+  intervalMs: number = SESSION_LIST_BACKSTOP_MS,
   schedule: IntervalScheduler = realInterval,
 ): WatchedSource {
   return (onChanged) => {

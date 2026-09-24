@@ -16,7 +16,7 @@ const BACKENDS = {
 } satisfies Record<SessionBackendOptions['sessionBackend'], () => SessionHarnessBackend>
 
 export type SessionOptions = {
-  // The Roster shows only for a selected Project (#2307), so every case but the empty-window one wants it.
+  // The SessionList shows only for a selected Project (#2307), so every case but the empty-window one wants it.
   projectSelected: boolean
   // A Harness that holds its reply, so a case can read the app waiting on a Turn (#2119).
   slowReply: boolean

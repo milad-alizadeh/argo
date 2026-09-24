@@ -59,15 +59,14 @@
   /* The ring shadcn's own `focus-visible` utilities draw; named so a hand-built control matches it
      without repeating shadcn's own arbitrary value. */
   --size-focus-ring: 3px;
-  /* The height of a pane head, the Roster's and the Feed's alike, so the two heads meet on one
+  /* The height of a pane head, the Session list's and the Feed's alike, so the two heads meet on one
      line across the handle between them. */
   --size-pane-head: 46px;
   /* The unavailable-composer notice takes the composer's reserved place without offering a
      field that cannot send a Turn. */
   --size-composer-unavailable: 48px;
   /* The Session page's panes and composer assembly (#1937). The Feed and the composer share one
-     reading column, and the Roster widens no further than its maximum. */
-  --size-session-roster-max: 460px;
+     reading column, and the Session list uses the available pane width. */
   --size-session-feed-min: 360px;
   --size-session-column: 48rem;
   /* The least room the Feed and the composer keep from the window's edges. */
@@ -448,7 +447,7 @@
   --color-quiet: oklch(0.44 0 0);
   --color-faint: var(--muted-foreground);
   --color-off: oklch(0.72 0 0);
-  /* State marks need 3:1 contrast on the Roster's white ground, where the design's dark-first
+  /* State marks need 3:1 contrast on the Session list's white ground, where the design's dark-first
      inks are too light to remain distinguishable (#2526). */
   --color-active: #159b70;
   /* Darkened from #a16207: that cleared --background but not the warn badge's own tinted fill,

@@ -1,4 +1,4 @@
-// Search reaches the full indexed history, not just the Roster's own loaded window (#2375): a
+// Search reaches the full indexed history, not just the SessionList's own loaded window (#2375): a
 // Session buried behind enough filler Sessions to sit outside the first bounded window is still
 // findable and openable by title through the search box.
 import type { Page } from 'playwright-core'

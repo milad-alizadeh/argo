@@ -10,8 +10,8 @@ import { EmptyProjectScreen } from '@/domains/projects/renderer/screens/empty-pr
 import { ProjectSetupWindow } from '@/domains/projects/renderer/setup/screens/project-setup-window'
 import { DevelopmentIdentityBar } from '@/domains/sessions/renderer/composer/identity/development-identity-bar'
 import { SessionsPage } from '@/domains/sessions/renderer/pages/sessions-page'
-import { SessionsSidebar } from '@/domains/sessions/renderer/roster/sidebar/sessions-sidebar'
 import { SessionScreenView } from '@/domains/sessions/renderer/screens'
+import { SessionsSidebar } from '@/domains/sessions/renderer/session-list/sidebar/sessions-sidebar'
 import { TicketsPage } from '@/domains/tickets/renderer/pages/tickets-page'
 import { TicketsScreenView } from '@/domains/tickets/renderer/screens/tickets-screen-view'
 import { TicketsSidebar } from '@/domains/tickets/renderer/sidebar/tickets-sidebar'
@@ -55,8 +55,8 @@ export function CockpitRouteLayout() {
     return <Navigate replace to={`/projects/${cockpit.project.id}/setup`} />
   }
   // A Project with no Harness signed in has no way to run a Session, so this precedes the
-  // roster the same way `EmptyProjectScreen` precedes it for no Project. `readiness.data` is
-  // read only once it has landed, so a still-loading first read shows the roster underneath
+  // session list the same way `EmptyProjectScreen` precedes it for no Project. `readiness.data` is
+  // read only once it has landed, so a still-loading first read shows the session list underneath
   // rather than flashing this screen first.
   if (readiness.data && !readiness.data.some((harness) => harness.state === 'ready')) {
     return <NoHarnessReadyScreen harnesses={readiness.data} />

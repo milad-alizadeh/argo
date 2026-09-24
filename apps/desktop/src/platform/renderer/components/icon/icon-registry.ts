@@ -131,8 +131,8 @@ export const ICONS = {
   // A ticket's own "blocked" mark, wherever it's drawn.
   blocked: Ban,
 
-  // A Session's own "linked pull request" marker in the roster (no state today — see
-  // 'pull-request-open' and its siblings for the states a future roster row can draw).
+  // A Session's own "linked pull request" marker in the sessionList (no state today — see
+  // 'pull-request-open' and its siblings for the states a future sessionList row can draw).
   'pull-request-linked': GitPullRequestArrow,
 
   // Tickets screen and detail.
@@ -151,7 +151,7 @@ export const ICONS = {
   reasoning: Brain,
   'context-stack': Layers3,
   'usage-meter': CircleGauge,
-  'roster-filter': SlidersVertical,
+  'session-list-filter': SlidersVertical,
   'no-sessions': Inbox,
   'archive-session': Archive,
   'awaiting-permission': Lock,

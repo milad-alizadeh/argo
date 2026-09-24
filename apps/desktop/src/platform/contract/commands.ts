@@ -16,13 +16,13 @@ export const DESTINATION_PATHS: Record<Destination, string> = {
 }
 
 export const REGISTER_PROJECT_COMMAND = 'project.register'
-// Moving focus down the Roster. These are chords on one element rather than on the window: they
+// Moving focus down the Session list. These are chords on one element rather than on the window: they
 // fire only while a row holds focus, so a reader typing anywhere else keeps their arrow keys.
-export const ROSTER_MOVES = {
-  next: 'roster.next',
-  previous: 'roster.previous',
-  first: 'roster.first',
-  last: 'roster.last',
+export const SESSION_LIST_MOVES = {
+  next: 'sessionList.next',
+  previous: 'sessionList.previous',
+  first: 'sessionList.first',
+  last: 'sessionList.last',
 } as const
 
 // Fires only while the composer holds focus, so Enter elsewhere is untouched (#2103).
@@ -64,24 +64,29 @@ export const SHORTCUTS: readonly Shortcut[] = [
     scope: 'window' as const,
   })),
   {
-    command: ROSTER_MOVES.next,
-    labelKey: 'shortcut.roster.next',
+    command: SESSION_LIST_MOVES.next,
+    labelKey: 'shortcut.sessionList.next',
     chord: 'ArrowDown',
     scope: 'element',
   },
   {
-    command: ROSTER_MOVES.previous,
-    labelKey: 'shortcut.roster.previous',
+    command: SESSION_LIST_MOVES.previous,
+    labelKey: 'shortcut.sessionList.previous',
     chord: 'ArrowUp',
     scope: 'element',
   },
   {
-    command: ROSTER_MOVES.first,
-    labelKey: 'shortcut.roster.first',
+    command: SESSION_LIST_MOVES.first,
+    labelKey: 'shortcut.sessionList.first',
     chord: 'Home',
     scope: 'element',
   },
-  { command: ROSTER_MOVES.last, labelKey: 'shortcut.roster.last', chord: 'End', scope: 'element' },
+  {
+    command: SESSION_LIST_MOVES.last,
+    labelKey: 'shortcut.sessionList.last',
+    chord: 'End',
+    scope: 'element',
+  },
   {
     command: SEND_MESSAGE_COMMAND,
     labelKey: 'shortcut.composer.send',

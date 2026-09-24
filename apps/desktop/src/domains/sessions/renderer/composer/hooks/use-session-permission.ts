@@ -6,7 +6,7 @@ import {
   throwSessionContractError,
   throwUnexpectedSessionReply,
 } from '../../session-contract-error'
-import { invalidateSessionRoster, sessionPermissionQueryKey } from '../../session-queries'
+import { invalidateSessionList, sessionPermissionQueryKey } from '../../session-queries'
 import { useWatchedQueries } from '../../use-watched-topic'
 
 export type PermissionAnswer = SessionPermissionDecisionRequest['decision']
@@ -40,7 +40,7 @@ export function useSessionPermission(sessionId: string | null) {
     try {
       await permissionDecision.mutateAsync({ decision, permission: permission.data })
       queryClient.setQueryData(sessionPermissionQueryKey(permission.data.sessionId), null)
-      await invalidateSessionRoster(queryClient)
+      await invalidateSessionList(queryClient)
       setFailure(null)
       return true
     } catch (error) {

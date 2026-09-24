@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { harnessSchema } from '@/harnesses/harness'
-import { rosterStatusSchema } from './model/roster-status'
+import { sessionListStatusSchema } from './model/session-list-status'
 import { sessionIngestionSchema } from './session-index'
 
 export const sessionListInputSchema = z.strictObject({
@@ -8,7 +8,7 @@ export const sessionListInputSchema = z.strictObject({
   pageSize: z.number().int().min(1).max(100).default(50),
   projectId: z.string().uuid().nullable().default(null),
   search: z.string().default(''),
-  status: rosterStatusSchema.default('active'),
+  status: sessionListStatusSchema.default('active'),
 })
 
 export const sessionListItemSchema = sessionIngestionSchema.extend({

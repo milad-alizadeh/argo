@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 
-export async function rosterRow(page, sessionId) {
+export async function sessionListRow(page, sessionId) {
   const reply = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
   assert.equal(reply.type, 'session.listed')
   return reply.sessions.filter((session) => session.id === sessionId)
