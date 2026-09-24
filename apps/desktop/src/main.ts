@@ -13,6 +13,7 @@ import {
   attachmentPathFromUrl,
 } from '@/domains/sessions/contract/model/feed/feed-images'
 import { createSessionIdentityService } from '@/domains/sessions/main/session-identity-service'
+import { recoverSessionState } from '@/domains/sessions/main/session-recovery'
 import { createSessionStarter } from '@/domains/sessions/main/start-session'
 import { attachManagedSessions } from '@/domains/sessions/next/main/managed-session-composition'
 import { createSessionTicketLinkStoreFromDatabase } from '@/domains/tickets/main/session-links'
@@ -121,10 +122,10 @@ function attachSessionTransport(
   const identity = createSessionIdentityService(stores.database, ticketLinks.disconnect)
   let recovering = false
   const recover = async () => {
-    if (recovering || identity.isUnsafe()) return
+    if (recovering) return
     recovering = true
     try {
-      await identity.recoverLaunches((intent) => adapters.discoverLaunch(intent))
+      await recoverSessionState(identity, adapters)
     } catch (error) {
       console.error(error)
     } finally {

@@ -4,6 +4,7 @@ import type { SessionService } from '@/domains/sessions/main/lifecycle/session-s
 import type {
   LaunchDiscovery,
   PendingSessionLaunch,
+  VendorSessionRead,
 } from '@/domains/sessions/main/session-identity-service'
 import type {
   Harness,
@@ -24,6 +25,7 @@ export type SessionAdapterInstance = {
   adapter: SessionAdapter
   close: () => void | Promise<void>
   discoverLaunch?: (intent: PendingSessionLaunch) => Promise<LaunchDiscovery>
+  readKnownSession?: (session: SessionIdentity) => Promise<VendorSessionRead>
   hasLiveChannel?: (session: SessionIdentity) => boolean
   readModelCatalog?: () => Promise<CodexModelCatalog | null>
   readClaudeModelCatalog?: () => Promise<ClaudeModelCatalog | null>
@@ -40,6 +42,7 @@ export type SessionAdapterRegistry = {
   readClaudeModelCatalog: () => Promise<ClaudeModelCatalog | null>
   close: () => Promise<void>
   discoverLaunch: (intent: PendingSessionLaunch) => Promise<LaunchDiscovery>
+  readKnownSession: (session: SessionIdentity) => Promise<VendorSessionRead>
   hasLiveChannel: (session: SessionIdentity) => boolean
 }
 
@@ -61,6 +64,9 @@ export function createSessionAdapterRegistry(
     readClaudeModelCatalog: () =>
       adapters.get('claude')?.readClaudeModelCatalog?.() ?? Promise.resolve(null),
     hasLiveChannel: (session) => adapters.get(session.harness)?.hasLiveChannel?.(session) ?? false,
+    readKnownSession: (session) =>
+      adapters.get(session.harness)?.readKnownSession?.(session) ??
+      Promise.resolve({ kind: 'inaccessible' }),
     discoverLaunch: (intent) =>
       adapters.get(intent.harness)?.discoverLaunch?.(intent) ??
       Promise.resolve({ kind: 'unavailable' }),

@@ -30,6 +30,16 @@ export function createCodexSessionAdapterRegistration(options: {
                 projection.session.nativeId === session.nativeId &&
                 projection.posture === 'managed',
             ),
+        readKnownSession: async (session) => {
+          try {
+            const found = await adapter.readHistoryProjection(session.nativeId)
+            return found?.session.nativeId === session.nativeId
+              ? { kind: 'found' }
+              : { kind: 'ambiguous' }
+          } catch {
+            return { kind: 'temporarily-unavailable' }
+          }
+        },
         discoverLaunch: async (intent) => {
           try {
             const sessions = await adapter.refreshHistory(() => false)

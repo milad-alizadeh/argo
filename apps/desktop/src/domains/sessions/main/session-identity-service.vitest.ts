@@ -12,6 +12,7 @@ import { databaseMigrationsFolder } from '@/platform/main/storage/migrations-fol
 import { openSharedDatabase } from '@/platform/main/storage/shared-database'
 import { appRouter } from '@/platform/main/trpc-router'
 import { createSessionIdentityService } from './session-identity-service'
+import { recoverSessionState } from './session-recovery'
 import { createSessionStarter } from './start-session'
 
 const folders: string[] = []
@@ -95,13 +96,16 @@ test('a vendor start followed by a SQLite failure remains uncertain and recovers
     )
     expect(() => service.commitLaunch(intentId, 'native-1')).toThrow('Failed query')
     expect(service.isUnsafe()).toBe(true)
+    expect(() => service.beginLaunch(launch)).toThrow('unsafe')
     fixture.client.exec('DROP TRIGGER fail_session_insert')
-    const restarted = fixture.create()
-    const recovered = await restarted.recoverLaunches(async () => {
-      throw new Error('The known native ID should be used')
+    await recoverSessionState(service, {
+      discoverLaunch: async () => {
+        throw new Error('The known native ID should be used')
+      },
+      readKnownSession: async () => ({ kind: 'found' }),
     })
-    expect(recovered).toHaveLength(1)
-    expect(fixture.database.select().from(session).all()[0]?.argoId).toBe(recovered[0])
+    expect(fixture.database.select().from(session).all()).toHaveLength(1)
+    expect(service.pendingLaunches()).toEqual([])
   } finally {
     fixture.client.close()
   }
@@ -133,22 +137,66 @@ test('only authenticated permanent loss removes a Session and its local Ticket l
       )
       .run(argoId, 'project-1', 'ARGO-1', 'Linked work', 'open', '2026-09-24T00:00:00.000Z')
     for (const kind of ['inaccessible', 'temporarily-unavailable', 'ambiguous', 'found'] as const) {
-      expect(await service.removeAfterVendorRead({ kind })).toBe(false)
+      expect(await service.reconcileVendorReads(async () => ({ kind }))).toBe(0)
     }
     expect(fixture.database.select().from(session).all()).toHaveLength(1)
     expect(fixture.client.prepare('SELECT * FROM session_ticket_link').all()).toHaveLength(1)
     expect(
-      await service.removeAfterVendorRead({
+      await service.reconcileVendorReads(async () => ({
+        kind: 'permanently-unrecoverable',
+        authenticated: true,
+        harness: 'claude',
+        nativeId: 'a-different-session',
+      })),
+    ).toBe(0)
+    expect(fixture.database.select().from(session).all()).toHaveLength(1)
+    await recoverSessionState(service, {
+      discoverLaunch: async () => ({ kind: 'unavailable' }),
+      readKnownSession: async () => ({
         kind: 'permanently-unrecoverable',
         authenticated: true,
         harness: 'claude',
         nativeId: 'native-1',
       }),
-    ).toBe(true)
+    })
     expect(fixture.database.select().from(session).all()).toEqual([])
     expect(fixture.database.select().from(sessionLaunchIntent).all()).toEqual([])
     expect(fixture.database.select().from(managedSessionLease).all()).toEqual([])
     expect(fixture.client.prepare('SELECT * FROM session_ticket_link').all()).toEqual([])
+  } finally {
+    fixture.client.close()
+  }
+})
+
+test('a vendor native ID cannot remove another Session Ticket link', async () => {
+  const fixture = await harness()
+  try {
+    const service = fixture.create()
+    const retained = service.reconcile({ ...discovery, nativeId: 'other-native' })
+    const removed = service.reconcile({ ...discovery, nativeId: retained })
+    fixture.client
+      .prepare(
+        'INSERT INTO session_ticket_link (session_id, project_id, ticket_key, title, state, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+      )
+      .run(retained, 'project-1', 'ARGO-2', 'Retained work', 'open', '2026-09-24T00:00:00.000Z')
+    expect(
+      await service.reconcileVendorReads(async (identity) =>
+        identity.nativeId === retained
+          ? { kind: 'permanently-unrecoverable', authenticated: true, ...identity }
+          : { kind: 'found' },
+      ),
+    ).toBe(1)
+    expect(
+      fixture.database
+        .select()
+        .from(session)
+        .all()
+        .map((row) => row.argoId),
+    ).toEqual([retained])
+    expect(fixture.client.prepare('SELECT session_id FROM session_ticket_link').all()).toEqual([
+      { session_id: retained },
+    ])
+    expect(removed).not.toBe(retained)
   } finally {
     fixture.client.close()
   }

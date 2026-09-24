@@ -50,6 +50,7 @@ export type LaunchDiscovery =
 export class SessionIdentityService {
   private readonly inProcessNativeIds = new Map<string, string>()
   private unsafeStorage = false
+  private vendorReadOffset = 0
   private readonly database: DurableDatabase
   private readonly now: () => number
   private readonly removeTicketLink: (sessionId: string) => Promise<void>
@@ -245,6 +246,39 @@ export class SessionIdentityService {
     return recovered
   }
 
+  async reconcileVendorReads(
+    read: (identity: {
+      harness: z.infer<typeof harnessSchema>
+      nativeId: string
+    }) => Promise<VendorSessionRead>,
+  ): Promise<number> {
+    let removed = 0
+    const rows = this.database.select().from(session).orderBy(session.argoId).all()
+    const count = Math.min(rows.length, 10)
+    const start = this.vendorReadOffset
+    this.vendorReadOffset = rows.length === 0 ? 0 : (start + count) % rows.length
+    for (let index = 0; index < count; index += 1) {
+      const row = rows[(start + index) % rows.length]
+      if (row === undefined) continue
+      const identity = { harness: harnessSchema.parse(row.harness), nativeId: row.nativeId }
+      let result: VendorSessionRead
+      try {
+        result = await read(identity)
+      } catch {
+        continue
+      }
+      if (
+        result.kind === 'permanently-unrecoverable' &&
+        result.harness === identity.harness &&
+        result.nativeId === identity.nativeId &&
+        (await this.removeAfterVendorRead(result))
+      ) {
+        removed += 1
+      }
+    }
+    return removed
+  }
+
   async removeAfterVendorRead(result: VendorSessionRead): Promise<boolean> {
     if (result.kind !== 'permanently-unrecoverable' || result.authenticated !== true) return false
     const identity = vendorIdentitySchema.parse({
@@ -259,7 +293,6 @@ export class SessionIdentityService {
     if (row === undefined) return false
     try {
       await this.removeTicketLink(row.argoId)
-      await this.removeTicketLink(identity.nativeId)
       this.database.transaction((transaction) => {
         transaction
           .delete(managedSessionLease)
