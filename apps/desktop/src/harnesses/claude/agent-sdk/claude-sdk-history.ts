@@ -51,7 +51,7 @@ export async function readClaudeSessions(history: ClaudeSdkHistory): Promise<SDK
   return readPages((offset) => history.listSessions({ limit: PAGE_SIZE, offset }))
 }
 
-export async function readClaudeSessionPage(
+export async function readClaudeSessionsBatch(
   history: ClaudeSdkHistory,
   offset: number,
 ): Promise<SDKSessionInfo[]> {

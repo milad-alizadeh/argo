@@ -3,7 +3,7 @@ import { rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { app, net, protocol } from 'electron'
+import { app, type BrowserWindow, net, protocol } from 'electron'
 import { seedDevelopmentProject } from '@/domains/projects/main/development-seed'
 import { openProjectStore } from '@/domains/projects/main/main-store'
 import { PROJECT_PROOF_STORE_ENV } from '@/domains/projects/main/proof-protocol'
@@ -84,6 +84,19 @@ if (DEVELOPMENT_INSTANCE) {
   app.commandLine.appendSwitch('remote-debugging-port', String(DEVELOPMENT_INSTANCE.debugPort))
 }
 
+let desktopWindow: BrowserWindow | undefined
+let focusRequestedBeforeWindowReady = false
+
+function focusWindow(): void {
+  if (!desktopWindow) {
+    focusRequestedBeforeWindowReady = true
+    return
+  }
+  if (desktopWindow.isMinimized()) desktopWindow.restore()
+  if (!desktopWindow.isVisible()) desktopWindow.show()
+  desktopWindow.focus()
+}
+
 function createWindow(): void {
   const userData = app.getPath('userData')
   const { projectData } = developmentStoreDirectories({
@@ -92,7 +105,7 @@ function createWindow(): void {
     instance: DEVELOPMENT_INSTANCE,
   })
   const { close } = openDurableStores(projectData, !ACCEPTANCE_ENABLED)
-  createDesktopWindow({
+  desktopWindow = createDesktopWindow({
     buildDirectory: __dirname,
     rendererName: MAIN_WINDOW_VITE_NAME,
     developmentServerURL: MAIN_WINDOW_VITE_DEV_SERVER_URL,
@@ -110,13 +123,20 @@ function createWindow(): void {
       : undefined,
     attach: (window) => {
       attachAppearanceWatch(window)
-      window.once('closed', close)
+      window.once('closed', () => {
+        desktopWindow = undefined
+        close()
+      })
       installMenu(window)
     },
     loaded: (window) => {
       void writeDevelopmentReady(DEVELOPMENT_INSTANCE, window)
     },
   })
+  if (focusRequestedBeforeWindowReady) {
+    focusRequestedBeforeWindowReady = false
+    focusWindow()
+  }
 }
 
 async function ready(): Promise<void> {
@@ -154,6 +174,7 @@ async function ready(): Promise<void> {
 
 startDesktopApplication({
   ready,
+  focusExistingWindow: focusWindow,
   willQuit: () => {
     if (DEVELOPMENT_INSTANCE) void rm(DEVELOPMENT_INSTANCE.readyFile, { force: true })
     if (acceptanceUserData) void rm(acceptanceUserData, { recursive: true, force: true })
