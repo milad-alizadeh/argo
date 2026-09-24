@@ -75,7 +75,10 @@ export function SessionComposerArea({
   // The Roster already knows another process runs it live, so no Send is offered at all (ADR-0040).
   if (session?.locked === true) return <OpenElsewhere onRetry={null} />
   const refreshCatalog = () =>
-    catalogRefresh.mutate({ harness: harness.harness }, { onSettled: () => void catalogQuery.refetch() })
+    catalogRefresh.mutate(
+      { harness: harness.harness },
+      { onSettled: () => void catalogQuery.refetch() },
+    )
   const submit = (input: SessionSubmitInput) => sessionSubmit.mutateAsync(input)
   return (
     <SessionComposerForm
