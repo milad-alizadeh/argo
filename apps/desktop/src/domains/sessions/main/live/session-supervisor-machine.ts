@@ -51,6 +51,17 @@ type SupervisorEvent =
       failure: string
     }
   | {
+      type: 'Send settled'
+      commandId: string
+      outcome:
+        | {
+            sessionId: string
+          }
+        | {
+            failure: string
+          }
+    }
+  | {
       type: 'Shutdown'
     }
 
@@ -139,6 +150,15 @@ export const sessionSupervisorMachine = setup({
           }
       >
       failed: Record<string, SessionActor>
+      sendOutcomes: Record<
+        string,
+        | {
+            sessionId: string
+          }
+        | {
+            failure: string
+          }
+      >
     },
     events: {} as SupervisorEvent,
   },
@@ -214,8 +234,14 @@ export const sessionSupervisorMachine = setup({
         session: SessionActor
         reply: StartReply
         commandId: string
-      }
-    >(({ input }) => {
+      },
+      Extract<
+        SupervisorEvent,
+        {
+          type: 'Send settled'
+        }
+      >
+    >(({ input, sendBack }) => {
       let settled = false
       const subscription = input.session.subscribe((snapshot) => {
         if (settled) return
@@ -223,13 +249,29 @@ export const sessionSupervisorMachine = setup({
           settled = true
           const sessionId = snapshot.context.argoId
           if (sessionId === null) input.reply.reject(new Error('Session resume lost its identity.'))
-          else
+          else {
+            sendBack({
+              type: 'Send settled',
+              commandId: input.commandId,
+              outcome: {
+                sessionId,
+              },
+            })
             input.reply.resolve({
               sessionId,
             })
+          }
         } else if (snapshot.matches('Failed') || snapshot.matches('Closed')) {
           settled = true
-          input.reply.reject(new Error(snapshot.context.failure ?? 'Session resume failed.'))
+          const failure = snapshot.context.failure ?? 'Session resume failed.'
+          sendBack({
+            type: 'Send settled',
+            commandId: input.commandId,
+            outcome: {
+              failure,
+            },
+          })
+          input.reply.reject(new Error(failure))
         }
       })
       return () => {
@@ -239,6 +281,15 @@ export const sessionSupervisorMachine = setup({
     }),
   },
   actions: {
+    rememberSendOutcome: assign({
+      sendOutcomes: ({ context, event }) =>
+        event.type === 'Send settled'
+          ? {
+              ...context.sendOutcomes,
+              [event.commandId]: event.outcome,
+            }
+          : context.sendOutcomes,
+    }),
     startOrQueue: assign({
       starts: ({ context, event, self, spawn }) => {
         if (event.type !== 'Start') return context.starts
@@ -373,6 +424,12 @@ export const sessionSupervisorMachine = setup({
     forwardSend: assign({
       sessions: ({ context, event, self, spawn }) => {
         if (event.type !== 'Send') return context.sessions
+        const settled = context.sendOutcomes[event.input.commandId]
+        if (settled !== undefined) {
+          if ('sessionId' in settled) event.reply.resolve(settled)
+          else event.reply.reject(new Error(settled.failure))
+          return context.sessions
+        }
         const actor = context.sessions[event.input.sessionId]
         const resumeIndexedSession = () => {
           const identity = readSessionIdentity(context.database, event.input.sessionId)
@@ -447,11 +504,7 @@ export const sessionSupervisorMachine = setup({
         }
         const snapshot = actor.getSnapshot()
         if (snapshot.matches('Failed') || snapshot.matches('Closed')) {
-          event.reply.reject(
-            new Error(snapshot.context.failure ?? 'Session is not available for sends.'),
-          )
-          const { [event.input.sessionId]: _closed, ...remaining } = context.sessions
-          return remaining
+          return resumeIndexedSession()
         }
         actor.send({
           type: 'Send',
@@ -477,6 +530,7 @@ export const sessionSupervisorMachine = setup({
     starts: {},
     completed: {},
     failed: {},
+    sendOutcomes: {},
   }),
   states: {
     Running: {},
@@ -496,6 +550,9 @@ export const sessionSupervisorMachine = setup({
     },
     'Session failed': {
       actions: 'rememberPersisted',
+    },
+    'Send settled': {
+      actions: 'rememberSendOutcome',
     },
     Shutdown: '.Closed',
   },

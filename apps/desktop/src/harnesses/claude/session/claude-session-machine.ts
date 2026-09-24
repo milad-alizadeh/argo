@@ -29,6 +29,9 @@ type QueryEvent =
       type: 'Sent'
     }
   | {
+      type: 'Prompt accepted'
+    }
+  | {
       type: 'Query failed'
       detail: string
     }
@@ -79,6 +82,7 @@ export const claudeSessionMachine = setup({
       let wake: (() => void) | null = null
       let session: Query | null = null
       let open = true
+      let submittedPrompts = 0
       const wakeInput = () => {
         wake?.()
         wake = null
@@ -91,6 +95,11 @@ export const claudeSessionMachine = setup({
             })
           const prompt = prompts.shift()
           if (prompt === undefined) continue
+          submittedPrompts += 1
+          if (submittedPrompts > 1)
+            sendBack({
+              type: 'Prompt accepted',
+            })
           yield {
             type: 'user',
             message: {
@@ -231,6 +240,9 @@ export const claudeSessionMachine = setup({
       },
       working: () => false,
     }),
+    rememberSubmittedCommand: assign({
+      acceptedCommandId: ({ context }) => context.pendingCommandId,
+    }),
     forwardSend: sendTo('queryActor', ({ event }) => {
       if (event.type !== 'Send') throw new Error('Expected a Claude Session send.')
       return {
@@ -306,6 +318,9 @@ export const claudeSessionMachine = setup({
         },
         Sending: {
           on: {
+            'Prompt accepted': {
+              actions: 'rememberSubmittedCommand',
+            },
             Sent: {
               target: 'Ready',
               actions: 'rememberAcceptedCommand',

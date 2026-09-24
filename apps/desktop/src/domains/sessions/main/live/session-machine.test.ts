@@ -37,6 +37,7 @@ function testMachine(services: {
               () => sendBack({ type: 'Sent' }),
               (error) => sendBack({ type: 'Query failed', detail: String(error) }),
             )
+          if (promptCount > 1) sendBack({ type: 'Prompt accepted' })
         })
       }),
     },
@@ -72,6 +73,7 @@ test('models Session lifecycle and failure paths', () => {
         ]
       if (snapshot.matches('Sending'))
         return [
+          { type: 'Harness accepted' as const, commandId: 'second' },
           { type: 'Harness ready' as const, nativeId: 'native-1' },
           { type: 'Harness failed' as const, failure: 'send failed' },
           { type: 'Close' as const },
@@ -179,6 +181,65 @@ test('does not deliver a duplicate first command', async () => {
   actor.send({ type: 'Send', command: first })
   await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
   assert.deepEqual(delivered, [])
+  actor.stop()
+})
+
+test('acknowledges a live command before completion without draining the next prompt', async () => {
+  const delivered: string[] = []
+  const releases: Array<() => void> = []
+  const actor = createActor(
+    testMachine({
+      send: (prompt) => {
+        delivered.push(prompt)
+        return new Promise<void>((resolve) => releases.push(resolve))
+      },
+    }),
+    { input: first },
+  ).start()
+  await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
+  const second = { ...first, commandId: 'second', prompt: 'second' }
+  actor.send({ type: 'Send', command: second })
+  const accepted = await waitFor(actor, (snapshot) =>
+    snapshot.context.acceptedCommandIds.includes('second'),
+  )
+  assert.equal(accepted.matches('Sending'), true)
+  actor.send({ type: 'Send', command: second })
+  actor.send({ type: 'Send', command: { ...first, commandId: 'third', prompt: 'third' } })
+  assert.deepEqual(delivered, ['second'])
+  assert.deepEqual(
+    actor.getSnapshot().context.queue.map(({ commandId }) => commandId),
+    ['second', 'third'],
+  )
+  releases[0]?.()
+  await waitFor(actor, (snapshot) => snapshot.context.acceptedCommandIds.includes('third'))
+  assert.deepEqual(delivered, ['second', 'third'])
+  releases[1]?.()
+  await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
+  actor.stop()
+})
+
+test('does not replay an accepted prompt after an uncertain turn failure', async () => {
+  const delivered: string[] = []
+  let failTurn!: (error: Error) => void
+  const actor = createActor(
+    testMachine({
+      send: (prompt) => {
+        delivered.push(prompt)
+        return new Promise<void>((_resolve, reject) => {
+          failTurn = reject
+        })
+      },
+    }),
+    { input: first },
+  ).start()
+  await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
+  const second = { ...first, commandId: 'second', prompt: 'second' }
+  actor.send({ type: 'Send', command: second })
+  await waitFor(actor, (snapshot) => snapshot.context.acceptedCommandIds.includes('second'))
+  failTurn(new Error('The vendor connection ended after accepting the prompt.'))
+  await waitFor(actor, (snapshot) => snapshot.matches('Failed'))
+  actor.send({ type: 'Send', command: second })
+  assert.deepEqual(delivered, ['second'])
   actor.stop()
 })
 

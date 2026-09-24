@@ -60,6 +60,10 @@ export const sessionMachine = setup({
           commandId?: string
         }
       | {
+          type: 'Harness accepted'
+          commandId: string
+        }
+      | {
           type: 'Harness failed'
           failure: string
         }
@@ -99,18 +103,27 @@ export const sessionMachine = setup({
           type: 'Harness failed',
           failure: snapshot.context.failure ?? 'Harness failed.',
         })
-      else if (
-        snapshot.context.nativeId !== null &&
-        snapshot.context.acceptedCommandId ===
-          (context.acceptedCommandIds.includes(context.first.commandId)
-            ? context.queue[0]?.commandId
-            : context.first.commandId)
-      )
-        enqueue.raise({
-          type: 'Harness ready',
-          nativeId: snapshot.context.nativeId,
-          commandId: snapshot.context.acceptedCommandId,
-        })
+      else if (snapshot.context.nativeId !== null) {
+        const expectedCommandId = context.acceptedCommandIds.includes(context.first.commandId)
+          ? context.queue[0]?.commandId
+          : context.first.commandId
+        if (
+          expectedCommandId !== undefined &&
+          snapshot.context.acceptedCommandId === expectedCommandId
+        ) {
+          if (snapshot.hasTag('ready'))
+            enqueue.raise({
+              type: 'Harness ready',
+              nativeId: snapshot.context.nativeId,
+              commandId: expectedCommandId,
+            })
+          else if (!context.acceptedCommandIds.includes(expectedCommandId))
+            enqueue.raise({
+              type: 'Harness accepted',
+              commandId: expectedCommandId,
+            })
+        }
+      }
     }),
     queueDistinct: assign({
       queue: ({ context, event }) =>
@@ -130,7 +143,7 @@ export const sessionMachine = setup({
     rememberAcceptedCommand: assign({
       acceptedCommandIds: ({ context, event }) => {
         const commandId =
-          event.type === 'Harness ready'
+          event.type === 'Harness ready' || event.type === 'Harness accepted'
             ? (event.commandId ??
               (context.acceptedCommandIds.length === 0
                 ? context.first.commandId
@@ -278,6 +291,9 @@ export const sessionMachine = setup({
     Sending: {
       entry: 'sendQueuedCommand',
       on: {
+        'Harness accepted': {
+          actions: 'rememberAcceptedCommand',
+        },
         'Harness ready': {
           target: 'Draining',
           actions: [

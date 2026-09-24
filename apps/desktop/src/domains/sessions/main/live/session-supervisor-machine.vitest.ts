@@ -377,3 +377,47 @@ test('reports a definite live vendor refusal instead of accepting the prompt ear
     client.close()
   }
 })
+
+test('keeps an accepted command outcome after the live child fails', async () => {
+  const methods: string[] = []
+  const opening = { ...first, projectId: '00000000-0000-4000-8000-000000000099' }
+  const { root, supervisor, client, completeTurn } = await supervisorFor(
+    async (method, _params, parse) => {
+      methods.push(method)
+      if (method === 'thread/start' || method === 'thread/read' || method === 'thread/resume')
+        return parse({ thread: { id: 'native-1' } })
+      return parse({ turn: { id: `turn-${methods.length}` } })
+    },
+  )
+  try {
+    const { sessionId } = await start(supervisor, opening)
+    const child = supervisor.getSnapshot().context.sessions[sessionId]
+    assert.ok(child)
+    await waitFor(child, (snapshot) => snapshot.matches('Ready'))
+    const second = { ...opening, sessionId, commandId: 'accepted-second', prompt: 'second' }
+    const secondSend = send(supervisor, second)
+    completeTurn('native-1', 'turn-2')
+    assert.equal((await secondSend).sessionId, sessionId)
+    child.send({
+      type: 'Harness failed',
+      failure: 'The vendor connection ended after accepting the prompt.',
+    })
+    await waitFor(child, (snapshot) => snapshot.matches('Failed'))
+    const callsBeforeRepeat = methods.length
+    assert.equal((await send(supervisor, second)).sessionId, sessionId)
+    assert.equal(methods.length, callsBeforeRepeat)
+    assert.equal(
+      (await send(supervisor, { ...second, commandId: 'fresh-command', prompt: 'fresh' }))
+        .sessionId,
+      sessionId,
+    )
+    assert.deepEqual(methods.slice(callsBeforeRepeat), [
+      'thread/read',
+      'thread/resume',
+      'turn/start',
+    ])
+  } finally {
+    root.send({ type: 'Shutdown' })
+    client.close()
+  }
+})

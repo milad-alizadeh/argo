@@ -32,6 +32,7 @@ test('models opening, later sends, failure, and close paths', () => {
         ]
       if (snapshot.matches({ Active: 'Sending' }))
         return [
+          { type: 'Prompt accepted' as const },
           { type: 'Sent' as const },
           { type: 'Query failed' as const, detail: 'send failed' },
           { type: 'Close' as const },
@@ -81,6 +82,36 @@ test('keeps the Claude query alive for later sends and closes it with the Sessio
   actor.send({ type: 'Close' })
   await waitFor(actor, (snapshot) => snapshot.matches('Closed'))
   assert.equal(closed, 1)
+})
+
+test('accepts a later prompt while its turn is still running', async () => {
+  let completeTurn!: () => void
+  const machine = claudeSessionMachine.provide({
+    actors: {
+      queryActor: fromCallback(({ receive, sendBack }) => {
+        receive((event) => {
+          if (event.prompt === 'first') {
+            sendBack({ type: 'Opened', nativeId: 'native-1' })
+            return
+          }
+          sendBack({ type: 'Prompt accepted' })
+          completeTurn = () => sendBack({ type: 'Sent' })
+        })
+      }),
+    },
+  })
+  const actor = createActor(machine, { input: first }).start()
+  await waitFor(actor, (snapshot) => snapshot.hasTag('ready'))
+  actor.send({ type: 'Send', command: { commandId: 'second', prompt: 'second' } })
+  const accepted = await waitFor(
+    actor,
+    (snapshot) => snapshot.context.acceptedCommandId === 'second',
+  )
+  assert.equal(accepted.matches({ Active: 'Sending' }), true)
+  assert.equal(accepted.context.working, true)
+  completeTurn()
+  await waitFor(actor, (snapshot) => snapshot.hasTag('ready'))
+  actor.stop()
 })
 
 test('closes the Claude query after a vendor failure', async () => {
