@@ -86,3 +86,29 @@ test('keeps Sessions outside a known Project unassigned', () => {
     client.close()
   }
 })
+
+test('attaches a later discovered Project without changing the Argo ID', () => {
+  const { client, database: durable } = database()
+  try {
+    const record = {
+      harness: 'claude' as const,
+      nativeId: '00000000-0000-4000-8000-000000000001',
+      vendorTitle: null,
+      firstPrompt: null,
+      updatedAt: 42,
+      workingDirectory: '/external/repository',
+    }
+    const originalId = indexSessionIngestion(durable, record)
+    client
+      .prepare('INSERT INTO project VALUES (?, ?, ?)')
+      .run('00000000-0000-4000-8000-000000000099', '/external', '/external')
+    const indexedId = indexSessionIngestion(durable, record)
+    assert.equal(indexedId, originalId)
+    assert.equal(
+      readSessionIdentity(durable, indexedId)?.projectId,
+      '00000000-0000-4000-8000-000000000099',
+    )
+  } finally {
+    client.close()
+  }
+})

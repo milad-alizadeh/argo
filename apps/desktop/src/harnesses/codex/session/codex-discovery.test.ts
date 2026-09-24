@@ -16,6 +16,11 @@ test('parses valid Codex discovery records and counts invalid ones', async () =>
           {
             id: '',
           },
+          {
+            id: 'thread-without-workspace',
+            name: null,
+            updatedAt: 43,
+          },
         ],
         nextCursor: 'next',
       }),
@@ -31,6 +36,14 @@ test('parses valid Codex discovery records and counts invalid ones', async () =>
         firstPrompt: null,
         updatedAt: 42_000,
         workingDirectory: '/repo',
+      },
+      {
+        harness: 'codex',
+        nativeId: 'thread-without-workspace',
+        vendorTitle: null,
+        firstPrompt: null,
+        updatedAt: 43_000,
+        workingDirectory: null,
       },
     ],
     nextCursor: 'next',

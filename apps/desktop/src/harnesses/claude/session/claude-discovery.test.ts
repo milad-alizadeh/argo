@@ -14,6 +14,10 @@ test('parses valid Claude discovery records and counts invalid ones', () => {
     {
       sessionId: 'not-a-session-id',
     },
+    {
+      sessionId: 'f6c683e5-8305-4fe4-b379-ea514bcc9bdf',
+      lastModified: 43,
+    },
   ])
   assert.deepEqual(result, {
     sessions: [
@@ -25,8 +29,16 @@ test('parses valid Claude discovery records and counts invalid ones', () => {
         updatedAt: 42,
         workingDirectory: '/repo',
       },
+      {
+        harness: 'claude',
+        nativeId: 'f6c683e5-8305-4fe4-b379-ea514bcc9bdf',
+        vendorTitle: null,
+        firstPrompt: null,
+        updatedAt: 43,
+        workingDirectory: null,
+      },
     ],
-    recordCount: 2,
+    recordCount: 3,
     invalidRecordCount: 1,
   })
 })

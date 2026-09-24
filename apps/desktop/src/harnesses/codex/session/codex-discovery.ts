@@ -9,7 +9,7 @@ const codexThreadSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1).nullable(),
   updatedAt: z.number().int().nonnegative(),
-  cwd: z.string().min(1),
+  cwd: z.string().min(1).optional(),
 })
 const codexThreadPageSchema = z.object({
   data: z.array(z.unknown()),
@@ -52,7 +52,7 @@ export async function readCodexSessions(
       vendorTitle: thread.data.name,
       firstPrompt: null,
       updatedAt: thread.data.updatedAt * 1_000,
-      workingDirectory: thread.data.cwd,
+      workingDirectory: thread.data.cwd ?? null,
     })
     if (!parsed.success) {
       invalidRecordCount += 1

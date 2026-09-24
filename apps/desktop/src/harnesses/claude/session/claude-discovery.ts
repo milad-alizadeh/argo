@@ -7,7 +7,7 @@ import {
 
 const claudeSessionInfoSchema = z.object({
   sessionId: z.string().uuid(),
-  summary: z.string(),
+  summary: z.string().optional(),
   firstPrompt: z.string().optional(),
   lastModified: z.number().int().nonnegative(),
   cwd: z.string().min(1).optional(),
@@ -30,7 +30,7 @@ export function parseClaudeSessions(records: unknown[]): ClaudeDiscoveryResult {
     const session = sessionIngestionSchema.safeParse({
       harness: 'claude',
       nativeId: parsed.data.sessionId,
-      vendorTitle: parsed.data.summary || null,
+      vendorTitle: parsed.data.summary ?? null,
       firstPrompt: parsed.data.firstPrompt ?? null,
       updatedAt: parsed.data.lastModified,
       workingDirectory: parsed.data.cwd ?? null,
