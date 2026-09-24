@@ -1,8 +1,8 @@
 import { createActor } from 'xstate'
 import type { ClaudeTurnSetup } from '@/domains/sessions/contract/claude-turn-setup'
+import type { SessionService } from '@/domains/sessions/main/lifecycle/session-service'
 import type * as SessionContract from '@/domains/sessions/next/contract/session-contract'
 import type { SessionCommandOutcome } from '@/domains/sessions/next/contract/session-projection-contract'
-import type { SessionService } from '@/domains/sessions/next/main/session-service'
 import { createClaudeSessionMachine } from './claude-session-actor'
 import { type ClaudeSessionActor, projectionFrom } from './claude-session-projection'
 import type { sessionRegistry } from './claude-session-registry'
@@ -60,7 +60,11 @@ export async function openClaudeSession(options: {
       subscription.unsubscribe()
       const session = snapshot.context.session
       if (opening === 'rejected' || session === null) {
-        resolve({ kind: 'rejected', reason: 'Claude did not open a channel to this Session.' })
+        resolve(
+          command.session === null && session !== null
+            ? { kind: 'uncertain', session }
+            : { kind: 'rejected', reason: 'Claude did not open a channel to this Session.' },
+        )
         return
       }
       const entry = requireEntry(session)

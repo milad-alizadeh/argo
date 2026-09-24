@@ -4,13 +4,13 @@ import {
   claudeOpeningSetupFor,
   claudeTurnSetupSchemaFor,
 } from '@/domains/sessions/contract/claude-turn-setup'
+import type { SessionService } from '@/domains/sessions/main/lifecycle/session-service'
 import type { SessionCommand } from '@/domains/sessions/next/contract/session-command-contract'
 import type { WorkspaceSelection } from '@/domains/sessions/next/contract/session-contract'
 import type {
   SessionCommandOutcome,
   Unsubscribe,
 } from '@/domains/sessions/next/contract/session-projection-contract'
-import type { SessionService } from '@/domains/sessions/next/main/session-service'
 import { acceptedSessionOutcome } from './accepted-session-outcome'
 import { createClaudeQuery } from './claude-agent-sdk'
 import type { ClaudeSessionAdapter } from './claude-session-adapter-contract'

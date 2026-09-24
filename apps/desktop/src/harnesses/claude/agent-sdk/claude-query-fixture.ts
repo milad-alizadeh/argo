@@ -7,7 +7,7 @@ import type {
   SDKMessage,
   SDKUserMessage,
 } from '@anthropic-ai/claude-agent-sdk'
-import type { SessionService } from '@/domains/sessions/next/main/session-service'
+import type { SessionService } from '@/domains/sessions/main/lifecycle/session-service'
 import {
   assistantErrorMessage,
   assistantMessage,

@@ -1,6 +1,6 @@
+import type { SessionService } from '@/domains/sessions/main/lifecycle/session-service'
 import type { SessionIdentity } from '@/domains/sessions/next/contract/session-contract'
 import type { SessionProjection } from '@/domains/sessions/next/contract/session-projection-contract'
-import type { SessionService } from '@/domains/sessions/next/main/session-service'
 import { keyOf } from './claude-session-key'
 import {
   type ClaudeSessionActor,

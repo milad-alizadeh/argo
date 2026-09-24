@@ -22,6 +22,34 @@ export function createCodexSessionAdapterRegistration(options: {
         adapter,
         readModelCatalog: adapter.readModelCatalog,
         close: adapter.close,
+        hasLiveChannel: (session) =>
+          adapter
+            .projections()
+            .some(
+              (projection) =>
+                projection.session.nativeId === session.nativeId &&
+                projection.posture === 'managed',
+            ),
+        discoverLaunch: async (intent) => {
+          try {
+            const sessions = await adapter.refreshHistory(() => false)
+            const matches = sessions.filter((session) => {
+              const firstTurn = session.turns[0]
+              const firstUserMessage = session.messages.find((message) => message.role === 'user')
+              return (
+                session.workspace?.id === intent.workspaceId &&
+                firstUserMessage?.text === intent.prompt &&
+                firstTurn !== undefined &&
+                firstTurn.startedAt >= intent.createdAt - 120_000
+              )
+            })
+            return matches.length === 1 && matches[0] !== undefined
+              ? { kind: 'found', nativeId: matches[0].session.nativeId }
+              : { kind: 'ambiguous' }
+          } catch {
+            return { kind: 'unavailable' }
+          }
+        },
       }
     },
   }

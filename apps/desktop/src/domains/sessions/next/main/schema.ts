@@ -23,7 +23,21 @@ export const managedSessionLease = sqliteTable(
     harness: text().notNull(),
     nativeId: text('native_id').notNull(),
     windowId: text('window_id').notNull(),
+    ownerToken: text('owner_token').notNull(),
     expiresAt: integer('expires_at').notNull(),
   },
   (table) => [primaryKey({ columns: [table.harness, table.nativeId] })],
 )
+
+export const sessionLaunchIntent = sqliteTable('session_launch_intent', {
+  id: text('id').primaryKey(),
+  projectId: text('project_id')
+    .notNull()
+    .references(() => project.id, { onDelete: 'cascade' }),
+  workspaceId: text('workspace_id').notNull(),
+  harness: text().notNull(),
+  prompt: text().notNull(),
+  createdAt: integer('created_at').notNull(),
+  nativeId: text('native_id'),
+  status: text({ enum: ['starting', 'uncertain', 'committed', 'rejected'] }).notNull(),
+})

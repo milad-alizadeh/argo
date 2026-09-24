@@ -2,10 +2,10 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, expect, test } from 'vitest'
-import { createSessionService } from '@/domains/sessions/next/main/session-service'
 import { createDurableDatabase } from '@/platform/main/storage/durable-database'
 import { databaseMigrationsFolder } from '@/platform/main/storage/migrations-folder'
 import { openSharedDatabase } from '@/platform/main/storage/shared-database'
+import { createSessionService } from './session-service'
 
 const folders: string[] = []
 
@@ -105,6 +105,22 @@ test('rejects an invalid Session identity at the service boundary', async () => 
     expect(() =>
       harness.service('window-a').acquire({ harness: 'claude', nativeId: '' } as never),
     ).toThrow()
+  } finally {
+    harness.close()
+  }
+})
+
+test('an expired owner cannot release a successor lease', async () => {
+  const harness = await serviceHarness()
+  try {
+    const session = { harness: 'codex' as const, nativeId: 'native-1' }
+    const first = harness.service('same-window')
+    const successor = harness.service('same-window')
+    expect(first.acquire(session)).toEqual({ posture: 'managed' })
+    harness.setNow(110)
+    expect(successor.acquire(session)).toEqual({ posture: 'managed' })
+    first.release(session)
+    expect(successor.renew(session)).toEqual({ posture: 'managed' })
   } finally {
     harness.close()
   }

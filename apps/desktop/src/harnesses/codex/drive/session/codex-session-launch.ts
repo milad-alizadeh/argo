@@ -1,11 +1,11 @@
 import { createActor } from 'xstate'
 import type { CodexTurnSetup } from '@/domains/sessions/contract/codex-turn-setup'
+import type { SessionService } from '@/domains/sessions/main/lifecycle/session-service'
 import type {
   SessionIdentity,
   WorkspaceSelection,
 } from '@/domains/sessions/next/contract/session-contract'
 import type { SessionCommandOutcome } from '@/domains/sessions/next/contract/session-projection-contract'
-import type { SessionService } from '@/domains/sessions/next/main/session-service'
 import { beginWatchedResume } from '../../history/resume-watched'
 import { type HistoryTransport, readResumePermission } from '../../history/vendor-history'
 import type { AppServerSupervisor } from '../supervision/app-server-supervisor-machine'
@@ -98,7 +98,8 @@ export async function startCodexSession(options: {
   const { launch, selection, prompt, setup } = options
   const { workspaceId, cwd } = await launch.resolveWorkspace(selection)
   const identity = await open(launch, { kind: 'start', workspaceId, cwd, setup })
-  return executeSend(requireSessionEntry(launch.registry, identity), prompt, setup)
+  const outcome = await executeSend(requireSessionEntry(launch.registry, identity), prompt, setup)
+  return outcome.kind === 'accepted' ? outcome : { kind: 'uncertain' as const, session: identity }
 }
 
 export async function resumeCodexSession(

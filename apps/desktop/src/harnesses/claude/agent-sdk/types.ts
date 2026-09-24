@@ -8,6 +8,7 @@ import type {
 } from '@anthropic-ai/claude-agent-sdk'
 import { z } from 'zod'
 import type { ClaudeTurnSetup } from '@/domains/sessions/contract/claude-turn-setup'
+import type { SessionService } from '@/domains/sessions/main/lifecycle/session-service'
 import type {
   SessionIdentity,
   SourceHealth,
@@ -16,7 +17,6 @@ import type {
   Approval,
   Question,
 } from '@/domains/sessions/next/contract/session-projection-contract'
-import type { SessionService } from '@/domains/sessions/next/main/session-service'
 
 const sessionMessageSchema = z.looseObject({
   session_id: z.string().min(1),

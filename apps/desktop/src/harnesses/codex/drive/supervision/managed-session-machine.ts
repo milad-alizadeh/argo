@@ -4,6 +4,7 @@ import {
   CODEX_OPENING_SETUP,
   codexTurnSettings,
 } from '@/domains/sessions/contract/codex-turn-setup'
+import type { SessionService } from '@/domains/sessions/main/lifecycle/session-service'
 import type { SessionIdentity } from '@/domains/sessions/next/contract/session-contract'
 import type {
   Message,
@@ -12,7 +13,6 @@ import type {
   Turn,
   TurnStatus,
 } from '@/domains/sessions/next/contract/session-projection-contract'
-import type { SessionService } from '@/domains/sessions/next/main/session-service'
 import {
   codexApprovalDecision,
   type PendingCodexPermission,

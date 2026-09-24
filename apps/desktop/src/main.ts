@@ -4,6 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, type BrowserWindow, net, protocol } from 'electron'
+import { createProjectPort } from '@/domains/projects/main'
 import { seedDevelopmentProject } from '@/domains/projects/main/development-seed'
 import { openProjectStore } from '@/domains/projects/main/main-store'
 import { PROJECT_PROOF_STORE_ENV } from '@/domains/projects/main/proof-protocol'
@@ -11,6 +12,10 @@ import {
   ATTACHMENT_SCHEME,
   attachmentPathFromUrl,
 } from '@/domains/sessions/contract/model/feed/feed-images'
+import { createSessionIdentityService } from '@/domains/sessions/main/session-identity-service'
+import { createSessionStarter } from '@/domains/sessions/main/start-session'
+import { attachManagedSessions } from '@/domains/sessions/next/main/managed-session-composition'
+import { createSessionTicketLinkStoreFromDatabase } from '@/domains/tickets/main/session-links'
 import { openDurableStores } from '@/main/durable-stores'
 import { attachAppearanceWatch } from '@/platform/main/appearance'
 import { startDesktopApplication } from '@/platform/main/application/start'
@@ -100,6 +105,52 @@ function focusWindow(): void {
   desktopWindow.focus()
 }
 
+function attachSessionTransport(
+  window: BrowserWindow,
+  rendererURL: string,
+  stores: ReturnType<typeof openDurableStores>,
+): () => void {
+  const projects = createProjectPort(stores.projects)
+  const adapters = attachManagedSessions(window, {
+    database: stores.database,
+    home: os.homedir(),
+    projects,
+    proofEnabled: PROOF_ENABLED,
+  })
+  const ticketLinks = createSessionTicketLinkStoreFromDatabase(stores.database)
+  const identity = createSessionIdentityService(stores.database, ticketLinks.disconnect)
+  let recovering = false
+  const recover = async () => {
+    if (recovering || identity.isUnsafe()) return
+    recovering = true
+    try {
+      await identity.recoverLaunches((intent) => adapters.discoverLaunch(intent))
+    } catch (error) {
+      console.error(error)
+    } finally {
+      recovering = false
+    }
+  }
+  void recover()
+  const recoveryInterval = setInterval(() => void recover(), 30_000)
+  const detachTrpc = attachTrpcTransport({
+    window,
+    rendererURL,
+    router: appRouter,
+    context: {
+      database: stores.database,
+      selectedProjectId: projects.selectedProjectId,
+      startSession: createSessionStarter({ identity, projects, adapters }),
+      hasLiveChannel: adapters.hasLiveChannel,
+    },
+  })
+  return () => {
+    clearInterval(recoveryInterval)
+    detachTrpc()
+    void adapters.close()
+  }
+}
+
 function createWindow(): void {
   const userData = app.getPath('userData')
   const { projectData } = developmentStoreDirectories({
@@ -126,12 +177,7 @@ function createWindow(): void {
       : undefined,
     attach: (window, rendererURL) => {
       attachWindowNavigation(window)
-      const detachTrpc = attachTrpcTransport({
-        window,
-        rendererURL,
-        router: appRouter,
-        context: { database: stores.database },
-      })
+      const detachTrpc = attachSessionTransport(window, rendererURL, stores)
       attachAppearanceWatch(window)
       window.once('closed', () => {
         desktopWindow = undefined

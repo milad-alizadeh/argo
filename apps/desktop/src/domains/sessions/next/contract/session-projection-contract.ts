@@ -89,7 +89,7 @@ export type SessionProjection = z.infer<typeof sessionProjectionSchema>
 export const sessionCommandOutcomeSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('accepted'), projection: sessionProjectionSchema }),
   z.strictObject({ kind: z.literal('rejected'), reason: z.string().min(1) }),
-  z.strictObject({ kind: z.literal('uncertain') }),
+  z.strictObject({ kind: z.literal('uncertain'), session: sessionIdentitySchema.optional() }),
 ])
 export type SessionCommandOutcome = z.infer<typeof sessionCommandOutcomeSchema>
 

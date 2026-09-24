@@ -1,6 +1,5 @@
 import { z } from 'zod'
-import { identifierSchema } from '@/shared/validation'
-import { harnessSchema } from '../next/contract/session-contract'
+import { harnessSchema } from '@/domains/sessions/next/contract/session-contract'
 
 export const sessionListInputSchema = z.strictObject({
   page: z.number().int().positive(),
@@ -8,9 +7,8 @@ export const sessionListInputSchema = z.strictObject({
 })
 
 export const sessionListItemSchema = z.strictObject({
-  argoId: identifierSchema,
+  argoId: z.uuid(),
   harness: harnessSchema,
-  nativeId: identifierSchema,
   title: z.string().nullable(),
 })
 
