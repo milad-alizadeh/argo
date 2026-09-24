@@ -141,23 +141,6 @@ export function claudeHarnessInfo(catalog: ClaudeModelCatalog | null): HarnessIn
   })
 }
 
-export function claudeModelsWithEffort(catalog: ClaudeModelCatalog | null) {
-  return catalog?.data.filter(({ supportedEffortLevels }) => supportedEffortLevels.length > 0) ?? []
-}
-
-export function claudePermissionModes(catalog: ClaudeModelCatalog | null) {
-  return catalog?.supportedPermissionModes ?? []
-}
-
-export function claudePermissionModesForModel(
-  catalog: ClaudeModelCatalog,
-  model: ClaudeModelCatalog['data'][number],
-) {
-  return claudePermissionModes(catalog).filter(
-    (mode) => mode !== 'auto' || model.supportsAutoMode === true,
-  )
-}
-
 export async function readClaudeHarnessInfo(executablePath: string | null): Promise<HarnessInfo> {
   if (executablePath === null) return unavailable('claude')
   try {

@@ -1,10 +1,8 @@
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { createInterface } from 'node:readline'
-import { assign, createActor, fromCallback, setup, waitFor } from 'xstate'
-import { type HarnessInfo, unavailable } from '@/harnesses/catalog/harness-catalog-machine'
+import { type ActorRefFrom, assign, fromCallback, setup, waitFor } from 'xstate'
 import { executableVersion } from '@/harnesses/cli/executable-version'
-import { type CodexModelCatalog, codexHarnessInfo, readModelCatalog } from '../catalog'
 
 // The subset of `codex app-server`'s JSON-RPC protocol this adapter drives, grounded in codex-harness
 // 0.147.0's generated schema (`codex app-server generate-json-schema`) and the live proof recorded
@@ -28,6 +26,12 @@ export type RequestParams = {
     }
   }
 }
+
+export type CodexRequest = <Method extends keyof RequestParams, Result>(
+  method: Method,
+  params: RequestParams[Method],
+  parse: (value: unknown) => Result,
+) => Promise<Result>
 
 export type WireMessage =
   | {
@@ -394,7 +398,7 @@ async function handshake(channel: CodexChannel) {
   channel.notify('initialized')
 }
 
-export function createCodexAppServer(findExecutable: () => string | null) {
+export function createCodexAppServerMachine(findExecutable: () => string | null) {
   let liveChannel: CodexChannel | null = null
   const processActor = fromCallback<
     Event,
@@ -547,28 +551,19 @@ export function createCodexAppServer(findExecutable: () => string | null) {
       },
     },
   })
-  const actor = createActor(machine, {
-    input: {
-      executable: findExecutable(),
-    },
-  })
   return {
-    actor,
-    close: () =>
-      actor.send({
-        type: 'Shutdown',
-      }),
-    async readHarnessInfo(): Promise<HarnessInfo> {
-      const executablePath = findExecutable()
-      if (executablePath === null) {
-        if (actor.getSnapshot().context.executable !== null)
-          actor.send({
-            type: 'Executable changed',
-            executable: null,
-          })
-        return unavailable('codex')
-      }
-      try {
+    machine,
+    request(actor: ActorRefFrom<typeof machine>): CodexRequest {
+      return async (method, params, parse) => {
+        const executablePath = findExecutable()
+        if (executablePath === null) {
+          if (actor.getSnapshot().context.executable !== null)
+            actor.send({
+              type: 'Executable changed',
+              executable: null,
+            })
+          throw new Error('Codex executable is unavailable.')
+        }
         const identity: Identity = {
           executablePath,
           version: await executableVersion(executablePath),
@@ -595,39 +590,9 @@ export function createCodexAppServer(findExecutable: () => string | null) {
             timeout: 3_000,
           },
         )
-        if (liveChannel === null) return unavailable('codex')
-        const channel = liveChannel
-        const catalog = await readCatalogPages(channel)
-        return codexHarnessInfo(catalog)
-      } catch {
-        return unavailable('codex')
+        if (liveChannel === null) throw new Error('Codex app-server is unavailable.')
+        return liveChannel.request(method, params, parse)
       }
     },
-  }
-}
-
-async function readCatalogPages(channel: CodexChannel): Promise<CodexModelCatalog> {
-  const data: CodexModelCatalog['data'] = []
-  let cursor: string | undefined
-  do {
-    const page = await channel.request(
-      'model/list',
-      {
-        includeHidden: false,
-        limit: 100,
-        ...(cursor === undefined
-          ? {}
-          : {
-              cursor,
-            }),
-      },
-      readModelCatalog,
-    )
-    data.push(...page.data)
-    cursor = page.nextCursor ?? undefined
-  } while (cursor !== undefined)
-  return {
-    data,
-    nextCursor: null,
   }
 }

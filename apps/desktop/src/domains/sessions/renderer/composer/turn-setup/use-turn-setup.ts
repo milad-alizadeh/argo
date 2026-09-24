@@ -1,34 +1,23 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback } from 'react'
 
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
 import type { SessionHarness } from '../../harness/harnesses'
 import { useComposerStore } from '../hooks/use-composer-store'
 import { type ComposerIdentity, composerIdentityKey } from '../identity/composer-identity'
 import type { TurnSetupControlProps } from '../toolbar/run-setup-menu'
-import {
-  refusalOf,
-  resolvedTurnSetup,
-  type TurnSetup,
-  type TurnSetupChoices,
-  turnSettled,
-} from './turn-setup'
-
-type Expectation = { requested: TurnSetup; since: string | null }
+import { resolvedTurnSetup, type TurnSetup, type TurnSetupChoices } from './turn-setup'
 
 export function useTurnSetup({
   harness,
   choices,
   identity,
   rows,
-  onRefusal,
 }: {
   harness: SessionHarness
   choices: TurnSetupChoices | null
   identity: ComposerIdentity
   rows: SessionRosterRow[]
-  onRefusal: (refusal: { sessionId: string; message: string }) => void
 }) {
-  const [expectations, setExpectations] = useState(() => new Map<string, Expectation>())
   const chosen = useComposerStore(({ setup }) => setup)
   const chooseSetup = useComposerStore(({ chooseSetup }) => chooseSetup)
   const remembered = useComposerStore(({ rememberedSetup }) => rememberedSetup[harness])
@@ -42,31 +31,6 @@ export function useTurnSetup({
     [chooseSetup, harness, rememberSetup],
   )
 
-  const watchTurn = useCallback(
-    (sessionId: string, requested: TurnSetup, since: string | null) => {
-      chooseSetup(sessionId, requested)
-      setExpectations((current) => new Map(current).set(sessionId, { requested, since }))
-    },
-    [chooseSetup],
-  )
-
-  useEffect(() => {
-    if (choices === null) return
-    for (const [sessionId, { requested, since }] of expectations) {
-      const row = rows.find(({ id }) => id === sessionId)
-      if (row === undefined || !turnSettled(row, since)) continue
-      setExpectations((current) => {
-        const next = new Map(current)
-        next.delete(sessionId)
-        return next
-      })
-      const refusal = refusalOf(choices, requested, row.setup)
-      if (refusal === null) continue
-      choose(sessionId, refusal.setup)
-      onRefusal({ sessionId, message: refusal.message })
-    }
-  }, [choices, choose, expectations, onRefusal, rows])
-
   const control = useComposerControl({
     choices,
     chosen: new Map(Object.entries(chosen)),
@@ -75,7 +39,7 @@ export function useTurnSetup({
     remembered,
     choose,
   })
-  return { control, watchTurn }
+  return control
 }
 
 function useComposerControl({

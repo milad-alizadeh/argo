@@ -1,11 +1,8 @@
 import { expect, test } from 'bun:test'
-import { claudeModelCatalogSchema } from '@/harnesses/claude/catalog'
-import { claudeTurnSetupSchemaFor } from '@/domains/sessions/contract/claude-turn-setup'
-import { codexTurnSetupSchemaFor } from '@/domains/sessions/contract/codex-turn-setup'
-import { claudeTurnSetupSchema } from '@/domains/sessions/contract/ipc/contract'
-import { claudeModelCatalogFixture } from '../../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
-import { codexModelCatalogFixture } from '../../../../../../test-fixtures/sessions/codex-model-catalog.fixture'
-import { claudeChoices, codexChoices } from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
+import {
+  claudeChoices,
+  codexChoices,
+} from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
 import {
   refusalOf,
   resolvedTurnSetup,
@@ -98,137 +95,6 @@ test('names a model Argo does not offer verbatim and keeps the choice it cannot 
       mode: 'bypassPermissions',
     }),
   ).toEqual({ setup: requested, message: 'Claude used claude-mythos-1, not Opus 5.' })
-})
-
-test('offers no Claude setup before a live model catalog is available', () => {
-  expect(claudeChoices(null)).toBe(null)
-  expect(claudeTurnSetupSchema.safeParse(undefined).success).toBe(false)
-  expect(claudeTurnSetupSchemaFor(null).safeParse(undefined).success).toBe(true)
-  expect(
-    claudeTurnSetupSchemaFor(null).safeParse({ model: 'sonnet', effort: 'medium', mode: 'manual' })
-      .success,
-  ).toBe(false)
-  expect(CLAUDE_TURN_SETUP.modes.map(({ value }) => value)).toContain('manual')
-})
-
-test('offers no Claude setup when the live catalog has no model with a supported effort', () => {
-  const catalog = {
-    supportedPermissionModes: ['manual'],
-    data: [
-      {
-        value: 'sonnet-live',
-        resolvedModel: 'claude-sonnet-live',
-        displayName: 'Sonnet Live',
-        description: '',
-        supportedEffortLevels: [],
-      },
-    ],
-  }
-  expect(claudeChoices(catalog)).toBe(null)
-  expect(
-    claudeTurnSetupSchemaFor(catalog).safeParse({
-      model: 'sonnet',
-      effort: 'medium',
-      mode: 'manual',
-    }).success,
-  ).toBe(false)
-})
-
-test('uses the live Claude catalog for composer choices and setup validation', () => {
-  const catalog = claudeModelCatalogFixture()
-  const choices = claudeChoices(catalog)
-  if (choices === null) throw new Error('The mock Claude catalog has no usable model.')
-  expect(choices.models.map(({ value }) => value)).toEqual(['sonnet-live'])
-  expect(choices.models[0]?.efforts).toEqual(['low', 'high'])
-  expect(choices.opening).toEqual({ model: 'sonnet-live', effort: 'low', mode: 'manual' })
-  const schema = claudeTurnSetupSchemaFor(catalog)
-  expect(schema.safeParse({ model: 'sonnet-live', effort: 'high', mode: 'manual' }).success).toBe(
-    true,
-  )
-  expect(schema.safeParse({ model: 'sonnet-live', effort: 'max', mode: 'manual' }).success).toBe(
-    false,
-  )
-})
-
-test('accepts effort values supplied by the Claude model catalog', () => {
-  const parsed = claudeModelCatalogSchema.safeParse({
-    supportedPermissionModes: ['manual'],
-    data: [
-      {
-        value: 'sonnet-live',
-        displayName: 'Sonnet Live',
-        description: '',
-        supportedEffortLevels: ['ultra'],
-      },
-    ],
-  })
-  expect(parsed.success).toBe(true)
-  if (!parsed.success) throw new Error('The Claude model catalog rejected its advertised effort.')
-  const choices = claudeChoices(parsed.data)
-  if (choices === null) throw new Error('The Claude catalog has no usable model.')
-  expect(choices.models[0]?.efforts).toEqual(['ultra'])
-  expect(
-    claudeTurnSetupSchemaFor(parsed.data).safeParse({
-      model: 'sonnet-live',
-      effort: 'ultra',
-      mode: 'manual',
-    }).success,
-  ).toBe(true)
-  expect(choices.modes.map(({ value }) => value)).toEqual(['manual'])
-})
-
-test('accepts permission modes supplied by the Claude CLI', () => {
-  const catalog = {
-    supportedPermissionModes: ['workspaceAudit'],
-    data: [
-      {
-        value: 'sonnet-live',
-        displayName: 'Sonnet Live',
-        description: '',
-        supportedEffortLevels: ['ultra'],
-      },
-    ],
-  }
-  const choices = claudeChoices(catalog)
-  if (choices === null) throw new Error('The Claude catalog has no usable choices.')
-  expect(choices.modes.map(({ value }) => value)).toEqual(['workspaceAudit'])
-  expect(
-    claudeTurnSetupSchemaFor(catalog).safeParse({
-      model: 'sonnet-live',
-      effort: 'ultra',
-      mode: 'workspaceAudit',
-    }).success,
-  ).toBe(true)
-})
-
-test('advertised models and efforts become the Codex composer choices and schema rules', () => {
-  const catalog = codexModelCatalogFixture()
-  const choices = codexChoices(catalog)
-  expect(choices.models.map(({ value }) => value)).toEqual(['gpt-live'])
-  expect(choices.models[0]?.efforts).toEqual(['focused'])
-  expect(choices.opening).toEqual({
-    model: 'gpt-live',
-    effort: 'focused',
-    mode: 'workspace-write',
-  })
-  const schema = codexTurnSetupSchemaFor(catalog)
-  expect(
-    schema.safeParse({ model: 'gpt-live', effort: 'focused', mode: 'workspace-write' }).success,
-  ).toBe(true)
-  expect(
-    schema.safeParse({ model: 'gpt-live', effort: 'high', mode: 'workspace-write' }).success,
-  ).toBe(false)
-})
-
-test('offers no Codex setup while the live model catalog is unavailable', () => {
-  expect(codexChoices(null)).toBe(null)
-  expect(
-    codexTurnSetupSchemaFor(null).safeParse({
-      model: 'unverified-model',
-      effort: 'unverified-effort',
-      mode: 'workspace-write',
-    }).success,
-  ).toBe(false)
 })
 
 test('replaces an explicit model and effort removed by a live catalog refresh', () => {

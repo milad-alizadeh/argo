@@ -4,6 +4,7 @@ import {
   harnessInfoSchema,
   unavailable,
 } from '@/harnesses/catalog/harness-catalog-machine'
+import type { CodexRequest } from './app-server/codex-app-server-machine'
 
 function effortLabel(value: string): string {
   return value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
@@ -119,4 +120,23 @@ export function codexHarnessInfo(catalog: CodexModelCatalog | null): HarnessInfo
 
 export function readModelCatalog(value: unknown): CodexModelCatalog {
   return codexModelCatalogSchema.parse(value)
+}
+
+export async function readCodexHarnessInfo(request: CodexRequest): Promise<HarnessInfo> {
+  try {
+    const data: CodexModelCatalog['data'] = []
+    let cursor: string | undefined
+    do {
+      const page = await request(
+        'model/list',
+        { includeHidden: false, limit: 100, ...(cursor === undefined ? {} : { cursor }) },
+        readModelCatalog,
+      )
+      data.push(...page.data)
+      cursor = page.nextCursor ?? undefined
+    } while (cursor !== undefined)
+    return codexHarnessInfo({ data, nextCursor: null })
+  } catch {
+    return unavailable('codex')
+  }
 }

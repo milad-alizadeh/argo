@@ -1,5 +1,5 @@
-import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router'
 import type { Cockpit, ProjectActions } from '@/domains/projects/renderer'
 import type { SessionRosterRow } from '@/domains/sessions/contract/model/models'
@@ -15,9 +15,9 @@ import { Button } from '@/platform/renderer/components/ui/button'
 import { trpc } from '@/platform/renderer/trpc-client'
 import { SessionComposer } from '../composer/editor/session-composer'
 import { composerIdentityKey, composerIdentityOf } from '../composer/identity/composer-identity'
+import { COMPOSER_COLUMN } from '../composer/layout/composer-form'
 import { useTurnSetup } from '../composer/turn-setup/use-turn-setup'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
-import { COMPOSER_COLUMN } from '../composer/layout/composer-form'
 import type { HarnessControl } from '../harness/harnesses'
 import { useSessionCreationStore } from '../session-creation'
 import type { SessionRoster } from '../types'
@@ -44,16 +44,21 @@ export function SessionComposerArea({
   projectActions,
 }: SessionScreenDetailsProps) {
   const location = useLocation()
-  const catalogQuery = useQuery(trpc.harnessCatalogSnapshot.queryOptions({ harness: harness.harness }))
+  const catalogQuery = useQuery(
+    trpc.harnessCatalogSnapshot.queryOptions({ harness: harness.harness }),
+  )
   const catalog = catalogQuery.data?.info ?? null
   const pending = useSessionCreationStore((state) => state.pending)
-  const identity = composerIdentityOf(selectedSessionId, cockpit.project?.id ?? null, pending?.stage === 'draft' ? pending.id : null)
-  const { control } = useTurnSetup({
+  const identity = composerIdentityOf(
+    selectedSessionId,
+    cockpit.project?.id ?? null,
+    pending?.stage === 'draft' ? pending.id : null,
+  )
+  const control = useTurnSetup({
     harness: harness.harness,
     choices: catalog?.availability === 'available' ? catalog : null,
     identity,
     rows: roster?.sessions ?? [],
-    onRefusal: () => undefined,
   })
   // The Roster already knows another process runs it live, so no Send is offered at all (ADR-0040).
   if (session?.locked === true) return <OpenElsewhere onRetry={null} />
@@ -64,14 +69,22 @@ export function SessionComposerArea({
         sessionId={composerIdentityKey(identity)}
         focusOnMount={location.state === COMPOSER_FOCUS_STATE}
         setup={control}
-        catalogError={catalogQuery.isError || catalog?.availability !== 'available'}
-        refreshCatalog={() => { void catalogQuery.refetch() }}
-        workspace={identity.kind === 'draft' ? {
-          workspaces: cockpit.workspaces,
-          workspace: cockpit.workspace,
-          onSelect: projectActions.selectWorkspace,
-          onCreateManaged: () => projectActions.createManagedWorkspace('HEAD'),
-        } : null}
+        catalogError={
+          catalogQuery.isError || (catalogQuery.isSuccess && catalog?.availability !== 'available')
+        }
+        refreshCatalog={() => {
+          void catalogQuery.refetch()
+        }}
+        workspace={
+          identity.kind === 'draft'
+            ? {
+                workspaces: cockpit.workspaces,
+                workspace: cockpit.workspace,
+                onSelect: projectActions.selectWorkspace,
+                onCreateManaged: () => projectActions.createManagedWorkspace('HEAD'),
+              }
+            : null
+        }
         contextTokens={session?.contextTokens}
         contextWindowTokens={session?.contextWindowTokens}
         disabled={questionPending}

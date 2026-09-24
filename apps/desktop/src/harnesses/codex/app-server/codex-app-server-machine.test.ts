@@ -3,10 +3,11 @@ import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-import { waitFor } from 'xstate'
+import { createActor, waitFor } from 'xstate'
 import { codexModelCatalogFixture } from '../../../../test-fixtures/sessions/codex-model-catalog.fixture'
+import { readCodexHarnessInfo } from '../catalog'
 import type { CodexChannel } from './codex-app-server-machine'
-import { createCodexAppServer, processExitIsCurrent } from './codex-app-server-machine'
+import { createCodexAppServerMachine, processExitIsCurrent } from './codex-app-server-machine'
 
 test('ignores the exit of a superseded app-server channel', () => {
   const oldChannel = {} as CodexChannel
@@ -36,18 +37,18 @@ createInterface({ input: process.stdin }).on('line', (line) => {
     `#!/bin/sh\nif [ "$1" = "--version" ]; then echo 'codex 0.147.0'; exit 0; fi\nexec "${process.execPath}" "${server}"\n`,
   )
   await chmod(executable, 0o755)
-  const runtime = createCodexAppServer(() => executable)
-  runtime.actor.start()
+  const runtime = createCodexAppServerMachine(() => executable)
+  const actor = createActor(runtime.machine, { input: { executable } }).start()
   try {
-    const info = await runtime.readHarnessInfo()
+    const info = await readCodexHarnessInfo(runtime.request(actor))
     assert.equal(info.availability, 'available')
     assert.equal(info.harness, 'codex')
-    runtime.close()
-    await waitFor(runtime.actor, (snapshot) => snapshot.matches('Closed'))
+    actor.send({ type: 'Shutdown' })
+    await waitFor(actor, (snapshot) => snapshot.matches('Closed'))
     await new Promise((resolve) => setTimeout(resolve, 30))
     assert.equal(await readFile(closed, 'utf8'), 'closed')
   } finally {
-    runtime.actor.stop()
+    actor.stop()
     await rm(directory, { recursive: true, force: true })
   }
 })

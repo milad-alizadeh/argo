@@ -11,9 +11,9 @@ import {
   ATTACHMENT_SCHEME,
   attachmentPathFromUrl,
 } from '@/domains/sessions/contract/model/feed/feed-images'
-import { stopHarnessCatalog } from '@/harnesses/catalog/runtime'
 import { openDurableStores } from '@/main/durable-stores'
 import { attachAppearanceWatch } from '@/platform/main/appearance'
+import type { ApplicationActors } from '@/platform/main/application/actors'
 import { startDesktopApplication } from '@/platform/main/application/start'
 import {
   DEVELOPMENT_APPLICATION_NAME,
@@ -28,7 +28,7 @@ import { resetIncompleteDevelopmentDatabase } from '@/platform/main/development/
 import { installMenu } from '@/platform/main/menu'
 import { attachWindowNavigation } from '@/platform/main/security/window-navigation'
 import { configureStorageRuntime } from '@/platform/main/storage/storage-runtime'
-import { appRouter } from '@/platform/main/trpc-router'
+import { type AppRouter, createAppRouter } from '@/platform/main/trpc-router'
 import { attachTrpcTransport } from '@/platform/main/trpc-transport'
 import { createDesktopWindow } from '@/platform/main/window/create-window'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mts'
@@ -101,7 +101,7 @@ function focusWindow(): void {
   desktopWindow.focus()
 }
 
-function createWindow(): void {
+function createWindow(router: AppRouter): void {
   const userData = app.getPath('userData')
   const { projectData } = developmentStoreDirectories({
     userData,
@@ -130,7 +130,7 @@ function createWindow(): void {
       const detachTrpc = attachTrpcTransport({
         window,
         rendererURL,
-        router: appRouter,
+        router,
         context: undefined,
       })
       attachAppearanceWatch(window)
@@ -151,7 +151,7 @@ function createWindow(): void {
   }
 }
 
-async function ready(): Promise<void> {
+async function ready(actors: ApplicationActors): Promise<void> {
   // Main-process `net.fetch` reads `file://` directly, unlike a renderer's own subresource
   // requests, so this is immune to the restriction the scheme itself exists to route around.
   protocol.handle(ATTACHMENT_SCHEME, (request) => {
@@ -169,7 +169,7 @@ async function ready(): Promise<void> {
     await seedDevelopmentProject(projects, DEVELOPMENT_INSTANCE)
     projects.close()
   }
-  createWindow()
+  createWindow(createAppRouter(actors.catalogActor))
 
   if (!ACCEPTANCE_ENABLED) return
 
@@ -188,7 +188,6 @@ startDesktopApplication({
   ready,
   focusExistingWindow: focusWindow,
   willQuit: () => {
-    stopHarnessCatalog()
     if (DEVELOPMENT_INSTANCE) void rm(DEVELOPMENT_INSTANCE.readyFile, { force: true })
     if (acceptanceUserData) void rm(acceptanceUserData, { recursive: true, force: true })
   },

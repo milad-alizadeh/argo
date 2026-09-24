@@ -1,7 +1,7 @@
 import { initTRPC } from '@trpc/server'
+import type { ActorRefFrom } from 'xstate'
 import { z } from 'zod'
-import { harnessInfoSchema } from './harness-catalog-machine'
-import { harnessCatalogActor } from './runtime'
+import { type createHarnessCatalogMachine, harnessInfoSchema } from './harness-catalog-machine'
 
 const t = initTRPC.create()
 const inputSchema = z.strictObject({ harness: z.enum(['claude', 'codex']) })
@@ -11,7 +11,7 @@ const outputSchema = z.strictObject({
   loading: z.boolean(),
 })
 
-type CatalogActor = typeof harnessCatalogActor
+export type CatalogActor = ActorRefFrom<ReturnType<typeof createHarnessCatalogMachine>>
 type Harness = z.infer<typeof inputSchema>['harness']
 
 function selectedSnapshot(actor: CatalogActor, harness: Harness) {
@@ -41,6 +41,8 @@ export function readCatalogSnapshot(actor: CatalogActor, harness: Harness) {
 }
 
 export function catalogSnapshotProcedure(actor: CatalogActor) {
-  return t.procedure.input(inputSchema).output(outputSchema)
+  return t.procedure
+    .input(inputSchema)
+    .output(outputSchema)
     .query(({ input }) => readCatalogSnapshot(actor, input.harness))
 }

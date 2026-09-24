@@ -1,12 +1,10 @@
 import { initTRPC } from '@trpc/server'
-import { catalogSnapshotProcedure } from '@/harnesses/catalog/catalog-snapshot'
-import { harnessCatalogActor } from '@/harnesses/catalog/runtime'
+import { type CatalogActor, catalogSnapshotProcedure } from '@/harnesses/catalog/catalog-snapshot'
 
 const t = initTRPC.create()
 
-export function createAppRouter(actor: typeof harnessCatalogActor) {
+export function createAppRouter(actor: CatalogActor) {
   return t.router({ harnessCatalogSnapshot: catalogSnapshotProcedure(actor) })
 }
 
-export const appRouter = createAppRouter(harnessCatalogActor)
-export type AppRouter = typeof appRouter
+export type AppRouter = ReturnType<typeof createAppRouter>
