@@ -57,7 +57,7 @@ export const claudeQueryLogic = fromCallback<ClaudeSessionEvent, ClaudeSessionIn
   ({ input, sendBack, receive }) => {
     const channel = createStreamInputChannel()
     // A resume always pushes its prompt here. A fresh, non-deferred start instead waits and pushes
-    // it once the lease is acquired (`startInitialTurn` in claude-session-lease-states.ts), so the
+    // it once the Session is managed (`startInitialTurn` in claude-session-channel-states.ts), so the
     // Managed transition orders it. But a *deferred* fresh start (`startTurn: false`) has no other
     // trigger at all: the SDK's query() reads nothing — not even the "system"/"init" handshake that
     // carries the Session's nativeId — until the prompt iterable yields a first message (confirmed

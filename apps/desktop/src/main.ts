@@ -12,8 +12,8 @@ import {
   ATTACHMENT_SCHEME,
   attachmentPathFromUrl,
 } from '@/domains/sessions/contract/model/feed/feed-images'
-import { createSessionIdentityService } from '@/domains/sessions/main/session-identity-service'
-import { recoverSessionState } from '@/domains/sessions/main/session-recovery'
+import { createSessionRepository } from '@/domains/sessions/main/session-repository'
+import { syncSessions } from '@/domains/sessions/main/session-sync'
 import { createSessionStarter } from '@/domains/sessions/main/start-session'
 import { attachManagedSessions } from '@/domains/sessions/next/main/managed-session-composition'
 import { createSessionTicketLinkStoreFromDatabase } from '@/domains/tickets/main/session-links'
@@ -113,19 +113,22 @@ function attachSessionTransport(
   stores: ReturnType<typeof openDurableStores>,
 ): () => Promise<void> {
   const projects = createProjectPort(stores.projects)
-  const adapters = attachManagedSessions(window, {
-    database: stores.database,
+  const adapters = attachManagedSessions({
     home: os.homedir(),
     projects,
     proofEnabled: PROOF_ENABLED,
   })
   const ticketLinks = createSessionTicketLinkStoreFromDatabase(stores.database)
-  const identity = createSessionIdentityService(stores.database, ticketLinks.disconnect)
+  const repository = createSessionRepository(stores.database, ticketLinks.disconnect)
   let stopping = false
   let recoveryInFlight: Promise<void> | null = null
   const recover = () => {
     if (stopping || recoveryInFlight !== null) return
-    const pending = recoverSessionState(identity, adapters)
+    const pending = syncSessions(repository, adapters, projects)
+      .then(({ failedWrites, unavailableWorkspaces }) => {
+        if (failedWrites > 0 || unavailableWorkspaces > 0)
+          console.error('Session sync skipped rows', { failedWrites, unavailableWorkspaces })
+      })
       .catch(console.error)
       .finally(() => {
         if (recoveryInFlight === pending) recoveryInFlight = null
@@ -141,7 +144,7 @@ function attachSessionTransport(
     context: {
       database: stores.database,
       selectedProjectId: projects.selectedProjectId,
-      startSession: createSessionStarter({ identity, projects, adapters }),
+      startSession: createSessionStarter({ repository, projects, adapters }),
       hasLiveChannel: adapters.hasLiveChannel,
     },
   })

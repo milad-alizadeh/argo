@@ -1,4 +1,3 @@
-import type { SessionService } from '@/domains/sessions/main/lifecycle/session-service'
 import type { SessionIdentity } from '@/domains/sessions/next/contract/session-contract'
 import type { SessionProjection } from '@/domains/sessions/next/contract/session-projection-contract'
 import { keyOf } from './claude-session-key'
@@ -20,7 +19,7 @@ function endedUnmanaged(snapshot: ReturnType<ClaudeSessionActor['getSnapshot']>)
   return snapshot.status === 'done' && snapshot.context.sourceHealth === 'unavailable'
 }
 
-export function sessionRegistry(changed: Set<() => void>, sessionService: SessionService) {
+export function sessionRegistry(changed: Set<() => void>) {
   const entries = new Map<string, Entry>()
   const requireEntry = (session: SessionIdentity) => {
     const entry = entries.get(keyOf(session))
@@ -67,8 +66,6 @@ export function sessionRegistry(changed: Set<() => void>, sessionService: Sessio
     },
     close: () =>
       [...entries.values()].forEach((entry) => {
-        const session = entry.actor.getSnapshot().context.session
-        if (session !== null) sessionService.release(session)
         entry.actor.stop()
       }),
   }

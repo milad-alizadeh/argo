@@ -1,6 +1,5 @@
 import { createActor } from 'xstate'
 import type { CodexTurnSetup } from '@/domains/sessions/contract/codex-turn-setup'
-import type { SessionService } from '@/domains/sessions/main/lifecycle/session-service'
 import type {
   SessionIdentity,
   WorkspaceSelection,
@@ -63,7 +62,6 @@ type Launch = {
   register: (actor: ManagedSessionActor) => void
   registry: SessionRegistry
   supervisor: AppServerSupervisor
-  sessionService: SessionService
   history: HistoryTransport
 }
 
@@ -119,8 +117,6 @@ export async function resumeCodexSession(
   if (existing !== undefined) return executeSend(existing, request.prompt)
   return beginWatchedResume({
     readPermission: () => readResumePermission(launch.history, request.session.nativeId),
-    acquireLease: () => launch.sessionService.acquire(request.session),
-    releaseLease: () => launch.sessionService.release(request.session),
     openManaged: async () => {
       const { workspaceId } = await launch.resolveWorkspace(request.workspace)
       await open(launch, {

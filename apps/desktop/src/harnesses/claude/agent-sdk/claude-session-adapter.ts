@@ -4,13 +4,13 @@ import {
   claudeOpeningSetupFor,
   claudeTurnSetupSchemaFor,
 } from '@/domains/sessions/contract/claude-turn-setup'
-import type { SessionService } from '@/domains/sessions/main/lifecycle/session-service'
 import type { SessionCommand } from '@/domains/sessions/next/contract/session-command-contract'
 import type { WorkspaceSelection } from '@/domains/sessions/next/contract/session-contract'
 import type {
   SessionCommandOutcome,
   Unsubscribe,
 } from '@/domains/sessions/next/contract/session-projection-contract'
+import { createResumeGate } from '@/harnesses/composition/resume-gate'
 import { acceptedSessionOutcome } from './accepted-session-outcome'
 import { createClaudeQuery } from './claude-agent-sdk'
 import type { ClaudeSessionAdapter } from './claude-session-adapter-contract'
@@ -70,7 +70,6 @@ async function executeCommand(options: {
 }
 
 export function createClaudeSessionAdapter(deps: {
-  sessionService: SessionService
   waitForWorkspaceReady: (workspaceId: string) => Promise<void>
   resolveWorkspace: (selection: WorkspaceSelection) => Promise<{ workspaceId: string; cwd: string }>
   createQuery?: ClaudeQueryFactory
@@ -92,7 +91,8 @@ export function createClaudeSessionAdapter(deps: {
     readResumePermission: deps.readResumePermission ?? defaultReadResumePermission,
   }
   const changed = new Set<() => void>()
-  const registry = sessionRegistry(changed, deps.sessionService)
+  const registry = sessionRegistry(changed)
+  const runResume = createResumeGate<SessionCommandOutcome>()
   const catalogCache = new ClaudeModelCatalogCache()
   const readModelCatalog =
     deps.readModelCatalog ??
@@ -109,28 +109,27 @@ export function createClaudeSessionAdapter(deps: {
       entry.listeners.add(listener)
       return (() => entry.listeners.delete(listener)) as Unsubscribe
     },
-    resume: async ({ session, workspace, prompt, cwd }) => {
-      const entry = registry.entries.get(keyOf(session))
-      if (entry !== undefined) {
-        if (!(await sendWhenManaged(entry.actor, prompt))) {
-          return { kind: 'rejected', reason: 'The Claude Session is no longer managed.' }
+    resume: ({ session, workspace, prompt, cwd }) =>
+      runResume(keyOf(session), async () => {
+        const entry = registry.entries.get(keyOf(session))
+        if (entry !== undefined) {
+          if (!(await sendWhenManaged(entry.actor, prompt))) {
+            return { kind: 'rejected', reason: 'The Claude Session is no longer managed.' }
+          }
+          entry.revision += 1
+          return acceptedSessionOutcome(entry)
         }
-        entry.revision += 1
-        return acceptedSessionOutcome(entry)
-      }
-      return beginWatchedClaudeResume({
-        readPermission: () => runtime.readResumePermission(session.nativeId),
-        acquireLease: () => runtime.sessionService.acquire(session),
-        releaseLease: () => runtime.sessionService.release(session),
-        openManaged: () =>
-          openClaudeSession({
-            command: { session, workspace, prompt, cwd },
-            deps: runtime,
-            register: registry.register,
-            requireEntry: registry.requireEntry,
-          }),
-      })
-    },
+        return beginWatchedClaudeResume({
+          readPermission: () => runtime.readResumePermission(session.nativeId),
+          openManaged: () =>
+            openClaudeSession({
+              command: { session, workspace, prompt, cwd },
+              deps: runtime,
+              register: registry.register,
+              requireEntry: registry.requireEntry,
+            }),
+        })
+      }),
     rename: async (sessionId, title) => {
       const entry = registry.requireEntry({ harness: 'claude', nativeId: sessionId })
       entry.actor.send({ type: 'Rename', title })

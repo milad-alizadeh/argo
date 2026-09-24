@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, readdir, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { expect, test } from 'vitest'
@@ -30,7 +30,6 @@ test('starts a clean database with every ordered migration', async () => {
         { name: 'workspace' },
         { name: 'project_workspace_selection' },
         { name: 'managed_workspace_recovery' },
-        { name: 'managed_session_lease' },
         { name: 'session_ticket_link' },
       ]),
     )
@@ -39,15 +38,20 @@ test('starts a clean database with every ordered migration', async () => {
         .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'session_search'")
         .all(),
     ).toEqual([{ name: 'session_search' }])
-    expect(database.prepare('SELECT name FROM __drizzle_migrations ORDER BY name').all()).toEqual([
-      { name: '20260921153754_low_ronan' },
-      { name: '20260921153755_session_search' },
-      { name: '20260921160623_sharp_silver_samurai' },
-      { name: '20260921164243_aberrant_thundra' },
-      { name: '20260921173714_demonic_meteorite' },
-      { name: '20260921194635_worried_gargoyle' },
-      { name: '20260921223050_tiresome_the_initiative' },
-    ])
+    expect(
+      database
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('managed_session_lease', 'session_launch_intent')",
+        )
+        .all(),
+    ).toEqual([])
+    const migrations = (await readdir(migrationsFolder, { withFileTypes: true }))
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => ({ name: entry.name }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+    expect(database.prepare('SELECT name FROM __drizzle_migrations ORDER BY name').all()).toEqual(
+      migrations,
+    )
     database
       .prepare('INSERT INTO project (id, path, common_directory) VALUES (?, ?, ?)')
       .run('project-constraint', '/tmp/constraint', '/tmp/constraint/.git')

@@ -10,6 +10,7 @@ import {
   codexOpeningSetupFor,
   codexTurnSetupSchemaFor,
 } from '@/domains/sessions/contract/codex-turn-setup'
+import { createResumeGate } from '@/harnesses/composition/resume-gate'
 import { createWatchedChanges } from '@/harnesses/composition/watched-changes'
 import { closeCodexSessionAdapter } from '../codex-session-adapter-close'
 import { sharedAppServerRuntimeFor } from '../supervision/codex-shared-app-server-runtime'
@@ -87,7 +88,6 @@ function createAdapterLaunch(options: {
   appServer: ReturnType<typeof sharedAppServerRuntimeFor>
   registry: SessionRegistry
   resolveWorkspace: (selection: WorkspaceSelection) => Promise<{ workspaceId: string; cwd: string }>
-  sessionService: ManagedSessionDeps['sessionService']
   history: ReturnType<typeof createAdapterHistory>['history']
   notify: () => void
 }) {
@@ -103,9 +103,16 @@ function createAdapterLaunch(options: {
     registry: options.registry,
     resolveWorkspace: options.resolveWorkspace,
     supervisor: options.appServer.supervisor,
-    sessionService: options.sessionService,
     history: options.history,
   }
+}
+
+function createCodexResume(launch: ReturnType<typeof createAdapterLaunch>) {
+  const runResume = createResumeGate<SessionCommandOutcome>()
+  return (request: Parameters<CodexSessionAdapter['resume']>[0]) =>
+    runResume(`${request.session.harness}:${request.session.nativeId}`, () =>
+      resumeCodexSession(launch, request),
+    )
 }
 
 function createHistoryReads(
@@ -127,18 +134,16 @@ function createHistoryReads(
 function closeAdapter(options: {
   stopWatch: () => void
   launch: Parameters<typeof closeCodexSessionAdapter>[0]
-  sessionService: ManagedSessionDeps['sessionService']
   detach: () => void
 }) {
   return async () => {
     options.stopWatch()
-    await closeCodexSessionAdapter(options.launch, options.sessionService, options.detach)
+    await closeCodexSessionAdapter(options.launch, options.detach)
   }
 }
 
 export function createCodexSessionAdapter(deps: {
   findExecutable: AppServerSupervisorDeps['findExecutable']
-  sessionService: ManagedSessionDeps['sessionService']
   waitForWorkspaceReady: ManagedSessionDeps['waitForWorkspaceReady']
   now: ManagedSessionDeps['now']
   resolveWorkspace: (selection: WorkspaceSelection) => Promise<{ workspaceId: string; cwd: string }>
@@ -152,7 +157,6 @@ export function createCodexSessionAdapter(deps: {
   const detach = attachRegistry(appServer, registry)
   const machine = createManagedSessionMachine({
     getChannel: supervisor.getChannel,
-    sessionService: deps.sessionService,
     waitForWorkspaceReady: deps.waitForWorkspaceReady,
     now: deps.now,
   })
@@ -167,7 +171,6 @@ export function createCodexSessionAdapter(deps: {
     appServer,
     registry,
     resolveWorkspace: deps.resolveWorkspace,
-    sessionService: deps.sessionService,
     history,
     notify: rosterChanges.notify,
   })
@@ -180,7 +183,7 @@ export function createCodexSessionAdapter(deps: {
         start: (selection, prompt, setup) =>
           startCodexSession({ launch, selection, prompt, setup }),
       }),
-    resume: (request) => resumeCodexSession(launch, request),
+    resume: createCodexResume(launch),
     subscribe: (session, onProjection) => {
       const unsubscribe = subscribeToCodexSession({
         session: { harness: 'codex', nativeId: session.nativeId },
@@ -191,7 +194,7 @@ export function createCodexSessionAdapter(deps: {
       if (unsubscribe === undefined) throw new CodexSessionDriverError('missing-session')
       return unsubscribe
     },
-    close: closeAdapter({ stopWatch, launch, sessionService: deps.sessionService, detach }),
+    close: closeAdapter({ stopWatch, launch, detach }),
     projections: appServer.projections,
     readModelCatalog: appServer.readModelCatalog,
     refreshHistory: async (notifyLateSuccess) => {

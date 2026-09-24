@@ -1,6 +1,5 @@
 import { getSessionInfo, listSessions } from '@anthropic-ai/claude-agent-sdk'
 import { SESSION_CLAUDE_EXECUTABLE_ENV } from '@/domains/sessions/contract/proof-protocol'
-import { discoverStartedSession } from '@/domains/sessions/main/launch-discovery'
 import type { SessionAdapterRegistration } from '@/domains/sessions/next/main/session-adapter-registry'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 import { createClaudeSessionAdapter } from './claude-session-adapter'
@@ -26,30 +25,26 @@ export const claudeSessionAdapterRegistration: SessionAdapterRegistration = {
           return { kind: 'temporarily-unavailable' }
         }
       },
-      discoverLaunch: async (intent) => {
+      discoverSessions: async () => {
         const workspaces = await runtime.knownWorkspaces()
-        const cwd = workspaces.find((workspace) => workspace.id === intent.workspaceId)?.path
-        if (cwd === undefined) return { kind: 'unavailable' }
-        try {
-          const sessions = await listSessions({ dir: cwd, includeWorktrees: false })
-          return discoverStartedSession(
-            intent,
-            sessions.flatMap((session) =>
-              session.cwd === cwd && session.createdAt !== undefined
+        const results = await Promise.allSettled(
+          workspaces.map(async (workspace) => {
+            const sessions = await listSessions({ dir: workspace.path, includeWorktrees: false })
+            return sessions.flatMap((session) =>
+              session.cwd === workspace.path
                 ? [
                     {
+                      harness: 'claude' as const,
                       nativeId: session.sessionId,
-                      workspaceId: intent.workspaceId,
+                      workspaceId: workspace.id,
                       firstPrompt: session.firstPrompt ?? null,
-                      startedAt: session.createdAt,
                     },
                   ]
                 : [],
-            ),
-          )
-        } catch {
-          return { kind: 'unavailable' }
-        }
+            )
+          }),
+        )
+        return results.flatMap((result) => (result.status === 'fulfilled' ? result.value : []))
       },
     }
   },

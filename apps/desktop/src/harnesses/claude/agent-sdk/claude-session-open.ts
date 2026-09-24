@@ -1,6 +1,5 @@
 import { createActor } from 'xstate'
 import type { ClaudeTurnSetup } from '@/domains/sessions/contract/claude-turn-setup'
-import type { SessionService } from '@/domains/sessions/main/lifecycle/session-service'
 import type * as SessionContract from '@/domains/sessions/next/contract/session-contract'
 import type { SessionCommandOutcome } from '@/domains/sessions/next/contract/session-projection-contract'
 import { createClaudeSessionMachine } from './claude-session-actor'
@@ -18,7 +17,6 @@ export async function openClaudeSession(options: {
     setup?: ClaudeTurnSetup
   }
   deps: {
-    sessionService: SessionService
     waitForWorkspaceReady: (workspaceId: string) => Promise<void>
     resolveWorkspace: (
       selection: SessionContract.WorkspaceSelection,
@@ -47,7 +45,6 @@ export async function openClaudeSession(options: {
       cwd: command.cwd ?? workspaceCwd,
       startedAt: deps.now().toISOString(),
       createQuery: deps.createQuery,
-      sessionService: deps.sessionService,
       setup: command.setup,
     }),
     { input: undefined },

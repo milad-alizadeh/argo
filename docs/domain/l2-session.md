@@ -5,6 +5,11 @@
   Claude Session and a Codex Session never merge, even if their titles or Project match. A fork is
   a separate Session with its own Argo UUID and native ID.
 
+  Vendor sync upserts the Harness and native ID pair to assign or reuse the Argo UUID. The
+  managed actor sends the first prompt. If Argo cannot save the UUID after the vendor starts,
+  the result stays uncertain; later vendor sync can discover the Session without replaying
+  that prompt.
+
   A Session has one current posture: **`managed | watched`**. `managed` means Argo owns its live
   channel and can drive it through the Harness adapter. `watched` means Argo owns no live channel;
   the Session is readable but not drivable. A live channel is not durable across an Argo restart,
@@ -17,11 +22,10 @@
   adapter reads the change through the vendor interface. A transcript or rollout file is never an
   Argo domain object or input.
 
-  Origin does not gate resume (ADR-0040). Argo has one application window. The adapter checks
-  vendor liveness before resume because another vendor client can still hold the Session. A
-  separate SQLite lease has an owner token and expiry; it is not a Boolean Session attribute and
-  does not prove that an external vendor client is absent. A watched Session that cannot be
-  resumed because of a temporary condition stays readable and reports the vendor reason. Argo
+  Origin does not gate resume (ADR-0040). Argo has one application window, and its managed
+  Session actor serializes start, resume, and Turn events. The adapter checks vendor liveness
+  before resume because another vendor client can still hold the Session. A watched Session that
+  cannot be resumed because of a temporary condition stays readable and reports the vendor reason. Argo
   removes a Session only when its Harness confirms that the vendor conversation cannot be resumed
   again. Removing it also removes its Argo title, pin, and user-asserted Ticket link.
 

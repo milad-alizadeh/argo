@@ -1,10 +1,9 @@
 import { expect, test } from 'bun:test'
-import { fakeClaudeQuery, managedSessionService } from './claude-query-fixture'
+import { fakeClaudeQuery } from './claude-query-fixture'
 import { createClaudeSessionAdapter } from './claude-session-adapter'
 
 function managedAdapter(fake: ReturnType<typeof fakeClaudeQuery>) {
   return createClaudeSessionAdapter({
-    sessionService: managedSessionService,
     waitForWorkspaceReady: async () => {},
     resolveWorkspace: async () => ({ workspaceId: 'workspace-1', cwd: '/repository' }),
     createQuery: fake.createQuery,
@@ -45,7 +44,6 @@ test('starts Claude after the selected Workspace is ready', async () => {
   let releaseWorkspace: (() => void) | undefined
   let queryCalls = 0
   const adapter = createClaudeSessionAdapter({
-    sessionService: managedSessionService,
     waitForWorkspaceReady: () =>
       new Promise<void>((resolve) => {
         releaseWorkspace = resolve
@@ -109,7 +107,7 @@ test('starting a Claude Session sends its first turn immediately, even when defe
   expect(fake.sentPrompts()).toEqual(['hello'])
 })
 
-test('waits for the lease before sending a resumed turn', async () => {
+test('sends a resumed turn through the managed actor', async () => {
   const fake = fakeClaudeQuery()
   const adapter = managedAdapter(fake)
   const started = await startDeferredSession(adapter, fake)
@@ -127,6 +125,26 @@ test('waits for the lease before sending a resumed turn', async () => {
 
 // The real CLI refuses `--resume` for an id it cannot find and closes the stream after one error
 // result, so the Session is never identified: the composer has to hear that the Turn did not land.
+test('concurrent watched resumes send the first prompt once through one actor', async () => {
+  const fake = fakeClaudeQuery()
+  const adapter = managedAdapter(fake)
+  const request = {
+    session: { harness: 'claude' as const, nativeId: 'native-1' },
+    workspace: { kind: 'main' as const },
+    prompt: 'Continue the Session.',
+    cwd: '/repository',
+  }
+  const first = adapter.resume(request)
+  const second = adapter.resume(request)
+  await new Promise((resolve) => setImmediate(resolve))
+  fake.emitInit({ apiKeySource: 'none' })
+  const outcomes = await Promise.all([first, second])
+  await new Promise((resolve) => setImmediate(resolve))
+
+  expect(outcomes.map((outcome) => outcome.kind)).toEqual(['accepted', 'accepted'])
+  expect(fake.sentPrompts()).toEqual(['Continue the Session.'])
+})
+
 test('rejects a resume the Claude SDK never opens', async () => {
   const fake = fakeClaudeQuery()
   const adapter = managedAdapter(fake)

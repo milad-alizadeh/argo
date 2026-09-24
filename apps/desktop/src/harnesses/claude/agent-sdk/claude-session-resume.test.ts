@@ -5,7 +5,7 @@
 import { expect, test } from 'bun:test'
 import { createActor } from 'xstate'
 import { createClaudeSessionMachine } from './claude-session-actor'
-import { fakeClaudeQuery, flush, managedSessionService } from './claude-session-test-support'
+import { fakeClaudeQuery, flush } from './claude-session-test-support'
 
 function resumingActor(fake: ReturnType<typeof fakeClaudeQuery>) {
   return createActor(
@@ -16,7 +16,6 @@ function resumingActor(fake: ReturnType<typeof fakeClaudeQuery>) {
       cwd: '/repository',
       startedAt: '2026-09-22T00:00:00.000Z',
       createQuery: fake.createQuery,
-      sessionService: managedSessionService,
     }),
     { input: undefined },
   ).start()

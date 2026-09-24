@@ -1,11 +1,7 @@
 import type { ClaudeModelCatalog } from '@/domains/sessions/contract/claude-model-catalog'
 import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
-import type { SessionService } from '@/domains/sessions/main/lifecycle/session-service'
-import type {
-  LaunchDiscovery,
-  PendingSessionLaunch,
-  VendorSessionRead,
-} from '@/domains/sessions/main/session-identity-service'
+import type { DiscoveredSession } from '@/domains/sessions/contract/session-discovery'
+import type { VendorSessionRead } from '@/domains/sessions/main/session-repository'
 import type {
   Harness,
   SessionIdentity,
@@ -14,7 +10,6 @@ import type {
 import type { SessionAdapter } from '@/domains/sessions/next/contract/session-projection-contract'
 
 export type SessionAdapterRuntime = {
-  sessionService: SessionService
   waitForWorkspaceReady: (workspaceId: string) => Promise<void>
   now: () => Date
   resolveWorkspace: (selection: WorkspaceSelection) => Promise<{ workspaceId: string; cwd: string }>
@@ -24,7 +19,7 @@ export type SessionAdapterRuntime = {
 export type SessionAdapterInstance = {
   adapter: SessionAdapter
   close: () => void | Promise<void>
-  discoverLaunch?: (intent: PendingSessionLaunch) => Promise<LaunchDiscovery>
+  discoverSessions?: () => Promise<DiscoveredSession[]>
   readKnownSession?: (session: SessionIdentity) => Promise<VendorSessionRead>
   hasLiveChannel?: (session: SessionIdentity) => boolean
   readModelCatalog?: () => Promise<CodexModelCatalog | null>
@@ -41,7 +36,7 @@ export type SessionAdapterRegistry = {
   readModelCatalog: (harness: Harness) => Promise<CodexModelCatalog | null>
   readClaudeModelCatalog: () => Promise<ClaudeModelCatalog | null>
   close: () => Promise<void>
-  discoverLaunch: (intent: PendingSessionLaunch) => Promise<LaunchDiscovery>
+  discoverSessions: () => Promise<DiscoveredSession[]>
   readKnownSession: (session: SessionIdentity) => Promise<VendorSessionRead>
   hasLiveChannel: (session: SessionIdentity) => boolean
 }
@@ -67,9 +62,14 @@ export function createSessionAdapterRegistry(
     readKnownSession: (session) =>
       adapters.get(session.harness)?.readKnownSession?.(session) ??
       Promise.resolve({ kind: 'inaccessible' }),
-    discoverLaunch: (intent) =>
-      adapters.get(intent.harness)?.discoverLaunch?.(intent) ??
-      Promise.resolve({ kind: 'unavailable' }),
+    discoverSessions: async () => {
+      const results = await Promise.allSettled(
+        [...adapters.values()].map(
+          (instance) => instance.discoverSessions?.() ?? Promise.resolve([]),
+        ),
+      )
+      return results.flatMap((result) => (result.status === 'fulfilled' ? result.value : []))
+    },
     close: async () => {
       await Promise.all([...adapters.values()].map((instance) => instance.close()))
     },

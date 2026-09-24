@@ -11,7 +11,7 @@ export const initialClaudeSessionContext = (input: ClaudeSessionInput): ClaudeSe
   pendingApprovals: [],
   pendingQuestions: [],
   sourceHealth: 'ready',
-  releaseTarget: 'closed',
+  closingTarget: 'closed',
 })
 
 export function sessionFrom(message: ClaudeSdkMessage): SessionIdentity | null {

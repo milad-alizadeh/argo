@@ -1,7 +1,7 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "bd600b70-99d6-4fe0-88d4-f6f957d80033",
+  "id": "56e245a3-3b3c-4f4e-9164-b15f83297144",
   "prevIds": ["aed42e35-c771-440a-b8d0-85ad8a72b58f"],
   "ddl": [
     {
@@ -45,15 +45,7 @@
       "entityType": "tables"
     },
     {
-      "name": "managed_session_lease",
-      "entityType": "tables"
-    },
-    {
       "name": "session",
-      "entityType": "tables"
-    },
-    {
-      "name": "session_launch_intent",
       "entityType": "tables"
     },
     {
@@ -468,56 +460,6 @@
     },
     {
       "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "harness",
-      "entityType": "columns",
-      "table": "managed_session_lease"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "native_id",
-      "entityType": "columns",
-      "table": "managed_session_lease"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "window_id",
-      "entityType": "columns",
-      "table": "managed_session_lease"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "owner_token",
-      "entityType": "columns",
-      "table": "managed_session_lease"
-    },
-    {
-      "type": "integer",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "expires_at",
-      "entityType": "columns",
-      "table": "managed_session_lease"
-    },
-    {
-      "type": "text",
       "notNull": false,
       "autoincrement": false,
       "default": null,
@@ -585,86 +527,6 @@
       "name": "updated_at",
       "entityType": "columns",
       "table": "session"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "id",
-      "entityType": "columns",
-      "table": "session_launch_intent"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "project_id",
-      "entityType": "columns",
-      "table": "session_launch_intent"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "workspace_id",
-      "entityType": "columns",
-      "table": "session_launch_intent"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "harness",
-      "entityType": "columns",
-      "table": "session_launch_intent"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "prompt",
-      "entityType": "columns",
-      "table": "session_launch_intent"
-    },
-    {
-      "type": "integer",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "created_at",
-      "entityType": "columns",
-      "table": "session_launch_intent"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "native_id",
-      "entityType": "columns",
-      "table": "session_launch_intent"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "status",
-      "entityType": "columns",
-      "table": "session_launch_intent"
     },
     {
       "columns": ["workspace_id"],
@@ -777,24 +639,6 @@
       "table": "session"
     },
     {
-      "columns": ["project_id"],
-      "tableTo": "project",
-      "columnsTo": ["id"],
-      "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
-      "nameExplicit": false,
-      "name": "fk_session_launch_intent_project_id_project_id_fk",
-      "entityType": "fks",
-      "table": "session_launch_intent"
-    },
-    {
-      "columns": ["harness", "native_id"],
-      "nameExplicit": false,
-      "name": "managed_session_lease_pk",
-      "entityType": "pks",
-      "table": "managed_session_lease"
-    },
-    {
       "columns": ["workspace_id"],
       "nameExplicit": false,
       "name": "managed_workspace_recovery_pk",
@@ -869,13 +713,6 @@
       "nameExplicit": false,
       "name": "session_pk",
       "table": "session",
-      "entityType": "pks"
-    },
-    {
-      "columns": ["id"],
-      "nameExplicit": false,
-      "name": "session_launch_intent_pk",
-      "table": "session_launch_intent",
       "entityType": "pks"
     },
     {

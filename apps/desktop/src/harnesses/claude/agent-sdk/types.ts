@@ -8,7 +8,6 @@ import type {
 } from '@anthropic-ai/claude-agent-sdk'
 import { z } from 'zod'
 import type { ClaudeTurnSetup } from '@/domains/sessions/contract/claude-turn-setup'
-import type { SessionService } from '@/domains/sessions/main/lifecycle/session-service'
 import type {
   SessionIdentity,
   SourceHealth,
@@ -79,7 +78,6 @@ export type ClaudeSessionInput = {
   cwd: string
   startedAt: string
   createQuery: ClaudeQueryFactory
-  sessionService: SessionService
   setup?: ClaudeTurnSetup
 }
 
@@ -93,7 +91,7 @@ export type ClaudeSessionContext = {
   pendingApprovals: Approval[]
   pendingQuestions: Question[]
   sourceHealth: SourceHealth
-  releaseTarget: 'closed' | 'unavailable' | 'watched'
+  closingTarget: 'closed' | 'unavailable' | 'watched'
 }
 
 export type ClaudeSessionEvent =

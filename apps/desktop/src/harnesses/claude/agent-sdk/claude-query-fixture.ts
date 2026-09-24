@@ -7,18 +7,11 @@ import type {
   SDKMessage,
   SDKUserMessage,
 } from '@anthropic-ai/claude-agent-sdk'
-import type { SessionService } from '@/domains/sessions/main/lifecycle/session-service'
 import {
   assistantErrorMessage,
   assistantMessage,
   initMessage,
 } from './claude-query-fixture-message'
-
-export const managedSessionService: SessionService = {
-  acquire: () => ({ posture: 'managed' }),
-  renew: () => ({ posture: 'managed' }),
-  release: () => {},
-}
 
 function fakeQuery(hooks: {
   sent: SDKUserMessage[]

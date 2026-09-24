@@ -1,9 +1,9 @@
-import { assign, fromPromise, sendTo, setup } from 'xstate'
+import { assign, sendTo, setup } from 'xstate'
 import { appendAssistantMessage } from './claude-live-messages'
 import { claudeQueryLogic } from './claude-query-actor'
+import { channelStates } from './claude-session-channel-states'
 import { initialClaudeSessionContext, sessionFrom } from './claude-session-context'
 import { claudeSessionGuards } from './claude-session-guards'
-import { leaseStates } from './claude-session-lease-states'
 import { recoveringState } from './claude-session-recovery'
 import type {
   ClaudeSdkMessage,
@@ -25,17 +25,6 @@ const claudeSessionSetup = setup({
   },
   actors: {
     claudeQuery: claudeQueryLogic,
-    acquireLease: fromPromise<
-      ReturnType<ClaudeSessionInput['sessionService']['acquire']>,
-      ClaudeSessionInput
-    >(({ input }) => {
-      if (input.session === null) throw new Error('Claude Session has no identity')
-      return Promise.resolve(input.sessionService.acquire(input.session))
-    }),
-    releaseLease: fromPromise<void, ClaudeSessionInput>(({ input }) => {
-      if (input.session !== null) input.sessionService.release(input.session)
-      return Promise.resolve()
-    }),
   },
   guards: claudeSessionGuards,
   actions: {
@@ -44,8 +33,8 @@ const claudeSessionSetup = setup({
       prompt: context.prompt,
     })),
     markUnavailable: assign({ sourceHealth: 'unavailable' as const }),
-    markWatched: assign({ releaseTarget: 'watched' as const }),
-    releaseAsUnavailable: assign({ releaseTarget: 'unavailable' as const }),
+    markWatched: assign({ closingTarget: 'watched' as const }),
+    closeAsUnavailable: assign({ closingTarget: 'unavailable' as const }),
     recordAssistantMessage: assign(({ context, event }) =>
       event.type === 'SDK message'
         ? { liveMessages: appendAssistantMessage(context.liveMessages, event.message) }
@@ -82,7 +71,7 @@ export function createClaudeSessionMachine(input: ClaudeSessionInput) {
     invoke: { id: 'claudeQuery', src: 'claudeQuery', input: () => input },
     initial: 'Authorizing',
     states: {
-      ...leaseStates(input),
+      ...channelStates(input),
       Authorizing: {
         on: {
           'SDK message': [
@@ -92,7 +81,7 @@ export function createClaudeSessionMachine(input: ClaudeSessionInput) {
             },
             {
               guard: { type: 'isSubscriptionAuthorized', params: messageParams },
-              target: 'AcquiringLease',
+              target: 'Opening',
               actions: [
                 assign({ session: ({ event }) => sessionFrom(event.message) }),
                 sendTo('claudeQuery', ({ event }) => {
@@ -120,15 +109,15 @@ export function createClaudeSessionMachine(input: ClaudeSessionInput) {
           'SDK message': [
             {
               guard: { type: 'isAuthenticationFailure', params: messageParams },
-              target: 'Releasing',
-              actions: assign({ releaseTarget: 'unavailable' }),
+              target: 'Closing',
+              actions: assign({ closingTarget: 'unavailable' }),
             },
             { actions: 'recordAssistantMessage' },
           ],
           'Channel lost': 'Recovering',
-          'SDK failed': 'Releasing',
-          'SDK ended': 'Releasing',
-          Close: 'Releasing',
+          'SDK failed': 'Closing',
+          'SDK ended': 'Closing',
+          Close: 'Closing',
         },
       },
       Recovering: recoveringState(messageParams),

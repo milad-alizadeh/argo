@@ -1,4 +1,3 @@
-import { discoverStartedSession } from '@/domains/sessions/main/launch-discovery'
 import type { SessionAdapterRegistration } from '@/domains/sessions/next/main/session-adapter-registry'
 import { createCodexSessionAdapter } from './codex-session-adapter'
 
@@ -12,7 +11,6 @@ export function createCodexSessionAdapterRegistration(options: {
     create: (runtime) => {
       const adapter = createCodexSessionAdapter({
         findExecutable: options.findExecutable,
-        sessionService: runtime.sessionService,
         waitForWorkspaceReady: runtime.waitForWorkspaceReady,
         now: runtime.now,
         resolveWorkspace: runtime.resolveWorkspace,
@@ -41,29 +39,21 @@ export function createCodexSessionAdapterRegistration(options: {
             return { kind: 'temporarily-unavailable' }
           }
         },
-        discoverLaunch: async (intent) => {
-          try {
-            const sessions = await adapter.refreshHistory(() => false)
-            return discoverStartedSession(
-              intent,
-              sessions.flatMap((session) => {
-                const firstTurn = session.turns[0]
-                const firstUserMessage = session.messages.find((message) => message.role === 'user')
-                return session.workspace?.id !== undefined && firstTurn !== undefined
-                  ? [
-                      {
-                        nativeId: session.session.nativeId,
-                        workspaceId: session.workspace.id,
-                        firstPrompt: firstUserMessage?.text ?? null,
-                        startedAt: firstTurn.startedAt,
-                      },
-                    ]
-                  : []
-              }),
-            )
-          } catch {
-            return { kind: 'unavailable' }
-          }
+        discoverSessions: async () => {
+          const sessions = await adapter.refreshHistory(() => false)
+          return sessions.flatMap((session) =>
+            session.workspace?.id === undefined
+              ? []
+              : [
+                  {
+                    harness: 'codex' as const,
+                    nativeId: session.session.nativeId,
+                    workspaceId: session.workspace.id,
+                    firstPrompt:
+                      session.messages.find((message) => message.role === 'user')?.text ?? null,
+                  },
+                ],
+          )
         },
       }
     },

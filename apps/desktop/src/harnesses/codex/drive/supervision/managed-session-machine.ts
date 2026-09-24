@@ -4,7 +4,6 @@ import {
   CODEX_OPENING_SETUP,
   codexTurnSettings,
 } from '@/domains/sessions/contract/codex-turn-setup'
-import type { SessionService } from '@/domains/sessions/main/lifecycle/session-service'
 import type { SessionIdentity } from '@/domains/sessions/next/contract/session-contract'
 import type {
   Message,
@@ -50,7 +49,6 @@ function turnStatusFrom(status: WireTurnStatus): TurnStatus {
 // channel directly outside its own invoked actors.
 export type ManagedSessionDeps = {
   getChannel: () => CodexChannel | null
-  sessionService: SessionService
   waitForWorkspaceReady: (workspaceId: string) => Promise<void>
   now: () => Date
 }
@@ -80,9 +78,8 @@ type ManagedSessionContext = {
   opensExistingThread: boolean
 }
 
-// A fresh `session.start` carries no native ID: Codex only hands one back in `thread/start`'s
-// response, so lease acquisition (keyed on that ID) cannot run before the thread exists. A
-// `resume` already knows the ID. It calls `thread/resume` only after the lease is held (#2581).
+// A fresh start receives its native ID from `thread/start`. Resume knows the ID and checks
+// vendor liveness before asking the app-server to open the existing thread.
 export type ManagedSessionInput =
   | {
       kind: 'start'
@@ -170,21 +167,6 @@ function createManagedSessionActors(deps: ManagedSessionDeps) {
         workspaceId: string
       }
     >(({ input }) => deps.waitForWorkspaceReady(input.workspaceId)),
-    acquireLease: fromPromise<
-      ReturnType<SessionService['acquire']>,
-      {
-        sessionId: SessionIdentity
-      }
-    >(({ input }) => Promise.resolve(deps.sessionService.acquire(input.sessionId))),
-    releaseLease: fromPromise<
-      void,
-      {
-        sessionId: SessionIdentity
-      }
-    >(({ input }) => {
-      deps.sessionService.release(input.sessionId)
-      return Promise.resolve()
-    }),
     resumeThread: fromPromise<
       {
         threadId: string
@@ -628,7 +610,7 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
             target: 'CreatingThread',
           },
           {
-            target: 'AcquiringLease',
+            target: 'ResumingThread',
           },
         ],
       },
@@ -639,7 +621,7 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
             cwd: context.cwd,
           }),
           onDone: {
-            target: 'AcquiringLease',
+            target: 'Active',
             actions: assign({
               sessionId: ({ event }) => ({
                 harness: 'codex',
@@ -647,28 +629,6 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
               }),
             }),
           },
-          onError: 'Failed',
-        },
-      },
-      AcquiringLease: {
-        invoke: {
-          src: 'acquireLease',
-          input: ({ context }) => ({
-            sessionId: context.sessionId as SessionIdentity,
-          }),
-          onDone: [
-            {
-              guard: ({ event }) => event.output.posture !== 'managed',
-              target: 'Watched',
-            },
-            {
-              guard: ({ context }) => context.opensExistingThread,
-              target: 'ResumingThread',
-            },
-            {
-              target: 'Active',
-            },
-          ],
           onError: 'Failed',
         },
       },
@@ -681,7 +641,7 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
           }),
           onDone: 'Active',
           onError: {
-            target: 'ReleasingLease',
+            target: 'Watched',
             actions: assign({
               lastSendRejection: ({ event }) =>
                 event.error instanceof Error
@@ -932,11 +892,11 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
           Notification: [
             {
               guard: 'isThreadNotLoaded',
-              target: 'ReleasingLease',
+              target: 'Watched',
             },
             {
               guard: 'isThreadClosed',
-              target: 'ReleasingLease',
+              target: 'Watched',
             },
             {
               guard: 'isRenamedForThread',
@@ -961,7 +921,7 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
       },
       Recovering: {
         after: {
-          recoveryTimeout: 'ReleasingLease',
+          recoveryTimeout: 'Watched',
         },
         on: {
           // Targets Active's own history so a reconnect resumes the substate `Channel lost`
@@ -969,28 +929,8 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
           'Channel restored': 'Active.Recall',
         },
       },
-      ReleasingLease: {
-        invoke: {
-          src: 'releaseLease',
-          input: ({ context }) => ({
-            sessionId: context.sessionId as SessionIdentity,
-          }),
-          onDone: 'Watched',
-          onError: 'Watched',
-        },
-      },
       Watched: {
         type: 'final',
-      },
-      Closing: {
-        invoke: {
-          src: 'releaseLease',
-          input: ({ context }) => ({
-            sessionId: context.sessionId as SessionIdentity,
-          }),
-          onDone: 'Closed',
-          onError: 'Closed',
-        },
       },
       Unsubscribing: {
         invoke: {
@@ -998,8 +938,8 @@ export function createManagedSessionMachine(deps: ManagedSessionDeps) {
           input: ({ context }) => ({
             threadId: threadIdOf(context),
           }),
-          onDone: 'Closing',
-          onError: 'Closing',
+          onDone: 'Closed',
+          onError: 'Closed',
         },
       },
       Closed: {

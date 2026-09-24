@@ -110,6 +110,18 @@ ingestion. An Argo UUID gives local titles, pins, and Ticket links a stable key 
 vendor IDs through the renderer. Argo does not reconstruct identity from files or merge forks; a
 fork has its own native ID and Argo UUID.
 
+**No SQLite Session lease.** Argo runs one instance and one window. Each managed Session's
+XState actor serializes its own start, resume, and Turn events, so a database owner token adds a
+second owner for the same channel without preventing another vendor client from using it. The
+Harness adapter still checks vendor liveness before native resume; a temporary refusal leaves the
+Session watched and readable. Managed posture follows the live channel.
+
+**Session identity follows vendor discovery.** The per-Session actor sends the first prompt and
+owns later events. Once a Harness supplies a native ID, Argo upserts its unique Harness and native
+ID pair to assign or reuse the UUID. A failed SQLite write leaves the start uncertain and vendor
+sync can discover the Session later. There is no launch-intent table or prompt replay path: an
+uncertain first prompt is never sent again automatically.
+
 **Argo title is a local choice.** A reader's Argo title outranks vendor names. A linked Ticket's
 current indexed title supplies a name only when the reader has not chosen one; Argo never copies
 that title into the Session. Vendor title and first prompt follow. This makes Ticket renames visible

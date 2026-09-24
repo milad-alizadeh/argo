@@ -2,7 +2,6 @@ import { setTimeout as delay } from 'node:timers/promises'
 import type { SessionRegistry } from './session/codex-session-commands'
 import type { ManagedSessionActor } from './session/codex-session-projection'
 import type { CodexChannel } from './supervision/codex-channel'
-import type { ManagedSessionDeps } from './supervision/managed-session-machine'
 
 // Quitting must not hang on an app-server that never answers the interrupt.
 const CLOSING_INTERRUPT_MS = 5_000
@@ -28,7 +27,6 @@ function openTurnsIn(registry: SessionRegistry) {
 
 export async function closeCodexSessionAdapter(
   held: { registry: SessionRegistry; supervisor: { getChannel: () => CodexChannel | null } },
-  sessionService: ManagedSessionDeps['sessionService'],
   detach: () => void,
 ) {
   const { registry } = held
@@ -39,8 +37,6 @@ export async function closeCodexSessionAdapter(
     )
   }
   for (const entry of registry.values()) {
-    const session = (entry.actor as ManagedSessionActor).getSnapshot().context.sessionId
-    if (session !== null) sessionService.release(session)
     entry.actor.stop()
   }
   detach()

@@ -1,8 +1,6 @@
 import { getSessionInfo } from '@anthropic-ai/claude-agent-sdk'
 import { beginWatchedResume } from '@/harnesses/composition/begin-watched-resume'
 
-const LEASE_REFUSAL = 'Another Argo window is driving this Claude Session.'
-
 export async function readClaudeResumePermission(sessionId: string) {
   try {
     const session = await getSessionInfo(sessionId)
@@ -18,10 +16,9 @@ export async function readClaudeResumePermission(sessionId: string) {
 }
 
 export const beginWatchedClaudeResume = (
-  options: Omit<Parameters<typeof beginWatchedResume>[0], 'leaseRefusal' | 'openFailure'>,
+  options: Omit<Parameters<typeof beginWatchedResume>[0], 'openFailure'>,
 ) =>
   beginWatchedResume({
     ...options,
-    leaseRefusal: LEASE_REFUSAL,
     openFailure: 'Claude refused to resume this Session.',
   })

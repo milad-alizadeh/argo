@@ -6,17 +6,17 @@ export function recoveringState(
   },
 ) {
   return {
-    after: { recoveryTimeout: { target: 'Releasing', actions: 'markWatched' } },
+    after: { recoveryTimeout: { target: 'Closing', actions: 'markWatched' } },
     on: {
       'SDK message': [
         {
           guard: { type: 'isInheritedApiCredential', params: messageParams },
-          target: 'Releasing',
-          actions: 'releaseAsUnavailable',
+          target: 'Closing',
+          actions: 'closeAsUnavailable',
         },
         { guard: { type: 'isSubscriptionAuthorized', params: messageParams }, target: 'Managed' },
       ],
-      'SDK failed': { target: 'Releasing', actions: 'markWatched' },
+      'SDK failed': { target: 'Closing', actions: 'markWatched' },
     },
   } as const
 }

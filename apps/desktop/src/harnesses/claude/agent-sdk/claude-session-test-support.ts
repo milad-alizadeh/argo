@@ -1,8 +1,8 @@
 import { createActor } from 'xstate'
-import { fakeClaudeQuery, managedSessionService } from './claude-query-fixture'
+import { fakeClaudeQuery } from './claude-query-fixture'
 import { createClaudeSessionMachine } from './claude-session-actor'
 
-export { fakeClaudeQuery, managedSessionService }
+export { fakeClaudeQuery }
 
 export function flush(): Promise<void> {
   return new Promise((resolve) => setImmediate(resolve))
@@ -17,7 +17,6 @@ export async function startedClaudeActor(fake: ReturnType<typeof fakeClaudeQuery
       cwd: '/repository',
       startedAt: '2026-09-22T00:00:00.000Z',
       createQuery: fake.createQuery,
-      sessionService: managedSessionService,
     }),
     { input: undefined },
   ).start()

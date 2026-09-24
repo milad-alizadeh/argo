@@ -95,11 +95,10 @@ A committed Session or Ticket index change invalidates affected lists and select
 the transaction, never before it. Vendor history and live events use stable source event identity
 and order so reconciliation fills gaps without duplicate Feed rows.
 
-Argo allows one application instance and one window; a second launch focuses the first. A separate
-SQLite Session lease retains an owner token and expiry. Managed or watched posture comes from the
-live channel, not a stored Boolean. The lease protects Argo's own resume path after overlap or
-crash but does not prove that another vendor client is absent. The adapter checks vendor liveness
-before native resume.
+Argo allows one application instance and one window; a second launch focuses the first. Each
+managed Session's XState actor serializes start, resume, and Turn events. Managed or watched posture
+comes from the live channel, not a stored Boolean. The adapter checks vendor liveness before native
+resume because another vendor client can still hold the Session.
 
 ## Mutations and failure
 
@@ -121,19 +120,20 @@ is atomic from the renderer's point of view: success appears only after the vend
 SQLite commits the Argo identity and native ID. If the vendor starts a Session but the database
 commit fails, Argo keeps the vendor Session for reconciliation, reports an uncertain result, and
 never resends the first prompt automatically. Vendor and SQLite writes do not share a transaction.
-Argo writes a launch intent before asking the vendor to start; if durable storage is already unsafe,
-it refuses the start. If the vendor starts but the identity commit fails, Argo retains the native ID
-for same-process reconciliation. After process loss it rediscovers through the vendor interface and
-keeps the outcome uncertain until a matching Session is established. If no recoverable native ID
-can be established, it does not claim success or automatically send again. Lease acquire, renewal,
-and release are token-conditional so an expired owner cannot release a successor's lease.
+The typed start command sends the first prompt through the per-Session Harness actor. After the
+vendor supplies a native ID, the Session repository upserts the unique Harness and native ID pair
+and assigns or reuses its Argo UUID. A failed SQLite write leaves the start uncertain; the actor
+retains any known native ID in process, and later vendor sync can discover the Session after restart.
+No launch-intent table or automatic first-prompt retry exists. Concurrent native resume requests for
+one Session share one in-flight attempt, and the managed actor handles later Turn events.
 
 ## Changes to earlier decisions
 
 This decision extends ADR-0043's authority split: durable Argo Session identity and local fields
 coexist with disposable Session and Ticket indexes. It keeps ADR-0047's vendor interface, Feed,
-actor, and `managed | watched` boundaries. It replaces ADR-0047's vendor-paged Roster merge and
-cursor recovery with SQLite paging. It changes the lease's reason from protecting multiple Argo
-windows to protecting one instance against overlap and crash. It supersedes ADR-0039's operation
+actor, and `managed | watched` boundaries, while superseding its SQLite Session lease and launch-intent requirement. It replaces ADR-0047's vendor-paged Roster merge and
+cursor recovery with SQLite paging. It removes the SQLite Session lease because one Argo
+instance and its per-Session actors own managed channels; vendor liveness still guards resume.
+It supersedes ADR-0039's operation
 tables with domain-owned tRPC routers, while retaining the validated boundary and trusted-frame
 requirement. No public HTTP server is required.
