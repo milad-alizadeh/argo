@@ -1,14 +1,14 @@
 // The optimistic-mutation shape shared by every field a Ticket can be moved to: the row moves at
 // once, a listing not yet reloaded moves too, and a refusal puts every moved row back and says why.
 import { type QueryClient, type QueryKey, useMutation, useQueryClient } from '@tanstack/react-query'
-import type { Ticket } from '@/domains/tickets/contract/contract'
+import type { Ticket, TicketRead } from '@/domains/tickets/contract/contract'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
 import { useContractText } from '@/platform/renderer/i18n/contract-text'
-import { type ContractFailure, settle } from '@/platform/renderer/lib/query-client'
-import { listKey, onRefused, type TicketPages } from './use-tickets'
+import { type ContractFailure, QUERY_KEYS, settle } from '@/platform/renderer/lib/query-client'
+import { listKey, onRefused, type TicketPages, ticketReadPrefix } from './use-tickets'
 
 export type TicketChange = { projectId: string; key: string }
-type Snapshot = [QueryKey, TicketPages | undefined][]
+type Snapshot = [QueryKey, TicketPages | TicketRead | undefined][]
 
 // The one Ticket named by `key`, patched across every cached listing of the Project, searches
 // included. Every field a Ticket can be moved to shares this traversal and supplies its own patch.
@@ -27,6 +27,9 @@ export function patchTicket(
           })),
         }
       : data,
+  )
+  client.setQueriesData<TicketRead>({ queryKey: ticketReadPrefix(projectId) }, (data) =>
+    data?.ticket?.key === key ? { ...data, ticket: patch(data.ticket) } : data,
   )
 }
 
@@ -48,8 +51,11 @@ export function useTicketFieldMutation<
   return useMutation<Reply, ContractFailure, Change, Snapshot>({
     mutationFn: (change) => settle(request(change)),
     onMutate: async (change) => {
-      await client.cancelQueries({ queryKey: listKey(change.projectId) })
-      const snapshot = client.getQueriesData<TicketPages>({ queryKey: listKey(change.projectId) })
+      await client.cancelQueries({ queryKey: [...QUERY_KEYS.tickets, change.projectId] })
+      const snapshot: Snapshot = [
+        ...client.getQueriesData<TicketPages>({ queryKey: listKey(change.projectId) }),
+        ...client.getQueriesData<TicketRead>({ queryKey: ticketReadPrefix(change.projectId) }),
+      ]
       move(client, change)
       return snapshot
     },

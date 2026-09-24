@@ -182,7 +182,7 @@ test('links a closed branch Ticket with its exact title', async () => {
     },
   })
   let linked: { key: string; title: string; state: 'open' | 'closed' } | null = null
-  let renameConfirmed = false
+  let customTitlePreserved = false
 
   await processDerivedSession({
     attempted: new Set(),
@@ -192,7 +192,7 @@ test('links a closed branch Ticket with its exact title', async () => {
     session: { ...session('custom'), branch: 'argo/#2582-drive-managed-claude-sessions' },
     connect: async (_session, ticket, options) => {
       linked = ticket
-      renameConfirmed = options?.confirmedRename === true
+      customTitlePreserved = options?.preserveCustomTitle === true
       return { failure: null, renamed: true, needsRenameConfirmation: false, renameFailure: null }
     },
   })
@@ -203,7 +203,7 @@ test('links a closed branch Ticket with its exact title', async () => {
     title: 'Drive managed Claude Sessions',
     state: 'closed',
   })
-  expect(renameConfirmed).toBe(true)
+  expect(customTitlePreserved).toBe(true)
 })
 
 test('renames a linked non-custom Session when its title differs from the Ticket', async () => {
@@ -238,8 +238,8 @@ test('renames a linked non-custom Session when its title differs from the Ticket
   expect(renamedTitle).toBe(TICKET.title)
 })
 
-test('renames a custom Session when its existing Ticket link has another title', async () => {
-  let confirmation: { confirmedRename?: boolean } | undefined
+test('preserves a custom Session name when its existing Ticket title differs', async () => {
+  let optionsSeen: { confirmedRename?: boolean; preserveCustomTitle?: boolean } | undefined
   installTicketHost(() => {})
   await processDerivedSession({
     attempted: new Set(),
@@ -251,12 +251,12 @@ test('renames a custom Session when its existing Ticket link has another title',
       ticket: { ...TICKET, title: 'Old Ticket title', createdAt: '2026-09-23T00:00:00.000Z' },
     },
     connect: async (_session, _ticket, options) => {
-      confirmation = options
+      optionsSeen = options
       return { failure: null, renamed: true, needsRenameConfirmation: false, renameFailure: null }
     },
   })
 
-  expect(confirmation).toEqual({ confirmedRename: true })
+  expect(optionsSeen).toEqual({ preserveCustomTitle: true })
 })
 
 test('reports a failed Ticket read while syncing a linked Session title', async () => {

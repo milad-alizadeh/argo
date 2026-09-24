@@ -14,6 +14,7 @@ import type {
 } from '@/domains/tickets/contract/contract'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 import type { ConnectSourceFormProps } from '../connection/connect-source-form'
+import { ticketSelectionState } from '../detail/selected-ticket'
 import type { TicketDeckProps } from '../detail/ticket-deck'
 import {
   connectionProblem,
@@ -85,6 +86,9 @@ export type Connected = {
   onChangePriority: (key: string, priority: TicketPriority | null) => void
   selectedKey: string | null
   resolvedTicket: Ticket | null
+  resolvedTicketError: ContractFailure | null
+  resolvedTicketPending: boolean
+  onRetryResolvedTicket: () => unknown
   resolvedStatuses: TicketStatus[]
   onSelect: (key: string) => void
   onOpenSession: (id: string) => void
@@ -98,6 +102,9 @@ export function connectedView(
     onDisconnectSource,
     selectedKey,
     resolvedTicket,
+    resolvedTicketError,
+    resolvedTicketPending,
+    onRetryResolvedTicket,
     resolvedStatuses,
     onSelect,
     onOpenSession,
@@ -118,6 +125,19 @@ export function connectedView(
       provider: connection.provider,
     })
   }
+  const selection = ticketSelectionState({
+    tickets: list.data?.pages.flatMap((page) => page.tickets) ?? [],
+    selectedKey,
+    resolvedTicket,
+    pending: resolvedTicketPending,
+    error: resolvedTicketError,
+  })
+  if (selection.kind === 'failure')
+    return failure(t('failure.tickets'), selection.error, {
+      onRetry: onRetryResolvedTicket,
+      provider: connection.provider,
+    })
+  if (selection.kind === 'loading') return loading(t('loading.tickets'))
   return {
     kind: 'tickets',
     projectId,

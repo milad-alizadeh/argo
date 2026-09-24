@@ -26,6 +26,10 @@ export const listKey = (projectId: string | null, query?: string) =>
   query === undefined
     ? [...QUERY_KEYS.tickets, projectId, 'list']
     : [...QUERY_KEYS.tickets, projectId, 'list', query]
+export const ticketReadPrefix = (projectId: string | null) =>
+  [...QUERY_KEYS.tickets, projectId, 'ticket'] as const
+export const ticketReadKey = (projectId: string | null, key: string | null) =>
+  [...ticketReadPrefix(projectId), key] as const
 
 export type TicketPages = InfiniteData<TicketListed, string | null>
 
@@ -82,7 +86,7 @@ export function useTicket(
   const client = useQueryClient()
   const ready = projectId !== null && connection?.state === 'ready' && key !== null
   return useQuery<TicketRead, ContractFailure>({
-    queryKey: [...QUERY_KEYS.tickets, projectId, 'ticket', key],
+    queryKey: ticketReadKey(projectId, key),
     queryFn: ready
       ? () =>
           settle(window.argo.readTicket({ projectId, key })).catch((failure: ContractFailure) => {

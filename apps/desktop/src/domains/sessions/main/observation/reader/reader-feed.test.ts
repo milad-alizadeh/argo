@@ -18,7 +18,7 @@ import {
   writeCodexTranscript,
 } from './reader-test-helpers'
 
-test('answers with the first error when every Harness folder is missing', async (context) => {
+test('lists no Sessions when both transcript roots are absent', async (context) => {
   const root = await tempRoot(context)
   const reader = createSessionReader([
     claudeSessionSource({ transcripts: `${root}/claude-absent` }),
@@ -26,8 +26,8 @@ test('answers with the first error when every Harness folder is missing', async 
   ])
 
   const reply = sessionListReplySchema.parse(await reader.listSessions(listing()))
-  assert.equal(reply.type, 'session.error')
-  assert.equal(reply.type === 'session.error' && reply.code, 'transcripts-unavailable')
+  assert.equal(reply.type, 'session.listed')
+  assert.deepEqual(reply.type === 'session.listed' && reply.sessions, [])
 })
 
 test('names a folder it cannot reach rather than reading as an empty machine', async (context) => {

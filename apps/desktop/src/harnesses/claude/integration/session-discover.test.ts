@@ -149,10 +149,12 @@ test('says a Session is missing rather than answering with an empty Feed', async
   })
 })
 
-test('names a folder it cannot reach rather than reading as an empty machine', async (context) => {
+test('treats an absent transcript root as empty and reports an unreadable root', async (context) => {
   const root = await fixtureRoot(context, ['11111111-2222-4333-8444-555555555555'])
-  assert.equal((await listSessions(listing, `${root}/absent`)).code, 'transcripts-unavailable')
+  assert.equal((await listSessions(listing, `${root}/absent`)).type, 'session.listed')
   await chmod(root, 0o000)
   context.after(() => chmod(root, 0o700))
-  assert.equal((await listSessions(listing, root)).code, 'access-denied')
+  const inaccessible = await listSessions(listing, root)
+  assert.equal(inaccessible.type, 'session.error')
+  assert.equal(inaccessible.code, 'access-denied')
 })

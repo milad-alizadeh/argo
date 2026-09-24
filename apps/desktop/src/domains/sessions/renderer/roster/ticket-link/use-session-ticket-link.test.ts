@@ -59,6 +59,25 @@ test('connecting a Ticket with a custom title asks before renaming', async () =>
   expect(argo.calls.renameSession).toEqual([])
 })
 
+test('reconciling a custom Session links the Ticket and preserves its title', async () => {
+  const argo = mockArgo()
+  const result = await connectTicket({
+    argo,
+    session: session('custom'),
+    ticket: TICKET,
+    preserveCustomTitle: true,
+  })
+
+  expect(result.outcome).toEqual({
+    failure: null,
+    renamed: false,
+    needsRenameConfirmation: false,
+    renameFailure: null,
+  })
+  expect(argo.calls.connectSessionTicket).toEqual([{ sessionId: 'session-1', ...TICKET }])
+  expect(argo.calls.renameSession).toEqual([])
+})
+
 test('a confirmed rename on a custom title links and renames', async () => {
   const argo = mockArgo()
   const result = await connectTicket({

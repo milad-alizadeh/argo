@@ -35,10 +35,12 @@ export async function connectTicket(request: {
   session: Session
   ticket: ConnectTicketInput
   confirmedRename?: boolean
+  preserveCustomTitle?: boolean
 }): Promise<{ outcome: ConnectOutcome; failure: string | null; invalidate: boolean }> {
-  const { argo, session, ticket, confirmedRename } = request
+  const { argo, session, ticket, confirmedRename, preserveCustomTitle = false } = request
   const source = session.title?.source ?? null
-  if (source === 'custom' && confirmedRename !== true) {
+  const preserveTitle = source === 'custom' && confirmedRename !== true && preserveCustomTitle
+  if (source === 'custom' && confirmedRename !== true && !preserveTitle) {
     return {
       outcome: {
         failure: null,
@@ -65,6 +67,18 @@ export async function connectTicket(request: {
         failure: reply.message,
         invalidate: false,
       }
+    }
+  }
+  if (preserveTitle) {
+    return {
+      outcome: {
+        failure: null,
+        renamed: false,
+        needsRenameConfirmation: false,
+        renameFailure: null,
+      },
+      failure: null,
+      invalidate: !alreadyLinked,
     }
   }
   const renameReply = await argo.renameSession({ sessionId: session.id, name: ticket.title })
@@ -108,7 +122,7 @@ export function useSessionTicketLink() {
     async (
       session: Session,
       ticket: ConnectTicketInput,
-      options: { confirmedRename?: boolean } = {},
+      options: { confirmedRename?: boolean; preserveCustomTitle?: boolean } = {},
     ): Promise<ConnectOutcome> => {
       setPending(true)
       setFailure(null)
@@ -118,6 +132,7 @@ export function useSessionTicketLink() {
           session,
           ticket,
           confirmedRename: options.confirmedRename,
+          preserveCustomTitle: options.preserveCustomTitle,
         })
         if (result.failure !== null) setFailure(result.failure)
         if (result.invalidate) await invalidateSessionRoster(client)

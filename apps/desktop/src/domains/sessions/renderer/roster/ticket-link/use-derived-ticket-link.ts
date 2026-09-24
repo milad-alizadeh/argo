@@ -10,7 +10,7 @@ type ReportRenameFailure = (message: string) => void
 type Connect = (
   session: Session,
   ticket: ConnectTicketInput,
-  options?: { confirmedRename?: boolean },
+  options?: { confirmedRename?: boolean; preserveCustomTitle?: boolean },
 ) => Promise<ConnectOutcome>
 
 function derivedTicket(session: Session): string | null {
@@ -59,7 +59,7 @@ async function connectDerivedTicket(options: {
     if (ticket === null) return
     if (session.ticket?.key === ticket.key && session.title?.text === ticket.title) return
     const input = { projectId, key: ticket.key, title: ticket.title, state: ticket.state }
-    const outcome = await connect(session, input, { confirmedRename: true })
+    const outcome = await connect(session, input, { preserveCustomTitle: true })
     if (outcome.failure !== null) {
       reportFailure(outcome.failure)
       return
