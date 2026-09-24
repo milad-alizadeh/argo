@@ -59,3 +59,16 @@ test('closes the Claude query after a vendor failure', async () => {
   assert.equal(closed, 1)
   actor.stop()
 })
+
+test('maps the catalog manual mode to the SDK default mode', () => {
+  const actor = createActor(
+    claudeSessionMachine.provide({
+      actors: {
+        queryActor: fromCallback(() => undefined),
+      },
+    }),
+    { input: { ...first, setup: { ...first.setup, mode: 'manual' } } },
+  ).start()
+  assert.equal(actor.getSnapshot().context.mode, 'default')
+  actor.stop()
+})
