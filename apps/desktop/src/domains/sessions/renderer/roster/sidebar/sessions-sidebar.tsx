@@ -4,7 +4,6 @@ import { useProjects } from '@/domains/projects/renderer'
 import { currentSessionId } from '@/domains/sessions/contract/model/models'
 import { Roster, type RosterActions } from '../roster'
 import { useOrderedSessions } from '../rows/roster-order'
-import { UnreadMarkerPrototypeSwitcher } from '../unread-marker-prototype'
 import { useArchiveSelected } from './use-session-archive-mutation'
 import { SELECTED_SESSION_KEY, useSidebarActions } from './use-sidebar-actions'
 
@@ -51,9 +50,6 @@ export function SessionsSidebar() {
   }
 
   return (
-    <>
-      <Roster actions={actions} projectRoot={projectRoot} selectedSessionId={sessionId ?? null} />
-      <UnreadMarkerPrototypeSwitcher />
-    </>
+    <Roster actions={actions} projectRoot={projectRoot} selectedSessionId={sessionId ?? null} />
   )
 }
