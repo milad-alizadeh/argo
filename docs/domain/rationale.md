@@ -106,14 +106,22 @@ Session model.
 
 **Native identity and Argo identity serve different boundaries.** A Harness and its native Session
 ID name the conversation that its API can list, read, and resume. The unique pair prevents duplicate
-ingestion. An Argo UUID gives local titles, pins, and Ticket links a stable key without spreading
-vendor IDs through the renderer. Argo does not reconstruct identity from files or merge forks; a
-fork has its own native ID and Argo UUID.
+ingestion. An Argo UUID gives pins and Ticket links a stable key without spreading vendor IDs
+through the renderer. A single Session table keeps both identities and vendor metadata together.
+One upsert serves live creation and sync, so neither path can assign a second UUID. Argo does not
+reconstruct identity from files or merge forks; a fork has its own native ID and Argo UUID.
 
-**Argo title is a local choice.** A reader's Argo title outranks vendor names. A linked Ticket's
-current indexed title supplies a name only when the reader has not chosen one; Argo never copies
-that title into the Session. Vendor title and first prompt follow. This makes Ticket renames visible
-without a Session mutation and lets names entered in other apps remain vendor facts.
+**One custom title follows the vendor.** A reader can rename a Session in any supported client
+and see the same title in Argo after sync. An authoritative vendor read can also clear it. A
+linked Ticket's current indexed title supplies a name only when the Session has no custom title.
+Argo never copies that title into the Session. Vendor preview and first prompt follow. This keeps
+Ticket renames visible without a Session mutation and avoids competing local and vendor titles.
+
+**Session sync and live control have different owners.** One worker runs a reusable XState sync
+machine per Harness and writes through the shared Session upsert. The live Session supervisor and
+Harness machines keep prompt order, channels, and resume state. A worker crash cannot close a live
+channel or erase committed rows. The first milestone reads Claude metadata; Codex later uses the
+same worker and sync machine.
 
 **Status comes from the vendor boundary.** Live actors know when their own start, Turn, gate,
 and close transitions occur. Sessions without a live channel use only vendor history and liveness. Process
@@ -123,16 +131,16 @@ matching, file age, and unfinished records no longer stand in for liveness.
 vendor Session and the root Agent, so #1073 declined to carve out a second kind for it. What is
 true of it is narrower: nobody is at the terminal. That is a property of how the process was
 started, so it sits beside `harness` and `cwd` rather than beside live-channel state, and it
-changes what the Roster draws without changing what a Session is.
+  changes what the Session list draws without changing what a Session is.
 
 **And the folded row is not one either.** A row standing for 180 Sessions is not a Session, so
-#1073 named it in "Not domain entities" beside Cockpit and Roster rather than in L2 — it belongs to
+#1073 named it in "Not domain entities" beside Cockpit and the Session list rather than in L2. It belongs to
 the projection, and nothing about it reaches `HubSession`. Two alternatives were on the table and
 were declined. **Hiding headless runs** (dropping them at `isPublished`) is cheaper and needs no
 name at all, but a headless run that FAILED would become invisible and its history unreachable
-from the cockpit — the Roster lying by omission about work that ran in this Project. **Admitting
+from the cockpit. The list would omit work that ran in this Project. **Admitting
 them and fixing only the naming** (#1072) is honest to L2 as written and needs no new concept, but
-leaves the Roster permanently dominated by headless SDK output. The earlier measured set contained
+leaves the Session list permanently dominated by headless SDK output. The earlier measured set contained
 328 Sessions in the Argo Project's seven-day working set, at least 136 of them headless, and one
 caption loop burying the four Sessions being steered under fourteen visible rows. Folding keeps the
 evidence reachable and spends one row on it.
