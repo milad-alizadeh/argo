@@ -1,5 +1,6 @@
-import { memo, useEffect, useState } from 'react'
+import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useLocation, useNavigate } from 'react-router'
 import { DESTINATION_PATHS, DESTINATIONS, type Destination } from '@/platform/contract/commands'
 import { Icon, type IconName } from '../../components/icon/icon'
 
@@ -15,24 +16,18 @@ const navigationLabelKeys = {
   Atlas: 'rail.destinations.atlas',
 } as const satisfies Record<Destination, string>
 
-function destinationFromHash(): Destination {
+function destinationFromPathname(pathname: string): Destination {
   return (
-    DESTINATIONS.find(
-      (destination) => window.location.hash === `#${DESTINATION_PATHS[destination]}`,
-    ) ?? 'Sessions'
+    DESTINATIONS.find((destination) => pathname === DESTINATION_PATHS[destination]) ?? 'Sessions'
   )
 }
 
 export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
   const { t } = useTranslation('cockpit')
-  const [destination, setDestination] = useState(destinationFromHash)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const destination = destinationFromPathname(location.pathname)
   const settingsLabel = t('rail.settings')
-
-  useEffect(() => {
-    const updateDestination = () => setDestination(destinationFromHash())
-    window.addEventListener('hashchange', updateDestination)
-    return () => window.removeEventListener('hashchange', updateDestination)
-  }, [])
 
   return (
     <nav
@@ -52,7 +47,7 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
               aria-label={label}
               className="no-drag-region group flex flex-col items-center gap-1 type-meta"
               onClick={() => {
-                window.location.hash = DESTINATION_PATHS[itemDestination]
+                navigate(DESTINATION_PATHS[itemDestination])
               }}
             >
               <span
