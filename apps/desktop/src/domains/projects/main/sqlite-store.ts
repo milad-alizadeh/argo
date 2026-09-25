@@ -1,9 +1,11 @@
-import path from 'node:path'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import type { DurableDatabase } from '@/database/durable-database'
-import { project, projectSelection, projectSetupCheckpoint } from '@/database/project-tables'
-import { identifierSchema } from '@/shared/validation'
+import { project } from '@/database/project/schema'
+import type { ProjectRow } from '@/database/project/types'
+import { projectRegistrationSchema } from '@/database/project/validation'
+import { projectSelection } from '@/database/project-selection/schema'
+import { projectSetupCheckpoint } from '@/database/project-tables'
 import { createSetupWorktreePromotion } from './project-store-promotion'
 import type { ProjectSetupRecord } from './setup/persistence/project-setup-registry'
 import { projectSetupStore } from './setup/persistence/project-setup-storage'
@@ -18,7 +20,7 @@ export type {
   WorkspaceRecord,
 } from './workspaces/workspace-store'
 
-export type ProjectRegistration = { id: string; path: string; commonDirectory: string }
+export type ProjectRegistration = Pick<ProjectRow, 'id' | 'path' | 'commonDirectory'>
 export type ProjectRegistry = { projects: ProjectRegistration[]; selectedId: string | null }
 export type ProjectDatabase = DurableDatabase
 export type ProjectStore = WorkspaceStore & {
@@ -34,12 +36,6 @@ export type ProjectStore = WorkspaceStore & {
   writeProjectSetup: (record: ProjectSetupRecord) => void
   close: () => void
 }
-
-const projectRowSchema = z.strictObject({
-  id: identifierSchema,
-  path: z.string().refine((value) => path.isAbsolute(value) && !value.includes('\0')),
-  commonDirectory: z.string().refine((value) => path.isAbsolute(value) && !value.includes('\0')),
-})
 
 export const isProjectStoreInvalid = (error: unknown): boolean => error instanceof z.ZodError
 
@@ -97,7 +93,7 @@ export function createProjectStore(
 }
 
 function readRegistry(database: ProjectDatabase): ProjectRegistry {
-  const registered = projectRowSchema
+  const registered = projectRegistrationSchema
     .array()
     .parse(
       database

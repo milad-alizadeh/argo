@@ -1,19 +1,15 @@
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import {
-  managedWorkspaceRecovery,
-  projectWorkspaceSelection,
-  workspace,
-  workspaceKinds,
-} from '@/database/project-tables'
+import { managedWorkspaceRecovery } from '@/database/managed-workspace-recovery/schema'
+import type { ManagedWorkspaceRecoveryRow } from '@/database/managed-workspace-recovery/types'
+import { projectWorkspaceSelection } from '@/database/project-workspace-selection/schema'
+import { workspace, workspaceKinds } from '@/database/workspace/schema'
+import type { WorkspaceRow } from '@/database/workspace/types'
 import type { ProjectDatabase } from '../sqlite-store'
 
-export type WorkspaceRecord = Omit<typeof workspace.$inferSelect, 'createdAt' | 'updatedAt'>
+export type WorkspaceRecord = Omit<WorkspaceRow, 'createdAt' | 'updatedAt'>
 export type WorkspaceKind = WorkspaceRecord['kind']
-export type ManagedWorkspaceRecovery = Omit<
-  typeof managedWorkspaceRecovery.$inferSelect,
-  'createdAt' | 'updatedAt'
->
+export type ManagedWorkspaceRecovery = Omit<ManagedWorkspaceRecoveryRow, 'createdAt' | 'updatedAt'>
 export type WorkspaceStore = {
   readWorkspaces: (projectId: string) => WorkspaceRecord[]
   writeWorkspace: (workspace: WorkspaceRecord) => void

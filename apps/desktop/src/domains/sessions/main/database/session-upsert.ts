@@ -1,11 +1,9 @@
 import type { DurableDatabase } from '@/database/durable-database'
-import { sessionInsertSchema } from '@/database/session-schemas'
-import { sessionTable } from '@/database/session-table'
+import { sessionTable } from '@/database/session/schema'
+import type { NewSession } from '@/database/session/types'
+import { sessionInsertSchema } from '@/database/session/validation'
 
-export type SessionUpsertInput = Omit<
-  typeof sessionTable.$inferInsert,
-  'argoId' | 'createdAt' | 'updatedAt'
->
+export type SessionUpsertInput = Omit<NewSession, 'argoId' | 'createdAt' | 'updatedAt'>
 
 export type SessionUpsert = (input: SessionUpsertInput) => string
 
