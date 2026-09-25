@@ -7,6 +7,7 @@ import { type ActorLogic, createActor, fromCallback, fromPromise, waitFor } from
 import { adjacencyMapToArray, getAdjacencyMap, getShortestPaths } from 'xstate/graph'
 import { codexModelCatalogFixture } from '../../../../test-fixtures/sessions/codex-model-catalog.fixture'
 import { readCodexHarnessInfo } from '../catalog'
+import type { CodexChannel } from './codex-app-server-machine'
 import {
   codexAppServerMachine,
   codexAppServerProcessActor,
