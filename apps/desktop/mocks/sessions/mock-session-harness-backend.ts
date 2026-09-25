@@ -3,11 +3,11 @@
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { Page } from 'playwright-core'
+import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import {
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
-} from '@/domains/sessions/contract/proof-protocol'
-import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
+} from '@/harnesses/proof-protocol'
 import type {
   SessionFixture,
   SessionHarnessBackend,

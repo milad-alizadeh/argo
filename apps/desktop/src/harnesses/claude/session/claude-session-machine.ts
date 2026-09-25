@@ -5,7 +5,7 @@ import {
   type SDKUserMessage,
 } from '@anthropic-ai/claude-agent-sdk'
 import { assign, fromCallback, sendTo, setup } from 'xstate'
-import type { SessionStartInput } from '@/domains/sessions/contract/session-start'
+import type { SessionStartInput } from '@/domains/sessions/main/api/session-start'
 import { claudeCliEnvironment } from '../cli-environment'
 
 type Send = Pick<SessionStartInput, 'prompt'>

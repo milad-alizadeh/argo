@@ -3,10 +3,13 @@
 - **Session** — one vendor conversation with an Argo UUID and a unique **Harness + native Session
   ID** pair. The UUID identifies the Session in Argo; the pair identifies it at the vendor. A
   Claude Session and a Codex Session never merge, even if their titles or Project match. A fork is
-  a separate Session with its own Argo UUID and native ID.
+  a separate Session with its own Argo UUID and native ID. One SQLite table holds the UUID, pair,
+  and indexed vendor metadata. Its Project link is nullable. A new vendor working directory can
+  move the Session to another Project. A missing directory keeps the known Project. Deleting a
+  Project leaves the Session in the global Session list.
 
-  A Session has no durable live-channel posture. An app-scoped Session supervisor actor owns the
-  live Session actors. Each Session actor invokes one Harness machine, owns prompt order, and
+  A Session has no durable live-channel posture. An app-scoped live Session supervisor actor owns
+  the live Session actors. Each live Session actor invokes one Harness machine, owns prompt order, and
   stops with the application. A Session without a live actor remains readable through vendor
   history; the first new prompt attempts native resume. A live channel is not durable across an
   Argo restart.
@@ -22,25 +25,19 @@
   Session that cannot be
   resumed because of a temporary condition stays readable and reports the vendor reason. Argo
   removes a Session only when its Harness confirms that the vendor conversation cannot be resumed
-  again. Removing it also removes its Argo title, pin, and user-asserted Ticket link.
+  again. Removing it also removes its custom title, pin, and user-asserted Ticket link.
 
   A Session **is the root Agent** (`parentId: null`). Key attributes are **`harness`**
   (`claude | codex | …`), native ID, Project, and **`cwd`**. Managed facts are DIRECT when Argo
   observes them through its channel. Watched facts are vendor-sourced.
 
-- **Vendor title** — a name for the Session that the Harness itself holds. DERIVED: Argo reads it
-  through the vendor interface and never owns it. Two kinds, and the reader's outranks the
-  summariser's whichever order they arrive in (#1623):
-  - **summarised** — the Harness's own summariser wrote it from the conversation.
-  - **custom** — a person entered it through the Harness.
-
-  **Argo title** — an optional, Argo-owned name for the Session. It takes precedence over every
-  vendor title in Argo, including one changed later in another app. Renaming in Argo changes this
-  title and does not rename the vendor Session. The displayed name is the Argo title, then the
-  current title of a linked Ticket, then the vendor title, then the first prompt. The first prompt
-  is the first thing the Session was asked, without text the Harness injects. Connecting a Ticket
-  changes the displayed name only while no reader has set an Argo title; Argo does not copy the
-  Ticket title into the Session.
+- **Custom title** — one reader-chosen name shared by Argo and the vendor. The Harness reads it
+  through the vendor interface. An authoritative vendor read can change or clear it. A future
+  Argo rename writes through the vendor and stores its confirmed value. The displayed name is the
+  custom title, then the current title of a linked Ticket, then the vendor preview, then the first
+  prompt. The preview is vendor metadata, not another custom title. The first prompt is the first
+  thing the Session was asked, without text the Harness injects. Missing optional metadata does
+  not erase a known value. Connecting a Ticket does not copy its title into the Session.
 
 - **Session status** — the adapter's validated rollup of vendor lifecycle facts:
   - **starting** — Argo accepted a start or resume command and a live channel is opening.
@@ -59,7 +56,9 @@
 
 - **Entry** — optional vendor metadata describing how the Session started: **`interactive`** or
   **`headless`**. Absence represents unknown; Argo does not infer it
-  from a transcript or hide the Session because of it.
+  from a transcript. The first Claude list sync discovers external interactive Sessions and reads
+  known Argo-created Sessions by ID. It does not import unrelated headless SDK runs. This scope
+  does not make Entry a kind of Session.
 
 - **Session Mode** — the Session's *standing autonomy stance*; defined once in the Autonomy
   cluster below. A Session (root-Agent) fact, not per-Subagent. DIRECT while Argo owns the live

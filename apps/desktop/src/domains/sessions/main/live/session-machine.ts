@@ -1,7 +1,7 @@
 import { assign, enqueueActions, fromPromise, type SnapshotFrom, sendTo, setup } from 'xstate'
 import { claudeSessionMachine } from '@/harnesses/claude/session/claude-session-machine'
 import type { codexSessionMachine } from '@/harnesses/codex/session/codex-session-machine'
-import type { SessionStartInput } from '../../contract/session-start'
+import type { SessionStartInput } from '../api/session-start'
 
 export type QueuedSessionCommand = Pick<
   SessionStartInput,

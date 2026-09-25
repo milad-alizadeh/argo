@@ -1,5 +1,5 @@
-import type { SessionShellCommand } from '@/domains/sessions/contract/model/models'
-import type { SessionShellOutput } from '@/domains/sessions/contract/model/wire/background-work-contract'
+import type { SessionShellCommand } from '@/domains/sessions/renderer/model/models'
+import type { SessionShellOutput } from '@/domains/sessions/renderer/work/types'
 
 // A Shell selection is meaningful only once its adapter supplied a terminal to reveal (#2530).
 export function workInspectorReveal(

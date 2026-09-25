@@ -6,8 +6,8 @@ import type {
   SessionShellCommand,
   SessionSubagent,
   ShellState,
-} from '@/domains/sessions/contract/model/models'
-import type { SubagentUsageFacts } from '@/domains/sessions/contract/model/wire/background-work-contract'
+} from '@/domains/sessions/renderer/model/models'
+import type { SubagentUsageFacts } from '@/domains/sessions/renderer/work/types'
 
 // What a header button or a Feed block opens: a Subagent with what it spent, or a Shell.
 export type SessionWork =

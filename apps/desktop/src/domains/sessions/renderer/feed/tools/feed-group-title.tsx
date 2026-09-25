@@ -1,4 +1,4 @@
-import type { LiveActivity } from '@/domains/sessions/contract/model/feed/feed-rows'
+import type { LiveActivity } from '@/domains/sessions/renderer/feed/model/feed-rows'
 import type { IconName } from '@/platform/renderer/components/icon/icon'
 import type { SessionFeedRow } from '../../types'
 import { toolPresentation } from './feed-tools'

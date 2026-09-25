@@ -2,9 +2,9 @@ import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { createInterface } from 'node:readline'
 import { type ActorRefFrom, assign, fromCallback, fromPromise, raise, sendTo, setup } from 'xstate'
-import { SESSION_CODEX_EXECUTABLE_ENV } from '@/domains/sessions/contract/proof-protocol'
 import { executableVersion } from '@/harnesses/cli/executable-version'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
+import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/proof-protocol'
 
 // The subset of `codex app-server`'s JSON-RPC protocol this adapter drives, grounded in codex-harness
 // 0.147.0's generated schema (`codex app-server generate-json-schema`) and the live proof recorded

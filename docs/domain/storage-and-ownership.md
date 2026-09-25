@@ -2,11 +2,11 @@
 
 Vendor facts remain external: Tickets live in a project-management provider, Delivery truth in a
 code host, and Session history behind vendor interfaces. Argo owns the **glue** — the Project and
-Account registries, each Project's Workspace registry, local Session IDs and titles, and the
+Account registries, each Project's Workspace registry, local Session IDs and pins, and the
 user-asserted links no external signal carries.
 
 - **Argo-owned per-machine state** lives in one SQLite database under `userData`. Durable tables
-  are authoritative for registries, local Session IDs and titles, global settings, user-asserted
+  are authoritative for registries, local Session IDs and pins, global settings, user-asserted
   links, and resumable setup checkpoints. Credentials stay in the OS keychain.
 - **ProjectSetup** — the one Project-owned, resumable process that determines `ready | deferred`.
   It starts after Project registration. Its method is `manual | agent`: manual validates and stores
@@ -24,6 +24,10 @@ user-asserted links no external signal carries.
 - **The join is derived, never stored.** Branch-per-session, work-item-per-branch, PR/CI state
   are all derivable. The **Hub** assembles the join in memory on launch as a throwaway
   projection (ADR-0008).
-- **Derived indexes share the database but not its authority.** Session and Ticket query tables
-  are disposable and rebuild through vendor interfaces. Rebuilding them never replaces or deletes
-  durable tables.
+- **Session storage** — one table holds each Argo UUID, its unique Harness and native ID pair,
+  vendor metadata, Project link, custom title, and local fields. The vendor is authoritative for
+  its metadata and custom title. One domain upsert assigns a UUID on first insert and serves both
+  live creation and sync. A failed or incomplete scan does not delete known Sessions.
+- **Derived indexes share the database but not its authority.** Session history search and Ticket
+  query tables can rebuild through vendor interfaces. Rebuilding them never replaces Session
+  identity or other durable Argo state.

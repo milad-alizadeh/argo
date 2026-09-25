@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { attachmentKindOf } from '@/domains/sessions/contract/drive/attachments-contract'
-import { fileImageUrl } from '@/domains/sessions/contract/model/feed/feed-images'
+import { attachmentKindOf } from '@/domains/sessions/api/attachments'
+import { fileImageUrl } from '@/domains/sessions/renderer/feed/model/feed-images'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   Attachment,

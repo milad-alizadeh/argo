@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test'
-import type { Permission } from '@/domains/sessions/contract/ipc/contract'
+import type { Permission } from '@/domains/sessions/api/permissions'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
 import { PendingTurnsView } from './pending-turns'
 import '../editor/composer-content.css'

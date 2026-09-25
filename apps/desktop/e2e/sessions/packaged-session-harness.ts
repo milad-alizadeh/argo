@@ -8,7 +8,7 @@ import {
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_EXECUTABLE_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
-} from '@/domains/sessions/contract/proof-protocol'
+} from '@/harnesses/proof-protocol'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { appExecutable } from '../packaged-app'
 import type {

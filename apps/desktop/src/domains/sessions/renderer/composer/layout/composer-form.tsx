@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { SessionPlan } from '@/domains/sessions/contract/model/models'
+import type { SessionPlan } from '@/domains/sessions/renderer/model/models'
 import type { HarnessControl } from '../../harness/harnesses'
 import type { Send } from '../hooks/use-send'
 import { useSessionComposerState } from '../hooks/use-session-composer-state'
@@ -9,7 +9,7 @@ import { AttachmentTray } from '../tray/attachment-tray'
 import { PendingTurns } from '../tray/pending-turns'
 import { ComposerCard } from './composer-card'
 import '../editor/composer-content.css'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
+import type { SessionAttachmentInput } from '@/domains/sessions/api/attachments'
 
 export const COMPOSER_COLUMN = 'mx-auto w-full max-w-(--size-session-column)'
 

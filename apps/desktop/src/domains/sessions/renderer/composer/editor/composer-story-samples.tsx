@@ -1,7 +1,7 @@
 // Shared across three or more Composer stories files. A one-off helper stays beside its story
 // instead of here (house rule: a helper hoists on the third caller).
 import { useState } from 'react'
-import type { SessionPlan } from '@/domains/sessions/contract/model/models'
+import type { SessionPlan } from '@/domains/sessions/renderer/model/models'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { ComposerForm, type ComposerFormProps } from '../layout/composer-form'
 

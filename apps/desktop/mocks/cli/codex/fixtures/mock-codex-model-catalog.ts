@@ -1,4 +1,4 @@
-import type { CodexModelCatalog } from '@/domains/sessions/contract/codex-model-catalog'
+import type { CodexModelCatalog } from '@/harnesses/codex/catalog'
 
 export const MOCK_CODEX_MODEL_CATALOG: CodexModelCatalog = {
   data: [

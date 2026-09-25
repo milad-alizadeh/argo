@@ -1,5 +1,5 @@
 // The Harness readiness/sign-in seam's own proof env vars (#2579), kept apart from
-// `sessions/contract/proof-protocol.ts`'s Session-drive seam: a packaged proof can point a
+// `harnesses/proof-protocol.ts`'s Session-drive seam: a packaged proof can point a
 // readiness probe or a sign-in driver at a mock CLI without touching what a Session drives.
 
 // The `claude`/`codex` a readiness probe or sign-in driver spawns on a proof run; unset means the

@@ -10,7 +10,7 @@ import {
   codexSessionMachine,
 } from '@/harnesses/codex/session/codex-session-machine'
 import type { DurableDatabase } from '@/platform/main/storage/durable-database'
-import type { SessionSendInput, SessionStartInput } from '../../contract/session-start'
+import type { SessionSendInput, SessionStartInput } from '../api/session-start'
 import { createSessionUpsert } from '../storage/session-upsert'
 import { sessionMachine } from './session-machine'
 

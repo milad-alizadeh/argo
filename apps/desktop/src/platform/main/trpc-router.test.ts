@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 import { createActor, fromPromise } from 'xstate'
-import type { SessionSubmitInput } from '@/domains/sessions/contract/session-start'
+import type { SessionSubmitInput } from '@/domains/sessions/main/api/session-start'
 import type { SessionSupervisorActor } from '@/domains/sessions/main/live/session-supervisor-machine'
 import {
   harnessCatalogMachine,

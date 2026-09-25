@@ -1,6 +1,6 @@
 import type { LexicalEditor } from 'lexical'
 import type { RefObject } from 'react'
-import type { SessionPlan } from '@/domains/sessions/contract/model/models'
+import type { SessionPlan } from '@/domains/sessions/renderer/model/models'
 import type { SessionHarness } from '../../harness/harnesses'
 import { ComposerEditor } from '../editor/session-composer-editor'
 import { ComposerAttachments } from './composer-attachments'

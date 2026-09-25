@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
+import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { FeedLiveFacts } from '../feed/document/feed-live-facts'
 import { BackgroundWork } from '../feed/rows/background-work'
 import { SessionInspector } from '../inspector/session-inspector'

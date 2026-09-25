@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import type { WorkspaceSummary } from '@/domains/projects/contract/workspace-messages'
-import type { SessionPlan } from '@/domains/sessions/contract/model'
+import type { SessionPlan } from '@/domains/sessions/renderer/model/models'
 import { claudeComposerModelCatalogFixture } from '../../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
 import { claudeChoices } from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
 import type { SessionHarness } from '../../harness/harnesses'

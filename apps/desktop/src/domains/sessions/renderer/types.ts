@@ -1,46 +1,68 @@
-import type {
-  SessionArchiveListed,
-  SessionError,
-  SessionFeedRead,
-  SessionFeedRequest,
-  SessionListRequest,
-  SessionSearched,
-  SessionsListed,
-} from '@/domains/sessions/contract/ipc/contract'
+import type { SessionError } from '@/domains/sessions/api/session-error'
+import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/renderer/model/models'
 
-export type {
-  SessionArchiveListed,
-  SessionError,
-  SessionFeedRead as SessionFeed,
-  SessionFeedRequest,
-  SessionListRequest,
-  SessionSearched,
-  SessionsListed,
+// The renderer's current Roster state. The old request envelope has no consumer here.
+export type SessionsListed = {
+  version: 1
+  type: 'session.listed'
+  requestId: string
+  sessions: SessionRosterRow[]
+  partialFailures: { harness: string; code: string }[]
+  filesFound: number
+  filesRead: number
+  filesUnreadable: number
+  filesParsed: number
+  nextCursor: string | null
+  historyComplete: boolean
 }
 
-// The roster the renderer holds. The reply's envelope is left out, so that a poll which finds
-// nothing new hands back the roster already on screen rather than a new object (#2241).
-export type SessionRoster = Omit<SessionsListed, 'requestId' | 'type' | 'version'>
-export type Session = SessionsListed['sessions'][number]
-export type SessionId = Session['id']
-export type SessionFeedRow = SessionFeedRead['rows'][number]
+export type SessionSearched = {
+  version: 1
+  type: 'session.searched'
+  requestId: string
+  sessions: SessionRosterRow[]
+  nextCursor: string | null
+  historyComplete: boolean
+}
 
-// A diagram is recorded assistant prose (a mermaid fence), not a tool call, so it carries its own
-// evidence shape rather than reusing `SessionFeedRow`'s tool variant.
+export type SessionArchiveListed = {
+  version: 1
+  type: 'session.archive.listed'
+  requestId: string
+  sessions: SessionRosterRow[]
+  nextCursor: string | null
+  restored: SessionRosterRow | null
+  historyComplete: boolean
+}
+
+export type SessionFeed = {
+  version: 1
+  type: 'session.feed.read'
+  requestId: string
+  sessionId: string
+  chainId: string
+  revision: string
+  rows: SessionFeedRow[]
+}
+
+export type { SessionError }
+export type SessionRoster = Omit<SessionsListed, 'version' | 'type' | 'requestId'>
+export type Session = SessionRosterRow
+export type SessionId = Session['id']
+export type { SessionFeedRow }
+
 export type SessionDiagramEvidence = {
   shape: 'diagram'
   id: string
   title: string
   source: string
 }
-// A skill a prompt mentions, opened by the path the Harness wrote into the prompt.
 export type SessionSkillEvidence = {
   shape: 'skill'
   id: string
   name: string
   path: string
 }
-// A file an assistant's prose links to by absolute path, read inside the Session's workspace.
 export type SessionFileEvidence = {
   shape: 'file'
   id: string
@@ -52,10 +74,6 @@ export type SessionEvidence =
   | SessionSkillEvidence
   | SessionFileEvidence
 
-// Argo can only write an answer into a Session whose channel it currently holds (#2205): every
-// other posture — another Argo window, an external terminal, or simply idle — locks the answer
-// affordance, whatever the transcript says. The one rule, shared by the roster badge/lock icon
-// and the Feed's inline question form.
 export function sessionPostureLocksAnswer(posture: Session['posture'] | null): boolean {
   return posture !== 'managed'
 }
