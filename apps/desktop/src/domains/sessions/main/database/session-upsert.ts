@@ -20,7 +20,6 @@ function definedMetadata(input: SessionUpsertInput): Partial<SessionUpsertMetada
 
 export function createSessionUpsert(database: DurableDatabase): SessionUpsert {
   return (input) => {
-    const now = Date.now()
     const argoId = crypto.randomUUID()
     const metadata = definedMetadata(input)
     const row = database
@@ -34,14 +33,12 @@ export function createSessionUpsert(database: DurableDatabase): SessionUpsert {
         preview: input.preview ?? null,
         firstPrompt: input.firstPrompt ?? null,
         cwd: input.cwd ?? null,
-        createdAt: now,
-        updatedAt: now,
       })
       .onConflictDoUpdate({
         target: [sessionTable.harness, sessionTable.nativeId],
         set: {
           ...metadata,
-          updatedAt: now,
+          harness: input.harness,
         },
       })
       .returning({ argoId: sessionTable.argoId })

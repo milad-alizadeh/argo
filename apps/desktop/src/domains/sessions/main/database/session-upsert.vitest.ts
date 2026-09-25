@@ -15,9 +15,14 @@ function database() {
     preview TEXT,
     first_prompt TEXT,
     cwd TEXT,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL
-  ); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);`)
+    created_at INTEGER NOT NULL DEFAULT (CAST(unixepoch('subsec') * 1000 AS INTEGER)),
+    updated_at INTEGER NOT NULL DEFAULT (CAST(unixepoch('subsec') * 1000 AS INTEGER))
+  ); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);
+  CREATE TRIGGER session_touch_updated_at AFTER UPDATE ON session FOR EACH ROW
+  WHEN NEW.updated_at <= OLD.updated_at BEGIN
+    UPDATE session SET updated_at = MAX(CAST(unixepoch('subsec') * 1000 AS INTEGER), OLD.updated_at + 1)
+    WHERE argo_id = NEW.argo_id;
+  END;`)
   return { client, upsert: createSessionUpsert(createDurableDatabase(client)) }
 }
 
@@ -38,6 +43,15 @@ test('keeps one Argo ID and preserves known metadata on a sparse upsert', () => 
       nativeId: 'native-1',
     })
     assert.equal(repeated, first)
+    const originalTimes = client
+      .prepare('SELECT created_at, updated_at FROM session WHERE argo_id = ?')
+      .get(first) as { created_at: number; updated_at: number }
+    upsert({ harness: 'claude', nativeId: 'native-1' })
+    const repeatedTimes = client
+      .prepare('SELECT created_at, updated_at FROM session WHERE argo_id = ?')
+      .get(first) as { created_at: number; updated_at: number }
+    assert.equal(repeatedTimes.created_at, originalTimes.created_at)
+    assert.ok(repeatedTimes.updated_at > originalTimes.updated_at)
     const row = client
       .prepare(
         'SELECT project_id, custom_title, preview, first_prompt, cwd FROM session WHERE argo_id = ?',
