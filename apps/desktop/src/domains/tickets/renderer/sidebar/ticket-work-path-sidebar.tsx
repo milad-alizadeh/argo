@@ -54,7 +54,7 @@ export function TicketWorkPathSidebar({
       <div className="relative mt-(--spacing-shell-item) pl-(--spacing-shell-inset)">
         <span
           aria-hidden="true"
-          className="absolute top-(--spacing-shell-item) bottom-(--spacing-shell-item) left-(--spacing-shell-tight) w-px bg-border"
+          className="absolute top-(--spacing-shell-item) bottom-(--spacing-shell-item) [left:calc(var(--size-icon-meta)/2)] w-px bg-border"
         />
         <div className="relative rounded-row bg-muted/70 p-(--spacing-shell-item)">
           <span
