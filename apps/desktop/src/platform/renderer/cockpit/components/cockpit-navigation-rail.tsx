@@ -37,7 +37,7 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
   return (
     <nav
       aria-label={t('rail.label')}
-      className="flex h-full min-h-0 w-(--size-navigation-rail) shrink-0 flex-col items-center border-r border-border/60 bg-sidebar [&_svg]:size-(--size-icon-control)"
+      className="no-drag-region flex h-full min-h-0 w-(--size-navigation-rail) shrink-0 flex-col items-center border-r border-border/60 bg-sidebar [&_svg]:size-(--size-icon-control)"
     >
       <div className="flex flex-col items-center gap-2 pt-(--inset-navigation-rail-item-top)">
         {DESTINATIONS.map((itemDestination) => {
@@ -50,7 +50,7 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
               type="button"
               aria-current={active ? 'page' : undefined}
               aria-label={label}
-              className="group flex flex-col items-center gap-1 type-meta"
+              className="no-drag-region group flex flex-col items-center gap-1 type-meta"
               onClick={() => {
                 window.location.hash = DESTINATION_PATHS[itemDestination]
               }}
