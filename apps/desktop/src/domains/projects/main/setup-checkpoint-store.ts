@@ -1,8 +1,11 @@
 import { eq } from 'drizzle-orm'
-import { projectSetupCheckpoint } from './schema'
+import { projectSetupCheckpoint } from '@/database/project-tables'
 import type { ProjectDatabase } from './sqlite-store'
 
-export type SetupCheckpoint = typeof projectSetupCheckpoint.$inferSelect
+export type SetupCheckpoint = Omit<
+  typeof projectSetupCheckpoint.$inferSelect,
+  'createdAt' | 'updatedAt'
+>
 
 export function readSetupCheckpoint(
   database: ProjectDatabase,
@@ -10,7 +13,13 @@ export function readSetupCheckpoint(
 ): SetupCheckpoint | null {
   return (
     database
-      .select()
+      .select({
+        projectId: projectSetupCheckpoint.projectId,
+        worktreePath: projectSetupCheckpoint.worktreePath,
+        phase: projectSetupCheckpoint.phase,
+        configurationSource: projectSetupCheckpoint.configurationSource,
+        documentRevision: projectSetupCheckpoint.documentRevision,
+      })
       .from(projectSetupCheckpoint)
       .where(eq(projectSetupCheckpoint.projectId, projectId))
       .get() ?? null

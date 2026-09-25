@@ -5,12 +5,15 @@ import {
   projectWorkspaceSelection,
   workspace,
   workspaceKinds,
-} from '../schema'
+} from '@/database/project-tables'
 import type { ProjectDatabase } from '../sqlite-store'
 
-export type WorkspaceRecord = typeof workspace.$inferSelect
+export type WorkspaceRecord = Omit<typeof workspace.$inferSelect, 'createdAt' | 'updatedAt'>
 export type WorkspaceKind = WorkspaceRecord['kind']
-export type ManagedWorkspaceRecovery = typeof managedWorkspaceRecovery.$inferSelect
+export type ManagedWorkspaceRecovery = Omit<
+  typeof managedWorkspaceRecovery.$inferSelect,
+  'createdAt' | 'updatedAt'
+>
 export type WorkspaceStore = {
   readWorkspaces: (projectId: string) => WorkspaceRecord[]
   writeWorkspace: (workspace: WorkspaceRecord) => void
@@ -24,6 +27,28 @@ const workspaceOwnerSchema = z.strictObject({
   projectId: z.string().min(1),
   kind: workspaceKindSchema,
 })
+const workspaceRecordColumns = {
+  id: workspace.id,
+  projectId: workspace.projectId,
+  kind: workspace.kind,
+  displayName: workspace.displayName,
+  path: workspace.path,
+  baseRef: workspace.baseRef,
+}
+const managedWorkspaceRecoveryColumns = {
+  workspaceId: managedWorkspaceRecovery.workspaceId,
+  checkoutRemovedAt: managedWorkspaceRecovery.checkoutRemovedAt,
+}
+
+function readManagedWorkspaceRecovery(database: ProjectDatabase, workspaceId: string) {
+  return (
+    database
+      .select(managedWorkspaceRecoveryColumns)
+      .from(managedWorkspaceRecovery)
+      .where(eq(managedWorkspaceRecovery.workspaceId, workspaceId))
+      .get() ?? null
+  )
+}
 
 export function createWorkspaceStore(
   database: ProjectDatabase,
@@ -39,7 +64,11 @@ export function createWorkspaceStore(
     )
   return {
     readWorkspaces: (projectId) =>
-      database.select().from(workspace).where(eq(workspace.projectId, projectId)).all(),
+      database
+        .select(workspaceRecordColumns)
+        .from(workspace)
+        .where(eq(workspace.projectId, projectId))
+        .all(),
     writeWorkspace: (record) => {
       database
         .insert(workspace)
@@ -75,10 +104,6 @@ export function createWorkspaceStore(
       afterWrite()
     },
     readManagedWorkspaceRecovery: (workspaceId) =>
-      database
-        .select()
-        .from(managedWorkspaceRecovery)
-        .where(eq(managedWorkspaceRecovery.workspaceId, workspaceId))
-        .get() ?? null,
+      readManagedWorkspaceRecovery(database, workspaceId),
   }
 }

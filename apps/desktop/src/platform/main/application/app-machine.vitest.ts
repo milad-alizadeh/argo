@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'vitest'
 import { createActor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
-import type { DurableDatabase } from '@/platform/main/storage/durable-database'
+import type { DurableDatabase } from '@/database/durable-database'
 import { appMachine } from './app-machine'
 
 const input = { database: {} as DurableDatabase }

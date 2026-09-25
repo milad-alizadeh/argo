@@ -1,28 +1,28 @@
 import { type ActorRefFrom, assign, fromCallback, fromPromise, setup } from 'xstate'
+import type { DurableDatabase } from '@/database/durable-database'
 import type { harnessCatalogMachine } from '@/harnesses/catalog/harness-catalog-machine'
-import { claudeSessionMachine } from '@/harnesses/claude/session/claude-session-machine'
+import { claudeLiveSessionMachine } from '@/harnesses/claude/session/claude-live-session-machine'
 import {
   type codexAppServerMachine,
   requestCodexAppServer,
 } from '@/harnesses/codex/app-server/codex-app-server-machine'
 import {
-  codexSessionActors,
-  codexSessionMachine,
-} from '@/harnesses/codex/session/codex-session-machine'
-import type { DurableDatabase } from '@/platform/main/storage/durable-database'
+  codexLiveSessionActors,
+  codexLiveSessionMachine,
+} from '@/harnesses/codex/session/codex-live-session-machine'
 import type { SessionSendInput, SessionStartInput } from '../api/session-start'
-import { createSessionUpsert } from '../storage/session-upsert'
-import { sessionMachine } from './session-machine'
+import { createSessionUpsert } from '../database/session-upsert'
+import { liveSessionMachine } from './live-session-machine'
 
-type SessionActor = ActorRefFrom<typeof sessionMachine>
+type LiveSessionActor = ActorRefFrom<typeof liveSessionMachine>
 type StartReply = {
   resolve: (value: { sessionId: string }) => void
   reject: (error: Error) => void
 }
-type SupervisorInput = {
+type LiveSessionSupervisorInput = {
   database: DurableDatabase
 }
-type SupervisorEvent =
+type LiveSessionSupervisorEvent =
   | {
       type: 'Start'
       input: SessionStartInput
@@ -67,7 +67,7 @@ function setupIsAvailable(
   )
 }
 
-function acceptsSetupChange(actor: SessionActor, setup: SessionSendInput['setup']): boolean {
+function acceptsSetupChange(actor: LiveSessionActor, setup: SessionSendInput['setup']): boolean {
   const opening = actor.getSnapshot().context.first.setup
   if (actor.getSnapshot().context.first.harness === 'claude')
     return (
@@ -78,13 +78,13 @@ function acceptsSetupChange(actor: SessionActor, setup: SessionSendInput['setup'
   return opening.mode === setup.mode
 }
 
-export const sessionSupervisorMachine = setup({
+export const liveSessionSupervisorMachine = setup({
   types: {
-    input: {} as SupervisorInput,
+    input: {} as LiveSessionSupervisorInput,
     context: {} as {
       database: DurableDatabase
-      sessions: Record<string, SessionActor>
-      starts: Record<string, SessionActor>
+      sessions: Record<string, LiveSessionActor>
+      starts: Record<string, LiveSessionActor>
       completed: Record<
         string,
         | {
@@ -94,9 +94,9 @@ export const sessionSupervisorMachine = setup({
             failure: string
           }
       >
-      failed: Record<string, SessionActor>
+      failed: Record<string, LiveSessionActor>
     },
-    events: {} as SupervisorEvent,
+    events: {} as LiveSessionSupervisorEvent,
   },
   actors: {
     observeSession: fromCallback<
@@ -105,10 +105,10 @@ export const sessionSupervisorMachine = setup({
       },
       {
         pendingId: string
-        session: SessionActor
+        session: LiveSessionActor
       },
       Extract<
-        SupervisorEvent,
+        LiveSessionSupervisorEvent,
         {
           type: 'Session persisted' | 'Session failed'
         }
@@ -140,7 +140,7 @@ export const sessionSupervisorMachine = setup({
         type: 'Stop'
       },
       {
-        session: SessionActor
+        session: LiveSessionActor
         reply: StartReply
       }
     >(({ input }) => {
@@ -195,18 +195,18 @@ export const sessionSupervisorMachine = setup({
           })
           return context.starts
         }
-        let harness: typeof claudeSessionMachine | typeof codexSessionMachine
+        let harness: typeof claudeLiveSessionMachine | typeof codexLiveSessionMachine
         switch (event.input.harness) {
           case 'claude':
-            harness = claudeSessionMachine
+            harness = claudeLiveSessionMachine
             break
           case 'codex': {
             const codex = self.system.get('codex') as
               | ActorRefFrom<typeof codexAppServerMachine>
               | undefined
             if (codex === undefined) throw new Error('Codex app-server actor is unavailable.')
-            harness = codexSessionMachine.provide({
-              actors: codexSessionActors(requestCodexAppServer(codex)),
+            harness = codexLiveSessionMachine.provide({
+              actors: codexLiveSessionActors(requestCodexAppServer(codex)),
             })
             break
           }
@@ -216,7 +216,7 @@ export const sessionSupervisorMachine = setup({
           }
         }
         const actor = spawn(
-          sessionMachine.provide({
+          liveSessionMachine.provide({
             actors: {
               harness,
               persist: fromPromise(({ input: record }) => {
@@ -338,7 +338,7 @@ export const sessionSupervisorMachine = setup({
     },
   },
 }).createMachine({
-  id: 'sessionSupervisor',
+  id: 'liveSessionSupervisor',
   initial: 'Running',
   context: ({ input }) => ({
     database: input.database,
@@ -370,4 +370,4 @@ export const sessionSupervisorMachine = setup({
   },
 })
 
-export type SessionSupervisorActor = ActorRefFrom<typeof sessionSupervisorMachine>
+export type LiveSessionSupervisorActor = ActorRefFrom<typeof liveSessionSupervisorMachine>

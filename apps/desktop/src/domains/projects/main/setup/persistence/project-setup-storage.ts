@@ -1,5 +1,9 @@
 import { eq } from 'drizzle-orm'
-import { projectSetupActor, projectSetupEffect, projectSetupRecovery } from '../../schema'
+import {
+  projectSetupActor,
+  projectSetupEffect,
+  projectSetupRecovery,
+} from '@/database/project-tables'
 import type { ProjectDatabase } from '../../sqlite-store'
 import type { ProjectSetupActor } from '../project-setup-actor'
 import { PROJECT_SETUP_MACHINE_VERSION } from '../project-setup-machine'

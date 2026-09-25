@@ -1,10 +1,10 @@
 import path from 'node:path'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import type { DurableDatabase } from '@/platform/main/storage/durable-database'
+import type { DurableDatabase } from '@/database/durable-database'
+import { project, projectSelection, projectSetupCheckpoint } from '@/database/project-tables'
 import { identifierSchema } from '@/shared/validation'
 import { createSetupWorktreePromotion } from './project-store-promotion'
-import { project, projectSelection, projectSetupCheckpoint } from './schema'
 import type { ProjectSetupRecord } from './setup/persistence/project-setup-registry'
 import { projectSetupStore } from './setup/persistence/project-setup-storage'
 import { readSetupCheckpoint, type SetupCheckpoint } from './setup-checkpoint-store'
@@ -97,7 +97,14 @@ export function createProjectStore(
 }
 
 function readRegistry(database: ProjectDatabase): ProjectRegistry {
-  const registered = projectRowSchema.array().parse(database.select().from(project).all())
+  const registered = projectRowSchema
+    .array()
+    .parse(
+      database
+        .select({ id: project.id, path: project.path, commonDirectory: project.commonDirectory })
+        .from(project)
+        .all(),
+    )
   const selected =
     database
       .select({ projectId: projectSelection.projectId })

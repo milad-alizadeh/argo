@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 import { createActor, fromPromise } from 'xstate'
 import type { SessionSubmitInput } from '@/domains/sessions/main/api/session-start'
-import type { SessionSupervisorActor } from '@/domains/sessions/main/live/session-supervisor-machine'
+import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import {
   harnessCatalogMachine,
   harnessCatalogSchema,
@@ -12,13 +12,13 @@ import { claudeModelCatalogFixture } from '../../../test-fixtures/sessions/claud
 import { codexModelCatalogFixture } from '../../../test-fixtures/sessions/codex-model-catalog.fixture'
 import { createAppRouter } from './trpc-router'
 
-type SupervisorEvent = Parameters<SessionSupervisorActor['send']>[0]
+type SupervisorEvent = Parameters<LiveSessionSupervisorActor['send']>[0]
 const sessions = {
   send: (event: SupervisorEvent) => {
     if (event.type === 'Start' || event.type === 'Send')
       event.reply.resolve({ sessionId: '00000000-0000-4000-8000-000000000001' })
   },
-} as SessionSupervisorActor
+} as LiveSessionSupervisorActor
 
 test('returns only the selected Harness as serializable composer choices', async () => {
   const actor = createActor(
@@ -119,7 +119,7 @@ test('routes a second optimistic composer command to the same pending Session', 
         event.reply.resolve({ sessionId: '00000000-0000-4000-8000-000000000001' })
       }
     },
-  } as SessionSupervisorActor
+  } as LiveSessionSupervisorActor
   const actor = createActor(
     harnessCatalogMachine.provide({
       actors: {
@@ -166,7 +166,7 @@ test('rejects Claude attachments before a Session reaches a vendor', async () =>
         event.reply.resolve({ sessionId: '00000000-0000-4000-8000-000000000001' })
       }
     },
-  } as SessionSupervisorActor
+  } as LiveSessionSupervisorActor
   const actor = createActor(
     harnessCatalogMachine.provide({
       actors: {

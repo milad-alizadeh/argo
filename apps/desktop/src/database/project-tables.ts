@@ -1,10 +1,12 @@
 import { sql } from 'drizzle-orm'
 import { check, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { timestampColumns } from '@/database/timestamp-columns'
 
 export const project = sqliteTable('project', {
   id: text().primaryKey(),
   path: text().notNull(),
   commonDirectory: text('common_directory').notNull().unique(),
+  ...timestampColumns(),
 })
 
 export const projectSelection = sqliteTable(
@@ -12,6 +14,7 @@ export const projectSelection = sqliteTable(
   {
     singleton: integer().primaryKey(),
     projectId: text('project_id').references(() => project.id),
+    ...timestampColumns(),
   },
   (table) => [check('project_selection_singleton', sql`${table.singleton} = 1`)],
 )
@@ -26,6 +29,7 @@ export const projectSetupCheckpoint = sqliteTable(
     phase: text().notNull(),
     configurationSource: text('configuration_source').notNull(),
     documentRevision: text('document_revision').notNull(),
+    ...timestampColumns(),
   },
   (table) => [
     check(
@@ -47,6 +51,7 @@ export const projectSetupActor = sqliteTable(
     persistedSnapshot: text('persisted_snapshot').notNull(),
     receipts: text().notNull(),
     savedAt: text('saved_at').notNull(),
+    ...timestampColumns(),
   },
   (table) => [
     check('project_setup_actor_checkpoint_version', sql`${table.checkpointVersion} = 1`),
@@ -62,6 +67,7 @@ export const projectSetupEffect = sqliteTable('project_setup_effect', {
   intentJson: text('intent_json').notNull(),
   resultJson: text('result_json').notNull(),
   savedAt: text('saved_at').notNull(),
+  ...timestampColumns(),
 })
 
 export const projectSetupRecovery = sqliteTable('project_setup_recovery', {
@@ -71,6 +77,7 @@ export const projectSetupRecovery = sqliteTable('project_setup_recovery', {
   rawRecord: text('raw_record').notNull(),
   reason: text().notNull(),
   savedAt: text('saved_at').notNull(),
+  ...timestampColumns(),
 })
 
 export const workspaceKinds = ['main', 'imported', 'managed'] as const
@@ -86,6 +93,7 @@ export const workspace = sqliteTable(
     displayName: text('display_name').notNull(),
     path: text().notNull(),
     baseRef: text('base_ref').notNull(),
+    ...timestampColumns(),
   },
   (table) => [
     check('workspace_kind', sql`${table.kind} IN ('main', 'imported', 'managed')`),
@@ -100,6 +108,7 @@ export const projectWorkspaceSelection = sqliteTable('project_workspace_selectio
   workspaceId: text('workspace_id')
     .notNull()
     .references(() => workspace.id, { onDelete: 'cascade' }),
+  ...timestampColumns(),
 })
 
 export const managedWorkspaceRecovery = sqliteTable('managed_workspace_recovery', {
@@ -107,4 +116,5 @@ export const managedWorkspaceRecovery = sqliteTable('managed_workspace_recovery'
     .primaryKey()
     .references(() => workspace.id, { onDelete: 'cascade' }),
   checkoutRemovedAt: text('checkout_removed_at').notNull(),
+  ...timestampColumns(),
 })

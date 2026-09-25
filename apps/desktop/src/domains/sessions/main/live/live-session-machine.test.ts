@@ -2,9 +2,9 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createActor, fromCallback, fromPromise, waitFor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
-import { claudeSessionMachine } from '@/harnesses/claude/session/claude-session-machine'
+import { claudeLiveSessionMachine } from '@/harnesses/claude/session/claude-live-session-machine'
 import type { SessionStartInput } from '../api/session-start'
-import { sessionMachine } from './session-machine'
+import { liveSessionMachine } from './live-session-machine'
 
 const first: SessionStartInput = {
   commandId: '00000000-0000-4000-8000-000000000001',
@@ -22,7 +22,7 @@ function testMachine(services: {
   persist?: () => Promise<string>
 }) {
   let promptCount = 0
-  const harness = claudeSessionMachine.provide({
+  const harness = claudeLiveSessionMachine.provide({
     actors: {
       queryActor: fromCallback(({ receive, sendBack }) => {
         receive((event) => {
@@ -41,7 +41,7 @@ function testMachine(services: {
       }),
     },
   })
-  return sessionMachine.provide({
+  return liveSessionMachine.provide({
     actors: {
       harness,
       persist: fromPromise(() => services.persist?.() ?? Promise.resolve('argo-1')),

@@ -4,11 +4,13 @@ import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, type BrowserWindow, net, protocol } from 'electron'
+import { resetIncompleteDevelopmentDatabase } from '@/database/reset-incomplete-database'
+import { configureStorageRuntime } from '@/database/storage-runtime'
 import { seedDevelopmentProject } from '@/domains/projects/main/development-seed'
 import { openProjectStore } from '@/domains/projects/main/main-store'
 import { PROJECT_PROOF_STORE_ENV } from '@/domains/projects/main/proof-protocol'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
-import type { SessionSupervisorActor } from '@/domains/sessions/main/live/session-supervisor-machine'
+import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import type { CatalogActor } from '@/harnesses/catalog/catalog-read'
 import { openDurableStores } from '@/main/durable-stores'
 import { attachAppearanceWatch } from '@/platform/main/appearance'
@@ -23,10 +25,8 @@ import {
   developmentInstance,
 } from '@/platform/main/development/instance'
 import { writeDevelopmentReady } from '@/platform/main/development/ready'
-import { resetIncompleteDevelopmentDatabase } from '@/platform/main/development/reset-incomplete-database'
 import { installMenu } from '@/platform/main/menu'
 import { attachWindowNavigation } from '@/platform/main/security/window-navigation'
-import { configureStorageRuntime } from '@/platform/main/storage/storage-runtime'
 import { createAppRouter } from '@/platform/main/trpc-router'
 import { attachTrpcTransport } from '@/platform/main/trpc-transport'
 import { createDesktopWindow } from '@/platform/main/window/create-window'
@@ -102,7 +102,7 @@ function focusWindow(): void {
 
 function createWindow(actor: AppActor, stores: ReturnType<typeof openDurableStores>): void {
   const catalogActor = actor.system.get('catalog') as CatalogActor | undefined
-  const sessionsActor = actor.system.get('sessions') as SessionSupervisorActor | undefined
+  const sessionsActor = actor.system.get('sessions') as LiveSessionSupervisorActor | undefined
   if (catalogActor === undefined || sessionsActor === undefined)
     throw new Error('Application child actors are unavailable.')
   const router = createAppRouter(catalogActor, sessionsActor)

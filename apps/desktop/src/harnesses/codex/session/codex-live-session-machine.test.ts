@@ -3,14 +3,14 @@ import { test } from 'node:test'
 import { createActor, waitFor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
 import type { CodexRequest } from '../app-server/codex-app-server-machine'
-import { codexSessionActors, codexSessionMachine } from './codex-session-machine'
+import { codexLiveSessionActors, codexLiveSessionMachine } from './codex-live-session-machine'
 
 function machineFor(request: CodexRequest) {
-  return codexSessionMachine.provide({ actors: codexSessionActors(request) })
+  return codexLiveSessionMachine.provide({ actors: codexLiveSessionActors(request) })
 }
 
 test('models Codex opening, first turn, later turn, failure, and close paths', () => {
-  const paths = getShortestPaths(codexSessionMachine, {
+  const paths = getShortestPaths(codexLiveSessionMachine, {
     input: {
       commandId: '00000000-0000-4000-8000-000000000001',
       harness: 'codex',

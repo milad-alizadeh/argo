@@ -1,33 +1,34 @@
 import { assign, enqueueActions, fromPromise, type SnapshotFrom, sendTo, setup } from 'xstate'
-import { claudeSessionMachine } from '@/harnesses/claude/session/claude-session-machine'
-import type { codexSessionMachine } from '@/harnesses/codex/session/codex-session-machine'
+import { claudeLiveSessionMachine } from '@/harnesses/claude/session/claude-live-session-machine'
+import type { codexLiveSessionMachine } from '@/harnesses/codex/session/codex-live-session-machine'
 import type { SessionStartInput } from '../api/session-start'
 
-export type QueuedSessionCommand = Pick<
+export type QueuedLiveSessionCommand = Pick<
   SessionStartInput,
   'commandId' | 'prompt' | 'attachments' | 'setup'
 >
-type SessionPersistInput = {
+type LiveSessionPersistInput = {
   harness: string
   projectId: string
+  cwd: string
   nativeId: string | null
   firstPrompt: string
 }
 
-export const sessionMachine = setup({
+export const liveSessionMachine = setup({
   types: {
     input: {} as SessionStartInput,
     context: {} as {
       argoId: string | null
       first: SessionStartInput
       nativeId: string | null
-      queue: QueuedSessionCommand[]
+      queue: QueuedLiveSessionCommand[]
       failure: string | null
     },
     events: {} as
       | {
           type: 'Send'
-          command: QueuedSessionCommand
+          command: QueuedLiveSessionCommand
         }
       | {
           type: 'Close'
@@ -50,12 +51,14 @@ export const sessionMachine = setup({
         }
       | {
           type: 'xstate.snapshot.harness'
-          snapshot: SnapshotFrom<typeof claudeSessionMachine | typeof codexSessionMachine>
+          snapshot: SnapshotFrom<typeof claudeLiveSessionMachine | typeof codexLiveSessionMachine>
         },
   },
   actors: {
-    harness: claudeSessionMachine as typeof claudeSessionMachine | typeof codexSessionMachine,
-    persist: fromPromise<string, SessionPersistInput>(async () => {
+    harness: claudeLiveSessionMachine as
+      | typeof claudeLiveSessionMachine
+      | typeof codexLiveSessionMachine,
+    persist: fromPromise<string, LiveSessionPersistInput>(async () => {
       throw new Error('Session persistence actor was not provided.')
     }),
   },
@@ -116,7 +119,7 @@ export const sessionMachine = setup({
       !context.queue.some(({ commandId }) => commandId === event.command.commandId),
   },
 }).createMachine({
-  id: 'session',
+  id: 'liveSession',
   initial: 'Starting',
   context: ({ input }) => ({
     argoId: null,
@@ -157,6 +160,7 @@ export const sessionMachine = setup({
         input: ({ context }) => ({
           harness: context.first.harness,
           projectId: context.first.projectId,
+          cwd: context.first.cwd,
           nativeId: context.nativeId,
           firstPrompt: context.first.prompt,
         }),

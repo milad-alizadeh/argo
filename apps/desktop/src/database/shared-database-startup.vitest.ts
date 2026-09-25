@@ -30,8 +30,8 @@ test('starts a clean database with every ordered migration', async () => {
         { name: 'workspace' },
         { name: 'project_workspace_selection' },
         { name: 'managed_workspace_recovery' },
-        { name: 'managed_session_lease' },
         { name: 'session_ticket_link' },
+        { name: 'session' },
       ]),
     )
     expect(
@@ -47,7 +47,20 @@ test('starts a clean database with every ordered migration', async () => {
       { name: '20260921173714_demonic_meteorite' },
       { name: '20260921194635_worried_gargoyle' },
       { name: '20260921223050_tiresome_the_initiative' },
+      { name: '20260924095908_wonderful_viper' },
+      { name: '20260924100017_freezing_calypso' },
+      { name: '20260924104032_bored_vulture' },
+      { name: '20260925153614_centralize-session-table' },
+      { name: '20260925164412_universal-timestamps' },
+      { name: '20260925164424_touch-updated-at' },
     ])
+    expect(
+      database
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'managed_session_lease'",
+        )
+        .all(),
+    ).toEqual([])
     database
       .prepare('INSERT INTO project (id, path, common_directory) VALUES (?, ?, ?)')
       .run('project-constraint', '/tmp/constraint', '/tmp/constraint/.git')

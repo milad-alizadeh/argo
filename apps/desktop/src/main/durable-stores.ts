@@ -1,13 +1,13 @@
-import { createProjectStore } from '@/domains/projects/main/sqlite-store'
-import { createSessionTicketLinkStoreFromDatabase } from '@/domains/tickets/main/session-links'
-import { createDurableDatabase } from '@/platform/main/storage/durable-database'
-import { recoverDurableStore } from '@/platform/main/storage/durable-store-recovery'
+import { createDurableDatabase } from '@/database/durable-database'
+import { recoverDurableStore } from '@/database/durable-store-recovery'
 import {
   backupSharedDatabase,
   openSharedDatabase,
   sharedDatabaseBackupPath,
   sharedDatabasePath,
-} from '@/platform/main/storage/shared-database'
+} from '@/database/shared-database'
+import { createProjectStore } from '@/domains/projects/main/sqlite-store'
+import { createSessionTicketLinkStoreFromDatabase } from '@/domains/tickets/main/session-links'
 
 export function openDurableStores(projectData: string, recovery: boolean) {
   const backupPath = sharedDatabaseBackupPath(projectData)

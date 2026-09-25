@@ -1,6 +1,6 @@
 import { app } from 'electron'
 import { createActor } from 'xstate'
-import type { DurableDatabase } from '@/platform/main/storage/durable-database'
+import type { DurableDatabase } from '@/database/durable-database'
 import { applyStoredAppearance, readAppearance } from '../appearance'
 import { setPlatformLanguage } from '../i18n'
 import { type AppActor, appMachine } from './app-machine'
