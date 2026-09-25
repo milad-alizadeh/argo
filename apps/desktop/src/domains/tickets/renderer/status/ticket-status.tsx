@@ -84,15 +84,21 @@ export const priorityName = (priority: TicketPriority | null): string =>
 export function StatusIcon({
   status,
   statuses = [],
+  current,
+  total,
 }: {
   status: TicketStatus
   statuses?: readonly TicketStatus[]
+  current?: number
+  total?: number
 }) {
   return (
     <StatusGlyph
       category={status.category}
       className={`${markIcon} ${CATEGORY_TONES[status.category]}`}
+      current={current}
       share={startedShare(status, statuses)}
+      total={total}
     />
   )
 }

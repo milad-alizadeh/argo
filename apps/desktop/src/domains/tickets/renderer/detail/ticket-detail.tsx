@@ -1,8 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
+import { providerPresentation } from '@/domains/accounts/renderer'
 import { FeedMarkdown } from '@/domains/sessions/renderer'
 import type { Ticket } from '@/domains/tickets/contract/contract'
 import { CockpitContentChrome } from '@/platform/renderer/cockpit/components/cockpit-content-chrome'
+import { Icon } from '@/platform/renderer/components/icon/icon'
+import { Button } from '@/platform/renderer/components/ui/button'
 import type { LinkedSession } from '../hooks/use-linked-sessions'
 import { TicketDetailEmpty } from './ticket-detail-empty'
 import { LinkedSessions } from './ticket-detail-linked-sessions'
@@ -11,12 +14,13 @@ import { type Editing, Properties } from './ticket-detail-properties'
 
 // Metadata flows below the title until the workspace is wide enough to become a quiet right rail.
 const detailMeasure =
-  'grid max-w-6xl grid-cols-[minmax(0,1fr)] content-start gap-x-(--spacing-shell-section) gap-y-(--spacing-shell-section) px-(--spacing-shell-inset) pb-(--spacing-shell-section) pt-(--spacing-shell-inset) @[46rem]:grid-cols-[minmax(0,1fr)_18rem]'
+  'grid max-w-6xl grid-cols-[minmax(0,1fr)] content-start gap-x-(--spacing-shell-section) gap-y-(--spacing-shell-section) px-(--spacing-shell-inset) pb-(--spacing-shell-section) pt-(--spacing-shell-inset) @3xl:grid-cols-[minmax(0,1fr)_18rem]'
 
 export type TicketDetailProps = {
   ticket: Ticket | null
   provider: Provider
   linkedSessions: readonly LinkedSession[]
+  onBack: () => void
   onOpenSession: (id: string) => void
 } & Navigation &
   Editing
@@ -30,6 +34,7 @@ export function TicketDetail(props: TicketDetailProps) {
     onChangeStatus,
     onChangePriority,
     linkedSessions,
+    onBack,
     onOpenSession,
     ...navigation
   } = props
@@ -46,16 +51,37 @@ export function TicketDetail(props: TicketDetailProps) {
         className="@container min-h-0 flex-1 overflow-y-auto"
       >
         <div className={detailMeasure}>
-          <div className="contents @[46rem]:col-start-1 @[46rem]:row-start-1 @[46rem]:block">
-            <header className="order-1">
+          <div className="contents @3xl:col-start-1 @3xl:row-start-1 @3xl:block">
+            <header className="order-1 flex min-w-0 flex-col items-start gap-(--spacing-shell-item)">
+              <Button onClick={onBack} size="sm" type="button" variant="ghost">
+                <Icon data-icon="inline-start" name="back" />
+                {t('detail.back')}
+              </Button>
               <h2
                 className="min-w-0 self-start line-clamp-2 type-title wrap-anywhere"
                 title={ticket.title}
               >
-                {ticket.title}
+                {ticket.url === null ? (
+                  <>
+                    {ticket.key} - {ticket.title}
+                  </>
+                ) : (
+                  <a
+                    aria-label={t('detail.openInProvider', {
+                      key: ticket.key,
+                      provider: providerPresentation(provider).name,
+                    })}
+                    className="hover:underline"
+                    href={ticket.url}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    {ticket.key} - {ticket.title}
+                  </a>
+                )}
               </h2>
             </header>
-            <div className="order-3 grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-(--spacing-shell-section) @[46rem]:mt-(--spacing-shell-section)">
+            <div className="order-3 grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-(--spacing-shell-section) @3xl:mt-(--spacing-shell-section)">
               {body ? (
                 <FeedMarkdown text={body} />
               ) : (

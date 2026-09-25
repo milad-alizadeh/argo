@@ -1,6 +1,6 @@
-export { useTicketBacklogSidebar } from './ticket-backlog-sidebar-store'
 export { TicketList } from './ticket-list'
-export { TicketsBacklogSidebar, type TicketsBacklogSidebarProps } from './tickets-backlog-sidebar'
+export { useTicketPlanningSidebar } from './ticket-planning-sidebar-store'
+export { type TicketWorkPath, ticketWorkPath } from './ticket-work-path'
 export {
   TicketsSidebar,
   TicketsSidebarContent,

@@ -7,8 +7,9 @@ import {
 } from '@/domains/accounts/renderer'
 import type { ConnectionSummary } from '@/domains/tickets/contract/contract'
 import { useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
-import { useTicketBacklogSidebar } from './ticket-backlog-sidebar-store'
-import { TicketsBacklogSidebar } from './tickets-backlog-sidebar'
+import { useTicketPlanningSidebar } from './ticket-planning-sidebar-store'
+import type { TicketWorkPath } from './ticket-work-path'
+import { TicketWorkPathSidebar } from './ticket-work-path-sidebar'
 import { TicketsSidebarAccountFoot } from './tickets-sidebar-account-foot'
 import { TicketsSidebarHeader } from './tickets-sidebar-header'
 
@@ -18,6 +19,8 @@ export type TicketsSidebarContentProps = {
   openCount: string | null
   notice: SignInNoticeProps | null
   onManageAccounts: () => void
+  workPath?: TicketWorkPath | null
+  onSelectTicket?: (key: string) => void
 }
 
 export function TicketsSidebarContent({
@@ -25,6 +28,8 @@ export function TicketsSidebarContent({
   openCount,
   notice,
   onManageAccounts,
+  workPath = null,
+  onSelectTicket = () => {},
 }: TicketsSidebarContentProps) {
   const { t } = useTranslation('tickets')
   const sidebar = useRef<HTMLElement>(null)
@@ -37,20 +42,24 @@ export function TicketsSidebarContent({
       ref={sidebar}
     >
       <TicketsSidebarHeader connection={connection} />
-      <nav
-        aria-label={t('sidebar.views')}
-        className="min-h-0 flex-1 overflow-y-auto p-(--spacing-shell-item)"
-      >
-        <div
-          aria-current="page"
-          className="flex items-center gap-(--spacing-shell-item) rounded-row bg-muted px-(--spacing-shell-item) py-(--spacing-shell-icon) type-body"
-        >
-          <span className="flex-1">{t('sidebar.allOpen')}</span>
-          {openCount === null ? null : (
-            <span className="font-mono type-meta text-faint">{openCount}</span>
-          )}
-        </div>
-      </nav>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <nav aria-label={t('sidebar.views')} className="p-(--spacing-shell-item)">
+          <div
+            aria-current="page"
+            className="flex items-center gap-(--spacing-shell-item) rounded-row bg-muted px-(--spacing-shell-item) py-(--spacing-shell-icon) type-body"
+          >
+            <span className="flex-1">{t('sidebar.allOpen')}</span>
+            {openCount === null ? null : (
+              <span className="font-mono type-meta text-faint">{openCount}</span>
+            )}
+          </div>
+        </nav>
+        {workPath ? (
+          <div className="border-t border-border/60 py-(--spacing-shell-section)">
+            <TicketWorkPathSidebar onSelect={onSelectTicket} path={workPath} />
+          </div>
+        ) : null}
+      </div>
       {notice ? <SignInNotice {...notice} /> : null}
       <TicketsSidebarAccountFoot connection={connection} onManageAccounts={onManageAccounts} />
     </aside>
@@ -58,24 +67,15 @@ export function TicketsSidebarContent({
 }
 
 export function TicketsSidebar() {
-  const sidebar = useTicketBacklogSidebar((state) => state.sidebar)
-  if (sidebar) {
-    return (
-      <TicketsBacklogSidebar
-        {...sidebar}
-        connection={null}
-        notice={null}
-        now={Date.now()}
-        onManageAccounts={openAccountsDialog}
-      />
-    )
-  }
+  const planning = useTicketPlanningSidebar((state) => state.planning)
   return (
     <TicketsSidebarContent
       connection={null}
       notice={null}
       onManageAccounts={openAccountsDialog}
+      onSelectTicket={planning?.onSelect}
       openCount={null}
+      workPath={planning?.path}
     />
   )
 }

@@ -4,60 +4,53 @@ import type { Provider } from '@/domains/accounts/contract/contract'
 import type { Ticket, TicketPriority, TicketStatus } from '@/domains/tickets/contract/contract'
 import { ticketAge } from '@/domains/tickets/contract/ticket-age'
 import { Icon } from '@/platform/renderer/components/icon/icon'
+import { Badge } from '@/platform/renderer/components/ui/badge'
+import { Popover, PopoverContent, PopoverTrigger } from '@/platform/renderer/components/ui/popover'
 import { type BacklogRow, closedChildren, openBlockers } from '../lib/backlog'
 import type { SourcePresentation } from '../lib/sources'
 import { PriorityMenu } from '../status/priority-menu'
 import { StatusMenu } from '../status/status-menu'
 import { TicketLabel } from '../status/ticket-label'
-import { ChildProgress } from './child-progress'
 import { TreeRails, TreeStem, TreeTwig } from './tree-lines'
 
 const markIcon = 'size-(--size-icon-meta) shrink-0'
 type TreeAnchorStyle = CSSProperties & Record<'--ticket-tree-anchor', string>
 const treeAnchor: TreeAnchorStyle = {
-  '--ticket-tree-anchor': 'calc(var(--spacing-shell-icon) + var(--text-body--line-height) / 2)',
+  '--ticket-tree-anchor':
+    'calc(var(--spacing-shell-icon) + var(--text-body--line-height) / 2 + 1px)',
 }
 const sidebarTreeAnchor: TreeAnchorStyle = {
   '--ticket-tree-anchor': 'calc(var(--spacing-shell-item) + var(--text-body--line-height) / 2)',
 }
 // Past this many, the rest of a row's labels are counted rather than drawn.
 const SHOWN_LABELS = 2
+const CATEGORY_LABELS = new Set(['bug', 'implementation', 'enhancement'])
 
-// The blocked mark and the children tally each carry their fact in text for a screen reader.
-function Marks({ ticket }: { ticket: Ticket }) {
+// Blocking is workflow state, not taxonomy: it sits beside the title instead of among labels.
+function BlockedMark({ ticket }: { ticket: Ticket }) {
   const { t } = useTranslation('tickets')
   const blockers = openBlockers(ticket)
-  const children = ticket.children.length
-  if (blockers === 0 && children === 0) return null
+  if (blockers === 0) return null
   return (
-    <span className="flex shrink-0 items-center gap-(--spacing-shell-item) type-meta text-muted-foreground">
-      {blockers > 0 ? (
-        <span className="flex items-center gap-(--spacing-shell-tight) text-danger">
-          <Icon name="blocked" className={markIcon} />
-          <span className="sr-only">{t('row.blockedBy', { count: blockers })}</span>
-        </span>
-      ) : null}
-      {children > 0 ? (
-        <span className="flex items-center gap-(--spacing-shell-tight) tabular-nums">
-          <ChildProgress closed={closedChildren(ticket)} total={children} />
-          <span aria-hidden="true">
-            {closedChildren(ticket)}/{children}
-          </span>
-          <span className="sr-only">
-            {t('row.childrenClosed', { closed: closedChildren(ticket), count: children })}
-          </span>
-        </span>
-      ) : null}
+    <span className="inline-flex shrink-0 items-center text-destructive">
+      <Icon aria-hidden name="blocked" className={markIcon} />
+      <span className="sr-only">{t('row.blockedBy', { count: blockers })}</span>
     </span>
   )
 }
 
-function Labels({ labels }: { labels: Ticket['labels'] }) {
+function Labels({ labels, stacked = false }: { labels: Ticket['labels']; stacked?: boolean }) {
   const { t } = useTranslation('tickets')
   if (labels.length === 0) return null
   const hidden = labels.length - SHOWN_LABELS
   return (
-    <span className="flex shrink-0 items-center gap-(--spacing-shell-tight)">
+    <span
+      className={
+        stacked
+          ? 'flex min-w-0 flex-nowrap items-center -space-x-2 overflow-hidden'
+          : 'flex shrink-0 items-center gap-(--spacing-shell-tight)'
+      }
+    >
       {labels.slice(0, SHOWN_LABELS).map((label) => (
         <TicketLabel key={label.name} label={label} />
       ))}
@@ -67,6 +60,73 @@ function Labels({ labels }: { labels: Ticket['labels'] }) {
           <span className="sr-only">{t('row.moreLabels', { count: hidden })}</span>
         </span>
       ) : null}
+    </span>
+  )
+}
+
+function categoryAndLabels(ticket: Ticket) {
+  const labelledCategory = ticket.labels.find((label) =>
+    CATEGORY_LABELS.has(label.name.toLocaleLowerCase()),
+  )
+  const type = ticket.type?.trim() ?? ''
+  const category = labelledCategory ?? (type === '' ? null : { name: type, color: null })
+  const labels = ticket.labels.filter(
+    (label) =>
+      label !== labelledCategory &&
+      (type === '' || label.name.toLocaleLowerCase() !== type.toLocaleLowerCase()),
+  )
+  return { category, labels }
+}
+
+// The category remains readable while secondary labels stay on one clipped line. The same control
+// opens the complete set on hover, focus, click, or tap without changing the row's height.
+function CategoryTagRail({ ticket }: { ticket: Ticket }) {
+  const { t } = useTranslation('tickets')
+  const { category, labels } = categoryAndLabels(ticket)
+  const all = category === null ? labels : [category, ...labels]
+  if (all.length === 0) return null
+  if (all.length === 1) {
+    return (
+      <span className="flex min-w-0 items-center gap-(--spacing-shell-tight)">
+        {all.map((label) => (
+          <TicketLabel key={label.name} label={label} />
+        ))}
+      </span>
+    )
+  }
+  return (
+    <span className="flex min-w-0 max-w-full items-center gap-(--spacing-shell-tight)">
+      {category === null ? null : <TicketLabel label={category} />}
+      <Popover>
+        <PopoverTrigger
+          openOnHover
+          render={
+            <button
+              aria-label={t('row.showLabels', { count: all.length, key: ticket.key })}
+              className="relative z-20 flex min-w-0 max-w-full items-center gap-(--spacing-shell-tight) rounded-full outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+              type="button"
+            />
+          }
+        >
+          <span className="flex min-w-0 items-center gap-(--spacing-shell-tight) overflow-hidden py-px">
+            {labels.slice(0, 3).map((label) => (
+              <TicketLabel key={label.name} label={label} />
+            ))}
+          </span>
+          <Badge variant="secondary">{t('row.labelsCount', { count: all.length })}</Badge>
+        </PopoverTrigger>
+        <PopoverContent
+          align="end"
+          aria-label={t('row.labelsFor', { key: ticket.key })}
+          className="w-80"
+        >
+          <div className="flex flex-wrap gap-(--spacing-shell-tight)">
+            {all.map((label) => (
+              <TicketLabel key={label.name} label={label} />
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
     </span>
   )
 }
@@ -121,29 +181,29 @@ function SidebarMetadata(props: TicketRowProps) {
   const { ticket } = props.row
   const age = ticketAge(ticket.createdAt, props.now)
   return (
-    <div className="mt-(--spacing-shell-tight) flex min-w-0 items-center gap-(--spacing-shell-item) pl-[calc(var(--size-icon-control)+var(--spacing-shell-tight))]">
-      {props.provider === 'linear' ? (
-        <span className="relative z-10 flex shrink-0 items-center">
-          <PriorityMenu
-            named={false}
-            onChange={props.onChangePriority}
-            priority={ticket.priority}
-          />
+    <>
+      <div className="col-start-2 mt-(--spacing-shell-tight) flex min-w-0 items-center gap-(--spacing-shell-item)">
+        {props.provider === 'linear' ? (
+          <span className="relative z-10 flex shrink-0 items-center">
+            <PriorityMenu
+              named={false}
+              onChange={props.onChangePriority}
+              priority={ticket.priority}
+            />
+          </span>
+        ) : null}
+        <span aria-hidden="true" className="shrink-0 type-meta text-faint">
+          {ticket.key}
         </span>
-      ) : null}
-      <span
-        aria-hidden="true"
-        className={`${props.presentation.keyColumn} shrink-0 font-mono type-meta text-faint`}
-      >
-        {ticket.key}
-      </span>
-      <span className="min-w-0 flex-1" />
-      <Marks ticket={ticket} />
-      <time className="shrink-0 type-meta text-faint tabular-nums" dateTime={ticket.createdAt}>
-        <span aria-hidden="true">{age.short}</span>
-        <span className="sr-only">{age.long}</span>
-      </time>
-    </div>
+        <time className="shrink-0 type-meta text-faint tabular-nums" dateTime={ticket.createdAt}>
+          <span aria-hidden="true">{age.short}</span>
+          <span className="sr-only">{age.long}</span>
+        </time>
+      </div>
+      <div className="col-start-2 mt-(--spacing-shell-tight) min-w-0">
+        <Labels labels={ticket.labels} stacked />
+      </div>
+    </>
   )
 }
 
@@ -159,32 +219,35 @@ function SidebarTicketRow(props: TicketRowProps) {
         <Fold folded={folded} onToggle={onToggle} row={row} />
       </span>
       <div className="min-w-0 flex-1 py-(--spacing-shell-item)">
-        <div className="flex min-w-0 items-start gap-(--spacing-shell-tight)">
-          <span className="relative z-10 flex h-(--text-body--line-height) shrink-0 items-center">
+        <div className="grid min-w-0 grid-cols-[var(--size-icon-meta)_minmax(0,1fr)] items-start gap-x-(--spacing-shell-tight)">
+          <span className="relative z-10 flex h-(--text-body--line-height) shrink-0 items-center justify-center">
             <StatusMenu
+              current={ticket.children.length > 0 ? closedChildren(ticket) : undefined}
               named={false}
               noun={presentation.statusNoun}
               onChange={onChangeStatus}
               status={ticket.status}
               statuses={statuses}
+              total={ticket.children.length || undefined}
             />
           </span>
           <button
             aria-current={selected ? 'true' : undefined}
-            className="min-w-0 flex-1 text-left outline-none after:absolute after:inset-0 after:rounded-row focus-visible:after:outline-2 focus-visible:after:outline-ring focus-visible:after:-outline-offset-2"
+            className="flex min-w-0 flex-1 items-start gap-(--spacing-shell-tight) text-left outline-none after:absolute after:inset-0 after:rounded-row focus-visible:after:outline-2 focus-visible:after:outline-ring focus-visible:after:-outline-offset-2"
             onClick={onSelect}
             type="button"
           >
             <span className="sr-only">{ticket.key} </span>
-            <span className="line-clamp-2 type-body" title={ticket.title}>
+            <span className="min-w-0 line-clamp-2 type-body font-medium" title={ticket.title}>
               {ticket.title}
             </span>
+            <BlockedMark ticket={ticket} />
             {parent === null ? null : (
               <span className="sr-only">{t('row.childOf', { parent })}</span>
             )}
           </button>
+          <SidebarMetadata {...props} />
         </div>
-        <SidebarMetadata {...props} />
       </div>
     </div>
   )
@@ -208,51 +271,62 @@ function WorkspaceTicketRow(props: TicketRowProps) {
       ) : null}
       <span
         aria-hidden="true"
-        className={`${presentation.keyColumn} mt-(--spacing-shell-icon) shrink-0 font-mono type-body text-faint`}
+        className={`${presentation.keyColumn} mt-(--spacing-shell-icon) shrink-0 translate-y-px type-body text-faint`}
       >
         {ticket.key}
       </span>
-      <span className="mt-1 shrink-0">
+      <span className="relative z-10 mt-(--spacing-shell-icon) flex h-(--text-body--line-height) shrink-0 translate-y-px items-center gap-(--spacing-shell-tight) type-meta text-muted-foreground tabular-nums">
         <StatusMenu
+          current={ticket.children.length > 0 ? closedChildren(ticket) : undefined}
           named={false}
           noun={presentation.statusNoun}
           onChange={onChangeStatus}
           status={ticket.status}
           statuses={statuses}
+          total={ticket.children.length || undefined}
         />
+        {ticket.children.length > 0 ? (
+          <>
+            <span aria-hidden="true">
+              {closedChildren(ticket)}/{ticket.children.length}
+            </span>
+            <span className="sr-only">
+              {t('row.childrenClosed', {
+                closed: closedChildren(ticket),
+                count: ticket.children.length,
+              })}
+            </span>
+          </>
+        ) : null}
       </span>
       <span className="flex shrink-0 self-stretch" style={treeAnchor}>
         <TreeRails rails={rails} />
         <Fold folded={folded} onToggle={onToggle} row={row} />
       </span>
-      <button
-        aria-current={selected ? 'true' : undefined}
-        className="@container flex min-w-0 flex-1 flex-wrap items-center gap-(--spacing-shell-item) py-(--spacing-shell-icon) text-left outline-none @[22rem]:flex-nowrap after:absolute after:inset-0 after:rounded-row focus-visible:after:outline-2 focus-visible:after:outline-ring focus-visible:after:-outline-offset-2"
-        onClick={onSelect}
-        type="button"
-      >
-        <span className="sr-only">{ticket.key} </span>
-        <span
-          className="order-1 min-w-0 flex-1 line-clamp-2 type-body @[22rem]:line-clamp-none @[22rem]:truncate"
+      <div className="@container flex min-w-0 flex-1 flex-wrap items-center gap-(--spacing-shell-item) py-(--spacing-shell-icon) text-left @[44rem]:flex-nowrap">
+        <button
+          aria-current={selected ? 'true' : undefined}
+          className="order-1 flex min-w-0 flex-1 items-center gap-(--spacing-shell-tight) text-left type-body outline-none after:absolute after:inset-0 after:rounded-row focus-visible:after:outline-2 focus-visible:after:outline-ring focus-visible:after:-outline-offset-2"
+          onClick={onSelect}
           title={ticket.title}
+          type="button"
         >
-          {ticket.title}
-        </span>
-        <span className="order-2 mt-[calc((var(--text-body--line-height)-var(--size-icon-meta))_/_2)] self-start @[22rem]:order-3 @[22rem]:mt-0 @[22rem]:self-auto">
-          <Marks ticket={ticket} />
-        </span>
-        <span className="order-3 flex min-w-0 basis-full @[22rem]:order-2 @[22rem]:basis-auto">
-          <Labels labels={ticket.labels} />
+          <span className="sr-only">{ticket.key} </span>
+          <span className="min-w-0 truncate">{ticket.title}</span>
+          <BlockedMark ticket={ticket} />
+          {parent === null ? null : <span className="sr-only">{t('row.childOf', { parent })}</span>}
+        </button>
+        <span className="relative z-10 order-3 flex min-w-0 basis-full @[44rem]:order-2 @[44rem]:basis-auto">
+          <CategoryTagRail ticket={ticket} />
         </span>
         <time
-          className="order-4 hidden w-(--size-ticket-age) shrink-0 text-right type-meta text-faint tabular-nums @[var(--size-ticket-age-visible)]:block"
+          className="relative z-10 order-4 hidden w-(--size-ticket-age) shrink-0 text-right type-meta text-faint tabular-nums @[var(--size-ticket-age-visible)]:block"
           dateTime={ticket.createdAt}
         >
           <span aria-hidden="true">{age.short}</span>
           <span className="sr-only">{age.long}</span>
         </time>
-        {parent === null ? null : <span className="sr-only">{t('row.childOf', { parent })}</span>}
-      </button>
+      </div>
     </div>
   )
 }

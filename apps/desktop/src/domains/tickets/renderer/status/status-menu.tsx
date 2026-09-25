@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 
 import type { TicketStatus } from '@/domains/tickets/contract/contract'
+import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   DropdownMenu,
@@ -19,15 +20,16 @@ export type StatusMenuProps = {
   // The Detail writes the name beside the icon; a row draws the icon alone.
   named: boolean
   metadata?: boolean
+  current?: number
+  total?: number
   onChange: (status: TicketStatus) => void
 }
 
-// Pulls the named trigger's icon onto the value column: the xs button's px-2 plus its 1px border.
+// Pulls the named trigger's icon onto the value column outside the compact Badge treatment.
 const NAMED_INSET = '-ml-[calc(--spacing(2)+var(--size-border))]'
-const METADATA_NAMED_INSET = '@[46rem]:-ml-[calc(--spacing(2)+var(--size-border))]'
 const namedInset = (named: boolean, metadata: boolean) => {
   if (!named) return ''
-  return metadata ? METADATA_NAMED_INSET : NAMED_INSET
+  return metadata ? '' : NAMED_INSET
 }
 
 // A Ticket's status as a menu of every status its provider offers.
@@ -37,6 +39,8 @@ export function StatusMenu({
   noun,
   named,
   metadata = false,
+  current,
+  total,
   onChange,
 }: StatusMenuProps) {
   const { t } = useTranslation('tickets')
@@ -50,14 +54,23 @@ export function StatusMenu({
       <DropdownMenuTrigger
         aria-label={t('status.trigger', { noun, status: status.name })}
         render={
-          <Button
-            className={`relative z-10 shrink-0 type-meta ${metadata ? 'rounded-full border-border/60 bg-background text-foreground shadow-xs @[46rem]:border-transparent @[46rem]:bg-transparent @[46rem]:text-muted-foreground @[46rem]:shadow-none' : 'text-muted-foreground'} ${namedInset(named, metadata)}`}
-            size={named ? 'xs' : 'icon-xs'}
-            variant="ghost"
-          />
+          metadata ? (
+            <Badge
+              className={`relative z-10 @3xl:bg-transparent @3xl:text-muted-foreground ${namedInset(named, metadata)}`}
+              render={<button type="button" />}
+              size="default"
+              variant="secondary"
+            />
+          ) : (
+            <Button
+              className={`relative z-10 shrink-0 type-meta text-muted-foreground ${namedInset(named, metadata)}`}
+              size={named ? 'xs' : 'icon-xs'}
+              variant="ghost"
+            />
+          )
         }
       >
-        <StatusIcon status={status} statuses={statuses} />
+        <StatusIcon current={current} status={status} statuses={statuses} total={total} />
         {named ? status.name : null}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-auto">

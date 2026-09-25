@@ -38,6 +38,7 @@ export const wayfinder: Ticket = {
   children: [
     link('#609', 'Prototype the Tickets room'),
     link('#388', 'Ticket read path', 'closed'),
+    link('#610', 'Refine the Tickets room'),
   ],
   blockedBy: [link('#609', 'Prototype the Tickets room'), link('#12', 'An old blocker', 'closed')],
 }
@@ -155,6 +156,8 @@ export const ticketsView = (overrides: Partial<Backlog> = {}): TicketsView => ({
   projectId: 'storybook-project',
   backlog: backlog(overrides),
   selectedKey: null,
+  now: new Date('2026-09-25T12:00:00Z').getTime(),
+  onBack: fn(),
   onSelect: fn(),
   onOpenSession: fn(),
 })

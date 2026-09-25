@@ -24,6 +24,7 @@ const meta = {
   args: {
     listed: new Set(['#609']),
     linkedSessions: [],
+    onBack: fn(),
     onOpenSession: fn(),
     onSelect: fn(),
     provider: 'github',
@@ -41,27 +42,17 @@ async function openRelation(article: HTMLElement, canvasElement: HTMLElement, na
   return within(canvasElement.ownerDocument.body).findByRole('dialog')
 }
 
-function compactMetadataBoxes(article: HTMLElement, key = '#607') {
+function compactMetadataBoxes(article: HTMLElement) {
   const values = [
-    within(article).getByRole('link', { name: `Open ${key} in GitHub` }),
     within(article).getByRole('button', { name: 'State: Open' }),
-    article.querySelector('time'),
-    within(article).getByText('0 Sessions'),
+    within(article).getByRole('button', { name: '3 children' }),
+    within(article).getByRole('button', { name: '2 blockers' }),
   ]
-  return values.map((value) => {
-    if (value === null) throw new Error('The compact metadata value is absent.')
-    return value.getBoundingClientRect()
-  })
+  return values.map((value) => value.getBoundingClientRect())
 }
 
-function expectCompactMetadataHeight(article: HTMLElement, key?: string) {
-  const boxes = compactMetadataBoxes(article, key)
-  const heights = boxes.map((box) => box.height)
-  expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(1)
-}
-
-function expectAlignedCompactMetadata(article: HTMLElement, key?: string) {
-  const boxes = compactMetadataBoxes(article, key)
+function expectAlignedCompactMetadata(article: HTMLElement) {
+  const boxes = compactMetadataBoxes(article)
   const centers = boxes.map((box) => box.top + box.height / 2)
   expect(Math.max(...centers) - Math.min(...centers)).toBeLessThanOrEqual(1)
 }
@@ -70,11 +61,13 @@ export const Default: Story = {
   args: { ticket: wayfinder },
   play: async ({ args, canvasElement }) => {
     const article = within(canvasElement).getByRole('article', { name: 'Ticket #607' })
+    await userEvent.click(within(article).getByRole('button', { name: 'Back to Tickets' }))
+    await expect(args.onBack).toHaveBeenCalled()
     // Compact metadata keeps the full relationship rows in an accessible popover.
-    const children = await openRelation(article, canvasElement, '2 children')
-    await expect(children).toHaveTextContent('ClosedTicket read path#388')
+    const children = await openRelation(article, canvasElement, '3 children')
+    await expect(children).toHaveTextContent('Closed#388 - Ticket read path')
     await expect(within(children).queryByRole('button', { name: /#388$/ })).toBeNull()
-    await userEvent.click(within(children).getByRole('button', { name: /#609$/ }))
+    await userEvent.click(within(children).getByRole('button', { name: /Open #609/ }))
     await expect(args.onSelect).toHaveBeenCalledWith('#609')
     await userEvent.keyboard('{Escape}')
     const blockedTrigger = within(article).getByRole('button', { name: '2 blockers' })
@@ -82,17 +75,14 @@ export const Default: Story = {
     if (blockedIcon === null) throw new Error('Blocked by needs a blocked mark.')
     await expect(blockedIcon).toHaveClass('text-danger')
     const dependencies = await openRelation(article, canvasElement, '2 blockers')
-    await expect(dependencies).toHaveTextContent('ClosedAn old blocker#12')
+    await expect(dependencies).toHaveTextContent('Closed#12 - An old blocker')
     const ticketLink = within(article).getByRole('link', { name: 'Open #607 in GitHub' })
     await expect(ticketLink).toHaveAttribute(
       'href',
       'https://github.com/octocat/hello-world/issues/607',
     )
     await expect(ticketLink).not.toHaveClass('group/button')
-    const metadata = within(article).getByRole('complementary', { name: 'Ticket metadata' })
-    await expect(metadata.querySelector('time')).toHaveAttribute('datetime', wayfinder.createdAt)
-    await expect(metadata).toHaveTextContent('0 Sessions')
-    expectCompactMetadataHeight(article)
+    expectAlignedCompactMetadata(article)
     // GitHub keeps no priority, and names its status the Ticket's state.
     await expect(within(article).queryByText('Status')).toBeNull()
     await expect(within(article).queryByText('Priority')).toBeNull()
@@ -106,12 +96,11 @@ export const Default: Story = {
 
 // A compact workspace can still fit the core metadata on one row. Every pill keeps one centreline.
 export const CompactMetadataAlignment: Story = {
-  args: { ticket: prototype },
+  args: { ticket: wayfinder },
   parameters: { detailWidth: '44rem' },
   play: async ({ canvasElement }) => {
-    const article = within(canvasElement).getByRole('article', { name: 'Ticket #609' })
-    expectCompactMetadataHeight(article, '#609')
-    expectAlignedCompactMetadata(article, '#609')
+    const article = within(canvasElement).getByRole('article', { name: 'Ticket #607' })
+    expectAlignedCompactMetadata(article)
   },
 }
 
@@ -145,7 +134,7 @@ export const Linear: Story = {
       within(article).getByRole('link', { name: 'Open ENG-12 in Linear' }),
     ).toHaveAttribute('href', 'https://linear.app/analytical/issue/ENG-12')
     const blockers = await openRelation(article, canvasElement, '1 blocker')
-    await expect(blockers).toHaveTextContent('ClosedStore the refresh tokenENG-9')
+    await expect(blockers).toHaveTextContent('ClosedENG-9 - Store the refresh token')
   },
 }
 
@@ -171,13 +160,6 @@ export const NoBody: Story = {
     await expect(
       within(article).getByText('GitHub gives no dependency information for this Ticket.'),
     ).toBeInTheDocument()
-  },
-}
-
-export const NothingSelected: Story = {
-  args: { ticket: null },
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('Select a Ticket')).toBeVisible()
   },
 }
 

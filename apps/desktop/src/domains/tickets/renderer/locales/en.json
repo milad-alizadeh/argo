@@ -15,6 +15,16 @@
       "descriptionFiltered": "{{provider}} found nothing for “{{query}}”."
     }
   },
+  "loading": {
+    "accounts": "Reading Accounts…",
+    "connection": "Reading the connected Ticket source…",
+    "tickets": "Reading Tickets…"
+  },
+  "failure": {
+    "accounts": "Argo could not read Accounts.",
+    "connection": "Argo could not read the connected Ticket source.",
+    "tickets": "Argo could not read Tickets."
+  },
   "row": {
     "expand": "Expand {{key}}",
     "collapse": "Collapse {{key}}",
@@ -24,10 +34,16 @@
     "childrenClosed_other": "{{closed}} of {{count}} children closed",
     "moreLabels_one": "and {{count}} more label",
     "moreLabels_other": "and {{count}} more labels",
+    "labelsCount_one": "{{count}} label",
+    "labelsCount_other": "{{count}} labels",
+    "showLabels_one": "Show {{count}} label for {{key}}",
+    "showLabels_other": "Show {{count}} labels for {{key}}",
+    "labelsFor": "Labels for {{key}}",
     "childOf": "child of {{parent}}"
   },
   "detail": {
     "ticket": "Ticket",
+    "back": "Back to Tickets",
     "metadata": "Ticket metadata",
     "properties": "Properties",
     "empty": {
@@ -133,6 +149,15 @@
     "label": "Tickets sidebar",
     "views": "Ticket views",
     "allOpen": "All open",
+    "workPath": "Work path",
+    "currentPlan": "current plan",
+    "suggestedSequence": "Suggested sequence",
+    "startHere": "Start here",
+    "startReason_one": "Completing this releases one listed Ticket.",
+    "startReason_other": "Completing this releases {{count}} listed Tickets.",
+    "unlocks_one": "Unlocks one Ticket",
+    "unlocks_other": "Unlocks {{count}} Tickets",
+    "readyOutsidePath": "Ready outside this path",
     "accounts": "Accounts",
     "readThrough": "{{name}} · {{login}}",
     "noAccount": "no Account"

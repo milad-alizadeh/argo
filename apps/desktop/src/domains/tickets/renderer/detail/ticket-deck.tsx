@@ -1,40 +1,49 @@
-import { useLayoutEffect } from 'react'
+import { useLayoutEffect, useMemo } from 'react'
 import { useLinkedSessions } from '../hooks/use-linked-sessions'
 import type { Backlog } from '../lib/backlog'
-import { useTicketBacklogSidebar } from '../sidebar/ticket-backlog-sidebar-store'
+import { TicketList } from '../sidebar/ticket-list'
+import { useTicketPlanningSidebar } from '../sidebar/ticket-planning-sidebar-store'
+import { ticketWorkPath } from '../sidebar/ticket-work-path'
 import { TicketDetail } from './ticket-detail'
 
 export type TicketDeckProps = {
   backlog: Backlog
   projectId: string
   selectedKey: string | null
+  now: number
+  onBack: () => void
   onSelect: (key: string) => void
   onOpenSession: (id: string) => void
 }
 
-// A selection that a new listing no longer holds falls back to nothing selected. The shell owns
-// the backlog, so this deck is only the selected Ticket's workspace. The Ticket router
-// (CONTEXT.md L1 · Ticket) owns the selection itself, so a reload or a Session's "Open Ticket"
-// navigation lands on the same Ticket.
+// The Tickets route owns list/detail navigation. Its sidebar stays the Tickets tab's own surface,
+// while this workspace switches from the complete list to the selected Ticket and back.
 export function TicketDeck({
   backlog,
   projectId,
   selectedKey,
+  now,
+  onBack,
   onSelect,
   onOpenSession,
 }: TicketDeckProps) {
-  const setSidebar = useTicketBacklogSidebar((state) => state.setSidebar)
+  const setPlanning = useTicketPlanningSidebar((state) => state.setPlanning)
+  const path = useMemo(() => ticketWorkPath(backlog.tickets), [backlog.tickets])
+  useLayoutEffect(() => {
+    setPlanning({ path, onSelect })
+    return () => setPlanning(null)
+  }, [onSelect, path, setPlanning])
   const selected = backlog.tickets.find((ticket) => ticket.key === selectedKey) ?? null
   const listed = new Set(backlog.tickets.map((ticket) => ticket.key))
   const linkedSessions = useLinkedSessions(projectId, selected?.key ?? null)
-  useLayoutEffect(() => {
-    setSidebar({ backlog, selectedKey, onSelect })
-    return () => setSidebar(null)
-  }, [backlog, onSelect, selectedKey, setSidebar])
+  if (selectedKey === null) {
+    return <TicketList backlog={backlog} now={now} onSelect={onSelect} selectedKey={null} />
+  }
   return (
     <TicketDetail
       linkedSessions={linkedSessions}
       listed={listed}
+      onBack={onBack}
       onChangePriority={(priority) => selected && backlog.onChangePriority(selected.key, priority)}
       onChangeStatus={(status) => selected && backlog.onChangeStatus(selected.key, status)}
       onOpenSession={onOpenSession}

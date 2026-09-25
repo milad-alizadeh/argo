@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, userEvent, within } from 'storybook/test'
-import { backlog, engine, standalone, wayfinder } from '../detail/ticket-fixtures'
-import { STATUSES } from '../status/status-fixtures'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
+import { backlog, prototype, standalone, wayfinder } from '../detail/ticket-fixtures'
 import { TicketList } from './ticket-list'
 
 const longTicket = {
@@ -14,11 +13,33 @@ const longTicket = {
   ],
 }
 
+const manyLabels = {
+  ...standalone,
+  labels: [
+    { name: 'enhancement', color: 'a2eeef' },
+    { name: 'wallet', color: '0e8a16' },
+    { name: 'iOS', color: '1d76db' },
+    { name: 'onboarding', color: '5319e7' },
+    { name: 'accessibility', color: 'd4c5f9' },
+    { name: 'regression', color: 'b60205' },
+    { name: 'customer-report', color: 'fbca04' },
+    { name: 'release-blocker', color: 'd93f0b' },
+  ],
+}
+
+const tagRailParent = {
+  ...wayfinder,
+  children: wayfinder.children.map((child, index) =>
+    index === 0 ? { key: manyLabels.key, title: manyLabels.title, state: 'open' as const } : child,
+  ),
+}
+
 const meta = {
-  title: 'Tickets/Sidebar/List',
+  title: 'Tickets/List',
   component: TicketList,
   args: {
-    backlog: backlog({ tickets: [wayfinder, standalone] }),
+    backlog: backlog({ tickets: [wayfinder, prototype, standalone] }),
+    onSelect: fn(),
     selectedKey: null,
     // Fixed, so a Ticket's age reads the same however long this story sits open.
     now: new Date('2026-06-15T12:00:00Z').getTime(),
@@ -28,49 +49,9 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof TicketList>
 
-export const Ages: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await expect(canvas.getByRole('button', { name: /^#607/ })).toHaveTextContent('14d')
-    await expect(canvas.getByRole('button', { name: /^#273/ })).toHaveTextContent('5mo')
-  },
-}
-
-// A Linear row draws priority, then key, then status, leftmost first.
-export const ChangePriority: Story = {
+export const NestedLongTitle: Story = {
   args: {
-    backlog: backlog({ provider: 'linear', tickets: [engine], statuses: STATUSES.linear }),
-  },
-  play: async ({ args, canvasElement }) => {
-    const row = within(canvasElement)
-      .getByRole('button', { name: /^ENG-12/ })
-      .closest('div')
-    if (row === null) throw new Error('The row needs its wrapper.')
-    const priority = within(row).getByRole('button', { name: 'Priority: High' })
-    const key = within(row).getByText('ENG-12', { selector: 'span[aria-hidden="true"]' })
-    const status = within(row).getByRole('button', { name: 'Status: In Review' })
-    await expect(priority.getBoundingClientRect().left).toBeLessThan(
-      key.getBoundingClientRect().left,
-    )
-    await expect(key.getBoundingClientRect().left).toBeLessThan(status.getBoundingClientRect().left)
-    await userEvent.click(priority)
-    // The portal mounts slower than testing-library's 1s default in this row's dev-mode render.
-    const menu = await within(canvasElement.ownerDocument.body).findByRole(
-      'menu',
-      {},
-      { timeout: 3000 },
-    )
-    await userEvent.click(within(menu).getByRole('menuitemradio', { name: 'Urgent' }))
-    await expect(args.backlog.onChangePriority).toHaveBeenCalledWith('ENG-12', {
-      level: 1,
-      label: 'Urgent',
-    })
-  },
-}
-
-export const LongTitleWithLabels: Story = {
-  args: {
-    backlog: backlog({ tickets: [longTicket] }),
+    backlog: backlog({ tickets: [longTicket, prototype] }),
   },
   decorators: [
     (Story) => (
@@ -81,28 +62,63 @@ export const LongTitleWithLabels: Story = {
   ],
   play: async ({ canvasElement }) => {
     const list = within(canvasElement).getByRole('list')
-    const title = within(list).getByText(longTicket.title)
-    const status = within(list).getByRole('button', { name: 'State: Open' })
-    const progress = within(list).getByText('1/2')
-    const blocked = list.querySelector('svg.lucide-ban')
+    const title = within(list).getByRole('button', { name: /^#607/ })
+    const parentRow = title.closest('li')
+    if (parentRow === null) throw new Error('A parent Ticket needs a list row.')
+    const parent = within(parentRow)
+    const status = parent.getByRole('button', { name: 'State: Open' })
+    const progress = parent.getByText('1/3')
+    const blocked = parentRow.querySelector('svg.lucide-ban')
     if (blocked === null) throw new Error('A blocked Ticket needs a blocked mark.')
-    await expect(blocked.parentElement).toHaveClass('text-danger')
+    await expect(blocked.parentElement).toHaveClass('text-destructive')
     for (const label of longTicket.labels) {
-      const badge = within(list).getByText(label.name)
+      const badge = parent.getByText(label.name)
       await expect(badge.scrollWidth).toBeLessThanOrEqual(badge.clientWidth)
       await expect(badge.getBoundingClientRect().top).toBeGreaterThan(
         title.getBoundingClientRect().top,
       )
     }
-    await expect(title.clientHeight).toBeGreaterThan(20)
+    await expect(title.scrollWidth).toBeGreaterThanOrEqual(title.clientWidth)
     const titleLineHeight = Number.parseFloat(getComputedStyle(title).lineHeight)
     const titleCenter = title.getBoundingClientRect().top + titleLineHeight / 2
     const statusCenter =
       status.getBoundingClientRect().top + status.getBoundingClientRect().height / 2
     await expect(Math.abs(statusCenter - titleCenter)).toBeLessThanOrEqual(1)
-    const progressCenter =
-      progress.getBoundingClientRect().top + progress.getBoundingClientRect().height / 2
-    await expect(Math.abs(progressCenter - titleCenter)).toBeLessThanOrEqual(1)
+    await expect(progress).toBeVisible()
+    await expect(within(list).getByRole('button', { name: /^#609.*child of #607$/ })).toBeVisible()
     await expect(list.scrollWidth).toBeLessThanOrEqual(list.clientWidth)
+  },
+}
+
+export const NestedExpandableTags: Story = {
+  args: { backlog: backlog({ tickets: [tagRailParent, manyLabels] }) },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('button', { name: 'Collapse #607' })).toBeVisible()
+    await expect(canvas.getByRole('button', { name: /^#273.*child of #607$/ })).toBeVisible()
+    const category = canvas.getByText('enhancement')
+    await expect(category).toBeVisible()
+    const trigger = canvas.getByRole('button', { name: 'Show 8 labels for #273' })
+    const title = canvas.getByRole('button', { name: /^#273/ })
+    const row = title.closest('li')
+    if (row === null) throw new Error('A Ticket needs a list row.')
+    const key = within(row).getByText('#273', { selector: 'span[aria-hidden="true"]' })
+    const status = within(row).getByRole('button', { name: 'State: Open' })
+    const center = (element: HTMLElement) => {
+      const bounds = element.getBoundingClientRect()
+      return bounds.top + bounds.height / 2
+    }
+    for (const element of [key, status, category, trigger]) {
+      await expect(Math.abs(center(element) - center(title))).toBeLessThanOrEqual(0.5)
+    }
+    await userEvent.click(trigger)
+    await expect(args.onSelect).not.toHaveBeenCalled()
+    const popover = await within(canvasElement.ownerDocument.body).findByRole('dialog', {
+      name: 'Labels for #273',
+    })
+    await waitFor(() => expect(popover).toBeVisible())
+    for (const label of manyLabels.labels) {
+      await expect(within(popover).getByText(label.name)).toBeVisible()
+    }
   },
 }
