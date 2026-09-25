@@ -1,13 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
-import { useNavigate } from 'react-router'
+import { useLocation, useNavigate, useParams } from 'react-router'
 import { useComposerStore } from '../../composer/hooks/use-composer-store'
 import { COMPOSER_FOCUS_STATE } from '../../composer-focus-state'
 import { newSessionTarget, useSessionCreationStore } from '../../session-creation'
 import { markSessionRead } from '../../session-queries'
 import type { Session, SessionId } from '../../types'
-
-export const SELECTED_SESSION_KEY = 'argo.selected-session-id'
 
 // What a row's menu and a row's click do, each with one identity for as long as its inputs hold. The
 // sessionList's rows are memoized, so a handler rebuilt on every render would re-render all of them on
@@ -15,6 +13,8 @@ export const SELECTED_SESSION_KEY = 'argo.selected-session-id'
 export function useSidebarActions(options: { projectPath: string | null }) {
   const { projectPath } = options
   const navigate = useNavigate()
+  const location = useLocation()
+  const { projectId } = useParams()
   const queryClient = useQueryClient()
   const lastHarness = useComposerStore(({ harness }) => harness)
   const pending = useSessionCreationStore(({ pending }) => pending)
@@ -23,17 +23,18 @@ export function useSidebarActions(options: { projectPath: string | null }) {
     openNew: useCallback(() => {
       const target = newSessionTarget(lastHarness, projectPath)
       if (target === null) {
-        navigate('/sessions/new')
+        navigate(`/projects/${projectId}/sessions/new`)
         return
       }
-      navigate(`/sessions/${target}`, { state: COMPOSER_FOCUS_STATE })
-    }, [lastHarness, navigate, projectPath]),
+      navigate(`/projects/${projectId}/sessions/${target}`, { state: COMPOSER_FOCUS_STATE })
+    }, [lastHarness, navigate, projectId, projectPath]),
 
     openTicket: useCallback(
       (session: Session) => {
-        if (session.ticket !== null) navigate(`/tickets/${session.ticket.key}`)
+        if (session.ticket !== null)
+          navigate(`/projects/${projectId}/tickets/${session.ticket.key}`)
       },
-      [navigate],
+      [navigate, projectId],
     ),
 
     rename: useCallback(async (session: Session, name: string) => {
@@ -49,8 +50,7 @@ export function useSidebarActions(options: { projectPath: string | null }) {
         if (pending?.stage === 'draft' && pending.id !== selectedSessionId) {
           useSessionCreationStore.getState().abandon(pending.id)
         }
-        window.localStorage.setItem(SELECTED_SESSION_KEY, selectedSessionId)
-        navigate(`/sessions/${selectedSessionId}`)
+        navigate(`/projects/${projectId}/sessions/${selectedSessionId}${location.search}`)
         const reply = await window.argo.focusSessionUnread({
           sessionId: selectedSessionId,
           retiredIds,
@@ -59,7 +59,7 @@ export function useSidebarActions(options: { projectPath: string | null }) {
           markSessionRead(queryClient, selectedSessionId, retiredIds)
         }
       },
-      [navigate, pending, queryClient],
+      [location.search, navigate, pending, projectId, queryClient],
     ),
   }
 }

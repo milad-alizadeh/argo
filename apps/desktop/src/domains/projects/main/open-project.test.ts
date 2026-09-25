@@ -14,7 +14,6 @@ async function fixture(context: { after: (callback: () => Promise<void>) => void
     projects: {
       read: () => ({
         projects: [{ id: 'project-1', path: project, commonDirectory: path.join(project, '.git') }],
-        selectedId: 'project-1',
       }),
       replace: () => undefined,
       updateProjectPath: () => undefined,

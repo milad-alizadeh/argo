@@ -1,4 +1,4 @@
-import { create } from 'zustand'
+import { useSearchParams } from 'react-router'
 import type { RosterStatus as SessionListStatus } from '@/domains/sessions/renderer/model/roster-status'
 
 // Which Sessions the Session list shows. The Archive used to be a disclosure row inside the list, which
@@ -7,18 +7,21 @@ import type { RosterStatus as SessionListStatus } from '@/domains/sessions/rende
 // three values, so one definition serves all of them.
 export type { SessionListStatus }
 
-type SessionListFilterState = {
-  status: SessionListStatus
-  setStatus: (status: SessionListStatus) => void
+export function useSessionListStatus(): SessionListStatus {
+  const [params] = useSearchParams()
+  const status = params.get('status')
+  return status === 'archived' || status === 'all' ? status : 'active'
 }
 
-export const useSessionListFilterStore = create<SessionListFilterState>((set) => ({
-  status: 'active',
-  setStatus: (status) => set({ status }),
-}))
-
-export function useSessionListStatus(): SessionListStatus {
-  return useSessionListFilterStore((state) => state.status)
+export function useSetSessionListStatus(): (status: SessionListStatus) => void {
+  const [, setParams] = useSearchParams()
+  return (status) =>
+    setParams((current) => {
+      const next = new URLSearchParams(current)
+      if (status === 'active') next.delete('status')
+      else next.set('status', status)
+      return next
+    })
 }
 
 // Whether the current filter asks for archived Sessions at all, which is what decides if the

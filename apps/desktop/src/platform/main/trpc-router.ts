@@ -7,6 +7,10 @@ import {
   type HarnessSignInProcedureContext,
   harnessSignInProcedures,
 } from '@/domains/harness-signin/main/harness-sign-in-procedures'
+import { projectListProcedure } from '@/domains/projects/main/api/project-list'
+import { projectOpenProcedure } from '@/domains/projects/main/api/project-open'
+import { projectRegisterProcedure } from '@/domains/projects/main/api/project-register'
+import { projectRelocateProcedure } from '@/domains/projects/main/api/project-relocate'
 import {
   type ProjectProcedureContext,
   projectProcedures,
@@ -42,6 +46,10 @@ export function createAppRouter(dependencies: AppRouterDependencies) {
     harnessCatalogRead: catalogReadProcedure(dependencies.catalog),
     harnessCatalogRefresh: catalogRefreshProcedure(dependencies.catalog),
     sessionSubmit: sessionSubmitProcedure(dependencies.sessions),
+    projectList: projectListProcedure(dependencies.projects),
+    projectOpen: projectOpenProcedure(dependencies.projects),
+    projectRegister: projectRegisterProcedure(dependencies.projects),
+    projectRelocate: projectRelocateProcedure(dependencies.projects),
     tickets: createTicketRouter(dependencies.tickets),
   })
 }

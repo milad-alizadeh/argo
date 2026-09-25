@@ -4,7 +4,10 @@ import type { ComposerTicketContext } from '../store/composer-ticket-context'
 import { ticketProviderIconSource } from './ticket-provider-icon'
 
 function openTicket(ticketKey: string) {
-  window.location.hash = `/tickets/${encodeURIComponent(ticketKey)}`
+  const projectId = window.location.hash.match(/^#\/projects\/([^/]+)/)?.[1]
+  if (projectId) {
+    window.location.hash = `/projects/${projectId}/tickets/${encodeURIComponent(ticketKey)}`
+  }
 }
 
 export class ComposerTicketReferenceNode extends TextNode {

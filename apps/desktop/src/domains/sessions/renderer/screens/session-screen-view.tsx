@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useParams } from 'react-router'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { FeedLiveFacts } from '../feed/document/feed-live-facts'
 import { BackgroundWork } from '../feed/rows/background-work'
@@ -35,6 +36,7 @@ function WorkButtons({ model }: { model: SessionScreenModel }) {
 }
 
 function Inspector({ model }: { model: SessionScreenModel }) {
+  const { projectId } = useParams()
   const { evidence, navigate, roster, session, setEvidence } = model
   return (
     <SessionInspector
@@ -46,7 +48,7 @@ function Inspector({ model }: { model: SessionScreenModel }) {
       sessionId={model.selectedSessionId}
       handoff={<SessionHandoffFacts onNavigate={navigate} roster={roster} session={session} />}
       onOpenEvidence={setEvidence}
-      onOpenSession={(sessionId) => navigate(`/sessions/${sessionId}`)}
+      onOpenSession={(sessionId) => navigate(`/projects/${projectId}/sessions/${sessionId}`)}
       onRetryDelegationFeed={model.retryDelegationFeed}
       shell={model.shell}
       shellOutput={model.shellOutput}
@@ -91,11 +93,13 @@ function liveFactsOf({ session }: SessionScreenModel): NonNullable<FeedLiveFacts
 }
 
 export function SessionScreenView() {
+  const { projectId } = useParams()
   const model = useSessionScreenModel()
   const { evidence, feed, feedError, isNewSession, question, session } = model
   const { navigate, retryFeed, selectedSessionId, setEvidence, workReveal } = model
   const [, setFeedStalledSessionId] = useState<string | null>(null)
-  const openSession = (sessionId: string) => navigate(`/sessions/${sessionId}`)
+  const openSession = (sessionId: string) =>
+    navigate(`/projects/${projectId}/sessions/${sessionId}`)
   const answerQuestion = (_sessionId: string, questionId: string, answers: QuestionAnswer[]) =>
     void question.decide(questionId, answers)
   return (

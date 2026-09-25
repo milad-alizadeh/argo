@@ -11,7 +11,7 @@ function store(initial: ProjectRegistry) {
 }
 
 test('registers and selects the development worktree on first launch', () => {
-  const projects = store({ projects: [], selectedId: null })
+  const projects = store({ projects: [] })
 
   selectDevelopmentProject(projects, {
     path: '/worktrees/ticket-2391',
@@ -19,7 +19,6 @@ test('registers and selects the development worktree on first launch', () => {
   })
 
   const registry = projects.read()
-  assert.equal(registry.selectedId, registry.projects[0]?.id)
   assert.deepEqual(registry.projects[0], {
     id: registry.projects[0]?.id,
     path: '/worktrees/ticket-2391',
@@ -36,7 +35,6 @@ test('keeps the Project identity and connection when a different worktree opens 
         commonDirectory: '/repositories/argo/.git',
       },
     ],
-    selectedId: null,
   })
 
   selectDevelopmentProject(projects, {
@@ -52,7 +50,6 @@ test('keeps the Project identity and connection when a different worktree opens 
         commonDirectory: '/repositories/argo/.git',
       },
     ],
-    selectedId: 'project-argo',
   })
 })
 
@@ -67,7 +64,6 @@ test('keeps the ready setup worktree when a development window restarts', () => 
         commonDirectory: '/repositories/argo/.git',
       },
     ],
-    selectedId: 'project-argo',
   })
   projects.writeSetupCheckpoint({
     projectId: 'project-argo',

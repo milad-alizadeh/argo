@@ -5,36 +5,19 @@ import {
   type ProjectSetupCommandRequest,
   type ProjectSetupReply,
   type ProjectSetupSnapshotRequest,
-  projectOpenedSchema,
   projectSetupCommandSchema,
-  projectSetupRequiredSchema,
   projectSetupSnapshotSchema,
 } from '@/domains/projects/contract/contract'
-import { projectCancelledSchema, projectListedSchema } from '@/domains/projects/contract/messages'
 import { projectErrorSchema } from '@/domains/projects/contract/project-error'
 import { projectWorkspaceListedSchema } from '@/domains/projects/contract/workspace-messages'
 import { identifierSchema } from '@/shared/validation'
 import { createManagedProjectWorkspace } from './create-managed-project-workspace'
 import { listProjectWorkspaces } from './list-project-workspaces'
-import { listProjects } from './list-projects'
-import { openProject } from './open-project'
-import { type ProjectStore, registerProject, relocateProject } from './register-project'
-import { selectProject } from './select-project'
+import type { ProjectStore } from './register-project'
 import { selectProjectWorkspace } from './select-project-workspace'
 
 const t = initTRPC.create()
-const emptyInputSchema = z.undefined()
 const projectInputSchema = z.strictObject({ projectId: identifierSchema })
-const projectListOutputSchema = z.union([
-  projectListedSchema,
-  projectCancelledSchema,
-  projectErrorSchema,
-])
-const projectOpenOutputSchema = z.union([
-  projectOpenedSchema,
-  projectSetupRequiredSchema,
-  projectErrorSchema,
-])
 const workspaceOutputSchema = z.union([projectWorkspaceListedSchema, projectErrorSchema])
 const setupOutputSchema = z.union([projectSetupSnapshotSchema, projectErrorSchema])
 
@@ -45,52 +28,6 @@ export type ProjectSetupProcedurePort = {
 
 export type ProjectProcedureContext = ProjectStore & {
   projectSetup: ProjectSetupProcedurePort
-}
-
-function listRequest() {
-  return { version: 1 as const, type: 'project.list' as const, requestId: randomUUID() }
-}
-
-function projectRegistryProcedures(context: ProjectProcedureContext) {
-  return {
-    projectList: t.procedure
-      .input(emptyInputSchema)
-      .output(projectListOutputSchema)
-      .query(() => listProjects(listRequest(), context)),
-    projectOpen: t.procedure
-      .input(projectInputSchema)
-      .output(projectOpenOutputSchema)
-      .query(({ input }) =>
-        openProject(
-          { version: 1, type: 'project.open', requestId: randomUUID(), ...input },
-          context,
-        ),
-      ),
-    projectRegister: t.procedure
-      .input(emptyInputSchema)
-      .output(projectListOutputSchema)
-      .mutation(() =>
-        registerProject({ version: 1, type: 'project.register', requestId: randomUUID() }, context),
-      ),
-    projectRelocate: t.procedure
-      .input(projectInputSchema)
-      .output(projectListOutputSchema)
-      .mutation(({ input }) =>
-        relocateProject(
-          { version: 1, type: 'project.relocate', requestId: randomUUID(), ...input },
-          context,
-        ),
-      ),
-    projectSelect: t.procedure
-      .input(projectInputSchema)
-      .output(projectListOutputSchema)
-      .mutation(({ input }) =>
-        selectProject(
-          { version: 1, type: 'project.select', requestId: randomUUID(), ...input },
-          context,
-        ),
-      ),
-  }
 }
 
 function projectWorkspaceProcedures(context: ProjectProcedureContext) {
@@ -172,7 +109,6 @@ function projectSetupProcedures(context: ProjectProcedureContext) {
 
 export function projectProcedures(context: ProjectProcedureContext) {
   return {
-    ...projectRegistryProcedures(context),
     ...projectWorkspaceProcedures(context),
     ...projectSetupProcedures(context),
   }

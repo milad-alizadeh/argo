@@ -25,7 +25,8 @@ export type TicketsScreenProps = { view: TicketsView }
 export function useTicketsView(): TicketsScreenProps {
   const { t } = useTranslation('tickets')
   const project = useSelectedProject()
-  const projectId = project?.id ?? null
+  const { projectId: routeProjectId, ticketKey } = useParams()
+  const projectId = project?.id ?? routeProjectId ?? null
   const accounts = useAccounts()
   const connection = useConnection(projectId)
   const query = useSettledQuery()
@@ -34,7 +35,6 @@ export function useTicketsView(): TicketsScreenProps {
   const disconnectSource = useDisconnectSource()
   const updateStatus = useUpdateStatus()
   const updatePriority = useUpdatePriority()
-  const { ticketKey } = useParams()
   const navigate = useNavigate()
 
   function view(): TicketsView {
@@ -58,9 +58,9 @@ export function useTicketsView(): TicketsScreenProps {
       onChangePriority: (key, priority) => updatePriority.mutate({ projectId, key, priority }),
       selectedKey: ticketKey ?? null,
       now: Date.now(),
-      onBack: () => navigate('/tickets'),
-      onSelect: (key) => navigate(`/tickets/${encodeURIComponent(key)}`),
-      onOpenSession: (id) => navigate(`/sessions/${id}`),
+      onBack: () => navigate(`/projects/${projectId}/tickets`),
+      onSelect: (key) => navigate(`/projects/${projectId}/tickets/${encodeURIComponent(key)}`),
+      onOpenSession: (id) => navigate(`/projects/${projectId}/sessions/${id}`),
     })
   }
 

@@ -40,7 +40,10 @@ export function CockpitRouteLayout() {
   const matches = useMatches()
   useCommands((command) => {
     const destination = DESTINATIONS.find((item) => navigateCommand(item) === command)
-    if (destination) window.location.hash = DESTINATION_PATHS[destination]
+    if (destination) {
+      const projectId = cockpit.project?.id
+      window.location.hash = `/projects/${projectId ?? ''}${DESTINATION_PATHS[destination]}`
+    }
   })
   const sidebar = matches.reduce<ReactNode | null>(
     (currentSidebar, match) =>
@@ -48,9 +51,6 @@ export function CockpitRouteLayout() {
     null,
   )
 
-  if (matches.some((match) => match.id === 'project-setup')) {
-    return <Outlet />
-  }
   if (cockpit.status === 'empty') return <EmptyProjectScreen />
   if (cockpit.status === 'setup' && cockpit.project) {
     return <Navigate replace to={`/projects/${cockpit.project.id}/setup`} />
@@ -77,10 +77,15 @@ export const cockpitRouter = createHashRouter([
   {
     element: <CockpitRouteLayout />,
     children: [
-      { index: true, element: <Navigate replace to="/sessions" /> },
-      { id: 'project-setup', path: '/projects/:projectId/setup', element: <ProjectSetupScreen /> },
+      { index: true, element: <Navigate replace to="/projects" /> },
+      { path: '/projects', element: <ProjectIndexRedirect /> },
       {
-        path: '/sessions',
+        id: 'project-setup',
+        path: '/projects/:projectId/setup',
+        element: <ProjectSetupScreen />,
+      },
+      {
+        path: '/projects/:projectId/sessions',
         handle: { sidebar: sidebarByPage.sessions } satisfies CockpitRouteHandle,
         element: <SessionsPage />,
         children: [
@@ -89,7 +94,7 @@ export const cockpitRouter = createHashRouter([
         ],
       },
       {
-        path: '/tickets',
+        path: '/projects/:projectId/tickets',
         handle: { sidebar: sidebarByPage.tickets } satisfies CockpitRouteHandle,
         element: <TicketsPage />,
         children: [
@@ -98,7 +103,7 @@ export const cockpitRouter = createHashRouter([
         ],
       },
       {
-        path: '/atlas',
+        path: '/projects/:projectId/atlas',
         handle: { sidebar: sidebarByPage.atlas } satisfies CockpitRouteHandle,
         element: <AtlasPage />,
       },
@@ -106,8 +111,15 @@ export const cockpitRouter = createHashRouter([
   },
 ])
 
+function ProjectIndexRedirect() {
+  const [cockpit] = useProjects()
+  return cockpit.project ? (
+    <Navigate replace to={`/projects/${cockpit.project.id}/sessions`} />
+  ) : null
+}
+
 function ProjectSetupScreen() {
   const [cockpit] = useProjects()
-  if (!cockpit.project) return <Navigate replace to="/sessions" />
+  if (!cockpit.project) return <Navigate replace to="/projects" />
   return <ProjectSetupWindow project={cockpit.project} />
 }

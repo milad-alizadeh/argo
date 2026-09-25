@@ -15,9 +15,9 @@ test('relocating moves the path and keeps the identity', async (context) => {
   const registered = await registerProject(register('r1'), setup.store)
   const moved = await repository(setup.root, 'moved')
   setup.choose(moved)
-  const reply = await relocateProject(relocate('m1', registered.selectedId), setup.store)
-  assert.deepEqual(reply.projects, [{ id: registered.selectedId, name: 'moved', path: moved }])
-  assert.equal(reply.selectedId, registered.selectedId)
+  const projectId = registered.projects[0]?.id
+  const reply = await relocateProject(relocate('m1', projectId ?? ''), setup.store)
+  assert.deepEqual(reply.projects, [{ id: projectId, name: 'moved', path: moved }])
 })
 
 test('relocating onto another Project refuses rather than merging the two', async (context) => {
@@ -28,7 +28,7 @@ test('relocating onto another Project refuses rather than merging the two', asyn
   setup.choose(betaFolder)
   await registerProject(register('r2'), setup.store)
   setup.choose(betaFolder)
-  const reply = await relocateProject(relocate('m1', alpha.selectedId), setup.store)
+  const reply = await relocateProject(relocate('m1', alpha.projects[0]?.id ?? ''), setup.store)
   assert.equal(reply.code, 'already-registered')
 })
 
@@ -47,9 +47,9 @@ test('a registry written while the chooser is open survives the relocation', asy
   const moved = await repository(setup.root, 'alpha-moved')
   setup.choose(moved)
   setup.duringChoice(() => registerElsewhere(setup))
-  const reply = await relocateProject(relocate('m1', alpha.selectedId), setup.store)
-  assert.equal(reply.selectedId, alpha.selectedId)
-  assert.equal(reply.projects.find((project) => project.id === alpha.selectedId).path, moved)
+  const projectId = alpha.projects[0]?.id
+  const reply = await relocateProject(relocate('m1', projectId), setup.store)
+  assert.equal(reply.projects.find((project) => project.id === projectId)?.path, moved)
   assert.equal(reply.projects.length, 2)
 })
 
@@ -59,8 +59,8 @@ test('a Project removed while the chooser is open relocates nothing', async (con
   const alpha = await registerProject(register('r1'), setup.store)
   setup.choose(await repository(setup.root, 'alpha-moved'))
   // Another window forgets the Project while this chooser is open.
-  setup.duringChoice(async () => setup.store.projects.replace({ projects: [], selectedId: null }))
-  const reply = await relocateProject(relocate('m1', alpha.selectedId), setup.store)
+  setup.duringChoice(async () => setup.store.projects.replace({ projects: [] }))
+  const reply = await relocateProject(relocate('m1', alpha.projects[0]?.id ?? ''), setup.store)
   assert.equal(reply.code, 'missing-project')
-  assert.deepEqual(setup.store.projects.read(), { projects: [], selectedId: null })
+  assert.deepEqual(setup.store.projects.read(), { projects: [] })
 })
