@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'vitest'
-import { sessionInsertSchema, sessionSelectSchema, sessionUpdateSchema } from './session-schemas'
+import { sessionInsertSchema, sessionSelectSchema } from './session-schemas'
 
 test('Session select validation follows persisted nullability and required fields', () => {
   const parsed = sessionSelectSchema.parse({
@@ -21,7 +21,7 @@ test('Session select validation follows persisted nullability and required field
   assert.throws(() => sessionSelectSchema.parse({ ...parsed, projectId: 1 }))
 })
 
-test('Session insert validation omits server-owned fields and keeps nullable fields optional', () => {
+test('Session insert validation omits server-owned fields and allows database defaults', () => {
   const parsed = sessionInsertSchema.parse({ harness: 'claude', nativeId: 'native-1' })
   assert.deepEqual(parsed, { harness: 'claude', nativeId: 'native-1' })
   assert.deepEqual(
@@ -32,5 +32,4 @@ test('Session insert validation omits server-owned fields and keeps nullable fie
     }),
     { harness: 'claude', nativeId: 'native-1' },
   )
-  assert.deepEqual(sessionUpdateSchema.parse({ customTitle: null }), { customTitle: null })
 })
