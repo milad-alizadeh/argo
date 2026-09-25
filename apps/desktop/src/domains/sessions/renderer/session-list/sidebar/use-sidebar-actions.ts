@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { useLocation, useNavigate, useParams } from 'react-router'
 import { useComposerStore } from '../../composer/hooks/use-composer-store'
 import { COMPOSER_FOCUS_STATE } from '../../composer-focus-state'
 import { newSessionTarget, useSessionCreationStore } from '../../session-creation'
@@ -13,6 +13,7 @@ import type { Session, SessionId } from '../../types'
 export function useSidebarActions(options: { projectPath: string | null }) {
   const { projectPath } = options
   const navigate = useNavigate()
+  const location = useLocation()
   const { projectId } = useParams()
   const queryClient = useQueryClient()
   const lastHarness = useComposerStore(({ harness }) => harness)
@@ -49,7 +50,7 @@ export function useSidebarActions(options: { projectPath: string | null }) {
         if (pending?.stage === 'draft' && pending.id !== selectedSessionId) {
           useSessionCreationStore.getState().abandon(pending.id)
         }
-        navigate(`/projects/${projectId}/sessions/${selectedSessionId}`)
+        navigate(`/projects/${projectId}/sessions/${selectedSessionId}${location.search}`)
         const reply = await window.argo.focusSessionUnread({
           sessionId: selectedSessionId,
           retiredIds,
@@ -58,7 +59,7 @@ export function useSidebarActions(options: { projectPath: string | null }) {
           markSessionRead(queryClient, selectedSessionId, retiredIds)
         }
       },
-      [navigate, pending, projectId, queryClient],
+      [location.search, navigate, pending, projectId, queryClient],
     ),
   }
 }

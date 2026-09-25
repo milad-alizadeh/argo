@@ -88,7 +88,7 @@ export function useProjects(): [Cockpit, ProjectActions] {
   )
 
   const open = useCallback(() => {
-    if (queryClient.isMutating() > 0) return
+    if (register.isPending || relocate.isPending) return
     if (projectCockpit.status === 'refused' && projectCockpit.project) {
       relocate.mutate(projectCockpit.project.id)
       return
@@ -99,7 +99,7 @@ export function useProjects(): [Cockpit, ProjectActions] {
         if (registered) navigate(`/projects/${registered.id}/sessions`)
       },
     })
-  }, [navigate, projectCockpit, queryClient, register, relocate])
+  }, [navigate, projectCockpit, register, relocate])
 
   return [cockpit, useMemo(() => ({ open, ...workspaceActions }), [open, workspaceActions])]
 }
