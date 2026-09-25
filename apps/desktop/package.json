@@ -13,6 +13,7 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "storybook": "storybook dev -p 6006",
+    "prototype:ticket-layout": "vite --config prototypes/ticket-layout/vite.config.mts",
     "build:storybook": "storybook build",
     "test:storybook": "vitest run --project=storybook-dark --project=storybook-light",
     "build": "electron-forge package --arch arm64",
