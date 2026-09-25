@@ -3,6 +3,7 @@ import { useCallback } from 'react'
 import type { ProjectListReply } from '@/domains/projects/contract/messages'
 import { type ProjectContractError, throwProjectContractError } from '../project-contract-error'
 import { projectListQueryKey, projectMutationKey } from '../project-queries'
+import { useProjectSelectionStore } from './use-project-selection-store'
 import type { ProjectCockpit } from './use-projects'
 
 export function useProjectMutations(options: {
@@ -17,9 +18,11 @@ export function useProjectMutations(options: {
   const settleMutation = useCallback(
     async (reply: ProjectListReply) => {
       switch (reply.type) {
-        case 'project.listed':
+        case 'project.listed': {
+          useProjectSelectionStore.getState().selectProject(reply.selectedId)
           queryClient.setQueryData(projectListQueryKey, await cockpitForListing(reply))
           return
+        }
         case 'project.cancelled':
           return
         case 'project.error':

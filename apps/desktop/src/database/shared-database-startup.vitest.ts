@@ -22,7 +22,6 @@ test('starts a clean database with every ordered migration', async () => {
       expect.arrayContaining([
         { name: '__drizzle_migrations' },
         { name: 'project' },
-        { name: 'project_selection' },
         { name: 'project_setup_checkpoint' },
         { name: 'project_setup_actor' },
         { name: 'project_setup_effect' },
@@ -53,6 +52,7 @@ test('starts a clean database with every ordered migration', async () => {
       { name: '20260925153614_centralize-session-table' },
       { name: '20260925164412_universal-timestamps' },
       { name: '20260925164424_touch-updated-at' },
+      { name: '20260925183929_conscious_spencer_smythe' },
     ])
     expect(
       database
@@ -64,9 +64,6 @@ test('starts a clean database with every ordered migration', async () => {
     database
       .prepare('INSERT INTO project (id, path, common_directory) VALUES (?, ?, ?)')
       .run('project-constraint', '/tmp/constraint', '/tmp/constraint/.git')
-    expect(() =>
-      database.prepare('INSERT INTO project_selection (singleton) VALUES (?)').run(2),
-    ).toThrow()
     expect(() =>
       database
         .prepare(

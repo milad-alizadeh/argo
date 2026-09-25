@@ -1,6 +1,7 @@
 import { sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
-import { project } from '@/database/project-tables'
+import { project } from '@/database/project/schema'
 import { timestampColumns } from '@/database/timestamp-columns'
+
 export const sessionTable = sqliteTable(
   'session',
   {

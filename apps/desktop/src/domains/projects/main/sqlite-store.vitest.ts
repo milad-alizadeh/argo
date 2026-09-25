@@ -21,7 +21,7 @@ async function temporaryUserData(): Promise<string> {
   return mkdtemp(path.join(os.tmpdir(), 'argo-project-store-'))
 }
 
-test('keeps registered Projects and the selected Project after the store reopens', async () => {
+test('keeps registered Projects but not UI selection after the store reopens', async () => {
   const userData = await temporaryUserData()
   try {
     const { store: first } = openStore(userData)
@@ -34,7 +34,7 @@ test('keeps registered Projects and the selected Project after the store reopens
     const { store: reopened } = openStore(userData)
     assert.deepEqual(reopened.read(), {
       projects: [{ id: 'project-1', path: '/tmp/example', commonDirectory: '/tmp/example/.git' }],
-      selectedId: 'project-1',
+      selectedId: null,
     })
     reopened.close()
   } finally {

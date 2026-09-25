@@ -1,10 +1,9 @@
 import type { DurableDatabase } from '@/database/durable-database'
-import { sessionTable } from '@/database/session-table'
+import { sessionTable } from '@/database/session/schema'
+import type { NewSession } from '@/database/session/types'
+import { sessionInsertSchema } from '@/database/session/validation'
 
-export type SessionUpsertInput = Omit<
-  typeof sessionTable.$inferInsert,
-  'argoId' | 'createdAt' | 'updatedAt'
->
+export type SessionUpsertInput = Omit<NewSession, 'argoId' | 'createdAt' | 'updatedAt'>
 
 export type SessionUpsert = (input: SessionUpsertInput) => string
 
@@ -20,25 +19,26 @@ function definedMetadata(input: SessionUpsertInput): Partial<SessionUpsertMetada
 
 export function createSessionUpsert(database: DurableDatabase): SessionUpsert {
   return (input) => {
+    const validatedInput = sessionInsertSchema.parse(input)
     const argoId = crypto.randomUUID()
-    const metadata = definedMetadata(input)
+    const metadata = definedMetadata(validatedInput)
     const row = database
       .insert(sessionTable)
       .values({
         argoId,
-        harness: input.harness,
-        nativeId: input.nativeId,
-        projectId: input.projectId ?? null,
-        customTitle: input.customTitle ?? null,
-        preview: input.preview ?? null,
-        firstPrompt: input.firstPrompt ?? null,
-        cwd: input.cwd ?? null,
+        harness: validatedInput.harness,
+        nativeId: validatedInput.nativeId,
+        projectId: validatedInput.projectId ?? null,
+        customTitle: validatedInput.customTitle ?? null,
+        preview: validatedInput.preview ?? null,
+        firstPrompt: validatedInput.firstPrompt ?? null,
+        cwd: validatedInput.cwd ?? null,
       })
       .onConflictDoUpdate({
         target: [sessionTable.harness, sessionTable.nativeId],
         set: {
           ...metadata,
-          harness: input.harness,
+          harness: validatedInput.harness,
         },
       })
       .returning({ argoId: sessionTable.argoId })
