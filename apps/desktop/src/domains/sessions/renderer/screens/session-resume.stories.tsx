@@ -7,8 +7,8 @@ import {
   driveSessionError,
 } from '@/domains/sessions/contract/ipc/contract'
 import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
-import { SessionsSidebar } from '../roster/sidebar/sessions-sidebar'
 import { sessionRosterRow } from '../session-fixtures'
+import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import { SessionScreenView } from './session-screen-view'
 
 // #2092: a Session Argo held before a restart reads external, keeps its composer, and the next

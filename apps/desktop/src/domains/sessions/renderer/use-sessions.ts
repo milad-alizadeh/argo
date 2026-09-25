@@ -3,10 +3,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
 import { retrySessionFeed, sessionFeedQuery } from './feed/session-feed-query'
-import { reportCodexFailure } from './roster/codex-failure-notice'
-import { sessionRosterQuery } from './roster/rows/session-roster-query'
 import type { SessionContractError } from './session-contract-error'
 import { mergeOptimisticRow, readableSessionId, useSessionCreationStore } from './session-creation'
+import { reportCodexFailure } from './session-list/codex-failure-notice'
+import { sessionRosterQuery } from './session-list/rows/session-roster-query'
 import { invalidateSessionRoster } from './session-queries'
 import type { SessionFeed, SessionId } from './types'
 import { useWatchedQueries, useWatchedTopic } from './use-watched-topic'
@@ -110,8 +110,8 @@ export function useSessions(
     reportCodexFailure(
       rosterData?.partialFailures ?? [],
       {
-        title: t('roster.sourceFailed', { harness: 'Codex' }),
-        description: t('roster.codexSourceFailedDescription'),
+        title: t('sessionList.sourceFailed', { harness: 'Codex' }),
+        description: t('sessionList.codexSourceFailedDescription'),
       },
       (notice) => add({ ...notice, type: 'error', priority: 'high' }),
     )

@@ -60,7 +60,10 @@ function AvailablePlan({ plan }: { plan: Extract<SessionPlan, { state: 'availabl
         </PopoverTitle>
       </PopoverHeader>
       <Progress
-        aria-label={t('roster.planProgress', { completed: progressed, total: plan.entries.length })}
+        aria-label={t('sessionList.planProgress', {
+          completed: progressed,
+          total: plan.entries.length,
+        })}
         value={percentage}
         className="h-1.5"
       />

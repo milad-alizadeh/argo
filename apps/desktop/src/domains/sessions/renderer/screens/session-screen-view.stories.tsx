@@ -11,8 +11,8 @@ import { RICH_MARKDOWN } from '../feed/content/feed-samples'
 import { INACTIVE_FEED_LIVE_FACTS } from '../feed/document/feed-live-facts'
 import { SessionInspector } from '../inspector/session-inspector'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
-import { Roster, type RosterActions } from '../roster/roster'
 import { sessionRosterRow, sessionShellCommand, sessionSubagent } from '../session-fixtures'
+import { SessionList, type SessionListActions } from '../session-list/session-list'
 import type { Session, SessionFeed, SessionsListed } from '../types'
 import { SessionWorkButtons } from '../work/session-work-buttons'
 import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
@@ -162,7 +162,7 @@ function delegationFeedFor(delegation: SessionSubagent) {
   } satisfies SessionFeed
 }
 
-// The Roster reads its own Session list now (#2284), so a screen review stubs the read rather than
+// The Session list reads its own Sessions now (#2284), so a screen review stubs the read rather than
 // handing it a fixed roster prop.
 function withListedSessions(sessions: Session[]) {
   const before = window.argo
@@ -188,7 +188,7 @@ function withListedSessions(sessions: Session[]) {
   }
 }
 
-const NOOP_ROSTER_ACTIONS: RosterActions = {
+const NOOP_SESSION_LIST_ACTIONS: SessionListActions = {
   onArchiveSelected: () => {},
   onLinkTicket: () => {},
   onNew: () => {},
@@ -213,8 +213,8 @@ function ReviewSidebar({
     ),
   )
   return (
-    <Roster
-      actions={{ ...NOOP_ROSTER_ACTIONS, onSelect }}
+    <SessionList
+      actions={{ ...NOOP_SESSION_LIST_ACTIONS, onSelect }}
       projectRoot={null}
       selectedSessionId={selectedSessionId}
     />
@@ -381,9 +381,9 @@ function NewSessionScreen() {
     <CockpitShell
       header={<ProjectSwitcher />}
       sidebar={
-        <Roster
+        <SessionList
           actions={{
-            ...NOOP_ROSTER_ACTIONS,
+            ...NOOP_SESSION_LIST_ACTIONS,
             onNew: () => setSelectedSessionId('optimistic:new-session'),
             onSelect: setSelectedSessionId,
           }}
