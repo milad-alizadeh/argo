@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import {
   AUTO_COMPACT_LIMIT_MAX,
   AUTO_COMPACT_LIMIT_MIN,
-} from '@/domains/sessions/contract/codex-compaction'
+} from '@/domains/sessions/renderer/composer/context-window/codex-compaction'
 import { ClaudeContextComposition } from './claude-context-composition'
 import { contextZone } from './context-zone'
 import { useCodexAutoCompactThreshold } from './use-codex-auto-compact-threshold'

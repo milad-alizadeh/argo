@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { createActor, fromCallback, fromPromise, waitFor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
 import { claudeSessionMachine } from '@/harnesses/claude/session/claude-session-machine'
-import type { SessionStartInput } from '../../contract/session-start'
+import type { SessionStartInput } from '../api/session-start'
 import { sessionMachine } from './session-machine'
 
 const first: SessionStartInput = {

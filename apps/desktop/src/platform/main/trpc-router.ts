@@ -1,6 +1,6 @@
 import { initTRPC } from '@trpc/server'
+import { sessionSubmitProcedure } from '@/domains/sessions/main/api/session-procedures'
 import type { SessionSupervisorActor } from '@/domains/sessions/main/live/session-supervisor-machine'
-import { sessionSubmitProcedure } from '@/domains/sessions/main/session-procedures'
 import {
   type CatalogActor,
   catalogReadProcedure,

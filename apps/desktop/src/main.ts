@@ -7,10 +7,7 @@ import { app, type BrowserWindow, net, protocol } from 'electron'
 import { seedDevelopmentProject } from '@/domains/projects/main/development-seed'
 import { openProjectStore } from '@/domains/projects/main/main-store'
 import { PROJECT_PROOF_STORE_ENV } from '@/domains/projects/main/proof-protocol'
-import {
-  ATTACHMENT_SCHEME,
-  attachmentPathFromUrl,
-} from '@/domains/sessions/contract/model/feed/feed-images'
+import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
 import type { SessionSupervisorActor } from '@/domains/sessions/main/live/session-supervisor-machine'
 import type { CatalogActor } from '@/harnesses/catalog/catalog-read'
 import { openDurableStores } from '@/main/durable-stores'

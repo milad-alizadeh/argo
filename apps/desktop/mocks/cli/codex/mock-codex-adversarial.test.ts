@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/domains/sessions/contract/proof-protocol'
 import { startSession } from '@/domains/sessions/main/drive/drive'
 import { createCodexDriveAdapter } from '@/harnesses/codex/drive/session/session-drive-adapter'
+import { SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harnesses/proof-protocol'
 import { driverBackedByFixture } from './mock-codex-driver.ts'
 
 test('a seeded Codex reply survives a split through a multi-byte character', async () => {

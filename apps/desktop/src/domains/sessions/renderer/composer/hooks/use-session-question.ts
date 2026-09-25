@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
+import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import {
   type SessionContractError,
   throwSessionContractError,

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import type { PatchFile } from '@/domains/sessions/contract/model/patch-files'
+import type { PatchFile } from '@/domains/sessions/renderer/model/patch-files'
 import { diffLineDecoration, diffLines } from '@/platform/renderer/components/file-diff-lines'
 import { type FileDiff, FileDiffList } from '@/platform/renderer/components/file-diff-list'
 import { CodeBlock } from '../ai-elements/code-block'

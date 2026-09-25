@@ -2,7 +2,6 @@
 // callers share this so the revision handshake, which answers `session.feed.unchanged` and expects
 // the holder to keep what it already has, is written once.
 import type { QueryClient, QueryKey, UseQueryOptions } from '@tanstack/react-query'
-import { mergeAppendedFeed } from '@/domains/sessions/contract/model/wire/feed-contract'
 import {
   type SessionContractError,
   throwSessionContractError,
@@ -10,6 +9,32 @@ import {
 } from '../session-contract-error'
 import { SESSION_REFRESH_MS, sessionFeedQueryKey } from '../session-queries'
 import type { SessionFeed, SessionId } from '../types'
+import type { SessionFeedRow } from './model/feed-rows'
+
+type AppendedFeed = Pick<
+  SessionFeed,
+  'version' | 'requestId' | 'sessionId' | 'chainId' | 'revision'
+> & {
+  type: 'session.feed.appended'
+  unchangedRowCount: number
+  rows: SessionFeedRow[]
+}
+
+function mergeAppendedFeed(
+  cached: SessionFeed | null | undefined,
+  reply: AppendedFeed,
+): SessionFeed {
+  const held = cached?.rows.slice(0, reply.unchangedRowCount) ?? []
+  return {
+    version: reply.version,
+    type: 'session.feed.read',
+    requestId: reply.requestId,
+    sessionId: reply.sessionId,
+    chainId: reply.chainId,
+    revision: reply.revision,
+    rows: [...held, ...reply.rows],
+  }
+}
 
 export async function retrySessionFeed(
   queryClient: QueryClient,

@@ -1,6 +1,6 @@
 import { memo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
+import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { SessionEvidence, SessionFeedRow } from '../../types'
 import { type Reveal, useRevealAnimation } from '../scroll/reveal'
 import { isFeedRowStreaming, renderFeedRow } from './feed-row-renderers'

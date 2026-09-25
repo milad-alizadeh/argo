@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next'
-import { displayedToolLabel } from '@/domains/sessions/contract/model/feed/tool-feed'
+import { displayedToolLabel } from '@/domains/sessions/renderer/feed/model/tool-feed'
 import {
   standsAlone,
   TOOL_KIND_PRESENTATION,
-} from '@/domains/sessions/contract/model/feed/tool-groups'
+} from '@/domains/sessions/renderer/feed/model/tool-groups'
 import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
 import { RunningText } from '@/platform/renderer/components/running-text'
 import { TaskItem } from '../../ai-elements/task'

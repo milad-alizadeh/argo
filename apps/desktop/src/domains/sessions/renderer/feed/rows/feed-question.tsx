@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Question, QuestionAnswer } from '@/domains/sessions/contract/drive/question'
+import type { Question, QuestionAnswer } from '@/domains/sessions/api/questions'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import {
