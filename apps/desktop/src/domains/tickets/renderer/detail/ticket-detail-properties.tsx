@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
 import type { Ticket, TicketPriority, TicketStatus } from '@/domains/tickets/contract/contract'
+import { SectionTitle } from '@/platform/renderer/components/section-title'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { sourcePresentation } from '../lib/sources'
 import { PriorityMenu } from '../status/priority-menu'
@@ -29,7 +30,9 @@ function Property({ name, children }: { name: string; children: ReactNode }) {
 function MetadataSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="contents min-w-0 @3xl:flex @3xl:flex-col @3xl:gap-(--spacing-shell-item)">
-      <h3 className="sr-only type-meta-heading text-muted-foreground @3xl:not-sr-only">{title}</h3>
+      <SectionTitle className="sr-only text-muted-foreground @3xl:not-sr-only">
+        {title}
+      </SectionTitle>
       <div className="contents @3xl:flex @3xl:flex-col @3xl:items-stretch">{children}</div>
     </section>
   )

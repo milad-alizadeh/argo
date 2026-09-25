@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Icon } from '@/platform/renderer/components/icon/icon'
+import { SectionTitle } from '@/platform/renderer/components/section-title'
 import type { TicketWorkPath, WorkPathTicket } from './ticket-work-path'
 
 type TicketLinkProps = {
@@ -42,9 +42,9 @@ export function TicketWorkPathSidebar({
   return (
     <section aria-labelledby="ticket-work-path-heading" className="px-(--spacing-shell-inset)">
       <div className="flex items-baseline justify-between gap-(--spacing-shell-item)">
-        <h3 id="ticket-work-path-heading" className="type-meta-heading text-foreground">
+        <SectionTitle id="ticket-work-path-heading" className="text-foreground">
           {t('sidebar.workPath')}
-        </h3>
+        </SectionTitle>
         <span className="type-meta text-faint">{t('sidebar.currentPlan')}</span>
       </div>
       <p className="mt-(--spacing-shell-tight) type-meta text-muted-foreground">
@@ -75,9 +75,9 @@ export function TicketWorkPathSidebar({
             aria-hidden="true"
             className="absolute top-1 -left-(--spacing-shell-inset) size-(--size-icon-meta) rounded-full border-2 border-primary bg-sidebar"
           />
-          <h4 className="type-meta-heading">
+          <SectionTitle as="h4">
             {t('sidebar.unlocks', { count: path.unlocks.length })}
-          </h4>
+          </SectionTitle>
           <ul className="mt-(--spacing-shell-item) space-y-(--spacing-shell-item) type-meta">
             {path.unlocks.map((ticket) => (
               <li key={ticket.key}>
@@ -89,15 +89,14 @@ export function TicketWorkPathSidebar({
       </div>
 
       {path.readyOutsidePath ? (
-        <div className="mt-(--spacing-shell-section) border-t border-border/60 pt-(--spacing-shell-item)">
-          <div className="flex items-center gap-(--spacing-shell-tight) type-meta text-muted-foreground">
-            <Icon name="sparkles" size="meta" />
-            <span>{t('sidebar.readyOutsidePath')}</span>
-          </div>
+        <section className="mt-(--spacing-shell-section) border-t border-border/60 pt-(--spacing-shell-item)">
+          <SectionTitle as="h4" className="text-muted-foreground" icon="sparkles">
+            {t('sidebar.readyOutsidePath')}
+          </SectionTitle>
           <div className="mt-(--spacing-shell-tight) type-meta">
             <TicketLink onSelect={onSelect} ticket={path.readyOutsidePath} />
           </div>
-        </div>
+        </section>
       ) : null}
     </section>
   )
