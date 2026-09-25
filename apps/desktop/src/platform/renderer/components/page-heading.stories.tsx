@@ -21,11 +21,13 @@ export const Title: Story = {
 }
 
 export const BackAction: Story = {
-  args: { as: 'button', children: 'Back to Tickets', icon: 'back', onClick: fn() },
+  args: { as: 'a', children: 'Back to Tickets', href: '#/tickets', icon: 'back', onClick: fn() },
   play: async ({ args, canvasElement }) => {
-    const action = within(canvasElement).getByRole('button', { name: 'Back to Tickets' })
+    const action = within(canvasElement).getByRole('link', { name: 'Back to Tickets' })
+    await expect(action).toHaveAttribute('href', '#/tickets')
+    await expect(action.querySelector('[data-slot="icon"]')).toHaveAttribute('aria-hidden', 'true')
+    action.addEventListener('click', (event) => event.preventDefault(), { once: true })
     await userEvent.click(action)
     await expect(args.onClick).toHaveBeenCalled()
-    await expect(action.querySelector('[data-slot="icon"]')).toHaveAttribute('aria-hidden', 'true')
   },
 }

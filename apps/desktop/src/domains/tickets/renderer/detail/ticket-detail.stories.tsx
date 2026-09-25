@@ -64,7 +64,7 @@ export const Default: Story = {
   args: { ticket: wayfinder },
   play: async ({ args, canvasElement }) => {
     const article = within(canvasElement).getByRole('article', { name: 'Ticket #607' })
-    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Back to Tickets' }))
+    await userEvent.click(within(canvasElement).getByRole('link', { name: 'Back to Tickets' }))
     await expect(args.onBack).toHaveBeenCalled()
     // Compact metadata keeps the full relationship rows in an accessible popover.
     const children = await openRelation(article, canvasElement, '3 children')

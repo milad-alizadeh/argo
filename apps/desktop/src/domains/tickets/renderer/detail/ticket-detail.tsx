@@ -29,11 +29,14 @@ function TicketDetailPageHeader({ onBack }: Pick<TicketDetailProps, 'onBack'>) {
   return (
     <AppPageHeader>
       <PageHeading
-        as="button"
+        as="a"
         className="no-drag-region"
+        href="#/tickets"
         icon="back"
-        onClick={onBack}
-        type="button"
+        onClick={(event) => {
+          event.preventDefault()
+          onBack()
+        }}
       >
         {t('detail.back')}
       </PageHeading>

@@ -1,7 +1,6 @@
 import { cn } from 'cn'
 import type { ComponentPropsWithoutRef, ReactNode } from 'react'
 import { Icon, type IconName } from './icon/icon'
-import { Button } from './ui/button'
 
 type SharedProps = {
   children: ReactNode
@@ -14,12 +13,14 @@ type PageHeadingTitleProps = SharedProps &
     as?: 'h1'
   }
 
-type PageHeadingActionProps = SharedProps &
-  Omit<ComponentPropsWithoutRef<typeof Button>, 'children' | 'className' | 'size' | 'variant'> & {
-    as: 'button'
+type PageHeadingLinkProps = SharedProps &
+  Omit<ComponentPropsWithoutRef<'a'>, 'children' | 'className'> & {
+    as: 'a'
   }
 
-export type PageHeadingProps = PageHeadingTitleProps | PageHeadingActionProps
+export type PageHeadingProps = PageHeadingTitleProps | PageHeadingLinkProps
+
+const pageHeadingClass = 'flex min-w-0 items-center gap-(--spacing-shell-tight) type-heading'
 
 function PageHeadingContent({ children, icon }: Pick<SharedProps, 'children' | 'icon'>) {
   return (
@@ -33,29 +34,18 @@ function PageHeadingContent({ children, icon }: Pick<SharedProps, 'children' | '
 // Page headers share one visual title whether the title names the page or navigates to its parent.
 // The element keeps the correct document or control semantics for each use.
 export function PageHeading(props: PageHeadingProps) {
-  if (props.as === 'button') {
-    const { as: _as, children, className, icon, ...buttonProps } = props
+  if (props.as === 'a') {
+    const { as: _as, children, className, icon, ...linkProps } = props
     return (
-      <Button
-        className={cn('min-w-0 type-heading', className)}
-        size="sm"
-        variant="ghost"
-        {...buttonProps}
-      >
+      <a className={cn(pageHeadingClass, className)} {...linkProps}>
         <PageHeadingContent icon={icon}>{children}</PageHeadingContent>
-      </Button>
+      </a>
     )
   }
 
   const { as: _as, children, className, icon, ...headingProps } = props
   return (
-    <h1
-      className={cn(
-        'flex min-w-0 items-center gap-(--spacing-shell-tight) type-heading',
-        className,
-      )}
-      {...headingProps}
-    >
+    <h1 className={cn(pageHeadingClass, className)} {...headingProps}>
       <PageHeadingContent icon={icon}>{children}</PageHeadingContent>
     </h1>
   )

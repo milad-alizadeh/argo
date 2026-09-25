@@ -179,7 +179,7 @@ export const Backlog: Story = {
     await expect(canvas.getByRole('complementary', { name: 'Tickets sidebar' })).toHaveTextContent(
       'Work path',
     )
-    await userEvent.click(canvas.getByRole('button', { name: 'Back to Tickets' }))
+    await userEvent.click(canvas.getByRole('link', { name: 'Back to Tickets' }))
     if (args.view.kind !== 'tickets') throw new Error('The backlog story needs a Tickets view.')
     await expect(args.view.onBack).toHaveBeenCalled()
     await expect(canvas.getByRole('region', { name: 'Backlog' })).toBeVisible()
