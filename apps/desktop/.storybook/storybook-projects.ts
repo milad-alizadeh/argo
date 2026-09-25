@@ -1,4 +1,41 @@
-import type { ProjectClient } from '../src/domains/projects/preload/client'
+import type {
+  ProjectOpenReply,
+  ProjectSetupCommand,
+  ProjectSetupReply,
+} from '../src/domains/projects/contract/contract'
+import type { ProjectListReply } from '../src/domains/projects/contract/messages'
+import type { ProjectError } from '../src/domains/projects/contract/project-error'
+import type { ProjectWorkspaceListed } from '../src/domains/projects/contract/workspace-messages'
+
+type ProjectWorkspaceReply = ProjectWorkspaceListed | ProjectError
+
+type StorybookProjectBridge = {
+  openProject: (request: { projectId: string }) => Promise<ProjectOpenReply>
+  projectSetupSnapshot: (request: { projectId: string }) => Promise<ProjectSetupReply>
+  sendProjectSetupCommand: (request: {
+    projectId: string
+    commandId: string
+    expectedRevision: number
+    command: ProjectSetupCommand
+  }) => Promise<ProjectSetupReply>
+  subscribeProjectSetup: (
+    projectId: string,
+    listener: (reply: ProjectSetupReply) => void,
+  ) => () => void
+  listProjects: () => Promise<ProjectListReply>
+  registerProject: () => Promise<ProjectListReply>
+  relocateProject: (request: { projectId: string }) => Promise<ProjectListReply>
+  selectProject: (request: { projectId: string }) => Promise<ProjectListReply>
+  listProjectWorkspaces: (request: { projectId: string }) => Promise<ProjectWorkspaceReply>
+  selectProjectWorkspace: (request: {
+    projectId: string
+    workspaceId: string
+  }) => Promise<ProjectWorkspaceReply>
+  createManagedProjectWorkspace: (request: {
+    projectId: string
+    baseRef: string
+  }) => Promise<ProjectWorkspaceReply>
+}
 
 const projects = [
   { id: 'storybook-project', name: 'argo', path: '/storybook/argo' },
@@ -56,7 +93,7 @@ function setupSnapshot(projectId: string) {
   }
 }
 
-export const storybookProjectBridge: ProjectClient = {
+export const storybookProjectBridge: StorybookProjectBridge = {
   listProjects: () => Promise.resolve(listed('storybook-project')),
   openProject: () =>
     Promise.resolve({

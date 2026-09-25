@@ -1,9 +1,22 @@
-import type { HarnessSignInClient } from '../src/domains/harness-signin/preload/client'
+import type {
+  Harness,
+  HarnessReadinessListReply,
+  HarnessSignInCancelReply,
+  HarnessSignInStartReply,
+  HarnessSignInWaitReply,
+} from '../src/domains/harness-signin/contract/contract'
+
+type StorybookHarnessSignInBridge = {
+  listHarnessReadiness: () => Promise<HarnessReadinessListReply>
+  startHarnessSignIn: (request: { harness: Harness }) => Promise<HarnessSignInStartReply>
+  waitHarnessSignIn: (request: { harness: Harness }) => Promise<HarnessSignInWaitReply>
+  cancelHarnessSignIn: (request: { harness: Harness }) => Promise<HarnessSignInCancelReply>
+}
 
 // Ready by default so a story about anything else never lands on the empty-Harness screen; a
 // story about that screen overrides `listHarnessReadiness` the way `NoProject` overrides
 // `listProjects` (#2579).
-export const storybookHarnessSignInBridge: HarnessSignInClient = {
+export const storybookHarnessSignInBridge: StorybookHarnessSignInBridge = {
   listHarnessReadiness: () =>
     Promise.resolve({
       version: 1,

@@ -96,4 +96,4 @@ host.argo = {
   ...ticketsHost,
   ...storybookHarnessSignInBridge,
   zoomFactor: () => 1,
-}
+} as typeof host.argo

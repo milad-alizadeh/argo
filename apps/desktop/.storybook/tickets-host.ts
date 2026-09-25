@@ -1,10 +1,16 @@
-import { PROVIDERS } from '../src/domains/accounts/contract/contract'
-import type { AccountClient } from '../src/domains/accounts/preload/client'
-import type { TicketClient } from '../src/domains/tickets/preload/client'
+import { type AccountListReply, PROVIDERS } from '../src/domains/accounts/contract/contract'
+import type {
+  TicketConnectedReply,
+  TicketConnectionRequest,
+} from '../src/domains/tickets/contract/contract'
+
+type StorybookTicketsHost = {
+  listAccounts: () => Promise<AccountListReply>
+  readConnection: (request: TicketConnectionRequest) => Promise<TicketConnectedReply>
+}
 
 // No Account and no Connection: a story that reaches the Tickets screen draws its first-run screen.
-export const ticketsHost: Pick<AccountClient, 'listAccounts'> &
-  Pick<TicketClient, 'readConnection'> = {
+export const ticketsHost: StorybookTicketsHost = {
   listAccounts: () =>
     Promise.resolve({
       version: 1,
