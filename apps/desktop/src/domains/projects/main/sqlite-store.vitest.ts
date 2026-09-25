@@ -27,14 +27,12 @@ test('keeps registered Projects but not UI selection after the store reopens', a
     const { store: first } = openStore(userData)
     first.replace({
       projects: [{ id: 'project-1', path: '/tmp/example', commonDirectory: '/tmp/example/.git' }],
-      selectedId: 'project-1',
     })
     first.close()
 
     const { store: reopened } = openStore(userData)
     assert.deepEqual(reopened.read(), {
       projects: [{ id: 'project-1', path: '/tmp/example', commonDirectory: '/tmp/example/.git' }],
-      selectedId: null,
     })
     reopened.close()
   } finally {
@@ -62,7 +60,6 @@ test('keeps a setup checkpoint after the store reopens', async () => {
     const { store: first } = openStore(userData)
     first.replace({
       projects: [{ id: 'project-1', path: '/tmp/project', commonDirectory: '/tmp/project/.git' }],
-      selectedId: 'project-1',
     })
     first.writeSetupCheckpoint({
       projectId: 'project-1',
@@ -134,7 +131,6 @@ test('updates a Project path without discarding its setup checkpoint', async () 
     const { store } = openStore(userData)
     store.replace({
       projects: [{ id: 'project-1', path: '/tmp/project', commonDirectory: '/tmp/project/.git' }],
-      selectedId: 'project-1',
     })
     store.writeSetupCheckpoint({
       projectId: 'project-1',

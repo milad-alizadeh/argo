@@ -22,7 +22,6 @@ test('promotes the approved worktree and its checkpoint in one store transition'
   const worktreePath = '/tmp/project/.argo/worktrees/setup-project-1'
   store.replace({
     projects: [{ id: 'project-1', path: '/tmp/project', commonDirectory: '/tmp/project/.git' }],
-    selectedId: 'project-1',
   })
   store.writeSetupCheckpoint({
     projectId: 'project-1',

@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef } from 'react'
 import type { SessionId } from '../../types'
 import {
   showsArchived,
-  useSessionListFilterStore,
   useSessionListStatus,
+  useSetSessionListStatus,
 } from '../hooks/use-session-list-filter-store'
 import { useArchivedSessions } from './use-archived-sessions'
 
@@ -16,7 +16,7 @@ export function useArchivedSection(
   sessionListResolved: boolean,
 ) {
   const status = useSessionListStatus()
-  const setStatus = useSessionListFilterStore((state) => state.setStatus)
+  const setStatus = useSetSessionListStatus()
   const loadedIds = useRef<Set<SessionId>>(new Set())
   // A selection that is not among the active rows AND not already loaded here can only be an
   // archived Session restored from a route or a persisted choice: ask the reader for it by id

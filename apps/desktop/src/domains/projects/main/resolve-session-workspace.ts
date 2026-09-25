@@ -4,18 +4,19 @@ import type { WorkspaceSelection } from './workspace-selection'
 import { createManagedWorkspace } from './workspaces/create-managed-workspace'
 import { reconcileWorkspaces } from './workspaces/workspace-reconciliation'
 
-function selectedProject(store: ProjectStore) {
+function projectById(projectId: string, store: ProjectStore) {
   const registry = store.read()
-  const project = registry.projects.find((candidate) => candidate.id === registry.selectedId)
+  const project = registry.projects.find((candidate) => candidate.id === projectId)
   if (project === undefined) throw new Error('No Project is selected')
   return project
 }
 
 export async function resolveSessionWorkspace(
+  projectId: string,
   selection: WorkspaceSelection,
   store: ProjectStore,
 ): Promise<{ workspaceId: string; cwd: string }> {
-  const project = selectedProject(store)
+  const project = projectById(projectId, store)
   const workspaces = await reconcileWorkspaces(store, project)
   switch (selection.kind) {
     case 'main': {
@@ -36,10 +37,11 @@ export async function resolveSessionWorkspace(
 }
 
 export async function workspaceSelectionForSessionCwd(
+  projectId: string,
   cwd: string,
   store: ProjectStore,
 ): Promise<WorkspaceSelection> {
-  const project = selectedProject(store)
+  const project = projectById(projectId, store)
   const workspaces = await reconcileWorkspaces(store, project)
   const resolvedCwd = await realpath(cwd).catch(() => cwd)
   const resolvedWorkspaces = await Promise.all(

@@ -41,7 +41,6 @@ async function fixture(context: TestContext) {
     projects: [
       { id: 'project-1', path: projectPath, commonDirectory: path.join(projectPath, '.git') },
     ],
-    selectedId: 'project-1',
   })
   const store = {
     projects,

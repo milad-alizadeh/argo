@@ -1,8 +1,8 @@
 import { type RefObject, useCallback, useMemo, useState } from 'react'
 import type { Session, SessionError, SessionId, SessionRoster, SessionsListed } from '../../types'
 import {
-  useSessionListFilterStore,
   useSessionListStatus,
+  useSetSessionListStatus,
 } from '../hooks/use-session-list-filter-store'
 import { useSessionListFocus } from '../hooks/use-session-list-focus'
 import { useSessionListSelection } from '../hooks/use-session-list-selection'
@@ -60,7 +60,7 @@ export function useSidebarSessionList({
   const [renamed, setRenamed] = useState<Record<string, string>>(NO_TITLES)
   const [search, setSearch] = useState('')
   const status = useSessionListStatus()
-  const setStatus = useSessionListFilterStore((state) => state.setStatus)
+  const setStatus = useSetSessionListStatus()
   const sessions = sessionList?.sessions ?? NO_SESSIONS
   const searching = search.trim() !== ''
   const searched = useSessionSearch(search, projectRoot, status)

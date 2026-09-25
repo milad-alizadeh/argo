@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { useParams } from 'react-router'
 import type { ProjectSummary } from '@/domains/projects/contract/messages'
 import { SourceSettings, useConnection, useDisconnectSource } from '@/domains/tickets/renderer'
 import {
@@ -16,10 +17,9 @@ type ProjectSettingsDialogProps = {
 }
 
 // The Connection's form lives on the Tickets screen, so connecting goes there.
-const TICKETS_PATH = '#/tickets'
-
 export function ProjectSettingsDialog({ project, open, onOpenChange }: ProjectSettingsDialogProps) {
   const { t } = useTranslation('projects')
+  const { projectId = project.id } = useParams()
   const connection = useConnection(project.id)
   const disconnectSource = useDisconnectSource()
   return (
@@ -40,7 +40,7 @@ export function ProjectSettingsDialog({ project, open, onOpenChange }: ProjectSe
           error={connection.error ?? disconnectSource.error}
           onConnect={() => {
             onOpenChange(false)
-            window.location.hash = TICKETS_PATH
+            window.location.hash = `#/projects/${projectId}/tickets`
           }}
           onDisconnect={() => disconnectSource.mutate({ projectId: project.id })}
         />

@@ -27,7 +27,6 @@ async function withHandlers(
   )
   projects.replace({
     projects: [{ id: 'project-1', path: project, commonDirectory: path.join(project, '.git') }],
-    selectedId: 'project-1',
   })
   try {
     await handle({ projects })

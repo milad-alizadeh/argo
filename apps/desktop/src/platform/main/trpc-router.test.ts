@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
 import { createActor, fromPromise } from 'xstate'
+import type { ProjectStore } from '@/domains/projects/main/register-project'
 import type { SessionSubmitInput } from '@/domains/sessions/main/api/session-start'
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import {
@@ -19,6 +20,7 @@ const sessions = {
       event.reply.resolve({ sessionId: '00000000-0000-4000-8000-000000000001' })
   },
 } as LiveSessionSupervisorActor
+const projects = { read: () => ({ projects: [] }) } as unknown as ProjectStore
 
 test('returns only the selected Harness as serializable composer choices', async () => {
   const actor = createActor(
@@ -36,7 +38,7 @@ test('returns only the selected Harness as serializable composer choices', async
     }),
   ).start()
   try {
-    const caller = createAppRouter(actor, sessions).createCaller({})
+    const caller = createAppRouter(actor, sessions, projects).createCaller({})
     const claude = await caller.harnessCatalogRead({ harness: 'claude' })
     const codex = await caller.harnessCatalogRead({ harness: 'codex' })
     expect(claude.info.harness).toBe('claude')
@@ -68,7 +70,7 @@ test('repeated reads reuse the settled catalog until an explicit refresh', async
     }),
   ).start()
   try {
-    const caller = createAppRouter(actor, sessions).createCaller({})
+    const caller = createAppRouter(actor, sessions, projects).createCaller({})
     await caller.harnessCatalogRead({ harness: 'claude' })
     await caller.harnessCatalogRead({ harness: 'codex' })
     expect(loads).toBe(1)
@@ -97,7 +99,7 @@ test('retry reloads a failed catalog once', async () => {
     }),
   ).start()
   try {
-    const caller = createAppRouter(actor, sessions).createCaller({})
+    const caller = createAppRouter(actor, sessions, projects).createCaller({})
     const failed = await caller.harnessCatalogRead({ harness: 'claude' })
     expect(failed.failure).toContain('Catalog unavailable')
     await caller.harnessCatalogRead({ harness: 'claude' })
@@ -128,7 +130,7 @@ test('routes a second optimistic composer command to the same pending Session', 
     }),
   ).start()
   try {
-    const caller = createAppRouter(actor, supervisor).createCaller({})
+    const caller = createAppRouter(actor, supervisor, projects).createCaller({})
     const initial: SessionSubmitInput = {
       commandId: '00000000-0000-4000-8000-000000000002',
       harness: 'claude',
@@ -175,7 +177,7 @@ test('rejects Claude attachments before a Session reaches a vendor', async () =>
     }),
   ).start()
   try {
-    const caller = createAppRouter(actor, supervisor).createCaller({})
+    const caller = createAppRouter(actor, supervisor, projects).createCaller({})
     await expect(
       caller.sessionSubmit({
         commandId: '00000000-0000-4000-8000-000000000002',

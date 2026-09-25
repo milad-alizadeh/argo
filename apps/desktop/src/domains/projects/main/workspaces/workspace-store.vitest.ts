@@ -11,7 +11,6 @@ import { createProjectStore, type ProjectStore } from '../sqlite-store'
 function writeWorkspaces(store: ProjectStore): void {
   store.replace({
     projects: [{ id: 'project-1', path: '/tmp/project', commonDirectory: '/tmp/project/.git' }],
-    selectedId: 'project-1',
   })
   store.writeWorkspace({
     id: 'workspace-main',

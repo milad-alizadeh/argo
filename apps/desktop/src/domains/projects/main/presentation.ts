@@ -16,6 +16,5 @@ export function listed(requestId: string, registry: ProjectRegistry): ProjectLis
     type: 'project.listed',
     requestId,
     projects: registry.projects.map(toSummary),
-    selectedId: registry.selectedId,
   }
 }

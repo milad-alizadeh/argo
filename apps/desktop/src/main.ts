@@ -3,7 +3,7 @@ import { rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { app, type BrowserWindow, net, protocol } from 'electron'
+import { app, type BrowserWindow, dialog, net, protocol } from 'electron'
 import { resetIncompleteDevelopmentDatabase } from '@/database/reset-incomplete-database'
 import { configureStorageRuntime } from '@/database/storage-runtime'
 import { seedDevelopmentProject } from '@/domains/projects/main/development-seed'
@@ -105,7 +105,16 @@ function createWindow(actor: AppActor, stores: ReturnType<typeof openDurableStor
   const sessionsActor = actor.system.get('sessions') as LiveSessionSupervisorActor | undefined
   if (catalogActor === undefined || sessionsActor === undefined)
     throw new Error('Application child actors are unavailable.')
-  const router = createAppRouter(catalogActor, sessionsActor)
+  const router = createAppRouter(catalogActor, sessionsActor, {
+    projects: stores.projects,
+    chooseFolder: async () => {
+      const result = await dialog.showOpenDialog({
+        properties: ['openDirectory'],
+      })
+      return result.canceled ? null : (result.filePaths[0] ?? null)
+    },
+    exclusive: async (work) => work(),
+  })
   desktopWindow = createDesktopWindow({
     buildDirectory: __dirname,
     rendererName: MAIN_WINDOW_VITE_NAME,
