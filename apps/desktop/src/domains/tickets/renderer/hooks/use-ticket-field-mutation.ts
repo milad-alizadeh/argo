@@ -17,8 +17,8 @@ export function patchTicket(
   { projectId, key }: TicketChange,
   patch: (ticket: Ticket) => Ticket,
 ) {
-  client.setQueriesData<TicketPages>({ queryKey: listKey(projectId) }, (data) =>
-    data
+  client.setQueriesData<TicketPages>({ queryKey: listKey() }, (data) =>
+    data && data.pages[0]?.projectId === projectId
       ? {
           ...data,
           pages: data.pages.map((page) => ({
@@ -48,8 +48,8 @@ export function useTicketFieldMutation<
   return useMutation<Reply, ContractFailure, Change, Snapshot>({
     mutationFn: (change) => settle(request(change)),
     onMutate: async (change) => {
-      await client.cancelQueries({ queryKey: listKey(change.projectId) })
-      const snapshot = client.getQueriesData<TicketPages>({ queryKey: listKey(change.projectId) })
+      await client.cancelQueries({ queryKey: listKey() })
+      const snapshot = client.getQueriesData<TicketPages>({ queryKey: listKey() })
       move(client, change)
       return snapshot
     },
