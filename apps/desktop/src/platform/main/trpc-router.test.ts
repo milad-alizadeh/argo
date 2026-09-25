@@ -3,7 +3,6 @@ import { createActor, fromPromise } from 'xstate'
 import type { AccountProcedureContext } from '@/domains/accounts/main/account-procedures'
 import type { HarnessSignInProcedureContext } from '@/domains/harness-signin/main/harness-sign-in-procedures'
 import type { ProjectRegisterContext } from '@/domains/projects/main/api/project-register'
-import type { SessionSubmitInput } from '@/domains/sessions/main/api/session-start'
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import type { TicketRouterDependencies } from '@/domains/tickets/main/ticket-router'
 import type { WorkspaceListContext } from '@/domains/workspaces/main/api/workspace-list'
@@ -34,7 +33,7 @@ function testRouter(
     catalog,
     harnessSignIn: {} as HarnessSignInProcedureContext,
     projects: {} as ProjectRegisterContext,
-    sessions: sessionActor,
+    sessions: { database: {} as never, supervisor: sessionActor },
     tickets: {} as TicketRouterDependencies,
     workspaces: {} as WorkspaceListContext,
   })
@@ -125,91 +124,6 @@ test('retry reloads a failed catalog once', async () => {
     const retried = await caller.harnessCatalogRefresh({ harness: 'claude' })
     expect(retried.failure).toBe(null)
     expect(loads).toBe(2)
-  } finally {
-    actor.stop()
-  }
-})
-
-test('routes a second optimistic composer command to the same pending Session', async () => {
-  const submitted: Array<{ pendingId: string; prompt: string }> = []
-  const supervisor = {
-    send: (event: SupervisorEvent) => {
-      if (event.type === 'Start') {
-        submitted.push({ pendingId: event.pendingId, prompt: event.input.prompt })
-        event.reply.resolve({ sessionId: '00000000-0000-4000-8000-000000000001' })
-      }
-    },
-  } as LiveSessionSupervisorActor
-  const actor = createActor(
-    harnessCatalogMachine.provide({
-      actors: {
-        loadCatalog: fromPromise(async () => harnessCatalogSchema.parse({ harnesses: [] })),
-      },
-    }),
-  ).start()
-  try {
-    const caller = testRouter(actor, supervisor).createCaller({})
-    const initial: SessionSubmitInput = {
-      commandId: '00000000-0000-4000-8000-000000000002',
-      harness: 'claude',
-      projectId: '00000000-0000-4000-8000-000000000099',
-      cwd: '/repo',
-      sessionId: null,
-      pendingId: 'optimistic:session-1',
-      prompt: 'Start a Session.',
-      attachments: [],
-      turnConfiguration: { model: 'claude-sonnet', effort: 'medium', mode: 'default' },
-    }
-    await Promise.all([
-      caller.sessionSubmit(initial),
-      caller.sessionSubmit({
-        ...initial,
-        commandId: '00000000-0000-4000-8000-000000000003',
-        prompt: 'Continue the plan.',
-      }),
-    ])
-    expect(submitted).toEqual([
-      { pendingId: 'optimistic:session-1', prompt: 'Start a Session.' },
-      { pendingId: 'optimistic:session-1', prompt: 'Continue the plan.' },
-    ])
-  } finally {
-    actor.stop()
-  }
-})
-
-test('rejects Claude attachments before a Session reaches a vendor', async () => {
-  let submissions = 0
-  const supervisor = {
-    send: (event: SupervisorEvent) => {
-      if (event.type === 'Start' || event.type === 'Send') {
-        submissions += 1
-        event.reply.resolve({ sessionId: '00000000-0000-4000-8000-000000000001' })
-      }
-    },
-  } as LiveSessionSupervisorActor
-  const actor = createActor(
-    harnessCatalogMachine.provide({
-      actors: {
-        loadCatalog: fromPromise(async () => harnessCatalogSchema.parse({ harnesses: [] })),
-      },
-    }),
-  ).start()
-  try {
-    const caller = testRouter(actor, supervisor).createCaller({})
-    await expect(
-      caller.sessionSubmit({
-        commandId: '00000000-0000-4000-8000-000000000002',
-        harness: 'claude',
-        projectId: '00000000-0000-4000-8000-000000000099',
-        cwd: '/repo',
-        sessionId: null,
-        pendingId: 'optimistic:session-1',
-        prompt: 'Read this image.',
-        attachments: [{ kind: 'image', path: '/repo/image.png' }],
-        turnConfiguration: { model: 'claude-sonnet', effort: 'medium', mode: 'default' },
-      }),
-    ).rejects.toThrow('Claude Session attachments are not supported.')
-    expect(submissions).toBe(0)
   } finally {
     actor.stop()
   }

@@ -51,10 +51,13 @@ export const composerDraftValueSchema = z.strictObject({
 })
 export type ComposerDraftValue = z.infer<typeof composerDraftValueSchema>
 
-export type ComposerDraftContent = Pick<
-  ComposerDraftValue,
-  'prompt' | 'attachments' | 'ticketContext' | 'turnConfiguration'
->
+export const composerDraftContentSchema = composerDraftValueSchema.pick({
+  prompt: true,
+  attachments: true,
+  ticketContext: true,
+  turnConfiguration: true,
+})
+export type ComposerDraftContent = z.infer<typeof composerDraftContentSchema>
 
 function parseJson<Value>(source: string, schema: z.ZodType<Value>): Value {
   return schema.parse(JSON.parse(source))
@@ -99,11 +102,36 @@ function storedContent(content: ComposerDraftContent) {
   }
 }
 
-export function readComposerDraft(
-  database: Database,
-  id: string,
-): ComposerDraftValue | null {
+function storedTarget(target: ComposerDraftValue['target']) {
+  return target.type === 'project'
+    ? {
+        projectId: target.projectId,
+        sessionId: null,
+        workspaceId: target.workspaceId,
+        harness: target.harness,
+      }
+    : {
+        projectId: null,
+        sessionId: target.sessionId,
+        workspaceId: null,
+        harness: null,
+      }
+}
+
+export function readComposerDraft(database: Database, id: string): ComposerDraftValue | null {
   const row = database.select().from(composerDraft).where(eq(composerDraft.id, id)).get()
+  return row === undefined ? null : valueFromRow(row)
+}
+
+export function readComposerDraftForTarget(
+  database: Database,
+  target: ComposerDraftValue['target'],
+): ComposerDraftValue | null {
+  const condition =
+    target.type === 'project'
+      ? eq(composerDraft.projectId, target.projectId)
+      : eq(composerDraft.sessionId, target.sessionId)
+  const row = database.select().from(composerDraft).where(condition).get()
   return row === undefined ? null : valueFromRow(row)
 }
 
@@ -111,23 +139,9 @@ export function insertComposerDraft(
   database: Database,
   input: { id: string; target: ComposerDraftValue['target'] } & ComposerDraftContent,
 ): ComposerDraftValue {
-  const target =
-    input.target.type === 'project'
-      ? {
-          projectId: input.target.projectId,
-          sessionId: null,
-          workspaceId: input.target.workspaceId,
-          harness: input.target.harness,
-        }
-      : {
-          projectId: null,
-          sessionId: input.target.sessionId,
-          workspaceId: null,
-          harness: null,
-        }
   database
     .insert(composerDraft)
-    .values({ id: input.id, ...target, ...storedContent(input) })
+    .values({ id: input.id, ...storedTarget(input.target), ...storedContent(input) })
     .run()
   const created = readComposerDraft(database, input.id)
   if (created === null) throw new Error('Composer draft did not persist.')
@@ -136,14 +150,20 @@ export function insertComposerDraft(
 
 export function updateComposerDraft(
   database: Database,
-  input: { id: string; expectedRevision: number } & ComposerDraftContent,
+  input: {
+    id: string
+    expectedRevision: number
+    target: ComposerDraftValue['target']
+  } & ComposerDraftContent,
 ): ComposerDraftValue | null {
   const updated = database
     .update(composerDraft)
-    .set({ ...storedContent(input), revision: input.expectedRevision + 1 })
-    .where(
-      and(eq(composerDraft.id, input.id), eq(composerDraft.revision, input.expectedRevision)),
-    )
+    .set({
+      ...storedTarget(input.target),
+      ...storedContent(input),
+      revision: input.expectedRevision + 1,
+    })
+    .where(and(eq(composerDraft.id, input.id), eq(composerDraft.revision, input.expectedRevision)))
     .returning()
     .get()
   return updated === undefined ? null : valueFromRow(updated)

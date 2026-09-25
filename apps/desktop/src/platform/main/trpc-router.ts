@@ -17,8 +17,13 @@ import {
   type ProjectRelocateContext,
   projectRelocateProcedure,
 } from '@/domains/projects/main/api/project-relocate'
-import { sessionSubmitProcedure } from '@/domains/sessions/main/api/session-procedures'
-import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
+import { composerDraftCreateProcedure } from '@/domains/sessions/main/api/composer-draft-create'
+import { composerDraftReadProcedure } from '@/domains/sessions/main/api/composer-draft-read'
+import { composerDraftSaveProcedure } from '@/domains/sessions/main/api/composer-draft-save'
+import {
+  type SessionProcedureContext,
+  sessionSubmitProcedure,
+} from '@/domains/sessions/main/api/session-submit'
 import {
   createTicketRouter,
   type TicketRouterDependencies,
@@ -40,7 +45,7 @@ export type AppRouterDependencies = {
   catalog: CatalogActor
   harnessSignIn: HarnessSignInProcedureContext
   projects: ProjectRegisterContext & ProjectRelocateContext
-  sessions: LiveSessionSupervisorActor
+  sessions: SessionProcedureContext
   tickets: TicketRouterDependencies
   workspaces: WorkspaceListContext
 }
@@ -51,6 +56,9 @@ export function createAppRouter(dependencies: AppRouterDependencies) {
     ...harnessSignInProcedures(dependencies.harnessSignIn),
     harnessCatalogRead: catalogReadProcedure(dependencies.catalog),
     harnessCatalogRefresh: catalogRefreshProcedure(dependencies.catalog),
+    composerDraftCreate: composerDraftCreateProcedure(dependencies.sessions.database),
+    composerDraftRead: composerDraftReadProcedure(dependencies.sessions.database),
+    composerDraftSave: composerDraftSaveProcedure(dependencies.sessions.database),
     sessionSubmit: sessionSubmitProcedure(dependencies.sessions),
     projectList: projectListProcedure(dependencies.projects.database),
     projectOpen: projectOpenProcedure(dependencies.projects.database),

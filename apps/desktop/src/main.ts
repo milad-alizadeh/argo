@@ -177,7 +177,7 @@ function routerForWindow(options: {
       chooseFolder: () => chooseProjectFolder(window),
       exclusive,
     },
-    sessions: actors.sessions,
+    sessions: { database, supervisor: actors.sessions },
     tickets: { access: domains.access, connections: domains.connections, sources: ticketSources },
     workspaces: { database, exclusive },
   })

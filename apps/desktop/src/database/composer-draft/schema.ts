@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { check, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { check, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
 import { timestampColumns } from '@/database/timestamp-columns'
@@ -23,6 +23,8 @@ export const composerDraft = sqliteTable(
     ...timestampColumns(),
   },
   (table) => [
+    uniqueIndex('composer_draft_project').on(table.projectId),
+    uniqueIndex('composer_draft_session').on(table.sessionId),
     check(
       'composer_draft_target',
       sql`(${table.projectId} IS NOT NULL) != (${table.sessionId} IS NOT NULL)`,

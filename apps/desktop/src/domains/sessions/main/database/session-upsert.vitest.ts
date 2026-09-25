@@ -11,6 +11,7 @@ function database() {
     harness TEXT NOT NULL,
     native_id TEXT NOT NULL,
     project_id TEXT,
+    workspace_id TEXT,
     custom_title TEXT,
     preview TEXT,
     first_prompt TEXT,
@@ -33,6 +34,7 @@ test('keeps one Argo ID and preserves known metadata on a sparse upsert', () => 
       harness: 'claude',
       nativeId: 'native-1',
       projectId: 'project-1',
+      workspaceId: 'workspace-1',
       customTitle: 'Release notes',
       preview: 'A preview',
       firstPrompt: 'first',
@@ -54,11 +56,12 @@ test('keeps one Argo ID and preserves known metadata on a sparse upsert', () => 
     assert.ok(repeatedTimes.updated_at > originalTimes.updated_at)
     const row = client
       .prepare(
-        'SELECT project_id, custom_title, preview, first_prompt, cwd FROM session WHERE argo_id = ?',
+        'SELECT project_id, workspace_id, custom_title, preview, first_prompt, cwd FROM session WHERE argo_id = ?',
       )
       .get(first)
     assert.deepEqual(Object.assign({}, row), {
       project_id: 'project-1',
+      workspace_id: 'workspace-1',
       custom_title: 'Release notes',
       preview: 'A preview',
       first_prompt: 'first',

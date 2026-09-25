@@ -604,6 +604,34 @@
     {
       "columns": [
         {
+          "value": "project_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "composer_draft_project",
+      "entityType": "indexes",
+      "table": "composer_draft"
+    },
+    {
+      "columns": [
+        {
+          "value": "session_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "composer_draft_session",
+      "entityType": "indexes",
+      "table": "composer_draft"
+    },
+    {
+      "columns": [
+        {
           "value": "harness",
           "isExpression": false
         },

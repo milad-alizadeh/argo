@@ -29,6 +29,7 @@ export function createSessionUpsert(database: Database): SessionUpsert {
         harness: validatedInput.harness,
         nativeId: validatedInput.nativeId,
         projectId: validatedInput.projectId ?? null,
+        workspaceId: validatedInput.workspaceId ?? null,
         customTitle: validatedInput.customTitle ?? null,
         preview: validatedInput.preview ?? null,
         firstPrompt: validatedInput.firstPrompt ?? null,

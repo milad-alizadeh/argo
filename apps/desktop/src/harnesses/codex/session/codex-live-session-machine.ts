@@ -1,6 +1,6 @@
 import { assign, fromPromise, setup as xstateSetup } from 'xstate'
 import { z } from 'zod'
-import type { SessionStartInput } from '@/domains/sessions/main/api/session-start'
+import type { SessionStartInput } from '@/domains/sessions/main/api/session-submit'
 import type { CodexRequest } from '../app-server/codex-app-server-machine'
 
 export type CodexInputItem =

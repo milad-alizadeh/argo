@@ -1,11 +1,8 @@
-import { z } from 'zod'
 import { create } from 'zustand'
-import { createJSONStorage, persist } from 'zustand/middleware'
-import { sessionAttachmentInputSchema } from '@/domains/sessions/api/attachments'
 import type { TurnMarkerEntry } from '../../feed/rows/turn-marker-state'
-import { SESSION_HARNESSES, type SessionHarness } from '../../harness/harnesses'
+import type { SessionHarness } from '../../harness/harnesses'
 import { composerActions } from '../store/composer-store-actions'
-import { type ComposerTicketContext, ticketContextSchema } from '../store/composer-ticket-context'
+import type { ComposerTicketContext } from '../store/composer-ticket-context'
 import type { TurnConfiguration } from '../turn-configuration/turn-configuration'
 
 export type { ComposerTicketContext } from '../store'
@@ -30,25 +27,6 @@ export const EMPTY_COMPOSER_ATTACHMENTS: ComposerAttachment[] = []
 export const EMPTY_COMPOSER_TICKETS: ComposerTicketContext[] = []
 export const EMPTY_PENDING_TURNS: PendingTurn[] = []
 
-const attachmentSchema = z.object({
-  id: z.string(),
-  path: z.string(),
-  status: z.enum(['idle', 'error']),
-})
-
-const pendingTurnSchema = z
-  .strictObject({
-    id: z.string().uuid(),
-    text: z.string(),
-    turnConfiguration: z
-      .strictObject({ model: z.string(), effort: z.string(), mode: z.string() })
-      .optional(),
-    attachments: z.array(sessionAttachmentInputSchema).default([]),
-  })
-  .refine(({ text, attachments }) => text.trim().length > 0 || attachments.length > 0)
-
-// What a composer keeps across leaving the page and relaunching: each composer's unsent draft and
-// attachments, and the harness the last new Session was set to, app-wide.
 export type ComposerState = {
   harness: SessionHarness
   rememberedTurnConfiguration: Partial<
@@ -82,63 +60,14 @@ export type ComposerState = {
   rekey: (from: string, to: string) => void
 }
 
-const storedSchema = z
-  .object({
-    harness: z.enum(SESSION_HARNESSES),
-    rememberedTurnConfiguration: z.partialRecord(
-      z.enum(SESSION_HARNESSES),
-      z.strictObject({ model: z.string(), effort: z.string() }),
-    ),
-    drafts: z.record(z.string(), z.string()),
-    attachments: z.record(z.string(), z.array(attachmentSchema)),
-    pendingTurns: z.record(z.string(), z.array(pendingTurnSchema)),
-    tickets: z.record(z.string(), z.array(ticketContextSchema)),
-  })
-  .partial()
-
-// A test runs this module with no `localStorage`, and the default storage says so on every write.
-// The drafts are the window's to keep, so a run without one keeps them for its own length.
-const composerStorage: Storage = globalThis.localStorage ?? {
-  length: 0,
-  clear: () => {},
-  getItem: () => null,
-  key: () => null,
-  removeItem: () => {},
-  setItem: () => {},
-}
-
-export const useComposerStore = create<ComposerState>()(
-  persist(
-    (set) => ({
-      harness: 'claude',
-      rememberedTurnConfiguration: {},
-      drafts: {},
-      attachments: {},
-      tickets: {},
-      pendingTurns: {},
-      markers: {},
-      turnConfiguration: {},
-      ...composerActions(set),
-    }),
-    {
-      name: 'argo.composer',
-      storage: createJSONStorage(() => composerStorage),
-      partialize: ({
-        harness,
-        rememberedTurnConfiguration,
-        drafts,
-        attachments,
-        pendingTurns,
-        tickets,
-      }) => ({
-        harness,
-        rememberedTurnConfiguration,
-        drafts,
-        attachments,
-        pendingTurns,
-        tickets,
-      }),
-      merge: (stored, current) => ({ ...current, ...storedSchema.safeParse(stored).data }),
-    },
-  ),
-)
+export const useComposerStore = create<ComposerState>()((set) => ({
+  harness: 'claude',
+  rememberedTurnConfiguration: {},
+  drafts: {},
+  attachments: {},
+  tickets: {},
+  pendingTurns: {},
+  markers: {},
+  turnConfiguration: {},
+  ...composerActions(set),
+}))

@@ -8,6 +8,7 @@ const first = {
   commandId: '00000000-0000-4000-8000-000000000001',
   harness: 'claude' as const,
   projectId: '00000000-0000-4000-8000-000000000099',
+  workspaceId: '00000000-0000-4000-8000-000000000098',
   cwd: '/repo',
   prompt: 'first',
   attachments: [],

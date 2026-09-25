@@ -3,13 +3,14 @@ import { test } from 'node:test'
 import { createActor, fromCallback, fromPromise, waitFor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
 import { claudeLiveSessionMachine } from '@/harnesses/claude/session/claude-live-session-machine'
-import type { SessionStartInput } from '../api/session-start'
+import type { SessionStartInput } from '../api/session-submit'
 import { liveSessionMachine } from './live-session-machine'
 
 const first: SessionStartInput = {
   commandId: '00000000-0000-4000-8000-000000000001',
   harness: 'claude',
   projectId: '00000000-0000-4000-8000-000000000099',
+  workspaceId: '00000000-0000-4000-8000-000000000098',
   cwd: '/repo',
   prompt: 'first',
   attachments: [],

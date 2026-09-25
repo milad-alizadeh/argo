@@ -25,6 +25,7 @@ test('opens a registered Project without ProjectSetup state', async () => {
         chooseFolder: async () => null,
         exclusive: async <T>(work: () => Promise<T>) => work(),
       },
+      sessions: { database, supervisor: { send: () => {} } },
     } as unknown as AppRouterDependencies
 
     await expect(

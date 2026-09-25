@@ -69,4 +69,6 @@ CREATE TABLE `session_ticket_link` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `session_harness_native` ON `session` (`harness`,`native_id`);--> statement-breakpoint
+CREATE UNIQUE INDEX `composer_draft_project` ON `composer_draft` (`project_id`);--> statement-breakpoint
+CREATE UNIQUE INDEX `composer_draft_session` ON `composer_draft` (`session_id`);--> statement-breakpoint
 CREATE INDEX `session_ticket_link_ticket` ON `session_ticket_link` (`project_id`,`ticket_key`,`created_at`);

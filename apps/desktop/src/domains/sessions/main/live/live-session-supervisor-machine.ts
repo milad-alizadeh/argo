@@ -10,7 +10,7 @@ import {
   codexLiveSessionActors,
   codexLiveSessionMachine,
 } from '@/harnesses/codex/session/codex-live-session-machine'
-import type { SessionSendInput, SessionStartInput } from '../api/session-start'
+import type { SessionSendInput, SessionStartInput } from '../api/session-submit'
 import { createSessionUpsert } from '../database/session-upsert'
 import { liveSessionMachine } from './live-session-machine'
 

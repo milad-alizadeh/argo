@@ -23,7 +23,7 @@ import type {
 } from '@/harnesses/codex/app-server/codex-app-server-machine'
 import { codexHarnessInfo } from '@/harnesses/codex/catalog'
 import { codexModelCatalogFixture } from '../../../../../test-fixtures/sessions/codex-model-catalog.fixture'
-import type { SessionStartInput } from '../api/session-start'
+import type { SessionStartInput } from '../api/session-submit'
 import { liveSessionSupervisorMachine } from './live-session-supervisor-machine'
 
 const available = codexHarnessInfo(codexModelCatalogFixture())
@@ -35,6 +35,7 @@ const first: SessionStartInput = {
   commandId: 'first-command',
   harness: 'codex',
   projectId: 'project-1',
+  workspaceId: 'workspace-1',
   cwd: '/repo',
   prompt: 'first',
   attachments: [],
@@ -44,7 +45,7 @@ const first: SessionStartInput = {
 async function supervisorFor(request: CodexRequest, catalogValue = catalog) {
   const client = new DatabaseSync(':memory:')
   client.exec(
-    'CREATE TABLE session (argo_id TEXT PRIMARY KEY, harness TEXT NOT NULL, native_id TEXT NOT NULL, project_id TEXT, custom_title TEXT, preview TEXT, first_prompt TEXT, cwd TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);',
+    'CREATE TABLE session (argo_id TEXT PRIMARY KEY, harness TEXT NOT NULL, native_id TEXT NOT NULL, project_id TEXT, workspace_id TEXT, custom_title TEXT, preview TEXT, first_prompt TEXT, cwd TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);',
   )
   const database = databaseFrom(client)
   const channel: CodexChannel = {
