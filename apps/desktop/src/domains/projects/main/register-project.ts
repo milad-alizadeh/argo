@@ -104,7 +104,7 @@ export function registerProject(
       commonDirectory,
     }
     const projects = known ? registry.projects : [...registry.projects, project]
-    return commit(store, request.requestId, { ...registry, projects, selectedId: project.id })
+    return commit(store, request.requestId, { projects })
   })
 }
 
@@ -135,9 +135,7 @@ export function relocateProject(
       project.id === request.projectId ? { ...project, path: root, commonDirectory } : project,
     )
     return commit(store, request.requestId, {
-      ...registry,
       projects,
-      selectedId: request.projectId,
     })
   })
 }

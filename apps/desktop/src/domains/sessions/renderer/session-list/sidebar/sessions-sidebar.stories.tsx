@@ -4,7 +4,7 @@ import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { sessionRosterRow, sessionSubagent } from '../../session-fixtures'
 import type { SessionError, SessionId, SessionsListed } from '../../types'
-import { useSessionListFilterStore, useSessionListWindowStore } from '../hooks'
+import { useSessionListWindowStore } from '../hooks'
 import { SessionList, type SessionListActions } from '../session-list/session-list'
 
 const session = sessionRosterRow({
@@ -950,7 +950,7 @@ function manySessionsPage(index: number) {
 // The status filter is one store for the whole window, and ArchiveRestored widens it, so a story
 // that reads the active Session list says which status it starts from rather than inheriting one.
 function showingActiveSessions() {
-  useSessionListFilterStore.setState({ status: 'active' })
+  // The route has no status parameter, so the URL-owned default is active.
 }
 
 function sessionListScroll(canvasElement: HTMLElement) {

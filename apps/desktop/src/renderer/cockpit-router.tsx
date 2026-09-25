@@ -7,11 +7,10 @@ import { NoHarnessReadyScreen } from '@/domains/harness-signin/renderer/screens/
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { useProjects } from '@/domains/projects/renderer/hooks/use-projects'
 import { EmptyProjectScreen } from '@/domains/projects/renderer/screens/empty-project-screen'
-import { ProjectSetupWindow } from '@/domains/projects/renderer/setup/screens/project-setup-window'
 import { DevelopmentIdentityBar } from '@/domains/sessions/renderer/composer/identity/development-identity-bar'
 import { SessionsPage } from '@/domains/sessions/renderer/pages/sessions-page'
-import { SessionsSidebar } from '@/domains/sessions/renderer/roster/sidebar/sessions-sidebar'
 import { SessionScreenView } from '@/domains/sessions/renderer/screens'
+import { SessionsSidebar } from '@/domains/sessions/renderer/session-list/sidebar/sessions-sidebar'
 import { TicketsPage } from '@/domains/tickets/renderer/pages/tickets-page'
 import { TicketsScreenView } from '@/domains/tickets/renderer/screens/tickets-screen-view'
 import { TicketsSidebar } from '@/domains/tickets/renderer/sidebar/tickets-sidebar'
@@ -40,7 +39,10 @@ export function CockpitRouteLayout() {
   const matches = useMatches()
   useCommands((command) => {
     const destination = DESTINATIONS.find((item) => navigateCommand(item) === command)
-    if (destination) window.location.hash = DESTINATION_PATHS[destination]
+    if (destination) {
+      const projectId = cockpit.project?.id
+      window.location.hash = `/projects/${projectId ?? ''}${DESTINATION_PATHS[destination]}`
+    }
   })
   const sidebar = matches.reduce<ReactNode | null>(
     (currentSidebar, match) =>
@@ -48,13 +50,7 @@ export function CockpitRouteLayout() {
     null,
   )
 
-  if (matches.some((match) => match.id === 'project-setup')) {
-    return <Outlet />
-  }
   if (cockpit.status === 'empty') return <EmptyProjectScreen />
-  if (cockpit.status === 'setup' && cockpit.project) {
-    return <Navigate replace to={`/projects/${cockpit.project.id}/setup`} />
-  }
   // A Project with no Harness signed in has no way to run a Session, so this precedes the
   // roster the same way `EmptyProjectScreen` precedes it for no Project. `readiness.data` is
   // read only once it has landed, so a still-loading first read shows the roster underneath
@@ -77,10 +73,10 @@ export const cockpitRouter = createHashRouter([
   {
     element: <CockpitRouteLayout />,
     children: [
-      { index: true, element: <Navigate replace to="/sessions" /> },
-      { id: 'project-setup', path: '/projects/:projectId/setup', element: <ProjectSetupScreen /> },
+      { index: true, element: <Navigate replace to="/projects" /> },
+      { path: '/projects', element: <ProjectIndexRedirect /> },
       {
-        path: '/sessions',
+        path: '/projects/:projectId/sessions',
         handle: { sidebar: sidebarByPage.sessions } satisfies CockpitRouteHandle,
         element: <SessionsPage />,
         children: [
@@ -89,7 +85,7 @@ export const cockpitRouter = createHashRouter([
         ],
       },
       {
-        path: '/tickets',
+        path: '/projects/:projectId/tickets',
         handle: { sidebar: sidebarByPage.tickets } satisfies CockpitRouteHandle,
         element: <TicketsPage />,
         children: [
@@ -98,7 +94,7 @@ export const cockpitRouter = createHashRouter([
         ],
       },
       {
-        path: '/atlas',
+        path: '/projects/:projectId/atlas',
         handle: { sidebar: sidebarByPage.atlas } satisfies CockpitRouteHandle,
         element: <AtlasPage />,
       },
@@ -106,8 +102,9 @@ export const cockpitRouter = createHashRouter([
   },
 ])
 
-function ProjectSetupScreen() {
+function ProjectIndexRedirect() {
   const [cockpit] = useProjects()
-  if (!cockpit.project) return <Navigate replace to="/sessions" />
-  return <ProjectSetupWindow project={cockpit.project} />
+  return cockpit.project ? (
+    <Navigate replace to={`/projects/${cockpit.project.id}/sessions`} />
+  ) : null
 }

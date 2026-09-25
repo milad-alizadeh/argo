@@ -27,7 +27,6 @@ type WorkspaceFixtureStore = Pick<
 export function projectStore(projectId: string): ProjectStore {
   let registry: ProjectRegistry = {
     projects: [{ id: projectId, path: '/tmp/argo-demo', commonDirectory: '/tmp/argo-demo/.git' }],
-    selectedId: projectId,
   }
   let checkpoint: SetupCheckpoint | null = null
   let projectSetup: ProjectSetupRecord | null = null
@@ -39,9 +38,6 @@ export function projectStore(projectId: string): ProjectStore {
     },
     insertProject: (project) => {
       registry = { ...registry, projects: [...registry.projects, project] }
-    },
-    selectProject: (projectId) => {
-      registry = { ...registry, selectedId: projectId }
     },
     updateProjectPath: (projectId, projectPath) => {
       registry = {

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router'
 import { REGISTER_PROJECT_COMMAND } from '@/platform/contract/commands'
 import { useCommands } from '@/platform/renderer/cockpit/hooks/use-commands'
 import { Icon } from '@/platform/renderer/components/icon/icon'
@@ -19,6 +20,7 @@ import { ProjectSettingsDialog } from './project-settings-dialog'
 export function ProjectSwitcher() {
   const { t } = useTranslation('projects')
   const [cockpit, actions] = useProjects()
+  const navigate = useNavigate()
   useCommands((command) => {
     if (command === REGISTER_PROJECT_COMMAND) actions.open()
   })
@@ -50,7 +52,7 @@ export function ProjectSwitcher() {
               <DropdownMenuItem
                 key={project.id}
                 aria-label={t('switcher.switchTo', { name: project.name })}
-                onClick={() => actions.select(project.id)}
+                onClick={() => navigate(`/projects/${project.id}/sessions`)}
               >
                 <Icon name="folder" />
                 <span className="flex-1 truncate">{project.name}</span>

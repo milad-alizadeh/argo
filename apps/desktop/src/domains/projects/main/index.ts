@@ -8,7 +8,7 @@ import type { WorkspaceSelection } from './workspace-selection'
 export type ProjectPort = {
   has: (projectId: string) => boolean
   names: () => Map<string, string>
-  resolveWorkspace: (selection: WorkspaceSelection) => Promise<{ workspaceId: string; cwd: string }>
+  resolveWorkspace: (projectId: string, selection: WorkspaceSelection) => Promise<{ workspaceId: string; cwd: string }>
   knownWorkspaces: () => Promise<readonly { id: string; path: string }[]>
 }
 
@@ -17,7 +17,7 @@ export function createProjectPort(store: ProjectStore): ProjectPort {
     has: (projectId) => store.read().projects.some((project) => project.id === projectId),
     names: () =>
       new Map(store.read().projects.map((project) => [project.id, toSummary(project).name])),
-    resolveWorkspace: (selection) => resolveSessionWorkspace(selection, store),
+    resolveWorkspace: (projectId, selection) => resolveSessionWorkspace(projectId, selection, store),
     knownWorkspaces: async () => {
       const workspaces = store
         .read()

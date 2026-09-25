@@ -20,13 +20,12 @@ export type {
 } from './workspaces/workspace-store'
 
 export type ProjectRegistration = Pick<ProjectRow, 'id' | 'path' | 'commonDirectory'>
-export type ProjectRegistry = { projects: ProjectRegistration[]; selectedId: string | null }
+export type ProjectRegistry = { projects: ProjectRegistration[] }
 export type ProjectDatabase = DurableDatabase
 export type ProjectStore = WorkspaceStore & {
   read: () => ProjectRegistry
   replace: (registry: ProjectRegistry) => void
   insertProject: (project: ProjectRegistration) => void
-  selectProject: (projectId: string) => void
   updateProjectPath: (projectId: string, projectPath: string) => void
   promoteSetupWorktree: (projectId: string, worktreePath: string) => void
   readSetupCheckpoint: (projectId: string) => SetupCheckpoint | null
@@ -42,23 +41,18 @@ export function createProjectStore(
   database: ProjectDatabase,
   afterWrite: () => void = () => {},
 ): ProjectStore {
-  let selectedId: string | null = null
   return {
-    read: () => readRegistry(database, selectedId),
+    read: () => readRegistry(database),
     replace(registry) {
       database.transaction((transaction) => {
         transaction.delete(project).run()
         if (registry.projects.length) transaction.insert(project).values(registry.projects).run()
       })
-      selectedId = registry.selectedId
       afterWrite()
     },
     insertProject: (registration) => {
       database.insert(project).values(registration).run()
       afterWrite()
-    },
-    selectProject: (projectId) => {
-      selectedId = projectId
     },
     updateProjectPath: (projectId, projectPath) => {
       database.update(project).set({ path: projectPath }).where(eq(project.id, projectId)).run()
@@ -80,7 +74,7 @@ export function createProjectStore(
   }
 }
 
-function readRegistry(database: ProjectDatabase, selectedId: string | null): ProjectRegistry {
+function readRegistry(database: ProjectDatabase): ProjectRegistry {
   const registered = projectRegistrationSchema
     .array()
     .parse(
@@ -91,6 +85,5 @@ function readRegistry(database: ProjectDatabase, selectedId: string | null): Pro
     )
   return {
     projects: registered,
-    selectedId: registered.some((entry) => entry.id === selectedId) ? selectedId : null,
   }
 }

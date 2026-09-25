@@ -12,17 +12,17 @@ import {
 import { listProjects } from './list-projects'
 import { registerProject } from './register-project'
 
-test('registering a folder creates one Project, selects it and writes it down', async (context) => {
+test('registering a folder creates one Project and writes it down', async (context) => {
   const setup = await fixture(context)
   const folder = await repository(setup.root, 'alpha')
   setup.choose(folder)
   const reply = await registerProject(register('r1'), setup.store)
   assert.equal(reply.type, 'project.listed')
-  assert.deepEqual(reply.projects, [{ id: reply.selectedId, name: 'alpha', path: folder }])
-  assert.match(reply.selectedId, /^project-/)
+  const projectId = reply.projects[0]?.id
+  assert.match(projectId ?? '', /^project-/)
+  assert.deepEqual(reply.projects, [{ id: projectId, name: 'alpha', path: folder }])
   assert.deepEqual(setup.store.projects.read(), {
-    projects: [{ id: reply.selectedId, path: folder, commonDirectory: path.join(folder, '.git') }],
-    selectedId: reply.selectedId,
+    projects: [{ id: projectId, path: folder, commonDirectory: path.join(folder, '.git') }],
   })
 })
 
@@ -36,7 +36,6 @@ test('one git root is one Project, however the folder is chosen', async (context
   setup.choose(inside)
   const second = await registerProject(register('r2'), setup.store)
   assert.equal(second.projects.length, 1)
-  assert.equal(second.selectedId, first.selectedId)
 })
 
 test('a folder that is not a git repository registers nothing', async (context) => {
@@ -67,16 +66,14 @@ test('a fresh machine lists an empty cockpit rather than a storage failure', asy
     type: 'project.listed',
     requestId: 'l1',
     projects: [],
-    selectedId: null,
   })
 })
 
-test('listing after registration returns the selected Project', async (context) => {
+test('listing after registration returns the registered Project', async (context) => {
   const setup = await fixture(context)
   setup.choose(await repository(setup.root, 'alpha'))
   const registered = await registerProject(register('r1'), setup.store)
   const relaunched = await listProjects(list('l1'), setup.store)
-  assert.equal(relaunched.selectedId, registered.selectedId)
   assert.deepEqual(relaunched.projects, registered.projects)
 })
 
@@ -89,13 +86,12 @@ test('does not migrate portable-v1 registrations', async (context) => {
     version: 1,
     importedFrom: 'swift',
     projects: [{ id: 'project-kept', path: folder, bindings: [{ token: 'must-stay-private' }] }],
-    selectedId: null,
   })
   await writeFile(portablePath, portableData)
   setup.choose(folder)
   const reply = await registerProject(register('r1'), setup.store)
-  assert.notEqual(reply.selectedId, 'project-kept')
-  assert.deepEqual(reply.projects, [{ id: reply.selectedId, name: 'alpha', path: folder }])
+  assert.notEqual(reply.projects[0]?.id, 'project-kept')
+  assert.deepEqual(reply.projects, [{ id: reply.projects[0]?.id, name: 'alpha', path: folder }])
   assert.equal(await readFile(portablePath, 'utf8'), portableData)
 })
 
@@ -125,8 +121,6 @@ test('a registry written while the chooser is open survives the registration', a
   setup.choose(beta)
   setup.duringChoice(() => registerElsewhere(setup))
   const reply = await registerProject(register('r2'), setup.store)
-  assert.deepEqual(
-    reply.projects.map((project) => project.id).sort(),
-    [alpha.selectedId, 'project-elsewhere', reply.selectedId].sort(),
-  )
+  assert.equal(reply.projects.length, 3)
+  assert.ok(reply.projects.some((project) => project.id === 'project-elsewhere'))
 })

@@ -49,12 +49,7 @@ export const projectListedSchema = z
     type: z.literal('project.listed'),
     requestId: identifierSchema,
     projects: z.array(projectSummarySchema),
-    selectedId: identifierSchema.nullable(),
   })
-  .refine(
-    ({ projects, selectedId }) =>
-      selectedId === null || projects.some(({ id }) => id === selectedId),
-  )
 export type ProjectListed = z.infer<typeof projectListedSchema>
 
 // The person dismissed the folder chooser. Nothing was read and nothing was written.
