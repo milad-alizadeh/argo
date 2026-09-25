@@ -43,17 +43,15 @@ function SessionLayout() {
   )
 }
 
-function expectIdentityBelowChrome(canvasElement: HTMLElement) {
+function expectIdentityInPageHeader(canvasElement: HTMLElement) {
   const canvas = within(canvasElement)
   const title = canvas.getByRole('heading', { name: session.title?.text })
-  const chrome = canvasElement.querySelector<HTMLElement>('[data-component="SessionHeader"]')
+  const header = canvasElement.querySelector<HTMLElement>('[data-component="AppMainHeader"]')
   const identity = canvasElement.querySelector<HTMLElement>('[data-component="SessionIdentity"]')
-  if (chrome === null || identity === null)
+  if (header === null || identity === null)
     throw new Error('The Session layout regions are absent.')
-  expect(chrome.contains(title)).toBe(false)
-  expect(identity.getBoundingClientRect().top).toBeGreaterThanOrEqual(
-    chrome.getBoundingClientRect().bottom,
-  )
+  expect(header.contains(identity)).toBe(true)
+  expect(identity.contains(title)).toBe(true)
 }
 
 const meta = {
@@ -75,13 +73,17 @@ type Story = StoryObj<typeof SessionLayout>
 export const Open: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    expectIdentityBelowChrome(canvasElement)
+    expectIdentityInPageHeader(canvasElement)
+    const title = canvas.getByRole('heading', { name: session.title?.text })
     const metadata = canvas
       .getByText('Session ID')
       .closest<HTMLElement>('[data-component="SessionIdMetadata"]')
     if (metadata === null) throw new Error('The Session ID metadata is absent.')
     await expect(metadata).toHaveTextContent(session.id)
     await expect(metadata.querySelector('svg')).not.toBeNull()
+    await expect(title.getBoundingClientRect().width).toBeGreaterThan(
+      metadata.getBoundingClientRect().width,
+    )
   },
 }
 
@@ -91,7 +93,7 @@ export const Collapsed: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
     const opener = await canvas.findByRole('button', { name: 'Open sidebar' })
     const title = canvas.getByRole('heading', { name: session.title?.text })
-    await expect(title.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+    await expect(title.getBoundingClientRect().top).toBeLessThan(
       opener.getBoundingClientRect().bottom,
     )
   },

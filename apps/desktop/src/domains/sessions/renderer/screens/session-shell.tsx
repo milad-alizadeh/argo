@@ -32,10 +32,13 @@ function SessionIdentity({ session }: { session: SessionShellProps['session'] })
       data-component="SessionIdentity"
       className="flex min-w-0 flex-1 items-center gap-(--spacing-shell-section)"
     >
-      <h1 className="min-w-0 flex-1 truncate type-heading">
+      <h1 className="min-w-0 flex-[1_1_var(--size-session-header-title-basis)] truncate type-heading">
         <SessionTitle session={session} text={sessionName(session, t('newSession'))} />
       </h1>
-      <div className="flex min-w-0 shrink items-center gap-(--spacing-shell-section) type-meta text-muted-foreground">
+      <div
+        data-component="SessionMetadata"
+        className="flex min-w-0 flex-[0_1_var(--size-session-header-metadata-basis)] items-center gap-(--spacing-shell-section) type-meta text-muted-foreground"
+      >
         <p
           data-component="SessionIdMetadata"
           className="flex min-w-0 max-w-40 items-center gap-(--spacing-shell-tight)"

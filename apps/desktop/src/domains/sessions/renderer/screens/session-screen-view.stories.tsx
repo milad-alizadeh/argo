@@ -680,9 +680,17 @@ export const FormattedHeaderTitle: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const header = canvas.getByRole('heading', { name: /Implement/ })
+    const sessionId = canvas
+      .getByText('Session ID')
+      .closest<HTMLElement>('[data-component="SessionIdMetadata"]')
+    const metadata = canvasElement.querySelector<HTMLElement>('[data-component="SessionMetadata"]')
+    if (sessionId === null || metadata === null) throw new Error('The Session metadata is absent.')
     await expect(header).not.toHaveTextContent('[$implement]')
     await expect(header).toHaveTextContent('https://example.com/guide')
     await expect(header.querySelector('a')).toBeNull()
+    await expect(header.getBoundingClientRect().width).toBeGreaterThan(
+      metadata.getBoundingClientRect().width,
+    )
   },
 }
 

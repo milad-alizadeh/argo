@@ -1,5 +1,7 @@
 .session-screen__shell {
   --inset-session-inspector-toggle: var(--size-control);
+  --size-session-header-metadata-basis: 20rem;
+  --size-session-header-title-basis: 32rem;
 }
 
 .session-screen__composer {
