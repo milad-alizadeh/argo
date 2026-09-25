@@ -1,4 +1,5 @@
 import type { DurableDatabase } from '@/database/durable-database'
+import { sessionInsertSchema } from '@/database/session-schemas'
 import { sessionTable } from '@/database/session-table'
 
 export type SessionUpsertInput = Omit<
@@ -20,25 +21,26 @@ function definedMetadata(input: SessionUpsertInput): Partial<SessionUpsertMetada
 
 export function createSessionUpsert(database: DurableDatabase): SessionUpsert {
   return (input) => {
+    const validatedInput = sessionInsertSchema.parse(input)
     const argoId = crypto.randomUUID()
-    const metadata = definedMetadata(input)
+    const metadata = definedMetadata(validatedInput)
     const row = database
       .insert(sessionTable)
       .values({
         argoId,
-        harness: input.harness,
-        nativeId: input.nativeId,
-        projectId: input.projectId ?? null,
-        customTitle: input.customTitle ?? null,
-        preview: input.preview ?? null,
-        firstPrompt: input.firstPrompt ?? null,
-        cwd: input.cwd ?? null,
+        harness: validatedInput.harness,
+        nativeId: validatedInput.nativeId,
+        projectId: validatedInput.projectId ?? null,
+        customTitle: validatedInput.customTitle ?? null,
+        preview: validatedInput.preview ?? null,
+        firstPrompt: validatedInput.firstPrompt ?? null,
+        cwd: validatedInput.cwd ?? null,
       })
       .onConflictDoUpdate({
         target: [sessionTable.harness, sessionTable.nativeId],
         set: {
           ...metadata,
-          harness: input.harness,
+          harness: validatedInput.harness,
         },
       })
       .returning({ argoId: sessionTable.argoId })
