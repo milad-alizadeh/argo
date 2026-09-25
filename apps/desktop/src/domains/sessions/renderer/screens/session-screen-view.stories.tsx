@@ -530,9 +530,13 @@ function expectHeaderActionsAtTrailingEdge(canvasElement: HTMLElement) {
 
   expect(subagents).toHaveAccessibleName(/^Subagents/)
   expect(shell).toHaveAccessibleName(/^Shell/)
-  expect(headerControls.getBoundingClientRect().right).toBeLessThanOrEqual(
-    inspector.getBoundingClientRect().left -
-      Number.parseFloat(getComputedStyle(headerControls).getPropertyValue('gap')),
+  expect(headerControls.contains(inspector)).toBe(true)
+  const gap = Number.parseFloat(getComputedStyle(headerControls).getPropertyValue('gap'))
+  expect(subagents.getBoundingClientRect().right).toBeLessThanOrEqual(
+    shell.getBoundingClientRect().left - gap,
+  )
+  expect(shell.getBoundingClientRect().right).toBeLessThanOrEqual(
+    inspector.getBoundingClientRect().left - gap,
   )
 }
 
@@ -688,8 +692,8 @@ export const FormattedHeaderTitle: Story = {
     await expect(header).not.toHaveTextContent('[$implement]')
     await expect(header).toHaveTextContent('https://example.com/guide')
     await expect(header.querySelector('a')).toBeNull()
-    await expect(header.getBoundingClientRect().width).toBeGreaterThan(
-      metadata.getBoundingClientRect().width,
+    await expect(metadata.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+      header.getBoundingClientRect().bottom,
     )
   },
 }

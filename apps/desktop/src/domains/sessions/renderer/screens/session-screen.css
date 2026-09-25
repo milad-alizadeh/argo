@@ -1,9 +1,3 @@
-.session-screen__shell {
-  --inset-session-inspector-toggle: var(--size-control);
-  --size-session-header-metadata-basis: 20rem;
-  --size-session-header-title-basis: 32rem;
-}
-
 .session-screen__composer {
   --session-screen-composer-limit: min(var(--size-session-composer-overlay), 50%);
   max-height: var(--session-screen-composer-limit);
@@ -12,12 +6,6 @@
 .session-screen__composer-scroll {
   min-height: 0;
   overflow-y: auto;
-}
-
-.session-screen__shell
-  [data-component="InspectorSplit"][data-state="collapsed"]
-  [data-component="SessionHeaderControls"] {
-  margin-inline-end: var(--inset-session-inspector-toggle);
 }
 
 .session-screen__feed .feed__viewport {

@@ -1,7 +1,10 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AppPageHeader } from '@/platform/renderer/app/components/app-shell'
-import { InspectorSplit } from '@/platform/renderer/cockpit/inspector-split/inspector-split'
+import {
+  InspectorHeaderControls,
+  InspectorSplit,
+} from '@/platform/renderer/cockpit/inspector-split/inspector-split'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { SessionTitle } from '../prompt/session-title'
 import { sessionName } from '../session-list/rows/session-list-rows'
@@ -30,14 +33,14 @@ function SessionIdentity({ session }: { session: SessionShellProps['session'] })
   return (
     <div
       data-component="SessionIdentity"
-      className="flex min-w-0 flex-1 items-center gap-(--spacing-shell-section)"
+      className="flex min-w-0 flex-1 flex-col items-start justify-center gap-(--spacing-shell-tight)"
     >
-      <h1 className="min-w-0 flex-[1_1_var(--size-session-header-title-basis)] truncate type-heading">
+      <h1 className="w-full truncate type-heading">
         <SessionTitle session={session} text={sessionName(session, t('newSession'))} />
       </h1>
       <div
         data-component="SessionMetadata"
-        className="flex min-w-0 flex-[0_1_var(--size-session-header-metadata-basis)] items-center gap-(--spacing-shell-section) type-meta text-muted-foreground"
+        className="flex w-full min-w-0 items-center gap-(--spacing-shell-section) type-meta text-muted-foreground"
       >
         <p
           data-component="SessionIdMetadata"
@@ -97,7 +100,10 @@ export function SessionShell({
             header={
               <AppPageHeader>
                 <SessionIdentity session={session} />
-                <SessionHeaderControls>{headerControls}</SessionHeaderControls>
+                <SessionHeaderControls>
+                  {headerControls}
+                  <InspectorHeaderControls />
+                </SessionHeaderControls>
               </AppPageHeader>
             }
           />

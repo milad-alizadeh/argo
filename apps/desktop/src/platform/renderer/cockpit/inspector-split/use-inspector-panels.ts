@@ -40,6 +40,7 @@ export function useInspectorPanels(
   const inspectorPanel = usePanelRef()
   const workspacePanel = usePanelRef()
   const inspectorElement = useRef<HTMLElement>(null)
+  const splitElement = useRef<HTMLDivElement>(null)
   const [state, setState] = useState<InspectorState>(defaultCollapsed ? 'collapsed' : 'open')
   const stateRef = useRef<InspectorState>(defaultCollapsed ? 'collapsed' : 'open')
   const { isInspectorReady, setIsInspectorReady, synchronizeReady } = useInspectorReadiness({
@@ -53,10 +54,14 @@ export function useInspectorPanels(
   }
 
   const open = () => {
+    const availableWidth = splitElement.current?.getBoundingClientRect().width ?? 0
+    const minimumSplitWidth = readCssSize(sizes.inspectorMin) + readCssSize(sizes.workspaceMin)
+    const shouldExpand = availableWidth < minimumSplitWidth
     setIsInspectorReady(true)
+    if (shouldExpand) workspacePanel.current?.collapse()
     inspectorPanel.current?.expand()
     inspectorPanel.current?.resize(readCssSize(sizes.inspector))
-    updateState('open')
+    updateState(shouldExpand ? 'expanded' : 'open')
   }
   const opener = useRef(open)
   opener.current = open
@@ -66,6 +71,7 @@ export function useInspectorPanels(
   return {
     inspectorElement,
     inspectorPanel,
+    splitElement,
     workspacePanel,
     state,
     isInspectorReady,

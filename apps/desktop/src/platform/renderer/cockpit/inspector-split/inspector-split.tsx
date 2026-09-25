@@ -1,4 +1,4 @@
-import { type ReactNode, useLayoutEffect } from 'react'
+import { createContext, type ReactNode, useContext, useLayoutEffect } from 'react'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../components/ui/resizable'
 import { readCssSize } from '../../lib/read-css-size'
 import { cn } from '../../lib/utils'
@@ -19,8 +19,17 @@ export type InspectorSplitProps = {
   defaultCollapsed?: boolean
 }
 
+const InspectorHeaderControlsContext = createContext<ReactNode>(null)
+
+// The page that owns an inspector chooses where its controls belong. It normally places this in
+// its own header, so the toggle consumes layout space instead of floating over another control.
+export function InspectorHeaderControls() {
+  return useContext(InspectorHeaderControlsContext)
+}
+
 function InspectorPanel({
   bar,
+  controls,
   id,
   inspector,
   noun,
@@ -30,6 +39,7 @@ function InspectorPanel({
   defaultInspectorSize,
 }: {
   bar: ReactNode
+  controls: ReactNode
   id: string
   inspector: ReactNode
   noun: string
@@ -63,8 +73,13 @@ function InspectorPanel({
           (panels.state === 'collapsed' || !panels.isInspectorReady) && 'invisible',
         )}
       >
-        <header className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 bg-sidebar px-(--spacing-shell-item)">
+        <header className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center gap-(--spacing-shell-tight) border-b border-border/60 bg-sidebar px-(--spacing-shell-item)">
           <div className="no-drag-region flex min-w-0 flex-1 items-center">{bar}</div>
+          {controls ? (
+            <div className="no-drag-region flex shrink-0 items-center gap-(--spacing-shell-tight)">
+              {controls}
+            </div>
+          ) : null}
         </header>
         {inspector}
       </aside>
@@ -86,46 +101,52 @@ export function InspectorSplit(props: InspectorSplitProps) {
   } = props
   const panels = useInspectorPanels(sizes, reveal, defaultCollapsed)
   const id = noun.toLowerCase()
+  const toggles = (
+    <InspectorToggles
+      noun={noun}
+      onToggle={panels.toggle}
+      onToggleExpanded={panels.toggleExpanded}
+      state={panels.state}
+    />
+  )
   return (
-    <div
-      data-component="InspectorSplit"
-      data-state={panels.state}
-      className="relative h-full min-h-0"
-    >
-      <ResizablePanelGroup
-        orientation="horizontal"
-        className="h-full"
-        onLayoutChanged={panels.synchronizeCollapsed}
+    <InspectorHeaderControlsContext.Provider value={panels.state === 'expanded' ? null : toggles}>
+      <div
+        data-component="InspectorSplit"
+        data-state={panels.state}
+        className="h-full min-h-0"
+        ref={panels.splitElement}
       >
-        <ResizablePanel
-          id={`${id}-workspace`}
-          panelRef={panels.workspacePanel}
-          collapsible
-          collapsedSize={0}
-          minSize={readCssSize(sizes.workspaceMin)}
+        <ResizablePanelGroup
+          orientation="horizontal"
+          className="h-full"
+          onLayoutChanged={panels.synchronizeCollapsed}
         >
-          {workspace}
-        </ResizablePanel>
-        <ResizableHandle
-          className={panels.state === 'collapsed' ? 'bg-transparent' : 'bg-border/60'}
-        />
-        <InspectorPanel
-          bar={bar}
-          defaultCollapsed={defaultCollapsed}
-          defaultInspectorSize={defaultInspectorSize}
-          id={id}
-          inspector={inspector}
-          noun={noun}
-          panels={panels}
-          sizes={sizes}
-        />
-      </ResizablePanelGroup>
-      <InspectorToggles
-        noun={noun}
-        onToggle={panels.toggle}
-        onToggleExpanded={panels.toggleExpanded}
-        state={panels.state}
-      />
-    </div>
+          <ResizablePanel
+            id={`${id}-workspace`}
+            panelRef={panels.workspacePanel}
+            collapsible
+            collapsedSize={0}
+            minSize={readCssSize(sizes.workspaceMin)}
+          >
+            {workspace}
+          </ResizablePanel>
+          <ResizableHandle
+            className={panels.state === 'collapsed' ? 'bg-transparent' : 'bg-border/60'}
+          />
+          <InspectorPanel
+            bar={bar}
+            controls={panels.state === 'expanded' ? toggles : null}
+            defaultCollapsed={defaultCollapsed}
+            defaultInspectorSize={defaultInspectorSize}
+            id={id}
+            inspector={inspector}
+            noun={noun}
+            panels={panels}
+            sizes={sizes}
+          />
+        </ResizablePanelGroup>
+      </div>
+    </InspectorHeaderControlsContext.Provider>
   )
 }

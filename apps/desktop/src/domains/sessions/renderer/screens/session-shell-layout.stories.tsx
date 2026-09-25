@@ -81,8 +81,8 @@ export const Open: Story = {
     if (metadata === null) throw new Error('The Session ID metadata is absent.')
     await expect(metadata).toHaveTextContent(session.id)
     await expect(metadata.querySelector('svg')).not.toBeNull()
-    await expect(title.getBoundingClientRect().width).toBeGreaterThan(
-      metadata.getBoundingClientRect().width,
+    await expect(metadata.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+      title.getBoundingClientRect().bottom,
     )
   },
 }
