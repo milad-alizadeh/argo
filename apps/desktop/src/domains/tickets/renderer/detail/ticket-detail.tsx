@@ -4,8 +4,7 @@ import { providerPresentation } from '@/domains/accounts/renderer'
 import { FeedMarkdown } from '@/domains/sessions/renderer'
 import type { Ticket } from '@/domains/tickets/contract/contract'
 import { AppPageHeader } from '@/platform/renderer/app/components/app-shell'
-import { Icon } from '@/platform/renderer/components/icon/icon'
-import { Button } from '@/platform/renderer/components/ui/button'
+import { PageHeading } from '@/platform/renderer/components/page-heading'
 import type { LinkedSession } from '../hooks/use-linked-sessions'
 import { TicketDetailEmpty } from './ticket-detail-empty'
 import { LinkedSessions } from './ticket-detail-linked-sessions'
@@ -24,6 +23,23 @@ export type TicketDetailProps = {
   onOpenSession: (id: string) => void
 } & Navigation &
   Editing
+
+function TicketDetailPageHeader({ onBack }: Pick<TicketDetailProps, 'onBack'>) {
+  const { t } = useTranslation('tickets')
+  return (
+    <AppPageHeader>
+      <PageHeading
+        as="button"
+        className="no-drag-region"
+        icon="back"
+        onClick={onBack}
+        type="button"
+      >
+        {t('detail.back')}
+      </PageHeading>
+    </AppPageHeader>
+  )
+}
 
 export function TicketDetail(props: TicketDetailProps) {
   const { t } = useTranslation('tickets')
@@ -45,12 +61,7 @@ export function TicketDetail(props: TicketDetailProps) {
       aria-label={t('detail.articleLabel', { key: ticket.key })}
       className="flex min-h-0 flex-1 flex-col overflow-hidden"
     >
-      <AppPageHeader>
-        <Button className="no-drag-region" onClick={onBack} size="sm" type="button" variant="ghost">
-          <Icon data-icon="inline-start" name="back" />
-          {t('detail.back')}
-        </Button>
-      </AppPageHeader>
+      <TicketDetailPageHeader onBack={onBack} />
       <div
         data-component="TicketDetailScroll"
         className="@container min-h-0 flex-1 overflow-y-auto"

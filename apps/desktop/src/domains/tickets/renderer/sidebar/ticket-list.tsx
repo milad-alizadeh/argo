@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { providerPresentation } from '@/domains/accounts/renderer'
 import { AppPageHeader } from '@/platform/renderer/app/components/app-shell'
 import { Icon } from '@/platform/renderer/components/icon/icon'
+import { PageHeading } from '@/platform/renderer/components/page-heading'
 import {
   Empty,
   EmptyDescription,
@@ -82,7 +83,7 @@ export function TicketList({
     <section aria-label={t('backlog.label')} className="flex h-full min-h-0 min-w-0 flex-col">
       {placement === 'workspace' ? (
         <AppPageHeader>
-          <h1 className="type-heading">{t('backlog.label')}</h1>
+          <PageHeading>{t('backlog.label')}</PageHeading>
           <p aria-live="polite" className="ml-auto type-meta text-muted-foreground">
             {tally(t, backlog)}
           </p>
