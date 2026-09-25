@@ -40,8 +40,10 @@ function TicketKey({ ticket, provider }: { ticket: Ticket; provider: Provider })
   )
 }
 
-// Keeps a readable measure while the rule under the header runs the inspector's full width.
-const measure =
+// The header uses spare width for properties. At narrower measures they wrap under the title.
+const headerMeasure =
+  'grid max-w-6xl grid-cols-[minmax(0,1fr)] content-start gap-(--spacing-shell-section) px-(--spacing-shell-inset) py-(--spacing-shell-section) @[52rem]:grid-cols-[minmax(0,1fr)_18rem]'
+const bodyMeasure =
   'grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-(--spacing-shell-section) px-(--spacing-shell-inset) py-(--spacing-shell-section)'
 
 export type TicketDetailProps = {
@@ -72,8 +74,8 @@ export function TicketDetail(props: TicketDetailProps) {
       aria-label={t('detail.articleLabel', { key: ticket.key })}
       className="min-h-0 flex-1 overflow-y-auto"
     >
-      <header className="border-b border-border/60">
-        <div className={measure}>
+      <header className="@container border-b border-border/60">
+        <div className={headerMeasure}>
           <div className="grid min-w-0 gap-(--spacing-shell-tight)">
             <h2 className="min-w-0 type-title wrap-anywhere">{ticket.title}</h2>
             <TicketKey provider={provider} ticket={ticket} />
@@ -87,7 +89,7 @@ export function TicketDetail(props: TicketDetailProps) {
           />
         </div>
       </header>
-      <div className={measure}>
+      <div className={bodyMeasure}>
         {body ? (
           <FeedMarkdown text={body} />
         ) : (

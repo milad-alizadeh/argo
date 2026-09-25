@@ -13,6 +13,17 @@ const config: StorybookConfig = {
   viteFinal: async (viteConfig) => ({
     ...viteConfig,
     plugins: [...(viteConfig.plugins ?? []), tailwindcss()],
+    // Keep previews mountable while an unrelated story has an unresolved application import.
+    optimizeDeps: {
+      ...viteConfig.optimizeDeps,
+      include: [
+        ...(viteConfig.optimizeDeps?.include ?? []),
+        'react',
+        'react-dom',
+        'react/jsx-runtime',
+        'react/jsx-dev-runtime',
+      ],
+    },
     resolve: {
       ...viteConfig.resolve,
       dedupe: [

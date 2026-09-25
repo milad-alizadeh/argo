@@ -17,6 +17,9 @@ type TreeAnchorStyle = CSSProperties & Record<'--ticket-tree-anchor', string>
 const treeAnchor: TreeAnchorStyle = {
   '--ticket-tree-anchor': 'calc(var(--spacing-shell-icon) + var(--text-body--line-height) / 2)',
 }
+const sidebarTreeAnchor: TreeAnchorStyle = {
+  '--ticket-tree-anchor': 'calc(var(--spacing-shell-item) + var(--text-body--line-height) / 2)',
+}
 // Past this many, the rest of a row's labels are counted rather than drawn.
 const SHOWN_LABELS = 2
 
@@ -84,7 +87,7 @@ function Fold({ row, folded, onToggle }: Pick<TicketRowProps, 'row' | 'folded' |
     <button
       aria-expanded={!folded}
       aria-label={folded ? t('row.expand', { key }) : t('row.collapse', { key })}
-      className="relative z-10 flex w-(--size-icon-control) shrink-0 items-start justify-center self-stretch rounded-row pt-2 text-faint hover:text-foreground"
+      className="relative z-10 flex w-(--size-icon-control) shrink-0 items-start justify-center self-stretch rounded-row pt-[calc(var(--ticket-tree-anchor)-var(--size-icon-meta)/2)] text-faint hover:text-foreground"
       onClick={onToggle}
       type="button"
     >
@@ -106,6 +109,7 @@ type TicketRowProps = {
   statuses: readonly TicketStatus[]
   selected: boolean
   folded: boolean
+  placement: 'workspace' | 'sidebar'
   now: number
   onSelect: () => void
   onToggle: () => void
@@ -113,10 +117,81 @@ type TicketRowProps = {
   onChangePriority: (priority: TicketPriority | null) => void
 }
 
+function SidebarMetadata(props: TicketRowProps) {
+  const { ticket } = props.row
+  const age = ticketAge(ticket.createdAt, props.now)
+  return (
+    <div className="mt-(--spacing-shell-tight) flex min-w-0 items-center gap-(--spacing-shell-item) pl-[calc(var(--size-icon-control)+var(--spacing-shell-tight))]">
+      {props.provider === 'linear' ? (
+        <span className="relative z-10 flex shrink-0 items-center">
+          <PriorityMenu
+            named={false}
+            onChange={props.onChangePriority}
+            priority={ticket.priority}
+          />
+        </span>
+      ) : null}
+      <span
+        aria-hidden="true"
+        className={`${props.presentation.keyColumn} shrink-0 font-mono type-meta text-faint`}
+      >
+        {ticket.key}
+      </span>
+      <span className="min-w-0 flex-1" />
+      <Marks ticket={ticket} />
+      <time className="shrink-0 type-meta text-faint tabular-nums" dateTime={ticket.createdAt}>
+        <span aria-hidden="true">{age.short}</span>
+        <span className="sr-only">{age.long}</span>
+      </time>
+    </div>
+  )
+}
+
+function SidebarTicketRow(props: TicketRowProps) {
+  const { t } = useTranslation('tickets')
+  const { row, rails, presentation, statuses, selected, folded } = props
+  const { onSelect, onToggle, onChangeStatus } = props
+  const { ticket, parent } = row
+  return (
+    <div className="relative flex min-w-0 items-stretch gap-(--spacing-shell-tight) rounded-row px-(--spacing-shell-item) hover:bg-muted has-[[aria-current]]:bg-selected">
+      <span className="flex shrink-0 self-stretch" style={sidebarTreeAnchor}>
+        <TreeRails rails={rails} />
+        <Fold folded={folded} onToggle={onToggle} row={row} />
+      </span>
+      <div className="min-w-0 flex-1 py-(--spacing-shell-item)">
+        <div className="flex min-w-0 items-start gap-(--spacing-shell-tight)">
+          <span className="relative z-10 mt-[calc((var(--text-body--line-height)-var(--size-icon-control))/2)] shrink-0">
+            <StatusMenu
+              named={false}
+              noun={presentation.statusNoun}
+              onChange={onChangeStatus}
+              status={ticket.status}
+              statuses={statuses}
+            />
+          </span>
+          <button
+            aria-current={selected ? 'true' : undefined}
+            className="min-w-0 flex-1 text-left outline-none after:absolute after:inset-0 after:rounded-row focus-visible:after:outline-2 focus-visible:after:outline-ring focus-visible:after:-outline-offset-2"
+            onClick={onSelect}
+            type="button"
+          >
+            <span className="sr-only">{ticket.key} </span>
+            <span className="line-clamp-3 type-body">{ticket.title}</span>
+            {parent === null ? null : (
+              <span className="sr-only">{t('row.childOf', { parent })}</span>
+            )}
+          </button>
+        </div>
+        <SidebarMetadata {...props} />
+      </div>
+    </div>
+  )
+}
+
 // The row selects wherever it is pressed but on its status and its chevron: the select button's
 // overlay covers the row, and those two sit above it. The overlay draws the button's ring, so the
 // keyboard cursor outlines the whole row. The key column keeps parent and child titles aligned.
-export function TicketRow(props: TicketRowProps) {
+function WorkspaceTicketRow(props: TicketRowProps) {
   const { t } = useTranslation('tickets')
   const { row, rails, presentation, provider, statuses, selected, folded, now } = props
   const { onSelect, onToggle, onChangeStatus, onChangePriority } = props
@@ -174,5 +249,13 @@ export function TicketRow(props: TicketRowProps) {
         {parent === null ? null : <span className="sr-only">{t('row.childOf', { parent })}</span>}
       </button>
     </div>
+  )
+}
+
+export function TicketRow(props: TicketRowProps) {
+  return props.placement === 'sidebar' ? (
+    <SidebarTicketRow {...props} />
+  ) : (
+    <WorkspaceTicketRow {...props} />
   )
 }

@@ -10,13 +10,13 @@ import { TicketLabel } from '../status/ticket-label'
 
 function Property({ name, children }: { name: string; children: ReactNode }) {
   return (
-    <>
-      <dt className="text-muted-foreground">{name}</dt>
+    <div className="flex min-w-0 items-center rounded-full border border-border/60 px-(--spacing-shell-item) py-(--spacing-shell-tight) @[52rem]:contents">
+      <dt className="sr-only text-muted-foreground @[52rem]:not-sr-only">{name}</dt>
       {/* Every value row is as tall as the status trigger, so the rows keep one rhythm. */}
       <dd className="flex min-h-6 min-w-0 flex-wrap items-center gap-(--spacing-shell-tight)">
         {children}
       </dd>
-    </>
+    </div>
   )
 }
 
@@ -40,7 +40,7 @@ export function Properties({
   const presentation = sourcePresentation(provider)
   const noun = presentation.statusNoun
   return (
-    <dl className="grid grid-cols-[var(--size-ticket-property)_minmax(0,1fr)] items-center gap-x-(--spacing-shell-gutter) gap-y-(--spacing-shell-item) type-meta">
+    <dl className="flex min-w-0 flex-wrap items-center gap-(--spacing-shell-item) type-meta @[52rem]:grid @[52rem]:grid-cols-[var(--size-ticket-property)_minmax(0,1fr)] @[52rem]:gap-x-(--spacing-shell-gutter) @[52rem]:gap-y-(--spacing-shell-item)">
       <Property name={noun}>
         <StatusMenu
           named

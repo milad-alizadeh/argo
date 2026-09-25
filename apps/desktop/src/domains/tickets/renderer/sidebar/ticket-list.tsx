@@ -22,6 +22,7 @@ export type TicketListProps = {
   onSelect: (key: string) => void
   // The moment a Ticket's age is measured against, so a caller controls whether it moves.
   now: number
+  placement?: 'workspace' | 'sidebar'
 }
 
 function tally(
@@ -117,15 +118,23 @@ function useFolds() {
   return { folded, toggle }
 }
 
-export function TicketList({ backlog, selectedKey, onSelect, now }: TicketListProps) {
+export function TicketList({
+  backlog,
+  selectedKey,
+  onSelect,
+  now,
+  placement = 'workspace',
+}: TicketListProps) {
   const { t } = useTranslation('tickets')
   const { folded, toggle } = useFolds()
   const rows = unfoldedRows(backlogRows(backlog.tickets), folded)
   const rails = treeRails(rows)
   return (
     <section aria-label={t('backlog.label')} className="flex min-h-0 min-w-0 flex-1 flex-col">
-      {/* Empty, as the Session workspace's is: a collapsed sidebar draws its controls over it. */}
-      <div className="h-(--size-chrome-bar) shrink-0 border-b border-border/60" />
+      {placement === 'workspace' ? (
+        // Empty, as the Session workspace's is: a collapsed sidebar draws its controls over it.
+        <div className="h-(--size-chrome-bar) shrink-0 border-b border-border/60" />
+      ) : null}
       <header className="flex shrink-0 items-baseline gap-(--spacing-shell-item) px-(--spacing-shell-inset) pt-(--spacing-shell-inset) pb-(--spacing-shell-item)">
         <h2 className="type-heading">{t('backlog.label')}</h2>
         <p aria-live="polite" className="ml-auto type-meta text-muted-foreground">
@@ -150,6 +159,7 @@ export function TicketList({ backlog, selectedKey, onSelect, now }: TicketListPr
               onSelect={() => onSelect(row.ticket.key)}
               onToggle={() => toggle(row.ticket.key)}
               presentation={sourcePresentation(backlog.provider)}
+              placement={placement}
               provider={backlog.provider}
               row={row}
               selected={row.ticket.key === selectedKey}
