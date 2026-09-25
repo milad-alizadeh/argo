@@ -32,7 +32,7 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
   return (
     <nav
       aria-label={t('rail.label')}
-      className="no-drag-region flex h-full min-h-0 w-(--size-navigation-rail) shrink-0 flex-col items-center border-r border-border/60 bg-sidebar [&_svg]:size-(--size-icon-control)"
+      className="no-drag-region flex h-full min-h-0 w-(--size-navigation-rail) shrink-0 flex-col items-center border-r border-border/60 bg-sidebar [&_*]:no-drag-region [&_svg]:size-(--size-icon-control)"
     >
       <div className="flex flex-col items-center gap-2 pt-(--inset-navigation-rail-item-top)">
         {DESTINATIONS.map((itemDestination) => {
@@ -70,7 +70,7 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
         <button
           type="button"
           aria-label={settingsLabel}
-          className="group flex flex-col items-center gap-1 type-meta"
+          className="no-drag-region group flex flex-col items-center gap-1 type-meta"
         >
           <span className="grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors group-hover:bg-sidebar group-hover:text-foreground">
             <Icon name="settings" />
