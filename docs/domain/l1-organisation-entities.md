@@ -5,12 +5,14 @@
   **optional** Code host Connection. One git common directory = one Project: linked worktrees
   share it, while independent clones of the same remote are separate Projects. A monorepo is one
   Project. Registration is the act that creates it — an unregistered repo on disk is not a
-  Project. One active Project per window; the known set lives in the per-machine database. The **only
-  entity in the L1 triangle that Argo owns rather than observes** (Account is owned too, but
-  sits outside it), and the shared base ref every session's Workspace branches from. Owns a
-  **Workspace registry**: one durable record per main checkout, externally-created linked
-  worktree (**imported**), and Argo-created worktree (**managed**) — **id is stable, path is a
-  mutable attribute**, the same id-vs-path split as Project's own. Reconciled lazily against git
+  Project. One active Project per window; the known set lives in the per-machine database. The
+  Session list can also show all known Sessions, including those with no Project (ADR-0015
+  amendment). The **only entity in the L1 triangle that Argo owns rather than observes**
+  (Account is owned too, but sits outside it), and the shared base ref every session's Workspace
+  branches from. Owns a **Workspace registry**: one durable record per main checkout,
+  externally-created linked worktree (**imported**), and Argo-created worktree (**managed**) —
+  **id is stable, path is a mutable attribute**, the same id-vs-path split as Project's own.
+  Reconciled lazily against git
   on every list, **never deleted** once written, so a Project's remembered Workspace selection is
   always resolvable. See L3 · Workspace for the live git facts an Agent reads off the checkout a
   record points to.
