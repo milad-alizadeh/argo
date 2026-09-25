@@ -24,6 +24,7 @@ const sidebarTreeAnchor: TreeAnchorStyle = {
 }
 // Past this many, the rest of a row's labels are counted rather than drawn.
 const SHOWN_LABELS = 2
+const SHOWN_RAIL_LABELS = 3
 const CATEGORY_LABELS = new Set(['bug', 'implementation', 'enhancement'])
 
 // Blocking is workflow state, not taxonomy: it sits beside the title instead of among labels.
@@ -78,16 +79,22 @@ function categoryAndLabels(ticket: Ticket) {
   return { category, labels }
 }
 
-// The category remains readable while secondary labels stay on one clipped line. The same control
-// opens the complete set on hover, focus, click, or tap without changing the row's height.
-function CategoryTagRail({ ticket }: { ticket: Ticket }) {
+type TagRailProps = {
+  all: Ticket['labels']
+  category: Ticket['labels'][number] | null
+  className: string
+  labels: Ticket['labels']
+  limit: number
+  ticket: Ticket
+}
+
+function TagRail({ all, category, className, labels, limit, ticket }: TagRailProps) {
   const { t } = useTranslation('tickets')
-  const { category, labels } = categoryAndLabels(ticket)
-  const all = category === null ? labels : [category, ...labels]
-  if (all.length === 0) return null
-  if (all.length === 1) {
+  const shown = labels.slice(0, limit)
+  const hidden = labels.length - shown.length
+  if (hidden === 0) {
     return (
-      <span className="flex min-w-0 items-center gap-(--spacing-shell-tight)">
+      <span className={`${className} min-w-0 items-center gap-(--spacing-shell-tight)`}>
         {all.map((label) => (
           <TicketLabel key={label.name} label={label} />
         ))}
@@ -95,25 +102,25 @@ function CategoryTagRail({ ticket }: { ticket: Ticket }) {
     )
   }
   return (
-    <span className="flex min-w-0 max-w-full items-center gap-(--spacing-shell-tight)">
+    <span className={`${className} min-w-0 max-w-full items-center gap-(--spacing-shell-tight)`}>
       {category === null ? null : <TicketLabel label={category} />}
       <Popover>
         <PopoverTrigger
           openOnHover
           render={
             <button
-              aria-label={t('row.showLabels', { count: all.length, key: ticket.key })}
+              aria-label={t('row.showMoreLabels', { count: hidden, key: ticket.key })}
               className="relative z-20 flex min-w-0 max-w-full items-center gap-(--spacing-shell-tight) rounded-full outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
               type="button"
             />
           }
         >
           <span className="flex min-w-0 items-center gap-(--spacing-shell-tight) overflow-hidden py-px">
-            {labels.slice(0, 3).map((label) => (
+            {shown.map((label) => (
               <TicketLabel key={label.name} label={label} />
             ))}
           </span>
-          <Badge variant="secondary">{t('row.labelsCount', { count: all.length })}</Badge>
+          <Badge variant="secondary">{t('row.hiddenLabels', { count: hidden })}</Badge>
         </PopoverTrigger>
         <PopoverContent
           align="end"
@@ -128,6 +135,34 @@ function CategoryTagRail({ ticket }: { ticket: Ticket }) {
         </PopoverContent>
       </Popover>
     </span>
+  )
+}
+
+// The category remains readable while secondary labels stay on one line. Compact rows reserve
+// more room for the title; the overflow control appears only when this row actually hides labels.
+function CategoryTagRail({ ticket }: { ticket: Ticket }) {
+  const { category, labels } = categoryAndLabels(ticket)
+  const all = category === null ? labels : [category, ...labels]
+  if (all.length === 0) return null
+  return (
+    <>
+      <TagRail
+        all={all}
+        category={category}
+        className="flex @[44rem]:hidden"
+        labels={labels}
+        limit={1}
+        ticket={ticket}
+      />
+      <TagRail
+        all={all}
+        category={category}
+        className="hidden @[44rem]:flex"
+        labels={labels}
+        limit={SHOWN_RAIL_LABELS}
+        ticket={ticket}
+      />
+    </>
   )
 }
 

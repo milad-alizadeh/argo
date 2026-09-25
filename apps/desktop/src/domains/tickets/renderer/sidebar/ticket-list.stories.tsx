@@ -49,6 +49,9 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof TicketList>
 
+const visibleMatches = (elements: HTMLElement[]) =>
+  elements.filter((element) => element.getClientRects().length > 0)
+
 export const NestedLongTitle: Story = {
   args: {
     backlog: backlog({ tickets: [longTicket, prototype] }),
@@ -71,13 +74,16 @@ export const NestedLongTitle: Story = {
     const blocked = parentRow.querySelector('svg.lucide-ban')
     if (blocked === null) throw new Error('A blocked Ticket needs a blocked mark.')
     await expect(blocked.parentElement).toHaveClass('text-destructive')
-    for (const label of longTicket.labels) {
-      const badge = parent.getByText(label.name)
-      await expect(badge.scrollWidth).toBeLessThanOrEqual(badge.clientWidth)
-      await expect(badge.getBoundingClientRect().top).toBeGreaterThan(
-        title.getBoundingClientRect().top,
-      )
-    }
+    const shownLabel = visibleMatches(parent.getAllByText(longTicket.labels[0]?.name ?? ''))[0]
+    if (!shownLabel) throw new Error('The compact row needs one visible label.')
+    await expect(shownLabel.scrollWidth).toBeLessThanOrEqual(shownLabel.clientWidth)
+    await expect(shownLabel.getBoundingClientRect().top).toBeGreaterThan(
+      title.getBoundingClientRect().top,
+    )
+    await expect(
+      visibleMatches(parent.queryAllByText(longTicket.labels[1]?.name ?? '')),
+    ).toHaveLength(0)
+    await expect(parent.getByText('+1 label')).toBeVisible()
     await expect(title.scrollWidth).toBeGreaterThanOrEqual(title.clientWidth)
     const titleLineHeight = Number.parseFloat(getComputedStyle(title).lineHeight)
     const titleCenter = title.getBoundingClientRect().top + titleLineHeight / 2
@@ -96,9 +102,11 @@ export const NestedExpandableTags: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: 'Collapse #607' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: /^#273.*child of #607$/ })).toBeVisible()
-    const category = canvas.getByText('enhancement')
+    const category = visibleMatches(canvas.getAllByText('enhancement'))[0]
+    if (!category) throw new Error('The Ticket category needs to remain visible.')
     await expect(category).toBeVisible()
-    const trigger = canvas.getByRole('button', { name: 'Show 8 labels for #273' })
+    const trigger = canvas.getByRole('button', { name: 'Show 4 more labels for #273' })
+    await expect(trigger).toHaveTextContent('+4 labels')
     const title = canvas.getByRole('button', { name: /^#273/ })
     const row = title.closest('li')
     if (row === null) throw new Error('A Ticket needs a list row.')

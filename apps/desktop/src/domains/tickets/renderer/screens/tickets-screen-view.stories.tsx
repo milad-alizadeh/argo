@@ -138,6 +138,7 @@ async function readsTheBacklog(canvasElement: HTMLElement) {
   if (parentRow === null || parentRow === undefined) throw new Error('A Ticket needs a list row.')
   await expect(parentRow).toHaveTextContent('Blocked by 1 open Ticket')
   await expect(parentRow).toHaveTextContent('1 of 3 children closed')
+  await expect(within(parentRow).queryByText(/^\+\d+ labels?$/)).toBeNull()
   await expect(rows[1]).toHaveAccessibleName(/child of #607$/)
   const title = list.getByText('Wayfinder: the Tickets room, end to end')
   const chevron = list.getByRole('button', { name: 'Collapse #607' })
