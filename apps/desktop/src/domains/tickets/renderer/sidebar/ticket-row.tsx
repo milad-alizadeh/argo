@@ -321,17 +321,12 @@ function WorkspaceTicketRow(props: TicketRowProps) {
           total={ticket.children.length || undefined}
         />
         {ticket.children.length > 0 ? (
-          <>
-            <span aria-hidden="true">
-              {closedChildren(ticket)}/{ticket.children.length}
-            </span>
-            <span className="sr-only">
-              {t('row.childrenClosed', {
-                closed: closedChildren(ticket),
-                count: ticket.children.length,
-              })}
-            </span>
-          </>
+          <span className="sr-only">
+            {t('row.childrenClosed', {
+              closed: closedChildren(ticket),
+              count: ticket.children.length,
+            })}
+          </span>
         ) : null}
       </span>
       <span className="flex shrink-0 self-stretch" style={treeAnchor}>

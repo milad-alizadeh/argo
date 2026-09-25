@@ -70,7 +70,7 @@ export const NestedLongTitle: Story = {
     if (parentRow === null) throw new Error('A parent Ticket needs a list row.')
     const parent = within(parentRow)
     const status = parent.getByRole('button', { name: 'State: Open' })
-    const progress = parent.getByText('1/3')
+    await expect(parent.queryByText('1/3')).toBeNull()
     const blocked = parentRow.querySelector('svg.lucide-ban')
     if (blocked === null) throw new Error('A blocked Ticket needs a blocked mark.')
     await expect(blocked.parentElement).toHaveClass('text-destructive')
@@ -90,7 +90,6 @@ export const NestedLongTitle: Story = {
     const statusCenter =
       status.getBoundingClientRect().top + status.getBoundingClientRect().height / 2
     await expect(Math.abs(statusCenter - titleCenter)).toBeLessThanOrEqual(1)
-    await expect(progress).toBeVisible()
     await expect(within(list).getByRole('button', { name: /^#609.*child of #607$/ })).toBeVisible()
     await expect(list.scrollWidth).toBeLessThanOrEqual(list.clientWidth)
   },
