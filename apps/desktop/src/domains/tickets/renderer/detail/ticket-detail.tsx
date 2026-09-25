@@ -3,7 +3,7 @@ import type { Provider } from '@/domains/accounts/contract/contract'
 import { providerPresentation } from '@/domains/accounts/renderer'
 import { FeedMarkdown } from '@/domains/sessions/renderer'
 import type { Ticket } from '@/domains/tickets/contract/contract'
-import { CockpitContentChrome } from '@/platform/renderer/cockpit/components/cockpit-content-chrome'
+import { AppPageHeader } from '@/platform/renderer/app/components/app-shell'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import type { LinkedSession } from '../hooks/use-linked-sessions'
@@ -45,12 +45,12 @@ export function TicketDetail(props: TicketDetailProps) {
       aria-label={t('detail.articleLabel', { key: ticket.key })}
       className="flex min-h-0 flex-1 flex-col overflow-hidden"
     >
-      <CockpitContentChrome>
+      <AppPageHeader>
         <Button className="no-drag-region" onClick={onBack} size="sm" type="button" variant="ghost">
           <Icon data-icon="inline-start" name="back" />
           {t('detail.back')}
         </Button>
-      </CockpitContentChrome>
+      </AppPageHeader>
       <div
         data-component="TicketDetailScroll"
         className="@container min-h-0 flex-1 overflow-y-auto"

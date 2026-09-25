@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
-import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
+import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { SessionsSidebar } from '../roster/sidebar/sessions-sidebar'
 import { sessionRosterRow } from '../session-fixtures'
 import { SessionScreenView } from './session-screen-view'
@@ -60,11 +60,11 @@ const meta = {
     (Story) => (
       <div className="h-dvh w-full">
         <MemoryRouter initialEntries={[`/sessions/${stalled.id}`]}>
-          <CockpitShell header={<ProjectSwitcher />} sidebar={<SessionsSidebar />}>
+          <AppShell leftHeader={<ProjectSwitcher />} sidebar={<SessionsSidebar />}>
             <Routes>
               <Route path="/sessions/:sessionId" element={<Story />} />
             </Routes>
-          </CockpitShell>
+          </AppShell>
         </MemoryRouter>
       </div>
     ),

@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { providerPresentation } from '@/domains/accounts/renderer'
-import { CockpitContentChrome } from '@/platform/renderer/cockpit/components/cockpit-content-chrome'
+import { AppPageHeader } from '@/platform/renderer/app/components/app-shell'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   Empty,
@@ -80,13 +80,14 @@ export function TicketList({
   const rows = unfoldedRows(backlogRows(backlog.tickets), folded)
   return (
     <section aria-label={t('backlog.label')} className="flex h-full min-h-0 min-w-0 flex-col">
-      {placement === 'workspace' ? <CockpitContentChrome /> : null}
-      <header className="flex shrink-0 items-baseline gap-(--spacing-shell-item) px-[var(--inset-cockpit-content-body,var(--spacing-shell-inset))] pt-(--spacing-shell-inset) pb-(--spacing-shell-item)">
-        <h2 className="type-heading">{t('backlog.label')}</h2>
-        <p aria-live="polite" className="ml-auto type-meta text-muted-foreground">
-          {tally(t, backlog)}
-        </p>
-      </header>
+      {placement === 'workspace' ? (
+        <AppPageHeader>
+          <h1 className="type-heading">{t('backlog.label')}</h1>
+          <p aria-live="polite" className="ml-auto type-meta text-muted-foreground">
+            {tally(t, backlog)}
+          </p>
+        </AppPageHeader>
+      ) : null}
       {backlog.tickets.length === 0 ? (
         <NoTickets provider={backlog.provider} query={backlog.query} />
       ) : null}

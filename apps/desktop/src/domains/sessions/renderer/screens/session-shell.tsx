@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CockpitContentChrome } from '@/platform/renderer/cockpit/components/cockpit-content-chrome'
+import { AppPageHeader } from '@/platform/renderer/app/components/app-shell'
 import { InspectorSplit } from '@/platform/renderer/cockpit/inspector-split/inspector-split'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { SessionTitle } from '../prompt/session-title'
@@ -28,14 +28,14 @@ function SessionIdentity({ session }: { session: SessionShellProps['session'] })
   if (session === null || session === undefined) return null
   const worktree = worktreeName(session.cwd)
   return (
-    <header
+    <div
       data-component="SessionIdentity"
-      className="grid min-w-0 shrink-0 gap-(--spacing-shell-item) border-b border-border/60 px-(--spacing-session-gutter) py-(--spacing-shell-inset)"
+      className="flex min-w-0 flex-1 items-center gap-(--spacing-shell-section)"
     >
-      <h1 className="min-w-0 type-title wrap-anywhere">
+      <h1 className="min-w-0 flex-1 truncate type-heading">
         <SessionTitle session={session} text={sessionName(session, t('newSession'))} />
       </h1>
-      <div className="flex min-w-0 flex-wrap items-center gap-x-(--spacing-shell-section) gap-y-(--spacing-shell-item) type-meta text-muted-foreground">
+      <div className="hidden min-w-0 items-center gap-(--spacing-shell-section) type-meta text-muted-foreground @lg:flex">
         <p
           data-component="SessionIdMetadata"
           className="flex min-w-0 items-center gap-(--spacing-shell-tight)"
@@ -52,7 +52,7 @@ function SessionIdentity({ session }: { session: SessionShellProps['session'] })
           </p>
         ) : null}
       </div>
-    </header>
+    </div>
   )
 }
 
@@ -83,8 +83,8 @@ export function SessionShell({
     >
       <InspectorSplit
         bar={inspectorBar}
-        inspector={inspector}
         defaultCollapsed={defaultInspectorCollapsed}
+        inspector={inspector}
         noun="Session"
         reveal={inspectorReveal}
         sizes={SESSION_SPLIT}
@@ -92,12 +92,10 @@ export function SessionShell({
           <SessionWorkspace
             {...workspaceProps}
             header={
-              <>
-                <CockpitContentChrome data-component="SessionHeader">
-                  <SessionHeaderControls>{headerControls}</SessionHeaderControls>
-                </CockpitContentChrome>
+              <AppPageHeader>
                 <SessionIdentity session={session} />
-              </>
+                <SessionHeaderControls>{headerControls}</SessionHeaderControls>
+              </AppPageHeader>
             }
           />
         }

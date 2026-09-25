@@ -10,7 +10,7 @@ import type { useSessions } from '../use-sessions'
 
 export type SessionWorkspaceProps = {
   composer: ReactNode | null
-  header: ReactNode
+  header?: ReactNode
   feed: ReturnType<typeof useSessions>['feed']
   feedError: ReturnType<typeof useSessions>['feedError']
   onRetryFeed: ReturnType<typeof useSessions>['retryFeed']
@@ -99,8 +99,11 @@ export function SessionWorkspace({
   const { t } = useTranslation('sessions')
 
   return (
-    <section aria-label={t('workspaceLabel')} className="relative flex h-full min-h-0 flex-col">
-      {header}
+    <section
+      aria-label={t('workspaceLabel')}
+      className="@container relative flex h-full min-h-0 flex-col"
+    >
+      {header ?? null}
       {/* A layout wrapper only: `BasicFeed` is its own labelled landmark, so this stays a plain `div` to
           avoid a second "Session Feed" region with the same name. */}
       <div className="session-screen__feed min-h-0 flex-1 overflow-hidden">

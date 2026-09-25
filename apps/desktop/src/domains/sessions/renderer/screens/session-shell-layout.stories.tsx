@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
-import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
+import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { INACTIVE_FEED_LIVE_FACTS } from '../feed/document/feed-live-facts'
 import { sessionRosterRow } from '../session-fixtures'
 import { SessionShell } from './session-shell'
@@ -18,8 +18,8 @@ const session = sessionRosterRow({
 
 function SessionLayout() {
   return (
-    <CockpitShell
-      header={<span className="type-meta text-muted-foreground">argo</span>}
+    <AppShell
+      leftHeader={<span className="type-meta text-muted-foreground">argo</span>}
       sidebar={<aside aria-label="Sessions sidebar" className="h-full bg-sidebar" />}
     >
       <SessionShell
@@ -39,7 +39,7 @@ function SessionLayout() {
         selectedSessionId={null}
         session={session}
       />
-    </CockpitShell>
+    </AppShell>
   )
 }
 

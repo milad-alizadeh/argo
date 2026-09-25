@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import { CockpitContentChrome } from '@/platform/renderer/cockpit/components/cockpit-content-chrome'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   Empty,
@@ -13,7 +12,6 @@ export function TicketDetailEmpty() {
   const { t } = useTranslation('tickets')
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <CockpitContentChrome />
       <Empty className="min-h-0 flex-1">
         <EmptyHeader>
           <EmptyMedia variant="icon">

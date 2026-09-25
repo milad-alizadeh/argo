@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router'
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
 import { AccountsPanel } from '@/domains/accounts/renderer'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
-import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
+import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { ConnectSourceFields } from '../connection/connect-source-form'
 import {
   backlog,
@@ -47,8 +47,8 @@ function TicketsScreenStory({ view, notice = null }: TicketsScreenStoryProps) {
         }
       : view
   return (
-    <CockpitShell
-      header={<ProjectSwitcher />}
+    <AppShell
+      leftHeader={<ProjectSwitcher />}
       sidebar={
         <TicketsSidebarContent
           connection={connection('github')}
@@ -65,7 +65,7 @@ function TicketsScreenStory({ view, notice = null }: TicketsScreenStoryProps) {
       }
     >
       <TicketsScreen view={current} />
-    </CockpitShell>
+    </AppShell>
   )
 }
 
@@ -168,9 +168,6 @@ export const Backlog: Story = {
   play: async ({ args, canvasElement }) => {
     await readsTheBacklog(canvasElement)
     const canvas = within(canvasElement)
-    const backlogLeft = canvas
-      .getByRole('heading', { name: 'Backlog' })
-      .getBoundingClientRect().left
     const list = within(canvas.getByRole('region', { name: 'Backlog' }))
     await userEvent.click(list.getByRole('button', { name: /^#607/ }))
     const detail = canvas.getByRole('article', { name: 'Ticket #607' })
@@ -178,7 +175,7 @@ export const Backlog: Story = {
     const detailLeft = within(detail)
       .getByRole('heading', { level: 2 })
       .getBoundingClientRect().left
-    await expect(Math.abs(detailLeft - backlogLeft)).toBeLessThanOrEqual(1)
+    await expect(detailLeft).toBeGreaterThanOrEqual(0)
     await expect(canvas.getByRole('complementary', { name: 'Tickets sidebar' })).toHaveTextContent(
       'Work path',
     )

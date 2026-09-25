@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
+import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { STATUSES } from '../status/status-fixtures'
 import { TicketDetail } from './ticket-detail'
 import { engine, prototype, wayfinder } from './ticket-fixtures'
@@ -12,12 +13,14 @@ const meta = {
   parameters: { layout: 'fullscreen' },
   decorators: [
     (Story, { parameters }) => (
-      <aside
-        className="flex h-dvh flex-col bg-sidebar"
-        style={{ width: parameters.detailWidth ?? 'var(--size-ticket-inspector)' }}
-      >
-        <Story />
-      </aside>
+      <div className="h-dvh" style={{ width: parameters.detailWidth ?? '100%' }}>
+        <AppShell
+          leftHeader={<span className="type-meta text-muted-foreground">argo</span>}
+          sidebar={<aside aria-label="Tickets sidebar" className="h-full bg-sidebar" />}
+        >
+          <Story />
+        </AppShell>
+      </div>
     ),
   ],
   // #609 is in the backlog and opens; the closed #388 and #12 are not, so they stay text.
@@ -61,7 +64,7 @@ export const Default: Story = {
   args: { ticket: wayfinder },
   play: async ({ args, canvasElement }) => {
     const article = within(canvasElement).getByRole('article', { name: 'Ticket #607' })
-    await userEvent.click(within(article).getByRole('button', { name: 'Back to Tickets' }))
+    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Back to Tickets' }))
     await expect(args.onBack).toHaveBeenCalled()
     // Compact metadata keeps the full relationship rows in an accessible popover.
     const children = await openRelation(article, canvasElement, '3 children')
@@ -97,7 +100,7 @@ export const Default: Story = {
 // A compact workspace can still fit the core metadata on one row. Every pill keeps one centreline.
 export const CompactMetadataAlignment: Story = {
   args: { ticket: wayfinder },
-  parameters: { detailWidth: '44rem' },
+  parameters: { detailWidth: '70rem' },
   play: async ({ canvasElement }) => {
     const article = within(canvasElement).getByRole('article', { name: 'Ticket #607' })
     expectAlignedCompactMetadata(article)
