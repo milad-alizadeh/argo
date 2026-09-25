@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { useLocation } from 'react-router'
+import { useLocation, useParams } from 'react-router'
 import type { Cockpit, ProjectActions } from '@/domains/projects/renderer'
 import type { SessionSubmitInput } from '@/domains/sessions/main/api/session-start'
 import type { SessionRosterRow } from '@/domains/sessions/renderer/model/models'
@@ -185,12 +185,13 @@ function HandoffLink({
   roster: SessionRoster | null
   onNavigate: (path: string) => void
 }) {
+  const { projectId } = useParams()
   return (
     <p className="mt-2">
       {label}{' '}
       <button
         className="text-foreground underline underline-offset-2"
-        onClick={() => onNavigate(`/sessions/${sessionId}`)}
+        onClick={() => onNavigate(`/projects/${projectId}/sessions/${sessionId}`)}
         type="button"
       >
         {handoffTitle(roster, sessionId)}

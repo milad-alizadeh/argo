@@ -7,6 +7,7 @@ import { NoHarnessReadyScreen } from '@/domains/harness-signin/renderer/screens/
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { useProjects } from '@/domains/projects/renderer/hooks/use-projects'
 import { EmptyProjectScreen } from '@/domains/projects/renderer/screens/empty-project-screen'
+import { ProjectSetupWindow } from '@/domains/projects/renderer/setup/screens/project-setup-window'
 import { DevelopmentIdentityBar } from '@/domains/sessions/renderer/composer/identity/development-identity-bar'
 import { SessionsPage } from '@/domains/sessions/renderer/pages/sessions-page'
 import { SessionScreenView } from '@/domains/sessions/renderer/screens'
@@ -51,6 +52,9 @@ export function CockpitRouteLayout() {
   )
 
   if (cockpit.status === 'empty') return <EmptyProjectScreen />
+  if (cockpit.status === 'setup' && cockpit.project) {
+    return <Navigate replace to={`/projects/${cockpit.project.id}/setup`} />
+  }
   // A Project with no Harness signed in has no way to run a Session, so this precedes the
   // roster the same way `EmptyProjectScreen` precedes it for no Project. `readiness.data` is
   // read only once it has landed, so a still-loading first read shows the roster underneath
@@ -75,6 +79,11 @@ export const cockpitRouter = createHashRouter([
     children: [
       { index: true, element: <Navigate replace to="/projects" /> },
       { path: '/projects', element: <ProjectIndexRedirect /> },
+      {
+        id: 'project-setup',
+        path: '/projects/:projectId/setup',
+        element: <ProjectSetupScreen />,
+      },
       {
         path: '/projects/:projectId/sessions',
         handle: { sidebar: sidebarByPage.sessions } satisfies CockpitRouteHandle,
@@ -107,4 +116,10 @@ function ProjectIndexRedirect() {
   return cockpit.project ? (
     <Navigate replace to={`/projects/${cockpit.project.id}/sessions`} />
   ) : null
+}
+
+function ProjectSetupScreen() {
+  const [cockpit] = useProjects()
+  if (!cockpit.project) return <Navigate replace to="/projects" />
+  return <ProjectSetupWindow project={cockpit.project} />
 }
