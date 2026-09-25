@@ -171,6 +171,10 @@ push-before-stopping step above is not optional.
 
 ## Sub-agents stay in the parent's worktree
 
+On every dispatch, set model and reasoning effort explicitly. Pick the lowest tier that can
+finish the bounded task; the parent model is the ceiling. Report the choice and the task
+requirement that earns it.
+
 A dispatched sub-agent **inherits its parent's worktree and stays there by default** — it must
 not spin up its own (Claude Code: don't pass `isolation: "worktree"` to the `Agent` tool).
 Nesting worktrees per sub-agent just proliferates them and splits state across trees — separate
