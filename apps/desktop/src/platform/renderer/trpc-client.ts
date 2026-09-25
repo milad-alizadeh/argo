@@ -2,8 +2,7 @@ import { QueryClient } from '@tanstack/react-query'
 import { createTRPCClient, TRPCClientError, type TRPCLink } from '@trpc/client'
 import { type Observer, observable } from '@trpc/server/observable'
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query'
-import type { TrpcRequest } from '@/platform/contract/trpc'
-import { trpcSubscriptionMessageSchema } from '@/platform/contract/trpc'
+import type { TrpcRequest, TrpcSubscriptionMessage } from '@/platform/contract/trpc'
 import type { AppRouter } from '@/platform/main/trpc-router'
 
 function assertNever(value: never): never {
@@ -13,16 +12,15 @@ function assertNever(value: never): never {
 function receiveSubscriptionMessage<TRouter extends AppRouter>(
   observer: Partial<Observer<{ result: { data: unknown } }, TRPCClientError<TRouter>>>,
   id: number,
-  rawMessage: unknown,
+  message: TrpcSubscriptionMessage,
 ): void {
-  const parsed = trpcSubscriptionMessageSchema.safeParse(rawMessage)
-  if (!parsed.success || parsed.data.id !== id) return
-  switch (parsed.data.type) {
+  if (message.id !== id) return
+  switch (message.type) {
     case 'data':
-      observer.next?.({ result: parsed.data.result })
+      observer.next?.({ result: message.result })
       break
     case 'error':
-      observer.error?.(TRPCClientError.from<TRouter>(parsed.data.error))
+      observer.error?.(TRPCClientError.from<TRouter>({ error: message.error }))
       break
     case 'complete':
       observer.complete?.()
@@ -40,9 +38,8 @@ const electronLink: TRPCLink<AppRouter> =
         let stopped = false
         let dispose = () => {}
         window.argo
-          .trpcSubscribe(
-            { id: op.id, path: op.path, type: op.type, input: op.input },
-            (rawMessage) => receiveSubscriptionMessage<AppRouter>(observer, op.id, rawMessage),
+          .trpcSubscribe({ id: op.id, path: op.path, type: op.type, input: op.input }, (message) =>
+            receiveSubscriptionMessage<AppRouter>(observer, op.id, message),
           )
           .then((unsubscribe) => {
             if (stopped) unsubscribe()

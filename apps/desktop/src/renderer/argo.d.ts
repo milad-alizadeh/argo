@@ -1,7 +1,7 @@
 import type { ProjectSetupSnapshot } from '@/domains/projects/contract/contract'
 import type { AppearanceState } from '@/platform/contract/appearance'
 import type { DevelopmentIdentity } from '@/platform/contract/development-identity'
-import type { TrpcRequest } from '@/platform/contract/trpc'
+import type { TrpcRequest, TrpcSubscriptionMessage } from '@/platform/contract/trpc'
 import type { WatchTopic } from '@/platform/contract/watch'
 
 declare global {
@@ -20,7 +20,7 @@ declare global {
       ) => Promise<{ id: number; result: { data: unknown } } | { id: number; error: unknown }>
       trpcSubscribe: (
         request: TrpcRequest,
-        listener: (message: unknown) => void,
+        listener: (message: TrpcSubscriptionMessage) => void,
       ) => Promise<() => void>
     }
   }
