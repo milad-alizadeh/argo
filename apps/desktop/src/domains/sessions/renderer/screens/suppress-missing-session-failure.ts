@@ -1,11 +1,11 @@
-import type { Failure } from '../composer/send/session-failure'
+import type { SessionErrorCode } from '@/domains/sessions/api/session-error'
 export function suppressMissingSessionFailure({
   failure,
   feedFailureSessionId,
   feedStalledSessionId,
   selectedSessionId,
 }: {
-  failure: Pick<Failure, 'code'> | null
+  failure: { code: SessionErrorCode } | null
   feedFailureSessionId: string | null
   feedStalledSessionId: string | null
   selectedSessionId: string | null

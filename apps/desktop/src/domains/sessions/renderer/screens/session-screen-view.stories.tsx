@@ -190,12 +190,10 @@ function withListedSessions(sessions: Session[]) {
 
 const NOOP_SESSION_LIST_ACTIONS: SessionListActions = {
   onArchiveSelected: () => {},
-  onLinkTicket: () => {},
   onNew: () => {},
   onOpenTicket: () => {},
   onRename: async (_session, name) => name,
   onSelect: () => {},
-  onUnlinkTicket: () => {},
 }
 
 function ReviewSidebar({
