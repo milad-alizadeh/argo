@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { CockpitContentChrome } from '@/platform/renderer/cockpit/components/cockpit-content-chrome'
 import { InspectorSplit } from '@/platform/renderer/cockpit/inspector-split/inspector-split'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { SessionTitle } from '../prompt/session-title'
@@ -22,22 +23,36 @@ type SessionShellProps = Omit<SessionWorkspaceProps, 'header'> & {
   inspectorReveal?: string | null
 }
 
-function SessionHeader({ session }: { session: SessionShellProps['session'] }) {
+function SessionIdentity({ session }: { session: SessionShellProps['session'] }) {
   const { t } = useTranslation('sessions')
   if (session === null || session === undefined) return null
   const worktree = worktreeName(session.cwd)
   return (
-    <div className="min-w-0 flex-1 overflow-hidden">
-      <h1 className="truncate type-heading">
+    <header
+      data-component="SessionIdentity"
+      className="grid min-w-0 shrink-0 gap-(--spacing-shell-item) border-b border-border/60 px-(--spacing-session-gutter) py-(--spacing-shell-inset)"
+    >
+      <h1 className="min-w-0 type-title wrap-anywhere">
         <SessionTitle session={session} text={sessionName(session, t('newSession'))} />
       </h1>
-      {worktree ? (
-        <p className="mt-1 flex min-w-0 items-center gap-1 type-meta text-muted-foreground">
-          <Icon name="worktree" className="size-(--size-icon-inline) shrink-0" />
-          <span className="truncate">{worktree}</span>
+      <div className="flex min-w-0 flex-wrap items-center gap-x-(--spacing-shell-section) gap-y-(--spacing-shell-item) type-meta text-muted-foreground">
+        <p
+          data-component="SessionIdMetadata"
+          className="flex min-w-0 items-center gap-(--spacing-shell-tight)"
+        >
+          <Icon name="session" size="meta" />
+          <span>{t('identity.sessionId')}</span>
+          <code className="max-w-64 truncate font-mono text-foreground">{session.id}</code>
         </p>
-      ) : null}
-    </div>
+        {worktree ? (
+          <p className="flex min-w-0 items-center gap-(--spacing-shell-tight)">
+            <Icon name="worktree" className="size-(--size-icon-inline) shrink-0" />
+            <span>{t('identity.worktree')}</span>
+            <span className="truncate">{worktree}</span>
+          </p>
+        ) : null}
+      </div>
+    </header>
   )
 }
 
@@ -77,13 +92,12 @@ export function SessionShell({
           <SessionWorkspace
             {...workspaceProps}
             header={
-              <header
-                data-component="SessionHeader"
-                className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center gap-2 border-b border-border/60 bg-background px-(--spacing-shell-gutter)"
-              >
-                <SessionHeader session={session} />
-                <SessionHeaderControls>{headerControls}</SessionHeaderControls>
-              </header>
+              <>
+                <CockpitContentChrome data-component="SessionHeader">
+                  <SessionHeaderControls>{headerControls}</SessionHeaderControls>
+                </CockpitContentChrome>
+                <SessionIdentity session={session} />
+              </>
             }
           />
         }

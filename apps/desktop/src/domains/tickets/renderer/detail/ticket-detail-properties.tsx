@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
+import { providerPresentation } from '@/domains/accounts/renderer'
 import type { Ticket, TicketPriority, TicketStatus } from '@/domains/tickets/contract/contract'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { sourcePresentation } from '../lib/sources'
 import { PriorityMenu } from '../status/priority-menu'
@@ -10,8 +12,8 @@ import { TicketLabel } from '../status/ticket-label'
 
 function Property({ name, children }: { name: string; children: ReactNode }) {
   return (
-    <div className="flex min-w-0 items-center rounded-full border border-border/60 px-(--spacing-shell-item) py-(--spacing-shell-tight) @[52rem]:contents">
-      <dt className="sr-only text-muted-foreground @[52rem]:not-sr-only">{name}</dt>
+    <div className="flex min-w-0 items-center rounded-full border border-border/60 px-(--spacing-shell-item) py-(--spacing-shell-tight) @[46rem]:contents">
+      <dt className="sr-only text-muted-foreground @[46rem]:not-sr-only">{name}</dt>
       {/* Every value row is as tall as the status trigger, so the rows keep one rhythm. */}
       <dd className="flex min-h-6 min-w-0 flex-wrap items-center gap-(--spacing-shell-tight)">
         {children}
@@ -29,6 +31,26 @@ export type Editing = {
 
 export type PropertiesProps = { ticket: Ticket; provider: Provider } & Editing
 
+function TicketSource({ ticket, provider }: Pick<PropertiesProps, 'ticket' | 'provider'>) {
+  const { t } = useTranslation('tickets')
+  if (ticket.url === null) return <span className="font-mono">{ticket.key}</span>
+  return (
+    <a
+      aria-label={t('detail.openInProvider', {
+        key: ticket.key,
+        provider: providerPresentation(provider).name,
+      })}
+      className="inline-flex min-w-0 items-center gap-(--spacing-shell-tight) font-mono underline-offset-2 hover:underline"
+      href={ticket.url}
+      rel="noreferrer"
+      target="_blank"
+    >
+      <span className="truncate">{ticket.key}</span>
+      <Icon name="open-external" size="meta" />
+    </a>
+  )
+}
+
 export function Properties({
   ticket,
   provider,
@@ -40,7 +62,10 @@ export function Properties({
   const presentation = sourcePresentation(provider)
   const noun = presentation.statusNoun
   return (
-    <dl className="flex min-w-0 flex-wrap items-center gap-(--spacing-shell-item) type-meta @[52rem]:grid @[52rem]:grid-cols-[var(--size-ticket-property)_minmax(0,1fr)] @[52rem]:gap-x-(--spacing-shell-gutter) @[52rem]:gap-y-(--spacing-shell-item)">
+    <dl className="flex min-w-0 flex-wrap items-center gap-(--spacing-shell-item) type-meta @[46rem]:grid @[46rem]:grid-cols-[var(--size-ticket-property)_minmax(0,1fr)] @[46rem]:gap-x-(--spacing-shell-gutter) @[46rem]:gap-y-(--spacing-shell-item)">
+      <Property name={t('detail.ticket')}>
+        <TicketSource provider={provider} ticket={ticket} />
+      </Property>
       <Property name={noun}>
         <StatusMenu
           named

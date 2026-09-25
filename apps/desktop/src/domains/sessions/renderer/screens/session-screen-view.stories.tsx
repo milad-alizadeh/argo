@@ -563,9 +563,8 @@ async function expectCollapsedSidebarDoesNotCoverSessionHeader(canvasElement: HT
   await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
   const opener = await canvas.findByRole('button', { name: 'Open sidebar' })
   const title = canvas.getByRole('heading', { name: 'Finish Session composer review' })
-  expect(title.getBoundingClientRect().left).toBeGreaterThanOrEqual(
-    opener.getBoundingClientRect().right +
-      Number.parseFloat(getComputedStyle(title).getPropertyValue('--spacing-shell-tight')),
+  expect(title.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+    opener.getBoundingClientRect().bottom,
   )
   await userEvent.click(opener)
   await expect(canvas.getByLabelText('Sessions sidebar')).toBeVisible()
@@ -640,6 +639,21 @@ export const Open: Story = {
       canvas.getByRole('heading', { name: 'Finish Session composer review' }),
     ).toBeVisible()
     await expect(canvas.getByText('ticket-1846-composer')).toBeVisible()
+    const sessionId = canvas
+      .getByText('Session ID')
+      .closest<HTMLElement>('[data-component="SessionIdMetadata"]')
+    if (sessionId === null) throw new Error('The Session ID metadata is absent.')
+    await expect(sessionId).toHaveTextContent('composer-review')
+    await expect(sessionId.querySelector('svg')).not.toBeNull()
+    const contentChrome = canvasElement.querySelector<HTMLElement>(
+      '[data-component="SessionHeader"]',
+    )
+    const sessionTitle = canvas.getByRole('heading', { name: 'Finish Session composer review' })
+    if (contentChrome === null) throw new Error('The Session content chrome is absent.')
+    await expect(contentChrome.contains(sessionTitle)).toBe(false)
+    await expect(sessionTitle.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+      contentChrome.getBoundingClientRect().bottom,
+    )
     expectHeaderActionsAtTrailingEdge(canvasElement)
     await expectCollapsedSidebarDoesNotCoverSessionHeader(canvasElement)
     await waitFor(() =>

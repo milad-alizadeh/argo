@@ -160,7 +160,7 @@ function SidebarTicketRow(props: TicketRowProps) {
       </span>
       <div className="min-w-0 flex-1 py-(--spacing-shell-item)">
         <div className="flex min-w-0 items-start gap-(--spacing-shell-tight)">
-          <span className="relative z-10 mt-[calc((var(--text-body--line-height)-var(--size-icon-control))/2)] shrink-0">
+          <span className="relative z-10 flex h-(--text-body--line-height) shrink-0 items-center">
             <StatusMenu
               named={false}
               noun={presentation.statusNoun}
@@ -176,7 +176,9 @@ function SidebarTicketRow(props: TicketRowProps) {
             type="button"
           >
             <span className="sr-only">{ticket.key} </span>
-            <span className="line-clamp-3 type-body">{ticket.title}</span>
+            <span className="line-clamp-2 type-body" title={ticket.title}>
+              {ticket.title}
+            </span>
             {parent === null ? null : (
               <span className="sr-only">{t('row.childOf', { parent })}</span>
             )}
@@ -230,7 +232,10 @@ function WorkspaceTicketRow(props: TicketRowProps) {
         type="button"
       >
         <span className="sr-only">{ticket.key} </span>
-        <span className="order-1 min-w-0 flex-1 line-clamp-2 type-body @[22rem]:line-clamp-none @[22rem]:truncate">
+        <span
+          className="order-1 min-w-0 flex-1 line-clamp-2 type-body @[22rem]:line-clamp-none @[22rem]:truncate"
+          title={ticket.title}
+        >
           {ticket.title}
         </span>
         <span className="order-2 mt-[calc((var(--text-body--line-height)-var(--size-icon-meta))_/_2)] self-start @[22rem]:order-3 @[22rem]:mt-0 @[22rem]:self-auto">

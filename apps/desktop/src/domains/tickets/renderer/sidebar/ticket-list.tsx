@@ -2,6 +2,7 @@ import type { TFunction } from 'i18next'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { providerPresentation } from '@/domains/accounts/renderer'
+import { CockpitContentChrome } from '@/platform/renderer/cockpit/components/cockpit-content-chrome'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Loader } from '@/platform/renderer/components/loader/loader'
 import {
@@ -131,10 +132,7 @@ export function TicketList({
   const rails = treeRails(rows)
   return (
     <section aria-label={t('backlog.label')} className="flex min-h-0 min-w-0 flex-1 flex-col">
-      {placement === 'workspace' ? (
-        // Empty, as the Session workspace's is: a collapsed sidebar draws its controls over it.
-        <div className="h-(--size-chrome-bar) shrink-0 border-b border-border/60" />
-      ) : null}
+      {placement === 'workspace' ? <CockpitContentChrome /> : null}
       <header className="flex shrink-0 items-baseline gap-(--spacing-shell-item) px-(--spacing-shell-inset) pt-(--spacing-shell-inset) pb-(--spacing-shell-item)">
         <h2 className="type-heading">{t('backlog.label')}</h2>
         <p aria-live="polite" className="ml-auto type-meta text-muted-foreground">

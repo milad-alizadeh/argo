@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
-import { providerPresentation } from '@/domains/accounts/renderer'
 import { FeedMarkdown } from '@/domains/sessions/renderer'
 import type { Ticket } from '@/domains/tickets/contract/contract'
+import { CockpitContentChrome } from '@/platform/renderer/cockpit/components/cockpit-content-chrome'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import type { LinkedSession } from '../hooks/use-linked-sessions'
 import { closedChildren } from '../lib/backlog'
@@ -12,37 +12,9 @@ import { Dependencies, Links, type Navigation, stateIcon } from './ticket-detail
 import { type Editing, Properties } from './ticket-detail-properties'
 import { TicketDetailSection } from './ticket-detail-section'
 
-const keyText = 'font-mono type-meta'
-
-function TicketKey({ ticket, provider }: { ticket: Ticket; provider: Provider }) {
-  const { t } = useTranslation('tickets')
-  if (ticket.url === null) {
-    return (
-      <span className={`${keyText} justify-self-start shrink-0 text-muted-foreground`}>
-        {ticket.key}
-      </span>
-    )
-  }
-  return (
-    <a
-      aria-label={t('detail.openInProvider', {
-        key: ticket.key,
-        provider: providerPresentation(provider).name,
-      })}
-      className={`${keyText} inline-flex items-center gap-(--spacing-shell-tight) justify-self-start text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline`}
-      href={ticket.url}
-      rel="noreferrer"
-      target="_blank"
-    >
-      {ticket.key}
-      <Icon name="open-external" className="size-(--size-icon-meta) shrink-0" />
-    </a>
-  )
-}
-
 // The header uses spare width for properties. At narrower measures they wrap under the title.
 const headerMeasure =
-  'grid max-w-6xl grid-cols-[minmax(0,1fr)] content-start gap-(--spacing-shell-section) px-(--spacing-shell-inset) py-(--spacing-shell-section) @[52rem]:grid-cols-[minmax(0,1fr)_18rem]'
+  'grid max-w-6xl grid-cols-[minmax(0,1fr)] content-start gap-(--spacing-shell-section) px-(--spacing-shell-inset) py-(--spacing-shell-section) @[46rem]:grid-cols-[minmax(0,1fr)_18rem]'
 const bodyMeasure =
   'grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-(--spacing-shell-section) px-(--spacing-shell-inset) py-(--spacing-shell-section)'
 
@@ -72,42 +44,47 @@ export function TicketDetail(props: TicketDetailProps) {
   return (
     <article
       aria-label={t('detail.articleLabel', { key: ticket.key })}
-      className="min-h-0 flex-1 overflow-y-auto"
+      className="flex min-h-0 flex-1 flex-col overflow-hidden"
     >
-      <header className="@container border-b border-border/60">
-        <div className={headerMeasure}>
-          <div className="grid min-w-0 gap-(--spacing-shell-tight)">
-            <h2 className="min-w-0 type-title wrap-anywhere">{ticket.title}</h2>
-            <TicketKey provider={provider} ticket={ticket} />
+      <CockpitContentChrome />
+      <div data-component="TicketDetailScroll" className="min-h-0 flex-1 overflow-y-auto">
+        <header className="@container border-b border-border/60">
+          <div className={headerMeasure}>
+            <h2
+              className="min-w-0 self-start line-clamp-2 type-title wrap-anywhere"
+              title={ticket.title}
+            >
+              {ticket.title}
+            </h2>
+            <Properties
+              onChangePriority={onChangePriority}
+              onChangeStatus={onChangeStatus}
+              provider={provider}
+              statuses={statuses}
+              ticket={ticket}
+            />
           </div>
-          <Properties
-            onChangePriority={onChangePriority}
-            onChangeStatus={onChangeStatus}
-            provider={provider}
-            statuses={statuses}
-            ticket={ticket}
-          />
+        </header>
+        <div className={bodyMeasure}>
+          {body ? (
+            <FeedMarkdown text={body} />
+          ) : (
+            <p className="type-body text-muted-foreground">{t('detail.noDescription')}</p>
+          )}
+          {children.length > 0 ? (
+            <TicketDetailSection
+              icon={<Icon name="ticket-children" className={stateIcon} />}
+              title={t('detail.childrenCount', {
+                closed: closedChildren(ticket),
+                count: children.length,
+              })}
+            >
+              <Links links={children} {...navigation} />
+            </TicketDetailSection>
+          ) : null}
+          <Dependencies blockedBy={ticket.blockedBy} provider={provider} {...navigation} />
+          <LinkedSessions onOpenSession={onOpenSession} sessions={linkedSessions} />
         </div>
-      </header>
-      <div className={bodyMeasure}>
-        {body ? (
-          <FeedMarkdown text={body} />
-        ) : (
-          <p className="type-body text-muted-foreground">{t('detail.noDescription')}</p>
-        )}
-        {children.length > 0 ? (
-          <TicketDetailSection
-            icon={<Icon name="ticket-children" className={stateIcon} />}
-            title={t('detail.childrenCount', {
-              closed: closedChildren(ticket),
-              count: children.length,
-            })}
-          >
-            <Links links={children} {...navigation} />
-          </TicketDetailSection>
-        ) : null}
-        <Dependencies blockedBy={ticket.blockedBy} provider={provider} {...navigation} />
-        <LinkedSessions onOpenSession={onOpenSession} sessions={linkedSessions} />
       </div>
     </article>
   )

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
-
+import { CockpitContentChrome } from './cockpit-content-chrome'
 import { CockpitNavigationRail } from './cockpit-navigation-rail'
 import { CockpitShell } from './cockpit-shell'
 
@@ -26,7 +26,13 @@ const args = {
   rail: <CockpitNavigationRail />,
   sidebar: <aside aria-label="Cockpit sidebar" />,
   header: <div data-component="CockpitHeaderFixture" />,
-  children: <main aria-label="Cockpit content" />,
+  children: (
+    <main aria-label="Cockpit content">
+      <CockpitContentChrome>
+        <span data-component="CockpitChromeFixture">Workspace controls</span>
+      </CockpitContentChrome>
+    </main>
+  ),
 }
 
 export const SidebarControls: Story = {
@@ -49,6 +55,11 @@ export const SidebarControls: Story = {
       header.getBoundingClientRect().bottom,
       1,
     )
+    const chromeFixture = canvas.getByText('Workspace controls')
+    const content = canvas.getByRole('main', { name: 'Cockpit content' })
+    expect(chromeFixture.getBoundingClientRect().left).toBeGreaterThan(
+      content.getBoundingClientRect().left,
+    )
 
     await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
     const opener = await canvas.findByRole('button', { name: 'Open sidebar' })
@@ -58,6 +69,9 @@ export const SidebarControls: Story = {
     )
     if (openerContainer === null) throw new Error('The collapsed sidebar control is absent.')
     await expect(openerContainer).toHaveClass('no-drag-region')
+    expect(chromeFixture.getBoundingClientRect().left).toBeGreaterThanOrEqual(
+      opener.getBoundingClientRect().right,
+    )
     await userEvent.click(opener)
     await waitFor(() =>
       expect(

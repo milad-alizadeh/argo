@@ -6,6 +6,10 @@
   "loading": "Argo is reading this machine's Sessions.",
   "readAgain": "Read again",
   "newSession": "New Session",
+  "identity": {
+    "sessionId": "Session ID",
+    "worktree": "Worktree"
+  },
   "searchSessions": "Search Sessions",
   "subagent": "Subagent",
   "findSession": "Find a Session",

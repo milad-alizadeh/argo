@@ -27,6 +27,7 @@
     "childOf": "child of {{parent}}"
   },
   "detail": {
+    "ticket": "Ticket",
     "empty": {
       "title": "Select a Ticket",
       "description": "Its description, children and blockers show here."

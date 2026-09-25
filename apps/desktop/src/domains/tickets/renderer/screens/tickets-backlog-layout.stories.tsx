@@ -116,6 +116,47 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof TicketBacklogLayout>
 
+function expectAlignedRowControls(backlogRegion: ReturnType<typeof within>) {
+  const parentFold = backlogRegion.getByRole('button', { name: 'Collapse #801' })
+  const parentStatus = backlogRegion.getAllByRole('button', { name: 'State: Open' })[0]
+  const foldIcon = parentFold.querySelector('svg')
+  const statusIcon = parentStatus?.querySelector('svg')
+  if (foldIcon === null || statusIcon === null || statusIcon === undefined)
+    throw new Error('The Ticket row controls need their icons.')
+  const foldCenter =
+    foldIcon.getBoundingClientRect().top + foldIcon.getBoundingClientRect().height / 2
+  const statusCenter =
+    statusIcon.getBoundingClientRect().top + statusIcon.getBoundingClientRect().height / 2
+  expect(Math.abs(foldCenter - statusCenter)).toBeLessThanOrEqual(1)
+}
+
+async function expectCollapsedToggleClearsTitle(
+  canvas: ReturnType<typeof within>,
+  detailTitle: HTMLElement,
+) {
+  await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
+  const opener = await canvas.findByRole('button', { name: 'Open sidebar' })
+  await expect(detailTitle.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+    opener.getBoundingClientRect().bottom,
+  )
+  await userEvent.click(opener)
+}
+
+async function expectFixedDetailChrome(canvasElement: HTMLElement) {
+  const contentChrome = canvasElement.querySelector<HTMLElement>(
+    'main[aria-label="Ticket detail"] [data-component="CockpitContentChrome"]',
+  )
+  const detailScroll = canvasElement.querySelector<HTMLElement>(
+    'main[aria-label="Ticket detail"] [data-component="TicketDetailScroll"]',
+  )
+  if (contentChrome === null || detailScroll === null)
+    throw new Error('The Ticket detail layout is absent.')
+  await expect(detailScroll.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+    contentChrome.getBoundingClientRect().bottom,
+  )
+  await expect(getComputedStyle(detailScroll).overflowY).toBe('auto')
+}
+
 export const NestedLongTitles: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -133,7 +174,7 @@ export const NestedLongTitles: Story = {
     const longTitle = backlogRegion.getByText(nestedList[1]?.title ?? '')
     const lineHeight = Number.parseFloat(getComputedStyle(longTitle).lineHeight)
     await expect(longTitle.clientHeight).toBeGreaterThan(lineHeight)
-    await expect(longTitle.clientHeight).toBeLessThanOrEqual(lineHeight * 3 + 1)
+    await expect(longTitle.clientHeight).toBeLessThanOrEqual(lineHeight * 2 + 1)
     await expect(backlogRegion.queryByText('hierarchy')).toBeNull()
     await expect(backlogRegion.queryByText('needs-triage')).toBeNull()
     await expect(sidebarElement.scrollWidth).toBeLessThanOrEqual(sidebarElement.clientWidth)
@@ -141,12 +182,21 @@ export const NestedLongTitles: Story = {
     const properties = canvas.getByText('State').closest('dl')
     if (properties === null) throw new Error('The Ticket detail needs its properties.')
     const detailTitle = canvas.getByRole('heading', { name: architecture.title })
+    await expectFixedDetailChrome(canvasElement)
+    const detailLineHeight = Number.parseFloat(getComputedStyle(detailTitle).lineHeight)
+    await expect(detailTitle.clientHeight).toBeLessThanOrEqual(detailLineHeight * 2 + 1)
+    const sourceLink = canvas.getByRole('link', { name: 'Open #801 in GitHub' })
+    const metadata = canvas.getByText('State').closest('dl')
+    if (metadata === null) throw new Error('The Ticket metadata is absent.')
+    await expect(metadata.contains(sourceLink)).toBe(true)
     await expect(properties.getBoundingClientRect().left).toBeGreaterThan(
       detailTitle.getBoundingClientRect().right,
     )
+    expectAlignedRowControls(backlogRegion)
+    await expectCollapsedToggleClearsTitle(canvas, detailTitle)
     await expect(rows[1]).toHaveAccessibleName(/child of #801$/)
     await expect(rows[2]).toHaveAccessibleName(/child of #802$/)
-    await userEvent.click(rows[1] as HTMLElement)
+    await userEvent.click(canvas.getAllByRole('button', { name: /^#\d+/ })[1] as HTMLElement)
     await expect(canvas.getByRole('heading', { name: nestedList[1]?.title ?? '' })).toBeVisible()
   },
 }
