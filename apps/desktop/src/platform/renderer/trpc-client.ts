@@ -3,7 +3,17 @@ import { createTRPCClient, TRPCClientError, type TRPCLink } from '@trpc/client'
 import { type Observer, observable } from '@trpc/server/observable'
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query'
 import type { AppRouter } from '@/platform/main/trpc-router'
-import type { TrpcRequest, TrpcSubscriptionMessage } from '@/platform/trpc'
+
+type TrpcRequest = {
+  id: number
+  path: string
+  input: unknown
+  type: 'query' | 'mutation' | 'subscription'
+}
+type TrpcSubscriptionMessage =
+  | { id: number; type: 'data'; result: { data: unknown } }
+  | { id: number; type: 'error'; error: unknown }
+  | { id: number; type: 'complete' }
 
 function assertNever(value: never): never {
   throw new Error(`Unknown tRPC subscription message: ${String(value)}`)

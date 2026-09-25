@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, webFrame, webUtils } from 'electron'
 import './platform/preload/zod-jitless'
+import { z } from 'zod'
 import {
   PROJECT_SETUP_CHANGED_CHANNEL,
   type ProjectSetupSnapshot,
@@ -10,11 +11,12 @@ import { APPEARANCE_CHANGED_CHANNEL, isAppearanceState } from '@/platform/contra
 import { COMMAND_CHANNEL } from '@/platform/contract/commands'
 import { isWatchTopic, WATCHED_CHANGED_CHANNEL, type WatchTopic } from '@/platform/contract/watch'
 import { developmentIdentityFromArguments } from '@/platform/preload/development-identity'
-import {
-  TRPC_CHANNEL,
-  type TrpcSubscriptionMessage,
-  trpcSubscriptionMessageSchema,
-} from '@/platform/trpc'
+
+const TRPC_CHANNEL = 'argo:trpc'
+type TrpcSubscriptionMessage =
+  | { id: number; type: 'data'; result: { data: unknown } }
+  | { id: number; type: 'error'; error: unknown }
+  | { id: number; type: 'complete' }
 
 let invalidTrpcSubscriptionMessageCount = 0
 
@@ -22,7 +24,24 @@ function receiveTrpcSubscriptionMessage(
   listener: (message: TrpcSubscriptionMessage) => void,
   message: unknown,
 ): void {
-  const parsed = trpcSubscriptionMessageSchema.safeParse(message)
+  const parsed = z
+    .discriminatedUnion('type', [
+      z.strictObject({
+        id: z.number().int().nonnegative(),
+        type: z.literal('data'),
+        result: z.strictObject({ data: z.unknown() }),
+      }),
+      z.strictObject({
+        id: z.number().int().nonnegative(),
+        type: z.literal('error'),
+        error: z.unknown(),
+      }),
+      z.strictObject({
+        id: z.number().int().nonnegative(),
+        type: z.literal('complete'),
+      }),
+    ])
+    .safeParse(message)
   if (!parsed.success) {
     invalidTrpcSubscriptionMessageCount += 1
     console.error(

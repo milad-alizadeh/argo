@@ -1,17 +1,24 @@
 import { type AnyRouter, callTRPCProcedure, getTRPCErrorShape, TRPCError } from '@trpc/server'
 import { isObservable, type Observable } from '@trpc/server/observable'
 import { app, type BrowserWindow, ipcMain } from 'electron'
-import {
-  TRPC_CHANNEL,
-  type TrpcRequest,
-  trpcRequestSchema,
-  trpcSubscriptionStopSchema,
-} from '@/platform/trpc'
+import { z } from 'zod'
 import { isTrustedRendererFrame } from './security/is-trusted-renderer-frame'
 
+const TRPC_CHANNEL = 'argo:trpc'
 type Context = undefined
 type Subscription = { unsubscribe: () => void }
-type SubscriptionRequest = Omit<TrpcRequest, 'type'> & { type: 'subscription' }
+type TrpcRequestFields = {
+  id: number
+  path: string
+  input: unknown
+}
+type SubscriptionRequest = {
+  type: 'subscription'
+} & TrpcRequestFields
+type TrpcRequest =
+  | ({ type: 'query' } & TrpcRequestFields)
+  | ({ type: 'mutation' } & TrpcRequestFields)
+  | SubscriptionRequest
 
 function asTRPCError(cause: unknown): TRPCError {
   return cause instanceof TRPCError
@@ -34,6 +41,40 @@ function errorShape<TRouter extends AnyRouter>(request: {
     input: input.input,
     ctx: context,
   })
+}
+
+function parseTrpcSubscriptionStop(rawInput: unknown) {
+  return z
+    .strictObject({
+      id: z.number().int().nonnegative(),
+      type: z.literal('subscriptionStop'),
+    })
+    .safeParse(rawInput)
+}
+
+function parseTrpcRequest(rawInput: unknown): TrpcRequest {
+  return z
+    .discriminatedUnion('type', [
+      z.strictObject({
+        id: z.number().int().nonnegative(),
+        path: z.string().min(1),
+        input: z.unknown(),
+        type: z.literal('query'),
+      }),
+      z.strictObject({
+        id: z.number().int().nonnegative(),
+        path: z.string().min(1),
+        input: z.unknown(),
+        type: z.literal('mutation'),
+      }),
+      z.strictObject({
+        id: z.number().int().nonnegative(),
+        path: z.string().min(1),
+        input: z.unknown(),
+        type: z.literal('subscription'),
+      }),
+    ])
+    .parse(rawInput)
 }
 
 async function startSubscription<TRouter extends AnyRouter>(request: {
@@ -116,12 +157,12 @@ export function attachTrpcTransport<TRouter extends AnyRouter>(request: {
     if (!isTrustedRendererFrame(event, request.window, request.rendererURL)) {
       throw new TRPCError({ code: 'FORBIDDEN', message: 'Renderer frame is not trusted.' })
     }
-    const stop = trpcSubscriptionStopSchema.safeParse(rawInput)
+    const stop = parseTrpcSubscriptionStop(rawInput)
     if (stop.success) {
       stopSubscription(stop.data.id)
       return { id: stop.data.id, result: { data: null } }
     }
-    const input = trpcRequestSchema.parse(rawInput)
+    const input = parseTrpcRequest(rawInput)
     if (input.type === 'subscription') {
       stopSubscription(input.id)
       await startSubscription({
