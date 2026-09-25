@@ -18,6 +18,10 @@ declare global {
       trpc: (
         request: TrpcRequest,
       ) => Promise<{ id: number; result: { data: unknown } } | { id: number; error: unknown }>
+      trpcSubscribe: (
+        request: TrpcRequest,
+        listener: (message: unknown) => void,
+      ) => Promise<() => void>
     }
   }
 }

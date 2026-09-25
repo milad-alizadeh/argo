@@ -45,4 +45,22 @@ contextBridge.exposeInMainWorld('argo', {
   versions: { electron: process.versions.electron, chrome: process.versions.chrome },
   development: developmentIdentityFromArguments(process.argv),
   trpc: (request: unknown) => ipcRenderer.invoke(TRPC_CHANNEL, request),
+  trpcSubscribe(request: unknown, listener: (message: unknown) => void) {
+    const forward = (_event: Electron.IpcRendererEvent, message: unknown) => listener(message)
+    ipcRenderer.on(TRPC_CHANNEL, forward)
+    const attached = ipcRenderer.invoke(TRPC_CHANNEL, request)
+    return attached.then(
+      () => () => {
+        ipcRenderer.off(TRPC_CHANNEL, forward)
+        void ipcRenderer.invoke(TRPC_CHANNEL, {
+          id: (request as { id: number }).id,
+          type: 'subscriptionStop',
+        })
+      },
+      (error) => {
+        ipcRenderer.off(TRPC_CHANNEL, forward)
+        throw error
+      },
+    )
+  },
 })
