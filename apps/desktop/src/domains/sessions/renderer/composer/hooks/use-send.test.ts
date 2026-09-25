@@ -14,15 +14,15 @@ function fixture(overrides: Partial<Parameters<typeof performSend>[0]> = {}) {
       attachments: [],
       markError: () => {},
       isRunning: false,
-      addPendingTurn: (text: string, setup: unknown, attachments: unknown) => {
-        calls.addPendingTurn.push({ text, setup, attachments })
+      addPendingTurn: (text: string, turnConfiguration: unknown, attachments: unknown) => {
+        calls.addPendingTurn.push({ text, turnConfiguration, attachments })
       },
       editor: null,
-      onSend: async (text: string, setup: unknown, attachments: unknown) => {
-        calls.onSend.push({ text, setup, attachments })
+      onSend: async (text: string, turnConfiguration: unknown, attachments: unknown) => {
+        calls.onSend.push({ text, turnConfiguration, attachments })
         return true
       },
-      setupValue: null,
+      turnConfigurationValue: null,
       clearDraft: () => {},
       restoreDraft: () => {},
       clear: (ids: string[]) => {
@@ -38,14 +38,16 @@ function fixture(overrides: Partial<Parameters<typeof performSend>[0]> = {}) {
 test('a Send while a Turn is running queues it and never calls onSend', async () => {
   const { calls, input } = fixture({ isRunning: true })
   await performSend(input)
-  expect(calls.addPendingTurn).toEqual([{ text: 'hello', setup: undefined, attachments: [] }])
+  expect(calls.addPendingTurn).toEqual([
+    { text: 'hello', turnConfiguration: undefined, attachments: [] },
+  ])
   expect(calls.onSend).toEqual([])
 })
 
 test('a Send with no Turn running calls onSend and never queues', async () => {
   const { calls, input } = fixture({ isRunning: false })
   await performSend(input)
-  expect(calls.onSend).toEqual([{ text: 'hello', setup: null, attachments: [] }])
+  expect(calls.onSend).toEqual([{ text: 'hello', turnConfiguration: null, attachments: [] }])
   expect(calls.addPendingTurn).toEqual([])
 })
 

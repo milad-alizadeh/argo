@@ -59,7 +59,7 @@ const SESSION_ROSTER = [
   sessionRosterRow({
     id: 'shortcut-review',
     harness: 'codex',
-    posture: 'managed',
+    posture: 'live',
     title: { text: 'Add Markdown typing shortcuts', source: 'summarised' },
     status: 'idle',
     cwd: '/workspace/argo',

@@ -1,44 +1,66 @@
 import { randomUUID } from 'node:crypto'
+import path from 'node:path'
 import { initTRPC, TRPCError } from '@trpc/server'
-import { projectErrorSchema } from '@/domains/projects/contract/contract'
-import { projectSummarySchema } from '@/domains/projects/contract/messages'
-import type { ProjectStore } from '../register-project'
-import { registerProject } from '../register-project'
-import { repositoryRoot } from '../repository'
+import { eq } from 'drizzle-orm'
+import type { Database } from '@/database/database'
+import { project } from '@/database/project/schema'
+import { projectRegistrationSchema, projectSummarySchema } from '@/database/project/validation'
+import { repositoryRoot } from '@/platform/main/git-repository-root'
 
 const t = initTRPC.create()
 
-export function projectRegisterProcedure(projects: ProjectStore) {
-  return t.procedure.output(projectSummarySchema.array()).mutation(async () => {
-    let chosenFolder: string | null = null
-    const reply = await registerProject(
-      { version: 1, type: 'project.register', requestId: randomUUID() },
-      {
-        ...projects,
-        chooseFolder: async () => {
-          chosenFolder = await projects.chooseFolder()
-          return chosenFolder
-        },
-      },
+export type ProjectRegisterContext = {
+  database: Database
+  chooseFolder: () => Promise<string | null>
+  exclusive: <T>(work: () => Promise<T>) => Promise<T>
+}
+
+export function projectRegisterProcedure(context: ProjectRegisterContext) {
+  return t.procedure.output(projectSummarySchema.array()).mutation(() =>
+    context.exclusive(async () => {
+      const folder = await context.chooseFolder()
+      if (folder === null) return listProjects(context.database)
+      const repository = await repositoryRoot(folder)
+      if ('failure' in repository) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: repository.failure })
+      }
+      const existing = context.database
+        .select({ id: project.id })
+        .from(project)
+        .where(eq(project.commonDirectory, repository.commonDirectory))
+        .get()
+      const selectedId = existing?.id ?? `project-${randomUUID()}`
+      if (existing === undefined) {
+        context.database
+          .insert(project)
+          .values({
+            id: selectedId,
+            path: repository.root,
+            commonDirectory: repository.commonDirectory,
+          })
+          .run()
+      }
+      const projects = listProjects(context.database)
+      const selected = projects.find((candidate) => candidate.id === selectedId)
+      return selected === undefined
+        ? projects
+        : [...projects.filter((candidate) => candidate.id !== selectedId), selected]
+    }),
+  )
+}
+
+function listProjects(database: Database) {
+  return projectRegistrationSchema
+    .array()
+    .parse(
+      database
+        .select({ id: project.id, path: project.path, commonDirectory: project.commonDirectory })
+        .from(project)
+        .all(),
     )
-    if (reply.type !== 'project.listed') {
-      const parsed = projectErrorSchema.safeParse(reply)
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: parsed.success ? parsed.data.code : 'Project registration failed.',
-      })
-    }
-    const summaries = projectSummarySchema.array().parse(reply.projects)
-    if (chosenFolder === null) return summaries
-    const chosen = await repositoryRoot(chosenFolder)
-    if ('failure' in chosen) return summaries
-    const selectedId = projects.projects
-      .read()
-      .projects.find((project) => project.commonDirectory === chosen.commonDirectory)?.id
-    if (!selectedId) return summaries
-    const selected = summaries.find((project) => project.id === selectedId)
-    return selected
-      ? [...summaries.filter((project) => project.id !== selectedId), selected]
-      : summaries
-  })
+    .map((registration) => ({
+      id: registration.id,
+      name: path.basename(registration.path) || registration.path,
+      path: registration.path,
+    }))
 }

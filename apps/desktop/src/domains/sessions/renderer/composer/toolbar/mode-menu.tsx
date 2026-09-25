@@ -10,11 +10,11 @@ import {
   DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
-import { modeChoices } from '../turn-setup/turn-setup'
-import type { TurnSetupControlProps } from './run-setup-menu'
+import { modeChoices } from '../turn-configuration/turn-configuration'
+import type { TurnConfigurationControlProps } from './turn-configuration-menu'
 
 // Extracted from the prototype's PermissionMenu (602bcce2); CONTEXT.md L2 · Session Mode.
-export function ModeMenu({ choices, value, onChange }: TurnSetupControlProps) {
+export function ModeMenu({ choices, value, onChange }: TurnConfigurationControlProps) {
   const { t } = useTranslation('sessions')
   const modes = modeChoices(choices, value.model)
   const current = modes.find((mode) => mode.value === value.mode) ?? modes[0]
@@ -25,7 +25,9 @@ export function ModeMenu({ choices, value, onChange }: TurnSetupControlProps) {
           <InputGroupButton
             variant="ghost"
             className="shrink-0 type-control text-foreground"
-            aria-label={t('composer.setup.choosePermissionMode', { mode: current?.label })}
+            aria-label={t('composer.turnConfiguration.choosePermissionMode', {
+              mode: current?.label,
+            })}
           />
         }
       >
@@ -36,7 +38,7 @@ export function ModeMenu({ choices, value, onChange }: TurnSetupControlProps) {
       <DropdownMenuContent align="start" side="top" className="w-(--size-session-menu) p-1.5">
         <DropdownMenuGroup>
           <DropdownMenuLabel className="px-2 py-1.5 type-control text-muted-foreground">
-            {t('composer.setup.permissions', { harness: choices.label })}
+            {t('composer.turnConfiguration.permissions', { harness: choices.label })}
           </DropdownMenuLabel>
           <DropdownMenuRadioGroup
             value={current?.value ?? ''}

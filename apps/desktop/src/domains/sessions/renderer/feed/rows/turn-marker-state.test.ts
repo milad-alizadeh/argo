@@ -30,13 +30,13 @@ test('stageFor starts a draft identity', () => {
   expect(stageFor('draft', null)).toBe('starting')
 })
 
-test('stageFor resumes a session identity whose posture is not managed', () => {
+test('stageFor resumes a session identity whose posture is external', () => {
   expect(stageFor('session', 'external')).toBe('resuming')
   expect(stageFor('session', null)).toBe('resuming')
 })
 
-test('stageFor reads live for a session identity already managed', () => {
-  expect(stageFor('session', 'managed')).toBe('live')
+test('stageFor reads live for a live session identity', () => {
+  expect(stageFor('session', 'live')).toBe('live')
 })
 
 test('turnMarkerView holds Starting until the real record catches up', () => {

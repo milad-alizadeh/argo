@@ -13,7 +13,7 @@ const first: SessionStartInput = {
   cwd: '/repo',
   prompt: 'first',
   attachments: [],
-  setup: { model: 'model', effort: 'medium', mode: 'default' },
+  turnConfiguration: { model: 'model', effort: 'medium', mode: 'default' },
 }
 
 function testMachine(services: {

@@ -36,14 +36,14 @@ async function sendFromComposer(page: Page, text: string) {
   await page.keyboard.press('Enter')
 }
 
-async function managedRosterRow(page: Page, sessionId: string, budgetMs: number) {
+async function liveRosterRow(page: Page, sessionId: string, budgetMs: number) {
   const deadline = Date.now() + budgetMs
   while (Date.now() < deadline) {
     const rows = await rosterRow(page, sessionId)
-    if (rows.some((row: { posture: string }) => row.posture === 'managed')) return rows
+    if (rows.some((row: { posture: string }) => row.posture === 'live')) return rows
     await setTimeout(100)
   }
-  throw new Error(`Session ${sessionId} did not become managed after resuming.`)
+  throw new Error(`Session ${sessionId} did not become live after resuming.`)
 }
 
 export async function provePackagedCodexResume(
@@ -61,7 +61,7 @@ export async function provePackagedCodexResume(
   const relaunched = await restart()
 
   const [reread] = await rosterRow(relaunched, sessionId)
-  assert.equal(reread?.posture, 'watched')
+  assert.equal(reread?.posture, 'external')
   await openSessionByClick(relaunched, sessionId)
   const history = relaunched.getByRole('region', { name: 'Session history' })
   await backend.waitForReply(relaunched, { harness: 'codex', prompt: OPENING_PROMPT })
@@ -80,10 +80,10 @@ export async function provePackagedCodexResume(
   // The optimistic Turn row (#2099) shows the sent prompt in the Feed before the roster
   // invalidation that follows a Send lands, so the Roster's posture catches up on its own poll
   // rather than by the time the message is visible.
-  const resumed = await managedRosterRow(relaunched, sessionId, backend.budgetMs)
+  const resumed = await liveRosterRow(relaunched, sessionId, backend.budgetMs)
   assert.deepEqual(
     resumed.map(({ id, posture }: { id: string; posture: string }) => ({ id, posture })),
-    [{ id: sessionId, posture: 'managed' }],
+    [{ id: sessionId, posture: 'live' }],
   )
   return relaunched
 }
@@ -109,5 +109,5 @@ export async function provePackagedCodexResumeRefusal(
   await alert.waitFor()
   assert.match((await alert.textContent()) ?? '', new RegExp(REFUSAL))
   const [row] = await rosterRow(relaunched, sessionId)
-  assert.equal(row?.posture, 'watched')
+  assert.equal(row?.posture, 'external')
 }

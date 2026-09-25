@@ -11,7 +11,7 @@ import { SessionScreenView } from './session-screen-view'
 const SESSION_ID = 'feed-actions-session'
 const SUBAGENT_ID = 'child-task-2669'
 const SKILL_PATH = '/storybook/.agents/skills/to-spec/SKILL.md'
-const SUBAGENT_NAME = 'Explore turn setup and harness code for issue 2669'
+const SUBAGENT_NAME = 'Explore Turn Configuration and harness code for issue 2669'
 let readSubagentIds: Array<string | null> = []
 const session = sessionRosterRow({
   id: SESSION_ID,

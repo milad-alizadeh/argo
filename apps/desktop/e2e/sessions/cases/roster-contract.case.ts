@@ -99,7 +99,7 @@ export async function proveContract(page) {
   )
   assert.deepEqual(
     [...new Set(list.sessions.map((session) => session.posture))],
-    ['external', 'watched'],
+    ['external'],
   )
   const read = await page.evaluate(
     (value) => window.argo.readSessionFeed(value),

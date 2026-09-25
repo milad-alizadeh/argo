@@ -9,18 +9,24 @@ import {
 } from '@/domains/harness-signin/main/harness-sign-in-procedures'
 import { projectListProcedure } from '@/domains/projects/main/api/project-list'
 import { projectOpenProcedure } from '@/domains/projects/main/api/project-open'
-import { projectRegisterProcedure } from '@/domains/projects/main/api/project-register'
-import { projectRelocateProcedure } from '@/domains/projects/main/api/project-relocate'
 import {
-  type ProjectProcedureContext,
-  projectProcedures,
-} from '@/domains/projects/main/project-procedures'
+  type ProjectRegisterContext,
+  projectRegisterProcedure,
+} from '@/domains/projects/main/api/project-register'
+import {
+  type ProjectRelocateContext,
+  projectRelocateProcedure,
+} from '@/domains/projects/main/api/project-relocate'
 import { sessionSubmitProcedure } from '@/domains/sessions/main/api/session-procedures'
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import {
   createTicketRouter,
   type TicketRouterDependencies,
 } from '@/domains/tickets/main/ticket-router'
+import {
+  type WorkspaceListContext,
+  workspaceListProcedure,
+} from '@/domains/workspaces/main/api/workspace-list'
 import {
   type CatalogActor,
   catalogReadProcedure,
@@ -33,23 +39,24 @@ export type AppRouterDependencies = {
   accounts: AccountProcedureContext
   catalog: CatalogActor
   harnessSignIn: HarnessSignInProcedureContext
-  projects: ProjectProcedureContext
+  projects: ProjectRegisterContext & ProjectRelocateContext
   sessions: LiveSessionSupervisorActor
   tickets: TicketRouterDependencies
+  workspaces: WorkspaceListContext
 }
 
 export function createAppRouter(dependencies: AppRouterDependencies) {
   return t.router({
     ...accountProcedures(dependencies.accounts),
     ...harnessSignInProcedures(dependencies.harnessSignIn),
-    ...projectProcedures(dependencies.projects),
     harnessCatalogRead: catalogReadProcedure(dependencies.catalog),
     harnessCatalogRefresh: catalogRefreshProcedure(dependencies.catalog),
     sessionSubmit: sessionSubmitProcedure(dependencies.sessions),
-    projectList: projectListProcedure(dependencies.projects),
-    projectOpen: projectOpenProcedure(dependencies.projects),
+    projectList: projectListProcedure(dependencies.projects.database),
+    projectOpen: projectOpenProcedure(dependencies.projects.database),
     projectRegister: projectRegisterProcedure(dependencies.projects),
     projectRelocate: projectRelocateProcedure(dependencies.projects),
+    workspaceList: workspaceListProcedure(dependencies.workspaces),
     tickets: createTicketRouter(dependencies.tickets),
   })
 }

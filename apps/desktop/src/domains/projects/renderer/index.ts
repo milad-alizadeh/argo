@@ -2,6 +2,7 @@
 export {
   type Cockpit,
   type ProjectActions,
+  type ProjectSummary,
   useProjects,
   useSelectedProject,
 } from './hooks'

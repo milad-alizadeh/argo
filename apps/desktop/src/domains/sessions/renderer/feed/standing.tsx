@@ -24,7 +24,7 @@ export function Standing({
   failure: SessionError | null
   selected: boolean
   stalled: boolean
-  posture: 'managed' | 'external' | 'watched' | null
+  posture: 'live' | 'external' | null
   onRetry: () => void
 }) {
   const { t } = useTranslation('sessions')

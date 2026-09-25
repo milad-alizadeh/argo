@@ -90,12 +90,14 @@ test('a draft survives before a Session exists, keyed by its own identity', () =
 })
 
 test('a harness remembers its Model and Effort in the persisted composer state', () => {
-  useComposerStore.getState().rememberSetup('codex', { model: 'gpt-6', effort: 'high' })
-  useComposerStore.getState().rememberSetup('claude', { model: 'opus', effort: 'medium' })
+  useComposerStore.getState().rememberTurnConfiguration('codex', { model: 'gpt-6', effort: 'high' })
+  useComposerStore
+    .getState()
+    .rememberTurnConfiguration('claude', { model: 'opus', effort: 'medium' })
 
   const persisted = useComposerStore.persist.getOptions().partialize?.(useComposerStore.getState())
   expect(persisted).toMatchObject({
-    rememberedSetup: {
+    rememberedTurnConfiguration: {
       codex: { model: 'gpt-6', effort: 'high' },
       claude: { model: 'opus', effort: 'medium' },
     },
@@ -112,7 +114,11 @@ test('a draft becoming a Session moves every unsent-Turn fact together', () => {
     text: 'then send this',
     attachments: [],
   })
-  composer.chooseSetup('new:project-1', { model: 'opus', effort: 'high', mode: 'default' })
+  composer.chooseTurnConfiguration('new:project-1', {
+    model: 'opus',
+    effort: 'high',
+    mode: 'default',
+  })
   composer.beginMarker('new:project-1', {
     stage: 'starting',
     since: null,
@@ -130,11 +136,15 @@ test('a draft becoming a Session moves every unsent-Turn fact together', () => {
   expect(state.tickets['new:project-1']).toBeUndefined()
   expect(state.pendingTurns['new:project-1']).toBeUndefined()
   expect(state.markers['new:project-1']).toBeUndefined()
-  expect(state.setup['new:project-1']).toBeUndefined()
+  expect(state.turnConfiguration['new:project-1']).toBeUndefined()
   expect(state.drafts['session-1']).toBe('still writing this')
   expect(state.attachments['session-1']).toHaveLength(1)
   expect(state.tickets['session-1']).toHaveLength(1)
   expect(state.pendingTurns['session-1']).toHaveLength(1)
   expect(state.markers['session-1']?.stage).toBe('starting')
-  expect(state.setup['session-1']).toEqual({ model: 'opus', effort: 'high', mode: 'default' })
+  expect(state.turnConfiguration['session-1']).toEqual({
+    model: 'opus',
+    effort: 'high',
+    mode: 'default',
+  })
 })

@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
+import { queryClient } from '@/platform/renderer/trpc-client'
 import { sessionRosterRow, sessionSubagent } from '../../session-fixtures'
 import type { SessionError, SessionId, SessionsListed } from '../../types'
 import { useSessionListWindowStore } from '../hooks'
@@ -57,31 +58,19 @@ function withSessionListHost(handler: (request: { cursor: string | null }) => Pr
   }
 }
 
-// A Session list poll rebuilds its array on every tick regardless of whether anything changed
-// (`keepSessionListOrder` in `session-session-list-query.ts`), so a rename or a focused row must survive a
-// same-content rebuild rather than only the exact array a rename dialog closed against (#2290).
-// `repoll` stands in for the watch that brings that rebuild, the same seam `useWatchedTopic` reads.
+// A Session list refresh rebuilds its array even when nothing changed, so a rename or focused row
+// must survive a same-content rebuild rather than only the array a rename dialog closed against.
 function withSessionsHost(initialSessions: SessionsListed['sessions']) {
   const before = window.argo
   let sessions = initialSessions
-  // The sessionList's own invalidation and the Feed's `useWatchedQueries` each hold their own
-  // subscription to this seam, so a single-slot stand-in silently dropped whichever subscribed
-  // first (#2284).
-  const listeners = new Set<(topic: 'sessions' | 'permissions') => void>()
   window.argo = {
     ...before,
     listSessions: () => Promise.resolve(listedReply({ ...listed, sessions })),
-    onWatchedChanged: (listener) => {
-      listeners.add(listener)
-      return () => {
-        listeners.delete(listener)
-      }
-    },
   }
   return {
     repoll(next: SessionsListed['sessions']) {
       sessions = next
-      for (const listener of listeners) listener('sessions')
+      void queryClient.invalidateQueries({ queryKey: ['sessions'] })
     },
     restore: () => {
       window.argo = before
@@ -463,7 +452,7 @@ export const PendingBadges: Story = {
           {
             ...session,
             id: 'wants-answer',
-            posture: 'managed',
+            posture: 'live',
             status: 'asking',
             title: { text: 'A question is waiting', source: 'first-prompt' },
           },

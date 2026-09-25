@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import type { WorkspaceSummary } from '@/domains/projects/contract/workspace-messages'
+import type { WorkspaceSummary } from '@/domains/workspaces/renderer'
 import { WorkspaceMenu } from './workspace-menu'
 
-const WORKSPACE_CANDIDATES: [WorkspaceSummary, WorkspaceSummary, WorkspaceSummary] = [
+const WORKSPACE_CANDIDATES: [WorkspaceSummary, WorkspaceSummary] = [
   {
     id: 'workspace-main',
     kind: 'main',
@@ -19,23 +19,15 @@ const WORKSPACE_CANDIDATES: [WorkspaceSummary, WorkspaceSummary, WorkspaceSummar
     path: '/Users/milad/Developer/argo-linked',
     facts: { branch: 'feature/linked', headSha: 'def5678', dirty: true },
   },
-  {
-    id: 'workspace-managed',
-    kind: 'managed',
-    displayName: 'ticket-2600-project-workspaces',
-    path: '/Users/milad/Developer/argo/.claude/worktrees/ticket-2600-project-workspaces',
-    facts: { branch: 'argo/#2600-project-workspaces', headSha: 'ghi9012', dirty: false },
-  },
 ]
 
-function WorkspaceStory({ onCreateManaged }: { onCreateManaged: () => void }) {
+function WorkspaceStory() {
   const [selectedId, setSelectedId] = useState(WORKSPACE_CANDIDATES[0].id)
   const selected = WORKSPACE_CANDIDATES.find((candidate) => candidate.id === selectedId) ?? null
 
   return (
     <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
       <WorkspaceMenu
-        onCreateManaged={onCreateManaged}
         onSelect={setSelectedId}
         workspace={selected}
         workspaces={WORKSPACE_CANDIDATES}
@@ -47,7 +39,6 @@ function WorkspaceStory({ onCreateManaged }: { onCreateManaged: () => void }) {
 const meta = {
   title: 'Sessions/Composer/Workspace Menu',
   component: WorkspaceStory,
-  args: { onCreateManaged: fn() },
 } satisfies Meta<typeof WorkspaceStory>
 
 export default meta
@@ -56,7 +47,7 @@ type Story = StoryObj<typeof WorkspaceStory>
 const page = () => within(document.body)
 
 export const WorkspacePicker: Story = {
-  play: async ({ args, canvasElement }) => {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const trigger = canvas.getByRole('button', { name: 'Choose Workspace: argo' })
 
@@ -69,17 +60,10 @@ export const WorkspacePicker: Story = {
     ).toEqual([
       'argomain',
       'linked-featurefeature/linked',
-      'ticket-2600-project-workspacesargo/#2600-project-workspaces',
     ])
 
     await userEvent.click(within(menu).getByRole('menuitemradio', { name: /linked-feature/ }))
     await waitFor(() => expect(page().queryByRole('menu')).toBeNull())
 
-    const reopenTrigger = canvas.getByRole('button', { name: 'Choose Workspace: linked-feature' })
-    await userEvent.click(reopenTrigger)
-    const reopened = await page().findByRole('menu')
-    await userEvent.click(within(reopened).getByRole('menuitem', { name: 'New managed Workspace' }))
-    await waitFor(() => expect(page().queryByRole('menu')).toBeNull())
-    await expect(args.onCreateManaged).toHaveBeenCalledTimes(1)
   },
 }

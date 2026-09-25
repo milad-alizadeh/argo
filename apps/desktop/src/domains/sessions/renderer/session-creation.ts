@@ -135,7 +135,7 @@ export function optimisticSessionRow(pending: PendingSession): SessionRosterRow 
     id: pending.id,
     retiredIds: [],
     harness: pending.harness,
-    posture: 'managed',
+    posture: 'live',
     title: pending.prompt === null ? null : { text: pending.prompt, source: 'first-prompt' },
     ticket: null,
     status: 'starting',
@@ -153,6 +153,6 @@ export function optimisticSessionRow(pending: PendingSession): SessionRosterRow 
     pullRequest: null,
     archived: false,
     unread: false,
-    setup: { model: null, effort: null, mode: null },
+    turnConfiguration: { model: null, effort: null, mode: null },
   }
 }

@@ -1,15 +1,13 @@
-import { ChevronDown, FolderGit2, Plus } from 'lucide-react'
+import { ChevronDown, FolderGit2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import type { WorkspaceSummary } from '@/domains/projects/contract/workspace-messages'
+import type { WorkspaceSummary } from '@/domains/workspaces/renderer'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
@@ -18,16 +16,14 @@ export type WorkspaceMenuControlProps = {
   workspaces: readonly WorkspaceSummary[]
   workspace: WorkspaceSummary | null
   onSelect: (workspaceId: string) => void
-  onCreateManaged: () => void
 }
 
-// The composer's cwd choice: main, an existing Workspace, or a new managed one (#2600). Shown
+// The composer's cwd choice: the main checkout or an imported Workspace (#2600). Shown
 // only while a Session has not started, since a Session's Workspace is fixed at `session.start`.
 export function WorkspaceMenu({
   workspaces,
   workspace,
   onSelect,
-  onCreateManaged,
 }: WorkspaceMenuControlProps) {
   const { t } = useTranslation('sessions')
   const label = workspace?.displayName ?? t('composer.workspace.choose')
@@ -71,11 +67,6 @@ export function WorkspaceMenu({
             ))}
           </DropdownMenuRadioGroup>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onCreateManaged} className="rounded-md py-1.5 pr-8 pl-2">
-          <Plus className="size-3.5" />
-          {t('composer.workspace.createManaged')}
-        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )

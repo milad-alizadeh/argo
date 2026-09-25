@@ -8,14 +8,12 @@
   Project. One active Project per window; the known set lives in the per-machine database. The
   Session list can also show all known Sessions, including those with no Project (ADR-0015
   amendment). The **only entity in the L1 triangle that Argo owns rather than observes**
-  (Account is owned too, but sits outside it), and the shared base ref every session's Workspace
-  branches from. Owns a **Workspace registry**: one durable record per main checkout,
-  externally-created linked worktree (**imported**), and Argo-created worktree (**managed**) —
+  (Account is owned too, but sits outside it). Owns a **Workspace registry**: one durable record
+  for the main checkout and one for each externally-created linked worktree (**imported**) —
   **id is stable, path is a mutable attribute**, the same id-vs-path split as Project's own.
-  Reconciled lazily against git
-  on every list, **never deleted** once written, so a Project's remembered Workspace selection is
-  always resolvable. See L3 · Workspace for the live git facts an Agent reads off the checkout a
-  record points to.
+  Reconciliation against git happens when Workspaces are listed. A new-Session draft names its
+  Workspace; the Project does not remember one global Workspace selection. See L3 · Workspace for
+  the live git facts an Agent reads from the checkout a record points to.
 
 - **Account** — one authenticated identity with a provider: **one OAuth grant, one token in the
   OS keychain**, keyed by the **provider's own stable id** for it (login/workspace name is a

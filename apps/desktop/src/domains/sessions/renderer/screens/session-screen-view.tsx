@@ -128,7 +128,8 @@ export function SessionScreenView() {
               selectedSessionId={selectedSessionId}
               roster={model.roster}
               cockpit={model.cockpit}
-              projectActions={model.projectActions}
+              workspaceActions={model.workspaceActions}
+              workspaceCockpit={model.workspaceCockpit}
             />
           )
         }

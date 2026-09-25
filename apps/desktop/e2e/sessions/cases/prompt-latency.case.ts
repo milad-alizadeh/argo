@@ -15,14 +15,14 @@ const MAX_BLANK_FRAMES = 3
 const WATCH_MS = 2000
 
 type PromptWatch = Promise<{ shownMs: number; blankFrames: number }>
-type WatchedWindow = Window & { __promptWatch?: PromptWatch }
+type ObservedWindow = Window & { __promptObservation?: PromptWatch }
 
 // Runs inside the page, so it names nothing outside itself. The clock starts on the Enter keydown
 // and stops at the first frame that holds the prompt. Frames where the Feed is empty are then
 // counted while the temporary id hands over to the real Session.
 function watchAfterEnter({ text, watchMs }: { text: string; watchMs: number }) {
   let resolveWatch: (result: { shownMs: number; blankFrames: number }) => void = () => {}
-  ;(window as WatchedWindow).__promptWatch = new Promise((resolve) => {
+  ;(window as ObservedWindow).__promptObservation = new Promise((resolve) => {
     resolveWatch = resolve
   })
   let started = 0
@@ -49,14 +49,14 @@ async function armWatch(page: Page, prompt: string) {
   await page.evaluate(watchAfterEnter, { text: prompt, watchMs: WATCH_MS })
 }
 
-async function sendWatched(page: Page, prompt: string) {
+async function sendObserved(page: Page, prompt: string) {
   const composer = page.getByRole('combobox', { name: 'Message' })
   await composer.click()
   await page.keyboard.type(prompt)
   await armWatch(page, prompt)
   await page.keyboard.press('Enter')
   return page.evaluate(() => {
-    const watch = (window as WatchedWindow).__promptWatch
+    const watch = (window as ObservedWindow).__promptObservation
     if (watch === undefined) throw new Error('The prompt watch was never armed.')
     return watch
   })
@@ -65,13 +65,13 @@ async function sendWatched(page: Page, prompt: string) {
 export async function provePromptLatency(page: Page, backend: SessionHarnessBackend) {
   await openNewSessionByClick(page)
   await chooseHarness(page, 'claude')
-  const created = await sendWatched(page, NEW_PROMPT)
+  const created = await sendObserved(page, NEW_PROMPT)
   // The header names the Session by its prompt, never by its temporary id.
   const header = page.getByRole('heading', { level: 1 })
   assert.doesNotMatch((await header.textContent()) ?? '', /optimistic:/)
   await backend.waitForReply(page, { harness: 'claude', prompt: NEW_PROMPT })
 
-  const existing = await sendWatched(page, EXISTING_PROMPT)
+  const existing = await sendObserved(page, EXISTING_PROMPT)
   await backend.waitForReply(page, { harness: 'claude', prompt: EXISTING_PROMPT })
 
   console.log(

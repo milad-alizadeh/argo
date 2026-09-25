@@ -2,10 +2,11 @@ import { expect, test } from 'bun:test'
 import { createActor, fromPromise } from 'xstate'
 import type { AccountProcedureContext } from '@/domains/accounts/main/account-procedures'
 import type { HarnessSignInProcedureContext } from '@/domains/harness-signin/main/harness-sign-in-procedures'
-import type { ProjectProcedureContext } from '@/domains/projects/main/project-procedures'
+import type { ProjectRegisterContext } from '@/domains/projects/main/api/project-register'
 import type { SessionSubmitInput } from '@/domains/sessions/main/api/session-start'
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import type { TicketRouterDependencies } from '@/domains/tickets/main/ticket-router'
+import type { WorkspaceListContext } from '@/domains/workspaces/main/api/workspace-list'
 import {
   harnessCatalogMachine,
   harnessCatalogSchema,
@@ -32,9 +33,10 @@ function testRouter(
     accounts: {} as AccountProcedureContext,
     catalog,
     harnessSignIn: {} as HarnessSignInProcedureContext,
-    projects: {} as ProjectProcedureContext,
+    projects: {} as ProjectRegisterContext,
     sessions: sessionActor,
     tickets: {} as TicketRouterDependencies,
+    workspaces: {} as WorkspaceListContext,
   })
 }
 
@@ -156,7 +158,7 @@ test('routes a second optimistic composer command to the same pending Session', 
       pendingId: 'optimistic:session-1',
       prompt: 'Start a Session.',
       attachments: [],
-      setup: { model: 'claude-sonnet', effort: 'medium', mode: 'default' },
+      turnConfiguration: { model: 'claude-sonnet', effort: 'medium', mode: 'default' },
     }
     await Promise.all([
       caller.sessionSubmit(initial),
@@ -204,7 +206,7 @@ test('rejects Claude attachments before a Session reaches a vendor', async () =>
         pendingId: 'optimistic:session-1',
         prompt: 'Read this image.',
         attachments: [{ kind: 'image', path: '/repo/image.png' }],
-        setup: { model: 'claude-sonnet', effort: 'medium', mode: 'default' },
+        turnConfiguration: { model: 'claude-sonnet', effort: 'medium', mode: 'default' },
       }),
     ).rejects.toThrow('Claude Session attachments are not supported.')
     expect(submissions).toBe(0)

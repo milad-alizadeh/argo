@@ -9,18 +9,9 @@ import { reportCodexFailure } from './session-list/codex-failure-notice'
 import { sessionRosterQuery } from './session-list/rows/session-roster-query'
 import { invalidateSessionRoster } from './session-queries'
 import type { SessionFeed, SessionId } from './types'
-import { useWatchedQueries, useWatchedTopic } from './use-watched-topic'
 
 function useRosterQuery(enabled: boolean, projectRoot: string | null) {
-  const queryClient = useQueryClient()
   const query = useInfiniteQuery(sessionRosterQuery(enabled, { projectRoot }))
-
-  // A Session written by a Harness outside Argo appears because the transcript trees are watched. The
-  // roster used to notice it only by re-reading every file twice a second, and only while a Session
-  // was selected, so a reader just looking at the list saw a stale roster indefinitely.
-  useWatchedTopic('sessions', () => {
-    if (enabled) void invalidateSessionRoster(queryClient)
-  })
 
   const lastPage = query.data?.pages.at(-1)
   const roster = useMemo(() => {
@@ -87,10 +78,6 @@ export function useSessions(
   const feedQuery = sessionFeedQuery(queryClient, selectedFeedId, null)
   const feed = useQuery<SessionFeed | null, SessionContractError>(feedQuery)
   const failedFeedReads = useConsecutiveFeedFailures(selectedFeedId, feed)
-  // The open Session's transcript lives under the same watched trees as every other, whether a Harness
-  // outside Argo writes it or a Turn Argo drives does.
-  useWatchedQueries('sessions', [feedQuery.queryKey])
-
   // An already-settled read has no in-flight abort to notify the main process. Release it here
   // as well, so a Session switch or close drops its Feed rows and measurement state immediately.
   useEffect(() => {

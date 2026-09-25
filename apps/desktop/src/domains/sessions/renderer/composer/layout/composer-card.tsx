@@ -9,7 +9,7 @@ import { useComposerStore } from '../hooks/use-composer-store'
 import { activeReference } from '../references/composer-reference-menu'
 import { DraftContextPicker } from '../references/context-picker/draft-context-picker'
 import { ComposerToolbar } from '../toolbar/composer-toolbar'
-import type { TurnSetupControlProps } from '../toolbar/run-setup-menu'
+import type { TurnConfigurationControlProps } from '../toolbar/turn-configuration-menu'
 import type { WorkspaceMenuControlProps } from '../toolbar/workspace-menu'
 import { ComposerEditorArea } from './composer-editor-area'
 
@@ -29,9 +29,9 @@ type ComposerCardProps = {
   onSend: () => void
   plan: SessionPlan | null
   sessionId: string
-  setup: TurnSetupControlProps | null
+  turnConfiguration: TurnConfigurationControlProps | null
   catalogState?: {
-    catalogFailure: import('../toolbar/run-setup-menu').CatalogFailure | null
+    catalogFailure: import('../toolbar/turn-configuration-menu').CatalogFailure | null
     refreshCatalog?: () => void
     sendAvailable?: boolean
   }
@@ -162,7 +162,7 @@ export function ComposerCard(props: ComposerCardProps) {
           isRunning={props.isRunning}
           onOpenContextPicker={() => setContextPickerOpen(true)}
           onInterrupt={props.onInterrupt}
-          setup={props.setup}
+          turnConfiguration={props.turnConfiguration}
           workspace={props.workspace}
           catalogFailure={props.catalogState?.catalogFailure}
           refreshCatalog={props.catalogState?.refreshCatalog}

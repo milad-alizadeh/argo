@@ -6,7 +6,7 @@
 
 import { and, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
-import type { DurableDatabase } from '@/database/durable-database'
+import type { Database } from '@/database/database'
 import { sessionTicketLink } from '@/database/session-ticket-link/schema'
 import { sessionTicketLinkSelectSchema } from '@/database/session-ticket-link/validation'
 import { ticketKey } from '@/domains/tickets/contract/ticket'
@@ -119,7 +119,7 @@ export function createSessionTicketLinkStore(path: string): SessionTicketLinkSto
 }
 
 export function createSessionTicketLinkStoreFromDatabase(
-  database: DurableDatabase,
+  database: Database,
   afterWrite: () => Promise<void> = async () => {},
 ): SessionTicketLinkStore {
   return {

@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 
 import { useProjects } from '@/domains/projects/renderer'
+import { useWorkspaces } from '@/domains/workspaces/renderer'
 import { useComposerStore } from '../composer/hooks/use-composer-store'
 import { useSessionPermission } from '../composer/hooks/use-session-permission'
 import { useSessionQuestion } from '../composer/hooks/use-session-question'
@@ -56,6 +57,7 @@ export function useSessionScreenModel() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
   const [cockpit, projectActions] = useProjects()
+  const [workspaceCockpit, workspaceActions] = useWorkspaces(cockpit.project?.id ?? null)
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
   const [evidence, setEvidence] = useState<SessionEvidence | null>(null)
   const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
@@ -91,6 +93,8 @@ export function useSessionScreenModel() {
     harness,
     cockpit,
     projectActions,
+    workspaceCockpit,
+    workspaceActions,
     permission,
     question,
     work,

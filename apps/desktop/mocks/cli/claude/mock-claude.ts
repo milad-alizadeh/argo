@@ -16,7 +16,6 @@ import { createMockClaudeHooks } from './mock-claude-hooks.ts'
 import { replyToSdkPrompt } from './mock-claude-sdk-reply.ts'
 import { startMockClaudeSdkStream } from './mock-claude-sdk-stream.ts'
 import { settleMockClaudeTurn } from './mock-claude-turn.ts'
-import { projectSetupReply } from './mock-project-setup.ts'
 
 process.title = MOCK_CLAUDE_PROCESS_TITLE
 
@@ -43,7 +42,6 @@ const REPLY_DELAY_MS = Number.isFinite(replyDelay) && replyDelay > 0 ? replyDela
 // routinely slower than that; 300ms is still negligible next to a real CLI's reply time.
 const SDK_FRESH_SESSION_REPLY_FLOOR_MS = 300
 const adversarialSeed = process.env[SESSION_MOCK_ADVERSARIAL_SEED_ENV]
-const projectSetupScenario = process.env.ARGO_PROJECT_SETUP_MOCK_SCENARIO
 let turnIndex = 0
 
 const arguments_ = process.argv.slice(2)
@@ -102,8 +100,7 @@ const compact = () => {
   )
 }
 function writeReply(text: string, plan: AdversarialTurn | null) {
-  const response =
-    projectSetupReply(text, projectSetupScenario) ?? `Mock Claude read: ${text}${plan ? ' 🦜' : ''}`
+  const response = `Mock Claude read: ${text}${plan ? ' 🦜' : ''}`
   const reply = record('assistant', {
     role: 'assistant',
     stop_reason: 'end_turn',
@@ -138,7 +135,6 @@ if (agentSdk) {
       recordUser: (text) => write('user', { role: 'user', content: text }),
       nextPlan: () =>
         adversarialSeed === undefined ? null : adversarialTurn(adversarialSeed, turnIndex++),
-      projectSetupScenario,
       replyDelayMs: sdkReplyDelayMs,
       writeReply,
     }),
@@ -170,7 +166,6 @@ process.stdin.on('data', (chunk: string) => {
     void settleMockClaudeTurn({
       text,
       plan,
-      projectSetupScenario,
       replyDelayMs: REPLY_DELAY_MS,
       waitForPermission,
       writeReply,

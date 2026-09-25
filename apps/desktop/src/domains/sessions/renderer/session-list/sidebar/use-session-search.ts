@@ -7,7 +7,6 @@ import {
 } from '../../session-contract-error'
 import { sessionSearchQueryKey } from '../../session-queries'
 import type { SessionSearched } from '../../types'
-import { useWatchedQueries } from '../../use-watched-topic'
 import type { SessionListStatus } from '../hooks/use-session-list-filter-store'
 
 const SEARCH_DEBOUNCE_MS = 250
@@ -61,9 +60,6 @@ export function useSessionSearch(
       }
     },
   })
-  // A transcript update re-reads the active search so both views keep one current title.
-  useWatchedQueries('sessions', enabled ? [queryKey] : [])
-
   const sessions = searched.data?.pages.flatMap((page) => page.sessions) ?? []
   // The most recently read page's word on it: backfill (#2373) can turn this true between one
   // fetch and the next, and only the latest read says where it stands right now.

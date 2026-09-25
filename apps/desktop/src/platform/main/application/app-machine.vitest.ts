@@ -2,10 +2,10 @@ import assert from 'node:assert/strict'
 import { test } from 'vitest'
 import { createActor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
-import type { DurableDatabase } from '@/database/durable-database'
+import type { Database } from '@/database/database'
 import { appMachine } from './app-machine'
 
-const input = { database: {} as DurableDatabase }
+const input = { database: {} as Database }
 
 test('models application startup and shutdown', () => {
   const paths = getShortestPaths(appMachine, {

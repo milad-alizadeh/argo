@@ -38,10 +38,6 @@ host.argo = {
     return Promise.resolve(codexAutoCompactLimit)
   },
   onCommand: subscribeToStorybookCommands,
-  // Nothing watches files in a story, so a reader that stops polling because a watch will tell it
-  // subscribes to a watch that never reports. Every story needs the call to answer: a screen that
-  // reads a watched topic mounts this hook whatever the story is about.
-  onWatchedChanged: () => () => {},
   listSessions: () =>
     Promise.resolve({
       version: 1,

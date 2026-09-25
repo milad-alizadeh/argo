@@ -33,7 +33,6 @@ export default defineConfig<object, SessionBackendOptions>({
     { name: 'project-setup', testDir: 'e2e/project-setup' },
     { name: 'projects', testDir: 'e2e/projects' },
     { name: 'harness-signin', testDir: 'e2e/harness-signin' },
-    { name: 'project-workspaces', testDir: 'e2e/project-workspaces' },
     // The adversarial cases (jitter, split bytes, stalls, seeded failure) run inside this same
     // project and the same `test:e2e` invocation, not a second `turbo run` (#2605): one packaged
     // app boot and one Playwright startup covers both.

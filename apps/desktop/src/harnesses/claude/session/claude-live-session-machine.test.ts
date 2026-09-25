@@ -11,7 +11,7 @@ const first = {
   cwd: '/repo',
   prompt: 'first',
   attachments: [],
-  setup: { model: 'sonnet', effort: 'medium', mode: 'default' },
+  turnConfiguration: { model: 'sonnet', effort: 'medium', mode: 'default' },
 }
 
 test('models opening, later sends, failure, and close paths', () => {
@@ -109,7 +109,7 @@ test('maps the catalog manual mode to the SDK default mode', () => {
         queryActor: fromCallback(() => undefined),
       },
     }),
-    { input: { ...first, setup: { ...first.setup, mode: 'manual' } } },
+    { input: { ...first, turnConfiguration: { ...first.turnConfiguration, mode: 'manual' } } },
   ).start()
   assert.equal(actor.getSnapshot().context.mode, 'default')
   actor.stop()

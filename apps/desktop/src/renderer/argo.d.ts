@@ -1,7 +1,5 @@
-import type { ProjectSetupSnapshot } from '@/domains/projects/contract/contract'
 import type { AppearanceState } from '@/platform/contract/appearance'
 import type { DevelopmentIdentity } from '@/platform/contract/development-identity'
-import type { WatchTopic } from '@/platform/contract/watch'
 
 type TrpcRequest = {
   id: number
@@ -17,10 +15,8 @@ type TrpcSubscriptionMessage =
 declare global {
   interface Window {
     argo: {
-      onWatchedChanged: (listener: (topic: WatchTopic) => void) => () => void
       onAppearanceChanged: (listener: (state: AppearanceState) => void) => () => void
       onCommand: (listener: (command: string) => void) => () => void
-      onProjectSetupChanged: (listener: (snapshot: ProjectSetupSnapshot) => void) => () => void
       zoomFactor: () => number
       pathForFile: (file: File) => string
       versions: { electron: string; chrome: string }

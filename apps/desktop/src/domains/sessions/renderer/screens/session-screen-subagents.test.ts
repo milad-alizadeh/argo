@@ -10,14 +10,14 @@ test('uses a Feed subagent event as an inspector target when the roster has no c
       id: 'call-started',
       subagentId: 'agent-a64dd851fde47a6f0',
       event: 'started',
-      name: 'Explore turn setup and harness code for issue 2669',
+      name: 'Explore Turn Configuration and harness code for issue 2669',
     },
   ] satisfies SessionFeedRow[]
 
   expect(sessionScreenSubagents(rows, [])).toEqual([
     {
       id: 'agent-a64dd851fde47a6f0',
-      label: 'Explore turn setup and harness code for issue 2669',
+      label: 'Explore Turn Configuration and harness code for issue 2669',
       state: 'running',
       startedAt: null,
       endedAt: null,

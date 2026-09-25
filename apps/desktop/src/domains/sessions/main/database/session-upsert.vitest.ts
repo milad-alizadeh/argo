@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
-import { createDurableDatabase } from '@/database/durable-database'
+import { databaseFrom } from '@/database/database'
 import { createSessionUpsert } from './session-upsert'
 
 function database() {
@@ -23,7 +23,7 @@ function database() {
     UPDATE session SET updated_at = MAX(CAST(unixepoch('subsec') * 1000 AS INTEGER), OLD.updated_at + 1)
     WHERE argo_id = NEW.argo_id;
   END;`)
-  return { client, upsert: createSessionUpsert(createDurableDatabase(client)) }
+  return { client, upsert: createSessionUpsert(databaseFrom(client)) }
 }
 
 test('keeps one Argo ID and preserves known metadata on a sparse upsert', () => {

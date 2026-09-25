@@ -34,7 +34,7 @@ export const sessionReferences = [
     source: '@$frontend-design',
   },
   {
-    detail: 'Managed Claude permission plugin',
+    detail: 'Live Claude permission plugin',
     kind: 'plugin',
     label: 'Argo Session plugin',
     source: '@argo-plugin',

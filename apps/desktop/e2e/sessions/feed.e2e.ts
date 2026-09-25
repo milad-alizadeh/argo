@@ -36,8 +36,8 @@ import { proveToolCalls } from './cases/tool-calls.case'
 import {
   proveComposerMemory,
   proveLiveCodexModelChoices,
-  proveTurnSetup,
-} from './cases/turn-setup.case'
+  proveTurnConfiguration,
+} from './cases/turn-configuration.case'
 import { rosterRow } from './claude-proof-helpers'
 import { appendProse, removeProse, streamProse } from './fixtures/feed.fixture'
 import { updatePlan } from './fixtures/plan.fixture'
@@ -118,8 +118,8 @@ test('session-plan', async ({ session }) => {
   await proveSessionPlan(session.page(), () => updatePlan(session.fixture.claudeTranscripts))
 })
 
-test('session-turn-setup', async ({ session }) => {
-  await proveTurnSetup(session.page())
+test('session-turn-configuration', async ({ session }) => {
+  await proveTurnConfiguration(session.page())
 })
 
 test('session-live-codex-model-choices', async ({ session }) => {
@@ -161,18 +161,18 @@ test.describe('with the real Claude SDK history', () => {
   test('session-sdk-history-real', async ({ session, backend }) => {
     const sessionId = await proveSessionCreatedByClick(session.page(), backend)
     const restarted = await session.restart()
-    const [watched] = await rosterRow(restarted, sessionId)
-    expect(watched?.posture).toBe('watched')
+    const [external] = await rosterRow(restarted, sessionId)
+    expect(external?.posture).toBe('external')
     await openSessionByClick(restarted, sessionId)
     await restarted.waitForSelector(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`)
-    const prompt = 'Continue the watched SDK history with one short acknowledgement.'
+    const prompt = 'Continue the external SDK history with one short acknowledgement.'
     const composer = restarted.getByRole('combobox', { name: 'Message' })
     await composer.click()
     await restarted.keyboard.type(prompt)
     await restarted.getByRole('button', { name: 'Send message' }).click()
     await backend.waitForReply(restarted, { harness: 'claude', prompt })
-    const [managed] = await rosterRow(restarted, sessionId)
-    expect(managed?.posture).toBe('managed')
+    const [live] = await rosterRow(restarted, sessionId)
+    expect(live?.posture).toBe('live')
   })
 })
 
@@ -193,7 +193,7 @@ test.describe('with real Session transcript corpora', () => {
       harness: 'claude',
       prompt:
         'Review this pasted snippet: <pasted_content id="corpus-paste">const answer = 42</pasted_content id="corpus-paste">. Start one short Task agent in the background that returns READY. Wait for its completion notification, then acknowledge the result in one sentence.',
-      budgetRunSetup: true,
+      budgetTurnConfiguration: true,
       permissionMode: 'auto',
     })
     const composer = session.page().getByRole('combobox', { name: 'Message' })
@@ -204,7 +204,7 @@ test.describe('with real Session transcript corpora', () => {
       harness: 'codex',
       prompt:
         '<task-notification><task-id>corpus-task</task-id><status>completed</status><summary>Task finished</summary></task-notification>',
-      budgetRunSetup: true,
+      budgetTurnConfiguration: true,
     })
     const home = path.join(session.root, 'home')
     await assertTranscriptFeedCorpus({

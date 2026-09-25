@@ -19,7 +19,7 @@ const resumable = sessionRosterRow({
 })
 
 // The bridge a restarted Argo answers with: the Roster lists the resumable Session, and a Send
-// either resumes it into a live managed channel or is refused with the reason.
+// either resumes it into a live channel or is refused with the reason.
 function restartedHost(refusal: DriveSessionErrorCode | null, row = resumable) {
   let resumed = false
   const before = window.argo
@@ -29,7 +29,7 @@ function restartedHost(refusal: DriveSessionErrorCode | null, row = resumable) {
       version: 1,
       type: 'session.listed',
       requestId: 'storybook-sessions',
-      sessions: [resumed ? { ...row, posture: 'managed', status: 'running' } : row],
+      sessions: [resumed ? { ...row, posture: 'live', status: 'running' } : row],
       filesFound: 1,
       filesRead: 1,
       filesUnreadable: 0,

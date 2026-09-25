@@ -1,15 +1,9 @@
 import { contextBridge, ipcRenderer, webFrame, webUtils } from 'electron'
 import './platform/preload/zod-jitless'
 import { z } from 'zod'
-import {
-  PROJECT_SETUP_CHANGED_CHANNEL,
-  type ProjectSetupSnapshot,
-  projectSetupSnapshotSchema,
-} from '@/domains/projects/contract/contract'
 import type { AppearanceState } from '@/platform/contract/appearance'
 import { APPEARANCE_CHANGED_CHANNEL, isAppearanceState } from '@/platform/contract/appearance'
 import { COMMAND_CHANNEL } from '@/platform/contract/commands'
-import { isWatchTopic, WATCHED_CHANGED_CHANNEL, type WatchTopic } from '@/platform/contract/watch'
 import { developmentIdentityFromArguments } from '@/platform/preload/development-identity'
 
 type Subscription = {
@@ -86,11 +80,6 @@ function subscribe<Value>(channel: string, listener: (value: Value) => void): ()
 }
 
 contextBridge.exposeInMainWorld('argo', {
-  onWatchedChanged(listener: (topic: WatchTopic) => void) {
-    return subscribe<unknown>(WATCHED_CHANGED_CHANNEL, (value) => {
-      if (isWatchTopic(value)) listener(value)
-    })
-  },
   onAppearanceChanged(listener: (state: AppearanceState) => void) {
     return subscribe<unknown>(APPEARANCE_CHANGED_CHANNEL, (value) => {
       if (isAppearanceState(value)) listener(value)
@@ -99,12 +88,6 @@ contextBridge.exposeInMainWorld('argo', {
   onCommand(listener: (command: string) => void) {
     return subscribe<unknown>(COMMAND_CHANNEL, (value) => {
       if (typeof value === 'string') listener(value)
-    })
-  },
-  onProjectSetupChanged(listener: (snapshot: ProjectSetupSnapshot) => void) {
-    return subscribe<unknown>(PROJECT_SETUP_CHANGED_CHANNEL, (value) => {
-      const parsed = projectSetupSnapshotSchema.safeParse(value)
-      if (parsed.success) listener(parsed.data)
     })
   },
   zoomFactor: () => webFrame.getZoomFactor(),

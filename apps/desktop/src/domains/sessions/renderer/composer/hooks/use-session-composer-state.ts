@@ -1,19 +1,25 @@
 import { $convertFromMarkdownString, TRANSFORMERS } from '@lexical/markdown'
 import { $createParagraphNode, $getRoot, type LexicalEditor } from 'lexical'
 import { type RefObject, useCallback, useRef } from 'react'
-import type { TurnSetupControlProps } from '../toolbar/run-setup-menu'
+import type { TurnConfigurationControlProps } from '../toolbar/turn-configuration-menu'
 import { usePendingTurns } from '../tray/use-pending-turns'
-import { supportedSetup, type TurnSetup } from '../turn-setup/turn-setup'
+import {
+  supportedConfiguration,
+  type TurnConfiguration,
+} from '../turn-configuration/turn-configuration'
 import { useComposerAttachments } from './use-composer-attachments'
 import { useComposerStore } from './use-composer-store'
 import { type Send, useSend } from './use-send'
 
-// The setup a queued Turn was written with, narrowed to the choices still offered.
-function turnSetupOf(setup: TurnSetupControlProps | null, turnSetup: TurnSetup | undefined) {
-  if (setup === null) return null
-  return turnSetup === undefined
-    ? setup.value
-    : supportedSetup(setup.choices, turnSetup, setup.value)
+// Narrow the queued Turn Configuration to the choices that remain available.
+function turnConfigurationOf(
+  control: TurnConfigurationControlProps | null,
+  queued: TurnConfiguration | undefined,
+) {
+  if (control === null) return null
+  return queued === undefined
+    ? control.value
+    : supportedConfiguration(control.choices, queued, control.value)
 }
 
 function useComposerDraft(sessionId: string, editorRef: RefObject<LexicalEditor | null>) {
@@ -44,21 +50,24 @@ export function useSessionComposerState({
   isRunning,
   onSend,
   sessionId,
-  setup,
+  turnConfiguration,
 }: {
   isRunning: boolean
   onSend?: Send
   sessionId: string
-  setup: TurnSetupControlProps | null
+  turnConfiguration: TurnConfigurationControlProps | null
 }) {
   const editorRef = useRef<LexicalEditor>(null)
   const { clearDraft, draft, restoreDraft } = useComposerDraft(sessionId, editorRef)
   const { attachments, markError, clear } = useComposerAttachments(sessionId)
   const sendPendingTurn: Send = useCallback(
-    (text, turnSetup, pendingAttachments) =>
-      onSend?.(text, turnSetupOf(setup, turnSetup ?? undefined), pendingAttachments) ??
-      Promise.resolve(false),
-    [onSend, setup],
+    (text, queuedConfiguration, pendingAttachments) =>
+      onSend?.(
+        text,
+        turnConfigurationOf(turnConfiguration, queuedConfiguration ?? undefined),
+        pendingAttachments,
+      ) ?? Promise.resolve(false),
+    [onSend, turnConfiguration],
   )
   const { addPendingTurn } = usePendingTurns({ isRunning, onSend: sendPendingTurn, sessionId })
   const send = useSend({
@@ -72,7 +81,7 @@ export function useSessionComposerState({
     markError,
     onSend,
     restoreDraft,
-    setupValue: setup?.value,
+    turnConfigurationValue: turnConfiguration?.value,
   })
   return { editorRef, send }
 }

@@ -3,7 +3,10 @@ import type { SessionPlan } from '@/domains/sessions/renderer/model/models'
 import type { HarnessControl } from '../../harness/harnesses'
 import type { Send } from '../hooks/use-send'
 import { useSessionComposerState } from '../hooks/use-session-composer-state'
-import type { CatalogFailure, TurnSetupControlProps } from '../toolbar/run-setup-menu'
+import type {
+  CatalogFailure,
+  TurnConfigurationControlProps,
+} from '../toolbar/turn-configuration-menu'
 import type { WorkspaceMenuControlProps } from '../toolbar/workspace-menu'
 import { AttachmentTray } from '../tray/attachment-tray'
 import { PendingTurns } from '../tray/pending-turns'
@@ -30,7 +33,7 @@ export type ComposerFormProps = {
   permissionPrompt?: ReactNode
   plan?: SessionPlan | null
   harness?: HarnessControl | null
-  setup?: TurnSetupControlProps | null
+  turnConfiguration?: TurnConfigurationControlProps | null
   catalogFailure?: CatalogFailure | null
   refreshCatalog?: () => void
   workspace?: WorkspaceMenuControlProps | null
@@ -53,12 +56,12 @@ export function ComposerForm({
   permissionPrompt,
   plan = null,
   harness = null,
-  setup = null,
+  turnConfiguration = null,
   catalogFailure = null,
   refreshCatalog,
   workspace = null,
 }: ComposerFormProps) {
-  const state = useSessionComposerState({ sessionId, isRunning, onSend, setup })
+  const state = useSessionComposerState({ sessionId, isRunning, onSend, turnConfiguration })
   const send = () => {
     if (!disabled && onSend) void state.send()
   }
@@ -76,7 +79,7 @@ export function ComposerForm({
           editorRef={state.editorRef}
           onSteer={onSteer}
           sessionId={sessionId}
-          setup={setup}
+          turnConfiguration={turnConfiguration}
         />
       </AttachmentTray>
       <ComposerCard
@@ -95,7 +98,7 @@ export function ComposerForm({
         onSend={send}
         plan={plan}
         sessionId={sessionId}
-        setup={setup}
+        turnConfiguration={turnConfiguration}
         catalogState={{ catalogFailure, refreshCatalog, sendAvailable: onSend !== undefined }}
         workspace={workspace}
       />

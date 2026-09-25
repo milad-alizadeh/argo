@@ -6,7 +6,11 @@ import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 import type { HarnessControl } from '../../harness/harnesses'
 import { EMPTY_COMPOSER_ATTACHMENTS, useComposerStore } from '../hooks/use-composer-store'
 import { ModeMenu } from './mode-menu'
-import { type CatalogFailure, RunSetupMenu, type TurnSetupControlProps } from './run-setup-menu'
+import {
+  type CatalogFailure,
+  type TurnConfigurationControlProps,
+  TurnConfigurationMenu,
+} from './turn-configuration-menu'
 import { WorkspaceMenu, type WorkspaceMenuControlProps } from './workspace-menu'
 
 function AddContextButton({ onOpen }: { onOpen: () => void }) {
@@ -31,7 +35,7 @@ export function ComposerToolbar({
   sendAvailable = true,
   onOpenContextPicker,
   harness,
-  setup,
+  turnConfiguration,
   catalogFailure = null,
   refreshCatalog,
   workspace,
@@ -44,7 +48,7 @@ export function ComposerToolbar({
   sendAvailable?: boolean
   onOpenContextPicker: () => void
   harness: HarnessControl | null
-  setup: TurnSetupControlProps | null
+  turnConfiguration: TurnConfigurationControlProps | null
   catalogFailure?: CatalogFailure | null
   refreshCatalog?: () => void
   workspace: WorkspaceMenuControlProps | null
@@ -62,16 +66,16 @@ export function ComposerToolbar({
     <div className="flex items-center gap-1 p-(--spacing-shell-item) @[36rem]:gap-2">
       <AddContextButton onOpen={onOpenContextPicker} />
       {harness ? (
-        <RunSetupMenu
+        <TurnConfigurationMenu
           harness={harness}
-          setup={setup}
+          turnConfiguration={turnConfiguration}
           catalogFailure={catalogFailure}
           refreshCatalog={refreshCatalog}
         />
       ) : null}
       {workspace ? <WorkspaceMenu {...workspace} /> : null}
       <div className="ml-auto flex items-center gap-1">
-        {setup ? <ModeMenu {...setup} /> : null}
+        {turnConfiguration ? <ModeMenu {...turnConfiguration} /> : null}
         {isRunning ? (
           <Button
             aria-label={t('composer.interrupt')}

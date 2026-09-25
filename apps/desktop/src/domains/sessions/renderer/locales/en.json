@@ -24,7 +24,7 @@
   "stalled": {
     "title": "Could not load this Session",
     "description": {
-      "managed": "Argo tried to load the history for this Session, but the load did not finish.",
+      "live": "Argo tried to load the history for this Session, but the load did not finish.",
       "external": "This Session is external. Argo reads its history from a file it does not control, and the read is taking too long."
     },
     "retry": "Retry"
@@ -130,8 +130,8 @@
       "dumbZoneDescription": "History still fits, but noise and stale decisions weaken attention.",
       "loadedContext": "Loaded context"
     },
-    "setup": {
-      "title": "Run setup",
+    "turnConfiguration": {
+      "title": "Turn configuration",
       "effort": "Effort",
       "effortDescription": "More effort trades speed for deeper reasoning.",
       "choosePermissionMode": "Choose permission mode: {{mode}}",
@@ -151,8 +151,7 @@
     "workspace": {
       "choose": "Choose Workspace",
       "chooseLabel": "Choose Workspace: {{workspace}}",
-      "label": "Workspace",
-      "createManaged": "New managed Workspace"
+      "label": "Workspace"
     },
     "references": {
       "label": "References",

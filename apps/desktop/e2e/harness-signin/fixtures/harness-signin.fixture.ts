@@ -5,53 +5,39 @@ import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { expect as baseExpect } from '@playwright/test'
 import type { ElectronApplication, Page } from 'playwright-core'
-import { createDurableDatabase } from '@/database/durable-database'
-import { openSharedDatabase } from '@/database/shared-database'
+import { openDatabase } from '@/database/database'
+import { project } from '@/database/project/schema'
 import {
   HARNESS_SIGNIN_CLAUDE_EXECUTABLE_ENV,
   HARNESS_SIGNIN_CODEX_EXECUTABLE_ENV,
   HARNESS_SIGNIN_EXPIRES_AFTER_MS_ENV,
 } from '@/domains/harness-signin/contract/proof-protocol'
-import { createProjectStore } from '@/domains/projects/main/sqlite-store'
 import { writeMockClaudeReadinessCli } from '../../../mocks/cli/claude/mock-claude-readiness-cli'
 import { writeMockCodexReadinessCli } from '../../../mocks/cli/codex/mock-codex-readiness-cli'
-import type { MockSetupDocument } from '../../../mocks/providers/setup/mock-setup-document-loopback'
 import { test as packagedTest } from '../../packaged-proof'
 import { openHiddenWindow } from '../../packaged-window'
-import {
-  makeProjectLocallyReady,
-  markProjectSetupLocallyReady,
-} from '../../projects/fixtures/locally-ready-project'
+import { makeProjectLocallyReady } from '../../projects/fixtures/locally-ready-project'
 import { launch, repository } from '../../projects/fixtures/project.fixture'
 
 const PROOF_PROJECT_ID = 'harness-signin-project'
 
-// `project.fixture.ts`'s own `prepare()` marks a Project locally runnable but not through setup, so
-// the cockpit still routes it to `/setup` (#2326's Project contract cases want exactly that door
-// open). This gate sits behind a Project setup has already finished, so this fixture also writes
-// the setup checkpoint `markProjectSetupLocallyReady` leaves, and `launch()`'s own
-// `fixture.setupDocument` wiring is what keeps `openProject`'s document-revision check from
-// reopening setup on every launch.
-async function prepareReadyProject(
-  root: string,
-  application: string,
-  setupDocument: MockSetupDocument,
-) {
+async function prepareReadyProject(root: string, application: string) {
   const userData = path.join(root, 'userData')
   const projectPath = path.join(root, 'example')
   await mkdir(userData, { recursive: true })
   await repository(projectPath)
   await makeProjectLocallyReady(projectPath)
-  const projects = createProjectStore(createDurableDatabase(openSharedDatabase(userData)))
-  projects.replace({
-    projects: [
-      { id: PROOF_PROJECT_ID, path: projectPath, commonDirectory: path.join(projectPath, '.git') },
-    ],
-    selectedId: PROOF_PROJECT_ID,
-  })
-  markProjectSetupLocallyReady(projects, PROOF_PROJECT_ID, projectPath)
-  projects.close()
-  return { application, userData, setupDocument }
+  const database = openDatabase(userData)
+  database
+    .insert(project)
+    .values({
+      id: PROOF_PROJECT_ID,
+      path: projectPath,
+      commonDirectory: path.join(projectPath, '.git'),
+    })
+    .run()
+  database.$client.close()
+  return { application, userData }
 }
 
 const VIEWPORT = { height: 860, width: 1440 }
@@ -132,12 +118,8 @@ export const test = packagedTest.extend<{
   harnessSignInScenario: HarnessSignInScenario
 }>({
   harnessSignInScenario: ['signed-out', { option: true }],
-  harnessSignIn: async (
-    { packagedApplication, harnessSignInScenario, root, setupDocument },
-    use,
-  ) => {
-    if (!setupDocument) throw new Error('The Harness sign-in proof requires a setup document.')
-    const fixture = await prepareReadyProject(root, packagedApplication, setupDocument)
+  harnessSignIn: async ({ packagedApplication, harnessSignInScenario, root }, use) => {
+    const fixture = await prepareReadyProject(root, packagedApplication)
     const environment = await environmentFor(root, harnessSignInScenario)
     const application = await launch(fixture, environment)
     try {

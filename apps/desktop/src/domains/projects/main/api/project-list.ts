@@ -1,25 +1,25 @@
-import { randomUUID } from 'node:crypto'
-import { initTRPC, TRPCError } from '@trpc/server'
-import { projectErrorSchema } from '@/domains/projects/contract/contract'
-import { projectSummarySchema } from '@/domains/projects/contract/messages'
-import { listProjects } from '../list-projects'
-import type { ProjectStore } from '../register-project'
+import path from 'node:path'
+import { initTRPC } from '@trpc/server'
+import type { Database } from '@/database/database'
+import { project } from '@/database/project/schema'
+import { projectRegistrationSchema, projectSummarySchema } from '@/database/project/validation'
 
 const t = initTRPC.create()
 
-export function projectListProcedure(projects: ProjectStore) {
-  return t.procedure.output(projectSummarySchema.array()).query(async () => {
-    const reply = await listProjects(
-      { version: 1, type: 'project.list', requestId: randomUUID() },
-      projects,
-    )
-    if (reply.type !== 'project.listed') {
-      const parsed = projectErrorSchema.safeParse(reply)
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: parsed.success ? parsed.data.code : 'Project listing failed.',
-      })
-    }
-    return projectSummarySchema.array().parse(reply.projects)
-  })
+export function projectListProcedure(database: Database) {
+  return t.procedure.output(projectSummarySchema.array()).query(() =>
+    projectRegistrationSchema
+      .array()
+      .parse(
+        database
+          .select({ id: project.id, path: project.path, commonDirectory: project.commonDirectory })
+          .from(project)
+          .all(),
+      )
+      .map((registration) => ({
+        id: registration.id,
+        name: path.basename(registration.path) || registration.path,
+        path: registration.path,
+      })),
+  )
 }

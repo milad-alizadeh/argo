@@ -2,7 +2,6 @@
 // prove a re-read reaches the file system rather than a cache.
 import { appendFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import type { MockSetupDocument } from '../../../mocks/providers/setup/mock-setup-document-loopback'
 import { pointShellOutputAtRoot } from '../../../mocks/sessions/mock-shell-output'
 import {
   CODEX_FIXTURES,
@@ -12,10 +11,7 @@ import {
   writeArchiveStore,
   writeFixtureTree,
 } from '../../../mocks/sessions/mock-transcript-files'
-import {
-  makeProjectLocallyReady,
-  markProjectSetupLocallyReady,
-} from '../../projects/fixtures/locally-ready-project'
+import { makeProjectLocallyReady } from '../../projects/fixtures/locally-ready-project'
 import { repository, seedSingleProject } from '../../projects/fixtures/project.fixture'
 
 export const FIXTURES = [
@@ -105,10 +101,7 @@ export async function streamProse(transcripts, text) {
 export async function prepare(
   root,
   application,
-  {
-    projectSelected,
-    setupDocument,
-  }: { projectSelected: boolean; setupDocument: MockSetupDocument | undefined },
+  { projectSelected }: { projectSelected: boolean },
 ) {
   const claudeTranscripts = path.join(root, 'claude-transcripts')
   const codexTranscripts = path.join(root, 'codex-transcripts')
@@ -125,21 +118,18 @@ export async function prepare(
   const project = proofProject(claudeTranscripts)
   await repository(project)
   await makeProjectLocallyReady(project)
-  await writeProjectStore(userData, project, projectSelected ? PROOF_PROJECT_ID : null)
+  if (projectSelected) seedProject(userData, project)
   return {
     application,
     claudeTranscripts,
     codexTranscripts,
     userData,
     project,
-    setupDocumentURL: setupDocument?.url,
   }
 }
 
 const PROOF_PROJECT_ID = 'session-proof-project'
 
-async function writeProjectStore(userData, project, selectedId) {
-  const projects = seedSingleProject(userData, { id: PROOF_PROJECT_ID, path: project, selectedId })
-  markProjectSetupLocallyReady(projects, PROOF_PROJECT_ID, project)
-  projects.close()
+function seedProject(userData, project) {
+  seedSingleProject(userData, { id: PROOF_PROJECT_ID, path: project })
 }

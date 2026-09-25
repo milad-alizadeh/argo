@@ -10,7 +10,7 @@ function rosterRow(overrides: Partial<SessionRosterRow> = {}): SessionRosterRow 
     id: 'session-one',
     retiredIds: [],
     harness: 'claude',
-    posture: 'managed',
+    posture: 'live',
     title: null,
     status: 'idle',
     entry: 'interactive',
@@ -28,7 +28,7 @@ function rosterRow(overrides: Partial<SessionRosterRow> = {}): SessionRosterRow 
     ticket: null,
     archived: false,
     unread: false,
-    setup: { model: null, effort: null, mode: null },
+    turnConfiguration: { model: null, effort: null, mode: null },
     ...overrides,
   }
 }

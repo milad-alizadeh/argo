@@ -11,7 +11,6 @@ export type SessionFixture = {
   codexTranscripts: string
   userData: string
   project: string
-  setupDocumentURL: string | undefined
 }
 
 // What one launch asks of the Harness. A slow reply is the state the wait cases read (#2119): a Harness

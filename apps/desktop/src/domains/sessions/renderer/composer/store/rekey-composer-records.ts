@@ -3,7 +3,7 @@ import { rekeyComposerRecord } from './rekey-composer-record'
 
 type ComposerRecords = Pick<
   ComposerState,
-  'attachments' | 'drafts' | 'markers' | 'pendingTurns' | 'setup' | 'tickets'
+  'attachments' | 'drafts' | 'markers' | 'pendingTurns' | 'turnConfiguration' | 'tickets'
 >
 
 export function rekeyComposerRecords(state: ComposerRecords, from: string, to: string) {
@@ -12,7 +12,7 @@ export function rekeyComposerRecords(state: ComposerRecords, from: string, to: s
     drafts: rekeyComposerRecord(state.drafts, from, to),
     markers: rekeyComposerRecord(state.markers, from, to),
     pendingTurns: rekeyComposerRecord(state.pendingTurns, from, to),
-    setup: rekeyComposerRecord(state.setup, from, to),
+    turnConfiguration: rekeyComposerRecord(state.turnConfiguration, from, to),
     tickets: rekeyComposerRecord(state.tickets, from, to),
   }
 }

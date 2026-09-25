@@ -18,7 +18,7 @@ export type TurnMarkerPhase = (typeof TURN_MARKER_PHASES)[number]
 export type TurnMarkerEntry = {
   stage: TurnMarkerStage
   // The Session's own turnStartedAt at the moment Send was pressed, so the real record catching
-  // up (a different value) is the one honest "the Harness has spoken" signal (turn-setup.ts's
+  // up (a different value) is the one honest "the Harness has spoken" signal (turn-configuration.ts's
   // turnSettled reads the same fact for the same reason).
   since: string | null
   startedAt: number
@@ -52,14 +52,14 @@ export type TurnMarkerRow = {
 // Starting vs. Resuming is chosen once, at Send time, by whether this Session's process has ever
 // run under Argo before: a brand-new Session (no id yet) starts, one currently external (never
 // driven, or Argo held it and lost it across a restart, CONTEXT.md L2 · Session) resumes. One
-// already managed has necessarily spoken before (`starting` is unreachable once a managed Session
+// already live has necessarily spoken before (`starting` is unreachable once a live Session
 // has said anything, docs/domain/l2-session.md), so it skips straight to reading activity.
 export function stageFor(
   identityKind: 'draft' | 'session',
   posture: SessionPosture | null,
 ): TurnMarkerStage {
   if (identityKind === 'draft') return 'starting'
-  return posture === 'managed' ? 'live' : 'resuming'
+  return posture === 'live' ? 'live' : 'resuming'
 }
 
 // Whether the real record for this Turn has caught up: the Session moved off the turnStartedAt

@@ -35,7 +35,7 @@ export function checkedDataImageUrl(url: string): FeedImageUrl | null {
   return DATA_URL.test(url) ? built(url) : null
 }
 
-// POSIX only: the managed drivers these paths come from run on macOS today (#1894, #1892 track
+// POSIX only: the live drivers these paths come from run on macOS today (#1894, #1892 track
 // Linux and Windows separately).
 export function fileImageUrl(path: string): FeedImageUrl | null {
   return path.startsWith('/')

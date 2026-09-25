@@ -2,9 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, expect, test } from 'vitest'
-import { createDurableDatabase } from '@/database/durable-database'
-import { databaseMigrationsFolder } from '@/database/migrations-folder'
-import { openSharedDatabase } from '@/database/shared-database'
+import { databaseMigrationsFolder, openDatabase } from '@/database/database'
 import { createSessionTicketLinkStoreFromDatabase } from './session-links'
 
 const roots: string[] = []
@@ -17,8 +15,8 @@ afterEach(async () => {
 test('keeps an asserted Session to Ticket link after the shared database reopens', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-session-links-sqlite-'))
   roots.push(root)
-  const first = openSharedDatabase(root, migrationsFolder)
-  const links = createSessionTicketLinkStoreFromDatabase(createDurableDatabase(first))
+  const first = openDatabase(root, { migrationsFolder })
+  const links = createSessionTicketLinkStoreFromDatabase(first)
   await links.connect(
     'session-1',
     { projectId: 'project-1', key: '#607', title: 'Ticket #607', state: 'open' },
@@ -27,7 +25,7 @@ test('keeps an asserted Session to Ticket link after the shared database reopens
   links.close()
 
   const reopened = createSessionTicketLinkStoreFromDatabase(
-    createDurableDatabase(openSharedDatabase(root, migrationsFolder)),
+    openDatabase(root, { migrationsFolder }),
   )
   await expect(reopened.linkFor('session-1')).resolves.toEqual({
     projectId: 'project-1',

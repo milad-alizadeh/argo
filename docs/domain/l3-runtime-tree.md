@@ -43,15 +43,14 @@
   Session's current plan is the newest snapshot observed, which is **DERIVED** — which is why a
   turn that touched no plan does not blank it. Distinct from Ticket and Delivery lifecycle.
 - **Workspace** — the git working context attached to an Agent. Splits across two authorities:
-  **identity** (`id`, `kind: main | imported | managed`, `path`) comes from the **Project's
+  **identity** (`id`, `kind: main | imported`, `path`) comes from the **Project's
   Workspace registry** (L1) and is durable — chosen once at `session.start` and never changed by
-  a later branch checkout; **live facts** (`branch`, `baseRef`, `dirty`, `unpushed`, `headSha`,
+  a later branch checkout; **live facts** (`branch`, `dirty`, `unpushed`, `headSha`,
   `ahead`/`behind`, `sharedCount`) are read off that path from git on demand, never a second
   stored registry. **The join key `branch` lives here** — Delivery is keyed by
   `Workspace.branch`. Node-scoped (ADR-0010): an Agent has **`0..1` owned** Workspace and
   otherwise **inherits its parent's** — a Subagent without its own worktree renders no second
-  chip. DIRECT with a live Agent channel, DERIVED without one. Every owned Workspace branches from the
-  Project's shared base ref.
+  chip. DIRECT with a live Agent channel, DERIVED without one.
 - **Compaction** — a marker in an Agent's Turn sequence where history was condensed; the
   native Session continues across it.
 - **Usage** — token/cost/context telemetry, DERIVED. Not a tree node — a fact on Turn +

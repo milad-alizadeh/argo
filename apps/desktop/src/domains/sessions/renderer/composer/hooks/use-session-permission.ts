@@ -7,7 +7,6 @@ import {
   throwUnexpectedSessionReply,
 } from '../../session-contract-error'
 import { invalidateSessionRoster, sessionPermissionQueryKey } from '../../session-queries'
-import { useWatchedQueries } from '../../use-watched-topic'
 
 export type PermissionAnswer = PermissionDecision
 
@@ -33,12 +32,6 @@ export function useSessionPermission(sessionId: string | null) {
       }
     },
   })
-  // The main process is where a Permission appears and where a decision clears it, so it says when
-  // to read again (#2299). The topic carries no Session id: a window shows one Session, so another
-  // Session's Permission costs this screen one read. Unlike the transcript reads, no fallback poll
-  // stands behind it, because the push comes from the process holding the Permission, not from a
-  // file watch the OS can drop.
-  useWatchedQueries('permissions', [queryKey])
   const permissionDecision = usePermissionDecision()
   const decide = async (decision: PermissionAnswer) => {
     if (permission.data === null || permission.data === undefined) return false

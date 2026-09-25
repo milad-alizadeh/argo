@@ -5,7 +5,6 @@ import { mkdir, realpath, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
-import { developmentSetupDocumentEnvironment } from '../src/domains/projects/main/setup/preparation/setup-document-source.ts'
 import { startControlServer } from './dev-control-server.mts'
 import { stopElectronProcess, stopForgeProcess } from './dev-launch-stop.mts'
 import {
@@ -106,7 +105,6 @@ async function main() {
       ARGO_DESKTOP_CONTROL_TOKEN: controlToken,
       ARGO_DESKTOP_WINDOW_TITLE: instance.title,
       ARGO_DESKTOP_WORKTREE: instance.worktree,
-      ...developmentSetupDocumentEnvironment(branch),
     },
     stdio: 'inherit',
   })

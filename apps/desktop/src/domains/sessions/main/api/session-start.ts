@@ -3,7 +3,7 @@ import { sessionAttachmentInputSchema } from '@/domains/sessions/api/attachments
 import { harnessSchema } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
 
-export const sessionSetupSchema = z.strictObject({
+export const turnConfigurationSchema = z.strictObject({
   model: z.string().min(1),
   effort: z.string().min(1),
   mode: z.string().min(1),
@@ -12,7 +12,7 @@ const commandSchema = z.strictObject({
   commandId: identifierSchema,
   prompt: z.string(),
   attachments: z.array(sessionAttachmentInputSchema).default([]),
-  setup: sessionSetupSchema,
+  turnConfiguration: turnConfigurationSchema,
 })
 export const sessionStartInputSchema = commandSchema.extend({
   harness: harnessSchema,

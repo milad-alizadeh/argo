@@ -1,9 +1,16 @@
 import assert from 'node:assert/strict'
 import { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
-import { type ActorRefFrom, createActor, fromCallback, fromPromise, setup, waitFor } from 'xstate'
+import {
+  type ActorRefFrom,
+  createActor,
+  fromCallback,
+  fromPromise,
+  waitFor,
+  setup as xstateSetup,
+} from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
-import { createDurableDatabase } from '@/database/durable-database'
+import { databaseFrom } from '@/database/database'
 import {
   harnessCatalogMachine,
   harnessCatalogSchema,
@@ -31,7 +38,7 @@ const first: SessionStartInput = {
   cwd: '/repo',
   prompt: 'first',
   attachments: [],
-  setup: { model: model.value, effort: model.defaultEffort, mode: 'workspace-write' },
+  turnConfiguration: { model: model.value, effort: model.defaultEffort, mode: 'workspace-write' },
 }
 
 async function supervisorFor(request: CodexRequest, catalogValue = catalog) {
@@ -39,7 +46,7 @@ async function supervisorFor(request: CodexRequest, catalogValue = catalog) {
   client.exec(
     'CREATE TABLE session (argo_id TEXT PRIMARY KEY, harness TEXT NOT NULL, native_id TEXT NOT NULL, project_id TEXT, custom_title TEXT, preview TEXT, first_prompt TEXT, cwd TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);',
   )
-  const database = createDurableDatabase(client)
+  const database = databaseFrom(client)
   const channel: CodexChannel = {
     request: (method, params, parse) => request(method, params, parse),
     invalidMessageCount: () => 0,
@@ -53,7 +60,7 @@ async function supervisorFor(request: CodexRequest, catalogValue = catalog) {
     Parameters<ActorRefFrom<typeof codexAppServerMachine>['send']>[0],
     { type: 'Call' }
   >
-  const rootMachine = setup({
+  const rootMachine = xstateSetup({
     types: {
       input: {} as { database: typeof database },
       context: {} as { database: typeof database },
@@ -143,7 +150,10 @@ test('rejects a model mode that the catalog does not support before calling Code
   }, restrictedCatalog)
   try {
     await assert.rejects(
-      start(supervisor, { ...first, setup: { ...first.setup, mode: 'read-only' } }),
+      start(supervisor, {
+        ...first,
+        turnConfiguration: { ...first.turnConfiguration, mode: 'read-only' },
+      }),
       /no longer available/,
     )
     assert.equal(called, false)
@@ -195,7 +205,7 @@ test('rejects a changed Codex stance instead of silently retaining the opening s
         ...first,
         commandId: 'changed-stance',
         sessionId,
-        setup: { ...first.setup, mode: 'read-only' },
+        turnConfiguration: { ...first.turnConfiguration, mode: 'read-only' },
       }),
       /requires starting a new Session/,
     )

@@ -2,14 +2,14 @@ import type { LexicalEditor } from 'lexical'
 import { type RefObject, useCallback } from 'react'
 
 import type { SessionAttachmentInput } from '@/domains/sessions/api/attachments'
-import type { TurnSetup } from '../turn-setup/turn-setup'
+import type { TurnConfiguration } from '../turn-configuration/turn-configuration'
 import { resolveAttachments } from './use-composer-attachments'
 import type { ComposerAttachment } from './use-composer-store'
 
 export type SendOutcome = 'accepted' | 'rejected' | 'uncertain'
 export type Send = (
   text: string,
-  setup: TurnSetup | null,
+  turnConfiguration: TurnConfiguration | null,
   attachments: SessionAttachmentInput[],
 ) => Promise<SendOutcome | boolean>
 
@@ -30,28 +30,30 @@ export async function performSend(input: {
   isRunning: boolean
   addPendingTurn: (
     text: string,
-    setup: TurnSetup | undefined,
+    turnConfiguration: TurnConfiguration | undefined,
     attachments: SessionAttachmentInput[],
   ) => void
   editor: LexicalEditor | null
   onSend?: Send
-  setupValue: TurnSetup | null | undefined
+  turnConfigurationValue: TurnConfiguration | null | undefined
   clearDraft: (editor?: LexicalEditor | null) => void
   restoreDraft: (text: string, editor?: LexicalEditor | null) => void
   clear: (ids: string[]) => void
 }) {
   const { draft, attachments, markError, isRunning, addPendingTurn, editor, onSend } = input
-  const { setupValue, clearDraft, clear } = input
+  const { turnConfigurationValue, clearDraft, clear } = input
   if (onSend === undefined || (!draft.trim() && attachments.length === 0)) return
   const resolved = await resolveAttachments(draft, attachments, markError)
   if (!resolved.prompt.trim() && resolved.attachments.length === 0) return
   if (isRunning) {
-    addPendingTurn(resolved.prompt, setupValue ?? undefined, resolved.attachments)
+    addPendingTurn(resolved.prompt, turnConfigurationValue ?? undefined, resolved.attachments)
     clearDraft()
     clear(resolved.sentIds)
     return
   }
-  switch (outcomeFor(await onSend(resolved.prompt, setupValue ?? null, resolved.attachments))) {
+  switch (
+    outcomeFor(await onSend(resolved.prompt, turnConfigurationValue ?? null, resolved.attachments))
+  ) {
     case 'accepted':
       clearDraft(editor)
       clear(resolved.sentIds)
@@ -76,14 +78,14 @@ export function useSend(input: {
   markError: (ids: string[]) => void
   addPendingTurn: (
     text: string,
-    setup: TurnSetup | undefined,
+    turnConfiguration: TurnConfiguration | undefined,
     attachments: SessionAttachmentInput[],
   ) => void
   onSend?: Send
-  setupValue: TurnSetup | null | undefined
+  turnConfigurationValue: TurnConfiguration | null | undefined
 }) {
   const { editorRef, draft, attachments, clear, clearDraft, isRunning, restoreDraft } = input
-  const { markError, addPendingTurn, onSend, setupValue } = input
+  const { markError, addPendingTurn, onSend, turnConfigurationValue } = input
   return useCallback(
     () =>
       performSend({
@@ -97,7 +99,7 @@ export function useSend(input: {
         markError,
         onSend,
         restoreDraft,
-        setupValue,
+        turnConfigurationValue,
       }),
     [
       addPendingTurn,
@@ -110,7 +112,7 @@ export function useSend(input: {
       markError,
       onSend,
       restoreDraft,
-      setupValue,
+      turnConfigurationValue,
     ],
   )
 }

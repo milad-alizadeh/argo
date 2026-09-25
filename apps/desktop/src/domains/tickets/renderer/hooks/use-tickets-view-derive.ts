@@ -5,7 +5,7 @@ import type { TFunction } from 'i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
 import type { AccountListing } from '@/domains/accounts/renderer'
 import { openAccountsDialog } from '@/domains/accounts/renderer'
-import type { ProjectSummary } from '@/domains/projects/contract/messages'
+import type { ProjectSummary } from '@/domains/projects/renderer'
 import type {
   ConnectionSummary,
   TicketPriority,
