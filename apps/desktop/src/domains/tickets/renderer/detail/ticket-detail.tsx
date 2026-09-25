@@ -45,7 +45,12 @@ export function TicketDetail(props: TicketDetailProps) {
       aria-label={t('detail.articleLabel', { key: ticket.key })}
       className="flex min-h-0 flex-1 flex-col overflow-hidden"
     >
-      <CockpitContentChrome />
+      <CockpitContentChrome>
+        <Button className="no-drag-region" onClick={onBack} size="sm" type="button" variant="ghost">
+          <Icon data-icon="inline-start" name="back" />
+          {t('detail.back')}
+        </Button>
+      </CockpitContentChrome>
       <div
         data-component="TicketDetailScroll"
         className="@container min-h-0 flex-1 overflow-y-auto"
@@ -53,10 +58,6 @@ export function TicketDetail(props: TicketDetailProps) {
         <div className={detailMeasure}>
           <div className="contents @3xl:col-start-1 @3xl:row-start-1 @3xl:block">
             <header className="order-1 flex min-w-0 flex-col items-start gap-(--spacing-shell-item)">
-              <Button onClick={onBack} size="sm" type="button" variant="ghost">
-                <Icon data-icon="inline-start" name="back" />
-                {t('detail.back')}
-              </Button>
               <h2
                 className="min-w-0 self-start line-clamp-2 type-title wrap-anywhere"
                 title={ticket.title}
