@@ -8,13 +8,13 @@ import {
 import type { AppearanceState } from '@/platform/contract/appearance'
 import { APPEARANCE_CHANGED_CHANNEL, isAppearanceState } from '@/platform/contract/appearance'
 import { COMMAND_CHANNEL } from '@/platform/contract/commands'
+import { isWatchTopic, WATCHED_CHANGED_CHANNEL, type WatchTopic } from '@/platform/contract/watch'
+import { developmentIdentityFromArguments } from '@/platform/preload/development-identity'
 import {
   TRPC_CHANNEL,
   type TrpcSubscriptionMessage,
   trpcSubscriptionMessageSchema,
-} from '@/platform/contract/trpc'
-import { isWatchTopic, WATCHED_CHANGED_CHANNEL, type WatchTopic } from '@/platform/contract/watch'
-import { developmentIdentityFromArguments } from '@/platform/preload/development-identity'
+} from '@/platform/trpc'
 
 let invalidTrpcSubscriptionMessageCount = 0
 

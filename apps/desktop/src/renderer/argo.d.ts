@@ -1,8 +1,8 @@
 import type { ProjectSetupSnapshot } from '@/domains/projects/contract/contract'
 import type { AppearanceState } from '@/platform/contract/appearance'
 import type { DevelopmentIdentity } from '@/platform/contract/development-identity'
-import type { TrpcRequest, TrpcSubscriptionMessage } from '@/platform/contract/trpc'
 import type { WatchTopic } from '@/platform/contract/watch'
+import type { TrpcRequest, TrpcSubscriptionMessage } from '@/platform/trpc'
 
 declare global {
   interface Window {

@@ -6,7 +6,7 @@ import {
   type TrpcRequest,
   trpcRequestSchema,
   trpcSubscriptionStopSchema,
-} from '@/platform/contract/trpc'
+} from '@/platform/trpc'
 import { isTrustedRendererFrame } from './security/is-trusted-renderer-frame'
 
 type Context = undefined

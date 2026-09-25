@@ -2,8 +2,8 @@ import { QueryClient } from '@tanstack/react-query'
 import { createTRPCClient, TRPCClientError, type TRPCLink } from '@trpc/client'
 import { type Observer, observable } from '@trpc/server/observable'
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query'
-import type { TrpcRequest, TrpcSubscriptionMessage } from '@/platform/contract/trpc'
 import type { AppRouter } from '@/platform/main/trpc-router'
+import type { TrpcRequest, TrpcSubscriptionMessage } from '@/platform/trpc'
 
 function assertNever(value: never): never {
   throw new Error(`Unknown tRPC subscription message: ${String(value)}`)
@@ -26,7 +26,7 @@ function receiveSubscriptionMessage<TRouter extends AppRouter>(
       observer.complete?.()
       break
     default:
-      assertNever(parsed.data)
+      assertNever(message)
   }
 }
 
