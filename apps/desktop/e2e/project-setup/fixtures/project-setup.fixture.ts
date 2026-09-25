@@ -5,7 +5,7 @@ import type { ElectronApplication, Page } from 'playwright-core'
 import {
   SESSION_CLAUDE_EXECUTABLE_ENV,
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
-} from '@/domains/sessions/contract/proof-protocol'
+} from '@/harnesses/proof-protocol'
 import { writeMockClaude } from '../../../mocks/cli/claude/mock-claude-cli'
 import { test as packagedTest } from '../../packaged-proof'
 import { openHiddenWindow } from '../../packaged-window'

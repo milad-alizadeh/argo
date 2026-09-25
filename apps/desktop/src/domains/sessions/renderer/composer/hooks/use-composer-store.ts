@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
-import { sessionAttachmentInputSchema } from '@/domains/sessions/contract/drive/attachments-contract'
+import { sessionAttachmentInputSchema } from '@/domains/sessions/api/attachments'
 import type { TurnMarkerEntry } from '../../feed/rows/turn-marker-state'
 import { SESSION_HARNESSES, type SessionHarness } from '../../harness/harnesses'
 import { composerActions } from '../store/composer-store-actions'
@@ -23,7 +23,7 @@ export type PendingTurn = {
   id: string
   text: string
   setup?: TurnSetup
-  attachments: import('@/domains/sessions/contract/drive').SessionAttachmentInput[]
+  attachments: import('@/domains/sessions/api/attachments').SessionAttachmentInput[]
 }
 
 export const EMPTY_COMPOSER_ATTACHMENTS: ComposerAttachment[] = []

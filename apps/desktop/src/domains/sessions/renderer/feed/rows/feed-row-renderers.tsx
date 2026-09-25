@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
+import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import { RunningText } from '@/platform/renderer/components/running-text'
 import type { SessionEvidence, SessionFeedRow } from '../../types'
 import { FeedGallery, FeedImage } from '../content/feed-images'

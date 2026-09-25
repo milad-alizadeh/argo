@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { displayedToolLabel } from '@/domains/sessions/contract/model/feed/tool-feed'
+import { displayedToolLabel } from '@/domains/sessions/renderer/feed/model/tool-feed'
 import { RunningText } from '@/platform/renderer/components/running-text'
 import {
   CodeBlock,

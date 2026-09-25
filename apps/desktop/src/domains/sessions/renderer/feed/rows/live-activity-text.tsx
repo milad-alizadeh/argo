@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import { displayedToolLabel } from '@/domains/sessions/contract/model/feed/tool-feed'
-import type { SessionActivity } from '@/domains/sessions/contract/model/models'
+import { displayedToolLabel } from '@/domains/sessions/renderer/feed/model/tool-feed'
+import type { SessionActivity } from '@/domains/sessions/renderer/model/models'
 import { RunningText } from '@/platform/renderer/components/running-text'
 
 export type LiveActivity = {

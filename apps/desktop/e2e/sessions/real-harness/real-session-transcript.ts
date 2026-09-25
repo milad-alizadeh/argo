@@ -1,6 +1,6 @@
 import { readdir, readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
-import type { TranscriptRecord } from '@/domains/sessions/contract/model/transcript/transcript'
+import type { TranscriptRecord } from '@/domains/sessions/renderer/feed/source/transcript'
 
 type TranscriptMatch = { size: number }
 type TranscriptMatcher = {

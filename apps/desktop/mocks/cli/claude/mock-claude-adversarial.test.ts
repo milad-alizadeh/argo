@@ -5,12 +5,11 @@ import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
-
-import { SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/domains/sessions/contract/proof-protocol'
 import {
   ClaudeModelCatalogCache,
   readClaudeModelCatalog,
 } from '@/harnesses/claude/agent-sdk/model-catalog'
+import { SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harnesses/proof-protocol'
 import { writeMockClaude } from './mock-claude-cli.ts'
 
 const ESCAPE = String.fromCharCode(27)

@@ -1,11 +1,11 @@
 import type { VirtualItem } from '@tanstack/virtual-core'
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
+import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import {
   foldSettledToolRuns,
   withHeadline,
-} from '@/domains/sessions/contract/model/feed/tool-groups'
+} from '@/domains/sessions/renderer/feed/model/tool-groups'
 import type { SessionEvidence, SessionFeed, SessionFeedRow } from '../../types'
 import { sessionPostureLocksAnswer } from '../../types'
 import { isFeedRowStreaming } from '../rows/feed-row-renderers'

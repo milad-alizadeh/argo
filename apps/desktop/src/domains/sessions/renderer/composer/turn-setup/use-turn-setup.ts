@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 
-import type { SessionRosterRow, SessionSetup } from '@/domains/sessions/contract/model/models'
+import type { SessionRosterRow, SessionSetup } from '@/domains/sessions/renderer/model/models'
 import type { SessionHarness } from '../../harness/harnesses'
 import { useComposerStore } from '../hooks/use-composer-store'
 import { type ComposerIdentity, composerIdentityKey } from '../identity/composer-identity'

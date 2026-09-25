@@ -16,7 +16,7 @@ import type {
 import { codexHarnessInfo } from '@/harnesses/codex/catalog'
 import { createDurableDatabase } from '@/platform/main/storage/durable-database'
 import { codexModelCatalogFixture } from '../../../../../test-fixtures/sessions/codex-model-catalog.fixture'
-import type { SessionStartInput } from '../../contract/session-start'
+import type { SessionStartInput } from '../api/session-start'
 import { sessionSupervisorMachine } from './session-supervisor-machine'
 
 const available = codexHarnessInfo(codexModelCatalogFixture())

@@ -1,4 +1,4 @@
-import { DEFAULT_AUTO_COMPACT_LIMIT } from '../src/domains/sessions/contract/codex-compaction'
+import { DEFAULT_AUTO_COMPACT_LIMIT } from '../src/domains/sessions/renderer/composer/context-window/codex-compaction'
 import { sessionRosterRow } from '../src/domains/sessions/renderer/session-fixtures'
 import { subscribeToStorybookCommands } from './storybook-commands'
 import { storybookHarnessSignInBridge } from './storybook-harness-signin'

@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { useProjects } from '@/domains/projects/renderer'
-import { currentSessionId } from '@/domains/sessions/contract/model/models'
+import { currentSessionId } from '@/domains/sessions/renderer/model/models'
 import { Roster, type RosterActions } from '../roster'
 import { useOrderedSessions } from '../rows/roster-order'
 import { useArchiveSelected } from './use-session-archive-mutation'

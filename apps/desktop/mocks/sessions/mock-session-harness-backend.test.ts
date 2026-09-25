@@ -5,7 +5,7 @@ import path from 'node:path'
 import {
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
-} from '@/domains/sessions/contract/proof-protocol'
+} from '@/harnesses/proof-protocol'
 import type {
   SessionFixture,
   SessionHarnessBackend,

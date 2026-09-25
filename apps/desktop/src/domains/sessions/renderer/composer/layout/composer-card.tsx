@@ -1,7 +1,7 @@
 import type { LexicalEditor } from 'lexical'
 import { type DragEvent, type RefObject, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { SessionPlan } from '@/domains/sessions/contract/model/models'
+import type { SessionPlan } from '@/domains/sessions/renderer/model/models'
 import type { HarnessControl } from '../../harness/harnesses'
 import { SessionContextBar } from '../context-bar/session-context-bar'
 import { useAttachmentTransfer } from '../hooks/use-composer-attachments'
