@@ -6,8 +6,7 @@ import type { Ticket } from '@/domains/tickets/contract/contract'
 import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
 import { TicketDetail } from '../detail/ticket-detail'
 import { backlog, connection, standalone, wayfinder } from '../detail/ticket-fixtures'
-import { TicketList } from '../sidebar/ticket-list'
-import { TicketsSidebarHeader } from '../sidebar/tickets-sidebar-header'
+import { TicketsBacklogSidebar } from '../sidebar/tickets-backlog-sidebar'
 
 const link = (key: string, title: string) => ({ key, title, state: 'open' as const })
 
@@ -76,16 +75,15 @@ function TicketBacklogLayout({ width = '100%' }: { width?: string }) {
         <CockpitShell
           header={<span className="type-meta text-muted-foreground">octocat/hello-world</span>}
           sidebar={
-            <aside aria-label="Tickets sidebar" className="flex h-full min-h-0 flex-col bg-sidebar">
-              <TicketsSidebarHeader connection={connection('github')} />
-              <TicketList
-                backlog={storyBacklog}
-                now={new Date('2026-09-25T12:00:00Z').getTime()}
-                onSelect={setSelectedKey}
-                placement="sidebar"
-                selectedKey={selectedKey}
-              />
-            </aside>
+            <TicketsBacklogSidebar
+              backlog={storyBacklog}
+              connection={connection('github')}
+              notice={null}
+              now={new Date('2026-09-25T12:00:00Z').getTime()}
+              onManageAccounts={fn()}
+              onSelect={setSelectedKey}
+              selectedKey={selectedKey}
+            />
           }
         >
           <main aria-label="Ticket detail" className="flex h-full min-h-0 flex-col bg-background">

@@ -1,7 +1,7 @@
-import { InspectorSplit } from '@/platform/renderer/cockpit/inspector-split/inspector-split'
+import { useLayoutEffect } from 'react'
 import { useLinkedSessions } from '../hooks/use-linked-sessions'
 import type { Backlog } from '../lib/backlog'
-import { TicketList } from '../sidebar/ticket-list'
+import { useTicketBacklogSidebar } from '../sidebar/ticket-backlog-sidebar-store'
 import { TicketDetail } from './ticket-detail'
 
 export type TicketDeckProps = {
@@ -12,15 +12,10 @@ export type TicketDeckProps = {
   onOpenSession: (id: string) => void
 }
 
-const TICKET_SPLIT = {
-  inspector: '--size-ticket-inspector',
-  inspectorMin: '--size-ticket-inspector-min',
-  workspaceMin: '--size-ticket-workspace-min',
-}
-
-// A selection that a new listing no longer holds falls back to nothing selected. The Ticket
-// router (CONTEXT.md L1 · Ticket) owns the selection itself, so a reload or a Session's "Open
-// Ticket" navigation lands on the same Ticket.
+// A selection that a new listing no longer holds falls back to nothing selected. The shell owns
+// the backlog, so this deck is only the selected Ticket's workspace. The Ticket router
+// (CONTEXT.md L1 · Ticket) owns the selection itself, so a reload or a Session's "Open Ticket"
+// navigation lands on the same Ticket.
 export function TicketDeck({
   backlog,
   projectId,
@@ -28,40 +23,25 @@ export function TicketDeck({
   onSelect,
   onOpenSession,
 }: TicketDeckProps) {
+  const setSidebar = useTicketBacklogSidebar((state) => state.setSidebar)
   const selected = backlog.tickets.find((ticket) => ticket.key === selectedKey) ?? null
   const listed = new Set(backlog.tickets.map((ticket) => ticket.key))
   const linkedSessions = useLinkedSessions(projectId, selected?.key ?? null)
+  useLayoutEffect(() => {
+    setSidebar({ backlog, selectedKey, onSelect })
+    return () => setSidebar(null)
+  }, [backlog, onSelect, selectedKey, setSidebar])
   return (
-    <InspectorSplit
-      defaultInspectorSize="50%"
-      inspector={
-        <TicketDetail
-          linkedSessions={linkedSessions}
-          listed={listed}
-          onChangePriority={(priority) =>
-            selected && backlog.onChangePriority(selected.key, priority)
-          }
-          onChangeStatus={(status) => selected && backlog.onChangeStatus(selected.key, status)}
-          onOpenSession={onOpenSession}
-          onSelect={onSelect}
-          provider={backlog.provider}
-          statuses={backlog.statuses}
-          ticket={selected}
-        />
-      }
-      noun="Ticket"
-      reveal={selected?.key}
-      sizes={TICKET_SPLIT}
-      workspace={
-        <div className="flex h-full min-h-0 flex-col">
-          <TicketList
-            backlog={backlog}
-            now={Date.now()}
-            onSelect={onSelect}
-            selectedKey={selected?.key ?? null}
-          />
-        </div>
-      }
+    <TicketDetail
+      linkedSessions={linkedSessions}
+      listed={listed}
+      onChangePriority={(priority) => selected && backlog.onChangePriority(selected.key, priority)}
+      onChangeStatus={(status) => selected && backlog.onChangeStatus(selected.key, status)}
+      onOpenSession={onOpenSession}
+      onSelect={onSelect}
+      provider={backlog.provider}
+      statuses={backlog.statuses}
+      ticket={selected}
     />
   )
 }

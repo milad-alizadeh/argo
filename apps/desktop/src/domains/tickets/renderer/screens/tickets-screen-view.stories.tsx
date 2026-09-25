@@ -16,28 +16,58 @@ import {
   ticketsView,
 } from '../detail/ticket-fixtures'
 import type { TicketsScreenProps } from '../hooks/use-tickets-view'
+import { TicketsBacklogSidebar } from '../sidebar/tickets-backlog-sidebar'
 import { TicketsSidebarContent } from '../sidebar/tickets-sidebar'
 import { STATUSES } from '../status/status-fixtures'
 import { TicketsScreen } from './tickets-screen-view'
 
 // The screen no longer holds its own selection (#2134: a Session's "Open Ticket" must land on the
 // same Ticket after a reload), so a story stands in for the router state that owns it in the app.
-function TicketsScreenStory({ view }: TicketsScreenProps) {
+type TicketsScreenStoryProps = TicketsScreenProps & {
+  notice?: { onConnect: () => void; onDismiss: () => void }
+}
+
+function TicketsScreenStory({ view, notice = null }: TicketsScreenStoryProps) {
   const [selectedKey, setSelectedKey] = useState<string | null>(
     view.kind === 'tickets' ? view.selectedKey : null,
   )
-  if (view.kind !== 'tickets') return <TicketsScreen view={view} />
+  const current =
+    view.kind === 'tickets'
+      ? {
+          ...view,
+          selectedKey,
+          onSelect: (key: string) => {
+            view.onSelect(key)
+            setSelectedKey(key)
+          },
+        }
+      : view
   return (
-    <TicketsScreen
-      view={{
-        ...view,
-        selectedKey,
-        onSelect: (key) => {
-          view.onSelect(key)
-          setSelectedKey(key)
-        },
-      }}
-    />
+    <CockpitShell
+      header={<ProjectSwitcher />}
+      sidebar={
+        current.kind === 'tickets' ? (
+          <TicketsBacklogSidebar
+            backlog={current.backlog}
+            connection={connection('github')}
+            notice={notice}
+            now={new Date('2026-09-25T12:00:00Z').getTime()}
+            onManageAccounts={fn()}
+            onSelect={current.onSelect}
+            selectedKey={current.selectedKey}
+          />
+        ) : (
+          <TicketsSidebarContent
+            connection={connection('github')}
+            notice={notice}
+            onManageAccounts={fn()}
+            openCount="3"
+          />
+        )
+      }
+    >
+      <TicketsScreen view={current} />
+    </CockpitShell>
   )
 }
 
@@ -85,22 +115,10 @@ const meta = {
   component: TicketsScreenStory,
   parameters: { layout: 'fullscreen' },
   decorators: [
-    (Story, { parameters }) => (
+    (Story) => (
       <div className="h-dvh w-full">
         <MemoryRouter>
-          <CockpitShell
-            header={<ProjectSwitcher />}
-            sidebar={
-              <TicketsSidebarContent
-                connection={connection('github')}
-                notice={parameters.notice ?? null}
-                onManageAccounts={fn()}
-                openCount="3"
-              />
-            }
-          >
-            <Story />
-          </CockpitShell>
+          <Story />
         </MemoryRouter>
       </div>
     ),
@@ -285,7 +303,7 @@ export const LinearBacklog: Story = {
 
 // The one-time notice sits in the sidebar at its narrowest, and nothing in it spills out.
 export const SignInNotice: Story = {
-  parameters: { notice: { onConnect: fn(), onDismiss: fn() } },
+  args: { notice: { onConnect: fn(), onDismiss: fn() } },
   play: async ({ canvasElement }) => {
     const notice = within(canvasElement).getByRole('region', { name: 'Sign-in notice' })
     const edge = notice.getBoundingClientRect().right

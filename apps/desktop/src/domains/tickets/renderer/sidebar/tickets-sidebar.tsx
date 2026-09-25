@@ -2,18 +2,14 @@ import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   openAccountsDialog,
-  providerPresentation,
   SignInNotice,
   type SignInNoticeProps,
-  useAccounts,
-  useDismissNotice,
 } from '@/domains/accounts/renderer'
-import { useSelectedProject } from '@/domains/projects/renderer'
 import type { ConnectionSummary } from '@/domains/tickets/contract/contract'
 import { useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
-import { ConnectionStatusMark } from '../connection/connection-status-mark'
-import { useConnection, useTicketList } from '../hooks/use-tickets'
-import { uniqueTickets } from '../lib/backlog'
+import { useTicketBacklogSidebar } from './ticket-backlog-sidebar-store'
+import { TicketsBacklogSidebar } from './tickets-backlog-sidebar'
+import { TicketsSidebarAccountFoot } from './tickets-sidebar-account-foot'
 import { TicketsSidebarHeader } from './tickets-sidebar-header'
 
 export type TicketsSidebarContentProps = {
@@ -22,33 +18,6 @@ export type TicketsSidebarContentProps = {
   openCount: string | null
   notice: SignInNoticeProps | null
   onManageAccounts: () => void
-}
-
-type AccountFootProps = Pick<TicketsSidebarContentProps, 'connection' | 'onManageAccounts'>
-
-// The foot names the Account this Project reads through; with no Connection it opens the Accounts.
-function AccountFoot({ connection, onManageAccounts }: AccountFootProps) {
-  const { t } = useTranslation('tickets')
-  return (
-    <footer className="shrink-0 border-t border-border/60 p-(--spacing-shell-item)">
-      <button
-        className="flex w-full items-center gap-(--spacing-shell-item) rounded-row px-(--spacing-shell-item) py-(--spacing-shell-icon) text-left type-meta text-muted-foreground hover:bg-muted"
-        onClick={onManageAccounts}
-        type="button"
-      >
-        {connection ? (
-          <ConnectionStatusMark state={connection.state}>
-            {t('sidebar.readThrough', {
-              name: providerPresentation(connection.provider).name,
-              login: connection.login ?? t('sidebar.noAccount'),
-            })}
-          </ConnectionStatusMark>
-        ) : (
-          <span className="min-w-0 flex-1 truncate">{t('sidebar.accounts')}</span>
-        )}
-      </button>
-    </footer>
-  )
 }
 
 export function TicketsSidebarContent({
@@ -83,28 +52,30 @@ export function TicketsSidebarContent({
         </div>
       </nav>
       {notice ? <SignInNotice {...notice} /> : null}
-      <AccountFoot connection={connection} onManageAccounts={onManageAccounts} />
+      <TicketsSidebarAccountFoot connection={connection} onManageAccounts={onManageAccounts} />
     </aside>
   )
 }
 
 export function TicketsSidebar() {
-  const projectId = useSelectedProject()?.id ?? null
-  const connection = useConnection(projectId).data ?? null
-  const list = useTicketList(projectId, connection)
-  const dismiss = useDismissNotice()
-  const showNotice = useAccounts().data?.notice ?? false
-  const opened = list.data ? uniqueTickets(list.data.pages).length : null
+  const sidebar = useTicketBacklogSidebar((state) => state.sidebar)
+  if (sidebar) {
+    return (
+      <TicketsBacklogSidebar
+        {...sidebar}
+        connection={null}
+        notice={null}
+        now={Date.now()}
+        onManageAccounts={openAccountsDialog}
+      />
+    )
+  }
   return (
     <TicketsSidebarContent
-      connection={connection}
-      notice={
-        showNotice
-          ? { onConnect: openAccountsDialog, onDismiss: () => dismiss.mutate(undefined) }
-          : null
-      }
+      connection={null}
+      notice={null}
       onManageAccounts={openAccountsDialog}
-      openCount={opened === null ? null : `${opened}${list.hasNextPage ? '+' : ''}`}
+      openCount={null}
     />
   )
 }
