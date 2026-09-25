@@ -4,8 +4,8 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { type DriveSessionErrorCode, driveSessionError } from '@/domains/sessions/api/session-error'
 import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
-import { SessionsSidebar } from '../roster/sidebar/sessions-sidebar'
 import { sessionRosterRow } from '../session-fixtures'
+import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import { SessionScreenView } from './session-screen-view'
 
 // #2092: a Session Argo held before a restart reads external, keeps its composer, and the next

@@ -4,8 +4,8 @@ import { expect, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { sessionError } from '@/domains/sessions/api/session-error'
 import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
-import { SessionsSidebar } from '../roster/sidebar/sessions-sidebar'
 import { sessionRosterRow } from '../session-fixtures'
+import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import { SessionScreenView } from './session-screen-view'
 
 const session = sessionRosterRow({

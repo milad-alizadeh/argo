@@ -1,0 +1,92 @@
+/* The harness logo with a gap cut around its status dot. A cut shows whatever ground the row has,
+   idle, hovered or selected, where a painted ring would show the one colour it was given. */
+.session-list-harness-mark {
+  --session-list-dot-gap: 2px;
+  --session-list-dot-radius: calc(var(--size-state-dot) / 2);
+  --session-list-dot-offset: 2px;
+  --session-list-harness-spin-duration: 2.4s;
+  --session-list-harness-spin-easing: linear;
+  --session-list-harness-spin-turn: 1turn;
+
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  mask: radial-gradient(
+    circle at calc(100% + var(--session-list-dot-offset) - var(--session-list-dot-radius))
+      calc(100% - var(--session-list-dot-radius)),
+    transparent calc(var(--session-list-dot-radius) + var(--session-list-dot-gap)),
+    black calc(var(--session-list-dot-radius) + var(--session-list-dot-gap))
+  );
+}
+
+.session-list-harness-mark [data-slot="harness-logo"] {
+  display: inline-flex;
+}
+
+.session-list-harness-mark [data-slot="harness-logo"][data-active="true"] {
+  animation: session-list-harness-spin var(--session-list-harness-spin-duration)
+    var(--session-list-harness-spin-easing) infinite;
+}
+
+.session-list-session-status {
+  --session-list-status-pulse-duration: 1.6s;
+  --session-list-status-pulse-easing: ease-in-out;
+  --session-list-attention-glow: 0 0 5px color-mix(in srgb, var(--color-warn) 35%, transparent);
+
+  background-color: var(--color-idle);
+  box-shadow: none;
+  opacity: 1;
+  transition:
+    background-color var(--duration-attention) var(--ease-emphasized),
+    box-shadow var(--duration-attention) var(--ease-emphasized),
+    opacity var(--duration-attention) var(--ease-emphasized);
+}
+
+.session-list-session-status[data-variant="active"] {
+  background-color: var(--color-active);
+  animation: session-list-status-pulse var(--session-list-status-pulse-duration)
+    var(--session-list-status-pulse-easing) infinite;
+}
+
+.session-list-session-status[data-variant="attention"] {
+  background-color: var(--color-warn);
+  box-shadow: var(--session-list-attention-glow);
+}
+
+.session-list-session-status[data-variant="failed"] {
+  background-color: var(--color-danger);
+}
+
+.session-list-session-status[data-variant="unread"] {
+  background-color: var(--color-plan);
+  box-shadow: var(--shadow-unread-glow);
+}
+
+.session-list-session-status[data-variant="unknown"] {
+  background-color: transparent;
+  box-shadow: var(--shadow-state-outline);
+}
+
+@keyframes session-list-harness-spin {
+  to {
+    transform: rotate(var(--session-list-harness-spin-turn));
+  }
+}
+
+@keyframes session-list-status-pulse {
+  50% {
+    box-shadow: var(--shadow-state-glow);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .session-list-harness-mark [data-slot="harness-logo"][data-active="true"],
+  .session-list-session-status[data-variant="active"] {
+    animation: none;
+  }
+
+  .session-list-session-status {
+    transition: none;
+  }
+}
