@@ -10,7 +10,7 @@ import { EmptyProjectScreen } from '@/domains/projects/renderer/screens/empty-pr
 import { ProjectSetupWindow } from '@/domains/projects/renderer/setup/screens/project-setup-window'
 import { DevelopmentIdentityBar } from '@/domains/sessions/renderer/composer/identity/development-identity-bar'
 import { SessionsPage } from '@/domains/sessions/renderer/pages/sessions-page'
-import { SessionsSidebar } from '@/domains/sessions/renderer/roster/sidebar/sessions-sidebar'
+import { SessionsSidebar } from '@/domains/sessions/renderer/session-list/sidebar/sessions-sidebar'
 import { SessionScreenView } from '@/domains/sessions/renderer/screens'
 import { TicketsPage } from '@/domains/tickets/renderer/pages/tickets-page'
 import { TicketsScreenView } from '@/domains/tickets/renderer/screens/tickets-screen-view'

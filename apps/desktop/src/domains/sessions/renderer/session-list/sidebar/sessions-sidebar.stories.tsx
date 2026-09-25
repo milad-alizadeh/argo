@@ -5,7 +5,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { sessionRosterRow, sessionSubagent } from '../../session-fixtures'
 import type { SessionError, SessionId, SessionsListed } from '../../types'
 import { useSessionListFilterStore, useSessionListWindowStore } from '../hooks'
-import { SessionList, type SessionListActions } from '../session-list/session-list'
+import { SessionList, type SessionListActions } from '../session-list'
 
 const session = sessionRosterRow({
   id: 'prose',
