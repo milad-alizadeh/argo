@@ -14,7 +14,7 @@ import { type Editing, Properties } from './ticket-detail-properties'
 
 // Metadata flows below the title until the workspace is wide enough to become a quiet right rail.
 const detailMeasure =
-  'grid max-w-6xl grid-cols-[minmax(0,1fr)] content-start gap-x-(--spacing-shell-section) gap-y-(--spacing-shell-section) px-(--spacing-shell-inset) pb-(--spacing-shell-section) pt-(--spacing-shell-inset) @3xl:grid-cols-[minmax(0,1fr)_18rem]'
+  'grid max-w-6xl grid-cols-[minmax(0,1fr)] content-start gap-x-(--spacing-shell-section) gap-y-(--spacing-shell-section) px-[var(--inset-cockpit-content-body,var(--spacing-shell-inset))] pb-(--spacing-shell-section) pt-(--spacing-shell-inset) @3xl:grid-cols-[minmax(0,1fr)_18rem]'
 
 export type TicketDetailProps = {
   ticket: Ticket | null

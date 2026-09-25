@@ -147,7 +147,7 @@ export function TicketVirtualList({
 
   return (
     <div
-      className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-(--spacing-shell-item) pb-(--spacing-shell-inset)"
+      className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-[calc(var(--inset-cockpit-content-body,var(--spacing-shell-inset))-var(--spacing-shell-item))] pb-(--spacing-shell-inset)"
       data-slot="ticket-list-scroll"
       ref={scrollRef}
     >

@@ -168,9 +168,17 @@ export const Backlog: Story = {
   play: async ({ args, canvasElement }) => {
     await readsTheBacklog(canvasElement)
     const canvas = within(canvasElement)
+    const backlogLeft = canvas
+      .getByRole('heading', { name: 'Backlog' })
+      .getBoundingClientRect().left
     const list = within(canvas.getByRole('region', { name: 'Backlog' }))
     await userEvent.click(list.getByRole('button', { name: /^#607/ }))
-    await expect(canvas.getByRole('article', { name: 'Ticket #607' })).toBeVisible()
+    const detail = canvas.getByRole('article', { name: 'Ticket #607' })
+    await expect(detail).toBeVisible()
+    const detailLeft = within(detail)
+      .getByRole('heading', { level: 2 })
+      .getBoundingClientRect().left
+    await expect(Math.abs(detailLeft - backlogLeft)).toBeLessThanOrEqual(1)
     await expect(canvas.getByRole('complementary', { name: 'Tickets sidebar' })).toHaveTextContent(
       'Work path',
     )

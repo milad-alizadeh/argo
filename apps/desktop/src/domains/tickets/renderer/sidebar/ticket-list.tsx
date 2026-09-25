@@ -81,7 +81,7 @@ export function TicketList({
   return (
     <section aria-label={t('backlog.label')} className="flex h-full min-h-0 min-w-0 flex-col">
       {placement === 'workspace' ? <CockpitContentChrome /> : null}
-      <header className="flex shrink-0 items-baseline gap-(--spacing-shell-item) px-(--spacing-shell-inset) pt-(--spacing-shell-inset) pb-(--spacing-shell-item)">
+      <header className="flex shrink-0 items-baseline gap-(--spacing-shell-item) px-[var(--inset-cockpit-content-body,var(--spacing-shell-inset))] pt-(--spacing-shell-inset) pb-(--spacing-shell-item)">
         <h2 className="type-heading">{t('backlog.label')}</h2>
         <p aria-live="polite" className="ml-auto type-meta text-muted-foreground">
           {tally(t, backlog)}

@@ -106,6 +106,9 @@ function CockpitRail({ rail }: Pick<CockpitShellProps, 'rail'>) {
 
 function cockpitContentInsets(isSidebarCollapsed: boolean): CSSProperties {
   return {
+    // Screens use this instead of choosing their own page gutter, so a route swap cannot shift the
+    // content edge. The chrome keeps its separate safe leading inset for the collapsed-sidebar control.
+    '--inset-cockpit-content-body': 'var(--spacing-shell-inset)',
     '--inset-cockpit-content-leading': isSidebarCollapsed
       ? 'calc(var(--spacing-shell-gutter) + var(--size-control) + var(--spacing-shell-tight))'
       : 'var(--spacing-shell-gutter)',
