@@ -38,3 +38,14 @@ project strip and the Concierge.**
   repos anyway).
 - `Session ──belongs to──▶ 1 Project` is DIRECT (resolved from cwd), never a
   user choice.
+
+## Amendment · Session list and optional Project (#2732) · 2026-09-25
+
+The Session list is an exception to the project-scoped surface rule above. It can show all known
+Sessions in its global scope and filter by the active Project in its Project scope. This does not
+add another window or change the scope of Work room or other Project surfaces.
+
+A Session belongs to zero or one Project. Argo matches a vendor working directory to a registered
+Project or its worktree. An unmatched Session remains in the global Session list. Deleting a
+Project clears the Session's Project link without deleting the Session. This replaces the
+exactly-one-Project consequence above.

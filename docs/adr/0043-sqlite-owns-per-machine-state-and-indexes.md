@@ -43,3 +43,17 @@ ADR-0047 replaces transcript-built Session indexes. Vendor interfaces are the on
 disposable Session metadata and FTS5 tables. The development cutover resets the existing database
 and removes old JSON stores, compatibility readers, and legacy migrations. Backup and recovery
 apply from the first shipped version of the new schema.
+
+## Amendment · unified Session table and schema ownership (#2732) · 2026-09-25
+
+ADR-0048 supersedes this ADR's separation of durable Session identity from disposable Session
+metadata. One Session table holds the Argo UUID, unique Harness and native ID pair, local fields,
+and indexed vendor metadata. Vendor facts remain vendor-owned, but a failed or incomplete scan
+does not replace or delete the Session row. Automatic index recovery may rebuild separate Session
+history search and Ticket query tables; it must not discard the Session table. If the Session
+table is unsafe to read, use the durable database backup and recovery choice above.
+
+ADR-0048 also supersedes the rule that table definitions stay beside their domains. All Project,
+Session, and Ticket table definitions and database lifecycle live in `apps/desktop/src/database/`.
+Domain modules still own their SQL reads and writes. Vendor interfaces, not transcript files,
+provide any rebuilt Session index data.

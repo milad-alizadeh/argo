@@ -111,6 +111,12 @@ through the renderer. A single Session table keeps both identities and vendor me
 One upsert serves live creation and sync, so neither path can assign a second UUID. Argo does not
 reconstruct identity from files or merge forks; a fork has its own native ID and Argo UUID.
 
+**Project is optional for an imported Session.** A vendor Session may use a directory outside
+registered Projects, and deleting a Project should not erase its Sessions. The Session list can
+show these rows globally while its Project scope filters by the active Project. This is the narrow
+exception to ADR-0015's earlier rule that every Session belongs to one Project and every surface
+inherits the active Project.
+
 **One custom title follows the vendor.** A reader can rename a Session in any supported client
 and see the same title in Argo after sync. An authoritative vendor read can also clear it. A
 linked Ticket's current indexed title supplies a name only when the Session has no custom title.

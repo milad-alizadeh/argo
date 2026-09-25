@@ -160,9 +160,13 @@ creation path. Vendor and SQLite writes do not share a transaction.
 
 ## Changes to earlier decisions
 
-This decision extends ADR-0043's authority split. One Session table holds Argo identity and
-vendor metadata, while Ticket and history indexes can be disposable. It keeps ADR-0047's vendor
-interface, Feed, and live actor boundaries. It replaces ADR-0047's `managed | watched` posture,
+This decision amends ADR-0043: one Session table holds Argo identity and vendor metadata, and
+its rows are not a disposable index. Separate Ticket and Session history query tables can still
+be rebuilt. It also moves all Project, Session, and Ticket table definitions from domain folders
+to `src/database/`; domain modules retain their queries and writes. ADR-0015 now permits the
+Session list to show Sessions across Projects and keeps Sessions with no Project in its global
+scope. It keeps ADR-0047's vendor interface, Feed, and live actor boundaries. It replaces
+ADR-0047's `managed | watched` posture,
 lease, vendor-paged Roster merge, and cursor recovery. It supersedes ADR-0039's operation tables
 with one global tRPC router and colocated handlers and schemas. The validated boundary and
 trusted-frame requirement remain. No public HTTP server is required.
