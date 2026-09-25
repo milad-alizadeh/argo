@@ -1,8 +1,8 @@
 import { DEFAULT_AUTO_COMPACT_LIMIT } from '../src/domains/sessions/renderer/composer/context-window/codex-compaction'
 import { sessionRosterRow } from '../src/domains/sessions/renderer/session-fixtures'
 import { subscribeToStorybookCommands } from './storybook-commands'
-import { storybookHarnessSignInBridge } from './storybook-harness-signin'
-import { storybookProjectBridge } from './storybook-projects'
+import { storybookHarnessSignInProcedures } from './storybook-harness-signin'
+import { storybookProjectProcedures } from './storybook-projects'
 import { createStorybookTrpcHost, type StorybookProcedureHandlers } from './storybook-trpc'
 import { ticketsHost } from './tickets-host'
 
@@ -19,31 +19,10 @@ const storybookSession = sessionRosterRow({
   cwd: '/storybook/argo',
 })
 const procedureHandlers = (): StorybookProcedureHandlers => {
-  const bridge = host.argo as typeof host.argo &
-    typeof storybookProjectBridge &
-    typeof storybookHarnessSignInBridge &
-    typeof ticketsHost
   return {
-    accountList: () => bridge.listAccounts(),
-    harnessReadinessList: () => bridge.listHarnessReadiness(),
-    harnessSignInStart: (input: { harness: 'claude' | 'codex' }) =>
-      bridge.startHarnessSignIn(input),
-    harnessSignInWait: (input: { harness: 'claude' | 'codex' }) => bridge.waitHarnessSignIn(input),
-    harnessSignInCancel: (input: { harness: 'claude' | 'codex' }) =>
-      bridge.cancelHarnessSignIn(input),
-    projectList: () => bridge.listProjects(),
-    projectOpen: (input: { projectId: string }) => bridge.openProject(input),
-    projectRegister: () => bridge.registerProject(),
-    projectRelocate: (input: { projectId: string }) => bridge.relocateProject(input),
-    projectSelect: (input: { projectId: string }) => bridge.selectProject(input),
-    projectWorkspaceList: (input: { projectId: string }) => bridge.listProjectWorkspaces(input),
-    projectWorkspaceSelect: (input: { projectId: string; workspaceId: string }) =>
-      bridge.selectProjectWorkspace(input),
-    projectWorkspaceCreateManaged: (input: { projectId: string; baseRef: string }) =>
-      bridge.createManagedProjectWorkspace(input),
-    projectSetupSnapshot: (input: { projectId: string }) => bridge.projectSetupSnapshot(input),
-    projectSetupCommand: (input: Parameters<typeof bridge.sendProjectSetupCommand>[0]) =>
-      bridge.sendProjectSetupCommand(input),
+    ...storybookProjectProcedures,
+    ...storybookHarnessSignInProcedures,
+    accountList: ticketsHost.accountList,
   }
 }
 host.argo = {
@@ -121,9 +100,7 @@ host.argo = {
       restored: null,
       historyComplete: true,
     }),
-  ...storybookProjectBridge,
-  ...ticketsHost,
-  ...storybookHarnessSignInBridge,
+  readConnection: ticketsHost.readConnection,
   trpc: createStorybookTrpcHost(procedureHandlers),
   trpcSubscribe: () => Promise.reject(new Error('Storybook has no tRPC subscriptions.')),
   zoomFactor: () => 1,

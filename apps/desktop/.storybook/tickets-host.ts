@@ -5,13 +5,13 @@ import type {
 } from '../src/domains/tickets/contract/contract'
 
 type StorybookTicketsHost = {
-  listAccounts: () => Promise<AccountListReply>
+  accountList: () => Promise<AccountListReply>
   readConnection: (request: TicketConnectionRequest) => Promise<TicketConnectedReply>
 }
 
 // No Account and no Connection: a story that reaches the Tickets screen draws its first-run screen.
 export const ticketsHost: StorybookTicketsHost = {
-  listAccounts: () =>
+  accountList: () =>
     Promise.resolve({
       version: 1,
       type: 'account.listed',

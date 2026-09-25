@@ -6,18 +6,18 @@ import type {
   HarnessSignInWaitReply,
 } from '../src/domains/harness-signin/contract/contract'
 
-type StorybookHarnessSignInBridge = {
-  listHarnessReadiness: () => Promise<HarnessReadinessListReply>
-  startHarnessSignIn: (request: { harness: Harness }) => Promise<HarnessSignInStartReply>
-  waitHarnessSignIn: (request: { harness: Harness }) => Promise<HarnessSignInWaitReply>
-  cancelHarnessSignIn: (request: { harness: Harness }) => Promise<HarnessSignInCancelReply>
+type StorybookHarnessSignInProcedures = {
+  harnessReadinessList: () => Promise<HarnessReadinessListReply>
+  harnessSignInStart: (request: { harness: Harness }) => Promise<HarnessSignInStartReply>
+  harnessSignInWait: (request: { harness: Harness }) => Promise<HarnessSignInWaitReply>
+  harnessSignInCancel: (request: { harness: Harness }) => Promise<HarnessSignInCancelReply>
 }
 
 // Ready by default so a story about anything else never lands on the empty-Harness screen; a
 // story about that screen overrides `listHarnessReadiness` the way `NoProject` overrides
 // `listProjects` (#2579).
-export const storybookHarnessSignInBridge: StorybookHarnessSignInBridge = {
-  listHarnessReadiness: () =>
+export const storybookHarnessSignInProcedures: StorybookHarnessSignInProcedures = {
+  harnessReadinessList: () =>
     Promise.resolve({
       version: 1,
       type: 'harness-readiness.listed',
@@ -27,7 +27,7 @@ export const storybookHarnessSignInBridge: StorybookHarnessSignInBridge = {
         { harness: 'codex', state: 'ready', detail: null },
       ],
     }),
-  startHarnessSignIn: ({ harness }) =>
+  harnessSignInStart: ({ harness }) =>
     Promise.resolve({
       version: 1,
       type: 'harness-sign-in.started',
@@ -36,7 +36,7 @@ export const storybookHarnessSignInBridge: StorybookHarnessSignInBridge = {
       status: 'pending',
       expiresAt: Date.now() + 60_000,
     }),
-  waitHarnessSignIn: ({ harness }) =>
+  harnessSignInWait: ({ harness }) =>
     Promise.resolve({
       version: 1,
       type: 'harness-sign-in.resolved',
@@ -46,7 +46,7 @@ export const storybookHarnessSignInBridge: StorybookHarnessSignInBridge = {
       expiresAt: null,
       readiness: { harness, state: 'ready', detail: null },
     }),
-  cancelHarnessSignIn: ({ harness }) =>
+  harnessSignInCancel: ({ harness }) =>
     Promise.resolve({
       version: 1,
       type: 'harness-sign-in.canceled',
