@@ -2,14 +2,14 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useRef } from 'react'
 import type { SessionId } from '../../types'
 import { moveFocus } from './session-list-arrow-keys'
-import { SessionRowContextMenu } from './session-row-context-menu'
-import { SessionRowView } from './session-row-view'
 import {
   rowPlace,
   SESSION_LIST_ROW_HEIGHT,
   type SessionListRow,
   type SessionListRowHandlers,
 } from './session-list-rows'
+import { SessionRowContextMenu } from './session-row-context-menu'
+import { SessionRowView } from './session-row-view'
 import { useSentinelFetch } from './use-session-list-sentinel-fetch'
 
 // Overscan generous enough to keep a sessionList's realistic session count fully mounted, so arrow-key
