@@ -347,21 +347,22 @@ export const Loading: Story = {
 // Reading the next page starts before the last row is reached.
 export const LongBacklog: Story = {
   args: {
-    view: ticketsView({ tickets: longBacklog(40), hasMore: true, onLoadMore: fn() }),
+    view: ticketsView({ tickets: longBacklog(200), hasMore: true, onLoadMore: fn() }),
   },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('All open · 40+ Tickets')).toBeInTheDocument()
+    await expect(canvas.getByText('All open · 200+ Tickets')).toBeInTheDocument()
+    const scroll = canvasElement.querySelector<HTMLElement>('[data-slot="ticket-list-scroll"]')
+    if (scroll === null) throw new Error('The Ticket list needs its virtual scroll container.')
+    // The DOM contains the viewport and its overscan, not every Ticket in the backlog.
+    await waitFor(() => expect(scroll.querySelectorAll('li[data-index]').length).toBeLessThan(200))
     // Scrolling the list alone, as a wheel does; scrollIntoView would also scroll the panels around it.
     // Each retry scrolls again: a scroll before the list has laid out reaches no end. The
-    // IntersectionObserver reports on a later frame, which a loaded CI runner can hold past 1 s.
+    // virtual range reports on a later frame, which a loaded CI runner can hold past 1 s.
     await waitFor(
       () => {
-        const list = canvas.getByRole('region', { name: 'Backlog' }).querySelector('ul')
-        if (list) {
-          list.scrollTop = list.scrollHeight
-          fireEvent.scroll(list)
-        }
+        scroll.scrollTop = scroll.scrollHeight
+        fireEvent.scroll(scroll)
         expect(args.view.kind === 'tickets' && args.view.backlog.onLoadMore).toHaveBeenCalled()
       },
       { timeout: 5000 },

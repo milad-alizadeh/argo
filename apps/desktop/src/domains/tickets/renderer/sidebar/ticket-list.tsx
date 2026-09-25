@@ -1,10 +1,9 @@
 import type { TFunction } from 'i18next'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { providerPresentation } from '@/domains/accounts/renderer'
 import { CockpitContentChrome } from '@/platform/renderer/cockpit/components/cockpit-content-chrome'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import { Loader } from '@/platform/renderer/components/loader/loader'
 import {
   Empty,
   EmptyDescription,
@@ -12,10 +11,8 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/platform/renderer/components/ui/empty'
-import { useToastManager } from '@/platform/renderer/components/ui/toast'
-import { type Backlog, backlogRows, treeRails, unfoldedRows } from '../lib/backlog'
-import { sourcePresentation } from '../lib/sources'
-import { TicketRow } from './ticket-row'
+import { type Backlog, backlogRows, unfoldedRows } from '../lib/backlog'
+import { TicketVirtualList } from './ticket-virtual-list'
 
 export type TicketListProps = {
   backlog: Backlog
@@ -35,54 +32,6 @@ function tally(
   return hasMore
     ? t('backlog.allOpenMore', { count: tickets.length })
     : t('backlog.allOpen', { count: tickets.length })
-}
-
-// A page the provider failed to send is a passing fault: a toast offers the retry, the rows read stay.
-function useLoadMoreFailure({ loadMoreError, loadingMore, onRetryLoadMore }: Backlog) {
-  // The manager object changes with every toast; its add and close do not.
-  const { add, close } = useToastManager()
-  const retry = useRef(onRetryLoadMore)
-  retry.current = onRetryLoadMore
-  useEffect(() => {
-    if (!loadMoreError || loadingMore) return
-    const id = add({
-      title: loadMoreError,
-      type: 'error',
-      priority: 'high',
-      timeout: 0,
-      actionProps: { children: 'Try again', onClick: () => retry.current() },
-    })
-    return () => close(id)
-  }, [add, close, loadMoreError, loadingMore])
-}
-
-// Reading the next page starts a screen before the end; keyed by the rows read, it observes
-// afresh after each page, so an end still in view reads again.
-function NextPage({ backlog }: { backlog: Backlog }) {
-  const { t } = useTranslation('tickets')
-  const mark = useRef<HTMLLIElement>(null)
-  const load = useRef(backlog.onLoadMore)
-  load.current = backlog.onLoadMore
-  const { hasMore, loadingMore, loadMoreError } = backlog
-  useLoadMoreFailure(backlog)
-  useEffect(() => {
-    const node = mark.current
-    if (!(node && hasMore) || loadingMore || loadMoreError) return
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) load.current()
-      },
-      { root: node.closest('ul'), rootMargin: '0px 0px 100% 0px' },
-    )
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [hasMore, loadingMore, loadMoreError])
-  if (!hasMore) return null
-  return (
-    <li className="flex justify-center py-(--spacing-shell-item)" ref={mark}>
-      {loadingMore ? <Loader aria-label={t('backlog.loadingMore')} className="text-faint" /> : null}
-    </li>
-  )
 }
 
 function NoTickets({ query, provider }: Pick<Backlog, 'query' | 'provider'>) {
@@ -129,9 +78,8 @@ export function TicketList({
   const { t } = useTranslation('tickets')
   const { folded, toggle } = useFolds()
   const rows = unfoldedRows(backlogRows(backlog.tickets), folded)
-  const rails = treeRails(rows)
   return (
-    <section aria-label={t('backlog.label')} className="flex min-h-0 min-w-0 flex-1 flex-col">
+    <section aria-label={t('backlog.label')} className="flex h-full min-h-0 min-w-0 flex-col">
       {placement === 'workspace' ? <CockpitContentChrome /> : null}
       <header className="flex shrink-0 items-baseline gap-(--spacing-shell-item) px-(--spacing-shell-inset) pt-(--spacing-shell-inset) pb-(--spacing-shell-item)">
         <h2 className="type-heading">{t('backlog.label')}</h2>
@@ -142,31 +90,18 @@ export function TicketList({
       {backlog.tickets.length === 0 ? (
         <NoTickets provider={backlog.provider} query={backlog.query} />
       ) : null}
-      <ul
-        aria-busy={backlog.searching}
-        className="grid min-h-0 min-w-0 flex-1 grid-cols-1 content-start gap-px overflow-x-hidden overflow-y-auto px-(--spacing-shell-item) pb-(--spacing-shell-inset) aria-busy:opacity-60"
-      >
-        {rows.map((row, index) => (
-          <li className="min-w-0" key={row.ticket.key}>
-            <TicketRow
-              rails={rails[index] ?? []}
-              folded={folded.has(row.ticket.key)}
-              now={now}
-              onChangePriority={(priority) => backlog.onChangePriority(row.ticket.key, priority)}
-              onChangeStatus={(status) => backlog.onChangeStatus(row.ticket.key, status)}
-              onSelect={() => onSelect(row.ticket.key)}
-              onToggle={() => toggle(row.ticket.key)}
-              presentation={sourcePresentation(backlog.provider)}
-              placement={placement}
-              provider={backlog.provider}
-              row={row}
-              selected={row.ticket.key === selectedKey}
-              statuses={backlog.statuses}
-            />
-          </li>
-        ))}
-        <NextPage backlog={backlog} key={backlog.tickets.length} />
-      </ul>
+      {backlog.tickets.length > 0 ? (
+        <TicketVirtualList
+          backlog={backlog}
+          folded={folded}
+          now={now}
+          onSelect={onSelect}
+          onToggle={toggle}
+          placement={placement}
+          rows={rows}
+          selectedKey={selectedKey}
+        />
+      ) : null}
     </section>
   )
 }
