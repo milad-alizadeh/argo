@@ -51,6 +51,8 @@ test('starts a clean database with every ordered migration', async () => {
       { name: '20260924100017_freezing_calypso' },
       { name: '20260924104032_bored_vulture' },
       { name: '20260925153614_centralize-session-table' },
+      { name: '20260925164412_universal-timestamps' },
+      { name: '20260925164424_touch-updated-at' },
     ])
     expect(
       database

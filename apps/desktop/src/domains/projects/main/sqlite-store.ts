@@ -97,7 +97,14 @@ export function createProjectStore(
 }
 
 function readRegistry(database: ProjectDatabase): ProjectRegistry {
-  const registered = projectRowSchema.array().parse(database.select().from(project).all())
+  const registered = projectRowSchema
+    .array()
+    .parse(
+      database
+        .select({ id: project.id, path: project.path, commonDirectory: project.commonDirectory })
+        .from(project)
+        .all(),
+    )
   const selected =
     database
       .select({ projectId: projectSelection.projectId })

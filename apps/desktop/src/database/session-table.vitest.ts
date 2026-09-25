@@ -37,14 +37,14 @@ test('database tables have an explicit timestamp policy', async () => {
     const database = openSharedDatabase(userData)
     const tableNames = database
       .prepare(
-        "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'session_search%' AND name != '__drizzle_migrations' ORDER BY name",
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT GLOB 'session_search_*' AND name != '__drizzle_migrations' ORDER BY name",
       )
       .all()
       .map((row) => String(Object.values(row)[0]))
     assert.deepEqual(tableNames, Object.keys(tableTimestampPolicy).sort())
 
     for (const [tableName, timestampPolicy] of Object.entries(tableTimestampPolicy)) {
-      if (timestampPolicy === 'none') continue
+      if (timestampPolicy === 'virtual-index') continue
       const columns = database.prepare(`PRAGMA table_info(${tableName})`).all() as Array<{
         name: string
         dflt_value: string | null
@@ -52,12 +52,12 @@ test('database tables have an explicit timestamp policy', async () => {
       for (const columnName of ['created_at', 'updated_at']) {
         const column = columns.find((candidate) => candidate.name === columnName)
         assert.ok(column, `${tableName}.${columnName} exists`)
-        assert.match(column.dflt_value ?? '', /unixepoch\('subsec'\)/)
+        assert.match(column.dflt_value ?? '', /unixepoch\('subsec'\)|strftime\(/)
       }
       const trigger = database
         .prepare("SELECT name FROM sqlite_master WHERE type = 'trigger' AND tbl_name = ?")
         .get(tableName)
-      assert.ok(trigger, `${tableName} has a database timestamp trigger`)
+      assert.equal(String(Object.values(trigger ?? {})[0]), `${tableName}_touch_updated_at`)
     }
     database.close()
   } finally {
