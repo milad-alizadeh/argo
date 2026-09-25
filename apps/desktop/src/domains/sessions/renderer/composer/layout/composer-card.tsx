@@ -134,7 +134,7 @@ export function ComposerCard(props: ComposerCardProps) {
   const [contextPickerOpen, setContextPickerOpen] = useContextPicker(draft)
   const interruptRef = useFocusInterruptOnCompactStart(props.isCompacting)
   return (
-    <div className="relative">
+    <div className="relative shrink-0">
       {/* The editor takes the focus but the card wears the ring, so the ring follows the card's
           radius instead of boxing the bare text area (#2273). */}
       <fieldset

@@ -742,19 +742,41 @@ export const TallQueuedComposerRemainsReachable: Story = {
     }
 
     const pendingTurns = canvas.getByRole('region', { name: 'Pending Turns' })
-    await waitFor(() => expect(within(pendingTurns).getAllByRole('listitem')).toHaveLength(10))
+    const pendingRows = within(pendingTurns).getAllByRole('listitem')
+    await waitFor(() => expect(pendingRows).toHaveLength(10))
+    const queueRowHeight =
+      pendingRows[0]?.getBoundingClientRect().height ?? Number.POSITIVE_INFINITY
+    const lastPendingRow = pendingRows.at(-1)
+    if (lastPendingRow === undefined) throw new Error('The final queued turn is absent.')
+    await waitFor(() =>
+      expect(lastPendingRow.getBoundingClientRect().height).toBeGreaterThanOrEqual(queueRowHeight),
+    )
+    await expect(pendingTurns.getBoundingClientRect().height).toBeGreaterThanOrEqual(queueRowHeight)
     await expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toBeVisible()
     const composerScroll = canvasElement.querySelector<HTMLElement>(
       '[data-component="SessionComposerScroll"]',
     )
-    if (composerScroll === null) throw new Error('The Session composer scroll region is absent.')
+    const composerCard = canvasElement.querySelector<HTMLElement>('[data-component="ComposerCard"]')
+    if (composerScroll === null || composerCard === null)
+      throw new Error('The Session composer surfaces are absent.')
+    const cardBeforeQueueScroll = composerCard.getBoundingClientRect()
+    await expect(pendingTurns.scrollHeight).toBeGreaterThan(pendingTurns.clientHeight)
+    pendingTurns.scrollTo({ top: pendingTurns.scrollHeight })
+    fireEvent.scroll(pendingTurns)
+    await expect(pendingTurns.scrollTop).toBeGreaterThan(0)
+    const visibleQueueBounds = pendingTurns.getBoundingClientRect()
+    const lastPendingRowBounds = lastPendingRow.getBoundingClientRect()
+    await expect(lastPendingRowBounds.top).toBeGreaterThanOrEqual(visibleQueueBounds.top)
+    await expect(lastPendingRowBounds.bottom).toBeLessThanOrEqual(visibleQueueBounds.bottom)
+    await expect(lastPendingRowBounds.bottom).toBeLessThanOrEqual(cardBeforeQueueScroll.top)
+    await expect(composerCard.getBoundingClientRect()).toEqual(cardBeforeQueueScroll)
+    await expect(composerScroll.scrollTop).toBe(0)
     await userEvent.tab()
     await expect(canvas.getByRole('button', { name: 'Add context' })).toHaveFocus()
     await userEvent.tab()
     const interrupt = canvas.getByRole('button', { name: 'Interrupt' })
     await expect(interrupt).toHaveFocus()
     await expect(interrupt).toBeVisible()
-    expect(composerScroll.scrollTop).toBeGreaterThan(0)
   },
 }
 
