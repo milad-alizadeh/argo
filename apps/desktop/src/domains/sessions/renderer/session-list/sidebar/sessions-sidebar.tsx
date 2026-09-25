@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router'
 import { useProjects } from '@/domains/projects/renderer'
 import { currentSessionId } from '@/domains/sessions/renderer/model/models'
 import { useOrderedSessions } from '../rows/session-list-order'
-import { SessionList, type SessionListActions } from '../session-list/session-list'
+import { SessionList, type SessionListActions } from '../session-list'
 import { useArchiveSelected } from './use-session-archive-mutation'
 import { SELECTED_SESSION_KEY, useSidebarActions } from './use-sidebar-actions'
 
