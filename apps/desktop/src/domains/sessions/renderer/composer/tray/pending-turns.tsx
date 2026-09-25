@@ -2,7 +2,7 @@ import { $convertFromMarkdownString, TRANSFORMERS } from '@lexical/markdown'
 import type { LexicalEditor } from 'lexical'
 import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { SessionAttachmentInput } from '@/domains/sessions/contract/drive/attachments-contract'
+import type { SessionAttachmentInput } from '@/domains/sessions/api/attachments'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   attachmentExitDelay,

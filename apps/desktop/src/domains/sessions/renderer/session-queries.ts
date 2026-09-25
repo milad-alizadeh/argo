@@ -1,5 +1,5 @@
 import type { InfiniteData, QueryClient } from '@tanstack/react-query'
-import type { RosterStatus } from '@/domains/sessions/contract/model/roster-status'
+import type { RosterStatus } from '@/domains/sessions/renderer/model/roster-status'
 import type { SessionId, SessionRoster } from './types'
 
 export const SESSION_REFRESH_MS = 500

@@ -1,5 +1,4 @@
 import { type ActorRefFrom, fromPromise } from 'xstate'
-import { SESSION_CLAUDE_EXECUTABLE_ENV } from '@/domains/sessions/contract/proof-protocol'
 import { readClaudeHarnessInfo } from '@/harnesses/claude/catalog'
 import {
   type codexAppServerMachine,
@@ -7,6 +6,7 @@ import {
 } from '@/harnesses/codex/app-server/codex-app-server-machine'
 import { readCodexHarnessInfo } from '@/harnesses/codex/catalog'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
+import { SESSION_CLAUDE_EXECUTABLE_ENV } from '@/harnesses/proof-protocol'
 import {
   type HarnessCatalog,
   type HarnessInfo,

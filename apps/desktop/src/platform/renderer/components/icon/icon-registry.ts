@@ -152,7 +152,7 @@ export const ICONS = {
   reasoning: Brain,
   'context-stack': Layers3,
   'usage-meter': CircleGauge,
-  'roster-filter': SlidersVertical,
+  'session-list-filter': SlidersVertical,
   'no-sessions': Inbox,
   'archive-session': Archive,
   'awaiting-permission': Lock,

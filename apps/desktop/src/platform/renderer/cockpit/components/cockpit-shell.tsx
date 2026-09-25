@@ -1,11 +1,4 @@
-import {
-  type CSSProperties,
-  type ReactNode,
-  type RefObject,
-  useEffect,
-  useRef,
-  useState,
-} from 'react'
+import { type ReactNode, type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { usePanelRef } from 'react-resizable-panels'
 import { Icon } from '../../components/icon/icon'
@@ -29,6 +22,10 @@ type SidebarHeaderProps = {
 }
 
 type SidebarToggleProps = Pick<SidebarHeaderProps, 'onToggle' | 'toggleRef'>
+
+function sidebarCollapsedState(current: boolean, panelCollapsed: boolean | undefined): boolean {
+  return panelCollapsed ?? current
+}
 
 function SidebarHeader({ header, onToggle, toggleRef }: SidebarHeaderProps) {
   const { t } = useTranslation('cockpit')
@@ -97,36 +94,37 @@ function CockpitRail({ rail }: Pick<CockpitShellProps, 'rail'>) {
         className="drag-region h-(--size-chrome-bar) shrink-0 border-b border-border/60 bg-sidebar"
       />
       {/* A layout wrapper only: `CockpitNavigationRail` (or a story's `rail` override) is its own labelled `nav`. */}
-      <div className="min-h-0 flex-1 border-r border-border/60">
+      <div className="no-drag-region min-h-0 flex-1 border-r border-border/60">
         {rail ?? <CockpitNavigationRail />}
       </div>
     </div>
   )
 }
 
-function cockpitContentInsets(isSidebarCollapsed: boolean): CSSProperties {
-  return {
-    // Screens use this instead of choosing their own page gutter, so a route swap cannot shift the
-    // content edge. The chrome keeps its separate safe leading inset for the collapsed-sidebar control.
-    '--inset-cockpit-content-body': 'var(--spacing-shell-inset)',
-    '--inset-cockpit-content-leading': isSidebarCollapsed
-      ? 'calc(var(--spacing-shell-gutter) + var(--size-control) + var(--spacing-shell-tight))'
-      : 'var(--spacing-shell-gutter)',
-  } as CSSProperties
-}
-
-function cockpitPanelSizes() {
-  return {
-    sidebarDefault: readCssSize('--size-cockpit-sidebar-default'),
-    sidebarMinimum: readCssSize('--size-cockpit-sidebar-min'),
-    sidebarMaximum: readCssSize('--size-cockpit-sidebar-max'),
-    contentMinimum: readCssSize('--size-cockpit-content-min'),
-  }
+function CockpitContent({
+  isSidebarCollapsed,
+  children,
+}: {
+  isSidebarCollapsed: boolean
+  children: ReactNode
+}) {
+  return (
+    <div
+      data-component="CockpitContent"
+      data-sidebar-state={isSidebarCollapsed ? 'collapsed' : 'open'}
+      className="relative h-full min-w-0 overflow-hidden bg-background"
+    >
+      {children}
+    </div>
+  )
 }
 
 export function CockpitShell({ rail, sidebar, header, footer, children }: CockpitShellProps) {
   const sidebarPanelRef = usePanelRef()
-  const sizes = cockpitPanelSizes()
+  const sidebarDefaultWidth = readCssSize('--size-cockpit-sidebar-default')
+  const sidebarMinimumWidth = readCssSize('--size-cockpit-sidebar-min')
+  const sidebarMaximumWidth = readCssSize('--size-cockpit-sidebar-max')
+  const contentMinimumWidth = readCssSize('--size-cockpit-content-min')
   const sidebarToggleRef = useRef<HTMLButtonElement>(null)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [shouldFocusSidebarToggle, setShouldFocusSidebarToggle] = useState(false)
@@ -137,13 +135,15 @@ export function CockpitShell({ rail, sidebar, header, footer, children }: Cockpi
     setShouldFocusSidebarToggle(false)
   }, [shouldFocusSidebarToggle])
 
-  const synchronizeSidebarCollapsed = () => {
-    setIsSidebarCollapsed(sidebarPanelRef.current?.isCollapsed() ?? false)
-  }
+  const synchronizeSidebarCollapsed = useCallback(() => {
+    setIsSidebarCollapsed((current) =>
+      sidebarCollapsedState(current, sidebarPanelRef.current?.isCollapsed()),
+    )
+  }, [sidebarPanelRef])
 
   const toggleSidebar = () => {
     if (isSidebarCollapsed) {
-      sidebarPanelRef.current?.resize(sizes.sidebarMinimum)
+      sidebarPanelRef.current?.resize(sidebarMinimumWidth)
       setIsSidebarCollapsed(false)
       setShouldFocusSidebarToggle(true)
       return
@@ -170,9 +170,9 @@ export function CockpitShell({ rail, sidebar, header, footer, children }: Cockpi
             id="cockpit-sidebar"
             collapsible
             collapsedSize={0}
-            defaultSize={sizes.sidebarDefault}
-            minSize={sizes.sidebarMinimum}
-            maxSize={sizes.sidebarMaximum}
+            defaultSize={sidebarDefaultWidth}
+            minSize={sidebarMinimumWidth}
+            maxSize={sidebarMaximumWidth}
             panelRef={sidebarPanelRef}
           >
             <CockpitSidebar
@@ -184,15 +184,8 @@ export function CockpitShell({ rail, sidebar, header, footer, children }: Cockpi
             />
           </ResizablePanel>
           <ResizableHandle className={isSidebarCollapsed ? 'bg-transparent' : 'bg-border/60'} />
-          <ResizablePanel id="cockpit-content" minSize={sizes.contentMinimum}>
-            <div
-              data-component="CockpitContent"
-              data-sidebar-state={isSidebarCollapsed ? 'collapsed' : 'open'}
-              className="relative h-full min-w-0 overflow-hidden bg-background"
-              style={cockpitContentInsets(isSidebarCollapsed)}
-            >
-              {children}
-            </div>
+          <ResizablePanel id="cockpit-content" minSize={contentMinimumWidth}>
+            <CockpitContent isSidebarCollapsed={isSidebarCollapsed}>{children}</CockpitContent>
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>

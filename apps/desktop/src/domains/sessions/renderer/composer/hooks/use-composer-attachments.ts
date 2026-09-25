@@ -1,9 +1,6 @@
 import { useCallback } from 'react'
 
-import {
-  attachmentKindOf,
-  type SessionAttachmentInput,
-} from '@/domains/sessions/contract/drive/attachments-contract'
+import { attachmentKindOf, type SessionAttachmentInput } from '@/domains/sessions/api/attachments'
 import {
   type ComposerAttachment,
   EMPTY_COMPOSER_ATTACHMENTS,

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import type { SessionSetup } from '@/domains/sessions/contract/model/models'
+import type { SessionSetup } from '@/domains/sessions/renderer/model/models'
 import type { AvailableHarness, CatalogReading } from '@/harnesses/catalog/harness-catalog-machine'
 import type { IconName } from '@/platform/renderer/components/icon/icon'
 

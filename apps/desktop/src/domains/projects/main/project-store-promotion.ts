@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm'
-import { project, projectSetupCheckpoint } from './schema'
+import { project } from '@/database/project/schema'
+import { projectSetupCheckpoint } from '@/database/project-tables'
 import type { ProjectDatabase } from './sqlite-store'
 
 export function createSetupWorktreePromotion({

@@ -6,15 +6,16 @@
 
 import { and, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
+import type { DurableDatabase } from '@/database/durable-database'
+import { sessionTicketLink } from '@/database/session-ticket-link/schema'
+import { sessionTicketLinkSelectSchema } from '@/database/session-ticket-link/validation'
 import { ticketKey } from '@/domains/tickets/contract/ticket'
-import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 import {
   createWriteQueue,
   readDocument,
   writeDocument,
 } from '@/platform/main/storage/portable-file'
 import { identifierSchema } from '@/shared/validation'
-import { sessionTicketLink } from './schema'
 
 const linkedTicketSchema = z.strictObject({
   projectId: identifierSchema,
@@ -41,13 +42,18 @@ export type SessionTicketLinkStore = {
   close: () => void
 }
 
-const storedLinkSchema = z.strictObject({
-  projectId: identifierSchema,
-  ticketKey: ticketKey,
-  title: z.string(),
-  state: z.enum(['open', 'closed']),
-  createdAt: z.iso.datetime(),
-})
+const storedLinkSchema = sessionTicketLinkSelectSchema
+  .pick({
+    projectId: true,
+    ticketKey: true,
+    title: true,
+    state: true,
+    createdAt: true,
+  })
+  .extend({
+    state: z.enum(['open', 'closed']),
+    createdAt: z.iso.datetime(),
+  })
 
 function linkedTicket(record: unknown): LinkedTicket | null {
   if (record === null || record === undefined) return null

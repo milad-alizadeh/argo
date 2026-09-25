@@ -18,7 +18,7 @@
   "loadingMoreSessions": "Loading more Sessions",
   "unableToLoadSessions": "Unable to load Sessions",
   "errors": {
-    "roster": "Argo could not read the Sessions again.",
+    "sessionList": "Argo could not read the Sessions again.",
     "feed": "Argo cannot read this Session's history."
   },
   "stalled": {
@@ -209,7 +209,7 @@
     "keepName": "Keep name",
     "rename": "Rename"
   },
-  "roster": {
+  "sessionList": {
     "planProgress": "{{completed}} of {{total}} steps completed",
     "planUnreadable": "Plan unreadable",
     "sourceFailed": "{{harness}} Sessions did not load",
@@ -240,11 +240,11 @@
   "standing": {
     "failure": "Unable to load Session",
     "missingHistoryTitle": "Session history is unavailable",
-    "missingHistoryDescription": "Argo cannot open this Session's history. Retry, or archive it from the roster menu if it appears there.",
+    "missingHistoryDescription": "Argo cannot open this Session's history. Retry, or archive it from the Session list menu if it appears there.",
     "missingHistoryBadge": "Unavailable",
     "retry": "Retry",
     "unselectedTitle": "No Session selected",
-    "unselectedDescription": "Choose a Session from the Roster to read its history."
+    "unselectedDescription": "Choose a Session from the Session list to read its history."
   },
   "harness": { "label": "Harness" },
   "promptSender": "You",
@@ -264,19 +264,10 @@
     "complete": "Assistant response complete."
   },
   "filterSessions": "Filter Sessions",
-  "rosterStatusActive": "Active",
-  "rosterStatusUnread": "Unread",
-  "rosterStatusArchived": "Archived",
-  "rosterStatusAll": "All",
-  "loaderPrototype": {
-    "sessions": "Sessions",
-    "label": "{{name}} loader",
-    "pixels": "{{pixels}}px",
-    "title": "Argo Loader",
-    "description": "The moving square is now the shared loading mark. It stays neutral, while blue means unread and yellow means that a Session needs you.",
-    "squareTrack": "Square track",
-    "legend": "blue is unread · motion is running"
-  },
+  "sessionListStatusActive": "Active",
+  "sessionListStatusUnread": "Unread",
+  "sessionListStatusArchived": "Archived",
+  "sessionListStatusAll": "All",
   "archivedEmpty": "No archived Sessions",
   "archivedStillIndexing": "Still indexing older Sessions",
   "readingSessions": "Reading Sessions",
@@ -320,7 +311,7 @@
       "title": "No Sessions on this machine",
       "description": "Argo lists a Session here as soon as a Harness writes one."
     },
-    "roster": {
+    "sessionList": {
       "title": "No Sessions on this machine",
       "description": "Argo lists a Session here as soon as a Harness writes one."
     },

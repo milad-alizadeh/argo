@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { createHashRouter, Navigate, Outlet, useMatches } from 'react-router'
+import { createHashRouter, Navigate, Outlet, useLocation, useMatches } from 'react-router'
 import { AtlasSidebar } from '@/domains/atlas/renderer/components/atlas-sidebar'
 import { AtlasPage } from '@/domains/atlas/renderer/pages/atlas-page'
 import { useHarnessReadiness } from '@/domains/harness-signin/renderer/hooks/use-harness-readiness'
@@ -36,6 +36,7 @@ function isCockpitRouteHandle(handle: unknown): handle is CockpitRouteHandle {
 export function CockpitRouteLayout() {
   const [cockpit] = useProjects()
   const readiness = useHarnessReadiness()
+  const location = useLocation()
   const matches = useMatches()
   useCommands((command) => {
     const destination = DESTINATIONS.find((item) => navigateCommand(item) === command)
@@ -67,7 +68,7 @@ export function CockpitRouteLayout() {
       leftHeader={<ProjectSwitcher />}
       sidebar={sidebar}
     >
-      <Outlet />
+      <Outlet key={location.pathname} />
     </AppShell>
   )
 }

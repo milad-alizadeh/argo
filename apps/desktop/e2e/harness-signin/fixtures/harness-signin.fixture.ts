@@ -5,14 +5,14 @@ import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { expect as baseExpect } from '@playwright/test'
 import type { ElectronApplication, Page } from 'playwright-core'
+import { createDurableDatabase } from '@/database/durable-database'
+import { openSharedDatabase } from '@/database/shared-database'
 import {
   HARNESS_SIGNIN_CLAUDE_EXECUTABLE_ENV,
   HARNESS_SIGNIN_CODEX_EXECUTABLE_ENV,
   HARNESS_SIGNIN_EXPIRES_AFTER_MS_ENV,
 } from '@/domains/harness-signin/contract/proof-protocol'
 import { createProjectStore } from '@/domains/projects/main/sqlite-store'
-import { createDurableDatabase } from '@/platform/main/storage/durable-database'
-import { openSharedDatabase } from '@/platform/main/storage/shared-database'
 import { writeMockClaudeReadinessCli } from '../../../mocks/cli/claude/mock-claude-readiness-cli'
 import { writeMockCodexReadinessCli } from '../../../mocks/cli/codex/mock-codex-readiness-cli'
 import type { MockSetupDocument } from '../../../mocks/providers/setup/mock-setup-document-loopback'

@@ -3,8 +3,35 @@ import type {
   SessionRosterRow,
   SessionShellCommand,
   SessionSubagent,
-} from '@/domains/sessions/contract/model/models'
-import { rosterRow } from '@/domains/sessions/contract/observation/roster-row-test-fixture'
+} from '@/domains/sessions/renderer/model/models'
+
+function rosterRow(overrides: Partial<SessionRosterRow> = {}): SessionRosterRow {
+  return {
+    id: 'session-one',
+    retiredIds: [],
+    harness: 'claude',
+    posture: 'managed',
+    title: null,
+    status: 'idle',
+    entry: 'interactive',
+    cwd: null,
+    branch: null,
+    updatedAt: null,
+    unreadableLines: 0,
+    originUnread: false,
+    turnStartedAt: null,
+    activity: null,
+    plan: null,
+    subagents: [],
+    shell: [],
+    pullRequest: null,
+    ticket: null,
+    archived: false,
+    unread: false,
+    setup: { model: null, effort: null, mode: null },
+    ...overrides,
+  }
+}
 
 export function sessionShellCommand(
   overrides: Partial<SessionShellCommand> & Pick<SessionShellCommand, 'id'>,

@@ -1,4 +1,4 @@
-import type { SessionErrorCode } from '@/domains/sessions/contract/ipc/contract'
+import type { SessionErrorCode } from '@/domains/sessions/api/session-error'
 
 export function sessionFailureState(code: SessionErrorCode) {
   switch (code) {

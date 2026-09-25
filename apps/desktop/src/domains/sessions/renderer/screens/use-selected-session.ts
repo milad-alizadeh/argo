@@ -1,4 +1,4 @@
-import { useArchivedSessions } from '../roster/archived/use-archived-sessions'
+import { useArchivedSessions } from '../session-list/archived/use-archived-sessions'
 import type { useSessions } from '../use-sessions'
 
 // The active Roster never carries an archived Session (#1593): a direct open of one (a restored

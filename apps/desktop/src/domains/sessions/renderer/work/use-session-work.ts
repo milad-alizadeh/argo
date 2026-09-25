@@ -2,10 +2,7 @@
 // Subagent spent, and what one background Shell has written so far. Neither rides the Roster or
 // Feed reply, and each stops polling once the thing it watches has finished.
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import type {
-  SessionShellOutput,
-  SubagentUsageFacts,
-} from '@/domains/sessions/contract/model/wire/background-work-contract'
+import type { SessionShellOutput, SubagentUsageFacts } from '@/domains/sessions/renderer/work/types'
 import { retrySessionFeed, sessionFeedQuery } from '../feed/session-feed-query'
 import type { SessionContractError } from '../session-contract-error'
 import {

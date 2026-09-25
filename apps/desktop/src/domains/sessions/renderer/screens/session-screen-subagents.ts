@@ -1,4 +1,4 @@
-import type { SessionSubagent } from '@/domains/sessions/contract/model/models'
+import type { SessionSubagent } from '@/domains/sessions/renderer/model/models'
 import type { SessionFeedRow } from '../types'
 
 type SubagentRow = Extract<SessionFeedRow, { shape: 'subagent' }>

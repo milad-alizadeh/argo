@@ -1,8 +1,18 @@
 import type { ProjectSetupSnapshot } from '@/domains/projects/contract/contract'
 import type { AppearanceState } from '@/platform/contract/appearance'
 import type { DevelopmentIdentity } from '@/platform/contract/development-identity'
-import type { TrpcRequest } from '@/platform/contract/trpc'
 import type { WatchTopic } from '@/platform/contract/watch'
+
+type TrpcRequest = {
+  id: number
+  path: string
+  input: unknown
+  type: 'query' | 'mutation' | 'subscription'
+}
+type TrpcSubscriptionMessage =
+  | { id: number; type: 'data'; result: { data: unknown } }
+  | { id: number; type: 'error'; error: unknown }
+  | { id: number; type: 'complete' }
 
 declare global {
   interface Window {
@@ -18,6 +28,10 @@ declare global {
       trpc: (
         request: TrpcRequest,
       ) => Promise<{ id: number; result: { data: unknown } } | { id: number; error: unknown }>
+      trpcSubscribe: (
+        request: TrpcRequest,
+        listener: (message: TrpcSubscriptionMessage) => void,
+      ) => Promise<() => void>
     }
   }
 }

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import type { SessionPlan } from '@/domains/sessions/contract/model'
+import type { SessionPlan } from '@/domains/sessions/renderer/model/models'
 import { useComposerStore } from '../hooks'
 import { ComposerStory } from './composer-story-samples'
 

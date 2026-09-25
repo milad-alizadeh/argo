@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
-import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/contract/model/models'
-import type { SessionShellOutput } from '@/domains/sessions/contract/model/wire/background-work-contract'
+import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/renderer/model/models'
+import type { SessionShellOutput } from '@/domains/sessions/renderer/work/types'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { useComposerStore } from '../composer/hooks'
 import { ComposerForm } from '../composer/layout/composer-form'
@@ -11,8 +11,8 @@ import { RICH_MARKDOWN } from '../feed/content/feed-samples'
 import { INACTIVE_FEED_LIVE_FACTS } from '../feed/document/feed-live-facts'
 import { SessionInspector } from '../inspector/session-inspector'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
-import { Roster, type RosterActions } from '../roster/roster'
 import { sessionRosterRow, sessionShellCommand, sessionSubagent } from '../session-fixtures'
+import { SessionList, type SessionListActions } from '../session-list/session-list'
 import type { Session, SessionFeed, SessionsListed } from '../types'
 import { SessionWorkButtons } from '../work/session-work-buttons'
 import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
@@ -162,7 +162,7 @@ function delegationFeedFor(delegation: SessionSubagent) {
   } satisfies SessionFeed
 }
 
-// The Roster reads its own Session list now (#2284), so a screen review stubs the read rather than
+// The Session list reads its own Sessions now (#2284), so a screen review stubs the read rather than
 // handing it a fixed roster prop.
 function withListedSessions(sessions: Session[]) {
   const before = window.argo
@@ -188,7 +188,7 @@ function withListedSessions(sessions: Session[]) {
   }
 }
 
-const NOOP_ROSTER_ACTIONS: RosterActions = {
+const NOOP_SESSION_LIST_ACTIONS: SessionListActions = {
   onArchiveSelected: () => {},
   onLinkTicket: () => {},
   onNew: () => {},
@@ -213,8 +213,8 @@ function ReviewSidebar({
     ),
   )
   return (
-    <Roster
-      actions={{ ...NOOP_ROSTER_ACTIONS, onSelect }}
+    <SessionList
+      actions={{ ...NOOP_SESSION_LIST_ACTIONS, onSelect }}
       projectRoot={null}
       selectedSessionId={selectedSessionId}
     />
@@ -381,9 +381,9 @@ function NewSessionScreen() {
     <AppShell
       leftHeader={<ProjectSwitcher />}
       sidebar={
-        <Roster
+        <SessionList
           actions={{
-            ...NOOP_ROSTER_ACTIONS,
+            ...NOOP_SESSION_LIST_ACTIONS,
             onNew: () => setSelectedSessionId('optimistic:new-session'),
             onSelect: setSelectedSessionId,
           }}
@@ -563,13 +563,10 @@ async function expectCollapsedSidebarDoesNotCoverSessionHeader(canvasElement: HT
   await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
   const opener = await canvas.findByRole('button', { name: 'Open sidebar' })
   const title = canvas.getByRole('heading', { name: 'Finish Session composer review' })
-  expect(
-    Math.abs(
-      title.getBoundingClientRect().top +
-        title.getBoundingClientRect().height / 2 -
-        (opener.getBoundingClientRect().top + opener.getBoundingClientRect().height / 2),
-    ),
-  ).toBeLessThanOrEqual(1)
+  expect(title.getBoundingClientRect().left).toBeGreaterThanOrEqual(
+    opener.getBoundingClientRect().right +
+      Number.parseFloat(getComputedStyle(title).getPropertyValue('--spacing-shell-tight')),
+  )
   await userEvent.click(opener)
   await expect(canvas.getByLabelText('Sessions sidebar')).toBeVisible()
 }
@@ -642,19 +639,7 @@ export const Open: Story = {
     await expect(
       canvas.getByRole('heading', { name: 'Finish Session composer review' }),
     ).toBeVisible()
-    await expect(canvas.getByText('ticket-1846-composer')).toBeInTheDocument()
-    const sessionId = canvas
-      .getByText('Session ID')
-      .closest<HTMLElement>('[data-component="SessionIdMetadata"]')
-    if (sessionId === null) throw new Error('The Session ID metadata is absent.')
-    await expect(sessionId).toHaveTextContent('composer-review')
-    await expect(sessionId.querySelector('svg')).not.toBeNull()
-    const contentChrome = canvasElement.querySelector<HTMLElement>(
-      '[data-component="AppMainHeader"]',
-    )
-    const sessionTitle = canvas.getByRole('heading', { name: 'Finish Session composer review' })
-    if (contentChrome === null) throw new Error('The Session page header is absent.')
-    await expect(contentChrome.contains(sessionTitle)).toBe(true)
+    await expect(canvas.getByText('ticket-1846-composer')).toBeVisible()
     expectHeaderActionsAtTrailingEdge(canvasElement)
     await expectCollapsedSidebarDoesNotCoverSessionHeader(canvasElement)
     await waitFor(() =>
@@ -695,9 +680,14 @@ export const FormattedHeaderTitle: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const header = canvas.getByRole('heading', { name: /Implement/ })
+    const row = canvas.getByRole('button', {
+      name: /Implement https:\/\/example\.com\/guide/,
+    })
     await expect(header).not.toHaveTextContent('[$implement]')
     await expect(header).toHaveTextContent('https://example.com/guide')
     await expect(header.querySelector('a')).toBeNull()
+    await expect(row).not.toHaveTextContent('[$implement]')
+    await expect(row).toHaveTextContent('https://example.com/guide')
   },
 }
 
@@ -850,7 +840,7 @@ export const NarrowHeader: Story = {
     await expect(
       canvas.getByRole('heading', { name: 'Finish Session composer review' }),
     ).toBeVisible()
-    await expect(canvas.getByText('ticket-1846-composer')).toBeInTheDocument()
+    await expect(canvas.getByText('ticket-1846-composer')).toBeVisible()
     await waitFor(() =>
       expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
         'data-session',

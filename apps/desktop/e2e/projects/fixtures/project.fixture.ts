@@ -7,14 +7,14 @@ import path from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { promisify } from 'node:util'
 import { _electron as electron } from 'playwright-core'
+import { createDurableDatabase } from '@/database/durable-database'
+import { openSharedDatabase } from '@/database/shared-database'
+import { sharedDatabasePath } from '@/database/shared-database-path'
 import {
   PROJECT_PROOF_STORE_ENV,
   SETUP_DOCUMENT_PROOF_URL_ENV,
 } from '@/domains/projects/main/proof-protocol'
 import { createProjectStore } from '@/domains/projects/main/sqlite-store'
-import { createDurableDatabase } from '@/platform/main/storage/durable-database'
-import { openSharedDatabase } from '@/platform/main/storage/shared-database'
-import { sharedDatabasePath } from '@/platform/main/storage/shared-database-path'
 import type { MockSetupDocument } from '../../../mocks/providers/setup/mock-setup-document-loopback'
 import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mts'
 import { appExecutable, packagedTestCopy } from '../../packaged-app'

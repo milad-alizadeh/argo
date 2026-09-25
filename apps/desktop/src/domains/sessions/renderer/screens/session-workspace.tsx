@@ -1,7 +1,7 @@
 import { type ReactNode, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
+import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import { BasicFeed } from '../feed/document/basic-feed'
 import type { FeedLiveFacts } from '../feed/document/feed-live-facts'
 import { FeedJumpToLatest } from '../feed/rows/feed-jump-to-latest'

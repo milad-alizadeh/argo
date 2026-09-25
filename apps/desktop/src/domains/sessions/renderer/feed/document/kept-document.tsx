@@ -1,5 +1,5 @@
 import type { VirtualItem } from '@tanstack/virtual-core'
-import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
+import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { SessionError, SessionEvidence, SessionFeed, SessionId } from '../../types'
 import type { FeedDocumentContext } from './feed-document'
 import { FeedDocument } from './feed-document'

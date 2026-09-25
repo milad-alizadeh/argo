@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react'
-import type { QuestionAnswer } from '@/domains/sessions/contract/drive/question'
+import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { SessionEvidence, SessionFeedRow } from '../../types'
 import { FeedRow } from '../rows/feed-row'
 import type { RevealCache } from '../rows/streaming-text'
