@@ -4,7 +4,7 @@ import type {
   ProjectWorkspaceListed,
   WorkspaceSummary,
 } from '@/domains/projects/contract/workspace-messages'
-import { trpc, trpcClient } from '@/platform/renderer/trpc-client'
+import { trpcClient } from '@/platform/renderer/trpc-client'
 import { type ProjectContractError, throwProjectContractError } from '../project-contract-error'
 
 export type WorkspaceCockpit = {
@@ -50,7 +50,6 @@ export function useWorkspaces(projectId: string | null): [WorkspaceCockpit, Work
   const queryKey = workspaceQueryKey(projectId ?? '')
 
   const query = useQuery<ProjectWorkspaceListed, ProjectContractError>({
-    ...trpc.projectWorkspaceList.queryOptions({ projectId: projectId ?? '' }),
     queryKey,
     enabled: projectId !== null,
     staleTime: Infinity,
@@ -63,7 +62,6 @@ export function useWorkspaces(projectId: string | null): [WorkspaceCockpit, Work
     onSuccess: (reply: ProjectWorkspaceListed) => queryClient.setQueryData(queryKey, reply),
   }
   const select = useMutation<ProjectWorkspaceListed, ProjectContractError, string>({
-    ...trpc.projectWorkspaceSelect.mutationOptions(),
     ...mutationOptions,
     mutationFn: async (workspaceId) => {
       const reply = await trpcClient.projectWorkspaceSelect.mutate({
@@ -74,7 +72,6 @@ export function useWorkspaces(projectId: string | null): [WorkspaceCockpit, Work
     },
   })
   const createManaged = useMutation<ProjectWorkspaceListed, ProjectContractError, string>({
-    ...trpc.projectWorkspaceCreateManaged.mutationOptions(),
     ...mutationOptions,
     mutationFn: async (baseRef) => {
       const reply = await trpcClient.projectWorkspaceCreateManaged.mutate({

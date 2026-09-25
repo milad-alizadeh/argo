@@ -2,7 +2,7 @@
 import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { AccountListed, AccountListReply } from '@/domains/accounts/contract/contract'
 import { type ContractFailure, QUERY_KEYS, settle } from '@/platform/renderer/lib/query-client'
-import { trpc, trpcClient } from '@/platform/renderer/trpc-client'
+import { trpcClient } from '@/platform/renderer/trpc-client'
 
 export type AccountListing = Pick<AccountListed, 'accounts' | 'notice' | 'providers'>
 
@@ -20,7 +20,6 @@ export function storeListing(client: QueryClient, next: AccountListing): void {
 
 export function useAccounts() {
   return useQuery<AccountListing, ContractFailure>({
-    ...trpc.accountList.queryOptions(),
     queryKey: QUERY_KEYS.accounts,
     queryFn: async () => listing(await settle(trpcClient.accountList.query())),
   })
@@ -40,12 +39,12 @@ function useListingAction<Input>(options: {
 
 export const useDisconnect = () =>
   useListingAction({
-    ...trpc.accountDisconnect.mutationOptions(),
+    mutationKey: ['accounts', 'disconnect'],
     mutationFn: (accountId: string) => trpcClient.accountDisconnect.mutate({ accountId }),
   })
 
 export const useDismissNotice = () =>
   useListingAction({
-    ...trpc.accountDismissNotice.mutationOptions(),
+    mutationKey: ['accounts', 'dismiss-notice'],
     mutationFn: () => trpcClient.accountDismissNotice.mutate(),
   })

@@ -2,7 +2,7 @@
 // it back and says why.
 import type { QueryClient } from '@tanstack/react-query'
 import type { TicketPrioritized, TicketPriority } from '@/domains/tickets/contract/contract'
-import { trpc } from '@/platform/renderer/trpc-client'
+import { trpcClient } from '@/platform/renderer/trpc-client'
 import { patchTicket, type TicketChange, useTicketFieldMutation } from './use-ticket-field-mutation'
 
 export type PriorityChange = TicketChange & { priority: TicketPriority | null }
@@ -12,11 +12,14 @@ function move(client: QueryClient, change: PriorityChange) {
 }
 
 export function useUpdatePriority() {
-  const options = trpc.tickets.updatePriority.mutationOptions()
   return useTicketFieldMutation<TicketPrioritized, PriorityChange>({
     move,
     request: ({ projectId, key, priority }) =>
-      options.mutationFn({ projectId, key, priorityLevel: priority?.level ?? null }),
+      trpcClient.tickets.updatePriority.mutate({
+        projectId,
+        key,
+        priorityLevel: priority?.level ?? null,
+      }),
     reply: ({ projectId, key, priority }) => ({ projectId, key, priority }),
   })
 }

@@ -19,7 +19,7 @@ import type {
   TicketScope,
 } from '@/domains/tickets/contract/contract'
 import { type ContractFailure, QUERY_KEYS } from '@/platform/renderer/lib/query-client'
-import { trpc } from '@/platform/renderer/trpc-client'
+import { trpc, trpcClient } from '@/platform/renderer/trpc-client'
 import { ticketReply } from './ticket-reply'
 
 const connectionKey = (projectId: string) => trpc.tickets.connection.queryKey({ projectId })
@@ -39,7 +39,10 @@ export function onRefused(client: QueryClient, projectId: string, failure: Contr
 
 export function useConnection(projectId: string | null) {
   return useQuery<TicketConnectedReply, ContractFailure, ConnectionSummary | null>({
-    ...trpc.tickets.connection.queryOptions(projectId ? { projectId } : skipToken),
+    queryKey: projectId ? connectionKey(projectId) : [...listKey(), 'connection', null],
+    queryFn: projectId
+      ? () => trpcClient.tickets.connection.query({ projectId }).then(ticketReply)
+      : skipToken,
     select: (reply) => ticketReply(reply).connection,
   })
 }
@@ -54,15 +57,21 @@ export function useTicketList(
   const client = useQueryClient()
   const ready = projectId !== null && connection?.state === 'ready'
   return useInfiniteQuery<TicketListReply, ContractFailure, TicketPages, QueryKey, string | null>({
-    ...trpc.tickets.list.infiniteQueryOptions(
-      ready ? { projectId, query, cursor: null } : skipToken,
-      {
-        initialCursor: null,
-        getNextPageParam: (last) => ticketReply(last).nextCursor ?? undefined,
-        placeholderData: keepPreviousData,
-      },
-    ),
-    select: (data) => ({ ...data, pages: data.pages.map(ticketReply) }),
+    queryKey: [...listKey(), projectId, query],
+    queryFn:
+      ready && projectId
+        ? ({ pageParam }) =>
+            trpcClient.tickets.list
+              .query({ projectId, query, cursor: pageParam })
+              .then(ticketReply)
+              .catch((failure: ContractFailure) => {
+                onRefused(client, projectId, failure)
+                throw failure
+              })
+        : skipToken,
+    initialPageParam: null,
+    getNextPageParam: (last) => last.nextCursor ?? undefined,
+    placeholderData: keepPreviousData,
     throwOnError: (failure) => {
       if (projectId) onRefused(client, projectId, failure)
       return false
@@ -74,9 +83,18 @@ export function useTicketList(
 export function useSources(projectId: string | null, accountId: string | null) {
   const client = useQueryClient()
   return useQuery<TicketDiscoverReply, ContractFailure, TicketScope[]>({
-    ...trpc.tickets.discover.queryOptions(
-      projectId && accountId ? { projectId, accountId } : skipToken,
-    ),
+    queryKey: [...listKey(), projectId, 'sources', accountId],
+    queryFn:
+      projectId && accountId
+        ? () =>
+            trpcClient.tickets.discover
+              .query({ projectId, accountId })
+              .then(ticketReply)
+              .catch((failure: ContractFailure) => {
+                onRefused(client, projectId, failure)
+                throw failure
+              })
+        : skipToken,
     select: (reply) => ticketReply(reply).scopes,
     throwOnError: (failure) => {
       if (projectId) onRefused(client, projectId, failure)
@@ -106,17 +124,15 @@ function useConnectionAction<Input extends { projectId: string }>(options: {
 export type ConnectInput = { projectId: string; accountId: string; scope: string }
 
 export const useConnectSource = () => {
-  const options = trpc.tickets.connect.mutationOptions()
   return useConnectionAction<ConnectInput>({
-    mutationKey: options.mutationKey,
-    mutationFn: options.mutationFn,
+    mutationKey: [...listKey(), 'connect'],
+    mutationFn: (input) => trpcClient.tickets.connect.mutate(input),
   })
 }
 
 export const useDisconnectSource = () => {
-  const options = trpc.tickets.disconnect.mutationOptions()
   return useConnectionAction<{ projectId: string }>({
-    mutationKey: options.mutationKey,
-    mutationFn: options.mutationFn,
+    mutationKey: [...listKey(), 'disconnect'],
+    mutationFn: (input) => trpcClient.tickets.disconnect.mutate(input),
   })
 }

@@ -7,7 +7,7 @@ import type {
   Provider,
 } from '@/domains/accounts/contract/contract'
 import { type ContractFailure, settle } from '@/platform/renderer/lib/query-client'
-import { trpc, trpcClient } from '@/platform/renderer/trpc-client'
+import { trpcClient } from '@/platform/renderer/trpc-client'
 import { storeListing } from './use-accounts'
 
 export type SignInPhase = 'idle' | 'requesting' | 'waiting' | 'connected'
@@ -27,17 +27,14 @@ export type SignIn = {
 export function useSignIn(): SignIn {
   const client = useQueryClient()
   const wait = useMutation<AccountConnected, ContractFailure>({
-    ...trpc.accountWait.mutationOptions(),
     mutationFn: () => settle(trpcClient.accountWait.mutate()),
     onSuccess: (reply) => storeListing(client, reply),
   })
   const verify = useMutation<AccountChallenge, ContractFailure>({
-    ...trpc.accountVerify.mutationOptions(),
     mutationFn: () => settle(trpcClient.accountVerify.mutate()),
   })
   // Linear has no code to show first, so its consent page opens as soon as it is asked for.
   const connect = useMutation<AccountChallenge, ContractFailure, Provider>({
-    ...trpc.accountConnect.mutationOptions(),
     mutationFn: (provider) => settle(trpcClient.accountConnect.mutate({ provider })),
     onSuccess: (challenge) => {
       wait.mutate()

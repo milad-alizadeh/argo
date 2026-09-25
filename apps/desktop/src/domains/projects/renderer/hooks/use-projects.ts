@@ -3,7 +3,7 @@ import { useCallback, useMemo } from 'react'
 import type { ProjectError, ProjectErrorCode } from '@/domains/projects/contract/contract'
 import type { ProjectListed, ProjectSummary } from '@/domains/projects/contract/messages'
 import type { WorkspaceSummary } from '@/domains/projects/contract/workspace-messages'
-import { trpc, trpcClient } from '@/platform/renderer/trpc-client'
+import { trpcClient } from '@/platform/renderer/trpc-client'
 import { type ProjectContractError, throwProjectContractError } from '../project-contract-error'
 import { projectListQueryKey } from '../project-queries'
 import { useProjectMutations } from './use-project-mutations'
@@ -89,7 +89,6 @@ async function cockpitForListing(reply: ProjectListed): Promise<ProjectCockpit> 
 
 function useProjectListing() {
   return useQuery<ProjectCockpit, ProjectContractError>({
-    ...trpc.projectList.queryOptions(),
     queryKey: projectListQueryKey,
     staleTime: Infinity,
     retry: false,
