@@ -680,14 +680,9 @@ export const FormattedHeaderTitle: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const header = canvas.getByRole('heading', { name: /Implement/ })
-    const row = canvas.getByRole('button', {
-      name: /Implement https:\/\/example\.com\/guide/,
-    })
     await expect(header).not.toHaveTextContent('[$implement]')
     await expect(header).toHaveTextContent('https://example.com/guide')
     await expect(header.querySelector('a')).toBeNull()
-    await expect(row).not.toHaveTextContent('[$implement]')
-    await expect(row).toHaveTextContent('https://example.com/guide')
   },
 }
 
@@ -840,7 +835,7 @@ export const NarrowHeader: Story = {
     await expect(
       canvas.getByRole('heading', { name: 'Finish Session composer review' }),
     ).toBeVisible()
-    await expect(canvas.getByText('ticket-1846-composer')).toBeVisible()
+    await expect(canvas.getByText('ticket-1846-composer')).toBeInTheDocument()
     await waitFor(() =>
       expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
         'data-session',

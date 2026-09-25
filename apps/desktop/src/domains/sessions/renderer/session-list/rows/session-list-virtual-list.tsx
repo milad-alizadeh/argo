@@ -2,8 +2,8 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useRef } from 'react'
 import type { SessionId } from '../../types'
 import { moveFocus } from './session-list-arrow-keys'
-import { SessionRowContextMenu } from './session-list-context-menu'
-import { SessionRowView } from './session-list-row-view'
+import { SessionRowContextMenu } from './session-row-context-menu'
+import { SessionRowView } from './session-row-view'
 import {
   rowPlace,
   SESSION_LIST_ROW_HEIGHT,

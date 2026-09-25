@@ -9,6 +9,7 @@ import {
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import { usePanelRef } from 'react-resizable-panels'
+import { useInRouterContext } from 'react-router'
 import { CockpitNavigationRail } from '../../cockpit/components/cockpit-navigation-rail'
 import { Icon } from '../../components/icon/icon'
 import { Button } from '../../components/ui/button'
@@ -48,11 +49,12 @@ function SidebarToggle({
 }
 
 function AppRail({ rail }: Pick<AppShellProps, 'rail'>) {
+  const inRouter = useInRouterContext()
   return (
     <div className="flex min-h-0 w-(--size-navigation-rail) shrink-0 flex-col bg-sidebar">
       <div className="drag-region h-(--size-chrome-bar) shrink-0 border-b border-border/60" />
       <div className="min-h-0 flex-1 border-r border-border/60">
-        {rail ?? <CockpitNavigationRail />}
+        {rail ?? (inRouter ? <CockpitNavigationRail /> : null)}
       </div>
     </div>
   )
