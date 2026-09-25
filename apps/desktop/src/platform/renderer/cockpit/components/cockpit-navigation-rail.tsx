@@ -1,5 +1,6 @@
-import { memo, useEffect, useState } from 'react'
+import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useLocation, useNavigate } from 'react-router'
 import { DESTINATION_PATHS, DESTINATIONS, type Destination } from '@/platform/contract/commands'
 import { Icon, type IconName } from '../../components/icon/icon'
 
@@ -15,29 +16,23 @@ const navigationLabelKeys = {
   Atlas: 'rail.destinations.atlas',
 } as const satisfies Record<Destination, string>
 
-function destinationFromHash(): Destination {
+function destinationFromPathname(pathname: string): Destination {
   return (
-    DESTINATIONS.find(
-      (destination) => window.location.hash === `#${DESTINATION_PATHS[destination]}`,
-    ) ?? 'Sessions'
+    DESTINATIONS.find((destination) => pathname === DESTINATION_PATHS[destination]) ?? 'Sessions'
   )
 }
 
 export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
   const { t } = useTranslation('cockpit')
-  const [destination, setDestination] = useState(destinationFromHash)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const destination = destinationFromPathname(location.pathname)
   const settingsLabel = t('rail.settings')
-
-  useEffect(() => {
-    const updateDestination = () => setDestination(destinationFromHash())
-    window.addEventListener('hashchange', updateDestination)
-    return () => window.removeEventListener('hashchange', updateDestination)
-  }, [])
 
   return (
     <nav
       aria-label={t('rail.label')}
-      className="flex h-full min-h-0 w-(--size-navigation-rail) shrink-0 flex-col items-center border-r border-border/60 bg-sidebar [&_svg]:size-(--size-icon-control)"
+      className="no-drag-region flex h-full min-h-0 w-(--size-navigation-rail) shrink-0 flex-col items-center border-r border-border/60 bg-sidebar [&_*]:no-drag-region [&_svg]:size-(--size-icon-control)"
     >
       <div className="flex flex-col items-center gap-2 pt-(--inset-navigation-rail-item-top)">
         {DESTINATIONS.map((itemDestination) => {
@@ -50,9 +45,9 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
               type="button"
               aria-current={active ? 'page' : undefined}
               aria-label={label}
-              className="group flex flex-col items-center gap-1 type-meta"
+              className="no-drag-region group flex flex-col items-center gap-1 type-meta"
               onClick={() => {
-                window.location.hash = DESTINATION_PATHS[itemDestination]
+                navigate(DESTINATION_PATHS[itemDestination])
               }}
             >
               <span
@@ -75,7 +70,7 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
         <button
           type="button"
           aria-label={settingsLabel}
-          className="group flex flex-col items-center gap-1 type-meta"
+          className="no-drag-region group flex flex-col items-center gap-1 type-meta"
         >
           <span className="grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors group-hover:bg-sidebar group-hover:text-foreground">
             <Icon name="settings" />

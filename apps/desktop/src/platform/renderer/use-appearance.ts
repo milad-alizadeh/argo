@@ -27,8 +27,12 @@ export function useAppearance(): [Appearance, (chosen: Appearance) => void] {
   const [state, setState] = useState<AppearanceState>(INITIAL)
 
   useEffect(() => {
-    void window.argo.getAppearance().then(setState)
-    return window.argo.onAppearanceChanged(setState)
+    const bridge = window.argo as typeof window.argo & {
+      getAppearance?: () => Promise<AppearanceState>
+    }
+    if (bridge.getAppearance === undefined) return
+    void bridge.getAppearance().then(setState)
+    return bridge.onAppearanceChanged(setState)
   }, [])
 
   useEffect(() => {
@@ -38,7 +42,11 @@ export function useAppearance(): [Appearance, (chosen: Appearance) => void] {
   }, [state.dark])
 
   const choose = useCallback((chosen: Appearance) => {
-    void window.argo.setAppearance(chosen).then(setState)
+    const bridge = window.argo as typeof window.argo & {
+      setAppearance?: (appearance: Appearance) => Promise<AppearanceState>
+    }
+    if (bridge.setAppearance === undefined) return
+    void bridge.setAppearance(chosen).then(setState)
   }, [])
 
   return [state.appearance, choose]

@@ -12,6 +12,13 @@ import { COMMAND_CHANNEL } from '@/platform/contract/commands'
 import { isWatchTopic, WATCHED_CHANGED_CHANNEL, type WatchTopic } from '@/platform/contract/watch'
 import { developmentIdentityFromArguments } from '@/platform/preload/development-identity'
 
+type Subscription = {
+  listeners: Set<(value: unknown) => void>
+  forward: (_event: Electron.IpcRendererEvent, value: unknown) => void
+}
+
+const subscriptions = new Map<string, Subscription>()
+
 const TRPC_CHANNEL = 'argo:trpc'
 type TrpcSubscriptionMessage =
   | { id: number; type: 'data'; result: { data: unknown } }
@@ -54,9 +61,28 @@ function receiveTrpcSubscriptionMessage(
 }
 
 function subscribe<Value>(channel: string, listener: (value: Value) => void): () => void {
-  const forward = (_event: Electron.IpcRendererEvent, value: Value) => listener(value)
-  ipcRenderer.on(channel, forward)
-  return () => ipcRenderer.off(channel, forward)
+  let subscription = subscriptions.get(channel)
+  if (!subscription) {
+    const listeners = new Set<(value: unknown) => void>()
+    const forward = (_event: Electron.IpcRendererEvent, value: unknown) => {
+      for (const current of listeners) current(value)
+    }
+    subscription = { listeners, forward }
+    subscriptions.set(channel, subscription)
+    ipcRenderer.on(channel, forward)
+  }
+
+  const current = listener as (value: unknown) => void
+  subscription.listeners.add(current)
+  return () => {
+    const active = subscriptions.get(channel)
+    if (!active) return
+    active.listeners.delete(current)
+    if (active.listeners.size === 0) {
+      ipcRenderer.off(channel, active.forward)
+      subscriptions.delete(channel)
+    }
+  }
 }
 
 contextBridge.exposeInMainWorld('argo', {
@@ -87,20 +113,20 @@ contextBridge.exposeInMainWorld('argo', {
   development: developmentIdentityFromArguments(process.argv),
   trpc: (request: unknown) => ipcRenderer.invoke(TRPC_CHANNEL, request),
   trpcSubscribe(request: unknown, listener: (message: TrpcSubscriptionMessage) => void) {
-    const forward = (_event: Electron.IpcRendererEvent, message: unknown) =>
-      receiveTrpcSubscriptionMessage(listener, message)
-    ipcRenderer.on(TRPC_CHANNEL, forward)
+    const unsubscribe = subscribe<unknown>(TRPC_CHANNEL, (message) =>
+      receiveTrpcSubscriptionMessage(listener, message),
+    )
     const attached = ipcRenderer.invoke(TRPC_CHANNEL, request)
     return attached.then(
       () => () => {
-        ipcRenderer.off(TRPC_CHANNEL, forward)
+        unsubscribe()
         void ipcRenderer.invoke(TRPC_CHANNEL, {
           id: (request as { id: number }).id,
           type: 'subscriptionStop',
         })
       },
       (error) => {
-        ipcRenderer.off(TRPC_CHANNEL, forward)
+        unsubscribe()
         throw error
       },
     )

@@ -1,4 +1,4 @@
-import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react'
+import { type ReactNode, type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { usePanelRef } from 'react-resizable-panels'
 import { Icon } from '../../components/icon/icon'
@@ -22,6 +22,10 @@ type SidebarHeaderProps = {
 }
 
 type SidebarToggleProps = Pick<SidebarHeaderProps, 'onToggle' | 'toggleRef'>
+
+function sidebarCollapsedState(current: boolean, panelCollapsed: boolean | undefined): boolean {
+  return panelCollapsed ?? current
+}
 
 function SidebarHeader({ header, onToggle, toggleRef }: SidebarHeaderProps) {
   const { t } = useTranslation('cockpit')
@@ -90,9 +94,27 @@ function CockpitRail({ rail }: Pick<CockpitShellProps, 'rail'>) {
         className="drag-region h-(--size-chrome-bar) shrink-0 border-b border-border/60 bg-sidebar"
       />
       {/* A layout wrapper only: `CockpitNavigationRail` (or a story's `rail` override) is its own labelled `nav`. */}
-      <div className="min-h-0 flex-1 border-r border-border/60">
+      <div className="no-drag-region min-h-0 flex-1 border-r border-border/60">
         {rail ?? <CockpitNavigationRail />}
       </div>
+    </div>
+  )
+}
+
+function CockpitContent({
+  isSidebarCollapsed,
+  children,
+}: {
+  isSidebarCollapsed: boolean
+  children: ReactNode
+}) {
+  return (
+    <div
+      data-component="CockpitContent"
+      data-sidebar-state={isSidebarCollapsed ? 'collapsed' : 'open'}
+      className="relative h-full min-w-0 overflow-hidden bg-background"
+    >
+      {children}
     </div>
   )
 }
@@ -113,9 +135,11 @@ export function CockpitShell({ rail, sidebar, header, footer, children }: Cockpi
     setShouldFocusSidebarToggle(false)
   }, [shouldFocusSidebarToggle])
 
-  const synchronizeSidebarCollapsed = () => {
-    setIsSidebarCollapsed(sidebarPanelRef.current?.isCollapsed() ?? false)
-  }
+  const synchronizeSidebarCollapsed = useCallback(() => {
+    setIsSidebarCollapsed((current) =>
+      sidebarCollapsedState(current, sidebarPanelRef.current?.isCollapsed()),
+    )
+  }, [sidebarPanelRef])
 
   const toggleSidebar = () => {
     if (isSidebarCollapsed) {
@@ -161,13 +185,7 @@ export function CockpitShell({ rail, sidebar, header, footer, children }: Cockpi
           </ResizablePanel>
           <ResizableHandle className={isSidebarCollapsed ? 'bg-transparent' : 'bg-border/60'} />
           <ResizablePanel id="cockpit-content" minSize={contentMinimumWidth}>
-            <div
-              data-component="CockpitContent"
-              data-sidebar-state={isSidebarCollapsed ? 'collapsed' : 'open'}
-              className="relative h-full min-w-0 overflow-hidden bg-background"
-            >
-              {children}
-            </div>
+            <CockpitContent isSidebarCollapsed={isSidebarCollapsed}>{children}</CockpitContent>
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
