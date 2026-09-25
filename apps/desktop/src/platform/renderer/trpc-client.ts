@@ -6,6 +6,10 @@ import type { TrpcRequest } from '@/platform/contract/trpc'
 import { trpcSubscriptionMessageSchema } from '@/platform/contract/trpc'
 import type { AppRouter } from '@/platform/main/trpc-router'
 
+function assertNever(value: never): never {
+  throw new Error(`Unknown tRPC subscription message: ${String(value)}`)
+}
+
 function receiveSubscriptionMessage<TRouter extends AppRouter>(
   observer: Partial<Observer<{ result: { data: unknown } }, TRPCClientError<TRouter>>>,
   id: number,
@@ -13,10 +17,19 @@ function receiveSubscriptionMessage<TRouter extends AppRouter>(
 ): void {
   const parsed = trpcSubscriptionMessageSchema.safeParse(rawMessage)
   if (!parsed.success || parsed.data.id !== id) return
-  if (parsed.data.type === 'data') observer.next?.({ result: parsed.data.result })
-  if (parsed.data.type === 'error')
-    observer.error?.(TRPCClientError.from<TRouter>(parsed.data.error))
-  if (parsed.data.type === 'complete') observer.complete?.()
+  switch (parsed.data.type) {
+    case 'data':
+      observer.next?.({ result: parsed.data.result })
+      break
+    case 'error':
+      observer.error?.(TRPCClientError.from<TRouter>(parsed.data.error))
+      break
+    case 'complete':
+      observer.complete?.()
+      break
+    default:
+      assertNever(parsed.data)
+  }
 }
 
 const electronLink: TRPCLink<AppRouter> =

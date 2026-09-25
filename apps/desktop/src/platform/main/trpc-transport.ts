@@ -1,6 +1,6 @@
 import { type AnyRouter, callTRPCProcedure, getTRPCErrorShape, TRPCError } from '@trpc/server'
 import { isObservable, type Observable } from '@trpc/server/observable'
-import { type BrowserWindow, ipcMain } from 'electron'
+import { app, type BrowserWindow, ipcMain } from 'electron'
 import {
   TRPC_CHANNEL,
   type TrpcRequest,
@@ -44,6 +44,15 @@ async function startSubscription<TRouter extends AnyRouter>(request: {
   send: (message: unknown) => void
 }): Promise<void> {
   const { input, router, context, subscriptions, send } = request
+  let active = true
+  let subscription: Subscription | undefined
+  const pending: Subscription = {
+    unsubscribe: () => {
+      active = false
+      subscription?.unsubscribe()
+    },
+  }
+  subscriptions.set(input.id, pending)
   try {
     const result = await callTRPCProcedure({
       router,
@@ -60,8 +69,9 @@ async function startSubscription<TRouter extends AnyRouter>(request: {
         message: 'Subscription procedures must return an observable.',
       })
     }
+    if (!active) return
     let finished = false
-    const subscription = (result as Observable<unknown, unknown>).subscribe({
+    subscription = (result as Observable<unknown, unknown>).subscribe({
       next: (data) => send({ id: input.id, type: 'data', result: { data } }),
       error: (cause) => {
         send({ id: input.id, type: 'error', error: errorShape({ router, input, context, cause }) })
@@ -74,10 +84,13 @@ async function startSubscription<TRouter extends AnyRouter>(request: {
         subscriptions.delete(input.id)
       },
     })
-    if (finished) subscription.unsubscribe()
+    if (!active || finished) subscription.unsubscribe()
     else subscriptions.set(input.id, subscription)
   } catch (cause) {
-    send({ id: input.id, type: 'error', error: errorShape({ router, input, context, cause }) })
+    if (active)
+      send({ id: input.id, type: 'error', error: errorShape({ router, input, context, cause }) })
+  } finally {
+    if (subscriptions.get(input.id) === pending) subscriptions.delete(input.id)
   }
 }
 
@@ -142,10 +155,12 @@ export function attachTrpcTransport<TRouter extends AnyRouter>(request: {
   const stopOnNavigation = () => stopAllSubscriptions()
   request.window.webContents.on('did-start-navigation', stopOnNavigation)
   request.window.webContents.once('destroyed', stopOnNavigation)
+  app.on('will-quit', stopOnNavigation)
   return () => {
     stopAllSubscriptions()
     request.window.webContents.removeListener('did-start-navigation', stopOnNavigation)
     request.window.webContents.removeListener('destroyed', stopOnNavigation)
+    app.removeListener('will-quit', stopOnNavigation)
     ipcMain.removeHandler(TRPC_CHANNEL)
   }
 }

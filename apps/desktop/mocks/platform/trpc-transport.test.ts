@@ -6,6 +6,7 @@ import type { BrowserWindow, IpcMainInvokeEvent } from 'electron'
 type Handler = (event: IpcMainInvokeEvent, input: unknown) => Promise<unknown>
 
 let handler: Handler | undefined
+const appListeners = new Map<string, () => void>()
 const ipcMain = {
   handle: (_channel: string, next: Handler) => {
     handler = next
@@ -14,9 +15,13 @@ const ipcMain = {
     handler = undefined
   },
 }
-mock.module('electron', () => ({ ipcMain }))
+const app = {
+  on: (event: string, listener: () => void) => appListeners.set(event, listener),
+  removeListener: (event: string) => appListeners.delete(event),
+}
+mock.module('electron', () => ({ app, ipcMain }))
 
-const { attachTrpcTransport } = await import('./trpc-transport')
+const { attachTrpcTransport } = await import('../../src/platform/main/trpc-transport')
 
 function getHandler(): Handler {
   if (handler === undefined) throw new Error('Transport handler is not attached.')
@@ -132,6 +137,13 @@ test('trusted tRPC transport stops on navigation and shutdown, and does not deli
     })
     hostWindow.navigate()
     expect(unsubscribed).toBe(1)
+    await getHandler()(hostWindow.event, {
+      id: 3,
+      path: 'updates',
+      type: 'subscription',
+      input: undefined,
+    })
+    appListeners.get('will-quit')?.()
     hostWindow.destroy()
     emit?.('ignored')
     expect(hostWindow.sent).toEqual([])
