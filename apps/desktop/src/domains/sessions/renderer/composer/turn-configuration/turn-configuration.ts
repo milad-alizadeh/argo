@@ -3,6 +3,7 @@ import { z } from 'zod'
 import type { SessionTurnConfiguration } from '@/domains/sessions/renderer/model/models'
 import type { AvailableHarness, CatalogReading } from '@/harnesses/catalog/harness-catalog-machine'
 import type { IconName } from '@/platform/renderer/components/icon/icon'
+import type { ComposerIdentity } from '../identity/composer-identity'
 
 // The Model, Effort and Mode a composer sends with its next Turn (CONTEXT.md L2 · Model and Effort).
 export const turnConfigurationSchema = z.strictObject({
@@ -92,6 +93,21 @@ export function configurationFromReading(
     choiceRead(choices, { field: 'effort', reading: reading.effort, model })?.value ?? ''
   const mode = choiceRead(choices, { field: 'mode', reading: reading.mode, model })?.value ?? ''
   return supportedConfiguration(choices, { model, effort, mode }, choices.opening)
+}
+
+export function initialTurnConfiguration(
+  choices: TurnConfigurationChoices,
+  input: {
+    identity: ComposerIdentity
+    rows: readonly { id: string; turnConfiguration: SessionTurnConfiguration }[]
+  },
+) {
+  const { identity } = input
+  const row =
+    identity.kind === 'session' ? input.rows.find(({ id }) => id === identity.sessionId) : undefined
+  return row === undefined
+    ? choices.opening
+    : configurationFromReading(choices, row.turnConfiguration)
 }
 
 // A stored turnConfiguration can name a choice Argo no longer offers, and that one field takes the fallback.

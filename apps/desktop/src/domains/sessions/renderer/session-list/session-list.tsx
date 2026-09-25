@@ -3,13 +3,12 @@ import { type RefObject, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { sessionFeedQuery } from '../feed/session-feed-query'
 import type { Session, SessionId } from '../types'
-import { useConsecutiveFeedFailures } from '../use-sessions'
+import { useConsecutiveFeedFailures, useSessions } from '../use-sessions'
 import { useArchivedSection } from './archived/use-archived-section'
 import { useSessionListStatus } from './hooks/use-session-list-filter-store'
 import { RenameDialog } from './rename/rename-dialog'
 import { useRenameDialog } from './rename/use-rename-dialog'
 import type { SessionListActions } from './rows/session-list-actions'
-import { useOrderedSessions } from './rows/session-list-order'
 import { SessionListOutcome } from './rows/session-list-outcome'
 import { sessionListRows } from './rows/session-list-rows'
 import { sessionListState } from './rows/session-list-status-row'
@@ -21,8 +20,13 @@ export type { SessionListActions } from './rows'
 
 const NOOP = () => {}
 
+function useSessionListRead(projectRoot: string | null) {
+  const { roster, rosterError, ...read } = useSessions(null, true, projectRoot)
+  return { ...read, sessionList: roster, sessionListError: rosterError }
+}
+
 function useSessionListRows(options: {
-  read: ReturnType<typeof useOrderedSessions>
+  read: ReturnType<typeof useSessionListRead>
   search: ReturnType<typeof useSidebarSessionList>['searched'] | null
   selectedSessionId: SessionId | null
   visible: readonly Session[]
@@ -66,7 +70,7 @@ function useSessionListRows(options: {
 function useSessionListSessions(options: {
   actions: SessionListActions
   projectRoot: string | null
-  read: ReturnType<typeof useOrderedSessions>
+  read: ReturnType<typeof useSessionListRead>
   selectedSessionId: SessionId | null
   sidebar: RefObject<HTMLElement | null>
 }) {
@@ -123,7 +127,7 @@ export function SessionList({
 }) {
   const sidebar = useRef<HTMLElement>(null)
   const unavailableSessionIds = useUnavailableSessionIds(selectedSessionId)
-  const read = useOrderedSessions(projectRoot)
+  const read = useSessionListRead(projectRoot)
   const sessions = useSessionListSessions({
     actions,
     projectRoot,

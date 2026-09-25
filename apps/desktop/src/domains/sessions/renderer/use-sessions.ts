@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
 import { retrySessionFeed, sessionFeedQuery } from './feed/session-feed-query'
 import type { SessionContractError } from './session-contract-error'
-import { mergeOptimisticRow, readableSessionId, useSessionCreationStore } from './session-creation'
 import { reportCodexFailure } from './session-list/codex-failure-notice'
 import { sessionRosterQuery } from './session-list/rows/session-roster-query'
 import { invalidateSessionRoster } from './session-queries'
@@ -67,7 +66,7 @@ export function useSessions(
   const queryClient = useQueryClient()
   const { t } = useTranslation('sessions')
   const { add } = useToastManager()
-  const selectedFeedId = readableSessionId(selectedSessionId)
+  const selectedFeedId = selectedSessionId
   const {
     query: roster,
     roster: rosterPage,
@@ -85,12 +84,7 @@ export function useSessions(
     return () => void window.argo.cancelSessionFeed({ sessionId: selectedFeedId })
   }, [selectedFeedId])
 
-  const pending = useSessionCreationStore((state) => state.pending)
   const rosterData = roster.error === null ? rosterPage : null
-  const mergedRoster = useMemo(() => {
-    if (rosterData === null) return null
-    return { ...rosterData, sessions: mergeOptimisticRow(rosterData.sessions, pending) }
-  }, [rosterData, pending])
 
   // A partial Codex failure must leave Claude usable. One toast marks the outage for this app run.
   useEffect(() => {
@@ -104,21 +98,10 @@ export function useSessions(
     )
   }, [add, rosterData?.partialFailures, t])
 
-  // The reader reported the real Session for itself: the synthetic row has done its job.
-  useEffect(() => {
-    if (pending?.stage !== 'reconciling') return
-    if (rosterData?.sessions.some((session) => session.id === pending.id) !== true) return
-    if (feed.data === undefined || feed.data === null) return
-    useSessionCreationStore.getState().confirmed(pending.id)
-  }, [feed.data, pending, rosterData])
-  // A new Codex Session is navigable as soon as its drive channel returns an id, before its
-  // first transcript record makes the Session discoverable to the Feed reader. Keep that
-  // expected gap loading; the failed Feed query already retries until the record arrives.
-  const isReconcilingSelection = pending?.stage === 'reconciling' && pending.id === selectedFeedId
-  const feedError = isReconcilingSelection || failedFeedReads <= 1 ? null : feed.error
+  const feedError = failedFeedReads <= 1 ? null : feed.error
 
   return {
-    roster: mergedRoster,
+    roster: rosterData,
     rosterError: roster.error,
     // A poll racing the transcript another live process is actively writing can fail once and
     // recover on the next, whether or not a prior read already landed: the first open of an

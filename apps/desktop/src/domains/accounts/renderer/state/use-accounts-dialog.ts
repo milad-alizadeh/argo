@@ -1,18 +1,28 @@
-import { create } from 'zustand'
+import { useCallback } from 'react'
+import { useSearchParams } from 'react-router'
 
-// The sidebar's Account control and the room's Connect and Reconnect actions open one dialog.
-// `opener` is the control that opened it, for focus to return to when it closes.
-type AccountsDialogState = {
-  open: boolean
-  opener: Element | null
-  setOpen: (open: boolean) => void
+const ACCOUNTS_PARAMETER = 'accounts'
+
+export function useAccountsDialog() {
+  const [search, setSearch] = useSearchParams()
+  const setOpen = useCallback(
+    (open: boolean) => {
+      setSearch(
+        (current) => {
+          const next = new URLSearchParams(current)
+          if (open) next.set(ACCOUNTS_PARAMETER, '1')
+          else next.delete(ACCOUNTS_PARAMETER)
+          return next
+        },
+        { replace: true },
+      )
+    },
+    [setSearch],
+  )
+  return { open: search.get(ACCOUNTS_PARAMETER) === '1', setOpen }
 }
 
-export const useAccountsDialog = create<AccountsDialogState>((set) => ({
-  open: false,
-  opener: null,
-  setOpen: (open) => set({ open }),
-}))
-
-export const openAccountsDialog = (): void =>
-  useAccountsDialog.setState({ open: true, opener: document.activeElement })
+export function useOpenAccountsDialog() {
+  const { setOpen } = useAccountsDialog()
+  return useCallback(() => setOpen(true), [setOpen])
+}

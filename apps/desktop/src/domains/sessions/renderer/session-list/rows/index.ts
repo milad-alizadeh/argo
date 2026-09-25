@@ -1,6 +1,5 @@
 export type { SessionListActions } from './session-list-actions'
 export { SessionListFilterMenu } from './session-list-filter-menu'
-export { useOrderedSessions } from './session-list-order'
 export { SessionListOutcome } from './session-list-outcome'
 export { sessionListRows, sessionName } from './session-list-rows'
 export { sessionListState } from './session-list-status-row'

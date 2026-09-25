@@ -13,9 +13,7 @@ export function SessionsSidebar() {
   const [cockpit] = useProjects()
   const projectRoot = cockpit.project?.path ?? null
   const archiveSelected = useArchiveSelected()
-  const sidebarActions = useSidebarActions({
-    projectPath: projectRoot,
-  })
+  const sidebarActions = useSidebarActions()
 
   const actions: SessionListActions = {
     onArchiveSelected: archiveSelected,

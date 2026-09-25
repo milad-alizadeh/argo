@@ -1,35 +1,26 @@
 import { useCallback } from 'react'
 
 import { attachmentKindOf, type SessionAttachmentInput } from '@/domains/sessions/api/attachments'
-import {
-  type ComposerAttachment,
-  EMPTY_COMPOSER_ATTACHMENTS,
-  useComposerStore,
-} from './use-composer-store'
+import type { ComposerAttachment } from '../editing/composer-editing'
+import { useComposerEditing } from '../editing/composer-editing-context'
 
-// A stable reference for "no attachments yet": the selector below must return the same array on
-// every call with no entry, or zustand's useSyncExternalStore snapshot never settles (#1845).
-export function useComposerAttachments(sessionId: string) {
-  const attachments = useComposerStore(
-    ({ attachments }) => attachments[sessionId] ?? EMPTY_COMPOSER_ATTACHMENTS,
-  )
-  const markAttachmentsError = useComposerStore(({ markAttachmentsError }) => markAttachmentsError)
-  const removeAttachments = useComposerStore(({ removeAttachments }) => removeAttachments)
+export function useComposerAttachments() {
+  const { editing, dispatch } = useComposerEditing()
   return {
-    attachments,
+    attachments: editing.attachments,
     markError: useCallback(
-      (ids: string[]) => markAttachmentsError(sessionId, ids),
-      [sessionId, markAttachmentsError],
+      (ids: string[]) => dispatch({ type: 'attachments.failed', ids }),
+      [dispatch],
     ),
     clear: useCallback(
-      (ids: string[]) => removeAttachments(sessionId, ids),
-      [sessionId, removeAttachments],
+      (ids: string[]) => dispatch({ type: 'attachments.removed', ids }),
+      [dispatch],
     ),
   }
 }
 
 // The chooser and drag-and-drop are the two ways a file joins the strip (#1845 gap-decision);
-// both just hand paths to the store.
+// both hand paths to the active composer edit.
 export function useAttachmentTransfer(attach: (paths: string[]) => void) {
   return {
     attachFiles: useCallback(async () => {

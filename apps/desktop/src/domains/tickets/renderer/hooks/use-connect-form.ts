@@ -3,7 +3,7 @@
 import type { UseQueryResult } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { AccountSummary } from '@/domains/accounts/contract/contract'
-import { openAccountsDialog } from '@/domains/accounts/renderer'
+import { useOpenAccountsDialog } from '@/domains/accounts/renderer'
 import type { TicketScope } from '@/domains/tickets/contract/contract'
 import { useContractText } from '@/platform/renderer/i18n/contract-text'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
@@ -37,6 +37,7 @@ export function useConnectForm(
   accounts: readonly AccountSummary[] | undefined,
   open: boolean,
 ): ConnectForm {
+  const openAccountsDialog = useOpenAccountsDialog()
   const [picked, setPicked] = useState<string | null>(null)
   const accountId = chosenAccount(accounts, picked)
   const sources = useSources(projectId, open ? accountId : null)

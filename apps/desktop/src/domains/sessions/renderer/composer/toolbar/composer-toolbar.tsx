@@ -4,7 +4,7 @@ import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 import type { HarnessControl } from '../../harness/harnesses'
-import { EMPTY_COMPOSER_ATTACHMENTS, useComposerStore } from '../hooks/use-composer-store'
+import { useComposerEditing } from '../editing/composer-editing-context'
 import { ModeMenu } from './mode-menu'
 import {
   type CatalogFailure,
@@ -30,7 +30,6 @@ function AddContextButton({ onOpen }: { onOpen: () => void }) {
 }
 
 export function ComposerToolbar({
-  sessionId,
   disabled = false,
   sendAvailable = true,
   onOpenContextPicker,
@@ -43,7 +42,6 @@ export function ComposerToolbar({
   onInterrupt,
   interruptRef,
 }: {
-  sessionId: string
   disabled?: boolean
   sendAvailable?: boolean
   onOpenContextPicker: () => void
@@ -57,10 +55,8 @@ export function ComposerToolbar({
   interruptRef: Parameters<typeof Button>[0]['ref']
 }) {
   const { t } = useTranslation('sessions')
-  const draft = useComposerStore(({ drafts }) => drafts[sessionId] ?? '')
-  const attachments = useComposerStore(
-    ({ attachments }) => attachments[sessionId] ?? EMPTY_COMPOSER_ATTACHMENTS,
-  )
+  const { editing } = useComposerEditing()
+  const { prompt: draft, attachments } = editing
   const [isInterrupting, setInterrupting] = useState(false)
   return (
     <div className="flex items-center gap-1 p-(--spacing-shell-item) @[36rem]:gap-2">

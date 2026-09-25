@@ -5,7 +5,6 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { queryClient } from '@/platform/renderer/trpc-client'
 import { sessionRosterRow, sessionSubagent } from '../../session-fixtures'
 import type { SessionError, SessionId, SessionsListed } from '../../types'
-import { useSessionListWindowStore } from '../hooks'
 import { SessionList, type SessionListActions } from '../session-list/session-list'
 
 const session = sessionRosterRow({
@@ -133,11 +132,8 @@ const meta = {
       </MemoryRouter>
     ),
   ],
-  // The sessionList's paging window and remembered order live in one store shared by every mount
-  // (#2277's fix for the poll racing the reader's own growth), so a story that grows it must not
-  // leave that window for the next story to inherit.
+  // Each story installs a fresh Session-list host and query result.
   beforeEach: () => {
-    useSessionListWindowStore.setState({ cursors: {}, orders: {} })
     return withSessionListHost(async () => listedReply(listed))
   },
   args: {

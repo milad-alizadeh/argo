@@ -5,7 +5,6 @@ import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/renderer/model/models'
 import type { SessionShellOutput } from '@/domains/sessions/renderer/work/types'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { useComposerStore } from '../composer/hooks'
 import { ComposerForm } from '../composer/layout/composer-form'
 import { RICH_MARKDOWN } from '../feed/content/feed-samples'
 import { INACTIVE_FEED_LIVE_FACTS } from '../feed/document/feed-live-facts'
@@ -596,9 +595,6 @@ const meta = {
       </div>
     ),
   ],
-  beforeEach: () => {
-    useComposerStore.setState(useComposerStore.getInitialState())
-  },
 } satisfies Meta<typeof SessionScreenView>
 
 export default meta

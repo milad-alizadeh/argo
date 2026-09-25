@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { MemoryRouter } from 'react-router'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { backlog, connection } from '../detail/ticket-fixtures'
-import { useTicketSearch } from '../state/use-ticket-search'
 import { ticketWorkPath } from './ticket-work-path'
 import { TicketsSidebarContent, type TicketsSidebarContentProps } from './tickets-sidebar'
 
@@ -11,13 +11,13 @@ const meta = {
   parameters: { layout: 'fullscreen' },
   decorators: [
     (Story) => (
-      <div className="h-dvh w-64">
-        <Story />
-      </div>
+      <MemoryRouter>
+        <div className="h-dvh w-64">
+          <Story />
+        </div>
+      </MemoryRouter>
     ),
   ],
-  // The search store outlives a story, so each starts with the field closed.
-  beforeEach: () => useTicketSearch.setState({ open: false, query: '' }),
   args: {
     connection: connection('github'),
     notice: null,
@@ -60,11 +60,12 @@ export const Connected: Story = {
     const field = canvas.getByRole('textbox', { name: 'Search Tickets' })
     await expect(field).toHaveFocus()
     await userEvent.type(field, 'crash')
-    await expect(useTicketSearch.getState().query).toBe('crash')
+    await expect(field).toHaveValue('crash')
     // Closing the field ends the search, so no hidden query filters the backlog.
     await userEvent.keyboard('{Escape}')
     await expect(canvas.queryByRole('textbox', { name: 'Search Tickets' })).toBeNull()
-    await expect(useTicketSearch.getState().query).toBe('')
+    await userEvent.click(canvas.getByRole('button', { name: 'Find a Ticket' }))
+    await expect(canvas.getByRole('textbox', { name: 'Search Tickets' })).toHaveValue('')
     await userEvent.click(canvas.getByRole('button', { name: 'GitHub · octocat Connected' }))
     await expect(args.onManageAccounts).toHaveBeenCalled()
   },

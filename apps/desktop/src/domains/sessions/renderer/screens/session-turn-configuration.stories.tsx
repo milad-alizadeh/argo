@@ -4,7 +4,6 @@ import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionTurnConfiguration } from '@/domains/sessions/renderer/model/models'
 import { claudeComposerModelCatalogFixture } from '../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
-import { useComposerStore } from '../composer'
 import { sessionRosterRow } from '../session-fixtures'
 import { SessionScreenView } from './session-screen-view'
 
@@ -72,9 +71,6 @@ const meta = {
   title: 'Sessions/Screen/Turn Configuration',
   component: SessionScreenView,
   parameters: { layout: 'fullscreen' },
-  beforeEach: () => {
-    useComposerStore.setState(useComposerStore.getInitialState())
-  },
   decorators: [
     (Story, { parameters }) => (
       <div className="h-dvh w-full">

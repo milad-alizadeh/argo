@@ -2,9 +2,9 @@ import type { LexicalEditor } from 'lexical'
 import { type RefObject, useCallback } from 'react'
 
 import type { SessionAttachmentInput } from '@/domains/sessions/api/attachments'
+import type { ComposerAttachment } from '../editing/composer-editing'
 import type { TurnConfiguration } from '../turn-configuration/turn-configuration'
 import { resolveAttachments } from './use-composer-attachments'
-import type { ComposerAttachment } from './use-composer-store'
 
 export type SendOutcome = 'accepted' | 'rejected' | 'uncertain'
 export type Send = (

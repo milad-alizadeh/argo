@@ -9,7 +9,7 @@ import {
 } from 'lexical'
 import type { RefObject } from 'react'
 import { useEffect, useState } from 'react'
-import type { ComposerTicketContext } from '../../store/composer-ticket-context'
+import type { ComposerTicketContext } from '../../editing/composer-editing'
 import { activeReference } from '../composer-reference-menu'
 import { $createComposerTicketReferenceNode } from '../composer-ticket-reference-node'
 import { ContextPicker } from './context-picker'

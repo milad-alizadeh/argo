@@ -1,12 +1,11 @@
 import { expect, test } from 'bun:test'
+import { claudeChoices } from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
 import {
-  claudeChoices,
-  codexChoices,
-} from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
-import { configurationFromReading, supportedConfiguration } from './turn-configuration'
-import { resolvedTurnConfiguration } from './use-turn-configuration'
+  configurationFromReading,
+  initialTurnConfiguration,
+  supportedConfiguration,
+} from './turn-configuration'
 
-const requested = { model: 'opus', effort: 'max', mode: 'bypassPermissions' }
 const CLAUDE_TURN_CONFIGURATION = claudeChoices({
   supportedPermissionModes: [
     'manual',
@@ -64,72 +63,6 @@ test('keeps the opening choice for what the transcript has not stated or Argo do
   ).toEqual(CLAUDE_TURN_CONFIGURATION.opening)
 })
 
-test('replaces an explicit model and effort removed by a live catalog refresh', () => {
-  const identity = { kind: 'draft', projectId: 'project-1' } as const
-  const choices = codexChoices({
-    data: [
-      {
-        id: 'gpt-current',
-        model: 'gpt-current',
-        displayName: 'Current model',
-        description: '',
-        defaultReasoningEffort: 'low',
-        isDefault: true,
-        hidden: false,
-        supportedReasoningEfforts: [{ reasoningEffort: 'low', description: 'Low' }],
-      },
-    ],
-    nextCursor: null,
-  })
-  const next = resolvedTurnConfiguration(choices, {
-    identity,
-    chosen: new Map([
-      ['new:project-1', { model: 'retired-model', effort: 'max', mode: 'workspace-write' }],
-    ]),
-    rows: [],
-    remembered: {},
-  })
-  expect(next).toEqual(choices.opening)
-})
-
-test('keeps a valid Model and uses its own Effort when a remembered Effort disappears', () => {
-  const choices = claudeChoices({
-    supportedPermissionModes: ['manual'],
-    data: [
-      {
-        value: 'opening',
-        displayName: 'Opening',
-        description: '',
-        supportedEffortLevels: ['medium'],
-      },
-      {
-        value: 'retained',
-        displayName: 'Retained',
-        description: '',
-        supportedEffortLevels: ['high'],
-      },
-    ],
-  })
-  if (choices === null) throw new Error('The test catalog has no choices.')
-  const identity = { kind: 'draft', projectId: 'project-1' } as const
-  expect(choices.opening.effort).toBe('medium')
-  expect(
-    resolvedTurnConfiguration(choices, {
-      identity,
-      chosen: new Map(),
-      rows: [],
-      remembered: { model: 'retained', effort: 'retired' },
-    }),
-  ).toEqual({ model: 'retained', effort: 'high', mode: 'manual' })
-  expect(
-    configurationFromReading(choices, {
-      model: 'retained',
-      effort: 'retired',
-      mode: 'manual',
-    }),
-  ).toEqual({ model: 'retained', effort: 'high', mode: 'manual' })
-})
-
 test('keeps each restored choice Argo still offers and replaces the rest', () => {
   expect(
     supportedConfiguration(
@@ -140,37 +73,17 @@ test('keeps each restored choice Argo still offers and replaces the rest', () =>
   ).toEqual({ model: 'sonnet', effort: 'xhigh', mode: 'plan' })
 })
 
-test('resolves a draft to an explicit choice, then the remembered Model and Effort, then the opening turnConfiguration', () => {
+test('starts a new draft from the catalog opening Turn configuration', () => {
   const identity = { kind: 'draft', projectId: 'project-1' } as const
   expect(
-    resolvedTurnConfiguration(CLAUDE_TURN_CONFIGURATION, {
+    initialTurnConfiguration(CLAUDE_TURN_CONFIGURATION, {
       identity,
-      chosen: new Map(),
       rows: [],
-      remembered: {},
     }),
   ).toEqual(CLAUDE_TURN_CONFIGURATION.opening)
-  expect(
-    resolvedTurnConfiguration(CLAUDE_TURN_CONFIGURATION, {
-      identity,
-      chosen: new Map(),
-      rows: [],
-      remembered: { model: 'sonnet', effort: 'xhigh' },
-    }),
-  ).toEqual({ ...CLAUDE_TURN_CONFIGURATION.opening, model: 'sonnet', effort: 'xhigh' })
-  const chosen = new Map([['new:project-1', requested]])
-  expect(
-    resolvedTurnConfiguration(CLAUDE_TURN_CONFIGURATION, {
-      identity,
-      chosen,
-      rows: [],
-      remembered: {},
-    }),
-  ).toEqual(requested)
 })
 
-test('carries a draft choice into the Session it started, and reads the roster once it has none', () => {
-  const chosen = new Map([['new:project-1', requested]])
+test('starts a Session draft from its persisted roster configuration', () => {
   const identity = { kind: 'session', sessionId: 'session-1' } as const
   const rows = [
     {
@@ -178,21 +91,16 @@ test('carries a draft choice into the Session it started, and reads the roster o
       turnConfiguration: { model: 'claude-opus-5', effort: 'max', mode: 'bypassPermissions' },
     },
   ]
-  // The draft's own choice is keyed to the draft, so a fresh Session starts from the roster.
   expect(
-    resolvedTurnConfiguration(CLAUDE_TURN_CONFIGURATION, {
+    initialTurnConfiguration(CLAUDE_TURN_CONFIGURATION, {
       identity,
-      chosen,
       rows,
-      remembered: {},
     }),
-  ).toEqual(requested)
+  ).toEqual({ model: 'opus', effort: 'max', mode: 'bypassPermissions' })
   expect(
-    resolvedTurnConfiguration(CLAUDE_TURN_CONFIGURATION, {
+    initialTurnConfiguration(CLAUDE_TURN_CONFIGURATION, {
       identity,
-      chosen,
       rows: [],
-      remembered: {},
     }),
   ).toEqual(CLAUDE_TURN_CONFIGURATION.opening)
 })

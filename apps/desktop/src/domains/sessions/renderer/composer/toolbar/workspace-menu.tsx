@@ -20,11 +20,7 @@ export type WorkspaceMenuControlProps = {
 
 // The composer's cwd choice: the main checkout or an imported Workspace (#2600). Shown
 // only while a Session has not started, since a Session's Workspace is fixed at `session.start`.
-export function WorkspaceMenu({
-  workspaces,
-  workspace,
-  onSelect,
-}: WorkspaceMenuControlProps) {
+export function WorkspaceMenu({ workspaces, workspace, onSelect }: WorkspaceMenuControlProps) {
   const { t } = useTranslation('sessions')
   const label = workspace?.displayName ?? t('composer.workspace.choose')
   return (

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import type { WorkspaceSummary } from '@/domains/workspaces/renderer'
 import { WorkspaceMenu } from './workspace-menu'
 
@@ -57,13 +57,9 @@ export const WorkspacePicker: Story = {
       within(menu)
         .getAllByRole('menuitemradio')
         .map((item) => item.textContent),
-    ).toEqual([
-      'argomain',
-      'linked-featurefeature/linked',
-    ])
+    ).toEqual(['argomain', 'linked-featurefeature/linked'])
 
     await userEvent.click(within(menu).getByRole('menuitemradio', { name: /linked-feature/ }))
     await waitFor(() => expect(page().queryByRole('menu')).toBeNull())
-
   },
 }

@@ -1,6 +1,7 @@
 import { $convertFromMarkdownString, TRANSFORMERS } from '@lexical/markdown'
 import { $createParagraphNode, $getRoot, type LexicalEditor } from 'lexical'
 import { type RefObject, useCallback, useRef } from 'react'
+import { useComposerEditing } from '../editing/composer-editing-context'
 import type { TurnConfigurationControlProps } from '../toolbar/turn-configuration-menu'
 import { usePendingTurns } from '../tray/use-pending-turns'
 import {
@@ -8,7 +9,6 @@ import {
   type TurnConfiguration,
 } from '../turn-configuration/turn-configuration'
 import { useComposerAttachments } from './use-composer-attachments'
-import { useComposerStore } from './use-composer-store'
 import { type Send, useSend } from './use-send'
 
 // Narrow the queued Turn Configuration to the choices that remain available.
@@ -22,26 +22,26 @@ function turnConfigurationOf(
     : supportedConfiguration(control.choices, queued, control.value)
 }
 
-function useComposerDraft(sessionId: string, editorRef: RefObject<LexicalEditor | null>) {
-  const draft = useComposerStore(({ drafts }) => drafts[sessionId] ?? '')
-  const setDraft = useComposerStore(({ setDraft }) => setDraft)
+function useComposerDraft(editorRef: RefObject<LexicalEditor | null>) {
+  const { editing, dispatch } = useComposerEditing()
+  const draft = editing.prompt
   const clearDraft = useCallback(
     (editor = editorRef.current) => {
       // Selecting the fresh paragraph matters: without it, the next keystroke finds no
       // selection to type into and Lexical opens a second paragraph instead, so the composer's
       // next Send carries a leading blank line (#e2e-real-cheap-models).
       editor?.update(() => $getRoot().clear().append($createParagraphNode()).selectEnd())
-      setDraft(sessionId, '')
+      dispatch({ type: 'prompt.changed', prompt: '' })
     },
-    [editorRef, sessionId, setDraft],
+    [dispatch, editorRef],
   )
   const restoreDraft = useCallback(
     (text: string, editor = editorRef.current) => {
-      if ((useComposerStore.getState().drafts[sessionId] ?? '') !== '') return
+      if (editing.prompt !== '') return
       editor?.update(() => $convertFromMarkdownString(text, TRANSFORMERS))
-      setDraft(sessionId, text)
+      dispatch({ type: 'prompt.changed', prompt: text })
     },
-    [editorRef, sessionId, setDraft],
+    [dispatch, editing.prompt, editorRef],
   )
   return { clearDraft, draft, restoreDraft }
 }
@@ -49,17 +49,15 @@ function useComposerDraft(sessionId: string, editorRef: RefObject<LexicalEditor 
 export function useSessionComposerState({
   isRunning,
   onSend,
-  sessionId,
   turnConfiguration,
 }: {
   isRunning: boolean
   onSend?: Send
-  sessionId: string
   turnConfiguration: TurnConfigurationControlProps | null
 }) {
   const editorRef = useRef<LexicalEditor>(null)
-  const { clearDraft, draft, restoreDraft } = useComposerDraft(sessionId, editorRef)
-  const { attachments, markError, clear } = useComposerAttachments(sessionId)
+  const { clearDraft, draft, restoreDraft } = useComposerDraft(editorRef)
+  const { attachments, markError, clear } = useComposerAttachments()
   const sendPendingTurn: Send = useCallback(
     (text, queuedConfiguration, pendingAttachments) =>
       onSend?.(
@@ -69,7 +67,7 @@ export function useSessionComposerState({
       ) ?? Promise.resolve(false),
     [onSend, turnConfiguration],
   )
-  const { addPendingTurn } = usePendingTurns({ isRunning, onSend: sendPendingTurn, sessionId })
+  const { addPendingTurn } = usePendingTurns({ isRunning, onSend: sendPendingTurn })
   const send = useSend({
     addPendingTurn,
     attachments,

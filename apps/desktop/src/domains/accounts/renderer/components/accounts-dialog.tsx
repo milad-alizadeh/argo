@@ -109,15 +109,14 @@ function signedIn(reply: AccountConnected | null): SignedIn | null {
 
 // A sign-in replaces the room's Connect control that opened the dialog, so closing lands on the
 // room's first control instead of the body.
-function returnFocus(opener: Element | null): HTMLElement | true {
-  if (opener?.isConnected) return true
+function returnFocus(): HTMLElement | true {
   return firstControl(document.querySelector('main')) ?? true
 }
 
 // Closing the dialog abandons a sign-in in progress, so no code outlives the screen that showed it.
 export function AccountsDialog({ connect }: { connect?: ReactNode }) {
   const { t } = useTranslation('accounts')
-  const { open, opener, setOpen } = useAccountsDialog()
+  const { open, setOpen } = useAccountsDialog()
   const accounts = useAccounts()
   const harnesses = useHarnessReadiness()
   const { connected, ...signIn } = useSignIn()
@@ -140,7 +139,7 @@ export function AccountsDialog({ connect }: { connect?: ReactNode }) {
   }, [connect, setOpen])
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent className="sm:max-w-md" finalFocus={() => returnFocus(opener)}>
+      <DialogContent className="sm:max-w-md" finalFocus={returnFocus}>
         <DialogHeader>
           <DialogTitle>{t('dialog.title')}</DialogTitle>
           <DialogDescription>{t('dialog.description')}</DialogDescription>

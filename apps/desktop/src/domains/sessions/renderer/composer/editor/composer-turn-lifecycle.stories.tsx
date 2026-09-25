@@ -5,7 +5,6 @@ import { Button } from '@/platform/renderer/components/ui/button'
 import { claudeComposerModelCatalogFixture } from '../../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
 import { claudeChoices } from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
 import type { SessionHarness } from '../../harness/harnesses'
-import { useComposerStore } from '../hooks'
 import { ComposerForm, type ComposerFormProps } from '../layout/composer-form'
 import type { TurnConfigurationChoices } from '../turn-configuration/turn-configuration'
 import { configurationFromReading } from '../turn-configuration/turn-configuration'
@@ -205,10 +204,6 @@ const meta = {
       </div>
     ),
   ],
-  // Drafts outlive a story like they outlive a page, so each story starts from none.
-  beforeEach: () => {
-    useComposerStore.setState(useComposerStore.getInitialState())
-  },
 } satisfies Meta<typeof LiveComposerStory>
 
 export default meta
