@@ -35,20 +35,20 @@ function SessionIdentity({ session }: { session: SessionShellProps['session'] })
       <h1 className="min-w-0 flex-1 truncate type-heading">
         <SessionTitle session={session} text={sessionName(session, t('newSession'))} />
       </h1>
-      <div className="hidden min-w-0 items-center gap-(--spacing-shell-section) type-meta text-muted-foreground @lg:flex">
+      <div className="flex min-w-0 shrink items-center gap-(--spacing-shell-section) type-meta text-muted-foreground">
         <p
           data-component="SessionIdMetadata"
-          className="flex min-w-0 items-center gap-(--spacing-shell-tight)"
+          className="flex min-w-0 max-w-40 items-center gap-(--spacing-shell-tight)"
         >
           <Icon name="session" size="meta" />
-          <span>{t('identity.sessionId')}</span>
-          <code className="max-w-64 truncate font-mono text-foreground">{session.id}</code>
+          <span className="shrink-0">{t('identity.sessionId')}</span>
+          <code className="min-w-0 truncate font-mono text-foreground">{session.id}</code>
         </p>
         {worktree ? (
-          <p className="flex min-w-0 items-center gap-(--spacing-shell-tight)">
+          <p className="flex min-w-0 max-w-48 items-center gap-(--spacing-shell-tight)">
             <Icon name="worktree" className="size-(--size-icon-inline) shrink-0" />
-            <span>{t('identity.worktree')}</span>
-            <span className="truncate">{worktree}</span>
+            <span className="shrink-0">{t('identity.worktree')}</span>
+            <span className="min-w-0 truncate">{worktree}</span>
           </p>
         ) : null}
       </div>
