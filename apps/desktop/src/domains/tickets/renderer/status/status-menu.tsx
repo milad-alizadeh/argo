@@ -18,14 +18,27 @@ export type StatusMenuProps = {
   noun: SourcePresentation['statusNoun']
   // The Detail writes the name beside the icon; a row draws the icon alone.
   named: boolean
+  metadata?: boolean
   onChange: (status: TicketStatus) => void
 }
 
 // Pulls the named trigger's icon onto the value column: the xs button's px-2 plus its 1px border.
 const NAMED_INSET = '-ml-[calc(--spacing(2)+var(--size-border))]'
+const METADATA_NAMED_INSET = '@[46rem]:-ml-[calc(--spacing(2)+var(--size-border))]'
+const namedInset = (named: boolean, metadata: boolean) => {
+  if (!named) return ''
+  return metadata ? METADATA_NAMED_INSET : NAMED_INSET
+}
 
 // A Ticket's status as a menu of every status its provider offers.
-export function StatusMenu({ status, statuses, noun, named, onChange }: StatusMenuProps) {
+export function StatusMenu({
+  status,
+  statuses,
+  noun,
+  named,
+  metadata = false,
+  onChange,
+}: StatusMenuProps) {
   const { t } = useTranslation('tickets')
   if (statuses.length === 0) return <StatusMark named={named} status={status} />
   const choose = (id: unknown) => {
@@ -38,7 +51,7 @@ export function StatusMenu({ status, statuses, noun, named, onChange }: StatusMe
         aria-label={t('status.trigger', { noun, status: status.name })}
         render={
           <Button
-            className={`relative z-10 shrink-0 type-meta text-muted-foreground ${named ? NAMED_INSET : ''}`}
+            className={`relative z-10 shrink-0 type-meta ${metadata ? 'rounded-full border-border/60 bg-background text-foreground shadow-xs @[46rem]:border-transparent @[46rem]:bg-transparent @[46rem]:text-muted-foreground @[46rem]:shadow-none' : 'text-muted-foreground'} ${namedInset(named, metadata)}`}
             size={named ? 'xs' : 'icon-xs'}
             variant="ghost"
           />

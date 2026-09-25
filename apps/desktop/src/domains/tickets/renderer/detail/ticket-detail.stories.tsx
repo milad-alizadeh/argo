@@ -33,39 +33,37 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof TicketDetail>
 
+async function openRelation(article: HTMLElement, canvasElement: HTMLElement, name: string) {
+  await userEvent.click(within(article).getByRole('button', { name }))
+  return within(canvasElement.ownerDocument.body).findByRole('dialog')
+}
+
 export const Default: Story = {
   args: { ticket: wayfinder },
   play: async ({ args, canvasElement }) => {
     const article = within(canvasElement).getByRole('article', { name: 'Ticket #607' })
-    // A linked Ticket's state is an icon, and its word stays in the text.
-    const children = within(article).getByRole('region', { name: 'Children · 1 of 2 closed' })
-    await expect(
-      within(children)
-        .getByRole('heading', { name: 'Children · 1 of 2 closed' })
-        .querySelector('svg'),
-    ).not.toBeNull()
-    const dependencies = within(article).getByRole('region', { name: 'Blocked by · 2' })
-    const blockedIcon = within(dependencies)
-      .getByRole('heading', { name: 'Blocked by · 2' })
-      .querySelector('svg')
-    if (blockedIcon === null) throw new Error('Blocked by needs a blocked mark.')
-    await expect(blockedIcon).toHaveClass('text-danger')
+    // Compact metadata keeps the full relationship rows in an accessible popover.
+    const children = await openRelation(article, canvasElement, '2 children')
     await expect(children).toHaveTextContent('ClosedTicket read path#388')
     await expect(within(children).queryByRole('button', { name: /#388$/ })).toBeNull()
     await userEvent.click(within(children).getByRole('button', { name: /#609$/ }))
     await expect(args.onSelect).toHaveBeenCalledWith('#609')
+    await userEvent.keyboard('{Escape}')
+    const blockedTrigger = within(article).getByRole('button', { name: '2 blockers' })
+    const blockedIcon = blockedTrigger.querySelector('svg')
+    if (blockedIcon === null) throw new Error('Blocked by needs a blocked mark.')
+    await expect(blockedIcon).toHaveClass('text-danger')
+    const dependencies = await openRelation(article, canvasElement, '2 blockers')
+    await expect(dependencies).toHaveTextContent('ClosedAn old blocker#12')
     const ticketLink = within(article).getByRole('link', { name: 'Open #607 in GitHub' })
     await expect(ticketLink).toHaveAttribute(
       'href',
       'https://github.com/octocat/hello-world/issues/607',
     )
     await expect(ticketLink).not.toHaveClass('group/button')
-    const title = within(article).getByRole('heading', { name: wayfinder.title })
-    const linkBounds = ticketLink.getBoundingClientRect()
-    const titleBounds = title.getBoundingClientRect()
-    await expect(linkBounds.top).toBeGreaterThanOrEqual(titleBounds.bottom)
-    await expect(Math.abs(linkBounds.left - titleBounds.left)).toBeLessThanOrEqual(1)
-    await expect(linkBounds.width).toBeLessThan(titleBounds.width)
+    const metadata = within(article).getByRole('complementary', { name: 'Ticket metadata' })
+    await expect(metadata.querySelector('time')).toHaveAttribute('datetime', wayfinder.createdAt)
+    await expect(metadata).toHaveTextContent('0 Sessions')
     // GitHub keeps no priority, and names its status the Ticket's state.
     await expect(within(article).queryByText('Status')).toBeNull()
     await expect(within(article).queryByText('Priority')).toBeNull()
@@ -100,15 +98,14 @@ export const Linear: Story = {
     const article = within(canvasElement).getByRole('article', { name: 'Ticket ENG-12' })
     const properties = within(article).getByText('Status').closest('dl')
     await expect(properties).toHaveTextContent('StatusIn Review')
+    await expect(properties).toHaveTextContent('StateOpen')
     await expect(properties).toHaveTextContent('PriorityHigh')
-    await expect(within(article).queryByText('State')).toBeNull()
     await expect(within(article).getByRole('button', { name: 'Status: In Review' })).toBeVisible()
     await expect(
       within(article).getByRole('link', { name: 'Open ENG-12 in Linear' }),
     ).toHaveAttribute('href', 'https://linear.app/analytical/issue/ENG-12')
-    await expect(within(article).getByRole('region', { name: 'Blocked by · 1' })).toHaveTextContent(
-      'ClosedStore the refresh tokenENG-9',
-    )
+    const blockers = await openRelation(article, canvasElement, '1 blocker')
+    await expect(blockers).toHaveTextContent('ClosedStore the refresh tokenENG-9')
   },
 }
 

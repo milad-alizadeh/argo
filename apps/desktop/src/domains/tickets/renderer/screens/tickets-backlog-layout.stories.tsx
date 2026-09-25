@@ -157,10 +157,41 @@ async function expectFixedDetailChrome(canvasElement: HTMLElement) {
   await expect(getComputedStyle(detailScroll).overflowY).toBe('auto')
 }
 
+async function ensureSidebarOpen(canvas: ReturnType<typeof within>) {
+  const opener = canvas.queryByRole('button', { name: 'Open sidebar' })
+  if (opener) await userEvent.click(opener)
+}
+
+async function expectTicketMetadata(canvas: ReturnType<typeof within>) {
+  const sourceLink = canvas.getByRole('link', { name: 'Open #801 in GitHub' })
+  const properties = canvas.getByText('State').closest('dl')
+  if (properties === null) throw new Error('The Ticket metadata is absent.')
+  await expect(properties.contains(sourceLink)).toBe(true)
+  const metadata = canvas.getByRole('complementary', { name: 'Ticket metadata' })
+  const rail = within(metadata)
+  await expect(getComputedStyle(metadata).flexDirection).toBe('column')
+  await expect(rail.getByRole('heading', { name: 'Properties' })).toBeVisible()
+  await expect(rail.getByRole('heading', { name: 'Labels' })).toBeVisible()
+  await expect(rail.getByRole('heading', { name: 'Relations' })).toBeVisible()
+  await expect(rail.getAllByText('Created').length).toBeGreaterThan(0)
+  await expect(metadata.querySelector('time')).toHaveAttribute('datetime', architecture.createdAt)
+  await expect(metadata).toHaveTextContent('Children · 0 of 2 closed')
+  await expect(metadata).toHaveTextContent('Blocked by · 2')
+  await expect(metadata).toHaveTextContent('Sessions0')
+  const [child] = architecture.children
+  if (!child) throw new Error('The fixture needs a child Ticket.')
+  const relationTitle = rail.getByTitle(child.title)
+  await expect(getComputedStyle(relationTitle).textOverflow).toBe('ellipsis')
+  await expect(getComputedStyle(relationTitle).whiteSpace).toBe('nowrap')
+  const labelBadge = rail.getByText('desktop-layout')
+  await expect(labelBadge.parentElement?.closest('[data-slot="badge"]')).toBeNull()
+}
+
 export const NestedLongTitles: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const sidebarElement = canvas.getByRole('complementary', { name: 'Tickets sidebar' })
+    await ensureSidebarOpen(canvas)
+    const sidebarElement = await canvas.findByRole('complementary', { name: 'Tickets sidebar' })
     const sidebar = within(sidebarElement)
     const backlogRegion = within(sidebar.getByRole('region', { name: 'Backlog' }))
     const rows = backlogRegion.getAllByRole('button', { name: /^#\d+/ })
@@ -179,19 +210,25 @@ export const NestedLongTitles: Story = {
     await expect(backlogRegion.queryByText('needs-triage')).toBeNull()
     await expect(sidebarElement.scrollWidth).toBeLessThanOrEqual(sidebarElement.clientWidth)
     await expect(canvas.getByRole('heading', { name: architecture.title })).toBeVisible()
+    const sidebarTitle = sidebar.getByRole('heading', { name: 'Tickets' })
     const properties = canvas.getByText('State').closest('dl')
     if (properties === null) throw new Error('The Ticket detail needs its properties.')
     const detailTitle = canvas.getByRole('heading', { name: architecture.title })
+    await expect(
+      Math.abs(sidebarTitle.getBoundingClientRect().top - detailTitle.getBoundingClientRect().top),
+    ).toBeLessThanOrEqual(1)
+    const detailHeader = detailTitle.closest('header')
+    if (detailHeader === null) throw new Error('The Ticket title needs a header.')
+    await expect(getComputedStyle(detailHeader).borderBottomWidth).toBe('0px')
     await expectFixedDetailChrome(canvasElement)
     const detailLineHeight = Number.parseFloat(getComputedStyle(detailTitle).lineHeight)
     await expect(detailTitle.clientHeight).toBeLessThanOrEqual(detailLineHeight * 2 + 1)
-    const sourceLink = canvas.getByRole('link', { name: 'Open #801 in GitHub' })
-    const metadata = canvas.getByText('State').closest('dl')
-    if (metadata === null) throw new Error('The Ticket metadata is absent.')
-    await expect(metadata.contains(sourceLink)).toBe(true)
-    await expect(properties.getBoundingClientRect().left).toBeGreaterThan(
-      detailTitle.getBoundingClientRect().right,
-    )
+    await expectTicketMetadata(canvas)
+    const propertyBounds = properties.getBoundingClientRect()
+    const titleBounds = detailTitle.getBoundingClientRect()
+    await expect(
+      propertyBounds.left > titleBounds.right || propertyBounds.top > titleBounds.bottom,
+    ).toBe(true)
     expectAlignedRowControls(backlogRegion)
     await expectCollapsedToggleClearsTitle(canvas, detailTitle)
     await expect(rows[1]).toHaveAccessibleName(/child of #801$/)
@@ -206,11 +243,12 @@ export const NarrowDetail: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const title = canvas.getByRole('heading', { name: architecture.title })
-    const properties = canvas.getByText('State').closest('dl')
-    if (properties === null) throw new Error('The Ticket detail needs its properties.')
-    await expect(properties.getBoundingClientRect().top).toBeGreaterThan(
+    const metadata = canvas.getByRole('complementary', { name: 'Ticket metadata' })
+    await expect(metadata.getBoundingClientRect().top).toBeGreaterThan(
       title.getBoundingClientRect().bottom,
     )
-    await expect(properties.scrollWidth).toBeLessThanOrEqual(properties.clientWidth)
+    await expect(metadata.scrollWidth).toBeLessThanOrEqual(metadata.clientWidth)
+    await expect(within(metadata).getByRole('button', { name: '2 children' })).toBeVisible()
+    await expect(within(metadata).getByRole('button', { name: '2 blockers' })).toBeVisible()
   },
 }

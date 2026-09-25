@@ -28,6 +28,8 @@
   },
   "detail": {
     "ticket": "Ticket",
+    "metadata": "Ticket metadata",
+    "properties": "Properties",
     "empty": {
       "title": "Select a Ticket",
       "description": "Its description, children and blockers show here."
@@ -38,7 +40,17 @@
     },
     "priority": "Priority",
     "type": "Type",
+    "created": "Created",
     "labels": "Labels",
+    "relations": "Relations",
+    "linkedSessions": "Sessions",
+    "childrenCompact_one": "{{count}} child",
+    "childrenCompact_other": "{{count}} children",
+    "blockedByCompact_one": "{{count}} blocker",
+    "blockedByCompact_other": "{{count}} blockers",
+    "sessionsCompact_one": "{{count}} Session",
+    "sessionsCompact_other": "{{count}} Sessions",
+    "dependenciesUnavailable": "Dependencies unavailable",
     "noDescription": "No description.",
     "blockedBy": "Blocked by",
     "blockedByCount": "Blocked by · {{count}}",
