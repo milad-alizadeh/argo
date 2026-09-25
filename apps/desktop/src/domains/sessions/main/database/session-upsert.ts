@@ -6,7 +6,7 @@ export type SessionUpsertInput = {
   nativeId: string
   projectId?: string | null
   customTitle?: string | null
-  vendorPreview?: string | null
+  preview?: string | null
   firstPrompt?: string | null
   cwd?: string | null
 }
@@ -34,7 +34,7 @@ export function createSessionUpsert(database: DurableDatabase): SessionUpsert {
         nativeId: input.nativeId,
         projectId: input.projectId ?? null,
         customTitle: input.customTitle ?? null,
-        vendorPreview: input.vendorPreview ?? null,
+        preview: input.preview ?? null,
         firstPrompt: input.firstPrompt ?? null,
         cwd: input.cwd ?? null,
         createdAt: now,

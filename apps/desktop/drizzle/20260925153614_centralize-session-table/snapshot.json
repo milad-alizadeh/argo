@@ -514,7 +514,7 @@
       "autoincrement": false,
       "default": null,
       "generated": null,
-      "name": "vendor_preview",
+      "name": "preview",
       "entityType": "columns",
       "table": "session"
     },

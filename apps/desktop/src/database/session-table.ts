@@ -8,7 +8,7 @@ export const sessionTable = sqliteTable(
     nativeId: text('native_id').notNull(),
     projectId: text('project_id').references(() => project.id, { onDelete: 'set null' }),
     customTitle: text('custom_title'),
-    vendorPreview: text('vendor_preview'),
+    preview: text('preview'),
     firstPrompt: text('first_prompt'),
     cwd: text(),
     createdAt: integer('created_at').notNull(),

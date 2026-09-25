@@ -5,7 +5,7 @@ CREATE TABLE `session` (
 	`native_id` text NOT NULL,
 	`project_id` text,
 	`custom_title` text,
-	`vendor_preview` text,
+	`preview` text,
 	`first_prompt` text,
 	`cwd` text,
 	`created_at` integer NOT NULL,

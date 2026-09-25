@@ -12,7 +12,7 @@ function database() {
     native_id TEXT NOT NULL,
     project_id TEXT,
     custom_title TEXT,
-    vendor_preview TEXT,
+    preview TEXT,
     first_prompt TEXT,
     cwd TEXT,
     created_at INTEGER NOT NULL,
@@ -29,7 +29,7 @@ test('keeps one Argo ID and preserves known metadata on a sparse upsert', () => 
       nativeId: 'native-1',
       projectId: 'project-1',
       customTitle: 'Release notes',
-      vendorPreview: 'A preview',
+      preview: 'A preview',
       firstPrompt: 'first',
       cwd: '/work/argo',
     })
@@ -40,13 +40,13 @@ test('keeps one Argo ID and preserves known metadata on a sparse upsert', () => 
     assert.equal(repeated, first)
     const row = client
       .prepare(
-        'SELECT project_id, custom_title, vendor_preview, first_prompt, cwd FROM session WHERE argo_id = ?',
+        'SELECT project_id, custom_title, preview, first_prompt, cwd FROM session WHERE argo_id = ?',
       )
       .get(first)
     assert.deepEqual(Object.assign({}, row), {
       project_id: 'project-1',
       custom_title: 'Release notes',
-      vendor_preview: 'A preview',
+      preview: 'A preview',
       first_prompt: 'first',
       cwd: '/work/argo',
     })
