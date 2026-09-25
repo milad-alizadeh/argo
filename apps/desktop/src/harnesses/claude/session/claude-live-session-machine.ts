@@ -36,7 +36,7 @@ const permissionModes: Record<string, PermissionMode> = {
   auto: 'auto',
 }
 
-export const claudeSessionMachine = setup({
+export const claudeLiveSessionMachine = setup({
   types: {
     input: {} as SessionStartInput,
     context: {} as {
@@ -174,7 +174,7 @@ export const claudeSessionMachine = setup({
     hasPermissionMode: ({ context }) => context.mode !== null,
   },
 }).createMachine({
-  id: 'claudeSession',
+  id: 'claudeLiveSession',
   initial: 'Preparing',
   context: ({ input }) => ({
     input,

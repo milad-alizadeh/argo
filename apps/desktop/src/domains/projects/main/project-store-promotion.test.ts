@@ -6,7 +6,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 import { drizzle } from 'drizzle-orm/bun-sqlite'
 import { migrate } from 'drizzle-orm/bun-sqlite/migrator'
-import { databaseMigrationsFolder } from '@/platform/main/storage/migrations-folder'
+import { databaseMigrationsFolder } from '@/database/migrations-folder'
 import { SETUP_DOCUMENT_REVISION } from '../../../../test-fixtures/projects/setup-document.fixture'
 import { createProjectStore } from './sqlite-store'
 

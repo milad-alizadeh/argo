@@ -1,10 +1,10 @@
 import { initTRPC } from '@trpc/server'
-import type { SessionSupervisorActor } from '../live/session-supervisor-machine'
+import type { LiveSessionSupervisorActor } from '../live/live-session-supervisor-machine'
 import { sessionAcceptedOutputSchema, sessionSubmitInputSchema } from './session-start'
 
 const t = initTRPC.create()
 
-export function sessionSubmitProcedure(supervisor: SessionSupervisorActor) {
+export function sessionSubmitProcedure(supervisor: LiveSessionSupervisorActor) {
   return t.procedure
     .input(sessionSubmitInputSchema)
     .output(sessionAcceptedOutputSchema)

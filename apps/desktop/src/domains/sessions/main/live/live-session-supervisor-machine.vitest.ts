@@ -3,6 +3,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
 import { type ActorRefFrom, createActor, fromCallback, fromPromise, setup, waitFor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
+import { createDurableDatabase } from '@/database/durable-database'
 import {
   harnessCatalogMachine,
   harnessCatalogSchema,
@@ -14,10 +15,9 @@ import type {
   codexAppServerMachine,
 } from '@/harnesses/codex/app-server/codex-app-server-machine'
 import { codexHarnessInfo } from '@/harnesses/codex/catalog'
-import { createDurableDatabase } from '@/platform/main/storage/durable-database'
 import { codexModelCatalogFixture } from '../../../../../test-fixtures/sessions/codex-model-catalog.fixture'
 import type { SessionStartInput } from '../api/session-start'
-import { sessionSupervisorMachine } from './session-supervisor-machine'
+import { liveSessionSupervisorMachine } from './live-session-supervisor-machine'
 
 const available = codexHarnessInfo(codexModelCatalogFixture())
 if (available.availability !== 'available') throw new Error('Codex fixture must be available.')
@@ -37,7 +37,7 @@ const first: SessionStartInput = {
 async function supervisorFor(request: CodexRequest, catalogValue = catalog) {
   const client = new DatabaseSync(':memory:')
   client.exec(
-    'CREATE TABLE session (argo_id TEXT PRIMARY KEY, harness TEXT NOT NULL, native_id TEXT NOT NULL, project_id TEXT NOT NULL, first_prompt TEXT, updated_at INTEGER NOT NULL); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);',
+    'CREATE TABLE session (argo_id TEXT PRIMARY KEY, harness TEXT NOT NULL, native_id TEXT NOT NULL, project_id TEXT, custom_title TEXT, vendor_preview TEXT, first_prompt TEXT, cwd TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);',
   )
   const database = createDurableDatabase(client)
   const channel: CodexChannel = {
@@ -64,7 +64,7 @@ async function supervisorFor(request: CodexRequest, catalogValue = catalog) {
       catalog: harnessCatalogMachine.provide({
         actors: { loadCatalog: fromPromise(async () => catalogValue) },
       }),
-      sessions: sessionSupervisorMachine,
+      sessions: liveSessionSupervisorMachine,
     },
   }).createMachine({
     initial: 'Running',
@@ -88,14 +88,16 @@ async function supervisorFor(request: CodexRequest, catalogValue = catalog) {
   })
   const root = createActor(rootMachine, { input: { database } }).start()
   const catalogActor = root.system.get('catalog') as ActorRefFrom<typeof harnessCatalogMachine>
-  const supervisor = root.system.get('sessions') as ActorRefFrom<typeof sessionSupervisorMachine>
+  const supervisor = root.system.get('sessions') as ActorRefFrom<
+    typeof liveSessionSupervisorMachine
+  >
   catalogActor.send({ type: 'Catalog requested' })
   await waitFor(catalogActor, (snapshot) => snapshot.matches('Ready'))
   return { root, supervisor, client }
 }
 
 function start(
-  actor: ActorRefFrom<typeof sessionSupervisorMachine>,
+  actor: ActorRefFrom<typeof liveSessionSupervisorMachine>,
   input: SessionStartInput,
   pendingId = 'optimistic:one',
 ) {
@@ -105,7 +107,7 @@ function start(
 }
 
 function send(
-  actor: ActorRefFrom<typeof sessionSupervisorMachine>,
+  actor: ActorRefFrom<typeof liveSessionSupervisorMachine>,
   input: SessionStartInput & { sessionId: string },
 ) {
   return new Promise<{ sessionId: string }>((resolve, reject) =>
@@ -114,7 +116,7 @@ function send(
 }
 
 test('models supervisor lifetime', () => {
-  const paths = getShortestPaths(sessionSupervisorMachine, {
+  const paths = getShortestPaths(liveSessionSupervisorMachine, {
     input: { database: {} as never },
     events: (state) => (state.matches('Running') ? [{ type: 'Shutdown' as const }] : []),
   })
@@ -176,6 +178,15 @@ test('rejects a changed Codex stance instead of silently retaining the opening s
   })
   try {
     const { sessionId } = await start(supervisor, first)
+    assert.deepEqual(
+      Object.assign(
+        {},
+        client
+          .prepare('SELECT argo_id, first_prompt, cwd FROM session WHERE argo_id = ?')
+          .get(sessionId),
+      ),
+      { argo_id: sessionId, first_prompt: 'first', cwd: '/repo' },
+    )
     const child = supervisor.getSnapshot().context.sessions[sessionId]
     assert.ok(child)
     await waitFor(child, (snapshot) => snapshot.matches('Ready'))

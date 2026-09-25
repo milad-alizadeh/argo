@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createActor, fromCallback, waitFor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
-import { claudeSessionMachine } from './claude-session-machine'
+import { claudeLiveSessionMachine } from './claude-live-session-machine'
 
 const first = {
   commandId: '00000000-0000-4000-8000-000000000001',
@@ -15,7 +15,7 @@ const first = {
 }
 
 test('models opening, later sends, failure, and close paths', () => {
-  const paths = getShortestPaths(claudeSessionMachine, {
+  const paths = getShortestPaths(claudeLiveSessionMachine, {
     input: first,
     events: (snapshot) => {
       if (snapshot.matches({ Active: 'Opening' }))
@@ -58,7 +58,7 @@ test('models opening, later sends, failure, and close paths', () => {
 test('keeps the Claude query alive for later sends and closes it with the Session', async () => {
   const delivered: string[] = []
   let closed = 0
-  const machine = claudeSessionMachine.provide({
+  const machine = claudeLiveSessionMachine.provide({
     actors: {
       queryActor: fromCallback(({ receive, sendBack }) => {
         receive((event) => {
@@ -85,7 +85,7 @@ test('keeps the Claude query alive for later sends and closes it with the Sessio
 
 test('closes the Claude query after a vendor failure', async () => {
   let closed = 0
-  const machine = claudeSessionMachine.provide({
+  const machine = claudeLiveSessionMachine.provide({
     actors: {
       queryActor: fromCallback(({ sendBack }) => {
         sendBack({ type: 'Query failed', detail: 'Vendor refused the first prompt.' })
@@ -104,7 +104,7 @@ test('closes the Claude query after a vendor failure', async () => {
 
 test('maps the catalog manual mode to the SDK default mode', () => {
   const actor = createActor(
-    claudeSessionMachine.provide({
+    claudeLiveSessionMachine.provide({
       actors: {
         queryActor: fromCallback(() => undefined),
       },

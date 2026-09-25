@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { projectSetupCheckpoint } from './schema'
+import { projectSetupCheckpoint } from '@/database/project-tables'
 import type { ProjectDatabase } from './sqlite-store'
 
 export type SetupCheckpoint = typeof projectSetupCheckpoint.$inferSelect

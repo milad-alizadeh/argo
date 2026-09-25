@@ -1,12 +1,12 @@
 import { type ActorRefFrom, assertEvent, setup } from 'xstate'
-import { sessionSupervisorMachine } from '@/domains/sessions/main/live/session-supervisor-machine'
+import type { DurableDatabase } from '@/database/durable-database'
+import { liveSessionSupervisorMachine } from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import { harnessCatalogMachine } from '@/harnesses/catalog/harness-catalog-machine'
 import { harnessCatalogLoadActor } from '@/harnesses/catalog/runtime'
 import {
   codexAppServerMachine,
   codexAppServerProcessActor,
 } from '@/harnesses/codex/app-server/codex-app-server-machine'
-import type { DurableDatabase } from '@/platform/main/storage/durable-database'
 
 const codexMachine = codexAppServerMachine.provide({
   actors: {
@@ -39,7 +39,7 @@ export const appMachine = setup({
   actors: {
     codex: codexMachine,
     catalog: catalogMachine,
-    sessions: sessionSupervisorMachine,
+    sessions: liveSessionSupervisorMachine,
   },
 }).createMachine({
   id: 'application',

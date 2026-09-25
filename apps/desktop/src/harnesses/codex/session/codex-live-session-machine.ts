@@ -37,7 +37,7 @@ const turnStartResultSchema = z.object({
   }),
 })
 
-export const codexSessionActors = (request: CodexRequest) => ({
+export const codexLiveSessionActors = (request: CodexRequest) => ({
   startThread: fromPromise(({ input }: { input: SessionStartInput }) =>
     request(
       'thread/start',
@@ -76,7 +76,7 @@ export const codexSessionActors = (request: CodexRequest) => ({
   ),
 })
 
-export const codexSessionMachine = setup({
+export const codexLiveSessionMachine = setup({
   types: {
     input: {} as SessionStartInput,
     context: {} as {
@@ -185,7 +185,7 @@ export const codexSessionMachine = setup({
     }),
   },
 }).createMachine({
-  id: 'codexSession',
+  id: 'codexLiveSession',
   initial: 'Opening',
   context: ({ input }) => ({
     input,

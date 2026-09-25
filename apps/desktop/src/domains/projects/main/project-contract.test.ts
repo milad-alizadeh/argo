@@ -6,12 +6,12 @@ import path from 'node:path'
 import { type TestContext, test } from 'node:test'
 import { drizzle } from 'drizzle-orm/bun-sqlite'
 import { migrate } from 'drizzle-orm/bun-sqlite/migrator'
+import { databaseMigrationsFolder } from '@/database/migrations-folder'
 import type {
   ProjectError,
   ProjectOpenReply,
   ProjectOpenRequest,
 } from '@/domains/projects/contract/contract'
-import { databaseMigrationsFolder } from '@/platform/main/storage/migrations-folder'
 import { openProject } from './open-project'
 import { createProjectStore } from './sqlite-store'
 

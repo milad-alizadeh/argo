@@ -5,7 +5,7 @@ import {
   projectWorkspaceSelection,
   workspace,
   workspaceKinds,
-} from '../schema'
+} from '@/database/project-tables'
 import type { ProjectDatabase } from '../sqlite-store'
 
 export type WorkspaceRecord = typeof workspace.$inferSelect

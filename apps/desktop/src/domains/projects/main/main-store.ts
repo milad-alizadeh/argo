@@ -1,5 +1,5 @@
-import { createDurableDatabase } from '@/platform/main/storage/durable-database'
-import { openSharedDatabase } from '@/platform/main/storage/shared-database'
+import { createDurableDatabase } from '@/database/durable-database'
+import { openSharedDatabase } from '@/database/shared-database'
 import { createProjectStore } from './sqlite-store'
 
 export function openProjectStore(projectData: string) {
