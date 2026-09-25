@@ -75,10 +75,16 @@ export const Open: Story = {
     const canvas = within(canvasElement)
     expectIdentityInPageHeader(canvasElement)
     const title = canvas.getByRole('heading', { name: session.title?.text })
+    const header = canvasElement.querySelector<HTMLElement>('[data-component="AppMainHeader"]')
     const metadata = canvas
       .getByText('Session ID')
       .closest<HTMLElement>('[data-component="SessionIdMetadata"]')
-    if (metadata === null) throw new Error('The Session ID metadata is absent.')
+    if (header === null || metadata === null) throw new Error('The Session header is absent.')
+    const gutter = Number.parseFloat(getComputedStyle(header).paddingInlineStart)
+    await expect(title.getBoundingClientRect().left).toBeCloseTo(
+      header.getBoundingClientRect().left + gutter,
+      1,
+    )
     await expect(metadata).toHaveTextContent(session.id)
     await expect(metadata.querySelector('svg')).not.toBeNull()
     await expect(metadata.getBoundingClientRect().top).toBeGreaterThanOrEqual(

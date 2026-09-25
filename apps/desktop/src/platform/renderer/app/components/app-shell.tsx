@@ -83,9 +83,7 @@ export function AppPageHeader({ children }: { children?: ReactNode }) {
           onToggle={controls.toggleSidebar}
           toggleRef={controls.sidebarToggleRef}
         />
-      ) : (
-        <span aria-hidden="true" className="size-(--size-control) shrink-0" />
-      )}
+      ) : null}
       <div className="no-drag-region flex min-w-0 flex-1 items-center">{children}</div>
     </header>
   )
