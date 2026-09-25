@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router'
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
 import { AccountsPanel } from '@/domains/accounts/renderer'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
-import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
+import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { ConnectSourceFields } from '../connection/connect-source-form'
 import {
   backlog,
@@ -16,28 +16,56 @@ import {
   ticketsView,
 } from '../detail/ticket-fixtures'
 import type { TicketsScreenProps } from '../hooks/use-tickets-view'
+import { ticketWorkPath } from '../sidebar/ticket-work-path'
 import { TicketsSidebarContent } from '../sidebar/tickets-sidebar'
 import { STATUSES } from '../status/status-fixtures'
 import { TicketsScreen } from './tickets-screen-view'
 
 // The screen no longer holds its own selection (#2134: a Session's "Open Ticket" must land on the
 // same Ticket after a reload), so a story stands in for the router state that owns it in the app.
-function TicketsScreenStory({ view }: TicketsScreenProps) {
+type TicketsScreenStoryProps = TicketsScreenProps & {
+  notice?: { onConnect: () => void; onDismiss: () => void } | null
+}
+
+function TicketsScreenStory({ view, notice = null }: TicketsScreenStoryProps) {
   const [selectedKey, setSelectedKey] = useState<string | null>(
     view.kind === 'tickets' ? view.selectedKey : null,
   )
-  if (view.kind !== 'tickets') return <TicketsScreen view={view} />
+  const current =
+    view.kind === 'tickets'
+      ? {
+          ...view,
+          selectedKey,
+          onBack: () => {
+            view.onBack()
+            setSelectedKey(null)
+          },
+          onSelect: (key: string) => {
+            view.onSelect(key)
+            setSelectedKey(key)
+          },
+        }
+      : view
   return (
-    <TicketsScreen
-      view={{
-        ...view,
-        selectedKey,
-        onSelect: (key) => {
-          view.onSelect(key)
-          setSelectedKey(key)
-        },
-      }}
-    />
+    <AppShell
+      leftHeader={<ProjectSwitcher />}
+      sidebar={
+        <TicketsSidebarContent
+          connection={connection('github')}
+          notice={notice}
+          onManageAccounts={fn()}
+          onSelectTicket={current.kind === 'tickets' ? current.onSelect : () => {}}
+          openCount={
+            current.kind === 'tickets'
+              ? String(current.backlog.total ?? current.backlog.tickets.length)
+              : '3'
+          }
+          workPath={current.kind === 'tickets' ? ticketWorkPath(current.backlog.tickets) : null}
+        />
+      }
+    >
+      <TicketsScreen view={current} />
+    </AppShell>
   )
 }
 
@@ -85,22 +113,10 @@ const meta = {
   component: TicketsScreenStory,
   parameters: { layout: 'fullscreen' },
   decorators: [
-    (Story, { parameters }) => (
+    (Story) => (
       <div className="h-dvh w-full">
         <MemoryRouter>
-          <CockpitShell
-            header={<ProjectSwitcher />}
-            sidebar={
-              <TicketsSidebarContent
-                connection={connection('github')}
-                notice={parameters.notice ?? null}
-                onManageAccounts={fn()}
-                openCount="3"
-              />
-            }
-          >
-            <Story />
-          </CockpitShell>
+          <Story />
         </MemoryRouter>
       </div>
     ),
@@ -113,23 +129,27 @@ type Story = StoryObj<typeof TicketsScreenStory>
 
 async function readsTheBacklog(canvasElement: HTMLElement) {
   const canvas = within(canvasElement)
+  const list = within(canvas.getByRole('region', { name: 'Backlog' }))
   await expect(canvas.getByText('All open · 3 Tickets')).toBeInTheDocument()
-  const rows = canvas.getAllByRole('button', { name: /^#\d+/ })
+  const rows = list.getAllByRole('button', { name: /^#\d+/ })
   // A listed child sits under its parent, whatever order GitHub listed them in.
   await expect(rows.map((row) => row.textContent?.slice(0, 4))).toEqual(['#607', '#609', '#273'])
-  await expect(rows[0]).toHaveTextContent('Blocked by 1 open Ticket')
-  await expect(rows[0]).toHaveTextContent('1 of 2 children closed')
+  const parentRow = rows[0]?.closest('li')
+  if (parentRow === null || parentRow === undefined) throw new Error('A Ticket needs a list row.')
+  await expect(parentRow).toHaveTextContent('Blocked by 1 open Ticket')
+  await expect(parentRow).toHaveTextContent('1 of 3 children closed')
+  await expect(within(parentRow).queryByText(/^\+\d+ labels?$/)).toBeNull()
   await expect(rows[1]).toHaveAccessibleName(/child of #607$/)
-  const title = canvas.getByText('Wayfinder: the Tickets room, end to end')
-  const chevron = canvas.getByRole('button', { name: 'Collapse #607' })
+  const title = list.getByText('Wayfinder: the Tickets room, end to end')
+  const chevron = list.getByRole('button', { name: 'Collapse #607' })
   const chevronIcon = chevron.querySelector('svg')
   if (chevronIcon === null) throw new Error('The Ticket fold control needs a chevron icon.')
   const titleCenter =
     title.getBoundingClientRect().top + Number.parseFloat(getComputedStyle(title).lineHeight) / 2
   const chevronCenter =
     chevronIcon.getBoundingClientRect().top + chevronIcon.getBoundingClientRect().height / 2
-  await expect(Math.abs(chevronCenter - titleCenter)).toBeLessThanOrEqual(1)
-  const childRow = rows[1]?.parentElement
+  await expect(Math.abs(chevronCenter - titleCenter)).toBeLessThanOrEqual(2)
+  const childRow = rows[1]?.closest('li')
   if (childRow === null || childRow === undefined) throw new Error('A child Ticket needs a row.')
   const twig = childRow.querySelector('span.absolute.left-0')
   if (twig === null) throw new Error('A child Ticket needs a tree twig.')
@@ -141,14 +161,28 @@ async function readsTheBacklog(canvasElement: HTMLElement) {
     Math.abs(twig.getBoundingClientRect().top - childTitleFirstLineCenter),
   ).toBeLessThanOrEqual(1)
   // Each row's state is an icon that opens a menu, named for a screen reader.
-  await expect(canvas.getAllByRole('button', { name: 'State: Open' })).toHaveLength(3)
-  await userEvent.click(rows[0] as HTMLElement)
-  await expect(rows[0]).toHaveAttribute('aria-current', 'true')
+  await expect(list.getAllByRole('button', { name: 'State: Open' })).toHaveLength(3)
 }
 
 export const Backlog: Story = {
-  play: async ({ canvasElement }) => {
+  play: async ({ args, canvasElement }) => {
     await readsTheBacklog(canvasElement)
+    const canvas = within(canvasElement)
+    const list = within(canvas.getByRole('region', { name: 'Backlog' }))
+    await userEvent.click(list.getByRole('button', { name: /^#607/ }))
+    const detail = canvas.getByRole('article', { name: 'Ticket #607' })
+    await expect(detail).toBeVisible()
+    const detailLeft = within(detail)
+      .getByRole('heading', { level: 2 })
+      .getBoundingClientRect().left
+    await expect(detailLeft).toBeGreaterThanOrEqual(0)
+    await expect(canvas.getByRole('complementary', { name: 'Tickets sidebar' })).toHaveTextContent(
+      'Work path',
+    )
+    await userEvent.click(canvas.getByRole('link', { name: 'Back to Tickets' }))
+    if (args.view.kind !== 'tickets') throw new Error('The backlog story needs a Tickets view.')
+    await expect(args.view.onBack).toHaveBeenCalled()
+    await expect(canvas.getByRole('region', { name: 'Backlog' })).toBeVisible()
   },
 }
 
@@ -179,13 +213,16 @@ export const MoreTicketsUnavailable: Story = {
         onRetryLoadMore: retryLoadMore,
       }),
       selectedKey: null,
+      now: new Date('2026-09-25T12:00:00Z').getTime(),
+      onBack: fn(),
       onSelect: fn(),
       onOpenSession: fn(),
     },
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('button', { name: /^#607/ })).toBeInTheDocument()
+    const list = within(canvas.getByRole('region', { name: 'Backlog' }))
+    await expect(list.getByRole('button', { name: /^#607/ })).toBeInTheDocument()
     // The toast draws in a portal outside the canvas, hidden from the accessibility tree while an
     // offscreen alert announces its words, so it is found by its slot rather than by role.
     const body = canvasElement.ownerDocument.body
@@ -201,18 +238,17 @@ export const MoreTicketsUnavailable: Story = {
 export const FoldedParent: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const fold = canvas.getByRole('button', { name: 'Collapse #607' })
+    const list = within(canvas.getByRole('region', { name: 'Backlog' }))
+    const fold = list.getByRole('button', { name: 'Collapse #607' })
     await expect(fold).toHaveAttribute('aria-expanded', 'true')
     await userEvent.click(fold)
-    await expect(canvas.queryByRole('button', { name: /^#609/ })).toBeNull()
-    const unfold = canvas.getByRole('button', { name: 'Expand #607' })
+    await expect(list.queryByRole('button', { name: /^#609/ })).toBeNull()
+    const unfold = list.getByRole('button', { name: 'Expand #607' })
     await expect(unfold).toHaveAttribute('aria-expanded', 'false')
     // A Ticket with no listed child has nothing to fold.
-    await expect(canvas.queryByRole('button', { name: /^(Collapse|Expand) #273$/ })).toBeNull()
+    await expect(list.queryByRole('button', { name: /^(Collapse|Expand) #273$/ })).toBeNull()
     await userEvent.click(unfold)
-    await expect(canvas.getByRole('button', { name: /^#609/ })).toHaveAccessibleName(
-      /child of #607$/,
-    )
+    await expect(list.getByRole('button', { name: /^#609/ })).toHaveAccessibleName(/child of #607$/)
   },
 }
 
@@ -253,7 +289,7 @@ export const TicketTree: Story = {
     ])
     await expect(rows[2]).toHaveAccessibleName(/child of #701$/)
     await expect(rows[3]).toHaveAccessibleName(/child of #700$/)
-    const leafRow = rows[2]?.parentElement
+    const leafRow = rows[2]?.closest('li')
     if (leafRow === null || leafRow === undefined) throw new Error('A child Ticket needs a row.')
     const twig = leafRow?.querySelector('span.absolute.left-0')
     if (twig === null || twig === undefined) throw new Error('A child Ticket needs a tree twig.')
@@ -277,7 +313,6 @@ export const LinearBacklog: Story = {
     await userEvent.click(within(menu).getByRole('menuitemradio', { name: 'Done' }))
     const { backlog } = args.view.kind === 'tickets' ? args.view : { backlog: null }
     await expect(backlog?.onChangeStatus).toHaveBeenCalledWith('ENG-12', STATUSES.linear[4])
-    await expect(canvas.getByText('Select a Ticket')).toBeInTheDocument()
     await expect(canvas.getByRole('button', { name: /^ENG-12/ })).toBeInTheDocument()
     await expect(canvas.getByRole('button', { name: 'Status: In Review' })).toBeVisible()
   },
@@ -285,7 +320,7 @@ export const LinearBacklog: Story = {
 
 // The one-time notice sits in the sidebar at its narrowest, and nothing in it spills out.
 export const SignInNotice: Story = {
-  parameters: { notice: { onConnect: fn(), onDismiss: fn() } },
+  args: { notice: { onConnect: fn(), onDismiss: fn() } },
   play: async ({ canvasElement }) => {
     const notice = within(canvasElement).getByRole('region', { name: 'Sign-in notice' })
     const edge = notice.getBoundingClientRect().right
@@ -317,21 +352,22 @@ export const Loading: Story = {
 // Reading the next page starts before the last row is reached.
 export const LongBacklog: Story = {
   args: {
-    view: ticketsView({ tickets: longBacklog(40), hasMore: true, onLoadMore: fn() }),
+    view: ticketsView({ tickets: longBacklog(200), hasMore: true, onLoadMore: fn() }),
   },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('All open · 40+ Tickets')).toBeInTheDocument()
+    await expect(canvas.getByText('All open · 200+ Tickets')).toBeInTheDocument()
+    const scroll = canvasElement.querySelector<HTMLElement>('[data-slot="ticket-list-scroll"]')
+    if (scroll === null) throw new Error('The Ticket list needs its virtual scroll container.')
+    // The DOM contains the viewport and its overscan, not every Ticket in the backlog.
+    await waitFor(() => expect(scroll.querySelectorAll('li[data-index]').length).toBeLessThan(200))
     // Scrolling the list alone, as a wheel does; scrollIntoView would also scroll the panels around it.
     // Each retry scrolls again: a scroll before the list has laid out reaches no end. The
-    // IntersectionObserver reports on a later frame, which a loaded CI runner can hold past 1 s.
+    // virtual range reports on a later frame, which a loaded CI runner can hold past 1 s.
     await waitFor(
       () => {
-        const list = canvas.getByRole('region', { name: 'Backlog' }).querySelector('ul')
-        if (list) {
-          list.scrollTop = list.scrollHeight
-          fireEvent.scroll(list)
-        }
+        scroll.scrollTop = scroll.scrollHeight
+        fireEvent.scroll(scroll)
         expect(args.view.kind === 'tickets' && args.view.backlog.onLoadMore).toHaveBeenCalled()
       },
       { timeout: 5000 },

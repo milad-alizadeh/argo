@@ -57,6 +57,8 @@ export function useTicketsView(): TicketsScreenProps {
       onChangeStatus: (key, status) => updateStatus.mutate({ projectId, key, status }),
       onChangePriority: (key, priority) => updatePriority.mutate({ projectId, key, priority }),
       selectedKey: ticketKey ?? null,
+      now: Date.now(),
+      onBack: () => navigate(`/projects/${projectId}/tickets`),
       onSelect: (key) => navigate(`/projects/${projectId}/tickets/${encodeURIComponent(key)}`),
       onOpenSession: (id) => navigate(`/projects/${projectId}/sessions/${id}`),
     })

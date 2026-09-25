@@ -18,6 +18,14 @@ const CATEGORY_TONES: Record<TicketStatus['category'], string> = {
   canceled: 'text-faint',
 }
 
+// Review is still an active workflow state, but its handoff is positive and should read as the
+// success-coloured stage beside the warning-coloured work-in-progress stage.
+function statusTone(status: TicketStatus) {
+  return status.category === 'started' && status.name.toLocaleLowerCase() === 'in review'
+    ? 'text-success'
+    : CATEGORY_TONES[status.category]
+}
+
 // Three ascending bars, drawn in the 14x14 box `StatusGlyph` also draws in, so priority and status
 // read at the same size. `filled` counts bars lit solid; the rest stay at low opacity. `null` draws
 // three flat dashes instead of bars, Linear's own mark for "No priority".
@@ -84,15 +92,21 @@ export const priorityName = (priority: TicketPriority | null): string =>
 export function StatusIcon({
   status,
   statuses = [],
+  current,
+  total,
 }: {
   status: TicketStatus
   statuses?: readonly TicketStatus[]
+  current?: number
+  total?: number
 }) {
   return (
     <StatusGlyph
       category={status.category}
-      className={`${markIcon} ${CATEGORY_TONES[status.category]}`}
+      className={`${markIcon} ${statusTone(status)}`}
+      current={current}
       share={startedShare(status, statuses)}
+      total={total}
     />
   )
 }

@@ -43,6 +43,20 @@
     letter-spacing: var(--text-meta-tracking);
   }
 
+  .type-navigation.type-navigation {
+    font-size: var(--text-navigation);
+    line-height: var(--text-navigation--line-height);
+    font-weight: var(--text-navigation-weight);
+    letter-spacing: var(--text-navigation-tracking);
+  }
+
+  .type-meta-heading.type-meta-heading {
+    font-size: var(--text-meta);
+    line-height: var(--text-meta--line-height);
+    font-weight: var(--text-heading-weight);
+    letter-spacing: var(--text-meta-tracking);
+  }
+
   .type-code.type-code,
   .type-code-content :is(code, pre) {
     font-family: var(--font-mono);

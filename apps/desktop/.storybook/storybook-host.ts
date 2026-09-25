@@ -1,8 +1,9 @@
 import { DEFAULT_AUTO_COMPACT_LIMIT } from '../src/domains/sessions/renderer/composer/context-window/codex-compaction'
 import { sessionRosterRow } from '../src/domains/sessions/renderer/session-fixtures'
 import { subscribeToStorybookCommands } from './storybook-commands'
-import { storybookHarnessSignInBridge } from './storybook-harness-signin'
-import { storybookProjectBridge } from './storybook-projects'
+import { storybookHarnessSignInProcedures } from './storybook-harness-signin'
+import { storybookProjectProcedures } from './storybook-projects'
+import { createStorybookTrpcHost, type StorybookProcedureHandlers } from './storybook-trpc'
 import { ticketsHost } from './tickets-host'
 
 // The Feed keys its measure pass on the window's zoom, read off the preload bridge
@@ -17,6 +18,13 @@ const storybookSession = sessionRosterRow({
   status: 'idle',
   cwd: '/storybook/argo',
 })
+const procedureHandlers = (): StorybookProcedureHandlers => {
+  return {
+    ...storybookProjectProcedures,
+    ...storybookHarnessSignInProcedures,
+    accountList: ticketsHost.accountList,
+  }
+}
 host.argo = {
   ...host.argo,
   readCodexModelCatalog: () => Promise.resolve(null),
@@ -92,8 +100,8 @@ host.argo = {
       restored: null,
       historyComplete: true,
     }),
-  ...storybookProjectBridge,
-  ...ticketsHost,
-  ...storybookHarnessSignInBridge,
+  readConnection: ticketsHost.readConnection,
+  trpc: createStorybookTrpcHost(procedureHandlers),
+  trpcSubscribe: () => Promise.reject(new Error('Storybook has no tRPC subscriptions.')),
   zoomFactor: () => 1,
-}
+} as typeof host.argo

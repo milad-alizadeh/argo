@@ -123,6 +123,7 @@ export const ICONS = {
   search: Search,
   settings: Settings,
   'messages-square': MessagesSquare,
+  session: MessagesSquare,
   'panel-left': PanelLeft,
   'panel-right': PanelRight,
   ticket: Ticket,

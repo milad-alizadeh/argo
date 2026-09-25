@@ -1,4 +1,37 @@
-import type { ProjectClient } from '../src/domains/projects/preload/client'
+import type {
+  ProjectOpenReply,
+  ProjectSetupCommand,
+  ProjectSetupReply,
+} from '../src/domains/projects/contract/contract'
+import type { ProjectListReply } from '../src/domains/projects/contract/messages'
+import type { ProjectError } from '../src/domains/projects/contract/project-error'
+import type { ProjectWorkspaceListed } from '../src/domains/projects/contract/workspace-messages'
+
+type ProjectWorkspaceReply = ProjectWorkspaceListed | ProjectError
+
+type StorybookProjectProcedures = {
+  projectOpen: (request: { projectId: string }) => Promise<ProjectOpenReply>
+  projectSetupSnapshot: (request: { projectId: string }) => Promise<ProjectSetupReply>
+  projectSetupCommand: (request: {
+    projectId: string
+    commandId: string
+    expectedRevision: number
+    command: ProjectSetupCommand
+  }) => Promise<ProjectSetupReply>
+  projectList: () => Promise<ProjectListReply>
+  projectRegister: () => Promise<ProjectListReply>
+  projectRelocate: (request: { projectId: string }) => Promise<ProjectListReply>
+  projectSelect: (request: { projectId: string }) => Promise<ProjectListReply>
+  projectWorkspaceList: (request: { projectId: string }) => Promise<ProjectWorkspaceReply>
+  projectWorkspaceSelect: (request: {
+    projectId: string
+    workspaceId: string
+  }) => Promise<ProjectWorkspaceReply>
+  projectWorkspaceCreateManaged: (request: {
+    projectId: string
+    baseRef: string
+  }) => Promise<ProjectWorkspaceReply>
+}
 
 const projects = [
   { id: 'storybook-project', name: 'argo', path: '/storybook/argo' },
@@ -56,9 +89,9 @@ function setupSnapshot(projectId: string) {
   }
 }
 
-export const storybookProjectBridge: ProjectClient = {
-  listProjects: () => Promise.resolve(listed('storybook-project')),
-  openProject: () =>
+export const storybookProjectProcedures: StorybookProjectProcedures = {
+  projectList: () => Promise.resolve(listed('storybook-project')),
+  projectOpen: () =>
     Promise.resolve({
       version: 1,
       type: 'project.opened' as const,
@@ -66,13 +99,12 @@ export const storybookProjectBridge: ProjectClient = {
       project: { id: 'storybook-project', name: 'argo' },
     }),
   projectSetupSnapshot: ({ projectId }) => Promise.resolve(setupSnapshot(projectId)),
-  sendProjectSetupCommand: ({ projectId }) => Promise.resolve(setupSnapshot(projectId)),
-  subscribeProjectSetup: () => () => {},
-  registerProject: () => Promise.resolve(listed('storybook-worktree')),
-  relocateProject: () => Promise.resolve(listed('storybook-worktree')),
-  selectProject: ({ projectId }) => Promise.resolve(listed(projectId)),
-  listProjectWorkspaces: () => Promise.resolve(workspacesListed('storybook-workspace-main')),
-  selectProjectWorkspace: ({ workspaceId }) => Promise.resolve(workspacesListed(workspaceId)),
-  createManagedProjectWorkspace: () =>
+  projectSetupCommand: ({ projectId }) => Promise.resolve(setupSnapshot(projectId)),
+  projectRegister: () => Promise.resolve(listed('storybook-worktree')),
+  projectRelocate: () => Promise.resolve(listed('storybook-worktree')),
+  projectSelect: ({ projectId }) => Promise.resolve(listed(projectId)),
+  projectWorkspaceList: () => Promise.resolve(workspacesListed('storybook-workspace-main')),
+  projectWorkspaceSelect: ({ workspaceId }) => Promise.resolve(workspacesListed(workspaceId)),
+  projectWorkspaceCreateManaged: () =>
     Promise.resolve(workspacesListed('storybook-workspace-main')),
 }

@@ -140,7 +140,7 @@ export function PendingTurnsView({
 
   if (turns.length === 0) return null
   return (
-    <section aria-label={t('composer.pendingTurns')}>
+    <section aria-label={t('composer.pendingTurns')} className="session-page__pending-turns">
       <ul ref={listRef}>
         {turns.map((turn) => (
           <li

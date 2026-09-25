@@ -7,6 +7,7 @@ import type {
   Provider,
 } from '@/domains/accounts/contract/contract'
 import { type ContractFailure, settle } from '@/platform/renderer/lib/query-client'
+import { trpcClient } from '@/platform/renderer/trpc-client'
 import { storeListing } from './use-accounts'
 
 export type SignInPhase = 'idle' | 'requesting' | 'waiting' | 'connected'
@@ -26,15 +27,15 @@ export type SignIn = {
 export function useSignIn(): SignIn {
   const client = useQueryClient()
   const wait = useMutation<AccountConnected, ContractFailure>({
-    mutationFn: () => settle(window.argo.awaitAccount()),
+    mutationFn: () => settle(trpcClient.accountWait.mutate()),
     onSuccess: (reply) => storeListing(client, reply),
   })
   const verify = useMutation<AccountChallenge, ContractFailure>({
-    mutationFn: () => settle(window.argo.verifyAccount()),
+    mutationFn: () => settle(trpcClient.accountVerify.mutate()),
   })
   // Linear has no code to show first, so its consent page opens as soon as it is asked for.
   const connect = useMutation<AccountChallenge, ContractFailure, Provider>({
-    mutationFn: (provider) => settle(window.argo.connectAccount({ provider })),
+    mutationFn: (provider) => settle(trpcClient.accountConnect.mutate({ provider })),
     onSuccess: (challenge) => {
       wait.mutate()
       if (challenge.provider === 'linear') verify.mutate()
@@ -74,7 +75,7 @@ export function useSignIn(): SignIn {
     cancel: () => {
       const pending = connect.isPending || challenge !== null
       clear()
-      if (pending) void window.argo.cancelAccount()
+      if (pending) void trpcClient.accountCancel.mutate()
     },
   }
 }

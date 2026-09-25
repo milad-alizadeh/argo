@@ -1,6 +1,10 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { InspectorSplit } from '@/platform/renderer/cockpit/inspector-split/inspector-split'
+import { AppPageHeader } from '@/platform/renderer/app/components/app-shell'
+import {
+  InspectorHeaderControls,
+  InspectorSplit,
+} from '@/platform/renderer/cockpit/inspector-split/inspector-split'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { SessionTitle } from '../prompt/session-title'
 import { sessionName } from '../session-list/rows/session-list-rows'
@@ -22,21 +26,38 @@ type SessionShellProps = Omit<SessionWorkspaceProps, 'header'> & {
   inspectorReveal?: string | null
 }
 
-function SessionHeader({ session }: { session: SessionShellProps['session'] }) {
+function SessionIdentity({ session }: { session: SessionShellProps['session'] }) {
   const { t } = useTranslation('sessions')
   if (session === null || session === undefined) return null
   const worktree = worktreeName(session.cwd)
   return (
-    <div className="min-w-0 flex-1 overflow-hidden">
-      <h1 className="truncate type-heading">
+    <div
+      data-component="SessionIdentity"
+      className="flex min-w-0 flex-1 flex-col items-start justify-center gap-(--spacing-shell-tight)"
+    >
+      <h1 className="w-full truncate type-heading">
         <SessionTitle session={session} text={sessionName(session, t('newSession'))} />
       </h1>
-      {worktree ? (
-        <p className="mt-1 flex min-w-0 items-center gap-1 type-meta text-muted-foreground">
-          <Icon name="worktree" className="size-(--size-icon-inline) shrink-0" />
-          <span className="truncate">{worktree}</span>
+      <div
+        data-component="SessionMetadata"
+        className="flex w-full min-w-0 items-center gap-(--spacing-shell-section) type-meta text-muted-foreground"
+      >
+        <p
+          data-component="SessionIdMetadata"
+          className="flex min-w-0 max-w-40 items-center gap-(--spacing-shell-tight)"
+        >
+          <Icon name="session" size="meta" />
+          <span className="shrink-0">{t('identity.sessionId')}</span>
+          <code className="min-w-0 truncate font-mono text-foreground">{session.id}</code>
         </p>
-      ) : null}
+        {worktree ? (
+          <p className="flex min-w-0 max-w-48 items-center gap-(--spacing-shell-tight)">
+            <Icon name="worktree" className="size-(--size-icon-inline) shrink-0" />
+            <span className="shrink-0">{t('identity.worktree')}</span>
+            <span className="min-w-0 truncate">{worktree}</span>
+          </p>
+        ) : null}
+      </div>
     </div>
   )
 }
@@ -68,8 +89,8 @@ export function SessionShell({
     >
       <InspectorSplit
         bar={inspectorBar}
-        inspector={inspector}
         defaultCollapsed={defaultInspectorCollapsed}
+        inspector={inspector}
         noun="Session"
         reveal={inspectorReveal}
         sizes={SESSION_SPLIT}
@@ -77,13 +98,13 @@ export function SessionShell({
           <SessionWorkspace
             {...workspaceProps}
             header={
-              <header
-                data-component="SessionHeader"
-                className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center gap-2 border-b border-border/60 bg-background px-(--spacing-shell-gutter)"
-              >
-                <SessionHeader session={session} />
-                <SessionHeaderControls>{headerControls}</SessionHeaderControls>
-              </header>
+              <AppPageHeader>
+                <SessionIdentity session={session} />
+                <SessionHeaderControls>
+                  {headerControls}
+                  <InspectorHeaderControls />
+                </SessionHeaderControls>
+              </AppPageHeader>
             }
           />
         }

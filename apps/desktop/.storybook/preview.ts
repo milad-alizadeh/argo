@@ -13,7 +13,7 @@ const preview: Preview = {
       host.argo = {
         ...host.argo,
         getAppearance: () => Promise.resolve({ appearance: dark ? 'dark' : 'light', dark }),
-      }
+      } as typeof host.argo
       document.documentElement.classList.toggle('dark', dark)
       document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
       return createElement(AppQueryProvider, null, Story())

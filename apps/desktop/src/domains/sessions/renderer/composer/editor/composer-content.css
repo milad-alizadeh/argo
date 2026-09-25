@@ -3,7 +3,11 @@
 .session-page__composer-attachments {
   position: relative;
   z-index: 0;
+  display: flex;
   width: calc(100% - var(--spacing-shell-section));
+  min-height: 0;
+  flex-direction: column;
+  flex-shrink: 1;
   margin-inline: auto;
   margin-bottom: calc(var(--spacing-shell-item) * -1);
   padding-bottom: var(--spacing-shell-item);
@@ -13,6 +17,13 @@
   border-start-start-radius: var(--radius-xl);
   border-start-end-radius: var(--radius-xl);
   background: var(--card);
+}
+
+.session-page__pending-turns {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
 }
 
 .session-page__composer-attachments:empty {

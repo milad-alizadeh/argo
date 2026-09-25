@@ -5,3 +5,8 @@ export type {
   HarnessSignInDriver,
   HarnessSignInOutcome,
 } from './harness-sign-in'
+export {
+  createHarnessSignInProcedureContext,
+  type HarnessSignInProcedureContext,
+  harnessSignInProcedures,
+} from './harness-sign-in-procedures'

@@ -6,6 +6,7 @@ import type { TicketStatus } from '@/domains/tickets/contract/contract'
 type Category = TicketStatus['category']
 
 const RING = { cx: 7, cy: 7, r: 6, fill: 'none', stroke: 'currentColor', strokeWidth: 1.5 }
+const TRACK_OPACITY = 0.35
 
 // A disc with `cut` punched through it, so the ground shows in either appearance.
 function Disc({ cut }: { cut: ReactNode }) {
@@ -55,23 +56,50 @@ const SHAPES: Record<Exclude<Category, 'started'>, () => ReactNode> = {
   triage: () => <Disc cut={<path d="M4 5.5h6M8.5 4 10 5.5 8.5 7M10 8.5H4M5.5 7 4 8.5 5.5 10" />} />,
   // Eight dashes round the ring.
   backlog: () => <circle {...RING} pathLength="16" strokeDasharray="1.2 0.8" />,
-  unstarted: () => <circle {...RING} />,
+  unstarted: () => <circle {...RING} opacity={TRACK_OPACITY} />,
   completed: () => <Disc cut={<path d="M4.25 7.25 6.1 9.1 9.75 5.25" />} />,
   canceled: () => <Disc cut={<path d="M5 5l4 4M9 5l-4 4" />} />,
+}
+
+function categoryGlyph(category: Category, share: number) {
+  return category === 'started' ? <Pie share={share} /> : SHAPES[category]()
+}
+
+function childProgress(current: number | undefined, total: number | undefined) {
+  if (current === undefined || total === undefined) return null
+  if (total === 0) return 0
+  return Math.min(Math.max(current / total, 0), 1)
 }
 
 export function StatusGlyph({
   category,
   share,
+  current,
+  total,
   className,
 }: {
   category: Category
   share: number
+  current?: number
+  total?: number
   className: string
 }) {
+  const progress = childProgress(current, total)
   return (
     <svg aria-hidden="true" className={className} viewBox="0 0 14 14">
-      {category === 'started' ? <Pie share={share} /> : SHAPES[category]()}
+      {progress === null ? (
+        categoryGlyph(category, share)
+      ) : (
+        <>
+          <circle {...RING} opacity={TRACK_OPACITY} />
+          <circle
+            {...RING}
+            pathLength="1"
+            strokeDasharray={`${progress} 1`}
+            transform="rotate(-90 7 7)"
+          />
+        </>
+      )}
     </svg>
   )
 }

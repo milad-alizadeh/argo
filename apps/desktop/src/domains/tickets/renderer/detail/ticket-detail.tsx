@@ -3,54 +3,46 @@ import type { Provider } from '@/domains/accounts/contract/contract'
 import { providerPresentation } from '@/domains/accounts/renderer'
 import { FeedMarkdown } from '@/domains/sessions/renderer'
 import type { Ticket } from '@/domains/tickets/contract/contract'
-import { Icon } from '@/platform/renderer/components/icon/icon'
+import { AppPageHeader } from '@/platform/renderer/app/components/app-shell'
+import { PageHeading } from '@/platform/renderer/components/page-heading'
 import type { LinkedSession } from '../hooks/use-linked-sessions'
-import { closedChildren } from '../lib/backlog'
 import { TicketDetailEmpty } from './ticket-detail-empty'
 import { LinkedSessions } from './ticket-detail-linked-sessions'
-import { Dependencies, Links, type Navigation, stateIcon } from './ticket-detail-links'
+import type { Navigation } from './ticket-detail-links'
 import { type Editing, Properties } from './ticket-detail-properties'
-import { TicketDetailSection } from './ticket-detail-section'
 
-const keyText = 'font-mono type-meta'
-
-function TicketKey({ ticket, provider }: { ticket: Ticket; provider: Provider }) {
-  const { t } = useTranslation('tickets')
-  if (ticket.url === null) {
-    return (
-      <span className={`${keyText} justify-self-start shrink-0 text-muted-foreground`}>
-        {ticket.key}
-      </span>
-    )
-  }
-  return (
-    <a
-      aria-label={t('detail.openInProvider', {
-        key: ticket.key,
-        provider: providerPresentation(provider).name,
-      })}
-      className={`${keyText} inline-flex items-center gap-(--spacing-shell-tight) justify-self-start text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline`}
-      href={ticket.url}
-      rel="noreferrer"
-      target="_blank"
-    >
-      {ticket.key}
-      <Icon name="open-external" className="size-(--size-icon-meta) shrink-0" />
-    </a>
-  )
-}
-
-// Keeps a readable measure while the rule under the header runs the inspector's full width.
-const measure =
-  'grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-(--spacing-shell-section) px-(--spacing-shell-inset) py-(--spacing-shell-section)'
+// Metadata flows below the title until the workspace is wide enough to become a quiet right rail.
+const detailMeasure =
+  'grid max-w-6xl grid-cols-[minmax(0,1fr)] content-start gap-x-(--spacing-shell-section) gap-y-(--spacing-shell-section) px-[var(--inset-cockpit-content-body,var(--spacing-shell-inset))] pb-(--spacing-shell-section) pt-(--spacing-shell-inset) @3xl:grid-cols-[minmax(0,1fr)_18rem]'
 
 export type TicketDetailProps = {
   ticket: Ticket | null
   provider: Provider
   linkedSessions: readonly LinkedSession[]
+  onBack: () => void
   onOpenSession: (id: string) => void
 } & Navigation &
   Editing
+
+function TicketDetailPageHeader({ onBack }: Pick<TicketDetailProps, 'onBack'>) {
+  const { t } = useTranslation('tickets')
+  return (
+    <AppPageHeader>
+      <PageHeading
+        as="a"
+        className="no-drag-region"
+        href="#/tickets"
+        icon="back"
+        onClick={(event) => {
+          event.preventDefault()
+          onBack()
+        }}
+      >
+        {t('detail.back')}
+      </PageHeading>
+    </AppPageHeader>
+  )
+}
 
 export function TicketDetail(props: TicketDetailProps) {
   const { t } = useTranslation('tickets')
@@ -61,51 +53,69 @@ export function TicketDetail(props: TicketDetailProps) {
     onChangeStatus,
     onChangePriority,
     linkedSessions,
+    onBack,
     onOpenSession,
     ...navigation
   } = props
   if (ticket === null) return <TicketDetailEmpty />
-  const { children } = ticket
   const body = ticket.body?.trim()
   return (
     <article
       aria-label={t('detail.articleLabel', { key: ticket.key })}
-      className="min-h-0 flex-1 overflow-y-auto"
+      className="flex min-h-0 flex-1 flex-col overflow-hidden"
     >
-      <header className="border-b border-border/60">
-        <div className={measure}>
-          <div className="grid min-w-0 gap-(--spacing-shell-tight)">
-            <h2 className="min-w-0 type-title wrap-anywhere">{ticket.title}</h2>
-            <TicketKey provider={provider} ticket={ticket} />
+      <TicketDetailPageHeader onBack={onBack} />
+      <div
+        data-component="TicketDetailScroll"
+        className="@container min-h-0 flex-1 overflow-y-auto"
+      >
+        <div className={detailMeasure}>
+          <div className="contents @3xl:col-start-1 @3xl:row-start-1 @3xl:block">
+            <header className="order-1 flex min-w-0 flex-col items-start gap-(--spacing-shell-item)">
+              <h2
+                className="min-w-0 self-start line-clamp-2 type-title wrap-anywhere"
+                title={ticket.title}
+              >
+                {ticket.url === null ? (
+                  <>
+                    {ticket.key} - {ticket.title}
+                  </>
+                ) : (
+                  <a
+                    aria-label={t('detail.openInProvider', {
+                      key: ticket.key,
+                      provider: providerPresentation(provider).name,
+                    })}
+                    className="hover:underline"
+                    href={ticket.url}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    {ticket.key} - {ticket.title}
+                  </a>
+                )}
+              </h2>
+            </header>
+            <div className="order-3 grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-(--spacing-shell-section) @3xl:mt-(--spacing-shell-section)">
+              {body ? (
+                <FeedMarkdown text={body} />
+              ) : (
+                <p className="type-body text-muted-foreground">{t('detail.noDescription')}</p>
+              )}
+              <LinkedSessions onOpenSession={onOpenSession} sessions={linkedSessions} />
+            </div>
           </div>
           <Properties
             onChangePriority={onChangePriority}
             onChangeStatus={onChangeStatus}
+            linkedSessionCount={linkedSessions.length}
+            listed={navigation.listed}
+            onSelect={navigation.onSelect}
             provider={provider}
             statuses={statuses}
             ticket={ticket}
           />
         </div>
-      </header>
-      <div className={measure}>
-        {body ? (
-          <FeedMarkdown text={body} />
-        ) : (
-          <p className="type-body text-muted-foreground">{t('detail.noDescription')}</p>
-        )}
-        {children.length > 0 ? (
-          <TicketDetailSection
-            icon={<Icon name="ticket-children" className={stateIcon} />}
-            title={t('detail.childrenCount', {
-              closed: closedChildren(ticket),
-              count: children.length,
-            })}
-          >
-            <Links links={children} {...navigation} />
-          </TicketDetailSection>
-        ) : null}
-        <Dependencies blockedBy={ticket.blockedBy} provider={provider} {...navigation} />
-        <LinkedSessions onOpenSession={onOpenSession} sessions={linkedSessions} />
       </div>
     </article>
   )

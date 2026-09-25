@@ -4,6 +4,7 @@ import type {
   ProjectWorkspaceListed,
   WorkspaceSummary,
 } from '@/domains/projects/contract/workspace-messages'
+import { trpcClient } from '@/platform/renderer/trpc-client'
 import { type ProjectContractError, throwProjectContractError } from '../project-contract-error'
 
 export type WorkspaceCockpit = {
@@ -25,11 +26,14 @@ function workspaceQueryKey(projectId: string) {
 // AC5: a Project with no remembered selection, or whose remembered selection no longer names a
 // Workspace, opens into a fresh managed Workspace rather than leaving the composer without one.
 async function resolveWorkspaces(projectId: string): Promise<ProjectWorkspaceListed> {
-  const reply = await window.argo.listProjectWorkspaces({ projectId })
+  const reply = await trpcClient.projectWorkspaceList.query({ projectId })
   if (reply.type === 'project.error') return throwProjectContractError(reply)
   const selected = reply.workspaces.some((workspace) => workspace.id === reply.selectedId)
   if (selected) return reply
-  const created = await window.argo.createManagedProjectWorkspace({ projectId, baseRef: 'HEAD' })
+  const created = await trpcClient.projectWorkspaceCreateManaged.mutate({
+    projectId,
+    baseRef: 'HEAD',
+  })
   if (created.type === 'project.error') return throwProjectContractError(created)
   return created
 }
@@ -60,7 +64,7 @@ export function useWorkspaces(projectId: string | null): [WorkspaceCockpit, Work
   const select = useMutation<ProjectWorkspaceListed, ProjectContractError, string>({
     ...mutationOptions,
     mutationFn: async (workspaceId) => {
-      const reply = await window.argo.selectProjectWorkspace({
+      const reply = await trpcClient.projectWorkspaceSelect.mutate({
         projectId: projectId as string,
         workspaceId,
       })
@@ -70,7 +74,7 @@ export function useWorkspaces(projectId: string | null): [WorkspaceCockpit, Work
   const createManaged = useMutation<ProjectWorkspaceListed, ProjectContractError, string>({
     ...mutationOptions,
     mutationFn: async (baseRef) => {
-      const reply = await window.argo.createManagedProjectWorkspace({
+      const reply = await trpcClient.projectWorkspaceCreateManaged.mutate({
         projectId: projectId as string,
         baseRef,
       })

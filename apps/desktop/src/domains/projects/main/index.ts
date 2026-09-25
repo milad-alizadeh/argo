@@ -5,6 +5,12 @@ import { resolveSessionWorkspace } from './resolve-session-workspace'
 import type { ProjectStore } from './sqlite-store'
 import type { WorkspaceSelection } from './workspace-selection'
 
+export {
+  type ProjectProcedureContext,
+  type ProjectSetupProcedurePort,
+  projectProcedures,
+} from './project-procedures'
+
 export type ProjectPort = {
   has: (projectId: string) => boolean
   names: () => Map<string, string>

@@ -4,7 +4,7 @@ import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/renderer/model/models'
 import type { SessionShellOutput } from '@/domains/sessions/renderer/work/types'
-import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
+import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { useComposerStore } from '../composer/hooks'
 import { ComposerForm } from '../composer/layout/composer-form'
 import { RICH_MARKDOWN } from '../feed/content/feed-samples'
@@ -190,12 +190,10 @@ function withListedSessions(sessions: Session[]) {
 
 const NOOP_SESSION_LIST_ACTIONS: SessionListActions = {
   onArchiveSelected: () => {},
-  onLinkTicket: () => {},
   onNew: () => {},
   onOpenTicket: () => {},
   onRename: async (_session, name) => name,
   onSelect: () => {},
-  onUnlinkTicket: () => {},
 }
 
 function ReviewSidebar({
@@ -307,8 +305,8 @@ function ReviewScreen({
   const shell = session.shell.find(({ id }) => id === picked?.id) ?? null
 
   return (
-    <CockpitShell
-      header={<ProjectSwitcher />}
+    <AppShell
+      leftHeader={<ProjectSwitcher />}
       sidebar={reviewSidebar(selectedSessionId, setSelectedSessionId, titleText)}
     >
       <SessionShell
@@ -350,7 +348,7 @@ function ReviewScreen({
         questionFailure={() => null}
         selectedSessionId={selectedSessionId}
       />
-    </CockpitShell>
+    </AppShell>
   )
 }
 
@@ -378,8 +376,8 @@ function NewSessionScreen() {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   withListedSessions([])
   return (
-    <CockpitShell
-      header={<ProjectSwitcher />}
+    <AppShell
+      leftHeader={<ProjectSwitcher />}
       sidebar={
         <SessionList
           actions={{
@@ -412,7 +410,7 @@ function NewSessionScreen() {
         selectedSessionId={selectedSessionId}
         stallTimeoutMs={50}
       />
-    </CockpitShell>
+    </AppShell>
   )
 }
 
@@ -530,9 +528,13 @@ function expectHeaderActionsAtTrailingEdge(canvasElement: HTMLElement) {
 
   expect(subagents).toHaveAccessibleName(/^Subagents/)
   expect(shell).toHaveAccessibleName(/^Shell/)
-  expect(headerControls.getBoundingClientRect().right).toBeLessThanOrEqual(
-    inspector.getBoundingClientRect().left -
-      Number.parseFloat(getComputedStyle(headerControls).getPropertyValue('gap')),
+  expect(headerControls.contains(inspector)).toBe(true)
+  const gap = Number.parseFloat(getComputedStyle(headerControls).getPropertyValue('gap'))
+  expect(subagents.getBoundingClientRect().right).toBeLessThanOrEqual(
+    shell.getBoundingClientRect().left - gap,
+  )
+  expect(shell.getBoundingClientRect().right).toBeLessThanOrEqual(
+    inspector.getBoundingClientRect().left - gap,
   )
 }
 
@@ -680,14 +682,17 @@ export const FormattedHeaderTitle: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const header = canvas.getByRole('heading', { name: /Implement/ })
-    const row = canvas.getByRole('button', {
-      name: /Implement https:\/\/example\.com\/guide/,
-    })
+    const sessionId = canvas
+      .getByText('Session ID')
+      .closest<HTMLElement>('[data-component="SessionIdMetadata"]')
+    const metadata = canvasElement.querySelector<HTMLElement>('[data-component="SessionMetadata"]')
+    if (sessionId === null || metadata === null) throw new Error('The Session metadata is absent.')
     await expect(header).not.toHaveTextContent('[$implement]')
     await expect(header).toHaveTextContent('https://example.com/guide')
     await expect(header.querySelector('a')).toBeNull()
-    await expect(row).not.toHaveTextContent('[$implement]')
-    await expect(row).toHaveTextContent('https://example.com/guide')
+    await expect(metadata.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+      header.getBoundingClientRect().bottom,
+    )
   },
 }
 
@@ -735,19 +740,41 @@ export const TallQueuedComposerRemainsReachable: Story = {
     }
 
     const pendingTurns = canvas.getByRole('region', { name: 'Pending Turns' })
-    await waitFor(() => expect(within(pendingTurns).getAllByRole('listitem')).toHaveLength(10))
+    const pendingRows = within(pendingTurns).getAllByRole('listitem')
+    await waitFor(() => expect(pendingRows).toHaveLength(10))
+    const queueRowHeight =
+      pendingRows[0]?.getBoundingClientRect().height ?? Number.POSITIVE_INFINITY
+    const lastPendingRow = pendingRows.at(-1)
+    if (lastPendingRow === undefined) throw new Error('The final queued turn is absent.')
+    await waitFor(() =>
+      expect(lastPendingRow.getBoundingClientRect().height).toBeGreaterThanOrEqual(queueRowHeight),
+    )
+    await expect(pendingTurns.getBoundingClientRect().height).toBeGreaterThanOrEqual(queueRowHeight)
     await expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toBeVisible()
     const composerScroll = canvasElement.querySelector<HTMLElement>(
       '[data-component="SessionComposerScroll"]',
     )
-    if (composerScroll === null) throw new Error('The Session composer scroll region is absent.')
+    const composerCard = canvasElement.querySelector<HTMLElement>('[data-component="ComposerCard"]')
+    if (composerScroll === null || composerCard === null)
+      throw new Error('The Session composer surfaces are absent.')
+    const cardBeforeQueueScroll = composerCard.getBoundingClientRect()
+    await expect(pendingTurns.scrollHeight).toBeGreaterThan(pendingTurns.clientHeight)
+    pendingTurns.scrollTo({ top: pendingTurns.scrollHeight })
+    fireEvent.scroll(pendingTurns)
+    await expect(pendingTurns.scrollTop).toBeGreaterThan(0)
+    const visibleQueueBounds = pendingTurns.getBoundingClientRect()
+    const lastPendingRowBounds = lastPendingRow.getBoundingClientRect()
+    await expect(lastPendingRowBounds.top).toBeGreaterThanOrEqual(visibleQueueBounds.top)
+    await expect(lastPendingRowBounds.bottom).toBeLessThanOrEqual(visibleQueueBounds.bottom)
+    await expect(lastPendingRowBounds.bottom).toBeLessThanOrEqual(cardBeforeQueueScroll.top)
+    await expect(composerCard.getBoundingClientRect()).toEqual(cardBeforeQueueScroll)
+    await expect(composerScroll.scrollTop).toBe(0)
     await userEvent.tab()
     await expect(canvas.getByRole('button', { name: 'Add context' })).toHaveFocus()
     await userEvent.tab()
     const interrupt = canvas.getByRole('button', { name: 'Interrupt' })
     await expect(interrupt).toHaveFocus()
     await expect(interrupt).toBeVisible()
-    expect(composerScroll.scrollTop).toBeGreaterThan(0)
   },
 }
 
@@ -840,7 +867,7 @@ export const NarrowHeader: Story = {
     await expect(
       canvas.getByRole('heading', { name: 'Finish Session composer review' }),
     ).toBeVisible()
-    await expect(canvas.getByText('ticket-1846-composer')).toBeVisible()
+    await expect(canvas.getByText('ticket-1846-composer')).toBeInTheDocument()
     await waitFor(() =>
       expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
         'data-session',

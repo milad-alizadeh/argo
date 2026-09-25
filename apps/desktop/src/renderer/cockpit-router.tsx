@@ -16,7 +16,7 @@ import { TicketsPage } from '@/domains/tickets/renderer/pages/tickets-page'
 import { TicketsScreenView } from '@/domains/tickets/renderer/screens/tickets-screen-view'
 import { TicketsSidebar } from '@/domains/tickets/renderer/sidebar/tickets-sidebar'
 import { DESTINATION_PATHS, DESTINATIONS, navigateCommand } from '@/platform/contract/commands'
-import { CockpitShell } from '@/platform/renderer/cockpit/components/cockpit-shell'
+import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { useCommands } from '@/platform/renderer/cockpit/hooks/use-commands'
 
 type CockpitRouteHandle = {
@@ -63,13 +63,13 @@ export function CockpitRouteLayout() {
     return <NoHarnessReadyScreen harnesses={readiness.data} />
   }
   return (
-    <CockpitShell
+    <AppShell
       footer={<DevelopmentIdentityBar identity={window.argo?.development ?? null} ticket={null} />}
-      header={<ProjectSwitcher />}
+      leftHeader={<ProjectSwitcher />}
       sidebar={sidebar}
     >
       <Outlet key={location.pathname} />
-    </CockpitShell>
+    </AppShell>
   )
 }
 

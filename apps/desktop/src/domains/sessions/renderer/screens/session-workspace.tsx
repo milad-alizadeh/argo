@@ -10,7 +10,7 @@ import type { useSessions } from '../use-sessions'
 
 export type SessionWorkspaceProps = {
   composer: ReactNode | null
-  header: ReactNode
+  header?: ReactNode
   feed: ReturnType<typeof useSessions>['feed']
   feedError: ReturnType<typeof useSessions>['feedError']
   onRetryFeed: ReturnType<typeof useSessions>['retryFeed']
@@ -59,10 +59,13 @@ function ComposerSection({
   return (
     <section
       aria-label={t('composerRegionLabel')}
-      className="session-screen__composer relative z-20 isolate flex shrink-0 flex-col px-(--spacing-session-gutter)"
+      className="session-screen__composer relative z-20 isolate flex shrink-0 flex-col overflow-hidden px-(--spacing-session-gutter)"
     >
       <ComposerFade onJumpToLatest={onJumpToLatest} />
-      <div className="session-screen__composer-scroll" data-component="SessionComposerScroll">
+      <div
+        className="session-screen__composer-scroll flex min-h-0 flex-col"
+        data-component="SessionComposerScroll"
+      >
         {composer}
       </div>
     </section>
@@ -99,8 +102,11 @@ export function SessionWorkspace({
   const { t } = useTranslation('sessions')
 
   return (
-    <section aria-label={t('workspaceLabel')} className="relative flex h-full min-h-0 flex-col">
-      {header}
+    <section
+      aria-label={t('workspaceLabel')}
+      className="@container relative flex h-full min-h-0 flex-col"
+    >
+      {header ?? null}
       {/* A layout wrapper only: `BasicFeed` is its own labelled landmark, so this stays a plain `div` to
           avoid a second "Session Feed" region with the same name. */}
       <div className="session-screen__feed min-h-0 flex-1 overflow-hidden">

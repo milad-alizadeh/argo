@@ -83,6 +83,8 @@ export type Connected = {
   onChangeStatus: (key: string, status: TicketStatus) => void
   onChangePriority: (key: string, priority: TicketPriority | null) => void
   selectedKey: string | null
+  now: number
+  onBack: () => void
   onSelect: (key: string) => void
   onOpenSession: (id: string) => void
 }
@@ -94,6 +96,8 @@ export function connectedView(
     connection,
     onDisconnectSource,
     selectedKey,
+    now,
+    onBack,
     onSelect,
     onOpenSession,
     ...listing
@@ -117,6 +121,8 @@ export function connectedView(
     kind: 'tickets',
     projectId,
     selectedKey,
+    now,
+    onBack,
     onSelect,
     onOpenSession,
     backlog: { ...listedBacklog(list.data, listing), provider: connection.provider },

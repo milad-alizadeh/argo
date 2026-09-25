@@ -2,6 +2,7 @@
 import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { AccountListed, AccountListReply } from '@/domains/accounts/contract/contract'
 import { type ContractFailure, QUERY_KEYS, settle } from '@/platform/renderer/lib/query-client'
+import { trpcClient } from '@/platform/renderer/trpc-client'
 
 export type AccountListing = Pick<AccountListed, 'accounts' | 'notice' | 'providers'>
 
@@ -20,19 +21,30 @@ export function storeListing(client: QueryClient, next: AccountListing): void {
 export function useAccounts() {
   return useQuery<AccountListing, ContractFailure>({
     queryKey: QUERY_KEYS.accounts,
-    queryFn: async () => listing(await settle(window.argo.listAccounts())),
+    queryFn: async () => listing(await settle(trpcClient.accountList.query())),
   })
 }
 
-function useListingAction<Input>(act: (input: Input) => Promise<AccountListReply>) {
+function useListingAction<Input>(options: {
+  mutationKey: readonly unknown[]
+  mutationFn: (input: Input) => Promise<AccountListReply>
+}) {
   const client = useQueryClient()
   return useMutation<AccountListed, ContractFailure, Input>({
-    mutationFn: (input: Input) => settle(act(input)),
+    ...options,
+    mutationFn: (input) => settle(options.mutationFn(input)),
     onSuccess: (next) => storeListing(client, next),
   })
 }
 
 export const useDisconnect = () =>
-  useListingAction((accountId: string) => window.argo.disconnectAccount({ accountId }))
+  useListingAction({
+    mutationKey: ['accounts', 'disconnect'],
+    mutationFn: (accountId: string) => trpcClient.accountDisconnect.mutate({ accountId }),
+  })
 
-export const useDismissNotice = () => useListingAction(() => window.argo.dismissAccountNotice())
+export const useDismissNotice = () =>
+  useListingAction({
+    mutationKey: ['accounts', 'dismiss-notice'],
+    mutationFn: () => trpcClient.accountDismissNotice.mutate(),
+  })

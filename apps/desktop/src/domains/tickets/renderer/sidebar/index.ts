@@ -1,2 +1,8 @@
 export { TicketList } from './ticket-list'
-export { TicketsSidebar, TicketsSidebarContent } from './tickets-sidebar'
+export { useTicketPlanningSidebar } from './ticket-planning-sidebar-store'
+export { type TicketWorkPath, ticketWorkPath } from './ticket-work-path'
+export {
+  TicketsSidebar,
+  TicketsSidebarContent,
+  type TicketsSidebarContentProps,
+} from './tickets-sidebar'

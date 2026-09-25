@@ -1,28 +1,18 @@
-.session-screen__shell {
-  --inset-session-inspector-toggle: var(--size-control);
-  --inset-session-sidebar-toggle: calc(var(--size-control) + var(--spacing-shell-tight));
-}
-
 .session-screen__composer {
   --session-screen-composer-limit: min(var(--size-session-composer-overlay), 50%);
+  --session-screen-queued-composer-limit: 50%;
   max-height: var(--session-screen-composer-limit);
+}
+
+.session-screen__composer:has(.session-page__pending-turns) {
+  height: var(--session-screen-queued-composer-limit);
+  max-height: var(--session-screen-queued-composer-limit);
 }
 
 .session-screen__composer-scroll {
   min-height: 0;
-  overflow-y: auto;
-}
-
-[data-component="CockpitContent"][data-sidebar-state="collapsed"]
-  .session-screen__shell
-  [data-component="SessionHeader"] {
-  padding-inline-start: calc(var(--spacing-shell-gutter) + var(--inset-session-sidebar-toggle));
-}
-
-.session-screen__shell
-  [data-component="InspectorSplit"][data-state="collapsed"]
-  [data-component="SessionHeaderControls"] {
-  margin-inline-end: var(--inset-session-inspector-toggle);
+  flex: 1 1 auto;
+  overflow: hidden;
 }
 
 .session-screen__feed .feed__viewport {

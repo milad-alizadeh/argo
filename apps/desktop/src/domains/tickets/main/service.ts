@@ -4,6 +4,7 @@ import {
   type TicketConnectedReply,
   type TicketDiscoverReply,
   type TicketError,
+  type TicketListReply,
   type TicketUpdateReply,
   ticketError,
 } from '@/domains/tickets/contract/contract'
@@ -98,6 +99,28 @@ export async function discoverSources(call: Call, accountId: string): Promise<Ti
   const read = await readAs(call, accountId, (source, reader) => source.discover(reader))
   if (!read.ok) return read.error
   return { version: 1, type: 'ticket.discovered', requestId, projectId, scopes: read.value }
+}
+
+export async function listTickets(
+  call: Call,
+  request: { query: string; cursor: string | null },
+): Promise<TicketListReply> {
+  const { requestId, projectId } = call
+  const target = await writableConnection(call)
+  if (!target.ok) return target.error
+  const { accountId, scope } = target
+  const read = await readAs(call, accountId, (source, reader) =>
+    source.page(reader, { scope, ...request }),
+  )
+  if (!read.ok) return read.error
+  return {
+    version: 1,
+    type: 'ticket.listed',
+    requestId,
+    projectId,
+    scope,
+    ...read.value,
+  }
 }
 
 export async function updateStatus(

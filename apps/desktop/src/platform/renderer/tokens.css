@@ -45,6 +45,8 @@
   --text-code: 13px;
   /* Supporting facts and compact counts share the one smaller sans rung. */
   --text-meta: 12px;
+  /* Labels in the fixed navigation rail stay subordinate to a screen's content. */
+  --text-navigation: 11px;
   /* Named on Tailwind's own spacing namespace, so one declaration serves both readers: the Feed
      reaches these through var() for properties no utility expresses, and the Roster reaches the
      same numbers as `gap-tight` and the rest. Named `--space-*` they would still be valid CSS
@@ -167,6 +169,7 @@
   --text-prose: 14px;
   --text-prose--line-height: 20px;
   --text-meta--line-height: 16px;
+  --text-navigation--line-height: 14px;
   --text-code--line-height: 19px;
   --text-control: var(--text-body);
   --text-control--line-height: var(--text-body--line-height);
@@ -183,6 +186,7 @@
   --text-body-weight: 400;
   --text-prose-weight: 400;
   --text-meta-weight: 400;
+  --text-navigation-weight: 400;
   --text-code-weight: 400;
   --text-control-weight: 400;
   --text-title-tracking: normal;
@@ -190,6 +194,7 @@
   --text-body-tracking: normal;
   --text-prose-tracking: normal;
   --text-meta-tracking: normal;
+  --text-navigation-tracking: normal;
   --text-code-tracking: normal;
   --text-control-tracking: normal;
   --size-chrome-bar: 52px;
@@ -202,6 +207,8 @@
   --size-navigation-item: 36px;
   --size-navigation-control: 28px;
   --size-icon-control: 16px;
+  /* The child-completion ring sits around a Ticket state mark without becoming a control itself. */
+  --size-icon-progress: 20px;
   --size-control: 32px;
   --size-ticket-age-visible: 240px;
   --size-session-inspector: 400px;
@@ -373,7 +380,7 @@
   --size-ticket-key: 52px;
   --size-ticket-key-long: 80px;
   --size-ticket-age: 32px;
-  --size-ticket-property: 56px;
+  --size-ticket-property: 72px;
   --size-ticket-inspector: 560px;
   --size-ticket-inspector-min: 440px;
   --size-ticket-workspace-min: 400px;

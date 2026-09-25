@@ -12,19 +12,18 @@ import {
 } from '@tanstack/react-query'
 import type {
   ConnectionSummary,
-  TicketConnected,
   TicketConnectedReply,
+  TicketDiscoverReply,
   TicketListed,
+  TicketListReply,
   TicketScope,
 } from '@/domains/tickets/contract/contract'
-import { type ContractFailure, QUERY_KEYS, settle } from '@/platform/renderer/lib/query-client'
+import { type ContractFailure, QUERY_KEYS } from '@/platform/renderer/lib/query-client'
+import { trpc, trpcClient } from '@/platform/renderer/trpc-client'
+import { ticketReply } from './ticket-reply'
 
-const connectionKey = (projectId: string | null) => [...QUERY_KEYS.tickets, projectId, 'connection']
-// The prefix without a query names every listing of the Project, searches included.
-export const listKey = (projectId: string | null, query?: string) =>
-  query === undefined
-    ? [...QUERY_KEYS.tickets, projectId, 'list']
-    : [...QUERY_KEYS.tickets, projectId, 'list', query]
+const connectionKey = (projectId: string) => trpc.tickets.connection.queryKey({ projectId })
+export const listKey = () => trpc.tickets.list.pathKey()
 
 export type TicketPages = InfiniteData<TicketListed, string | null>
 
@@ -39,11 +38,12 @@ export function onRefused(client: QueryClient, projectId: string, failure: Contr
 }
 
 export function useConnection(projectId: string | null) {
-  return useQuery<ConnectionSummary | null, ContractFailure>({
-    queryKey: connectionKey(projectId),
+  return useQuery<TicketConnectedReply, ContractFailure, ConnectionSummary | null>({
+    queryKey: projectId ? connectionKey(projectId) : [...listKey(), 'connection', null],
     queryFn: projectId
-      ? async () => (await settle(window.argo.readConnection({ projectId }))).connection
+      ? () => trpcClient.tickets.connection.query({ projectId }).then(ticketReply)
       : skipToken,
+    select: (reply) => ticketReply(reply).connection,
   })
 }
 
@@ -56,52 +56,65 @@ export function useTicketList(
 ) {
   const client = useQueryClient()
   const ready = projectId !== null && connection?.state === 'ready'
-  return useInfiniteQuery<TicketListed, ContractFailure, TicketPages, QueryKey, string | null>({
-    queryKey: listKey(projectId, query),
-    queryFn: ready
-      ? ({ pageParam }) =>
-          settle(window.argo.listTickets({ projectId, query, cursor: pageParam })).catch(
-            (failure: ContractFailure) => {
-              onRefused(client, projectId, failure)
-              throw failure
-            },
-          )
-      : skipToken,
+  return useInfiniteQuery<TicketListReply, ContractFailure, TicketPages, QueryKey, string | null>({
+    queryKey: [...listKey(), projectId, query],
+    queryFn:
+      ready && projectId
+        ? ({ pageParam }) =>
+            trpcClient.tickets.list
+              .query({ projectId, query, cursor: pageParam })
+              .then(ticketReply)
+              .catch((failure: ContractFailure) => {
+                onRefused(client, projectId, failure)
+                throw failure
+              })
+        : skipToken,
     initialPageParam: null,
     getNextPageParam: (last) => last.nextCursor ?? undefined,
     placeholderData: keepPreviousData,
+    throwOnError: (failure) => {
+      if (projectId) onRefused(client, projectId, failure)
+      return false
+    },
   })
 }
 
 // The sources an Account could connect this Project to, read only while the form is open.
 export function useSources(projectId: string | null, accountId: string | null) {
   const client = useQueryClient()
-  return useQuery<TicketScope[], ContractFailure>({
-    queryKey: [...QUERY_KEYS.tickets, projectId, 'sources', accountId],
+  return useQuery<TicketDiscoverReply, ContractFailure, TicketScope[]>({
+    queryKey: [...listKey(), projectId, 'sources', accountId],
     queryFn:
       projectId && accountId
         ? () =>
-            settle(window.argo.discoverSources({ projectId, accountId })).then(
-              (reply) => reply.scopes,
-              (failure: ContractFailure) => {
+            trpcClient.tickets.discover
+              .query({ projectId, accountId })
+              .then(ticketReply)
+              .catch((failure: ContractFailure) => {
                 onRefused(client, projectId, failure)
                 throw failure
-              },
-            )
+              })
         : skipToken,
+    select: (reply) => ticketReply(reply).scopes,
+    throwOnError: (failure) => {
+      if (projectId) onRefused(client, projectId, failure)
+      return false
+    },
   })
 }
 
 // Each action names its Project, so a reply lands in that Project's cache whatever is on screen.
-function useConnectionAction<Input extends { projectId: string }>(
-  act: (input: Input) => Promise<TicketConnectedReply>,
-) {
+function useConnectionAction<Input extends { projectId: string }>(options: {
+  mutationFn: (input: Input) => Promise<TicketConnectedReply>
+  mutationKey?: readonly unknown[]
+}) {
   const client = useQueryClient()
-  return useMutation<TicketConnected, ContractFailure, Input>({
-    mutationFn: (input: Input) => settle(act(input)),
+  return useMutation<TicketConnectedReply, ContractFailure, Input>({
+    ...options,
     onSuccess: (reply, { projectId }) => {
-      client.setQueryData(connectionKey(projectId), reply.connection)
-      void client.invalidateQueries({ queryKey: listKey(projectId) })
+      const connected = ticketReply(reply)
+      client.setQueryData(connectionKey(projectId), connected.connection)
+      void client.invalidateQueries({ queryKey: listKey() })
       void client.invalidateQueries({ queryKey: QUERY_KEYS.accounts })
     },
     onError: (failure, { projectId }) => onRefused(client, projectId, failure),
@@ -110,10 +123,16 @@ function useConnectionAction<Input extends { projectId: string }>(
 
 export type ConnectInput = { projectId: string; accountId: string; scope: string }
 
-export const useConnectSource = () =>
-  useConnectionAction((input: ConnectInput) => window.argo.connectSource(input))
+export const useConnectSource = () => {
+  return useConnectionAction<ConnectInput>({
+    mutationKey: [...listKey(), 'connect'],
+    mutationFn: (input) => trpcClient.tickets.connect.mutate(input),
+  })
+}
 
-export const useDisconnectSource = () =>
-  useConnectionAction(({ projectId }: { projectId: string }) =>
-    window.argo.disconnectSource({ projectId }),
-  )
+export const useDisconnectSource = () => {
+  return useConnectionAction<{ projectId: string }>({
+    mutationKey: [...listKey(), 'disconnect'],
+    mutationFn: (input) => trpcClient.tickets.disconnect.mutate(input),
+  })
+}
