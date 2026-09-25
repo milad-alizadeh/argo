@@ -3,6 +3,7 @@ import { sessionRosterRow } from '../src/domains/sessions/renderer/session-fixtu
 import { subscribeToStorybookCommands } from './storybook-commands'
 import { storybookHarnessSignInBridge } from './storybook-harness-signin'
 import { storybookProjectBridge } from './storybook-projects'
+import { createStorybookTrpcHost, type StorybookProcedureHandlers } from './storybook-trpc'
 import { ticketsHost } from './tickets-host'
 
 // The Feed keys its measure pass on the window's zoom, read off the preload bridge
@@ -17,6 +18,34 @@ const storybookSession = sessionRosterRow({
   status: 'idle',
   cwd: '/storybook/argo',
 })
+const procedureHandlers = (): StorybookProcedureHandlers => {
+  const bridge = host.argo as typeof host.argo &
+    typeof storybookProjectBridge &
+    typeof storybookHarnessSignInBridge &
+    typeof ticketsHost
+  return {
+    accountList: () => bridge.listAccounts(),
+    harnessReadinessList: () => bridge.listHarnessReadiness(),
+    harnessSignInStart: (input: { harness: 'claude' | 'codex' }) =>
+      bridge.startHarnessSignIn(input),
+    harnessSignInWait: (input: { harness: 'claude' | 'codex' }) => bridge.waitHarnessSignIn(input),
+    harnessSignInCancel: (input: { harness: 'claude' | 'codex' }) =>
+      bridge.cancelHarnessSignIn(input),
+    projectList: () => bridge.listProjects(),
+    projectOpen: (input: { projectId: string }) => bridge.openProject(input),
+    projectRegister: () => bridge.registerProject(),
+    projectRelocate: (input: { projectId: string }) => bridge.relocateProject(input),
+    projectSelect: (input: { projectId: string }) => bridge.selectProject(input),
+    projectWorkspaceList: (input: { projectId: string }) => bridge.listProjectWorkspaces(input),
+    projectWorkspaceSelect: (input: { projectId: string; workspaceId: string }) =>
+      bridge.selectProjectWorkspace(input),
+    projectWorkspaceCreateManaged: (input: { projectId: string; baseRef: string }) =>
+      bridge.createManagedProjectWorkspace(input),
+    projectSetupSnapshot: (input: { projectId: string }) => bridge.projectSetupSnapshot(input),
+    projectSetupCommand: (input: Parameters<typeof bridge.sendProjectSetupCommand>[0]) =>
+      bridge.sendProjectSetupCommand(input),
+  }
+}
 host.argo = {
   ...host.argo,
   readCodexModelCatalog: () => Promise.resolve(null),
@@ -95,5 +124,7 @@ host.argo = {
   ...storybookProjectBridge,
   ...ticketsHost,
   ...storybookHarnessSignInBridge,
+  trpc: createStorybookTrpcHost(procedureHandlers),
+  trpcSubscribe: () => Promise.reject(new Error('Storybook has no tRPC subscriptions.')),
   zoomFactor: () => 1,
 } as typeof host.argo

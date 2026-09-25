@@ -6,5 +6,10 @@ export {
   markRevoked,
   projectNames,
 } from './access'
+export {
+  type AccountProcedureContext,
+  accountProcedures,
+  createAccountProcedureContext,
+} from './account-procedures'
 export { readAccounts } from './registry'
 export { asAccount, type TokenFailure } from './tokens'

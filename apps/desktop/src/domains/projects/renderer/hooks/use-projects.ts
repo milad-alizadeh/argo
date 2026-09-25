@@ -3,6 +3,7 @@ import { useCallback, useMemo } from 'react'
 import type { ProjectError, ProjectErrorCode } from '@/domains/projects/contract/contract'
 import type { ProjectListed, ProjectSummary } from '@/domains/projects/contract/messages'
 import type { WorkspaceSummary } from '@/domains/projects/contract/workspace-messages'
+import { trpc, trpcClient } from '@/platform/renderer/trpc-client'
 import { type ProjectContractError, throwProjectContractError } from '../project-contract-error'
 import { projectListQueryKey } from '../project-queries'
 import { useProjectMutations } from './use-project-mutations'
@@ -51,11 +52,11 @@ async function cockpitForListing(reply: ProjectListed): Promise<ProjectCockpit> 
   const project = reply.projects.find((candidate) => candidate.id === selectedId)
   useProjectSelectionStore.getState().selectProject(project?.id ?? null)
   if (project && reply.selectedId !== project.id) {
-    const selected = await window.argo.selectProject({ projectId: project.id })
+    const selected = await trpcClient.projectSelect.mutate({ projectId: project.id })
     if (selected.type !== 'project.listed') return { ...EMPTY, projects: reply.projects }
   }
   if (!project) return { ...EMPTY, projects: reply.projects }
-  const opened = await window.argo.openProject({ projectId: project.id })
+  const opened = await trpcClient.projectOpen.query({ projectId: project.id })
   if (opened.type === 'project.error') {
     return {
       status: 'refused',
@@ -88,11 +89,12 @@ async function cockpitForListing(reply: ProjectListed): Promise<ProjectCockpit> 
 
 function useProjectListing() {
   return useQuery<ProjectCockpit, ProjectContractError>({
+    ...trpc.projectList.queryOptions(),
     queryKey: projectListQueryKey,
     staleTime: Infinity,
     retry: false,
     queryFn: async () => {
-      const reply = await window.argo.listProjects()
+      const reply = await trpcClient.projectList.query()
       switch (reply.type) {
         case 'project.listed':
           return cockpitForListing(reply)

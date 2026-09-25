@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import type { ProjectListReply } from '@/domains/projects/contract/messages'
+import { trpc, trpcClient } from '@/platform/renderer/trpc-client'
 import { type ProjectContractError, throwProjectContractError } from '../project-contract-error'
 import { projectListQueryKey, projectMutationKey } from '../project-queries'
 import { useProjectSelectionStore } from './use-project-selection-store'
@@ -40,19 +41,22 @@ export function useProjectMutations(options: {
     },
   }
   const register = useMutation<ProjectListReply, ProjectContractError, void>({
+    ...trpc.projectRegister.mutationOptions(),
     ...mutationOptions,
     mutationKey: projectMutationKey,
-    mutationFn: () => window.argo.registerProject(),
+    mutationFn: () => trpcClient.projectRegister.mutate(),
   })
   const relocate = useMutation<ProjectListReply, ProjectContractError, string>({
+    ...trpc.projectRelocate.mutationOptions(),
     ...mutationOptions,
     mutationKey: projectMutationKey,
-    mutationFn: (projectId) => window.argo.relocateProject({ projectId }),
+    mutationFn: (projectId) => trpcClient.projectRelocate.mutate({ projectId }),
   })
   const selectProject = useMutation<ProjectListReply, ProjectContractError, string>({
+    ...trpc.projectSelect.mutationOptions(),
     ...mutationOptions,
     mutationKey: projectMutationKey,
-    mutationFn: (projectId) => window.argo.selectProject({ projectId }),
+    mutationFn: (projectId) => trpcClient.projectSelect.mutate({ projectId }),
   })
   return {
     isPending: register.isPending || relocate.isPending || selectProject.isPending,

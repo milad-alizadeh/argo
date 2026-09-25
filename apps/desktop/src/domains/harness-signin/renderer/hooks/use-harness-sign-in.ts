@@ -9,6 +9,7 @@ import type {
   HarnessSignInStarted,
 } from '@/domains/harness-signin/contract/contract'
 import { type ContractFailure, QUERY_KEYS, settle } from '@/platform/renderer/lib/query-client'
+import { trpc, trpcClient } from '@/platform/renderer/trpc-client'
 
 export type HarnessSignIn = {
   // Set once `start` has asked the main process and cleared once `wait` settles.
@@ -23,17 +24,20 @@ export function useHarnessSignIn(harness: Harness): HarnessSignIn {
   const client = useQueryClient()
   const readiness = () => void client.invalidateQueries({ queryKey: QUERY_KEYS.harnessReadiness })
   const wait = useMutation<HarnessSignInResolved, ContractFailure>({
-    mutationFn: () => settle(window.argo.waitHarnessSignIn({ harness })),
+    ...trpc.harnessSignInWait.mutationOptions(),
+    mutationFn: () => settle(trpcClient.harnessSignInWait.mutate({ harness })),
     onSettled: readiness,
   })
   // Asking again while an attempt is already pending resumes it, so a re-click after a remount
   // reaches the same attempt rather than starting a second one.
   const start = useMutation<HarnessSignInStarted, ContractFailure>({
-    mutationFn: () => settle(window.argo.startHarnessSignIn({ harness })),
+    ...trpc.harnessSignInStart.mutationOptions(),
+    mutationFn: () => settle(trpcClient.harnessSignInStart.mutate({ harness })),
     onSuccess: () => wait.mutate(),
   })
   const cancel = useMutation<HarnessSignInCanceled, ContractFailure>({
-    mutationFn: () => settle(window.argo.cancelHarnessSignIn({ harness })),
+    ...trpc.harnessSignInCancel.mutationOptions(),
+    mutationFn: () => settle(trpcClient.harnessSignInCancel.mutate({ harness })),
   })
 
   return {

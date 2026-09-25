@@ -3,10 +3,12 @@
 import { useQuery } from '@tanstack/react-query'
 import type { HarnessReadiness } from '@/domains/harness-signin/contract/contract'
 import { type ContractFailure, QUERY_KEYS, settle } from '@/platform/renderer/lib/query-client'
+import { trpc, trpcClient } from '@/platform/renderer/trpc-client'
 
 export function useHarnessReadiness() {
   return useQuery<HarnessReadiness[], ContractFailure>({
+    ...trpc.harnessReadinessList.queryOptions(),
     queryKey: QUERY_KEYS.harnessReadiness,
-    queryFn: async () => (await settle(window.argo.listHarnessReadiness())).harnesses,
+    queryFn: async () => (await settle(trpcClient.harnessReadinessList.query())).harnesses,
   })
 }

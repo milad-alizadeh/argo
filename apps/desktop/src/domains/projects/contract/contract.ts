@@ -55,7 +55,7 @@ const onboardingHarnessAvailabilitySchema = z.strictObject({
   harness: onboardingHarnessSchema,
   unavailableReason: z.string().min(1).nullable(),
 })
-const projectSetupCommandSchema = z.discriminatedUnion('type', [
+export const projectSetupCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('choose-manual') }),
   z.strictObject({ type: z.literal('choose-agent'), harness: onboardingHarnessSchema }),
   z.strictObject({
