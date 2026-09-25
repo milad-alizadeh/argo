@@ -1,24 +1,21 @@
 import type { DurableDatabase } from '@/database/durable-database'
 import { sessionTable } from '@/database/session-table'
 
-export type SessionUpsertInput = {
-  harness: string
-  nativeId: string
-  projectId?: string | null
-  customTitle?: string | null
-  preview?: string | null
-  firstPrompt?: string | null
-  cwd?: string | null
-}
+export type SessionUpsertInput = Omit<
+  typeof sessionTable.$inferInsert,
+  'argoId' | 'createdAt' | 'updatedAt'
+>
 
 export type SessionUpsert = (input: SessionUpsertInput) => string
 
-function definedMetadata(input: SessionUpsertInput): Partial<SessionUpsertInput> {
+type SessionUpsertMetadata = Omit<SessionUpsertInput, 'harness' | 'nativeId'>
+
+function definedMetadata(input: SessionUpsertInput): Partial<SessionUpsertMetadata> {
   return Object.fromEntries(
     Object.entries(input).filter(
       ([key, value]) => key !== 'harness' && key !== 'nativeId' && value !== undefined,
     ),
-  ) as Partial<SessionUpsertInput>
+  ) as Partial<SessionUpsertMetadata>
 }
 
 export function createSessionUpsert(database: DurableDatabase): SessionUpsert {
