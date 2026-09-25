@@ -101,6 +101,24 @@ function CockpitRail({ rail }: Pick<CockpitShellProps, 'rail'>) {
   )
 }
 
+function CockpitContent({
+  isSidebarCollapsed,
+  children,
+}: {
+  isSidebarCollapsed: boolean
+  children: ReactNode
+}) {
+  return (
+    <div
+      data-component="CockpitContent"
+      data-sidebar-state={isSidebarCollapsed ? 'collapsed' : 'open'}
+      className="relative h-full min-w-0 overflow-hidden bg-background"
+    >
+      {children}
+    </div>
+  )
+}
+
 export function CockpitShell({ rail, sidebar, header, footer, children }: CockpitShellProps) {
   const sidebarPanelRef = usePanelRef()
   const sidebarDefaultWidth = readCssSize('--size-cockpit-sidebar-default')
@@ -167,13 +185,7 @@ export function CockpitShell({ rail, sidebar, header, footer, children }: Cockpi
           </ResizablePanel>
           <ResizableHandle className={isSidebarCollapsed ? 'bg-transparent' : 'bg-border/60'} />
           <ResizablePanel id="cockpit-content" minSize={contentMinimumWidth}>
-            <div
-              data-component="CockpitContent"
-              data-sidebar-state={isSidebarCollapsed ? 'collapsed' : 'open'}
-              className="relative h-full min-w-0 overflow-hidden bg-background"
-            >
-              {children}
-            </div>
+            <CockpitContent isSidebarCollapsed={isSidebarCollapsed}>{children}</CockpitContent>
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
