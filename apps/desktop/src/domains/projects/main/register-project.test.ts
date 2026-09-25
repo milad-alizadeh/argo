@@ -71,7 +71,7 @@ test('a fresh machine lists an empty cockpit rather than a storage failure', asy
   })
 })
 
-test('the next launch lists the Project that was open', async (context) => {
+test('listing after registration returns the selected Project', async (context) => {
   const setup = await fixture(context)
   setup.choose(await repository(setup.root, 'alpha'))
   const registered = await registerProject(register('r1'), setup.store)

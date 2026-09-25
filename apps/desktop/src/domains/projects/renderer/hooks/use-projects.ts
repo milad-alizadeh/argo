@@ -6,6 +6,7 @@ import type { WorkspaceSummary } from '@/domains/projects/contract/workspace-mes
 import { type ProjectContractError, throwProjectContractError } from '../project-contract-error'
 import { projectListQueryKey } from '../project-queries'
 import { useProjectMutations } from './use-project-mutations'
+import { useProjectSelectionStore } from './use-project-selection-store'
 import { useWorkspaces } from './use-workspaces'
 
 export type CockpitStatus = 'loading' | 'empty' | 'selected' | 'setup' | 'refused'
@@ -43,7 +44,16 @@ function refuse(
 }
 
 async function cockpitForListing(reply: ProjectListed): Promise<ProjectCockpit> {
-  const project = reply.projects.find((candidate) => candidate.id === reply.selectedId)
+  const persistedId = useProjectSelectionStore.getState().selectedProjectId
+  const selectedId = reply.projects.some((candidate) => candidate.id === persistedId)
+    ? persistedId
+    : reply.selectedId
+  const project = reply.projects.find((candidate) => candidate.id === selectedId)
+  useProjectSelectionStore.getState().selectProject(project?.id ?? null)
+  if (project && reply.selectedId !== project.id) {
+    const selected = await window.argo.selectProject({ projectId: project.id })
+    if (selected.type !== 'project.listed') return { ...EMPTY, projects: reply.projects }
+  }
   if (!project) return { ...EMPTY, projects: reply.projects }
   const opened = await window.argo.openProject({ projectId: project.id })
   if (opened.type === 'project.error') {

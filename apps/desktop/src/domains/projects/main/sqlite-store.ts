@@ -4,7 +4,6 @@ import type { DurableDatabase } from '@/database/durable-database'
 import { project } from '@/database/project/schema'
 import type { ProjectRow } from '@/database/project/types'
 import { projectRegistrationSchema } from '@/database/project/validation'
-import { projectSelection } from '@/database/project-selection/schema'
 import { projectSetupCheckpoint } from '@/database/project-tables'
 import { createSetupWorktreePromotion } from './project-store-promotion'
 import type { ProjectSetupRecord } from './setup/persistence/project-setup-registry'
@@ -43,25 +42,15 @@ export function createProjectStore(
   database: ProjectDatabase,
   afterWrite: () => void = () => {},
 ): ProjectStore {
-  const writeSelection = (projectId: string) =>
-    database
-      .insert(projectSelection)
-      .values({ singleton: 1, projectId })
-      .onConflictDoUpdate({ target: projectSelection.singleton, set: { projectId } })
-      .run()
+  let selectedId: string | null = null
   return {
-    read: () => readRegistry(database),
+    read: () => readRegistry(database, selectedId),
     replace(registry) {
       database.transaction((transaction) => {
-        transaction.delete(projectSelection).run()
         transaction.delete(project).run()
         if (registry.projects.length) transaction.insert(project).values(registry.projects).run()
-        if (registry.selectedId !== null)
-          transaction
-            .insert(projectSelection)
-            .values({ singleton: 1, projectId: registry.selectedId })
-            .run()
       })
+      selectedId = registry.selectedId
       afterWrite()
     },
     insertProject: (registration) => {
@@ -69,8 +58,7 @@ export function createProjectStore(
       afterWrite()
     },
     selectProject: (projectId) => {
-      writeSelection(projectId)
-      afterWrite()
+      selectedId = projectId
     },
     updateProjectPath: (projectId, projectPath) => {
       database.update(project).set({ path: projectPath }).where(eq(project.id, projectId)).run()
@@ -92,7 +80,7 @@ export function createProjectStore(
   }
 }
 
-function readRegistry(database: ProjectDatabase): ProjectRegistry {
+function readRegistry(database: ProjectDatabase, selectedId: string | null): ProjectRegistry {
   const registered = projectRegistrationSchema
     .array()
     .parse(
@@ -101,14 +89,8 @@ function readRegistry(database: ProjectDatabase): ProjectRegistry {
         .from(project)
         .all(),
     )
-  const selected =
-    database
-      .select({ projectId: projectSelection.projectId })
-      .from(projectSelection)
-      .where(eq(projectSelection.singleton, 1))
-      .get()?.projectId ?? null
   return {
     projects: registered,
-    selectedId: registered.some((entry) => entry.id === selected) ? selected : null,
+    selectedId: registered.some((entry) => entry.id === selectedId) ? selectedId : null,
   }
 }

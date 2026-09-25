@@ -1,6 +1,6 @@
 # Database tables
 
-Put each refactored persisted table in `src/database/<sql-table-name>/schema.ts`. Use the SQL table name for the folder, with underscores changed to hyphens, and keep the existing camel case table export. Project Setup tables stay in `project-tables.ts` until that model is revisited.
+Put each persisted table in `src/database/<sql-table-name>/schema.ts`. Use the SQL table name for the folder, with underscores changed to hyphens, and keep the existing camel case table export. Project Setup tables stay in `project-tables.ts` until that model is revisited. The selected Project is renderer UI state in the persisted Zustand store, not a database table.
 
 Put each table's inferred TypeScript aliases in the same folder's `types.ts`. Name the selected row type `<Thing>Row` and the insert type `New<Thing>`. Derive both from the Drizzle table.
 

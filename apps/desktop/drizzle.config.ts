@@ -5,7 +5,6 @@ export default defineConfig({
   schema: [
     './src/database/project-tables.ts',
     './src/database/project/schema.ts',
-    './src/database/project-selection/schema.ts',
     './src/database/workspace/schema.ts',
     './src/database/project-workspace-selection/schema.ts',
     './src/database/managed-workspace-recovery/schema.ts',
