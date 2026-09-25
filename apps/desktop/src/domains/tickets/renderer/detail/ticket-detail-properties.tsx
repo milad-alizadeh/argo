@@ -12,7 +12,7 @@ import { TicketLabel } from '../status/ticket-label'
 import { type Navigation, TicketRelations } from './ticket-detail-links'
 
 const COMPACT_VALUE =
-  'rounded-full border border-border/60 bg-background px-(--spacing-shell-item) py-(--spacing-shell-tight) text-foreground shadow-xs @[46rem]:rounded-none @[46rem]:border-transparent @[46rem]:bg-transparent @[46rem]:p-0 @[46rem]:shadow-none'
+  'inline-flex h-6 items-center rounded-full border border-border/60 bg-background px-(--spacing-shell-item) text-foreground shadow-xs @[46rem]:h-auto @[46rem]:rounded-none @[46rem]:border-transparent @[46rem]:bg-transparent @[46rem]:p-0 @[46rem]:shadow-none'
 
 function Property({ name, children }: { name: string; children: ReactNode }) {
   return (
@@ -30,7 +30,7 @@ function Property({ name, children }: { name: string; children: ReactNode }) {
 
 function MetadataSection({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="contents min-w-0 space-y-(--spacing-shell-item) @[46rem]:block">
+    <section className="contents min-w-0 @[46rem]:block @[46rem]:space-y-(--spacing-shell-item)">
       <h3 className="sr-only type-meta-heading text-muted-foreground @[46rem]:not-sr-only">
         {title}
       </h3>
@@ -130,9 +130,9 @@ export function Properties({
             </Property>
           ) : null}
           <Property name={t('detail.created')}>
-            <time className={COMPACT_VALUE} dateTime={ticket.createdAt}>
-              <span className="@[46rem]:hidden">{t('detail.created')} </span>
-              {createdAt}
+            <time className={`${COMPACT_VALUE} gap-1`} dateTime={ticket.createdAt}>
+              <span className="@[46rem]:hidden">{t('detail.created')}</span>
+              <span>{createdAt}</span>
             </time>
           </Property>
         </dl>
@@ -147,7 +147,7 @@ export function Properties({
         </MetadataSection>
       ) : null}
       <MetadataSection title={t('detail.relations')}>
-        <div className="contents min-w-0 space-y-(--spacing-shell-item) @[46rem]:block">
+        <div className="contents min-w-0 @[46rem]:block @[46rem]:space-y-(--spacing-shell-item)">
           <TicketRelations
             linkedSessionCount={linkedSessionCount}
             listed={listed}

@@ -11,8 +11,11 @@ const meta = {
   component: TicketDetail,
   parameters: { layout: 'fullscreen' },
   decorators: [
-    (Story) => (
-      <aside className="flex h-dvh w-(--size-ticket-inspector) flex-col bg-sidebar">
+    (Story, { parameters }) => (
+      <aside
+        className="flex h-dvh flex-col bg-sidebar"
+        style={{ width: parameters.detailWidth ?? 'var(--size-ticket-inspector)' }}
+      >
         <Story />
       </aside>
     ),
@@ -36,6 +39,31 @@ type Story = StoryObj<typeof TicketDetail>
 async function openRelation(article: HTMLElement, canvasElement: HTMLElement, name: string) {
   await userEvent.click(within(article).getByRole('button', { name }))
   return within(canvasElement.ownerDocument.body).findByRole('dialog')
+}
+
+function compactMetadataBoxes(article: HTMLElement, key = '#607') {
+  const values = [
+    within(article).getByRole('link', { name: `Open ${key} in GitHub` }),
+    within(article).getByRole('button', { name: 'State: Open' }),
+    article.querySelector('time'),
+    within(article).getByText('0 Sessions'),
+  ]
+  return values.map((value) => {
+    if (value === null) throw new Error('The compact metadata value is absent.')
+    return value.getBoundingClientRect()
+  })
+}
+
+function expectCompactMetadataHeight(article: HTMLElement, key?: string) {
+  const boxes = compactMetadataBoxes(article, key)
+  const heights = boxes.map((box) => box.height)
+  expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(1)
+}
+
+function expectAlignedCompactMetadata(article: HTMLElement, key?: string) {
+  const boxes = compactMetadataBoxes(article, key)
+  const centers = boxes.map((box) => box.top + box.height / 2)
+  expect(Math.max(...centers) - Math.min(...centers)).toBeLessThanOrEqual(1)
 }
 
 export const Default: Story = {
@@ -64,6 +92,7 @@ export const Default: Story = {
     const metadata = within(article).getByRole('complementary', { name: 'Ticket metadata' })
     await expect(metadata.querySelector('time')).toHaveAttribute('datetime', wayfinder.createdAt)
     await expect(metadata).toHaveTextContent('0 Sessions')
+    expectCompactMetadataHeight(article)
     // GitHub keeps no priority, and names its status the Ticket's state.
     await expect(within(article).queryByText('Status')).toBeNull()
     await expect(within(article).queryByText('Priority')).toBeNull()
@@ -72,6 +101,17 @@ export const Default: Story = {
       within(article).getByText(name).style.getPropertyValue('--ticket-label')
     await expect(tint('wayfinder')).toBe(`#${wayfinder.labels[0]?.color}`)
     await expect(tint('prd')).toBe('')
+  },
+}
+
+// A compact workspace can still fit the core metadata on one row. Every pill keeps one centreline.
+export const CompactMetadataAlignment: Story = {
+  args: { ticket: prototype },
+  parameters: { detailWidth: '44rem' },
+  play: async ({ canvasElement }) => {
+    const article = within(canvasElement).getByRole('article', { name: 'Ticket #609' })
+    expectCompactMetadataHeight(article, '#609')
+    expectAlignedCompactMetadata(article, '#609')
   },
 }
 

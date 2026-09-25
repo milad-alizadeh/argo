@@ -20,6 +20,8 @@ const STATE_ICONS: Record<TicketState, { icon: IconName; tone: string }> = {
 
 export const stateIcon = 'size-(--size-icon-meta) shrink-0'
 const blockedIcon = `${stateIcon} text-danger`
+const COMPACT_RELATION_PILL =
+  'inline-flex h-6 items-center rounded-full border border-border/60 bg-background px-(--spacing-shell-item) shadow-xs @[46rem]:hidden'
 
 export type Navigation = { listed: ReadonlySet<string>; onSelect: (key: string) => void }
 
@@ -177,15 +179,13 @@ export function TicketRelations({
       ) : null}
       {blockers === null ? (
         <>
-          <span className="rounded-full border border-border/60 bg-background px-(--spacing-shell-item) py-(--spacing-shell-tight) shadow-xs @[46rem]:hidden">
-            {t('detail.dependenciesUnavailable')}
-          </span>
+          <span className={COMPACT_RELATION_PILL}>{t('detail.dependenciesUnavailable')}</span>
           <p className="hidden type-meta text-muted-foreground @[46rem]:block">
             {sourcePresentation(provider).noDependencies}
           </p>
         </>
       ) : null}
-      <span className="rounded-full border border-border/60 bg-background px-(--spacing-shell-item) py-(--spacing-shell-tight) shadow-xs @[46rem]:hidden">
+      <span className={COMPACT_RELATION_PILL}>
         {t('detail.sessionsCompact', { count: linkedSessionCount })}
       </span>
       <dl className="hidden grid-cols-[var(--size-ticket-property)_minmax(0,1fr)] gap-x-(--spacing-shell-gutter) @[46rem]:grid">
