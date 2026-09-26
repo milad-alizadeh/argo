@@ -67,7 +67,7 @@ export function sessionListTrpc(
 ): typeof window.argo.trpc {
   queryClient.removeQueries({ queryKey: ['sessions', 'list'] })
   return (async (request) => {
-    if (request.path !== 'sessionList') return trpc(request)
+    if (request.path !== 'sessions.list') return trpc(request)
     const input = request.input as { page: number; pageSize: number }
     const rows = sessions()
     const start = (input.page - 1) * input.pageSize

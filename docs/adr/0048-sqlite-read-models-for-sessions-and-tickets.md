@@ -81,9 +81,9 @@ separate owners of Ticket provider sync.
 
 The shared table definitions and database lifecycle live under `apps/desktop/src/database/`.
 Session SQL reads and writes live under `apps/desktop/src/domains/sessions/main/`. Name the
-shared write `session-upsert.ts`, the list handler `session-list.ts`, and the worker machine
-`session-sync-machine.ts`. Keep the worker entry and bridge beside the sync machine and app
-machine, respectively. Claude and Codex metadata readers and their response schemas live under
+shared write `session-upsert.ts` and the list handler `session-list.ts`. The reusable sync machine
+and worker entry live under `apps/desktop/src/domains/sessions/worker/`. Keep the worker bridge
+beside the app machine. Claude and Codex metadata readers and their response schemas live under
 their own `apps/desktop/src/harnesses/<harness>/` folders. Name the live machines
 `live-session-supervisor-machine.ts`, `live-session-machine.ts`,
 `claude-live-session-machine.ts`, and `codex-live-session-machine.ts`. The sync machine does

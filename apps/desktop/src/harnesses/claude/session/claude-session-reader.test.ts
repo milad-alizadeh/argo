@@ -25,11 +25,32 @@ test('reads interactive Sessions and gets metadata for known Argo Sessions', asy
     {
       nativeId: ID_ONE,
       activityAt: 1,
-      customTitle: null,
       preview: 'External Session',
       cwd: '/repo',
     },
     { nativeId: ID_TWO, activityAt: 2, customTitle: 'Pinned', preview: 'Argo Session' },
   ])
   expect(malformed).toHaveLength(1)
+})
+
+test('distinguishes a missing custom title from an explicit removal', async () => {
+  const records = await readClaudeSessions({
+    reader: {
+      list: async () => [
+        { sessionId: ID_ONE, summary: 'Sparse Session', lastModified: 1 },
+        {
+          sessionId: ID_TWO,
+          summary: 'Cleared Session',
+          lastModified: 2,
+          customTitle: null,
+        },
+      ],
+      get: async () => undefined,
+    },
+    knownNativeIds: [],
+    reportMalformed: () => {},
+  })
+
+  expect(records[0]).not.toHaveProperty('customTitle')
+  expect(records[1]).toHaveProperty('customTitle', null)
 })

@@ -70,7 +70,7 @@ function withSessionListHost(
   window.argo = {
     ...before,
     trpc: fn(async (request) => {
-      if (request.path !== 'sessionList') return before.trpc(request)
+      if (request.path !== 'sessions.list') return before.trpc(request)
       const input = request.input as {
         projectId: string
         search: string
@@ -978,7 +978,7 @@ export const GrowsOnlyWhenTheReaderReachesTheEnd: Story = {
     await waitFor(() => expect(listSessions).toHaveBeenCalledTimes(2))
     await expect(listSessions).toHaveBeenCalledWith(
       expect.objectContaining({
-        path: 'sessionList',
+        path: 'sessions.list',
         input: { projectId: 'project-1', search: '', page: 2, pageSize: 30 },
       }),
     )

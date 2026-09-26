@@ -51,7 +51,7 @@ test('registers the paged Session list on the global router', async () => {
   await expect(
     createAppRouter(dependencies)
       .createCaller({})
-      .sessionList({ projectId: 'project-1', page: 1, pageSize: 30 }),
+      .sessions.list({ projectId: 'project-1', page: 1, pageSize: 30 }),
   ).resolves.toMatchObject({
     page: 1,
     pageSize: 30,

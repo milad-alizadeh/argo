@@ -119,10 +119,10 @@ test('retries only the failed SQL batch', async () => {
   }
 })
 
-test('covers the Idle, Fetching, Saving, Ready, and Failed graph paths', () => {
+test('covers the Idle, Fetching, Saving, Ready, Failed, Refresh, and Shutdown graph paths', () => {
   const paths = getShortestPaths(sessionSyncMachine, {
     events: (snapshot): EventFrom<typeof sessionSyncMachine>[] => {
-      if (snapshot.matches('Idle')) return [{ type: 'Start' }]
+      if (snapshot.matches('Idle')) return [{ type: 'Start' }, { type: 'Shutdown' }]
       if (snapshot.matches('Fetching'))
         return [
           {
@@ -130,12 +130,15 @@ test('covers the Idle, Fetching, Saving, Ready, and Failed graph paths', () => {
             output: { records: [{ nativeId: 'native-1', customTitle: null }], skipped: 0 },
           },
           { type: 'xstate.error.actor.fetch', error: new Error('Unavailable') },
+          { type: 'Shutdown' },
         ]
-      if (snapshot.matches('Saving')) return [{ type: 'xstate.done.actor.save', output: undefined }]
-      if (snapshot.matches('Ready') || snapshot.matches('Failed')) return [{ type: 'Refresh' }]
+      if (snapshot.matches('Saving'))
+        return [{ type: 'xstate.done.actor.save', output: undefined }, { type: 'Shutdown' }]
+      if (snapshot.matches('Ready') || snapshot.matches('Failed'))
+        return [{ type: 'Refresh' }, { type: 'Shutdown' }]
       return []
     },
   })
   const states = new Set(paths.map(({ state }) => String(state.value)))
-  assert.deepEqual(states, new Set(['Idle', 'Fetching', 'Saving', 'Ready', 'Failed']))
+  assert.deepEqual(states, new Set(['Idle', 'Fetching', 'Saving', 'Ready', 'Failed', 'Closed']))
 })

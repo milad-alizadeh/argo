@@ -39,7 +39,7 @@ function parseClaudeSession(raw: unknown): ClaudeSessionRecord | null {
   return {
     nativeId: parsed.data.sessionId,
     activityAt: parsed.data.lastModified,
-    customTitle: parsed.data.customTitle ?? null,
+    ...(parsed.data.customTitle === undefined ? {} : { customTitle: parsed.data.customTitle }),
     ...(parsed.data.summary === '' ||
     parsed.data.summary === parsed.data.customTitle ||
     parsed.data.summary === parsed.data.firstPrompt

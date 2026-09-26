@@ -3,8 +3,8 @@ import { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
 import { createActor, fromPromise, waitFor } from 'xstate'
 import { databaseFrom } from '@/database/database'
-import { fetchClaudeSessions, saveClaudeSessions } from './run-claude-session-sync'
-import { type SyncResult, sessionSyncMachine } from './session-sync-machine'
+import { type SyncResult, sessionSyncMachine } from '@/domains/sessions/worker/session-sync-machine'
+import { fetchClaudeSessions, saveClaudeSessions } from './claude-session-sync'
 
 const ID = '00000000-0000-4000-8000-000000000001'
 
@@ -38,7 +38,6 @@ test('matches cwd to the deepest registered Project root and keeps sparse metada
       {
         nativeId: ID,
         activityAt: 1,
-        customTitle: null,
         preview: 'Summary',
         cwd: '/repo/worktree/src',
         projectId: 'project-1',
@@ -88,7 +87,13 @@ test('clears a removed Claude custom title without replacing a known preview', a
       reportMalformed: () => assert.fail('The record is valid.'),
       reader: {
         list: async () => [
-          { sessionId: ID, summary: 'First prompt', firstPrompt: 'First prompt', lastModified: 2 },
+          {
+            sessionId: ID,
+            summary: 'First prompt',
+            firstPrompt: 'First prompt',
+            lastModified: 2,
+            customTitle: null,
+          },
         ],
         get: async () => undefined,
       },

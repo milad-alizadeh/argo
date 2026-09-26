@@ -4,14 +4,14 @@ import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
 import { workspace } from '@/database/workspace/schema'
+import { createSessionUpsert } from '@/domains/sessions/main/database/session-upsert'
+import type { SyncedSessionRecord } from '@/domains/sessions/worker/session-sync-machine'
 import {
   type ClaudeSessionReader,
   type ClaudeSessionRecord,
   readClaudeSessions,
   systemClaudeSessionReader,
 } from '@/harnesses/claude/session/claude-session-reader'
-import { createSessionUpsert } from '../database/upsert-session'
-import type { SyncedSessionRecord } from './session-sync-machine'
 
 export type SyncedClaudeSession = SyncedSessionRecord
 

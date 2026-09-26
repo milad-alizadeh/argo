@@ -4,7 +4,7 @@ import { trpc } from '@/platform/renderer/trpc-client'
 import { sessionRow } from './session-fixtures'
 import { invalidateSessionList, markSessionRead } from './session-queries'
 
-const sessionListPathKey = trpc.sessionList.pathKey()
+const sessionListPathKey = trpc.sessions.list.pathKey()
 
 test('coalesces one watch event into one Session list invalidation', async () => {
   const queryClient = new QueryClient()
@@ -32,7 +32,7 @@ test('opening a Session clears unread state without dropping a loaded row', () =
     retiredIds: ['retired'],
     unread: true,
   })
-  const key = trpc.sessionList.infiniteQueryKey({ projectId: 'project-1', search: '' })
+  const key = trpc.sessions.list.infiniteQueryKey({ projectId: 'project-1', search: '' })
   queryClient.setQueryData(key, {
     pages: [
       {
@@ -62,7 +62,7 @@ test('opening a resumed Session clears its retired row in every cached Session l
     title: null,
     unread: true,
   })
-  const key = trpc.sessionList.infiniteQueryKey({ projectId: 'project-1', search: '' })
+  const key = trpc.sessions.list.infiniteQueryKey({ projectId: 'project-1', search: '' })
   queryClient.setQueryData(key, {
     pages: [{ page: 1, pageSize: 30, rows: [retired], total: 1 }],
     pageParams: [null],

@@ -3,8 +3,11 @@ import { type MessagePort, parentPort, workerData } from 'node:worker_threads'
 import { createActor, fromPromise, type SnapshotFrom } from 'xstate'
 import { z } from 'zod'
 import { databaseFrom } from '@/database/database'
-import { type SessionSyncStatus, sessionSyncStatusSchema } from '../api/session-sync-status'
-import { fetchClaudeSessions, saveClaudeSessions } from './run-claude-session-sync'
+import {
+  fetchClaudeSessions,
+  saveClaudeSessions,
+} from '@/harnesses/claude/session/claude-session-sync'
+import { type SessionSyncStatus, sessionSyncStatusSchema } from '../main/api/session-sync-status'
 import { sessionSyncMachine } from './session-sync-machine'
 
 function statusFor(snapshot: SnapshotFrom<typeof sessionSyncMachine>): SessionSyncStatus {
@@ -14,6 +17,7 @@ function statusFor(snapshot: SnapshotFrom<typeof sessionSyncMachine>): SessionSy
     Saving: 'saving',
     Ready: 'ready',
     Failed: 'failed',
+    Closed: 'idle',
   } as const
   return sessionSyncStatusSchema.parse({
     phase: phaseByState[snapshot.value],
@@ -54,6 +58,7 @@ function startSessionSyncWorker(port: MessagePort, databasePath: string): void {
     }),
   )
   actor.subscribe((snapshot) => {
+    if (snapshot.matches('Closed')) return
     port.postMessage({ type: 'status', status: statusFor(snapshot) })
     if (snapshot.matches('Ready') && snapshot.context.skipped > 0)
       console.warn(`Claude Session sync skipped ${snapshot.context.skipped} malformed records.`)
@@ -62,6 +67,7 @@ function startSessionSyncWorker(port: MessagePort, databasePath: string): void {
   function close(): void {
     if (closed) return
     closed = true
+    actor.send({ type: 'Shutdown' })
     actor.stop()
     client.close()
     port.close()

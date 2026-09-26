@@ -1,5 +1,5 @@
 import { assign, fromPromise, setup } from 'xstate'
-import type { SessionUpsertInput } from '../database/upsert-session'
+import type { SessionUpsertInput } from '../main/database/session-upsert'
 
 export type SyncedSessionRecord = Omit<SessionUpsertInput, 'harness'>
 
@@ -26,6 +26,9 @@ export const sessionSyncMachine = setup({
         }
       | {
           type: 'Refresh'
+        }
+      | {
+          type: 'Shutdown'
         }
       | {
           type: 'xstate.done.actor.fetch'
@@ -117,6 +120,9 @@ export const sessionSyncMachine = setup({
     lastSuccessfulSyncAt: null,
     fetchAttempts: 0,
     saveAttempts: 0,
+  },
+  on: {
+    Shutdown: '.Closed',
   },
   states: {
     Idle: {
@@ -223,6 +229,9 @@ export const sessionSyncMachine = setup({
           actions: 'reset',
         },
       },
+    },
+    Closed: {
+      type: 'final',
     },
   },
 })

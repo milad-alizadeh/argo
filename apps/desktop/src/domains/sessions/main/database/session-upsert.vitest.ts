@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
 import { databaseFrom } from '@/database/database'
-import { createSessionUpsert } from './upsert-session'
+import { createSessionUpsert } from './session-upsert'
 
 function database() {
   const client = new DatabaseSync(':memory:')
