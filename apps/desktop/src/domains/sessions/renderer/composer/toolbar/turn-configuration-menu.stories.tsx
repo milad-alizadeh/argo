@@ -37,16 +37,22 @@ const liveCodexInfo: AvailableHarness = {
   ...codexFixture,
   models: [
     {
-      value: 'provider/live-codex',
-      label: 'Live Codex Model',
-      detail: 'Current model reported by the running app-server',
-      defaultEffort: 'focused',
-      efforts: ['focused'],
-      readings: { exact: ['provider/live-codex'], prefixes: [] },
+      value: 'gpt-5.6-terra',
+      label: 'GPT-5.6-Terra',
+      detail: 'Older balanced model for straightforward work.',
+      defaultEffort: 'medium',
+      efforts: ['medium'],
+      readings: { exact: ['gpt-5.6-terra'], prefixes: [] },
     },
   ],
-  efforts: [{ value: 'focused', label: 'Focused', readings: { exact: ['focused'], prefixes: [] } }],
-  opening: { model: 'provider/live-codex', effort: 'focused', mode: 'workspace-write' },
+  efforts: [
+    {
+      value: 'medium',
+      label: 'Balances speed and reasoning',
+      readings: { exact: ['medium'], prefixes: [] },
+    },
+  ],
+  opening: { model: 'gpt-5.6-terra', effort: 'medium', mode: 'workspace-write' },
 }
 const readyClaude: CatalogReadResult = { info: liveClaudeInfo, failure: null }
 const readyCodex: CatalogReadResult = { info: liveCodexInfo, failure: null }
@@ -191,16 +197,17 @@ export const UsesLiveCodexCatalog: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const trigger = canvas.getByRole('button', { name: TRIGGER })
+    await expect(trigger).toHaveTextContent('GPT-5.6-Terra·medium')
     await expect(trigger).toHaveAccessibleName(
-      'Choose Turn configuration: Codex, Live Codex Model, Focused',
+      'Choose Turn configuration: Codex, GPT-5.6-Terra, medium',
     )
     await userEvent.click(trigger)
     const models = await page().findByRole('radiogroup', { name: 'Model' })
     await expect(within(models).getAllByRole('radio')).toHaveLength(1)
-    await expect(within(models).getByRole('radio', { name: /Live Codex Model/ })).toBeChecked()
+    await expect(within(models).getByRole('radio', { name: /GPT-5.6-Terra/ })).toBeChecked()
     await expect(page().getByRole('slider', { name: 'Effort' })).toHaveAttribute(
       'aria-valuetext',
-      'Focused',
+      'medium',
     )
     await expect(page().queryByRole('status')).toBeNull()
   },
