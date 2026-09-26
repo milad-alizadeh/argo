@@ -20,6 +20,7 @@ function useSessionListQuery(enabled: boolean) {
   return {
     query,
     sessionList,
+    loadedPages: query.data?.pages.length ?? 0,
     hasMore: query.hasNextPage,
     isFetchingMore: query.isFetchingNextPage,
     fetchMore: useCallback(() => {
@@ -66,6 +67,7 @@ export function useSessions(selectedSessionId: SessionId | null, sessionListEnab
   const {
     query: sessionListQueryResult,
     sessionList: sessionListPage,
+    loadedPages: loadedSessionPages,
     hasMore: hasMoreSessions,
     isFetchingMore: isFetchingMoreSessions,
     fetchMore: fetchMoreSessions,
@@ -99,6 +101,7 @@ export function useSessions(selectedSessionId: SessionId | null, sessionListEnab
   return {
     sessionList,
     sessionListError: sessionListQueryResult.error,
+    loadedSessionPages,
     // A poll racing the transcript another live process is actively writing can fail once and
     // recover on the next, whether or not a prior read already landed: the first open of an
     // actively driven Session races the same writer every other poll does (#2053, #2071).

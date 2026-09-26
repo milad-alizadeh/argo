@@ -37,7 +37,7 @@ function WorkButtons({ model }: { model: SessionScreenModel }) {
 
 function Inspector({ model }: { model: SessionScreenModel }) {
   const { projectId } = useParams()
-  const { evidence, navigate, roster, session, setEvidence } = model
+  const { evidence, navigate, sessionList, session, setEvidence } = model
   return (
     <SessionInspector
       activeEvidenceId={evidence?.id ?? null}
@@ -46,7 +46,9 @@ function Inspector({ model }: { model: SessionScreenModel }) {
       delegationFeedError={model.delegationFeedError}
       evidence={evidence}
       sessionId={model.selectedSessionId}
-      handoff={<SessionHandoffFacts onNavigate={navigate} roster={roster} session={session} />}
+      handoff={
+        <SessionHandoffFacts onNavigate={navigate} sessionList={sessionList} session={session} />
+      }
       onOpenEvidence={setEvidence}
       onOpenSession={(sessionId) => navigate(`/projects/${projectId}/sessions/${sessionId}`)}
       onRetryDelegationFeed={model.retryDelegationFeed}
@@ -126,7 +128,7 @@ export function SessionScreenView() {
               session={session}
               harness={model.harness}
               selectedSessionId={selectedSessionId}
-              roster={model.roster}
+              sessionList={model.sessionList}
               cockpit={model.cockpit}
               workspaceActions={model.workspaceActions}
               workspaceCockpit={model.workspaceCockpit}

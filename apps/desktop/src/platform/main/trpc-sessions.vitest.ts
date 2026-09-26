@@ -34,7 +34,10 @@ test('registers the paged Session list under sessions.list', async () => {
     catalog: {},
     harnessSignIn: {},
     projects: { database },
-    sessions: { database, supervisor: { send: () => {} } },
+    sessions: {
+      database,
+      supervisor: { getSnapshot: () => ({ context: { sessions: {} } }), send: () => {} },
+    },
     tickets: {},
     workspaces: { database },
   } as unknown as AppRouterDependencies

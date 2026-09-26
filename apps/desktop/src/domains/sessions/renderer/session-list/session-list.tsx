@@ -114,6 +114,14 @@ function useUnavailableSessionIds(selectedSessionId: SessionId | null) {
   return unavailableSessionIds
 }
 
+function sessionListData(read: ReturnType<typeof useSessionListRead>, sessionCount: number) {
+  return {
+    'data-page-count': read.loadedSessionPages,
+    'data-state': sessionListState(read.sessionList, read.sessionListError, sessionCount),
+    'data-total': read.sessionList?.total,
+  }
+}
+
 // The sidebar header, outcome and rows, under one named record of row actions (#2284).
 export function SessionList({
   actions,
@@ -142,7 +150,7 @@ export function SessionList({
     <aside
       aria-label={useTranslation('sessions').t('sidebarLabel')}
       className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-sidebar"
-      data-state={sessionListState(read.sessionList, read.sessionListError, sessions.sessionCount)}
+      {...sessionListData(read, sessions.sessionCount)}
       ref={sidebar}
     >
       <SessionsSidebarHeader

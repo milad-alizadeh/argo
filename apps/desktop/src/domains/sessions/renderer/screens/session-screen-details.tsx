@@ -40,7 +40,7 @@ type SessionScreenDetailsProps = {
   session: SessionRow | null
   harness: HarnessControl
   selectedSessionId: string | null
-  roster: SessionListPage | null
+  sessionList: SessionListPage | null
   cockpit: Cockpit
   workspaceCockpit: WorkspaceCockpit
   workspaceActions: WorkspaceActions
@@ -96,7 +96,7 @@ export function SessionComposerArea({
   session,
   harness,
   selectedSessionId,
-  roster,
+  sessionList,
   cockpit,
   workspaceCockpit,
   workspaceActions,
@@ -109,11 +109,11 @@ export function SessionComposerArea({
   const identity = composerIdentityOf(selectedSessionId, cockpit.project?.id ?? null)
   const choices = catalog?.availability === 'available' ? catalog : null
   const initialTurnConfiguration =
-    choices === null || (identity.kind === 'session' && roster === null)
+    choices === null || (identity.kind === 'session' && sessionList === null)
       ? null
       : turnConfigurationFor(choices, {
           identity,
-          rows: roster?.sessions ?? [],
+          rows: sessionList?.sessions ?? [],
         })
   const composerKey = composerIdentityKey(identity)
   const target = draftTarget({ identity, harness, cockpit, workspace: workspaceCockpit })
@@ -134,7 +134,7 @@ export function SessionComposerArea({
       navigate(`/projects/${cockpit.project.id}/sessions/${sessionId}`, { replace: true })
     return true
   }
-  // The Roster already knows another process runs it live, so no Send is offered at all (ADR-0040).
+  // The Session list already knows another process runs it live, so no Send is offered at all (ADR-0040).
   if (session?.locked === true) return <OpenElsewhere onRetry={null} />
   if (draft === null) return null
   const refreshCatalog = () =>
@@ -215,20 +215,20 @@ function ReadySessionComposer({
   )
 }
 
-function handoffTitle(roster: SessionListPage | null, sessionId: string) {
-  const row = roster?.sessions.find(({ id }) => id === sessionId)
+function handoffTitle(sessionList: SessionListPage | null, sessionId: string) {
+  const row = sessionList?.sessions.find(({ id }) => id === sessionId)
   return row?.title?.text ?? sessionId
 }
 
 function HandoffLink({
   label,
   sessionId,
-  roster,
+  sessionList,
   onNavigate,
 }: {
   label: string
   sessionId: string
-  roster: SessionListPage | null
+  sessionList: SessionListPage | null
   onNavigate: (path: string) => void
 }) {
   const { projectId } = useParams()
@@ -240,7 +240,7 @@ function HandoffLink({
         onClick={() => onNavigate(`/projects/${projectId}/sessions/${sessionId}`)}
         type="button"
       >
-        {handoffTitle(roster, sessionId)}
+        {handoffTitle(sessionList, sessionId)}
       </button>
     </p>
   )
@@ -248,10 +248,10 @@ function HandoffLink({
 
 export function SessionHandoffFacts({
   session,
-  roster = null,
+  sessionList = null,
   onNavigate,
 }: Pick<SessionScreenDetailsProps, 'session'> & {
-  roster?: SessionListPage | null
+  sessionList?: SessionListPage | null
   onNavigate?: (path: string) => void
 }) {
   const { t } = useTranslation('sessions')
@@ -263,7 +263,7 @@ export function SessionHandoffFacts({
         <HandoffLink
           label={t('handoff.to')}
           onNavigate={onNavigate}
-          roster={roster}
+          sessionList={sessionList}
           sessionId={session.handoffTo}
         />
       ) : null}
@@ -271,7 +271,7 @@ export function SessionHandoffFacts({
         <HandoffLink
           label={t('handoff.from')}
           onNavigate={onNavigate}
-          roster={roster}
+          sessionList={sessionList}
           sessionId={session.handoffFrom}
         />
       ) : null}
@@ -289,7 +289,7 @@ function Failure({ message }: { message: string }) {
   )
 }
 
-// One lock icon for any read-only Session, regardless of Harness (#2092 AC #4/#9). A Roster lock lifts
+// One lock icon for any read-only Session, regardless of Harness (#2092 AC #4/#9). A list lock lifts
 // on its own at the next poll, so it offers no Retry.
 function OpenElsewhere({ onRetry }: { onRetry: (() => void) | null }) {
   const { t } = useTranslation('sessions')

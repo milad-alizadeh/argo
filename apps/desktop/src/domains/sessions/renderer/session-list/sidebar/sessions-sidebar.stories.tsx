@@ -53,6 +53,7 @@ function sessionListResult(sessionList: SessionListPage, page: number, pageSize:
 function withSessionListHost(
   handler: (request: { page: number; pageSize: number }) => Promise<SessionListPage | SessionError>,
 ) {
+  queryClient.removeQueries({ queryKey: ['sessions', 'list'] })
   const before = window.argo
   window.argo = {
     ...before,
@@ -60,7 +61,7 @@ function withSessionListHost(
       if (request.path !== 'sessions.list') return before.trpc(request)
       const input = request.input as { page: number; pageSize: number }
       const sessionList = await handler(input)
-      if (sessionList.type === 'session.error') throw new Error(sessionList.message)
+      if ('type' in sessionList) throw new Error(sessionList.message)
       return { result: { data: sessionListResult(sessionList, input.page, input.pageSize) } }
     }) as typeof before.trpc,
   }

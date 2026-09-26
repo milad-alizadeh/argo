@@ -61,7 +61,7 @@ export function createAppRouter(dependencies: AppRouterDependencies) {
     composerDraftRead: composerDraftReadProcedure(dependencies.sessions.database),
     composerDraftSave: composerDraftSaveProcedure(dependencies.sessions.database),
     sessionSubmit: sessionSubmitProcedure(dependencies.sessions),
-    sessions: t.router({ list: sessionListProcedure(dependencies.sessions.database) }),
+    sessions: t.router({ list: sessionListProcedure(dependencies.sessions) }),
     projectList: projectListProcedure(dependencies.projects.database),
     projectOpen: projectOpenProcedure(dependencies.projects.database),
     projectRegister: projectRegisterProcedure(dependencies.projects),

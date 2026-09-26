@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { sessionRow } from '../session-fixtures'
+import { sessionListTrpc, sessionRow } from '../session-fixtures'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import { SessionScreenView } from './session-screen-view'
 
@@ -32,19 +32,7 @@ function stalledFeedHost() {
   const before = window.argo
   window.argo = {
     ...before,
-    listSessions: async () => ({
-      version: 1,
-      type: 'session.listed',
-      requestId: 'storybook-sessions',
-      sessions: [stalled, other],
-      filesFound: 2,
-      filesRead: 2,
-      filesUnreadable: 0,
-      filesParsed: 0,
-      nextCursor: null,
-      historyComplete: true,
-      partialFailures: [],
-    }),
+    trpc: sessionListTrpc(before.trpc, () => [stalled, other]),
     readSessionFeed: () => new Promise(() => {}),
   }
   return () => {

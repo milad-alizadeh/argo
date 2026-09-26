@@ -3,6 +3,7 @@ import { asc, count } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
+import type { LiveSessionSupervisorActor } from '../live/live-session-supervisor-machine'
 
 const t = initTRPC.create()
 
@@ -20,9 +21,9 @@ export const sessionListRowSchema = z.strictObject({
   id: z.string().uuid(),
   retiredIds: z.array(z.string().uuid()),
   harness: z.string().min(1),
-  posture: z.null(),
+  posture: z.literal('live').nullable(),
   title: sessionListTitleSchema.nullable(),
-  status: z.literal('unknown'),
+  status: z.enum(['running', 'idle', 'stopped', 'ended', 'unknown']),
   entry: z.null(),
   cwd: z.string().nullable(),
   branch: z.null(),
@@ -39,9 +40,9 @@ export const sessionListRowSchema = z.strictObject({
   archived: z.literal(false),
   unread: z.literal(false),
   turnConfiguration: z.strictObject({
-    model: z.null(),
-    effort: z.null(),
-    mode: z.null(),
+    model: z.string().nullable(),
+    effort: z.string().nullable(),
+    mode: z.string().nullable(),
   }),
 })
 
@@ -58,6 +59,27 @@ type StoredSessionTitle = {
   firstPrompt: string | null
 }
 
+type SessionListContext = {
+  database: Database
+  supervisor: LiveSessionSupervisorActor
+}
+
+function liveProjection(context: SessionListContext, sessionId: string) {
+  const actor = context.supervisor.getSnapshot().context.sessions[sessionId]
+  if (actor === undefined) return null
+  const snapshot = actor.getSnapshot()
+  let status: 'running' | 'idle' | 'stopped' | 'ended'
+  if (snapshot.matches('Ready')) status = 'idle'
+  else if (snapshot.matches('Failed')) status = 'stopped'
+  else if (snapshot.matches('Closed')) status = 'ended'
+  else status = 'running'
+  return {
+    posture: 'live' as const,
+    status,
+    turnConfiguration: snapshot.context.first.turnConfiguration,
+  }
+}
+
 function displayedTitle(row: StoredSessionTitle): z.infer<typeof sessionListTitleSchema> | null {
   if (row.customTitle !== null) return { text: row.customTitle, source: 'custom' }
   if (row.preview !== null) return { text: row.preview, source: 'summarised' }
@@ -65,12 +87,12 @@ function displayedTitle(row: StoredSessionTitle): z.infer<typeof sessionListTitl
   return null
 }
 
-export function sessionListProcedure(database: Database) {
+export function sessionListProcedure(context: SessionListContext) {
   return t.procedure
     .input(sessionListInputSchema)
     .output(sessionListOutputSchema)
     .query(({ input }) => {
-      const storedRows = database
+      const storedRows = context.database
         .select({
           id: sessionTable.argoId,
           harness: sessionTable.harness,
@@ -85,35 +107,38 @@ export function sessionListProcedure(database: Database) {
         .limit(input.pageSize)
         .offset((input.page - 1) * input.pageSize)
         .all()
-      const total = database.select({ value: count() }).from(sessionTable).get()?.value ?? 0
+      const total = context.database.select({ value: count() }).from(sessionTable).get()?.value ?? 0
       return {
         page: input.page,
         pageSize: input.pageSize,
         total,
-        rows: storedRows.map((row) => ({
-          id: row.id,
-          retiredIds: [],
-          harness: row.harness,
-          posture: null,
-          title: displayedTitle(row),
-          status: 'unknown' as const,
-          entry: null,
-          cwd: row.cwd,
-          branch: null,
-          updatedAt: new Date(row.updatedAt).toISOString(),
-          unreadableLines: 0 as const,
-          originUnread: false as const,
-          turnStartedAt: null,
-          activity: null,
-          plan: null,
-          subagents: [],
-          shell: [],
-          pullRequest: null,
-          ticket: null,
-          archived: false as const,
-          unread: false as const,
-          turnConfiguration: { model: null, effort: null, mode: null },
-        })),
+        rows: storedRows.map((row) => {
+          const live = liveProjection(context, row.id)
+          return {
+            id: row.id,
+            retiredIds: [],
+            harness: row.harness,
+            posture: live?.posture ?? null,
+            title: displayedTitle(row),
+            status: live?.status ?? ('unknown' as const),
+            entry: null,
+            cwd: row.cwd,
+            branch: null,
+            updatedAt: new Date(row.updatedAt).toISOString(),
+            unreadableLines: 0 as const,
+            originUnread: false as const,
+            turnStartedAt: null,
+            activity: null,
+            plan: null,
+            subagents: [],
+            shell: [],
+            pullRequest: null,
+            ticket: null,
+            archived: false as const,
+            unread: false as const,
+            turnConfiguration: live?.turnConfiguration ?? { model: null, effort: null, mode: null },
+          }
+        }),
       }
     })
 }

@@ -16,11 +16,11 @@ export function composerIdentityOf(
 }
 
 export function findSessionRow(
-  roster: SessionListPage | null,
+  sessionList: SessionListPage | null,
   id: string | null,
 ): SessionRow | null {
   if (id === null) return null
-  return roster?.sessions.find((session) => session.id === id) ?? null
+  return sessionList?.sessions.find((session) => session.id === id) ?? null
 }
 
 export function composerIdentityKey(identity: ComposerIdentity): string {

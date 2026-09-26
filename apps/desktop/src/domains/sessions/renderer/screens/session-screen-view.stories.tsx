@@ -10,9 +10,14 @@ import { RICH_MARKDOWN } from '../feed/content/feed-samples'
 import { INACTIVE_FEED_LIVE_FACTS } from '../feed/document/feed-live-facts'
 import { SessionInspector } from '../inspector/session-inspector'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
-import { sessionRow, sessionShellCommand, sessionSubagent } from '../session-fixtures'
+import {
+  sessionListTrpc,
+  sessionRow,
+  sessionShellCommand,
+  sessionSubagent,
+} from '../session-fixtures'
 import { SessionList, type SessionListActions } from '../session-list/session-list'
-import type { Session, SessionFeed, SessionListPage } from '../types'
+import type { Session, SessionFeed } from '../types'
 import { SessionWorkButtons } from '../work/session-work-buttons'
 import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
 import { SessionScreenView } from './session-screen-view'
@@ -167,14 +172,7 @@ function withListedSessions(sessions: Session[]) {
   const before = window.argo
   window.argo = {
     ...before,
-    listSessions: async () =>
-      ({
-        sessions,
-        total: sessions.length,
-        nextPage: null,
-        historyComplete: true,
-        partialFailures: [],
-      }) satisfies SessionListPage,
+    trpc: sessionListTrpc(before.trpc, () => sessions),
   }
   return () => {
     window.argo = before

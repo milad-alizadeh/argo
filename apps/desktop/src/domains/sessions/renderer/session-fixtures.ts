@@ -4,6 +4,7 @@ import type {
   SessionShellCommand,
   SessionSubagent,
 } from '@/domains/sessions/renderer/model/models'
+import { queryClient } from '@/platform/renderer/trpc-client'
 
 function listedSession(overrides: Partial<SessionRow> = {}): SessionRow {
   return {
@@ -59,4 +60,27 @@ export function sessionRow(
   overrides: Partial<SessionRow> & Pick<SessionRow, 'id' | 'cwd' | 'posture' | 'status' | 'title'>,
 ): SessionRow {
   return listedSession({ branch: 'main', ...overrides })
+}
+
+export function sessionListTrpc(
+  trpc: typeof window.argo.trpc,
+  sessions: () => readonly SessionRow[],
+): typeof window.argo.trpc {
+  queryClient.removeQueries({ queryKey: ['sessions', 'list'] })
+  return (async (request) => {
+    if (request.path !== 'sessions.list') return trpc(request)
+    const input = request.input as { page: number; pageSize: number }
+    const rows = sessions()
+    const start = (input.page - 1) * input.pageSize
+    return {
+      result: {
+        data: {
+          page: input.page,
+          pageSize: input.pageSize,
+          total: rows.length,
+          rows: rows.slice(start, start + input.pageSize),
+        },
+      },
+    }
+  }) as typeof window.argo.trpc
 }

@@ -11,7 +11,7 @@ const IDS = [
   '00000000-0000-4000-8000-000000000003',
 ] as const
 
-function sessionListCaller() {
+function sessionListCaller(sessions: Record<string, unknown> = {}) {
   const client = new DatabaseSync(':memory:')
   client.exec(`CREATE TABLE session (
     argo_id TEXT PRIMARY KEY,
@@ -27,8 +27,26 @@ function sessionListCaller() {
     updated_at INTEGER NOT NULL
   ); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);`)
   const database = databaseFrom(client)
-  const router = initTRPC.create().router({ list: sessionListProcedure(database) })
+  const supervisor = {
+    getSnapshot: () => ({ context: { sessions } }),
+  }
+  const router = initTRPC.create().router({
+    list: sessionListProcedure({ database, supervisor: supervisor as never }),
+  })
   return { client, list: router.createCaller({}).list }
+}
+
+function liveSession(state: string) {
+  return {
+    getSnapshot: () => ({
+      matches: (candidate: string) => candidate === state,
+      context: {
+        first: {
+          turnConfiguration: { model: 'claude-sonnet', effort: 'high', mode: 'default' },
+        },
+      },
+    }),
+  }
 }
 
 function insertSession(
@@ -152,6 +170,36 @@ test('chooses custom title, vendor preview, then first prompt without reading hi
       ],
     )
     assert.equal(result.rows[0]?.cwd, '/work/one')
+  } finally {
+    client.close()
+  }
+})
+
+test('adds the current live projection to a saved Session', async () => {
+  const { client, list } = sessionListCaller({ [IDS[0]]: liveSession('Ready') })
+  try {
+    insertSession(client, {
+      id: IDS[0],
+      harness: 'claude',
+      nativeId: 'native-1',
+      firstPrompt: 'First prompt',
+      updatedAt: 10,
+    })
+
+    const result = await list({ page: 1, pageSize: 10 })
+
+    assert.deepEqual(
+      {
+        posture: result.rows[0]?.posture,
+        status: result.rows[0]?.status,
+        turnConfiguration: result.rows[0]?.turnConfiguration,
+      },
+      {
+        posture: 'live',
+        status: 'idle',
+        turnConfiguration: { model: 'claude-sonnet', effort: 'high', mode: 'default' },
+      },
+    )
   } finally {
     client.close()
   }

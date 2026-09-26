@@ -4,7 +4,7 @@ import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionTurnConfiguration } from '@/domains/sessions/renderer/model/models'
 import { claudeComposerModelCatalogFixture } from '../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
-import { sessionRow } from '../session-fixtures'
+import { sessionListTrpc, sessionRow } from '../session-fixtures'
 import { SessionScreenView } from './session-screen-view'
 
 const SESSION_ID = 'live-turn-configuration'
@@ -23,20 +23,7 @@ function liveSession(reply: SessionTurnConfiguration, sent: unknown[]) {
     turnConfiguration: { model: 'claude-opus-5', effort: 'medium', mode: 'default' },
   })
   return {
-    listSessions: () =>
-      Promise.resolve({
-        version: 1 as const,
-        type: 'session.listed' as const,
-        requestId: 'turn-configuration-sessions',
-        sessions: [row],
-        filesFound: 1,
-        filesRead: 1,
-        filesUnreadable: 0,
-        filesParsed: 0,
-        nextCursor: null,
-        historyComplete: true,
-        partialFailures: [],
-      }),
+    trpc: sessionListTrpc(window.argo.trpc, () => [row]),
     sendSession: (request: { sessionId: string }) => {
       sent.push(request)
       Object.assign(row, { turnStartedAt: NEXT_TURN, turnConfiguration: reply })

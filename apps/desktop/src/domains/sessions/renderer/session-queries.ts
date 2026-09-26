@@ -50,11 +50,11 @@ export function markSessionRead(
   const identities = new Set([sessionId, ...retiredIds])
   queryClient.setQueriesData<InfiniteData<SessionListPage>>(
     { queryKey: sessionListQueryKey },
-    (roster) => {
-      if (roster === undefined) return roster
+    (sessionList) => {
+      if (sessionList === undefined) return sessionList
       return {
-        ...roster,
-        pages: roster.pages.map((page) => ({
+        ...sessionList,
+        pages: sessionList.pages.map((page) => ({
           ...page,
           sessions: page.sessions.map((session) =>
             identities.has(session.id) || session.retiredIds.some((id) => identities.has(id))

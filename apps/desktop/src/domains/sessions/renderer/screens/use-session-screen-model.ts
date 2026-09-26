@@ -64,7 +64,7 @@ export function useSessionScreenModel() {
   const [lastHarness, chooseHarness] = useState<SessionHarness>('claude')
   const session = useSelectedSession(selectedSessionId, sessionList)
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
-  // Ask only real Session ids; an optimistic Roster row has no backend record yet (#2109).
+  // Ask only real Session ids; an optimistic Session row has no backend record yet (#2109).
   const permission = useSessionPermission(selectedSessionId),
     question = useSessionQuestion(selectedSessionId)
   const artifacts = useWorkArtifacts({
@@ -80,7 +80,7 @@ export function useSessionScreenModel() {
     feed,
     feedError,
     retryFeed,
-    roster: sessionList,
+    sessionList,
     navigate,
     session,
     evidence,
