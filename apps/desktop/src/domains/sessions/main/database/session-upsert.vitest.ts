@@ -18,12 +18,7 @@ function database() {
     cwd TEXT,
     created_at INTEGER NOT NULL DEFAULT (CAST(unixepoch('subsec') * 1000 AS INTEGER)),
     updated_at INTEGER NOT NULL DEFAULT (CAST(unixepoch('subsec') * 1000 AS INTEGER))
-  ); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);
-  CREATE TRIGGER session_touch_updated_at AFTER UPDATE ON session FOR EACH ROW
-  WHEN NEW.updated_at <= OLD.updated_at BEGIN
-    UPDATE session SET updated_at = MAX(CAST(unixepoch('subsec') * 1000 AS INTEGER), OLD.updated_at + 1)
-    WHERE argo_id = NEW.argo_id;
-  END;`)
+  ); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);`)
   return { client, upsert: createSessionUpsert(databaseFrom(client)) }
 }
 

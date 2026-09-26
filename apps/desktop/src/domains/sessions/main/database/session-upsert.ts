@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm'
 import type { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
@@ -40,6 +41,7 @@ export function createSessionUpsert(database: Database): SessionUpsert {
         set: {
           ...metadata,
           harness: validatedInput.harness,
+          updatedAt: sql`MAX(CAST(unixepoch('subsec') * 1000 AS INTEGER), ${sessionTable.updatedAt} + 1)`,
         },
       })
       .returning({ argoId: sessionTable.argoId })
