@@ -60,6 +60,7 @@ function insertSession(
     preview?: string | null
     firstPrompt?: string | null
     cwd?: string | null
+    projectId?: string
     updatedAt: number
   },
 ) {
@@ -68,12 +69,13 @@ function insertSession(
       `INSERT INTO session (
         argo_id, harness, native_id, project_id, workspace_id, custom_title, preview,
         first_prompt, cwd, created_at, updated_at
-      ) VALUES (?, ?, ?, NULL, NULL, ?, ?, ?, ?, 1, ?)`,
+      ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, 1, ?)`,
     )
     .run(
       values.id,
       values.harness,
       values.nativeId,
+      values.projectId ?? 'project-1',
       values.customTitle ?? null,
       values.preview ?? null,
       values.firstPrompt ?? null,
@@ -107,8 +109,17 @@ test('returns exact numbered pages in deterministic Argo ID order', async () => 
       updatedAt: 20,
     })
 
-    const first = await list({ page: 1, pageSize: 2 })
-    const second = await list({ page: 2, pageSize: 2 })
+    insertSession(client, {
+      id: '00000000-0000-4000-8000-000000000004',
+      harness: 'claude',
+      nativeId: 'other-project',
+      projectId: 'project-2',
+      firstPrompt: 'other project',
+      updatedAt: 40,
+    })
+
+    const first = await list({ projectId: 'project-1', page: 1, pageSize: 2 })
+    const second = await list({ projectId: 'project-1', page: 2, pageSize: 2 })
 
     assert.deepEqual(
       first.rows.map(({ id }) => id),
@@ -160,7 +171,7 @@ test('chooses custom title, vendor preview, then first prompt without reading hi
       updatedAt: 30,
     })
 
-    const result = await list({ page: 1, pageSize: 10 })
+    const result = await list({ projectId: 'project-1', page: 1, pageSize: 10 })
 
     assert.deepEqual(
       result.rows.map(({ title }) => title),
@@ -171,6 +182,45 @@ test('chooses custom title, vendor preview, then first prompt without reading hi
       ],
     )
     assert.equal(result.rows[0]?.cwd, '/work/one')
+  } finally {
+    client.close()
+  }
+})
+
+test('filters one Project by custom title and preview only', async () => {
+  const { client, list } = sessionListCaller()
+  try {
+    insertSession(client, {
+      id: IDS[0],
+      harness: 'claude',
+      nativeId: 'native-1',
+      customTitle: 'Custom match',
+      preview: 'Older summary',
+      firstPrompt: 'Hidden first prompt',
+      updatedAt: 10,
+    })
+    insertSession(client, {
+      id: IDS[1],
+      harness: 'codex',
+      nativeId: 'native-2',
+      preview: 'Preview match',
+      firstPrompt: 'Another hidden prompt',
+      updatedAt: 20,
+    })
+
+    const custom = await list({ projectId: 'project-1', search: 'CUSTOM', page: 1, pageSize: 10 })
+    const preview = await list({ projectId: 'project-1', search: 'preview', page: 1, pageSize: 10 })
+    const prompt = await list({ projectId: 'project-1', search: 'hidden', page: 1, pageSize: 10 })
+
+    assert.deepEqual(
+      custom.rows.map(({ id }) => id),
+      [IDS[0]],
+    )
+    assert.deepEqual(
+      preview.rows.map(({ id }) => id),
+      [IDS[1]],
+    )
+    assert.equal(prompt.total, 0)
   } finally {
     client.close()
   }
@@ -187,7 +237,7 @@ test('adds the current live projection to a saved Session', async () => {
       updatedAt: 10,
     })
 
-    const result = await list({ page: 1, pageSize: 10 })
+    const result = await list({ projectId: 'project-1', page: 1, pageSize: 10 })
 
     assert.deepEqual(
       {
@@ -217,7 +267,7 @@ test('does not project a failed live channel as live', async () => {
       updatedAt: 10,
     })
 
-    const result = await list({ page: 1, pageSize: 10 })
+    const result = await list({ projectId: 'project-1', page: 1, pageSize: 10 })
 
     assert.deepEqual(
       { posture: result.rows[0]?.posture, status: result.rows[0]?.status },

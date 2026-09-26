@@ -1,5 +1,5 @@
 import { initTRPC } from '@trpc/server'
-import { asc, count } from 'drizzle-orm'
+import { and, asc, count, eq, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
@@ -8,6 +8,8 @@ import type { LiveSessionSupervisorActor } from '../live/live-session-supervisor
 const t = initTRPC.create()
 
 export const sessionListInputSchema = z.strictObject({
+  projectId: z.string().min(1),
+  search: z.string().trim().max(500).default(''),
   page: z.number().int().min(1).max(1_000_000).default(1),
   pageSize: z.number().int().min(1).max(100).default(30),
 })
@@ -17,11 +19,76 @@ const sessionListTitleSchema = z.strictObject({
   source: z.enum(['custom', 'summarised', 'first-prompt']),
 })
 
+const identifierSchema = z.string().min(1)
+const countSchema = z.number().int().nonnegative()
+const sessionActivitySchema = z.strictObject({
+  label: z.string(),
+  kind: z.enum([
+    'command',
+    'read',
+    'edited',
+    'created',
+    'deleted',
+    'tool',
+    'skill',
+    'searched',
+    'thought',
+  ]),
+  open: z.boolean(),
+  tool: z.string(),
+  target: z.string().nullable(),
+})
+const sessionPlanSchema = z.discriminatedUnion('state', [
+  z.strictObject({
+    state: z.literal('available'),
+    entries: z.array(
+      z.strictObject({
+        content: z.string().trim().min(1),
+        position: countSchema,
+        status: z.enum(['pending', 'in_progress', 'completed']),
+      }),
+    ),
+  }),
+  z.strictObject({ state: z.literal('malformed') }),
+])
+const sessionSubagentSchema = z.strictObject({
+  id: identifierSchema,
+  label: z.string().nullable(),
+  state: z.enum(['running', 'completed', 'failed', 'interrupted']),
+  startedAt: z.string().nullable(),
+  endedAt: z.string().nullable(),
+})
+const sessionShellCommandSchema = z.strictObject({
+  id: identifierSchema,
+  command: z.string().nullable(),
+  label: z.string().nullable(),
+  background: z.boolean(),
+  state: z.enum(['running', 'completed', 'failed', 'interrupted']),
+  startedAt: z.string().nullable(),
+  endedAt: z.string().nullable(),
+  outputPath: z.string().nullable(),
+  result: z.string().nullable(),
+})
+const sessionPullRequestSchema = z.strictObject({
+  number: countSchema,
+  url: z.string(),
+  repository: z.string().nullable(),
+})
+const sessionTicketSchema = z.strictObject({
+  projectId: identifierSchema,
+  key: z.string().min(1),
+  title: z.string(),
+  state: z.enum(['open', 'closed']),
+  createdAt: z.iso.datetime(),
+})
+
 export const sessionListRowSchema = z.strictObject({
   id: z.string().uuid(),
   retiredIds: z.array(z.string().uuid()),
   harness: z.string().min(1),
-  posture: z.literal('live').nullable(),
+  posture: z.enum(['live', 'external']).nullable(),
+  customTitle: z.string().nullable(),
+  preview: z.string().nullable(),
   title: sessionListTitleSchema.nullable(),
   status: z.enum([
     'starting',
@@ -33,21 +100,33 @@ export const sessionListRowSchema = z.strictObject({
     'ended',
     'unknown',
   ]),
-  entry: z.null(),
+  entry: z.enum(['interactive', 'headless']).nullable(),
   cwd: z.string().nullable(),
-  branch: z.null(),
-  updatedAt: z.string().datetime(),
-  unreadableLines: z.literal(0),
-  originUnread: z.literal(false),
-  turnStartedAt: z.null(),
-  activity: z.null(),
-  plan: z.null(),
-  subagents: z.array(z.never()),
-  shell: z.array(z.never()),
-  pullRequest: z.null(),
-  ticket: z.null(),
-  archived: z.literal(false),
-  unread: z.literal(false),
+  branch: z.string().nullable(),
+  locked: z.boolean().optional(),
+  updatedAt: z.string().nullable(),
+  unreadableLines: z.number(),
+  originUnread: z.boolean(),
+  turnStartedAt: z.string().nullable(),
+  activity: sessionActivitySchema.nullable(),
+  plan: sessionPlanSchema.nullable(),
+  subagents: z.array(sessionSubagentSchema),
+  shell: z.array(sessionShellCommandSchema),
+  pullRequest: sessionPullRequestSchema.nullable(),
+  ticket: sessionTicketSchema.nullable(),
+  archived: z.boolean(),
+  unread: z.boolean(),
+  searchExcerpt: z.string().optional(),
+  contextTokens: countSchema.nullable().optional(),
+  contextWindowTokens: countSchema.nullable().optional(),
+  spentTokens: countSchema.nullable().optional(),
+  compactionStartedAt: z.string().datetime().nullable().optional(),
+  compactionPercentage: z.number().int().min(0).max(100).nullable().optional(),
+  compactionTokens: z.string().nullable().optional(),
+  handoffStartedAt: z.string().datetime().nullable().optional(),
+  handoffFailure: z.string().nullable().optional(),
+  handoffTo: identifierSchema.nullable().optional(),
+  handoffFrom: identifierSchema.nullable().optional(),
   turnConfiguration: z.strictObject({
     model: z.string().nullable(),
     effort: z.string().nullable(),
@@ -104,58 +183,84 @@ function displayedTitle(row: StoredSessionTitle): z.infer<typeof sessionListTitl
   return null
 }
 
+function sessionListRow(
+  context: SessionListContext,
+  row: StoredSessionTitle & {
+    id: string
+    harness: string
+    cwd: string | null
+    updatedAt: number
+  },
+) {
+  const live = liveProjection(context, row.id)
+  return {
+    id: row.id,
+    retiredIds: [],
+    harness: row.harness,
+    posture: live?.posture ?? null,
+    customTitle: row.customTitle,
+    preview: row.preview,
+    title: displayedTitle(row),
+    status: live?.status ?? ('unknown' as const),
+    entry: null,
+    cwd: row.cwd,
+    branch: null,
+    updatedAt: new Date(row.updatedAt).toISOString(),
+    unreadableLines: 0,
+    originUnread: false,
+    turnStartedAt: null,
+    activity: null,
+    plan: null,
+    subagents: [],
+    shell: [],
+    pullRequest: null,
+    ticket: null,
+    archived: false,
+    unread: false,
+    turnConfiguration: live?.turnConfiguration ?? { model: null, effort: null, mode: null },
+  }
+}
+
+function readSessionList(
+  context: SessionListContext,
+  input: z.infer<typeof sessionListInputSchema>,
+) {
+  const projectFilter = eq(sessionTable.projectId, input.projectId)
+  const filter =
+    input.search === ''
+      ? projectFilter
+      : and(
+          projectFilter,
+          or(
+            sql<boolean>`instr(lower(coalesce(${sessionTable.customTitle}, '')), lower(${input.search})) > 0`,
+            sql<boolean>`instr(lower(coalesce(${sessionTable.preview}, '')), lower(${input.search})) > 0`,
+          ),
+        )
+  const rows = context.database
+    .select({
+      id: sessionTable.argoId,
+      harness: sessionTable.harness,
+      customTitle: sessionTable.customTitle,
+      preview: sessionTable.preview,
+      firstPrompt: sessionTable.firstPrompt,
+      cwd: sessionTable.cwd,
+      updatedAt: sessionTable.updatedAt,
+    })
+    .from(sessionTable)
+    .where(filter)
+    .orderBy(asc(sessionTable.argoId))
+    .limit(input.pageSize)
+    .offset((input.page - 1) * input.pageSize)
+    .all()
+    .map((row) => sessionListRow(context, row))
+  const total =
+    context.database.select({ value: count() }).from(sessionTable).where(filter).get()?.value ?? 0
+  return { page: input.page, pageSize: input.pageSize, total, rows }
+}
+
 export function sessionListProcedure(context: SessionListContext) {
   return t.procedure
     .input(sessionListInputSchema)
     .output(sessionListOutputSchema)
-    .query(({ input }) => {
-      const storedRows = context.database
-        .select({
-          id: sessionTable.argoId,
-          harness: sessionTable.harness,
-          customTitle: sessionTable.customTitle,
-          preview: sessionTable.preview,
-          firstPrompt: sessionTable.firstPrompt,
-          cwd: sessionTable.cwd,
-          updatedAt: sessionTable.updatedAt,
-        })
-        .from(sessionTable)
-        .orderBy(asc(sessionTable.argoId))
-        .limit(input.pageSize)
-        .offset((input.page - 1) * input.pageSize)
-        .all()
-      const total = context.database.select({ value: count() }).from(sessionTable).get()?.value ?? 0
-      return {
-        page: input.page,
-        pageSize: input.pageSize,
-        total,
-        rows: storedRows.map((row) => {
-          const live = liveProjection(context, row.id)
-          return {
-            id: row.id,
-            retiredIds: [],
-            harness: row.harness,
-            posture: live?.posture ?? null,
-            title: displayedTitle(row),
-            status: live?.status ?? ('unknown' as const),
-            entry: null,
-            cwd: row.cwd,
-            branch: null,
-            updatedAt: new Date(row.updatedAt).toISOString(),
-            unreadableLines: 0 as const,
-            originUnread: false as const,
-            turnStartedAt: null,
-            activity: null,
-            plan: null,
-            subagents: [],
-            shell: [],
-            pullRequest: null,
-            ticket: null,
-            archived: false as const,
-            unread: false as const,
-            turnConfiguration: live?.turnConfiguration ?? { model: null, effort: null, mode: null },
-          }
-        }),
-      }
-    })
+    .query(({ input }) => readSessionList(context, input))
 }

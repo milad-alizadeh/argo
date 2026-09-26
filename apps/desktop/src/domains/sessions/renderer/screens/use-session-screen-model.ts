@@ -18,10 +18,6 @@ import { sessionScreenSubagents } from './session-screen-subagents'
 import { useSelectedSession } from './use-selected-session'
 import { useWorkPick, type WorkSelection } from './work-selection'
 
-function useScreenSessionFeed(sessionId: string | null) {
-  return useSessions(sessionId, true)
-}
-
 function useWorkArtifacts({
   session,
   selectedSessionId,
@@ -60,7 +56,10 @@ export function useSessionScreenModel() {
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
   const [evidence, setEvidence] = useState<SessionEvidence | null>(null)
   const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
-  const { feed, feedError, sessionList, retryFeed } = useScreenSessionFeed(selectedSessionId)
+  const { feed, feedError, sessionList, retryFeed } = useSessions({
+    selectedSessionId,
+    projectId: cockpit.project?.id ?? null,
+  })
   const [lastHarness, chooseHarness] = useState<SessionHarness>('claude')
   const session = useSelectedSession(selectedSessionId, sessionList)
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })

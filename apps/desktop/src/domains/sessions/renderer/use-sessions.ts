@@ -1,16 +1,13 @@
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { useToastManager } from '@/platform/renderer/components/ui/toast'
 import { retrySessionFeed, sessionFeedQuery } from './feed/session-feed-query'
 import type { SessionContractError } from './session-contract-error'
-import { reportCodexFailure } from './session-list/codex-failure-notice'
 import { sessionListQuery } from './session-list/rows/session-list-query'
 import { invalidateSessionList } from './session-queries'
 import type { SessionFeed, SessionId } from './types'
 
-function useSessionListQuery(enabled: boolean) {
-  const query = useInfiniteQuery(sessionListQuery(enabled))
+function useSessionListQuery(projectId: string | null, enabled: boolean, search: string) {
+  const query = useInfiniteQuery(sessionListQuery(projectId, enabled, search))
 
   const lastPage = query.data?.pages.at(-1)
   const sessionList = useMemo(() => {
@@ -59,10 +56,18 @@ export function useConsecutiveFeedFailures(
 // `sessionListEnabled` lets a caller that only sometimes needs the list (a Ticket's Linked
 // Sessions, unread until a Ticket is selected) skip the fetch rather than pull the whole
 // list in for a result it may throw away.
-export function useSessions(selectedSessionId: SessionId | null, sessionListEnabled = true) {
+export function useSessions({
+  selectedSessionId,
+  sessionListEnabled = true,
+  projectId = null,
+  sessionListSearch = '',
+}: {
+  selectedSessionId: SessionId | null
+  sessionListEnabled?: boolean
+  projectId?: string | null
+  sessionListSearch?: string
+}) {
   const queryClient = useQueryClient()
-  const { t } = useTranslation('sessions')
-  const { add } = useToastManager()
   const selectedFeedId = selectedSessionId
   const {
     query: sessionListQueryResult,
@@ -71,7 +76,7 @@ export function useSessions(selectedSessionId: SessionId | null, sessionListEnab
     hasMore: hasMoreSessions,
     isFetchingMore: isFetchingMoreSessions,
     fetchMore: fetchMoreSessions,
-  } = useSessionListQuery(sessionListEnabled)
+  } = useSessionListQuery(projectId, sessionListEnabled, sessionListSearch)
   const feedQuery = sessionFeedQuery(queryClient, selectedFeedId, null)
   const feed = useQuery<SessionFeed | null, SessionContractError>(feedQuery)
   const failedFeedReads = useConsecutiveFeedFailures(selectedFeedId, feed)
@@ -83,18 +88,6 @@ export function useSessions(selectedSessionId: SessionId | null, sessionListEnab
   }, [selectedFeedId])
 
   const sessionList = sessionListQueryResult.error === null ? sessionListPage : null
-
-  // A partial Codex failure must leave Claude usable. One toast marks the outage for this app run.
-  useEffect(() => {
-    reportCodexFailure(
-      sessionList?.partialFailures ?? [],
-      {
-        title: t('sessionList.sourceFailed', { harness: 'Codex' }),
-        description: t('sessionList.codexSourceFailedDescription'),
-      },
-      (notice) => add({ ...notice, type: 'error', priority: 'high' }),
-    )
-  }, [add, sessionList?.partialFailures, t])
 
   const feedError = failedFeedReads <= 1 ? null : feed.error
 

@@ -6,7 +6,11 @@ import { useSessions } from '@/domains/sessions/renderer'
 export type LinkedSession = { id: string; title: string }
 
 export function useLinkedSessions(projectId: string | null, key: string | null): LinkedSession[] {
-  const { sessionList } = useSessions(null, key !== null)
+  const { sessionList } = useSessions({
+    selectedSessionId: null,
+    sessionListEnabled: key !== null,
+    projectId,
+  })
   if (projectId === null || key === null || sessionList === null) return []
   return sessionList.sessions
     .filter((session) => session.ticket?.projectId === projectId && session.ticket.key === key)

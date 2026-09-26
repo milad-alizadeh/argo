@@ -26,6 +26,8 @@ function page(
         retiredIds: [],
         harness: 'claude',
         posture: null,
+        customTitle: null,
+        preview: title,
         title: { text: title, source: 'summarised' as const },
         status: 'unknown' as const,
         entry: null,
@@ -51,7 +53,7 @@ function page(
 
 async function observeSessionList(read: (observer: SessionListObserver) => Promise<void>) {
   const client = new QueryClient()
-  const options = sessionListQuery(true)
+  const options = sessionListQuery('project-1', true)
   const observer = new InfiniteQueryObserver(client, options)
   const unsubscribe = observer.subscribe(() => {})
   await read(observer)
@@ -91,11 +93,17 @@ describe('reading numbered Session pages', () => {
 
     expect(trpc).toHaveBeenNthCalledWith(
       1,
-      expect.objectContaining({ path: 'sessions.list', input: { page: 1, pageSize: 30 } }),
+      expect.objectContaining({
+        path: 'sessions.list',
+        input: { projectId: 'project-1', search: '', page: 1, pageSize: 30 },
+      }),
     )
     expect(trpc).toHaveBeenNthCalledWith(
       2,
-      expect.objectContaining({ path: 'sessions.list', input: { page: 2, pageSize: 30 } }),
+      expect.objectContaining({
+        path: 'sessions.list',
+        input: { projectId: 'project-1', search: '', page: 2, pageSize: 30 },
+      }),
     )
     expect(titles).toEqual(['First page', 'Second page'])
   })

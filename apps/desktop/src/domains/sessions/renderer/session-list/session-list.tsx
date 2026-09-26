@@ -18,19 +18,13 @@ import { useSidebarSessionList } from './sidebar/use-sidebar-session-list'
 
 export type { SessionListActions } from './rows'
 
-const NOOP = () => {}
-
-function useSessionListRead() {
-  return useSessions(null, true)
-}
-
 function useSessionListRows(options: {
-  read: ReturnType<typeof useSessionListRead>
-  search: ReturnType<typeof useSidebarSessionList>['searched'] | null
+  read: ReturnType<typeof useSessions>
+  searching: boolean
   selectedSessionId: SessionId | null
   visible: readonly Session[]
 }) {
-  const { read, search, selectedSessionId, visible } = options
+  const { read, searching, selectedSessionId, visible } = options
   const visibleSessionIds = useMemo(() => visible.map((session) => session.id), [visible])
   const status = useSessionListStatus()
   const archived = useArchivedSection(
@@ -45,7 +39,7 @@ function useSessionListRows(options: {
         archived,
         hasMoreSessions: read.hasMoreSessions,
         isFetchingMoreSessions: read.isFetchingMoreSessions,
-        search,
+        searching,
         showArchive: read.sessionList !== null,
         status,
       }),
@@ -54,7 +48,7 @@ function useSessionListRows(options: {
       read.hasMoreSessions,
       read.isFetchingMoreSessions,
       read.sessionList,
-      search,
+      searching,
       visible,
       status,
     ],
@@ -62,22 +56,21 @@ function useSessionListRows(options: {
   return {
     rows,
     onFetchNextPage: archived.fetchNextPage,
-    onFetchNextSearchPage: search?.fetchNextPage ?? NOOP,
   }
 }
 
 function useSessionListSessions(options: {
   actions: SessionListActions
-  projectRoot: string | null
-  read: ReturnType<typeof useSessionListRead>
+  read: ReturnType<typeof useSessions>
+  search: string
   selectedSessionId: SessionId | null
   sidebar: RefObject<HTMLElement | null>
 }) {
-  const { actions, projectRoot, read, selectedSessionId, sidebar } = options
+  const { actions, read, search, selectedSessionId, sidebar } = options
   const sessions = useSidebarSessionList({
     onArchiveSelected: actions.onArchiveSelected,
     onSelect: actions.onSelect,
-    projectRoot,
+    search,
     sessionList: read.sessionList,
     sessionListError: read.sessionListError,
     selectedSessionId,
@@ -85,7 +78,7 @@ function useSessionListSessions(options: {
   })
   const rows = useSessionListRows({
     read,
-    search: sessions.searching ? sessions.searched : null,
+    searching: sessions.searching,
     selectedSessionId,
     visible: sessions.visible,
   })
@@ -114,7 +107,7 @@ function useUnavailableSessionIds(selectedSessionId: SessionId | null) {
   return unavailableSessionIds
 }
 
-function sessionListData(read: ReturnType<typeof useSessionListRead>, sessionCount: number) {
+function sessionListData(read: ReturnType<typeof useSessions>, sessionCount: number) {
   return {
     'data-page-count': read.loadedSessionPages,
     'data-state': sessionListState(read.sessionList, read.sessionListError, sessionCount),
@@ -123,22 +116,24 @@ function sessionListData(read: ReturnType<typeof useSessionListRead>, sessionCou
 }
 
 // The sidebar header, outcome and rows, under one named record of row actions (#2284).
-export function SessionList({
-  actions,
-  projectRoot,
-  selectedSessionId,
-}: {
+type SessionListProps = {
   actions: SessionListActions
-  projectRoot: string | null
+  projectId: string | null
   selectedSessionId: SessionId | null
-}) {
+}
+
+export function SessionList({ actions, projectId, selectedSessionId }: SessionListProps) {
   const sidebar = useRef<HTMLElement>(null)
-  const unavailableSessionIds = useUnavailableSessionIds(selectedSessionId)
-  const read = useSessionListRead()
+  const [search, setSearch] = useState('')
+  const read = useSessions({
+    selectedSessionId: null,
+    projectId,
+    sessionListSearch: search.trim(),
+  })
   const sessions = useSessionListSessions({
     actions,
-    projectRoot,
     read,
+    search,
     selectedSessionId,
     sidebar,
   })
@@ -155,9 +150,9 @@ export function SessionList({
     >
       <SessionsSidebarHeader
         onNew={actions.onNew}
-        onSearch={sessions.setSearch}
+        onSearch={setSearch}
         onStatusChange={sessions.setStatus}
-        search={sessions.search}
+        search={search}
         status={sessions.status}
       />
       <SessionListOutcome
@@ -168,11 +163,10 @@ export function SessionList({
       />
       <SessionListVirtualList
         label="Sessions"
-        unavailableSessionIds={unavailableSessionIds}
+        unavailableSessionIds={useUnavailableSessionIds(selectedSessionId)}
         onArchive={sessions.archive}
         onFetchMoreSessions={read.fetchMoreSessions}
         onFetchNextPage={sessions.onFetchNextPage}
-        onFetchNextSearchPage={sessions.onFetchNextSearchPage}
         onFocus={sessions.focus.setFocusedSessionId}
         onOpenTicket={actions.onOpenTicket}
         onRename={setRenameTarget}

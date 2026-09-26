@@ -11,7 +11,7 @@ import { useSidebarActions } from './use-sidebar-actions'
 export function SessionsSidebar() {
   const { sessionId } = useParams()
   const [cockpit] = useProjects()
-  const projectRoot = cockpit.project?.path ?? null
+  const projectId = cockpit.project?.id ?? null
   const archiveSelected = useArchiveSelected()
   const sidebarActions = useSidebarActions()
 
@@ -24,10 +24,6 @@ export function SessionsSidebar() {
   }
 
   return (
-    <SessionList
-      actions={actions}
-      projectRoot={projectRoot}
-      selectedSessionId={sessionId ?? null}
-    />
+    <SessionList actions={actions} projectId={projectId} selectedSessionId={sessionId ?? null} />
   )
 }

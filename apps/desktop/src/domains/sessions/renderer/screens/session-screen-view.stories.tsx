@@ -204,7 +204,7 @@ function ReviewSidebar({
   return (
     <SessionList
       actions={{ ...NOOP_SESSION_LIST_ACTIONS, onSelect }}
-      projectRoot={null}
+      projectId="project-1"
       selectedSessionId={selectedSessionId}
     />
   )
@@ -376,7 +376,7 @@ function NewSessionScreen() {
             onNew: () => setSelectedSessionId('optimistic:new-session'),
             onSelect: setSelectedSessionId,
           }}
-          projectRoot={null}
+          projectId="project-1"
           selectedSessionId={selectedSessionId}
         />
       }

@@ -1,17 +1,16 @@
 // Session rows the Sessions stories draw.
-import type {
-  SessionRow,
-  SessionShellCommand,
-  SessionSubagent,
-} from '@/domains/sessions/renderer/model/models'
+import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/renderer/model/models'
 import { queryClient } from '@/platform/renderer/trpc-client'
+import type { Session } from './types'
 
-function listedSession(overrides: Partial<SessionRow> = {}): SessionRow {
+function listedSession(overrides: Partial<Session> = {}): Session {
   return {
     id: 'session-one',
     retiredIds: [],
     harness: 'claude',
     posture: 'live',
+    customTitle: null,
+    preview: null,
     title: null,
     status: 'idle',
     entry: 'interactive',
@@ -57,14 +56,14 @@ export function sessionSubagent(
 }
 
 export function sessionRow(
-  overrides: Partial<SessionRow> & Pick<SessionRow, 'id' | 'cwd' | 'posture' | 'status' | 'title'>,
-): SessionRow {
+  overrides: Partial<Session> & Pick<Session, 'id' | 'cwd' | 'posture' | 'status' | 'title'>,
+): Session {
   return listedSession({ branch: 'main', ...overrides })
 }
 
 export function sessionListTrpc(
   trpc: typeof window.argo.trpc,
-  sessions: () => readonly SessionRow[],
+  sessions: () => readonly Session[],
 ): typeof window.argo.trpc {
   queryClient.removeQueries({ queryKey: ['sessions', 'list'] })
   return (async (request) => {

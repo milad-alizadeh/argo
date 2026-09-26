@@ -16,12 +16,13 @@ function sessionListPage(
     total: result.total,
     nextPage,
     historyComplete: nextPage === null,
-    partialFailures: [],
   }
 }
 
 export function sessionListQuery(
+  projectId: string | null,
   enabled: boolean,
+  search = '',
 ): UseInfiniteQueryOptions<
   SessionListPage,
   SessionContractError,
@@ -30,18 +31,23 @@ export function sessionListQuery(
   number
 > {
   return {
-    queryKey: sessionListQueryKey,
+    queryKey:
+      projectId === null
+        ? [...sessionListQueryKey('unselected', search)]
+        : sessionListQueryKey(projectId, search),
     staleTime: Infinity,
-    enabled,
+    enabled: enabled && projectId !== null,
     initialPageParam: 1,
     getNextPageParam: (page) => page.nextPage,
     retry: false,
     queryFn: ({ pageParam }) =>
-      trpcClient.sessions.list
-        .query({ page: pageParam, pageSize: SESSION_PAGE_SIZE })
-        .then(sessionListPage)
-        .catch(() => {
-          throw new SessionContractError(sessionError('internal-error', null))
-        }),
+      projectId === null
+        ? Promise.reject(new Error('A Project must be selected before Sessions can be listed.'))
+        : trpcClient.sessions.list
+            .query({ projectId, search, page: pageParam, pageSize: SESSION_PAGE_SIZE })
+            .then(sessionListPage)
+            .catch(() => {
+              throw new SessionContractError(sessionError('internal-error', null))
+            }),
   }
 }

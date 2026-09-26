@@ -139,45 +139,7 @@ export const sessionTurnConfigurationSchema = z.strictObject({
 })
 export type SessionTurnConfiguration = z.infer<typeof sessionTurnConfigurationSchema>
 
-export const sessionRowSchema = z.strictObject({
-  id: identifierSchema,
-  retiredIds: z.array(identifierSchema),
-  harness: identifierSchema,
-  posture: sessionPostureSchema.nullable(),
-  title: sessionTitleSchema.nullable(),
-  status: sessionStatusSchema,
-  entry: sessionEntrySchema.nullable(),
-  cwd: z.string().nullable(),
-  branch: z.string().nullable(),
-  locked: z.boolean().optional(),
-  updatedAt: z.string().nullable(),
-  unreadableLines: z.number(),
-  originUnread: z.boolean(),
-  turnStartedAt: z.string().nullable(),
-  activity: sessionActivitySchema.nullable(),
-  plan: sessionPlanSchema.nullable(),
-  subagents: z.array(sessionSubagentSchema),
-  shell: z.array(sessionShellCommandSchema),
-  pullRequest: sessionPullRequestSchema.nullable(),
-  ticket: sessionTicketSchema.nullable(),
-  archived: z.boolean(),
-  unread: z.boolean(),
-  searchExcerpt: z.string().optional(),
-  contextTokens: countSchema.nullable().optional(),
-  contextWindowTokens: countSchema.nullable().optional(),
-  spentTokens: countSchema.nullable().optional(),
-  compactionStartedAt: z.string().datetime().nullable().optional(),
-  compactionPercentage: z.number().int().min(0).max(100).nullable().optional(),
-  compactionTokens: z.string().nullable().optional(),
-  handoffStartedAt: z.string().datetime().nullable().optional(),
-  handoffFailure: z.string().nullable().optional(),
-  handoffTo: identifierSchema.nullable().optional(),
-  handoffFrom: identifierSchema.nullable().optional(),
-  turnConfiguration: sessionTurnConfigurationSchema,
-})
-export type SessionRow = z.infer<typeof sessionRowSchema>
-
-export function currentSessionId<Session extends Pick<SessionRow, 'id' | 'retiredIds'>>(
+export function currentSessionId<Session extends { id: string; retiredIds: string[] }>(
   sessions: readonly Session[],
   rememberedId: string,
 ): string | null {
@@ -191,8 +153,8 @@ export function currentSessionId<Session extends Pick<SessionRow, 'id' | 'retire
 // The Session list order (#1593, #2239): newest-first by `updatedAt`, shared by every read that
 // re-sorts a set of rows rather than trusting an already-ordered source.
 export function newestFirst(
-  left: Pick<SessionRow, 'updatedAt'>,
-  right: Pick<SessionRow, 'updatedAt'>,
+  left: { updatedAt: string | null },
+  right: { updatedAt: string | null },
 ): number {
   return (right.updatedAt ?? '').localeCompare(left.updatedAt ?? '')
 }

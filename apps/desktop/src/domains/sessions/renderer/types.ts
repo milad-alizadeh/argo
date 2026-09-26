@@ -1,22 +1,18 @@
 import type { SessionError } from '@/domains/sessions/api/session-error'
-import type { SessionFeedRow, SessionRow } from '@/domains/sessions/renderer/model/models'
+import type { SessionFeedRow } from '@/domains/sessions/renderer/model/models'
+import type { RouterOutputs } from '@/platform/renderer/trpc-client'
 
-export type SessionSearched = {
-  version: 1
-  type: 'session.searched'
-  requestId: string
-  sessions: SessionRow[]
-  nextCursor: string | null
-  historyComplete: boolean
-}
+export type SessionListResult = RouterOutputs['sessions']['list']
+export type Session = SessionListResult['rows'][number]
+export type SessionId = Session['id']
 
 export type SessionArchiveListed = {
   version: 1
   type: 'session.archive.listed'
   requestId: string
-  sessions: SessionRow[]
+  sessions: Session[]
   nextCursor: string | null
-  restored: SessionRow | null
+  restored: Session | null
   historyComplete: boolean
 }
 
@@ -31,15 +27,11 @@ export type SessionFeed = {
 }
 
 export type { SessionError }
-export type SessionListPage = {
-  sessions: SessionRow[]
-  total: number
+export type SessionListPage = Pick<SessionListResult, 'total'> & {
+  sessions: Session[]
   nextPage: number | null
   historyComplete: boolean
-  partialFailures: { harness: string; code: string }[]
 }
-export type Session = SessionRow
-export type SessionId = Session['id']
 export type { SessionFeedRow }
 
 export type SessionDiagramEvidence = {

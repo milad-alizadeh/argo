@@ -1,5 +1,6 @@
-import type { BrowserContext } from 'playwright-core'
+import type { BrowserContext, Locator, Page } from 'playwright-core'
 import { openDatabase } from '@/database/database'
+import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
 import { expect, finishRecording, startRecording, test } from '../packaged-proof'
 import { launch, prepare } from '../projects/fixtures/project.fixture'
@@ -15,8 +16,9 @@ function savedSessions() {
         argoId,
         harness: 'claude',
         nativeId: 'shared-native-id',
+        projectId: 'project-1',
         customTitle: 'Custom title',
-        preview: 'Ignored vendor preview',
+        preview: 'Older summary',
         firstPrompt: 'Ignored first prompt',
       }
     }
@@ -25,6 +27,7 @@ function savedSessions() {
         argoId,
         harness: 'codex',
         nativeId: 'shared-native-id',
+        projectId: 'project-1',
         preview: 'Vendor preview',
         firstPrompt: 'Ignored first prompt',
       }
@@ -33,6 +36,7 @@ function savedSessions() {
       argoId,
       harness: 'claude',
       nativeId: `native-${pagePosition}`,
+      projectId: 'project-1',
       firstPrompt: pagePosition === 3 ? 'First prompt' : `Saved Session ${pagePosition}`,
     }
   })
@@ -46,10 +50,21 @@ function addSavedSession(userData: string) {
       argoId: '00000000-0000-4000-8000-000000000000',
       harness: 'claude',
       nativeId: 'newly-saved',
+      projectId: 'project-1',
       firstPrompt: 'New saved Session',
     })
     .run()
   database.$client.close()
+}
+
+async function verifyTitleSearch(page: Page, sessionList: Locator) {
+  const search = page.getByRole('textbox', { name: 'Search Sessions' })
+  await search.fill('vendor preview')
+  await expect(page.getByRole('button', { name: /Vendor preview/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Custom title/ })).toHaveCount(0)
+  await expect(sessionList).toHaveAttribute('data-total', '1')
+  await search.clear()
+  await expect(sessionList).toHaveAttribute('data-total', '31')
 }
 
 test('shows saved numbered pages and keeps Argo-ID selection', async ({
@@ -59,7 +74,21 @@ test('shows saved numbered pages and keeps Argo-ID selection', async ({
 }, testInfo) => {
   const fixture = await prepare(root, packagedApplication)
   const seeded = openDatabase(fixture.userData)
+  seeded
+    .insert(project)
+    .values({ id: 'project-2', path: fixture.beta, commonDirectory: `${fixture.beta}/.git` })
+    .run()
   seeded.insert(sessionTable).values(savedSessions()).run()
+  seeded
+    .insert(sessionTable)
+    .values({
+      argoId: '00000000-0000-4000-8000-999999999999',
+      harness: 'claude',
+      nativeId: 'other-project',
+      projectId: 'project-2',
+      customTitle: 'Other Project Session',
+    })
+    .run()
   seeded.$client.close()
 
   const application = await launch(fixture, { PATH: '/usr/bin:/bin' })
@@ -71,8 +100,10 @@ test('shows saved numbered pages and keeps Argo-ID selection', async ({
     await expect(page.getByRole('button', { name: /Custom title/ })).toBeVisible()
     await expect(page.getByRole('button', { name: /Vendor preview/ })).toBeVisible()
     await expect(page.getByRole('button', { name: /First prompt/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Other Project Session/ })).toHaveCount(0)
     await expect(sessionList).toHaveAttribute('data-page-count', '1')
     await expect(sessionList).toHaveAttribute('data-total', '31')
+    await verifyTitleSearch(page, sessionList)
     await page.locator('[data-slot="session-list-scroll"]').evaluate((element) => {
       element.scrollTop = element.scrollHeight
     })
