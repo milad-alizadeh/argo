@@ -102,6 +102,7 @@ test('resolves the Workspace path in main and deletes an accepted new-Session dr
   const api = caller((event) => {
     if (event.type !== 'Start') throw new Error(`Unexpected event: ${event.type}`)
     submitted = event
+    expect(database.select().from(composerDraft).all()).toHaveLength(1)
     event.reply.resolve({ sessionId: 'session-1' })
   })
 
@@ -117,6 +118,31 @@ test('resolves the Workspace path in main and deletes an accepted new-Session dr
     input: { cwd: '/current/repo', projectId, workspaceId, prompt: content.prompt },
   })
   await expect(api.composerDraftRead(created.target)).resolves.toBeNull()
+})
+
+test('retains a newer draft revision when the accepted Session loses the delete race', async () => {
+  const created = await createProjectDraft()
+  const api = caller((event) => {
+    if (event.type !== 'Start') throw new Error(`Unexpected event: ${event.type}`)
+    database
+      .update(composerDraft)
+      .set({ prompt: 'A newer thought.', revision: created.revision + 1 })
+      .where(eq(composerDraft.id, created.id))
+      .run()
+    event.reply.resolve({ sessionId: 'session-1' })
+  })
+
+  await expect(
+    api.sessionSubmit({
+      draftId: created.id,
+      expectedRevision: created.revision,
+      commandId: 'command-1',
+    }),
+  ).rejects.toThrow('stale-draft')
+  await expect(api.composerDraftRead(created.target)).resolves.toMatchObject({
+    prompt: 'A newer thought.',
+    revision: created.revision + 1,
+  })
 })
 
 test('retains a new-Session draft after submission fails', async () => {
@@ -167,7 +193,10 @@ test('rejects a Workspace that does not belong to the draft Project', async () =
       path: '/other',
     })
     .run()
-  const api = caller()
+  let submissions = 0
+  const api = caller(() => {
+    submissions += 1
+  })
   const created = await api.composerDraftCreate({
     target: { type: 'project', projectId, workspaceId: 'workspace-2', harness: 'codex' },
     content,
@@ -180,6 +209,7 @@ test('rejects a Workspace that does not belong to the draft Project', async () =
       commandId: 'command-1',
     }),
   ).rejects.toThrow('workspace-not-in-project')
+  expect(submissions).toBe(0)
   await expect(api.composerDraftRead(created.target)).resolves.toEqual(created)
 })
 
@@ -216,4 +246,35 @@ test('submits and removes an existing-Session Turn draft', async () => {
     input: { sessionId: 'session-1', prompt: content.prompt },
   })
   await expect(submittingApi.composerDraftRead(created.target)).resolves.toBeNull()
+})
+
+test('retains an existing-Session Turn draft when the supervisor rejects it', async () => {
+  database
+    .insert(sessionTable)
+    .values({
+      argoId: 'session-1',
+      harness: 'codex',
+      nativeId: 'native-1',
+      projectId,
+      workspaceId,
+      cwd: '/original/repo',
+    })
+    .run()
+  const created = await caller().composerDraftCreate({
+    target: { type: 'session', sessionId: 'session-1' },
+    content,
+  })
+  const api = caller((event) => {
+    if (event.type !== 'Send') throw new Error(`Unexpected event: ${event.type}`)
+    event.reply.reject(new Error('Turn failed.'))
+  })
+
+  await expect(
+    api.sessionSubmit({
+      draftId: created.id,
+      expectedRevision: created.revision,
+      commandId: 'command-1',
+    }),
+  ).rejects.toThrow('Turn failed.')
+  await expect(api.composerDraftRead(created.target)).resolves.toEqual(created)
 })

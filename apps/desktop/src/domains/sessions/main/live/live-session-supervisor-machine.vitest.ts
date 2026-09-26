@@ -45,7 +45,7 @@ const first: SessionStartInput = {
 async function supervisorFor(request: CodexRequest, catalogValue = catalog) {
   const client = new DatabaseSync(':memory:')
   client.exec(
-    'CREATE TABLE session (argo_id TEXT PRIMARY KEY, harness TEXT NOT NULL, native_id TEXT NOT NULL, project_id TEXT, workspace_id TEXT, custom_title TEXT, preview TEXT, first_prompt TEXT, cwd TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);',
+    'CREATE TABLE session (argo_id TEXT PRIMARY KEY, harness TEXT NOT NULL, native_id TEXT NOT NULL, project_id TEXT, workspace_id TEXT, custom_title TEXT, preview TEXT, first_prompt TEXT, cwd TEXT, activity_at INTEGER, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);',
   )
   const database = databaseFrom(client)
   const channel: CodexChannel = {
@@ -193,11 +193,20 @@ test('rejects a changed Codex stance instead of silently retaining the opening s
       Object.assign(
         {},
         client
-          .prepare('SELECT argo_id, first_prompt, cwd FROM session WHERE argo_id = ?')
+          .prepare(
+            'SELECT argo_id, project_id, workspace_id, first_prompt, cwd FROM session WHERE argo_id = ?',
+          )
           .get(sessionId),
       ),
-      { argo_id: sessionId, first_prompt: 'first', cwd: '/repo' },
+      {
+        argo_id: sessionId,
+        project_id: 'project-1',
+        workspace_id: 'workspace-1',
+        first_prompt: 'first',
+        cwd: '/repo',
+      },
     )
+    await waitFor(supervisor, (snapshot) => snapshot.context.sessions[sessionId] !== undefined)
     const child = supervisor.getSnapshot().context.sessions[sessionId]
     assert.ok(child)
     await waitFor(child, (snapshot) => snapshot.matches('Ready'))
@@ -217,63 +226,99 @@ test('rejects a changed Codex stance instead of silently retaining the opening s
   }
 })
 
-test('queues a distinct startup command and settles both calls after persistence', async () => {
-  const turns: string[] = []
-  let releaseFirst!: () => void
-  const firstTurn = new Promise<void>((resolve) => {
-    releaseFirst = resolve
+test('the same in-flight command shares one vendor Session result', async () => {
+  let starts = 0
+  let releaseStart!: () => void
+  const startGate = new Promise<void>((resolve) => {
+    releaseStart = resolve
   })
-  const request: CodexRequest = async (method, params, parse) => {
-    if (method === 'thread/start') return parse({ thread: { id: 'native-1' } })
-    turns.push(((params as { input: Array<{ text: string }> }).input[0] as { text: string }).text)
-    if (turns.length === 1) await firstTurn
-    return parse({ turn: { id: `turn-${turns.length}` } })
-  }
-  const { root, supervisor, client } = await supervisorFor(request)
+  const { root, supervisor, client } = await supervisorFor(async (method, _params, parse) => {
+    if (method === 'thread/start') {
+      starts += 1
+      await startGate
+      return parse({ thread: { id: 'native-1' } })
+    }
+    return parse({ turn: { id: 'turn-1' } })
+  })
   try {
     const one = start(supervisor, first)
-    const two = start(supervisor, { ...first, commandId: 'second-command', prompt: 'second' })
-    releaseFirst()
+    const two = start(supervisor, first)
+    releaseStart()
     const [firstResult, secondResult] = await Promise.all([one, two])
     assert.equal(secondResult.sessionId, firstResult.sessionId)
-    const child = supervisor.getSnapshot().context.sessions[firstResult.sessionId]
-    assert.ok(child)
-    await waitFor(child, (snapshot) => snapshot.matches('Ready'))
-    assert.deepEqual(turns, ['first', 'second'])
+    assert.equal(starts, 1)
   } finally {
     root.send({ type: 'Shutdown' })
     client.close()
   }
 })
 
-test('settles start before a queued turn fails', async () => {
-  let turns = 0
-  let releaseFirst!: () => void
-  const firstTurn = new Promise<void>((resolve) => {
-    releaseFirst = resolve
+test('rejects a different command for an in-flight draft without sending a Turn', async () => {
+  const turns: string[] = []
+  let releaseStart!: () => void
+  const startGate = new Promise<void>((resolve) => {
+    releaseStart = resolve
   })
-  const request: CodexRequest = async (method, _params, parse) => {
-    if (method === 'thread/start') return parse({ thread: { id: 'native-1' } })
-    turns += 1
-    if (turns === 1) await firstTurn
-    if (turns === 2) throw new Error('second turn failed')
+  const { root, supervisor, client } = await supervisorFor(async (method, _params, parse) => {
+    if (method === 'thread/start') {
+      await startGate
+      return parse({ thread: { id: 'native-1' } })
+    }
+    turns.push(method)
     return parse({ turn: { id: 'turn-1' } })
-  }
-  const { root, supervisor, client } = await supervisorFor(request)
+  })
   try {
-    const firstStart = start(supervisor, first)
-    const queuedStart = start(supervisor, {
-      ...first,
-      commandId: 'second-command',
-      prompt: 'second',
-    })
-    releaseFirst()
-    const [firstResult, queuedResult] = await Promise.all([firstStart, queuedStart])
-    assert.ok(firstResult.sessionId)
-    assert.equal(queuedResult.sessionId, firstResult.sessionId)
-    const child = supervisor.getSnapshot().context.sessions[firstResult.sessionId]
-    assert.ok(child)
-    await waitFor(child, (snapshot) => snapshot.matches('Failed'))
+    const one = start(supervisor, first)
+    const two = start(supervisor, { ...first, commandId: 'second-command', prompt: 'second' })
+    await assert.rejects(two, /conflicting start/)
+    releaseStart()
+    await one
+    assert.equal(turns.filter((method) => method === 'turn/start').length, 1)
+  } finally {
+    root.send({ type: 'Shutdown' })
+    client.close()
+  }
+})
+
+test('allows an explicit retry after the Harness fails before returning a native id', async () => {
+  let starts = 0
+  const { root, supervisor, client } = await supervisorFor(async (method, _params, parse) => {
+    if (method !== 'thread/start') return parse({ turn: { id: 'turn-1' } })
+    starts += 1
+    if (starts === 1) throw new Error('Harness failed before start.')
+    return parse({ thread: { id: 'native-1' } })
+  })
+  try {
+    await assert.rejects(start(supervisor, first), /Harness failed before start/)
+    const result = await start(supervisor, { ...first, commandId: 'retry-command' })
+    assert.ok(result.sessionId)
+    assert.equal(starts, 2)
+  } finally {
+    root.send({ type: 'Shutdown' })
+    client.close()
+  }
+})
+
+test('does not retry a vendor Session automatically when the real SQLite upsert fails', async () => {
+  let starts = 0
+  const { root, supervisor, client } = await supervisorFor(async (method, _params, parse) => {
+    if (method === 'thread/start') {
+      starts += 1
+      return parse({ thread: { id: 'native-1' } })
+    }
+    return parse({ turn: { id: 'turn-1' } })
+  })
+  client.exec(
+    "CREATE TRIGGER reject_session_insert BEFORE INSERT ON session BEGIN SELECT RAISE(ABORT, 'session insert rejected'); END;",
+  )
+  try {
+    await assert.rejects(start(supervisor, first), /Failed query/)
+    await assert.rejects(
+      start(supervisor, { ...first, commandId: 'retry-command' }),
+      /Failed query/,
+    )
+    assert.equal(starts, 1)
+    assert.equal(client.prepare('SELECT COUNT(*) AS count FROM session').get()?.count, 0)
   } finally {
     root.send({ type: 'Shutdown' })
     client.close()

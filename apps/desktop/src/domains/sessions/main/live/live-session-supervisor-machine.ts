@@ -1,4 +1,12 @@
-import { type ActorRefFrom, assign, fromCallback, fromPromise, setup as xstateSetup } from 'xstate'
+import {
+  type ActorRefFrom,
+  assign,
+  enqueueActions,
+  fromCallback,
+  fromPromise,
+  stopChild,
+  setup as xstateSetup,
+} from 'xstate'
 import type { Database } from '@/database/database'
 import type { harnessCatalogMachine } from '@/harnesses/catalog/harness-catalog-machine'
 import { claudeLiveSessionMachine } from '@/harnesses/claude/session/claude-live-session-machine'
@@ -43,6 +51,7 @@ type LiveSessionSupervisorEvent =
       type: 'Session failed'
       pendingId: string
       failure: string
+      nativeId: string | null
     }
   | {
       type: 'Shutdown'
@@ -97,7 +106,6 @@ export const liveSessionSupervisorMachine = xstateSetup({
             failure: string
           }
       >
-      failed: Record<string, LiveSessionActor>
     },
     events: {} as LiveSessionSupervisorEvent,
   },
@@ -133,6 +141,7 @@ export const liveSessionSupervisorMachine = xstateSetup({
             type: 'Session failed',
             pendingId: input.pendingId,
             failure: snapshot.context.failure ?? 'Session start failed.',
+            nativeId: snapshot.context.nativeId,
           })
         }
       })
@@ -187,11 +196,10 @@ export const liveSessionSupervisorMachine = xstateSetup({
         }
         const existing = context.starts[event.pendingId]
         if (existing !== undefined) {
-          if (existing.getSnapshot().context.first.commandId !== event.input.commandId)
-            existing.send({
-              type: 'Send',
-              command: event.input,
-            })
+          if (existing.getSnapshot().context.first.commandId !== event.input.commandId) {
+            event.reply.reject(new Error('A conflicting start is already active for this draft.'))
+            return context.starts
+          }
           spawn('replyWhenPersisted', {
             input: {
               session: existing,
@@ -283,7 +291,7 @@ export const liveSessionSupervisorMachine = xstateSetup({
               sessionId: event.sessionId,
             },
           }
-        if (event.type === 'Session failed')
+        if (event.type === 'Session failed' && event.nativeId !== null)
           return {
             ...context.completed,
             [event.pendingId]: {
@@ -292,16 +300,11 @@ export const liveSessionSupervisorMachine = xstateSetup({
           }
         return context.completed
       },
-      failed: ({ context, event }) => {
-        if (event.type !== 'Session failed') return context.failed
-        const actor = context.starts[event.pendingId]
-        return actor === undefined
-          ? context.failed
-          : {
-              ...context.failed,
-              [event.pendingId]: actor,
-            }
-      },
+    }),
+    stopFailedSession: enqueueActions(({ context, event, enqueue }) => {
+      if (event.type !== 'Session failed') return
+      const actor = context.starts[event.pendingId]
+      if (actor !== undefined) enqueue(stopChild(actor))
     }),
     forwardSend: ({ context, event, self }) => {
       if (event.type !== 'Send') return
@@ -350,7 +353,6 @@ export const liveSessionSupervisorMachine = xstateSetup({
     sessions: {},
     starts: {},
     completed: {},
-    failed: {},
   }),
   states: {
     Running: {},
@@ -369,7 +371,10 @@ export const liveSessionSupervisorMachine = xstateSetup({
       actions: 'rememberPersisted',
     },
     'Session failed': {
-      actions: 'rememberPersisted',
+      actions: [
+        'stopFailedSession',
+        'rememberPersisted',
+      ],
     },
     Shutdown: '.Closed',
   },
