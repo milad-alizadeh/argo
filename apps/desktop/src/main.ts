@@ -18,6 +18,7 @@ import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/li
 import type { CatalogActor } from '@/harnesses/catalog/catalog-read'
 import { createClaudeSignInDriver, createSystemClaudeReadiness } from '@/harnesses/claude/readiness'
 import { createCodexSignInDriver, createSystemCodexReadiness } from '@/harnesses/codex/readiness'
+import { renameHarnessSession } from '@/harnesses/session-rename'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { attachAppearanceWatch } from '@/platform/main/appearance'
 import type { AppActor } from '@/platform/main/application/app-machine'
@@ -185,6 +186,7 @@ function routerForWindow(options: {
     },
     sessions: {
       database,
+      rename: renameHarnessSession,
       supervisor: actors.sessions,
       refreshSessionSync: () => actors.sessionSync.send({ type: 'Refresh' }),
       sessionSyncStatus,

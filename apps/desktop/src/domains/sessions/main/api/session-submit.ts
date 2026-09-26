@@ -13,6 +13,7 @@ import {
   readComposerDraft,
 } from '../database/composer-draft'
 import type { LiveSessionSupervisorActor } from '../live/live-session-supervisor-machine'
+import type { SessionRenameContext } from './session-rename'
 
 const t = initTRPC.create()
 const commandSchema = z.strictObject({
@@ -38,7 +39,7 @@ const outputSchema = z.strictObject({ sessionId: identifierSchema })
 export type SessionStartInput = z.infer<typeof sessionStartInputSchema>
 export type SessionSendInput = z.infer<typeof sessionSendInputSchema>
 export type SessionSubmitInput = z.infer<typeof inputSchema>
-export type SessionProcedureContext = {
+export type SessionProcedureContext = SessionRenameContext & {
   database: Database
   supervisor: LiveSessionSupervisorActor
 }

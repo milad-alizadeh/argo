@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { queryClient } from '@/platform/renderer/trpc-client'
+import { queryClient, trpc } from '@/platform/renderer/trpc-client'
 import { sessionRow, sessionSubagent } from '../../session-fixtures'
 import type { SessionError, SessionId, SessionListPage } from '../../types'
 import { SessionList, type SessionListActions } from '../session-list'
@@ -65,12 +65,12 @@ function withSessionListHost(
     pageSize: number
   }) => Promise<SessionListPage | SessionError>,
 ) {
-  queryClient.removeQueries({ queryKey: ['sessions', 'list'] })
+  queryClient.removeQueries({ queryKey: trpc.sessionList.pathKey() })
   const before = window.argo
   window.argo = {
     ...before,
     trpc: fn(async (request) => {
-      if (request.path !== 'sessions.list') return before.trpc(request)
+      if (request.path !== 'sessionList') return before.trpc(request)
       const input = request.input as {
         projectId: string
         search: string
@@ -978,7 +978,7 @@ export const GrowsOnlyWhenTheReaderReachesTheEnd: Story = {
     await waitFor(() => expect(listSessions).toHaveBeenCalledTimes(2))
     await expect(listSessions).toHaveBeenCalledWith(
       expect.objectContaining({
-        path: 'sessions.list',
+        path: 'sessionList',
         input: { projectId: 'project-1', search: '', page: 2, pageSize: 30 },
       }),
     )

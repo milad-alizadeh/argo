@@ -4,21 +4,23 @@ import { trpc } from '@/platform/renderer/trpc-client'
 import { sessionRow } from './session-fixtures'
 import { invalidateSessionList, markSessionRead } from './session-queries'
 
-const sessionListPathKey = trpc.sessions.list.pathKey()
+const sessionListPathKey = trpc.sessionList.pathKey()
 
-test('coalesces one watch event into one Session list invalidation', async () => {
+test('coalesces one watch event into current and archived Session list invalidations', async () => {
   const queryClient = new QueryClient()
-  let invalidations = 0
+  const invalidations: unknown[] = []
   queryClient.invalidateQueries = async (filters) => {
-    expect(filters).toEqual({ queryKey: sessionListPathKey })
-    invalidations += 1
+    invalidations.push(filters)
   }
 
   const first = invalidateSessionList(queryClient)
   const second = invalidateSessionList(queryClient)
   await Promise.all([first, second])
 
-  expect(invalidations).toBe(1)
+  expect(invalidations).toEqual([
+    { queryKey: sessionListPathKey },
+    { queryKey: ['sessions', 'archive'] },
+  ])
 })
 
 test('opening a Session clears unread state without dropping a loaded row', () => {
@@ -32,7 +34,7 @@ test('opening a Session clears unread state without dropping a loaded row', () =
     retiredIds: ['retired'],
     unread: true,
   })
-  const key = trpc.sessions.list.infiniteQueryKey({ projectId: 'project-1', search: '' })
+  const key = trpc.sessionList.infiniteQueryKey({ projectId: 'project-1', search: '' })
   queryClient.setQueryData(key, {
     pages: [
       {
@@ -62,7 +64,7 @@ test('opening a resumed Session clears its retired row in every cached Session l
     title: null,
     unread: true,
   })
-  const key = trpc.sessions.list.infiniteQueryKey({ projectId: 'project-1', search: '' })
+  const key = trpc.sessionList.infiniteQueryKey({ projectId: 'project-1', search: '' })
   queryClient.setQueryData(key, {
     pages: [{ page: 1, pageSize: 30, rows: [retired], total: 1 }],
     pageParams: [null],
