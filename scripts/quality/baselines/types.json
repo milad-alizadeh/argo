@@ -167,16 +167,6 @@
         "workspace": "@argo/desktop",
         "path": "apps/desktop/src/domains/sessions/renderer/feed/session-feed-query.ts",
         "code": "TS2339",
-        "message": "Property 'cancelSessionFeed' does not exist on type '{ onAppearanceChanged: (listener: (state: { appearance: \"dark\" | \"light\" | \"system\"; dark: boolean; }) => void) => () => void; onCommand: (listener: (command: string) => void) => () => void; ... 5 more ...; trpcSubscribe: (request: TrpcRequest, listener: (message: TrpcSubscriptionMessage) => void) => Promise<...>; }'."
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this remaining type repair."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/sessions/renderer/feed/session-feed-query.ts",
-        "code": "TS2339",
         "message": "Property 'readSessionFeed' does not exist on type '{ onAppearanceChanged: (listener: (state: { appearance: \"dark\" | \"light\" | \"system\"; dark: boolean; }) => void) => () => void; onCommand: (listener: (command: string) => void) => () => void; ... 5 more ...; trpcSubscribe: (request: TrpcRequest, listener: (message: TrpcSubscriptionMessage) => void) => Promise<...>; }'."
       },
       "owner": "#2587",
@@ -188,16 +178,6 @@
         "path": "apps/desktop/src/domains/sessions/renderer/feed/session-feed-query.ts",
         "code": "TS2345",
         "message": "Argument of type 'any' is not assignable to parameter of type 'never'."
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this remaining type repair."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/sessions/renderer/feed/use-session-feed.ts",
-        "code": "TS2339",
-        "message": "Property 'cancelSessionFeed' does not exist on type '{ onAppearanceChanged: (listener: (state: { appearance: \"dark\" | \"light\" | \"system\"; dark: boolean; }) => void) => () => void; onCommand: (listener: (command: string) => void) => () => void; ... 5 more ...; trpcSubscribe: (request: TrpcRequest, listener: (message: TrpcSubscriptionMessage) => void) => Promise<...>; }'."
       },
       "owner": "#2587",
       "reason": "The final typed-API cutover owns this remaining type repair."

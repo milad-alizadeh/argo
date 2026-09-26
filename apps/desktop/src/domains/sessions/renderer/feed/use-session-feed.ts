@@ -31,10 +31,6 @@ export function useSessionFeed(selectedSessionId: SessionId | null) {
   const feedQuery = sessionFeedQuery(queryClient, selectedSessionId, null)
   const feed = useQuery<SessionFeed | null, SessionContractError>(feedQuery)
   const failedFeedReads = useConsecutiveFeedFailures(selectedSessionId, feed)
-  useEffect(() => {
-    if (selectedSessionId === null) return
-    return () => void window.argo.cancelSessionFeed({ sessionId: selectedSessionId })
-  }, [selectedSessionId])
   return {
     feed: feed.data ?? null,
     feedError: failedFeedReads <= 1 ? null : feed.error,

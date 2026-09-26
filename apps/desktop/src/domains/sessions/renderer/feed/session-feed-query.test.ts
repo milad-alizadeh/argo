@@ -37,6 +37,33 @@ test('reads a newly started Session by its real identifier', async () => {
   }
 })
 
+test('aborting a feed read does not call the retired preload cancellation method', async () => {
+  let finishRead: ((reply: ReturnType<typeof feedReply>) => void) | undefined
+  const readSessionFeed = vi.fn(
+    () =>
+      new Promise<ReturnType<typeof feedReply>>((resolve) => {
+        finishRead = resolve
+      }),
+  )
+  const originalWindow = globalThis.window
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: { argo: { trpc: vi.fn(), readSessionFeed } },
+  })
+  const options = sessionFeedQuery(new QueryClient(), 'session-a', null)
+  const controller = new AbortController()
+  const pending = options.queryFn?.({ signal: controller.signal } as never)
+
+  try {
+    expect(readSessionFeed).toHaveBeenCalledOnce()
+    controller.abort()
+    finishRead?.(feedReply('session-a', 'feed-read', 'revision-1'))
+    await expect(pending).resolves.toMatchObject({ sessionId: 'session-a' })
+  } finally {
+    Object.defineProperty(globalThis, 'window', { configurable: true, value: originalWindow })
+  }
+})
+
 describe('caching and retrying the Session feed read', () => {
   test('removes an inactive transcript as soon as its observer switches away', async () => {
     const client = new QueryClient()
