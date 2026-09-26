@@ -98,6 +98,10 @@ test('uses a global key and input that do not overlap a Project read', async () 
   )
 })
 
+test('keeps the global Session query disabled while a Project is unresolved', () => {
+  expect(sessionListQuery(null, false).enabled).toBe(false)
+})
+
 describe('reading numbered Session pages', () => {
   test('requests consecutive page numbers and stops at the total count', async () => {
     const trpc = withSessionPages(page(1, 'First page'), page(2, 'Second page'))

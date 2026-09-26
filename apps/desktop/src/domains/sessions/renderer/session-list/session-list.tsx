@@ -119,22 +119,44 @@ function sessionListData(read: ReturnType<typeof useSessions>, sessionCount: num
 type SessionListProps = {
   actions: SessionListActions
   projectId: string | null
+  sessionListEnabled?: boolean
   selectedSessionId: SessionId | null
 }
 
-export function SessionList({ actions, projectId, selectedSessionId }: SessionListProps) {
-  const sidebar = useRef<HTMLElement>(null)
-  const [search, setSearch] = useState('')
+function useSessionListData({
+  actions,
+  projectId,
+  search,
+  selectedSessionId,
+  sessionListEnabled,
+  sidebar,
+}: SessionListProps & { search: string; sidebar: RefObject<HTMLElement | null> }) {
   const read = useSessions({
     selectedSessionId: null,
     projectId,
+    sessionListEnabled,
     sessionListSearch: search.trim(),
   })
-  const sessions = useSessionListSessions({
-    actions,
+  return {
     read,
+    sessions: useSessionListSessions({ actions, read, search, selectedSessionId, sidebar }),
+  }
+}
+
+export function SessionList({
+  actions,
+  projectId,
+  sessionListEnabled = true,
+  selectedSessionId,
+}: SessionListProps) {
+  const sidebar = useRef<HTMLElement>(null)
+  const [search, setSearch] = useState('')
+  const { read, sessions } = useSessionListData({
+    actions,
+    projectId,
     search,
     selectedSessionId,
+    sessionListEnabled,
     sidebar,
   })
   const { renameTarget, setRenameTarget, handleRename } = useRenameDialog(

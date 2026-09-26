@@ -59,6 +59,7 @@ export function useSessionScreenModel() {
   const { feed, feedError, sessionList, retryFeed } = useSessions({
     selectedSessionId,
     projectId: cockpit.project?.id ?? null,
+    sessionListEnabled: cockpit.status !== 'loading',
   })
   const [lastHarness, chooseHarness] = useState<SessionHarness>('claude')
   const session = useSelectedSession(selectedSessionId, sessionList)
