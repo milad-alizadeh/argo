@@ -42,6 +42,14 @@ const first: SessionStartInput = {
   turnConfiguration: { model: model.value, effort: model.defaultEffort, mode: 'workspace-write' },
 }
 
+function createStartGate() {
+  let release!: () => void
+  const promise = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  return { promise, release }
+}
+
 async function supervisorFor(request: CodexRequest, catalogValue = catalog) {
   const client = new DatabaseSync(':memory:')
   client.exec(
@@ -228,14 +236,11 @@ test('rejects a changed Codex stance instead of silently retaining the opening s
 
 test('the same in-flight command shares one vendor Session result', async () => {
   let starts = 0
-  let releaseStart!: () => void
-  const startGate = new Promise<void>((resolve) => {
-    releaseStart = resolve
-  })
+  const startGate = createStartGate()
   const { root, supervisor, client } = await supervisorFor(async (method, _params, parse) => {
     if (method === 'thread/start') {
       starts += 1
-      await startGate
+      await startGate.promise
       return parse({ thread: { id: 'native-1' } })
     }
     return parse({ turn: { id: 'turn-1' } })
@@ -243,7 +248,7 @@ test('the same in-flight command shares one vendor Session result', async () => 
   try {
     const one = start(supervisor, first)
     const two = start(supervisor, first)
-    releaseStart()
+    startGate.release()
     const [firstResult, secondResult] = await Promise.all([one, two])
     assert.equal(secondResult.sessionId, firstResult.sessionId)
     assert.equal(starts, 1)
@@ -255,13 +260,10 @@ test('the same in-flight command shares one vendor Session result', async () => 
 
 test('rejects a different command for an in-flight draft without sending a Turn', async () => {
   const turns: string[] = []
-  let releaseStart!: () => void
-  const startGate = new Promise<void>((resolve) => {
-    releaseStart = resolve
-  })
+  const startGate = createStartGate()
   const { root, supervisor, client } = await supervisorFor(async (method, _params, parse) => {
     if (method === 'thread/start') {
-      await startGate
+      await startGate.promise
       return parse({ thread: { id: 'native-1' } })
     }
     turns.push(method)
@@ -271,7 +273,7 @@ test('rejects a different command for an in-flight draft without sending a Turn'
     const one = start(supervisor, first)
     const two = start(supervisor, { ...first, commandId: 'second-command', prompt: 'second' })
     await assert.rejects(two, /conflicting start/)
-    releaseStart()
+    startGate.release()
     await one
     assert.equal(turns.filter((method) => method === 'turn/start').length, 1)
   } finally {
