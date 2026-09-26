@@ -14,13 +14,13 @@ export function HarnessLogo({ harness }: { harness: SessionHarness }) {
           <img
             aria-hidden="true"
             alt=""
-            className="size-3.5 shrink-0 dark:hidden"
+            className="size-3.5 shrink-0 scale-[1.49] dark:hidden"
             src={codexBlack}
           />
           <img
             aria-hidden="true"
             alt=""
-            className="hidden size-3.5 shrink-0 dark:block"
+            className="hidden size-3.5 shrink-0 scale-[1.49] dark:block"
             src={codexWhite}
           />
         </>
