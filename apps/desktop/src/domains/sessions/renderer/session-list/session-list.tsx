@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { formatDistanceStrict } from 'date-fns'
 import { type RefObject, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Progress } from '@/platform/renderer/components/ui/progress'
 import { sessionFeedQuery } from '../feed/session-feed-query'
 import { useConsecutiveFeedFailures } from '../feed/use-session-feed'
 import type { Session, SessionId } from '../types'
@@ -14,6 +14,7 @@ import { SessionListOutcome } from './rows/session-list-outcome'
 import { sessionListRows } from './rows/session-list-rows'
 import { sessionListState } from './rows/session-list-status-row'
 import { SessionListVirtualList } from './rows/session-list-virtual-list'
+import { sessionSyncProgress } from './session-sync-progress'
 import { SessionsSidebarHeader } from './sidebar/sessions-sidebar-chrome'
 import { useSidebarSessionList } from './sidebar/use-sidebar-session-list'
 import { useSessionList } from './use-session-list'
@@ -156,46 +157,24 @@ function SessionSyncFeedback({
   status: ReturnType<typeof useSessionList>['syncStatus']
 }) {
   const { t } = useTranslation('sessions')
-  const [now, setNow] = useState(() => new Date())
-  const lastSuccessfulSyncAt = status?.lastSuccessfulSyncAt
-  useEffect(() => {
-    if (lastSuccessfulSyncAt === null || lastSuccessfulSyncAt === undefined) return
-    const timer = window.setInterval(() => setNow(new Date()), 60_000)
-    return () => window.clearInterval(timer)
-  }, [lastSuccessfulSyncAt])
-  if (status === null) return null
-
-  let message: string | null = null
-  switch (status.phase) {
-    case 'fetching':
-      message = t('sync.fetching')
-      break
-    case 'saving':
-      message =
-        status.total === null
-          ? t('sync.fetching')
-          : t('sync.saving', { processed: status.processed, total: status.total })
-      break
-    case 'failed':
-      message = t('sync.failed')
-      break
-    case 'idle':
-    case 'ready':
-      if (status.lastSuccessfulSyncAt !== null)
-        message = t('sync.lastSynced', {
-          time: formatDistanceStrict(new Date(status.lastSuccessfulSyncAt), now, {
-            addSuffix: true,
-          }),
-        })
-      break
-  }
-  if (message === null) return null
+  if (status === null || (status.phase !== 'fetching' && status.phase !== 'saving')) return null
+  const message =
+    status.phase === 'fetching' || status.total === null
+      ? t('sync.fetching')
+      : t('sync.saving', { processed: status.processed, total: status.total })
   return (
     <div
-      className="border-b border-border/60 px-4 py-1 type-meta text-muted-foreground"
+      className="border-b border-border/60 px-4 py-2 type-meta text-muted-foreground"
       role="status"
     >
-      {message}
+      <div className="flex items-center gap-2">
+        <Progress
+          aria-label={t('sync.progress')}
+          className="min-w-0 flex-1"
+          value={sessionSyncProgress(status)}
+        />
+        <span>{message}</span>
+      </div>
     </div>
   )
 }
