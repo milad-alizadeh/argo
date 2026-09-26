@@ -208,7 +208,7 @@ export function parseBunTestOutput(rawOutput: string, context: TestParserContext
   const workingDirectory = context.workingDirectory ?? context.repositoryRoot
 
   for (const rawLine of stripAnsi(rawOutput).split(/\r?\n/)) {
-    const line = rawLine.replace(TURBO_PREFIX, '')
+    const line = rawLine.replace(TURBO_PREFIX, '').replace(/^::group::/, '')
     if (/^\d+ tests? failed:$/.test(line.trim())) break
     const file = line.match(/^(.+\.(?:test\.(?:ts|tsx|mts)|vitest\.ts)):$/)
     if (file?.[1]) {

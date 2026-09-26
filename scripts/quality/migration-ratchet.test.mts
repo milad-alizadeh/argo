@@ -95,6 +95,25 @@ test('Bun test identity keeps the file and complete test name', () => {
   )
 })
 
+test('Bun test identity ignores GitHub Actions group markers', () => {
+  assert.deepEqual(
+    parseBunTestOutput(
+      '@argo/desktop:test: ::group::src/example.test.ts:\n(fail) reports the failure\n 1 fail\n',
+      {
+        project: '@argo/desktop',
+        repositoryRoot: repository,
+      },
+    ),
+    [
+      {
+        project: '@argo/desktop',
+        path: 'src/example.test.ts',
+        test: 'reports the failure',
+      },
+    ],
+  )
+})
+
 test('Bun requires a final summary and accepts a zero-failure summary', () => {
   const context = { project: '@argo/desktop', repositoryRoot: repository }
   assert.throws(() => parseBunTestOutput('', context), /no final failure summary/)
