@@ -1,0 +1,16 @@
+{
+  "success": false,
+  "numFailedTests": 1,
+  "testResults": [
+    {
+      "name": "/repo/apps/desktop/src/example.vitest.ts",
+      "assertionResults": [
+        {
+          "ancestorTitles": ["outer behavior"],
+          "title": "reports the complete name",
+          "status": "failed"
+        }
+      ]
+    }
+  ]
+}

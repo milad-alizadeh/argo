@@ -250,6 +250,18 @@ function drawnRows(canvasElement: HTMLElement) {
   return [...canvasElement.querySelectorAll<HTMLElement>('[data-feed-row]')]
 }
 
+async function waitForScrollToSettle(history: HTMLElement) {
+  await waitFor(async () => {
+    const position = history.scrollTop
+    const height = history.scrollHeight
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    )
+    expect(history.scrollTop).toBeCloseTo(position, 1)
+    expect(history.scrollHeight).toBe(height)
+  })
+}
+
 // Mounted rows retain their natural content height after images and code highlighting finish.
 export const FormattedProse: Story = {
   args: { feed: richFeed, selectedSessionId: 'rich' },
@@ -1499,6 +1511,7 @@ export const SessionSwitchRestoresReadingPosition: Story = {
     await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(history.clientHeight))
     history.scrollTop = history.scrollHeight / 2
     fireEvent.scroll(history)
+    await waitForScrollToSettle(history)
     const savedPosition = history.scrollTop
     await userEvent.click(canvas.getByRole('button', { name: 'Open second Session' }))
     await waitFor(() =>
@@ -1524,6 +1537,7 @@ export const SessionSwitchRestoresReadingPositionAfterContentChangesWhileAway: S
     await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(history.clientHeight))
     history.scrollTop = history.scrollHeight / 2
     fireEvent.scroll(history)
+    await waitForScrollToSettle(history)
     const historyTop = history.getBoundingClientRect().top
     const anchor = [...history.querySelectorAll<HTMLElement>('[data-feed-row]')].find(
       (row) => row.getBoundingClientRect().bottom > historyTop,
