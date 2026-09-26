@@ -10,6 +10,7 @@ const input = {
   database: {} as Database,
   databasePath: null,
   sessionSyncStatus: new SessionSyncStatusStore(),
+  codexSessionSyncStatus: new SessionSyncStatusStore(undefined, 'codex'),
 }
 
 test('models application startup and shutdown', () => {

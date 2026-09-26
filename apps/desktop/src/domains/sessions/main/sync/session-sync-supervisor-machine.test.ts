@@ -53,7 +53,7 @@ test('dispatches one thread for the supported Harness and deduplicates Refresh',
     },
   })
   const actor = createActor(machine, {
-    input: { databasePath: '/tmp/session-sync-test.sqlite', status },
+    input: { databasePath: '/tmp/session-sync-test.sqlite', status: { claude: status } },
   }).start()
   try {
     assert.deepEqual(dispatched, ['claude'])
@@ -72,4 +72,30 @@ test('dispatches one thread for the supported Harness and deduplicates Refresh',
     actor.stop()
     unsubscribe()
   }
+})
+
+test('keeps a Codex sync failure out of Claude status', () => {
+  const claudeStatus = new SessionSyncStatusStore()
+  const codexStatus = new SessionSyncStatusStore(undefined, 'codex')
+  const actor = createActor(sessionSyncSupervisorMachine, {
+    input: {
+      databasePath: null,
+      status: { claude: claudeStatus, codex: codexStatus },
+    },
+  }).start()
+  actor.send({
+    type: 'WorkerStatus',
+    harness: 'codex',
+    status: {
+      phase: 'failed',
+      processed: 0,
+      total: null,
+      skipped: 0,
+      lastSuccessfulSyncAt: null,
+      failure: 'Codex app-server is unavailable.',
+    },
+  })
+  assert.equal(claudeStatus.current().phase, 'idle')
+  assert.equal(codexStatus.current().phase, 'failed')
+  actor.stop()
 })

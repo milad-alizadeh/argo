@@ -264,6 +264,7 @@ function createWindow(actor: AppActor, database: Database): void {
 
 let applicationDatabase: Database | undefined
 let sessionSyncStatus: SessionSyncStatusStore | undefined
+let codexSessionSyncStatus: SessionSyncStatusStore | undefined
 
 async function prepare() {
   const { projectData } = developmentStoreDirectories({
@@ -273,6 +274,7 @@ async function prepare() {
   })
   applicationDatabase = openDatabase(projectData, { packaged: app.isPackaged })
   sessionSyncStatus = new SessionSyncStatusStore(applicationDatabase)
+  codexSessionSyncStatus = new SessionSyncStatusStore(applicationDatabase, 'codex')
   if (DEVELOPMENT_INSTANCE) {
     await seedDevelopmentProject(applicationDatabase, DEVELOPMENT_INSTANCE)
   }
@@ -280,6 +282,7 @@ async function prepare() {
     database: applicationDatabase,
     databasePath: databasePath(projectData),
     sessionSyncStatus,
+    codexSessionSyncStatus,
   }
 }
 
