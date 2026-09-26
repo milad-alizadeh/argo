@@ -2,12 +2,17 @@ import path from 'node:path'
 import { Worker } from 'node:worker_threads'
 import { assertEvent, assign, enqueueActions, fromCallback, sendTo, setup, stopChild } from 'xstate'
 import { z } from 'zod'
+import {
+  type codexAppServerMachine,
+  requestCodexAppServer,
+} from '@/harnesses/codex/app-server/codex-app-server-machine'
 import type { Harness } from '@/harnesses/harness'
 import {
   type SessionSyncStatus,
   type SessionSyncStatusStore,
   sessionSyncEventSchema,
 } from '../api/session-sync-status'
+import { installCodexWorkerBridge, startWhenCodexReady } from './session-sync-codex-bridge'
 
 const workerMessageSchema = z.union([
   sessionSyncEventSchema,
@@ -54,7 +59,7 @@ const sessionSyncWorkerActor = fromCallback<
   },
   SessionSyncWorkerActorInput,
   WorkerEvent
->(({ input, sendBack }) => {
+>(({ input, sendBack, system }) => {
   if (input.databasePath === null) {
     sendBack({
       type: 'WorkerStatus',
@@ -75,70 +80,109 @@ const sessionSyncWorkerActor = fromCallback<
     return () => {}
   }
 
-  const worker = new Worker(path.join(__dirname, 'session-sync-worker.js'), {
-    workerData: {
-      databasePath: input.databasePath,
-      harness: input.harness,
-    },
-  })
-  worker.unref()
   let stopping = false
   let exited = false
+  let worker: Worker | undefined
+  let uninstallBridge: (() => void) | undefined
+  let cancelReadiness = () => {}
   let outcome: 'ready' | 'failed' | null = null
   let workerError: string | null = null
   let forcedStop: ReturnType<typeof setTimeout> | undefined
 
-  worker.on('online', () =>
-    sendBack({
-      type: 'WorkerReady',
-      harness: input.harness,
-    }),
-  )
-
-  worker.on('message', (message: unknown) => {
+  const launchWorker = (codexRequest?: ReturnType<typeof requestCodexAppServer>) => {
     if (stopping) return
-    const parsed = workerMessageSchema.safeParse(message)
-    if (!parsed.success) {
-      console.error('Invalid Session sync worker message.', parsed.error)
-      workerError = 'Invalid Session sync worker message.'
-      void worker.terminate()
-      return
-    }
-    switch (parsed.data.type) {
-      case 'status':
+    const child = new Worker(path.join(__dirname, 'session-sync-worker.js'), {
+      workerData: {
+        databasePath: input.databasePath,
+        harness: input.harness,
+      },
+    })
+    worker = child
+    child.unref()
+    if (codexRequest !== undefined) uninstallBridge = installCodexWorkerBridge(child, codexRequest)
+    child.on('online', () =>
+      sendBack({
+        type: 'WorkerReady',
+        harness: input.harness,
+      }),
+    )
+
+    child.on('message', (message: unknown) => {
+      if (stopping) return
+      if (
+        codexRequest !== undefined &&
+        typeof message === 'object' &&
+        message !== null &&
+        'type' in message &&
+        message.type === 'codex-request'
+      )
+        return
+      const parsed = workerMessageSchema.safeParse(message)
+      if (!parsed.success) {
+        console.error('Invalid Session sync worker message.', parsed.error)
+        workerError = 'Invalid Session sync worker message.'
+        void child.terminate()
+        return
+      }
+      switch (parsed.data.type) {
+        case 'status':
+          sendBack({
+            type: 'WorkerStatus',
+            harness: input.harness,
+            status: parsed.data.status,
+          })
+          break
+        case 'committed':
+          sendBack({
+            type: 'WorkerCommitted',
+            harness: input.harness,
+          })
+          break
+        case 'finished':
+          outcome = parsed.data.outcome
+          break
+      }
+    })
+    child.on('error', (error) => {
+      if (stopping) return
+      workerError = String(error)
+    })
+    child.on('exit', (code) => {
+      exited = true
+      if (forcedStop !== undefined) clearTimeout(forcedStop)
+      if (stopping) return
+      if (code === 0 && outcome === 'ready') {
+        sendBack({
+          type: 'WorkerCompleted',
+          harness: input.harness,
+        })
+        return
+      }
+      if (outcome !== 'failed')
         sendBack({
           type: 'WorkerStatus',
           harness: input.harness,
-          status: parsed.data.status,
+          status: {
+            phase: 'failed',
+            processed: 0,
+            total: null,
+            skipped: 0,
+            lastSuccessfulSyncAt: null,
+            failure: workerError ?? `Session sync worker exited with code ${code}.`,
+          },
         })
-        break
-      case 'committed':
-        sendBack({
-          type: 'WorkerCommitted',
-          harness: input.harness,
-        })
-        break
-      case 'finished':
-        outcome = parsed.data.outcome
-        break
-    }
-  })
-  worker.on('error', (error) => {
-    if (stopping) return
-    workerError = String(error)
-  })
-  worker.on('exit', (code) => {
-    exited = true
-    if (forcedStop !== undefined) clearTimeout(forcedStop)
-    if (stopping) return
-    if (code === 0 && outcome === 'ready') {
       sendBack({
-        type: 'WorkerCompleted',
+        type: 'WorkerFailed',
         harness: input.harness,
       })
-      return
-    }
-    if (outcome !== 'failed')
+    })
+  }
+
+  if (input.harness === 'codex') {
+    const codexActor = system.get('codex') as
+      | import('xstate').ActorRefFrom<typeof codexAppServerMachine>
+      | undefined
+    if (codexActor === undefined) {
       sendBack({
         type: 'WorkerStatus',
         harness: input.harness,
@@ -148,24 +192,54 @@ const sessionSyncWorkerActor = fromCallback<
           total: null,
           skipped: 0,
           lastSuccessfulSyncAt: null,
-          failure: workerError ?? `Session sync worker exited with code ${code}.`,
+          failure: 'Codex app-server actor is unavailable.',
         },
       })
-    sendBack({
-      type: 'WorkerFailed',
-      harness: input.harness,
-    })
-  })
+      sendBack({
+        type: 'WorkerFailed',
+        harness: input.harness,
+      })
+    } else {
+      const codexRequest = requestCodexAppServer(codexActor)
+      cancelReadiness = startWhenCodexReady(
+        codexRequest,
+        () => launchWorker(codexRequest),
+        (error) => {
+          sendBack({
+            type: 'WorkerStatus',
+            harness: input.harness,
+            status: {
+              phase: 'failed',
+              processed: 0,
+              total: null,
+              skipped: 0,
+              lastSuccessfulSyncAt: null,
+              failure: String(error),
+            },
+          })
+          sendBack({
+            type: 'WorkerFailed',
+            harness: input.harness,
+          })
+        },
+      )
+    }
+  } else {
+    launchWorker()
+  }
 
   return () => {
     stopping = true
-    if (exited) return
-    forcedStop = setTimeout(() => void worker.terminate(), 5000)
+    cancelReadiness()
+    uninstallBridge?.()
+    if (worker === undefined || exited) return
+    const child = worker
+    forcedStop = setTimeout(() => void child.terminate(), 5000)
     forcedStop.unref()
     try {
-      worker.postMessage('Shutdown')
+      child.postMessage('Shutdown')
     } catch {
-      void worker.terminate()
+      void child.terminate()
     }
   }
 })
@@ -173,20 +247,22 @@ const sessionSyncWorkerActor = fromCallback<
 const sessionSyncStatusActor = fromCallback<
   | {
       type: 'Update'
+      harness: Harness
       status: SessionSyncStatus
     }
   | {
       type: 'Committed'
+      harness: Harness
     },
-  SessionSyncStatusStore
+  Partial<Record<Harness, SessionSyncStatusStore>>
 >(({ input, receive }) => {
   receive((event) => {
     switch (event.type) {
       case 'Update':
-        input.update(event.status)
+        input[event.harness]?.update(event.status)
         break
       case 'Committed':
-        input.committed()
+        input[event.harness]?.committed()
         break
     }
   })
@@ -198,7 +274,7 @@ const supportedHarnesses = [
 
 type SupervisorInput = {
   databasePath: string | null
-  status: SessionSyncStatusStore
+  status: Partial<Record<Harness, SessionSyncStatusStore>>
 }
 
 type SupervisorEvent =
@@ -271,11 +347,16 @@ export const sessionSyncSupervisorMachine = setup({
       assertEvent(event, 'WorkerStatus')
       return {
         type: 'Update',
+        harness: event.harness,
         status: event.status,
       }
     }),
-    reportCommit: sendTo('status', {
-      type: 'Committed',
+    reportCommit: sendTo('status', ({ event }) => {
+      assertEvent(event, 'WorkerCommitted')
+      return {
+        type: 'Committed',
+        harness: event.harness,
+      }
     }),
   },
 }).createMachine({

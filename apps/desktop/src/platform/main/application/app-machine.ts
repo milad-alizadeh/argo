@@ -27,6 +27,7 @@ export const appMachine = setup({
       database: Database
       databasePath: string | null
       sessionSyncStatus: SessionSyncStatusStore
+      codexSessionSyncStatus: SessionSyncStatusStore
     },
     context: {} as Record<string, never>,
     events: {} as
@@ -39,6 +40,7 @@ export const appMachine = setup({
             database: Database
             databasePath: string | null
             sessionSyncStatus: SessionSyncStatusStore
+            codexSessionSyncStatus: SessionSyncStatusStore
           }
         },
   },
@@ -85,7 +87,10 @@ export const appMachine = setup({
         assertEvent(event, 'xstate.init')
         return {
           databasePath: event.input.databasePath,
-          status: event.input.sessionSyncStatus,
+          status: {
+            claude: event.input.sessionSyncStatus,
+            codex: event.input.codexSessionSyncStatus,
+          },
         }
       },
     },

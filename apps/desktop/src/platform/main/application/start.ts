@@ -11,6 +11,7 @@ export function startDesktopApplication(request: {
     database: Database
     databasePath: string
     sessionSyncStatus: SessionSyncStatusStore
+    codexSessionSyncStatus: SessionSyncStatusStore
   }>
   ready: (actor: AppActor) => Promise<void> | void
   willQuit: () => void
