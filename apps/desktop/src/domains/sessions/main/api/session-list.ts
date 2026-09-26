@@ -103,6 +103,7 @@ export const sessionListRowSchema = z.strictObject({
   ]),
   entry: z.enum(['interactive', 'headless']).nullable(),
   cwd: z.string().nullable(),
+  workspaceId: z.string().min(1).nullable(),
   branch: z.string().nullable(),
   locked: z.boolean().optional(),
   updatedAt: z.string().nullable(),
@@ -198,6 +199,7 @@ function sessionListRow(
     id: string
     harness: string
     cwd: string | null
+    workspaceId: string | null
     activityAt: number | null
     updatedAt: number
     ticket: {
@@ -223,6 +225,7 @@ function sessionListRow(
     status: live?.status ?? ('unknown' as const),
     entry: null,
     cwd: row.cwd,
+    workspaceId: row.workspaceId,
     branch: null,
     updatedAt: new Date(row.activityAt ?? row.updatedAt).toISOString(),
     unreadableLines: 0,
@@ -264,6 +267,7 @@ function readSessionList(
       preview: sessionTable.preview,
       firstPrompt: sessionTable.firstPrompt,
       cwd: sessionTable.cwd,
+      workspaceId: sessionTable.workspaceId,
       activityAt: sessionTable.activityAt,
       updatedAt: sessionTable.updatedAt,
       ticket: {

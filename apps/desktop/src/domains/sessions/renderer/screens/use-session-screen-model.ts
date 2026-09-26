@@ -16,6 +16,7 @@ import type { SessionEvidence, SessionFeedRow } from '../types'
 import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../work/use-session-work'
 import { sessionHarness } from './session-screen-state'
 import { sessionScreenSubagents } from './session-screen-subagents'
+import { sessionWorkspaceIdentity } from './session-screen-workspace'
 import { useSelectedSession } from './use-selected-session'
 import { useWorkPick, type WorkSelection } from './work-selection'
 
@@ -60,6 +61,7 @@ export function useSessionScreenModel() {
   })
   const [lastHarness, chooseHarness] = useState<SessionHarness>('claude')
   const session = useSelectedSession(selectedSessionId, sessionList)
+  const workspaceIdentity = sessionWorkspaceIdentity(session, workspaceCockpit.workspaces)
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
   // Ask only real Session ids; an optimistic Session row has no backend record yet (#2109).
   const permission = useSessionPermission(selectedSessionId),
@@ -80,6 +82,7 @@ export function useSessionScreenModel() {
     sessionList,
     navigate,
     session,
+    workspaceIdentity,
     evidence,
     setEvidence,
     harness,

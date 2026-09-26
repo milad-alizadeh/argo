@@ -137,6 +137,7 @@ export function SessionScreenView() {
         }
         headerControls={<WorkButtons model={model} />}
         session={session}
+        workspaceIdentity={model.workspaceIdentity}
         inspector={<Inspector model={model} />}
         inspectorBar={<InspectorBar model={model} />}
         defaultInspectorCollapsed={true}

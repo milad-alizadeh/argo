@@ -15,6 +15,7 @@ function listedSession(overrides: Partial<Session> = {}): Session {
     status: 'idle',
     entry: 'interactive',
     cwd: null,
+    workspaceId: null,
     branch: null,
     updatedAt: null,
     unreadableLines: 0,
