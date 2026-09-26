@@ -12,13 +12,18 @@ const twoBatchRecords = Array.from({ length: SESSION_SYNC_BATCH_SIZE + 1 }, (_va
   nativeId: `native-${index}`,
   customTitle: null,
 }))
+const input = { harness: 'claude' as const, knownNativeIds: [] }
+const fetchTwoBatchRecords = fromPromise<SyncResult, { knownNativeIds: string[] }>(async () => ({
+  records: twoBatchRecords,
+  skipped: 0,
+}))
 
 test('moves from Idle through Fetching and Saving to Ready', async () => {
   let saved = 0
   const actor = createActor(
     sessionSyncMachine.provide({
       actors: {
-        fetch: fromPromise<SyncResult>(async () => ({
+        fetch: fromPromise<SyncResult, { knownNativeIds: string[] }>(async () => ({
           records: [{ nativeId: 'native-1', customTitle: null }],
           skipped: 2,
         })),
@@ -27,6 +32,7 @@ test('moves from Idle through Fetching and Saving to Ready', async () => {
         }),
       },
     }),
+    { input },
   ).start()
   try {
     assert.ok(actor.getSnapshot().matches('Idle'))
@@ -40,25 +46,23 @@ test('moves from Idle through Fetching and Saving to Ready', async () => {
   }
 })
 
-test('fails after three fetch attempts and permits a manual Refresh', async () => {
+test('fails after three fetch attempts', async () => {
   let attempts = 0
   const actor = createActor(
     sessionSyncMachine.provide({
       actors: {
-        fetch: fromPromise<SyncResult>(async () => {
+        fetch: fromPromise<SyncResult, { knownNativeIds: string[] }>(async () => {
           attempts += 1
           throw new Error('Claude is unavailable.')
         }),
       },
     }),
+    { input },
   ).start()
   try {
     actor.send({ type: 'Start' })
     await waitFor(actor, (snapshot) => snapshot.matches('Failed'))
     assert.equal(attempts, 3)
-    actor.send({ type: 'Refresh' })
-    await waitFor(actor, (snapshot) => snapshot.matches('Failed') && attempts === 6)
-    assert.equal(attempts, 6)
   } finally {
     actor.stop()
   }
@@ -69,12 +73,13 @@ test('saves each committed batch once and advances progress after each commit', 
   const actor = createActor(
     sessionSyncMachine.provide({
       actors: {
-        fetch: fromPromise<SyncResult>(async () => ({ records: twoBatchRecords, skipped: 0 })),
+        fetch: fetchTwoBatchRecords,
         save: fromPromise(async ({ input }) => {
           saved.push(input.records.map((record) => record.nativeId))
         }),
       },
     }),
+    { input },
   ).start()
   try {
     actor.send({ type: 'Start' })
@@ -95,7 +100,7 @@ test('retries only the failed SQL batch', async () => {
   const actor = createActor(
     sessionSyncMachine.provide({
       actors: {
-        fetch: fromPromise<SyncResult>(async () => ({ records: twoBatchRecords, skipped: 0 })),
+        fetch: fetchTwoBatchRecords,
         save: fromPromise(async ({ input }) => {
           batches.push(input.records.map((record) => record.nativeId))
           if (input.records.length === 1 && failSecondBatch) {
@@ -105,6 +110,7 @@ test('retries only the failed SQL batch', async () => {
         }),
       },
     }),
+    { input },
   ).start()
   try {
     actor.send({ type: 'Start' })
@@ -119,8 +125,9 @@ test('retries only the failed SQL batch', async () => {
   }
 })
 
-test('covers the Idle, Fetching, Saving, Ready, Failed, Refresh, and Shutdown graph paths', () => {
+test('covers the Idle, Fetching, Saving, Ready, Failed, and Shutdown graph paths', () => {
   const paths = getShortestPaths(sessionSyncMachine, {
+    input,
     events: (snapshot): EventFrom<typeof sessionSyncMachine>[] => {
       if (snapshot.matches('Idle')) return [{ type: 'Start' }, { type: 'Shutdown' }]
       if (snapshot.matches('Fetching'))
@@ -134,8 +141,6 @@ test('covers the Idle, Fetching, Saving, Ready, Failed, Refresh, and Shutdown gr
         ]
       if (snapshot.matches('Saving'))
         return [{ type: 'xstate.done.actor.save', output: undefined }, { type: 'Shutdown' }]
-      if (snapshot.matches('Ready') || snapshot.matches('Failed'))
-        return [{ type: 'Refresh' }, { type: 'Shutdown' }]
       return []
     },
   })

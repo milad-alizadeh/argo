@@ -49,12 +49,15 @@ which outcome occurred, Argo keeps the local identity and reports uncertainty.
 
 ## Sync and reads
 
-The app XState machine owns one long-lived Session sync worker bridge. It shuts the worker down
-with the app. The worker contains one reusable XState sync machine definition and runs one
-instance per Harness. Each instance invokes its Harness fetch actor and a batch-save actor.
-Machine context holds serializable progress and identity, not an SDK client or SQLite connection.
-The worker opens its own SQLite connection after main-process migrations. SQLite WAL and a busy
-timeout coordinate writes from main and worker. A worker failure retains committed rows.
+The app XState machine invokes one long-running Session sync supervisor after database migration.
+The supervisor receives Refresh, reads the list of Harnesses supported for Session sync, and
+dispatches one generic sync worker for each Harness job. Each dispatched worker owns one thread.
+The supervisor tracks the jobs, prevents duplicate concurrent jobs for one Harness, and stops all
+threads with the app. A completed or failed job releases its thread. Each worker runs the same
+XState sync machine definition. That machine invokes its Harness fetch actor, then saves batches.
+Its context holds serializable progress and identity, not an SDK client or SQLite connection.
+Each worker opens its own SQLite connection. SQLite WAL and a busy timeout coordinate writes from
+main and worker threads. A worker failure retains committed rows.
 
 The first milestone syncs Claude Session metadata at app start and on manual Refresh. It scans
 all listed metadata without a watermark or transcript history. The Claude reader lists external
@@ -72,7 +75,7 @@ toast with the skipped count. A terminal fetch or save failure shows one toast. 
 sends current sync status on subscribe, then progress and committed-change signals. The renderer
 refetches the SQL list after a commit.
 
-Codex metadata sync later reuses the same worker and machine definition. Its fetch actor requests
+Codex metadata sync later reuses the generic worker and machine definition in its own thread. Its fetch actor requests
 thread data through the existing main-process Codex app-server actor over a narrow bridge. It
 does not start another Codex process. Codex parsing stays in its Harness. Ticket observers remain
 separate owners of Ticket provider sync.
@@ -81,10 +84,12 @@ separate owners of Ticket provider sync.
 
 The shared table definitions and database lifecycle live under `apps/desktop/src/database/`.
 Session SQL reads and writes live under `apps/desktop/src/domains/sessions/main/`. Name the
-shared write `session-upsert.ts` and the list handler `session-list.ts`. The reusable sync machine
-and worker entry live under `apps/desktop/src/domains/sessions/worker/`. Keep the worker bridge
-beside the app machine. Claude and Codex metadata readers and their response schemas live under
-their own `apps/desktop/src/harnesses/<harness>/` folders. Name the live machines
+shared write `session-upsert.ts` and the list handler `session-list.ts`. The supervisor machine,
+generic sync machine, worker entry, and shared Session matching and saving live under
+`apps/desktop/src/domains/sessions/main/sync/`. The supervisor machine file owns its worker-thread
+actor. The app machine only imports and invokes the supervisor. Claude and Codex metadata readers,
+fetch actors, and their response schemas live under their own
+`apps/desktop/src/harnesses/<harness>/` folders. Name the live machines
 `live-session-supervisor-machine.ts`, `live-session-machine.ts`,
 `claude-live-session-machine.ts`, and `codex-live-session-machine.ts`. The sync machine does
 not own a live channel. These names describe ownership; they do not require new contract layers.

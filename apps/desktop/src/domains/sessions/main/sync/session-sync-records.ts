@@ -4,16 +4,9 @@ import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
 import { workspace } from '@/database/workspace/schema'
-import { createSessionUpsert } from '@/domains/sessions/main/database/session-upsert'
-import type { SyncedSessionRecord } from '@/domains/sessions/worker/session-sync-machine'
-import {
-  type ClaudeSessionReader,
-  type ClaudeSessionRecord,
-  readClaudeSessions,
-  systemClaudeSessionReader,
-} from '@/harnesses/claude/session/claude-session-reader'
-
-export type SyncedClaudeSession = SyncedSessionRecord
+import type { Harness } from '@/harnesses/harness'
+import { createSessionUpsert } from '../database/session-upsert'
+import type { SyncedSessionRecord } from './session-sync-machine'
 
 type SessionRoot = {
   projectId: string
@@ -34,11 +27,11 @@ function matchRoot(roots: readonly SessionRoot[], cwd: string): SessionRoot | nu
   )
 }
 
-function knownSessionIds(database: Database): string[] {
+export function knownSessionIds(database: Database, harness: Harness): string[] {
   return database
     .select({ nativeId: sessionTable.nativeId })
     .from(sessionTable)
-    .where(eq(sessionTable.harness, 'claude'))
+    .where(eq(sessionTable.harness, harness))
     .all()
     .map((row) => row.nativeId)
 }
@@ -65,9 +58,9 @@ function sessionRoots(database: Database): SessionRoot[] {
 
 function withProjectMatch(
   roots: readonly SessionRoot[],
-  record: ClaudeSessionRecord,
-): SyncedClaudeSession {
-  if (record.cwd === undefined) return record
+  record: SyncedSessionRecord,
+): SyncedSessionRecord {
+  if (record.cwd == null) return record
   const root = matchRoot(roots, record.cwd)
   return {
     ...record,
@@ -76,39 +69,26 @@ function withProjectMatch(
   }
 }
 
-export async function fetchClaudeSessions(request: {
-  database: Database
-  reportMalformed: (raw: unknown) => void
-  reader?: ClaudeSessionReader
-}): Promise<SyncedClaudeSession[]> {
-  const records = await readClaudeSessions({
-    reader: request.reader ?? systemClaudeSessionReader(),
-    knownNativeIds: knownSessionIds(request.database),
-    reportMalformed: request.reportMalformed,
-  })
-  const roots = sessionRoots(request.database)
+export function matchSessionsToProjects(
+  database: Database,
+  records: readonly SyncedSessionRecord[],
+): SyncedSessionRecord[] {
+  const roots = sessionRoots(database)
   return records.map((record) => withProjectMatch(roots, record))
 }
 
-export function saveClaudeSessions(
+export function saveSessionBatch(
   database: Database,
-  records: readonly SyncedClaudeSession[],
-  committed: () => void = () => {},
+  harness: Harness,
+  records: readonly SyncedSessionRecord[],
 ): void {
   const upsert = createSessionUpsert(database)
   database.$client.exec('BEGIN IMMEDIATE')
   try {
     for (const record of records) {
       upsert({
-        harness: 'claude',
-        nativeId: record.nativeId,
-        customTitle: record.customTitle,
-        preview: record.preview,
-        firstPrompt: record.firstPrompt,
-        cwd: record.cwd,
-        projectId: record.projectId,
-        workspaceId: record.workspaceId,
-        activityAt: record.activityAt,
+        ...record,
+        harness,
       })
     }
     database.$client.exec('COMMIT')
@@ -116,5 +96,4 @@ export function saveClaudeSessions(
     database.$client.exec('ROLLBACK')
     throw error
   }
-  committed()
 }

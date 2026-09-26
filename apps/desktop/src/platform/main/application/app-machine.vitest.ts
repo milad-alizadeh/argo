@@ -23,7 +23,7 @@ test('models application startup and shutdown', () => {
   )
 })
 
-test('owns catalog, Session supervisor, Codex, and sync worker children until shutdown', () => {
+test('owns catalog, live and sync Session supervisors, and Codex until shutdown', () => {
   const actor = createActor(appMachine, { input }).start()
   const catalog = actor.system.get('catalog')
   const sessions = actor.system.get('sessions')

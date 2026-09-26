@@ -2,13 +2,13 @@ import { type ActorRefFrom, assertEvent, setup } from 'xstate'
 import type { Database } from '@/database/database'
 import type { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
 import { liveSessionSupervisorMachine } from '@/domains/sessions/main/live/live-session-supervisor-machine'
+import { sessionSyncSupervisorMachine } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
 import { harnessCatalogMachine } from '@/harnesses/catalog/harness-catalog-machine'
 import { harnessCatalogLoadActor } from '@/harnesses/catalog/runtime'
 import {
   codexAppServerMachine,
   codexAppServerProcessActor,
 } from '@/harnesses/codex/app-server/codex-app-server-machine'
-import { sessionSyncWorkerBridge } from './session-sync-worker-bridge'
 
 const codexMachine = codexAppServerMachine.provide({
   actors: {
@@ -46,7 +46,7 @@ export const appMachine = setup({
     codex: codexMachine,
     catalog: catalogMachine,
     sessions: liveSessionSupervisorMachine,
-    sessionSync: sessionSyncWorkerBridge,
+    sessionSync: sessionSyncSupervisorMachine,
   },
 }).createMachine({
   id: 'application',

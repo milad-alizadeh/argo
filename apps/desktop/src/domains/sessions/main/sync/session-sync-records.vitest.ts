@@ -3,8 +3,8 @@ import { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
 import { createActor, fromPromise, waitFor } from 'xstate'
 import { databaseFrom } from '@/database/database'
-import { type SyncResult, sessionSyncMachine } from '@/domains/sessions/worker/session-sync-machine'
-import { fetchClaudeSessions, saveClaudeSessions } from './claude-session-sync'
+import { type SyncResult, sessionSyncMachine } from './session-sync-machine'
+import { knownSessionIds, matchSessionsToProjects, saveSessionBatch } from './session-sync-records'
 
 const ID = '00000000-0000-4000-8000-000000000001'
 
@@ -21,19 +21,12 @@ function createDatabase() {
   return { client, database: databaseFrom(client) }
 }
 
-test('matches cwd to the deepest registered Project root and keeps sparse metadata', async () => {
+test('matches cwd to the deepest registered Project root and keeps sparse metadata', () => {
   const { client, database } = createDatabase()
   try {
-    const records = await fetchClaudeSessions({
-      database,
-      reportMalformed: () => assert.fail('The record is valid.'),
-      reader: {
-        list: async () => [
-          { sessionId: ID, summary: 'Summary', lastModified: 1, cwd: '/repo/worktree/src' },
-        ],
-        get: async () => undefined,
-      },
-    })
+    const records = matchSessionsToProjects(database, [
+      { nativeId: ID, preview: 'Summary', activityAt: 1, cwd: '/repo/worktree/src' },
+    ])
     assert.deepEqual(records, [
       {
         nativeId: ID,
@@ -44,7 +37,7 @@ test('matches cwd to the deepest registered Project root and keeps sparse metada
         workspaceId: 'workspace-1',
       },
     ])
-    saveClaudeSessions(database, records)
+    saveSessionBatch(database, 'claude', records)
     assert.deepEqual(
       Object.assign(
         {},
@@ -59,50 +52,50 @@ test('matches cwd to the deepest registered Project root and keeps sparse metada
   }
 })
 
-test('saves the supplied batch in one commit', () => {
+test('saves the supplied batch', () => {
   const { client, database } = createDatabase()
   try {
     const records = Array.from({ length: 51 }, (_value, index) => ({
       nativeId: `native-${index}`,
     }))
-    let commits = 0
-    saveClaudeSessions(database, records, () => {
-      commits += 1
-    })
-    assert.equal(commits, 1)
+    saveSessionBatch(database, 'claude', records)
     assert.equal(client.prepare('SELECT count(*) AS count FROM session').get()?.count, 51)
   } finally {
     client.close()
   }
 })
 
-test('clears a removed Claude custom title without replacing a known preview', async () => {
+test('clears a removed custom title without replacing a known preview', () => {
   const { client, database } = createDatabase()
   try {
-    saveClaudeSessions(database, [
+    saveSessionBatch(database, 'claude', [
       { nativeId: ID, customTitle: 'Pinned', preview: 'Earlier summary' },
     ])
-    const records = await fetchClaudeSessions({
-      database,
-      reportMalformed: () => assert.fail('The record is valid.'),
-      reader: {
-        list: async () => [
-          {
-            sessionId: ID,
-            summary: 'First prompt',
-            firstPrompt: 'First prompt',
-            lastModified: 2,
-            customTitle: null,
-          },
-        ],
-        get: async () => undefined,
+    saveSessionBatch(database, 'claude', [
+      {
+        nativeId: ID,
+        firstPrompt: 'First prompt',
+        activityAt: 2,
+        customTitle: null,
       },
-    })
-    saveClaudeSessions(database, records)
+    ])
     assert.deepEqual(
       Object.assign({}, client.prepare('SELECT custom_title, preview FROM session').get()),
       { custom_title: null, preview: 'Earlier summary' },
     )
+  } finally {
+    client.close()
+  }
+})
+
+test('uses Harness and native ID together as Session identity', () => {
+  const { client, database } = createDatabase()
+  try {
+    saveSessionBatch(database, 'claude', [{ nativeId: ID }])
+    saveSessionBatch(database, 'codex', [{ nativeId: ID }])
+    assert.equal(client.prepare('SELECT count(*) AS count FROM session').get()?.count, 2)
+    assert.deepEqual(knownSessionIds(database, 'claude'), [ID])
+    assert.deepEqual(knownSessionIds(database, 'codex'), [ID])
   } finally {
     client.close()
   }
@@ -115,16 +108,20 @@ test('keeps the first committed batch after the second batch exhausts retries', 
   const actor = createActor(
     sessionSyncMachine.provide({
       actors: {
-        fetch: fromPromise<SyncResult>(async () => ({ records, skipped: 0 })),
+        fetch: fromPromise<SyncResult, { knownNativeIds: string[] }>(async () => ({
+          records,
+          skipped: 0,
+        })),
         save: fromPromise(async ({ input }) => {
           if (input.records[0]?.nativeId === 'native-50') {
             failedBatchAttempts += 1
             throw new Error('Database unavailable')
           }
-          saveClaudeSessions(database, input.records)
+          saveSessionBatch(database, 'claude', input.records)
         }),
       },
     }),
+    { input: { harness: 'claude', knownNativeIds: [] } },
   ).start()
   try {
     actor.send({ type: 'Start' })

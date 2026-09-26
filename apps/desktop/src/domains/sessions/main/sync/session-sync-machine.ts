@@ -1,5 +1,6 @@
 import { assign, fromPromise, setup } from 'xstate'
-import type { SessionUpsertInput } from '../main/database/session-upsert'
+import type { Harness } from '@/harnesses/harness'
+import type { SessionUpsertInput } from '../database/session-upsert'
 
 export type SyncedSessionRecord = Omit<SessionUpsertInput, 'harness'>
 
@@ -11,7 +12,13 @@ export const SESSION_SYNC_BATCH_SIZE = 50
 
 export const sessionSyncMachine = setup({
   types: {
+    input: {} as {
+      harness: Harness
+      knownNativeIds: string[]
+    },
     context: {} as {
+      harness: Harness
+      knownNativeIds: string[]
       records: SyncedSessionRecord[]
       processed: number
       skipped: number
@@ -23,9 +30,6 @@ export const sessionSyncMachine = setup({
     events: {} as
       | {
           type: 'Start'
-        }
-      | {
-          type: 'Refresh'
         }
       | {
           type: 'Shutdown'
@@ -48,7 +52,12 @@ export const sessionSyncMachine = setup({
         },
   },
   actors: {
-    fetch: fromPromise<SyncResult>(async () => {
+    fetch: fromPromise<
+      SyncResult,
+      {
+        knownNativeIds: string[]
+      }
+    >(async () => {
       throw new Error('The session sync reader is not configured.')
     }),
     save: fromPromise<
@@ -112,7 +121,9 @@ export const sessionSyncMachine = setup({
 }).createMachine({
   id: 'sessionSync',
   initial: 'Idle',
-  context: {
+  context: ({ input }) => ({
+    harness: input.harness,
+    knownNativeIds: input.knownNativeIds,
     records: [],
     processed: 0,
     skipped: 0,
@@ -120,7 +131,7 @@ export const sessionSyncMachine = setup({
     lastSuccessfulSyncAt: null,
     fetchAttempts: 0,
     saveAttempts: 0,
-  },
+  }),
   on: {
     Shutdown: '.Closed',
   },
@@ -131,16 +142,15 @@ export const sessionSyncMachine = setup({
           target: 'Fetching',
           actions: 'reset',
         },
-        Refresh: {
-          target: 'Fetching',
-          actions: 'reset',
-        },
       },
     },
     Fetching: {
       invoke: {
         id: 'fetch',
         src: 'fetch',
+        input: ({ context }) => ({
+          knownNativeIds: context.knownNativeIds,
+        }),
         onDone: [
           {
             guard: 'hasFetchedRecords',
@@ -215,20 +225,10 @@ export const sessionSyncMachine = setup({
       },
     },
     Ready: {
-      on: {
-        Refresh: {
-          target: 'Fetching',
-          actions: 'reset',
-        },
-      },
+      type: 'final',
     },
     Failed: {
-      on: {
-        Refresh: {
-          target: 'Fetching',
-          actions: 'reset',
-        },
-      },
+      type: 'final',
     },
     Closed: {
       type: 'final',
