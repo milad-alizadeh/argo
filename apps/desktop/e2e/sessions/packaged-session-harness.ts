@@ -1,6 +1,7 @@
 import { type ElectronApplication, _electron as electron, type Page } from 'playwright-core'
 import {
   SESSION_CLAUDE_EXECUTABLE_ENV,
+  SESSION_CLAUDE_SYNC_FIXTURE_ENV,
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_EXECUTABLE_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
@@ -40,12 +41,31 @@ function transcriptEnv(transcripts: SessionHarnessRun['transcripts']): Record<st
   }
 }
 
-function launchEnvironment(run: SessionHarnessRun, launch: SessionHarnessLaunch) {
+function launchEnvironment(run: SessionHarnessRun, launch: SessionHarnessLaunch, project: string) {
+  const syncFixture =
+    launch.sessionSyncFixture === undefined
+      ? undefined
+      : {
+          ...launch.sessionSyncFixture,
+          records: launch.sessionSyncFixture.records.map((record) => {
+            if (
+              typeof record !== 'object' ||
+              record === null ||
+              !('cwd' in record) ||
+              record.cwd !== '$PROJECT'
+            )
+              return record
+            return { ...record, cwd: project }
+          }),
+        }
   const environment = {
     ...process.env,
     ...transcriptEnv(run.transcripts),
     [SESSION_CLAUDE_EXECUTABLE_ENV]: run.executables.claude,
     [SESSION_CODEX_EXECUTABLE_ENV]: run.executables.codex,
+    ...(syncFixture === undefined
+      ? {}
+      : { [SESSION_CLAUDE_SYNC_FIXTURE_ENV]: JSON.stringify(syncFixture) }),
     ...run.launchEnv(launch),
   }
   for (const name of run.unsetEnv ?? []) delete environment[name]
@@ -79,7 +99,7 @@ export async function createPackagedSessionHarness(request: {
     application = await electron.launch({
       executablePath: appExecutable(fixture.application),
       env: {
-        ...launchEnvironment(run, launch),
+        ...launchEnvironment(run, launch, fixture.project),
         [PROJECT_PROOF_STORE_ENV]: fixture.userData,
         [ACCEPTANCE_ENV]: '0',
       },

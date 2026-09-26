@@ -13,3 +13,6 @@ export const SESSION_MOCK_REPLY_DELAY_MS_ENV = 'ARGO_MOCK_REPLY_DELAY_MS'
 
 // Opts a packaged proof into a replayable adverse transport plan; unset keeps ordinary mock behavior.
 export const SESSION_MOCK_ADVERSARIAL_SEED_ENV = 'ARGO_MOCK_ADVERSARIAL_SEED'
+
+// A packaged proof can supply recorded SDK-shaped rows to the Claude sync adapter.
+export const SESSION_CLAUDE_SYNC_FIXTURE_ENV = 'ARGO_CLAUDE_SYNC_FIXTURE'

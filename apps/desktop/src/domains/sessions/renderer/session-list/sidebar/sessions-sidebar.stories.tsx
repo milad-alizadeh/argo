@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { queryClient, trpc } from '@/platform/renderer/trpc-client'
+import { queryClient, type RouterOutputs, trpc } from '@/platform/renderer/trpc-client'
 import { sessionRow, sessionSubagent } from '../../session-fixtures'
 import type { SessionError, SessionId, SessionListPage } from '../../types'
 import { SessionList, type SessionListActions } from '../session-list'
@@ -42,6 +42,20 @@ const readFailure = {
   message: 'Argo could not read these Sessions.',
 } satisfies SessionError
 
+type SessionSyncStatus = Extract<RouterOutputs['sessionSyncStatus'], { type: 'status' }>['status']
+type SessionSyncEvent = RouterOutputs['sessionSyncStatus']
+
+const initialSyncStatus: SessionSyncStatus = {
+  phase: 'idle',
+  processed: 0,
+  total: null,
+  skipped: 0,
+  lastSuccessfulSyncAt: null,
+  failure: null,
+}
+
+let publishSessionSyncEvent = (_event: SessionSyncEvent) => {}
+
 function listedReply(sessionList: SessionListPage): SessionListPage {
   return sessionList
 }
@@ -67,6 +81,19 @@ function withSessionListHost(
 ) {
   queryClient.removeQueries({ queryKey: trpc.sessionList.pathKey() })
   const before = window.argo
+  const listeners = new Set<{
+    id: number
+    listener: Parameters<typeof before.trpcSubscribe>[1]
+  }>()
+  let syncStatus = initialSyncStatus
+  const publish = (event: SessionSyncEvent) => {
+    for (const { id, listener } of listeners)
+      listener({ id, type: 'data', result: { data: event } })
+  }
+  publishSessionSyncEvent = (event) => {
+    if (event.type === 'status') syncStatus = event.status
+    publish(event)
+  }
   window.argo = {
     ...before,
     trpc: fn(async (request) => {
@@ -81,10 +108,29 @@ function withSessionListHost(
       if ('type' in sessionList) throw new Error(sessionList.message)
       return { result: { data: sessionListResult(sessionList, input.page, input.pageSize) } }
     }) as typeof before.trpc,
+    trpcSubscribe: async (request, listener) => {
+      if (request.path !== 'sessionSyncStatus') return before.trpcSubscribe(request, listener)
+      listeners.add({ id: request.id, listener })
+      listener({
+        id: request.id,
+        type: 'data',
+        result: { data: { type: 'status', status: syncStatus } },
+      })
+      return () => {
+        for (const subscription of listeners) {
+          if (subscription.id === request.id) listeners.delete(subscription)
+        }
+      }
+    },
   }
   return () => {
+    publishSessionSyncEvent = () => {}
     window.argo = before
   }
+}
+
+function publishSyncStatus(status: SessionSyncStatus) {
+  publishSessionSyncEvent({ type: 'status', status })
 }
 
 // A Session list refresh rebuilds its array even when nothing changed, so a rename or focused row
@@ -93,6 +139,9 @@ function withSessionsHost(initialSessions: SessionListPage['sessions']) {
   let sessions = initialSessions
   const restore = withSessionListHost(async () => listedReply({ ...listed, sessions }))
   return {
+    setSessions(next: SessionListPage['sessions']) {
+      sessions = next
+    },
     repoll(next: SessionListPage['sessions']) {
       sessions = next
       void queryClient.invalidateQueries({ queryKey: ['sessions'] })
@@ -615,6 +664,97 @@ export const NarrowSidebarWithLongSessionName: Story = {
     const name = await within(sidebar).findByText(/Keep the Sessions sidebar readable/)
     await expect(name.scrollWidth).toBeGreaterThan(name.clientWidth)
     await expect(sidebar.scrollWidth).toBeLessThanOrEqual(sidebar.clientWidth)
+  },
+}
+
+export const RefreshProgressWhileFetching: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    publishSyncStatus({ ...initialSyncStatus, phase: 'fetching' })
+    const progress = await canvas.findByRole('progressbar', { name: 'Session refresh progress' })
+    await expect(canvas.getAllByRole('progressbar')).toHaveLength(1)
+    await expect(progress).not.toHaveAttribute('aria-valuenow')
+    await expect(canvas.getByRole('status')).toHaveTextContent('Syncing Sessions…')
+    await expect(canvas.getByRole('button', { name: 'Refresh Sessions' })).toBeDisabled()
+  },
+}
+
+export const RefreshProgressWhileSaving: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    publishSyncStatus({ ...initialSyncStatus, phase: 'saving', processed: 1, total: 2 })
+    const progress = await canvas.findByRole('progressbar', { name: 'Session refresh progress' })
+    await expect(progress).toHaveAttribute('aria-valuenow', '50')
+    await expect(canvas.getByRole('status')).toHaveTextContent('Syncing 1 out of 2 Sessions')
+    await expect(canvas.getByRole('button', { name: 'Refresh Sessions' })).toBeDisabled()
+  },
+}
+
+export const PartialRefreshShowsOneToast: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    publishSyncStatus({ ...initialSyncStatus, phase: 'ready', skipped: 2 })
+    const toast = await within(document.body).findByText(
+      'Skipped 2 Sessions with unreadable metadata.',
+    )
+    await expect(toast).toBeVisible()
+    await expect(
+      within(document.body).getAllByText('Skipped 2 Sessions with unreadable metadata.'),
+    ).toHaveLength(1)
+    await expect(canvas.queryByRole('progressbar')).toBeNull()
+  },
+}
+
+export const FailedRefreshShowsOneToast: Story = {
+  play: async ({ canvasElement }) => {
+    publishSyncStatus({ ...initialSyncStatus, phase: 'failed', failure: 'Reader unavailable.' })
+    await waitFor(() => {
+      const toastTitles = document.body.querySelectorAll('[data-slot="toast-title"]')
+      expect(toastTitles).toHaveLength(1)
+      expect(toastTitles[0]).toHaveTextContent('Could not sync Sessions.')
+    })
+    await expect(within(document.body).getByText('Reader unavailable.')).toBeVisible()
+    await expect(within(canvasElement).queryByRole('status')).toBeNull()
+    await expect(within(canvasElement).queryByRole('progressbar')).toBeNull()
+  },
+}
+
+export const CompletedRefreshFeedbackDisappears: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    publishSyncStatus({ ...initialSyncStatus, phase: 'saving', processed: 1, total: 2 })
+    await canvas.findByRole('progressbar', { name: 'Session refresh progress' })
+    publishSyncStatus({
+      ...initialSyncStatus,
+      phase: 'ready',
+      lastSuccessfulSyncAt: new Date().toISOString(),
+    })
+    await waitFor(() => expect(canvas.queryByRole('progressbar')).toBeNull())
+    await expect(canvas.queryByRole('status')).toBeNull()
+    await expect(canvas.queryByText(/Syncing/)).toBeNull()
+  },
+}
+
+export const CommittedRefreshUpdatesSessionList: Story = {
+  beforeEach: () => {
+    sessionsHost = withSessionsHost(listed.sessions)
+    return () => {
+      sessionsHost?.restore()
+      sessionsHost = null
+    }
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const added = {
+      ...session,
+      id: 'synced-session',
+      title: { text: 'A Session found by Refresh', source: 'first-prompt' as const },
+    }
+    sessionsHost?.setSessions([...listed.sessions, added])
+    publishSessionSyncEvent({ type: 'committed' })
+    await expect(
+      await canvas.findByRole('button', { name: /A Session found by Refresh/ }),
+    ).toBeVisible()
   },
 }
 

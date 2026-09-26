@@ -64,6 +64,39 @@ test('session-shell', async ({ session }) => {
   await proveSessionShell(session.page())
 })
 
+test.describe('session refresh progress', () => {
+  test.use({
+    sessionSyncFixture: {
+      delayMs: 500,
+      records: [
+        {
+          sessionId: 'bb458b6d-bcf3-4fe6-9586-65930e6185a0',
+          summary: 'Refresh Sessions visibly',
+          firstPrompt: 'Refresh Sessions visibly',
+          lastModified: Date.now(),
+          cwd: '$PROJECT',
+        },
+      ],
+    },
+  })
+
+  test('Refresh shows progress and completes in the Electron window', async ({ session }) => {
+    const page = session.page()
+    const row = page.getByRole('button', { name: /Refresh Sessions visibly/ })
+    await expect(row).toBeVisible()
+
+    const refresh = page.getByRole('button', { name: 'Refresh Sessions' })
+    await expect(refresh).toBeEnabled()
+    await refresh.click()
+    await expect(refresh).toBeDisabled()
+    await expect(page.getByRole('progressbar', { name: 'Session refresh progress' })).toBeVisible()
+    await expect(refresh).toBeEnabled()
+    await expect(page.getByRole('progressbar')).toHaveCount(0)
+    await expect(page.getByText(/Syncing/)).toHaveCount(0)
+    await expect(row).toBeVisible()
+  })
+})
+
 test('session-roster-selection', async ({ session }) => {
   await provePackagedRosterSelection(session.page())
 })
