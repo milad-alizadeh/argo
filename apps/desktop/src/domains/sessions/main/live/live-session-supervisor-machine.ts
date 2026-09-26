@@ -45,11 +45,13 @@ type LiveSessionSupervisorEvent =
   | {
       type: 'Session persisted'
       pendingId: string
+      commandId: string
       sessionId: string
     }
   | {
       type: 'Session failed'
       pendingId: string
+      commandId: string
       failure: string
       nativeId: string | null
     }
@@ -100,9 +102,11 @@ export const liveSessionSupervisorMachine = xstateSetup({
       completed: Record<
         string,
         | {
+            commandId: string
             sessionId: string
           }
         | {
+            commandId: string
             failure: string
           }
       >
@@ -133,6 +137,7 @@ export const liveSessionSupervisorMachine = xstateSetup({
           sendBack({
             type: 'Session persisted',
             pendingId: input.pendingId,
+            commandId: snapshot.context.first.commandId,
             sessionId: snapshot.context.argoId,
           })
         } else if (snapshot.matches('Failed')) {
@@ -140,6 +145,7 @@ export const liveSessionSupervisorMachine = xstateSetup({
           sendBack({
             type: 'Session failed',
             pendingId: input.pendingId,
+            commandId: snapshot.context.first.commandId,
             failure: snapshot.context.failure ?? 'Session start failed.',
             nativeId: snapshot.context.nativeId,
           })
@@ -190,7 +196,9 @@ export const liveSessionSupervisorMachine = xstateSetup({
         }
         const completed = context.completed[event.pendingId]
         if (completed !== undefined) {
-          if ('sessionId' in completed) event.reply.resolve(completed)
+          if (completed.commandId !== event.input.commandId) {
+            event.reply.reject(new Error('A conflicting start already completed for this draft.'))
+          } else if ('sessionId' in completed) event.reply.resolve(completed)
           else event.reply.reject(new Error(completed.failure))
           return context.starts
         }
@@ -288,6 +296,7 @@ export const liveSessionSupervisorMachine = xstateSetup({
           return {
             ...context.completed,
             [event.pendingId]: {
+              commandId: event.commandId,
               sessionId: event.sessionId,
             },
           }
@@ -295,6 +304,7 @@ export const liveSessionSupervisorMachine = xstateSetup({
           return {
             ...context.completed,
             [event.pendingId]: {
+              commandId: event.commandId,
               failure: event.failure,
             },
           }

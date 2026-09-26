@@ -50,6 +50,18 @@ function createStartGate() {
   return { promise, release }
 }
 
+function successfulCodexRequest(nativeIdForStart: (count: number) => string) {
+  let starts = 0
+  const request: CodexRequest = async (method, _params, parse) => {
+    if (method === 'thread/start') {
+      starts += 1
+      return parse({ thread: { id: nativeIdForStart(starts) } })
+    }
+    return parse({ turn: { id: 'turn-1' } })
+  }
+  return { request, starts: () => starts }
+}
+
 async function supervisorFor(request: CodexRequest, catalogValue = catalog) {
   const client = new DatabaseSync(':memory:')
   client.exec(
@@ -282,6 +294,37 @@ test('rejects a different command for an in-flight draft without sending a Turn'
   }
 })
 
+test('completed draft revisions replay only their command and isolate newer prompts', async () => {
+  const request = successfulCodexRequest((count) => `native-${count}`)
+  const { root, supervisor, client } = await supervisorFor(request.request)
+  try {
+    const accepted = await start(supervisor, first, 'optimistic:one:1')
+    const replay = await start(supervisor, first, 'optimistic:one:1')
+    assert.equal(replay.sessionId, accepted.sessionId)
+    await assert.rejects(
+      start(supervisor, { ...first, commandId: 'different-command' }, 'optimistic:one:1'),
+      /conflicting start already completed/,
+    )
+    const original = await start(supervisor, first, 'optimistic:one:1')
+    const newer = await start(
+      supervisor,
+      { ...first, commandId: 'newer-command', prompt: 'newer draft' },
+      'optimistic:one:2',
+    )
+    assert.equal(original.sessionId, accepted.sessionId)
+    assert.notEqual(newer.sessionId, original.sessionId)
+    assert.equal(request.starts(), 2)
+    assert.equal(
+      client.prepare('SELECT first_prompt FROM session WHERE argo_id = ?').get(newer.sessionId)
+        ?.first_prompt,
+      'newer draft',
+    )
+  } finally {
+    root.send({ type: 'Shutdown' })
+    client.close()
+  }
+})
+
 test('allows an explicit retry after the Harness fails before returning a native id', async () => {
   let starts = 0
   const { root, supervisor, client } = await supervisorFor(async (method, _params, parse) => {
@@ -302,14 +345,8 @@ test('allows an explicit retry after the Harness fails before returning a native
 })
 
 test('does not retry a vendor Session automatically when the real SQLite upsert fails', async () => {
-  let starts = 0
-  const { root, supervisor, client } = await supervisorFor(async (method, _params, parse) => {
-    if (method === 'thread/start') {
-      starts += 1
-      return parse({ thread: { id: 'native-1' } })
-    }
-    return parse({ turn: { id: 'turn-1' } })
-  })
+  const request = successfulCodexRequest(() => 'native-1')
+  const { root, supervisor, client } = await supervisorFor(request.request)
   client.exec(
     "CREATE TRIGGER reject_session_insert BEFORE INSERT ON session BEGIN SELECT RAISE(ABORT, 'session insert rejected'); END;",
   )
@@ -317,9 +354,9 @@ test('does not retry a vendor Session automatically when the real SQLite upsert 
     await assert.rejects(start(supervisor, first), /Failed query/)
     await assert.rejects(
       start(supervisor, { ...first, commandId: 'retry-command' }),
-      /Failed query/,
+      /conflicting start already completed/,
     )
-    assert.equal(starts, 1)
+    assert.equal(request.starts(), 1)
     assert.equal(client.prepare('SELECT COUNT(*) AS count FROM session').get()?.count, 0)
   } finally {
     root.send({ type: 'Shutdown' })

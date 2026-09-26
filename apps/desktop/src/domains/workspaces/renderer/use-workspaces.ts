@@ -22,7 +22,8 @@ export function useWorkspaces(projectId: string | null): [WorkspaceCockpit, Work
   const query = useQuery({
     ...trpc.workspaceList.queryOptions({ projectId: projectId ?? '' }),
     enabled: projectId !== null,
-    staleTime: Infinity,
+    staleTime: 30_000,
+    refetchInterval: 30_000,
   })
   const cockpit = useMemo(() => {
     if (query.data?.type !== 'workspace.listed') return IDLE

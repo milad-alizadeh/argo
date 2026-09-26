@@ -114,7 +114,7 @@ test('resolves the Workspace path in main and deletes an accepted new-Session dr
     }),
   ).resolves.toEqual({ sessionId: 'session-1' })
   expect(submitted).toMatchObject({
-    pendingId: `optimistic:${created.id}`,
+    pendingId: `optimistic:${created.id}:${created.revision}`,
     input: { cwd: '/current/repo', projectId, workspaceId, prompt: content.prompt },
   })
   await expect(api.composerDraftRead(created.target)).resolves.toBeNull()

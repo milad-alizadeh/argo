@@ -74,7 +74,7 @@ function sendToSupervisor(
       }
       context.supervisor.send({
         type: 'Start',
-        pendingId: `optimistic:${draft.id}`,
+        pendingId: `optimistic:${draft.id}:${draft.revision}`,
         input: {
           ...command,
           harness: draft.target.harness,
