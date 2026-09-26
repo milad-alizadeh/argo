@@ -1,7 +1,8 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { attachmentKindOf } from '@/domains/sessions/api/attachments'
 import { type RouterInputs, type RouterOutputs, trpc } from '@/platform/renderer/trpc-client'
+import { invalidateSessionList } from '../../session-queries'
 import type { ComposerEditing } from '../editing/composer-editing'
 import {
   supportedConfiguration,
@@ -224,9 +225,14 @@ export function useDurableComposerDraft(input: {
   opening: TurnConfiguration | null
 }) {
   const { target, choices, opening } = input
+  const queryClient = useQueryClient()
   const { mutateAsync: createDraft } = useMutation(trpc.composerDraftCreate.mutationOptions())
   const { mutateAsync: saveDraft } = useMutation(trpc.composerDraftSave.mutationOptions())
-  const { mutateAsync: submitDraft } = useMutation(trpc.sessionSubmit.mutationOptions())
+  const { mutateAsync: submitDraft } = useMutation(
+    trpc.sessionSubmit.mutationOptions({
+      onSuccess: () => invalidateSessionList(queryClient),
+    }),
+  )
   const persisted = useRef<PersistedDraft | null>(null)
   const latestEditing = useRef<ComposerEditing | null>(null)
   const saveChain = useRef<Promise<void>>(Promise.resolve())

@@ -10,16 +10,21 @@ import { RICH_MARKDOWN } from '../feed/content/feed-samples'
 import { INACTIVE_FEED_LIVE_FACTS } from '../feed/document/feed-live-facts'
 import { SessionInspector } from '../inspector/session-inspector'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
-import { sessionRosterRow, sessionShellCommand, sessionSubagent } from '../session-fixtures'
+import {
+  sessionListTrpc,
+  sessionRow,
+  sessionShellCommand,
+  sessionSubagent,
+} from '../session-fixtures'
 import { SessionList, type SessionListActions } from '../session-list/session-list'
-import type { Session, SessionFeed, SessionsListed } from '../types'
+import type { Session, SessionFeed } from '../types'
 import { SessionWorkButtons } from '../work/session-work-buttons'
 import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
 import { SessionScreenView } from './session-screen-view'
 import { SessionShell } from './session-shell'
 
 const SESSION_ROSTER = [
-  sessionRosterRow({
+  sessionRow({
     id: 'composer-review',
     posture: 'external',
     title: { text: 'Finish Session composer review', source: 'first-prompt' },
@@ -55,7 +60,7 @@ const SESSION_ROSTER = [
     contextTokens: 54_000,
     spentTokens: 11_200,
   }),
-  sessionRosterRow({
+  sessionRow({
     id: 'shortcut-review',
     harness: 'codex',
     posture: 'live',
@@ -68,7 +73,7 @@ const SESSION_ROSTER = [
     contextTokens: 21_000,
     spentTokens: 4_600,
   }),
-  sessionRosterRow({
+  sessionRow({
     id: 'feed-review',
     posture: 'external',
     title: { text: 'Review transcript rendering', source: 'custom' },
@@ -167,20 +172,7 @@ function withListedSessions(sessions: Session[]) {
   const before = window.argo
   window.argo = {
     ...before,
-    listSessions: async () =>
-      ({
-        version: 1,
-        type: 'session.listed',
-        requestId: 'screen-review-sessions',
-        sessions,
-        filesFound: sessions.length,
-        filesRead: sessions.length,
-        filesUnreadable: 0,
-        filesParsed: 0,
-        nextCursor: null,
-        historyComplete: true,
-        partialFailures: [],
-      }) satisfies SessionsListed,
+    trpc: sessionListTrpc(before.trpc, () => sessions),
   }
   return () => {
     window.argo = before
@@ -212,7 +204,7 @@ function ReviewSidebar({
   return (
     <SessionList
       actions={{ ...NOOP_SESSION_LIST_ACTIONS, onSelect }}
-      projectRoot={null}
+      projectId="project-1"
       selectedSessionId={selectedSessionId}
     />
   )
@@ -384,7 +376,7 @@ function NewSessionScreen() {
             onNew: () => setSelectedSessionId('optimistic:new-session'),
             onSelect: setSelectedSessionId,
           }}
-          projectRoot={null}
+          projectId="project-1"
           selectedSessionId={selectedSessionId}
         />
       }

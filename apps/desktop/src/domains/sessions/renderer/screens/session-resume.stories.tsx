@@ -4,13 +4,13 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { type DriveSessionErrorCode, driveSessionError } from '@/domains/sessions/api/session-error'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { sessionRosterRow } from '../session-fixtures'
+import { sessionListTrpc, sessionRow } from '../session-fixtures'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import { SessionScreenView } from './session-screen-view'
 
 // #2092: a Session Argo held before a restart reads external, keeps its composer, and the next
 // Send is what resumes it, regardless of whether Argo started it originally.
-const resumable = sessionRosterRow({
+const resumable = sessionRow({
   id: 'resumable-session',
   posture: 'external',
   title: { text: 'Fix the flaky roster test', source: 'first-prompt' },
@@ -25,19 +25,9 @@ function restartedHost(refusal: DriveSessionErrorCode | null, row = resumable) {
   const before = window.argo
   window.argo = {
     ...before,
-    listSessions: async () => ({
-      version: 1,
-      type: 'session.listed',
-      requestId: 'storybook-sessions',
-      sessions: [resumed ? { ...row, posture: 'live', status: 'running' } : row],
-      filesFound: 1,
-      filesRead: 1,
-      filesUnreadable: 0,
-      filesParsed: 0,
-      nextCursor: null,
-      historyComplete: true,
-      partialFailures: [],
-    }),
+    trpc: sessionListTrpc(before.trpc, () => [
+      resumed ? { ...row, posture: 'live', status: 'running' } : row,
+    ]),
     sendSession: async ({ sessionId }) => {
       if (refusal !== null) return driveSessionError(refusal, 'claude', 'storybook-send')
       resumed = true
@@ -119,7 +109,7 @@ export const RefusedSend: Story = {
 
 // A Session another process runs live right now (a `claude` in a terminal, a Codex Turn in the
 // Codex app) is locked in the Roster, and its composer never shows: no Send is offered to refuse.
-const liveElsewhere = sessionRosterRow({ ...resumable, status: 'running', locked: true })
+const liveElsewhere = sessionRow({ ...resumable, status: 'running', locked: true })
 
 export const LockedWhileLiveElsewhere: Story = {
   beforeEach: () => restartedHost(null, liveElsewhere),

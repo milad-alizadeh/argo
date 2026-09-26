@@ -4,11 +4,11 @@ import { expect, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { sessionError } from '@/domains/sessions/api/session-error'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { sessionRosterRow } from '../session-fixtures'
+import { sessionListTrpc, sessionRow } from '../session-fixtures'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import { SessionScreenView } from './session-screen-view'
 
-const session = sessionRosterRow({
+const session = sessionRow({
   id: 'flaky-feed-session',
   posture: 'external',
   title: { text: 'Read the transcript through a flaky poll', source: 'first-prompt' },
@@ -23,19 +23,7 @@ function flakyFeedHost() {
   const before = window.argo
   window.argo = {
     ...before,
-    listSessions: async () => ({
-      version: 1,
-      type: 'session.listed',
-      requestId: 'storybook-sessions',
-      sessions: [session],
-      filesFound: 1,
-      filesRead: 1,
-      filesUnreadable: 0,
-      filesParsed: 0,
-      nextCursor: null,
-      historyComplete: true,
-      partialFailures: [],
-    }),
+    trpc: sessionListTrpc(before.trpc, () => [session]),
     readSessionFeed: async (request) => {
       reads += 1
       if (reads === 2) {
@@ -72,19 +60,7 @@ function flakyFirstOpenHost() {
   const before = window.argo
   window.argo = {
     ...before,
-    listSessions: async () => ({
-      version: 1,
-      type: 'session.listed',
-      requestId: 'storybook-sessions',
-      sessions: [session],
-      filesFound: 1,
-      filesRead: 1,
-      filesUnreadable: 0,
-      filesParsed: 0,
-      nextCursor: null,
-      historyComplete: true,
-      partialFailures: [],
-    }),
+    trpc: sessionListTrpc(before.trpc, () => [session]),
     readSessionFeed: async (request) => {
       reads += 1
       if (reads === 1) {
@@ -121,19 +97,7 @@ function missingHistoryHost(listed = true) {
   const before = window.argo
   window.argo = {
     ...before,
-    listSessions: async () => ({
-      version: 1,
-      type: 'session.listed',
-      requestId: 'storybook-sessions',
-      sessions: listed ? [session] : [],
-      filesFound: 1,
-      filesRead: 1,
-      filesUnreadable: 0,
-      filesParsed: 0,
-      nextCursor: null,
-      historyComplete: true,
-      partialFailures: [],
-    }),
+    trpc: sessionListTrpc(before.trpc, () => (listed ? [session] : [])),
     readSessionFeed: async (request) =>
       historyReady
         ? {

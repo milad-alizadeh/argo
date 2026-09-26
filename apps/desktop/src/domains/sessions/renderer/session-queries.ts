@@ -1,9 +1,10 @@
 import type { InfiniteData, QueryClient } from '@tanstack/react-query'
-import type { RosterStatus } from '@/domains/sessions/renderer/model/roster-status'
-import type { SessionId, SessionRoster } from './types'
+import type { SessionId, SessionListPage } from './types'
 
 export const SESSION_REFRESH_MS = 500
-export const sessionRosterQueryKey = ['sessions', 'roster'] as const
+export const sessionListsQueryKey = ['sessions', 'list'] as const
+export const sessionListQueryKey = (projectId: string, search = '') =>
+  [...sessionListsQueryKey, projectId, search] as const
 // A Subagent's Feed is a document of its own, so it is its own query: switching between the
 // Session's Feed and a Subagent's swaps documents rather than refetching one (#1582).
 export const sessionFeedQueryKey = (sessionId: SessionId, subagentId: string | null = null) =>
@@ -20,25 +21,17 @@ export const sessionPermissionQueryKey = (sessionId: SessionId) =>
 // outside the loaded pages, so it is a different query rather than a refetch of the same one.
 export const sessionArchiveQueryKey = (restoreId: SessionId | null) =>
   ['sessions', 'archive', restoreId] as const
-// Keyed on everything that scopes a search's answer, so a changed Project, status filter or query
-// text reads as a different query rather than a stale page of a different scope's results.
-export const sessionSearchQueryKey = (
-  projectRoot: string | null,
-  status: RosterStatus,
-  query: string,
-) => ['sessions', 'search', projectRoot, status, query] as const
+const pendingSessionListInvalidations = new WeakMap<QueryClient, Promise<void>>()
 
-const pendingRosterInvalidations = new WeakMap<QueryClient, Promise<void>>()
-
-export function invalidateSessionRoster(queryClient: QueryClient) {
-  const pending = pendingRosterInvalidations.get(queryClient)
+export function invalidateSessionList(queryClient: QueryClient) {
+  const pending = pendingSessionListInvalidations.get(queryClient)
   if (pending !== undefined) return pending
 
   const invalidation = Promise.resolve().then(() => {
-    pendingRosterInvalidations.delete(queryClient)
-    return queryClient.invalidateQueries({ queryKey: sessionRosterQueryKey })
+    pendingSessionListInvalidations.delete(queryClient)
+    return queryClient.invalidateQueries({ queryKey: sessionListsQueryKey })
   })
-  pendingRosterInvalidations.set(queryClient, invalidation)
+  pendingSessionListInvalidations.set(queryClient, invalidation)
   return invalidation
 }
 
@@ -48,13 +41,13 @@ export function markSessionRead(
   retiredIds: readonly SessionId[],
 ) {
   const identities = new Set([sessionId, ...retiredIds])
-  queryClient.setQueriesData<InfiniteData<SessionRoster>>(
-    { queryKey: sessionRosterQueryKey },
-    (roster) => {
-      if (roster === undefined) return roster
+  queryClient.setQueriesData<InfiniteData<SessionListPage>>(
+    { queryKey: sessionListsQueryKey },
+    (sessionList) => {
+      if (sessionList === undefined) return sessionList
       return {
-        ...roster,
-        pages: roster.pages.map((page) => ({
+        ...sessionList,
+        pages: sessionList.pages.map((page) => ({
           ...page,
           sessions: page.sessions.map((session) =>
             identities.has(session.id) || session.retiredIds.some((id) => identities.has(id))

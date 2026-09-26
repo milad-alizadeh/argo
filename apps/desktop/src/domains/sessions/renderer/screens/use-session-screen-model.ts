@@ -18,10 +18,6 @@ import { sessionScreenSubagents } from './session-screen-subagents'
 import { useSelectedSession } from './use-selected-session'
 import { useWorkPick, type WorkSelection } from './work-selection'
 
-function useScreenSessionFeed(sessionId: string | null, projectPath: string | null) {
-  return useSessions(sessionId, true, projectPath)
-}
-
 function useWorkArtifacts({
   session,
   selectedSessionId,
@@ -60,14 +56,14 @@ export function useSessionScreenModel() {
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
   const [evidence, setEvidence] = useState<SessionEvidence | null>(null)
   const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
-  const { feed, feedError, roster, retryFeed } = useScreenSessionFeed(
+  const { feed, feedError, sessionList, retryFeed } = useSessions({
     selectedSessionId,
-    cockpit.project?.path ?? null,
-  )
+    projectId: cockpit.project?.id ?? null,
+  })
   const [lastHarness, chooseHarness] = useState<SessionHarness>('claude')
-  const session = useSelectedSession(selectedSessionId, roster)
+  const session = useSelectedSession(selectedSessionId, sessionList)
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
-  // Ask only real Session ids; an optimistic Roster row has no backend record yet (#2109).
+  // Ask only real Session ids; an optimistic Session row has no backend record yet (#2109).
   const permission = useSessionPermission(selectedSessionId),
     question = useSessionQuestion(selectedSessionId)
   const artifacts = useWorkArtifacts({
@@ -83,7 +79,7 @@ export function useSessionScreenModel() {
     feed,
     feedError,
     retryFeed,
-    roster,
+    sessionList,
     navigate,
     session,
     evidence,

@@ -6,7 +6,7 @@ import {
   throwSessionContractError,
   throwUnexpectedSessionReply,
 } from '../../session-contract-error'
-import { invalidateSessionRoster } from '../../session-queries'
+import { invalidateSessionList } from '../../session-queries'
 import type { SessionId } from '../../types'
 
 export type ArchiveSetOutcome = { applied: SessionId[]; failed: SessionId[] }
@@ -34,7 +34,7 @@ export function useSessionArchiveMutation() {
       }
     },
     onSuccess: () => {
-      invalidateSessionRoster(queryClient)
+      invalidateSessionList(queryClient)
       queryClient.invalidateQueries({ queryKey: ['sessions', 'archive'] })
     },
   })

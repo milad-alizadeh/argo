@@ -51,11 +51,7 @@ export const SessionRowView = memo(function SessionRowView({
   tabbable,
   unavailable,
 }: SessionRowViewProps) {
-  if (
-    row.kind === 'archivedSentinel' ||
-    row.kind === 'sessionListSentinel' ||
-    row.kind === 'searchSentinel'
-  ) {
+  if (row.kind === 'archivedSentinel' || row.kind === 'sessionListSentinel') {
     return <div aria-hidden="true" />
   }
   if (row.kind === 'sessionListLoadingMore') return <SessionListLoadingMoreRow />

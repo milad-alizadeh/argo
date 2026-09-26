@@ -1,5 +1,4 @@
-import type { SessionRosterRow } from '@/domains/sessions/renderer/model/models'
-import type { SessionRoster } from '../../types'
+import type { Session, SessionListPage } from '../../types'
 
 // Whether the composer has a real Session yet, and what it is keyed on until it does
 // (CONTEXT.md L2 · Model and Effort).
@@ -16,11 +15,11 @@ export function composerIdentityOf(
 }
 
 export function findSessionRow(
-  roster: SessionRoster | null,
+  sessionList: SessionListPage | null,
   id: string | null,
-): SessionRosterRow | null {
+): Session | null {
   if (id === null) return null
-  return roster?.sessions.find((session) => session.id === id) ?? null
+  return sessionList?.sessions.find((session) => session.id === id) ?? null
 }
 
 export function composerIdentityKey(identity: ComposerIdentity): string {

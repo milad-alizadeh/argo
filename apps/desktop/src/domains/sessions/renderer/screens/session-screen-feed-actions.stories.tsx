@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { sessionRosterRow } from '../session-fixtures'
+import { sessionListTrpc, sessionRow } from '../session-fixtures'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import type { SessionFeed } from '../types'
 import { SessionScreenView } from './session-screen-view'
@@ -13,7 +13,7 @@ const SUBAGENT_ID = 'child-task-2669'
 const SKILL_PATH = '/storybook/.agents/skills/to-spec/SKILL.md'
 const SUBAGENT_NAME = 'Explore Turn Configuration and harness code for issue 2669'
 let readSubagentIds: Array<string | null> = []
-const session = sessionRosterRow({
+const session = sessionRow({
   id: SESSION_ID,
   posture: 'external',
   title: { text: 'Feed actions', source: 'first-prompt' },
@@ -86,19 +86,7 @@ function withFeedActions() {
     const previous = window.argo
     window.argo = {
       ...previous,
-      listSessions: async () => ({
-        version: 1,
-        type: 'session.listed',
-        requestId: 'feed-actions-sessions',
-        sessions: [session],
-        filesFound: 1,
-        filesRead: 1,
-        filesUnreadable: 0,
-        filesParsed: 0,
-        nextCursor: null,
-        historyComplete: true,
-        partialFailures: [],
-      }),
+      trpc: sessionListTrpc(previous.trpc, () => [session]),
       readSessionFeed: async (request) => {
         readSubagentIds.push(request.subagentId)
         return feed(request.sessionId, request.subagentId)

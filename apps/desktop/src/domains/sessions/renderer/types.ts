@@ -1,37 +1,18 @@
 import type { SessionError } from '@/domains/sessions/api/session-error'
-import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/renderer/model/models'
+import type { SessionFeedRow } from '@/domains/sessions/renderer/model/models'
+import type { RouterOutputs } from '@/platform/renderer/trpc-client'
 
-// The renderer's current Roster state. The old request envelope has no consumer here.
-export type SessionsListed = {
-  version: 1
-  type: 'session.listed'
-  requestId: string
-  sessions: SessionRosterRow[]
-  partialFailures: { harness: string; code: string }[]
-  filesFound: number
-  filesRead: number
-  filesUnreadable: number
-  filesParsed: number
-  nextCursor: string | null
-  historyComplete: boolean
-}
-
-export type SessionSearched = {
-  version: 1
-  type: 'session.searched'
-  requestId: string
-  sessions: SessionRosterRow[]
-  nextCursor: string | null
-  historyComplete: boolean
-}
+export type SessionListResult = RouterOutputs['sessions']['list']
+export type Session = SessionListResult['rows'][number]
+export type SessionId = Session['id']
 
 export type SessionArchiveListed = {
   version: 1
   type: 'session.archive.listed'
   requestId: string
-  sessions: SessionRosterRow[]
+  sessions: Session[]
   nextCursor: string | null
-  restored: SessionRosterRow | null
+  restored: Session | null
   historyComplete: boolean
 }
 
@@ -46,9 +27,11 @@ export type SessionFeed = {
 }
 
 export type { SessionError }
-export type SessionRoster = Omit<SessionsListed, 'version' | 'type' | 'requestId'>
-export type Session = SessionRosterRow
-export type SessionId = Session['id']
+export type SessionListPage = Pick<SessionListResult, 'total'> & {
+  sessions: Session[]
+  nextPage: number | null
+  historyComplete: boolean
+}
 export type { SessionFeedRow }
 
 export type SessionDiagramEvidence = {

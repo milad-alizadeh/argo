@@ -51,11 +51,14 @@ export function CockpitRouteLayout() {
   )
 
   if (cockpit.status === 'empty') return <EmptyProjectScreen />
-  // A Project with no Harness signed in has no way to run a Session, so this precedes the
-  // roster the same way `EmptyProjectScreen` precedes it for no Project. `readiness.data` is
-  // read only once it has landed, so a still-loading first read shows the roster underneath
-  // rather than flashing this screen first.
-  if (readiness.data && !readiness.data.some((harness) => harness.state === 'ready')) {
+  // Saved Sessions remain readable without a Harness. Other surfaces keep the sign-in gate.
+  const opensSavedSessions =
+    location.pathname === '/projects' || location.pathname.includes('/sessions')
+  if (
+    !opensSavedSessions &&
+    readiness.data &&
+    !readiness.data.some((harness) => harness.state === 'ready')
+  ) {
     return <NoHarnessReadyScreen harnesses={readiness.data} />
   }
   return (

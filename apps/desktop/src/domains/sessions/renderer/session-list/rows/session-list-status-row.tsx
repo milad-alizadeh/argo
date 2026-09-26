@@ -2,11 +2,11 @@ import { useTranslation } from 'react-i18next'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Skeleton } from '@/platform/renderer/components/ui/skeleton'
 import { sessionFailureState } from '../../session-failure-state'
-import type { SessionError, SessionRoster } from '../../types'
+import type { SessionError, SessionListPage } from '../../types'
 import { SESSION_LIST_ROW_HEIGHT } from './session-list-rows'
 
 export function sessionListState(
-  sessionList: SessionRoster | null,
+  sessionList: SessionListPage | null,
   sessionListError: SessionError | null,
   count: number,
 ) {

@@ -1,7 +1,6 @@
 import { SessionContractError } from '../../session-contract-error'
 import type { Session } from '../../types'
 import type { SessionListStatus } from '../hooks/use-session-list-filter-store'
-import type { SearchSessionListState } from './search-session-list-rows'
 import { sessionListRows } from './session-list-rows'
 
 export const noArchive = {
@@ -38,7 +37,7 @@ export function kindsOf(options: {
   archived?: typeof noArchive
   hasMoreSessions?: boolean
   isFetchingMoreSessions?: boolean
-  search?: SearchSessionListState | null
+  searching?: boolean
   showArchive?: boolean
   status?: SessionListStatus
 }) {
@@ -47,7 +46,7 @@ export function kindsOf(options: {
     archived: noArchive,
     hasMoreSessions: false,
     isFetchingMoreSessions: false,
-    search: null,
+    searching: false,
     showArchive: false,
     status: 'active',
     ...options,

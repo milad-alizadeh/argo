@@ -6,7 +6,6 @@ import {
   showsActive,
   showsArchived,
 } from '../hooks/use-session-list-filter-store'
-import { type SearchSessionListState, searchSessionListRows } from './search-session-list-rows'
 
 // What the one Session list context menu does to the row under the pointer.
 export type SessionListMenuHandlers = {
@@ -54,12 +53,7 @@ export type SessionListRow =
   | { kind: 'archivedSentinel' }
   | { kind: 'archivedLoadingMore' }
   | { kind: 'archivedIndexing' }
-  | { kind: 'searchLoading' }
-  | { kind: 'searchError'; error: SessionContractError }
   | { kind: 'searchEmpty' }
-  | { kind: 'searchSentinel' }
-  | { kind: 'searchLoadingMore' }
-  | { kind: 'searchIndexing' }
 
 // Two rows draw the same thing. A Session list read rebuilds every row object when one Session changes,
 // so the row's memo boundary compares what the row draws rather than the object it arrived in
@@ -73,9 +67,6 @@ export function sameSessionListRow(left: SessionListRow, right: SessionListRow):
   }
   if (left.kind === 'archivedError') {
     return right.kind === 'archivedError' && left.error === right.error
-  }
-  if (left.kind === 'searchError') {
-    return right.kind === 'searchError' && left.error === right.error
   }
   return left.kind === right.kind
 }
@@ -138,18 +129,14 @@ function archivedSessionListRows(
   return rows
 }
 
-// The status filter chooses which Sessions the one list carries. The Archive used to be a
-// disclosure row inside it, which made the reader open a place in the list rather than choose what
-// the list was of; the filter in the header decides now and there is no toggle row. A live search
-// (#2375) replaces the whole list rather than joining it: the query already answers across the
-// complete indexed history, scoped by the same status filter, so there is nothing left for the
-// loaded active/archived rows to add.
+// The status filter chooses which Sessions the one list carries. A title search filters its loaded
+// active rows in place, so selection and virtualization stay on the same list.
 export function sessionListRows({
   active,
   archived,
   hasMoreSessions,
   isFetchingMoreSessions,
-  search,
+  searching,
   showArchive,
   status,
 }: {
@@ -157,14 +144,14 @@ export function sessionListRows({
   archived: ArchivedSessionListState
   hasMoreSessions: boolean
   isFetchingMoreSessions: boolean
-  search: SearchSessionListState | null
+  searching: boolean
   showArchive: boolean
   status: SessionListStatus
 }): SessionListRow[] {
-  if (search !== null) return searchSessionListRows(search)
   const rows: SessionListRow[] = showsActive(status)
     ? active.map((session) => ({ kind: 'session', session, archived: false }))
     : []
+  if (searching) return rows.length === 0 ? [{ kind: 'searchEmpty' }] : rows
   // Scrolling this row into view is the reader action that grows the active sessionList's own bounded
   // window (#2239); it carries no loaded rows itself, so it is never mistaken for one.
   if (showsActive(status) && hasMoreSessions) rows.push({ kind: 'sessionListSentinel' })

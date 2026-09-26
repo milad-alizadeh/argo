@@ -1,4 +1,4 @@
-import type { Session, SessionsListed } from '../../types'
+import type { Session } from '../../types'
 import { SessionRenameDialog } from './session-rename-dialog'
 
 export function RenameDialog({
@@ -7,8 +7,8 @@ export function RenameDialog({
   setSession,
 }: {
   onRename: (session: Session, name: string) => Promise<void>
-  session: SessionsListed['sessions'][number] | null
-  setSession: (session: SessionsListed['sessions'][number] | null) => void
+  session: Session | null
+  setSession: (session: Session | null) => void
 }) {
   return (
     <SessionRenameDialog
