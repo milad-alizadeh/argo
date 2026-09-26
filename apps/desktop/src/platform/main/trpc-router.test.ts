@@ -93,7 +93,7 @@ test('accepts a Session sync refresh', async () => {
     tickets: {} as TicketRouterDependencies,
     workspaces: {} as WorkspaceListContext,
   })
-  await expect(router.createCaller({}).sessions.refresh()).resolves.toEqual({ accepted: true })
+  await expect(router.createCaller({}).sessionRefresh()).resolves.toEqual({ accepted: true })
   expect(refreshes).toBe(1)
 })
 

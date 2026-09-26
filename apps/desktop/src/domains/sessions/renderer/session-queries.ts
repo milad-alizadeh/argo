@@ -3,7 +3,7 @@ import { trpc } from '@/platform/renderer/trpc-client'
 import type { SessionId, SessionListResult } from './types'
 
 export const SESSION_REFRESH_MS = 500
-const sessionListPathKey = trpc.sessions.list.pathKey()
+const sessionListPathKey = trpc.sessionList.pathKey()
 // A Subagent's Feed is a document of its own, so it is its own query: switching between the
 // Session's Feed and a Subagent's swaps documents rather than refetching one (#1582).
 export const sessionFeedQueryKey = (sessionId: SessionId, subagentId: string | null = null) =>

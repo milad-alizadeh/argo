@@ -4,9 +4,9 @@ import { invalidateSessionList } from '@/domains/sessions/renderer/session-queri
 import { queryClient, trpc, trpcClient } from '@/platform/renderer/trpc-client'
 
 export function useSessionSync() {
-  const refresh = useMutation(trpc.sessions.refresh.mutationOptions())
+  const refresh = useMutation(trpc.sessionRefresh.mutationOptions())
   useEffect(() => {
-    const subscription = trpcClient.sessions.syncStatus.subscribe(undefined, {
+    const subscription = trpcClient.sessionSyncStatus.subscribe(undefined, {
       onData: () => {
         void invalidateSessionList(queryClient)
       },

@@ -70,7 +70,7 @@ function withSessionListHost(
   window.argo = {
     ...before,
     trpc: fn(async (request) => {
-      if (request.path !== 'sessions.list') return before.trpc(request)
+      if (request.path !== 'sessionList') return before.trpc(request)
       const input = request.input as {
         projectId: string
         search: string
@@ -105,7 +105,7 @@ type SessionListHarnessArgs = SessionListActions & { selectedSessionId: SessionI
 
 // The presentational seam Storybook drives: SessionList's own props, plus the routing a real caller
 // gives it. Project scoping plays no part in what a story renders, so every story reads the same
-// null root and tells the Session list apart by what `sessions.list` answers instead.
+// null root and tells the Session list apart by what `sessionList` answers instead.
 function SessionListHarness({ selectedSessionId, ...actions }: SessionListHarnessArgs) {
   return (
     <SessionList actions={actions} projectId="project-1" selectedSessionId={selectedSessionId} />
@@ -978,7 +978,7 @@ export const GrowsOnlyWhenTheReaderReachesTheEnd: Story = {
     await waitFor(() => expect(listSessions).toHaveBeenCalledTimes(2))
     await expect(listSessions).toHaveBeenCalledWith(
       expect.objectContaining({
-        path: 'sessions.list',
+        path: 'sessionList',
         input: { projectId: 'project-1', search: '', page: 2, pageSize: 30 },
       }),
     )

@@ -7,7 +7,7 @@ import {
   type SessionSyncStatus,
   sessionSyncStatusSchema,
 } from '@/domains/sessions/main/sync/session-sync-status'
-import { fetchClaudeSessions, saveClaudeSessions } from './claude-session-sync'
+import { fetchClaudeSessions, saveClaudeSessions } from './run-claude-session-sync'
 
 const port = parentPort
 if (port === null) throw new Error('The Session sync worker requires a parent port.')

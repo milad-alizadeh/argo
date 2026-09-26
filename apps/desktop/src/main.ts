@@ -194,6 +194,11 @@ function routerForWindow(options: {
   })
 }
 
+function currentSessionSyncStatus(): SessionSyncStatusStore {
+  if (sessionSyncStatus === undefined) throw new Error('Session sync status is unavailable.')
+  return sessionSyncStatus
+}
+
 function createWindow(actor: AppActor, database: Database): void {
   const catalogActor = actor.system.get('catalog') as CatalogActor | undefined
   const sessionsActor = actor.system.get('sessions') as LiveSessionSupervisorActor | undefined
@@ -224,7 +229,7 @@ function createWindow(actor: AppActor, database: Database): void {
       const router = routerForWindow({
         actors: { catalog: catalogActor, sessions: sessionsActor, sessionSync: sessionSyncActor },
         domains,
-        sessionSyncStatus,
+        sessionSyncStatus: currentSessionSyncStatus(),
         window,
         database,
       })
@@ -256,7 +261,7 @@ function createWindow(actor: AppActor, database: Database): void {
 }
 
 let applicationDatabase: Database | undefined
-const sessionSyncStatus = new SessionSyncStatusStore()
+let sessionSyncStatus: SessionSyncStatusStore | undefined
 
 async function prepare() {
   const { projectData } = developmentStoreDirectories({
@@ -265,6 +270,7 @@ async function prepare() {
     instance: DEVELOPMENT_INSTANCE,
   })
   applicationDatabase = openDatabase(projectData, { packaged: app.isPackaged })
+  sessionSyncStatus = new SessionSyncStatusStore(applicationDatabase)
   if (DEVELOPMENT_INSTANCE) {
     await seedDevelopmentProject(applicationDatabase, DEVELOPMENT_INSTANCE)
   }
@@ -282,7 +288,8 @@ async function ready(actor: AppActor): Promise<void> {
     const filePath = attachmentPathFromUrl(request.url)
     return filePath ? net.fetch(pathToFileURL(filePath).href) : new Response(null, { status: 400 })
   })
-  if (applicationDatabase === undefined) throw new Error('Application database is unavailable.')
+  if (applicationDatabase === undefined || sessionSyncStatus === undefined)
+    throw new Error('Application services are unavailable.')
   createWindow(actor, applicationDatabase)
 
   if (ACCEPTANCE_ENABLED) {

@@ -1,12 +1,8 @@
-import path from 'node:path'
-import { Worker } from 'node:worker_threads'
-import { type ActorRefFrom, assertEvent, fromCallback, setup } from 'xstate'
+import { type ActorRefFrom, assertEvent, setup } from 'xstate'
 import type { Database } from '@/database/database'
 import { liveSessionSupervisorMachine } from '@/domains/sessions/main/live/live-session-supervisor-machine'
-import {
-  type SessionSyncStatusStore,
-  sessionSyncStatusSchema,
-} from '@/domains/sessions/main/sync/session-sync-status'
+import type { SessionSyncStatusStore } from '@/domains/sessions/main/sync/session-sync-status'
+import { sessionSyncWorkerMachine } from '@/domains/sessions/main/sync/session-sync-worker-machine'
 import { harnessCatalogMachine } from '@/harnesses/catalog/harness-catalog-machine'
 import { harnessCatalogLoadActor } from '@/harnesses/catalog/runtime'
 import {
@@ -50,59 +46,7 @@ export const appMachine = setup({
     codex: codexMachine,
     catalog: catalogMachine,
     sessions: liveSessionSupervisorMachine,
-    sessionSync: fromCallback<
-      {
-        type: 'Refresh'
-      },
-      {
-        databasePath: string | null
-        status: SessionSyncStatusStore
-      }
-    >(({ input, receive }) => {
-      if (input.databasePath === null) return () => {}
-      const worker = new Worker(path.join(__dirname, 'claude-session-sync-worker.js'), {
-        workerData: {
-          databasePath: input.databasePath,
-        },
-      })
-      worker.on('message', (message: unknown) => {
-        if (typeof message === 'object' && message !== null && 'type' in message) {
-          if (
-            (
-              message as {
-                type?: unknown
-              }
-            ).type === 'committed'
-          ) {
-            input.status.update(input.status.current())
-            return
-          }
-        }
-        const parsed = sessionSyncStatusSchema.safeParse(
-          typeof message === 'object' && message !== null && 'status' in message
-            ? (
-                message as {
-                  status: unknown
-                }
-              ).status
-            : undefined,
-        )
-        if (parsed.success) input.status.update(parsed.data)
-      })
-      worker.on('error', (error) => {
-        input.status.update({
-          ...input.status.current(),
-          phase: 'failed',
-          failure: String(error),
-        })
-      })
-      receive((event) => {
-        if (event.type === 'Refresh') worker.postMessage('Refresh')
-      })
-      return () => {
-        void worker.terminate()
-      }
-    }),
+    sessionSync: sessionSyncWorkerMachine,
   },
 }).createMachine({
   id: 'application',

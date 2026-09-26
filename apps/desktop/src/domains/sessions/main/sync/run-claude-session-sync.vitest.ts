@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
 import { databaseFrom } from '@/database/database'
-import { fetchClaudeSessions, saveClaudeSessions } from './claude-session-sync'
+import { fetchClaudeSessions, saveClaudeSessions } from './run-claude-session-sync'
 
 const ID = '00000000-0000-4000-8000-000000000001'
 
