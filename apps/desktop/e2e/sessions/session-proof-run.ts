@@ -22,6 +22,7 @@ export type SessionOptions = {
   slowReply: boolean
   // Replays the mock Harness's seeded jitter, split bytes and failures.
   adversarialSeed: string | undefined
+  sessionSyncFixture: { records: unknown[]; delayMs: number } | undefined
 }
 
 export type SessionFixtures = SessionOptions & {
@@ -50,6 +51,7 @@ export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>(
   projectSelected: [true, { option: true }],
   slowReply: [false, { option: true }],
   adversarialSeed: [undefined, { option: true }],
+  sessionSyncFixture: [undefined, { option: true }],
   // Built per test, because a backend remembers the folders of the one root it started on.
   backend: async ({ sessionBackend }, use) => {
     await use(BACKENDS[sessionBackend]())
@@ -58,7 +60,15 @@ export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>(
     await use(await prepare(root, packagedApplication, { projectSelected }))
   },
   session: async (
-    { root, sessionFixture, backend, slowReply, adversarialSeed, performanceProfile },
+    {
+      root,
+      sessionFixture,
+      backend,
+      slowReply,
+      adversarialSeed,
+      sessionSyncFixture,
+      performanceProfile,
+    },
     use,
     testInfo,
   ) => {
@@ -67,7 +77,7 @@ export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>(
       root,
       fixture: sessionFixture,
       backend,
-      launch: { slowReply, adversarialSeed },
+      launch: { slowReply, adversarialSeed, sessionSyncFixture },
       launched: async (application, page) => {
         traced = await startRecording(performanceProfile, application, async () => page)
       },
