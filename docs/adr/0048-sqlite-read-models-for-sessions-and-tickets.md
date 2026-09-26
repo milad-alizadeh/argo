@@ -75,10 +75,38 @@ toast with the skipped count. A terminal fetch or save failure shows one toast. 
 sends current sync status on subscribe, then progress and committed-change signals. The renderer
 refetches the SQL list after a commit.
 
-Codex metadata sync later reuses the generic worker and machine definition in its own thread. Its fetch actor requests
-thread data through the existing main-process Codex app-server actor over a narrow bridge. It
-does not start another Codex process. Codex parsing stays in its Harness. Ticket observers remain
-separate owners of Ticket provider sync.
+Codex metadata sync uses the same supervisor, worker entry, sync machine, batch saver, and Session
+upsert as Claude. The supervisor must confirm that the existing Codex app-server is ready before
+it dispatches a Codex worker. An actor reference alone does not prove readiness. If the server is
+unavailable, the supervisor reports a Codex sync failure and does not start that worker. Refresh
+checks readiness again. Once dispatched, the Codex worker runs the generic sync machine with a
+Codex fetch actor, just as a Claude worker runs it with a Claude fetch actor. The Codex fetch actor
+requests thread data from the existing main-process app-server actor through a narrow worker-to-main
+request and response bridge. Codex parsing stays in its Harness. The worker's own SQLite
+connection handles Session reads and batched upserts. No second Codex process starts. Ticket
+observers remain separate owners of Ticket provider sync.
+
+```mermaid
+flowchart TD
+    App[Application machine] --> Supervisor[Session sync supervisor]
+    Supervisor -->|Claude job| ClaudeWorker[Generic sync worker: Claude]
+    Supervisor -->|Codex job| Ready{Codex app-server ready?}
+    Ready -->|Yes| CodexWorker[Generic sync worker: Codex]
+    Ready -->|No| Failure[Report Codex sync failure]
+    ClaudeWorker --> ClaudeMachine[Generic sync machine]
+    CodexWorker --> CodexMachine[Generic sync machine]
+    ClaudeMachine --> ClaudeFetch[Claude fetch actor]
+    CodexMachine --> CodexFetch[Codex fetch actor]
+    ClaudeFetch --> ClaudeSource[Claude Session source]
+    CodexFetch --> Bridge[Worker-to-main request bridge]
+    Bridge --> Server[Existing Codex app-server actor]
+    Server -->|Response| Bridge
+    ClaudeFetch -->|Session records| ClaudeMachine
+    Bridge --> CodexFetch
+    CodexFetch -->|Session records| CodexMachine
+    ClaudeMachine --> Store[(Shared Session upsert in worker SQLite)]
+    CodexMachine --> Store
+```
 
 ## Module ownership
 
