@@ -9,18 +9,19 @@ export function HarnessLogo({ harness }: { harness: SessionHarness }) {
     case 'claude':
       return <img aria-hidden="true" alt="" className="size-3.5 shrink-0" src={claudeSpark} />
     case 'codex':
+      // The original mark fills about 67% of its viewBox, so 1.49 matches Claude's visible size.
       return (
         <>
           <img
             aria-hidden="true"
             alt=""
-            className="size-3.5 shrink-0 dark:hidden"
+            className="size-3.5 shrink-0 scale-[1.49] dark:hidden"
             src={codexBlack}
           />
           <img
             aria-hidden="true"
             alt=""
-            className="hidden size-3.5 shrink-0 dark:block"
+            className="hidden size-3.5 shrink-0 scale-[1.49] dark:block"
             src={codexWhite}
           />
         </>
