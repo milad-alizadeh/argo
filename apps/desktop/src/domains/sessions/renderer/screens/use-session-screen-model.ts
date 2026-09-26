@@ -40,10 +40,7 @@ function useWorkArtifacts({
     delegationFeed: delegationFeed.feed,
     delegationFeedError: delegationFeed.feedError,
     retryDelegationFeed: delegationFeed.retry,
-    subagentUsage: useDelegationUsage(
-      subagents.length === 0 ? null : selectedSessionId,
-      subagents.some((candidate) => candidate.state === 'running'),
-    ),
+    subagentUsage: useDelegationUsage(subagents.length === 0 ? null : selectedSessionId),
     shellOutput: useShellOutput(selectedSessionId, shell?.id ?? null, shell?.state === 'running'),
     subagents,
   }

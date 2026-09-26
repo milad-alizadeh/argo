@@ -134,10 +134,7 @@ test('a second worktree reads the Account grant and selected Project from the fi
     const stores = worktreeStores(path.join(root, 'Application Support'))
     assert.notEqual(stores.firstInstance.userData, stores.secondInstance.userData)
     assert.deepEqual(stores.first, stores.second)
-    assert.equal(
-      databasePath(stores.first.projectData),
-      databasePath(stores.second.projectData),
-    )
+    assert.equal(databasePath(stores.first.projectData), databasePath(stores.second.projectData))
     assert.equal(stores.first.connectionData, stores.second.connectionData)
     assert.equal(DEVELOPMENT_APPLICATION_NAME, 'Argo Development')
     await persistFirstLaunch(stores.first)

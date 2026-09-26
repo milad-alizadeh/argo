@@ -1,7 +1,7 @@
+import type { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import { sessionInsertSchema } from '@/database/session/validation'
-import type { z } from 'zod'
 
 export type SessionUpsertInput = z.infer<typeof sessionInsertSchema>
 
