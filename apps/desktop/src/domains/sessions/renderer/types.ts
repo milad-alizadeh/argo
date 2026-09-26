@@ -46,7 +46,13 @@ export type SessionFeed = {
 }
 
 export type { SessionError }
-export type SessionRoster = Omit<SessionsListed, 'version' | 'type' | 'requestId'>
+export type SessionRoster = {
+  sessions: SessionRosterRow[]
+  total: number
+  nextPage: number | null
+  historyComplete: boolean
+  partialFailures: { harness: string; code: string }[]
+}
 export type Session = SessionRosterRow
 export type SessionId = Session['id']
 export type { SessionFeedRow }

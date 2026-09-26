@@ -20,8 +20,8 @@ export type { SessionListActions } from './rows'
 
 const NOOP = () => {}
 
-function useSessionListRead(projectRoot: string | null) {
-  const { roster, rosterError, ...read } = useSessions(null, true, projectRoot)
+function useSessionListRead() {
+  const { roster, rosterError, ...read } = useSessions(null, true)
   return { ...read, sessionList: roster, sessionListError: rosterError }
 }
 
@@ -127,7 +127,7 @@ export function SessionList({
 }) {
   const sidebar = useRef<HTMLElement>(null)
   const unavailableSessionIds = useUnavailableSessionIds(selectedSessionId)
-  const read = useSessionListRead(projectRoot)
+  const read = useSessionListRead()
   const sessions = useSessionListSessions({
     actions,
     projectRoot,

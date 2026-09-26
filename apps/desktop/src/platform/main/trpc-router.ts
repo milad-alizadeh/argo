@@ -20,6 +20,7 @@ import {
 import { composerDraftCreateProcedure } from '@/domains/sessions/main/api/composer-draft-create'
 import { composerDraftReadProcedure } from '@/domains/sessions/main/api/composer-draft-read'
 import { composerDraftSaveProcedure } from '@/domains/sessions/main/api/composer-draft-save'
+import { sessionListProcedure } from '@/domains/sessions/main/api/session-list'
 import {
   type SessionProcedureContext,
   sessionSubmitProcedure,
@@ -60,6 +61,7 @@ export function createAppRouter(dependencies: AppRouterDependencies) {
     composerDraftRead: composerDraftReadProcedure(dependencies.sessions.database),
     composerDraftSave: composerDraftSaveProcedure(dependencies.sessions.database),
     sessionSubmit: sessionSubmitProcedure(dependencies.sessions),
+    sessions: t.router({ list: sessionListProcedure(dependencies.sessions.database) }),
     projectList: projectListProcedure(dependencies.projects.database),
     projectOpen: projectOpenProcedure(dependencies.projects.database),
     projectRegister: projectRegisterProcedure(dependencies.projects),

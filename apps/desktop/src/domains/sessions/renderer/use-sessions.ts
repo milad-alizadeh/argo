@@ -5,12 +5,12 @@ import { useToastManager } from '@/platform/renderer/components/ui/toast'
 import { retrySessionFeed, sessionFeedQuery } from './feed/session-feed-query'
 import type { SessionContractError } from './session-contract-error'
 import { reportCodexFailure } from './session-list/codex-failure-notice'
-import { sessionRosterQuery } from './session-list/rows/session-roster-query'
+import { sessionListQuery } from './session-list/rows/session-list-query'
 import { invalidateSessionRoster } from './session-queries'
 import type { SessionFeed, SessionId } from './types'
 
-function useRosterQuery(enabled: boolean, projectRoot: string | null) {
-  const query = useInfiniteQuery(sessionRosterQuery(enabled, { projectRoot }))
+function useSessionListQuery(enabled: boolean) {
+  const query = useInfiniteQuery(sessionListQuery(enabled))
 
   const lastPage = query.data?.pages.at(-1)
   const roster = useMemo(() => {
@@ -58,11 +58,7 @@ export function useConsecutiveFeedFailures(
 // `rosterEnabled` lets a caller that only sometimes needs the roster (a Ticket's Linked
 // Sessions, unread until a Ticket is selected) skip the fetch rather than pull the whole
 // roster in for a result it may throw away.
-export function useSessions(
-  selectedSessionId: SessionId | null,
-  rosterEnabled = true,
-  projectRoot: string | null = null,
-) {
+export function useSessions(selectedSessionId: SessionId | null, rosterEnabled = true) {
   const queryClient = useQueryClient()
   const { t } = useTranslation('sessions')
   const { add } = useToastManager()
@@ -73,7 +69,7 @@ export function useSessions(
     hasMore: hasMoreSessions,
     isFetchingMore: isFetchingMoreSessions,
     fetchMore: fetchMoreSessions,
-  } = useRosterQuery(rosterEnabled, projectRoot)
+  } = useSessionListQuery(rosterEnabled)
   const feedQuery = sessionFeedQuery(queryClient, selectedFeedId, null)
   const feed = useQuery<SessionFeed | null, SessionContractError>(feedQuery)
   const failedFeedReads = useConsecutiveFeedFailures(selectedFeedId, feed)

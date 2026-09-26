@@ -1,6 +1,6 @@
 import { useParams } from 'react-router'
 import { useProjects } from '@/domains/projects/renderer'
-import { SessionList, type SessionListActions } from '../session-list/session-list'
+import { SessionList, type SessionListActions } from '../session-list'
 import { useArchiveSelected } from './use-session-archive-mutation'
 import { useSidebarActions } from './use-sidebar-actions'
 
