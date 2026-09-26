@@ -1,13 +1,13 @@
 import { type InfiniteData, InfiniteQueryObserver, QueryClient } from '@tanstack/react-query'
 import { afterEach, describe, expect, test, vi } from 'vitest'
-import type { SessionListPage } from '../../types'
-import { sessionListQuery } from './session-list-query'
+import { trpc } from '@/platform/renderer/trpc-client'
+import type { SessionListResult } from '../../types'
 
 const originalWindow = globalThis.window
 
 type SessionListObserver = {
   fetchNextPage: () => Promise<unknown>
-  getCurrentResult: () => { data: InfiniteData<SessionListPage> | undefined }
+  getCurrentResult: () => { data: InfiniteData<SessionListResult> | undefined }
   refetch: () => Promise<unknown>
 }
 
@@ -53,7 +53,14 @@ function page(
 
 async function observeSessionList(read: (observer: SessionListObserver) => Promise<void>) {
   const client = new QueryClient()
-  const options = sessionListQuery('project-1', true)
+  const options = trpc.sessions.list.infiniteQueryOptions(
+    { projectId: 'project-1', search: '' },
+    {
+      initialCursor: 1,
+      getNextPageParam: (result) =>
+        result.page * result.pageSize < result.total ? result.page + 1 : null,
+    },
+  )
   const observer = new InfiniteQueryObserver(client, options)
   const unsubscribe = observer.subscribe(() => {})
   await read(observer)
@@ -87,7 +94,7 @@ describe('reading numbered Session pages', () => {
         observer
           .getCurrentResult()
           .data?.pages.flatMap((result) =>
-            result.sessions.map((session) => session.title?.text ?? ''),
+            result.rows.map((session) => session.title?.text ?? ''),
           ) ?? []
     })
 
@@ -95,14 +102,14 @@ describe('reading numbered Session pages', () => {
       1,
       expect.objectContaining({
         path: 'sessions.list',
-        input: { projectId: 'project-1', search: '', page: 1, pageSize: 30 },
+        input: { projectId: 'project-1', search: '', cursor: 1, direction: 'forward' },
       }),
     )
     expect(trpc).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
         path: 'sessions.list',
-        input: { projectId: 'project-1', search: '', page: 2, pageSize: 30 },
+        input: { projectId: 'project-1', search: '', cursor: 2, direction: 'forward' },
       }),
     )
     expect(titles).toEqual(['First page', 'Second page'])
@@ -110,8 +117,8 @@ describe('reading numbered Session pages', () => {
 
   test('keeps the published list when an equivalent saved page is read again', async () => {
     withSessionPages(page(1, 'Saved title'), page(1, 'Saved title'))
-    let first: InfiniteData<SessionListPage> | undefined
-    let second: InfiniteData<SessionListPage> | undefined
+    let first: InfiniteData<SessionListResult> | undefined
+    let second: InfiniteData<SessionListResult> | undefined
 
     await observeSessionList(async (observer) => {
       await observer.refetch()
@@ -125,18 +132,18 @@ describe('reading numbered Session pages', () => {
 
   test('converts persisted timestamps without exposing database-only identity', async () => {
     withSessionPages(page(1, 'Saved title', { total: 1, updatedAt: 1_000 }))
-    let result: SessionListPage | undefined
+    let result: SessionListResult | undefined
 
     await observeSessionList(async (observer) => {
       await observer.refetch()
       result = observer.getCurrentResult().data?.pages[0]
     })
 
-    expect(result?.sessions[0]).toMatchObject({
+    expect(result?.rows[0]).toMatchObject({
       id: '00000000-0000-4000-8000-000000000001',
       title: { text: 'Saved title', source: 'summarised' },
       updatedAt: '1970-01-01T00:00:01.000Z',
     })
-    expect(result).toMatchObject({ total: 1, nextPage: null })
+    expect(result).toMatchObject({ page: 1, pageSize: 1, total: 1 })
   })
 })

@@ -93,6 +93,32 @@ function insertSession(
     )
 }
 
+function insertTicketLink(
+  client: DatabaseSync,
+  values: {
+    sessionId: string
+    projectId: string
+    key: string
+    title: string
+    state: 'open' | 'closed'
+  },
+) {
+  client
+    .prepare(
+      `INSERT INTO session_ticket_link (
+        session_id, project_id, ticket_key, title, state, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+    .run(
+      values.sessionId,
+      values.projectId,
+      values.key,
+      values.title,
+      values.state,
+      '2026-09-26T10:00:00.000Z',
+    )
+}
+
 test('returns exact numbered pages in deterministic Argo ID order', async () => {
   const { client, list } = sessionListCaller()
   try {
@@ -230,6 +256,39 @@ test('filters one Project by custom title and preview only', async () => {
       [IDS[1]],
     )
     assert.equal(prompt.total, 0)
+  } finally {
+    client.close()
+  }
+})
+
+test('joins a Session to its Ticket as one nested ticket object', async () => {
+  const { client, list } = sessionListCaller()
+  try {
+    insertSession(client, {
+      id: IDS[0],
+      harness: 'claude',
+      nativeId: 'native-1',
+      firstPrompt: 'Linked Session',
+      updatedAt: 10,
+    })
+    insertTicketLink(client, {
+      sessionId: IDS[0],
+      projectId: 'project-1',
+      key: '#2744',
+      title: 'Simplify Session renderer state',
+      state: 'open',
+    })
+
+    const result = await list({ projectId: 'project-1', page: 1, pageSize: 10 })
+
+    assert.deepEqual(result.rows[0]?.ticket, {
+      projectId: 'project-1',
+      key: '#2744',
+      title: 'Simplify Session renderer state',
+      state: 'open',
+      createdAt: '2026-09-26T10:00:00.000Z',
+    })
+    assert.equal('ticketKey' in (result.rows[0] ?? {}), false)
   } finally {
     client.close()
   }

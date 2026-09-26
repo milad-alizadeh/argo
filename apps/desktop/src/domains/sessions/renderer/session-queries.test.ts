@@ -1,18 +1,16 @@
 import { expect, test } from 'bun:test'
 import { QueryClient } from '@tanstack/react-query'
+import { trpc } from '@/platform/renderer/trpc-client'
 import { sessionRow } from './session-fixtures'
-import {
-  invalidateSessionList,
-  markSessionRead,
-  sessionListQueryKey,
-  sessionListsQueryKey,
-} from './session-queries'
+import { invalidateSessionList, markSessionRead } from './session-queries'
+
+const sessionListPathKey = trpc.sessions.list.pathKey()
 
 test('coalesces one watch event into one Session list invalidation', async () => {
   const queryClient = new QueryClient()
   let invalidations = 0
   queryClient.invalidateQueries = async (filters) => {
-    expect(filters).toEqual({ queryKey: sessionListsQueryKey })
+    expect(filters).toEqual({ queryKey: sessionListPathKey })
     invalidations += 1
   }
 
@@ -34,13 +32,14 @@ test('opening a Session clears unread state without dropping a loaded row', () =
     retiredIds: ['retired'],
     unread: true,
   })
-  queryClient.setQueryData(sessionListQueryKey('project-1'), {
+  const key = trpc.sessions.list.infiniteQueryKey({ projectId: 'project-1', search: '' })
+  queryClient.setQueryData(key, {
     pages: [
       {
-        sessions: [session],
+        page: 1,
+        pageSize: 30,
+        rows: [session],
         total: 1,
-        nextPage: null,
-        historyComplete: true,
       },
     ],
     pageParams: [null],
@@ -48,11 +47,9 @@ test('opening a Session clears unread state without dropping a loaded row', () =
 
   markSessionRead(queryClient, 'resumed', ['retired'])
 
-  const sessionList = queryClient.getQueryData<{ pages: { sessions: (typeof session)[] }[] }>([
-    ...sessionListQueryKey('project-1'),
-  ])
-  expect(sessionList?.pages[0]?.sessions).toHaveLength(1)
-  expect(sessionList?.pages[0]?.sessions[0]?.unread).toBe(false)
+  const sessionList = queryClient.getQueryData<{ pages: { rows: (typeof session)[] }[] }>(key)
+  expect(sessionList?.pages[0]?.rows).toHaveLength(1)
+  expect(sessionList?.pages[0]?.rows[0]?.unread).toBe(false)
 })
 
 test('opening a resumed Session clears its retired row in every cached Session list', () => {
@@ -65,15 +62,14 @@ test('opening a resumed Session clears its retired row in every cached Session l
     title: null,
     unread: true,
   })
-  queryClient.setQueryData(sessionListQueryKey('project-1'), {
-    pages: [{ sessions: [retired] }],
+  const key = trpc.sessions.list.infiniteQueryKey({ projectId: 'project-1', search: '' })
+  queryClient.setQueryData(key, {
+    pages: [{ page: 1, pageSize: 30, rows: [retired], total: 1 }],
     pageParams: [null],
   })
 
   markSessionRead(queryClient, 'resumed', ['retired'])
 
-  const sessionList = queryClient.getQueryData<{ pages: { sessions: (typeof retired)[] }[] }>([
-    ...sessionListQueryKey('project-1'),
-  ])
-  expect(sessionList?.pages[0]?.sessions[0]?.unread).toBe(false)
+  const sessionList = queryClient.getQueryData<{ pages: { rows: (typeof retired)[] }[] }>(key)
+  expect(sessionList?.pages[0]?.rows[0]?.unread).toBe(false)
 })

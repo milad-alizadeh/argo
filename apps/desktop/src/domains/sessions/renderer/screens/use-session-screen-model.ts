@@ -8,10 +8,11 @@ import { useProjects } from '@/domains/projects/renderer'
 import { useWorkspaces } from '@/domains/workspaces/renderer'
 import { useSessionPermission } from '../composer/hooks/use-session-permission'
 import { useSessionQuestion } from '../composer/hooks/use-session-question'
+import { useSessionFeed } from '../feed/use-session-feed'
 import type { SessionHarness } from '../harness/harnesses'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
+import { useSessionList } from '../session-list/use-session-list'
 import type { SessionEvidence, SessionFeedRow } from '../types'
-import { useSessions } from '../use-sessions'
 import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../work/use-session-work'
 import { sessionHarness } from './session-screen-state'
 import { sessionScreenSubagents } from './session-screen-subagents'
@@ -56,8 +57,8 @@ export function useSessionScreenModel() {
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
   const [evidence, setEvidence] = useState<SessionEvidence | null>(null)
   const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
-  const { feed, feedError, sessionList, retryFeed } = useSessions({
-    selectedSessionId,
+  const { feed, feedError, retryFeed } = useSessionFeed(selectedSessionId)
+  const { sessionList } = useSessionList({
     projectId: cockpit.project?.id ?? null,
   })
   const [lastHarness, chooseHarness] = useState<SessionHarness>('claude')

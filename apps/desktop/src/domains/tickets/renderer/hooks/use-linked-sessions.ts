@@ -1,14 +1,12 @@
 // Every Session linked to one Ticket (CONTEXT.md L1 · Session → Ticket), most recently linked
-// first, read here from the Session list the
-// Sessions module already polls rather than a second reader.
-import { useSessions } from '@/domains/sessions/renderer'
+// first, read here from the Session list through its generated tRPC query.
+import { useSessionList } from '@/domains/sessions/renderer/session-list/use-session-list'
 
 export type LinkedSession = { id: string; title: string }
 
 export function useLinkedSessions(projectId: string | null, key: string | null): LinkedSession[] {
-  const { sessionList } = useSessions({
-    selectedSessionId: null,
-    sessionListEnabled: key !== null,
+  const { sessionList } = useSessionList({
+    enabled: key !== null,
     projectId,
   })
   if (projectId === null || key === null || sessionList === null) return []
