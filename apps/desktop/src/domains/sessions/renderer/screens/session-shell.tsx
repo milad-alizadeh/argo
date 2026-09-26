@@ -120,7 +120,7 @@ export function SessionShell({
           <SessionWorkspace
             {...workspaceProps}
             header={
-              <AppPageHeader>
+              <AppPageHeader multiline>
                 <SessionIdentity session={session} workspaceIdentity={workspaceIdentity} />
                 <SessionHeaderControls>
                   {headerControls}

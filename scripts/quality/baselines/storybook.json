@@ -168,78 +168,6 @@
       "identity": {
         "project": "storybook-dark",
         "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "Codex Shell Without Output Does Not Reveal Inspector"
-      },
-      "owner": "#2783",
-      "reason": "Codex shell output awaits its typed Session procedure."
-    },
-    {
-      "identity": {
-        "project": "storybook-dark",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "Composer Fade Dark"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-dark",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "Composer Fade Light"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-dark",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "Composer Stays Fixed"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-dark",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "Formatted Header Title"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-dark",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "Jump To Latest In Expanded Composer Fade"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-dark",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "Jump To Latest In Normal Composer Fade"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-dark",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "Narrow Header"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-dark",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
         "story": "New Session Does Not Stall"
       },
       "owner": "#2587",
@@ -250,33 +178,6 @@
         "project": "storybook-dark",
         "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
         "story": "Open"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-dark",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "Shared Checkout"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-dark",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "Tall Queued Composer Remains Reachable"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-dark",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "Wide Shared Reading Column"
       },
       "owner": "#2587",
       "reason": "The final typed-API cutover owns this Storybook repair."
@@ -645,78 +546,6 @@
       "identity": {
         "project": "storybook-light",
         "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "Codex Shell Without Output Does Not Reveal Inspector"
-      },
-      "owner": "#2783",
-      "reason": "Codex shell output awaits its typed Session procedure."
-    },
-    {
-      "identity": {
-        "project": "storybook-light",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "Composer Fade Dark"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-light",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "Composer Fade Light"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-light",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "Composer Stays Fixed"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-light",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "Formatted Header Title"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-light",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "Jump To Latest In Expanded Composer Fade"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-light",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "Jump To Latest In Normal Composer Fade"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-light",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "Narrow Header"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-light",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
         "story": "New Session Does Not Stall"
       },
       "owner": "#2587",
@@ -727,33 +556,6 @@
         "project": "storybook-light",
         "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
         "story": "Open"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-light",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "Shared Checkout"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-light",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "Tall Queued Composer Remains Reachable"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-light",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "Wide Shared Reading Column"
       },
       "owner": "#2587",
       "reason": "The final typed-API cutover owns this Storybook repair."
