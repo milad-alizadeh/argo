@@ -279,6 +279,21 @@ test('counts malformed bridge messages without usable IDs', async () => {
   port2.close()
 })
 
+test('leaves generic Session sync messages to the worker handler', async () => {
+  const { port1, port2 } = new MessageChannel()
+  const uninstall = installCodexWorkerBridge(port2, async () => {
+    throw new Error('generic messages must not reach the Codex server')
+  })
+  port1.postMessage({ type: 'status', status: { phase: 'fetching' } })
+  port1.postMessage({ type: 'committed' })
+  port1.postMessage({ type: 'finished', outcome: 'ready' })
+  await new Promise((resolve) => setTimeout(resolve, 10))
+  assert.equal(uninstall.invalidMessageCount(), 0)
+  uninstall()
+  port1.close()
+  port2.close()
+})
+
 test('ignores an app-server reply after the worker bridge closes', async () => {
   const { port1, port2 } = new MessageChannel()
   let release: ((value: unknown) => void) | undefined

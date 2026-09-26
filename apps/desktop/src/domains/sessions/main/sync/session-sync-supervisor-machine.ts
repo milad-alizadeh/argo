@@ -2,20 +2,14 @@ import path from 'node:path'
 import { Worker } from 'node:worker_threads'
 import { assertEvent, assign, enqueueActions, fromCallback, sendTo, setup, stopChild } from 'xstate'
 import { z } from 'zod'
-import {
-  type codexAppServerMachine,
-  requestCodexAppServer,
-} from '@/harnesses/codex/app-server/codex-app-server-machine'
-import {
-  installCodexWorkerBridge,
-  startWhenCodexReady,
-} from '@/harnesses/codex/session/session-sync-codex-bridge'
+import { createCodexSessionSyncWorkerBridge } from '@/harnesses/codex/session/session-sync-codex-bridge'
 import type { Harness } from '@/harnesses/harness'
 import {
   type SessionSyncStatus,
   type SessionSyncStatusStore,
   sessionSyncEventSchema,
 } from '../api/session-sync-status'
+import type { SessionSyncWorkerBridge } from './session-sync-worker-bridge'
 
 const workerMessageSchema = z.union([
   sessionSyncEventSchema,
@@ -92,7 +86,7 @@ const sessionSyncWorkerActor = fromCallback<
   let workerError: string | null = null
   let forcedStop: ReturnType<typeof setTimeout> | undefined
 
-  const launchWorker = (codexRequest?: ReturnType<typeof requestCodexAppServer>) => {
+  const launchWorker = (bridge?: SessionSyncWorkerBridge) => {
     if (stopping) return
     const child = new Worker(path.join(__dirname, 'session-sync-worker.js'), {
       workerData: {
@@ -102,7 +96,7 @@ const sessionSyncWorkerActor = fromCallback<
     })
     worker = child
     child.unref()
-    if (codexRequest !== undefined) uninstallBridge = installCodexWorkerBridge(child, codexRequest)
+    if (bridge !== undefined) uninstallBridge = bridge.install(child)
     child.on('online', () =>
       sendBack({
         type: 'WorkerReady',
@@ -112,14 +106,7 @@ const sessionSyncWorkerActor = fromCallback<
 
     child.on('message', (message: unknown) => {
       if (stopping) return
-      if (
-        codexRequest !== undefined &&
-        typeof message === 'object' &&
-        message !== null &&
-        'type' in message &&
-        message.type === 'codex-request'
-      )
-        return
+      if (bridge?.handlesWorkerMessage(message) === true) return
       const parsed = workerMessageSchema.safeParse(message)
       if (!parsed.success) {
         console.error('Invalid Session sync worker message.', parsed.error)
@@ -187,7 +174,7 @@ const sessionSyncWorkerActor = fromCallback<
       break
     case 'codex': {
       const codexActor = system.get('codex') as
-        | import('xstate').ActorRefFrom<typeof codexAppServerMachine>
+        | Parameters<typeof createCodexSessionSyncWorkerBridge>[0]
         | undefined
       if (codexActor === undefined) {
         sendBack({
@@ -207,9 +194,9 @@ const sessionSyncWorkerActor = fromCallback<
           harness: input.harness,
         })
       } else {
-        const codexRequest = requestCodexAppServer(codexActor)
-        cancelReadiness = startWhenCodexReady(codexRequest, {
-          start: () => launchWorker(codexRequest),
+        const bridge = createCodexSessionSyncWorkerBridge(codexActor)
+        cancelReadiness = bridge.start({
+          ready: () => launchWorker(bridge),
           fail: (error) => {
             sendBack({
               type: 'WorkerStatus',

@@ -95,14 +95,8 @@ function startSessionSyncWorker(port: MessagePort, databasePath: string, harness
   })
   port.on('message', (message: unknown) => {
     if (message === 'Shutdown') close()
-    else if (
-      typeof message === 'object' &&
-      message !== null &&
-      'type' in message &&
-      message.type === 'codex-response'
-    ) {
-      return
-    } else {
+    else if (codexRequest?.handlesWorkerMessage(message) === true) return
+    else {
       invalidCommandCount += 1
       console.error('Invalid Session sync worker command.', {
         count: invalidCommandCount,

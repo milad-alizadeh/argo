@@ -1,16 +1,44 @@
 import { randomUUID } from 'node:crypto'
+import type { ActorRefFrom } from 'xstate'
 import { z } from 'zod'
+import type { SessionSyncWorkerBridge } from '@/domains/sessions/main/sync/session-sync-worker-bridge'
 import type {
   CodexRequest,
   RequestParams,
 } from '@/harnesses/codex/app-server/codex-app-server-machine'
+import {
+  type codexAppServerMachine,
+  requestCodexAppServer,
+} from '@/harnesses/codex/app-server/codex-app-server-machine'
 
 export type { CodexRequest } from '@/harnesses/codex/app-server/codex-app-server-machine'
-export type CodexWorkerReadRequest = <Result>(
-  method: 'model/list',
-  params: RequestParams['model/list'],
-  parse: (value: unknown) => Result,
-) => Promise<Result>
+export type CodexWorkerReadRequest = {
+  <Result>(
+    method: 'model/list',
+    params: RequestParams['model/list'],
+    parse: (value: unknown) => Result,
+  ): Promise<Result>
+  handlesWorkerMessage: (message: unknown) => boolean
+}
+
+export function createCodexSessionSyncWorkerBridge(
+  actor: ActorRefFrom<typeof codexAppServerMachine>,
+): SessionSyncWorkerBridge {
+  const codexRequest = requestCodexAppServer(actor)
+  return {
+    handlesWorkerMessage: (message) =>
+      typeof message === 'object' &&
+      message !== null &&
+      'type' in message &&
+      message.type === 'codex-request',
+    install: (worker) => installCodexWorkerBridge(worker, codexRequest),
+    start: ({ ready, fail }) =>
+      startWhenCodexReady(codexRequest, {
+        start: ready,
+        fail,
+      }),
+  }
+}
 
 const requestSchema = z.strictObject({
   type: z.literal('codex-request'),
@@ -82,6 +110,21 @@ export function validateCodexWorkerRequest(value: unknown): CodexWorkerRequest |
   return parsed.success ? parsed.data : null
 }
 
+function isCodexWorkerRequest(value: unknown): boolean {
+  return (
+    typeof value === 'object' && value !== null && 'type' in value && value.type === 'codex-request'
+  )
+}
+
+function isCodexWorkerResponse(value: unknown): boolean {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    value.type === 'codex-response'
+  )
+}
+
 type PendingRequest = {
   resolve: (value: unknown) => void
   reject: (error: Error) => void
@@ -106,6 +149,7 @@ export function createCodexWorkerRequest(port: BridgePort, timeoutMs = 9_000): C
   const pending = new Map<string, PendingRequest>()
   let invalidMessageCount = 0
   const onMessage = (message: unknown) => {
+    if (!isCodexWorkerResponse(message)) return
     const parsed = responseSchema.safeParse(message)
     if (!parsed.success) {
       invalidMessageCount += 1
@@ -154,6 +198,7 @@ export function createCodexWorkerRequest(port: BridgePort, timeoutMs = 9_000): C
       port.postMessage({ type: 'codex-request', id, method, params })
     })
   }) as CountedRequest
+  request.handlesWorkerMessage = isCodexWorkerResponse
   request.invalidMessageCount = () => invalidMessageCount
   return request
 }
@@ -176,6 +221,7 @@ export function installCodexWorkerBridge(
   let closed = false
   let invalidMessageCount = 0
   const onMessage = (message: unknown) => {
+    if (!isCodexWorkerRequest(message)) return
     const request = validateCodexWorkerRequest(message)
     if (request === null) {
       invalidMessageCount += 1
