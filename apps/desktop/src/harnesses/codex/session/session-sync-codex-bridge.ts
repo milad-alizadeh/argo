@@ -1,6 +1,16 @@
 import { randomUUID } from 'node:crypto'
 import { z } from 'zod'
-import type { CodexRequest } from '@/harnesses/codex/app-server/codex-app-server-machine'
+import type {
+  CodexRequest,
+  RequestParams,
+} from '@/harnesses/codex/app-server/codex-app-server-machine'
+
+export type { CodexRequest } from '@/harnesses/codex/app-server/codex-app-server-machine'
+export type CodexWorkerReadRequest = <Result>(
+  method: 'model/list',
+  params: RequestParams['model/list'],
+  parse: (value: unknown) => Result,
+) => Promise<Result>
 
 const requestSchema = z.strictObject({
   type: z.literal('codex-request'),
@@ -31,20 +41,39 @@ export async function confirmCodexAppServerReady(codexRequest: CodexRequest): Pr
 
 export function startWhenCodexReady(
   codexRequest: CodexRequest,
-  start: () => void,
-  fail: (error: unknown) => void,
+  callbacks: {
+    start: () => void
+    fail: (error: unknown) => void
+    timeoutMs?: number
+  },
 ): () => void {
   let cancelled = false
+  const timeoutMs = callbacks.timeoutMs ?? 9_000
+  const timeout = setTimeout(() => {
+    if (cancelled) return
+    cancelled = true
+    callbacks.fail(new Error('Codex app-server readiness check timed out.'))
+  }, timeoutMs)
+  timeout.unref()
   void confirmCodexAppServerReady(codexRequest).then(
     () => {
-      if (!cancelled) start()
+      if (!cancelled) {
+        clearTimeout(timeout)
+        cancelled = true
+        callbacks.start()
+      }
     },
     (error: unknown) => {
-      if (!cancelled) fail(error)
+      if (!cancelled) {
+        clearTimeout(timeout)
+        cancelled = true
+        callbacks.fail(error)
+      }
     },
   )
   return () => {
     cancelled = true
+    clearTimeout(timeout)
   }
 }
 
@@ -59,6 +88,9 @@ type PendingRequest = {
   timer: NodeJS.Timeout
 }
 
+type CountedRequest = CodexWorkerReadRequest & { invalidMessageCount: () => number }
+type BridgeDisposer = (() => void) & { invalidMessageCount: () => number }
+
 function rejectInvalidResponse(message: unknown, pending: Map<string, PendingRequest>): void {
   if (typeof message !== 'object' || message === null || !('id' in message)) return
   const parsedId = z.string().uuid().safeParse(message.id)
@@ -70,11 +102,17 @@ function rejectInvalidResponse(message: unknown, pending: Map<string, PendingReq
   waiting.reject(new Error('Invalid Codex Session sync bridge response.'))
 }
 
-export function createCodexWorkerRequest(port: BridgePort, timeoutMs = 9_000): CodexRequest {
+export function createCodexWorkerRequest(port: BridgePort, timeoutMs = 9_000): CountedRequest {
   const pending = new Map<string, PendingRequest>()
+  let invalidMessageCount = 0
   const onMessage = (message: unknown) => {
     const parsed = responseSchema.safeParse(message)
     if (!parsed.success) {
+      invalidMessageCount += 1
+      console.error('Invalid Codex Session sync bridge response.', {
+        count: invalidMessageCount,
+        message,
+      })
       rejectInvalidResponse(message, pending)
       return
     }
@@ -94,7 +132,7 @@ export function createCodexWorkerRequest(port: BridgePort, timeoutMs = 9_000): C
   }
   port.on('message', onMessage)
   port.once('close', rejectPending)
-  return (method, params, parse) => {
+  const request = ((method, params, parse) => {
     const id = randomUUID()
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
@@ -115,7 +153,9 @@ export function createCodexWorkerRequest(port: BridgePort, timeoutMs = 9_000): C
       })
       port.postMessage({ type: 'codex-request', id, method, params })
     })
-  }
+  }) as CountedRequest
+  request.invalidMessageCount = () => invalidMessageCount
+  return request
 }
 
 export function forwardCodexWorkerRequest(
@@ -129,12 +169,20 @@ export function forwardCodexWorkerRequest(
   )
 }
 
-export function installCodexWorkerBridge(port: BridgePort, codexRequest: CodexRequest): () => void {
+export function installCodexWorkerBridge(
+  port: BridgePort,
+  codexRequest: CodexRequest,
+): BridgeDisposer {
   let closed = false
+  let invalidMessageCount = 0
   const onMessage = (message: unknown) => {
     const request = validateCodexWorkerRequest(message)
     if (request === null) {
-      console.error('Invalid Codex Session sync worker request.', message)
+      invalidMessageCount += 1
+      console.error('Invalid Codex Session sync worker request.', {
+        count: invalidMessageCount,
+        message,
+      })
       const id = z
         .string()
         .uuid()
@@ -154,8 +202,10 @@ export function installCodexWorkerBridge(port: BridgePort, codexRequest: CodexRe
     })
   }
   port.on('message', onMessage)
-  return () => {
+  const uninstall = (() => {
     closed = true
     port.off('message', onMessage)
-  }
+  }) as BridgeDisposer
+  uninstall.invalidMessageCount = () => invalidMessageCount
+  return uninstall
 }

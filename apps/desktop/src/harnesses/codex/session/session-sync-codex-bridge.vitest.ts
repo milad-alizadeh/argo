@@ -153,6 +153,7 @@ test('returns an error for an invalid request with a usable ID', async () => {
       id: 'f2fbab42-0c4a-437d-a799-7dd03b6fbf8e',
       error: 'Invalid Codex Session sync worker request.',
     })
+    assert.equal(uninstall.invalidMessageCount(), 1)
   } finally {
     uninstall()
     port1.close()
@@ -185,10 +186,12 @@ test('does not start after readiness fails or the supervisor cancels the check',
       async () => {
         throw new Error('offline')
       },
-      () => startCount++,
-      (error) => {
-        failure = error
-        resolve()
+      {
+        start: () => startCount++,
+        fail: (error) => {
+          failure = error
+          resolve()
+        },
       },
     )
   })
@@ -200,15 +203,38 @@ test('does not start after readiness fails or the supervisor cancels the check',
     new Promise((resolve) => {
       release = () => resolve(parse({ data: [] }))
     })
-  const cancel = startWhenCodexReady(
-    pendingRequest,
-    () => startCount++,
-    () => assert.fail('cancelled readiness must not report a late failure'),
-  )
+  const cancel = startWhenCodexReady(pendingRequest, {
+    start: () => startCount++,
+    fail: () => assert.fail('cancelled readiness must not report a late failure'),
+  })
   cancel()
   release?.()
-  await new Promise<void>((resolve) => setImmediate(resolve))
+  await new Promise<void>((resolve) => setTimeout(resolve, 10))
   assert.equal(startCount, 0)
+})
+
+test('fails readiness once and ignores a reply after the deadline', async () => {
+  let release: (() => void) | undefined
+  let starts = 0
+  const failures: unknown[] = []
+  const cancel = startWhenCodexReady(
+    (_method, _params, parse) =>
+      new Promise((resolve) => {
+        release = () => resolve(parse({ data: [] }))
+      }),
+    {
+      start: () => starts++,
+      fail: (error) => failures.push(error),
+      timeoutMs: 1,
+    },
+  )
+  await new Promise((resolve) => setTimeout(resolve, 5))
+  release?.()
+  await new Promise<void>((resolve) => setImmediate(resolve))
+  cancel()
+  assert.equal(starts, 0)
+  assert.equal(failures.length, 1)
+  assert.match(String(failures[0]), /readiness check timed out/)
 })
 
 test('settles pending reads when the bridge closes', async () => {
@@ -232,6 +258,46 @@ test('rejects a malformed reply that matches an outstanding request', async () =
     error: null,
   })
   await assert.rejects(pending, /Invalid Codex Session sync bridge response/)
+  assert.equal(request.invalidMessageCount(), 1)
   port1.close()
+  port2.close()
+})
+
+test('counts malformed bridge messages without usable IDs', async () => {
+  const { port1, port2 } = new MessageChannel()
+  const workerRequest = createCodexWorkerRequest(port1)
+  const uninstall = installCodexWorkerBridge(port2, async () => {
+    throw new Error('malformed request must not reach app-server')
+  })
+  port2.postMessage({ type: 'codex-response', result: [] })
+  port1.postMessage({ type: 'codex-request', method: 'model/list', params: {} })
+  await new Promise<void>((resolve) => setTimeout(resolve, 10))
+  assert.equal(workerRequest.invalidMessageCount(), 1)
+  assert.equal(uninstall.invalidMessageCount(), 1)
+  uninstall()
+  port1.close()
+  port2.close()
+})
+
+test('ignores an app-server reply after the worker bridge closes', async () => {
+  const { port1, port2 } = new MessageChannel()
+  let release: ((value: unknown) => void) | undefined
+  const request = createCodexWorkerRequest(port1, 20)
+  const delayedRequest: CodexRequest = (_method, _params, parse) =>
+    new Promise((resolve) => {
+      release = (value) => resolve(parse(value))
+    })
+  const uninstall = installCodexWorkerBridge(port2, delayedRequest)
+  const pending = request('model/list', {}, (value) => value)
+  const sent = await new Promise<unknown>((resolve) => port2.once('message', resolve))
+  let replies = 0
+  port1.on('message', () => replies++)
+  uninstall()
+  release?.({ data: [] })
+  await new Promise((resolve) => setTimeout(resolve, 5))
+  assert.equal(replies, 0)
+  assert.ok(validateCodexWorkerRequest(sent))
+  port1.close()
+  await assert.rejects(pending, /bridge closed/)
   port2.close()
 })

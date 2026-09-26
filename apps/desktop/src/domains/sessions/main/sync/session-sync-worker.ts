@@ -4,6 +4,10 @@ import { createActor, fromPromise, type SnapshotFrom } from 'xstate'
 import { z } from 'zod'
 import { databaseFrom } from '@/database/database'
 import { claudeSessionSyncActor } from '@/harnesses/claude/session/claude-session-sync-actor'
+import {
+  type CodexWorkerReadRequest,
+  createCodexWorkerRequest,
+} from '@/harnesses/codex/session/session-sync-codex-bridge'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
 import { type SessionSyncStatus, sessionSyncStatusSchema } from '../api/session-sync-status'
 import { sessionSyncMachine } from './session-sync-machine'
@@ -31,12 +35,15 @@ function statusFor(snapshot: SnapshotFrom<typeof sessionSyncMachine>): SessionSy
   })
 }
 
-function fetchActorFor(harness: Harness) {
+function fetchActorFor(harness: Harness, codexRequest?: CodexWorkerReadRequest) {
   switch (harness) {
     case 'claude':
       return claudeSessionSyncActor
-    case 'codex':
+    case 'codex': {
+      if (codexRequest === undefined)
+        throw new Error('Codex Session sync requires the worker request bridge.')
       throw new Error('Codex Session sync is not supported yet.')
+    }
     default: {
       const unknownHarness: never = harness
       throw new Error(`Unsupported Session sync Harness: ${unknownHarness}`)
@@ -49,10 +56,11 @@ function startSessionSyncWorker(port: MessagePort, databasePath: string, harness
   client.exec('PRAGMA journal_mode = WAL')
   client.exec('PRAGMA busy_timeout = 5000')
   const database = databaseFrom(client)
+  const codexRequest = harness === 'codex' ? createCodexWorkerRequest(port) : undefined
   const actor = createActor(
     sessionSyncMachine.provide({
       actors: {
-        fetch: fetchActorFor(harness),
+        fetch: fetchActorFor(harness, codexRequest),
         save: fromPromise(async ({ input }) => {
           saveSessionBatch(database, harness, matchSessionsToProjects(database, input.records))
           port.postMessage({ type: 'committed' })
@@ -62,6 +70,7 @@ function startSessionSyncWorker(port: MessagePort, databasePath: string, harness
     { input: { harness, knownNativeIds: knownSessionIds(database, harness) } },
   )
   let closed = false
+  let invalidCommandCount = 0
   function close(): void {
     if (closed) return
     closed = true
@@ -86,7 +95,20 @@ function startSessionSyncWorker(port: MessagePort, databasePath: string, harness
   })
   port.on('message', (message: unknown) => {
     if (message === 'Shutdown') close()
-    else console.error('Invalid Session sync worker command.', message)
+    else if (
+      typeof message === 'object' &&
+      message !== null &&
+      'type' in message &&
+      message.type === 'codex-response'
+    ) {
+      return
+    } else {
+      invalidCommandCount += 1
+      console.error('Invalid Session sync worker command.', {
+        count: invalidCommandCount,
+        message,
+      })
+    }
   })
   port.on('close', close)
   actor.start()

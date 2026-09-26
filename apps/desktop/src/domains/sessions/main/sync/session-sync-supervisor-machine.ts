@@ -6,13 +6,16 @@ import {
   type codexAppServerMachine,
   requestCodexAppServer,
 } from '@/harnesses/codex/app-server/codex-app-server-machine'
+import {
+  installCodexWorkerBridge,
+  startWhenCodexReady,
+} from '@/harnesses/codex/session/session-sync-codex-bridge'
 import type { Harness } from '@/harnesses/harness'
 import {
   type SessionSyncStatus,
   type SessionSyncStatusStore,
   sessionSyncEventSchema,
 } from '../api/session-sync-status'
-import { installCodexWorkerBridge, startWhenCodexReady } from './session-sync-codex-bridge'
 
 const workerMessageSchema = z.union([
   sessionSyncEventSchema,
@@ -178,54 +181,61 @@ const sessionSyncWorkerActor = fromCallback<
     })
   }
 
-  if (input.harness === 'codex') {
-    const codexActor = system.get('codex') as
-      | import('xstate').ActorRefFrom<typeof codexAppServerMachine>
-      | undefined
-    if (codexActor === undefined) {
-      sendBack({
-        type: 'WorkerStatus',
-        harness: input.harness,
-        status: {
-          phase: 'failed',
-          processed: 0,
-          total: null,
-          skipped: 0,
-          lastSuccessfulSyncAt: null,
-          failure: 'Codex app-server actor is unavailable.',
-        },
-      })
-      sendBack({
-        type: 'WorkerFailed',
-        harness: input.harness,
-      })
-    } else {
-      const codexRequest = requestCodexAppServer(codexActor)
-      cancelReadiness = startWhenCodexReady(
-        codexRequest,
-        () => launchWorker(codexRequest),
-        (error) => {
-          sendBack({
-            type: 'WorkerStatus',
-            harness: input.harness,
-            status: {
-              phase: 'failed',
-              processed: 0,
-              total: null,
-              skipped: 0,
-              lastSuccessfulSyncAt: null,
-              failure: String(error),
-            },
-          })
-          sendBack({
-            type: 'WorkerFailed',
-            harness: input.harness,
-          })
-        },
-      )
+  switch (input.harness) {
+    case 'claude':
+      launchWorker()
+      break
+    case 'codex': {
+      const codexActor = system.get('codex') as
+        | import('xstate').ActorRefFrom<typeof codexAppServerMachine>
+        | undefined
+      if (codexActor === undefined) {
+        sendBack({
+          type: 'WorkerStatus',
+          harness: input.harness,
+          status: {
+            phase: 'failed',
+            processed: 0,
+            total: null,
+            skipped: 0,
+            lastSuccessfulSyncAt: null,
+            failure: 'Codex app-server actor is unavailable.',
+          },
+        })
+        sendBack({
+          type: 'WorkerFailed',
+          harness: input.harness,
+        })
+      } else {
+        const codexRequest = requestCodexAppServer(codexActor)
+        cancelReadiness = startWhenCodexReady(codexRequest, {
+          start: () => launchWorker(codexRequest),
+          fail: (error) => {
+            sendBack({
+              type: 'WorkerStatus',
+              harness: input.harness,
+              status: {
+                phase: 'failed',
+                processed: 0,
+                total: null,
+                skipped: 0,
+                lastSuccessfulSyncAt: null,
+                failure: String(error),
+              },
+            })
+            sendBack({
+              type: 'WorkerFailed',
+              harness: input.harness,
+            })
+          },
+        })
+      }
+      break
     }
-  } else {
-    launchWorker()
+    default: {
+      const unknownHarness: never = input.harness
+      throw new Error(`Unsupported Session sync Harness: ${unknownHarness}`)
+    }
   }
 
   return () => {
