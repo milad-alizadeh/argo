@@ -1,7 +1,7 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   // Electron has no Knip plugin (electron-vite is a different build tool from
-  // @electron-forge/plugin-vite), so the main and preload bundle entries are listed by hand,
+  // @electron-forge/plugin-vite), so the main, worker, and preload entries are listed by hand,
   // matching forge.config.ts's own `build` entries.
   "workspaces": {
     ".": {
@@ -25,7 +25,7 @@
       "entry": [
         "src/main.ts",
         "src/preload.ts",
-        "src/domains/sessions/main/indexing/session-index/session-index-worker.ts",
+        "src/domains/sessions/main/sync/session-sync-worker.ts",
         "forge.config.ts",
         // forge.config.ts names these by string path (its Vite plugin's `build` entries), not by
         // import, and Knip's own Vite plugin only auto-detects a single "vite.config.ts".

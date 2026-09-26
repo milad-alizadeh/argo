@@ -22,9 +22,17 @@ import { composerDraftReadProcedure } from '@/domains/sessions/main/api/composer
 import { composerDraftSaveProcedure } from '@/domains/sessions/main/api/composer-draft-save'
 import { sessionListProcedure } from '@/domains/sessions/main/api/session-list'
 import {
+  type SessionRefreshContext,
+  sessionRefreshProcedure,
+} from '@/domains/sessions/main/api/session-refresh'
+import {
   type SessionProcedureContext,
   sessionSubmitProcedure,
 } from '@/domains/sessions/main/api/session-submit'
+import {
+  type SessionSyncStatusStore,
+  sessionSyncStatusProcedure,
+} from '@/domains/sessions/main/api/session-sync-status'
 import {
   createTicketRouter,
   type TicketRouterDependencies,
@@ -46,7 +54,8 @@ export type AppRouterDependencies = {
   catalog: CatalogActor
   harnessSignIn: HarnessSignInProcedureContext
   projects: ProjectRegisterContext & ProjectRelocateContext
-  sessions: SessionProcedureContext
+  sessions: SessionProcedureContext &
+    SessionRefreshContext & { sessionSyncStatus: SessionSyncStatusStore }
   tickets: TicketRouterDependencies
   workspaces: WorkspaceListContext
 }
@@ -61,7 +70,11 @@ export function createAppRouter(dependencies: AppRouterDependencies) {
     composerDraftRead: composerDraftReadProcedure(dependencies.sessions.database),
     composerDraftSave: composerDraftSaveProcedure(dependencies.sessions.database),
     sessionSubmit: sessionSubmitProcedure(dependencies.sessions),
-    sessions: t.router({ list: sessionListProcedure(dependencies.sessions) }),
+    sessions: t.router({
+      list: sessionListProcedure(dependencies.sessions),
+      refresh: sessionRefreshProcedure(dependencies.sessions),
+      syncStatus: sessionSyncStatusProcedure(dependencies.sessions.sessionSyncStatus),
+    }),
     projectList: projectListProcedure(dependencies.projects.database),
     projectOpen: projectOpenProcedure(dependencies.projects.database),
     projectRegister: projectRegisterProcedure(dependencies.projects),

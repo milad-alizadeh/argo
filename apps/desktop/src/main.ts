@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, type BrowserWindow, dialog, net, protocol, shell } from 'electron'
-import { type Database, openDatabase } from '@/database/database'
+import { type Database, databasePath, openDatabase } from '@/database/database'
 import { createAccountAccess, createAccountProcedureContext } from '@/domains/accounts/main'
 import { safeStorageCipher } from '@/domains/accounts/main/safe-storage'
 import { createConnectionPort } from '@/domains/connections/main'
@@ -13,6 +13,7 @@ import {
   type HarnessReadinessRegistration,
 } from '@/domains/harness-signin/main'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
+import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import type { CatalogActor } from '@/harnesses/catalog/catalog-read'
 import { createClaudeSignInDriver, createSystemClaudeReadiness } from '@/harnesses/claude/readiness'
@@ -163,10 +164,15 @@ function createDomainContexts(database: Database) {
 function routerForWindow(options: {
   window: BrowserWindow
   database: Database
-  actors: { catalog: CatalogActor; sessions: LiveSessionSupervisorActor }
+  actors: {
+    catalog: CatalogActor
+    sessions: LiveSessionSupervisorActor
+    sessionSync: { send: (event: { type: 'Refresh' }) => void }
+  }
+  sessionSyncStatus: SessionSyncStatusStore
   domains: ReturnType<typeof createDomainContexts>
 }) {
-  const { window, database, actors, domains } = options
+  const { window, database, actors, domains, sessionSyncStatus } = options
   const exclusive = createWriteQueue()
   return createAppRouter({
     accounts: domains.accounts,
@@ -177,16 +183,29 @@ function routerForWindow(options: {
       chooseFolder: () => chooseProjectFolder(window),
       exclusive,
     },
-    sessions: { database, supervisor: actors.sessions },
+    sessions: {
+      database,
+      supervisor: actors.sessions,
+      refreshSessionSync: () => actors.sessionSync.send({ type: 'Refresh' }),
+      sessionSyncStatus,
+    },
     tickets: { access: domains.access, connections: domains.connections, sources: ticketSources },
     workspaces: { database, exclusive },
   })
 }
 
+function currentSessionSyncStatus(): SessionSyncStatusStore {
+  if (sessionSyncStatus === undefined) throw new Error('Session sync status is unavailable.')
+  return sessionSyncStatus
+}
+
 function createWindow(actor: AppActor, database: Database): void {
   const catalogActor = actor.system.get('catalog') as CatalogActor | undefined
   const sessionsActor = actor.system.get('sessions') as LiveSessionSupervisorActor | undefined
-  if (catalogActor === undefined || sessionsActor === undefined)
+  const sessionSyncActor = actor.system.get('sessionSync') as
+    | { send: (event: { type: 'Refresh' }) => void }
+    | undefined
+  if (catalogActor === undefined || sessionsActor === undefined || sessionSyncActor === undefined)
     throw new Error('Application child actors are unavailable.')
   const domains = createDomainContexts(database)
   desktopWindow = createDesktopWindow({
@@ -208,8 +227,9 @@ function createWindow(actor: AppActor, database: Database): void {
     attach: (window, rendererURL) => {
       attachWindowNavigation(window)
       const router = routerForWindow({
-        actors: { catalog: catalogActor, sessions: sessionsActor },
+        actors: { catalog: catalogActor, sessions: sessionsActor, sessionSync: sessionSyncActor },
         domains,
+        sessionSyncStatus: currentSessionSyncStatus(),
         window,
         database,
       })
@@ -241,6 +261,7 @@ function createWindow(actor: AppActor, database: Database): void {
 }
 
 let applicationDatabase: Database | undefined
+let sessionSyncStatus: SessionSyncStatusStore | undefined
 
 async function prepare() {
   const { projectData } = developmentStoreDirectories({
@@ -249,10 +270,15 @@ async function prepare() {
     instance: DEVELOPMENT_INSTANCE,
   })
   applicationDatabase = openDatabase(projectData, { packaged: app.isPackaged })
+  sessionSyncStatus = new SessionSyncStatusStore(applicationDatabase)
   if (DEVELOPMENT_INSTANCE) {
     await seedDevelopmentProject(applicationDatabase, DEVELOPMENT_INSTANCE)
   }
-  return { database: applicationDatabase }
+  return {
+    database: applicationDatabase,
+    databasePath: databasePath(projectData),
+    sessionSyncStatus,
+  }
 }
 
 async function ready(actor: AppActor): Promise<void> {
@@ -262,7 +288,8 @@ async function ready(actor: AppActor): Promise<void> {
     const filePath = attachmentPathFromUrl(request.url)
     return filePath ? net.fetch(pathToFileURL(filePath).href) : new Response(null, { status: 400 })
   })
-  if (applicationDatabase === undefined) throw new Error('Application database is unavailable.')
+  if (applicationDatabase === undefined || sessionSyncStatus === undefined)
+    throw new Error('Application services are unavailable.')
   createWindow(actor, applicationDatabase)
 
   if (ACCEPTANCE_ENABLED) {

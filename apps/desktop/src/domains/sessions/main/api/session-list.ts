@@ -198,6 +198,7 @@ function sessionListRow(
     id: string
     harness: string
     cwd: string | null
+    activityAt: number | null
     updatedAt: number
     ticket: {
       projectId: string
@@ -223,7 +224,7 @@ function sessionListRow(
     entry: null,
     cwd: row.cwd,
     branch: null,
-    updatedAt: new Date(row.updatedAt).toISOString(),
+    updatedAt: new Date(row.activityAt ?? row.updatedAt).toISOString(),
     unreadableLines: 0,
     originUnread: false,
     turnStartedAt: null,
@@ -263,6 +264,7 @@ function readSessionList(
       preview: sessionTable.preview,
       firstPrompt: sessionTable.firstPrompt,
       cwd: sessionTable.cwd,
+      activityAt: sessionTable.activityAt,
       updatedAt: sessionTable.updatedAt,
       ticket: {
         projectId: sessionTicketLink.projectId,
@@ -275,7 +277,10 @@ function readSessionList(
     .from(sessionTable)
     .leftJoin(sessionTicketLink, eq(sessionTicketLink.sessionId, sessionTable.argoId))
     .where(filter)
-    .orderBy(desc(sessionTable.updatedAt), asc(sessionTable.argoId))
+    .orderBy(
+      desc(sql`coalesce(${sessionTable.activityAt}, ${sessionTable.updatedAt})`),
+      asc(sessionTable.argoId),
+    )
     .limit(input.pageSize)
     .offset((page - 1) * input.pageSize)
     .all()

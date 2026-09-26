@@ -3,6 +3,7 @@ import { createActor, fromPromise } from 'xstate'
 import type { AccountProcedureContext } from '@/domains/accounts/main/account-procedures'
 import type { HarnessSignInProcedureContext } from '@/domains/harness-signin/main/harness-sign-in-procedures'
 import type { ProjectRegisterContext } from '@/domains/projects/main/api/project-register'
+import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import type { TicketRouterDependencies } from '@/domains/tickets/main/ticket-router'
 import type { WorkspaceListContext } from '@/domains/workspaces/main/api/workspace-list'
@@ -33,7 +34,12 @@ function testRouter(
     catalog,
     harnessSignIn: {} as HarnessSignInProcedureContext,
     projects: {} as ProjectRegisterContext,
-    sessions: { database: {} as never, supervisor: sessionActor },
+    sessions: {
+      database: {} as never,
+      supervisor: sessionActor,
+      refreshSessionSync: () => {},
+      sessionSyncStatus: new SessionSyncStatusStore(),
+    },
     tickets: {} as TicketRouterDependencies,
     workspaces: {} as WorkspaceListContext,
   })
@@ -67,6 +73,28 @@ test('returns only the selected Harness as serializable composer choices', async
   } finally {
     actor.stop()
   }
+})
+
+test('accepts a Session sync refresh', async () => {
+  let refreshes = 0
+  const router = createAppRouter({
+    accounts: {} as AccountProcedureContext,
+    catalog: {} as never,
+    harnessSignIn: {} as HarnessSignInProcedureContext,
+    projects: {} as ProjectRegisterContext,
+    sessions: {
+      database: {} as never,
+      supervisor: sessions,
+      refreshSessionSync: () => {
+        refreshes += 1
+      },
+      sessionSyncStatus: new SessionSyncStatusStore(),
+    },
+    tickets: {} as TicketRouterDependencies,
+    workspaces: {} as WorkspaceListContext,
+  })
+  await expect(router.createCaller({}).sessions.refresh()).resolves.toEqual({ accepted: true })
+  expect(refreshes).toBe(1)
 })
 
 test('repeated reads reuse the settled catalog until an explicit refresh', async () => {

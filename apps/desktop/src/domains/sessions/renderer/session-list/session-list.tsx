@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { formatDistanceStrict } from 'date-fns'
 import { type RefObject, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { sessionFeedQuery } from '../feed/session-feed-query'
@@ -123,6 +124,82 @@ type SessionListProps = {
   selectedSessionId: SessionId | null
 }
 
+function SessionListHeader({
+  actions,
+  read,
+  search,
+  sessions,
+  setSearch,
+}: {
+  actions: SessionListActions
+  read: ReturnType<typeof useSessionList>
+  search: string
+  sessions: ReturnType<typeof useSessionListSessions>
+  setSearch: (search: string) => void
+}) {
+  return (
+    <SessionsSidebarHeader
+      onNew={actions.onNew}
+      onRefresh={read.refreshSessions}
+      onSearch={setSearch}
+      onStatusChange={sessions.setStatus}
+      refreshing={read.refreshingSessions}
+      search={search}
+      status={sessions.status}
+    />
+  )
+}
+
+function SessionSyncFeedback({
+  status,
+}: {
+  status: ReturnType<typeof useSessionList>['syncStatus']
+}) {
+  const { t } = useTranslation('sessions')
+  const [now, setNow] = useState(() => new Date())
+  const lastSuccessfulSyncAt = status?.lastSuccessfulSyncAt
+  useEffect(() => {
+    if (lastSuccessfulSyncAt === null || lastSuccessfulSyncAt === undefined) return
+    const timer = window.setInterval(() => setNow(new Date()), 60_000)
+    return () => window.clearInterval(timer)
+  }, [lastSuccessfulSyncAt])
+  if (status === null) return null
+
+  let message: string | null = null
+  switch (status.phase) {
+    case 'fetching':
+      message = t('sync.fetching')
+      break
+    case 'saving':
+      message =
+        status.total === null
+          ? t('sync.fetching')
+          : t('sync.saving', { processed: status.processed, total: status.total })
+      break
+    case 'failed':
+      message = t('sync.failed')
+      break
+    case 'idle':
+    case 'ready':
+      if (status.lastSuccessfulSyncAt !== null)
+        message = t('sync.lastSynced', {
+          time: formatDistanceStrict(new Date(status.lastSuccessfulSyncAt), now, {
+            addSuffix: true,
+          }),
+        })
+      break
+  }
+  if (message === null) return null
+  return (
+    <div
+      className="border-b border-border/60 px-4 py-1 type-meta text-muted-foreground"
+      role="status"
+    >
+      {message}
+    </div>
+  )
+}
+
 export function SessionList({ actions, projectId, selectedSessionId }: SessionListProps) {
   const sidebar = useRef<HTMLElement>(null)
   const [search, setSearch] = useState('')
@@ -148,13 +225,8 @@ export function SessionList({ actions, projectId, selectedSessionId }: SessionLi
       {...sessionListData(read, sessions.sessionCount)}
       ref={sidebar}
     >
-      <SessionsSidebarHeader
-        onNew={actions.onNew}
-        onSearch={setSearch}
-        onStatusChange={sessions.setStatus}
-        search={search}
-        status={sessions.status}
-      />
+      <SessionListHeader {...{ actions, read, search, sessions, setSearch }} />
+      <SessionSyncFeedback status={read.syncStatus} />
       <SessionListOutcome
         count={sessions.sessionCount}
         sessionList={read.sessionList}

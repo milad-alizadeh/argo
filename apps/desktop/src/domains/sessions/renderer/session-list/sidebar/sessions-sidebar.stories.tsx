@@ -105,7 +105,7 @@ type SessionListHarnessArgs = SessionListActions & { selectedSessionId: SessionI
 
 // The presentational seam Storybook drives: SessionList's own props, plus the routing a real caller
 // gives it. Project scoping plays no part in what a story renders, so every story reads the same
-// null root and tells the Session list apart by what `sessions.list` answers instead.
+// null root and tells the Session list apart by what `sessionList` answers instead.
 function SessionListHarness({ selectedSessionId, ...actions }: SessionListHarnessArgs) {
   return (
     <SessionList actions={actions} projectId="project-1" selectedSessionId={selectedSessionId} />

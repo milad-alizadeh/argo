@@ -1,0 +1,685 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "45121627-5a87-4ebc-9268-a7a1bbdc60a0",
+  "prevIds": ["b34ad826-4d6e-432d-8f24-5ecc880b2de3"],
+  "ddl": [
+    {
+      "name": "project",
+      "entityType": "tables"
+    },
+    {
+      "name": "workspace",
+      "entityType": "tables"
+    },
+    {
+      "name": "session",
+      "entityType": "tables"
+    },
+    {
+      "name": "composer_draft",
+      "entityType": "tables"
+    },
+    {
+      "name": "session_ticket_link",
+      "entityType": "tables"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "project"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "path",
+      "entityType": "columns",
+      "table": "project"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "common_directory",
+      "entityType": "columns",
+      "table": "project"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "(CAST(unixepoch('subsec') * 1000 AS INTEGER))",
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "project"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "(CAST(unixepoch('subsec') * 1000 AS INTEGER))",
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "project"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "workspace"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "project_id",
+      "entityType": "columns",
+      "table": "workspace"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "kind",
+      "entityType": "columns",
+      "table": "workspace"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "display_name",
+      "entityType": "columns",
+      "table": "workspace"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "path",
+      "entityType": "columns",
+      "table": "workspace"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "(CAST(unixepoch('subsec') * 1000 AS INTEGER))",
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "workspace"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "(CAST(unixepoch('subsec') * 1000 AS INTEGER))",
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "workspace"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "argo_id",
+      "entityType": "columns",
+      "table": "session"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "harness",
+      "entityType": "columns",
+      "table": "session"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "native_id",
+      "entityType": "columns",
+      "table": "session"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "project_id",
+      "entityType": "columns",
+      "table": "session"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "workspace_id",
+      "entityType": "columns",
+      "table": "session"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "custom_title",
+      "entityType": "columns",
+      "table": "session"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "preview",
+      "entityType": "columns",
+      "table": "session"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "first_prompt",
+      "entityType": "columns",
+      "table": "session"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "cwd",
+      "entityType": "columns",
+      "table": "session"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "activity_at",
+      "entityType": "columns",
+      "table": "session"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "(CAST(unixepoch('subsec') * 1000 AS INTEGER))",
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "session"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "(CAST(unixepoch('subsec') * 1000 AS INTEGER))",
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "session"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "composer_draft"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "project_id",
+      "entityType": "columns",
+      "table": "composer_draft"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "session_id",
+      "entityType": "columns",
+      "table": "composer_draft"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "workspace_id",
+      "entityType": "columns",
+      "table": "composer_draft"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "harness",
+      "entityType": "columns",
+      "table": "composer_draft"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "''",
+      "generated": null,
+      "name": "prompt",
+      "entityType": "columns",
+      "table": "composer_draft"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'[]'",
+      "generated": null,
+      "name": "attachments_json",
+      "entityType": "columns",
+      "table": "composer_draft"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'[]'",
+      "generated": null,
+      "name": "ticket_context_json",
+      "entityType": "columns",
+      "table": "composer_draft"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "model",
+      "entityType": "columns",
+      "table": "composer_draft"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "effort",
+      "entityType": "columns",
+      "table": "composer_draft"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "mode",
+      "entityType": "columns",
+      "table": "composer_draft"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "revision",
+      "entityType": "columns",
+      "table": "composer_draft"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "(CAST(unixepoch('subsec') * 1000 AS INTEGER))",
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "composer_draft"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "(CAST(unixepoch('subsec') * 1000 AS INTEGER))",
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "composer_draft"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "session_id",
+      "entityType": "columns",
+      "table": "session_ticket_link"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "project_id",
+      "entityType": "columns",
+      "table": "session_ticket_link"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ticket_key",
+      "entityType": "columns",
+      "table": "session_ticket_link"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "title",
+      "entityType": "columns",
+      "table": "session_ticket_link"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "state",
+      "entityType": "columns",
+      "table": "session_ticket_link"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "session_ticket_link"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "(CAST(unixepoch('subsec') * 1000 AS INTEGER))",
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "session_ticket_link"
+    },
+    {
+      "columns": ["project_id"],
+      "tableTo": "project",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_workspace_project_id_project_id_fk",
+      "entityType": "fks",
+      "table": "workspace"
+    },
+    {
+      "columns": ["project_id"],
+      "tableTo": "project",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "nameExplicit": false,
+      "name": "fk_session_project_id_project_id_fk",
+      "entityType": "fks",
+      "table": "session"
+    },
+    {
+      "columns": ["workspace_id"],
+      "tableTo": "workspace",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "nameExplicit": false,
+      "name": "fk_session_workspace_id_workspace_id_fk",
+      "entityType": "fks",
+      "table": "session"
+    },
+    {
+      "columns": ["project_id"],
+      "tableTo": "project",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_composer_draft_project_id_project_id_fk",
+      "entityType": "fks",
+      "table": "composer_draft"
+    },
+    {
+      "columns": ["session_id"],
+      "tableTo": "session",
+      "columnsTo": ["argo_id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_composer_draft_session_id_session_argo_id_fk",
+      "entityType": "fks",
+      "table": "composer_draft"
+    },
+    {
+      "columns": ["workspace_id"],
+      "tableTo": "workspace",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_composer_draft_workspace_id_workspace_id_fk",
+      "entityType": "fks",
+      "table": "composer_draft"
+    },
+    {
+      "columns": ["id"],
+      "nameExplicit": false,
+      "name": "project_pk",
+      "table": "project",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["id"],
+      "nameExplicit": false,
+      "name": "workspace_pk",
+      "table": "workspace",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["argo_id"],
+      "nameExplicit": false,
+      "name": "session_pk",
+      "table": "session",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["id"],
+      "nameExplicit": false,
+      "name": "composer_draft_pk",
+      "table": "composer_draft",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["session_id"],
+      "nameExplicit": false,
+      "name": "session_ticket_link_pk",
+      "table": "session_ticket_link",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        {
+          "value": "harness",
+          "isExpression": false
+        },
+        {
+          "value": "native_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "session_harness_native",
+      "entityType": "indexes",
+      "table": "session"
+    },
+    {
+      "columns": [
+        {
+          "value": "project_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "composer_draft_project",
+      "entityType": "indexes",
+      "table": "composer_draft"
+    },
+    {
+      "columns": [
+        {
+          "value": "session_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "composer_draft_session",
+      "entityType": "indexes",
+      "table": "composer_draft"
+    },
+    {
+      "columns": [
+        {
+          "value": "project_id",
+          "isExpression": false
+        },
+        {
+          "value": "ticket_key",
+          "isExpression": false
+        },
+        {
+          "value": "created_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "session_ticket_link_ticket",
+      "entityType": "indexes",
+      "table": "session_ticket_link"
+    },
+    {
+      "columns": ["common_directory"],
+      "nameExplicit": false,
+      "name": "project_common_directory_unique",
+      "entityType": "uniques",
+      "table": "project"
+    },
+    {
+      "value": "\"kind\" IN ('main', 'imported')",
+      "name": "workspace_kind",
+      "entityType": "checks",
+      "table": "workspace"
+    },
+    {
+      "value": "length(\"display_name\") > 0",
+      "name": "workspace_display_name",
+      "entityType": "checks",
+      "table": "workspace"
+    },
+    {
+      "value": "(\"project_id\" IS NOT NULL) != (\"session_id\" IS NOT NULL)",
+      "name": "composer_draft_target",
+      "entityType": "checks",
+      "table": "composer_draft"
+    },
+    {
+      "value": "(\"project_id\" IS NULL AND \"workspace_id\" IS NULL AND \"harness\" IS NULL) OR (\"project_id\" IS NOT NULL AND \"workspace_id\" IS NOT NULL AND \"harness\" IS NOT NULL)",
+      "name": "composer_draft_new_session_fields",
+      "entityType": "checks",
+      "table": "composer_draft"
+    },
+    {
+      "value": "\"revision\" >= 0",
+      "name": "composer_draft_revision",
+      "entityType": "checks",
+      "table": "composer_draft"
+    }
+  ],
+  "renames": []
+}

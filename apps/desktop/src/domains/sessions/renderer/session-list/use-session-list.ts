@@ -2,6 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
 import { sessionError } from '@/domains/sessions/api/session-error'
 import { trpc } from '@/platform/renderer/trpc-client'
+import { useSessionSync } from './use-session-sync'
 
 function nextPageOf(page: { page: number; pageSize: number; total: number }) {
   return page.page * page.pageSize < page.total ? page.page + 1 : null
@@ -16,6 +17,7 @@ export function useSessionList({
   enabled?: boolean
   search?: string
 }) {
+  const sync = useSessionSync()
   const query = useInfiniteQuery({
     ...trpc.sessions.list.infiniteQueryOptions(
       { projectId: projectId ?? 'unselected', search },
@@ -49,5 +51,8 @@ export function useSessionList({
       if (!query.hasNextPage || query.isFetchingNextPage) return
       void query.fetchNextPage()
     }, [query.fetchNextPage, query.hasNextPage, query.isFetchingNextPage]),
+    refreshSessions: sync.refresh,
+    refreshingSessions: sync.refreshing,
+    syncStatus: sync.status,
   }
 }

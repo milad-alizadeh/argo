@@ -42,7 +42,12 @@ function host() {
     once: (event: string, listener: () => void) => listeners.set(event, listener),
     removeListener: (event: string) => listeners.delete(event),
   }
-  const window = { webContents } as unknown as BrowserWindow
+  const window = {
+    get webContents() {
+      if (destroyed) throw new Error('BrowserWindow is destroyed.')
+      return webContents
+    },
+  } as unknown as BrowserWindow
   return {
     window,
     sent,

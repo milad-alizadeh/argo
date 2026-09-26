@@ -20,7 +20,7 @@ afterEach(async () => {
   await rm(userData, { recursive: true, force: true })
 })
 
-test('registers the paged Session list under sessions.list', async () => {
+test('registers the paged Session list on the global router', async () => {
   database
     .insert(project)
     .values({ id: 'project-1', path: '/work/one', commonDirectory: '/work/one/.git' })

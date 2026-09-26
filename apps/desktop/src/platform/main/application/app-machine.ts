@@ -1,6 +1,8 @@
 import { type ActorRefFrom, assertEvent, setup } from 'xstate'
 import type { Database } from '@/database/database'
+import type { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
 import { liveSessionSupervisorMachine } from '@/domains/sessions/main/live/live-session-supervisor-machine'
+import { sessionSyncSupervisorMachine } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
 import { harnessCatalogMachine } from '@/harnesses/catalog/harness-catalog-machine'
 import { harnessCatalogLoadActor } from '@/harnesses/catalog/runtime'
 import {
@@ -23,6 +25,8 @@ export const appMachine = setup({
   types: {
     input: {} as {
       database: Database
+      databasePath: string | null
+      sessionSyncStatus: SessionSyncStatusStore
     },
     context: {} as Record<string, never>,
     events: {} as
@@ -33,6 +37,8 @@ export const appMachine = setup({
           type: 'xstate.init'
           input: {
             database: Database
+            databasePath: string | null
+            sessionSyncStatus: SessionSyncStatusStore
           }
         },
   },
@@ -40,6 +46,7 @@ export const appMachine = setup({
     codex: codexMachine,
     catalog: catalogMachine,
     sessions: liveSessionSupervisorMachine,
+    sessionSync: sessionSyncSupervisorMachine,
   },
 }).createMachine({
   id: 'application',
@@ -67,6 +74,18 @@ export const appMachine = setup({
         assertEvent(event, 'xstate.init')
         return {
           database: event.input.database,
+        }
+      },
+    },
+    {
+      id: 'sessionSync',
+      systemId: 'sessionSync',
+      src: 'sessionSync',
+      input: ({ event }) => {
+        assertEvent(event, 'xstate.init')
+        return {
+          databasePath: event.input.databasePath,
+          status: event.input.sessionSyncStatus,
         }
       },
     },
