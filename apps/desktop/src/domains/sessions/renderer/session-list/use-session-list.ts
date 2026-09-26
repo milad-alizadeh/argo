@@ -17,7 +17,7 @@ export function useSessionList({
   enabled?: boolean
   search?: string
 }) {
-  useSessionSync()
+  const sync = useSessionSync()
   const query = useInfiniteQuery({
     ...trpc.sessions.list.infiniteQueryOptions(
       { projectId: projectId ?? 'unselected', search },
@@ -51,5 +51,7 @@ export function useSessionList({
       if (!query.hasNextPage || query.isFetchingNextPage) return
       void query.fetchNextPage()
     }, [query.fetchNextPage, query.hasNextPage, query.isFetchingNextPage]),
+    refreshSessions: sync.refresh,
+    refreshingSessions: sync.refreshing,
   }
 }

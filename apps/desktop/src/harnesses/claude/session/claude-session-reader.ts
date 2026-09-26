@@ -14,6 +14,7 @@ const claudeSessionSchema = z
 
 export type ClaudeSessionRecord = {
   nativeId: string
+  activityAt: number
   customTitle?: string | null
   preview?: string
   firstPrompt?: string
@@ -37,6 +38,7 @@ function parseClaudeSession(raw: unknown): ClaudeSessionRecord | null {
   if (!parsed.success) return null
   return {
     nativeId: parsed.data.sessionId,
+    activityAt: parsed.data.lastModified,
     ...(parsed.data.customTitle === undefined ? {} : { customTitle: parsed.data.customTitle }),
     ...(parsed.data.summary === '' ? {} : { preview: parsed.data.summary }),
     ...(parsed.data.firstPrompt === undefined ? {} : { firstPrompt: parsed.data.firstPrompt }),

@@ -1,4 +1,4 @@
-import { sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { project } from '@/database/project/schema'
 import { timestampColumns } from '@/database/timestamp-columns'
 import { workspace } from '@/database/workspace/schema'
@@ -15,6 +15,7 @@ export const sessionTable = sqliteTable(
     preview: text('preview'),
     firstPrompt: text('first_prompt'),
     cwd: text(),
+    activityAt: integer('activity_at'),
     ...timestampColumns(),
   },
   (table) => [uniqueIndex('session_harness_native').on(table.harness, table.nativeId)],

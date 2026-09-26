@@ -1,8 +1,18 @@
 import { assign, fromPromise, setup } from 'xstate'
-import type { SyncedClaudeSession } from './run-claude-session-sync'
+
+export type SyncedSessionRecord = {
+  nativeId: string
+  activityAt?: number
+  customTitle?: string | null
+  preview?: string
+  firstPrompt?: string
+  cwd?: string
+  projectId?: string | null
+  workspaceId?: string | null
+}
 
 export type SyncResult = {
-  records: SyncedClaudeSession[]
+  records: SyncedSessionRecord[]
   skipped: number
 }
 export const SESSION_SYNC_BATCH_SIZE = 50
@@ -10,7 +20,7 @@ export const SESSION_SYNC_BATCH_SIZE = 50
 export const sessionSyncMachine = setup({
   types: {
     context: {} as {
-      records: SyncedClaudeSession[]
+      records: SyncedSessionRecord[]
       processed: number
       skipped: number
       failure: string | null
@@ -49,7 +59,7 @@ export const sessionSyncMachine = setup({
     save: fromPromise<
       void,
       {
-        records: SyncedClaudeSession[]
+        records: SyncedSessionRecord[]
       }
     >(async () => {
       throw new Error('The session sync saver is not configured.')

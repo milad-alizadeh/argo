@@ -23,6 +23,7 @@ function sessionListCaller(sessions: Record<string, unknown> = {}) {
     preview TEXT,
     first_prompt TEXT,
     cwd TEXT,
+    activity_at INTEGER,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
   ); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);
@@ -69,6 +70,7 @@ function insertSession(
     preview?: string | null
     firstPrompt?: string | null
     cwd?: string | null
+    activityAt?: number | null
     projectId?: string
     updatedAt: number
   },
@@ -77,8 +79,8 @@ function insertSession(
     .prepare(
       `INSERT INTO session (
         argo_id, harness, native_id, project_id, workspace_id, custom_title, preview,
-        first_prompt, cwd, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, 1, ?)`,
+        first_prompt, cwd, activity_at, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, 1, ?)`,
     )
     .run(
       values.id,
@@ -89,6 +91,7 @@ function insertSession(
       values.preview ?? null,
       values.firstPrompt ?? null,
       values.cwd ?? null,
+      values.activityAt ?? null,
       values.updatedAt,
     )
 }
@@ -127,6 +130,7 @@ test('returns exact numbered pages in activity order with an Argo ID tie-breaker
       harness: 'claude',
       nativeId: 'shared-native-id',
       firstPrompt: 'third',
+      activityAt: 10,
       updatedAt: 30,
     })
     insertSession(client, {
@@ -158,11 +162,11 @@ test('returns exact numbered pages in activity order with an Argo ID tie-breaker
 
     assert.deepEqual(
       first.rows.map(({ id }) => id),
-      [IDS[2], IDS[0]],
+      [IDS[0], IDS[1]],
     )
     assert.deepEqual(
       second.rows.map(({ id }) => id),
-      [IDS[1]],
+      [IDS[2]],
     )
     assert.deepEqual(
       { page: first.page, pageSize: first.pageSize, total: first.total },

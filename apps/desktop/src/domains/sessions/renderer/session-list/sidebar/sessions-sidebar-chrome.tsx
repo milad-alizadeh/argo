@@ -11,14 +11,18 @@ import { SessionListFilterMenu } from '../rows/session-list-filter-menu'
 
 export function SessionsSidebarHeader({
   onNew,
+  onRefresh,
   onSearch,
   onStatusChange,
+  refreshing,
   search,
   status,
 }: {
   onNew: () => void
+  onRefresh: () => void
   onSearch: (search: string) => void
   onStatusChange: (status: SessionListStatus) => void
+  refreshing: boolean
   search: string
   status: SessionListStatus
 }) {
@@ -39,6 +43,15 @@ export function SessionsSidebarHeader({
       </InputGroup>
       {/* The filter sits left of the plus, so the plus keeps the right edge every row lines up on. */}
       <div className="ml-(--spacing-shell-tight) flex items-center">
+        <Button
+          aria-label={t('refreshSessions')}
+          disabled={refreshing}
+          onClick={onRefresh}
+          size="icon-sm"
+          variant="ghost"
+        >
+          <Icon name="retry" />
+        </Button>
         <SessionListFilterMenu onStatusChange={onStatusChange} status={status} />
         <Button aria-label={t('newSession')} onClick={onNew} size="icon-sm" variant="ghost">
           <Icon name="add" />

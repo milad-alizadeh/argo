@@ -75,6 +75,28 @@ test('returns only the selected Harness as serializable composer choices', async
   }
 })
 
+test('accepts a Session sync refresh', async () => {
+  let refreshes = 0
+  const router = createAppRouter({
+    accounts: {} as AccountProcedureContext,
+    catalog: {} as never,
+    harnessSignIn: {} as HarnessSignInProcedureContext,
+    projects: {} as ProjectRegisterContext,
+    sessions: {
+      database: {} as never,
+      supervisor: sessions,
+      refreshSessionSync: () => {
+        refreshes += 1
+      },
+      sessionSyncStatus: new SessionSyncStatusStore(),
+    },
+    tickets: {} as TicketRouterDependencies,
+    workspaces: {} as WorkspaceListContext,
+  })
+  await expect(router.createCaller({}).sessions.refresh()).resolves.toEqual({ accepted: true })
+  expect(refreshes).toBe(1)
+})
+
 test('repeated reads reuse the settled catalog until an explicit refresh', async () => {
   let loads = 0
   const actor = createActor(

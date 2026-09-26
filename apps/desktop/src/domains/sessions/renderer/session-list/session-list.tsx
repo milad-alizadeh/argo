@@ -123,6 +123,32 @@ type SessionListProps = {
   selectedSessionId: SessionId | null
 }
 
+function SessionListHeader({
+  actions,
+  read,
+  search,
+  sessions,
+  setSearch,
+}: {
+  actions: SessionListActions
+  read: ReturnType<typeof useSessionList>
+  search: string
+  sessions: ReturnType<typeof useSessionListSessions>
+  setSearch: (search: string) => void
+}) {
+  return (
+    <SessionsSidebarHeader
+      onNew={actions.onNew}
+      onRefresh={read.refreshSessions}
+      onSearch={setSearch}
+      onStatusChange={sessions.setStatus}
+      refreshing={read.refreshingSessions}
+      search={search}
+      status={sessions.status}
+    />
+  )
+}
+
 export function SessionList({ actions, projectId, selectedSessionId }: SessionListProps) {
   const sidebar = useRef<HTMLElement>(null)
   const [search, setSearch] = useState('')
@@ -148,13 +174,7 @@ export function SessionList({ actions, projectId, selectedSessionId }: SessionLi
       {...sessionListData(read, sessions.sessionCount)}
       ref={sidebar}
     >
-      <SessionsSidebarHeader
-        onNew={actions.onNew}
-        onSearch={setSearch}
-        onStatusChange={sessions.setStatus}
-        search={search}
-        status={sessions.status}
-      />
+      <SessionListHeader {...{ actions, read, search, sessions, setSearch }} />
       <SessionListOutcome
         count={sessions.sessionCount}
         sessionList={read.sessionList}

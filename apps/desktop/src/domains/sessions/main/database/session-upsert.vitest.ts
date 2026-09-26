@@ -16,6 +16,7 @@ function database() {
     preview TEXT,
     first_prompt TEXT,
     cwd TEXT,
+    activity_at INTEGER,
     created_at INTEGER NOT NULL DEFAULT (CAST(unixepoch('subsec') * 1000 AS INTEGER)),
     updated_at INTEGER NOT NULL DEFAULT (CAST(unixepoch('subsec') * 1000 AS INTEGER))
   ); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);`)
@@ -34,6 +35,7 @@ test('keeps one Argo ID and preserves known metadata on a sparse upsert', () => 
       preview: 'A preview',
       firstPrompt: 'first',
       cwd: '/work/argo',
+      activityAt: 10,
     })
     const repeated = upsert({
       harness: 'claude',
@@ -51,7 +53,7 @@ test('keeps one Argo ID and preserves known metadata on a sparse upsert', () => 
     assert.ok(repeatedTimes.updated_at > originalTimes.updated_at)
     const row = client
       .prepare(
-        'SELECT project_id, workspace_id, custom_title, preview, first_prompt, cwd FROM session WHERE argo_id = ?',
+        'SELECT project_id, workspace_id, custom_title, preview, first_prompt, cwd, activity_at FROM session WHERE argo_id = ?',
       )
       .get(first)
     assert.deepEqual(Object.assign({}, row), {
@@ -61,6 +63,7 @@ test('keeps one Argo ID and preserves known metadata on a sparse upsert', () => 
       preview: 'A preview',
       first_prompt: 'first',
       cwd: '/work/argo',
+      activity_at: 10,
     })
   } finally {
     client.close()

@@ -60,7 +60,7 @@ export const appMachine = setup({
       }
     >(({ input, receive }) => {
       if (input.databasePath === null) return () => {}
-      const worker = new Worker(path.join(__dirname, 'session-sync-worker.js'), {
+      const worker = new Worker(path.join(__dirname, 'claude-session-sync-worker.js'), {
         workerData: {
           databasePath: input.databasePath,
         },

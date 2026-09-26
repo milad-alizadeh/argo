@@ -35,6 +35,7 @@ export function createSessionUpsert(database: Database): SessionUpsert {
         preview: validatedInput.preview ?? null,
         firstPrompt: validatedInput.firstPrompt ?? null,
         cwd: validatedInput.cwd ?? null,
+        activityAt: validatedInput.activityAt ?? null,
       })
       .onConflictDoUpdate({
         target: [sessionTable.harness, sessionTable.nativeId],

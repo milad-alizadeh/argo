@@ -1,8 +1,10 @@
+import { useMutation } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { invalidateSessionList } from '@/domains/sessions/renderer/session-queries'
-import { queryClient, trpcClient } from '@/platform/renderer/trpc-client'
+import { queryClient, trpc, trpcClient } from '@/platform/renderer/trpc-client'
 
-export function useSessionSync(): void {
+export function useSessionSync() {
+  const refresh = useMutation(trpc.sessions.refresh.mutationOptions())
   useEffect(() => {
     const subscription = trpcClient.sessions.syncStatus.subscribe(undefined, {
       onData: () => {
@@ -11,4 +13,8 @@ export function useSessionSync(): void {
     })
     return () => subscription.unsubscribe()
   }, [])
+  return {
+    refreshing: refresh.isPending,
+    refresh: () => refresh.mutate(),
+  }
 }

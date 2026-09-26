@@ -2,9 +2,12 @@ import { DatabaseSync } from 'node:sqlite'
 import { parentPort, workerData } from 'node:worker_threads'
 import { createActor, fromPromise } from 'xstate'
 import { databaseFrom } from '@/database/database'
-import { fetchClaudeSessions, saveClaudeSessions } from './run-claude-session-sync'
-import { sessionSyncMachine } from './session-sync-machine'
-import { type SessionSyncStatus, sessionSyncStatusSchema } from './session-sync-status'
+import { sessionSyncMachine } from '@/domains/sessions/main/sync/session-sync-machine'
+import {
+  type SessionSyncStatus,
+  sessionSyncStatusSchema,
+} from '@/domains/sessions/main/sync/session-sync-status'
+import { fetchClaudeSessions, saveClaudeSessions } from './claude-session-sync'
 
 const port = parentPort
 if (port === null) throw new Error('The Session sync worker requires a parent port.')

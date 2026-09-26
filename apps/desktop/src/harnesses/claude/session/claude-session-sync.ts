@@ -4,18 +4,16 @@ import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
 import { workspace } from '@/database/workspace/schema'
+import { createSessionUpsert } from '@/domains/sessions/main/database/upsert-session'
+import type { SyncedSessionRecord } from '@/domains/sessions/main/sync/session-sync-machine'
 import {
   type ClaudeSessionReader,
   type ClaudeSessionRecord,
   readClaudeSessions,
   systemClaudeSessionReader,
 } from '@/harnesses/claude/session/claude-session-reader'
-import { createSessionUpsert } from '../database/upsert-session'
 
-export type SyncedClaudeSession = ClaudeSessionRecord & {
-  projectId?: string | null
-  workspaceId?: string | null
-}
+export type SyncedClaudeSession = SyncedSessionRecord
 
 type SessionRoot = {
   projectId: string
@@ -121,6 +119,7 @@ function saveBatch(
         cwd: record.cwd,
         projectId: record.projectId,
         workspaceId: record.workspaceId,
+        activityAt: record.activityAt,
       })
     }
     database.$client.exec('COMMIT')
