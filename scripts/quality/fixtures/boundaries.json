@@ -1,0 +1,16 @@
+{
+  "summary": {
+    "violations": [
+      {
+        "from": "apps\\desktop\\src\\source.ts",
+        "to": "apps/desktop/src/target.ts",
+        "rule": { "name": "domain-port-only", "severity": "error" }
+      },
+      {
+        "from": "apps/desktop/src/info.ts",
+        "to": "apps/desktop/src/target.ts",
+        "rule": { "name": "parked-rule", "severity": "info" }
+      }
+    ]
+  }
+}

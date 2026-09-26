@@ -21,6 +21,9 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * *"
 
 concurrency:
   group: ci-${{ github.head_ref || github.ref }}
@@ -68,6 +71,10 @@ jobs:
       # verdict in one push instead of one round trip per breach.
       - name: Lint and format
         run: bun run format-and-lint
+
+      - name: Migration ratchet tests
+        if: ${{ !cancelled() }}
+        run: bun run test:quality-ratchet
 
       - name: Fetch main baseline
         if: ${{ !cancelled() }}
@@ -173,6 +180,34 @@ jobs:
           for result in $RESULTS; do
             if [ "$result" != "success" ]; then exit 1; fi
           done
+
+  # The raw audit stays red until #2587 removes the migration debt. Pull requests use the exact
+  # shrinking baselines above, while scheduled and manual runs expose every remaining failure.
+  raw-audit:
+    name: raw migration debt audit
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup
+
+      - name: Fetch main baseline
+        run: git fetch --no-tags origin main:refs/remotes/origin/main
+
+      - name: Install Chromium for Storybook interaction tests
+        run: bunx playwright install --with-deps chromium
+
+      - name: Raw quality audit
+        run: bun run quality:raw
+
+      - name: Raw unit and Node test audit
+        if: ${{ !cancelled() }}
+        run: bun run test:raw
+
+      - name: Raw Storybook audit
+        if: ${{ !cancelled() }}
+        run: bun run test:storybook:raw
 
   # The artifact tier (#1758). It exists for what Linux genuinely cannot do: package a macOS app,
   # read the fuse wire back out of the shipped binary, and test it. Everything #1769 tests about

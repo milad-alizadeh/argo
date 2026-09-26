@@ -8,9 +8,9 @@ import {
   type codexAppServerMachine,
   type RequestParams,
   requestCodexAppServer,
-} from '@/harnesses/codex/app-server/codex-app-server-machine'
+} from '../app-server/codex-app-server-machine'
 
-export type { CodexRequest } from '@/harnesses/codex/app-server/codex-app-server-machine'
+export type { CodexRequest } from '../app-server/codex-app-server-machine'
 export type CodexWorkerReadRequest = {
   <Result>(
     method: 'model/list',

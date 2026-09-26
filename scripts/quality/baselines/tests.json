@@ -1,0 +1,141 @@
+{
+  "version": 1,
+  "gate": "tests",
+  "entries": [
+    {
+      "identity": {
+        "project": "@argo/desktop:node",
+        "path": "apps/desktop/src/database/database-startup.vitest.ts",
+        "test": "starts a clean database with every ordered migration"
+      },
+      "owner": "#2409",
+      "reason": "The durable SQLite migration path owns this startup repair."
+    },
+    {
+      "identity": {
+        "project": "@argo/desktop:node",
+        "path": "apps/desktop/src/domains/sessions/main/live/live-session-supervisor-machine.vitest.ts",
+        "test": "queues a distinct startup command and settles both calls after persistence"
+      },
+      "owner": "#2587",
+      "reason": "The final typed-API cutover owns this test repair."
+    },
+    {
+      "identity": {
+        "project": "@argo/desktop:node",
+        "path": "apps/desktop/src/domains/sessions/main/live/live-session-supervisor-machine.vitest.ts",
+        "test": "rejects a changed Codex stance instead of silently retaining the opening stance"
+      },
+      "owner": "#2587",
+      "reason": "The final typed-API cutover owns this test repair."
+    },
+    {
+      "identity": {
+        "project": "@argo/desktop:node",
+        "path": "apps/desktop/src/domains/sessions/main/live/live-session-supervisor-machine.vitest.ts",
+        "test": "settles start before a queued turn fails"
+      },
+      "owner": "#2587",
+      "reason": "The final typed-API cutover owns this test repair."
+    },
+    {
+      "identity": {
+        "project": "@argo/desktop",
+        "path": "apps/desktop/e2e/sessions/real-harness/real-session-harness-backend.test.ts",
+        "test": "[suite setup]"
+      },
+      "owner": "#2587",
+      "reason": "The final typed-API cutover owns this test repair."
+    },
+    {
+      "identity": {
+        "project": "@argo/desktop",
+        "path": "apps/desktop/e2e/sessions/real-harness/transcript-feed-corpus.test.ts",
+        "test": "[suite setup]"
+      },
+      "owner": "#2587",
+      "reason": "The final typed-API cutover owns this test repair."
+    },
+    {
+      "identity": {
+        "project": "@argo/desktop",
+        "path": "apps/desktop/mocks/cli/claude/mock-claude-adversarial.test.ts",
+        "test": "[suite setup]"
+      },
+      "owner": "#2587",
+      "reason": "The final typed-API cutover owns this test repair."
+    },
+    {
+      "identity": {
+        "project": "@argo/desktop",
+        "path": "apps/desktop/mocks/cli/codex/mock-codex-adversarial.test.ts",
+        "test": "[suite setup]"
+      },
+      "owner": "#2587",
+      "reason": "The final typed-API cutover owns this test repair."
+    },
+    {
+      "identity": {
+        "project": "@argo/desktop",
+        "path": "apps/desktop/mocks/cli/codex/mock-codex-plan.test.ts",
+        "test": "[suite setup]"
+      },
+      "owner": "#2587",
+      "reason": "The final typed-API cutover owns this test repair."
+    },
+    {
+      "identity": {
+        "project": "@argo/desktop",
+        "path": "apps/desktop/mocks/cli/codex/mock-codex-session-adapter.test.ts",
+        "test": "[suite setup]"
+      },
+      "owner": "#2587",
+      "reason": "The final typed-API cutover owns this test repair."
+    },
+    {
+      "identity": {
+        "project": "@argo/desktop",
+        "path": "apps/desktop/mocks/cli/codex/mock-codex-session-lifecycle.test.ts",
+        "test": "[suite setup]"
+      },
+      "owner": "#2587",
+      "reason": "The final typed-API cutover owns this test repair."
+    },
+    {
+      "identity": {
+        "project": "@argo/desktop",
+        "path": "apps/desktop/mocks/cli/codex/mock-codex-session-resume.test.ts",
+        "test": "[suite setup]"
+      },
+      "owner": "#2587",
+      "reason": "The final typed-API cutover owns this test repair."
+    },
+    {
+      "identity": {
+        "project": "@argo/desktop",
+        "path": "apps/desktop/mocks/sessions/mock-session-harness-backend.test.ts",
+        "test": "[suite setup]"
+      },
+      "owner": "#2587",
+      "reason": "The final typed-API cutover owns this test repair."
+    },
+    {
+      "identity": {
+        "project": "@argo/desktop",
+        "path": "apps/desktop/src/renderer/catalogs.test.ts",
+        "test": "every catalog key has a call site"
+      },
+      "owner": "#2587",
+      "reason": "The final typed-API cutover owns this test repair."
+    },
+    {
+      "identity": {
+        "project": "@argo/desktop",
+        "path": "apps/desktop/tests/sessions/renderer/model/models.test.ts",
+        "test": "[suite setup]"
+      },
+      "owner": "#2587",
+      "reason": "The final typed-API cutover owns this test repair."
+    }
+  ]
+}

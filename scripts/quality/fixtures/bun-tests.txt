@@ -1,0 +1,12 @@
+src/example.test.ts:
+(fail) outer behavior > reports the complete name [12.34ms]
+
+src/setup.test.ts:
+# Unhandled error between tests
+-------------------------------
+error: Cannot find module './missing'
+-------------------------------
+
+2 tests failed:
+(fail) outer behavior > reports the complete name [12.34ms]
+ 2 fail

@@ -23,6 +23,53 @@ Two properties of the wiring are not readable off those files:
   which skipped the lint it did carry as well. A staged-files subset of a check CI runs over the
   whole tree buys nothing and costs a gate that fails open the moment one flag is typed.
 
+## Migration failure baselines
+
+A migration ratchet permits an exact recorded failure and rejects every change to that set.
+The temporary ratchets cover TypeScript, dependency boundaries, unit tests, and Storybook tests.
+Each baseline entry names its owner issue and its full stable identity.
+
+Use the normal commands on a work branch:
+
+```text
+bun run quality
+bun run test
+bun run test:storybook
+```
+
+A zero result means that the observed failures match the baseline exactly.
+A new failure makes the command fail.
+A resolved failure also makes the command fail until its entry is removed.
+
+If a change fixes recorded debt, run this command with `types`, `boundaries`, `tests`, or `storybook`:
+
+```text
+bun run quality:baseline:remove-resolved <gate>
+```
+
+The command displays the exact entries that it will remove.
+It refuses to add an entry.
+Commit the smaller baseline with the repair.
+
+Use the raw commands for diagnosis and the final cutover:
+
+```text
+bun run quality:raw
+bun run test:raw
+bun run test:storybook:raw
+```
+
+Raw commands run the tools without accepted debt, so they remain red during the migration.
+CI runs the raw audit on a schedule and through `workflow_dispatch`.
+Pull requests use the ratcheted commands and stay green when they add no failure.
+
+The runner stores a full log in the system temporary directory when a comparison fails.
+It fails if a tool is missing, times out, stops on a signal, or returns an unknown result.
+It also fails when a parser cannot account for the failure count that a tool reports.
+
+#2587 removes this transition after all four baseline files are empty.
+That change points the normal commands to the raw tool graph and deletes the runner, fixtures, baselines, and scheduled audit.
+
 ## What no config confesses
 
 Two shapes cost this repo real time and apply to whatever gates `apps/desktop` next:

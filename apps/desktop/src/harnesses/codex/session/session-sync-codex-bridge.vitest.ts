@@ -6,11 +6,11 @@ import type {
   CodexChannel,
   CodexRequest,
   RequestParams,
-} from '@/harnesses/codex/app-server/codex-app-server-machine'
+} from '../app-server/codex-app-server-machine'
 import {
   codexAppServerMachine,
   requestCodexAppServer,
-} from '@/harnesses/codex/app-server/codex-app-server-machine'
+} from '../app-server/codex-app-server-machine'
 import {
   confirmCodexAppServerReady,
   createCodexWorkerRequest,
