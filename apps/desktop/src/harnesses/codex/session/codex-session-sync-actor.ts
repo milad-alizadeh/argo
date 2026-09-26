@@ -25,6 +25,10 @@ function rememberRecord(records: Map<string, CodexSessionRecord>, record: CodexS
   records.set(record.nativeId, { ...records.get(record.nativeId), ...record })
 }
 
+function isMissingCodexThread(error: unknown): boolean {
+  return error instanceof Error && /thread.*(?:not found|does not exist)/i.test(error.message)
+}
+
 function parseThread(raw: unknown): CodexSessionRecord | null {
   const parsed = threadSchema.safeParse(raw)
   if (!parsed.success) return null
@@ -53,6 +57,7 @@ async function readListedCodexSessions(
         sortKey: 'updated_at',
         sourceKinds: ['cli', 'vscode', 'appServer'],
         archived: false,
+        useStateDbOnly: true,
       },
       (value) => pageSchema.parse(value),
     )
@@ -74,11 +79,17 @@ async function readKnownCodexSessions(input: {
 }): Promise<void> {
   for (const nativeId of input.knownNativeIds) {
     if (input.records.has(nativeId)) continue
-    const result = await input.request(
-      'thread/read',
-      { threadId: nativeId, includeTurns: false },
-      (value) => readSchema.parse(value),
-    )
+    let result: z.infer<typeof readSchema>
+    try {
+      result = await input.request(
+        'thread/read',
+        { threadId: nativeId, includeTurns: false },
+        (value) => readSchema.parse(value),
+      )
+    } catch (error) {
+      if (isMissingCodexThread(error)) continue
+      throw error
+    }
     const record = parseThread(result.thread)
     if (record === null) input.reportMalformed()
     else rememberRecord(input.records, record)

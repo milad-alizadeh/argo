@@ -49,6 +49,7 @@ export type RequestParams = {
     sortDirection?: 'asc' | 'desc'
     sourceKinds?: CodexThreadSourceKind[]
     archived?: boolean
+    useStateDbOnly?: boolean
   }
   'thread/read': {
     threadId: string

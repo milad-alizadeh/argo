@@ -27,12 +27,12 @@ test('round trips an allowlisted Codex read through the main-side request functi
   try {
     const result = await workerRequest(
       'thread/list',
-      { cursor: 'next', sourceKinds: ['appServer'] },
+      { cursor: 'next', sourceKinds: ['appServer'], useStateDbOnly: true },
       (value) => value,
     )
     assert.deepEqual(result, {
       models: [],
-      params: { cursor: 'next', sourceKinds: ['appServer'] },
+      params: { cursor: 'next', sourceKinds: ['appServer'], useStateDbOnly: true },
     })
   } finally {
     uninstall()
