@@ -28,9 +28,7 @@ export function StalledFeed({
         </EmptyMedia>
         <EmptyTitle>{t('stalled.title')}</EmptyTitle>
         <EmptyDescription>
-          {t(
-            posture === 'live' ? 'stalled.description.live' : 'stalled.description.external',
-          )}
+          {t(posture === 'live' ? 'stalled.description.live' : 'stalled.description.external')}
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent className="flex-row justify-center">

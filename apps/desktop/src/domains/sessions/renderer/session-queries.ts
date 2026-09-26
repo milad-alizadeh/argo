@@ -1,12 +1,9 @@
 import type { InfiniteData, QueryClient } from '@tanstack/react-query'
-import type { SessionId, SessionListPage } from './types'
+import { trpc } from '@/platform/renderer/trpc-client'
+import type { SessionId, SessionListResult } from './types'
 
 export const SESSION_REFRESH_MS = 500
-export const sessionListsQueryKey = ['sessions', 'list'] as const
-export const globalSessionListQueryKey = (search = '') =>
-  [...sessionListsQueryKey, 'global', search] as const
-export const sessionListQueryKey = (projectId: string, search = '') =>
-  [...sessionListsQueryKey, projectId, search] as const
+const sessionListPathKey = trpc.sessions.list.pathKey()
 // A Subagent's Feed is a document of its own, so it is its own query: switching between the
 // Session's Feed and a Subagent's swaps documents rather than refetching one (#1582).
 export const sessionFeedQueryKey = (sessionId: SessionId, subagentId: string | null = null) =>
@@ -31,7 +28,7 @@ export function invalidateSessionList(queryClient: QueryClient) {
 
   const invalidation = Promise.resolve().then(() => {
     pendingSessionListInvalidations.delete(queryClient)
-    return queryClient.invalidateQueries({ queryKey: sessionListsQueryKey })
+    return queryClient.invalidateQueries({ queryKey: sessionListPathKey })
   })
   pendingSessionListInvalidations.set(queryClient, invalidation)
   return invalidation
@@ -43,15 +40,15 @@ export function markSessionRead(
   retiredIds: readonly SessionId[],
 ) {
   const identities = new Set([sessionId, ...retiredIds])
-  queryClient.setQueriesData<InfiniteData<SessionListPage>>(
-    { queryKey: sessionListsQueryKey },
+  queryClient.setQueriesData<InfiniteData<SessionListResult>>(
+    { queryKey: sessionListPathKey },
     (sessionList) => {
       if (sessionList === undefined) return sessionList
       return {
         ...sessionList,
         pages: sessionList.pages.map((page) => ({
           ...page,
-          sessions: page.sessions.map((session) =>
+          rows: page.rows.map((session) =>
             identities.has(session.id) || session.retiredIds.some((id) => identities.has(id))
               ? { ...session, unread: false }
               : session,

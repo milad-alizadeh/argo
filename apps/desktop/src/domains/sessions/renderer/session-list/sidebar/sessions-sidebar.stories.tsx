@@ -979,7 +979,7 @@ export const GrowsOnlyWhenTheReaderReachesTheEnd: Story = {
     await expect(listSessions).toHaveBeenCalledWith(
       expect.objectContaining({
         path: 'sessions.list',
-        input: { scope: 'project', projectId: 'project-1', search: '', page: 2, pageSize: 30 },
+        input: { projectId: 'project-1', search: '', page: 2, pageSize: 30 },
       }),
     )
     await new Promise((resolve) => setTimeout(resolve, 300))

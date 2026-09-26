@@ -24,11 +24,6 @@ export function SessionsSidebar() {
   }
 
   return (
-    <SessionList
-      actions={actions}
-      projectId={projectId}
-      selectedSessionId={sessionId ?? null}
-      sessionListEnabled={cockpit.status !== 'loading'}
-    />
+    <SessionList actions={actions} projectId={projectId} selectedSessionId={sessionId ?? null} />
   )
 }

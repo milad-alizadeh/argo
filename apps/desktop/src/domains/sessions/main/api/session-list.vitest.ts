@@ -3,7 +3,6 @@ import { DatabaseSync } from 'node:sqlite'
 import { initTRPC } from '@trpc/server'
 import { test } from 'vitest'
 import { databaseFrom } from '@/database/database'
-import { createSessionTicketLinkStoreFromDatabase } from '@/domains/tickets/main/session-links'
 import { sessionListProcedure } from './session-list'
 
 const IDS = [
@@ -43,7 +42,7 @@ function sessionListCaller(sessions: Record<string, unknown> = {}) {
   const router = initTRPC.create().router({
     list: sessionListProcedure({ database, supervisor: supervisor as never }),
   })
-  return { client, database, list: router.createCaller({}).list }
+  return { client, list: router.createCaller({}).list }
 }
 
 function liveSession(state: string) {
@@ -94,18 +93,33 @@ function insertSession(
     )
 }
 
-function insertRepeatedPromptSession(client: DatabaseSync) {
-  insertSession(client, {
-    id: '00000000-0000-4000-8000-000000000005',
-    harness: 'claude',
-    nativeId: 'native-5',
-    preview: 'Repeated prompt',
-    firstPrompt: 'Repeated prompt',
-    updatedAt: 5,
-  })
+function insertTicketLink(
+  client: DatabaseSync,
+  values: {
+    sessionId: string
+    projectId: string
+    key: string
+    title: string
+    state: 'open' | 'closed'
+  },
+) {
+  client
+    .prepare(
+      `INSERT INTO session_ticket_link (
+        session_id, project_id, ticket_key, title, state, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+    .run(
+      values.sessionId,
+      values.projectId,
+      values.key,
+      values.title,
+      values.state,
+      '2026-09-26T10:00:00.000Z',
+    )
 }
 
-test('returns exact numbered pages in descending activity order with an Argo ID tie-breaker', async () => {
+test('returns exact numbered pages in activity order with an Argo ID tie-breaker', async () => {
   const { client, list } = sessionListCaller()
   try {
     insertSession(client, {
@@ -139,8 +153,8 @@ test('returns exact numbered pages in descending activity order with an Argo ID 
       updatedAt: 40,
     })
 
-    const first = await list({ scope: 'project', projectId: 'project-1', page: 1, pageSize: 2 })
-    const second = await list({ scope: 'project', projectId: 'project-1', page: 2, pageSize: 2 })
+    const first = await list({ projectId: 'project-1', page: 1, pageSize: 2 })
+    const second = await list({ projectId: 'project-1', page: 2, pageSize: 2 })
 
     assert.deepEqual(
       first.rows.map(({ id }) => id),
@@ -163,7 +177,7 @@ test('returns exact numbered pages in descending activity order with an Argo ID 
   }
 })
 
-test('chooses custom title, linked Ticket title, vendor preview, then first prompt without reading history', async () => {
+test('chooses custom title, Ticket title, distinct vendor preview, then first prompt', async () => {
   const { client, list } = sessionListCaller()
   try {
     insertSession(client, {
@@ -184,143 +198,41 @@ test('chooses custom title, linked Ticket title, vendor preview, then first prom
       firstPrompt: 'First prompt',
       updatedAt: 30,
     })
-    client
-      .prepare(
-        `INSERT INTO session_ticket_link (session_id, project_id, ticket_key, title, state, created_at)
-         VALUES (?, 'project-1', '2744', 'Linked Ticket title', 'open', '2026-01-01T00:00:00.000Z')`,
-      )
-      .run(IDS[1])
     insertSession(client, {
       id: IDS[2],
       harness: 'claude',
       nativeId: 'native-3',
       preview: 'Vendor preview',
-      firstPrompt: 'Ignored first prompt',
+      firstPrompt: 'First prompt',
       updatedAt: 20,
     })
     insertSession(client, {
       id: '00000000-0000-4000-8000-000000000004',
-      harness: 'codex',
+      harness: 'claude',
       nativeId: 'native-4',
       firstPrompt: 'First prompt',
       updatedAt: 10,
     })
-    insertRepeatedPromptSession(client)
+    insertTicketLink(client, {
+      sessionId: IDS[1],
+      projectId: 'project-1',
+      key: '#2765',
+      title: 'Ticket title',
+      state: 'open',
+    })
 
-    const result = await list({ scope: 'project', projectId: 'project-1', page: 1, pageSize: 10 })
+    const result = await list({ projectId: 'project-1', page: 1, pageSize: 10 })
 
     assert.deepEqual(
       result.rows.map(({ title }) => title),
       [
         { text: 'Custom title', source: 'custom' },
-        { text: 'Linked Ticket title', source: 'ticket' },
+        { text: 'Ticket title', source: 'ticket' },
         { text: 'Vendor preview', source: 'summarised' },
         { text: 'First prompt', source: 'first-prompt' },
-        { text: 'Repeated prompt', source: 'first-prompt' },
       ],
     )
     assert.equal(result.rows[0]?.cwd, '/work/one')
-  } finally {
-    client.close()
-  }
-})
-
-test('lists every Session in the global scope, including a null Project link', async () => {
-  const { client, list } = sessionListCaller()
-  try {
-    insertSession(client, {
-      id: IDS[0],
-      harness: 'claude',
-      nativeId: 'project-one',
-      firstPrompt: 'Project one',
-      updatedAt: 10,
-    })
-    insertSession(client, {
-      id: IDS[1],
-      harness: 'codex',
-      nativeId: 'project-two',
-      projectId: 'project-2',
-      firstPrompt: 'Project two',
-      updatedAt: 20,
-    })
-    insertSession(client, {
-      id: IDS[2],
-      harness: 'claude',
-      nativeId: 'no-project',
-      projectId: undefined,
-      firstPrompt: 'No Project',
-      updatedAt: 30,
-    })
-    client.prepare(`UPDATE session SET project_id = NULL WHERE argo_id = ?`).run(IDS[2])
-
-    const global = await list({ scope: 'global', page: 1, pageSize: 10 })
-    const project = await list({ scope: 'project', projectId: 'project-1', page: 1, pageSize: 10 })
-
-    assert.deepEqual(
-      global.rows.map(({ id }) => id),
-      [IDS[2], IDS[1], IDS[0]],
-    )
-    assert.equal(global.total, 3)
-    assert.deepEqual(
-      project.rows.map(({ id }) => id),
-      [IDS[0]],
-    )
-  } finally {
-    client.close()
-  }
-})
-
-test('uses Argo ID to make equal activity times deterministic', async () => {
-  const { client, list } = sessionListCaller()
-  try {
-    insertSession(client, {
-      id: IDS[1],
-      harness: 'claude',
-      nativeId: 'later-id',
-      firstPrompt: 'Later ID',
-      updatedAt: 10,
-    })
-    insertSession(client, {
-      id: IDS[0],
-      harness: 'codex',
-      nativeId: 'earlier-id',
-      firstPrompt: 'Earlier ID',
-      updatedAt: 10,
-    })
-
-    const result = await list({ scope: 'project', projectId: 'project-1', page: 1, pageSize: 10 })
-
-    assert.deepEqual(
-      result.rows.map(({ id }) => id),
-      [IDS[0], IDS[1]],
-    )
-  } finally {
-    client.close()
-  }
-})
-
-test('links a Ticket without copying its title to the Session row', async () => {
-  const { client, database } = sessionListCaller()
-  try {
-    insertSession(client, {
-      id: IDS[0],
-      harness: 'claude',
-      nativeId: 'native-1',
-      firstPrompt: 'First prompt',
-      updatedAt: 10,
-    })
-
-    await createSessionTicketLinkStoreFromDatabase(database).connect(
-      IDS[0],
-      { projectId: 'project-1', key: '2765', title: 'Linked Ticket title', state: 'open' },
-      '2026-09-26T00:00:00.000Z',
-    )
-
-    assert.equal(
-      client.prepare(`SELECT custom_title FROM session WHERE argo_id = ?`).get(IDS[0])
-        ?.custom_title,
-      null,
-    )
   } finally {
     client.close()
   }
@@ -347,27 +259,9 @@ test('filters one Project by custom title and preview only', async () => {
       updatedAt: 20,
     })
 
-    const custom = await list({
-      scope: 'project',
-      projectId: 'project-1',
-      search: 'CUSTOM',
-      page: 1,
-      pageSize: 10,
-    })
-    const preview = await list({
-      scope: 'project',
-      projectId: 'project-1',
-      search: 'preview',
-      page: 1,
-      pageSize: 10,
-    })
-    const prompt = await list({
-      scope: 'project',
-      projectId: 'project-1',
-      search: 'hidden',
-      page: 1,
-      pageSize: 10,
-    })
+    const custom = await list({ projectId: 'project-1', search: 'CUSTOM', page: 1, pageSize: 10 })
+    const preview = await list({ projectId: 'project-1', search: 'preview', page: 1, pageSize: 10 })
+    const prompt = await list({ projectId: 'project-1', search: 'hidden', page: 1, pageSize: 10 })
 
     assert.deepEqual(
       custom.rows.map(({ id }) => id),
@@ -378,6 +272,39 @@ test('filters one Project by custom title and preview only', async () => {
       [IDS[1]],
     )
     assert.equal(prompt.total, 0)
+  } finally {
+    client.close()
+  }
+})
+
+test('joins a Session to its Ticket as one nested ticket object', async () => {
+  const { client, list } = sessionListCaller()
+  try {
+    insertSession(client, {
+      id: IDS[0],
+      harness: 'claude',
+      nativeId: 'native-1',
+      firstPrompt: 'Linked Session',
+      updatedAt: 10,
+    })
+    insertTicketLink(client, {
+      sessionId: IDS[0],
+      projectId: 'project-1',
+      key: '#2744',
+      title: 'Simplify Session renderer state',
+      state: 'open',
+    })
+
+    const result = await list({ projectId: 'project-1', page: 1, pageSize: 10 })
+
+    assert.deepEqual(result.rows[0]?.ticket, {
+      projectId: 'project-1',
+      key: '#2744',
+      title: 'Simplify Session renderer state',
+      state: 'open',
+      createdAt: '2026-09-26T10:00:00.000Z',
+    })
+    assert.equal('ticketKey' in (result.rows[0] ?? {}), false)
   } finally {
     client.close()
   }
@@ -394,7 +321,7 @@ test('adds the current live projection to a saved Session', async () => {
       updatedAt: 10,
     })
 
-    const result = await list({ scope: 'project', projectId: 'project-1', page: 1, pageSize: 10 })
+    const result = await list({ projectId: 'project-1', page: 1, pageSize: 10 })
 
     assert.deepEqual(
       {
@@ -424,7 +351,7 @@ test('does not project a failed live channel as live', async () => {
       updatedAt: 10,
     })
 
-    const result = await list({ scope: 'project', projectId: 'project-1', page: 1, pageSize: 10 })
+    const result = await list({ projectId: 'project-1', page: 1, pageSize: 10 })
 
     assert.deepEqual(
       { posture: result.rows[0]?.posture, status: result.rows[0]?.status },

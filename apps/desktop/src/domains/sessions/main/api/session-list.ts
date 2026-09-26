@@ -8,20 +8,16 @@ import type { LiveSessionSupervisorActor } from '../live/live-session-supervisor
 
 const t = initTRPC.create()
 
-const sessionListPageInputSchema = {
+export const sessionListInputSchema = z.strictObject({
+  projectId: z.string().min(1),
   search: z.string().trim().max(500).default(''),
+  // tRPC's generated infinite-query options reserve `cursor` and `direction`. This list uses
+  // numbered SQL pages, so the cursor is the next page number rather than an opaque database key.
+  cursor: z.number().int().min(1).max(1_000_000).nullable().optional(),
+  direction: z.enum(['forward', 'backward']).optional(),
   page: z.number().int().min(1).max(1_000_000).default(1),
   pageSize: z.number().int().min(1).max(100).default(30),
-}
-
-export const sessionListInputSchema = z.discriminatedUnion('scope', [
-  z.strictObject({
-    scope: z.literal('project'),
-    projectId: z.string().min(1),
-    ...sessionListPageInputSchema,
-  }),
-  z.strictObject({ scope: z.literal('global'), ...sessionListPageInputSchema }),
-])
+})
 
 const sessionListTitleSchema = z.strictObject({
   text: z.string(),
@@ -152,7 +148,6 @@ export const sessionListOutputSchema = z.strictObject({
 
 type StoredSessionTitle = {
   customTitle: string | null
-  ticketTitle: string | null
   preview: string | null
   firstPrompt: string | null
 }
@@ -186,13 +181,19 @@ function liveProjection(context: SessionListContext, sessionId: string) {
   }
 }
 
-function displayedTitle(row: StoredSessionTitle): z.infer<typeof sessionListTitleSchema> | null {
+function displayedTitle(
+  row: StoredSessionTitle & { ticketTitle: string | null },
+): z.infer<typeof sessionListTitleSchema> | null {
   if (row.customTitle !== null) return { text: row.customTitle, source: 'custom' }
   if (row.ticketTitle !== null) return { text: row.ticketTitle, source: 'ticket' }
   if (row.preview !== null && row.preview !== row.firstPrompt)
     return { text: row.preview, source: 'summarised' }
   if (row.firstPrompt !== null) return { text: row.firstPrompt, source: 'first-prompt' }
   return null
+}
+
+function ticketStateOf(value: string): 'open' | 'closed' {
+  return z.enum(['open', 'closed']).parse(value)
 }
 
 function sessionListRow(
@@ -202,21 +203,18 @@ function sessionListRow(
     harness: string
     cwd: string | null
     updatedAt: number
-    ticketProjectId: string | null
-    ticketKey: string | null
-    ticketTitle: string | null
-    ticketState: string | null
-    ticketCreatedAt: string | null
+    ticket: {
+      projectId: string
+      key: string
+      title: string
+      state: string
+      createdAt: string
+    } | null
   },
 ) {
   const live = liveProjection(context, row.id)
-  const ticket = sessionTicketSchema.safeParse({
-    projectId: row.ticketProjectId,
-    key: row.ticketKey,
-    title: row.ticketTitle,
-    state: row.ticketState,
-    createdAt: row.ticketCreatedAt,
-  })
+  const ticket =
+    row.ticket === null ? null : { ...row.ticket, state: ticketStateOf(row.ticket.state) }
   return {
     id: row.id,
     retiredIds: [],
@@ -224,7 +222,7 @@ function sessionListRow(
     posture: live?.posture ?? null,
     customTitle: row.customTitle,
     preview: row.preview,
-    title: displayedTitle({ ...row, ticketTitle: ticket.success ? ticket.data.title : null }),
+    title: displayedTitle({ ...row, ticketTitle: ticket?.title ?? null }),
     status: live?.status ?? ('unknown' as const),
     entry: null,
     cwd: row.cwd,
@@ -238,7 +236,7 @@ function sessionListRow(
     subagents: [],
     shell: [],
     pullRequest: null,
-    ticket: ticket.success ? ticket.data : null,
+    ticket,
     archived: false,
     unread: false,
     turnConfiguration: live?.turnConfiguration ?? { model: null, effort: null, mode: null },
@@ -249,29 +247,18 @@ function readSessionList(
   context: SessionListContext,
   input: z.infer<typeof sessionListInputSchema>,
 ) {
-  const projectFilter = (() => {
-    switch (input.scope) {
-      case 'global':
-        return undefined
-      case 'project':
-        return eq(sessionTable.projectId, input.projectId)
-      default: {
-        const unexpectedScope: never = input
-        return unexpectedScope
-      }
-    }
-  })()
-  const searchFilter =
+  const page = input.cursor ?? input.page
+  const projectFilter = eq(sessionTable.projectId, input.projectId)
+  const filter =
     input.search === ''
-      ? undefined
-      : or(
-          sql<boolean>`instr(lower(coalesce(${sessionTable.customTitle}, '')), lower(${input.search})) > 0`,
-          sql<boolean>`instr(lower(coalesce(${sessionTable.preview}, '')), lower(${input.search})) > 0`,
+      ? projectFilter
+      : and(
+          projectFilter,
+          or(
+            sql<boolean>`instr(lower(coalesce(${sessionTable.customTitle}, '')), lower(${input.search})) > 0`,
+            sql<boolean>`instr(lower(coalesce(${sessionTable.preview}, '')), lower(${input.search})) > 0`,
+          ),
         )
-  let filter = projectFilter
-  if (searchFilter !== undefined) {
-    filter = filter === undefined ? searchFilter : and(filter, searchFilter)
-  }
   const rows = context.database
     .select({
       id: sessionTable.argoId,
@@ -281,23 +268,25 @@ function readSessionList(
       firstPrompt: sessionTable.firstPrompt,
       cwd: sessionTable.cwd,
       updatedAt: sessionTable.updatedAt,
-      ticketProjectId: sessionTicketLink.projectId,
-      ticketKey: sessionTicketLink.ticketKey,
-      ticketTitle: sessionTicketLink.title,
-      ticketState: sessionTicketLink.state,
-      ticketCreatedAt: sessionTicketLink.createdAt,
+      ticket: {
+        projectId: sessionTicketLink.projectId,
+        key: sessionTicketLink.ticketKey,
+        title: sessionTicketLink.title,
+        state: sessionTicketLink.state,
+        createdAt: sessionTicketLink.createdAt,
+      },
     })
     .from(sessionTable)
     .leftJoin(sessionTicketLink, eq(sessionTicketLink.sessionId, sessionTable.argoId))
     .where(filter)
     .orderBy(desc(sessionTable.updatedAt), asc(sessionTable.argoId))
     .limit(input.pageSize)
-    .offset((input.page - 1) * input.pageSize)
+    .offset((page - 1) * input.pageSize)
     .all()
     .map((row) => sessionListRow(context, row))
   const total =
     context.database.select({ value: count() }).from(sessionTable).where(filter).get()?.value ?? 0
-  return { page: input.page, pageSize: input.pageSize, total, rows }
+  return { page, pageSize: input.pageSize, total, rows }
 }
 
 export function sessionListProcedure(context: SessionListContext) {

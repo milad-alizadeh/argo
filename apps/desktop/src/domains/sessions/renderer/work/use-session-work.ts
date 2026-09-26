@@ -14,7 +14,7 @@ import type { SessionFeed, SessionId } from '../types'
 
 // Each read re-parses every Subagent transcript the Session has, so a Session whose Subagents have
 // all come back is read once rather than on every pass.
-export function useDelegationUsage(sessionId: SessionId | null, live: boolean) {
+export function useDelegationUsage(sessionId: SessionId | null) {
   const queryKey = sessionSubagentUsageQueryKey(sessionId ?? '')
   const usage = useQuery<Record<string, SubagentUsageFacts>>({
     queryKey,

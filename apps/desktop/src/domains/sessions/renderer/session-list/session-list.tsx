@@ -2,8 +2,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { type RefObject, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { sessionFeedQuery } from '../feed/session-feed-query'
+import { useConsecutiveFeedFailures } from '../feed/use-session-feed'
 import type { Session, SessionId } from '../types'
-import { useConsecutiveFeedFailures, useSessions } from '../use-sessions'
 import { useArchivedSection } from './archived/use-archived-section'
 import { useSessionListStatus } from './hooks/use-session-list-filter-store'
 import { RenameDialog } from './rename/rename-dialog'
@@ -15,11 +15,12 @@ import { sessionListState } from './rows/session-list-status-row'
 import { SessionListVirtualList } from './rows/session-list-virtual-list'
 import { SessionsSidebarHeader } from './sidebar/sessions-sidebar-chrome'
 import { useSidebarSessionList } from './sidebar/use-sidebar-session-list'
+import { useSessionList } from './use-session-list'
 
 export type { SessionListActions } from './rows'
 
 function useSessionListRows(options: {
-  read: ReturnType<typeof useSessions>
+  read: ReturnType<typeof useSessionList>
   searching: boolean
   selectedSessionId: SessionId | null
   visible: readonly Session[]
@@ -61,7 +62,7 @@ function useSessionListRows(options: {
 
 function useSessionListSessions(options: {
   actions: SessionListActions
-  read: ReturnType<typeof useSessions>
+  read: ReturnType<typeof useSessionList>
   search: string
   selectedSessionId: SessionId | null
   sidebar: RefObject<HTMLElement | null>
@@ -107,7 +108,7 @@ function useUnavailableSessionIds(selectedSessionId: SessionId | null) {
   return unavailableSessionIds
 }
 
-function sessionListData(read: ReturnType<typeof useSessions>, sessionCount: number) {
+function sessionListData(read: ReturnType<typeof useSessionList>, sessionCount: number) {
   return {
     'data-page-count': read.loadedSessionPages,
     'data-state': sessionListState(read.sessionList, read.sessionListError, sessionCount),
@@ -119,44 +120,21 @@ function sessionListData(read: ReturnType<typeof useSessions>, sessionCount: num
 type SessionListProps = {
   actions: SessionListActions
   projectId: string | null
-  sessionListEnabled?: boolean
   selectedSessionId: SessionId | null
 }
 
-function useSessionListData({
-  actions,
-  projectId,
-  search,
-  selectedSessionId,
-  sessionListEnabled,
-  sidebar,
-}: SessionListProps & { search: string; sidebar: RefObject<HTMLElement | null> }) {
-  const read = useSessions({
-    selectedSessionId: null,
-    projectId,
-    sessionListEnabled,
-    sessionListSearch: search.trim(),
-  })
-  return {
-    read,
-    sessions: useSessionListSessions({ actions, read, search, selectedSessionId, sidebar }),
-  }
-}
-
-export function SessionList({
-  actions,
-  projectId,
-  sessionListEnabled = true,
-  selectedSessionId,
-}: SessionListProps) {
+export function SessionList({ actions, projectId, selectedSessionId }: SessionListProps) {
   const sidebar = useRef<HTMLElement>(null)
   const [search, setSearch] = useState('')
-  const { read, sessions } = useSessionListData({
-    actions,
+  const read = useSessionList({
     projectId,
+    search: search.trim(),
+  })
+  const sessions = useSessionListSessions({
+    actions,
+    read,
     search,
     selectedSessionId,
-    sessionListEnabled,
     sidebar,
   })
   const { renameTarget, setRenameTarget, handleRename } = useRenameDialog(

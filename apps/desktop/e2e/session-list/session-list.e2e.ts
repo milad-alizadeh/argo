@@ -76,15 +76,6 @@ function seedSessionList(userData: string, beta: string) {
     .run()
   database.insert(sessionTable).values(savedSessions()).run()
   database
-    .insert(sessionTable)
-    .values({
-      argoId: '00000000-0000-4000-8000-999999999998',
-      harness: 'codex',
-      nativeId: 'no-project',
-      firstPrompt: 'No Project Session',
-    })
-    .run()
-  database
     .insert(sessionTicketLink)
     .values({
       sessionId: '00000000-0000-4000-8000-000000000002',
@@ -108,31 +99,6 @@ function seedSessionList(userData: string, beta: string) {
   database.$client.close()
 }
 
-async function verifyGlobalRows(page: Page) {
-  await expect
-    .poll(() =>
-      page.evaluate(async () => {
-        const reply = await window.argo.trpc({
-          id: 2765,
-          path: 'sessions.list',
-          input: { scope: 'global', search: '', page: 1, pageSize: 100 },
-          type: 'query',
-        })
-        if ('error' in reply) throw new Error('The global Session list failed.')
-        return reply.result.data
-      }),
-    )
-    .toMatchObject({
-      total: 33,
-      rows: expect.arrayContaining([
-        expect.objectContaining({
-          id: '00000000-0000-4000-8000-999999999998',
-          title: { text: 'No Project Session', source: 'first-prompt' },
-        }),
-      ]),
-    })
-}
-
 test('shows saved numbered pages and keeps Argo-ID selection', async ({
   root,
   packagedApplication,
@@ -153,7 +119,6 @@ test('shows saved numbered pages and keeps Argo-ID selection', async ({
     await expect(page.getByRole('button', { name: /Other Project Session/ })).toHaveCount(0)
     await expect(sessionList).toHaveAttribute('data-page-count', '1')
     await expect(sessionList).toHaveAttribute('data-total', '31')
-    await verifyGlobalRows(page)
     await verifyTitleSearch(page, sessionList)
     await page.locator('[data-slot="session-list-scroll"]').evaluate((element) => {
       element.scrollTop = element.scrollHeight
