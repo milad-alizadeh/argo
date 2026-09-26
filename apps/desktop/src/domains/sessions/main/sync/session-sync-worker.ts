@@ -4,6 +4,7 @@ import { createActor, fromPromise, type SnapshotFrom } from 'xstate'
 import { z } from 'zod'
 import { databaseFrom } from '@/database/database'
 import { claudeSessionSyncActor } from '@/harnesses/claude/session/claude-session-sync-actor'
+import { createCodexSessionSyncActor } from '@/harnesses/codex/session/codex-session-sync-actor'
 import {
   type CodexWorkerReadRequest,
   createCodexWorkerRequest,
@@ -42,7 +43,7 @@ function fetchActorFor(harness: Harness, codexRequest?: CodexWorkerReadRequest) 
     case 'codex': {
       if (codexRequest === undefined)
         throw new Error('Codex Session sync requires the worker request bridge.')
-      throw new Error('Codex Session sync is not supported yet.')
+      return createCodexSessionSyncActor(codexRequest)
     }
     default: {
       const unknownHarness: never = harness

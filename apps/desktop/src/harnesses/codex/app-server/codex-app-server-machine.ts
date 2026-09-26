@@ -10,6 +10,20 @@ import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/proof-protocol'
 // 0.147.0's generated schema (`codex app-server generate-json-schema`) and the live proof recorded
 // in docs/research/2026-09-09-codex-transport.md.
 export type RequestID = string | number
+export const CODEX_THREAD_SOURCE_KINDS = [
+  'cli',
+  'vscode',
+  'exec',
+  'appServer',
+  'subAgent',
+  'subAgentReview',
+  'subAgentCompact',
+  'subAgentThreadSpawn',
+  'subAgentOther',
+  'unknown',
+] as const
+export type CodexThreadSourceKind = (typeof CODEX_THREAD_SOURCE_KINDS)[number]
+
 export type RequestParams = {
   'thread/start': {
     cwd: string
@@ -27,6 +41,19 @@ export type RequestParams = {
     cursor?: string
     limit?: number
     includeHidden?: boolean
+  }
+  'thread/list': {
+    cursor?: string
+    limit?: number
+    sortKey?: 'created_at' | 'updated_at' | 'recency_at'
+    sortDirection?: 'asc' | 'desc'
+    sourceKinds?: CodexThreadSourceKind[]
+    archived?: boolean
+    useStateDbOnly?: boolean
+  }
+  'thread/read': {
+    threadId: string
+    includeTurns: false
   }
   initialize: {
     clientInfo: {

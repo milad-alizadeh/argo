@@ -267,6 +267,7 @@ const sessionSyncStatusActor = fromCallback<
 
 const supportedHarnesses = [
   'claude',
+  'codex',
 ] as const satisfies readonly Harness[]
 
 type SupervisorInput = {
