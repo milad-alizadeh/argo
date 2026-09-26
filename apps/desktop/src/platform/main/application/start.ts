@@ -1,12 +1,17 @@
 import { app } from 'electron'
 import { createActor } from 'xstate'
 import type { Database } from '@/database/database'
+import type { SessionSyncStatusStore } from '@/domains/sessions/main/sync/session-sync-status'
 import { applyStoredAppearance, readAppearance } from '../appearance'
 import { setPlatformLanguage } from '../i18n'
 import { type AppActor, appMachine } from './app-machine'
 
 export function startDesktopApplication(request: {
-  prepare: () => Promise<{ database: Database }>
+  prepare: () => Promise<{
+    database: Database
+    databasePath: string
+    sessionSyncStatus: SessionSyncStatusStore
+  }>
   ready: (actor: AppActor) => Promise<void> | void
   willQuit: () => void
   focusExistingWindow: () => void

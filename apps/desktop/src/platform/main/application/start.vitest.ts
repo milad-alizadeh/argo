@@ -1,4 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest'
+import { SessionSyncStatusStore } from '@/domains/sessions/main/sync/session-sync-status'
 
 const electron = vi.hoisted(() => ({
   app: {
@@ -30,7 +31,11 @@ test('does not start a second Argo application instance', async () => {
   const ready = vi.fn()
 
   startDesktopApplication({
-    prepare: vi.fn(async () => ({ database: {} as never })),
+    prepare: vi.fn(async () => ({
+      database: {} as never,
+      databasePath: '',
+      sessionSyncStatus: new SessionSyncStatusStore(),
+    })),
     ready,
     focusExistingWindow: vi.fn(),
     willQuit: vi.fn(),
@@ -48,7 +53,11 @@ test('focuses the existing window when a second instance is launched', async () 
   const ready = vi.fn()
 
   startDesktopApplication({
-    prepare: vi.fn(async () => ({ database: {} as never })),
+    prepare: vi.fn(async () => ({
+      database: {} as never,
+      databasePath: '',
+      sessionSyncStatus: new SessionSyncStatusStore(),
+    })),
     ready,
     focusExistingWindow,
     willQuit: vi.fn(),

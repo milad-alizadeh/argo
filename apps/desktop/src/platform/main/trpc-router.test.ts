@@ -4,6 +4,7 @@ import type { AccountProcedureContext } from '@/domains/accounts/main/account-pr
 import type { HarnessSignInProcedureContext } from '@/domains/harness-signin/main/harness-sign-in-procedures'
 import type { ProjectRegisterContext } from '@/domains/projects/main/api/project-register'
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
+import { SessionSyncStatusStore } from '@/domains/sessions/main/sync/session-sync-status'
 import type { TicketRouterDependencies } from '@/domains/tickets/main/ticket-router'
 import type { WorkspaceListContext } from '@/domains/workspaces/main/api/workspace-list'
 import {
@@ -33,7 +34,12 @@ function testRouter(
     catalog,
     harnessSignIn: {} as HarnessSignInProcedureContext,
     projects: {} as ProjectRegisterContext,
-    sessions: { database: {} as never, supervisor: sessionActor },
+    sessions: {
+      database: {} as never,
+      supervisor: sessionActor,
+      refreshSessionSync: () => {},
+      sessionSyncStatus: new SessionSyncStatusStore(),
+    },
     tickets: {} as TicketRouterDependencies,
     workspaces: {} as WorkspaceListContext,
   })
