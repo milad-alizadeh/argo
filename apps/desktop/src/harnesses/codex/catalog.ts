@@ -105,7 +105,7 @@ export function codexHarnessInfo(catalog: CodexModelCatalog | null): HarnessInfo
       ).values(),
     ].map((effort) => ({
       value: effort.reasoningEffort,
-      label: effort.description || effort.reasoningEffort,
+      label: effort.reasoningEffort,
       readings: { exact: [effort.reasoningEffort], prefixes: [] },
     })),
     modes: SANDBOX_MODES.map((mode) => ({
