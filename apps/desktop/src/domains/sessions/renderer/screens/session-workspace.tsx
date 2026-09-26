@@ -5,15 +5,15 @@ import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import { BasicFeed } from '../feed/document/basic-feed'
 import type { FeedLiveFacts } from '../feed/document/feed-live-facts'
 import { FeedJumpToLatest } from '../feed/rows/feed-jump-to-latest'
+import type { useSessionFeed } from '../feed/use-session-feed'
 import type { SessionEvidence } from '../types'
-import type { useSessions } from '../use-sessions'
 
 export type SessionWorkspaceProps = {
   composer: ReactNode | null
   header?: ReactNode
-  feed: ReturnType<typeof useSessions>['feed']
-  feedError: ReturnType<typeof useSessions>['feedError']
-  onRetryFeed: ReturnType<typeof useSessions>['retryFeed']
+  feed: ReturnType<typeof useSessionFeed>['feed']
+  feedError: ReturnType<typeof useSessionFeed>['feedError']
+  onRetryFeed: ReturnType<typeof useSessionFeed>['retryFeed']
   liveFacts: FeedLiveFacts
   stallTimeoutMs?: number
   onOpenSession: (sessionId: string) => void

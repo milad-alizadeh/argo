@@ -97,10 +97,7 @@ export async function proveContract(page) {
     list.sessions.filter((session) => session.originUnread).map((session) => session.id),
     ['strandedResume'],
   )
-  assert.deepEqual(
-    [...new Set(list.sessions.map((session) => session.posture))],
-    ['external'],
-  )
+  assert.deepEqual([...new Set(list.sessions.map((session) => session.posture))], ['external'])
   const read = await page.evaluate(
     (value) => window.argo.readSessionFeed(value),
     CLAUDE_FEED_REQUEST,
