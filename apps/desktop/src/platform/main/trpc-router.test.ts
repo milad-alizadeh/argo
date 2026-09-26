@@ -95,8 +95,15 @@ test('accepts a Session sync refresh', async () => {
     tickets: {} as TicketRouterDependencies,
     workspaces: {} as WorkspaceListContext,
   })
-  await expect(router.createCaller({}).sessions.refresh()).resolves.toEqual({ accepted: true })
+  await expect(router.createCaller({}).sessionRefresh()).resolves.toEqual({ accepted: true })
   expect(refreshes).toBe(1)
+})
+
+test('registers Session procedures directly on the global router', () => {
+  const paths = Object.keys(testRouter({} as never)._def.procedures)
+  for (const path of ['sessionList', 'sessionRename', 'sessionRefresh', 'sessionSyncStatus'])
+    expect(paths).toContain(path)
+  expect(paths.some((path) => path === 'sessions' || path.startsWith('sessions.'))).toBe(false)
 })
 
 test('repeated reads reuse the settled catalog until an explicit refresh', async () => {

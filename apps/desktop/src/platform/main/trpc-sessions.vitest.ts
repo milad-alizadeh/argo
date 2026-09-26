@@ -53,7 +53,7 @@ test('registers the paged Session list on the global router', async () => {
   await expect(
     createAppRouter(dependencies)
       .createCaller({})
-      .sessions.list({ projectId: 'project-1', page: 1, pageSize: 30 }),
+      .sessionList({ projectId: 'project-1', page: 1, pageSize: 30 }),
   ).resolves.toMatchObject({
     page: 1,
     pageSize: 30,
@@ -68,7 +68,7 @@ test('registers the paged Session list on the global router', async () => {
   })
 })
 
-test('renames a saved Session through sessions.rename after the Harness accepts it', async () => {
+test('renames a saved Session through sessionRename after the Harness accepts it', async () => {
   database
     .insert(sessionTable)
     .values({
@@ -96,7 +96,7 @@ test('renames a saved Session through sessions.rename after the Harness accepts 
   } as unknown as AppRouterDependencies
 
   await expect(
-    createAppRouter(dependencies).createCaller({}).sessions.rename({
+    createAppRouter(dependencies).createCaller({}).sessionRename({
       sessionId: '00000000-0000-4000-8000-000000000002',
       title: 'Confirmed title',
     }),
@@ -144,7 +144,7 @@ test('keeps the existing title when the Harness rejects a rename', async () => {
   } as unknown as AppRouterDependencies
 
   await expect(
-    createAppRouter(dependencies).createCaller({}).sessions.rename({
+    createAppRouter(dependencies).createCaller({}).sessionRename({
       sessionId: '00000000-0000-4000-8000-000000000003',
       title: 'Rejected title',
     }),
@@ -182,7 +182,7 @@ test('accepts a later Harness sync that changes or clears a confirmed custom tit
   } as unknown as AppRouterDependencies
   const caller = createAppRouter(dependencies).createCaller({})
 
-  await caller.sessions.rename({
+  await caller.sessionRename({
     sessionId: '00000000-0000-4000-8000-000000000004',
     title: 'Confirmed title',
   })

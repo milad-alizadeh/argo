@@ -30,7 +30,7 @@ export function useSidebarActions() {
 
     rename: useCallback(
       async (session: Session, name: string) => {
-        const renamed = await trpcClient.sessions.rename.mutate({
+        const renamed = await trpcClient.sessionRename.mutate({
           sessionId: session.id,
           title: name,
         })

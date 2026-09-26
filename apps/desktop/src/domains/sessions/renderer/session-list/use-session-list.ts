@@ -19,7 +19,7 @@ export function useSessionList({
 }) {
   const sync = useSessionSync()
   const query = useInfiniteQuery({
-    ...trpc.sessions.list.infiniteQueryOptions(
+    ...trpc.sessionList.infiniteQueryOptions(
       { projectId: projectId ?? 'unselected', search },
       {
         initialCursor: 1,

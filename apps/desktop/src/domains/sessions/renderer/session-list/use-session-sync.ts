@@ -5,16 +5,16 @@ import { useToastManager } from '@/platform/renderer/components/ui/toast'
 import { queryClient, type RouterOutputs, trpc, trpcClient } from '@/platform/renderer/trpc-client'
 import { invalidateSessionList } from '../session-queries'
 
-type SyncStatus = Extract<RouterOutputs['sessions']['syncStatus'], { type: 'status' }>['status']
+type SyncStatus = Extract<RouterOutputs['sessionSyncStatus'], { type: 'status' }>['status']
 
 export function useSessionSync() {
   const { t } = useTranslation('sessions')
   const { add } = useToastManager()
-  const refresh = useMutation(trpc.sessions.refresh.mutationOptions())
+  const refresh = useMutation(trpc.sessionRefresh.mutationOptions())
   const [status, setStatus] = useState<SyncStatus | null>(null)
   const previousPhase = useRef<SyncStatus['phase'] | null>(null)
   useEffect(() => {
-    const subscription = trpcClient.sessions.syncStatus.subscribe(undefined, {
+    const subscription = trpcClient.sessionSyncStatus.subscribe(undefined, {
       onData: (event) => {
         if (event.type === 'committed') {
           void invalidateSessionList(queryClient)

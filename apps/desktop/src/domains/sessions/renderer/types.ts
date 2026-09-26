@@ -2,7 +2,7 @@ import type { SessionError } from '@/domains/sessions/api/session-error'
 import type { SessionFeedRow } from '@/domains/sessions/renderer/model/models'
 import type { RouterOutputs } from '@/platform/renderer/trpc-client'
 
-export type SessionListResult = RouterOutputs['sessions']['list']
+export type SessionListResult = RouterOutputs['sessionList']
 export type Session = SessionListResult['rows'][number]
 export type SessionId = Session['id']
 
