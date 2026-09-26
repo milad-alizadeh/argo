@@ -1,9 +1,9 @@
 import type { InfiniteData, QueryClient } from '@tanstack/react-query'
 import type { RosterStatus } from '@/domains/sessions/renderer/model/roster-status'
-import type { SessionId, SessionRoster } from './types'
+import type { SessionId, SessionListPage } from './types'
 
 export const SESSION_REFRESH_MS = 500
-export const sessionRosterQueryKey = ['sessions', 'roster'] as const
+export const sessionListQueryKey = ['sessions', 'list'] as const
 // A Subagent's Feed is a document of its own, so it is its own query: switching between the
 // Session's Feed and a Subagent's swaps documents rather than refetching one (#1582).
 export const sessionFeedQueryKey = (sessionId: SessionId, subagentId: string | null = null) =>
@@ -28,17 +28,17 @@ export const sessionSearchQueryKey = (
   query: string,
 ) => ['sessions', 'search', projectRoot, status, query] as const
 
-const pendingRosterInvalidations = new WeakMap<QueryClient, Promise<void>>()
+const pendingSessionListInvalidations = new WeakMap<QueryClient, Promise<void>>()
 
-export function invalidateSessionRoster(queryClient: QueryClient) {
-  const pending = pendingRosterInvalidations.get(queryClient)
+export function invalidateSessionList(queryClient: QueryClient) {
+  const pending = pendingSessionListInvalidations.get(queryClient)
   if (pending !== undefined) return pending
 
   const invalidation = Promise.resolve().then(() => {
-    pendingRosterInvalidations.delete(queryClient)
-    return queryClient.invalidateQueries({ queryKey: sessionRosterQueryKey })
+    pendingSessionListInvalidations.delete(queryClient)
+    return queryClient.invalidateQueries({ queryKey: sessionListQueryKey })
   })
-  pendingRosterInvalidations.set(queryClient, invalidation)
+  pendingSessionListInvalidations.set(queryClient, invalidation)
   return invalidation
 }
 
@@ -48,8 +48,8 @@ export function markSessionRead(
   retiredIds: readonly SessionId[],
 ) {
   const identities = new Set([sessionId, ...retiredIds])
-  queryClient.setQueriesData<InfiniteData<SessionRoster>>(
-    { queryKey: sessionRosterQueryKey },
+  queryClient.setQueriesData<InfiniteData<SessionListPage>>(
+    { queryKey: sessionListQueryKey },
     (roster) => {
       if (roster === undefined) return roster
       return {

@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { sessionRosterRow } from '../session-fixtures'
+import { sessionRow } from '../session-fixtures'
 import type { SessionFeedRow } from '../types'
 import { backgroundWorkLinks } from './background-work-links'
 import { sessionScreenSubagents } from './session-screen-subagents'
@@ -19,7 +19,7 @@ test('opens the child Session named by a Feed subagent row', () => {
   const links = backgroundWorkLinks({
     pick: (selection) => selections.push(selection),
     selectedSessionId: 'parent-session',
-    session: sessionRosterRow({ id: 'parent-session', subagents: [], shell: [] }),
+    session: sessionRow({ id: 'parent-session', subagents: [], shell: [] }),
     subagents,
     subagentUsage: {},
   })

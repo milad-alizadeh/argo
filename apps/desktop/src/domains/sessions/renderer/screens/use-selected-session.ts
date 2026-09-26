@@ -1,14 +1,14 @@
 import { useArchivedSessions } from '../session-list/archived/use-archived-sessions'
 import type { useSessions } from '../use-sessions'
 
-// The active Roster never carries an archived Session (#1593): a direct open of one (a restored
+// The active Session list never carries an archived Session (#1593): a direct open of one (a restored
 // route, a stored selection) asks the reader for its row by id instead of finding it in the
-// Roster's own list.
+// active list.
 export function useSelectedSession(
   selectedSessionId: string | null,
-  roster: ReturnType<typeof useSessions>['roster'],
+  sessionList: ReturnType<typeof useSessions>['sessionList'],
 ) {
-  const activeSession = roster?.sessions.find(({ id }) => id === selectedSessionId) ?? null
+  const activeSession = sessionList?.sessions.find(({ id }) => id === selectedSessionId) ?? null
   const archiveRestoreId = activeSession === null ? selectedSessionId : null
   const { restored } = useArchivedSessions(archiveRestoreId !== null, archiveRestoreId)
   return activeSession ?? restored

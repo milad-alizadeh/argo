@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/platform/renderer/components/ui/empty'
-import type { SessionError, SessionRoster } from '../../types'
+import type { SessionError, SessionListPage } from '../../types'
 import { type SessionListStatus, showsActive } from '../hooks/use-session-list-filter-store'
 import { SessionListLoading } from './session-list-status-row'
 
@@ -44,7 +44,7 @@ export function SessionListOutcome({
   status,
 }: {
   count: number
-  sessionList: SessionRoster | null
+  sessionList: SessionListPage | null
   sessionListError: SessionError | null
   status: SessionListStatus
 }) {

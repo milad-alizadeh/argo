@@ -13,15 +13,36 @@ export const sessionListInputSchema = z.strictObject({
 
 const sessionListTitleSchema = z.strictObject({
   text: z.string(),
-  source: z.enum(['custom', 'vendor-preview', 'first-prompt']),
+  source: z.enum(['custom', 'summarised', 'first-prompt']),
 })
 
 export const sessionListRowSchema = z.strictObject({
   id: z.string().uuid(),
+  retiredIds: z.array(z.string().uuid()),
   harness: z.string().min(1),
+  posture: z.null(),
   title: sessionListTitleSchema.nullable(),
+  status: z.literal('unknown'),
+  entry: z.null(),
   cwd: z.string().nullable(),
-  updatedAt: z.number().int().nonnegative(),
+  branch: z.null(),
+  updatedAt: z.string().datetime(),
+  unreadableLines: z.literal(0),
+  originUnread: z.literal(false),
+  turnStartedAt: z.null(),
+  activity: z.null(),
+  plan: z.null(),
+  subagents: z.array(z.never()),
+  shell: z.array(z.never()),
+  pullRequest: z.null(),
+  ticket: z.null(),
+  archived: z.literal(false),
+  unread: z.literal(false),
+  turnConfiguration: z.strictObject({
+    model: z.null(),
+    effort: z.null(),
+    mode: z.null(),
+  }),
 })
 
 export const sessionListOutputSchema = z.strictObject({
@@ -39,7 +60,7 @@ type StoredSessionTitle = {
 
 function displayedTitle(row: StoredSessionTitle): z.infer<typeof sessionListTitleSchema> | null {
   if (row.customTitle !== null) return { text: row.customTitle, source: 'custom' }
-  if (row.preview !== null) return { text: row.preview, source: 'vendor-preview' }
+  if (row.preview !== null) return { text: row.preview, source: 'summarised' }
   if (row.firstPrompt !== null) return { text: row.firstPrompt, source: 'first-prompt' }
   return null
 }
@@ -71,10 +92,27 @@ export function sessionListProcedure(database: Database) {
         total,
         rows: storedRows.map((row) => ({
           id: row.id,
+          retiredIds: [],
           harness: row.harness,
+          posture: null,
           title: displayedTitle(row),
+          status: 'unknown' as const,
+          entry: null,
           cwd: row.cwd,
-          updatedAt: row.updatedAt,
+          branch: null,
+          updatedAt: new Date(row.updatedAt).toISOString(),
+          unreadableLines: 0 as const,
+          originUnread: false as const,
+          turnStartedAt: null,
+          activity: null,
+          plan: null,
+          subagents: [],
+          shell: [],
+          pullRequest: null,
+          ticket: null,
+          archived: false as const,
+          unread: false as const,
+          turnConfiguration: { model: null, effort: null, mode: null },
         })),
       }
     })

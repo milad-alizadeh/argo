@@ -2,7 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate, useParams } from 'react-router'
 import type { Cockpit } from '@/domains/projects/renderer'
-import type { SessionRosterRow } from '@/domains/sessions/renderer/model/models'
+import type { SessionRow } from '@/domains/sessions/renderer/model/models'
 import type { WorkspaceActions, WorkspaceCockpit } from '@/domains/workspaces/renderer'
 import type { CatalogReadResult } from '@/harnesses/catalog/catalog-read'
 import { Icon } from '@/platform/renderer/components/icon/icon'
@@ -32,15 +32,15 @@ import {
 } from '../composer/turn-configuration/turn-configuration'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import type { HarnessControl } from '../harness/harnesses'
-import type { SessionRoster } from '../types'
+import type { SessionListPage } from '../types'
 
 type SessionScreenDetailsProps = {
   permission: ReturnType<typeof import('../composer').useSessionPermission>
   questionPending: boolean
-  session: SessionRosterRow | null
+  session: SessionRow | null
   harness: HarnessControl
   selectedSessionId: string | null
-  roster: SessionRoster | null
+  roster: SessionListPage | null
   cockpit: Cockpit
   workspaceCockpit: WorkspaceCockpit
   workspaceActions: WorkspaceActions
@@ -215,7 +215,7 @@ function ReadySessionComposer({
   )
 }
 
-function handoffTitle(roster: SessionRoster | null, sessionId: string) {
+function handoffTitle(roster: SessionListPage | null, sessionId: string) {
   const row = roster?.sessions.find(({ id }) => id === sessionId)
   return row?.title?.text ?? sessionId
 }
@@ -228,7 +228,7 @@ function HandoffLink({
 }: {
   label: string
   sessionId: string
-  roster: SessionRoster | null
+  roster: SessionListPage | null
   onNavigate: (path: string) => void
 }) {
   const { projectId } = useParams()
@@ -251,7 +251,7 @@ export function SessionHandoffFacts({
   roster = null,
   onNavigate,
 }: Pick<SessionScreenDetailsProps, 'session'> & {
-  roster?: SessionRoster | null
+  roster?: SessionListPage | null
   onNavigate?: (path: string) => void
 }) {
   const { t } = useTranslation('sessions')

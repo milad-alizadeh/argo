@@ -10,16 +10,16 @@ import { RICH_MARKDOWN } from '../feed/content/feed-samples'
 import { INACTIVE_FEED_LIVE_FACTS } from '../feed/document/feed-live-facts'
 import { SessionInspector } from '../inspector/session-inspector'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
-import { sessionRosterRow, sessionShellCommand, sessionSubagent } from '../session-fixtures'
+import { sessionRow, sessionShellCommand, sessionSubagent } from '../session-fixtures'
 import { SessionList, type SessionListActions } from '../session-list/session-list'
-import type { Session, SessionFeed, SessionsListed } from '../types'
+import type { Session, SessionFeed, SessionListPage } from '../types'
 import { SessionWorkButtons } from '../work/session-work-buttons'
 import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
 import { SessionScreenView } from './session-screen-view'
 import { SessionShell } from './session-shell'
 
 const SESSION_ROSTER = [
-  sessionRosterRow({
+  sessionRow({
     id: 'composer-review',
     posture: 'external',
     title: { text: 'Finish Session composer review', source: 'first-prompt' },
@@ -55,7 +55,7 @@ const SESSION_ROSTER = [
     contextTokens: 54_000,
     spentTokens: 11_200,
   }),
-  sessionRosterRow({
+  sessionRow({
     id: 'shortcut-review',
     harness: 'codex',
     posture: 'live',
@@ -68,7 +68,7 @@ const SESSION_ROSTER = [
     contextTokens: 21_000,
     spentTokens: 4_600,
   }),
-  sessionRosterRow({
+  sessionRow({
     id: 'feed-review',
     posture: 'external',
     title: { text: 'Review transcript rendering', source: 'custom' },
@@ -169,18 +169,12 @@ function withListedSessions(sessions: Session[]) {
     ...before,
     listSessions: async () =>
       ({
-        version: 1,
-        type: 'session.listed',
-        requestId: 'screen-review-sessions',
         sessions,
-        filesFound: sessions.length,
-        filesRead: sessions.length,
-        filesUnreadable: 0,
-        filesParsed: 0,
-        nextCursor: null,
+        total: sessions.length,
+        nextPage: null,
         historyComplete: true,
         partialFailures: [],
-      }) satisfies SessionsListed,
+      }) satisfies SessionListPage,
   }
   return () => {
     window.argo = before

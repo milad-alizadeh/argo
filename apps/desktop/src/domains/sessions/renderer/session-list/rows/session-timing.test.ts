@@ -1,11 +1,11 @@
 import { expect, test } from 'bun:test'
-import { sessionRosterRow } from '../../session-fixtures'
+import { sessionRow } from '../../session-fixtures'
 import { sessionTiming } from './session-timing'
 
 const NOW = Date.parse('2026-09-14T12:00:00.000Z')
 
 test('shows the current Turn duration for a running Session', () => {
-  const session = sessionRosterRow({
+  const session = sessionRow({
     id: 'running',
     posture: 'live',
     title: null,
@@ -18,7 +18,7 @@ test('shows the current Turn duration for a running Session', () => {
 })
 
 test('shows recency instead of accumulated lifetime for an idle Session', () => {
-  const session = sessionRosterRow({
+  const session = sessionRow({
     id: 'idle',
     posture: 'live',
     title: null,

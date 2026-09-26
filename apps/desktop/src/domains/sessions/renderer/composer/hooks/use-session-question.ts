@@ -6,7 +6,7 @@ import {
   throwSessionContractError,
   throwUnexpectedSessionReply,
 } from '../../session-contract-error'
-import { invalidateSessionRoster } from '../../session-queries'
+import { invalidateSessionList } from '../../session-queries'
 
 // A pending question already reaches the renderer through the Feed's own `ask` row (tool-feed.ts),
 // so this hook only decides — there is nothing to poll (unlike `useSessionPermission`).
@@ -18,7 +18,7 @@ export function useSessionQuestion(sessionId: string | null) {
     try {
       await decision.mutateAsync({ questionId, answers })
       setFailure(null)
-      await invalidateSessionRoster(queryClient)
+      await invalidateSessionList(queryClient)
       return true
     } catch (error) {
       setFailure({

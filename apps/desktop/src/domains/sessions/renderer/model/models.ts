@@ -139,14 +139,14 @@ export const sessionTurnConfigurationSchema = z.strictObject({
 })
 export type SessionTurnConfiguration = z.infer<typeof sessionTurnConfigurationSchema>
 
-export const sessionRosterRowSchema = z.strictObject({
+export const sessionRowSchema = z.strictObject({
   id: identifierSchema,
   retiredIds: z.array(identifierSchema),
   harness: identifierSchema,
-  posture: sessionPostureSchema,
+  posture: sessionPostureSchema.nullable(),
   title: sessionTitleSchema.nullable(),
   status: sessionStatusSchema,
-  entry: sessionEntrySchema,
+  entry: sessionEntrySchema.nullable(),
   cwd: z.string().nullable(),
   branch: z.string().nullable(),
   locked: z.boolean().optional(),
@@ -175,10 +175,10 @@ export const sessionRosterRowSchema = z.strictObject({
   handoffFrom: identifierSchema.nullable().optional(),
   turnConfiguration: sessionTurnConfigurationSchema,
 })
-export type SessionRosterRow = z.infer<typeof sessionRosterRowSchema>
+export type SessionRow = z.infer<typeof sessionRowSchema>
 
-export function currentSessionId<Session extends Pick<SessionRosterRow, 'id' | 'retiredIds'>>(
-  sessions: Session[],
+export function currentSessionId<Session extends Pick<SessionRow, 'id' | 'retiredIds'>>(
+  sessions: readonly Session[],
   rememberedId: string,
 ): string | null {
   return (
@@ -188,11 +188,11 @@ export function currentSessionId<Session extends Pick<SessionRosterRow, 'id' | '
   )
 }
 
-// The Roster's own order (#1593, #2239): newest-first by `updatedAt`, shared by every read that
+// The Session list order (#1593, #2239): newest-first by `updatedAt`, shared by every read that
 // re-sorts a set of rows rather than trusting an already-ordered source.
 export function newestFirst(
-  left: Pick<SessionRosterRow, 'updatedAt'>,
-  right: Pick<SessionRosterRow, 'updatedAt'>,
+  left: Pick<SessionRow, 'updatedAt'>,
+  right: Pick<SessionRow, 'updatedAt'>,
 ): number {
   return (right.updatedAt ?? '').localeCompare(left.updatedAt ?? '')
 }

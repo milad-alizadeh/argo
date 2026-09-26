@@ -1,13 +1,13 @@
 import { type InfiniteData, InfiniteQueryObserver, QueryClient } from '@tanstack/react-query'
 import { afterEach, describe, expect, test, vi } from 'vitest'
-import type { SessionRoster } from '../../types'
+import type { SessionListPage } from '../../types'
 import { sessionListQuery } from './session-list-query'
 
 const originalWindow = globalThis.window
 
 type SessionListObserver = {
   fetchNextPage: () => Promise<unknown>
-  getCurrentResult: () => { data: InfiniteData<SessionRoster> | undefined }
+  getCurrentResult: () => { data: InfiniteData<SessionListPage> | undefined }
   refetch: () => Promise<unknown>
 }
 
@@ -23,10 +23,27 @@ function page(
     rows: [
       {
         id: `00000000-0000-4000-8000-00000000000${pageNumber}`,
+        retiredIds: [],
         harness: 'claude',
-        title: { text: title, source: 'vendor-preview' as const },
+        posture: null,
+        title: { text: title, source: 'summarised' as const },
+        status: 'unknown' as const,
+        entry: null,
         cwd: '/work/argo',
-        updatedAt: options.updatedAt ?? pageNumber,
+        branch: null,
+        updatedAt: new Date(options.updatedAt ?? pageNumber).toISOString(),
+        unreadableLines: 0 as const,
+        originUnread: false as const,
+        turnStartedAt: null,
+        activity: null,
+        plan: null,
+        subagents: [],
+        shell: [],
+        pullRequest: null,
+        ticket: null,
+        archived: false as const,
+        unread: false as const,
+        turnConfiguration: { model: null, effort: null, mode: null },
       },
     ],
   }
@@ -85,8 +102,8 @@ describe('reading numbered Session pages', () => {
 
   test('keeps the published list when an equivalent saved page is read again', async () => {
     withSessionPages(page(1, 'Saved title'), page(1, 'Saved title'))
-    let first: InfiniteData<SessionRoster> | undefined
-    let second: InfiniteData<SessionRoster> | undefined
+    let first: InfiniteData<SessionListPage> | undefined
+    let second: InfiniteData<SessionListPage> | undefined
 
     await observeSessionList(async (observer) => {
       await observer.refetch()
@@ -100,7 +117,7 @@ describe('reading numbered Session pages', () => {
 
   test('converts persisted timestamps without exposing database-only identity', async () => {
     withSessionPages(page(1, 'Saved title', { total: 1, updatedAt: 1_000 }))
-    let result: SessionRoster | undefined
+    let result: SessionListPage | undefined
 
     await observeSessionList(async (observer) => {
       await observer.refetch()

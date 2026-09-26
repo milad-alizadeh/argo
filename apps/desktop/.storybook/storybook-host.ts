@@ -1,5 +1,5 @@
 import { DEFAULT_AUTO_COMPACT_LIMIT } from '../src/domains/sessions/renderer/composer/context-window/codex-compaction'
-import { sessionRosterRow } from '../src/domains/sessions/renderer/session-fixtures'
+import { sessionRow } from '../src/domains/sessions/renderer/session-fixtures'
 import { subscribeToStorybookCommands } from './storybook-commands'
 import { storybookHarnessSignInProcedures } from './storybook-harness-signin'
 import { storybookProjectProcedures } from './storybook-projects'
@@ -11,7 +11,7 @@ import { ticketsHost } from './tickets-host'
 // the zoom a story is drawn at.
 export const host = window
 let codexAutoCompactLimit = DEFAULT_AUTO_COMPACT_LIMIT
-const storybookSession = sessionRosterRow({
+const storybookSession = sessionRow({
   id: 'storybook-session',
   posture: 'external',
   title: { text: 'Storybook Session', source: 'first-prompt' },
@@ -23,6 +23,12 @@ const procedureHandlers = (): StorybookProcedureHandlers => {
     ...storybookProjectProcedures,
     ...storybookHarnessSignInProcedures,
     accountList: ticketsHost.accountList,
+    'sessions.list': (input: { page: number; pageSize: number }) => ({
+      page: input.page,
+      pageSize: input.pageSize,
+      total: 1,
+      rows: input.page === 1 ? [storybookSession] : [],
+    }),
   }
 }
 host.argo = {
@@ -38,20 +44,6 @@ host.argo = {
     return Promise.resolve(codexAutoCompactLimit)
   },
   onCommand: subscribeToStorybookCommands,
-  listSessions: () =>
-    Promise.resolve({
-      version: 1,
-      type: 'session.listed',
-      requestId: 'storybook-sessions',
-      sessions: [storybookSession],
-      filesFound: 1,
-      filesRead: 1,
-      filesUnreadable: 0,
-      filesParsed: 0,
-      nextCursor: null,
-      historyComplete: true,
-      partialFailures: [],
-    }),
   readSessionFeed: (request: { sessionId: string }) =>
     Promise.resolve({
       version: 1,

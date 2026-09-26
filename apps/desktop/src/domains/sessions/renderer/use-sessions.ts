@@ -6,20 +6,20 @@ import { retrySessionFeed, sessionFeedQuery } from './feed/session-feed-query'
 import type { SessionContractError } from './session-contract-error'
 import { reportCodexFailure } from './session-list/codex-failure-notice'
 import { sessionListQuery } from './session-list/rows/session-list-query'
-import { invalidateSessionRoster } from './session-queries'
+import { invalidateSessionList } from './session-queries'
 import type { SessionFeed, SessionId } from './types'
 
 function useSessionListQuery(enabled: boolean) {
   const query = useInfiniteQuery(sessionListQuery(enabled))
 
   const lastPage = query.data?.pages.at(-1)
-  const roster = useMemo(() => {
+  const sessionList = useMemo(() => {
     if (lastPage === undefined) return null
     return { ...lastPage, sessions: query.data?.pages.flatMap((page) => page.sessions) ?? [] }
   }, [lastPage, query.data?.pages])
   return {
     query,
-    roster,
+    sessionList,
     hasMore: query.hasNextPage,
     isFetchingMore: query.isFetchingNextPage,
     fetchMore: useCallback(() => {
@@ -53,23 +53,23 @@ export function useConsecutiveFeedFailures(
 
 // The main column always reads the Session's own Feed. A Subagent's Feed is a separate document
 // read beside it, drawn in the inspector, so opening one never takes the Session's away (#1582).
-// A Session that only exists as an optimistic Roster row has no backend record to read a feed
+// A Session that only exists as an optimistic Session row has no backend record to read a feed
 // for yet (#2109); the backend is asked only once the id is a real one.
-// `rosterEnabled` lets a caller that only sometimes needs the roster (a Ticket's Linked
+// `sessionListEnabled` lets a caller that only sometimes needs the list (a Ticket's Linked
 // Sessions, unread until a Ticket is selected) skip the fetch rather than pull the whole
-// roster in for a result it may throw away.
-export function useSessions(selectedSessionId: SessionId | null, rosterEnabled = true) {
+// list in for a result it may throw away.
+export function useSessions(selectedSessionId: SessionId | null, sessionListEnabled = true) {
   const queryClient = useQueryClient()
   const { t } = useTranslation('sessions')
   const { add } = useToastManager()
   const selectedFeedId = selectedSessionId
   const {
-    query: roster,
-    roster: rosterPage,
+    query: sessionListQueryResult,
+    sessionList: sessionListPage,
     hasMore: hasMoreSessions,
     isFetchingMore: isFetchingMoreSessions,
     fetchMore: fetchMoreSessions,
-  } = useSessionListQuery(rosterEnabled)
+  } = useSessionListQuery(sessionListEnabled)
   const feedQuery = sessionFeedQuery(queryClient, selectedFeedId, null)
   const feed = useQuery<SessionFeed | null, SessionContractError>(feedQuery)
   const failedFeedReads = useConsecutiveFeedFailures(selectedFeedId, feed)
@@ -80,25 +80,25 @@ export function useSessions(selectedSessionId: SessionId | null, rosterEnabled =
     return () => void window.argo.cancelSessionFeed({ sessionId: selectedFeedId })
   }, [selectedFeedId])
 
-  const rosterData = roster.error === null ? rosterPage : null
+  const sessionList = sessionListQueryResult.error === null ? sessionListPage : null
 
   // A partial Codex failure must leave Claude usable. One toast marks the outage for this app run.
   useEffect(() => {
     reportCodexFailure(
-      rosterData?.partialFailures ?? [],
+      sessionList?.partialFailures ?? [],
       {
         title: t('sessionList.sourceFailed', { harness: 'Codex' }),
         description: t('sessionList.codexSourceFailedDescription'),
       },
       (notice) => add({ ...notice, type: 'error', priority: 'high' }),
     )
-  }, [add, rosterData?.partialFailures, t])
+  }, [add, sessionList?.partialFailures, t])
 
   const feedError = failedFeedReads <= 1 ? null : feed.error
 
   return {
-    roster: rosterData,
-    rosterError: roster.error,
+    sessionList,
+    sessionListError: sessionListQueryResult.error,
     // A poll racing the transcript another live process is actively writing can fail once and
     // recover on the next, whether or not a prior read already landed: the first open of an
     // actively driven Session races the same writer every other poll does (#2053, #2071).
@@ -108,7 +108,7 @@ export function useSessions(selectedSessionId: SessionId | null, rosterEnabled =
     hasMoreSessions,
     isFetchingMoreSessions,
     fetchMoreSessions,
-    reread: () => invalidateSessionRoster(queryClient),
+    reread: () => invalidateSessionList(queryClient),
     // Cancel a read that never answers (#2102), because TanStack reuses a pending query without cached data.
     retryFeed: () => void retrySessionFeed(queryClient, feedQuery.queryKey, feed.refetch),
   }

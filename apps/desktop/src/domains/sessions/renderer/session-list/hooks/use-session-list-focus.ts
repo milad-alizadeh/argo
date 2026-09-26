@@ -1,10 +1,10 @@
 import { type RefObject, useLayoutEffect, useState } from 'react'
 import { currentSessionId } from '@/domains/sessions/renderer/model/models'
-import type { SessionId, SessionsListed } from '../../types'
+import type { Session, SessionId } from '../../types'
 
 export function useSessionListFocus(
   sidebar: RefObject<HTMLElement | null>,
-  visible: SessionsListed['sessions'],
+  visible: readonly Session[],
   selectedSessionId: SessionId | null,
 ) {
   const [focusedSessionId, setFocusedSessionId] = useState<SessionId | null>(null)

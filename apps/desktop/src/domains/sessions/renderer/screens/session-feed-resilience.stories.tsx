@@ -4,11 +4,11 @@ import { expect, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { sessionError } from '@/domains/sessions/api/session-error'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { sessionRosterRow } from '../session-fixtures'
+import { sessionRow } from '../session-fixtures'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import { SessionScreenView } from './session-screen-view'
 
-const session = sessionRosterRow({
+const session = sessionRow({
   id: 'flaky-feed-session',
   posture: 'external',
   title: { text: 'Read the transcript through a flaky poll', source: 'first-prompt' },

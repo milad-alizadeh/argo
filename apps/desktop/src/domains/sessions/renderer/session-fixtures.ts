@@ -1,11 +1,11 @@
-// Session roster rows the Sessions stories draw.
+// Session rows the Sessions stories draw.
 import type {
-  SessionRosterRow,
+  SessionRow,
   SessionShellCommand,
   SessionSubagent,
 } from '@/domains/sessions/renderer/model/models'
 
-function rosterRow(overrides: Partial<SessionRosterRow> = {}): SessionRosterRow {
+function listedSession(overrides: Partial<SessionRow> = {}): SessionRow {
   return {
     id: 'session-one',
     retiredIds: [],
@@ -55,9 +55,8 @@ export function sessionSubagent(
   return { label: null, state: 'running', startedAt: null, endedAt: null, ...overrides }
 }
 
-export function sessionRosterRow(
-  overrides: Partial<SessionRosterRow> &
-    Pick<SessionRosterRow, 'id' | 'cwd' | 'posture' | 'status' | 'title'>,
-): SessionRosterRow {
-  return rosterRow({ branch: 'main', ...overrides })
+export function sessionRow(
+  overrides: Partial<SessionRow> & Pick<SessionRow, 'id' | 'cwd' | 'posture' | 'status' | 'title'>,
+): SessionRow {
+  return listedSession({ branch: 'main', ...overrides })
 }

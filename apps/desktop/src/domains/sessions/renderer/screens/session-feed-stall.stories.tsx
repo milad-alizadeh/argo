@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { sessionRosterRow } from '../session-fixtures'
+import { sessionRow } from '../session-fixtures'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import { SessionScreenView } from './session-screen-view'
 
@@ -12,7 +12,7 @@ import { SessionScreenView } from './session-screen-view'
 // (`stableChain`, domains/sessions/main/feed-cache.ts), so a transcript a real terminal is still writing
 // holds the reply open forever. This fixture is that reply, and the play function reads what the
 // window does while it is open.
-const stalled = sessionRosterRow({
+const stalled = sessionRow({
   id: 'stalled-feed-session',
   posture: 'external',
   title: { text: 'A transcript still being written', source: 'first-prompt' },
@@ -20,7 +20,7 @@ const stalled = sessionRosterRow({
   cwd: '/storybook/argo',
 })
 
-const other = sessionRosterRow({
+const other = sessionRow({
   id: 'other-session',
   posture: 'external',
   title: { text: 'Another Session to switch to', source: 'first-prompt' },

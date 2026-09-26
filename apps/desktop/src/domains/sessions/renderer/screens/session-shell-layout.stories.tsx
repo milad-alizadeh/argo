@@ -2,10 +2,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { INACTIVE_FEED_LIVE_FACTS } from '../feed/document/feed-live-facts'
-import { sessionRosterRow } from '../session-fixtures'
+import { sessionRow } from '../session-fixtures'
 import { SessionShell } from './session-shell'
 
-const session = sessionRosterRow({
+const session = sessionRow({
   id: '01K5S9WHWCG1S9K3K88P4JBQBP',
   posture: 'external',
   status: 'idle',

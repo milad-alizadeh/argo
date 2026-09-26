@@ -147,7 +147,7 @@ test('chooses custom title, vendor preview, then first prompt without reading hi
       result.rows.map(({ title }) => title),
       [
         { text: 'Custom title', source: 'custom' },
-        { text: 'Vendor preview', source: 'vendor-preview' },
+        { text: 'Vendor preview', source: 'summarised' },
         { text: 'First prompt', source: 'first-prompt' },
       ],
     )

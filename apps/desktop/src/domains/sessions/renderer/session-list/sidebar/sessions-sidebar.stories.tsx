@@ -3,35 +3,29 @@ import { useState } from 'react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { queryClient } from '@/platform/renderer/trpc-client'
-import { sessionRosterRow, sessionSubagent } from '../../session-fixtures'
-import type { SessionError, SessionId, SessionsListed } from '../../types'
+import { sessionRow, sessionSubagent } from '../../session-fixtures'
+import type { SessionError, SessionId, SessionListPage } from '../../types'
 import { SessionList, type SessionListActions } from '../session-list'
 
-const session = sessionRosterRow({
+const session = sessionRow({
   id: 'prose',
   posture: 'external',
   title: { text: 'Read the Session transcript', source: 'first-prompt' },
   status: 'idle',
   cwd: '/workspace/argo',
   subagents: [sessionSubagent({ id: 'interface-review', label: 'Interface review' })],
-}) satisfies SessionsListed['sessions'][number]
+})
 
 const listed = {
-  version: 1,
-  type: 'session.listed',
-  requestId: 'storybook-sessions',
   sessions: [
     session,
     { ...session, id: 'second-session', title: { text: 'A second Session', source: 'summarised' } },
   ],
-  filesFound: 1,
-  filesRead: 1,
-  filesUnreadable: 0,
-  filesParsed: 0,
-  nextCursor: null,
+  total: 2,
+  nextPage: null,
   historyComplete: true,
   partialFailures: [],
-} satisfies SessionsListed
+} satisfies SessionListPage
 
 const readFailure = {
   version: 1,
@@ -41,17 +35,35 @@ const readFailure = {
   message: 'Argo could not read these Sessions.',
 } satisfies SessionError
 
-function listedReply(sessionList: SessionsListed): SessionsListed {
+function listedReply(sessionList: SessionListPage): SessionListPage {
   return sessionList
 }
 
-// The SessionList reads its own Session list now (#2284), so every story that used to hand it a
-// `sessionList` prop instead stands one window.argo.listSessions in for the read. The active SessionList
-// stories share this seam with the Archive stories below it, which already stub their own read
-// the same way.
-function withSessionListHost(handler: (request: { cursor: string | null }) => Promise<unknown>) {
+function sessionListResult(sessionList: SessionListPage, page: number, pageSize: number) {
+  return {
+    page,
+    pageSize,
+    total: sessionList.total,
+    rows: sessionList.sessions,
+  }
+}
+
+// The active Session list reads numbered pages through the typed tRPC path. Archive stories keep
+// their separate preload seam until that reader moves in its own slice.
+function withSessionListHost(
+  handler: (request: { page: number; pageSize: number }) => Promise<SessionListPage | SessionError>,
+) {
   const before = window.argo
-  window.argo = { ...before, listSessions: handler as typeof before.listSessions }
+  window.argo = {
+    ...before,
+    trpc: fn(async (request) => {
+      if (request.path !== 'sessions.list') return before.trpc(request)
+      const input = request.input as { page: number; pageSize: number }
+      const sessionList = await handler(input)
+      if (sessionList.type === 'session.error') throw new Error(sessionList.message)
+      return { result: { data: sessionListResult(sessionList, input.page, input.pageSize) } }
+    }) as typeof before.trpc,
+  }
   return () => {
     window.argo = before
   }
@@ -59,21 +71,15 @@ function withSessionListHost(handler: (request: { cursor: string | null }) => Pr
 
 // A Session list refresh rebuilds its array even when nothing changed, so a rename or focused row
 // must survive a same-content rebuild rather than only the array a rename dialog closed against.
-function withSessionsHost(initialSessions: SessionsListed['sessions']) {
-  const before = window.argo
+function withSessionsHost(initialSessions: SessionListPage['sessions']) {
   let sessions = initialSessions
-  window.argo = {
-    ...before,
-    listSessions: () => Promise.resolve(listedReply({ ...listed, sessions })),
-  }
+  const restore = withSessionListHost(async () => listedReply({ ...listed, sessions }))
   return {
-    repoll(next: SessionsListed['sessions']) {
+    repoll(next: SessionListPage['sessions']) {
       sessions = next
       void queryClient.invalidateQueries({ queryKey: ['sessions'] })
     },
-    restore: () => {
-      window.argo = before
-    },
+    restore,
   }
 }
 
@@ -81,7 +87,7 @@ type SessionListHarnessArgs = SessionListActions & { selectedSessionId: SessionI
 
 // The presentational seam Storybook drives: SessionList's own props, plus the routing a real caller
 // gives it. Project scoping plays no part in what a story renders, so every story reads the same
-// null root and tells the Session list apart by what window.argo.listSessions answers instead.
+// null root and tells the Session list apart by what `sessions.list` answers instead.
 function SessionListHarness({ selectedSessionId, ...actions }: SessionListHarnessArgs) {
   return <SessionList actions={actions} projectRoot={null} selectedSessionId={selectedSessionId} />
 }
@@ -162,7 +168,6 @@ export const UnavailableHistoryRecovers: Story = {
     }
     window.argo = {
       ...before,
-      listSessions: async () => listedReply(listed),
       readSessionFeed: async (request) =>
         historyAvailable || request.sessionId !== session.id
           ? {
@@ -928,8 +933,9 @@ function manySessionsPage(index: number) {
       id: `session-${index}-${row}`,
       title: { text: `Session number ${row}`, source: 'first-prompt' as const },
     })),
-    nextCursor: index === 0 ? 'page-2' : null,
-  } satisfies SessionsListed
+    total: 80,
+    nextPage: index === 0 ? 2 : null,
+  } satisfies SessionListPage
 }
 
 // The status filter is one store for the whole window, and ArchiveRestored widens it, so a story
@@ -947,14 +953,14 @@ function sessionListScroll(canvasElement: HTMLElement) {
 export const GrowsOnlyWhenTheReaderReachesTheEnd: Story = {
   beforeEach: () => {
     showingActiveSessions()
-    const listSessions = fn(async ({ cursor }: { cursor: string | null }) =>
-      listedReply(manySessionsPage(cursor === null ? 0 : 1)),
+    const listSessions = fn(async ({ page }: { page: number }) =>
+      listedReply(manySessionsPage(page - 1)),
     )
     return withSessionListHost(listSessions)
   },
   play: async ({ canvasElement }) => {
     const scroll = await waitFor(() => sessionListScroll(canvasElement))
-    const listSessions = window.argo.listSessions as ReturnType<typeof fn>
+    const listSessions = window.argo.trpc as ReturnType<typeof fn>
     await expect(scroll.scrollTop).toBe(0)
     await expect(listSessions).toHaveBeenCalledTimes(1)
     scroll.scrollTop = scroll.scrollHeight
@@ -962,7 +968,9 @@ export const GrowsOnlyWhenTheReaderReachesTheEnd: Story = {
     // One arrival of the sentinel asks for one page: the callback's identity changes with the
     // cursor the read returned, which used to ask again for as long as the sentinel stayed in view.
     await waitFor(() => expect(listSessions).toHaveBeenCalledTimes(2))
-    await expect(listSessions).toHaveBeenCalledWith({ projectRoot: null, cursor: 'page-2' })
+    await expect(listSessions).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'sessions.list', input: { page: 2, pageSize: 30 } }),
+    )
     await new Promise((resolve) => setTimeout(resolve, 300))
     await expect(listSessions).toHaveBeenCalledTimes(2)
   },
@@ -973,13 +981,13 @@ export const GrowsOnlyWhenTheReaderReachesTheEnd: Story = {
 export const AsksOnceWhenTheWindowDoesNotFillTheViewport: Story = {
   beforeEach: () => {
     showingActiveSessions()
-    const listSessions = fn(async ({ cursor }: { cursor: string | null }) =>
-      listedReply(cursor === null ? { ...listed, nextCursor: 'page-2' } : listed),
+    const listSessions = fn(async ({ page }: { page: number }) =>
+      listedReply(page === 1 ? { ...listed, total: 3, nextPage: 2 } : listed),
     )
     return withSessionListHost(listSessions)
   },
   play: async () => {
-    const listSessions = window.argo.listSessions as ReturnType<typeof fn>
+    const listSessions = window.argo.trpc as ReturnType<typeof fn>
     await waitFor(() => expect(listSessions).toHaveBeenCalledTimes(2))
     await new Promise((resolve) => setTimeout(resolve, 300))
     await expect(listSessions).toHaveBeenCalledTimes(2)
@@ -991,8 +999,8 @@ export const AsksOnceWhenTheWindowDoesNotFillTheViewport: Story = {
 export const GrowingTheWindow: Story = {
   beforeEach: () => {
     showingActiveSessions()
-    return withSessionListHost(async ({ cursor }) =>
-      cursor === null
+    return withSessionListHost(async ({ page }) =>
+      page === 1
         ? listedReply(manySessionsPage(0))
         : new Promise(() => {
             // The second page never lands, so the Session list stays on its loading-more row.

@@ -21,8 +21,7 @@ export type { SessionListActions } from './rows'
 const NOOP = () => {}
 
 function useSessionListRead() {
-  const { roster, rosterError, ...read } = useSessions(null, true)
-  return { ...read, sessionList: roster, sessionListError: rosterError }
+  return useSessions(null, true)
 }
 
 function useSessionListRows(options: {

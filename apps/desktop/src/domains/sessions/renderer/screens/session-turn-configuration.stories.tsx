@@ -4,7 +4,7 @@ import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionTurnConfiguration } from '@/domains/sessions/renderer/model/models'
 import { claudeComposerModelCatalogFixture } from '../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
-import { sessionRosterRow } from '../session-fixtures'
+import { sessionRow } from '../session-fixtures'
 import { SessionScreenView } from './session-screen-view'
 
 const SESSION_ID = 'live-turn-configuration'
@@ -13,7 +13,7 @@ const NEXT_TURN = '2026-09-13T10:01:00.000Z'
 
 // A live Claude Session whose next Turn runs on whatever `reply` says the Harness used.
 function liveSession(reply: SessionTurnConfiguration, sent: unknown[]) {
-  const row = sessionRosterRow({
+  const row = sessionRow({
     id: SESSION_ID,
     posture: 'live',
     title: { text: 'Turn turnConfiguration Session', source: 'first-prompt' },

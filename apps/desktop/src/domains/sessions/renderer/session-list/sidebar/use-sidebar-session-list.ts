@@ -1,5 +1,5 @@
 import { type RefObject, useCallback, useMemo, useState } from 'react'
-import type { Session, SessionError, SessionId, SessionRoster, SessionsListed } from '../../types'
+import type { Session, SessionError, SessionId, SessionListPage } from '../../types'
 import {
   useSessionListStatus,
   useSetSessionListStatus,
@@ -9,7 +9,7 @@ import { useSessionListSelection } from '../hooks/use-session-list-selection'
 import { sessionListState } from '../rows/session-list-status-row'
 import { useSessionSearch } from './use-session-search'
 
-const NO_SESSIONS: SessionsListed['sessions'] = []
+const NO_SESSIONS: Session[] = []
 const NO_TITLES: Record<string, string> = {}
 
 export function sessionListTitledSearchResults(
@@ -23,7 +23,7 @@ export function sessionListTitledSearchResults(
 // A renamed title is shown locally, keyed by session id, until a Session list read carries the same
 // title back through the transcript. Keying on the Session list array's identity instead lets any
 // equivalent read revert the row before the renamed title lands (#2290).
-function pendingRenames(renamed: Record<string, string>, sessions: SessionsListed['sessions']) {
+function pendingRenames(renamed: Record<string, string>, sessions: readonly Session[]) {
   const pending: Record<string, string> = {}
   for (const [sessionId, title] of Object.entries(renamed)) {
     const landed = sessions.find((session) => session.id === sessionId)
@@ -51,7 +51,7 @@ export function useSidebarSessionList({
   onArchiveSelected: (sessionIds: SessionId[]) => void
   onSelect: (sessionId: SessionId, retiredIds?: SessionId[]) => void
   projectRoot: string | null
-  sessionList: SessionRoster | null
+  sessionList: SessionListPage | null
   sessionListError: SessionError | null
   selectedSessionId: SessionId | null
   sidebar: RefObject<HTMLElement | null>

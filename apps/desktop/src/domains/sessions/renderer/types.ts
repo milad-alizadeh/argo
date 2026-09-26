@@ -1,26 +1,11 @@
 import type { SessionError } from '@/domains/sessions/api/session-error'
-import type { SessionFeedRow, SessionRosterRow } from '@/domains/sessions/renderer/model/models'
-
-// The renderer's current Roster state. The old request envelope has no consumer here.
-export type SessionsListed = {
-  version: 1
-  type: 'session.listed'
-  requestId: string
-  sessions: SessionRosterRow[]
-  partialFailures: { harness: string; code: string }[]
-  filesFound: number
-  filesRead: number
-  filesUnreadable: number
-  filesParsed: number
-  nextCursor: string | null
-  historyComplete: boolean
-}
+import type { SessionFeedRow, SessionRow } from '@/domains/sessions/renderer/model/models'
 
 export type SessionSearched = {
   version: 1
   type: 'session.searched'
   requestId: string
-  sessions: SessionRosterRow[]
+  sessions: SessionRow[]
   nextCursor: string | null
   historyComplete: boolean
 }
@@ -29,9 +14,9 @@ export type SessionArchiveListed = {
   version: 1
   type: 'session.archive.listed'
   requestId: string
-  sessions: SessionRosterRow[]
+  sessions: SessionRow[]
   nextCursor: string | null
-  restored: SessionRosterRow | null
+  restored: SessionRow | null
   historyComplete: boolean
 }
 
@@ -46,14 +31,14 @@ export type SessionFeed = {
 }
 
 export type { SessionError }
-export type SessionRoster = {
-  sessions: SessionRosterRow[]
+export type SessionListPage = {
+  sessions: SessionRow[]
   total: number
   nextPage: number | null
   historyComplete: boolean
   partialFailures: { harness: string; code: string }[]
 }
-export type Session = SessionRosterRow
+export type Session = SessionRow
 export type SessionId = Session['id']
 export type { SessionFeedRow }
 
