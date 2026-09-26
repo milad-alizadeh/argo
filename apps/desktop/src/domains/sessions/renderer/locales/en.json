@@ -7,11 +7,11 @@
   "readAgain": "Read again",
   "refreshSessions": "Refresh Sessions",
   "sync": {
-    "fetching": "Reading Claude Sessions…",
-    "saving": "Synced {{processed}} of {{total}} Claude Sessions",
-    "lastSynced": "Synced {{time}}",
-    "partial": "Skipped {{count}} Claude Sessions with unreadable metadata.",
-    "failed": "Could not sync Claude Sessions."
+    "fetching": "Syncing Sessions…",
+    "saving": "Syncing {{processed}} out of {{total}} Sessions",
+    "progress": "Session refresh progress",
+    "partial": "Skipped {{count}} Sessions with unreadable metadata.",
+    "failed": "Could not sync Sessions."
   },
   "newSession": "New Session",
   "identity": {

@@ -2,6 +2,7 @@ import { getSessionInfo, listSessions } from '@anthropic-ai/claude-agent-sdk'
 import { fromPromise } from 'xstate'
 import { z } from 'zod'
 import type { SyncResult } from '@/domains/sessions/main/sync/session-sync-machine'
+import { SESSION_CLAUDE_SYNC_FIXTURE_ENV } from '@/harnesses/proof-protocol'
 
 const claudeSessionSchema = z
   .object({
@@ -19,6 +20,33 @@ type ClaudeSessionRecord = SyncResult['records'][number]
 type ClaudeSessionReader = {
   list: () => Promise<unknown[]>
   get: (nativeId: string) => Promise<unknown>
+}
+
+function proofClaudeSessionReader(): ClaudeSessionReader | undefined {
+  const fixture = process.env[SESSION_CLAUDE_SYNC_FIXTURE_ENV]
+  if (fixture === undefined) return undefined
+  const parsed = z
+    .strictObject({ records: z.array(z.unknown()), delayMs: z.number().int().nonnegative() })
+    .parse(JSON.parse(fixture))
+  const pause = async () => {
+    if (parsed.delayMs > 0) await new Promise((resolve) => setTimeout(resolve, parsed.delayMs))
+  }
+  return {
+    list: async () => {
+      await pause()
+      return parsed.records
+    },
+    get: async (nativeId) => {
+      await pause()
+      return parsed.records.find(
+        (record) =>
+          typeof record === 'object' &&
+          record !== null &&
+          'sessionId' in record &&
+          record.sessionId === nativeId,
+      )
+    },
+  }
 }
 
 function systemClaudeSessionReader(): ClaudeSessionReader {
@@ -74,7 +102,7 @@ export const claudeSessionSyncActor = fromPromise<
 >(async ({ input }) => {
   let skipped = 0
   const records = await readClaudeSessions({
-    reader: input.reader ?? systemClaudeSessionReader(),
+    reader: input.reader ?? proofClaudeSessionReader() ?? systemClaudeSessionReader(),
     knownNativeIds: input.knownNativeIds,
     reportMalformed: () => {
       skipped += 1
