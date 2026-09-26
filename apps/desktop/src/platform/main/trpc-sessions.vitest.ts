@@ -51,7 +51,7 @@ test('registers the paged Session list under sessions.list', async () => {
   await expect(
     createAppRouter(dependencies)
       .createCaller({})
-      .sessions.list({ projectId: 'project-1', page: 1, pageSize: 30 }),
+      .sessions.list({ scope: 'project', projectId: 'project-1', page: 1, pageSize: 30 }),
   ).resolves.toMatchObject({
     page: 1,
     pageSize: 30,

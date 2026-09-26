@@ -2,7 +2,7 @@ import type { InfiniteData, UseInfiniteQueryOptions } from '@tanstack/react-quer
 import { sessionError } from '@/domains/sessions/api/session-error'
 import { trpcClient } from '@/platform/renderer/trpc-client'
 import { SessionContractError } from '../../session-contract-error'
-import { sessionListQueryKey } from '../../session-queries'
+import { globalSessionListQueryKey, sessionListQueryKey } from '../../session-queries'
 import type { SessionListPage } from '../../types'
 
 const SESSION_PAGE_SIZE = 30
@@ -33,21 +33,30 @@ export function sessionListQuery(
   return {
     queryKey:
       projectId === null
-        ? [...sessionListQueryKey('unselected', search)]
+        ? globalSessionListQueryKey(search)
         : sessionListQueryKey(projectId, search),
     staleTime: Infinity,
-    enabled: enabled && projectId !== null,
+    enabled,
     initialPageParam: 1,
     getNextPageParam: (page) => page.nextPage,
     retry: false,
-    queryFn: ({ pageParam }) =>
-      projectId === null
-        ? Promise.reject(new Error('A Project must be selected before Sessions can be listed.'))
-        : trpcClient.sessions.list
-            .query({ projectId, search, page: pageParam, pageSize: SESSION_PAGE_SIZE })
-            .then(sessionListPage)
-            .catch(() => {
-              throw new SessionContractError(sessionError('internal-error', null))
-            }),
+    queryFn: ({ pageParam }) => {
+      const input =
+        projectId === null
+          ? { scope: 'global' as const, search, page: pageParam, pageSize: SESSION_PAGE_SIZE }
+          : {
+              scope: 'project' as const,
+              projectId,
+              search,
+              page: pageParam,
+              pageSize: SESSION_PAGE_SIZE,
+            }
+      return trpcClient.sessions.list
+        .query(input)
+        .then(sessionListPage)
+        .catch(() => {
+          throw new SessionContractError(sessionError('internal-error', null))
+        })
+    },
   }
 }

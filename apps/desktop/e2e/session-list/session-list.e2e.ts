@@ -2,6 +2,7 @@ import type { BrowserContext, Locator, Page } from 'playwright-core'
 import { openDatabase } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
+import { sessionTicketLink } from '@/database/session-ticket-link/schema'
 import { expect, finishRecording, startRecording, test } from '../packaged-proof'
 import { launch, prepare } from '../projects/fixtures/project.fixture'
 
@@ -60,26 +61,41 @@ function addSavedSession(userData: string) {
 async function verifyTitleSearch(page: Page, sessionList: Locator) {
   const search = page.getByRole('textbox', { name: 'Search Sessions' })
   await search.fill('vendor preview')
-  await expect(page.getByRole('button', { name: /Vendor preview/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Linked Ticket title/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /Custom title/ })).toHaveCount(0)
   await expect(sessionList).toHaveAttribute('data-total', '1')
   await search.clear()
   await expect(sessionList).toHaveAttribute('data-total', '31')
 }
 
-test('shows saved numbered pages and keeps Argo-ID selection', async ({
-  root,
-  packagedApplication,
-  performanceProfile,
-}, testInfo) => {
-  const fixture = await prepare(root, packagedApplication)
-  const seeded = openDatabase(fixture.userData)
-  seeded
+function seedSessionList(userData: string, beta: string) {
+  const database = openDatabase(userData)
+  database
     .insert(project)
-    .values({ id: 'project-2', path: fixture.beta, commonDirectory: `${fixture.beta}/.git` })
+    .values({ id: 'project-2', path: beta, commonDirectory: `${beta}/.git` })
     .run()
-  seeded.insert(sessionTable).values(savedSessions()).run()
-  seeded
+  database.insert(sessionTable).values(savedSessions()).run()
+  database
+    .insert(sessionTable)
+    .values({
+      argoId: '00000000-0000-4000-8000-999999999998',
+      harness: 'codex',
+      nativeId: 'no-project',
+      firstPrompt: 'No Project Session',
+    })
+    .run()
+  database
+    .insert(sessionTicketLink)
+    .values({
+      sessionId: '00000000-0000-4000-8000-000000000002',
+      projectId: 'project-1',
+      ticketKey: '2765',
+      title: 'Linked Ticket title',
+      state: 'open',
+      createdAt: '2026-09-26T00:00:00.000Z',
+    })
+    .run()
+  database
     .insert(sessionTable)
     .values({
       argoId: '00000000-0000-4000-8000-999999999999',
@@ -89,7 +105,41 @@ test('shows saved numbered pages and keeps Argo-ID selection', async ({
       customTitle: 'Other Project Session',
     })
     .run()
-  seeded.$client.close()
+  database.$client.close()
+}
+
+async function verifyGlobalRows(page: Page) {
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        const reply = await window.argo.trpc({
+          id: 2765,
+          path: 'sessions.list',
+          input: { scope: 'global', search: '', page: 1, pageSize: 100 },
+          type: 'query',
+        })
+        if ('error' in reply) throw new Error('The global Session list failed.')
+        return reply.result.data
+      }),
+    )
+    .toMatchObject({
+      total: 33,
+      rows: expect.arrayContaining([
+        expect.objectContaining({
+          id: '00000000-0000-4000-8000-999999999998',
+          title: { text: 'No Project Session', source: 'first-prompt' },
+        }),
+      ]),
+    })
+}
+
+test('shows saved numbered pages and keeps Argo-ID selection', async ({
+  root,
+  packagedApplication,
+  performanceProfile,
+}, testInfo) => {
+  const fixture = await prepare(root, packagedApplication)
+  seedSessionList(fixture.userData, fixture.beta)
 
   const application = await launch(fixture, { PATH: '/usr/bin:/bin' })
   let traced: BrowserContext | undefined
@@ -98,11 +148,12 @@ test('shows saved numbered pages and keeps Argo-ID selection', async ({
     traced = await startRecording(performanceProfile, application, async () => page)
     const sessionList = page.getByRole('complementary', { name: 'Sessions' })
     await expect(page.getByRole('button', { name: /Custom title/ })).toBeVisible()
-    await expect(page.getByRole('button', { name: /Vendor preview/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Linked Ticket title/ })).toBeVisible()
     await expect(page.getByRole('button', { name: /First prompt/ })).toBeVisible()
     await expect(page.getByRole('button', { name: /Other Project Session/ })).toHaveCount(0)
     await expect(sessionList).toHaveAttribute('data-page-count', '1')
     await expect(sessionList).toHaveAttribute('data-total', '31')
+    await verifyGlobalRows(page)
     await verifyTitleSearch(page, sessionList)
     await page.locator('[data-slot="session-list-scroll"]').evaluate((element) => {
       element.scrollTop = element.scrollHeight

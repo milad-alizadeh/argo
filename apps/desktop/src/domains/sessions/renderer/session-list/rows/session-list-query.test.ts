@@ -51,9 +51,12 @@ function page(
   }
 }
 
-async function observeSessionList(read: (observer: SessionListObserver) => Promise<void>) {
+async function observeSessionList(
+  read: (observer: SessionListObserver) => Promise<void>,
+  projectId: string | null = 'project-1',
+) {
   const client = new QueryClient()
-  const options = sessionListQuery('project-1', true)
+  const options = sessionListQuery(projectId, true)
   const observer = new InfiniteQueryObserver(client, options)
   const unsubscribe = observer.subscribe(() => {})
   await read(observer)
@@ -73,6 +76,26 @@ function withSessionPages(...pages: ReturnType<typeof page>[]) {
 
 afterEach(() => {
   Object.defineProperty(globalThis, 'window', { configurable: true, value: originalWindow })
+})
+
+test('uses a global key and input that do not overlap a Project read', async () => {
+  const trpc = withSessionPages(page(1, 'Global Session', { total: 1 }))
+  let globalKey: readonly unknown[] | undefined
+  const projectKey = sessionListQuery('project-1', true).queryKey
+
+  await observeSessionList(async (observer) => {
+    await observer.refetch()
+  }, null).then(({ options }) => {
+    globalKey = options.queryKey
+  })
+
+  expect(globalKey).not.toEqual(projectKey)
+  expect(trpc).toHaveBeenCalledWith(
+    expect.objectContaining({
+      path: 'sessions.list',
+      input: { scope: 'global', search: '', page: 1, pageSize: 30 },
+    }),
+  )
 })
 
 describe('reading numbered Session pages', () => {
@@ -95,14 +118,14 @@ describe('reading numbered Session pages', () => {
       1,
       expect.objectContaining({
         path: 'sessions.list',
-        input: { projectId: 'project-1', search: '', page: 1, pageSize: 30 },
+        input: { scope: 'project', projectId: 'project-1', search: '', page: 1, pageSize: 30 },
       }),
     )
     expect(trpc).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
         path: 'sessions.list',
-        input: { projectId: 'project-1', search: '', page: 2, pageSize: 30 },
+        input: { scope: 'project', projectId: 'project-1', search: '', page: 2, pageSize: 30 },
       }),
     )
     expect(titles).toEqual(['First page', 'Second page'])

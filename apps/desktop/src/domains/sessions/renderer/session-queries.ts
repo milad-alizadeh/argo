@@ -3,6 +3,8 @@ import type { SessionId, SessionListPage } from './types'
 
 export const SESSION_REFRESH_MS = 500
 export const sessionListsQueryKey = ['sessions', 'list'] as const
+export const globalSessionListQueryKey = (search = '') =>
+  [...sessionListsQueryKey, 'global', search] as const
 export const sessionListQueryKey = (projectId: string, search = '') =>
   [...sessionListsQueryKey, projectId, search] as const
 // A Subagent's Feed is a document of its own, so it is its own query: switching between the
