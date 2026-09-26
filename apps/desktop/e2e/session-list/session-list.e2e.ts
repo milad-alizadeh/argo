@@ -114,6 +114,14 @@ test('shows saved numbered pages and keeps Argo-ID selection', async ({
     traced = await startRecording(performanceProfile, application, async () => page)
     const sessionList = page.getByRole('complementary', { name: 'Sessions' })
     await expect(page.getByRole('button', { name: /Custom title/ })).toBeVisible()
+    const codexSession = page.locator(
+      '[data-session-id="00000000-0000-4000-8000-000000000002"]',
+    )
+    await expect(codexSession).toBeVisible()
+    await expect(codexSession).toHaveAttribute(
+      'data-session-id',
+      '00000000-0000-4000-8000-000000000002',
+    )
     await expect(page.getByRole('button', { name: /Linked Ticket title/ })).toBeVisible()
     await expect(page.getByRole('button', { name: /First prompt/ })).toBeVisible()
     await expect(page.getByRole('button', { name: /Other Project Session/ })).toHaveCount(0)

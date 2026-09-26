@@ -2,12 +2,11 @@ import { randomUUID } from 'node:crypto'
 import type { ActorRefFrom } from 'xstate'
 import { z } from 'zod'
 import type { SessionSyncWorkerBridge } from '@/domains/sessions/main/sync/session-sync-worker-bridge'
-import type {
-  CodexRequest,
-  RequestParams,
-} from '@/harnesses/codex/app-server/codex-app-server-machine'
 import {
+  CODEX_THREAD_SOURCE_KINDS,
+  type CodexRequest,
   type codexAppServerMachine,
+  type RequestParams,
   requestCodexAppServer,
 } from '@/harnesses/codex/app-server/codex-app-server-machine'
 
@@ -16,6 +15,16 @@ export type CodexWorkerReadRequest = {
   <Result>(
     method: 'model/list',
     params: RequestParams['model/list'],
+    parse: (value: unknown) => Result,
+  ): Promise<Result>
+  <Result>(
+    method: 'thread/list',
+    params: RequestParams['thread/list'],
+    parse: (value: unknown) => Result,
+  ): Promise<Result>
+  <Result>(
+    method: 'thread/read',
+    params: RequestParams['thread/read'],
     parse: (value: unknown) => Result,
   ): Promise<Result>
   handlesWorkerMessage: (message: unknown) => boolean
@@ -40,16 +49,38 @@ export function createCodexSessionSyncWorkerBridge(
   }
 }
 
-const requestSchema = z.strictObject({
-  type: z.literal('codex-request'),
-  id: z.string().uuid(),
-  method: z.literal('model/list'),
-  params: z.strictObject({
-    cursor: z.string().optional(),
-    limit: z.number().int().positive().optional(),
-    includeHidden: z.boolean().optional(),
+const sourceKindSchema = z.enum(CODEX_THREAD_SOURCE_KINDS)
+const requestSchema = z.discriminatedUnion('method', [
+  z.strictObject({
+    type: z.literal('codex-request'),
+    id: z.string().uuid(),
+    method: z.literal('model/list'),
+    params: z.strictObject({
+      cursor: z.string().optional(),
+      limit: z.number().int().positive().optional(),
+      includeHidden: z.boolean().optional(),
+    }),
   }),
-})
+  z.strictObject({
+    type: z.literal('codex-request'),
+    id: z.string().uuid(),
+    method: z.literal('thread/list'),
+    params: z.strictObject({
+      cursor: z.string().optional(),
+      limit: z.number().int().positive().optional(),
+      sortKey: z.enum(['created_at', 'updated_at', 'recency_at']).optional(),
+      sortDirection: z.enum(['asc', 'desc']).optional(),
+      sourceKinds: z.array(sourceKindSchema).optional(),
+      archived: z.boolean().optional(),
+    }),
+  }),
+  z.strictObject({
+    type: z.literal('codex-request'),
+    id: z.string().uuid(),
+    method: z.literal('thread/read'),
+    params: z.strictObject({ threadId: z.string().min(1), includeTurns: z.literal(false) }),
+  }),
+])
 const responseSchema = z.union([
   z.strictObject({ type: z.literal('codex-response'), id: z.string().uuid(), result: z.unknown() }),
   z.strictObject({ type: z.literal('codex-response'), id: z.string().uuid(), error: z.string() }),

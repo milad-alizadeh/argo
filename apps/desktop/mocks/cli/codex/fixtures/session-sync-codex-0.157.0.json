@@ -1,0 +1,60 @@
+{
+  "version": "0.157.0",
+  "params": {
+    "limit": 2,
+    "sortKey": "updated_at",
+    "sourceKinds": ["cli", "vscode", "appServer"],
+    "archived": false
+  },
+  "pages": [
+    {
+      "data": [
+        {
+          "id": "thread-recorded-page-1-1",
+          "updatedAt": 1790444998,
+          "name": "Recorded thread",
+          "preview": "Recorded preview",
+          "cwd": "/recorded/workspace"
+        },
+        {
+          "id": "thread-recorded-page-1-2",
+          "updatedAt": 1790444500,
+          "name": "Recorded thread",
+          "preview": "Recorded preview",
+          "cwd": "/recorded/workspace"
+        }
+      ],
+      "nextCursor": "2026-09-26T17:41:40.22Z",
+      "backwardsCursor": null
+    },
+    {
+      "data": [
+        {
+          "id": "thread-recorded-page-2-1",
+          "updatedAt": 1790443965,
+          "name": "Recorded thread",
+          "preview": "Recorded preview",
+          "cwd": "/recorded/workspace"
+        },
+        {
+          "id": "thread-recorded-page-2-2",
+          "updatedAt": 1790443692,
+          "name": "Recorded thread",
+          "preview": "Recorded preview",
+          "cwd": "/recorded/workspace"
+        }
+      ],
+      "nextCursor": "2026-09-26T17:28:12.579Z",
+      "backwardsCursor": null
+    }
+  ],
+  "read": {
+    "thread": {
+      "id": "thread-recorded-page-1-1",
+      "updatedAt": 1790444998,
+      "name": "Recorded thread",
+      "preview": "Recorded preview",
+      "cwd": "/recorded/workspace"
+    }
+  }
+}
