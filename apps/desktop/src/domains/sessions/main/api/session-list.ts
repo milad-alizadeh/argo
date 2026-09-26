@@ -3,6 +3,7 @@ import { and, asc, count, eq, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
+import { sessionTicketLink } from '@/database/session-ticket-link/schema'
 import type { LiveSessionSupervisorActor } from '../live/live-session-supervisor-machine'
 
 const t = initTRPC.create()
@@ -190,6 +191,11 @@ function sessionListRow(
     harness: string
     cwd: string | null
     updatedAt: number
+    ticketProjectId: string | null
+    ticketKey: string | null
+    ticketTitle: string | null
+    ticketState: string | null
+    ticketCreatedAt: string | null
   },
 ) {
   const live = liveProjection(context, row.id)
@@ -214,7 +220,20 @@ function sessionListRow(
     subagents: [],
     shell: [],
     pullRequest: null,
-    ticket: null,
+    ticket:
+      row.ticketProjectId === null ||
+      row.ticketKey === null ||
+      row.ticketTitle === null ||
+      row.ticketState === null ||
+      row.ticketCreatedAt === null
+        ? null
+        : {
+            projectId: row.ticketProjectId,
+            key: row.ticketKey,
+            title: row.ticketTitle,
+            state: row.ticketState,
+            createdAt: row.ticketCreatedAt,
+          },
     archived: false,
     unread: false,
     turnConfiguration: live?.turnConfiguration ?? { model: null, effort: null, mode: null },
@@ -245,8 +264,14 @@ function readSessionList(
       firstPrompt: sessionTable.firstPrompt,
       cwd: sessionTable.cwd,
       updatedAt: sessionTable.updatedAt,
+      ticketProjectId: sessionTicketLink.projectId,
+      ticketKey: sessionTicketLink.ticketKey,
+      ticketTitle: sessionTicketLink.title,
+      ticketState: sessionTicketLink.state,
+      ticketCreatedAt: sessionTicketLink.createdAt,
     })
     .from(sessionTable)
+    .leftJoin(sessionTicketLink, eq(sessionTicketLink.sessionId, sessionTable.argoId))
     .where(filter)
     .orderBy(asc(sessionTable.argoId))
     .limit(input.pageSize)

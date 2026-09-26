@@ -52,7 +52,8 @@ export function CockpitRouteLayout() {
 
   if (cockpit.status === 'empty') return <EmptyProjectScreen />
   // Saved Sessions remain readable without a Harness. Other surfaces keep the sign-in gate.
-  const opensSavedSessions = location.pathname.includes('/sessions')
+  const opensSavedSessions =
+    location.pathname === '/projects' || location.pathname.includes('/sessions')
   if (
     !opensSavedSessions &&
     readiness.data &&
