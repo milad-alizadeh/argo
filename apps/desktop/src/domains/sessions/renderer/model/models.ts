@@ -1,4 +1,9 @@
 import { z } from 'zod'
+import {
+  SESSION_TITLE_SOURCES,
+  sessionTitleSchema,
+  sessionTitleSourceSchema,
+} from '@/domains/sessions/api/session-title'
 import { liveActivitySchema } from '@/domains/sessions/renderer/feed/model/feed-rows'
 import { ticketKey } from '@/domains/tickets/contract/ticket'
 import { identifierSchema } from '@/shared/validation'
@@ -31,15 +36,15 @@ export const SESSION_STATUSES = [
   'unknown',
 ] as const
 export const sessionStatusSchema = z.enum(SESSION_STATUSES)
-// Strongest first: the roster projection ranks two titles by this order, so reordering it changes
-// which title a live Session shows.
-export const TITLE_SOURCES = ['custom', 'ticket', 'summarised', 'first-prompt'] as const
-export const titleSourceSchema = z.enum(TITLE_SOURCES)
+export {
+  SESSION_TITLE_SOURCES as TITLE_SOURCES,
+  sessionTitleSchema,
+  sessionTitleSourceSchema as titleSourceSchema,
+}
 
 export type SessionPosture = z.infer<typeof sessionPostureSchema>
 export type SessionEntry = z.infer<typeof sessionEntrySchema>
 export type SessionStatus = z.infer<typeof sessionStatusSchema>
-export const sessionTitleSchema = z.strictObject({ text: z.string(), source: titleSourceSchema })
 export type SessionTitle = z.infer<typeof sessionTitleSchema>
 
 // CONTEXT.md L3 · Subagent, as the parent Session's transcript shows it: the events its adapter

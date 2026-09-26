@@ -4,6 +4,7 @@ import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import { sessionTicketLink } from '@/database/session-ticket-link/schema'
+import { sessionTitleSchema } from '@/domains/sessions/api/session-title'
 import type { LiveSessionSupervisorActor } from '../live/live-session-supervisor-machine'
 
 const t = initTRPC.create()
@@ -17,11 +18,6 @@ export const sessionListInputSchema = z.strictObject({
   direction: z.enum(['forward', 'backward']).optional(),
   page: z.number().int().min(1).max(1_000_000).default(1),
   pageSize: z.number().int().min(1).max(100).default(30),
-})
-
-const sessionListTitleSchema = z.strictObject({
-  text: z.string(),
-  source: z.enum(['custom', 'ticket', 'summarised', 'first-prompt']),
 })
 
 const identifierSchema = z.string().min(1)
@@ -94,7 +90,7 @@ export const sessionListRowSchema = z.strictObject({
   posture: z.enum(['live', 'external']).nullable(),
   customTitle: z.string().nullable(),
   preview: z.string().nullable(),
-  title: sessionListTitleSchema.nullable(),
+  title: sessionTitleSchema.nullable(),
   status: z.enum([
     'starting',
     'running',
@@ -183,7 +179,7 @@ function liveProjection(context: SessionListContext, sessionId: string) {
 
 function displayedTitle(
   row: StoredSessionTitle & { ticketTitle: string | null },
-): z.infer<typeof sessionListTitleSchema> | null {
+): z.infer<typeof sessionTitleSchema> | null {
   if (row.customTitle !== null) return { text: row.customTitle, source: 'custom' }
   if (row.ticketTitle !== null) return { text: row.ticketTitle, source: 'ticket' }
   if (row.preview !== null && row.preview !== row.firstPrompt)

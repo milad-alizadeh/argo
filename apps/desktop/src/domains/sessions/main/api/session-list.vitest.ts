@@ -134,7 +134,7 @@ test('returns exact numbered pages in activity order with an Argo ID tie-breaker
       harness: 'claude',
       nativeId: 'claude-native-id',
       firstPrompt: 'first',
-      updatedAt: 10,
+      updatedAt: 20,
     })
     insertSession(client, {
       id: IDS[1],
@@ -158,11 +158,11 @@ test('returns exact numbered pages in activity order with an Argo ID tie-breaker
 
     assert.deepEqual(
       first.rows.map(({ id }) => id),
-      [IDS[2], IDS[1]],
+      [IDS[2], IDS[0]],
     )
     assert.deepEqual(
       second.rows.map(({ id }) => id),
-      [IDS[0]],
+      [IDS[1]],
     )
     assert.deepEqual(
       { page: first.page, pageSize: first.pageSize, total: first.total },
@@ -210,6 +210,7 @@ test('chooses custom title, Ticket title, distinct vendor preview, then first pr
       id: '00000000-0000-4000-8000-000000000004',
       harness: 'claude',
       nativeId: 'native-4',
+      preview: 'First prompt',
       firstPrompt: 'First prompt',
       updatedAt: 10,
     })
@@ -304,6 +305,11 @@ test('joins a Session to its Ticket as one nested ticket object', async () => {
       state: 'open',
       createdAt: '2026-09-26T10:00:00.000Z',
     })
+    assert.deepEqual(result.rows[0]?.title, {
+      text: 'Simplify Session renderer state',
+      source: 'ticket',
+    })
+    assert.equal(result.rows[0]?.customTitle, null)
     assert.equal('ticketKey' in (result.rows[0] ?? {}), false)
   } finally {
     client.close()
