@@ -53,21 +53,25 @@ test('dispatches one thread for the supported Harness and deduplicates Refresh',
     },
   })
   const actor = createActor(machine, {
-    input: { databasePath: '/tmp/session-sync-test.sqlite', status: { claude: status } },
+    input: {
+      databasePath: '/tmp/session-sync-test.sqlite',
+      status: { claude: status, codex: new SessionSyncStatusStore(undefined, 'codex') },
+    },
   }).start()
   try {
-    assert.deepEqual(dispatched, ['claude'])
+    assert.deepEqual(dispatched, ['claude', 'codex'])
     assert.equal(status.current().phase, 'fetching')
     assert.deepEqual(reported, ['status', 'status', 'committed'])
     actor.send({ type: 'Refresh' })
-    assert.deepEqual(dispatched, ['claude'])
+    assert.deepEqual(dispatched, ['claude', 'codex'])
     finished[0]?.()
-    assert.equal(stopped, 1)
+    finished[1]?.()
+    assert.equal(stopped, 2)
     actor.send({ type: 'Refresh' })
-    assert.deepEqual(dispatched, ['claude', 'claude'])
+    assert.deepEqual(dispatched, ['claude', 'codex', 'claude', 'codex'])
     actor.send({ type: 'Shutdown' })
     assert.ok(actor.getSnapshot().matches('Closed'))
-    assert.equal(stopped, 2)
+    assert.equal(stopped, 4)
   } finally {
     actor.stop()
     unsubscribe()

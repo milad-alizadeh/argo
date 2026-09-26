@@ -11,7 +11,12 @@ const MARKS: Record<SessionHarness, string> = {
 // Decorative: the harness's name always sits beside it or in its control's accessible name.
 export function HarnessLogo({ harness }: { harness: SessionHarness }) {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor" className="size-3.5 shrink-0">
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={`size-3.5 shrink-0 ${harness === 'claude' ? 'text-claude' : ''}`}
+    >
       <path d={MARKS[harness]} />
     </svg>
   )

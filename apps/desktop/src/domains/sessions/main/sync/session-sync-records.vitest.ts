@@ -101,6 +101,38 @@ test('uses Harness and native ID together as Session identity', () => {
   }
 })
 
+test('keeps Codex Session identity while syncing title, preview, and cwd changes', () => {
+  const { client, database } = createDatabase()
+  try {
+    saveSessionBatch(database, 'codex', [
+      { nativeId: ID, customTitle: 'First title', preview: 'First preview', cwd: '/first' },
+    ])
+    const original = client.prepare('SELECT argo_id FROM session WHERE harness = ?').get('codex') as
+      | { argo_id: string }
+      | undefined
+    saveSessionBatch(database, 'codex', [
+      { nativeId: ID, customTitle: 'Renamed title', preview: 'Updated preview', cwd: '/second' },
+    ])
+    saveSessionBatch(database, 'codex', [
+      { nativeId: ID, customTitle: null, preview: 'Latest preview', cwd: '/third' },
+    ])
+    const updated = client
+      .prepare('SELECT argo_id, custom_title, preview, cwd FROM session WHERE harness = ?')
+      .get('codex') as
+      | { argo_id: string; custom_title: string | null; preview: string | null; cwd: string | null }
+      | undefined
+    assert.equal(original?.argo_id, updated?.argo_id)
+    assert.deepEqual(Object.assign({}, updated), {
+      argo_id: original?.argo_id,
+      custom_title: null,
+      preview: 'Latest preview',
+      cwd: '/third',
+    })
+  } finally {
+    client.close()
+  }
+})
+
 test('keeps the first committed batch after the second batch exhausts retries', async () => {
   const { client, database } = createDatabase()
   const records = Array.from({ length: 51 }, (_value, index) => ({ nativeId: `native-${index}` }))

@@ -19,14 +19,21 @@ import {
   validateCodexWorkerRequest,
 } from './session-sync-codex-bridge'
 
-test('round trips a worker model/list read through the main-side request function', async () => {
+test('round trips an allowlisted Codex read through the main-side request function', async () => {
   const { port1, port2 } = new MessageChannel()
   const workerRequest = createCodexWorkerRequest(port1)
   const request: CodexRequest = async (_method, params, parse) => parse({ models: [], params })
   const uninstall = installCodexWorkerBridge(port2, request)
   try {
-    const result = await workerRequest('model/list', { limit: 20 }, (value) => value)
-    assert.deepEqual(result, { models: [], params: { limit: 20 } })
+    const result = await workerRequest(
+      'thread/list',
+      { cursor: 'next', sourceKinds: ['appServer'] },
+      (value) => value,
+    )
+    assert.deepEqual(result, {
+      models: [],
+      params: { cursor: 'next', sourceKinds: ['appServer'] },
+    })
   } finally {
     uninstall()
     port1.close()
@@ -118,7 +125,7 @@ test('rejects unknown methods and malformed worker envelopes', () => {
     validateCodexWorkerRequest({
       type: 'codex-request',
       id: 'bad',
-      method: 'thread/read',
+      method: 'thread/resume',
       params: {},
     }),
     null,
@@ -144,7 +151,7 @@ test('returns an error for an invalid request with a usable ID', async () => {
   port1.postMessage({
     type: 'codex-request',
     id: 'f2fbab42-0c4a-437d-a799-7dd03b6fbf8e',
-    method: 'thread/read',
+    method: 'thread/resume',
     params: {},
   })
   try {
