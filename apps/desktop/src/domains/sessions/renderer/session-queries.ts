@@ -18,8 +18,9 @@ export const sessionPermissionQueryKey = (sessionId: SessionId) =>
   ['sessions', 'permission', sessionId] as const
 // Keyed on the restoreId too: a different restoreId asks the reader to hand back a different row
 // outside the loaded pages, so it is a different query rather than a refetch of the same one.
+const sessionArchivePathKey = ['sessions', 'archive'] as const
 export const sessionArchiveQueryKey = (restoreId: SessionId | null) =>
-  ['sessions', 'archive', restoreId] as const
+  [...sessionArchivePathKey, restoreId] as const
 const pendingSessionListInvalidations = new WeakMap<QueryClient, Promise<void>>()
 
 export function invalidateSessionList(queryClient: QueryClient) {
@@ -28,7 +29,10 @@ export function invalidateSessionList(queryClient: QueryClient) {
 
   const invalidation = Promise.resolve().then(() => {
     pendingSessionListInvalidations.delete(queryClient)
-    return queryClient.invalidateQueries({ queryKey: sessionListPathKey })
+    return Promise.all([
+      queryClient.invalidateQueries({ queryKey: sessionListPathKey }),
+      queryClient.invalidateQueries({ queryKey: sessionArchivePathKey }),
+    ]).then(() => undefined)
   })
   pendingSessionListInvalidations.set(queryClient, invalidation)
   return invalidation

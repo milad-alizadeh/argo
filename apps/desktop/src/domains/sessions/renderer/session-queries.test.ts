@@ -6,19 +6,21 @@ import { invalidateSessionList, markSessionRead } from './session-queries'
 
 const sessionListPathKey = trpc.sessions.list.pathKey()
 
-test('coalesces one watch event into one Session list invalidation', async () => {
+test('coalesces one watch event into current and archived Session list invalidations', async () => {
   const queryClient = new QueryClient()
-  let invalidations = 0
+  const invalidations: unknown[] = []
   queryClient.invalidateQueries = async (filters) => {
-    expect(filters).toEqual({ queryKey: sessionListPathKey })
-    invalidations += 1
+    invalidations.push(filters)
   }
 
   const first = invalidateSessionList(queryClient)
   const second = invalidateSessionList(queryClient)
   await Promise.all([first, second])
 
-  expect(invalidations).toBe(1)
+  expect(invalidations).toEqual([
+    { queryKey: sessionListPathKey },
+    { queryKey: ['sessions', 'archive'] },
+  ])
 })
 
 test('opening a Session clears unread state without dropping a loaded row', () => {
