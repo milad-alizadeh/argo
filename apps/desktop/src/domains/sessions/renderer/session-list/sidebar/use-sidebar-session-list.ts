@@ -76,6 +76,13 @@ export function useSidebarSessionList({
 
   return {
     archive,
+    clearRename: (sessionId: SessionId) =>
+      setRenamed((current) => {
+        if (current[sessionId] === undefined) return current
+        const next = { ...current }
+        delete next[sessionId]
+        return Object.keys(next).length === 0 ? NO_TITLES : next
+      }),
     focus,
     renamedTitles: useMemo(() => pendingRenames(renamed, sessions), [renamed, sessions]),
     rename: (sessionId: SessionId, title: string) =>

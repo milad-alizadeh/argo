@@ -36,6 +36,7 @@ function testRouter(
     projects: {} as ProjectRegisterContext,
     sessions: {
       database: {} as never,
+      rename: async () => {},
       supervisor: sessionActor,
       refreshSessionSync: () => {},
       sessionSyncStatus: new SessionSyncStatusStore(),
@@ -84,6 +85,7 @@ test('accepts a Session sync refresh', async () => {
     projects: {} as ProjectRegisterContext,
     sessions: {
       database: {} as never,
+      rename: async () => {},
       supervisor: sessions,
       refreshSessionSync: () => {
         refreshes += 1

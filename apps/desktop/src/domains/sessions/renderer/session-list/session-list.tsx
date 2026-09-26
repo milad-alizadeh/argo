@@ -216,6 +216,7 @@ export function SessionList({ actions, projectId, selectedSessionId }: SessionLi
   })
   const { renameTarget, setRenameTarget, handleRename } = useRenameDialog(
     sessions.rename,
+    sessions.clearRename,
     actions.onRename,
   )
   return (

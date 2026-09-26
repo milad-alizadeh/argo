@@ -25,6 +25,7 @@ import {
   type SessionRefreshContext,
   sessionRefreshProcedure,
 } from '@/domains/sessions/main/api/session-refresh'
+import { sessionRenameProcedure } from '@/domains/sessions/main/api/session-rename'
 import {
   type SessionProcedureContext,
   sessionSubmitProcedure,
@@ -72,6 +73,7 @@ export function createAppRouter(dependencies: AppRouterDependencies) {
     sessionSubmit: sessionSubmitProcedure(dependencies.sessions),
     sessions: t.router({
       list: sessionListProcedure(dependencies.sessions),
+      rename: sessionRenameProcedure(dependencies.sessions),
       refresh: sessionRefreshProcedure(dependencies.sessions),
       syncStatus: sessionSyncStatusProcedure(dependencies.sessions.sessionSyncStatus),
     }),
