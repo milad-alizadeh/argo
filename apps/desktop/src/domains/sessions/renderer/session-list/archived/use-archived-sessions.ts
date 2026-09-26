@@ -6,7 +6,6 @@ import {
 } from '../../session-contract-error'
 import { sessionArchiveQueryKey } from '../../session-queries'
 import type { SessionArchiveListed, SessionId } from '../../types'
-import { useWatchedQueries } from '../../use-watched-topic'
 
 type ArchivePage = Pick<
   SessionArchiveListed,
@@ -38,12 +37,6 @@ export function useArchivedSessions(enabled: boolean, restoreId: SessionId | nul
       }
     },
   })
-
-  // An archived Session's row sits under the same watched trees as an active one, so the row being
-  // viewed is read again when a Harness writes rather than twice a second. Each tick paid for a whole
-  // discovery pass, which made this the most expensive of the polls #2303 removed. Browsing the
-  // paged list carries no restoreId and stays read on demand, as it was under the poll.
-  useWatchedQueries('sessions', restoreId === null ? [] : [sessionArchiveQueryKey(restoreId)])
 
   const seen = new Set<string>()
   const sessions = (query.data?.pages.flatMap((page) => page.sessions) ?? []).filter((session) => {

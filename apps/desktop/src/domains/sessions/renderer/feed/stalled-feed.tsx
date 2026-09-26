@@ -16,7 +16,7 @@ export function StalledFeed({
   posture,
   onRetry,
 }: {
-  posture: 'managed' | 'external' | 'watched' | null
+  posture: 'live' | 'external' | null
   onRetry: () => void
 }) {
   const { t } = useTranslation('sessions')
@@ -29,7 +29,7 @@ export function StalledFeed({
         <EmptyTitle>{t('stalled.title')}</EmptyTitle>
         <EmptyDescription>
           {t(
-            posture === 'managed' ? 'stalled.description.managed' : 'stalled.description.external',
+            posture === 'live' ? 'stalled.description.live' : 'stalled.description.external',
           )}
         </EmptyDescription>
       </EmptyHeader>

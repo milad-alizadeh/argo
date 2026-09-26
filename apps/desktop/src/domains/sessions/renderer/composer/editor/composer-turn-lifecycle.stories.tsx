@@ -5,19 +5,18 @@ import { Button } from '@/platform/renderer/components/ui/button'
 import { claudeComposerModelCatalogFixture } from '../../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
 import { claudeChoices } from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
 import type { SessionHarness } from '../../harness/harnesses'
-import { useComposerStore } from '../hooks'
 import { ComposerForm, type ComposerFormProps } from '../layout/composer-form'
-import type { TurnSetupChoices } from '../turn-setup/turn-setup'
-import { setupFromReading } from '../turn-setup/turn-setup'
+import type { TurnConfigurationChoices } from '../turn-configuration/turn-configuration'
+import { configurationFromReading } from '../turn-configuration/turn-configuration'
 
-const CLAUDE_TURN_SETUP = (() => {
+const CLAUDE_TURN_CONFIGURATION = (() => {
   const choices = claudeChoices(claudeComposerModelCatalogFixture())
   if (choices === null) throw new Error('The Claude story catalog has no usable model.')
   return choices
-})() satisfies TurnSetupChoices
+})() satisfies TurnConfigurationChoices
 
 const FRAME = 'mx-auto max-w-4xl p-8'
-const SETUP_FRAME = 'mx-auto max-w-4xl p-8 pt-96'
+const TURN_CONFIGURATION_FRAME = 'mx-auto max-w-4xl p-8 pt-96'
 
 // The send chord spelled once, so the stories that only need a draft sent do not each restate it.
 // The stories that are about the chord itself press it directly.
@@ -37,7 +36,7 @@ async function chooseMode(canvasElement: HTMLElement, mode: RegExp) {
   await waitFor(() => expect(within(document.body).queryByRole('menu')).toBeNull())
 }
 
-function ManagedComposerStory() {
+function LiveComposerStory() {
   const [running, setRunning] = useState(true)
 
   return (
@@ -49,7 +48,7 @@ function ManagedComposerStory() {
       }}
       onSend={async () => false}
       plan={null}
-      sessionId="managed-session"
+      sessionId="live-session"
     />
   )
 }
@@ -140,7 +139,7 @@ function NewSessionHarnessestory({ onSend }: { onSend: ComposerFormProps['onSend
   )
 }
 
-function SetupComposerStory({
+function TurnConfigurationComposerStory({
   onSend,
   running = false,
   sessionId,
@@ -150,7 +149,7 @@ function SetupComposerStory({
   sessionId: string
 }) {
   const [isRunning, setRunning] = useState(running)
-  const [setup, setSetup] = useState(CLAUDE_TURN_SETUP.opening)
+  const [turnConfiguration, setTurnConfiguration] = useState(CLAUDE_TURN_CONFIGURATION.opening)
 
   return (
     <>
@@ -162,15 +161,19 @@ function SetupComposerStory({
         onSend={onSend}
         sessionId={sessionId}
         harness={{ harness: 'claude' }}
-        setup={{ choices: CLAUDE_TURN_SETUP, value: setup, onChange: setSetup }}
+        turnConfiguration={{
+          choices: CLAUDE_TURN_CONFIGURATION,
+          value: turnConfiguration,
+          onChange: setTurnConfiguration,
+        }}
       />
     </>
   )
 }
 
 function HistoricalResolvedModelStory({ onSend }: { onSend: ComposerFormProps['onSend'] }) {
-  const [setup, setSetup] = useState(() =>
-    setupFromReading(CLAUDE_TURN_SETUP, {
+  const [turnConfiguration, setTurnConfiguration] = useState(() =>
+    configurationFromReading(CLAUDE_TURN_CONFIGURATION, {
       model: 'claude-sonnet-4-5',
       effort: 'medium',
       mode: 'default',
@@ -182,14 +185,18 @@ function HistoricalResolvedModelStory({ onSend }: { onSend: ComposerFormProps['o
       onSend={onSend}
       sessionId="historical-sonnet-session"
       harness={{ harness: 'claude' }}
-      setup={{ choices: CLAUDE_TURN_SETUP, value: setup, onChange: setSetup }}
+      turnConfiguration={{
+        choices: CLAUDE_TURN_CONFIGURATION,
+        value: turnConfiguration,
+        onChange: setTurnConfiguration,
+      }}
     />
   )
 }
 
 const meta = {
   title: 'Sessions/Composer/Turn Lifecycle',
-  component: ManagedComposerStory,
+  component: LiveComposerStory,
   decorators: [
     (Story, { parameters }) => (
       <div className={(parameters.frame as string | undefined) ?? FRAME}>
@@ -197,17 +204,13 @@ const meta = {
       </div>
     ),
   ],
-  // Drafts outlive a story like they outlive a page, so each story starts from none.
-  beforeEach: () => {
-    useComposerStore.setState(useComposerStore.getInitialState())
-  },
-} satisfies Meta<typeof ManagedComposerStory>
+} satisfies Meta<typeof LiveComposerStory>
 
 export default meta
-type Story = StoryObj<typeof ManagedComposerStory>
+type Story = StoryObj<typeof LiveComposerStory>
 
-export const ManagedTurn: Story = {
-  render: () => <ManagedComposerStory />,
+export const LiveTurn: Story = {
+  render: () => <LiveComposerStory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')
@@ -225,13 +228,13 @@ export const NewSessionChoosesCli: StoryObj<typeof NewSessionHarnessestory> = {
   args: { onSend: fn(async () => true) },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    const trigger = canvas.getByRole('button', { name: /^Choose run setup/ })
-    await expect(trigger).toHaveAccessibleName('Choose run setup: Claude Code')
+    const trigger = canvas.getByRole('button', { name: /^Choose Turn configuration/ })
+    await expect(trigger).toHaveAccessibleName('Choose Turn configuration: Claude Code')
 
     await userEvent.click(trigger)
     await userEvent.click(await within(document.body).findByRole('tab', { name: 'Codex' }))
     await userEvent.keyboard('{Escape}')
-    await expect(trigger).toHaveAccessibleName('Choose run setup: Codex')
+    await expect(trigger).toHaveAccessibleName('Choose Turn configuration: Codex')
 
     await sendDraft(canvas, 'Fix the flaky test.')
     await expect(args.onSend).toHaveBeenCalledWith('Fix the flaky test.', null, [])
@@ -325,24 +328,26 @@ export const FailedQueuedTurn: Story = {
   },
 }
 
-export const SendsTheChosenSetup: StoryObj<typeof SetupComposerStory> = {
-  render: (args) => <SetupComposerStory {...args} sessionId="setup-session" />,
+export const SendsTheChosenTurnConfiguration: StoryObj<typeof TurnConfigurationComposerStory> = {
+  render: (args) => (
+    <TurnConfigurationComposerStory {...args} sessionId="turnConfiguration-session" />
+  ),
   args: { onSend: fn(async () => true) },
-  parameters: { frame: SETUP_FRAME },
+  parameters: { frame: TURN_CONFIGURATION_FRAME },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const placeholder = canvas.getAllByText('Direct the next move…')[0]?.getBoundingClientRect()
     const controls = canvas
-      .getByRole('button', { name: /^Choose run setup/ })
+      .getByRole('button', { name: /^Choose Turn configuration/ })
       .getBoundingClientRect()
     await expect(placeholder?.bottom).toBeLessThanOrEqual(controls.top)
-    await userEvent.click(canvas.getByRole('button', { name: /^Choose run setup/ }))
+    await userEvent.click(canvas.getByRole('button', { name: /^Choose Turn configuration/ }))
     await userEvent.click(await within(document.body).findByRole('radio', { name: /Sonnet 5/ }))
     await userEvent.keyboard('{Escape}')
     await chooseMode(canvasElement, /Plan/)
-    await expect(canvas.getByRole('button', { name: /^Choose run setup/ })).toHaveTextContent(
-      'Sonnet 5·Medium',
-    )
+    await expect(
+      canvas.getByRole('button', { name: /^Choose Turn configuration/ }),
+    ).toHaveTextContent('Sonnet 5·Medium')
 
     await sendDraft(canvas, 'Plan the migration.')
     await expect(args.onSend).toHaveBeenCalledWith(
@@ -353,10 +358,16 @@ export const SendsTheChosenSetup: StoryObj<typeof SetupComposerStory> = {
   },
 }
 
-export const QueuedTurnKeepsItsSetup: StoryObj<typeof SetupComposerStory> = {
-  render: (args) => <SetupComposerStory {...args} running sessionId="queued-setup-session" />,
+export const QueuedTurnKeepsItsConfiguration: StoryObj<typeof TurnConfigurationComposerStory> = {
+  render: (args) => (
+    <TurnConfigurationComposerStory
+      {...args}
+      running
+      sessionId="queued-turnConfiguration-session"
+    />
+  ),
   args: { onSend: fn(async () => true) },
-  parameters: { frame: SETUP_FRAME },
+  parameters: { frame: TURN_CONFIGURATION_FRAME },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const composer = canvas.getByLabelText('Message')
@@ -383,20 +394,24 @@ export const QueuedTurnKeepsItsSetup: StoryObj<typeof SetupComposerStory> = {
   },
 }
 
-export const NarrowShowsModelAndEffort: StoryObj<typeof SetupComposerStory> = {
-  render: (args) => <SetupComposerStory {...args} sessionId="setup-narrow" />,
+export const NarrowShowsModelAndEffort: StoryObj<typeof TurnConfigurationComposerStory> = {
+  render: (args) => (
+    <TurnConfigurationComposerStory {...args} sessionId="turnConfiguration-narrow" />
+  ),
   args: { onSend: fn(async () => true) },
   parameters: { frame: 'w-(--size-session-feed-min) pt-96' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const trigger = canvas.getByRole('button', { name: /^Choose run setup/ })
+    const trigger = canvas.getByRole('button', { name: /^Choose Turn configuration/ })
     const row = trigger.parentElement
 
     if (!row) throw new Error('Composer control row is missing.')
     await expect(within(trigger).getByText('Opus 5')).toBeVisible()
     await expect(within(trigger).getByText('Medium')).toBeVisible()
     await expect(within(trigger).queryByText('Claude Code')).not.toBeInTheDocument()
-    await expect(trigger).toHaveAccessibleName('Choose run setup: Claude Code, Opus 5, Medium')
+    await expect(trigger).toHaveAccessibleName(
+      'Choose Turn configuration: Claude Code, Opus 5, Medium',
+    )
     await expect(canvas.getByRole('button', { name: 'Send message' })).toBeVisible()
     await expect(row.scrollWidth).toBeLessThanOrEqual(row.clientWidth)
   },
@@ -405,13 +420,13 @@ export const NarrowShowsModelAndEffort: StoryObj<typeof SetupComposerStory> = {
 export const HistoricalSonnetIdKeepsSonnet: StoryObj<typeof HistoricalResolvedModelStory> = {
   render: (args) => <HistoricalResolvedModelStory {...args} />,
   args: { onSend: fn(async () => true) },
-  parameters: { frame: SETUP_FRAME },
+  parameters: { frame: TURN_CONFIGURATION_FRAME },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const setup = canvas.getByRole('button', { name: /^Choose run setup/ })
+    const turnConfiguration = canvas.getByRole('button', { name: /^Choose Turn configuration/ })
 
-    await expect(setup).toHaveTextContent('Sonnet 5')
-    await userEvent.click(setup)
+    await expect(turnConfiguration).toHaveTextContent('Sonnet 5')
+    await userEvent.click(turnConfiguration)
     await expect(
       await within(document.body).findByRole('radio', { name: /Sonnet 5/ }),
     ).toBeChecked()

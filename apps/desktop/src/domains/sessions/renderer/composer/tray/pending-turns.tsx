@@ -8,49 +8,50 @@ import {
   attachmentExitDelay,
   focusMessageField,
 } from '@/platform/renderer/components/permission/exit-presence'
-import { EMPTY_PENDING_TURNS, useComposerStore } from '../hooks/use-composer-store'
-import type { TurnSetupControlProps } from '../toolbar/run-setup-menu'
-import { supportedSetup } from '../turn-setup/turn-setup'
+import { useComposerEditing } from '../editing/composer-editing-context'
+import type { TurnConfigurationControlProps } from '../toolbar/turn-configuration-menu'
+import { supportedConfiguration } from '../turn-configuration/turn-configuration'
 import { PendingTurnActions } from './pending-turn-actions'
 import type { PendingTurn } from './use-pending-turns'
 
 export function PendingTurns({
   editorRef,
   onSteer,
-  sessionId,
-  setup,
+  turnConfiguration,
 }: {
   editorRef: RefObject<LexicalEditor | null>
   onSteer?: (text: string, attachments: SessionAttachmentInput[]) => Promise<boolean>
-  sessionId: string
-  setup: TurnSetupControlProps | null
+  turnConfiguration: TurnConfigurationControlProps | null
 }) {
-  const turns = useComposerStore(
-    ({ pendingTurns }) => pendingTurns[sessionId] ?? EMPTY_PENDING_TURNS,
-  )
-  const setDraft = useComposerStore(({ setDraft }) => setDraft)
-  const removePendingTurn = useComposerStore(({ removePendingTurn }) => removePendingTurn)
-  const reorderPendingTurn = useComposerStore(({ reorderPendingTurn }) => reorderPendingTurn)
+  const { editing, dispatch } = useComposerEditing()
   const onEdit = (turn: PendingTurn) => {
-    setDraft(sessionId, turn.text)
+    dispatch({ type: 'prompt.changed', prompt: turn.text })
     editorRef.current?.update(() => $convertFromMarkdownString(turn.text, TRANSFORMERS))
     window.requestAnimationFrame(() => editorRef.current?.focus())
-    if (setup && turn.setup !== undefined)
-      setup.onChange(supportedSetup(setup.choices, turn.setup, setup.value))
+    if (turnConfiguration && turn.turnConfiguration !== undefined)
+      turnConfiguration.onChange(
+        supportedConfiguration(
+          turnConfiguration.choices,
+          turn.turnConfiguration,
+          turnConfiguration.value,
+        ),
+      )
   }
   const steer = async (turn: PendingTurn) => {
     if (onSteer === undefined) return false
     const steered = await onSteer(turn.text, turn.attachments)
-    if (steered) removePendingTurn(sessionId, turn.id)
+    if (steered) dispatch({ type: 'pending-turn.removed', id: turn.id })
     return steered
   }
   return (
     <PendingTurnsView
-      turns={turns}
+      turns={editing.pendingTurns}
       onEdit={onEdit}
       onSteer={steer}
-      onRemove={(id) => removePendingTurn(sessionId, id)}
-      onReorder={(sourceId, targetId) => reorderPendingTurn(sessionId, sourceId, targetId)}
+      onRemove={(id) => dispatch({ type: 'pending-turn.removed', id })}
+      onReorder={(sourceId, targetId) =>
+        dispatch({ type: 'pending-turn.reordered', sourceId, targetId })
+      }
     />
   )
 }

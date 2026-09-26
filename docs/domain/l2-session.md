@@ -14,10 +14,9 @@
   history; the first new prompt attempts native resume. A live channel is not durable across an
   Argo restart.
 
-  Vendor history is the source of Feed truth. Live vendor events add immediate updates. For
-  Sessions without a live channel, a filesystem watcher can signal that history changed, but the
-  adapter reads the change through the vendor interface. A transcript or rollout file is never an
-  Argo domain object or input.
+  Vendor history is the source of Feed truth. Live vendor events add immediate updates. Metadata
+  synchronization commits vendor changes to SQLite and tells readers to refresh the affected
+  projection. A transcript or rollout file is never an Argo domain object or input.
 
   Origin does not gate resume (ADR-0040). Argo has one application window. The adapter checks
   vendor liveness before resume because another vendor client can still hold the Session. A
@@ -28,8 +27,8 @@
   again. Removing it also removes its custom title, pin, and user-asserted Ticket link.
 
   A Session **is the root Agent** (`parentId: null`). Key attributes are **`harness`**
-  (`claude | codex | …`), native ID, Project, and **`cwd`**. Managed facts are DIRECT when Argo
-  observes them through its channel. Watched facts are vendor-sourced.
+  (`claude | codex | …`), native ID, Project, and **`cwd`**. Facts from a live channel are DIRECT.
+  Facts read later from vendor history are vendor-sourced.
 
 - **Custom title** — one reader-chosen name shared by Argo and the vendor. The Harness reads it
   through the vendor interface. An authoritative vendor read can change or clear it. A future

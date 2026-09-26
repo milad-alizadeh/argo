@@ -15,10 +15,11 @@ test('models Codex opening, first turn, later turn, failure, and close paths', (
       commandId: '00000000-0000-4000-8000-000000000001',
       harness: 'codex',
       projectId: '00000000-0000-4000-8000-000000000099',
+      workspaceId: '00000000-0000-4000-8000-000000000098',
       cwd: '/repo',
       prompt: 'first',
       attachments: [],
-      setup: { model: 'model', effort: 'medium', mode: 'workspace-write' },
+      turnConfiguration: { model: 'model', effort: 'medium', mode: 'workspace-write' },
     },
     events: (snapshot) => {
       if (snapshot.matches('Opening'))
@@ -38,7 +39,7 @@ test('models Codex opening, first turn, later turn, failure, and close paths', (
             command: {
               prompt: 'second',
               attachments: [],
-              setup: { model: 'model', effort: 'medium', mode: 'workspace-write' },
+              turnConfiguration: { model: 'model', effort: 'medium', mode: 'workspace-write' },
             },
           },
           { type: 'Close' as const },
@@ -77,13 +78,14 @@ test('converts text, files, and images at the Codex Session boundary', async () 
       commandId: '00000000-0000-4000-8000-000000000001',
       harness: 'codex',
       projectId: '00000000-0000-4000-8000-000000000099',
+      workspaceId: '00000000-0000-4000-8000-000000000098',
       cwd: '/repo',
       prompt: 'Read these.',
       attachments: [
         { path: '/repo/readme.md', kind: 'file' },
         { path: '/repo/image.png', kind: 'image' },
       ],
-      setup: { model: 'model', effort: 'medium', mode: 'workspace-write' },
+      turnConfiguration: { model: 'model', effort: 'medium', mode: 'workspace-write' },
     },
   }).start()
   await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
@@ -112,10 +114,11 @@ test('starts the first Codex turn before becoming ready', async () => {
       commandId: '00000000-0000-4000-8000-000000000001',
       harness: 'codex',
       projectId: '00000000-0000-4000-8000-000000000099',
+      workspaceId: '00000000-0000-4000-8000-000000000098',
       cwd: '/repo',
       prompt: 'first',
       attachments: [],
-      setup: { model: 'model', effort: 'medium', mode: 'workspace-write' },
+      turnConfiguration: { model: 'model', effort: 'medium', mode: 'workspace-write' },
     },
   }).start()
   await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
@@ -139,10 +142,11 @@ test('starts later Codex prompts on the persisted thread', async () => {
       commandId: '00000000-0000-4000-8000-000000000001',
       harness: 'codex',
       projectId: '00000000-0000-4000-8000-000000000099',
+      workspaceId: '00000000-0000-4000-8000-000000000098',
       cwd: '/repo',
       prompt: 'first',
       attachments: [],
-      setup: { model: 'model', effort: 'medium', mode: 'workspace-write' },
+      turnConfiguration: { model: 'model', effort: 'medium', mode: 'workspace-write' },
     },
   }).start()
   await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
@@ -151,7 +155,7 @@ test('starts later Codex prompts on the persisted thread', async () => {
     command: {
       prompt: 'second',
       attachments: [],
-      setup: { model: 'model', effort: 'medium', mode: 'workspace-write' },
+      turnConfiguration: { model: 'model', effort: 'medium', mode: 'workspace-write' },
     },
   })
   await waitFor(actor, (snapshot) => snapshot.matches('Ready'))

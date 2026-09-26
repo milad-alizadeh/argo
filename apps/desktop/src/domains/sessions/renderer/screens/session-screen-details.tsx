@@ -1,9 +1,9 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { useLocation, useParams } from 'react-router'
-import type { Cockpit, ProjectActions } from '@/domains/projects/renderer'
-import type { SessionSubmitInput } from '@/domains/sessions/main/api/session-start'
+import { useLocation, useNavigate, useParams } from 'react-router'
+import type { Cockpit } from '@/domains/projects/renderer'
 import type { SessionRosterRow } from '@/domains/sessions/renderer/model/models'
+import type { WorkspaceActions, WorkspaceCockpit } from '@/domains/workspaces/renderer'
 import type { CatalogReadResult } from '@/harnesses/catalog/catalog-read'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
@@ -14,14 +14,24 @@ import {
   AlertTitle,
 } from '@/platform/renderer/components/ui/alert'
 import { Button } from '@/platform/renderer/components/ui/button'
-import { trpc } from '@/platform/renderer/trpc-client'
-import { composerIdentityKey, composerIdentityOf } from '../composer/identity/composer-identity'
+import { type RouterInputs, trpc } from '@/platform/renderer/trpc-client'
+import {
+  type DraftContent,
+  useDurableComposerDraft,
+} from '../composer/draft/use-durable-composer-draft'
+import {
+  type ComposerIdentity,
+  composerIdentityKey,
+  composerIdentityOf,
+} from '../composer/identity/composer-identity'
 import { COMPOSER_COLUMN, ComposerForm } from '../composer/layout/composer-form'
-import type { CatalogFailure } from '../composer/toolbar/run-setup-menu'
-import { useTurnSetup } from '../composer/turn-setup/use-turn-setup'
+import type { CatalogFailure } from '../composer/toolbar/turn-configuration-menu'
+import {
+  type TurnConfiguration,
+  initialTurnConfiguration as turnConfigurationFor,
+} from '../composer/turn-configuration/turn-configuration'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import type { HarnessControl } from '../harness/harnesses'
-import { useSessionCreationStore } from '../session-creation'
 import type { SessionRoster } from '../types'
 
 type SessionScreenDetailsProps = {
@@ -32,7 +42,8 @@ type SessionScreenDetailsProps = {
   selectedSessionId: string | null
   roster: SessionRoster | null
   cockpit: Cockpit
-  projectActions: Pick<ProjectActions, 'selectWorkspace' | 'createManagedWorkspace'>
+  workspaceCockpit: WorkspaceCockpit
+  workspaceActions: WorkspaceActions
 }
 
 function catalogFailureOf(
@@ -47,59 +58,35 @@ function catalogFailureOf(
 
 function workspaceControl(
   identity: ReturnType<typeof composerIdentityOf>,
-  cockpit: Cockpit,
-  projectActions: SessionScreenDetailsProps['projectActions'],
+  workspaces: WorkspaceCockpit,
+  actions: WorkspaceActions,
 ) {
   if (identity.kind !== 'draft') return null
   return {
-    workspaces: cockpit.workspaces,
-    workspace: cockpit.workspace,
-    onSelect: projectActions.selectWorkspace,
-    onCreateManaged: () => projectActions.createManagedWorkspace('HEAD'),
+    workspaces: workspaces.workspaces,
+    workspace: workspaces.workspace,
+    onSelect: actions.selectWorkspace,
   }
 }
 
-async function submitFromComposer({
-  submit,
+function draftTarget({
   identity,
   harness,
   cockpit,
-  prompt,
-  setup,
-  attachments,
+  workspace,
 }: {
-  submit: (input: SessionSubmitInput) => Promise<{ sessionId: string }>
-  identity: ReturnType<typeof composerIdentityOf>
+  identity: ComposerIdentity
   harness: HarnessControl
   cockpit: Cockpit
-  prompt: string
-  setup: SessionSubmitInput['setup'] | null
-  attachments: SessionSubmitInput['attachments']
-}) {
-  if (setup === null) return false
-  const commandId =
-    identity.kind === 'pending'
-      ? useSessionCreationStore.getState().startSubmission(identity.sessionId, prompt)
-      : crypto.randomUUID()
-  if (commandId === null) return false
-  try {
-    const submitted = await submit({
-      commandId,
-      harness: harness.harness,
-      projectId: cockpit.project?.id ?? '',
-      cwd: cockpit.workspace?.path ?? cockpit.project?.path ?? '',
-      sessionId: identity.kind === 'session' ? identity.sessionId : null,
-      pendingId: identity.kind === 'pending' ? identity.sessionId : null,
-      prompt,
-      attachments,
-      setup,
-    })
-    if (identity.kind === 'pending')
-      useSessionCreationStore.getState().resolved(identity.sessionId, submitted.sessionId)
-    return true
-  } catch {
-    if (identity.kind === 'pending') useSessionCreationStore.getState().failed(identity.sessionId)
-    return false
+  workspace: WorkspaceCockpit
+}): RouterInputs['composerDraftCreate']['target'] | null {
+  if (identity.kind === 'session') return { type: 'session', sessionId: identity.sessionId }
+  if (cockpit.project === null || workspace.workspace === null) return null
+  return {
+    type: 'project',
+    projectId: cockpit.project.id,
+    workspaceId: workspace.workspace.id,
+    harness: harness.harness,
   }
 }
 
@@ -111,44 +98,105 @@ export function SessionComposerArea({
   selectedSessionId,
   roster,
   cockpit,
-  projectActions,
+  workspaceCockpit,
+  workspaceActions,
 }: SessionScreenDetailsProps) {
   const catalogQuery = useQuery(trpc.harnessCatalogRead.queryOptions({ harness: harness.harness }))
   const catalogRefresh = useMutation(trpc.harnessCatalogRefresh.mutationOptions())
-  const sessionSubmit = useMutation(trpc.sessionSubmit.mutationOptions())
   const location = useLocation()
   const catalog = catalogQuery.data?.info ?? null
   const catalogFailure = catalogFailureOf(catalogQuery.data, catalogQuery.isError)
-  const pending = useSessionCreationStore((state) => state.pending)
-  const identity = composerIdentityOf(
-    selectedSessionId,
-    cockpit.project?.id ?? null,
-    pending?.stage === 'draft' ? pending.id : null,
-  )
-  const control = useTurnSetup({
-    harness: harness.harness,
-    choices: catalog?.availability === 'available' ? catalog : null,
-    identity,
-    rows: roster?.sessions ?? [],
+  const identity = composerIdentityOf(selectedSessionId, cockpit.project?.id ?? null)
+  const choices = catalog?.availability === 'available' ? catalog : null
+  const initialTurnConfiguration =
+    choices === null || (identity.kind === 'session' && roster === null)
+      ? null
+      : turnConfigurationFor(choices, {
+          identity,
+          rows: roster?.sessions ?? [],
+        })
+  const composerKey = composerIdentityKey(identity)
+  const target = draftTarget({ identity, harness, cockpit, workspace: workspaceCockpit })
+  const draft = useDurableComposerDraft({
+    target,
+    choices,
+    opening: initialTurnConfiguration,
   })
+  const navigate = useNavigate()
+  const send = async (
+    prompt: string,
+    turnConfiguration: TurnConfiguration | null,
+    attachments: DraftContent['attachments'],
+  ) => {
+    const sessionId = (await draft?.submit(prompt, turnConfiguration, attachments)) ?? null
+    if (sessionId === null) return false
+    if (identity.kind === 'draft' && cockpit.project !== null)
+      navigate(`/projects/${cockpit.project.id}/sessions/${sessionId}`, { replace: true })
+    return true
+  }
   // The Roster already knows another process runs it live, so no Send is offered at all (ADR-0040).
   if (session?.locked === true) return <OpenElsewhere onRetry={null} />
+  if (draft === null) return null
   const refreshCatalog = () =>
     catalogRefresh.mutate(
       { harness: harness.harness },
       { onSettled: () => void catalogQuery.refetch() },
     )
-  const submit = (input: SessionSubmitInput) => sessionSubmit.mutateAsync(input)
+  return (
+    <ReadySessionComposer
+      {...{ permission, questionPending, session, harness, workspaceCockpit, workspaceActions }}
+      catalogFailure={catalogFailure}
+      choices={choices}
+      composerKey={composerKey}
+      draft={draft}
+      focusOnMount={location.state === COMPOSER_FOCUS_STATE}
+      identity={identity}
+      onRefreshCatalog={refreshCatalog}
+      onSend={send}
+    />
+  )
+}
+
+function ReadySessionComposer({
+  permission,
+  questionPending,
+  session,
+  harness,
+  workspaceCockpit,
+  workspaceActions,
+  catalogFailure,
+  choices,
+  composerKey,
+  draft,
+  focusOnMount,
+  identity,
+  onRefreshCatalog,
+  onSend,
+}: Pick<
+  SessionScreenDetailsProps,
+  'permission' | 'questionPending' | 'session' | 'harness' | 'workspaceCockpit' | 'workspaceActions'
+> & {
+  catalogFailure: CatalogFailure | null
+  choices: Parameters<typeof useDurableComposerDraft>[0]['choices']
+  composerKey: string
+  draft: NonNullable<ReturnType<typeof useDurableComposerDraft>>
+  focusOnMount: boolean
+  identity: ComposerIdentity
+  onRefreshCatalog: () => void
+  onSend: NonNullable<Parameters<typeof ComposerForm>[0]['onSend']>
+}) {
   return (
     <>
       {permission.failure ? <Failure message={permission.failure} /> : null}
       <ComposerForm
-        sessionId={composerIdentityKey(identity)}
-        focusOnMount={location.state === COMPOSER_FOCUS_STATE}
-        setup={control}
+        sessionId={composerKey}
+        initialEditing={draft.initialEditing}
+        onEditingChange={draft.onEditingChange}
+        focusOnMount={focusOnMount}
+        turnConfigurationChoices={choices}
         catalogFailure={catalogFailure}
-        refreshCatalog={refreshCatalog}
-        workspace={workspaceControl(identity, cockpit, projectActions)}
+        refreshCatalog={onRefreshCatalog}
+        workspace={workspaceControl(identity, workspaceCockpit, workspaceActions)}
         contextTokens={session?.contextTokens}
         contextWindowTokens={session?.contextWindowTokens}
         disabled={questionPending}
@@ -161,9 +209,7 @@ export function SessionComposerArea({
           />
         }
         plan={session?.plan ?? null}
-        onSend={(prompt, setup, attachments) =>
-          submitFromComposer({ submit, identity, harness, cockpit, prompt, setup, attachments })
-        }
+        onSend={onSend}
       />
     </>
   )

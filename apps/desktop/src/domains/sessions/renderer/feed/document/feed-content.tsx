@@ -40,7 +40,7 @@ export function feedContent({
   settled: ReturnType<typeof useSettledFeed>['settled']
   isRunning: boolean
   stalled: boolean
-  posture: 'managed' | 'external' | 'watched' | null
+  posture: 'live' | 'external' | null
   onRetry: () => void
   onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
   onMeasurementsChange: (sessionId: string, measurements: VirtualItem[]) => void

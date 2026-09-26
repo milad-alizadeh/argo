@@ -1,27 +1,53 @@
-import { useEffect, useState } from 'react'
-import { create } from 'zustand'
+import { useCallback, useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router'
 
-// The sidebar's search field and the backlog it searches share one query.
-type TicketSearchState = {
-  open: boolean
-  query: string
-  setOpen: (open: boolean) => void
-  setQuery: (query: string) => void
+const SEARCH_PARAMETER = 'ticketSearch'
+const QUERY_PARAMETER = 'q'
+
+export function useTicketSearch() {
+  const [search, setSearch] = useSearchParams()
+  const change = useCallback(
+    (update: (next: URLSearchParams) => void) =>
+      setSearch(
+        (current) => {
+          const next = new URLSearchParams(current)
+          update(next)
+          return next
+        },
+        { replace: true },
+      ),
+    [setSearch],
+  )
+  return {
+    open: search.get(SEARCH_PARAMETER) === '1',
+    query: search.get(QUERY_PARAMETER) ?? '',
+    setOpen: useCallback(
+      (open: boolean) =>
+        change((next) => {
+          if (open) next.set(SEARCH_PARAMETER, '1')
+          else {
+            next.delete(SEARCH_PARAMETER)
+            next.delete(QUERY_PARAMETER)
+          }
+        }),
+      [change],
+    ),
+    setQuery: useCallback(
+      (query: string) =>
+        change((next) => {
+          if (query === '') next.delete(QUERY_PARAMETER)
+          else next.set(QUERY_PARAMETER, query)
+        }),
+      [change],
+    ),
+  }
 }
-
-export const useTicketSearch = create<TicketSearchState>((set) => ({
-  open: false,
-  query: '',
-  // Closing the field ends the search, so the backlog is never filtered by a query out of sight.
-  setOpen: (open) => set(open ? { open } : { open, query: '' }),
-  setQuery: (query) => set({ query }),
-}))
 
 // GitHub's search limit is 30 requests a minute, so a query is sent once typing pauses.
 const SETTLE_MILLISECONDS = 300
 
 export function useSettledQuery(): string {
-  const query = useTicketSearch((state) => state.query).trim()
+  const query = useTicketSearch().query.trim()
   const [settled, setSettled] = useState(query)
   useEffect(() => {
     const timer = setTimeout(() => setSettled(query), query === '' ? 0 : SETTLE_MILLISECONDS)

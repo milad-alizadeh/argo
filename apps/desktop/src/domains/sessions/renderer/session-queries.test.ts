@@ -23,7 +23,7 @@ test('opening a Session clears unread state without dropping a loaded row', () =
   const session = sessionRosterRow({
     id: 'resumed',
     cwd: null,
-    posture: 'managed',
+    posture: 'live',
     status: 'idle',
     title: null,
     retiredIds: ['retired'],
@@ -60,7 +60,7 @@ test('opening a resumed Session clears its retired row in every cached roster', 
   const retired = sessionRosterRow({
     id: 'retired',
     cwd: null,
-    posture: 'managed',
+    posture: 'live',
     status: 'idle',
     title: null,
     unread: true,

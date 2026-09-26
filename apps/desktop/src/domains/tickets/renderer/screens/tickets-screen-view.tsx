@@ -55,7 +55,7 @@ function NoProject() {
 
 function Body({ view }: { view: TicketsView }) {
   // The Accounts dialog draws this same form inline, so it stays the one copy on screen.
-  const dialogOpen = useAccountsDialog((state) => state.open)
+  const { open: dialogOpen } = useAccountsDialog()
   switch (view.kind) {
     case 'no-project':
       return <NoProject />

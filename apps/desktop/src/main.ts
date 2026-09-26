@@ -4,8 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, type BrowserWindow, dialog, net, protocol, shell } from 'electron'
-import { resetIncompleteDevelopmentDatabase } from '@/database/reset-incomplete-database'
-import { configureStorageRuntime } from '@/database/storage-runtime'
+import { type Database, openDatabase } from '@/database/database'
 import { createAccountAccess, createAccountProcedureContext } from '@/domains/accounts/main'
 import { safeStorageCipher } from '@/domains/accounts/main/safe-storage'
 import { createConnectionPort } from '@/domains/connections/main'
@@ -13,18 +12,12 @@ import {
   createHarnessSignInProcedureContext,
   type HarnessReadinessRegistration,
 } from '@/domains/harness-signin/main'
-import { createProjectPort } from '@/domains/projects/main'
-import { seedDevelopmentProject } from '@/domains/projects/main/development-seed'
-import { openProjectStore } from '@/domains/projects/main/main-store'
-import { PROJECT_PROOF_STORE_ENV } from '@/domains/projects/main/proof-protocol'
-import { inactiveProjectSetupRuntime } from '@/domains/projects/main/setup/actors/project-setup-actors'
-import { createProjectSetupBridge } from '@/domains/projects/main/setup/project-setup-bridge'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import type { CatalogActor } from '@/harnesses/catalog/catalog-read'
 import { createClaudeSignInDriver, createSystemClaudeReadiness } from '@/harnesses/claude/readiness'
 import { createCodexSignInDriver, createSystemCodexReadiness } from '@/harnesses/codex/readiness'
-import { openDurableStores } from '@/main/durable-stores'
+import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { attachAppearanceWatch } from '@/platform/main/appearance'
 import type { AppActor } from '@/platform/main/application/app-machine'
 import { startDesktopApplication } from '@/platform/main/application/start'
@@ -36,6 +29,7 @@ import {
   developmentIdentityArgument,
   developmentInstance,
 } from '@/platform/main/development/instance'
+import { seedDevelopmentProject } from '@/platform/main/development/project-seed'
 import { writeDevelopmentReady } from '@/platform/main/development/ready'
 import { platformText } from '@/platform/main/i18n'
 import { installMenu } from '@/platform/main/menu'
@@ -54,8 +48,6 @@ protocol.registerSchemesAsPrivileged([
     privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
   },
 ])
-
-configureStorageRuntime(app.isPackaged)
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined
 declare const MAIN_WINDOW_VITE_NAME: string
@@ -140,7 +132,7 @@ async function chooseProjectFolder(window: BrowserWindow): Promise<string | null
   return chosen.canceled ? null : (chosen.filePaths[0] ?? null)
 }
 
-function createDomainContexts(stores: ReturnType<typeof openDurableStores>) {
+function createDomainContexts(database: Database) {
   const userData = app.getPath('userData')
   const { accountData, connectionData } = developmentStoreDirectories({
     userData,
@@ -155,7 +147,7 @@ function createDomainContexts(stores: ReturnType<typeof openDurableStores>) {
     providers: accountProviders,
     cipher: safeStorageCipher,
     openExternal: (url) => shell.openExternal(url).then(() => undefined),
-    projects: createProjectPort(stores.projects),
+    database,
   })
   return {
     access,
@@ -170,32 +162,33 @@ function createDomainContexts(stores: ReturnType<typeof openDurableStores>) {
 
 function routerForWindow(options: {
   window: BrowserWindow
-  stores: ReturnType<typeof openDurableStores>
+  database: Database
   actors: { catalog: CatalogActor; sessions: LiveSessionSupervisorActor }
   domains: ReturnType<typeof createDomainContexts>
 }) {
-  const { window, stores, actors, domains } = options
+  const { window, database, actors, domains } = options
+  const exclusive = createWriteQueue()
   return createAppRouter({
     accounts: domains.accounts,
     catalog: actors.catalog,
     harnessSignIn: domains.harnessSignIn,
     projects: {
-      projects: stores.projects,
+      database,
       chooseFolder: () => chooseProjectFolder(window),
-      exclusive: createWriteQueue(),
-      projectSetup: createProjectSetupBridge(window, stores.projects, inactiveProjectSetupRuntime),
+      exclusive,
     },
-    sessions: actors.sessions,
+    sessions: { database, supervisor: actors.sessions },
     tickets: { access: domains.access, connections: domains.connections, sources: ticketSources },
+    workspaces: { database, exclusive },
   })
 }
 
-function createWindow(actor: AppActor, stores: ReturnType<typeof openDurableStores>): void {
+function createWindow(actor: AppActor, database: Database): void {
   const catalogActor = actor.system.get('catalog') as CatalogActor | undefined
   const sessionsActor = actor.system.get('sessions') as LiveSessionSupervisorActor | undefined
   if (catalogActor === undefined || sessionsActor === undefined)
     throw new Error('Application child actors are unavailable.')
-  const domains = createDomainContexts(stores)
+  const domains = createDomainContexts(database)
   desktopWindow = createDesktopWindow({
     buildDirectory: __dirname,
     rendererName: MAIN_WINDOW_VITE_NAME,
@@ -218,7 +211,7 @@ function createWindow(actor: AppActor, stores: ReturnType<typeof openDurableStor
         actors: { catalog: catalogActor, sessions: sessionsActor },
         domains,
         window,
-        stores,
+        database,
       })
       const detachTrpc = attachTrpcTransport({
         window,
@@ -233,7 +226,7 @@ function createWindow(actor: AppActor, stores: ReturnType<typeof openDurableStor
         domains.accounts.signIn.dispose()
         domains.harnessSignIn.signIn.dispose()
         actor.send({ type: 'Shutdown' })
-        stores.close()
+        database.$client.close()
       })
       installMenu(window)
     },
@@ -247,27 +240,19 @@ function createWindow(actor: AppActor, stores: ReturnType<typeof openDurableStor
   }
 }
 
-let applicationStores: ReturnType<typeof openDurableStores> | undefined
+let applicationDatabase: Database | undefined
 
 async function prepare() {
-  if (DEVELOPMENT_INSTANCE) {
-    const { projectData } = developmentStoreDirectories({
-      userData: app.getPath('userData'),
-      appData: app.getPath('appData'),
-      instance: DEVELOPMENT_INSTANCE,
-    })
-    resetIncompleteDevelopmentDatabase(projectData)
-    const projects = openProjectStore(projectData)
-    await seedDevelopmentProject(projects, DEVELOPMENT_INSTANCE)
-    projects.close()
-  }
   const { projectData } = developmentStoreDirectories({
     userData: app.getPath('userData'),
     appData: app.getPath('appData'),
     instance: DEVELOPMENT_INSTANCE,
   })
-  applicationStores = openDurableStores(projectData, !ACCEPTANCE_ENABLED)
-  return { database: applicationStores.database }
+  applicationDatabase = openDatabase(projectData, { packaged: app.isPackaged })
+  if (DEVELOPMENT_INSTANCE) {
+    await seedDevelopmentProject(applicationDatabase, DEVELOPMENT_INSTANCE)
+  }
+  return { database: applicationDatabase }
 }
 
 async function ready(actor: AppActor): Promise<void> {
@@ -277,8 +262,8 @@ async function ready(actor: AppActor): Promise<void> {
     const filePath = attachmentPathFromUrl(request.url)
     return filePath ? net.fetch(pathToFileURL(filePath).href) : new Response(null, { status: 400 })
   })
-  if (applicationStores === undefined) throw new Error('Application stores are unavailable.')
-  createWindow(actor, applicationStores)
+  if (applicationDatabase === undefined) throw new Error('Application database is unavailable.')
+  createWindow(actor, applicationDatabase)
 
   if (ACCEPTANCE_ENABLED) {
     // A window is open and a PTY may still be draining, so this run also stands as the app-shutdown

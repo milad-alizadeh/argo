@@ -56,7 +56,7 @@ test('resolves both real CLIs before it starts the packaged app', () => {
   ).toEqual({ claude: '/bin/claude', codex: '/bin/codex' })
 })
 
-test('names the missing Harness in the setup error', () => {
+test('names the missing Harness in the startup error', () => {
   expect(() =>
     resolveRealSessionExecutables((name) => (name === 'claude' ? '/bin/claude' : null)),
   ).toThrow('codex is not available on PATH')

@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { expect, userEvent, within } from 'storybook/test'
 import { BasicFeed, INACTIVE_FEED_LIVE_FACTS } from '../../feed'
 import type { SessionFeed } from '../../types'
-import { useComposerStore } from '../hooks'
 import { ComposerForm } from '../layout/composer-form'
 
 const COMPACTION_FEED = {
@@ -67,10 +66,6 @@ const meta = {
       </div>
     ),
   ],
-  // Drafts outlive a story like they outlive a page, so each story starts from none.
-  beforeEach: () => {
-    useComposerStore.setState(useComposerStore.getInitialState())
-  },
 } satisfies Meta<typeof CompactingComposerStory>
 
 export default meta

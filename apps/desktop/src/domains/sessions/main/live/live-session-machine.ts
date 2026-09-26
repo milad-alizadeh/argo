@@ -1,21 +1,29 @@
-import { assign, enqueueActions, fromPromise, type SnapshotFrom, sendTo, setup } from 'xstate'
+import {
+  assign,
+  enqueueActions,
+  fromPromise,
+  type SnapshotFrom,
+  sendTo,
+  setup as xstateSetup,
+} from 'xstate'
 import { claudeLiveSessionMachine } from '@/harnesses/claude/session/claude-live-session-machine'
 import type { codexLiveSessionMachine } from '@/harnesses/codex/session/codex-live-session-machine'
-import type { SessionStartInput } from '../api/session-start'
+import type { SessionStartInput } from '../api/session-submit'
 
 export type QueuedLiveSessionCommand = Pick<
   SessionStartInput,
-  'commandId' | 'prompt' | 'attachments' | 'setup'
+  'commandId' | 'prompt' | 'attachments' | 'turnConfiguration'
 >
 type LiveSessionPersistInput = {
   harness: string
   projectId: string
+  workspaceId: string
   cwd: string
   nativeId: string | null
   firstPrompt: string
 }
 
-export const liveSessionMachine = setup({
+export const liveSessionMachine = xstateSetup({
   types: {
     input: {} as SessionStartInput,
     context: {} as {
@@ -160,6 +168,7 @@ export const liveSessionMachine = setup({
         input: ({ context }) => ({
           harness: context.first.harness,
           projectId: context.first.projectId,
+          workspaceId: context.first.workspaceId,
           cwd: context.first.cwd,
           nativeId: context.nativeId,
           firstPrompt: context.first.prompt,

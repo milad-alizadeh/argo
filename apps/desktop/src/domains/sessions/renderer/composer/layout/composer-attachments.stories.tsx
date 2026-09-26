@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { ComposerStory } from '../editor'
-import { useComposerStore } from '../hooks'
 
 const FRAME = 'mx-auto max-w-4xl p-8'
 const CONTEXT_PICKER_FRAME = 'mx-auto mt-72 max-w-4xl p-8 pt-96'
@@ -65,10 +64,6 @@ const meta = {
       </div>
     ),
   ],
-  // Drafts outlive a story like they outlive a page, so each story starts from none.
-  beforeEach: () => {
-    useComposerStore.setState(useComposerStore.getInitialState())
-  },
   args: { onSend: fn(async () => true) },
 } satisfies Meta<typeof ComposerStory>
 

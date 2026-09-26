@@ -11,7 +11,7 @@ test('opens the child Session named by a Feed subagent row', () => {
       id: 'call-started',
       subagentId: 'agent-a64dd851fde47a6f0',
       event: 'started',
-      name: 'Explore turn setup and harness code for issue 2669',
+      name: 'Explore Turn Configuration and harness code for issue 2669',
     },
   ] satisfies SessionFeedRow[]
   const subagents = sessionScreenSubagents(rows, [])
@@ -29,7 +29,7 @@ test('opens the child Session named by a Feed subagent row', () => {
     kind: 'delegation',
     delegation: {
       id: 'agent-a64dd851fde47a6f0',
-      label: 'Explore turn setup and harness code for issue 2669',
+      label: 'Explore Turn Configuration and harness code for issue 2669',
     },
   })
   if (target !== null) links.open(target)

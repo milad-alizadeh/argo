@@ -14,3 +14,11 @@ export const projectSelectSchema = createSelectSchema(project)
   .strict()
 
 export const projectRegistrationSchema = projectSelectSchema
+
+export type ProjectRegistration = z.infer<typeof projectRegistrationSchema>
+
+export const projectSummarySchema = projectSelectSchema
+  .pick({ id: true, path: true })
+  .extend({ name: z.string().min(1) })
+
+export type ProjectSummary = z.infer<typeof projectSummarySchema>

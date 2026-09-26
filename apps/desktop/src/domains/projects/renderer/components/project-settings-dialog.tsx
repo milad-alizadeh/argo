@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router'
-import type { ProjectSummary } from '@/domains/projects/contract/messages'
 import { SourceSettings, useConnection, useDisconnectSource } from '@/domains/tickets/renderer'
 import {
   Dialog,
@@ -9,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/platform/renderer/components/ui/dialog'
+import type { ProjectSummary } from '../hooks/use-projects'
 
 type ProjectSettingsDialogProps = {
   project: ProjectSummary

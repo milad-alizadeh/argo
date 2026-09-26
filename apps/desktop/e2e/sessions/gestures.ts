@@ -9,7 +9,7 @@ import type { Page } from 'playwright-core'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 
 // The harness tab labels, typed against SessionHarness so a new Harness cannot be left out. The strings
-// themselves live in the renderer's turn setup (claude-turn-setup.ts, codex-turn-setup.ts), which
+// themselves live in the renderer's turn turnConfiguration (claude-turn-configuration.ts, codex-turn-configuration.ts), which
 // the driver bundle cannot import: the path there runs through the `@/` alias, and the bundler CI
 // runs leaves that unresolved.
 const HARNESS_TABS: Record<SessionHarness, string> = { claude: 'Claude Code', codex: 'Codex' }
@@ -20,17 +20,17 @@ const BUDGET_MODELS: Record<SessionHarness, RegExp> = {
 
 const ROW = 'nav[aria-label="Sessions"] button[data-session-id]'
 const FILTER = 'button[aria-label="Filter Sessions"]'
-export const RUN_SETUP = '[aria-label^="Choose run setup"]'
+export const TURN_CONFIGURATION = '[aria-label^="Choose Turn configuration"]'
 const ROW_TIMEOUT = 30_000
 const POLL_MS = 25
 
 export type CreateRequest = {
   harness: SessionHarness
   prompt: string
-  budgetRunSetup?: boolean
+  budgetTurnConfiguration?: boolean
   permissionMode?: 'auto'
   // Read on every poll while the Roster row is still absent. A true reading fails the case: the
-  // row a managed Session stands on must not wait for the Harness to write (managed-row.ts).
+  // row a live Session stands on must not wait for the Harness to write.
   harnessWrote?: () => Promise<boolean>
 }
 
@@ -90,17 +90,17 @@ export async function deselectSession(page: Page) {
   })
 }
 
-// The harness tabs inside the run setup popover, dismissed the way a person dismisses it.
+// The harness tabs inside the Turn configuration popover, dismissed the way a person dismisses it.
 export async function chooseHarness(page: Page, harness: SessionHarness) {
-  await page.locator(RUN_SETUP).click()
-  // Keyboard tab selection remains valid while the run-setup surface re-renders its controls.
+  await page.locator(TURN_CONFIGURATION).click()
+  // Keyboard tab selection remains valid while the turn-configuration surface re-renders its controls.
   await page.getByRole('tab', { name: HARNESS_TABS[harness] }).press('Enter')
   await page.keyboard.press('Escape')
   await page.getByRole('tablist', { name: 'Harness' }).waitFor({ state: 'detached' })
 }
 
-async function chooseBudgetRunSetup(page: Page, harness: SessionHarness) {
-  await page.locator(RUN_SETUP).click()
+async function chooseBudgetTurnConfiguration(page: Page, harness: SessionHarness) {
+  await page.locator(TURN_CONFIGURATION).click()
   const models = page.getByRole('radiogroup', { name: 'Model' })
   const model = models.getByRole('radio', {
     name: BUDGET_MODELS[harness],
@@ -190,7 +190,8 @@ export async function createSessionByClick(page: Page, request: CreateRequest): 
   const known = await rosterIds(page)
   await openNewSessionByClick(page)
   await chooseHarness(page, request.harness)
-  if (request.budgetRunSetup === true) await chooseBudgetRunSetup(page, request.harness)
+  if (request.budgetTurnConfiguration === true)
+    await chooseBudgetTurnConfiguration(page, request.harness)
   if (request.permissionMode === 'auto') await chooseAutoPermissionMode(page)
   const composer = page.getByRole('combobox', { name: 'Message' })
   await composer.click()
@@ -199,7 +200,7 @@ export async function createSessionByClick(page: Page, request: CreateRequest): 
   await page.keyboard.press('Enter')
 
   const created = await waitForCreatedRow(page, known, request)
-  // One gesture makes one Session; history refreshes can add unrelated watched rows (#2581).
+  // One gesture makes one Session; history refreshes can add unrelated external rows (#2581).
   assert.equal(created.matchingRows, 1)
   return created.id
 }

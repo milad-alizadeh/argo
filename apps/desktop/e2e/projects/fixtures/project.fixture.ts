@@ -2,20 +2,13 @@
 // carries the production fuse profile with one fuse flipped, so the run reads a shipped app whose
 // only difference from the download is the inspector it is driven through.
 import { execFile } from 'node:child_process'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
 import { promisify } from 'node:util'
 import { _electron as electron } from 'playwright-core'
-import { createDurableDatabase } from '@/database/durable-database'
-import { openSharedDatabase } from '@/database/shared-database'
-import { sharedDatabasePath } from '@/database/shared-database-path'
-import {
-  PROJECT_PROOF_STORE_ENV,
-  SETUP_DOCUMENT_PROOF_URL_ENV,
-} from '@/domains/projects/main/proof-protocol'
-import { createProjectStore } from '@/domains/projects/main/sqlite-store'
-import type { MockSetupDocument } from '../../../mocks/providers/setup/mock-setup-document-loopback'
+import { databasePath, openDatabase } from '@/database/database'
+import { project as projectTable } from '@/database/project/schema'
+import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mts'
 import { appExecutable, packagedTestCopy } from '../../packaged-app'
 import { makeProjectLocallyReady } from './locally-ready-project'
@@ -23,17 +16,14 @@ import { makeProjectLocallyReady } from './locally-ready-project'
 const run = promisify(execFile)
 
 // The one project entry every fixture in this proof suite seeds before it launches the app.
-export function seedSingleProject(
-  userData: string,
-  project: { id: string; path: string; selectedId?: string | null },
-) {
-  const { id, path: projectPath, selectedId = id } = project
-  const projects = createProjectStore(createDurableDatabase(openSharedDatabase(userData)))
-  projects.replace({
-    projects: [{ id, path: projectPath, commonDirectory: path.join(projectPath, '.git') }],
-    selectedId,
-  })
-  return projects
+export function seedSingleProject(userData: string, project: { id: string; path: string }) {
+  const { id, path: projectPath } = project
+  const database = openDatabase(userData)
+  database
+    .insert(projectTable)
+    .values({ id, path: projectPath, commonDirectory: path.join(projectPath, '.git') })
+    .run()
+  database.$client.close()
 }
 
 export async function repository(folder) {
@@ -57,68 +47,17 @@ export async function prepare(root, application?) {
   await mkdir(userData, { recursive: true })
   await mkdir(projectPath)
   await makeProjectLocallyReady(projectPath)
-  const databasePath = sharedDatabasePath(userData)
-  seedSingleProject(userData, { id: 'project-1', path: projectPath }).close()
+  const applicationDatabasePath = databasePath(userData)
+  seedSingleProject(userData, { id: 'project-1', path: projectPath })
   return {
     application,
     userData,
     projectPath,
-    databasePath,
+    databasePath: applicationDatabasePath,
     beta: await repository(path.join(root, 'beta')),
     moved: path.join(root, 'beta-moved'),
     relocated: path.join(root, 'beta-relocated'),
     plain: await folder(path.join(root, 'plain')),
-  }
-}
-
-export async function prepareManual(
-  root: string,
-  application: string,
-  setupDocument: MockSetupDocument,
-) {
-  const userData = path.join(root, 'manual-userData')
-  const projectPath = path.join(root, 'manual-project')
-  const remote = path.join(root, 'manual-remote.git')
-  await mkdir(userData, { recursive: true })
-  await repository(projectPath)
-  await writeFile(path.join(projectPath, 'README.md'), 'Manual setup fixture\n')
-  await run('git', ['-C', projectPath, 'add', 'README.md'])
-  await run('git', [
-    '-C',
-    projectPath,
-    '-c',
-    'user.email=argo@example.test',
-    '-c',
-    'user.name=Argo',
-    'commit',
-    '--quiet',
-    '-m',
-    'fixture',
-  ])
-  await run('git', ['init', '--bare', '--quiet', remote])
-  await run('git', ['-C', projectPath, 'remote', 'add', 'origin', remote])
-  const branch = (await run('git', ['-C', projectPath, 'branch', '--show-current'])).stdout.trim()
-  await run('git', ['-C', projectPath, 'push', '--quiet', '-u', 'origin', branch])
-  await run('git', ['-C', remote, 'symbolic-ref', 'HEAD', `refs/heads/${branch}`])
-  const databasePath = sharedDatabasePath(userData)
-  seedSingleProject(userData, { id: 'project-setup', path: projectPath }).close()
-  return {
-    application,
-    databasePath,
-    projectPath,
-    setupDocument,
-    userData,
-  }
-}
-
-export async function readManualSetupConfiguration(fixture: { databasePath: string }) {
-  const projects = createProjectStore(createDurableDatabase(new DatabaseSync(fixture.databasePath)))
-  try {
-    const checkpoint = projects.readSetupCheckpoint('project-setup')
-    if (!checkpoint) throw new Error('Manual setup checkpoint is unavailable.')
-    return await readFile(path.join(checkpoint.worktreePath, '.argo', 'settings.json'), 'utf8')
-  } finally {
-    projects.close()
   }
 }
 
@@ -130,9 +69,6 @@ export function launch(fixture, environment: Record<string, string> = {}) {
     env: {
       ...process.env,
       [PROJECT_PROOF_STORE_ENV]: fixture.userData,
-      ...(fixture.setupDocument
-        ? { [SETUP_DOCUMENT_PROOF_URL_ENV]: fixture.setupDocument.url }
-        : {}),
       ...environment,
       [ACCEPTANCE_ENV]: '0',
     },

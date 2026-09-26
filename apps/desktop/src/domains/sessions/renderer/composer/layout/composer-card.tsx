@@ -4,12 +4,12 @@ import { useTranslation } from 'react-i18next'
 import type { SessionPlan } from '@/domains/sessions/renderer/model/models'
 import type { HarnessControl } from '../../harness/harnesses'
 import { SessionContextBar } from '../context-bar/session-context-bar'
+import { useComposerEditing } from '../editing/composer-editing-context'
 import { useAttachmentTransfer } from '../hooks/use-composer-attachments'
-import { useComposerStore } from '../hooks/use-composer-store'
 import { activeReference } from '../references/composer-reference-menu'
 import { DraftContextPicker } from '../references/context-picker/draft-context-picker'
 import { ComposerToolbar } from '../toolbar/composer-toolbar'
-import type { TurnSetupControlProps } from '../toolbar/run-setup-menu'
+import type { TurnConfigurationControlProps } from '../toolbar/turn-configuration-menu'
 import type { WorkspaceMenuControlProps } from '../toolbar/workspace-menu'
 import { ComposerEditorArea } from './composer-editor-area'
 
@@ -29,9 +29,9 @@ type ComposerCardProps = {
   onSend: () => void
   plan: SessionPlan | null
   sessionId: string
-  setup: TurnSetupControlProps | null
+  turnConfiguration: TurnConfigurationControlProps | null
   catalogState?: {
-    catalogFailure: import('../toolbar/run-setup-menu').CatalogFailure | null
+    catalogFailure: import('../toolbar/turn-configuration-menu').CatalogFailure | null
     refreshCatalog?: () => void
     sendAvailable?: boolean
   }
@@ -99,23 +99,23 @@ function ComposerContextBar(
 function ComposerContextPicker({
   editorRef,
   open,
-  sessionId,
   setOpen,
 }: {
   editorRef: RefObject<LexicalEditor | null>
   open: boolean
-  sessionId: string
   setOpen: (open: boolean) => void
 }) {
-  const draft = useComposerStore(({ drafts }) => drafts[sessionId] ?? '')
-  const addTicket = useComposerStore(({ addTicket }) => addTicket)
-  const addAttachments = useComposerStore(({ addAttachments }) => addAttachments)
-  const { attachFiles } = useAttachmentTransfer((paths) => addAttachments(sessionId, paths))
+  const { editing, dispatch } = useComposerEditing()
+  const { attachFiles } = useAttachmentTransfer((paths) =>
+    dispatch({ type: 'attachments.added', paths, createId: crypto.randomUUID }),
+  )
   if (!open) return null
   return (
     <DraftContextPicker
-      draft={draft}
-      onAddTicket={(ticket) => addTicket(sessionId, ticket)}
+      draft={editing.prompt}
+      onAddTicket={(ticket) =>
+        dispatch({ type: 'ticket.added', ticket, createId: crypto.randomUUID })
+      }
       onAttach={() => void attachFiles()}
       onClose={() => closeContextPicker(editorRef, setOpen)}
       editorRef={editorRef}
@@ -126,12 +126,11 @@ function ComposerContextPicker({
 // The card and the context bar pinned under it: everything below the pending-turns list.
 export function ComposerCard(props: ComposerCardProps) {
   const { t } = useTranslation('sessions')
-  const draft = useComposerStore(({ drafts }) => drafts[props.sessionId] ?? '')
-  const addAttachments = useComposerStore(({ addAttachments }) => addAttachments)
+  const { editing, dispatch } = useComposerEditing()
   const { dropFiles: dropAttachedFiles } = useAttachmentTransfer((paths) =>
-    addAttachments(props.sessionId, paths),
+    dispatch({ type: 'attachments.added', paths, createId: crypto.randomUUID }),
   )
-  const [contextPickerOpen, setContextPickerOpen] = useContextPicker(draft)
+  const [contextPickerOpen, setContextPickerOpen] = useContextPicker(editing.prompt)
   const interruptRef = useFocusInterruptOnCompactStart(props.isCompacting)
   return (
     <div className="relative shrink-0">
@@ -154,7 +153,6 @@ export function ComposerCard(props: ComposerCardProps) {
           sessionId={props.sessionId}
         />
         <ComposerToolbar
-          sessionId={props.sessionId}
           disabled={props.disabled}
           sendAvailable={props.catalogState?.sendAvailable}
           harness={props.harness}
@@ -162,7 +160,7 @@ export function ComposerCard(props: ComposerCardProps) {
           isRunning={props.isRunning}
           onOpenContextPicker={() => setContextPickerOpen(true)}
           onInterrupt={props.onInterrupt}
-          setup={props.setup}
+          turnConfiguration={props.turnConfiguration}
           workspace={props.workspace}
           catalogFailure={props.catalogState?.catalogFailure}
           refreshCatalog={props.catalogState?.refreshCatalog}
@@ -171,7 +169,6 @@ export function ComposerCard(props: ComposerCardProps) {
       <ComposerContextPicker
         editorRef={props.editorRef}
         open={contextPickerOpen}
-        sessionId={props.sessionId}
         setOpen={setContextPickerOpen}
       />
       <ComposerContextBar {...props} />

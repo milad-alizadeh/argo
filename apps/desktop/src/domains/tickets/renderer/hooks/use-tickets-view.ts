@@ -2,7 +2,7 @@
 // the Tickets, resolved into the single view the screen draws.
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router'
-import { useAccounts } from '@/domains/accounts/renderer'
+import { useAccounts, useOpenAccountsDialog } from '@/domains/accounts/renderer'
 import { useSelectedProject } from '@/domains/projects/renderer'
 import { useSettledQuery } from '../state/use-ticket-search'
 import { useConnectForm } from './use-connect-form'
@@ -36,6 +36,7 @@ export function useTicketsView(): TicketsScreenProps {
   const updateStatus = useUpdateStatus()
   const updatePriority = useUpdatePriority()
   const navigate = useNavigate()
+  const openAccountsDialog = useOpenAccountsDialog()
 
   function view(): TicketsView {
     if (!project) return { kind: 'no-project' }
@@ -43,10 +44,12 @@ export function useTicketsView(): TicketsScreenProps {
     if (connection.error) {
       return failure(t('failure.connection'), connection.error, {
         onRetry: connection.refetch,
+        onReconnect: openAccountsDialog,
         provider: null,
       })
     }
-    if (connection.data === null) return unconnectedView(t, { project, accounts, form })
+    if (connection.data === null)
+      return unconnectedView(t, { project, accounts, form, onReconnect: openAccountsDialog })
     const projectId = project.id
     return connectedView(t, {
       projectId,
@@ -61,6 +64,7 @@ export function useTicketsView(): TicketsScreenProps {
       onBack: () => navigate(`/projects/${projectId}/tickets`),
       onSelect: (key) => navigate(`/projects/${projectId}/tickets/${encodeURIComponent(key)}`),
       onOpenSession: (id) => navigate(`/projects/${projectId}/sessions/${id}`),
+      onReconnect: openAccountsDialog,
     })
   }
 

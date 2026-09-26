@@ -10,7 +10,6 @@ type SdkReplyOptions = {
   transcript: string
   recordUser: (prompt: string) => void
   nextPlan: () => AdversarialTurn | null
-  projectSetupScenario: string | undefined
   replyDelayMs: number
   writeReply: (text: string, plan: AdversarialTurn | null) => string
 }
@@ -19,7 +18,6 @@ export async function replyToSdkPrompt(options: SdkReplyOptions): Promise<string
   const {
     compact,
     nextPlan,
-    projectSetupScenario,
     prompt,
     recordUser,
     rename,
@@ -42,11 +40,7 @@ export async function replyToSdkPrompt(options: SdkReplyOptions): Promise<string
   }
   recordUser(prompt)
   const plan = nextPlan()
-  if (
-    plan?.permissionBeforeReply ||
-    (projectSetupScenario === 'permission' && prompt.includes('ARGO_SETUP_PLAN'))
-  )
-    await waitForPermission()
+  if (plan?.permissionBeforeReply) await waitForPermission()
   if (plan?.outcome === 'stall') return new Promise<string>(() => undefined)
   return replyForMockClaudeTurn({ text: prompt, plan, replyDelayMs, writeReply })
 }

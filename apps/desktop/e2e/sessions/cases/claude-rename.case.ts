@@ -15,7 +15,7 @@ export async function proveClaudeRename(page, { backend, project, transcripts })
         harness: 'claude',
         cwd,
         prompt,
-        setup: { model: 'opus', effort: 'medium', mode: 'manual' },
+        turnConfiguration: { model: 'opus', effort: 'medium', mode: 'manual' },
       }),
     { cwd: project, prompt },
   )

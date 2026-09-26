@@ -2,7 +2,7 @@
 
 - **Project** `0—N` **Session**; each **Session** has `0..1` Project. A Session without one remains
   in the global Session list. **Project** has `1—N` **Delivery**, `1—N` **Workspace** (its registry:
-  main, imported, managed — durable identity, never deleted); holds **`0..1` Connection per port**
+  main and imported — durable identity); holds **`0..1` Connection per port**
   (Work Item, Code host), which is what scopes the providers it reads.
 - **Account** `0—N` **Connection**, across any number of Projects; a **Connection** names exactly
   **one Account** and **one port**. A provider has `0—N` **Accounts** on this machine, so

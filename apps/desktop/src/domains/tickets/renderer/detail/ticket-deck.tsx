@@ -1,9 +1,6 @@
-import { useLayoutEffect, useMemo } from 'react'
 import { useLinkedSessions } from '../hooks/use-linked-sessions'
 import type { Backlog } from '../lib/backlog'
 import { TicketList } from '../sidebar/ticket-list'
-import { useTicketPlanningSidebar } from '../sidebar/ticket-planning-sidebar-store'
-import { ticketWorkPath } from '../sidebar/ticket-work-path'
 import { TicketDetail } from './ticket-detail'
 
 export type TicketDeckProps = {
@@ -27,12 +24,6 @@ export function TicketDeck({
   onSelect,
   onOpenSession,
 }: TicketDeckProps) {
-  const setPlanning = useTicketPlanningSidebar((state) => state.setPlanning)
-  const path = useMemo(() => ticketWorkPath(backlog.tickets), [backlog.tickets])
-  useLayoutEffect(() => {
-    setPlanning({ path, onSelect })
-    return () => setPlanning(null)
-  }, [onSelect, path, setPlanning])
   const selected = backlog.tickets.find((ticket) => ticket.key === selectedKey) ?? null
   const listed = new Set(backlog.tickets.map((ticket) => ticket.key))
   const linkedSessions = useLinkedSessions(projectId, selected?.key ?? null)

@@ -75,5 +75,5 @@ export type SessionEvidence =
   | SessionFileEvidence
 
 export function sessionPostureLocksAnswer(posture: Session['posture'] | null): boolean {
-  return posture !== 'managed'
+  return posture !== 'live'
 }

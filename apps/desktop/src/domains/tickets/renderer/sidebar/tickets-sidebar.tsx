@@ -1,14 +1,15 @@
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  openAccountsDialog,
   SignInNotice,
   type SignInNoticeProps,
+  useOpenAccountsDialog,
 } from '@/domains/accounts/renderer'
 import type { ConnectionSummary } from '@/domains/tickets/contract/contract'
 import { useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
-import { useTicketPlanningSidebar } from './ticket-planning-sidebar-store'
+import { useTicketsView } from '../hooks/use-tickets-view'
 import type { TicketWorkPath } from './ticket-work-path'
+import { ticketWorkPath } from './ticket-work-path'
 import { TicketWorkPathSidebar } from './ticket-work-path-sidebar'
 import { TicketsSidebarAccountFoot } from './tickets-sidebar-account-foot'
 import { TicketsSidebarHeader } from './tickets-sidebar-header'
@@ -67,7 +68,12 @@ export function TicketsSidebarContent({
 }
 
 export function TicketsSidebar() {
-  const planning = useTicketPlanningSidebar((state) => state.planning)
+  const { view } = useTicketsView()
+  const planning =
+    view.kind === 'tickets'
+      ? { path: ticketWorkPath(view.backlog.tickets), onSelect: view.onSelect }
+      : null
+  const openAccountsDialog = useOpenAccountsDialog()
   return (
     <TicketsSidebarContent
       connection={null}

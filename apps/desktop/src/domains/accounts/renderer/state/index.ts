@@ -1,1 +1,1 @@
-export { openAccountsDialog, useAccountsDialog } from './use-accounts-dialog'
+export { useAccountsDialog, useOpenAccountsDialog } from './use-accounts-dialog'

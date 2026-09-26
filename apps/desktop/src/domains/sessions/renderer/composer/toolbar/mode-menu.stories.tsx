@@ -3,20 +3,24 @@ import { useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { claudeComposerModelCatalogFixture } from '../../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
 import { claudeChoices } from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
-import type { TurnSetupChoices } from '../turn-setup/turn-setup'
+import type { TurnConfigurationChoices } from '../turn-configuration/turn-configuration'
 import { ModeMenu } from './mode-menu'
 
-const CLAUDE_TURN_SETUP = (() => {
+const CLAUDE_TURN_CONFIGURATION = (() => {
   const choices = claudeChoices(claudeComposerModelCatalogFixture())
   if (choices === null) throw new Error('The Claude story catalog has no usable model.')
   return choices
-})() satisfies TurnSetupChoices
+})() satisfies TurnConfigurationChoices
 
 function ModeStory() {
-  const [setup, setSetup] = useState(CLAUDE_TURN_SETUP.opening)
+  const [turnConfiguration, setTurnConfiguration] = useState(CLAUDE_TURN_CONFIGURATION.opening)
   return (
     <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
-      <ModeMenu choices={CLAUDE_TURN_SETUP} value={setup} onChange={setSetup} />
+      <ModeMenu
+        choices={CLAUDE_TURN_CONFIGURATION}
+        value={turnConfiguration}
+        onChange={setTurnConfiguration}
+      />
     </div>
   )
 }
@@ -24,10 +28,14 @@ function ModeStory() {
 function AutoRestrictedModeStory() {
   const choices = claudeChoices(claudeComposerModelCatalogFixture())
   if (choices === null) throw new Error('The Claude story catalog has no usable model.')
-  const [setup, setSetup] = useState({ model: 'sonnet', effort: 'medium', mode: 'manual' })
+  const [turnConfiguration, setTurnConfiguration] = useState({
+    model: 'sonnet',
+    effort: 'medium',
+    mode: 'manual',
+  })
   return (
     <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
-      <ModeMenu choices={choices} value={setup} onChange={setSetup} />
+      <ModeMenu choices={choices} value={turnConfiguration} onChange={setTurnConfiguration} />
     </div>
   )
 }

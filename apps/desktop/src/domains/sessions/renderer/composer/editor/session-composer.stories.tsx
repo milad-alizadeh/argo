@@ -1,19 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import type { WorkspaceSummary } from '@/domains/projects/contract/workspace-messages'
 import type { SessionPlan } from '@/domains/sessions/renderer/model/models'
+import type { WorkspaceSummary } from '@/domains/workspaces/renderer'
 import { claudeComposerModelCatalogFixture } from '../../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
 import { claudeChoices } from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
 import type { SessionHarness } from '../../harness/harnesses'
-import { useComposerStore } from '../hooks'
 import { ComposerForm } from '../layout/composer-form'
-import type { TurnSetupChoices } from '../turn-setup/turn-setup'
+import type { TurnConfigurationChoices } from '../turn-configuration/turn-configuration'
 
-const CLAUDE_TURN_SETUP = (() => {
+const CLAUDE_TURN_CONFIGURATION = (() => {
   const choices = claudeChoices(claudeComposerModelCatalogFixture())
   if (choices === null) throw new Error('The Claude story catalog has no usable model.')
   return choices
-})() satisfies TurnSetupChoices
+})() satisfies TurnConfigurationChoices
 
 const FRAME = 'mx-auto max-w-4xl p-8'
 
@@ -22,7 +21,7 @@ const plan: SessionPlan = {
   entries: [{ content: 'Choose the base layout', position: 0, status: 'in_progress' as const }],
 }
 
-const WORKSPACE_CANDIDATES: [WorkspaceSummary, WorkspaceSummary, WorkspaceSummary] = [
+const WORKSPACE_CANDIDATES: [WorkspaceSummary, WorkspaceSummary] = [
   {
     id: 'workspace-main',
     kind: 'main',
@@ -37,21 +36,14 @@ const WORKSPACE_CANDIDATES: [WorkspaceSummary, WorkspaceSummary, WorkspaceSummar
     path: '/Users/milad/Developer/argo-linked',
     facts: { branch: 'feature/linked', headSha: 'def5678', dirty: true },
   },
-  {
-    id: 'workspace-managed',
-    kind: 'managed',
-    displayName: 'ticket-2600-project-workspaces',
-    path: '/Users/milad/Developer/argo/.claude/worktrees/ticket-2600-project-workspaces',
-    facts: { branch: 'argo/#2600-project-workspaces', headSha: 'ghi9012', dirty: false },
-  },
 ]
 
 // Every control the composer can show at once, for visual/manual review rather than a behaviour
-// assertion: plan, harness, turn setup and the Workspace picker together.
+// assertion: plan, harness, turn turnConfiguration and the Workspace picker together.
 function EverythingComposerStory() {
   const [sessionId] = useState('session-one')
   const [harness, setHarness] = useState<SessionHarness>('claude')
-  const [setup, setSetup] = useState(CLAUDE_TURN_SETUP.opening)
+  const [turnConfiguration, setTurnConfiguration] = useState(CLAUDE_TURN_CONFIGURATION.opening)
   const [selectedId, setSelectedId] = useState(WORKSPACE_CANDIDATES[0].id)
   const selected = WORKSPACE_CANDIDATES.find((candidate) => candidate.id === selectedId) ?? null
 
@@ -63,11 +55,14 @@ function EverythingComposerStory() {
       onSend={async () => true}
       plan={plan}
       sessionId={sessionId}
-      setup={{ choices: CLAUDE_TURN_SETUP, value: setup, onChange: setSetup }}
+      turnConfiguration={{
+        choices: CLAUDE_TURN_CONFIGURATION,
+        value: turnConfiguration,
+        onChange: setTurnConfiguration,
+      }}
       workspace={{
         workspace: selected,
         workspaces: WORKSPACE_CANDIDATES,
-        onCreateManaged: () => {},
         onSelect: setSelectedId,
       }}
     />
@@ -84,16 +79,12 @@ const meta = {
       </div>
     ),
   ],
-  // Drafts outlive a story like they outlive a page, so each story starts from none.
-  beforeEach: () => {
-    useComposerStore.setState(useComposerStore.getInitialState())
-  },
 } satisfies Meta<typeof EverythingComposerStory>
 
 export default meta
 type Story = StoryObj<typeof EverythingComposerStory>
 
-// A single visual reference showing every composer control together: plan, harness, turn setup
+// A single visual reference showing every composer control together: plan, harness, turn turnConfiguration
 // and the Workspace picker. Manual/visual review, not a behaviour assertion (each control already
 // has its own dedicated story above).
 export const Everything: Story = { tags: ['view-only'] }

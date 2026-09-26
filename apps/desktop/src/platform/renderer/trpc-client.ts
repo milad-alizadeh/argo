@@ -1,8 +1,12 @@
 import { QueryClient } from '@tanstack/react-query'
 import { createTRPCClient, TRPCClientError, type TRPCLink } from '@trpc/client'
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server'
 import { type Observer, observable } from '@trpc/server/observable'
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query'
 import type { AppRouter } from '@/platform/main/trpc-router'
+
+export type RouterOutputs = inferRouterOutputs<AppRouter>
+export type RouterInputs = inferRouterInputs<AppRouter>
 
 type TrpcRequest = {
   id: number

@@ -28,11 +28,10 @@ export function ComposerEditorArea({
       <div className="absolute top-(--spacing-shell-inset) right-(--spacing-shell-inset) z-20">
         <SessionPlanPopover plan={plan} />
       </div>
-      <ComposerAttachments sessionId={sessionId} />
+      <ComposerAttachments />
       <div className="relative min-w-0 flex-1">
         <ComposerEditor
           key={sessionId}
-          sessionId={sessionId}
           harness={harness}
           contextPickerOpen={contextPickerOpen}
           editorRef={editorRef}

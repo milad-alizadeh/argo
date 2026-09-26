@@ -2,10 +2,9 @@
 // vendor CLIs Argo drives — Claude and Codex — kept apart from Account: a Harness sign-in is a
 // subscription to a vendor's own CLI, never an Account entity (#2579).
 import { z } from 'zod'
-import { projectSetupHarnesses } from '@/domains/projects/contract/setup'
 import { type ContractError, errorFactory, errorSchema, guard, message } from '@/shared/messages'
 
-export const harnessSchema = z.enum(projectSetupHarnesses)
+export const harnessSchema = z.enum(['claude', 'codex'])
 export type Harness = z.infer<typeof harnessSchema>
 
 export const HARNESS_READINESS_STATES = [

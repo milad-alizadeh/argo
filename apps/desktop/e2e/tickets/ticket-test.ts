@@ -86,11 +86,11 @@ export type Tickets = {
 export const test = packagedTest.extend<{ ticketState: TicketState; tickets: Tickets }>({
   ticketState: ['none', { option: true }],
   tickets: async (
-    { root, packagedApplication, ticketState, performanceProfile, setupDocument },
+    { root, packagedApplication, ticketState, performanceProfile },
     use,
     testInfo,
   ) => {
-    const fixture = await prepare(root, packagedApplication, setupDocument)
+    const fixture = await prepare(root, packagedApplication)
     let application: ElectronApplication | undefined
     let traced: BrowserContext | undefined
     const open = async () => {

@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { isOptimisticSessionId } from '../../session-creation'
 import type { SessionError, SessionFeed, SessionId } from '../../types'
 import { FEED_STALL_TIMEOUT_MS, useStallTimer } from '../feed-stall'
 import { Standing } from '../standing'
@@ -37,19 +36,16 @@ function awaitingSelectedFeed({
   current,
   failure,
   selectedSessionId,
-  optimisticSession,
   liveFacts,
 }: {
   current: SessionFeed | null
   failure: SessionError | null
   selectedSessionId: SessionId | null
-  optimisticSession: boolean
   liveFacts: FeedLiveFacts
 }) {
   return (
     failure === null &&
     selectedSessionId !== null &&
-    !optimisticSession &&
     (current === null || (liveFacts?.isRunning === true && awaitingAssistantReply(current.rows)))
   )
 }
@@ -94,7 +90,6 @@ export function BasicFeed({
   // The Standing spinner (below) has no bound of its own: a Session whose read never answers
   // (#2102) never gets a kept document, so `current` stays null forever without this.
   const { retry, retryToken } = useFeedRetry(onRetryFeed)
-  const optimisticSession = selectedSessionId !== null && isOptimisticSessionId(selectedSessionId)
   // The prompt row outlives the temporary id: the real Session's first read can trail the hand-off.
   const holdsPrompt =
     current === null &&
@@ -109,7 +104,6 @@ export function BasicFeed({
     current,
     failure,
     selectedSessionId,
-    optimisticSession,
     liveFacts,
   })
   const stalled = useStallTimer(
@@ -141,7 +135,7 @@ export function BasicFeed({
   return (
     <section aria-label={feedLabel ?? t('feedLabel')} className="feed">
       {!stalled && documents.map(([id, document]) => keptDocument(id, document, shared))}
-      {failure !== null || stalled || (current === null && !optimisticSession && !holdsPrompt) ? (
+      {failure !== null || stalled || (current === null && !holdsPrompt) ? (
         <Standing
           failure={failure}
           selected={selectedSessionId !== null}

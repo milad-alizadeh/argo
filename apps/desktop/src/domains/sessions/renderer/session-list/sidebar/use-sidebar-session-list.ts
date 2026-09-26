@@ -21,9 +21,8 @@ export function sessionListTitledSearchResults(
 }
 
 // A renamed title is shown locally, keyed by session id, until a Session list read carries the same
-// title back through the transcript. Keying on the Session list array's identity instead let a read
-// that changed nothing else revert the row, because the remembered order builds a new array on every
-// read whether or not any Session actually changed (#2290).
+// title back through the transcript. Keying on the Session list array's identity instead lets any
+// equivalent read revert the row before the renamed title lands (#2290).
 function pendingRenames(renamed: Record<string, string>, sessions: SessionsListed['sessions']) {
   const pending: Record<string, string> = {}
   for (const [sessionId, title] of Object.entries(renamed)) {

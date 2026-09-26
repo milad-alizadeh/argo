@@ -6,14 +6,12 @@ import {
   AttachmentGroup,
 } from '@/platform/renderer/components/ui/attachment'
 import { AttachmentChip, parseFilename } from '../../attachment-chip'
-import { EMPTY_COMPOSER_ATTACHMENTS, useComposerStore } from '../hooks/use-composer-store'
+import { useComposerEditing } from '../editing/composer-editing-context'
 
-export function ComposerAttachments({ sessionId }: { sessionId: string }) {
+export function ComposerAttachments() {
   const { t } = useTranslation('sessions')
-  const attachments = useComposerStore(
-    ({ attachments }) => attachments[sessionId] ?? EMPTY_COMPOSER_ATTACHMENTS,
-  )
-  const removeAttachment = useComposerStore(({ removeAttachment }) => removeAttachment)
+  const { editing, dispatch } = useComposerEditing()
+  const { attachments } = editing
   if (attachments.length === 0) return null
   return (
     <AttachmentGroup className="flex-nowrap gap-(--spacing-composer-attachment-gutter) overflow-x-auto scroll-p-(--spacing-composer-attachment-gutter) p-(--spacing-composer-attachment-gutter)">
@@ -28,7 +26,7 @@ export function ComposerAttachments({ sessionId }: { sessionId: string }) {
               aria-label={t('composer.attachment.remove', {
                 title: parseFilename(attachment.path).title,
               })}
-              onClick={() => removeAttachment(sessionId, attachment.id)}
+              onClick={() => dispatch({ type: 'attachment.removed', id: attachment.id })}
             >
               <Icon name="close" />
             </AttachmentAction>

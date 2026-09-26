@@ -1,6 +1,4 @@
 export {
-  type ComposerTicketContext,
-  useComposerStore,
   useSessionPermission,
   useSessionQuestion,
 } from './hooks'
@@ -14,4 +12,4 @@ export { activeReference } from './references/composer-reference-menu'
 export { $createComposerTicketReferenceNode } from './references/composer-ticket-reference-node'
 export { SessionReferenceText } from './references/session-reference'
 export { TicketProviderIcon } from './references/ticket-provider-icon'
-export type { TurnSetupControlProps } from './toolbar'
+export type { TurnConfigurationControlProps } from './toolbar'

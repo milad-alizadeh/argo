@@ -1,9 +1,9 @@
-import type { DurableDatabase } from '@/database/durable-database'
+import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
-import type { NewSession } from '@/database/session/types'
 import { sessionInsertSchema } from '@/database/session/validation'
+import type { z } from 'zod'
 
-export type SessionUpsertInput = Omit<NewSession, 'argoId' | 'createdAt' | 'updatedAt'>
+export type SessionUpsertInput = z.infer<typeof sessionInsertSchema>
 
 export type SessionUpsert = (input: SessionUpsertInput) => string
 
@@ -17,7 +17,7 @@ function definedMetadata(input: SessionUpsertInput): Partial<SessionUpsertMetada
   ) as Partial<SessionUpsertMetadata>
 }
 
-export function createSessionUpsert(database: DurableDatabase): SessionUpsert {
+export function createSessionUpsert(database: Database): SessionUpsert {
   return (input) => {
     const validatedInput = sessionInsertSchema.parse(input)
     const argoId = crypto.randomUUID()
@@ -29,6 +29,7 @@ export function createSessionUpsert(database: DurableDatabase): SessionUpsert {
         harness: validatedInput.harness,
         nativeId: validatedInput.nativeId,
         projectId: validatedInput.projectId ?? null,
+        workspaceId: validatedInput.workspaceId ?? null,
         customTitle: validatedInput.customTitle ?? null,
         preview: validatedInput.preview ?? null,
         firstPrompt: validatedInput.firstPrompt ?? null,

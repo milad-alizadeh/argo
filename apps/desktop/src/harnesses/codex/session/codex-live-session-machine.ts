@@ -1,6 +1,6 @@
-import { assign, fromPromise, setup } from 'xstate'
+import { assign, fromPromise, setup as xstateSetup } from 'xstate'
 import { z } from 'zod'
-import type { SessionStartInput } from '@/domains/sessions/main/api/session-start'
+import type { SessionStartInput } from '@/domains/sessions/main/api/session-submit'
 import type { CodexRequest } from '../app-server/codex-app-server-machine'
 
 export type CodexInputItem =
@@ -24,7 +24,7 @@ export type CodexSessionResult = {
   nativeId: string
 }
 
-type TurnCommand = Pick<SessionStartInput, 'attachments' | 'prompt' | 'setup'>
+type TurnCommand = Pick<SessionStartInput, 'attachments' | 'prompt' | 'turnConfiguration'>
 
 const threadStartResultSchema = z.object({
   thread: z.object({
@@ -43,9 +43,9 @@ export const codexLiveSessionActors = (request: CodexRequest) => ({
       'thread/start',
       {
         cwd: input.cwd,
-        model: input.setup.model,
+        model: input.turnConfiguration.model,
         approvalPolicy: 'on-request',
-        sandbox: input.setup.mode,
+        sandbox: input.turnConfiguration.mode,
       },
       (value) => threadStartResultSchema.parse(value).thread.id,
     ),
@@ -67,8 +67,8 @@ export const codexLiveSessionActors = (request: CodexRequest) => ({
         {
           threadId: input.nativeId,
           input: input.inputItems,
-          model: input.command.setup.model,
-          effort: input.command.setup.effort,
+          model: input.command.turnConfiguration.model,
+          effort: input.command.turnConfiguration.effort,
         },
         (value) => turnStartResultSchema.parse(value).turn.id,
       )
@@ -76,7 +76,7 @@ export const codexLiveSessionActors = (request: CodexRequest) => ({
   ),
 })
 
-export const codexLiveSessionMachine = setup({
+export const codexLiveSessionMachine = xstateSetup({
   types: {
     input: {} as SessionStartInput,
     context: {} as {

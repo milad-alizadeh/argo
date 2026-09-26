@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process'
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { type ElectronApplication, _electron as electron } from 'playwright-core'
-import { PROJECT_PROOF_STORE_ENV } from '@/domains/projects/main/proof-protocol'
+import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { appExecutable } from '../packaged-app'
 import { test } from '../packaged-proof'
 

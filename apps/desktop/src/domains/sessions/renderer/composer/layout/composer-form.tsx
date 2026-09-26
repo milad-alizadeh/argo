@@ -1,15 +1,21 @@
-import type { ReactNode } from 'react'
+import { type ReactNode, useCallback } from 'react'
 import type { SessionPlan } from '@/domains/sessions/renderer/model/models'
 import type { HarnessControl } from '../../harness/harnesses'
 import type { Send } from '../hooks/use-send'
 import { useSessionComposerState } from '../hooks/use-session-composer-state'
-import type { CatalogFailure, TurnSetupControlProps } from '../toolbar/run-setup-menu'
+import type {
+  CatalogFailure,
+  TurnConfigurationControlProps,
+} from '../toolbar/turn-configuration-menu'
 import type { WorkspaceMenuControlProps } from '../toolbar/workspace-menu'
 import { AttachmentTray } from '../tray/attachment-tray'
 import { PendingTurns } from '../tray/pending-turns'
+import type { TurnConfigurationChoices } from '../turn-configuration/turn-configuration'
 import { ComposerCard } from './composer-card'
 import '../editor/composer-content.css'
 import type { SessionAttachmentInput } from '@/domains/sessions/api/attachments'
+import type { ComposerEditing } from '../editing/composer-editing'
+import { ComposerEditingProvider, useComposerEditing } from '../editing/composer-editing-context'
 
 export const COMPOSER_COLUMN = 'mx-auto w-full max-w-(--size-session-column)'
 
@@ -30,13 +36,28 @@ export type ComposerFormProps = {
   permissionPrompt?: ReactNode
   plan?: SessionPlan | null
   harness?: HarnessControl | null
-  setup?: TurnSetupControlProps | null
+  turnConfiguration?: TurnConfigurationControlProps | null
+  turnConfigurationChoices?: TurnConfigurationChoices | null
   catalogFailure?: CatalogFailure | null
   refreshCatalog?: () => void
   workspace?: WorkspaceMenuControlProps | null
+  initialEditing?: Partial<ComposerEditing>
+  onEditingChange?: (editing: ComposerEditing) => void
 }
 
-export function ComposerForm({
+function editingTurnConfiguration(input: {
+  supplied: TurnConfigurationControlProps | null
+  choices: TurnConfigurationChoices | null | undefined
+  editing: ComposerEditing
+  onChange: TurnConfigurationControlProps['onChange']
+}) {
+  const { supplied, choices, editing, onChange } = input
+  if (choices === undefined) return supplied
+  if (choices === null || editing.turnConfiguration === null) return null
+  return { choices, value: editing.turnConfiguration, onChange }
+}
+
+function ComposerFormSurface({
   contextTokens,
   contextWindowTokens,
   disabled = false,
@@ -53,12 +74,25 @@ export function ComposerForm({
   permissionPrompt,
   plan = null,
   harness = null,
-  setup = null,
+  turnConfiguration: suppliedTurnConfiguration = null,
+  turnConfigurationChoices,
   catalogFailure = null,
   refreshCatalog,
   workspace = null,
-}: ComposerFormProps) {
-  const state = useSessionComposerState({ sessionId, isRunning, onSend, setup })
+}: Omit<ComposerFormProps, 'initialEditing' | 'onEditingChange'>) {
+  const { editing, dispatch } = useComposerEditing()
+  const changeTurnConfiguration = useCallback(
+    (turnConfiguration: NonNullable<ComposerEditing['turnConfiguration']>) =>
+      dispatch({ type: 'turn-configuration.changed', turnConfiguration }),
+    [dispatch],
+  )
+  const turnConfiguration = editingTurnConfiguration({
+    supplied: suppliedTurnConfiguration,
+    choices: turnConfigurationChoices,
+    editing,
+    onChange: changeTurnConfiguration,
+  })
+  const state = useSessionComposerState({ isRunning, onSend, turnConfiguration })
   const send = () => {
     if (!disabled && onSend) void state.send()
   }
@@ -75,8 +109,7 @@ export function ComposerForm({
         <PendingTurns
           editorRef={state.editorRef}
           onSteer={onSteer}
-          sessionId={sessionId}
-          setup={setup}
+          turnConfiguration={turnConfiguration}
         />
       </AttachmentTray>
       <ComposerCard
@@ -95,10 +128,22 @@ export function ComposerForm({
         onSend={send}
         plan={plan}
         sessionId={sessionId}
-        setup={setup}
+        turnConfiguration={turnConfiguration}
         catalogState={{ catalogFailure, refreshCatalog, sendAvailable: onSend !== undefined }}
         workspace={workspace}
       />
     </form>
+  )
+}
+
+export function ComposerForm({ initialEditing, onEditingChange, ...props }: ComposerFormProps) {
+  return (
+    <ComposerEditingProvider
+      initial={initialEditing}
+      key={props.sessionId}
+      onChange={onEditingChange}
+    >
+      <ComposerFormSurface {...props} />
+    </ComposerEditingProvider>
   )
 }

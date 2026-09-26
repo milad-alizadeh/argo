@@ -11,7 +11,6 @@ import {
   sessionSubagentUsageQueryKey,
 } from '../session-queries'
 import type { SessionFeed, SessionId } from '../types'
-import { useWatchedQueries } from '../use-watched-topic'
 
 // Each read re-parses every Subagent transcript the Session has, so a Session whose Subagents have
 // all come back is read once rather than on every pass.
@@ -30,9 +29,6 @@ export function useDelegationUsage(sessionId: SessionId | null, live: boolean) {
       return Object.fromEntries(reply.usage.map(({ id, tokens, model }) => [id, { tokens, model }]))
     },
   })
-  // A Subagent's transcript is what carries its token count, and it sits under the same watched
-  // trees as its Session's own, so the count follows the write instead of a timer (#2303).
-  useWatchedQueries('sessions', live ? [queryKey] : [])
   return usage.data ?? {}
 }
 
@@ -62,8 +58,6 @@ export function useDelegationFeed(sessionId: SessionId | null, subagentId: strin
   const queryClient = useQueryClient()
   const query = sessionFeedQuery(queryClient, subagentId === null ? null : sessionId, subagentId)
   const feed = useQuery<SessionFeed | null, SessionContractError>(query)
-  // A Subagent's transcript sits under the same watched trees as its Session's own.
-  useWatchedQueries('sessions', [query.queryKey])
   return {
     feed: feed.data ?? null,
     feedError: feed.failureCount > 1 ? feed.error : null,

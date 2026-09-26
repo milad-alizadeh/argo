@@ -4,8 +4,8 @@ import {
   query,
   type SDKUserMessage,
 } from '@anthropic-ai/claude-agent-sdk'
-import { assign, fromCallback, sendTo, setup } from 'xstate'
-import type { SessionStartInput } from '@/domains/sessions/main/api/session-start'
+import { assign, fromCallback, sendTo, setup as xstateSetup } from 'xstate'
+import type { SessionStartInput } from '@/domains/sessions/main/api/session-submit'
 import { claudeCliEnvironment } from '../cli-environment'
 
 type Send = Pick<SessionStartInput, 'prompt'>
@@ -36,7 +36,7 @@ const permissionModes: Record<string, PermissionMode> = {
   auto: 'auto',
 }
 
-export const claudeLiveSessionMachine = setup({
+export const claudeLiveSessionMachine = xstateSetup({
   types: {
     input: {} as SessionStartInput,
     context: {} as {
@@ -120,7 +120,7 @@ export const claudeLiveSessionMachine = setup({
             prompt: messages(),
             options: {
               cwd: input.command.cwd,
-              model: input.command.setup.model,
+              model: input.command.turnConfiguration.model,
               permissionMode: input.mode,
               env: claudeCliEnvironment(),
             },
@@ -147,10 +147,11 @@ export const claudeLiveSessionMachine = setup({
   },
   actions: {
     preparePermissionMode: assign({
-      mode: ({ context }) => permissionModes[context.input.setup.mode] ?? null,
+      mode: ({ context }) => permissionModes[context.input.turnConfiguration.mode] ?? null,
     }),
     rejectUnsupportedMode: assign({
-      failure: ({ context }) => `Unsupported Claude permission mode: ${context.input.setup.mode}`,
+      failure: ({ context }) =>
+        `Unsupported Claude permission mode: ${context.input.turnConfiguration.mode}`,
     }),
     submitFirstPrompt: sendTo('queryActor', ({ context }) => ({
       type: 'Send to Query',

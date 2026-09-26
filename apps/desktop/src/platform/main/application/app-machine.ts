@@ -1,5 +1,5 @@
 import { type ActorRefFrom, assertEvent, setup } from 'xstate'
-import type { DurableDatabase } from '@/database/durable-database'
+import type { Database } from '@/database/database'
 import { liveSessionSupervisorMachine } from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import { harnessCatalogMachine } from '@/harnesses/catalog/harness-catalog-machine'
 import { harnessCatalogLoadActor } from '@/harnesses/catalog/runtime'
@@ -22,7 +22,7 @@ const catalogMachine = harnessCatalogMachine.provide({
 export const appMachine = setup({
   types: {
     input: {} as {
-      database: DurableDatabase
+      database: Database
     },
     context: {} as Record<string, never>,
     events: {} as
@@ -32,7 +32,7 @@ export const appMachine = setup({
       | {
           type: 'xstate.init'
           input: {
-            database: DurableDatabase
+            database: Database
           }
         },
   },

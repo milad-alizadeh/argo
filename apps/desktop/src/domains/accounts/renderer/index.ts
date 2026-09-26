@@ -18,6 +18,6 @@ export {
   providerPresentation,
 } from './lib/providers'
 export {
-  openAccountsDialog,
   useAccountsDialog,
+  useOpenAccountsDialog,
 } from './state/use-accounts-dialog'

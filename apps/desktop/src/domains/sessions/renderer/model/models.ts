@@ -16,7 +16,7 @@ export {
   unreadableRowHeight,
 } from '@/domains/sessions/renderer/feed/model/feed-rows'
 
-export const SESSION_POSTURES = ['managed', 'external', 'watched'] as const
+export const SESSION_POSTURES = ['live', 'external'] as const
 export const sessionPostureSchema = z.enum(SESSION_POSTURES)
 export const SESSION_ENTRIES = ['interactive', 'headless'] as const
 export const sessionEntrySchema = z.enum(SESSION_ENTRIES)
@@ -31,8 +31,8 @@ export const SESSION_STATUSES = [
   'unknown',
 ] as const
 export const sessionStatusSchema = z.enum(SESSION_STATUSES)
-// Strongest first: `managed-row.ts` ranks two titles by this order, so reordering it changes which
-// title a managed Session shows.
+// Strongest first: the roster projection ranks two titles by this order, so reordering it changes
+// which title a live Session shows.
 export const TITLE_SOURCES = ['custom', 'summarised', 'first-prompt'] as const
 export const titleSourceSchema = z.enum(TITLE_SOURCES)
 
@@ -132,12 +132,12 @@ export const sessionShellCommandSchema = z.strictObject({
 export type SessionShellCommand = z.infer<typeof sessionShellCommandSchema>
 
 // The newest Turn's Model, Effort and Mode, verbatim; null where no record states it yet.
-export const sessionSetupSchema = z.strictObject({
+export const sessionTurnConfigurationSchema = z.strictObject({
   model: z.string().nullable(),
   effort: z.string().nullable(),
   mode: z.string().nullable(),
 })
-export type SessionSetup = z.infer<typeof sessionSetupSchema>
+export type SessionTurnConfiguration = z.infer<typeof sessionTurnConfigurationSchema>
 
 export const sessionRosterRowSchema = z.strictObject({
   id: identifierSchema,
@@ -173,7 +173,7 @@ export const sessionRosterRowSchema = z.strictObject({
   handoffFailure: z.string().nullable().optional(),
   handoffTo: identifierSchema.nullable().optional(),
   handoffFrom: identifierSchema.nullable().optional(),
-  setup: sessionSetupSchema,
+  turnConfiguration: sessionTurnConfigurationSchema,
 })
 export type SessionRosterRow = z.infer<typeof sessionRosterRowSchema>
 

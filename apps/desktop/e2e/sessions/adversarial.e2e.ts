@@ -29,7 +29,7 @@ test.describe('session-adversarial', () => {
       prompt: firstPrompt,
     })
     await expect(page.getByText(`Mock Codex read: ${firstPrompt} 🦜`)).toBeVisible()
-    await expect.poll(() => postureFor(page, failedSessionId)).toBe('managed')
+    await expect.poll(() => postureFor(page, failedSessionId)).toBe('live')
 
     const composer = page.getByRole('combobox', { name: 'Message' })
     await composer.click()

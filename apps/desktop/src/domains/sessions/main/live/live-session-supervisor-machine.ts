@@ -1,5 +1,5 @@
-import { type ActorRefFrom, assign, fromCallback, fromPromise, setup } from 'xstate'
-import type { DurableDatabase } from '@/database/durable-database'
+import { type ActorRefFrom, assign, fromCallback, fromPromise, setup as xstateSetup } from 'xstate'
+import type { Database } from '@/database/database'
 import type { harnessCatalogMachine } from '@/harnesses/catalog/harness-catalog-machine'
 import { claudeLiveSessionMachine } from '@/harnesses/claude/session/claude-live-session-machine'
 import {
@@ -10,7 +10,7 @@ import {
   codexLiveSessionActors,
   codexLiveSessionMachine,
 } from '@/harnesses/codex/session/codex-live-session-machine'
-import type { SessionSendInput, SessionStartInput } from '../api/session-start'
+import type { SessionSendInput, SessionStartInput } from '../api/session-submit'
 import { createSessionUpsert } from '../database/session-upsert'
 import { liveSessionMachine } from './live-session-machine'
 
@@ -20,7 +20,7 @@ type StartReply = {
   reject: (error: Error) => void
 }
 type LiveSessionSupervisorInput = {
-  database: DurableDatabase
+  database: Database
 }
 type LiveSessionSupervisorEvent =
   | {
@@ -48,10 +48,10 @@ type LiveSessionSupervisorEvent =
       type: 'Shutdown'
     }
 
-function setupIsAvailable(
+function turnConfigurationIsAvailable(
   catalog: ActorRefFrom<typeof harnessCatalogMachine> | undefined,
   harness: SessionStartInput['harness'],
-  setup: SessionStartInput['setup'],
+  turnConfiguration: SessionStartInput['turnConfiguration'],
 ) {
   const entry = catalog
     ?.getSnapshot()
@@ -59,30 +59,33 @@ function setupIsAvailable(
       (candidate) => candidate.harness === harness && candidate.availability === 'available',
     )
   if (entry?.availability !== 'available') return false
-  const model = entry.models.find((candidate) => candidate.value === setup.model)
+  const model = entry.models.find((candidate) => candidate.value === turnConfiguration.model)
   return Boolean(
-    model?.efforts.includes(setup.effort) &&
-      entry.modes.some((mode) => mode.value === setup.mode) &&
-      (model.supportedModes === undefined || model.supportedModes.includes(setup.mode)),
+    model?.efforts.includes(turnConfiguration.effort) &&
+      entry.modes.some((mode) => mode.value === turnConfiguration.mode) &&
+      (model.supportedModes === undefined || model.supportedModes.includes(turnConfiguration.mode)),
   )
 }
 
-function acceptsSetupChange(actor: LiveSessionActor, setup: SessionSendInput['setup']): boolean {
-  const opening = actor.getSnapshot().context.first.setup
+function acceptsTurnConfigurationChange(
+  actor: LiveSessionActor,
+  turnConfiguration: SessionSendInput['turnConfiguration'],
+): boolean {
+  const opening = actor.getSnapshot().context.first.turnConfiguration
   if (actor.getSnapshot().context.first.harness === 'claude')
     return (
-      opening.model === setup.model &&
-      opening.effort === setup.effort &&
-      opening.mode === setup.mode
+      opening.model === turnConfiguration.model &&
+      opening.effort === turnConfiguration.effort &&
+      opening.mode === turnConfiguration.mode
     )
-  return opening.mode === setup.mode
+  return opening.mode === turnConfiguration.mode
 }
 
-export const liveSessionSupervisorMachine = setup({
+export const liveSessionSupervisorMachine = xstateSetup({
   types: {
     input: {} as LiveSessionSupervisorInput,
     context: {} as {
-      database: DurableDatabase
+      database: Database
       sessions: Record<string, LiveSessionActor>
       starts: Record<string, LiveSessionActor>
       completed: Record<
@@ -170,8 +173,10 @@ export const liveSessionSupervisorMachine = setup({
         const catalog = self.system.get('catalog') as
           | ActorRefFrom<typeof harnessCatalogMachine>
           | undefined
-        if (!setupIsAvailable(catalog, event.input.harness, event.input.setup)) {
-          event.reply.reject(new Error('The selected Session setup is no longer available.'))
+        if (
+          !turnConfigurationIsAvailable(catalog, event.input.harness, event.input.turnConfiguration)
+        ) {
+          event.reply.reject(new Error('The selected Turn configuration is no longer available.'))
           return context.starts
         }
         const completed = context.completed[event.pendingId]
@@ -306,18 +311,18 @@ export const liveSessionSupervisorMachine = setup({
         return
       }
       if (
-        !setupIsAvailable(
+        !turnConfigurationIsAvailable(
           self.system.get('catalog') as ActorRefFrom<typeof harnessCatalogMachine> | undefined,
           actor.getSnapshot().context.first.harness,
-          event.input.setup,
+          event.input.turnConfiguration,
         )
       ) {
-        event.reply.reject(new Error('The selected Session setup is no longer available.'))
+        event.reply.reject(new Error('The selected Turn configuration is no longer available.'))
         return
       }
-      if (!acceptsSetupChange(actor, event.input.setup)) {
+      if (!acceptsTurnConfigurationChange(actor, event.input.turnConfiguration)) {
         event.reply.reject(
-          new Error('Changing this Session setup requires starting a new Session.'),
+          new Error('Changing this Turn configuration requires starting a new Session.'),
         )
         return
       }

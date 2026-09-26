@@ -1,5 +1,5 @@
-import { effortChoices } from '../turn-setup/turn-setup'
-import type { TurnSetupControlProps } from './run-setup-menu'
+import { effortChoices } from '../turn-configuration/turn-configuration'
+import type { TurnConfigurationControlProps } from './turn-configuration-menu'
 
 // The end labels sit inside the track; the rest centre on their stop.
 function labelShift(index: number, last: number) {
@@ -8,7 +8,7 @@ function labelShift(index: number, last: number) {
   return 'translateX(-50%)'
 }
 
-export function EffortSlider({ choices, value, onChange }: TurnSetupControlProps) {
+export function EffortSlider({ choices, value, onChange }: TurnConfigurationControlProps) {
   const { t } = useTranslation('sessions')
   const efforts = effortChoices(choices, value.model)
   const effortIndex = Math.max(
@@ -21,10 +21,10 @@ export function EffortSlider({ choices, value, onChange }: TurnSetupControlProps
     <div className="border-t p-2.5">
       <div className="flex items-center">
         <div className="type-label font-medium text-muted-foreground">
-          {t('composer.setup.effort')}
+          {t('composer.turnConfiguration.effort')}
         </div>
         <span className="ml-auto type-meta text-muted-foreground">
-          {t('composer.setup.effortDescription')}
+          {t('composer.turnConfiguration.effortDescription')}
         </span>
       </div>
       <input
@@ -33,7 +33,7 @@ export function EffortSlider({ choices, value, onChange }: TurnSetupControlProps
         max={Math.max(0, efforts.length - 1)}
         step={1}
         value={effortIndex}
-        aria-label={t('composer.setup.effort')}
+        aria-label={t('composer.turnConfiguration.effort')}
         aria-valuetext={efforts[effortIndex]?.label}
         onChange={(event) => {
           const effort = efforts[Number(event.currentTarget.value)]

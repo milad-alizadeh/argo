@@ -3,7 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { test } from 'vitest'
-import { sharedDatabasePath } from '@/database/shared-database'
+import { databasePath } from '@/database/database'
 import {
   DEVELOPMENT_APPLICATION_NAME,
   developmentStoreDirectories,
@@ -135,8 +135,8 @@ test('a second worktree reads the Account grant and selected Project from the fi
     assert.notEqual(stores.firstInstance.userData, stores.secondInstance.userData)
     assert.deepEqual(stores.first, stores.second)
     assert.equal(
-      sharedDatabasePath(stores.first.projectData),
-      sharedDatabasePath(stores.second.projectData),
+      databasePath(stores.first.projectData),
+      databasePath(stores.second.projectData),
     )
     assert.equal(stores.first.connectionData, stores.second.connectionData)
     assert.equal(DEVELOPMENT_APPLICATION_NAME, 'Argo Development')

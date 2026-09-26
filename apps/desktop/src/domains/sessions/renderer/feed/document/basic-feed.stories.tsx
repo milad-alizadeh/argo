@@ -2034,7 +2034,7 @@ export const ThoughtWhileStatusIsUnknown: Story = {
   },
 }
 
-// Watched Sessions cannot always prove a live Turn, but their Feed and Roster still name the
+// External Sessions cannot always prove a live Turn, but their Feed and Roster still name the
 // same newest observed activity. The Feed must not replace it with a grouped command summary.
 export const CommandActivityWhileStatusIsUnknown: Story = {
   args: {

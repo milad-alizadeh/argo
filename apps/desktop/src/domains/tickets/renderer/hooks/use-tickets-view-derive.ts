@@ -4,8 +4,7 @@ import type { UseQueryResult } from '@tanstack/react-query'
 import type { TFunction } from 'i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
 import type { AccountListing } from '@/domains/accounts/renderer'
-import { openAccountsDialog } from '@/domains/accounts/renderer'
-import type { ProjectSummary } from '@/domains/projects/contract/messages'
+import type { ProjectSummary } from '@/domains/projects/renderer'
 import type {
   ConnectionSummary,
   TicketPriority,
@@ -33,17 +32,21 @@ export type TicketsView =
 
 export const loading = (label: string): TicketsView => ({ kind: 'loading', label })
 
-type Retry = { onRetry: () => unknown; provider: Provider | null }
+type Retry = {
+  onRetry: () => unknown
+  onReconnect: () => void
+  provider: Provider | null
+}
 
 export const failure = (
   title: string,
   error: ContractFailure,
-  { onRetry, provider }: Retry,
+  { onRetry, onReconnect, provider }: Retry,
 ): TicketsView => ({
   kind: 'problem',
   ...failureProblem(title, error, {
     onRetry: () => void onRetry(),
-    onReconnect: openAccountsDialog,
+    onReconnect,
     provider,
   }),
 })
@@ -52,16 +55,18 @@ export type Unconnected = {
   project: ProjectSummary
   accounts: UseQueryResult<AccountListing, ContractFailure>
   form: ConnectForm
+  onReconnect: () => void
 }
 
 export function unconnectedView(
   t: TFunction<'tickets'>,
-  { project, accounts, form }: Unconnected,
+  { project, accounts, form, onReconnect }: Unconnected,
 ): TicketsView {
   if (accounts.isPending) return loading(t('loading.accounts'))
   if (accounts.error) {
     return failure(t('failure.accounts'), accounts.error, {
       onRetry: accounts.refetch,
+      onReconnect,
       provider: null,
     })
   }
@@ -87,6 +92,7 @@ export type Connected = {
   onBack: () => void
   onSelect: (key: string) => void
   onOpenSession: (id: string) => void
+  onReconnect: () => void
 }
 
 export function connectedView(
@@ -100,13 +106,14 @@ export function connectedView(
     onBack,
     onSelect,
     onOpenSession,
+    onReconnect,
     ...listing
   }: Connected,
 ): TicketsView {
   if (isConnectionProblem(connection)) {
     return {
       kind: 'problem',
-      ...connectionProblem(connection, { onReconnect: openAccountsDialog, onDisconnectSource }),
+      ...connectionProblem(connection, { onReconnect, onDisconnectSource }),
     }
   }
   const { list } = listing
@@ -114,6 +121,7 @@ export function connectedView(
   if (list.error && !list.isFetchNextPageError) {
     return failure(t('failure.tickets'), list.error, {
       onRetry: list.refetch,
+      onReconnect,
       provider: connection.provider,
     })
   }

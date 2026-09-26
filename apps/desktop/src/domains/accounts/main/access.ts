@@ -1,8 +1,11 @@
 // Everything the main process holds to reach a provider on an Account's behalf. Built once per
 // window in `main.ts` and shared by the Account and Ticket bridges, so both write through one queue.
 
+import path from 'node:path'
+import type { Database } from '@/database/database'
+import { project } from '@/database/project/schema'
+import { projectRegistrationSchema } from '@/database/project/validation'
 import type { AccountState } from '@/domains/accounts/contract/contract'
-import type { ProjectPort } from '@/domains/projects/main'
 import { createWriteQueue, portablePath } from '@/platform/main/storage/portable-file'
 import type { ProviderEndpoints } from '@/providers/endpoints'
 import { type Cipher, createGrantStore, type GrantStore } from './grants'
@@ -14,7 +17,7 @@ export type AccountAccess = {
   providers: Record<'github' | 'linear', AccountProvider>
   grants: GrantStore
   paths: { accounts: string; connections: string }
-  projects: ProjectPort | null
+  database: Database | null
   exclusive: <T>(work: () => Promise<T>) => Promise<T>
   // Opens a URL the main process already validated. Never a URL the renderer named.
   openExternal: (url: string) => Promise<void>
@@ -31,7 +34,7 @@ export function createAccountAccess(options: {
   providers: Record<'github' | 'linear', AccountProvider>
   cipher: Cipher
   openExternal: (url: string) => Promise<void>
-  projects?: ProjectPort
+  database?: Database
 }): AccountAccess {
   const {
     userData,
@@ -41,7 +44,7 @@ export function createAccountAccess(options: {
     providers,
     cipher,
     openExternal,
-    projects,
+    database,
   } = options
   return {
     endpoints,
@@ -51,7 +54,7 @@ export function createAccountAccess(options: {
       accounts: portablePath(accountData, 'accounts.json'),
       connections: portablePath(connectionData ?? userData, 'connections.json'),
     },
-    projects: projects ?? null,
+    database: database ?? null,
     exclusive: createWriteQueue(),
     openExternal,
   }
@@ -60,7 +63,18 @@ export function createAccountAccess(options: {
 // Project names by ID, for drawing a Connection. A registry that cannot be read names nothing.
 export async function projectNames(access: AccountAccess): Promise<Map<string, string>> {
   try {
-    return access.projects?.names() ?? new Map()
+    if (access.database === null) return new Map()
+    const projects = projectRegistrationSchema
+      .array()
+      .parse(
+        access.database
+          .select({ id: project.id, path: project.path, commonDirectory: project.commonDirectory })
+          .from(project)
+          .all(),
+      )
+    return new Map(
+      projects.map((project) => [project.id, path.basename(project.path) || project.path]),
+    )
   } catch {
     return new Map()
   }

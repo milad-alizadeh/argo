@@ -4,26 +4,19 @@ import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { type ElectronApplication, _electron as electron } from 'playwright-core'
 import {
-  PROJECT_PROOF_STORE_ENV,
-  SETUP_DOCUMENT_PROOF_URL_ENV,
-} from '@/domains/projects/main/proof-protocol'
-import {
   SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_CODEX_TRANSCRIPTS_ENV,
 } from '@/harnesses/proof-protocol'
+import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { GITHUB_PROOF_ORIGIN_ENV, LINEAR_PROOF_ORIGIN_ENV } from '@/providers/proof-protocol'
 import type { MockGitHub } from '../../../mocks/providers/github/mock-github'
 import { startMockGitHubLoopback } from '../../../mocks/providers/github/mock-github-loopback'
 import type { MockLinear } from '../../../mocks/providers/linear/mock-linear'
 import { HIDDEN, TEAM } from '../../../mocks/providers/linear/mock-linear-cast'
 import { startMockLinearLoopback } from '../../../mocks/providers/linear/mock-linear-loopback'
-import type { MockSetupDocument } from '../../../mocks/providers/setup/mock-setup-document-loopback'
 import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mts'
 import { appExecutable } from '../../packaged-app'
-import {
-  makeProjectLocallyReady,
-  markProjectSetupLocallyReady,
-} from '../../projects/fixtures/locally-ready-project'
+import { makeProjectLocallyReady } from '../../projects/fixtures/locally-ready-project'
 import { repository, seedSingleProject } from '../../projects/fixtures/project.fixture'
 
 export const OCTOCAT = { id: 583231, login: 'octocat' }
@@ -38,7 +31,6 @@ export type TicketFixture = {
   noSessions: string
   github: MockGitHub
   linear: MockLinear
-  setupDocumentURL: string | undefined
 }
 
 function serveRepositories(github: MockGitHub) {
@@ -70,25 +62,19 @@ function serveTeams(linear: MockLinear) {
   linear.tokenLifetime(LINEAR_TOKEN_LIFETIME)
 }
 
-export async function prepare(
-  root: string,
-  application: string,
-  setupDocument: MockSetupDocument | undefined,
-): Promise<TicketFixture> {
+export async function prepare(root: string, application: string): Promise<TicketFixture> {
   const userData = path.join(root, 'userData')
   const projectPath = await repository(path.join(root, 'argo'))
   await makeProjectLocallyReady(projectPath)
   const noSessions = path.join(root, 'no-sessions')
   await mkdir(userData, { recursive: true })
   await mkdir(noSessions, { recursive: true })
-  const projects = seedSingleProject(userData, { id: 'project-1', path: projectPath })
-  markProjectSetupLocallyReady(projects, 'project-1', projectPath)
-  projects.close()
+  seedSingleProject(userData, { id: 'project-1', path: projectPath })
   const github = await startMockGitHubLoopback()
   serveRepositories(github)
   const linear = await startMockLinearLoopback()
   serveTeams(linear)
-  return { application, userData, noSessions, github, linear, setupDocumentURL: setupDocument?.url }
+  return { application, userData, noSessions, github, linear }
 }
 
 // The mock keychain keeps safeStorage off the login keychain, whose prompt no proof can answer.
@@ -99,9 +85,6 @@ export async function launch(fixture: TicketFixture): Promise<ElectronApplicatio
     env: {
       ...process.env,
       [PROJECT_PROOF_STORE_ENV]: fixture.userData,
-      ...(fixture.setupDocumentURL
-        ? { [SETUP_DOCUMENT_PROOF_URL_ENV]: fixture.setupDocumentURL }
-        : {}),
       [GITHUB_PROOF_ORIGIN_ENV]: fixture.github.origin,
       [LINEAR_PROOF_ORIGIN_ENV]: fixture.linear.origin,
       [SESSION_CLAUDE_TRANSCRIPTS_ENV]: fixture.noSessions,

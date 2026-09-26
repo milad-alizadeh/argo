@@ -16,7 +16,7 @@ import { type RefObject, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { lastInputWasKeyboard } from '@/platform/renderer/lib/input-modality'
 import type { SessionHarness } from '../../harness/harnesses'
-import { EMPTY_COMPOSER_TICKETS, useComposerStore } from '../hooks/use-composer-store'
+import { useComposerEditing } from '../editing/composer-editing-context'
 import { ComposerReferenceMenuPlugin } from '../references/composer-reference-menu-plugin'
 import { ComposerReferenceNode } from '../references/composer-reference-node'
 import { ComposerReferencePlugin } from '../references/composer-reference-plugin'
@@ -59,14 +59,12 @@ function FocusOnMountPlugin({ enabled }: { enabled: boolean }) {
 }
 
 export function ComposerEditor({
-  sessionId,
   harness = null,
   contextPickerOpen,
   editorRef,
   focusOnMount,
   onSend,
 }: {
-  sessionId: string
   harness?: SessionHarness | null
   contextPickerOpen: boolean
   editorRef: RefObject<LexicalEditor | null>
@@ -74,9 +72,8 @@ export function ComposerEditor({
   onSend: () => void
 }) {
   const { t } = useTranslation('sessions')
-  const draft = useComposerStore(({ drafts }) => drafts[sessionId] ?? '')
-  const tickets = useComposerStore(({ tickets }) => tickets[sessionId] ?? EMPTY_COMPOSER_TICKETS)
-  const setDraft = useComposerStore(({ setDraft }) => setDraft)
+  const { editing, dispatch } = useComposerEditing()
+  const { prompt: draft, tickets } = editing
   const [showsKeyboardFocus, setShowsKeyboardFocus] = useState(false)
   const [referencesOpen, setReferencesOpen] = useState(false)
   return (
@@ -111,7 +108,12 @@ export function ComposerEditor({
       />
       <OnChangePlugin
         onChange={(state) => {
-          state.read(() => setDraft(sessionId, $convertToMarkdownString(TRANSFORMERS)))
+          state.read(() =>
+            dispatch({
+              type: 'prompt.changed',
+              prompt: $convertToMarkdownString(TRANSFORMERS),
+            }),
+          )
         }}
       />
       <MarkdownShortcutPlugin transformers={composerTransformers} />

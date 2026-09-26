@@ -1,52 +1,25 @@
-import type {
-  ProjectOpenReply,
-  ProjectSetupCommand,
-  ProjectSetupReply,
-} from '../src/domains/projects/contract/contract'
-import type { ProjectListReply } from '../src/domains/projects/contract/messages'
-import type { ProjectError } from '../src/domains/projects/contract/project-error'
-import type { ProjectWorkspaceListed } from '../src/domains/projects/contract/workspace-messages'
+import type { RouterOutputs } from '../src/platform/renderer/trpc-client'
 
-type ProjectWorkspaceReply = ProjectWorkspaceListed | ProjectError
+type ProjectListReply = RouterOutputs['projectList']
+type ProjectOpenReply = RouterOutputs['projectOpen']
+type ProjectRelocateReply = RouterOutputs['projectRelocate']
+type WorkspaceReply = RouterOutputs['workspaceList']
 
 type StorybookProjectProcedures = {
   projectOpen: (request: { projectId: string }) => Promise<ProjectOpenReply>
-  projectSetupSnapshot: (request: { projectId: string }) => Promise<ProjectSetupReply>
-  projectSetupCommand: (request: {
-    projectId: string
-    commandId: string
-    expectedRevision: number
-    command: ProjectSetupCommand
-  }) => Promise<ProjectSetupReply>
   projectList: () => Promise<ProjectListReply>
   projectRegister: () => Promise<ProjectListReply>
-  projectRelocate: (request: { projectId: string }) => Promise<ProjectListReply>
-  projectSelect: (request: { projectId: string }) => Promise<ProjectListReply>
-  projectWorkspaceList: (request: { projectId: string }) => Promise<ProjectWorkspaceReply>
-  projectWorkspaceSelect: (request: {
-    projectId: string
-    workspaceId: string
-  }) => Promise<ProjectWorkspaceReply>
-  projectWorkspaceCreateManaged: (request: {
-    projectId: string
-    baseRef: string
-  }) => Promise<ProjectWorkspaceReply>
+  projectRelocate: (request: { projectId: string }) => Promise<ProjectRelocateReply>
+  workspaceList: (request: { projectId: string }) => Promise<WorkspaceReply>
 }
 
-const projects = [
-  { id: 'storybook-project', name: 'argo', path: '/storybook/argo' },
-  { id: 'storybook-worktree', name: 'worktree', path: '/storybook/worktree' },
-]
-
-function listed(selectedId: string) {
-  return {
-    version: 1 as const,
-    type: 'project.listed' as const,
-    requestId: 'storybook-projects',
-    projects,
-    selectedId,
-  }
+const primaryProject = { id: 'storybook-project', name: 'argo', path: '/storybook/argo' }
+const secondaryProject = {
+  id: 'storybook-worktree',
+  name: 'worktree',
+  path: '/storybook/worktree',
 }
+const projects = [primaryProject, secondaryProject]
 
 const workspaces = [
   {
@@ -58,53 +31,18 @@ const workspaces = [
   },
 ]
 
-function workspacesListed(selectedId: string | null) {
+function workspacesListed() {
   return {
-    version: 1 as const,
-    type: 'project.workspace.listed' as const,
+    type: 'workspace.listed' as const,
     requestId: 'storybook-workspaces',
     workspaces,
-    selectedId,
-  }
-}
-
-function setupSnapshot(projectId: string) {
-  return {
-    version: 1 as const,
-    type: 'project.setup.snapshot' as const,
-    requestId: 'storybook-setup',
-    projectId,
-    revision: 0,
-    screen: 'choosing-method' as const,
-    manualSource: '',
-    attempt: null,
-    questions: [],
-    plan: null,
-    acceptedPlan: null,
-    progress: [],
-    finalDiff: null,
-    activeEffect: null,
-    recoveryMessage: null,
-    pendingApproval: null,
   }
 }
 
 export const storybookProjectProcedures: StorybookProjectProcedures = {
-  projectList: () => Promise.resolve(listed('storybook-project')),
-  projectOpen: () =>
-    Promise.resolve({
-      version: 1,
-      type: 'project.opened' as const,
-      requestId: 'storybook-project',
-      project: { id: 'storybook-project', name: 'argo' },
-    }),
-  projectSetupSnapshot: ({ projectId }) => Promise.resolve(setupSnapshot(projectId)),
-  projectSetupCommand: ({ projectId }) => Promise.resolve(setupSnapshot(projectId)),
-  projectRegister: () => Promise.resolve(listed('storybook-worktree')),
-  projectRelocate: () => Promise.resolve(listed('storybook-worktree')),
-  projectSelect: ({ projectId }) => Promise.resolve(listed(projectId)),
-  projectWorkspaceList: () => Promise.resolve(workspacesListed('storybook-workspace-main')),
-  projectWorkspaceSelect: ({ workspaceId }) => Promise.resolve(workspacesListed(workspaceId)),
-  projectWorkspaceCreateManaged: () =>
-    Promise.resolve(workspacesListed('storybook-workspace-main')),
+  projectList: () => Promise.resolve(projects),
+  projectOpen: () => Promise.resolve(primaryProject),
+  projectRegister: () => Promise.resolve(projects),
+  projectRelocate: () => Promise.resolve(secondaryProject),
+  workspaceList: () => Promise.resolve(workspacesListed()),
 }

@@ -246,7 +246,7 @@ function wireInbound(process: CodexProcess, state: ChannelState) {
   return lines
 }
 
-// ADR-0024: the cockpit owns one `codex app-server` process per managed Session and speaks
+// ADR-0024: the cockpit owns one `codex app-server` process per live Session and speaks
 // newline-delimited JSON-RPC over its stdio pipes. A server->client request no listener claims is
 // refused rather than left open, because an unanswered approval holds the Turn forever
 // (openai/codex#11816); `item/tool/requestUserInput` is claimed and answered for real (#1841),

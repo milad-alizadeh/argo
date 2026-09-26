@@ -1,12 +1,12 @@
 import { app } from 'electron'
 import { createActor } from 'xstate'
-import type { DurableDatabase } from '@/database/durable-database'
+import type { Database } from '@/database/database'
 import { applyStoredAppearance, readAppearance } from '../appearance'
 import { setPlatformLanguage } from '../i18n'
 import { type AppActor, appMachine } from './app-machine'
 
 export function startDesktopApplication(request: {
-  prepare: () => Promise<{ database: DurableDatabase }>
+  prepare: () => Promise<{ database: Database }>
   ready: (actor: AppActor) => Promise<void> | void
   willQuit: () => void
   focusExistingWindow: () => void

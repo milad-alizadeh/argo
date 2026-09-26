@@ -1,20 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router'
-import { PROJECT_ERROR_CODES, type ProjectErrorCode } from '@/domains/projects/contract/contract'
-import type { ProjectSummary } from '@/domains/projects/contract/messages'
-import type { WorkspaceSummary } from '@/domains/projects/contract/workspace-messages'
-import { trpc } from '@/platform/renderer/trpc-client'
-import { useWorkspaces } from './use-workspaces'
+import { type RouterOutputs, trpc } from '@/platform/renderer/trpc-client'
+import messages from '../locales/en.json'
 
-export type CockpitStatus = 'loading' | 'empty' | 'selected' | 'setup' | 'refused'
+export type ProjectSummary = RouterOutputs['projectList'][number]
+type ProjectErrorCode = keyof typeof messages.error
+const PROJECT_ERROR_CODES = Object.keys(messages.error) as ProjectErrorCode[]
+
+export type CockpitStatus = 'loading' | 'empty' | 'selected' | 'refused'
 
 export type Cockpit = {
   status: CockpitStatus
   project: ProjectSummary | null
   projects: readonly ProjectSummary[]
-  workspace: WorkspaceSummary | null
-  workspaces: readonly WorkspaceSummary[]
   message: string | null
   code: ProjectErrorCode | null
   busy: boolean
@@ -22,11 +21,9 @@ export type Cockpit = {
 
 export type ProjectActions = {
   open: () => void
-  selectWorkspace: (workspaceId: string) => void
-  createManagedWorkspace: (baseRef: string) => void
 }
 
-export type ProjectCockpit = Omit<Cockpit, 'workspace' | 'workspaces'>
+export type ProjectCockpit = Cockpit
 
 const IDLE = { project: null, projects: [], message: null, code: null, busy: false } as const
 const LOADING: ProjectCockpit = { status: 'loading', ...IDLE }
@@ -79,14 +76,6 @@ export function useProjects(): [Cockpit, ProjectActions] {
       busy: register.isPending || relocate.isPending,
     }
   }, [openErrorCode, project, queryCockpit, register.isPending, relocate.isPending])
-  const [workspaces, workspaceActions] = useWorkspaces(
-    projectCockpit.status === 'selected' ? (projectCockpit.project?.id ?? null) : null,
-  )
-  const cockpit = useMemo(
-    () => ({ ...projectCockpit, ...workspaces }),
-    [projectCockpit, workspaces],
-  )
-
   const open = useCallback(() => {
     if (register.isPending || relocate.isPending) return
     if (projectCockpit.status === 'refused' && projectCockpit.project) {
@@ -101,5 +90,5 @@ export function useProjects(): [Cockpit, ProjectActions] {
     })
   }, [navigate, projectCockpit, register, relocate])
 
-  return [cockpit, useMemo(() => ({ open, ...workspaceActions }), [open, workspaceActions])]
+  return [projectCockpit, useMemo(() => ({ open }), [open])]
 }

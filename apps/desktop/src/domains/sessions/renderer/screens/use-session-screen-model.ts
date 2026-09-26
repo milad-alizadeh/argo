@@ -5,11 +5,11 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 
 import { useProjects } from '@/domains/projects/renderer'
-import { useComposerStore } from '../composer/hooks/use-composer-store'
+import { useWorkspaces } from '@/domains/workspaces/renderer'
 import { useSessionPermission } from '../composer/hooks/use-session-permission'
 import { useSessionQuestion } from '../composer/hooks/use-session-question'
+import type { SessionHarness } from '../harness/harnesses'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
-import { readableSessionId } from '../session-creation'
 import type { SessionEvidence, SessionFeedRow } from '../types'
 import { useSessions } from '../use-sessions'
 import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../work/use-session-work'
@@ -56,6 +56,7 @@ export function useSessionScreenModel() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
   const [cockpit, projectActions] = useProjects()
+  const [workspaceCockpit, workspaceActions] = useWorkspaces(cockpit.project?.id ?? null)
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
   const [evidence, setEvidence] = useState<SessionEvidence | null>(null)
   const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
@@ -63,13 +64,12 @@ export function useSessionScreenModel() {
     selectedSessionId,
     cockpit.project?.path ?? null,
   )
-  const lastHarness = useComposerStore(({ harness }) => harness)
-  const chooseHarness = useComposerStore(({ chooseHarness }) => chooseHarness)
+  const [lastHarness, chooseHarness] = useState<SessionHarness>('claude')
   const session = useSelectedSession(selectedSessionId, roster)
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
   // Ask only real Session ids; an optimistic Roster row has no backend record yet (#2109).
-  const permission = useSessionPermission(readableSessionId(selectedSessionId)),
-    question = useSessionQuestion(readableSessionId(selectedSessionId))
+  const permission = useSessionPermission(selectedSessionId),
+    question = useSessionQuestion(selectedSessionId)
   const artifacts = useWorkArtifacts({
     session,
     selectedSessionId,
@@ -91,6 +91,8 @@ export function useSessionScreenModel() {
     harness,
     cockpit,
     projectActions,
+    workspaceCockpit,
+    workspaceActions,
     permission,
     question,
     work,

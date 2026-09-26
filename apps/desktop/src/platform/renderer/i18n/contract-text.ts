@@ -11,8 +11,6 @@ export function contractText(failure: ContractFailure): string {
   switch (failure.type) {
     case 'account.error':
       return i18n.t(`accounts:error.${failure.code}`)
-    case 'project.error':
-      return i18n.t(`projects:error.${failure.code}`)
     case 'ticket.error':
       return i18n.t(`tickets:error.${failure.code}`)
     case 'harness-sign-in.error':
@@ -22,6 +20,6 @@ export function contractText(failure: ContractFailure): string {
 
 // A component that draws a failure holds this instead, so it redraws on a language change.
 export function useContractText(): (failure: ContractFailure) => string {
-  useTranslation(['accounts', 'projects', 'tickets', 'harnessSignIn'])
+  useTranslation(['accounts', 'tickets', 'harnessSignIn'])
   return contractText
 }

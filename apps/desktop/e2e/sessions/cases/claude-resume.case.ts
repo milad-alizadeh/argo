@@ -43,7 +43,7 @@ export async function provePackagedResume(page, { backend, project, restart, tra
   const resumed = await rosterRow(relaunched, sessionId)
   assert.deepEqual(
     resumed.map(({ posture }) => posture),
-    ['managed'],
+    ['live'],
   )
 
   // 11111111-2222-4333-8444-555555555555's fixture cwd is a folder under the Project that no one created; a real send
@@ -54,7 +54,7 @@ export async function provePackagedResume(page, { backend, project, restart, tra
     project,
   )
 
-  // The rewrite above touches disk under the same watched tree; the resulting rescan can still
+  // The rewrite above touches disk under the same transcript tree; the resulting rescan can still
   // be shifting rows when the click below would otherwise fire (#2650).
   await waitForRosterSettled(relaunched)
   await openSessionByClick(relaunched, '11111111-2222-4333-8444-555555555555')

@@ -8,8 +8,3 @@ export {
 } from './use-session-list-filter-store'
 export { useSessionListFocus } from './use-session-list-focus'
 export { useSessionListSelection } from './use-session-list-selection'
-export {
-  useRememberedSessionListOrder,
-  useSessionListWindowCursor,
-  useSessionListWindowStore,
-} from './use-session-list-window-store'

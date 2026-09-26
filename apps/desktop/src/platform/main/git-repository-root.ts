@@ -1,0 +1,56 @@
+// Registration is the act that creates a Project, and a Project is a registered git repository
+// (CONTEXT.md · Project). This is where a chosen folder is proved to be one.
+import { execFile } from 'node:child_process'
+import { realpath } from 'node:fs/promises'
+import { promisify } from 'node:util'
+import { isRecord } from '@/shared/validation'
+
+const run = promisify(execFile)
+
+export type RepositoryFailure =
+  | 'access-denied'
+  | 'git-unavailable'
+  | 'internal-error'
+  | 'not-a-repository'
+  | 'project-unavailable'
+
+export type RepositoryRoot =
+  | { root: string; commonDirectory: string }
+  | { failure: RepositoryFailure }
+
+// git decides what a git root is. Reimplementing the walk would have to answer worktrees, submodule
+// links and `GIT_DIR`, and would answer them differently from the tool the rest of Argo drives.
+export async function repositoryRoot(folder: string): Promise<RepositoryRoot> {
+  let output: { stdout: string }
+  try {
+    output = await run('git', [
+      '-C',
+      folder,
+      'rev-parse',
+      '--show-toplevel',
+      '--path-format=absolute',
+      '--git-common-dir',
+    ])
+  } catch (error) {
+    return { failure: spawnFailure(error) }
+  }
+  const [root, commonDirectory] = output.stdout.trim().split('\n')
+  if (!root || !commonDirectory) return { failure: 'not-a-repository' }
+  try {
+    // Two paths to one repository must land on one Project, so the stored path is the resolved
+    // one. On macOS `/tmp` is a symlink to `/private/tmp`, which is the case that shows it.
+    return { root: await realpath(root), commonDirectory: await realpath(commonDirectory) }
+  } catch {
+    return { failure: 'project-unavailable' }
+  }
+}
+
+function spawnFailure(error: unknown): RepositoryFailure {
+  if (!isRecord(error)) return 'internal-error'
+  // A spawn failure carries a string code and is a fact about this computer. A non-zero exit
+  // carries a numeric one and is a fact about the chosen folder.
+  if (error.code === 'ENOENT') return 'git-unavailable'
+  if (error.code === 'EACCES' || error.code === 'EPERM') return 'access-denied'
+  if (typeof error.code === 'number') return 'not-a-repository'
+  return 'internal-error'
+}

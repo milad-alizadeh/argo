@@ -8,10 +8,11 @@ const first = {
   commandId: '00000000-0000-4000-8000-000000000001',
   harness: 'claude' as const,
   projectId: '00000000-0000-4000-8000-000000000099',
+  workspaceId: '00000000-0000-4000-8000-000000000098',
   cwd: '/repo',
   prompt: 'first',
   attachments: [],
-  setup: { model: 'sonnet', effort: 'medium', mode: 'default' },
+  turnConfiguration: { model: 'sonnet', effort: 'medium', mode: 'default' },
 }
 
 test('models opening, later sends, failure, and close paths', () => {
@@ -109,7 +110,7 @@ test('maps the catalog manual mode to the SDK default mode', () => {
         queryActor: fromCallback(() => undefined),
       },
     }),
-    { input: { ...first, setup: { ...first.setup, mode: 'manual' } } },
+    { input: { ...first, turnConfiguration: { ...first.turnConfiguration, mode: 'manual' } } },
   ).start()
   assert.equal(actor.getSnapshot().context.mode, 'default')
   actor.stop()

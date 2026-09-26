@@ -5,7 +5,6 @@ import { createMemoryRouter, RouterProvider } from 'react-router'
 import { expect, userEvent, within } from 'storybook/test'
 import type { Harness, HarnessReadinessState } from '@/domains/harness-signin/contract/contract'
 import { SessionsSidebar } from '@/domains/sessions/renderer/session-list/sidebar/sessions-sidebar'
-import { SELECTED_SESSION_KEY } from '@/domains/sessions/renderer/session-list/sidebar/use-sidebar-actions'
 import { CockpitRouteLayout } from './cockpit-router'
 
 function CockpitRouteLayoutStory() {
@@ -48,43 +47,6 @@ const meta = {
 
 export default meta
 type Story = StoryObj<typeof CockpitRouteLayoutStory>
-
-const PROJECT = { id: 'story-project', name: 'argo', path: '/storybook/argo' }
-
-function listed(projects: (typeof PROJECT)[], selectedId: string | null) {
-  return {
-    version: 1 as const,
-    type: 'project.listed' as const,
-    requestId: 'story-projects',
-    projects,
-    selectedId,
-  }
-}
-
-// With no Project the cockpit has nothing to show a roster for: the window names the next step, and
-// adding a Project from it opens guided Project setup (#2381).
-export const NoProject: Story = {
-  beforeEach: () => {
-    const before = window.argo
-    const storedSession = window.localStorage.getItem(SELECTED_SESSION_KEY)
-    window.localStorage.setItem(SELECTED_SESSION_KEY, 'restored-session')
-    window.argo = {
-      ...before,
-      listProjects: () => Promise.resolve(listed([], null)),
-    }
-    return () => {
-      window.argo = before
-      if (storedSession === null) window.localStorage.removeItem(SELECTED_SESSION_KEY)
-      else window.localStorage.setItem(SELECTED_SESSION_KEY, storedSession)
-    }
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await expect(await canvas.findByText('Add a Project to start')).toBeVisible()
-    await expect(canvas.queryByRole('complementary', { name: 'Sessions sidebar' })).toBeNull()
-    await expect(canvas.queryByRole('button', { name: 'New Session' })).toBeNull()
-  },
-}
 
 function readinessListed(harnesses: Array<{ harness: Harness; state: HarnessReadinessState }>) {
   return {
