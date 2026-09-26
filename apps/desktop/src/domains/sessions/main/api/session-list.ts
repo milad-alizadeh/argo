@@ -23,7 +23,16 @@ export const sessionListRowSchema = z.strictObject({
   harness: z.string().min(1),
   posture: z.literal('live').nullable(),
   title: sessionListTitleSchema.nullable(),
-  status: z.enum(['running', 'idle', 'stopped', 'ended', 'unknown']),
+  status: z.enum([
+    'starting',
+    'running',
+    'permission',
+    'asking',
+    'idle',
+    'stopped',
+    'ended',
+    'unknown',
+  ]),
   entry: z.null(),
   cwd: z.string().nullable(),
   branch: z.null(),
@@ -68,14 +77,22 @@ function liveProjection(context: SessionListContext, sessionId: string) {
   const actor = context.supervisor.getSnapshot().context.sessions[sessionId]
   if (actor === undefined) return null
   const snapshot = actor.getSnapshot()
-  let status: 'running' | 'idle' | 'stopped' | 'ended'
-  if (snapshot.matches('Ready')) status = 'idle'
-  else if (snapshot.matches('Failed')) status = 'stopped'
-  else if (snapshot.matches('Closed')) status = 'ended'
-  else status = 'running'
+  const stateProjection = {
+    Starting: { posture: 'live', status: 'starting' },
+    Persisting: { posture: 'live', status: 'starting' },
+    Draining: { posture: 'live', status: 'unknown' },
+    Sending: { posture: 'live', status: 'unknown' },
+    Ready: { posture: 'live', status: 'unknown' },
+    Failed: null,
+    Closed: null,
+  } as const satisfies Record<
+    typeof snapshot.value,
+    { posture: 'live'; status: 'starting' | 'unknown' } | null
+  >
+  const projection = stateProjection[snapshot.value]
+  if (projection === null) return null
   return {
-    posture: 'live' as const,
-    status,
+    ...projection,
     turnConfiguration: snapshot.context.first.turnConfiguration,
   }
 }

@@ -39,6 +39,7 @@ function sessionListCaller(sessions: Record<string, unknown> = {}) {
 function liveSession(state: string) {
   return {
     getSnapshot: () => ({
+      value: state,
       matches: (candidate: string) => candidate === state,
       context: {
         first: {
@@ -196,9 +197,31 @@ test('adds the current live projection to a saved Session', async () => {
       },
       {
         posture: 'live',
-        status: 'idle',
+        status: 'unknown',
         turnConfiguration: { model: 'claude-sonnet', effort: 'high', mode: 'default' },
       },
+    )
+  } finally {
+    client.close()
+  }
+})
+
+test('does not project a failed live channel as live', async () => {
+  const { client, list } = sessionListCaller({ [IDS[0]]: liveSession('Failed') })
+  try {
+    insertSession(client, {
+      id: IDS[0],
+      harness: 'claude',
+      nativeId: 'native-1',
+      firstPrompt: 'First prompt',
+      updatedAt: 10,
+    })
+
+    const result = await list({ page: 1, pageSize: 10 })
+
+    assert.deepEqual(
+      { posture: result.rows[0]?.posture, status: result.rows[0]?.status },
+      { posture: null, status: 'unknown' },
     )
   } finally {
     client.close()
