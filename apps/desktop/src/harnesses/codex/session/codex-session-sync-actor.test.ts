@@ -44,6 +44,7 @@ function expectedCalls(): unknown[] {
     sortKey: 'updated_at',
     sourceKinds: sources,
     archived: false,
+    useStateDbOnly: true,
   }
   return [
     { method: 'thread/list', params: listParams },
@@ -153,4 +154,20 @@ test('propagates a failed read for a known Session so the generic worker can ret
       reportMalformed: () => {},
     }),
   ).rejects.toThrow('app-server read failed')
+})
+
+test('skips a previously saved thread that Codex has removed', async () => {
+  const calls: unknown[] = []
+  const result = await readCodexSessions({
+    request: (async (method: string, _params, parse) => {
+      calls.push(method)
+      if (method === 'thread/list') return parse({ data: [], nextCursor: null })
+      throw new Error('Thread not found')
+    }) as CodexWorkerReadRequest,
+    knownNativeIds: ['removed-thread'],
+    reportMalformed: () => {},
+  })
+
+  expect(result).toEqual([])
+  expect(calls).toEqual(['thread/list', 'thread/read'])
 })

@@ -72,6 +72,7 @@ const requestSchema = z.discriminatedUnion('method', [
       sortDirection: z.enum(['asc', 'desc']).optional(),
       sourceKinds: z.array(sourceKindSchema).optional(),
       archived: z.boolean().optional(),
+      useStateDbOnly: z.boolean().optional(),
     }),
   }),
   z.strictObject({
