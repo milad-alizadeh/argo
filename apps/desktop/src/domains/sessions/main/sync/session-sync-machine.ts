@@ -1,5 +1,5 @@
 import { assign, fromPromise, setup } from 'xstate'
-import type { SessionUpsertInput } from '@/domains/sessions/main/database/upsert-session'
+import type { SessionUpsertInput } from '../database/upsert-session'
 
 export type SyncedSessionRecord = Omit<SessionUpsertInput, 'harness'>
 

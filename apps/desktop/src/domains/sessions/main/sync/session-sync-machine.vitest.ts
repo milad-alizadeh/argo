@@ -8,6 +8,11 @@ import {
   sessionSyncMachine,
 } from './session-sync-machine'
 
+const twoBatchRecords = Array.from({ length: SESSION_SYNC_BATCH_SIZE + 1 }, (_value, index) => ({
+  nativeId: `native-${index}`,
+  customTitle: null,
+}))
+
 test('moves from Idle through Fetching and Saving to Ready', async () => {
   let saved = 0
   const actor = createActor(
@@ -61,14 +66,10 @@ test('fails after three fetch attempts and permits a manual Refresh', async () =
 
 test('saves each committed batch once and advances progress after each commit', async () => {
   const saved: string[][] = []
-  const records = Array.from({ length: SESSION_SYNC_BATCH_SIZE + 1 }, (_value, index) => ({
-    nativeId: `native-${index}`,
-    customTitle: null,
-  }))
   const actor = createActor(
     sessionSyncMachine.provide({
       actors: {
-        fetch: fromPromise<SyncResult>(async () => ({ records, skipped: 0 })),
+        fetch: fromPromise<SyncResult>(async () => ({ records: twoBatchRecords, skipped: 0 })),
         save: fromPromise(async ({ input }) => {
           saved.push(input.records.map((record) => record.nativeId))
         }),
@@ -91,14 +92,10 @@ test('saves each committed batch once and advances progress after each commit', 
 test('retries only the failed SQL batch', async () => {
   const batches: string[][] = []
   let failSecondBatch = true
-  const records = Array.from({ length: SESSION_SYNC_BATCH_SIZE + 1 }, (_value, index) => ({
-    nativeId: `native-${index}`,
-    customTitle: null,
-  }))
   const actor = createActor(
     sessionSyncMachine.provide({
       actors: {
-        fetch: fromPromise<SyncResult>(async () => ({ records, skipped: 0 })),
+        fetch: fromPromise<SyncResult>(async () => ({ records: twoBatchRecords, skipped: 0 })),
         save: fromPromise(async ({ input }) => {
           batches.push(input.records.map((record) => record.nativeId))
           if (input.records.length === 1 && failSecondBatch) {

@@ -141,6 +141,7 @@ export function attachTrpcTransport<TRouter extends AnyRouter>(request: {
   router: TRouter
   context: Context
 }): () => void {
+  const webContents = request.window.webContents
   const subscriptions = new Map<number, Subscription>()
   const stopSubscription = (id: number): void => {
     subscriptions.get(id)?.unsubscribe()
@@ -150,8 +151,7 @@ export function attachTrpcTransport<TRouter extends AnyRouter>(request: {
     for (const id of subscriptions.keys()) stopSubscription(id)
   }
   const sendSubscriptionMessage = (message: unknown): void => {
-    if (!request.window.webContents.isDestroyed())
-      request.window.webContents.send(TRPC_CHANNEL, message)
+    if (!webContents.isDestroyed()) webContents.send(TRPC_CHANNEL, message)
   }
   const handler = async (event: Electron.IpcMainInvokeEvent, rawInput: unknown) => {
     if (!isTrustedRendererFrame(event, request.window, request.rendererURL)) {
@@ -194,13 +194,13 @@ export function attachTrpcTransport<TRouter extends AnyRouter>(request: {
   }
   ipcMain.handle(TRPC_CHANNEL, handler)
   const stopOnNavigation = () => stopAllSubscriptions()
-  request.window.webContents.on('did-start-navigation', stopOnNavigation)
-  request.window.webContents.once('destroyed', stopOnNavigation)
+  webContents.on('did-start-navigation', stopOnNavigation)
+  webContents.once('destroyed', stopOnNavigation)
   app.on('will-quit', stopOnNavigation)
   return () => {
     stopAllSubscriptions()
-    request.window.webContents.removeListener('did-start-navigation', stopOnNavigation)
-    request.window.webContents.removeListener('destroyed', stopOnNavigation)
+    webContents.removeListener('did-start-navigation', stopOnNavigation)
+    webContents.removeListener('destroyed', stopOnNavigation)
     app.removeListener('will-quit', stopOnNavigation)
     ipcMain.removeHandler(TRPC_CHANNEL)
   }

@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest'
-import { SessionSyncStatusStore } from '@/domains/sessions/main/sync/session-sync-status'
+import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
 
 const electron = vi.hoisted(() => ({
   app: {

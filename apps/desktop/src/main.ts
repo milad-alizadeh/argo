@@ -13,8 +13,8 @@ import {
   type HarnessReadinessRegistration,
 } from '@/domains/harness-signin/main'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
+import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
-import { SessionSyncStatusStore } from '@/domains/sessions/main/sync/session-sync-status'
 import type { CatalogActor } from '@/harnesses/catalog/catalog-read'
 import { createClaudeSignInDriver, createSystemClaudeReadiness } from '@/harnesses/claude/readiness'
 import { createCodexSignInDriver, createSystemCodexReadiness } from '@/harnesses/codex/readiness'

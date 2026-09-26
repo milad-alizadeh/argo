@@ -22,7 +22,13 @@ test('reads interactive Sessions and gets metadata for known Argo Sessions', asy
   })
 
   expect(records).toEqual([
-    { nativeId: ID_ONE, activityAt: 1, preview: 'External Session', cwd: '/repo' },
+    {
+      nativeId: ID_ONE,
+      activityAt: 1,
+      customTitle: null,
+      preview: 'External Session',
+      cwd: '/repo',
+    },
     { nativeId: ID_TWO, activityAt: 2, customTitle: 'Pinned', preview: 'Argo Session' },
   ])
   expect(malformed).toHaveLength(1)

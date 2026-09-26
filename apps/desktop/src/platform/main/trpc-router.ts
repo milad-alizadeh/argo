@@ -32,7 +32,7 @@ import {
 import {
   type SessionSyncStatusStore,
   sessionSyncStatusProcedure,
-} from '@/domains/sessions/main/sync/session-sync-status'
+} from '@/domains/sessions/main/api/session-sync-status'
 import {
   createTicketRouter,
   type TicketRouterDependencies,

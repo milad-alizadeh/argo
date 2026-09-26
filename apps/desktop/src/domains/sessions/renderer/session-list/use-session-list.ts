@@ -53,5 +53,6 @@ export function useSessionList({
     }, [query.fetchNextPage, query.hasNextPage, query.isFetchingNextPage]),
     refreshSessions: sync.refresh,
     refreshingSessions: sync.refreshing,
+    syncStatus: sync.status,
   }
 }

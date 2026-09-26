@@ -3,7 +3,7 @@ import { test } from 'vitest'
 import { createActor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
 import type { Database } from '@/database/database'
-import { SessionSyncStatusStore } from '@/domains/sessions/main/sync/session-sync-status'
+import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
 import { appMachine } from './app-machine'
 
 const input = {

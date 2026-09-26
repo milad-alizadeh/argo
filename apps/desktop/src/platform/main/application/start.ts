@@ -1,7 +1,7 @@
 import { app } from 'electron'
 import { createActor } from 'xstate'
 import type { Database } from '@/database/database'
-import type { SessionSyncStatusStore } from '@/domains/sessions/main/sync/session-sync-status'
+import type { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
 import { applyStoredAppearance, readAppearance } from '../appearance'
 import { setPlatformLanguage } from '../i18n'
 import { type AppActor, appMachine } from './app-machine'

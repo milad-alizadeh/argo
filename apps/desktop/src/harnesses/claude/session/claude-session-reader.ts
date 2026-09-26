@@ -39,8 +39,12 @@ function parseClaudeSession(raw: unknown): ClaudeSessionRecord | null {
   return {
     nativeId: parsed.data.sessionId,
     activityAt: parsed.data.lastModified,
-    ...(parsed.data.customTitle === undefined ? {} : { customTitle: parsed.data.customTitle }),
-    ...(parsed.data.summary === '' ? {} : { preview: parsed.data.summary }),
+    customTitle: parsed.data.customTitle ?? null,
+    ...(parsed.data.summary === '' ||
+    parsed.data.summary === parsed.data.customTitle ||
+    parsed.data.summary === parsed.data.firstPrompt
+      ? {}
+      : { preview: parsed.data.summary }),
     ...(parsed.data.firstPrompt === undefined ? {} : { firstPrompt: parsed.data.firstPrompt }),
     ...(parsed.data.cwd === undefined ? {} : { cwd: parsed.data.cwd }),
   }

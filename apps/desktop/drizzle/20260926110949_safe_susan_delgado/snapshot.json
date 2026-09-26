@@ -2,9 +2,7 @@
   "version": "7",
   "dialect": "sqlite",
   "id": "6a56ba9c-3494-434f-ab58-a177d4976dc7",
-  "prevIds": [
-    "45121627-5a87-4ebc-9268-a7a1bbdc60a0"
-  ],
+  "prevIds": ["45121627-5a87-4ebc-9268-a7a1bbdc60a0"],
   "ddl": [
     {
       "name": "project",
@@ -571,13 +569,9 @@
       "table": "session_ticket_link"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -586,13 +580,9 @@
       "table": "workspace"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
       "nameExplicit": false,
@@ -601,13 +591,9 @@
       "table": "session"
     },
     {
-      "columns": [
-        "workspace_id"
-      ],
+      "columns": ["workspace_id"],
       "tableTo": "workspace",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
       "nameExplicit": false,
@@ -616,13 +602,9 @@
       "table": "session"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -631,13 +613,9 @@
       "table": "composer_draft"
     },
     {
-      "columns": [
-        "session_id"
-      ],
+      "columns": ["session_id"],
       "tableTo": "session",
-      "columnsTo": [
-        "argo_id"
-      ],
+      "columnsTo": ["argo_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -646,13 +624,9 @@
       "table": "composer_draft"
     },
     {
-      "columns": [
-        "workspace_id"
-      ],
+      "columns": ["workspace_id"],
       "tableTo": "workspace",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -661,54 +635,42 @@
       "table": "composer_draft"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "project_pk",
       "table": "project",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "workspace_pk",
       "table": "workspace",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "argo_id"
-      ],
+      "columns": ["argo_id"],
       "nameExplicit": false,
       "name": "session_pk",
       "table": "session",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "harness"
-      ],
+      "columns": ["harness"],
       "nameExplicit": false,
       "name": "session_sync_status_pk",
       "table": "session_sync_status",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "composer_draft_pk",
       "table": "composer_draft",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "session_id"
-      ],
+      "columns": ["session_id"],
       "nameExplicit": false,
       "name": "session_ticket_link_pk",
       "table": "session_ticket_link",
@@ -783,9 +745,7 @@
       "table": "session_ticket_link"
     },
     {
-      "columns": [
-        "common_directory"
-      ],
+      "columns": ["common_directory"],
       "nameExplicit": false,
       "name": "project_common_directory_unique",
       "entityType": "uniques",
