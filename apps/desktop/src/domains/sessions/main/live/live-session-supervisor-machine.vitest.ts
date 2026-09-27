@@ -17,10 +17,10 @@ import {
   unavailable,
 } from '@/harnesses/catalog/harness-catalog-machine'
 import type {
-  CodexChannel,
+  CodexAppServerClient,
   CodexRequest,
-  codexAppServerMachine,
-} from '@/harnesses/codex/app-server/codex-app-server-machine'
+} from '@/harnesses/codex/app-server/codex-app-server-client'
+import type { codexAppServerMachine } from '@/harnesses/codex/app-server/codex-app-server-machine'
 import { codexHarnessInfo } from '@/harnesses/codex/catalog'
 import { codexModelCatalogFixture } from '../../../../../test-fixtures/sessions/codex-model-catalog.fixture'
 import type { SessionStartInput } from '../api/session-submit'
@@ -68,14 +68,11 @@ async function supervisorFor(request: CodexRequest, catalogValue = catalog) {
     'CREATE TABLE session (argo_id TEXT PRIMARY KEY, harness TEXT NOT NULL, native_id TEXT NOT NULL, project_id TEXT, workspace_id TEXT, custom_title TEXT, preview TEXT, first_prompt TEXT, cwd TEXT, activity_at INTEGER, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);',
   )
   const database = databaseFrom(client)
-  const channel: CodexChannel = {
+  const codexClient: CodexAppServerClient = {
     request: (method, params, parse) => request(method, params, parse),
-    invalidMessageCount: () => 0,
-    notify: () => {},
     respond: () => {},
-    onNotification: () => {},
-    onExit: () => {},
-    close: () => {},
+    onNotification: () => () => {},
+    shutdown: () => {},
   }
   type Call = Extract<
     Parameters<ActorRefFrom<typeof codexAppServerMachine>['send']>[0],
@@ -88,7 +85,7 @@ async function supervisorFor(request: CodexRequest, catalogValue = catalog) {
       events: {} as { type: 'Shutdown' },
     },
     actors: {
-      codex: fromCallback<Call>(({ receive }) => receive((event) => event.run(channel))),
+      codex: fromCallback<Call>(({ receive }) => receive((event) => event.run(codexClient))),
       catalog: harnessCatalogMachine.provide({
         actors: { loadCatalog: fromPromise(async () => catalogValue) },
       }),

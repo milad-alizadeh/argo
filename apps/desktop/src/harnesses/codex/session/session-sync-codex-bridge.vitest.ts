@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict'
 import { MessageChannel, Worker } from 'node:worker_threads'
 import { test } from 'vitest'
-import { createActor, fromCallback, fromPromise } from 'xstate'
+import { createActor } from 'xstate'
 import type {
-  CodexChannel,
+  CodexAppServerClient,
   CodexRequest,
   RequestParams,
-} from '../app-server/codex-app-server-machine'
+} from '../app-server/codex-app-server-client'
 import {
   codexAppServerMachine,
   requestCodexAppServer,
@@ -42,35 +42,17 @@ test('round trips an allowlisted Codex read through the main-side request functi
 })
 
 function createTestCodexAppServer() {
-  return createActor(
-    codexAppServerMachine.provide({
-      actors: {
-        processActor: fromCallback(({ receive, sendBack }) => {
-          receive((command) => {
-            if (command.type === 'Dispatch')
-              command.request.run({
-                request: async <Method extends keyof RequestParams & string, Result>(
-                  _method: Method,
-                  _params: RequestParams[Method],
-                  parse: (value: unknown) => Result,
-                ): Promise<Result> => parse({ data: ['fixture-model'] }),
-              } as unknown as CodexChannel)
-          })
-          sendBack({ type: 'Process ready', version: '0.147.0' })
-        }),
-        discoverExecutable: fromPromise(({ input }) =>
-          Promise.resolve({
-            type: 'Request',
-            executable: 'codex',
-            version: '0.147.0',
-            run: input.run,
-            reject: input.reject,
-          }),
-        ),
-      },
-    }),
-    { input: { executable: 'codex' } },
-  ).start()
+  const client: CodexAppServerClient = {
+    request: async <Method extends keyof RequestParams & string, Result>(
+      _method: Method,
+      _params: RequestParams[Method],
+      parse: (value: unknown) => Result,
+    ): Promise<Result> => parse({ data: ['fixture-model'] }),
+    respond: () => {},
+    onNotification: () => () => {},
+    shutdown: () => {},
+  }
+  return createActor(codexAppServerMachine, { input: { client } }).start()
 }
 
 test('serves a test-only worker request through the app-server request function', async () => {

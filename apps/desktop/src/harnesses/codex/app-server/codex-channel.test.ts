@@ -2,12 +2,16 @@ import assert from 'node:assert/strict'
 import { PassThrough } from 'node:stream'
 import { test } from 'node:test'
 
-import { CodexRequestTimeoutError, openCodexChannel } from './codex-app-server-machine'
+import {
+  type CodexProcess,
+  CodexRequestTimeoutError,
+  openCodexChannel,
+} from './codex-app-server-client'
 
-function silentProcess() {
+function silentProcess(): CodexProcess & { stdout: PassThrough } {
   return {
     stdout: new PassThrough(),
-    write: () => {},
+    write: (_line) => {},
     kill: () => {},
     onExit: () => {},
   }
@@ -43,4 +47,34 @@ test('reports and counts an invalid protocol line while keeping the channel open
   assert.equal(channel.invalidMessageCount(), 1)
   assert.equal(reports.length, 1)
   assert.match(String(reports[0]), /SyntaxError/)
+})
+
+test('refuses only server requests that no notification listener claims', () => {
+  const writes: string[] = []
+  const process = {
+    ...silentProcess(),
+    write: (line: string) => {
+      writes.push(line)
+    },
+  }
+  const channel = openCodexChannel(process)
+  channel.onNotification(
+    (message) => 'method' in message && message.method === 'item/tool/requestUserInput',
+  )
+
+  process.stdout.write(
+    `${JSON.stringify({ id: 1, method: 'item/commandExecution/requestApproval', params: {} })}\n`,
+  )
+  process.stdout.write(
+    `${JSON.stringify({ id: 2, method: 'item/tool/requestUserInput', params: {} })}\n`,
+  )
+
+  assert.equal(writes.length, 1)
+  assert.deepEqual(JSON.parse(writes[0] ?? ''), {
+    id: 1,
+    error: {
+      code: -32601,
+      message: 'Argo does not answer item/commandExecution/requestApproval yet.',
+    },
+  })
 })

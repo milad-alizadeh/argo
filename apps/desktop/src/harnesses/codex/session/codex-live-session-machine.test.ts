@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createActor, waitFor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
-import type { CodexRequest } from '../app-server/codex-app-server-machine'
+import type { CodexRequest } from '../app-server/codex-app-server-client'
 import { codexLiveSessionActors, codexLiveSessionMachine } from './codex-live-session-machine'
 
 function machineFor(request: CodexRequest) {
