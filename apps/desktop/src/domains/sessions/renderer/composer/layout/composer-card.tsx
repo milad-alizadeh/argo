@@ -123,7 +123,7 @@ function ComposerContextPicker({
   )
 }
 
-// The card and the context bar pinned under it: everything below the pending-turns list.
+// The card and its context bar form the composer's anchored surface.
 export function ComposerCard(props: ComposerCardProps) {
   const { t } = useTranslation('sessions')
   const { editing, dispatch } = useComposerEditing()

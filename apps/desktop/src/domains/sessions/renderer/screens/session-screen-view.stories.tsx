@@ -780,62 +780,6 @@ export const ComposerStaysFixed: Story = {
   },
 }
 
-export const TallQueuedComposerRemainsReachable: Story = {
-  render: () => <ReviewScreen composerRunning />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await waitFor(() =>
-      expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
-        'data-session',
-        'composer-review',
-      ),
-    )
-    const message = canvas.getByLabelText('Message')
-    for (let position = 1; position <= 10; position += 1) {
-      await userEvent.click(message)
-      await userEvent.type(message, `Queued step ${position}.`)
-      await userEvent.keyboard('{Enter}')
-    }
-
-    const pendingTurns = canvas.getByRole('region', { name: 'Pending Turns' })
-    const pendingRows = within(pendingTurns).getAllByRole('listitem')
-    await waitFor(() => expect(pendingRows).toHaveLength(10))
-    const queueRowHeight =
-      pendingRows[0]?.getBoundingClientRect().height ?? Number.POSITIVE_INFINITY
-    const lastPendingRow = pendingRows.at(-1)
-    if (lastPendingRow === undefined) throw new Error('The final queued turn is absent.')
-    await waitFor(() =>
-      expect(lastPendingRow.getBoundingClientRect().height).toBeGreaterThanOrEqual(queueRowHeight),
-    )
-    await expect(pendingTurns.getBoundingClientRect().height).toBeGreaterThanOrEqual(queueRowHeight)
-    await expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toBeVisible()
-    const composerScroll = canvasElement.querySelector<HTMLElement>(
-      '[data-component="SessionComposerScroll"]',
-    )
-    const composerCard = canvasElement.querySelector<HTMLElement>('[data-component="ComposerCard"]')
-    if (composerScroll === null || composerCard === null)
-      throw new Error('The Session composer surfaces are absent.')
-    const cardBeforeQueueScroll = composerCard.getBoundingClientRect()
-    await expect(pendingTurns.scrollHeight).toBeGreaterThan(pendingTurns.clientHeight)
-    pendingTurns.scrollTo({ top: pendingTurns.scrollHeight })
-    fireEvent.scroll(pendingTurns)
-    await expect(pendingTurns.scrollTop).toBeGreaterThan(0)
-    const visibleQueueBounds = pendingTurns.getBoundingClientRect()
-    const lastPendingRowBounds = lastPendingRow.getBoundingClientRect()
-    await expect(lastPendingRowBounds.top).toBeGreaterThanOrEqual(visibleQueueBounds.top)
-    await expect(lastPendingRowBounds.bottom).toBeLessThanOrEqual(visibleQueueBounds.bottom)
-    await expect(lastPendingRowBounds.bottom).toBeLessThanOrEqual(cardBeforeQueueScroll.top)
-    await expect(composerCard.getBoundingClientRect()).toEqual(cardBeforeQueueScroll)
-    await expect(composerScroll.scrollTop).toBe(0)
-    await userEvent.tab()
-    await expect(canvas.getByRole('button', { name: 'Add context' })).toHaveFocus()
-    await userEvent.tab()
-    const interrupt = canvas.getByRole('button', { name: 'Interrupt' })
-    await expect(interrupt).toHaveFocus()
-    await expect(interrupt).toBeVisible()
-  },
-}
-
 export const NewSessionDoesNotStall: Story = {
   render: () => <NewSessionScreen />,
   play: async ({ canvasElement }) => {

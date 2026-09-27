@@ -8,7 +8,7 @@ import {
 } from 'xstate'
 import { claudeLiveSessionMachine } from '@/harnesses/claude/session/claude-live-session-machine'
 import type { codexLiveSessionMachine } from '@/harnesses/codex/session/codex-live-session-machine'
-import type { SessionStartInput } from '../api/session-submit'
+import type { SessionLiveInput, SessionStartInput } from '../api/session-submit'
 
 export type QueuedLiveSessionCommand = Pick<
   SessionStartInput,
@@ -16,19 +16,20 @@ export type QueuedLiveSessionCommand = Pick<
 >
 type LiveSessionPersistInput = {
   harness: string
-  projectId: string
-  workspaceId: string
+  projectId: string | null
+  workspaceId: string | null
   cwd: string
   nativeId: string | null
   firstPrompt: string
+  sessionId?: string
 }
 
 export const liveSessionMachine = xstateSetup({
   types: {
-    input: {} as SessionStartInput,
+    input: {} as SessionLiveInput,
     context: {} as {
       argoId: string | null
-      first: SessionStartInput
+      first: SessionLiveInput
       nativeId: string | null
       queue: QueuedLiveSessionCommand[]
       failure: string | null
@@ -166,12 +167,21 @@ export const liveSessionMachine = xstateSetup({
         id: 'persist',
         src: 'persist',
         input: ({ context }) => ({
-          harness: context.first.harness,
-          projectId: context.first.projectId,
-          workspaceId: context.first.workspaceId,
-          cwd: context.first.cwd,
+          harness: 'resume' in context.first ? context.first.resume.harness : context.first.harness,
+          projectId:
+            'resume' in context.first ? context.first.resume.projectId : context.first.projectId,
+          workspaceId:
+            'resume' in context.first
+              ? context.first.resume.workspaceId
+              : context.first.workspaceId,
+          cwd: 'resume' in context.first ? context.first.resume.cwd : context.first.cwd,
           nativeId: context.nativeId,
           firstPrompt: context.first.prompt,
+          ...('resume' in context.first
+            ? {
+                sessionId: context.first.sessionId,
+              }
+            : {}),
         }),
         onDone: {
           target: 'Draining',

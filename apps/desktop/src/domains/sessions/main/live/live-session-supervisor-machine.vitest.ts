@@ -139,7 +139,24 @@ function send(
   input: SessionStartInput & { sessionId: string },
 ) {
   return new Promise<{ sessionId: string }>((resolve, reject) =>
-    actor.send({ type: 'Send', input, reply: { resolve, reject } }),
+    actor.send({
+      type: 'Send',
+      input: {
+        commandId: input.commandId,
+        prompt: input.prompt,
+        attachments: input.attachments,
+        turnConfiguration: input.turnConfiguration,
+        sessionId: input.sessionId,
+        resume: {
+          harness: input.harness,
+          nativeId: 'native-1',
+          projectId: input.projectId,
+          workspaceId: input.workspaceId,
+          cwd: input.cwd,
+        },
+      },
+      reply: { resolve, reject },
+    }),
   )
 }
 
@@ -264,6 +281,30 @@ test('the same in-flight command shares one vendor Session result', async () => 
     const [firstResult, secondResult] = await Promise.all([one, two])
     assert.equal(secondResult.sessionId, firstResult.sessionId)
     assert.equal(starts, 1)
+  } finally {
+    root.send({ type: 'Shutdown' })
+    client.close()
+  }
+})
+
+test('the first Send after restart resumes the stored Codex thread before starting its Turn', async () => {
+  const calls: Array<{ method: string; threadId: string | undefined }> = []
+  const { root, supervisor, client } = await supervisorFor(async (method, params, parse) => {
+    const requestParams = params as { threadId?: string }
+    calls.push({
+      method,
+      threadId: requestParams.threadId,
+    })
+    if (method === 'thread/resume') return parse({ thread: { id: requestParams.threadId } })
+    return parse({ turn: { id: 'turn-1' } })
+  })
+  try {
+    await assert.doesNotReject(send(supervisor, { ...first, sessionId: 'session-1' }))
+    assert.deepEqual(calls, [
+      { method: 'thread/resume', threadId: 'native-1' },
+      { method: 'turn/start', threadId: 'native-1' },
+    ])
+    await waitFor(supervisor, (snapshot) => snapshot.context.sessions['session-1'] !== undefined)
   } finally {
     root.send({ type: 'Shutdown' })
     client.close()

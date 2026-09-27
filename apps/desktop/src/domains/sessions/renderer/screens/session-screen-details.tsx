@@ -184,9 +184,11 @@ function ReadySessionComposer({
   onRefreshCatalog: () => void
   onSend: NonNullable<Parameters<typeof ComposerForm>[0]['onSend']>
 }) {
+  const { t } = useTranslation('sessions')
   return (
     <>
       {permission.failure ? <Failure message={permission.failure} /> : null}
+      {draft.saveFailed ? <Failure message={t('composer.draftSaveFailed')} /> : null}
       <ComposerForm
         sessionId={composerKey}
         initialEditing={draft.initialEditing}

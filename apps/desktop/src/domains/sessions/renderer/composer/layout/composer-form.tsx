@@ -9,11 +9,9 @@ import type {
 } from '../toolbar/turn-configuration-menu'
 import type { WorkspaceMenuControlProps } from '../toolbar/workspace-menu'
 import { AttachmentTray } from '../tray/attachment-tray'
-import { PendingTurns } from '../tray/pending-turns'
 import type { TurnConfigurationChoices } from '../turn-configuration/turn-configuration'
 import { ComposerCard } from './composer-card'
 import '../editor/composer-content.css'
-import type { SessionAttachmentInput } from '@/domains/sessions/api/attachments'
 import type { ComposerEditing } from '../editing/composer-editing'
 import { ComposerEditingProvider, useComposerEditing } from '../editing/composer-editing-context'
 
@@ -32,7 +30,6 @@ export type ComposerFormProps = {
   onInterrupt?: () => Promise<boolean>
   sessionId: string
   onSend?: Send
-  onSteer?: (text: string, attachments: SessionAttachmentInput[]) => Promise<boolean>
   permissionPrompt?: ReactNode
   plan?: SessionPlan | null
   harness?: HarnessControl | null
@@ -70,7 +67,6 @@ function ComposerFormSurface({
   onInterrupt,
   sessionId,
   onSend,
-  onSteer,
   permissionPrompt,
   plan = null,
   harness = null,
@@ -92,7 +88,7 @@ function ComposerFormSurface({
     editing,
     onChange: changeTurnConfiguration,
   })
-  const state = useSessionComposerState({ isRunning, onSend, turnConfiguration })
+  const state = useSessionComposerState({ onSend, turnConfiguration })
   const send = () => {
     if (!disabled && onSend) void state.send()
   }
@@ -104,14 +100,7 @@ function ComposerFormSurface({
         send()
       }}
     >
-      <AttachmentTray>
-        {permissionPrompt}
-        <PendingTurns
-          editorRef={state.editorRef}
-          onSteer={onSteer}
-          turnConfiguration={turnConfiguration}
-        />
-      </AttachmentTray>
+      <AttachmentTray>{permissionPrompt}</AttachmentTray>
       <ComposerCard
         contextTokens={contextTokens}
         contextWindowTokens={contextWindowTokens}

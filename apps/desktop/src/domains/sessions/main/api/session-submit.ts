@@ -28,7 +28,17 @@ export const sessionStartInputSchema = commandSchema.extend({
   workspaceId: identifierSchema,
   cwd: z.string().min(1),
 })
-export const sessionSendInputSchema = commandSchema.extend({ sessionId: identifierSchema })
+const sessionResumeSchema = z.strictObject({
+  harness: harnessSchema,
+  nativeId: identifierSchema,
+  projectId: identifierSchema.nullable(),
+  workspaceId: identifierSchema.nullable(),
+  cwd: z.string().min(1),
+})
+export const sessionSendInputSchema = commandSchema.extend({
+  sessionId: identifierSchema,
+  resume: sessionResumeSchema,
+})
 const inputSchema = z.strictObject({
   draftId: identifierSchema,
   expectedRevision: z.number().int().nonnegative(),
@@ -38,10 +48,88 @@ const outputSchema = z.strictObject({ sessionId: identifierSchema })
 
 export type SessionStartInput = z.infer<typeof sessionStartInputSchema>
 export type SessionSendInput = z.infer<typeof sessionSendInputSchema>
+export type SessionLiveInput = SessionStartInput | SessionSendInput
 export type SessionSubmitInput = z.infer<typeof inputSchema>
 export type SessionProcedureContext = SessionRenameContext & {
   database: Database
   supervisor: LiveSessionSupervisorActor
+}
+type SupervisorDraftRequest = {
+  context: SessionProcedureContext
+  draft: NonNullable<ReturnType<typeof readComposerDraft>>
+  command: ReturnType<typeof commandForDraft>
+  reply: { resolve: (value: { sessionId: string }) => void; reject: (error: Error) => void }
+}
+
+function commandForDraft(
+  draft: NonNullable<ReturnType<typeof readComposerDraft>>,
+  input: SessionSubmitInput,
+) {
+  return {
+    commandId: input.commandId,
+    prompt: draft.prompt,
+    attachments: draft.attachments,
+    turnConfiguration: draft.turnConfiguration,
+  }
+}
+
+function rejectUnsupportedAttachments(harness: string, attachments: unknown[]): void {
+  if (harness === 'claude' && attachments.length > 0) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Claude Session attachments are not supported.',
+    })
+  }
+}
+
+function startProjectDraft(input: SupervisorDraftRequest) {
+  const { context, draft, command, reply } = input
+  if (draft.target.type !== 'project') return false
+  rejectUnsupportedAttachments(draft.target.harness, draft.attachments)
+  const cwd = resolveWorkspacePath(context.database, draft.target)
+  if (cwd === null)
+    throw new TRPCError({ code: 'BAD_REQUEST', message: 'workspace-not-in-project' })
+  context.supervisor.send({
+    type: 'Start',
+    pendingId: `optimistic:${draft.id}:${draft.revision}`,
+    input: { ...command, ...draft.target, cwd },
+    reply,
+  })
+  return true
+}
+
+function sendSessionDraft(input: SupervisorDraftRequest) {
+  const { context, draft, command, reply } = input
+  if (draft.target.type !== 'session') return
+  const stored = context.database
+    .select({
+      harness: sessionTable.harness,
+      nativeId: sessionTable.nativeId,
+      projectId: sessionTable.projectId,
+      workspaceId: sessionTable.workspaceId,
+      cwd: sessionTable.cwd,
+    })
+    .from(sessionTable)
+    .where(eq(sessionTable.argoId, draft.target.sessionId))
+    .get()
+  if (stored === undefined) throw new TRPCError({ code: 'NOT_FOUND', message: 'missing-session' })
+  const harness = harnessSchema.parse(stored.harness)
+  rejectUnsupportedAttachments(harness, draft.attachments)
+  const cwd =
+    stored.cwd ??
+    (stored.projectId !== null && stored.workspaceId !== null
+      ? resolveWorkspacePath(context.database, {
+          projectId: stored.projectId,
+          workspaceId: stored.workspaceId,
+        })
+      : null)
+  if (cwd === null)
+    throw new TRPCError({ code: 'BAD_REQUEST', message: 'missing-session-working-directory' })
+  context.supervisor.send({
+    type: 'Send',
+    input: { ...command, sessionId: draft.target.sessionId, resume: { ...stored, harness, cwd } },
+    reply,
+  })
 }
 
 function sendToSupervisor(
@@ -53,59 +141,12 @@ function sendToSupervisor(
   if (draft.revision !== input.expectedRevision) {
     throw new TRPCError({ code: 'CONFLICT', message: 'stale-draft' })
   }
+  const command = commandForDraft(draft, input)
   return new Promise((resolve, reject) => {
     const reply = { resolve, reject }
-    const command = {
-      commandId: input.commandId,
-      prompt: draft.prompt,
-      attachments: draft.attachments,
-      turnConfiguration: draft.turnConfiguration,
-    }
-    if (draft.target.type === 'project') {
-      if (draft.target.harness === 'claude' && draft.attachments.length > 0) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Claude Session attachments are not supported.',
-        })
-      }
-      const cwd = resolveWorkspacePath(context.database, draft.target)
-      if (cwd === null) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'workspace-not-in-project' })
-      }
-      context.supervisor.send({
-        type: 'Start',
-        pendingId: `optimistic:${draft.id}:${draft.revision}`,
-        input: {
-          ...command,
-          harness: draft.target.harness,
-          projectId: draft.target.projectId,
-          workspaceId: draft.target.workspaceId,
-          cwd,
-        },
-        reply,
-      })
-      return
-    }
-    const stored = context.database
-      .select({ harness: sessionTable.harness })
-      .from(sessionTable)
-      .where(eq(sessionTable.argoId, draft.target.sessionId))
-      .get()
-    if (stored === undefined) {
-      throw new TRPCError({ code: 'NOT_FOUND', message: 'missing-session' })
-    }
-    const harness = harnessSchema.parse(stored.harness)
-    if (harness === 'claude' && draft.attachments.length > 0) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: 'Claude Session attachments are not supported.',
-      })
-    }
-    context.supervisor.send({
-      type: 'Send',
-      input: { ...command, sessionId: draft.target.sessionId },
-      reply,
-    })
+    const request = { context, draft, command, reply }
+    if (startProjectDraft(request)) return
+    sendSessionDraft(request)
   })
 }
 

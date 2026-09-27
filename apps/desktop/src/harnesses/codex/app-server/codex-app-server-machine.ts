@@ -31,6 +31,9 @@ export type RequestParams = {
     approvalPolicy: string
     sandbox: string
   }
+  'thread/resume': {
+    threadId: string
+  }
   'turn/start': {
     threadId: string
     input: Array<unknown>

@@ -1,5 +1,4 @@
-/* The composer's attachment tray: one card inset from its edges and tucked under its top, holding
-   the Permission above the queue. */
+/* The composer's attachment tray holds temporary Permission cards above the editor. */
 .session-page__composer-attachments {
   position: relative;
   z-index: 0;
@@ -19,51 +18,12 @@
   background: var(--card);
 }
 
-.session-page__pending-turns {
-  min-height: 0;
-  flex: 1 1 auto;
-  overflow-y: auto;
-  overscroll-behavior-y: contain;
-}
-
 .session-page__composer-attachments:empty {
   display: none;
 }
 
 .session-page__composer-attachments > * + * {
   border-top: 1px solid var(--border);
-}
-
-.session-page__queued-message {
-  display: flex;
-  height: var(--size-queue-row);
-  align-items: center;
-  gap: var(--spacing-shell-item);
-  padding-inline: var(--spacing-shell-inset) var(--spacing-shell-item);
-}
-
-.session-page__queued-message + .session-page__queued-message {
-  border-top: 1px solid var(--border);
-}
-
-@keyframes session-page-queue-enter {
-  from {
-    height: 0;
-  }
-
-  to {
-    height: var(--size-queue-row);
-  }
-}
-
-@keyframes session-page-queue-exit {
-  from {
-    height: var(--size-queue-row);
-  }
-
-  to {
-    height: 0;
-  }
 }
 
 @keyframes session-page-attachment-enter {
@@ -79,14 +39,6 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .session-page__queued-message--enter {
-    animation: session-page-queue-enter var(--attachment-enter) cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  }
-
-  .session-page__queued-message--exit {
-    animation: session-page-queue-exit var(--attachment-exit) cubic-bezier(0.4, 0, 0.2, 1) both;
-  }
-
   .session-page__composer-permission {
     animation: session-page-attachment-enter var(--attachment-enter) cubic-bezier(0.2, 0.8, 0.2, 1)
       both;

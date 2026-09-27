@@ -18,7 +18,7 @@ import {
   codexLiveSessionActors,
   codexLiveSessionMachine,
 } from '@/harnesses/codex/session/codex-live-session-machine'
-import type { SessionSendInput, SessionStartInput } from '../api/session-submit'
+import type { SessionLiveInput, SessionSendInput, SessionStartInput } from '../api/session-submit'
 import { createSessionUpsert } from '../database/session-upsert'
 import { liveSessionMachine } from './live-session-machine'
 
@@ -27,6 +27,15 @@ type StartReply = {
   resolve: (value: { sessionId: string }) => void
   reject: (error: Error) => void
 }
+type CompletedStart =
+  | {
+      commandId: string
+      sessionId: string
+    }
+  | {
+      commandId: string
+      failure: string
+    }
 type LiveSessionSupervisorInput = {
   database: Database
 }
@@ -83,13 +92,41 @@ function acceptsTurnConfigurationChange(
   turnConfiguration: SessionSendInput['turnConfiguration'],
 ): boolean {
   const opening = actor.getSnapshot().context.first.turnConfiguration
-  if (actor.getSnapshot().context.first.harness === 'claude')
+  if (harnessOf(actor.getSnapshot().context.first) === 'claude')
     return (
       opening.model === turnConfiguration.model &&
       opening.effort === turnConfiguration.effort &&
       opening.mode === turnConfiguration.mode
     )
   return opening.mode === turnConfiguration.mode
+}
+
+function harnessOf(input: SessionLiveInput) {
+  return 'resume' in input ? input.resume.harness : input.harness
+}
+
+function pendingIdOf(
+  event: Extract<
+    LiveSessionSupervisorEvent,
+    {
+      type: 'Start' | 'Send'
+    }
+  >,
+) {
+  return event.type === 'Start' ? event.pendingId : `resume:${event.input.sessionId}`
+}
+
+function replyForCompletedStart(
+  completed: CompletedStart | undefined,
+  commandId: string,
+  reply: StartReply,
+) {
+  if (completed === undefined) return false
+  if (completed.commandId !== commandId) {
+    reply.reject(new Error('A conflicting start already completed for this draft.'))
+  } else if ('sessionId' in completed) reply.resolve(completed)
+  else reply.reject(new Error(completed.failure))
+  return true
 }
 
 export const liveSessionSupervisorMachine = xstateSetup({
@@ -184,25 +221,28 @@ export const liveSessionSupervisorMachine = xstateSetup({
   actions: {
     startOrQueue: assign({
       starts: ({ context, event, self, spawn }) => {
-        if (event.type !== 'Start') return context.starts
+        if (event.type !== 'Start' && event.type !== 'Send') return context.starts
+        if (event.type === 'Send' && context.sessions[event.input.sessionId] !== undefined)
+          return context.starts
+        const pendingId = pendingIdOf(event)
         const catalog = self.system.get('catalog') as
           | ActorRefFrom<typeof harnessCatalogMachine>
           | undefined
         if (
-          !turnConfigurationIsAvailable(catalog, event.input.harness, event.input.turnConfiguration)
+          !turnConfigurationIsAvailable(
+            catalog,
+            harnessOf(event.input),
+            event.input.turnConfiguration,
+          )
         ) {
           event.reply.reject(new Error('The selected Turn configuration is no longer available.'))
           return context.starts
         }
-        const completed = context.completed[event.pendingId]
-        if (completed !== undefined) {
-          if (completed.commandId !== event.input.commandId) {
-            event.reply.reject(new Error('A conflicting start already completed for this draft.'))
-          } else if ('sessionId' in completed) event.reply.resolve(completed)
-          else event.reply.reject(new Error(completed.failure))
+        if (
+          replyForCompletedStart(context.completed[pendingId], event.input.commandId, event.reply)
+        )
           return context.starts
-        }
-        const existing = context.starts[event.pendingId]
+        const existing = context.starts[pendingId]
         if (existing !== undefined) {
           if (existing.getSnapshot().context.first.commandId !== event.input.commandId) {
             event.reply.reject(new Error('A conflicting start is already active for this draft.'))
@@ -217,7 +257,8 @@ export const liveSessionSupervisorMachine = xstateSetup({
           return context.starts
         }
         let harness: typeof claudeLiveSessionMachine | typeof codexLiveSessionMachine
-        switch (event.input.harness) {
+        const harnessName = harnessOf(event.input)
+        switch (harnessName) {
           case 'claude':
             harness = claudeLiveSessionMachine
             break
@@ -232,7 +273,7 @@ export const liveSessionSupervisorMachine = xstateSetup({
             break
           }
           default: {
-            const unknownHarness: never = event.input.harness
+            const unknownHarness: never = harnessName
             throw new Error(`Unsupported Harness: ${unknownHarness}`)
           }
         }
@@ -243,6 +284,9 @@ export const liveSessionSupervisorMachine = xstateSetup({
               persist: fromPromise(({ input: record }) => {
                 if (record.nativeId === null)
                   throw new Error('Session has no native ID to persist.')
+                if (record.sessionId !== undefined) return Promise.resolve(record.sessionId)
+                if (record.projectId === null || record.workspaceId === null)
+                  throw new Error('New Session has no Project Workspace to persist.')
                 return Promise.resolve(
                   createSessionUpsert(context.database)({
                     ...record,
@@ -258,7 +302,7 @@ export const liveSessionSupervisorMachine = xstateSetup({
         )
         spawn('observeSession', {
           input: {
-            pendingId: event.pendingId,
+            pendingId,
             session: actor,
           },
         })
@@ -270,7 +314,7 @@ export const liveSessionSupervisorMachine = xstateSetup({
         })
         return {
           ...context.starts,
-          [event.pendingId]: actor,
+          [pendingId]: actor,
         }
       },
     }),
@@ -319,14 +363,11 @@ export const liveSessionSupervisorMachine = xstateSetup({
     forwardSend: ({ context, event, self }) => {
       if (event.type !== 'Send') return
       const actor = context.sessions[event.input.sessionId]
-      if (actor === undefined) {
-        event.reply.reject(new Error('Session is not live.'))
-        return
-      }
+      if (actor === undefined) return
       if (
         !turnConfigurationIsAvailable(
           self.system.get('catalog') as ActorRefFrom<typeof harnessCatalogMachine> | undefined,
-          actor.getSnapshot().context.first.harness,
+          harnessOf(actor.getSnapshot().context.first),
           event.input.turnConfiguration,
         )
       ) {
@@ -375,7 +416,10 @@ export const liveSessionSupervisorMachine = xstateSetup({
       actions: 'startOrQueue',
     },
     Send: {
-      actions: 'forwardSend',
+      actions: [
+        'startOrQueue',
+        'forwardSend',
+      ],
     },
     'Session persisted': {
       actions: 'rememberPersisted',

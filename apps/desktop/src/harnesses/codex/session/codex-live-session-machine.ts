@@ -1,6 +1,9 @@
 import { assign, fromPromise, setup as xstateSetup } from 'xstate'
 import { z } from 'zod'
-import type { SessionStartInput } from '@/domains/sessions/main/api/session-submit'
+import type {
+  SessionLiveInput,
+  SessionStartInput,
+} from '@/domains/sessions/main/api/session-submit'
 import type { CodexRequest } from '../app-server/codex-app-server-machine'
 
 export type CodexInputItem =
@@ -38,8 +41,16 @@ const turnStartResultSchema = z.object({
 })
 
 export const codexLiveSessionActors = (request: CodexRequest) => ({
-  startThread: fromPromise(({ input }: { input: SessionStartInput }) =>
-    request(
+  startThread: fromPromise(({ input }: { input: SessionLiveInput }) => {
+    if ('resume' in input)
+      return request(
+        'thread/resume',
+        {
+          threadId: input.resume.nativeId,
+        },
+        (value) => threadStartResultSchema.parse(value).thread.id,
+      )
+    return request(
       'thread/start',
       {
         cwd: input.cwd,
@@ -48,8 +59,8 @@ export const codexLiveSessionActors = (request: CodexRequest) => ({
         sandbox: input.turnConfiguration.mode,
       },
       (value) => threadStartResultSchema.parse(value).thread.id,
-    ),
-  ),
+    )
+  }),
   startTurn: fromPromise(
     ({
       input,
@@ -78,9 +89,9 @@ export const codexLiveSessionActors = (request: CodexRequest) => ({
 
 export const codexLiveSessionMachine = xstateSetup({
   types: {
-    input: {} as SessionStartInput,
+    input: {} as SessionLiveInput,
     context: {} as {
-      input: SessionStartInput
+      input: SessionLiveInput
       nativeId: string | null
       pending: TurnCommand | null
       inputItems: CodexInputItem[]
@@ -120,7 +131,7 @@ export const codexLiveSessionMachine = xstateSetup({
         },
   },
   actors: {
-    startThread: fromPromise<string, SessionStartInput>(async () => {
+    startThread: fromPromise<string, SessionLiveInput>(async () => {
       throw new Error('Codex thread actor was not provided.')
     }),
     startTurn: fromPromise<

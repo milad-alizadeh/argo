@@ -3,24 +3,8 @@ import { $createParagraphNode, $getRoot, type LexicalEditor } from 'lexical'
 import { type RefObject, useCallback, useRef } from 'react'
 import { useComposerEditing } from '../editing/composer-editing-context'
 import type { TurnConfigurationControlProps } from '../toolbar/turn-configuration-menu'
-import { usePendingTurns } from '../tray/use-pending-turns'
-import {
-  supportedConfiguration,
-  type TurnConfiguration,
-} from '../turn-configuration/turn-configuration'
 import { useComposerAttachments } from './use-composer-attachments'
 import { type Send, useSend } from './use-send'
-
-// Narrow the queued Turn Configuration to the choices that remain available.
-function turnConfigurationOf(
-  control: TurnConfigurationControlProps | null,
-  queued: TurnConfiguration | undefined,
-) {
-  if (control === null) return null
-  return queued === undefined
-    ? control.value
-    : supportedConfiguration(control.choices, queued, control.value)
-}
 
 function useComposerDraft(editorRef: RefObject<LexicalEditor | null>) {
   const { editing, dispatch } = useComposerEditing()
@@ -47,35 +31,21 @@ function useComposerDraft(editorRef: RefObject<LexicalEditor | null>) {
 }
 
 export function useSessionComposerState({
-  isRunning,
   onSend,
   turnConfiguration,
 }: {
-  isRunning: boolean
   onSend?: Send
   turnConfiguration: TurnConfigurationControlProps | null
 }) {
   const editorRef = useRef<LexicalEditor>(null)
   const { clearDraft, draft, restoreDraft } = useComposerDraft(editorRef)
   const { attachments, markError, clear } = useComposerAttachments()
-  const sendPendingTurn: Send = useCallback(
-    (text, queuedConfiguration, pendingAttachments) =>
-      onSend?.(
-        text,
-        turnConfigurationOf(turnConfiguration, queuedConfiguration ?? undefined),
-        pendingAttachments,
-      ) ?? Promise.resolve(false),
-    [onSend, turnConfiguration],
-  )
-  const { addPendingTurn } = usePendingTurns({ isRunning, onSend: sendPendingTurn })
   const send = useSend({
-    addPendingTurn,
     attachments,
     clear,
     clearDraft,
     draft,
     editorRef,
-    isRunning,
     markError,
     onSend,
     restoreDraft,

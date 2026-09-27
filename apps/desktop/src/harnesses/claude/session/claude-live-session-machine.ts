@@ -5,7 +5,10 @@ import {
   type SDKUserMessage,
 } from '@anthropic-ai/claude-agent-sdk'
 import { assign, fromCallback, sendTo, setup as xstateSetup } from 'xstate'
-import type { SessionStartInput } from '@/domains/sessions/main/api/session-submit'
+import type {
+  SessionLiveInput,
+  SessionStartInput,
+} from '@/domains/sessions/main/api/session-submit'
 import { claudeCliEnvironment } from '../cli-environment'
 
 type Send = Pick<SessionStartInput, 'prompt'>
@@ -38,9 +41,9 @@ const permissionModes: Record<string, PermissionMode> = {
 
 export const claudeLiveSessionMachine = xstateSetup({
   types: {
-    input: {} as SessionStartInput,
+    input: {} as SessionLiveInput,
     context: {} as {
-      input: SessionStartInput
+      input: SessionLiveInput
       mode: PermissionMode | null
       nativeId: string | null
       failure: string | null
@@ -59,7 +62,7 @@ export const claudeLiveSessionMachine = xstateSetup({
     queryActor: fromCallback<
       QueryCommand,
       {
-        command: SessionStartInput
+        command: SessionLiveInput
         mode: PermissionMode | null
       },
       QueryEvent
@@ -119,7 +122,12 @@ export const claudeLiveSessionMachine = xstateSetup({
           session = query({
             prompt: messages(),
             options: {
-              cwd: input.command.cwd,
+              cwd: 'resume' in input.command ? input.command.resume.cwd : input.command.cwd,
+              ...('resume' in input.command
+                ? {
+                    resume: input.command.resume.nativeId,
+                  }
+                : {}),
               model: input.command.turnConfiguration.model,
               permissionMode: input.mode,
               env: claudeCliEnvironment(),

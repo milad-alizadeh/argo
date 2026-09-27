@@ -3,7 +3,6 @@ import { performSend } from './use-send'
 
 function fixture(overrides: Partial<Parameters<typeof performSend>[0]> = {}) {
   const calls = {
-    addPendingTurn: [] as unknown[],
     onSend: [] as unknown[],
     cleared: [] as unknown[],
   }
@@ -13,10 +12,6 @@ function fixture(overrides: Partial<Parameters<typeof performSend>[0]> = {}) {
       draft: 'hello',
       attachments: [],
       markError: () => {},
-      isRunning: false,
-      addPendingTurn: (text: string, turnConfiguration: unknown, attachments: unknown) => {
-        calls.addPendingTurn.push({ text, turnConfiguration, attachments })
-      },
       editor: null,
       onSend: async (text: string, turnConfiguration: unknown, attachments: unknown) => {
         calls.onSend.push({ text, turnConfiguration, attachments })
@@ -33,22 +28,10 @@ function fixture(overrides: Partial<Parameters<typeof performSend>[0]> = {}) {
   }
 }
 
-// A Turn already running (#2099): the content goes to the queued-Turn list, and onSend — which is
-// what begins the Turn Marker — never fires, so a queued Send never shows a Marker of its own.
-test('a Send while a Turn is running queues it and never calls onSend', async () => {
-  const { calls, input } = fixture({ isRunning: true })
-  await performSend(input)
-  expect(calls.addPendingTurn).toEqual([
-    { text: 'hello', turnConfiguration: undefined, attachments: [] },
-  ])
-  expect(calls.onSend).toEqual([])
-})
-
-test('a Send with no Turn running calls onSend and never queues', async () => {
-  const { calls, input } = fixture({ isRunning: false })
+test('a Send while a Turn is running goes through the durable send callback', async () => {
+  const { calls, input } = fixture()
   await performSend(input)
   expect(calls.onSend).toEqual([{ text: 'hello', turnConfiguration: null, attachments: [] }])
-  expect(calls.addPendingTurn).toEqual([])
 })
 
 test('a rejected Send restores its draft', async () => {
@@ -77,8 +60,7 @@ test('an uncertain Send keeps its draft and does not clear attachments', async (
 })
 
 test('an empty draft with no attachments does neither', async () => {
-  const { calls, input } = fixture({ draft: '   ', isRunning: false })
+  const { calls, input } = fixture({ draft: '   ' })
   await performSend(input)
   expect(calls.onSend).toEqual([])
-  expect(calls.addPendingTurn).toEqual([])
 })

@@ -21,6 +21,39 @@ type PersistedDraft = {
   owner: string
   fingerprint: string
 }
+type DraftLoadDependencies = {
+  create: (input: RouterInputs['composerDraftCreate']) => Promise<DraftValue>
+  persisted: React.RefObject<Map<string, PersistedDraft>>
+  latestEditing: React.RefObject<ComposerEditing | null>
+  setLoaded: React.Dispatch<
+    React.SetStateAction<{ owner: string; editing: ComposerEditing } | null>
+  >
+  initialFingerprints: React.RefObject<Map<string, string>>
+}
+type ComposerDraftLoadInput = Omit<DraftLoadDependencies, 'setLoaded'> & {
+  target: DraftTarget | null
+  choices: TurnConfigurationChoices | null
+  opening: TurnConfiguration | null
+  owner: string | null
+}
+type ComposerDraftActionInput = {
+  persist: (content: DraftContent) => Promise<PersistedDraft>
+  persisted: React.RefObject<Map<string, PersistedDraft>>
+  latestEditing: React.RefObject<ComposerEditing | null>
+  saveTimer: React.RefObject<Map<string, number>>
+  owner: string | null
+  setSaveFailureOwner: React.Dispatch<React.SetStateAction<string | null>>
+  suppressNextEmptyAutosave: React.RefObject<string | null>
+}
+type ComposerDraftSubmitInput = ComposerDraftActionInput & {
+  submit: (input: RouterInputs['sessionSubmit']) => Promise<{ sessionId: string }>
+  clearAcceptedDraft: () => void
+}
+type DurableComposerDraftInput = {
+  target: DraftTarget | null
+  choices: TurnConfigurationChoices | null
+  opening: TurnConfiguration | null
+}
 
 function ownerKey(target: DraftTarget | null) {
   if (target === null) return null
@@ -50,25 +83,19 @@ function editingFromDraft(
       status: 'idle',
     })),
     tickets: draft.ticketContext,
-    pendingTurns: [],
     turnConfiguration: supportedConfiguration(choices, draft.turnConfiguration, fallback),
   }
 }
 
-function startComposerDraftLoad(input: {
-  target: DraftTarget
-  choices: TurnConfigurationChoices
-  opening: TurnConfiguration
-  owner: string
-  draft: DraftValue | undefined
-  create: (input: RouterInputs['composerDraftCreate']) => Promise<DraftValue>
-  persisted: React.RefObject<PersistedDraft | null>
-  latestEditing: React.RefObject<ComposerEditing | null>
-  setLoaded: React.Dispatch<
-    React.SetStateAction<{ owner: string; editing: ComposerEditing } | null>
-  >
-  saveTimer: React.RefObject<number | null>
-}) {
+function startComposerDraftLoad(
+  input: DraftLoadDependencies & {
+    target: DraftTarget
+    choices: TurnConfigurationChoices
+    opening: TurnConfiguration
+    owner: string
+    draft: DraftValue | undefined
+  },
+) {
   let active = true
   const empty = { prompt: '', attachments: [], ticketContext: [], turnConfiguration: input.opening }
   void (async () => {
@@ -77,18 +104,25 @@ function startComposerDraftLoad(input: {
     const editing = editingFromDraft(draft, input.choices, input.opening)
     const content = contentFromEditing(editing)
     if (content === null) return
-    input.persisted.current = {
+    const renderedFingerprint = fingerprint(content)
+    const storedContent: DraftContent = {
+      prompt: draft.prompt,
+      attachments: draft.attachments,
+      ticketContext: draft.ticketContext,
+      turnConfiguration: draft.turnConfiguration,
+    }
+    input.persisted.current.set(input.owner, {
       id: draft.id,
       revision: draft.revision,
       owner: input.owner,
-      fingerprint: fingerprint(content),
-    }
+      fingerprint: fingerprint(storedContent),
+    })
+    input.initialFingerprints.current.set(input.owner, renderedFingerprint)
     input.latestEditing.current = editing
     input.setLoaded({ owner: input.owner, editing })
   })()
   return () => {
     active = false
-    if (input.saveTimer.current !== null) window.clearTimeout(input.saveTimer.current)
   }
 }
 
@@ -96,66 +130,170 @@ function fingerprint(content: DraftContent) {
   return JSON.stringify(content)
 }
 
-function useComposerDraftLoad(input: {
-  target: DraftTarget | null
-  choices: TurnConfigurationChoices | null
-  opening: TurnConfiguration | null
-  owner: string | null
-  create: (input: RouterInputs['composerDraftCreate']) => Promise<DraftValue>
-  persisted: React.RefObject<PersistedDraft | null>
-  latestEditing: React.RefObject<ComposerEditing | null>
-  saveTimer: React.RefObject<number | null>
-}) {
-  const { target, choices, opening, owner, create, persisted, latestEditing, saveTimer } = input
-  const queryInput = target ?? { type: 'session' as const, sessionId: 'disabled' }
-  const query = useQuery({
-    ...trpc.composerDraftRead.queryOptions(queryInput),
-    enabled: target !== null && choices !== null && opening !== null,
-  })
-  const [loaded, setLoaded] = useState<{ owner: string; editing: ComposerEditing } | null>(null)
-  useEffect(() => {
-    if (
-      target === null ||
-      choices === null ||
-      opening === null ||
-      owner === null ||
-      query.isPending ||
-      !shouldLoadComposerDraft({
-        owner,
-        loadedOwner: loaded?.owner ?? null,
-        isFetching: query.isFetching,
-        isError: query.isError,
-      })
-    )
-      return
-    return startComposerDraftLoad({
-      target,
-      choices,
-      opening,
+function draftLoadIdentities(
+  target: DraftTarget | null,
+  choices: TurnConfigurationChoices | null,
+  opening: TurnConfiguration | null,
+) {
+  return {
+    targetIdentity: target === null ? null : JSON.stringify(target),
+    choicesIdentity: JSON.stringify(choices),
+    openingIdentity: JSON.stringify(opening),
+  }
+}
+
+function suppressAcceptedEmptyDraft(
+  owner: string,
+  content: DraftContent,
+  suppressedOwner: React.RefObject<string | null>,
+) {
+  if (suppressedOwner.current !== owner) return false
+  suppressedOwner.current = null
+  return content.prompt.length === 0 && content.attachments.length === 0
+}
+
+function startDraftLoadIfReady(
+  input: DraftLoadDependencies & {
+    target: DraftTarget | null
+    choices: TurnConfigurationChoices | null
+    opening: TurnConfiguration | null
+    owner: string | null
+    loadedOwner: string | null
+    isPending: boolean
+    isFetching: boolean
+    isError: boolean
+    draft: DraftValue | undefined
+  },
+) {
+  const { target, choices, opening, owner } = input
+  if (
+    target === null ||
+    choices === null ||
+    opening === null ||
+    owner === null ||
+    input.isPending ||
+    !shouldLoadComposerDraft({
       owner,
-      draft: query.data ?? undefined,
-      create,
-      persisted,
-      latestEditing,
-      setLoaded,
-      saveTimer,
+      loadedOwner: input.loadedOwner,
+      isFetching: input.isFetching,
+      isError: input.isError,
     })
-  }, [
+  )
+    return
+  return startComposerDraftLoad({
+    target,
     choices,
-    create,
-    latestEditing,
-    loaded?.owner,
     opening,
     owner,
-    persisted,
-    query.data,
-    query.isFetching,
-    query.isError,
-    query.isPending,
-    saveTimer,
-    target,
+    draft: input.draft,
+    create: input.create,
+    persisted: input.persisted,
+    latestEditing: input.latestEditing,
+    setLoaded: input.setLoaded,
+    initialFingerprints: input.initialFingerprints,
+  })
+}
+
+function startComposerDraftLoadEffect(
+  input: DraftLoadDependencies & {
+    target: DraftTarget | null
+    choices: TurnConfigurationChoices | null
+    opening: TurnConfiguration | null
+    owner: string | null
+    targetIdentity: string | null
+    choicesIdentity: string
+    openingIdentity: string
+    latestTarget: DraftTarget | null
+    latestChoices: TurnConfigurationChoices | null
+    latestOpening: TurnConfiguration | null
+    loadedOwner: string | null
+    isPending: boolean
+    isFetching: boolean
+    isError: boolean
+    draft: DraftValue | undefined
+  },
+) {
+  if (
+    input.targetIdentity !==
+      (input.latestTarget === null ? null : JSON.stringify(input.latestTarget)) ||
+    input.choicesIdentity !== JSON.stringify(input.latestChoices) ||
+    input.openingIdentity !== JSON.stringify(input.latestOpening)
+  )
+    return
+  return startDraftLoadIfReady(input)
+}
+
+function useStartComposerDraftLoad(
+  input: ComposerDraftLoadInput & {
+    setLoaded: DraftLoadDependencies['setLoaded']
+    loaded: { owner: string; editing: ComposerEditing } | null
+    query: {
+      isPending: boolean
+      isFetching: boolean
+      isError: boolean
+      data: DraftValue | null | undefined
+    }
+  },
+) {
+  const targetRef = useRef(input.target)
+  const configurationRef = useRef({ choices: input.choices, opening: input.opening })
+  targetRef.current = input.target
+  configurationRef.current = { choices: input.choices, opening: input.opening }
+  const { targetIdentity, choicesIdentity, openingIdentity } = draftLoadIdentities(
+    input.target,
+    input.choices,
+    input.opening,
+  )
+  useEffect(() => {
+    return startComposerDraftLoadEffect({
+      create: input.create,
+      persisted: input.persisted,
+      latestEditing: input.latestEditing,
+      initialFingerprints: input.initialFingerprints,
+      target: targetRef.current,
+      choices: configurationRef.current.choices,
+      opening: configurationRef.current.opening,
+      owner: input.owner,
+      targetIdentity,
+      choicesIdentity,
+      openingIdentity,
+      latestTarget: targetRef.current,
+      latestChoices: configurationRef.current.choices,
+      latestOpening: configurationRef.current.opening,
+      loadedOwner: input.loaded?.owner ?? null,
+      isPending: input.query.isPending,
+      isFetching: input.query.isFetching,
+      isError: input.query.isError,
+      draft: input.query.data ?? undefined,
+      setLoaded: input.setLoaded,
+    })
+  }, [
+    input.owner,
+    targetIdentity,
+    choicesIdentity,
+    openingIdentity,
+    input.loaded?.owner,
+    input.query.data,
+    input.query.isFetching,
+    input.query.isError,
+    input.query.isPending,
+    input.create,
+    input.persisted,
+    input.latestEditing,
+    input.initialFingerprints,
+    input.setLoaded,
   ])
-  return loaded?.owner === owner ? loaded.editing : undefined
+}
+
+function useComposerDraftLoad(input: ComposerDraftLoadInput) {
+  const queryInput = input.target ?? { type: 'session' as const, sessionId: 'disabled' }
+  const query = useQuery({
+    ...trpc.composerDraftRead.queryOptions(queryInput),
+    enabled: input.target !== null && input.choices !== null && input.opening !== null,
+  })
+  const [loaded, setLoaded] = useState<{ owner: string; editing: ComposerEditing } | null>(null)
+  useStartComposerDraftLoad({ ...input, loaded, query, setLoaded })
+  return loaded?.owner === input.owner ? loaded.editing : undefined
 }
 
 function usePersistComposerDraft(input: {
@@ -163,19 +301,22 @@ function usePersistComposerDraft(input: {
   owner: string | null
   create: (input: RouterInputs['composerDraftCreate']) => Promise<DraftValue>
   save: (input: RouterInputs['composerDraftSave']) => Promise<DraftValue>
-  persisted: React.RefObject<PersistedDraft | null>
+  persisted: React.RefObject<Map<string, PersistedDraft>>
   saveChain: React.RefObject<Promise<void>>
+  queryClient: ReturnType<typeof useQueryClient>
+  setSaveFailureOwner: React.Dispatch<React.SetStateAction<string | null>>
 }) {
-  const { target, owner, create, save, persisted, saveChain } = input
+  const { target, owner, create, save, persisted, saveChain, queryClient, setSaveFailureOwner } =
+    input
   return useCallback(
     (content: DraftContent) => {
       const operation = saveChain.current.then(async (): Promise<PersistedDraft> => {
         if (target === null || owner === null) throw new Error('Composer draft has no target.')
         const contentFingerprint = fingerprint(content)
-        const current = persisted.current
-        if (current?.owner === owner && current.fingerprint === contentFingerprint) return current
+        const current = persisted.current.get(owner)
+        if (current?.fingerprint === contentFingerprint) return current
         const draft =
-          current?.owner === owner
+          current !== undefined
             ? await save({ id: current.id, expectedRevision: current.revision, target, content })
             : await create({ target, content })
         const next = {
@@ -184,7 +325,9 @@ function usePersistComposerDraft(input: {
           owner,
           fingerprint: contentFingerprint,
         }
-        persisted.current = next
+        persisted.current.set(owner, next)
+        queryClient.setQueryData(trpc.composerDraftRead.queryKey(target), draft)
+        setSaveFailureOwner((failedOwner) => (failedOwner === owner ? null : failedOwner))
         return next
       })
       saveChain.current = operation.then(
@@ -193,37 +336,72 @@ function usePersistComposerDraft(input: {
       )
       return operation
     },
-    [create, owner, persisted, save, saveChain, target],
+    [create, owner, persisted, queryClient, save, saveChain, setSaveFailureOwner, target],
   )
 }
 
-function useComposerDraftAutosave(input: {
-  persist: (content: DraftContent) => Promise<PersistedDraft>
-  persisted: React.RefObject<PersistedDraft | null>
-  latestEditing: React.RefObject<ComposerEditing | null>
-  saveTimer: React.RefObject<number | null>
-}) {
-  const { persist, persisted, latestEditing, saveTimer } = input
+function useComposerDraftAutosave(
+  input: ComposerDraftActionInput & {
+    initialFingerprints: React.RefObject<Map<string, string>>
+  },
+) {
+  const {
+    persist,
+    persisted,
+    latestEditing,
+    saveTimer,
+    owner,
+    initialFingerprints,
+    setSaveFailureOwner,
+    suppressNextEmptyAutosave,
+  } = input
   return useCallback(
     (editing: ComposerEditing) => {
       latestEditing.current = editing
       const content = contentFromEditing(editing)
-      if (content === null || fingerprint(content) === persisted.current?.fingerprint) return
-      if (saveTimer.current !== null) window.clearTimeout(saveTimer.current)
-      saveTimer.current = window.setTimeout(() => void persist(content).catch(() => undefined), 250)
+      if (content === null || owner === null) return
+      if (suppressAcceptedEmptyDraft(owner, content, suppressNextEmptyAutosave)) return
+      if (fingerprint(content) === persisted.current.get(owner)?.fingerprint) return
+      if (initialFingerprints.current.has(owner)) {
+        const baseline = initialFingerprints.current.get(owner)
+        initialFingerprints.current.delete(owner)
+        if (baseline === fingerprint(content)) return
+      }
+      const currentTimer = saveTimer.current.get(owner)
+      if (currentTimer !== undefined) window.clearTimeout(currentTimer)
+      const timer = window.setTimeout(() => {
+        if (saveTimer.current.get(owner) === timer) saveTimer.current.delete(owner)
+        void persist(content).catch(() => {
+          if (owner !== null) setSaveFailureOwner(owner)
+        })
+      }, 250)
+      saveTimer.current.set(owner, timer)
     },
-    [latestEditing, persist, persisted, saveTimer],
+    [
+      initialFingerprints,
+      latestEditing,
+      owner,
+      persist,
+      persisted,
+      saveTimer,
+      setSaveFailureOwner,
+      suppressNextEmptyAutosave,
+    ],
   )
 }
 
-function useComposerDraftSubmit(input: {
-  persist: (content: DraftContent) => Promise<PersistedDraft>
-  persisted: React.RefObject<PersistedDraft | null>
-  latestEditing: React.RefObject<ComposerEditing | null>
-  saveTimer: React.RefObject<number | null>
-  submit: (input: RouterInputs['sessionSubmit']) => Promise<{ sessionId: string }>
-}) {
-  const { persist, persisted, latestEditing, saveTimer, submit } = input
+function useComposerDraftSubmit(input: ComposerDraftSubmitInput) {
+  const {
+    persist,
+    persisted,
+    latestEditing,
+    saveTimer,
+    submit,
+    owner,
+    setSaveFailureOwner,
+    suppressNextEmptyAutosave,
+    clearAcceptedDraft,
+  } = input
   return useCallback(
     async (
       prompt: string,
@@ -231,8 +409,13 @@ function useComposerDraftSubmit(input: {
       attachments: DraftContent['attachments'],
     ) => {
       const editing = latestEditing.current
-      if (editing === null || turnConfiguration === null) return null
-      if (saveTimer.current !== null) window.clearTimeout(saveTimer.current)
+      if (editing === null || turnConfiguration === null || owner === null) return null
+      const timer = saveTimer.current.get(owner)
+      if (timer !== undefined) {
+        window.clearTimeout(timer)
+        saveTimer.current.delete(owner)
+      }
+
       try {
         const saved = await persist({
           prompt,
@@ -240,28 +423,142 @@ function useComposerDraftSubmit(input: {
           ticketContext: editing.tickets,
           turnConfiguration,
         })
-        const result = await submit({
-          draftId: saved.id,
-          expectedRevision: saved.revision,
-          commandId: crypto.randomUUID(),
-        })
-        if (persisted.current?.id === saved.id) persisted.current = null
+        const result = await submitSavedDraft(saved, submit)
+        suppressNextEmptyAutosave.current = owner
+        if (persisted.current.get(owner)?.id === saved.id) persisted.current.delete(owner)
+        clearAcceptedDraft()
+        setSaveFailureOwner((failedOwner) => (failedOwner === owner ? null : failedOwner))
         return result.sessionId
       } catch {
+        if (owner !== null) setSaveFailureOwner(owner)
         return null
       }
     },
-    [latestEditing, persist, persisted, saveTimer, submit],
+    [
+      clearAcceptedDraft,
+      latestEditing,
+      owner,
+      persist,
+      persisted,
+      saveTimer,
+      setSaveFailureOwner,
+      suppressNextEmptyAutosave,
+      submit,
+    ],
   )
 }
 
-export function useDurableComposerDraft(input: {
-  target: DraftTarget | null
-  choices: TurnConfigurationChoices | null
-  opening: TurnConfiguration | null
-}) {
+function submitSavedDraft(
+  saved: PersistedDraft,
+  submit: (input: RouterInputs['sessionSubmit']) => Promise<{ sessionId: string }>,
+) {
+  return submit({
+    draftId: saved.id,
+    expectedRevision: saved.revision,
+    commandId: crypto.randomUUID(),
+  })
+}
+
+export function useDurableComposerDraft(input: DurableComposerDraftInput) {
   const { target, choices, opening } = input
   const queryClient = useQueryClient()
+  const { create, save, submitMutation } = useComposerDraftMutations(queryClient)
+  const owner = ownerKey(target)
+  const persistence = useComposerDraftPersistence({
+    target,
+    owner,
+    create,
+    save,
+    submitMutation,
+    queryClient,
+  })
+  const initialEditing = useComposerDraftLoad({
+    target,
+    choices,
+    opening,
+    owner,
+    create,
+    persisted: persistence.persisted,
+    latestEditing: persistence.latestEditing,
+    initialFingerprints: persistence.initialFingerprints,
+  })
+  return initialEditing === undefined
+    ? null
+    : {
+        initialEditing,
+        onEditingChange: persistence.onEditingChange,
+        submit: persistence.submit,
+        saveFailed: persistence.saveFailed,
+      }
+}
+
+function useComposerDraftPersistence(input: {
+  target: DraftTarget | null
+  owner: string | null
+  create: (input: RouterInputs['composerDraftCreate']) => Promise<DraftValue>
+  save: (input: RouterInputs['composerDraftSave']) => Promise<DraftValue>
+  submitMutation: (input: RouterInputs['sessionSubmit']) => Promise<{ sessionId: string }>
+  queryClient: ReturnType<typeof useQueryClient>
+}) {
+  const { target, owner, create, save, submitMutation, queryClient } = input
+  const persisted = useRef(new Map<string, PersistedDraft>())
+  const initialFingerprints = useRef(new Map<string, string>())
+  const [saveFailureOwner, setSaveFailureOwner] = useState<string | null>(null)
+  const latestEditing = useRef<ComposerEditing | null>(null)
+  const saveChain = useRef<Promise<void>>(Promise.resolve())
+  const saveTimer = useRef(new Map<string, number>())
+  const suppressNextEmptyAutosave = useRef<string | null>(null)
+  const persist = usePersistComposerDraft({
+    target,
+    owner,
+    create,
+    save,
+    persisted,
+    saveChain,
+    queryClient,
+    setSaveFailureOwner,
+  })
+  const onEditingChange = useComposerDraftAutosave({
+    persist,
+    persisted,
+    latestEditing,
+    saveTimer,
+    owner,
+    initialFingerprints,
+    setSaveFailureOwner,
+    suppressNextEmptyAutosave,
+  })
+  const submit = useComposerDraftSubmit({
+    persist,
+    persisted,
+    latestEditing,
+    saveTimer,
+    submit: submitMutation,
+    owner,
+    setSaveFailureOwner,
+    suppressNextEmptyAutosave,
+    clearAcceptedDraft: clearComposerDraftCache(target, queryClient),
+  })
+  return {
+    persisted,
+    latestEditing,
+    initialFingerprints,
+    onEditingChange,
+    submit,
+    saveFailed: saveFailureOwner === owner,
+  }
+}
+
+function clearComposerDraftCache(
+  target: DraftTarget | null,
+  queryClient: ReturnType<typeof useQueryClient>,
+) {
+  return () => {
+    if (target !== null) queryClient.setQueryData(trpc.composerDraftRead.queryKey(target), null)
+  }
+}
+
+function useComposerDraftMutations(queryClient: ReturnType<typeof useQueryClient>) {
   const { mutateAsync: createDraft } = useMutation(trpc.composerDraftCreate.mutationOptions())
   const { mutateAsync: saveDraft } = useMutation(trpc.composerDraftSave.mutationOptions())
   const { mutateAsync: submitDraft } = useMutation(
@@ -269,42 +566,15 @@ export function useDurableComposerDraft(input: {
       onSuccess: () => invalidateSessionList(queryClient),
     }),
   )
-  const persisted = useRef<PersistedDraft | null>(null)
-  const latestEditing = useRef<ComposerEditing | null>(null)
-  const saveChain = useRef<Promise<void>>(Promise.resolve())
-  const saveTimer = useRef<number | null>(null)
-  const owner = ownerKey(target)
-  const create = useCallback(
-    (value: RouterInputs['composerDraftCreate']) => createDraft(value),
-    [createDraft],
-  )
-  const save = useCallback(
-    (value: RouterInputs['composerDraftSave']) => saveDraft(value),
-    [saveDraft],
-  )
-  const initialEditing = useComposerDraftLoad({
-    target,
-    choices,
-    opening,
-    owner,
-    create,
-    persisted,
-    latestEditing,
-    saveTimer,
-  })
-  const persist = usePersistComposerDraft({ target, owner, create, save, persisted, saveChain })
-  const onEditingChange = useComposerDraftAutosave({ persist, persisted, latestEditing, saveTimer })
-  const submitMutation = useCallback(
-    (value: RouterInputs['sessionSubmit']) => submitDraft(value),
-    [submitDraft],
-  )
-  const submit = useComposerDraftSubmit({
-    persist,
-    persisted,
-    latestEditing,
-    saveTimer,
-    submit: submitMutation,
-  })
-
-  return initialEditing === null ? null : { initialEditing, onEditingChange, submit }
+  return {
+    create: useCallback(
+      (value: RouterInputs['composerDraftCreate']) => createDraft(value),
+      [createDraft],
+    ),
+    save: useCallback((value: RouterInputs['composerDraftSave']) => saveDraft(value), [saveDraft]),
+    submitMutation: useCallback(
+      (value: RouterInputs['sessionSubmit']) => submitDraft(value),
+      [submitDraft],
+    ),
+  }
 }

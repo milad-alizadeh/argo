@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test'
 import type { Permission } from '@/domains/sessions/api/permissions'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
-import { PendingTurnsView } from './pending-turns'
 import '../editor/composer-content.css'
 import { AttachmentTray } from './attachment-tray'
 
@@ -79,29 +78,6 @@ export const AllowAll: Story = {
   },
 }
 
-// One tray holds both: the Permission on top, the queue under it, at one width.
-export const AboveTheQueue: Story = {
-  render: (args) => (
-    <>
-      <PermissionPrompt {...args} />
-      <PendingTurnsView
-        turns={[{ id: 'queued', text: 'Then run the linter', attachments: [] }]}
-        onEdit={() => {}}
-        onRemove={() => {}}
-        onReorder={() => {}}
-        onSteer={async () => false}
-      />
-    </>
-  ),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const prompt = canvas.getByRole('region', { name: 'Permission needed' }).getBoundingClientRect()
-    const queue = canvas.getByRole('region', { name: 'Pending Turns' }).getBoundingClientRect()
-    await expect(prompt.bottom).toBeLessThanOrEqual(queue.top)
-    await expect(prompt.width).toBe(queue.width)
-  },
-}
-
 // Answered, it collapses out of the tray the way a queued turn leaves, then unmounts.
 export const LeavesTheTray: Story = {
   render: (args) => {
@@ -123,39 +99,6 @@ export const LeavesTheTray: Story = {
     await expect(canvas.getByRole('heading', { name: 'Permission needed' })).toBeInTheDocument()
     await waitFor(() => expect(canvas.queryByText(/bun test/)).toBeNull())
     await expect(canvas.queryByRole('heading', { name: 'Permission needed' })).toBeNull()
-  },
-}
-
-// Answered from the keyboard, the leaving card hands focus to the queue under it.
-export const HandsFocusOn: Story = {
-  render: (args) => {
-    const [pending, setPending] = useState<Permission | null>(permission)
-    return (
-      <>
-        <PermissionPrompt
-          {...args}
-          permission={pending}
-          onDecide={async () => {
-            setPending(null)
-            return true
-          }}
-        />
-        <PendingTurnsView
-          turns={[{ id: 'queued', text: 'Then run the linter', attachments: [] }]}
-          onEdit={() => {}}
-          onRemove={() => {}}
-          onReorder={() => {}}
-          onSteer={async () => false}
-        />
-      </>
-    )
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    canvas.getByRole('button', { name: 'Allow' }).focus()
-    await userEvent.keyboard('{Enter}')
-    const queue = canvas.getByRole('region', { name: 'Pending Turns' })
-    await waitFor(() => expect(queue).toContainElement(document.activeElement as HTMLElement))
   },
 }
 
