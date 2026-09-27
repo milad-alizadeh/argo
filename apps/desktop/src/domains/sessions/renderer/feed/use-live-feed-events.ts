@@ -1,13 +1,17 @@
 import { type Dispatch, type SetStateAction, useEffect, useState } from 'react'
-import type { SessionLiveEvent, SessionLiveUpdate } from '@/domains/sessions/api/session-live-event'
+import type { SessionLiveUpdate } from '@/domains/sessions/api/session-live-event'
 import { queryClient, trpcClient } from '@/platform/renderer/trpc-client'
 import { sessionFeedQueryKey, sessionPermissionQueryKey } from '../session-queries'
 import type { SessionId } from '../types'
+import {
+  emptyLiveEventBuffer,
+  type LiveEventBuffer,
+  retainLiveEvent,
+} from './model/live-event-buffer'
 
-type LiveFeedState = {
+type LiveFeedState = LiveEventBuffer & {
   sessionId: SessionId
   hasChannel: boolean
-  events: SessionLiveEvent[]
 }
 
 function applyLiveUpdate({
@@ -24,19 +28,17 @@ function applyLiveUpdate({
   switch (update.type) {
     case 'ready':
       setState((current) => ({
+        ...(current?.sessionId === selected ? current : emptyLiveEventBuffer()),
         sessionId: selected,
         hasChannel: update.live,
-        events: current?.sessionId === selected ? current.events : [],
       }))
       return cursor
     case 'event':
       if (update.event.sequence <= cursor) return cursor
       setState((current) => ({
+        ...retainLiveEvent(current?.sessionId === selected ? current : null, update.event),
         sessionId: selected,
         hasChannel: current?.sessionId === selected ? current.hasChannel : true,
-        events: [...(current?.sessionId === selected ? current.events : []), update.event].slice(
-          -500,
-        ),
       }))
       if (update.event.type === 'status' && update.event.status === 'idle')
         void queryClient.invalidateQueries({ queryKey: sessionFeedQueryKey(selected) })
@@ -45,9 +47,9 @@ function applyLiveUpdate({
       return update.event.sequence
     case 'expired':
       setState((current) => ({
+        ...emptyLiveEventBuffer(),
         sessionId: selected,
         hasChannel: current?.hasChannel ?? false,
-        events: [],
       }))
       void queryClient.invalidateQueries({ queryKey: sessionFeedQueryKey(selected) })
       return update.cursor

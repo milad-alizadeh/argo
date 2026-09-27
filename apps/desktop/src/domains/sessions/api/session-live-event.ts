@@ -3,6 +3,9 @@ import { identifierSchema } from '@/shared/validation'
 import { feedContentSchema } from './feed-content'
 import { questionSchema } from './questions'
 
+export const SESSION_LIVE_REPLAY_EVENT_LIMIT = 500
+export const SESSION_LIVE_REPLAY_BYTE_LIMIT = 2 * 1024 * 1024
+
 const identity = {
   commandId: identifierSchema.nullable(),
   turnId: identifierSchema.nullable(),

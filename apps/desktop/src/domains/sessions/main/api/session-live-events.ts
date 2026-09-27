@@ -6,7 +6,7 @@ import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import { sessionLiveUpdateSchema } from '@/domains/sessions/api/session-live-event'
 import { identifierSchema } from '@/shared/validation'
-import type { SessionEventJournal } from '../database/session-event-journal'
+import type { SessionEventJournal } from '../live/session-event-journal'
 
 const t = initTRPC.create()
 const inputSchema = z.strictObject({

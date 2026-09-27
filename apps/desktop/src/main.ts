@@ -5,15 +5,17 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, type BrowserWindow, dialog, net, protocol, shell } from 'electron'
 import type { ActorRefFrom } from 'xstate'
+import { z } from 'zod'
 import { type Database, openDatabase } from '@/database/database'
 import { createAccountAccess, createAccountProcedureContext } from '@/domains/accounts/main'
 import { safeStorageCipher } from '@/domains/accounts/main/safe-storage'
 import { createConnectionPort } from '@/domains/connections/main'
 import { createHarnessSignInProcedureContext } from '@/domains/harness-signin/main'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
+import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
 import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
-import { SessionEventJournal } from '@/domains/sessions/main/database/session-event-journal'
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
+import { SessionEventJournal } from '@/domains/sessions/main/live/session-event-journal'
 import { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
 import type { CatalogActor } from '@/harnesses/catalog/catalog-read'
@@ -23,7 +25,7 @@ import {
   requestCodexAppServer,
 } from '@/harnesses/codex/app-server/codex-app-server-machine'
 import { createHarnessRegistry, type HarnessRegistry } from '@/harnesses/registry'
-import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
+import { LIVE_EVENT_PROOF_ENV, PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { attachAppearanceWatch } from '@/platform/main/appearance'
 import type { AppActor } from '@/platform/main/application/app-machine'
 import { startDesktopApplication } from '@/platform/main/application/start'
@@ -46,6 +48,7 @@ import { attachTrpcTransport } from '@/platform/main/trpc-transport'
 import { createDesktopWindow } from '@/platform/main/window/create-window'
 import { accountProviders, ticketSources } from '@/providers/composition'
 import { providerEndpoints } from '@/providers/endpoints'
+import { identifierSchema } from '@/shared/validation'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mts'
 
 protocol.registerSchemesAsPrivileged([
@@ -80,6 +83,9 @@ if (acceptanceUserData) app.setPath('userData', acceptanceUserData)
 const projectProofStore = process.env[PROJECT_PROOF_STORE_ENV]
 const PROOF_ENABLED = Boolean(projectProofStore && path.isAbsolute(projectProofStore))
 if (PROOF_ENABLED && projectProofStore) app.setPath('userData', projectProofStore)
+const liveEventProofSchema = z
+  .array(z.strictObject({ sessionId: identifierSchema, body: sessionLiveEventBodySchema }))
+  .max(500)
 
 // A window that never shows still stands up a GPU/compositor process to paint it, and closing
 // that process is where Chromium's shutdown occasionally stalls tens of seconds past a CI
@@ -367,7 +373,12 @@ async function prepare() {
   })
   applicationDatabase = openDatabase(projectData, { packaged: app.isPackaged })
   sessionSyncStatus = new SessionSyncStatusStore(applicationDatabase)
-  sessionEventJournal = new SessionEventJournal(applicationDatabase)
+  sessionEventJournal = new SessionEventJournal()
+  const liveEventProof = process.env[LIVE_EVENT_PROOF_ENV]
+  if (PROOF_ENABLED && liveEventProof !== undefined) {
+    const events = liveEventProofSchema.parse(JSON.parse(liveEventProof))
+    for (const event of events) sessionEventJournal.append(event.sessionId, event.body)
+  }
   sessionInteractionBroker = new SessionInteractionBroker()
   codexSessionSyncStatus = new SessionSyncStatusStore(applicationDatabase, 'codex')
   if (DEVELOPMENT_INSTANCE) {

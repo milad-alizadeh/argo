@@ -19,9 +19,9 @@ import {
   codexLiveSessionMachine,
 } from '@/harnesses/codex/session/codex-live-session-machine'
 import type { SessionLiveInput, SessionSendInput, SessionStartInput } from '../api/session-submit'
-import type { SessionEventJournal } from '../database/session-event-journal'
 import { createSessionUpsert } from '../database/session-upsert'
 import { liveSessionMachine } from './live-session-machine'
+import type { SessionEventJournal } from './session-event-journal'
 import type { SessionInteractionBroker } from './session-interaction-broker'
 
 type LiveSessionActor = ActorRefFrom<typeof liveSessionMachine>

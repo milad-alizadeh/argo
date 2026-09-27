@@ -5,7 +5,7 @@ import { initTRPC } from '@trpc/server'
 import { afterEach, beforeEach, expect, test } from 'vitest'
 import { type Database, openDatabase } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
-import { SessionEventJournal } from '../database/session-event-journal'
+import { SessionEventJournal } from '../live/session-event-journal'
 import { sessionLiveEventsProcedure } from './session-live-events'
 
 const sessionId = '00000000-0000-4000-8000-000000000001'
@@ -20,7 +20,7 @@ beforeEach(async () => {
     .insert(sessionTable)
     .values({ argoId: sessionId, harness: 'claude', nativeId: 'native-1' })
     .run()
-  journal = new SessionEventJournal(database, 2)
+  journal = new SessionEventJournal(2)
 })
 
 afterEach(async () => {

@@ -1,32 +1,11 @@
-import { mkdtemp, rm } from 'node:fs/promises'
-import os from 'node:os'
-import path from 'node:path'
-import { afterEach, beforeEach, expect, test } from 'vitest'
-import { type Database, openDatabase } from '@/database/database'
-import { sessionTable } from '@/database/session/schema'
-import { SessionEventJournal } from '../database/session-event-journal'
+import { expect, test } from 'vitest'
 import { recordLiveSessionEvents } from './live-session-supervisor-machine'
+import { SessionEventJournal } from './session-event-journal'
 
 const sessionId = '00000000-0000-4000-8000-000000000001'
-let directory: string
-let database: Database
-
-beforeEach(async () => {
-  directory = await mkdtemp(path.join(os.tmpdir(), 'argo-event-observer-'))
-  database = openDatabase(directory)
-  database
-    .insert(sessionTable)
-    .values({ argoId: sessionId, harness: 'claude', nativeId: 'native-1' })
-    .run()
-})
-
-afterEach(async () => {
-  database.$client.close()
-  await rm(directory, { recursive: true, force: true })
-})
 
 test('buffers live content until a delayed native identity binds to the Argo Session', () => {
-  const journal = new SessionEventJournal(database)
+  const journal = new SessionEventJournal()
   const listeners = new Set<(snapshot: unknown) => void>()
   const session = {
     subscribe(listener: (snapshot: unknown) => void) {

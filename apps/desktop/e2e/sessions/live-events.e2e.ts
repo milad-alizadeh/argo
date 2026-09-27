@@ -3,8 +3,7 @@ import path from 'node:path'
 import { _electron as electron } from 'playwright-core'
 import { openDatabase } from '@/database/database'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
-import { SessionEventJournal } from '@/domains/sessions/main/database/session-event-journal'
-import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
+import { LIVE_EVENT_PROOF_ENV, PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { appExecutable } from '../packaged-app'
 import { expect, test } from '../packaged-proof'
 
@@ -90,8 +89,6 @@ async function seedSession(root: string): Promise<string> {
       projectPath,
       'Inspect this',
     )
-  const journal = new SessionEventJournal(database)
-  for (const event of liveEvents) journal.append(sessionId, event)
   database.$client.close()
   return userData
 }
@@ -103,7 +100,11 @@ test('packaged Feed replays ordered Claude live activity for a stored Session', 
   const userData = await seedSession(root)
   const application = await electron.launch({
     executablePath: appExecutable(packagedApplication),
-    env: { ...process.env, [PROJECT_PROOF_STORE_ENV]: userData },
+    env: {
+      ...process.env,
+      [PROJECT_PROOF_STORE_ENV]: userData,
+      [LIVE_EVENT_PROOF_ENV]: JSON.stringify(liveEvents.map((body) => ({ sessionId, body }))),
+    },
   })
   try {
     const page = await application.firstWindow()

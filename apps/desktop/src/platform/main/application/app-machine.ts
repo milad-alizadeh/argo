@@ -1,8 +1,8 @@
 import { type ActorRefFrom, assertEvent, fromPromise, setup } from 'xstate'
 import type { Database } from '@/database/database'
 import type { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
-import type { SessionEventJournal } from '@/domains/sessions/main/database/session-event-journal'
 import { liveSessionSupervisorMachine } from '@/domains/sessions/main/live/live-session-supervisor-machine'
+import type { SessionEventJournal } from '@/domains/sessions/main/live/session-event-journal'
 import type { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import { sessionSyncSupervisorMachine } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
 import {
