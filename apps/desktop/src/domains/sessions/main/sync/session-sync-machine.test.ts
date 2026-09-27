@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'vitest'
 import { createActor, type EventFrom, fromPromise, waitFor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
+import type { SessionDiscovery } from '@/harnesses/session-discovery'
 import {
   SESSION_SYNC_BATCH_SIZE,
   type SyncResult,
@@ -12,8 +13,12 @@ const twoBatchRecords = Array.from({ length: SESSION_SYNC_BATCH_SIZE + 1 }, (_va
   nativeId: `native-${index}`,
   customTitle: null,
 }))
-const input = { harness: 'claude' as const, knownNativeIds: [] }
-const fetchTwoBatchRecords = fromPromise<SyncResult, { knownNativeIds: string[] }>(async () => ({
+const sessionDiscovery: SessionDiscovery = async () => ({ records: [], skipped: 0 })
+const input = { harness: 'claude' as const, knownNativeIds: [], sessionDiscovery }
+const fetchTwoBatchRecords = fromPromise<
+  SyncResult,
+  { knownNativeIds: string[]; sessionDiscovery: SessionDiscovery }
+>(async () => ({
   records: twoBatchRecords,
   skipped: 0,
 }))
@@ -23,16 +28,20 @@ test('moves from Idle through Fetching and Saving to Ready', async () => {
   const actor = createActor(
     sessionSyncMachine.provide({
       actors: {
-        fetch: fromPromise<SyncResult, { knownNativeIds: string[] }>(async () => ({
-          records: [{ nativeId: 'native-1', customTitle: null }],
-          skipped: 2,
-        })),
         save: fromPromise(async ({ input }) => {
           saved += input.records.length
         }),
       },
     }),
-    { input },
+    {
+      input: {
+        ...input,
+        sessionDiscovery: async () => ({
+          records: [{ nativeId: 'native-1', customTitle: null }],
+          skipped: 2,
+        }),
+      },
+    },
   ).start()
   try {
     assert.ok(actor.getSnapshot().matches('Idle'))
@@ -51,7 +60,10 @@ test('fails after three fetch attempts', async () => {
   const actor = createActor(
     sessionSyncMachine.provide({
       actors: {
-        fetch: fromPromise<SyncResult, { knownNativeIds: string[] }>(async () => {
+        fetch: fromPromise<
+          SyncResult,
+          { knownNativeIds: string[]; sessionDiscovery: SessionDiscovery }
+        >(async () => {
           attempts += 1
           throw new Error('Claude is unavailable.')
         }),

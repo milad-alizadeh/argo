@@ -1,5 +1,6 @@
 import { assign, fromPromise, setup } from 'xstate'
 import type { Harness } from '@/harnesses/harness'
+import type { SessionDiscovery } from '@/harnesses/session-discovery'
 import type { SessionUpsertInput } from '../database/session-upsert'
 
 export type SyncedSessionRecord = Omit<SessionUpsertInput, 'harness'>
@@ -15,10 +16,12 @@ export const sessionSyncMachine = setup({
     input: {} as {
       harness: Harness
       knownNativeIds: string[]
+      sessionDiscovery: SessionDiscovery
     },
     context: {} as {
       harness: Harness
       knownNativeIds: string[]
+      sessionDiscovery: SessionDiscovery
       records: SyncedSessionRecord[]
       processed: number
       skipped: number
@@ -56,10 +59,13 @@ export const sessionSyncMachine = setup({
       SyncResult,
       {
         knownNativeIds: string[]
+        sessionDiscovery: SessionDiscovery
       }
-    >(async () => {
-      throw new Error('The session sync reader is not configured.')
-    }),
+    >(({ input }) =>
+      input.sessionDiscovery({
+        knownNativeIds: input.knownNativeIds,
+      }),
+    ),
     save: fromPromise<
       void,
       {
@@ -124,6 +130,7 @@ export const sessionSyncMachine = setup({
   context: ({ input }) => ({
     harness: input.harness,
     knownNativeIds: input.knownNativeIds,
+    sessionDiscovery: input.sessionDiscovery,
     records: [],
     processed: 0,
     skipped: 0,
@@ -150,6 +157,7 @@ export const sessionSyncMachine = setup({
         src: 'fetch',
         input: ({ context }) => ({
           knownNativeIds: context.knownNativeIds,
+          sessionDiscovery: context.sessionDiscovery,
         }),
         onDone: [
           {

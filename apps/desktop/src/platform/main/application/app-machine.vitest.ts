@@ -8,7 +8,6 @@ import { appMachine } from './app-machine'
 
 const input = {
   database: {} as Database,
-  databasePath: null,
   sessionSyncStatus: new SessionSyncStatusStore(),
   codexSessionSyncStatus: new SessionSyncStatusStore(undefined, 'codex'),
 }

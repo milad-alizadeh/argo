@@ -4,11 +4,11 @@ import type {
   SessionHistoryTarget,
 } from '@/domains/sessions/api/session-history'
 import type { Harness } from './harness'
-import type { SessionDiscoveryJobFor } from './session-sync-job'
+import type { SessionDiscovery } from './session-discovery'
 
 export type HarnessRegistration<Id extends Harness = Harness> = HarnessReadinessRegistration & {
   harness: Id
   readHistory: (target: SessionHistoryTarget) => Promise<SessionHistoryRow[]>
   rename?: (nativeId: string, title: string) => Promise<void>
-  sessionDiscovery: SessionDiscoveryJobFor<Id>
+  sessionDiscovery: SessionDiscovery
 }

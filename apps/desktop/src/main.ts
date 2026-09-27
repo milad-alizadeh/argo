@@ -5,7 +5,7 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, type BrowserWindow, dialog, net, protocol, shell } from 'electron'
 import type { ActorRefFrom } from 'xstate'
-import { type Database, databasePath, openDatabase } from '@/database/database'
+import { type Database, openDatabase } from '@/database/database'
 import { createAccountAccess, createAccountProcedureContext } from '@/domains/accounts/main'
 import { safeStorageCipher } from '@/domains/accounts/main/safe-storage'
 import { createConnectionPort } from '@/domains/connections/main'
@@ -278,8 +278,8 @@ function createWindow(actor: AppActor, database: Database): void {
     codex: createCodexRegistration(requestCodexAppServer(actors.codex)),
   } satisfies HarnessRegistry
   actors.sessionSync.send({
-    type: 'RegisterJobs',
-    jobs: Object.values(registrations).map(({ sessionDiscovery }) => sessionDiscovery),
+    type: 'RegisterHarnesses',
+    harnesses: registrations,
   })
   actors.sessionSync.send({ type: 'Refresh' })
   const domains = createDomainContexts(database, registrations)
@@ -341,7 +341,6 @@ async function prepare() {
   }
   return {
     database: applicationDatabase,
-    databasePath: databasePath(projectData),
     sessionSyncStatus,
     codexSessionSyncStatus,
   }

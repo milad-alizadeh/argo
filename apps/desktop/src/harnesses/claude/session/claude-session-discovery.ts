@@ -1,8 +1,8 @@
 import { getSessionInfo, listSessions } from '@anthropic-ai/claude-agent-sdk'
-import { fromPromise } from 'xstate'
 import { z } from 'zod'
 import type { SyncResult } from '@/domains/sessions/main/sync/session-sync-machine'
 import { SESSION_CLAUDE_SYNC_FIXTURE_ENV } from '@/harnesses/proof-protocol'
+import type { SessionDiscoveryInput } from '@/harnesses/session-discovery'
 
 const claudeSessionSchema = z
   .object({
@@ -17,7 +17,7 @@ const claudeSessionSchema = z
 
 type ClaudeSessionRecord = SyncResult['records'][number]
 
-type ClaudeSessionReader = {
+export type ClaudeSessionReader = {
   list: () => Promise<unknown[]>
   get: (nativeId: string) => Promise<unknown>
 }
@@ -96,10 +96,9 @@ async function readClaudeSessions(request: {
   return [...records.values()]
 }
 
-export const claudeSessionSyncActor = fromPromise<
-  SyncResult,
-  { knownNativeIds: string[]; reader?: ClaudeSessionReader }
->(async ({ input }) => {
+export async function discoverClaudeSessions(
+  input: SessionDiscoveryInput & { reader?: ClaudeSessionReader },
+): Promise<SyncResult> {
   let skipped = 0
   const records = await readClaudeSessions({
     reader: input.reader ?? proofClaudeSessionReader() ?? systemClaudeSessionReader(),
@@ -109,4 +108,4 @@ export const claudeSessionSyncActor = fromPromise<
     },
   })
   return { records, skipped }
-})
+}

@@ -3,6 +3,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
 import { createActor, fromPromise, waitFor } from 'xstate'
 import { databaseFrom } from '@/database/database'
+import type { SessionDiscovery } from '@/harnesses/session-discovery'
 import { type SyncResult, sessionSyncMachine } from './session-sync-machine'
 import { knownSessionIds, matchSessionsToProjects, saveSessionBatch } from './session-sync-records'
 
@@ -140,10 +141,10 @@ test('keeps the first committed batch after the second batch exhausts retries', 
   const actor = createActor(
     sessionSyncMachine.provide({
       actors: {
-        fetch: fromPromise<SyncResult, { knownNativeIds: string[] }>(async () => ({
-          records,
-          skipped: 0,
-        })),
+        fetch: fromPromise<
+          SyncResult,
+          { knownNativeIds: string[]; sessionDiscovery: SessionDiscovery }
+        >(async () => ({ records, skipped: 0 })),
         save: fromPromise(async ({ input }) => {
           if (input.records[0]?.nativeId === 'native-50') {
             failedBatchAttempts += 1
@@ -153,7 +154,13 @@ test('keeps the first committed batch after the second batch exhausts retries', 
         }),
       },
     }),
-    { input: { harness: 'claude', knownNativeIds: [] } },
+    {
+      input: {
+        harness: 'claude',
+        knownNativeIds: [],
+        sessionDiscovery: async () => ({ records: [], skipped: 0 }),
+      },
+    },
   ).start()
   try {
     actor.send({ type: 'Start' })

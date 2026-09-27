@@ -1,12 +1,13 @@
 import type { HarnessRegistration } from '@/harnesses/registration'
 import { createClaudeSignInDriver, createSystemClaudeReadiness } from './readiness'
+import { discoverClaudeSessions } from './session/claude-session-discovery'
 import { readClaudeSessionHistory } from './session/claude-session-history'
 import { claudeSessionRenamer } from './session/claude-session-rename'
 
 export function createClaudeRegistration(): HarnessRegistration<'claude'> {
   return {
     harness: 'claude',
-    sessionDiscovery: { kind: 'claude-session-discovery', harness: 'claude' },
+    sessionDiscovery: discoverClaudeSessions,
     checkReadiness: createSystemClaudeReadiness(),
     signIn: createClaudeSignInDriver(),
     readHistory: ({ nativeId, subagentId, cwd }) =>

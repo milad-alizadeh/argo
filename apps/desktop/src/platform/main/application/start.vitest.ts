@@ -33,7 +33,6 @@ test('does not start a second Argo application instance', async () => {
   startDesktopApplication({
     prepare: vi.fn(async () => ({
       database: {} as never,
-      databasePath: '',
       sessionSyncStatus: new SessionSyncStatusStore(),
       codexSessionSyncStatus: new SessionSyncStatusStore(undefined, 'codex'),
     })),
@@ -56,7 +55,6 @@ test('focuses the existing window when a second instance is launched', async () 
   startDesktopApplication({
     prepare: vi.fn(async () => ({
       database: {} as never,
-      databasePath: '',
       sessionSyncStatus: new SessionSyncStatusStore(),
       codexSessionSyncStatus: new SessionSyncStatusStore(undefined, 'codex'),
     })),

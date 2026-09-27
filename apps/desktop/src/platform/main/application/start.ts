@@ -9,7 +9,6 @@ import { type AppActor, appMachine } from './app-machine'
 export function startDesktopApplication(request: {
   prepare: () => Promise<{
     database: Database
-    databasePath: string
     sessionSyncStatus: SessionSyncStatusStore
     codexSessionSyncStatus: SessionSyncStatusStore
   }>

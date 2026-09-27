@@ -17,7 +17,6 @@ export const appMachine = setup({
   types: {
     input: {} as {
       database: Database
-      databasePath: string | null
       sessionSyncStatus: SessionSyncStatusStore
       codexSessionSyncStatus: SessionSyncStatusStore
     },
@@ -30,7 +29,6 @@ export const appMachine = setup({
           type: 'xstate.init'
           input: {
             database: Database
-            databasePath: string | null
             sessionSyncStatus: SessionSyncStatusStore
             codexSessionSyncStatus: SessionSyncStatusStore
           }
@@ -76,7 +74,7 @@ export const appMachine = setup({
       input: ({ event }) => {
         assertEvent(event, 'xstate.init')
         return {
-          databasePath: event.input.databasePath,
+          database: event.input.database,
           status: {
             claude: event.input.sessionSyncStatus,
             codex: event.input.codexSessionSyncStatus,
