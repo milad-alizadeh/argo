@@ -4,8 +4,9 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
+import { type FeedContent, feedContentSchema } from '@/domains/sessions/api/feed-content'
 import {
-  type SessionHistoryRow,
+  projectSessionHistoryRows,
   type SessionHistoryTarget,
   sessionHistoryRowSchema,
 } from '@/domains/sessions/api/session-history'
@@ -24,12 +25,13 @@ const outputSchema = z.strictObject({
   sessionId: identifierSchema,
   chainId: identifierSchema,
   revision: z.string().min(1),
+  content: z.array(feedContentSchema),
   rows: z.array(sessionHistoryRowSchema),
 })
 
 export type SessionFeedReadContext = {
   database: Database
-  readHistory: (harness: Harness, target: SessionHistoryTarget) => Promise<SessionHistoryRow[]>
+  readHistory: (harness: Harness, target: SessionHistoryTarget) => Promise<FeedContent[]>
 }
 
 export function sessionFeedReadProcedure(context: SessionFeedReadContext) {
@@ -49,9 +51,9 @@ export function sessionFeedReadProcedure(context: SessionFeedReadContext) {
       if (stored === undefined)
         throw new TRPCError({ code: 'NOT_FOUND', message: 'missing-session' })
       const harness = harnessSchema.parse(stored.harness)
-      let rows: SessionHistoryRow[]
+      let content: FeedContent[]
       try {
-        rows = await context.readHistory(harness, {
+        content = await context.readHistory(harness, {
           nativeId: stored.nativeId,
           subagentId: input.subagentId,
           cwd: stored.cwd,
@@ -62,7 +64,8 @@ export function sessionFeedReadProcedure(context: SessionFeedReadContext) {
           message: 'vendor-history-unavailable',
         })
       }
-      const revision = createHash('sha256').update(JSON.stringify(rows)).digest('hex')
+      const rows = projectSessionHistoryRows(content)
+      const revision = createHash('sha256').update(JSON.stringify(content)).digest('hex')
       return {
         version: 1,
         type: 'session.feed.read',
@@ -70,6 +73,7 @@ export function sessionFeedReadProcedure(context: SessionFeedReadContext) {
         sessionId: input.sessionId,
         chainId: input.subagentId ?? input.sessionId,
         revision,
+        content,
         rows,
       }
     })

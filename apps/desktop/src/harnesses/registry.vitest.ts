@@ -18,7 +18,7 @@ beforeEach(() => {
 
 test('registered Claude reads root and subagent history and renames through the SDK', async () => {
   vendor.getSessionMessages.mockResolvedValue([
-    { type: 'assistant', uuid: 'reply', message: { content: 'Done' } },
+    { type: 'assistant', uuid: 'reply', message: { role: 'assistant', content: 'Done' } },
   ])
   vendor.renameSession.mockResolvedValue(undefined)
   const registrations = {
@@ -36,7 +36,7 @@ test('registered Claude reads root and subagent history and renames through the 
       subagentId: null,
       cwd: '/work/project',
     }),
-  ).resolves.toEqual([{ shape: 'prose', id: 'reply', role: 'assistant', text: 'Done' }])
+  ).resolves.toEqual([{ kind: 'message', id: 'reply', role: 'assistant', text: 'Done' }])
   await claude.readHistory({
     nativeId: 'root',
     subagentId: 'child',
@@ -70,7 +70,7 @@ test('registered Codex reads the selected thread through its shared request and 
       subagentId: 'child',
       cwd: null,
     }),
-  ).resolves.toEqual([{ shape: 'prose', id: 'reply', role: 'assistant', text: 'Done' }])
+  ).resolves.toEqual([{ kind: 'message', id: 'reply', role: 'assistant', text: 'Done' }])
   expect(calls).toEqual([
     { method: 'thread/read', params: { threadId: 'child', includeTurns: true } },
   ])

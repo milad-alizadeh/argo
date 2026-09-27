@@ -88,7 +88,7 @@ test('reads historical Feed rows through the saved Session Harness adapter', asy
   const dependencies = routerDependencies({
     readHistory: async (harness, target) => {
       reads.push({ harness, target })
-      return [{ shape: 'prose', id: 'message-1', role: 'user', text: 'Hello' }]
+      return [{ kind: 'message', id: 'message-1', role: 'user', text: 'Hello' }]
     },
   })
 
@@ -97,6 +97,7 @@ test('reads historical Feed rows through the saved Session Harness adapter', asy
   ).resolves.toMatchObject({
     type: 'session.feed.read',
     sessionId,
+    content: [{ kind: 'message', role: 'user', text: 'Hello' }],
     rows: [{ role: 'user', text: 'Hello' }],
   })
   expect(reads).toEqual([
@@ -122,7 +123,7 @@ test('reads a selected subagent through its parent Harness and retains the Sessi
   const dependencies = routerDependencies({
     readHistory: async (harness, target) => {
       targets.push({ harness, target })
-      return [{ shape: 'prose', id: 'child-message', role: 'assistant', text: 'Child result' }]
+      return [{ kind: 'message', id: 'child-message', role: 'assistant', text: 'Child result' }]
     },
   })
 

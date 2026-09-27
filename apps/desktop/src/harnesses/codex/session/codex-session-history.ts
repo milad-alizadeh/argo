@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { SessionHistoryRow } from '@/domains/sessions/api/session-history'
+import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { CodexRequest } from '../app-server/codex-app-server-client'
 
 const textContentSchema = z.object({ type: z.literal('text'), text: z.string() }).passthrough()
@@ -73,26 +73,26 @@ function itemText(item: z.infer<typeof itemSchema>): string | null {
 export async function readCodexSessionHistory(
   request: CodexRequest,
   nativeId: string,
-): Promise<SessionHistoryRow[]> {
+): Promise<FeedContent[]> {
   const response = await request(
     'thread/read',
     { threadId: nativeId, includeTurns: true },
     (value) => responseSchema.parse(value),
   )
-  const rows: SessionHistoryRow[] = []
+  const content: FeedContent[] = []
   response.thread.turns.forEach((turn, turnIndex) => {
     turn.items.forEach((rawItem, itemIndex) => {
       const parsed = itemSchema.parse(rawItem)
       const role = threadItemRoles[parsed.type]
       const text = itemText(parsed)
       if (role === null || text === null) return
-      rows.push({
-        shape: 'prose',
+      content.push({
+        kind: 'message',
         id: parsed.id ?? `${nativeId}:${turnIndex}:${itemIndex}`,
         role,
         text,
       })
     })
   })
-  return rows
+  return content
 }
