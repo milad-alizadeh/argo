@@ -6,7 +6,7 @@ import { readCodexSessionHistory } from './codex-session-history'
 
 afterEach(() => vi.unstubAllEnvs())
 
-test('projects recorded Codex user and agent messages into Feed prose', async () => {
+test('projects recorded Codex user and agent messages into Feed content', async () => {
   vi.stubEnv(
     'ARGO_CODEX_TRANSCRIPTS',
     fileURLToPath(new URL('../../../../mocks/cli/codex/fixtures/sessions', import.meta.url)),
@@ -20,8 +20,8 @@ test('projects recorded Codex user and agent messages into Feed prose', async ()
   }) as CodexRequest
 
   await expect(readCodexSessionHistory(request, thread.id)).resolves.toEqual([
-    { shape: 'prose', id: 'codex-child-u1', role: 'user', text: 'Continue the check' },
-    { shape: 'prose', id: 'codex-child-a1', role: 'assistant', text: 'Continuing' },
+    { kind: 'message', id: 'codex-child-u1', role: 'user', text: 'Continue the check' },
+    { kind: 'message', id: 'codex-child-a1', role: 'assistant', text: 'Continuing' },
   ])
   expect(calls).toEqual([
     { method: 'thread/read', params: { threadId: 'rollout-codexChild', includeTurns: true } },

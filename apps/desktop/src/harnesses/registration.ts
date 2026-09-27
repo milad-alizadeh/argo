@@ -1,16 +1,14 @@
 import type { HarnessReadinessRegistration } from '@/domains/harness-signin/main'
+import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionDiscovery } from '@/domains/sessions/api/session-discovery'
-import type {
-  SessionHistoryRow,
-  SessionHistoryTarget,
-} from '@/domains/sessions/api/session-history'
+import type { SessionHistoryTarget } from '@/domains/sessions/api/session-history'
 import type { HarnessInfo } from '@/harnesses/catalog/harness-catalog-machine'
 import type { Harness } from './harness'
 
 export type HarnessRegistration<Id extends Harness = Harness> = HarnessReadinessRegistration & {
   harness: Id
   readCatalog: () => Promise<HarnessInfo>
-  readHistory: (target: SessionHistoryTarget) => Promise<SessionHistoryRow[]>
+  readHistory: (target: SessionHistoryTarget) => Promise<FeedContent[]>
   rename?: (nativeId: string, title: string) => Promise<void>
   sessionDiscovery: SessionDiscovery
 }
