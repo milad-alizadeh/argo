@@ -6,6 +6,7 @@ import { readCodexSessionHistory } from './session/codex-session-history'
 export function createCodexRegistration(request: CodexRequest): HarnessRegistration<'codex'> {
   return {
     harness: 'codex',
+    sessionDiscovery: { kind: 'codex-session-discovery', harness: 'codex' },
     checkReadiness: createSystemCodexReadiness(),
     signIn: createCodexSignInDriver(),
     readHistory: ({ nativeId, subagentId }) =>

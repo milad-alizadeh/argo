@@ -6,6 +6,7 @@ import { claudeSessionRenamer } from './session/claude-session-rename'
 export function createClaudeRegistration(): HarnessRegistration<'claude'> {
   return {
     harness: 'claude',
+    sessionDiscovery: { kind: 'claude-session-discovery', harness: 'claude' },
     checkReadiness: createSystemClaudeReadiness(),
     signIn: createClaudeSignInDriver(),
     readHistory: ({ nativeId, subagentId, cwd }) =>

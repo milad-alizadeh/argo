@@ -1,11 +1,21 @@
 import assert from 'node:assert/strict'
 import { test } from 'vitest'
 import { createActor, fromCallback } from 'xstate'
+import type { SessionDiscoveryJob } from '@/harnesses/session-sync-job'
 import { SessionSyncStatusStore } from '../api/session-sync-status'
 import {
   type SessionSyncWorkerActorInput,
   sessionSyncSupervisorMachine,
 } from './session-sync-supervisor-machine'
+
+const claudeDiscoveryJob: SessionDiscoveryJob = {
+  kind: 'claude-session-discovery',
+  harness: 'claude',
+}
+const discoveryJobs: SessionDiscoveryJob[] = [
+  claudeDiscoveryJob,
+  { kind: 'codex-session-discovery', harness: 'codex' },
+]
 
 type WorkerEvent =
   | { type: 'WorkerReady'; harness: 'claude' | 'codex' }
@@ -18,7 +28,7 @@ type WorkerEvent =
   | { type: 'WorkerCompleted'; harness: 'claude' | 'codex' }
   | { type: 'WorkerFailed'; harness: 'claude' | 'codex' }
 
-test('dispatches one thread for the supported Harness and deduplicates Refresh', () => {
+test('dispatches registered Session discovery jobs and deduplicates Refresh', () => {
   const dispatched: string[] = []
   const finished: Array<() => void> = []
   let stopped = 0
@@ -29,12 +39,12 @@ test('dispatches one thread for the supported Harness and deduplicates Refresh',
     actors: {
       worker: fromCallback<{ type: 'Stop' }, SessionSyncWorkerActorInput, WorkerEvent>(
         ({ input, sendBack }) => {
-          dispatched.push(input.harness)
-          finished.push(() => sendBack({ type: 'WorkerCompleted', harness: input.harness }))
-          sendBack({ type: 'WorkerReady', harness: input.harness })
+          dispatched.push(input.job.harness)
+          finished.push(() => sendBack({ type: 'WorkerCompleted', harness: input.job.harness }))
+          sendBack({ type: 'WorkerReady', harness: input.job.harness })
           sendBack({
             type: 'WorkerStatus',
-            harness: input.harness,
+            harness: input.job.harness,
             status: {
               phase: 'fetching',
               processed: 0,
@@ -44,7 +54,7 @@ test('dispatches one thread for the supported Harness and deduplicates Refresh',
               failure: null,
             },
           })
-          sendBack({ type: 'WorkerCommitted', harness: input.harness })
+          sendBack({ type: 'WorkerCommitted', harness: input.job.harness })
           return () => {
             stopped += 1
           }
@@ -59,6 +69,9 @@ test('dispatches one thread for the supported Harness and deduplicates Refresh',
     },
   }).start()
   try {
+    assert.deepEqual(dispatched, [])
+    actor.send({ type: 'RegisterJobs', jobs: discoveryJobs })
+    actor.send({ type: 'Refresh' })
     assert.deepEqual(dispatched, ['claude', 'codex'])
     assert.equal(status.current().phase, 'fetching')
     assert.deepEqual(reported, ['status', 'status', 'committed'])
@@ -75,6 +88,38 @@ test('dispatches one thread for the supported Harness and deduplicates Refresh',
   } finally {
     actor.stop()
     unsubscribe()
+  }
+})
+
+test('dispatches only discovery jobs selected by registered Harnesses', () => {
+  const dispatched: SessionDiscoveryJob[] = []
+  const actor = createActor(
+    sessionSyncSupervisorMachine.provide({
+      actors: {
+        worker: fromCallback<{ type: 'Stop' }, SessionSyncWorkerActorInput, WorkerEvent>(
+          ({ input }) => {
+            dispatched.push(input.job)
+          },
+        ),
+      },
+    }),
+    {
+      input: {
+        databasePath: '/tmp/session-sync-test.sqlite',
+        status: { claude: new SessionSyncStatusStore() },
+      },
+    },
+  ).start()
+  try {
+    actor.send({ type: 'RegisterJobs', jobs: [claudeDiscoveryJob] })
+    assert.deepEqual(dispatched, [])
+    actor.send({ type: 'Refresh' })
+    assert.deepEqual(dispatched, [claudeDiscoveryJob])
+    actor.send({ type: 'RegisterJobs', jobs: discoveryJobs })
+    actor.send({ type: 'Refresh' })
+    assert.deepEqual(dispatched, [claudeDiscoveryJob])
+  } finally {
+    actor.stop()
   }
 })
 

@@ -4,6 +4,7 @@ import { assertEvent, assign, enqueueActions, fromCallback, sendTo, setup, stopC
 import { z } from 'zod'
 import { createCodexSessionSyncWorkerBridge } from '@/harnesses/codex/session/session-sync-codex-bridge'
 import type { Harness } from '@/harnesses/harness'
+import type { SessionDiscoveryJob } from '@/harnesses/session-sync-job'
 import {
   type SessionSyncStatus,
   type SessionSyncStatusStore,
@@ -23,7 +24,7 @@ const workerMessageSchema = z.union([
 ])
 
 export type SessionSyncWorkerActorInput = {
-  harness: Harness
+  job: SessionDiscoveryJob
   databasePath: string | null
 }
 
@@ -57,10 +58,11 @@ const sessionSyncWorkerActor = fromCallback<
   SessionSyncWorkerActorInput,
   WorkerEvent
 >(({ input, sendBack, system }) => {
+  const harness = input.job.harness
   if (input.databasePath === null) {
     sendBack({
       type: 'WorkerStatus',
-      harness: input.harness,
+      harness,
       status: {
         phase: 'failed',
         processed: 0,
@@ -72,7 +74,7 @@ const sessionSyncWorkerActor = fromCallback<
     })
     sendBack({
       type: 'WorkerFailed',
-      harness: input.harness,
+      harness,
     })
     return () => {}
   }
@@ -91,7 +93,7 @@ const sessionSyncWorkerActor = fromCallback<
     const child = new Worker(path.join(__dirname, 'session-sync-worker.js'), {
       workerData: {
         databasePath: input.databasePath,
-        harness: input.harness,
+        job: input.job,
       },
     })
     worker = child
@@ -100,7 +102,7 @@ const sessionSyncWorkerActor = fromCallback<
     child.on('online', () =>
       sendBack({
         type: 'WorkerReady',
-        harness: input.harness,
+        harness,
       }),
     )
 
@@ -118,14 +120,14 @@ const sessionSyncWorkerActor = fromCallback<
         case 'status':
           sendBack({
             type: 'WorkerStatus',
-            harness: input.harness,
+            harness,
             status: parsed.data.status,
           })
           break
         case 'committed':
           sendBack({
             type: 'WorkerCommitted',
-            harness: input.harness,
+            harness,
           })
           break
         case 'finished':
@@ -144,14 +146,14 @@ const sessionSyncWorkerActor = fromCallback<
       if (code === 0 && outcome === 'ready') {
         sendBack({
           type: 'WorkerCompleted',
-          harness: input.harness,
+          harness,
         })
         return
       }
       if (outcome !== 'failed')
         sendBack({
           type: 'WorkerStatus',
-          harness: input.harness,
+          harness,
           status: {
             phase: 'failed',
             processed: 0,
@@ -163,23 +165,23 @@ const sessionSyncWorkerActor = fromCallback<
         })
       sendBack({
         type: 'WorkerFailed',
-        harness: input.harness,
+        harness,
       })
     })
   }
 
-  switch (input.harness) {
-    case 'claude':
+  switch (input.job.kind) {
+    case 'claude-session-discovery':
       launchWorker()
       break
-    case 'codex': {
+    case 'codex-session-discovery': {
       const codexActor = system.get('codex') as
         | Parameters<typeof createCodexSessionSyncWorkerBridge>[0]
         | undefined
       if (codexActor === undefined) {
         sendBack({
           type: 'WorkerStatus',
-          harness: input.harness,
+          harness,
           status: {
             phase: 'failed',
             processed: 0,
@@ -191,7 +193,7 @@ const sessionSyncWorkerActor = fromCallback<
         })
         sendBack({
           type: 'WorkerFailed',
-          harness: input.harness,
+          harness,
         })
       } else {
         const bridge = createCodexSessionSyncWorkerBridge(codexActor)
@@ -200,7 +202,7 @@ const sessionSyncWorkerActor = fromCallback<
           fail: (error) => {
             sendBack({
               type: 'WorkerStatus',
-              harness: input.harness,
+              harness,
               status: {
                 phase: 'failed',
                 processed: 0,
@@ -212,7 +214,7 @@ const sessionSyncWorkerActor = fromCallback<
             })
             sendBack({
               type: 'WorkerFailed',
-              harness: input.harness,
+              harness,
             })
           },
         })
@@ -220,8 +222,8 @@ const sessionSyncWorkerActor = fromCallback<
       break
     }
     default: {
-      const unknownHarness: never = input.harness
-      throw new Error(`Unsupported Session sync Harness: ${unknownHarness}`)
+      const unknownJob: never = input.job
+      throw new Error(`Unsupported Session discovery job: ${unknownJob}`)
     }
   }
 
@@ -265,11 +267,6 @@ const sessionSyncStatusActor = fromCallback<
   })
 })
 
-const supportedHarnesses = [
-  'claude',
-  'codex',
-] as const satisfies readonly Harness[]
-
 type SupervisorInput = {
   databasePath: string | null
   status: Partial<Record<Harness, SessionSyncStatusStore>>
@@ -280,13 +277,20 @@ type SupervisorEvent =
       type: 'xstate.init'
       input: SupervisorInput
     }
-  | {
-      type: 'Refresh'
-    }
+  | SessionSyncSupervisorCommand
   | {
       type: 'Shutdown'
     }
   | WorkerEvent
+
+export type SessionSyncSupervisorCommand =
+  | {
+      type: 'Refresh'
+    }
+  | {
+      type: 'RegisterJobs'
+      jobs: SessionDiscoveryJob[]
+    }
 
 export const sessionSyncSupervisorMachine = setup({
   types: {
@@ -294,6 +298,8 @@ export const sessionSyncSupervisorMachine = setup({
     context: {} as {
       databasePath: string | null
       jobs: Partial<Record<Harness, 'starting' | 'running'>>
+      sessionDiscoveryJobs: SessionDiscoveryJob[]
+      configured: boolean
     },
     events: {} as SupervisorEvent,
   },
@@ -302,14 +308,23 @@ export const sessionSyncSupervisorMachine = setup({
     status: sessionSyncStatusActor,
   },
   actions: {
+    registerJobs: assign(({ context, event }) => {
+      assertEvent(event, 'RegisterJobs')
+      if (context.configured) return {}
+      return {
+        sessionDiscoveryJobs: event.jobs,
+        configured: true,
+      }
+    }),
     dispatchSupportedJobs: enqueueActions(({ context, enqueue }) => {
-      if (context.databasePath === null) return
-      for (const harness of supportedHarnesses) {
+      if (context.databasePath === null || !context.configured) return
+      for (const job of context.sessionDiscoveryJobs) {
+        const { harness } = job
         if (context.jobs[harness] !== undefined) continue
         enqueue.spawnChild('worker', {
           id: `session-sync-${harness}`,
           input: {
-            harness,
+            job,
             databasePath: context.databasePath,
           },
         })
@@ -363,6 +378,8 @@ export const sessionSyncSupervisorMachine = setup({
   context: ({ input }) => ({
     databasePath: input.databasePath,
     jobs: {},
+    sessionDiscoveryJobs: [],
+    configured: false,
   }),
   invoke: {
     id: 'status',
@@ -374,8 +391,10 @@ export const sessionSyncSupervisorMachine = setup({
   },
   states: {
     Running: {
-      entry: 'dispatchSupportedJobs',
       on: {
+        RegisterJobs: {
+          actions: 'registerJobs',
+        },
         Refresh: {
           actions: 'dispatchSupportedJobs',
         },

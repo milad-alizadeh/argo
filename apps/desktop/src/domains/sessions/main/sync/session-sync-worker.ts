@@ -9,7 +9,7 @@ import {
   type CodexWorkerReadRequest,
   createCodexWorkerRequest,
 } from '@/harnesses/codex/session/session-sync-codex-bridge'
-import { type Harness, harnessSchema } from '@/harnesses/harness'
+import { type SessionDiscoveryJob, sessionDiscoveryJobSchema } from '@/harnesses/session-sync-job'
 import { type SessionSyncStatus, sessionSyncStatusSchema } from '../api/session-sync-status'
 import { sessionSyncMachine } from './session-sync-machine'
 import { knownSessionIds, matchSessionsToProjects, saveSessionBatch } from './session-sync-records'
@@ -36,32 +36,38 @@ function statusFor(snapshot: SnapshotFrom<typeof sessionSyncMachine>): SessionSy
   })
 }
 
-function fetchActorFor(harness: Harness, codexRequest?: CodexWorkerReadRequest) {
-  switch (harness) {
-    case 'claude':
+function fetchActorFor(job: SessionDiscoveryJob, codexRequest?: CodexWorkerReadRequest) {
+  switch (job.kind) {
+    case 'claude-session-discovery':
       return claudeSessionSyncActor
-    case 'codex': {
+    case 'codex-session-discovery': {
       if (codexRequest === undefined)
         throw new Error('Codex Session sync requires the worker request bridge.')
       return createCodexSessionSyncActor(codexRequest)
     }
     default: {
-      const unknownHarness: never = harness
-      throw new Error(`Unsupported Session sync Harness: ${unknownHarness}`)
+      const unknownJob: never = job
+      throw new Error(`Unsupported Session discovery job: ${unknownJob}`)
     }
   }
 }
 
-function startSessionSyncWorker(port: MessagePort, databasePath: string, harness: Harness): void {
+function startSessionSyncWorker(
+  port: MessagePort,
+  databasePath: string,
+  job: SessionDiscoveryJob,
+): void {
+  const { harness } = job
   const client = new DatabaseSync(databasePath)
   client.exec('PRAGMA journal_mode = WAL')
   client.exec('PRAGMA busy_timeout = 5000')
   const database = databaseFrom(client)
-  const codexRequest = harness === 'codex' ? createCodexWorkerRequest(port) : undefined
+  const codexRequest =
+    job.kind === 'codex-session-discovery' ? createCodexWorkerRequest(port) : undefined
   const actor = createActor(
     sessionSyncMachine.provide({
       actors: {
-        fetch: fetchActorFor(harness, codexRequest),
+        fetch: fetchActorFor(job, codexRequest),
         save: fromPromise(async ({ input }) => {
           saveSessionBatch(database, harness, matchSessionsToProjects(database, input.records))
           port.postMessage({ type: 'committed' })
@@ -112,6 +118,6 @@ function startSessionSyncWorker(port: MessagePort, databasePath: string, harness
 
 if (parentPort === null) throw new Error('The Session sync worker requires a parent port.')
 const data = z
-  .strictObject({ databasePath: z.string().min(1), harness: harnessSchema })
+  .strictObject({ databasePath: z.string().min(1), job: sessionDiscoveryJobSchema })
   .parse(workerData)
-startSessionSyncWorker(parentPort, data.databasePath, data.harness)
+startSessionSyncWorker(parentPort, data.databasePath, data.job)

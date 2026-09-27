@@ -13,6 +13,7 @@ import { createHarnessSignInProcedureContext } from '@/domains/harness-signin/ma
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
 import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
+import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
 import type { CatalogActor } from '@/harnesses/catalog/catalog-read'
 import { createClaudeRegistration } from '@/harnesses/claude/registration'
 import {
@@ -156,7 +157,9 @@ function routerForWindow(options: {
     catalog: CatalogActor
     codex: ActorRefFrom<typeof codexAppServerMachine>
     sessions: LiveSessionSupervisorActor
-    sessionSync: { send: (event: { type: 'Refresh' }) => void }
+    sessionSync: {
+      send: (event: SessionSyncSupervisorCommand) => void
+    }
   }
   sessionSyncStatus: SessionSyncStatusStore
   domains: ReturnType<typeof createDomainContexts>
@@ -199,7 +202,9 @@ type WindowActors = {
   catalog: CatalogActor
   codex: ActorRefFrom<typeof codexAppServerMachine>
   sessions: LiveSessionSupervisorActor
-  sessionSync: { send: (event: { type: 'Refresh' }) => void }
+  sessionSync: {
+    send: (event: SessionSyncSupervisorCommand) => void
+  }
 }
 
 function requireWindowActors(actor: AppActor): WindowActors {
@@ -207,7 +212,9 @@ function requireWindowActors(actor: AppActor): WindowActors {
   const codex = actor.system.get('codex') as ActorRefFrom<typeof codexAppServerMachine> | undefined
   const sessions = actor.system.get('sessions') as LiveSessionSupervisorActor | undefined
   const sessionSync = actor.system.get('sessionSync') as
-    | { send: (event: { type: 'Refresh' }) => void }
+    | {
+        send: (event: SessionSyncSupervisorCommand) => void
+      }
     | undefined
   if (
     catalog === undefined ||
@@ -270,6 +277,11 @@ function createWindow(actor: AppActor, database: Database): void {
     claude: createClaudeRegistration(),
     codex: createCodexRegistration(requestCodexAppServer(actors.codex)),
   } satisfies HarnessRegistry
+  actors.sessionSync.send({
+    type: 'RegisterJobs',
+    jobs: Object.values(registrations).map(({ sessionDiscovery }) => sessionDiscovery),
+  })
+  actors.sessionSync.send({ type: 'Refresh' })
   const domains = createDomainContexts(database, registrations)
   desktopWindow = createDesktopWindow({
     buildDirectory: __dirname,
