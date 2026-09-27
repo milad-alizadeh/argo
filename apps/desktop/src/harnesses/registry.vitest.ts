@@ -2,7 +2,7 @@ import { beforeEach, expect, test, vi } from 'vitest'
 import { createClaudeRegistration } from './claude/registration'
 import type { CodexRequest } from './codex/app-server/codex-app-server-client'
 import { createCodexRegistration } from './codex/registration'
-import { createHarnessRegistry } from './registry'
+import type { HarnessRegistry } from './registry'
 
 const vendor = vi.hoisted(() => ({
   getSessionMessages: vi.fn(),
@@ -21,13 +21,13 @@ test('registered Claude reads root and subagent history and renames through the 
     { type: 'assistant', uuid: 'reply', message: { content: 'Done' } },
   ])
   vendor.renameSession.mockResolvedValue(undefined)
-  const registrations = createHarnessRegistry([
-    createClaudeRegistration(),
-    createCodexRegistration(async () => {
+  const registrations = {
+    claude: createClaudeRegistration(),
+    codex: createCodexRegistration(async () => {
       throw new Error('Codex was not selected.')
     }),
-  ])
-  const claude = registrations.get('claude')
+  } satisfies HarnessRegistry
+  const claude = registrations.claude
 
   expect(claude.harness).toBe('claude')
   await expect(
@@ -56,11 +56,11 @@ test('registered Codex reads the selected thread through its shared request and 
       thread: { turns: [{ items: [{ id: 'reply', type: 'agentMessage', text: 'Done' }] }] },
     })
   }) as CodexRequest
-  const registrations = createHarnessRegistry([
-    createClaudeRegistration(),
-    createCodexRegistration(request),
-  ])
-  const codex = registrations.get('codex')
+  const registrations = {
+    claude: createClaudeRegistration(),
+    codex: createCodexRegistration(request),
+  } satisfies HarnessRegistry
+  const codex = registrations.codex
 
   expect(codex.harness).toBe('codex')
   expect(codex.rename).toBeUndefined()

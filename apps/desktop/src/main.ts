@@ -20,7 +20,7 @@ import {
   requestCodexAppServer,
 } from '@/harnesses/codex/app-server/codex-app-server-machine'
 import { createCodexRegistration } from '@/harnesses/codex/registration'
-import { createHarnessRegistry, type HarnessRegistry } from '@/harnesses/registry'
+import type { HarnessRegistry } from '@/harnesses/registry'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { attachAppearanceWatch } from '@/platform/main/appearance'
 import type { AppActor } from '@/platform/main/application/app-machine'
@@ -145,7 +145,7 @@ function createDomainContexts(database: Database, registrations: HarnessRegistry
       path: access.paths.connections,
       exclusive: access.exclusive,
     }),
-    harnessSignIn: createHarnessSignInProcedureContext(registrations.all()),
+    harnessSignIn: createHarnessSignInProcedureContext(Object.values(registrations)),
   }
 }
 
@@ -175,9 +175,9 @@ function routerForWindow(options: {
     },
     sessions: {
       database,
-      readHistory: (harness, target) => registrations.get(harness).readHistory(target),
+      readHistory: (harness, target) => registrations[harness].readHistory(target),
       rename: ({ harness, nativeId, title }) => {
-        const rename = registrations.get(harness).rename
+        const rename = registrations[harness].rename
         if (rename === undefined) throw new Error(`${harness} Session renaming is unavailable.`)
         return rename(nativeId, title)
       },
@@ -266,10 +266,10 @@ function closeDesktopWindow({
 
 function createWindow(actor: AppActor, database: Database): void {
   const actors = requireWindowActors(actor)
-  const registrations = createHarnessRegistry([
-    createClaudeRegistration(),
-    createCodexRegistration(requestCodexAppServer(actors.codex)),
-  ])
+  const registrations = {
+    claude: createClaudeRegistration(),
+    codex: createCodexRegistration(requestCodexAppServer(actors.codex)),
+  } satisfies HarnessRegistry
   const domains = createDomainContexts(database, registrations)
   desktopWindow = createDesktopWindow({
     buildDirectory: __dirname,
