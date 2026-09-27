@@ -113,7 +113,13 @@ function mediaContent(
 }
 
 function decodeBlock(
-  input: { id: string; role: Role; raw: unknown; vendorEnvelope: boolean },
+  input: {
+    id: string
+    role: Role
+    raw: unknown
+    vendorEnvelope: boolean
+    humanInput: boolean
+  },
   reject: RejectClaudeShape,
 ): FeedContent | null {
   const { id, role, raw, vendorEnvelope } = input
@@ -131,7 +137,10 @@ function decodeBlock(
       }
       return text.data.text.trim() === ''
         ? null
-        : decodeClaudeText({ id, role, text: text.data.text, vendorEnvelope }, reject)
+        : decodeClaudeText(
+            { id, role, text: text.data.text, vendorEnvelope, humanInput: input.humanInput },
+            reject,
+          )
     }
     case 'thinking': {
       const thinking = thinkingSchema.safeParse(raw)
@@ -172,7 +181,13 @@ function decodeBlock(
 }
 
 export function decodeClaudeBlocks(
-  input: { id: string; role: Role; message: unknown; vendorEnvelope: boolean },
+  input: {
+    id: string
+    role: Role
+    message: unknown
+    vendorEnvelope: boolean
+    humanInput?: boolean
+  },
   reject: RejectClaudeShape,
 ): FeedContent[] {
   const parsed = messageSchema.safeParse(input.message)
@@ -188,7 +203,13 @@ export function decodeClaudeBlocks(
   blocks.forEach((raw, index) => {
     const id = blocks.length === 1 ? input.id : `${input.id}:${index}`
     const candidate = decodeBlock(
-      { id, role: input.role, raw, vendorEnvelope: input.vendorEnvelope },
+      {
+        id,
+        role: input.role,
+        raw,
+        vendorEnvelope: input.vendorEnvelope,
+        humanInput: input.humanInput ?? false,
+      },
       reject,
     )
     if (candidate === null) return

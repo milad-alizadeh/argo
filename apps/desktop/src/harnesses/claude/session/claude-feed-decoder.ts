@@ -42,6 +42,7 @@ export function decodeClaudeHistoryContent(
         role: envelope.data.type,
         message: envelope.data.message,
         vendorEnvelope: envelope.data.origin !== undefined && envelope.data.origin.kind !== 'human',
+        humanInput: envelope.data.origin?.kind === 'human',
       },
       reject,
     ),
@@ -112,6 +113,7 @@ function decodeLiveMessage(
           role: 'user',
           message: message.message,
           vendorEnvelope: message.origin !== undefined && message.origin.kind !== 'human',
+          humanInput: message.origin?.kind === 'human',
         },
         reject,
       )
