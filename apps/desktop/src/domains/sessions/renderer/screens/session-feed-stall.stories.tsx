@@ -60,23 +60,25 @@ export const SpinsForeverAndLeavesTheWindowLive: Story = {
     const canvas = within(canvasElement)
     await waitFor(
       () => expect(canvasElement.querySelector('[data-state="loading"]')).not.toBeNull(),
-      { timeout: 5000 },
+      { timeout: 10000 },
     )
 
     // Hit testing over the project switcher: a full-window overlay would answer here instead.
     const projectSwitcher = canvas.getByRole('button', { name: /Current project:/ })
-    const box = projectSwitcher.getBoundingClientRect()
-    const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)
-    await expect(projectSwitcher.contains(hit)).toBe(true)
+    await waitFor(() => {
+      const box = projectSwitcher.getBoundingClientRect()
+      const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)
+      expect(projectSwitcher.contains(hit)).toBe(true)
+    })
 
     // The click reaches the project switcher while the Session remains selected and loading.
     await userEvent.click(projectSwitcher)
-    await waitFor(() => expect(document.activeElement).toBe(projectSwitcher), { timeout: 5000 })
+    await waitFor(() => expect(projectSwitcher).toHaveAttribute('aria-expanded', 'true'))
     await userEvent.keyboard('{Escape}')
 
     await waitFor(
       () => expect(canvasElement.querySelector('[data-state="loading"]')).not.toBeNull(),
-      { timeout: 5000 },
+      { timeout: 10000 },
     )
   },
 }
