@@ -5,8 +5,8 @@ import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import { PERMISSION_DECISIONS } from '@/domains/sessions/api/permissions'
 import { questionAnswerSchema } from '@/domains/sessions/api/questions'
-import type { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import { identifierSchema } from '@/shared/validation'
+import type { SessionInteractionBroker } from '../live/session-interaction-broker'
 
 const t = initTRPC.create()
 const sessionInput = z.strictObject({ sessionId: identifierSchema })

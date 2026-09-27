@@ -16,6 +16,36 @@ function content(sequence: number, value: FeedContent): SessionLiveEvent {
   }
 }
 
+function status(sequence: number, value: 'running' | 'idle'): SessionLiveEvent {
+  return {
+    type: 'status',
+    sessionId,
+    sequence,
+    commandId: 'command-1',
+    turnId: 'turn-1',
+    vendorEventId: null,
+    status: value,
+  }
+}
+
+function question(
+  sequence: number,
+  requestId: string,
+  vendorEventId: string | null,
+): SessionLiveEvent {
+  return {
+    type: 'question',
+    sessionId,
+    sequence,
+    commandId: 'command-1',
+    turnId: 'turn-1',
+    vendorEventId,
+    requestId,
+    questions: [{ question: 'Which file?', header: null, multiSelect: false, options: [] }],
+    answer: null,
+  }
+}
+
 test('shows ordered live text, tool work, status, Permission, and Question rows', () => {
   const rows = projectLiveFeedRows(
     [],
@@ -51,17 +81,7 @@ test('shows ordered live text, tool work, status, Permission, and Question rows'
         requestId: 'permission-1',
         description: 'Read this file?',
       },
-      {
-        type: 'question',
-        sessionId,
-        sequence: 6,
-        commandId: 'command-1',
-        turnId: 'turn-1',
-        vendorEventId: null,
-        requestId: 'question-1',
-        questions: [{ question: 'Which file?', header: null, multiSelect: false, options: [] }],
-        answer: null,
-      },
+      question(6, 'question-1', null),
     ],
   )
   expect(rows.map((row) => [row.shape, row.id])).toEqual([
@@ -102,15 +122,7 @@ test('settled vendor history replaces matching live messages and tool progress',
       output: null,
       summary: null,
     }),
-    {
-      type: 'status' as const,
-      sessionId,
-      sequence: 4,
-      commandId: 'command-1',
-      turnId: 'turn-1',
-      vendorEventId: null,
-      status: 'idle' as const,
-    },
+    status(4, 'idle'),
   ]
   const rows = projectLiveFeedRows(history, live)
   expect(rows).toHaveLength(4)
@@ -141,15 +153,7 @@ test('interleaves live status with matching history while active text and tools 
   ]
   const rows = projectLiveFeedRows(history, [
     content(1, { kind: 'message', id: 'prompt-1', role: 'user', text: 'Inspect this' }),
-    {
-      type: 'status',
-      sessionId,
-      sequence: 2,
-      commandId: 'command-1',
-      turnId: 'turn-1',
-      vendorEventId: null,
-      status: 'running',
-    },
+    status(2, 'running'),
     content(3, { kind: 'message', id: 'answer-1', role: 'assistant', text: 'Growing text' }),
     {
       type: 'permission',
@@ -171,15 +175,7 @@ test('interleaves live status with matching history while active text and tools 
       output: null,
       summary: null,
     }),
-    {
-      type: 'status',
-      sessionId,
-      sequence: 6,
-      commandId: 'command-1',
-      turnId: 'turn-1',
-      vendorEventId: null,
-      status: 'running',
-    },
+    status(6, 'running'),
   ])
   expect(rows.map((row) => row.id)).toEqual([
     'old-1',
@@ -205,19 +201,9 @@ test('shows a Claude Question once when vendor history includes its tool call', 
     output: null,
     summary: null,
   }
-  const rows = projectLiveFeedRows([tool], [
-    content(1, tool),
-    {
-      type: 'question',
-      sessionId,
-      sequence: 2,
-      commandId: 'command-1',
-      turnId: 'turn-1',
-      vendorEventId: 'question-call',
-      requestId: 'question-1',
-      questions: [{ question: 'Which file?', header: null, multiSelect: false, options: [] }],
-      answer: null,
-    },
-  ])
+  const rows = projectLiveFeedRows(
+    [tool],
+    [content(1, tool), question(2, 'question-1', 'question-call')],
+  )
   expect(rows.map((row) => [row.shape, row.id])).toEqual([['ask', 'question-1']])
 })

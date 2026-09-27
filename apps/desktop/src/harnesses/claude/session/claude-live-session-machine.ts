@@ -8,7 +8,11 @@ import {
 } from '@anthropic-ai/claude-agent-sdk'
 import { assign, fromCallback, sendTo, setup as xstateSetup } from 'xstate'
 import { z } from 'zod'
-import { type Question, type QuestionAnswer, questionSchema } from '@/domains/sessions/api/questions'
+import {
+  type Question,
+  type QuestionAnswer,
+  questionSchema,
+} from '@/domains/sessions/api/questions'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type {
   SessionLiveInput,
@@ -88,11 +92,22 @@ function answerText(answer: QuestionAnswer, question: Question): string {
 }
 
 function answeredQuestionEntries(questions: Question[], answers: QuestionAnswer[]) {
-  return questions.map((question, index): [string, string] => {
-    const answer = answers[index]
-    if (answer === undefined) throw new Error('Claude Question answer is incomplete.')
-    return [question.question, answerText(answer, question)]
-  })
+  return questions.map(
+    (
+      question,
+      index,
+    ): [
+      string,
+      string,
+    ] => {
+      const answer = answers[index]
+      if (answer === undefined) throw new Error('Claude Question answer is incomplete.')
+      return [
+        question.question,
+        answerText(answer, question),
+      ]
+    },
+  )
 }
 
 function isUuid(value: string): boolean {

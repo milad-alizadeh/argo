@@ -136,6 +136,72 @@ function rowKey(row: SessionFeedRow): string {
   return `${row.shape}:${id}`
 }
 
+type IndexedRows = { rows: SessionFeedRow[]; index: Map<string, number> }
+type LiveRow = { key: string; row: SessionFeedRow; sequence: number }
+
+function historyFeedRows(history: readonly FeedContent[], questionCalls: Set<string>): IndexedRows {
+  const historyRows: SessionFeedRow[] = []
+  const historyIndex = new Map<string, number>()
+  for (const content of history) {
+    if (content.kind === 'tool' && questionCalls.has(content.callId)) continue
+    const row = contentRow(content)
+    if (row === null) continue
+    const key = rowKey(row)
+    const prior = historyIndex.get(key)
+    if (prior === undefined) {
+      historyIndex.set(key, historyRows.length)
+      historyRows.push(row)
+    } else historyRows[prior] = row
+  }
+  return { rows: historyRows, index: historyIndex }
+}
+
+function liveFeedRows(live: readonly SessionLiveEvent[], questionCalls: Set<string>): LiveRow[] {
+  const liveRows: LiveRow[] = []
+  const liveIndex = new Map<string, number>()
+  for (const event of live) {
+    if (
+      event.type === 'content' &&
+      event.content.kind === 'tool' &&
+      questionCalls.has(event.content.callId)
+    )
+      continue
+    const row = liveRow(event)
+    if (row === null) continue
+    const key = rowKey(row)
+    const prior = liveIndex.get(key)
+    if (prior === undefined) {
+      liveIndex.set(key, liveRows.length)
+      liveRows.push({ key, row, sequence: event.sequence })
+    } else liveRows[prior] = { key, row, sequence: event.sequence }
+  }
+  return liveRows
+}
+
+function mergeFeedRows(history: IndexedRows, live: LiveRow[], settledThrough: number) {
+  const { rows: historyRows, index: historyIndex } = history
+  const firstMatch = live
+    .map(({ key }) => historyIndex.get(key))
+    .find((position) => position !== undefined)
+  const rows = historyRows.slice(0, firstMatch ?? historyRows.length)
+  let nextHistory = firstMatch ?? historyRows.length
+  for (const current of live) {
+    const matched = historyIndex.get(current.key)
+    if (matched === undefined) {
+      rows.push(current.row)
+      continue
+    }
+    if (matched < nextHistory) continue
+    rows.push(...historyRows.slice(nextHistory, matched))
+    rows.push(
+      current.sequence <= settledThrough ? (historyRows[matched] ?? current.row) : current.row,
+    )
+    nextHistory = matched + 1
+  }
+  rows.push(...historyRows.slice(nextHistory))
+  return rows
+}
+
 export function projectLiveFeedRows(
   history: readonly FeedContent[],
   live: readonly SessionLiveEvent[],
@@ -153,49 +219,9 @@ export function projectLiveFeedRows(
         : sequence,
     0,
   )
-  const historyRows: SessionFeedRow[] = []
-  const historyIndex = new Map<string, number>()
-  for (const content of history) {
-    if (content.kind === 'tool' && questionCalls.has(content.callId)) continue
-    const row = contentRow(content)
-    if (row === null) continue
-    const key = rowKey(row)
-    const prior = historyIndex.get(key)
-    if (prior === undefined) {
-      historyIndex.set(key, historyRows.length)
-      historyRows.push(row)
-    } else historyRows[prior] = row
-  }
-  const liveRows: { key: string; row: SessionFeedRow; sequence: number }[] = []
-  const liveIndex = new Map<string, number>()
-  for (const event of sortedLive) {
-    if (event.type === 'content' && event.content.kind === 'tool')
-      if (questionCalls.has(event.content.callId)) continue
-    const row = liveRow(event)
-    if (row === null) continue
-    const key = rowKey(row)
-    const prior = liveIndex.get(key)
-    if (prior === undefined) {
-      liveIndex.set(key, liveRows.length)
-      liveRows.push({ key, row, sequence: event.sequence })
-    } else liveRows[prior] = { key, row, sequence: event.sequence }
-  }
-  const firstMatch = liveRows
-    .map(({ key }) => historyIndex.get(key))
-    .find((position) => position !== undefined)
-  const rows = historyRows.slice(0, firstMatch ?? historyRows.length)
-  let nextHistory = firstMatch ?? historyRows.length
-  for (const liveRow of liveRows) {
-    const matched = historyIndex.get(liveRow.key)
-    if (matched === undefined) {
-      rows.push(liveRow.row)
-      continue
-    }
-    if (matched < nextHistory) continue
-    rows.push(...historyRows.slice(nextHistory, matched))
-    rows.push(liveRow.sequence <= settledThrough ? (historyRows[matched] ?? liveRow.row) : liveRow.row)
-    nextHistory = matched + 1
-  }
-  rows.push(...historyRows.slice(nextHistory))
-  return rows
+  return mergeFeedRows(
+    historyFeedRows(history, questionCalls),
+    liveFeedRows(sortedLive, questionCalls),
+    settledThrough,
+  )
 }
