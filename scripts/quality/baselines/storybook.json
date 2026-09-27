@@ -113,33 +113,6 @@
     {
       "identity": {
         "project": "storybook-dark",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-feed-resilience.stories.tsx",
-        "story": "Missing History Can Be Recovered"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-dark",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-feed-resilience.stories.tsx",
-        "story": "Unknown Session Has Truthful Recovery"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-dark",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-feed-stall.stories.tsx",
-        "story": "Spins Forever And Leaves The Window Live"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-dark",
         "path": "apps/desktop/src/domains/sessions/renderer/screens/session-resume.stories.tsx",
         "story": "Locked While Live Elsewhere"
       },
@@ -487,33 +460,6 @@
       },
       "owner": "#2713",
       "reason": "Session attachments await typed procedures."
-    },
-    {
-      "identity": {
-        "project": "storybook-light",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-feed-resilience.stories.tsx",
-        "story": "Missing History Can Be Recovered"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-light",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-feed-resilience.stories.tsx",
-        "story": "Unknown Session Has Truthful Recovery"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-light",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-feed-stall.stories.tsx",
-        "story": "Spins Forever And Leaves The Window Live"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
     },
     {
       "identity": {
