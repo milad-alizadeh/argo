@@ -69,16 +69,18 @@ export function sessionListTrpc(
   queryClient.removeQueries({ queryKey: trpcOptions.sessionList.pathKey() })
   return (async (request) => {
     if (request.path !== 'sessionList') return trpc(request)
-    const input = request.input as { page: number; pageSize: number }
+    const input = request.input as { cursor?: number | null; page?: number; pageSize?: number }
+    const page = input.cursor ?? input.page ?? 1
+    const pageSize = input.pageSize ?? 30
     const rows = sessions()
-    const start = (input.page - 1) * input.pageSize
+    const start = (page - 1) * pageSize
     return {
       result: {
         data: {
-          page: input.page,
-          pageSize: input.pageSize,
+          page,
+          pageSize,
           total: rows.length,
-          rows: rows.slice(start, start + input.pageSize),
+          rows: rows.slice(start, start + pageSize),
         },
       },
     }
