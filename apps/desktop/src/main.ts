@@ -9,24 +9,18 @@ import { type Database, databasePath, openDatabase } from '@/database/database'
 import { createAccountAccess, createAccountProcedureContext } from '@/domains/accounts/main'
 import { safeStorageCipher } from '@/domains/accounts/main/safe-storage'
 import { createConnectionPort } from '@/domains/connections/main'
-import {
-  createHarnessSignInProcedureContext,
-  type HarnessReadinessRegistration,
-} from '@/domains/harness-signin/main'
+import { createHarnessSignInProcedureContext } from '@/domains/harness-signin/main'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
 import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import type { CatalogActor } from '@/harnesses/catalog/catalog-read'
-import { createClaudeSignInDriver, createSystemClaudeReadiness } from '@/harnesses/claude/readiness'
-import { readClaudeSessionHistory } from '@/harnesses/claude/session/claude-session-history'
+import { createClaudeRegistration } from '@/harnesses/claude/registration'
 import {
   type codexAppServerMachine,
   requestCodexAppServer,
 } from '@/harnesses/codex/app-server/codex-app-server-machine'
-import { createCodexSignInDriver, createSystemCodexReadiness } from '@/harnesses/codex/readiness'
-import { readCodexSessionHistory } from '@/harnesses/codex/session/codex-session-history'
-import type { Harness } from '@/harnesses/harness'
-import { renameHarnessSession } from '@/harnesses/session-rename'
+import { createCodexRegistration } from '@/harnesses/codex/registration'
+import type { HarnessRegistry } from '@/harnesses/registry'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { attachAppearanceWatch } from '@/platform/main/appearance'
 import type { AppActor } from '@/platform/main/application/app-machine'
@@ -118,21 +112,6 @@ function focusWindow(): void {
   desktopWindow.focus()
 }
 
-function harnessReadinessRegistrations(): HarnessReadinessRegistration[] {
-  return [
-    {
-      harness: 'claude',
-      checkReadiness: createSystemClaudeReadiness(),
-      signIn: createClaudeSignInDriver(),
-    },
-    {
-      harness: 'codex',
-      checkReadiness: createSystemCodexReadiness(),
-      signIn: createCodexSignInDriver(),
-    },
-  ]
-}
-
 async function chooseProjectFolder(window: BrowserWindow): Promise<string | null> {
   const chosen = await dialog.showOpenDialog(window, {
     title: platformText('dialog.openProject.title'),
@@ -142,7 +121,7 @@ async function chooseProjectFolder(window: BrowserWindow): Promise<string | null
   return chosen.canceled ? null : (chosen.filePaths[0] ?? null)
 }
 
-function createDomainContexts(database: Database) {
+function createDomainContexts(database: Database, registrations: HarnessRegistry) {
   const userData = app.getPath('userData')
   const { accountData, connectionData } = developmentStoreDirectories({
     userData,
@@ -166,7 +145,7 @@ function createDomainContexts(database: Database) {
       path: access.paths.connections,
       exclusive: access.exclusive,
     }),
-    harnessSignIn: createHarnessSignInProcedureContext(harnessReadinessRegistrations()),
+    harnessSignIn: createHarnessSignInProcedureContext(Object.values(registrations)),
   }
 }
 
@@ -181,8 +160,9 @@ function routerForWindow(options: {
   }
   sessionSyncStatus: SessionSyncStatusStore
   domains: ReturnType<typeof createDomainContexts>
+  registrations: HarnessRegistry
 }) {
-  const { window, database, actors, domains, sessionSyncStatus } = options
+  const { window, database, actors, domains, sessionSyncStatus, registrations } = options
   const exclusive = createWriteQueue()
   return createAppRouter({
     accounts: domains.accounts,
@@ -195,15 +175,12 @@ function routerForWindow(options: {
     },
     sessions: {
       database,
-      readHistory: (harness: Harness, nativeId, cwd) => {
-        switch (harness) {
-          case 'claude':
-            return readClaudeSessionHistory(nativeId, cwd)
-          case 'codex':
-            return readCodexSessionHistory(requestCodexAppServer(actors.codex), nativeId)
-        }
+      readHistory: (harness, target) => registrations[harness].readHistory(target),
+      rename: ({ harness, nativeId, title }) => {
+        const rename = registrations[harness].rename
+        if (rename === undefined) throw new Error(`${harness} Session renaming is unavailable.`)
+        return rename(nativeId, title)
       },
-      rename: renameHarnessSession,
       supervisor: actors.sessions,
       refreshSessionSync: () => actors.sessionSync.send({ type: 'Refresh' }),
       sessionSyncStatus,
@@ -248,12 +225,14 @@ function attachWindowTrpc({
   actors,
   domains,
   database,
+  registrations,
 }: {
   window: BrowserWindow
   rendererURL: string
   actors: WindowActors
   domains: ReturnType<typeof createDomainContexts>
   database: Database
+  registrations: HarnessRegistry
 }): () => void {
   const router = routerForWindow({
     actors,
@@ -261,6 +240,7 @@ function attachWindowTrpc({
     sessionSyncStatus: currentSessionSyncStatus(),
     window,
     database,
+    registrations,
   })
   return attachTrpcTransport({ window, rendererURL, router, context: undefined })
 }
@@ -286,7 +266,11 @@ function closeDesktopWindow({
 
 function createWindow(actor: AppActor, database: Database): void {
   const actors = requireWindowActors(actor)
-  const domains = createDomainContexts(database)
+  const registrations = {
+    claude: createClaudeRegistration(),
+    codex: createCodexRegistration(requestCodexAppServer(actors.codex)),
+  } satisfies HarnessRegistry
+  const domains = createDomainContexts(database, registrations)
   desktopWindow = createDesktopWindow({
     buildDirectory: __dirname,
     rendererName: MAIN_WINDOW_VITE_NAME,
@@ -305,7 +289,14 @@ function createWindow(actor: AppActor, database: Database): void {
       : undefined,
     attach: (window, rendererURL) => {
       attachWindowNavigation(window)
-      const detachTrpc = attachWindowTrpc({ window, rendererURL, actors, domains, database })
+      const detachTrpc = attachWindowTrpc({
+        window,
+        rendererURL,
+        actors,
+        domains,
+        database,
+        registrations,
+      })
       attachAppearanceWatch(window)
       window.once('closed', () => closeDesktopWindow({ actor, database, domains, detachTrpc }))
       installMenu(window)

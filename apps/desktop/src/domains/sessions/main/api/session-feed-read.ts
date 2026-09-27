@@ -6,6 +6,7 @@ import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import {
   type SessionHistoryRow,
+  type SessionHistoryTarget,
   sessionHistoryRowSchema,
 } from '@/domains/sessions/api/session-history'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
@@ -26,17 +27,9 @@ const outputSchema = z.strictObject({
   rows: z.array(sessionHistoryRowSchema),
 })
 
-export type SessionHistoryReader = (
-  nativeId: string,
-  cwd: string | null,
-) => Promise<SessionHistoryRow[]>
 export type SessionFeedReadContext = {
   database: Database
-  readHistory: (
-    harness: Harness,
-    nativeId: string,
-    cwd: string | null,
-  ) => Promise<SessionHistoryRow[]>
+  readHistory: (harness: Harness, target: SessionHistoryTarget) => Promise<SessionHistoryRow[]>
 }
 
 export function sessionFeedReadProcedure(context: SessionFeedReadContext) {
@@ -58,7 +51,11 @@ export function sessionFeedReadProcedure(context: SessionFeedReadContext) {
       const harness = harnessSchema.parse(stored.harness)
       let rows: SessionHistoryRow[]
       try {
-        rows = await context.readHistory(harness, input.subagentId ?? stored.nativeId, stored.cwd)
+        rows = await context.readHistory(harness, {
+          nativeId: stored.nativeId,
+          subagentId: input.subagentId,
+          cwd: stored.cwd,
+        })
       } catch {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
