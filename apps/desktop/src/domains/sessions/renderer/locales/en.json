@@ -107,6 +107,7 @@
     "send": "Send",
     "sendMessage": "Send message",
     "draftSaveFailed": "The draft could not be saved. Try again before closing this Session.",
+    "sendFailed": "The Turn could not be sent. Your draft is still saved.",
     "interrupt": "Interrupt",
     "usage": "Usage",
     "compact": "Compact the conversation",

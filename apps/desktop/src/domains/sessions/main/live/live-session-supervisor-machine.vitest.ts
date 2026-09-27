@@ -288,20 +288,27 @@ test('the same in-flight command shares one vendor Session result', async () => 
 })
 
 test('the first Send after restart resumes the stored Codex thread before starting its Turn', async () => {
-  const calls: Array<{ method: string; threadId: string | undefined }> = []
+  const calls: Array<{ method: string; threadId: string | undefined; sandbox?: string }> = []
   const { root, supervisor, client } = await supervisorFor(async (method, params, parse) => {
-    const requestParams = params as { threadId?: string }
+    const requestParams = params as { threadId?: string; sandbox?: string }
     calls.push({
       method,
       threadId: requestParams.threadId,
+      ...(requestParams.sandbox === undefined ? {} : { sandbox: requestParams.sandbox }),
     })
     if (method === 'thread/resume') return parse({ thread: { id: requestParams.threadId } })
     return parse({ turn: { id: 'turn-1' } })
   })
   try {
-    await assert.doesNotReject(send(supervisor, { ...first, sessionId: 'session-1' }))
+    await assert.doesNotReject(
+      send(supervisor, {
+        ...first,
+        sessionId: 'session-1',
+        turnConfiguration: { ...first.turnConfiguration, mode: 'read-only' },
+      }),
+    )
     assert.deepEqual(calls, [
-      { method: 'thread/resume', threadId: 'native-1' },
+      { method: 'thread/resume', threadId: 'native-1', sandbox: 'read-only' },
       { method: 'turn/start', threadId: 'native-1' },
     ])
     await waitFor(supervisor, (snapshot) => snapshot.context.sessions['session-1'] !== undefined)

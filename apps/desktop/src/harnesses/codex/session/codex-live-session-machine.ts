@@ -47,6 +47,7 @@ export const codexLiveSessionActors = (request: CodexRequest) => ({
         'thread/resume',
         {
           threadId: input.resume.nativeId,
+          sandbox: input.turnConfiguration.mode,
         },
         (value) => threadStartResultSchema.parse(value).thread.id,
       )

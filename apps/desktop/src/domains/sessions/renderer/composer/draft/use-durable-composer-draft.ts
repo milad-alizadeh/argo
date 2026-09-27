@@ -10,6 +10,7 @@ import {
   type TurnConfigurationChoices,
 } from '../turn-configuration/turn-configuration'
 import { shouldLoadComposerDraft } from './composer-draft-load'
+import { type ComposerDraftActionInput, useComposerDraftSubmit } from './composer-draft-submit'
 
 export type DraftTarget = RouterInputs['composerDraftCreate']['target']
 export type DraftContent = RouterInputs['composerDraftCreate']['content']
@@ -35,19 +36,6 @@ type ComposerDraftLoadInput = Omit<DraftLoadDependencies, 'setLoaded'> & {
   choices: TurnConfigurationChoices | null
   opening: TurnConfiguration | null
   owner: string | null
-}
-type ComposerDraftActionInput = {
-  persist: (content: DraftContent) => Promise<PersistedDraft>
-  persisted: React.RefObject<Map<string, PersistedDraft>>
-  latestEditing: React.RefObject<ComposerEditing | null>
-  saveTimer: React.RefObject<Map<string, number>>
-  owner: string | null
-  setSaveFailureOwner: React.Dispatch<React.SetStateAction<string | null>>
-  suppressNextEmptyAutosave: React.RefObject<string | null>
-}
-type ComposerDraftSubmitInput = ComposerDraftActionInput & {
-  submit: (input: RouterInputs['sessionSubmit']) => Promise<{ sessionId: string }>
-  clearAcceptedDraft: () => void
 }
 type DurableComposerDraftInput = {
   target: DraftTarget | null
@@ -390,75 +378,6 @@ function useComposerDraftAutosave(
   )
 }
 
-function useComposerDraftSubmit(input: ComposerDraftSubmitInput) {
-  const {
-    persist,
-    persisted,
-    latestEditing,
-    saveTimer,
-    submit,
-    owner,
-    setSaveFailureOwner,
-    suppressNextEmptyAutosave,
-    clearAcceptedDraft,
-  } = input
-  return useCallback(
-    async (
-      prompt: string,
-      turnConfiguration: TurnConfiguration | null,
-      attachments: DraftContent['attachments'],
-    ) => {
-      const editing = latestEditing.current
-      if (editing === null || turnConfiguration === null || owner === null) return null
-      const timer = saveTimer.current.get(owner)
-      if (timer !== undefined) {
-        window.clearTimeout(timer)
-        saveTimer.current.delete(owner)
-      }
-
-      try {
-        const saved = await persist({
-          prompt,
-          attachments,
-          ticketContext: editing.tickets,
-          turnConfiguration,
-        })
-        const result = await submitSavedDraft(saved, submit)
-        suppressNextEmptyAutosave.current = owner
-        if (persisted.current.get(owner)?.id === saved.id) persisted.current.delete(owner)
-        clearAcceptedDraft()
-        setSaveFailureOwner((failedOwner) => (failedOwner === owner ? null : failedOwner))
-        return result.sessionId
-      } catch {
-        if (owner !== null) setSaveFailureOwner(owner)
-        return null
-      }
-    },
-    [
-      clearAcceptedDraft,
-      latestEditing,
-      owner,
-      persist,
-      persisted,
-      saveTimer,
-      setSaveFailureOwner,
-      suppressNextEmptyAutosave,
-      submit,
-    ],
-  )
-}
-
-function submitSavedDraft(
-  saved: PersistedDraft,
-  submit: (input: RouterInputs['sessionSubmit']) => Promise<{ sessionId: string }>,
-) {
-  return submit({
-    draftId: saved.id,
-    expectedRevision: saved.revision,
-    commandId: crypto.randomUUID(),
-  })
-}
-
 export function useDurableComposerDraft(input: DurableComposerDraftInput) {
   const { target, choices, opening } = input
   const queryClient = useQueryClient()
@@ -489,6 +408,7 @@ export function useDurableComposerDraft(input: DurableComposerDraftInput) {
         onEditingChange: persistence.onEditingChange,
         submit: persistence.submit,
         saveFailed: persistence.saveFailed,
+        sendFailed: persistence.sendFailed,
       }
 }
 
@@ -504,6 +424,7 @@ function useComposerDraftPersistence(input: {
   const persisted = useRef(new Map<string, PersistedDraft>())
   const initialFingerprints = useRef(new Map<string, string>())
   const [saveFailureOwner, setSaveFailureOwner] = useState<string | null>(null)
+  const [sendFailureOwner, setSendFailureOwner] = useState<string | null>(null)
   const latestEditing = useRef<ComposerEditing | null>(null)
   const saveChain = useRef<Promise<void>>(Promise.resolve())
   const saveTimer = useRef(new Map<string, number>())
@@ -536,6 +457,7 @@ function useComposerDraftPersistence(input: {
     submit: submitMutation,
     owner,
     setSaveFailureOwner,
+    setSendFailureOwner,
     suppressNextEmptyAutosave,
     clearAcceptedDraft: clearComposerDraftCache(target, queryClient),
   })
@@ -546,6 +468,7 @@ function useComposerDraftPersistence(input: {
     onEditingChange,
     submit,
     saveFailed: saveFailureOwner === owner,
+    sendFailed: sendFailureOwner === owner,
   }
 }
 

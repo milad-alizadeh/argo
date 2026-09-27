@@ -189,6 +189,7 @@ function ReadySessionComposer({
     <>
       {permission.failure ? <Failure message={permission.failure} /> : null}
       {draft.saveFailed ? <Failure message={t('composer.draftSaveFailed')} /> : null}
+      {draft.sendFailed ? <Failure message={t('composer.sendFailed')} /> : null}
       <ComposerForm
         sessionId={composerKey}
         initialEditing={draft.initialEditing}

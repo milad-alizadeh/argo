@@ -277,6 +277,9 @@ export const RestoresAndRetainsRejectedDrafts: Story = {
       'Restored Session A draft.',
     )
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
+    await expect(
+      await canvas.findByText('The Turn could not be sent. Your draft is still saved.'),
+    ).toBeInTheDocument()
     await waitFor(() =>
       expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent('Restored Session A draft.'),
     )
