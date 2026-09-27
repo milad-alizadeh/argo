@@ -52,6 +52,9 @@ export function Standing({
           <Icon name="triangle-alert" />
           <AlertTitle>{t('standing.failure')}</AlertTitle>
           <AlertDescription>{failure.message}</AlertDescription>
+          <Button onClick={onRetry} type="button" variant="outline">
+            {t('standing.retry')}
+          </Button>
         </Alert>
       </section>
     )
