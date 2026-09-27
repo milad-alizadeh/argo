@@ -115,14 +115,15 @@ test('packaged Feed replays ordered Claude live activity for a stored Session', 
     await expect(feed.getByText('Reading now', { exact: true })).toBeVisible()
     await expect(feed.getByText('Which file?', { exact: true })).toBeVisible()
     await expect(feed.getByRole('button', { name: /Read/ })).toBeVisible()
-    await expect(feed.getByText('Permission: Read file')).toBeVisible()
+    await expect(feed.getByText('Permission needed')).toBeVisible()
+    await expect(feed.getByText('Read file', { exact: true })).toBeVisible()
     const rows = await feed.locator('[data-feed-row]').allTextContents()
     expect(rows.map((row) => row.trim())).toEqual([
       expect.stringContaining('Inspect this'),
-      expect.stringContaining('running'),
+      expect.stringContaining('Running'),
       expect.stringContaining('Reading now'),
       expect.stringContaining('Read'),
-      expect.stringContaining('Permission: Read file'),
+      expect.stringContaining('Permission needed'),
       expect.stringContaining('Which file?'),
     ])
   } finally {

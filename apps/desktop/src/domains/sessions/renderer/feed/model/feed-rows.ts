@@ -3,16 +3,16 @@ import { questionSchema } from '@/domains/sessions/api/questions'
 import { identifierSchema } from '@/shared/validation'
 import { BACKGROUND_STATES } from '../source/background-task-record'
 import { SUBAGENT_EVENTS } from '../source/subagent-event'
-import { TRANSCRIPT_EVENT_KINDS, type TranscriptEventKind } from '../source/transcript-content'
+import { TRANSCRIPT_EVENT_KINDS } from '../source/transcript-content'
 import { feedImageUrlSchema } from './feed-images'
 
 export const FEED_MARKERS = ['compacted', 'interrupted'] as const
 export const feedMarkerSchema = z.enum(FEED_MARKERS)
 export type FeedMarker = z.infer<typeof feedMarkerSchema>
 
-export { TRANSCRIPT_EVENT_KINDS as FEED_EVENT_KINDS }
-export const feedEventKindSchema = z.enum(TRANSCRIPT_EVENT_KINDS)
-export type FeedEventKind = TranscriptEventKind
+export const FEED_EVENT_KINDS = [...TRANSCRIPT_EVENT_KINDS, 'liveStatus', 'permission'] as const
+export const feedEventKindSchema = z.enum(FEED_EVENT_KINDS)
+export type FeedEventKind = z.infer<typeof feedEventKindSchema>
 
 const toolEvidenceSchema = z
   .discriminatedUnion('kind', [

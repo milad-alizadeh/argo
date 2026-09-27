@@ -103,15 +103,15 @@ function liveRow(event: SessionLiveEvent): SessionFeedRow | null {
       return {
         shape: 'event',
         id: `status:${event.sequence}`,
-        event: 'status',
+        event: 'liveStatus',
         text: event.status,
       }
     case 'permission':
       return {
         shape: 'event',
         id: event.requestId,
-        event: 'status',
-        text: `Permission: ${event.description}`,
+        event: 'permission',
+        text: event.description,
       }
     case 'question':
       return {

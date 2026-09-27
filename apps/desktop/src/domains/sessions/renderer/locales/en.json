@@ -343,6 +343,18 @@
     },
     "context": { "label": "System context updated" },
     "status": { "label": "Status updated" },
+    "liveStatus": {
+      "label": "Session status",
+      "starting": "Starting",
+      "running": "Running",
+      "permission": "Waiting for permission",
+      "asking": "Waiting for an answer",
+      "idle": "Idle",
+      "stopped": "Stopped",
+      "ended": "Ended",
+      "unknown": "Unknown"
+    },
+    "permission": { "label": "Permission needed" },
     "transcript": { "label": "Transcript delivered" },
     "protocolDetails": "Protocol text"
   },
