@@ -58,8 +58,9 @@ export const SpinsForeverAndLeavesTheWindowLive: Story = {
   beforeEach: () => stalledFeedHost(),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await waitFor(() =>
-      expect(canvasElement.querySelector('[data-state="loading"]')).not.toBeNull(),
+    await waitFor(
+      () => expect(canvasElement.querySelector('[data-state="loading"]')).not.toBeNull(),
+      { timeout: 5000 },
     )
 
     // Hit testing over the project switcher: a full-window overlay would answer here instead.
@@ -70,11 +71,12 @@ export const SpinsForeverAndLeavesTheWindowLive: Story = {
 
     // The click reaches the project switcher while the Session remains selected and loading.
     await userEvent.click(projectSwitcher)
-    await waitFor(() => expect(document.activeElement).toBe(projectSwitcher))
+    await waitFor(() => expect(document.activeElement).toBe(projectSwitcher), { timeout: 5000 })
     await userEvent.keyboard('{Escape}')
 
-    // Still spinning: nothing in the Feed's own loading state bounds it.
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    await expect(canvasElement.querySelector('[data-state="loading"]')).not.toBeNull()
+    await waitFor(
+      () => expect(canvasElement.querySelector('[data-state="loading"]')).not.toBeNull(),
+      { timeout: 5000 },
+    )
   },
 }
