@@ -2,9 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
-import { sessionError } from '@/domains/sessions/api/session-error'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { sessionListTrpc, sessionRow } from '../session-fixtures'
+import { sessionFeedTrpc, sessionListTrpc, sessionRow } from '../session-fixtures'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import { SessionScreenView } from './session-screen-view'
 
@@ -16,37 +15,31 @@ const session = sessionRow({
   cwd: '/storybook/argo',
 })
 
-// A live process holding a Session elsewhere keeps writing its transcript, so a poll can land
-// mid-write and fail once; the Session already read stays on screen through that (#2053).
+// A live process holding a Session elsewhere can fail one vendor history read; the Session already
+// read stays on screen through that (#2053).
 function flakyFeedHost() {
   let reads = 0
   const before = window.argo
   window.argo = {
     ...before,
-    trpc: sessionListTrpc(before.trpc, () => [session]),
-    readSessionFeed: async (request) => {
-      reads += 1
-      if (reads === 2) {
+    trpc: sessionFeedTrpc(
+      sessionListTrpc(before.trpc, () => [session]),
+      async (sessionId) => {
+        reads += 1
+        if (reads === 2) throw new Error('Vendor history is unavailable.')
         return {
           version: 1,
-          type: 'session.error',
-          requestId: 'storybook-feed-error',
-          code: 'internal-error',
-          message: 'Argo could not read these Sessions.',
+          type: 'session.feed.read',
+          requestId: 'storybook-feed',
+          sessionId,
+          chainId: sessionId,
+          revision: `storybook-feed-${reads}`,
+          rows: [
+            { shape: 'prose', id: 'flaky-row', role: 'assistant', text: 'Read before the flake.' },
+          ],
         }
-      }
-      return {
-        version: 1,
-        type: 'session.feed.read',
-        requestId: 'storybook-feed',
-        sessionId: request.sessionId,
-        chainId: request.sessionId,
-        revision: `storybook-feed-${reads}`,
-        rows: [
-          { shape: 'prose', id: 'flaky-row', role: 'assistant', text: 'Read before the flake.' },
-        ],
-      }
-    },
+      },
+    ),
   }
   return () => {
     window.argo = before
@@ -60,30 +53,24 @@ function flakyFirstOpenHost() {
   const before = window.argo
   window.argo = {
     ...before,
-    trpc: sessionListTrpc(before.trpc, () => [session]),
-    readSessionFeed: async (request) => {
-      reads += 1
-      if (reads === 1) {
+    trpc: sessionFeedTrpc(
+      sessionListTrpc(before.trpc, () => [session]),
+      async (sessionId) => {
+        reads += 1
+        if (reads === 1) throw new Error('Vendor history is unavailable.')
         return {
           version: 1,
-          type: 'session.error',
-          requestId: 'storybook-feed-error',
-          code: 'internal-error',
-          message: 'Argo could not read these Sessions.',
+          type: 'session.feed.read',
+          requestId: 'storybook-feed',
+          sessionId,
+          chainId: sessionId,
+          revision: `storybook-feed-${reads}`,
+          rows: [
+            { shape: 'prose', id: 'flaky-row', role: 'assistant', text: 'Read after the flake.' },
+          ],
         }
-      }
-      return {
-        version: 1,
-        type: 'session.feed.read',
-        requestId: 'storybook-feed',
-        sessionId: request.sessionId,
-        chainId: request.sessionId,
-        revision: `storybook-feed-${reads}`,
-        rows: [
-          { shape: 'prose', id: 'flaky-row', role: 'assistant', text: 'Read after the flake.' },
-        ],
-      }
-    },
+      },
+    ),
   }
   return () => {
     window.argo = before
@@ -97,26 +84,29 @@ function missingHistoryHost(listed = true) {
   const before = window.argo
   window.argo = {
     ...before,
-    trpc: sessionListTrpc(before.trpc, () => (listed ? [session] : [])),
-    readSessionFeed: async (request) =>
-      historyReady
-        ? {
-            version: 1,
-            type: 'session.feed.read',
-            requestId: 'storybook-feed',
-            sessionId: request.sessionId,
-            chainId: request.sessionId,
-            revision: 'recovered',
-            rows: [
-              {
-                shape: 'prose',
-                id: 'recovered-row',
-                role: 'assistant',
-                text: 'History recovered.',
-              },
-            ],
-          }
-        : sessionError('missing-session', 'storybook-feed-error'),
+    trpc: sessionFeedTrpc(
+      sessionListTrpc(before.trpc, () => (listed ? [session] : [])),
+      async (sessionId) => {
+        if (!historyReady)
+          throw Object.assign(new Error('Session is missing.'), { data: { code: 'NOT_FOUND' } })
+        return {
+          version: 1,
+          type: 'session.feed.read',
+          requestId: 'storybook-feed',
+          sessionId,
+          chainId: sessionId,
+          revision: 'recovered',
+          rows: [
+            {
+              shape: 'prose',
+              id: 'recovered-row',
+              role: 'assistant',
+              text: 'History recovered.',
+            },
+          ],
+        }
+      },
+    ),
   }
   return () => {
     window.argo = before
@@ -181,10 +171,13 @@ export const MissingHistoryCanBeRecovered: Story = {
   beforeEach: () => missingHistoryHost(),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await waitFor(() => expect(canvas.getByText('Session history is unavailable')).toBeVisible(), {
+    await waitFor(() => expect(canvas.getByText(/Session history is unavailable/)).toBeVisible(), {
       timeout: 5000,
     })
-    await expect(canvas.getByText(/Retry, or archive it from the roster menu/)).toBeVisible()
+    const unavailable = canvas.getByText(/Session history is unavailable/)
+    await expect(unavailable.parentElement?.textContent).toContain(
+      "Argo cannot open this Session's history. Retry, or archive it from the Session list menu",
+    )
     await expect(canvas.getByRole('button', { name: 'Retry' })).toBeVisible()
     await expect(canvas.queryByRole('alert')).toBeNull()
     await expect(canvas.queryByText('Argo cannot find this Session.')).toBeNull()
@@ -192,7 +185,7 @@ export const MissingHistoryCanBeRecovered: Story = {
     historyReady = true
     await canvas.getByRole('button', { name: 'Retry' }).click()
     await waitFor(() => expect(canvas.getByText('History recovered.')).toBeVisible())
-    await expect(canvas.getByLabelText('Message')).toBeVisible()
+    await expect(canvas.queryByText(/Session history is unavailable/)).toBeNull()
   },
 }
 
@@ -200,12 +193,13 @@ export const UnknownSessionHasTruthfulRecovery: Story = {
   beforeEach: () => missingHistoryHost(false),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await waitFor(() => expect(canvas.getByText('Session history is unavailable')).toBeVisible(), {
+    await waitFor(() => expect(canvas.getByText(/Session history is unavailable/)).toBeVisible(), {
       timeout: 5000,
     })
-    await expect(
-      canvas.getByText(/archive it from the roster menu if it appears there/),
-    ).toBeVisible()
+    const unavailable = canvas.getByText(/Session history is unavailable/)
+    await expect(unavailable.parentElement?.textContent).toContain(
+      'archive it from the Session list menu if it appears there',
+    )
     await expect(canvas.getByRole('button', { name: 'Retry' })).toBeVisible()
   },
 }

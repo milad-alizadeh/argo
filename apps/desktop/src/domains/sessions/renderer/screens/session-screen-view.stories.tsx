@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
+import { MemoryRouter } from 'react-router'
 import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/renderer/model/models'
@@ -21,6 +22,7 @@ import type { Session, SessionFeed } from '../types'
 import { SessionWorkButtons } from '../work/session-work-buttons'
 import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
 import { SessionScreenView } from './session-screen-view'
+import { type ListedWorkspace, sessionWorkspaceIdentity } from './session-screen-workspace'
 import { SessionShell } from './session-shell'
 
 const SESSION_ROSTER = [
@@ -168,6 +170,14 @@ function delegationFeedFor(delegation: SessionSubagent) {
 
 // The Session list reads its own Sessions now (#2284), so a screen review stubs the read rather than
 // handing it a fixed roster prop.
+const NOOP_SESSION_LIST_ACTIONS: SessionListActions = {
+  onArchiveSelected: () => {},
+  onNew: () => {},
+  onOpenTicket: () => {},
+  onRename: async (_session, name) => name,
+  onSelect: () => {},
+}
+
 function withListedSessions(sessions: Session[]) {
   const before = window.argo
   window.argo = {
@@ -177,14 +187,6 @@ function withListedSessions(sessions: Session[]) {
   return () => {
     window.argo = before
   }
-}
-
-const NOOP_SESSION_LIST_ACTIONS: SessionListActions = {
-  onArchiveSelected: () => {},
-  onNew: () => {},
-  onOpenTicket: () => {},
-  onRename: async (_session, name) => name,
-  onSelect: () => {},
 }
 
 function ReviewSidebar({
@@ -276,6 +278,8 @@ function ReviewScreen({
   showPlan = true,
   composerRunning = false,
   titleText,
+  workspaceId = null,
+  workspaces = [],
 }: {
   initialSessionId?: string
   rows?: SessionFeed['rows'] | null
@@ -283,6 +287,8 @@ function ReviewScreen({
   showPlan?: boolean
   composerRunning?: boolean
   titleText?: string
+  workspaceId?: string | null
+  workspaces?: readonly ListedWorkspace[]
 }) {
   const [selectedSessionId, setSelectedSessionId] = useState(initialSessionId)
   // The header's picks drive a real inspector, so the story shows what picking a row opens.
@@ -291,14 +297,61 @@ function ReviewScreen({
   const session = SESSION_ROSTER.find(({ id }) => id === selectedSessionId)
   const feed = rows === null ? feedFor(selectedSessionId) : { ...feedFor(selectedSessionId), rows }
   if (session === undefined) return null
-  const headerSession = sessionWithTitle(session, titleText)
+  const headerSession = sessionWithTitle({ ...session, workspaceId }, titleText)
+  const workspaceIdentity = sessionWorkspaceIdentity(headerSession, workspaces)
+
+  return (
+    <ReviewContent
+      composerRunning={composerRunning}
+      feed={feed}
+      headerSession={headerSession}
+      onSelectSessionId={setSelectedSessionId}
+      pick={pick}
+      picked={picked}
+      selectedSessionId={selectedSessionId}
+      session={session}
+      shellOutput={shellOutput}
+      showPlan={showPlan}
+      titleText={titleText}
+      workspaceIdentity={workspaceIdentity}
+    />
+  )
+}
+
+function ReviewContent({
+  composerRunning,
+  feed,
+  headerSession,
+  onSelectSessionId,
+  pick,
+  picked,
+  selectedSessionId,
+  session,
+  shellOutput,
+  showPlan,
+  titleText,
+  workspaceIdentity,
+}: {
+  composerRunning: boolean
+  feed: SessionFeed
+  headerSession: Session
+  onSelectSessionId: (sessionId: string) => void
+  pick: (id: string) => void
+  picked: { id: string; count: number } | null
+  selectedSessionId: string
+  session: Session
+  shellOutput: SessionShellOutput
+  showPlan: boolean
+  titleText: string | undefined
+  workspaceIdentity: ReturnType<typeof sessionWorkspaceIdentity>
+}) {
   const delegation = session.subagents.find(({ id }) => id === picked?.id) ?? null
   const shell = session.shell.find(({ id }) => id === picked?.id) ?? null
 
   return (
     <AppShell
       leftHeader={<ProjectSwitcher />}
-      sidebar={reviewSidebar(selectedSessionId, setSelectedSessionId, titleText)}
+      sidebar={reviewSidebar(selectedSessionId, onSelectSessionId, titleText)}
     >
       <SessionShell
         activeEvidenceId={null}
@@ -325,6 +378,7 @@ function ReviewScreen({
           />
         }
         session={headerSession}
+        workspaceIdentity={workspaceIdentity}
         inspector={
           <ReviewInspector delegation={delegation} shell={shell} shellOutput={shellOutput} />
         }
@@ -582,9 +636,11 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div className="h-dvh w-full">
-        <Story />
-      </div>
+      <MemoryRouter initialEntries={['/projects/project-1/sessions']}>
+        <div className="h-dvh w-full">
+          <Story />
+        </div>
+      </MemoryRouter>
     ),
   ],
 } satisfies Meta<typeof SessionScreenView>
@@ -619,7 +675,18 @@ async function expectDelegatedFeedSurvivesCollapse(canvas: ReturnType<typeof wit
 }
 
 export const Open: Story = {
-  render: () => <ReviewScreen />,
+  render: () => (
+    <ReviewScreen
+      workspaceId="workspace-feature"
+      workspaces={[
+        {
+          id: 'workspace-feature',
+          displayName: 'ticket-1846-composer',
+          facts: { branch: 'feature/composer-review' },
+        },
+      ]}
+    />
+  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
@@ -629,7 +696,10 @@ export const Open: Story = {
     await expect(
       canvas.getByRole('heading', { name: 'Finish Session composer review' }),
     ).toBeVisible()
+    await expect(canvas.getByText('Workspace')).toBeVisible()
     await expect(canvas.getByText('ticket-1846-composer')).toBeVisible()
+    await expect(canvas.getByText('Branch')).toBeVisible()
+    await expect(canvas.getByText('feature/composer-review')).toBeVisible()
     expectHeaderActionsAtTrailingEdge(canvasElement)
     await expectCollapsedSidebarDoesNotCoverSessionHeader(canvasElement)
     await waitFor(() =>
@@ -840,14 +910,24 @@ export const SharedCheckout: Story = {
     await expect(
       canvas.getByRole('heading', { name: 'Add Markdown typing shortcuts' }),
     ).toBeVisible()
-    expect(canvas.queryByText('ticket-1846-composer')).not.toBeInTheDocument()
+    expect(canvas.queryByText('Workspace')).not.toBeInTheDocument()
+    expect(canvas.queryByText('Branch')).not.toBeInTheDocument()
   },
 }
 
 export const NarrowHeader: Story = {
   render: () => (
     <div className="h-dvh w-[calc(var(--size-navigation-rail)+var(--size-cockpit-sidebar-min)+var(--size-cockpit-content-min))]">
-      <ReviewScreen />
+      <ReviewScreen
+        workspaceId="workspace-feature"
+        workspaces={[
+          {
+            id: 'workspace-feature',
+            displayName: 'ticket-1846-composer',
+            facts: { branch: 'feature/composer-review' },
+          },
+        ]}
+      />
     </div>
   ),
   play: async ({ canvasElement }) => {
@@ -856,6 +936,7 @@ export const NarrowHeader: Story = {
       canvas.getByRole('heading', { name: 'Finish Session composer review' }),
     ).toBeVisible()
     await expect(canvas.getByText('ticket-1846-composer')).toBeInTheDocument()
+    await expect(canvas.getByText('feature/composer-review')).toBeInTheDocument()
     await waitFor(() =>
       expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
         'data-session',
@@ -864,5 +945,109 @@ export const NarrowHeader: Story = {
     )
     expectFeedDoesNotOverlapComposer(canvasElement)
     expectHeaderActionsAtTrailingEdge(canvasElement)
+  },
+}
+
+export const WorkspaceMainBranch: Story = {
+  render: () => (
+    <ReviewScreen
+      workspaceId="workspace-main"
+      workspaces={[{ id: 'workspace-main', displayName: 'Argo', facts: { branch: 'main' } }]}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Workspace')).toBeVisible()
+    await expect(canvas.getByText('Argo')).toBeVisible()
+    await expect(canvas.getByText('Branch')).toBeVisible()
+    await expect(canvas.getByText('main')).toBeVisible()
+  },
+}
+
+export const WorkspaceDetachedHead: Story = {
+  render: () => (
+    <ReviewScreen
+      workspaceId="workspace-detached"
+      workspaces={[
+        { id: 'workspace-detached', displayName: 'Detached checkout', facts: { branch: null } },
+      ]}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Workspace')).toBeVisible()
+    await expect(canvas.getByText('Detached checkout')).toBeVisible()
+    expect(canvas.queryByText('Branch')).not.toBeInTheDocument()
+  },
+}
+
+export const LegacySessionWithoutWorkspace: Story = {
+  render: () => (
+    <ReviewScreen
+      workspaces={[{ id: 'workspace-main', displayName: 'Argo', facts: { branch: 'main' } }]}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Session ID')).toBeVisible()
+    expect(canvas.queryByText('Workspace')).not.toBeInTheDocument()
+    expect(canvas.queryByText('Branch')).not.toBeInTheDocument()
+  },
+}
+
+export const RemovedWorkspace: Story = {
+  render: () => (
+    <ReviewScreen
+      workspaceId="workspace-removed"
+      workspaces={[{ id: 'workspace-main', displayName: 'Argo', facts: { branch: 'main' } }]}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Session ID')).toBeVisible()
+    expect(canvas.queryByText('Workspace')).not.toBeInTheDocument()
+    expect(canvas.queryByText('Branch')).not.toBeInTheDocument()
+  },
+}
+
+export const LongWorkspaceAndBranchNames: Story = {
+  render: () => (
+    <div className="h-dvh w-[calc(var(--size-navigation-rail)+var(--size-cockpit-sidebar-min)+var(--size-cockpit-content-min))]">
+      <ReviewScreen
+        workspaceId="workspace-long"
+        workspaces={[
+          {
+            id: 'workspace-long',
+            displayName: 'A workspace name that is much longer than the header can display',
+            facts: {
+              branch:
+                'feature/a-branch-name-that-is-much-longer-than-the-header-can-display-or-the-session-title',
+            },
+          },
+        ]}
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const viewport = canvasElement.getBoundingClientRect()
+    await expect(
+      canvas.getByText('A workspace name that is much longer than the header can display'),
+    ).toBeVisible()
+    await expect(
+      canvas.getByText(
+        'feature/a-branch-name-that-is-much-longer-than-the-header-can-display-or-the-session-title',
+      ),
+    ).toBeVisible()
+    for (const control of [
+      canvas.getByRole('button', { name: /^Subagents/ }),
+      canvas.getByRole('button', { name: /^Shell/ }),
+      canvas.getByRole('button', { name: 'Open Session inspector' }),
+    ]) {
+      await expect(control).toBeVisible()
+      const bounds = control.getBoundingClientRect()
+      expect(bounds.left).toBeGreaterThanOrEqual(viewport.left)
+      expect(bounds.right).toBeLessThanOrEqual(viewport.right)
+    }
   },
 }

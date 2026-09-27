@@ -16,7 +16,8 @@
   "newSession": "New Session",
   "identity": {
     "sessionId": "Session ID",
-    "worktree": "Worktree"
+    "workspace": "Workspace",
+    "branch": "Branch"
   },
   "searchSessions": "Search Sessions",
   "subagent": "Subagent",

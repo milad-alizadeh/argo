@@ -10,8 +10,8 @@ import { SessionTitle } from '../prompt/session-title'
 import { sessionName } from '../session-list/rows/session-list-rows'
 import type { Session } from '../types'
 import { SESSION_SPLIT } from './session-screen-layout'
+import type { SessionWorkspaceIdentity } from './session-screen-workspace'
 import { SessionWorkspace, type SessionWorkspaceProps } from './session-workspace'
-import { worktreeName } from './session-worktree'
 
 import './session-screen.css'
 
@@ -19,17 +19,23 @@ type SessionShellProps = Omit<SessionWorkspaceProps, 'header'> & {
   // The workspace header's own controls, drawn leading. A Session with no background work hands
   // nothing here and the bar stays empty (#1582).
   headerControls?: ReactNode
-  session?: Pick<Session, 'cwd' | 'harness' | 'id' | 'status' | 'title'> | null
+  session?: Pick<Session, 'harness' | 'id' | 'status' | 'title'> | null
+  workspaceIdentity?: SessionWorkspaceIdentity | null
   inspector: ReactNode
   inspectorBar?: ReactNode
   defaultInspectorCollapsed?: boolean
   inspectorReveal?: string | null
 }
 
-function SessionIdentity({ session }: { session: SessionShellProps['session'] }) {
+function SessionIdentity({
+  session,
+  workspaceIdentity,
+}: {
+  session: SessionShellProps['session']
+  workspaceIdentity: SessionWorkspaceIdentity | null
+}) {
   const { t } = useTranslation('sessions')
   if (session === null || session === undefined) return null
-  const worktree = worktreeName(session.cwd)
   return (
     <div
       data-component="SessionIdentity"
@@ -40,7 +46,7 @@ function SessionIdentity({ session }: { session: SessionShellProps['session'] })
       </h1>
       <div
         data-component="SessionMetadata"
-        className="flex w-full min-w-0 items-center gap-(--spacing-shell-section) type-meta text-muted-foreground"
+        className="flex w-full min-w-0 flex-wrap items-center gap-(--spacing-shell-section) type-meta text-muted-foreground"
       >
         <p
           data-component="SessionIdMetadata"
@@ -50,12 +56,27 @@ function SessionIdentity({ session }: { session: SessionShellProps['session'] })
           <span className="shrink-0">{t('identity.sessionId')}</span>
           <code className="min-w-0 truncate font-mono text-foreground">{session.id}</code>
         </p>
-        {worktree ? (
-          <p className="flex min-w-0 max-w-48 items-center gap-(--spacing-shell-tight)">
-            <Icon name="worktree" className="size-(--size-icon-inline) shrink-0" />
-            <span className="shrink-0">{t('identity.worktree')}</span>
-            <span className="min-w-0 truncate">{worktree}</span>
-          </p>
+        {workspaceIdentity ? (
+          <>
+            <p
+              data-component="SessionWorkspaceMetadata"
+              className="flex min-w-0 max-w-48 items-center gap-(--spacing-shell-tight)"
+            >
+              <Icon name="workspace" className="size-(--size-icon-inline) shrink-0" />
+              <span className="shrink-0">{t('identity.workspace')}</span>
+              <span className="min-w-0 truncate">{workspaceIdentity.displayName}</span>
+            </p>
+            {workspaceIdentity.branch === null ? null : (
+              <p
+                data-component="SessionBranchMetadata"
+                className="flex min-w-0 max-w-48 items-center gap-(--spacing-shell-tight)"
+              >
+                <Icon name="branch" className="size-(--size-icon-inline) shrink-0" />
+                <span className="shrink-0">{t('identity.branch')}</span>
+                <span className="min-w-0 truncate">{workspaceIdentity.branch}</span>
+              </p>
+            )}
+          </>
         ) : null}
       </div>
     </div>
@@ -76,6 +97,7 @@ function SessionHeaderControls({ children }: { children: ReactNode }) {
 export function SessionShell({
   headerControls = null,
   session = null,
+  workspaceIdentity = null,
   inspector,
   inspectorBar = null,
   defaultInspectorCollapsed = false,
@@ -98,8 +120,8 @@ export function SessionShell({
           <SessionWorkspace
             {...workspaceProps}
             header={
-              <AppPageHeader>
-                <SessionIdentity session={session} />
+              <AppPageHeader multiline>
+                <SessionIdentity session={session} workspaceIdentity={workspaceIdentity} />
                 <SessionHeaderControls>
                   {headerControls}
                   <InspectorHeaderControls />

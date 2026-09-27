@@ -165,46 +165,6 @@
     {
       "identity": {
         "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/sessions/renderer/feed/session-feed-query.ts",
-        "code": "TS2339",
-        "message": "Property 'cancelSessionFeed' does not exist on type '{ onAppearanceChanged: (listener: (state: { appearance: \"dark\" | \"light\" | \"system\"; dark: boolean; }) => void) => () => void; onCommand: (listener: (command: string) => void) => () => void; ... 5 more ...; trpcSubscribe: (request: TrpcRequest, listener: (message: TrpcSubscriptionMessage) => void) => Promise<...>; }'."
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this remaining type repair."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/sessions/renderer/feed/session-feed-query.ts",
-        "code": "TS2339",
-        "message": "Property 'readSessionFeed' does not exist on type '{ onAppearanceChanged: (listener: (state: { appearance: \"dark\" | \"light\" | \"system\"; dark: boolean; }) => void) => () => void; onCommand: (listener: (command: string) => void) => () => void; ... 5 more ...; trpcSubscribe: (request: TrpcRequest, listener: (message: TrpcSubscriptionMessage) => void) => Promise<...>; }'."
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this remaining type repair."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/sessions/renderer/feed/session-feed-query.ts",
-        "code": "TS2345",
-        "message": "Argument of type 'any' is not assignable to parameter of type 'never'."
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this remaining type repair."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/sessions/renderer/feed/use-session-feed.ts",
-        "code": "TS2339",
-        "message": "Property 'cancelSessionFeed' does not exist on type '{ onAppearanceChanged: (listener: (state: { appearance: \"dark\" | \"light\" | \"system\"; dark: boolean; }) => void) => () => void; onCommand: (listener: (command: string) => void) => () => void; ... 5 more ...; trpcSubscribe: (request: TrpcRequest, listener: (message: TrpcSubscriptionMessage) => void) => Promise<...>; }'."
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this remaining type repair."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
         "path": "apps/desktop/src/domains/sessions/renderer/inspector/session-diff-viewer.tsx",
         "code": "TS2339",
         "message": "Property 'readWorkspaceFile' does not exist on type '{ onAppearanceChanged: (listener: (state: { appearance: \"dark\" | \"light\" | \"system\"; dark: boolean; }) => void) => () => void; onCommand: (listener: (command: string) => void) => () => void; ... 5 more ...; trpcSubscribe: (request: TrpcRequest, listener: (message: TrpcSubscriptionMessage) => void) => Promise<...>; }'."
@@ -295,36 +255,6 @@
     {
       "identity": {
         "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-feed-resilience.stories.tsx",
-        "code": "TS2353",
-        "message": "Object literal may only specify known properties, and 'readSessionFeed' does not exist in type '{ onAppearanceChanged: (listener: (state: { appearance: \"dark\" | \"light\" | \"system\"; dark: boolean; }) => void) => () => void; onCommand: (listener: (command: string) => void) => () => void; ... 5 more ...; trpcSubscribe: (request: TrpcRequest, listener: (message: TrpcSubscriptionMessage) => void) => Promise<...>; }'."
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this remaining type repair."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-feed-resilience.stories.tsx",
-        "code": "TS7006",
-        "message": "Parameter 'request' implicitly has an 'any' type."
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this remaining type repair."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-feed-stall.stories.tsx",
-        "code": "TS2353",
-        "message": "Object literal may only specify known properties, and 'readSessionFeed' does not exist in type '{ onAppearanceChanged: (listener: (state: { appearance: \"dark\" | \"light\" | \"system\"; dark: boolean; }) => void) => () => void; onCommand: (listener: (command: string) => void) => () => void; ... 5 more ...; trpcSubscribe: (request: TrpcRequest, listener: (message: TrpcSubscriptionMessage) => void) => Promise<...>; }'."
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this remaining type repair."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
         "path": "apps/desktop/src/domains/sessions/renderer/screens/session-resume.stories.tsx",
         "code": "TS2353",
         "message": "Object literal may only specify known properties, and 'sendSession' does not exist in type '{ onAppearanceChanged: (listener: (state: { appearance: \"dark\" | \"light\" | \"system\"; dark: boolean; }) => void) => () => void; onCommand: (listener: (command: string) => void) => () => void; ... 5 more ...; trpcSubscribe: (request: TrpcRequest, listener: (message: TrpcSubscriptionMessage) => void) => Promise<...>; }'."
@@ -338,26 +268,6 @@
         "path": "apps/desktop/src/domains/sessions/renderer/screens/session-resume.stories.tsx",
         "code": "TS7031",
         "message": "Binding element 'sessionId' implicitly has an 'any' type."
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this remaining type repair."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-feed-actions.stories.tsx",
-        "code": "TS2353",
-        "message": "Object literal may only specify known properties, and 'readSessionFeed' does not exist in type '{ onAppearanceChanged: (listener: (state: { appearance: \"dark\" | \"light\" | \"system\"; dark: boolean; }) => void) => () => void; onCommand: (listener: (command: string) => void) => () => void; ... 5 more ...; trpcSubscribe: (request: TrpcRequest, listener: (message: TrpcSubscriptionMessage) => void) => Promise<...>; }'."
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this remaining type repair."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-feed-actions.stories.tsx",
-        "code": "TS7006",
-        "message": "Parameter 'request' implicitly has an 'any' type."
       },
       "owner": "#2587",
       "reason": "The final typed-API cutover owns this remaining type repair."
@@ -401,26 +311,6 @@
       },
       "owner": "#2712",
       "reason": "Session archive and unread operations await typed procedures."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/sessions/renderer/session-list/sidebar/sessions-sidebar.stories.tsx",
-        "code": "TS2353",
-        "message": "Object literal may only specify known properties, and 'readSessionFeed' does not exist in type '{ onAppearanceChanged: (listener: (state: { appearance: \"dark\" | \"light\" | \"system\"; dark: boolean; }) => void) => () => void; onCommand: (listener: (command: string) => void) => () => void; ... 5 more ...; trpcSubscribe: (request: TrpcRequest, listener: (message: TrpcSubscriptionMessage) => void) => Promise<...>; }'."
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this remaining type repair."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/sessions/renderer/session-list/sidebar/sessions-sidebar.stories.tsx",
-        "code": "TS7006",
-        "message": "Parameter 'request' implicitly has an 'any' type."
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this remaining type repair."
     },
     {
       "identity": {

@@ -28,6 +28,7 @@ const sessions = {
 function testRouter(
   catalog: Parameters<typeof createAppRouter>[0]['catalog'],
   sessionActor = sessions,
+  refreshSessionSync = () => {},
 ) {
   return createAppRouter({
     accounts: {} as AccountProcedureContext,
@@ -36,9 +37,10 @@ function testRouter(
     projects: {} as ProjectRegisterContext,
     sessions: {
       database: {} as never,
+      readHistory: async () => [],
       rename: async () => {},
       supervisor: sessionActor,
-      refreshSessionSync: () => {},
+      refreshSessionSync,
       sessionSyncStatus: new SessionSyncStatusStore(),
     },
     tickets: {} as TicketRouterDependencies,
@@ -78,22 +80,8 @@ test('returns only the selected Harness as serializable composer choices', async
 
 test('accepts a Session sync refresh', async () => {
   let refreshes = 0
-  const router = createAppRouter({
-    accounts: {} as AccountProcedureContext,
-    catalog: {} as never,
-    harnessSignIn: {} as HarnessSignInProcedureContext,
-    projects: {} as ProjectRegisterContext,
-    sessions: {
-      database: {} as never,
-      rename: async () => {},
-      supervisor: sessions,
-      refreshSessionSync: () => {
-        refreshes += 1
-      },
-      sessionSyncStatus: new SessionSyncStatusStore(),
-    },
-    tickets: {} as TicketRouterDependencies,
-    workspaces: {} as WorkspaceListContext,
+  const router = testRouter({} as never, sessions, () => {
+    refreshes += 1
   })
   await expect(router.createCaller({}).sessionRefresh()).resolves.toEqual({ accepted: true })
   expect(refreshes).toBe(1)

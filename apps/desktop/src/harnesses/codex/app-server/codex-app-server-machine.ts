@@ -53,7 +53,7 @@ export type RequestParams = {
   }
   'thread/read': {
     threadId: string
-    includeTurns: false
+    includeTurns: boolean
   }
   initialize: {
     clientInfo: {

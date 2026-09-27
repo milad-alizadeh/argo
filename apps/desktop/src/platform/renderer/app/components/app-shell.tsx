@@ -70,12 +70,18 @@ const AppShellControlsContext = createContext<AppShellControls | null>(null)
 
 // Pages choose where their own header belongs. Sessions puts one over its workspace, while the
 // inspector retains its own header; Tickets uses the full main-content width.
-export function AppPageHeader({ children }: { children?: ReactNode }) {
+export function AppPageHeader({
+  children,
+  multiline = false,
+}: {
+  children?: ReactNode
+  multiline?: boolean
+}) {
   const controls = useContext(AppShellControlsContext)
   return (
     <header
       data-component="AppMainHeader"
-      className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center gap-(--spacing-shell-item) border-b border-border/60 bg-background px-(--spacing-shell-gutter)"
+      className={`drag-region flex ${multiline ? 'min-h-(--size-chrome-bar) py-(--spacing-shell-tight)' : 'h-(--size-chrome-bar)'} shrink-0 items-center gap-(--spacing-shell-item) border-b border-border/60 bg-background px-(--spacing-shell-gutter)`}
     >
       {controls?.sidebarCollapsed ? (
         <SidebarToggle

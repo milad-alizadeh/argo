@@ -1,7 +1,7 @@
 // Session rows the Sessions stories draw.
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/renderer/model/models'
 import { queryClient, trpc as trpcOptions } from '@/platform/renderer/trpc-client'
-import type { Session } from './types'
+import type { Session, SessionFeed } from './types'
 
 function listedSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -15,6 +15,7 @@ function listedSession(overrides: Partial<Session> = {}): Session {
     status: 'idle',
     entry: 'interactive',
     cwd: null,
+    workspaceId: null,
     branch: null,
     updatedAt: null,
     unreadableLines: 0,
@@ -80,6 +81,27 @@ export function sessionListTrpc(
           rows: rows.slice(start, start + input.pageSize),
         },
       },
+    }
+  }) as typeof window.argo.trpc
+}
+
+export function sessionFeedTrpc(
+  trpc: typeof window.argo.trpc,
+  read: (sessionId: string, subagentId: string | null) => Promise<SessionFeed>,
+): typeof window.argo.trpc {
+  queryClient.removeQueries({ queryKey: ['sessions'] })
+  return (async (request) => {
+    if (request.path !== 'sessionFeedRead') return trpc(request)
+    const input = request.input as { sessionId: string; subagentId: string | null }
+    try {
+      return { result: { data: await read(input.sessionId, input.subagentId) } }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      const data =
+        typeof error === 'object' && error !== null && 'data' in error
+          ? (error as { data?: unknown }).data
+          : undefined
+      return { error: { code: -32004, message, data } }
     }
   }) as typeof window.argo.trpc
 }

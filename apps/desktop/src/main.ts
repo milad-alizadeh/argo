@@ -4,6 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, type BrowserWindow, dialog, net, protocol, shell } from 'electron'
+import type { ActorRefFrom } from 'xstate'
 import { type Database, databasePath, openDatabase } from '@/database/database'
 import { createAccountAccess, createAccountProcedureContext } from '@/domains/accounts/main'
 import { safeStorageCipher } from '@/domains/accounts/main/safe-storage'
@@ -17,7 +18,14 @@ import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import type { CatalogActor } from '@/harnesses/catalog/catalog-read'
 import { createClaudeSignInDriver, createSystemClaudeReadiness } from '@/harnesses/claude/readiness'
+import { readClaudeSessionHistory } from '@/harnesses/claude/session/claude-session-history'
+import {
+  type codexAppServerMachine,
+  requestCodexAppServer,
+} from '@/harnesses/codex/app-server/codex-app-server-machine'
 import { createCodexSignInDriver, createSystemCodexReadiness } from '@/harnesses/codex/readiness'
+import { readCodexSessionHistory } from '@/harnesses/codex/session/codex-session-history'
+import type { Harness } from '@/harnesses/harness'
 import { renameHarnessSession } from '@/harnesses/session-rename'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { attachAppearanceWatch } from '@/platform/main/appearance'
@@ -167,6 +175,7 @@ function routerForWindow(options: {
   database: Database
   actors: {
     catalog: CatalogActor
+    codex: ActorRefFrom<typeof codexAppServerMachine>
     sessions: LiveSessionSupervisorActor
     sessionSync: { send: (event: { type: 'Refresh' }) => void }
   }
@@ -186,6 +195,14 @@ function routerForWindow(options: {
     },
     sessions: {
       database,
+      readHistory: (harness: Harness, nativeId, cwd) => {
+        switch (harness) {
+          case 'claude':
+            return readClaudeSessionHistory(nativeId, cwd)
+          case 'codex':
+            return readCodexSessionHistory(requestCodexAppServer(actors.codex), nativeId)
+        }
+      },
       rename: renameHarnessSession,
       supervisor: actors.sessions,
       refreshSessionSync: () => actors.sessionSync.send({ type: 'Refresh' }),
@@ -201,14 +218,74 @@ function currentSessionSyncStatus(): SessionSyncStatusStore {
   return sessionSyncStatus
 }
 
-function createWindow(actor: AppActor, database: Database): void {
-  const catalogActor = actor.system.get('catalog') as CatalogActor | undefined
-  const sessionsActor = actor.system.get('sessions') as LiveSessionSupervisorActor | undefined
-  const sessionSyncActor = actor.system.get('sessionSync') as
+type WindowActors = {
+  catalog: CatalogActor
+  codex: ActorRefFrom<typeof codexAppServerMachine>
+  sessions: LiveSessionSupervisorActor
+  sessionSync: { send: (event: { type: 'Refresh' }) => void }
+}
+
+function requireWindowActors(actor: AppActor): WindowActors {
+  const catalog = actor.system.get('catalog') as CatalogActor | undefined
+  const codex = actor.system.get('codex') as ActorRefFrom<typeof codexAppServerMachine> | undefined
+  const sessions = actor.system.get('sessions') as LiveSessionSupervisorActor | undefined
+  const sessionSync = actor.system.get('sessionSync') as
     | { send: (event: { type: 'Refresh' }) => void }
     | undefined
-  if (catalogActor === undefined || sessionsActor === undefined || sessionSyncActor === undefined)
+  if (
+    catalog === undefined ||
+    codex === undefined ||
+    sessions === undefined ||
+    sessionSync === undefined
+  )
     throw new Error('Application child actors are unavailable.')
+  return { catalog, codex, sessions, sessionSync }
+}
+
+function attachWindowTrpc({
+  window,
+  rendererURL,
+  actors,
+  domains,
+  database,
+}: {
+  window: BrowserWindow
+  rendererURL: string
+  actors: WindowActors
+  domains: ReturnType<typeof createDomainContexts>
+  database: Database
+}): () => void {
+  const router = routerForWindow({
+    actors,
+    domains,
+    sessionSyncStatus: currentSessionSyncStatus(),
+    window,
+    database,
+  })
+  return attachTrpcTransport({ window, rendererURL, router, context: undefined })
+}
+
+function closeDesktopWindow({
+  actor,
+  database,
+  domains,
+  detachTrpc,
+}: {
+  actor: AppActor
+  database: Database
+  domains: ReturnType<typeof createDomainContexts>
+  detachTrpc: () => void
+}): void {
+  desktopWindow = undefined
+  detachTrpc()
+  domains.accounts.signIn.dispose()
+  domains.harnessSignIn.signIn.dispose()
+  actor.send({ type: 'Shutdown' })
+  database.$client.close()
+}
+
+function createWindow(actor: AppActor, database: Database): void {
+  const actors = requireWindowActors(actor)
   const domains = createDomainContexts(database)
   desktopWindow = createDesktopWindow({
     buildDirectory: __dirname,
@@ -228,28 +305,9 @@ function createWindow(actor: AppActor, database: Database): void {
       : undefined,
     attach: (window, rendererURL) => {
       attachWindowNavigation(window)
-      const router = routerForWindow({
-        actors: { catalog: catalogActor, sessions: sessionsActor, sessionSync: sessionSyncActor },
-        domains,
-        sessionSyncStatus: currentSessionSyncStatus(),
-        window,
-        database,
-      })
-      const detachTrpc = attachTrpcTransport({
-        window,
-        rendererURL,
-        router,
-        context: undefined,
-      })
+      const detachTrpc = attachWindowTrpc({ window, rendererURL, actors, domains, database })
       attachAppearanceWatch(window)
-      window.once('closed', () => {
-        desktopWindow = undefined
-        detachTrpc()
-        domains.accounts.signIn.dispose()
-        domains.harnessSignIn.signIn.dispose()
-        actor.send({ type: 'Shutdown' })
-        database.$client.close()
-      })
+      window.once('closed', () => closeDesktopWindow({ actor, database, domains, detachTrpc }))
       installMenu(window)
     },
     loaded: (window) => {

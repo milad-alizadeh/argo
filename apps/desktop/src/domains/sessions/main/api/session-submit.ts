@@ -74,7 +74,7 @@ function sendToSupervisor(
       }
       context.supervisor.send({
         type: 'Start',
-        pendingId: `optimistic:${draft.id}`,
+        pendingId: `optimistic:${draft.id}:${draft.revision}`,
         input: {
           ...command,
           harness: draft.target.harness,
@@ -115,7 +115,10 @@ export function sessionSubmitProcedure(context: SessionProcedureContext) {
     .output(outputSchema)
     .mutation(async ({ input }) => {
       const accepted = await sendToSupervisor(context, input)
-      deleteComposerDraft(context.database, input.draftId, input.expectedRevision)
+      const deleted = deleteComposerDraft(context.database, input.draftId, input.expectedRevision)
+      if (!deleted && readComposerDraft(context.database, input.draftId) !== null) {
+        throw new TRPCError({ code: 'CONFLICT', message: 'stale-draft' })
+      }
       return accepted
     })
 }

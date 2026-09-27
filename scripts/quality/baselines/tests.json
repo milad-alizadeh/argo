@@ -13,33 +13,6 @@
     },
     {
       "identity": {
-        "project": "@argo/desktop:node",
-        "path": "apps/desktop/src/domains/sessions/main/live/live-session-supervisor-machine.vitest.ts",
-        "test": "queues a distinct startup command and settles both calls after persistence"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this test repair."
-    },
-    {
-      "identity": {
-        "project": "@argo/desktop:node",
-        "path": "apps/desktop/src/domains/sessions/main/live/live-session-supervisor-machine.vitest.ts",
-        "test": "rejects a changed Codex stance instead of silently retaining the opening stance"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this test repair."
-    },
-    {
-      "identity": {
-        "project": "@argo/desktop:node",
-        "path": "apps/desktop/src/domains/sessions/main/live/live-session-supervisor-machine.vitest.ts",
-        "test": "settles start before a queued turn fails"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this test repair."
-    },
-    {
-      "identity": {
         "project": "@argo/desktop",
         "path": "apps/desktop/e2e/sessions/real-harness/real-session-harness-backend.test.ts",
         "test": "[suite setup]"

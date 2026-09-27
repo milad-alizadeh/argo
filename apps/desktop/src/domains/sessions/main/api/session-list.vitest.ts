@@ -70,6 +70,7 @@ function insertSession(
     preview?: string | null
     firstPrompt?: string | null
     cwd?: string | null
+    workspaceId?: string | null
     activityAt?: number | null
     projectId?: string
     updatedAt: number
@@ -80,13 +81,14 @@ function insertSession(
       `INSERT INTO session (
         argo_id, harness, native_id, project_id, workspace_id, custom_title, preview,
         first_prompt, cwd, activity_at, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, 1, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
     )
     .run(
       values.id,
       values.harness,
       values.nativeId,
       values.projectId ?? 'project-1',
+      values.workspaceId ?? null,
       values.customTitle ?? null,
       values.preview ?? null,
       values.firstPrompt ?? null,
@@ -176,6 +178,34 @@ test('returns exact numbered pages in activity order with an Argo ID tie-breaker
     assert.equal(JSON.stringify(first).includes('cursor'), false)
     assert.equal(JSON.stringify(first).includes('managed'), false)
     assert.equal(JSON.stringify(first).includes('watched'), false)
+  } finally {
+    client.close()
+  }
+})
+
+test('projects the stored Workspace identity, including null for legacy Sessions', async () => {
+  const { client, list } = sessionListCaller()
+  try {
+    insertSession(client, {
+      id: IDS[0],
+      harness: 'claude',
+      nativeId: 'linked-session',
+      workspaceId: 'workspace-1',
+      updatedAt: 20,
+    })
+    insertSession(client, {
+      id: IDS[1],
+      harness: 'codex',
+      nativeId: 'legacy-session',
+      updatedAt: 10,
+    })
+
+    const result = await list({ projectId: 'project-1', page: 1, pageSize: 10 })
+
+    assert.deepEqual(
+      result.rows.map(({ workspaceId }) => workspaceId),
+      ['workspace-1', null],
+    )
   } finally {
     client.close()
   }

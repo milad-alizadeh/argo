@@ -3,15 +3,12 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { sessionListTrpc, sessionRow } from '../session-fixtures'
+import { sessionFeedTrpc, sessionListTrpc, sessionRow } from '../session-fixtures'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import { SessionScreenView } from './session-screen-view'
 
-// #2111: the Feed read that never answers. The main process reads an `external` Session's
-// transcript in a loop that only ends when two consecutive reads see the file unchanged
-// (`stableChain`, domains/sessions/main/feed-cache.ts), so a transcript a real terminal is still writing
-// holds the reply open forever. This fixture is that reply, and the play function reads what the
-// window does while it is open.
+// #2111: the Feed read that never answers. This fixture holds the supported vendor read open and
+// the play function reads what the window does while it is waiting.
 const stalled = sessionRow({
   id: 'stalled-feed-session',
   posture: 'external',
@@ -20,20 +17,14 @@ const stalled = sessionRow({
   cwd: '/storybook/argo',
 })
 
-const other = sessionRow({
-  id: 'other-session',
-  posture: 'external',
-  title: { text: 'Another Session to switch to', source: 'first-prompt' },
-  status: 'idle',
-  cwd: '/storybook/argo',
-})
-
 function stalledFeedHost() {
   const before = window.argo
   window.argo = {
     ...before,
-    trpc: sessionListTrpc(before.trpc, () => [stalled, other]),
-    readSessionFeed: () => new Promise(() => {}),
+    trpc: sessionFeedTrpc(
+      sessionListTrpc(before.trpc, () => [stalled]),
+      () => new Promise(() => {}),
+    ),
   }
   return () => {
     window.argo = before
@@ -62,12 +53,6 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof SessionScreenView>
 
-function rowFor(canvasElement: HTMLElement, sessionId: string) {
-  const row = canvasElement.querySelector<HTMLButtonElement>(`[data-session-id="${sessionId}"]`)
-  if (row === null) throw new Error(`no Roster row for ${sessionId}`)
-  return row
-}
-
 // What the reader sees: the spinner never resolves, and nothing else in the window is covered.
 export const SpinsForeverAndLeavesTheWindowLive: Story = {
   beforeEach: () => stalledFeedHost(),
@@ -77,17 +62,16 @@ export const SpinsForeverAndLeavesTheWindowLive: Story = {
       expect(canvasElement.querySelector('[data-state="loading"]')).not.toBeNull(),
     )
 
-    // Hit testing over a Roster row: an overlay or portal left mounted over the window would
-    // answer here instead of the row itself. The Roster read can land after the Feed's spinner.
-    const row = await waitFor(() => rowFor(canvasElement, other.id))
-    const box = row.getBoundingClientRect()
+    // Hit testing over the project switcher: a full-window overlay would answer here instead.
+    const projectSwitcher = canvas.getByRole('button', { name: /Current project:/ })
+    const box = projectSwitcher.getBoundingClientRect()
     const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)
-    await expect(row.contains(hit)).toBe(true)
+    await expect(projectSwitcher.contains(hit)).toBe(true)
 
-    // And the click the report says is swallowed is delivered to that row: the pointer press
-    // reaches it and leaves the focus there, which a cover over the window would prevent.
-    await userEvent.click(canvas.getByText('Another Session to switch to'))
-    await waitFor(() => expect(document.activeElement).toBe(row))
+    // The click reaches the project switcher while the Session remains selected and loading.
+    await userEvent.click(projectSwitcher)
+    await waitFor(() => expect(document.activeElement).toBe(projectSwitcher))
+    await userEvent.keyboard('{Escape}')
 
     // Still spinning: nothing in the Feed's own loading state bounds it.
     await new Promise((resolve) => setTimeout(resolve, 1000))

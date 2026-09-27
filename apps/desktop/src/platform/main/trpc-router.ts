@@ -20,6 +20,10 @@ import {
 import { composerDraftCreateProcedure } from '@/domains/sessions/main/api/composer-draft-create'
 import { composerDraftReadProcedure } from '@/domains/sessions/main/api/composer-draft-read'
 import { composerDraftSaveProcedure } from '@/domains/sessions/main/api/composer-draft-save'
+import {
+  type SessionFeedReadContext,
+  sessionFeedReadProcedure,
+} from '@/domains/sessions/main/api/session-feed-read'
 import { sessionListProcedure } from '@/domains/sessions/main/api/session-list'
 import {
   type SessionRefreshContext,
@@ -56,6 +60,7 @@ export type AppRouterDependencies = {
   harnessSignIn: HarnessSignInProcedureContext
   projects: ProjectRegisterContext & ProjectRelocateContext
   sessions: SessionProcedureContext &
+    SessionFeedReadContext &
     SessionRefreshContext & { sessionSyncStatus: SessionSyncStatusStore }
   tickets: TicketRouterDependencies
   workspaces: WorkspaceListContext
@@ -72,6 +77,7 @@ export function createAppRouter(dependencies: AppRouterDependencies) {
     composerDraftSave: composerDraftSaveProcedure(dependencies.sessions.database),
     sessionSubmit: sessionSubmitProcedure(dependencies.sessions),
     sessionList: sessionListProcedure(dependencies.sessions),
+    sessionFeedRead: sessionFeedReadProcedure(dependencies.sessions),
     sessionRename: sessionRenameProcedure(dependencies.sessions),
     sessionRefresh: sessionRefreshProcedure(dependencies.sessions),
     sessionSyncStatus: sessionSyncStatusProcedure(dependencies.sessions.sessionSyncStatus),
