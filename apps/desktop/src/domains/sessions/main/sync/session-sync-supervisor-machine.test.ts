@@ -1,24 +1,36 @@
 import assert from 'node:assert/strict'
 import { test } from 'vitest'
 import { createActor, fromCallback } from 'xstate'
+import type { Database } from '@/database/database'
+import type { SessionDiscovery } from '@/domains/sessions/api/session-discovery'
 import { SessionSyncStatusStore } from '../api/session-sync-status'
 import {
-  type SessionSyncWorkerActorInput,
+  type SessionSyncActorInput,
   sessionSyncSupervisorMachine,
 } from './session-sync-supervisor-machine'
 
-type WorkerEvent =
-  | { type: 'WorkerReady'; harness: 'claude' | 'codex' }
+const database = {} as Database
+const claudeDiscovery: SessionDiscovery = async () => ({ records: [], skipped: 0 })
+const codexDiscovery: SessionDiscovery = async () => ({ records: [], skipped: 0 })
+const fetchingStatus = {
+  phase: 'fetching' as const,
+  processed: 0,
+  total: null,
+  skipped: 0,
+  lastSuccessfulSyncAt: null,
+  failure: null,
+}
+type SyncEvent =
   | {
-      type: 'WorkerStatus'
+      type: 'SyncStatus'
       harness: 'claude' | 'codex'
       status: ReturnType<SessionSyncStatusStore['current']>
     }
-  | { type: 'WorkerCommitted'; harness: 'claude' | 'codex' }
-  | { type: 'WorkerCompleted'; harness: 'claude' | 'codex' }
-  | { type: 'WorkerFailed'; harness: 'claude' | 'codex' }
+  | { type: 'SyncCommitted'; harness: 'claude' | 'codex' }
+  | { type: 'SyncCompleted'; harness: 'claude' | 'codex' }
+  | { type: 'SyncFailed'; harness: 'claude' | 'codex' }
 
-test('dispatches one thread for the supported Harness and deduplicates Refresh', () => {
+test('dispatches registered Session discovery functions and deduplicates Refresh', () => {
   const dispatched: string[] = []
   const finished: Array<() => void> = []
   let stopped = 0
@@ -27,24 +39,12 @@ test('dispatches one thread for the supported Harness and deduplicates Refresh',
   const unsubscribe = status.subscribe((event) => reported.push(event.type))
   const machine = sessionSyncSupervisorMachine.provide({
     actors: {
-      worker: fromCallback<{ type: 'Stop' }, SessionSyncWorkerActorInput, WorkerEvent>(
+      sync: fromCallback<{ type: 'Stop' }, SessionSyncActorInput, SyncEvent>(
         ({ input, sendBack }) => {
           dispatched.push(input.harness)
-          finished.push(() => sendBack({ type: 'WorkerCompleted', harness: input.harness }))
-          sendBack({ type: 'WorkerReady', harness: input.harness })
-          sendBack({
-            type: 'WorkerStatus',
-            harness: input.harness,
-            status: {
-              phase: 'fetching',
-              processed: 0,
-              total: null,
-              skipped: 0,
-              lastSuccessfulSyncAt: null,
-              failure: null,
-            },
-          })
-          sendBack({ type: 'WorkerCommitted', harness: input.harness })
+          finished.push(() => sendBack({ type: 'SyncCompleted', harness: input.harness }))
+          sendBack({ type: 'SyncStatus', harness: input.harness, status: fetchingStatus })
+          sendBack({ type: 'SyncCommitted', harness: input.harness })
           return () => {
             stopped += 1
           }
@@ -54,11 +54,17 @@ test('dispatches one thread for the supported Harness and deduplicates Refresh',
   })
   const actor = createActor(machine, {
     input: {
-      databasePath: '/tmp/session-sync-test.sqlite',
+      database,
+      harnesses: {
+        claude: { sessionDiscovery: claudeDiscovery },
+        codex: { sessionDiscovery: codexDiscovery },
+      },
       status: { claude: status, codex: new SessionSyncStatusStore(undefined, 'codex') },
     },
   }).start()
   try {
+    assert.deepEqual(dispatched, [])
+    actor.send({ type: 'Refresh' })
     assert.deepEqual(dispatched, ['claude', 'codex'])
     assert.equal(status.current().phase, 'fetching')
     assert.deepEqual(reported, ['status', 'status', 'committed'])
@@ -78,17 +84,47 @@ test('dispatches one thread for the supported Harness and deduplicates Refresh',
   }
 })
 
+test('dispatches only discovery functions selected by the Harness registry', () => {
+  const dispatched: SessionDiscovery[] = []
+  const actor = createActor(
+    sessionSyncSupervisorMachine.provide({
+      actors: {
+        sync: fromCallback<{ type: 'Stop' }, SessionSyncActorInput, SyncEvent>(({ input }) => {
+          dispatched.push(input.sessionDiscovery)
+        }),
+      },
+    }),
+    {
+      input: {
+        database,
+        harnesses: { claude: { sessionDiscovery: claudeDiscovery } },
+        status: { claude: new SessionSyncStatusStore() },
+      },
+    },
+  ).start()
+  try {
+    assert.deepEqual(dispatched, [])
+    actor.send({ type: 'Refresh' })
+    assert.deepEqual(dispatched, [claudeDiscovery])
+    actor.send({ type: 'Refresh' })
+    assert.deepEqual(dispatched, [claudeDiscovery])
+  } finally {
+    actor.stop()
+  }
+})
+
 test('keeps a Codex sync failure out of Claude status', () => {
   const claudeStatus = new SessionSyncStatusStore()
   const codexStatus = new SessionSyncStatusStore(undefined, 'codex')
   const actor = createActor(sessionSyncSupervisorMachine, {
     input: {
-      databasePath: null,
+      database,
+      harnesses: {},
       status: { claude: claudeStatus, codex: codexStatus },
     },
   }).start()
   actor.send({
-    type: 'WorkerStatus',
+    type: 'SyncStatus',
     harness: 'codex',
     status: {
       phase: 'failed',

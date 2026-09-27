@@ -1,4 +1,5 @@
 import type { HarnessReadinessRegistration } from '@/domains/harness-signin/main'
+import type { SessionDiscovery } from '@/domains/sessions/api/session-discovery'
 import type {
   SessionHistoryRow,
   SessionHistoryTarget,
@@ -11,4 +12,5 @@ export type HarnessRegistration<Id extends Harness = Harness> = HarnessReadiness
   readCatalog: () => Promise<HarnessInfo>
   readHistory: (target: SessionHistoryTarget) => Promise<SessionHistoryRow[]>
   rename?: (nativeId: string, title: string) => Promise<void>
+  sessionDiscovery: SessionDiscovery
 }

@@ -1,6 +1,26 @@
 # SQLite read models for Sessions and Tickets
 
-Status: accepted · 2026-09-24
+Status: accepted · 2026-09-24 · Session discovery amended 2026-09-27
+
+## Amendment · stateless Harness discovery · 2026-09-27
+
+The worker topology in **Sync and reads**, its diagram, and the worker ownership in **Module
+ownership** are superseded. Each Harness registration now exposes one stateless
+`sessionDiscovery` function. The shared Session sync machine calls that function with the known
+native Session IDs and receives generic Session records plus a malformed-record count. Harness
+source selection, vendor schemas, and parsing stay under `src/harnesses/<harness>/`.
+
+The supervisor selects `harnesses[harnessId].sessionDiscovery`, prevents concurrent syncs for the
+same Harness, and runs the shared sync machine in the main process. That machine owns retries,
+progress, Project matching, and batched writes through the application database connection. A
+failed batch keeps earlier commits. No Session discovery worker, worker job schema, or
+worker-to-main bridge remains.
+
+Codex discovery closes over the existing app-server request function supplied when its Harness is
+registered. It reads thread metadata through that shared client and starts no second Codex
+process. Claude discovery reads the Agent SDK directly. Adding another Harness requires one
+function with the same input and output shape and one registration entry; shared Session sync code
+does not branch on the Harness or its source.
 
 The Session list currently mixes vendor pages with SQLite metadata. The renderer must reconcile
 source cursors and Argo-owned fields, so paging and search depend on adapter behavior. Ticket

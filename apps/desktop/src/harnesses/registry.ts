@@ -19,11 +19,14 @@ export function createHarnessRegistry(codexRequest: CodexRequest): HarnessRegist
 }
 
 export async function readHarnessCatalog(registry: HarnessRegistry): Promise<HarnessCatalog> {
-  const [claudeResult, codexResult] = await Promise.allSettled([
-    registry.claude.readCatalog(),
-    registry.codex.readCatalog(),
-  ])
-  const claude = claudeResult.status === 'fulfilled' ? claudeResult.value : unavailable('claude')
-  const codex = codexResult.status === 'fulfilled' ? codexResult.value : unavailable('codex')
-  return harnessCatalogSchema.parse({ harnesses: [claude, codex] })
+  const harnesses = await Promise.all(
+    Object.values(registry).map(async (registration) => {
+      try {
+        return await registration.readCatalog()
+      } catch {
+        return unavailable(registration.harness)
+      }
+    }),
+  )
+  return harnessCatalogSchema.parse({ harnesses })
 }
