@@ -1,11 +1,10 @@
 import { expect, test } from 'bun:test'
-import { createActor, waitFor } from 'xstate'
 import { z } from 'zod'
 import recordedResponses from '../../../../mocks/cli/codex/fixtures/session-sync-codex-0.157.0.json' with {
   type: 'json',
 }
-import { createCodexSessionSyncActor, readCodexSessions } from './codex-session-sync-actor'
-import type { CodexWorkerReadRequest } from './session-sync-codex-bridge'
+import type { CodexRequest } from '../app-server/codex-app-server-client'
+import { createCodexSessionDiscovery, readCodexSessions } from './codex-session-discovery'
 
 const FIRST_ID = 'thread-first'
 const KNOWN_ID = 'thread-known'
@@ -26,7 +25,7 @@ const recordedReadSchema = z.object({
   thread: recordedPageSchema.shape.data.element,
 })
 
-function requestFor(responses: Map<string, unknown>, calls: unknown[]): CodexWorkerReadRequest {
+function requestFor(responses: Map<string, unknown>, calls: unknown[]): CodexRequest {
   return (async (method: string, params: unknown, parse: (value: unknown) => unknown) => {
     calls.push({ method, params })
     const key =
@@ -34,7 +33,7 @@ function requestFor(responses: Map<string, unknown>, calls: unknown[]): CodexWor
         ? String((params as { cursor?: string }).cursor ?? '')
         : String((params as { threadId: string }).threadId)
     return parse(responses.get(`${method}:${key}`))
-  }) as CodexWorkerReadRequest
+  }) as CodexRequest
 }
 
 function expectedCalls(): unknown[] {
@@ -95,61 +94,56 @@ function recordedRequest(calls: unknown[]) {
 test('pages interactive Codex threads, deduplicates IDs, and reads known missing IDs', async () => {
   const calls: unknown[] = []
   const fixture = recordedRequest(calls)
-  const actor = createActor(createCodexSessionSyncActor(fixture.request), {
-    input: { knownNativeIds: [KNOWN_ID, SAVED_ID] },
-  }).start()
-  try {
-    const result = await waitFor(actor, (snapshot) => snapshot.status === 'done')
-    expect(result.output).toEqual({
-      records: [
-        {
-          nativeId: FIRST_ID,
-          activityAt: fixture.duplicateRecord.updatedAt * 1000,
-          customTitle: null,
-          preview: fixture.firstRecord.preview,
-          cwd: fixture.firstRecord.cwd,
-        },
-        {
-          nativeId: KNOWN_ID,
-          activityAt: fixture.knownRecord.updatedAt * 1000,
-          customTitle: fixture.knownRecord.name,
-          preview: fixture.knownRecord.preview,
-          cwd: fixture.knownRecord.cwd,
-        },
-        {
-          nativeId: SAVED_ID,
-          activityAt: fixture.readThread.updatedAt * 1000,
-          customTitle: fixture.readThread.name,
-          preview: fixture.readThread.preview,
-          cwd: fixture.readThread.cwd,
-        },
-      ],
-      skipped: 1,
-    })
-    expect(calls).toEqual(expectedCalls())
-  } finally {
-    actor.stop()
-  }
+  const result = await createCodexSessionDiscovery(fixture.request)({
+    knownNativeIds: [KNOWN_ID, SAVED_ID],
+  })
+  expect(result).toEqual({
+    records: [
+      {
+        nativeId: FIRST_ID,
+        activityAt: fixture.duplicateRecord.updatedAt * 1000,
+        customTitle: null,
+        preview: fixture.firstRecord.preview,
+        cwd: fixture.firstRecord.cwd,
+      },
+      {
+        nativeId: KNOWN_ID,
+        activityAt: fixture.knownRecord.updatedAt * 1000,
+        customTitle: fixture.knownRecord.name,
+        preview: fixture.knownRecord.preview,
+        cwd: fixture.knownRecord.cwd,
+      },
+      {
+        nativeId: SAVED_ID,
+        activityAt: fixture.readThread.updatedAt * 1000,
+        customTitle: fixture.readThread.name,
+        preview: fixture.readThread.preview,
+        cwd: fixture.readThread.cwd,
+      },
+    ],
+    skipped: 1,
+  })
+  expect(calls).toEqual(expectedCalls())
 })
 
 test('fails a Codex scan when the page envelope is malformed', async () => {
   await expect(
     readCodexSessions({
       request: (async (_method, _params, parse) =>
-        parse({ data: [], nextCursor: 7 })) as CodexWorkerReadRequest,
+        parse({ data: [], nextCursor: 7 })) as CodexRequest,
       knownNativeIds: [],
       reportMalformed: () => {},
     }),
   ).rejects.toThrow()
 })
 
-test('propagates a failed read for a known Session so the generic worker can retry', async () => {
+test('propagates a failed read for a known Session so Session sync can retry', async () => {
   await expect(
     readCodexSessions({
       request: (async (method: string, _params, _parse) => {
         if (method === 'thread/list') return { data: [], nextCursor: null }
         throw new Error('app-server read failed')
-      }) as CodexWorkerReadRequest,
+      }) as CodexRequest,
       knownNativeIds: ['previously-saved'],
       reportMalformed: () => {},
     }),
@@ -163,7 +157,7 @@ test('skips a previously saved thread that Codex has removed', async () => {
       calls.push(method)
       if (method === 'thread/list') return parse({ data: [], nextCursor: null })
       throw new Error('Thread not found')
-    }) as CodexWorkerReadRequest,
+    }) as CodexRequest,
     knownNativeIds: ['removed-thread'],
     reportMalformed: () => {},
   })

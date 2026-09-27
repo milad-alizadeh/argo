@@ -1,7 +1,6 @@
-import { fromPromise } from 'xstate'
 import { z } from 'zod'
-import type { SyncResult } from '@/domains/sessions/main/sync/session-sync-machine'
-import type { CodexWorkerReadRequest } from './session-sync-codex-bridge'
+import type { DiscoveredSession, SessionDiscovery } from '@/domains/sessions/api/session-discovery'
+import type { CodexRequest } from '../app-server/codex-app-server-client'
 
 const threadSchema = z
   .object({
@@ -19,7 +18,7 @@ const pageSchema = z.strictObject({
   backwardsCursor: z.string().nullable().optional(),
 })
 const readSchema = z.strictObject({ thread: z.unknown() })
-type CodexSessionRecord = SyncResult['records'][number]
+type CodexSessionRecord = DiscoveredSession
 
 function rememberRecord(records: Map<string, CodexSessionRecord>, record: CodexSessionRecord) {
   records.set(record.nativeId, { ...records.get(record.nativeId), ...record })
@@ -43,7 +42,7 @@ function parseThread(raw: unknown): CodexSessionRecord | null {
 }
 
 async function readListedCodexSessions(
-  request: CodexWorkerReadRequest,
+  request: CodexRequest,
   reportMalformed: () => void,
 ): Promise<Map<string, CodexSessionRecord>> {
   const records = new Map<string, CodexSessionRecord>()
@@ -72,7 +71,7 @@ async function readListedCodexSessions(
 }
 
 async function readKnownCodexSessions(input: {
-  request: CodexWorkerReadRequest
+  request: CodexRequest
   knownNativeIds: readonly string[]
   records: Map<string, CodexSessionRecord>
   reportMalformed: () => void
@@ -97,7 +96,7 @@ async function readKnownCodexSessions(input: {
 }
 
 export async function readCodexSessions(input: {
-  request: CodexWorkerReadRequest
+  request: CodexRequest
   knownNativeIds: readonly string[]
   reportMalformed: () => void
 }): Promise<CodexSessionRecord[]> {
@@ -106,16 +105,16 @@ export async function readCodexSessions(input: {
   return [...records.values()]
 }
 
-export function createCodexSessionSyncActor(request: CodexWorkerReadRequest) {
-  return fromPromise<SyncResult, { knownNativeIds: string[] }>(async ({ input }) => {
+export function createCodexSessionDiscovery(request: CodexRequest): SessionDiscovery {
+  return async ({ knownNativeIds }) => {
     let skipped = 0
     const records = await readCodexSessions({
       request,
-      knownNativeIds: input.knownNativeIds,
+      knownNativeIds,
       reportMalformed: () => {
         skipped += 1
       },
     })
     return { records, skipped }
-  })
+  }
 }

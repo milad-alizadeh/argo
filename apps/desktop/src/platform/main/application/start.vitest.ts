@@ -30,7 +30,6 @@ afterEach(() => {
 function prepared() {
   return {
     database: {} as never,
-    databasePath: '',
     sessionSyncStatus: new SessionSyncStatusStore(),
     codexSessionSyncStatus: new SessionSyncStatusStore(undefined, 'codex'),
     registry: {} as HarnessRegistry,

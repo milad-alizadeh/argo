@@ -11,7 +11,6 @@ const registry = {} as HarnessRegistry
 const appMachine = createAppMachine(registry)
 const input = {
   database: {} as Database,
-  databasePath: null,
   sessionSyncStatus: new SessionSyncStatusStore(),
   codexSessionSyncStatus: new SessionSyncStatusStore(undefined, 'codex'),
 }

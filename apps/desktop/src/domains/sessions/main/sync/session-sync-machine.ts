@@ -1,13 +1,10 @@
 import { assign, fromPromise, setup } from 'xstate'
+import type {
+  DiscoveredSession,
+  SessionDiscovery,
+  SessionDiscoveryResult,
+} from '@/domains/sessions/api/session-discovery'
 import type { Harness } from '@/harnesses/harness'
-import type { SessionUpsertInput } from '../database/session-upsert'
-
-export type SyncedSessionRecord = Omit<SessionUpsertInput, 'harness'>
-
-export type SyncResult = {
-  records: SyncedSessionRecord[]
-  skipped: number
-}
 export const SESSION_SYNC_BATCH_SIZE = 50
 
 export const sessionSyncMachine = setup({
@@ -15,11 +12,13 @@ export const sessionSyncMachine = setup({
     input: {} as {
       harness: Harness
       knownNativeIds: string[]
+      sessionDiscovery: SessionDiscovery
     },
     context: {} as {
       harness: Harness
       knownNativeIds: string[]
-      records: SyncedSessionRecord[]
+      sessionDiscovery: SessionDiscovery
+      records: DiscoveredSession[]
       processed: number
       skipped: number
       failure: string | null
@@ -36,7 +35,7 @@ export const sessionSyncMachine = setup({
         }
       | {
           type: 'xstate.done.actor.fetch'
-          output: SyncResult
+          output: SessionDiscoveryResult
         }
       | {
           type: 'xstate.error.actor.fetch'
@@ -53,17 +52,20 @@ export const sessionSyncMachine = setup({
   },
   actors: {
     fetch: fromPromise<
-      SyncResult,
+      SessionDiscoveryResult,
       {
         knownNativeIds: string[]
+        sessionDiscovery: SessionDiscovery
       }
-    >(async () => {
-      throw new Error('The session sync reader is not configured.')
-    }),
+    >(({ input }) =>
+      input.sessionDiscovery({
+        knownNativeIds: input.knownNativeIds,
+      }),
+    ),
     save: fromPromise<
       void,
       {
-        records: SyncedSessionRecord[]
+        records: DiscoveredSession[]
       }
     >(async () => {
       throw new Error('The session sync saver is not configured.')
@@ -124,6 +126,7 @@ export const sessionSyncMachine = setup({
   context: ({ input }) => ({
     harness: input.harness,
     knownNativeIds: input.knownNativeIds,
+    sessionDiscovery: input.sessionDiscovery,
     records: [],
     processed: 0,
     skipped: 0,
@@ -150,6 +153,7 @@ export const sessionSyncMachine = setup({
         src: 'fetch',
         input: ({ context }) => ({
           knownNativeIds: context.knownNativeIds,
+          sessionDiscovery: context.sessionDiscovery,
         }),
         onDone: [
           {
