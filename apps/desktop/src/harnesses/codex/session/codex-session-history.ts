@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import type { SessionHistoryRow } from '@/domains/sessions/api/session-history'
-import type { CodexRequest } from '../app-server/codex-app-server-machine'
+import type { CodexRequest } from '../app-server/codex-app-server-client'
 
 const textContentSchema = z.object({ type: z.literal('text'), text: z.string() }).passthrough()
 const threadItemTypeSchema = z.enum([

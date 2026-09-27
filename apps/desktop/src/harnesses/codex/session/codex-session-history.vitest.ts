@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url'
 import { afterEach, expect, test, vi } from 'vitest'
 import { scanRollouts } from '../../../../mocks/cli/codex/mock-codex-rollout-history.ts'
-import type { CodexRequest } from '../app-server/codex-app-server-machine'
+import type { CodexRequest } from '../app-server/codex-app-server-client'
 import { readCodexSessionHistory } from './codex-session-history'
 
 afterEach(() => vi.unstubAllEnvs())
