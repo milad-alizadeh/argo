@@ -33,7 +33,7 @@ function prepared() {
     databasePath: '',
     sessionSyncStatus: new SessionSyncStatusStore(),
     codexSessionSyncStatus: new SessionSyncStatusStore(undefined, 'codex'),
-    registrations: {} as HarnessRegistry,
+    registry: {} as HarnessRegistry,
   }
 }
 

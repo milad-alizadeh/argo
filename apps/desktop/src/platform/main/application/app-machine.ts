@@ -1,14 +1,21 @@
-import { type ActorRefFrom, assertEvent, setup } from 'xstate'
+import { type ActorRefFrom, assertEvent, fromPromise, setup } from 'xstate'
 import type { Database } from '@/database/database'
 import type { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
 import { liveSessionSupervisorMachine } from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import { sessionSyncSupervisorMachine } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
-import { createHarnessCatalogMachine } from '@/harnesses/catalog/runtime'
+import {
+  type HarnessCatalog,
+  harnessCatalogMachine,
+} from '@/harnesses/catalog/harness-catalog-machine'
 import { codexAppServerMachine } from '@/harnesses/codex/app-server/codex-app-server-machine'
-import type { HarnessRegistry } from '@/harnesses/registry'
+import { type HarnessRegistry, readHarnessCatalog } from '@/harnesses/registry'
 
-export function createAppMachine(registrations: HarnessRegistry) {
-  const catalogMachine = createHarnessCatalogMachine(registrations)
+export function createAppMachine(registry: HarnessRegistry) {
+  const catalogMachine = harnessCatalogMachine.provide({
+    actors: {
+      loadCatalog: fromPromise<HarnessCatalog>(() => readHarnessCatalog(registry)),
+    },
+  })
   return setup({
     types: {
       input: {} as {

@@ -64,32 +64,6 @@ function checkBashWrites({ command, cwd, root, roots }: ShellCheck): Verdict {
   return ALLOW
 }
 
-function changeDirectory(segment: string, cwd: string): string | undefined | null {
-  const { name, args } = invocation(tokenize(segment))
-  if (name !== 'cd') return null
-  const target = args[0] === '--' ? args[1] : args[0]
-  if (!target || target === '-' || unexpanded(target)) return undefined
-  return path.resolve(cwd, target)
-}
-
-function checkCommandSegments({ command, cwd, root, roots }: ShellCheck): Verdict {
-  let currentDirectory: string | undefined = cwd
-  for (const segment of segments(command)) {
-    const nextDirectory = changeDirectory(segment, currentDirectory ?? cwd)
-    if (nextDirectory !== null) {
-      currentDirectory = nextDirectory
-      continue
-    }
-    if (!currentDirectory) continue
-    const check = { command: segment, cwd: currentDirectory, root, roots }
-    const committing = checkGitCommit(check)
-    if (committing.block) return committing
-    const writing = checkBashWrites(check)
-    if (writing.block) return writing
-  }
-  return ALLOW
-}
-
 // The commit is the second way work lands in the shared checkout, and the write half above
 // cannot see it: `git commit` names no file, so `writeTargets` returns nothing to judge. This
 // ran as a husky `pre-commit` hook until #1911 removed husky, and it belongs here instead, for
@@ -145,7 +119,9 @@ export function decideEdit({
   const root = projectDir || base
 
   if (typeof command === 'string' && (!toolName || toolName === 'Bash')) {
-    return checkCommandSegments({ command, cwd: base, root, roots })
+    const committing = checkGitCommit({ command, cwd: base, root, roots })
+    if (committing.block) return committing
+    return checkBashWrites({ command, cwd: base, root, roots })
   }
   if (!filePath) return ALLOW
   const abs = path.resolve(base, filePath)

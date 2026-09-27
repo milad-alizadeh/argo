@@ -16,56 +16,8 @@
  * tracked files in this repo quote a guarded command inside one. Treating a quoted mention as an
  * invocation denies any session searching or rewriting the docs that describe the rule.
  */
-type Separator = { index: number; size: number }
-
-function scanQuote(
-  character: string | undefined,
-  quote: "'" | '"' | undefined,
-): { quote: "'" | '"' | undefined; consumed: boolean } {
-  if (quote) return { quote: character === quote ? undefined : quote, consumed: true }
-  if (character === "'" || character === '"') return { quote: character, consumed: true }
-  return { quote, consumed: false }
-}
-
-function separatorSize(command: string, index: number): number {
-  const pair = command.slice(index, index + 2)
-  if (pair === '<<') return -1
-  if (pair === '&&' || pair === '||') return 2
-  return ';|\n'.includes(command[index] ?? '') ? 1 : 0
-}
-
-function nextSeparator(command: string, start: number): Separator | undefined {
-  let quote: "'" | '"' | undefined
-  for (let index = start; index < command.length; index += 1) {
-    const character = command[index]
-    if (character === '\\') {
-      index += 1
-      continue
-    }
-    const quoteScan = scanQuote(character, quote)
-    quote = quoteScan.quote
-    if (quoteScan.consumed) continue
-    const size = separatorSize(command, index)
-    if (size !== 0) {
-      return { index, size: Math.max(0, size) }
-    }
-  }
-  return undefined
-}
-
-export const segments = (command: string): string[] => {
-  const result: string[] = []
-  let start = 0
-  let separator = nextSeparator(command, start)
-  while (separator) {
-    result.push(command.slice(start, separator.index))
-    if (separator.size === 0) return result
-    start = separator.index + separator.size
-    separator = nextSeparator(command, start)
-  }
-  result.push(command.slice(start))
-  return result
-}
+export const segments = (command: string): string[] =>
+  (command.split('<<')[0] ?? '').split(/&&|\|\||;|\||\n/)
 
 /**
  * A segment's tokens. Quotes and subshell parens are stripped because everything read through

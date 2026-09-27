@@ -7,8 +7,8 @@ import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync
 import type { HarnessRegistry } from '@/harnesses/registry'
 import { createAppMachine } from './app-machine'
 
-const registrations = {} as HarnessRegistry
-const appMachine = createAppMachine(registrations)
+const registry = {} as HarnessRegistry
+const appMachine = createAppMachine(registry)
 const input = {
   database: {} as Database,
   databasePath: null,

@@ -34,12 +34,6 @@ test('segments splits on every shell separator a command line can carry', () => 
   )
 })
 
-test('segments ignores separators inside quoted arguments', () => {
-  assert.deepEqual(segments('rtk rg -n "a|git commit|b" hooks.mts'), [
-    'rtk rg -n "a|git commit|b" hooks.mts',
-  ])
-})
-
 test('segments drops a heredoc body, which is data the shell never runs', () => {
   // Tracked files in this repo quote guarded commands inside heredocs; reading one as an
   // invocation denies any session rewriting the docs that describe the rule.

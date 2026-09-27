@@ -8,7 +8,6 @@
 // `$` or a backtick comes back as it is, and the caller decides (the guards allow it, because
 // guessing at an expansion would deny work that may well be correct).
 import path from 'node:path'
-import { segments } from './shell-commands.mts'
 
 // Commands that write a file the shell can name. `dd` and `apply_patch` are handled below —
 // one names its target with `of=`, the other carries every path inside a heredoc body.
@@ -36,6 +35,11 @@ const ENV_ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/
  */
 export const CURRENT_DIRECTORY = '.'
 
+// Split on shell separators so `cd x && cat > y` is seen. A heredoc body is data the shell
+// never runs, so everything after the opener is dropped — the redirection that matters
+// (`> file <<EOF`) is always in front of it.
+const segments = (command: string): string[] =>
+  (command.split('<<')[0] ?? '').split(/&&|\|\||;|\||\n/)
 const tokenize = (segment: string): string[] =>
   segment
     .trim()

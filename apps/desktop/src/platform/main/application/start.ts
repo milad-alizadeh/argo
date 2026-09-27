@@ -13,7 +13,7 @@ export function startDesktopApplication(request: {
     databasePath: string
     sessionSyncStatus: SessionSyncStatusStore
     codexSessionSyncStatus: SessionSyncStatusStore
-    registrations: HarnessRegistry
+    registry: HarnessRegistry
   }>
   ready: (actor: AppActor) => Promise<void> | void
   willQuit: () => void
@@ -37,8 +37,8 @@ export function startDesktopApplication(request: {
     setPlatformLanguage(app.getLocale())
     applyStoredAppearance(await readAppearance(app.getPath('userData')))
     const input = await request.prepare()
-    const { registrations, ...applicationInput } = input
-    actor = createActor(createAppMachine(registrations), { input: applicationInput }).start()
+    const { registry, ...applicationInput } = input
+    actor = createActor(createAppMachine(registry), { input: applicationInput }).start()
     await request.ready(actor)
   }
 
