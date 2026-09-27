@@ -86,8 +86,8 @@ test('reads historical Feed rows through the saved Session Harness adapter', asy
     .run()
   const reads: unknown[] = []
   const dependencies = routerDependencies({
-    readHistory: async (harness, nativeId, cwd) => {
-      reads.push({ harness, nativeId, cwd })
+    readHistory: async (harness, target) => {
+      reads.push({ harness, target })
       return [{ shape: 'prose', id: 'message-1', role: 'user', text: 'Hello' }]
     },
   })
@@ -99,7 +99,66 @@ test('reads historical Feed rows through the saved Session Harness adapter', asy
     sessionId,
     rows: [{ role: 'user', text: 'Hello' }],
   })
-  expect(reads).toEqual([{ harness: 'claude', nativeId: 'vendor-session', cwd: '/work/project' }])
+  expect(reads).toEqual([
+    {
+      harness: 'claude',
+      target: { nativeId: 'vendor-session', subagentId: null, cwd: '/work/project' },
+    },
+  ])
+})
+
+test('reads a selected subagent through its parent Harness and retains the Session chain', async () => {
+  const sessionId = '00000000-0000-4000-8000-000000000005'
+  database
+    .insert(sessionTable)
+    .values({
+      argoId: sessionId,
+      harness: 'codex',
+      nativeId: 'root-thread',
+      cwd: '/work/project',
+    })
+    .run()
+  const targets: unknown[] = []
+  const dependencies = routerDependencies({
+    readHistory: async (harness, target) => {
+      targets.push({ harness, target })
+      return [{ shape: 'prose', id: 'child-message', role: 'assistant', text: 'Child result' }]
+    },
+  })
+
+  await expect(
+    createAppRouter(dependencies).createCaller({}).sessionFeedRead({
+      sessionId,
+      subagentId: 'child-thread',
+    }),
+  ).resolves.toMatchObject({
+    sessionId,
+    chainId: 'child-thread',
+    rows: [{ id: 'child-message', text: 'Child result' }],
+  })
+  expect(targets).toEqual([
+    {
+      harness: 'codex',
+      target: { nativeId: 'root-thread', subagentId: 'child-thread', cwd: '/work/project' },
+    },
+  ])
+})
+
+test('reports a failed vendor history read instead of confirming an empty Feed', async () => {
+  const sessionId = '00000000-0000-4000-8000-000000000006'
+  database
+    .insert(sessionTable)
+    .values({ argoId: sessionId, harness: 'claude', nativeId: 'root' })
+    .run()
+  const dependencies = routerDependencies({
+    readHistory: async () => {
+      throw new Error('offline')
+    },
+  })
+
+  await expect(
+    createAppRouter(dependencies).createCaller({}).sessionFeedRead({ sessionId }),
+  ).rejects.toMatchObject({ code: 'INTERNAL_SERVER_ERROR', message: 'vendor-history-unavailable' })
 })
 
 test('renames a saved Session through sessionRename after the Harness accepts it', async () => {

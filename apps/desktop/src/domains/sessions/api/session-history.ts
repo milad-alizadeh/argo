@@ -9,3 +9,9 @@ export const sessionHistoryRowSchema = z.strictObject({
 })
 
 export type SessionHistoryRow = z.infer<typeof sessionHistoryRowSchema>
+
+export type SessionHistoryTarget = {
+  nativeId: string
+  subagentId: string | null
+  cwd: string | null
+}

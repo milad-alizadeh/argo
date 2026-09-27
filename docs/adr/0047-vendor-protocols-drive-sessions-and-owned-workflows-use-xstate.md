@@ -116,3 +116,15 @@ schema.
 It keeps ADR-0046's durable main-process `ProjectSetup` actor and validated IPC boundary. It
 supersedes separate planning and application Sessions, separate Harness choices, routine
 worktree-effect approval, final-diff approval as completion, and publication as a later workflow.
+
+## Amendment: Harness registrations for Session history (#2795)
+
+Desktop startup assembles one descriptor for each concrete Harness. Each descriptor provides
+readiness, sign-in, vendor history, and supported Session mutations. Readiness works before a
+Project or Session exists. Registration implementations have no XState imports. Argo machines
+still own application and live Session lifetimes during the migration.
+
+The Feed reads the selected descriptor with the root native Session ID, optional subagent ID,
+and working directory. It keeps the Argo Session UUID and selected chain ID in the response.
+A vendor read failure reports an error and does not confirm an empty Feed. This amends the
+machine-per-Harness boundary above as the migration replaces vendor machines with async clients.

@@ -14,7 +14,9 @@
   history; the first new prompt attempts native resume. A live channel is not durable across an
   Argo restart.
 
-  Vendor history is the source of Feed truth. Live vendor events add immediate updates. Metadata
+  Vendor history is the source of Feed truth. The selected Harness registration reads the root
+  Session or a subagent while the Feed keeps the Argo Session UUID and chain ID. A failed read
+  reports failure and keeps known Feed content. Live vendor events add immediate updates. Metadata
   synchronization commits vendor changes to SQLite and tells readers to refresh the affected
   projection. A transcript or rollout file is never an Argo domain object or input.
 

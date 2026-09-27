@@ -203,3 +203,14 @@ ADR-0047's `managed | watched` posture,
 lease, vendor-paged Roster merge, and cursor recovery. It supersedes ADR-0039's operation tables
 with one global tRPC router and colocated handlers and schemas. The validated boundary and
 trusted-frame requirement remain. No public HTTP server is required.
+
+## Amendment: registered Feed reads and rename (#2795)
+
+The Session Feed reads vendor history through the selected Harness descriptor. The target names
+the root native Session and any selected subagent. The Feed response keeps the Argo Session UUID
+and chain ID. A failed vendor read remains a failure, so the renderer can keep known content.
+
+Session rename calls the same descriptor before SQLite stores the confirmed title. A descriptor
+offers rename only when its vendor supports it. Claude offers rename; Codex currently does not.
+This replaces the separate desktop history switch and rename table described by the earlier
+machine boundary. The Session sync and live Session migrations remain separate work.
