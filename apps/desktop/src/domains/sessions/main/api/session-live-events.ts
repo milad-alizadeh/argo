@@ -15,6 +15,7 @@ import { sessionHistoryIdentity } from './session-history-identity'
 const t = initTRPC.create()
 const inputSchema = z.strictObject({
   sessionId: identifierSchema,
+  subagentId: identifierSchema.nullable().optional(),
   cursor: z.number().int().nonnegative(),
 })
 
@@ -46,6 +47,17 @@ export type SessionLiveEventsContext = {
 export function sessionLiveEventsProcedure(context: SessionLiveEventsContext) {
   return t.procedure.input(inputSchema).subscription(({ input }) => {
     const stored = sessionHistoryIdentity(context.database, input.sessionId)
+    const subagentId = input.subagentId ?? null
+    if (subagentId !== null)
+      return observable<z.infer<typeof sessionLiveUpdateSchema>>((emit) => {
+        emit.next(sessionLiveUpdateSchema.parse({ type: 'ready', live: false, cursor: 0 }))
+        const unwatch = context.watchHistory?.(
+          stored.harness,
+          { nativeId: stored.nativeId, subagentId, cwd: stored.cwd },
+          () => emit.next(sessionLiveUpdateSchema.parse({ type: 'invalidated' })),
+        )
+        return () => unwatch?.()
+      })
     return observable<z.infer<typeof sessionLiveUpdateSchema>>((emit) => {
       let replaying = true
       const pending: ReturnType<SessionEventJournal['append']>[] = []

@@ -11,17 +11,20 @@ import {
 
 type LiveFeedState = LiveEventBuffer & {
   sessionId: SessionId
+  subagentId: string | null
   hasChannel: boolean
   ready: boolean
 }
 
 function applyLiveUpdate({
   selected,
+  subagentId,
   update,
   cursor,
   setState,
 }: {
   selected: SessionId
+  subagentId: string | null
   update: SessionLiveUpdate
   cursor: number
   setState: Dispatch<SetStateAction<LiveFeedState | null>>
@@ -29,8 +32,11 @@ function applyLiveUpdate({
   switch (update.type) {
     case 'ready':
       setState((current) => ({
-        ...(current?.sessionId === selected ? current : emptyLiveEventBuffer()),
+        ...(current?.sessionId === selected && current.subagentId === subagentId
+          ? current
+          : emptyLiveEventBuffer()),
         sessionId: selected,
+        subagentId,
         hasChannel: update.live,
         ready: true,
       }))
@@ -38,39 +44,47 @@ function applyLiveUpdate({
     case 'event':
       if (update.event.sequence <= cursor) return cursor
       setState((current) => ({
-        ...retainLiveEvent(current?.sessionId === selected ? current : null, update.event),
+        ...retainLiveEvent(
+          current?.sessionId === selected && current.subagentId === subagentId ? current : null,
+          update.event,
+        ),
         sessionId: selected,
-        hasChannel: current?.sessionId === selected ? current.hasChannel : true,
+        subagentId,
+        hasChannel:
+          current?.sessionId === selected && current.subagentId === subagentId
+            ? current.hasChannel
+            : true,
         ready: true,
       }))
       if (update.event.type === 'status' && update.event.status === 'idle')
-        void queryClient.invalidateQueries({ queryKey: sessionFeedQueryKey(selected) })
-      if (update.event.type === 'permission')
+        void queryClient.invalidateQueries({ queryKey: sessionFeedQueryKey(selected, subagentId) })
+      if (subagentId === null && update.event.type === 'permission')
         void queryClient.invalidateQueries({ queryKey: sessionPermissionQueryKey(selected) })
       return update.event.sequence
     case 'expired':
       setState((current) => ({
         ...emptyLiveEventBuffer(),
         sessionId: selected,
-        hasChannel: current?.hasChannel ?? false,
+        subagentId,
+        hasChannel: current?.subagentId === subagentId ? current.hasChannel : false,
         ready: true,
       }))
-      void queryClient.invalidateQueries({ queryKey: sessionFeedQueryKey(selected) })
+      void queryClient.invalidateQueries({ queryKey: sessionFeedQueryKey(selected, subagentId) })
       return update.cursor
     case 'invalidated':
-      void queryClient.invalidateQueries({ queryKey: ['sessions', 'feed', selected] })
+      void queryClient.invalidateQueries({ queryKey: sessionFeedQueryKey(selected, subagentId) })
       return cursor
   }
 }
 
-function useFocusRefresh(sessionId: SessionId | null) {
+function useFocusRefresh(sessionId: SessionId | null, subagentId: string | null) {
   useEffect(() => {
     if (sessionId === null) return
     let timer: ReturnType<typeof setTimeout> | null = null
     const refresh = () => {
       if (timer !== null) clearTimeout(timer)
       timer = setTimeout(() => {
-        void queryClient.invalidateQueries({ queryKey: ['sessions', 'feed', sessionId] })
+        void queryClient.invalidateQueries({ queryKey: sessionFeedQueryKey(sessionId, subagentId) })
       }, 250)
     }
     const onVisibilityChange = () => {
@@ -83,12 +97,15 @@ function useFocusRefresh(sessionId: SessionId | null) {
       window.removeEventListener('focus', refresh)
       document.removeEventListener('visibilitychange', onVisibilityChange)
     }
-  }, [sessionId])
+  }, [sessionId, subagentId])
 }
 
-export function useLiveFeedEvents(sessionId: SessionId | null): LiveFeedState | null {
+export function useLiveFeedEvents(
+  sessionId: SessionId | null,
+  subagentId: string | null = null,
+): LiveFeedState | null {
   const [state, setState] = useState<LiveFeedState | null>(null)
-  useFocusRefresh(sessionId)
+  useFocusRefresh(sessionId, subagentId)
   useEffect(() => {
     if (sessionId === null) return
     const selected = sessionId
@@ -98,16 +115,19 @@ export function useLiveFeedEvents(sessionId: SessionId | null): LiveFeedState | 
     let subscription: { unsubscribe: () => void } | null = null
     const connect = () => {
       subscription = trpcClient.sessionLiveEvents.subscribe(
-        { sessionId: selected, cursor },
+        { sessionId: selected, subagentId, cursor },
         {
           onData(update) {
-            cursor = applyLiveUpdate({ selected, update, cursor, setState })
+            cursor = applyLiveUpdate({ selected, subagentId, update, cursor, setState })
           },
           onError() {
             if (stopped) return
             setState((current) => ({
-              ...(current?.sessionId === selected ? current : emptyLiveEventBuffer()),
+              ...(current?.sessionId === selected && current.subagentId === subagentId
+                ? current
+                : emptyLiveEventBuffer()),
               sessionId: selected,
+              subagentId,
               hasChannel: false,
               ready: true,
             }))
@@ -122,6 +142,6 @@ export function useLiveFeedEvents(sessionId: SessionId | null): LiveFeedState | 
       subscription?.unsubscribe()
       if (reconnect !== null) clearTimeout(reconnect)
     }
-  }, [sessionId])
-  return state?.sessionId === sessionId ? state : null
+  }, [sessionId, subagentId])
+  return state?.sessionId === sessionId && state.subagentId === subagentId ? state : null
 }

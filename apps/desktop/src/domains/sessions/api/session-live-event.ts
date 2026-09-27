@@ -33,6 +33,7 @@ export const sessionLiveEventBodySchema = z.discriminatedUnion('type', [
     ...identity,
     requestId: identifierSchema,
     description: z.string(),
+    decision: z.enum(['allow', 'allowForSession', 'deny', 'cancel']).nullable(),
   }),
   z.strictObject({
     type: z.literal('question'),

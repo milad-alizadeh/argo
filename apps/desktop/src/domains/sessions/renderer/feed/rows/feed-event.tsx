@@ -11,7 +11,11 @@ const EVENT_PRESENTATION = {
   context: 'event-context',
   status: 'event-status',
   liveStatus: 'event-status',
+  liveFailure: 'event-status',
   permission: 'awaiting-permission',
+  permissionGranted: 'awaiting-permission',
+  permissionDenied: 'awaiting-permission',
+  permissionCancelled: 'awaiting-permission',
   transcript: 'event-transcript',
   'skill-invocation': 'skill-invocation',
 } satisfies Record<FeedEventRow['event'], IconName>

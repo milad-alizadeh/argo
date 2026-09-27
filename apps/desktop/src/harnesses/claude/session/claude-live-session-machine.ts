@@ -366,6 +366,7 @@ export const claudeLiveSessionMachine = xstateSetup({
             type: 'permission',
             ...identity,
             description: options.title ?? options.displayName ?? toolName,
+            decision: null,
           },
         })
         sendBack({
@@ -381,6 +382,15 @@ export const claudeLiveSessionMachine = xstateSetup({
           requestId: options.requestId,
           description: options.title ?? options.displayName ?? toolName,
           signal: options.signal,
+        })
+        sendBack({
+          type: 'Feed event',
+          body: {
+            type: 'permission',
+            ...identity,
+            description: options.title ?? options.displayName ?? toolName,
+            decision,
+          },
         })
         emitStatus('running')
         switch (decision) {

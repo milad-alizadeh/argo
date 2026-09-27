@@ -17,10 +17,10 @@ export function createCodexRegistration(request: CodexRequest): HarnessRegistrat
     readCatalog: () => readCodexHarnessInfo(request),
     readHistory: ({ nativeId, subagentId }) =>
       readCodexSessionHistory(request, subagentId ?? nativeId),
-    watchHistory: ({ nativeId }, invalidate) =>
+    watchHistory: ({ nativeId, subagentId }, invalidate) =>
       watchVendorHistory(
         path.join(process.env.CODEX_HOME ?? path.join(os.homedir(), '.codex'), 'sessions'),
-        nativeId,
+        subagentId ?? nativeId,
         invalidate,
       ),
   }

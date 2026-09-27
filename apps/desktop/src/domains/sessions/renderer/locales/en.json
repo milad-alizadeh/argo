@@ -355,7 +355,11 @@
       "ended": "Ended",
       "unknown": "Unknown"
     },
+    "liveFailure": { "label": "Session activity failed" },
     "permission": { "label": "Permission needed" },
+    "permissionGranted": { "label": "Permission granted" },
+    "permissionDenied": { "label": "Permission denied" },
+    "permissionCancelled": { "label": "Permission cancelled" },
     "transcript": { "label": "Transcript delivered" },
     "protocolDetails": "Protocol text"
   },

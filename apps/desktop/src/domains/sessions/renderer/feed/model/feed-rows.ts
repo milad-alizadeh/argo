@@ -10,7 +10,15 @@ export const FEED_MARKERS = ['compacted', 'interrupted'] as const
 export const feedMarkerSchema = z.enum(FEED_MARKERS)
 export type FeedMarker = z.infer<typeof feedMarkerSchema>
 
-export const FEED_EVENT_KINDS = [...TRANSCRIPT_EVENT_KINDS, 'liveStatus', 'permission'] as const
+export const FEED_EVENT_KINDS = [
+  ...TRANSCRIPT_EVENT_KINDS,
+  'liveStatus',
+  'liveFailure',
+  'permission',
+  'permissionGranted',
+  'permissionDenied',
+  'permissionCancelled',
+] as const
 export const feedEventKindSchema = z.enum(FEED_EVENT_KINDS)
 export type FeedEventKind = z.infer<typeof feedEventKindSchema>
 

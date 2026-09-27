@@ -80,6 +80,7 @@ test('shows ordered live text, tool work, status, Permission, and Question rows'
         vendorEventId: null,
         requestId: 'permission-1',
         description: 'Read this file?',
+        decision: null,
       },
       question(6, 'question-1', null),
     ],
@@ -92,6 +93,60 @@ test('shows ordered live text, tool work, status, Permission, and Question rows'
     ['event', 'permission-1'],
     ['ask', 'question-1'],
   ])
+})
+
+test('replaces a pending Permission with its resolved decision', () => {
+  const pending: SessionLiveEvent = {
+    type: 'permission',
+    sessionId,
+    sequence: 1,
+    commandId: 'command-1',
+    turnId: 'turn-1',
+    vendorEventId: 'tool-1',
+    requestId: 'permission-1',
+    description: 'Read this file?',
+    decision: null,
+  }
+  expect(projectLiveFeedRows([], [pending])).toMatchObject([
+    { id: 'permission-1', event: 'permission' },
+  ])
+  expect(
+    projectLiveFeedRows([], [pending, { ...pending, sequence: 2, decision: 'allow' }]),
+  ).toMatchObject([{ id: 'permission-1', event: 'permissionGranted' }])
+})
+
+test('keeps raw vendor failures out of the reader-facing Feed row', () => {
+  const rows = projectLiveFeedRows(
+    [],
+    [
+      {
+        type: 'failure',
+        sessionId,
+        sequence: 1,
+        commandId: 'command-1',
+        turnId: 'turn-1',
+        vendorEventId: null,
+        detail: 'SDK internal path /private/example',
+      },
+    ],
+  )
+  expect(rows).toMatchObject([{ event: 'liveFailure', text: null }])
+})
+
+test('uses product status events instead of raw vendor status strings', () => {
+  const rows = projectLiveFeedRows(
+    [
+      {
+        id: 'native-status',
+        kind: 'notification',
+        category: 'status',
+        text: 'SessionStart:resume',
+        priority: null,
+      },
+    ],
+    [status(1, 'running')],
+  )
+  expect(rows).toMatchObject([{ event: 'liveStatus', text: 'running' }])
 })
 
 test('settled vendor history replaces matching live messages and tool progress', () => {
@@ -164,6 +219,7 @@ test('interleaves live status with matching history while active text and tools 
       vendorEventId: 'call-1',
       requestId: 'permission-1',
       description: 'Read file',
+      decision: null,
     },
     content(5, {
       kind: 'tool',

@@ -71,6 +71,7 @@ test('does not replay unanswered interactions after their live channel closes', 
     vendorEventId: null,
     requestId: 'permission-1',
     description: 'Read file',
+    decision: null,
   })
   journal.append(sessionId, {
     type: 'question',
@@ -178,4 +179,40 @@ test.each([false, true])('invalidates vendor history with live channel %s', asyn
   subscription.unsubscribe()
   expect(updates).toMatchObject([{ type: 'ready', live }, { type: 'invalidated' }])
   expect(watcher.closed).toBe(true)
+})
+
+test('subscribes to Subagent changes without replaying root Session events', async () => {
+  const t = initTRPC.create()
+  const watcher: { invalidate: () => void } = {
+    invalidate: () => {
+      throw new Error('Subagent watcher did not attach.')
+    },
+  }
+  const caller = t
+    .router({
+      live: sessionLiveEventsProcedure({
+        database,
+        journal,
+        hasLiveChannel: () => true,
+        watchHistory: (_harness, target, callback) => {
+          expect(target.subagentId).toBe('subagent-1')
+          watcher.invalidate = callback
+          return () => {}
+        },
+      }),
+    })
+    .createCaller({})
+  const updates: unknown[] = []
+  const stream = await caller.live({ sessionId, subagentId: 'subagent-1', cursor: 0 })
+  const subscription = stream.subscribe({ next: (update) => updates.push(update) })
+  journal.append(sessionId, {
+    type: 'status',
+    commandId: null,
+    turnId: null,
+    vendorEventId: null,
+    status: 'running',
+  })
+  watcher.invalidate()
+  subscription.unsubscribe()
+  expect(updates).toEqual([{ type: 'ready', live: false, cursor: 0 }, { type: 'invalidated' }])
 })

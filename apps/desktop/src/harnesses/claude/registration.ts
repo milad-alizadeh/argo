@@ -21,10 +21,10 @@ export function createClaudeRegistration(): HarnessRegistration<'claude'> {
     readCatalog: () => readClaudeHarnessInfo(executable),
     readHistory: ({ nativeId, subagentId, cwd }) =>
       readClaudeSessionHistory(nativeId, cwd, subagentId),
-    watchHistory: ({ nativeId }, invalidate) =>
+    watchHistory: ({ nativeId, subagentId }, invalidate) =>
       watchVendorHistory(
         path.join(process.env.CLAUDE_CONFIG_DIR ?? path.join(os.homedir(), '.claude'), 'projects'),
-        nativeId,
+        subagentId ?? nativeId,
         invalidate,
       ),
     rename: claudeSessionRenamer.rename,

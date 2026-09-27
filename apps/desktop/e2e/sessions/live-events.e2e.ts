@@ -51,6 +51,7 @@ const liveEvents: SessionLiveEventBody[] = [
     vendorEventId: 'permission-1',
     requestId: 'permission-1',
     description: 'Read file',
+    decision: null,
   },
   {
     type: 'question',

@@ -55,6 +55,22 @@ function commandContentRow(content: Extract<FeedContent, { kind: 'command' }>): 
   }
 }
 
+function permissionEventKind(
+  decision: Extract<SessionLiveEvent, { type: 'permission' }>['decision'],
+): Extract<SessionFeedRow, { shape: 'event' }>['event'] {
+  switch (decision) {
+    case null:
+      return 'permission'
+    case 'allow':
+    case 'allowForSession':
+      return 'permissionGranted'
+    case 'deny':
+      return 'permissionDenied'
+    case 'cancel':
+      return 'permissionCancelled'
+  }
+}
+
 // Decoders preserve content semantics; this maps that content to the existing Feed display rows.
 function contentRow(content: FeedContent): SessionFeedRow | null {
   switch (content.kind) {
@@ -69,7 +85,9 @@ function contentRow(content: FeedContent): SessionFeedRow | null {
     case 'command':
       return commandContentRow(content)
     case 'notification':
-      return { shape: 'event', id: content.id, event: 'status', text: content.text }
+      return content.category === 'status'
+        ? null
+        : { shape: 'event', id: content.id, event: 'status', text: content.text }
     case 'context':
       return { shape: 'event', id: content.id, event: 'context', text: content.text }
     case 'marker':
@@ -111,7 +129,7 @@ function liveRow(event: SessionLiveEvent): SessionFeedRow | null {
       return {
         shape: 'event',
         id: event.requestId,
-        event: 'permission',
+        event: permissionEventKind(event.decision),
         text: event.description,
       }
     case 'question':
@@ -126,8 +144,8 @@ function liveRow(event: SessionLiveEvent): SessionFeedRow | null {
       return {
         shape: 'event',
         id: `failure:${event.sequence}`,
-        event: 'status',
-        text: event.detail,
+        event: 'liveFailure',
+        text: null,
       }
   }
 }

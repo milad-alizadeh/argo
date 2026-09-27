@@ -1,42 +1,26 @@
 import { expect, test } from 'bun:test'
-import type { SDKPartialAssistantMessage } from '@anthropic-ai/claude-agent-sdk'
+import { readFileSync } from 'node:fs'
 import { ClaudeLiveText } from './claude-live-text'
 
-function delta(uuid: string, index: number, text: string): SDKPartialAssistantMessage {
-  return {
-    type: 'stream_event',
-    uuid,
-    session_id: 'native-1',
-    parent_tool_use_id: null,
-    event: { type: 'content_block_delta', index, delta: { type: 'text_delta', text } },
-  } as SDKPartialAssistantMessage
-}
-
-function start(uuid: string, messageId: string): SDKPartialAssistantMessage {
-  return {
-    type: 'stream_event',
-    uuid,
-    session_id: 'native-1',
-    parent_tool_use_id: null,
-    event: { type: 'message_start', message: { id: messageId } },
-  } as SDKPartialAssistantMessage
-}
-
-test('builds an assistant row incrementally under its vendor message identity', () => {
+// Captured from a Claude Agent SDK query with includePartialMessages on 2026-09-28.
+test('builds a stable assistant row from recorded Claude Agent SDK stream events', () => {
+  const recorded = readFileSync(
+    new URL('./fixtures/claude-live-stream.jsonl', import.meta.url),
+    'utf8',
+  )
+    .trim()
+    .split('\n')
+    .map((line) => JSON.parse(line) as unknown)
   const stream = new ClaudeLiveText()
-  expect(stream.append(start('event-1', 'assistant-1'))).toBeNull()
-  expect(stream.append(delta('event-2', 0, 'Read'))).toMatchObject({
-    id: 'assistant-1',
-    text: 'Read',
+  expect(stream.append(recorded[0])).toBeNull()
+  expect(stream.append(recorded[1])).toMatchObject({
+    id: 'msg_011CfUn1LYTswFg4iiVyNh4i:1',
+    text: 'A file reader opens',
   })
-  expect(stream.append(delta('event-3', 0, 'ing'))).toMatchObject({
-    id: 'assistant-1',
-    text: 'Reading',
+  expect(stream.append(recorded[2])).toMatchObject({
+    id: 'msg_011CfUn1LYTswFg4iiVyNh4i:1',
+    text: 'A file reader opens files stored',
   })
-  expect(stream.append(delta('event-4', 1, 'tool'))).toMatchObject({
-    id: 'assistant-1:1',
-    text: 'tool',
-  })
-  stream.settle('assistant-1')
-  expect(stream.append(delta('event-5', 0, 'stray'))).toBeNull()
+  stream.settle('msg_011CfUn1LYTswFg4iiVyNh4i')
+  expect(stream.append(recorded[3])).toBeNull()
 })

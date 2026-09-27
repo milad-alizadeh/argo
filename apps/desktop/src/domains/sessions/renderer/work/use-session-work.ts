@@ -6,6 +6,7 @@ import { useMemo } from 'react'
 import type { SessionShellOutput, SubagentUsageFacts } from '@/domains/sessions/renderer/work/types'
 import { projectLiveFeedRows } from '../feed/model/live-feed-rows'
 import { useFeedHistory } from '../feed/use-feed-history'
+import { useLiveFeedEvents } from '../feed/use-live-feed-events'
 import {
   SESSION_REFRESH_MS,
   sessionShellOutputQueryKey,
@@ -56,7 +57,9 @@ export function useShellOutput(sessionId: SessionId | null, shellId: string | nu
 // One Subagent's own transcript, read as its own document so the Session's Feed is never displaced
 // by it. Null until a Subagent is picked.
 export function useDelegationFeed(sessionId: SessionId | null, subagentId: string | null) {
-  const history = useFeedHistory(subagentId === null ? null : sessionId, subagentId)
+  const selectedSessionId = subagentId === null ? null : sessionId
+  const live = useLiveFeedEvents(selectedSessionId, subagentId)
+  const history = useFeedHistory(selectedSessionId, subagentId, live?.ready ?? false)
   const feed = useMemo(() => {
     const reading = history.reading
     return reading?.content === undefined

@@ -1,7 +1,7 @@
-import type { SDKPartialAssistantMessage } from '@anthropic-ai/claude-agent-sdk'
 import { z } from 'zod'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 
+const streamEventSchema = z.object({ event: z.unknown() })
 const textDeltaSchema = z.object({
   type: z.literal('content_block_delta'),
   index: z.number().int().nonnegative(),
@@ -23,13 +23,15 @@ export class ClaudeLiveText {
       if (key.startsWith(`${messageId}:`)) this.blocks.delete(key)
   }
 
-  append(message: SDKPartialAssistantMessage): FeedContent | null {
-    const start = messageStartSchema.safeParse(message.event)
+  append(message: unknown): FeedContent | null {
+    const envelope = streamEventSchema.safeParse(message)
+    if (!envelope.success) return null
+    const start = messageStartSchema.safeParse(envelope.data.event)
     if (start.success) {
       this.activeMessageId = start.data.message.id
       return null
     }
-    const event = textDeltaSchema.safeParse(message.event)
+    const event = textDeltaSchema.safeParse(envelope.data.event)
     if (!event.success || this.activeMessageId === null) return null
     const id =
       event.data.index === 0 ? this.activeMessageId : `${this.activeMessageId}:${event.data.index}`
