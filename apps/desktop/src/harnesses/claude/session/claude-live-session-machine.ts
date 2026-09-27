@@ -8,7 +8,7 @@ import {
 } from '@anthropic-ai/claude-agent-sdk'
 import { assign, fromCallback, sendTo, setup as xstateSetup } from 'xstate'
 import { z } from 'zod'
-import { type QuestionAnswer, questionSchema } from '@/domains/sessions/api/questions'
+import { type Question, type QuestionAnswer, questionSchema } from '@/domains/sessions/api/questions'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type {
   SessionLiveInput,
@@ -76,12 +76,23 @@ const askInputSchema = z.object({
     .min(1),
 })
 
-function answerText(answer: QuestionAnswer, question: z.infer<typeof questionSchema>): string {
+function answerText(answer: QuestionAnswer, question: Question): string {
   if (answer.kind === 'text') return answer.text
   return answer.indices
-    .map((index) => question.options[index - 1]?.label)
-    .filter((label): label is string => label !== undefined)
+    .map((index) => {
+      const option = question.options[index - 1]
+      if (option === undefined) throw new Error('Claude Question answer has an invalid option.')
+      return option.label
+    })
     .join(', ')
+}
+
+function answeredQuestionEntries(questions: Question[], answers: QuestionAnswer[]) {
+  return questions.map((question, index): [string, string] => {
+    const answer = answers[index]
+    if (answer === undefined) throw new Error('Claude Question answer is incomplete.')
+    return [question.question, answerText(answer, question)]
+  })
 }
 
 function isUuid(value: string): boolean {
@@ -278,7 +289,7 @@ export const claudeLiveSessionMachine = xstateSetup({
         const identity = {
           commandId: activeCommandId,
           turnId: activeCommandId,
-          vendorEventId: options.requestId,
+          vendorEventId: options.toolUseID,
           requestId: options.requestId,
         }
         if (toolName === 'AskUserQuestion') {
@@ -314,9 +325,8 @@ export const claudeLiveSessionMachine = xstateSetup({
             questions,
             signal: options.signal,
           })
-          const answer = questions
-            .map((question, index) => answerText(answers[index] as QuestionAnswer, question))
-            .join('; ')
+          const answered = answeredQuestionEntries(questions, answers)
+          const answer = answered.map(([, text]) => text).join('; ')
           sendBack({
             type: 'Feed event',
             body: {
@@ -331,12 +341,7 @@ export const claudeLiveSessionMachine = xstateSetup({
             behavior: 'allow',
             updatedInput: {
               ...toolInput,
-              answers: Object.fromEntries(
-                questions.map((question, index) => [
-                  question.question,
-                  answerText(answers[index] as QuestionAnswer, question),
-                ]),
-              ),
+              answers: Object.fromEntries(answered),
             },
           }
         }

@@ -18,13 +18,15 @@ type PendingQuestion = {
 }
 
 type Pending = PendingPermission | PendingQuestion
-type PendingRequest = Omit<PendingPermission, 'resolve'> | Omit<PendingQuestion, 'resolve'>
 
 export class SessionInteractionBroker {
   private readonly pending = new Map<string, Pending>()
 
-  private wait<Value>(request: PendingRequest, signal: AbortSignal): Promise<Value> {
-    const key = `${request.nativeId}:${request.requestId}`
+  private wait<Value>(
+    key: string,
+    signal: AbortSignal,
+    create: (resolve: (answer: Value) => void) => Pending,
+  ): Promise<Value> {
     if (this.pending.has(key)) throw new Error('Duplicate Session interaction request.')
     if (signal.aborted) return Promise.reject(new Error('Session interaction was cancelled.'))
     return new Promise<Value>((resolve, reject) => {
@@ -33,14 +35,14 @@ export class SessionInteractionBroker {
         reject(new Error('Session interaction was cancelled.'))
       }
       signal.addEventListener('abort', cancel, { once: true })
-      this.pending.set(key, {
-        ...request,
-        resolve: (answer: PermissionDecision | QuestionAnswer[]) => {
+      this.pending.set(
+        key,
+        create((answer) => {
           signal.removeEventListener('abort', cancel)
           this.pending.delete(key)
-          resolve(answer as Value)
-        },
-      } as Pending)
+          resolve(answer)
+        }),
+      )
     })
   }
 
@@ -50,8 +52,14 @@ export class SessionInteractionBroker {
     description: string
     signal: AbortSignal
   }): Promise<PermissionDecision> {
-    const { signal, ...pending } = request
-    return this.wait({ kind: 'permission', ...pending }, signal)
+    const { nativeId, requestId, description, signal } = request
+    return this.wait(`${nativeId}:${requestId}`, signal, (resolve) => ({
+      kind: 'permission',
+      nativeId,
+      requestId,
+      description,
+      resolve,
+    }))
   }
 
   requestQuestion(request: {
@@ -60,8 +68,14 @@ export class SessionInteractionBroker {
     questions: Question[]
     signal: AbortSignal
   }): Promise<QuestionAnswer[]> {
-    const { signal, ...pending } = request
-    return this.wait({ kind: 'question', ...pending }, signal)
+    const { nativeId, requestId, questions, signal } = request
+    return this.wait(`${nativeId}:${requestId}`, signal, (resolve) => ({
+      kind: 'question',
+      nativeId,
+      requestId,
+      questions,
+      resolve,
+    }))
   }
 
   permission(nativeId: string): Pick<PendingPermission, 'requestId' | 'description'> | null {

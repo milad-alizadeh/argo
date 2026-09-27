@@ -80,7 +80,17 @@ function contentRow(content: FeedContent): SessionFeedRow | null {
             summary: content.summary,
           }
         : { shape: 'event', id: content.id, event: 'status', text: content.summary }
-    default:
+    case 'media':
+    case 'reference':
+    case 'fileChange':
+    case 'search':
+    case 'plan':
+    case 'delegation':
+    case 'task':
+    case 'refusal':
+    case 'imageGeneration':
+    case 'wait':
+    case 'diagnostic':
       return null
   }
 }
@@ -92,7 +102,7 @@ function liveRow(event: SessionLiveEvent): SessionFeedRow | null {
     case 'status':
       return {
         shape: 'event',
-        id: `status:${event.turnId ?? event.commandId ?? event.sequence}:${event.status}`,
+        id: `status:${event.sequence}`,
         event: 'status',
         text: event.status,
       }
@@ -114,7 +124,7 @@ function liveRow(event: SessionLiveEvent): SessionFeedRow | null {
     case 'failure':
       return {
         shape: 'event',
-        id: `failure:${event.turnId ?? event.sequence}`,
+        id: `failure:${event.sequence}`,
         event: 'status',
         text: event.detail,
       }
@@ -130,30 +140,62 @@ export function projectLiveFeedRows(
   history: readonly FeedContent[],
   live: readonly SessionLiveEvent[],
 ): SessionFeedRow[] {
-  const rows: SessionFeedRow[] = []
-  const index = new Map<string, number>()
-  const settled = new Set<string>()
+  const sortedLive = [...live].sort((left, right) => left.sequence - right.sequence)
+  const questionCalls = new Set(
+    sortedLive.flatMap((event) =>
+      event.type === 'question' && event.vendorEventId !== null ? [event.vendorEventId] : [],
+    ),
+  )
+  const settledThrough = sortedLive.reduce(
+    (sequence, event) =>
+      event.type === 'status' && event.status === 'idle'
+        ? Math.max(sequence, event.sequence)
+        : sequence,
+    0,
+  )
+  const historyRows: SessionFeedRow[] = []
+  const historyIndex = new Map<string, number>()
   for (const content of history) {
+    if (content.kind === 'tool' && questionCalls.has(content.callId)) continue
     const row = contentRow(content)
     if (row === null) continue
     const key = rowKey(row)
-    const prior = index.get(key)
+    const prior = historyIndex.get(key)
     if (prior === undefined) {
-      index.set(key, rows.length)
-      rows.push(row)
-    } else rows[prior] = row
-    settled.add(key)
+      historyIndex.set(key, historyRows.length)
+      historyRows.push(row)
+    } else historyRows[prior] = row
   }
-  for (const event of [...live].sort((left, right) => left.sequence - right.sequence)) {
+  const liveRows: { key: string; row: SessionFeedRow; sequence: number }[] = []
+  const liveIndex = new Map<string, number>()
+  for (const event of sortedLive) {
+    if (event.type === 'content' && event.content.kind === 'tool')
+      if (questionCalls.has(event.content.callId)) continue
     const row = liveRow(event)
     if (row === null) continue
     const key = rowKey(row)
-    if (settled.has(key)) continue
-    const prior = index.get(key)
+    const prior = liveIndex.get(key)
     if (prior === undefined) {
-      index.set(key, rows.length)
-      rows.push(row)
-    } else rows[prior] = row
+      liveIndex.set(key, liveRows.length)
+      liveRows.push({ key, row, sequence: event.sequence })
+    } else liveRows[prior] = { key, row, sequence: event.sequence }
   }
+  const firstMatch = liveRows
+    .map(({ key }) => historyIndex.get(key))
+    .find((position) => position !== undefined)
+  const rows = historyRows.slice(0, firstMatch ?? historyRows.length)
+  let nextHistory = firstMatch ?? historyRows.length
+  for (const liveRow of liveRows) {
+    const matched = historyIndex.get(liveRow.key)
+    if (matched === undefined) {
+      rows.push(liveRow.row)
+      continue
+    }
+    if (matched < nextHistory) continue
+    rows.push(...historyRows.slice(nextHistory, matched))
+    rows.push(liveRow.sequence <= settledThrough ? (historyRows[matched] ?? liveRow.row) : liveRow.row)
+    nextHistory = matched + 1
+  }
+  rows.push(...historyRows.slice(nextHistory))
   return rows
 }

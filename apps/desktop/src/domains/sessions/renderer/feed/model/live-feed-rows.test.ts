@@ -66,7 +66,7 @@ test('shows ordered live text, tool work, status, Permission, and Question rows'
   )
   expect(rows.map((row) => [row.shape, row.id])).toEqual([
     ['prose', 'prompt-1'],
-    ['event', 'status:turn-1:running'],
+    ['event', 'status:2'],
     ['prose', 'answer-1'],
     ['tool', 'call-1'],
     ['event', 'permission-1'],
@@ -102,9 +102,18 @@ test('settled vendor history replaces matching live messages and tool progress',
       output: null,
       summary: null,
     }),
+    {
+      type: 'status' as const,
+      sessionId,
+      sequence: 4,
+      commandId: 'command-1',
+      turnId: 'turn-1',
+      vendorEventId: null,
+      status: 'idle' as const,
+    },
   ]
   const rows = projectLiveFeedRows(history, live)
-  expect(rows).toHaveLength(3)
+  expect(rows).toHaveLength(4)
   expect(rows[1]).toMatchObject({ shape: 'prose', text: 'Final answer' })
   expect(rows[2]).toMatchObject({
     shape: 'tool',
@@ -112,4 +121,103 @@ test('settled vendor history replaces matching live messages and tool progress',
     status: 'succeeded',
     evidence: { source: 'file contents' },
   })
+})
+
+test('interleaves live status with matching history while active text and tools keep updating', () => {
+  const history: FeedContent[] = [
+    { kind: 'message', id: 'old-1', role: 'assistant', text: 'Earlier turn' },
+    { kind: 'message', id: 'prompt-1', role: 'user', text: 'Inspect this' },
+    { kind: 'message', id: 'answer-1', role: 'assistant', text: 'Old text' },
+    {
+      kind: 'tool',
+      id: 'tool-1',
+      callId: 'call-1',
+      name: 'Read',
+      status: 'running',
+      input: null,
+      output: null,
+      summary: null,
+    },
+  ]
+  const rows = projectLiveFeedRows(history, [
+    content(1, { kind: 'message', id: 'prompt-1', role: 'user', text: 'Inspect this' }),
+    {
+      type: 'status',
+      sessionId,
+      sequence: 2,
+      commandId: 'command-1',
+      turnId: 'turn-1',
+      vendorEventId: null,
+      status: 'running',
+    },
+    content(3, { kind: 'message', id: 'answer-1', role: 'assistant', text: 'Growing text' }),
+    {
+      type: 'permission',
+      sessionId,
+      sequence: 4,
+      commandId: 'command-1',
+      turnId: 'turn-1',
+      vendorEventId: 'call-1',
+      requestId: 'permission-1',
+      description: 'Read file',
+    },
+    content(5, {
+      kind: 'tool',
+      id: 'tool-1',
+      callId: 'call-1',
+      name: 'Read',
+      status: 'completed',
+      input: null,
+      output: null,
+      summary: null,
+    }),
+    {
+      type: 'status',
+      sessionId,
+      sequence: 6,
+      commandId: 'command-1',
+      turnId: 'turn-1',
+      vendorEventId: null,
+      status: 'running',
+    },
+  ])
+  expect(rows.map((row) => row.id)).toEqual([
+    'old-1',
+    'prompt-1',
+    'status:2',
+    'answer-1',
+    'permission-1',
+    'call-1',
+    'status:6',
+  ])
+  expect(rows[3]).toMatchObject({ text: 'Growing text' })
+  expect(rows[5]).toMatchObject({ status: 'succeeded' })
+})
+
+test('shows a Claude Question once when vendor history includes its tool call', () => {
+  const tool: FeedContent = {
+    kind: 'tool',
+    id: 'question-tool',
+    callId: 'question-call',
+    name: 'AskUserQuestion',
+    status: 'completed',
+    input: null,
+    output: null,
+    summary: null,
+  }
+  const rows = projectLiveFeedRows([tool], [
+    content(1, tool),
+    {
+      type: 'question',
+      sessionId,
+      sequence: 2,
+      commandId: 'command-1',
+      turnId: 'turn-1',
+      vendorEventId: 'question-call',
+      requestId: 'question-1',
+      questions: [{ question: 'Which file?', header: null, multiSelect: false, options: [] }],
+      answer: null,
+    },
+  ])
+  expect(rows.map((row) => [row.shape, row.id])).toEqual([['ask', 'question-1']])
 })
