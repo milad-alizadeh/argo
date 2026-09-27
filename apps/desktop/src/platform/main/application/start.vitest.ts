@@ -1,5 +1,6 @@
 import { afterEach, expect, test, vi } from 'vitest'
 import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
+import type { HarnessRegistry } from '@/harnesses/registry'
 
 const electron = vi.hoisted(() => ({
   app: {
@@ -26,17 +27,22 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
+function prepared() {
+  return {
+    database: {} as never,
+    databasePath: '',
+    sessionSyncStatus: new SessionSyncStatusStore(),
+    codexSessionSyncStatus: new SessionSyncStatusStore(undefined, 'codex'),
+    registrations: {} as HarnessRegistry,
+  }
+}
+
 test('does not start a second Argo application instance', async () => {
   electron.app.requestSingleInstanceLock.mockReturnValue(false)
   const ready = vi.fn()
 
   startDesktopApplication({
-    prepare: vi.fn(async () => ({
-      database: {} as never,
-      databasePath: '',
-      sessionSyncStatus: new SessionSyncStatusStore(),
-      codexSessionSyncStatus: new SessionSyncStatusStore(undefined, 'codex'),
-    })),
+    prepare: vi.fn(async () => prepared()),
     ready,
     focusExistingWindow: vi.fn(),
     willQuit: vi.fn(),
@@ -54,12 +60,7 @@ test('focuses the existing window when a second instance is launched', async () 
   const ready = vi.fn()
 
   startDesktopApplication({
-    prepare: vi.fn(async () => ({
-      database: {} as never,
-      databasePath: '',
-      sessionSyncStatus: new SessionSyncStatusStore(),
-      codexSessionSyncStatus: new SessionSyncStatusStore(undefined, 'codex'),
-    })),
+    prepare: vi.fn(async () => prepared()),
     ready,
     focusExistingWindow,
     willQuit: vi.fn(),

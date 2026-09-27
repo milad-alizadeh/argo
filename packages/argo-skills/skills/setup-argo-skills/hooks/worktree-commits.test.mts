@@ -31,6 +31,18 @@ test('the same commit inside a worktree is allowed', () => {
   assert.equal(decideEdit(commit('git commit -m "wip"', WORKTREE)).block, false)
 })
 
+test('a commit after changing into a worktree is allowed', () => {
+  assert.equal(decideEdit(commit(`cd ${WORKTREE} && rtk git commit -m "wip"`)).block, false)
+})
+
+test('a write after changing into a worktree is allowed', () => {
+  assert.equal(decideEdit(commit(`cd ${WORKTREE} && touch created`)).block, false)
+})
+
+test('a guarded command inside a quoted search pattern is not invoked', () => {
+  assert.equal(decideEdit(commit('rtk rg -n "a|git commit|b" hooks.mts')).block, false)
+})
+
 test('the human is never guarded', () => {
   assert.equal(decideEdit({ ...commit('git commit -m "wip"'), isAgent: false }).block, false)
 })

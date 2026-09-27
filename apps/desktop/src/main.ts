@@ -15,6 +15,7 @@ import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import type { CatalogActor } from '@/harnesses/catalog/catalog-read'
 import { createClaudeRegistration } from '@/harnesses/claude/registration'
+import type { CodexRequest } from '@/harnesses/codex/app-server/codex-app-server-client'
 import {
   type codexAppServerMachine,
   requestCodexAppServer,
@@ -101,6 +102,19 @@ if (DEVELOPMENT_INSTANCE) {
 
 let desktopWindow: BrowserWindow | undefined
 let focusRequestedBeforeWindowReady = false
+let applicationActor: AppActor | undefined
+let harnessRegistrations: HarnessRegistry | undefined
+
+function codexRequest(): CodexRequest {
+  return (method, params, parse) => {
+    const actor = applicationActor?.system.get('codex') as
+      | ActorRefFrom<typeof codexAppServerMachine>
+      | undefined
+    if (actor === undefined)
+      return Promise.reject(new Error('Codex app-server actor is unavailable.'))
+    return requestCodexAppServer(actor)(method, params, parse)
+  }
+}
 
 function focusWindow(): void {
   if (!desktopWindow) {
@@ -264,12 +278,8 @@ function closeDesktopWindow({
   database.$client.close()
 }
 
-function createWindow(actor: AppActor, database: Database): void {
+function createWindow(actor: AppActor, database: Database, registrations: HarnessRegistry): void {
   const actors = requireWindowActors(actor)
-  const registrations = {
-    claude: createClaudeRegistration(),
-    codex: createCodexRegistration(requestCodexAppServer(actors.codex)),
-  } satisfies HarnessRegistry
   const domains = createDomainContexts(database, registrations)
   desktopWindow = createDesktopWindow({
     buildDirectory: __dirname,
@@ -327,11 +337,16 @@ async function prepare() {
   if (DEVELOPMENT_INSTANCE) {
     await seedDevelopmentProject(applicationDatabase, DEVELOPMENT_INSTANCE)
   }
+  harnessRegistrations = {
+    claude: createClaudeRegistration(),
+    codex: createCodexRegistration(codexRequest()),
+  }
   return {
     database: applicationDatabase,
     databasePath: databasePath(projectData),
     sessionSyncStatus,
     codexSessionSyncStatus,
+    registrations: harnessRegistrations,
   }
 }
 
@@ -344,7 +359,9 @@ async function ready(actor: AppActor): Promise<void> {
   })
   if (applicationDatabase === undefined || sessionSyncStatus === undefined)
     throw new Error('Application services are unavailable.')
-  createWindow(actor, applicationDatabase)
+  applicationActor = actor
+  if (harnessRegistrations === undefined) throw new Error('Harness registrations are unavailable.')
+  createWindow(actor, applicationDatabase, harnessRegistrations)
 
   if (ACCEPTANCE_ENABLED) {
     // A window is open and a PTY may still be draining, so this run also stands as the app-shutdown
