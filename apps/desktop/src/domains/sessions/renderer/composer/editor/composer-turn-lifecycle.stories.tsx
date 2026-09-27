@@ -53,51 +53,6 @@ function LiveComposerStory() {
   )
 }
 
-function QueuedComposerStory({ onSend }: { onSend: ComposerFormProps['onSend'] }) {
-  const [running, setRunning] = useState(true)
-
-  return (
-    <>
-      <Button onClick={() => setRunning(false)} type="button" variant="outline">
-        Finish turn
-      </Button>
-      <ComposerForm isRunning={running} onSend={onSend} sessionId="queued-session" />
-    </>
-  )
-}
-
-function SteeredQueuedComposerStory({
-  onSteer,
-}: {
-  onSteer: NonNullable<ComposerFormProps['onSteer']>
-}) {
-  return (
-    <ComposerForm
-      isRunning
-      onSend={async () => true}
-      onSteer={onSteer}
-      sessionId="steered-queued-session"
-    />
-  )
-}
-
-function FailedQueuedComposerStory() {
-  const [running, setRunning] = useState(true)
-
-  return (
-    <>
-      <Button onClick={() => setRunning(false)} type="button" variant="outline">
-        Finish turn
-      </Button>
-      <ComposerForm
-        isRunning={running}
-        onSend={async () => false}
-        sessionId="failed-queued-session"
-      />
-    </>
-  )
-}
-
 // The send stays pending until the reader finishes it, so a Session switch can land mid-send.
 function PendingSendStory() {
   const [sessionId, setSessionId] = useState('session-one')
@@ -255,78 +210,24 @@ export const SendFinishesInAnotherSession: Story = {
   },
 }
 
-export const QueuedTurn: StoryObj<typeof QueuedComposerStory> = {
-  render: (args) => <QueuedComposerStory {...args} />,
-  args: { onSend: fn(async () => true) },
-  play: async ({ args, canvasElement }) => {
-    const canvas = within(canvasElement)
-    const composer = canvas.getByLabelText('Message')
-
-    await sendDraft(canvas, 'Run the focused checks after this Turn.')
-
-    await expect(canvas.getByRole('region', { name: 'Pending Turns' })).toHaveTextContent(
-      'Run the focused checks after this Turn.',
-    )
-    await expect(args.onSend).not.toHaveBeenCalled()
-    await sendDraft(canvas, 'Then prepare the release notes.')
-    await expect(canvas.getAllByRole('listitem')[1]).toHaveClass(
-      'session-page__queued-message--enter',
-    )
-    await userEvent.click(
-      canvas.getByRole('button', {
-        name: 'Remove queued message: Run the focused checks after this Turn.',
-      }),
-    )
-    await expect(canvas.getAllByRole('listitem')[0]).toHaveClass(
-      'session-page__queued-message--exit',
-    )
-    await waitFor(() =>
-      expect(
-        canvas.getByRole('button', {
-          name: 'Steer queued message: Then prepare the release notes.',
-        }),
-      ).toHaveFocus(),
-    )
-    await userEvent.click(
-      canvas.getByRole('button', {
-        name: 'Edit queued message: Then prepare the release notes.',
-      }),
-    )
-    await expect(composer).toHaveTextContent('Then prepare the release notes.')
-    await expect(composer).toHaveFocus()
-    await userEvent.click(canvas.getByRole('button', { name: 'Finish turn' }))
-    await expect(args.onSend).toHaveBeenCalledWith('Then prepare the release notes.', null, [])
-  },
-}
-
-export const SteeredQueuedTurn: StoryObj<typeof SteeredQueuedComposerStory> = {
-  render: (args) => <SteeredQueuedComposerStory {...args} />,
-  args: { onSteer: fn(async () => true) },
-  play: async ({ args, canvasElement }) => {
-    const canvas = within(canvasElement)
-    const message = 'Steer this queued message.'
-
-    await sendDraft(canvas, message)
-    await userEvent.click(canvas.getByRole('button', { name: `Steer queued message: ${message}` }))
-
-    await expect(args.onSteer).toHaveBeenCalledWith(message, [])
-    await expect(canvas.queryByRole('listitem')).toBeNull()
-    await expect(canvas.getByLabelText('Message')).not.toHaveTextContent(message)
-  },
-}
-
-export const FailedQueuedTurn: Story = {
-  render: () => <FailedQueuedComposerStory />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-
-    await sendDraft(canvas, 'Keep this pending when Claude rejects it.')
-    await userEvent.click(canvas.getByRole('button', { name: 'Finish turn' }))
-    await expect(canvas.getByRole('region', { name: 'Pending Turns' })).toHaveTextContent(
-      'Keep this pending when Claude rejects it.',
-    )
-  },
-}
+export const RunningSessionSendUsesDurableCommand: StoryObj<typeof TurnConfigurationComposerStory> =
+  {
+    render: (args) => (
+      <TurnConfigurationComposerStory {...args} running sessionId="running-session-send" />
+    ),
+    args: { onSend: fn(async () => true) },
+    play: async ({ args, canvasElement }) => {
+      const canvas = within(canvasElement)
+      const composer = canvas.getByLabelText('Message')
+      await sendDraft(canvas, 'Keep this Turn in the durable draft flow.')
+      await expect(args.onSend).toHaveBeenCalledWith(
+        'Keep this Turn in the durable draft flow.',
+        CLAUDE_TURN_CONFIGURATION.opening,
+        [],
+      )
+      await expect(composer).not.toHaveTextContent('Keep this Turn in the durable draft flow.')
+    },
+  }
 
 export const SendsTheChosenTurnConfiguration: StoryObj<typeof TurnConfigurationComposerStory> = {
   render: (args) => (
@@ -353,42 +254,6 @@ export const SendsTheChosenTurnConfiguration: StoryObj<typeof TurnConfigurationC
     await expect(args.onSend).toHaveBeenCalledWith(
       'Plan the migration.',
       { model: 'sonnet', effort: 'medium', mode: 'plan' },
-      [],
-    )
-  },
-}
-
-export const QueuedTurnKeepsItsConfiguration: StoryObj<typeof TurnConfigurationComposerStory> = {
-  render: (args) => (
-    <TurnConfigurationComposerStory
-      {...args}
-      running
-      sessionId="queued-turnConfiguration-session"
-    />
-  ),
-  args: { onSend: fn(async () => true) },
-  parameters: { frame: TURN_CONFIGURATION_FRAME },
-  play: async ({ args, canvasElement }) => {
-    const canvas = within(canvasElement)
-    const composer = canvas.getByLabelText('Message')
-    const mode = canvas.getByRole('button', { name: /^Choose permission mode/ })
-
-    await chooseMode(canvasElement, /Plan/)
-    await sendDraft(canvas, 'Plan the release.')
-    await chooseMode(canvasElement, /Accept edits/)
-    await expect(mode).toHaveTextContent('Accept edits')
-
-    await userEvent.click(
-      canvas.getByRole('button', { name: 'Edit queued message: Plan the release.' }),
-    )
-    await expect(composer).toHaveTextContent('Plan the release.')
-    await expect(mode).toHaveTextContent('Plan')
-
-    await chooseMode(canvasElement, /Auto/)
-    await userEvent.click(canvas.getByRole('button', { name: 'Finish turn' }))
-    await expect(args.onSend).toHaveBeenCalledWith(
-      'Plan the release.',
-      { model: 'opus', effort: 'medium', mode: 'plan' },
       [],
     )
   },

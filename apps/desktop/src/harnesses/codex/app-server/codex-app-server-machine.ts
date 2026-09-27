@@ -6,9 +6,7 @@ import { executableVersion } from '@/harnesses/cli/executable-version'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/proof-protocol'
 
-// The subset of `codex app-server`'s JSON-RPC protocol this adapter drives, grounded in codex-harness
-// 0.147.0's generated schema (`codex app-server generate-json-schema`) and the live proof recorded
-// in docs/research/2026-09-09-codex-transport.md.
+// The base protocol uses the 0.147.0 schema; the thread/resume sandbox override was verified against 0.157.0.
 export type RequestID = string | number
 export const CODEX_THREAD_SOURCE_KINDS = [
   'cli',
@@ -30,6 +28,10 @@ export type RequestParams = {
     model: string
     approvalPolicy: string
     sandbox: string
+  }
+  'thread/resume': {
+    threadId: string
+    sandbox?: string
   }
   'turn/start': {
     threadId: string

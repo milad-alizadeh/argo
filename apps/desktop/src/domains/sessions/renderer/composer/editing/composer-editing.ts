@@ -1,4 +1,3 @@
-import type { SessionAttachmentInput } from '@/domains/sessions/api/attachments'
 import type { RouterInputs } from '@/platform/renderer/trpc-client'
 import type { TurnConfiguration } from '../turn-configuration/turn-configuration'
 
@@ -11,18 +10,10 @@ export type ComposerAttachment = {
   status: 'idle' | 'error'
 }
 
-export type PendingTurn = {
-  id: string
-  text: string
-  turnConfiguration?: TurnConfiguration
-  attachments: SessionAttachmentInput[]
-}
-
 export type ComposerEditing = {
   prompt: string
   attachments: ComposerAttachment[]
   tickets: ComposerTicketContext[]
-  pendingTurns: PendingTurn[]
   turnConfiguration: TurnConfiguration | null
 }
 
@@ -31,7 +22,6 @@ export function composerEditing(initial: Partial<ComposerEditing> = {}): Compose
     prompt: '',
     attachments: [],
     tickets: [],
-    pendingTurns: [],
     turnConfiguration: null,
     ...initial,
   }
@@ -48,9 +38,6 @@ export type ComposerEditingEvent =
       ticket: Omit<ComposerTicketContext, 'id'>
       createId: () => string
     }
-  | { type: 'pending-turn.added'; turn: PendingTurn }
-  | { type: 'pending-turn.removed'; id: string }
-  | { type: 'pending-turn.reordered'; sourceId: string; targetId: string }
   | { type: 'turn-configuration.changed'; turnConfiguration: TurnConfiguration }
 
 function addAttachments(
@@ -84,20 +71,6 @@ function addTicket(
     : { ...current, tickets: [...current.tickets, { ...event.ticket, id: event.createId() }] }
 }
 
-function reorderPendingTurn(
-  current: ComposerEditing,
-  event: Extract<ComposerEditingEvent, { type: 'pending-turn.reordered' }>,
-) {
-  const sourceIndex = current.pendingTurns.findIndex(({ id }) => id === event.sourceId)
-  const targetIndex = current.pendingTurns.findIndex(({ id }) => id === event.targetId)
-  if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) return current
-  const pendingTurns = [...current.pendingTurns]
-  const [source] = pendingTurns.splice(sourceIndex, 1)
-  if (source === undefined) return current
-  pendingTurns.splice(targetIndex, 0, source)
-  return { ...current, pendingTurns }
-}
-
 export function editComposer(
   current: ComposerEditing,
   event: ComposerEditingEvent,
@@ -128,15 +101,6 @@ export function editComposer(
       }
     case 'ticket.added':
       return addTicket(current, event)
-    case 'pending-turn.added':
-      return { ...current, pendingTurns: [...current.pendingTurns, event.turn] }
-    case 'pending-turn.removed':
-      return {
-        ...current,
-        pendingTurns: current.pendingTurns.filter((turn) => turn.id !== event.id),
-      }
-    case 'pending-turn.reordered':
-      return reorderPendingTurn(current, event)
     case 'turn-configuration.changed':
       return { ...current, turnConfiguration: event.turnConfiguration }
   }

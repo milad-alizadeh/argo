@@ -64,6 +64,25 @@ async function createProjectDraft() {
   })
 }
 
+function addSession(sessionId: string, overrides: Partial<typeof sessionTable.$inferInsert> = {}) {
+  database
+    .insert(sessionTable)
+    .values({
+      argoId: sessionId,
+      harness: 'codex',
+      nativeId: `native-${sessionId}`,
+      projectId,
+      workspaceId,
+      cwd: '/original/repo',
+      ...overrides,
+    })
+    .run()
+}
+
+function sessionTarget(sessionId: string) {
+  return { type: 'session' as const, sessionId }
+}
+
 test('creates, reads, saves, and rejects a stale draft revision', async () => {
   const created = await createProjectDraft()
   await expect(caller().composerDraftRead(created.target)).resolves.toEqual(created)
@@ -214,17 +233,7 @@ test('rejects a Workspace that does not belong to the draft Project', async () =
 })
 
 test('submits and removes an existing-Session Turn draft', async () => {
-  database
-    .insert(sessionTable)
-    .values({
-      argoId: 'session-1',
-      harness: 'codex',
-      nativeId: 'native-1',
-      projectId,
-      workspaceId,
-      cwd: '/original/repo',
-    })
-    .run()
+  addSession('session-1')
   const api = caller()
   const created = await api.composerDraftCreate({
     target: { type: 'session', sessionId: 'session-1' },
@@ -243,23 +252,26 @@ test('submits and removes an existing-Session Turn draft', async () => {
     commandId: 'command-1',
   })
   expect(submitted).toMatchObject({
-    input: { sessionId: 'session-1', prompt: content.prompt },
+    input: {
+      sessionId: 'session-1',
+      commandId: 'command-1',
+      prompt: content.prompt,
+      attachments: content.attachments,
+      turnConfiguration: content.turnConfiguration,
+      resume: {
+        harness: 'codex',
+        nativeId: 'native-session-1',
+        projectId,
+        workspaceId,
+        cwd: '/original/repo',
+      },
+    },
   })
   await expect(submittingApi.composerDraftRead(created.target)).resolves.toBeNull()
 })
 
 test('retains an existing-Session Turn draft when the supervisor rejects it', async () => {
-  database
-    .insert(sessionTable)
-    .values({
-      argoId: 'session-1',
-      harness: 'codex',
-      nativeId: 'native-1',
-      projectId,
-      workspaceId,
-      cwd: '/original/repo',
-    })
-    .run()
+  addSession('session-1')
   const created = await caller().composerDraftCreate({
     target: { type: 'session', sessionId: 'session-1' },
     content,
@@ -276,5 +288,223 @@ test('retains an existing-Session Turn draft when the supervisor rejects it', as
       commandId: 'command-1',
     }),
   ).rejects.toThrow('Turn failed.')
+  await expect(api.composerDraftRead(created.target)).resolves.toEqual(created)
+})
+
+test('keeps Session drafts independent and rejects moving one to another owner', async () => {
+  addSession('session-1')
+  addSession('session-2')
+  const api = caller()
+  const first = await api.composerDraftCreate({ target: sessionTarget('session-1'), content })
+  const second = await api.composerDraftCreate({
+    target: sessionTarget('session-2'),
+    content: { ...content, prompt: 'Second Session draft.' },
+  })
+  const saved = await api.composerDraftSave({
+    id: first.id,
+    expectedRevision: first.revision,
+    target: first.target,
+    content: { ...content, prompt: 'Saved for first Session.' },
+  })
+
+  expect(saved).toMatchObject({ target: sessionTarget('session-1'), revision: 1 })
+  await expect(api.composerDraftRead(first.target)).resolves.toEqual(saved)
+  await expect(api.composerDraftRead(second.target)).resolves.toEqual(second)
+  await expect(
+    api.composerDraftSave({
+      id: first.id,
+      expectedRevision: first.revision,
+      target: first.target,
+      content,
+    }),
+  ).rejects.toThrow('stale-draft')
+  await expect(api.composerDraftRead(first.target)).resolves.toEqual(saved)
+  await expect(
+    api.composerDraftSave({
+      id: first.id,
+      expectedRevision: saved.revision,
+      target: second.target,
+      content,
+    }),
+  ).rejects.toThrow('draft-target-cannot-change')
+  await expect(
+    api.composerDraftSave({
+      id: first.id,
+      expectedRevision: saved.revision,
+      target: { type: 'project', projectId, workspaceId, harness: 'codex' },
+      content,
+    }),
+  ).rejects.toThrow('draft-target-cannot-change')
+})
+
+test('round-trips every Session draft content field through SQLite', async () => {
+  addSession('session-1')
+  const target = sessionTarget('session-1')
+  const created = await caller().composerDraftCreate({ target, content })
+  const updatedContent = {
+    prompt: 'Saved prompt.',
+    attachments: [
+      { kind: 'file' as const, path: '/repo/readme.md' },
+      { kind: 'image' as const, path: '/repo/diagram.png' },
+    ],
+    ticketContext: [
+      {
+        id: 'github:argo-42',
+        provider: 'github' as const,
+        key: 'argo-42',
+        title: 'Persist the Session draft',
+        status: 'In progress',
+        terminal: false,
+        blocked: null,
+      },
+    ],
+    turnConfiguration: { model: 'codex-pro', effort: 'medium', mode: 'read-only' },
+  }
+  const saved = await caller().composerDraftSave({
+    id: created.id,
+    expectedRevision: created.revision,
+    target,
+    content: updatedContent,
+  })
+
+  expect(saved).toMatchObject({ target, ...updatedContent, revision: 1 })
+  await expect(caller().composerDraftRead(target)).resolves.toEqual(saved)
+  expect(database.select().from(composerDraft).get()).toMatchObject({
+    projectId: null,
+    sessionId: 'session-1',
+    workspaceId: null,
+    harness: null,
+  })
+})
+
+test('rejects a stale existing-Session submit before sending to the supervisor', async () => {
+  addSession('session-1')
+  const api = caller()
+  const created = await api.composerDraftCreate({ target: sessionTarget('session-1'), content })
+  await api.composerDraftSave({
+    id: created.id,
+    expectedRevision: created.revision,
+    target: created.target,
+    content: { ...content, prompt: 'Current revision.' },
+  })
+  let sends = 0
+  const submittingApi = caller((event) => {
+    if (event.type === 'Send') sends += 1
+  })
+
+  await expect(
+    submittingApi.sessionSubmit({
+      draftId: created.id,
+      expectedRevision: created.revision,
+      commandId: 'stale-command',
+    }),
+  ).rejects.toThrow('stale-draft')
+  expect(sends).toBe(0)
+})
+
+test('rejects a missing stored Session without sending or deleting its draft', async () => {
+  addSession('session-missing')
+  const api = caller()
+  const created = await api.composerDraftCreate({
+    target: sessionTarget('session-missing'),
+    content,
+  })
+  database.$client.exec('PRAGMA foreign_keys = OFF')
+  database.delete(sessionTable).where(eq(sessionTable.argoId, 'session-missing')).run()
+  let sends = 0
+  const submittingApi = caller(() => {
+    sends += 1
+  })
+
+  await expect(
+    submittingApi.sessionSubmit({
+      draftId: created.id,
+      expectedRevision: created.revision,
+      commandId: 'missing-session-command',
+    }),
+  ).rejects.toThrow('missing-session')
+  expect(sends).toBe(0)
+  await expect(api.composerDraftRead(created.target)).resolves.toEqual(created)
+})
+
+test('rejects invalid stored JSON for a Session draft at the database interface', async () => {
+  addSession('session-1')
+  const api = caller()
+  const created = await api.composerDraftCreate({ target: sessionTarget('session-1'), content })
+  database
+    .update(composerDraft)
+    .set({ ticketContextJson: '[null]' })
+    .where(eq(composerDraft.id, created.id))
+    .run()
+
+  await expect(api.composerDraftRead(created.target)).rejects.toThrow()
+})
+
+test('keeps a Session draft present until main accepts the command', async () => {
+  addSession('session-1')
+  const api = caller()
+  const created = await api.composerDraftCreate({ target: sessionTarget('session-1'), content })
+  let accept!: (value: { sessionId: string }) => void
+  const submittingApi = caller((event) => {
+    if (event.type !== 'Send') throw new Error(`Unexpected event: ${event.type}`)
+    accept = event.reply.resolve
+  })
+
+  const submission = submittingApi.sessionSubmit({
+    draftId: created.id,
+    expectedRevision: created.revision,
+    commandId: 'pending-command',
+  })
+  await Promise.resolve()
+  await expect(api.composerDraftRead(created.target)).resolves.toEqual(created)
+  accept({ sessionId: 'session-1' })
+  await expect(submission).resolves.toEqual({ sessionId: 'session-1' })
+  await expect(api.composerDraftRead(created.target)).resolves.toBeNull()
+})
+
+test('retains a newer Session revision when an accepted Turn loses the delete race', async () => {
+  addSession('session-1')
+  const api = caller()
+  const created = await api.composerDraftCreate({ target: sessionTarget('session-1'), content })
+  const submittingApi = caller((event) => {
+    if (event.type !== 'Send') throw new Error(`Unexpected event: ${event.type}`)
+    database
+      .update(composerDraft)
+      .set({ prompt: 'Written while submit was pending.', revision: created.revision + 1 })
+      .where(eq(composerDraft.id, created.id))
+      .run()
+    event.reply.resolve({ sessionId: 'session-1' })
+  })
+
+  await expect(
+    submittingApi.sessionSubmit({
+      draftId: created.id,
+      expectedRevision: created.revision,
+      commandId: 'delete-race-command',
+    }),
+  ).rejects.toThrow('stale-draft')
+  await expect(api.composerDraftRead(created.target)).resolves.toMatchObject({
+    prompt: 'Written while submit was pending.',
+    revision: created.revision + 1,
+  })
+})
+
+test('rejects unsupported Session attachments before sending to the supervisor', async () => {
+  addSession('session-1', { harness: 'claude' })
+  const api = caller()
+  const created = await api.composerDraftCreate({ target: sessionTarget('session-1'), content })
+  let sends = 0
+  const submittingApi = caller(() => {
+    sends += 1
+  })
+
+  await expect(
+    submittingApi.sessionSubmit({
+      draftId: created.id,
+      expectedRevision: created.revision,
+      commandId: 'unsupported-attachment',
+    }),
+  ).rejects.toThrow('Claude Session attachments are not supported')
+  expect(sends).toBe(0)
   await expect(api.composerDraftRead(created.target)).resolves.toEqual(created)
 })
