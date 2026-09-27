@@ -2,12 +2,11 @@ import assert from 'node:assert/strict'
 import { test } from 'vitest'
 import { createActor, type EventFrom, fromPromise, waitFor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
-import type { SessionDiscovery } from '@/harnesses/session-discovery'
-import {
-  SESSION_SYNC_BATCH_SIZE,
-  type SyncResult,
-  sessionSyncMachine,
-} from './session-sync-machine'
+import type {
+  SessionDiscovery,
+  SessionDiscoveryResult,
+} from '@/domains/sessions/api/session-discovery'
+import { SESSION_SYNC_BATCH_SIZE, sessionSyncMachine } from './session-sync-machine'
 
 const twoBatchRecords = Array.from({ length: SESSION_SYNC_BATCH_SIZE + 1 }, (_value, index) => ({
   nativeId: `native-${index}`,
@@ -16,7 +15,7 @@ const twoBatchRecords = Array.from({ length: SESSION_SYNC_BATCH_SIZE + 1 }, (_va
 const sessionDiscovery: SessionDiscovery = async () => ({ records: [], skipped: 0 })
 const input = { harness: 'claude' as const, knownNativeIds: [], sessionDiscovery }
 const fetchTwoBatchRecords = fromPromise<
-  SyncResult,
+  SessionDiscoveryResult,
   { knownNativeIds: string[]; sessionDiscovery: SessionDiscovery }
 >(async () => ({
   records: twoBatchRecords,
@@ -61,7 +60,7 @@ test('fails after three fetch attempts', async () => {
     sessionSyncMachine.provide({
       actors: {
         fetch: fromPromise<
-          SyncResult,
+          SessionDiscoveryResult,
           { knownNativeIds: string[]; sessionDiscovery: SessionDiscovery }
         >(async () => {
           attempts += 1

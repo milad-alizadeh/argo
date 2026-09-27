@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'vitest'
 import { createActor, fromCallback } from 'xstate'
 import type { Database } from '@/database/database'
-import type { SessionDiscovery } from '@/harnesses/session-discovery'
+import type { SessionDiscovery } from '@/domains/sessions/api/session-discovery'
 import { SessionSyncStatusStore } from '../api/session-sync-status'
 import {
   type SessionSyncActorInput,

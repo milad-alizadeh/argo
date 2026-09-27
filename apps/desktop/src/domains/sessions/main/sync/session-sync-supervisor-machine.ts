@@ -11,8 +11,8 @@ import {
   stopChild,
 } from 'xstate'
 import type { Database } from '@/database/database'
+import type { SessionDiscovery } from '@/domains/sessions/api/session-discovery'
 import type { Harness } from '@/harnesses/harness'
-import type { SessionDiscovery } from '@/harnesses/session-discovery'
 import {
   type SessionSyncStatus,
   type SessionSyncStatusStore,

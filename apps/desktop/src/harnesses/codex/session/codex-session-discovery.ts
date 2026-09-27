@@ -1,6 +1,5 @@
 import { z } from 'zod'
-import type { SyncResult } from '@/domains/sessions/main/sync/session-sync-machine'
-import type { SessionDiscovery } from '@/harnesses/session-discovery'
+import type { DiscoveredSession, SessionDiscovery } from '@/domains/sessions/api/session-discovery'
 import type { CodexRequest } from '../app-server/codex-app-server-client'
 
 const threadSchema = z
@@ -19,7 +18,7 @@ const pageSchema = z.strictObject({
   backwardsCursor: z.string().nullable().optional(),
 })
 const readSchema = z.strictObject({ thread: z.unknown() })
-type CodexSessionRecord = SyncResult['records'][number]
+type CodexSessionRecord = DiscoveredSession
 
 function rememberRecord(records: Map<string, CodexSessionRecord>, record: CodexSessionRecord) {
   records.set(record.nativeId, { ...records.get(record.nativeId), ...record })

@@ -1,14 +1,10 @@
 import { assign, fromPromise, setup } from 'xstate'
+import type {
+  DiscoveredSession,
+  SessionDiscovery,
+  SessionDiscoveryResult,
+} from '@/domains/sessions/api/session-discovery'
 import type { Harness } from '@/harnesses/harness'
-import type { SessionDiscovery } from '@/harnesses/session-discovery'
-import type { SessionUpsertInput } from '../database/session-upsert'
-
-export type SyncedSessionRecord = Omit<SessionUpsertInput, 'harness'>
-
-export type SyncResult = {
-  records: SyncedSessionRecord[]
-  skipped: number
-}
 export const SESSION_SYNC_BATCH_SIZE = 50
 
 export const sessionSyncMachine = setup({
@@ -22,7 +18,7 @@ export const sessionSyncMachine = setup({
       harness: Harness
       knownNativeIds: string[]
       sessionDiscovery: SessionDiscovery
-      records: SyncedSessionRecord[]
+      records: DiscoveredSession[]
       processed: number
       skipped: number
       failure: string | null
@@ -39,7 +35,7 @@ export const sessionSyncMachine = setup({
         }
       | {
           type: 'xstate.done.actor.fetch'
-          output: SyncResult
+          output: SessionDiscoveryResult
         }
       | {
           type: 'xstate.error.actor.fetch'
@@ -56,7 +52,7 @@ export const sessionSyncMachine = setup({
   },
   actors: {
     fetch: fromPromise<
-      SyncResult,
+      SessionDiscoveryResult,
       {
         knownNativeIds: string[]
         sessionDiscovery: SessionDiscovery
@@ -69,7 +65,7 @@ export const sessionSyncMachine = setup({
     save: fromPromise<
       void,
       {
-        records: SyncedSessionRecord[]
+        records: DiscoveredSession[]
       }
     >(async () => {
       throw new Error('The session sync saver is not configured.')
