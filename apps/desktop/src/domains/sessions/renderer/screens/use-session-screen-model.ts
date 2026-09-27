@@ -41,6 +41,10 @@ function useWorkArtifacts({
     delegationFeed: delegationFeed.feed,
     delegationFeedError: delegationFeed.feedError,
     retryDelegationFeed: delegationFeed.retry,
+    loadOlderDelegationFeed: delegationFeed.loadOlder,
+    delegationFeedHasOlder: delegationFeed.hasOlder,
+    delegationFeedLoadingOlder: delegationFeed.loadingOlder,
+    delegationFeedOlderError: delegationFeed.olderError,
     subagentUsage: useDelegationUsage(subagents.length === 0 ? null : selectedSessionId),
     shellOutput: useShellOutput(selectedSessionId, shell?.id ?? null, shell?.state === 'running'),
     subagents,
@@ -55,7 +59,8 @@ export function useSessionScreenModel() {
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
   const [evidence, setEvidence] = useState<SessionEvidence | null>(null)
   const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
-  const { feed, feedError, retryFeed } = useSessionFeed(selectedSessionId)
+  const { feed, feedError, retryFeed, loadOlder, hasOlder, loadingOlder, olderError } =
+    useSessionFeed(selectedSessionId)
   const { sessionList } = useSessionList({
     projectId: cockpit.project?.id ?? null,
   })
@@ -79,6 +84,10 @@ export function useSessionScreenModel() {
     feed,
     feedError,
     retryFeed,
+    loadOlder,
+    hasOlder,
+    loadingOlder,
+    olderError,
     sessionList,
     navigate,
     session,

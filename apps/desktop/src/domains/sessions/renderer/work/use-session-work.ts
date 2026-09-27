@@ -1,16 +1,15 @@
 // The two reads the work rail needs beyond the Roster row it already has (#1582): what each
 // Subagent spent, and what one background Shell has written so far. Neither rides the Roster or
-// Feed reply, and each stops polling once the thing it watches has finished.
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+// Feed reply.
+import { useQuery } from '@tanstack/react-query'
 import type { SessionShellOutput, SubagentUsageFacts } from '@/domains/sessions/renderer/work/types'
-import { retrySessionFeed, sessionFeedQuery } from '../feed/session-feed-query'
-import type { SessionContractError } from '../session-contract-error'
+import { useFeedHistory } from '../feed/use-feed-history'
 import {
   SESSION_REFRESH_MS,
   sessionShellOutputQueryKey,
   sessionSubagentUsageQueryKey,
 } from '../session-queries'
-import type { SessionFeed, SessionId } from '../types'
+import type { SessionId } from '../types'
 
 // Each read re-parses every Subagent transcript the Session has, so a Session whose Subagents have
 // all come back is read once rather than on every pass.
@@ -32,7 +31,7 @@ export function useDelegationUsage(sessionId: SessionId | null) {
   return usage.data ?? {}
 }
 
-// A running command keeps writing, so its output is polled at the Feed's own rate. A finished one
+// A running command keeps writing, so its output is polled while active. A finished one
 // no longer changes, so it is read once and kept, and the previous text stays on screen while that
 // last read is in flight.
 export function useShellOutput(sessionId: SessionId | null, shellId: string | null, live: boolean) {
@@ -55,12 +54,14 @@ export function useShellOutput(sessionId: SessionId | null, shellId: string | nu
 // One Subagent's own transcript, read as its own document so the Session's Feed is never displaced
 // by it. Null until a Subagent is picked.
 export function useDelegationFeed(sessionId: SessionId | null, subagentId: string | null) {
-  const queryClient = useQueryClient()
-  const query = sessionFeedQuery(subagentId === null ? null : sessionId, subagentId)
-  const feed = useQuery<SessionFeed | null, SessionContractError>(query)
+  const history = useFeedHistory(subagentId === null ? null : sessionId, subagentId)
   return {
-    feed: feed.data ?? null,
-    feedError: feed.failureCount > 1 ? feed.error : null,
-    retry: () => void retrySessionFeed(queryClient, query.queryKey, feed.refetch),
+    feed: history.reading,
+    feedError: history.error,
+    retry: history.retry,
+    loadOlder: history.loadOlder,
+    hasOlder: history.hasOlder,
+    loadingOlder: history.loadingOlder,
+    olderError: history.olderError,
   }
 }

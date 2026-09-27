@@ -24,6 +24,7 @@ export type SessionFeed = {
   sessionId: string
   chainId: string
   revision: string
+  olderCursor?: string | null
   content?: FeedContent[]
   rows: SessionFeedRow[]
 }

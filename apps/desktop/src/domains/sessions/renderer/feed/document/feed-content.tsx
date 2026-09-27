@@ -17,6 +17,10 @@ import { awaitingAssistantReply, type Settled, type useSettledFeed } from './use
 
 export function feedContent({
   active,
+  hasOlder,
+  loadingOlder,
+  olderError,
+  onLoadOlder,
   initialMeasurementsCache,
   initialScrollPosition,
   settled,
@@ -35,6 +39,10 @@ export function feedContent({
   historyLabel,
 }: {
   active: boolean
+  hasOlder?: boolean
+  loadingOlder?: boolean
+  olderError?: boolean
+  onLoadOlder?: () => void
   initialMeasurementsCache: VirtualItem[]
   initialScrollPosition: number | null
   settled: ReturnType<typeof useSettledFeed>['settled']
@@ -80,6 +88,10 @@ export function feedContent({
   return (
     <AnchoredFeed
       active={active}
+      hasOlder={hasOlder}
+      loadingOlder={loadingOlder}
+      olderError={olderError}
+      onLoadOlder={onLoadOlder}
       initialMeasurementsCache={initialMeasurementsCache}
       initialScrollPosition={initialScrollPosition}
       rows={settled.rows}

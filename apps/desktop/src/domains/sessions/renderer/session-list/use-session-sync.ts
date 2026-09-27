@@ -18,6 +18,7 @@ export function useSessionSync() {
       onData: (event) => {
         if (event.type === 'committed') {
           void invalidateSessionList(queryClient)
+          void queryClient.invalidateQueries({ queryKey: ['sessions', 'feed'] })
           return
         }
         const earlierPhase = previousPhase.current

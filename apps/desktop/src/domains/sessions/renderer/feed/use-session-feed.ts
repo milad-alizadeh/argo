@@ -1,9 +1,7 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
-import type { SessionContractError } from '../session-contract-error'
 import type { SessionFeed, SessionId } from '../types'
 import { projectLiveFeedRows } from './model/live-feed-rows'
-import { retrySessionFeed, sessionFeedQuery } from './session-feed-query'
+import { useFeedHistory } from './use-feed-history'
 import { useLiveFeedEvents } from './use-live-feed-events'
 
 function displayedFeed(
@@ -56,18 +54,19 @@ export function useConsecutiveFeedFailures(
 }
 
 export function useSessionFeed(selectedSessionId: SessionId | null) {
-  const queryClient = useQueryClient()
   const live = useLiveFeedEvents(selectedSessionId)
-  const feedQuery = sessionFeedQuery(selectedSessionId, null, live?.hasChannel ?? false)
-  const feed = useQuery<SessionFeed | null, SessionContractError>(feedQuery)
-  const failedFeedReads = useConsecutiveFeedFailures(selectedSessionId, feed)
+  const history = useFeedHistory(selectedSessionId, null, live?.ready ?? false)
   const displayed = useMemo(
-    () => displayedFeed(selectedSessionId, feed.data, live),
-    [feed.data, live, selectedSessionId],
+    () => displayedFeed(selectedSessionId, history.reading, live),
+    [history.reading, live, selectedSessionId],
   )
   return {
     feed: displayed,
-    feedError: failedFeedReads <= 1 ? null : feed.error,
-    retryFeed: () => void retrySessionFeed(queryClient, feedQuery.queryKey, feed.refetch),
+    feedError: history.error,
+    retryFeed: history.retry,
+    loadOlder: history.loadOlder,
+    hasOlder: history.hasOlder,
+    loadingOlder: history.loadingOlder,
+    olderError: history.olderError,
   }
 }

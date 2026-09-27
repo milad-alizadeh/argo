@@ -54,6 +54,7 @@
     }
   },
   "feedLabel": "Session Feed",
+  "retryOlderHistory": "Retry older messages",
   "subagentFeedLabel": "Subagent Feed",
   "workspaceLabel": "Session workspace",
   "composerRegionLabel": "Session composer",

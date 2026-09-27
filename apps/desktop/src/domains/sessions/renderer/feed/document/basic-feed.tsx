@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
+import { Button } from '@/platform/renderer/components/ui/button'
 import type { SessionError, SessionFeed, SessionId } from '../../types'
 import { FEED_STALL_TIMEOUT_MS, useStallTimer } from '../feed-stall'
 import { Standing } from '../standing'
@@ -18,6 +20,7 @@ import { awaitingAssistantReply } from './use-settled-feed'
 import '../feed.css'
 
 function ignoreJumpToLatestChange(_sessionId: string, _action: (() => void) | null) {}
+function ignoreLoadOlder() {}
 
 // A pending id has no Feed to read, so this empty document lets the prompt row and Turn Marker mount at once (#2430).
 function optimisticFeedDocument(sessionId: SessionId): SessionFeed {
@@ -50,8 +53,26 @@ function awaitingSelectedFeed({
   )
 }
 
+function needsStanding({
+  current,
+  failure,
+  stalled,
+  holdsPrompt,
+}: {
+  current: SessionFeed | null
+  failure: SessionError | null
+  stalled: boolean
+  holdsPrompt: boolean
+}) {
+  return (failure !== null && current === null) || stalled || (current === null && !holdsPrompt)
+}
+
 type BasicFeedProps = {
   feed: SessionFeed | null
+  hasOlder?: boolean
+  loadingOlder?: boolean
+  olderError?: boolean
+  onLoadOlder?: () => void
   activeEvidenceId: string | null
   liveFacts: FeedLiveFacts
   onOpenSession: (sessionId: string) => void
@@ -66,6 +87,10 @@ type BasicFeedProps = {
 
 export function BasicFeed({
   feed,
+  hasOlder = false,
+  loadingOlder = false,
+  olderError = false,
+  onLoadOlder = ignoreLoadOlder,
   activeEvidenceId,
   liveFacts: reportedLiveFacts,
   onOpenSession,
@@ -115,6 +140,10 @@ export function BasicFeed({
   }, [onStalledChange, selectedSessionId, stalled])
   const shared = {
     selectedSessionId,
+    hasOlder,
+    loadingOlder,
+    olderError,
+    onLoadOlder,
     liveFacts,
     activeEvidenceId,
     failure,
@@ -133,9 +162,22 @@ export function BasicFeed({
   }
 
   return (
-    <section aria-label={feedLabel ?? t('feedLabel')} className="feed">
+    <section
+      aria-label={feedLabel ?? t('feedLabel')}
+      className="feed"
+      data-known-read-failure={failure !== null && current !== null}
+    >
+      {failure !== null && current !== null ? (
+        <Alert className="mx-auto mt-(--spacing-snug) max-w-sm" variant="destructive">
+          <AlertTitle>{t('standing.failure')}</AlertTitle>
+          <AlertDescription>{failure.message}</AlertDescription>
+          <Button onClick={retry} type="button" variant="outline">
+            {t('standing.retry')}
+          </Button>
+        </Alert>
+      ) : null}
       {!stalled && documents.map(([id, document]) => keptDocument(id, document, shared))}
-      {failure !== null || stalled || (current === null && !holdsPrompt) ? (
+      {needsStanding({ current, failure, stalled, holdsPrompt }) ? (
         <Standing
           failure={failure}
           selected={selectedSessionId !== null}

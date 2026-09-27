@@ -89,14 +89,14 @@ function useSessionListSessions(options: {
 }
 
 function useUnavailableSessionIds(selectedSessionId: SessionId | null) {
-  const selectedFeed = useQuery(sessionFeedQuery(selectedSessionId, null))
+  const selectedFeed = useQuery(sessionFeedQuery(selectedSessionId, null, false))
   const failedFeedReads = useConsecutiveFeedFailures(selectedSessionId, selectedFeed)
   const [unavailableSessionIds, setUnavailableSessionIds] = useState<ReadonlySet<SessionId>>(
     () => new Set(),
   )
   useEffect(() => {
     if (selectedSessionId === null) return
-    const unavailable = failedFeedReads > 1 && selectedFeed.error?.code === 'missing-session'
+    const unavailable = failedFeedReads > 0 && selectedFeed.error?.code === 'missing-session'
     if (!unavailable && !selectedFeed.isSuccess) return
     setUnavailableSessionIds((current) => {
       if (unavailable === current.has(selectedSessionId)) return current

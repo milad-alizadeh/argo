@@ -13,12 +13,16 @@ export function SessionInspector({
   delegation,
   delegationFeed,
   delegationFeedError,
+  delegationFeedHasOlder,
+  delegationFeedLoadingOlder,
+  delegationFeedOlderError,
   evidence,
   sessionId,
   handoff,
   onOpenEvidence,
   onOpenSession,
   onRetryDelegationFeed,
+  onLoadOlderDelegationFeed,
   shell,
   shellOutput,
 }: {
@@ -26,6 +30,9 @@ export function SessionInspector({
   delegation: SessionSubagent | null
   delegationFeed: SessionFeed | null
   delegationFeedError: SessionError | null
+  delegationFeedHasOlder?: boolean
+  delegationFeedLoadingOlder?: boolean
+  delegationFeedOlderError?: boolean
   evidence: SessionEvidence | null
   sessionId: string | null
   // The Sessions this one was handed off to or from, drawn when nothing else is open.
@@ -33,6 +40,7 @@ export function SessionInspector({
   onOpenEvidence: (evidence: SessionEvidence) => void
   onOpenSession: (sessionId: string) => void
   onRetryDelegationFeed: () => void
+  onLoadOlderDelegationFeed?: () => void
   shell: SessionShellCommand | null
   shellOutput: SessionShellOutput | null
 }) {
@@ -51,6 +59,10 @@ export function SessionInspector({
         onOpenEvidence={onOpenEvidence}
         onOpenSession={onOpenSession}
         onRetryFeed={onRetryDelegationFeed}
+        onLoadOlder={onLoadOlderDelegationFeed}
+        hasOlder={delegationFeedHasOlder}
+        loadingOlder={delegationFeedLoadingOlder}
+        olderError={delegationFeedOlderError}
         sessionId={sessionId}
       />
     )

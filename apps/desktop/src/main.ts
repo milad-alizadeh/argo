@@ -199,6 +199,8 @@ function routerForWindow(options: {
     sessions: {
       database,
       readHistory: (harness, target) => registry[harness].readHistory(target),
+      watchHistory: (harness, target, invalidate) =>
+        registry[harness].watchHistory?.(target, invalidate) ?? (() => {}),
       rename: ({ harness, nativeId, title }) => {
         const rename = registry[harness].rename
         if (rename === undefined) throw new Error(`${harness} Session renaming is unavailable.`)

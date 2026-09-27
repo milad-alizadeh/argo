@@ -46,6 +46,7 @@ const meta = {
     liveFacts: LIVE_FACTS,
     onJumpToLatestChange: fn(),
     onOpenEvidence: () => {},
+    onStalledChange: fn(),
     selectedSessionId: 'prose',
   },
 } satisfies Meta<typeof BasicFeed>
@@ -232,6 +233,16 @@ export const Failure: Story = {
     await expect(canvas.getByRole('alert')).toHaveAttribute('data-slot', 'alert')
     await expect(canvas.getByRole('alert')).toHaveTextContent('Unable to load Session')
     await expect(canvas.getByRole('alert')).toHaveTextContent('Argo could not read these Sessions.')
+  },
+}
+export const RefreshFailedWithKnownHistory: Story = {
+  args: { feed, failure: readFailure, onRetryFeed: fn() },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('The matching Session Feed.')).toBeVisible()
+    await expect(canvas.getByRole('alert')).toHaveTextContent('Argo could not read these Sessions.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Retry' }))
+    expect(args.onRetryFeed).toHaveBeenCalledOnce()
   },
 }
 
@@ -2202,5 +2213,111 @@ export const RunningToolAfterAssistantReply: Story = {
       expect(drawnRow(canvasElement, 'streaming-text')).toHaveTextContent(streamedText),
     )
     await expect(drawnRow(canvasElement, 'streaming-tool')).toHaveTextContent('Still working.')
+  },
+}
+
+const pagedRows: SessionFeedRow[] = Array.from({ length: 120 }, (_, index) => ({
+  shape: 'prose',
+  id: `paged-${index}`,
+  role: 'assistant',
+  text: `Saved reply ${index}`,
+}))
+
+function PaginatedHistoryDemo({ onPage }: { onPage: () => void }) {
+  const [visible, setVisible] = useState(50)
+  const reading: SessionFeed = {
+    ...feed,
+    sessionId: 'paged',
+    chainId: 'paged',
+    revision: `paged:${visible}`,
+    rows: pagedRows.slice(-visible),
+  }
+  return (
+    <BasicFeed
+      activeEvidenceId={null}
+      answeringQuestionId={null}
+      failure={null}
+      feed={reading}
+      hasOlder={visible < pagedRows.length}
+      liveFacts={LIVE_FACTS}
+      loadingOlder={false}
+      onAnswerQuestion={() => {}}
+      onLoadOlder={() => {
+        onPage()
+        setVisible((current) => Math.min(pagedRows.length, current + 50))
+      }}
+      onOpenEvidence={() => {}}
+      onOpenSession={() => {}}
+      onRetryFeed={() => {}}
+      questionFailure={() => null}
+      selectedSessionId="paged"
+    />
+  )
+}
+
+export const PaginatedHistory: Story = {
+  args: { onLoadOlder: fn() },
+  render: (args) => <PaginatedHistoryDemo onPage={args.onLoadOlder ?? (() => {})} />,
+  play: async ({ args, canvasElement }) => {
+    const history = await within(canvasElement).findByLabelText('Session history')
+    await waitFor(() => expect(history.scrollTop).toBeGreaterThan(0))
+    history.scrollTop = 0
+    fireEvent.scroll(history)
+    await waitFor(() => expect(args.onLoadOlder).toHaveBeenCalled())
+    await within(canvasElement).findByText('Saved reply 71')
+    expect(history.scrollTop).toBeGreaterThan(160)
+    history.scrollTop = 0
+    fireEvent.scroll(history)
+    await within(canvasElement).findByText('Saved reply 21')
+  },
+}
+
+function OlderPageFailedDemo({ onPage }: { onPage: () => void }) {
+  const [failed, setFailed] = useState(true)
+  const [visible, setVisible] = useState(50)
+  return (
+    <BasicFeed
+      activeEvidenceId={null}
+      answeringQuestionId={null}
+      failure={null}
+      feed={{
+        ...feed,
+        sessionId: 'older-failed',
+        chainId: 'older-failed',
+        rows: pagedRows.slice(-visible),
+      }}
+      hasOlder={!failed && visible < pagedRows.length}
+      liveFacts={LIVE_FACTS}
+      olderError={failed}
+      onAnswerQuestion={() => {}}
+      onLoadOlder={() => {
+        onPage()
+        setFailed(false)
+        setVisible(100)
+      }}
+      onOpenEvidence={() => {}}
+      onOpenSession={() => {}}
+      onRetryFeed={() => {}}
+      questionFailure={() => null}
+      selectedSessionId="older-failed"
+    />
+  )
+}
+
+export const OlderPageFailed: Story = {
+  args: { onLoadOlder: fn() },
+  render: (args) => <OlderPageFailedDemo onPage={args.onLoadOlder ?? (() => {})} />,
+  play: async ({ args, canvasElement }) => {
+    const history = await within(canvasElement).findByLabelText('Session history')
+    await waitFor(() => expect(history.scrollTop).toBeGreaterThan(0))
+    history.scrollTop = 0
+    fireEvent.scroll(history)
+    await userEvent.click(
+      await within(canvasElement).findByRole('button', {
+        name: 'Retry older messages',
+      }),
+    )
+    expect(args.onLoadOlder).toHaveBeenCalledOnce()
+    await waitFor(() => expect(history.scrollTop).toBeGreaterThan(160))
   },
 }

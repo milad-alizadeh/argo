@@ -12,6 +12,7 @@ import {
 type LiveFeedState = LiveEventBuffer & {
   sessionId: SessionId
   hasChannel: boolean
+  ready: boolean
 }
 
 function applyLiveUpdate({
@@ -31,6 +32,7 @@ function applyLiveUpdate({
         ...(current?.sessionId === selected ? current : emptyLiveEventBuffer()),
         sessionId: selected,
         hasChannel: update.live,
+        ready: true,
       }))
       return cursor
     case 'event':
@@ -39,6 +41,7 @@ function applyLiveUpdate({
         ...retainLiveEvent(current?.sessionId === selected ? current : null, update.event),
         sessionId: selected,
         hasChannel: current?.sessionId === selected ? current.hasChannel : true,
+        ready: true,
       }))
       if (update.event.type === 'status' && update.event.status === 'idle')
         void queryClient.invalidateQueries({ queryKey: sessionFeedQueryKey(selected) })
@@ -50,14 +53,42 @@ function applyLiveUpdate({
         ...emptyLiveEventBuffer(),
         sessionId: selected,
         hasChannel: current?.hasChannel ?? false,
+        ready: true,
       }))
       void queryClient.invalidateQueries({ queryKey: sessionFeedQueryKey(selected) })
       return update.cursor
+    case 'invalidated':
+      void queryClient.invalidateQueries({ queryKey: ['sessions', 'feed', selected] })
+      return cursor
   }
+}
+
+function useFocusRefresh(sessionId: SessionId | null) {
+  useEffect(() => {
+    if (sessionId === null) return
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const refresh = () => {
+      if (timer !== null) clearTimeout(timer)
+      timer = setTimeout(() => {
+        void queryClient.invalidateQueries({ queryKey: ['sessions', 'feed', sessionId] })
+      }, 250)
+    }
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') refresh()
+    }
+    window.addEventListener('focus', refresh)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => {
+      if (timer !== null) clearTimeout(timer)
+      window.removeEventListener('focus', refresh)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  }, [sessionId])
 }
 
 export function useLiveFeedEvents(sessionId: SessionId | null): LiveFeedState | null {
   const [state, setState] = useState<LiveFeedState | null>(null)
+  useFocusRefresh(sessionId)
   useEffect(() => {
     if (sessionId === null) return
     const selected = sessionId
@@ -74,9 +105,12 @@ export function useLiveFeedEvents(sessionId: SessionId | null): LiveFeedState | 
           },
           onError() {
             if (stopped) return
-            setState((current) =>
-              current?.sessionId === selected ? { ...current, hasChannel: false } : current,
-            )
+            setState((current) => ({
+              ...(current?.sessionId === selected ? current : emptyLiveEventBuffer()),
+              sessionId: selected,
+              hasChannel: false,
+              ready: true,
+            }))
             reconnect = setTimeout(connect, 1000)
           },
         },

@@ -17,6 +17,10 @@ function selectedLiveFacts(
 
 export type KeptDocumentShared = {
   selectedSessionId: SessionId | null
+  hasOlder: boolean
+  loadingOlder: boolean
+  olderError: boolean
+  onLoadOlder: () => void
   liveFacts: FeedLiveFacts
   activeEvidenceId: string | null
   failure: SessionError | null
@@ -37,7 +41,11 @@ export type KeptDocumentShared = {
 export function keptDocument(id: SessionId, document: SessionFeed, shared: KeptDocumentShared) {
   const liveFacts = selectedLiveFacts(id, shared.selectedSessionId, shared.liveFacts)
   const actions: FeedDocumentContext = {
-    active: shared.failure === null && id === shared.selectedSessionId,
+    active: id === shared.selectedSessionId,
+    hasOlder: id === shared.selectedSessionId && shared.hasOlder,
+    loadingOlder: shared.loadingOlder,
+    olderError: shared.olderError,
+    onLoadOlder: shared.onLoadOlder,
     activeEvidenceId: shared.activeEvidenceId,
     initialMeasurementsCache: shared.initialMeasurementsCache(id),
     initialScrollPosition: shared.initialScrollPosition(id),

@@ -79,3 +79,72 @@ test('asks the reader to reconcile an expired cursor with vendor history', async
     { type: 'expired', cursor: 3 },
   ])
 })
+
+test('does not lose an event published while replay is delivered', async () => {
+  journal.append(sessionId, {
+    type: 'status',
+    commandId: null,
+    turnId: null,
+    vendorEventId: null,
+    status: 'running',
+  })
+  const t = initTRPC.create()
+  const caller = t
+    .router({ live: sessionLiveEventsProcedure({ database, journal, hasLiveChannel: () => true }) })
+    .createCaller({})
+  const updates: unknown[] = []
+  const stream = await caller.live({ sessionId, cursor: 0 })
+  const subscription = stream.subscribe({
+    next(update) {
+      updates.push(update)
+      if (update.type === 'ready')
+        journal.append(sessionId, {
+          type: 'status',
+          commandId: null,
+          turnId: null,
+          vendorEventId: null,
+          status: 'idle',
+        })
+    },
+  })
+  subscription.unsubscribe()
+  expect(updates).toMatchObject([
+    { type: 'ready', cursor: 1 },
+    { type: 'event', event: { sequence: 1, status: 'running' } },
+    { type: 'event', event: { sequence: 2, status: 'idle' } },
+  ])
+})
+
+test.each([false, true])('invalidates vendor history with live channel %s', async (live) => {
+  const t = initTRPC.create()
+  const watcher: { invalidate: () => void; closed: boolean } = {
+    invalidate: () => {
+      throw new Error('Watcher did not attach.')
+    },
+    closed: false,
+  }
+  const caller = t
+    .router({
+      live: sessionLiveEventsProcedure({
+        database,
+        journal,
+        hasLiveChannel: () => live,
+        watchHistory: (harness, target, callback) => {
+          expect(harness).toBe('claude')
+          expect(target.nativeId).toBe('native-1')
+          watcher.invalidate = callback
+          return () => {
+            watcher.closed = true
+          }
+        },
+      }),
+    })
+    .createCaller({})
+  const updates: unknown[] = []
+  const stream = await caller.live({ sessionId, cursor: 0 })
+  const subscription = stream.subscribe({ next: (update) => updates.push(update) })
+  watcher.invalidate()
+  subscription.unsubscribe()
+  expect(updates).toMatchObject([{ type: 'ready', live }, { type: 'invalidated' }])
+  expect(watcher.closed).toBe(true)
+})

@@ -57,6 +57,7 @@ export const sessionLiveUpdateSchema = z.discriminatedUnion('type', [
   }),
   z.strictObject({ type: z.literal('event'), event: sessionLiveEventSchema }),
   z.strictObject({ type: z.literal('expired'), cursor: z.number().int().nonnegative() }),
+  z.strictObject({ type: z.literal('invalidated') }),
 ])
 
 export type SessionLiveEventBody = z.infer<typeof sessionLiveEventBodySchema>

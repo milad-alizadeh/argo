@@ -53,6 +53,12 @@ test('reads the feed through tRPC without legacy preload methods', async () => {
   })
 })
 
+test('keeps history reads event-driven for both live and external Sessions', () => {
+  expect(sessionFeedQuery('session-a', null).refetchInterval).toBeUndefined()
+  expect(sessionFeedQuery('session-a', null, false).enabled).toBe(false)
+  expect(sessionFeedQuery('session-a', 'child-1').refetchInterval).toBeUndefined()
+})
+
 describe('caching and retrying the Session feed read', () => {
   test('removes an inactive transcript as soon as its observer switches away', async () => {
     const client = new QueryClient()

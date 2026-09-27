@@ -52,6 +52,10 @@ function Inspector({ model }: { model: SessionScreenModel }) {
       onOpenEvidence={setEvidence}
       onOpenSession={(sessionId) => navigate(`/projects/${projectId}/sessions/${sessionId}`)}
       onRetryDelegationFeed={model.retryDelegationFeed}
+      onLoadOlderDelegationFeed={model.loadOlderDelegationFeed}
+      delegationFeedHasOlder={model.delegationFeedHasOlder}
+      delegationFeedLoadingOlder={model.delegationFeedLoadingOlder}
+      delegationFeedOlderError={model.delegationFeedOlderError}
       shell={model.shell}
       shellOutput={model.shellOutput}
     />
@@ -94,10 +98,31 @@ function liveFactsOf({ session }: SessionScreenModel): NonNullable<FeedLiveFacts
   }
 }
 
+function composerFor(model: ReturnType<typeof useSessionScreenModel>) {
+  if (
+    (model.selectedSessionId === null && !model.isNewSession) ||
+    model.feedError?.code === 'missing-session'
+  )
+    return null
+  return (
+    <SessionComposerArea
+      permission={model.permission}
+      questionPending={pendingQuestionId(model.feed) !== null}
+      session={model.session}
+      harness={model.harness}
+      selectedSessionId={model.selectedSessionId}
+      sessionList={model.sessionList}
+      cockpit={model.cockpit}
+      workspaceActions={model.workspaceActions}
+      workspaceCockpit={model.workspaceCockpit}
+    />
+  )
+}
+
 export function SessionScreenView() {
   const { projectId } = useParams()
   const model = useSessionScreenModel()
-  const { evidence, feed, feedError, isNewSession, question, session } = model
+  const { evidence, feed, feedError, question, session } = model
   const { navigate, retryFeed, selectedSessionId, setEvidence, workReveal } = model
   const [, setFeedStalledSessionId] = useState<string | null>(null)
   const openSession = (sessionId: string) =>
@@ -110,6 +135,10 @@ export function SessionScreenView() {
         feed={feed}
         feedError={feedError}
         onRetryFeed={retryFeed}
+        onLoadOlder={model.loadOlder}
+        hasOlder={model.hasOlder}
+        loadingOlder={model.loadingOlder}
+        olderError={model.olderError}
         liveFacts={liveFactsOf(model)}
         onOpenSession={openSession}
         selectedSessionId={selectedSessionId}
@@ -119,22 +148,7 @@ export function SessionScreenView() {
         answeringQuestionId={model.question.answeringId}
         questionFailure={model.question.failureFor}
         onFeedStalledChange={setFeedStalledSessionId}
-        composer={
-          (selectedSessionId === null && !isNewSession) ||
-          feedError?.code === 'missing-session' ? null : (
-            <SessionComposerArea
-              permission={model.permission}
-              questionPending={pendingQuestionId(feed) !== null}
-              session={session}
-              harness={model.harness}
-              selectedSessionId={selectedSessionId}
-              sessionList={model.sessionList}
-              cockpit={model.cockpit}
-              workspaceActions={model.workspaceActions}
-              workspaceCockpit={model.workspaceCockpit}
-            />
-          )
-        }
+        composer={composerFor(model)}
         headerControls={<WorkButtons model={model} />}
         session={session}
         workspaceIdentity={model.workspaceIdentity}

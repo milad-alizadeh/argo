@@ -1,4 +1,7 @@
+import os from 'node:os'
+import path from 'node:path'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
+import { watchVendorHistory } from '@/harnesses/host/history-watch'
 import { SESSION_CLAUDE_EXECUTABLE_ENV } from '@/harnesses/proof-protocol'
 import type { HarnessRegistration } from '@/harnesses/registration'
 import { readClaudeHarnessInfo } from './catalog'
@@ -17,7 +20,13 @@ export function createClaudeRegistration(): HarnessRegistration<'claude'> {
     signIn: createClaudeSignInDriver(),
     readCatalog: () => readClaudeHarnessInfo(executable),
     readHistory: ({ nativeId, subagentId, cwd }) =>
-      readClaudeSessionHistory(subagentId ?? nativeId, cwd),
+      readClaudeSessionHistory(nativeId, cwd, subagentId),
+    watchHistory: ({ nativeId }, invalidate) =>
+      watchVendorHistory(
+        path.join(process.env.CLAUDE_CONFIG_DIR ?? path.join(os.homedir(), '.claude'), 'projects'),
+        nativeId,
+        invalidate,
+      ),
     rename: claudeSessionRenamer.rename,
   }
 }
