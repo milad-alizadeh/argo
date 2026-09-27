@@ -14,54 +14,43 @@ function feedReply(sessionId: string, requestId: string, revision: string) {
   }
 }
 
-test('reads a newly started Session by its real identifier', async () => {
-  const readSessionFeed = vi
-    .fn()
-    .mockResolvedValue(feedReply('session-new', 'new-session-feed', 'initial'))
+async function withTrpc<T>(trpc: ReturnType<typeof vi.fn>, run: () => Promise<T>): Promise<T> {
   const originalWindow = globalThis.window
   Object.defineProperty(globalThis, 'window', {
     configurable: true,
-    value: { argo: { cancelSessionFeed: vi.fn(), readSessionFeed } },
+    value: { argo: { trpc } },
   })
-  const options = sessionFeedQuery(new QueryClient(), 'session-new', null)
-
   try {
-    await options.queryFn?.({ signal: new AbortController().signal } as never)
-    expect(readSessionFeed).toHaveBeenCalledWith({
-      sessionId: 'session-new',
-      subagentId: null,
-      revision: null,
-    })
+    return await run()
   } finally {
     Object.defineProperty(globalThis, 'window', { configurable: true, value: originalWindow })
   }
+}
+
+test('reads a newly started Session by its real identifier', async () => {
+  const feed = feedReply('session-new', 'new-session-feed', 'initial')
+  const trpc = vi.fn().mockResolvedValue({ result: { data: feed } })
+  const options = sessionFeedQuery(new QueryClient(), 'session-new', null)
+  await withTrpc(trpc, async () => {
+    await options.queryFn?.({ signal: new AbortController().signal } as never)
+    expect(trpc).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'sessionFeedRead', type: 'query' }),
+    )
+  })
 })
 
-test('aborting a feed read does not call the retired preload cancellation method', async () => {
-  let finishRead: ((reply: ReturnType<typeof feedReply>) => void) | undefined
-  const readSessionFeed = vi.fn(
-    () =>
-      new Promise<ReturnType<typeof feedReply>>((resolve) => {
-        finishRead = resolve
-      }),
-  )
-  const originalWindow = globalThis.window
-  Object.defineProperty(globalThis, 'window', {
-    configurable: true,
-    value: { argo: { trpc: vi.fn(), readSessionFeed } },
-  })
+test('reads the feed through tRPC without legacy preload methods', async () => {
+  const feed = feedReply('session-a', 'feed-read', 'revision-1')
+  const trpc = vi.fn().mockResolvedValue({ result: { data: feed } })
   const options = sessionFeedQuery(new QueryClient(), 'session-a', null)
-  const controller = new AbortController()
-  const pending = options.queryFn?.({ signal: controller.signal } as never)
-
-  try {
-    expect(readSessionFeed).toHaveBeenCalledOnce()
-    controller.abort()
-    finishRead?.(feedReply('session-a', 'feed-read', 'revision-1'))
-    await expect(pending).resolves.toMatchObject({ sessionId: 'session-a' })
-  } finally {
-    Object.defineProperty(globalThis, 'window', { configurable: true, value: originalWindow })
-  }
+  await withTrpc(trpc, async () => {
+    await expect(
+      options.queryFn?.({ signal: new AbortController().signal } as never),
+    ).resolves.toMatchObject({
+      sessionId: 'session-a',
+    })
+    expect(trpc).toHaveBeenCalledOnce()
+  })
 })
 
 describe('caching and retrying the Session feed read', () => {
@@ -84,26 +73,20 @@ describe('caching and retrying the Session feed read', () => {
   test('starts a new read when retrying a pending Feed with no cached data', async () => {
     const client = new QueryClient()
     const pendingRead = new Promise<never>(() => {})
-    const readSessionFeed = vi
+    const trpc = vi
       .fn()
-      .mockResolvedValueOnce(pendingRead)
-      .mockResolvedValueOnce(feedReply('session-a', 'recovered-feed', 'recovered'))
-    const originalWindow = globalThis.window
-    Object.defineProperty(globalThis, 'window', {
-      configurable: true,
-      value: { argo: { cancelSessionFeed: vi.fn(), readSessionFeed } },
-    })
+      .mockImplementationOnce(() => pendingRead)
+      .mockResolvedValueOnce({
+        result: { data: feedReply('session-a', 'recovered-feed', 'recovered') },
+      })
     const options = sessionFeedQuery(client, 'session-a', null)
-    const observer = new QueryObserver(client, options)
-    const unsubscribe = observer.subscribe(() => {})
-
-    expect(readSessionFeed).toHaveBeenCalledTimes(1)
-    try {
+    await withTrpc(trpc, async () => {
+      const observer = new QueryObserver(client, options)
+      const unsubscribe = observer.subscribe(() => {})
+      expect(trpc).toHaveBeenCalledTimes(1)
       await retrySessionFeed(client, options.queryKey, () => observer.refetch())
-      expect(readSessionFeed).toHaveBeenCalledTimes(2)
-    } finally {
+      expect(trpc).toHaveBeenCalledTimes(2)
       unsubscribe()
-      Object.defineProperty(globalThis, 'window', { configurable: true, value: originalWindow })
-    }
+    })
   })
 })

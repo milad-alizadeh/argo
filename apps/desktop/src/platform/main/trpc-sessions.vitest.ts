@@ -12,6 +12,24 @@ import { type AppRouterDependencies, createAppRouter } from './trpc-router'
 let userData: string
 let database: Database
 
+function routerDependencies(
+  sessions: Partial<AppRouterDependencies['sessions']> = {},
+): AppRouterDependencies {
+  return {
+    accounts: {},
+    catalog: {},
+    harnessSignIn: {},
+    projects: { database },
+    sessions: {
+      database,
+      supervisor: { getSnapshot: () => ({ context: { sessions: {} } }), send: () => {} },
+      ...sessions,
+    },
+    tickets: {},
+    workspaces: { database },
+  } as unknown as AppRouterDependencies
+}
+
 beforeEach(async () => {
   userData = await mkdtemp(path.join(os.tmpdir(), 'argo-session-router-'))
   database = openDatabase(userData, { migrationsFolder: databaseMigrationsFolder() })
@@ -37,21 +55,8 @@ test('registers the paged Session list on the global router', async () => {
       firstPrompt: 'Open the saved Session',
     })
     .run()
-  const dependencies = {
-    accounts: {},
-    catalog: {},
-    harnessSignIn: {},
-    projects: { database },
-    sessions: {
-      database,
-      supervisor: { getSnapshot: () => ({ context: { sessions: {} } }), send: () => {} },
-    },
-    tickets: {},
-    workspaces: { database },
-  } as unknown as AppRouterDependencies
-
   await expect(
-    createAppRouter(dependencies)
+    createAppRouter(routerDependencies())
       .createCaller({})
       .sessionList({ projectId: 'project-1', page: 1, pageSize: 30 }),
   ).resolves.toMatchObject({
@@ -68,6 +73,35 @@ test('registers the paged Session list on the global router', async () => {
   })
 })
 
+test('reads historical Feed rows through the saved Session Harness adapter', async () => {
+  const sessionId = '00000000-0000-4000-8000-000000000003'
+  database
+    .insert(sessionTable)
+    .values({
+      argoId: sessionId,
+      harness: 'claude',
+      nativeId: 'vendor-session',
+      cwd: '/work/project',
+    })
+    .run()
+  const reads: unknown[] = []
+  const dependencies = routerDependencies({
+    readHistory: async (harness, nativeId, cwd) => {
+      reads.push({ harness, nativeId, cwd })
+      return [{ shape: 'prose', id: 'message-1', role: 'user', text: 'Hello' }]
+    },
+  })
+
+  await expect(
+    createAppRouter(dependencies).createCaller({}).sessionFeedRead({ sessionId }),
+  ).resolves.toMatchObject({
+    type: 'session.feed.read',
+    sessionId,
+    rows: [{ role: 'user', text: 'Hello' }],
+  })
+  expect(reads).toEqual([{ harness: 'claude', nativeId: 'vendor-session', cwd: '/work/project' }])
+})
+
 test('renames a saved Session through sessionRename after the Harness accepts it', async () => {
   database
     .insert(sessionTable)
@@ -79,21 +113,11 @@ test('renames a saved Session through sessionRename after the Harness accepts it
     })
     .run()
   const renamed: unknown[] = []
-  const dependencies = {
-    accounts: {},
-    catalog: {},
-    harnessSignIn: {},
-    projects: { database },
-    sessions: {
-      database,
-      rename: async (request: unknown) => {
-        renamed.push(request)
-      },
-      supervisor: { getSnapshot: () => ({ context: { sessions: {} } }), send: () => {} },
+  const dependencies = routerDependencies({
+    rename: async (request) => {
+      renamed.push(request)
     },
-    tickets: {},
-    workspaces: { database },
-  } as unknown as AppRouterDependencies
+  })
 
   await expect(
     createAppRouter(dependencies).createCaller({}).sessionRename({
@@ -127,21 +151,11 @@ test('keeps the existing title when the Harness rejects a rename', async () => {
       customTitle: 'Before',
     })
     .run()
-  const dependencies = {
-    accounts: {},
-    catalog: {},
-    harnessSignIn: {},
-    projects: { database },
-    sessions: {
-      database,
-      rename: async () => {
-        throw new Error('Harness rejected the rename.')
-      },
-      supervisor: { getSnapshot: () => ({ context: { sessions: {} } }), send: () => {} },
+  const dependencies = routerDependencies({
+    rename: async () => {
+      throw new Error('Harness rejected the rename.')
     },
-    tickets: {},
-    workspaces: { database },
-  } as unknown as AppRouterDependencies
+  })
 
   await expect(
     createAppRouter(dependencies).createCaller({}).sessionRename({
@@ -167,19 +181,7 @@ test('accepts a later Harness sync that changes or clears a confirmed custom tit
       nativeId: 'native-synced-rename',
     })
     .run()
-  const dependencies = {
-    accounts: {},
-    catalog: {},
-    harnessSignIn: {},
-    projects: { database },
-    sessions: {
-      database,
-      rename: async () => undefined,
-      supervisor: { getSnapshot: () => ({ context: { sessions: {} } }), send: () => {} },
-    },
-    tickets: {},
-    workspaces: { database },
-  } as unknown as AppRouterDependencies
+  const dependencies = routerDependencies({ rename: async () => undefined })
   const caller = createAppRouter(dependencies).createCaller({})
 
   await caller.sessionRename({

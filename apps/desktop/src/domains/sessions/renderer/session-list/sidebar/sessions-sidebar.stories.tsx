@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { queryClient, type RouterOutputs, trpc } from '@/platform/renderer/trpc-client'
-import { sessionRow, sessionSubagent } from '../../session-fixtures'
+import { sessionFeedTrpc, sessionRow, sessionSubagent } from '../../session-fixtures'
 import type { SessionError, SessionId, SessionListPage } from '../../types'
 import { SessionList, type SessionListActions } from '../session-list'
 
@@ -244,18 +244,20 @@ export const UnavailableHistoryRecovers: Story = {
     }
     window.argo = {
       ...before,
-      readSessionFeed: async (request) =>
-        historyAvailable || request.sessionId !== session.id
-          ? {
-              version: 1,
-              type: 'session.feed.read',
-              requestId: 'storybook-feed',
-              sessionId: request.sessionId,
-              chainId: request.sessionId,
-              revision: 'recovered',
-              rows: [],
-            }
-          : { ...readFailure, code: 'missing-session' },
+      trpc: sessionFeedTrpc(before.trpc, async (sessionId) => {
+        if (!historyAvailable && sessionId === session.id) {
+          throw Object.assign(new Error(readFailure.message), { data: { code: 'NOT_FOUND' } })
+        }
+        return {
+          version: 1,
+          type: 'session.feed.read',
+          requestId: 'storybook-feed',
+          sessionId,
+          chainId: sessionId,
+          revision: 'recovered',
+          rows: [],
+        }
+      }),
     }
     return () => {
       window.argo = before

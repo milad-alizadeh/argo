@@ -170,6 +170,14 @@ function delegationFeedFor(delegation: SessionSubagent) {
 
 // The Session list reads its own Sessions now (#2284), so a screen review stubs the read rather than
 // handing it a fixed roster prop.
+const NOOP_SESSION_LIST_ACTIONS: SessionListActions = {
+  onArchiveSelected: () => {},
+  onNew: () => {},
+  onOpenTicket: () => {},
+  onRename: async (_session, name) => name,
+  onSelect: () => {},
+}
+
 function withListedSessions(sessions: Session[]) {
   const before = window.argo
   window.argo = {
@@ -179,14 +187,6 @@ function withListedSessions(sessions: Session[]) {
   return () => {
     window.argo = before
   }
-}
-
-const NOOP_SESSION_LIST_ACTIONS: SessionListActions = {
-  onArchiveSelected: () => {},
-  onNew: () => {},
-  onOpenTicket: () => {},
-  onRename: async (_session, name) => name,
-  onSelect: () => {},
 }
 
 function ReviewSidebar({
@@ -1030,6 +1030,7 @@ export const LongWorkspaceAndBranchNames: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    const viewport = canvasElement.getBoundingClientRect()
     await expect(
       canvas.getByText('A workspace name that is much longer than the header can display'),
     ).toBeVisible()
@@ -1038,8 +1039,15 @@ export const LongWorkspaceAndBranchNames: Story = {
         'feature/a-branch-name-that-is-much-longer-than-the-header-can-display-or-the-session-title',
       ),
     ).toBeVisible()
-    await expect(canvas.getByRole('button', { name: /^Subagents/ })).toBeVisible()
-    await expect(canvas.getByRole('button', { name: /^Shell/ })).toBeVisible()
-    await expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeVisible()
+    for (const control of [
+      canvas.getByRole('button', { name: /^Subagents/ }),
+      canvas.getByRole('button', { name: /^Shell/ }),
+      canvas.getByRole('button', { name: 'Open Session inspector' }),
+    ]) {
+      await expect(control).toBeVisible()
+      const bounds = control.getBoundingClientRect()
+      expect(bounds.left).toBeGreaterThanOrEqual(viewport.left)
+      expect(bounds.right).toBeLessThanOrEqual(viewport.right)
+    }
   },
 }

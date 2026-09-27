@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { sessionListTrpc, sessionRow } from '../session-fixtures'
+import { sessionFeedTrpc, sessionListTrpc, sessionRow } from '../session-fixtures'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import type { SessionFeed } from '../types'
 import { SessionScreenView } from './session-screen-view'
@@ -84,23 +84,29 @@ function withFeedActions() {
   return () => {
     readSubagentIds = []
     const previous = window.argo
-    window.argo = {
-      ...previous,
-      trpc: sessionListTrpc(previous.trpc, () => [session]),
-      readSessionFeed: async (request) => {
-        readSubagentIds.push(request.subagentId)
-        return feed(request.sessionId, request.subagentId)
+    window.argo = Object.assign(
+      {
+        ...previous,
+        trpc: sessionFeedTrpc(
+          sessionListTrpc(previous.trpc, () => [session]),
+          async (sessionId, subagentId) => {
+            readSubagentIds.push(subagentId)
+            return feed(sessionId, subagentId)
+          },
+        ),
       },
-      readSkillFile: async (request) => ({
-        version: 1,
-        type: 'session.skill.read',
-        requestId: 'feed-actions-skill',
-        content:
-          request.path === SKILL_PATH
-            ? '---\nname: to-spec\ndescription: Inspect an issue.\n---\n\n# To spec\n\nCheck the **acceptance criteria**.'
-            : null,
-      }),
-    }
+      {
+        readSkillFile: async (request: { path: string }) => ({
+          version: 1,
+          type: 'session.skill.read',
+          requestId: 'feed-actions-skill',
+          content:
+            request.path === SKILL_PATH
+              ? '---\nname: to-spec\ndescription: Inspect an issue.\n---\n\n# To spec\n\nCheck the **acceptance criteria**.'
+              : null,
+        }),
+      },
+    )
     return () => {
       window.argo = previous
     }

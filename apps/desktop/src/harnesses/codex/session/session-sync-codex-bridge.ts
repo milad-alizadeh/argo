@@ -79,7 +79,7 @@ const requestSchema = z.discriminatedUnion('method', [
     type: z.literal('codex-request'),
     id: z.string().uuid(),
     method: z.literal('thread/read'),
-    params: z.strictObject({ threadId: z.string().min(1), includeTurns: z.literal(false) }),
+    params: z.strictObject({ threadId: z.string().min(1), includeTurns: z.boolean() }),
   }),
 ])
 const responseSchema = z.union([
