@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { type RefObject, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Progress } from '@/platform/renderer/components/ui/progress'
@@ -89,8 +89,7 @@ function useSessionListSessions(options: {
 }
 
 function useUnavailableSessionIds(selectedSessionId: SessionId | null) {
-  const queryClient = useQueryClient()
-  const selectedFeed = useQuery(sessionFeedQuery(queryClient, selectedSessionId, null))
+  const selectedFeed = useQuery(sessionFeedQuery(selectedSessionId, null))
   const failedFeedReads = useConsecutiveFeedFailures(selectedSessionId, selectedFeed)
   const [unavailableSessionIds, setUnavailableSessionIds] = useState<ReadonlySet<SessionId>>(
     () => new Set(),

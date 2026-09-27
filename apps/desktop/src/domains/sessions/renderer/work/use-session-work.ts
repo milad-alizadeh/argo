@@ -56,7 +56,7 @@ export function useShellOutput(sessionId: SessionId | null, shellId: string | nu
 // by it. Null until a Subagent is picked.
 export function useDelegationFeed(sessionId: SessionId | null, subagentId: string | null) {
   const queryClient = useQueryClient()
-  const query = sessionFeedQuery(queryClient, subagentId === null ? null : sessionId, subagentId)
+  const query = sessionFeedQuery(subagentId === null ? null : sessionId, subagentId)
   const feed = useQuery<SessionFeed | null, SessionContractError>(query)
   return {
     feed: feed.data ?? null,

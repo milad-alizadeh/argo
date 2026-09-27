@@ -1,7 +1,9 @@
 import { type ActorRefFrom, assertEvent, fromPromise, setup } from 'xstate'
 import type { Database } from '@/database/database'
 import type { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
+import type { SessionEventJournal } from '@/domains/sessions/main/database/session-event-journal'
 import { liveSessionSupervisorMachine } from '@/domains/sessions/main/live/live-session-supervisor-machine'
+import type { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import { sessionSyncSupervisorMachine } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
 import {
   type HarnessCatalog,
@@ -22,6 +24,8 @@ export function createAppMachine(registry: HarnessRegistry) {
         database: Database
         sessionSyncStatus: SessionSyncStatusStore
         codexSessionSyncStatus: SessionSyncStatusStore
+        sessionEventJournal?: SessionEventJournal
+        sessionInteractionBroker?: SessionInteractionBroker
       },
       context: {} as Record<string, never>,
       events: {} as
@@ -34,6 +38,8 @@ export function createAppMachine(registry: HarnessRegistry) {
               database: Database
               sessionSyncStatus: SessionSyncStatusStore
               codexSessionSyncStatus: SessionSyncStatusStore
+              sessionEventJournal?: SessionEventJournal
+              sessionInteractionBroker?: SessionInteractionBroker
             }
           },
     },
@@ -67,6 +73,8 @@ export function createAppMachine(registry: HarnessRegistry) {
           assertEvent(event, 'xstate.init')
           return {
             database: event.input.database,
+            journal: event.input.sessionEventJournal,
+            interactions: event.input.sessionInteractionBroker,
           }
         },
       },

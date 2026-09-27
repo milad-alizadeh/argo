@@ -18,9 +18,9 @@ export async function retrySessionFeed(
 }
 
 export function sessionFeedQuery(
-  _queryClient: QueryClient,
   sessionId: SessionId | null,
   subagentId: string | null,
+  hasLiveChannel = false,
 ): UseQueryOptions<SessionFeed | null, SessionContractError> {
   const key =
     sessionId === null
@@ -43,7 +43,7 @@ export function sessionFeedQuery(
     gcTime: 0,
     // Only the selected Feed polls. The vendor history API is the reconciliation path until a live
     // event subscription is restored through the current Harness adapters.
-    refetchInterval: SESSION_REFRESH_MS,
+    refetchInterval: hasLiveChannel ? false : SESSION_REFRESH_MS,
     retry: false,
     queryFn: async () => {
       try {

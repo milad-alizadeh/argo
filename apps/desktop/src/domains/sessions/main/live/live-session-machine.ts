@@ -6,9 +6,15 @@ import {
   sendTo,
   setup as xstateSetup,
 } from 'xstate'
+import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import { claudeLiveSessionMachine } from '@/harnesses/claude/session/claude-live-session-machine'
 import type { codexLiveSessionMachine } from '@/harnesses/codex/session/codex-live-session-machine'
 import type { SessionLiveInput, SessionStartInput } from '../api/session-submit'
+import type { SessionInteractionBroker } from './session-interaction-broker'
+
+type DrivenSessionInput = SessionLiveInput & {
+  interactions?: SessionInteractionBroker
+}
 
 export type QueuedLiveSessionCommand = Pick<
   SessionStartInput,
@@ -26,13 +32,19 @@ type LiveSessionPersistInput = {
 
 export const liveSessionMachine = xstateSetup({
   types: {
-    input: {} as SessionLiveInput,
+    input: {} as DrivenSessionInput,
     context: {} as {
       argoId: string | null
-      first: SessionLiveInput
+      first: DrivenSessionInput
       nativeId: string | null
       queue: QueuedLiveSessionCommand[]
       failure: string | null
+      harnessReady: boolean
+      feedSerial: number
+      feedEvents: {
+        serial: number
+        body: SessionLiveEventBody
+      }[]
     },
     events: {} as
       | {
@@ -43,12 +55,21 @@ export const liveSessionMachine = xstateSetup({
           type: 'Close'
         }
       | {
+          type: 'Harness identified'
+          nativeId: string
+        }
+      | {
           type: 'Harness ready'
           nativeId: string
         }
       | {
           type: 'Harness failed'
           failure: string
+        }
+      | {
+          type: 'Harness feed'
+          serial: number
+          body: SessionLiveEventBody
         }
       | {
           type: 'xstate.done.actor.persist'
@@ -72,19 +93,34 @@ export const liveSessionMachine = xstateSetup({
     }),
   },
   actions: {
-    reportHarnessSnapshot: enqueueActions(({ event, enqueue }) => {
+    reportHarnessSnapshot: enqueueActions(({ context, event, enqueue }) => {
       if (event.type !== 'xstate.snapshot.harness') return
       const snapshot = event.snapshot
+      if (
+        'lastFeed' in snapshot.context &&
+        snapshot.context.lastFeed !== null &&
+        snapshot.context.lastFeed.serial > context.feedSerial
+      )
+        enqueue.raise({
+          type: 'Harness feed',
+          ...snapshot.context.lastFeed,
+        })
       if (snapshot.matches('Failed'))
         enqueue.raise({
           type: 'Harness failed',
           failure: snapshot.context.failure ?? 'Harness failed.',
         })
-      else if (snapshot.hasTag('ready') && snapshot.context.nativeId !== null)
+      else if (snapshot.context.nativeId !== null) {
         enqueue.raise({
-          type: 'Harness ready',
+          type: 'Harness identified',
           nativeId: snapshot.context.nativeId,
         })
+        if (snapshot.hasTag('ready'))
+          enqueue.raise({
+            type: 'Harness ready',
+            nativeId: snapshot.context.nativeId,
+          })
+      }
     }),
     queueDistinct: assign({
       queue: ({ context, event }) =>
@@ -106,11 +142,30 @@ export const liveSessionMachine = xstateSetup({
     }),
     rememberNativeId: assign({
       nativeId: ({ context, event }) =>
-        event.type === 'Harness ready' ? event.nativeId : context.nativeId,
+        event.type === 'Harness ready' || event.type === 'Harness identified'
+          ? event.nativeId
+          : context.nativeId,
     }),
     rememberHarnessFailure: assign({
       failure: ({ context, event }) =>
         event.type === 'Harness failed' ? event.failure : context.failure,
+    }),
+    rememberFeed: assign({
+      feedSerial: ({ context, event }) =>
+        event.type === 'Harness feed' ? event.serial : context.feedSerial,
+      feedEvents: ({ context, event }) =>
+        event.type === 'Harness feed'
+          ? [
+              ...context.feedEvents,
+              {
+                serial: event.serial,
+                body: event.body,
+              },
+            ].slice(-500)
+          : context.feedEvents,
+    }),
+    rememberHarnessReady: assign({
+      harnessReady: true,
     }),
     rememberPersistFailure: assign({
       failure: ({ context, event }) => ('error' in event ? String(event.error) : context.failure),
@@ -122,6 +177,7 @@ export const liveSessionMachine = xstateSetup({
   },
   guards: {
     hasQueuedCommand: ({ context }) => context.queue.length > 0,
+    harnessIsReady: ({ context }) => context.harnessReady,
     isNewCommand: ({ context, event }) =>
       event.type === 'Send' &&
       event.command.commandId !== context.first.commandId &&
@@ -136,6 +192,9 @@ export const liveSessionMachine = xstateSetup({
     nativeId: null,
     queue: [],
     failure: null,
+    harnessReady: false,
+    feedSerial: 0,
+    feedEvents: [],
   }),
   invoke: {
     id: 'harness',
@@ -148,9 +207,16 @@ export const liveSessionMachine = xstateSetup({
   states: {
     Starting: {
       on: {
-        'Harness ready': {
+        'Harness identified': {
           target: 'Persisting',
           actions: 'rememberNativeId',
+        },
+        'Harness ready': {
+          target: 'Persisting',
+          actions: [
+            'rememberNativeId',
+            'rememberHarnessReady',
+          ],
         },
         'Harness failed': {
           target: 'Failed',
@@ -184,8 +250,8 @@ export const liveSessionMachine = xstateSetup({
             : {}),
         }),
         onDone: {
-          target: 'Draining',
           actions: 'rememberArgoId',
+          target: 'Awaiting turn',
         },
         onError: {
           target: 'Failed',
@@ -193,6 +259,29 @@ export const liveSessionMachine = xstateSetup({
         },
       },
       on: {
+        'Harness ready': {
+          actions: 'rememberHarnessReady',
+        },
+        'Harness failed': {
+          target: 'Failed',
+          actions: 'rememberHarnessFailure',
+        },
+        Send: {
+          actions: 'queueDistinct',
+        },
+        Close: 'Closed',
+      },
+    },
+    'Awaiting turn': {
+      always: {
+        guard: 'harnessIsReady',
+        target: 'Draining',
+      },
+      on: {
+        'Harness ready': {
+          target: 'Draining',
+          actions: 'rememberHarnessReady',
+        },
         'Harness failed': {
           target: 'Failed',
           actions: 'rememberHarnessFailure',
@@ -262,6 +351,11 @@ export const liveSessionMachine = xstateSetup({
     },
     Closed: {
       type: 'final',
+    },
+  },
+  on: {
+    'Harness feed': {
+      actions: 'rememberFeed',
     },
   },
 })

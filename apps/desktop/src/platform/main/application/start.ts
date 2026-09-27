@@ -2,6 +2,8 @@ import { app } from 'electron'
 import { createActor } from 'xstate'
 import type { Database } from '@/database/database'
 import type { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
+import type { SessionEventJournal } from '@/domains/sessions/main/database/session-event-journal'
+import type { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import type { HarnessRegistry } from '@/harnesses/registry'
 import { applyStoredAppearance, readAppearance } from '../appearance'
 import { setPlatformLanguage } from '../i18n'
@@ -12,6 +14,8 @@ export function startDesktopApplication(request: {
     database: Database
     sessionSyncStatus: SessionSyncStatusStore
     codexSessionSyncStatus: SessionSyncStatusStore
+    sessionEventJournal?: SessionEventJournal
+    sessionInteractionBroker?: SessionInteractionBroker
     registry: HarnessRegistry
   }>
   ready: (actor: AppActor) => Promise<void> | void

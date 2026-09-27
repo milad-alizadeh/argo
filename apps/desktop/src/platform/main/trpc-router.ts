@@ -24,7 +24,15 @@ import {
   type SessionFeedReadContext,
   sessionFeedReadProcedure,
 } from '@/domains/sessions/main/api/session-feed-read'
+import {
+  type SessionInteractionContext,
+  sessionInteractionProcedures,
+} from '@/domains/sessions/main/api/session-interactions'
 import { sessionListProcedure } from '@/domains/sessions/main/api/session-list'
+import {
+  type SessionLiveEventsContext,
+  sessionLiveEventsProcedure,
+} from '@/domains/sessions/main/api/session-live-events'
 import {
   type SessionRefreshContext,
   sessionRefreshProcedure,
@@ -61,6 +69,8 @@ export type AppRouterDependencies = {
   projects: ProjectRegisterContext & ProjectRelocateContext
   sessions: SessionProcedureContext &
     SessionFeedReadContext &
+    SessionInteractionContext &
+    SessionLiveEventsContext &
     SessionRefreshContext & { sessionSyncStatus: SessionSyncStatusStore }
   tickets: TicketRouterDependencies
   workspaces: WorkspaceListContext
@@ -78,6 +88,8 @@ export function createAppRouter(dependencies: AppRouterDependencies) {
     sessionSubmit: sessionSubmitProcedure(dependencies.sessions),
     sessionList: sessionListProcedure(dependencies.sessions),
     sessionFeedRead: sessionFeedReadProcedure(dependencies.sessions),
+    ...sessionInteractionProcedures(dependencies.sessions),
+    sessionLiveEvents: sessionLiveEventsProcedure(dependencies.sessions),
     sessionRename: sessionRenameProcedure(dependencies.sessions),
     sessionRefresh: sessionRefreshProcedure(dependencies.sessions),
     sessionSyncStatus: sessionSyncStatusProcedure(dependencies.sessions.sessionSyncStatus),

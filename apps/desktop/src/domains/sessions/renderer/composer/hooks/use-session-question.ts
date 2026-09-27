@@ -1,11 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
-import {
-  type SessionContractError,
-  throwSessionContractError,
-  throwUnexpectedSessionReply,
-} from '../../session-contract-error'
+import { trpcClient } from '@/platform/renderer/trpc-client'
 import { invalidateSessionList } from '../../session-queries'
 
 // A pending question already reaches the renderer through the Feed's own `ask` row (tool-feed.ts),
@@ -39,20 +35,10 @@ export function useSessionQuestion(sessionId: string | null) {
 }
 
 function useQuestionDecision(sessionId: string | null) {
-  return useMutation<void, SessionContractError, { questionId: string; answers: QuestionAnswer[] }>(
-    {
-      mutationFn: async ({ questionId, answers }) => {
-        if (sessionId === null) throw new Error('No Session selected.')
-        const reply = await window.argo.decideSessionQuestion({ sessionId, questionId, answers })
-        switch (reply.type) {
-          case 'session.accepted':
-            return
-          case 'session.error':
-            return throwSessionContractError(reply)
-          default:
-            return throwUnexpectedSessionReply(reply)
-        }
-      },
+  return useMutation<void, Error, { questionId: string; answers: QuestionAnswer[] }>({
+    mutationFn: async ({ questionId, answers }) => {
+      if (sessionId === null) throw new Error('No Session selected.')
+      await trpcClient.sessionQuestionDecide.mutate({ sessionId, questionId, answers })
     },
-  )
+  })
 }

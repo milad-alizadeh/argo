@@ -12,7 +12,9 @@ import { createConnectionPort } from '@/domains/connections/main'
 import { createHarnessSignInProcedureContext } from '@/domains/harness-signin/main'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
 import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
+import { SessionEventJournal } from '@/domains/sessions/main/database/session-event-journal'
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
+import { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
 import type { CatalogActor } from '@/harnesses/catalog/catalog-read'
 import type { CodexRequest } from '@/harnesses/codex/app-server/codex-app-server-client'
@@ -197,6 +199,19 @@ function routerForWindow(options: {
         return rename(nativeId, title)
       },
       supervisor: actors.sessions,
+      journal: currentSessionEventJournal(),
+      interactions: currentSessionInteractionBroker(),
+      hasLiveChannel: (sessionId) => {
+        const { sessions, starts } = actors.sessions.getSnapshot().context
+        const session =
+          sessions[sessionId] ??
+          Object.values(starts).find((actor) => actor.getSnapshot().context.argoId === sessionId)
+        return (
+          session !== undefined &&
+          !session.getSnapshot().matches('Failed') &&
+          !session.getSnapshot().matches('Closed')
+        )
+      },
       refreshSessionSync: () => actors.sessionSync.send({ type: 'Refresh' }),
       sessionSyncStatus,
     },
@@ -208,6 +223,17 @@ function routerForWindow(options: {
 function currentSessionSyncStatus(): SessionSyncStatusStore {
   if (sessionSyncStatus === undefined) throw new Error('Session sync status is unavailable.')
   return sessionSyncStatus
+}
+
+function currentSessionEventJournal(): SessionEventJournal {
+  if (sessionEventJournal === undefined) throw new Error('Session event journal is unavailable.')
+  return sessionEventJournal
+}
+
+function currentSessionInteractionBroker(): SessionInteractionBroker {
+  if (sessionInteractionBroker === undefined)
+    throw new Error('Session interaction broker is unavailable.')
+  return sessionInteractionBroker
 }
 
 type WindowActors = {
@@ -329,6 +355,8 @@ function createWindow(actor: AppActor, database: Database, registry: HarnessRegi
 
 let applicationDatabase: Database | undefined
 let sessionSyncStatus: SessionSyncStatusStore | undefined
+let sessionEventJournal: SessionEventJournal | undefined
+let sessionInteractionBroker: SessionInteractionBroker | undefined
 let codexSessionSyncStatus: SessionSyncStatusStore | undefined
 
 async function prepare() {
@@ -339,6 +367,8 @@ async function prepare() {
   })
   applicationDatabase = openDatabase(projectData, { packaged: app.isPackaged })
   sessionSyncStatus = new SessionSyncStatusStore(applicationDatabase)
+  sessionEventJournal = new SessionEventJournal(applicationDatabase)
+  sessionInteractionBroker = new SessionInteractionBroker()
   codexSessionSyncStatus = new SessionSyncStatusStore(applicationDatabase, 'codex')
   if (DEVELOPMENT_INSTANCE) {
     await seedDevelopmentProject(applicationDatabase, DEVELOPMENT_INSTANCE)
@@ -348,6 +378,8 @@ async function prepare() {
     database: applicationDatabase,
     sessionSyncStatus,
     codexSessionSyncStatus,
+    sessionEventJournal,
+    sessionInteractionBroker,
     registry: harnessRegistry,
   }
 }

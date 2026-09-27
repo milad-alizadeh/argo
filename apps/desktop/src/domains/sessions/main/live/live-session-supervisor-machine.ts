@@ -19,10 +19,36 @@ import {
   codexLiveSessionMachine,
 } from '@/harnesses/codex/session/codex-live-session-machine'
 import type { SessionLiveInput, SessionSendInput, SessionStartInput } from '../api/session-submit'
+import type { SessionEventJournal } from '../database/session-event-journal'
 import { createSessionUpsert } from '../database/session-upsert'
 import { liveSessionMachine } from './live-session-machine'
+import type { SessionInteractionBroker } from './session-interaction-broker'
 
 type LiveSessionActor = ActorRefFrom<typeof liveSessionMachine>
+export function recordLiveSessionEvents(
+  session: LiveSessionActor,
+  journal: SessionEventJournal,
+): () => void {
+  let lastSerial = 0
+  let pending: {
+    serial: number
+    body: Parameters<SessionEventJournal['append']>[1]
+  }[] = []
+  const subscription = session.subscribe((snapshot) => {
+    const next = snapshot.context.feedEvents.filter((event) => event.serial > lastSerial)
+    if (next.length > 0) {
+      lastSerial = next.at(-1)?.serial ?? lastSerial
+      pending = [
+        ...pending,
+        ...next,
+      ]
+    }
+    if (snapshot.context.argoId === null || pending.length === 0) return
+    for (const event of pending) journal.append(snapshot.context.argoId, event.body)
+    pending = []
+  })
+  return () => subscription.unsubscribe()
+}
 type StartReply = {
   resolve: (value: { sessionId: string }) => void
   reject: (error: Error) => void
@@ -38,6 +64,8 @@ type CompletedStart =
     }
 type LiveSessionSupervisorInput = {
   database: Database
+  journal?: SessionEventJournal
+  interactions?: SessionInteractionBroker
 }
 type LiveSessionSupervisorEvent =
   | {
@@ -134,6 +162,8 @@ export const liveSessionSupervisorMachine = xstateSetup({
     input: {} as LiveSessionSupervisorInput,
     context: {} as {
       database: Database
+      journal: SessionEventJournal | undefined
+      interactions: SessionInteractionBroker | undefined
       sessions: Record<string, LiveSessionActor>
       starts: Record<string, LiveSessionActor>
       completed: Record<
@@ -151,6 +181,15 @@ export const liveSessionSupervisorMachine = xstateSetup({
     events: {} as LiveSessionSupervisorEvent,
   },
   actors: {
+    observeLiveEvents: fromCallback<
+      {
+        type: 'Stop'
+      },
+      {
+        session: LiveSessionActor
+        journal: SessionEventJournal
+      }
+    >(({ input }) => recordLiveSessionEvents(input.session, input.journal)),
     observeSession: fromCallback<
       {
         type: 'Stop'
@@ -297,7 +336,10 @@ export const liveSessionSupervisorMachine = xstateSetup({
             },
           }),
           {
-            input: event.input,
+            input: {
+              ...event.input,
+              interactions: context.interactions,
+            },
           },
         )
         spawn('observeSession', {
@@ -306,6 +348,13 @@ export const liveSessionSupervisorMachine = xstateSetup({
             session: actor,
           },
         })
+        if (context.journal !== undefined)
+          spawn('observeLiveEvents', {
+            input: {
+              session: actor,
+              journal: context.journal,
+            },
+          })
         spawn('replyWhenPersisted', {
           input: {
             session: actor,
@@ -401,6 +450,8 @@ export const liveSessionSupervisorMachine = xstateSetup({
   initial: 'Running',
   context: ({ input }) => ({
     database: input.database,
+    journal: input.journal,
+    interactions: input.interactions,
     sessions: {},
     starts: {},
     completed: {},

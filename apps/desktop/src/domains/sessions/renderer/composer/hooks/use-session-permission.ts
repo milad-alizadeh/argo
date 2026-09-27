@@ -1,11 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { Permission, PermissionDecision } from '@/domains/sessions/api/permissions'
-import {
-  type SessionContractError,
-  throwSessionContractError,
-  throwUnexpectedSessionReply,
-} from '../../session-contract-error'
+import { trpcClient } from '@/platform/renderer/trpc-client'
 import { invalidateSessionList, sessionPermissionQueryKey } from '../../session-queries'
 
 export type PermissionAnswer = PermissionDecision
@@ -15,21 +11,13 @@ export function useSessionPermission(sessionId: string | null) {
   const queryClient = useQueryClient()
   const queryKey =
     sessionId === null ? ['sessions', 'permission', null] : sessionPermissionQueryKey(sessionId)
-  const permission = useQuery<Permission | null, SessionContractError>({
+  const permission = useQuery<Permission | null, Error>({
     queryKey,
     enabled: sessionId !== null,
     retry: false,
     queryFn: async () => {
       if (sessionId === null) return null
-      const reply = await window.argo.readSessionPermission({ sessionId })
-      switch (reply.type) {
-        case 'session.permission.read':
-          return reply.permission
-        case 'session.error':
-          return throwSessionContractError(reply)
-        default:
-          return throwUnexpectedSessionReply(reply)
-      }
+      return trpcClient.sessionPermissionRead.query({ sessionId })
     },
   })
   const permissionDecision = usePermissionDecision()
@@ -62,19 +50,11 @@ function usePermissionDecision() {
       decision: PermissionAnswer
       permission: Permission
     }) => {
-      const reply = await window.argo.decideSessionPermission({
+      await trpcClient.sessionPermissionDecide.mutate({
         sessionId: permission.sessionId,
         permissionId: permission.id,
         decision,
       })
-      switch (reply.type) {
-        case 'session.accepted':
-          return
-        case 'session.error':
-          return throwSessionContractError(reply)
-        default:
-          return throwUnexpectedSessionReply(reply)
-      }
     },
   })
 }

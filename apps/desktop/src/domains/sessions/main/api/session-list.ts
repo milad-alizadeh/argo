@@ -161,6 +161,7 @@ function liveProjection(context: SessionListContext, sessionId: string) {
   const stateProjection = {
     Starting: { posture: 'live', status: 'starting' },
     Persisting: { posture: 'live', status: 'starting' },
+    'Awaiting turn': { posture: 'live', status: 'starting' },
     Draining: { posture: 'live', status: 'unknown' },
     Sending: { posture: 'live', status: 'unknown' },
     Ready: { posture: 'live', status: 'unknown' },
