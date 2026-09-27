@@ -5,16 +5,8 @@ import { liveSessionSupervisorMachine } from '@/domains/sessions/main/live/live-
 import { sessionSyncSupervisorMachine } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
 import { harnessCatalogMachine } from '@/harnesses/catalog/harness-catalog-machine'
 import { harnessCatalogLoadActor } from '@/harnesses/catalog/runtime'
-import {
-  codexAppServerMachine,
-  codexAppServerProcessActor,
-} from '@/harnesses/codex/app-server/codex-app-server-machine'
+import { codexAppServerMachine } from '@/harnesses/codex/app-server/codex-app-server-machine'
 
-const codexMachine = codexAppServerMachine.provide({
-  actors: {
-    processActor: codexAppServerProcessActor,
-  },
-})
 const catalogMachine = harnessCatalogMachine.provide({
   actors: {
     loadCatalog: harnessCatalogLoadActor,
@@ -45,7 +37,7 @@ export const appMachine = setup({
         },
   },
   actors: {
-    codex: codexMachine,
+    codex: codexAppServerMachine,
     catalog: catalogMachine,
     sessions: liveSessionSupervisorMachine,
     sessionSync: sessionSyncSupervisorMachine,
@@ -59,9 +51,7 @@ export const appMachine = setup({
       id: 'codex',
       systemId: 'codex',
       src: 'codex',
-      input: {
-        executable: null,
-      },
+      input: {},
     },
     {
       id: 'catalog',

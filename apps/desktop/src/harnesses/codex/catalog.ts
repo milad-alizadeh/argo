@@ -6,7 +6,7 @@ import {
   unavailable,
 } from '@/harnesses/catalog/harness-catalog-machine'
 import { platformText } from '@/platform/main/i18n'
-import type { CodexRequest } from './app-server/codex-app-server-machine'
+import type { CodexRequest } from './app-server/codex-app-server-client'
 
 export const codexModelEffortSchema = z.object({
   reasoningEffort: z.string().min(1),

@@ -5,12 +5,14 @@ import type { SessionSyncWorkerBridge } from '@/domains/sessions/main/sync/sessi
 import {
   CODEX_THREAD_SOURCE_KINDS,
   type CodexRequest,
-  type codexAppServerMachine,
   type RequestParams,
+} from '../app-server/codex-app-server-client'
+import {
+  type codexAppServerMachine,
   requestCodexAppServer,
 } from '../app-server/codex-app-server-machine'
 
-export type { CodexRequest } from '../app-server/codex-app-server-machine'
+export type { CodexRequest } from '../app-server/codex-app-server-client'
 export type CodexWorkerReadRequest = {
   <Result>(
     method: 'model/list',

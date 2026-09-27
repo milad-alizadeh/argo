@@ -4,7 +4,7 @@ import type {
   SessionLiveInput,
   SessionStartInput,
 } from '@/domains/sessions/main/api/session-submit'
-import type { CodexRequest } from '../app-server/codex-app-server-machine'
+import type { CodexRequest } from '../app-server/codex-app-server-client'
 
 export type CodexInputItem =
   | {
