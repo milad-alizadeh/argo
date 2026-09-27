@@ -246,7 +246,7 @@ export const claudeLiveSessionMachine = xstateSetup({
             nativeId: message.session_id,
           })
         }
-        if (message.type === 'assistant') liveText.settle(message.uuid)
+        if (message.type === 'assistant') liveText.settle(message.message.id)
         if (message.type === 'stream_event') {
           const content = liveText.append(message)
           if (content !== null) {

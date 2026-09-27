@@ -107,7 +107,7 @@ function composerFor(model: ReturnType<typeof useSessionScreenModel>) {
   return (
     <SessionComposerArea
       permission={model.permission}
-      questionPending={pendingQuestionId(model.feed) !== null}
+      questionPending={model.session?.posture === 'live' && pendingQuestionId(model.feed) !== null}
       session={model.session}
       harness={model.harness}
       selectedSessionId={model.selectedSessionId}

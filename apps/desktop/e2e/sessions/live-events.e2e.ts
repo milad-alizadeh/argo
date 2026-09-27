@@ -59,6 +59,15 @@ const liveEvents: SessionLiveEventBody[] = [
     vendorEventId: 'request-1',
     requestId: 'request-1',
     questions: [{ question: 'Which file?', header: null, multiSelect: false, options: [] }],
+    answer: 'README.md',
+  },
+  {
+    type: 'question',
+    commandId,
+    turnId: commandId,
+    vendorEventId: 'request-2',
+    requestId: 'request-2',
+    questions: [{ question: 'Unanswered?', header: null, multiSelect: false, options: [] }],
     answer: null,
   },
 ]
@@ -114,18 +123,19 @@ test('packaged Feed replays ordered Claude live activity for a stored Session', 
     const feed = page.getByRole('region', { name: 'Session Feed' })
     await expect(feed.getByText('Inspect this', { exact: true })).toBeVisible()
     await expect(feed.getByText('Reading now', { exact: true })).toBeVisible()
-    await expect(feed.getByText('Which file?', { exact: true })).toBeVisible()
+    await expect(feed.getByText('README.md', { exact: true })).toBeVisible()
     await expect(feed.getByRole('button', { name: /Read/ })).toBeVisible()
-    await expect(feed.getByText('Permission needed')).toBeVisible()
-    await expect(feed.getByText('Read file', { exact: true })).toBeVisible()
+    await expect(feed.getByText('Permission needed')).toHaveCount(0)
+    await expect(feed.getByText('Unanswered?', { exact: true })).toHaveCount(0)
+    await page.getByRole('combobox', { name: 'Message' }).fill('Continue')
+    await expect(page.getByRole('button', { name: 'Send message' })).toBeEnabled()
     const rows = await feed.locator('[data-feed-row]').allTextContents()
     expect(rows.map((row) => row.trim())).toEqual([
       expect.stringContaining('Inspect this'),
       expect.stringContaining('Running'),
       expect.stringContaining('Reading now'),
       expect.stringContaining('Read'),
-      expect.stringContaining('Permission needed'),
-      expect.stringContaining('Which file?'),
+      expect.stringContaining('README.md'),
     ])
   } finally {
     await application.close()

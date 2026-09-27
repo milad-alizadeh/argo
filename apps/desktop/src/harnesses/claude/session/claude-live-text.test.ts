@@ -12,18 +12,31 @@ function delta(uuid: string, index: number, text: string): SDKPartialAssistantMe
   } as SDKPartialAssistantMessage
 }
 
+function start(uuid: string, messageId: string): SDKPartialAssistantMessage {
+  return {
+    type: 'stream_event',
+    uuid,
+    session_id: 'native-1',
+    parent_tool_use_id: null,
+    event: { type: 'message_start', message: { id: messageId } },
+  } as SDKPartialAssistantMessage
+}
+
 test('builds an assistant row incrementally under its vendor message identity', () => {
   const stream = new ClaudeLiveText()
-  expect(stream.append(delta('assistant-1', 0, 'Read'))).toMatchObject({
+  expect(stream.append(start('event-1', 'assistant-1'))).toBeNull()
+  expect(stream.append(delta('event-2', 0, 'Read'))).toMatchObject({
     id: 'assistant-1',
     text: 'Read',
   })
-  expect(stream.append(delta('assistant-1', 0, 'ing'))).toMatchObject({
+  expect(stream.append(delta('event-3', 0, 'ing'))).toMatchObject({
     id: 'assistant-1',
     text: 'Reading',
   })
-  expect(stream.append(delta('assistant-1', 1, 'tool'))).toMatchObject({
+  expect(stream.append(delta('event-4', 1, 'tool'))).toMatchObject({
     id: 'assistant-1:1',
     text: 'tool',
   })
+  stream.settle('assistant-1')
+  expect(stream.append(delta('event-5', 0, 'stray'))).toBeNull()
 })

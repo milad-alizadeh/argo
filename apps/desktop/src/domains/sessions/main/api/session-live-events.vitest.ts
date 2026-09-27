@@ -63,6 +63,37 @@ test('replays a cursor then delivers new live events through the product subscri
   ])
 })
 
+test('does not replay unanswered interactions after their live channel closes', async () => {
+  journal.append(sessionId, {
+    type: 'permission',
+    commandId: null,
+    turnId: null,
+    vendorEventId: null,
+    requestId: 'permission-1',
+    description: 'Read file',
+  })
+  journal.append(sessionId, {
+    type: 'question',
+    commandId: null,
+    turnId: null,
+    vendorEventId: null,
+    requestId: 'question-1',
+    questions: [{ question: 'Which file?', header: null, multiSelect: false, options: [] }],
+    answer: null,
+  })
+  const external = await subscribe(0, false)
+  external.subscription.unsubscribe()
+  expect(external.updates).toEqual([{ type: 'ready', live: false, cursor: 2 }])
+
+  const live = await subscribe(0, true)
+  live.subscription.unsubscribe()
+  expect(live.updates).toMatchObject([
+    { type: 'ready', live: true, cursor: 2 },
+    { type: 'event', event: { type: 'permission', requestId: 'permission-1' } },
+    { type: 'event', event: { type: 'question', requestId: 'question-1', answer: null } },
+  ])
+})
+
 test('asks the reader to reconcile an expired cursor with vendor history', async () => {
   for (let index = 0; index < 3; index += 1)
     journal.append(sessionId, {
