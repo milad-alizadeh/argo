@@ -7,6 +7,10 @@ Status: accepted · 2026-08-12 (proposed 2026-08-10; Codex channel corrected to 
 > Agent SDK adapter when Anthropic supports Argo's authorization. Codex keeps app-server. Both use
 > vendor history, and a future PTY adapter is deferred.
 
+> **Session boundary amended by ADR-0047 and ADR-0048 · 2026-09-27:** #2793 replaces this
+> drive-only port with one async registration per concrete Harness. The registration covers live
+> Sessions and vendor-backed history. Argo-owned machines manage the Session lifecycle.
+
 ADR-0041 adds one user-level hook that every Claude Session runs, for compaction only.
 
 ## Context

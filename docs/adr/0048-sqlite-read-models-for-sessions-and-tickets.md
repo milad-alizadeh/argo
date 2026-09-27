@@ -2,11 +2,15 @@
 
 Status: accepted · 2026-09-24
 
+Amended 2026-09-27 for the Session migration in #2793. This amendment replaces the
+Harness-machine boundary, sync dispatch, and creation recovery rules in this decision.
+
 The Session list currently mixes vendor pages with SQLite metadata. The renderer must reconcile
 source cursors and Argo-owned fields, so paging and search depend on adapter behavior. Ticket
 queries have a similar split. Argo will give the renderer one validated IPC read surface backed by
-SQLite for Sessions and Tickets. Live connections and mutations still go through their Harness
-machines and vendor interfaces. Delivery facts, including pull requests and CI, need a separate design.
+SQLite for Sessions and Tickets. Live connections and mutations go through Argo-owned Session
+machines and registered Harness functions. Delivery facts, including pull requests and CI, need a
+separate design.
 
 ## Identity and ownership
 
@@ -50,14 +54,18 @@ which outcome occurred, Argo keeps the local identity and reports uncertainty.
 ## Sync and reads
 
 The app XState machine invokes one long-running Session sync supervisor after database migration.
-The supervisor receives Refresh, reads the list of Harnesses supported for Session sync, and
-dispatches one generic sync worker for each Harness job. Each dispatched worker owns one thread.
+The supervisor receives Refresh, reads the registered Harnesses that support discovery, and
+dispatches one generic sync worker for each Harness job. A registration selects a serializable
+discovery job. The supervisor sends job data, not the registration object, across the thread
+boundary. Each dispatched worker owns one thread.
 The supervisor tracks the jobs, prevents duplicate concurrent jobs for one Harness, and stops all
 threads with the app. A completed or failed job releases its thread. Each worker runs the same
-XState sync machine definition. That machine invokes its Harness fetch actor, then saves batches.
+XState sync machine definition. That machine invokes an Argo-owned actor to call the registered
+discovery operation, then saves batches.
 Its context holds serializable progress and identity, not an SDK client or SQLite connection.
 Each worker opens its own SQLite connection. SQLite WAL and a busy timeout coordinate writes from
-main and worker threads. A worker failure retains committed rows.
+main and worker threads. A worker failure retains committed rows and does not stop another Harness.
+Production Harness code exposes async discovery operations and does not import XState.
 
 The first milestone syncs Claude Session metadata at app start and on manual Refresh. It scans
 all listed metadata without a watermark or transcript history. The Claude reader lists external
@@ -76,36 +84,26 @@ sends current sync status on subscribe, then progress and committed-change signa
 refetches the SQL list after a commit.
 
 Codex metadata sync uses the same supervisor, worker entry, sync machine, batch saver, and Session
-upsert as Claude. The supervisor must confirm that the existing Codex app-server is ready before
-it dispatches a Codex worker. An actor reference alone does not prove readiness. If the server is
+upsert as Claude. The supervisor must confirm that the shared Codex app-server client is ready before
+it dispatches a Codex worker. A client reference alone does not prove readiness. If the server is
 unavailable, the supervisor reports a Codex sync failure and does not start that worker. Refresh
-checks readiness again. Once dispatched, the Codex worker runs the generic sync machine with a
-Codex fetch actor, just as a Claude worker runs it with a Claude fetch actor. The Codex fetch actor
-requests thread data from the existing main-process app-server actor through a narrow worker-to-main
-request and response bridge. Codex parsing stays in its Harness. The worker's own SQLite
-connection handles Session reads and batched upserts. No second Codex process starts. Ticket
+checks readiness again. Once dispatched, the Codex worker runs the generic sync machine. Its
+discovery operation requests thread data from the main-process app-server client through a narrow
+worker-to-main request and response bridge. Codex parsing stays in its Harness. The worker's own
+SQLite connection handles Session reads and batched upserts. No second Codex process starts. Ticket
 observers remain separate owners of Ticket provider sync.
 
 ```mermaid
 flowchart TD
     App[Application machine] --> Supervisor[Session sync supervisor]
-    Supervisor -->|Claude job| ClaudeWorker[Generic sync worker: Claude]
-    Supervisor -->|Codex job| Ready{Codex app-server ready?}
-    Ready -->|Yes| CodexWorker[Generic sync worker: Codex]
-    Ready -->|No| Failure[Report Codex sync failure]
-    ClaudeWorker --> ClaudeMachine[Generic sync machine]
-    CodexWorker --> CodexMachine[Generic sync machine]
-    ClaudeMachine --> ClaudeFetch[Claude fetch actor]
-    CodexMachine --> CodexFetch[Codex fetch actor]
-    ClaudeFetch --> ClaudeSource[Claude Session source]
-    CodexFetch --> Bridge[Worker-to-main request bridge]
-    Bridge --> Server[Existing Codex app-server actor]
-    Server -->|Response| Bridge
-    ClaudeFetch -->|Session records| ClaudeMachine
-    Bridge --> CodexFetch
-    CodexFetch -->|Session records| CodexMachine
-    ClaudeMachine --> Store[(Shared Session upsert in worker SQLite)]
-    CodexMachine --> Store
+    Supervisor --> Registry[Harness registry]
+    Registry -->|Serializable discovery job| Worker[Generic sync worker]
+    Worker --> Machine[Generic sync machine]
+    Machine --> Reader[Harness discovery operation]
+    Reader -->|Codex only| Bridge[Worker-to-main request bridge]
+    Bridge --> Client[Shared Codex app-server client]
+    Reader -->|Validated Session records| Machine
+    Machine --> Store[(Shared Session upsert in worker SQLite)]
 ```
 
 ## Module ownership
@@ -115,12 +113,11 @@ Session SQL reads and writes live under `apps/desktop/src/domains/sessions/main/
 shared write `session-upsert.ts` and the list handler `session-list.ts`. The supervisor machine,
 generic sync machine, worker entry, and shared Session matching and saving live under
 `apps/desktop/src/domains/sessions/main/sync/`. The supervisor machine file owns its worker-thread
-actor. The app machine only imports and invokes the supervisor. Claude and Codex metadata readers,
-fetch actors, and their response schemas live under their own
-`apps/desktop/src/harnesses/<harness>/` folders. Name the live machines
-`live-session-supervisor-machine.ts`, `live-session-machine.ts`,
-`claude-live-session-machine.ts`, and `codex-live-session-machine.ts`. The sync machine does
-not own a live channel. These names describe ownership; they do not require new contract layers.
+actor. The app machine starts the supervisor. Claude and Codex metadata readers and their response
+schemas live under their own `apps/desktop/src/harnesses/<harness>/` folders. One registration
+per concrete Harness declares its capabilities. The Argo-owned live machines are
+`live-session-supervisor-machine.ts` and `live-session-machine.ts`. Production Harness code has
+no XState machine or actor reference. The sync machine does not own a live channel.
 
 tRPC is the renderer's typed API for request-response operations. One global router registers
 procedures. A Session list handler owns its SQL read and colocated Zod input and output schemas.
@@ -135,10 +132,11 @@ consumers, and the generic tRPC message schema beside transport. No new Session 
 Session repository, or second normalized-record parser is needed. Old contract files leave as
 their owning slices replace them. The Electron transport keeps trusted-frame authorization.
 Procedures carry product commands and projections, never raw XState events or actor snapshots.
-One app-scoped live Session supervisor actor receives those commands. It spawns one live Session
-actor per live conversation, correlates command IDs with results, and owns shutdown. Each actor
-invokes its selected Claude or Codex live Session Harness machine directly. The shared Codex app-server actor,
-ProjectSetup actor, and sign-in actors remain separate owners of their work.
+One app-scoped live Session supervisor actor receives those commands. It spawns one generic live
+Session actor per live conversation, correlates command IDs with results, and owns shutdown. Each
+actor calls the selected registration's async live Session operation. The app machine owns the
+lifetime of one shared Codex app-server client. ProjectSetup and sign-in actors remain separate
+owners of their work.
 
 Read operations query SQLite for lists, search, and indexed detail. The backend adds current live
 Session projections to those rows and returns one Argo-shaped response; the renderer does not merge
@@ -180,16 +178,21 @@ automatically retried; a provider read by immutable native ID reconciles them af
 restart. A late response or stale sync result cannot overwrite a newer accepted edit. The syncing
 state clears only when the matching provider fact is committed to SQLite.
 
-Procedures return structured domain error codes; tRPC handles transport failures. Session creation
-is atomic from the renderer's point of view: success appears only after the vendor accepts the
-first prompt and SQLite commits the Argo identity and native ID. The Session actor queues later
-prompts during start and persistence, then sends them in arrival order through the same Harness
-machine. The supervisor deduplicates the first command ID, including a failed attempt, so a retry
-does not pay for another vendor Session. If SQLite fails after vendor creation, the supervisor
-retains the failed child for same-process reconciliation and reports failure. It never resends the
-first prompt automatically. After process loss, vendor discovery must establish the native ID
-before Argo claims a Session exists. There is no launch-intent table or Session lease in this
-creation path. Vendor and SQLite writes do not share a transaction.
+Procedures return structured domain error codes; tRPC handles transport failures. The first send
+returns an Argo command outcome. A queued result means that Argo accepted the command for ordered
+delivery. A channel acceptance means that the Harness accepted delivery. Neither outcome claims
+that the vendor ran or completed a Turn. The Session supervisor queues later prompts during start
+and persistence, then sends them in arrival order through the same Harness channel. It
+deduplicates command IDs before vendor calls. A retry cannot start another vendor Session. If
+SQLite fails after vendor creation, the supervisor retains the child for same-process
+reconciliation and reports failure. It never resends the first prompt automatically.
+
+The live channel can open before the native ID arrives. Argo binds that ID to one Session UUID and
+commits the vendor identity once. After process loss, vendor discovery or history must establish
+the native ID before Argo claims that the vendor created a Session. Argo stores command outcomes
+and recent event sequences for recovery. These records do not claim that the vendor ran a Turn.
+There is no durable live-channel posture or Session lease. This replaces the earlier decision to
+store no launch or command recovery record. Vendor and SQLite writes do not share a transaction.
 
 ## Changes to earlier decisions
 

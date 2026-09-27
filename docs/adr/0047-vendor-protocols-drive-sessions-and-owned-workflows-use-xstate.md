@@ -2,6 +2,10 @@
 
 Status: accepted · 2026-09-21
 
+Amended 2026-09-27 for the Session migration in #2793. This amendment governs the Harness
+boundary and live Session lifecycle. The vendor interface, Session identity, and Feed rules below
+still apply.
+
 Argo reads and drives Sessions through supported vendor interfaces. Claude uses the Claude Agent
 SDK. Codex uses `codex app-server`. Argo does not parse transcript or rollout files. A filesystem
 watcher can invalidate a Session without a live channel, but the adapter must then read it through the
@@ -13,20 +17,48 @@ Session posture. Argo has one application window and uses no Session lease. Afte
 vendor history remains available and the first new prompt can attempt native resume. The Harness
 checks vendor liveness before that attempt.
 
-Each Harness owns one adapter. Shared Session code owns only validated commands, projections, and
-application rules. Claude has one ephemeral main-process actor per live Session. Codex has one
-main-process app-server supervisor and one child actor per live Session. Invoked actors own
-SDK clients, processes, streams, sockets, timers, and cancellation handles. Machine context holds
-only serializable identifiers and validated facts. Live Session actor snapshots are not persisted.
+Each concrete Harness has one compiled-in registration. It declares independent capabilities for
+readiness, catalog, discovery, history, rename, and live Sessions. Each supported operation uses an
+async function or returns an async live channel. Harness code owns vendor parsing, protocols, and
+resources. Production Harness code does not import XState or hold an Argo actor. Argo routes by a
+validated Harness ID; shared Session code does not branch on Claude, Codex, or another provider.
+The ID remains Session identity data and can appear in catalog and UI projections.
+
+The app machine starts one live Session supervisor. That Argo-owned machine creates one generic
+live Session actor per active conversation. The supervisor orders and deduplicates commands, allows
+one active Turn per Session, and retires idle actors. The Session actor owns lifecycle and consumes
+validated channel events. A renderer reload or Session switch does not stop an active Turn. SDK
+clients, processes, streams, sockets, and cancellation handles stay inside the channel or an
+invoked Argo actor. Machine context holds only serializable IDs and validated facts. Actor
+snapshots are not persisted. The app machine also owns the lifetime of shared vendor clients, such
+as one Codex app-server client. These clients are plain async resources, not Harness machines.
 
 IPC carries validated product commands and revisioned projections. It does not carry raw XState
 events or XState snapshots. The renderer owns view state only. It does not own connection, Turn,
 approval, retry, or resume state.
 
-Vendor events are the immediate Feed source. Vendor history reconciles gaps and uncertain sends.
+Vendor events are the immediate Feed source. Each registration reads vendor history for a root
+Session or selected subagent without starting a live actor. Vendor history reconciles gaps and
+uncertain sends. A failed history read retains known Feed content and reports failure. Argo
+reconciles stable identities so a Feed row appears once. A cursor-based subscription delivers live
+events. A bounded journal replays recent events after a brief disconnect. An expired cursor
+causes a fresh projection and vendor history read. The journal is not a permanent transcript.
 Argo never resends an uncertain Turn automatically. The renderer does not create optimistic Feed
 rows, optimistic Turns, temporary Session IDs, or a pending-Turn queue. It keeps the draft until
 main accepts the send command and restores it after a definite rejection.
+
+Opening or resuming a Session returns a channel before the native Session ID is necessarily known.
+Commands have stable IDs; Permission and Question requests have stable request IDs. Argo records
+command outcomes and assigns a monotonic sequence to each received event per Session. Channel
+acceptance proves delivery acceptance, not vendor execution or Turn completion. A delayed native ID
+binds to one Argo Session. After process loss, Argo reads vendor history and reconnects when the
+Harness supports it. An uncertain command is never sent again automatically.
+
+ACP is a reusable protocol implementation under a concrete Harness registration. A concrete ACP
+agent has its own Harness ID and proves live updates, Permission handling, resume, and vendor-backed
+history before Argo offers it as a full Session Harness. ACP is not Argo's internal Session
+protocol. Mobile access can use the same serializable product commands, events, and cursors later;
+this decision does not add a mobile host.
 
 Claude authorization is subscription-only. Argo does not accept an Anthropic API key or select
 API billing. Anthropic's paused billing change means that Agent SDK and third-party app usage
@@ -91,8 +123,10 @@ Linear uses polling until Argo has a secure webhook relay. Push never writes Tic
 
 ## Superseded decisions
 
-This ADR keeps ADR-0024's one-adapter-per-Harness boundary. It supersedes that ADR's Claude PTY
-driver, separate Agent SDK billing claim, and transcript-observation decisions.
+This ADR keeps ADR-0024's one-integration-per-Harness boundary. The 2026-09-27 amendment replaces
+its drive-only port with a registration for live Sessions and history. This ADR also supersedes
+that decision's Claude PTY driver, separate Agent SDK billing claim, and transcript-observation
+rules.
 
 It supersedes ADR-0008's files-only store, transcript discovery, resume-chain construction, and
 file-derived liveness. ADR-0043 now governs the shared SQLite store.
