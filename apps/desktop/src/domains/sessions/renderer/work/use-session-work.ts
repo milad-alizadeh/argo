@@ -2,7 +2,9 @@
 // Subagent spent, and what one background Shell has written so far. Neither rides the Roster or
 // Feed reply.
 import { useQuery } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import type { SessionShellOutput, SubagentUsageFacts } from '@/domains/sessions/renderer/work/types'
+import { projectLiveFeedRows } from '../feed/model/live-feed-rows'
 import { useFeedHistory } from '../feed/use-feed-history'
 import {
   SESSION_REFRESH_MS,
@@ -55,8 +57,14 @@ export function useShellOutput(sessionId: SessionId | null, shellId: string | nu
 // by it. Null until a Subagent is picked.
 export function useDelegationFeed(sessionId: SessionId | null, subagentId: string | null) {
   const history = useFeedHistory(subagentId === null ? null : sessionId, subagentId)
+  const feed = useMemo(() => {
+    const reading = history.reading
+    return reading?.content === undefined
+      ? reading
+      : { ...reading, rows: projectLiveFeedRows(reading.content, []) }
+  }, [history.reading])
   return {
-    feed: history.reading,
+    feed,
     feedError: history.error,
     retry: history.retry,
     loadOlder: history.loadOlder,

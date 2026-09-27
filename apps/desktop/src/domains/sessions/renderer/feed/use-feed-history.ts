@@ -3,7 +3,6 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionContractError } from '../session-contract-error'
 import type { SessionFeed, SessionId } from '../types'
-import { projectLiveFeedRows } from './model/live-feed-rows'
 import { readSessionFeedPage, retrySessionFeed, sessionFeedQuery } from './session-feed-query'
 
 type OlderPages = {
@@ -105,7 +104,6 @@ export function useFeedHistory(
     return {
       ...feed,
       content,
-      rows: projectLiveFeedRows(content, []),
       olderCursor: current.cursor,
       revision: `${feed.revision}:${current.pages[0]?.revision ?? ''}`,
     }

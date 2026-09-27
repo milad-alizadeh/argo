@@ -55,6 +55,7 @@ function commandContentRow(content: Extract<FeedContent, { kind: 'command' }>): 
   }
 }
 
+// Decoders preserve content semantics; this maps that content to the existing Feed display rows.
 function contentRow(content: FeedContent): SessionFeedRow | null {
   switch (content.kind) {
     case 'message':
