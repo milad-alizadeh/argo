@@ -29,6 +29,7 @@ const config: StorybookConfig = {
       dedupe: [
         'react',
         'react-dom',
+        'lexical',
         '@codemirror/language',
         '@codemirror/state',
         '@codemirror/view',

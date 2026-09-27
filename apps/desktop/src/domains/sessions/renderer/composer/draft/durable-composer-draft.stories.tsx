@@ -198,6 +198,14 @@ function DurableDraftStory({
   if (!initialized.current) {
     queryClient.removeQueries({ queryKey: trpc.composerDraftRead.pathKey() })
     window.argo.trpc = server.trpc
+    Object.assign(window.argo, {
+      statSessionAttachments: async ({ paths }: { paths: string[] }) => ({
+        version: 1,
+        type: 'session.attachments.statted',
+        requestId: 'storybook-draft-attachments',
+        files: paths.map((path) => ({ path, readable: true })),
+      }),
+    })
     initialized.current = true
   }
   const [sessionId, setSessionId] = useState('session-a')
@@ -241,6 +249,9 @@ function DurableDraftStory({
       <output aria-label="Stored drafts" data-save-pending={server.savePending}>
         {JSON.stringify(storedDrafts)}
       </output>
+      {draft?.sendFailed ? (
+        <div role="alert">The Turn could not be sent. Your draft is still saved.</div>
+      ) : null}
       {draft ? (
         <ComposerForm
           harness={{ harness: 'claude' }}
@@ -271,7 +282,7 @@ export const RestoresAndRetainsRejectedDrafts: Story = {
     const canvas = within(canvasElement)
     const editor = await canvas.findByLabelText('Message')
     await expect(editor).toHaveTextContent('Restored Session A draft.')
-    await expect(canvas.getByText('notes.md')).toBeInTheDocument()
+    await expect(canvas.getByRole('button', { name: 'Remove notes' })).toBeInTheDocument()
     await userEvent.click(canvas.getByRole('button', { name: 'Reload composer' }))
     await expect(await canvas.findByLabelText('Message')).toHaveTextContent(
       'Restored Session A draft.',
@@ -283,7 +294,10 @@ export const RestoresAndRetainsRejectedDrafts: Story = {
     await waitFor(() =>
       expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent('Restored Session A draft.'),
     )
-    await expect(editor).toHaveTextContent('Restored Session A draft.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Reload composer' }))
+    await expect(await canvas.findByLabelText('Message')).toHaveTextContent(
+      'Restored Session A draft.',
+    )
   },
 }
 
@@ -319,9 +333,10 @@ export const AcceptedSendClearsTheCachedDraft: Story = {
     await expect(await canvas.findByLabelText('Message')).not.toHaveTextContent(
       'Restored Session A draft.',
     )
-    await new Promise<void>((resolve) => setTimeout(resolve, 350))
-    await expect(canvas.getByLabelText('Stored drafts')).not.toHaveTextContent(
-      '"sessionId":"session-a"',
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Stored drafts')).not.toHaveTextContent(
+        'Restored Session A draft.',
+      ),
     )
   },
 }

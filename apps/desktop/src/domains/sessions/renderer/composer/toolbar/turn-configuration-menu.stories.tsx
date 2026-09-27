@@ -197,9 +197,9 @@ export const UsesLiveCodexCatalog: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const trigger = canvas.getByRole('button', { name: TRIGGER })
-    await expect(trigger).toHaveTextContent('GPT-5.6-Terra·medium')
+    await expect(trigger).toHaveTextContent('GPT-5.6-Terra·Balances speed and reasoning')
     await expect(trigger).toHaveAccessibleName(
-      'Choose Turn configuration: Codex, GPT-5.6-Terra, medium',
+      'Choose Turn configuration: Codex, GPT-5.6-Terra, Balances speed and reasoning',
     )
     await userEvent.click(trigger)
     const models = await page().findByRole('radiogroup', { name: 'Model' })
@@ -207,7 +207,7 @@ export const UsesLiveCodexCatalog: Story = {
     await expect(within(models).getByRole('radio', { name: /GPT-5.6-Terra/ })).toBeChecked()
     await expect(page().getByRole('slider', { name: 'Effort' })).toHaveAttribute(
       'aria-valuetext',
-      'medium',
+      'Balances speed and reasoning',
     )
     await expect(page().queryByRole('status')).toBeNull()
   },
@@ -271,11 +271,11 @@ export const RetriesUnavailableCatalog: Story = {
     await expect(page().queryByRole('radiogroup', { name: 'Model' })).toBeNull()
     await userEvent.click(page().getByRole('button', { name: 'Refresh models' }))
     await expect(canvas.getByRole('button', { name: TRIGGER })).toHaveAccessibleName(
-      'Choose Turn configuration: Codex, Live Codex Model, Focused',
+      'Choose Turn configuration: Codex, GPT-5.6-Terra, Balances speed and reasoning',
     )
     await userEvent.click(canvas.getByRole('button', { name: TRIGGER }))
     await expect(page().getByRole('radiogroup', { name: 'Model' })).toBeVisible()
-    await expect(page().getByRole('radio', { name: /Live Codex Model/ })).toBeChecked()
+    await expect(page().getByRole('radio', { name: /GPT-5.6-Terra/ })).toBeChecked()
   },
 }
 
@@ -341,9 +341,9 @@ export const NewSessionChoosesHarness: Story = {
     await expect(codex).toHaveAttribute('aria-selected', 'true')
     const codexModels = page().getByRole('radiogroup', { name: 'Model' })
     await expect(within(codexModels).getAllByRole('radio')).toHaveLength(1)
-    await expect(within(codexModels).getByRole('radio', { name: /Live Codex Model/ })).toBeChecked()
+    await expect(within(codexModels).getByRole('radio', { name: /GPT-5.6-Terra/ })).toBeChecked()
     await expect(trigger).toHaveAccessibleName(
-      'Choose Turn configuration: Codex, Live Codex Model, Focused',
+      'Choose Turn configuration: Codex, GPT-5.6-Terra, Balances speed and reasoning',
     )
 
     await userEvent.click(within(harnesses).getByRole('tab', { name: 'Claude Code' }))
