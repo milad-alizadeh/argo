@@ -9,6 +9,7 @@ import {
   type TurnConfiguration,
   type TurnConfigurationChoices,
 } from '../turn-configuration/turn-configuration'
+import { shouldLoadComposerDraft } from './composer-draft-load'
 
 export type DraftTarget = RouterInputs['composerDraftCreate']['target']
 export type DraftContent = RouterInputs['composerDraftCreate']['content']
@@ -54,6 +55,43 @@ function editingFromDraft(
   }
 }
 
+function startComposerDraftLoad(input: {
+  target: DraftTarget
+  choices: TurnConfigurationChoices
+  opening: TurnConfiguration
+  owner: string
+  draft: DraftValue | undefined
+  create: (input: RouterInputs['composerDraftCreate']) => Promise<DraftValue>
+  persisted: React.RefObject<PersistedDraft | null>
+  latestEditing: React.RefObject<ComposerEditing | null>
+  setLoaded: React.Dispatch<
+    React.SetStateAction<{ owner: string; editing: ComposerEditing } | null>
+  >
+  saveTimer: React.RefObject<number | null>
+}) {
+  let active = true
+  const empty = { prompt: '', attachments: [], ticketContext: [], turnConfiguration: input.opening }
+  void (async () => {
+    const draft = input.draft ?? (await input.create({ target: input.target, content: empty }))
+    if (!active) return
+    const editing = editingFromDraft(draft, input.choices, input.opening)
+    const content = contentFromEditing(editing)
+    if (content === null) return
+    input.persisted.current = {
+      id: draft.id,
+      revision: draft.revision,
+      owner: input.owner,
+      fingerprint: fingerprint(content),
+    }
+    input.latestEditing.current = editing
+    input.setLoaded({ owner: input.owner, editing })
+  })()
+  return () => {
+    active = false
+    if (input.saveTimer.current !== null) window.clearTimeout(input.saveTimer.current)
+  }
+}
+
 function fingerprint(content: DraftContent) {
   return JSON.stringify(content)
 }
@@ -81,31 +119,27 @@ function useComposerDraftLoad(input: {
       choices === null ||
       opening === null ||
       owner === null ||
-      query.isPending
+      query.isPending ||
+      !shouldLoadComposerDraft({
+        owner,
+        loadedOwner: loaded?.owner ?? null,
+        isFetching: query.isFetching,
+        isError: query.isError,
+      })
     )
       return
-    if (loaded?.owner === owner) return
-    let active = true
-    const empty = { prompt: '', attachments: [], ticketContext: [], turnConfiguration: opening }
-    void (async () => {
-      const draft = query.data ?? (await create({ target, content: empty }))
-      if (!active) return
-      const editing = editingFromDraft(draft, choices, opening)
-      const content = contentFromEditing(editing)
-      if (content === null) return
-      persisted.current = {
-        id: draft.id,
-        revision: draft.revision,
-        owner,
-        fingerprint: fingerprint(content),
-      }
-      latestEditing.current = editing
-      setLoaded({ owner, editing })
-    })()
-    return () => {
-      active = false
-      if (saveTimer.current !== null) window.clearTimeout(saveTimer.current)
-    }
+    return startComposerDraftLoad({
+      target,
+      choices,
+      opening,
+      owner,
+      draft: query.data ?? undefined,
+      create,
+      persisted,
+      latestEditing,
+      setLoaded,
+      saveTimer,
+    })
   }, [
     choices,
     create,
@@ -115,11 +149,13 @@ function useComposerDraftLoad(input: {
     owner,
     persisted,
     query.data,
+    query.isFetching,
+    query.isError,
     query.isPending,
     saveTimer,
     target,
   ])
-  return loaded?.owner === owner ? loaded.editing : null
+  return loaded?.owner === owner ? loaded.editing : undefined
 }
 
 function usePersistComposerDraft(input: {
