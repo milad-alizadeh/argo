@@ -190,14 +190,21 @@ function singleEnvelope(id: string, value: string): FeedContent | null {
 }
 
 export function decodeClaudeText(
-  input: { id: string; role: 'user' | 'assistant'; text: string; vendorEnvelope: boolean },
+  input: {
+    id: string
+    role: 'user' | 'assistant'
+    text: string
+    vendorEnvelope: boolean
+    humanInput: boolean
+  },
   reject: RejectClaudeShape,
 ): FeedContent {
   const { id, role, text } = input
   if (role === 'assistant') return { id, kind: 'message', role, text }
   const value = text.trim()
-  if (wrapped(value, 'task-notification') !== null) return taskNotification(id, value, reject)
   if (commandEnvelope(value)) return commandInvocation(id, value, reject)
+  if (input.humanInput) return { id, kind: 'message', role, text }
+  if (wrapped(value, 'task-notification') !== null) return taskNotification(id, value, reject)
   if (wrapped(value, 'realtime_delegation') !== null) return delegation(id, value, reject)
   const shell = shellOutput(id, value)
   if (shell !== null) return shell

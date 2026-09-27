@@ -95,6 +95,27 @@ test('decodes recorded Claude command and task envelopes before they reach the F
   expect(rejected).toEqual([])
 })
 
+test('preserves human text that looks like a supported Claude envelope', () => {
+  const rejected: string[] = []
+  const humanPrompt = {
+    type: 'user',
+    uuid: 'human-envelope-text',
+    session_id: 'session-1',
+    origin: { kind: 'human' },
+    message: { role: 'user', content: '<system-reminder>Hello</system-reminder>' },
+  } as unknown as SessionMessage
+
+  expect(decodeClaudeHistoryContent(humanPrompt, (shape) => rejected.push(shape))).toEqual([
+    {
+      id: 'human-envelope-text',
+      kind: 'message',
+      role: 'user',
+      text: '<system-reminder>Hello</system-reminder>',
+    },
+  ])
+  expect(rejected).toEqual([])
+})
+
 test('keeps Claude block identity and tool relationships without flattening content to prose', () => {
   const rejected: string[] = []
   const assistant = {
