@@ -1,8 +1,12 @@
 import { beforeEach, expect, test, vi } from 'vitest'
+import { claudeModelCatalogFixture } from '../../test-fixtures/sessions/claude-model-catalog.fixture'
+import { codexModelCatalogFixture } from '../../test-fixtures/sessions/codex-model-catalog.fixture'
+import { claudeHarnessInfo } from './claude/catalog'
 import { createClaudeRegistration } from './claude/registration'
 import type { CodexRequest } from './codex/app-server/codex-app-server-client'
+import { codexHarnessInfo } from './codex/catalog'
 import { createCodexRegistration } from './codex/registration'
-import type { HarnessRegistry } from './registry'
+import { type HarnessRegistry, readHarnessCatalog } from './registry'
 
 const vendor = vi.hoisted(() => ({
   getSessionMessages: vi.fn(),
@@ -76,4 +80,52 @@ test('registered Codex reads the selected thread through its shared request and 
   expect(calls).toEqual([
     { method: 'thread/read', params: { threadId: 'child', includeTurns: true } },
   ])
+})
+
+test('the registry reads every Harness catalog', async () => {
+  const reads = { claude: 0, codex: 0 }
+  const registry = {
+    claude: {
+      harness: 'claude',
+      readCatalog: async () => {
+        reads.claude += 1
+        return claudeHarnessInfo(claudeModelCatalogFixture())
+      },
+    },
+    codex: {
+      harness: 'codex',
+      readCatalog: async () => {
+        reads.codex += 1
+        return codexHarnessInfo(codexModelCatalogFixture())
+      },
+    },
+  } as unknown as HarnessRegistry
+
+  const catalog = await readHarnessCatalog(registry)
+
+  expect(reads).toEqual({ claude: 1, codex: 1 })
+  expect(catalog.harnesses.map(({ availability }) => availability)).toEqual([
+    'available',
+    'available',
+  ])
+})
+
+test('one failed catalog read leaves the other Harness available', async () => {
+  const registry = {
+    claude: {
+      harness: 'claude',
+      readCatalog: async () => claudeHarnessInfo(claudeModelCatalogFixture()),
+    },
+    codex: {
+      harness: 'codex',
+      readCatalog: async () => {
+        throw new Error('Codex catalog is unavailable')
+      },
+    },
+  } as unknown as HarnessRegistry
+
+  const catalog = await readHarnessCatalog(registry)
+
+  expect(catalog.harnesses[0]?.availability).toBe('available')
+  expect(catalog.harnesses[1]).toEqual(codexHarnessInfo(null))
 })

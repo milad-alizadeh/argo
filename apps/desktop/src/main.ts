@@ -15,13 +15,12 @@ import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
 import type { CatalogActor } from '@/harnesses/catalog/catalog-read'
-import { createClaudeRegistration } from '@/harnesses/claude/registration'
+import type { CodexRequest } from '@/harnesses/codex/app-server/codex-app-server-client'
 import {
   type codexAppServerMachine,
   requestCodexAppServer,
 } from '@/harnesses/codex/app-server/codex-app-server-machine'
-import { createCodexRegistration } from '@/harnesses/codex/registration'
-import type { HarnessRegistry } from '@/harnesses/registry'
+import { createHarnessRegistry, type HarnessRegistry } from '@/harnesses/registry'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { attachAppearanceWatch } from '@/platform/main/appearance'
 import type { AppActor } from '@/platform/main/application/app-machine'
@@ -102,6 +101,19 @@ if (DEVELOPMENT_INSTANCE) {
 
 let desktopWindow: BrowserWindow | undefined
 let focusRequestedBeforeWindowReady = false
+let applicationActor: AppActor | undefined
+let harnessRegistry: HarnessRegistry | undefined
+
+function codexRequest(): CodexRequest {
+  return (method, params, parse) => {
+    const actor = applicationActor?.system.get('codex') as
+      | ActorRefFrom<typeof codexAppServerMachine>
+      | undefined
+    if (actor === undefined)
+      return Promise.reject(new Error('Codex app-server actor is unavailable.'))
+    return requestCodexAppServer(actor)(method, params, parse)
+  }
+}
 
 function focusWindow(): void {
   if (!desktopWindow) {
@@ -122,7 +134,7 @@ async function chooseProjectFolder(window: BrowserWindow): Promise<string | null
   return chosen.canceled ? null : (chosen.filePaths[0] ?? null)
 }
 
-function createDomainContexts(database: Database, registrations: HarnessRegistry) {
+function createDomainContexts(database: Database, registry: HarnessRegistry) {
   const userData = app.getPath('userData')
   const { accountData, connectionData } = developmentStoreDirectories({
     userData,
@@ -146,7 +158,7 @@ function createDomainContexts(database: Database, registrations: HarnessRegistry
       path: access.paths.connections,
       exclusive: access.exclusive,
     }),
-    harnessSignIn: createHarnessSignInProcedureContext(Object.values(registrations)),
+    harnessSignIn: createHarnessSignInProcedureContext(Object.values(registry)),
   }
 }
 
@@ -163,9 +175,9 @@ function routerForWindow(options: {
   }
   sessionSyncStatus: SessionSyncStatusStore
   domains: ReturnType<typeof createDomainContexts>
-  registrations: HarnessRegistry
+  registry: HarnessRegistry
 }) {
-  const { window, database, actors, domains, sessionSyncStatus, registrations } = options
+  const { window, database, actors, domains, sessionSyncStatus, registry } = options
   const exclusive = createWriteQueue()
   return createAppRouter({
     accounts: domains.accounts,
@@ -178,9 +190,9 @@ function routerForWindow(options: {
     },
     sessions: {
       database,
-      readHistory: (harness, target) => registrations[harness].readHistory(target),
+      readHistory: (harness, target) => registry[harness].readHistory(target),
       rename: ({ harness, nativeId, title }) => {
-        const rename = registrations[harness].rename
+        const rename = registry[harness].rename
         if (rename === undefined) throw new Error(`${harness} Session renaming is unavailable.`)
         return rename(nativeId, title)
       },
@@ -232,14 +244,14 @@ function attachWindowTrpc({
   actors,
   domains,
   database,
-  registrations,
+  registry,
 }: {
   window: BrowserWindow
   rendererURL: string
   actors: WindowActors
   domains: ReturnType<typeof createDomainContexts>
   database: Database
-  registrations: HarnessRegistry
+  registry: HarnessRegistry
 }): () => void {
   const router = routerForWindow({
     actors,
@@ -247,7 +259,7 @@ function attachWindowTrpc({
     sessionSyncStatus: currentSessionSyncStatus(),
     window,
     database,
-    registrations,
+    registry,
   })
   return attachTrpcTransport({ window, rendererURL, router, context: undefined })
 }
@@ -271,18 +283,10 @@ function closeDesktopWindow({
   database.$client.close()
 }
 
-function createWindow(actor: AppActor, database: Database): void {
+function createWindow(actor: AppActor, database: Database, registry: HarnessRegistry): void {
   const actors = requireWindowActors(actor)
-  const registrations = {
-    claude: createClaudeRegistration(),
-    codex: createCodexRegistration(requestCodexAppServer(actors.codex)),
-  } satisfies HarnessRegistry
-  actors.sessionSync.send({
-    type: 'RegisterHarnesses',
-    harnesses: registrations,
-  })
   actors.sessionSync.send({ type: 'Refresh' })
-  const domains = createDomainContexts(database, registrations)
+  const domains = createDomainContexts(database, registry)
   desktopWindow = createDesktopWindow({
     buildDirectory: __dirname,
     rendererName: MAIN_WINDOW_VITE_NAME,
@@ -307,7 +311,7 @@ function createWindow(actor: AppActor, database: Database): void {
         actors,
         domains,
         database,
-        registrations,
+        registry,
       })
       attachAppearanceWatch(window)
       window.once('closed', () => closeDesktopWindow({ actor, database, domains, detachTrpc }))
@@ -339,10 +343,12 @@ async function prepare() {
   if (DEVELOPMENT_INSTANCE) {
     await seedDevelopmentProject(applicationDatabase, DEVELOPMENT_INSTANCE)
   }
+  harnessRegistry = createHarnessRegistry(codexRequest())
   return {
     database: applicationDatabase,
     sessionSyncStatus,
     codexSessionSyncStatus,
+    registry: harnessRegistry,
   }
 }
 
@@ -355,7 +361,9 @@ async function ready(actor: AppActor): Promise<void> {
   })
   if (applicationDatabase === undefined || sessionSyncStatus === undefined)
     throw new Error('Application services are unavailable.')
-  createWindow(actor, applicationDatabase)
+  applicationActor = actor
+  if (harnessRegistry === undefined) throw new Error('Harness registry is unavailable.')
+  createWindow(actor, applicationDatabase, harnessRegistry)
 
   if (ACCEPTANCE_ENABLED) {
     // A window is open and a PTY may still be draining, so this run also stands as the app-shutdown

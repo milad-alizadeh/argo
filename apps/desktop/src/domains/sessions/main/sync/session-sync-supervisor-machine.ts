@@ -1,6 +1,5 @@
 import {
   assertEvent,
-  assign,
   createActor,
   enqueueActions,
   fromCallback,
@@ -164,6 +163,7 @@ const sessionSyncStatusActor = fromCallback<
 
 type SupervisorInput = {
   database: Database
+  harnesses: RegisteredHarnesses
   status: Partial<Record<Harness, SessionSyncStatusStore>>
 }
 
@@ -178,14 +178,9 @@ type SupervisorEvent =
     }
   | SessionSyncEvent
 
-export type SessionSyncSupervisorCommand =
-  | {
-      type: 'Refresh'
-    }
-  | {
-      type: 'RegisterHarnesses'
-      harnesses: RegisteredHarnesses
-    }
+export type SessionSyncSupervisorCommand = {
+  type: 'Refresh'
+}
 
 export const sessionSyncSupervisorMachine = setup({
   types: {
@@ -194,7 +189,6 @@ export const sessionSyncSupervisorMachine = setup({
       database: Database
       active: Partial<Record<Harness, true>>
       harnesses: RegisteredHarnesses
-      configured: boolean
     },
     events: {} as SupervisorEvent,
   },
@@ -203,16 +197,7 @@ export const sessionSyncSupervisorMachine = setup({
     status: sessionSyncStatusActor,
   },
   actions: {
-    registerHarnesses: assign(({ context, event }) => {
-      assertEvent(event, 'RegisterHarnesses')
-      if (context.configured) return {}
-      return {
-        harnesses: event.harnesses,
-        configured: true,
-      }
-    }),
     dispatchSessionDiscoveries: enqueueActions(({ context, enqueue }) => {
-      if (!context.configured) return
       for (const harnessId of Object.keys(context.harnesses)) {
         const harness = harnessId as Harness
         const sessionDiscovery = context.harnesses[harness]?.sessionDiscovery
@@ -265,8 +250,7 @@ export const sessionSyncSupervisorMachine = setup({
   context: ({ input }) => ({
     database: input.database,
     active: {},
-    harnesses: {},
-    configured: false,
+    harnesses: input.harnesses,
   }),
   invoke: {
     id: 'status',
@@ -279,9 +263,6 @@ export const sessionSyncSupervisorMachine = setup({
   states: {
     Running: {
       on: {
-        RegisterHarnesses: {
-          actions: 'registerHarnesses',
-        },
         Refresh: {
           actions: 'dispatchSessionDiscoveries',
         },

@@ -55,18 +55,15 @@ test('dispatches registered Session discovery functions and deduplicates Refresh
   const actor = createActor(machine, {
     input: {
       database,
+      harnesses: {
+        claude: { sessionDiscovery: claudeDiscovery },
+        codex: { sessionDiscovery: codexDiscovery },
+      },
       status: { claude: status, codex: new SessionSyncStatusStore(undefined, 'codex') },
     },
   }).start()
   try {
     assert.deepEqual(dispatched, [])
-    actor.send({
-      type: 'RegisterHarnesses',
-      harnesses: {
-        claude: { sessionDiscovery: claudeDiscovery },
-        codex: { sessionDiscovery: codexDiscovery },
-      },
-    })
     actor.send({ type: 'Refresh' })
     assert.deepEqual(dispatched, ['claude', 'codex'])
     assert.equal(status.current().phase, 'fetching')
@@ -87,7 +84,7 @@ test('dispatches registered Session discovery functions and deduplicates Refresh
   }
 })
 
-test('dispatches only discovery functions selected by registered Harnesses', () => {
+test('dispatches only discovery functions selected by the Harness registry', () => {
   const dispatched: SessionDiscovery[] = []
   const actor = createActor(
     sessionSyncSupervisorMachine.provide({
@@ -100,25 +97,15 @@ test('dispatches only discovery functions selected by registered Harnesses', () 
     {
       input: {
         database,
+        harnesses: { claude: { sessionDiscovery: claudeDiscovery } },
         status: { claude: new SessionSyncStatusStore() },
       },
     },
   ).start()
   try {
-    actor.send({
-      type: 'RegisterHarnesses',
-      harnesses: { claude: { sessionDiscovery: claudeDiscovery } },
-    })
     assert.deepEqual(dispatched, [])
     actor.send({ type: 'Refresh' })
     assert.deepEqual(dispatched, [claudeDiscovery])
-    actor.send({
-      type: 'RegisterHarnesses',
-      harnesses: {
-        claude: { sessionDiscovery: claudeDiscovery },
-        codex: { sessionDiscovery: codexDiscovery },
-      },
-    })
     actor.send({ type: 'Refresh' })
     assert.deepEqual(dispatched, [claudeDiscovery])
   } finally {
@@ -132,6 +119,7 @@ test('keeps a Codex sync failure out of Claude status', () => {
   const actor = createActor(sessionSyncSupervisorMachine, {
     input: {
       database,
+      harnesses: {},
       status: { claude: claudeStatus, codex: codexStatus },
     },
   }).start()

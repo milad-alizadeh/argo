@@ -2,15 +2,17 @@ import { app } from 'electron'
 import { createActor } from 'xstate'
 import type { Database } from '@/database/database'
 import type { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
+import type { HarnessRegistry } from '@/harnesses/registry'
 import { applyStoredAppearance, readAppearance } from '../appearance'
 import { setPlatformLanguage } from '../i18n'
-import { type AppActor, appMachine } from './app-machine'
+import { type AppActor, createAppMachine } from './app-machine'
 
 export function startDesktopApplication(request: {
   prepare: () => Promise<{
     database: Database
     sessionSyncStatus: SessionSyncStatusStore
     codexSessionSyncStatus: SessionSyncStatusStore
+    registry: HarnessRegistry
   }>
   ready: (actor: AppActor) => Promise<void> | void
   willQuit: () => void
@@ -34,7 +36,8 @@ export function startDesktopApplication(request: {
     setPlatformLanguage(app.getLocale())
     applyStoredAppearance(await readAppearance(app.getPath('userData')))
     const input = await request.prepare()
-    actor = createActor(appMachine, { input }).start()
+    const { registry, ...applicationInput } = input
+    actor = createActor(createAppMachine(registry), { input: applicationInput }).start()
     await request.ready(actor)
   }
 
