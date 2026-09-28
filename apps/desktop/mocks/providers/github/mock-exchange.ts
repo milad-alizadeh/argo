@@ -14,6 +14,18 @@ export type MockState = {
   serial: number
 }
 
+// A GitHub with no sign-in answered, no data and no outage.
+export const initialMockState = (origin: string): MockState => ({
+  origin,
+  signIn: { answer: 'declined', pending: 0, held: false },
+  devices: new Map(),
+  tokens: new Map(),
+  repositories: new Map(),
+  outage: 'none',
+  held: null,
+  serial: 0,
+})
+
 // A held device stays pending until someone opens the device page, as a person entering the code.
 export type MockDevice = { answer: MockSignIn; pending: number; held: boolean }
 

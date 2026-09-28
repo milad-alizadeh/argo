@@ -2,10 +2,7 @@
   "version": "7",
   "dialect": "sqlite",
   "id": "6d7c0446-9678-4d57-99d2-1c3913693caa",
-  "prevIds": [
-    "17e83f76-c208-45da-8178-9e54c8d2c039",
-    "7669b786-b81a-4afc-9d1b-f92ab53a06f1"
-  ],
+  "prevIds": ["17e83f76-c208-45da-8178-9e54c8d2c039", "7669b786-b81a-4afc-9d1b-f92ab53a06f1"],
   "ddl": [
     {
       "name": "project",
@@ -1092,13 +1089,9 @@
       "table": "ticket_sync"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -1107,13 +1100,9 @@
       "table": "workspace"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
       "nameExplicit": false,
@@ -1122,13 +1111,9 @@
       "table": "session"
     },
     {
-      "columns": [
-        "workspace_id"
-      ],
+      "columns": ["workspace_id"],
       "tableTo": "workspace",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
       "nameExplicit": false,
@@ -1137,13 +1122,9 @@
       "table": "session"
     },
     {
-      "columns": [
-        "session_id"
-      ],
+      "columns": ["session_id"],
       "tableTo": "session",
-      "columnsTo": [
-        "argo_id"
-      ],
+      "columnsTo": ["argo_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
       "nameExplicit": false,
@@ -1152,13 +1133,9 @@
       "table": "session_command"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -1167,13 +1144,9 @@
       "table": "composer_draft"
     },
     {
-      "columns": [
-        "session_id"
-      ],
+      "columns": ["session_id"],
       "tableTo": "session",
-      "columnsTo": [
-        "argo_id"
-      ],
+      "columnsTo": ["argo_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -1182,13 +1155,9 @@
       "table": "composer_draft"
     },
     {
-      "columns": [
-        "workspace_id"
-      ],
+      "columns": ["workspace_id"],
       "tableTo": "workspace",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -1197,13 +1166,9 @@
       "table": "composer_draft"
     },
     {
-      "columns": [
-        "session_id"
-      ],
+      "columns": ["session_id"],
       "tableTo": "session",
-      "columnsTo": [
-        "argo_id"
-      ],
+      "columnsTo": ["argo_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -1212,13 +1177,9 @@
       "table": "session_subagent"
     },
     {
-      "columns": [
-        "ticket_id"
-      ],
+      "columns": ["ticket_id"],
       "tableTo": "ticket",
-      "columnsTo": [
-        "argo_id"
-      ],
+      "columnsTo": ["argo_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -1227,102 +1188,77 @@
       "table": "ticket_content"
     },
     {
-      "columns": [
-        "session_id",
-        "subagent_id"
-      ],
+      "columns": ["session_id", "subagent_id"],
       "nameExplicit": false,
       "name": "session_subagent_pk",
       "entityType": "pks",
       "table": "session_subagent"
     },
     {
-      "columns": [
-        "provider",
-        "scope",
-        "kind"
-      ],
+      "columns": ["provider", "scope", "kind"],
       "nameExplicit": false,
       "name": "ticket_sync_pk",
       "entityType": "pks",
       "table": "ticket_sync"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "project_pk",
       "table": "project",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "workspace_pk",
       "table": "workspace",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "argo_id"
-      ],
+      "columns": ["argo_id"],
       "nameExplicit": false,
       "name": "session_pk",
       "table": "session",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "command_id"
-      ],
+      "columns": ["command_id"],
       "nameExplicit": false,
       "name": "session_command_pk",
       "table": "session_command",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "harness"
-      ],
+      "columns": ["harness"],
       "nameExplicit": false,
       "name": "session_sync_status_pk",
       "table": "session_sync_status",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "composer_draft_pk",
       "table": "composer_draft",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "session_id"
-      ],
+      "columns": ["session_id"],
       "nameExplicit": false,
       "name": "session_ticket_link_pk",
       "table": "session_ticket_link",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "argo_id"
-      ],
+      "columns": ["argo_id"],
       "nameExplicit": false,
       "name": "ticket_pk",
       "table": "ticket",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "ticket_id"
-      ],
+      "columns": ["ticket_id"],
       "nameExplicit": false,
       "name": "ticket_content_pk",
       "table": "ticket_content",
@@ -1451,9 +1387,7 @@
       "table": "ticket_content"
     },
     {
-      "columns": [
-        "common_directory"
-      ],
+      "columns": ["common_directory"],
       "nameExplicit": false,
       "name": "project_common_directory_unique",
       "entityType": "uniques",

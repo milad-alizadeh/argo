@@ -4,23 +4,14 @@
 // dispatcher both transports call; only the socket differs.
 import { createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import { type MockState, send } from './mock-exchange'
+import { initialMockState, send } from './mock-exchange'
 import type { MockGitHub } from './mock-github'
 import { githubControls } from './mock-github-controls'
 import { answer } from './mock-routes'
 
 export async function startMockGitHubLoopback(): Promise<MockGitHub> {
   const requests: string[] = []
-  const state: MockState = {
-    origin: '',
-    signIn: { answer: 'declined', pending: 0, held: false },
-    devices: new Map(),
-    tokens: new Map(),
-    repositories: new Map(),
-    outage: 'none',
-    held: null,
-    serial: 0,
-  }
+  const state = initialMockState('')
   const server = createServer((request, response) => {
     requests.push(`${request.method} ${new URL(request.url ?? '/', 'http://x').pathname}`)
     answer(state, request, response).catch(() => send(response, 500, { message: 'Mock failed' }))
