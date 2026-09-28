@@ -56,6 +56,10 @@ export type SessionSubmitInput = z.infer<typeof inputSchema>
 export type SessionProcedureContext = SessionRenameContext & {
   database: Database
   supervisor: LiveSessionSupervisorActor
+  ensureManagedWorkspace: (
+    projectId: string,
+    draftId: string,
+  ) => Promise<{ id: string; path: string }>
 }
 type SupervisorDraftRequest = {
   context: SessionProcedureContext
@@ -85,20 +89,34 @@ function rejectUnsupportedAttachments(harness: string, attachments: unknown[]): 
   }
 }
 
-function startProjectDraft(input: SupervisorDraftRequest) {
-  const { context, draft, command, reply } = input
-  if (draft.target.type !== 'project') return false
-  rejectUnsupportedAttachments(draft.target.harness, draft.attachments)
-  const cwd = resolveWorkspacePath(context.database, draft.target)
-  if (cwd === null)
+async function prepareProjectDraft(
+  input: Omit<SupervisorDraftRequest, 'reply'>,
+): Promise<SessionStartInput | null> {
+  const { context, draft, command } = input
+  if (draft.target.type !== 'project') return null
+  const target = draft.target
+  rejectUnsupportedAttachments(target.harness, draft.attachments)
+  const created =
+    target.workspaceId === null
+      ? await context.ensureManagedWorkspace(target.projectId, draft.id).catch(() => {
+          throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'worktree-create-failed' })
+        })
+      : null
+  const workspaceId = created?.id ?? target.workspaceId
+  const cwd =
+    created?.path ??
+    (workspaceId === null
+      ? null
+      : resolveWorkspacePath(context.database, { projectId: target.projectId, workspaceId }))
+  if (workspaceId === null || cwd === null)
     throw new TRPCError({ code: 'BAD_REQUEST', message: 'workspace-not-in-project' })
-  context.supervisor.send({
-    type: 'Start',
-    pendingId: `optimistic:${draft.id}:${draft.revision}`,
-    input: { ...command, ...draft.target, cwd },
-    reply,
-  })
-  return true
+  return {
+    ...command,
+    harness: target.harness,
+    projectId: target.projectId,
+    workspaceId,
+    cwd,
+  }
 }
 
 function sendSessionDraft(input: SupervisorDraftRequest) {
@@ -136,7 +154,7 @@ function sendSessionDraft(input: SupervisorDraftRequest) {
   })
 }
 
-function sendToSupervisor(
+async function sendToSupervisor(
   context: SessionProcedureContext,
   input: SessionSubmitInput,
 ): Promise<{ sessionId: string }> {
@@ -146,11 +164,18 @@ function sendToSupervisor(
     throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'stale-draft' })
   }
   const command = commandForDraft(draft, input)
+  const request = { context, draft, command }
+  const startInput = draft.target.type === 'project' ? await prepareProjectDraft(request) : null
   return new Promise((resolve, reject) => {
     const reply = { resolve, reject }
-    const request = { context, draft, command, reply }
-    if (startProjectDraft(request)) return
-    sendSessionDraft(request)
+    if (startInput !== null) {
+      context.supervisor.send({
+        type: 'Start',
+        pendingId: `optimistic:${draft.id}:${draft.revision}`,
+        input: startInput,
+        reply,
+      })
+    } else sendSessionDraft({ ...request, reply })
   })
 }
 

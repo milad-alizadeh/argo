@@ -13,7 +13,6 @@ import {
   type TurnConfigurationControlProps,
   TurnConfigurationMenu,
 } from './turn-configuration-menu'
-import { WorkspaceMenu, type WorkspaceMenuControlProps } from './workspace-menu'
 
 function AddContextButton({ onOpen }: { onOpen: () => void }) {
   const { t } = useTranslation('sessions')
@@ -39,7 +38,6 @@ export function ComposerToolbar({
   turnConfiguration,
   catalogFailure = null,
   refreshCatalog,
-  workspace,
   isRunning,
   onInterrupt,
   interruptRef,
@@ -53,7 +51,6 @@ export function ComposerToolbar({
   turnConfiguration: TurnConfigurationControlProps | null
   catalogFailure?: CatalogFailure | null
   refreshCatalog?: () => void
-  workspace: WorkspaceMenuControlProps | null
   isRunning: boolean
   onInterrupt?: () => Promise<boolean>
   interruptRef: Parameters<typeof Button>[0]['ref']
@@ -73,7 +70,6 @@ export function ComposerToolbar({
           refreshCatalog={refreshCatalog}
         />
       ) : null}
-      {workspace ? <WorkspaceMenu {...workspace} /> : null}
       <div className="ml-auto flex items-center gap-1">
         {turnConfiguration ? <ModeMenu {...turnConfiguration} /> : null}
         <SessionPlanPopover plan={plan} />

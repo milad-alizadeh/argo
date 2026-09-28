@@ -1,6 +1,8 @@
-import { mkdtemp, rm } from 'node:fs/promises'
+import { execFile } from 'node:child_process'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import { promisify } from 'node:util'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, expect, test } from 'vitest'
 import { composerDraft } from '@/database/composer-draft/schema'
@@ -12,9 +14,11 @@ import {
   type LiveSessionSupervisorActor,
   SessionSubmitRejectedError,
 } from '@/domains/sessions/main/live/live-session-supervisor-machine'
+import { ensureManagedWorkspace } from '@/domains/workspaces/main/workspace-create-managed'
 import { type AppRouterDependencies, createAppRouter } from './trpc-router'
 
 const projectId = 'project-1'
+const run = promisify(execFile)
 const workspaceId = 'workspace-1'
 const content = {
   prompt: 'Keep this thought.',
@@ -54,7 +58,19 @@ function caller(send: LiveSessionSupervisorActor['send'] = () => {}) {
   const exclusive = async <T>(work: () => Promise<T>) => work()
   const dependencies = {
     projects: { database, chooseFolder: async () => null, exclusive },
-    sessions: { database, supervisor: { send } as LiveSessionSupervisorActor },
+    sessions: {
+      database,
+      supervisor: { send } as LiveSessionSupervisorActor,
+      ensureManagedWorkspace: (projectId: string, draftId: string) =>
+        exclusive(() =>
+          ensureManagedWorkspace({
+            database,
+            projectId,
+            draftId,
+            worktreeRoot: path.join(userData, 'worktrees'),
+          }),
+        ),
+    },
     workspaces: { database, exclusive },
   } as unknown as AppRouterDependencies
   return createAppRouter(dependencies).createCaller({})
@@ -199,6 +215,47 @@ test('resolves the Workspace path in main and deletes an accepted new-Session dr
     pendingId: `optimistic:${created.id}:${created.revision}`,
     input: { cwd: '/current/repo', projectId, workspaceId, prompt: content.prompt },
   })
+  await expect(api.composerDraftRead(created.target)).resolves.toBeNull()
+})
+
+test('creates the selected new worktree before starting a Session', async () => {
+  const repository = path.join(userData, 'repository')
+  await run('git', ['init', '--initial-branch=main', repository])
+  await run('git', ['-C', repository, 'config', 'user.name', 'Argo Test'])
+  await run('git', ['-C', repository, 'config', 'user.email', 'argo-test@example.invalid'])
+  await writeFile(path.join(repository, 'README.md'), 'test repository\n')
+  await run('git', ['-C', repository, 'add', 'README.md'])
+  await run('git', ['-C', repository, 'commit', '-m', 'Initial commit'])
+  database
+    .update(project)
+    .set({ path: repository, commonDirectory: path.join(repository, '.git') })
+    .where(eq(project.id, projectId))
+    .run()
+  const created = await caller().composerDraftCreate({
+    target: { type: 'project', projectId, workspaceId: null, harness: 'codex' },
+    content: { ...content, attachments: [] },
+  })
+  let submitted: unknown
+  const api = caller((event) => {
+    if (event.type !== 'Start') throw new Error(`Unexpected event: ${event.type}`)
+    submitted = event.input
+    event.reply.resolve({ sessionId: 'session-new-worktree' })
+  })
+  await expect(
+    api.sessionSubmit({
+      draftId: created.id,
+      expectedRevision: created.revision,
+      commandId: 'new-worktree-command',
+    }),
+  ).resolves.toEqual({ sessionId: 'session-new-worktree' })
+  const managed = database.select().from(workspace).where(eq(workspace.kind, 'managed')).get()
+  expect(managed).toBeDefined()
+  expect(submitted).toMatchObject({ workspaceId: managed?.id, cwd: managed?.path })
+  expect(
+    (
+      await run('git', ['-C', managed?.path ?? '', 'rev-parse', '--abbrev-ref', 'HEAD'])
+    ).stdout.trim(),
+  ).toMatch(/^argo\/session-/)
   await expect(api.composerDraftRead(created.target)).resolves.toBeNull()
 })
 

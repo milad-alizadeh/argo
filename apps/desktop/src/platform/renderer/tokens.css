@@ -109,8 +109,9 @@
   --size-attachment-tray: 72px;
   /* The editor reserves the plan control width, so its first line does not pass under the control. */
   --size-composer-plan-trigger: calc(var(--size-control) * 3 + var(--spacing-shell-item));
-  /* A dropdown or popover menu hung off the composer's toolbar: mode, permission and run setup. */
+  /* A dropdown or popover menu beside the composer: work location, mode, permission and run setup. */
   --size-session-menu: 23rem;
+  --size-session-menu-max-width: calc(100vw - var(--spacing-shell-item) * 2);
   --size-session-menu-max-height: calc(100dvh - 2rem);
   --size-context-picker-max-width: calc(100vw - var(--spacing-shell-item) * 2);
   /* A wider popover carrying prose and a meter: context and usage. */

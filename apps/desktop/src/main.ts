@@ -25,6 +25,7 @@ import {
 import { SessionEventJournal } from '@/domains/sessions/main/live/session-event-journal'
 import { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
+import { ensureManagedWorkspace } from '@/domains/workspaces/main/workspace-create-managed'
 import type { CatalogActor } from '@/harnesses/catalog/catalog-read'
 import type { CodexLiveClient } from '@/harnesses/codex/session/codex-session-channel'
 import { createHarnessRegistry, type HarnessRegistry } from '@/harnesses/registry'
@@ -218,6 +219,15 @@ function routerForWindow(options: {
     },
     sessions: {
       database,
+      ensureManagedWorkspace: (projectId, draftId) =>
+        exclusive(() =>
+          ensureManagedWorkspace({
+            database,
+            projectId,
+            draftId,
+            worktreeRoot: path.join(app.getPath('userData'), 'worktrees'),
+          }),
+        ),
       readHistory: (harness, target) => registry[harness].readHistory(target),
       watchHistory: (harness, target, invalidate) =>
         registry[harness].watchHistory?.(target, invalidate) ?? (() => {}),

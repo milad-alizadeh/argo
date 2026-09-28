@@ -10,7 +10,6 @@ import { activeReference } from '../references/composer-reference-menu'
 import { DraftContextPicker } from '../references/context-picker/draft-context-picker'
 import { ComposerToolbar } from '../toolbar/composer-toolbar'
 import type { TurnConfigurationControlProps } from '../toolbar/turn-configuration-menu'
-import type { WorkspaceMenuControlProps } from '../toolbar/workspace-menu'
 import { ComposerEditorArea } from './composer-editor-area'
 
 type ComposerCardProps = {
@@ -36,7 +35,6 @@ type ComposerCardProps = {
     refreshCatalog?: () => void
     sendAvailable?: boolean
   }
-  workspace: WorkspaceMenuControlProps | null
 }
 
 function useFocusInterruptOnCompactStart(isCompacting: boolean) {
@@ -168,7 +166,6 @@ export function ComposerCard(props: ComposerCardProps) {
           onOpenContextPicker={() => setContextPickerOpen(true)}
           onInterrupt={props.onInterrupt}
           turnConfiguration={props.turnConfiguration}
-          workspace={props.workspace}
           catalogFailure={props.catalogState?.catalogFailure}
           refreshCatalog={props.catalogState?.refreshCatalog}
         />

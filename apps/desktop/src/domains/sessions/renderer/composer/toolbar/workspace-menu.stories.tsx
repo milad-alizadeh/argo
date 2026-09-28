@@ -21,14 +21,22 @@ const WORKSPACE_CANDIDATES: [WorkspaceSummary, WorkspaceSummary] = [
   },
 ]
 
-function WorkspaceStory() {
-  const [selectedId, setSelectedId] = useState(WORKSPACE_CANDIDATES[0].id)
+function WorkspaceStory({
+  initialChoice = 'new',
+  saveFailed = false,
+}: {
+  initialChoice?: string
+  saveFailed?: boolean
+}) {
+  const [selectedId, setSelectedId] = useState(initialChoice)
   const selected = WORKSPACE_CANDIDATES.find((candidate) => candidate.id === selectedId) ?? null
 
   return (
     <div className="@container flex min-h-dvh max-w-4xl items-end p-8">
       <WorkspaceMenu
+        choice={selectedId}
         onSelect={setSelectedId}
+        saveFailed={saveFailed}
         workspace={selected}
         workspaces={WORKSPACE_CANDIDATES}
       />
@@ -49,17 +57,31 @@ const page = () => within(document.body)
 export const WorkspacePicker: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const trigger = canvas.getByRole('button', { name: 'Choose Workspace: argo' })
+    const trigger = canvas.getByRole('button', { name: 'Work location: New worktree' })
 
     await userEvent.click(trigger)
-    const menu = await page().findByRole('menu')
-    await expect(
-      within(menu)
-        .getAllByRole('menuitemradio')
-        .map((item) => item.textContent),
-    ).toEqual(['argomain', 'linked-featurefeature/linked'])
+    const list = await page().findByRole('listbox')
+    await waitFor(() => expect(within(list).getByText('New worktree')).toBeVisible())
+    await expect(within(list).getByText('Main checkout')).toBeVisible()
+    await expect(within(list).getByText('linked-feature')).toBeVisible()
 
-    await userEvent.click(within(menu).getByRole('menuitemradio', { name: /linked-feature/ }))
-    await waitFor(() => expect(page().queryByRole('menu')).toBeNull())
+    await userEvent.click(within(list).getByText('linked-feature'))
+    await waitFor(() => expect(page().queryByRole('listbox')).toBeNull())
+    await expect(
+      canvas.getByRole('button', { name: 'Work location: linked-feature' }),
+    ).toBeVisible()
+  },
+}
+
+export const UnavailableChoice: Story = {
+  args: { initialChoice: 'missing-workspace', saveFailed: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(
+      canvas.getByRole('button', { name: 'Work location: Choose work location' }),
+    ).toBeVisible()
+    await expect(canvas.getByRole('status')).toHaveTextContent(
+      'Could not use this work location. Choose another.',
+    )
   },
 }

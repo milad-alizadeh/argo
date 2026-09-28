@@ -4,6 +4,7 @@ type ProjectListReply = RouterOutputs['projectList']
 type ProjectOpenReply = RouterOutputs['projectOpen']
 type ProjectRelocateReply = RouterOutputs['projectRelocate']
 type WorkspaceReply = RouterOutputs['workspaceList']
+type WorkspaceChooseReply = RouterOutputs['workspaceChoose']
 
 type StorybookProjectProcedures = {
   projectOpen: (request: { projectId: string }) => Promise<ProjectOpenReply>
@@ -11,6 +12,7 @@ type StorybookProjectProcedures = {
   projectRegister: () => Promise<ProjectListReply>
   projectRelocate: (request: { projectId: string }) => Promise<ProjectRelocateReply>
   workspaceList: (request: { projectId: string }) => Promise<WorkspaceReply>
+  workspaceChoose: (request: { projectId: string; choice: string }) => Promise<WorkspaceChooseReply>
 }
 
 const primaryProject = { id: 'storybook-project', name: 'argo', path: '/storybook/argo' }
@@ -35,6 +37,7 @@ function workspacesListed() {
   return {
     type: 'workspace.listed' as const,
     requestId: 'storybook-workspaces',
+    choice: 'new',
     workspaces,
   }
 }
@@ -45,4 +48,5 @@ export const storybookProjectProcedures: StorybookProjectProcedures = {
   projectRegister: () => Promise.resolve(projects),
   projectRelocate: () => Promise.resolve(secondaryProject),
   workspaceList: () => Promise.resolve(workspacesListed()),
+  workspaceChoose: ({ choice }) => Promise.resolve({ choice }),
 }
