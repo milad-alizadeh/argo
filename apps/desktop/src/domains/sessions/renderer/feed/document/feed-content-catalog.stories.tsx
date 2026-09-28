@@ -149,6 +149,7 @@ export const Delegation = kindStory(
     id: 'delegation',
     agentId: 'agent-1',
     status: 'running',
+    name: 'Review the Feed',
     prompt: 'Review the Feed',
     model: null,
     summary: null,

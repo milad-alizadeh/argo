@@ -37,6 +37,7 @@ import {
   turnResultSchema,
   userContentSchema,
 } from './codex-session-protocol'
+import { codexSubagentContent } from './codex-subagent-content'
 import { readCodexThreadStatus } from './codex-thread-status'
 
 export type CodexLiveClient = {
@@ -412,13 +413,11 @@ export class CodexSessionChannel implements LiveSessionChannel {
     const parts = this.reasoningByItem.get(itemId) ?? []
     parts[summaryIndex] = (parts[summaryIndex] ?? '') + delta
     this.reasoningByItem.set(itemId, parts)
-    this.emitFeed({
-      type: 'content',
-      commandId: this.active.commandId,
+    this.emitItemContent(
+      { kind: 'reasoning', id: itemId, text: parts.join('\n'), redacted: false },
+      itemId,
       turnId,
-      vendorEventId: itemId,
-      content: { kind: 'reasoning', id: itemId, text: parts.join('\n'), redacted: false },
-    })
+    )
   }
 
   private commandOutputDelta(params: Record<string, unknown>) {
@@ -432,13 +431,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
     if (command === undefined) return
     const updated = { ...command, output }
     this.commandByItem.set(itemId, updated)
-    this.emitFeed({
-      type: 'content',
-      commandId: this.active.commandId,
-      turnId,
-      vendorEventId: itemId,
-      content: updated,
-    })
+    this.emitItemContent(updated, itemId, turnId)
   }
 
   private commandItem(
@@ -454,13 +447,17 @@ export class CodexSessionChannel implements LiveSessionChannel {
         : (this.outputByItem.get(item.id) ?? command.output)
     const updated = { ...command, output }
     this.commandByItem.set(item.id, updated)
-    this.emitFeed({
-      type: 'content',
-      commandId: this.active?.commandId ?? null,
-      turnId,
-      vendorEventId: item.id,
-      content: updated,
-    })
+    this.emitItemContent(updated, item.id, turnId)
+  }
+
+  private subagentItem(
+    item: z.infer<typeof itemNotificationSchema>['item'],
+    turnId: string,
+    phase: 'started' | 'completed',
+  ) {
+    const delegation = codexSubagentContent(item)
+    if (delegation === null) return this.reject(`item/${phase}`)
+    this.emitItemContent(delegation, item.id, turnId)
   }
 
   private userItem(item: z.infer<typeof itemNotificationSchema>['item'], turnId: string) {
@@ -482,6 +479,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
     if (!codexThreadItemTypeSchema.safeParse(item.type).success)
       return this.reject(`item/${phase}: ${item.type}`)
     if (item.type === 'commandExecution') return this.commandItem(item, turnId, phase)
+    if (item.type === 'subAgentActivity') return this.subagentItem(item, turnId, phase)
     if (phase === 'started') {
       if (item.type === 'agentMessage') {
         const messagePhase = codexMessagePhaseSchema.nullable().safeParse(item.phase)
@@ -496,13 +494,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
     if (item.type === 'userMessage') return this.userItem(item, turnId)
     if (item.type !== 'agentMessage') {
       for (const content of codexContentFromItems([item]))
-        this.emitFeed({
-          type: 'content',
-          commandId: this.active?.commandId ?? null,
-          turnId,
-          vendorEventId: item.id,
-          content,
-        })
+        this.emitItemContent(content, item.id, turnId)
       return
     }
     if (item.text === undefined) return this.reject('item/completed: missing agentMessage content')
@@ -518,6 +510,16 @@ export class CodexSessionChannel implements LiveSessionChannel {
     })
   }
 
+  private emitItemContent(content: FeedContent, itemId: string, turnId: string) {
+    this.emitFeed({
+      type: 'content',
+      commandId: this.active?.commandId ?? null,
+      turnId,
+      vendorEventId: itemId,
+      content,
+    })
+  }
+
   private emitMessage(message: {
     itemId: string
     turnId: string
@@ -525,19 +527,17 @@ export class CodexSessionChannel implements LiveSessionChannel {
     text: string
     phase?: 'commentary' | 'final_answer' | null
   }) {
-    this.emitFeed({
-      type: 'content',
-      commandId: this.active?.commandId ?? null,
-      turnId: message.turnId,
-      vendorEventId: message.itemId,
-      content: {
+    this.emitItemContent(
+      {
         kind: 'message',
         id: message.itemId,
         role: message.role,
         text: message.text,
         ...(message.phase !== undefined ? { phase: message.phase } : {}),
       },
-    })
+      message.itemId,
+      message.turnId,
+    )
   }
 
   private fail(error: unknown) {

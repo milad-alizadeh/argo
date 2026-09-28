@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { afterEach, expect, test, vi } from 'vitest'
 import { scanRollouts } from '../../../../mocks/cli/codex/mock-codex-rollout-history.ts'
@@ -99,5 +100,37 @@ test('reads Codex reasoning, commentary, file edits, and MCP results from thread
     { kind: 'fileChange', id: 'edit-1', changes: [{ path: '/repo/feed.ts', change: 'update' }] },
     { kind: 'tool', id: 'mcp-1', output: [{ kind: 'text', text: 'updated' }] },
     { kind: 'message', id: 'answer-1', phase: 'final_answer' },
+  ])
+})
+
+test('reads each recorded Subagent as one delegation, updated by its activity', async () => {
+  const recorded = JSON.parse(
+    readFileSync(
+      new URL(
+        '../../../../mocks/cli/codex/fixtures/thread-read-subagents-codex-0.157.0.json',
+        import.meta.url,
+      ),
+      'utf8',
+    ),
+  ) as { thread: unknown }
+  const request = (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
+    parse({ thread: recorded.thread })) as CodexRequest
+  const delegation = (status: 'running' | 'completed' | 'interrupted') => ({
+    kind: 'delegation',
+    id: 'thread-child-review',
+    agentId: 'thread-child-review',
+    status,
+    name: 'spec_review',
+    prompt: null,
+    model: null,
+    summary: null,
+  })
+  await expect(readCodexSessionHistory(request, 'thread-parent')).resolves.toEqual([
+    { kind: 'message', id: 'user-1', role: 'user', text: 'Review the branch' },
+    delegation('running'),
+    delegation('completed'),
+    delegation('running'),
+    delegation('interrupted'),
+    { kind: 'message', id: 'agent-1', role: 'assistant', text: 'The review is in.' },
   ])
 })

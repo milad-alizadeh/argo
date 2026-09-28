@@ -323,6 +323,7 @@ const catalogHistory: FeedContent[] = [
     id: 'delegation',
     agentId: 'agent-1',
     status: 'running',
+    name: null,
     prompt: 'Review',
     model: null,
     summary: null,
@@ -363,7 +364,10 @@ test('draws every FeedContent kind with a stable item identity', () => {
   expect(rows.map((row) => row.id)).toEqual(
     catalogHistory.map((item) => (item.kind === 'tool' ? item.callId : item.id)),
   )
-  expect(rows.find((row) => row.id === 'delegation')).toMatchObject({ status: 'running' })
+  expect(rows.find((row) => row.id === 'delegation')).toMatchObject({
+    shape: 'subagent',
+    event: 'started',
+  })
   expect(rows.find((row) => row.id === 'task')).toMatchObject({ status: 'paused' })
   expect(rows.find((row) => row.id === 'imageGeneration')).toMatchObject({ status: 'failed' })
 })
@@ -386,6 +390,7 @@ test('joins task and delegation progress by native ID without losing earlier det
         id: 'agent-1',
         agentId: 'agent-1',
         status: 'running',
+        name: 'Review files',
         prompt: 'Review files',
         model: 'small',
         summary: null,
@@ -404,6 +409,7 @@ test('joins task and delegation progress by native ID without losing earlier det
         id: 'agent-1',
         agentId: 'agent-1',
         status: 'completed',
+        name: null,
         prompt: null,
         model: null,
         summary: null,
@@ -413,6 +419,84 @@ test('joins task and delegation progress by native ID without losing earlier det
   expect(rows.map((row) => row.id)).toEqual(['task-1', 'agent-1'])
   expect(rows).toMatchObject([
     { event: 'task', text: 'Inspect files', status: 'completed' },
-    { event: 'delegation', text: 'Review files', status: 'completed' },
+    { shape: 'subagent', event: 'responded', state: 'completed', name: 'Review files' },
+  ])
+})
+
+test('draws one Subagent row per delegation, updated in place as its status changes', () => {
+  const delegation = (status: 'running' | 'completed'): FeedContent => ({
+    id: 'call-agent',
+    kind: 'delegation',
+    agentId: 'agent-7',
+    status,
+    prompt: 'Survey the adapters',
+    model: 'sonnet',
+    name: 'Survey adapters',
+    summary: status === 'completed' ? 'Found two adapters' : null,
+  })
+  expect(projectLiveFeedRows([delegation('running')], [])).toEqual([
+    {
+      shape: 'subagent',
+      id: 'call-agent',
+      subagentId: 'agent-7',
+      event: 'started',
+      name: 'Survey adapters',
+      model: 'sonnet',
+    },
+  ])
+  expect(projectLiveFeedRows([delegation('running'), { ...delegation('completed') }], [])).toEqual([
+    {
+      shape: 'subagent',
+      id: 'call-agent',
+      subagentId: 'agent-7',
+      event: 'responded',
+      state: 'completed',
+      name: 'Survey adapters',
+      model: 'sonnet',
+      text: 'Found two adapters',
+    },
+  ])
+})
+
+test('draws a skill reference as a skill invocation and other references as context', () => {
+  const rows = projectLiveFeedRows(
+    [
+      {
+        id: 'skill-1',
+        kind: 'reference',
+        referenceType: 'skill',
+        label: 'tdd',
+        target: '/repo/.claude/skills/tdd/SKILL.md',
+        text: 'red green',
+      },
+      {
+        id: 'skill-2',
+        kind: 'reference',
+        referenceType: 'skill',
+        label: 'ship',
+        target: null,
+        text: null,
+      },
+      {
+        id: 'pasted-1',
+        kind: 'reference',
+        referenceType: 'pasted',
+        label: 'Pasted content',
+        target: null,
+        text: 'the pasted words',
+      },
+    ],
+    [],
+  )
+  expect(rows).toEqual([
+    {
+      shape: 'event',
+      id: 'skill-1',
+      event: 'skill-invocation',
+      text: 'tdd red green',
+      skill: { name: 'tdd', path: '/repo/.claude/skills/tdd/SKILL.md' },
+    },
+    { shape: 'event', id: 'skill-2', event: 'skill-invocation', text: 'ship' },
+    { shape: 'event', id: 'pasted-1', event: 'context', text: 'the pasted words' },
   ])
 })

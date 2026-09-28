@@ -212,3 +212,66 @@ test('answers Claude Permission and Question requests through the channel', asyn
 })
 
 import { readFileSync } from 'node:fs'
+
+test('streams an Agent call as one delegation from its start to its notification', async () => {
+  vendor.prompts = []
+  vendor.releaseSecond = null
+  const envelope = { session_id: 'native-1' }
+  vendor.recordedEvents = [
+    {
+      ...envelope,
+      type: 'assistant',
+      uuid: 'live-a-1',
+      parent_tool_use_id: null,
+      message: {
+        id: 'msg_live_1',
+        role: 'assistant',
+        content: [
+          {
+            type: 'tool_use',
+            id: 'toolu_live_agent',
+            name: 'Agent',
+            input: { description: 'Survey adapters', prompt: 'Survey the adapters.' },
+          },
+        ],
+      },
+    },
+    {
+      ...envelope,
+      type: 'system',
+      subtype: 'task_started',
+      uuid: 'live-s-1',
+      task_id: 'a1b2c3d4e5f6a7b8c',
+      tool_use_id: 'toolu_live_agent',
+      description: 'Survey adapters',
+    },
+    {
+      ...envelope,
+      type: 'system',
+      subtype: 'task_notification',
+      uuid: 'live-s-2',
+      task_id: 'a1b2c3d4e5f6a7b8c',
+      tool_use_id: 'toolu_live_agent',
+      status: 'completed',
+      output_file: '/tmp/a1b2c3d4e5f6a7b8c.output',
+      summary: 'Agent "Survey adapters" finished',
+    },
+  ]
+  const events: unknown[] = []
+  const channel = claudeSessionChannelOpener(null)(first, undefined, (event) => events.push(event))
+  await until(() => events.some((event) => (event as { type: string }).type === 'turn.completed'))
+  const content = events.flatMap((event) => {
+    const parsed = liveSessionChannelEventSchema.parse(event)
+    return parsed.type === 'feed' && parsed.body.type === 'content' ? [parsed.body.content] : []
+  })
+  expect(content.filter((entry) => entry.kind === 'tool' || entry.kind === 'task')).toEqual([])
+  expect(
+    content.flatMap((entry) =>
+      entry.kind === 'delegation' ? [[entry.id, entry.agentId, entry.status]] : [],
+    ),
+  ).toEqual([
+    ['toolu_live_agent', 'a1b2c3d4e5f6a7b8c', 'running'],
+    ['toolu_live_agent', 'a1b2c3d4e5f6a7b8c', 'completed'],
+  ])
+  channel.close()
+})

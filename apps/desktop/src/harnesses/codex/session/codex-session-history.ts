@@ -4,6 +4,7 @@ import type { CodexRequest } from '../app-server/codex-app-server-client'
 import type { ThreadItem } from '../app-server/protocol-generated/v2/thread-item'
 import type { ThreadReadResponse } from '../app-server/protocol-generated/v2/thread-read-response'
 import { codexCommandContent } from './codex-command-content'
+import { codexSubagentContent } from './codex-subagent-content'
 
 const textContentSchema = z.object({ type: z.literal('text'), text: z.string() }).passthrough()
 type FileChangeStatus = Extract<ThreadItem, { type: 'fileChange' }>['status']
@@ -58,14 +59,14 @@ export const codexThreadItemTypeSchema = z.enum(
 )
 const itemSchema = z
   .object({
-    id: z.string().min(1),
+    id: z.string().min(1).optional(),
     type: codexThreadItemTypeSchema,
     content: z.array(z.unknown()).optional(),
     text: z.string().optional(),
     phase: codexMessagePhaseSchema.nullable().optional(),
     summary: z.array(z.string()).optional(),
   })
-  .passthrough() satisfies z.ZodType<Pick<ThreadItem, 'id' | 'type'>>
+  .passthrough() satisfies z.ZodType<Pick<ThreadItem, 'type'> & Partial<Pick<ThreadItem, 'id'>>>
 type ReadTurn = ThreadReadResponse['thread']['turns'][number]
 const readTurnSchema = z
   .object({
@@ -93,8 +94,9 @@ function itemText(item: z.infer<typeof itemSchema>): string | null {
 }
 
 type ParsedItem = z.infer<typeof itemSchema>
+type IdentifiedItem = ParsedItem & { id: string }
 
-function messageItemContent(item: ParsedItem): FeedContent | null {
+function messageItemContent(item: IdentifiedItem): FeedContent | null {
   const role = threadItemRoles[item.type]
   const text = itemText(item)
   if (role === null || text === null) return null
@@ -107,7 +109,7 @@ function messageItemContent(item: ParsedItem): FeedContent | null {
   }
 }
 
-function simpleItemContent(item: ParsedItem, raw: unknown): FeedContent | null {
+function simpleItemContent(item: IdentifiedItem, raw: unknown): FeedContent | null {
   switch (item.type) {
     case 'reasoning': {
       const summary = item.summary?.join('\n').trim() ?? ''
@@ -253,32 +255,9 @@ function imageGenerationContent(id: string, raw: unknown): FeedContent {
   }
 }
 
-function delegationContent(id: string, raw: unknown): FeedContent {
-  const delegation = z
-    .object({
-      agentThreadId: z.string().optional(),
-      receiverThreadIds: z.array(z.string()).optional(),
-      prompt: z.string().nullable().optional(),
-      model: z.string().nullable().optional(),
-      status: z.string().optional(),
-    })
-    .parse(raw)
-  let status: Extract<FeedContent, { kind: 'delegation' }>['status'] = 'running'
-  if (delegation.status === 'completed') status = 'completed'
-  if (delegation.status === 'failed') status = 'failed'
-  return {
-    kind: 'delegation',
-    id,
-    agentId: delegation.agentThreadId ?? delegation.receiverThreadIds?.[0] ?? id,
-    status,
-    prompt: delegation.prompt ?? null,
-    model: delegation.model ?? null,
-    summary: null,
-  }
-}
-
-function codexItemContent(raw: unknown): FeedContent | null {
-  const item = itemSchema.parse(raw)
+function codexItemContent(raw: unknown, fallbackId: string): FeedContent | null {
+  const parsed = itemSchema.parse(raw)
+  const item = { ...parsed, id: parsed.id ?? fallbackId }
   switch (item.type) {
     case 'commandExecution': {
       const command = codexCommandContent(raw, 'completed')
@@ -294,17 +273,21 @@ function codexItemContent(raw: unknown): FeedContent | null {
       return searchContent(item.id, raw)
     case 'imageGeneration':
       return imageGenerationContent(item.id, raw)
-    case 'subAgentActivity':
+    case 'subAgentActivity': {
+      const delegation = codexSubagentContent(raw)
+      if (delegation === null) throw new Error('Invalid Codex subAgentActivity history item')
+      return delegation
+    }
     case 'collabAgentToolCall':
-      return delegationContent(item.id, raw)
+      return null
     default:
       return simpleItemContent(item, raw)
   }
 }
 
-export function codexContentFromItems(items: unknown[]): FeedContent[] {
-  return items.flatMap((raw) => {
-    const content = codexItemContent(raw)
+export function codexContentFromItems(items: unknown[], fallbackPrefix = 'item'): FeedContent[] {
+  return items.flatMap((raw, itemIndex) => {
+    const content = codexItemContent(raw, `${fallbackPrefix}:${itemIndex}`)
     return content === null ? [] : [content]
   })
 }
@@ -319,8 +302,8 @@ export async function readCodexSessionHistory(
     (value) => responseSchema.parse(value),
   )
   const content: FeedContent[] = []
-  response.thread.turns.forEach((turn) => {
-    content.push(...codexContentFromItems(turn.items))
+  response.thread.turns.forEach((turn, turnIndex) => {
+    content.push(...codexContentFromItems(turn.items, `${nativeId}:${turn.id ?? turnIndex}`))
   })
   return content
 }

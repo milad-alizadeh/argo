@@ -107,6 +107,7 @@ export const feedContentSchema = z.discriminatedUnion('kind', [
     kind: z.literal('delegation'),
     agentId: identifierSchema,
     status: workStatusSchema,
+    name: z.string().nullable(),
     prompt: z.string().nullable(),
     model: z.string().nullable(),
     summary: z.string().nullable(),

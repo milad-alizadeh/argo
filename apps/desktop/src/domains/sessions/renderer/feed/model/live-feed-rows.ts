@@ -151,6 +151,7 @@ function mergeProgressContent(
   if (update.kind === 'delegation' && earlier.kind === 'delegation')
     return {
       ...update,
+      name: update.name ?? earlier.name,
       prompt: update.prompt ?? earlier.prompt,
       model: update.model ?? earlier.model,
       summary: update.summary ?? earlier.summary,
@@ -177,6 +178,45 @@ function joinContent(
     }
     default:
       return content
+  }
+}
+
+function delegationContentRow(
+  content: Extract<FeedContent, { kind: 'delegation' }>,
+): SessionFeedRow {
+  const facts = {
+    shape: 'subagent',
+    id: content.id,
+    subagentId: content.agentId,
+    ...(content.name === null ? {} : { name: content.name }),
+    ...(content.model === null ? {} : { model: content.model }),
+  } as const
+  switch (content.status) {
+    case 'pending':
+    case 'running':
+    case 'paused':
+      return { ...facts, event: 'started' }
+    case 'completed':
+    case 'failed':
+    case 'interrupted':
+      return {
+        ...facts,
+        event: 'responded',
+        state: content.status,
+        ...(content.summary === null ? {} : { text: content.summary }),
+      }
+  }
+}
+
+function referenceContentRow(content: Extract<FeedContent, { kind: 'reference' }>): SessionFeedRow {
+  if (content.referenceType !== 'skill')
+    return { shape: 'event', id: content.id, event: 'context', text: content.text ?? content.label }
+  return {
+    shape: 'event',
+    id: content.id,
+    event: 'skill-invocation',
+    text: content.text === null ? content.label : `${content.label} ${content.text}`,
+    ...(content.target === null ? {} : { skill: { name: content.label, path: content.target } }),
   }
 }
 
@@ -255,7 +295,17 @@ function imageGenerationRow(
 function otherContentRow(
   content: Exclude<
     FeedContent,
-    { kind: 'message' | 'reasoning' | 'media' | 'reference' | 'tool' | 'command' | 'fileChange' }
+    {
+      kind:
+        | 'message'
+        | 'reasoning'
+        | 'media'
+        | 'reference'
+        | 'tool'
+        | 'command'
+        | 'fileChange'
+        | 'delegation'
+    }
   >,
 ): SessionFeedRow | null {
   switch (content.kind) {
@@ -263,14 +313,6 @@ function otherContentRow(
       return { shape: 'event', id: content.id, event: 'search', text: content.query }
     case 'plan':
       return { shape: 'event', id: content.id, event: 'plan', text: content.text }
-    case 'delegation':
-      return {
-        shape: 'event',
-        id: content.id,
-        event: 'delegation',
-        text: content.summary ?? content.prompt ?? content.agentId,
-        status: content.status,
-      }
     case 'task':
       return {
         shape: 'event',
@@ -318,19 +360,15 @@ function contentRow(content: FeedContent): SessionFeedRow | null {
         : { shape: 'image', id: content.id, role: content.role ?? 'assistant', source }
     }
     case 'reference':
-      return {
-        shape: 'source',
-        id: content.id,
-        role: 'assistant',
-        label: content.label,
-        source: content.target ?? content.text ?? '',
-      }
+      return referenceContentRow(content)
     case 'tool':
       return toolContentRow(content)
     case 'command':
       return commandContentRow(content)
     case 'fileChange':
       return fileChangeRow(content)
+    case 'delegation':
+      return delegationContentRow(content)
     default:
       return otherContentRow(content)
   }
@@ -389,7 +427,7 @@ function liveRows(event: SessionLiveEvent): SessionFeedRow[] {
 
 function rowKey(row: SessionFeedRow): string {
   const id = row.shape === 'prose' || row.shape === 'thought' ? row.id.replace(/:0$/, '') : row.id
-  return id
+  return `${row.shape}:${id}`
 }
 
 type IndexedRows = { rows: SessionFeedRow[]; index: Map<string, number> }
