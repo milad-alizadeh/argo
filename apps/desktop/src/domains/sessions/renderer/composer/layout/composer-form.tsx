@@ -1,4 +1,6 @@
-import { type ReactNode, useCallback } from 'react'
+import { $convertFromMarkdownString, TRANSFORMERS } from '@lexical/markdown'
+import type { LexicalEditor } from 'lexical'
+import { type ReactNode, type RefObject, useCallback, useLayoutEffect, useRef } from 'react'
 import type { SessionPlan } from '@/domains/sessions/renderer/model/models'
 import type { HarnessControl } from '../../harness/harnesses'
 import type { Send } from '../hooks/use-send'
@@ -21,8 +23,8 @@ export type ComposerFormProps = {
   contextTokens?: number | null
   contextWindowTokens?: number | null
   disabled?: boolean
-  // Takes no input and sends nothing, but draws like an enabled card.
-  inert?: boolean
+  // Inert until the owner's draft loads, yet drawn like an enabled card; the draft then fills in.
+  loading?: boolean
   focusOnMount?: boolean
   onFocusAfterMount?: () => void
   isCompacting?: boolean
@@ -61,7 +63,7 @@ function ComposerFormSurface({
   contextTokens,
   contextWindowTokens,
   disabled = false,
-  inert = false,
+  loading = false,
   focusOnMount = false,
   onFocusAfterMount,
   isCompacting = false,
@@ -94,12 +96,13 @@ function ComposerFormSurface({
     onChange: changeTurnConfiguration,
   })
   const state = useSessionComposerState({ onSend, turnConfiguration })
+  useLoadedDraftInEditor(state.editorRef, loading, editing.prompt)
   const send = () => {
-    if (!disabled && !inert && onSend) void state.send()
+    if (!disabled && !loading && onSend) void state.send()
   }
   return (
     <form
-      inert={inert}
+      inert={loading}
       className={`${COMPOSER_COLUMN} @container flex h-full min-h-0 flex-col pt-(--spacing-shell-section) pb-(--spacing-session-composer-bottom)`}
       onSubmit={(event) => {
         event.preventDefault()
@@ -112,7 +115,7 @@ function ComposerFormSurface({
         contextWindowTokens={contextWindowTokens}
         disabled={disabled}
         editorRef={state.editorRef}
-        focusOnMount={focusOnMount}
+        focusOnMount={focusOnMount && !loading}
         onFocusAfterMount={onFocusAfterMount}
         harness={harness}
         isCompacting={isCompacting}
@@ -132,12 +135,29 @@ function ComposerFormSurface({
   )
 }
 
+// The editor mounted while loading, so the loaded draft is written into it, not remounted.
+function useLoadedDraftInEditor(
+  editorRef: RefObject<LexicalEditor | null>,
+  loading: boolean,
+  prompt: string,
+) {
+  const wasLoading = useRef(loading)
+  useLayoutEffect(() => {
+    if (wasLoading.current && !loading)
+      editorRef.current?.update(() => $convertFromMarkdownString(prompt, TRANSFORMERS), {
+        discrete: true,
+      })
+    wasLoading.current = loading
+  }, [editorRef, loading, prompt])
+}
+
 export function ComposerForm({ initialEditing, onEditingChange, ...props }: ComposerFormProps) {
   return (
+    // The loaded draft starts a fresh edit, so nothing edited while loading outlives it.
     <ComposerEditingProvider
       initial={initialEditing}
       onChange={onEditingChange}
-      owner={props.sessionId}
+      owner={props.loading === true ? `${props.sessionId}:loading` : props.sessionId}
     >
       <ComposerFormSurface {...props} />
     </ComposerEditingProvider>

@@ -38,6 +38,21 @@ export function savedSelectionDraft(target: object) {
   return drafts.get(JSON.stringify(target))
 }
 
+// Draft reads the story holds back until it releases them, by Session id.
+const heldDraftReads = new Map<string, () => void>()
+
+export function releaseDraftRead(sessionId: string) {
+  const release = heldDraftReads.get(sessionId)
+  heldDraftReads.delete(sessionId)
+  release?.()
+}
+
+async function draftRead(target: { type: 'session'; sessionId: string }) {
+  if (heldDraftReads.has(target.sessionId))
+    await new Promise<void>((resolve) => heldDraftReads.set(target.sessionId, resolve))
+  return success(drafts.get(JSON.stringify(target)) ?? null)
+}
+
 function draftReply(value: { target: object; [field: string]: unknown }) {
   drafts.set(JSON.stringify(value.target), value)
   return success(value)
@@ -49,12 +64,14 @@ function catalogReply(request: StorybookTrpcRequest) {
   return success({ info, failure: null })
 }
 
-function composerReply(request: StorybookTrpcRequest): StorybookTrpcResponse | null {
+function composerReply(
+  request: StorybookTrpcRequest,
+): StorybookTrpcResponse | Promise<StorybookTrpcResponse> | null {
   switch (request.path) {
     case 'harnessCatalogRead':
       return catalogReply(request)
     case 'composerDraftRead':
-      return success(drafts.get(JSON.stringify(request.input)) ?? null)
+      return draftRead(request.input as { type: 'session'; sessionId: string })
     case 'composerDraftCreate': {
       const input = request.input as {
         target: { type: 'session'; sessionId: string }
@@ -114,6 +131,8 @@ function feedReply(request: StorybookTrpcRequest): StorybookTrpcResponse | null 
 
 function clearSelectionQueries() {
   drafts.clear()
+  for (const release of heldDraftReads.values()) release()
+  heldDraftReads.clear()
   queryClient.removeQueries({ queryKey: trpc.sessionList.pathKey() })
   queryClient.removeQueries({ queryKey: trpc.projectList.pathKey() })
   queryClient.removeQueries({ queryKey: trpc.projectOpen.pathKey() })
@@ -125,10 +144,27 @@ function clearSelectionQueries() {
   queryClient.removeQueries({ queryKey: ['sessions', 'delegation-usage'] })
 }
 
-// Installs the host for one story and returns the story's cleanup.
-export function sessionSelectionHost(roster: readonly Session[]) {
+// Installs the host for one story and returns the story's cleanup. A saved draft is read back as
+// stored; a held Session's draft read waits for `releaseDraftRead`.
+export function sessionSelectionHost(
+  roster: readonly Session[],
+  options: { savedDrafts?: Record<string, string>; heldDraftReads?: string[] } = {},
+) {
   const before = window.argo
   clearSelectionQueries()
+  for (const [sessionId, prompt] of Object.entries(options.savedDrafts ?? {}))
+    draftReply({
+      id: `selection-draft-${sessionId}`,
+      target: { type: 'session', sessionId },
+      prompt,
+      attachments: [],
+      ticketContext: [],
+      turnConfiguration: { model: null, effort: null, mode: null },
+      revision: 0,
+      createdAt: 0,
+      updatedAt: 0,
+    })
+  for (const sessionId of options.heldDraftReads ?? []) heldDraftReads.set(sessionId, () => {})
   const sessionTrpc = sessionListTrpc(before.trpc, () => roster)
   window.argo = Object.assign(
     {

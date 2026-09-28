@@ -46,7 +46,7 @@ function ComposerCatalogRecovery() {
       <ComposerForm
         sessionId="catalog-recovery:loading"
         catalogFailure={state === 'failed' ? { reason: 'load-failed' } : null}
-        inert
+        loading
         harness={{ harness: 'claude' }}
         turnConfigurationChoices={state === 'failed' ? null : availableChoices}
         initialEditing={

@@ -4,6 +4,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { cockpitRoutes } from '@/renderer/cockpit-router'
 import {
+  releaseDraftRead,
   savedSelectionDraft,
   sessionSelectionHost,
 } from '../../../../../test-fixtures/sessions/session-selection-host.fixture'
@@ -183,6 +184,77 @@ export const SwitchingKeepsTheComposerCardMounted: Story = {
         draft: 'Draft for the first Session',
       })
     } finally {
+      watch.stop()
+    }
+  },
+}
+
+// Reads the editor after every DOM change and keeps any text it showed while another Session's
+// route was active.
+function watchForeignText(canvasElement: HTMLElement, sessionId: string, text: string) {
+  const canvas = within(canvasElement)
+  const shown: string[] = []
+  const observer = new MutationObserver(() => {
+    const route = canvas.queryByLabelText('Session history')?.getAttribute('data-session')
+    const editor = canvas.queryByRole('combobox', { name: MESSAGE_LABEL })
+    if (route === sessionId && editor?.textContent?.includes(text)) shown.push(editor.textContent)
+  })
+  observer.observe(canvasElement, {
+    attributes: true,
+    childList: true,
+    subtree: true,
+    characterData: true,
+  })
+  return { shown, stop: () => observer.disconnect() }
+}
+
+// A first visit shows the new Session's own editor, empty and inert, until its draft arrives, and
+// never the last Session's draft (#2836).
+export const FirstVisitNeverShowsTheLastSessionsDraft: Story = {
+  beforeEach: () =>
+    sessionSelectionHost(ROSTER, {
+      savedDrafts: { 'claude-third': 'Draft kept for the third Session' },
+      heldDraftReads: ['claude-third'],
+    }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = await canvas.findByRole('combobox', { name: MESSAGE_LABEL })
+    await waitFor(() => expect(composer).toHaveAttribute('aria-disabled', 'false'))
+    await userEvent.type(composer, 'Draft for the first Session')
+    await waitFor(() =>
+      expect(savedSelectionDraft({ type: 'session', sessionId: 'claude-first' })).toMatchObject({
+        prompt: 'Draft for the first Session',
+      }),
+    )
+    const watch = watchComposer(canvasElement)
+    const foreign = watchForeignText(canvasElement, 'claude-third', 'Draft for the first Session')
+    try {
+      await userEvent.click(canvas.getByRole('button', { name: /Third Claude Session/ }))
+      await waitFor(() =>
+        expect(canvas.getByLabelText('Session history')).toHaveAttribute(
+          'data-session',
+          'claude-third',
+        ),
+      )
+      await expect(canvas.getByRole('combobox', { name: MESSAGE_LABEL })).not.toHaveTextContent(
+        'Draft for the first Session',
+      )
+      releaseDraftRead('claude-third')
+      await waitFor(() =>
+        expect(canvas.getByRole('combobox', { name: MESSAGE_LABEL })).toHaveTextContent(
+          'Draft kept for the third Session',
+        ),
+      )
+      await expect(foreign.shown).toEqual([])
+      await expect(watch.read()).toEqual({
+        sameCard: true,
+        fewestCards: 1,
+        disabled: false,
+        waitedForDraft: true,
+        editorsMounted: 1,
+      })
+    } finally {
+      foreign.stop()
       watch.stop()
     }
   },

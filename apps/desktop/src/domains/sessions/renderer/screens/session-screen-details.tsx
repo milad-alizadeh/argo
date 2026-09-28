@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate, useParams } from 'react-router'
 import type { Cockpit } from '@/domains/projects/renderer'
@@ -288,25 +288,21 @@ export function SessionComposerArea({
 
 type LoadedDraft = NonNullable<ReturnType<typeof useDurableComposerDraft>>
 
-// Stands in for an owner while no draft is loaded, so the owner's own editor mounts once, with its draft.
-const NO_DRAFT_OWNER = 'composer-no-draft'
-
 function initialFormEditing(draft: LoadedDraft | null, opening: TurnConfiguration | null) {
   if (draft !== null) return draft.initialEditing
   return opening === null ? undefined : { turnConfiguration: opening }
 }
 
-// The last form drawn with a loaded draft, drawn again while the next owner's draft loads.
-function useHeldComposerForm(form: ComposerFormProps | null) {
-  const held = useRef<ComposerFormProps | null>(null)
-  useEffect(() => {
-    if (form !== null) held.current = form
-  })
-  return form === null ? held.current : null
+// Once a draft has loaded, a later load says nothing, so a Session switch shows no notice.
+function useFirstComposerLoad(loaded: boolean) {
+  const [first, setFirst] = useState(true)
+  if (first && loaded) setFirst(false)
+  return first && !loaded
 }
 
 // One card at one place in the tree while a draft loads and after, so a Session switch swaps its
-// content instead of mounting a new card (#2836). A loading card looks enabled, but is inert.
+// content instead of mounting a new card (#2836). The owner's editor mounts at once, empty and
+// inert but drawn enabled, and its draft fills in when it loads.
 function SessionComposer({
   permission,
   questionPending,
@@ -350,8 +346,10 @@ function SessionComposer({
     identity,
     projectId: identity.kind === 'draft' ? identity.projectId : null,
   })
+  const firstLoad = useFirstComposerLoad(draft !== null)
   const form: ComposerFormProps = {
-    sessionId: draft?.hasDraft === true ? composerKey : NO_DRAFT_OWNER,
+    sessionId: composerKey,
+    loading: draft?.hasDraft !== true,
     initialEditing: initialFormEditing(draft, opening),
     onEditingChange: draft?.onEditingChange,
     focusOnMount,
@@ -376,23 +374,18 @@ function SessionComposer({
     isRunning,
     onInterrupt,
   }
-  const held = useHeldComposerForm(draft === null ? null : form)
   return (
     <>
       <ComposerNotices
         catalogFailure={catalogFailure}
         draft={draft}
         harness={harness}
-        loading={draft === null && held === null && choices === null}
+        loading={firstLoad && choices === null}
         onRetryCatalog={onRetryCatalog}
         onRetryDraft={onRetryDraft}
         permissionFailure={permission.failure}
       />
-      {draft === null ? (
-        <ComposerForm {...(held ?? form)} inert onEditingChange={undefined} />
-      ) : (
-        <ComposerForm {...form} />
-      )}
+      <ComposerForm {...form} />
     </>
   )
 }
