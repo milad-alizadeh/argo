@@ -34,7 +34,7 @@ function facts(ticket: Ticket) {
   }
 }
 
-// The Ticket's key is its native ID within the scope.
+// The identity behind a native ID within the scope.
 function savedIdentity(database: Writer, { provider, scope }: TicketScopeTarget, nativeId: string) {
   return database
     .select({ argoId: ticketTable.argoId })
@@ -44,6 +44,22 @@ function savedIdentity(database: Writer, { provider, scope }: TicketScopeTarget,
         eq(ticketTable.provider, provider),
         eq(ticketTable.scope, scope),
         eq(ticketTable.nativeId, nativeId),
+      ),
+    )
+    .get()?.argoId
+}
+
+// A Ticket addressed by its key, which is not its native ID where the key can change.
+function savedIdentityByKey(database: Writer, { provider, scope }: TicketScopeTarget, key: string) {
+  return database
+    .select({ argoId: ticketTable.argoId })
+    .from(ticketTable)
+    .innerJoin(ticketContent, eq(ticketContent.ticketId, ticketTable.argoId))
+    .where(
+      and(
+        eq(ticketTable.provider, provider),
+        eq(ticketTable.scope, scope),
+        eq(ticketContent.key, key),
       ),
     )
     .get()?.argoId
@@ -69,7 +85,7 @@ export function saveListedTickets(
 ): void {
   database.transaction((transaction) => {
     tickets.forEach((ticket, index) => {
-      const ticketId = identity(transaction, batch, ticket.key)
+      const ticketId = identity(transaction, batch, ticket.nativeId ?? ticket.key)
       const listed = { position: batch.offset + index, listedAt: batch.scanStartedAt }
       transaction
         .insert(ticketContent)
@@ -102,7 +118,7 @@ export function saveConfirmedFields(
       ? {}
       : { priorityJson: fields.priority === null ? null : JSON.stringify(fields.priority) }),
   }
-  const ticketId = savedIdentity(database, target, target.key)
+  const ticketId = savedIdentityByKey(database, target, target.key)
   if (ticketId === undefined) return
   database
     .update(ticketContent)

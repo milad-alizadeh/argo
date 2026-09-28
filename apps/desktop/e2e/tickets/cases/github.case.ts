@@ -3,8 +3,6 @@
 // app. Its account lifecycle cases are `lifecycle.case.ts`, and Linear's are
 // `linear.case.ts`.
 import assert from 'node:assert/strict'
-import path from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
 import { expect, test } from '@playwright/test'
 import { HUBOT, helloWorld, OCTOCAT } from '../fixtures/tickets.fixture'
 import {
@@ -14,6 +12,7 @@ import {
   backlog,
   backlogKeys,
   chooseAccount,
+  committedTicketIds,
   connectForm,
   detailTitle,
   openRoom,
@@ -23,6 +22,8 @@ import {
   signIn,
   storeText,
 } from '../screen'
+
+const GITHUB_SCOPE = { provider: 'github', scope: 'octocat/hello-world' }
 
 export async function proveConnect(run: Run) {
   await openRoom(run.page, 'tickets')
@@ -105,32 +106,13 @@ export async function proveBacklog(run: Run) {
   })
 }
 
-// The Argo ID of each Ticket the main process committed for the repository, by its GitHub key.
-function committedIds(run: Run): Record<string, string> {
-  const database = new DatabaseSync(path.join(run.fixture.userData, 'argo.sqlite'), {
-    readOnly: true,
-  })
-  try {
-    const rows = database
-      .prepare(
-        `SELECT ticket.native_id, ticket.argo_id FROM ticket
-         JOIN ticket_content ON ticket_content.ticket_id = ticket.argo_id
-         WHERE ticket.provider = 'github' AND ticket.scope = 'octocat/hello-world'`,
-      )
-      .all()
-    return Object.fromEntries(rows.map((row) => [String(row.native_id), String(row.argo_id)]))
-  } finally {
-    database.close()
-  }
-}
-
 // With GitHub reads held, the backlog draws committed rows; a new Ticket waits for its commit.
 export async function proveCommittedBacklog(run: Run) {
   const github = run.fixture.github
   let committed: Record<string, string> = {}
   await test.step('committed', async () => {
     assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
-    committed = committedIds(run)
+    committed = committedTicketIds(run, GITHUB_SCOPE)
     assert.deepEqual(Object.keys(committed).sort(), ['#273', '#607', '#609'])
   })
   const release = github.holdReads()
@@ -149,7 +131,7 @@ export async function proveCommittedBacklog(run: Run) {
   }
   await test.step('external-ticket', async () => {
     await backlog(run.page).getByRole('button', { name: /^#710/ }).waitFor()
-    const later = committedIds(run)
+    const later = committedTicketIds(run, GITHUB_SCOPE)
     for (const key of Object.keys(committed)) assert.equal(later[key], committed[key])
     assert.ok(later['#710'])
   })

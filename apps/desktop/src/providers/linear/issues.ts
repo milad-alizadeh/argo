@@ -96,6 +96,7 @@ function ticket(endpoints: LinearEndpoints, value: unknown): Ticket | null {
   const prose = typeof description === 'string' ? description.trim() : ''
   return {
     ...own,
+    nativeId: typeof value.id === 'string' && value.id !== '' ? value.id : undefined,
     url: pageURL(endpoints, value.url),
     body: prose === '' ? null : prose,
     status,

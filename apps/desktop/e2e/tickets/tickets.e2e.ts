@@ -19,6 +19,7 @@ import {
 } from './cases/lifecycle.case'
 import {
   proveLinearBacklog,
+  proveLinearCommitted,
   proveLinearConnect,
   proveLinearDisconnect,
   proveLinearExpired,
@@ -62,6 +63,9 @@ test.describe('with a Linear team', () => {
   test('restart with a Linear Account', async ({ tickets }) => {
     await proveLinearStatus(tickets.run())
     await proveLinearRestart(await tickets.restart())
+  })
+  test('the Linear scan commits Tickets that keep their identity', async ({ tickets }) => {
+    await proveLinearCommitted(tickets.run(), await tickets.restart())
   })
   test('an expired Linear renewal', ({ tickets }) => proveLinearExpired(tickets.run()))
   test('disconnect the Linear Account', ({ tickets }) => proveLinearDisconnect(tickets.run()))
