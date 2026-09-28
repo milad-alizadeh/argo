@@ -77,7 +77,8 @@ function InspectorPanel({
         inert={panels.state === 'collapsed'}
         ref={panels.inspectorElement}
         className={cn(
-          'panel-frame',
+          'panel-frame transition-opacity duration-(--duration-layout) ease-(--ease-emphasized)',
+          panels.state === 'collapsed' && 'pointer-events-none opacity-0',
           panels.state !== 'expanded' && 'panel-inner-start',
           panels.state !== 'collapsed' && !panels.isInspectorReady && 'invisible',
         )}
@@ -152,6 +153,10 @@ function InspectorSplitPanels({
   toggleSlotRef: RefObject<HTMLDivElement | null>
   workspace: ReactNode
 }) {
+  const workspaceRegionRef = useRef<HTMLElement>(null)
+  useLayoutEffect(() => {
+    workspaceRegionRef.current?.setAttribute('tabindex', '0')
+  }, [])
   return (
     <div
       data-component="InspectorSplit"
@@ -167,12 +172,15 @@ function InspectorSplitPanels({
         <ResizablePanel
           className={panels.state === 'collapsed' ? undefined : 'panel-inner-end'}
           id={`${id}-workspace`}
+          tabIndex={0}
           panelRef={panels.workspacePanel}
           collapsible
           collapsedSize={0}
           minSize={readCssSize(sizes.workspaceMin)}
         >
-          {workspace}
+          <section ref={workspaceRegionRef} aria-label={noun} className="h-full min-h-0">
+            {workspace}
+          </section>
         </ResizablePanel>
         <ResizableHandle
           className={

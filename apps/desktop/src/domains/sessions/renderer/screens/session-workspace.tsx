@@ -71,13 +71,9 @@ function ComposerSection({
     const card = section.querySelector<HTMLElement>('[data-component="ComposerCard"]')
     const measure = () => {
       const sectionBounds = section.getBoundingClientRect()
-      const cardBounds = card?.getBoundingClientRect() ?? sectionBounds
       body.style.setProperty('--session-composer-height', `${sectionBounds.height}px`)
-      section.style.setProperty(
-        '--session-composer-fade-start',
-        `${cardBounds.top - sectionBounds.top + cardBounds.height / 2}px`,
-      )
-      section.style.setProperty('--session-composer-fade-length', `${cardBounds.height / 2}px`)
+      section.style.setProperty('--session-composer-fade-start', `${sectionBounds.height / 2}px`)
+      section.style.setProperty('--session-composer-fade-length', `${sectionBounds.height / 2}px`)
     }
     const observer = new ResizeObserver(measure)
     observer.observe(section)

@@ -39,7 +39,7 @@ function ComposerPlaceholder() {
   return (
     <span
       aria-hidden="true"
-      className="pointer-events-none absolute top-0 left-0 px-(--spacing-shell-inset) py-(--spacing-shell-gutter) type-prose text-muted-foreground"
+      className="pointer-events-none absolute top-0 left-0 px-(--spacing-shell-inset) py-(--spacing-shell-gutter) type-prose text-foreground"
     >
       {t('composer.placeholder')}
     </span>

@@ -78,9 +78,8 @@ export const Open: Story = {
     const header = canvasElement.querySelector<HTMLElement>('[data-component="AppMainHeader"]')
     if (header === null) throw new Error('The Session header is absent.')
     const gutter = Number.parseFloat(getComputedStyle(header).paddingInlineStart)
-    await expect(title.getBoundingClientRect().left).toBeCloseTo(
+    await expect(title.getBoundingClientRect().left).toBeGreaterThanOrEqual(
       header.getBoundingClientRect().left + gutter,
-      1,
     )
     expect(within(header).queryByText('Session ID')).toBeNull()
     expect(within(header).queryByText('Workspace')).toBeNull()

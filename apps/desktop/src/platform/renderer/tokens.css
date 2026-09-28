@@ -452,7 +452,7 @@
   --accent-foreground: #e7e9ed;
   /* Lightened from shadcn's default 0.704: that clears --card but not a destructive/80 label at
      80% opacity over --popover, failing 4.5:1. */
-  --destructive: oklch(0.728 0.191 22.216);
+  --destructive: oklch(0.85 0.14 22.216);
   --success: oklch(0.765 0.177 151.328);
   --diff-added: oklch(0.765 0.177 163.223);
   --border: oklch(1 0 0 / 8%);

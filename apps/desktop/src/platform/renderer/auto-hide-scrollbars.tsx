@@ -32,6 +32,12 @@ export function AutoHideScrollbars({ children }: { children: ReactNode }) {
     const onScroll = (event: Event) => {
       const target = event.target === document ? document.scrollingElement : event.target
       if (!(target instanceof HTMLElement)) return
+      if (
+        target !== document.documentElement &&
+        target !== document.body &&
+        !target.hasAttribute('tabindex')
+      )
+        target.tabIndex = 0
       reveal(target)
       const scrollArea = target.closest<HTMLElement>('[data-slot="scroll-area"]')
       if (scrollArea && scrollArea !== target) reveal(scrollArea)

@@ -4,6 +4,7 @@ import {
   type ReactNode,
   type RefObject,
   useContext,
+  useEffect,
   useRef,
   useState,
 } from 'react'
@@ -92,7 +93,7 @@ export function AppPageHeader({ children }: { children?: ReactNode }) {
           </div>
         </div>
       ) : null}
-      <div className="no-drag-region flex min-w-0 flex-1 items-center pl-(--spacing-shell-icon)">
+      <div className="no-drag-region flex min-w-0 flex-1 items-center pl-[calc(var(--spacing-shell-icon)+var(--spacing-shell-tight))]">
         {children}
       </div>
     </header>
@@ -121,7 +122,12 @@ export function AppShell({ rail, sidebar, leftHeader, footer, children }: AppShe
   const sizes = panelSizes()
   const sidebarPanelRef = usePanelRef()
   const sidebarToggleRef = useRef<HTMLButtonElement>(null)
+  const sidebarRegionRef = useRef<HTMLElement>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+
+  useEffect(() => {
+    sidebarRegionRef.current?.setAttribute('tabindex', '0')
+  }, [])
 
   const toggleSidebar = () => {
     if (sidebarCollapsed) {
@@ -155,7 +161,7 @@ export function AppShell({ rail, sidebar, leftHeader, footer, children }: AppShe
                 minSize={sizes.sidebarMinimum}
                 panelRef={sidebarPanelRef}
               >
-                <aside className="panel-frame panel-outer-start">
+                <section ref={sidebarRegionRef} className="panel-frame panel-outer-start">
                   <header className="panel-header drag-region gap-(--spacing-shell-tight) px-(--spacing-shell-gutter)">
                     <div
                       className="panel-control-motion"
@@ -175,7 +181,7 @@ export function AppShell({ rail, sidebar, leftHeader, footer, children }: AppShe
                     <div className="no-drag-region ml-auto min-w-0">{leftHeader}</div>
                   </header>
                   <div className="panel-body">{sidebar}</div>
-                </aside>
+                </section>
               </ResizablePanel>
               <ResizableHandle
                 className={sidebarCollapsed ? 'w-0 bg-transparent' : 'panel-divider bg-transparent'}
