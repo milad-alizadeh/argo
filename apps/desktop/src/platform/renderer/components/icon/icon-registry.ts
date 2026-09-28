@@ -35,7 +35,6 @@ import {
   FolderIcon,
   FolderPlusIcon,
   FolderSimpleIcon,
-  FolderSimpleStarIcon,
   GaugeIcon,
   GearSixIcon,
   GitBranchIcon,
@@ -238,7 +237,7 @@ export const ICONS = {
 
   // A Project's own workspace, and the worktree a Session runs its branch in.
   workspace: SquaresFourIcon,
-  worktree: FolderSimpleStarIcon,
+  worktree: GitBranchIcon,
 
   // A linked pull request's own state (CONTEXT.md L4 · Delivery).
   'pull-request-open': GitPullRequestIcon,

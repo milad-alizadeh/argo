@@ -62,14 +62,48 @@ export const WorkspacePicker: Story = {
     await userEvent.click(trigger)
     const list = await page().findByRole('listbox')
     await waitFor(() => expect(within(list).getByText('New worktree')).toBeVisible())
-    await expect(within(list).getByText('Main checkout')).toBeVisible()
+    await expect(within(list).getByText('main')).toBeVisible()
     await expect(within(list).getByText('linked-feature')).toBeVisible()
+    for (const name of ['New worktree', 'main', 'linked-feature']) {
+      await expect(
+        within(list).getByRole('option', { name }).querySelector('[data-icon]'),
+      ).toHaveAttribute('data-icon', 'worktree')
+    }
 
     await userEvent.click(within(list).getByText('linked-feature'))
     await waitFor(() => expect(page().queryByRole('listbox')).toBeNull())
     await expect(
       canvas.getByRole('button', { name: 'Work location: linked-feature' }),
     ).toBeVisible()
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Work location: linked-feature' }))
+    const reopened = await page().findByRole('listbox')
+    await expect(within(reopened).getByRole('option', { name: 'linked-feature' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+    await expect(within(reopened).getByRole('option', { name: 'New worktree' })).toHaveAttribute(
+      'aria-selected',
+      'false',
+    )
+  },
+}
+
+export const MainCheckout: Story = {
+  args: { initialChoice: 'workspace-main' },
+  play: async ({ canvasElement }) => {
+    const trigger = within(canvasElement).getByRole('button', { name: 'Work location: main' })
+    await expect(trigger).toBeVisible()
+    await expect(trigger.querySelector('[data-icon]')).toHaveAttribute('data-icon', 'worktree')
+  },
+}
+
+export const NoMatches: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Work location: New worktree' }))
+    await userEvent.type(page().getByPlaceholderText('Search worktrees'), 'none')
+    await expect(page().getByRole('option', { name: 'No worktrees found' })).toBeVisible()
   },
 }
 

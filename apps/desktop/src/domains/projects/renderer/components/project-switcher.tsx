@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router'
 import { REGISTER_PROJECT_COMMAND } from '@/platform/contract/commands'
 import { useCommands } from '@/platform/renderer/cockpit/hooks/use-commands'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import { Button } from '@/platform/renderer/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,8 +11,8 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
+import { MenuDropdownTrigger } from '@/platform/renderer/components/ui/dropdown-trigger'
 import { useProjects } from '../hooks/use-projects'
 import { ProjectSettingsDialog } from './project-settings-dialog'
 
@@ -30,21 +29,14 @@ export function ProjectSwitcher() {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger
+        <MenuDropdownTrigger
+          aria-label={t('switcher.current', { name: projectName })}
+          className="max-w-48 gap-(--spacing-shell-tight) border-0 pl-2 pr-(--spacing-shell-icon) type-body"
           disabled={cockpit.busy}
-          render={
-            <Button
-              aria-label={t('switcher.current', { name: projectName })}
-              variant="ghost"
-              size="sm"
-              className="min-w-0 max-w-48 gap-(--spacing-shell-tight) border-0 pl-2 pr-(--spacing-shell-icon) type-body"
-            />
-          }
-        >
-          <Icon name="folder" />
-          <span className="truncate font-medium">{projectName}</span>
-          <Icon name="chevron-down" className="text-muted-foreground" />
-        </DropdownMenuTrigger>
+          icon="folder"
+          label={projectName}
+          variant="ghost"
+        />
         <DropdownMenuContent align="end" className="w-64">
           <DropdownMenuGroup>
             <DropdownMenuLabel>{t('switcher.switchLabel')}</DropdownMenuLabel>
