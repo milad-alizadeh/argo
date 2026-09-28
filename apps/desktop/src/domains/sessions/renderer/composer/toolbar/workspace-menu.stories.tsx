@@ -61,9 +61,14 @@ export const WorkspacePicker: Story = {
 
     await userEvent.click(trigger)
     const list = await page().findByRole('listbox')
+    const search = page().getByPlaceholderText('Search worktrees')
+    await expect(search).toHaveValue('')
     await waitFor(() => expect(within(list).getByText('New worktree')).toBeVisible())
     await expect(within(list).getByText('main')).toBeVisible()
     await expect(within(list).getByText('linked-feature')).toBeVisible()
+    await userEvent.type(search, 'main')
+    await expect(within(list).getByText('main')).toBeVisible()
+    await userEvent.clear(search)
     for (const name of ['New worktree', 'main', 'linked-feature']) {
       await expect(
         within(list).getByRole('option', { name }).querySelector('[data-icon]'),

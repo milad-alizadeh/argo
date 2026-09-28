@@ -117,10 +117,11 @@ function useSessionComposerDraft(input: {
   harness: HarnessControl
   cockpit: Cockpit
   workspaceCockpit: WorkspaceCockpit
+  workspaceActions: WorkspaceActions
   choices: Parameters<typeof useDurableComposerDraft>[0]['choices']
   opening: TurnConfiguration | null
 }) {
-  const { identity, harness, cockpit, workspaceCockpit, choices, opening } = input
+  const { identity, harness, cockpit, workspaceCockpit, workspaceActions, choices, opening } = input
   const target = draftTarget({
     identity,
     harness,
@@ -145,8 +146,18 @@ function useSessionComposerDraft(input: {
       harness.onChange?.(loadedTarget.harness)
       return
     }
+    const savedChoice = loadedTarget.workspaceId ?? 'new'
+    if (workspaceCockpit.choice !== savedChoice) workspaceActions.selectWorkspace(savedChoice)
     setRestoredProjectId(projectId)
-  }, [harness.harness, harness.onChange, loadedTarget, projectId, restoredProjectId])
+  }, [
+    harness.harness,
+    harness.onChange,
+    loadedTarget,
+    projectId,
+    restoredProjectId,
+    workspaceActions,
+    workspaceCockpit.choice,
+  ])
   return { draft, targetRestored }
 }
 
@@ -248,6 +259,7 @@ export function SessionComposerArea({
     harness,
     cockpit,
     workspaceCockpit,
+    workspaceActions,
     choices,
     opening: initialTurnConfiguration,
   })

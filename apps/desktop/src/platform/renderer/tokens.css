@@ -347,9 +347,9 @@
   /* Darkened from shadcn's default 0.556: that clears --background but not --selected (#e4e4e4),
      failing 4.5:1 for muted text on a selected row. */
   --muted-foreground: oklch(0.508 0 0);
-  /* The selected row or rail item: a step past the hover ground, so the two never read alike. */
+  /* Selected rows and menu hover share this ground. */
   --selected: oklch(0.92 0 0);
-  --accent: oklch(0.97 0 0);
+  --accent: var(--selected);
   --accent-foreground: oklch(0.205 0 0);
   /* Darkened from shadcn's default 0.577: that clears solid grounds but not the /10-/20 tinted
      fills badges and buttons use behind destructive text, nor an alert description's own
@@ -438,7 +438,7 @@
   --muted: #2b2e33;
   --muted-foreground: #a5a9b0;
   --selected: #34373c;
-  --accent: #41454b;
+  --accent: var(--selected);
   --accent-foreground: #e7e9ed;
   /* Lightened from shadcn's default 0.704: that clears --card but not a destructive/80 label at
      80% opacity over --popover, failing 4.5:1. */

@@ -128,7 +128,7 @@ export function WorkspaceMenu({
       <Popover open={open} onOpenChange={setOpen}>
         <SearchableDropdownTrigger
           aria-label={t('composer.workspace.chooseLabel', { workspace: label })}
-          className="max-w-full rounded-full type-control"
+          className="max-w-full rounded-full border-border bg-(--color-session-composer) backdrop-blur-(--blur-session-composer) type-control dark:border-border dark:bg-(--color-session-composer)"
           icon="worktree"
           label={label}
           type="button"
