@@ -1,16 +1,7 @@
-import { z } from 'zod'
+import type { SDKMessage } from '@anthropic-ai/claude-agent-sdk'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 
-const streamEventSchema = z.object({ event: z.unknown() })
-const textDeltaSchema = z.object({
-  type: z.literal('content_block_delta'),
-  index: z.number().int().nonnegative(),
-  delta: z.object({ type: z.literal('text_delta'), text: z.string() }),
-})
-const messageStartSchema = z.object({
-  type: z.literal('message_start'),
-  message: z.object({ id: z.string().min(1) }),
-})
+type PartialMessage = Extract<SDKMessage, { type: 'stream_event' }>
 
 export class ClaudeLiveText {
   private readonly blocks = new Map<string, string>()
@@ -23,19 +14,20 @@ export class ClaudeLiveText {
       if (key.startsWith(`${messageId}:`)) this.blocks.delete(key)
   }
 
-  append(message: unknown): FeedContent | null {
-    const envelope = streamEventSchema.safeParse(message)
-    if (!envelope.success) return null
-    const start = messageStartSchema.safeParse(envelope.data.event)
-    if (start.success) {
-      this.activeMessageId = start.data.message.id
+  append(message: PartialMessage): FeedContent | null {
+    const event = message.event
+    if (event.type === 'message_start') {
+      this.activeMessageId = event.message.id
       return null
     }
-    const event = textDeltaSchema.safeParse(envelope.data.event)
-    if (!event.success || this.activeMessageId === null) return null
-    const id =
-      event.data.index === 0 ? this.activeMessageId : `${this.activeMessageId}:${event.data.index}`
-    const text = `${this.blocks.get(id) ?? ''}${event.data.delta.text}`
+    if (
+      event.type !== 'content_block_delta' ||
+      event.delta.type !== 'text_delta' ||
+      this.activeMessageId === null
+    )
+      return null
+    const id = event.index === 0 ? this.activeMessageId : `${this.activeMessageId}:${event.index}`
+    const text = `${this.blocks.get(id) ?? ''}${event.delta.text}`
     this.blocks.set(id, text)
     if (this.blocks.size > 500) this.blocks.delete(this.blocks.keys().next().value ?? id)
     return { id, kind: 'message', role: 'assistant', text }

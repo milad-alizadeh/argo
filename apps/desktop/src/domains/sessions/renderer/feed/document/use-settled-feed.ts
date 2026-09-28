@@ -19,8 +19,7 @@ type SettledFeedOptions = {
   rows: readonly SessionFeedRow[]
 }
 
-// Virtual rows are available as soon as the Session Feed arrives. TanStack measures only mounted
-// rows and corrects its estimate while keeping the end anchor stable.
+// The Feed receives the full reading here; AnchoredFeed measures it before opening the virtual list.
 export function useSettledFeed({ sessionId, revision, rows }: SettledFeedOptions) {
   const column = useRef<HTMLDivElement>(null)
   const settled =

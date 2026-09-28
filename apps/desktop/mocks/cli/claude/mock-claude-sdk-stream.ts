@@ -70,31 +70,56 @@ export function startMockClaudeSdkStream(
     )
     return new Promise((resolve) => pendingPermissions.set(requestId, resolve))
   }
+  const handleLine = (line: string) => {
+    const input = JSON.parse(line)
+    const initializationId = initializationRequestId(input)
+    if (initializationId !== null) {
+      process.stdout.write(
+        `${JSON.stringify({ type: 'control_response', response: { subtype: 'success', request_id: initializationId, response: { models: MODELS } } })}\n`,
+      )
+      return
+    }
+    const permissionId = permissionResponseId(input)
+    if (permissionId !== null) {
+      pendingPermissions.get(permissionId)?.()
+      pendingPermissions.delete(permissionId)
+      return
+    }
+    const text = promptText(input)
+    if (text === null) return
+    if (text.includes('FeedActivityProbe')) writeActivity(sessionId)
+    void reply(text, waitForPermission).then((response) =>
+      setTimeout(() => writeReply(sessionId, response), INITIALIZATION_DELAY_MS),
+    )
+  }
   process.stdin.on('data', (chunk: string) => {
     pending += chunk
-    for (const line of pending.split('\n').slice(0, -1)) {
-      const input = JSON.parse(line)
-      const initializationId = initializationRequestId(input)
-      if (initializationId !== null) {
-        process.stdout.write(
-          `${JSON.stringify({ type: 'control_response', response: { subtype: 'success', request_id: initializationId, response: { models: MODELS } } })}\n`,
-        )
-        continue
-      }
-      const permissionId = permissionResponseId(input)
-      if (permissionId !== null) {
-        pendingPermissions.get(permissionId)?.()
-        pendingPermissions.delete(permissionId)
-        continue
-      }
-      const text = promptText(input)
-      if (text === null) continue
-      void reply(text, waitForPermission).then((response) =>
-        setTimeout(() => writeReply(sessionId, response), INITIALIZATION_DELAY_MS),
-      )
-    }
+    for (const line of pending.split('\n').slice(0, -1)) handleLine(line)
     pending = pending.includes('\n') ? pending.slice(pending.lastIndexOf('\n') + 1) : pending
   })
+}
+
+function writeActivity(sessionId: string) {
+  const toolUseId = randomUUID()
+  const message = (content: Record<string, unknown>) =>
+    process.stdout.write(
+      `${JSON.stringify({ type: 'assistant', session_id: sessionId, uuid: randomUUID(), parent_tool_use_id: null, message: { id: randomUUID(), type: 'message', role: 'assistant', model: 'claude-opus-4-6', content: [content], stop_reason: null, stop_sequence: null, usage: { input_tokens: 0, output_tokens: 0 } } })}\n`,
+    )
+  setTimeout(() => {
+    process.stdout.write(
+      `${JSON.stringify({ type: 'tool_progress', session_id: sessionId, uuid: randomUUID(), tool_use_id: toolUseId, tool_name: 'Bash', parent_tool_use_id: null, elapsed_time_seconds: 0 })}\n`,
+    )
+    message({
+      type: 'tool_use',
+      id: toolUseId,
+      name: 'Bash',
+      input: { command: 'bun test', description: 'Check the Feed' },
+    })
+  }, 1_200)
+  setTimeout(
+    () => message({ type: 'thinking', thinking: 'Inspecting the results', signature: 'mock' }),
+    2_400,
+  )
 }
 
 function writeInitialization(sessionId: string) {

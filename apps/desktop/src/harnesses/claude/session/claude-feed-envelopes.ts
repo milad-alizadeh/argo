@@ -1,7 +1,15 @@
-import { z } from 'zod'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 
 export type RejectClaudeShape = (shape: string) => void
+
+const delegationStatuses = {
+  pending: 'pending',
+  running: 'running',
+  paused: 'paused',
+  completed: 'completed',
+  failed: 'failed',
+  interrupted: 'interrupted',
+} as const satisfies Record<string, Extract<FeedContent, { kind: 'delegation' }>['status']>
 
 function field(value: string, name: string): string | null {
   return value.match(new RegExp(`<${name}>([\\s\\S]*?)</${name}>`))?.[1] ?? null
@@ -79,10 +87,7 @@ function delegation(id: string, value: string, reject: RejectClaudeShape): FeedC
       detail: 'Missing agent identity or status.',
     }
   }
-  const status = z
-    .enum(['pending', 'running', 'paused', 'completed', 'failed', 'interrupted'])
-    .safeParse(rawStatus)
-  if (!status.success) {
+  if (!Object.hasOwn(delegationStatuses, rawStatus)) {
     reject('realtime_delegation-status')
     return {
       id,
@@ -95,7 +100,7 @@ function delegation(id: string, value: string, reject: RejectClaudeShape): FeedC
     id,
     kind: 'delegation',
     agentId,
-    status: status.data,
+    status: delegationStatuses[rawStatus as keyof typeof delegationStatuses],
     name: null,
     prompt: field(value, 'input'),
     model: null,

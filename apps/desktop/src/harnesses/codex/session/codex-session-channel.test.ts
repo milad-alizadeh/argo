@@ -62,6 +62,8 @@ function sampleMessages(notify: (message: WireMessage) => unknown) {
         content: [
           { type: 'text', text: 'first' },
           { type: 'localImage', path: '/repo/image.png' },
+          { type: 'skill', name: 'review', path: '/repo/.agents/skills/review/SKILL.md' },
+          { type: 'audio', url: 'data:audio/wav;base64,AA==' },
         ],
       },
     },
@@ -323,6 +325,94 @@ test('Codex channel projects recorded app-server notifications', async () => {
   channel.close()
 })
 
+function sendProgressNotifications(notify: (message: WireMessage) => void) {
+  const item = (id: string, type: string, fields: Record<string, unknown>) => ({
+    threadId: 'thread-1',
+    turnId: 'turn-1',
+    item: { id, type, ...fields },
+  })
+  notify({
+    method: 'item/started',
+    params: item('progress-1', 'agentMessage', { phase: 'commentary' }),
+  })
+  notify({
+    method: 'item/agentMessage/delta',
+    params: {
+      threadId: 'thread-1',
+      turnId: 'turn-1',
+      itemId: 'progress-1',
+      delta: 'Reading files',
+    },
+  })
+  notify({
+    method: 'item/reasoning/summaryTextDelta',
+    params: {
+      threadId: 'thread-1',
+      turnId: 'turn-1',
+      itemId: 'reason-1',
+      summaryIndex: 0,
+      delta: 'Checking',
+    },
+  })
+  notify({
+    method: 'item/reasoning/summaryTextDelta',
+    params: {
+      threadId: 'thread-1',
+      turnId: 'turn-1',
+      itemId: 'reason-1',
+      summaryIndex: 0,
+      delta: ' the results',
+    },
+  })
+  notify({
+    method: 'item/completed',
+    params: item('reason-1', 'reasoning', {
+      summary: ['Checking the results'],
+    }),
+  })
+  notify({
+    method: 'item/completed',
+    params: item('answer-1', 'agentMessage', {
+      text: 'Done',
+      phase: 'final_answer',
+    }),
+  })
+}
+
+const startedThreadRequest = (async (
+  method: string,
+  _params: unknown,
+  parse: (value: unknown) => unknown,
+) => {
+  if (method === 'thread/start') return parse({ thread: { id: 'thread-1' } })
+  if (method === 'turn/start') return parse({ turn: { id: 'turn-1' } })
+  throw new Error(`Unexpected request: ${method}`)
+}) as CodexRequest
+
+test('Codex live commentary and reasoning stay separate from the final answer', async () => {
+  const request = startedThreadRequest
+  const { channel, events, notify } = testChannel(request)
+  await new Promise((resolve) => setImmediate(resolve))
+  sendProgressNotifications(notify)
+  const content = events.flatMap((event) =>
+    event.type === 'feed' && event.body.type === 'content' ? [event.body.content] : [],
+  )
+  assert.deepEqual(content, [
+    {
+      kind: 'message',
+      id: 'progress-1',
+      role: 'assistant',
+      text: 'Reading files',
+      phase: 'commentary',
+    },
+    { kind: 'reasoning', id: 'reason-1', text: 'Checking', redacted: false },
+    { kind: 'reasoning', id: 'reason-1', text: 'Checking the results', redacted: false },
+    { kind: 'reasoning', id: 'reason-1', text: 'Checking the results', redacted: false },
+    { kind: 'message', id: 'answer-1', role: 'assistant', text: 'Done', phase: 'final_answer' },
+  ])
+  channel.close()
+})
+
 test('a Turn notification establishes vendor delivery before the request response', async () => {
   let rejectTurn: ((error: Error) => void) | undefined
   const request = (async (method: string, _params: unknown, parse: (value: unknown) => unknown) => {
@@ -378,22 +468,27 @@ test('unknown Codex item shapes are reported and counted', async () => {
         item: { id: 'message-1', type: 'agentMessage' },
       },
     })
+    notify({
+      method: 'item/completed',
+      params: {
+        threadId: 'thread-1',
+        turnId: 'turn-1',
+        item: { id: 'image-1', type: 'imageGeneration', status: 'futureStatus' },
+      },
+    })
   } finally {
     console.warn = originalWarn
     channel.close()
   }
   assert.deepEqual(warnings, [
     'Rejected 1 unsupported Codex live notification(s): item/completed: futureItem',
-    'Rejected 2 unsupported Codex live notification(s): item/completed: missing agentMessage content',
+    'Rejected 2 unsupported Codex live notification(s): item/completed',
+    'Rejected 3 unsupported Codex live notification(s): item/completed: imageGeneration',
   ])
 })
 
 test('Codex channel streams Subagent activity as delegation content', async () => {
-  const request = (async (method: string, _params: unknown, parse: (value: unknown) => unknown) => {
-    if (method === 'thread/start') return parse({ thread: { id: 'thread-1' } })
-    if (method === 'turn/start') return parse({ turn: { id: 'turn-1' } })
-    throw new Error(`Unexpected request: ${method}`)
-  }) as CodexRequest
+  const request = startedThreadRequest
   const { channel, events, notify } = testChannel(request)
   await new Promise((resolve) => setImmediate(resolve))
   for (const [id, kind] of [

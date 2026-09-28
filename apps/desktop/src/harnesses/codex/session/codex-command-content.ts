@@ -1,42 +1,22 @@
-import { z } from 'zod'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
+import type { CommandExecutionStatus } from '../app-server/protocol-generated/v2/command-execution-status'
+import type { ThreadItem } from '../app-server/protocol-generated/v2/thread-item'
 
-const commandSchema = z.object({
-  id: z.string().min(1),
-  type: z.literal('commandExecution'),
-  command: z.string().nullable().optional(),
-  cwd: z.string().nullable().optional(),
-  status: z.enum(['inProgress', 'completed', 'failed', 'interrupted', 'declined']).optional(),
-  aggregatedOutput: z.string().nullable().optional(),
-  exitCode: z.number().int().nullable().optional(),
-})
+const commandStatuses = {
+  inProgress: 'running',
+  completed: 'completed',
+  failed: 'failed',
+  declined: 'failed',
+} as const satisfies Record<
+  CommandExecutionStatus,
+  Extract<FeedContent, { kind: 'command' }>['status']
+>
 
 export function codexCommandContent(
-  raw: unknown,
+  item: Extract<ThreadItem, { type: 'commandExecution' }>,
   phase: 'started' | 'completed',
-): FeedContent | null {
-  const parsed = commandSchema.safeParse(raw)
-  if (!parsed.success) return null
-  const item = parsed.data
-  let status: Extract<FeedContent, { kind: 'command' }>['status']
-  switch (phase === 'started' ? 'inProgress' : item.status) {
-    case 'inProgress':
-      status = 'running'
-      break
-    case 'completed':
-      status = 'completed'
-      break
-    case 'failed':
-    case 'declined':
-      status = 'failed'
-      break
-    case 'interrupted':
-      status = 'interrupted'
-      break
-    case undefined:
-      status = 'completed'
-      break
-  }
+): Extract<FeedContent, { kind: 'command' }> {
+  const status = phase === 'started' ? 'running' : commandStatuses[item.status]
   return {
     kind: 'command',
     id: item.id,

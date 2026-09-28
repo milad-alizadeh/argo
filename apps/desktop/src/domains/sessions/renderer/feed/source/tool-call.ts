@@ -1,3 +1,4 @@
+import type { ToolPresentation } from '@/domains/sessions/api/feed-content'
 import type { Question } from '@/domains/sessions/api/questions'
 
 // Where a Tool Call stands (CONTEXT.md L3 · Tool Call). A call the person declines can be
@@ -41,6 +42,7 @@ export type OtherFacts = {
   label: string
   text: string | null
   source: { server: string; tool: string } | null
+  presentation?: ToolPresentation
 }
 
 // A question the agent put to the person, and the one typed fact both harnesses report for it.

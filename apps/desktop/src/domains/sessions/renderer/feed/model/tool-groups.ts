@@ -17,8 +17,8 @@ function groupFingerprint(value: string, seed: number) {
 }
 
 function toolGroupId(calls: ToolRow[]) {
-  const callIds = calls.map(({ id }) => id).join('\u001f')
-  return `tool-group:${groupFingerprint(callIds, 0x811c9dc5)}${groupFingerprint(callIds, 0x9e3779b9)}`
+  const firstCallId = calls[0]?.id ?? ''
+  return `tool-group:${groupFingerprint(firstCallId, 0x811c9dc5)}${groupFingerprint(firstCallId, 0x9e3779b9)}`
 }
 
 // One tool-kind record owns its icon, route, group wording, and group order.
@@ -92,9 +92,10 @@ export function groupedRowIndexes(
     const run: number[] = []
     let next = rows[index]
     while (
-      next?.shape === 'tool' &&
-      !standsAlone(next.kind) &&
-      (run.length === 0 || !breakBeforeIds.has(next.id))
+      next?.shape === 'thought' ||
+      (next?.shape === 'tool' &&
+        !standsAlone(next.kind) &&
+        (run.length === 0 || !breakBeforeIds.has(next.id)))
     ) {
       run.push(index++)
       next = rows[index]
@@ -111,7 +112,9 @@ function toolGroup(calls: ToolRow[]): SessionFeedRow {
 type ToolGroupRow = Extract<SessionFeedRow, { shape: 'tool-group' }>
 
 function foldableGroup(row: SessionFeedRow | undefined): ToolGroupRow | null {
-  return row?.shape === 'tool-group' && !row.calls.some((call) => standsAlone(call.kind))
+  return row?.shape === 'tool-group' &&
+    row.thoughts === undefined &&
+    !row.calls.some((call) => standsAlone(call.kind))
     ? row
     : null
 }
@@ -140,6 +143,18 @@ export function withHeadline(row: SessionFeedRow, headline: LiveActivity): Sessi
   return row.shape === 'tool-group' ? { ...row, headline } : row
 }
 
+function indexedToolGroup(rows: SessionFeedRow[], indexes: number[]): SessionFeedRow {
+  const calls: ToolRow[] = []
+  const thoughts: { id: string; text: string; afterCallIndex: number }[] = []
+  for (const index of indexes) {
+    const row = rows[index]
+    if (row?.shape === 'tool') calls.push(row)
+    if (row?.shape === 'thought')
+      thoughts.push({ id: row.id, text: row.text, afterCallIndex: calls.length - 1 })
+  }
+  return { ...toolGroup(calls), ...(thoughts.length === 0 ? {} : { thoughts }) }
+}
+
 export function groupToolRuns(
   rows: SessionFeedRow[],
   breakBeforeIds: ReadonlySet<string> = new Set(),
@@ -152,10 +167,7 @@ export function groupToolRuns(
       grouped.push(first)
       continue
     }
-    const calls = indexes
-      .map((index) => rows[index])
-      .filter((row): row is ToolRow => row?.shape === 'tool')
-    grouped.push(toolGroup(calls))
+    grouped.push(indexedToolGroup(rows, indexes))
   }
   return grouped
 }

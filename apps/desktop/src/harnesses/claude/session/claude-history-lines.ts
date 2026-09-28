@@ -1,61 +1,41 @@
 import path from 'node:path'
 import type { SessionMessage } from '@anthropic-ai/claude-agent-sdk'
-import { z } from 'zod'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type { HistoryChange, HistoryTurn } from '@/harnesses/registration'
 import { decodeClaudeHistoryContent } from './claude-feed-decoder'
 
-const chainedRecordSchema = z.looseObject({
-  type: z.string(),
-  uuid: z.string().min(1).optional(),
-  parentUuid: z.string().min(1).nullable().optional(),
-  logicalParentUuid: z.string().min(1).nullable().optional(),
-  isSidechain: z.boolean().optional(),
-})
-// The records `getSessionMessages` keeps, by the same test the Agent SDK applies to a transcript.
-const conversationRecordSchema = z.looseObject({
-  type: z.enum(['user', 'assistant']),
-  uuid: z.string().min(1),
-  message: z.unknown(),
-  isMeta: z.literal(true).optional(),
-  isSidechain: z.boolean().optional(),
-  teamName: z.string().optional(),
-})
-
-const turnRecordSchema = z.looseObject({
-  type: z.string(),
-  subtype: z.string().optional(),
-  isMeta: z.literal(true).optional(),
-  isSidechain: z.boolean().optional(),
-  message: z
-    .looseObject({
-      stop_reason: z.string().nullable().optional(),
-      content: z.union([z.string(), z.array(z.looseObject({ type: z.string() }))]).optional(),
-    })
-    .optional(),
-})
-const textBlockSchema = z.looseObject({ type: z.literal('text'), text: z.string() })
 const CLOSING_STOP_REASONS = new Set(['end_turn', 'stop_sequence'])
+
+function object(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null
+}
 
 function promptTexts(content: unknown): string[] | null {
   if (typeof content === 'string') return [content]
   if (!Array.isArray(content)) return null
   const texts = content.flatMap((block) => {
-    const text = textBlockSchema.safeParse(block)
-    return text.success ? [text.data.text] : []
+    const text = object(block)
+    return text?.type === 'text' && typeof text.text === 'string' ? [text.text] : []
   })
   return texts.length > 0 ? texts : null
 }
 
 // A person's prompt opens a turn; the final answer, the turn's duration line or an interruption closes it.
 export function claudeHistoryTurn(line: string): HistoryTurn | null {
-  const record = turnRecordSchema.safeParse(recordOf(line))
-  if (!record.success) return null
-  const { type, subtype, isMeta, isSidechain, message } = record.data
+  const record = recordOf(line)
+  if (record === null) return null
+  const { type, subtype, isMeta, isSidechain } = record
+  const message = object(record.message)
   if (isSidechain === true || isMeta === true) return null
   if (type === 'system') return subtype === 'turn_duration' ? 'closed' : null
   if (type === 'assistant')
-    return CLOSING_STOP_REASONS.has(message?.stop_reason ?? '') ? 'closed' : null
+    return CLOSING_STOP_REASONS.has(
+      typeof message?.stop_reason === 'string' ? message.stop_reason : '',
+    )
+      ? 'closed'
+      : null
   if (type !== 'user') return null
   const texts = promptTexts(message?.content)
   if (texts === null) return null
@@ -68,20 +48,24 @@ export function claudeHistoryOwner(relativePath: string): string | null {
   return path.basename(relativePath, '.jsonl').replace(/^agent-/, '')
 }
 
-function recordOf(line: string): unknown {
+function recordOf(line: string): Record<string, unknown> | null {
   try {
-    return JSON.parse(line)
+    const record = object(JSON.parse(line))
+    return typeof record?.type === 'string' ? record : null
   } catch {
-    return undefined
+    return null
   }
 }
 
-function contentEvents(value: unknown, reject: () => void): SessionLiveEventBody[] {
-  const record = conversationRecordSchema.safeParse(value)
-  if (!record.success) return []
-  const { isMeta, isSidechain, teamName, uuid } = record.data
+function contentEvents(
+  record: Record<string, unknown>,
+  reject: () => void,
+): SessionLiveEventBody[] {
+  if (record.type !== 'user' && record.type !== 'assistant') return []
+  const { isMeta, isSidechain, teamName, uuid } = record
+  if (typeof uuid !== 'string' || uuid === '') return []
   if (isMeta === true || isSidechain === true || teamName !== undefined) return []
-  const message = { ...record.data, session_id: '', parent_tool_use_id: null }
+  const message = { ...record, session_id: '', parent_tool_use_id: null }
   return decodeClaudeHistoryContent(message as SessionMessage, reject).map((content) => ({
     type: 'content',
     commandId: null,
@@ -93,25 +77,27 @@ function contentEvents(value: unknown, reject: () => void): SessionLiveEventBody
 
 type ChainStep = { leaf: string | null; branched: boolean; events: SessionLiveEventBody[] }
 
-type ChainRecord = z.infer<typeof chainedRecordSchema>
-
 // The chain's leaf after one record, and whether that record branched off an earlier one.
-function chainLink(leaf: string | null, record: ChainRecord): Omit<ChainStep, 'events'> | null {
+function chainLink(
+  leaf: string | null,
+  record: Record<string, unknown>,
+): Omit<ChainStep, 'events'> | null {
   const { uuid, parentUuid, logicalParentUuid, isSidechain } = record
-  if (uuid === undefined || isSidechain === true) return null
+  if (typeof uuid !== 'string' || uuid === '' || isSidechain === true) return null
+  const parent = typeof parentUuid === 'string' ? parentUuid : null
+  const logicalParent = typeof logicalParentUuid === 'string' ? logicalParentUuid : null
   // A compaction boundary starts a new root that names the old leaf as its logical parent.
-  return { leaf: uuid, branched: leaf !== null && (parentUuid ?? logicalParentUuid) !== leaf }
+  return { leaf: uuid, branched: leaf !== null && (parent ?? logicalParent) !== leaf }
 }
 
 // One transcript line against the chain's current leaf; a line that is not a record is rejected.
 function chainStep(leaf: string | null, line: string, reject: () => void): ChainStep {
   const value = recordOf(line)
-  const record = chainedRecordSchema.safeParse(value)
-  if (!record.success) {
+  if (value === null) {
     reject()
     return { leaf, branched: false, events: [] }
   }
-  const link = chainLink(leaf, record.data)
+  const link = chainLink(leaf, value)
   if (link === null) return { leaf, branched: false, events: [] }
   return { ...link, events: contentEvents(value, reject) }
 }
@@ -119,8 +105,8 @@ function chainStep(leaf: string | null, line: string, reject: () => void): Chain
 function leafOf(lines: readonly string[]): string | null {
   let leaf: string | null = null
   for (const line of lines) {
-    const record = chainedRecordSchema.safeParse(recordOf(line))
-    if (record.success) leaf = chainLink(leaf, record.data)?.leaf ?? leaf
+    const record = recordOf(line)
+    if (record !== null) leaf = chainLink(leaf, record)?.leaf ?? leaf
   }
   return leaf
 }

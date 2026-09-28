@@ -538,9 +538,17 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
           }
         >
       >(({ input, sendBack }) => {
+        let previousActivity = input.session.getSnapshot().context.activity.activity
         const subscription = input.session.on('feed', ({ body }) => {
-          const sessionId = input.session.getSnapshot().context.argoId
-          if (body.type === 'status' && sessionId !== null)
+          const snapshot = input.session.getSnapshot()
+          const sessionId = snapshot.context.argoId
+          const activity = snapshot.context.activity.activity
+          const activityChanged =
+            activity?.label !== previousActivity?.label ||
+            activity?.kind !== previousActivity?.kind ||
+            activity?.open !== previousActivity?.open
+          previousActivity = activity
+          if ((body.type === 'status' || activityChanged) && sessionId !== null)
             sendBack({
               type: 'Session status changed',
               sessionId,

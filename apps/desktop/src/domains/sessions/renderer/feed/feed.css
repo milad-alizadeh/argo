@@ -76,6 +76,15 @@
   overflow-anchor: none;
 }
 
+.feed__measurement {
+  position: absolute;
+  inset: 0;
+  padding-inline: var(--spacing-session-gutter);
+  scroll-padding-block: var(--spacing-snug);
+  content-visibility: hidden;
+  pointer-events: none;
+}
+
 .feed-row {
   padding: var(--spacing-tight) var(--spacing-wide);
   /* The body rung the Roster's titles are set in. */

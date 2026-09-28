@@ -364,6 +364,22 @@
       "unknown": "Unknown"
     },
     "liveFailure": { "label": "Session activity failed" },
+    "reasoning": { "label": "Reasoning unavailable" },
+    "media": {
+      "label": "Attachment",
+      "image": "Image unavailable",
+      "audio": "Audio",
+      "document": "Document"
+    },
+    "fileChange": { "label": "File change" },
+    "search": { "label": "Search" },
+    "plan": { "label": "Plan" },
+    "delegation": { "label": "Subagent" },
+    "task": { "label": "Task" },
+    "refusal": { "label": "Request declined" },
+    "imageGeneration": { "label": "Image generation" },
+    "wait": { "label": "Wait" },
+    "diagnostic": { "label": "Unsupported item" },
     "permission": { "label": "Permission needed" },
     "permissionGranted": { "label": "Permission granted" },
     "permissionDenied": { "label": "Permission denied" },
@@ -384,7 +400,9 @@
     "tokens": "{{amount}} tokens"
   },
   "workState": {
+    "pending": "Pending",
     "running": "Running",
+    "paused": "Paused",
     "done": "Done",
     "completed": "Completed",
     "failed": "Failed",

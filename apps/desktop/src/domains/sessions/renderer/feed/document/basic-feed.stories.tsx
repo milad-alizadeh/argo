@@ -2044,8 +2044,7 @@ const thinkingPrompt = {
   text: 'Add a single parent ticket.',
 } satisfies SessionFeedRow
 
-// Two reasoning records in a row, the way Codex writes them. The Feed never draws them as rows:
-// the newest is the Session's activity, the same fact the roster line reads.
+// Two reasoning records in a row, the way Codex writes them. Both remain in the Feed history.
 const thinkingFeed = {
   ...feed,
   sessionId: 'thinking',
@@ -2104,26 +2103,21 @@ function ThinkingFeed({ initialRunning = true }: { initialRunning?: boolean }) {
   )
 }
 
-// A thought is a status, not history: only the newest shows, only while the agent is still
-// thinking, and it leaves the Feed the moment the reply lands.
+// Reasoning remains in the Feed history while the current activity follows the live Turn.
 export const ThoughtWhileThinking: Story = {
   render: () => <ThinkingFeed />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await waitFor(() => {
-      expect(drawnRow(canvasElement, 'thinking:activity')).toHaveTextContent(
+      expect(drawnRow(canvasElement, 'thought-one')).toHaveTextContent(
+        'Planning parent and child ticket labeling',
+      )
+      expect(drawnRow(canvasElement, 'thought-two')).toHaveTextContent(
         'Designing issue creation order and labeling',
       )
-      expect(
-        drawnRow(canvasElement, 'thinking:activity')?.querySelector('.feed-work-shimmer'),
-      ).not.toBeNull()
     })
-    expect(drawnRow(canvasElement, 'thought-one')).toBeUndefined()
-    expect(drawnRow(canvasElement, 'thought-two')).toBeUndefined()
-    // The shimmering thought already says the agent is working; the marker does not say it twice.
-    expect(canvas.queryByRole('status', { name: 'Working' })).toBeNull()
-    // Prose delivered mid-Turn lands above the thought, which stays the tail as Codex keeps its
-    // headline, until the Turn ends or a newer thought replaces it.
+    expect(drawnRow(canvasElement, 'thinking:activity')).toBeUndefined()
+    // Prose delivered mid-Turn lands above the live headline until the Turn ends.
     await userEvent.click(canvas.getByRole('button', { name: 'Deliver reply' }))
     await waitFor(() => {
       expect(drawnRow(canvasElement, 'thinking-reply')).toHaveTextContent('One parent issue, then.')
@@ -2134,23 +2128,26 @@ export const ThoughtWhileThinking: Story = {
 }
 
 // Codex can write its reasoning summary before Argo receives the matching running report. The
-// available headline must not disappear during that short status gap.
+// reasoning history remains visible during that short status gap.
 export const ThoughtWhileStatusIsUnknown: Story = {
   render: () => <ThinkingFeed initialRunning={false} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await waitFor(() =>
-      expect(drawnRow(canvasElement, 'thinking:activity')).toHaveTextContent(
+    await waitFor(() => {
+      expect(drawnRow(canvasElement, 'thought-two')).toHaveTextContent(
         'Designing issue creation order and labeling',
-      ),
-    )
+      )
+    })
+    expect(drawnRow(canvasElement, 'thinking:activity')).toBeUndefined()
     await userEvent.click(canvas.getByRole('button', { name: 'Deliver reply' }))
-    await waitFor(() => expect(drawnRow(canvasElement, 'thinking:activity')).toBeUndefined())
+    await waitFor(() => expect(drawnRow(canvasElement, 'thinking-reply')).toBeDefined())
+    expect(drawnRow(canvasElement, 'thought-two')).toBeDefined()
+    expect(drawnRow(canvasElement, 'thinking:activity')).toBeUndefined()
   },
 }
 
 // External Sessions cannot always prove a live Turn, but their Feed and Roster still name the
-// same newest observed activity. The Feed must not replace it with a grouped command summary.
+// same newest observed activity, followed by the grouped command count.
 export const CommandActivityWhileStatusIsUnknown: Story = {
   args: {
     feed: {
@@ -2194,22 +2191,27 @@ export const CommandActivityWhileStatusIsUnknown: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('button', { name: 'Ran rtk gh issue create' })).toBeVisible()
-    await expect(canvas.queryByText('Ran 7 commands')).toBeNull()
+    await expect(
+      canvas.getByRole('button', { name: 'Ran rtk gh issue create · Ran 7 commands' }),
+    ).toBeVisible()
   },
 }
 
-// The Turn can end on a thought, as an interrupted one does; a thought never outlives its Turn.
+// The live thought leaves when the Turn ends, while reasoning remains in the Feed history.
 export const ThoughtLeavesWithItsTurn: Story = {
   render: () => <ThinkingFeed />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await waitFor(() => expect(drawnRow(canvasElement, 'thinking:activity')).toBeDefined())
+    await waitFor(() => expect(drawnRow(canvasElement, 'thought-two')).toBeDefined())
     await userEvent.click(canvas.getByRole('button', { name: 'Deliver reply' }))
-    await waitFor(() => expect(drawnRow(canvasElement, 'thinking-reply')).toBeDefined())
+    await waitFor(() => {
+      expect(drawnRow(canvasElement, 'thinking-reply')).toBeDefined()
+      expect(drawnRow(canvasElement, 'thinking:activity')).toBeDefined()
+    })
     await userEvent.click(canvas.getByRole('button', { name: 'Complete turn' }))
     await waitFor(() => expect(drawnRow(canvasElement, 'thinking:activity')).toBeUndefined())
     expect(drawnRow(canvasElement, 'thinking-prompt')).toBeDefined()
+    expect(drawnRow(canvasElement, 'thought-two')).toBeDefined()
   },
 }
 
@@ -2358,6 +2360,16 @@ export const FullHistoryRefresh: Story = {
     const canvas = within(canvasElement)
     const history = await canvas.findByLabelText('Session history')
     await waitFor(() => expect(history.scrollTop).toBeGreaterThan(0))
+    await waitForScrollToSettle(history)
+    const settledHeight = history.scrollHeight
+    for (let step = 0; step < 100; step += 1) {
+      const expected = Math.max(0, history.scrollTop - 200)
+      history.scrollTop = expected
+      fireEvent.scroll(history)
+      await new Promise(requestAnimationFrame)
+      expect(history.scrollHeight).toBeCloseTo(settledHeight, 1)
+      expect(history.scrollTop).toBeCloseTo(expected, 1)
+    }
     history.scrollTop = 0
     fireEvent.scroll(history)
     await canvas.findByText('Saved reply 0')
