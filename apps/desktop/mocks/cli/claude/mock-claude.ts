@@ -5,11 +5,8 @@ import { randomUUID } from 'node:crypto'
 import { appendFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import {
-  SESSION_CLAUDE_TRANSCRIPTS_ENV,
-  SESSION_MOCK_ADVERSARIAL_SEED_ENV,
-  SESSION_MOCK_REPLY_DELAY_MS_ENV,
-} from '@/harnesses/proof-protocol'
+import { SESSION_CLAUDE_TRANSCRIPTS_ENV } from '@/harnesses/claude/proof-protocol'
+import { readMockReplyDelayMs, SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harnesses/proof-protocol'
 import { type AdversarialTurn, adversarialTurn } from '../../sessions/adversarial-turns.ts'
 import { MOCK_CLAUDE_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
 import { createMockClaudeHooks } from './mock-claude-hooks.ts'
@@ -30,8 +27,7 @@ const TURN = new RegExp(`${ESCAPE}\\[200~([\\s\\S]*?)${ESCAPE}\\[201~[\\r\\n]`)
 // The real CLI's own slash command: it writes a `custom-title` record rather than answering as a
 // Turn, and Argo's `driver.rename` reads that record back with source `custom` (issue #2134).
 const RENAME = /^\/rename (.+)$/
-const replyDelay = Number(process.env[SESSION_MOCK_REPLY_DELAY_MS_ENV] ?? '0')
-const REPLY_DELAY_MS = Number.isFinite(replyDelay) && replyDelay > 0 ? replyDelay : 0
+const REPLY_DELAY_MS = readMockReplyDelayMs()
 // A fresh SDK session has to push its opening prompt before the SDK will even identify it
 // (mock-claude-sdk-stream.ts's own comment on that constraint), so this process can otherwise
 // record that prompt's reply before the app's own identify → authorize → paint round trip

@@ -6,6 +6,12 @@ import type { SessionLiveInput, SessionStartInput } from '../api/session-submit'
 import { liveSessionChannelActor } from './live-session-channel-actor'
 
 type DrivenSessionInput = SessionLiveInput
+type LiveSessionStatus = Extract<
+  SessionLiveEventBody,
+  {
+    type: 'status'
+  }
+>['status']
 
 export type QueuedLiveSessionCommand = Pick<
   SessionStartInput,
@@ -33,6 +39,7 @@ export const liveSessionMachine = xstateSetup({
       failure: string | null
       harnessReady: boolean
       feedSerial: number
+      status: LiveSessionStatus | null
     },
     events: {} as
       | {
@@ -141,6 +148,12 @@ export const liveSessionMachine = xstateSetup({
       feedSerial: ({ context, event }) =>
         event.type === 'Harness feed' ? event.serial : context.feedSerial,
     }),
+    rememberStatus: assign({
+      status: ({ context, event }) =>
+        event.type === 'Harness feed' && event.body.type === 'status'
+          ? event.body.status
+          : context.status,
+    }),
     rememberHarnessReady: assign({
       harnessReady: true,
     }),
@@ -187,6 +200,7 @@ export const liveSessionMachine = xstateSetup({
     failure: null,
     harnessReady: false,
     feedSerial: 0,
+    status: null,
   }),
   invoke: {
     id: 'harness',
@@ -346,6 +360,7 @@ export const liveSessionMachine = xstateSetup({
     'Harness feed': {
       actions: [
         'rememberFeedSerial',
+        'rememberStatus',
         emit(({ event }) => {
           if (event.type !== 'Harness feed') throw new Error('Expected a Harness Feed event.')
           return {

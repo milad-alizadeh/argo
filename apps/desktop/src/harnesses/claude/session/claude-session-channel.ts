@@ -13,6 +13,7 @@ import type {
   SessionStartInput,
 } from '@/domains/sessions/main/api/session-submit'
 import {
+  type HarnessRegistration,
   type LiveSessionChannel,
   type LiveSessionChannelEvent,
   type LiveSessionCommand,
@@ -100,18 +101,24 @@ export class ClaudeSessionChannel implements LiveSessionChannel {
   private input: ClaudeLiveInput
   private controls: LiveSessionControls | undefined
   private onEvent: (event: LiveSessionChannelEvent) => void
+  private executable: string | null
 
   constructor(
     input: ClaudeLiveInput,
-    controls: LiveSessionControls | undefined,
     onEvent: (event: LiveSessionChannelEvent) => void,
+    host: { controls: LiveSessionControls | undefined; executable: string | null },
   ) {
     this.input = input
+<<<<<<< HEAD
     this.projection = new ClaudeFeedProjection(
       claudeSkillFiles('resume' in input ? input.resume.cwd : input.cwd),
     )
     this.controls = controls
+=======
+    this.controls = host.controls
+>>>>>>> origin/main
     this.onEvent = onEvent
+    this.executable = host.executable
     this.activeCommandId = input.commandId
     void this.run()
     void this.submit(input)
@@ -272,7 +279,10 @@ export class ClaudeSessionChannel implements LiveSessionChannel {
             })
       this.session = query({
         prompt: this.messages(),
-        options: claudeQueryOptions(this.input, mode, canUseTool),
+        options: {
+          ...claudeQueryOptions(this.input, mode, canUseTool),
+          ...(this.executable === null ? {} : { pathToClaudeCodeExecutable: this.executable }),
+        },
       })
       await this.readResults(this.session)
     } catch (error) {
@@ -319,10 +329,9 @@ export class ClaudeSessionChannel implements LiveSessionChannel {
   }
 }
 
-export function openClaudeSessionChannel(
-  input: ClaudeLiveInput,
-  controls: LiveSessionControls | undefined,
-  onEvent: (event: LiveSessionChannelEvent) => void,
-): LiveSessionChannel {
-  return new ClaudeSessionChannel(input, controls, onEvent)
+export function claudeSessionChannelOpener(
+  executable: string | null,
+): NonNullable<HarnessRegistration<'claude'>['openLiveSession']> {
+  return (input, controls, onEvent) =>
+    new ClaudeSessionChannel(input, onEvent, { controls, executable })
 }

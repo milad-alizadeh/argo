@@ -9,11 +9,11 @@
 // so a test-fed `now()` still controls it without a real timer.
 import { type ActorRefFrom, createActor, waitFor } from 'xstate'
 import type {
-  Harness,
   HarnessReadiness,
   HarnessSignInSnapshot,
   HarnessSignInStatus,
 } from '@/domains/harness-signin/contract/contract'
+import type { Harness } from '@/harnesses/harness'
 import {
   createHarnessSignInMachine,
   type HarnessSignInDriver,

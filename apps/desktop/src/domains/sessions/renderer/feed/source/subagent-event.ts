@@ -19,7 +19,7 @@ export type SubagentEvent = SubagentFacts & {
   kind: 'subagent'
   uuid: string
   timestamp: string | null
-  // The call that spawned it for Claude, the thread id for Codex: what the child's own Feed is read by.
+  // The spawning call or the child thread, as the adapter names it: what the child's own Feed is read by.
   subagentId: string
 } & (
     | { event: 'started' | 'messaged' }

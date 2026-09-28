@@ -28,7 +28,10 @@ import {
   type SessionInteractionContext,
   sessionInteractionProcedures,
 } from '@/domains/sessions/main/api/session-interactions'
-import { sessionListProcedure } from '@/domains/sessions/main/api/session-list'
+import {
+  sessionListProcedure,
+  sessionStatusChangesProcedure,
+} from '@/domains/sessions/main/api/session-list'
 import {
   type SessionLiveEventsContext,
   sessionLiveEventsProcedure,
@@ -55,15 +58,21 @@ import {
   workspaceListProcedure,
 } from '@/domains/workspaces/main/api/workspace-list'
 import {
+  type AutoCompactLimitLookup,
+  autoCompactLimitReadProcedure,
+  autoCompactLimitWriteProcedure,
+} from './harness-catalog/auto-compact-limit'
+import {
   type CatalogActor,
   catalogReadProcedure,
   catalogRefreshProcedure,
-} from '@/harnesses/catalog/catalog-read'
+} from './harness-catalog/catalog-read'
 
 const t = initTRPC.create()
 
 export type AppRouterDependencies = {
   accounts: AccountProcedureContext
+  autoCompactLimit: AutoCompactLimitLookup
   catalog: CatalogActor
   harnessSignIn: HarnessSignInProcedureContext
   projects: ProjectRegisterContext & ProjectRelocateContext
@@ -71,7 +80,7 @@ export type AppRouterDependencies = {
     SessionFeedReadContext &
     SessionInteractionContext &
     SessionLiveEventsContext &
-    SessionRefreshContext & { sessionSyncStatus: SessionSyncStatusStore }
+    SessionRefreshContext & { sessionSyncStatus: readonly SessionSyncStatusStore[] }
   tickets: TicketRouterDependencies
   workspaces: WorkspaceListContext
 }
@@ -82,11 +91,14 @@ export function createAppRouter(dependencies: AppRouterDependencies) {
     ...harnessSignInProcedures(dependencies.harnessSignIn),
     harnessCatalogRead: catalogReadProcedure(dependencies.catalog),
     harnessCatalogRefresh: catalogRefreshProcedure(dependencies.catalog),
+    harnessAutoCompactLimitRead: autoCompactLimitReadProcedure(dependencies.autoCompactLimit),
+    harnessAutoCompactLimitWrite: autoCompactLimitWriteProcedure(dependencies.autoCompactLimit),
     composerDraftCreate: composerDraftCreateProcedure(dependencies.sessions.database),
     composerDraftRead: composerDraftReadProcedure(dependencies.sessions.database),
     composerDraftSave: composerDraftSaveProcedure(dependencies.sessions.database),
     sessionSubmit: sessionSubmitProcedure(dependencies.sessions),
     sessionList: sessionListProcedure(dependencies.sessions),
+    sessionStatusChanges: sessionStatusChangesProcedure(dependencies.sessions),
     sessionFeedRead: sessionFeedReadProcedure(dependencies.sessions),
     ...sessionInteractionProcedures(dependencies.sessions),
     sessionLiveEvents: sessionLiveEventsProcedure(dependencies.sessions),

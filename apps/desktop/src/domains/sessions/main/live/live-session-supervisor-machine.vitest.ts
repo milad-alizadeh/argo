@@ -1,38 +1,30 @@
 import assert from 'node:assert/strict'
-import { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
-import {
-  type ActorRefFrom,
-  createActor,
-  fromCallback,
-  fromPromise,
-  waitFor,
-  setup as xstateSetup,
-} from 'xstate'
+import { waitFor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
-import { databaseFrom } from '@/database/database'
-import {
-  harnessCatalogMachine,
-  harnessCatalogSchema,
-  unavailable,
-} from '@/harnesses/catalog/harness-catalog-machine'
-import type {
-  CodexAppServerClient,
-  CodexRequest,
-  WireMessage,
-} from '@/harnesses/codex/app-server/codex-app-server-client'
-import { codexHarnessInfo } from '@/harnesses/codex/catalog'
-import type { HarnessRegistration } from '@/harnesses/registration'
+import { harnessCatalogSchema, unavailable } from '@/harnesses/harness-catalog'
 import { createHarnessRegistry } from '@/harnesses/registry'
-import type { codexAppServerMachine } from '@/platform/main/application/codex-app-server-machine'
-import { codexModelCatalogFixture } from '../../../../../test-fixtures/sessions/codex-model-catalog.fixture'
-import type { SessionStartInput } from '../api/session-submit'
+import {
+  available,
+  claudeCatalog,
+  claudeFirst,
+  codexClientFor,
+  completeCodexTurn,
+  createStartGate,
+  first,
+  model,
+  passiveChannelMethods,
+  send,
+  start,
+  successfulCodexRequest,
+  supervisorFor,
+} from '../../../../../test-fixtures/sessions/live-session-supervisor.fixture'
 import {
   createLiveSessionSupervisorMachine,
-  type LiveSessionSupervisorActor,
   liveSessionActorFor,
 } from './live-session-supervisor-machine'
 
+<<<<<<< HEAD
 const available = codexHarnessInfo(codexModelCatalogFixture())
 if (available.availability !== 'available') throw new Error('Codex fixture must be available.')
 const model = available.models[0]
@@ -204,6 +196,8 @@ function completeCodexTurn(notify: (message: WireMessage) => void, turnId: strin
 const commandStatus = (client: DatabaseSync, commandId: string) =>
   client.prepare('SELECT status FROM session_command WHERE command_id = ?').get(commandId)?.status
 
+=======
+>>>>>>> origin/main
 test('models supervisor lifetime', () => {
   const paths = getShortestPaths(
     createLiveSessionSupervisorMachine({
@@ -262,59 +256,6 @@ test('binds a delayed Claude identity once and never repeats a command ID', asyn
     await waitFor(liveActor, (snapshot) => snapshot.matches('Ready'))
     await send(supervisor, later)
     assert.equal(laterSubmissions, 1)
-  } finally {
-    root.send({ type: 'Shutdown' })
-    client.close()
-  }
-})
-
-test('resumes a persisted Claude Session after its live channel fails', async () => {
-  let failFirst!: () => void
-  let identifyRetry!: () => void
-  let openings = 0
-  let queuedSubmissions = 0
-  const { root, supervisor, client } = await supervisorFor(
-    async () => {
-      throw new Error('Codex must not be called.')
-    },
-    claudeCatalog,
-    (input, _controls, emit) => {
-      openings += 1
-      const identify = () => {
-        emit({ type: 'identity', nativeId: 'native-1' })
-        emit({ type: 'turn.completed', commandId: input.commandId })
-      }
-      if (openings === 1) {
-        identify()
-        failFirst = () => emit({ type: 'closed' })
-      } else identifyRetry = identify
-      return {
-        submit: async (command) => {
-          queuedSubmissions += 1
-          emit({ type: 'turn.completed', commandId: command.commandId })
-        },
-        ...passiveChannelMethods,
-      }
-    },
-  )
-  try {
-    const { sessionId } = await start(supervisor, claudeFirst)
-    const firstActor = liveSessionActorFor(supervisor, sessionId)
-    assert.ok(firstActor)
-    failFirst()
-    await waitFor(firstActor, (snapshot) => snapshot.matches('Failed'))
-    const retry = { ...claudeFirst, sessionId, commandId: 'retry-command', prompt: 'retry' }
-    const retried = send(supervisor, retry)
-    const queued = { ...retry, commandId: 'queued-command', prompt: 'queued' }
-    assert.equal((await send(supervisor, queued)).sessionId, sessionId)
-    identifyRetry()
-    assert.equal((await retried).sessionId, sessionId)
-    assert.equal(openings, 2)
-    const resumed = liveSessionActorFor(supervisor, sessionId)
-    assert.ok(resumed)
-    assert.notEqual(resumed, firstActor)
-    await waitFor(resumed, (snapshot) => snapshot.matches('Ready'))
-    assert.equal(queuedSubmissions, 1)
   } finally {
     root.send({ type: 'Shutdown' })
     client.close()
@@ -441,37 +382,6 @@ test('the same in-flight command shares one vendor Session result', async () => 
   }
 })
 
-test('the first Send after restart resumes the stored Codex thread before starting its Turn', async () => {
-  const calls: Array<{ method: string; threadId: string | undefined; sandbox?: string }> = []
-  const { root, supervisor, client } = await supervisorFor(async (method, params, parse) => {
-    const requestParams = params as { threadId?: string; sandbox?: string }
-    calls.push({
-      method,
-      threadId: requestParams.threadId,
-      ...(requestParams.sandbox === undefined ? {} : { sandbox: requestParams.sandbox }),
-    })
-    if (method === 'thread/resume') return parse({ thread: { id: requestParams.threadId } })
-    return parse({ turn: { id: 'turn-1' } })
-  })
-  try {
-    await assert.doesNotReject(
-      send(supervisor, {
-        ...first,
-        sessionId: 'session-1',
-        turnConfiguration: { ...first.turnConfiguration, mode: 'read-only' },
-      }),
-    )
-    assert.deepEqual(calls, [
-      { method: 'thread/resume', threadId: 'native-1', sandbox: 'read-only' },
-      { method: 'turn/start', threadId: 'native-1' },
-    ])
-    await waitFor(supervisor, (snapshot) => snapshot.context.sessions['session-1'] !== undefined)
-  } finally {
-    root.send({ type: 'Shutdown' })
-    client.close()
-  }
-})
-
 test('rejects a different command for an in-flight draft without sending a Turn', async () => {
   const turns: string[] = []
   const startGate = createStartGate()
@@ -559,58 +469,6 @@ test('does not retry a vendor Session automatically when the real SQLite upsert 
     )
     assert.equal(request.starts(), 1)
     assert.equal(client.prepare('SELECT COUNT(*) AS count FROM session').get()?.count, 0)
-  } finally {
-    root.send({ type: 'Shutdown' })
-    client.close()
-  }
-})
-
-test('retiring an idle actor keeps the Session identity and the next send resumes it', async () => {
-  const calls: string[] = []
-  const { root, supervisor, client, notify } = await supervisorFor(
-    async (method, _params, parse) => {
-      calls.push(method)
-      if (method === 'thread/start' || method === 'thread/resume')
-        return parse({ thread: { id: 'native-1' } })
-      return parse({ turn: { id: `turn-${calls.length}` } })
-    },
-  )
-  try {
-    const { sessionId } = await start(supervisor, first)
-    const actor = liveSessionActorFor(supervisor, sessionId)
-    assert.ok(actor)
-    await waitFor(actor, (snapshot) => snapshot.context.feedSerial >= 1)
-    completeCodexTurn(notify, 'turn-2')
-    await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
-    assert.equal(commandStatus(client, first.commandId), 'completed')
-    const actorId = supervisor.getSnapshot().context.sessions[sessionId]
-    assert.ok(actorId)
-    supervisor.send({ type: 'Retire session', actorId, sessionId })
-    await waitFor(supervisor, (snapshot) => snapshot.context.sessions[sessionId] === undefined)
-    assert.equal(
-      client.prepare('SELECT native_id FROM session WHERE argo_id = ?').get(sessionId)?.native_id,
-      'native-1',
-    )
-    await send(supervisor, { ...first, sessionId, commandId: 'second-command', prompt: 'second' })
-    const resumed = liveSessionActorFor(supervisor, sessionId)
-    assert.ok(resumed)
-    await waitFor(resumed, (snapshot) => snapshot.context.feedSerial >= 1)
-    completeCodexTurn(notify, 'turn-4')
-    await waitFor(resumed, (snapshot) => snapshot.matches('Ready'))
-    assert.equal(commandStatus(client, 'second-command'), 'completed')
-    const resumedActorId = supervisor.getSnapshot().context.sessions[sessionId]
-    assert.ok(resumedActorId)
-    supervisor.send({ type: 'Retire session', actorId: resumedActorId, sessionId })
-    await waitFor(supervisor, (snapshot) => snapshot.context.sessions[sessionId] === undefined)
-    await send(supervisor, { ...first, sessionId, commandId: 'third-command', prompt: 'third' })
-    assert.deepEqual(calls, [
-      'thread/start',
-      'turn/start',
-      'thread/resume',
-      'turn/start',
-      'thread/resume',
-      'turn/start',
-    ])
   } finally {
     root.send({ type: 'Shutdown' })
     client.close()

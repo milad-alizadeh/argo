@@ -71,6 +71,13 @@ export function sameSessionListRow(left: SessionListRow, right: SessionListRow):
   return left.kind === right.kind
 }
 
+// The virtualizer's key, read once per row so a Session that changes index (the list re-sorts by
+// activity) keeps its DOM node instead of swapping into whatever node the array's next index now
+// holds. Every other row kind stands at most once in the list, so its own kind is unique enough.
+export function sessionListRowKey(row: SessionListRow): string {
+  return row.kind === 'session' ? row.session.id : row.kind
+}
+
 // What a row is in the list right now: picked out in bulk, open, and holding the list's one tab stop.
 export function rowPlace(
   row: SessionListRow,

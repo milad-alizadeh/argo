@@ -1,11 +1,7 @@
 import { execFile } from 'node:child_process'
 import { type ModelInfo, type Query, query } from '@anthropic-ai/claude-agent-sdk'
 import { z } from 'zod'
-import {
-  type HarnessInfo,
-  invalidCatalogResponse,
-  unavailable,
-} from '@/harnesses/catalog/harness-catalog-machine'
+import { type HarnessInfo, invalidCatalogResponse, unavailable } from '@/harnesses/harness-catalog'
 import { claudeHarnessInfo } from './catalog-projection'
 
 export type { ClaudeModelCatalog } from './catalog-projection'

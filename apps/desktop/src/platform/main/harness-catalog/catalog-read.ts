@@ -2,15 +2,12 @@ import { initTRPC } from '@trpc/server'
 import type { ActorRefFrom } from 'xstate'
 import { z } from 'zod'
 import { harnessSchema } from '@/harnesses/harness'
-import { type harnessCatalogMachine, harnessInfoSchema } from './harness-catalog-machine'
+import { catalogReadResultSchema } from '@/harnesses/harness-catalog'
+import type { harnessCatalogMachine } from './harness-catalog-machine'
 
 const t = initTRPC.create()
 const inputSchema = z.strictObject({ harness: harnessSchema })
-const outputSchema = z.strictObject({
-  info: harnessInfoSchema,
-  failure: z.string().nullable(),
-})
-export type CatalogReadResult = z.infer<typeof outputSchema>
+const outputSchema = catalogReadResultSchema
 
 export type CatalogActor = ActorRefFrom<typeof harnessCatalogMachine>
 type Harness = z.infer<typeof inputSchema>['harness']

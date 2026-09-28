@@ -3,6 +3,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
 import { databaseFrom } from '@/database/database'
 import {
+  observeSessionSync,
   type SessionSyncEvent,
   type SessionSyncStatus,
   SessionSyncStatusStore,
@@ -23,7 +24,7 @@ test('persists completed results while live phases remain in memory', () => {
       updated_at INTEGER NOT NULL DEFAULT 1
     )`)
     const database = databaseFrom(client)
-    const first = new SessionSyncStatusStore(database)
+    const first = new SessionSyncStatusStore(database, 'claude')
     const completed: SessionSyncStatus = {
       phase: 'ready',
       processed: 4,
@@ -36,7 +37,7 @@ test('persists completed results while live phases remain in memory', () => {
     first.update({ ...completed, phase: 'fetching', processed: 0, total: null })
 
     assert.equal(first.current().phase, 'fetching')
-    assert.deepEqual(new SessionSyncStatusStore(database).current(), completed)
+    assert.deepEqual(new SessionSyncStatusStore(database, 'claude').current(), completed)
 
     first.update({
       ...completed,
@@ -45,7 +46,7 @@ test('persists completed results while live phases remain in memory', () => {
       failure: 'Claude unavailable',
       lastSuccessfulSyncAt: null,
     })
-    assert.deepEqual(new SessionSyncStatusStore(database).current(), {
+    assert.deepEqual(new SessionSyncStatusStore(database, 'claude').current(), {
       ...completed,
       phase: 'failed',
       processed: 2,
@@ -53,7 +54,7 @@ test('persists completed results while live phases remain in memory', () => {
     })
 
     client.exec("UPDATE session_sync_status SET phase = 'fetching'")
-    assert.deepEqual(new SessionSyncStatusStore(database).current(), {
+    assert.deepEqual(new SessionSyncStatusStore(database, 'claude').current(), {
       ...completed,
       phase: 'idle',
       processed: 0,
@@ -66,7 +67,7 @@ test('persists completed results while live phases remain in memory', () => {
 })
 
 test('subscribers receive current status and a separate committed signal', () => {
-  const store = new SessionSyncStatusStore()
+  const store = new SessionSyncStatusStore(undefined, 'claude')
   const events: SessionSyncEvent[] = []
   const unsubscribe = store.subscribe((event) => events.push(event))
   store.committed()
@@ -75,4 +76,68 @@ test('subscribers receive current status and a separate committed signal', () =>
     events.map((event) => event.type),
     ['status', 'committed'],
   )
+})
+
+const idle: SessionSyncStatus = {
+  phase: 'idle',
+  processed: 0,
+  total: null,
+  skipped: 0,
+  lastSuccessfulSyncAt: null,
+  failure: null,
+}
+
+test('one observer reports every Harness scan as one status and forwards each commit', () => {
+  const first = new SessionSyncStatusStore(undefined, 'claude')
+  const second = new SessionSyncStatusStore(undefined, 'codex')
+  const events: SessionSyncEvent[] = []
+  const stop = observeSessionSync([first, second], (event) => events.push(event))
+  first.update({
+    ...idle,
+    phase: 'ready',
+    processed: 3,
+    total: 3,
+    lastSuccessfulSyncAt: '2026-09-28T10:00:00.000Z',
+  })
+  second.update({ ...idle, phase: 'fetching', processed: 1, total: 4 })
+  second.committed()
+  second.update({ ...idle, phase: 'failed', processed: 2, total: 4, failure: 'Codex scan failed.' })
+  stop()
+  first.committed()
+
+  assert.deepEqual(events, [
+    { type: 'status', status: idle },
+    {
+      type: 'status',
+      status: {
+        ...idle,
+        phase: 'ready',
+        processed: 3,
+        total: 3,
+        lastSuccessfulSyncAt: '2026-09-28T10:00:00.000Z',
+      },
+    },
+    {
+      type: 'status',
+      status: {
+        ...idle,
+        phase: 'fetching',
+        processed: 4,
+        total: 7,
+        lastSuccessfulSyncAt: '2026-09-28T10:00:00.000Z',
+      },
+    },
+    { type: 'committed' },
+    {
+      type: 'status',
+      status: {
+        ...idle,
+        phase: 'failed',
+        processed: 5,
+        total: 7,
+        lastSuccessfulSyncAt: '2026-09-28T10:00:00.000Z',
+        failure: 'Codex scan failed.',
+      },
+    },
+  ])
 })

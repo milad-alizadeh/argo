@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process'
 import { createInterface } from 'node:readline'
 import { executableVersion } from '@/harnesses/cli/executable-version'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
-import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/proof-protocol'
+import { SESSION_CODEX_EXECUTABLE_ENV } from '../proof-protocol'
 
 // The base protocol uses the 0.147.0 schema; the thread/resume sandbox override was verified against 0.157.0.
 export type RequestID = string | number

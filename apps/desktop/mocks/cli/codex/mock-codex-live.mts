@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { createInterface } from 'node:readline'
+import { readMockReplyDelayMs } from '@/harnesses/proof-protocol'
 import { MOCK_CODEX_MODEL_CATALOG } from './fixtures/mock-codex-model-catalog.ts'
 
 type Item = {
@@ -23,6 +24,7 @@ const save = () => writeFileSync(statePath, JSON.stringify(threads))
 const send = (message: unknown) => process.stdout.write(`${JSON.stringify(message)}\n`)
 const identifier = (index: number) => `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`
 const pending = new Map<string, ActiveTurn>()
+const REPLY_DELAY_MS = readMockReplyDelayMs()
 
 function finish(active: ActiveTurn, status: 'completed' | 'interrupted' | 'failed') {
   const { thread, turn, prompt } = active
@@ -113,7 +115,9 @@ function notifyTurn(active: ActiveTurn) {
     return
   }
   if (prompt === 'Wait to interrupt') return
-  finish(active, prompt === 'Fail this turn' ? 'failed' : 'completed')
+  const outcome = prompt === 'Fail this turn' ? 'failed' : 'completed'
+  if (REPLY_DELAY_MS === 0) finish(active, outcome)
+  else setTimeout(() => finish(active, outcome), REPLY_DELAY_MS)
 }
 
 function startTurn(id: Request['id'], params: Record<string, unknown>, thread: Thread) {

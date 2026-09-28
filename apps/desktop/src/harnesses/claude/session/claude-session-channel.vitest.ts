@@ -3,7 +3,7 @@ import { expect, test, vi } from 'vitest'
 import type { SessionStartInput } from '@/domains/sessions/main/api/session-submit'
 import type { LiveSessionControls } from '@/harnesses/registration'
 import { liveSessionChannelEventSchema } from '@/harnesses/registration'
-import { openClaudeSessionChannel } from './claude-session-channel'
+import { claudeSessionChannelOpener } from './claude-session-channel'
 
 const vendor = vi.hoisted(() => ({
   prompts: [] as unknown[],
@@ -11,6 +11,7 @@ const vendor = vi.hoisted(() => ({
   releaseSecond: null as (() => void) | null,
   canUseTool: null as CanUseTool | null,
   recordedEvents: [] as unknown[],
+  executable: undefined as string | undefined,
 }))
 
 vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
@@ -19,9 +20,10 @@ vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
     options,
   }: {
     prompt: AsyncGenerator<unknown>
-    options: { canUseTool?: CanUseTool }
+    options: { canUseTool?: CanUseTool; pathToClaudeCodeExecutable?: string }
   }) => {
     vendor.canUseTool = options.canUseTool ?? null
+    vendor.executable = options.pathToClaudeCodeExecutable
     let closed = false
     let count = 0
     const pending: unknown[] = []
@@ -110,7 +112,7 @@ test('validates delayed identity and completes each submitted Turn once', async 
   vendor.interrupts = 0
   vendor.releaseSecond = null
   const events: unknown[] = []
-  const channel = openClaudeSessionChannel(first, undefined, (event) => events.push(event))
+  const channel = claudeSessionChannelOpener(null)(first, undefined, (event) => events.push(event))
   await until(() => events.some((event) => (event as { type: string }).type === 'turn.completed'))
   expect(events.map((event) => liveSessionChannelEventSchema.parse(event).type)).toContain(
     'identity',
@@ -147,12 +149,19 @@ test('validates delayed identity and completes each submitted Turn once', async 
   expect(events).toContainEqual({ type: 'closed' })
 })
 
+test('runs the Claude executable the registration resolved', () => {
+  claudeSessionChannelOpener('/bin/mock-claude')(first, undefined, () => {}).close()
+  expect(vendor.executable).toBe('/bin/mock-claude')
+  claudeSessionChannelOpener(null)(first, undefined, () => {}).close()
+  expect(vendor.executable).toBeUndefined()
+})
+
 test('answers Claude Permission and Question requests through the channel', async () => {
   vendor.prompts = []
   vendor.recordedEvents = []
   vendor.canUseTool = null
   const events: unknown[] = []
-  const channel = openClaudeSessionChannel(first, interactiveControls(), (event) =>
+  const channel = claudeSessionChannelOpener(null)(first, interactiveControls(), (event) =>
     events.push(event),
   )
   await until(() => events.some((event) => (event as { type: string }).type === 'turn.completed'))

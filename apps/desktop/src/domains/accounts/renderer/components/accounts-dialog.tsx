@@ -29,7 +29,7 @@ export type AccountsPanelProps = {
   // The repository-connect form's fields, drawn by the caller so this module names no Ticket type.
   connect?: ReactNode
   onDisconnect: (accountId: string) => void
-  // Null while the first read has not landed. Claude and Codex sign in to their own CLI, never an
+  // Null while the first read has not landed. Each Harness signs in to its own CLI, never an
   // Account (ADR-0047), so this draws as its own section rather than joining the list above.
   harnesses: HarnessReadiness[] | null
 }

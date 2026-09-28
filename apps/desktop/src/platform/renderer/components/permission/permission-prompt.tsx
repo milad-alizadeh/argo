@@ -1,9 +1,10 @@
 import { type ReactNode, type RefObject, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { Harness } from '@/harnesses/harness'
 import { Icon } from '../icon/icon'
 import { Button } from '../ui/button'
 import { focusAfterLeaving, useExitPresence } from './exit-presence'
-import { AllowButton, type PermissionAnswer, type SessionHarness } from './permission-allow-button'
+import { AllowButton, type PermissionAnswer } from './permission-allow-button'
 
 type Permission = { description: string; id: string }
 
@@ -11,7 +12,7 @@ type PermissionLabels = { allow: string; deny: string; title: string }
 
 export type PermissionPromptProps = {
   presentation?: 'composer' | 'stage'
-  harness?: SessionHarness
+  harness?: Harness
   // The title defaults to `h3`. A caller that nests this under its own `h1` (the Session screen,
   // Project setup's Approval screen) passes 2 to keep the document outline unbroken.
   headingLevel?: 2 | 3

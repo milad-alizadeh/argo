@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import {
   type ActorRefFrom,
   assign,
+  emit,
   enqueueActions,
   fromCallback,
   fromPromise,
@@ -12,8 +13,8 @@ import type { Database } from '@/database/database'
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
-import type { harnessCatalogMachine } from '@/harnesses/catalog/harness-catalog-machine'
 import type { HarnessRegistry } from '@/harnesses/registry'
+import type { harnessCatalogMachine } from '@/platform/main/harness-catalog/harness-catalog-machine'
 import type { SessionLiveInput, SessionSendInput, SessionStartInput } from '../api/session-submit'
 import { bindSessionCommand, setSessionCommandOutcome } from '../database/session-command-outcomes'
 import {
@@ -205,6 +206,10 @@ type LiveSessionSupervisorEvent =
       sessionId: string
     }
   | {
+      type: 'Session status changed'
+      sessionId: string
+    }
+  | {
       type: 'Shutdown'
     }
   | {
@@ -258,18 +263,23 @@ function turnConfigurationIsAvailable(
 function acceptsTurnConfigurationChange(
   actor: LiveSessionActor,
   turnConfiguration: SessionSendInput['turnConfiguration'],
+  registry: HarnessRegistry,
 ): boolean {
-  const opening = actor.getSnapshot().context.first.turnConfiguration
-  if (harnessOf(actor.getSnapshot().context.first) === 'claude')
-    return (
-      opening.model === turnConfiguration.model &&
-      opening.effort === turnConfiguration.effort &&
-      opening.mode === turnConfiguration.mode
-    )
-  return opening.mode === turnConfiguration.mode
+  const { first } = actor.getSnapshot().context
+  const changeable = registry[harnessOfInput(first)].changeableTurnSettings
+  const opening = first.turnConfiguration
+  return (
+    [
+      'model',
+      'effort',
+      'mode',
+    ] as const
+  ).every(
+    (setting) => changeable.includes(setting) || opening[setting] === turnConfiguration[setting],
+  )
 }
 
-function harnessOf(input: SessionLiveInput) {
+function harnessOfInput(input: SessionLiveInput) {
   return 'resume' in input ? input.resume.harness : input.harness
 }
 
@@ -325,19 +335,22 @@ function handledStart({
     | ActorRefFrom<typeof harnessCatalogMachine>
     | undefined
   if (
-    !turnConfigurationIsAvailable(catalog, harnessOf(event.input), event.input.turnConfiguration)
+    !turnConfigurationIsAvailable(
+      catalog,
+      harnessOfInput(event.input),
+      event.input.turnConfiguration,
+    )
   ) {
     event.reply.reject(
       new SessionSubmitRejectedError('The selected Turn configuration is no longer available.'),
     )
     return true
   }
-  const staleClaudeSession =
-    event.type === 'Send' &&
-    harnessOf(event.input) === 'claude' &&
-    context.sessions[event.input.sessionId] !== undefined
+  // A Send to a retired or failed Session reopens it instead of replaying the earlier resume.
+  const reopensSession =
+    event.type === 'Send' && context.sessions[event.input.sessionId] !== undefined
   if (
-    !staleClaudeSession &&
+    !reopensSession &&
     replyForCompletedStart(context.completed[pendingId], event.input.commandId, event.reply)
   )
     return true
@@ -398,7 +411,7 @@ function commandIdentityOf(
 ) {
   return {
     intentId: event.type === 'Start' ? event.pendingId : event.intentId,
-    harness: harnessOf(event.input),
+    harness: harnessOfInput(event.input),
     nativeId: event.type === 'Send' ? event.input.resume.nativeId : null,
     cwd: event.type === 'Send' ? event.input.resume.cwd : event.input.cwd,
   }
@@ -440,7 +453,7 @@ function selectHarness({
   dependencies: LiveSessionSupervisorInput
   commands: SessionCommandStore
 }) {
-  const harness = harnessOf(input)
+  const harness = harnessOfInput(input)
   const open = dependencies.registry[harness].openLiveSession
   if (open === undefined) throw new Error(`${harness} live channel is unavailable.`)
   return liveSessionChannelActor(open, dependencies.interactions, commands)
@@ -449,17 +462,21 @@ function selectHarness({
 function sendValidationError(
   actor: LiveSessionActor,
   input: SessionSendInput,
-  catalog: ActorRefFrom<typeof harnessCatalogMachine> | undefined,
+  harnesses: {
+    catalog: ActorRefFrom<typeof harnessCatalogMachine> | undefined
+    registry: HarnessRegistry
+  },
 ): SessionSubmitRejectedError | null {
+  const { catalog, registry } = harnesses
   if (
     !turnConfigurationIsAvailable(
       catalog,
-      harnessOf(actor.getSnapshot().context.first),
+      harnessOfInput(actor.getSnapshot().context.first),
       input.turnConfiguration,
     )
   )
     return new SessionSubmitRejectedError('The selected Turn configuration is no longer available.')
-  if (!acceptsTurnConfigurationChange(actor, input.turnConfiguration))
+  if (!acceptsTurnConfigurationChange(actor, input.turnConfiguration, registry))
     return new SessionSubmitRejectedError(
       'Changing this Turn configuration requires starting a new Session.',
     )
@@ -477,6 +494,10 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
     types: {
       context: {} as SupervisorContext,
       events: {} as LiveSessionSupervisorEvent,
+      emitted: {} as {
+        type: 'Session status changed'
+        sessionId: string
+      },
     },
     actors: {
       observeIdle: fromCallback<
@@ -507,9 +528,29 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
           type: 'Stop'
         },
         {
+          session: LiveSessionActor
           stop: () => void
+        },
+        Extract<
+          LiveSessionSupervisorEvent,
+          {
+            type: 'Session status changed'
+          }
+        >
+      >(({ input, sendBack }) => {
+        const subscription = input.session.on('feed', ({ body }) => {
+          const sessionId = input.session.getSnapshot().context.argoId
+          if (body.type === 'status' && sessionId !== null)
+            sendBack({
+              type: 'Session status changed',
+              sessionId,
+            })
+        })
+        return () => {
+          subscription.unsubscribe()
+          input.stop()
         }
-      >(({ input }) => input.stop),
+      }),
       observeSession: fromCallback<
         {
           type: 'Stop'
@@ -657,6 +698,7 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
           spawn('observeLiveEvents', {
             id: `events:${actorId}`,
             input: {
+              session: actor,
               stop,
             },
           })
@@ -736,6 +778,10 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
         enqueue(stopChild(actor))
         enqueue(stopChild(`idle:${event.actorId}`))
         enqueue(stopChild(`events:${event.actorId}`))
+        enqueue.emit({
+          type: 'Session status changed',
+          sessionId,
+        })
       }),
       retireFailedSession: enqueueActions(({ context, event, self, enqueue }) => {
         if (event.type !== 'Send') return
@@ -751,7 +797,10 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
         const catalog = self.system.get('catalog') as
           | ActorRefFrom<typeof harnessCatalogMachine>
           | undefined
-        const error = sendValidationError(actor, event.input, catalog)
+        const error = sendValidationError(actor, event.input, {
+          catalog,
+          registry: dependencies.registry,
+        })
         if (error !== null) {
           event.reply.reject(error)
           return
@@ -802,6 +851,14 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
       bindCommand: ({ event }) => {
         if (event.type === 'Session persisted') commands.bind(event.commandId, event.sessionId)
       },
+      announceStatus: emit(({ event }) => {
+        if (event.type !== 'Session persisted' && event.type !== 'Session status changed')
+          throw new Error('Expected a Session status change.')
+        return {
+          type: 'Session status changed' as const,
+          sessionId: event.sessionId,
+        }
+      }),
       markUncertain: ({ event }) => {
         if (event.type === 'Session failed' && event.nativeId !== null)
           commands.record(event.commandId, 'uncertain')
@@ -845,7 +902,11 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
         actions: [
           'rememberPersisted',
           'bindCommand',
+          'announceStatus',
         ],
+      },
+      'Session status changed': {
+        actions: 'announceStatus',
       },
       'Session failed': {
         actions: [

@@ -3,13 +3,13 @@ import { initTRPC } from '@trpc/server'
 import { z } from 'zod'
 import {
   harnessReadinessListedSchema,
-  harnessSchema,
   harnessSignInCanceledSchema,
   harnessSignInError,
   harnessSignInErrorSchema,
   harnessSignInResolvedSchema,
   harnessSignInStartedSchema,
 } from '@/domains/harness-signin/contract/contract'
+import { harnessSchema } from '@/harnesses/harness'
 import { listHarnessReadiness } from './harness-readiness-list'
 import type { HarnessReadinessRegistration } from './harness-readiness-registration'
 import { createHarnessSignIn } from './harness-sign-in'

@@ -23,6 +23,7 @@ import {
   readCodexInteraction,
 } from './codex-session-interactions'
 import { codexSubagentContent } from './codex-subagent-content'
+import { readCodexThreadStatus } from './codex-thread-status'
 
 export type CodexLiveClient = {
   request: CodexRequest
@@ -110,6 +111,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
   private opening = true
   private closed = false
   private rejected = 0
+  private lastStatus: string | null = null
 
   constructor(
     input: SessionLiveInput,
@@ -184,8 +186,27 @@ export class CodexSessionChannel implements LiveSessionChannel {
     }
   }
 
+  // Turn boundaries and thread status both report a status, so a repeat adds no Feed row.
   private emitFeed(body: SessionLiveEventBody) {
-    if (!this.closed) this.emit({ type: 'feed', body })
+    if (this.closed) return
+    if (body.type === 'status') {
+      if (body.status === this.lastStatus) return
+      this.lastStatus = body.status
+    }
+    this.emit({ type: 'feed', body })
+  }
+
+  private threadStatusChanged(params: Record<string, unknown>) {
+    const reading = readCodexThreadStatus(params)
+    if (reading === null) return this.reject('thread/status/changed')
+    if (reading.threadId !== this.nativeId || reading.status === null) return
+    this.emitFeed({
+      type: 'status',
+      status: reading.status,
+      commandId: this.active?.commandId ?? null,
+      turnId: this.active?.turnId ?? null,
+      vendorEventId: null,
+    })
   }
 
   private startTurn(turnId: string) {
@@ -199,6 +220,19 @@ export class CodexSessionChannel implements LiveSessionChannel {
       commandId: this.active.commandId,
       turnId,
       vendorEventId: turnId,
+    })
+  }
+
+  private emitInteractionStatus(
+    status: 'running' | 'permission' | 'asking',
+    interaction: CodexInteraction,
+  ) {
+    this.emitFeed({
+      type: 'status',
+      status,
+      commandId: this.active?.commandId ?? null,
+      turnId: interaction.turnId,
+      vendorEventId: interaction.itemId,
     })
   }
 
@@ -236,6 +270,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
       vendorEventId: pending.itemId,
       detail: 'Codex permission expired without an answer.',
     })
+    this.emitInteractionStatus('running', pending)
   }
 
   private reject(method: string) {
@@ -280,6 +315,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
       description: interaction.description,
       decision: null,
     })
+    this.emitInteractionStatus('permission', interaction)
     return true
   }
 
@@ -304,6 +340,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
       questions: interaction.questions,
       answer: null,
     })
+    this.emitInteractionStatus('asking', interaction)
     return true
   }
 
@@ -336,6 +373,9 @@ export class CodexSessionChannel implements LiveSessionChannel {
         return undefined
       case 'turn/completed':
         this.turnCompleted(message.params)
+        return undefined
+      case 'thread/status/changed':
+        this.threadStatusChanged(message.params)
         return undefined
       case 'item/agentMessage/delta':
         this.messageDelta(message.params)
@@ -539,6 +579,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
       decision,
     })
     if (decision === 'cancel') await this.interrupt()
+    else this.emitInteractionStatus('running', pending)
     return true
   }
 
@@ -561,6 +602,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
         .flatMap(({ answers: values }) => values)
         .join(', '),
     })
+    this.emitInteractionStatus('running', pending)
     return true
   }
 

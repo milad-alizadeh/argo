@@ -273,6 +273,12 @@ test('Codex controls answer vendor requests and interrupt the active Turn', asyn
   await new Promise((resolve) => setImmediate(resolve))
   await answerSampleApproval({ channel, notify, responses, events })
   await answerSampleQuestion(channel, notify, responses)
+  assert.deepEqual(
+    events.flatMap((event) =>
+      event.type === 'feed' && event.body.type === 'status' ? [event.body.status] : [],
+    ),
+    ['running', 'permission', 'running', 'asking', 'running'],
+  )
   await channel.interrupt()
   assert.deepEqual(calls.at(-1), {
     method: 'turn/interrupt',
@@ -419,5 +425,35 @@ test('Codex channel streams Subagent activity as delegation content', async () =
     ['call_spawn', 'thread-child', 'running'],
     ['subagent-completed-1', 'thread-child', 'completed'],
   ])
+  channel.close()
+})
+
+test('Codex thread status reaches the Session status without repeats (ADR-0024)', async () => {
+  const request = (async (method: string, _params: unknown, parse: (value: unknown) => unknown) =>
+    parse(
+      method === 'thread/start' ? { thread: { id: 'thread-1' } } : { turn: { id: 'turn-1' } },
+    )) as CodexRequest
+  const { channel, events, notify } = testChannel(request)
+  await new Promise((resolve) => setImmediate(resolve))
+  const thread = (status: Record<string, unknown>, threadId = 'thread-1') =>
+    notify({ method: 'thread/status/changed', params: { threadId, status } })
+  thread({ type: 'active', activeFlags: [] })
+  thread({ type: 'active', activeFlags: ['waitingOnApproval'] })
+  thread({ type: 'active', activeFlags: ['waitingOnUserInput'] })
+  thread({ type: 'active', activeFlags: [] })
+  thread({ type: 'idle' }, 'other-thread')
+  thread({ type: 'idle' })
+  thread({ type: 'notLoaded' })
+  notify({
+    method: 'turn/completed',
+    params: { threadId: 'thread-1', turn: { id: 'turn-1', status: 'failed' } },
+  })
+  thread({ type: 'systemError' })
+  assert.deepEqual(
+    events.flatMap((event) =>
+      event.type === 'feed' && event.body.type === 'status' ? [event.body.status] : [],
+    ),
+    ['running', 'permission', 'asking', 'running', 'idle', 'stopped', 'unknown'],
+  )
   channel.close()
 })

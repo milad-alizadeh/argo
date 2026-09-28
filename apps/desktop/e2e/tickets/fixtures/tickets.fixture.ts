@@ -3,10 +3,8 @@
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { type ElectronApplication, _electron as electron } from 'playwright-core'
-import {
-  SESSION_CLAUDE_TRANSCRIPTS_ENV,
-  SESSION_CODEX_TRANSCRIPTS_ENV,
-} from '@/harnesses/proof-protocol'
+import { SESSION_CLAUDE_TRANSCRIPTS_ENV } from '@/harnesses/claude/proof-protocol'
+import { SESSION_CODEX_TRANSCRIPTS_ENV } from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { GITHUB_PROOF_ORIGIN_ENV, LINEAR_PROOF_ORIGIN_ENV } from '@/providers/proof-protocol'
 import type { MockGitHub } from '../../../mocks/providers/github/mock-github'

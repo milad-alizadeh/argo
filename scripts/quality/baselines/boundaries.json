@@ -239,24 +239,6 @@
     {
       "identity": {
         "rule": "no-aliased-same-facet-import",
-        "source": "apps/desktop/src/domains/sessions/renderer/composer/context-window/context-details.tsx",
-        "target": "apps/desktop/src/domains/sessions/renderer/composer/context-window/codex-compaction.ts"
-      },
-      "owner": "#2642",
-      "reason": "The parked same-facet import gate owns this exact edge."
-    },
-    {
-      "identity": {
-        "rule": "no-aliased-same-facet-import",
-        "source": "apps/desktop/src/domains/sessions/renderer/composer/context-window/context-popover.stories.tsx",
-        "target": "apps/desktop/src/domains/sessions/renderer/composer/context-window/codex-compaction.ts"
-      },
-      "owner": "#2642",
-      "reason": "The parked same-facet import gate owns this exact edge."
-    },
-    {
-      "identity": {
-        "rule": "no-aliased-same-facet-import",
         "source": "apps/desktop/src/domains/sessions/renderer/composer/editor/composer-layout.stories.tsx",
         "target": "apps/desktop/src/domains/sessions/renderer/model/models.ts"
       },

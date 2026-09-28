@@ -1,5 +1,5 @@
-import { DEFAULT_AUTO_COMPACT_LIMIT } from '../src/domains/sessions/renderer/composer/context-window/codex-compaction'
 import { sessionRow } from '../src/domains/sessions/renderer/session-fixtures'
+import { storybookAutoCompactProcedures } from './storybook-auto-compact'
 import { subscribeToStorybookCommands } from './storybook-commands'
 import { storybookHarnessSignInProcedures } from './storybook-harness-signin'
 import { storybookProjectProcedures } from './storybook-projects'
@@ -10,7 +10,6 @@ import { ticketsHost } from './tickets-host'
 // (`feed/measure.ts`). A story has no preload, so the one call it reaches is answered here with
 // the zoom a story is drawn at.
 export const host = window
-let codexAutoCompactLimit = DEFAULT_AUTO_COMPACT_LIMIT
 const storybookSession = sessionRow({
   id: 'storybook-session',
   posture: 'external',
@@ -22,6 +21,7 @@ const procedureHandlers = (): StorybookProcedureHandlers => {
   return {
     ...storybookProjectProcedures,
     ...storybookHarnessSignInProcedures,
+    ...storybookAutoCompactProcedures,
     accountList: ticketsHost.accountList,
     'sessions.list': (input: { page: number; pageSize: number }) => ({
       page: input.page,
@@ -33,16 +33,9 @@ const procedureHandlers = (): StorybookProcedureHandlers => {
 }
 host.argo = {
   ...host.argo,
-  readCodexModelCatalog: () => Promise.resolve(null),
-  readClaudeModelCatalog: () => Promise.resolve(null),
   getAppearance: () => Promise.resolve({ appearance: 'system', dark: true }),
   setAppearance: () => Promise.resolve({ appearance: 'system', dark: true }),
   onAppearanceChanged: () => () => {},
-  getCodexAutoCompactLimit: () => Promise.resolve(codexAutoCompactLimit),
-  setCodexAutoCompactLimit: (limit: number) => {
-    codexAutoCompactLimit = limit
-    return Promise.resolve(codexAutoCompactLimit)
-  },
   onCommand: subscribeToStorybookCommands,
   readSessionFeed: (request: { sessionId: string }) =>
     Promise.resolve({

@@ -1,4 +1,5 @@
 import { initTRPC } from '@trpc/server'
+import { observable } from '@trpc/server/observable'
 import { and, asc, count, desc, eq, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
@@ -178,7 +179,8 @@ function liveProjection(context: SessionListContext, sessionId: string) {
   const projection = stateProjection[snapshot.value]
   if (projection === null) return null
   return {
-    ...projection,
+    posture: projection.posture,
+    status: snapshot.context.status ?? projection.status,
     turnConfiguration: snapshot.context.first.turnConfiguration,
   }
 }
@@ -309,4 +311,15 @@ export function sessionListProcedure(context: SessionListContext) {
     .input(sessionListInputSchema)
     .output(sessionListOutputSchema)
     .query(({ input }) => readSessionList(context, input))
+}
+
+export function sessionStatusChangesProcedure(context: Pick<SessionListContext, 'supervisor'>) {
+  return t.procedure.subscription(() =>
+    observable<{ sessionId: string }>((emit) => {
+      const subscription = context.supervisor.on('Session status changed', ({ sessionId }) =>
+        emit.next({ sessionId }),
+      )
+      return () => subscription.unsubscribe()
+    }),
+  )
 }

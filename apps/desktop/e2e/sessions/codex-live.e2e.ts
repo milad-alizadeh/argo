@@ -1,28 +1,19 @@
-import { execFileSync } from 'node:child_process'
-import { chmod, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { _electron as electron } from 'playwright-core'
-import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/proof-protocol'
+import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
 import { prepare } from './fixtures/feed.fixture'
-import { chooseHarness } from './gestures'
+import { writeMockCodex } from './fixtures/mock-codex.fixture'
+import { chooseHarness, PERSISTED_ROW } from './gestures'
 
 async function prepareCodexApp(root: string, applicationUnderTest: string) {
   const fixture = await prepare(root, applicationUnderTest, { projectSelected: true })
-  const bun = execFileSync('which', ['bun'], { encoding: 'utf8' }).trim()
-  const server = path.resolve('mocks/cli/codex/mock-codex-live.mts')
-  const executable = path.join(root, 'mock-codex')
-  await writeFile(
-    executable,
-    `#!/bin/sh\nif [ "$1" = "--version" ]; then echo 'codex-cli 0.147.0'; exit 0; fi\nif [ "$1" = "login" ]; then echo 'Logged in using ChatGPT'; exit 0; fi\nexec "${bun}" "${server}"\n`,
-  )
-  await chmod(executable, 0o755)
   const environment = {
     ...process.env,
-    [SESSION_CODEX_EXECUTABLE_ENV]: executable,
+    [SESSION_CODEX_EXECUTABLE_ENV]: await writeMockCodex(root),
     [PROJECT_PROOF_STORE_ENV]: fixture.userData,
     [ACCEPTANCE_ENV]: '0',
     ARGO_CODEX_E2E_STATE: path.join(root, 'codex-state.json'),
@@ -62,11 +53,7 @@ test('packaged Codex live feed resumes from app-server history', async ({
     await chooseHarness(first.page, 'codex')
     await first.page.getByRole('combobox', { name: 'Message' }).fill('First Codex turn')
     await first.page.keyboard.press('Enter')
-    const created = first.page
-      .locator(
-        'nav[aria-label="Sessions"] button[data-session-id]:not([data-session-id^="optimistic:"])',
-      )
-      .filter({ hasText: 'First Codex turn' })
+    const created = first.page.locator(PERSISTED_ROW).filter({ hasText: 'First Codex turn' })
     await expect(created).toHaveCount(1)
     sessionId = (await created.getAttribute('data-session-id')) ?? ''
     expect(sessionId).not.toMatch(/^optimistic:|^$/)

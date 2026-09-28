@@ -60,12 +60,13 @@ function sessionListCaller(sessions: Record<string, unknown> = {}) {
   return { client, list: router.createCaller({}).list }
 }
 
-function liveSession(state: string) {
+function liveSession(state: string, status: string | null = null) {
   return {
     getSnapshot: () => ({
       value: state,
       matches: (candidate: string) => candidate === state,
       context: {
+        status,
         first: {
           turnConfiguration: { model: 'claude-sonnet', effort: 'high', mode: 'default' },
         },
@@ -410,6 +411,23 @@ test('does not project a failed live channel as live', async () => {
     assert.deepEqual(
       { posture: result.rows[0]?.posture, status: result.rows[0]?.status },
       { posture: null, status: 'unknown' },
+    )
+  } finally {
+    client.close()
+  }
+})
+
+test('projects the latest live status over the machine state, and unknown with no live actor', async () => {
+  const { client, list } = sessionListCaller({ [IDS[0]]: liveSession('Sending', 'running') })
+  try {
+    insertSession(client, { id: IDS[0], harness: 'codex', nativeId: 'native-1', updatedAt: 20 })
+    insertSession(client, { id: IDS[1], harness: 'claude', nativeId: 'native-2', updatedAt: 10 })
+
+    const result = await list({ projectId: 'project-1', page: 1, pageSize: 10 })
+
+    assert.deepEqual(
+      result.rows.map(({ status }) => status),
+      ['running', 'unknown'],
     )
   } finally {
     client.close()
