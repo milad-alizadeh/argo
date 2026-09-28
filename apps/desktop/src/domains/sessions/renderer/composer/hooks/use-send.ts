@@ -2,7 +2,7 @@ import type { LexicalEditor } from 'lexical'
 import { type RefObject, useCallback } from 'react'
 
 import type { SessionAttachmentInput } from '@/domains/sessions/api/attachments'
-import type { ComposerAttachment } from '../editing/composer-editing'
+import type { ComposerAttachment, ComposerEditing } from '../editing/composer-editing'
 import type { TurnConfiguration } from '../turn-configuration/turn-configuration'
 import { resolveAttachments } from './use-composer-attachments'
 
@@ -19,6 +19,20 @@ function outcomeFor(result: SendOutcome | boolean): SendOutcome {
   return result
 }
 
+export function sameDraftContent(start: ComposerEditing, current: ComposerEditing): boolean {
+  return (
+    start.prompt === current.prompt &&
+    start.tickets === current.tickets &&
+    start.turnConfiguration === current.turnConfiguration &&
+    start.attachments.length === current.attachments.length &&
+    start.attachments.every(
+      (attachment, index) =>
+        attachment.id === current.attachments[index]?.id &&
+        attachment.path === current.attachments[index]?.path,
+    )
+  )
+}
+
 // Resolve attachments, send through the durable command, and clear only after main accepts it.
 export async function performSend(input: {
   draft: string
@@ -30,6 +44,7 @@ export async function performSend(input: {
   clearDraft: (editor?: LexicalEditor | null) => void
   restoreDraft: (text: string, editor?: LexicalEditor | null) => void
   clear: (ids: string[]) => void
+  isCurrentDraft: () => boolean
 }) {
   const { draft, attachments, markError, editor, onSend } = input
   const { turnConfigurationValue, clearDraft, clear } = input
@@ -40,11 +55,13 @@ export async function performSend(input: {
     outcomeFor(await onSend(resolved.prompt, turnConfigurationValue ?? null, resolved.attachments))
   ) {
     case 'accepted':
-      clearDraft(editor)
-      clear(resolved.sentIds)
+      if (input.isCurrentDraft()) {
+        clearDraft(editor)
+        clear(resolved.sentIds)
+      }
       return
     case 'rejected':
-      input.restoreDraft(draft, editor)
+      if (input.isCurrentDraft()) input.restoreDraft(draft, editor)
       return
     case 'uncertain':
       return
@@ -62,6 +79,8 @@ export function useSend(input: {
   markError: (ids: string[]) => void
   onSend?: Send
   turnConfigurationValue: TurnConfiguration | null | undefined
+  editing: ComposerEditing
+  latestEditing: RefObject<ComposerEditing>
 }) {
   const { editorRef, draft, attachments, clear, clearDraft, restoreDraft } = input
   const { markError, onSend, turnConfigurationValue } = input
@@ -77,6 +96,7 @@ export function useSend(input: {
         onSend,
         restoreDraft,
         turnConfigurationValue,
+        isCurrentDraft: () => sameDraftContent(input.editing, input.latestEditing.current),
       }),
     [
       attachments,
@@ -88,6 +108,8 @@ export function useSend(input: {
       onSend,
       restoreDraft,
       turnConfigurationValue,
+      input.editing,
+      input.latestEditing,
     ],
   )
 }

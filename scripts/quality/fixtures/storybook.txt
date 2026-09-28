@@ -1,6 +1,6 @@
- ❯ |storybook-dark (chromium)| src/example.stories.tsx (2 tests | 2 failed) 20ms
+ ❯ |storybook (chromium)| src/example.stories.tsx (2 tests | 2 failed) 20ms
    × First Story 12ms
    × Nested Story > Keeps Its Full Name 8ms
- ❯ |storybook-light (chromium)| src/example.stories.tsx (1 test | 1 failed) 9ms
+ ❯ |storybook (chromium)| src/other.stories.tsx (1 test | 1 failed) 9ms
    × First Story 9ms
  Tests  3 failed

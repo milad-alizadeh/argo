@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url'
 import { afterEach, expect, test, vi } from 'vitest'
 import { scanRollouts } from '../../../../mocks/cli/codex/mock-codex-rollout-history.ts'
 import type { CodexRequest } from '../app-server/codex-app-server-client'
-import { readCodexSessionHistory } from './codex-session-history'
+import { hasCodexSessionTurn, readCodexSessionHistory } from './codex-session-history'
 
 afterEach(() => vi.unstubAllEnvs())
 
@@ -23,7 +23,13 @@ test('projects recorded Codex user and agent messages into Feed content', async 
     { kind: 'message', id: 'codex-child-u1', role: 'user', text: 'Continue the check' },
     { kind: 'message', id: 'codex-child-a1', role: 'assistant', text: 'Continuing' },
   ])
+  const recordedTurnId = thread.turns[0]?.id
+  if (recordedTurnId === undefined) throw new Error('The recorded Codex turn is missing.')
+  await expect(hasCodexSessionTurn(request, thread.id, recordedTurnId)).resolves.toBe(true)
+  await expect(hasCodexSessionTurn(request, thread.id, 'missing-turn')).resolves.toBe(false)
   expect(calls).toEqual([
+    { method: 'thread/read', params: { threadId: 'rollout-codexChild', includeTurns: true } },
+    { method: 'thread/read', params: { threadId: 'rollout-codexChild', includeTurns: true } },
     { method: 'thread/read', params: { threadId: 'rollout-codexChild', includeTurns: true } },
   ])
 })

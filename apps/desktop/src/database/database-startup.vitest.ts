@@ -39,6 +39,7 @@ test('starts a clean database with every ordered migration', async () => {
       { name: '20260926052843_preserve_session_activity' },
       { name: '20260926110949_safe_susan_delgado' },
       { name: '20260928032053_groovy_magik' },
+      { name: '20260928112826_little_wonder_man' },
     ])
     expect(
       database

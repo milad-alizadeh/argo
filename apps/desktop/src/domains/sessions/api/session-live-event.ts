@@ -55,6 +55,8 @@ export const sessionLiveUpdateSchema = z.discriminatedUnion('type', [
     type: z.literal('ready'),
     live: z.boolean(),
     cursor: z.number().int().nonnegative(),
+    generation: identifierSchema,
+    replayExpired: z.boolean(),
   }),
   z.strictObject({ type: z.literal('event'), event: sessionLiveEventSchema }),
   z.strictObject({ type: z.literal('expired'), cursor: z.number().int().nonnegative() }),
