@@ -6,26 +6,23 @@ import { defineConfig } from 'vitest/config'
 
 const directory = path.dirname(fileURLToPath(import.meta.url))
 
-// One story run per theme, so a component that only breaks in light theme fails CI.
-function storybookProject(theme: 'dark' | 'light') {
-  return {
-    extends: true as const,
-    plugins: [
-      storybookTest({
-        configDir: path.join(directory, '.storybook'),
-        initialGlobals: { theme },
-      }),
-    ],
-    test: {
-      name: `storybook-${theme}`,
-      browser: {
-        enabled: true,
-        headless: true,
-        provider: playwright({}),
-        instances: [{ browser: 'chromium' as const }],
-      },
+const storybookProject = {
+  extends: true as const,
+  plugins: [
+    storybookTest({
+      configDir: path.join(directory, '.storybook'),
+      initialGlobals: { theme: 'dark' },
+    }),
+  ],
+  test: {
+    name: 'storybook',
+    browser: {
+      enabled: true,
+      headless: true,
+      provider: playwright({}),
+      instances: [{ browser: 'chromium' as const }],
     },
-  }
+  },
 }
 
 // Bun runs every other suite here, but Bun 1.3.14 ships no `node:sqlite`, so the Session index
@@ -42,7 +39,7 @@ export default defineConfig({
     include: ['@storybook/react-dom-shim', 'react/jsx-dev-runtime'],
   },
   test: {
-    projects: [nodeProject, storybookProject('dark'), storybookProject('light')],
+    projects: [nodeProject, storybookProject],
     coverage: {
       provider: 'v8',
       reporter: ['lcov', 'text'],

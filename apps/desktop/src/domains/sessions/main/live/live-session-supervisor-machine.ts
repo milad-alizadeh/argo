@@ -79,6 +79,7 @@ type StartReply = {
   resolve: (value: { sessionId: string }) => void
   reject: (error: Error) => void
 }
+export class SessionSubmitRejectedError extends Error {}
 type CompletedStart =
   | {
       commandId: string
@@ -247,7 +248,9 @@ function handledStart({
   if (
     !turnConfigurationIsAvailable(catalog, harnessOf(event.input), event.input.turnConfiguration)
   ) {
-    event.reply.reject(new Error('The selected Turn configuration is no longer available.'))
+    event.reply.reject(
+      new SessionSubmitRejectedError('The selected Turn configuration is no longer available.'),
+    )
     return true
   }
   const staleClaudeSession =
@@ -352,7 +355,7 @@ function sendValidationError(
   actor: LiveSessionActor,
   input: SessionSendInput,
   catalog: ActorRefFrom<typeof harnessCatalogMachine> | undefined,
-): Error | null {
+): SessionSubmitRejectedError | null {
   if (
     !turnConfigurationIsAvailable(
       catalog,
@@ -360,12 +363,16 @@ function sendValidationError(
       input.turnConfiguration,
     )
   )
-    return new Error('The selected Turn configuration is no longer available.')
+    return new SessionSubmitRejectedError('The selected Turn configuration is no longer available.')
   if (!acceptsTurnConfigurationChange(actor, input.turnConfiguration))
-    return new Error('Changing this Turn configuration requires starting a new Session.')
+    return new SessionSubmitRejectedError(
+      'Changing this Turn configuration requires starting a new Session.',
+    )
   const snapshot = actor.getSnapshot()
   if (sessionIsUnavailable(actor))
-    return new Error(snapshot.context.failure ?? 'Session is not available for sends.')
+    return new SessionSubmitRejectedError(
+      snapshot.context.failure ?? 'Session is not available for sends.',
+    )
   return null
 }
 

@@ -134,21 +134,21 @@ test('Vitest identity reads its structured report', () => {
   ])
 })
 
-test('Storybook identity includes appearance, path, and complete story name', () => {
+test('Storybook identity includes path and complete story name', () => {
   assert.deepEqual(parseStorybookOutput(fixture('storybook.txt')), [
     {
-      project: 'storybook-dark',
+      project: 'storybook',
       path: 'src/example.stories.tsx',
       story: 'First Story',
     },
     {
-      project: 'storybook-dark',
+      project: 'storybook',
       path: 'src/example.stories.tsx',
       story: 'Nested Story > Keeps Its Full Name',
     },
     {
-      project: 'storybook-light',
-      path: 'src/example.stories.tsx',
+      project: 'storybook',
+      path: 'src/other.stories.tsx',
       story: 'First Story',
     },
   ])
