@@ -798,9 +798,10 @@ async function expectShellReopensWithOutput(canvasElement: HTMLElement) {
   await userEvent.click(await screen.findByRole('menuitem', { name: /bun run quality/ }))
   const shellInspector = canvas.getByRole('region', { name: 'Background Shell' })
   await expect(shellInspector).toBeVisible()
-  await expect(within(shellInspector).getByText(/Checked 187 files\./)).toBeVisible({
-    timeout: 5000,
-  })
+  await waitFor(
+    () => expect(within(shellInspector).getByText(/Checked 187 files\./)).toBeVisible(),
+    { timeout: 5000 },
+  )
 }
 
 const meta = {
