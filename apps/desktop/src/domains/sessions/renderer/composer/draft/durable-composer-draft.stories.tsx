@@ -239,6 +239,7 @@ function createMockTrpc(server: Server, notify: () => void): typeof window.argo.
 function createServer(input: {
   notify: () => void
   initialOutcome: 'accept' | 'reject' | 'uncertain' | 'fallback'
+  initialPrompt: string
   project: boolean
   projectDraftExists: boolean
   savedProjectHarness: 'claude' | 'codex'
@@ -247,12 +248,13 @@ function createServer(input: {
   const {
     notify,
     initialOutcome,
+    initialPrompt,
     project,
     projectDraftExists,
     savedProjectHarness,
     draftReadFailures,
   } = input
-  const firstDraft = savedDraft('session-a', 'Restored Session A draft.', 1)
+  const firstDraft = savedDraft('session-a', initialPrompt, 1)
   if (initialOutcome === 'fallback')
     firstDraft.turnConfiguration = {
       model: 'model-no-longer-available',
@@ -416,12 +418,14 @@ function useDraftStoryRetryFocus(draft: ReturnType<typeof useDurableComposerDraf
 
 function DurableDraftStory({
   initialOutcome = 'accept',
+  initialPrompt = 'Restored Session A draft.',
   project = false,
   projectDraftExists = true,
   savedProjectHarness = 'claude',
   draftReadFailures = 0,
 }: {
   initialOutcome?: 'accept' | 'reject' | 'uncertain' | 'fallback'
+  initialPrompt?: string
   project?: boolean
   projectDraftExists?: boolean
   savedProjectHarness?: 'claude' | 'codex'
@@ -433,6 +437,7 @@ function DurableDraftStory({
     createServer({
       notify: () => setServerVersion((version) => version + 1),
       initialOutcome,
+      initialPrompt,
       project,
       projectDraftExists,
       savedProjectHarness,
@@ -694,6 +699,38 @@ export const RestoresAndRetainsRejectedDrafts: Story = {
     await expect(await canvas.findByLabelText('Message')).toHaveTextContent(
       'Restored Session A draft.',
     )
+  },
+}
+
+export const RestoredReferenceSurvivesSwitchAndRejectedKeyboardSend: Story = {
+  args: {
+    initialOutcome: 'reject',
+    initialPrompt: 'Use [$implement](/skills/implement/SKILL.md) for this.',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const editor = await canvas.findByLabelText('Message')
+    await expect(canvas.getByText('Implement')).toBeVisible()
+    await expect(editor).toHaveTextContent('for this.')
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Session B' }))
+    await expect(await canvas.findByLabelText('Message')).toHaveTextContent(
+      'Restored Session B draft.',
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Reopen Session A' }))
+    const restored = await canvas.findByLabelText('Message')
+    await expect(canvas.getByText('Implement')).toBeVisible()
+    await userEvent.click(restored)
+    await userEvent.keyboard('{Enter}')
+    await expect(
+      await within(canvasElement.ownerDocument.body).findByText(
+        'The Turn could not be sent. Your draft is still saved.',
+      ),
+    ).toBeInTheDocument()
+    await expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent(
+      'Use [$implement](/skills/implement/SKILL.md) for this.',
+    )
+    await expect(canvas.getByText('Implement')).toBeVisible()
   },
 }
 

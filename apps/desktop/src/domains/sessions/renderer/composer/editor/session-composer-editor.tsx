@@ -1,15 +1,9 @@
-import {
-  $convertFromMarkdownString,
-  $convertToMarkdownString,
-  TRANSFORMERS,
-} from '@lexical/markdown'
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { EditorRefPlugin } from '@lexical/react/LexicalEditorRefPlugin'
 import { HorizontalRulePlugin } from '@lexical/react/LexicalHorizontalRulePlugin'
 import { MarkdownShortcutPlugin } from '@lexical/react/LexicalMarkdownShortcutPlugin'
-import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import type { LexicalEditor } from 'lexical'
 import { type RefObject, useEffect, useState } from 'react'
@@ -22,6 +16,7 @@ import { ComposerReferenceNode } from '../references/composer-reference-node'
 import { ComposerReferencePlugin } from '../references/composer-reference-plugin'
 import { ComposerTicketReferenceNode } from '../references/composer-ticket-reference-node'
 import { ComposerTicketReferencePlugin } from '../references/composer-ticket-reference-plugin'
+import { ComposerEditorAdapter, initialComposerDocument } from './composer-editor-adapter'
 import { SendOnEnterPlugin } from './session-composer-enter'
 import {
   composerNodes,
@@ -29,10 +24,6 @@ import {
   MarkdownPastePlugin,
   MarkdownTypingShortcutPlugin,
 } from './session-composer-markdown'
-
-function editorState(text: string) {
-  return () => $convertFromMarkdownString(text, TRANSFORMERS)
-}
 
 function FocusOnMountPlugin({ enabled, onFocused }: { enabled: boolean; onFocused?: () => void }) {
   const [editor] = useLexicalComposerContext()
@@ -74,7 +65,7 @@ export function ComposerEditor({
   return (
     <LexicalComposer
       initialConfig={{
-        editorState: editorState(draft),
+        editorState: initialComposerDocument(draft),
         namespace: 'argo-session-composer',
         nodes: [...composerNodes, ComposerReferenceNode, ComposerTicketReferenceNode],
         onError: (error) => {
@@ -101,15 +92,9 @@ export function ComposerEditor({
           />
         }
       />
-      <OnChangePlugin
-        onChange={(state) => {
-          state.read(() =>
-            dispatch({
-              type: 'prompt.changed',
-              prompt: $convertToMarkdownString(TRANSFORMERS),
-            }),
-          )
-        }}
+      <ComposerEditorAdapter
+        prompt={draft}
+        onPromptChange={(prompt) => dispatch({ type: 'prompt.changed', prompt })}
       />
       <MarkdownShortcutPlugin transformers={composerTransformers} />
       <MarkdownTypingShortcutPlugin />

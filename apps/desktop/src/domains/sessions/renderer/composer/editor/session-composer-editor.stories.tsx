@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
 import { Button } from '@/platform/renderer/components/ui/button'
+import type { ComposerEditing } from '../editing/composer-editing'
 import { ComposerForm, type ComposerFormProps } from '../layout/composer-form'
 import { ComposerStory } from './composer-story-samples'
 
@@ -51,6 +52,7 @@ function ClosableComposerStory({
   onSend: ComposerFormProps['onSend']
 }) {
   const [open, setOpen] = useState(true)
+  const [editing, setEditing] = useState<ComposerEditing>()
 
   return (
     <>
@@ -58,7 +60,13 @@ function ClosableComposerStory({
         {open ? 'Leave the Session' : 'Return to the Session'}
       </Button>
       {open ? (
-        <ComposerForm harness={{ harness }} onSend={onSend} sessionId="closable-session" />
+        <ComposerForm
+          harness={{ harness }}
+          initialEditing={editing}
+          onEditingChange={setEditing}
+          onSend={onSend}
+          sessionId="closable-session"
+        />
       ) : null}
     </>
   )

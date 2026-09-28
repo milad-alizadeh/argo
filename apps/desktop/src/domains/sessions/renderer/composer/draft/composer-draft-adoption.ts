@@ -50,7 +50,6 @@ function editingFromDraft(
     attachments: draft.attachments.map(({ path }, index) => ({
       id: `${draft.id}:${index}`,
       path,
-      status: 'idle',
     })),
     tickets: draft.ticketContext,
     turnConfiguration: supportedConfiguration(choices, draft.turnConfiguration, fallback),

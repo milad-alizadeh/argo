@@ -1,6 +1,4 @@
-import { $convertFromMarkdownString, TRANSFORMERS } from '@lexical/markdown'
-import type { LexicalEditor } from 'lexical'
-import { type ReactNode, type RefObject, useCallback, useLayoutEffect, useRef } from 'react'
+import { type ReactNode, useCallback } from 'react'
 import type { SessionPlan } from '@/domains/sessions/renderer/model/models'
 import type { HarnessControl } from '../../harness/harnesses'
 import type { Send } from '../hooks/use-send'
@@ -96,7 +94,6 @@ function ComposerFormSurface({
     onChange: changeTurnConfiguration,
   })
   const state = useSessionComposerState({ onSend, turnConfiguration })
-  useLoadedDraftInEditor(state.editorRef, loading, editing.prompt)
   const send = () => {
     if (!disabled && !loading && onSend) void state.send()
   }
@@ -133,22 +130,6 @@ function ComposerFormSurface({
       />
     </form>
   )
-}
-
-// The editor mounted while loading, so the loaded draft is written into it, not remounted.
-function useLoadedDraftInEditor(
-  editorRef: RefObject<LexicalEditor | null>,
-  loading: boolean,
-  prompt: string,
-) {
-  const wasLoading = useRef(loading)
-  useLayoutEffect(() => {
-    if (wasLoading.current && !loading)
-      editorRef.current?.update(() => $convertFromMarkdownString(prompt, TRANSFORMERS), {
-        discrete: true,
-      })
-    wasLoading.current = loading
-  }, [editorRef, loading, prompt])
 }
 
 export function ComposerForm({ initialEditing, onEditingChange, ...props }: ComposerFormProps) {

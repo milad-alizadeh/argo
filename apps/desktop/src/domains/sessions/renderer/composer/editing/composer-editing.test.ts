@@ -1,30 +1,22 @@
 import { expect, test } from 'bun:test'
 import { composerEditing, editComposer } from './composer-editing'
 
-test('the active draft keeps one attachment per path and clears a failed path when reattached', () => {
+test('the active draft keeps one attachment per path', () => {
   const attached = editComposer(composerEditing(), {
     type: 'attachments.added',
     paths: ['/repo/notes.md', '/repo/notes.md'],
     createId: () => 'attachment-1',
   })
-  const failed = editComposer(attached, {
-    type: 'attachments.failed',
-    ids: ['attachment-1'],
-  })
-  const reattached = editComposer(failed, {
+  const reattached = editComposer(attached, {
     type: 'attachments.added',
     paths: ['/repo/notes.md'],
     createId: () => 'unused',
   })
 
-  expect(reattached.attachments).toEqual([
-    { id: 'attachment-1', path: '/repo/notes.md', status: 'idle' },
-  ])
+  expect(reattached).toBe(attached)
+  expect(reattached.attachments).toEqual([{ id: 'attachment-1', path: '/repo/notes.md' }])
   expect(
     editComposer(reattached, { type: 'attachment.removed', id: 'attachment-1' }).attachments,
-  ).toEqual([])
-  expect(
-    editComposer(reattached, { type: 'attachments.removed', ids: ['attachment-1'] }).attachments,
   ).toEqual([])
 })
 
