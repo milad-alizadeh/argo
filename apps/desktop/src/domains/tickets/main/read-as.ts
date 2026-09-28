@@ -25,7 +25,8 @@ export type Call = {
   connections: ConnectionPort
   requestId: string
   projectId: string
-  sources: Record<Provider, TicketSource>
+  // The Ticket half of each provider's registration.
+  providers: Record<Provider, { tickets: TicketSource }>
 }
 
 type Read<T> = { ok: true; value: T; provider: Provider } | { ok: false; error: TicketError }
@@ -41,7 +42,7 @@ export async function readAs<T>(
 ): Promise<Read<T>> {
   const provider = providerOf(accountId)
   if (!provider) return failure(call, 'missing-account')
-  const source = call.sources[provider]
+  const source = call.providers[provider].tickets
   const outcome = await asAccount(call.access, accountId, {
     call: (token) => read(source, { endpoints: call.access.endpoints, token }),
     refused: (reply) => !reply.ok && reply.failure === 'refused',

@@ -10,8 +10,8 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from '@/platform/renderer/components/ui/popover'
+import { providerPresentation } from '@/providers/presentation-registry'
 import { closedChildren } from '../lib/backlog'
-import { sourcePresentation } from '../lib/sources'
 
 const STATE_ICONS: Record<TicketState, { icon: IconName; tone: string }> = {
   open: { icon: 'ticket-link-open', tone: 'text-active' },
@@ -193,7 +193,7 @@ export function TicketRelations({
             {t('detail.dependenciesUnavailable')}
           </Badge>
           <p className="hidden type-meta text-muted-foreground @3xl:block">
-            {sourcePresentation(provider).noDependencies}
+            {providerPresentation(provider).noDependencies}
           </p>
         </>
       ) : null}

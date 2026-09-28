@@ -43,7 +43,7 @@ const updatePriorityInputSchema = projectInputSchema.extend({
 })
 const updatePriorityOutputSchema = z.union([ticketPrioritizedSchema, ticketErrorSchema])
 
-export type TicketRouterDependencies = Pick<Call, 'access' | 'connections' | 'sources'>
+export type TicketRouterDependencies = Pick<Call, 'access' | 'connections' | 'providers'>
 
 function request(dependencies: TicketRouterDependencies, projectId: string): Call {
   return { ...dependencies, projectId, requestId: randomUUID() }

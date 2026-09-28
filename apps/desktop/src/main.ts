@@ -48,8 +48,8 @@ import { createWriteQueue } from '@/platform/main/storage/portable-file'
 import { createAppRouter } from '@/platform/main/trpc-router'
 import { attachTrpcTransport } from '@/platform/main/trpc-transport'
 import { createDesktopWindow } from '@/platform/main/window/create-window'
-import { accountProviders, ticketSources } from '@/providers/composition'
 import { providerEndpoints } from '@/providers/endpoints'
+import { PROVIDER_REGISTRY } from '@/providers/registry'
 import { identifierSchema } from '@/shared/validation'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mts'
 
@@ -144,7 +144,7 @@ function createDomainContexts(database: Database, registry: HarnessRegistry) {
     accountData,
     connectionData,
     endpoints: providerEndpoints(PROOF_ENABLED),
-    providers: accountProviders,
+    providers: PROVIDER_REGISTRY,
     cipher: safeStorageCipher,
     openExternal: (url) => shell.openExternal(url).then(() => undefined),
     database,
@@ -205,7 +205,11 @@ function routerForWindow(options: {
       refreshSessionSync: () => actors.sessionSync.send({ type: 'Refresh' }),
       sessionSyncStatus,
     },
-    tickets: { access: domains.access, connections: domains.connections, sources: ticketSources },
+    tickets: {
+      access: domains.access,
+      connections: domains.connections,
+      providers: PROVIDER_REGISTRY,
+    },
     workspaces: { database, exclusive },
   })
 }

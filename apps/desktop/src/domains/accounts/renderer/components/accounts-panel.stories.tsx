@@ -118,6 +118,7 @@ export const EnterCode: Story = {
         type: 'account.challenge',
         requestId: 'request-1',
         provider: 'github',
+        kind: 'device-code',
         userCode: 'WDJB-MJHT',
         verificationUri: 'https://github.com/login/device',
         expiresAt: 0,
@@ -135,7 +136,7 @@ export const EnterCode: Story = {
   },
 }
 
-// Linear asks only for consent in the browser, so there is no code to copy.
+// A browser-consent challenge asks only for consent in the browser, so there is no code to copy.
 export const AllowInLinear: Story = {
   args: {
     signIn: {
@@ -147,6 +148,7 @@ export const AllowInLinear: Story = {
         type: 'account.challenge',
         requestId: 'request-1',
         provider: 'linear',
+        kind: 'browser-consent',
         expiresAt: 0,
       },
     },

@@ -1,7 +1,10 @@
 import type { EditorConfig, NodeKey, SerializedTextNode } from 'lexical'
-import { TextNode } from 'lexical'
+import { $createTextNode, TextNode } from 'lexical'
+import { provider as providerSchema } from '@/domains/accounts/contract/contract'
+import { PROVIDER_PRESENTATIONS } from '@/providers/presentation-registry'
 import type { ComposerTicketContext } from '../editing/composer-editing'
-import { ticketProviderIconSource } from './ticket-provider-icon'
+
+type SerializedTicketReferenceNode = SerializedTextNode & { provider?: unknown }
 
 function openTicket(ticketKey: string) {
   const projectId = window.location.hash.match(/^#\/projects\/([^/]+)/)?.[1]
@@ -26,12 +29,21 @@ export class ComposerTicketReferenceNode extends TextNode {
     return new ComposerTicketReferenceNode(node.__text, node.__provider, node.__key)
   }
 
-  static importJSON(serializedNode: SerializedTextNode) {
-    return $createComposerTicketReferenceNode(serializedNode.text, 'github')
+  // A reference whose provider is not recognized pastes back as its plain key.
+  static importJSON(serializedNode: SerializedTicketReferenceNode) {
+    const provider = providerSchema.safeParse(serializedNode.provider)
+    const node = provider.success
+      ? $createComposerTicketReferenceNode(serializedNode.text, provider.data)
+      : $createTextNode(serializedNode.text)
+    return node
       .setDetail(serializedNode.detail)
       .setFormat(serializedNode.format)
       .setMode(serializedNode.mode)
       .setStyle(serializedNode.style)
+  }
+
+  exportJSON(): SerializedTicketReferenceNode {
+    return { ...super.exportJSON(), provider: this.__provider }
   }
 
   createDOM(config: EditorConfig) {
@@ -40,7 +52,7 @@ export class ComposerTicketReferenceNode extends TextNode {
     icon.alt = ''
     icon.className = 'size-3.5 shrink-0 dark:invert'
     icon.contentEditable = 'false'
-    icon.src = ticketProviderIconSource[this.__provider]
+    icon.src = PROVIDER_PRESENTATIONS[this.__provider].icon
     element.className =
       'mx-0.5 inline-flex items-center gap-1 align-middle !font-semibold text-foreground type-body'
     element.dataset.ticketKey = this.getTextContent()

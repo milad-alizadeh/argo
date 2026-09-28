@@ -36,6 +36,18 @@
       }
     },
     {
+      "name": "shared-code-reaches-providers-through-registries",
+      "comment": "Only the provider registries import an adapter; shared code looks a provider up by ID (#2867).",
+      "severity": "error",
+      "from": {
+        "path": "^apps/desktop/src/",
+        "pathNot": ["^apps/desktop/src/providers/", "\\.(test|vitest|stories)\\.(ts|tsx)$"]
+      },
+      "to": {
+        "path": "^apps/desktop/src/providers/[^/]+/"
+      }
+    },
+    {
       "name": "codex-history-does-not-import-retired-readers",
       "comment": "Codex history reads app-server. Rollout files are invalidation signals only (#2581).",
       "severity": "error",

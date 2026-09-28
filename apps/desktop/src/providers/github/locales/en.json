@@ -1,0 +1,15 @@
+{
+  "presentation": {
+    "name": "GitHub",
+    "scopeOne": "repository",
+    "scopeMany": "repositories",
+    "requesting": "Asking GitHub for a code…",
+    "connect": "Connect a GitHub Account",
+    "challenge": "Enter this code on GitHub to connect an Account.",
+    "open": "Copy code and open GitHub",
+    "items": "GitHub Issues",
+    "scopePlaceholder": "Search owner/name",
+    "noScopes": "{{login}} cannot see any repository with GitHub Issues turned on.",
+    "noDependencies": "GitHub gives no dependency information for this Ticket."
+  }
+}

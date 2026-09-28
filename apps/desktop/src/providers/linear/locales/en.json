@@ -1,0 +1,15 @@
+{
+  "presentation": {
+    "name": "Linear",
+    "scopeOne": "team",
+    "scopeMany": "teams",
+    "requesting": "Opening Linear…",
+    "connect": "Connect a Linear Account",
+    "challenge": "Allow Argo in the Linear page your browser opened to connect an Account.",
+    "open": "Open Linear again",
+    "items": "Linear issues",
+    "scopePlaceholder": "Search teams",
+    "noScopes": "{{login}} cannot see any Linear team.",
+    "noDependencies": "Linear gives no dependency information for this Ticket."
+  }
+}

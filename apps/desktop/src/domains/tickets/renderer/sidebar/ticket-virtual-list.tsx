@@ -4,8 +4,8 @@ import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Loader } from '@/platform/renderer/components/loader/loader'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
+import { providerPresentation } from '@/providers/presentation-registry'
 import { type Backlog, type BacklogRow, treeRails } from '../lib/backlog'
-import { sourcePresentation } from '../lib/sources'
 import { TicketRow } from './ticket-row'
 
 const OVERSCAN = 30
@@ -104,8 +104,7 @@ function VirtualTicketRow({
           onSelect={() => onSelect(row.ticket.key)}
           onToggle={() => onToggle(row.ticket.key)}
           placement={placement}
-          presentation={sourcePresentation(backlog.provider)}
-          provider={backlog.provider}
+          presentation={providerPresentation(backlog.provider)}
           rails={rails}
           row={row}
           selected={row.ticket.key === selectedKey}

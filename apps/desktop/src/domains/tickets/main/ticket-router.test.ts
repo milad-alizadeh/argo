@@ -6,8 +6,8 @@ import { type TestContext, test } from 'node:test'
 import { createAccountAccess } from '@/domains/accounts/main'
 import type { Cipher } from '@/domains/accounts/main/grants'
 import { createConnectionPort } from '@/domains/connections/main'
-import { accountProviders, ticketSources } from '@/providers/composition'
 import { providerEndpoints } from '@/providers/endpoints'
+import { PROVIDER_REGISTRY } from '@/providers/registry'
 import { createTicketRouter } from './ticket-router'
 
 const cipher: Cipher = {
@@ -23,7 +23,7 @@ async function caller(context: TestContext) {
     userData: directory,
     accountData: directory,
     endpoints: providerEndpoints(false),
-    providers: accountProviders,
+    providers: PROVIDER_REGISTRY,
     cipher,
     openExternal: async () => {},
   })
@@ -33,7 +33,7 @@ async function caller(context: TestContext) {
       path: access.paths.connections,
       exclusive: access.exclusive,
     }),
-    sources: ticketSources,
+    providers: PROVIDER_REGISTRY,
   }).createCaller({})
 }
 

@@ -8,7 +8,7 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from '@/platform/renderer/components/ui/input-group'
-import { sourcePresentation } from '../lib/sources'
+import { providerPresentation } from '@/providers/presentation-registry'
 import { useTicketSearch } from '../state/use-ticket-search'
 
 // The provider answers the search, so the field only holds the words; the backlog reads the settled query.
@@ -52,7 +52,7 @@ function TicketSearchField() {
 // A new Ticket is written on the provider's own page until Argo can write one (#1850, #1851).
 function NewTicket({ connection }: { connection: ConnectionSummary | null }) {
   const { t } = useTranslation('tickets')
-  const page = connection && sourcePresentation(connection.provider).newTicketURL
+  const page = connection && providerPresentation(connection.provider).newTicketURL
   if (!connection) {
     return (
       <Button aria-label={t('sidebarHeader.newTicket')} disabled size="icon-sm" variant="ghost">

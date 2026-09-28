@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import { providerPresentation } from '@/domains/accounts/renderer'
 import type { ConnectionSummary } from '@/domains/tickets/contract/contract'
+import { providerPresentation } from '@/providers/presentation-registry'
 import { ConnectionStatusMark } from '../connection/connection-status-mark'
 
 export type TicketsSidebarAccountFootProps = {

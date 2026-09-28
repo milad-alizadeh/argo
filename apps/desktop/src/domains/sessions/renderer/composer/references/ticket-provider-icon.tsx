@@ -1,9 +1,5 @@
+import { PROVIDER_PRESENTATIONS } from '@/providers/presentation-registry'
 import type { ComposerTicketContext } from '../editing/composer-editing'
-
-export const ticketProviderIconSource: Record<ComposerTicketContext['provider'], string> = {
-  github: '/provider-icons/github.svg',
-  linear: '/provider-icons/linear.svg',
-}
 
 export function TicketProviderIcon({ provider }: { provider: ComposerTicketContext['provider'] }) {
   return (
@@ -11,7 +7,7 @@ export function TicketProviderIcon({ provider }: { provider: ComposerTicketConte
       alt=""
       aria-hidden="true"
       className="size-3.5 shrink-0 dark:invert"
-      src={ticketProviderIconSource[provider]}
+      src={PROVIDER_PRESENTATIONS[provider].icon}
     />
   )
 }

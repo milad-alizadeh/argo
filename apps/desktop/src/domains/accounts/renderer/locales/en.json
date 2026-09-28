@@ -48,30 +48,10 @@
   "signIn": {
     "label": "Connect an Account",
     "waiting": "Waiting for {{provider}}…",
+    "codeLabel": "{{provider}} code",
     "cancel": "Cancel",
     "added": "Connected <name>{{login}}</name>.",
     "renewed": "Signed in again as <name>{{login}}</name>."
-  },
-  "provider": {
-    "github": {
-      "name": "GitHub",
-      "scopeOne": "repository",
-      "scopeMany": "repositories",
-      "requesting": "Asking GitHub for a code…",
-      "connect": "Connect a GitHub Account",
-      "challenge": "Enter this code on GitHub to connect an Account.",
-      "codeLabel": "GitHub code",
-      "open": "Copy code and open GitHub"
-    },
-    "linear": {
-      "name": "Linear",
-      "scopeOne": "team",
-      "scopeMany": "teams",
-      "requesting": "Opening Linear…",
-      "connect": "Connect a Linear Account",
-      "challenge": "Allow Argo in the Linear page your browser opened to connect an Account.",
-      "open": "Open Linear again"
-    }
   },
   "error": {
     "access-denied": "Argo cannot manage Accounts for this window.",

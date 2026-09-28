@@ -40,7 +40,7 @@ export const linearAccounts: AccountProvider = {
     if (!started.ok) return 'sign-in-port-busy'
     const { url, outcome } = started.authorization
     return {
-      challenge: { provider: 'linear' },
+      challenge: { kind: 'browser-consent' },
       url,
       expiresAt,
       async finish(): Promise<SignInEnd> {

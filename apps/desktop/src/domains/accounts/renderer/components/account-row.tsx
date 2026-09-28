@@ -5,7 +5,7 @@ import type { AccountState, AccountSummary } from '@/domains/accounts/contract/c
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
-import { providerPresentation } from '../lib/providers'
+import { providerPresentation } from '@/providers/presentation-registry'
 
 // How each Account state draws: its badge, and the note saying why, which a connected Account has
 // no need of.

@@ -93,20 +93,6 @@
       "account-missing": "Disconnected"
     }
   },
-  "source": {
-    "github": {
-      "items": "GitHub Issues",
-      "scopePlaceholder": "Search owner/name",
-      "noScopes": "{{login}} cannot see any repository with GitHub Issues turned on.",
-      "noDependencies": "GitHub gives no dependency information for this Ticket."
-    },
-    "linear": {
-      "items": "Linear issues",
-      "scopePlaceholder": "Search teams",
-      "noScopes": "{{login}} cannot see any Linear team.",
-      "noDependencies": "Linear gives no dependency information for this Ticket."
-    }
-  },
   "connect": {
     "form": {
       "label": "Connect a Ticket source",
