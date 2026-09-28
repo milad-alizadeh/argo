@@ -1,4 +1,4 @@
-import { Trans, useTranslation } from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import type { SessionHarness } from '../../harness/harnesses'
 import {
@@ -16,15 +16,6 @@ type ActiveReference = {
   source: string
   trigger: '/' | '@'
 }
-
-export const composerPlaceholder = (
-  <span
-    aria-hidden="true"
-    className="pointer-events-none absolute px-4 py-3 type-body text-muted-foreground"
-  >
-    <Trans i18nKey="composer.placeholder" ns="sessions" />
-  </span>
-)
 
 function referenceTrigger(value: string | undefined): '/' | '@' | null {
   return value === '/' || value === '@' ? value : null

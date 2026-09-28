@@ -69,7 +69,6 @@
     "label": "Session input",
     "cardLabel": "Message composer",
     "message": "Message",
-    "placeholder": "Direct the next move…",
     "plan": "Step {{current}}/{{total}}",
     "addContext": "Add context",
     "contextPicker": {
