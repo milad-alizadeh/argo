@@ -118,8 +118,8 @@ export const test = packagedTest.extend<{
   harnessSignInScenario: HarnessSignInScenario
 }>({
   harnessSignInScenario: ['signed-out', { option: true }],
-  harnessSignIn: async ({ packagedApplication, harnessSignInScenario, root }, use) => {
-    const fixture = await prepareReadyProject(root, packagedApplication)
+  harnessSignIn: async ({ applicationUnderTest, harnessSignInScenario, root }, use) => {
+    const fixture = await prepareReadyProject(root, applicationUnderTest)
     const environment = await environmentFor(root, harnessSignInScenario)
     const application = await launch(fixture, environment)
     try {

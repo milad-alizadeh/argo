@@ -26,6 +26,7 @@
         "scripts/entitlements.mts",
         "scripts/fuse-profile.mts",
         "scripts/production-install.mts",
+        "scripts/vite-targets.mts",
         "package.json",
         "package-lock.json",
         "$TURBO_ROOT$/bun.lock"
@@ -67,20 +68,25 @@
       "outputs": []
     },
     "test:e2e": {
-      "dependsOn": ["build"],
       "inputs": [
         "e2e/**",
         "mocks/**",
         "src/**",
         "!src/**/*.test.ts",
         "!src/**/*.stories.tsx",
+        "index.html",
+        "public/**",
+        "assets/**",
+        "vite.*.config.ts",
+        "scripts/build-vite.mts",
+        "scripts/vite-targets.mts",
         "scripts/acceptance-protocol.mts",
         "scripts/fuse-profile.mts",
         "playwright.config.ts",
         "tsconfig*.json",
         "package.json"
       ],
-      "env": ["CI", "ARGO_SESSION_SHOTS"],
+      "env": ["CI", "ARGO_SESSION_SHOTS", "ARGO_E2E_PACKAGED"],
       "outputs": []
     },
     "build:storybook": {

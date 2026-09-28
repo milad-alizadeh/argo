@@ -5,6 +5,7 @@ import path from 'node:path'
 // needs and lets the project (`sessions` or `real-sessions`, `playwright.config.ts`) decide which
 // one it gets, rather than living in a second curated file (#e2e-real-cheap-models).
 import { completeWatch, writeWatchOutput } from '../../mocks/sessions/mock-shell-output'
+import { packagedRun } from '../application-under-test'
 import { assertShippedFusesIntact } from '../packaged-app'
 import { proveBackgroundShell } from './cases/background-shell.case'
 import { proveClaudeRename } from './cases/claude-rename.case'
@@ -309,5 +310,6 @@ test.describe('with a slow Harness', () => {
 })
 
 test('shipped fuses stay intact', async () => {
+  test.skip(!packagedRun, 'Only the packaged app has fuses.')
   await assertShippedFusesIntact()
 })

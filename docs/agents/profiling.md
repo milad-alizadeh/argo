@@ -74,9 +74,9 @@ no CPU samples. Delete the file when you are done.
 If `profiler stop` prints `No tracing in progress` while the app still runs, start the recording
 again.
 
-## A packaged flow
+## An e2e flow
 
-Run the packaged end-to-end flows with a CPU profile and per-case wall times:
+Run the end-to-end flows with a CPU profile and per-case wall times:
 
 ```sh
 bun run --cwd apps/desktop test:e2e:profile

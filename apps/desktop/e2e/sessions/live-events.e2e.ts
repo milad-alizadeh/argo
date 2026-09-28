@@ -4,7 +4,7 @@ import { _electron as electron } from 'playwright-core'
 import { openDatabase } from '@/database/database'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import { LIVE_EVENT_PROOF_ENV, PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
-import { appExecutable } from '../packaged-app'
+import { launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
 
 const projectId = '00000000-0000-4000-8000-000000000091'
@@ -105,11 +105,11 @@ async function seedSession(root: string): Promise<string> {
 
 test('packaged Feed replays ordered Claude live activity for a stored Session', async ({
   root,
-  packagedApplication,
+  applicationUnderTest,
 }) => {
   const userData = await seedSession(root)
   const application = await electron.launch({
-    executablePath: appExecutable(packagedApplication),
+    ...launchCommand(applicationUnderTest),
     env: {
       ...process.env,
       [PROJECT_PROOF_STORE_ENV]: userData,

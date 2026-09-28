@@ -18,6 +18,9 @@ Test assets live outside `src/`, and a mock is called a mock.
 - `e2e/<flow>/` holds Playwright flows (`*.e2e.ts`, `cases/*.case.ts`, `fixtures/*.fixture.ts`),
   one project per flow in `playwright.config.ts`, run by `bun run test:e2e`. A new flow is a
   project, never a script.
+- Run e2e locally against the Vite build: `bun run test:e2e` builds it and never packages the app.
+  Only CI sets `ARGO_E2E_PACKAGED=1` to run the same cases against the packaged app. Do not package
+  to run e2e.
 - Cases build on the `test` in `e2e/packaged-proof.ts` and declare their starting state as a
   fixture option (`test.use`), never as a case that runs first. A flow variant, such as the
   real-Harness backend, is a project `use` option on the same file, never a copy.
