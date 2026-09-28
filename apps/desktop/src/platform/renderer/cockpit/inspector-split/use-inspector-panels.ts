@@ -78,6 +78,7 @@ function useInspectorReadiness({
 }
 
 function useOpenInspector({
+  dismissedReveal,
   inspectorPanel,
   reveal,
   setIsInspectorReady,
@@ -89,6 +90,7 @@ function useOpenInspector({
   constrainedExpansion,
   expandedWidth,
 }: {
+  dismissedReveal: RefObject<unknown>
   inspectorPanel: ReturnType<typeof usePanelRef>
   reveal: unknown
   setIsInspectorReady: (ready: boolean) => void
@@ -115,17 +117,23 @@ function useOpenInspector({
   const opener = useRef(open)
   opener.current = open
   useLayoutEffect(() => {
-    if (reveal != null && stateRef.current === 'collapsed') opener.current()
-  }, [reveal, stateRef])
+    // A session switch retires `reveal` to null and back (work-selection.ts); returning to the same
+    // Session names the same reveal again, which must not read as a fresh pick if the reader already
+    // dismissed it by collapsing the panel (#2852).
+    if (reveal != null && reveal !== dismissedReveal.current && stateRef.current === 'collapsed')
+      opener.current()
+  }, [dismissedReveal, reveal, stateRef])
   return open
 }
 
 function useInspectorToggles({
   constrainedExpansion,
+  dismissedReveal,
   expandedWidth,
   expandWorkspace,
   inspectorPanel,
   open,
+  reveal,
   setIsInspectorReady,
   splitElement,
   state,
@@ -133,10 +141,12 @@ function useInspectorToggles({
   workspacePanel,
 }: {
   constrainedExpansion: RefObject<boolean>
+  dismissedReveal: RefObject<unknown>
   expandedWidth: RefObject<number>
   expandWorkspace: () => void
   inspectorPanel: ReturnType<typeof usePanelRef>
   open: () => void
+  reveal: unknown
   setIsInspectorReady: (ready: boolean) => void
   splitElement: RefObject<HTMLDivElement | null>
   state: InspectorState
@@ -150,6 +160,7 @@ function useInspectorToggles({
         expandWorkspace()
         constrainedExpansion.current = false
       }
+      dismissedReveal.current = reveal
       setIsInspectorReady(false)
       inspectorPanel.current?.collapse()
       updateState('collapsed')
@@ -200,6 +211,7 @@ function useInspectorPanelState(sizes: InspectorSizes, defaultCollapsed: boolean
   const stateRef = useRef<InspectorState>(defaultCollapsed ? 'collapsed' : 'open')
   const constrainedExpansionRef = useRef(false)
   const expandedWidthRef = useRef(0)
+  const dismissedRevealRef = useRef<unknown>(null)
   const readiness = useInspectorReadiness({ defaultCollapsed, element: inspectorElement, state })
   const updateState = (next: InspectorState) => {
     stateRef.current = next
@@ -207,6 +219,7 @@ function useInspectorPanelState(sizes: InspectorSizes, defaultCollapsed: boolean
   }
   return {
     constrainedExpansionRef,
+    dismissedRevealRef,
     expandedWidthRef,
     inspectorElement,
     inspectorPanel,
@@ -229,6 +242,7 @@ function useInspectorPanelControls({
 }) {
   const {
     constrainedExpansionRef,
+    dismissedRevealRef,
     expandedWidthRef,
     inspectorPanel,
     readiness: { isInspectorReady, setIsInspectorReady, synchronizeReady },
@@ -239,39 +253,35 @@ function useInspectorPanelControls({
     workspacePanel,
     sizes,
   } = panels
-  useRestoreWorkspaceOnResize({
-    constrainedExpansion: constrainedExpansionRef,
-    expandedWidth: expandedWidthRef,
-    inspectorMinimum: sizes.inspectorMin,
-    splitElement,
-    stateRef,
-    updateState,
-    workspaceMinimum: sizes.workspaceMin,
-    workspacePanel,
-  })
-  const open = useOpenInspector({
+  const shared = {
     constrainedExpansion: constrainedExpansionRef,
     expandedWidth: expandedWidthRef,
     inspectorPanel,
+    splitElement,
+    stateRef,
+    updateState,
+    workspacePanel,
+  }
+  useRestoreWorkspaceOnResize({
+    ...shared,
+    inspectorMinimum: sizes.inspectorMin,
+    workspaceMinimum: sizes.workspaceMin,
+  })
+  const open = useOpenInspector({
+    ...shared,
+    dismissedReveal: dismissedRevealRef,
     reveal,
     setIsInspectorReady,
     sizes,
-    splitElement,
-    stateRef,
-    updateState,
-    workspacePanel,
   })
   const toggles = useInspectorToggles({
-    constrainedExpansion: constrainedExpansionRef,
-    expandedWidth: expandedWidthRef,
+    ...shared,
+    dismissedReveal: dismissedRevealRef,
     expandWorkspace: () => workspacePanel.current?.expand(),
-    inspectorPanel,
     open,
+    reveal,
     setIsInspectorReady,
-    splitElement,
     state,
-    updateState,
-    workspacePanel,
   })
   const synchronizeCollapsed = useSynchronizeCollapsed({
     inspectorPanel,

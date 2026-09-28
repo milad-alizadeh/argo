@@ -19,6 +19,7 @@ const BUDGET_MODELS: Record<SessionHarness, RegExp> = {
 }
 
 const ROW = 'nav[aria-label="Sessions"] button[data-session-id]'
+export const PERSISTED_ROW = `${ROW}:not([data-session-id^="optimistic:"])`
 const FILTER = 'button[aria-label="Filter Sessions"]'
 export const TURN_CONFIGURATION = '[aria-label^="Choose Turn configuration"]'
 const ROW_TIMEOUT = 30_000

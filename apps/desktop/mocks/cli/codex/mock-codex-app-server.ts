@@ -1,8 +1,5 @@
 import { createInterface } from 'node:readline'
-import {
-  SESSION_MOCK_ADVERSARIAL_SEED_ENV,
-  SESSION_MOCK_REPLY_DELAY_MS_ENV,
-} from '@/harnesses/proof-protocol'
+import { readMockReplyDelayMs, SESSION_MOCK_ADVERSARIAL_SEED_ENV } from '@/harnesses/proof-protocol'
 import { MOCK_CODEX_PROCESS_TITLE } from '../mock-cli-process-titles.mts'
 import { MOCK_CODEX_MODEL_CATALOG } from './fixtures/mock-codex-model-catalog.ts'
 import { compactionItem, completeTurn } from './fixtures/mock-codex-responses.ts'
@@ -17,8 +14,7 @@ let threadCounter = 0
 let turnIndex = 0
 const echoFile = process.env.ARGO_CODEX_ECHO_FILE
 const COMPLETION_DELAY_MS = 10
-const replyDelay = Number(process.env[SESSION_MOCK_REPLY_DELAY_MS_ENV] ?? '0')
-const REPLY_DELAY_MS = Number.isFinite(replyDelay) && replyDelay > 0 ? replyDelay : 0
+const REPLY_DELAY_MS = readMockReplyDelayMs()
 const adversarialSeed = process.env[SESSION_MOCK_ADVERSARIAL_SEED_ENV]
 const threadIdFor = (counter: number) =>
   `00000000-0000-4000-8000-${String(counter).padStart(12, '0')}`
