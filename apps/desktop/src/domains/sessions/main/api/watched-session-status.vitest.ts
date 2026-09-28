@@ -1,12 +1,12 @@
-import { afterEach, expect, jest, test } from 'bun:test'
+import { afterEach, expect, test, vi } from 'vitest'
 import { WATCHED_TURN_QUIET_LIMIT_MS, WatchedSessionStatus } from './watched-session-status'
 
 afterEach(() => {
-  jest.useRealTimers()
+  vi.useRealTimers()
 })
 
 function openTurnWithFakeTimers() {
-  jest.useFakeTimers()
+  vi.useFakeTimers()
   let changes = 0
   const status = new WatchedSessionStatus(() => {
     changes += 1
@@ -37,7 +37,7 @@ test('reads a write with no turn marker as a turn under way', () => {
 test('stops calling an open turn running once its file has been quiet too long', () => {
   const { status, changes } = openTurnWithFakeTimers()
 
-  jest.advanceTimersByTime(WATCHED_TURN_QUIET_LIMIT_MS - 1)
+  vi.advanceTimersByTime(WATCHED_TURN_QUIET_LIMIT_MS - 1)
   expect(changes()).toBe(0)
   status.record({
     harness: 'claude',
@@ -45,7 +45,7 @@ test('stops calling an open turn running once its file has been quiet too long',
     turn: 'open',
     at: WATCHED_TURN_QUIET_LIMIT_MS - 1,
   })
-  jest.advanceTimersByTime(WATCHED_TURN_QUIET_LIMIT_MS)
+  vi.advanceTimersByTime(WATCHED_TURN_QUIET_LIMIT_MS)
 
   expect(changes()).toBe(1)
   expect(status.statusOf('claude', 'native-1', 2 * WATCHED_TURN_QUIET_LIMIT_MS)).toBeNull()
@@ -55,7 +55,7 @@ test('stops calling an open turn running once its file has been quiet too long',
 test('keeps a closed turn idle with no timer', () => {
   const { status, changes } = openTurnWithFakeTimers()
   status.record({ harness: 'claude', nativeId: 'native-1', turn: 'closed', at: 10 })
-  jest.advanceTimersByTime(2 * WATCHED_TURN_QUIET_LIMIT_MS)
+  vi.advanceTimersByTime(2 * WATCHED_TURN_QUIET_LIMIT_MS)
 
   expect(changes()).toBe(0)
   expect(status.statusOf('claude', 'native-1', 2 * WATCHED_TURN_QUIET_LIMIT_MS)).toBe('idle')
