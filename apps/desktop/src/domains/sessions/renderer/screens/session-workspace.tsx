@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useState } from 'react'
+import { type ReactNode, useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
@@ -33,7 +33,7 @@ function ComposerFade({ onJumpToLatest }: { onJumpToLatest: (() => void) | null 
       <div
         aria-hidden="true"
         data-component="SessionComposerFade"
-        className="pointer-events-none absolute inset-x-0 -top-(--size-session-feed-fade) bottom-0 -z-10 bg-[image:var(--gradient-session-composer-fade)]"
+        className="pointer-events-none absolute inset-x-0 top-(--session-composer-fade-start) bottom-0 -z-10 bg-[image:var(--gradient-session-composer-fade)]"
       />
       {onJumpToLatest === null ? null : (
         <FeedJumpToLatest
@@ -55,11 +55,38 @@ function ComposerSection({
   onJumpToLatest: (() => void) | null
 }) {
   const { t } = useTranslation('sessions')
+  const sectionRef = useRef<HTMLElement>(null)
+  const hasComposer = composer !== null
+  useLayoutEffect(() => {
+    const section = sectionRef.current
+    const body = section?.parentElement
+    if (!section || !body) return
+    const card = section.querySelector<HTMLElement>('[data-component="ComposerCard"]')
+    const measure = () => {
+      const sectionBounds = section.getBoundingClientRect()
+      const cardBounds = card?.getBoundingClientRect() ?? sectionBounds
+      body.style.setProperty('--session-composer-height', `${sectionBounds.height}px`)
+      section.style.setProperty(
+        '--session-composer-fade-start',
+        `${cardBounds.top - sectionBounds.top + cardBounds.height / 2}px`,
+      )
+      section.style.setProperty('--session-composer-fade-length', `${cardBounds.height / 2}px`)
+    }
+    const observer = new ResizeObserver(measure)
+    observer.observe(section)
+    if (card) observer.observe(card)
+    measure()
+    return () => {
+      observer.disconnect()
+      body.style.removeProperty('--session-composer-height')
+    }
+  }, [hasComposer])
   if (composer === null) return null
   return (
     <section
       aria-label={t('composerRegionLabel')}
-      className="session-screen__composer relative z-20 isolate flex shrink-0 flex-col px-(--spacing-session-gutter)"
+      ref={sectionRef}
+      className="session-screen__composer absolute inset-x-0 bottom-0 z-20 isolate flex flex-col px-(--spacing-session-gutter)"
     >
       <ComposerFade onJumpToLatest={onJumpToLatest} />
       <div
@@ -104,7 +131,7 @@ export function SessionWorkspace({
   return (
     <section aria-label={t('workspaceLabel')} className="panel-frame @container relative">
       {header ?? null}
-      <div className="panel-body bg-popover">
+      <div className="panel-body relative bg-(--color-session-surface)">
         {/* A layout wrapper only: `BasicFeed` is its own labelled landmark, so this stays a plain `div` to
           avoid a second "Session Feed" region with the same name. */}
         <div className="session-screen__feed min-h-0 flex-1 overflow-hidden">

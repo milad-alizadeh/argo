@@ -4,7 +4,6 @@ import { mergeProps } from '@base-ui/react/merge-props'
 import { useRender } from '@base-ui/react/use-render'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from 'cn'
-import { PanelLeftIcon } from 'lucide-react'
 import * as React from 'react'
 import { Button } from './button'
 import { Input } from './input'
@@ -19,6 +18,7 @@ import {
 import { Skeleton } from './skeleton'
 import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip'
 import { useIsMobile } from './use-mobile'
+import { SidebarIcon } from "@phosphor-icons/react";
 
 const SIDEBAR_COOKIE_NAME = 'sidebar_state'
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -259,7 +259,7 @@ function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<t
       }}
       {...props}
     >
-      <PanelLeftIcon />
+      <SidebarIcon strokeWidth={2} />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )

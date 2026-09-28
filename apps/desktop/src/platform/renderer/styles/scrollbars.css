@@ -1,0 +1,65 @@
+@property --scrollbar-visibility {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+[data-scrollbar-active] {
+  --scrollbar-visibility: 1;
+}
+
+/* Native scrolling panes and ScrollArea share the same quiet thumb. */
+::-webkit-scrollbar {
+  width: var(--size-scrollbar);
+  height: var(--size-scrollbar);
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border: var(--spacing-scrollbar-inset) solid transparent;
+  border-radius: var(--radius-xl);
+  background-color: color-mix(in srgb, var(--color-scrollbar-thumb) calc(var(--scrollbar-visibility) * 100%), transparent);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:active {
+  background-color: var(--color-scrollbar-thumb-hover);
+}
+
+::-webkit-scrollbar-button {
+  display: none;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-scrollbar-thumb) calc(var(--scrollbar-visibility) * 100%), transparent) transparent;
+  }
+}
+
+[data-slot="scroll-area-scrollbar"] {
+  border: 0;
+  padding: var(--spacing-scrollbar-inset);
+  background: transparent;
+}
+
+[data-slot="scroll-area-scrollbar"][data-orientation="vertical"] {
+  width: var(--size-scrollbar);
+}
+
+[data-slot="scroll-area-scrollbar"][data-orientation="horizontal"] {
+  height: var(--size-scrollbar);
+}
+
+[data-slot="scroll-area-thumb"] {
+  background-color: color-mix(in srgb, var(--color-scrollbar-thumb) calc(var(--scrollbar-visibility) * 100%), transparent);
+}
+
+[data-slot="scroll-area"] [data-slot="scroll-area-scrollbar"]:is(:hover, :active) [data-slot="scroll-area-thumb"] {
+  background-color: var(--color-scrollbar-thumb-hover);
+}

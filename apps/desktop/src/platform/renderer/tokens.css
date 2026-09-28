@@ -81,7 +81,6 @@
    --size-queue-row: 44px;
    --size-composer-field: 56px;
    --size-development-identity-bar: 32px;
-   --size-composer-plan-state: calc(var(--size-composer-field) * 2);
    --spacing-session-composer-bottom: calc(var(--spacing-shell-region) * 2 + var(--spacing-shell-inset));
    --spacing-development-identity-bottom: calc(var(--spacing-session-composer-bottom) - var(--size-development-identity-bar) - var(--spacing-shell-item));
    --size-session-context-bar: 54px;
@@ -91,13 +90,13 @@
    --spacing-session-composer-ink-bottom: calc(var(--spacing-session-composer-bottom) - var(--size-session-context-bar) + var(--spacing-shell-item));
    --size-session-composer-overlay: calc(var(--spacing-shell-section) + var(--size-composer-field) + var(--size-control) + var(--spacing-shell-item) * 2 + var(--spacing-session-composer-bottom) + var(--spacing-hair));
    --spacing-session-feed-composer-inset: calc(var(--size-session-composer-overlay) + var(--spacing-snug));
-   --size-session-feed-fade: 48px;
+   --blur-session-composer: 12px;
+   --color-session-composer: color-mix(in oklab, var(--card) 82%, transparent);
    --size-attachment-thumbnail: 56px;
    --size-attachment-card: 64px;
    --size-attachment-tray: 72px;
    /* The editor reserves the plan control width, so its first line does not pass under the control. */
    --size-composer-plan-trigger: calc(var(--size-control) * 3 + var(--spacing-shell-item));
-   --inset-composer-plan: var(--size-composer-plan-trigger);
    /* A dropdown or popover menu hung off the composer's toolbar: mode, permission and run setup. */
    --size-session-menu: 23rem;
    --size-session-menu-max-height: calc(100dvh - 2rem);
@@ -189,7 +188,8 @@
    --size-navigation-item: 36px;
    --size-navigation-control: 28px;
    --size-icon-control: 16px;
-   --size-navigation-icon: 24px;
+   --size-navigation-icon: calc(var(--size-icon-control) * 1.25);
+   --color-icon: var(--muted-foreground);
    --size-navigation-control: 40px;
    /* The child-completion ring sits around a Ticket state mark without becoming a control itself. */
    --size-icon-progress: 20px;
@@ -256,10 +256,10 @@
    --duration-standard: var(--duration-layout);
    --transition-duration-standard: var(--duration-standard);
    --size-bottom-status: 106px;
-   --size-icon-meta: 14px;
+   --size-icon-meta: var(--size-icon-control);
    --size-icon-metadata: var(--size-icon-meta);
-   --size-icon-inline: 14px;
-   --size-icon-text: 1em;
+   --size-icon-inline: var(--size-icon-control);
+   --size-icon-text: var(--size-icon-control);
    /* an icon set in running text, at the size of its words */
    --size-feed-attachment-preview: 80px;
    --size-feed-gallery: 160px;
@@ -367,13 +367,32 @@
    --size-ticket-inspector: 560px;
    --size-ticket-inspector-min: 440px;
    --size-ticket-workspace-min: 400px;
-   --gradient-session-composer-fade: linear-gradient(to bottom, transparent, var(--popover) var(--size-session-feed-fade));
+   --size-scrollbar: 8px;
+   --spacing-scrollbar-inset: 2px;
+   --color-scrollbar-thumb: rgb(0 0 0 / 0.18);
+   --color-scrollbar-thumb-hover: rgb(0 0 0 / 0.3);
+   --color-session-surface: var(--popover);
+   --shadow-panel-body:
+      0 0 4px color-mix(in oklab, var(--color-black) 2%, transparent),
+      0 0 24px -6px color-mix(in oklab, var(--color-black) 8%, transparent);
 }
 
 .dark {
-   --color-surface-base: var(--color-neutral-950);
-   --color-surface-panel: var(--color-neutral-900);
-   --color-surface-raised: var(--color-neutral-800);
+   --color-surface-base: #292c30;
+   --color-surface-panel: #202226;
+   --color-surface-raised: #2a2d32;
+   --color-session-surface: #191b1e;
+   --color-scrollbar-thumb: rgb(255 255 255 / 0.16);
+   --color-scrollbar-thumb-hover: rgb(255 255 255 / 0.28);
+   --color-session-composer: color-mix(in oklab, var(--color-surface-raised) 86%, transparent);
+   --shadow-panel-body:
+      0 0 24px rgb(255 255 255 / 0.035),
+      0 0 48px -4px rgb(255 255 255 / 0.025),
+      0 0 40px -8px rgb(0 0 0 / 0.14);
+   --shadow-surface:
+      0 0 0 1px rgb(255 255 255 / 0.025),
+      0 0 24px -6px rgb(255 255 255 / 0.035),
+      0 6px 24px -10px rgb(0 0 0 / 0.35);
    --code-xcode-background: #292a30;
    --code-xcode-foreground: #cecfd0;
    --code-xcode-line-highlight: #ffffff0f;
@@ -388,40 +407,40 @@
    --code-xcode-link: var(--code-xcode-string);
    --code-xcode-caret: #fff;
    --background: var(--color-surface-base);
-   --foreground: oklch(0.985 0 0);
+   --foreground: #e7e9ed;
    --card: var(--color-surface-panel);
-   --card-foreground: oklch(0.985 0 0);
+   --card-foreground: #e7e9ed;
    --popover: var(--color-surface-raised);
-   --popover-foreground: oklch(0.985 0 0);
+   --popover-foreground: #e7e9ed;
    --primary: oklch(0.922 0 0);
    --primary-foreground: oklch(0.205 0 0);
-   --secondary: oklch(0.269 0 0);
-   --secondary-foreground: oklch(0.985 0 0);
-   --muted: oklch(0.269 0 0);
-   --muted-foreground: oklch(0.708 0 0);
-   --selected: oklch(0.34 0 0);
-   --accent: oklch(0.269 0 0);
-   --accent-foreground: oklch(0.985 0 0);
+   --secondary: #2b2e33;
+   --secondary-foreground: #e7e9ed;
+   --muted: #2b2e33;
+   --muted-foreground: #a5a9b0;
+   --selected: #34373c;
+   --accent: #2b2e33;
+   --accent-foreground: #e7e9ed;
    /* Lightened from shadcn's default 0.704: that clears --card but not a destructive/80 label at
      80% opacity over --popover, failing 4.5:1. */
    --destructive: oklch(0.728 0.191 22.216);
    --success: oklch(0.765 0.177 151.328);
    --diff-added: oklch(0.765 0.177 163.223);
-   --border: oklch(1 0 0 / 10%);
-   --input: oklch(1 0 0 / 15%);
+   --border: oklch(1 0 0 / 8%);
+   --input: oklch(1 0 0 / 12%);
    --ring: oklch(0.556 0 0);
    --chart-1: oklch(0.87 0 0);
    --chart-2: oklch(0.556 0 0);
    --chart-3: oklch(0.439 0 0);
    --chart-4: oklch(0.371 0 0);
-   --chart-5: oklch(0.269 0 0);
+   --chart-5: #2b2e33;
    --sidebar: var(--color-surface-panel);
-   --sidebar-foreground: oklch(0.985 0 0);
+   --sidebar-foreground: #e7e9ed;
    --sidebar-primary: oklch(0.488 0.243 264.376);
-   --sidebar-primary-foreground: oklch(0.985 0 0);
-   --sidebar-accent: oklch(0.269 0 0);
-   --sidebar-accent-foreground: oklch(0.985 0 0);
-   --sidebar-border: oklch(1 0 0 / 10%);
+   --sidebar-primary-foreground: #e7e9ed;
+   --sidebar-accent: #2b2e33;
+   --sidebar-accent-foreground: #e7e9ed;
+   --sidebar-border: oklch(1 0 0 / 8%);
    --sidebar-ring: oklch(0.556 0 0);
    --color-language-go: var(--color-cyan-400);
    --color-language-ruby: var(--color-red-400);

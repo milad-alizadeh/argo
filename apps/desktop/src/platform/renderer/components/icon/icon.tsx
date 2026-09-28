@@ -1,4 +1,5 @@
 import { cn } from 'cn'
+import type { IconWeight } from '@phosphor-icons/react'
 import type * as React from 'react'
 import { ICONS, type IconName } from './icon-registry'
 
@@ -24,18 +25,21 @@ export type IconProps = Omit<
   IconAccessibility & {
     name: IconName
     size?: IconSize
+    weight?: IconWeight
   }
 
-// Sizeless by default so a control that already sizes its own icons (a Button's
-// `[&_svg:not([class*='size-'])]:size-4`) keeps governing it; pass `size` for a standalone icon.
-export function Icon({ className, name, size, ...props }: IconProps) {
+// Shared icon styles keep every role consistent across buttons, headers, and metadata.
+export function Icon({ className, name, size, weight = 'regular', ...props }: IconProps) {
   const Glyph = ICONS[name]
   return (
     <Glyph
       aria-hidden={props['aria-label'] === undefined ? true : undefined}
       className={cn(size && SIZE_CLASS[size], className)}
       data-slot="icon"
+      data-icon={name}
       {...props}
+      weight={weight}
+      mirrored={name === 'panel-right'}
     />
   )
 }

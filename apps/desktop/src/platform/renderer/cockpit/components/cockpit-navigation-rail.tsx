@@ -39,7 +39,7 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
     <TooltipProvider>
       <nav
         aria-label={t('rail.label')}
-        className="no-drag-region flex h-full min-h-0 w-(--size-navigation-rail) shrink-0 flex-col items-center [&_*]:no-drag-region [&_svg]:size-(--size-navigation-icon)"
+        className="no-drag-region flex h-full min-h-0 w-(--size-navigation-rail) shrink-0 flex-col items-center [--icon-size:var(--size-navigation-icon)] [&_*]:no-drag-region"
       >
         <div className="flex flex-col items-center gap-2 pt-(--inset-navigation-rail-item-top)">
           {DESTINATIONS.map((itemDestination) => {
@@ -57,7 +57,7 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
                     navigate(DESTINATION_PATHS[itemDestination])
                   }}
                 >
-                  <Icon name={iconName} />
+                  <Icon name={iconName} weight={active ? 'fill' : 'regular'} />
                 </TooltipTrigger>
                 <TooltipContent side="right" className="type-meta">
                   {label}

@@ -507,8 +507,9 @@ async function expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement: HTML
 function expectFeedDoesNotOverlapComposer(canvasElement: HTMLElement) {
   const composer = within(canvasElement).getByLabelText('Session composer')
   const history = within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)
-  expect(history.getBoundingClientRect().bottom).toBeLessThanOrEqual(
-    composer.getBoundingClientRect().top,
+  expect(history.getBoundingClientRect().bottom).toBeCloseTo(
+    composer.getBoundingClientRect().bottom,
+    1,
   )
 }
 
@@ -536,9 +537,9 @@ function expectContextBarInset(canvasElement: HTMLElement) {
   const composerBounds = composer.getBoundingClientRect()
   const workspaceBounds = workspace.getBoundingClientRect()
   const fadeBounds = fade.getBoundingClientRect()
-  expect(fadeBounds.top).toBeLessThan(composerBounds.top)
+  expect(fadeBounds.top).toBeCloseTo(composerBounds.top + composerBounds.height / 2, 1)
   expect(fadeBounds.bottom).toBeCloseTo(workspaceBounds.bottom, 1)
-  expect(fadeBounds.height).toBeGreaterThan(composerBounds.height)
+  expect(fadeBounds.height).toBeCloseTo(composerBounds.height / 2, 1)
   expect(getComputedStyle(fade).pointerEvents).toBe('none')
 }
 

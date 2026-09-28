@@ -2,7 +2,6 @@
 
 import { Command as CommandPrimitive } from 'cmdk'
 import { cn } from 'cn'
-import { CheckIcon, SearchIcon } from 'lucide-react'
 import type * as React from 'react'
 import {
   Dialog,
@@ -12,6 +11,7 @@ import {
   DialogTitle,
 } from './dialog'
 import { InputGroup, InputGroupAddon } from './input-group'
+import { CheckIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 
 function Command({ className, ...props }: React.ComponentProps<typeof CommandPrimitive>) {
   return (
@@ -72,7 +72,7 @@ function CommandInput({
           {...props}
         />
         <InputGroupAddon>
-          <SearchIcon className="size-4 shrink-0 opacity-50" />
+          <MagnifyingGlassIcon strokeWidth={2} className="size-4 shrink-0 opacity-50" />
         </InputGroupAddon>
       </InputGroup>
     </div>
@@ -149,7 +149,7 @@ function CommandItem({
       {...props}
     >
       {children}
-      <CheckIcon className="ml-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100" />
+      <CheckIcon strokeWidth={2} className="ml-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100" />
     </CommandPrimitive.Item>
   )
 }

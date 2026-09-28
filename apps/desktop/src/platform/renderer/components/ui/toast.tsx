@@ -2,16 +2,10 @@
 
 import { Toast as ToastPrimitive } from '@base-ui/react/toast'
 import { cn } from 'cn'
-import {
-  CircleCheckIcon,
-  InfoIcon,
-  OctagonXIcon,
-  TriangleAlertIcon,
-  XIcon,
-} from 'lucide-react'
 import type * as React from 'react'
 import { Loader } from '../loader/loader'
 import { Button } from './button'
+import { CheckCircleIcon, InfoIcon, XCircleIcon, WarningIcon, XIcon } from "@phosphor-icons/react";
 
 const toast = ToastPrimitive.createToastManager()
 
@@ -128,7 +122,7 @@ function ToastClose({
       )}
       {...props}
     >
-      {children ?? <XIcon aria-hidden="true" />}
+      {children ?? <XIcon strokeWidth={2} aria-hidden="true" />}
     </ToastPrimitive.Close>
   )
 }
@@ -137,19 +131,19 @@ function ToastIcon({ type }: { type: string | undefined }) {
   let icon: React.ReactNode = null
 
   if (type === 'success') {
-    icon = <CircleCheckIcon aria-hidden="true" />
+    icon = <CheckCircleIcon strokeWidth={2} aria-hidden="true" />
   }
 
   if (type === 'info') {
-    icon = <InfoIcon aria-hidden="true" />
+    icon = <InfoIcon strokeWidth={2} aria-hidden="true" />
   }
 
   if (type === 'warning') {
-    icon = <TriangleAlertIcon aria-hidden="true" />
+    icon = <WarningIcon strokeWidth={2} aria-hidden="true" />
   }
 
   if (type === 'error') {
-    icon = <OctagonXIcon className="text-destructive" aria-hidden="true" />
+    icon = <XCircleIcon strokeWidth={2} className="text-destructive" aria-hidden="true" />
   }
 
   if (type === 'loading') {

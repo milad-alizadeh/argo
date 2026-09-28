@@ -119,9 +119,9 @@ export function SessionPlanPopover({ plan }: { plan: SessionPlan | null }) {
         render={
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="sm"
-            className="h-8 w-(--size-composer-plan-trigger) gap-1.5 rounded-full !bg-card px-2.5 type-control"
+            className="h-8 w-(--size-composer-plan-trigger) gap-1.5 px-2.5 type-control text-muted-foreground"
             aria-label={t('composer.taskPlan.open')}
           />
         }
@@ -151,7 +151,7 @@ export function SessionPlanPopover({ plan }: { plan: SessionPlan | null }) {
         <PlanTriggerLabel plan={plan} />
       </PopoverTrigger>
       <PopoverContent
-        align="start"
+        align="end"
         side="top"
         className="w-80 gap-3 p-3"
         data-plan-state={plan.state}

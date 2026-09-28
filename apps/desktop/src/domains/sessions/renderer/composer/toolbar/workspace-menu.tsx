@@ -1,4 +1,4 @@
-import { ChevronDown, FolderGit2 } from 'lucide-react'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { useTranslation } from 'react-i18next'
 import type { WorkspaceSummary } from '@/domains/workspaces/renderer'
 import {
@@ -34,9 +34,9 @@ export function WorkspaceMenu({ workspaces, workspace, onSelect }: WorkspaceMenu
           />
         }
       >
-        <FolderGit2 />
+        <Icon name="repository" />
         <span className="hidden min-w-0 truncate @[36rem]:inline">{label}</span>
-        <ChevronDown className="hidden text-muted-foreground @[36rem]:block" />
+        <Icon name="chevron-down" className="hidden text-muted-foreground @[36rem]:block" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="w-(--size-session-menu) p-1.5">
         <DropdownMenuGroup>

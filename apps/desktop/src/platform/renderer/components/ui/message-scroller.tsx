@@ -5,9 +5,9 @@ import {
   useMessageScrollerVisibility,
 } from '@shadcn/react/message-scroller'
 import { cn } from 'cn'
-import { ArrowDownIcon } from 'lucide-react'
 import type * as React from 'react'
 import { Button } from './button'
+import { ArrowDownIcon } from "@phosphor-icons/react";
 
 function MessageScrollerProvider(
   props: React.ComponentProps<typeof MessageScrollerPrimitive.Provider>,
@@ -104,7 +104,7 @@ function MessageScrollerButton({
     >
       {children ?? (
         <>
-          <ArrowDownIcon />
+          <ArrowDownIcon strokeWidth={2} />
           <span className="sr-only">
             {direction === 'end' ? 'Scroll to end' : 'Scroll to start'}
           </span>

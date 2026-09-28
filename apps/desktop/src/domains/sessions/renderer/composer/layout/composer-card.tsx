@@ -97,10 +97,12 @@ function ComposerContextBar(
 }
 
 function ComposerContextPicker({
+  anchorRef,
   editorRef,
   open,
   setOpen,
 }: {
+  anchorRef: RefObject<HTMLDivElement | null>
   editorRef: RefObject<LexicalEditor | null>
   open: boolean
   setOpen: (open: boolean) => void
@@ -112,6 +114,7 @@ function ComposerContextPicker({
   if (!open) return null
   return (
     <DraftContextPicker
+      anchorRef={anchorRef}
       draft={editing.prompt}
       onAddTicket={(ticket) =>
         dispatch({ type: 'ticket.added', ticket, createId: crypto.randomUUID })
@@ -125,6 +128,7 @@ function ComposerContextPicker({
 
 // The card and its context bar form the composer's anchored surface.
 export function ComposerCard(props: ComposerCardProps) {
+  const cardRef = useRef<HTMLDivElement>(null)
   const { t } = useTranslation('sessions')
   const { editing, dispatch } = useComposerEditing()
   const { dropFiles: dropAttachedFiles } = useAttachmentTransfer((paths) =>
@@ -133,13 +137,13 @@ export function ComposerCard(props: ComposerCardProps) {
   const [contextPickerOpen, setContextPickerOpen] = useContextPicker(editing.prompt)
   const interruptRef = useFocusInterruptOnCompactStart(props.isCompacting)
   return (
-    <div className="relative shrink-0">
+    <div className="relative shrink-0" ref={cardRef}>
       {/* The editor takes the focus but the card wears the ring, so the ring follows the card's
           radius instead of boxing the bare text area (#2273). */}
       <fieldset
         aria-label={t('composer.cardLabel')}
         data-component="ComposerCard"
-        className={`@container relative z-10 flex min-w-0 flex-col overflow-visible rounded-xl border border-border bg-card shadow-(--shadow-surface) has-[[data-keyboard-focus=true]]:ring-2 has-[[data-keyboard-focus=true]]:ring-ring${props.plan?.state === 'available' ? ' min-h-(--size-composer-plan-state)' : ''}${props.disabled ? ' opacity-60' : ''}`}
+        className={`@container relative z-10 flex min-w-0 flex-col overflow-visible rounded-xl border border-border bg-card shadow-(--shadow-surface) has-[[data-keyboard-focus=true]]:ring-2 has-[[data-keyboard-focus=true]]:ring-ring${props.disabled ? ' opacity-60' : ''}`}
         onDragOver={(event: DragEvent<HTMLFieldSetElement>) => event.preventDefault()}
         onDrop={(event) => dropFiles(event, dropAttachedFiles)}
       >
@@ -149,10 +153,10 @@ export function ComposerCard(props: ComposerCardProps) {
           editorRef={props.editorRef}
           focusOnMount={props.focusOnMount}
           onSend={props.onSend}
-          plan={props.plan}
           sessionId={props.sessionId}
         />
         <ComposerToolbar
+          plan={props.plan}
           disabled={props.disabled}
           sendAvailable={props.catalogState?.sendAvailable}
           harness={props.harness}
@@ -167,6 +171,7 @@ export function ComposerCard(props: ComposerCardProps) {
         />
       </fieldset>
       <ComposerContextPicker
+        anchorRef={cardRef}
         editorRef={props.editorRef}
         open={contextPickerOpen}
         setOpen={setContextPickerOpen}

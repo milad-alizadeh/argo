@@ -1,39 +1,12 @@
-import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
+import { useTranslation } from 'react-i18next'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
-
-type ContextAction = {
-  accessibleName: string
-  icon: IconName
-  label: string
-  onClick: (() => Promise<boolean>) | undefined
-  disabled: boolean | undefined
-  variant: 'outline' | 'secondary'
-}
-
-function ContextActionButtons({
-  actions,
-  labelled,
-  size,
-}: {
-  actions: ContextAction[]
-  labelled: boolean
-  size: 'icon-sm' | 'sm'
-}) {
-  return actions.map((action) => (
-    <Button
-      aria-label={action.accessibleName}
-      disabled={action.disabled}
-      key={action.label}
-      onClick={() => void action.onClick?.()}
-      size={size}
-      type="button"
-      variant={action.variant}
-    >
-      <Icon name={action.icon} />
-      {labelled ? action.label : null}
-    </Button>
-  ))
-}
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/platform/renderer/components/ui/dropdown-menu'
 
 export function SessionContextActions({
   canCompact,
@@ -50,39 +23,42 @@ export function SessionContextActions({
   onCompact: (() => Promise<boolean>) | undefined
   onHandoff: (() => Promise<boolean>) | undefined
 }) {
-  const actions: [ContextAction, ContextAction] = [
-    {
-      accessibleName: 'Compact context',
-      icon: 'compact',
-      label: 'Compact',
-      onClick: onCompact,
-      disabled: !canCompact || isCompacting,
-      variant: 'secondary' as const,
-    },
-    {
-      accessibleName: 'Handoff Session',
-      icon: 'handoff',
-      label: 'Handoff',
-      onClick: onHandoff,
-      disabled: !canHandoff || isHandingOff,
-      variant: 'outline' as const,
-    },
-  ]
-  const [compactAction, handoffAction] = actions
+  const { t } = useTranslation('sessions')
   return (
-    <>
-      <div className="ml-auto flex shrink-0 items-center gap-1 @[23rem]:hidden">
-        <ContextActionButtons actions={[compactAction]} labelled={false} size="icon-sm" />
-      </div>
-      <div className="ml-auto hidden shrink-0 items-center gap-1 @[23rem]:flex">
-        <ContextActionButtons actions={[compactAction]} labelled size="sm" />
-      </div>
-      <div className="flex shrink-0 items-center gap-1 @[23rem]:hidden">
-        <ContextActionButtons actions={[handoffAction]} labelled={false} size="icon-sm" />
-      </div>
-      <div className="hidden shrink-0 items-center gap-1 @[23rem]:flex">
-        <ContextActionButtons actions={[handoffAction]} labelled size="sm" />
-      </div>
-    </>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            aria-label={t('composer.contextActions')}
+            className="shrink-0"
+            size="icon-sm"
+            type="button"
+            variant="ghost"
+          >
+            <Icon name="context-actions" />
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="end" side="top" className="w-max">
+        <DropdownMenuItem
+          aria-label={t('composer.compactAction')}
+          className="type-control"
+          disabled={!canCompact || isCompacting}
+          onClick={() => void onCompact?.()}
+        >
+          <Icon name="compact" />
+          {t('composer.compactShort')}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          aria-label={t('composer.handoffAction')}
+          className="type-control"
+          disabled={!canHandoff || isHandingOff}
+          onClick={() => void onHandoff?.()}
+        >
+          <Icon name="handoff" />
+          {t('handoff.title')}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

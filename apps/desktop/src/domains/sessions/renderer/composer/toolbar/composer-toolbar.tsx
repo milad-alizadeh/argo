@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { SessionPlan } from '@/domains/sessions/renderer/model/models'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 import type { HarnessControl } from '../../harness/harnesses'
 import { useComposerEditing } from '../editing/composer-editing-context'
+import { SessionPlanPopover } from '../layout/session-plan-popover'
 import { ModeMenu } from './mode-menu'
 import {
   type CatalogFailure,
@@ -41,7 +43,9 @@ export function ComposerToolbar({
   isRunning,
   onInterrupt,
   interruptRef,
+  plan,
 }: {
+  plan: SessionPlan | null
   disabled?: boolean
   sendAvailable?: boolean
   onOpenContextPicker: () => void
@@ -72,6 +76,7 @@ export function ComposerToolbar({
       {workspace ? <WorkspaceMenu {...workspace} /> : null}
       <div className="ml-auto flex items-center gap-1">
         {turnConfiguration ? <ModeMenu {...turnConfiguration} /> : null}
+        <SessionPlanPopover plan={plan} />
         {isRunning ? (
           <Button
             aria-label={t('composer.interrupt')}

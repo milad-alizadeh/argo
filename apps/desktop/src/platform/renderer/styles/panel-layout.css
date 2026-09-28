@@ -89,9 +89,6 @@
 }
 
 @utility panel-elevation {
-  --panel-body-shadow:
-    0 0 4px color-mix(in oklab, var(--color-black) 4%, transparent),
-    0 0 24px -6px color-mix(in oklab, var(--color-black) 14%, transparent);
   position: relative;
   isolation: isolate;
 
@@ -100,7 +97,7 @@
     z-index: 30;
     inset: var(--size-chrome-bar) 0 0;
     border-radius: var(--radius-2xl);
-    box-shadow: var(--panel-body-shadow);
+    box-shadow: var(--shadow-panel-body);
     pointer-events: none;
     content: "";
   }

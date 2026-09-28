@@ -1,6 +1,8 @@
 import type { Preview } from '@storybook/react-vite'
+import { IconContext } from '@phosphor-icons/react'
 import { createElement } from 'react'
 
+import { AutoHideScrollbars } from '../src/platform/renderer/auto-hide-scrollbars'
 import { AppQueryProvider } from '../src/platform/renderer/app-query-provider'
 import '../src/renderer/i18n'
 import '../src/platform/renderer/styles/globals.css'
@@ -16,7 +18,11 @@ const preview: Preview = {
       } as typeof host.argo
       document.documentElement.classList.toggle('dark', dark)
       document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
-      return createElement(AppQueryProvider, null, Story())
+      return createElement(
+        IconContext.Provider,
+        { value: { weight: 'regular' } },
+        createElement(AutoHideScrollbars, { children: createElement(AppQueryProvider, null, Story()) }),
+      )
     },
   ],
   globalTypes: {
