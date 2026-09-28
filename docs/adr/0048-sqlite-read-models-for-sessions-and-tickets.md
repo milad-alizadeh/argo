@@ -13,6 +13,17 @@ The Claude registration supplies the async channel. The generic Argo live Sessio
 lifetime. The Claude Harness machine name in **Module ownership** is superseded. Codex keeps its
 existing live machine until its channel migration.
 
+## Amendment · command recovery · 2026-09-28
+
+The `session_command` table also stores a draft revision identity, Harness and native Session
+identities, and a vendor turn ID when known. It stores no prompt, live event payload, or vendor
+history. The Session table still owns durable Session identity.
+
+Argo records the command before vendor delivery. On restart, it marks unfinished outcomes
+uncertain and reads vendor history for commands with a native Session ID. A matching vendor item
+or turn can change an uncertain outcome to running. Argo never resends an uncertain command.
+A command without a known native Session ID stays uncertain until vendor evidence arrives.
+
 ## Amendment · stateless Harness discovery · 2026-09-27
 
 The worker topology in **Sync and reads**, its diagram, and the worker ownership in **Module

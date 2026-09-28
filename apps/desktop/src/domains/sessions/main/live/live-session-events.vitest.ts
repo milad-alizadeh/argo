@@ -1,6 +1,6 @@
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
-import { recordLiveSessionEvents } from './live-session-supervisor-machine'
+import { recordLiveSessionEvents, watchIdleSession } from './live-session-supervisor-machine'
 import { SessionEventJournal } from './session-event-journal'
 
 const sessionId = '00000000-0000-4000-8000-000000000001'
@@ -18,7 +18,14 @@ function message(id: string, text = id): SessionLiveEventBody {
 function liveSession() {
   const snapshots = new Set<(snapshot: unknown) => void>()
   const events = new Set<(event: { type: 'feed'; body: SessionLiveEventBody }) => void>()
+  let argoId: string | null = null
+  let state = 'Ready'
+  const snapshot = () => ({
+    context: { argoId, first: { commandId: 'command-1' }, queue: [] },
+    matches: (value: string) => state === value,
+  })
   const actor = {
+    getSnapshot: snapshot,
     on(_type: 'feed', listener: (event: { type: 'feed'; body: SessionLiveEventBody }) => void) {
       events.add(listener)
       return { unsubscribe: () => events.delete(listener) }
@@ -34,11 +41,48 @@ function liveSession() {
       for (const listener of events) listener({ type: 'feed', body })
     },
     identify: (id: string) => {
-      for (const listener of snapshots) listener({ context: { argoId: id } })
+      argoId = id
+      for (const listener of snapshots) listener(snapshot())
+    },
+    state: (value: string) => {
+      state = value
+      for (const listener of snapshots) listener(snapshot())
     },
     listeners: () => snapshots.size + events.size,
   }
 }
+
+test('retires after continuous inactivity, including uncertain Turn outcomes', () => {
+  vi.useFakeTimers()
+  try {
+    const session = liveSession()
+    const retired: string[] = []
+    const stop = watchIdleSession(session.actor, 100, (id) => retired.push(id))
+    session.identify(sessionId)
+    vi.advanceTimersByTime(50)
+    session.state('Sending')
+    vi.advanceTimersByTime(100)
+    expect(retired).toEqual([])
+    session.feed({
+      type: 'status',
+      commandId: 'command-1',
+      turnId: 'turn-1',
+      vendorEventId: null,
+      status: 'unknown',
+    })
+    session.state('Ready')
+    vi.advanceTimersByTime(100)
+    expect(retired).toEqual([sessionId])
+    session.state('Ready')
+    session.state('Failed')
+    vi.advanceTimersByTime(100)
+    expect(retired).toEqual([sessionId])
+    stop()
+    expect(session.listeners()).toBe(0)
+  } finally {
+    vi.useRealTimers()
+  }
+})
 
 test('delivers Feed events in order after a delayed Argo Session identity', () => {
   const journal = new SessionEventJournal()
