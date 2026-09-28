@@ -22,6 +22,7 @@ export type ComposerFormProps = {
   contextWindowTokens?: number | null
   disabled?: boolean
   focusOnMount?: boolean
+  onFocusAfterMount?: () => void
   isCompacting?: boolean
   isHandingOff?: boolean
   isRunning?: boolean
@@ -59,6 +60,7 @@ function ComposerFormSurface({
   contextWindowTokens,
   disabled = false,
   focusOnMount = false,
+  onFocusAfterMount,
   isCompacting = false,
   isHandingOff = false,
   isRunning = false,
@@ -107,6 +109,7 @@ function ComposerFormSurface({
         disabled={disabled}
         editorRef={state.editorRef}
         focusOnMount={focusOnMount}
+        onFocusAfterMount={onFocusAfterMount}
         harness={harness}
         isCompacting={isCompacting}
         isHandingOff={isHandingOff}

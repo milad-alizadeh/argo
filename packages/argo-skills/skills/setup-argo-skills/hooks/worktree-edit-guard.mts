@@ -76,11 +76,25 @@ function checkBashWrites({ command, cwd, root, roots }: ShellCheck): Verdict {
 const MAIN_COMMIT_MARKER = 'ARGO_MAIN_COMMIT=1'
 
 function checkGitCommit({ command, cwd, root, roots }: ShellCheck): Verdict {
-  if (!guarded({ abs: cwd, root, roots })) return ALLOW
   for (const segment of segments(command)) {
     const { prefix, name, args } = invocation(tokenize(segment))
     if (prefix.includes(MAIN_COMMIT_MARKER)) continue
-    if (name !== 'git' || afterGitOptions(args)[0] !== 'commit') continue
+    const commandArgs = afterGitOptions(args)
+    if (name !== 'git' || commandArgs[0] !== 'commit') continue
+    const options = args.slice(0, args.length - commandArgs.length)
+    if (
+      prefix.some((argument) => argument.startsWith('GIT_DIR=')) ||
+      options.some((argument) => argument === '--git-dir' || argument.startsWith('--git-dir='))
+    ) {
+      return {
+        block: true,
+        reason:
+          `This commit uses GIT_DIR or --git-dir. The guard cannot prove that the selected index ` +
+          `belongs to a linked worktree. Remove the override or use a normal ticket-worktree commit.`,
+      }
+    }
+    const commitCwd = gitCommitWorkingDirectory(args, cwd)
+    if (!guarded({ abs: commitCwd, root, roots })) continue
     return {
       block: true,
       reason:
@@ -88,12 +102,29 @@ function checkGitCommit({ command, cwd, root, roots }: ShellCheck): Verdict {
         `index another session is using. Commit inside a worktree, on a ticket branch — ` +
         `git worktree add -b argo/#<N>-<slug> .claude/worktrees/ticket-<N>-<slug> — then enter ` +
         `it by path (Claude Code: EnterWorktree { path: ".claude/worktrees/ticket-<N>-<slug>" }; ` +
-        `other harnesses: cd). For a deliberate main-checkout commit, such as skills-lock.json ` +
+        `other harnesses: cd, or use git -C .claude/worktrees/ticket-<N>-<slug> commit if the ` +
+        `shell guard keeps its original cwd). For a deliberate main-checkout commit, such as skills-lock.json ` +
         `after a reinstall, prefix the command with ${MAIN_COMMIT_MARKER}. ` +
         `Naming, resuming, and recovery: docs/agents/worktrees.md.`,
     }
   }
   return ALLOW
+}
+
+// A harness can keep its tool cwd at the repository root and still target a linked checkout with
+// `git -C <worktree> commit`. Judge the directory Git will actually use, not the harness cwd.
+function gitCommitWorkingDirectory(args: string[], cwd: string): string {
+  let directory = cwd
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index]
+    if (argument === 'commit') break
+    if (argument !== '-C') continue
+    const target = args[index + 1]
+    if (!target || unexpanded(target)) return cwd
+    directory = path.resolve(directory, target)
+    index += 1
+  }
+  return directory
 }
 
 /** WHERE: is this change being made outside a worktree? */

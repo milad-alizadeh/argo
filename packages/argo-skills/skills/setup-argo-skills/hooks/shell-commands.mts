@@ -61,6 +61,8 @@ export function invocation(tokens: string[]): {
  */
 export function afterGitOptions(args: string[]): string[] {
   let i = 0
-  while (i < args.length && args[i]?.startsWith('-')) i += args[i] === '-C' ? 2 : 1
+  const optionsWithValues = new Set(['-C', '-c', '--config-env', '--git-dir', '--work-tree'])
+  while (i < args.length && args[i]?.startsWith('-'))
+    i += optionsWithValues.has(args[i] ?? '') ? 2 : 1
   return args.slice(i)
 }
