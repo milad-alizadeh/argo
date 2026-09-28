@@ -32,19 +32,6 @@ const feedRowEntrySchema = z.strictObject({
 })
 type FeedRowEntry = z.infer<typeof feedRowEntrySchema>
 
-const feedRowEntriesSchema = z.array(feedRowEntrySchema).superRefine((entries, context) => {
-  const seen = new Set<string>()
-  for (const [index, entry] of entries.entries()) {
-    if (seen.has(entry.id))
-      context.addIssue({ code: 'custom', path: [index, 'id'], message: 'Duplicate Feed row id.' })
-    seen.add(entry.id)
-    if (entry.revision !== feedRowRevision(entry.row))
-      context.addIssue({ code: 'custom', path: [index, 'revision'], message: 'Stale revision.' })
-    if (entry.row.shape === 'activity' && index !== entries.length - 1)
-      context.addIssue({ code: 'custom', path: [index], message: 'Activity row must be last.' })
-  }
-})
-
 type FeedRowRejections = { history: number; live: number; rows: number }
 
 function entryOf(row: FeedRow): FeedRowEntry {
@@ -67,8 +54,8 @@ function accepted<Value>(
   return { values, rejected: inputs.length - values.length }
 }
 
-// The complete ordered rows of one Feed from recorded history and live events. Main can call
-// this without a renderer: unrecognised input is skipped and counted, never drawn.
+// The complete ordered rows of one Feed from recorded history and live events. Unrecognised
+// input and a repeated row id are skipped and counted, never drawn.
 export function projectFeedRowEntries(input: {
   history: readonly unknown[]
   live: readonly unknown[]
@@ -77,22 +64,25 @@ export function projectFeedRowEntries(input: {
   const history = accepted(feedContentSchema, input.history)
   const live = accepted(sessionLiveEventSchema, input.live)
   const projected = projectLiveFeedRows(history.values, live.values)
+  const activity =
+    input.activity === null
+      ? []
+      : [{ shape: 'activity', id: ACTIVITY_ROW_ID, activity: input.activity }]
   const entries: FeedRowEntry[] = []
+  const ids = new Set<string>()
   let rejectedRows = 0
-  for (const row of projected) {
+  for (const row of [...projected, ...activity]) {
     // The parsed row is canonical: schema key order, so its revision is the same on every read.
     const parsed = feedRowSchema.safeParse(row)
-    if (parsed.success) entries.push(entryOf(parsed.data))
-    else rejectedRows += 1
+    const entry = parsed.success ? entryOf(parsed.data) : null
+    if (entry === null || ids.has(entry.id)) rejectedRows += 1
+    else {
+      ids.add(entry.id)
+      entries.push(entry)
+    }
   }
-  if (input.activity !== null)
-    entries.push(
-      entryOf(
-        feedRowSchema.parse({ shape: 'activity', id: ACTIVITY_ROW_ID, activity: input.activity }),
-      ),
-    )
   return {
-    entries: feedRowEntriesSchema.parse(entries),
+    entries,
     rejected: { history: history.rejected, live: live.rejected, rows: rejectedRows },
   }
 }

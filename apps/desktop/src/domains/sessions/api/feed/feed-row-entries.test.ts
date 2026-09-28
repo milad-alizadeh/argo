@@ -1,7 +1,9 @@
 import { expect, test } from 'bun:test'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
+import { feedContentKindSchema } from '@/domains/sessions/api/feed-content'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import { projectFeedRowEntries } from './feed-row-entries'
+import { projectLiveFeedRows } from './live-feed-rows'
 
 const sessionId = '00000000-0000-4000-8000-000000000001'
 const running = { label: 'Reading the code', kind: 'thought', open: true } as const
@@ -182,4 +184,29 @@ test('unsupported input is skipped and counted, never drawn', () => {
   })
   expect(entries.map((entry) => entry.row.id)).toEqual(['m1'])
   expect(rejected).toEqual({ history: 2, live: 1, rows: 0 })
+})
+
+test('the sample covers every content kind', () => {
+  expect(new Set(durableKinds.map((content) => content.kind))).toEqual(
+    new Set(feedContentKindSchema.options),
+  )
+})
+
+test('the entries draw the rows the renderer drew before', () => {
+  const history = durableKinds.slice(0, 9)
+  const liveEvents = [
+    live(1, message('m9', 'assistant', 'Later')),
+    live(2, durableKinds[9] as FeedContent),
+  ]
+  const { entries } = projectFeedRowEntries({ history, live: liveEvents, activity: null })
+  expect(entries.map((entry) => entry.row)).toEqual(projectLiveFeedRows(history, liveEvents))
+})
+
+test('live rows follow the history rows they extend, in sequence order', () => {
+  const { entries } = projectFeedRowEntries({
+    history: [message('m1', 'user', 'Hi')],
+    live: [live(3, message('m4', 'assistant', 'C')), live(2, message('m3', 'assistant', 'B'))],
+    activity: null,
+  })
+  expect(entries.map((entry) => entry.row.id)).toEqual(['m1', 'm3', 'm4'])
 })
