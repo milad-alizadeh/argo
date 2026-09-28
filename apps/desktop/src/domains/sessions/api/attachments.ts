@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { identifierSchema } from '@/shared/validation'
 import { sessionErrorSchema } from './session-error'
 
-// The formats every adapter's own image input variant accepts (Codex's `localImage`, e.g.);
+// The formats every adapter's own image input variant accepts;
 // anything else is a generic file reference. Kept as one classifier so the composer's preview
 // (image thumbnail vs. file icon) and the wire representation never disagree (#1845, #1886).
 const IMAGE_EXTENSION = /\.(avif|gif|jpe?g|png|webp)$/i

@@ -13,8 +13,8 @@ import type { Database } from '@/database/database'
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
-import type { harnessCatalogMachine } from '@/harnesses/catalog/harness-catalog-machine'
 import type { HarnessRegistry } from '@/harnesses/registry'
+import type { harnessCatalogMachine } from '@/platform/main/harness-catalog/harness-catalog-machine'
 import type { SessionLiveInput, SessionSendInput, SessionStartInput } from '../api/session-submit'
 import { bindSessionCommand, setSessionCommandOutcome } from '../database/session-command-outcomes'
 import {
@@ -263,18 +263,23 @@ function turnConfigurationIsAvailable(
 function acceptsTurnConfigurationChange(
   actor: LiveSessionActor,
   turnConfiguration: SessionSendInput['turnConfiguration'],
+  registry: HarnessRegistry,
 ): boolean {
-  const opening = actor.getSnapshot().context.first.turnConfiguration
-  if (harnessOf(actor.getSnapshot().context.first) === 'claude')
-    return (
-      opening.model === turnConfiguration.model &&
-      opening.effort === turnConfiguration.effort &&
-      opening.mode === turnConfiguration.mode
-    )
-  return opening.mode === turnConfiguration.mode
+  const { first } = actor.getSnapshot().context
+  const changeable = registry[harnessOfInput(first)].changeableTurnSettings
+  const opening = first.turnConfiguration
+  return (
+    [
+      'model',
+      'effort',
+      'mode',
+    ] as const
+  ).every(
+    (setting) => changeable.includes(setting) || opening[setting] === turnConfiguration[setting],
+  )
 }
 
-function harnessOf(input: SessionLiveInput) {
+function harnessOfInput(input: SessionLiveInput) {
   return 'resume' in input ? input.resume.harness : input.harness
 }
 
@@ -330,19 +335,22 @@ function handledStart({
     | ActorRefFrom<typeof harnessCatalogMachine>
     | undefined
   if (
-    !turnConfigurationIsAvailable(catalog, harnessOf(event.input), event.input.turnConfiguration)
+    !turnConfigurationIsAvailable(
+      catalog,
+      harnessOfInput(event.input),
+      event.input.turnConfiguration,
+    )
   ) {
     event.reply.reject(
       new SessionSubmitRejectedError('The selected Turn configuration is no longer available.'),
     )
     return true
   }
-  const staleClaudeSession =
-    event.type === 'Send' &&
-    harnessOf(event.input) === 'claude' &&
-    context.sessions[event.input.sessionId] !== undefined
+  // A Send to a retired or failed Session reopens it instead of replaying the earlier resume.
+  const reopensSession =
+    event.type === 'Send' && context.sessions[event.input.sessionId] !== undefined
   if (
-    !staleClaudeSession &&
+    !reopensSession &&
     replyForCompletedStart(context.completed[pendingId], event.input.commandId, event.reply)
   )
     return true
@@ -403,7 +411,7 @@ function commandIdentityOf(
 ) {
   return {
     intentId: event.type === 'Start' ? event.pendingId : event.intentId,
-    harness: harnessOf(event.input),
+    harness: harnessOfInput(event.input),
     nativeId: event.type === 'Send' ? event.input.resume.nativeId : null,
     cwd: event.type === 'Send' ? event.input.resume.cwd : event.input.cwd,
   }
@@ -445,7 +453,7 @@ function selectHarness({
   dependencies: LiveSessionSupervisorInput
   commands: SessionCommandStore
 }) {
-  const harness = harnessOf(input)
+  const harness = harnessOfInput(input)
   const open = dependencies.registry[harness].openLiveSession
   if (open === undefined) throw new Error(`${harness} live channel is unavailable.`)
   return liveSessionChannelActor(open, dependencies.interactions, commands)
@@ -454,17 +462,21 @@ function selectHarness({
 function sendValidationError(
   actor: LiveSessionActor,
   input: SessionSendInput,
-  catalog: ActorRefFrom<typeof harnessCatalogMachine> | undefined,
+  harnesses: {
+    catalog: ActorRefFrom<typeof harnessCatalogMachine> | undefined
+    registry: HarnessRegistry
+  },
 ): SessionSubmitRejectedError | null {
+  const { catalog, registry } = harnesses
   if (
     !turnConfigurationIsAvailable(
       catalog,
-      harnessOf(actor.getSnapshot().context.first),
+      harnessOfInput(actor.getSnapshot().context.first),
       input.turnConfiguration,
     )
   )
     return new SessionSubmitRejectedError('The selected Turn configuration is no longer available.')
-  if (!acceptsTurnConfigurationChange(actor, input.turnConfiguration))
+  if (!acceptsTurnConfigurationChange(actor, input.turnConfiguration, registry))
     return new SessionSubmitRejectedError(
       'Changing this Turn configuration requires starting a new Session.',
     )
@@ -785,7 +797,10 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
         const catalog = self.system.get('catalog') as
           | ActorRefFrom<typeof harnessCatalogMachine>
           | undefined
-        const error = sendValidationError(actor, event.input, catalog)
+        const error = sendValidationError(actor, event.input, {
+          catalog,
+          registry: dependencies.registry,
+        })
         if (error !== null) {
           event.reply.reject(error)
           return

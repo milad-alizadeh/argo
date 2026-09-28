@@ -3,10 +3,9 @@ import { claudeModelCatalogFixture } from '../../test-fixtures/sessions/claude-m
 import { codexModelCatalogFixture } from '../../test-fixtures/sessions/codex-model-catalog.fixture'
 import { claudeHarnessInfo } from './claude/catalog'
 import { createClaudeRegistration } from './claude/registration'
-import type { CodexRequest } from './codex/app-server/codex-app-server-client'
+import type { CodexAppServerClient, CodexRequest } from './codex/app-server/codex-app-server-client'
 import { codexHarnessInfo } from './codex/catalog'
 import { createCodexRegistration } from './codex/registration'
-import type { CodexLiveClient } from './codex/session/codex-session-channel'
 import { type HarnessRegistry, readHarnessCatalog } from './registry'
 
 const vendor = vi.hoisted(() => ({
@@ -17,10 +16,11 @@ const vendor = vi.hoisted(() => ({
 
 vi.mock('@anthropic-ai/claude-agent-sdk', () => vendor)
 
-const clientFor = (request: CodexRequest): CodexLiveClient => ({
+const clientFor = (request: CodexRequest): CodexAppServerClient => ({
   request,
   onNotification: () => () => {},
   respond: () => {},
+  shutdown: () => {},
 })
 
 beforeEach(() => {

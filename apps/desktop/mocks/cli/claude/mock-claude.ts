@@ -5,9 +5,9 @@ import { randomUUID } from 'node:crypto'
 import { appendFileSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import { SESSION_CLAUDE_TRANSCRIPTS_ENV } from '@/harnesses/claude/proof-protocol'
 import {
   readMockReplyDelayMs,
-  SESSION_CLAUDE_TRANSCRIPTS_ENV,
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
 } from '@/harnesses/proof-protocol'
 import { type AdversarialTurn, adversarialTurn } from '../../sessions/adversarial-turns.ts'

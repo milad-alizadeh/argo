@@ -124,6 +124,7 @@
       "details": "Context details",
       "explanation": "The working memory for the next response: instructions, tools, files, and conversation. As it fills, new information competes with older details.",
       "autoCompact": "Auto-compact",
+      "autoCompactUnreadable": "The auto-compact limit in this Harness config could not be read.",
       "threshold": "Threshold",
       "thresholdLabel": "Auto-compact threshold",
       "thresholdTokens": "Auto-compact threshold tokens",
@@ -224,8 +225,7 @@
   "sessionList": {
     "planProgress": "{{completed}} of {{total}} steps completed",
     "planUnreadable": "Plan unreadable",
-    "sourceFailed": "{{harness}} Sessions did not load",
-    "codexSourceFailedDescription": "Another Codex app is using the database. Close it, then retry."
+    "sourceFailed": "{{harness}} Sessions did not load"
   },
   "inspector": {
     "diagramLabel": "Diagram inspector",

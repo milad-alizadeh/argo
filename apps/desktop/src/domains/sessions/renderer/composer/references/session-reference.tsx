@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { HARNESS_PRESENTATIONS, harnessLabel } from '@/harnesses/presentation-registry'
 import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
-import { HARNESSES, type SessionHarness } from '../../harness/harnesses'
+import type { SessionHarness } from '../../harness/harnesses'
 import { InlineContext } from './inline-context'
 
 export type SessionReferenceKind = 'command' | 'file' | 'plugin' | 'skill'
@@ -11,9 +12,8 @@ export type SessionReference = {
   kind: SessionReferenceKind
   label: string
   source: string
-  // Every Harness supports a reference unless this names the closed set that does; a plugin invoking
-  // Claude's own permission system has no Codex equivalent to name.
-  harness?: readonly SessionHarness[]
+  // Every Harness supports a reference unless it needs the live Argo permission plugin.
+  needsPermissionPlugin?: boolean
 }
 
 export const sessionReferences = [
@@ -34,11 +34,11 @@ export const sessionReferences = [
     source: '@$frontend-design',
   },
   {
-    detail: 'Live Claude permission plugin',
+    detail: 'Live Session permission plugin',
     kind: 'plugin',
     label: 'Argo Session plugin',
     source: '@argo-plugin',
-    harness: ['claude'],
+    needsPermissionPlugin: true,
   },
 ] as const satisfies readonly SessionReference[]
 
@@ -73,11 +73,15 @@ export function referenceSupportsHarness(
   reference: SessionReference,
   harness: SessionHarness | null,
 ) {
-  return harness === null || reference.harness === undefined || reference.harness.includes(harness)
+  return (
+    harness === null ||
+    reference.needsPermissionPlugin !== true ||
+    HARNESS_PRESENTATIONS[harness].permissionPlugin
+  )
 }
 
-export function harnessLabel(harness: SessionHarness | null) {
-  return harness ? HARNESSES[harness].label : 'this Harness'
+export function referenceHarnessLabel(harness: SessionHarness | null) {
+  return harness ? harnessLabel(harness) : 'this Harness'
 }
 
 export function referenceInText(text: string) {
@@ -108,7 +112,7 @@ export function SessionReferenceBadge({
       <InlineContext icon={renderReferenceIcon(unsupported, reference)} text={source} />
       {unsupported ? (
         <span className="sr-only">
-          {t('composer.references.badgeUnavailable', { harness: harnessLabel(harness) })}
+          {t('composer.references.badgeUnavailable', { harness: referenceHarnessLabel(harness) })}
         </span>
       ) : null}
     </span>

@@ -1,12 +1,15 @@
-export const projectSetupHarnesses = ['claude', 'codex'] as const
-export type ProjectSetupHarness = (typeof projectSetupHarnesses)[number]
+import { type Harness, harnessSchema } from '@/harnesses/harness'
+
+export type ProjectSetupHarness = Harness
 
 export type ProjectSetupHarnessAvailability = {
   harness: ProjectSetupHarness
   unavailableReason: string | null
 }
 
-export const defaultProjectSetupHarnesses = [
-  { harness: 'claude', unavailableReason: null },
-  { harness: 'codex', unavailableReason: 'unavailable' },
-] as const satisfies ProjectSetupHarnessAvailability[]
+// Before the setup snapshot reports availability, only the first registered Harness is offered.
+export const defaultProjectSetupHarnesses: ProjectSetupHarnessAvailability[] =
+  harnessSchema.options.map((harness, index) => ({
+    harness,
+    unavailableReason: index === 0 ? null : 'unavailable',
+  }))

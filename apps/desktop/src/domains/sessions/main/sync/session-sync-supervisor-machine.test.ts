@@ -34,7 +34,7 @@ test('dispatches registered Session discovery functions and deduplicates Refresh
   const dispatched: string[] = []
   const finished: Array<() => void> = []
   let stopped = 0
-  const status = new SessionSyncStatusStore()
+  const status = new SessionSyncStatusStore(undefined, 'claude')
   const reported: string[] = []
   const unsubscribe = status.subscribe((event) => reported.push(event.type))
   const machine = sessionSyncSupervisorMachine.provide({
@@ -98,7 +98,7 @@ test('dispatches only discovery functions selected by the Harness registry', () 
       input: {
         database,
         harnesses: { claude: { sessionDiscovery: claudeDiscovery } },
-        status: { claude: new SessionSyncStatusStore() },
+        status: { claude: new SessionSyncStatusStore(undefined, 'claude') },
       },
     },
   ).start()
@@ -114,7 +114,7 @@ test('dispatches only discovery functions selected by the Harness registry', () 
 })
 
 test('keeps a Codex sync failure out of Claude status', () => {
-  const claudeStatus = new SessionSyncStatusStore()
+  const claudeStatus = new SessionSyncStatusStore(undefined, 'claude')
   const codexStatus = new SessionSyncStatusStore(undefined, 'codex')
   const actor = createActor(sessionSyncSupervisorMachine, {
     input: {

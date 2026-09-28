@@ -1,0 +1,20 @@
+{
+  "presentation": {
+    "shortLabel": "Codex",
+    "label": "Codex"
+  },
+  "mode": {
+    "readOnly": {
+      "label": "Ask first",
+      "detail": "Read-only work asks before any change"
+    },
+    "workspaceWrite": {
+      "label": "Approve safely",
+      "detail": "Work in this project, asking at the boundary"
+    },
+    "fullAccess": {
+      "label": "Full access",
+      "detail": "Work without permission prompts"
+    }
+  }
+}

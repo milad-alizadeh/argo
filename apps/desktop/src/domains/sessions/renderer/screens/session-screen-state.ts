@@ -1,10 +1,5 @@
-import type { HarnessControl, SessionHarness } from '../harness/harnesses'
+import { type HarnessControl, type SessionHarness, sessionHarnessOf } from '../harness/harnesses'
 import type { Session } from '../types'
-
-// Roster's open `harness` string narrows to the closed `SessionHarness` union at this adapter boundary (ADR-0021).
-function sessionHarnessOf(session: Pick<Session, 'harness'> | null): SessionHarness {
-  return session?.harness === 'codex' ? 'codex' : 'claude'
-}
 
 export function sessionHarness({
   selectedSessionId,

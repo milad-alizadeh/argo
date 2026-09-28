@@ -1,4 +1,6 @@
 import { useTranslation } from 'react-i18next'
+import type { Harness } from '@/harnesses/harness'
+import { HARNESS_PRESENTATIONS, harnessLabel } from '@/harnesses/presentation-registry'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
@@ -10,25 +12,11 @@ import {
   PopoverTrigger,
 } from '@/platform/renderer/components/ui/popover'
 import { Progress } from '@/platform/renderer/components/ui/progress'
-import { HARNESSES } from '../../harness/harnesses'
 
-const PLAN_USAGE = {
-  claude: [
-    { detail: 'Resets in 4 hr 5 min', label: '5-hour limit', percentage: 8 },
-    { detail: 'Resets Saturday at 6:00 PM', label: 'Weekly, all models', percentage: 65 },
-    { detail: 'Resets Saturday at 6:00 PM', label: 'Weekly, Opus', percentage: 12 },
-  ],
-  codex: [
-    { detail: 'Resets Monday at 9:00 AM', label: 'Weekly', percentage: 54 },
-    { detail: 'Resets October 1', label: 'Monthly', percentage: 31 },
-  ],
-} as const
-
-export function UsagePopover({ harness }: { harness: 'claude' | 'codex' }) {
+export function UsagePopover({ harness }: { harness: Harness }) {
   const { t } = useTranslation('sessions')
-  const usage = PLAN_USAGE[harness]
-  const primaryPercentage = usage[0].percentage
-  const harnessLabel = HARNESSES[harness].label
+  const usage = HARNESS_PRESENTATIONS[harness].planUsage
+  const primaryPercentage = usage[0]?.percentage ?? 0
   return (
     <Popover>
       <PopoverTrigger
@@ -49,7 +37,9 @@ export function UsagePopover({ harness }: { harness: 'claude' | 'codex' }) {
       </PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-96 gap-4 p-4">
         <PopoverHeader>
-          <PopoverTitle>{t('composer.allowance.title', { harness: harnessLabel })}</PopoverTitle>
+          <PopoverTitle>
+            {t('composer.allowance.title', { harness: harnessLabel(harness) })}
+          </PopoverTitle>
           <PopoverDescription>{t('composer.allowance.description')}</PopoverDescription>
         </PopoverHeader>
         {usage.map((item) => (

@@ -2,9 +2,9 @@ import os from 'node:os'
 import path from 'node:path'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
 import { watchVendorHistory } from '@/harnesses/host/history-watch'
-import { SESSION_CLAUDE_EXECUTABLE_ENV } from '@/harnesses/proof-protocol'
 import type { HarnessRegistration } from '@/harnesses/registration'
 import { readClaudeHarnessInfo } from './catalog'
+import { SESSION_CLAUDE_EXECUTABLE_ENV } from './proof-protocol'
 import { createClaudeSignInDriver, createSystemClaudeReadiness } from './readiness'
 import { claudeSessionChannelOpener } from './session/claude-session-channel'
 import { discoverClaudeSessions } from './session/claude-session-discovery'
@@ -30,5 +30,7 @@ export function createClaudeRegistration(): HarnessRegistration<'claude'> {
         invalidate,
       ),
     rename: claudeSessionRenamer.rename,
+    changeableTurnSettings: [],
+    acceptsAttachments: false,
   }
 }

@@ -1,12 +1,13 @@
 import { Fragment, useId } from 'react'
 import { useTranslation } from 'react-i18next'
+import { harnessLabel } from '@/harnesses/presentation-registry'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 import { Popover, PopoverContent, PopoverTrigger } from '@/platform/renderer/components/ui/popover'
 import { HarnessLogo } from '../../harness/harness-logo'
 import { HarnessTabs } from '../../harness/harness-tabs'
-import { HARNESSES, type HarnessControl } from '../../harness/harnesses'
+import type { HarnessControl } from '../../harness/harnesses'
 import {
   choiceLabel,
   effortChoices,
@@ -41,7 +42,7 @@ export function TurnConfigurationMenu({
   refreshCatalog,
 }: TurnConfigurationMenuProps) {
   const { t } = useTranslation('sessions')
-  const harnessLabel = HARNESSES[harness.harness].label
+  const label = harnessLabel(harness.harness)
   const facts = configurationFacts(turnConfiguration)
   const body = (
     <ConfigurationBody
@@ -58,14 +59,14 @@ export function TurnConfigurationMenu({
           <InputGroupButton
             variant="ghost"
             className="max-w-80 min-w-0 type-control text-foreground"
-            aria-label={`Choose Turn configuration: ${[harnessLabel, ...facts].join(', ')}`}
+            aria-label={`Choose Turn configuration: ${[label, ...facts].join(', ')}`}
           />
         }
       >
         <HarnessLogo harness={harness.harness} />
         <span className="min-w-0 truncate">
           {/* The logo names the harness, so its word only shows when there's no Model and Effort to say instead. */}
-          {facts.length === 0 ? <span>{harnessLabel}</span> : null}
+          {facts.length === 0 ? <span>{label}</span> : null}
           {facts.map((fact, index) => (
             <Fragment key={fact}>
               {index > 0 ? <span className="mx-1.5 text-muted-foreground">·</span> : null}
@@ -111,7 +112,7 @@ function ConfigurationBody({
       <div className="space-y-2 p-3.5" role="alert">
         <p className="type-meta text-muted-foreground">
           {t(`composer.turnConfiguration.catalogFailure.${catalogFailure.reason}`, {
-            harness: HARNESSES[harness.harness].label,
+            harness: harnessLabel(harness.harness),
           })}
         </p>
         <Button onClick={refreshCatalog} size="sm" type="button" variant="outline">
@@ -123,7 +124,7 @@ function ConfigurationBody({
     return (
       <p className="p-3.5 type-meta text-muted-foreground" role="status">
         {t('composer.turnConfiguration.loadingModels', {
-          harness: HARNESSES[harness.harness].label,
+          harness: harnessLabel(harness.harness),
         })}
       </p>
     )

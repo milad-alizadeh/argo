@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { _electron as electron } from 'playwright-core'
-import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/proof-protocol'
+import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { launchCommand } from '../application-under-test'

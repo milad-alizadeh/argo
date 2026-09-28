@@ -7,8 +7,8 @@ export function searchLabel(call: Extract<ToolCall, { kind: 'search' | 'fetch' }
   return `Searched ${call.query ?? (call.scope === 'web' ? 'the web' : 'files')}`
 }
 
-// A web call's outcome is the first line of its output, which the Codex app shows beside the
-// query. Codex writes no HTTP status: a fetch that failed says so in words instead.
+// A web call's outcome is the first line of its output, shown beside the query. A Harness may
+// write no HTTP status, so a fetch that failed says so in words instead.
 const SEARCH_OUTCOMES = /^(Internal Error|Script error|Empty search results|Failed to fetch)/
 export function searchOutcome(result: Pick<ToolResult, 'blocks'> | undefined): string | null {
   const source = result === undefined ? null : resultText(result.blocks)

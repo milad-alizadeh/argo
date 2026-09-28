@@ -7,14 +7,12 @@ import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import type { TicketRouterDependencies } from '@/domains/tickets/main/ticket-router'
 import type { WorkspaceListContext } from '@/domains/workspaces/main/api/workspace-list'
-import {
-  harnessCatalogMachine,
-  harnessCatalogSchema,
-} from '@/harnesses/catalog/harness-catalog-machine'
 import { claudeHarnessInfo } from '@/harnesses/claude/catalog'
 import { codexHarnessInfo } from '@/harnesses/codex/catalog'
+import { harnessCatalogSchema } from '@/harnesses/harness-catalog'
 import { claudeModelCatalogFixture } from '../../../test-fixtures/sessions/claude-model-catalog.fixture'
 import { codexModelCatalogFixture } from '../../../test-fixtures/sessions/codex-model-catalog.fixture'
+import { harnessCatalogMachine } from './harness-catalog/harness-catalog-machine'
 import { createAppRouter } from './trpc-router'
 
 type SupervisorEvent = Parameters<LiveSessionSupervisorActor['send']>[0]
@@ -32,6 +30,7 @@ function testRouter(
 ) {
   return createAppRouter({
     accounts: {} as AccountProcedureContext,
+    autoCompactLimit: () => undefined,
     catalog,
     harnessSignIn: {} as HarnessSignInProcedureContext,
     projects: {} as ProjectRegisterContext,
@@ -40,8 +39,9 @@ function testRouter(
       readHistory: async () => [],
       rename: async () => {},
       supervisor: sessionActor,
+      acceptsAttachments: () => true,
       refreshSessionSync,
-      sessionSyncStatus: new SessionSyncStatusStore(),
+      sessionSyncStatus: [new SessionSyncStatusStore(undefined, 'claude')],
       journal: {} as never,
       interactions: {} as never,
       hasLiveChannel: () => false,

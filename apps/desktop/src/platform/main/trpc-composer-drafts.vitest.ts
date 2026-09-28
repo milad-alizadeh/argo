@@ -54,7 +54,11 @@ function caller(send: LiveSessionSupervisorActor['send'] = () => {}) {
   const exclusive = async <T>(work: () => Promise<T>) => work()
   const dependencies = {
     projects: { database, chooseFolder: async () => null, exclusive },
-    sessions: { database, supervisor: { send } as LiveSessionSupervisorActor },
+    sessions: {
+      database,
+      supervisor: { send } as LiveSessionSupervisorActor,
+      acceptsAttachments: (harness: string) => harness !== 'claude',
+    },
     workspaces: { database, exclusive },
   } as unknown as AppRouterDependencies
   return createAppRouter(dependencies).createCaller({})
@@ -583,7 +587,7 @@ test('rejects unsupported Session attachments before sending to the supervisor',
       expectedRevision: created.revision,
       commandId: 'unsupported-attachment',
     }),
-  ).rejects.toThrow('Claude Session attachments are not supported')
+  ).rejects.toThrow('This Harness does not accept Session attachments')
   expect(sends).toBe(0)
   await expect(api.composerDraftRead(created.target)).resolves.toEqual(created)
 })

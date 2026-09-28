@@ -23,6 +23,19 @@
       }
     },
     {
+      "name": "shared-code-reaches-harnesses-through-registries",
+      "comment": "Only the Harness registries import an adapter; shared code looks a Harness up by ID (#2804).",
+      "severity": "error",
+      "from": {
+        "path": "^apps/desktop/src/",
+        "pathNot": ["^apps/desktop/src/harnesses/", "\\.(test|vitest|stories)\\.(ts|tsx)$"]
+      },
+      "to": {
+        "path": "^apps/desktop/src/harnesses/[^/]+/",
+        "pathNot": "^apps/desktop/src/harnesses/(host|cli)/"
+      }
+    },
+    {
       "name": "codex-history-does-not-import-retired-readers",
       "comment": "Codex history reads app-server. Rollout files are invalidation signals only (#2581).",
       "severity": "error",

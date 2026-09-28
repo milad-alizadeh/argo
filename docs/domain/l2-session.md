@@ -21,10 +21,19 @@
   synchronization commits vendor changes to SQLite and tells readers to refresh the affected
   projection. A transcript or rollout file is never an Argo domain object or input.
 
-  Argo keeps recent live events in a bounded memory journal. A separate SQLite table holds small
-  command outcomes. After a restart, unfinished commands become uncertain until vendor history
-  provides evidence. Argo never resends an uncertain command automatically. An idle live actor can
-  retire while the Session identity and vendor history remain.
+  Argo keeps recent live events in one bounded memory journal: the newest 500 events and 2 MiB
+  across all Sessions. Each launch starts an empty journal with a new generation. A reader whose
+  cursor is older than the journal holds, or belongs to an earlier generation, reads vendor history
+  instead and merges rows by stable item ID. A separate SQLite table holds small command outcomes.
+  After a restart, unfinished commands become uncertain until vendor history provides evidence. Argo
+  never resends an uncertain command automatically. An idle live actor can retire while the Session
+  identity and vendor history remain.
+
+  A Session without an Argo live channel, such as one an external vendor client drives, is only as
+  fresh as its Harness's change signal. An open Feed reads vendor history again when the Harness's
+  history watcher reports a change. Without that signal the Feed shows what it last read until the
+  reader opens the Session again or asks for Refresh. Session list metadata changes only at app
+  start and on Refresh; nothing polls.
 
   Origin does not gate resume (ADR-0040). Argo has one application window. The adapter checks
   vendor liveness before resume because another vendor client can still hold the Session. A
