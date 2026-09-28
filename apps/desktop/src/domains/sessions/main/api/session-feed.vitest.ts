@@ -11,6 +11,7 @@ import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-e
 import type { SessionFeedReaderContext } from '../feed/feed-reader'
 import { SessionEventJournal } from '../live/session-event-journal'
 import { sessionFeedProcedures } from './session-feed'
+import { SessionSyncStatusStore } from './session-sync-status'
 
 const sessionId = '00000000-0000-4000-8000-000000000001'
 let directory: string
@@ -87,6 +88,19 @@ async function observe(
   return { caller, readings, subscription, latest: () => readings.at(-1) }
 }
 
+// The trigger starts a second history read, and its answer replaces the first one's rows.
+async function expectFreshRead(
+  feed: Awaited<ReturnType<typeof observe>>,
+  history: ReturnType<typeof historyReads>,
+  trigger: () => void,
+) {
+  await history.answer([message('m1', 'assistant', 'Before')])
+  trigger()
+  await history.answer([message('m1', 'assistant', 'After')])
+  expect(feed.latest()?.entries[0]?.row).toMatchObject({ text: 'After' })
+  feed.subscription.unsubscribe()
+}
+
 const rowIds = (reading: FeedReading | undefined) => reading?.entries.map(({ row }) => row.id)
 
 test('opens loading, then publishes the history rows in order', async () => {
@@ -147,6 +161,7 @@ test('an expired replay starts from a fresh history read, not the partial journa
     journal.append(sessionId, content(message(id, 'assistant', id)))
   const history = historyReads()
   const feed = await observe({ readHistory: history.readHistory })
+  // m3 is still in the journal, but the replay lost m1, so none of it joins the reading.
   expect(rowIds(feed.latest())).toEqual([])
   expect(history.pending).toHaveLength(1)
   await history.answer([message('m1', 'assistant', 'm1'), message('m2', 'assistant', 'm2')])
@@ -246,9 +261,89 @@ test('an external Session reads history again when its file is rewritten', async
       return () => {}
     },
   })
-  await history.answer([message('m1', 'assistant', 'Before')])
-  rewrite()
-  await history.answer([message('m1', 'assistant', 'After')])
-  expect(feed.latest()?.entries[0]?.row).toMatchObject({ text: 'After' })
+  await expectFreshRead(feed, history, () => rewrite())
+})
+
+test('a committed sync reads vendor history again', async () => {
+  const history = historyReads()
+  const store = new SessionSyncStatusStore(undefined, 'claude')
+  const feed = await observe({ readHistory: history.readHistory, sessionSyncStatus: [store] })
+  await expectFreshRead(feed, history, () => store.committed())
+})
+
+test('a read that lands after the last observer left publishes nothing', async () => {
+  const history = historyReads()
+  const feed = await observe({ readHistory: history.readHistory })
+  feed.subscription.unsubscribe()
+  await history.answer([message('m1', 'assistant', 'Late')])
+  expect(feed.readings.map(({ state }) => state)).toEqual(['loading'])
+})
+
+test('the waiting Permission is the newest undecided one, not the newest event', async () => {
+  const history = historyReads()
+  const feed = await observe({ readHistory: history.readHistory })
+  await history.answer([])
+  const permission = (requestId: string, decision: 'allow' | 'deny' | null) =>
+    journal.append(sessionId, {
+      type: 'permission',
+      ...identity,
+      requestId,
+      description: requestId,
+      decision,
+    })
+  permission('a', null)
+  permission('b', null)
+  permission('a', 'allow')
+  expect(feed.latest()?.pendingPermissionId).toBe('b')
+  permission('b', 'deny')
+  expect(feed.latest()?.pendingPermissionId).toBeNull()
+  feed.subscription.unsubscribe()
+})
+
+test('a Session that loses its live channel starts following its history file', async () => {
+  const history = historyReads()
+  let live = true
+  const followed: string[] = []
+  const feed = await observe({
+    readHistory: history.readHistory,
+    hasLiveChannel: () => live,
+    followHistory: ({ target }) => {
+      followed.push(target.nativeId)
+      return () => {}
+    },
+  })
+  await history.answer([])
+  expect(followed).toEqual([])
+  live = false
+  journal.append(sessionId, { type: 'status', ...identity, status: 'ended' })
+  expect(followed).toEqual(['native-1'])
+  feed.subscription.unsubscribe()
+})
+
+test('a Session missing at open follows its history once a Refresh finds it', async () => {
+  const otherId = '00000000-0000-4000-8000-000000000002'
+  const history = historyReads()
+  const followed: string[] = []
+  const feed = await observe(
+    {
+      readHistory: history.readHistory,
+      hasLiveChannel: () => false,
+      followHistory: ({ target }) => {
+        followed.push(target.nativeId)
+        return () => {}
+      },
+    },
+    otherId,
+  )
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  expect(feed.latest()).toMatchObject({ state: 'failed', error: { code: 'missing-session' } })
+  database
+    .insert(sessionTable)
+    .values({ argoId: otherId, harness: 'claude', nativeId: 'native-2' })
+    .run()
+  await feed.caller.sessionFeedRefresh({ sessionId: otherId })
+  await history.answer([message('m1', 'assistant', 'Found')])
+  expect(feed.latest()).toMatchObject({ state: 'ready', error: null })
+  expect(followed).toEqual(['native-2'])
   feed.subscription.unsubscribe()
 })

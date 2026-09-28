@@ -127,6 +127,48 @@ function missingHistoryHost(listed = true) {
   }
 }
 
+const liveIdentity = { sessionId: session.id, commandId: null, turnId: null } as const
+
+// Main joins the read history with live work that history does not hold yet, in one reading.
+function liveFeedHost() {
+  const before = window.argo
+  const read = async (sessionId: string): Promise<SessionFeedSnapshot> => ({
+    version: 1,
+    type: 'session.feed.read',
+    requestId: 'storybook-feed',
+    sessionId,
+    chainId: sessionId,
+    revision: 'storybook-live',
+    content: [{ kind: 'message', id: 'history-row', role: 'user', text: 'Check the build.' }],
+  })
+  window.argo = {
+    ...before,
+    trpcSubscribe: sessionFeedSubscribe(
+      sessionListSubscribe(before.trpcSubscribe, () => [session]),
+      read,
+      [
+        { ...liveIdentity, sequence: 1, type: 'status', vendorEventId: null, status: 'running' },
+        {
+          ...liveIdentity,
+          sequence: 2,
+          type: 'content',
+          vendorEventId: 'live-row',
+          content: {
+            kind: 'message',
+            id: 'live-row',
+            role: 'assistant',
+            text: 'The build is still running.',
+          },
+        },
+      ],
+    ),
+    trpc: sessionFeedTrpc(before.trpc, read),
+  }
+  return () => {
+    window.argo = before
+  }
+}
+
 const meta = {
   title: 'Sessions/Screen/Feed Resilience',
   component: SessionScreenView,
@@ -216,5 +258,22 @@ export const UnknownSessionHasTruthfulRecovery: Story = {
       'archive it from the Session list menu if it appears there',
     )
     await expect(canvas.getByRole('button', { name: 'Retry' })).toBeVisible()
+  },
+}
+
+export const LiveWorkFollowsHistory: Story = {
+  beforeEach: () => liveFeedHost(),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const drawn = (text: string) =>
+      canvas.getAllByText(text).filter((node) => node.closest('[aria-hidden]') === null)
+    await waitFor(() => expect(drawn('The build is still running.')).toHaveLength(1))
+    const [live] = drawn('The build is still running.')
+    const [history] = drawn('Check the build.')
+    if (live === undefined || history === undefined) throw new Error('A Feed row is missing.')
+    await expect(live).toBeVisible()
+    await expect(
+      history.compareDocumentPosition(live) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
   },
 }

@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { feedContentSchema } from '@/domains/sessions/api/feed-content'
 import { sessionLiveEventSchema } from '@/domains/sessions/api/session-live-event'
-import { liveActivitySchema, sessionFeedRowSchema } from './feed-rows'
+import { liveActivitySchema, type SessionFeedRow, sessionFeedRowSchema } from './feed-rows'
 import { fingerprint } from './fingerprint'
 import { projectLiveFeedRows, rowKey } from './live-feed-rows'
 import { foldSettledToolRuns, groupToolRuns } from './tool-groups'
@@ -64,17 +64,25 @@ export function projectFeedRowEntries(input: {
 }): { entries: FeedRowEntry[]; rejected: FeedRowRejections } {
   const history = accepted(feedContentSchema, input.history)
   const live = accepted(sessionLiveEventSchema, input.live)
-  const projected = foldSettledToolRuns(
-    groupToolRuns(projectLiveFeedRows(history.values, live.values)),
-  )
+  // Each row is checked before grouping, so one bad call drops alone, not with its run.
+  const rows: SessionFeedRow[] = []
+  const rowIds = new Set<string>()
+  let rejectedRows = 0
+  for (const row of projectLiveFeedRows(history.values, live.values)) {
+    const parsed = sessionFeedRowSchema.safeParse(row)
+    if (!parsed.success || rowIds.has(rowKey(parsed.data))) rejectedRows += 1
+    else {
+      rowIds.add(rowKey(parsed.data))
+      rows.push(parsed.data)
+    }
+  }
   const activity =
     input.activity === null
       ? []
       : [{ shape: 'activity', id: ACTIVITY_ROW_ID, activity: input.activity }]
   const entries: FeedRowEntry[] = []
   const ids = new Set<string>()
-  let rejectedRows = 0
-  for (const row of [...projected, ...activity]) {
+  for (const row of [...foldSettledToolRuns(groupToolRuns(rows)), ...activity]) {
     // The parsed row is canonical: schema key order, so its revision is the same on every read.
     const parsed = feedRowSchema.safeParse(row)
     const entry = parsed.success ? entryOf(parsed.data) : null

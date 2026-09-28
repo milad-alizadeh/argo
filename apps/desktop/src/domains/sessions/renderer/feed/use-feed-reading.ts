@@ -1,6 +1,7 @@
 import { skipToken, useQuery } from '@tanstack/react-query'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FeedReading } from '@/domains/sessions/api/feed/feed-reading'
+import { sessionError } from '@/domains/sessions/api/session-error'
 import { queryClient, trpcClient } from '@/platform/renderer/trpc-client'
 import { sessionFeedReadingQueryKey, sessionPermissionQueryKey } from '../session-queries'
 import type { SessionFeed, SessionId } from '../types'
@@ -35,10 +36,6 @@ export function useObservedFeedReading(sessionId: SessionId | null): FeedReading
   )
 }
 
-function refreshFeed(sessionId: SessionId) {
-  void trpcClient.sessionFeedRefresh.mutate({ sessionId }).catch(() => {})
-}
-
 // A new or settled Permission request is read again through its own query.
 function usePermissionRequest(sessionId: SessionId | null, requestId: string | null) {
   const seen = useRef<string | null>(null)
@@ -49,15 +46,11 @@ function usePermissionRequest(sessionId: SessionId | null, requestId: string | n
   }, [sessionId, requestId])
 }
 
-// The root Session's Feed as main reads it. The renderer only draws it; a lost subscription
-// reconnects, and the reader it reaches reads history again.
-export function useFeedReading(sessionId: SessionId | null) {
-  // Set while the subscription is lost, so Retry reconnects instead of waiting out the timer.
-  const reconnectNow = useRef<(() => void) | null>(null)
-  // Focus reads vendor history again, for a Session with no live channel.
-  useFocusRefresh(
-    useMemo(() => (sessionId === null ? null : () => refreshFeed(sessionId)), [sessionId]),
-  )
+// The root Session's subscription: each reading lands in the query cache, and a lost one
+// reconnects after a second or at once through `reconnect`.
+function useFeedSubscription(sessionId: SessionId | null) {
+  const reconnect = useRef<(() => void) | null>(null)
+  const [lostSessionId, setLostSessionId] = useState<SessionId | null>(null)
   useEffect(() => {
     if (sessionId === null) return
     let stopped = false
@@ -66,42 +59,60 @@ export function useFeedReading(sessionId: SessionId | null) {
     const connect = () => {
       if (timer !== null) clearTimeout(timer)
       timer = null
-      reconnectNow.current = null
       subscription?.unsubscribe()
       subscription = trpcClient.sessionFeed.subscribe(
         { sessionId },
         {
           onData(reading) {
-            if (reading.sessionId === sessionId)
-              queryClient.setQueryData(sessionFeedReadingQueryKey(sessionId), reading)
+            if (reading.sessionId !== sessionId) return
+            setLostSessionId(null)
+            queryClient.setQueryData(sessionFeedReadingQueryKey(sessionId), reading)
           },
           onError() {
             if (stopped) return
-            reconnectNow.current = connect
+            setLostSessionId(sessionId)
             timer = setTimeout(connect, 1000)
           },
         },
       )
     }
+    reconnect.current = connect
     connect()
     return () => {
       stopped = true
-      reconnectNow.current = null
+      reconnect.current = null
       subscription?.unsubscribe()
       if (timer !== null) clearTimeout(timer)
     }
   }, [sessionId])
+  return { reconnect, lost: sessionId !== null && lostSessionId === sessionId }
+}
+
+// The root Session's Feed as main reads it. The renderer only draws it; Retry and focus start a
+// real read, or a reconnection when no reader answers.
+export function useFeedReading(sessionId: SessionId | null) {
+  const { reconnect, lost } = useFeedSubscription(sessionId)
+  const refresh = useMemo(() => {
+    if (sessionId === null) return null
+    return () => {
+      if (lost) return reconnect.current?.()
+      void trpcClient.sessionFeedRefresh.mutate({ sessionId }).then(
+        ({ accepted }) => {
+          if (!accepted) reconnect.current?.()
+        },
+        () => reconnect.current?.(),
+      )
+    }
+  }, [lost, reconnect, sessionId])
+  // Focus reads vendor history again, for a Session with no live channel.
+  useFocusRefresh(refresh)
   const reading = useObservedFeedReading(sessionId)
   const feed = useMemo(() => (reading === null ? null : drawnFeed(reading)), [reading])
   usePermissionRequest(sessionId, reading?.pendingPermissionId ?? null)
-  const retryFeed = useCallback(() => {
-    if (sessionId === null) return
-    if (reconnectNow.current === null) refreshFeed(sessionId)
-    else reconnectNow.current()
-  }, [sessionId])
+  const retryFeed = useCallback(() => refresh?.(), [refresh])
   return {
     feed,
-    feedError: reading?.error ?? null,
+    feedError: lost ? sessionError('connection-lost', null) : (reading?.error ?? null),
     liveStatus: reading?.liveStatus ?? null,
     pendingQuestionId: reading?.pendingQuestionId ?? null,
     retryFeed,

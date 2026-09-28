@@ -55,6 +55,17 @@ function readFailure(error: unknown): SessionError {
   return sessionError(missing ? 'missing-session' : 'vendor-history-unavailable', null)
 }
 
+// The newest Permission request whose latest event has no decision yet.
+function pendingPermission(events: readonly SessionLiveEvent[]): string | null {
+  const decided = new Map<string, boolean>()
+  for (const event of events)
+    if (event.type === 'permission') {
+      decided.delete(event.requestId)
+      decided.set(event.requestId, event.decision !== null)
+    }
+  return [...decided].findLast(([, isDecided]) => !isDecided)?.[0] ?? null
+}
+
 // One root Session's Feed: it attaches to live events before it reads vendor history, so an
 // event that lands during the read is reconciled rather than missed.
 class RootFeedReader {
@@ -62,6 +73,7 @@ class RootFeedReader {
   readonly #sessionId: string
   readonly #observers = new Set<Observer>()
   readonly #stops: (() => void)[] = []
+  #follower: { key: string; stop: () => void } | null = null
   #history: FeedContent[] = []
   #events: LiveEventBuffer = emptyLiveEventBuffer()
   #state: ReadState = 'loading'
@@ -87,7 +99,6 @@ class RootFeedReader {
     // An expired replay lost events; the history read below is the fresh start.
     const live = hasLiveChannel(this.#sessionId)
     if (replay.type === 'events') for (const event of replay.events) this.#retain(event, live)
-    if (!live) this.#follow()
     // A committed sync can move where the Session's history lives.
     this.#stops.push(
       observeSessionSync(this.#context.sessionSyncStatus ?? [], (event) => {
@@ -110,6 +121,7 @@ class RootFeedReader {
   // Every call starts a real read; a later read's answer replaces an earlier one's.
   refresh(): void {
     const read = ++this.#read
+    this.#follow()
     if (this.#state !== 'ready') this.#settle('loading', this.#error)
     void this.#readHistory().then(
       (content) => {
@@ -127,6 +139,8 @@ class RootFeedReader {
   stop(): void {
     this.#stopped = true
     for (const stop of this.#stops.splice(0)) stop()
+    this.#follower?.stop()
+    this.#follower = null
     this.#observers.clear()
   }
 
@@ -139,21 +153,30 @@ class RootFeedReader {
     })
   }
 
+  // A Session without a live channel follows its history file; each read re-checks both where
+  // that file is and whether a live channel now carries the Session instead.
   #follow(): void {
-    const { database, followHistory } = this.#context
+    const { database, followHistory, hasLiveChannel } = this.#context
     if (followHistory === undefined) return
-    let stored: ReturnType<typeof sessionHistoryIdentity>
+    let stored: ReturnType<typeof sessionHistoryIdentity> | null = null
     try {
-      stored = sessionHistoryIdentity(database, this.#sessionId)
+      if (!hasLiveChannel(this.#sessionId))
+        stored = sessionHistoryIdentity(database, this.#sessionId)
     } catch {
-      return
+      stored = null
     }
+    const key =
+      stored === null ? null : JSON.stringify([stored.harness, stored.nativeId, stored.cwd])
+    if (key === (this.#follower?.key ?? null)) return
+    this.#follower?.stop()
+    this.#follower = null
+    if (stored === null || key === null) return
     const target = { nativeId: stored.nativeId, subagentId: null, cwd: stored.cwd }
-    this.#stops.push(
-      followHistory({ sessionId: this.#sessionId, harness: stored.harness, target }, () =>
-        this.refresh(),
-      ),
+    const stop = followHistory(
+      { sessionId: this.#sessionId, harness: stored.harness, target },
+      () => this.refresh(),
     )
+    this.#follower = { key, stop }
   }
 
   #retain(event: SessionLiveEvent, live: boolean): void {
@@ -162,6 +185,8 @@ class RootFeedReader {
 
   #receive(event: SessionLiveEvent, live: boolean): void {
     this.#retain(event, live)
+    // A status change can mean a live channel opened or closed, which moves who follows history.
+    if (event.type === 'status') this.#follow()
     const oversized =
       encoder.encode(JSON.stringify(event)).byteLength > SESSION_LIVE_REPLAY_BYTE_LIMIT
     // A settled Turn and an event too large to keep both live in vendor history now.
@@ -184,17 +209,13 @@ class RootFeedReader {
     const skipped = rejected.history + rejected.live + rejected.rows
     if (skipped > 0) console.warn(`Skipped ${skipped} unrecognised Session Feed item(s).`)
     const events = this.#events.events
-    const permission = events.findLast((event) => event.type === 'permission')
     const status = events.findLast((event) => event.type === 'status')
     const reading = feedReading({
       sessionId: this.#sessionId,
       chainId: this.#sessionId,
       state: this.#state,
       error: this.#error,
-      pendingPermissionId:
-        permission?.type === 'permission' && permission.decision === null
-          ? permission.requestId
-          : null,
+      pendingPermissionId: pendingPermission(events),
       liveStatus: status?.type === 'status' ? status.status : null,
       entries,
     })

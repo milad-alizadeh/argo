@@ -41,11 +41,12 @@ export function feedReading(
       body.entries.map(({ id, revision }) => [id, revision]),
     ]),
   )
-  return {
+  // Validated before it crosses IPC; a reading that fails here is a projection bug, not input.
+  return feedReadingSchema.parse({
     version: 1,
     type: 'session.feed.reading',
     revision,
     pendingQuestionId: pendingQuestion?.id ?? null,
     ...body,
-  }
+  })
 }

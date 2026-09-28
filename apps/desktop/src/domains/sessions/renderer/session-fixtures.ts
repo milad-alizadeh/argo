@@ -3,6 +3,7 @@
 import { type FeedReading, feedReading } from '@/domains/sessions/api/feed/feed-reading'
 import { projectFeedRowEntries } from '@/domains/sessions/api/feed/feed-row-entries'
 import { sessionError } from '@/domains/sessions/api/session-error'
+import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/renderer/model/models'
 import { DEFAULT_HARNESS } from '@/harnesses/harness'
 import { queryClient } from '@/platform/renderer/trpc-client'
@@ -144,11 +145,16 @@ export function sessionFeedTrpc(
 
 // The root Feed's readings, as the main reader publishes them: loading, then each read's result,
 // keeping the rows a failed read already had.
-export function sessionFeedSubscribe(subscribe: Subscribe, read: FeedRead): Subscribe {
+export function sessionFeedSubscribe(
+  subscribe: Subscribe,
+  read: FeedRead,
+  live: readonly SessionLiveEvent[] = [],
+): Subscribe {
   return async (request, listener) => {
     if (request.path !== 'sessionFeed') return subscribe(request, listener)
     const { sessionId } = request.input as { sessionId: string }
     let entries: FeedReading['entries'] = []
+    const status = live.findLast((event) => event.type === 'status')
     let reads = 0
     let open = true
     const send = (state: FeedReading['state'], error: FeedReading['error']) =>
@@ -162,7 +168,7 @@ export function sessionFeedSubscribe(subscribe: Subscribe, read: FeedRead): Subs
             state,
             error,
             pendingPermissionId: null,
-            liveStatus: null,
+            liveStatus: status?.type === 'status' ? status.status : null,
             entries,
           }),
         },
@@ -174,7 +180,7 @@ export function sessionFeedSubscribe(subscribe: Subscribe, read: FeedRead): Subs
           if (!open || current !== reads) return
           entries = projectFeedRowEntries({
             history: snapshot.content,
-            live: [],
+            live,
             activity: null,
           }).entries
           send('ready', null)
