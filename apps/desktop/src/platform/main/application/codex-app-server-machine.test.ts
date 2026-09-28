@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createActor, waitFor } from 'xstate'
-import type { CodexAppServerClient } from './codex-app-server-client'
+import type { CodexAppServerClient } from '@/harnesses/codex/app-server/codex-app-server-client'
 import { codexAppServerMachine, requestCodexAppServer } from './codex-app-server-machine'
 
 test('keeps the actor request API compatible while delegating ownership to the client', async () => {

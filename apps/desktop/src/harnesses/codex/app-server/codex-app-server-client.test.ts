@@ -130,3 +130,52 @@ test('forwards server notifications and responses through the client API', async
   assert.deepEqual(responses, [{ id: 7, result: { answers: ['A'] } }])
   client.shutdown()
 })
+
+test('enables Turn pages only for the verified Codex 0.157.0 protocol', async () => {
+  const handshakes: boolean[] = []
+  const methods: string[] = []
+  const channel: CodexChannel = {
+    invalidMessageCount: () => 0,
+    notify: () => {},
+    request: async (method, params, parse) => {
+      methods.push(method)
+      if (method === 'initialize' && 'capabilities' in params)
+        handshakes.push(params.capabilities.experimentalApi)
+      return parse(
+        method === 'thread/turns/list' ? { data: [], nextCursor: null, backwardsCursor: null } : {},
+      )
+    },
+    respond: () => {},
+    onNotification: () => {},
+    onExit: () => {},
+    close: () => {},
+  }
+  for (const version of ['codex-cli 0.157.0', 'codex-cli 0.147.0']) {
+    const client = createCodexAppServerClient({
+      resolveExecutable: async () => ({ executable: 'codex', version }),
+      openChannel: () => channel,
+    })
+    try {
+      const page = client.request(
+        'thread/turns/list',
+        {
+          threadId: 'thread-1',
+          cursor: null,
+          limit: 1,
+          sortDirection: 'desc',
+          itemsView: 'full',
+        },
+        (value) => value,
+      )
+      if (version === 'codex-cli 0.157.0') await page
+      else await assert.rejects(page, /not available for this Codex version/)
+    } finally {
+      client.shutdown()
+    }
+  }
+  assert.deepEqual(handshakes, [true, false])
+  assert.deepEqual(
+    methods.filter((method) => method === 'thread/turns/list'),
+    ['thread/turns/list'],
+  )
+})

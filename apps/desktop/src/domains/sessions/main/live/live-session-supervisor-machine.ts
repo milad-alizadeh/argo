@@ -13,15 +13,6 @@ import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type { harnessCatalogMachine } from '@/harnesses/catalog/harness-catalog-machine'
-import {
-  type codexAppServerMachine,
-  observeCodexAppServer,
-  requestCodexAppServer,
-} from '@/harnesses/codex/app-server/codex-app-server-machine'
-import {
-  codexLiveSessionActors,
-  codexLiveSessionMachine,
-} from '@/harnesses/codex/session/codex-live-session-machine'
 import type { HarnessRegistry } from '@/harnesses/registry'
 import type { SessionLiveInput, SessionSendInput, SessionStartInput } from '../api/session-submit'
 import { bindSessionCommand, setSessionCommandOutcome } from '../database/session-command-outcomes'
@@ -442,35 +433,17 @@ function reserveActiveCommand(
 
 function selectHarness({
   input,
-  self,
   dependencies,
   commands,
 }: {
   input: SessionLiveInput
-  self: {
-    system: LiveSessionSupervisorActor['system']
-  }
   dependencies: LiveSessionSupervisorInput
   commands: SessionCommandStore
 }) {
-  switch (harnessOf(input)) {
-    case 'claude': {
-      const open = dependencies.registry.claude.openLiveSession
-      if (open === undefined) throw new Error('Claude live channel is unavailable.')
-      return liveSessionChannelActor(open, dependencies.interactions, commands)
-    }
-    case 'codex': {
-      const codex = self.system.get('codex') as
-        | ActorRefFrom<typeof codexAppServerMachine>
-        | undefined
-      if (codex === undefined) throw new Error('Codex app-server actor is unavailable.')
-      return codexLiveSessionMachine.provide({
-        actors: codexLiveSessionActors(requestCodexAppServer(codex), (listener) =>
-          observeCodexAppServer(codex, listener),
-        ),
-      })
-    }
-  }
+  const harness = harnessOf(input)
+  const open = dependencies.registry[harness].openLiveSession
+  if (open === undefined) throw new Error(`${harness} live channel is unavailable.`)
+  return liveSessionChannelActor(open, dependencies.interactions, commands)
 }
 
 function sendValidationError(
@@ -639,7 +612,6 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
           if (!reserveOpeningCommand(event, commands)) return context.starts
           const harness = selectHarness({
             input: event.input,
-            self,
             dependencies,
             commands,
           })
@@ -796,8 +768,8 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
       forwardInterrupt: ({ context, event, self }) => {
         if (event.type !== 'Interrupt') return
         const actor = sessionActor(self, context.sessions[event.sessionId])
-        if (actor === undefined || harnessOf(actor.getSnapshot().context.first) !== 'claude') {
-          event.reply.reject(new Error('Claude Session is not active.'))
+        if (actor === undefined) {
+          event.reply.reject(new Error('Session is not active.'))
           return
         }
         actor.send({
@@ -808,7 +780,7 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
       forwardAnswer: ({ context, event, self }) => {
         if (event.type !== 'Answer permission' && event.type !== 'Answer question') return
         const actor = sessionActor(self, context.sessions[event.sessionId])
-        if (actor === undefined || harnessOf(actor.getSnapshot().context.first) !== 'claude') {
+        if (actor === undefined) {
           event.reply.resolve(false)
           return
         }

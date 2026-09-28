@@ -121,7 +121,7 @@ function liveRow(event: SessionLiveEvent): SessionFeedRow | null {
     case 'status':
       return {
         shape: 'event',
-        id: `status:${event.sequence}`,
+        id: `status:${event.vendorEventId ?? event.sequence}`,
         event: 'liveStatus',
         text: event.status,
       }

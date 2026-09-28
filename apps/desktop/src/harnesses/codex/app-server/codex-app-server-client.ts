@@ -38,6 +38,10 @@ export type RequestParams = {
     model: string
     effort: string
   }
+  'turn/interrupt': {
+    threadId: string
+    turnId: string
+  }
   'model/list': {
     cursor?: string
     limit?: number
@@ -55,6 +59,13 @@ export type RequestParams = {
   'thread/read': {
     threadId: string
     includeTurns: boolean
+  }
+  'thread/turns/list': {
+    threadId: string
+    cursor: string | null
+    limit: number
+    sortDirection: 'desc'
+    itemsView: 'full'
   }
   initialize: {
     clientInfo: {
@@ -167,6 +178,17 @@ export class CodexChannelClosedError extends Error {
   }
 }
 
+export class CodexProtocolError extends Error {
+  readonly code: number
+
+  constructor(code: number, message: string) {
+    super(message)
+    this.code = code
+  }
+}
+
+const VERIFIED_TURN_PAGES_VERSION = 'codex-cli 0.157.0'
+
 // Conflicting app-server processes can hold the same upstream SQLite locks indefinitely (#2653).
 export class CodexRequestTimeoutError extends Error {
   constructor(method: string) {
@@ -242,7 +264,8 @@ function handleLine(process: CodexProcess, state: ChannelState, line: string) {
   const waiting = state.pending.get(message.id)
   if (waiting === undefined) return
   state.pending.delete(message.id)
-  if ('error' in message) waiting.reject(new Error(message.error.message))
+  if ('error' in message)
+    waiting.reject(new CodexProtocolError(message.error.code, message.error.message))
   else waiting.resolve(message.result)
 }
 
@@ -411,7 +434,7 @@ function resolveBeforeAbort(
   })
 }
 
-async function handshake(channel: CodexChannel) {
+async function handshake(channel: CodexChannel, version: string) {
   await channel.request(
     'initialize',
     {
@@ -421,7 +444,7 @@ async function handshake(channel: CodexChannel) {
         version: '1',
       },
       capabilities: {
-        experimentalApi: false,
+        experimentalApi: version === VERIFIED_TURN_PAGES_VERSION,
         requestAttestation: false,
       },
     },
@@ -450,6 +473,8 @@ class CodexAppServerClientInstance implements CodexAppServerClient {
 
   readonly request: CodexRequest = async (method, params, parse) => {
     const current = await this.connect()
+    if (method === 'thread/turns/list' && this.identity?.version !== VERIFIED_TURN_PAGES_VERSION)
+      throw new Error('thread/turns/list is not available for this Codex version.')
     return current.request(method, params, parse)
   }
 
@@ -546,7 +571,7 @@ class CodexAppServerClientInstance implements CodexAppServerClient {
       opened = this.openChannel(resolved.executable)
       this.channel = opened
       this.wireChannel(opened)
-      await handshake(opened)
+      await handshake(opened, resolved.version)
     } catch (error) {
       if (opened !== null && this.channel === opened) this.closeChannel()
       this.scheduleReconnect()

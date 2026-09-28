@@ -6,6 +6,7 @@ import { createClaudeRegistration } from './claude/registration'
 import type { CodexRequest } from './codex/app-server/codex-app-server-client'
 import { codexHarnessInfo } from './codex/catalog'
 import { createCodexRegistration } from './codex/registration'
+import type { CodexLiveClient } from './codex/session/codex-session-channel'
 import { type HarnessRegistry, readHarnessCatalog } from './registry'
 
 const vendor = vi.hoisted(() => ({
@@ -15,6 +16,12 @@ const vendor = vi.hoisted(() => ({
 }))
 
 vi.mock('@anthropic-ai/claude-agent-sdk', () => vendor)
+
+const clientFor = (request: CodexRequest): CodexLiveClient => ({
+  request,
+  onNotification: () => () => {},
+  respond: () => {},
+})
 
 beforeEach(() => {
   vendor.getSessionMessages.mockReset()
@@ -30,9 +37,11 @@ test('registered Claude reads root and subagent history and renames through the 
   vendor.renameSession.mockResolvedValue(undefined)
   const registrations = {
     claude: createClaudeRegistration(),
-    codex: createCodexRegistration(async () => {
-      throw new Error('Codex was not selected.')
-    }),
+    codex: createCodexRegistration(
+      clientFor(async () => {
+        throw new Error('Codex was not selected.')
+      }),
+    ),
   } satisfies HarnessRegistry
   const claude = registrations.claude
 
@@ -68,7 +77,7 @@ test('registered Codex reads the selected thread through its shared request and 
   }) as CodexRequest
   const registrations = {
     claude: createClaudeRegistration(),
-    codex: createCodexRegistration(request),
+    codex: createCodexRegistration(clientFor(request)),
   } satisfies HarnessRegistry
   const codex = registrations.codex
 

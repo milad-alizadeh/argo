@@ -259,6 +259,15 @@ no revoke control on the desktop yet, so `revokeStandingAllow` has no desktop co
 Permissions are still out of scope (#1841), so its adapter reads no pending Permission and refuses
 every decision.
 
+## Amendment · Codex live Permissions · 2026-09-28
+
+Issue #2801 brings Codex Permissions and Questions into the desktop Session flow. The live channel
+registers each pending request with Argo's interaction broker, displays it in the existing composer
+or Feed, and answers the app-server request through the shared client. Argo declines an unanswered
+Permission after one day. A standing allow remains in the Argo channel for the Session and answers
+matching later requests with `accept`. A reader's Cancel sends `decline` and then interrupts the
+Turn separately. The app-server still receives only `accept` or `decline`.
+
 ## Why
 
 - The port is the only part that survives policy churn. Anthropic's billing rule changed three

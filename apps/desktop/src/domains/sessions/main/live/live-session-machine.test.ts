@@ -6,10 +6,7 @@ import type {
   CodexRequest,
   WireMessage,
 } from '@/harnesses/codex/app-server/codex-app-server-client'
-import {
-  codexLiveSessionActors,
-  codexLiveSessionMachine,
-} from '@/harnesses/codex/session/codex-live-session-machine'
+import { openCodexSessionChannel } from '@/harnesses/codex/session/codex-session-channel'
 import type { SessionStartInput } from '../api/session-submit'
 import { liveSessionChannelActor } from './live-session-channel-actor'
 import { liveSessionMachine } from './live-session-machine'
@@ -279,9 +276,31 @@ test('emits validated Claude Feed events while the Session identity is persistin
   actor.stop()
 })
 
+function codexHarnessFor(request: CodexRequest) {
+  let notify: ((message: WireMessage) => boolean | undefined) | undefined
+  const harness = liveSessionChannelActor(
+    (input, _controls, emit) =>
+      openCodexSessionChannel(
+        input,
+        {
+          request,
+          onNotification: (listener) => {
+            notify = listener
+            return () => {
+              notify = undefined
+            }
+          },
+          respond: () => {},
+        },
+        { emit },
+      ),
+    undefined,
+  )
+  return { harness, notify: (message: WireMessage) => notify?.(message) }
+}
+
 test('forwards Codex notifications and holds queued prompts until Turn completion', async () => {
   const calls: string[] = []
-  let notify: ((message: WireMessage) => void) | undefined
   const request: CodexRequest = async (method, _params, parse) => {
     calls.push(method)
     return parse(
@@ -290,14 +309,7 @@ test('forwards Codex notifications and holds queued prompts until Turn completio
         : { turn: { id: calls.length === 2 ? 'turn-1' : 'turn-2' } },
     )
   }
-  const harness = codexLiveSessionMachine.provide({
-    actors: codexLiveSessionActors(request, (listener) => {
-      notify = listener
-      return () => {
-        notify = undefined
-      }
-    }),
-  })
+  const { harness, notify } = codexHarnessFor(request)
   const actor = createActor(
     liveSessionMachine.provide({
       actors: { harness, persist: fromPromise(async () => 'argo-1') },
@@ -315,7 +327,7 @@ test('forwards Codex notifications and holds queued prompts until Turn completio
   actor.start()
   await waitFor(actor, (snapshot) => snapshot.matches('Awaiting turn'))
   actor.send({ type: 'Send', command: { ...first, commandId: 'second', prompt: 'second' } })
-  notify?.({
+  notify({
     method: 'item/completed',
     params: {
       threadId: 'thread-1',
@@ -325,13 +337,13 @@ test('forwards Codex notifications and holds queued prompts until Turn completio
   })
   assert.equal(events.length, 2)
   assert.deepEqual(calls, ['thread/start', 'turn/start'])
-  notify?.({
+  notify({
     method: 'turn/completed',
     params: { threadId: 'thread-1', turn: { id: 'turn-1', status: 'completed' } },
   })
   await waitFor(actor, (snapshot) => snapshot.matches('Sending') && calls.length === 3)
   assert.equal(events.length, 4)
-  notify?.({
+  notify({
     method: 'turn/completed',
     params: { threadId: 'thread-1', turn: { id: 'turn-2', status: 'completed' } },
   })

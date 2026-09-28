@@ -1,9 +1,10 @@
 import { z } from 'zod'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { CodexRequest } from '../app-server/codex-app-server-client'
+import { codexCommandContent } from './codex-command-content'
 
 const textContentSchema = z.object({ type: z.literal('text'), text: z.string() }).passthrough()
-const threadItemTypeSchema = z.enum([
+export const codexThreadItemTypeSchema = z.enum([
   'userMessage',
   'hookPrompt',
   'agentMessage',
@@ -24,7 +25,10 @@ const threadItemTypeSchema = z.enum([
   'exitedReviewMode',
   'contextCompaction',
 ])
-const threadItemRoles: Record<z.infer<typeof threadItemTypeSchema>, 'user' | 'assistant' | null> = {
+const threadItemRoles: Record<
+  z.infer<typeof codexThreadItemTypeSchema>,
+  'user' | 'assistant' | null
+> = {
   userMessage: 'user',
   hookPrompt: null,
   agentMessage: 'assistant',
@@ -48,7 +52,7 @@ const threadItemRoles: Record<z.infer<typeof threadItemTypeSchema>, 'user' | 'as
 const itemSchema = z
   .object({
     id: z.string().optional(),
-    type: threadItemTypeSchema,
+    type: codexThreadItemTypeSchema,
     content: z.array(z.unknown()).optional(),
     text: z.string().optional(),
   })
@@ -74,6 +78,29 @@ function itemText(item: z.infer<typeof itemSchema>): string | null {
   return text === '' ? null : text
 }
 
+export function codexContentFromItems(items: unknown[], fallbackPrefix: string): FeedContent[] {
+  const content: FeedContent[] = []
+  items.forEach((rawItem, itemIndex) => {
+    const parsed = itemSchema.parse(rawItem)
+    if (parsed.type === 'commandExecution') {
+      const command = codexCommandContent(rawItem, 'completed')
+      if (command === null) throw new Error('Invalid Codex commandExecution history item')
+      content.push(command)
+      return
+    }
+    const role = threadItemRoles[parsed.type]
+    const text = itemText(parsed)
+    if (role === null || text === null) return
+    content.push({
+      kind: 'message',
+      id: parsed.id ?? `${fallbackPrefix}:${itemIndex}`,
+      role,
+      text,
+    })
+  })
+  return content
+}
+
 export async function readCodexSessionHistory(
   request: CodexRequest,
   nativeId: string,
@@ -85,18 +112,7 @@ export async function readCodexSessionHistory(
   )
   const content: FeedContent[] = []
   response.thread.turns.forEach((turn, turnIndex) => {
-    turn.items.forEach((rawItem, itemIndex) => {
-      const parsed = itemSchema.parse(rawItem)
-      const role = threadItemRoles[parsed.type]
-      const text = itemText(parsed)
-      if (role === null || text === null) return
-      content.push({
-        kind: 'message',
-        id: parsed.id ?? `${nativeId}:${turnIndex}:${itemIndex}`,
-        role,
-        text,
-      })
-    })
+    content.push(...codexContentFromItems(turn.items, `${nativeId}:${turn.id ?? turnIndex}`))
   })
   return content
 }

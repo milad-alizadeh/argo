@@ -28,6 +28,14 @@ function status(sequence: number, value: 'running' | 'idle'): SessionLiveEvent {
   }
 }
 
+test('updates one Codex Turn status row by vendor identity', () => {
+  const running = { ...status(1, 'running'), vendorEventId: 'turn-1' }
+  const idle = { ...status(2, 'idle'), vendorEventId: 'turn-1' }
+  expect(projectLiveFeedRows([], [running, idle])).toMatchObject([
+    { id: 'status:turn-1', text: 'idle' },
+  ])
+})
+
 function question(
   sequence: number,
   requestId: string,

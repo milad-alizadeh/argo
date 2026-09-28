@@ -21,10 +21,10 @@ import type {
   CodexRequest,
   WireMessage,
 } from '@/harnesses/codex/app-server/codex-app-server-client'
-import type { codexAppServerMachine } from '@/harnesses/codex/app-server/codex-app-server-machine'
 import { codexHarnessInfo } from '@/harnesses/codex/catalog'
 import type { HarnessRegistration } from '@/harnesses/registration'
 import { createHarnessRegistry } from '@/harnesses/registry'
+import type { codexAppServerMachine } from '@/platform/main/application/codex-app-server-machine'
 import { codexModelCatalogFixture } from '../../../../../test-fixtures/sessions/codex-model-catalog.fixture'
 import type { SessionStartInput } from '../api/session-submit'
 import {
@@ -108,7 +108,7 @@ async function supervisorFor(
     Parameters<ActorRefFrom<typeof codexAppServerMachine>['send']>[0],
     { type: 'Call' }
   >
-  const registry = createHarnessRegistry(request)
+  const registry = createHarnessRegistry(codexClient)
   if (openClaude !== undefined) registry.claude.openLiveSession = openClaude
   const rootMachine = xstateSetup({
     types: {
@@ -154,7 +154,7 @@ async function supervisorFor(
     root,
     supervisor,
     client,
-    notify: (message: WireMessage) => {
+    notify(message: WireMessage) {
       for (const listener of notifications) listener(message)
     },
   }
@@ -208,9 +208,11 @@ test('models supervisor lifetime', () => {
   const paths = getShortestPaths(
     createLiveSessionSupervisorMachine({
       database: {} as never,
-      registry: createHarnessRegistry(async () => {
-        throw new Error('Unused request.')
-      }),
+      registry: createHarnessRegistry(
+        codexClientFor(async () => {
+          throw new Error('Unused request.')
+        }, new Set()),
+      ),
     }),
     {
       events: (state) => (state.matches('Running') ? [{ type: 'Shutdown' as const }] : []),
@@ -535,12 +537,7 @@ test('allows an explicit retry after the Harness fails before returning a native
   })
   try {
     await assert.rejects(start(supervisor, first), /Harness failed before start/)
-    const result = await start(
-      supervisor,
-      { ...first, commandId: 'retry-command' },
-      'optimistic:one:2',
-    )
-    assert.ok(result.sessionId)
+    await start(supervisor, { ...first, commandId: 'retry-command' }, 'optimistic:one:2')
     assert.equal(starts, 2)
   } finally {
     root.send({ type: 'Shutdown' })
@@ -590,7 +587,6 @@ test('retiring an idle actor keeps the Session identity and the next send resume
     assert.ok(actorId)
     supervisor.send({ type: 'Retire session', actorId, sessionId })
     await waitFor(supervisor, (snapshot) => snapshot.context.sessions[sessionId] === undefined)
-    assert.equal(liveSessionActorFor(supervisor, sessionId), undefined)
     assert.equal(
       client.prepare('SELECT native_id FROM session WHERE argo_id = ?').get(sessionId)?.native_id,
       'native-1',

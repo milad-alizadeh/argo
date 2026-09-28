@@ -72,7 +72,7 @@ test('reads every model/list page before publishing Codex choices', async () => 
   const cursors: Array<string | undefined> = []
   const request: CodexRequest = async (_method, params, parse) => {
     const cursor = 'cursor' in params ? params.cursor : undefined
-    cursors.push(cursor)
+    cursors.push(cursor ?? undefined)
     const page =
       cursor === undefined
         ? { data: [catalog.data[0]], nextCursor: 'second' }

@@ -35,3 +35,17 @@ export const questionAnswerSchema = z.discriminatedUnion('kind', [
   }),
 ])
 export type QuestionAnswer = z.infer<typeof questionAnswerSchema>
+
+export function validQuestionAnswers(questions: Question[], answers: QuestionAnswer[]): boolean {
+  if (answers.length !== questions.length) return false
+  return answers.every((answer, position) => {
+    const question = questions[position]
+    if (question === undefined) return false
+    if (answer.kind === 'text')
+      return answer.index === question.options.length + 1 && answer.text.trim() !== ''
+    return (
+      (question.multiSelect || answer.indices.length === 1) &&
+      answer.indices.every((index) => index >= 1 && index <= question.options.length)
+    )
+  })
+}
