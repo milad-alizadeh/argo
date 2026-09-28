@@ -29,6 +29,7 @@ export type FeedQuestionHandlers = {
 }
 
 export type FeedDocumentContext = {
+  stalled: boolean
   activeEvidenceId: string | null
   hasOlder?: boolean
   loadingOlder?: boolean
@@ -132,6 +133,7 @@ export function FeedDocument({ reading, liveFacts, actions }: FeedDocumentProps)
     initialScrollPosition: actions.initialScrollPosition ?? null,
     settled,
     isRunning: live.isRunning,
+    stalled: actions.stalled,
     onJumpToLatestChange,
     onMeasurementsChange: actions.onMeasurementsChange ?? ignoreMeasurementsChange,
     onScrollPositionChange: actions.onScrollPositionChange,

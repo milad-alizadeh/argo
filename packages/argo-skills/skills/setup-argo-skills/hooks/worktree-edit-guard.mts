@@ -89,7 +89,8 @@ function checkGitCommit({ command, cwd, root, roots }: ShellCheck): Verdict {
         `index another session is using. Commit inside a worktree, on a ticket branch — ` +
         `git worktree add -b argo/#<N>-<slug> .claude/worktrees/ticket-<N>-<slug> — then enter ` +
         `it by path (Claude Code: EnterWorktree { path: ".claude/worktrees/ticket-<N>-<slug>" }; ` +
-        `other harnesses: cd). For a deliberate main-checkout commit, such as skills-lock.json ` +
+        `other harnesses: cd, or use git -C .claude/worktrees/ticket-<N>-<slug> commit if the ` +
+        `shell guard keeps its original cwd). For a deliberate main-checkout commit, such as skills-lock.json ` +
         `after a reinstall, prefix the command with ${MAIN_COMMIT_MARKER}. ` +
         `Naming, resuming, and recovery: docs/agents/worktrees.md.`,
     }

@@ -25,6 +25,7 @@ test('a commit in the main checkout is refused, and the refusal names the overri
   assert.equal(decision.block, true)
   assert.match(decision.reason ?? '', /ARGO_MAIN_COMMIT=1/)
   assert.match(decision.reason ?? '', /worktree/)
+  assert.match(decision.reason ?? '', /git -C/)
 })
 
 test('the same commit inside a worktree is allowed', () => {

@@ -23,6 +23,7 @@ export function feedContent({
   initialScrollPosition,
   settled,
   isRunning,
+  stalled,
   onJumpToLatestChange,
   onMeasurementsChange,
   onScrollPositionChange,
@@ -41,6 +42,7 @@ export function feedContent({
   initialScrollPosition: number | null
   settled: ReturnType<typeof useSettledFeed>['settled']
   isRunning: boolean
+  stalled: boolean
   onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
   onMeasurementsChange: (sessionId: string, measurements: VirtualItem[]) => void
   onScrollPositionChange: (sessionId: string, position: number) => void
@@ -56,7 +58,7 @@ export function feedContent({
   if (noRows && awaitingReply) {
     return (
       <>
-        <FeedLoading state="running" />
+        {stalled ? null : <FeedLoading state="running" />}
         {tail}
       </>
     )
@@ -95,7 +97,7 @@ export function feedContent({
         tail={tail}
         historyLabel={historyLabel}
       />
-      {awaitingReply && tail === null ? <FeedLoading state="running" /> : null}
+      {awaitingReply && !stalled && tail === null ? <FeedLoading state="running" /> : null}
     </>
   )
 }

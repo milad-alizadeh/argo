@@ -1806,6 +1806,7 @@ export const Stalled: Story = {
     await expect(canvas.getByText(/This Session is external/)).toBeInTheDocument()
     await expect(canvas.getByText('Keep this known history visible.')).toBeVisible()
     await expect(canvas.getByText('Keep this pending prompt visible.')).toBeVisible()
+    await expect(canvas.queryByRole('status', { name: 'Loading this Session' })).toBeNull()
     const retry = canvas.getByRole('button', { name: 'Retry' })
 
     const otherControl = canvas.getByRole('button', { name: /Other window control/ })

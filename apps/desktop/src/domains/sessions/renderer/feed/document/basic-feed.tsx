@@ -196,6 +196,7 @@ export function BasicFeed({
     onStalledChange?.(stalled ? selectedSessionId : null)
   }, [onStalledChange, selectedSessionId, stalled])
   const actions: FeedDocumentContext = {
+    stalled,
     hasOlder,
     loadingOlder,
     olderError,
