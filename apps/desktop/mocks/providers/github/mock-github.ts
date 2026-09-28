@@ -4,7 +4,7 @@
 // packaged proof keeps its own real loopback server, since Mock Service Worker cannot reach a
 // process it was never loaded into.
 import { mountMockProvider, type NodeRoute } from '../msw-node-bridge'
-import type { MockState } from './mock-exchange'
+import { initialMockState } from './mock-exchange'
 import { githubControls } from './mock-github-controls'
 import { answer } from './mock-routes'
 
@@ -51,6 +51,8 @@ export type MockGitHub = {
   addRepository(repository: MockRepository): void
   revoke(login: string): void
   outage(kind: MockOutage): void
+  // API reads wait until the returned release is called.
+  holdReads(): () => void
   close(): Promise<void>
 }
 
@@ -76,15 +78,7 @@ const ROUTES = [
 
 export async function startMockGitHub(): Promise<MockGitHub> {
   const requests: string[] = []
-  const state: MockState = {
-    origin: MOCK_GITHUB_ORIGIN,
-    signIn: { answer: 'declined', pending: 0, held: false },
-    devices: new Map(),
-    tokens: new Map(),
-    repositories: new Map(),
-    outage: 'none',
-    serial: 0,
-  }
+  const state = initialMockState(MOCK_GITHUB_ORIGIN)
   const route: NodeRoute = (request, response) => answer(state, request, response)
   const routes = Object.fromEntries(ROUTES.map((key) => [key, route]))
   const retire = mountMockProvider({ origin: MOCK_GITHUB_ORIGIN, requests, routes })

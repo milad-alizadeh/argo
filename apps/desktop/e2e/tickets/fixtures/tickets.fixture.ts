@@ -7,7 +7,7 @@ import { SESSION_CLAUDE_TRANSCRIPTS_ENV } from '@/harnesses/claude/proof-protoco
 import { SESSION_CODEX_TRANSCRIPTS_ENV } from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { GITHUB_PROOF_ORIGIN_ENV, LINEAR_PROOF_ORIGIN_ENV } from '@/providers/proof-protocol'
-import type { MockGitHub } from '../../../mocks/providers/github/mock-github'
+import type { MockGitHub, MockRepository } from '../../../mocks/providers/github/mock-github'
 import { startMockGitHubLoopback } from '../../../mocks/providers/github/mock-github-loopback'
 import type { MockLinear } from '../../../mocks/providers/linear/mock-linear'
 import { HIDDEN, TEAM } from '../../../mocks/providers/linear/mock-linear-cast'
@@ -31,26 +31,29 @@ export type TicketFixture = {
   linear: MockLinear
 }
 
+// A fresh copy each time, since the mock closes an issue in place.
+export const helloWorld = (): MockRepository => ({
+  fullName: 'octocat/hello-world',
+  visibleTo: [OCTOCAT.id, HUBOT.id],
+  issues: [
+    { number: 609, title: 'Prototype the Tickets room' },
+    {
+      number: 607,
+      title: 'Wayfinder: the Tickets room, end to end',
+      body: 'The backlog in the deck and the Ticket beside it.',
+      labels: [{ name: 'wayfinder', color: '5319e7' }],
+      type: 'PRD',
+      children: [609, 388],
+      blockedBy: [609],
+    },
+    { number: 388, title: 'Ticket read path', state: 'closed' },
+    { number: 273, title: 'The Next-up planner' },
+    { number: 700, title: 'A pull request is not a Ticket', pullRequest: true },
+  ],
+})
+
 function serveRepositories(github: MockGitHub) {
-  github.addRepository({
-    fullName: 'octocat/hello-world',
-    visibleTo: [OCTOCAT.id, HUBOT.id],
-    issues: [
-      { number: 609, title: 'Prototype the Tickets room' },
-      {
-        number: 607,
-        title: 'Wayfinder: the Tickets room, end to end',
-        body: 'The backlog in the deck and the Ticket beside it.',
-        labels: [{ name: 'wayfinder', color: '5319e7' }],
-        type: 'PRD',
-        children: [609, 388],
-        blockedBy: [609],
-      },
-      { number: 388, title: 'Ticket read path', state: 'closed' },
-      { number: 273, title: 'The Next-up planner' },
-      { number: 700, title: 'A pull request is not a Ticket', pullRequest: true },
-    ],
-  })
+  github.addRepository(helloWorld())
   github.addRepository({ fullName: 'octocat/secret', visibleTo: [], issues: [] })
 }
 

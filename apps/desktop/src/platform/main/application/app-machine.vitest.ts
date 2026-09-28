@@ -18,6 +18,11 @@ const input = {
     claude: new SessionSyncStatusStore(undefined, 'claude'),
     codex: new SessionSyncStatusStore(undefined, 'codex'),
   },
+  ticketSync: {
+    database: {} as Database,
+    readPage: async () => ({ ok: false as const, failure: 'github-unreachable' as const }),
+    changed: () => {},
+  },
 }
 const appMachine = createAppMachine(registry, input)
 
@@ -32,11 +37,13 @@ test('models application startup and shutdown', () => {
   )
 })
 
-test('owns catalog, live and sync Session supervisors, and shared Harness clients until shutdown', () => {
+test('owns catalog, live and sync Session supervisors, the Ticket sync supervisor, and shared Harness clients until shutdown', () => {
   const actor = createActor(appMachine, { input }).start()
   const catalog = actor.system.get('catalog')
   const sessions = actor.system.get('sessions')
   const sessionSync = actor.system.get('sessionSync')
+  const ticketSync = actor.system.get('ticketSync')
+  assert.ok(ticketSync)
   assert.ok(catalog)
   assert.ok(sessions)
   assert.ok(sessionSync)
@@ -44,11 +51,13 @@ test('owns catalog, live and sync Session supervisors, and shared Harness client
   assert.equal(catalog.getSnapshot().status, 'active')
   assert.equal(sessions.getSnapshot().status, 'active')
   assert.equal(sessionSync.getSnapshot().status, 'active')
+  assert.equal(ticketSync.getSnapshot().status, 'active')
   assert.deepEqual(shutdowns, [])
   actor.send({ type: 'Shutdown' })
   assert.equal(actor.getSnapshot().status, 'done')
   assert.equal(catalog.getSnapshot().status, 'stopped')
   assert.equal(sessions.getSnapshot().status, 'stopped')
   assert.equal(sessionSync.getSnapshot().status, 'stopped')
+  assert.equal(ticketSync.getSnapshot().status, 'stopped')
   assert.deepEqual(shutdowns, ['codex'])
 })

@@ -305,26 +305,6 @@
     {
       "identity": {
         "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/tickets/renderer/hooks/use-tickets.ts",
-        "code": "TS2339",
-        "message": "Property 'nextCursor' does not exist on type 'TicketListReply'. Property 'nextCursor' does not exist on type 'TicketError'."
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this remaining type repair."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/tickets/renderer/hooks/use-tickets.ts",
-        "code": "TS2345",
-        "message": "Argument of type '{ accountId: string; provider: \"github\" | \"linear\"; login: string | null; scope: string; label: string; state: \"ready\" | \"account-missing\" | \"account-expired\" | \"account-revoked\" | \"account-unreadable\"; } | null' is not assignable to parameter of type 'Updater<NoInfer<{ version: 1; type: \"ticket.connected\"; requestId: string; connection: { accountId: string; provider: \"github\" | \"linear\"; login: string | null; scope: string; label: string; state: \"ready\" | ... 3 more ... | \"account-unreadable\"; } | null; projectId: string; } | ContractError<...>> | undefined, NoIn...'. Type 'null' is not assignable to type 'Updater<NoInfer<{ version: 1; type: \"ticket.connected\"; requestId: string; connection: { accountId: string; provider: \"github\" | \"linear\"; login: string | null; scope: string; label: string; state: \"ready\" | ... 3 more ... | \"account-unreadable\"; } | null; projectId: string; } | ContractError<...>> | undefined, NoIn...'."
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this remaining type repair."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
         "path": "apps/desktop/src/renderer/cockpit-route-layout.stories.tsx",
         "code": "TS2353",
         "message": "Object literal may only specify known properties, and 'listHarnessReadiness' does not exist in type '{ onAppearanceChanged: (listener: (state: { appearance: \"light\" | \"dark\" | \"system\"; dark: boolean; }) => void) => () => void; onCommand: (listener: (command: string) => void) => () => void; ... 5 more ...; trpcSubscribe: (request: TrpcRequest, listener: (message: TrpcSubscriptionMessage) => void) => Promise<...>; }'."

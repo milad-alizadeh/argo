@@ -34,6 +34,11 @@ function prepared() {
       claude: new SessionSyncStatusStore(undefined, 'claude'),
       codex: new SessionSyncStatusStore(undefined, 'codex'),
     },
+    ticketSync: {
+      database: {} as never,
+      readPage: async () => ({ ok: false as const, failure: 'github-unreachable' as const }),
+      changed: () => {},
+    },
     registry: {} as HarnessRegistry,
   }
 }
