@@ -44,6 +44,7 @@ export type OtherFacts = {
   presentation?: {
     kind: 'command' | 'read' | 'edited' | 'created' | 'deleted' | 'tool' | 'skill' | 'searched'
     label: string
+    agentDescription?: boolean
   }
 }
 

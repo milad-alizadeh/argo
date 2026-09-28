@@ -73,6 +73,7 @@ export const feedContentSchema = z.discriminatedUnion('kind', [
           'searched',
         ]),
         label: z.string(),
+        agentDescription: z.boolean().optional(),
       })
       .optional(),
   }),

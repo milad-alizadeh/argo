@@ -41,6 +41,7 @@ const sessionActivitySchema = z.strictObject({
     'thought',
   ]),
   open: z.boolean(),
+  agentDescription: z.boolean().optional(),
   tool: z.string(),
   target: z.string().nullable(),
 })

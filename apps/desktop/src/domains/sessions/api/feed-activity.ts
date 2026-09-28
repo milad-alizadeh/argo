@@ -13,6 +13,7 @@ export type FeedActivity = {
     | 'searched'
     | 'thought'
   open: boolean
+  agentDescription?: boolean
   tool: string
   target: string | null
 }
@@ -28,6 +29,9 @@ function callActivity(content: FeedContent): { id: string; activity: FeedActivit
         activity: {
           label: content.presentation?.label ?? content.summary ?? (content.name || content.callId),
           kind: content.presentation?.kind ?? 'tool',
+          ...(content.presentation?.agentDescription === undefined
+            ? {}
+            : { agentDescription: content.presentation.agentDescription }),
           open:
             content.status === 'pending' ||
             content.status === 'running' ||

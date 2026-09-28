@@ -64,6 +64,7 @@ const toolCallSchema = z.strictObject({
     })
     .nullable(),
   status: z.enum(['succeeded', 'failed', 'running', 'interrupted']),
+  agentDescription: z.boolean().optional(),
   evidence: toolEvidenceSchema,
   // The call's own raw text, read by a kind routed inline (a command's full text). Null for a
   // kind routed to the evidence panel, which reads the call through `evidence` instead.
@@ -78,6 +79,7 @@ export const liveActivitySchema = z.strictObject({
   // A `thought` is the Turn's latest reasoning headline, newer than any call it has made.
   kind: z.union([toolCallKindSchema, z.literal('thought')]),
   open: z.boolean(),
+  agentDescription: z.boolean().optional(),
 })
 export type LiveActivity = z.infer<typeof liveActivitySchema>
 

@@ -56,7 +56,7 @@ const firstTool: FeedContent = {
   input: { command: 'bun test' },
   output: null,
   summary: null,
-  presentation: { kind: 'command', label: 'Run the Feed tests' },
+  presentation: { kind: 'command', label: 'Run the Feed tests', agentDescription: true },
 }
 const secondTool: FeedContent = {
   kind: 'tool',

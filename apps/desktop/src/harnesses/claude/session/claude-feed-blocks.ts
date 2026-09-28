@@ -47,30 +47,33 @@ function toolPresentation(name: string, input: unknown): ToolPresentation {
       ? (input as Record<string, unknown>)
       : {}
   const word = (key: string) => (typeof fields[key] === 'string' ? fields[key] : null)
+  const description = word('description')
+  const present = (kind: ToolPresentation['kind'], label: string): ToolPresentation => ({
+    kind,
+    label: description ?? label,
+    ...(description === null ? {} : { agentDescription: true }),
+  })
   switch (name) {
     case 'Bash': {
       const command = word('command')?.split('\n')[0] ?? null
-      return { kind: 'command', label: word('description') ?? `Ran ${command ?? 'command'}` }
+      return present('command', `Ran ${command ?? 'command'}`)
     }
     case 'Read':
-      return { kind: 'read', label: `Read ${word('file_path') ?? 'file'}` }
+      return present('read', `Read ${word('file_path') ?? 'file'}`)
     case 'Edit':
-      return { kind: 'edited', label: `Edited ${word('file_path') ?? 'file'}` }
+      return present('edited', `Edited ${word('file_path') ?? 'file'}`)
     case 'Write':
-      return { kind: 'created', label: `Created ${word('file_path') ?? 'file'}` }
+      return present('created', `Created ${word('file_path') ?? 'file'}`)
     case 'Grep':
     case 'Glob':
     case 'WebSearch':
-      return {
-        kind: 'searched',
-        label: `Searched ${word('pattern') ?? word('query') ?? ''}`.trim(),
-      }
+      return present('searched', `Searched ${word('pattern') ?? word('query') ?? ''}`.trim())
     case 'WebFetch':
-      return { kind: 'read', label: `Read ${word('url') ?? 'page'}` }
+      return present('read', `Read ${word('url') ?? 'page'}`)
     case 'Skill':
-      return { kind: 'skill', label: word('skill') ?? 'Skill' }
+      return present('skill', word('skill') ?? 'Skill')
     default:
-      return { kind: 'tool', label: word('description') ?? name }
+      return present('tool', name)
   }
 }
 

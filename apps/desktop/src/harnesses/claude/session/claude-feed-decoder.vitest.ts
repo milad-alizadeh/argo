@@ -222,7 +222,7 @@ test('keeps the Claude Code description as the command label', () => {
     {
       kind: 'tool',
       callId: 'call-command',
-      presentation: { kind: 'command', label: 'Run the Feed tests' },
+      presentation: { kind: 'command', label: 'Run the Feed tests', agentDescription: true },
     },
   ])
 })
