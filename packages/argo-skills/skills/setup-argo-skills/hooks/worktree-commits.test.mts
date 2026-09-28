@@ -31,6 +31,18 @@ test('the same commit inside a worktree is allowed', () => {
   assert.equal(decideEdit(commit('git commit -m "wip"', WORKTREE)).block, false)
 })
 
+test('a commit explicitly targeting a worktree is allowed from the main checkout cwd', () => {
+  assert.equal(decideEdit(commit(`rtk git -C ${WORKTREE} commit -m "wip"`)).block, false)
+})
+
+test('an explicit main checkout target remains guarded', () => {
+  assert.equal(decideEdit(commit('git -C /repo commit -m "wip"')).block, true)
+})
+
+test('an unresolved explicit target does not bypass the main checkout guard', () => {
+  assert.equal(decideEdit(commit('git -C $WORKTREE commit -m "wip"')).block, true)
+})
+
 test('the human is never guarded', () => {
   assert.equal(decideEdit({ ...commit('git commit -m "wip"'), isAgent: false }).block, false)
 })

@@ -76,11 +76,12 @@ function checkBashWrites({ command, cwd, root, roots }: ShellCheck): Verdict {
 const MAIN_COMMIT_MARKER = 'ARGO_MAIN_COMMIT=1'
 
 function checkGitCommit({ command, cwd, root, roots }: ShellCheck): Verdict {
-  if (!guarded({ abs: cwd, root, roots })) return ALLOW
   for (const segment of segments(command)) {
     const { prefix, name, args } = invocation(tokenize(segment))
     if (prefix.includes(MAIN_COMMIT_MARKER)) continue
     if (name !== 'git' || afterGitOptions(args)[0] !== 'commit') continue
+    const commitCwd = gitCommitWorkingDirectory(args, cwd)
+    if (!guarded({ abs: commitCwd, root, roots })) continue
     return {
       block: true,
       reason:
@@ -94,6 +95,22 @@ function checkGitCommit({ command, cwd, root, roots }: ShellCheck): Verdict {
     }
   }
   return ALLOW
+}
+
+// A harness can keep its tool cwd at the repository root and still target a linked checkout with
+// `git -C <worktree> commit`. Judge the directory Git will actually use, not the harness cwd.
+function gitCommitWorkingDirectory(args: string[], cwd: string): string {
+  let directory = cwd
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index]
+    if (argument === 'commit') break
+    if (argument !== '-C') continue
+    const target = args[index + 1]
+    if (!target || unexpanded(target)) return cwd
+    directory = path.resolve(directory, target)
+    index += 1
+  }
+  return directory
 }
 
 /** WHERE: is this change being made outside a worktree? */
