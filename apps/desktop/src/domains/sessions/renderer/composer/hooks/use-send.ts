@@ -19,6 +19,20 @@ function outcomeFor(result: SendOutcome | boolean): SendOutcome {
   return result
 }
 
+export function sameDraftContent(start: ComposerEditing, current: ComposerEditing): boolean {
+  return (
+    start.prompt === current.prompt &&
+    start.tickets === current.tickets &&
+    start.turnConfiguration === current.turnConfiguration &&
+    start.attachments.length === current.attachments.length &&
+    start.attachments.every(
+      (attachment, index) =>
+        attachment.id === current.attachments[index]?.id &&
+        attachment.path === current.attachments[index]?.path,
+    )
+  )
+}
+
 // Resolve attachments, send through the durable command, and clear only after main accepts it.
 export async function performSend(input: {
   draft: string
@@ -82,7 +96,7 @@ export function useSend(input: {
         onSend,
         restoreDraft,
         turnConfigurationValue,
-        isCurrentDraft: () => input.latestEditing.current === input.editing,
+        isCurrentDraft: () => sameDraftContent(input.editing, input.latestEditing.current),
       }),
     [
       attachments,

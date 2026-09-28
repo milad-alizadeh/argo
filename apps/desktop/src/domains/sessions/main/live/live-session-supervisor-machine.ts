@@ -70,6 +70,7 @@ type StartReply = {
   resolve: (value: { sessionId: string }) => void
   reject: (error: Error) => void
 }
+export class SessionSendRejectedError extends Error {}
 type CompletedStart =
   | {
       commandId: string
@@ -205,7 +206,11 @@ function handledStart({
   if (
     !turnConfigurationIsAvailable(catalog, harnessOf(event.input), event.input.turnConfiguration)
   ) {
-    event.reply.reject(new Error('The selected Turn configuration is no longer available.'))
+    event.reply.reject(
+      event.type === 'Send'
+        ? new SessionSendRejectedError('The selected Turn configuration is no longer available.')
+        : new Error('The selected Turn configuration is no longer available.'),
+    )
     return true
   }
   if (replyForCompletedStart(context.completed[pendingId], event.input.commandId, event.reply))
@@ -446,19 +451,25 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
             event.input.turnConfiguration,
           )
         ) {
-          event.reply.reject(new Error('The selected Turn configuration is no longer available.'))
+          event.reply.reject(
+            new SessionSendRejectedError('The selected Turn configuration is no longer available.'),
+          )
           return
         }
         if (!acceptsTurnConfigurationChange(actor, event.input.turnConfiguration)) {
           event.reply.reject(
-            new Error('Changing this Turn configuration requires starting a new Session.'),
+            new SessionSendRejectedError(
+              'Changing this Turn configuration requires starting a new Session.',
+            ),
           )
           return
         }
         const snapshot = actor.getSnapshot()
         if (snapshot.matches('Failed') || snapshot.matches('Closed')) {
           event.reply.reject(
-            new Error(snapshot.context.failure ?? 'Session is not available for sends.'),
+            new SessionSendRejectedError(
+              snapshot.context.failure ?? 'Session is not available for sends.',
+            ),
           )
           return
         }
