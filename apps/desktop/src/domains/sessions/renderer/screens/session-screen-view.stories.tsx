@@ -732,17 +732,23 @@ async function expectJumpToLatestInComposerFade(canvasElement: HTMLElement) {
   await waitFor(() => expect(canvas.queryByRole('button', { name: 'Jump to latest' })).toBeNull())
 }
 
-function feedEndGapAboveComposer(canvasElement: HTMLElement) {
-  const canvas = within(canvasElement)
-  const history = canvas.getByLabelText(SESSION_HISTORY_LABEL)
-  const card = canvas
+function composerCard(canvasElement: HTMLElement) {
+  const card = within(canvasElement)
     .getByLabelText('Session composer')
     .querySelector<HTMLElement>('[data-component="ComposerCard"]')
   if (card === null) throw new Error('The composer card is absent.')
+  return card
+}
+
+function feedEndGapAboveComposer(canvasElement: HTMLElement) {
+  const history = within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)
   const rows = [...history.querySelectorAll<HTMLElement>('[data-feed-row]')]
   const lastRowBottom = Math.max(...rows.map((row) => row.getBoundingClientRect().bottom))
-  return card.getBoundingClientRect().top - lastRowBottom
+  return composerCard(canvasElement).getBoundingClientRect().top - lastRowBottom
 }
+
+// `--spacing-snug`, the one gap the Feed keeps above the composer card.
+const FEED_END_GAP_PX = 12
 
 async function expectFeedEndsOneSnugAboveComposer(
   canvasElement: HTMLElement,
@@ -750,12 +756,11 @@ async function expectFeedEndsOneSnugAboveComposer(
 ) {
   const history = await within(canvasElement).findByLabelText(SESSION_HISTORY_LABEL)
   await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(history.clientHeight))
-  const snug = Number.parseFloat(getComputedStyle(history).getPropertyValue('--spacing-snug'))
   await waitFor(() => {
     if (scrollToEnd) history.scrollTo({ top: history.scrollHeight })
     const gap = feedEndGapAboveComposer(canvasElement)
-    expect(gap).toBeGreaterThanOrEqual(snug - 2)
-    expect(gap).toBeLessThanOrEqual(snug + 2)
+    expect(gap).toBeGreaterThanOrEqual(FEED_END_GAP_PX - 2)
+    expect(gap).toBeLessThanOrEqual(FEED_END_GAP_PX + 2)
   })
 }
 
@@ -1113,10 +1118,7 @@ export const FeedEndsJustAboveComposer: Story = {
     const canvas = within(canvasElement)
     await expectFeedEndsOneSnugAboveComposer(canvasElement, { scrollToEnd: true })
 
-    const card = canvas
-      .getByLabelText('Session composer')
-      .querySelector<HTMLElement>('[data-component="ComposerCard"]')
-    if (card === null) throw new Error('The composer card is absent.')
+    const card = composerCard(canvasElement)
     const oneLineHeight = card.getBoundingClientRect().height
     await userEvent.click(canvas.getByRole('combobox', { name: 'Message' }))
     await userEvent.keyboard('First line{Shift>}{Enter}{/Shift}Second line')

@@ -69,22 +69,38 @@ function ComposerSection({
     const body = section?.parentElement
     if (!section || !body) return
     const findCard = () => section.querySelector<HTMLElement>('[data-component="ComposerCard"]')
-    const card = findCard()
+    let observedCard: HTMLElement | null = null
     const measure = () => {
       const sectionBounds = section.getBoundingClientRect()
-      // From the card's top edge: the band above it is transparent fade the Feed may pass under.
-      const cardTop = findCard()?.getBoundingClientRect().top ?? sectionBounds.top
-      body.style.setProperty('--session-composer-height', `${sectionBounds.bottom - cardTop}px`)
+      // From the card's top edge, clamped to the section: the band above the card is transparent fade
+      // the Feed may pass under, and the section clips a card taller than its cap.
+      const cardTop = Math.max(
+        observedCard?.getBoundingClientRect().top ?? sectionBounds.top,
+        sectionBounds.top,
+      )
+      body.style.setProperty('--session-composer-reach', `${sectionBounds.bottom - cardTop}px`)
       section.style.setProperty('--session-composer-fade-start', `${sectionBounds.height / 2}px`)
       section.style.setProperty('--session-composer-fade-length', `${sectionBounds.height / 2}px`)
     }
-    const observer = new ResizeObserver(measure)
-    observer.observe(section)
-    if (card) observer.observe(card)
+    const resizes = new ResizeObserver(measure)
+    // A remounted composer brings a new card node, which the resize observer must follow.
+    const followCard = () => {
+      const card = findCard()
+      if (card === observedCard) return
+      if (observedCard !== null) resizes.unobserve(observedCard)
+      if (card !== null) resizes.observe(card)
+      observedCard = card
+      measure()
+    }
+    const mutations = new MutationObserver(followCard)
+    resizes.observe(section)
+    mutations.observe(section, { childList: true, subtree: true })
+    followCard()
     measure()
     return () => {
-      observer.disconnect()
-      body.style.removeProperty('--session-composer-height')
+      resizes.disconnect()
+      mutations.disconnect()
+      body.style.removeProperty('--session-composer-reach')
     }
   }, [hasComposer])
   if (composer === null) return null

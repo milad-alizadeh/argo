@@ -30,10 +30,7 @@
 }
 
 .session-screen__feed:has(+ .session-screen__composer) .feed__viewport {
-  --session-feed-composer-clearance: calc(
-    var(--session-composer-height, 0px) +
-    var(--spacing-snug)
-  );
+  --session-feed-composer-clearance: calc(var(--session-composer-reach, 0px) + var(--spacing-snug));
   padding-bottom: var(--session-feed-composer-clearance);
   scroll-padding-bottom: var(--session-feed-composer-clearance);
 }

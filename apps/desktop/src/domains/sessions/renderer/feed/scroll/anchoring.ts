@@ -19,14 +19,14 @@ const TAIL_KEY = 'feed-tail'
 // read once. The end space is the viewport's CSS padding, which follows the composer (#2835).
 export function useFeedViewport() {
   const [viewport, setViewport] = useState<HTMLElement | null>(null)
-  const [padding, setPadding] = useState({ start: 0 })
+  const [paddingStart, setPaddingStart] = useState(0)
   const attachViewport = useCallback((element: HTMLElement | null) => {
     if (element !== null) {
-      setPadding({ start: Number.parseFloat(getComputedStyle(element).scrollPaddingTop) || 0 })
+      setPaddingStart(Number.parseFloat(getComputedStyle(element).scrollPaddingTop) || 0)
     }
     setViewport(element)
   }, [])
-  return { attachViewport, padding, viewport }
+  return { attachViewport, paddingStart, viewport }
 }
 
 export function useAnchoredVirtualizer({
@@ -36,7 +36,7 @@ export function useAnchoredVirtualizer({
   rows,
   tail,
   viewport,
-  padding,
+  paddingStart,
   onChange,
 }: {
   following: boolean
@@ -45,7 +45,7 @@ export function useAnchoredVirtualizer({
   rows: readonly SessionFeedRow[]
   tail: ReactNode
   viewport: HTMLElement | null
-  padding: { start: number }
+  paddingStart: number
   onChange: (instance: Virtualizer<HTMLElement, Element>, sync: boolean) => void
 }) {
   const virtualizer = useVirtualizer({
@@ -66,8 +66,8 @@ export function useAnchoredVirtualizer({
     initialMeasurementsCache,
     onChange,
     overscan: FEED_OVERSCAN,
-    paddingStart: padding.start,
-    scrollPaddingStart: padding.start,
+    paddingStart,
+    scrollPaddingStart: paddingStart,
     scrollEndThreshold: TAIL_THRESHOLD_PX,
   })
   // TanStack Virtual takes this only as an instance assignment. Insertion effects run after
