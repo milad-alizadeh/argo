@@ -32,12 +32,11 @@ function updatedTaskStatus(
 }
 
 function taskContent(message: SystemMessage): FeedContent[] | null {
-  const id = message.uuid
   switch (message.subtype) {
     case 'task_started':
       return [
         {
-          id,
+          id: message.task_id,
           kind: 'task',
           taskId: message.task_id,
           callId: message.tool_use_id ?? null,
@@ -49,7 +48,7 @@ function taskContent(message: SystemMessage): FeedContent[] | null {
     case 'task_progress':
       return [
         {
-          id,
+          id: message.task_id,
           kind: 'task',
           taskId: message.task_id,
           callId: message.tool_use_id ?? null,
@@ -61,7 +60,7 @@ function taskContent(message: SystemMessage): FeedContent[] | null {
     case 'task_updated':
       return [
         {
-          id,
+          id: message.task_id,
           kind: 'task',
           taskId: message.task_id,
           callId: null,
@@ -73,7 +72,7 @@ function taskContent(message: SystemMessage): FeedContent[] | null {
     case 'task_notification':
       return [
         {
-          id,
+          id: message.task_id,
           kind: 'task',
           taskId: message.task_id,
           callId: message.tool_use_id ?? null,

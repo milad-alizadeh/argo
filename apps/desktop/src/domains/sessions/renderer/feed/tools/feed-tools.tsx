@@ -142,17 +142,26 @@ export function FeedToolGroup({
     )
   return (
     <CollapsibleText
-      content={group.calls.map((call) => (
-        <TaskItem key={call.id}>
-          <GroupedCall
-            activeEvidenceId={activeEvidenceId}
-            call={call}
-            isSole={call.id === soleCall?.id}
-            onOpen={onOpen}
-            toolGroups={toolGroups}
-          />
-        </TaskItem>
-      ))}
+      content={[
+        ...group.calls.map((call) => (
+          <TaskItem key={call.id}>
+            <GroupedCall
+              activeEvidenceId={activeEvidenceId}
+              call={call}
+              isSole={call.id === soleCall?.id}
+              onOpen={onOpen}
+              toolGroups={toolGroups}
+            />
+          </TaskItem>
+        )),
+        ...(group.thoughts ?? []).map((thought) => (
+          <TaskItem key={thought.id}>
+            <p className="whitespace-pre-wrap break-words text-muted-foreground type-body">
+              {thought.text}
+            </p>
+          </TaskItem>
+        )),
+      ]}
       contentVariant="flush"
       icon={groupIcon(activity, titleCall?.kind)}
       onOpenChange={onOpenChange}

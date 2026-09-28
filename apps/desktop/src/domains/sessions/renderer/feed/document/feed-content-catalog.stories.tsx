@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, fn, waitFor } from 'storybook/test'
+import { expect, fn, waitFor, within } from 'storybook/test'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionFeed } from '../../types'
 import { projectLiveFeedRows } from '../model/live-feed-rows'
@@ -36,17 +36,22 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof BasicFeed>
 
-function catalogFeed(content: FeedContent): SessionFeed {
+function catalogFeedContents(content: FeedContent[]): SessionFeed {
+  const revision = content.map((item) => item.id).join(':') || 'empty'
   return {
     version: 1,
     type: 'session.feed.read',
-    requestId: content.id,
+    requestId: revision,
     sessionId: 'catalog',
     chainId: 'catalog',
-    revision: content.id,
-    content: [content],
-    rows: groupToolRuns(projectLiveFeedRows([content], [])),
+    revision,
+    content,
+    rows: groupToolRuns(projectLiveFeedRows(content, [])),
   }
+}
+
+function catalogFeed(content: FeedContent): SessionFeed {
+  return catalogFeedContents([content])
 }
 
 function kindStory(content: FeedContent, visible: string): Story {
@@ -206,3 +211,146 @@ export const Diagnostic = kindStory(
   { kind: 'diagnostic', id: 'diagnostic', vendorType: 'unknownItem', detail: 'Unsupported' },
   'Unsupported item',
 )
+
+function workStateContents(status: 'running' | 'completed' | 'failed'): FeedContent[] {
+  return [
+    {
+      kind: 'tool',
+      id: `tool-${status}`,
+      callId: `call-${status}`,
+      name: 'Read',
+      status,
+      input: null,
+      output: null,
+      summary: null,
+      presentation: { kind: 'read', label: 'Read the Feed file' },
+    },
+    {
+      kind: 'command',
+      id: `command-${status}`,
+      command: 'bun test',
+      cwd: '/repo',
+      status,
+      output: null,
+      stderr: null,
+      exitCode: null,
+    },
+    { kind: 'fileChange', id: `file-${status}`, status, changes: [] },
+    {
+      kind: 'delegation',
+      id: `agent-${status}`,
+      agentId: `agent-${status}`,
+      status,
+      name: 'Review the Feed',
+      prompt: null,
+      model: null,
+      summary: null,
+    },
+    {
+      kind: 'task',
+      id: `task-${status}`,
+      taskId: `task-${status}`,
+      callId: null,
+      status,
+      description: 'Check the Feed',
+      summary: null,
+    },
+    {
+      kind: 'imageGeneration',
+      id: `image-${status}`,
+      status,
+      prompt: 'A map',
+      source: null,
+      failure: status === 'failed' ? 'No image' : null,
+    },
+  ]
+}
+
+function workStateStory(status: 'running' | 'completed' | 'failed', label: string): Story {
+  return {
+    args: { feed: catalogFeedContents(workStateContents(status)) },
+    play: async ({ canvasElement }) => {
+      const canvas = within(canvasElement)
+      await waitFor(() => {
+        expect(canvas.getByText('Image generation')).toBeVisible()
+        expect(canvas.getByText('File change')).toBeVisible()
+        expect(canvas.getAllByText(label)[0]).toBeVisible()
+      })
+    },
+  }
+}
+
+export const Empty: Story = {
+  args: { feed: catalogFeedContents([]) },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).findByText('No messages')).resolves.toBeVisible()
+  },
+}
+export const RunningWork = workStateStory('running', 'Running')
+export const CompletedWork = workStateStory('completed', 'Completed')
+export const FailedWork = workStateStory('failed', 'Failed')
+export const Unsupported: Story = {
+  args: {
+    feed: catalogFeedContents([
+      { kind: 'reasoning', id: 'redacted', text: null, redacted: true },
+      {
+        kind: 'media',
+        id: 'audio',
+        mediaType: 'audio',
+        source: { kind: 'url', url: 'https://example.invalid/sound.wav' },
+        role: 'assistant',
+      },
+      { kind: 'diagnostic', id: 'unknown', vendorType: 'futureItem', detail: 'Unsupported' },
+    ]),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() => {
+      expect(canvas.getByText('Reasoning unavailable')).toBeVisible()
+      expect(canvas.getByText('Unsupported item')).toBeVisible()
+    })
+  },
+}
+
+export const CommentaryAfterTool: Story = {
+  args: {
+    feed: catalogFeedContents([
+      {
+        kind: 'tool',
+        id: 'commentary-tool',
+        callId: 'commentary-call',
+        name: 'Read',
+        status: 'completed',
+        input: null,
+        output: null,
+        summary: null,
+      },
+      {
+        kind: 'message',
+        id: 'commentary-message',
+        role: 'assistant',
+        phase: 'commentary',
+        text: 'Checking the result',
+      },
+    ]),
+    liveFacts: {
+      ...INACTIVE_FEED_LIVE_FACTS,
+      isRunning: true,
+      status: 'running',
+      activity: {
+        label: 'Checking the result',
+        kind: 'thought',
+        open: true,
+        tool: 'thought',
+        target: null,
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(
+        within(canvasElement).getByRole('button', { name: /Checking the result/ }),
+      ).toBeVisible(),
+    )
+  },
+}

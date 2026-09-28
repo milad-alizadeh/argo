@@ -62,6 +62,8 @@ function sampleMessages(notify: (message: WireMessage) => unknown) {
         content: [
           { type: 'text', text: 'first' },
           { type: 'localImage', path: '/repo/image.png' },
+          { type: 'skill', name: 'review', path: '/repo/.agents/skills/review/SKILL.md' },
+          { type: 'audio', url: 'data:audio/wav;base64,AA==' },
         ],
       },
     },
@@ -466,13 +468,22 @@ test('unknown Codex item shapes are reported and counted', async () => {
         item: { id: 'message-1', type: 'agentMessage' },
       },
     })
+    notify({
+      method: 'item/completed',
+      params: {
+        threadId: 'thread-1',
+        turnId: 'turn-1',
+        item: { id: 'image-1', type: 'imageGeneration', status: 'futureStatus' },
+      },
+    })
   } finally {
     console.warn = originalWarn
     channel.close()
   }
   assert.deepEqual(warnings, [
     'Rejected 1 unsupported Codex live notification(s): item/completed: futureItem',
-    'Rejected 2 unsupported Codex live notification(s): item/completed: missing agentMessage content',
+    'Rejected 2 unsupported Codex live notification(s): item/completed',
+    'Rejected 3 unsupported Codex live notification(s): item/completed: imageGeneration',
   ])
 })
 

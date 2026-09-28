@@ -1,29 +1,24 @@
-import { z } from 'zod'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { CodexRequest } from '../app-server/codex-app-server-client'
 import type { ThreadItem } from '../app-server/protocol-generated/v2/thread-item'
 import type { ThreadReadResponse } from '../app-server/protocol-generated/v2/thread-read-response'
+import copy from '../locales/en.json'
 import { codexCommandContent } from './codex-command-content'
 import { codexSubagentContent } from './codex-subagent-content'
 
-const textContentSchema = z.object({ type: z.literal('text'), text: z.string() }).passthrough()
-type FileChangeStatus = Extract<ThreadItem, { type: 'fileChange' }>['status']
-type AgentMessagePhase = NonNullable<Extract<ThreadItem, { type: 'agentMessage' }>['phase']>
 type ImageGenerationFailure = NonNullable<
   Extract<ThreadItem, { type: 'imageGeneration' }>['failure']
 >
-export const codexMessagePhaseSchema = z.enum([
-  'commentary',
-  'final_answer',
-]) satisfies z.ZodType<AgentMessagePhase>
-const codexWorkStatusSchema = z.enum([
-  'inProgress',
-  'completed',
-  'failed',
-  'declined',
-]) satisfies z.ZodType<FileChangeStatus>
+const imageGenerationStatuses = {
+  inProgress: 'running',
+  completed: 'completed',
+  failed: 'failed',
+} as const satisfies Record<string, Extract<FeedContent, { kind: 'imageGeneration' }>['status']>
 function workStatus(
-  status: z.infer<typeof codexWorkStatusSchema>,
+  status: Extract<
+    ThreadItem,
+    { type: 'commandExecution' | 'fileChange' | 'mcpToolCall' | 'dynamicToolCall' }
+  >['status'],
 ): Extract<FeedContent, { kind: 'tool' }>['status'] {
   switch (status) {
     case 'inProgress':
@@ -36,86 +31,33 @@ function workStatus(
       return 'interrupted'
   }
 }
-const threadItemRoles = {
-  userMessage: 'user',
-  hookPrompt: null,
-  agentMessage: 'assistant',
-  functionCallOutput: null,
-  plan: null,
-  reasoning: null,
-  commandExecution: null,
-  fileChange: null,
-  mcpToolCall: null,
-  dynamicToolCall: null,
-  collabAgentToolCall: null,
-  subAgentActivity: null,
-  webSearch: null,
-  imageView: null,
-  sleep: null,
-  imageGeneration: null,
-  enteredReviewMode: null,
-  exitedReviewMode: null,
-  contextCompaction: null,
-} satisfies Record<ThreadItem['type'], 'user' | 'assistant' | null>
-export const codexThreadItemTypeSchema = z.enum(
-  Object.keys(threadItemRoles) as [ThreadItem['type'], ...ThreadItem['type'][]],
-)
-const itemSchema = z
-  .object({
-    id: z.string().min(1).optional(),
-    type: codexThreadItemTypeSchema,
-    content: z.array(z.unknown()).optional(),
-    text: z.string().optional(),
-    phase: codexMessagePhaseSchema.nullable().optional(),
-    summary: z.array(z.string()).optional(),
-  })
-  .passthrough() satisfies z.ZodType<Pick<ThreadItem, 'type'> & Partial<Pick<ThreadItem, 'id'>>>
-type ReadTurn = ThreadReadResponse['thread']['turns'][number]
-const readTurnSchema = z
-  .object({
-    id: z.string().min(1).optional(),
-    items: z.array(z.unknown()),
-  })
-  .passthrough() satisfies z.ZodType<Partial<Pick<ReadTurn, 'id'>> & { items: unknown[] }>
-const threadSchema = z
-  .object({
-    turns: z.array(readTurnSchema),
-  })
-  .passthrough()
-const responseSchema = z.object({ thread: threadSchema }).passthrough()
 
-function itemText(item: z.infer<typeof itemSchema>): string | null {
-  if (typeof item.text === 'string' && item.text.trim() !== '') return item.text
-  const text = (item.content ?? [])
-    .flatMap((block) => {
-      const parsed = textContentSchema.safeParse(block)
-      return parsed.success ? [parsed.data.text] : []
-    })
-    .join('\n')
-    .trim()
-  return text === '' ? null : text
-}
-
-type ParsedItem = z.infer<typeof itemSchema>
-type IdentifiedItem = ParsedItem & { id: string }
-
-function messageItemContent(item: IdentifiedItem): FeedContent | null {
-  const role = threadItemRoles[item.type]
-  const text = itemText(item)
-  if (role === null || text === null) return null
+function messageItemContent(
+  item: Extract<ThreadItem, { type: 'userMessage' | 'agentMessage' }>,
+): FeedContent | null {
+  const userContent = item.type === 'userMessage' ? item.content : null
+  const legacyText = 'text' in item && typeof item.text === 'string' ? item.text : ''
+  const text =
+    item.type === 'agentMessage'
+      ? item.text
+      : (userContent ?? [])
+          .flatMap((part) => (part.type === 'text' ? [part.text] : []))
+          .join('\n')
+          .trim() || legacyText
+  if (text === '') return null
   return {
     kind: 'message',
     id: item.id,
-    role,
+    role: item.type === 'agentMessage' ? 'assistant' : 'user',
     text,
-    ...(item.type === 'agentMessage' && item.phase !== undefined ? { phase: item.phase } : {}),
+    ...(item.type === 'agentMessage' ? { phase: item.phase } : {}),
   }
 }
 
-function simpleItemContent(item: IdentifiedItem, raw: unknown): FeedContent | null {
+function simpleItemContent(item: ThreadItem): FeedContent | null {
   switch (item.type) {
     case 'reasoning': {
-      const summary = item.summary?.join('\n').trim() ?? ''
+      const summary = item.summary.join('\n').trim()
       return { kind: 'reasoning', id: item.id, text: summary || null, redacted: false }
     }
     case 'contextCompaction':
@@ -129,46 +71,40 @@ function simpleItemContent(item: IdentifiedItem, raw: unknown): FeedContent | nu
         summary: null,
       }
     case 'plan':
-      return item.text === undefined ? null : { kind: 'plan', id: item.id, text: item.text }
-    case 'sleep': {
-      const sleep = z.object({ durationMs: z.number().int().nonnegative() }).safeParse(raw)
-      return sleep.success ? { kind: 'wait', id: item.id, durationMs: sleep.data.durationMs } : null
-    }
-    case 'imageView': {
-      const image = z.object({ path: z.string().min(1) }).safeParse(raw)
-      return image.success
-        ? {
-            kind: 'media',
-            id: item.id,
-            mediaType: 'image',
-            source: { kind: 'path', path: image.data.path },
-            role: null,
-          }
-        : null
-    }
-    default:
+      return { kind: 'plan', id: item.id, text: item.text }
+    case 'sleep':
+      return { kind: 'wait', id: item.id, durationMs: item.durationMs }
+    case 'imageView':
+      return {
+        kind: 'media',
+        id: item.id,
+        mediaType: 'image',
+        source: { kind: 'path', path: item.path },
+        role: null,
+      }
+    case 'userMessage':
+    case 'agentMessage':
       return messageItemContent(item)
+    case 'hookPrompt':
+    case 'functionCallOutput':
+    case 'commandExecution':
+    case 'fileChange':
+    case 'mcpToolCall':
+    case 'dynamicToolCall':
+    case 'collabAgentToolCall':
+    case 'subAgentActivity':
+    case 'webSearch':
+    case 'imageGeneration':
+      return null
+    default:
+      throw new Error(`Unsupported Codex history item: ${(item as ThreadItem).type}`)
   }
 }
 
-function fileChangeContent(id: string, raw: unknown): FeedContent {
-  type FileKind = Extract<ThreadItem, { type: 'fileChange' }>['changes'][number]['kind']['type']
-  const kindSchema = z.enum(['add', 'update', 'delete']) satisfies z.ZodType<FileKind>
-  const file = z
-    .object({
-      status: codexWorkStatusSchema,
-      changes: z.array(
-        z.object({
-          path: z.string(),
-          diff: z.string().optional(),
-          kind: z.object({ type: kindSchema }),
-        }),
-      ),
-    })
-    .parse(raw)
+function fileChangeContent(file: Extract<ThreadItem, { type: 'fileChange' }>): FeedContent {
   return {
     kind: 'fileChange',
-    id,
+    id: file.id,
     status: workStatus(file.status),
     changes: file.changes.map((change) => ({
       path: change.path,
@@ -178,100 +114,67 @@ function fileChangeContent(id: string, raw: unknown): FeedContent {
   }
 }
 
-function toolCallContent(id: string, raw: unknown): FeedContent {
-  const tool = z
-    .object({
-      tool: z.string(),
-      server: z.string().optional(),
-      status: codexWorkStatusSchema,
-      arguments: z.unknown().optional(),
-      result: z
-        .object({ content: z.array(z.unknown()) })
-        .nullable()
-        .optional(),
-      contentItems: z.array(z.unknown()).nullable().optional(),
-    })
-    .parse(raw)
-  const output = (tool.result?.content ?? tool.contentItems ?? []).flatMap((part) => {
-    const text = textContentSchema.safeParse(part)
-    if (text.success) return [{ kind: 'text' as const, text: text.data.text }]
-    const inputText = z.object({ type: z.literal('inputText'), text: z.string() }).safeParse(part)
-    return inputText.success ? [{ kind: 'text' as const, text: inputText.data.text }] : []
+function toolCallContent(
+  tool: Extract<ThreadItem, { type: 'mcpToolCall' | 'dynamicToolCall' }>,
+): FeedContent {
+  const parts =
+    tool.type === 'mcpToolCall' ? (tool.result?.content ?? []) : (tool.contentItems ?? [])
+  const output = parts.flatMap((part) => {
+    if (part === null || typeof part !== 'object' || !('type' in part)) return []
+    if (part.type !== 'text' && part.type !== 'inputText') return []
+    if (!('text' in part) || typeof part.text !== 'string') return []
+    return [{ kind: 'text' as const, text: part.text }]
   })
-  const name = tool.server === undefined ? tool.tool : `${tool.server}/${tool.tool}`
+  const name = tool.type === 'mcpToolCall' ? `${tool.server}/${tool.tool}` : tool.tool
   return {
     kind: 'tool',
-    id,
-    callId: id,
+    id: tool.id,
+    callId: tool.id,
     name,
     status: workStatus(tool.status),
-    input: z.json().safeParse(tool.arguments).data ?? null,
+    input: tool.arguments as Extract<FeedContent, { kind: 'tool' }>['input'],
     output: output.length === 0 ? null : output,
     summary: null,
     presentation: { kind: 'tool', label: name },
   }
 }
 
-function searchContent(id: string, raw: unknown): FeedContent | null {
-  type SearchAction = NonNullable<Extract<ThreadItem, { type: 'webSearch' }>['action']>['type']
-  const actionSchema = z.enum([
-    'search',
-    'openPage',
-    'findInPage',
-    'other',
-  ]) satisfies z.ZodType<SearchAction>
-  const search = z
-    .object({
-      query: z.string().optional(),
-      action: z.object({ type: actionSchema }).nullable().optional(),
-    })
-    .safeParse(raw)
-  return search.success
-    ? {
-        kind: 'search',
-        id,
-        query: search.data.query ?? '',
-        action: search.data.action?.type ?? null,
-        results: [],
-      }
-    : null
+function searchContent(search: Extract<ThreadItem, { type: 'webSearch' }>): FeedContent {
+  return {
+    kind: 'search',
+    id: search.id,
+    query: search.query,
+    action: search.action?.type ?? null,
+    results: [],
+  }
 }
-
-const imageGenerationFailureSchema = z.object({
-  type: z.literal('usageLimitExceeded'),
-  limitId: z.string(),
-  resetsAt: z.number().int().nullable().default(null),
-}) satisfies z.ZodType<ImageGenerationFailure>
 
 function imageGenerationFailureText(failure: ImageGenerationFailure | null): string | null {
   if (failure === null) return null
   switch (failure.type) {
     case 'usageLimitExceeded': {
-      const text = 'Image generation usage limit exceeded.'
+      const text = copy.imageGeneration.usageLimitExceeded
       if (failure.resetsAt === null) return text
       const reset = new Date(failure.resetsAt * 1000)
       return Number.isFinite(reset.getTime())
-        ? `Image generation usage limit exceeded. Resets at ${reset.toISOString()}.`
+        ? copy.imageGeneration.usageLimitExceededWithReset.replace(
+            '{{resetTime}}',
+            reset.toISOString(),
+          )
         : text
     }
   }
 }
 
-function imageGenerationContent(id: string, raw: unknown): FeedContent {
-  const generated = z
-    .object({
-      status: z.string(),
-      revisedPrompt: z.string().nullable().optional(),
-      savedPath: z.string().nullable().optional(),
-      failure: imageGenerationFailureSchema.nullable().optional(),
-    })
-    .parse(raw)
-  let status: Extract<FeedContent, { kind: 'imageGeneration' }>['status'] = 'running'
-  if (generated.status === 'completed') status = 'completed'
-  if (generated.status === 'failed') status = 'failed'
+function imageGenerationContent(
+  generated: Extract<ThreadItem, { type: 'imageGeneration' }>,
+): FeedContent {
+  if (!Object.hasOwn(imageGenerationStatuses, generated.status))
+    throw new Error(`Unsupported Codex image generation status: ${generated.status}`)
+  const status = imageGenerationStatuses[generated.status as keyof typeof imageGenerationStatuses]
   return {
     kind: 'imageGeneration',
-    id,
+    id: generated.id,
     status,
     prompt: generated.revisedPrompt ?? null,
     source: generated.savedPath == null ? null : { kind: 'path', path: generated.savedPath },
@@ -279,39 +182,33 @@ function imageGenerationContent(id: string, raw: unknown): FeedContent {
   }
 }
 
-function codexItemContent(raw: unknown, fallbackId: string): FeedContent | null {
-  const parsed = itemSchema.parse(raw)
-  const item = { ...parsed, id: parsed.id ?? fallbackId }
+function codexItemContent(item: ThreadItem): FeedContent | null {
   switch (item.type) {
     case 'commandExecution': {
-      const command = codexCommandContent(raw, 'completed')
-      if (command === null) throw new Error('Invalid Codex commandExecution history item')
-      return command
+      return codexCommandContent(item, 'completed')
     }
     case 'fileChange':
-      return fileChangeContent(item.id, raw)
+      return fileChangeContent(item)
     case 'mcpToolCall':
     case 'dynamicToolCall':
-      return toolCallContent(item.id, raw)
+      return toolCallContent(item)
     case 'webSearch':
-      return searchContent(item.id, raw)
+      return searchContent(item)
     case 'imageGeneration':
-      return imageGenerationContent(item.id, raw)
+      return imageGenerationContent(item)
     case 'subAgentActivity': {
-      const delegation = codexSubagentContent(raw)
-      if (delegation === null) throw new Error('Invalid Codex subAgentActivity history item')
-      return delegation
+      return codexSubagentContent(item)
     }
     case 'collabAgentToolCall':
       return null
     default:
-      return simpleItemContent(item, raw)
+      return simpleItemContent(item)
   }
 }
 
-export function codexContentFromItems(items: unknown[], fallbackPrefix = 'item'): FeedContent[] {
-  return items.flatMap((raw, itemIndex) => {
-    const content = codexItemContent(raw, `${fallbackPrefix}:${itemIndex}`)
+export function codexContentFromItems(items: ThreadItem[]): FeedContent[] {
+  return items.flatMap((item) => {
+    const content = codexItemContent(item)
     return content === null ? [] : [content]
   })
 }
@@ -323,11 +220,16 @@ export async function readCodexSessionHistory(
   const response = await request(
     'thread/read',
     { threadId: nativeId, includeTurns: true },
-    (value) => responseSchema.parse(value),
+    (value) => value as ThreadReadResponse,
   )
   const content: FeedContent[] = []
-  response.thread.turns.forEach((turn, turnIndex) => {
-    content.push(...codexContentFromItems(turn.items, `${nativeId}:${turn.id ?? turnIndex}`))
+  response.thread.turns.forEach((turn) => {
+    try {
+      content.push(...codexContentFromItems(turn.items))
+    } catch (error) {
+      console.warn('Rejected 1 unsupported Codex history shape.')
+      throw error
+    }
   })
   return content
 }
@@ -340,7 +242,7 @@ export async function hasCodexSessionTurn(
   const response = await request(
     'thread/read',
     { threadId: nativeId, includeTurns: true },
-    (value) => responseSchema.parse(value),
+    (value) => value as ThreadReadResponse,
   )
   return response.thread.turns.some((turn) => turn.id === turnId)
 }

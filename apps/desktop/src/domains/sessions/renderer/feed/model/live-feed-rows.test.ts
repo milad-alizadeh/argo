@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import { projectLiveFeedRows } from './live-feed-rows'
+import { groupToolRuns } from './tool-groups'
 
 const sessionId = '00000000-0000-4000-8000-000000000001'
 function content(sequence: number, value: FeedContent): SessionLiveEvent {
@@ -362,13 +363,17 @@ const catalogHistory: FeedContent[] = [
 test('draws every FeedContent kind with a stable item identity', () => {
   const rows = projectLiveFeedRows(catalogHistory, [])
   expect(rows.map((row) => row.id)).toEqual(
-    catalogHistory.map((item) => (item.kind === 'tool' ? item.callId : item.id)),
+    catalogHistory.map((item) => {
+      if (item.kind === 'tool') return item.callId
+      if (item.kind === 'task') return item.taskId
+      return item.id
+    }),
   )
   expect(rows.find((row) => row.id === 'delegation')).toMatchObject({
     shape: 'subagent',
     event: 'started',
   })
-  expect(rows.find((row) => row.id === 'task')).toMatchObject({ status: 'paused' })
+  expect(rows.find((row) => row.id === 'task-1')).toMatchObject({ status: 'paused' })
   expect(rows.find((row) => row.id === 'imageGeneration')).toMatchObject({ status: 'failed' })
 })
 
@@ -435,7 +440,7 @@ test('joins task and delegation progress by native ID without losing earlier det
       }),
       content(3, {
         kind: 'task',
-        id: 'task-1',
+        id: 'task-progress-2',
         taskId: 'task-1',
         callId: null,
         status: 'completed',
@@ -458,6 +463,39 @@ test('joins task and delegation progress by native ID without losing earlier det
   expect(rows).toMatchObject([
     { event: 'task', text: 'Inspect files', status: 'completed' },
     { shape: 'subagent', event: 'responded', state: 'completed', name: 'Review files' },
+  ])
+})
+
+test('keeps Codex commentary inside the tool group it follows', () => {
+  const rows = groupToolRuns(
+    projectLiveFeedRows(
+      [
+        {
+          kind: 'tool',
+          id: 'tool-1',
+          callId: 'call-1',
+          name: 'Bash',
+          status: 'completed',
+          input: null,
+          output: null,
+          summary: null,
+        },
+        {
+          kind: 'message',
+          id: 'commentary-1',
+          role: 'assistant',
+          phase: 'commentary',
+          text: 'Checking the result',
+        },
+      ],
+      [],
+    ),
+  )
+  expect(rows).toMatchObject([
+    {
+      shape: 'tool-group',
+      thoughts: [{ id: 'commentary-1', text: 'Checking the result' }],
+    },
   ])
 })
 

@@ -111,7 +111,9 @@ function toolGroup(calls: ToolRow[]): SessionFeedRow {
 type ToolGroupRow = Extract<SessionFeedRow, { shape: 'tool-group' }>
 
 function foldableGroup(row: SessionFeedRow | undefined): ToolGroupRow | null {
-  return row?.shape === 'tool-group' && !row.calls.some((call) => standsAlone(call.kind))
+  return row?.shape === 'tool-group' &&
+    row.thoughts === undefined &&
+    !row.calls.some((call) => standsAlone(call.kind))
     ? row
     : null
 }
@@ -148,6 +150,14 @@ export function groupToolRuns(
   for (const indexes of groupedRowIndexes(rows, breakBeforeIds)) {
     const first = rows[indexes[0] ?? -1]
     if (first === undefined) continue
+    const previous = grouped.at(-1)
+    if (first.shape === 'thought' && previous?.shape === 'tool-group') {
+      grouped[grouped.length - 1] = {
+        ...previous,
+        thoughts: [...(previous.thoughts ?? []), { id: first.id, text: first.text }],
+      }
+      continue
+    }
     if (first.shape !== 'tool') {
       grouped.push(first)
       continue

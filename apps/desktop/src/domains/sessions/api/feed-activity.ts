@@ -1,22 +1,18 @@
-import type { FeedContent } from './feed-content'
+import { z } from 'zod'
+import { type FeedContent, toolPresentationKindSchema } from './feed-content'
+import copy from './locales/en.json'
 
-export type FeedActivity = {
-  label: string
-  kind:
-    | 'command'
-    | 'read'
-    | 'edited'
-    | 'created'
-    | 'deleted'
-    | 'tool'
-    | 'skill'
-    | 'searched'
-    | 'thought'
-  open: boolean
-  agentDescription?: boolean
-  tool: string
-  target: string | null
-}
+export const feedActivityBaseSchema = z.strictObject({
+  label: z.string(),
+  kind: z.union([toolPresentationKindSchema, z.literal('thought')]),
+  open: z.boolean(),
+  agentDescription: z.boolean().optional(),
+})
+export const feedActivitySchema = feedActivityBaseSchema.extend({
+  tool: z.string(),
+  target: z.string().nullable(),
+})
+export type FeedActivity = z.infer<typeof feedActivitySchema>
 
 export type FeedActivityState = { activity: FeedActivity | null; callId: string | null }
 export const EMPTY_FEED_ACTIVITY: FeedActivityState = { activity: null, callId: null }
@@ -44,7 +40,10 @@ function callActivity(content: FeedContent): { id: string; activity: FeedActivit
       return {
         id: content.id,
         activity: {
-          label: `Ran ${content.command ?? 'command'}`,
+          label: copy.activity.command.replace(
+            '{{command}}',
+            content.command ?? copy.activity.unknownCommand,
+          ),
           kind: 'command',
           open:
             content.status === 'pending' ||

@@ -155,6 +155,19 @@ test('shows the image-generation usage limit and reset reported by Codex', async
   ])
 })
 
+test('rejects and reports an unknown Codex image-generation status', async () => {
+  const warning = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  const request = (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
+    parse({
+      thread: {
+        turns: [{ items: [{ id: 'image-1', type: 'imageGeneration', status: 'futureStatus' }] }],
+      },
+    })) as CodexRequest
+  await expect(readCodexSessionHistory(request, 'thread')).rejects.toThrow()
+  expect(warning).toHaveBeenCalledWith('Rejected 1 unsupported Codex history shape.')
+  warning.mockRestore()
+})
+
 test('reads each recorded Subagent as one delegation, updated by its activity', async () => {
   const recorded = JSON.parse(
     readFileSync(

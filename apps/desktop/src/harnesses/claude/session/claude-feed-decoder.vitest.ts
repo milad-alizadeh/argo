@@ -326,23 +326,28 @@ test('keeps Claude image and document sources structured', () => {
   expect(rejected).toEqual([])
 })
 
-test('decodes Claude system task, notice, and marker events', () => {
+function decodeSystemMessage(message: object, rejected: string[]) {
+  return decodeClaudeLiveContent(message as SDKMessage, (shape) => rejected.push(shape))
+}
+
+test('decodes Claude system task updates under their task ID', () => {
   const rejected: string[] = []
-  const decode = (message: object) =>
-    decodeClaudeLiveContent(message as SDKMessage, (shape) => rejected.push(shape))
   expect(
-    decode({
-      type: 'system',
-      subtype: 'task_started',
-      uuid: 'task-1',
-      session_id: 'session-1',
-      task_id: 'agent-1',
-      tool_use_id: 'call-1',
-      description: 'Review',
-    }),
+    decodeSystemMessage(
+      {
+        type: 'system',
+        subtype: 'task_started',
+        uuid: 'task-1',
+        session_id: 'session-1',
+        task_id: 'agent-1',
+        tool_use_id: 'call-1',
+        description: 'Review',
+      },
+      rejected,
+    ),
   ).toEqual([
     {
-      id: 'task-1',
+      id: 'agent-1',
       kind: 'task',
       taskId: 'agent-1',
       callId: 'call-1',
@@ -352,15 +357,38 @@ test('decodes Claude system task, notice, and marker events', () => {
     },
   ])
   expect(
-    decode({
-      type: 'system',
-      subtype: 'notification',
-      uuid: 'notice-1',
-      session_id: 'session-1',
-      key: 'build',
-      text: 'Build finished',
-      priority: 'high',
-    }),
+    decodeSystemMessage(
+      {
+        type: 'system',
+        subtype: 'task_progress',
+        uuid: 'task-progress-2',
+        session_id: 'session-1',
+        task_id: 'agent-1',
+        tool_use_id: 'call-1',
+        description: 'Review',
+        summary: 'Checking the Feed',
+      },
+      rejected,
+    ),
+  ).toMatchObject([{ id: 'agent-1', taskId: 'agent-1', summary: 'Checking the Feed' }])
+  expect(rejected).toEqual([])
+})
+
+test('decodes Claude system notices and markers', () => {
+  const rejected: string[] = []
+  expect(
+    decodeSystemMessage(
+      {
+        type: 'system',
+        subtype: 'notification',
+        uuid: 'notice-1',
+        session_id: 'session-1',
+        key: 'build',
+        text: 'Build finished',
+        priority: 'high',
+      },
+      rejected,
+    ),
   ).toEqual([
     {
       id: 'notice-1',
@@ -371,13 +399,16 @@ test('decodes Claude system task, notice, and marker events', () => {
     },
   ])
   expect(
-    decode({
-      type: 'system',
-      subtype: 'compact_boundary',
-      uuid: 'compact-1',
-      session_id: 'session-1',
-      compact_metadata: { trigger: 'auto', pre_tokens: 100 },
-    }),
+    decodeSystemMessage(
+      {
+        type: 'system',
+        subtype: 'compact_boundary',
+        uuid: 'compact-1',
+        session_id: 'session-1',
+        compact_metadata: { trigger: 'auto', pre_tokens: 100 },
+      },
+      rejected,
+    ),
   ).toEqual([{ id: 'compact-1', kind: 'marker', marker: 'compaction', summary: null }])
   expect(rejected).toEqual([])
 })

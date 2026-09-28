@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import { type QuestionAnswer, validQuestionAnswers } from '@/domains/sessions/api/questions'
@@ -12,12 +11,12 @@ import {
   liveSessionChannelEventSchema,
 } from '@/harnesses/registration'
 import type { CodexRequest, RequestID, WireMessage } from '../app-server/codex-app-server-client'
+import type { AgentMessageDeltaNotification } from '../app-server/protocol-generated/v2/agent-message-delta-notification'
+import type { ReasoningSummaryTextDeltaNotification } from '../app-server/protocol-generated/v2/reasoning-summary-text-delta-notification'
+import type { ThreadItem } from '../app-server/protocol-generated/v2/thread-item'
+import type { ThreadReadResponse } from '../app-server/protocol-generated/v2/thread-read-response'
 import { codexCommandContent } from './codex-command-content'
-import {
-  codexContentFromItems,
-  codexMessagePhaseSchema,
-  codexThreadItemTypeSchema,
-} from './codex-session-history'
+import { codexContentFromItems } from './codex-session-history'
 import {
   approvalResponse,
   type CodexApproval,
@@ -26,17 +25,7 @@ import {
   questionResponse,
   readCodexInteraction,
 } from './codex-session-interactions'
-import {
-  APPROVAL_TIMEOUT_MS,
-  inputItems,
-  itemNotificationSchema,
-  messageDeltaSchema,
-  reasoningSummaryDeltaSchema,
-  threadResultSchema,
-  turnNotificationSchema,
-  turnResultSchema,
-  userContentSchema,
-} from './codex-session-protocol'
+import { APPROVAL_TIMEOUT_MS, inputItems, userContentText } from './codex-session-protocol'
 import { codexSubagentContent } from './codex-subagent-content'
 import { readCodexThreadStatus } from './codex-thread-status'
 
@@ -45,6 +34,9 @@ export type CodexLiveClient = {
   onNotification: (listener: (message: WireMessage) => boolean | undefined) => () => void
   respond: (id: RequestID, result: unknown) => void
 }
+
+type Turn = ThreadReadResponse['thread']['turns'][number]
+type TurnNotice = { threadId: string; turn: Pick<Turn, 'id' | 'status'> }
 
 export class CodexSessionChannel implements LiveSessionChannel {
   private readonly client: CodexLiveClient
@@ -96,7 +88,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
               approvalPolicy: 'on-request',
               sandbox: input.turnConfiguration.mode,
             },
-        (value) => threadResultSchema.parse(value).thread.id,
+        (value) => (value as ThreadReadResponse).thread.id,
       )
       if (this.closed) return
       this.nativeId = nativeId
@@ -131,7 +123,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
           model: command.turnConfiguration.model,
           effort: command.turnConfiguration.effort,
         },
-        (value) => turnResultSchema.parse(value).turn.id,
+        (value) => (value as { turn: Pick<Turn, 'id'> }).turn.id,
       )
       if (this.closed || this.active?.commandId !== command.commandId) return
       if (this.active.turnId !== null && this.active.turnId !== turnId)
@@ -323,6 +315,15 @@ export class CodexSessionChannel implements LiveSessionChannel {
   private receive(message: WireMessage): boolean | undefined {
     if (this.closed || !('method' in message)) return undefined
     if (message.id !== undefined) return this.receiveInteraction(message)
+    try {
+      return this.receiveNotification(message)
+    } catch {
+      this.reject(message.method)
+      return undefined
+    }
+  }
+
+  private receiveNotification(message: Extract<WireMessage, { method: string }>): undefined {
     switch (message.method) {
       case 'turn/started':
         this.turnStarted(message.params)
@@ -354,25 +355,34 @@ export class CodexSessionChannel implements LiveSessionChannel {
   }
 
   private turnStarted(params: Record<string, unknown>) {
-    const parsed = turnNotificationSchema.safeParse(params)
-    if (!parsed.success || parsed.data.turn.status !== 'inProgress')
-      return this.reject('turn/started')
-    if (parsed.data.threadId !== this.nativeId || this.active === null) return
-    if (this.active.turnId !== null && this.active.turnId !== parsed.data.turn.id)
+    const notice = params as TurnNotice
+    if (notice.turn.status !== 'inProgress') return this.reject('turn/started')
+    if (notice.threadId !== this.nativeId || this.active === null) return
+    if (this.active.turnId !== null && this.active.turnId !== notice.turn.id)
       return this.reject('turn/started mismatched Turn')
-    this.startTurn(parsed.data.turn.id)
+    this.startTurn(notice.turn.id)
   }
 
   private turnCompleted(params: Record<string, unknown>) {
-    const parsed = turnNotificationSchema.safeParse(params)
-    if (!parsed.success || parsed.data.turn.status === 'inProgress')
-      return this.reject('turn/completed')
-    if (parsed.data.threadId !== this.nativeId || this.active?.turnId !== parsed.data.turn.id)
-      return
+    const notice = params as TurnNotice
+    if (notice.turn.status === 'inProgress') return this.reject('turn/completed')
+    if (notice.threadId !== this.nativeId || this.active?.turnId !== notice.turn.id) return
+    let status: 'idle' | 'stopped'
+    switch (notice.turn.status) {
+      case 'completed':
+        status = 'idle'
+        break
+      case 'failed':
+      case 'interrupted':
+        status = 'stopped'
+        break
+      default:
+        return this.reject('turn/completed')
+    }
     const { commandId, turnId } = this.active
     this.emitFeed({
       type: 'status',
-      status: parsed.data.turn.status === 'completed' ? 'idle' : 'stopped',
+      status,
       commandId,
       turnId,
       vendorEventId: turnId,
@@ -390,9 +400,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
   }
 
   private messageDelta(params: Record<string, unknown>) {
-    const parsed = messageDeltaSchema.safeParse(params)
-    if (!parsed.success) return this.reject('item/agentMessage/delta')
-    const { threadId, turnId, itemId, delta } = parsed.data
+    const { threadId, turnId, itemId, delta } = params as AgentMessageDeltaNotification
     if (threadId !== this.nativeId || this.active?.turnId !== turnId) return
     const text = (this.textByItem.get(itemId) ?? '') + delta
     this.textByItem.set(itemId, text)
@@ -406,9 +414,8 @@ export class CodexSessionChannel implements LiveSessionChannel {
   }
 
   private reasoningSummaryDelta(params: Record<string, unknown>) {
-    const parsed = reasoningSummaryDeltaSchema.safeParse(params)
-    if (!parsed.success) return this.reject('item/reasoning/summaryTextDelta')
-    const { threadId, turnId, itemId, delta, summaryIndex } = parsed.data
+    const { threadId, turnId, itemId, delta, summaryIndex } =
+      params as ReasoningSummaryTextDeltaNotification
     if (threadId !== this.nativeId || this.active?.turnId !== turnId) return
     const parts = this.reasoningByItem.get(itemId) ?? []
     parts[summaryIndex] = (parts[summaryIndex] ?? '') + delta
@@ -421,9 +428,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
   }
 
   private commandOutputDelta(params: Record<string, unknown>) {
-    const parsed = messageDeltaSchema.safeParse(params)
-    if (!parsed.success) return this.reject('item/commandExecution/outputDelta')
-    const { threadId, turnId, itemId, delta } = parsed.data
+    const { threadId, turnId, itemId, delta } = params as AgentMessageDeltaNotification
     if (threadId !== this.nativeId || this.active?.turnId !== turnId) return
     const output = (this.outputByItem.get(itemId) ?? '') + delta
     this.outputByItem.set(itemId, output)
@@ -435,12 +440,11 @@ export class CodexSessionChannel implements LiveSessionChannel {
   }
 
   private commandItem(
-    item: z.infer<typeof itemNotificationSchema>['item'],
+    item: Extract<ThreadItem, { type: 'commandExecution' }>,
     turnId: string,
     phase: 'started' | 'completed',
   ) {
     const command = codexCommandContent(item, phase)
-    if (command?.kind !== 'command') return this.reject(`item/${phase}`)
     const output =
       phase === 'completed'
         ? (command.output ?? this.outputByItem.get(item.id) ?? null)
@@ -450,56 +454,49 @@ export class CodexSessionChannel implements LiveSessionChannel {
     this.emitItemContent(updated, item.id, turnId)
   }
 
-  private subagentItem(
-    item: z.infer<typeof itemNotificationSchema>['item'],
-    turnId: string,
-    phase: 'started' | 'completed',
-  ) {
+  private subagentItem(item: Extract<ThreadItem, { type: 'subAgentActivity' }>, turnId: string) {
     const delegation = codexSubagentContent(item)
-    if (delegation === null) return this.reject(`item/${phase}`)
     this.emitItemContent(delegation, item.id, turnId)
   }
 
-  private userItem(item: z.infer<typeof itemNotificationSchema>['item'], turnId: string) {
-    if (item.content === undefined)
-      return this.reject('item/completed: missing userMessage content')
-    const content = item.content.map((part) => userContentSchema.safeParse(part))
-    if (content.some((part) => !part.success)) return this.reject('item/completed')
-    const text = content
-      .flatMap((part) => (part.success && part.data.type === 'text' ? [part.data.text] : []))
-      .join('\n')
+  private userItem(item: Extract<ThreadItem, { type: 'userMessage' }>, turnId: string) {
+    const text = userContentText(item.content)
     if (text !== '') this.emitMessage({ itemId: item.id, turnId, role: 'user', text })
   }
 
   private itemNotification(params: Record<string, unknown>, phase: 'started' | 'completed') {
-    const parsed = itemNotificationSchema.safeParse(params)
-    if (!parsed.success) return this.reject(`item/${phase}`)
-    const { threadId, turnId, item } = parsed.data
-    if (threadId !== this.nativeId || this.active?.turnId !== turnId) return
-    if (!codexThreadItemTypeSchema.safeParse(item.type).success)
-      return this.reject(`item/${phase}: ${item.type}`)
-    if (item.type === 'commandExecution') return this.commandItem(item, turnId, phase)
-    if (item.type === 'subAgentActivity') return this.subagentItem(item, turnId, phase)
-    if (phase === 'started') {
-      if (item.type === 'agentMessage') {
-        const messagePhase = codexMessagePhaseSchema.nullable().safeParse(item.phase)
-        if (messagePhase.success) this.phaseByItem.set(item.id, messagePhase.data)
+    try {
+      const { threadId, turnId, item } = params as {
+        threadId: string
+        turnId: string
+        item: ThreadItem
       }
-      return
+      if (threadId !== this.nativeId || this.active?.turnId !== turnId) return
+      if (item.type === 'commandExecution') return this.commandItem(item, turnId, phase)
+      if (item.type === 'subAgentActivity') return this.subagentItem(item, turnId)
+      if (phase === 'started') {
+        if (item.type === 'agentMessage') this.phaseByItem.set(item.id, item.phase)
+        return
+      }
+      this.completedItem(item, turnId)
+    } catch {
+      this.reject(`item/${phase}`)
     }
-    this.completedItem(item, turnId)
   }
 
-  private completedItem(item: z.infer<typeof itemNotificationSchema>['item'], turnId: string) {
+  private completedItem(item: ThreadItem, turnId: string) {
     if (item.type === 'userMessage') return this.userItem(item, turnId)
     if (item.type !== 'agentMessage') {
-      for (const content of codexContentFromItems([item]))
-        this.emitItemContent(content, item.id, turnId)
+      let projected: FeedContent[]
+      try {
+        projected = codexContentFromItems([item])
+      } catch {
+        return this.reject(`item/completed: ${item.type}`)
+      }
+      for (const content of projected) this.emitItemContent(content, item.id, turnId)
       return
     }
-    if (item.text === undefined) return this.reject('item/completed: missing agentMessage content')
-    const messagePhase = codexMessagePhaseSchema.nullable().safeParse(item.phase)
-    if (messagePhase.success) this.phaseByItem.set(item.id, messagePhase.data)
+    this.phaseByItem.set(item.id, item.phase)
     this.textByItem.set(item.id, item.text)
     this.emitMessage({
       itemId: item.id,
@@ -559,7 +556,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
     await this.client.request(
       'turn/interrupt',
       { threadId: this.nativeId, turnId: this.active.turnId },
-      (value) => z.strictObject({}).parse(value),
+      () => undefined,
     )
   }
 

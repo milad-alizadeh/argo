@@ -1,49 +1,49 @@
 import type { SDKMessage, SessionMessage } from '@anthropic-ai/claude-agent-sdk'
-import { z } from 'zod'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import { decodeClaudeBlocks } from './claude-feed-blocks'
+import { type ClaudeMessage, decodeClaudeBlocks } from './claude-feed-blocks'
 import type { RejectClaudeShape } from './claude-feed-envelopes'
 import { decodeClaudeSystemContent } from './claude-feed-system'
 
-const liveEnvelopeSchema = z.object({
-  type: z.string(),
-  uuid: z.string().min(1),
-  session_id: z.string().min(1),
-})
-const historyEnvelopeSchema = z.object({
-  type: z.enum(['user', 'assistant']),
-  uuid: z.string().min(1),
-  message: z.unknown(),
-  origin: z.object({ kind: z.string() }).optional(),
-})
-const assistantIdentitySchema = z.object({ id: z.string().min(1) })
-
 function assistantContentId(message: unknown, fallback: string): string {
-  return assistantIdentitySchema.safeParse(message).data?.id ?? fallback
+  return message !== null &&
+    typeof message === 'object' &&
+    'id' in message &&
+    typeof message.id === 'string' &&
+    message.id !== ''
+    ? message.id
+    : fallback
 }
 
 export function decodeClaudeHistoryContent(
   message: SessionMessage,
   reject: RejectClaudeShape,
 ): FeedContent[] {
-  const envelope = historyEnvelopeSchema.safeParse(message)
-  if (!envelope.success) {
-    reject('history-envelope')
+  if (message.type === 'system') return []
+  const origin = 'origin' in message ? message.origin : undefined
+  const humanInput =
+    origin !== undefined &&
+    origin !== null &&
+    typeof origin === 'object' &&
+    'kind' in origin &&
+    origin.kind === 'human'
+  try {
+    return decodeClaudeBlocks(
+      {
+        id:
+          message.type === 'assistant'
+            ? assistantContentId(message.message, message.uuid)
+            : message.uuid,
+        role: message.type,
+        message: message.message as ClaudeMessage,
+        vendorEnvelope: origin !== undefined && !humanInput,
+        humanInput,
+      },
+      reject,
+    )
+  } catch {
+    reject('history-content')
     return []
   }
-  return decodeClaudeBlocks(
-    {
-      id:
-        envelope.data.type === 'assistant'
-          ? assistantContentId(envelope.data.message, envelope.data.uuid)
-          : envelope.data.uuid,
-      role: envelope.data.type,
-      message: envelope.data.message,
-      vendorEnvelope: envelope.data.origin !== undefined && envelope.data.origin.kind !== 'human',
-      humanInput: envelope.data.origin?.kind === 'human',
-    },
-    reject,
-  )
 }
 
 function decodeLiveActivity(message: SDKMessage, id: string): FeedContent[] | null {
@@ -140,15 +140,14 @@ export function decodeClaudeLiveContent(
   message: SDKMessage,
   reject: RejectClaudeShape,
 ): FeedContent[] {
-  const envelope = liveEnvelopeSchema.safeParse(message)
-  if (!envelope.success) {
-    reject('live-envelope')
-    return []
-  }
   try {
-    return decodeLiveMessage(message, envelope.data.uuid, reject)
+    return decodeLiveMessage(
+      message,
+      message.uuid ?? message.session_id ?? crypto.randomUUID(),
+      reject,
+    )
   } catch {
-    reject(`malformed-live-content:${envelope.data.type}`)
+    reject(`malformed-live-content:${message.type}`)
     return []
   }
 }

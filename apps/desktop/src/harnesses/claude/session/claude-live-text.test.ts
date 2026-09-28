@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
+import type { SDKMessage } from '@anthropic-ai/claude-agent-sdk'
 import { ClaudeLiveText } from './claude-live-text'
 
 // Captured from a Claude Agent SDK query with includePartialMessages on 2026-09-28.
@@ -10,17 +11,20 @@ test('builds a stable assistant row from recorded Claude Agent SDK stream events
   )
     .trim()
     .split('\n')
-    .map((line) => JSON.parse(line) as unknown)
+    .map((line) => JSON.parse(line) as Extract<SDKMessage, { type: 'stream_event' }>)
+  const [start, first, second, settled] = recorded
+  if (start === undefined || first === undefined || second === undefined || settled === undefined)
+    throw new Error('Recorded Claude stream is incomplete.')
   const stream = new ClaudeLiveText()
-  expect(stream.append(recorded[0])).toBeNull()
-  expect(stream.append(recorded[1])).toMatchObject({
+  expect(stream.append(start)).toBeNull()
+  expect(stream.append(first)).toMatchObject({
     id: 'msg_011CfUn1LYTswFg4iiVyNh4i:1',
     text: 'A file reader opens',
   })
-  expect(stream.append(recorded[2])).toMatchObject({
+  expect(stream.append(second)).toMatchObject({
     id: 'msg_011CfUn1LYTswFg4iiVyNh4i:1',
     text: 'A file reader opens files stored',
   })
   stream.settle('msg_011CfUn1LYTswFg4iiVyNh4i')
-  expect(stream.append(recorded[3])).toBeNull()
+  expect(stream.append(settled)).toBeNull()
 })
