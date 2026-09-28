@@ -4,8 +4,9 @@ import {
   harnessInfoSchema,
   invalidCatalogResponse,
   unavailable,
-} from '@/harnesses/catalog/harness-catalog-machine'
+} from '@/harnesses/harness-catalog'
 import { platformText } from '@/platform/main/i18n'
+import copy from './locales/en.json'
 
 const effortLabels: Record<string, string> = {
   low: platformText('harnessCatalog.effort.low'),
@@ -30,33 +31,33 @@ const permissionModePresentation: Record<
   }
 > = {
   auto: {
-    label: platformText('harnessCatalog.claudeMode.auto.label'),
-    detail: platformText('harnessCatalog.claudeMode.auto.detail'),
+    label: copy.mode.auto.label,
+    detail: copy.mode.auto.detail,
     icon: 'mode-auto',
   },
   manual: {
-    label: platformText('harnessCatalog.claudeMode.manual.label'),
-    detail: platformText('harnessCatalog.claudeMode.manual.detail'),
+    label: copy.mode.manual.label,
+    detail: copy.mode.manual.detail,
     icon: 'mode-manual',
   },
   acceptEdits: {
-    label: platformText('harnessCatalog.claudeMode.acceptEdits.label'),
-    detail: platformText('harnessCatalog.claudeMode.acceptEdits.detail'),
+    label: copy.mode.acceptEdits.label,
+    detail: copy.mode.acceptEdits.detail,
     icon: 'mode-accept-edits',
   },
   plan: {
-    label: platformText('harnessCatalog.claudeMode.plan.label'),
-    detail: platformText('harnessCatalog.claudeMode.plan.detail'),
+    label: copy.mode.plan.label,
+    detail: copy.mode.plan.detail,
     icon: 'mode-plan',
   },
   dontAsk: {
-    label: platformText('harnessCatalog.claudeMode.dontAsk.label'),
-    detail: platformText('harnessCatalog.claudeMode.dontAsk.detail'),
+    label: copy.mode.dontAsk.label,
+    detail: copy.mode.dontAsk.detail,
     icon: 'mode-dont-ask',
   },
   bypassPermissions: {
-    label: platformText('harnessCatalog.claudeMode.bypassPermissions.label'),
-    detail: platformText('harnessCatalog.claudeMode.bypassPermissions.detail'),
+    label: copy.mode.bypassPermissions.label,
+    detail: copy.mode.bypassPermissions.detail,
     icon: 'mode-bypass-permissions',
   },
 }
@@ -135,7 +136,7 @@ export function claudeHarnessInfo(response: unknown): HarnessInfo {
       value,
       ...(permissionModePresentation[value] ?? {
         label: value,
-        detail: platformText('harnessCatalog.claudeMode.unknownModeDetail'),
+        detail: copy.mode.unknownModeDetail,
         icon: 'mode-manual' as const,
       }),
       readings: { exact: value === 'manual' ? [value, 'default'] : [value], prefixes: [] },

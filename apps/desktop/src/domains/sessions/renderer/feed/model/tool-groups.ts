@@ -42,7 +42,7 @@ export const TOOL_KIND_PRESENTATION: Record<
 }
 const KIND_ORDER = Object.keys(TOOL_KIND_PRESENTATION) as ToolRow['kind'][]
 
-// A skill keeps its own line under its own name, as Codex draws it, so it neither joins a run
+// A skill keeps its own line under its own name, so it neither joins a run
 // nor folds into a count.
 export function standsAlone(kind: ToolRow['kind']) {
   return kind === 'skill'

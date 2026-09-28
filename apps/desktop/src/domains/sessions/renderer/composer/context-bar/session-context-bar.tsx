@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { DEFAULT_HARNESS, type Harness } from '@/harnesses/harness'
 import {
   Tooltip,
   TooltipContent,
@@ -84,13 +85,13 @@ export function SessionContextBar({
 }: {
   contextTokens: number | null | undefined
   contextWindowTokens: number | null | undefined
-  harness: 'claude' | 'codex' | undefined
+  harness: Harness | undefined
   isCompacting: boolean
   isHandingOff?: boolean
   onCompact?: () => Promise<boolean>
   onHandoff?: () => Promise<boolean>
 }) {
-  const selectedHarness = harness ?? 'codex'
+  const selectedHarness = harness ?? DEFAULT_HARNESS
   const usedTokens = contextTokens ?? 0
   const capacityTokens = contextWindowTokens ?? null
   const percentage =

@@ -5,7 +5,7 @@ import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import { sessionAttachmentInputSchema } from '@/domains/sessions/api/attachments'
 import { resolveWorkspacePath } from '@/domains/workspaces/main/workspace-resolve-path'
-import { harnessSchema } from '@/harnesses/harness'
+import { type Harness, harnessSchema } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
 import {
   deleteComposerDraft,
@@ -56,6 +56,7 @@ export type SessionSubmitInput = z.infer<typeof inputSchema>
 export type SessionProcedureContext = SessionRenameContext & {
   database: Database
   supervisor: LiveSessionSupervisorActor
+  acceptsAttachments: (harness: Harness) => boolean
 }
 type SupervisorDraftRequest = {
   context: SessionProcedureContext
@@ -76,19 +77,22 @@ function commandForDraft(
   }
 }
 
-function rejectUnsupportedAttachments(harness: string, attachments: unknown[]): void {
-  if (harness === 'claude' && attachments.length > 0) {
-    throw new TRPCError({
-      code: 'BAD_REQUEST',
-      message: 'Claude Session attachments are not supported.',
-    })
-  }
+function rejectUnsupportedAttachments(
+  context: SessionProcedureContext,
+  harness: Harness,
+  attachments: unknown[],
+): void {
+  if (context.acceptsAttachments(harness) || attachments.length === 0) return
+  throw new TRPCError({
+    code: 'BAD_REQUEST',
+    message: 'This Harness does not accept Session attachments.',
+  })
 }
 
 function startProjectDraft(input: SupervisorDraftRequest) {
   const { context, draft, command, reply } = input
   if (draft.target.type !== 'project') return false
-  rejectUnsupportedAttachments(draft.target.harness, draft.attachments)
+  rejectUnsupportedAttachments(context, draft.target.harness, draft.attachments)
   const cwd = resolveWorkspacePath(context.database, draft.target)
   if (cwd === null)
     throw new TRPCError({ code: 'BAD_REQUEST', message: 'workspace-not-in-project' })
@@ -117,7 +121,7 @@ function sendSessionDraft(input: SupervisorDraftRequest) {
     .get()
   if (stored === undefined) throw new TRPCError({ code: 'NOT_FOUND', message: 'missing-session' })
   const harness = harnessSchema.parse(stored.harness)
-  rejectUnsupportedAttachments(harness, draft.attachments)
+  rejectUnsupportedAttachments(context, harness, draft.attachments)
   const cwd =
     stored.cwd ??
     (stored.projectId !== null && stored.workspaceId !== null

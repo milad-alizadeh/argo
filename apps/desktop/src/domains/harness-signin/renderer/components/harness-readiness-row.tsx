@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { HarnessReadiness } from '@/domains/harness-signin/contract/contract'
 import { HarnessLogo } from '@/domains/sessions/renderer'
+import { harnessShortLabel } from '@/harnesses/presentation-registry'
 import { ContractFailureAlert } from '@/platform/renderer/components/contract-failure-alert'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Button } from '@/platform/renderer/components/ui/button'
@@ -70,7 +71,7 @@ export function HarnessStateBody({
 }) {
   const { t } = useTranslation('harnessSignIn')
   const { harness, state, detail } = readiness
-  const name = t(`harness.${harness}`)
+  const name = harnessShortLabel(harness)
   if (state === 'missing') {
     return <p className="type-meta text-muted-foreground">{t('row.install', { harness: name })}</p>
   }
@@ -88,7 +89,7 @@ export function HarnessStateBody({
 export function HarnessReadinessRow({ readiness, signIn }: HarnessReadinessRowProps) {
   const { t } = useTranslation('harnessSignIn')
   const { harness, state } = readiness
-  const name = t(`harness.${harness}`)
+  const name = harnessShortLabel(harness)
   return (
     <li
       aria-label={t('row.label', { harness: name, state: t(`row.state.${state}`) })}

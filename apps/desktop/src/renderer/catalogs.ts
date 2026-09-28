@@ -9,6 +9,7 @@ import harnessSignIn from '@/domains/harness-signin/renderer/locales/en.json'
 import projects from '@/domains/projects/renderer/locales/en.json'
 import sessions from '@/domains/sessions/renderer/locales/en.json'
 import tickets from '@/domains/tickets/renderer/locales/en.json'
+import { HARNESS_CATALOG as harnesses } from '@/harnesses/copy-registry'
 import cockpit from '@/platform/renderer/cockpit/locales/en.json'
 import shared from '@/platform/renderer/i18n/locales/en.json'
 import platform from '@/platform/renderer/i18n/locales/en.json'
@@ -18,6 +19,7 @@ export const CATALOGS = {
   atlas,
   cockpit,
   harnessSignIn,
+  harnesses,
   platform,
   projects,
   sessions,

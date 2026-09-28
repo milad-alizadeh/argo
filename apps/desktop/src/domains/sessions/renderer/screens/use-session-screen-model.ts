@@ -6,6 +6,7 @@ import { useNavigate, useParams } from 'react-router'
 
 import { useProjects } from '@/domains/projects/renderer'
 import { useWorkspaces } from '@/domains/workspaces/renderer'
+import { DEFAULT_HARNESS } from '@/harnesses/harness'
 import { useSessionPermission } from '../composer/hooks/use-session-permission'
 import { useSessionQuestion } from '../composer/hooks/use-session-question'
 import { useSessionFeed } from '../feed/use-session-feed'
@@ -130,7 +131,7 @@ export function useSessionScreenModel() {
     selectedSessionId,
     workspaceCockpit.workspaces,
   )
-  const [lastHarness, chooseHarness] = useState<SessionHarness>('claude')
+  const [lastHarness, chooseHarness] = useState<SessionHarness>(DEFAULT_HARNESS)
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
   const { permission, question } = useSessionInteractions(selectedSessionId)
   const inspector = useSessionInspectorData({

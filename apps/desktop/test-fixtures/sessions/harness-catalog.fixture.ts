@@ -1,6 +1,6 @@
-import type { AvailableHarness, HarnessInfo } from '@/harnesses/catalog/harness-catalog-machine'
 import { type ClaudeModelCatalog, claudeHarnessInfo } from '@/harnesses/claude/catalog-projection'
 import { type CodexModelCatalog, codexHarnessInfo } from '@/harnesses/codex/catalog'
+import type { AvailableHarness, HarnessInfo } from '@/harnesses/harness-catalog'
 import { claudeComposerModelCatalogFixture } from './claude-model-catalog.fixture'
 import { codexModelCatalogFixture } from './codex-model-catalog.fixture'
 

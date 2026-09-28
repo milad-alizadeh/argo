@@ -1,7 +1,7 @@
 // The Harness-neutral Question every SessionDriveAdapter answers in (ADR-0024, #1841), mirroring
 // permission.ts. A Question states only what shared code and the shared renderer need: the
 // prompt, its options, and — when a Harness's own question shape has no honest answer in this type
-// (Codex's `isSecret`) — a reason the Feed's `ask` row shows instead of a form.
+// (a secret answer, e.g.) — a reason the Feed's `ask` row shows instead of a form.
 import { z } from 'zod'
 
 export const questionOptionSchema = z.strictObject({

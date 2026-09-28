@@ -41,10 +41,6 @@
     "add": "Add Project…"
   },
   "setup": {
-    "harnessName": {
-      "claude": "Claude Code",
-      "codex": "Codex"
-    },
     "label": "Set up {{name}}",
     "configurationLabel": "Project configuration",
     "invalidJson": "Enter valid JSON.",

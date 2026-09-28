@@ -2,13 +2,31 @@
 
 Status: accepted · 2026-09-21
 
+## Amendment · Harness registrations · 2026-09-28
+
+Shared Session, platform, and renderer code select Harness behavior by Harness ID through one
+registry and never branch on a Harness. A registration declares its capabilities: the Turn
+settings a later Send may change, whether it accepts attachments, an optional auto-compact limit,
+and an optional shutdown. The renderer reads each Harness's label, logo, extra context details,
+standing-allow scope, and plan usage from one presentation registry, and each name from the
+Harness's own locale catalog. Only the Harness ID list and the registry files under
+`src/harnesses/` name a Harness; everything else vendor-specific lives in
+`src/harnesses/<harness>/`, and a dependency-cruiser rule keeps shared code out of it. Harness
+code imports no XState.
+
+The app machine owns the shared Codex client through the registration's shutdown; no Codex
+app-server machine exists. The Harness catalog machine lives under
+`src/platform/main/harness-catalog/`.
+
+A Session without a live channel is only as fresh as its Harness's history watcher. Without a
+change signal its Feed stays as last read until the reader reopens it or asks for Refresh.
+
 ## Amendment · Codex live Session channel · 2026-09-28
 
-The Codex registration now opens an async channel through the application-owned, shared
-app-server client. The generic live Session machine owns each Codex Session lifecycle and the
-supervisor orders its commands. Codex Harness code imports no XState. The per-Session Codex child
-machine described below is superseded. A Codex channel failure affects its Session; the app-server
-client and other Harnesses remain application-owned resources.
+The Codex registration now opens an async channel through the application-owned, shared app-server
+client. The generic live Session machine owns each Codex Session lifecycle and the supervisor orders
+its commands. Codex Harness code imports no XState. A Codex channel failure affects its Session; the
+app-server client and other Harnesses remain application-owned resources.
 
 Codex turn and item notifications carry stable vendor IDs into the same validated Feed event
 contract as Claude. Vendor history settles those rows. The Feed reads each chain's complete
@@ -26,8 +44,8 @@ vendor history remains available and the first new prompt can attempt native res
 checks vendor liveness before that attempt.
 
 Each Harness owns one adapter. Shared Session code owns only validated commands, projections, and
-application rules. Claude has one ephemeral main-process actor per live Session. Codex has one
-main-process app-server supervisor and one child actor per live Session. Invoked actors own
+application rules. Every Harness has one generic, ephemeral main-process actor per live Session,
+which opens the live channel its registration supplies. Invoked actors own
 SDK clients, processes, streams, sockets, timers, and cancellation handles. Machine context holds
 only serializable identifiers and validated facts. Live Session actor snapshots are not persisted.
 

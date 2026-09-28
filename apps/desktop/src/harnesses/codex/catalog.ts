@@ -4,9 +4,9 @@ import {
   harnessInfoSchema,
   invalidCatalogResponse,
   unavailable,
-} from '@/harnesses/catalog/harness-catalog-machine'
-import { platformText } from '@/platform/main/i18n'
+} from '@/harnesses/harness-catalog'
 import type { CodexRequest } from './app-server/codex-app-server-client'
+import copy from './locales/en.json'
 
 export const codexModelEffortSchema = z.object({
   reasoningEffort: z.string().min(1),
@@ -45,20 +45,20 @@ export type CodexModelCatalog = z.infer<typeof codexModelCatalogSchema>
 const SANDBOX_MODES = [
   {
     value: 'read-only',
-    label: platformText('harnessCatalog.codexMode.readOnly.label'),
-    detail: platformText('harnessCatalog.codexMode.readOnly.detail'),
+    label: copy.mode.readOnly.label,
+    detail: copy.mode.readOnly.detail,
     icon: 'mode-manual',
   },
   {
     value: 'workspace-write',
-    label: platformText('harnessCatalog.codexMode.workspaceWrite.label'),
-    detail: platformText('harnessCatalog.codexMode.workspaceWrite.detail'),
+    label: copy.mode.workspaceWrite.label,
+    detail: copy.mode.workspaceWrite.detail,
     icon: 'mode-approve-safely',
   },
   {
     value: 'danger-full-access',
-    label: platformText('harnessCatalog.codexMode.fullAccess.label'),
-    detail: platformText('harnessCatalog.codexMode.fullAccess.detail'),
+    label: copy.mode.fullAccess.label,
+    detail: copy.mode.fullAccess.detail,
     icon: 'mode-bypass-permissions',
   },
 ] as const
