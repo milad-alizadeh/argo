@@ -24,7 +24,11 @@ import {
   composerIdentityKey,
   composerIdentityOf,
 } from '../composer/identity/composer-identity'
-import { COMPOSER_COLUMN, ComposerForm } from '../composer/layout/composer-form'
+import {
+  COMPOSER_COLUMN,
+  ComposerForm,
+  type ComposerFormProps,
+} from '../composer/layout/composer-form'
 import type { CatalogFailure } from '../composer/toolbar/turn-configuration-menu'
 import {
   type TurnConfiguration,
@@ -33,6 +37,7 @@ import {
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import { HARNESSES, type HarnessControl } from '../harness/harnesses'
 import type { Session, SessionListPage } from '../types'
+import { type ComposerFailure, useComposerFailureToasts } from './use-composer-failure-toasts'
 
 type SessionScreenDetailsProps = {
   permission: ReturnType<typeof import('../composer').useSessionPermission>
@@ -137,6 +142,8 @@ function useSessionComposerDraft(input: {
   const target = draftTarget({ identity, harness, cockpit, workspace: workspaceCockpit })
   const [restoredProjectId, setRestoredProjectId] = useState<string | null>(null)
   const projectId = identity.kind === 'draft' ? identity.projectId : null
+  // Opening a Session forgets the restore, so the next new-Session composer restores its target.
+  if (projectId === null && restoredProjectId !== null) setRestoredProjectId(null)
   const targetRestored = identity.kind === 'session' || restoredProjectId === projectId
   const draft = useDurableComposerDraft({ target, choices, opening, targetRestored })
   const loadedTarget = draft?.loadedTarget
@@ -168,6 +175,7 @@ function useSessionComposerSend(input: {
   draft: ReturnType<typeof useDurableComposerDraft>
   identity: ComposerIdentity
   projectId: string | null
+  onFailure: (outcome: 'rejected' | 'uncertain') => void
 }) {
   const navigate = useNavigate()
   return async (
@@ -176,7 +184,11 @@ function useSessionComposerSend(input: {
     attachments: DraftContent['attachments'],
   ) => {
     const result = await input.draft?.submit(prompt, turnConfiguration, attachments)
-    if (result?.outcome !== 'accepted') return result?.outcome ?? 'rejected'
+    if (result?.outcome !== 'accepted') {
+      const outcome = result?.outcome ?? 'rejected'
+      input.onFailure(outcome)
+      return outcome
+    }
     if (input.identity.kind === 'draft' && input.projectId !== null)
       navigate(`/projects/${input.projectId}/sessions/${result.sessionId}`, { replace: true })
     return 'accepted'
@@ -260,27 +272,16 @@ export function SessionComposerArea({
     useComposerRetryFocus(catalogQuery, draft)
   const onInterrupt = useSessionInterrupt(selectedSessionId, harness)
   if (session?.locked === true) return <OpenElsewhere onRetry={null} />
-  if (draft === null)
-    return (
-      <ComposerLoadFallback
-        sessionId={`${composerKey}:loading`}
-        harness={harness}
-        choices={choices}
-        opening={initialTurnConfiguration}
-        catalogFailure={catalogFailure}
-        onRetryCatalog={retryCatalog}
-      />
-    )
-  if (!targetRestored && !draft.loadFailed) return null
   return (
-    <ReadySessionComposer
+    <SessionComposer
       {...{ permission, questionPending, session, harness, workspaceCockpit, workspaceActions }}
       isRunning={liveStatus === 'running' || liveStatus === 'permission' || liveStatus === 'asking'}
       onInterrupt={onInterrupt}
       catalogFailure={catalogFailure}
       choices={choices}
       composerKey={composerKey}
-      draft={draft}
+      draft={draft !== null && (targetRestored || draft.loadFailed) ? draft : null}
+      opening={initialTurnConfiguration}
       focusOnMount={location.state === COMPOSER_FOCUS_STATE || focusComposerAfterRetry}
       onFocusAfterMount={clearRecoveryFocus}
       identity={identity}
@@ -291,7 +292,17 @@ export function SessionComposerArea({
   )
 }
 
-function ReadySessionComposer({
+type LoadedDraft = NonNullable<ReturnType<typeof useDurableComposerDraft>>
+
+function initialFormEditing(draft: LoadedDraft | null, opening: TurnConfiguration | null) {
+  if (draft !== null) return draft.initialEditing
+  return opening === null ? undefined : { turnConfiguration: opening }
+}
+
+// One card at one place in the tree while a draft loads and after, so a Session switch swaps its
+// content instead of mounting a new card (#2836). The owner's editor mounts at once, empty and
+// inert but drawn enabled, and its draft fills in when it loads.
+function SessionComposer({
   permission,
   questionPending,
   session,
@@ -302,6 +313,7 @@ function ReadySessionComposer({
   choices,
   composerKey,
   draft,
+  opening,
   focusOnMount,
   onFocusAfterMount,
   identity,
@@ -317,7 +329,8 @@ function ReadySessionComposer({
   catalogFailure: CatalogFailure | null
   choices: Parameters<typeof useDurableComposerDraft>[0]['choices']
   composerKey: string
-  draft: NonNullable<ReturnType<typeof useDurableComposerDraft>>
+  draft: LoadedDraft | null
+  opening: TurnConfiguration | null
   focusOnMount: boolean
   onFocusAfterMount: () => void
   identity: ComposerIdentity
@@ -327,108 +340,90 @@ function ReadySessionComposer({
   isRunning: boolean
   onInterrupt?: () => Promise<boolean>
 }) {
-  const { t } = useTranslation('sessions')
+  const reportSendFailure = useComposerFailures({
+    catalogFailure,
+    composerKey,
+    draft,
+    harness,
+    onRetryCatalog,
+    onRetryDraft,
+    permissionFailure: permission.failure,
+  })
   const onSend = useSessionComposerSend({
     draft,
     identity,
     projectId: identity.kind === 'draft' ? identity.projectId : null,
+    onFailure: reportSendFailure,
   })
-  return (
-    <>
-      {permission.failure ? <Failure message={permission.failure} /> : null}
-      {catalogFailure ? (
-        <Failure
-          message={catalogFailureMessage(t, harness.harness, catalogFailure)}
-          onRetry={onRetryCatalog}
-        />
-      ) : null}
-      {draft.loadFailed ? <DraftLoadFailure onRetry={onRetryDraft} /> : null}
-      {draft.saveFailed ? <Failure message={t('composer.draftSaveFailed')} /> : null}
-      {draft.sendFailure ? (
-        <Failure
-          message={t(
-            draft.sendFailure === 'rejected' ? 'composer.sendFailed' : 'composer.sendUncertain',
-          )}
-        />
-      ) : null}
-      <ComposerForm
-        sessionId={`${composerKey}:${draft.hasDraft ? 'ready' : 'load-failed'}`}
-        initialEditing={draft.initialEditing}
-        onEditingChange={draft.onEditingChange}
-        focusOnMount={focusOnMount}
-        onFocusAfterMount={onFocusAfterMount}
-        turnConfigurationChoices={choices}
-        catalogFailure={catalogFailure}
-        refreshCatalog={onRefreshCatalog}
-        workspace={workspaceControl(identity, workspaceCockpit, workspaceActions)}
-        contextTokens={session?.contextTokens}
-        contextWindowTokens={session?.contextWindowTokens}
-        disabled={questionPending || (draft.loadFailed && !draft.hasDraft)}
-        harness={harness}
-        permissionPrompt={
-          <PermissionPrompt
-            harness={harness.harness}
-            headingLevel={2}
-            permission={permission.permission}
-            onDecide={permission.decide}
-          />
-        }
-        plan={session?.plan ?? null}
-        onSend={onSend}
-        isRunning={isRunning}
-        onInterrupt={onInterrupt}
+  const waiting = draft?.hasDraft !== true
+  // A failed catalog leaves no draft to wait for: the card disables, and its catalog menu can retry.
+  const catalogBlocked = waiting && catalogFailure !== null
+  const form: ComposerFormProps = {
+    sessionId: composerKey,
+    loading: waiting && !catalogBlocked,
+    initialEditing: initialFormEditing(draft, opening),
+    onEditingChange: draft?.onEditingChange,
+    focusOnMount,
+    onFocusAfterMount,
+    turnConfigurationChoices: choices,
+    catalogFailure,
+    refreshCatalog: draft === null ? onRetryCatalog : onRefreshCatalog,
+    workspace: workspaceControl(identity, workspaceCockpit, workspaceActions),
+    contextTokens: session?.contextTokens,
+    contextWindowTokens: session?.contextWindowTokens,
+    disabled: questionPending || catalogBlocked || (draft?.loadFailed === true && !draft.hasDraft),
+    harness,
+    permissionPrompt: (
+      <PermissionPrompt
+        harness={harness.harness}
+        headingLevel={2}
+        permission={permission.permission}
+        onDecide={permission.decide}
       />
-    </>
-  )
+    ),
+    plan: session?.plan ?? null,
+    onSend,
+    isRunning,
+    onInterrupt,
+  }
+  return <ComposerForm {...form} />
 }
 
-export function ComposerLoadFallback({
-  sessionId,
-  harness,
-  choices,
-  opening,
-  catalogFailure,
-  onRetryCatalog,
-}: {
-  sessionId: string
-  harness: HarnessControl
-  choices: Parameters<typeof useDurableComposerDraft>[0]['choices']
-  opening: TurnConfiguration | null
+// Failures toast instead of drawing above the composer, so an error never moves the card (#2836).
+function useComposerFailures(input: {
   catalogFailure: CatalogFailure | null
+  composerKey: string
+  draft: LoadedDraft | null
+  harness: HarnessControl
   onRetryCatalog: () => void
+  onRetryDraft: () => void
+  permissionFailure: string | null
 }) {
   const { t } = useTranslation('sessions')
-  const message = catalogFailure
-    ? catalogFailureMessage(t, harness.harness, catalogFailure)
-    : t('composer.loading')
-  return (
-    <>
-      <Failure
-        message={message}
-        onRetry={catalogFailure ? onRetryCatalog : undefined}
-        status={!catalogFailure}
-      />
-      <ComposerForm
-        sessionId={sessionId}
-        initialEditing={opening === null ? undefined : { turnConfiguration: opening }}
-        disabled
-        harness={harness}
-        turnConfigurationChoices={choices}
-        catalogFailure={catalogFailure}
-        refreshCatalog={onRetryCatalog}
-      />
-    </>
-  )
+  const owner = input.composerKey
+  const catalog = `catalog:${input.harness.harness}`
+  const failures: ComposerFailure[] = []
+  if (input.permissionFailure) failures.push({ scope: owner, title: input.permissionFailure })
+  if (input.catalogFailure)
+    failures.push({
+      scope: catalog,
+      title: catalogFailureMessage(t, input.harness.harness, input.catalogFailure),
+      retry: input.onRetryCatalog,
+    })
+  if (input.draft?.loadFailed)
+    failures.push({ scope: owner, title: t('composer.draftLoadFailed'), retry: input.onRetryDraft })
+  if (input.draft?.saveFailed) failures.push({ scope: owner, title: t('composer.draftSaveFailed') })
+  const report = useComposerFailureToasts(failures, [owner, catalog])
+  return (outcome: 'rejected' | 'uncertain') =>
+    report({
+      scope: owner,
+      title: t(outcome === 'rejected' ? 'composer.sendFailed' : 'composer.sendUncertain'),
+    })
 }
 
 function handoffTitle(sessionList: SessionListPage | null, sessionId: string) {
   const row = sessionList?.sessions.find(({ id }) => id === sessionId)
   return row?.title?.text ?? sessionId
-}
-
-export function DraftLoadFailure({ onRetry }: { onRetry: () => void }) {
-  const { t } = useTranslation('sessions')
-  return <Failure message={t('composer.draftLoadFailed')} onRetry={onRetry} />
 }
 
 function HandoffLink({
@@ -487,32 +482,6 @@ export function SessionHandoffFacts({
         />
       ) : null}
     </section>
-  )
-}
-
-function Failure({
-  message,
-  onRetry,
-  status = false,
-}: {
-  message: string
-  onRetry?: () => void
-  status?: boolean
-}) {
-  const { t } = useTranslation('sessions')
-  return (
-    <div className={`${COMPOSER_COLUMN} mt-3`}>
-      <Alert role={status ? 'status' : 'alert'} variant={status ? 'default' : 'destructive'}>
-        <AlertDescription>{message}</AlertDescription>
-        {onRetry ? (
-          <AlertAction>
-            <Button onClick={onRetry} size="sm" type="button" variant="outline">
-              {t('composer.retry')}
-            </Button>
-          </AlertAction>
-        ) : null}
-      </Alert>
-    </div>
   )
 }
 

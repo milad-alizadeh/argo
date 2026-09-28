@@ -69,7 +69,6 @@
     "label": "Session input",
     "cardLabel": "Message composer",
     "message": "Message",
-    "placeholder": "Direct the next move…",
     "plan": "Step {{current}}/{{total}}",
     "addContext": "Add context",
     "contextPicker": {
@@ -109,7 +108,6 @@
     "sendMessage": "Send message",
     "draftSaveFailed": "The draft could not be saved. Try again before closing this Session.",
     "draftLoadFailed": "Argo could not load this draft. Your saved work will stay available while you retry.",
-    "loading": "Loading the Composer…",
     "retry": "Retry",
     "sendFailed": "The Turn could not be sent. Your draft is still saved.",
     "sendUncertain": "Argo could not confirm whether the Turn was sent. Your draft is still saved.",

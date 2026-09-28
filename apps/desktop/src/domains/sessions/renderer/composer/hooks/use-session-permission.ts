@@ -7,7 +7,9 @@ import { invalidateSessionList, sessionPermissionQueryKey } from '../../session-
 export type PermissionAnswer = PermissionDecision
 
 export function useSessionPermission(sessionId: string | null) {
-  const [failure, setFailure] = useState<string | null>(null)
+  // Held against the Session it happened in, since the Session screen stays mounted across a switch.
+  const [failed, setFailed] = useState<{ sessionId: string; message: string } | null>(null)
+  const failure = failed !== null && failed.sessionId === sessionId ? failed.message : null
   const queryClient = useQueryClient()
   const queryKey =
     sessionId === null ? ['sessions', 'permission', null] : sessionPermissionQueryKey(sessionId)
@@ -27,10 +29,13 @@ export function useSessionPermission(sessionId: string | null) {
       await permissionDecision.mutateAsync({ decision, permission: permission.data })
       queryClient.setQueryData(sessionPermissionQueryKey(permission.data.sessionId), null)
       await invalidateSessionList(queryClient)
-      setFailure(null)
+      setFailed(null)
       return true
     } catch (error) {
-      setFailure(error instanceof Error ? error.message : 'Argo could not decide this permission.')
+      setFailed({
+        sessionId: permission.data.sessionId,
+        message: error instanceof Error ? error.message : 'Argo could not decide this permission.',
+      })
       return false
     }
   }

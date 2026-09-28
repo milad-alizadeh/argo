@@ -242,11 +242,6 @@ export const SendsTheChosenTurnConfiguration: StoryObj<typeof TurnConfigurationC
   parameters: { frame: TURN_CONFIGURATION_FRAME },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    const placeholder = canvas.getAllByText('Direct the next move…')[0]?.getBoundingClientRect()
-    const controls = canvas
-      .getByRole('button', { name: /^Choose Turn configuration/ })
-      .getBoundingClientRect()
-    await expect(placeholder?.bottom).toBeLessThanOrEqual(controls.top)
     await userEvent.click(canvas.getByRole('button', { name: /^Choose Turn configuration/ }))
     await userEvent.click(await within(document.body).findByRole('radio', { name: /Sonnet 5/ }))
     await userEvent.keyboard('{Escape}')

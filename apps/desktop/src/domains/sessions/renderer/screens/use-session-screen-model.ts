@@ -107,6 +107,18 @@ function useSessionInspectorData({
   }
 }
 
+// Opened evidence is held against its Session, since the Session screen stays mounted across a
+// switch and evidence from one Session says nothing about the next.
+function useSessionEvidence(sessionId: string | null) {
+  const [opened, setOpened] = useState<{ sessionId: string | null; evidence: SessionEvidence }>()
+  const setEvidence = useCallback(
+    (evidence: SessionEvidence | null) =>
+      setOpened(evidence === null ? undefined : { sessionId, evidence }),
+    [sessionId],
+  )
+  return { evidence: opened?.sessionId === sessionId ? opened.evidence : null, setEvidence }
+}
+
 export function useSessionScreenModel() {
   const { projectId, sessionId } = useParams()
   const navigate = useNavigate()
@@ -114,7 +126,7 @@ export function useSessionScreenModel() {
   const [cockpit, projectActions] = useProjects()
   const [workspaceCockpit, workspaceActions] = useWorkspaces(cockpit.project?.id ?? null)
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
-  const [evidence, setEvidence] = useState<SessionEvidence | null>(null)
+  const { evidence, setEvidence } = useSessionEvidence(selectedSessionId)
   const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
   const sessionFeed = useSessionFeed(selectedSessionId)
   const { sessionList, session, workspaceIdentity } = useSessionSelectionData(

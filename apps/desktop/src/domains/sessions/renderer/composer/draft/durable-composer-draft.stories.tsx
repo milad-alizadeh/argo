@@ -12,7 +12,7 @@ import {
   claudeChoices,
   codexHarnessInfoFixture,
 } from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
-import { DraftLoadFailure } from '../../screens/session-screen-details'
+import { useComposerFailureToasts } from '../../screens/use-composer-failure-toasts'
 import { ComposerForm } from '../layout/composer-form'
 import type { TurnConfigurationChoices } from '../turn-configuration/turn-configuration'
 import { useDurableComposerDraft } from './use-durable-composer-draft'
@@ -566,13 +566,6 @@ function DurableDraftScreen({
         <DraftReadControls server={server} target={target} />
       </div>
       <DraftStoryDetails server={server} draft={draft} target={target} />
-      {draft?.sendFailure ? (
-        <div role="alert">
-          {draft.sendFailure === 'rejected'
-            ? 'The Turn could not be sent. Your draft is still saved.'
-            : 'Argo could not confirm whether the Turn was sent. Your draft is still saved.'}
-        </div>
-      ) : null}
       {draft && (targetRestored || draft.loadFailed) ? (
         <DurableDraftComposer
           draft={draft}
@@ -633,23 +626,35 @@ function DurableDraftComposer({
   onFocusAfterMount: () => void
   onRetry: () => void
 }) {
+  const report = useComposerFailureToasts(
+    draft.loadFailed
+      ? [{ scope: sessionId, title: 'Argo could not load this draft.', retry: onRetry }]
+      : [],
+    [sessionId],
+  )
   return (
-    <>
-      {draft.loadFailed ? <DraftLoadFailure onRetry={onRetry} /> : null}
-      <ComposerForm
-        harness={{ harness }}
-        initialEditing={draft.initialEditing}
-        onEditingChange={draft.onEditingChange}
-        onSend={async (prompt, turnConfiguration, attachments) =>
-          (await draft.submit(prompt, turnConfiguration, attachments)).outcome
-        }
-        sessionId={sessionId}
-        disabled={draft.loadFailed && !draft.hasDraft}
-        focusOnMount={focusOnRetry}
-        onFocusAfterMount={onFocusAfterMount}
-        turnConfigurationChoices={choices}
-      />
-    </>
+    <ComposerForm
+      harness={{ harness }}
+      initialEditing={draft.initialEditing}
+      onEditingChange={draft.onEditingChange}
+      onSend={async (prompt, turnConfiguration, attachments) => {
+        const { outcome } = await draft.submit(prompt, turnConfiguration, attachments)
+        if (outcome !== 'accepted')
+          report({
+            scope: sessionId,
+            title:
+              outcome === 'rejected'
+                ? 'The Turn could not be sent. Your draft is still saved.'
+                : 'Argo could not confirm whether the Turn was sent. Your draft is still saved.',
+          })
+        return outcome
+      }}
+      sessionId={sessionId}
+      disabled={draft.loadFailed && !draft.hasDraft}
+      focusOnMount={focusOnRetry}
+      onFocusAfterMount={onFocusAfterMount}
+      turnConfigurationChoices={choices}
+    />
   )
 }
 
@@ -683,7 +688,9 @@ export const RestoresAndRetainsRejectedDrafts: Story = {
     )
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
     await expect(
-      await canvas.findByText('The Turn could not be sent. Your draft is still saved.'),
+      await within(canvasElement.ownerDocument.body).findByText(
+        'The Turn could not be sent. Your draft is still saved.',
+      ),
     ).toBeInTheDocument()
     await waitFor(() =>
       expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent('Restored Session A draft.'),
@@ -715,9 +722,11 @@ export const RestoredReferenceSurvivesSwitchAndRejectedKeyboardSend: Story = {
     await expect(canvas.getByText('Implement')).toBeVisible()
     await userEvent.click(restored)
     await userEvent.keyboard('{Enter}')
-    await expect(await canvas.findByRole('alert')).toHaveTextContent(
-      'The Turn could not be sent. Your draft is still saved.',
-    )
+    await expect(
+      await within(canvasElement.ownerDocument.body).findByText(
+        'The Turn could not be sent. Your draft is still saved.',
+      ),
+    ).toBeInTheDocument()
     await expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent(
       'Use [$implement](/skills/implement/SKILL.md) for this.',
     )
@@ -729,17 +738,15 @@ export const DraftReadFailureCanRetry: Story = {
   args: { draftReadFailures: 1 },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(await canvas.findByRole('alert')).toHaveTextContent(
-      'Argo could not load this draft.',
-    )
-    const retry = canvas.getByRole('button', { name: 'Retry' })
-    await expect(retry).toBeVisible()
+    const page = within(canvasElement.ownerDocument.body)
+    await expect(await page.findByText('Argo could not load this draft.')).toBeVisible()
+    const retry = page.getByRole('button', { name: 'Retry' })
     retry.focus()
     await userEvent.keyboard('{Enter}')
     const editor = await canvas.findByLabelText('Message')
     await expect(editor).toHaveTextContent('Restored Session A draft.')
     await waitFor(() => expect(editor).toHaveFocus())
-    await expect(canvas.queryByText('Argo could not load this draft.')).toBeNull()
+    await waitFor(() => expect(page.queryByText('Argo could not load this draft.')).toBeNull())
   },
 }
 
@@ -754,13 +761,12 @@ export const KeepsLoadedDraftAfterRefreshFails: Story = {
       expect(canvas.getByLabelText('Stored drafts')).toHaveAttribute('data-read-failures', '0'),
     )
     await expect(editor).toHaveTextContent('Restored Session A draft.')
-    await expect(await canvas.findByRole('alert')).toHaveTextContent(
-      'Argo could not load this draft.',
-    )
-    const retry = canvas.getByRole('button', { name: 'Retry' })
+    const page = within(canvasElement.ownerDocument.body)
+    await expect(await page.findByText('Argo could not load this draft.')).toBeVisible()
+    const retry = page.getByRole('button', { name: 'Retry' })
     retry.focus()
     await userEvent.keyboard('{Enter}')
-    await expect(canvas.queryByText('Argo could not load this draft.')).toBeNull()
+    await waitFor(() => expect(page.queryByText('Argo could not load this draft.')).toBeNull())
     await expect(editor).toHaveTextContent('Restored Session A draft.')
     await waitFor(() => expect(editor).toHaveFocus())
   },
@@ -812,9 +818,11 @@ export const UncertainSendKeepsItsDraftWithoutResending: Story = {
     const canvas = within(canvasElement)
     const editor = await canvas.findByLabelText('Message')
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
-    await expect(await canvas.findByRole('alert')).toHaveTextContent(
-      'Argo could not confirm whether the Turn was sent. Your draft is still saved.',
-    )
+    await expect(
+      await within(canvasElement.ownerDocument.body).findByText(
+        'Argo could not confirm whether the Turn was sent. Your draft is still saved.',
+      ),
+    ).toBeInTheDocument()
     await expect(editor).toHaveTextContent('Restored Session A draft.')
     await expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent(
       'Restored Session A draft.',
@@ -1045,7 +1053,9 @@ export const RestoresSavedCodexConfigurationBeforeSend: Story = {
       expect(canvas.getByLabelText('Current target')).toHaveTextContent('"harness":"codex"'),
     )
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
-    await canvas.findByText('The Turn could not be sent. Your draft is still saved.')
+    await within(canvasElement.ownerDocument.body).findByText(
+      'The Turn could not be sent. Your draft is still saved.',
+    )
     await expect(store).toHaveTextContent('"model":"gpt-live"')
     await expect(store).toHaveTextContent('"revision":0')
   },

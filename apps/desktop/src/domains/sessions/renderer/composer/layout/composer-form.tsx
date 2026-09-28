@@ -21,6 +21,8 @@ export type ComposerFormProps = {
   contextTokens?: number | null
   contextWindowTokens?: number | null
   disabled?: boolean
+  // Inert until the owner's draft loads, yet drawn like an enabled card; the draft then fills in.
+  loading?: boolean
   focusOnMount?: boolean
   onFocusAfterMount?: () => void
   isCompacting?: boolean
@@ -59,6 +61,7 @@ function ComposerFormSurface({
   contextTokens,
   contextWindowTokens,
   disabled = false,
+  loading = false,
   focusOnMount = false,
   onFocusAfterMount,
   isCompacting = false,
@@ -92,10 +95,11 @@ function ComposerFormSurface({
   })
   const state = useSessionComposerState({ onSend, turnConfiguration })
   const send = () => {
-    if (!disabled && onSend) void state.send()
+    if (!disabled && !loading && onSend) void state.send()
   }
   return (
     <form
+      inert={loading}
       className={`${COMPOSER_COLUMN} @container flex h-full min-h-0 flex-col pt-(--spacing-shell-section) pb-(--spacing-session-composer-bottom)`}
       onSubmit={(event) => {
         event.preventDefault()
@@ -108,7 +112,7 @@ function ComposerFormSurface({
         contextWindowTokens={contextWindowTokens}
         disabled={disabled}
         editorRef={state.editorRef}
-        focusOnMount={focusOnMount}
+        focusOnMount={focusOnMount && !loading}
         onFocusAfterMount={onFocusAfterMount}
         harness={harness}
         isCompacting={isCompacting}
@@ -130,10 +134,11 @@ function ComposerFormSurface({
 
 export function ComposerForm({ initialEditing, onEditingChange, ...props }: ComposerFormProps) {
   return (
+    // The loaded draft starts a fresh edit, so nothing edited while loading outlives it.
     <ComposerEditingProvider
       initial={initialEditing}
-      key={props.sessionId}
       onChange={onEditingChange}
+      owner={props.loading === true ? `${props.sessionId}:loading` : props.sessionId}
     >
       <ComposerFormSurface {...props} />
     </ComposerEditingProvider>

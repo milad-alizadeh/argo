@@ -7,6 +7,10 @@ import type { Harness, HarnessReadinessState } from '@/domains/harness-signin/co
 import { SessionsSidebar } from '@/domains/sessions/renderer/session-list/sidebar/sessions-sidebar'
 import { CockpitRouteLayout } from './cockpit-router'
 
+function SectionScreen({ section }: { section: string }) {
+  return <h1>{section}</h1>
+}
+
 function CockpitRouteLayoutStory() {
   const [queryClient] = useState(() => new QueryClient())
   const [router] = useState(() =>
@@ -20,10 +24,11 @@ function CockpitRouteLayoutStory() {
               handle: { sidebar: <SessionsSidebar /> },
               // The sidebar reopens the last selected Session, so that path must resolve.
               children: [
-                { index: true, element: null },
-                { path: ':sessionId', element: null },
+                { index: true, element: <SectionScreen section="Sessions screen" /> },
+                { path: ':sessionId', element: <SectionScreen section="Sessions screen" /> },
               ],
             },
+            { path: '/tickets', element: <SectionScreen section="Tickets screen" /> },
           ],
         },
       ],
@@ -196,5 +201,19 @@ export const NoHarnessReadySignInFailed: Story = {
     await canvas.findByText('Sign in to a Harness')
     await userEvent.click(canvas.getByRole('button', { name: 'Sign in' }))
     await expect(await canvas.findByText('The sign-in failed. Try again.')).toBeVisible()
+  },
+}
+
+// A rail switch draws the chosen section's screen, in both directions (#2836).
+export const SectionSwitchDrawsTheChosenScreen: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await canvas.findByRole('heading', { name: 'Sessions screen' })
+    await userEvent.click(canvas.getByRole('button', { name: 'Tickets' }))
+    await expect(await canvas.findByRole('heading', { name: 'Tickets screen' })).toBeVisible()
+    await expect(canvas.queryByRole('heading', { name: 'Sessions screen' })).toBeNull()
+    await userEvent.click(canvas.getByRole('button', { name: 'Sessions' }))
+    await expect(await canvas.findByRole('heading', { name: 'Sessions screen' })).toBeVisible()
+    await expect(canvas.queryByRole('heading', { name: 'Tickets screen' })).toBeNull()
   },
 }
