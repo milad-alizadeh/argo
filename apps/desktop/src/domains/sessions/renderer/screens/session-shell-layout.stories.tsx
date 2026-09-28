@@ -115,7 +115,7 @@ export const ResizeExpandedInspector: Story = {
       canvas.getByRole('button', { name: 'Restore Session sidebar' }),
     ).toBeInTheDocument()
 
-    await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar', exact: true }))
+    await userEvent.click(canvas.getByRole('button', { name: /^Collapse sidebar$/ }))
     await waitFor(() => {
       expect(
         canvas.getByLabelText('Session workspace').getBoundingClientRect().width,

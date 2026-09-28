@@ -9,7 +9,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from '@/platform/renderer/components/ui/dropdown-menu'
-import { ComposerMenuTrigger } from './composer-menu-trigger'
+import { ComposerMenuTrigger, ComposerMenuValue } from './composer-menu-trigger'
 
 export type WorkspaceMenuControlProps = {
   workspaces: readonly WorkspaceSummary[]
@@ -28,9 +28,7 @@ export function WorkspaceMenu({ workspaces, workspace, onSelect }: WorkspaceMenu
         ariaLabel={t('composer.workspace.chooseLabel', { workspace: label })}
         className="max-w-48 min-w-0 shrink-0 type-control text-foreground"
       >
-        <Icon name="repository" />
-        <span className="hidden min-w-0 truncate @[36rem]:inline">{label}</span>
-        <Icon name="chevron-down" className="hidden text-muted-foreground @[36rem]:block" />
+        <ComposerMenuValue icon={<Icon name="repository" />} label={label} />
       </ComposerMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="w-(--size-session-menu) p-1.5">
         <DropdownMenuGroup>

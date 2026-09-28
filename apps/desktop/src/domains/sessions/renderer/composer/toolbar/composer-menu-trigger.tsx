@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { DropdownMenuTrigger } from '@/platform/renderer/components/ui/dropdown-menu'
 import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
 
@@ -24,5 +25,15 @@ export function ComposerMenuTrigger({
     >
       {children}
     </DropdownMenuTrigger>
+  )
+}
+
+export function ComposerMenuValue({ icon, label }: { icon: ReactNode; label: ReactNode }) {
+  return (
+    <>
+      {icon}
+      <span className="hidden min-w-0 truncate @[36rem]:inline">{label}</span>
+      <Icon name="chevron-down" className="hidden text-muted-foreground @[36rem]:block" />
+    </>
   )
 }

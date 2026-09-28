@@ -9,7 +9,7 @@ import {
   DropdownMenuRadioItem,
 } from '@/platform/renderer/components/ui/dropdown-menu'
 import { modeChoices } from '../turn-configuration/turn-configuration'
-import { ComposerMenuTrigger } from './composer-menu-trigger'
+import { ComposerMenuTrigger, ComposerMenuValue } from './composer-menu-trigger'
 import type { TurnConfigurationControlProps } from './turn-configuration-menu'
 
 // Extracted from the prototype's PermissionMenu (602bcce2); CONTEXT.md L2 · Session Mode.
@@ -24,9 +24,10 @@ export function ModeMenu({ choices, value, onChange }: TurnConfigurationControlP
           mode: current?.label,
         })}
       >
-        {current === undefined ? null : <Icon name={current.icon} />}
-        <span className="hidden @[36rem]:inline">{current?.label}</span>
-        <Icon name="chevron-down" className="hidden text-muted-foreground @[36rem]:block" />
+        <ComposerMenuValue
+          icon={current === undefined ? null : <Icon name={current.icon} />}
+          label={current?.label}
+        />
       </ComposerMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="w-(--size-session-menu) p-1.5">
         <DropdownMenuGroup>
