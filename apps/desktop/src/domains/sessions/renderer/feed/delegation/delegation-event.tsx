@@ -54,9 +54,8 @@ export function DelegationEvent({ row, onOpen }: { row: SubagentRow; onOpen?: ()
   const label = t(eventTranslationKey(row), { name: title })
   const stateMark = WORK_STATE_MARKS[DELEGATION_PHASE_WORK_STATES[phase]]
   return (
-    <section
-      // Named for this event, not the generic `delegation.agent.label`: several delegation events can
-      // sit in one feed, and landmarks need distinct names to stay distinguishable.
+    <article
+      // An article, not a landmark: the parent Feed and the Subagent Feed can both draw the same event.
       aria-label={label}
       className="min-w-0 py-1"
       data-event={row.event}
@@ -90,6 +89,6 @@ export function DelegationEvent({ row, onOpen }: { row: SubagentRow; onOpen?: ()
           </button>
         )}
       </div>
-    </section>
+    </article>
   )
 }

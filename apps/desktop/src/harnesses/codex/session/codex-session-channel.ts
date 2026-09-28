@@ -22,6 +22,7 @@ import {
   questionResponse,
   readCodexInteraction,
 } from './codex-session-interactions'
+import { codexSubagentContent } from './codex-subagent-content'
 import { readCodexThreadStatus } from './codex-thread-status'
 
 export type CodexLiveClient = {
@@ -479,6 +480,22 @@ export class CodexSessionChannel implements LiveSessionChannel {
     })
   }
 
+  private subagentItem(
+    item: z.infer<typeof itemNotificationSchema>['item'],
+    turnId: string,
+    phase: 'started' | 'completed',
+  ) {
+    const delegation = codexSubagentContent(item)
+    if (delegation === null) return this.reject(`item/${phase}`)
+    this.emitFeed({
+      type: 'content',
+      commandId: this.active?.commandId ?? null,
+      turnId,
+      vendorEventId: item.id,
+      content: delegation,
+    })
+  }
+
   private userItem(item: z.infer<typeof itemNotificationSchema>['item'], turnId: string) {
     if (item.content === undefined)
       return this.reject('item/completed: missing userMessage content')
@@ -498,6 +515,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
     if (!codexThreadItemTypeSchema.safeParse(item.type).success)
       return this.reject(`item/${phase}: ${item.type}`)
     if (item.type === 'commandExecution') return this.commandItem(item, turnId, phase)
+    if (item.type === 'subAgentActivity') return this.subagentItem(item, turnId, phase)
     if (phase === 'started') return
     if (item.type === 'userMessage') return this.userItem(item, turnId)
     if (item.type !== 'agentMessage') return

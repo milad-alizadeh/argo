@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { CodexRequest } from '../app-server/codex-app-server-client'
 import { codexCommandContent } from './codex-command-content'
+import { codexSubagentContent } from './codex-subagent-content'
 
 const textContentSchema = z.object({ type: z.literal('text'), text: z.string() }).passthrough()
 export const codexThreadItemTypeSchema = z.enum([
@@ -86,6 +87,12 @@ export function codexContentFromItems(items: unknown[], fallbackPrefix: string):
       const command = codexCommandContent(rawItem, 'completed')
       if (command === null) throw new Error('Invalid Codex commandExecution history item')
       content.push(command)
+      return
+    }
+    if (parsed.type === 'subAgentActivity') {
+      const delegation = codexSubagentContent(rawItem)
+      if (delegation === null) throw new Error('Invalid Codex subAgentActivity history item')
+      content.push(delegation)
       return
     }
     const role = threadItemRoles[parsed.type]
