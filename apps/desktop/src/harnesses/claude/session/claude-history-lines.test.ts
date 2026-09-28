@@ -86,6 +86,19 @@ test('keeps its place in the chain across appends', () => {
   ).toEqual({ type: 'rewritten' })
 })
 
+test('takes its place in the chain from the lines already in the file', () => {
+  const read = openClaudeHistoryReader([
+    '{"type":"user","uuid":"u-1","parentUuid":null,"message":{"role":"user","content":"one"}}',
+    '{"type":"user","uuid":"u-2","parentUuid":"u-1","message":{"role":"user","content":"two"}}',
+    '{"type":"user","uuid":"side","parentUuid":"u-2","isSidechain":true}',
+  ])
+  expect(
+    read([
+      '{"type":"user","uuid":"u-3","parentUuid":"u-1","message":{"role":"user","content":"fork"}}',
+    ]),
+  ).toEqual({ type: 'rewritten' })
+})
+
 test('skips transcript bookkeeping and counts a line that is not a record', () => {
   const warnings: unknown[] = []
   const warn = console.warn

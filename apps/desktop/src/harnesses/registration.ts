@@ -32,8 +32,8 @@ export type HistoryFiles = {
   directory: string
   // The Session or Subagent id a history file belongs to, or null for a file that holds none.
   ownerOf: (relativePath: string) => string | null
-  // A reader for one file from where the tail starts; it keeps what it needs across its calls.
-  openReader: () => (lines: readonly string[]) => HistoryChange
+  // A reader for the lines appended after `existing`, the newest complete lines already in the file.
+  openReader: (existing: readonly string[]) => (lines: readonly string[]) => HistoryChange
   // Whether a history line opens a turn, closes one, or says nothing about turns.
   turnOf: (line: string) => HistoryTurn | null
 }

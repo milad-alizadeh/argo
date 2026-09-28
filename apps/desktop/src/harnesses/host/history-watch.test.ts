@@ -14,23 +14,26 @@ async function directory(context: TestContext) {
   return folder
 }
 
-function files(root: string): HistoryFiles {
+function files(root: string, opened: (readonly string[])[] = []): HistoryFiles {
   return {
     directory: root,
     ownerOf: (relativePath) =>
       relativePath.endsWith('.jsonl') ? path.basename(relativePath, '.jsonl') : null,
-    openReader: () => (lines) => ({
-      type: 'appended',
-      events: lines.map(
-        (line): SessionLiveEventBody => ({
-          type: 'content',
-          commandId: null,
-          turnId: null,
-          vendorEventId: null,
-          content: { kind: 'message', id: line, role: 'assistant', text: line },
-        }),
-      ),
-    }),
+    openReader: (existing) => {
+      opened.push(existing)
+      return (lines) => ({
+        type: 'appended',
+        events: lines.map(
+          (line): SessionLiveEventBody => ({
+            type: 'content',
+            commandId: null,
+            turnId: null,
+            vendorEventId: null,
+            content: { kind: 'message', id: line, role: 'assistant', text: line },
+          }),
+        ),
+      })
+    },
     turnOf: (line) => {
       if (line.startsWith('prompt')) return 'open'
       return line.startsWith('answer') ? 'closed' : null
@@ -64,6 +67,16 @@ function tail(context: TestContext, root: string, owner: string) {
   context.after(stop)
   return changes
 }
+
+test('opens its reader with the complete lines already in the file', async (context) => {
+  const root = await directory(context)
+  const file = path.join(root, 'native-1.jsonl')
+  writeFileSync(file, 'first\nsecond\npart')
+  const opened: (readonly string[])[] = []
+  context.after(tailSessionHistory(files(root, opened), 'native-1', () => {}))
+
+  assert.deepEqual(opened, [['first', 'second']])
+})
 
 test('streams only the complete lines appended after the tail started', async (context) => {
   const root = await directory(context)

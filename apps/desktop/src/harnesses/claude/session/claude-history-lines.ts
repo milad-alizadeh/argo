@@ -93,6 +93,16 @@ function contentEvents(value: unknown, reject: () => void): SessionLiveEventBody
 
 type ChainStep = { leaf: string | null; branched: boolean; events: SessionLiveEventBody[] }
 
+type ChainRecord = z.infer<typeof chainedRecordSchema>
+
+// The chain's leaf after one record, and whether that record branched off an earlier one.
+function chainLink(leaf: string | null, record: ChainRecord): Omit<ChainStep, 'events'> | null {
+  const { uuid, parentUuid, logicalParentUuid, isSidechain } = record
+  if (uuid === undefined || isSidechain === true) return null
+  // A compaction boundary starts a new root that names the old leaf as its logical parent.
+  return { leaf: uuid, branched: leaf !== null && (parentUuid ?? logicalParentUuid) !== leaf }
+}
+
 // One transcript line against the chain's current leaf; a line that is not a record is rejected.
 function chainStep(leaf: string | null, line: string, reject: () => void): ChainStep {
   const value = recordOf(line)
@@ -101,17 +111,26 @@ function chainStep(leaf: string | null, line: string, reject: () => void): Chain
     reject()
     return { leaf, branched: false, events: [] }
   }
-  const { uuid, parentUuid, logicalParentUuid, isSidechain } = record.data
-  if (uuid === undefined || isSidechain === true) return { leaf, branched: false, events: [] }
-  // A compaction boundary starts a new root that names the old leaf as its logical parent.
-  const branched = leaf !== null && (parentUuid ?? logicalParentUuid) !== leaf
-  return { leaf: uuid, branched, events: contentEvents(value, reject) }
+  const link = chainLink(leaf, record.data)
+  if (link === null) return { leaf, branched: false, events: [] }
+  return { ...link, events: contentEvents(value, reject) }
+}
+
+function leafOf(lines: readonly string[]): string | null {
+  let leaf: string | null = null
+  for (const line of lines) {
+    const record = chainedRecordSchema.safeParse(recordOf(line))
+    if (record.success) leaf = chainLink(leaf, record.data)?.leaf ?? leaf
+  }
+  return leaf
 }
 
 // A full read follows the parent chain from the newest leaf, so a record that branches off an
 // earlier one cannot be read as an append: the reader reports the file as rewritten instead.
-export function openClaudeHistoryReader(): (lines: readonly string[]) => HistoryChange {
-  let leaf: string | null = null
+export function openClaudeHistoryReader(
+  existing: readonly string[] = [],
+): (lines: readonly string[]) => HistoryChange {
+  let leaf = leafOf(existing)
   return (lines) => {
     let rejected = 0
     const reject = () => {

@@ -8,6 +8,7 @@ const WITNESS_BYTES = 64
 const TURN_SCAN_CHUNK_BYTES = 64 * 1024
 // A turn whose opening prompt lies further back than this reads as no marker.
 const TURN_SCAN_BYTES = 1024 * 1024
+const EXISTING_LINE_BYTES = 1024 * 1024
 
 function watchDirectory(
   directory: string,
@@ -76,6 +77,15 @@ function startingPosition(file: string | null): TailPosition | null {
   }
 }
 
+// The complete lines in the window that ends at the tail's position, for a reader to start from.
+function existingLines(position: TailPosition | null): string[] {
+  if (position === null) return []
+  const start = Math.max(0, position.offset - EXISTING_LINE_BYTES)
+  const bytes = readRange(position.file, start, position.offset)
+  const firstBreak = start === 0 ? -1 : bytes.indexOf('\n')
+  return completeLines(bytes.subarray(firstBreak + 1)).lines
+}
+
 type Growth =
   | { type: 'missing' }
   | { type: 'rewritten'; position: TailPosition }
@@ -126,11 +136,11 @@ export function tailSessionHistory(
   changed: (change: HistoryChange) => void,
 ): () => void {
   let position = startingPosition(locate(files, owner))
-  let read = files.openReader()
+  let read = files.openReader(existingLines(position))
   let timer: ReturnType<typeof setTimeout> | null = null
 
   const rewritten = () => {
-    read = files.openReader()
+    read = files.openReader(existingLines(position))
     changed({ type: 'rewritten' })
   }
   const readAppended = (file: string) => {
