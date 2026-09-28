@@ -17,6 +17,7 @@ function database() {
     first_prompt TEXT,
     cwd TEXT,
     activity_at INTEGER,
+    subagents_read_at INTEGER,
     created_at INTEGER NOT NULL DEFAULT (CAST(unixepoch('subsec') * 1000 AS INTEGER)),
     updated_at INTEGER NOT NULL DEFAULT (CAST(unixepoch('subsec') * 1000 AS INTEGER))
   ); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);`)

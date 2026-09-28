@@ -552,11 +552,11 @@ export const DelegationEvents: StoryObj<typeof LinkedFeed> = {
   render: (args) => <LinkedFeed {...args} />,
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    // Each event's region is now named for that event (#2623), not the shared generic label.
+    // Each event's article is named for that event (#2623), not the shared generic label.
     await expect(
-      canvas.getAllByRole('region', { name: /Review the Feed disclosure for keyboard access\./ }),
+      canvas.getAllByRole('article', { name: /Review the Feed disclosure for keyboard access\./ }),
     ).toHaveLength(3)
-    const agent = canvas.getByRole('region', {
+    const agent = canvas.getByRole('article', {
       name: 'Review the Feed disclosure for keyboard access. sent a reply to the main Session',
     })
     await expect(agent).toHaveTextContent('Done')
@@ -1057,7 +1057,7 @@ export const AllRowVariations: Story = {
     await expect(canvas.getByRole('button', { name: 'Ran a command, edited a file' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Ran a command' })).toBeVisible()
     await expect(
-      canvas.getByRole('region', {
+      canvas.getByRole('article', {
         name: 'Review the Feed disclosure for keyboard access. started',
       }),
     ).toBeVisible()

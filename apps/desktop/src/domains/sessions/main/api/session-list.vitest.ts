@@ -24,6 +24,7 @@ function sessionListCaller(sessions: Record<string, unknown> = {}) {
     first_prompt TEXT,
     cwd TEXT,
     activity_at INTEGER,
+    subagents_read_at INTEGER,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
   ); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);
@@ -35,6 +36,13 @@ function sessionListCaller(sessions: Record<string, unknown> = {}) {
     state TEXT NOT NULL,
     created_at TEXT NOT NULL,
     updated_at INTEGER NOT NULL DEFAULT 1
+  );
+  CREATE TABLE session_subagent (
+    session_id TEXT NOT NULL,
+    subagent_id TEXT NOT NULL,
+    label TEXT,
+    state TEXT NOT NULL,
+    PRIMARY KEY (session_id, subagent_id)
   );`)
   const database = databaseFrom(client)
   const supervisor = {

@@ -11,12 +11,14 @@ import {
 } from 'xstate'
 import type { Database } from '@/database/database'
 import type { SessionDiscovery } from '@/domains/sessions/api/session-discovery'
+import type { SessionHistoryReader } from '@/domains/sessions/api/session-history'
 import type { Harness } from '@/harnesses/harness'
 import {
   type SessionSyncStatus,
   type SessionSyncStatusStore,
   sessionSyncStatusSchema,
 } from '../api/session-sync-status'
+import { refreshSessionSubagents } from '../database/session-subagents'
 import { sessionSyncMachine } from './session-sync-machine'
 import { knownSessionIds, matchSessionsToProjects, saveSessionBatch } from './session-sync-records'
 
@@ -25,6 +27,7 @@ type RegisteredHarnesses = Partial<
     Harness,
     {
       sessionDiscovery: SessionDiscovery
+      readHistory: SessionHistoryReader
     }
   >
 >
@@ -33,6 +36,7 @@ export type SessionSyncActorInput = {
   database: Database
   harness: Harness
   sessionDiscovery: SessionDiscovery
+  readHistory: SessionHistoryReader
 }
 
 type SessionSyncEvent =
@@ -83,7 +87,32 @@ const sessionSyncActor = fromCallback<
   SessionSyncActorInput,
   SessionSyncEvent
 >(({ input, sendBack }) => {
-  const { database, harness, sessionDiscovery } = input
+  const { database, harness, sessionDiscovery, readHistory } = input
+  let stopped = false
+  // Subagents come from full history reads, so they run after the listing has committed.
+  const completeWithSubagents = async () => {
+    try {
+      const { failed } = await refreshSessionSubagents({
+        database,
+        harness,
+        readHistory,
+        committed: () =>
+          sendBack({
+            type: 'SyncCommitted',
+            harness,
+          }),
+        stopped: () => stopped,
+      })
+      if (failed > 0) console.warn(`${harness} Session sync could not read ${failed} histories.`)
+    } catch (error) {
+      console.warn(`${harness} Session sync could not store Subagents.`, error)
+    }
+    if (!stopped)
+      sendBack({
+        type: 'SyncCompleted',
+        harness,
+      })
+  }
   const actor = createActor(
     sessionSyncMachine.provide({
       actors: {
@@ -116,10 +145,7 @@ const sessionSyncActor = fromCallback<
         console.warn(
           `${harness} Session sync skipped ${snapshot.context.skipped} malformed records.`,
         )
-      sendBack({
-        type: 'SyncCompleted',
-        harness,
-      })
+      void completeWithSubagents()
     }
     if (snapshot.matches('Failed'))
       sendBack({
@@ -132,6 +158,7 @@ const sessionSyncActor = fromCallback<
     type: 'Start',
   })
   return () => {
+    stopped = true
     subscription.unsubscribe()
     actor.stop()
   }
@@ -176,6 +203,10 @@ type SupervisorEvent =
   | {
       type: 'Shutdown'
     }
+  | {
+      type: 'ReplayRefresh'
+      harness: Harness
+    }
   | SessionSyncEvent
 
 export type SessionSyncSupervisorCommand = {
@@ -188,6 +219,8 @@ export const sessionSyncSupervisorMachine = setup({
     context: {} as {
       database: Database
       active: Partial<Record<Harness, true>>
+      // A Refresh that found a Harness still syncing, run again once it finishes.
+      pending: Partial<Record<Harness, true>>
       harnesses: RegisteredHarnesses
     },
     events: {} as SupervisorEvent,
@@ -197,17 +230,32 @@ export const sessionSyncSupervisorMachine = setup({
     status: sessionSyncStatusActor,
   },
   actions: {
-    dispatchSessionDiscoveries: enqueueActions(({ context, enqueue }) => {
-      for (const harnessId of Object.keys(context.harnesses)) {
-        const harness = harnessId as Harness
-        const sessionDiscovery = context.harnesses[harness]?.sessionDiscovery
-        if (sessionDiscovery === undefined || context.active[harness] === true) continue
+    dispatchSessionDiscoveries: enqueueActions(({ context, event, enqueue }) => {
+      const harnesses =
+        event.type === 'ReplayRefresh'
+          ? [
+              event.harness,
+            ]
+          : (Object.keys(context.harnesses) as Harness[])
+      for (const harness of harnesses) {
+        const registration = context.harnesses[harness]
+        if (registration === undefined) continue
+        if (context.active[harness] === true) {
+          enqueue.assign({
+            pending: ({ context: current }) => ({
+              ...current.pending,
+              [harness]: true,
+            }),
+          })
+          continue
+        }
         enqueue.spawnChild('sync', {
           id: `session-sync-${harness}`,
           input: {
             database: context.database,
             harness,
-            sessionDiscovery,
+            sessionDiscovery: registration.sessionDiscovery,
+            readHistory: registration.readHistory,
           },
         })
         enqueue.assign({
@@ -218,15 +266,24 @@ export const sessionSyncSupervisorMachine = setup({
         })
       }
     }),
-    releaseSync: enqueueActions(({ event, enqueue }) => {
+    releaseSync: enqueueActions(({ context, event, enqueue }) => {
       if (event.type !== 'SyncCompleted' && event.type !== 'SyncFailed') return
       enqueue(stopChild(`session-sync-${event.harness}`))
       enqueue.assign({
-        active: ({ context }) => {
-          const { [event.harness]: _finished, ...remaining } = context.active
+        active: ({ context: current }) => {
+          const { [event.harness]: _finished, ...remaining } = current.active
+          return remaining
+        },
+        pending: ({ context: current }) => {
+          const { [event.harness]: _replayed, ...remaining } = current.pending
           return remaining
         },
       })
+      if (context.pending[event.harness] === true)
+        enqueue.raise({
+          type: 'ReplayRefresh',
+          harness: event.harness,
+        })
     }),
     reportStatus: sendTo('status', ({ event }) => {
       assertEvent(event, 'SyncStatus')
@@ -250,6 +307,7 @@ export const sessionSyncSupervisorMachine = setup({
   context: ({ input }) => ({
     database: input.database,
     active: {},
+    pending: {},
     harnesses: input.harnesses,
   }),
   invoke: {
@@ -264,6 +322,9 @@ export const sessionSyncSupervisorMachine = setup({
     Running: {
       on: {
         Refresh: {
+          actions: 'dispatchSessionDiscoveries',
+        },
+        ReplayRefresh: {
           actions: 'dispatchSessionDiscoveries',
         },
         SyncStatus: {
