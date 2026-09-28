@@ -882,7 +882,7 @@ export const Open: Story = {
     expectNoSessionIdOrWorkspaceInHeader(canvasElement)
     await expect(canvas.getByText('Branch')).toBeVisible()
     await expect(canvas.getByText('feature/composer-review')).toBeVisible()
-    expectHeaderActionsAtTrailingEdge(canvasElement)
+    await waitFor(() => expectHeaderActionsAtTrailingEdge(canvasElement), { timeout: 5000 })
     await expectCollapsedSidebarDoesNotCoverSessionHeader(canvasElement)
     await waitFor(() =>
       expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
@@ -890,7 +890,7 @@ export const Open: Story = {
         'composer-review',
       ),
     )
-    expectTranscriptRowsDoNotOverlap(canvasElement)
+    await waitFor(() => expectTranscriptRowsDoNotOverlap(canvasElement), { timeout: 5000 })
 
     const openInspector = canvas.queryByRole('button', { name: 'Open Session inspector' })
     if (openInspector) await userEvent.click(openInspector)
@@ -900,7 +900,7 @@ export const Open: Story = {
       ).toBeInTheDocument(),
     )
     await userEvent.click(canvas.getByRole('button', { name: 'Collapse Session inspector' }))
-    expectSessionsSidebarIsOpen(canvasElement)
+    await waitFor(() => expectSessionsSidebarIsOpen(canvasElement), { timeout: 5000 })
 
     // Picking a Subagent in the header opens the collapsed inspector on its transcript.
     await pickSubagent(canvas)
