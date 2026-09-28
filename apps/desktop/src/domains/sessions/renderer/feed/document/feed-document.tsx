@@ -102,7 +102,6 @@ export function FeedDocument({ reading, liveFacts, actions }: FeedDocumentProps)
   const live = liveReading(reading, liveFacts)
   const toolGroups = useRef(new ToolGroupState()).current
   const revealCache = useRef<RevealCache>(new Map()).current
-  const revealsFor = useReveals()
   const DrawnRow = useDrawnRow({
     sessionId: live.reading.sessionId,
     activeEvidenceId: actions.activeEvidenceId,
@@ -119,6 +118,7 @@ export function FeedDocument({ reading, liveFacts, actions }: FeedDocumentProps)
     revision: live.reading.revision,
     rows: live.reading.rows,
   })
+  const reveals = useReveals(settled)
   const lastRow = live.reading.rows.at(-1)
   const tailIsLive = lastRow !== undefined && isFeedRowStreaming(lastRow)
   const streamingRowId = live.isRunning && tailIsLive ? lastRow.id : null
@@ -138,7 +138,7 @@ export function FeedDocument({ reading, liveFacts, actions }: FeedDocumentProps)
     onMeasurementsChange: actions.onMeasurementsChange ?? ignoreMeasurementsChange,
     onScrollPositionChange: actions.onScrollPositionChange,
     DrawnRow,
-    revealsFor,
+    reveals,
     streamingRowId,
     tail,
     emptyText: [t('empty.blank.title'), t('empty.blank.description')],

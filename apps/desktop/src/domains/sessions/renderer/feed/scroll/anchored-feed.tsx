@@ -1,4 +1,4 @@
-import type { VirtualItem } from '@tanstack/virtual-core'
+import type { VirtualItem, Virtualizer } from '@tanstack/virtual-core'
 import type { ReactNode } from 'react'
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -30,11 +30,46 @@ type AnchoredFeedProps = {
   onScrollPositionChange: (sessionId: string, position: number) => void
   rows: readonly SessionFeedRow[]
   settled: Settled
-  revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>
+  reveals: ReadonlyMap<string, Reveal>
   streamingRowId: string | null
   // Markers after the last row (Working, compaction, handoff), scrolled with it clear of the composer.
   tail: ReactNode
   historyLabel: string
+}
+
+function visibleRowAnchor(viewport: HTMLElement, rows: readonly SessionFeedRow[]) {
+  const view = viewport.getBoundingClientRect()
+  for (const element of viewport.querySelectorAll<HTMLElement>('[data-index]')) {
+    const bounds = element.getBoundingClientRect()
+    if (bounds.bottom <= view.top || bounds.top >= view.bottom) continue
+    const row = rows[Number(element.dataset.index)]
+    if (row !== undefined) return { id: row.id, offset: bounds.top - view.top }
+  }
+  return null
+}
+
+function currentRowAnchor(
+  viewport: HTMLElement,
+  rows: readonly SessionFeedRow[],
+  virtualizer: Virtualizer<HTMLElement, Element>,
+) {
+  const mounted = visibleRowAnchor(viewport, rows)
+  if (mounted !== null) return mounted
+  const measured = virtualizer.getVirtualItemForOffset(viewport.scrollTop)
+  if (measured === undefined) return null
+  const row = rows[measured.index]
+  return row === undefined ? null : { id: row.id, offset: measured.start - viewport.scrollTop }
+}
+
+function scrollToAnchor(
+  virtualizer: Virtualizer<HTMLElement, Element>,
+  rows: readonly SessionFeedRow[],
+  id: string,
+) {
+  const index = rows.findIndex((row) => row.id === id)
+  if (index < 0) return false
+  virtualizer.scrollToIndex(index, { align: 'start' })
+  return true
 }
 
 // TanStack chat pattern: https://tanstack.com/virtual/latest/docs/chat.
@@ -52,7 +87,7 @@ export function AnchoredFeed({
   onScrollPositionChange,
   rows,
   settled,
-  revealsFor,
+  reveals,
   streamingRowId,
   tail,
   historyLabel,
@@ -71,36 +106,76 @@ export function AnchoredFeed({
     padding,
     onChange: tailFollow.onChange,
   })
-  const olderAnchor = useRef<{ id: string; offset: number; count: number } | null>(null)
+  const olderAnchor = useRef<{ id: string; offset: number; firstId: string } | null>(null)
+  const visibleAnchor = useRef<{ id: string; offset: number } | null>(null)
+  const pendingAnchor = useRef<{ id: string; offset: number } | null>(null)
+  const committedRows = useRef(rows)
   const startOlderLoad = useCallback(() => {
     if (onLoadOlder === undefined || olderAnchor.current !== null) return
     if (viewport === null) {
       onLoadOlder()
       return
     }
-    const firstVisible = virtualizer
-      .getVirtualItems()
-      .find((item) => item.end > viewport.scrollTop && rows[item.index] !== undefined)
-    if (firstVisible === undefined) {
+    // The DOM gives an exact anchor; measurements cover a fast scroll before rows mount.
+    const anchor = currentRowAnchor(viewport, rows, virtualizer)
+    if (anchor === null) {
       onLoadOlder()
       return
     }
-    const row = rows[firstVisible.index]
-    if (row === undefined) return
     olderAnchor.current = {
-      id: row.id,
-      offset: firstVisible.start - viewport.scrollTop,
-      count: rows.length,
+      ...anchor,
+      firstId: rows[0]?.id ?? anchor.id,
     }
     onLoadOlder()
   }, [onLoadOlder, rows, viewport, virtualizer])
   useLayoutEffect(() => {
     const anchor = olderAnchor.current
-    if (anchor === null || viewport === null || rows.length <= anchor.count) return
+    const firstId = committedRows.current[0]?.id
+    const addedBefore = firstId === undefined ? 0 : rows.findIndex((row) => row.id === firstId)
+    if (viewport !== null && addedBefore > 0) {
+      const preserved = anchor ?? visibleAnchor.current
+      if (preserved !== null && scrollToAnchor(virtualizer, rows, preserved.id))
+        pendingAnchor.current = preserved
+    }
+    if (anchor !== null && rows.findIndex((row) => row.id === anchor.firstId) > 0)
+      olderAnchor.current = null
+    committedRows.current = rows
+  }, [rows, viewport, virtualizer])
+  useLayoutEffect(() => {
+    const anchor = pendingAnchor.current
+    if (anchor === null || viewport === null) return
     const index = rows.findIndex((row) => row.id === anchor.id)
-    const start = virtualizer.measurementsCache[index]?.start
-    if (start !== undefined) viewport.scrollTop = Math.max(0, start - anchor.offset)
-    olderAnchor.current = null
+    const element = viewport.querySelector<HTMLElement>(`[data-index="${index}"]`)
+    if (element === null) return
+    const offset = element.getBoundingClientRect().top - viewport.getBoundingClientRect().top
+    if (Math.abs(offset - anchor.offset) > 0.5)
+      virtualizer.scrollToOffset(viewport.scrollTop + offset - anchor.offset)
+    pendingAnchor.current = null
+  })
+  useLayoutEffect(() => {
+    if (viewport === null) return
+    const anchor = visibleRowAnchor(viewport, rows)
+    if (anchor !== null) visibleAnchor.current = anchor
+  })
+  useLayoutEffect(() => {
+    if (viewport === null) return
+    let frame: number | null = null
+    const rememberAnchor = () => {
+      const anchor = currentRowAnchor(viewport, rows, virtualizer)
+      // Keep this scroll even if a prepend cancels the next frame.
+      if (anchor !== null) visibleAnchor.current = anchor
+      if (frame !== null) cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        const settledAnchor = visibleRowAnchor(viewport, rows)
+        if (settledAnchor !== null) visibleAnchor.current = settledAnchor
+        frame = null
+      })
+    }
+    viewport.addEventListener('scroll', rememberAnchor, { passive: true })
+    return () => {
+      viewport.removeEventListener('scroll', rememberAnchor)
+      if (frame !== null) cancelAnimationFrame(frame)
+    }
   }, [rows, viewport, virtualizer])
   useEffect(() => {
     if (olderError) olderAnchor.current = null
@@ -177,7 +252,7 @@ export function AnchoredFeed({
         FeedRow={FeedRow}
         gap={padding.start}
         promptIndex={promptIndex}
-        reveals={revealsFor(settled)}
+        reveals={reveals}
         rows={rows}
         setViewport={attachViewport}
         settled={settled}
