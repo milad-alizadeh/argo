@@ -32,13 +32,13 @@ const t = initTRPC.create()
 
 function host() {
   const sent: unknown[] = []
-  const listeners = new Map<string, () => void>()
+  const listeners = new Map<string, (details?: unknown) => void>()
   let destroyed = false
   const webContents = {
     id: 7,
     isDestroyed: () => destroyed,
     send: (_channel: string, message: unknown) => sent.push(message),
-    on: (event: string, listener: () => void) => listeners.set(event, listener),
+    on: (event: string, listener: (details?: unknown) => void) => listeners.set(event, listener),
     once: (event: string, listener: () => void) => listeners.set(event, listener),
     removeListener: (event: string) => listeners.delete(event),
   }
@@ -55,7 +55,8 @@ function host() {
       sender: webContents,
       senderFrame: { url: 'http://localhost/#/sessions' },
     } as unknown as IpcMainInvokeEvent,
-    navigate: () => listeners.get('did-start-navigation')?.(),
+    navigate: (isSameDocument: boolean) =>
+      listeners.get('did-start-navigation')?.({ isMainFrame: true, isSameDocument }),
     destroy: () => {
       destroyed = true
       listeners.get('destroyed')?.()
@@ -112,7 +113,7 @@ test('trusted tRPC transport delivers the initial value and later events, then s
   }
 })
 
-test('trusted tRPC transport stops on navigation and shutdown, and does not deliver to destroyed contents', async () => {
+test('trusted tRPC transport keeps hash routes, stops on document navigation and shutdown, and does not deliver to destroyed contents', async () => {
   let emit: ((value: string) => void) | undefined
   let unsubscribed = 0
   const router = t.router({
@@ -140,7 +141,9 @@ test('trusted tRPC transport stops on navigation and shutdown, and does not deli
       type: 'subscription',
       input: undefined,
     })
-    hostWindow.navigate()
+    hostWindow.navigate(true)
+    expect(unsubscribed).toBe(0)
+    hostWindow.navigate(false)
     expect(unsubscribed).toBe(1)
     await getHandler()(hostWindow.event, {
       id: 3,
