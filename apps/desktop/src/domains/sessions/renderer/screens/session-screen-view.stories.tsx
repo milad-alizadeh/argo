@@ -904,6 +904,52 @@ export const SwitchingKeepsScreenAreasOnTheSelectedSession: Story = {
   },
 }
 
+// A Session switch retires the work pick and reopens nothing (comment in work-selection.ts).
+// Returning to a Session whose picked Shell is still open must not read as a fresh pick either:
+// the reader already dismissed that reveal by collapsing it, and switching away and back names no
+// new one (#2852).
+export const SwitchingBackDoesNotReopenADismissedInspector: Story = {
+  beforeEach: () => sessionSelectionHost(SESSION_ROSTER),
+  render: () => <ProductionSessionSelectionScreen />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() =>
+      expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
+        'data-session',
+        'composer-review',
+      ),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: /^Subagents/ }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: /Interface review/ }))
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: 'Collapse Session inspector' })).toBeVisible(),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Collapse Session inspector' }))
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeVisible(),
+    )
+
+    await userEvent.click(canvas.getByRole('button', { name: /Add Markdown typing shortcuts/ }))
+    await waitFor(() =>
+      expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
+        'data-session',
+        'shortcut-review',
+      ),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: /Finish Session composer review/ }))
+    await waitFor(() =>
+      expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
+        'data-session',
+        'composer-review',
+      ),
+    )
+    await expect(
+      canvas.getByRole('button', { name: 'Collapse Session inspector' }),
+    ).not.toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeVisible()
+  },
+}
+
 export const FormattedHeaderTitle: Story = {
   render: () => (
     <ReviewScreen titleText="[$implement](/skills/implement/SKILL.md) [https://example.com/guide](https://example.com/guide)" />

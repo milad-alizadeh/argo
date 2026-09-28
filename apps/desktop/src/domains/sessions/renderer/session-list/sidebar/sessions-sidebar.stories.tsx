@@ -773,6 +773,41 @@ export const CommittedRefreshUpdatesSessionList: Story = {
   },
 }
 
+// The list re-sorts by activity, so a row that moves to a new index must carry its DOM node with
+// it instead of swapping content into whatever node sits at that index now (#2852): the swap is
+// what restarts the harness spin and status-dot transitions on unrelated rows, and it also drops
+// keyboard focus a reader was holding on a row that only moved, never disappeared.
+export const ReorderKeepsRowFocus: Story = {
+  beforeEach: () => {
+    sessionsHost = withSessionsHost([
+      { ...session, id: 'alpha', title: { text: 'Alpha session', source: 'first-prompt' } },
+      { ...session, id: 'beta', title: { text: 'Beta session', source: 'first-prompt' } },
+    ])
+    return () => {
+      sessionsHost?.restore()
+      sessionsHost = null
+    }
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const beta = await canvas.findByRole('button', { name: /Beta session/ })
+    beta.focus()
+    await expect(beta).toHaveFocus()
+    sessionsHost?.setSessions([
+      { ...session, id: 'beta', title: { text: 'Beta session', source: 'first-prompt' } },
+      { ...session, id: 'alpha', title: { text: 'Alpha session', source: 'first-prompt' } },
+    ])
+    publishSessionSyncEvent({ type: 'committed' })
+    await waitFor(() => {
+      const sessionButtons = canvas
+        .getAllByRole('button')
+        .filter((button) => button.dataset.sessionId !== undefined)
+      expect(sessionButtons[0]?.dataset.sessionId).toBe('beta')
+    })
+    await expect(canvas.getByRole('button', { name: /Beta session/ })).toHaveFocus()
+  },
+}
+
 // A title that fell back to the opening prompt draws its skill mention as a badge, not the raw
 // markdown-link brackets (#2049).
 export const SkillMentionTitle: Story = {
