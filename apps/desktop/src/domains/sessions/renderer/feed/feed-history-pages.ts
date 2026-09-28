@@ -10,6 +10,8 @@ type OlderPages = {
 
 export type OlderPagesByChain = Record<string, OlderPages>
 
+const MAX_RETAINED_FEED_CHAINS = 5
+
 export function feedChainKey(sessionId: SessionId | null, subagentId: string | null) {
   return JSON.stringify([sessionId, subagentId])
 }
@@ -26,7 +28,32 @@ function updateOlderPages(
     const { [chainKey]: _removed, ...remaining } = previous
     return remaining
   }
-  return { ...previous, [chainKey]: next }
+  return withRecentChain(previous, chainKey, next)
+}
+
+function withRecentChain(
+  previous: OlderPagesByChain,
+  chainKey: string,
+  pages: OlderPages,
+): OlderPagesByChain {
+  const { [chainKey]: _previous, ...remaining } = previous
+  const next = { ...remaining, [chainKey]: pages }
+  const keys = Object.keys(next)
+  if (keys.length <= MAX_RETAINED_FEED_CHAINS) return next
+  const retained: OlderPagesByChain = {}
+  for (const key of keys.slice(-MAX_RETAINED_FEED_CHAINS)) {
+    const olderPages = next[key]
+    if (olderPages !== undefined) retained[key] = olderPages
+  }
+  return retained
+}
+
+export function touchOlderFeedChain(
+  previous: OlderPagesByChain,
+  chainKey: string,
+): OlderPagesByChain {
+  const current = previous[chainKey]
+  return current === undefined ? previous : withRecentChain(previous, chainKey, current)
 }
 
 async function refreshExpiredFeedCursor(
@@ -34,6 +61,11 @@ async function refreshExpiredFeedCursor(
   refreshLatest: () => Promise<SessionFeedPage | null>,
   setOlderByChain: Dispatch<SetStateAction<OlderPagesByChain>>,
 ) {
+  setOlderByChain((previous) =>
+    updateOlderPages(previous, chainKey, (current) =>
+      current === undefined ? current : { ...current, pages: [] },
+    ),
+  )
   try {
     const refreshed = await refreshLatest()
     setOlderByChain((previous) =>
@@ -42,6 +74,7 @@ async function refreshExpiredFeedCursor(
           ? current
           : {
               ...current,
+              pages: [],
               cursor: refreshed?.olderCursor ?? null,
               loading: false,
               failed: false,

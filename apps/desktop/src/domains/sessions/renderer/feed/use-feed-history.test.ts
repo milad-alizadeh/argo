@@ -1,7 +1,12 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { expect, test } from 'vitest'
 import type { SessionFeed, SessionFeedPage } from '../types'
-import { feedChainKey, loadOlderFeedPage, type OlderPagesByChain } from './feed-history-pages'
+import {
+  feedChainKey,
+  loadOlderFeedPage,
+  type OlderPagesByChain,
+  touchOlderFeedChain,
+} from './feed-history-pages'
 import { mergedContent } from './use-feed-history'
 
 const sessionAKey = feedChainKey('session-a', null)
@@ -167,6 +172,29 @@ test('a pending older cursor is requested only once per Session', async () => {
   expect(calls).toBe(1)
 })
 
+test('retains at most five history chains and keeps recently used chains', async () => {
+  const state = { current: {} as OlderPagesByChain }
+  for (const sessionId of ['session-a', 'session-b', 'session-c', 'session-d', 'session-e']) {
+    await loadPage(state, {
+      sessionId,
+      cursor: `${sessionId}-cursor`,
+      readPage: async () => page([`${sessionId}-item`], sessionId),
+    })
+  }
+
+  state.current = touchOlderFeedChain(state.current, sessionAKey)
+  await loadPage(state, {
+    sessionId: 'session-f',
+    cursor: 'session-f-cursor',
+    readPage: async () => page(['session-f-item'], 'session-f'),
+  })
+
+  expect(Object.keys(state.current)).toHaveLength(5)
+  expect(state.current[sessionAKey]).toBeDefined()
+  expect(state.current[feedChainKey('session-b', null)]).toBeUndefined()
+  expect(state.current[feedChainKey('session-f', null)]).toBeDefined()
+})
+
 test('a Session A page failure keeps Session B history intact', async () => {
   const sessionBPages = olderPageState({
     ids: ['b-one'],
@@ -195,7 +223,7 @@ test('a Session A page failure keeps Session B history intact', async () => {
 
 for (const { name, refreshLatest, expected } of [
   {
-    name: 'keeps loaded pages and adopts the refreshed cursor',
+    name: 'discards loaded pages and adopts the refreshed cursor',
     refreshLatest: async () => ({
       ...page(['a-two'], 'refreshed'),
       olderCursor: 'refreshed-cursor',
@@ -235,7 +263,7 @@ for (const { name, refreshLatest, expected } of [
 
     expect(state.current[sessionAKey]).toMatchObject({
       ...expected,
-      pages: sessionAPages.pages,
+      pages: [],
     })
     expect(state.current[sessionBKey]).toBe(sessionBPages)
   })

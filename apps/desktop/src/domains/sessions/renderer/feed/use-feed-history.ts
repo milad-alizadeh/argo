@@ -1,9 +1,14 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionContractError } from '../session-contract-error'
 import type { SessionFeedPage, SessionId } from '../types'
-import { feedChainKey, loadOlderFeedPage, type OlderPagesByChain } from './feed-history-pages'
+import {
+  feedChainKey,
+  loadOlderFeedPage,
+  type OlderPagesByChain,
+  touchOlderFeedChain,
+} from './feed-history-pages'
 import {
   readSessionFeedPage,
   refreshSessionFeed,
@@ -41,6 +46,9 @@ function useOlderPages({
   const key = feedChainKey(sessionId, subagentId)
   const [olderByChain, setOlderByChain] = useState<OlderPagesByChain>({})
   const loadingKeys = useRef(new Set<string>())
+  useEffect(() => {
+    setOlderByChain((previous) => touchOlderFeedChain(previous, key))
+  }, [key])
   const current = olderByChain[key] ?? null
   const cursor = current === null ? latestCursor : current.cursor
   const loadOlder = useCallback(async () => {
