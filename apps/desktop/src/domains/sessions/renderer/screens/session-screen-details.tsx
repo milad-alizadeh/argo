@@ -258,7 +258,6 @@ export function SessionComposerArea({
   })
   const { focusComposerAfterRetry, clearRecoveryFocus, retryCatalog, retryDraft } =
     useComposerRetryFocus(catalogQuery, draft)
-  const send = useSessionComposerSend({ draft, identity, projectId: cockpit.project?.id ?? null })
   const onInterrupt = useSessionInterrupt(selectedSessionId, harness)
   if (session?.locked === true) return <OpenElsewhere onRetry={null} />
   if (draft === null)
@@ -288,7 +287,6 @@ export function SessionComposerArea({
       onRefreshCatalog={refreshCatalog}
       onRetryCatalog={retryCatalog}
       onRetryDraft={retryDraft}
-      onSend={send}
     />
   )
 }
@@ -310,7 +308,6 @@ function ReadySessionComposer({
   onRefreshCatalog,
   onRetryCatalog,
   onRetryDraft,
-  onSend,
   isRunning,
   onInterrupt,
 }: Pick<
@@ -327,11 +324,15 @@ function ReadySessionComposer({
   onRefreshCatalog: () => void
   onRetryCatalog: () => void
   onRetryDraft: () => void
-  onSend: NonNullable<Parameters<typeof ComposerForm>[0]['onSend']>
   isRunning: boolean
   onInterrupt?: () => Promise<boolean>
 }) {
   const { t } = useTranslation('sessions')
+  const onSend = useSessionComposerSend({
+    draft,
+    identity,
+    projectId: identity.kind === 'draft' ? identity.projectId : null,
+  })
   return (
     <>
       {permission.failure ? <Failure message={permission.failure} /> : null}
