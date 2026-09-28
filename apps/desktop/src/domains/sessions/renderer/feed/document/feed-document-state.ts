@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import type { SessionFeedRow, SessionId } from '../../types'
 import type { FeedLiveFacts } from './feed-live-facts'
 
@@ -35,10 +35,16 @@ export function useHeldPrompt(
 ): FeedLiveFacts {
   const held = useRef<{ sessionId: SessionId; row: SessionFeedRow } | null>(null)
   const row = liveFacts?.optimisticRow ?? liveFacts?.settledPromptRow ?? null
-  if (sessionId !== null && row !== null) held.current = { sessionId, row }
-  else if (held.current !== null && sessionId !== held.current.sessionId) {
-    held.current = null
-  }
-  if (liveFacts === null || row !== null || held.current === null) return liveFacts
+  useLayoutEffect(() => {
+    if (sessionId !== null && row !== null) held.current = { sessionId, row }
+    else if (held.current !== null && sessionId !== held.current.sessionId) held.current = null
+  }, [row, sessionId])
+  if (
+    liveFacts === null ||
+    row !== null ||
+    held.current === null ||
+    held.current.sessionId !== sessionId
+  )
+    return liveFacts
   return { ...liveFacts, settledPromptRow: held.current.row }
 }

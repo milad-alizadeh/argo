@@ -32,6 +32,14 @@ test('does not reveal an unchanged draft', () => {
   expect(unchanged.reveals.size).toBe(0)
 })
 
+test('an abandoned reveal preview does not consume the next committed row', () => {
+  const committed = nextReveals(null, settled([]), 0).shown
+  const candidate = nextReveals(committed, settled([reply('x'.repeat(200))]), 0)
+  const delivered = nextReveals(committed, settled([reply('x'.repeat(200))]), 0)
+  expect(candidate.reveals.has('msg-1:0')).toBe(true)
+  expect(delivered.reveals.has('msg-1:0')).toBe(true)
+})
+
 test('caps how long a long reply takes to uncover', () => {
   const first = nextReveals(null, settled([]), 0)
   const long = nextReveals(first.shown, settled([reply('x'.repeat(10_000))]), 0)

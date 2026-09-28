@@ -1265,15 +1265,22 @@ function HistoryScrollHarness() {
   )
 }
 
-function SwitchingHistoryHarness() {
+function SwitchingHistoryHarness({ narrowWhileAway = false }: { narrowWhileAway?: boolean }) {
   const [selected, setSelected] = useState<'history' | 'second-history'>('history')
+  const [narrow, setNarrow] = useState(false)
   const current = selected === 'history' ? historyFeed : secondHistoryFeed
   return (
-    <div className="flex h-dvh flex-col">
+    <div className="flex h-dvh flex-col" style={{ width: narrow ? 420 : undefined }}>
       <button type="button" onClick={() => setSelected('history')}>
         Open first Session
       </button>
-      <button type="button" onClick={() => setSelected('second-history')}>
+      <button
+        type="button"
+        onClick={() => {
+          setSelected('second-history')
+          if (narrowWhileAway) setNarrow(true)
+        }}
+      >
         Open second Session
       </button>
       <div className="min-h-0 flex-1">
@@ -1536,6 +1543,33 @@ export const SessionSwitchRestoresReadingPosition: Story = {
   },
 }
 
+export const SessionSwitchRestoresPositionAfterWidthChange: Story = {
+  render: () => <SwitchingHistoryHarness narrowWhileAway />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const history = await canvas.findByLabelText('Session history')
+    await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(history.clientHeight))
+    history.scrollTop = history.scrollHeight / 2
+    fireEvent.scroll(history)
+    await waitForScrollToSettle(history)
+    const savedPosition = history.scrollTop
+    const wideWidth = history.clientWidth
+    const rowHeight = drawnRows(canvasElement)[0]?.getBoundingClientRect().height ?? 0
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Open second Session' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Open first Session' }))
+    const restored = await canvas.findByLabelText('Session history')
+    await waitFor(() => expect(restored.clientWidth).toBeLessThan(wideWidth))
+    await waitForScrollToSettle(restored)
+    await waitFor(() => expect(restored.scrollTop).toBeCloseTo(savedPosition, 1))
+    await waitFor(() =>
+      expect(drawnRows(canvasElement)[0]?.getBoundingClientRect().height).toBeGreaterThan(
+        rowHeight,
+      ),
+    )
+  },
+}
+
 // New content landing elsewhere in the Session while the reader is away must not move their
 // place: no snap to the top, no snap to the row, just the same row at the same offset they left
 // it at (#e2e-real-cheap-models).
@@ -1661,9 +1695,18 @@ export const HistoryKeepsItsAnchorWhenEarlierRowsArrive: Story = {
     history.scrollTop = history.scrollHeight / 2
     fireEvent.scroll(history)
     await waitFor(() => expect(drawnRow(canvasElement, historyAnchorId)).toBeDefined())
-    const anchoredRow = drawnRow(canvasElement, historyAnchorId)
+    const viewport = history.getBoundingClientRect()
+    const anchoredRow = drawnRows(canvasElement).find((row) => {
+      const bounds = row.getBoundingClientRect()
+      return bounds.bottom > viewport.top && bounds.top < viewport.bottom
+    })
+    if (anchoredRow === undefined) throw new Error('History needs a visible row to anchor.')
+    const anchorId = anchoredRow.getAttribute('data-feed-row')
+    if (anchorId === null) throw new Error('The anchored row needs an id.')
+    const anchorTop = anchoredRow.getBoundingClientRect().top
     await userEvent.click(canvas.getByRole('button', { name: 'Load earlier history' }))
-    await waitFor(() => expect(drawnRow(canvasElement, historyAnchorId)).toBe(anchoredRow))
+    await waitFor(() => expect(drawnRow(canvasElement, anchorId)).toBe(anchoredRow))
+    await waitFor(() => expect(anchoredRow.getBoundingClientRect().top).toBeCloseTo(anchorTop, 0))
   },
 }
 
@@ -2306,11 +2349,28 @@ export const PaginatedHistory: Story = {
   play: async ({ args, canvasElement }) => {
     const history = await within(canvasElement).findByLabelText('Session history')
     await waitFor(() => expect(history.scrollTop).toBeGreaterThan(0))
+    history.scrollTop = 200
+    fireEvent.scroll(history)
+    await waitFor(() => expect(drawnRow(canvasElement, 'paged-70')).toBeDefined())
     history.scrollTop = 0
+    const anchor = drawnRows(canvasElement).find((row) => {
+      const bounds = row.getBoundingClientRect()
+      const viewport = history.getBoundingClientRect()
+      return bounds.bottom > viewport.top && bounds.top < viewport.bottom
+    })
+    if (anchor === undefined) throw new Error('Paging needs a visible row to anchor.')
+    const anchorId = anchor.getAttribute('data-feed-row')
+    const anchorTop = anchor.getBoundingClientRect().top
     fireEvent.scroll(history)
     await waitFor(() => expect(args.onLoadOlder).toHaveBeenCalled())
-    await within(canvasElement).findByText('Saved reply 71')
     expect(history.scrollTop).toBeGreaterThan(160)
+    fireEvent.scroll(history)
+    await waitFor(() =>
+      expect(drawnRow(canvasElement, anchorId ?? '')?.getBoundingClientRect().top).toBeCloseTo(
+        anchorTop,
+        0,
+      ),
+    )
     history.scrollTop = 0
     fireEvent.scroll(history)
     await within(canvasElement).findByText('Saved reply 21')

@@ -1,4 +1,4 @@
-import { type RefObject, useCallback, useLayoutEffect, useRef } from 'react'
+import { type RefObject, useLayoutEffect, useRef } from 'react'
 import type { SessionFeedRow } from '../../types'
 import type { Settled } from '../document/use-settled-feed'
 import { isFeedRowStreaming } from '../rows/feed-row-renderers'
@@ -66,19 +66,15 @@ export function nextReveals(previous: Shown | null, settled: Settled, now: numbe
   return { shown, reveals }
 }
 
-// One answer per settled document, so a render repeated for the same document (Strict Mode, a
-// kept deck shown again) replays nothing.
-export function useReveals() {
+// Preview from the last committed rows. Only the layout effect retains a preview, so an abandoned
+// render cannot consume a reveal or replay one on an unchanged row.
+export function useReveals(settled: Settled | null) {
   const shown = useRef<Shown | null>(null)
-  const computed = useRef(new WeakMap<Settled, ReadonlyMap<string, Reveal>>())
-  return useCallback((settled: Settled) => {
-    const held = computed.current.get(settled)
-    if (held !== undefined) return held
-    const next = nextReveals(shown.current, settled, performance.now())
-    shown.current = next.shown
-    computed.current.set(settled, next.reveals)
-    return next.reveals
-  }, [])
+  const next = settled === null ? null : nextReveals(shown.current, settled, performance.now())
+  useLayoutEffect(() => {
+    if (next !== null) shown.current = next.shown
+  }, [next])
+  return next?.reveals ?? new Map<string, Reveal>()
 }
 
 // Runs before paint, so a row that arrives covered is never drawn uncovered for a frame. The mask

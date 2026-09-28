@@ -1,7 +1,13 @@
-import type { ReactVirtualizer } from '@tanstack/react-virtual'
-import { useVirtualizer } from '@tanstack/react-virtual'
+import { type ReactVirtualizer, useVirtualizer } from '@tanstack/react-virtual'
 import type { VirtualItem, Virtualizer } from '@tanstack/virtual-core'
-import { type ReactNode, useCallback, useLayoutEffect, useRef, useState } from 'react'
+import {
+  type ReactNode,
+  useCallback,
+  useInsertionEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 import type { SessionFeedRow } from '../../types'
 
 const FEED_ROW_ESTIMATE_PX = 96
@@ -46,47 +52,35 @@ export function useAnchoredVirtualizer({
   padding: { start: number; end: number }
   onChange: (instance: Virtualizer<HTMLElement, Element>, sync: boolean) => void
 }) {
-  return suppressRestoredScrollDrift(
-    useVirtualizer({
-      anchorTo: following ? 'end' : 'start',
-      count: rows.length + (tail === null ? 0 : 1),
-      estimateSize: () => FEED_ROW_ESTIMATE_PX,
-      // Smooth tail scrolling delays short-row measurement and leaves estimate-sized gaps (#2545).
-      followOnAppend: following,
-      getItemKey: (index) => (index === rows.length ? TAIL_KEY : feedRowAt(rows, index).id),
-      getScrollElement: () => viewport,
-      // Seeds the rendered range at construction, not after (#e2e-real-cheap-models): a fresh
-      // mount's own scroll listener attaches too late to catch a post-mount scrollTop write, so
-      // the range never followed it and the reader landed back at row zero.
-      initialOffset: initialScrollPosition ?? 0,
-      // Without the prior mount's real row heights, a fresh instance settles its estimate sizes
-      // into place after seeding `initialOffset` and drifts the reader off the restored pixel
-      // (#e2e-real-cheap-models). TanStack's own scroll-restoration guide pairs both.
-      initialMeasurementsCache,
-      onChange,
-      overscan: FEED_OVERSCAN,
-      paddingStart: padding.start,
-      paddingEnd: padding.end,
-      scrollPaddingStart: padding.start,
-      scrollEndThreshold: TAIL_THRESHOLD_PX,
-    }),
-    initialScrollPosition,
-  )
-}
-
-// TanStack Virtual takes this only as a direct instance assignment, not a construction option
-// (virtual-core's own VirtualizerOptions never lists it). A restored row still measures itself
-// for real once mounted, and any real-vs-cached rounding delta above the fold otherwise reads as
-// "old content resized" and nudges scrollTop to compensate (#e2e-real-cheap-models) — wrong right
-// after `useInitialFeedPosition` set that same scrollTop on purpose. A session with nothing to
-// restore keeps the default compensation, which anchorTo: 'end' needs to stay pinned as later
-// rows are measured.
-function suppressRestoredScrollDrift(
-  virtualizer: ReactVirtualizer<HTMLElement, Element>,
-  initialScrollPosition: number | null,
-) {
-  virtualizer.shouldAdjustScrollPositionOnItemSizeChange =
-    initialScrollPosition === null ? undefined : () => false
+  const virtualizer = useVirtualizer({
+    anchorTo: following ? 'end' : 'start',
+    count: rows.length + (tail === null ? 0 : 1),
+    estimateSize: () => FEED_ROW_ESTIMATE_PX,
+    // Smooth tail scrolling delays short-row measurement and leaves estimate-sized gaps (#2545).
+    followOnAppend: following,
+    getItemKey: (index) => (index === rows.length ? TAIL_KEY : feedRowAt(rows, index).id),
+    getScrollElement: () => viewport,
+    // Seeds the rendered range at construction, not after (#e2e-real-cheap-models): a fresh
+    // mount's own scroll listener attaches too late to catch a post-mount scrollTop write, so
+    // the range never followed it and the reader landed back at row zero.
+    initialOffset: initialScrollPosition ?? 0,
+    // Without the prior mount's real row heights, a fresh instance settles its estimate sizes
+    // into place after seeding `initialOffset` and drifts the reader off the restored pixel
+    // (#e2e-real-cheap-models). TanStack's own scroll-restoration guide pairs both.
+    initialMeasurementsCache,
+    onChange,
+    overscan: FEED_OVERSCAN,
+    paddingStart: padding.start,
+    paddingEnd: padding.end,
+    scrollPaddingStart: padding.start,
+    scrollEndThreshold: TAIL_THRESHOLD_PX,
+  })
+  // TanStack Virtual takes this only as an instance assignment. Insertion effects run after
+  // commit but before row refs measure, so restored heights cannot move the viewport first.
+  useInsertionEffect(() => {
+    virtualizer.shouldAdjustScrollPositionOnItemSizeChange =
+      initialScrollPosition === null ? undefined : () => false
+  }, [initialScrollPosition, virtualizer])
   return virtualizer
 }
 
