@@ -153,6 +153,10 @@ function InspectorSplitPanels({
   toggleSlotRef: RefObject<HTMLDivElement | null>
   workspace: ReactNode
 }) {
+  const workspaceRegionRef = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    workspaceRegionRef.current?.parentElement?.setAttribute('tabindex', '0')
+  }, [])
   return (
     <div
       data-component="InspectorSplit"
@@ -174,7 +178,9 @@ function InspectorSplitPanels({
           collapsedSize={0}
           minSize={readCssSize(sizes.workspaceMin)}
         >
-          {workspace}
+          <div ref={workspaceRegionRef} className="h-full min-h-0">
+            {workspace}
+          </div>
         </ResizablePanel>
         <ResizableHandle
           className={
