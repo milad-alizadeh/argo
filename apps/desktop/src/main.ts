@@ -168,6 +168,22 @@ function createDomainContexts(database: Database, registry: HarnessRegistry) {
   }
 }
 
+function historyFollowersFor(
+  registry: HarnessRegistry,
+  hasLiveChannel: (sessionId: string) => boolean,
+): SessionHistoryFollowers {
+  return new SessionHistoryFollowers(
+    currentSessionEventJournal(),
+    (harness, target, changed) => {
+      const files = registry[harness].historyFiles
+      return files === undefined
+        ? () => {}
+        : tailSessionHistory(files, target.subagentId ?? target.nativeId, changed)
+    },
+    hasLiveChannel,
+  )
+}
+
 function routerForWindow(options: {
   window: BrowserWindow
   database: Database
@@ -189,16 +205,7 @@ function routerForWindow(options: {
       !session.getSnapshot().matches('Closed')
     )
   }
-  const historyFollowers = new SessionHistoryFollowers(
-    currentSessionEventJournal(),
-    (harness, target, changed) => {
-      const files = registry[harness].historyFiles
-      return files === undefined
-        ? () => {}
-        : tailSessionHistory(files, target.subagentId ?? target.nativeId, changed)
-    },
-    hasLiveChannel,
-  )
+  const historyFollowers = historyFollowersFor(registry, hasLiveChannel)
   return createAppRouter({
     accounts: domains.accounts,
     autoCompactLimit: (harness) => registry[harness].autoCompactLimit,
