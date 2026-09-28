@@ -22,8 +22,8 @@
   projection. A transcript or rollout file is never an Argo domain object or input.
 
   Argo keeps recent live events in a bounded memory journal. A separate SQLite table holds small
-  command outcomes. After a restart, unfinished commands become unknown until vendor history
-  provides evidence. Argo never resends an unknown command automatically. An idle live actor can
+  command outcomes. After a restart, unfinished commands become uncertain until vendor history
+  provides evidence. Argo never resends an uncertain command automatically. An idle live actor can
   retire while the Session identity and vendor history remain.
 
   Origin does not gate resume (ADR-0040). Argo has one application window. The adapter checks

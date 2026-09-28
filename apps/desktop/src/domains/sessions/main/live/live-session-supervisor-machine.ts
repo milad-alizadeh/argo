@@ -142,21 +142,18 @@ export function watchIdleSession(
     if (timer !== null) clearTimeout(timer)
     timer = null
   }
-  const feed = session.on('feed', ({ body }) => {
-    if (body.type !== 'status') return
+  const consider = (snapshot: ReturnType<LiveSessionActor['getSnapshot']>) => {
     clear()
-    if (body.status !== 'idle') return
+    if (!snapshot.matches('Ready')) return
     timer = setTimeout(() => {
       const sessionId = session.getSnapshot().context.argoId
       if (sessionId !== null) retire(sessionId)
     }, milliseconds)
-  })
-  const state = session.subscribe((snapshot) => {
-    if (snapshot.matches('Failed') || snapshot.matches('Closed')) clear()
-  })
+  }
+  const state = session.subscribe(consider)
+  consider(session.getSnapshot())
   return () => {
     clear()
-    feed.unsubscribe()
     state.unsubscribe()
   }
 }

@@ -21,6 +21,11 @@ type CommandIdentity = {
   nativeId: string | null
   cwd: string
 }
+type ReadHistory = (
+  harness: Harness,
+  target: { nativeId: string; subagentId: null; cwd: string },
+) => Promise<FeedContent[]>
+type HasTurn = (harness: Harness, nativeId: string, turnId: string) => Promise<boolean>
 
 export function claimSessionCommand(database: Database, input: CommandIdentity) {
   const result = createSessionCommandStore(database).reserve(input.commandId, input.sessionId, {
@@ -55,13 +60,39 @@ export function markUnresolvedSessionCommandsUnknown(database: Database): void {
   createSessionCommandStore(database).markUnresolvedUncertain()
 }
 
+async function observedInVendorHistory(input: {
+  command: { commandId: string; nativeId: string; cwd: string; turnId: string | null }
+  harness: Harness
+  readHistory: ReadHistory
+  hasTurn: HasTurn
+}): Promise<boolean> {
+  const { command, harness, readHistory, hasTurn } = input
+  if (command.turnId !== null) {
+    try {
+      if (await hasTurn(harness, command.nativeId, command.turnId)) return true
+    } catch (error) {
+      console.warn('Session command turn reconciliation failed.', error)
+    }
+  }
+  try {
+    const history = await readHistory(harness, {
+      nativeId: command.nativeId,
+      subagentId: null,
+      cwd: command.cwd,
+    })
+    return history.some(
+      (item) => item.kind === 'message' && item.role === 'user' && item.id === command.commandId,
+    )
+  } catch (error) {
+    console.warn('Session command history reconciliation failed.', error)
+    return false
+  }
+}
+
 export async function reconcileUnknownSessionCommands(
   database: Database,
-  readHistory: (
-    harness: Harness,
-    target: { nativeId: string; subagentId: null; cwd: string },
-  ) => Promise<FeedContent[]>,
-  hasTurn: (harness: Harness, nativeId: string, turnId: string) => Promise<boolean>,
+  readHistory: ReadHistory,
+  hasTurn: HasTurn,
 ): Promise<void> {
   const uncertain = database
     .select()
@@ -76,24 +107,20 @@ export async function reconcileUnknownSessionCommands(
       invalid += 1
       continue
     }
-    try {
-      const history = await readHistory(harness.data, {
-        nativeId: command.nativeId,
-        subagentId: null,
-        cwd: command.cwd,
+    if (
+      await observedInVendorHistory({
+        command: {
+          commandId: command.commandId,
+          nativeId: command.nativeId,
+          cwd: command.cwd,
+          turnId: command.turnId,
+        },
+        harness: harness.data,
+        readHistory,
+        hasTurn,
       })
-      if (
-        (command.turnId !== null &&
-          (await hasTurn(harness.data, command.nativeId, command.turnId))) ||
-        history.some(
-          (item) =>
-            item.kind === 'message' && item.role === 'user' && item.id === command.commandId,
-        )
-      )
-        setSessionCommandOutcome(database, command.commandId, 'observed')
-    } catch (error) {
-      console.warn('Session command history reconciliation failed.', error)
-    }
+    )
+      setSessionCommandOutcome(database, command.commandId, 'observed')
   }
   if (invalid > 0) console.warn(`Skipped ${invalid} invalid stored Session command(s).`)
 }

@@ -52,29 +52,28 @@ function liveSession() {
   }
 }
 
-test('retires only after continuous reported idle time and clears its listeners', () => {
+test('retires after continuous inactivity, including uncertain Turn outcomes', () => {
   vi.useFakeTimers()
   try {
     const session = liveSession()
     const retired: string[] = []
     const stop = watchIdleSession(session.actor, 100, (id) => retired.push(id))
     session.identify(sessionId)
-    const status = (value: 'idle' | 'running'): SessionLiveEventBody => ({
+    vi.advanceTimersByTime(50)
+    session.state('Sending')
+    vi.advanceTimersByTime(100)
+    expect(retired).toEqual([])
+    session.feed({
       type: 'status',
       commandId: 'command-1',
       turnId: 'turn-1',
       vendorEventId: null,
-      status: value,
+      status: 'unknown',
     })
-    session.feed(status('idle'))
-    vi.advanceTimersByTime(50)
-    session.feed(status('running'))
-    vi.advanceTimersByTime(100)
-    expect(retired).toEqual([])
-    session.feed(status('idle'))
+    session.state('Ready')
     vi.advanceTimersByTime(100)
     expect(retired).toEqual([sessionId])
-    session.feed(status('idle'))
+    session.state('Ready')
     session.state('Failed')
     vi.advanceTimersByTime(100)
     expect(retired).toEqual([sessionId])

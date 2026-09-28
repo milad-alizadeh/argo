@@ -61,7 +61,8 @@ function recordCommand(database: Database, commandId: string, status: CommandSta
   if (prior === undefined || prior.status === 'completed') return
   if (
     (prior.status === 'running' && (status === 'queued' || status === 'accepted')) ||
-    (prior.status === 'accepted' && status === 'queued')
+    (prior.status === 'accepted' && status === 'queued') ||
+    (prior.status === 'uncertain' && (status === 'queued' || status === 'accepted'))
   )
     return
   database

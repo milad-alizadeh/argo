@@ -22,6 +22,10 @@ test('reserves a command once and retains its bound Session and outcome', () => 
     sessionId: 'argo-1',
     status: 'running',
   })
+  commands.record('command-1', 'uncertain')
+  commands.record('command-1', 'accepted')
+  expect(commands.reserve('command-1', null)).toMatchObject({ status: 'uncertain' })
+  commands.record('command-1', 'running')
   commands.record('command-1', 'completed')
   commands.record('command-1', 'uncertain')
   expect(commands.reserve('command-1', null)).toMatchObject({ status: 'completed' })

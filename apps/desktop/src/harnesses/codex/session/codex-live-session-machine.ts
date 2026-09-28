@@ -80,10 +80,20 @@ const itemNotificationSchema = z.object({
     content: z.array(z.unknown()).optional(),
   }),
 })
-const userTextSchema = z.object({
-  type: z.literal('text'),
-  text: z.string(),
-})
+const userContentSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('text'),
+    text: z.string(),
+  }),
+  z.object({
+    type: z.literal('localImage'),
+    path: z.string(),
+  }),
+  z.object({
+    type: z.literal('image'),
+    url: z.string(),
+  }),
+])
 const threadStatusSchema = z.object({
   threadId: z.string().min(1),
   status: z.object({
@@ -142,16 +152,14 @@ function decodeItem(params: Record<string, unknown>): DecodedNotification {
       text: item.text,
     }
   if (item.type !== 'userMessage') return null
-  const text = (item.content ?? [])
-    .flatMap((part) => {
-      const parsed = userTextSchema.safeParse(part)
-      return parsed.success
-        ? [
-            parsed.data.text,
-          ]
-        : []
-    })
-    .join('\n')
+  if (item.content === undefined) return 'invalid'
+  const parts: string[] = []
+  for (const part of item.content) {
+    const parsed = userContentSchema.safeParse(part)
+    if (!parsed.success) return 'invalid'
+    if (parsed.data.type === 'text') parts.push(parsed.data.text)
+  }
+  const text = parts.join('\n')
   if (text === '') return null
   return {
     type: 'Item completed',
@@ -542,7 +550,7 @@ export const codexLiveSessionMachine = xstateSetup({
           inputItems: context.inputItems,
         }),
         onDone: {
-          target: 'Ready',
+          target: 'Running turn',
           actions: [
             'rememberTurn',
             'clearPending',
@@ -575,7 +583,7 @@ export const codexLiveSessionMachine = xstateSetup({
           inputItems: context.inputItems,
         }),
         onDone: {
-          target: 'Ready',
+          target: 'Running turn',
           actions: [
             'rememberTurn',
             'clearPending',
@@ -587,6 +595,23 @@ export const codexLiveSessionMachine = xstateSetup({
         },
       },
       on: {
+        Close: 'Closed',
+      },
+    },
+    'Running turn': {
+      always: {
+        guard: ({ context }) => context.activeTurnId === null,
+        target: 'Ready',
+      },
+      on: {
+        'Turn completed': {
+          guard: ({ context, event }) =>
+            event.threadId === context.nativeId &&
+            event.turnId === context.activeTurnId &&
+            context.completedTurnId !== event.turnId,
+          target: 'Ready',
+          actions: 'rememberCompletedTurn',
+        },
         Close: 'Closed',
       },
     },

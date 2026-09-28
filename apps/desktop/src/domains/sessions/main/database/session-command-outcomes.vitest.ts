@@ -87,7 +87,7 @@ test('restart checks a recorded Codex turn before resolving an uncertain send', 
     database,
     async (harness, target) => {
       reads.push(`${harness}:${target.nativeId}`)
-      return []
+      throw new Error('Projection unavailable')
     },
     async (harness, nativeId, lookupTurnId) => {
       expect(harness).toBe('codex')
@@ -99,7 +99,7 @@ test('restart checks a recorded Codex turn before resolving an uncertain send', 
       return hasCodexSessionTurn(request, nativeId, lookupTurnId)
     },
   )
-  expect(reads).toEqual(['codex:rollout-codexChild'])
+  expect(reads).toEqual([])
   expect(storedOutcome()?.status).toBe('running')
   expect(claimSessionCommand(database, codexCommand).claimed).toBe(false)
 })
