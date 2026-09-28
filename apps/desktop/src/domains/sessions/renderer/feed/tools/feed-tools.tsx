@@ -116,13 +116,27 @@ function describesItself(call: ToolCall) {
   return call.label !== `Ran ${(call.text ?? '').split('\n')[0]}`
 }
 
+type ToolGroup = Extract<SessionFeedRow, { shape: 'tool-group' }>
+
+function groupThoughtsByCall(group: ToolGroup, titleThoughtId: string | undefined) {
+  const thoughtsByCall = new Map<number, NonNullable<ToolGroup['thoughts']>>()
+  for (const thought of group.thoughts ?? []) {
+    if (thought.id === titleThoughtId) continue
+    const callIndex = thought.afterCallIndex ?? group.calls.length - 1
+    const associated = thoughtsByCall.get(callIndex) ?? []
+    associated.push(thought)
+    thoughtsByCall.set(callIndex, associated)
+  }
+  return thoughtsByCall
+}
+
 export function FeedToolGroup({
   group,
   activeEvidenceId,
   onOpen,
   toolGroups,
 }: {
-  group: Extract<SessionFeedRow, { shape: 'tool-group' }>
+  group: ToolGroup
   activeEvidenceId: string | null
   onOpen: (row: ToolRow) => void
   toolGroups: ToolGroupState
@@ -130,38 +144,51 @@ export function FeedToolGroup({
   const { onOpenChange, open } = useToolGroupOpen(toolGroups, group.id)
   const soleCall = group.calls.length === 1 ? group.calls[0] : undefined
   const activity = liveActivity(group)
+  const latestCommentary = group.thoughts?.at(-1)?.text
   // A call that stands alone (`groupedRowIndexes`) names its group. Every other settled group
   // reads as its count: a command that has run is history, and its text is one disclosure away,
   // never a stray line in the Feed.
   const titleCall = soleCall !== undefined && standsAlone(soleCall.kind) ? soleCall : undefined
-  const title =
+  const headline =
     activity === null ? (
-      (titleCall?.label ?? group.label)
+      (latestCommentary ?? titleCall?.label ?? group.label)
     ) : (
       <LiveActivityText activity={activity} running shimmer />
     )
+  const title =
+    activity === null && latestCommentary === undefined ? (
+      headline
+    ) : (
+      <span className="flex min-w-0 items-baseline gap-2">
+        <span className="truncate">{headline}</span>
+        <span className="shrink-0">· {group.label}</span>
+      </span>
+    )
+  const titleThoughtId =
+    activity === null || (activity.kind === 'thought' && activity.label === latestCommentary)
+      ? group.thoughts?.at(-1)?.id
+      : undefined
+  const thoughtsByCall = groupThoughtsByCall(group, titleThoughtId)
   return (
     <CollapsibleText
-      content={[
-        ...group.calls.map((call) => (
-          <TaskItem key={call.id}>
-            <GroupedCall
-              activeEvidenceId={activeEvidenceId}
-              call={call}
-              isSole={call.id === soleCall?.id}
-              onOpen={onOpen}
-              toolGroups={toolGroups}
-            />
-          </TaskItem>
-        )),
-        ...(group.thoughts ?? []).map((thought) => (
+      content={group.calls.flatMap((call, index) => [
+        <TaskItem key={call.id}>
+          <GroupedCall
+            activeEvidenceId={activeEvidenceId}
+            call={call}
+            isSole={call.id === soleCall?.id}
+            onOpen={onOpen}
+            toolGroups={toolGroups}
+          />
+        </TaskItem>,
+        ...(thoughtsByCall.get(index) ?? []).map((thought) => (
           <TaskItem key={thought.id}>
             <p className="whitespace-pre-wrap break-words text-muted-foreground type-body">
               {thought.text}
             </p>
           </TaskItem>
         )),
-      ]}
+      ])}
       contentVariant="flush"
       icon={groupIcon(activity, titleCall?.kind)}
       onOpenChange={onOpenChange}

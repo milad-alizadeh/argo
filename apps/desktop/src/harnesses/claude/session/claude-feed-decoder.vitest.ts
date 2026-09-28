@@ -50,6 +50,63 @@ test('uses the same assistant identity for live replies and SDK history', () => 
   expect(live).toEqual(history)
 })
 
+test('renders a Claude history compaction summary as a marker', () => {
+  const rejected: string[] = []
+  const message = {
+    type: 'user',
+    uuid: 'compact-summary-1',
+    session_id: 'session-1',
+    isCompactSummary: true,
+    is_meta: true,
+    message: {
+      role: 'user',
+      content:
+        'This session is being continued from a previous conversation that ran out of context. The summary begins here.',
+    },
+  } as unknown as SessionMessage
+
+  expect(decodeClaudeHistoryContent(message, (shape) => rejected.push(shape))).toEqual([
+    { id: 'compact-summary-1', kind: 'marker', marker: 'compaction', summary: null },
+  ])
+  expect(rejected).toEqual([])
+})
+
+test('ignores Claude tool reference metadata without rejecting the tool result', () => {
+  const rejected: string[] = []
+  const message = {
+    type: 'user',
+    uuid: 'result-with-tool-reference',
+    session_id: 'session-1',
+    message: {
+      role: 'user',
+      content: [
+        {
+          type: 'tool_result',
+          tool_use_id: 'call-1',
+          content: [
+            { type: 'text', text: 'Done.' },
+            { type: 'tool_reference', tool_name: 'Bash' },
+          ],
+        },
+      ],
+    },
+  } as unknown as SessionMessage
+
+  expect(decodeClaudeHistoryContent(message, (shape) => rejected.push(shape))).toEqual([
+    {
+      id: 'result-with-tool-reference',
+      kind: 'tool',
+      callId: 'call-1',
+      name: '',
+      status: 'completed',
+      input: null,
+      output: [{ kind: 'text', text: 'Done.' }],
+      summary: null,
+    },
+  ])
+  expect(rejected).toEqual([])
+})
+
 test('decodes recorded command, task, and delegation shapes', () => {
   const rejected: string[] = []
   const decoded = recordedSession('harnessNoise').flatMap((entry) =>

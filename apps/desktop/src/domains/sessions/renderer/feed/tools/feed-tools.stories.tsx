@@ -1,5 +1,5 @@
 import type { Meta } from '@storybook/react-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ToolGroupState } from '../rows/tool-group-state'
 import { FeedToolGroup, FeedToolLine } from './feed-tools'
 
@@ -198,8 +198,9 @@ export const GroupWithARunningCommand = {
   ),
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('button', { name: 'Running bun run typecheck' })).toBeVisible()
-    await expect(canvas.queryByText('Ran 2 commands')).toBeNull()
+    await expect(
+      canvas.getByRole('button', { name: /Running bun run typecheck.*Ran 2 commands/ }),
+    ).toBeVisible()
   },
 }
 
@@ -223,9 +224,87 @@ export const LiveGroupBetweenCalls = {
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: /Edited Composer.tsx/ })).toBeVisible()
-    await expect(canvas.queryByText('Ran a command, edited a file')).toBeNull()
+    await expect(canvas.getByText('· Ran a command, edited a file')).toBeVisible()
     // Settled between two calls, the Session still runs, so the title still shimmers.
     await expect(canvas.getByText('Edited Composer.tsx')).toHaveClass('feed-work-shimmer')
+  },
+}
+
+export const MixedRunWithLatestCommentary = {
+  render: () => (
+    <FeedToolGroup
+      group={{
+        shape: 'tool-group',
+        id: 'tool-group:mixed-commentary',
+        label: 'Ran 2 commands, edited a file',
+        calls: [
+          { ...command, id: 'first-command', label: 'Ran first command' },
+          { ...edited, id: 'edited-file' },
+          { ...command, id: 'second-command', label: 'Ran second command' },
+        ],
+        thoughts: [
+          { id: 'first-commentary', text: 'Reading the output', afterCallIndex: 0 },
+          { id: 'second-commentary', text: 'Reviewing the edit', afterCallIndex: 1 },
+          { id: 'latest-commentary', text: 'Checking the result', afterCallIndex: 2 },
+        ],
+      }}
+      activeEvidenceId={null}
+      onOpen={() => {}}
+      toolGroups={closedToolGroups}
+    />
+  ),
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+    const disclosure = canvas.getByRole('button', {
+      name: /Checking the result.*Ran 2 commands, edited a file/,
+    })
+    await expect(disclosure).toHaveAttribute('aria-expanded', 'false')
+    await expect(canvas.queryByRole('button', { name: /Reading the output/ })).toBeNull()
+    await expect(canvas.getByText('Checking the result')).not.toHaveClass('feed-work-shimmer')
+    await userEvent.click(disclosure)
+    await waitFor(() => expect(canvas.getByText('Reading the output')).toBeVisible())
+    const first = canvas.getByRole('button', { name: 'Ran first command' })
+    const firstCommentary = canvas.getByText('Reading the output')
+    const edit = canvas.getByRole('button', { name: 'Edited Composer.tsx +3 −1' })
+    const secondCommentary = canvas.getByText('Reviewing the edit')
+    const second = canvas.getByRole('button', { name: 'Ran second command' })
+    for (const [earlier, later] of [
+      [first, firstCommentary],
+      [firstCommentary, edit],
+      [edit, secondCommentary],
+      [secondCommentary, second],
+    ]) {
+      if (earlier === undefined || later === undefined) throw new Error('Missing grouped work')
+      await expect(earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      )
+    }
+    await expect(canvas.getAllByText('Checking the result')).toHaveLength(1)
+  },
+}
+
+export const LiveMixedRunWithCommentary = {
+  render: () => (
+    <FeedToolGroup
+      group={{
+        shape: 'tool-group',
+        id: 'tool-group:live-commentary',
+        label: 'Ran 2 commands, edited a file',
+        calls: [command, edited, { ...command, id: 'last-command' }],
+        thoughts: [{ id: 'commentary', text: 'Checking the result' }],
+        headline: { kind: 'thought', label: 'Checking the result', open: false },
+      }}
+      activeEvidenceId={null}
+      onOpen={() => {}}
+      toolGroups={closedToolGroups}
+    />
+  ),
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+    await expect(
+      canvas.getByRole('button', { name: /Checking the result.*Ran 2 commands, edited a file/ }),
+    ).toHaveAttribute('aria-expanded', 'false')
+    await expect(canvas.getByText('Checking the result')).toHaveClass('feed-work-shimmer')
   },
 }
 

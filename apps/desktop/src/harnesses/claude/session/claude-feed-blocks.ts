@@ -65,6 +65,8 @@ function toolPart(part: ToolResultPart, reject: RejectClaudeShape): ToolPart | n
     const source = mediaSource(part.source)
     if (source !== null) return { kind: 'image', source }
   }
+  // SDK history includes tool_reference metadata outside the SDKMessage content union.
+  if (Reflect.get(part, 'type') === 'tool_reference') return null
   reject('tool-result-part')
   return null
 }

@@ -1,9 +1,12 @@
 import type { VirtualItem, Virtualizer } from '@tanstack/virtual-core'
 import type { ReactNode } from 'react'
-import { useLayoutEffect, useRef } from 'react'
+import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import type { SessionFeedRow } from '../../types'
 import type { Settled } from '../document/use-settled-feed'
+import { FeedLoading } from '../feed-loading'
 import {
+  FEED_TAIL_KEY,
+  feedScrollPaddingStart,
   useAnchoredVirtualizer,
   useFeedViewport,
   useInitialFeedPosition,
@@ -30,6 +33,80 @@ type AnchoredFeedProps = {
   // Markers after the last row (Working, compaction, handoff), scrolled with it clear of the composer.
   tail: ReactNode
   historyLabel: string
+}
+
+function MeasureFeedRows({
+  FeedRow,
+  onMeasured,
+  rows,
+  tail,
+}: Pick<AnchoredFeedProps, 'FeedRow' | 'rows' | 'tail'> & {
+  onMeasured: (measurements: VirtualItem[]) => void
+}) {
+  const content = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    let active = true
+    const measure = async () => {
+      await document.fonts.ready
+      if (!active || content.current === null) return
+      const wrappers = Array.from(content.current.children) as HTMLElement[]
+      const paddingStart = feedScrollPaddingStart(content.current.parentElement as HTMLElement)
+      let start = paddingStart
+      const measurements = wrappers.map((wrapper, index): VirtualItem => {
+        const size = wrapper.getBoundingClientRect().height
+        const item = {
+          index,
+          key: index === rows.length ? FEED_TAIL_KEY : (rows[index]?.id ?? ''),
+          start,
+          size,
+          end: start + size,
+          lane: 0,
+        }
+        start = item.end
+        return item
+      })
+      onMeasured(measurements)
+    }
+    void measure()
+    return () => {
+      active = false
+    }
+  }, [onMeasured, rows])
+  return (
+    <>
+      <FeedLoading state="loading" />
+      <div aria-hidden="true" className="feed__measurement" inert>
+        <div className="feed__content" ref={content}>
+          {rows.map((row, index) => (
+            <div data-index={index} key={row.id}>
+              <FeedRow measurement row={row} />
+            </div>
+          ))}
+          {tail === null ? null : (
+            <div data-index={rows.length}>
+              <div className="feed-row">{tail}</div>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  )
+}
+
+// Every existing row gets its Blink height at the Feed's real width before the virtual list opens.
+export function AnchoredFeed(props: AnchoredFeedProps) {
+  const [measurements, setMeasurements] = useState<VirtualItem[] | null>(null)
+  const onMeasured = useCallback((next: VirtualItem[]) => setMeasurements(next), [])
+  if (measurements === null)
+    return (
+      <MeasureFeedRows
+        FeedRow={props.FeedRow}
+        onMeasured={onMeasured}
+        rows={props.rows}
+        tail={props.tail}
+      />
+    )
+  return <VirtualFeed {...props} initialMeasurementsCache={measurements} />
 }
 
 function visibleRowAnchor(viewport: HTMLElement, rows: readonly SessionFeedRow[]) {
@@ -68,7 +145,7 @@ function scrollToAnchor(
 }
 
 // TanStack chat pattern: https://tanstack.com/virtual/latest/docs/chat.
-export function AnchoredFeed({
+function VirtualFeed({
   active,
   FeedRow,
   initialMeasurementsCache,

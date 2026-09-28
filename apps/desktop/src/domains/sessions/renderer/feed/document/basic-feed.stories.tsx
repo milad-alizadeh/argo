@@ -2147,7 +2147,7 @@ export const ThoughtWhileStatusIsUnknown: Story = {
 }
 
 // External Sessions cannot always prove a live Turn, but their Feed and Roster still name the
-// same newest observed activity. The Feed must not replace it with a grouped command summary.
+// same newest observed activity, followed by the grouped command count.
 export const CommandActivityWhileStatusIsUnknown: Story = {
   args: {
     feed: {
@@ -2191,8 +2191,9 @@ export const CommandActivityWhileStatusIsUnknown: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('button', { name: 'Ran rtk gh issue create' })).toBeVisible()
-    await expect(canvas.queryByText('Ran 7 commands')).toBeNull()
+    await expect(
+      canvas.getByRole('button', { name: 'Ran rtk gh issue create · Ran 7 commands' }),
+    ).toBeVisible()
   },
 }
 
@@ -2359,6 +2360,16 @@ export const FullHistoryRefresh: Story = {
     const canvas = within(canvasElement)
     const history = await canvas.findByLabelText('Session history')
     await waitFor(() => expect(history.scrollTop).toBeGreaterThan(0))
+    await waitForScrollToSettle(history)
+    const settledHeight = history.scrollHeight
+    for (let step = 0; step < 100; step += 1) {
+      const expected = Math.max(0, history.scrollTop - 200)
+      history.scrollTop = expected
+      fireEvent.scroll(history)
+      await new Promise(requestAnimationFrame)
+      expect(history.scrollHeight).toBeCloseTo(settledHeight, 1)
+      expect(history.scrollTop).toBeCloseTo(expected, 1)
+    }
     history.scrollTop = 0
     fireEvent.scroll(history)
     await canvas.findByText('Saved reply 0')

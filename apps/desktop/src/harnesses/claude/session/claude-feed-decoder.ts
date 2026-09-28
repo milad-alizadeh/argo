@@ -19,6 +19,8 @@ export function decodeClaudeHistoryContent(
   reject: RejectClaudeShape,
 ): FeedContent[] {
   if (message.type === 'system') return []
+  if (message.type === 'user' && 'isCompactSummary' in message && message.isCompactSummary === true)
+    return [{ id: message.uuid, kind: 'marker', marker: 'compaction', summary: null }]
   const origin = 'origin' in message ? message.origin : undefined
   const humanInput =
     origin !== undefined &&

@@ -92,9 +92,10 @@ export function groupedRowIndexes(
     const run: number[] = []
     let next = rows[index]
     while (
-      next?.shape === 'tool' &&
-      !standsAlone(next.kind) &&
-      (run.length === 0 || !breakBeforeIds.has(next.id))
+      next?.shape === 'thought' ||
+      (next?.shape === 'tool' &&
+        !standsAlone(next.kind) &&
+        (run.length === 0 || !breakBeforeIds.has(next.id)))
     ) {
       run.push(index++)
       next = rows[index]
@@ -142,6 +143,18 @@ export function withHeadline(row: SessionFeedRow, headline: LiveActivity): Sessi
   return row.shape === 'tool-group' ? { ...row, headline } : row
 }
 
+function indexedToolGroup(rows: SessionFeedRow[], indexes: number[]): SessionFeedRow {
+  const calls: ToolRow[] = []
+  const thoughts: { id: string; text: string; afterCallIndex: number }[] = []
+  for (const index of indexes) {
+    const row = rows[index]
+    if (row?.shape === 'tool') calls.push(row)
+    if (row?.shape === 'thought')
+      thoughts.push({ id: row.id, text: row.text, afterCallIndex: calls.length - 1 })
+  }
+  return { ...toolGroup(calls), ...(thoughts.length === 0 ? {} : { thoughts }) }
+}
+
 export function groupToolRuns(
   rows: SessionFeedRow[],
   breakBeforeIds: ReadonlySet<string> = new Set(),
@@ -150,22 +163,11 @@ export function groupToolRuns(
   for (const indexes of groupedRowIndexes(rows, breakBeforeIds)) {
     const first = rows[indexes[0] ?? -1]
     if (first === undefined) continue
-    const previous = grouped.at(-1)
-    if (first.shape === 'thought' && previous?.shape === 'tool-group') {
-      grouped[grouped.length - 1] = {
-        ...previous,
-        thoughts: [...(previous.thoughts ?? []), { id: first.id, text: first.text }],
-      }
-      continue
-    }
     if (first.shape !== 'tool') {
       grouped.push(first)
       continue
     }
-    const calls = indexes
-      .map((index) => rows[index])
-      .filter((row): row is ToolRow => row?.shape === 'tool')
-    grouped.push(toolGroup(calls))
+    grouped.push(indexedToolGroup(rows, indexes))
   }
   return grouped
 }

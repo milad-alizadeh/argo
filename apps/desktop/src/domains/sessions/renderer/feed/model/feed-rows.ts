@@ -95,7 +95,15 @@ export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
     id: identifierSchema,
     label: z.string(),
     calls: z.array(toolRowSchema),
-    thoughts: z.array(z.strictObject({ id: identifierSchema, text: z.string() })).optional(),
+    thoughts: z
+      .array(
+        z.strictObject({
+          id: identifierSchema,
+          text: z.string(),
+          afterCallIndex: z.number().int().nonnegative().optional(),
+        }),
+      )
+      .optional(),
     // The Session's activity while the Turn runs, set by the renderer alone (`withHeadline`)
     // from the same fact the roster draws under the title.
     headline: liveActivitySchema.optional(),
