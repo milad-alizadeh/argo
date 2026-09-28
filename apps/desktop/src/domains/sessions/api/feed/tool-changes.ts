@@ -1,6 +1,6 @@
 // What a web Tool Call fetched or searched, read off the facts its adapter filled.
-import type { ToolCall, ToolResult } from '../feed/source/transcript'
-import { resultText } from '../feed/source/transcript'
+import type { ToolCall } from './tool-call'
+import { resultText, type ToolResult } from './transcript-content'
 
 export function searchLabel(call: Extract<ToolCall, { kind: 'search' | 'fetch' }>) {
   if (call.kind === 'fetch') return `Fetched ${call.url ?? 'a page'}`

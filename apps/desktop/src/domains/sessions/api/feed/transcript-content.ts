@@ -1,5 +1,5 @@
-import type { FeedMarker } from '@/domains/sessions/renderer/model/models'
-import type { FeedImageUrl } from '../model/feed-images'
+import type { FeedImageUrl } from './feed-images'
+import type { FeedMarker } from './feed-rows'
 
 export type ContentBlock =
   | { shape: 'prose'; text: string }

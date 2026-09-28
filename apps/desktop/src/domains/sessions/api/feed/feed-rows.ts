@@ -7,10 +7,10 @@ import {
 } from '@/domains/sessions/api/feed-content'
 import { questionSchema } from '@/domains/sessions/api/questions'
 import { identifierSchema } from '@/shared/validation'
-import { BACKGROUND_STATES } from '../source/background-task-record'
-import { SUBAGENT_EVENTS } from '../source/subagent-event'
-import { TRANSCRIPT_EVENT_KINDS } from '../source/transcript-content'
+import { BACKGROUND_STATES } from './background-task-record'
 import { feedImageUrlSchema } from './feed-images'
+import { SUBAGENT_EVENTS } from './subagent-event'
+import { TRANSCRIPT_EVENT_KINDS } from './transcript-content'
 
 export const FEED_MARKERS = ['compacted', 'interrupted'] as const
 export const feedMarkerSchema = z.enum(FEED_MARKERS)

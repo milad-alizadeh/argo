@@ -3,7 +3,7 @@
 import { z } from 'zod'
 import { ATTACHMENT_HOST, ATTACHMENT_SCHEME } from '@/domains/sessions/api/attachment-url'
 import { attachmentKindOf } from '@/domains/sessions/api/attachments'
-import type { ContentBlock } from '../source/transcript-content'
+import type { ContentBlock } from './transcript-content'
 
 // Never `file://`: Chromium refuses a `file://` subresource load from a document the Vite dev
 // server serves over `http://`, which left every locally-attached image thumbnail unrendered in

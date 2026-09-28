@@ -1,8 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
+import { projectFeedRowEntries } from '@/domains/sessions/api/feed/feed-row-entries'
 import type { SessionContractError } from '../session-contract-error'
 import type { SessionFeed, SessionFeedSnapshot, SessionId } from '../types'
-import { projectLiveFeedRows } from './model/live-feed-rows'
 import { groupToolRuns } from './model/tool-groups'
 import { retrySessionFeed, sessionFeedQuery } from './session-feed-query'
 import { useLiveFeedEvents } from './use-live-feed-events'
@@ -24,7 +24,12 @@ export function displayedFeed({
     reading?.sessionId === selectedSessionId && reading.chainId === chainId ? reading : null
   const events = live?.events ?? []
   if (current === null && events.length === 0) return null
-  const rows = groupToolRuns(projectLiveFeedRows(current?.content ?? [], events))
+  const { entries } = projectFeedRowEntries({
+    history: current?.content ?? [],
+    live: events,
+    activity: null,
+  })
+  const rows = groupToolRuns(entries.flatMap(({ row }) => (row.shape === 'activity' ? [] : [row])))
   const base = current ?? {
     version: 1,
     type: 'session.feed.read',
