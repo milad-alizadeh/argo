@@ -236,6 +236,31 @@ function permissionEventKind(
   }
 }
 
+function fileChangeEvidence(
+  change: Extract<FeedContent, { kind: 'fileChange' }>['changes'][number],
+): string {
+  const text = change.diff ?? ''
+  switch (change.change) {
+    case 'add':
+    case 'delete': {
+      const lines = text === '' ? [] : text.replace(/\n$/, '').split('\n')
+      const added = change.change === 'add'
+      const verb = added ? 'Add' : 'Delete'
+      const oldRange = added || lines.length === 0 ? '0,0' : `1,${lines.length}`
+      const newRange = !added || lines.length === 0 ? '0,0' : `1,${lines.length}`
+      const prefix = added ? '+' : '-'
+      return [
+        `${verb} File: ${change.path}`,
+        `@@ -${oldRange} +${newRange} @@`,
+        ...lines.map((line) => `${prefix}${line}`),
+      ].join('\n')
+    }
+    case 'update':
+    case 'unknown':
+      return `Update File: ${change.path}\n${text}`
+  }
+}
+
 function fileChangeRow(content: Extract<FeedContent, { kind: 'fileChange' }>): SessionFeedRow {
   const files = content.changes.map((change) => change.path)
   if (files.length === 0)
@@ -261,7 +286,7 @@ function fileChangeRow(content: Extract<FeedContent, { kind: 'fileChange' }>): S
     evidence: {
       kind: 'diff',
       title: label,
-      source: content.changes.map((change) => change.diff ?? '').join('\n'),
+      source: content.changes.map(fileChangeEvidence).join('\n'),
     },
     text: null,
   }

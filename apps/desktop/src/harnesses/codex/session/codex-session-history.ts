@@ -9,6 +9,9 @@ import { codexSubagentContent } from './codex-subagent-content'
 const textContentSchema = z.object({ type: z.literal('text'), text: z.string() }).passthrough()
 type FileChangeStatus = Extract<ThreadItem, { type: 'fileChange' }>['status']
 type AgentMessagePhase = NonNullable<Extract<ThreadItem, { type: 'agentMessage' }>['phase']>
+type ImageGenerationFailure = NonNullable<
+  Extract<ThreadItem, { type: 'imageGeneration' }>['failure']
+>
 export const codexMessagePhaseSchema = z.enum([
   'commentary',
   'final_answer',
@@ -234,12 +237,33 @@ function searchContent(id: string, raw: unknown): FeedContent | null {
     : null
 }
 
+const imageGenerationFailureSchema = z.object({
+  type: z.literal('usageLimitExceeded'),
+  limitId: z.string(),
+  resetsAt: z.number().int().nullable().default(null),
+}) satisfies z.ZodType<ImageGenerationFailure>
+
+function imageGenerationFailureText(failure: ImageGenerationFailure | null): string | null {
+  if (failure === null) return null
+  switch (failure.type) {
+    case 'usageLimitExceeded': {
+      const text = 'Image generation usage limit exceeded.'
+      if (failure.resetsAt === null) return text
+      const reset = new Date(failure.resetsAt * 1000)
+      return Number.isFinite(reset.getTime())
+        ? `Image generation usage limit exceeded. Resets at ${reset.toISOString()}.`
+        : text
+    }
+  }
+}
+
 function imageGenerationContent(id: string, raw: unknown): FeedContent {
   const generated = z
     .object({
       status: z.string(),
       revisedPrompt: z.string().nullable().optional(),
       savedPath: z.string().nullable().optional(),
+      failure: imageGenerationFailureSchema.nullable().optional(),
     })
     .parse(raw)
   let status: Extract<FeedContent, { kind: 'imageGeneration' }>['status'] = 'running'
@@ -251,7 +275,7 @@ function imageGenerationContent(id: string, raw: unknown): FeedContent {
     status,
     prompt: generated.revisedPrompt ?? null,
     source: generated.savedPath == null ? null : { kind: 'path', path: generated.savedPath },
-    failure: null,
+    failure: imageGenerationFailureText(generated.failure ?? null),
   }
 }
 

@@ -103,6 +103,58 @@ test('reads Codex reasoning, commentary, file edits, and MCP results from thread
   ])
 })
 
+test('shows the image-generation usage limit and reset reported by Codex', async () => {
+  const request = (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
+    parse({
+      thread: {
+        turns: [
+          {
+            items: [
+              {
+                id: 'image-call',
+                type: 'imageGeneration',
+                status: 'failed',
+                revisedPrompt: 'paint a blue whale',
+                result: '',
+                failure: {
+                  type: 'usageLimitExceeded',
+                  limitId: 'image_gen',
+                  resetsAt: 1_786_150_800,
+                },
+              },
+              {
+                id: 'image-call-without-reset',
+                type: 'imageGeneration',
+                status: 'failed',
+                revisedPrompt: null,
+                result: '',
+                failure: { type: 'usageLimitExceeded', limitId: 'image_gen' },
+              },
+            ],
+          },
+        ],
+      },
+    })) as CodexRequest
+  await expect(readCodexSessionHistory(request, 'thread')).resolves.toEqual([
+    {
+      kind: 'imageGeneration',
+      id: 'image-call',
+      status: 'failed',
+      prompt: 'paint a blue whale',
+      source: null,
+      failure: 'Image generation usage limit exceeded. Resets at 2026-08-08T01:00:00.000Z.',
+    },
+    {
+      kind: 'imageGeneration',
+      id: 'image-call-without-reset',
+      status: 'failed',
+      prompt: null,
+      source: null,
+      failure: 'Image generation usage limit exceeded.',
+    },
+  ])
+})
+
 test('reads each recorded Subagent as one delegation, updated by its activity', async () => {
   const recorded = JSON.parse(
     readFileSync(
