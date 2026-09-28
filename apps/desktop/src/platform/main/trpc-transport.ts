@@ -135,6 +135,23 @@ async function startSubscription<TRouter extends AnyRouter>(request: {
   }
 }
 
+// Hash routing is a same-document navigation; only a new document drops its subscribers.
+function stopWithRendererDocument(webContents: Electron.WebContents, stop: () => void): () => void {
+  const stopOnDocumentChange = (
+    details: Electron.Event<Electron.WebContentsDidStartNavigationEventParams>,
+  ) => {
+    if (details.isMainFrame && !details.isSameDocument) stop()
+  }
+  webContents.on('did-start-navigation', stopOnDocumentChange)
+  webContents.once('destroyed', stop)
+  app.on('will-quit', stop)
+  return () => {
+    webContents.removeListener('did-start-navigation', stopOnDocumentChange)
+    webContents.removeListener('destroyed', stop)
+    app.removeListener('will-quit', stop)
+  }
+}
+
 export function attachTrpcTransport<TRouter extends AnyRouter>(request: {
   window: BrowserWindow
   rendererURL: string
@@ -193,15 +210,10 @@ export function attachTrpcTransport<TRouter extends AnyRouter>(request: {
     }
   }
   ipcMain.handle(TRPC_CHANNEL, handler)
-  const stopOnNavigation = () => stopAllSubscriptions()
-  webContents.on('did-start-navigation', stopOnNavigation)
-  webContents.once('destroyed', stopOnNavigation)
-  app.on('will-quit', stopOnNavigation)
+  const detachLifecycle = stopWithRendererDocument(webContents, stopAllSubscriptions)
   return () => {
     stopAllSubscriptions()
-    webContents.removeListener('did-start-navigation', stopOnNavigation)
-    webContents.removeListener('destroyed', stopOnNavigation)
-    app.removeListener('will-quit', stopOnNavigation)
+    detachLifecycle()
     ipcMain.removeHandler(TRPC_CHANNEL)
   }
 }
