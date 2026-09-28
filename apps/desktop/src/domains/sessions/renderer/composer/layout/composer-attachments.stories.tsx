@@ -203,5 +203,9 @@ export const FailedAttachmentStaysAfterSend: Story = {
     ])
     await expect(await canvas.findByText('Not found')).toBeVisible()
     await expect(canvas.getByText('gone')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: 'Session two' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Session one' }))
+    await expect(await canvas.findByText('gone')).toBeVisible()
+    await expect(canvas.queryByText('Not found')).toBeNull()
   },
 }

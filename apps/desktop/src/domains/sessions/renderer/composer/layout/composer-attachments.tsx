@@ -10,14 +10,14 @@ import { useComposerEditing } from '../editing/composer-editing-context'
 
 export function ComposerAttachments() {
   const { t } = useTranslation('sessions')
-  const { editing, dispatch } = useComposerEditing()
+  const { editing, dispatch, failedAttachmentIds } = useComposerEditing()
   const { attachments } = editing
   if (attachments.length === 0) return null
   return (
     <AttachmentGroup className="flex-nowrap gap-(--spacing-composer-attachment-gutter) overflow-x-auto scroll-p-(--spacing-composer-attachment-gutter) p-(--spacing-composer-attachment-gutter)">
       {attachments.map((attachment) => (
         <AttachmentChip
-          failed={attachment.status === 'error'}
+          failed={failedAttachmentIds.has(attachment.id)}
           key={attachment.id}
           path={attachment.path}
         >
