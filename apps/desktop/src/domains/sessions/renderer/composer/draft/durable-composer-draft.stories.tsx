@@ -8,7 +8,10 @@ import {
   trpc,
 } from '@/platform/renderer/trpc-client'
 import { claudeComposerModelCatalogFixture } from '../../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
-import { claudeChoices } from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
+import {
+  claudeChoices,
+  codexHarnessInfoFixture,
+} from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
 import { DraftLoadFailure } from '../../screens/session-screen-details'
 import { ComposerForm } from '../layout/composer-form'
 import type { TurnConfigurationChoices } from '../turn-configuration/turn-configuration'
@@ -42,6 +45,7 @@ const choices = (() => {
   if (value === null) throw new Error('The Claude story catalog has no usable model.')
   return value
 })()
+const codexChoices = codexHarnessInfoFixture()
 
 function ownerKey(target: DraftTarget) {
   return target.type === 'session' ? target.sessionId : target.projectId
@@ -71,22 +75,22 @@ function savedDraft(sessionId: string, prompt: string, now: number): DraftValue 
   }
 }
 
-function savedProjectDraft(): DraftValue {
+function savedProjectDraft(harness: 'claude' | 'codex'): DraftValue {
   return {
     ...savedDraft('project-1', 'Plan this change.', 3),
     id: 'draft-project-1',
+    turnConfiguration: harness === 'codex' ? codexChoices.opening : choices.opening,
     target: {
       type: 'project',
       projectId: 'project-1',
       workspaceId: 'workspace-1',
-      harness: 'claude',
+      harness,
     },
   }
 }
 
-function createReadResult(drafts: Map<string, DraftValue>, input: MockInput) {
-  if (input.target === undefined) return null
-  return drafts.get(ownerKey(input.target)) ?? null
+function createReadResult(drafts: Map<string, DraftValue>, target: DraftTarget) {
+  return drafts.get(ownerKey(target)) ?? null
 }
 
 function createCreateResult(drafts: Map<string, DraftValue>, input: MockInput, notify: () => void) {
@@ -171,7 +175,7 @@ function createMockTrpc(server: Server, notify: () => void): typeof window.argo.
         notify()
         throw new Error('The saved draft could not be read.')
       }
-      return { result: { data: createReadResult(server.drafts, input) } }
+      return { result: { data: createReadResult(server.drafts, request.input as DraftTarget) } }
     }
     if (request.path === 'composerDraftCreate')
       return { result: { data: createCreateResult(server.drafts, input, notify) } }
@@ -195,9 +199,18 @@ function createServer(input: {
   notify: () => void
   initialOutcome: 'accept' | 'reject' | 'fallback'
   project: boolean
+  projectDraftExists: boolean
+  savedProjectHarness: 'claude' | 'codex'
   draftReadFailures: number
 }): Server {
-  const { notify, initialOutcome, project, draftReadFailures } = input
+  const {
+    notify,
+    initialOutcome,
+    project,
+    projectDraftExists,
+    savedProjectHarness,
+    draftReadFailures,
+  } = input
   const firstDraft = savedDraft('session-a', 'Restored Session A draft.', 1)
   if (initialOutcome === 'fallback')
     firstDraft.turnConfiguration = {
@@ -209,7 +222,9 @@ function createServer(input: {
     drafts: new Map([
       ['session-a', firstDraft],
       ['session-b', savedDraft('session-b', 'Restored Session B draft.', 2)],
-      ...(project ? ([['project-1', savedProjectDraft()]] as const) : []),
+      ...(project && projectDraftExists
+        ? ([['project-1', savedProjectDraft(savedProjectHarness)]] as const)
+        : []),
     ]),
     trpc: (async () => ({ result: { data: null } })) as unknown as typeof window.argo.trpc,
     releaseSave: notify,
@@ -350,10 +365,14 @@ function useDraftStoryRetryFocus(draft: ReturnType<typeof useDurableComposerDraf
 function DurableDraftStory({
   initialOutcome = 'accept',
   project = false,
+  projectDraftExists = true,
+  savedProjectHarness = 'claude',
   draftReadFailures = 0,
 }: {
   initialOutcome?: 'accept' | 'reject' | 'fallback'
   project?: boolean
+  projectDraftExists?: boolean
+  savedProjectHarness?: 'claude' | 'codex'
   draftReadFailures?: number
 }) {
   const [serverVersion, setServerVersion] = useState(0)
@@ -363,6 +382,8 @@ function DurableDraftStory({
       notify: () => setServerVersion((version) => version + 1),
       initialOutcome,
       project,
+      projectDraftExists,
+      savedProjectHarness,
       draftReadFailures,
     }),
   )
@@ -386,9 +407,54 @@ function DurableDraftStory({
       key={screenVersion}
       server={server}
       project={project}
-      onReloadScreen={() => setScreenVersion((version) => version + 1)}
+      onReloadScreen={() => {
+        queryClient.removeQueries({ queryKey: trpc.composerDraftRead.pathKey() })
+        setScreenVersion((version) => version + 1)
+      }}
     />
   )
+}
+
+function useRestoreProjectDraftStory(input: {
+  project: boolean
+  restoredProjectId: string | null
+  loadedTarget: DraftTarget | null | undefined
+  harness: 'claude' | 'codex'
+  setWorkspaceId: (workspaceId: string) => void
+  setHarness: (harness: 'claude' | 'codex') => void
+  setRestoredProjectId: (projectId: string) => void
+}) {
+  const {
+    project,
+    restoredProjectId,
+    loadedTarget,
+    harness,
+    setWorkspaceId,
+    setHarness,
+    setRestoredProjectId,
+  } = input
+  useEffect(() => {
+    if (!project || restoredProjectId !== null || loadedTarget === undefined) return
+    if (loadedTarget === null) {
+      setRestoredProjectId('project-1')
+      return
+    }
+    if (loadedTarget.type !== 'project') return
+    setWorkspaceId(loadedTarget.workspaceId)
+    if (harness !== loadedTarget.harness) {
+      setHarness(loadedTarget.harness)
+      return
+    }
+    setRestoredProjectId(loadedTarget.projectId)
+  }, [
+    project,
+    restoredProjectId,
+    loadedTarget,
+    harness,
+    setWorkspaceId,
+    setHarness,
+    setRestoredProjectId,
+  ])
 }
 
 function DurableDraftScreen({
@@ -409,22 +475,25 @@ function DurableDraftScreen({
     ? { type: 'project', projectId: 'project-1', workspaceId, harness }
     : { type: 'session', sessionId }
   const targetRestored = !project || restoredProjectId === 'project-1'
+  const currentChoices = harness === 'codex' ? codexChoices : choices
   const draft = useDurableComposerDraft({
     target,
-    choices,
-    opening: choices.opening,
+    choices: currentChoices,
+    opening: currentChoices.opening,
     targetRestored,
   })
   const loadedTarget = draft?.loadedTarget
-  useEffect(() => {
-    if (!project || restoredProjectId !== null || loadedTarget?.type !== 'project') return
-    setWorkspaceId(loadedTarget.workspaceId)
-    setHarness(loadedTarget.harness)
-    setRestoredProjectId(loadedTarget.projectId)
-  }, [project, restoredProjectId, loadedTarget])
+  useRestoreProjectDraftStory({
+    project,
+    restoredProjectId,
+    loadedTarget,
+    harness,
+    setWorkspaceId,
+    setHarness,
+    setRestoredProjectId,
+  })
   const { focusComposerAfterRetry, retryDraftLoad, clearRecoveryFocus } =
     useDraftStoryRetryFocus(draft)
-  const storedDrafts = storedDraftSummaries(server.drafts)
   return (
     <div className="mx-auto flex h-[560px] max-w-3xl flex-col gap-3 p-6">
       <div className="flex gap-2">
@@ -439,24 +508,15 @@ function DurableDraftScreen({
         <DraftTimingControls server={server} />
         <DraftReadControls server={server} target={target} />
       </div>
-      <output
-        aria-label="Stored drafts"
-        data-save-pending={server.savePending}
-        data-read-failures={server.draftReadFailures}
-      >
-        {JSON.stringify(storedDrafts)}
-      </output>
-      <output aria-label="Submitted target">{JSON.stringify(server.submittedTarget)}</output>
-      <output aria-label="Current save failure">{String(draft?.saveFailed ?? false)}</output>
-      <output aria-label="Session A save rejected">{String(server.sessionASaveRejected)}</output>
-      <output aria-label="Current target">{JSON.stringify(target)}</output>
+      <DraftStoryDetails server={server} draft={draft} target={target} />
       {draft?.sendFailed ? (
         <div role="alert">The Turn could not be sent. Your draft is still saved.</div>
       ) : null}
-      {draft && targetRestored ? (
+      {draft && (targetRestored || draft.loadFailed) ? (
         <DurableDraftComposer
           draft={draft}
           harness={harness}
+          choices={currentChoices}
           sessionId={`${project ? 'project-1' : sessionId}:${composerVersion}:${draft.hasDraft ? 'ready' : 'load-failed'}`}
           focusOnRetry={focusComposerAfterRetry}
           onFocusAfterMount={clearRecoveryFocus}
@@ -467,9 +527,36 @@ function DurableDraftScreen({
   )
 }
 
+function DraftStoryDetails({
+  server,
+  draft,
+  target,
+}: {
+  server: Server
+  draft: ReturnType<typeof useDurableComposerDraft>
+  target: DraftTarget
+}) {
+  return (
+    <>
+      <output
+        aria-label="Stored drafts"
+        data-save-pending={server.savePending}
+        data-read-failures={server.draftReadFailures}
+      >
+        {JSON.stringify(storedDraftSummaries(server.drafts))}
+      </output>
+      <output aria-label="Submitted target">{JSON.stringify(server.submittedTarget)}</output>
+      <output aria-label="Current save failure">{String(draft?.saveFailed ?? false)}</output>
+      <output aria-label="Session A save rejected">{String(server.sessionASaveRejected)}</output>
+      <output aria-label="Current target">{JSON.stringify(target)}</output>
+    </>
+  )
+}
+
 function DurableDraftComposer({
   draft,
   harness,
+  choices,
   sessionId,
   focusOnRetry,
   onFocusAfterMount,
@@ -477,6 +564,7 @@ function DurableDraftComposer({
 }: {
   draft: NonNullable<ReturnType<typeof useDurableComposerDraft>>
   harness: 'claude' | 'codex'
+  choices: TurnConfigurationChoices
   sessionId: string
   focusOnRetry: boolean
   onFocusAfterMount: () => void
@@ -496,7 +584,7 @@ function DurableDraftComposer({
         disabled={draft.loadFailed && !draft.hasDraft}
         focusOnMount={focusOnRetry}
         onFocusAfterMount={onFocusAfterMount}
-        turnConfigurationChoices={choices as TurnConfigurationChoices}
+        turnConfigurationChoices={choices}
       />
     </>
   )
@@ -731,6 +819,35 @@ export const ProjectTargetChangesWithoutTextPersistForSend: Story = {
       ),
     )
     await expect(canvas.getByLabelText('Submitted target')).toHaveTextContent('"harness":"codex"')
+  },
+}
+
+export const RestoresSavedCodexConfigurationBeforeSend: Story = {
+  args: { project: true, savedProjectHarness: 'codex', initialOutcome: 'reject' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const store = canvas.getByLabelText('Stored drafts')
+    await expect(store).toHaveTextContent('"model":"gpt-live"')
+    await expect(await canvas.findByLabelText('Message')).toHaveTextContent('Plan this change.')
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Current target')).toHaveTextContent('"harness":"codex"'),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
+    await canvas.findByText('The Turn could not be sent. Your draft is still saved.')
+    await expect(store).toHaveTextContent('"model":"gpt-live"')
+    await expect(store).toHaveTextContent('"revision":0')
+  },
+}
+
+export const CreatesProjectDraftAfterEmptyRead: Story = {
+  args: { project: true, projectDraftExists: false },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await canvas.findByLabelText('Message')
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent('"projectId":"project-1"'),
+    )
+    await expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent('"revision":0')
   },
 }
 

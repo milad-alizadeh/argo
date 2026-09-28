@@ -36,6 +36,7 @@ type ComposerDraftLoadInput = Omit<DraftLoadDependencies, 'setLoaded'> & {
   choices: TurnConfigurationChoices | null
   opening: TurnConfiguration | null
   owner: string | null
+  targetRestored: boolean
 }
 type DurableComposerDraftInput = {
   target: DraftTarget | null
@@ -237,6 +238,7 @@ function useStartComposerDraftLoad(
     input.opening,
   )
   useEffect(() => {
+    if (!input.targetRestored) return
     return startComposerDraftLoadEffect({
       create: input.create,
       persisted: input.persisted,
@@ -262,6 +264,7 @@ function useStartComposerDraftLoad(
     })
   }, [
     input.owner,
+    input.targetRestored,
     targetIdentity,
     choicesIdentity,
     openingIdentity,
@@ -282,7 +285,7 @@ function useComposerDraftLoad(input: ComposerDraftLoadInput) {
   const queryInput = input.target ?? { type: 'session' as const, sessionId: 'disabled' }
   const query = useQuery({
     ...trpc.composerDraftRead.queryOptions(queryInput),
-    enabled: input.target !== null && input.choices !== null && input.opening !== null,
+    enabled: input.target !== null,
   })
   const [loaded, setLoaded] = useState<{
     owner: string
@@ -291,9 +294,10 @@ function useComposerDraftLoad(input: ComposerDraftLoadInput) {
   } | null>(null)
   useStartComposerDraftLoad({ ...input, loaded, query, setLoaded })
   const current = loaded?.owner === input.owner ? loaded : undefined
+  const readTarget = query.data === undefined ? undefined : (query.data?.target ?? null)
   return {
     editing: current?.editing,
-    loadedTarget: current?.target,
+    loadedTarget: readTarget,
     failed: query.isError,
     hasDraft: current !== undefined,
     retry: () => query.refetch(),
@@ -420,6 +424,7 @@ export function useDurableComposerDraft(input: DurableComposerDraftInput) {
     choices,
     opening,
     owner,
+    targetRestored,
     create,
     persisted: persistence.persisted,
     latestEditing: persistence.latestEditing,
@@ -438,7 +443,9 @@ export function useDurableComposerDraft(input: DurableComposerDraftInput) {
     )
       editingChange.current(persistence.latestEditing.current)
   }, [initialEditing, targetIdentity, targetRestored, persistence.latestEditing])
-  return load.editing === undefined && !load.failed
+  return load.editing === undefined &&
+    !load.failed &&
+    (targetRestored || load.loadedTarget === undefined)
     ? null
     : {
         initialEditing,

@@ -140,17 +140,26 @@ function useSessionComposerDraft(input: {
   const draft = useDurableComposerDraft({ target, choices, opening, targetRestored })
   const loadedTarget = draft?.loadedTarget
   useEffect(() => {
-    if (
-      projectId === null ||
-      loadedTarget?.type !== 'project' ||
-      loadedTarget.projectId !== projectId ||
-      restoredProjectId === projectId
-    )
+    if (projectId === null || restoredProjectId === projectId || loadedTarget === undefined) return
+    if (loadedTarget === null) {
+      setRestoredProjectId(projectId)
       return
+    }
+    if (loadedTarget.type !== 'project' || loadedTarget.projectId !== projectId) return
     workspaceActions.selectWorkspace(loadedTarget.workspaceId)
-    harness.onChange?.(loadedTarget.harness)
+    if (harness.harness !== loadedTarget.harness) {
+      harness.onChange?.(loadedTarget.harness)
+      return
+    }
     setRestoredProjectId(projectId)
-  }, [harness.onChange, loadedTarget, projectId, restoredProjectId, workspaceActions])
+  }, [
+    harness.harness,
+    harness.onChange,
+    loadedTarget,
+    projectId,
+    restoredProjectId,
+    workspaceActions,
+  ])
   return { draft, targetRestored }
 }
 
@@ -247,7 +256,7 @@ export function SessionComposerArea({
         onRetryCatalog={retryCatalog}
       />
     )
-  if (!targetRestored && draft.hasDraft) return null
+  if (!targetRestored && !draft.loadFailed) return null
   return (
     <ReadySessionComposer
       {...{ permission, questionPending, session, harness, workspaceCockpit, workspaceActions }}
