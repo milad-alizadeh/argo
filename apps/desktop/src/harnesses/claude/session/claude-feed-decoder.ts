@@ -1,6 +1,6 @@
 import type { SDKMessage, SessionMessage } from '@anthropic-ai/claude-agent-sdk'
 import { z } from 'zod'
-import { type FeedContent, feedContentSchema } from '@/domains/sessions/api/feed-content'
+import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { decodeClaudeBlocks } from './claude-feed-blocks'
 import type { RejectClaudeShape } from './claude-feed-envelopes'
 import { decodeClaudeSystemContent } from './claude-feed-system'
@@ -22,15 +22,6 @@ function assistantContentId(message: unknown, fallback: string): string {
   return assistantIdentitySchema.safeParse(message).data?.id ?? fallback
 }
 
-function validateContents(candidates: FeedContent[], reject: RejectClaudeShape): FeedContent[] {
-  return candidates.flatMap((candidate) => {
-    const parsed = feedContentSchema.safeParse(candidate)
-    if (parsed.success) return [parsed.data]
-    reject(`content:${candidate.kind}`)
-    return []
-  })
-}
-
 export function decodeClaudeHistoryContent(
   message: SessionMessage,
   reject: RejectClaudeShape,
@@ -40,20 +31,17 @@ export function decodeClaudeHistoryContent(
     reject('history-envelope')
     return []
   }
-  return validateContents(
-    decodeClaudeBlocks(
-      {
-        id:
-          envelope.data.type === 'assistant'
-            ? assistantContentId(envelope.data.message, envelope.data.uuid)
-            : envelope.data.uuid,
-        role: envelope.data.type,
-        message: envelope.data.message,
-        vendorEnvelope: envelope.data.origin !== undefined && envelope.data.origin.kind !== 'human',
-        humanInput: envelope.data.origin?.kind === 'human',
-      },
-      reject,
-    ),
+  return decodeClaudeBlocks(
+    {
+      id:
+        envelope.data.type === 'assistant'
+          ? assistantContentId(envelope.data.message, envelope.data.uuid)
+          : envelope.data.uuid,
+      role: envelope.data.type,
+      message: envelope.data.message,
+      vendorEnvelope: envelope.data.origin !== undefined && envelope.data.origin.kind !== 'human',
+      humanInput: envelope.data.origin?.kind === 'human',
+    },
     reject,
   )
 }
@@ -158,7 +146,7 @@ export function decodeClaudeLiveContent(
     return []
   }
   try {
-    return validateContents(decodeLiveMessage(message, envelope.data.uuid, reject), reject)
+    return decodeLiveMessage(message, envelope.data.uuid, reject)
   } catch {
     reject(`malformed-live-content:${envelope.data.type}`)
     return []

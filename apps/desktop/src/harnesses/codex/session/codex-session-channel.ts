@@ -13,7 +13,11 @@ import {
 } from '@/harnesses/registration'
 import type { CodexRequest, RequestID, WireMessage } from '../app-server/codex-app-server-client'
 import { codexCommandContent } from './codex-command-content'
-import { codexThreadItemTypeSchema } from './codex-session-history'
+import {
+  codexContentFromItems,
+  codexMessagePhaseSchema,
+  codexThreadItemTypeSchema,
+} from './codex-session-history'
 import {
   approvalResponse,
   type CodexApproval,
@@ -22,73 +26,23 @@ import {
   questionResponse,
   readCodexInteraction,
 } from './codex-session-interactions'
+import {
+  APPROVAL_TIMEOUT_MS,
+  inputItems,
+  itemNotificationSchema,
+  messageDeltaSchema,
+  reasoningSummaryDeltaSchema,
+  threadResultSchema,
+  turnNotificationSchema,
+  turnResultSchema,
+  userContentSchema,
+} from './codex-session-protocol'
 import { readCodexThreadStatus } from './codex-thread-status'
 
 export type CodexLiveClient = {
   request: CodexRequest
   onNotification: (listener: (message: WireMessage) => boolean | undefined) => () => void
   respond: (id: RequestID, result: unknown) => void
-}
-
-type CodexInputItem =
-  | {
-      type: 'text'
-      text: string
-      text_elements: Array<{ byteRange: { start: number; end: number }; placeholder: string }>
-    }
-  | { type: 'localImage'; path: string }
-
-const threadResultSchema = z.object({ thread: z.object({ id: z.string().min(1) }) })
-const turnResultSchema = z.object({ turn: z.object({ id: z.string().min(1) }) })
-const turnNotificationSchema = z.object({
-  threadId: z.string().min(1),
-  turn: z.object({
-    id: z.string().min(1),
-    status: z.enum(['inProgress', 'completed', 'failed', 'interrupted']),
-  }),
-})
-const itemNotificationSchema = z.object({
-  threadId: z.string().min(1),
-  turnId: z.string().min(1),
-  item: z
-    .object({
-      id: z.string().min(1),
-      type: z.string().min(1),
-      text: z.string().optional(),
-      content: z.array(z.unknown()).optional(),
-    })
-    .passthrough(),
-})
-const messageDeltaSchema = z.object({
-  threadId: z.string().min(1),
-  turnId: z.string().min(1),
-  itemId: z.string().min(1),
-  delta: z.string(),
-})
-const APPROVAL_TIMEOUT_MS = 24 * 60 * 60 * 1000
-const userContentSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('text'), text: z.string() }),
-  z.object({ type: z.literal('localImage'), path: z.string() }),
-  z.object({ type: z.literal('image'), url: z.string() }),
-])
-
-function inputItems(command: LiveSessionCommand): CodexInputItem[] {
-  const items: CodexInputItem[] = [{ type: 'text', text: command.prompt, text_elements: [] }]
-  for (const attachment of command.attachments) {
-    if (attachment.kind === 'image') items.push({ type: 'localImage', path: attachment.path })
-    else
-      items.push({
-        type: 'text',
-        text: attachment.path,
-        text_elements: [
-          {
-            byteRange: { start: 0, end: Buffer.byteLength(attachment.path) },
-            placeholder: attachment.path,
-          },
-        ],
-      })
-  }
-  return items
 }
 
 export class CodexSessionChannel implements LiveSessionChannel {
@@ -99,6 +53,8 @@ export class CodexSessionChannel implements LiveSessionChannel {
   private readonly queue: LiveSessionCommand[] = []
   private readonly seen = new Set<string>()
   private readonly textByItem = new Map<string, string>()
+  private readonly reasoningByItem = new Map<string, string[]>()
+  private readonly phaseByItem = new Map<string, 'commentary' | 'final_answer' | null>()
   private readonly outputByItem = new Map<string, string>()
   private readonly commandByItem = new Map<string, Extract<FeedContent, { kind: 'command' }>>()
   private readonly pending = new Map<string, CodexInteraction>()
@@ -379,6 +335,9 @@ export class CodexSessionChannel implements LiveSessionChannel {
       case 'item/agentMessage/delta':
         this.messageDelta(message.params)
         return undefined
+      case 'item/reasoning/summaryTextDelta':
+        this.reasoningSummaryDelta(message.params)
+        return undefined
       case 'item/commandExecution/outputDelta':
         this.commandOutputDelta(message.params)
         return undefined
@@ -421,6 +380,8 @@ export class CodexSessionChannel implements LiveSessionChannel {
     for (const requestId of this.pending.keys()) this.clearApproval(requestId)
     this.interactionAbort.abort()
     this.textByItem.clear()
+    this.reasoningByItem.clear()
+    this.phaseByItem.clear()
     this.outputByItem.clear()
     this.commandByItem.clear()
     this.active = null
@@ -434,7 +395,30 @@ export class CodexSessionChannel implements LiveSessionChannel {
     if (threadId !== this.nativeId || this.active?.turnId !== turnId) return
     const text = (this.textByItem.get(itemId) ?? '') + delta
     this.textByItem.set(itemId, text)
-    this.emitMessage({ itemId, turnId, role: 'assistant', text })
+    this.emitMessage({
+      itemId,
+      turnId,
+      role: 'assistant',
+      text,
+      phase: this.phaseByItem.get(itemId),
+    })
+  }
+
+  private reasoningSummaryDelta(params: Record<string, unknown>) {
+    const parsed = reasoningSummaryDeltaSchema.safeParse(params)
+    if (!parsed.success) return this.reject('item/reasoning/summaryTextDelta')
+    const { threadId, turnId, itemId, delta, summaryIndex } = parsed.data
+    if (threadId !== this.nativeId || this.active?.turnId !== turnId) return
+    const parts = this.reasoningByItem.get(itemId) ?? []
+    parts[summaryIndex] = (parts[summaryIndex] ?? '') + delta
+    this.reasoningByItem.set(itemId, parts)
+    this.emitFeed({
+      type: 'content',
+      commandId: this.active.commandId,
+      turnId,
+      vendorEventId: itemId,
+      content: { kind: 'reasoning', id: itemId, text: parts.join('\n'), redacted: false },
+    })
   }
 
   private commandOutputDelta(params: Record<string, unknown>) {
@@ -498,12 +482,40 @@ export class CodexSessionChannel implements LiveSessionChannel {
     if (!codexThreadItemTypeSchema.safeParse(item.type).success)
       return this.reject(`item/${phase}: ${item.type}`)
     if (item.type === 'commandExecution') return this.commandItem(item, turnId, phase)
-    if (phase === 'started') return
+    if (phase === 'started') {
+      if (item.type === 'agentMessage') {
+        const messagePhase = codexMessagePhaseSchema.nullable().safeParse(item.phase)
+        if (messagePhase.success) this.phaseByItem.set(item.id, messagePhase.data)
+      }
+      return
+    }
+    this.completedItem(item, turnId)
+  }
+
+  private completedItem(item: z.infer<typeof itemNotificationSchema>['item'], turnId: string) {
     if (item.type === 'userMessage') return this.userItem(item, turnId)
-    if (item.type !== 'agentMessage') return
+    if (item.type !== 'agentMessage') {
+      for (const content of codexContentFromItems([item]))
+        this.emitFeed({
+          type: 'content',
+          commandId: this.active?.commandId ?? null,
+          turnId,
+          vendorEventId: item.id,
+          content,
+        })
+      return
+    }
     if (item.text === undefined) return this.reject('item/completed: missing agentMessage content')
+    const messagePhase = codexMessagePhaseSchema.nullable().safeParse(item.phase)
+    if (messagePhase.success) this.phaseByItem.set(item.id, messagePhase.data)
     this.textByItem.set(item.id, item.text)
-    this.emitMessage({ itemId: item.id, turnId, role: 'assistant', text: item.text })
+    this.emitMessage({
+      itemId: item.id,
+      turnId,
+      role: 'assistant',
+      text: item.text,
+      phase: this.phaseByItem.get(item.id),
+    })
   }
 
   private emitMessage(message: {
@@ -511,13 +523,20 @@ export class CodexSessionChannel implements LiveSessionChannel {
     turnId: string
     role: 'user' | 'assistant'
     text: string
+    phase?: 'commentary' | 'final_answer' | null
   }) {
     this.emitFeed({
       type: 'content',
       commandId: this.active?.commandId ?? null,
       turnId: message.turnId,
       vendorEventId: message.itemId,
-      content: { kind: 'message', id: message.itemId, role: message.role, text: message.text },
+      content: {
+        kind: 'message',
+        id: message.itemId,
+        role: message.role,
+        text: message.text,
+        ...(message.phase !== undefined ? { phase: message.phase } : {}),
+      },
     })
   }
 

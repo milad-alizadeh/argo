@@ -103,7 +103,15 @@ export const FEED_ROW_RENDERERS = {
   event: ({ row }) => <FeedEvent row={row} />,
   subagent: ({ row }) => <FeedSubagent row={row} />,
   marker: ({ row }) => <FeedMarker row={row} />,
-  source: ({ row }) => <p>{row.label}</p>,
+  source: ({ row }) =>
+    row.source === '' ? (
+      <p>{row.label}</p>
+    ) : (
+      <details>
+        <summary className="cursor-pointer">{row.label}</summary>
+        <p className="whitespace-pre-wrap break-words text-muted-foreground">{row.source}</p>
+      </details>
+    ),
   image: ({ row }) => (
     <FeedGallery>
       <FeedImage alt="" source={row.source} />

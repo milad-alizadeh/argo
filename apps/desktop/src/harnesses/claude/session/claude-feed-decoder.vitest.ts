@@ -183,6 +183,7 @@ test('keeps Claude block identity and tool relationships without flattening cont
       input: { file_path: '/tmp/a' },
       output: null,
       summary: null,
+      presentation: { kind: 'read', label: 'Read /tmp/a' },
     },
   ])
   expect(decodeClaudeLiveContent(result, (shape) => rejected.push(shape))).toEqual([
@@ -198,6 +199,32 @@ test('keeps Claude block identity and tool relationships without flattening cont
     },
   ])
   expect(rejected).toEqual([])
+})
+
+test('keeps the Claude Code description as the command label', () => {
+  const message = {
+    type: 'assistant',
+    uuid: 'assistant-command',
+    session_id: 'session-1',
+    message: {
+      role: 'assistant',
+      content: [
+        {
+          type: 'tool_use',
+          id: 'call-command',
+          name: 'Bash',
+          input: { command: 'bun test', description: 'Run the Feed tests' },
+        },
+      ],
+    },
+  } as unknown as SDKMessage
+  expect(decodeClaudeLiveContent(message, () => {})).toMatchObject([
+    {
+      kind: 'tool',
+      callId: 'call-command',
+      presentation: { kind: 'command', label: 'Run the Feed tests' },
+    },
+  ])
 })
 
 test('counts unsupported shapes and keeps unknown envelope markup out of content', () => {

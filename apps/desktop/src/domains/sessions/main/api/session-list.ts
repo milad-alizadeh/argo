@@ -180,6 +180,7 @@ function liveProjection(context: SessionListContext, sessionId: string) {
   return {
     posture: projection.posture,
     status: snapshot.context.status ?? projection.status,
+    activity: snapshot.context.activity?.activity ?? null,
     turnConfiguration: snapshot.context.first.turnConfiguration,
   }
 }
@@ -237,7 +238,7 @@ function sessionListRow(
     unreadableLines: 0,
     originUnread: false,
     turnStartedAt: null,
-    activity: null,
+    activity: live?.activity ?? null,
     plan: null,
     subagents: [],
     shell: [],

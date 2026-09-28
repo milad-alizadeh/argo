@@ -14,6 +14,17 @@ export const FEED_EVENT_KINDS = [
   ...TRANSCRIPT_EVENT_KINDS,
   'liveStatus',
   'liveFailure',
+  'reasoning',
+  'media',
+  'fileChange',
+  'search',
+  'plan',
+  'delegation',
+  'task',
+  'refusal',
+  'imageGeneration',
+  'wait',
+  'diagnostic',
   'permission',
   'permissionGranted',
   'permissionDenied',
@@ -115,6 +126,9 @@ export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
     id: identifierSchema,
     event: feedEventKindSchema,
     text: z.string().nullable(),
+    status: z
+      .enum(['pending', 'running', 'paused', 'completed', 'failed', 'interrupted'])
+      .optional(),
     skill: z.strictObject({ name: z.string(), path: z.string().min(1) }).optional(),
     // The protocol update's own untranslated text, shown behind a closed disclosure for
     // diagnostics; absent for a harness event, which has none worth keeping.

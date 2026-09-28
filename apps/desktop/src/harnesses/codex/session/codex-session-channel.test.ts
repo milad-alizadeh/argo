@@ -323,6 +323,88 @@ test('Codex channel projects recorded app-server notifications', async () => {
   channel.close()
 })
 
+function sendProgressNotifications(notify: (message: WireMessage) => void) {
+  const item = (id: string, type: string, fields: Record<string, unknown>) => ({
+    threadId: 'thread-1',
+    turnId: 'turn-1',
+    item: { id, type, ...fields },
+  })
+  notify({
+    method: 'item/started',
+    params: item('progress-1', 'agentMessage', { phase: 'commentary' }),
+  })
+  notify({
+    method: 'item/agentMessage/delta',
+    params: {
+      threadId: 'thread-1',
+      turnId: 'turn-1',
+      itemId: 'progress-1',
+      delta: 'Reading files',
+    },
+  })
+  notify({
+    method: 'item/reasoning/summaryTextDelta',
+    params: {
+      threadId: 'thread-1',
+      turnId: 'turn-1',
+      itemId: 'reason-1',
+      summaryIndex: 0,
+      delta: 'Checking',
+    },
+  })
+  notify({
+    method: 'item/reasoning/summaryTextDelta',
+    params: {
+      threadId: 'thread-1',
+      turnId: 'turn-1',
+      itemId: 'reason-1',
+      summaryIndex: 0,
+      delta: ' the results',
+    },
+  })
+  notify({
+    method: 'item/completed',
+    params: item('reason-1', 'reasoning', {
+      summary: ['Checking the results'],
+    }),
+  })
+  notify({
+    method: 'item/completed',
+    params: item('answer-1', 'agentMessage', {
+      text: 'Done',
+      phase: 'final_answer',
+    }),
+  })
+}
+
+test('Codex live commentary and reasoning stay separate from the final answer', async () => {
+  const request = (async (method: string, _params: unknown, parse: (value: unknown) => unknown) => {
+    if (method === 'thread/start') return parse({ thread: { id: 'thread-1' } })
+    if (method === 'turn/start') return parse({ turn: { id: 'turn-1' } })
+    throw new Error(`Unexpected request: ${method}`)
+  }) as CodexRequest
+  const { channel, events, notify } = testChannel(request)
+  await new Promise((resolve) => setImmediate(resolve))
+  sendProgressNotifications(notify)
+  const content = events.flatMap((event) =>
+    event.type === 'feed' && event.body.type === 'content' ? [event.body.content] : [],
+  )
+  assert.deepEqual(content, [
+    {
+      kind: 'message',
+      id: 'progress-1',
+      role: 'assistant',
+      text: 'Reading files',
+      phase: 'commentary',
+    },
+    { kind: 'reasoning', id: 'reason-1', text: 'Checking', redacted: false },
+    { kind: 'reasoning', id: 'reason-1', text: 'Checking the results', redacted: false },
+    { kind: 'reasoning', id: 'reason-1', text: 'Checking the results', redacted: false },
+    { kind: 'message', id: 'answer-1', role: 'assistant', text: 'Done', phase: 'final_answer' },
+  ])
+  channel.close()
+})
+
 test('a Turn notification establishes vendor delivery before the request response', async () => {
   let rejectTurn: ((error: Error) => void) | undefined
   const request = (async (method: string, _params: unknown, parse: (value: unknown) => unknown) => {

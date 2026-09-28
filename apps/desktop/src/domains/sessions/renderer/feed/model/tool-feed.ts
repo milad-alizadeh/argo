@@ -19,8 +19,9 @@ export function displayedToolLabel(
   running: string,
 ) {
   if (!active || (call.kind !== 'command' && call.kind !== 'tool')) return call.label
-  const label = call.label.startsWith('Ran ') ? call.label.slice('Ran '.length) : call.label
-  return `${running} ${label}`
+  return call.label.startsWith('Ran ')
+    ? `${running} ${call.label.slice('Ran '.length)}`
+    : call.label
 }
 
 // A call's result and a Skill's body both arrive as later, separate records, keyed by call id.
@@ -59,7 +60,7 @@ export function toolPresentation(call: ToolCall, file = 0) {
     case 'skill':
       return { kind: 'skill' as const, label: call.title ?? 'Skill' }
     case 'other':
-      return { kind: 'tool' as const, label: call.label }
+      return call.presentation ?? { kind: 'tool' as const, label: call.label }
     case 'search':
     case 'fetch':
       return { kind: 'searched' as const, label: searchLabel(call) }

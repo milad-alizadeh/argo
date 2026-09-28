@@ -36,6 +36,7 @@ export const feedContentSchema = z.discriminatedUnion('kind', [
     kind: z.literal('message'),
     role: z.enum(['user', 'assistant', 'system']),
     text: z.string(),
+    phase: z.enum(['commentary', 'final_answer']).nullable().optional(),
   }),
   base.extend({ kind: z.literal('reasoning'), text: z.string().nullable(), redacted: z.boolean() }),
   base.extend({
@@ -59,6 +60,21 @@ export const feedContentSchema = z.discriminatedUnion('kind', [
     input: z.json().nullable(),
     output: z.array(contentPartSchema).nullable(),
     summary: z.string().nullable(),
+    presentation: z
+      .strictObject({
+        kind: z.enum([
+          'command',
+          'read',
+          'edited',
+          'created',
+          'deleted',
+          'tool',
+          'skill',
+          'searched',
+        ]),
+        label: z.string(),
+      })
+      .optional(),
   }),
   base.extend({
     kind: z.literal('command'),

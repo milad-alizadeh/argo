@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { SessionContractError } from '../session-contract-error'
 import type { SessionFeed, SessionFeedSnapshot, SessionId } from '../types'
 import { projectLiveFeedRows } from './model/live-feed-rows'
+import { groupToolRuns } from './model/tool-groups'
 import { retrySessionFeed, sessionFeedQuery } from './session-feed-query'
 import { useLiveFeedEvents } from './use-live-feed-events'
 
@@ -23,7 +24,7 @@ export function displayedFeed({
     reading?.sessionId === selectedSessionId && reading.chainId === chainId ? reading : null
   const events = live?.events ?? []
   if (current === null && events.length === 0) return null
-  const rows = projectLiveFeedRows(current?.content ?? [], events)
+  const rows = groupToolRuns(projectLiveFeedRows(current?.content ?? [], events))
   const base = current ?? {
     version: 1,
     type: 'session.feed.read',

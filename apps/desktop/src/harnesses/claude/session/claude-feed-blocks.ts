@@ -1,3 +1,4 @@
+import type { SDKMessage } from '@anthropic-ai/claude-agent-sdk'
 import { z } from 'zod'
 import type { FeedContent, MediaSource } from '@/domains/sessions/api/feed-content'
 import { decodeClaudeText, type RejectClaudeShape } from './claude-feed-envelopes'
@@ -7,14 +8,19 @@ const messageSchema = z.object({
   content: z.union([z.string(), z.array(z.unknown())]),
 })
 const blockTypeSchema = z.object({ type: z.string() })
-const textSchema = z.object({ type: z.literal('text'), text: z.string() })
+type AssistantBlock = Extract<SDKMessage, { type: 'assistant' }>['message']['content'][number]
+type TextBlock = Extract<AssistantBlock, { type: 'text' }>
+type ToolUseBlock = Extract<AssistantBlock, { type: 'tool_use' }>
+const textSchema = z.object({ type: z.literal('text'), text: z.string() }) satisfies z.ZodType<
+  Pick<TextBlock, 'type' | 'text'>
+>
 const thinkingSchema = z.object({ type: z.literal('thinking'), thinking: z.string() })
 const toolUseSchema = z.object({
   type: z.literal('tool_use'),
   id: z.string().min(1),
   name: z.string(),
   input: z.json(),
-})
+}) satisfies z.ZodType<Pick<ToolUseBlock, 'type' | 'id' | 'name' | 'input'>>
 const toolResultSchema = z.object({
   type: z.literal('tool_result'),
   tool_use_id: z.string().min(1),
@@ -31,8 +37,42 @@ const mediaSchema = z.object({
   }),
 })
 
-type Role = 'user' | 'assistant'
+type Role = Extract<SDKMessage, { type: 'user' | 'assistant' }>['type']
 type ToolPart = NonNullable<Extract<FeedContent, { kind: 'tool' }>['output']>[number]
+type ToolPresentation = NonNullable<Extract<FeedContent, { kind: 'tool' }>['presentation']>
+
+function toolPresentation(name: string, input: unknown): ToolPresentation {
+  const fields =
+    input !== null && typeof input === 'object' && !Array.isArray(input)
+      ? (input as Record<string, unknown>)
+      : {}
+  const word = (key: string) => (typeof fields[key] === 'string' ? fields[key] : null)
+  switch (name) {
+    case 'Bash': {
+      const command = word('command')?.split('\n')[0] ?? null
+      return { kind: 'command', label: word('description') ?? `Ran ${command ?? 'command'}` }
+    }
+    case 'Read':
+      return { kind: 'read', label: `Read ${word('file_path') ?? 'file'}` }
+    case 'Edit':
+      return { kind: 'edited', label: `Edited ${word('file_path') ?? 'file'}` }
+    case 'Write':
+      return { kind: 'created', label: `Created ${word('file_path') ?? 'file'}` }
+    case 'Grep':
+    case 'Glob':
+    case 'WebSearch':
+      return {
+        kind: 'searched',
+        label: `Searched ${word('pattern') ?? word('query') ?? ''}`.trim(),
+      }
+    case 'WebFetch':
+      return { kind: 'read', label: `Read ${word('url') ?? 'page'}` }
+    case 'Skill':
+      return { kind: 'skill', label: word('skill') ?? 'Skill' }
+    default:
+      return { kind: 'tool', label: word('description') ?? name }
+  }
+}
 
 function mediaSource(source: z.infer<typeof mediaSchema>['source']): MediaSource | null {
   if (source.type === 'url')
@@ -167,6 +207,7 @@ function decodeBlock(
         input: tool.data.input,
         output: null,
         summary: null,
+        presentation: toolPresentation(tool.data.name, tool.data.input),
       }
     }
     case 'tool_result':

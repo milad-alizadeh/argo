@@ -41,6 +41,10 @@ export type OtherFacts = {
   label: string
   text: string | null
   source: { server: string; tool: string } | null
+  presentation?: {
+    kind: 'command' | 'read' | 'edited' | 'created' | 'deleted' | 'tool' | 'skill' | 'searched'
+    label: string
+  }
 }
 
 // A question the agent put to the person, and the one typed fact both harnesses report for it.

@@ -17,8 +17,8 @@ function groupFingerprint(value: string, seed: number) {
 }
 
 function toolGroupId(calls: ToolRow[]) {
-  const callIds = calls.map(({ id }) => id).join('\u001f')
-  return `tool-group:${groupFingerprint(callIds, 0x811c9dc5)}${groupFingerprint(callIds, 0x9e3779b9)}`
+  const firstCallId = calls[0]?.id ?? ''
+  return `tool-group:${groupFingerprint(firstCallId, 0x811c9dc5)}${groupFingerprint(firstCallId, 0x9e3779b9)}`
 }
 
 // One tool-kind record owns its icon, route, group wording, and group order.
