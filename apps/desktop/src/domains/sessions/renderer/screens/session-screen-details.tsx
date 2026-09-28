@@ -362,6 +362,7 @@ function ReadySessionComposer({
         permissionPrompt={
           <PermissionPrompt
             harness={harness.harness}
+            headingLevel={2}
             permission={permission.permission}
             onDecide={permission.decide}
           />

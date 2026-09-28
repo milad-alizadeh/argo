@@ -10,6 +10,7 @@ import {
   useFeedViewport,
   useInitialFeedPosition,
   useScrollPositionSnapshot,
+  useTailThroughViewportResize,
 } from './anchoring'
 import { type FeedRowComponent, FeedViewport } from './feed-viewport'
 import { useFeedPrompt, usePromptHold } from './prompt-pin'
@@ -106,6 +107,7 @@ export function AnchoredFeed({
     paddingStart,
     onChange: tailFollow.onChange,
   })
+  useTailThroughViewportResize(viewport, following)
   const olderAnchor = useRef<{ id: string; offset: number; firstId: string } | null>(null)
   const visibleAnchor = useRef<{ id: string; offset: number } | null>(null)
   const pendingAnchor = useRef<{ id: string; offset: number } | null>(null)

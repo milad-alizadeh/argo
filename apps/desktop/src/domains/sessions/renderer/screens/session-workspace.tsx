@@ -52,6 +52,16 @@ function ComposerFade({ onJumpToLatest }: { onJumpToLatest: (() => void) | null 
   )
 }
 
+// The top of the composer's topmost drawn element (a stacked tray or the card), below the
+// transparent band its root pads above them.
+function composerInkTop(root: Element | null) {
+  const tops = [...(root?.children ?? [])]
+    .map((child) => child.getBoundingClientRect())
+    .filter((bounds) => bounds.height > 0)
+    .map((bounds) => bounds.top)
+  return tops.length === 0 ? null : Math.min(...tops)
+}
+
 // Unmounted rather than hidden: a Session with nothing selected has no composer at all (#2105).
 function ComposerSection({
   composer,
@@ -62,41 +72,38 @@ function ComposerSection({
 }) {
   const { t } = useTranslation('sessions')
   const sectionRef = useRef<HTMLElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
   const hasComposer = composer !== null
   useLayoutEffect(() => {
     if (!hasComposer) return
     const section = sectionRef.current
+    const scroll = scrollRef.current
     const body = section?.parentElement
-    if (!section || !body) return
-    const findCard = () => section.querySelector<HTMLElement>('[data-component="ComposerCard"]')
-    let observedCard: HTMLElement | null = null
+    if (!section || !scroll || !body) return
     const measure = () => {
       const sectionBounds = section.getBoundingClientRect()
-      // From the card's top edge, clamped to the section: the band above the card is transparent fade
-      // the Feed may pass under, and the section clips a card taller than its cap.
-      const cardTop = Math.max(
-        observedCard?.getBoundingClientRect().top ?? sectionBounds.top,
-        sectionBounds.top,
-      )
-      body.style.setProperty('--session-composer-reach', `${sectionBounds.bottom - cardTop}px`)
+      const inkTop = composerInkTop(scroll.firstElementChild) ?? sectionBounds.top
+      const reach = sectionBounds.bottom - Math.max(inkTop, sectionBounds.top)
+      body.style.setProperty('--session-composer-reach', `${reach}px`)
       section.style.setProperty('--session-composer-fade-start', `${sectionBounds.height / 2}px`)
       section.style.setProperty('--session-composer-fade-length', `${sectionBounds.height / 2}px`)
     }
     const resizes = new ResizeObserver(measure)
-    // A remounted composer brings a new card node, which the resize observer must follow.
-    const followCard = () => {
-      const card = findCard()
-      if (card === observedCard) return
-      if (observedCard !== null) resizes.unobserve(observedCard)
-      if (card !== null) resizes.observe(card)
-      observedCard = card
+    resizes.observe(section)
+    // The composer root remounts inside the wrapper, so the observer follows the live node and its
+    // children: a growing draft, stacked prompts or attachments each resize one of them.
+    let observed: Element[] = []
+    const mutations = new MutationObserver(() => follow())
+    const follow = () => {
+      for (const element of observed) resizes.unobserve(element)
+      const root = scroll.firstElementChild
+      observed = root === null ? [] : [root, ...root.children]
+      for (const element of observed) resizes.observe(element)
+      if (root !== null) mutations.observe(root, { childList: true })
       measure()
     }
-    const mutations = new MutationObserver(followCard)
-    resizes.observe(section)
-    mutations.observe(section, { childList: true, subtree: true })
-    followCard()
-    measure()
+    mutations.observe(scroll, { childList: true })
+    follow()
     return () => {
       resizes.disconnect()
       mutations.disconnect()
@@ -112,6 +119,7 @@ function ComposerSection({
     >
       <ComposerFade onJumpToLatest={onJumpToLatest} />
       <div
+        ref={scrollRef}
         className="session-screen__composer-scroll flex min-h-0 flex-col"
         data-component="SessionComposerScroll"
       >

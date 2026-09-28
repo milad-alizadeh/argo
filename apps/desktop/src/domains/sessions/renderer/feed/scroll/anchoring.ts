@@ -79,6 +79,37 @@ export function useAnchoredVirtualizer({
   return virtualizer
 }
 
+// A composer growing under a Feed at its tail grows the viewport's end padding, which shrinks its
+// content box but not the border box TanStack watches, so the tail is pinned again here (#2835).
+// One direct write, not `scrollToEnd`, whose re-aiming over later frames would override a reader
+// who scrolls away in that time.
+export function useTailThroughViewportResize(viewport: HTMLElement | null, following: boolean) {
+  const followingNow = useRef(following)
+  useLayoutEffect(() => {
+    followingNow.current = following
+  }, [following])
+  useLayoutEffect(() => {
+    if (viewport === null) return
+    // Read at each scroll, which runs before resize callbacks in a frame, so a reader who just
+    // scrolled away is not pulled back by a stale `following`.
+    let atEnd = true
+    const distanceFromEnd = () => viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop
+    const onScroll = () => {
+      atEnd = distanceFromEnd() <= 1
+    }
+    const resizes = new ResizeObserver(() => {
+      if (followingNow.current && atEnd && distanceFromEnd() > 1)
+        viewport.scrollTop = viewport.scrollHeight
+    })
+    viewport.addEventListener('scroll', onScroll, { passive: true })
+    resizes.observe(viewport)
+    return () => {
+      viewport.removeEventListener('scroll', onScroll)
+      resizes.disconnect()
+    }
+  }, [viewport])
+}
+
 function feedRowAt(rows: readonly SessionFeedRow[], index: number) {
   const row = rows[index]
   if (row === undefined) throw new RangeError(`Feed row ${index} is outside the virtualizer range.`)
