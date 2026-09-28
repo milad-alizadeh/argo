@@ -55,10 +55,10 @@ afterEach(async () => {
 
 // Pages read after every earlier write, unless a case says when its page was asked for.
 function scan(startedAt: number, pages: Ticket[][], readAt = Number.MAX_SAFE_INTEGER) {
-  beginTicketScan(database, ACTIVE, startedAt)
+  const scanStartedAt = beginTicketScan(database, ACTIVE, startedAt)
   let offset = 0
   for (const page of pages) {
-    saveListedTickets(database, { ...SCOPE, scanStartedAt: startedAt, offset, readAt }, page)
+    saveListedTickets(database, { ...SCOPE, scanStartedAt, offset, readAt }, page)
     offset += page.length
   }
 }
@@ -103,6 +103,21 @@ test('a complete scan commits Tickets that keep their Argo UUID across later sca
     complete: true,
     completedAt: 2500,
   })
+})
+
+test('a later complete scan drops what it omitted when the clock repeats or goes back', () => {
+  scan(1000, [[ticket(1), ticket(2)]])
+  completeTicketScan(database, ACTIVE, { statuses: [OPEN], completedAt: 1500 })
+  scan(1000, [[ticket(1)]])
+  completeTicketScan(database, ACTIVE, { statuses: [OPEN], completedAt: 1500 })
+  assert.deepEqual(
+    active().tickets.map(({ key }) => key),
+    ['#1'],
+  )
+
+  scan(900, [[]])
+  completeTicketScan(database, ACTIVE, { statuses: [OPEN], completedAt: 1500 })
+  assert.deepEqual(active().tickets, [])
 })
 
 test('an unfinished scan adds what it read but is never complete coverage', () => {

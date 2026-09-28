@@ -17,7 +17,7 @@ export function useUpdateStatus() {
   return useTicketFieldMutation<TicketUpdated, StatusChange>({
     move,
     request: ({ projectId, key, status }) =>
-      trpcClient.tickets.updateStatus.mutate({ projectId, key, statusId: status.id }),
+      trpcClient.ticketUpdateStatus.mutate({ projectId, key, statusId: status.id }),
     reply: ({ projectId, key, status }) => ({ projectId, key, status }),
   })
 }

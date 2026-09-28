@@ -15,7 +15,7 @@ export function useUpdatePriority() {
   return useTicketFieldMutation<TicketPrioritized, PriorityChange>({
     move,
     request: ({ projectId, key, priority }) =>
-      trpcClient.tickets.updatePriority.mutate({
+      trpcClient.ticketUpdatePriority.mutate({
         projectId,
         key,
         priorityLevel: priority?.level ?? null,

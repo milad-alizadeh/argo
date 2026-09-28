@@ -15,7 +15,13 @@ const listing = ({ accounts, notice, providers }: AccountListing): AccountListin
 // A Connection's summary names its Account's state, so a new listing is a new reading of Connections too.
 export function storeListing(client: QueryClient, next: AccountListing): void {
   client.setQueryData(QUERY_KEYS.accounts, listing(next))
-  void client.invalidateQueries({ queryKey: trpc.tickets.pathKey() })
+  for (const procedure of [
+    trpc.ticketConnection,
+    trpc.ticketList,
+    trpc.ticketActive,
+    trpc.ticketDiscover,
+  ])
+    void client.invalidateQueries({ queryKey: procedure.pathKey() })
 }
 
 export function useAccounts() {

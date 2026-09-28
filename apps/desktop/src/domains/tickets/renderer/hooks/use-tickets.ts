@@ -23,9 +23,9 @@ import { trpc, trpcClient } from '@/platform/renderer/trpc-client'
 import { type TicketIndexed, ticketReply } from './ticket-reply'
 import { useActiveTickets } from './use-active-tickets'
 
-const connectionKey = (projectId: string) => trpc.tickets.connection.queryKey({ projectId })
+const connectionKey = (projectId: string) => trpc.ticketConnection.queryKey({ projectId })
 // Every cached Ticket listing, saved or searched, sits under this key.
-export const listKey = () => trpc.tickets.list.pathKey()
+export const listKey = () => trpc.ticketList.pathKey()
 
 export type TicketPages = InfiniteData<TicketListed | TicketIndexed, unknown>
 
@@ -41,9 +41,9 @@ export function onRefused(client: QueryClient, projectId: string, failure: Contr
 
 export function useConnection(projectId: string | null) {
   return useQuery<TicketConnectedReply, ContractFailure, ConnectionSummary | null>({
-    queryKey: projectId ? connectionKey(projectId) : [...trpc.tickets.connection.pathKey(), null],
+    queryKey: projectId ? connectionKey(projectId) : [...trpc.ticketConnection.pathKey(), null],
     queryFn: projectId
-      ? () => trpcClient.tickets.connection.query({ projectId }).then(ticketReply)
+      ? () => trpcClient.ticketConnection.query({ projectId }).then(ticketReply)
       : skipToken,
     select: (reply) => ticketReply(reply).connection,
   })
@@ -69,7 +69,7 @@ function useSearchedTickets(projectId: string | null, ready: boolean, query: str
     queryFn:
       ready && projectId
         ? ({ pageParam }) =>
-            trpcClient.tickets.list
+            trpcClient.ticketList
               .query({ projectId, query, cursor: pageParam })
               .then(ticketReply)
               .catch((failure: ContractFailure) => {
@@ -91,11 +91,11 @@ function useSearchedTickets(projectId: string | null, ready: boolean, query: str
 export function useSources(projectId: string | null, accountId: string | null) {
   const client = useQueryClient()
   return useQuery<TicketDiscoverReply, ContractFailure, TicketScope[]>({
-    queryKey: [...trpc.tickets.discover.pathKey(), projectId, accountId],
+    queryKey: [...trpc.ticketDiscover.pathKey(), projectId, accountId],
     queryFn:
       projectId && accountId
         ? () =>
-            trpcClient.tickets.discover
+            trpcClient.ticketDiscover
               .query({ projectId, accountId })
               .then(ticketReply)
               .catch((failure: ContractFailure) => {
@@ -133,13 +133,13 @@ export type ConnectInput = { projectId: string; accountId: string; scope: string
 export const useConnectSource = () => {
   return useConnectionAction<ConnectInput>({
     mutationKey: [...listKey(), 'connect'],
-    mutationFn: (input) => trpcClient.tickets.connect.mutate(input),
+    mutationFn: (input) => trpcClient.ticketConnect.mutate(input),
   })
 }
 
 export const useDisconnectSource = () => {
   return useConnectionAction<{ projectId: string }>({
     mutationKey: [...listKey(), 'disconnect'],
-    mutationFn: (input) => trpcClient.tickets.disconnect.mutate(input),
+    mutationFn: (input) => trpcClient.ticketDisconnect.mutate(input),
   })
 }

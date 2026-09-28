@@ -8,7 +8,7 @@ import type {
 } from '@/domains/tickets/contract/contract'
 import type { RouterOutputs } from '@/platform/renderer/trpc-client'
 
-export type TicketIndexedReply = RouterOutputs['tickets']['active']
+export type TicketIndexedReply = RouterOutputs['ticketActive']
 export type TicketIndexed = Extract<TicketIndexedReply, { type: 'ticket.indexed' }>
 
 type TicketSuccess =

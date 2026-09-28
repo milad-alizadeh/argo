@@ -2,19 +2,20 @@ import assert from 'node:assert/strict'
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import { initTRPC } from '@trpc/server'
 import { onTestFinished, test } from 'vitest'
 import { createActor } from 'xstate'
-import { openDatabase } from '@/database/database'
+import { type Database, openDatabase } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { isAccountChallengeReply, type Provider } from '@/domains/accounts/contract/contract'
-import { createAccountAccess } from '@/domains/accounts/main'
+import { type AccountAccess, createAccountAccess } from '@/domains/accounts/main'
 import type { Cipher } from '@/domains/accounts/main/grants'
 import { createSignIn } from '@/domains/accounts/main/sign-in'
 import { createConnectionPort } from '@/domains/connections/main'
+import { ticketProcedures } from '@/domains/tickets/main/api/ticket-procedures'
 import { ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
 import { ticketSyncSupervisorMachine } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
 import { TicketChanges } from '@/domains/tickets/main/ticket-changes'
-import { createTicketRouter } from '@/domains/tickets/main/ticket-router'
 import { proofEndpoints } from '@/providers/github/endpoints'
 import { OCTOCAT } from '@/providers/github/harness'
 import { linearProofEndpoints } from '@/providers/linear/endpoints'
@@ -30,6 +31,34 @@ const cipher: Cipher = {
 }
 
 const projectId = 'project-one'
+
+// The Ticket procedures over a running scan supervisor, called as the renderer calls them.
+function ticketCaller(database: Database, access: AccountAccess, changes: TicketChanges) {
+  const ticketSync = createActor(ticketSyncSupervisorMachine, {
+    input: {
+      database,
+      readPage: ticketPageReader({ access, providers: PROVIDER_REGISTRY }),
+      changed: changes.changed,
+    },
+  }).start()
+  onTestFinished(() => {
+    ticketSync.stop()
+  })
+  const procedures = ticketProcedures({
+    access,
+    connections: createConnectionPort({
+      path: access.paths.connections,
+      exclusive: access.exclusive,
+    }),
+    providers: PROVIDER_REGISTRY,
+    index: {
+      database,
+      changes,
+      requestSync: (request) => ticketSync.send({ type: 'Sync', request }),
+    },
+  })
+  return initTRPC.create().router(procedures).createCaller({})
+}
 
 // Both providers behind the one registry, each answering from its mock, and one registered Project.
 async function flows() {
@@ -65,29 +94,7 @@ async function flows() {
   const signIn = createSignIn(access)
   onTestFinished(() => signIn.dispose())
   const changes = new TicketChanges()
-  const ticketSync = createActor(ticketSyncSupervisorMachine, {
-    input: {
-      database,
-      readPage: ticketPageReader({ access, providers: PROVIDER_REGISTRY }),
-      changed: changes.changed,
-    },
-  }).start()
-  onTestFinished(() => {
-    ticketSync.stop()
-  })
-  const tickets = createTicketRouter({
-    access,
-    connections: createConnectionPort({
-      path: access.paths.connections,
-      exclusive: access.exclusive,
-    }),
-    providers: PROVIDER_REGISTRY,
-    index: {
-      database,
-      changes,
-      requestSync: (request) => ticketSync.send({ type: 'Sync', request }),
-    },
-  }).createCaller({})
+  const tickets = ticketCaller(database, access, changes)
   return { gitHub, mockLinear, signIn, opened, tickets, changes, database }
 }
 
@@ -124,9 +131,9 @@ async function connectedKeys(
   accountId: string,
   scope: string,
 ) {
-  const connected = await tickets.connect({ projectId, accountId, scope })
+  const connected = await tickets.ticketConnect({ projectId, accountId, scope })
   assert.equal(connected.type, 'ticket.connected')
-  const listed = await tickets.list({ projectId, query: '', cursor: null })
+  const listed = await tickets.ticketList({ projectId, query: '', cursor: null })
   assert.ok(listed.type === 'ticket.listed')
   return listed.tickets.map((ticket) => ticket.key).sort()
 }
@@ -155,7 +162,7 @@ test('the shared Ticket flows read and close a GitHub issue through the registry
     issues: [{ number: 1, title: 'Wire the registry' }],
   })
   assert.deepEqual(await connectedKeys(tickets, accountId, 'octo/hello'), ['#1'])
-  const updated = await tickets.updateStatus({ projectId, key: '#1', statusId: 'completed' })
+  const updated = await tickets.ticketUpdateStatus({ projectId, key: '#1', statusId: 'completed' })
   assert.ok(updated.type === 'ticket.updated')
   assert.equal(updated.status.id, 'completed')
 })
@@ -164,7 +171,11 @@ test('the shared Ticket flows read and reprioritize a Linear issue through the r
   const { mockLinear, tickets, accountId } = await signedInToLinear()
   mockLinear.addTeam(TEAM)
   assert.deepEqual(await connectedKeys(tickets, accountId, TEAM.id), ['ENG-1', 'ENG-2'])
-  const prioritized = await tickets.updatePriority({ projectId, key: 'ENG-1', priorityLevel: 1 })
+  const prioritized = await tickets.ticketUpdatePriority({
+    projectId,
+    key: 'ENG-1',
+    priorityLevel: 1,
+  })
   assert.ok(prioritized.type === 'ticket.prioritized')
   assert.equal(prioritized.priority?.level, 1)
 })
@@ -178,10 +189,10 @@ async function synced({ tickets, changes }: Flow, forProject = projectId) {
     announced += 1
   })
   try {
-    const requested = await tickets.sync({ projectId: forProject })
+    const requested = await tickets.ticketSync({ projectId: forProject })
     assert.equal(requested.type, 'ticket.sync-requested')
     for (let attempt = 0; attempt < 200; attempt += 1) {
-      const read = await tickets.active({ projectId: forProject, page: 0 })
+      const read = await tickets.ticketActive({ projectId: forProject, page: 0 })
       assert.ok(read.type === 'ticket.indexed')
       if (announced > 0 && (read.sync.phase === 'ready' || read.sync.phase === 'failed'))
         return read
@@ -210,7 +221,7 @@ test('an active GitHub scan commits Tickets that the active list reads back from
     { number: 3, title: 'Shipped already', state: 'closed' as const },
   ]
   gitHub.addRepository({ fullName: 'octo/hello', visibleTo: [OCTOCAT.id], issues })
-  const connected = await tickets.connect({ projectId, accountId, scope: 'octo/hello' })
+  const connected = await tickets.ticketConnect({ projectId, accountId, scope: 'octo/hello' })
   assert.equal(connected.type, 'ticket.connected')
   const changed: string[] = []
   onTestFinished(changes.subscribe(({ scope }) => changed.push(scope)))
@@ -224,7 +235,7 @@ test('an active GitHub scan commits Tickets that the active list reads back from
   // With GitHub down the list still answers, from the rows it committed, without asking GitHub.
   gitHub.outage('down')
   const asked = gitHub.requests.length
-  const saved = await tickets.active({ projectId, page: 0 })
+  const saved = await tickets.ticketActive({ projectId, page: 0 })
   assert.ok(saved.type === 'ticket.indexed')
   assert.deepEqual(saved.tickets.map(({ key }) => key).sort(), ['#1', '#2'])
   assert.equal(gitHub.requests.length, asked)
@@ -259,7 +270,7 @@ test('an active GitHub scan commits Tickets that the active list reads back from
     .insert(project)
     .values({ id: 'project-two', path: '/other', commonDirectory: '/other/.git' })
     .run()
-  await tickets.connect({ projectId: 'project-two', accountId, scope: 'octo/hello' })
+  await tickets.ticketConnect({ projectId: 'project-two', accountId, scope: 'octo/hello' })
   const other = await synced(flow, 'project-two')
   assert.deepEqual(other.tickets.map(({ key }) => key).sort(), ['#1', '#2', '#4'])
   assert.deepEqual(argoIds(flow), later)

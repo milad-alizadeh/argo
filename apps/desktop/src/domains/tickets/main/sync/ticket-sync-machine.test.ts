@@ -90,6 +90,16 @@ test('a provider that answers the same cursor again fails rather than looping', 
   assert.deepEqual(sync.writes, ['begin', 'save 0 #1', 'fail invalid-response'])
 })
 
+test('a provider that cycles back to an earlier cursor fails rather than looping', async () => {
+  const sync = run({
+    first: { ok: true, value: page(['#1'], '2') },
+    '2': { ok: true, value: page(['#2'], '3') },
+    '3': { ok: true, value: page(['#3'], '2') },
+  })
+  await sync.done
+  assert.deepEqual(sync.writes, ['begin', 'save 0 #1', 'save 1 #2', 'fail invalid-response'])
+})
+
 test('a page read that throws is recorded as an invalid response', async () => {
   const sync = run({})
   await sync.done

@@ -17,7 +17,7 @@ const activeKey = () => [...listKey(), 'active']
 export function useTicketChanges() {
   const client = useQueryClient()
   useEffect(() => {
-    const subscription = trpcClient.tickets.changes.subscribe(undefined, {
+    const subscription = trpcClient.ticketChanges.subscribe(undefined, {
       onData: () => void client.invalidateQueries({ queryKey: activeKey() }),
     })
     return () => subscription.unsubscribe()
@@ -27,7 +27,7 @@ export function useTicketChanges() {
 // A scan starts on open, on a Project or source change, and when the Account is readable again.
 export function useTicketSync(projectId: string | null, connection: ConnectionSummary | null) {
   const sync = useMutation({
-    mutationFn: (id: string) => trpcClient.tickets.sync.mutate({ projectId: id }),
+    mutationFn: (id: string) => trpcClient.ticketSync.mutate({ projectId: id }),
   })
   const { mutate } = sync
   const ready = connection?.state === 'ready'
@@ -55,7 +55,7 @@ export function useActiveTickets(projectId: string | null, enabled: boolean) {
     queryFn:
       enabled && projectId
         ? ({ pageParam }) =>
-            trpcClient.tickets.active
+            trpcClient.ticketActive
               .query({ projectId, page: pageParam })
               .then(ticketReply)
               .catch((failure: ContractFailure) => {

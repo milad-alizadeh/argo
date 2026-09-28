@@ -51,12 +51,16 @@ export type RecordFailureInput = ScanInput & {
   failure: TicketErrorCode
 }
 
-function commit({ dependencies, target }: ScanInput, write: (database: Database) => void) {
-  write(dependencies.database)
+function commit<Result>(
+  { dependencies, target }: ScanInput,
+  write: (database: Database) => Result,
+) {
+  const result = write(dependencies.database)
   dependencies.changed({
     provider: target.provider,
     scope: target.scope,
   })
+  return result
 }
 
 const scanInput = ({ dependencies, target }: ScanInput): ScanInput => ({
@@ -80,6 +84,8 @@ export const ticketSyncMachine = setup({
       // The scan's start, which is also the listing mark every page of this scan writes.
       scanStartedAt: number
       cursor: string | null
+      // Every cursor this scan asked for, so a provider that cycles back to one fails the scan.
+      cursors: string[]
       // When the page being read was asked for.
       readAt: number
       page: TicketPage | null
@@ -91,9 +97,7 @@ export const ticketSyncMachine = setup({
   },
   actors: {
     begin: fromPromise<number, ScanInput>(async ({ input }) => {
-      const startedAt = Date.now()
-      commit(input, (database) => beginTicketScan(database, input.target, startedAt))
-      return startedAt
+      return commit(input, (database) => beginTicketScan(database, input.target, Date.now()))
     }),
     fetchPage: fromPromise<
       PageRead,
@@ -139,22 +143,29 @@ export const ticketSyncMachine = setup({
   },
   guards: {
     'if the read failed': (_, read: PageRead) => !read.ok,
-    // A provider that answers the cursor it was asked with would be read forever.
-    'if the provider repeated the cursor': (
+    // A provider that answers a cursor this scan already asked for would be read forever.
+    'if the provider repeated a cursor': (
       _,
       {
         read,
-        cursor,
+        cursors,
       }: {
         read: PageRead
-        cursor: string | null
+        cursors: readonly string[]
       },
-    ) => read.ok && read.value.nextCursor !== null && read.value.nextCursor === cursor,
+    ) => read.ok && read.value.nextCursor !== null && cursors.includes(read.value.nextCursor),
     'if another page follows': ({ context }) => context.page?.nextCursor != null,
   },
   actions: {
     advance: assign({
       cursor: ({ context }) => context.page?.nextCursor ?? null,
+      cursors: ({ context }) =>
+        context.page?.nextCursor
+          ? [
+              ...context.cursors,
+              context.page.nextCursor,
+            ]
+          : context.cursors,
       offset: ({ context }) => context.offset + (context.page?.tickets.length ?? 0),
     }),
   },
@@ -167,6 +178,7 @@ export const ticketSyncMachine = setup({
     accountId: input.accountId,
     scanStartedAt: 0,
     cursor: null,
+    cursors: [],
     readAt: 0,
     page: null,
     statuses: [],
@@ -216,10 +228,10 @@ export const ticketSyncMachine = setup({
           },
           {
             guard: {
-              type: 'if the provider repeated the cursor',
+              type: 'if the provider repeated a cursor',
               params: ({ context, event }) => ({
                 read: event.output,
-                cursor: context.cursor,
+                cursors: context.cursors,
               }),
             },
             target: 'Failing',

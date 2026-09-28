@@ -14,8 +14,8 @@ import {
 } from '@/domains/tickets/contract/contract'
 import { priorityLevel, statusId, ticketKey } from '@/domains/tickets/contract/ticket'
 import { identifierSchema } from '@/shared/validation'
-import { updatePriority } from './priority-service'
-import type { Call } from './read-as'
+import { updatePriority } from '../priority-service'
+import type { Call } from '../read-as'
 import {
   connectSource,
   disconnectSource,
@@ -23,13 +23,13 @@ import {
   listTickets,
   readConnection,
   updateStatus,
-} from './service'
+} from '../service'
 import {
   readActive,
   requestSync,
   ticketIndexedOutputSchema,
   ticketSyncRequestedOutputSchema,
-} from './ticket-index-service'
+} from '../ticket-index-service'
 
 const t = initTRPC.create()
 const projectInputSchema = z.strictObject({ projectId: identifierSchema })
@@ -54,27 +54,27 @@ const updatePriorityInputSchema = projectInputSchema.extend({
 })
 const updatePriorityOutputSchema = z.union([ticketPrioritizedSchema, ticketErrorSchema])
 
-export type TicketRouterDependencies = Pick<Call, 'access' | 'connections' | 'providers' | 'index'>
+export type TicketProcedureContext = Pick<Call, 'access' | 'connections' | 'providers' | 'index'>
 
-function request(dependencies: TicketRouterDependencies, projectId: string): Call {
+function request(dependencies: TicketProcedureContext, projectId: string): Call {
   return { ...dependencies, projectId, requestId: randomUUID() }
 }
 
 // The saved Ticket list: reads from SQLite, scan requests, and the commits that change it.
-function indexProcedures(dependencies: TicketRouterDependencies) {
+function indexProcedures(dependencies: TicketProcedureContext) {
   return {
-    active: t.procedure
+    ticketActive: t.procedure
       .input(activeInputSchema)
       .output(ticketIndexedOutputSchema)
       .query(({ input: { projectId, page } }) =>
         readActive(request(dependencies, projectId), page),
       ),
-    sync: t.procedure
+    ticketSync: t.procedure
       .input(projectInputSchema)
       .output(ticketSyncRequestedOutputSchema)
       .mutation(({ input }) => requestSync(request(dependencies, input.projectId))),
     // Sent after each commit to saved Tickets; the renderer then refetches from SQLite.
-    changes: t.procedure.subscription(() =>
+    ticketChanges: t.procedure.subscription(() =>
       observable<z.infer<typeof changeSchema>>((emit) =>
         dependencies.index.changes.subscribe((target) => emit.next(changeSchema.parse(target))),
       ),
@@ -82,42 +82,42 @@ function indexProcedures(dependencies: TicketRouterDependencies) {
   }
 }
 
-export function createTicketRouter(dependencies: TicketRouterDependencies) {
-  return t.router({
-    connection: t.procedure
+export function ticketProcedures(dependencies: TicketProcedureContext) {
+  return {
+    ticketConnection: t.procedure
       .input(projectInputSchema)
       .output(connectionOutputSchema)
       .query(({ input }) => readConnection(request(dependencies, input.projectId))),
-    list: t.procedure
+    ticketList: t.procedure
       .input(listInputSchema)
       .output(listOutputSchema)
       .query(({ input: { projectId, query, cursor } }) =>
         listTickets(request(dependencies, projectId), { query, cursor }),
       ),
     ...indexProcedures(dependencies),
-    discover: t.procedure
+    ticketDiscover: t.procedure
       .input(discoverInputSchema)
       .output(discoverOutputSchema)
       .query(({ input: { projectId, accountId } }) =>
         discoverSources(request(dependencies, projectId), accountId),
       ),
-    connect: t.procedure
+    ticketConnect: t.procedure
       .input(connectInputSchema)
       .output(connectionOutputSchema)
       .mutation(({ input: { projectId, accountId, scope } }) =>
         connectSource(request(dependencies, projectId), { accountId, scope }),
       ),
-    disconnect: t.procedure
+    ticketDisconnect: t.procedure
       .input(projectInputSchema)
       .output(connectionOutputSchema)
       .mutation(({ input }) => disconnectSource(request(dependencies, input.projectId))),
-    updateStatus: t.procedure
+    ticketUpdateStatus: t.procedure
       .input(updateStatusInputSchema)
       .output(updateStatusOutputSchema)
       .mutation(({ input: { projectId, key, statusId: nextStatusId } }) =>
         updateStatus(request(dependencies, projectId), { key, statusId: nextStatusId }),
       ),
-    updatePriority: t.procedure
+    ticketUpdatePriority: t.procedure
       .input(updatePriorityInputSchema)
       .output(updatePriorityOutputSchema)
       .mutation(({ input: { projectId, key, priorityLevel: nextPriorityLevel } }) =>
@@ -126,7 +126,5 @@ export function createTicketRouter(dependencies: TicketRouterDependencies) {
           priorityLevel: nextPriorityLevel,
         }),
       ),
-  })
+  }
 }
-
-export type TicketRouter = ReturnType<typeof createTicketRouter>

@@ -13,19 +13,24 @@ const touched = nextUpdatedAt(ticketSync.updatedAt)
 export const matchingScan = ({ provider, scope, kind }: TicketSyncTarget) =>
   and(eq(ticketSync.provider, provider), eq(ticketSync.scope, scope), eq(ticketSync.kind, kind))
 
-export function beginTicketScan(
-  database: Database,
-  target: TicketSyncTarget,
-  scanStartedAt: number,
-): void {
-  database
+// The listing mark for a new scan; it passes the last one even when the clock repeats or goes back.
+export function beginTicketScan(database: Database, target: TicketSyncTarget, now: number): number {
+  const row = database
     .insert(ticketSync)
-    .values({ ...target, phase: 'syncing', scanStartedAt })
+    .values({ ...target, phase: 'syncing', scanStartedAt: now })
     .onConflictDoUpdate({
       target: [ticketSync.provider, ticketSync.scope, ticketSync.kind],
-      set: { phase: 'syncing', failure: null, scanStartedAt, updatedAt: touched },
+      set: {
+        phase: 'syncing',
+        failure: null,
+        scanStartedAt: sql`MAX(${now}, ${ticketSync.scanStartedAt} + 1)`,
+        updatedAt: touched,
+      },
     })
-    .run()
+    .returning({ scanStartedAt: ticketSync.scanStartedAt })
+    .get()
+  if (row === undefined) throw new Error('The Ticket scan did not persist.')
+  return row.scanStartedAt
 }
 
 export function completeTicketScan(
