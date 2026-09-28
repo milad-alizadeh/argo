@@ -9,6 +9,8 @@ export type MockState = {
   tokens: Map<string, MockUser>
   repositories: Map<string, MockRepository>
   outage: MockOutage
+  // While set, every API read waits for it to settle, as a slow GitHub would.
+  held: Promise<void> | null
   serial: number
 }
 

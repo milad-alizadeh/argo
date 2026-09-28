@@ -22,7 +22,7 @@ import {
 // and reading again once GitHub answers draws the same backlog.
 export async function proveRestartAndFailure(run: Run) {
   await openRoom(run.page, 'tickets')
-  const failure = room(run).getByRole('alert').filter({ hasText: 'Unable to read Tickets' })
+  const failure = room(run).getByRole('alert').filter({ hasText: 'Argo could not read Tickets.' })
   await test.step('visible-failure', async () => {
     await failure.getByText('Argo cannot reach GitHub.').waitFor()
     await expect(run.page.getByRole('region', { name: 'Sign-in notice' })).toHaveCount(0)

@@ -20,6 +20,7 @@ import {
   type TicketProblemProps,
 } from '../lib/problems'
 import { listedBacklog, type TicketListing } from './listed-backlog'
+import { indexedHead, syncFailure } from './use-active-tickets'
 import type { ConnectForm } from './use-connect-form'
 
 // Everything the Tickets screen can show, resolved here before anything draws.
@@ -93,6 +94,8 @@ export type Connected = {
   onSelect: (key: string) => void
   onOpenSession: (id: string) => void
   onReconnect: () => void
+  // Asks main to scan the provider again.
+  onSync: () => void
 }
 
 export function connectedView(
@@ -107,6 +110,7 @@ export function connectedView(
     onSelect,
     onOpenSession,
     onReconnect,
+    onSync,
     ...listing
   }: Connected,
 ): TicketsView {
@@ -125,6 +129,17 @@ export function connectedView(
       provider: connection.provider,
     })
   }
+  const failed = syncFailure(list.data)
+  if (failed) {
+    return failure(t('failure.tickets'), failed, {
+      onRetry: onSync,
+      onReconnect,
+      provider: connection.provider,
+    })
+  }
+  // Nothing is saved yet and no scan has read every page, so an empty list would be a guess.
+  const saved = indexedHead(list.data)
+  if (saved && saved.total === 0 && !saved.sync.complete) return loading(t('loading.tickets'))
   return {
     kind: 'tickets',
     projectId,

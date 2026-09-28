@@ -4,7 +4,12 @@
 // declares the Accounts and source it starts with (`ticket-test.ts`).
 import { packagedRun } from '../application-under-test'
 import { assertShippedFusesIntact } from '../packaged-app'
-import { proveBacklog, proveConnect, proveConnectRepository } from './cases/github.case'
+import {
+  proveBacklog,
+  proveCommittedBacklog,
+  proveConnect,
+  proveConnectRepository,
+} from './cases/github.case'
 import {
   proveChangeState,
   proveDisconnect,
@@ -34,6 +39,7 @@ test.describe('with a GitHub repository', () => {
   test.use({ ticketState: 'github-repository' })
 
   test('list the backlog', ({ tickets }) => proveBacklog(tickets.run()))
+  test('the backlog reads committed Tickets', ({ tickets }) => proveCommittedBacklog(tickets.run()))
   test('restart while GitHub is down', async ({ tickets }) => {
     tickets.run().fixture.github.outage('down')
     await proveRestartAndFailure(await tickets.restart())

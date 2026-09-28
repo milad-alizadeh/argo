@@ -43,7 +43,7 @@ export const room = (run: Run) => run.page.getByRole('main', { name: 'Tickets' }
 export async function openRoom(page: Page, room: 'tickets' | 'atlas') {
   await page.evaluate((hash) => {
     window.location.hash = hash
-  }, `#/${room}`)
+  }, `#/projects/project-1/${room}`)
   if (room === 'tickets') await page.getByRole('main', { name: 'Tickets' }).waitFor()
 }
 
@@ -99,3 +99,9 @@ export async function signInToLinear(run: Run, start: { scope: Locator; name: st
 
 export const storeText = (fixture: TicketFixture, name: string) =>
   readFile(path.join(fixture.userData, 'portable-v1', name), 'utf8').catch(() => '')
+
+// Everything the renderer can ask about Accounts, through the same tRPC channel the screen uses.
+export const accountListing = (page: Page) =>
+  page.evaluate(() =>
+    window.argo.trpc({ id: 0, path: 'accountList', type: 'query', input: undefined }),
+  )

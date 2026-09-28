@@ -4,6 +4,7 @@ import assert from 'node:assert/strict'
 import { expect, test } from '@playwright/test'
 import { ADA } from '../../../mocks/providers/linear/mock-linear-cast'
 import {
+  accountListing,
   accountRow,
   accountsDialog,
   backlog,
@@ -27,9 +28,7 @@ const renewals = (run: Run) =>
   run.fixture.linear.requests.filter((request) => request === 'POST /oauth/token').length
 
 async function assertSealed(run: Run) {
-  const listing = await run.page.evaluate(() =>
-    window.argo.listAccounts({ version: 1, type: 'account.list', requestId: 'proof' }),
-  )
+  const listing = await accountListing(run.page)
   for (const text of [JSON.stringify(listing), await storeText(run.fixture, 'grants.json')]) {
     assert.equal(text.includes('linear-access-'), false)
     assert.equal(text.includes('linear-refresh-'), false)

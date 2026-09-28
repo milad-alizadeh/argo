@@ -30,6 +30,11 @@ import { SessionEventJournal } from '@/domains/sessions/main/live/session-event-
 import { SessionHistoryFollowers } from '@/domains/sessions/main/live/session-history-followers'
 import { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
+import type { TicketScopeTarget } from '@/domains/tickets/main/database/ticket-upsert'
+import { ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
+import type { TicketSyncSupervisorCommand } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
+import { markInterruptedTicketScans } from '@/domains/tickets/main/sync/ticket-sync-records'
+import { TicketChanges } from '@/domains/tickets/main/ticket-changes'
 import { ensureManagedWorkspace } from '@/domains/workspaces/main/workspace-create-managed'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
 import { tailSessionHistory, watchHistoryActivity } from '@/harnesses/host/history-watch'
@@ -140,7 +145,8 @@ async function chooseProjectFolder(window: BrowserWindow): Promise<string | null
   return chosen.canceled ? null : (chosen.filePaths[0] ?? null)
 }
 
-function createDomainContexts(database: Database, registry: HarnessRegistry) {
+// Account access and the Connection store, created once: the Ticket scans and every window share them.
+function createTicketServices(database: Database) {
   const userData = app.getPath('userData')
   const { accountData, connectionData } = developmentStoreDirectories({
     userData,
@@ -157,13 +163,21 @@ function createDomainContexts(database: Database, registry: HarnessRegistry) {
     openExternal: (url) => shell.openExternal(url).then(() => undefined),
     database,
   })
+  const connections = createConnectionPort({
+    path: access.paths.connections,
+    exclusive: access.exclusive,
+  })
+  return { access, connections, changes: new TicketChanges() }
+}
+
+type TicketServices = ReturnType<typeof createTicketServices>
+
+function createDomainContexts(services: TicketServices, registry: HarnessRegistry) {
+  const { access, connections } = services
   return {
     access,
     accounts: createAccountProcedureContext(access),
-    connections: createConnectionPort({
-      path: access.paths.connections,
-      exclusive: access.exclusive,
-    }),
+    connections,
     harnessSignIn: createHarnessSignInProcedureContext(Object.values(registry)),
   }
 }
@@ -248,6 +262,11 @@ function routerForWindow(options: {
       access: domains.access,
       connections: domains.connections,
       providers: PROVIDER_REGISTRY,
+      index: {
+        database,
+        changes: currentTicketServices().changes,
+        requestSync: (request) => actors.ticketSync.send({ type: 'Sync', request }),
+      },
     },
     workspaces: { database, exclusive },
   })
@@ -256,6 +275,11 @@ function routerForWindow(options: {
 function currentSessionSyncStatus(): SessionSyncStatusStore[] {
   if (sessionSyncStatus === undefined) throw new Error('Session sync status is unavailable.')
   return Object.values(sessionSyncStatus)
+}
+
+function currentTicketServices(): TicketServices {
+  if (ticketServices === undefined) throw new Error('Ticket services are unavailable.')
+  return ticketServices
 }
 
 function currentSessionEventJournal(): SessionEventJournal {
@@ -275,6 +299,9 @@ type WindowActors = {
   sessionSync: {
     send: (event: SessionSyncSupervisorCommand) => void
   }
+  ticketSync: {
+    send: (event: TicketSyncSupervisorCommand) => void
+  }
 }
 
 function requireWindowActors(actor: AppActor): WindowActors {
@@ -285,9 +312,19 @@ function requireWindowActors(actor: AppActor): WindowActors {
         send: (event: SessionSyncSupervisorCommand) => void
       }
     | undefined
-  if (catalog === undefined || sessions === undefined || sessionSync === undefined)
+  const ticketSync = actor.system.get('ticketSync') as
+    | {
+        send: (event: TicketSyncSupervisorCommand) => void
+      }
+    | undefined
+  if (
+    catalog === undefined ||
+    sessions === undefined ||
+    sessionSync === undefined ||
+    ticketSync === undefined
+  )
     throw new Error('Application child actors are unavailable.')
-  return { catalog, sessions, sessionSync }
+  return { catalog, sessions, sessionSync, ticketSync }
 }
 
 function attachWindowTrpc({
@@ -382,7 +419,7 @@ function closeDesktopWindow({
 function createWindow(actor: AppActor, database: Database, registry: HarnessRegistry): void {
   const actors = requireWindowActors(actor)
   actors.sessionSync.send({ type: 'Refresh' })
-  const domains = createDomainContexts(database, registry)
+  const domains = createDomainContexts(currentTicketServices(), registry)
   desktopWindow = createDesktopWindow({
     buildDirectory: __dirname,
     rendererName: MAIN_WINDOW_VITE_NAME,
@@ -427,6 +464,7 @@ let applicationDatabase: Database | undefined
 let sessionSyncStatus: Record<Harness, SessionSyncStatusStore> | undefined
 let sessionEventJournal: SessionEventJournal | undefined
 let sessionInteractionBroker: SessionInteractionBroker | undefined
+let ticketServices: TicketServices | undefined
 
 async function prepare() {
   const { projectData } = developmentStoreDirectories({
@@ -436,7 +474,10 @@ async function prepare() {
   })
   applicationDatabase = openDatabase(projectData, { packaged: app.isPackaged })
   markUnresolvedSessionCommandsUnknown(applicationDatabase)
+  markInterruptedTicketScans(applicationDatabase)
   const database = applicationDatabase
+  const tickets = createTicketServices(database)
+  ticketServices = tickets
   sessionSyncStatus = Object.fromEntries(
     harnessSchema.options.map((harness) => [
       harness,
@@ -459,6 +500,11 @@ async function prepare() {
     sessionSyncStatus,
     sessionEventJournal,
     sessionInteractionBroker,
+    ticketSync: {
+      database,
+      readPage: ticketPageReader({ access: tickets.access, providers: PROVIDER_REGISTRY }),
+      changed: (target: TicketScopeTarget) => tickets.changes.changed(target),
+    },
     registry: harnessRegistry,
   }
 }

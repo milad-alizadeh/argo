@@ -6,10 +6,15 @@ import type {
   TicketPrioritized,
   TicketUpdated,
 } from '@/domains/tickets/contract/contract'
+import type { RouterOutputs } from '@/platform/renderer/trpc-client'
+
+export type TicketIndexedReply = RouterOutputs['tickets']['active']
+export type TicketIndexed = Extract<TicketIndexedReply, { type: 'ticket.indexed' }>
 
 type TicketSuccess =
   | TicketConnected
   | TicketDiscovered
+  | TicketIndexed
   | TicketListed
   | TicketPrioritized
   | TicketUpdated

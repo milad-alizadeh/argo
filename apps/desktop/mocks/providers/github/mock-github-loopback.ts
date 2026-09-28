@@ -18,6 +18,7 @@ export async function startMockGitHubLoopback(): Promise<MockGitHub> {
     tokens: new Map(),
     repositories: new Map(),
     outage: 'none',
+    held: null,
     serial: 0,
   }
   const server = createServer((request, response) => {

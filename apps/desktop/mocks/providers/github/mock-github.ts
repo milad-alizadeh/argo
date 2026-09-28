@@ -51,6 +51,8 @@ export type MockGitHub = {
   addRepository(repository: MockRepository): void
   revoke(login: string): void
   outage(kind: MockOutage): void
+  // API reads wait until the returned release is called.
+  holdReads(): () => void
   close(): Promise<void>
 }
 
@@ -83,6 +85,7 @@ export async function startMockGitHub(): Promise<MockGitHub> {
     tokens: new Map(),
     repositories: new Map(),
     outage: 'none',
+    held: null,
     serial: 0,
   }
   const route: NodeRoute = (request, response) => answer(state, request, response)

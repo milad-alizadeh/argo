@@ -8,7 +8,9 @@ import {
   type TicketUpdateReply,
   ticketError,
 } from '@/domains/tickets/contract/contract'
+import { closureOf } from '@/domains/tickets/contract/ticket'
 import { connectionSummary } from './connection-summary'
+import { saveConfirmedFields } from './database/ticket-upsert'
 import { type Call, readAs } from './read-as'
 
 const STORAGE_ERRORS = { unreadable: 'storage-unavailable', invalid: 'storage-invalid' } as const
@@ -49,16 +51,27 @@ export async function writableConnection(call: Call) {
   return { ok: true, ...found.connection } as const
 }
 
+// A provider-confirmed field is committed to the saved Ticket before the reply announces it.
 export async function writeTicketField<Value>(
   call: Call,
-  read: (
-    accountId: string,
-    scope: string,
-  ) => Promise<{ ok: true; value: Value } | { ok: false; error: TicketError }>,
+  write: {
+    key: string
+    read: (
+      accountId: string,
+      scope: string,
+    ) => Promise<{ ok: true; value: Value } | { ok: false; error: TicketError }>
+    confirmed: (value: Value) => Parameters<typeof saveConfirmedFields>[2]
+  },
 ): Promise<{ ok: true; value: Value } | { ok: false; error: TicketError }> {
+  const { key, read, confirmed } = write
   const target = await writableConnection(call)
   if (!target.ok) return target
-  return read(target.accountId, target.scope)
+  const written = await read(target.accountId, target.scope)
+  if (!written.ok) return written
+  const { provider, scope } = target
+  saveConfirmedFields(call.index.database, { provider, scope, key }, confirmed(written.value))
+  call.index.changes.changed({ provider, scope })
+  return written
 }
 
 async function saveConnection(
@@ -128,9 +141,12 @@ export async function updateStatus(
   change: { key: string; statusId: string },
 ): Promise<TicketUpdateReply> {
   const { requestId, projectId } = call
-  const written = await writeTicketField(call, (accountId, scope) =>
-    readAs(call, accountId, (source, reader) => source.update(reader, { scope, ...change })),
-  )
+  const written = await writeTicketField(call, {
+    key: change.key,
+    read: (accountId, scope) =>
+      readAs(call, accountId, (source, reader) => source.update(reader, { scope, ...change })),
+    confirmed: (status) => ({ status, state: closureOf(status.category) }),
+  })
   if (!written.ok) return written.error
   const { key } = change
   return { version: 1, type: 'ticket.updated', requestId, projectId, key, status: written.value }

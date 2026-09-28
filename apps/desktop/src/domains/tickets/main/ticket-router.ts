@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import { initTRPC } from '@trpc/server'
+import { observable } from '@trpc/server/observable'
 import { z } from 'zod'
+import { provider } from '@/domains/accounts/contract/contract'
 import {
   TICKET_QUERY_LIMIT,
   ticketConnectedSchema,
@@ -22,6 +24,12 @@ import {
   readConnection,
   updateStatus,
 } from './service'
+import {
+  readActive,
+  requestSync,
+  ticketIndexedOutputSchema,
+  ticketSyncRequestedOutputSchema,
+} from './ticket-index-service'
 
 const t = initTRPC.create()
 const projectInputSchema = z.strictObject({ projectId: identifierSchema })
@@ -35,6 +43,9 @@ const listInputSchema = projectInputSchema.extend({
   cursor: cursorSchema,
 })
 const listOutputSchema = z.union([ticketListedSchema, ticketErrorSchema])
+// A numbered page of the saved active list; the bound keeps an offset inside SQLite's reach.
+const activeInputSchema = projectInputSchema.extend({ page: z.int().nonnegative().max(100_000) })
+const changeSchema = z.strictObject({ provider, scope: identifierSchema })
 const updateStatusInputSchema = projectInputSchema.extend({ key: ticketKey, statusId })
 const updateStatusOutputSchema = z.union([ticketUpdatedSchema, ticketErrorSchema])
 const updatePriorityInputSchema = projectInputSchema.extend({
@@ -43,10 +54,32 @@ const updatePriorityInputSchema = projectInputSchema.extend({
 })
 const updatePriorityOutputSchema = z.union([ticketPrioritizedSchema, ticketErrorSchema])
 
-export type TicketRouterDependencies = Pick<Call, 'access' | 'connections' | 'providers'>
+export type TicketRouterDependencies = Pick<Call, 'access' | 'connections' | 'providers' | 'index'>
 
 function request(dependencies: TicketRouterDependencies, projectId: string): Call {
   return { ...dependencies, projectId, requestId: randomUUID() }
+}
+
+// The saved Ticket list: reads from SQLite, scan requests, and the commits that change it.
+function indexProcedures(dependencies: TicketRouterDependencies) {
+  return {
+    active: t.procedure
+      .input(activeInputSchema)
+      .output(ticketIndexedOutputSchema)
+      .query(({ input: { projectId, page } }) =>
+        readActive(request(dependencies, projectId), page),
+      ),
+    sync: t.procedure
+      .input(projectInputSchema)
+      .output(ticketSyncRequestedOutputSchema)
+      .mutation(({ input }) => requestSync(request(dependencies, input.projectId))),
+    // Sent after each commit to saved Tickets; the renderer then refetches from SQLite.
+    changes: t.procedure.subscription(() =>
+      observable<z.infer<typeof changeSchema>>((emit) =>
+        dependencies.index.changes.subscribe((target) => emit.next(changeSchema.parse(target))),
+      ),
+    ),
+  }
 }
 
 export function createTicketRouter(dependencies: TicketRouterDependencies) {
@@ -61,6 +94,7 @@ export function createTicketRouter(dependencies: TicketRouterDependencies) {
       .query(({ input: { projectId, query, cursor } }) =>
         listTickets(request(dependencies, projectId), { query, cursor }),
       ),
+    ...indexProcedures(dependencies),
     discover: t.procedure
       .input(discoverInputSchema)
       .output(discoverOutputSchema)

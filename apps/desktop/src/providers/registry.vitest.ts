@@ -3,6 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { onTestFinished, test } from 'vitest'
+import { createActor } from 'xstate'
 import { openDatabase } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { isAccountChallengeReply, type Provider } from '@/domains/accounts/contract/contract'
@@ -10,6 +11,9 @@ import { createAccountAccess } from '@/domains/accounts/main'
 import type { Cipher } from '@/domains/accounts/main/grants'
 import { createSignIn } from '@/domains/accounts/main/sign-in'
 import { createConnectionPort } from '@/domains/connections/main'
+import { ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
+import { ticketSyncSupervisorMachine } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
+import { TicketChanges } from '@/domains/tickets/main/ticket-changes'
 import { createTicketRouter } from '@/domains/tickets/main/ticket-router'
 import { proofEndpoints } from '@/providers/github/endpoints'
 import { OCTOCAT } from '@/providers/github/harness'
@@ -60,6 +64,17 @@ async function flows() {
   })
   const signIn = createSignIn(access)
   onTestFinished(() => signIn.dispose())
+  const changes = new TicketChanges()
+  const ticketSync = createActor(ticketSyncSupervisorMachine, {
+    input: {
+      database,
+      readPage: ticketPageReader({ access, providers: PROVIDER_REGISTRY }),
+      changed: (target) => changes.changed(target),
+    },
+  }).start()
+  onTestFinished(() => {
+    ticketSync.stop()
+  })
   const tickets = createTicketRouter({
     access,
     connections: createConnectionPort({
@@ -67,8 +82,13 @@ async function flows() {
       exclusive: access.exclusive,
     }),
     providers: PROVIDER_REGISTRY,
+    index: {
+      database,
+      changes,
+      requestSync: (request) => ticketSync.send({ type: 'Sync', request }),
+    },
   }).createCaller({})
-  return { gitHub, mockLinear, signIn, opened, tickets }
+  return { gitHub, mockLinear, signIn, opened, tickets, changes, database }
 }
 
 async function challenged(provider: Provider) {
@@ -147,4 +167,101 @@ test('the shared Ticket flows read and reprioritize a Linear issue through the r
   const prioritized = await tickets.updatePriority({ projectId, key: 'ENG-1', priorityLevel: 1 })
   assert.ok(prioritized.type === 'ticket.prioritized')
   assert.equal(prioritized.priority?.level, 1)
+})
+
+type Flow = Awaited<ReturnType<typeof flows>>
+
+// Asks for a scan of the Project's scope and waits until SQLite records its outcome. The scan's
+// first commit announces a change, so a finished read after one is this scan's, not an earlier one.
+async function synced({ tickets, changes }: Flow, forProject = projectId) {
+  let announced = 0
+  const stop = changes.subscribe(() => {
+    announced += 1
+  })
+  try {
+    const requested = await tickets.sync({ projectId: forProject })
+    assert.equal(requested.type, 'ticket.sync-requested')
+    for (let attempt = 0; attempt < 200; attempt += 1) {
+      const read = await tickets.active({ projectId: forProject, page: 0 })
+      assert.ok(read.type === 'ticket.indexed')
+      if (announced > 0 && (read.sync.phase === 'ready' || read.sync.phase === 'failed'))
+        return read
+      await new Promise((settle) => setTimeout(settle, 5))
+    }
+    throw new Error('The Ticket scan did not finish.')
+  } finally {
+    stop()
+  }
+}
+
+const argoIds = ({ database }: Flow) =>
+  Object.fromEntries(
+    database.$client
+      .prepare('SELECT native_id, argo_id FROM ticket ORDER BY native_id')
+      .all()
+      .map((row) => [String(row.native_id), String(row.argo_id)]),
+  )
+
+test('an active GitHub scan commits Tickets that the active list reads back from SQLite', async () => {
+  const flow = await signedInToGitHub()
+  const { gitHub, tickets, accountId, changes } = flow
+  const issues = [
+    { number: 1, title: 'Wire the registry' },
+    { number: 2, title: 'Read from SQLite' },
+    { number: 3, title: 'Shipped already', state: 'closed' as const },
+  ]
+  gitHub.addRepository({ fullName: 'octo/hello', visibleTo: [OCTOCAT.id], issues })
+  const connected = await tickets.connect({ projectId, accountId, scope: 'octo/hello' })
+  assert.equal(connected.type, 'ticket.connected')
+  const changed: string[] = []
+  onTestFinished(changes.subscribe(({ scope }) => changed.push(scope)))
+
+  const first = await synced(flow)
+  assert.deepEqual(first.tickets.map(({ key }) => key).sort(), ['#1', '#2'])
+  assert.equal(first.sync.complete, true)
+  assert.equal(changed.includes('octo/hello'), true)
+  const identities = argoIds(flow)
+
+  // With GitHub down the list still answers, from the rows it committed, without asking GitHub.
+  gitHub.outage('down')
+  const asked = gitHub.requests.length
+  const saved = await tickets.active({ projectId, page: 0 })
+  assert.ok(saved.type === 'ticket.indexed')
+  assert.deepEqual(saved.tickets.map(({ key }) => key).sort(), ['#1', '#2'])
+  assert.equal(gitHub.requests.length, asked)
+  const failed = await synced(flow)
+  assert.equal(failed.sync.failure, 'github-unreachable')
+  assert.deepEqual(failed.tickets.map(({ key }) => key).sort(), ['#1', '#2'])
+
+  // A Ticket created and one edited on GitHub arrive with the next scan; identities hold.
+  gitHub.outage('none')
+  gitHub.addRepository({
+    fullName: 'octo/hello',
+    visibleTo: [OCTOCAT.id],
+    issues: [
+      { number: 1, title: 'Wire the registry, renamed' },
+      issues[1] as (typeof issues)[number],
+      issues[2] as (typeof issues)[number],
+      { number: 4, title: 'Created outside Argo' },
+    ],
+  })
+  const next = await synced(flow)
+  assert.deepEqual(next.tickets.map(({ key, title }) => [key, title]).sort(), [
+    ['#1', 'Wire the registry, renamed'],
+    ['#2', 'Read from SQLite'],
+    ['#4', 'Created outside Argo'],
+  ])
+  const later = argoIds(flow)
+  assert.equal(later['#1'], identities['#1'])
+  assert.equal(later['#2'], identities['#2'])
+
+  // Another Project on the same repository sees the same Tickets, not copies of them.
+  flow.database
+    .insert(project)
+    .values({ id: 'project-two', path: '/other', commonDirectory: '/other/.git' })
+    .run()
+  await tickets.connect({ projectId: 'project-two', accountId, scope: 'octo/hello' })
+  const other = await synced(flow, 'project-two')
+  assert.deepEqual(other.tickets.map(({ key }) => key).sort(), ['#1', '#2', '#4'])
+  assert.deepEqual(argoIds(flow), later)
 })

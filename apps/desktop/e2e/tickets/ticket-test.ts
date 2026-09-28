@@ -30,14 +30,12 @@ async function start(fixture: TicketFixture): Promise<Run> {
   const application = await launch(fixture)
   const page = await application.firstWindow()
   page.setDefaultTimeout(30_000)
-  await page.waitForFunction(() => typeof window.argo?.listTickets === 'function')
+  await page.waitForFunction(() => typeof window.argo?.trpc === 'function')
   return { application, page, fixture }
 }
 
 async function connectGitHubAccounts(run: Run) {
   await openRoom(run.page, 'tickets')
-  const notice = run.page.getByRole('region', { name: 'Sign-in notice' })
-  await press(notice, 'Dismiss')
   await press(room(run), 'Connect an Account')
   const connect = { scope: accountsDialog(run.page), name: 'Connect a GitHub Account' }
   await signIn(run, OCTOCAT, connect)

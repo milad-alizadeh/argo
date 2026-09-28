@@ -20,12 +20,14 @@ import type {
 } from '@/domains/tickets/contract/contract'
 import { type ContractFailure, QUERY_KEYS } from '@/platform/renderer/lib/query-client'
 import { trpc, trpcClient } from '@/platform/renderer/trpc-client'
-import { ticketReply } from './ticket-reply'
+import { type TicketIndexed, ticketReply } from './ticket-reply'
+import { useActiveTickets } from './use-active-tickets'
 
 const connectionKey = (projectId: string) => trpc.tickets.connection.queryKey({ projectId })
+// Every cached Ticket listing, saved or searched, sits under this key.
 export const listKey = () => trpc.tickets.list.pathKey()
 
-export type TicketPages = InfiniteData<TicketListed, string | null>
+export type TicketPages = InfiniteData<TicketListed | TicketIndexed, unknown>
 
 // An expired, refused or unreadable grant is an Account fact, so the Account listing and this Connection's
 // summary are both stale.
@@ -47,15 +49,22 @@ export function useConnection(projectId: string | null) {
   })
 }
 
-// One page per request, the next asked for as the list scrolls; a new query keeps the last
-// answer on screen until its own arrives.
+// The saved active list with no query; a query searches the provider.
 export function useTicketList(
   projectId: string | null,
   connection: ConnectionSummary | null,
   query = '',
 ) {
-  const client = useQueryClient()
   const ready = projectId !== null && connection?.state === 'ready'
+  const searched = useSearchedTickets(projectId, ready && query !== '', query)
+  const active = useActiveTickets(projectId, ready && query === '')
+  return query === '' ? active : searched
+}
+
+// One page per request, the next asked for as the list scrolls; a new query keeps the last
+// answer on screen until its own arrives.
+function useSearchedTickets(projectId: string | null, ready: boolean, query: string) {
+  const client = useQueryClient()
   return useInfiniteQuery<TicketListReply, ContractFailure, TicketPages, QueryKey, string | null>({
     queryKey: [...listKey(), projectId, query],
     queryFn:
@@ -70,7 +79,7 @@ export function useTicketList(
               })
         : skipToken,
     initialPageParam: null,
-    getNextPageParam: (last) => last.nextCursor ?? undefined,
+    getNextPageParam: (last) => ticketReply(last).nextCursor ?? undefined,
     placeholderData: keepPreviousData,
     throwOnError: (failure) => {
       if (projectId) onRefused(client, projectId, failure)
@@ -112,8 +121,7 @@ function useConnectionAction<Input extends { projectId: string }>(options: {
   return useMutation<TicketConnectedReply, ContractFailure, Input>({
     ...options,
     onSuccess: (reply, { projectId }) => {
-      const connected = ticketReply(reply)
-      client.setQueryData(connectionKey(projectId), connected.connection)
+      client.setQueryData(connectionKey(projectId), ticketReply(reply))
       void client.invalidateQueries({ queryKey: listKey() })
       void client.invalidateQueries({ queryKey: QUERY_KEYS.accounts })
     },

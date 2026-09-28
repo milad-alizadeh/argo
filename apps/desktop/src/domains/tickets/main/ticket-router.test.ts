@@ -3,11 +3,13 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { type TestContext, test } from 'node:test'
+import type { Database } from '@/database/database'
 import { createAccountAccess } from '@/domains/accounts/main'
 import type { Cipher } from '@/domains/accounts/main/grants'
 import { createConnectionPort } from '@/domains/connections/main'
 import { providerEndpoints } from '@/providers/endpoints'
 import { PROVIDER_REGISTRY } from '@/providers/registry'
+import { TicketChanges } from './ticket-changes'
 import { createTicketRouter } from './ticket-router'
 
 const cipher: Cipher = {
@@ -34,6 +36,8 @@ async function caller(context: TestContext) {
       exclusive: access.exclusive,
     }),
     providers: PROVIDER_REGISTRY,
+    // These cases are refused before any saved Ticket is read.
+    index: { database: {} as Database, changes: new TicketChanges(), requestSync: () => {} },
   }).createCaller({})
 }
 
