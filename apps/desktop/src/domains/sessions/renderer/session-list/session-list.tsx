@@ -1,9 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
 import { type RefObject, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Progress } from '@/platform/renderer/components/ui/progress'
-import { sessionFeedQuery } from '../feed/session-feed-query'
-import { useConsecutiveFeedFailures } from '../feed/use-session-feed'
+import { useObservedFeedReading } from '../feed/use-feed-reading'
 import type { Session, SessionId } from '../types'
 import { useArchivedSection } from './archived/use-archived-section'
 import { useSessionListStatus } from './hooks/use-session-list-filter-store'
@@ -89,15 +87,16 @@ function useSessionListSessions(options: {
 }
 
 function useUnavailableSessionIds(selectedSessionId: SessionId | null) {
-  const selectedFeed = useQuery(sessionFeedQuery(selectedSessionId, null, false))
-  const failedFeedReads = useConsecutiveFeedFailures(selectedSessionId, selectedFeed)
+  const reading = useObservedFeedReading(selectedSessionId)
   const [unavailableSessionIds, setUnavailableSessionIds] = useState<ReadonlySet<SessionId>>(
     () => new Set(),
   )
+  const state = reading?.state ?? null
+  const code = reading?.error?.code ?? null
   useEffect(() => {
     if (selectedSessionId === null) return
-    const unavailable = failedFeedReads > 0 && selectedFeed.error?.code === 'missing-session'
-    if (!unavailable && !selectedFeed.isSuccess) return
+    const unavailable = state === 'failed' && code === 'missing-session'
+    if (!unavailable && state !== 'ready') return
     setUnavailableSessionIds((current) => {
       if (unavailable === current.has(selectedSessionId)) return current
       const next = new Set(current)
@@ -105,7 +104,7 @@ function useUnavailableSessionIds(selectedSessionId: SessionId | null) {
       else next.delete(selectedSessionId)
       return next
     })
-  }, [failedFeedReads, selectedFeed.error?.code, selectedFeed.isSuccess, selectedSessionId])
+  }, [code, selectedSessionId, state])
   return unavailableSessionIds
 }
 

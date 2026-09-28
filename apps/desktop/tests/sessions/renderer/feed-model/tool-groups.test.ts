@@ -3,10 +3,7 @@ import { test } from 'node:test'
 import { type SessionFeedRow, sessionFeedRowSchema } from '@/domains/sessions/api/feed/feed-rows'
 import type { ToolCall } from '@/domains/sessions/api/feed/tool-call'
 import { toolRows } from '@/domains/sessions/api/feed/tool-feed'
-import {
-  groupToolRuns,
-  TOOL_KIND_PRESENTATION,
-} from '@/domains/sessions/renderer/feed/model/tool-groups'
+import { groupToolRuns, TOOL_KIND_PRESENTATION } from '@/domains/sessions/api/feed/tool-groups'
 import { editCall, fetchCall, searchCall } from './tool-feed-test-fixtures'
 
 function bash(id: string, command: string): ToolCall {

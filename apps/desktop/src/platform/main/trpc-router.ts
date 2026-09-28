@@ -20,6 +20,7 @@ import {
 import { composerDraftCreateProcedure } from '@/domains/sessions/main/api/composer-draft-create'
 import { composerDraftReadProcedure } from '@/domains/sessions/main/api/composer-draft-read'
 import { composerDraftSaveProcedure } from '@/domains/sessions/main/api/composer-draft-save'
+import { sessionFeedProcedures } from '@/domains/sessions/main/api/session-feed'
 import {
   type SessionFeedReadContext,
   sessionFeedReadProcedure,
@@ -101,6 +102,7 @@ export function createAppRouter(dependencies: AppRouterDependencies) {
     sessionSubmit: sessionSubmitProcedure(dependencies.sessions),
     sessionList: sessionListProcedure(dependencies.sessions),
     sessionFeedRead: sessionFeedReadProcedure(dependencies.sessions),
+    ...sessionFeedProcedures(dependencies.sessions),
     ...sessionInteractionProcedures(dependencies.sessions),
     sessionLiveEvents: sessionLiveEventsProcedure(dependencies.sessions),
     sessionRename: sessionRenameProcedure(dependencies.sessions),

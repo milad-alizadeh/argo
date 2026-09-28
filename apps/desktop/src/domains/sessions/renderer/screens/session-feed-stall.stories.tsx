@@ -3,7 +3,12 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { sessionFeedTrpc, sessionListSubscribe, sessionRow } from '../session-fixtures'
+import {
+  sessionFeedSubscribe,
+  sessionFeedTrpc,
+  sessionListSubscribe,
+  sessionRow,
+} from '../session-fixtures'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import { SessionScreenView } from './session-screen-view'
 
@@ -19,10 +24,14 @@ const stalled = sessionRow({
 
 function stalledFeedHost() {
   const before = window.argo
+  const read = () => new Promise<never>(() => {})
   window.argo = {
     ...before,
-    trpcSubscribe: sessionListSubscribe(before.trpcSubscribe, () => [stalled]),
-    trpc: sessionFeedTrpc(before.trpc, () => new Promise(() => {})),
+    trpcSubscribe: sessionFeedSubscribe(
+      sessionListSubscribe(before.trpcSubscribe, () => [stalled]),
+      read,
+    ),
+    trpc: sessionFeedTrpc(before.trpc, read),
   }
   return () => {
     window.argo = before

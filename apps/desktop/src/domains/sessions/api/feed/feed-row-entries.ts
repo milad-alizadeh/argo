@@ -4,6 +4,7 @@ import { sessionLiveEventSchema } from '@/domains/sessions/api/session-live-even
 import { liveActivitySchema, sessionFeedRowSchema } from './feed-rows'
 import { fingerprint } from './fingerprint'
 import { projectLiveFeedRows, rowKey } from './live-feed-rows'
+import { foldSettledToolRuns, groupToolRuns } from './tool-groups'
 
 const ACTIVITY_ROW_ID = 'activity'
 
@@ -25,7 +26,7 @@ function feedRowRevision(row: FeedRow): string {
 }
 
 // `id` is the row's stable identity across reads; `revision` changes when its drawing would.
-const feedRowEntrySchema = z.strictObject({
+export const feedRowEntrySchema = z.strictObject({
   id: z.string().min(1),
   revision: z.string().min(1),
   row: feedRowSchema,
@@ -54,8 +55,8 @@ function accepted<Value>(
   return { values, rejected: inputs.length - values.length }
 }
 
-// The complete ordered rows of one Feed from recorded history and live events. Unrecognised
-// input and a repeated row id are skipped and counted, never drawn.
+// The complete ordered rows of one Feed from recorded history and live events, with settled tool
+// runs grouped. Unrecognised input and a repeated row id are skipped and counted, never drawn.
 export function projectFeedRowEntries(input: {
   history: readonly unknown[]
   live: readonly unknown[]
@@ -63,7 +64,9 @@ export function projectFeedRowEntries(input: {
 }): { entries: FeedRowEntry[]; rejected: FeedRowRejections } {
   const history = accepted(feedContentSchema, input.history)
   const live = accepted(sessionLiveEventSchema, input.live)
-  const projected = projectLiveFeedRows(history.values, live.values)
+  const projected = foldSettledToolRuns(
+    groupToolRuns(projectLiveFeedRows(history.values, live.values)),
+  )
   const activity =
     input.activity === null
       ? []

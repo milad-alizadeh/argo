@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import type { SessionFeedRow } from '../../model/models'
+import type { SessionFeedRow } from './feed-rows'
 import { groupToolRuns } from './tool-groups'
 
 function tool(

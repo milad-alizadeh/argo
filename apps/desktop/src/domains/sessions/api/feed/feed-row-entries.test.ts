@@ -3,7 +3,9 @@ import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { feedContentKindSchema } from '@/domains/sessions/api/feed-content'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import { projectFeedRowEntries } from './feed-row-entries'
+import type { SessionFeedRow } from './feed-rows'
 import { projectLiveFeedRows } from './live-feed-rows'
+import { foldSettledToolRuns, groupToolRuns } from './tool-groups'
 
 const sessionId = '00000000-0000-4000-8000-000000000001'
 const running = { label: 'Reading the code', kind: 'thought', open: true } as const
@@ -107,6 +109,21 @@ const durableKinds: FeedContent[] = [
   { kind: 'diagnostic', id: 'dg1', vendorType: 'odd', detail: 'detail' },
 ]
 
+// A grouped tool run stands for its calls and thoughts, in source order.
+function memberIds({ row }: { row: { shape: string; id: string } }): string[] {
+  if (row.shape !== 'tool-group') return [row.id]
+  const group = row as Extract<SessionFeedRow, { shape: 'tool-group' }>
+  const thoughtsAfter = (index: number) =>
+    (group.thoughts ?? []).filter((thought) => (thought.afterCallIndex ?? -1) === index)
+  return [
+    ...thoughtsAfter(-1).map((thought) => thought.id),
+    ...group.calls.flatMap((call, index) => [
+      call.id,
+      ...thoughtsAfter(index).map((thought) => thought.id),
+    ]),
+  ]
+}
+
 // A tool row is named by its call, a task row by its task.
 function stableId(content: FeedContent): string[] {
   if (content.kind === 'tool') return [content.callId]
@@ -121,7 +138,7 @@ test('every durable content kind projects to a valid entry, in history order', (
     activity: null,
   })
   expect(rejected).toEqual({ history: 0, live: 0, rows: 0 })
-  expect(entries.map((entry) => entry.row.id)).toEqual(
+  expect(entries.flatMap(memberIds)).toEqual(
     durableKinds
       .filter((content) => content.kind !== 'notification' || content.category !== 'status')
       .flatMap((content) => stableId(content)),
@@ -199,7 +216,9 @@ test('the entries draw the rows the renderer drew before', () => {
     live(2, durableKinds[9] as FeedContent),
   ]
   const { entries } = projectFeedRowEntries({ history, live: liveEvents, activity: null })
-  expect(entries.map((entry) => entry.row)).toEqual(projectLiveFeedRows(history, liveEvents))
+  expect(entries.map((entry) => entry.row)).toEqual(
+    foldSettledToolRuns(groupToolRuns(projectLiveFeedRows(history, liveEvents))),
+  )
 })
 
 test('live rows follow the history rows they extend, in sequence order', () => {
@@ -225,5 +244,5 @@ test('a generated output row keeps the row when its call id fills the identifier
   }
   const { entries, rejected } = projectFeedRowEntries({ history: [tool], live: [], activity: null })
   expect(rejected.rows).toBe(0)
-  expect(entries.map((entry) => entry.row.shape)).toEqual(['tool', 'source'])
+  expect(entries.map((entry) => entry.row.shape)).toEqual(['tool-group', 'source'])
 })

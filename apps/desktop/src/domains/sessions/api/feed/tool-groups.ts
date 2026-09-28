@@ -1,6 +1,5 @@
-import type { LiveActivity } from '@/domains/sessions/api/feed/feed-rows'
-import { fingerprint } from '@/domains/sessions/api/feed/fingerprint'
-import type { SessionFeedRow } from '../../model/models'
+import type { LiveActivity, SessionFeedRow } from './feed-rows'
+import { fingerprint } from './fingerprint'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 

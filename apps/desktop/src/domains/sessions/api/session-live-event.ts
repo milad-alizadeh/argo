@@ -12,21 +12,23 @@ const identity = {
   vendorEventId: identifierSchema.nullable(),
 }
 
+export const sessionLiveStatusSchema = z.enum([
+  'starting',
+  'running',
+  'permission',
+  'asking',
+  'idle',
+  'stopped',
+  'ended',
+  'unknown',
+])
+
 export const sessionLiveEventBodySchema = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('content'), ...identity, content: feedContentSchema }),
   z.strictObject({
     type: z.literal('status'),
     ...identity,
-    status: z.enum([
-      'starting',
-      'running',
-      'permission',
-      'asking',
-      'idle',
-      'stopped',
-      'ended',
-      'unknown',
-    ]),
+    status: sessionLiveStatusSchema,
   }),
   z.strictObject({
     type: z.literal('permission'),

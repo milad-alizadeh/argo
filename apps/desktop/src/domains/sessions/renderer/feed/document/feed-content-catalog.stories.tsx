@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, waitFor, within } from 'storybook/test'
 import { projectLiveFeedRows } from '@/domains/sessions/api/feed/live-feed-rows'
+import { groupToolRuns } from '@/domains/sessions/api/feed/tool-groups'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionFeed } from '../../types'
-import { groupToolRuns } from '../model/tool-groups'
 import { BasicFeed } from './basic-feed'
 import { INACTIVE_FEED_LIVE_FACTS } from './feed-live-facts'
 

@@ -1,11 +1,8 @@
 import type { VirtualItem } from '@tanstack/virtual-core'
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { withHeadline } from '@/domains/sessions/api/feed/tool-groups'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
-import {
-  foldSettledToolRuns,
-  withHeadline,
-} from '@/domains/sessions/renderer/feed/model/tool-groups'
 import type { SessionEvidence, SessionFeed, SessionFeedRow } from '../../types'
 import { sessionPostureLocksAnswer } from '../../types'
 import { isFeedRowStreaming } from '../rows/feed-row-renderers'
@@ -50,7 +47,7 @@ function ignoreJumpToLatestChange(_sessionId: string, _action: (() => void) | nu
 function ignoreMeasurementsChange(_sessionId: string, _measurements: VirtualItem[]) {}
 
 function liveRows(reading: SessionFeed, facts: NonNullable<FeedLiveFacts>): SessionFeedRow[] {
-  const rows = foldSettledToolRuns(reading.rows)
+  const rows = reading.rows
   const hasTrailingThought = reading.rows.at(-1)?.shape === 'thought'
   const activity =
     facts.compactionStartedAt === null &&
