@@ -10,7 +10,7 @@ type Item = {
   content?: Array<{ type: string; text: string }>
 }
 type Turn = { id: string; status: string; items: Item[] }
-type Thread = { id: string; cwd: string; updatedAt: number; turns: Turn[] }
+type Thread = { id: string; cwd: string; updatedAt: number; name?: string; turns: Turn[] }
 type ActiveTurn = { thread: Thread; turn: Turn; prompt: string }
 const statePath = process.env.ARGO_CODEX_E2E_STATE
 if (statePath === undefined) throw new Error('Missing ARGO_CODEX_E2E_STATE')
@@ -186,7 +186,12 @@ function handle(message: Request) {
     return send({
       id,
       result: {
-        data: threads.map(({ id: threadId, cwd, updatedAt }) => ({ id: threadId, cwd, updatedAt })),
+        data: threads.map(({ id: threadId, cwd, updatedAt, name }) => ({
+          id: threadId,
+          cwd,
+          updatedAt,
+          name,
+        })),
         nextCursor: null,
       },
     })

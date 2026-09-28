@@ -497,7 +497,7 @@ function useRestoreProjectDraftStory(input: {
       return
     }
     if (loadedTarget.type !== 'project') return
-    setWorkspaceId(loadedTarget.workspaceId)
+    setWorkspaceId(loadedTarget.workspaceId ?? 'new')
     if (harness !== loadedTarget.harness) {
       setHarness(loadedTarget.harness)
       return

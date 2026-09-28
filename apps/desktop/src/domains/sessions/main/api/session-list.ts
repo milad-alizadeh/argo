@@ -12,17 +12,16 @@ import {
   type LiveSessionSupervisorActor,
   liveSessionActorFor,
 } from '../live/live-session-supervisor-machine'
+import type { SessionRosterChanges } from './session-roster-changes'
+import type { WatchedSessionStatus } from './watched-session-status'
 
 const t = initTRPC.create()
 
+// The roster reads the newest `pages` pages; loading more asks for one page more.
 export const sessionListInputSchema = z.strictObject({
   projectId: z.string().min(1),
   search: z.string().trim().max(500).default(''),
-  // tRPC's generated infinite-query options reserve `cursor` and `direction`. This list uses
-  // numbered SQL pages, so the cursor is the next page number rather than an opaque database key.
-  cursor: z.number().int().min(1).max(1_000_000).nullable().optional(),
-  direction: z.enum(['forward', 'backward']).optional(),
-  page: z.number().int().min(1).max(1_000_000).default(1),
+  pages: z.number().int().min(1).max(1_000).default(1),
   pageSize: z.number().int().min(1).max(100).default(30),
 })
 
@@ -125,12 +124,19 @@ export const sessionListRowSchema = z.strictObject({
   }),
 })
 
-export const sessionListOutputSchema = z.strictObject({
-  page: z.number().int().min(1),
+const sessionListSchema = z.strictObject({
+  pages: z.number().int().min(1),
   pageSize: z.number().int().min(1),
   total: z.number().int().nonnegative(),
   rows: z.array(sessionListRowSchema),
 })
+
+// The whole list first, and again whenever the rows or their order change; otherwise each row
+// that changed on its own.
+export const sessionListUpdateSchema = z.discriminatedUnion('type', [
+  sessionListSchema.extend({ type: z.literal('list') }),
+  z.strictObject({ type: z.literal('row'), row: sessionListRowSchema }),
+])
 
 type StoredSessionTitle = {
   customTitle: string | null
@@ -138,9 +144,11 @@ type StoredSessionTitle = {
   firstPrompt: string | null
 }
 
-type SessionListContext = {
+export type SessionListContext = {
   database: Database
   supervisor: LiveSessionSupervisorActor
+  roster: SessionRosterChanges
+  watchedStatus: Pick<WatchedSessionStatus, 'statusOf'>
 }
 
 function liveProjection(context: SessionListContext, sessionId: string) {
@@ -190,6 +198,7 @@ function sessionListRow(
   row: StoredSessionTitle & {
     id: string
     harness: string
+    nativeId: string
     cwd: string | null
     workspaceId: string | null
     activityAt: number | null
@@ -215,7 +224,10 @@ function sessionListRow(
     customTitle: row.customTitle,
     preview: row.preview,
     title: displayedTitle({ ...row, ticketTitle: ticket?.title ?? null }),
-    status: live?.status ?? ('unknown' as const),
+    status:
+      live?.status ??
+      context.watchedStatus.statusOf(row.harness, row.nativeId, Date.now()) ??
+      ('unknown' as const),
     entry: null,
     cwd: row.cwd,
     workspaceId: row.workspaceId,
@@ -239,8 +251,7 @@ function sessionListRow(
 function readSessionList(
   context: SessionListContext,
   input: z.infer<typeof sessionListInputSchema>,
-) {
-  const page = input.cursor ?? input.page
+): z.infer<typeof sessionListSchema> {
   const projectFilter = eq(sessionTable.projectId, input.projectId)
   const filter =
     input.search === ''
@@ -256,6 +267,7 @@ function readSessionList(
     .select({
       id: sessionTable.argoId,
       harness: sessionTable.harness,
+      nativeId: sessionTable.nativeId,
       customTitle: sessionTable.customTitle,
       preview: sessionTable.preview,
       firstPrompt: sessionTable.firstPrompt,
@@ -278,8 +290,7 @@ function readSessionList(
       desc(sql`coalesce(${sessionTable.activityAt}, ${sessionTable.updatedAt})`),
       asc(sessionTable.argoId),
     )
-    .limit(input.pageSize)
-    .offset((page - 1) * input.pageSize)
+    .limit(input.pages * input.pageSize)
     .all()
   const subagents = storedSessionSubagents(
     context.database,
@@ -288,23 +299,48 @@ function readSessionList(
   const rows = stored.map((row) => sessionListRow(context, row, subagents.get(row.id) ?? []))
   const total =
     context.database.select({ value: count() }).from(sessionTable).where(filter).get()?.value ?? 0
-  return { page, pageSize: input.pageSize, total, rows }
+  return sessionListSchema.parse({ pages: input.pages, pageSize: input.pageSize, total, rows })
+}
+
+function sameOrder(
+  left: z.infer<typeof sessionListSchema>,
+  right: z.infer<typeof sessionListSchema>,
+): boolean {
+  return (
+    left.total === right.total &&
+    left.rows.length === right.rows.length &&
+    left.rows.every((row, index) => row.id === right.rows[index]?.id)
+  )
 }
 
 export function sessionListProcedure(context: SessionListContext) {
-  return t.procedure
-    .input(sessionListInputSchema)
-    .output(sessionListOutputSchema)
-    .query(({ input }) => readSessionList(context, input))
-}
-
-export function sessionStatusChangesProcedure(context: Pick<SessionListContext, 'supervisor'>) {
-  return t.procedure.subscription(() =>
-    observable<{ sessionId: string }>((emit) => {
-      const subscription = context.supervisor.on('Session status changed', ({ sessionId }) =>
-        emit.next({ sessionId }),
-      )
-      return () => subscription.unsubscribe()
+  return t.procedure.input(sessionListInputSchema).subscription(({ input }) =>
+    observable<z.infer<typeof sessionListUpdateSchema>>((emit) => {
+      let sent = readSessionList(context, input)
+      emit.next({ type: 'list', ...sent })
+      let pending = false
+      const publish = () => {
+        pending = false
+        const next = readSessionList(context, input)
+        if (!sameOrder(sent, next)) emit.next({ type: 'list', ...next })
+        else
+          next.rows.forEach((row, index) => {
+            if (JSON.stringify(row) !== JSON.stringify(sent.rows[index]))
+              emit.next({ type: 'row', row })
+          })
+        sent = next
+      }
+      const changed = () => {
+        if (pending) return
+        pending = true
+        queueMicrotask(publish)
+      }
+      const unsubscribeRoster = context.roster.subscribe(changed)
+      const statusChanges = context.supervisor.on('Session status changed', changed)
+      return () => {
+        unsubscribeRoster()
+        statusChanges.unsubscribe()
+      }
     }),
   )
 }

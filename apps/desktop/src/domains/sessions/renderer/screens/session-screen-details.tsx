@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate, useParams } from 'react-router'
@@ -15,7 +15,7 @@ import {
   AlertTitle,
 } from '@/platform/renderer/components/ui/alert'
 import { Button } from '@/platform/renderer/components/ui/button'
-import { type RouterInputs, trpc } from '@/platform/renderer/trpc-client'
+import { trpc } from '@/platform/renderer/trpc-client'
 import {
   type DraftContent,
   useDurableComposerDraft,
@@ -38,6 +38,7 @@ import {
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import type { HarnessControl } from '../harness/harnesses'
 import type { Session, SessionListPage } from '../types'
+import { draftTarget } from './session-draft-target'
 import { type ComposerFailure, useComposerFailureToasts } from './use-composer-failure-toasts'
 
 type SessionScreenDetailsProps = {
@@ -105,28 +106,9 @@ function workspaceControl(
   return {
     workspaces: workspaces.workspaces,
     workspace: workspaces.workspace,
+    choice: workspaces.choice,
+    saveFailed: workspaces.saveFailed,
     onSelect: actions.selectWorkspace,
-  }
-}
-
-function draftTarget({
-  identity,
-  harness,
-  cockpit,
-  workspace,
-}: {
-  identity: ComposerIdentity
-  harness: HarnessControl
-  cockpit: Cockpit
-  workspace: WorkspaceCockpit
-}): RouterInputs['composerDraftCreate']['target'] | null {
-  if (identity.kind === 'session') return { type: 'session', sessionId: identity.sessionId }
-  if (cockpit.project === null || workspace.workspace === null) return null
-  return {
-    type: 'project',
-    projectId: cockpit.project.id,
-    workspaceId: workspace.workspace.id,
-    harness: harness.harness,
   }
 }
 
@@ -140,7 +122,12 @@ function useSessionComposerDraft(input: {
   opening: TurnConfiguration | null
 }) {
   const { identity, harness, cockpit, workspaceCockpit, workspaceActions, choices, opening } = input
-  const target = draftTarget({ identity, harness, cockpit, workspace: workspaceCockpit })
+  const target = draftTarget({
+    identity,
+    harness,
+    projectId: cockpit.project?.id ?? null,
+    workspace: workspaceCockpit,
+  })
   const [restoredProjectId, setRestoredProjectId] = useState<string | null>(null)
   const projectId = identity.kind === 'draft' ? identity.projectId : null
   // Opening a Session forgets the restore, so the next new-Session composer restores its target.
@@ -155,11 +142,12 @@ function useSessionComposerDraft(input: {
       return
     }
     if (loadedTarget.type !== 'project' || loadedTarget.projectId !== projectId) return
-    workspaceActions.selectWorkspace(loadedTarget.workspaceId)
     if (harness.harness !== loadedTarget.harness) {
       harness.onChange?.(loadedTarget.harness)
       return
     }
+    const savedChoice = loadedTarget.workspaceId ?? 'new'
+    if (workspaceCockpit.choice !== savedChoice) workspaceActions.selectWorkspace(savedChoice)
     setRestoredProjectId(projectId)
   }, [
     harness.harness,
@@ -168,6 +156,7 @@ function useSessionComposerDraft(input: {
     projectId,
     restoredProjectId,
     workspaceActions,
+    workspaceCockpit.choice,
   ])
   return { draft, targetRestored }
 }
@@ -179,6 +168,7 @@ function useSessionComposerSend(input: {
   onFailure: (outcome: 'rejected' | 'uncertain') => void
 }) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   return async (
     prompt: string,
     turnConfiguration: TurnConfiguration | null,
@@ -190,8 +180,12 @@ function useSessionComposerSend(input: {
       input.onFailure(outcome)
       return outcome
     }
-    if (input.identity.kind === 'draft' && input.projectId !== null)
+    if (input.identity.kind === 'draft' && input.projectId !== null) {
+      void queryClient.invalidateQueries({
+        queryKey: trpc.workspaceList.queryKey({ projectId: input.projectId }),
+      })
       navigate(`/projects/${input.projectId}/sessions/${result.sessionId}`, { replace: true })
+    }
     return 'accepted'
   }
 }

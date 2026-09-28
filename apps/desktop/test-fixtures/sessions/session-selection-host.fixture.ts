@@ -1,4 +1,5 @@
-import { sessionListTrpc } from '@/domains/sessions/renderer/session-fixtures'
+import { sessionListSubscribe } from '@/domains/sessions/renderer/session-fixtures'
+import { sessionRosterPathKey } from '@/domains/sessions/renderer/session-list/session-roster'
 import type { Session } from '@/domains/sessions/renderer/types'
 import { queryClient, trpc } from '@/platform/renderer/trpc-client'
 import { claudeHarnessInfoFixture, codexHarnessInfoFixture } from './harness-catalog.fixture'
@@ -164,7 +165,7 @@ function clearSelectionQueries() {
   failSelectionWrites({ draftSaves: false, sends: false })
   for (const release of heldDraftReads.values()) release()
   heldDraftReads.clear()
-  queryClient.removeQueries({ queryKey: trpc.sessionList.pathKey() })
+  queryClient.removeQueries({ queryKey: sessionRosterPathKey })
   queryClient.removeQueries({ queryKey: trpc.projectList.pathKey() })
   queryClient.removeQueries({ queryKey: trpc.projectOpen.pathKey() })
   queryClient.removeQueries({ queryKey: trpc.workspaceList.pathKey() })
@@ -196,7 +197,6 @@ export function sessionSelectionHost(
       updatedAt: 0,
     })
   for (const sessionId of options.heldDraftReads ?? []) heldDraftReads.set(sessionId, () => {})
-  const sessionTrpc = sessionListTrpc(before.trpc, () => roster)
   window.argo = Object.assign(
     {
       ...before,
@@ -204,7 +204,8 @@ export function sessionSelectionHost(
         projectReply(request) ??
         composerReply(request) ??
         feedReply(request) ??
-        sessionTrpc(request)) satisfies typeof window.argo.trpc,
+        before.trpc(request)) satisfies typeof window.argo.trpc,
+      trpcSubscribe: sessionListSubscribe(before.trpcSubscribe, () => roster),
     },
     {
       readShellOutput: async () => ({

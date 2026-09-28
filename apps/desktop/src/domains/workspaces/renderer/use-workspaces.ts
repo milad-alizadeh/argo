@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
-import { useCallback, useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { type RouterOutputs, trpc } from '@/platform/renderer/trpc-client'
 
 type WorkspaceListOutput = RouterOutputs['workspaceList']
@@ -9,16 +9,22 @@ export type WorkspaceSummary = WorkspaceListed['workspaces'][number]
 export type WorkspaceCockpit = {
   workspaces: readonly WorkspaceSummary[]
   workspace: WorkspaceSummary | null
+  choice: string | null
+  saveFailed: boolean
 }
 
 export type WorkspaceActions = {
-  selectWorkspace: (workspaceId: string) => void
+  selectWorkspace: (choice: string) => void
 }
 
-const IDLE: WorkspaceCockpit = { workspaces: [], workspace: null }
+const IDLE: WorkspaceCockpit = { workspaces: [], workspace: null, choice: null, saveFailed: false }
 
 export function useWorkspaces(projectId: string | null): [WorkspaceCockpit, WorkspaceActions] {
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const queryClient = useQueryClient()
+  const [localChoice, setLocalChoice] = useState<{ projectId: string; choice: string } | null>(null)
+  const [saveFailureProjectId, setSaveFailureProjectId] = useState<string | null>(null)
+  const { mutateAsync: choose } = useMutation(trpc.workspaceChoose.mutationOptions())
+  const pendingChoice = useRef(Promise.resolve())
   const query = useQuery({
     ...trpc.workspaceList.queryOptions({ projectId: projectId ?? '' }),
     enabled: projectId !== null,
@@ -27,12 +33,40 @@ export function useWorkspaces(projectId: string | null): [WorkspaceCockpit, Work
   })
   const cockpit = useMemo(() => {
     if (query.data?.type !== 'workspace.listed') return IDLE
-    const workspace =
-      query.data.workspaces.find((candidate) => candidate.id === selectedId) ??
-      query.data.workspaces.find((candidate) => candidate.kind === 'main') ??
-      null
-    return { workspaces: query.data.workspaces, workspace }
-  }, [query.data, selectedId])
-  const selectWorkspace = useCallback((workspaceId: string) => setSelectedId(workspaceId), [])
+    const choice = localChoice?.projectId === projectId ? localChoice.choice : query.data.choice
+    const workspace = query.data.workspaces.find((candidate) => candidate.id === choice) ?? null
+    return {
+      workspaces: query.data.workspaces,
+      workspace,
+      choice,
+      saveFailed: saveFailureProjectId === projectId || (choice !== 'new' && workspace === null),
+    }
+  }, [query.data, localChoice, projectId, saveFailureProjectId])
+  const selectWorkspace = useCallback(
+    (choice: string) => {
+      if (projectId === null) return
+      setLocalChoice({ projectId, choice })
+      setSaveFailureProjectId(null)
+      pendingChoice.current = pendingChoice.current.then(async () => {
+        try {
+          await choose({ projectId, choice })
+          queryClient.setQueryData<WorkspaceListOutput>(
+            trpc.workspaceList.queryKey({ projectId }),
+            (current) => (current?.type === 'workspace.listed' ? { ...current, choice } : current),
+          )
+          setLocalChoice((current) =>
+            current?.projectId === projectId && current.choice === choice ? null : current,
+          )
+          setSaveFailureProjectId((current) => (current === projectId ? null : current))
+        } catch {
+          setLocalChoice((current) =>
+            current?.projectId === projectId && current.choice === choice ? null : current,
+          )
+          setSaveFailureProjectId(projectId)
+        }
+      })
+    },
+    [choose, projectId, queryClient],
+  )
   return [cockpit, useMemo(() => ({ selectWorkspace }), [selectWorkspace])]
 }

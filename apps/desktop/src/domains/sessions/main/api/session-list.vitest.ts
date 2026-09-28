@@ -2,8 +2,11 @@ import assert from 'node:assert/strict'
 import { DatabaseSync } from 'node:sqlite'
 import { initTRPC } from '@trpc/server'
 import { test } from 'vitest'
+import type { z } from 'zod'
 import { databaseFrom } from '@/database/database'
-import { sessionListProcedure } from './session-list'
+import { sessionListProcedure, type sessionListUpdateSchema } from './session-list'
+import { SessionRosterChanges } from './session-roster-changes'
+import { WatchedSessionStatus } from './watched-session-status'
 
 const IDS = [
   '00000000-0000-4000-8000-000000000001',
@@ -45,7 +48,12 @@ function sessionListCaller(sessions: Record<string, unknown> = {}) {
     PRIMARY KEY (session_id, subagent_id)
   );`)
   const database = databaseFrom(client)
+  const statusListeners = new Set<(event: { sessionId: string }) => void>()
   const supervisor = {
+    on: (_type: string, listener: (event: { sessionId: string }) => void) => {
+      statusListeners.add(listener)
+      return { unsubscribe: () => statusListeners.delete(listener) }
+    },
     system: { get: (id: string) => sessions[id] },
     getSnapshot: () => ({
       context: {
@@ -54,11 +62,38 @@ function sessionListCaller(sessions: Record<string, unknown> = {}) {
       },
     }),
   }
+  const roster = new SessionRosterChanges()
+  const watchedStatus = new WatchedSessionStatus(() => roster.changed())
   const router = initTRPC.create().router({
-    list: sessionListProcedure({ database, supervisor: supervisor as never }),
+    list: sessionListProcedure({
+      database,
+      supervisor: supervisor as never,
+      roster,
+      watchedStatus,
+    }),
   })
-  return { client, list: router.createCaller({}).list }
+  const caller = router.createCaller({})
+  const updates = async (input: Parameters<typeof caller.list>[0]) => {
+    const received: SessionListUpdate[] = []
+    const stream = await caller.list(input)
+    const subscription = stream.subscribe({ next: (update) => received.push(update) })
+    return { received, stop: () => subscription.unsubscribe() }
+  }
+  const list = async (input: Parameters<typeof caller.list>[0]) => {
+    const { received, stop } = await updates(input)
+    stop()
+    const [first] = received
+    if (first?.type !== 'list') throw new Error('The roster did not send its list first.')
+    return first
+  }
+  const statusChanged = (sessionId: string) => {
+    for (const listener of statusListeners) listener({ sessionId })
+  }
+  return { client, list, updates, roster, statusChanged, watchedStatus }
 }
+
+type SessionListUpdate = z.infer<typeof sessionListUpdateSchema>
+const settled = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 function liveSession(state: string, status: string | null = null) {
   return {
@@ -113,6 +148,30 @@ function insertSession(
     )
 }
 
+type Caller = ReturnType<typeof sessionListCaller>
+
+function updatesOfTwoSessions(client: DatabaseSync, updates: Caller['updates']) {
+  insertSession(client, { id: IDS[0], harness: 'claude', nativeId: 'native-1', updatedAt: 20 })
+  insertSession(client, { id: IDS[1], harness: 'claude', nativeId: 'native-2', updatedAt: 10 })
+  return updates({ projectId: 'project-1', pageSize: 10 })
+}
+
+function listOneSession(client: DatabaseSync, list: Caller['list']) {
+  insertSession(client, {
+    id: IDS[0],
+    harness: 'claude',
+    nativeId: 'native-1',
+    firstPrompt: 'First prompt',
+    updatedAt: 10,
+  })
+  return list({ projectId: 'project-1', pageSize: 10 })
+}
+
+const statusesOf = (received: SessionListUpdate[]) =>
+  received.map((update) =>
+    update.type === 'row' ? update.row.status : update.rows.map((row) => row.status),
+  )
+
 function insertTicketLink(
   client: DatabaseSync,
   values: {
@@ -139,7 +198,7 @@ function insertTicketLink(
     )
 }
 
-test('returns exact numbered pages in activity order with an Argo ID tie-breaker', async () => {
+test('returns the newest pages in activity order with an Argo ID tie-breaker', async () => {
   const { client, list } = sessionListCaller()
   try {
     insertSession(client, {
@@ -174,8 +233,8 @@ test('returns exact numbered pages in activity order with an Argo ID tie-breaker
       updatedAt: 40,
     })
 
-    const first = await list({ projectId: 'project-1', page: 1, pageSize: 2 })
-    const second = await list({ projectId: 'project-1', page: 2, pageSize: 2 })
+    const first = await list({ projectId: 'project-1', pages: 1, pageSize: 2 })
+    const second = await list({ projectId: 'project-1', pages: 2, pageSize: 2 })
 
     assert.deepEqual(
       first.rows.map(({ id }) => id),
@@ -183,11 +242,11 @@ test('returns exact numbered pages in activity order with an Argo ID tie-breaker
     )
     assert.deepEqual(
       second.rows.map(({ id }) => id),
-      [IDS[2]],
+      [IDS[0], IDS[1], IDS[2]],
     )
     assert.deepEqual(
-      { page: first.page, pageSize: first.pageSize, total: first.total },
-      { page: 1, pageSize: 2, total: 3 },
+      { pages: first.pages, pageSize: first.pageSize, total: first.total },
+      { pages: 1, pageSize: 2, total: 3 },
     )
     assert.equal(JSON.stringify(first).includes('native'), false)
     assert.equal(JSON.stringify(first).includes('cursor'), false)
@@ -215,7 +274,7 @@ test('projects the stored Workspace identity, including null for legacy Sessions
       updatedAt: 10,
     })
 
-    const result = await list({ projectId: 'project-1', page: 1, pageSize: 10 })
+    const result = await list({ projectId: 'project-1', pageSize: 10 })
 
     assert.deepEqual(
       result.rows.map(({ workspaceId }) => workspaceId),
@@ -271,7 +330,7 @@ test('chooses custom title, Ticket title, distinct vendor preview, then first pr
       state: 'open',
     })
 
-    const result = await list({ projectId: 'project-1', page: 1, pageSize: 10 })
+    const result = await list({ projectId: 'project-1', pageSize: 10 })
 
     assert.deepEqual(
       result.rows.map(({ title }) => title),
@@ -309,9 +368,9 @@ test('filters one Project by custom title and preview only', async () => {
       updatedAt: 20,
     })
 
-    const custom = await list({ projectId: 'project-1', search: 'CUSTOM', page: 1, pageSize: 10 })
-    const preview = await list({ projectId: 'project-1', search: 'preview', page: 1, pageSize: 10 })
-    const prompt = await list({ projectId: 'project-1', search: 'hidden', page: 1, pageSize: 10 })
+    const custom = await list({ projectId: 'project-1', search: 'CUSTOM', pageSize: 10 })
+    const preview = await list({ projectId: 'project-1', search: 'preview', pageSize: 10 })
+    const prompt = await list({ projectId: 'project-1', search: 'hidden', pageSize: 10 })
 
     assert.deepEqual(
       custom.rows.map(({ id }) => id),
@@ -345,7 +404,7 @@ test('joins a Session to its Ticket as one nested ticket object', async () => {
       state: 'open',
     })
 
-    const result = await list({ projectId: 'project-1', page: 1, pageSize: 10 })
+    const result = await list({ projectId: 'project-1', pageSize: 10 })
 
     assert.deepEqual(result.rows[0]?.ticket, {
       projectId: 'project-1',
@@ -368,15 +427,7 @@ test('joins a Session to its Ticket as one nested ticket object', async () => {
 async function savedSessionRowWithLiveState(state: string) {
   const { client, list } = sessionListCaller({ [IDS[0]]: liveSession(state) })
   try {
-    insertSession(client, {
-      id: IDS[0],
-      harness: 'claude',
-      nativeId: 'native-1',
-      firstPrompt: 'First prompt',
-      updatedAt: 10,
-    })
-
-    const result = await list({ projectId: 'project-1', page: 1, pageSize: 10 })
+    const result = await listOneSession(client, list)
     return result.rows[0]
   } finally {
     client.close()
@@ -413,13 +464,129 @@ test('projects the latest live status over the machine state, and unknown with n
     insertSession(client, { id: IDS[0], harness: 'codex', nativeId: 'native-1', updatedAt: 20 })
     insertSession(client, { id: IDS[1], harness: 'claude', nativeId: 'native-2', updatedAt: 10 })
 
-    const result = await list({ projectId: 'project-1', page: 1, pageSize: 10 })
+    const result = await list({ projectId: 'project-1', pageSize: 10 })
 
     assert.deepEqual(
       result.rows.map(({ status }) => status),
       ['running', 'unknown'],
     )
   } finally {
+    client.close()
+  }
+})
+
+test('sends a changed row on its own when the roster announces a change', async () => {
+  const { client, updates, roster } = sessionListCaller()
+  try {
+    const { received, stop } = await updatesOfTwoSessions(client, updates)
+
+    client.prepare("UPDATE session SET custom_title = 'Renamed' WHERE argo_id = ?").run(IDS[1])
+    roster.changed()
+    roster.changed()
+    await settled()
+    stop()
+
+    assert.deepEqual(
+      received.map((update) => (update.type === 'row' ? update.row.customTitle : update.type)),
+      ['list', 'Renamed'],
+    )
+  } finally {
+    client.close()
+  }
+})
+
+test('sends the whole list again when a change moves or adds rows', async () => {
+  const { client, updates, roster } = sessionListCaller()
+  try {
+    const { received, stop } = await updatesOfTwoSessions(client, updates)
+
+    client.prepare('UPDATE session SET activity_at = 30 WHERE argo_id = ?').run(IDS[1])
+    roster.changed()
+    await settled()
+    insertSession(client, { id: IDS[2], harness: 'codex', nativeId: 'native-3', updatedAt: 40 })
+    roster.changed()
+    await settled()
+    stop()
+
+    assert.deepEqual(
+      received.map((update) =>
+        update.type === 'list' ? update.rows.map(({ id }) => id) : update.type,
+      ),
+      [
+        [IDS[0], IDS[1]],
+        [IDS[1], IDS[0]],
+        [IDS[2], IDS[1], IDS[0]],
+      ],
+    )
+  } finally {
+    client.close()
+  }
+})
+
+test('sends a row whose live status changed without a roster announcement', async () => {
+  let status = 'running'
+  const session = {
+    getSnapshot: () => ({
+      value: 'Ready',
+      matches: (candidate: string) => candidate === 'Ready',
+      context: {
+        status,
+        first: { turnConfiguration: { model: null, effort: null, mode: null } },
+      },
+    }),
+  }
+  const { client, updates, statusChanged } = sessionListCaller({ [IDS[0]]: session })
+  try {
+    insertSession(client, { id: IDS[0], harness: 'claude', nativeId: 'native-1', updatedAt: 20 })
+    const { received, stop } = await updates({ projectId: 'project-1', pageSize: 10 })
+
+    status = 'idle'
+    statusChanged(IDS[0])
+    await settled()
+    stop()
+
+    assert.deepEqual(statusesOf(received), [['running'], 'idle'])
+  } finally {
+    client.close()
+  }
+})
+
+test('stays quiet when a change leaves every row as it was', async () => {
+  const { client, updates, roster } = sessionListCaller()
+  try {
+    insertSession(client, { id: IDS[0], harness: 'claude', nativeId: 'native-1', updatedAt: 20 })
+    const { received, stop } = await updates({ projectId: 'project-1', pageSize: 10 })
+
+    roster.changed()
+    await settled()
+    stop()
+
+    assert.deepEqual(
+      received.map(({ type }) => type),
+      ['list'],
+    )
+  } finally {
+    client.close()
+  }
+})
+
+test('shows what a watched Session’s history last said about its turn', async () => {
+  const { client, updates, roster, watchedStatus } = sessionListCaller()
+  try {
+    insertSession(client, { id: IDS[0], harness: 'codex', nativeId: 'native-1', updatedAt: 20 })
+    const { received, stop } = await updates({ projectId: 'project-1', pageSize: 10 })
+
+    watchedStatus.record({ harness: 'codex', nativeId: 'native-1', turn: 'open', at: Date.now() })
+    roster.changed()
+    await settled()
+    watchedStatus.record({ harness: 'codex', nativeId: 'native-1', turn: 'closed', at: Date.now() })
+    roster.changed()
+    await settled()
+    stop()
+
+    assert.deepEqual(statusesOf(received), [['unknown'], 'running', 'idle'])
+  } finally {
+    watchedStatus.dispose()
     client.close()
   }
 })
