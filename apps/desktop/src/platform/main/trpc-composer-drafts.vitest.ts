@@ -70,6 +70,7 @@ function caller(send: LiveSessionSupervisorActor['send'] = () => {}) {
             worktreeRoot: path.join(userData, 'worktrees'),
           }),
         ),
+      acceptsAttachments: (harness: string) => harness !== 'claude',
     },
     workspaces: { database, exclusive },
   } as unknown as AppRouterDependencies
@@ -640,7 +641,7 @@ test('rejects unsupported Session attachments before sending to the supervisor',
       expectedRevision: created.revision,
       commandId: 'unsupported-attachment',
     }),
-  ).rejects.toThrow('Claude Session attachments are not supported')
+  ).rejects.toThrow('This Harness does not accept Session attachments')
   expect(sends).toBe(0)
   await expect(api.composerDraftRead(created.target)).resolves.toEqual(created)
 })

@@ -8,6 +8,8 @@ import type {
   ProjectSetupCommand,
   ProjectSetupSnapshot,
 } from '@/domains/projects/renderer/onboarding/onboarding-presentation'
+import { DEFAULT_HARNESS, harnessSchema } from '@/harnesses/harness'
+import { harnessLabel } from '@/harnesses/presentation-registry'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { RadioGroup, RadioGroupItem } from '@/platform/renderer/components/ui/radio-group'
@@ -34,10 +36,9 @@ export function ProjectSetupMethodScreen({
     availableHarnesses.length > 0 ? 'agent' : 'manual',
   )
   const [preferredHarness, setPreferredHarness] = useState<ProjectSetupHarness>(
-    () => availableHarnesses[0]?.harness ?? 'claude',
+    () => availableHarnesses[0]?.harness ?? DEFAULT_HARNESS,
   )
   const selectedHarness = chosenHarness(availableHarnesses, preferredHarness)
-  const harnessLabel = (harness: ProjectSetupHarness) => t(`setup.harnessName.${harness}` as const)
   const continueSetup = () => {
     if (method === 'agent' && selectedHarness) {
       return command({ type: 'choose-agent', harness: selectedHarness })
@@ -75,7 +76,8 @@ export function ProjectSetupMethodScreen({
                   value: harness,
                 }))}
                 onValueChange={(value) => {
-                  if (value === 'claude' || value === 'codex') setPreferredHarness(value)
+                  const chosen = harnessSchema.safeParse(value)
+                  if (chosen.success) setPreferredHarness(chosen.data)
                 }}
                 value={selectedHarness}
               >

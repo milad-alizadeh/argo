@@ -4,7 +4,6 @@ import os from 'node:os'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, type BrowserWindow, dialog, net, protocol, shell } from 'electron'
-import type { ActorRefFrom } from 'xstate'
 import { z } from 'zod'
 import { type Database, openDatabase } from '@/database/database'
 import { createAccountAccess, createAccountProcedureContext } from '@/domains/accounts/main'
@@ -26,18 +25,11 @@ import { SessionEventJournal } from '@/domains/sessions/main/live/session-event-
 import { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
 import { ensureManagedWorkspace } from '@/domains/workspaces/main/workspace-create-managed'
-import type { CatalogActor } from '@/harnesses/catalog/catalog-read'
-import type { CodexLiveClient } from '@/harnesses/codex/session/codex-session-channel'
+import { type Harness, harnessSchema } from '@/harnesses/harness'
 import { createHarnessRegistry, type HarnessRegistry } from '@/harnesses/registry'
 import { LIVE_EVENT_PROOF_ENV, PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { attachAppearanceWatch } from '@/platform/main/appearance'
 import type { AppActor } from '@/platform/main/application/app-machine'
-import {
-  type codexAppServerMachine,
-  observeCodexAppServer,
-  requestCodexAppServer,
-  respondCodexAppServer,
-} from '@/platform/main/application/codex-app-server-machine'
 import { startDesktopApplication } from '@/platform/main/application/start'
 import {
   DEVELOPMENT_APPLICATION_NAME,
@@ -49,6 +41,7 @@ import {
 } from '@/platform/main/development/instance'
 import { seedDevelopmentProject } from '@/platform/main/development/project-seed'
 import { writeDevelopmentReady } from '@/platform/main/development/ready'
+import type { CatalogActor } from '@/platform/main/harness-catalog/catalog-read'
 import { platformText } from '@/platform/main/i18n'
 import { installMenu } from '@/platform/main/menu'
 import { attachWindowNavigation } from '@/platform/main/security/window-navigation'
@@ -119,30 +112,7 @@ if (DEVELOPMENT_INSTANCE) {
 
 let desktopWindow: BrowserWindow | undefined
 let focusRequestedBeforeWindowReady = false
-let applicationActor: AppActor | undefined
 let harnessRegistry: HarnessRegistry | undefined
-
-function codexClient(): CodexLiveClient {
-  const actor = () =>
-    applicationActor?.system.get('codex') as ActorRefFrom<typeof codexAppServerMachine> | undefined
-  return {
-    request: (method, params, parse) => {
-      const current = actor()
-      if (current === undefined)
-        return Promise.reject(new Error('Codex app-server actor is unavailable.'))
-      return requestCodexAppServer(current)(method, params, parse)
-    },
-    onNotification: (listener) => {
-      const current = actor()
-      return current === undefined ? () => {} : observeCodexAppServer(current, listener)
-    },
-    respond: (id, result) => {
-      const current = actor()
-      if (current === undefined) throw new Error('Codex app-server actor is unavailable.')
-      respondCodexAppServer(current, id, result)
-    },
-  }
-}
 
 function focusWindow(): void {
   if (!desktopWindow) {
@@ -194,15 +164,8 @@ function createDomainContexts(database: Database, registry: HarnessRegistry) {
 function routerForWindow(options: {
   window: BrowserWindow
   database: Database
-  actors: {
-    catalog: CatalogActor
-    codex: ActorRefFrom<typeof codexAppServerMachine>
-    sessions: LiveSessionSupervisorActor
-    sessionSync: {
-      send: (event: SessionSyncSupervisorCommand) => void
-    }
-  }
-  sessionSyncStatus: SessionSyncStatusStore
+  actors: WindowActors
+  sessionSyncStatus: readonly SessionSyncStatusStore[]
   domains: ReturnType<typeof createDomainContexts>
   registry: HarnessRegistry
 }) {
@@ -210,6 +173,7 @@ function routerForWindow(options: {
   const exclusive = createWriteQueue()
   return createAppRouter({
     accounts: domains.accounts,
+    autoCompactLimit: (harness) => registry[harness].autoCompactLimit,
     catalog: actors.catalog,
     harnessSignIn: domains.harnessSignIn,
     projects: {
@@ -237,6 +201,7 @@ function routerForWindow(options: {
         return rename(nativeId, title)
       },
       supervisor: actors.sessions,
+      acceptsAttachments: (harness) => registry[harness].acceptsAttachments,
       journal: currentSessionEventJournal(),
       interactions: currentSessionInteractionBroker(),
       hasLiveChannel: (sessionId) => {
@@ -255,9 +220,9 @@ function routerForWindow(options: {
   })
 }
 
-function currentSessionSyncStatus(): SessionSyncStatusStore {
+function currentSessionSyncStatus(): SessionSyncStatusStore[] {
   if (sessionSyncStatus === undefined) throw new Error('Session sync status is unavailable.')
-  return sessionSyncStatus
+  return Object.values(sessionSyncStatus)
 }
 
 function currentSessionEventJournal(): SessionEventJournal {
@@ -273,7 +238,6 @@ function currentSessionInteractionBroker(): SessionInteractionBroker {
 
 type WindowActors = {
   catalog: CatalogActor
-  codex: ActorRefFrom<typeof codexAppServerMachine>
   sessions: LiveSessionSupervisorActor
   sessionSync: {
     send: (event: SessionSyncSupervisorCommand) => void
@@ -282,21 +246,15 @@ type WindowActors = {
 
 function requireWindowActors(actor: AppActor): WindowActors {
   const catalog = actor.system.get('catalog') as CatalogActor | undefined
-  const codex = actor.system.get('codex') as ActorRefFrom<typeof codexAppServerMachine> | undefined
   const sessions = actor.system.get('sessions') as LiveSessionSupervisorActor | undefined
   const sessionSync = actor.system.get('sessionSync') as
     | {
         send: (event: SessionSyncSupervisorCommand) => void
       }
     | undefined
-  if (
-    catalog === undefined ||
-    codex === undefined ||
-    sessions === undefined ||
-    sessionSync === undefined
-  )
+  if (catalog === undefined || sessions === undefined || sessionSync === undefined)
     throw new Error('Application child actors are unavailable.')
-  return { catalog, codex, sessions, sessionSync }
+  return { catalog, sessions, sessionSync }
 }
 
 function attachWindowTrpc({
@@ -389,10 +347,9 @@ function createWindow(actor: AppActor, database: Database, registry: HarnessRegi
 }
 
 let applicationDatabase: Database | undefined
-let sessionSyncStatus: SessionSyncStatusStore | undefined
+let sessionSyncStatus: Record<Harness, SessionSyncStatusStore> | undefined
 let sessionEventJournal: SessionEventJournal | undefined
 let sessionInteractionBroker: SessionInteractionBroker | undefined
-let codexSessionSyncStatus: SessionSyncStatusStore | undefined
 
 async function prepare() {
   const { projectData } = developmentStoreDirectories({
@@ -402,7 +359,13 @@ async function prepare() {
   })
   applicationDatabase = openDatabase(projectData, { packaged: app.isPackaged })
   markUnresolvedSessionCommandsUnknown(applicationDatabase)
-  sessionSyncStatus = new SessionSyncStatusStore(applicationDatabase)
+  const database = applicationDatabase
+  sessionSyncStatus = Object.fromEntries(
+    harnessSchema.options.map((harness) => [
+      harness,
+      new SessionSyncStatusStore(database, harness),
+    ]),
+  ) as Record<Harness, SessionSyncStatusStore>
   sessionEventJournal = new SessionEventJournal()
   const liveEventProof = process.env[LIVE_EVENT_PROOF_ENV]
   if (PROOF_ENABLED && liveEventProof !== undefined) {
@@ -410,15 +373,13 @@ async function prepare() {
     for (const event of events) sessionEventJournal.append(event.sessionId, event.body)
   }
   sessionInteractionBroker = new SessionInteractionBroker()
-  codexSessionSyncStatus = new SessionSyncStatusStore(applicationDatabase, 'codex')
   if (DEVELOPMENT_INSTANCE) {
     await seedDevelopmentProject(applicationDatabase, DEVELOPMENT_INSTANCE)
   }
-  harnessRegistry = createHarnessRegistry(codexClient())
+  harnessRegistry = createHarnessRegistry()
   return {
     database: applicationDatabase,
     sessionSyncStatus,
-    codexSessionSyncStatus,
     sessionEventJournal,
     sessionInteractionBroker,
     registry: harnessRegistry,
@@ -434,7 +395,6 @@ async function ready(actor: AppActor): Promise<void> {
   })
   if (applicationDatabase === undefined || sessionSyncStatus === undefined)
     throw new Error('Application services are unavailable.')
-  applicationActor = actor
   if (harnessRegistry === undefined) throw new Error('Harness registry is unavailable.')
   const registry = harnessRegistry
   void reconcileUnknownSessionCommands(

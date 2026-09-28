@@ -1,11 +1,12 @@
 import { and, eq, inArray, ne, or } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { sessionCommandTable } from '@/database/session/command-schema'
+import type { Harness } from '@/harnesses/harness'
 
 export type CommandStatus = typeof sessionCommandTable.$inferSelect.status
 export type CommandIdentity = {
   intentId: string
-  harness: 'claude' | 'codex'
+  harness: Harness
   nativeId: string | null
   cwd: string
 }

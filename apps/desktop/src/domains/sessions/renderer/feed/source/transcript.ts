@@ -86,22 +86,22 @@ export type TranscriptRecord =
       boundary?: boolean
       subagent?: boolean
       // A collaboration call the Subagent events read a fact from: the model a spawn chose, or the
-      // target a stop names (`codex/sessions/subagent-calls.ts`).
+      // target a stop names.
       subagentCall?: SubagentCall
-      // Codex records a spawned thread's parent and path in its session metadata. The adapter
-      // uses them to open that thread from the parent Session's Subagent row.
+      // A spawned thread's parent and path, which open that thread from the parent Session's
+      // Subagent row.
       parentSessionId?: string | null
       agentPath?: string | null
       agentNickname?: string | null
       cwd?: string | null
-      // Codex writes the branch beside the cwd on `session_meta`, under `git`.
+      // The branch the Harness recorded beside the cwd.
       branch?: string | null
-      // Codex records this on `task_started`; it is the model's actual context window, rather
-      // than a capacity the cockpit can safely assume.
+      // The model's actual context window as the Harness reports it, rather than a capacity the
+      // cockpit can safely assume.
       contextWindowTokens?: number
     }
   | { kind: 'pull-request'; number: number; url: string; repository: string | null }
-  // A Harness that writes its Plan outside any message, as Codex's `update_plan` call does.
+  // A Harness that writes its Plan outside any message, through a plan tool call.
   | { kind: 'plan'; changes: PlanChange[] }
   | { kind: 'compaction'; uuid: string; timestamp?: string; summary?: string }
   | {

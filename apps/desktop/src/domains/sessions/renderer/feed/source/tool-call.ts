@@ -1,6 +1,6 @@
 import type { Question } from '@/domains/sessions/api/questions'
 
-// Where a Tool Call stands (CONTEXT.md L3 · Tool Call). A call the person declines on Codex is
+// Where a Tool Call stands (CONTEXT.md L3 · Tool Call). A call the person declines can be
 // `failed` with the reason as its text; a call stopped before it finished is `interrupted`.
 export const TOOL_CALL_STATUSES = [
   'pending',

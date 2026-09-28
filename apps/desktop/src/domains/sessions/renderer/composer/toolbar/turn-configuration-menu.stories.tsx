@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
-import type { CatalogReadResult } from '@/harnesses/catalog/catalog-read'
-import type { AvailableHarness } from '@/harnesses/catalog/harness-catalog-machine'
+import type { AvailableHarness, CatalogReadResult } from '@/harnesses/harness-catalog'
 import {
   claudeHarnessInfoFixture,
   codexHarnessInfoFixture,

@@ -2,11 +2,26 @@
 
 Status: accepted · 2026-09-24 · Session discovery amended 2026-09-27
 
+## Amendment · Harness registrations for sync · 2026-09-28
+
+The sync supervisor reads each Harness's `sessionDiscovery` from its registration and runs the
+same sync machine for every Harness. Codex discovery uses the shared client the app machine owns;
+no Codex app-server actor or readiness bridge remains. A Harness whose client cannot connect fails
+its own job, and the other Harnesses still sync. One status subscription combines every Harness's
+progress and forwards each commit; an active scan outranks a failure, and a failure outranks
+ready, so one failed Harness reports its own failure text.
+
+Live Feed replay is bounded. One memory journal keeps the newest 500 events and 2 MiB across all
+Sessions, and each launch starts a new generation. A cursor older than the journal, or from an
+earlier generation, reads vendor history and merges rows by stable item ID. A Session with no Argo
+live channel is only as fresh as its Harness's history watcher: an open Feed rereads on a change
+signal, and otherwise shows what it last read until the reader reopens it or asks for Refresh.
+Session list metadata changes only at app start and on Refresh.
+
 ## Amendment · Codex live Session ownership · 2026-09-28
 
 The Codex registration supplies the same async live channel interface as Claude. The generic
-Argo live Session machine owns both lifecycles. The Codex live machine named in **Module
-ownership** and its direct invocation there are superseded. The app machine still owns one shared
+Argo live Session machine owns both lifecycles. The app machine still owns one shared
 Codex app-server client for live Sessions, catalog, discovery, and history. A Codex Session
 failure does not stop another Harness. The Feed reads one complete `thread/read` snapshot per
 chain and merges live events into it.
@@ -169,8 +184,7 @@ generic sync machine, worker entry, and shared Session matching and saving live 
 actor. The app machine only imports and invokes the supervisor. Claude and Codex metadata readers,
 fetch actors, and their response schemas live under their own
 `apps/desktop/src/harnesses/<harness>/` folders. Name the live machines
-`live-session-supervisor-machine.ts`, `live-session-machine.ts`,
-`claude-live-session-machine.ts`, and `codex-live-session-machine.ts`. The sync machine does
+`live-session-supervisor-machine.ts` and `live-session-machine.ts`. The sync machine does
 not own a live channel. These names describe ownership; they do not require new contract layers.
 
 tRPC is the renderer's typed API for request-response operations. One global router registers
@@ -188,8 +202,8 @@ their owning slices replace them. The Electron transport keeps trusted-frame aut
 Procedures carry product commands and projections, never raw XState events or actor snapshots.
 One app-scoped live Session supervisor actor receives those commands. It spawns one live Session
 actor per live conversation, correlates command IDs with results, and owns shutdown. Each actor
-invokes its selected Claude or Codex live Session Harness machine directly. The shared Codex app-server actor,
-ProjectSetup actor, and sign-in actors remain separate owners of their work.
+opens the live channel its Harness registration supplies. The app machine's shared Harness
+clients, the ProjectSetup actor, and the sign-in actors remain separate owners of their work.
 
 Read operations query SQLite for lists, search, and indexed detail. The backend adds current live
 Session projections to those rows and returns one Argo-shaped response; the renderer does not merge

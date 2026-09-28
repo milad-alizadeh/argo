@@ -5,10 +5,11 @@ import { createActor, fromPromise, waitFor } from 'xstate'
 import { adjacencyMapToArray, getAdjacencyMap, getShortestPaths } from 'xstate/graph'
 import { claudeHarnessInfo } from '@/harnesses/claude/catalog'
 import { codexHarnessInfo } from '@/harnesses/codex/catalog'
-import { assertModeledTransitions } from '@/platform/main/test-doubles/xstate-model-transitions'
-import { claudeModelCatalogFixture } from '../../../test-fixtures/sessions/claude-model-catalog.fixture'
-import { codexModelCatalogFixture } from '../../../test-fixtures/sessions/codex-model-catalog.fixture'
-import { harnessCatalogMachine, harnessCatalogSchema, unavailable } from './harness-catalog-machine'
+import { harnessCatalogSchema, unavailable } from '@/harnesses/harness-catalog'
+import { claudeModelCatalogFixture } from '../../../../test-fixtures/sessions/claude-model-catalog.fixture'
+import { codexModelCatalogFixture } from '../../../../test-fixtures/sessions/codex-model-catalog.fixture'
+import { assertModeledTransitions } from '../test-doubles/xstate-model-transitions'
+import { harnessCatalogMachine } from './harness-catalog-machine'
 
 test('publishes a serializable catalog with Model-specific Efforts and defaults', () => {
   const catalog = harnessCatalogSchema.parse({

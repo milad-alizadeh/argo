@@ -1,5 +1,5 @@
+import { type Harness, harnessSchema } from '@/harnesses/harness'
 import type {
-  Harness,
   HarnessReadinessListReply,
   HarnessSignInCancelReply,
   HarnessSignInStartReply,
@@ -22,10 +22,11 @@ export const storybookHarnessSignInProcedures: StorybookHarnessSignInProcedures 
       version: 1,
       type: 'harness-readiness.listed',
       requestId: 'storybook-harness-readiness',
-      harnesses: [
-        { harness: 'claude', state: 'ready', detail: null },
-        { harness: 'codex', state: 'ready', detail: null },
-      ],
+      harnesses: harnessSchema.options.map((harness) => ({
+        harness,
+        state: 'ready',
+        detail: null,
+      })),
     }),
   harnessSignInStart: ({ harness }) =>
     Promise.resolve({

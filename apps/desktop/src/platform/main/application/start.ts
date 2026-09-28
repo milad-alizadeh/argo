@@ -4,6 +4,7 @@ import type { Database } from '@/database/database'
 import type { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
 import type { SessionEventJournal } from '@/domains/sessions/main/live/session-event-journal'
 import type { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
+import type { Harness } from '@/harnesses/harness'
 import type { HarnessRegistry } from '@/harnesses/registry'
 import { applyStoredAppearance, readAppearance } from '../appearance'
 import { setPlatformLanguage } from '../i18n'
@@ -12,8 +13,7 @@ import { type AppActor, createAppMachine } from './app-machine'
 export function startDesktopApplication(request: {
   prepare: () => Promise<{
     database: Database
-    sessionSyncStatus: SessionSyncStatusStore
-    codexSessionSyncStatus: SessionSyncStatusStore
+    sessionSyncStatus: Record<Harness, SessionSyncStatusStore>
     sessionEventJournal?: SessionEventJournal
     sessionInteractionBroker?: SessionInteractionBroker
     registry: HarnessRegistry

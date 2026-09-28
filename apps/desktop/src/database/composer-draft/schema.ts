@@ -4,6 +4,7 @@ import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
 import { timestampColumns } from '@/database/timestamp-columns'
 import { workspace } from '@/database/workspace/schema'
+import { HARNESSES } from '@/harnesses/harness'
 
 export const composerDraft = sqliteTable(
   'composer_draft',
@@ -12,7 +13,7 @@ export const composerDraft = sqliteTable(
     projectId: text('project_id').references(() => project.id, { onDelete: 'cascade' }),
     sessionId: text('session_id').references(() => sessionTable.argoId, { onDelete: 'cascade' }),
     workspaceId: text('workspace_id').references(() => workspace.id, { onDelete: 'cascade' }),
-    harness: text({ enum: ['claude', 'codex'] }),
+    harness: text({ enum: HARNESSES }),
     prompt: text().notNull().default(''),
     attachmentsJson: text('attachments_json').notNull().default('[]'),
     ticketContextJson: text('ticket_context_json').notNull().default('[]'),

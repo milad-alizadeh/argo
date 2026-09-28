@@ -42,7 +42,7 @@ export function skillTitle(slug: string): string {
 // Every surface that names a Tool Call uses this label. The kind remains separate metadata so a
 // compact surface never has to rebuild reader-facing words from the Harness's execution type. An
 // unclassified tool reads as something the agent ran, the same verb as a command, under the
-// title the agent gave the call when it gave one (Codex's `js` writes `{title, code}`).
+// title the agent gave the call when it gave one.
 // `file` picks which of an edit's files the presentation is for.
 export function toolPresentation(call: ToolCall, file = 0) {
   // The agent's own description is already a whole label; the command's first line is the fallback.

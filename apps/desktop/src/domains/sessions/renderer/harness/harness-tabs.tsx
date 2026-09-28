@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { harnessLabel } from '@/harnesses/presentation-registry'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/platform/renderer/components/ui/tabs'
 import { HarnessLogo } from './harness-logo'
-import { HARNESSES, SESSION_HARNESSES, type SessionHarness } from './harnesses'
+import { SESSION_HARNESSES, type SessionHarness } from './harnesses'
 
 export function HarnessTabs({
   harness,
@@ -37,7 +38,7 @@ export function HarnessTabs({
               className="h-8 gap-2 px-3 type-control text-muted-foreground data-active:bg-card"
             >
               <HarnessLogo harness={option} />
-              {HARNESSES[option].label}
+              {harnessLabel(option)}
             </TabsTrigger>
           ))}
         </TabsList>

@@ -1,35 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
-import { DEFAULT_AUTO_COMPACT_LIMIT } from '@/domains/sessions/renderer/composer/context-window/codex-compaction'
+import {
+  makeStorybookAutoCompactLimitUnreadable,
+  resetStorybookAutoCompactLimit,
+  writtenAutoCompactLimits,
+} from '../../../../../../.storybook/storybook-auto-compact'
 import { ContextPopover } from './context-popover'
-
-// A mock `~/.codex/config.toml`: `set` mutates it, so a later `get` (a remount, a second control)
-// reads back whatever the popover last wrote, the way the real file would.
-function mockCodexCompaction(startingLimit: number) {
-  let limit = startingLimit
-  const written: number[] = []
-  return {
-    written,
-    beforeEach: () => {
-      written.length = 0
-      limit = startingLimit
-      const previous = window.argo
-      window.argo = {
-        ...previous,
-        getCodexAutoCompactLimit: () => Promise.resolve(limit),
-        setCodexAutoCompactLimit: (next: number) => {
-          limit = next
-          written.push(next)
-          return Promise.resolve(limit)
-        },
-      }
-      return () => {
-        window.argo = previous
-      }
-    },
-  }
-}
 
 const meta = {
   title: 'Sessions/Composer/Context Popover',
@@ -41,16 +18,8 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof ContextPopover>
 
-const mock = mockCodexCompaction(DEFAULT_AUTO_COMPACT_LIMIT)
-
-export const StorybookHostSupportsAutoCompact: Story = {
-  play: async () => {
-    await expect(window.argo.getCodexAutoCompactLimit()).resolves.toBe(DEFAULT_AUTO_COMPACT_LIMIT)
-  },
-}
-
-export const AutoCompactWritesToCodexConfig: Story = {
-  beforeEach: mock.beforeEach,
+export const AutoCompactWritesToTheHarnessConfig: Story = {
+  beforeEach: resetStorybookAutoCompactLimit,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Context details' }))
@@ -60,16 +29,32 @@ export const AutoCompactWritesToCodexConfig: Story = {
     await waitFor(() => expect(slider).toHaveValue('90'))
 
     fireEvent.change(slider, { target: { value: '70' } })
-    await waitFor(() => expect(mock.written.at(-1)).toBe(140_000))
+    await waitFor(() => expect(writtenAutoCompactLimits.at(-1)).toBe(140_000))
     const tokens = body.getByRole('spinbutton', { name: 'Auto-compact threshold tokens' })
     await waitFor(() => expect(tokens).toHaveValue(140_000))
 
     await userEvent.clear(tokens)
     await userEvent.type(tokens, '155000')
     await userEvent.tab()
-    await waitFor(() => expect(mock.written.at(-1)).toBe(155_000))
+    await waitFor(() => expect(writtenAutoCompactLimits.at(-1)).toBe(155_000))
     // 78% is the true value; the range input's own step sanitization snaps its displayed
     // position to the nearest multiple of 5, same as a person dragging it would see.
     await expect(slider).toHaveValue('80')
+  },
+}
+
+export const AutoCompactReportsAnUnreadableConfig: Story = {
+  beforeEach: makeStorybookAutoCompactLimitUnreadable,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Context details' }))
+
+    const body = within(document.body)
+    const failure = await body.findByText(
+      'The auto-compact limit in this Harness config could not be read.',
+    )
+    await waitFor(() => expect(failure).toBeVisible())
+    await expect(body.queryByRole('slider', { name: 'Auto-compact threshold' })).toBeNull()
+    expect(writtenAutoCompactLimits).toEqual([])
   },
 }
