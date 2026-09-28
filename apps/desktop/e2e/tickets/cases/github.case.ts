@@ -154,3 +154,12 @@ export async function proveCommittedBacklog(run: Run) {
     assert.ok(later['#710'])
   })
 }
+
+// A fresh launch has no renderer cache, so a backlog drawn while GitHub holds every read is SQLite's.
+export async function proveRestartFromSqlite(run: Run, release: () => void) {
+  await test.step('restart-from-sqlite', async () => {
+    await openRoom(run.page, 'tickets')
+    assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
+    release()
+  })
+}

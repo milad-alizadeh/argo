@@ -9,6 +9,7 @@ import {
   proveCommittedBacklog,
   proveConnect,
   proveConnectRepository,
+  proveRestartFromSqlite,
 } from './cases/github.case'
 import {
   proveChangeState,
@@ -40,6 +41,10 @@ test.describe('with a GitHub repository', () => {
 
   test('list the backlog', ({ tickets }) => proveBacklog(tickets.run()))
   test('the backlog reads committed Tickets', ({ tickets }) => proveCommittedBacklog(tickets.run()))
+  test('a restart draws committed Tickets while GitHub holds every read', async ({ tickets }) => {
+    const release = tickets.run().fixture.github.holdReads()
+    await proveRestartFromSqlite(await tickets.restart(), release)
+  })
   test('restart while GitHub is down', async ({ tickets }) => {
     tickets.run().fixture.github.outage('down')
     await proveRestartAndFailure(await tickets.restart())
