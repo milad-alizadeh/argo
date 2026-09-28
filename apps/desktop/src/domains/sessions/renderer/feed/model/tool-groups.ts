@@ -1,24 +1,12 @@
+import type { LiveActivity } from '@/domains/sessions/api/feed/feed-rows'
+import { fingerprint } from '@/domains/sessions/api/feed/fingerprint'
 import type { SessionFeedRow } from '../../model/models'
-import type { LiveActivity } from './feed-rows'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 
-// Group ids cross the Session IPC boundary, where identifiers are deliberately capped at 256
-// characters. A run can hold many ordinary UUID-length tool calls, so joining every id makes a
-// valid Feed fail its whole reply contract. These two independent 32-bit passes keep the id
-// deterministic and bounded without depending on Node APIs (this module is also renderer-safe).
-function groupFingerprint(value: string, seed: number) {
-  let hash = seed
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index)
-    hash = Math.imul(hash, 0x01000193)
-  }
-  return (hash >>> 0).toString(16).padStart(8, '0')
-}
-
 function toolGroupId(calls: ToolRow[]) {
   const firstCallId = calls[0]?.id ?? ''
-  return `tool-group:${groupFingerprint(firstCallId, 0x811c9dc5)}${groupFingerprint(firstCallId, 0x9e3779b9)}`
+  return `tool-group:${fingerprint(firstCallId)}`
 }
 
 // One tool-kind record owns its icon, route, group wording, and group order.
