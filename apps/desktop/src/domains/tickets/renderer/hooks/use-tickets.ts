@@ -41,7 +41,7 @@ export function onRefused(client: QueryClient, projectId: string, failure: Contr
 
 export function useConnection(projectId: string | null) {
   return useQuery<TicketConnectedReply, ContractFailure, ConnectionSummary | null>({
-    queryKey: projectId ? connectionKey(projectId) : [...listKey(), 'connection', null],
+    queryKey: projectId ? connectionKey(projectId) : [...trpc.tickets.connection.pathKey(), null],
     queryFn: projectId
       ? () => trpcClient.tickets.connection.query({ projectId }).then(ticketReply)
       : skipToken,
@@ -91,7 +91,7 @@ function useSearchedTickets(projectId: string | null, ready: boolean, query: str
 export function useSources(projectId: string | null, accountId: string | null) {
   const client = useQueryClient()
   return useQuery<TicketDiscoverReply, ContractFailure, TicketScope[]>({
-    queryKey: [...listKey(), projectId, 'sources', accountId],
+    queryKey: [...trpc.tickets.discover.pathKey(), projectId, accountId],
     queryFn:
       projectId && accountId
         ? () =>

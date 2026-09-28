@@ -1,5 +1,5 @@
 // The one write of provider Ticket facts into SQLite: one identity per native ID, facts replaced.
-import { and, eq } from 'drizzle-orm'
+import { and, eq, lt } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { ticketTable } from '@/database/ticket/schema'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
@@ -7,7 +7,12 @@ import { ticketContent } from '@/database/ticket-content/schema'
 import { nextUpdatedAt } from '@/database/timestamp-columns'
 import type { Ticket } from '@/domains/tickets/contract/contract'
 
-export type ListedBatch = TicketScopeTarget & { scanStartedAt: number; offset: number }
+// `readAt` is when the page was asked for; a Ticket written since keeps its newer facts.
+export type ListedBatch = TicketScopeTarget & {
+  scanStartedAt: number
+  offset: number
+  readAt: number
+}
 type Writer = Pick<Database, 'insert' | 'select' | 'update'>
 
 const touched = nextUpdatedAt(ticketContent.updatedAt)
@@ -71,8 +76,14 @@ export function saveListedTickets(
         .values({ ticketId, ...facts(ticket), ...listed })
         .onConflictDoUpdate({
           target: ticketContent.ticketId,
-          set: { ...facts(ticket), ...listed, updatedAt: touched },
+          set: { ...facts(ticket), updatedAt: touched },
+          setWhere: lt(ticketContent.updatedAt, batch.readAt),
         })
+        .run()
+      transaction
+        .update(ticketContent)
+        .set(listed)
+        .where(eq(ticketContent.ticketId, ticketId))
         .run()
     })
   })

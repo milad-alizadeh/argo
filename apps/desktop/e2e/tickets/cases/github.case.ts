@@ -15,6 +15,7 @@ import {
   backlogKeys,
   chooseAccount,
   connectForm,
+  detailTitle,
   openRoom,
   press,
   type Run,
@@ -96,12 +97,11 @@ export async function proveBacklog(run: Run) {
   await test.step('detail', async () => {
     await backlog(run.page).getByRole('button', { name: /^#607/ }).click()
     const detail = run.page.getByRole('article', { name: 'Ticket #607' })
-    await detail.getByRole('heading', { name: 'Wayfinder: the Tickets room, end to end' }).waitFor()
+    await detailTitle(detail, 'Wayfinder: the Tickets room, end to end').waitFor()
     await detail.getByText('The backlog in the deck and the Ticket beside it.').waitFor()
     await detail.getByText('wayfinder', { exact: true }).waitFor()
-    await detail.getByRole('region', { name: 'Children · 1 of 2 closed' }).waitFor()
-    await detail.getByRole('region', { name: 'Blocked by · 1' }).waitFor()
-    await run.page.getByRole('button', { name: 'GitHub · octocat Connected' }).waitFor()
+    await detail.getByRole('heading', { name: 'Children · 1 of 2 closed' }).waitFor()
+    await detail.getByRole('heading', { name: 'Blocked by · 1' }).waitFor()
   })
 }
 

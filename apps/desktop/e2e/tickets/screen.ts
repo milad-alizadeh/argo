@@ -33,6 +33,19 @@ export const chooseAccount = (page: Page, name: string) =>
 
 export const accountsDialog = (page: Page) => page.getByRole('dialog', { name: 'Accounts' })
 
+export const openAccounts = (page: Page) =>
+  page.getByRole('button', { name: 'Accounts', exact: true }).click()
+
+// The dialog fades out, and a click meant for the room behind it lands on the fading dialog.
+export async function closeAccounts(page: Page) {
+  await press(accountsDialog(page), 'Close')
+  await accountsDialog(page).waitFor({ state: 'hidden' })
+}
+
+// The Detail's title line, which links the Ticket out to its provider.
+export const detailTitle = (detail: Locator, title: string) =>
+  detail.getByRole('heading', { level: 2 }).filter({ hasText: title })
+
 export const accountRow = (page: Page, login: string, provider = 'GitHub') =>
   accountsDialog(page).getByRole('listitem', { name: `${provider} Account ${login}` })
 

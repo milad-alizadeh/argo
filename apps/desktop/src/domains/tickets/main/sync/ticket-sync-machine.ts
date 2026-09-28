@@ -40,6 +40,7 @@ type ScanInput = {
 }
 export type SavePageInput = ScanInput & {
   scanStartedAt: number
+  readAt: number
   tickets: readonly Ticket[]
   offset: number
 }
@@ -79,6 +80,8 @@ export const ticketSyncMachine = setup({
       // The scan's start, which is also the listing mark every page of this scan writes.
       scanStartedAt: number
       cursor: string | null
+      // When the page being read was asked for.
+      readAt: number
       page: TicketPage | null
       // Every status any page offered, so a later page cannot drop one an earlier page listed.
       statuses: TicketStatus[]
@@ -108,7 +111,7 @@ export const ticketSyncMachine = setup({
       ),
     ),
     savePage: fromPromise<void, SavePageInput>(async ({ input }) => {
-      const { target, scanStartedAt, offset } = input
+      const { target, scanStartedAt, offset, readAt } = input
       commit(input, (database) =>
         saveListedTickets(
           database,
@@ -116,6 +119,7 @@ export const ticketSyncMachine = setup({
             ...target,
             scanStartedAt,
             offset,
+            readAt,
           },
           input.tickets,
         ),
@@ -163,6 +167,7 @@ export const ticketSyncMachine = setup({
     accountId: input.accountId,
     scanStartedAt: 0,
     cursor: null,
+    readAt: 0,
     page: null,
     statuses: [],
     offset: 0,
@@ -188,6 +193,9 @@ export const ticketSyncMachine = setup({
       },
     },
     Fetching: {
+      entry: assign({
+        readAt: () => Date.now(),
+      }),
       invoke: {
         src: 'fetchPage',
         input: ({ context }) => ({
@@ -244,6 +252,7 @@ export const ticketSyncMachine = setup({
         input: ({ context }) => ({
           ...scanInput(context),
           scanStartedAt: context.scanStartedAt,
+          readAt: context.readAt,
           tickets: context.page?.tickets ?? [],
           offset: context.offset,
         }),

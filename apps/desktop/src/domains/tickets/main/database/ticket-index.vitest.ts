@@ -53,11 +53,12 @@ afterEach(async () => {
   await rm(directory, { recursive: true, force: true })
 })
 
-function scan(startedAt: number, pages: Ticket[][]) {
+// Pages read after every earlier write, unless a case says when its page was asked for.
+function scan(startedAt: number, pages: Ticket[][], readAt = Number.MAX_SAFE_INTEGER) {
   beginTicketScan(database, ACTIVE, startedAt)
   let offset = 0
   for (const page of pages) {
-    saveListedTickets(database, { ...SCOPE, scanStartedAt: startedAt, offset }, page)
+    saveListedTickets(database, { ...SCOPE, scanStartedAt: startedAt, offset, readAt }, page)
     offset += page.length
   }
 }
@@ -166,6 +167,20 @@ test('a confirmed status stays on the listed row until a scan omits it', () => {
   const closed = active().tickets.find(({ key }) => key === '#2')
   assert.deepEqual(closed?.status, NOT_PLANNED)
   assert.equal(closed?.state, 'closed')
+})
+
+test('a page asked for before a confirmed write lists the Ticket but keeps the confirmed fields', () => {
+  scan(1000, [[ticket(1), ticket(2)]])
+  saveConfirmedFields(database, { ...SCOPE, key: '#2' }, { status: NOT_PLANNED, state: 'closed' })
+  scan(2000, [[ticket(2, 'Renamed'), ticket(1), ticket(3)]], 0)
+  completeTicketScan(database, ACTIVE, { statuses: [OPEN, NOT_PLANNED], completedAt: 2100 })
+  const read = active().tickets
+  assert.deepEqual(
+    read.map(({ key }) => key),
+    ['#2', '#1', '#3'],
+  )
+  assert.deepEqual(read[0]?.status, NOT_PLANNED)
+  assert.equal(read[0]?.title, 'Ticket 2')
 })
 
 test('another scope reads none of these Tickets', () => {

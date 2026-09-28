@@ -2,7 +2,7 @@
 import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { AccountListed, AccountListReply } from '@/domains/accounts/contract/contract'
 import { type ContractFailure, QUERY_KEYS, settle } from '@/platform/renderer/lib/query-client'
-import { trpcClient } from '@/platform/renderer/trpc-client'
+import { trpc, trpcClient } from '@/platform/renderer/trpc-client'
 
 export type AccountListing = Pick<AccountListed, 'accounts' | 'notice' | 'providers'>
 
@@ -15,7 +15,7 @@ const listing = ({ accounts, notice, providers }: AccountListing): AccountListin
 // A Connection's summary names its Account's state, so a new listing is a new reading of Connections too.
 export function storeListing(client: QueryClient, next: AccountListing): void {
   client.setQueryData(QUERY_KEYS.accounts, listing(next))
-  void client.invalidateQueries({ queryKey: QUERY_KEYS.tickets })
+  void client.invalidateQueries({ queryKey: trpc.tickets.pathKey() })
 }
 
 export function useAccounts() {

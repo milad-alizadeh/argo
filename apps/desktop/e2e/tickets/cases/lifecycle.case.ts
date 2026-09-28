@@ -6,10 +6,11 @@ import { expect, test } from '@playwright/test'
 import { OCTOCAT } from '../fixtures/tickets.fixture'
 import {
   accountRow,
-  accountsDialog,
   backlog,
   backlogKeys,
   choose,
+  closeAccounts,
+  openAccounts,
   openRoom,
   press,
   type Run,
@@ -40,8 +41,7 @@ export async function proveRevoked(run: Run) {
   await openRoom(run.page, 'tickets')
   await test.step('revoked-access', async () => {
     await room(run).getByText('GitHub no longer accepts octocat').waitFor()
-    const foot = run.page.getByRole('button', { name: 'GitHub · octocat Access revoked' })
-    await foot.click()
+    await openAccounts(run.page)
     const octocat = accountRow(run.page, 'octocat')
     await octocat.getByText('Access revoked').waitFor()
     await octocat
@@ -55,7 +55,7 @@ export async function proveRevoked(run: Run) {
     const octocat = accountRow(run.page, 'octocat')
     const start = { scope: octocat, name: 'Reconnect' }
     assert.equal(await signIn(run, OCTOCAT, start), 'Signed in again as octocat.')
-    await press(accountsDialog(run.page), 'Close')
+    await closeAccounts(run.page)
     assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
   })
 }
@@ -69,7 +69,7 @@ export async function proveChangeState(run: Run) {
       role: 'menuitemradio',
       name: 'Closed as not planned',
     })
-    await backlog(run.page).getByRole('button', { name: 'State: Closed as not planned' }).waitFor()
+    await detail.getByRole('button', { name: 'State: Closed as not planned' }).waitFor()
     await openRoom(run.page, 'atlas')
     await openRoom(run.page, 'tickets')
     // The room draws its cached rows first and the read replaces them.
@@ -79,14 +79,14 @@ export async function proveChangeState(run: Run) {
 }
 
 export async function proveDisconnect(run: Run) {
-  await run.page.getByRole('button', { name: 'GitHub · octocat Connected' }).click()
+  await openAccounts(run.page)
   const octocat = accountRow(run.page, 'octocat')
   await test.step('disconnect', async () => {
     await press(octocat, 'Disconnect…')
     await press(octocat, 'Disconnect')
     await octocat.waitFor({ state: 'detached' })
     assert.equal((await storeText(run.fixture, 'grants.json')).includes('github:583231'), false)
-    await press(accountsDialog(run.page), 'Close')
+    await closeAccounts(run.page)
   })
   await test.step('disconnectSource', async () => {
     await room(run).getByText('The GitHub Account for this repository is disconnected').waitFor()

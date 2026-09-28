@@ -9,7 +9,6 @@ export type ContractFailure = AccountError | TicketError | HarnessSignInError
 
 export const QUERY_KEYS = {
   accounts: ['accounts'],
-  tickets: ['tickets'],
   harnessReadiness: ['harness-readiness'],
 } as const
 
