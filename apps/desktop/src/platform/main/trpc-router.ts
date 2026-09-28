@@ -29,8 +29,8 @@ import {
   sessionInteractionProcedures,
 } from '@/domains/sessions/main/api/session-interactions'
 import {
+  type SessionListContext,
   sessionListProcedure,
-  sessionStatusChangesProcedure,
 } from '@/domains/sessions/main/api/session-list'
 import {
   type SessionLiveEventsContext,
@@ -55,6 +55,7 @@ import {
 } from '@/domains/tickets/main/ticket-router'
 import {
   type WorkspaceListContext,
+  workspaceChooseProcedure,
   workspaceListProcedure,
 } from '@/domains/workspaces/main/api/workspace-list'
 import {
@@ -79,6 +80,7 @@ export type AppRouterDependencies = {
   sessions: SessionProcedureContext &
     SessionFeedReadContext &
     SessionInteractionContext &
+    SessionListContext &
     SessionLiveEventsContext &
     SessionRefreshContext & { sessionSyncStatus: readonly SessionSyncStatusStore[] }
   tickets: TicketRouterDependencies
@@ -98,7 +100,6 @@ export function createAppRouter(dependencies: AppRouterDependencies) {
     composerDraftSave: composerDraftSaveProcedure(dependencies.sessions.database),
     sessionSubmit: sessionSubmitProcedure(dependencies.sessions),
     sessionList: sessionListProcedure(dependencies.sessions),
-    sessionStatusChanges: sessionStatusChangesProcedure(dependencies.sessions),
     sessionFeedRead: sessionFeedReadProcedure(dependencies.sessions),
     ...sessionInteractionProcedures(dependencies.sessions),
     sessionLiveEvents: sessionLiveEventsProcedure(dependencies.sessions),
@@ -110,6 +111,7 @@ export function createAppRouter(dependencies: AppRouterDependencies) {
     projectRegister: projectRegisterProcedure(dependencies.projects),
     projectRelocate: projectRelocateProcedure(dependencies.projects),
     workspaceList: workspaceListProcedure(dependencies.workspaces),
+    workspaceChoose: workspaceChooseProcedure(dependencies.workspaces),
     tickets: createTicketRouter(dependencies.tickets),
   })
 }

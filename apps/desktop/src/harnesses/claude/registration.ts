@@ -1,11 +1,15 @@
 import os from 'node:os'
 import path from 'node:path'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
-import { watchVendorHistory } from '@/harnesses/host/history-watch'
 import type { HarnessRegistration } from '@/harnesses/registration'
 import { readClaudeHarnessInfo } from './catalog'
 import { SESSION_CLAUDE_EXECUTABLE_ENV } from './proof-protocol'
 import { createClaudeSignInDriver, createSystemClaudeReadiness } from './readiness'
+import {
+  claudeHistoryOwner,
+  claudeHistoryTurn,
+  openClaudeHistoryReader,
+} from './session/claude-history-lines'
 import { claudeSessionChannelOpener } from './session/claude-session-channel'
 import { discoverClaudeSessions } from './session/claude-session-discovery'
 import { readClaudeSessionHistory } from './session/claude-session-history'
@@ -23,12 +27,15 @@ export function createClaudeRegistration(): HarnessRegistration<'claude'> {
     readHistory: ({ nativeId, subagentId, cwd }) =>
       readClaudeSessionHistory(nativeId, cwd, subagentId),
     openLiveSession: claudeSessionChannelOpener(executable),
-    watchHistory: ({ nativeId, subagentId }, invalidate) =>
-      watchVendorHistory(
-        path.join(process.env.CLAUDE_CONFIG_DIR ?? path.join(os.homedir(), '.claude'), 'projects'),
-        subagentId ?? nativeId,
-        invalidate,
+    historyFiles: {
+      directory: path.join(
+        process.env.CLAUDE_CONFIG_DIR ?? path.join(os.homedir(), '.claude'),
+        'projects',
       ),
+      ownerOf: claudeHistoryOwner,
+      openReader: openClaudeHistoryReader,
+      turnOf: claudeHistoryTurn,
+    },
     rename: claudeSessionRenamer.rename,
     changeableTurnSettings: [],
     acceptsAttachments: false,

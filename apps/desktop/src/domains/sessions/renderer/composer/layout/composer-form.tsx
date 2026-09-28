@@ -7,7 +7,7 @@ import type {
   CatalogFailure,
   TurnConfigurationControlProps,
 } from '../toolbar/turn-configuration-menu'
-import type { WorkspaceMenuControlProps } from '../toolbar/workspace-menu'
+import { WorkspaceMenu, type WorkspaceMenuControlProps } from '../toolbar/workspace-menu'
 import { AttachmentTray } from '../tray/attachment-tray'
 import type { TurnConfigurationChoices } from '../turn-configuration/turn-configuration'
 import { ComposerCard } from './composer-card'
@@ -107,6 +107,11 @@ function ComposerFormSurface({
       }}
     >
       <AttachmentTray>{permissionPrompt}</AttachmentTray>
+      {workspace ? (
+        <div className="mb-2 px-1">
+          <WorkspaceMenu {...workspace} />
+        </div>
+      ) : null}
       <ComposerCard
         contextTokens={contextTokens}
         contextWindowTokens={contextWindowTokens}
@@ -126,7 +131,6 @@ function ComposerFormSurface({
         sessionId={sessionId}
         turnConfiguration={turnConfiguration}
         catalogState={{ catalogFailure, refreshCatalog, sendAvailable: onSend !== undefined }}
-        workspace={workspace}
       />
     </form>
   )

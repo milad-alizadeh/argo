@@ -23,7 +23,9 @@ import {
 import { claudeCliEnvironment } from '../cli-environment'
 import { createClaudeToolControl } from './claude-channel-controls'
 import { decodeClaudeLiveContent } from './claude-feed-decoder'
+import { ClaudeFeedProjection } from './claude-feed-projection'
 import { ClaudeLiveText } from './claude-live-text'
+import { claudeSkillFiles } from './claude-skill-files'
 
 type Send = Pick<SessionStartInput, 'prompt' | 'commandId'>
 type ClaudeLiveInput = SessionLiveInput
@@ -46,20 +48,23 @@ function isUuid(value: string): boolean {
 
 function decodedFeedEvents(
   message: SDKMessage,
-  fallbackCommandId: string,
+  stream: { fallbackCommandId: string; projection: ClaudeFeedProjection },
   reject: () => void,
 ): SessionLiveEventBody[] {
+  const { fallbackCommandId, projection } = stream
   const commandId =
     'user_message_uuid' in message && typeof message.user_message_uuid === 'string'
       ? message.user_message_uuid
       : fallbackCommandId
-  return decodeClaudeLiveContent(message, reject).map((content) => ({
-    type: 'content',
-    content,
-    commandId,
-    turnId: commandId,
-    vendorEventId: content.id,
-  }))
+  return decodeClaudeLiveContent(message, reject)
+    .flatMap((content) => projection.project(content))
+    .map((content) => ({
+      type: 'content',
+      content,
+      commandId,
+      turnId: commandId,
+      vendorEventId: content.id,
+    }))
 }
 
 function claudeQueryOptions(
@@ -92,6 +97,7 @@ export class ClaudeSessionChannel implements LiveSessionChannel {
   private seen = new Set<string>()
   private startedCommands = new Set<string>()
   private liveText = new ClaudeLiveText()
+  private projection: ClaudeFeedProjection
   private input: ClaudeLiveInput
   private controls: LiveSessionControls | undefined
   private onEvent: (event: LiveSessionChannelEvent) => void
@@ -103,6 +109,9 @@ export class ClaudeSessionChannel implements LiveSessionChannel {
     host: { controls: LiveSessionControls | undefined; executable: string | null },
   ) {
     this.input = input
+    this.projection = new ClaudeFeedProjection(
+      claudeSkillFiles('resume' in input ? input.resume.cwd : input.cwd),
+    )
     this.controls = host.controls
     this.onEvent = onEvent
     this.executable = host.executable
@@ -203,9 +212,13 @@ export class ClaudeSessionChannel implements LiveSessionChannel {
         })
       }
     }
-    for (const body of decodedFeedEvents(message, this.activeCommandId, () => {
-      this.rejected += 1
-    }))
+    for (const body of decodedFeedEvents(
+      message,
+      { fallbackCommandId: this.activeCommandId, projection: this.projection },
+      () => {
+        this.rejected += 1
+      },
+    ))
       this.emitFeed(body)
   }
 

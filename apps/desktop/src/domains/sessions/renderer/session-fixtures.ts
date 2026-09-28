@@ -2,7 +2,8 @@
 
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/renderer/model/models'
 import { DEFAULT_HARNESS } from '@/harnesses/harness'
-import { queryClient, trpc as trpcOptions } from '@/platform/renderer/trpc-client'
+import { queryClient } from '@/platform/renderer/trpc-client'
+import { sessionRosterPathKey } from './session-list/session-roster'
 import type { Session, SessionFeedSnapshot } from './types'
 
 function listedSession(overrides: Partial<Session> = {}): Session {
@@ -64,29 +65,44 @@ export function sessionRow(
   return listedSession({ branch: 'main', ...overrides })
 }
 
-export function sessionListTrpc(
-  trpc: typeof window.argo.trpc,
+type Subscribe = typeof window.argo.trpcSubscribe
+const openRosters = new Set<() => void>()
+
+// Sends every open story roster its rows again, as the main process does after a change.
+export function announceSessionListChange() {
+  for (const send of openRosters) send()
+}
+
+export function sessionListSubscribe(
+  subscribe: Subscribe,
   sessions: () => readonly Session[],
-): typeof window.argo.trpc {
-  queryClient.removeQueries({ queryKey: trpcOptions.sessionList.pathKey() })
-  return (async (request) => {
-    if (request.path !== 'sessionList') return trpc(request)
-    const input = request.input as { cursor?: number | null; page?: number; pageSize?: number }
-    const page = input.cursor ?? input.page ?? 1
+): Subscribe {
+  queryClient.removeQueries({ queryKey: sessionRosterPathKey })
+  return async (request, listener) => {
+    if (request.path !== 'sessionList') return subscribe(request, listener)
+    const input = request.input as { pages?: number; pageSize?: number }
+    const pages = input.pages ?? 1
     const pageSize = input.pageSize ?? 30
-    const rows = sessions()
-    const start = (page - 1) * pageSize
-    return {
-      result: {
-        data: {
-          page,
-          pageSize,
-          total: rows.length,
-          rows: rows.slice(start, start + pageSize),
+    const send = () => {
+      const rows = sessions()
+      listener({
+        id: request.id,
+        type: 'data',
+        result: {
+          data: {
+            type: 'list',
+            pages,
+            pageSize,
+            total: rows.length,
+            rows: rows.slice(0, pages * pageSize),
+          },
         },
-      },
+      })
     }
-  }) as typeof window.argo.trpc
+    openRosters.add(send)
+    queueMicrotask(send)
+    return () => openRosters.delete(send)
+  }
 }
 
 export function sessionFeedTrpc(

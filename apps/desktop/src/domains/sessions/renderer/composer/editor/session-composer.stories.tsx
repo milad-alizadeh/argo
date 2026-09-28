@@ -44,7 +44,7 @@ function EverythingComposerStory() {
   const [sessionId] = useState('session-one')
   const [harness, setHarness] = useState<SessionHarness>('claude')
   const [turnConfiguration, setTurnConfiguration] = useState(CLAUDE_TURN_CONFIGURATION.opening)
-  const [selectedId, setSelectedId] = useState(WORKSPACE_CANDIDATES[0].id)
+  const [selectedId, setSelectedId] = useState('new')
   const selected = WORKSPACE_CANDIDATES.find((candidate) => candidate.id === selectedId) ?? null
 
   return (
@@ -61,6 +61,8 @@ function EverythingComposerStory() {
         onChange: setTurnConfiguration,
       }}
       workspace={{
+        choice: selectedId,
+        saveFailed: false,
         workspace: selected,
         workspaces: WORKSPACE_CANDIDATES,
         onSelect: setSelectedId,

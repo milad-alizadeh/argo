@@ -4,7 +4,7 @@ import { expect, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { queryClient } from '@/platform/renderer/trpc-client'
-import { sessionFeedTrpc, sessionListTrpc, sessionRow } from '../session-fixtures'
+import { sessionFeedTrpc, sessionListSubscribe, sessionRow } from '../session-fixtures'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import { SessionScreenView } from './session-screen-view'
 
@@ -25,24 +25,22 @@ function flakyFeedHost() {
   const before = window.argo
   window.argo = {
     ...before,
-    trpc: sessionFeedTrpc(
-      sessionListTrpc(before.trpc, () => [session]),
-      async (sessionId) => {
-        flakyFeedReads += 1
-        if (flakyFeedReads === 2) throw new Error('Vendor history is unavailable.')
-        return {
-          version: 1,
-          type: 'session.feed.read',
-          requestId: 'storybook-feed',
-          sessionId,
-          chainId: sessionId,
-          revision: `storybook-feed-${flakyFeedReads}`,
-          content: [
-            { kind: 'message', id: 'flaky-row', role: 'assistant', text: 'Read before the flake.' },
-          ],
-        }
-      },
-    ),
+    trpcSubscribe: sessionListSubscribe(before.trpcSubscribe, () => [session]),
+    trpc: sessionFeedTrpc(before.trpc, async (sessionId) => {
+      flakyFeedReads += 1
+      if (flakyFeedReads === 2) throw new Error('Vendor history is unavailable.')
+      return {
+        version: 1,
+        type: 'session.feed.read',
+        requestId: 'storybook-feed',
+        sessionId,
+        chainId: sessionId,
+        revision: `storybook-feed-${flakyFeedReads}`,
+        content: [
+          { kind: 'message', id: 'flaky-row', role: 'assistant', text: 'Read before the flake.' },
+        ],
+      }
+    }),
   }
   return () => {
     window.argo = before
@@ -55,24 +53,22 @@ function flakyFirstOpenHost() {
   const before = window.argo
   window.argo = {
     ...before,
-    trpc: sessionFeedTrpc(
-      sessionListTrpc(before.trpc, () => [session]),
-      async (sessionId) => {
-        reads += 1
-        if (reads === 1) throw new Error('Vendor history is unavailable.')
-        return {
-          version: 1,
-          type: 'session.feed.read',
-          requestId: 'storybook-feed',
-          sessionId,
-          chainId: sessionId,
-          revision: `storybook-feed-${reads}`,
-          content: [
-            { kind: 'message', id: 'flaky-row', role: 'assistant', text: 'Read after the flake.' },
-          ],
-        }
-      },
-    ),
+    trpcSubscribe: sessionListSubscribe(before.trpcSubscribe, () => [session]),
+    trpc: sessionFeedTrpc(before.trpc, async (sessionId) => {
+      reads += 1
+      if (reads === 1) throw new Error('Vendor history is unavailable.')
+      return {
+        version: 1,
+        type: 'session.feed.read',
+        requestId: 'storybook-feed',
+        sessionId,
+        chainId: sessionId,
+        revision: `storybook-feed-${reads}`,
+        content: [
+          { kind: 'message', id: 'flaky-row', role: 'assistant', text: 'Read after the flake.' },
+        ],
+      }
+    }),
   }
   return () => {
     window.argo = before
@@ -86,29 +82,27 @@ function missingHistoryHost(listed = true) {
   const before = window.argo
   window.argo = {
     ...before,
-    trpc: sessionFeedTrpc(
-      sessionListTrpc(before.trpc, () => (listed ? [session] : [])),
-      async (sessionId) => {
-        if (!historyReady)
-          throw Object.assign(new Error('Session is missing.'), { data: { code: 'NOT_FOUND' } })
-        return {
-          version: 1,
-          type: 'session.feed.read',
-          requestId: 'storybook-feed',
-          sessionId,
-          chainId: sessionId,
-          revision: 'recovered',
-          content: [
-            {
-              kind: 'message',
-              id: 'recovered-row',
-              role: 'assistant',
-              text: 'History recovered.',
-            },
-          ],
-        }
-      },
-    ),
+    trpcSubscribe: sessionListSubscribe(before.trpcSubscribe, () => (listed ? [session] : [])),
+    trpc: sessionFeedTrpc(before.trpc, async (sessionId) => {
+      if (!historyReady)
+        throw Object.assign(new Error('Session is missing.'), { data: { code: 'NOT_FOUND' } })
+      return {
+        version: 1,
+        type: 'session.feed.read',
+        requestId: 'storybook-feed',
+        sessionId,
+        chainId: sessionId,
+        revision: 'recovered',
+        content: [
+          {
+            kind: 'message',
+            id: 'recovered-row',
+            role: 'assistant',
+            text: 'History recovered.',
+          },
+        ],
+      }
+    }),
   }
   return () => {
     window.argo = before

@@ -12,7 +12,12 @@ import { createConnectionPort } from '@/domains/connections/main'
 import { createHarnessSignInProcedureContext } from '@/domains/harness-signin/main'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
 import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
+import {
+  recordHistoryActivity,
+  SessionRosterChanges,
+} from '@/domains/sessions/main/api/session-roster-changes'
 import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
+import { WatchedSessionStatus } from '@/domains/sessions/main/api/watched-session-status'
 import {
   markUnresolvedSessionCommandsUnknown,
   reconcileUnknownSessionCommands,
@@ -22,9 +27,12 @@ import {
   liveSessionActorFor,
 } from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import { SessionEventJournal } from '@/domains/sessions/main/live/session-event-journal'
+import { SessionHistoryFollowers } from '@/domains/sessions/main/live/session-history-followers'
 import { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
+import { ensureManagedWorkspace } from '@/domains/workspaces/main/workspace-create-managed'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
+import { tailSessionHistory, watchHistoryActivity } from '@/harnesses/host/history-watch'
 import { createHarnessRegistry, type HarnessRegistry } from '@/harnesses/registry'
 import { LIVE_EVENT_PROOF_ENV, PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { attachAppearanceWatch } from '@/platform/main/appearance'
@@ -160,6 +168,22 @@ function createDomainContexts(database: Database, registry: HarnessRegistry) {
   }
 }
 
+function historyFollowersFor(
+  registry: HarnessRegistry,
+  hasLiveChannel: (sessionId: string) => boolean,
+): SessionHistoryFollowers {
+  return new SessionHistoryFollowers(
+    currentSessionEventJournal(),
+    (harness, target, changed) => {
+      const files = registry[harness].historyFiles
+      return files === undefined
+        ? () => {}
+        : tailSessionHistory(files, target.subagentId ?? target.nativeId, changed)
+    },
+    hasLiveChannel,
+  )
+}
+
 function routerForWindow(options: {
   window: BrowserWindow
   database: Database
@@ -167,9 +191,21 @@ function routerForWindow(options: {
   sessionSyncStatus: readonly SessionSyncStatusStore[]
   domains: ReturnType<typeof createDomainContexts>
   registry: HarnessRegistry
+  roster: SessionRosterChanges
+  watchedStatus: WatchedSessionStatus
 }) {
-  const { window, database, actors, domains, sessionSyncStatus, registry } = options
+  const { window, database, actors, domains, sessionSyncStatus, registry, roster, watchedStatus } =
+    options
   const exclusive = createWriteQueue()
+  const hasLiveChannel = (sessionId: string) => {
+    const session = liveSessionActorFor(actors.sessions, sessionId)
+    return (
+      session !== undefined &&
+      !session.getSnapshot().matches('Failed') &&
+      !session.getSnapshot().matches('Closed')
+    )
+  }
+  const historyFollowers = historyFollowersFor(registry, hasLiveChannel)
   return createAppRouter({
     accounts: domains.accounts,
     autoCompactLimit: (harness) => registry[harness].autoCompactLimit,
@@ -182,26 +218,29 @@ function routerForWindow(options: {
     },
     sessions: {
       database,
+      ensureManagedWorkspace: (projectId, draftId) =>
+        exclusive(() =>
+          ensureManagedWorkspace({
+            database,
+            projectId,
+            draftId,
+            worktreeRoot: path.join(app.getPath('userData'), 'worktrees'),
+          }),
+        ),
       readHistory: (harness, target) => registry[harness].readHistory(target),
-      watchHistory: (harness, target, invalidate) =>
-        registry[harness].watchHistory?.(target, invalidate) ?? (() => {}),
+      followHistory: (followed, invalidate) => historyFollowers.follow(followed, invalidate),
       rename: ({ harness, nativeId, title }) => {
         const rename = registry[harness].rename
         if (rename === undefined) throw new Error(`${harness} Session renaming is unavailable.`)
         return rename(nativeId, title)
       },
       supervisor: actors.sessions,
+      roster,
+      watchedStatus,
       acceptsAttachments: (harness) => registry[harness].acceptsAttachments,
       journal: currentSessionEventJournal(),
       interactions: currentSessionInteractionBroker(),
-      hasLiveChannel: (sessionId) => {
-        const session = liveSessionActorFor(actors.sessions, sessionId)
-        return (
-          session !== undefined &&
-          !session.getSnapshot().matches('Failed') &&
-          !session.getSnapshot().matches('Closed')
-        )
-      },
+      hasLiveChannel,
       refreshSessionSync: () => actors.sessionSync.send({ type: 'Refresh' }),
       sessionSyncStatus,
     },
@@ -266,6 +305,8 @@ function attachWindowTrpc({
   database: Database
   registry: HarnessRegistry
 }): () => void {
+  const roster = new SessionRosterChanges()
+  const watchedStatus = new WatchedSessionStatus(() => roster.changed())
   const router = routerForWindow({
     actors,
     domains,
@@ -273,8 +314,50 @@ function attachWindowTrpc({
     window,
     database,
     registry,
+    roster,
+    watchedStatus,
   })
-  return attachTrpcTransport({ window, rendererURL, router, context: undefined })
+  const stopRosterSources = watchRosterSources({ database, registry, roster, watchedStatus })
+  const detach = attachTrpcTransport({ window, rendererURL, router, context: undefined })
+  return () => {
+    stopRosterSources()
+    watchedStatus.dispose()
+    detach()
+  }
+}
+
+// Sync commits and writes to any Session's history file both move roster rows.
+function watchRosterSources({
+  database,
+  registry,
+  roster,
+  watchedStatus,
+}: {
+  database: Database
+  registry: HarnessRegistry
+  roster: SessionRosterChanges
+  watchedStatus: WatchedSessionStatus
+}): () => void {
+  const stops = currentSessionSyncStatus().map((store) =>
+    store.subscribe((event) => {
+      if (event.type === 'committed') roster.changed()
+    }),
+  )
+  for (const harness of harnessSchema.options) {
+    const files = registry[harness].historyFiles
+    if (files === undefined) continue
+    stops.push(
+      watchHistoryActivity(files, (owner, turn) => {
+        const at = Date.now()
+        recordHistoryActivity(database, { harness, nativeId: owner, at })
+        watchedStatus.record({ harness, nativeId: owner, turn, at })
+        roster.changed()
+      }),
+    )
+  }
+  return () => {
+    for (const stop of stops) stop()
+  }
 }
 
 function closeDesktopWindow({

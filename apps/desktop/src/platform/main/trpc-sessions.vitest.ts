@@ -1,13 +1,16 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import type { inferRouterOutputs } from '@trpc/server'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, expect, test } from 'vitest'
 import { type Database, databaseMigrationsFolder, openDatabase } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
+import { SessionRosterChanges } from '@/domains/sessions/main/api/session-roster-changes'
+import { refreshSessionSubagents } from '@/domains/sessions/main/database/session-subagents'
 import { saveSessionBatch } from '@/domains/sessions/main/sync/session-sync-records'
-import { type AppRouterDependencies, createAppRouter } from './trpc-router'
+import { type AppRouter, type AppRouterDependencies, createAppRouter } from './trpc-router'
 
 let userData: string
 let database: Database
@@ -22,12 +25,27 @@ function routerDependencies(
     projects: { database },
     sessions: {
       database,
-      supervisor: { getSnapshot: () => ({ context: { sessions: {} } }), send: () => {} },
+      roster: new SessionRosterChanges(),
+      watchedStatus: { statusOf: () => null },
+      supervisor: {
+        getSnapshot: () => ({ context: { sessions: {} } }),
+        send: () => {},
+        on: () => ({ unsubscribe: () => {} }),
+      },
       ...sessions,
     },
     tickets: {},
     workspaces: { database },
   } as unknown as AppRouterDependencies
+}
+
+async function firstRosterUpdates() {
+  const updates: inferRouterOutputs<AppRouter>['sessionList'][] = []
+  const stream = await createAppRouter(routerDependencies())
+    .createCaller({})
+    .sessionList({ projectId: 'project-1', pageSize: 30 })
+  stream.subscribe({ next: (update) => updates.push(update) }).unsubscribe()
+  return updates
 }
 
 beforeEach(async () => {
@@ -40,7 +58,7 @@ afterEach(async () => {
   await rm(userData, { recursive: true, force: true })
 })
 
-test('registers the paged Session list on the global router', async () => {
+test('registers the Session roster subscription on the global router', async () => {
   database
     .insert(project)
     .values({ id: 'project-1', path: '/work/one', commonDirectory: '/work/one/.git' })
@@ -55,12 +73,10 @@ test('registers the paged Session list on the global router', async () => {
       firstPrompt: 'Open the saved Session',
     })
     .run()
-  await expect(
-    createAppRouter(routerDependencies())
-      .createCaller({})
-      .sessionList({ projectId: 'project-1', page: 1, pageSize: 30 }),
-  ).resolves.toMatchObject({
-    page: 1,
+  const updates = await firstRosterUpdates()
+  expect(updates[0]).toMatchObject({
+    type: 'list',
+    pages: 1,
     pageSize: 30,
     total: 1,
     rows: [
@@ -71,6 +87,40 @@ test('registers the paged Session list on the global router', async () => {
       },
     ],
   })
+})
+
+test('lists the Subagents the sync read from each Session history', async () => {
+  database
+    .insert(project)
+    .values({ id: 'project-1', path: '/work/one', commonDirectory: '/work/one/.git' })
+    .run()
+  saveSessionBatch(database, 'codex', [
+    { nativeId: 'native-2', projectId: 'project-1', cwd: '/work/one', activityAt: 1 },
+  ])
+  await refreshSessionSubagents({
+    database,
+    harness: 'codex',
+    readHistory: async () => [
+      {
+        kind: 'delegation',
+        id: 'call-1',
+        agentId: 'agent-1',
+        status: 'running',
+        name: 'Survey',
+        prompt: null,
+        model: null,
+        summary: null,
+      },
+    ],
+    committed: () => {},
+    stopped: () => false,
+  })
+
+  const updates = await firstRosterUpdates()
+
+  expect(updates[0]?.type === 'list' && updates[0].rows[0]?.subagents).toEqual([
+    { id: 'agent-1', label: 'Survey', state: 'running', startedAt: null, endedAt: null },
+  ])
 })
 
 test('reads historical Feed content through the saved Session Harness adapter', async () => {

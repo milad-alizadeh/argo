@@ -96,6 +96,7 @@ function delegation(id: string, value: string, reject: RejectClaudeShape): FeedC
     kind: 'delegation',
     agentId,
     status: status.data,
+    name: null,
     prompt: field(value, 'input'),
     model: null,
     summary: field(value, 'progress') ?? field(value, 'summary'),

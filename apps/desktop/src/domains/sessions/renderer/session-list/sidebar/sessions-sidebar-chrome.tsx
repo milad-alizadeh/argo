@@ -5,6 +5,7 @@ import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
+  inlineSearchGroupClassName,
 } from '@/platform/renderer/components/ui/input-group'
 import type { SessionListStatus } from '../hooks/use-session-list-filter-store'
 import { SessionListFilterMenu } from '../rows/session-list-filter-menu'
@@ -29,7 +30,7 @@ export function SessionsSidebarHeader({
   const { t } = useTranslation('sessions')
   return (
     <header className="flex h-(--size-chrome-bar) shrink-0 items-center px-(--spacing-shell-gutter)">
-      <InputGroup className="min-w-0 flex-1 border-0 bg-transparent shadow-none focus-within:bg-muted dark:bg-transparent dark:focus-within:bg-muted">
+      <InputGroup className={inlineSearchGroupClassName}>
         <InputGroupAddon className="pl-(--spacing-shell-icon)">
           <Icon name="search" />
         </InputGroupAddon>

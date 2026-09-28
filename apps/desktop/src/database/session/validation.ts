@@ -5,6 +5,7 @@ const serverOwnedSessionFields = {
   argoId: true,
   createdAt: true,
   updatedAt: true,
+  subagentsReadAt: true,
 } as const
 
 export const sessionSelectSchema = createSelectSchema(sessionTable)

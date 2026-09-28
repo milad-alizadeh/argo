@@ -32,7 +32,7 @@ export const composerDraft = sqliteTable(
     ),
     check(
       'composer_draft_new_session_fields',
-      sql`(${table.projectId} IS NULL AND ${table.workspaceId} IS NULL AND ${table.harness} IS NULL) OR (${table.projectId} IS NOT NULL AND ${table.workspaceId} IS NOT NULL AND ${table.harness} IS NOT NULL)`,
+      sql`(${table.projectId} IS NULL AND ${table.workspaceId} IS NULL AND ${table.harness} IS NULL) OR (${table.projectId} IS NOT NULL AND ${table.harness} IS NOT NULL)`,
     ),
     check('composer_draft_revision', sql`${table.revision} >= 0`),
   ],

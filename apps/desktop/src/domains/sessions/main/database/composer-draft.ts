@@ -27,7 +27,7 @@ export const draftTurnConfigurationSchema = z.strictObject({
 const projectTargetSchema = z.strictObject({
   type: z.literal('project'),
   projectId: identifierSchema,
-  workspaceId: identifierSchema,
+  workspaceId: identifierSchema.nullable(),
   harness: harnessSchema,
 })
 const sessionTargetSchema = z.strictObject({

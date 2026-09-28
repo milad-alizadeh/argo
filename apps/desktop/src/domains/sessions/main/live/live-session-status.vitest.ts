@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { initTRPC } from '@trpc/server'
 import { test } from 'vitest'
-import { databaseFrom } from '@/database/database'
+import { type Database, databaseFrom } from '@/database/database'
 import {
   claudeCatalog,
   claudeFirst,
@@ -10,6 +10,34 @@ import {
   supervisorFor,
 } from '../../../../../test-fixtures/sessions/live-session-supervisor.fixture'
 import { sessionListProcedure } from '../api/session-list'
+import { SessionRosterChanges } from '../api/session-roster-changes'
+import type { LiveSessionSupervisorActor } from './live-session-supervisor-machine'
+
+// The status of the first row the roster lists first.
+function firstListedStatus(database: Database, supervisor: LiveSessionSupervisorActor) {
+  const list = initTRPC
+    .create()
+    .router({
+      list: sessionListProcedure({
+        database,
+        supervisor,
+        roster: new SessionRosterChanges(),
+        watchedStatus: { statusOf: () => null },
+      }),
+    })
+    .createCaller({}).list
+  return async () => {
+    const statuses: string[] = []
+    const stream = await list({ projectId: 'project-1', pageSize: 10 })
+    stream
+      .subscribe({
+        next: (update) =>
+          update.type === 'list' && statuses.push(...update.rows.map(({ status }) => status)),
+      })
+      .unsubscribe()
+    return statuses[0]
+  }
+}
 
 test('session.list projects the latest live status event and announces each change', async () => {
   let emitStatus!: (status: 'running' | 'idle' | 'permission') => void
@@ -37,12 +65,7 @@ test('session.list projects the latest live status event and announces each chan
   client.exec(
     'CREATE TABLE session_ticket_link (session_id TEXT PRIMARY KEY, project_id TEXT NOT NULL, ticket_key TEXT NOT NULL, title TEXT NOT NULL, state TEXT NOT NULL, created_at TEXT NOT NULL, updated_at INTEGER NOT NULL DEFAULT 1);',
   )
-  const list = initTRPC
-    .create()
-    .router({ list: sessionListProcedure({ database: databaseFrom(client), supervisor }) })
-    .createCaller({}).list
-  const statusOf = async () =>
-    (await list({ projectId: 'project-1', page: 1, pageSize: 10 })).rows[0]?.status
+  const statusOf = firstListedStatus(databaseFrom(client), supervisor)
   const announced: string[] = []
   const subscription = supervisor.on('Session status changed', ({ sessionId }) =>
     announced.push(sessionId),
