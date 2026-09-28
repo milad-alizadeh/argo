@@ -1,0 +1,75 @@
+@utility panel-frame {
+  display: flex;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  background-color: var(--background);
+}
+
+@utility panel-header {
+  display: flex;
+  height: var(--size-chrome-bar);
+  flex-shrink: 0;
+  align-items: center;
+  background-color: var(--background);
+}
+
+/* Outer edges inherit through nested splits; each split squares its interior edges. */
+@utility panel-body {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  border-start-start-radius: var(--panel-start-radius, 0px);
+  border-end-start-radius: var(--panel-start-radius, 0px);
+  border-start-end-radius: var(--panel-end-radius, 0px);
+  border-end-end-radius: var(--panel-end-radius, 0px);
+  background-color: var(--card);
+}
+
+@utility panel-outer-start {
+  --panel-start-radius: var(--radius-2xl);
+}
+
+@utility panel-outer-end {
+  --panel-end-radius: var(--radius-2xl);
+}
+
+@utility panel-inner-start {
+  --panel-start-radius: 0px;
+}
+
+@utility panel-inner-end {
+  --panel-end-radius: 0px;
+}
+
+@utility panel-elevation {
+  --panel-body-shadow:
+    0 0 4px color-mix(in oklab, var(--color-black) 4%, transparent),
+    0 0 24px -6px color-mix(in oklab, var(--color-black) 14%, transparent);
+  position: relative;
+  isolation: isolate;
+
+  &::after {
+    position: absolute;
+    z-index: 30;
+    inset: var(--size-chrome-bar) 0 0;
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--panel-body-shadow);
+    pointer-events: none;
+    content: "";
+  }
+}
+
+/* Keep the full-height resize target while drawing the seam below the chrome. */
+@utility panel-divider {
+  &::before {
+    position: absolute;
+    inset: var(--size-chrome-bar) 0 0;
+    content: "";
+    background-color: color-mix(in oklab, var(--border) 60%, transparent);
+  }
+}

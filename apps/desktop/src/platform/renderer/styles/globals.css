@@ -4,8 +4,15 @@
 @import "shadcn/tailwind.css";
 @import "./typography.css";
 @import "./cockpit-base.css";
+@import "./panel-layout.css";
 
 @custom-variant dark (&:is(.dark *));
+
+/* Inputs retain their focus border without the outer halo. */
+:is([data-slot="input"], [data-slot="textarea"], [data-slot="input-group-control"]):focus-visible,
+[data-slot="input-group"]:has([data-slot="input-group-control"]:focus-visible) {
+  --tw-ring-shadow: 0 0 transparent;
+}
 
 :is(
   button,

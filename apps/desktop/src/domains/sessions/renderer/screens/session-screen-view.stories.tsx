@@ -536,9 +536,9 @@ function expectContextBarInset(canvasElement: HTMLElement) {
   const composerBounds = composer.getBoundingClientRect()
   const workspaceBounds = workspace.getBoundingClientRect()
   const fadeBounds = fade.getBoundingClientRect()
-  expect(fadeBounds.top).toBeCloseTo(composerBounds.top, 1)
+  expect(fadeBounds.top).toBeLessThan(composerBounds.top)
   expect(fadeBounds.bottom).toBeCloseTo(workspaceBounds.bottom, 1)
-  expect(fadeBounds.height).toBeCloseTo(composerBounds.height, 1)
+  expect(fadeBounds.height).toBeGreaterThan(composerBounds.height)
   expect(getComputedStyle(fade).pointerEvents).toBe('none')
 }
 

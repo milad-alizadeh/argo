@@ -48,6 +48,7 @@ export const CollapseExpandRestore: Story = {
 
     // The page's header owns the controls, so a collapsed inspector opens from its header edge.
     const collapseControl = canvas.getByRole('button', { name: 'Collapse Panel inspector' })
+    await expect(canvas.getByLabelText('Panel inspector').contains(collapseControl)).toBe(true)
     await userEvent.click(collapseControl)
     await waitFor(() =>
       expect(canvas.getByRole('button', { name: 'Open Panel inspector' })).toBeInTheDocument(),

@@ -28,9 +28,9 @@ export function SessionsSidebarHeader({
 }) {
   const { t } = useTranslation('sessions')
   return (
-    <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 pl-4 pr-(--spacing-shell-icon)">
-      <InputGroup className="flex-1">
-        <InputGroupAddon>
+    <header className="flex h-(--size-chrome-bar) shrink-0 items-center px-(--spacing-shell-gutter)">
+      <InputGroup className="min-w-0 flex-1 border-0 bg-transparent shadow-none focus-within:bg-muted dark:bg-transparent dark:focus-within:bg-muted">
+        <InputGroupAddon className="pl-(--spacing-shell-icon)">
           <Icon name="search" />
         </InputGroupAddon>
         <InputGroupInput
@@ -43,16 +43,12 @@ export function SessionsSidebarHeader({
       </InputGroup>
       {/* The filter sits left of the plus, so the plus keeps the right edge every row lines up on. */}
       <div className="ml-(--spacing-shell-tight) flex items-center">
-        <Button
-          aria-label={t('refreshSessions')}
-          disabled={refreshing}
-          onClick={onRefresh}
-          size="icon-sm"
-          variant="ghost"
-        >
-          <Icon name="retry" />
-        </Button>
-        <SessionListFilterMenu onStatusChange={onStatusChange} status={status} />
+        <SessionListFilterMenu
+          onRefresh={onRefresh}
+          onStatusChange={onStatusChange}
+          refreshing={refreshing}
+          status={status}
+        />
         <Button aria-label={t('newSession')} onClick={onNew} size="icon-sm" variant="ghost">
           <Icon name="add" />
         </Button>

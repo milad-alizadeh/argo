@@ -77,12 +77,11 @@ export function useInspectorPanels(
     isInspectorReady,
     synchronizeCollapsed: () => {
       if (inspectorPanel.current?.isCollapsed()) {
-        if (stateRef.current !== 'collapsed') return
         setIsInspectorReady(false)
         updateState('collapsed')
       } else {
         synchronizeReady()
-        updateState(stateRef.current === 'expanded' ? 'expanded' : 'open')
+        updateState(workspacePanel.current?.isCollapsed() ? 'expanded' : 'open')
       }
     },
     toggle: () => {

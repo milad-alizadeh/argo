@@ -12,3 +12,7 @@
 .session-screen__feed .feed__viewport {
   scroll-padding-bottom: var(--spacing-session-feed-composer-inset);
 }
+
+.session-screen__feed:has(+ .session-screen__composer) .feed__viewport {
+  padding-bottom: var(--size-session-feed-fade);
+}

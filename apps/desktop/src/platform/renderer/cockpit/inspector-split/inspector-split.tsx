@@ -69,11 +69,12 @@ function InspectorPanel({
         aria-label={`${noun} inspector`}
         ref={panels.inspectorElement}
         className={cn(
-          'flex h-full min-h-0 flex-col bg-sidebar',
+          'panel-frame',
+          panels.state !== 'expanded' && 'panel-inner-start',
           (panels.state === 'collapsed' || !panels.isInspectorReady) && 'invisible',
         )}
       >
-        <header className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center gap-(--spacing-shell-tight) border-b border-border/60 bg-sidebar px-(--spacing-shell-item)">
+        <header className="panel-header drag-region gap-(--spacing-shell-tight) px-(--spacing-shell-gutter)">
           <div className="no-drag-region flex min-w-0 flex-1 items-center">{bar}</div>
           {controls ? (
             <div className="no-drag-region flex shrink-0 items-center gap-(--spacing-shell-tight)">
@@ -81,7 +82,7 @@ function InspectorPanel({
             </div>
           ) : null}
         </header>
-        {inspector}
+        <div className="panel-body">{inspector}</div>
       </aside>
     </ResizablePanel>
   )
@@ -110,7 +111,7 @@ export function InspectorSplit(props: InspectorSplitProps) {
     />
   )
   return (
-    <InspectorHeaderControlsContext.Provider value={panels.state === 'expanded' ? null : toggles}>
+    <InspectorHeaderControlsContext.Provider value={panels.state === 'collapsed' ? toggles : null}>
       <div
         data-component="InspectorSplit"
         data-state={panels.state}
@@ -123,6 +124,7 @@ export function InspectorSplit(props: InspectorSplitProps) {
           onLayoutChanged={panels.synchronizeCollapsed}
         >
           <ResizablePanel
+            className={panels.state === 'collapsed' ? undefined : 'panel-inner-end'}
             id={`${id}-workspace`}
             panelRef={panels.workspacePanel}
             collapsible
@@ -132,11 +134,11 @@ export function InspectorSplit(props: InspectorSplitProps) {
             {workspace}
           </ResizablePanel>
           <ResizableHandle
-            className={panels.state === 'collapsed' ? 'bg-transparent' : 'bg-border/60'}
+            className={panels.state === 'open' ? 'panel-divider bg-transparent' : 'w-0 bg-transparent'}
           />
           <InspectorPanel
             bar={bar}
-            controls={panels.state === 'expanded' ? toggles : null}
+            controls={panels.state === 'collapsed' ? null : toggles}
             defaultCollapsed={defaultCollapsed}
             defaultInspectorSize={defaultInspectorSize}
             id={id}

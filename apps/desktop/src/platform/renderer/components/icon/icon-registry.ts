@@ -63,10 +63,10 @@ import {
   Loader2,
   Lock,
   LockKeyhole,
-  Map as MapIcon,
   MessageSquare,
   MessagesSquare,
   Minimize2,
+  Network,
   OctagonAlert,
   Package,
   PanelLeft,
@@ -164,7 +164,7 @@ export const ICONS = {
   'shell-output': Terminal,
 
   // The cockpit rail's own destinations.
-  atlas: MapIcon,
+  atlas: Network,
 
   // Guided Project setup.
   connect: Plug,

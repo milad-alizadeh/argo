@@ -33,7 +33,7 @@ function ComposerFade({ onJumpToLatest }: { onJumpToLatest: (() => void) | null 
       <div
         aria-hidden="true"
         data-component="SessionComposerFade"
-        className="pointer-events-none absolute inset-0 bg-[image:var(--gradient-session-composer-fade)]"
+        className="pointer-events-none absolute inset-x-0 -top-(--size-session-feed-fade) bottom-0 -z-10 bg-[image:var(--gradient-session-composer-fade)]"
       />
       {onJumpToLatest === null ? null : (
         <FeedJumpToLatest
@@ -59,7 +59,7 @@ function ComposerSection({
   return (
     <section
       aria-label={t('composerRegionLabel')}
-      className="session-screen__composer relative z-20 isolate flex shrink-0 flex-col overflow-hidden px-(--spacing-session-gutter)"
+      className="session-screen__composer relative z-20 isolate flex shrink-0 flex-col px-(--spacing-session-gutter)"
     >
       <ComposerFade onJumpToLatest={onJumpToLatest} />
       <div
@@ -102,32 +102,31 @@ export function SessionWorkspace({
   const { t } = useTranslation('sessions')
 
   return (
-    <section
-      aria-label={t('workspaceLabel')}
-      className="@container relative flex h-full min-h-0 flex-col"
-    >
+    <section aria-label={t('workspaceLabel')} className="panel-frame @container relative">
       {header ?? null}
-      {/* A layout wrapper only: `BasicFeed` is its own labelled landmark, so this stays a plain `div` to
+      <div className="panel-body bg-popover">
+        {/* A layout wrapper only: `BasicFeed` is its own labelled landmark, so this stays a plain `div` to
           avoid a second "Session Feed" region with the same name. */}
-      <div className="session-screen__feed min-h-0 flex-1 overflow-hidden">
-        <BasicFeed
-          activeEvidenceId={activeEvidenceId}
-          answeringQuestionId={answeringQuestionId}
-          failure={feedError}
-          feed={feed}
-          onAnswerQuestion={onAnswerQuestion}
-          onOpenEvidence={onOpenEvidence}
-          onOpenSession={onOpenSession}
-          onJumpToLatestChange={updateJumpToLatest}
-          onRetryFeed={onRetryFeed}
-          questionFailure={questionFailure}
-          selectedSessionId={selectedSessionId}
-          onStalledChange={onFeedStalledChange}
-          stallTimeoutMs={stallTimeoutMs}
-          liveFacts={liveFacts}
-        />
+        <div className="session-screen__feed min-h-0 flex-1 overflow-hidden">
+          <BasicFeed
+            activeEvidenceId={activeEvidenceId}
+            answeringQuestionId={answeringQuestionId}
+            failure={feedError}
+            feed={feed}
+            onAnswerQuestion={onAnswerQuestion}
+            onOpenEvidence={onOpenEvidence}
+            onOpenSession={onOpenSession}
+            onJumpToLatestChange={updateJumpToLatest}
+            onRetryFeed={onRetryFeed}
+            questionFailure={questionFailure}
+            selectedSessionId={selectedSessionId}
+            onStalledChange={onFeedStalledChange}
+            stallTimeoutMs={stallTimeoutMs}
+            liveFacts={liveFacts}
+          />
+        </div>
+        <ComposerSection composer={composer} onJumpToLatest={jumpToLatest?.action ?? null} />
       </div>
-      <ComposerSection composer={composer} onJumpToLatest={jumpToLatest?.action ?? null} />
     </section>
   )
 }

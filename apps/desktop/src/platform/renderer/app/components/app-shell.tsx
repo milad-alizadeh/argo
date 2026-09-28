@@ -51,11 +51,9 @@ function SidebarToggle({
 function AppRail({ rail }: Pick<AppShellProps, 'rail'>) {
   const inRouter = useInRouterContext()
   return (
-    <div className="flex min-h-0 w-(--size-navigation-rail) shrink-0 flex-col bg-sidebar">
-      <div className="drag-region h-(--size-chrome-bar) shrink-0 border-b border-border/60" />
-      <div className="min-h-0 flex-1 border-r border-border/60">
-        {rail ?? (inRouter ? <CockpitNavigationRail /> : null)}
-      </div>
+    <div className="flex min-h-0 w-(--size-navigation-rail) shrink-0 flex-col">
+      <div className="drag-region h-(--size-chrome-bar) shrink-0" />
+      <div className="min-h-0 flex-1">{rail ?? (inRouter ? <CockpitNavigationRail /> : null)}</div>
     </div>
   )
 }
@@ -70,18 +68,12 @@ const AppShellControlsContext = createContext<AppShellControls | null>(null)
 
 // Pages choose where their own header belongs. Sessions puts one over its workspace, while the
 // inspector retains its own header; Tickets uses the full main-content width.
-export function AppPageHeader({
-  children,
-  multiline = false,
-}: {
-  children?: ReactNode
-  multiline?: boolean
-}) {
+export function AppPageHeader({ children }: { children?: ReactNode }) {
   const controls = useContext(AppShellControlsContext)
   return (
     <header
       data-component="AppMainHeader"
-      className={`drag-region flex ${multiline ? 'min-h-(--size-chrome-bar) py-(--spacing-shell-tight)' : 'h-(--size-chrome-bar)'} shrink-0 items-center gap-(--spacing-shell-item) border-b border-border/60 bg-background px-(--spacing-shell-gutter)`}
+      className="panel-header drag-region gap-(--spacing-shell-item) px-(--spacing-shell-gutter)"
     >
       {controls?.sidebarCollapsed ? (
         <SidebarToggle
@@ -90,7 +82,9 @@ export function AppPageHeader({
           toggleRef={controls.sidebarToggleRef}
         />
       ) : null}
-      <div className="no-drag-region flex min-w-0 flex-1 items-center">{children}</div>
+      <div className="no-drag-region flex min-w-0 flex-1 items-center pl-(--spacing-shell-icon)">
+        {children}
+      </div>
     </header>
   )
 }
@@ -131,44 +125,51 @@ export function AppShell({ rail, sidebar, leftHeader, footer, children }: AppShe
 
   return (
     <AppShellControlsContext.Provider value={{ sidebarCollapsed, toggleSidebar, sidebarToggleRef }}>
-      <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
+      <div className="panel-frame overflow-hidden">
         <div className="flex min-h-0 flex-1">
           <AppRail rail={rail} />
-          <ResizablePanelGroup
-            className="min-w-0 flex-1"
-            onLayoutChanged={() =>
-              setSidebarCollapsed(sidebarPanelRef.current?.isCollapsed() ?? false)
-            }
-            orientation="horizontal"
-          >
-            <ResizablePanel
-              collapsible
-              collapsedSize={0}
-              defaultSize={sizes.sidebarDefault}
-              id="app-left-sidebar"
-              maxSize={sizes.sidebarMaximum}
-              minSize={sizes.sidebarMinimum}
-              panelRef={sidebarPanelRef}
+          <div className="panel-elevation mb-(--spacing-shell-inset) mr-(--spacing-shell-inset) flex min-w-0 flex-1">
+            <ResizablePanelGroup
+              className="min-w-0 flex-1"
+              onLayoutChanged={() =>
+                setSidebarCollapsed(sidebarPanelRef.current?.isCollapsed() ?? false)
+              }
+              orientation="horizontal"
             >
-              <aside className="flex h-full min-h-0 flex-col overflow-hidden bg-sidebar">
-                <header className="drag-region flex h-(--size-chrome-bar) shrink-0 items-center gap-(--spacing-shell-tight) border-b border-border/60 px-(--spacing-shell-gutter)">
-                  <SidebarToggle
-                    collapsed={false}
-                    onToggle={toggleSidebar}
-                    toggleRef={sidebarToggleRef}
-                  />
-                  <div className="no-drag-region ml-auto min-w-0">{leftHeader}</div>
-                </header>
-                <div className="min-h-0 flex-1">{sidebar}</div>
-              </aside>
-            </ResizablePanel>
-            <ResizableHandle className={sidebarCollapsed ? 'bg-transparent' : 'bg-border/60'} />
-            <ResizablePanel id="app-main" minSize={sizes.contentMinimum}>
-              <section className="flex h-full min-h-0 min-w-0 flex-col" style={appContentInsets()}>
-                {children}
-              </section>
-            </ResizablePanel>
-          </ResizablePanelGroup>
+              <ResizablePanel
+                collapsible
+                collapsedSize={0}
+                defaultSize={sizes.sidebarDefault}
+                id="app-left-sidebar"
+                maxSize={sizes.sidebarMaximum}
+                minSize={sizes.sidebarMinimum}
+                panelRef={sidebarPanelRef}
+              >
+                <aside className="panel-frame panel-outer-start">
+                  <header className="panel-header drag-region gap-(--spacing-shell-tight) px-(--spacing-shell-gutter)">
+                    <SidebarToggle
+                      collapsed={false}
+                      onToggle={toggleSidebar}
+                      toggleRef={sidebarToggleRef}
+                    />
+                    <div className="no-drag-region ml-auto min-w-0">{leftHeader}</div>
+                  </header>
+                  <div className="panel-body">{sidebar}</div>
+                </aside>
+              </ResizablePanel>
+              <ResizableHandle
+                className={sidebarCollapsed ? 'w-0 bg-transparent' : 'panel-divider bg-transparent'}
+              />
+              <ResizablePanel id="app-main" minSize={sizes.contentMinimum}>
+                <section
+                  className={`panel-frame panel-outer-end ${sidebarCollapsed ? 'panel-outer-start' : 'panel-inner-start'}`}
+                  style={appContentInsets()}
+                >
+                  {children}
+                </section>
+              </ResizablePanel>
+            </ResizablePanelGroup>
+          </div>
         </div>
         {footer ? <div className="shrink-0">{footer}</div> : null}
       </div>

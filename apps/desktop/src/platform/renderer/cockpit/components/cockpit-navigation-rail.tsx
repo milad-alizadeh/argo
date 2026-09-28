@@ -3,6 +3,12 @@ import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router'
 import { DESTINATION_PATHS, DESTINATIONS, type Destination } from '@/platform/contract/commands'
 import { Icon, type IconName } from '../../components/icon/icon'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '../../components/ui/tooltip'
 
 const navigationIcons: Record<Destination, IconName> = {
   Sessions: 'messages-square',
@@ -30,54 +36,51 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
   const settingsLabel = t('rail.settings')
 
   return (
-    <nav
-      aria-label={t('rail.label')}
-      className="no-drag-region flex h-full min-h-0 w-(--size-navigation-rail) shrink-0 flex-col items-center border-r border-border/60 bg-sidebar [&_*]:no-drag-region [&_svg]:size-(--size-icon-control)"
-    >
-      <div className="flex flex-col items-center gap-2 pt-(--inset-navigation-rail-item-top)">
-        {DESTINATIONS.map((itemDestination) => {
-          const iconName = navigationIcons[itemDestination]
-          const active = destination === itemDestination
-          const label = t(navigationLabelKeys[itemDestination])
-          return (
-            <button
-              key={itemDestination}
+    <TooltipProvider>
+      <nav
+        aria-label={t('rail.label')}
+        className="no-drag-region flex h-full min-h-0 w-(--size-navigation-rail) shrink-0 flex-col items-center [&_*]:no-drag-region [&_svg]:size-(--size-navigation-icon)"
+      >
+        <div className="flex flex-col items-center gap-2 pt-(--inset-navigation-rail-item-top)">
+          {DESTINATIONS.map((itemDestination) => {
+            const iconName = navigationIcons[itemDestination]
+            const active = destination === itemDestination
+            const label = t(navigationLabelKeys[itemDestination])
+            return (
+              <Tooltip key={itemDestination}>
+                <TooltipTrigger
+                  type="button"
+                  aria-current={active ? 'page' : undefined}
+                  aria-label={label}
+                  className={`no-drag-region grid size-(--size-navigation-control) place-items-center rounded-lg transition-colors ${active ? 'bg-selected text-foreground' : 'text-muted-foreground hover:bg-selected hover:text-foreground'}`}
+                  onClick={() => {
+                    navigate(DESTINATION_PATHS[itemDestination])
+                  }}
+                >
+                  <Icon name={iconName} />
+                </TooltipTrigger>
+                <TooltipContent side="right" className="type-meta">
+                  {label}
+                </TooltipContent>
+              </Tooltip>
+            )
+          })}
+        </div>
+        <div className="mt-auto flex h-(--size-bottom-status) shrink-0 items-center justify-center pb-1">
+          <Tooltip>
+            <TooltipTrigger
               type="button"
-              aria-current={active ? 'page' : undefined}
-              aria-label={label}
-              className="no-drag-region group flex flex-col items-center gap-1 type-meta"
-              onClick={() => {
-                navigate(DESTINATION_PATHS[itemDestination])
-              }}
+              aria-label={settingsLabel}
+              className="no-drag-region grid size-(--size-navigation-control) place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-selected hover:text-foreground"
             >
-              <span
-                className={`grid size-9 place-items-center rounded-lg transition-colors ${
-                  active
-                    ? 'bg-selected text-foreground'
-                    : 'text-muted-foreground group-hover:bg-muted group-hover:text-foreground'
-                }`}
-              >
-                <Icon name={iconName} />
-              </span>
-              <span className={active ? 'font-medium text-foreground' : 'text-muted-foreground'}>
-                {label}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-      <div className="mt-auto flex h-(--size-bottom-status) shrink-0 items-center justify-center pb-1">
-        <button
-          type="button"
-          aria-label={settingsLabel}
-          className="no-drag-region group flex flex-col items-center gap-1 type-meta"
-        >
-          <span className="grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors group-hover:bg-sidebar group-hover:text-foreground">
-            <Icon name="settings" />
-          </span>
-          <span className="text-muted-foreground">{settingsLabel}</span>
-        </button>
-      </div>
-    </nav>
+              <Icon name="settings" />
+            </TooltipTrigger>
+            <TooltipContent side="right" className="type-meta">
+              {settingsLabel}
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </nav>
+    </TooltipProvider>
   )
 })

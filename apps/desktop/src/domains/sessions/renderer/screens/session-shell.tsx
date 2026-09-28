@@ -87,7 +87,7 @@ export function SessionShell({
   return (
     <main
       data-component="SessionShell"
-      className="session-screen__shell relative h-full min-h-0 overflow-hidden bg-background"
+      className="session-screen__shell panel-frame relative overflow-hidden"
     >
       <InspectorSplit
         bar={inspectorBar}
@@ -100,7 +100,7 @@ export function SessionShell({
           <SessionWorkspace
             {...workspaceProps}
             header={
-              <AppPageHeader multiline>
+              <AppPageHeader>
                 <SessionIdentity session={session} workspaceIdentity={workspaceIdentity} />
                 <SessionHeaderControls>
                   {headerControls}

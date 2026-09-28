@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { INACTIVE_FEED_LIVE_FACTS } from '../feed/document/feed-live-facts'
 import { sessionRow } from '../session-fixtures'
@@ -96,5 +96,31 @@ export const Collapsed: Story = {
     await expect(title.getBoundingClientRect().top).toBeLessThan(
       opener.getBoundingClientRect().bottom,
     )
+  },
+}
+
+export const ResizeExpandedInspector: Story = {
+  decorators: [
+    (Story) => (
+      <div className="h-dvh w-[1280px]">
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Open Session inspector' }))
+    await userEvent.click(await canvas.findByRole('button', { name: 'Expand Session sidebar' }))
+    await expect(
+      canvas.getByRole('button', { name: 'Restore Session sidebar' }),
+    ).toBeInTheDocument()
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar', exact: true }))
+    await waitFor(() => {
+      expect(
+        canvas.getByLabelText('Session workspace').getBoundingClientRect().width,
+      ).toBeGreaterThan(1)
+      expect(canvas.getByRole('button', { name: 'Expand Session sidebar' })).toBeVisible()
+    })
   },
 }
