@@ -98,6 +98,35 @@ async function flows() {
   return { gitHub, mockLinear, signIn, opened, tickets, changes, database }
 }
 
+test('an active Linear scan commits Tickets through the same tables and keeps their identity', async () => {
+  const flow = await signedInToLinear()
+  const { mockLinear, tickets, accountId } = flow
+  mockLinear.addTeam(TEAM)
+  const connected = await tickets.ticketConnect({ projectId, accountId, scope: TEAM.id })
+  assert.equal(connected.type, 'ticket.connected')
+
+  const first = await synced(flow)
+  assert.equal(first.sync.complete, true)
+  assert.deepEqual(first.tickets.map(({ key }) => key).sort(), ['ENG-1', 'ENG-2'])
+  // Linear's own status word is kept beside the shared category.
+  assert.equal(
+    first.tickets.every(({ status }) => status.name.length > 0 && status.category.length > 0),
+    true,
+  )
+  const identities = argoIds(flow)
+  assert.deepEqual(Object.keys(identities).sort(), ['issue-ENG-1', 'issue-ENG-2'])
+
+  // With Linear asked for nothing, the list answers from the committed rows.
+  const asked = mockLinear.requests.length
+  const saved = await tickets.ticketActive({ projectId, page: 0 })
+  assert.ok(saved.type === 'ticket.indexed')
+  assert.deepEqual(saved.tickets.map(({ key }) => key).sort(), ['ENG-1', 'ENG-2'])
+  assert.equal(mockLinear.requests.length, asked)
+
+  await synced(flow)
+  assert.deepEqual(argoIds(flow), identities)
+})
+
 async function challenged(provider: Provider) {
   const flow = await flows()
   const challenge = await flow.signIn.connect('request-1', provider)
