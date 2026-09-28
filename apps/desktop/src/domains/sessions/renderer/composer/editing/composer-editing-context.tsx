@@ -21,9 +21,7 @@ type ComposerEditingContextValue = {
 
 const ComposerEditingContext = createContext<ComposerEditingContextValue | null>(null)
 
-// A new owner starts from its own initial edit in the same render, so the composer stays mounted
-// and nothing edited for one owner reaches the next. An event dispatched for an earlier owner is
-// dropped.
+// A new owner starts from its own initial edit without a remount; an edit for an earlier owner is dropped.
 export function ComposerEditingProvider({
   children,
   owner,
@@ -35,17 +33,18 @@ export function ComposerEditingProvider({
   initial?: Partial<ComposerEditing>
   onChange?: (editing: ComposerEditing) => void
 }) {
-  const [owned, setOwned] = useState(() => ({ owner, editing: composerEditing(initial) }))
-  const current = owned.owner === owner ? owned : { owner, editing: composerEditing(initial) }
-  if (current !== owned) setOwned(current)
+  const [stored, setStored] = useState(() => ({ owner, editing: composerEditing(initial) }))
+  const ownerEditing =
+    stored.owner === owner ? stored : { owner, editing: composerEditing(initial) }
+  if (ownerEditing !== stored) setStored(ownerEditing)
   const dispatch = useCallback(
     (event: ComposerEditingEvent) =>
-      setOwned((state) =>
+      setStored((state) =>
         state.owner === owner ? { owner, editing: editComposer(state.editing, event) } : state,
       ),
     [owner],
   )
-  const { editing } = current
+  const { editing } = ownerEditing
   useEffect(() => onChange?.(editing), [editing, onChange])
   return <ComposerEditingContext value={{ editing, dispatch }}>{children}</ComposerEditingContext>
 }

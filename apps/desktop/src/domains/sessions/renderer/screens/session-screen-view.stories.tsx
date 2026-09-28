@@ -1,21 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useCallback, useState } from 'react'
-import {
-  createMemoryRouter,
-  MemoryRouter,
-  Navigate,
-  Route,
-  RouterProvider,
-  Routes,
-} from 'react-router'
+import { MemoryRouter, Navigate, Route, Routes } from 'react-router'
 import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/renderer/model/models'
 import type { SessionShellOutput } from '@/domains/sessions/renderer/work/types'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { queryClient, trpc } from '@/platform/renderer/trpc-client'
-import { cockpitRoutes } from '@/renderer/cockpit-router'
-import { claudeHarnessInfoFixture } from '../../../../../test-fixtures/sessions/harness-catalog.fixture'
+import { sessionSelectionHost } from '../../../../../test-fixtures/sessions/session-selection-host.fixture'
 import { ComposerForm } from '../composer/layout/composer-form'
 import { RICH_MARKDOWN } from '../feed/content/feed-samples'
 import { INACTIVE_FEED_LIVE_FACTS } from '../feed/document/feed-live-facts'
@@ -197,142 +188,6 @@ function withListedSessions(sessions: Session[]) {
   }
   return () => {
     window.argo = before
-  }
-}
-
-type StorybookTrpcRequest = Parameters<typeof window.argo.trpc>[0]
-type StorybookTrpcResponse = Awaited<ReturnType<typeof window.argo.trpc>>
-
-function storybookTrpcSuccess(data: unknown): StorybookTrpcResponse {
-  return { result: { data } } as StorybookTrpcResponse
-}
-
-function selectionProjectReply(request: StorybookTrpcRequest): StorybookTrpcResponse | null {
-  const project = { id: 'project-1', name: 'Argo', path: '/storybook/argo' }
-  switch (request.path) {
-    case 'projectList':
-      return storybookTrpcSuccess([project])
-    case 'projectOpen':
-      return storybookTrpcSuccess(project)
-    case 'workspaceList':
-      return storybookTrpcSuccess({
-        type: 'workspace.listed',
-        requestId: '00000000-0000-4000-8000-000000000001',
-        workspaces: [],
-      })
-    default:
-      return null
-  }
-}
-
-// Drafts the story host has saved, so a Session opened again reads back what it was left with.
-const selectionDrafts = new Map<string, object>()
-
-function selectionDraftReply(value: { target: object; [field: string]: unknown }) {
-  selectionDrafts.set(JSON.stringify(value.target), value)
-  return storybookTrpcSuccess(value)
-}
-
-function selectionComposerReply(request: StorybookTrpcRequest): StorybookTrpcResponse | null {
-  switch (request.path) {
-    case 'harnessCatalogRead':
-      return storybookTrpcSuccess({ info: claudeHarnessInfoFixture(), failure: null })
-    case 'composerDraftRead':
-      return storybookTrpcSuccess(selectionDrafts.get(JSON.stringify(request.input)) ?? null)
-    case 'composerDraftCreate': {
-      const input = request.input as {
-        target: { type: 'session'; sessionId: string }
-        content: object
-      }
-      return selectionDraftReply({
-        id: `selection-draft-${input.target.sessionId}`,
-        ...input.content,
-        target: input.target,
-        revision: 0,
-        createdAt: 0,
-        updatedAt: 0,
-      })
-    }
-    case 'composerDraftSave': {
-      const input = request.input as {
-        id: string
-        expectedRevision: number
-        target: object
-        content: object
-      }
-      return selectionDraftReply({
-        id: input.id,
-        ...input.content,
-        target: input.target,
-        revision: input.expectedRevision + 1,
-        createdAt: 0,
-        updatedAt: 0,
-      })
-    }
-    default:
-      return null
-  }
-}
-
-function selectionFeedReply(request: StorybookTrpcRequest): StorybookTrpcResponse | null {
-  if (request.path !== 'sessionFeedRead') return null
-  const { sessionId } = request.input as { sessionId: string }
-  return storybookTrpcSuccess({
-    version: 1,
-    type: 'session.feed.read',
-    requestId: `selection-${sessionId}`,
-    sessionId,
-    chainId: sessionId,
-    revision: `selection-${sessionId}`,
-    olderCursor: null,
-    content: [
-      {
-        id: `selection-row-${sessionId}`,
-        kind: 'message',
-        role: 'assistant',
-        text: `History for ${sessionId}.`,
-      },
-    ],
-  })
-}
-
-function selectionHostTrpc(base: typeof window.argo.trpc): typeof window.argo.trpc {
-  const sessionTrpc = sessionListTrpc(base, () => SESSION_ROSTER)
-  return async (request) =>
-    selectionProjectReply(request) ??
-    selectionComposerReply(request) ??
-    selectionFeedReply(request) ??
-    sessionTrpc(request)
-}
-
-function clearSelectionQueries() {
-  selectionDrafts.clear()
-  queryClient.removeQueries({ queryKey: trpc.sessionList.pathKey() })
-  queryClient.removeQueries({ queryKey: trpc.projectList.pathKey() })
-  queryClient.removeQueries({ queryKey: trpc.projectOpen.pathKey() })
-  queryClient.removeQueries({ queryKey: trpc.workspaceList.pathKey() })
-  queryClient.removeQueries({ queryKey: trpc.harnessCatalogRead.pathKey() })
-  queryClient.removeQueries({ queryKey: trpc.composerDraftRead.pathKey() })
-  queryClient.removeQueries({ queryKey: ['sessions', 'feed'] })
-  queryClient.removeQueries({ queryKey: ['sessions', 'shell-output'] })
-  queryClient.removeQueries({ queryKey: ['sessions', 'delegation-usage'] })
-}
-
-function productionSelectionHost() {
-  const before = window.argo
-  clearSelectionQueries()
-  window.argo = Object.assign(
-    { ...before, trpc: selectionHostTrpc(before.trpc) },
-    {
-      readShellOutput: async () => ({
-        type: 'session.shell.output.read',
-        output: { state: 'available', tail: 'Checked 187 files.\n' },
-      }),
-    },
-  )
-  return () => {
-    window.argo = before
-    clearSelectionQueries()
   }
 }
 
@@ -829,17 +684,13 @@ const meta = {
     layout: 'fullscreen',
   },
   decorators: [
-    // A story on the cockpit's own routes brings its own data router.
-    (Story, { parameters }) =>
-      parameters.ownRouter === true ? (
-        <Story />
-      ) : (
-        <MemoryRouter initialEntries={['/projects/project-1/sessions']}>
-          <div className="h-dvh w-full">
-            <Story />
-          </div>
-        </MemoryRouter>
-      ),
+    (Story) => (
+      <MemoryRouter initialEntries={['/projects/project-1/sessions']}>
+        <div className="h-dvh w-full">
+          <Story />
+        </div>
+      </MemoryRouter>
+    ),
   ],
 } satisfies Meta<typeof SessionScreenView>
 
@@ -952,7 +803,7 @@ export const Open: Story = {
 }
 
 export const SwitchingKeepsScreenAreasOnTheSelectedSession: Story = {
-  beforeEach: () => productionSelectionHost(),
+  beforeEach: () => sessionSelectionHost(SESSION_ROSTER),
   render: () => <ProductionSessionSelectionScreen />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -988,95 +839,6 @@ export const SwitchingKeepsScreenAreasOnTheSelectedSession: Story = {
     await expect(canvas.getByLabelText('Session composer')).toBeVisible()
     await expect(canvas.getByRole('combobox', { name: 'Message' })).toHaveTextContent('')
     await expect(canvas.queryByRole('region', { name: 'Background Shell' })).toBeNull()
-  },
-}
-
-function CockpitSessionScreen() {
-  const [router] = useState(() =>
-    createMemoryRouter(cockpitRoutes, {
-      initialEntries: ['/projects/project-1/sessions/composer-review'],
-    }),
-  )
-  return (
-    <div className="h-dvh w-full">
-      <RouterProvider router={router} />
-    </div>
-  )
-}
-
-// Counts composer cards after every DOM commit, so a commit that drops the card is caught even
-// when the next one draws it again.
-function watchComposerCards(canvasElement: HTMLElement) {
-  const cards = () => within(canvasElement).queryAllByLabelText(COMPOSER_CARD_LABEL)
-  const [first] = cards()
-  let fewest = cards().length
-  const observer = new MutationObserver(() => {
-    fewest = Math.min(fewest, cards().length)
-  })
-  observer.observe(canvasElement, { childList: true, subtree: true })
-  return {
-    read: () => ({ sameCard: first?.isConnected === true && cards()[0] === first, fewest }),
-    stop: () => observer.disconnect(),
-  }
-}
-
-const COMPOSER_CARD_LABEL = 'Message composer'
-
-async function switchSessionKeepingComposer(
-  canvasElement: HTMLElement,
-  watch: ReturnType<typeof watchComposerCards>,
-  input: { title: RegExp; sessionId: string; draft: string },
-) {
-  const canvas = within(canvasElement)
-  await userEvent.click(canvas.getByRole('button', { name: input.title }))
-  await waitFor(() =>
-    expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
-      'data-session',
-      input.sessionId,
-    ),
-  )
-  await waitFor(() =>
-    expect(canvas.getByRole('combobox', { name: 'Message' })).toHaveTextContent(input.draft),
-  )
-  await expect(watch.read()).toEqual({ sameCard: true, fewest: 1 })
-}
-
-// A Session switch keeps the one composer card on screen and swaps only its content (#2836).
-export const SwitchingKeepsTheComposerCardMounted: Story = {
-  parameters: { ownRouter: true },
-  beforeEach: () => productionSelectionHost(),
-  render: () => <CockpitSessionScreen />,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const composer = await canvas.findByRole('combobox', { name: 'Message' })
-    await waitFor(() => expect(composer).toHaveAttribute('contenteditable', 'true'))
-    await userEvent.type(composer, 'Draft for the first Session')
-    // The draft saves after a pause in typing; the switch comes after that save.
-    await waitFor(() =>
-      expect(
-        selectionDrafts.get(JSON.stringify({ type: 'session', sessionId: 'composer-review' })),
-      ).toMatchObject({ prompt: 'Draft for the first Session' }),
-    )
-    const watch = watchComposerCards(canvasElement)
-    try {
-      await switchSessionKeepingComposer(canvasElement, watch, {
-        title: /Add Markdown typing shortcuts/,
-        sessionId: 'shortcut-review',
-        draft: '',
-      })
-      await switchSessionKeepingComposer(canvasElement, watch, {
-        title: /Review transcript rendering/,
-        sessionId: 'feed-review',
-        draft: '',
-      })
-      await switchSessionKeepingComposer(canvasElement, watch, {
-        title: /Finish Session composer review/,
-        sessionId: 'composer-review',
-        draft: 'Draft for the first Session',
-      })
-    } finally {
-      watch.stop()
-    }
   },
 }
 

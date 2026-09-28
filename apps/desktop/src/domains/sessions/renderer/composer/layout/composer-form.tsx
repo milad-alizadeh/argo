@@ -21,6 +21,8 @@ export type ComposerFormProps = {
   contextTokens?: number | null
   contextWindowTokens?: number | null
   disabled?: boolean
+  // Takes no input and sends nothing, but draws like an enabled card.
+  inert?: boolean
   focusOnMount?: boolean
   onFocusAfterMount?: () => void
   isCompacting?: boolean
@@ -59,6 +61,7 @@ function ComposerFormSurface({
   contextTokens,
   contextWindowTokens,
   disabled = false,
+  inert = false,
   focusOnMount = false,
   onFocusAfterMount,
   isCompacting = false,
@@ -92,10 +95,11 @@ function ComposerFormSurface({
   })
   const state = useSessionComposerState({ onSend, turnConfiguration })
   const send = () => {
-    if (!disabled && onSend) void state.send()
+    if (!disabled && !inert && onSend) void state.send()
   }
   return (
     <form
+      inert={inert}
       className={`${COMPOSER_COLUMN} @container flex h-full min-h-0 flex-col pt-(--spacing-shell-section) pb-(--spacing-session-composer-bottom)`}
       onSubmit={(event) => {
         event.preventDefault()

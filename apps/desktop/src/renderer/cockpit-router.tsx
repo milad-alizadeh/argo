@@ -56,6 +56,7 @@ export function CockpitRouteLayout() {
       isCockpitRouteHandle(match.handle) ? match.handle.sidebar : currentSidebar,
     null,
   )
+  const section = matches.find((match) => isCockpitRouteHandle(match.handle))
 
   if (cockpit.status === 'empty') return <EmptyProjectScreen />
   // Saved Sessions remain readable without a Harness. Other surfaces keep the sign-in gate.
@@ -75,7 +76,7 @@ export function CockpitRouteLayout() {
       sidebar={sidebar}
     >
       {/* Keyed by section, not path: a section switch draws a fresh screen, a Session switch keeps it. */}
-      <Outlet key={matches[1]?.pathname ?? location.pathname} />
+      <Outlet key={section?.pathname ?? location.pathname} />
     </AppShell>
   )
 }

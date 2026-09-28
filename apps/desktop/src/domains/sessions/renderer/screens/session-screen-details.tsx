@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate, useParams } from 'react-router'
 import type { Cockpit } from '@/domains/projects/renderer'
@@ -24,7 +24,11 @@ import {
   composerIdentityKey,
   composerIdentityOf,
 } from '../composer/identity/composer-identity'
-import { COMPOSER_COLUMN, ComposerForm } from '../composer/layout/composer-form'
+import {
+  COMPOSER_COLUMN,
+  ComposerForm,
+  type ComposerFormProps,
+} from '../composer/layout/composer-form'
 import type { CatalogFailure } from '../composer/toolbar/turn-configuration-menu'
 import {
   type TurnConfiguration,
@@ -284,13 +288,25 @@ export function SessionComposerArea({
 
 type LoadedDraft = NonNullable<ReturnType<typeof useDurableComposerDraft>>
 
-function composerPhase(draft: LoadedDraft | null) {
-  if (draft === null) return 'loading'
-  return draft.hasDraft ? 'ready' : 'load-failed'
+// Stands in for an owner while no draft is loaded, so the owner's own editor mounts once, with its draft.
+const NO_DRAFT_OWNER = 'composer-no-draft'
+
+function initialFormEditing(draft: LoadedDraft | null, opening: TurnConfiguration | null) {
+  if (draft !== null) return draft.initialEditing
+  return opening === null ? undefined : { turnConfiguration: opening }
+}
+
+// The last form drawn with a loaded draft, drawn again while the next owner's draft loads.
+function useHeldComposerForm(form: ComposerFormProps | null) {
+  const held = useRef<ComposerFormProps | null>(null)
+  useEffect(() => {
+    if (form !== null) held.current = form
+  })
+  return form === null ? held.current : null
 }
 
 // One card at one place in the tree while a draft loads and after, so a Session switch swaps its
-// content instead of mounting a new card (#2836). A loading card is disabled and saves nothing.
+// content instead of mounting a new card (#2836). A loading card looks enabled, but is inert.
 function SessionComposer({
   permission,
   questionPending,
@@ -334,44 +350,49 @@ function SessionComposer({
     identity,
     projectId: identity.kind === 'draft' ? identity.projectId : null,
   })
-  const loadingEditing = opening === null ? undefined : { turnConfiguration: opening }
+  const form: ComposerFormProps = {
+    sessionId: draft?.hasDraft === true ? composerKey : NO_DRAFT_OWNER,
+    initialEditing: initialFormEditing(draft, opening),
+    onEditingChange: draft?.onEditingChange,
+    focusOnMount,
+    onFocusAfterMount,
+    turnConfigurationChoices: choices,
+    catalogFailure,
+    refreshCatalog: draft === null ? onRetryCatalog : onRefreshCatalog,
+    workspace: workspaceControl(identity, workspaceCockpit, workspaceActions),
+    contextTokens: session?.contextTokens,
+    contextWindowTokens: session?.contextWindowTokens,
+    disabled: questionPending || (draft?.loadFailed === true && !draft.hasDraft),
+    harness,
+    permissionPrompt: (
+      <PermissionPrompt
+        harness={harness.harness}
+        permission={permission.permission}
+        onDecide={permission.decide}
+      />
+    ),
+    plan: session?.plan ?? null,
+    onSend,
+    isRunning,
+    onInterrupt,
+  }
+  const held = useHeldComposerForm(draft === null ? null : form)
   return (
     <>
       <ComposerNotices
         catalogFailure={catalogFailure}
         draft={draft}
         harness={harness}
-        loading={draft === null && choices === null}
+        loading={draft === null && held === null && choices === null}
         onRetryCatalog={onRetryCatalog}
         onRetryDraft={onRetryDraft}
         permissionFailure={permission.failure}
       />
-      <ComposerForm
-        sessionId={`${composerKey}:${composerPhase(draft)}`}
-        initialEditing={draft === null ? loadingEditing : draft.initialEditing}
-        onEditingChange={draft?.onEditingChange}
-        focusOnMount={focusOnMount}
-        onFocusAfterMount={onFocusAfterMount}
-        turnConfigurationChoices={choices}
-        catalogFailure={catalogFailure}
-        refreshCatalog={draft === null ? onRetryCatalog : onRefreshCatalog}
-        workspace={workspaceControl(identity, workspaceCockpit, workspaceActions)}
-        contextTokens={session?.contextTokens}
-        contextWindowTokens={session?.contextWindowTokens}
-        disabled={draft === null || questionPending || (draft.loadFailed && !draft.hasDraft)}
-        harness={harness}
-        permissionPrompt={
-          <PermissionPrompt
-            harness={harness.harness}
-            permission={permission.permission}
-            onDecide={permission.decide}
-          />
-        }
-        plan={session?.plan ?? null}
-        onSend={onSend}
-        isRunning={isRunning}
-        onInterrupt={onInterrupt}
-      />
+      {draft === null ? (
+        <ComposerForm {...(held ?? form)} inert onEditingChange={undefined} />
+      ) : (
+        <ComposerForm {...form} />
+      )}
     </>
   )
 }

@@ -1,39 +1,37 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { isTRPCClientError } from '@trpc/client'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { attachmentKindOf } from '@/domains/sessions/api/attachments'
 import type { AppRouter } from '@/platform/main/trpc-router'
-import { type RouterInputs, type RouterOutputs, trpc } from '@/platform/renderer/trpc-client'
+import { type RouterInputs, trpc } from '@/platform/renderer/trpc-client'
 import { invalidateSessionList } from '../../session-queries'
 import type { ComposerEditing } from '../editing/composer-editing'
-import {
-  supportedConfiguration,
-  type TurnConfiguration,
-  type TurnConfigurationChoices,
+import type {
+  TurnConfiguration,
+  TurnConfigurationChoices,
 } from '../turn-configuration/turn-configuration'
+import {
+  adoptComposerDraft,
+  type ComposerDraftRecord,
+  contentFromEditing,
+  type DraftContent,
+  type DraftTarget,
+  type DraftValue,
+  fingerprint,
+  type LoadedDraft,
+  loadedDraft,
+  type PersistedDraft,
+  useCachedComposerDraft,
+} from './composer-draft-adoption'
+import { forgetComposerDraft, rememberComposerDraft } from './composer-draft-cache'
 import { shouldLoadComposerDraft } from './composer-draft-load'
 import { type ComposerDraftActionInput, useComposerDraftSubmit } from './composer-draft-submit'
 
-export type DraftTarget = RouterInputs['composerDraftCreate']['target']
-export type DraftContent = RouterInputs['composerDraftCreate']['content']
-type DraftValue = RouterOutputs['composerDraftCreate']
+export type { DraftContent, DraftTarget }
 
-type PersistedDraft = {
-  id: string
-  revision: number
-  owner: string
-  fingerprint: string
-}
-type DraftLoadDependencies = {
+type DraftLoadDependencies = ComposerDraftRecord & {
   create: (input: RouterInputs['composerDraftCreate']) => Promise<DraftValue>
-  persisted: React.RefObject<Map<string, PersistedDraft>>
-  latestEditing: React.RefObject<ComposerEditing | null>
-  setLoaded: React.Dispatch<
-    React.SetStateAction<{ owner: string; editing: ComposerEditing; target: DraftTarget } | null>
-  >
-  initialFingerprints: React.RefObject<Map<string, string>>
 }
-type ComposerDraftLoadInput = Omit<DraftLoadDependencies, 'setLoaded'> & {
+type ComposerDraftLoadInput = Omit<DraftLoadDependencies, 'setLoaded' | 'remember'> & {
   target: DraftTarget | null
   choices: TurnConfigurationChoices | null
   opening: TurnConfiguration | null
@@ -52,33 +50,6 @@ function ownerKey(target: DraftTarget | null) {
   return target.type === 'project' ? `project:${target.projectId}` : `session:${target.sessionId}`
 }
 
-function contentFromEditing(editing: ComposerEditing): DraftContent | null {
-  if (editing.turnConfiguration === null) return null
-  return {
-    prompt: editing.prompt,
-    attachments: editing.attachments.map(({ path }) => ({ path, kind: attachmentKindOf(path) })),
-    ticketContext: editing.tickets,
-    turnConfiguration: editing.turnConfiguration,
-  }
-}
-
-function editingFromDraft(
-  draft: DraftValue,
-  choices: TurnConfigurationChoices,
-  fallback: TurnConfiguration,
-): ComposerEditing {
-  return {
-    prompt: draft.prompt,
-    attachments: draft.attachments.map(({ path }, index) => ({
-      id: `${draft.id}:${index}`,
-      path,
-      status: 'idle',
-    })),
-    tickets: draft.ticketContext,
-    turnConfiguration: supportedConfiguration(choices, draft.turnConfiguration, fallback),
-  }
-}
-
 function startComposerDraftLoad(
   input: DraftLoadDependencies & {
     target: DraftTarget
@@ -93,40 +64,23 @@ function startComposerDraftLoad(
   void (async () => {
     const draft = input.draft ?? (await input.create({ target: input.target, content: empty }))
     if (!active) return
-    const editing = editingFromDraft(draft, input.choices, input.opening)
-    const content = contentFromEditing(editing)
-    if (content === null) return
-    const renderedFingerprint = fingerprint(draft.target, content)
-    const storedContent: DraftContent = {
-      prompt: draft.prompt,
-      attachments: draft.attachments,
-      ticketContext: draft.ticketContext,
-      turnConfiguration: draft.turnConfiguration,
-    }
-    input.persisted.current.set(input.owner, {
-      id: draft.id,
-      revision: draft.revision,
-      owner: input.owner,
-      fingerprint: fingerprint(draft.target, storedContent),
-    })
-    input.initialFingerprints.current.set(input.owner, renderedFingerprint)
-    input.latestEditing.current = editing
-    input.setLoaded({ owner: input.owner, editing, target: draft.target })
+    const { owner, choices, opening } = input
+    adoptComposerDraft(input, loadedDraft({ owner, draft, choices, opening }), draft)
   })()
   return () => {
     active = false
   }
 }
 
-function fingerprint(target: DraftTarget, content: DraftContent) {
-  return JSON.stringify({ target, content })
-}
-
-function draftLoadIdentities(
-  target: DraftTarget | null,
-  choices: TurnConfigurationChoices | null,
-  opening: TurnConfiguration | null,
-) {
+function draftLoadIdentities({
+  target,
+  choices,
+  opening,
+}: {
+  target: DraftTarget | null
+  choices: TurnConfigurationChoices | null
+  opening: TurnConfiguration | null
+}) {
   return {
     targetIdentity: target === null ? null : JSON.stringify(target),
     choicesIdentity: JSON.stringify(choices),
@@ -185,6 +139,7 @@ function startDraftLoadIfReady(
     latestEditing: input.latestEditing,
     setLoaded: input.setLoaded,
     initialFingerprints: input.initialFingerprints,
+    remember: input.remember,
   })
 }
 
@@ -218,27 +173,25 @@ function startComposerDraftLoadEffect(
   return startDraftLoadIfReady(input)
 }
 
-function useStartComposerDraftLoad(
-  input: ComposerDraftLoadInput & {
-    setLoaded: DraftLoadDependencies['setLoaded']
-    loaded: { owner: string; editing: ComposerEditing; target: DraftTarget } | null
-    query: {
-      isPending: boolean
-      isFetching: boolean
-      isError: boolean
-      data: DraftValue | null | undefined
-    }
-  },
-) {
+type DraftReadState = {
+  isPending: boolean
+  isFetching: boolean
+  isError: boolean
+  data: DraftValue | null | undefined
+}
+
+type DraftLoadStart = ComposerDraftLoadInput &
+  Pick<DraftLoadDependencies, 'setLoaded' | 'remember'> & {
+    loadedOwner: string | null
+    query: DraftReadState
+  }
+
+function useStartComposerDraftLoad(input: DraftLoadStart) {
   const targetRef = useRef(input.target)
   const configurationRef = useRef({ choices: input.choices, opening: input.opening })
   targetRef.current = input.target
   configurationRef.current = { choices: input.choices, opening: input.opening }
-  const { targetIdentity, choicesIdentity, openingIdentity } = draftLoadIdentities(
-    input.target,
-    input.choices,
-    input.opening,
-  )
+  const { targetIdentity, choicesIdentity, openingIdentity } = draftLoadIdentities(input)
   useEffect(() => {
     if (!input.targetRestored) return
     return startComposerDraftLoadEffect({
@@ -246,6 +199,7 @@ function useStartComposerDraftLoad(
       persisted: input.persisted,
       latestEditing: input.latestEditing,
       initialFingerprints: input.initialFingerprints,
+      remember: input.remember,
       target: targetRef.current,
       choices: configurationRef.current.choices,
       opening: configurationRef.current.opening,
@@ -256,7 +210,7 @@ function useStartComposerDraftLoad(
       latestTarget: targetRef.current,
       latestChoices: configurationRef.current.choices,
       latestOpening: configurationRef.current.opening,
-      loadedOwner: input.loaded?.owner ?? null,
+      loadedOwner: input.loadedOwner,
       isPending: input.query.isPending,
       isFetching: input.query.isFetching,
       isError: input.query.isError,
@@ -270,7 +224,7 @@ function useStartComposerDraftLoad(
     targetIdentity,
     choicesIdentity,
     openingIdentity,
-    input.loaded?.owner,
+    input.loadedOwner,
     input.query.data,
     input.query.isFetching,
     input.query.isError,
@@ -279,23 +233,32 @@ function useStartComposerDraftLoad(
     input.persisted,
     input.latestEditing,
     input.initialFingerprints,
+    input.remember,
     input.setLoaded,
   ])
 }
 
 function useComposerDraftLoad(input: ComposerDraftLoadInput) {
+  const queryClient = useQueryClient()
   const queryInput = input.target ?? { type: 'session' as const, sessionId: 'disabled' }
   const query = useQuery({
     ...trpc.composerDraftRead.queryOptions(queryInput),
     enabled: input.target !== null,
   })
-  const [loaded, setLoaded] = useState<{
-    owner: string
-    editing: ComposerEditing
-    target: DraftTarget
-  } | null>(null)
-  useStartComposerDraftLoad({ ...input, loaded, query, setLoaded })
-  const current = loaded?.owner === input.owner ? loaded : undefined
+  const [loaded, setLoaded] = useState<LoadedDraft | null>(null)
+  const remember = useCallback(
+    (owner: string, draft: DraftValue) => rememberComposerDraft(queryClient, owner, draft),
+    [queryClient],
+  )
+  const cached = useCachedComposerDraft({ ...input, remember, setLoaded }, loaded?.owner ?? null)
+  const current = loaded?.owner === input.owner ? loaded : cached
+  useStartComposerDraftLoad({
+    ...input,
+    remember,
+    loadedOwner: current?.owner ?? loaded?.owner ?? null,
+    query,
+    setLoaded,
+  })
   const readTarget = query.data === undefined ? undefined : (query.data?.target ?? null)
   return {
     editing: current?.editing,
@@ -351,6 +314,7 @@ function usePersistComposerDraft(input: {
         }
         persisted.current.set(owner, next)
         queryClient.setQueryData(trpc.composerDraftRead.queryKey(target), draft)
+        rememberComposerDraft(queryClient, owner, draft)
         setSaveFailureOwner((failedOwner) => (failedOwner === owner ? null : failedOwner))
         return next
       })
@@ -529,7 +493,7 @@ function useComposerDraftPersistence(input: {
     setSaveFailureOwner,
     setSendFailure,
     suppressNextEmptyAutosave,
-    clearAcceptedDraft: clearComposerDraftCache(target, queryClient),
+    clearAcceptedDraft: clearComposerDraftCache(target, owner, queryClient),
   })
   return {
     persisted,
@@ -544,10 +508,12 @@ function useComposerDraftPersistence(input: {
 
 function clearComposerDraftCache(
   target: DraftTarget | null,
+  owner: string | null,
   queryClient: ReturnType<typeof useQueryClient>,
 ) {
   return (saved: PersistedDraft) => {
-    if (target === null) return
+    if (target === null || owner === null) return
+    forgetComposerDraft(queryClient, owner, saved)
     queryClient.setQueryData<DraftValue | null>(
       trpc.composerDraftRead.queryKey(target),
       (current) =>
