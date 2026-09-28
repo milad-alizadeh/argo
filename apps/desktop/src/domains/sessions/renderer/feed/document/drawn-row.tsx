@@ -9,6 +9,7 @@ import type { Reveal } from '../scroll/reveal'
 export type DrawnRowProps = {
   row: SessionFeedRow
   height?: number
+  measurement?: boolean
   reveal?: Reveal
   streaming?: boolean
 }
@@ -39,15 +40,13 @@ export function useDrawnRow(inputs: DrawnRowInputs) {
   openEvidence.current = inputs.onOpenEvidence
   const toolGroups = inputs.toolGroups
   const revealCache = inputs.revealCache
+  const measurementCache = useRef<RevealCache>(new Map()).current
   const answerQuestion = useRef(inputs.onAnswerQuestion)
   answerQuestion.current = inputs.onAnswerQuestion
   const answeringId = useRef(inputs.answeringQuestionId)
   answeringId.current = inputs.answeringQuestionId
-  const failureFor = useRef<(questionId: string) => string | null>(
-    typeof inputs.questionFailure === 'function' ? inputs.questionFailure : noQuestionFailure,
-  )
-  failureFor.current =
-    typeof inputs.questionFailure === 'function' ? inputs.questionFailure : noQuestionFailure
+  const failureFor = useRef(inputs.questionFailure ?? noQuestionFailure)
+  failureFor.current = inputs.questionFailure ?? noQuestionFailure
   const sessionId = inputs.sessionId
   const questionLocked = inputs.questionLocked
   const onOpenEvidence = useCallback(
@@ -68,13 +67,21 @@ export function useDrawnRow(inputs: DrawnRowInputs) {
         activeEvidenceId={evidence.current}
         onOpenEvidence={onOpenEvidence}
         toolGroups={toolGroups}
-        revealCache={revealCache}
+        revealCache={props.measurement ? measurementCache : revealCache}
         onAnswerQuestion={onAnswerQuestion}
         answering={answeringId.current === props.row.id}
         questionFailure={questionFailure(props.row.id)}
         questionLocked={questionLocked}
       />
     ),
-    [onAnswerQuestion, onOpenEvidence, questionFailure, questionLocked, toolGroups, revealCache],
+    [
+      onAnswerQuestion,
+      onOpenEvidence,
+      questionFailure,
+      questionLocked,
+      toolGroups,
+      revealCache,
+      measurementCache,
+    ],
   )
 }

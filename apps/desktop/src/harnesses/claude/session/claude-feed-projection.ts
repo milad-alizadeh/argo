@@ -1,22 +1,20 @@
-import { z } from 'zod'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { ClaudeSkillFile } from './claude-skill-files'
 
 type Delegation = Extract<FeedContent, { kind: 'delegation' }>
 type Tool = Extract<FeedContent, { kind: 'tool' }>
 
-const agentInputSchema = z.object({
-  description: z.string().optional(),
-  subagent_type: z.string().optional(),
-  prompt: z.string().optional(),
-  model: z.string().optional(),
-})
-const skillInputSchema = z.object({ skill: z.string().min(1), args: z.string().optional() })
 const AGENT_TOOLS = new Set(['Agent', 'Task'])
 // The launch or reply text of an Agent call names the id its transcript is stored under.
 const AGENT_ID = /^agentId: ([\w-]+)/m
 const ASYNC_LAUNCH = 'Async agent launched'
 const SLASH_COMMAND = /^\/(\S+)(?:\s+([\s\S]*))?$/
+
+function inputField(input: Tool['input'], key: string): string | null {
+  if (input === null || typeof input !== 'object' || Array.isArray(input)) return null
+  const value = input[key]
+  return typeof value === 'string' ? value : null
+}
 
 function resultText(content: Tool): string {
   return (content.output ?? [])
@@ -83,21 +81,26 @@ export class ClaudeFeedProjection {
   }
 
   private call(content: Tool): FeedContent[] {
-    const skill = content.name === 'Skill' ? skillInputSchema.safeParse(content.input) : null
-    if (skill?.success) {
+    const skill = content.name === 'Skill' ? inputField(content.input, 'skill') : null
+    if (skill !== null && skill !== '') {
       this.skillCalls.add(content.callId)
       return [
         {
           id: content.id,
           kind: 'reference',
           referenceType: 'skill',
-          label: skill.data.skill,
-          target: this.skillFile(skill.data.skill),
-          text: skill.data.args ?? null,
+          label: skill,
+          target: this.skillFile(skill),
+          text: inputField(content.input, 'args'),
         },
       ]
     }
-    if (!AGENT_TOOLS.has(content.name) || !agentInputSchema.safeParse(content.input).success)
+    if (
+      !AGENT_TOOLS.has(content.name) ||
+      content.input === null ||
+      typeof content.input !== 'object' ||
+      Array.isArray(content.input)
+    )
       return [content]
     this.calls.set(content.callId, { call: content, delegation: null })
     return []
@@ -118,15 +121,16 @@ export class ClaudeFeedProjection {
     agentId: string,
     status: Delegation['status'],
   ): Delegation {
-    const input = agentInputSchema.parse(known.call.input)
     known.delegation = {
       id: known.call.callId,
       kind: 'delegation',
       agentId,
       status,
-      name: input.description ?? input.subagent_type ?? null,
-      prompt: input.prompt ?? null,
-      model: input.model ?? null,
+      name:
+        inputField(known.call.input, 'description') ??
+        inputField(known.call.input, 'subagent_type'),
+      prompt: inputField(known.call.input, 'prompt'),
+      model: inputField(known.call.input, 'model'),
       summary: null,
     }
     return known.delegation

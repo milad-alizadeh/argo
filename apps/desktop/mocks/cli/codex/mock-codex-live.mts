@@ -66,6 +66,41 @@ function handleResponse(id: string | number) {
   finish(waiting, 'completed')
 }
 
+function notifyFeedActivity(active: ActiveTurn) {
+  const { thread, turn } = active
+  setTimeout(
+    () =>
+      send({
+        method: 'item/started',
+        params: {
+          threadId: thread.id,
+          turnId: turn.id,
+          item: {
+            id: `${turn.id}-command`,
+            type: 'commandExecution',
+            command: 'rtk bun run typecheck',
+            status: 'inProgress',
+          },
+        },
+      }),
+    1_200,
+  )
+  setTimeout(
+    () =>
+      send({
+        method: 'item/reasoning/summaryTextDelta',
+        params: {
+          threadId: thread.id,
+          turnId: turn.id,
+          itemId: `${turn.id}-reason`,
+          summaryIndex: 0,
+          delta: 'Inspecting the results',
+        },
+      }),
+    2_400,
+  )
+}
+
 function notifyTurn(active: ActiveTurn) {
   const { thread, turn, prompt } = active
   send({
@@ -76,6 +111,7 @@ function notifyTurn(active: ActiveTurn) {
     method: 'item/completed',
     params: { threadId: thread.id, turnId: turn.id, item: turn.items[0] },
   })
+  if (prompt.includes('FeedActivityProbe')) notifyFeedActivity(active)
   if (prompt === 'Need approval') {
     const requestId = `approval-${turn.id}`
     pending.set(requestId, active)

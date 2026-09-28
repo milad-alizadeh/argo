@@ -7,6 +7,7 @@ import type { Reveal } from './reveal'
 
 export type FeedRowComponent = (props: {
   row: SessionFeedRow
+  measurement?: boolean
   reveal?: Reveal
   streaming?: boolean
 }) => ReactNode

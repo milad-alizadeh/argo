@@ -1,6 +1,9 @@
-import type { FeedContent } from '@/domains/sessions/api/feed-content'
+import type { FeedContent, MediaSource } from '@/domains/sessions/api/feed-content'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import type { SessionFeedRow } from '../../types'
+import type { ToolCall } from '../source/tool-call'
+import { checkedDataImageUrl, dataImageUrl, fileImageUrl } from './feed-images'
+import { toolRows } from './tool-feed'
 
 function workStatus(
   status: Extract<FeedContent, { kind: 'tool' }>['status'],
@@ -24,34 +27,163 @@ function textOutput(content: Extract<FeedContent, { kind: 'tool' }>): string | n
   return text.length === 0 ? null : text.join('\n')
 }
 
+function presentedToolRow(
+  call: ToolCall,
+  status: Extract<FeedContent, { kind: 'tool' }>['status'],
+  output: string[],
+): SessionFeedRow {
+  const results = new Map(
+    output.length === 0 && status !== 'completed' && status !== 'failed'
+      ? []
+      : [
+          [
+            call.id,
+            {
+              blocks: output.map((text) => ({ shape: 'text' as const, text })),
+              failed: status === 'failed',
+            },
+          ],
+        ],
+  )
+  const row = toolRows([call], { results, skillBodies: new Map() })[0]
+  if (row?.shape !== 'tool') throw new Error('A tool content item must draw one tool row.')
+  return { ...row, status: workStatus(status) }
+}
+
 function toolContentRow(content: Extract<FeedContent, { kind: 'tool' }>): SessionFeedRow {
   const source = textOutput(content)
-  return {
-    shape: 'tool',
+  const label = content.presentation?.label ?? content.summary ?? (content.name || content.callId)
+  const call: ToolCall = {
     id: content.callId,
-    kind: 'tool',
-    label: content.name || content.summary || content.callId,
-    lineCounts: null,
-    status: workStatus(content.status),
-    evidence:
-      source === null ? null : { kind: 'output', title: content.name || content.callId, source },
+    kind: 'other',
+    label,
     text: null,
+    source: null,
+    ...(content.presentation === undefined ? {} : { presentation: content.presentation }),
   }
+  return presentedToolRow(call, content.status, source === null ? [] : [source])
 }
 
 function commandContentRow(content: Extract<FeedContent, { kind: 'command' }>): SessionFeedRow {
-  return {
-    shape: 'tool',
+  const call: ToolCall = {
     id: content.id,
-    kind: 'command',
-    label: content.command ?? content.id,
-    lineCounts: null,
-    status: workStatus(content.status),
-    evidence:
-      content.output === null
-        ? null
-        : { kind: 'output', title: content.command ?? content.id, source: content.output },
+    kind: 'execute',
+    command: content.command,
+    label: null,
     text: content.command,
+    background: false,
+  }
+  const output = [content.output, content.stderr].filter((part): part is string => part !== null)
+  return presentedToolRow(call, content.status, output)
+}
+
+function mediaUrl(source: MediaSource): string | null {
+  switch (source.kind) {
+    case 'data':
+      return dataImageUrl(source.mimeType, source.base64)
+    case 'path':
+      return fileImageUrl(source.path)
+    case 'url':
+      return checkedDataImageUrl(source.url)
+  }
+}
+
+function toolOutputRows(content: Extract<FeedContent, { kind: 'tool' }>): SessionFeedRow[] {
+  return (content.output ?? []).flatMap((part, index): SessionFeedRow[] => {
+    const id = `${content.callId}:output:${index}`
+    switch (part.kind) {
+      case 'text':
+        return []
+      case 'image': {
+        const source = mediaUrl(part.source)
+        return source === null
+          ? [{ shape: 'event', id, event: 'media', text: 'image' }]
+          : [{ shape: 'image', id, role: 'assistant', source }]
+      }
+      case 'audio':
+      case 'document':
+        return [{ shape: 'event', id, event: 'media', text: part.kind }]
+      case 'json':
+        return [
+          {
+            shape: 'source',
+            id,
+            role: 'assistant',
+            label: content.name,
+            source: JSON.stringify(part.value),
+          },
+        ]
+      case 'encrypted':
+        return [{ shape: 'event', id, event: 'diagnostic', text: null }]
+      default:
+        return part satisfies never
+    }
+  })
+}
+
+function mergeToolContent(
+  earlier: Extract<FeedContent, { kind: 'tool' }> | undefined,
+  update: Extract<FeedContent, { kind: 'tool' }>,
+): Extract<FeedContent, { kind: 'tool' }> {
+  if (earlier === undefined) return update
+  return {
+    ...update,
+    name: update.name || earlier.name,
+    input: update.input ?? earlier.input,
+    output: update.output ?? earlier.output,
+    summary: update.summary ?? earlier.summary,
+    presentation: update.presentation ?? earlier.presentation,
+  }
+}
+
+function mergeProgressContent(
+  earlier: Extract<FeedContent, { kind: 'task' | 'delegation' }> | undefined,
+  update: Extract<FeedContent, { kind: 'task' | 'delegation' }>,
+): Extract<FeedContent, { kind: 'task' | 'delegation' }> {
+  if (earlier === undefined || earlier.kind !== update.kind) return update
+  if (update.kind === 'task' && earlier.kind === 'task')
+    return {
+      ...update,
+      callId: update.callId ?? earlier.callId,
+      status: update.status ?? earlier.status,
+      description: update.description ?? earlier.description,
+      summary: update.summary ?? earlier.summary,
+    }
+  if (update.kind === 'delegation' && earlier.kind === 'delegation')
+    return {
+      ...update,
+      name: update.name ?? earlier.name,
+      prompt: update.prompt ?? earlier.prompt,
+      model: update.model ?? earlier.model,
+      summary: update.summary ?? earlier.summary,
+    }
+  return update
+}
+
+function joinContent(
+  content: FeedContent,
+  tools: Map<string, Extract<FeedContent, { kind: 'tool' }>>,
+  progress: Map<string, Extract<FeedContent, { kind: 'task' | 'delegation' }>>,
+): FeedContent {
+  switch (content.kind) {
+    case 'tool': {
+      const joined = mergeToolContent(tools.get(content.callId), content)
+      tools.set(content.callId, joined)
+      return joined
+    }
+    case 'task': {
+      const joined = mergeProgressContent(progress.get(content.taskId), content)
+      const stable = { ...joined, id: content.taskId }
+      progress.set(content.taskId, stable)
+      return stable
+    }
+    case 'delegation': {
+      const joined = mergeProgressContent(progress.get(content.id), content)
+      progress.set(content.id, joined)
+      return joined
+    }
+    default:
+      return content
   }
 }
 
@@ -110,84 +242,210 @@ function permissionEventKind(
   }
 }
 
+function fileChangeEvidence(
+  change: Extract<FeedContent, { kind: 'fileChange' }>['changes'][number],
+): string {
+  const text = change.diff ?? ''
+  switch (change.change) {
+    case 'add':
+    case 'delete': {
+      const lines = text === '' ? [] : text.replace(/\n$/, '').split('\n')
+      const added = change.change === 'add'
+      const verb = added ? 'Add' : 'Delete'
+      const oldRange = added || lines.length === 0 ? '0,0' : `1,${lines.length}`
+      const newRange = !added || lines.length === 0 ? '0,0' : `1,${lines.length}`
+      const prefix = added ? '+' : '-'
+      return [
+        `${verb} File: ${change.path}`,
+        `@@ -${oldRange} +${newRange} @@`,
+        ...lines.map((line) => `${prefix}${line}`),
+      ].join('\n')
+    }
+    case 'update':
+    case 'unknown':
+      return `Update File: ${change.path}\n${text}`
+  }
+}
+
+function fileChangeRow(content: Extract<FeedContent, { kind: 'fileChange' }>): SessionFeedRow {
+  const files = content.changes.map((change) => change.path)
+  if (files.length === 0)
+    return {
+      shape: 'event',
+      id: content.id,
+      event: 'fileChange',
+      text: null,
+      status: content.status,
+    }
+  const lastChange = content.changes.at(-1)?.change
+  let kind: Extract<SessionFeedRow, { shape: 'tool' }>['kind'] = 'edited'
+  if (lastChange === 'add') kind = 'created'
+  if (lastChange === 'delete') kind = 'deleted'
+  const label = files.join(', ')
+  return {
+    shape: 'tool',
+    id: content.id,
+    kind,
+    label,
+    lineCounts: null,
+    status: workStatus(content.status),
+    evidence: {
+      kind: 'diff',
+      title: label,
+      source: content.changes.map(fileChangeEvidence).join('\n'),
+    },
+    text: null,
+  }
+}
+
+function markerRow(content: Extract<FeedContent, { kind: 'marker' }>): SessionFeedRow {
+  if (content.marker === 'compaction' || content.marker === 'interrupted')
+    return {
+      shape: 'marker',
+      id: content.id,
+      marker: content.marker === 'compaction' ? 'compacted' : 'interrupted',
+      summary: content.summary,
+    }
+  return { shape: 'event', id: content.id, event: 'status', text: content.summary }
+}
+
+function imageGenerationRow(
+  content: Extract<FeedContent, { kind: 'imageGeneration' }>,
+): SessionFeedRow {
+  const source = content.source === null ? null : mediaUrl(content.source)
+  if (source !== null) return { shape: 'image', id: content.id, role: 'assistant', source }
+  return {
+    shape: 'event',
+    id: content.id,
+    event: 'imageGeneration',
+    text: content.failure ?? content.prompt,
+    status: content.status,
+  }
+}
+
+function eventContentRow(
+  content: FeedContent,
+  event: Extract<SessionFeedRow, { shape: 'event' }>['event'],
+  text: string | null,
+): Extract<SessionFeedRow, { shape: 'event' }> {
+  return { shape: 'event', id: content.id, event, text }
+}
+
+function taskContentRow(
+  content: Extract<FeedContent, { kind: 'task' }>,
+): Extract<SessionFeedRow, { shape: 'event' }> {
+  return {
+    ...eventContentRow(content, 'task', content.description ?? content.summary ?? content.taskId),
+    ...(content.status === null ? {} : { status: content.status }),
+  }
+}
+
+function notificationContentRow(
+  content: Extract<FeedContent, { kind: 'notification' }>,
+): SessionFeedRow | null {
+  return content.category === 'status' ? null : eventContentRow(content, 'status', content.text)
+}
+
 // Decoders preserve content semantics; this maps that content to the existing Feed display rows.
 function contentRow(content: FeedContent): SessionFeedRow | null {
   switch (content.kind) {
     case 'message':
-      return content.role === 'system'
-        ? null
+      if (content.role === 'system')
+        return { shape: 'event', id: content.id, event: 'context', text: content.text }
+      return content.phase === 'commentary'
+        ? { shape: 'thought', id: content.id, text: content.text }
         : { shape: 'prose', id: content.id, role: content.role, text: content.text }
     case 'reasoning':
-      return content.text === null ? null : { shape: 'thought', id: content.id, text: content.text }
+      return content.text === null
+        ? { shape: 'event', id: content.id, event: 'reasoning', text: null }
+        : { shape: 'thought', id: content.id, text: content.text }
+    case 'media': {
+      const source = content.mediaType === 'image' ? mediaUrl(content.source) : null
+      return source === null
+        ? { shape: 'event', id: content.id, event: 'media', text: content.mediaType }
+        : { shape: 'image', id: content.id, role: content.role ?? 'assistant', source }
+    }
+    case 'reference':
+      return referenceContentRow(content)
     case 'tool':
       return toolContentRow(content)
     case 'command':
       return commandContentRow(content)
-    case 'notification':
-      return content.category === 'status'
-        ? null
-        : { shape: 'event', id: content.id, event: 'status', text: content.text }
-    case 'context':
-      return { shape: 'event', id: content.id, event: 'context', text: content.text }
-    case 'marker':
-      return content.marker === 'compaction' || content.marker === 'interrupted'
-        ? {
-            shape: 'marker',
-            id: content.id,
-            marker: content.marker === 'compaction' ? 'compacted' : 'interrupted',
-            summary: content.summary,
-          }
-        : { shape: 'event', id: content.id, event: 'status', text: content.summary }
+    case 'fileChange':
+      return fileChangeRow(content)
     case 'delegation':
       return delegationContentRow(content)
-    case 'reference':
-      return referenceContentRow(content)
-    case 'media':
-    case 'fileChange':
     case 'search':
+      return eventContentRow(content, content.kind, content.query)
     case 'plan':
+      return eventContentRow(content, content.kind, content.text)
     case 'task':
+      return taskContentRow(content)
+    case 'notification':
+      return notificationContentRow(content)
+    case 'context':
+      return eventContentRow(content, content.kind, content.text)
+    case 'marker':
+      return markerRow(content)
     case 'refusal':
+      return eventContentRow(content, content.kind, content.text)
     case 'imageGeneration':
+      return imageGenerationRow(content)
     case 'wait':
+      return eventContentRow(content, content.kind, `${content.durationMs} ms`)
     case 'diagnostic':
-      return null
+      return eventContentRow(content, content.kind, content.vendorType)
   }
 }
 
-function liveRow(event: SessionLiveEvent): SessionFeedRow | null {
+function contentRows(content: FeedContent): SessionFeedRow[] {
+  const row = contentRow(content)
+  if (row === null) return []
+  if (content.kind === 'tool') return [row, ...toolOutputRows(content)]
+  return [row]
+}
+
+function liveRows(event: SessionLiveEvent): SessionFeedRow[] {
   switch (event.type) {
     case 'content':
-      return contentRow(event.content)
+      return contentRows(event.content)
     case 'status':
-      return {
-        shape: 'event',
-        id: `status:${event.vendorEventId ?? event.sequence}`,
-        event: 'liveStatus',
-        text: event.status,
-      }
+      return [
+        {
+          shape: 'event',
+          id: `status:${event.vendorEventId ?? event.sequence}`,
+          event: 'liveStatus',
+          text: event.status,
+        },
+      ]
     case 'permission':
-      return {
-        shape: 'event',
-        id: event.requestId,
-        event: permissionEventKind(event.decision),
-        text: event.description,
-      }
+      return [
+        {
+          shape: 'event',
+          id: event.requestId,
+          event: permissionEventKind(event.decision),
+          text: event.description,
+        },
+      ]
     case 'question':
-      return {
-        shape: 'ask',
-        id: event.requestId,
-        questions: event.questions,
-        answer: event.answer,
-        unsupported: null,
-      }
+      return [
+        {
+          shape: 'ask',
+          id: event.requestId,
+          questions: event.questions,
+          answer: event.answer,
+          unsupported: null,
+        },
+      ]
     case 'failure':
-      return {
-        shape: 'event',
-        id: `failure:${event.sequence}`,
-        event: 'liveFailure',
-        text: null,
-      }
+      return [
+        {
+          shape: 'event',
+          id: `failure:${event.sequence}`,
+          event: 'liveFailure',
+          text: null,
+        },
+      ]
   }
 }
 
@@ -198,44 +456,69 @@ function rowKey(row: SessionFeedRow): string {
 
 type IndexedRows = { rows: SessionFeedRow[]; index: Map<string, number> }
 type LiveRow = { key: string; row: SessionFeedRow; sequence: number }
+type ProjectionState = {
+  questionCalls: Set<string>
+  tools: Map<string, Extract<FeedContent, { kind: 'tool' }>>
+  progress: Map<string, Extract<FeedContent, { kind: 'task' | 'delegation' }>>
+}
+
+function projectedContentRows(content: FeedContent, state: ProjectionState): SessionFeedRow[] {
+  if (content.kind === 'tool' && state.questionCalls.has(content.callId)) return []
+  return contentRows(joinContent(content, state.tools, state.progress))
+}
+
+function upsertRows<Row>(
+  target: { rows: Row[]; index: Map<string, number> },
+  projected: SessionFeedRow[],
+  makeRow: (key: string, row: SessionFeedRow) => Row,
+) {
+  for (const row of projected) {
+    const key = rowKey(row)
+    const prior = target.index.get(key)
+    const next = makeRow(key, row)
+    if (prior === undefined) {
+      target.index.set(key, target.rows.length)
+      target.rows.push(next)
+    } else target.rows[prior] = next
+  }
+}
 
 function historyFeedRows(history: readonly FeedContent[], questionCalls: Set<string>): IndexedRows {
   const historyRows: SessionFeedRow[] = []
   const historyIndex = new Map<string, number>()
+  const state: ProjectionState = {
+    questionCalls,
+    tools: new Map(),
+    progress: new Map(),
+  }
   for (const content of history) {
-    if (content.kind === 'tool' && questionCalls.has(content.callId)) continue
-    const row = contentRow(content)
-    if (row === null) continue
-    const key = rowKey(row)
-    const prior = historyIndex.get(key)
-    if (prior === undefined) {
-      historyIndex.set(key, historyRows.length)
-      historyRows.push(row)
-    } else historyRows[prior] = row
+    upsertRows(
+      { rows: historyRows, index: historyIndex },
+      projectedContentRows(content, state),
+      (_key, row) => row,
+    )
   }
   return { rows: historyRows, index: historyIndex }
 }
 
 function liveFeedRows(live: readonly SessionLiveEvent[], questionCalls: Set<string>): LiveRow[] {
-  const liveRows: LiveRow[] = []
+  const rows: LiveRow[] = []
   const liveIndex = new Map<string, number>()
-  for (const event of live) {
-    if (
-      event.type === 'content' &&
-      event.content.kind === 'tool' &&
-      questionCalls.has(event.content.callId)
-    )
-      continue
-    const row = liveRow(event)
-    if (row === null) continue
-    const key = rowKey(row)
-    const prior = liveIndex.get(key)
-    if (prior === undefined) {
-      liveIndex.set(key, liveRows.length)
-      liveRows.push({ key, row, sequence: event.sequence })
-    } else liveRows[prior] = { key, row, sequence: event.sequence }
+  const state: ProjectionState = {
+    questionCalls,
+    tools: new Map(),
+    progress: new Map(),
   }
-  return liveRows
+  for (const event of live) {
+    const projected =
+      event.type === 'content' ? projectedContentRows(event.content, state) : liveRows(event)
+    upsertRows({ rows, index: liveIndex }, projected, (key, row) => ({
+      key,
+      row,
+      sequence: event.sequence,
+    }))
+  }
+  return rows
 }
 
 function mergeFeedRows(history: IndexedRows, live: LiveRow[], settledThrough: number) {

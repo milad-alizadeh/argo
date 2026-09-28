@@ -1,79 +1,90 @@
-import { z } from 'zod'
+import type { SDKMessage } from '@anthropic-ai/claude-agent-sdk'
 import type { FeedContent, MediaSource } from '@/domains/sessions/api/feed-content'
 import { decodeClaudeText, type RejectClaudeShape } from './claude-feed-envelopes'
 
-const messageSchema = z.object({
-  role: z.enum(['user', 'assistant']),
-  content: z.union([z.string(), z.array(z.unknown())]),
-})
-const blockTypeSchema = z.object({ type: z.string() })
-const textSchema = z.object({ type: z.literal('text'), text: z.string() })
-const thinkingSchema = z.object({ type: z.literal('thinking'), thinking: z.string() })
-const toolUseSchema = z.object({
-  type: z.literal('tool_use'),
-  id: z.string().min(1),
-  name: z.string(),
-  input: z.json(),
-})
-const toolResultSchema = z.object({
-  type: z.literal('tool_result'),
-  tool_use_id: z.string().min(1),
-  content: z.union([z.string(), z.array(z.unknown())]).optional(),
-  is_error: z.boolean().optional(),
-})
-const mediaSchema = z.object({
-  type: z.enum(['image', 'document']),
-  source: z.object({
-    type: z.enum(['base64', 'url', 'text']),
-    media_type: z.string().optional(),
-    data: z.string().optional(),
-    url: z.string().optional(),
-  }),
-})
+type AssistantBlock = Extract<SDKMessage, { type: 'assistant' }>['message']['content'][number]
+type TextBlock = Extract<AssistantBlock, { type: 'text' }>
+type ToolUseBlock = Extract<AssistantBlock, { type: 'tool_use' }>
+type UserContent = Extract<SDKMessage, { type: 'user' }>['message']['content']
+type UserBlock = NonNullable<Exclude<UserContent, string>>[number]
+type ToolResultBlock = Extract<UserBlock, { type: 'tool_result' }>
+type ToolResultPart = NonNullable<Exclude<ToolResultBlock['content'], string>>[number]
+type MediaBlock = Extract<AssistantBlock | UserBlock, { type: 'image' | 'document' }>
+export type ClaudeMessage = Extract<SDKMessage, { type: 'user' | 'assistant' }>['message']
 
-type Role = 'user' | 'assistant'
+type Role = Extract<SDKMessage, { type: 'user' | 'assistant' }>['type']
 type ToolPart = NonNullable<Extract<FeedContent, { kind: 'tool' }>['output']>[number]
+type ToolPresentation = NonNullable<Extract<FeedContent, { kind: 'tool' }>['presentation']>
 
-function mediaSource(source: z.infer<typeof mediaSchema>['source']): MediaSource | null {
-  if (source.type === 'url')
-    return source.url === undefined ? null : { kind: 'url', url: source.url }
-  if (source.type === 'text') return null
-  if (source.media_type === undefined || source.data === undefined) return null
-  return { kind: 'data', mimeType: source.media_type, base64: source.data }
+function toolPresentation(name: string, input: unknown): ToolPresentation {
+  const fields =
+    input !== null && typeof input === 'object' && !Array.isArray(input)
+      ? (input as Record<string, unknown>)
+      : {}
+  const word = (key: string) => (typeof fields[key] === 'string' ? fields[key] : null)
+  const description = word('description')
+  const present = (kind: ToolPresentation['kind'], label: string): ToolPresentation => ({
+    kind,
+    label: description ?? label,
+    ...(description === null ? {} : { agentDescription: true }),
+  })
+  switch (name) {
+    case 'Bash': {
+      const command = word('command')?.split('\n')[0] ?? null
+      return present('command', `Ran ${command ?? 'command'}`)
+    }
+    case 'Read':
+      return present('read', `Read ${word('file_path') ?? 'file'}`)
+    case 'Edit':
+      return present('edited', `Edited ${word('file_path') ?? 'file'}`)
+    case 'Write':
+      return present('created', `Created ${word('file_path') ?? 'file'}`)
+    case 'Grep':
+    case 'Glob':
+    case 'WebSearch':
+      return present('searched', `Searched ${word('pattern') ?? word('query') ?? ''}`.trim())
+    case 'WebFetch':
+      return present('read', `Read ${word('url') ?? 'page'}`)
+    case 'Skill':
+      return present('skill', word('skill') ?? 'Skill')
+    default:
+      return present('tool', name)
+  }
 }
 
-function toolPart(raw: unknown, reject: RejectClaudeShape): ToolPart | null {
-  const text = textSchema.safeParse(raw)
-  if (text.success) return { kind: 'text', text: text.data.text }
-  const media = mediaSchema.safeParse(raw)
-  if (media.success && media.data.type === 'image') {
-    const source = mediaSource(media.data.source)
+function mediaSource(source: MediaBlock['source']): MediaSource | null {
+  if (source.type === 'url') return { kind: 'url', url: source.url }
+  if (source.type === 'base64')
+    return { kind: 'data', mimeType: source.media_type, base64: source.data }
+  return null
+}
+
+function toolPart(part: ToolResultPart, reject: RejectClaudeShape): ToolPart | null {
+  if (part.type === 'text') return { kind: 'text', text: part.text }
+  if (part.type === 'image') {
+    const source = mediaSource(part.source)
     if (source !== null) return { kind: 'image', source }
   }
+  // SDK history includes tool_reference metadata outside the SDKMessage content union.
+  if (Reflect.get(part, 'type') === 'tool_reference') return null
   reject('tool-result-part')
   return null
 }
 
-function toolResult(id: string, raw: unknown, reject: RejectClaudeShape): FeedContent | null {
-  const parsed = toolResultSchema.safeParse(raw)
-  if (!parsed.success) {
-    reject('tool-result')
-    return null
-  }
+function toolResult(id: string, result: ToolResultBlock, reject: RejectClaudeShape): FeedContent {
   const output: ToolPart[] = []
-  if (typeof parsed.data.content === 'string')
-    output.push({ kind: 'text', text: parsed.data.content })
+  if (typeof result.content === 'string') output.push({ kind: 'text', text: result.content })
   else
-    for (const part of parsed.data.content ?? []) {
+    for (const part of result.content ?? []) {
       const decoded = toolPart(part, reject)
       if (decoded !== null) output.push(decoded)
     }
   return {
     id,
     kind: 'tool',
-    callId: parsed.data.tool_use_id,
+    callId: result.tool_use_id,
     name: '',
-    status: parsed.data.is_error ? 'failed' : 'completed',
+    status: result.is_error ? 'failed' : 'completed',
     input: null,
     output,
     summary: null,
@@ -81,21 +92,16 @@ function toolResult(id: string, raw: unknown, reject: RejectClaudeShape): FeedCo
 }
 
 function mediaContent(
-  input: { id: string; role: Role; raw: unknown },
+  input: { id: string; role: Role; raw: MediaBlock },
   reject: RejectClaudeShape,
 ): FeedContent | null {
-  const parsed = mediaSchema.safeParse(input.raw)
-  if (!parsed.success) {
-    reject('media-block')
-    return null
-  }
-  const source = mediaSource(parsed.data.source)
-  if (source === null && parsed.data.source.type !== 'text') {
+  const source = mediaSource(input.raw.source)
+  if (source === null && input.raw.source.type !== 'text') {
     reject('media-source')
     return null
   }
-  if (parsed.data.source.type === 'text') {
-    if (parsed.data.type !== 'document' || parsed.data.source.data === undefined) {
+  if (input.raw.source.type === 'text') {
+    if (input.raw.type !== 'document') {
       reject('document-text-source')
       return null
     }
@@ -105,77 +111,59 @@ function mediaContent(
       referenceType: 'pasted',
       label: 'Document text',
       target: null,
-      text: parsed.data.source.data,
+      text: input.raw.source.data,
     }
   }
   if (source === null) return null
-  return { id: input.id, kind: 'media', mediaType: parsed.data.type, source, role: input.role }
+  return { id: input.id, kind: 'media', mediaType: input.raw.type, source, role: input.role }
 }
 
 function decodeBlock(
   input: {
     id: string
     role: Role
-    raw: unknown
+    raw: AssistantBlock | UserBlock
     vendorEnvelope: boolean
     humanInput: boolean
   },
   reject: RejectClaudeShape,
 ): FeedContent | null {
   const { id, role, raw, vendorEnvelope } = input
-  const block = blockTypeSchema.safeParse(raw)
-  if (!block.success) {
-    reject('message-block')
-    return null
-  }
-  switch (block.data.type) {
+  switch (raw.type) {
     case 'text': {
-      const text = textSchema.safeParse(raw)
-      if (!text.success) {
-        reject('text-block')
-        return null
-      }
-      return text.data.text.trim() === ''
+      const text = raw as TextBlock
+      return text.text.trim() === ''
         ? null
         : decodeClaudeText(
-            { id, role, text: text.data.text, vendorEnvelope, humanInput: input.humanInput },
+            { id, role, text: text.text, vendorEnvelope, humanInput: input.humanInput },
             reject,
           )
     }
-    case 'thinking': {
-      const thinking = thinkingSchema.safeParse(raw)
-      if (!thinking.success) {
-        reject('thinking-block')
-        return null
-      }
-      return { id, kind: 'reasoning', text: thinking.data.thinking, redacted: false }
-    }
+    case 'thinking':
+      return { id, kind: 'reasoning', text: raw.thinking, redacted: false }
     case 'redacted_thinking':
       return { id, kind: 'reasoning', text: null, redacted: true }
     case 'tool_use': {
-      const tool = toolUseSchema.safeParse(raw)
-      if (!tool.success) {
-        reject('tool-use')
-        return null
-      }
+      const tool = raw as ToolUseBlock
       return {
         id,
         kind: 'tool',
-        callId: tool.data.id,
-        name: tool.data.name,
+        callId: tool.id,
+        name: tool.name,
         status: 'running',
-        input: tool.data.input,
+        input: tool.input as Extract<FeedContent, { kind: 'tool' }>['input'],
         output: null,
         summary: null,
+        presentation: toolPresentation(tool.name, tool.input),
       }
     }
     case 'tool_result':
-      return toolResult(id, raw, reject)
+      return toolResult(id, raw as ToolResultBlock, reject)
     case 'image':
     case 'document':
-      return mediaContent(input, reject)
+      return mediaContent({ ...input, raw: raw as MediaBlock }, reject)
     default:
-      reject(`message-block:${block.data.type}`)
+      reject(`message-block:${raw.type}`)
       return null
   }
 }
@@ -184,21 +172,16 @@ export function decodeClaudeBlocks(
   input: {
     id: string
     role: Role
-    message: unknown
+    message: ClaudeMessage
     vendorEnvelope: boolean
     humanInput?: boolean
   },
   reject: RejectClaudeShape,
 ): FeedContent[] {
-  const parsed = messageSchema.safeParse(input.message)
-  if (!parsed.success || parsed.data.role !== input.role) {
-    reject('message')
-    return []
-  }
   const blocks =
-    typeof parsed.data.content === 'string'
-      ? [{ type: 'text', text: parsed.data.content }]
-      : parsed.data.content
+    typeof input.message.content === 'string'
+      ? [{ type: 'text', text: input.message.content } as TextBlock]
+      : input.message.content
   const content: FeedContent[] = []
   blocks.forEach((raw, index) => {
     const id = blocks.length === 1 ? input.id : `${input.id}:${index}`

@@ -59,7 +59,7 @@ async function startSession(page: Page, harness: SessionHarness, prompt: string)
   await composer.click()
   await page.keyboard.type(prompt)
   await page.keyboard.press('Enter')
-  const row = page.locator(PERSISTED_ROW).filter({ hasText: prompt })
+  const row = page.locator(PERSISTED_ROW).first()
   await expect(row).toHaveCount(1)
   return row.locator('[data-slot="session-status"]')
 }
@@ -74,6 +74,28 @@ for (const harness of ['claude', 'codex'] as const)
       const dot = await startSession(page, harness, `Roster status for ${harness}`)
       await expect(dot).toHaveAttribute('data-variant', 'active')
       await expect(dot).toHaveAttribute('data-variant', /^(idle|unread)$/, { timeout: 15_000 })
+    } finally {
+      await application.close()
+    }
+  })
+
+for (const harness of ['claude', 'codex'] as const)
+  test(`the ${harness} roster and Feed show the newest activity`, async ({
+    root,
+    applicationUnderTest,
+  }) => {
+    const { application, page } = await launch(root, applicationUnderTest, {
+      [SESSION_MOCK_REPLY_DELAY_MS_ENV]: '6000',
+    })
+    try {
+      const prompt = `FeedActivityProbe ${harness}`
+      await startSession(page, harness, prompt)
+      const row = page.locator(PERSISTED_ROW).first()
+      const feed = page.getByRole('region', { name: 'Session history' })
+      const toolLabel = harness === 'claude' ? 'Check the Feed' : 'rtk bun run typecheck'
+      await expect(feed).toContainText(toolLabel)
+      await expect(row).toContainText('Inspecting the results')
+      await expect(feed).toContainText('Inspecting the results')
     } finally {
       await application.close()
     }

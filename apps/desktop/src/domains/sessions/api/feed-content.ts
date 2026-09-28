@@ -22,7 +22,7 @@ const contentPartSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('encrypted'), bytes: z.string().min(1) }),
 ])
 
-const workStatusSchema = z.enum([
+export const workStatusSchema = z.enum([
   'pending',
   'running',
   'paused',
@@ -31,11 +31,29 @@ const workStatusSchema = z.enum([
   'interrupted',
 ])
 
+export const toolPresentationKindSchema = z.enum([
+  'command',
+  'read',
+  'edited',
+  'created',
+  'deleted',
+  'tool',
+  'skill',
+  'searched',
+])
+export const toolPresentationSchema = z.strictObject({
+  kind: toolPresentationKindSchema,
+  label: z.string(),
+  agentDescription: z.boolean().optional(),
+})
+export type ToolPresentation = z.infer<typeof toolPresentationSchema>
+
 export const feedContentSchema = z.discriminatedUnion('kind', [
   base.extend({
     kind: z.literal('message'),
     role: z.enum(['user', 'assistant', 'system']),
     text: z.string(),
+    phase: z.enum(['commentary', 'final_answer']).nullable().optional(),
   }),
   base.extend({ kind: z.literal('reasoning'), text: z.string().nullable(), redacted: z.boolean() }),
   base.extend({
@@ -59,6 +77,7 @@ export const feedContentSchema = z.discriminatedUnion('kind', [
     input: z.json().nullable(),
     output: z.array(contentPartSchema).nullable(),
     summary: z.string().nullable(),
+    presentation: toolPresentationSchema.optional(),
   }),
   base.extend({
     kind: z.literal('command'),
@@ -153,3 +172,9 @@ export const feedContentSchema = z.discriminatedUnion('kind', [
 ])
 
 export type FeedContent = z.infer<typeof feedContentSchema>
+export const feedContentKindSchema = z.enum(
+  feedContentSchema.options.map((option) => option.shape.kind.value) as [
+    FeedContent['kind'],
+    ...FeedContent['kind'][],
+  ],
+)

@@ -50,7 +50,7 @@ function ignoreJumpToLatestChange(_sessionId: string, _action: (() => void) | nu
 function ignoreMeasurementsChange(_sessionId: string, _measurements: VirtualItem[]) {}
 
 function liveRows(reading: SessionFeed, facts: NonNullable<FeedLiveFacts>): SessionFeedRow[] {
-  const rows = foldSettledToolRuns(reading.rows.filter((row) => row.shape !== 'thought'))
+  const rows = foldSettledToolRuns(reading.rows)
   const hasTrailingThought = reading.rows.at(-1)?.shape === 'thought'
   const activity =
     facts.compactionStartedAt === null &&
@@ -64,7 +64,7 @@ function liveRows(reading: SessionFeed, facts: NonNullable<FeedLiveFacts>): Sess
   const last = rows.at(-1)
   if (last?.shape === 'tool-group' && rows.length - 1 > turnStart)
     return [...rows.slice(0, -1), withHeadline(last, activity)]
-  if (activity.kind !== 'thought') return rows
+  if (activity.kind !== 'thought' || hasTrailingThought) return rows
   return [...rows, { shape: 'thought', id: `${reading.sessionId}:activity`, text: activity.label }]
 }
 

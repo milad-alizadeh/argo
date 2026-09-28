@@ -1,0 +1,6 @@
+{
+  "activity": {
+    "command": "Ran {{command}}",
+    "unknownCommand": "command"
+  }
+}

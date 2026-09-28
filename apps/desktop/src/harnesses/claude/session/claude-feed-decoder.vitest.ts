@@ -50,6 +50,63 @@ test('uses the same assistant identity for live replies and SDK history', () => 
   expect(live).toEqual(history)
 })
 
+test('renders a Claude history compaction summary as a marker', () => {
+  const rejected: string[] = []
+  const message = {
+    type: 'user',
+    uuid: 'compact-summary-1',
+    session_id: 'session-1',
+    isCompactSummary: true,
+    is_meta: true,
+    message: {
+      role: 'user',
+      content:
+        'This session is being continued from a previous conversation that ran out of context. The summary begins here.',
+    },
+  } as unknown as SessionMessage
+
+  expect(decodeClaudeHistoryContent(message, (shape) => rejected.push(shape))).toEqual([
+    { id: 'compact-summary-1', kind: 'marker', marker: 'compaction', summary: null },
+  ])
+  expect(rejected).toEqual([])
+})
+
+test('ignores Claude tool reference metadata without rejecting the tool result', () => {
+  const rejected: string[] = []
+  const message = {
+    type: 'user',
+    uuid: 'result-with-tool-reference',
+    session_id: 'session-1',
+    message: {
+      role: 'user',
+      content: [
+        {
+          type: 'tool_result',
+          tool_use_id: 'call-1',
+          content: [
+            { type: 'text', text: 'Done.' },
+            { type: 'tool_reference', tool_name: 'Bash' },
+          ],
+        },
+      ],
+    },
+  } as unknown as SessionMessage
+
+  expect(decodeClaudeHistoryContent(message, (shape) => rejected.push(shape))).toEqual([
+    {
+      id: 'result-with-tool-reference',
+      kind: 'tool',
+      callId: 'call-1',
+      name: '',
+      status: 'completed',
+      input: null,
+      output: [{ kind: 'text', text: 'Done.' }],
+      summary: null,
+    },
+  ])
+  expect(rejected).toEqual([])
+})
+
 test('decodes recorded command, task, and delegation shapes', () => {
   const rejected: string[] = []
   const decoded = recordedSession('harnessNoise').flatMap((entry) =>
@@ -183,6 +240,7 @@ test('keeps Claude block identity and tool relationships without flattening cont
       input: { file_path: '/tmp/a' },
       output: null,
       summary: null,
+      presentation: { kind: 'read', label: 'Read /tmp/a' },
     },
   ])
   expect(decodeClaudeLiveContent(result, (shape) => rejected.push(shape))).toEqual([
@@ -198,6 +256,32 @@ test('keeps Claude block identity and tool relationships without flattening cont
     },
   ])
   expect(rejected).toEqual([])
+})
+
+test('keeps the Claude Code description as the command label', () => {
+  const message = {
+    type: 'assistant',
+    uuid: 'assistant-command',
+    session_id: 'session-1',
+    message: {
+      role: 'assistant',
+      content: [
+        {
+          type: 'tool_use',
+          id: 'call-command',
+          name: 'Bash',
+          input: { command: 'bun test', description: 'Run the Feed tests' },
+        },
+      ],
+    },
+  } as unknown as SDKMessage
+  expect(decodeClaudeLiveContent(message, () => {})).toMatchObject([
+    {
+      kind: 'tool',
+      callId: 'call-command',
+      presentation: { kind: 'command', label: 'Run the Feed tests', agentDescription: true },
+    },
+  ])
 })
 
 test('counts unsupported shapes and keeps unknown envelope markup out of content', () => {
@@ -299,23 +383,28 @@ test('keeps Claude image and document sources structured', () => {
   expect(rejected).toEqual([])
 })
 
-test('decodes Claude system task, notice, and marker events', () => {
+function decodeSystemMessage(message: object, rejected: string[]) {
+  return decodeClaudeLiveContent(message as SDKMessage, (shape) => rejected.push(shape))
+}
+
+test('decodes Claude system task updates under their task ID', () => {
   const rejected: string[] = []
-  const decode = (message: object) =>
-    decodeClaudeLiveContent(message as SDKMessage, (shape) => rejected.push(shape))
   expect(
-    decode({
-      type: 'system',
-      subtype: 'task_started',
-      uuid: 'task-1',
-      session_id: 'session-1',
-      task_id: 'agent-1',
-      tool_use_id: 'call-1',
-      description: 'Review',
-    }),
+    decodeSystemMessage(
+      {
+        type: 'system',
+        subtype: 'task_started',
+        uuid: 'task-1',
+        session_id: 'session-1',
+        task_id: 'agent-1',
+        tool_use_id: 'call-1',
+        description: 'Review',
+      },
+      rejected,
+    ),
   ).toEqual([
     {
-      id: 'task-1',
+      id: 'agent-1',
       kind: 'task',
       taskId: 'agent-1',
       callId: 'call-1',
@@ -325,15 +414,38 @@ test('decodes Claude system task, notice, and marker events', () => {
     },
   ])
   expect(
-    decode({
-      type: 'system',
-      subtype: 'notification',
-      uuid: 'notice-1',
-      session_id: 'session-1',
-      key: 'build',
-      text: 'Build finished',
-      priority: 'high',
-    }),
+    decodeSystemMessage(
+      {
+        type: 'system',
+        subtype: 'task_progress',
+        uuid: 'task-progress-2',
+        session_id: 'session-1',
+        task_id: 'agent-1',
+        tool_use_id: 'call-1',
+        description: 'Review',
+        summary: 'Checking the Feed',
+      },
+      rejected,
+    ),
+  ).toMatchObject([{ id: 'agent-1', taskId: 'agent-1', summary: 'Checking the Feed' }])
+  expect(rejected).toEqual([])
+})
+
+test('decodes Claude system notices and markers', () => {
+  const rejected: string[] = []
+  expect(
+    decodeSystemMessage(
+      {
+        type: 'system',
+        subtype: 'notification',
+        uuid: 'notice-1',
+        session_id: 'session-1',
+        key: 'build',
+        text: 'Build finished',
+        priority: 'high',
+      },
+      rejected,
+    ),
   ).toEqual([
     {
       id: 'notice-1',
@@ -344,13 +456,16 @@ test('decodes Claude system task, notice, and marker events', () => {
     },
   ])
   expect(
-    decode({
-      type: 'system',
-      subtype: 'compact_boundary',
-      uuid: 'compact-1',
-      session_id: 'session-1',
-      compact_metadata: { trigger: 'auto', pre_tokens: 100 },
-    }),
+    decodeSystemMessage(
+      {
+        type: 'system',
+        subtype: 'compact_boundary',
+        uuid: 'compact-1',
+        session_id: 'session-1',
+        compact_metadata: { trigger: 'auto', pre_tokens: 100 },
+      },
+      rejected,
+    ),
   ).toEqual([{ id: 'compact-1', kind: 'marker', marker: 'compaction', summary: null }])
   expect(rejected).toEqual([])
 })

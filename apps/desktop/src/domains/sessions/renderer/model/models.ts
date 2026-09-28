@@ -1,10 +1,10 @@
 import { z } from 'zod'
+import { feedActivitySchema } from '@/domains/sessions/api/feed-activity'
 import {
   SESSION_TITLE_SOURCES,
   sessionTitleSchema,
   sessionTitleSourceSchema,
 } from '@/domains/sessions/api/session-title'
-import { liveActivitySchema } from '@/domains/sessions/renderer/feed/model/feed-rows'
 import { ticketKey } from '@/domains/tickets/contract/ticket'
 import { identifierSchema } from '@/shared/validation'
 
@@ -83,10 +83,7 @@ export type SessionPlan = z.infer<typeof sessionPlanSchema>
 // The newest Tool Call inside the open Turn: its canonical reader-facing label and kind, plus the
 // tool's own name and the one thing it acted on as metadata. `open` is the transcript holding no
 // answer to it yet, what lets the row read "Running" rather than "Ran" while the Session runs.
-export const sessionActivitySchema = liveActivitySchema.extend({
-  tool: z.string(),
-  target: z.string().nullable(),
-})
+export const sessionActivitySchema = feedActivitySchema
 export type SessionActivity = z.infer<typeof sessionActivitySchema>
 
 // The newest pull request the Harness linked this Session to, as its own `pr-link` record states it.

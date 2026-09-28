@@ -13,7 +13,11 @@ import type { SessionFeedRow } from '../../types'
 const FEED_ROW_ESTIMATE_PX = 96
 const FEED_OVERSCAN = 8
 const TAIL_THRESHOLD_PX = 80
-const TAIL_KEY = 'feed-tail'
+export const FEED_TAIL_KEY = 'feed-tail'
+
+export function feedScrollPaddingStart(element: HTMLElement) {
+  return Number.parseFloat(getComputedStyle(element).scrollPaddingTop) || 0
+}
 
 // Where the Feed's virtualizer attaches: the scrollable element itself, and its top scroll-padding
 // read once. The end space is the viewport's CSS padding, which follows the composer (#2835).
@@ -21,9 +25,7 @@ export function useFeedViewport() {
   const [viewport, setViewport] = useState<HTMLElement | null>(null)
   const [paddingStart, setPaddingStart] = useState(0)
   const attachViewport = useCallback((element: HTMLElement | null) => {
-    if (element !== null) {
-      setPaddingStart(Number.parseFloat(getComputedStyle(element).scrollPaddingTop) || 0)
-    }
+    if (element !== null) setPaddingStart(feedScrollPaddingStart(element))
     setViewport(element)
   }, [])
   return { attachViewport, paddingStart, viewport }
@@ -54,7 +56,7 @@ export function useAnchoredVirtualizer({
     estimateSize: () => FEED_ROW_ESTIMATE_PX,
     // Smooth tail scrolling delays short-row measurement and leaves estimate-sized gaps (#2545).
     followOnAppend: following,
-    getItemKey: (index) => (index === rows.length ? TAIL_KEY : feedRowAt(rows, index).id),
+    getItemKey: (index) => (index === rows.length ? FEED_TAIL_KEY : feedRowAt(rows, index).id),
     getScrollElement: () => viewport,
     // Seeds the rendered range at construction, not after (#e2e-real-cheap-models): a fresh
     // mount's own scroll listener attaches too late to catch a post-mount scrollTop write, so

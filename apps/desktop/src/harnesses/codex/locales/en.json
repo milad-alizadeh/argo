@@ -16,5 +16,9 @@
       "label": "Full access",
       "detail": "Work without permission prompts"
     }
+  },
+  "imageGeneration": {
+    "usageLimitExceeded": "Image generation usage limit exceeded.",
+    "usageLimitExceededWithReset": "Image generation usage limit exceeded. Resets at {{resetTime}}."
   }
 }

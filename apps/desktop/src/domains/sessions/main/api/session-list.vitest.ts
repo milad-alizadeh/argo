@@ -424,40 +424,38 @@ test('joins a Session to its Ticket as one nested ticket object', async () => {
   }
 })
 
-test('adds the current live projection to a saved Session', async () => {
-  const { client, list } = sessionListCaller({ [IDS[0]]: liveSession('Ready') })
+async function savedSessionRowWithLiveState(state: string) {
+  const { client, list } = sessionListCaller({ [IDS[0]]: liveSession(state) })
   try {
     const result = await listOneSession(client, list)
-
-    assert.deepEqual(
-      {
-        posture: result.rows[0]?.posture,
-        status: result.rows[0]?.status,
-        turnConfiguration: result.rows[0]?.turnConfiguration,
-      },
-      {
-        posture: 'live',
-        status: 'unknown',
-        turnConfiguration: { model: 'claude-sonnet', effort: 'high', mode: 'default' },
-      },
-    )
+    return result.rows[0]
   } finally {
     client.close()
   }
+}
+
+test('adds the current live projection to a saved Session', async () => {
+  const row = await savedSessionRowWithLiveState('Ready')
+  assert.deepEqual(
+    {
+      posture: row?.posture,
+      status: row?.status,
+      turnConfiguration: row?.turnConfiguration,
+    },
+    {
+      posture: 'live',
+      status: 'unknown',
+      turnConfiguration: { model: 'claude-sonnet', effort: 'high', mode: 'default' },
+    },
+  )
 })
 
 test('does not project a failed live channel as live', async () => {
-  const { client, list } = sessionListCaller({ [IDS[0]]: liveSession('Failed') })
-  try {
-    const result = await listOneSession(client, list)
-
-    assert.deepEqual(
-      { posture: result.rows[0]?.posture, status: result.rows[0]?.status },
-      { posture: null, status: 'unknown' },
-    )
-  } finally {
-    client.close()
-  }
+  const row = await savedSessionRowWithLiveState('Failed')
+  assert.deepEqual(
+    { posture: row?.posture, status: row?.status },
+    { posture: null, status: 'unknown' },
+  )
 })
 
 test('projects the latest live status over the machine state, and unknown with no live actor', async () => {

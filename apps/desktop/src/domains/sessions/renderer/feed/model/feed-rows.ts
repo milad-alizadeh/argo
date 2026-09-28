@@ -1,4 +1,10 @@
 import { z } from 'zod'
+import { feedActivityBaseSchema } from '@/domains/sessions/api/feed-activity'
+import {
+  feedContentKindSchema,
+  toolPresentationKindSchema,
+  workStatusSchema,
+} from '@/domains/sessions/api/feed-content'
 import { questionSchema } from '@/domains/sessions/api/questions'
 import { identifierSchema } from '@/shared/validation'
 import { BACKGROUND_STATES } from '../source/background-task-record'
@@ -14,6 +20,15 @@ export const FEED_EVENT_KINDS = [
   ...TRANSCRIPT_EVENT_KINDS,
   'liveStatus',
   'liveFailure',
+  ...feedContentKindSchema.exclude([
+    'message',
+    'reference',
+    'tool',
+    'command',
+    'notification',
+    'context',
+    'marker',
+  ]).options,
   'permission',
   'permissionGranted',
   'permissionDenied',
@@ -30,16 +45,7 @@ const toolEvidenceSchema = z
   ])
   .nullable()
 
-export const toolCallKindSchema = z.enum([
-  'command',
-  'read',
-  'edited',
-  'created',
-  'deleted',
-  'tool',
-  'skill',
-  'searched',
-])
+export const toolCallKindSchema = toolPresentationKindSchema
 
 const toolCallSchema = z.strictObject({
   id: identifierSchema,
@@ -53,6 +59,7 @@ const toolCallSchema = z.strictObject({
     })
     .nullable(),
   status: z.enum(['succeeded', 'failed', 'running', 'interrupted']),
+  agentDescription: z.boolean().optional(),
   evidence: toolEvidenceSchema,
   // The call's own raw text, read by a kind routed inline (a command's full text). Null for a
   // kind routed to the evidence panel, which reads the call through `evidence` instead.
@@ -62,12 +69,7 @@ const toolCallSchema = z.strictObject({
 const toolRowSchema = toolCallSchema.extend({ shape: z.literal('tool') })
 
 // What a Session is doing now, the words the roster and the Feed both draw (`SessionActivity`).
-export const liveActivitySchema = z.strictObject({
-  label: z.string(),
-  // A `thought` is the Turn's latest reasoning headline, newer than any call it has made.
-  kind: z.union([toolCallKindSchema, z.literal('thought')]),
-  open: z.boolean(),
-})
+export const liveActivitySchema = feedActivityBaseSchema
 export type LiveActivity = z.infer<typeof liveActivitySchema>
 
 const subagentRowSchema = z.strictObject({
@@ -93,6 +95,15 @@ export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
     id: identifierSchema,
     label: z.string(),
     calls: z.array(toolRowSchema),
+    thoughts: z
+      .array(
+        z.strictObject({
+          id: identifierSchema,
+          text: z.string(),
+          afterCallIndex: z.number().int().nonnegative().optional(),
+        }),
+      )
+      .optional(),
     // The Session's activity while the Turn runs, set by the renderer alone (`withHeadline`)
     // from the same fact the roster draws under the title.
     headline: liveActivitySchema.optional(),
@@ -115,6 +126,7 @@ export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
     id: identifierSchema,
     event: feedEventKindSchema,
     text: z.string().nullable(),
+    status: workStatusSchema.optional(),
     skill: z.strictObject({ name: z.string(), path: z.string().min(1) }).optional(),
     // The protocol update's own untranslated text, shown behind a closed disclosure for
     // diagnostics; absent for a harness event, which has none worth keeping.

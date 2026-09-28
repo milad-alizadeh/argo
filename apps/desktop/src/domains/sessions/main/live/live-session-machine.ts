@@ -1,4 +1,10 @@
 import { assign, emit, fromPromise, sendTo, setup as xstateSetup } from 'xstate'
+import {
+  advanceFeedActivity,
+  EMPTY_FEED_ACTIVITY,
+  type FeedActivityState,
+  settleFeedActivity,
+} from '@/domains/sessions/api/feed-activity'
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
@@ -40,6 +46,7 @@ export const liveSessionMachine = xstateSetup({
       harnessReady: boolean
       feedSerial: number
       status: LiveSessionStatus | null
+      activity: FeedActivityState
     },
     events: {} as
       | {
@@ -154,6 +161,16 @@ export const liveSessionMachine = xstateSetup({
           ? event.body.status
           : context.status,
     }),
+    rememberActivity: assign({
+      activity: ({ context, event }) => {
+        if (event.type !== 'Harness feed') return context.activity
+        if (event.body.type === 'content')
+          return advanceFeedActivity(context.activity, event.body.content)
+        if (event.body.type === 'status' && event.body.status === 'idle')
+          return settleFeedActivity(context.activity)
+        return context.activity
+      },
+    }),
     rememberHarnessReady: assign({
       harnessReady: true,
     }),
@@ -201,6 +218,7 @@ export const liveSessionMachine = xstateSetup({
     harnessReady: false,
     feedSerial: 0,
     status: null,
+    activity: EMPTY_FEED_ACTIVITY,
   }),
   invoke: {
     id: 'harness',
@@ -361,6 +379,7 @@ export const liveSessionMachine = xstateSetup({
       actions: [
         'rememberFeedSerial',
         'rememberStatus',
+        'rememberActivity',
         emit(({ event }) => {
           if (event.type !== 'Harness feed') throw new Error('Expected a Harness Feed event.')
           return {

@@ -5,6 +5,7 @@ import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import { sessionTicketLink } from '@/database/session-ticket-link/schema'
+import { feedActivitySchema } from '@/domains/sessions/api/feed-activity'
 import { sessionTitleSchema } from '@/domains/sessions/api/session-title'
 import { type StoredSubagent, storedSessionSubagents } from '../database/session-subagents'
 import {
@@ -26,23 +27,6 @@ export const sessionListInputSchema = z.strictObject({
 
 const identifierSchema = z.string().min(1)
 const countSchema = z.number().int().nonnegative()
-const sessionActivitySchema = z.strictObject({
-  label: z.string(),
-  kind: z.enum([
-    'command',
-    'read',
-    'edited',
-    'created',
-    'deleted',
-    'tool',
-    'skill',
-    'searched',
-    'thought',
-  ]),
-  open: z.boolean(),
-  tool: z.string(),
-  target: z.string().nullable(),
-})
 const sessionPlanSchema = z.discriminatedUnion('state', [
   z.strictObject({
     state: z.literal('available'),
@@ -114,7 +98,7 @@ export const sessionListRowSchema = z.strictObject({
   unreadableLines: z.number(),
   originUnread: z.boolean(),
   turnStartedAt: z.string().nullable(),
-  activity: sessionActivitySchema.nullable(),
+  activity: feedActivitySchema.nullable(),
   plan: sessionPlanSchema.nullable(),
   subagents: z.array(sessionSubagentSchema),
   shell: z.array(sessionShellCommandSchema),
@@ -189,6 +173,7 @@ function liveProjection(context: SessionListContext, sessionId: string) {
   return {
     posture: projection.posture,
     status: snapshot.context.status ?? projection.status,
+    activity: snapshot.context.activity?.activity ?? null,
     turnConfiguration: snapshot.context.first.turnConfiguration,
   }
 }
@@ -251,7 +236,7 @@ function sessionListRow(
     unreadableLines: 0,
     originUnread: false,
     turnStartedAt: null,
-    activity: null,
+    activity: live?.activity ?? null,
     plan: null,
     subagents: subagents.map((subagent) => ({ ...subagent, startedAt: null, endedAt: null })),
     shell: [],

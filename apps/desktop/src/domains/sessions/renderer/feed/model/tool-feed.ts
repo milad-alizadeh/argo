@@ -14,11 +14,12 @@ export type ToolResult = Pick<TranscriptToolResult, 'blocks' | 'failed'> & {
 }
 
 export function displayedToolLabel(
-  call: { kind: ToolRow['kind'] | 'thought'; label: string },
+  call: { kind: ToolRow['kind'] | 'thought'; label: string; agentDescription?: boolean },
   active: boolean,
   running: string,
 ) {
   if (!active || (call.kind !== 'command' && call.kind !== 'tool')) return call.label
+  if (call.agentDescription) return call.label
   const label = call.label.startsWith('Ran ') ? call.label.slice('Ran '.length) : call.label
   return `${running} ${label}`
 }
@@ -59,7 +60,7 @@ export function toolPresentation(call: ToolCall, file = 0) {
     case 'skill':
       return { kind: 'skill' as const, label: call.title ?? 'Skill' }
     case 'other':
-      return { kind: 'tool' as const, label: call.label }
+      return call.presentation ?? { kind: 'tool' as const, label: call.label }
     case 'search':
     case 'fetch':
       return { kind: 'searched' as const, label: searchLabel(call) }
@@ -132,6 +133,9 @@ function toolRow(call: ToolCall, { results, skillBodies }: ToolEvidence, file = 
     label: outcome === null ? presentation.label : `${presentation.label} · ${outcome}`,
     lineCounts: call.kind === 'edit' ? (call.files[file]?.lineCounts ?? null) : null,
     status: outcome === null ? toolStatus(result) : 'failed',
+    ...(call.kind === 'other' && call.presentation?.agentDescription
+      ? { agentDescription: true }
+      : {}),
     evidence: evidenceOf(call, result, file),
     text: toolText(call, skillBodies),
   }
