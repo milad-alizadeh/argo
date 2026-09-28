@@ -6,6 +6,7 @@ import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import { sessionTicketLink } from '@/database/session-ticket-link/schema'
 import { sessionTitleSchema } from '@/domains/sessions/api/session-title'
+import { type StoredSubagent, storedSessionSubagents } from '../database/session-subagents'
 import {
   type LiveSessionSupervisorActor,
   liveSessionActorFor,
@@ -216,6 +217,7 @@ function sessionListRow(
       createdAt: string
     } | null
   },
+  subagents: readonly StoredSubagent[],
 ) {
   const live = liveProjection(context, row.id)
   const ticket =
@@ -239,7 +241,7 @@ function sessionListRow(
     turnStartedAt: null,
     activity: null,
     plan: null,
-    subagents: [],
+    subagents: subagents.map((subagent) => ({ ...subagent, startedAt: null, endedAt: null })),
     shell: [],
     pullRequest: null,
     ticket,
@@ -265,7 +267,7 @@ function readSessionList(
             sql<boolean>`instr(lower(coalesce(${sessionTable.preview}, '')), lower(${input.search})) > 0`,
           ),
         )
-  const rows = context.database
+  const stored = context.database
     .select({
       id: sessionTable.argoId,
       harness: sessionTable.harness,
@@ -294,7 +296,11 @@ function readSessionList(
     .limit(input.pageSize)
     .offset((page - 1) * input.pageSize)
     .all()
-    .map((row) => sessionListRow(context, row))
+  const subagents = storedSessionSubagents(
+    context.database,
+    stored.map((row) => row.id),
+  )
+  const rows = stored.map((row) => sessionListRow(context, row, subagents.get(row.id) ?? []))
   const total =
     context.database.select({ value: count() }).from(sessionTable).where(filter).get()?.value ?? 0
   return { page, pageSize: input.pageSize, total, rows }

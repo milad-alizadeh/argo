@@ -55,6 +55,45 @@ function commandContentRow(content: Extract<FeedContent, { kind: 'command' }>): 
   }
 }
 
+function delegationContentRow(
+  content: Extract<FeedContent, { kind: 'delegation' }>,
+): SessionFeedRow {
+  const facts = {
+    shape: 'subagent',
+    id: content.id,
+    subagentId: content.agentId,
+    ...(content.name === null ? {} : { name: content.name }),
+    ...(content.model === null ? {} : { model: content.model }),
+  } as const
+  switch (content.status) {
+    case 'pending':
+    case 'running':
+    case 'paused':
+      return { ...facts, event: 'started' }
+    case 'completed':
+    case 'failed':
+    case 'interrupted':
+      return {
+        ...facts,
+        event: 'responded',
+        state: content.status,
+        ...(content.summary === null ? {} : { text: content.summary }),
+      }
+  }
+}
+
+function referenceContentRow(content: Extract<FeedContent, { kind: 'reference' }>): SessionFeedRow {
+  if (content.referenceType !== 'skill')
+    return { shape: 'event', id: content.id, event: 'context', text: content.text ?? content.label }
+  return {
+    shape: 'event',
+    id: content.id,
+    event: 'skill-invocation',
+    text: content.text === null ? content.label : `${content.label} ${content.text}`,
+    ...(content.target === null ? {} : { skill: { name: content.label, path: content.target } }),
+  }
+}
+
 function permissionEventKind(
   decision: Extract<SessionLiveEvent, { type: 'permission' }>['decision'],
 ): Extract<SessionFeedRow, { shape: 'event' }>['event'] {
@@ -99,12 +138,14 @@ function contentRow(content: FeedContent): SessionFeedRow | null {
             summary: content.summary,
           }
         : { shape: 'event', id: content.id, event: 'status', text: content.summary }
-    case 'media':
+    case 'delegation':
+      return delegationContentRow(content)
     case 'reference':
+      return referenceContentRow(content)
+    case 'media':
     case 'fileChange':
     case 'search':
     case 'plan':
-    case 'delegation':
     case 'task':
     case 'refusal':
     case 'imageGeneration':

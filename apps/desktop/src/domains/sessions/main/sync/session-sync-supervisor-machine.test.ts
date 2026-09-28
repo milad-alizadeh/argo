@@ -12,6 +12,7 @@ import {
 const database = {} as Database
 const claudeDiscovery: SessionDiscovery = async () => ({ records: [], skipped: 0 })
 const codexDiscovery: SessionDiscovery = async () => ({ records: [], skipped: 0 })
+const readHistory = async () => []
 const fetchingStatus = {
   phase: 'fetching' as const,
   processed: 0,
@@ -30,7 +31,7 @@ type SyncEvent =
   | { type: 'SyncCompleted'; harness: 'claude' | 'codex' }
   | { type: 'SyncFailed'; harness: 'claude' | 'codex' }
 
-test('dispatches registered Session discovery functions and deduplicates Refresh', () => {
+test('dispatches registered Session discovery functions and runs a Refresh that arrived mid-sync once after it', () => {
   const dispatched: string[] = []
   const finished: Array<() => void> = []
   let stopped = 0
@@ -56,8 +57,8 @@ test('dispatches registered Session discovery functions and deduplicates Refresh
     input: {
       database,
       harnesses: {
-        claude: { sessionDiscovery: claudeDiscovery },
-        codex: { sessionDiscovery: codexDiscovery },
+        claude: { sessionDiscovery: claudeDiscovery, readHistory },
+        codex: { sessionDiscovery: codexDiscovery, readHistory },
       },
       status: { claude: status, codex: new SessionSyncStatusStore(undefined, 'codex') },
     },
@@ -73,11 +74,15 @@ test('dispatches registered Session discovery functions and deduplicates Refresh
     finished[0]?.()
     finished[1]?.()
     assert.equal(stopped, 2)
-    actor.send({ type: 'Refresh' })
     assert.deepEqual(dispatched, ['claude', 'codex', 'claude', 'codex'])
+    finished[2]?.()
+    finished[3]?.()
+    assert.deepEqual(dispatched, ['claude', 'codex', 'claude', 'codex'])
+    actor.send({ type: 'Refresh' })
+    assert.deepEqual(dispatched, ['claude', 'codex', 'claude', 'codex', 'claude', 'codex'])
     actor.send({ type: 'Shutdown' })
     assert.ok(actor.getSnapshot().matches('Closed'))
-    assert.equal(stopped, 4)
+    assert.equal(stopped, 6)
   } finally {
     actor.stop()
     unsubscribe()
@@ -97,7 +102,7 @@ test('dispatches only discovery functions selected by the Harness registry', () 
     {
       input: {
         database,
-        harnesses: { claude: { sessionDiscovery: claudeDiscovery } },
+        harnesses: { claude: { sessionDiscovery: claudeDiscovery, readHistory } },
         status: { claude: new SessionSyncStatusStore(undefined, 'claude') },
       },
     },

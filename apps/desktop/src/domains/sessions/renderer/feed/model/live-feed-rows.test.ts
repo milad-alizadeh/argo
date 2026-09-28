@@ -271,3 +271,81 @@ test('shows a Claude Question once when vendor history includes its tool call', 
   )
   expect(rows.map((row) => [row.shape, row.id])).toEqual([['ask', 'question-1']])
 })
+
+test('draws one Subagent row per delegation, updated in place as its status changes', () => {
+  const delegation = (status: 'running' | 'completed'): FeedContent => ({
+    id: 'call-agent',
+    kind: 'delegation',
+    agentId: 'agent-7',
+    status,
+    prompt: 'Survey the adapters',
+    model: 'sonnet',
+    name: 'Survey adapters',
+    summary: status === 'completed' ? 'Found two adapters' : null,
+  })
+  expect(projectLiveFeedRows([delegation('running')], [])).toEqual([
+    {
+      shape: 'subagent',
+      id: 'call-agent',
+      subagentId: 'agent-7',
+      event: 'started',
+      name: 'Survey adapters',
+      model: 'sonnet',
+    },
+  ])
+  expect(projectLiveFeedRows([delegation('running'), { ...delegation('completed') }], [])).toEqual([
+    {
+      shape: 'subagent',
+      id: 'call-agent',
+      subagentId: 'agent-7',
+      event: 'responded',
+      state: 'completed',
+      name: 'Survey adapters',
+      model: 'sonnet',
+      text: 'Found two adapters',
+    },
+  ])
+})
+
+test('draws a skill reference as a skill invocation and other references as context', () => {
+  const rows = projectLiveFeedRows(
+    [
+      {
+        id: 'skill-1',
+        kind: 'reference',
+        referenceType: 'skill',
+        label: 'tdd',
+        target: '/repo/.claude/skills/tdd/SKILL.md',
+        text: 'red green',
+      },
+      {
+        id: 'skill-2',
+        kind: 'reference',
+        referenceType: 'skill',
+        label: 'ship',
+        target: null,
+        text: null,
+      },
+      {
+        id: 'pasted-1',
+        kind: 'reference',
+        referenceType: 'pasted',
+        label: 'Pasted content',
+        target: null,
+        text: 'the pasted words',
+      },
+    ],
+    [],
+  )
+  expect(rows).toEqual([
+    {
+      shape: 'event',
+      id: 'skill-1',
+      event: 'skill-invocation',
+      text: 'tdd red green',
+      skill: { name: 'tdd', path: '/repo/.claude/skills/tdd/SKILL.md' },
+    },
+    { shape: 'event', id: 'skill-2', event: 'skill-invocation', text: 'ship' },
+    { shape: 'event', id: 'pasted-1', event: 'context', text: 'the pasted words' },
+  ])
+})
