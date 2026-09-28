@@ -37,6 +37,10 @@ function testRouter(
     projects: {} as ProjectRegisterContext,
     sessions: {
       database: {} as never,
+      ensureManagedWorkspace: async () => ({
+        id: 'test-workspace',
+        path: '/tmp/argo-test-worktrees',
+      }),
       readHistory: async () => [],
       rename: async () => {},
       roster: new SessionRosterChanges(),

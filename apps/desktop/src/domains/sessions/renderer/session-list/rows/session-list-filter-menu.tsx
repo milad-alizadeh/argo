@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import { Button } from '@/platform/renderer/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,8 +7,8 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
+import { MenuDropdownTrigger } from '@/platform/renderer/components/ui/dropdown-trigger'
 import type { SessionListStatus } from '../hooks/use-session-list-filter-store'
 
 // The closed set of filters, each with the catalog key that names it to the reader.
@@ -35,12 +34,12 @@ export function SessionListFilterMenu({
   const { t } = useTranslation('sessions')
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button aria-label={t('filterSessions')} size="icon-sm" variant="ghost">
-            <Icon name="session-list-filter" />
-          </Button>
-        }
+      <MenuDropdownTrigger
+        aria-label={t('filterSessions')}
+        icon="session-list-filter"
+        iconOnly
+        label={t('filterSessions')}
+        variant="ghost"
       />
       <DropdownMenuContent align="end" className="w-max">
         <DropdownMenuRadioGroup

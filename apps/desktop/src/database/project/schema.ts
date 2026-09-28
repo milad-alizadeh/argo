@@ -5,5 +5,6 @@ export const project = sqliteTable('project', {
   id: text().primaryKey(),
   path: text().notNull(),
   commonDirectory: text('common_directory').notNull().unique(),
+  lastWorkspaceChoice: text('last_workspace_choice').notNull().default('new'),
   ...timestampColumns(),
 })

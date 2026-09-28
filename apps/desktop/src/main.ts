@@ -30,6 +30,7 @@ import { SessionEventJournal } from '@/domains/sessions/main/live/session-event-
 import { SessionHistoryFollowers } from '@/domains/sessions/main/live/session-history-followers'
 import { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
+import { ensureManagedWorkspace } from '@/domains/workspaces/main/workspace-create-managed'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
 import { tailSessionHistory, watchHistoryActivity } from '@/harnesses/host/history-watch'
 import { createHarnessRegistry, type HarnessRegistry } from '@/harnesses/registry'
@@ -210,6 +211,15 @@ function routerForWindow(options: {
     },
     sessions: {
       database,
+      ensureManagedWorkspace: (projectId, draftId) =>
+        exclusive(() =>
+          ensureManagedWorkspace({
+            database,
+            projectId,
+            draftId,
+            worktreeRoot: path.join(app.getPath('userData'), 'worktrees'),
+          }),
+        ),
       readHistory: (harness, target) => registry[harness].readHistory(target),
       followHistory: (followed, invalidate) => historyFollowers.follow(followed, invalidate),
       rename: ({ harness, nativeId, title }) => {

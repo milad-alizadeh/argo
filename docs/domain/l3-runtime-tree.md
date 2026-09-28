@@ -43,7 +43,7 @@
   Session's current plan is the newest snapshot observed, which is **DERIVED** — which is why a
   turn that touched no plan does not blank it. Distinct from Ticket and Delivery lifecycle.
 - **Workspace** — the git working context attached to an Agent. Splits across two authorities:
-  **identity** (`id`, `kind: main | imported`, `path`) comes from the **Project's
+  **identity** (`id`, `kind: main | imported | managed`, `path`) comes from the **Project's
   Workspace registry** (L1) and is durable — chosen once at `session.start` and never changed by
   a later branch checkout; **live facts** (`branch`, `dirty`, `unpushed`, `headSha`,
   `ahead`/`behind`, `sharedCount`) are read off that path from git on demand, never a second
