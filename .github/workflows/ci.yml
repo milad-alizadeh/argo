@@ -162,6 +162,14 @@ jobs:
       - name: Storybook interaction tests
         run: bun run test:storybook
 
+      - name: Upload Storybook failure log
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: storybook-failure-log
+          path: /tmp/argo-migration-ratchet/storybook-*.log
+          if-no-files-found: ignore
+
   # This job's `name:` is `main`'s required status check, matched literally, and renaming it
   # strands every open pull request on a check that never reports (#1733). So it keeps the name
   # the single Linux job had, and passes only when every Linux job passed.

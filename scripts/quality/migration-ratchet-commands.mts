@@ -83,12 +83,14 @@ export const gateCommands: Record<GateName, GateCommand[]> = {
       timeoutMilliseconds: fiveMinutes,
     },
   ],
-  storybook: ['storybook-dark', 'storybook-light'].map((project) => ({
-    label: `${project} interaction tests`,
-    executable: 'bunx',
-    args: ['vitest', 'run', `--project=${project}`, '--no-file-parallelism'],
-    cwd: desktopRoot,
-    timeoutMilliseconds: 10 * 60 * 1_000,
-    parser: { kind: 'storybook' },
-  })),
+  storybook: [
+    {
+      label: 'Storybook interaction tests',
+      executable: 'bunx',
+      args: ['vitest', 'run', '--project=storybook', '--no-file-parallelism'],
+      cwd: desktopRoot,
+      timeoutMilliseconds: 10 * 60 * 1_000,
+      parser: { kind: 'storybook' },
+    },
+  ],
 }

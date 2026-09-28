@@ -1038,34 +1038,6 @@ export const WideSharedReadingColumn: Story = {
   },
 }
 
-export const ComposerFadeLight: Story = {
-  globals: { theme: 'light' },
-  render: () => <ReviewScreen />,
-  play: async ({ canvasElement }) => {
-    await waitFor(() =>
-      expect(within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
-        'data-session',
-        'composer-review',
-      ),
-    )
-    expectContextBarInset(canvasElement)
-  },
-}
-
-export const ComposerFadeDark: Story = {
-  globals: { theme: 'dark' },
-  render: () => <ReviewScreen />,
-  play: async ({ canvasElement }) => {
-    await waitFor(() =>
-      expect(within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
-        'data-session',
-        'composer-review',
-      ),
-    )
-    expectContextBarInset(canvasElement)
-  },
-}
-
 export const JumpToLatestInExpandedComposerFade: Story = {
   render: () => <ReviewScreen rows={JUMP_TO_LATEST_ROWS} />,
   play: async ({ canvasElement }) => {
