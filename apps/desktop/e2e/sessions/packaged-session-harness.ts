@@ -8,7 +8,7 @@ import {
 } from '@/harnesses/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
-import { appExecutable } from '../packaged-app'
+import { launchCommand } from '../application-under-test'
 import type {
   SessionFixture,
   SessionHarnessBackend,
@@ -97,7 +97,7 @@ export async function createPackagedSessionHarness(request: {
   // The CLIs read their launch environment when the app spawns them, so it is fixed per launch.
   const open = async () => {
     application = await electron.launch({
-      executablePath: appExecutable(fixture.application),
+      ...launchCommand(fixture.application),
       env: {
         ...launchEnvironment(run, launch, fixture.project),
         [PROJECT_PROOF_STORE_ENV]: fixture.userData,

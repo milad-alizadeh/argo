@@ -425,6 +425,8 @@ jobs:
       # projects, `maxFailures`, and retries.
       - name: Test the e2e flows in a packaged copy (this shard)
         working-directory: apps/desktop
+        env:
+          ARGO_E2E_PACKAGED: '1'
         run: bunx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
 
       # The Playwright HTML report and any trace a failing case wrote (#2325): `playwright.config.ts`

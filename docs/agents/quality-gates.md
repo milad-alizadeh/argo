@@ -203,7 +203,8 @@ appeared. **Treat a manifest change as unverified until someone has done that.**
 **The packaged tests need a Mac and several minutes.** The `desktop-artifact` job runs them on
 `macos-26`, behind a path filter that fails closed. They cannot cover signing: a re-signature can
 invalidate what packaging tested, so `test:packaged-contents` has to run again after `osxSign` is
-wired to the chosen entitlement set.
+wired to the chosen entitlement set. Local e2e runs launch the Vite build instead, and only CI's
+e2e shards set `ARGO_E2E_PACKAGED=1` to launch the packaged app.
 
 ## The Node version (#1951)
 

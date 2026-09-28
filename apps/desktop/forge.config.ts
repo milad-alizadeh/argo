@@ -9,6 +9,7 @@ import { assertPackagedPty } from './scripts/assert-packaged-pty.mts'
 import { entitlementsPlistFor } from './scripts/entitlements.mts'
 import { PRODUCTION_FUSE_PROFILE } from './scripts/fuse-profile.mts'
 import { productionInstall } from './scripts/production-install.mts'
+import { VITE_PLUGIN_CONFIG } from './scripts/vite-targets.mts'
 
 // Forge owns the whole desktop lifecycle: start, package, make, sign, publish. Not the native
 // rebuild — see `rebuildConfig` below, which turns it off. Decision: "Choose the Electron desktop
@@ -126,16 +127,7 @@ const config: ForgeConfig = {
   plugins: [
     // Adds native modules to the ASAR unpack list, so node-pty's .node binary stays on disk.
     new AutoUnpackNativesPlugin({}),
-    new VitePlugin({
-      // Both targets emit into .vite/build, and the output is named after the entry file. Two
-      // entries both called index.ts silently overwrite each other, so the entry basenames are
-      // the contract with `main` in package.json and the preload path in create-window.ts.
-      build: [
-        { entry: 'src/main.ts', config: 'vite.main.config.ts', target: 'main' },
-        { entry: 'src/preload.ts', config: 'vite.preload.config.ts', target: 'preload' },
-      ],
-      renderer: [{ name: 'main_window', config: 'vite.renderer.config.ts' }],
-    }),
+    new VitePlugin(VITE_PLUGIN_CONFIG),
     // Production hardening. `scripts/prove-packaged-pty.mts` launches the shipped binary with
     // these fuses exactly as a user gets them, so nothing here is relaxed for testing.
     new FusesPlugin({

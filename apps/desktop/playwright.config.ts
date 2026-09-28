@@ -1,8 +1,9 @@
 import { defineConfig } from '@playwright/test'
 import type { SessionBackendOptions } from './e2e/sessions/session-backend-option'
 
-// One project per flow under `e2e/` (#2325). Every case launches the packaged app against its own
-// root (`e2e/packaged-proof.ts`, #2326), so cases run in parallel, one app per worker.
+// One project per flow under `e2e/` (#2325). Every case launches the app against its own root
+// (`e2e/packaged-proof.ts`, #2326), so cases run in parallel, one app per worker. The app is the
+// Vite build locally and the packaged copy under ARGO_E2E_PACKAGED=1 (`e2e/application-under-test.ts`).
 export default defineConfig<object, SessionBackendOptions>({
   testDir: 'e2e',
   testMatch: '**/*.e2e.ts',
@@ -35,8 +36,8 @@ export default defineConfig<object, SessionBackendOptions>({
     { name: 'harness-signin', testDir: 'e2e/harness-signin' },
     { name: 'session-list', testDir: 'e2e/session-list' },
     // The adversarial cases (jitter, split bytes, stalls, seeded failure) run inside this same
-    // project and the same `test:e2e` invocation, not a second `turbo run` (#2605): one packaged
-    // app boot and one Playwright startup covers both.
+    // project and the same `test:e2e` invocation, not a second `turbo run` (#2605): one app boot
+    // and one Playwright startup covers both.
     { name: 'sessions', testDir: 'e2e/sessions' },
     { name: 'tickets', testDir: 'e2e/tickets' },
     // The signed-in local CLIs, never CI. A real reply can take the backend's whole 180s budget.

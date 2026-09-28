@@ -5,13 +5,13 @@ import { _electron as electron } from 'playwright-core'
 import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
-import { appExecutable } from '../packaged-app'
+import { launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
 import { prepare } from './fixtures/feed.fixture'
 import { chooseHarness } from './gestures'
 
-async function prepareCodexApp(root: string, packagedApplication: string) {
-  const fixture = await prepare(root, packagedApplication, { projectSelected: true })
+async function prepareCodexApp(root: string, applicationUnderTest: string) {
+  const fixture = await prepare(root, applicationUnderTest, { projectSelected: true })
   const bun = execFileSync('which', ['bun'], { encoding: 'utf8' }).trim()
   const server = path.resolve('mocks/cli/codex/mock-codex-live.mts')
   const executable = path.join(root, 'mock-codex')
@@ -29,7 +29,7 @@ async function prepareCodexApp(root: string, packagedApplication: string) {
   }
   const launch = async () => {
     const application = await electron.launch({
-      executablePath: appExecutable(packagedApplication),
+      ...launchCommand(applicationUnderTest),
       env: environment,
     })
     const page = await application.firstWindow()
@@ -52,9 +52,9 @@ async function send(page: import('playwright-core').Page, prompt: string) {
 
 test('packaged Codex live feed resumes from app-server history', async ({
   root,
-  packagedApplication,
+  applicationUnderTest,
 }) => {
-  const launch = await prepareCodexApp(root, packagedApplication)
+  const launch = await prepareCodexApp(root, applicationUnderTest)
   const first = await launch()
   let sessionId: string
   try {
@@ -93,9 +93,9 @@ test('packaged Codex live feed resumes from app-server history', async ({
 
 test('packaged Codex controls queue, approve, answer, interrupt, and recover', async ({
   root,
-  packagedApplication,
+  applicationUnderTest,
 }) => {
-  const launch = await prepareCodexApp(root, packagedApplication)
+  const launch = await prepareCodexApp(root, applicationUnderTest)
   const { application, page } = await launch()
   try {
     await page.getByRole('button', { name: 'New Session', exact: true }).click()

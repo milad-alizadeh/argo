@@ -10,7 +10,7 @@ import { databasePath, openDatabase } from '@/database/database'
 import { project as projectTable } from '@/database/project/schema'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mts'
-import { appExecutable, packagedTestCopy } from '../../packaged-app'
+import { applicationUnderTest, launchCommand } from '../../application-under-test'
 import { makeProjectLocallyReady } from './locally-ready-project'
 
 const run = promisify(execFile)
@@ -39,9 +39,9 @@ async function folder(at) {
   return at
 }
 
-// A caller that already holds a packaged copy passes it; a standalone tool gets its own.
+// A caller that already holds the app under test passes it; a standalone tool gets its own.
 export async function prepare(root, application?) {
-  application ??= await packagedTestCopy(root)
+  application ??= await applicationUnderTest(root)
   const userData = path.join(root, 'userData')
   const projectPath = path.join(root, 'example')
   await mkdir(userData, { recursive: true })
@@ -61,11 +61,11 @@ export async function prepare(root, application?) {
   }
 }
 
-// One launch of the packaged app against the fixture's own application data. A restart is another
+// One launch of the app against the fixture's own application data. A restart is another
 // call to this, which is the only honest way to prove what survives one.
 export function launch(fixture, environment: Record<string, string> = {}) {
   return electron.launch({
-    executablePath: appExecutable(fixture.application),
+    ...launchCommand(fixture.application),
     env: {
       ...process.env,
       [PROJECT_PROOF_STORE_ENV]: fixture.userData,
