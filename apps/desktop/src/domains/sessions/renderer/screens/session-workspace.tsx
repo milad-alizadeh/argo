@@ -18,6 +18,8 @@ export type SessionWorkspaceProps = {
   hasOlder?: boolean
   loadingOlder?: boolean
   olderError?: boolean
+  jumpToLatest?: (() => void) | null
+  onJumpToLatestChange?: (sessionId: string, action: (() => void) | null) => void
   liveFacts: FeedLiveFacts
   stallTimeoutMs?: number
   onOpenSession: (sessionId: string) => void
@@ -114,6 +116,8 @@ export function SessionWorkspace({
   hasOlder,
   loadingOlder,
   olderError,
+  jumpToLatest: externalJumpToLatest = undefined,
+  onJumpToLatestChange,
   liveFacts,
   stallTimeoutMs,
   onOpenSession,
@@ -135,6 +139,7 @@ export function SessionWorkspace({
       return current?.sessionId === sessionId ? null : current
     })
   }, [])
+  const handleJumpToLatestChange = onJumpToLatestChange ?? updateJumpToLatest
   const { t } = useTranslation('sessions')
 
   return (
@@ -152,7 +157,7 @@ export function SessionWorkspace({
             onAnswerQuestion={onAnswerQuestion}
             onOpenEvidence={onOpenEvidence}
             onOpenSession={onOpenSession}
-            onJumpToLatestChange={updateJumpToLatest}
+            onJumpToLatestChange={handleJumpToLatestChange}
             onRetryFeed={onRetryFeed}
             onLoadOlder={onLoadOlder}
             hasOlder={hasOlder}
@@ -165,7 +170,10 @@ export function SessionWorkspace({
             liveFacts={liveFacts}
           />
         </div>
-        <ComposerSection composer={composer} onJumpToLatest={jumpToLatest?.action ?? null} />
+        <ComposerSection
+          composer={composer}
+          onJumpToLatest={externalJumpToLatest ?? jumpToLatest?.action ?? null}
+        />
       </div>
     </section>
   )

@@ -8,9 +8,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
-import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
+import { ComposerMenuTrigger } from './composer-menu-trigger'
 
 export type WorkspaceMenuControlProps = {
   workspaces: readonly WorkspaceSummary[]
@@ -25,19 +24,14 @@ export function WorkspaceMenu({ workspaces, workspace, onSelect }: WorkspaceMenu
   const label = workspace?.displayName ?? t('composer.workspace.choose')
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <InputGroupButton
-            variant="ghost"
-            className="max-w-48 min-w-0 shrink-0 type-control text-foreground"
-            aria-label={t('composer.workspace.chooseLabel', { workspace: label })}
-          />
-        }
+      <ComposerMenuTrigger
+        ariaLabel={t('composer.workspace.chooseLabel', { workspace: label })}
+        className="max-w-48 min-w-0 shrink-0 type-control text-foreground"
       >
         <Icon name="repository" />
         <span className="hidden min-w-0 truncate @[36rem]:inline">{label}</span>
         <Icon name="chevron-down" className="hidden text-muted-foreground @[36rem]:block" />
-      </DropdownMenuTrigger>
+      </ComposerMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="w-(--size-session-menu) p-1.5">
         <DropdownMenuGroup>
           <DropdownMenuLabel className="px-2 py-1.5 type-control text-muted-foreground">
