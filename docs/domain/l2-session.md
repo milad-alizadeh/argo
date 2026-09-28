@@ -21,11 +21,6 @@
   synchronization commits vendor changes to SQLite and tells readers to refresh the affected
   projection. A transcript or rollout file is never an Argo domain object or input.
 
-  Argo keeps recent live events in a bounded memory journal. A separate SQLite table holds small
-  command outcomes. After a restart, unfinished commands become uncertain until vendor history
-  provides evidence. Argo never resends an uncertain command automatically. An idle live actor can
-  retire while the Session identity and vendor history remain.
-
   Origin does not gate resume (ADR-0040). Argo has one application window. The adapter checks
   vendor liveness before resume because another vendor client can still hold the Session. A
   Session actor has no SQLite lease and cannot prove that an external vendor client is absent. A

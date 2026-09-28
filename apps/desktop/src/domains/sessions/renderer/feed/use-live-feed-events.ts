@@ -34,12 +34,8 @@ function applyLiveUpdate({
 }): number {
   switch (update.type) {
     case 'ready':
-      if (update.replayExpired)
-        void queryClient.invalidateQueries({ queryKey: sessionFeedQueryKey(selected, subagentId) })
       setState((current) => ({
-        ...(!update.replayExpired &&
-        current?.sessionId === selected &&
-        current.subagentId === subagentId
+        ...(current?.sessionId === selected && current.subagentId === subagentId
           ? current
           : emptyLiveEventBuffer()),
         sessionId: selected,
@@ -47,7 +43,7 @@ function applyLiveUpdate({
         hasChannel: update.live,
         ready: true,
       }))
-      return update.replayExpired ? update.cursor : cursor
+      return cursor
     case 'event':
       if (update.event.sequence <= cursor) return cursor
       if (
@@ -74,6 +70,14 @@ function applyLiveUpdate({
         void queryClient.invalidateQueries({ queryKey: sessionPermissionQueryKey(selected) })
       return update.event.sequence
     case 'expired':
+      setState((current) => ({
+        ...emptyLiveEventBuffer(),
+        sessionId: selected,
+        subagentId,
+        hasChannel: current?.subagentId === subagentId ? current.hasChannel : false,
+        ready: true,
+      }))
+      void queryClient.invalidateQueries({ queryKey: sessionFeedQueryKey(selected, subagentId) })
       return update.cursor
     case 'invalidated':
       void queryClient.invalidateQueries({ queryKey: sessionFeedQueryKey(selected, subagentId) })
@@ -115,15 +119,13 @@ export function useLiveFeedEvents(
     const selected = sessionId
     let stopped = false
     let cursor = 0
-    let generation: string | null = null
     let reconnect: ReturnType<typeof setTimeout> | null = null
     let subscription: { unsubscribe: () => void } | null = null
     const connect = () => {
       subscription = trpcClient.sessionLiveEvents.subscribe(
-        { sessionId: selected, subagentId, cursor, generation },
+        { sessionId: selected, subagentId, cursor },
         {
           onData(update) {
-            if (update.type === 'ready') generation = update.generation
             cursor = applyLiveUpdate({ selected, subagentId, update, cursor, setState })
           },
           onError() {

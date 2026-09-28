@@ -19,7 +19,6 @@ import {
 import type {
   CodexAppServerClient,
   CodexRequest,
-  WireMessage,
 } from '@/harnesses/codex/app-server/codex-app-server-client'
 import type { codexAppServerMachine } from '@/harnesses/codex/app-server/codex-app-server-machine'
 import { codexHarnessInfo } from '@/harnesses/codex/catalog'
@@ -79,19 +78,6 @@ function successfulCodexRequest(nativeIdForStart: (count: number) => string) {
   return { request, starts: () => starts }
 }
 
-const codexClientFor = (
-  request: CodexRequest,
-  notifications: Set<(message: WireMessage) => boolean | undefined>,
-): CodexAppServerClient => ({
-  request: (method, params, parse) => request(method, params, parse),
-  respond: () => {},
-  onNotification: (listener) => {
-    notifications.add(listener)
-    return () => notifications.delete(listener)
-  },
-  shutdown: () => {},
-})
-
 async function supervisorFor(
   request: CodexRequest,
   catalogValue = catalog,
@@ -99,11 +85,15 @@ async function supervisorFor(
 ) {
   const client = new DatabaseSync(':memory:')
   client.exec(
-    'CREATE TABLE session (argo_id TEXT PRIMARY KEY, harness TEXT NOT NULL, native_id TEXT NOT NULL, project_id TEXT, workspace_id TEXT, custom_title TEXT, preview TEXT, first_prompt TEXT, cwd TEXT, activity_at INTEGER, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id); CREATE TABLE session_command (command_id TEXT PRIMARY KEY, intent_id TEXT, session_id TEXT, harness TEXT, native_id TEXT, turn_id TEXT, cwd TEXT, status TEXT NOT NULL, created_at INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL DEFAULT 0); CREATE UNIQUE INDEX session_command_intent ON session_command (intent_id);',
+    'CREATE TABLE session (argo_id TEXT PRIMARY KEY, harness TEXT NOT NULL, native_id TEXT NOT NULL, project_id TEXT, workspace_id TEXT, custom_title TEXT, preview TEXT, first_prompt TEXT, cwd TEXT, activity_at INTEGER, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id); CREATE TABLE session_command (command_id TEXT PRIMARY KEY, session_id TEXT, status TEXT NOT NULL, created_at INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL DEFAULT 0);',
   )
   const database = databaseFrom(client)
-  const notifications = new Set<(message: WireMessage) => boolean | undefined>()
-  const codexClient = codexClientFor(request, notifications)
+  const codexClient: CodexAppServerClient = {
+    request: (method, params, parse) => request(method, params, parse),
+    respond: () => {},
+    onNotification: () => () => {},
+    shutdown: () => {},
+  }
   type Call = Extract<
     Parameters<ActorRefFrom<typeof codexAppServerMachine>['send']>[0],
     { type: 'Call' }
@@ -150,14 +140,7 @@ async function supervisorFor(
   const supervisor = root.system.get('sessions') as LiveSessionSupervisorActor
   catalogActor.send({ type: 'Catalog requested' })
   await waitFor(catalogActor, (snapshot) => snapshot.matches('Ready'))
-  return {
-    root,
-    supervisor,
-    client,
-    notify: (message: WireMessage) => {
-      for (const listener of notifications) listener(message)
-    },
-  }
+  return { root, supervisor, client }
 }
 
 function start(
@@ -174,7 +157,6 @@ function send(actor: LiveSessionSupervisorActor, input: SessionStartInput & { se
   return new Promise<{ sessionId: string }>((resolve, reject) =>
     actor.send({
       type: 'Send',
-      intentId: `optimistic:${input.commandId}`,
       input: {
         commandId: input.commandId,
         prompt: input.prompt,
@@ -193,16 +175,6 @@ function send(actor: LiveSessionSupervisorActor, input: SessionStartInput & { se
     }),
   )
 }
-
-function completeCodexTurn(notify: (message: WireMessage) => void, turnId: string) {
-  notify({
-    method: 'turn/completed',
-    params: { threadId: 'native-1', turn: { id: turnId, status: 'completed' } },
-  })
-}
-
-const commandStatus = (client: DatabaseSync, commandId: string) =>
-  client.prepare('SELECT status FROM session_command WHERE command_id = ?').get(commandId)?.status
 
 test('models supervisor lifetime', () => {
   const paths = getShortestPaths(
@@ -251,7 +223,10 @@ test('binds a delayed Claude identity once and never repeats a command ID', asyn
     assert.equal(openCount, 1)
     identify()
     const { sessionId } = await pending
-    assert.equal((await start(supervisor, claudeFirst)).sessionId, sessionId)
+    assert.equal(
+      (await start(supervisor, claudeFirst, 'optimistic:duplicate')).sessionId,
+      sessionId,
+    )
     assert.equal(openCount, 1)
     const later = { ...claudeFirst, sessionId, commandId: 'later-command', prompt: 'later' }
     await send(supervisor, later)
@@ -366,14 +341,12 @@ test('cancels an unsettled start when its supervisor stops', async () => {
 
 test('rejects a changed Codex stance instead of silently retaining the opening stance', async () => {
   let calls = 0
-  const { root, supervisor, client, notify } = await supervisorFor(
-    async (method, _params, parse) => {
-      calls += 1
-      return parse(
-        method === 'thread/start' ? { thread: { id: 'native-1' } } : { turn: { id: 'turn-1' } },
-      )
-    },
-  )
+  const { root, supervisor, client } = await supervisorFor(async (method, _params, parse) => {
+    calls += 1
+    return parse(
+      method === 'thread/start' ? { thread: { id: 'native-1' } } : { turn: { id: 'turn-1' } },
+    )
+  })
   try {
     const { sessionId } = await start(supervisor, first)
     assert.deepEqual(
@@ -396,8 +369,6 @@ test('rejects a changed Codex stance instead of silently retaining the opening s
     await waitFor(supervisor, (snapshot) => snapshot.context.sessions[sessionId] !== undefined)
     const child = liveSessionActorFor(supervisor, sessionId)
     assert.ok(child)
-    await waitFor(child, (snapshot) => snapshot.context.feedSerial >= 1)
-    completeCodexTurn(notify, 'turn-1')
     await waitFor(child, (snapshot) => snapshot.matches('Ready'))
     await assert.rejects(
       send(supervisor, {
@@ -535,11 +506,7 @@ test('allows an explicit retry after the Harness fails before returning a native
   })
   try {
     await assert.rejects(start(supervisor, first), /Harness failed before start/)
-    const result = await start(
-      supervisor,
-      { ...first, commandId: 'retry-command' },
-      'optimistic:one:2',
-    )
+    const result = await start(supervisor, { ...first, commandId: 'retry-command' })
     assert.ok(result.sessionId)
     assert.equal(starts, 2)
   } finally {
@@ -562,59 +529,6 @@ test('does not retry a vendor Session automatically when the real SQLite upsert 
     )
     assert.equal(request.starts(), 1)
     assert.equal(client.prepare('SELECT COUNT(*) AS count FROM session').get()?.count, 0)
-  } finally {
-    root.send({ type: 'Shutdown' })
-    client.close()
-  }
-})
-
-test('retiring an idle actor keeps the Session identity and the next send resumes it', async () => {
-  const calls: string[] = []
-  const { root, supervisor, client, notify } = await supervisorFor(
-    async (method, _params, parse) => {
-      calls.push(method)
-      if (method === 'thread/start' || method === 'thread/resume')
-        return parse({ thread: { id: 'native-1' } })
-      return parse({ turn: { id: `turn-${calls.length}` } })
-    },
-  )
-  try {
-    const { sessionId } = await start(supervisor, first)
-    const actor = liveSessionActorFor(supervisor, sessionId)
-    assert.ok(actor)
-    await waitFor(actor, (snapshot) => snapshot.context.feedSerial >= 1)
-    completeCodexTurn(notify, 'turn-2')
-    await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
-    assert.equal(commandStatus(client, first.commandId), 'completed')
-    const actorId = supervisor.getSnapshot().context.sessions[sessionId]
-    assert.ok(actorId)
-    supervisor.send({ type: 'Retire session', actorId, sessionId })
-    await waitFor(supervisor, (snapshot) => snapshot.context.sessions[sessionId] === undefined)
-    assert.equal(liveSessionActorFor(supervisor, sessionId), undefined)
-    assert.equal(
-      client.prepare('SELECT native_id FROM session WHERE argo_id = ?').get(sessionId)?.native_id,
-      'native-1',
-    )
-    await send(supervisor, { ...first, sessionId, commandId: 'second-command', prompt: 'second' })
-    const resumed = liveSessionActorFor(supervisor, sessionId)
-    assert.ok(resumed)
-    await waitFor(resumed, (snapshot) => snapshot.context.feedSerial >= 1)
-    completeCodexTurn(notify, 'turn-4')
-    await waitFor(resumed, (snapshot) => snapshot.matches('Ready'))
-    assert.equal(commandStatus(client, 'second-command'), 'completed')
-    const resumedActorId = supervisor.getSnapshot().context.sessions[sessionId]
-    assert.ok(resumedActorId)
-    supervisor.send({ type: 'Retire session', actorId: resumedActorId, sessionId })
-    await waitFor(supervisor, (snapshot) => snapshot.context.sessions[sessionId] === undefined)
-    await send(supervisor, { ...first, sessionId, commandId: 'third-command', prompt: 'third' })
-    assert.deepEqual(calls, [
-      'thread/start',
-      'turn/start',
-      'thread/resume',
-      'turn/start',
-      'thread/resume',
-      'turn/start',
-    ])
   } finally {
     root.send({ type: 'Shutdown' })
     client.close()

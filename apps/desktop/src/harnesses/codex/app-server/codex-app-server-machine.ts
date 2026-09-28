@@ -3,7 +3,6 @@ import {
   type CodexAppServerClient,
   type CodexRequest,
   createCodexAppServerClient,
-  type WireMessage,
 } from './codex-app-server-client'
 
 type CallEvent = {
@@ -89,28 +88,4 @@ export function requestCodexAppServer(
         run: (client) => void client.request(method, params, parse).then(resolve, reject),
       })
     })
-}
-
-export function observeCodexAppServer(
-  actor: ActorRefFrom<typeof codexAppServerMachine>,
-  listener: (message: WireMessage) => void,
-): () => void {
-  if (actor.getSnapshot().status !== 'active') return () => {}
-  let closed = false
-  let unsubscribe: (() => void) | null = null
-  actor.send({
-    type: 'Call',
-    run: (client) => {
-      const stop = client.onNotification((message) => {
-        listener(message)
-        return undefined
-      })
-      if (closed) stop()
-      else unsubscribe = stop
-    },
-  })
-  return () => {
-    closed = true
-    unsubscribe?.()
-  }
 }

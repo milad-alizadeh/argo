@@ -121,19 +121,10 @@ export const liveSessionMachine = xstateSetup({
     }),
   },
   actions: {
-    reportHarnessSnapshot: enqueueActions(({ context, event, enqueue }) => {
+    reportHarnessSnapshot: enqueueActions(({ event, enqueue }) => {
       if (event.type !== 'xstate.snapshot.harness') return
       const snapshot = event.snapshot
       if (!('context' in snapshot)) return
-      if ('lastFeed' in snapshot.context) {
-        const feed = snapshot.context.lastFeed
-        if (feed !== null && feed.serial > context.feedSerial)
-          enqueue.raise({
-            type: 'Harness feed',
-            serial: feed.serial,
-            body: feed.body,
-          })
-      }
       if (snapshot.matches('Failed'))
         enqueue.raise({
           type: 'Harness failed',

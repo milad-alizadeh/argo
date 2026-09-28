@@ -2,14 +2,6 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createActor, fromPromise, waitFor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
-import type {
-  CodexRequest,
-  WireMessage,
-} from '@/harnesses/codex/app-server/codex-app-server-client'
-import {
-  codexLiveSessionActors,
-  codexLiveSessionMachine,
-} from '@/harnesses/codex/session/codex-live-session-machine'
 import type { SessionStartInput } from '../api/session-submit'
 import { liveSessionChannelActor } from './live-session-channel-actor'
 import { liveSessionMachine } from './live-session-machine'
@@ -276,67 +268,6 @@ test('emits validated Claude Feed events while the Session identity is persistin
       content: { id: 'assistant-1', kind: 'message', role: 'assistant', text: 'Working' },
     },
   ])
-  actor.stop()
-})
-
-test('forwards Codex notifications and holds queued prompts until Turn completion', async () => {
-  const calls: string[] = []
-  let notify: ((message: WireMessage) => void) | undefined
-  const request: CodexRequest = async (method, _params, parse) => {
-    calls.push(method)
-    return parse(
-      method === 'thread/start'
-        ? { thread: { id: 'thread-1' } }
-        : { turn: { id: calls.length === 2 ? 'turn-1' : 'turn-2' } },
-    )
-  }
-  const harness = codexLiveSessionMachine.provide({
-    actors: codexLiveSessionActors(request, (listener) => {
-      notify = listener
-      return () => {
-        notify = undefined
-      }
-    }),
-  })
-  const actor = createActor(
-    liveSessionMachine.provide({
-      actors: { harness, persist: fromPromise(async () => 'argo-1') },
-    }),
-    {
-      input: {
-        ...first,
-        harness: 'codex',
-        turnConfiguration: { ...first.turnConfiguration, mode: 'workspace-write' },
-      },
-    },
-  )
-  const events: unknown[] = []
-  actor.on('feed', ({ body }) => events.push(body))
-  actor.start()
-  await waitFor(actor, (snapshot) => snapshot.matches('Awaiting turn'))
-  actor.send({ type: 'Send', command: { ...first, commandId: 'second', prompt: 'second' } })
-  notify?.({
-    method: 'item/completed',
-    params: {
-      threadId: 'thread-1',
-      turnId: 'turn-1',
-      item: { id: 'message-1', type: 'agentMessage', text: 'Done.' },
-    },
-  })
-  assert.equal(events.length, 2)
-  assert.deepEqual(calls, ['thread/start', 'turn/start'])
-  notify?.({
-    method: 'turn/completed',
-    params: { threadId: 'thread-1', turn: { id: 'turn-1', status: 'completed' } },
-  })
-  await waitFor(actor, (snapshot) => snapshot.matches('Sending') && calls.length === 3)
-  assert.equal(events.length, 4)
-  notify?.({
-    method: 'turn/completed',
-    params: { threadId: 'thread-1', turn: { id: 'turn-2', status: 'completed' } },
-  })
-  await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
-  assert.equal(events.length, 5)
   actor.stop()
 })
 

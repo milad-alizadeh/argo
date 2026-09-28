@@ -28,21 +28,6 @@ Argo never resends an uncertain Turn automatically. The renderer does not create
 rows, optimistic Turns, temporary Session IDs, or a pending-Turn queue. It keeps the draft until
 main accepts the send command and restores it after a definite rejection.
 
-## Amendment · replay and command recovery · 2026-09-28
-
-Argo keeps recent live events in a bounded memory journal. Each Session has an ordered sequence.
-A replay request includes the journal generation, which changes when Argo restarts. A subscription
-attaches before replay starts. If its cursor expires, the Feed reads vendor history and merges rows
-by stable item ID. SQLite stores no live event payload or second transcript.
-
-The supervisor records a command ID and its outcome before it calls a Harness. It also records the
-draft revision that sent the command. After a restart, Argo marks each unfinished command unknown.
-It reads vendor history when it knows the native Session ID. A matching Claude user item or Codex
-turn ID proves that the vendor saw the command. Argo never sends an unknown command again on its own.
-
-An actor retires after five minutes when the Harness reports idle and the actor has no queued
-command. The Session row and vendor history remain. A new prompt attempts native resume.
-
 Claude authorization is subscription-only. Argo does not accept an Anthropic API key or select
 API billing. Anthropic's paused billing change means that Agent SDK and third-party app usage
 currently draws from subscription limits. Argo will use that path. The separate third-party

@@ -54,11 +54,7 @@ const itemSchema = z
   })
   .passthrough()
 const threadSchema = z
-  .object({
-    turns: z.array(
-      z.object({ id: z.string().min(1).optional(), items: z.array(z.unknown()) }).passthrough(),
-    ),
-  })
+  .object({ turns: z.array(z.object({ items: z.array(z.unknown()) }).passthrough()) })
   .passthrough()
 const responseSchema = z.object({ thread: threadSchema }).passthrough()
 
@@ -99,17 +95,4 @@ export async function readCodexSessionHistory(
     })
   })
   return content
-}
-
-export async function hasCodexSessionTurn(
-  request: CodexRequest,
-  nativeId: string,
-  turnId: string,
-): Promise<boolean> {
-  const response = await request(
-    'thread/read',
-    { threadId: nativeId, includeTurns: true },
-    (value) => responseSchema.parse(value),
-  )
-  return response.thread.turns.some((turn) => turn.id === turnId)
 }

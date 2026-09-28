@@ -1,11 +1,10 @@
-import { assign, fromCallback, fromPromise, setup as xstateSetup } from 'xstate'
+import { assign, fromPromise, setup as xstateSetup } from 'xstate'
 import { z } from 'zod'
-import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type {
   SessionLiveInput,
   SessionStartInput,
 } from '@/domains/sessions/main/api/session-submit'
-import type { CodexRequest, WireMessage } from '../app-server/codex-app-server-client'
+import type { CodexRequest } from '../app-server/codex-app-server-client'
 
 export type CodexInputItem =
   | {
@@ -28,180 +27,7 @@ export type CodexSessionResult = {
   nativeId: string
 }
 
-type TurnCommand = Pick<
-  SessionStartInput,
-  'attachments' | 'prompt' | 'turnConfiguration' | 'commandId'
->
-
-type CodexLiveNotification =
-  | {
-      type: 'Turn started'
-      threadId: string
-      turnId: string
-    }
-  | {
-      type: 'Thread idle'
-      threadId: string
-    }
-  | {
-      type: 'Turn completed'
-      threadId: string
-      turnId: string
-      status: 'completed' | 'failed' | 'interrupted'
-    }
-  | {
-      type: 'Item completed'
-      threadId: string
-      turnId: string
-      itemId: string
-      role: 'user' | 'assistant'
-      text: string
-    }
-
-const turnNotificationSchema = z.object({
-  threadId: z.string().min(1),
-  turn: z.object({
-    id: z.string().min(1),
-    status: z.enum([
-      'inProgress',
-      'completed',
-      'failed',
-      'interrupted',
-    ]),
-  }),
-})
-const itemNotificationSchema = z.object({
-  threadId: z.string().min(1),
-  turnId: z.string().min(1),
-  item: z.object({
-    id: z.string().min(1),
-    type: z.string(),
-    text: z.string().optional(),
-    content: z.array(z.unknown()).optional(),
-  }),
-})
-const userContentSchema = z.discriminatedUnion('type', [
-  z.object({
-    type: z.literal('text'),
-    text: z.string(),
-  }),
-  z.object({
-    type: z.literal('localImage'),
-    path: z.string(),
-  }),
-  z.object({
-    type: z.literal('image'),
-    url: z.string(),
-  }),
-])
-const threadStatusSchema = z.object({
-  threadId: z.string().min(1),
-  status: z.object({
-    type: z.string().min(1),
-  }),
-})
-
-type DecodedNotification = CodexLiveNotification | 'invalid' | null
-
-function decodeThreadStatus(params: Record<string, unknown>): DecodedNotification {
-  const parsed = threadStatusSchema.safeParse(params)
-  if (!parsed.success) return 'invalid'
-  return parsed.data.status.type === 'idle'
-    ? {
-        type: 'Thread idle',
-        threadId: parsed.data.threadId,
-      }
-    : null
-}
-
-function decodeTurn(
-  method: 'turn/started' | 'turn/completed',
-  params: Record<string, unknown>,
-): DecodedNotification {
-  const parsed = turnNotificationSchema.safeParse(params)
-  if (!parsed.success) return 'invalid'
-  const { threadId, turn } = parsed.data
-  if (method === 'turn/started')
-    return turn.status === 'inProgress'
-      ? {
-          type: 'Turn started',
-          threadId,
-          turnId: turn.id,
-        }
-      : 'invalid'
-  if (turn.status === 'inProgress') return 'invalid'
-  return {
-    type: 'Turn completed',
-    threadId,
-    turnId: turn.id,
-    status: turn.status,
-  }
-}
-
-function decodeItem(params: Record<string, unknown>): DecodedNotification {
-  const parsed = itemNotificationSchema.safeParse(params)
-  if (!parsed.success) return 'invalid'
-  const { threadId, turnId, item } = parsed.data
-  if (item.type === 'agentMessage' && item.text !== undefined)
-    return {
-      type: 'Item completed',
-      threadId,
-      turnId,
-      itemId: item.id,
-      role: 'assistant',
-      text: item.text,
-    }
-  if (item.type !== 'userMessage') return null
-  if (item.content === undefined) return 'invalid'
-  const parts: string[] = []
-  for (const part of item.content) {
-    const parsed = userContentSchema.safeParse(part)
-    if (!parsed.success) return 'invalid'
-    if (parsed.data.type === 'text') parts.push(parsed.data.text)
-  }
-  const text = parts.join('\n')
-  if (text === '') return null
-  return {
-    type: 'Item completed',
-    threadId,
-    turnId,
-    itemId: item.id,
-    role: 'user',
-    text,
-  }
-}
-
-function decodeNotification(message: WireMessage): DecodedNotification {
-  if (!('method' in message)) return null
-  switch (message.method) {
-    case 'thread/status/changed':
-      return decodeThreadStatus(message.params)
-    case 'turn/started':
-    case 'turn/completed':
-      return decodeTurn(message.method, message.params)
-    case 'item/completed':
-      return decodeItem(message.params)
-    default:
-      return null
-  }
-}
-
-export function observeCodexLiveNotifications(
-  subscribe: (listener: (message: WireMessage) => void) => () => void,
-) {
-  return fromCallback<CodexLiveNotification>(({ sendBack }) => {
-    let invalid = 0
-    return subscribe((message) => {
-      const decoded = decodeNotification(message)
-      if (decoded === 'invalid') {
-        invalid += 1
-        console.warn(
-          `Invalid Codex live notification (${invalid}): ${'method' in message ? message.method : 'response'}`,
-        )
-      } else if (decoded !== null) sendBack(decoded)
-    })
-  })
-}
+type TurnCommand = Pick<SessionStartInput, 'attachments' | 'prompt' | 'turnConfiguration'>
 
 const threadStartResultSchema = z.object({
   thread: z.object({
@@ -214,17 +40,7 @@ const turnStartResultSchema = z.object({
   }),
 })
 
-function eventTurnId(event: { type: string }): string | null {
-  if ('turnId' in event && typeof event.turnId === 'string') return event.turnId
-  if ('output' in event && typeof event.output === 'string') return event.output
-  return null
-}
-
-export const codexLiveSessionActors = (
-  request: CodexRequest,
-  subscribe: (listener: (message: WireMessage) => void) => () => void,
-) => ({
-  notifications: observeCodexLiveNotifications(subscribe),
+export const codexLiveSessionActors = (request: CodexRequest) => ({
   startThread: fromPromise(({ input }: { input: SessionLiveInput }) => {
     if ('resume' in input)
       return request(
@@ -281,17 +97,8 @@ export const codexLiveSessionMachine = xstateSetup({
       pending: TurnCommand | null
       inputItems: CodexInputItem[]
       failure: string | null
-      activeTurnId: string | null
-      activeCommandId: string | null
-      completedTurnId: string | null
-      feedSerial: number
-      lastFeed: {
-        serial: number
-        body: SessionLiveEventBody
-      } | null
     },
     events: {} as
-      | CodexLiveNotification
       | {
           type: 'Send'
           command: TurnCommand
@@ -325,7 +132,6 @@ export const codexLiveSessionMachine = xstateSetup({
         },
   },
   actors: {
-    notifications: fromCallback<CodexLiveNotification>(() => () => {}),
     startThread: fromPromise<string, SessionLiveInput>(async () => {
       throw new Error('Codex thread actor was not provided.')
     }),
@@ -341,94 +147,6 @@ export const codexLiveSessionMachine = xstateSetup({
     }),
   },
   actions: {
-    rememberTurn: assign({
-      activeTurnId: ({ context, event }) => {
-        const turnId = eventTurnId(event)
-        return turnId === context.completedTurnId ? null : (turnId ?? context.activeTurnId)
-      },
-      activeCommandId: ({ context }) => context.pending?.commandId ?? context.activeCommandId,
-      feedSerial: ({ context, event }) => {
-        const turnId = eventTurnId(event)
-        return turnId !== null &&
-          turnId !== context.activeTurnId &&
-          turnId !== context.completedTurnId
-          ? context.feedSerial + 1
-          : context.feedSerial
-      },
-      lastFeed: ({ context, event }) => {
-        const turnId = eventTurnId(event)
-        if (
-          turnId === null ||
-          turnId === context.activeTurnId ||
-          turnId === context.completedTurnId
-        )
-          return context.lastFeed
-        return {
-          serial: context.feedSerial + 1,
-          body: {
-            type: 'status' as const,
-            commandId: context.pending?.commandId ?? context.activeCommandId,
-            turnId,
-            vendorEventId: null,
-            status: 'running' as const,
-          },
-        }
-      },
-    }),
-    rememberCompletedTurn: assign({
-      activeTurnId: () => null,
-      activeCommandId: () => null,
-      completedTurnId: ({ event, context }) =>
-        event.type === 'Turn completed' ? event.turnId : context.completedTurnId,
-      feedSerial: ({ context }) => context.feedSerial + 1,
-      lastFeed: ({ context, event }) =>
-        event.type === 'Turn completed'
-          ? {
-              serial: context.feedSerial + 1,
-              body: {
-                type: 'status',
-                commandId: context.activeCommandId ?? context.pending?.commandId ?? null,
-                turnId: event.turnId,
-                vendorEventId: null,
-                status: event.status === 'completed' ? 'idle' : 'unknown',
-              },
-            }
-          : context.lastFeed,
-    }),
-    rememberCompletedItem: assign({
-      feedSerial: ({ context }) => context.feedSerial + 1,
-      lastFeed: ({ context, event }) =>
-        event.type === 'Item completed'
-          ? {
-              serial: context.feedSerial + 1,
-              body: {
-                type: 'content',
-                commandId: context.activeCommandId ?? context.pending?.commandId ?? null,
-                turnId: event.turnId,
-                vendorEventId: event.itemId,
-                content: {
-                  kind: 'message',
-                  id: event.itemId,
-                  role: event.role,
-                  text: event.text,
-                },
-              },
-            }
-          : context.lastFeed,
-    }),
-    rememberThreadIdle: assign({
-      feedSerial: ({ context }) => context.feedSerial + 1,
-      lastFeed: ({ context }) => ({
-        serial: context.feedSerial + 1,
-        body: {
-          type: 'status',
-          commandId: null,
-          turnId: null,
-          vendorEventId: null,
-          status: 'idle',
-        },
-      }),
-    }),
     rememberNativeId: assign({
       nativeId: ({ context, event }) =>
         'output' in event && typeof event.output === 'string' ? event.output : context.nativeId,
@@ -487,42 +205,7 @@ export const codexLiveSessionMachine = xstateSetup({
     pending: input,
     inputItems: [],
     failure: null,
-    activeTurnId: null,
-    activeCommandId: null,
-    completedTurnId: null,
-    feedSerial: 0,
-    lastFeed: null,
   }),
-  invoke: {
-    id: 'notifications',
-    src: 'notifications',
-  },
-  on: {
-    'Thread idle': {
-      guard: ({ context, event }) =>
-        event.threadId === context.nativeId &&
-        context.activeTurnId === null &&
-        !(context.lastFeed?.body.type === 'status' && context.lastFeed.body.status === 'idle'),
-      actions: 'rememberThreadIdle',
-    },
-    'Turn started': {
-      guard: ({ context, event }) =>
-        event.threadId === context.nativeId && context.pending !== null,
-      actions: 'rememberTurn',
-    },
-    'Turn completed': {
-      guard: ({ context, event }) =>
-        event.threadId === context.nativeId &&
-        event.turnId === context.activeTurnId &&
-        context.completedTurnId !== event.turnId,
-      actions: 'rememberCompletedTurn',
-    },
-    'Item completed': {
-      guard: ({ context, event }) =>
-        event.threadId === context.nativeId && event.turnId === context.activeTurnId,
-      actions: 'rememberCompletedItem',
-    },
-  },
   states: {
     Opening: {
       invoke: {
@@ -550,11 +233,8 @@ export const codexLiveSessionMachine = xstateSetup({
           inputItems: context.inputItems,
         }),
         onDone: {
-          target: 'Running turn',
-          actions: [
-            'rememberTurn',
-            'clearPending',
-          ],
+          target: 'Ready',
+          actions: 'clearPending',
         },
         onError: {
           target: 'Failed',
@@ -583,11 +263,8 @@ export const codexLiveSessionMachine = xstateSetup({
           inputItems: context.inputItems,
         }),
         onDone: {
-          target: 'Running turn',
-          actions: [
-            'rememberTurn',
-            'clearPending',
-          ],
+          target: 'Ready',
+          actions: 'clearPending',
         },
         onError: {
           target: 'Failed',
@@ -595,23 +272,6 @@ export const codexLiveSessionMachine = xstateSetup({
         },
       },
       on: {
-        Close: 'Closed',
-      },
-    },
-    'Running turn': {
-      always: {
-        guard: ({ context }) => context.activeTurnId === null,
-        target: 'Ready',
-      },
-      on: {
-        'Turn completed': {
-          guard: ({ context, event }) =>
-            event.threadId === context.nativeId &&
-            event.turnId === context.activeTurnId &&
-            context.completedTurnId !== event.turnId,
-          target: 'Ready',
-          actions: 'rememberCompletedTurn',
-        },
         Close: 'Closed',
       },
     },

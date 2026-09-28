@@ -17,7 +17,6 @@ const inputSchema = z.strictObject({
   sessionId: identifierSchema,
   subagentId: identifierSchema.nullable().optional(),
   cursor: z.number().int().nonnegative(),
-  generation: identifierSchema.nullable().optional(),
 })
 
 function canDeliver(event: SessionLiveEvent, live: boolean): boolean {
@@ -45,35 +44,20 @@ export type SessionLiveEventsContext = {
   ) => () => void
 }
 
-function subagentLiveUpdates(
-  context: SessionLiveEventsContext,
-  stored: ReturnType<typeof sessionHistoryIdentity>,
-  subagentId: string,
-) {
-  return observable<z.infer<typeof sessionLiveUpdateSchema>>((emit) => {
-    emit.next(
-      sessionLiveUpdateSchema.parse({
-        type: 'ready',
-        live: false,
-        cursor: 0,
-        generation: context.journal.generation,
-        replayExpired: false,
-      }),
-    )
-    const unwatch = context.watchHistory?.(
-      stored.harness,
-      { nativeId: stored.nativeId, subagentId, cwd: stored.cwd },
-      () => emit.next(sessionLiveUpdateSchema.parse({ type: 'invalidated' })),
-    )
-    return () => unwatch?.()
-  })
-}
-
 export function sessionLiveEventsProcedure(context: SessionLiveEventsContext) {
   return t.procedure.input(inputSchema).subscription(({ input }) => {
     const stored = sessionHistoryIdentity(context.database, input.sessionId)
     const subagentId = input.subagentId ?? null
-    if (subagentId !== null) return subagentLiveUpdates(context, stored, subagentId)
+    if (subagentId !== null)
+      return observable<z.infer<typeof sessionLiveUpdateSchema>>((emit) => {
+        emit.next(sessionLiveUpdateSchema.parse({ type: 'ready', live: false, cursor: 0 }))
+        const unwatch = context.watchHistory?.(
+          stored.harness,
+          { nativeId: stored.nativeId, subagentId, cwd: stored.cwd },
+          () => emit.next(sessionLiveUpdateSchema.parse({ type: 'invalidated' })),
+        )
+        return () => unwatch?.()
+      })
     return observable<z.infer<typeof sessionLiveUpdateSchema>>((emit) => {
       let replaying = true
       const pending: ReturnType<SessionEventJournal['append']>[] = []
@@ -85,25 +69,21 @@ export function sessionLiveEventsProcedure(context: SessionLiveEventsContext) {
         if (replaying) pending.push(event)
         else sendEvent(event, context.hasLiveChannel(input.sessionId))
       })
-      const replay = context.journal.replay(input.sessionId, input.cursor, input.generation ?? null)
+      const replay = context.journal.replay(input.sessionId, input.cursor)
       const live = context.hasLiveChannel(input.sessionId)
       emit.next(
         sessionLiveUpdateSchema.parse({
           type: 'ready',
           live,
           cursor: replay.cursor,
-          generation: context.journal.generation,
-          replayExpired: replay.type === 'expired',
         }),
       )
       if (replay.type === 'expired') emit.next(sessionLiveUpdateSchema.parse(replay))
       else for (const event of replay.events) sendEvent(event, live)
-      while (pending.length > 0) {
-        const event = pending.shift()
-        if (event !== undefined && event.sequence > replay.cursor)
-          sendEvent(event, context.hasLiveChannel(input.sessionId))
-      }
       replaying = false
+      for (const event of pending)
+        if (event.sequence > replay.cursor)
+          sendEvent(event, context.hasLiveChannel(input.sessionId))
       const unwatch = context.watchHistory?.(
         stored.harness,
         { nativeId: stored.nativeId, subagentId: null, cwd: stored.cwd },

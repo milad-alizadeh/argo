@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto'
 import {
   SESSION_LIVE_REPLAY_BYTE_LIMIT,
   SESSION_LIVE_REPLAY_EVENT_LIMIT,
@@ -16,7 +15,6 @@ type RecordedEvent = { event: SessionLiveEvent; bytes: number }
 type PendingEvent = { source: object; body: SessionLiveEventBody; bytes: number }
 
 export class SessionEventJournal {
-  readonly generation = randomUUID()
   private readonly listeners = new Map<string, Set<(event: SessionLiveEvent) => void>>()
   private readonly cursors = new Map<string, number>()
   private readonly events: RecordedEvent[] = []
@@ -79,11 +77,9 @@ export class SessionEventJournal {
     }
   }
 
-  replay(sessionId: string, after: number, generation?: string | null): SessionEventReplay {
+  replay(sessionId: string, after: number): SessionEventReplay {
     if (!Number.isInteger(after) || after < 0) throw new Error('Session event cursor is invalid.')
     const cursor = this.cursors.get(sessionId) ?? 0
-    if (after > 0 && generation !== undefined && generation !== this.generation)
-      return { type: 'expired', cursor }
     const events = this.events.flatMap(({ event }) =>
       event.sessionId === sessionId && event.sequence > after ? [event] : [],
     )

@@ -28,13 +28,13 @@ afterEach(async () => {
   await rm(directory, { recursive: true, force: true })
 })
 
-async function subscribe(cursor: number, live = true, generation: string | null = null) {
+async function subscribe(cursor: number, live = true) {
   const t = initTRPC.create()
   const caller = t
     .router({ live: sessionLiveEventsProcedure({ database, journal, hasLiveChannel: () => live }) })
     .createCaller({})
   const updates: unknown[] = []
-  const stream = await caller.live({ sessionId, cursor, generation })
+  const stream = await caller.live({ sessionId, cursor })
   const subscription = stream.subscribe({ next: (update) => updates.push(update) })
   return { updates, subscription }
 }
@@ -84,15 +84,7 @@ test('does not replay unanswered interactions after their live channel closes', 
   })
   const external = await subscribe(0, false)
   external.subscription.unsubscribe()
-  expect(external.updates).toEqual([
-    {
-      type: 'ready',
-      live: false,
-      cursor: 2,
-      generation: journal.generation,
-      replayExpired: false,
-    },
-  ])
+  expect(external.updates).toEqual([{ type: 'ready', live: false, cursor: 2 }])
 
   const live = await subscribe(0, true)
   live.subscription.unsubscribe()
@@ -115,13 +107,7 @@ test('asks the reader to reconcile an expired cursor with vendor history', async
   const { updates, subscription } = await subscribe(0, false)
   subscription.unsubscribe()
   expect(updates).toEqual([
-    {
-      type: 'ready',
-      live: false,
-      cursor: 3,
-      generation: journal.generation,
-      replayExpired: true,
-    },
+    { type: 'ready', live: false, cursor: 3 },
     { type: 'expired', cursor: 3 },
   ])
 })
@@ -159,36 +145,6 @@ test('does not lose an event published while replay is delivered', async () => {
     { type: 'event', event: { sequence: 1, status: 'running' } },
     { type: 'event', event: { sequence: 2, status: 'idle' } },
   ])
-})
-
-test('keeps queued replay events ahead of events published during queue delivery', async () => {
-  const status = (value: 'running' | 'idle') => ({
-    type: 'status' as const,
-    commandId: null,
-    turnId: null,
-    vendorEventId: null,
-    status: value,
-  })
-  journal.append(sessionId, status('running'))
-  const t = initTRPC.create()
-  const caller = t
-    .router({ live: sessionLiveEventsProcedure({ database, journal, hasLiveChannel: () => true }) })
-    .createCaller({})
-  const sequences: number[] = []
-  const stream = await caller.live({ sessionId, cursor: 0 })
-  const subscription = stream.subscribe({
-    next(update) {
-      if (update.type === 'ready') {
-        journal.append(sessionId, status('idle'))
-        journal.append(sessionId, status('running'))
-      }
-      if (update.type !== 'event') return
-      sequences.push(update.event.sequence)
-      if (update.event.sequence === 2) journal.append(sessionId, status('idle'))
-    },
-  })
-  subscription.unsubscribe()
-  expect(sequences).toEqual([1, 2, 3, 4])
 })
 
 test.each([false, true])('invalidates vendor history with live channel %s', async (live) => {
@@ -258,38 +214,5 @@ test('subscribes to Subagent changes without replaying root Session events', asy
   })
   watcher.invalidate()
   subscription.unsubscribe()
-  expect(updates).toEqual([
-    {
-      type: 'ready',
-      live: false,
-      cursor: 0,
-      generation: journal.generation,
-      replayExpired: false,
-    },
-    { type: 'invalidated' },
-  ])
-})
-
-test('expires a cursor from an earlier process even when its sequence matches', async () => {
-  const previous = new SessionEventJournal()
-  previous.append(sessionId, {
-    type: 'status',
-    commandId: null,
-    turnId: null,
-    vendorEventId: null,
-    status: 'running',
-  })
-  journal.append(sessionId, {
-    type: 'status',
-    commandId: null,
-    turnId: null,
-    vendorEventId: null,
-    status: 'idle',
-  })
-  const { updates, subscription } = await subscribe(1, false, previous.generation)
-  subscription.unsubscribe()
-  expect(updates).toMatchObject([
-    { type: 'ready', cursor: 1, generation: journal.generation, replayExpired: true },
-    { type: 'expired', cursor: 1 },
-  ])
+  expect(updates).toEqual([{ type: 'ready', live: false, cursor: 0 }, { type: 'invalidated' }])
 })

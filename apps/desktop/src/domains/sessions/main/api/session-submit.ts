@@ -130,7 +130,6 @@ function sendSessionDraft(input: SupervisorDraftRequest) {
     throw new TRPCError({ code: 'BAD_REQUEST', message: 'missing-session-working-directory' })
   context.supervisor.send({
     type: 'Send',
-    intentId: `optimistic:${draft.id}:${draft.revision}`,
     input: { ...command, sessionId: draft.target.sessionId, resume: { ...stored, harness, cwd } },
     reply,
   })
