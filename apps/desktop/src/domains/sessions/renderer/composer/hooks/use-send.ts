@@ -1,4 +1,3 @@
-import type { LexicalEditor } from 'lexical'
 import { type RefObject, useCallback } from 'react'
 
 import type { SessionAttachmentInput } from '@/domains/sessions/api/attachments'
@@ -38,16 +37,13 @@ export async function performSend(input: {
   draft: string
   attachments: ComposerAttachment[]
   markError: (ids: string[]) => void
-  editor: LexicalEditor | null
   onSend?: Send
   turnConfigurationValue: TurnConfiguration | null | undefined
-  clearDraft: (editor?: LexicalEditor | null) => void
-  restoreDraft: (text: string, editor?: LexicalEditor | null) => void
-  clear: (ids: string[]) => void
+  clearSentContent: (sentIds: string[]) => void
   isCurrentDraft: () => boolean
 }) {
-  const { draft, attachments, markError, editor, onSend } = input
-  const { turnConfigurationValue, clearDraft, clear } = input
+  const { draft, attachments, markError, onSend } = input
+  const { turnConfigurationValue, clearSentContent } = input
   if (onSend === undefined || (!draft.trim() && attachments.length === 0)) return
   const resolved = await resolveAttachments(draft, attachments, markError)
   if (!resolved.prompt.trim() && resolved.attachments.length === 0) return
@@ -55,13 +51,9 @@ export async function performSend(input: {
     outcomeFor(await onSend(resolved.prompt, turnConfigurationValue ?? null, resolved.attachments))
   ) {
     case 'accepted':
-      if (input.isCurrentDraft()) {
-        clearDraft(editor)
-        clear(resolved.sentIds)
-      }
+      if (input.isCurrentDraft()) clearSentContent(resolved.sentIds)
       return
     case 'rejected':
-      if (input.isCurrentDraft()) input.restoreDraft(draft, editor)
       return
     case 'uncertain':
       return
@@ -70,43 +62,34 @@ export async function performSend(input: {
 
 // The Send callback: everything performSend needs, bound to this composer's state.
 export function useSend(input: {
-  editorRef: RefObject<LexicalEditor | null>
   draft: string
   attachments: ComposerAttachment[]
-  clear: (ids: string[]) => void
-  clearDraft: (editor?: LexicalEditor | null) => void
-  restoreDraft: (text: string, editor?: LexicalEditor | null) => void
+  clearSentContent: (sentIds: string[]) => void
   markError: (ids: string[]) => void
   onSend?: Send
   turnConfigurationValue: TurnConfiguration | null | undefined
   editing: ComposerEditing
   latestEditing: RefObject<ComposerEditing>
 }) {
-  const { editorRef, draft, attachments, clear, clearDraft, restoreDraft } = input
+  const { draft, attachments, clearSentContent } = input
   const { markError, onSend, turnConfigurationValue } = input
   return useCallback(
     () =>
       performSend({
         attachments,
-        clear,
-        clearDraft,
+        clearSentContent,
         draft,
-        editor: editorRef.current,
         markError,
         onSend,
-        restoreDraft,
         turnConfigurationValue,
         isCurrentDraft: () => sameDraftContent(input.editing, input.latestEditing.current),
       }),
     [
       attachments,
-      clear,
-      clearDraft,
+      clearSentContent,
       draft,
-      editorRef,
       markError,
       onSend,
-      restoreDraft,
       turnConfigurationValue,
       input.editing,
       input.latestEditing,

@@ -15,22 +15,18 @@ const FEED_OVERSCAN = 8
 const TAIL_THRESHOLD_PX = 80
 const TAIL_KEY = 'feed-tail'
 
-// Where the Feed's virtualizer attaches: the scrollable element itself, and the scroll-padding
-// read off it once, since that padding never changes after mount.
+// Where the Feed's virtualizer attaches: the scrollable element itself, and its top scroll-padding
+// read once. The end space is the viewport's CSS padding, which follows the composer (#2835).
 export function useFeedViewport() {
   const [viewport, setViewport] = useState<HTMLElement | null>(null)
-  const [padding, setPadding] = useState({ start: 0, end: 0 })
+  const [paddingStart, setPaddingStart] = useState(0)
   const attachViewport = useCallback((element: HTMLElement | null) => {
     if (element !== null) {
-      const style = getComputedStyle(element)
-      setPadding({
-        start: Number.parseFloat(style.scrollPaddingTop) || 0,
-        end: Number.parseFloat(style.scrollPaddingBottom) || 0,
-      })
+      setPaddingStart(Number.parseFloat(getComputedStyle(element).scrollPaddingTop) || 0)
     }
     setViewport(element)
   }, [])
-  return { attachViewport, padding, viewport }
+  return { attachViewport, paddingStart, viewport }
 }
 
 export function useAnchoredVirtualizer({
@@ -40,7 +36,7 @@ export function useAnchoredVirtualizer({
   rows,
   tail,
   viewport,
-  padding,
+  paddingStart,
   onChange,
 }: {
   following: boolean
@@ -49,7 +45,7 @@ export function useAnchoredVirtualizer({
   rows: readonly SessionFeedRow[]
   tail: ReactNode
   viewport: HTMLElement | null
-  padding: { start: number; end: number }
+  paddingStart: number
   onChange: (instance: Virtualizer<HTMLElement, Element>, sync: boolean) => void
 }) {
   const virtualizer = useVirtualizer({
@@ -70,9 +66,8 @@ export function useAnchoredVirtualizer({
     initialMeasurementsCache,
     onChange,
     overscan: FEED_OVERSCAN,
-    paddingStart: padding.start,
-    paddingEnd: padding.end,
-    scrollPaddingStart: padding.start,
+    paddingStart,
+    scrollPaddingStart: paddingStart,
     scrollEndThreshold: TAIL_THRESHOLD_PX,
   })
   // TanStack Virtual takes this only as an instance assignment. Insertion effects run after
@@ -82,6 +77,37 @@ export function useAnchoredVirtualizer({
       initialScrollPosition === null ? undefined : () => false
   }, [initialScrollPosition, virtualizer])
   return virtualizer
+}
+
+// A composer growing under a Feed at its tail grows the viewport's end padding, which shrinks its
+// content box but not the border box TanStack watches, so the tail is pinned again here (#2835).
+// One direct write, not `scrollToEnd`, whose re-aiming over later frames would override a reader
+// who scrolls away in that time.
+export function useTailThroughViewportResize(viewport: HTMLElement | null, following: boolean) {
+  const followingNow = useRef(following)
+  useLayoutEffect(() => {
+    followingNow.current = following
+  }, [following])
+  useLayoutEffect(() => {
+    if (viewport === null) return
+    // Read at each scroll, which runs before resize callbacks in a frame, so a reader who just
+    // scrolled away is not pulled back by a stale `following`.
+    let atEnd = true
+    const distanceFromEnd = () => viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop
+    const onScroll = () => {
+      atEnd = distanceFromEnd() <= 1
+    }
+    const resizes = new ResizeObserver(() => {
+      if (followingNow.current && atEnd && distanceFromEnd() > 1)
+        viewport.scrollTop = viewport.scrollHeight
+    })
+    viewport.addEventListener('scroll', onScroll, { passive: true })
+    resizes.observe(viewport)
+    return () => {
+      viewport.removeEventListener('scroll', onScroll)
+      resizes.disconnect()
+    }
+  }, [viewport])
 }
 
 function feedRowAt(rows: readonly SessionFeedRow[], index: number) {

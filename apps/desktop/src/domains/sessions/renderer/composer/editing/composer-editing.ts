@@ -7,7 +7,6 @@ export type ComposerTicketContext =
 export type ComposerAttachment = {
   id: string
   path: string
-  status: 'idle' | 'error'
 }
 
 export type ComposerEditing = {
@@ -29,10 +28,9 @@ export function composerEditing(initial: Partial<ComposerEditing> = {}): Compose
 
 export type ComposerEditingEvent =
   | { type: 'prompt.changed'; prompt: string }
+  | { type: 'send.accepted'; sentIds: string[] }
   | { type: 'attachments.added'; paths: string[]; createId: () => string }
-  | { type: 'attachments.failed'; ids: string[] }
   | { type: 'attachment.removed'; id: string }
-  | { type: 'attachments.removed'; ids: string[] }
   | {
       type: 'ticket.added'
       ticket: Omit<ComposerTicketContext, 'id'>
@@ -46,16 +44,13 @@ function addAttachments(
 ) {
   const known = new Set(current.attachments.map((attachment) => attachment.path))
   const paths = [...new Set(event.paths)]
+  const added = paths
+    .filter((path) => !known.has(path))
+    .map((path) => ({ id: event.createId(), path }))
+  if (added.length === 0) return current
   return {
     ...current,
-    attachments: [
-      ...current.attachments.map((attachment) =>
-        paths.includes(attachment.path) ? { ...attachment, status: 'idle' as const } : attachment,
-      ),
-      ...paths
-        .filter((path) => !known.has(path))
-        .map((path) => ({ id: event.createId(), path, status: 'idle' as const })),
-    ],
+    attachments: [...current.attachments, ...added],
   }
 }
 
@@ -78,26 +73,20 @@ export function editComposer(
   switch (event.type) {
     case 'prompt.changed':
       return { ...current, prompt: event.prompt }
-    case 'attachments.added':
-      return addAttachments(current, event)
-    case 'attachments.failed':
+    case 'send.accepted':
       return {
         ...current,
-        attachments: current.attachments.map((attachment) =>
-          event.ids.includes(attachment.id)
-            ? { ...attachment, status: 'error' as const }
-            : attachment,
+        prompt: '',
+        attachments: current.attachments.filter(
+          (attachment) => !event.sentIds.includes(attachment.id),
         ),
       }
+    case 'attachments.added':
+      return addAttachments(current, event)
     case 'attachment.removed':
       return {
         ...current,
         attachments: current.attachments.filter((attachment) => attachment.id !== event.id),
-      }
-    case 'attachments.removed':
-      return {
-        ...current,
-        attachments: current.attachments.filter((attachment) => !event.ids.includes(attachment.id)),
       }
     case 'ticket.added':
       return addTicket(current, event)

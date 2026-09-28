@@ -2,22 +2,6 @@ import { useCallback } from 'react'
 
 import { attachmentKindOf, type SessionAttachmentInput } from '@/domains/sessions/api/attachments'
 import type { ComposerAttachment } from '../editing/composer-editing'
-import { useComposerEditing } from '../editing/composer-editing-context'
-
-export function useComposerAttachments() {
-  const { editing, dispatch } = useComposerEditing()
-  return {
-    attachments: editing.attachments,
-    markError: useCallback(
-      (ids: string[]) => dispatch({ type: 'attachments.failed', ids }),
-      [dispatch],
-    ),
-    clear: useCallback(
-      (ids: string[]) => dispatch({ type: 'attachments.removed', ids }),
-      [dispatch],
-    ),
-  }
-}
 
 // The chooser and drag-and-drop are the two ways a file joins the strip (#1845 gap-decision);
 // both hand paths to the active composer edit.

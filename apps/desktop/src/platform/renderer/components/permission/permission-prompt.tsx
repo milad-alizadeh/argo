@@ -12,9 +12,8 @@ type PermissionLabels = { allow: string; deny: string; title: string }
 export type PermissionPromptProps = {
   presentation?: 'composer' | 'stage'
   harness?: SessionHarness
-  // The composer tray has no page heading above it, so the title defaults to `h3`. A caller that
-  // nests this under its own `h1` (Project setup's Approval screen) passes 2 to keep the document
-  // outline unbroken.
+  // The title defaults to `h3`. A caller that nests this under its own `h1` (the Session screen,
+  // Project setup's Approval screen) passes 2 to keep the document outline unbroken.
   headingLevel?: 2 | 3
   labels?: PermissionLabels
   permission: Pick<Permission, 'description' | 'id'> | null

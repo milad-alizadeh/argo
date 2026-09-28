@@ -1,15 +1,9 @@
-import {
-  $convertFromMarkdownString,
-  $convertToMarkdownString,
-  TRANSFORMERS,
-} from '@lexical/markdown'
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { EditorRefPlugin } from '@lexical/react/LexicalEditorRefPlugin'
 import { HorizontalRulePlugin } from '@lexical/react/LexicalHorizontalRulePlugin'
 import { MarkdownShortcutPlugin } from '@lexical/react/LexicalMarkdownShortcutPlugin'
-import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import type { LexicalEditor } from 'lexical'
 import { type RefObject, useEffect, useState } from 'react'
@@ -22,6 +16,7 @@ import { ComposerReferenceNode } from '../references/composer-reference-node'
 import { ComposerReferencePlugin } from '../references/composer-reference-plugin'
 import { ComposerTicketReferenceNode } from '../references/composer-ticket-reference-node'
 import { ComposerTicketReferencePlugin } from '../references/composer-ticket-reference-plugin'
+import { ComposerEditorAdapter, initialComposerDocument } from './composer-editor-adapter'
 import { SendOnEnterPlugin } from './session-composer-enter'
 import {
   composerNodes,
@@ -29,10 +24,6 @@ import {
   MarkdownPastePlugin,
   MarkdownTypingShortcutPlugin,
 } from './session-composer-markdown'
-
-function editorState(text: string) {
-  return () => $convertFromMarkdownString(text, TRANSFORMERS)
-}
 
 function ComposerPlaceholder() {
   const { t } = useTranslation('sessions')
@@ -86,7 +77,7 @@ export function ComposerEditor({
   return (
     <LexicalComposer
       initialConfig={{
-        editorState: editorState(draft),
+        editorState: initialComposerDocument(draft),
         namespace: 'argo-session-composer',
         nodes: [...composerNodes, ComposerReferenceNode, ComposerTicketReferenceNode],
         onError: (error) => {
@@ -106,7 +97,7 @@ export function ComposerEditor({
             aria-expanded={referencesOpen}
             // No aria-placeholder: role="combobox" (needed for aria-expanded) doesn't allow it, and
             // `ComposerPlaceholder` already renders the same text, visibly, beside this field.
-            className="min-h-(--size-composer-field) flex-1 px-(--spacing-shell-inset) py-(--spacing-shell-gutter) type-prose outline-none [&_a]:underline [&_a]:decoration-border [&_a]:underline-offset-4 [&_blockquote]:my-(--spacing-shell-item) [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-(--spacing-shell-inset) [&_code]:rounded-sm [&_code]:bg-muted [&_code]:px-1 [&_code]:font-mono [&_h1]:mt-(--spacing-shell-tight) [&_h1]:mb-(--spacing-shell-item) [&_h1]:!text-title [&_h1]:font-semibold [&_h1]:text-foreground [&_h2]:mt-(--spacing-shell-section) [&_h2]:mb-(--spacing-shell-item) [&_h2]:!text-heading [&_h2]:font-semibold [&_h2]:text-foreground [&_h3]:mt-(--spacing-shell-item) [&_h3]:mb-(--spacing-shell-tight) [&_h3]:!text-heading [&_h3]:font-semibold [&_h3]:text-foreground [&_hr]:my-(--spacing-shell-section) [&_hr]:border-border [&_ol]:my-(--spacing-shell-item) [&_ol]:list-decimal [&_ol]:pl-(--spacing-shell-section) [&_p]:mb-(--spacing-shell-item) [&_ul]:my-(--spacing-shell-item) [&_ul]:list-disc [&_ul]:pl-(--spacing-shell-section) [&>code]:my-(--spacing-shell-item) [&>code]:block [&>code]:rounded-lg [&>code]:bg-muted [&>code]:p-(--spacing-shell-inset) [&>code]:font-mono"
+            className="min-h-(--size-composer-field) max-h-(--size-composer-field-max) flex-1 overflow-y-auto px-(--spacing-shell-inset) py-(--spacing-shell-gutter) type-prose outline-none [&_a]:underline [&_a]:decoration-border [&_a]:underline-offset-4 [&_blockquote]:my-(--spacing-shell-item) [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-(--spacing-shell-inset) [&_code]:rounded-sm [&_code]:bg-muted [&_code]:px-1 [&_code]:font-mono [&_h1]:mt-(--spacing-shell-tight) [&_h1]:mb-(--spacing-shell-item) [&_h1]:!text-title [&_h1]:font-semibold [&_h1]:text-foreground [&_h2]:mt-(--spacing-shell-section) [&_h2]:mb-(--spacing-shell-item) [&_h2]:!text-heading [&_h2]:font-semibold [&_h2]:text-foreground [&_h3]:mt-(--spacing-shell-item) [&_h3]:mb-(--spacing-shell-tight) [&_h3]:!text-heading [&_h3]:font-semibold [&_h3]:text-foreground [&_hr]:my-(--spacing-shell-section) [&_hr]:border-border [&_ol]:my-(--spacing-shell-item) [&_ol]:list-decimal [&_ol]:pl-(--spacing-shell-section) [&_p]:mb-(--spacing-shell-item) [&_ul]:my-(--spacing-shell-item) [&_ul]:list-disc [&_ul]:pl-(--spacing-shell-section) [&>code]:my-(--spacing-shell-item) [&>code]:block [&>code]:rounded-lg [&>code]:bg-muted [&>code]:p-(--spacing-shell-inset) [&>code]:font-mono"
             data-keyboard-focus={showsKeyboardFocus}
             contentEditable={!disabled}
             onBlur={() => setShowsKeyboardFocus(false)}
@@ -115,15 +106,9 @@ export function ComposerEditor({
         }
         placeholder={<ComposerPlaceholder />}
       />
-      <OnChangePlugin
-        onChange={(state) => {
-          state.read(() =>
-            dispatch({
-              type: 'prompt.changed',
-              prompt: $convertToMarkdownString(TRANSFORMERS),
-            }),
-          )
-        }}
+      <ComposerEditorAdapter
+        prompt={draft}
+        onPromptChange={(prompt) => dispatch({ type: 'prompt.changed', prompt })}
       />
       <MarkdownShortcutPlugin transformers={composerTransformers} />
       <MarkdownTypingShortcutPlugin />
