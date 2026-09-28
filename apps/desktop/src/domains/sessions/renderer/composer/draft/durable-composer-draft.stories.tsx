@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { type Dispatch, type SetStateAction, useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import {
   queryClient,
@@ -8,7 +8,10 @@ import {
   trpc,
 } from '@/platform/renderer/trpc-client'
 import { claudeComposerModelCatalogFixture } from '../../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
-import { claudeChoices } from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
+import {
+  claudeChoices,
+  codexHarnessInfoFixture,
+} from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
 import { DraftLoadFailure } from '../../screens/session-screen-details'
 import { ComposerForm } from '../layout/composer-form'
 import type { TurnConfigurationChoices } from '../turn-configuration/turn-configuration'
@@ -21,10 +24,13 @@ type Server = {
   trpc: typeof window.argo.trpc
   releaseSave: () => void
   holdSessionASave: boolean
+  failSessionASave: boolean
+  sessionASaveRejected: boolean
   rejectSubmit: boolean
   savePending: boolean
   draftReadFailures: number
   notify: () => void
+  submittedTarget: DraftTarget | null
 }
 type MockInput = {
   target?: DraftTarget
@@ -39,6 +45,7 @@ const choices = (() => {
   if (value === null) throw new Error('The Claude story catalog has no usable model.')
   return value
 })()
+const codexChoices = codexHarnessInfoFixture()
 
 function ownerKey(target: DraftTarget) {
   return target.type === 'session' ? target.sessionId : target.projectId
@@ -68,9 +75,22 @@ function savedDraft(sessionId: string, prompt: string, now: number): DraftValue 
   }
 }
 
-function createReadResult(drafts: Map<string, DraftValue>, input: MockInput) {
-  if (input.target === undefined) return null
-  return drafts.get(ownerKey(input.target)) ?? null
+function savedProjectDraft(harness: 'claude' | 'codex'): DraftValue {
+  return {
+    ...savedDraft('project-1', 'Plan this change.', 3),
+    id: 'draft-project-1',
+    turnConfiguration: harness === 'codex' ? codexChoices.opening : choices.opening,
+    target: {
+      type: 'project',
+      projectId: 'project-1',
+      workspaceId: 'workspace-1',
+      harness,
+    },
+  }
+}
+
+function createReadResult(drafts: Map<string, DraftValue>, target: DraftTarget) {
+  return drafts.get(ownerKey(target)) ?? null
 }
 
 function createCreateResult(drafts: Map<string, DraftValue>, input: MockInput, notify: () => void) {
@@ -102,17 +122,25 @@ async function saveDraftResult(request: {
   if (input.target === undefined || input.content === undefined) return null
   const owner = ownerKey(input.target)
   if (owner === 'session-a' && server.holdSessionASave) {
+    server.holdSessionASave = false
     server.savePending = true
     notify()
     await new Promise<void>((resolve) => {
       server.releaseSave = resolve
     })
     server.savePending = false
+    if (server.failSessionASave) {
+      server.sessionASaveRejected = true
+      notify()
+      throw new Error('Session A save failed.')
+    }
   }
   const current = drafts.get(owner)
   if (current === undefined) throw new Error(`Missing draft for ${owner}.`)
+  if (current.revision !== input.expectedRevision) throw new Error('stale-draft')
   const saved: DraftValue = {
     ...current,
+    target: input.target,
     ...input.content,
     revision: current.revision + 1,
     updatedAt: Date.now(),
@@ -131,6 +159,7 @@ function submitDraftResult(request: {
   const { server, drafts, input, notify } = request
   if (server.rejectSubmit) throw new Error('The Session rejected this Turn.')
   const submitted = [...drafts.entries()].find(([_, draft]) => draft.id === input.draftId)
+  server.submittedTarget = submitted?.[1].target ?? null
   if (submitted !== undefined && submitted[1].revision === input.expectedRevision)
     drafts.delete(submitted[0])
   notify()
@@ -146,7 +175,7 @@ function createMockTrpc(server: Server, notify: () => void): typeof window.argo.
         notify()
         throw new Error('The saved draft could not be read.')
       }
-      return { result: { data: createReadResult(server.drafts, input) } }
+      return { result: { data: createReadResult(server.drafts, request.input as DraftTarget) } }
     }
     if (request.path === 'composerDraftCreate')
       return { result: { data: createCreateResult(server.drafts, input, notify) } }
@@ -166,11 +195,22 @@ function createMockTrpc(server: Server, notify: () => void): typeof window.argo.
   }) as typeof window.argo.trpc
 }
 
-function createServer(
-  notify: () => void,
-  initialOutcome: 'accept' | 'reject' | 'fallback',
-  draftReadFailures = 0,
-): Server {
+function createServer(input: {
+  notify: () => void
+  initialOutcome: 'accept' | 'reject' | 'fallback'
+  project: boolean
+  projectDraftExists: boolean
+  savedProjectHarness: 'claude' | 'codex'
+  draftReadFailures: number
+}): Server {
+  const {
+    notify,
+    initialOutcome,
+    project,
+    projectDraftExists,
+    savedProjectHarness,
+    draftReadFailures,
+  } = input
   const firstDraft = savedDraft('session-a', 'Restored Session A draft.', 1)
   if (initialOutcome === 'fallback')
     firstDraft.turnConfiguration = {
@@ -182,165 +222,112 @@ function createServer(
     drafts: new Map([
       ['session-a', firstDraft],
       ['session-b', savedDraft('session-b', 'Restored Session B draft.', 2)],
+      ...(project && projectDraftExists
+        ? ([['project-1', savedProjectDraft(savedProjectHarness)]] as const)
+        : []),
     ]),
     trpc: (async () => ({ result: { data: null } })) as unknown as typeof window.argo.trpc,
     releaseSave: notify,
     holdSessionASave: false,
+    failSessionASave: false,
+    sessionASaveRejected: false,
     rejectSubmit: initialOutcome !== 'accept',
     savePending: false,
     draftReadFailures,
     notify,
+    submittedTarget: null,
   }
   server.trpc = createMockTrpc(server, notify)
   return server
 }
 
-function useDraftStoryRetryFocus(draft: ReturnType<typeof useDurableComposerDraft>) {
-  const [focusComposerAfterRetry, setFocusComposerAfterRetry] = useState(false)
-  const retryDraftLoad = () => {
-    void draft?.retryLoad().then(({ isSuccess }) => {
-      if (isSuccess) setFocusComposerAfterRetry(true)
-    })
-  }
-  const clearRecoveryFocus = useCallback(() => setFocusComposerAfterRetry(false), [])
-  return { focusComposerAfterRetry, retryDraftLoad, clearRecoveryFocus }
-}
-
-function DurableDraftStory({
-  initialOutcome = 'accept',
-  draftReadFailures = 0,
+function DraftOwnerControls({
+  project,
+  onSession,
+  onReload,
+  onScreenReload,
+  onWorkspace,
+  onHarness,
 }: {
-  initialOutcome?: 'accept' | 'reject' | 'fallback'
-  draftReadFailures?: number
-}) {
-  const [serverVersion, setServerVersion] = useState(0)
-  const [server] = useState(() =>
-    createServer(
-      () => setServerVersion((version) => version + 1),
-      initialOutcome,
-      draftReadFailures,
-    ),
-  )
-  const initialized = useRef(false)
-  if (!initialized.current) {
-    queryClient.removeQueries({ queryKey: trpc.composerDraftRead.pathKey() })
-    window.argo.trpc = server.trpc
-    Object.assign(window.argo, {
-      statSessionAttachments: async ({ paths }: { paths: string[] }) => ({
-        version: 1,
-        type: 'session.attachments.statted',
-        requestId: 'storybook-draft-attachments',
-        files: paths.map((path) => ({ path, readable: true })),
-      }),
-    })
-    initialized.current = true
-  }
-  const [sessionId, setSessionId] = useState('session-a')
-  const [composerVersion, setComposerVersion] = useState(0)
-  const target: DraftTarget = { type: 'session', sessionId }
-  const draft = useDurableComposerDraft({ target, choices, opening: choices.opening })
-  const { focusComposerAfterRetry, retryDraftLoad, clearRecoveryFocus } =
-    useDraftStoryRetryFocus(draft)
-  const storedDrafts = storedDraftSummaries(server.drafts)
-  void serverVersion
-  return (
-    <div className="mx-auto flex h-[560px] max-w-3xl flex-col gap-3 p-6">
-      <DraftStoryControls
-        server={server}
-        target={target}
-        setSessionId={setSessionId}
-        setComposerVersion={setComposerVersion}
-      />
-      <output
-        aria-label="Stored drafts"
-        data-save-pending={server.savePending}
-        data-read-failures={server.draftReadFailures}
-      >
-        {JSON.stringify(storedDrafts)}
-      </output>
-      {draft?.sendFailed ? (
-        <div role="alert">The Turn could not be sent. Your draft is still saved.</div>
-      ) : null}
-      {draft ? (
-        <DurableDraftComposer
-          draft={draft}
-          sessionId={`${sessionId}:${composerVersion}:${draft.hasDraft ? 'ready' : 'load-failed'}`}
-          focusOnRetry={focusComposerAfterRetry}
-          onFocusAfterMount={clearRecoveryFocus}
-          onRetry={retryDraftLoad}
-        />
-      ) : null}
-    </div>
-  )
-}
-
-function DurableDraftComposer({
-  draft,
-  sessionId,
-  focusOnRetry,
-  onFocusAfterMount,
-  onRetry,
-}: {
-  draft: NonNullable<ReturnType<typeof useDurableComposerDraft>>
-  sessionId: string
-  focusOnRetry: boolean
-  onFocusAfterMount: () => void
-  onRetry: () => void
+  project: boolean
+  onSession: (sessionId: string) => void
+  onReload: () => void
+  onScreenReload: () => void
+  onWorkspace: () => void
+  onHarness: () => void
 }) {
   return (
     <>
-      {draft.loadFailed ? <DraftLoadFailure onRetry={onRetry} /> : null}
-      <ComposerForm
-        harness={{ harness: 'claude' }}
-        initialEditing={draft.initialEditing}
-        onEditingChange={draft.onEditingChange}
-        onSend={async (prompt, turnConfiguration, attachments) =>
-          (await draft.submit(prompt, turnConfiguration, attachments)) !== null
-        }
-        sessionId={sessionId}
-        disabled={draft.loadFailed && !draft.hasDraft}
-        focusOnMount={focusOnRetry}
-        onFocusAfterMount={onFocusAfterMount}
-        turnConfigurationChoices={choices as TurnConfigurationChoices}
-      />
+      <button onClick={() => onSession('session-a')} type="button">
+        Session A
+      </button>
+      <button onClick={() => onSession('session-b')} type="button">
+        Session B
+      </button>
+      <button onClick={() => onSession('session-a')} type="button">
+        Reopen Session A
+      </button>
+      <button onClick={onReload} type="button">
+        Reload composer
+      </button>
+      <button onClick={onScreenReload} type="button">
+        Reload screen
+      </button>
+      {project ? (
+        <>
+          <button onClick={onWorkspace} type="button">
+            Workspace 2
+          </button>
+          <button onClick={onHarness} type="button">
+            Harness Codex
+          </button>
+        </>
+      ) : null}
     </>
   )
 }
 
-function storedDraftSummaries(drafts: Map<string, DraftValue>) {
-  return [...drafts.values()].map(({ target, prompt, revision, turnConfiguration }) => ({
-    target,
-    prompt,
-    revision,
-    turnConfiguration,
-  }))
+function DraftTimingControls({ server }: { server: Server }) {
+  return (
+    <>
+      <button
+        onClick={() => {
+          server.holdSessionASave = true
+        }}
+        type="button"
+      >
+        Hold Session A saves
+      </button>
+      <button onClick={() => server.releaseSave()} type="button">
+        Release Session A save
+      </button>
+      <button
+        onClick={() => {
+          server.failSessionASave = true
+          server.releaseSave()
+        }}
+        type="button"
+      >
+        Fail Session A save
+      </button>
+      <button
+        onClick={() => {
+          queryClient.setQueryData(
+            trpc.composerDraftRead.queryKey({ type: 'session', sessionId: 'session-a' }),
+            savedDraft('session-a', 'Late Session A read.', Date.now()),
+          )
+        }}
+        type="button"
+      >
+        Apply late Session A read
+      </button>
+    </>
+  )
 }
 
-function DraftStoryControls({
-  server,
-  target,
-  setSessionId,
-  setComposerVersion,
-}: {
-  server: Server
-  target: DraftTarget
-  setSessionId: Dispatch<SetStateAction<string>>
-  setComposerVersion: Dispatch<SetStateAction<number>>
-}) {
+function DraftReadControls({ server, target }: { server: Server; target: DraftTarget }) {
   return (
-    <div className="flex gap-2">
-      <button onClick={() => setSessionId('session-a')} type="button">
-        Session A
-      </button>
-      <button onClick={() => setSessionId('session-b')} type="button">
-        Session B
-      </button>
-      <button onClick={() => setSessionId('session-a')} type="button">
-        Reopen Session A
-      </button>
-      <button onClick={() => setComposerVersion((version) => version + 1)} type="button">
-        Reload composer
-      </button>
+    <>
       <button
         onClick={() => {
           server.draftReadFailures = 1
@@ -360,19 +347,256 @@ function DraftStoryControls({
       >
         Refresh draft
       </button>
-      <button
-        onClick={() => {
-          server.holdSessionASave = true
-        }}
-        type="button"
-      >
-        Hold Session A saves
-      </button>
-      <button onClick={() => server.releaseSave()} type="button">
-        Release Session A save
-      </button>
+    </>
+  )
+}
+
+function useDraftStoryRetryFocus(draft: ReturnType<typeof useDurableComposerDraft>) {
+  const [focusComposerAfterRetry, setFocusComposerAfterRetry] = useState(false)
+  const retryDraftLoad = () => {
+    void draft?.retryLoad().then(({ isSuccess }) => {
+      if (isSuccess) setFocusComposerAfterRetry(true)
+    })
+  }
+  const clearRecoveryFocus = useCallback(() => setFocusComposerAfterRetry(false), [])
+  return { focusComposerAfterRetry, retryDraftLoad, clearRecoveryFocus }
+}
+
+function DurableDraftStory({
+  initialOutcome = 'accept',
+  project = false,
+  projectDraftExists = true,
+  savedProjectHarness = 'claude',
+  draftReadFailures = 0,
+}: {
+  initialOutcome?: 'accept' | 'reject' | 'fallback'
+  project?: boolean
+  projectDraftExists?: boolean
+  savedProjectHarness?: 'claude' | 'codex'
+  draftReadFailures?: number
+}) {
+  const [serverVersion, setServerVersion] = useState(0)
+  const [screenVersion, setScreenVersion] = useState(0)
+  const [server] = useState(() =>
+    createServer({
+      notify: () => setServerVersion((version) => version + 1),
+      initialOutcome,
+      project,
+      projectDraftExists,
+      savedProjectHarness,
+      draftReadFailures,
+    }),
+  )
+  const initialized = useRef(false)
+  if (!initialized.current) {
+    queryClient.removeQueries({ queryKey: trpc.composerDraftRead.pathKey() })
+    window.argo.trpc = server.trpc
+    Object.assign(window.argo, {
+      statSessionAttachments: async ({ paths }: { paths: string[] }) => ({
+        version: 1,
+        type: 'session.attachments.statted',
+        requestId: 'storybook-draft-attachments',
+        files: paths.map((path) => ({ path, readable: true })),
+      }),
+    })
+    initialized.current = true
+  }
+  void serverVersion
+  return (
+    <DurableDraftScreen
+      key={screenVersion}
+      server={server}
+      project={project}
+      onReloadScreen={() => {
+        queryClient.removeQueries({ queryKey: trpc.composerDraftRead.pathKey() })
+        setScreenVersion((version) => version + 1)
+      }}
+    />
+  )
+}
+
+function useRestoreProjectDraftStory(input: {
+  project: boolean
+  restoredProjectId: string | null
+  loadedTarget: DraftTarget | null | undefined
+  harness: 'claude' | 'codex'
+  setWorkspaceId: (workspaceId: string) => void
+  setHarness: (harness: 'claude' | 'codex') => void
+  setRestoredProjectId: (projectId: string) => void
+}) {
+  const {
+    project,
+    restoredProjectId,
+    loadedTarget,
+    harness,
+    setWorkspaceId,
+    setHarness,
+    setRestoredProjectId,
+  } = input
+  useEffect(() => {
+    if (!project || restoredProjectId !== null || loadedTarget === undefined) return
+    if (loadedTarget === null) {
+      setRestoredProjectId('project-1')
+      return
+    }
+    if (loadedTarget.type !== 'project') return
+    setWorkspaceId(loadedTarget.workspaceId)
+    if (harness !== loadedTarget.harness) {
+      setHarness(loadedTarget.harness)
+      return
+    }
+    setRestoredProjectId(loadedTarget.projectId)
+  }, [
+    project,
+    restoredProjectId,
+    loadedTarget,
+    harness,
+    setWorkspaceId,
+    setHarness,
+    setRestoredProjectId,
+  ])
+}
+
+function DurableDraftScreen({
+  server,
+  project,
+  onReloadScreen,
+}: {
+  server: Server
+  project: boolean
+  onReloadScreen: () => void
+}) {
+  const [sessionId, setSessionId] = useState('session-a')
+  const [workspaceId, setWorkspaceId] = useState('workspace-1')
+  const [harness, setHarness] = useState<'claude' | 'codex'>('claude')
+  const [composerVersion, setComposerVersion] = useState(0)
+  const [restoredProjectId, setRestoredProjectId] = useState<string | null>(null)
+  const target: DraftTarget = project
+    ? { type: 'project', projectId: 'project-1', workspaceId, harness }
+    : { type: 'session', sessionId }
+  const targetRestored = !project || restoredProjectId === 'project-1'
+  const currentChoices = harness === 'codex' ? codexChoices : choices
+  const draft = useDurableComposerDraft({
+    target,
+    choices: currentChoices,
+    opening: currentChoices.opening,
+    targetRestored,
+  })
+  const loadedTarget = draft?.loadedTarget
+  useRestoreProjectDraftStory({
+    project,
+    restoredProjectId,
+    loadedTarget,
+    harness,
+    setWorkspaceId,
+    setHarness,
+    setRestoredProjectId,
+  })
+  const { focusComposerAfterRetry, retryDraftLoad, clearRecoveryFocus } =
+    useDraftStoryRetryFocus(draft)
+  return (
+    <div className="mx-auto flex h-[560px] max-w-3xl flex-col gap-3 p-6">
+      <div className="flex gap-2">
+        <DraftOwnerControls
+          project={project}
+          onSession={setSessionId}
+          onReload={() => setComposerVersion((version) => version + 1)}
+          onScreenReload={onReloadScreen}
+          onWorkspace={() => setWorkspaceId('workspace-2')}
+          onHarness={() => setHarness('codex')}
+        />
+        <DraftTimingControls server={server} />
+        <DraftReadControls server={server} target={target} />
+      </div>
+      <DraftStoryDetails server={server} draft={draft} target={target} />
+      {draft?.sendFailed ? (
+        <div role="alert">The Turn could not be sent. Your draft is still saved.</div>
+      ) : null}
+      {draft && (targetRestored || draft.loadFailed) ? (
+        <DurableDraftComposer
+          draft={draft}
+          harness={harness}
+          choices={currentChoices}
+          sessionId={`${project ? 'project-1' : sessionId}:${composerVersion}:${draft.hasDraft ? 'ready' : 'load-failed'}`}
+          focusOnRetry={focusComposerAfterRetry}
+          onFocusAfterMount={clearRecoveryFocus}
+          onRetry={retryDraftLoad}
+        />
+      ) : null}
     </div>
   )
+}
+
+function DraftStoryDetails({
+  server,
+  draft,
+  target,
+}: {
+  server: Server
+  draft: ReturnType<typeof useDurableComposerDraft>
+  target: DraftTarget
+}) {
+  return (
+    <>
+      <output
+        aria-label="Stored drafts"
+        data-save-pending={server.savePending}
+        data-read-failures={server.draftReadFailures}
+      >
+        {JSON.stringify(storedDraftSummaries(server.drafts))}
+      </output>
+      <output aria-label="Submitted target">{JSON.stringify(server.submittedTarget)}</output>
+      <output aria-label="Current save failure">{String(draft?.saveFailed ?? false)}</output>
+      <output aria-label="Session A save rejected">{String(server.sessionASaveRejected)}</output>
+      <output aria-label="Current target">{JSON.stringify(target)}</output>
+    </>
+  )
+}
+
+function DurableDraftComposer({
+  draft,
+  harness,
+  choices,
+  sessionId,
+  focusOnRetry,
+  onFocusAfterMount,
+  onRetry,
+}: {
+  draft: NonNullable<ReturnType<typeof useDurableComposerDraft>>
+  harness: 'claude' | 'codex'
+  choices: TurnConfigurationChoices
+  sessionId: string
+  focusOnRetry: boolean
+  onFocusAfterMount: () => void
+  onRetry: () => void
+}) {
+  return (
+    <>
+      {draft.loadFailed ? <DraftLoadFailure onRetry={onRetry} /> : null}
+      <ComposerForm
+        harness={{ harness }}
+        initialEditing={draft.initialEditing}
+        onEditingChange={draft.onEditingChange}
+        onSend={async (prompt, turnConfiguration, attachments) =>
+          (await draft.submit(prompt, turnConfiguration, attachments)) !== null
+        }
+        sessionId={sessionId}
+        disabled={draft.loadFailed && !draft.hasDraft}
+        focusOnMount={focusOnRetry}
+        onFocusAfterMount={onFocusAfterMount}
+        turnConfigurationChoices={choices}
+      />
+    </>
+  )
+}
+
+function storedDraftSummaries(drafts: Map<string, DraftValue>) {
+  return [...drafts.values()].map(({ target, prompt, revision, turnConfiguration }) => ({
+    target,
+    prompt,
+    revision,
+    turnConfiguration,
+  }))
 }
 
 const meta = {
@@ -509,6 +733,121 @@ export const TargetSwitchKeepsAnInFlightSaveWithItsOwner: Story = {
       expect(store).toContain('Updated Session A draft.')
       expect(store).toContain('Updated Session B draft.')
     })
+    await expect(canvas.getByLabelText('Message')).toHaveTextContent('Updated Session B draft.')
+  },
+}
+
+export const SavesOneOwnerInRevisionOrder: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const editor = await canvas.findByLabelText('Message')
+    await userEvent.click(canvas.getByRole('button', { name: 'Hold Session A saves' }))
+    await userEvent.clear(editor)
+    await userEvent.type(editor, 'First revision.')
+    await serverRequestedSave(canvasElement)
+    await userEvent.clear(editor)
+    await userEvent.type(editor, 'Second revision.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Release Session A save' }))
+    await waitFor(() => {
+      const store = canvas.getByLabelText('Stored drafts')
+      expect(store).toHaveTextContent('Second revision.')
+      expect(store).toHaveTextContent('"revision":2')
+    })
+  },
+}
+
+export const LateSessionReadKeepsTheCurrentDraft: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByLabelText('Message')).toHaveTextContent(
+      'Restored Session A draft.',
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Session B' }))
+    const editor = await canvas.findByLabelText('Message')
+    await expect(editor).toHaveTextContent('Restored Session B draft.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Apply late Session A read' }))
+    await expect(canvas.getByLabelText('Message')).toHaveTextContent('Restored Session B draft.')
+  },
+}
+
+export const LateSessionSaveFailureKeepsTheCurrentOwner: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const editor = await canvas.findByLabelText('Message')
+    await userEvent.click(canvas.getByRole('button', { name: 'Hold Session A saves' }))
+    await userEvent.clear(editor)
+    await userEvent.type(editor, 'Session A pending save.')
+    await serverRequestedSave(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Session B' }))
+    await expect(await canvas.findByLabelText('Message')).toHaveTextContent(
+      'Restored Session B draft.',
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Fail Session A save' }))
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Session A save rejected')).toHaveTextContent('true'),
+    )
+    await expect(canvas.getByLabelText('Current save failure')).toHaveTextContent('false')
+    await expect(canvas.getByLabelText('Message')).toHaveTextContent('Restored Session B draft.')
+  },
+}
+
+export const ProjectTargetChangesWithoutTextPersistForSend: Story = {
+  args: { project: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const editor = await canvas.findByLabelText('Message')
+    await expect(editor).toHaveTextContent('Plan this change.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Workspace 2' }))
+    const store = canvas.getByLabelText('Stored drafts')
+    await waitFor(() => expect(store).toHaveTextContent('"workspaceId":"workspace-2"'))
+    await expect(store).toHaveTextContent('"harness":"claude"')
+    await userEvent.click(canvas.getByRole('button', { name: 'Harness Codex' }))
+    await waitFor(() => expect(store).toHaveTextContent('"revision":2'))
+    await expect(store).toHaveTextContent('"harness":"codex"')
+    await userEvent.click(canvas.getByRole('button', { name: 'Reload screen' }))
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Current target')).toHaveTextContent(
+        '"workspaceId":"workspace-2"',
+      ),
+    )
+    await expect(canvas.getByLabelText('Current target')).toHaveTextContent('"harness":"codex"')
+    await expect(await canvas.findByLabelText('Message')).toHaveTextContent('Plan this change.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Submitted target')).toHaveTextContent(
+        '"workspaceId":"workspace-2"',
+      ),
+    )
+    await expect(canvas.getByLabelText('Submitted target')).toHaveTextContent('"harness":"codex"')
+  },
+}
+
+export const RestoresSavedCodexConfigurationBeforeSend: Story = {
+  args: { project: true, savedProjectHarness: 'codex', initialOutcome: 'reject' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const store = canvas.getByLabelText('Stored drafts')
+    await expect(store).toHaveTextContent('"model":"gpt-live"')
+    await expect(await canvas.findByLabelText('Message')).toHaveTextContent('Plan this change.')
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Current target')).toHaveTextContent('"harness":"codex"'),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
+    await canvas.findByText('The Turn could not be sent. Your draft is still saved.')
+    await expect(store).toHaveTextContent('"model":"gpt-live"')
+    await expect(store).toHaveTextContent('"revision":0')
+  },
+}
+
+export const CreatesProjectDraftAfterEmptyRead: Story = {
+  args: { project: true, projectDraftExists: false },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await canvas.findByLabelText('Message')
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent('"projectId":"project-1"'),
+    )
+    await expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent('"revision":0')
   },
 }
 

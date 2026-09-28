@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate, useParams } from 'react-router'
 import type { Cockpit } from '@/domains/projects/renderer'
@@ -123,6 +123,46 @@ function draftTarget({
   }
 }
 
+function useSessionComposerDraft(input: {
+  identity: ComposerIdentity
+  harness: HarnessControl
+  cockpit: Cockpit
+  workspaceCockpit: WorkspaceCockpit
+  workspaceActions: WorkspaceActions
+  choices: Parameters<typeof useDurableComposerDraft>[0]['choices']
+  opening: TurnConfiguration | null
+}) {
+  const { identity, harness, cockpit, workspaceCockpit, workspaceActions, choices, opening } = input
+  const target = draftTarget({ identity, harness, cockpit, workspace: workspaceCockpit })
+  const [restoredProjectId, setRestoredProjectId] = useState<string | null>(null)
+  const projectId = identity.kind === 'draft' ? identity.projectId : null
+  const targetRestored = identity.kind === 'session' || restoredProjectId === projectId
+  const draft = useDurableComposerDraft({ target, choices, opening, targetRestored })
+  const loadedTarget = draft?.loadedTarget
+  useEffect(() => {
+    if (projectId === null || restoredProjectId === projectId || loadedTarget === undefined) return
+    if (loadedTarget === null) {
+      setRestoredProjectId(projectId)
+      return
+    }
+    if (loadedTarget.type !== 'project' || loadedTarget.projectId !== projectId) return
+    workspaceActions.selectWorkspace(loadedTarget.workspaceId)
+    if (harness.harness !== loadedTarget.harness) {
+      harness.onChange?.(loadedTarget.harness)
+      return
+    }
+    setRestoredProjectId(projectId)
+  }, [
+    harness.harness,
+    harness.onChange,
+    loadedTarget,
+    projectId,
+    restoredProjectId,
+    workspaceActions,
+  ])
+  return { draft, targetRestored }
+}
+
 function useSessionComposerSend(input: {
   draft: ReturnType<typeof useDurableComposerDraft>
   identity: ComposerIdentity
@@ -153,7 +193,10 @@ function useCatalogRead(harness: HarnessControl) {
   return { catalogQuery, refreshCatalog }
 }
 
-function useComposerRetryFocus() {
+function useComposerRetryFocus(
+  catalogQuery: ReturnType<typeof useCatalogRead>['catalogQuery'],
+  draft: ReturnType<typeof useDurableComposerDraft>,
+) {
   const [focusComposerAfterRetry, setFocusComposerAfterRetry] = useState(false)
   const clearRecoveryFocus = useCallback(() => setFocusComposerAfterRetry(false), [])
   const focusAfterSuccessfulRetry = (retry: Promise<{ isSuccess: boolean }>) => {
@@ -161,7 +204,9 @@ function useComposerRetryFocus() {
       if (isSuccess) setFocusComposerAfterRetry(true)
     })
   }
-  return { focusComposerAfterRetry, clearRecoveryFocus, focusAfterSuccessfulRetry }
+  const retryCatalog = () => focusAfterSuccessfulRetry(catalogQuery.refetch())
+  const retryDraft = () => draft && focusAfterSuccessfulRetry(draft.retryLoad())
+  return { focusComposerAfterRetry, clearRecoveryFocus, retryCatalog, retryDraft }
 }
 
 // The Session list already knows another process runs it live, so no Send is offered at all (ADR-0040).
@@ -177,8 +222,6 @@ export function SessionComposerArea({
   workspaceActions,
 }: SessionScreenDetailsProps) {
   const { catalogQuery, refreshCatalog } = useCatalogRead(harness)
-  const { focusComposerAfterRetry, clearRecoveryFocus, focusAfterSuccessfulRetry } =
-    useComposerRetryFocus()
   const location = useLocation()
   const { catalogFailure, choices, initialTurnConfiguration, identity } =
     sessionComposerConfiguration({
@@ -189,20 +232,18 @@ export function SessionComposerArea({
       catalogFailed: catalogQuery.isError,
     })
   const composerKey = composerIdentityKey(identity)
-  const draft = useDurableComposerDraft({
-    target: draftTarget({ identity, harness, cockpit, workspace: workspaceCockpit }),
+  const { draft, targetRestored } = useSessionComposerDraft({
+    identity,
+    harness,
+    cockpit,
+    workspaceCockpit,
+    workspaceActions,
     choices,
     opening: initialTurnConfiguration,
   })
-  const send = useSessionComposerSend({
-    draft,
-    identity,
-    projectId: cockpit.project?.id ?? null,
-  })
-  const retryCatalog = () => focusAfterSuccessfulRetry(catalogQuery.refetch())
-  const retryDraft = () => {
-    if (draft) focusAfterSuccessfulRetry(draft.retryLoad())
-  }
+  const { focusComposerAfterRetry, clearRecoveryFocus, retryCatalog, retryDraft } =
+    useComposerRetryFocus(catalogQuery, draft)
+  const send = useSessionComposerSend({ draft, identity, projectId: cockpit.project?.id ?? null })
   if (session?.locked === true) return <OpenElsewhere onRetry={null} />
   if (draft === null)
     return (
@@ -215,6 +256,7 @@ export function SessionComposerArea({
         onRetryCatalog={retryCatalog}
       />
     )
+  if (!targetRestored && !draft.loadFailed) return null
   return (
     <ReadySessionComposer
       {...{ permission, questionPending, session, harness, workspaceCockpit, workspaceActions }}
