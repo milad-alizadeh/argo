@@ -7,6 +7,17 @@
   min-height: 0;
 }
 
+.feed[data-known-read-failure="true"] {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.feed[data-known-read-failure="true"] .feed__document[data-active="true"] {
+  position: relative;
+  inset: auto;
+  grid-row: 2;
+}
+
 .feed__document {
   position: absolute;
   inset: 0;
@@ -41,6 +52,15 @@
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
+  outline: none;
+}
+
+.feed__viewport:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+
+.feed__viewport {
   /* Belt-and-braces alongside .feed__content's own rule: the anchoring code below sets
      scrollTop by hand on restore, and native scroll anchoring on the scrolling box itself
      (not only its content) can still race that write under load (#e2e-real-cheap-models). */

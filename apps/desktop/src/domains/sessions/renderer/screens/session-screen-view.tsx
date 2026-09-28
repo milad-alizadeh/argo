@@ -1,5 +1,3 @@
-import { useState } from 'react'
-import { useParams } from 'react-router'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { FeedLiveFacts } from '../feed/document/feed-live-facts'
 import { BackgroundWork } from '../feed/rows/background-work'
@@ -36,7 +34,6 @@ function WorkButtons({ model }: { model: SessionScreenModel }) {
 }
 
 function Inspector({ model }: { model: SessionScreenModel }) {
-  const { projectId } = useParams()
   const { evidence, navigate, sessionList, session, setEvidence } = model
   return (
     <SessionInspector
@@ -50,8 +47,12 @@ function Inspector({ model }: { model: SessionScreenModel }) {
         <SessionHandoffFacts onNavigate={navigate} sessionList={sessionList} session={session} />
       }
       onOpenEvidence={setEvidence}
-      onOpenSession={(sessionId) => navigate(`/projects/${projectId}/sessions/${sessionId}`)}
+      onOpenSession={(sessionId) => navigate(`/projects/${model.projectId}/sessions/${sessionId}`)}
       onRetryDelegationFeed={model.retryDelegationFeed}
+      onLoadOlderDelegationFeed={model.loadOlderDelegationFeed}
+      delegationFeedHasOlder={model.delegationFeedHasOlder}
+      delegationFeedLoadingOlder={model.delegationFeedLoadingOlder}
+      delegationFeedOlderError={model.delegationFeedOlderError}
       shell={model.shell}
       shellOutput={model.shellOutput}
     />
@@ -94,14 +95,33 @@ function liveFactsOf({ session }: SessionScreenModel): NonNullable<FeedLiveFacts
   }
 }
 
+function composerFor(model: ReturnType<typeof useSessionScreenModel>) {
+  if (
+    (model.selectedSessionId === null && !model.isNewSession) ||
+    model.feedError?.code === 'missing-session'
+  )
+    return null
+  return (
+    <SessionComposerArea
+      permission={model.permission}
+      questionPending={model.session?.posture === 'live' && pendingQuestionId(model.feed) !== null}
+      session={model.session}
+      harness={model.harness}
+      selectedSessionId={model.selectedSessionId}
+      sessionList={model.sessionList}
+      cockpit={model.cockpit}
+      workspaceActions={model.workspaceActions}
+      workspaceCockpit={model.workspaceCockpit}
+    />
+  )
+}
+
 export function SessionScreenView() {
-  const { projectId } = useParams()
   const model = useSessionScreenModel()
-  const { evidence, feed, feedError, isNewSession, question, session } = model
+  const { evidence, feed, feedError, question, session } = model
   const { navigate, retryFeed, selectedSessionId, setEvidence, workReveal } = model
-  const [, setFeedStalledSessionId] = useState<string | null>(null)
   const openSession = (sessionId: string) =>
-    navigate(`/projects/${projectId}/sessions/${sessionId}`)
+    navigate(`/projects/${model.projectId}/sessions/${sessionId}`)
   const answerQuestion = (_sessionId: string, questionId: string, answers: QuestionAnswer[]) =>
     void question.decide(questionId, answers)
   return (
@@ -110,6 +130,10 @@ export function SessionScreenView() {
         feed={feed}
         feedError={feedError}
         onRetryFeed={retryFeed}
+        onLoadOlder={model.loadOlder}
+        hasOlder={model.hasOlder}
+        loadingOlder={model.loadingOlder}
+        olderError={model.olderError}
         liveFacts={liveFactsOf(model)}
         onOpenSession={openSession}
         selectedSessionId={selectedSessionId}
@@ -118,23 +142,9 @@ export function SessionScreenView() {
         onAnswerQuestion={answerQuestion}
         answeringQuestionId={model.question.answeringId}
         questionFailure={model.question.failureFor}
-        onFeedStalledChange={setFeedStalledSessionId}
-        composer={
-          (selectedSessionId === null && !isNewSession) ||
-          feedError?.code === 'missing-session' ? null : (
-            <SessionComposerArea
-              permission={model.permission}
-              questionPending={pendingQuestionId(feed) !== null}
-              session={session}
-              harness={model.harness}
-              selectedSessionId={selectedSessionId}
-              sessionList={model.sessionList}
-              cockpit={model.cockpit}
-              workspaceActions={model.workspaceActions}
-              workspaceCockpit={model.workspaceCockpit}
-            />
-          )
-        }
+        jumpToLatest={model.jumpToLatest}
+        onJumpToLatestChange={model.onJumpToLatestChange}
+        composer={composerFor(model)}
         headerControls={<WorkButtons model={model} />}
         session={session}
         workspaceIdentity={model.workspaceIdentity}

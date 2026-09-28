@@ -6,16 +6,20 @@ import { ComposerAttachments } from './composer-attachments'
 
 export function ComposerEditorArea({
   contextPickerOpen,
+  disabled,
   harness,
   editorRef,
   focusOnMount,
+  onFocusAfterMount,
   onSend,
   sessionId,
 }: {
   contextPickerOpen: boolean
+  disabled: boolean
   harness: SessionHarness | null
   editorRef: RefObject<LexicalEditor | null>
   focusOnMount: boolean
+  onFocusAfterMount?: () => void
   onSend: () => void
   sessionId: string
 }) {
@@ -27,8 +31,10 @@ export function ComposerEditorArea({
           key={sessionId}
           harness={harness}
           contextPickerOpen={contextPickerOpen}
+          disabled={disabled}
           editorRef={editorRef}
           focusOnMount={focusOnMount}
+          onFocusAfterMount={onFocusAfterMount}
           onSend={onSend}
         />
       </div>

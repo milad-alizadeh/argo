@@ -1,3 +1,6 @@
+import os from 'node:os'
+import path from 'node:path'
+import { watchVendorHistory } from '@/harnesses/host/history-watch'
 import type { HarnessRegistration } from '@/harnesses/registration'
 import type { CodexRequest } from './app-server/codex-app-server-client'
 import { readCodexHarnessInfo } from './catalog'
@@ -14,5 +17,11 @@ export function createCodexRegistration(request: CodexRequest): HarnessRegistrat
     readCatalog: () => readCodexHarnessInfo(request),
     readHistory: ({ nativeId, subagentId }) =>
       readCodexSessionHistory(request, subagentId ?? nativeId),
+    watchHistory: ({ nativeId, subagentId }, invalidate) =>
+      watchVendorHistory(
+        path.join(process.env.CODEX_HOME ?? path.join(os.homedir(), '.codex'), 'sessions'),
+        subagentId ?? nativeId,
+        invalidate,
+      ),
   }
 }

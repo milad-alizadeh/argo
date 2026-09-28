@@ -26,18 +26,21 @@ export type FeedQuestionHandlers = {
   onAnswerQuestion: (sessionId: string, questionId: string, answers: QuestionAnswer[]) => void
   answeringQuestionId: string | null
   questionFailure: (questionId: string) => string | null
-  stallTimeoutMs?: number
 }
 
 export type FeedDocumentContext = {
-  active: boolean
+  stalled: boolean
   activeEvidenceId: string | null
+  hasOlder?: boolean
+  loadingOlder?: boolean
+  olderError?: boolean
+  onLoadOlder?: () => void
   initialMeasurementsCache?: VirtualItem[] | undefined
   initialScrollPosition?: number | null
   onJumpToLatestChange?: (sessionId: string, action: (() => void) | null) => void
   onMeasurementsChange?: (sessionId: string, measurements: VirtualItem[]) => void
   onOpenSession: (sessionId: string) => void
-  onScrollPositionChange?: (sessionId: string, position: number) => void
+  onScrollPositionChange: (sessionId: string, position: number) => void
   historyLabel: string
 } & FeedQuestionHandlers
 
@@ -48,7 +51,6 @@ export type FeedDocumentProps = {
 }
 
 function ignoreJumpToLatestChange(_sessionId: string, _action: (() => void) | null) {}
-function ignoreScrollPositionChange(_sessionId: string, _position: number) {}
 function ignoreMeasurementsChange(_sessionId: string, _measurements: VirtualItem[]) {}
 
 function liveRows(reading: SessionFeed, facts: NonNullable<FeedLiveFacts>): SessionFeedRow[] {
@@ -93,8 +95,7 @@ function liveReading(reading: SessionFeed, liveFacts: FeedLiveFacts) {
   return { ...facts, reading: readingWithOptimisticRow }
 }
 
-// A kept document remains mounted when another Session is selected, retaining that Session's
-// scroller state until the reader returns (#1834).
+// The selected document owns its virtualized history and scroll state.
 export function FeedDocument({ reading, liveFacts, actions }: FeedDocumentProps) {
   const { t } = useTranslation('sessions')
   const onJumpToLatestChange = actions.onJumpToLatestChange ?? ignoreJumpToLatestChange
@@ -113,13 +114,10 @@ export function FeedDocument({ reading, liveFacts, actions }: FeedDocumentProps)
     questionFailure: actions.questionFailure,
     questionLocked: sessionPostureLocksAnswer(live.posture),
   })
-  const { column, settled, stalled, retry } = useSettledFeed({
-    active: actions.active,
+  const { column, settled } = useSettledFeed({
     sessionId: live.reading.sessionId,
     revision: live.reading.revision,
     rows: live.reading.rows,
-    isRunning: live.isRunning,
-    stallTimeoutMs: actions.stallTimeoutMs,
   })
   const lastRow = live.reading.rows.at(-1)
   const tailIsLive = lastRow !== undefined && isFeedRowStreaming(lastRow)
@@ -127,17 +125,18 @@ export function FeedDocument({ reading, liveFacts, actions }: FeedDocumentProps)
   // A quiet marker keeps its box through prose/tool changes, so the Feed height stays stable (#2241).
   const tail = liveFeedTail(live, lastRow, actions.onOpenSession)
   const content = feedContent({
-    active: actions.active,
+    hasOlder: actions.hasOlder,
+    loadingOlder: actions.loadingOlder,
+    olderError: actions.olderError,
+    onLoadOlder: actions.onLoadOlder,
     initialMeasurementsCache: actions.initialMeasurementsCache ?? NO_MEASUREMENTS,
     initialScrollPosition: actions.initialScrollPosition ?? null,
     settled,
     isRunning: live.isRunning,
-    stalled,
-    posture: live.posture,
-    onRetry: retry,
+    stalled: actions.stalled,
     onJumpToLatestChange,
     onMeasurementsChange: actions.onMeasurementsChange ?? ignoreMeasurementsChange,
-    onScrollPositionChange: actions.onScrollPositionChange ?? ignoreScrollPositionChange,
+    onScrollPositionChange: actions.onScrollPositionChange,
     DrawnRow,
     revealsFor,
     streamingRowId,
@@ -146,12 +145,7 @@ export function FeedDocument({ reading, liveFacts, actions }: FeedDocumentProps)
     historyLabel: actions.historyLabel,
   })
   return (
-    <div
-      className="feed__document"
-      data-active={actions.active}
-      data-revision={settled?.reading.revision}
-      inert={!actions.active}
-    >
+    <div className="feed__document" data-active="true" data-revision={settled?.reading.revision}>
       <div className="feed__column" ref={column}>
         {content}
       </div>

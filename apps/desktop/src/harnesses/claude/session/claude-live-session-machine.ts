@@ -1,22 +1,44 @@
 import {
+  type CanUseTool,
   type PermissionMode,
   type Query,
   query,
+  type SDKMessage,
   type SDKUserMessage,
 } from '@anthropic-ai/claude-agent-sdk'
 import { assign, fromCallback, sendTo, setup as xstateSetup } from 'xstate'
+import { z } from 'zod'
+import {
+  type Question,
+  type QuestionAnswer,
+  questionSchema,
+} from '@/domains/sessions/api/questions'
+import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type {
   SessionLiveInput,
   SessionStartInput,
 } from '@/domains/sessions/main/api/session-submit'
+import type { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import { claudeCliEnvironment } from '../cli-environment'
+import { decodeClaudeLiveContent } from './claude-feed-decoder'
+import { ClaudeLiveText } from './claude-live-text'
 
-type Send = Pick<SessionStartInput, 'prompt'>
+type Send = Pick<SessionStartInput, 'prompt' | 'commandId'>
+type ClaudeLiveInput = SessionLiveInput
 type QueryCommand = {
   type: 'Send to Query'
   prompt: string
+  commandId: string
 }
 type QueryEvent =
+  | {
+      type: 'Feed event'
+      body: SessionLiveEventBody
+    }
+  | {
+      type: 'Identified'
+      nativeId: string
+    }
   | {
       type: 'Opened'
       nativeId: string
@@ -38,15 +60,459 @@ const permissionModes: Record<string, PermissionMode> = {
   dontAsk: 'dontAsk',
   auto: 'auto',
 }
+const askInputSchema = z.object({
+  questions: z
+    .array(
+      z.object({
+        question: z.string().min(1),
+        header: z.string().nullable(),
+        multiSelect: z.boolean(),
+        options: z.array(
+          z.object({
+            label: z.string().min(1),
+            description: z.string().nullable(),
+          }),
+        ),
+      }),
+    )
+    .min(1),
+})
+
+function answerText(answer: QuestionAnswer, question: Question): string {
+  if (answer.kind === 'text') return answer.text
+  return answer.indices
+    .map((index) => {
+      const option = question.options[index - 1]
+      if (option === undefined) throw new Error('Claude Question answer has an invalid option.')
+      return option.label
+    })
+    .join(', ')
+}
+
+function answeredQuestionEntries(questions: Question[], answers: QuestionAnswer[]) {
+  return questions.map(
+    (
+      question,
+      index,
+    ): [
+      string,
+      string,
+    ] => {
+      const answer = answers[index]
+      if (answer === undefined) throw new Error('Claude Question answer is incomplete.')
+      return [
+        question.question,
+        answerText(answer, question),
+      ]
+    },
+  )
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(value)
+}
+
+function decodedFeedEvents(
+  message: SDKMessage,
+  fallbackCommandId: string,
+  reject: () => void,
+): SessionLiveEventBody[] {
+  const commandId =
+    'user_message_uuid' in message && typeof message.user_message_uuid === 'string'
+      ? message.user_message_uuid
+      : fallbackCommandId
+  return decodeClaudeLiveContent(message, reject).map((content) => ({
+    type: 'content',
+    content,
+    commandId,
+    turnId: commandId,
+    vendorEventId: content.id,
+  }))
+}
+
+function streamFeedEvent(
+  message: SDKMessage,
+  liveText: ClaudeLiveText,
+  fallbackCommandId: string,
+): QueryEvent | null {
+  if (message.type !== 'stream_event') return null
+  const content = liveText.append(message)
+  if (content === null) return null
+  const commandId = message.user_message_uuid ?? fallbackCommandId
+  return {
+    type: 'Feed event',
+    body: {
+      type: 'content',
+      content,
+      commandId,
+      turnId: commandId,
+      vendorEventId: message.uuid,
+    },
+  }
+}
+
+function claudeQueryOptions(
+  command: ClaudeLiveInput,
+  mode: PermissionMode,
+  canUseTool?: CanUseTool,
+) {
+  return {
+    cwd: 'resume' in command ? command.resume.cwd : command.cwd,
+    ...('resume' in command
+      ? {
+          resume: command.resume.nativeId,
+        }
+      : {}),
+    model: command.turnConfiguration.model,
+    permissionMode: mode,
+    includePartialMessages: true,
+    ...(canUseTool === undefined
+      ? {}
+      : {
+          canUseTool,
+        }),
+    env: claudeCliEnvironment(),
+  }
+}
+
+function claudeQueryActor(interactions?: SessionInteractionBroker) {
+  return fromCallback<
+    QueryCommand,
+    {
+      command: ClaudeLiveInput
+      mode: PermissionMode | null
+    },
+    QueryEvent
+  >(({ input, receive, sendBack }) => {
+    const prompts: Send[] = []
+    let wake: (() => void) | null = null
+    let session: Query | null = null
+    let open = true
+    let activeCommandId = input.command.commandId
+    let nativeId: string | null = null
+    let rejected = 0
+    const liveText = new ClaudeLiveText()
+    const emitStatus = (status: 'running' | 'idle') => {
+      sendBack({
+        type: 'Feed event',
+        body: {
+          type: 'status',
+          status,
+          commandId: activeCommandId,
+          turnId: activeCommandId,
+          vendorEventId: null,
+        },
+      })
+    }
+    const wakeInput = () => {
+      wake?.()
+      wake = null
+    }
+    async function* messages(): AsyncGenerator<SDKUserMessage> {
+      while (open) {
+        if (prompts.length === 0)
+          await new Promise<void>((resolve) => {
+            wake = resolve
+          })
+        const command = prompts.shift()
+        if (command === undefined) continue
+        activeCommandId = command.commandId
+        sendBack({
+          type: 'Feed event',
+          body: {
+            type: 'content',
+            commandId: command.commandId,
+            turnId: command.commandId,
+            vendorEventId: command.commandId,
+            content: {
+              id: command.commandId,
+              kind: 'message',
+              role: 'user',
+              text: command.prompt,
+            },
+          },
+        })
+        emitStatus('running')
+        yield {
+          type: 'user',
+          message: {
+            role: 'user',
+            content: command.prompt,
+          },
+          parent_tool_use_id: null,
+          uuid: (isUuid(command.commandId)
+            ? command.commandId
+            : crypto.randomUUID()) as SDKUserMessage['uuid'],
+        }
+      }
+    }
+    receive((event) => {
+      prompts.push(event)
+      wakeInput()
+    })
+    function emitOutput(
+      message: Exclude<
+        SDKMessage,
+        {
+          type: 'result'
+        }
+      >,
+    ) {
+      if (message.type === 'system' && message.subtype === 'init' && !opened) {
+        nativeId = message.session_id
+        sendBack({
+          type: 'Identified',
+          nativeId: message.session_id,
+        })
+      }
+      if (message.type === 'assistant') liveText.settle(message.message.id)
+      const streamEvent = streamFeedEvent(message, liveText, activeCommandId)
+      if (streamEvent !== null) sendBack(streamEvent)
+      for (const body of decodedFeedEvents(message, activeCommandId, () => {
+        rejected += 1
+      }))
+        sendBack({
+          type: 'Feed event',
+          body,
+        })
+    }
+    let opened = false
+    function finishTurn(
+      message: Extract<
+        SDKMessage,
+        {
+          type: 'result'
+        }
+      >,
+    ) {
+      if (message.is_error) throw new Error('Claude Session turn failed.')
+      emitStatus('idle')
+      if (opened)
+        sendBack({
+          type: 'Sent',
+        })
+      else {
+        opened = true
+        sendBack({
+          type: 'Opened',
+          nativeId: message.session_id,
+        })
+      }
+    }
+    async function askQuestion({
+      toolInput,
+      options,
+      identity,
+      sessionId,
+      broker,
+    }: {
+      toolInput: Parameters<CanUseTool>[1]
+      options: Parameters<CanUseTool>[2]
+      identity: {
+        commandId: string
+        turnId: string
+        vendorEventId: string
+        requestId: string
+      }
+      sessionId: string
+      broker: SessionInteractionBroker
+    }) {
+      const parsed = askInputSchema.safeParse(toolInput)
+      if (!parsed.success) {
+        rejected += 1
+        return {
+          behavior: 'deny' as const,
+          message: 'Claude sent an unsupported Question.',
+        }
+      }
+      const questions = parsed.data.questions.map((question) => questionSchema.parse(question))
+      sendBack({
+        type: 'Feed event',
+        body: {
+          type: 'question',
+          ...identity,
+          questions,
+          answer: null,
+        },
+      })
+      sendBack({
+        type: 'Feed event',
+        body: {
+          type: 'status',
+          ...identity,
+          status: 'asking',
+        },
+      })
+      const answers = await broker.requestQuestion({
+        nativeId: sessionId,
+        requestId: options.requestId,
+        questions,
+        signal: options.signal,
+      })
+      const answered = answeredQuestionEntries(questions, answers)
+      const answer = answered.map(([, text]) => text).join('; ')
+      sendBack({
+        type: 'Feed event',
+        body: {
+          type: 'question',
+          ...identity,
+          questions,
+          answer,
+        },
+      })
+      emitStatus('running')
+      return {
+        behavior: 'allow' as const,
+        updatedInput: {
+          ...toolInput,
+          answers: Object.fromEntries(answered),
+        },
+      }
+    }
+    const canUseTool: CanUseTool = async (toolName, toolInput, options) => {
+      const broker = interactions
+      if (broker === undefined || nativeId === null)
+        return {
+          behavior: 'deny',
+          message: 'Session interaction is unavailable.',
+        }
+      const identity = {
+        commandId: activeCommandId,
+        turnId: activeCommandId,
+        vendorEventId: options.toolUseID,
+        requestId: options.requestId,
+      }
+      if (toolName === 'AskUserQuestion')
+        return askQuestion({
+          toolInput,
+          options,
+          identity,
+          sessionId: nativeId,
+          broker,
+        })
+      sendBack({
+        type: 'Feed event',
+        body: {
+          type: 'permission',
+          ...identity,
+          description: options.title ?? options.displayName ?? toolName,
+          decision: null,
+        },
+      })
+      sendBack({
+        type: 'Feed event',
+        body: {
+          type: 'status',
+          ...identity,
+          status: 'permission',
+        },
+      })
+      const decision = await broker.requestPermission({
+        nativeId,
+        requestId: options.requestId,
+        description: options.title ?? options.displayName ?? toolName,
+        signal: options.signal,
+      })
+      sendBack({
+        type: 'Feed event',
+        body: {
+          type: 'permission',
+          ...identity,
+          description: options.title ?? options.displayName ?? toolName,
+          decision,
+        },
+      })
+      emitStatus('running')
+      switch (decision) {
+        case 'allow':
+          return {
+            behavior: 'allow',
+          }
+        case 'allowForSession':
+          return {
+            behavior: 'allow',
+            updatedPermissions: options.suggestions,
+          }
+        case 'deny':
+          return {
+            behavior: 'deny',
+            message: 'The user denied this tool.',
+          }
+        case 'cancel':
+          return {
+            behavior: 'deny',
+            message: 'The user cancelled this tool.',
+            interrupt: true,
+          }
+      }
+    }
+    async function readResults(querySession: Query) {
+      for await (const message of querySession) {
+        if (!open) continue
+        if (message.type === 'result') finishTurn(message)
+        else emitOutput(message)
+      }
+      if (open) throw new Error('Claude Session ended before the turn completed.')
+    }
+    function reportFailure(error: unknown) {
+      if (!open) return
+      sendBack({
+        type: 'Feed event',
+        body: {
+          type: 'failure',
+          commandId: activeCommandId,
+          turnId: activeCommandId,
+          vendorEventId: null,
+          detail: String(error),
+        },
+      })
+      sendBack({
+        type: 'Query failed',
+        detail: String(error),
+      })
+    }
+    void (async () => {
+      try {
+        if (input.mode === null) throw new Error('Unsupported Claude permission mode.')
+        session = query({
+          prompt: messages(),
+          options: claudeQueryOptions(
+            input.command,
+            input.mode,
+            interactions === undefined ? undefined : canUseTool,
+          ),
+        })
+        await readResults(session)
+      } catch (error) {
+        reportFailure(error)
+      } finally {
+        if (rejected > 0) console.warn(`Rejected ${rejected} unsupported Claude live shape(s).`)
+        open = false
+        wakeInput()
+        session?.close()
+      }
+    })()
+    return () => {
+      open = false
+      wakeInput()
+      session?.close()
+    }
+  })
+}
 
 export const claudeLiveSessionMachine = xstateSetup({
   types: {
-    input: {} as SessionLiveInput,
+    input: {} as ClaudeLiveInput,
     context: {} as {
-      input: SessionLiveInput
+      input: ClaudeLiveInput
       mode: PermissionMode | null
       nativeId: string | null
       failure: string | null
+      feedSerial: number
+      lastFeed: {
+        serial: number
+        body: SessionLiveEventBody
+      } | null
     },
     events: {} as
       | QueryEvent
@@ -59,99 +525,7 @@ export const claudeLiveSessionMachine = xstateSetup({
         },
   },
   actors: {
-    queryActor: fromCallback<
-      QueryCommand,
-      {
-        command: SessionLiveInput
-        mode: PermissionMode | null
-      },
-      QueryEvent
-    >(({ input, receive, sendBack }) => {
-      const prompts: string[] = []
-      let wake: (() => void) | null = null
-      let session: Query | null = null
-      let open = true
-      const wakeInput = () => {
-        wake?.()
-        wake = null
-      }
-      async function* messages(): AsyncGenerator<SDKUserMessage> {
-        while (open) {
-          if (prompts.length === 0)
-            await new Promise<void>((resolve) => {
-              wake = resolve
-            })
-          const prompt = prompts.shift()
-          if (prompt === undefined) continue
-          yield {
-            type: 'user',
-            message: {
-              role: 'user',
-              content: prompt,
-            },
-            parent_tool_use_id: null,
-          }
-        }
-      }
-      receive((event) => {
-        prompts.push(event.prompt)
-        wakeInput()
-      })
-      async function readResults(querySession: Query) {
-        let opened = false
-        for await (const message of querySession) {
-          if (!open || message.type !== 'result') continue
-          if (message.is_error) throw new Error('Claude Session turn failed.')
-          if (opened)
-            sendBack({
-              type: 'Sent',
-            })
-          else {
-            opened = true
-            sendBack({
-              type: 'Opened',
-              nativeId: message.session_id,
-            })
-          }
-        }
-        if (open) throw new Error('Claude Session ended before the turn completed.')
-      }
-      void (async () => {
-        try {
-          if (input.mode === null) throw new Error('Unsupported Claude permission mode.')
-          session = query({
-            prompt: messages(),
-            options: {
-              cwd: 'resume' in input.command ? input.command.resume.cwd : input.command.cwd,
-              ...('resume' in input.command
-                ? {
-                    resume: input.command.resume.nativeId,
-                  }
-                : {}),
-              model: input.command.turnConfiguration.model,
-              permissionMode: input.mode,
-              env: claudeCliEnvironment(),
-            },
-          })
-          await readResults(session)
-        } catch (error) {
-          if (open)
-            sendBack({
-              type: 'Query failed',
-              detail: String(error),
-            })
-        } finally {
-          open = false
-          wakeInput()
-          session?.close()
-        }
-      })()
-      return () => {
-        open = false
-        wakeInput()
-        session?.close()
-      }
-    }),
+    queryActor: claudeQueryActor(),
   },
   actions: {
     preparePermissionMode: assign({
@@ -164,18 +538,31 @@ export const claudeLiveSessionMachine = xstateSetup({
     submitFirstPrompt: sendTo('queryActor', ({ context }) => ({
       type: 'Send to Query',
       prompt: context.input.prompt,
+      commandId: context.input.commandId,
     })),
     rememberNativeId: assign({
-      nativeId: ({ event }) => (event.type === 'Opened' ? event.nativeId : null),
+      nativeId: ({ context, event }) =>
+        event.type === 'Opened' || event.type === 'Identified' ? event.nativeId : context.nativeId,
     }),
     rememberFailure: assign({
       failure: ({ event }) => (event.type === 'Query failed' ? event.detail : null),
+    }),
+    rememberFeed: assign({
+      feedSerial: ({ context }) => context.feedSerial + 1,
+      lastFeed: ({ context, event }) =>
+        event.type === 'Feed event'
+          ? {
+              serial: context.feedSerial + 1,
+              body: event.body,
+            }
+          : context.lastFeed,
     }),
     forwardSend: sendTo('queryActor', ({ event }) => {
       if (event.type !== 'Send') throw new Error('Expected a Claude Session send.')
       return {
         type: 'Send to Query',
         prompt: event.command.prompt,
+        commandId: event.command.commandId,
       }
     }),
   },
@@ -190,6 +577,8 @@ export const claudeLiveSessionMachine = xstateSetup({
     mode: null,
     nativeId: null,
     failure: null,
+    feedSerial: 0,
+    lastFeed: null,
   }),
   states: {
     Preparing: {
@@ -219,6 +608,9 @@ export const claudeLiveSessionMachine = xstateSetup({
         Opening: {
           entry: 'submitFirstPrompt',
           on: {
+            Identified: {
+              actions: 'rememberNativeId',
+            },
             Opened: {
               target: 'Ready',
               actions: 'rememberNativeId',
@@ -241,6 +633,9 @@ export const claudeLiveSessionMachine = xstateSetup({
         },
       },
       on: {
+        'Feed event': {
+          actions: 'rememberFeed',
+        },
         'Query failed': {
           target: 'Failed',
           actions: 'rememberFailure',
@@ -258,3 +653,11 @@ export const claudeLiveSessionMachine = xstateSetup({
     },
   },
 })
+
+export function createClaudeLiveSessionMachine(interactions?: SessionInteractionBroker) {
+  return claudeLiveSessionMachine.provide({
+    actors: {
+      queryActor: claudeQueryActor(interactions),
+    },
+  })
+}

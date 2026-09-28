@@ -1,6 +1,7 @@
 // The live-update half of the packaged Session proof: the reader's chosen row and tail stay put
 // while a transcript grows, and a Session opened again starts at its tail.
 import assert from 'node:assert/strict'
+import { expect } from '@playwright/test'
 import {
   ACTIVE_FEED,
   ACTIVE_VIEWPORT,
@@ -119,11 +120,21 @@ export async function proveLiveFeed(page, fixture: LiveFixture) {
   await waitForTailSettled(page)
 
   const { tail, streamed: streamedTail } = await proveTail(page, fixture)
+  await page.evaluate((selector) => {
+    document.querySelector(selector).scrollTop = 0
+  }, ACTIVE_VIEWPORT)
+  const jumpToLatest = page.getByRole('button', { name: 'Jump to latest' })
+  await expect(jumpToLatest).toBeVisible()
+  await jumpToLatest.click()
+  await waitForTailSettled(page)
+  const jumped = await tailReading(page)
+  assert.equal(jumped.fromTail <= 1, true)
   return {
     anchoredOffset: held,
     anchoredBefore: before.offset,
     anchoredMotion: streamed - before.offset,
     fromTail: tail.fromTail,
     streamedTailMotion: streamedTail.fromTail,
+    jumpedFromTail: jumped.fromTail,
   }
 }

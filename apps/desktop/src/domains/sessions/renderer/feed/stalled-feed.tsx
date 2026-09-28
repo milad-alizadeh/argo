@@ -15,13 +15,18 @@ import {
 export function StalledFeed({
   posture,
   onRetry,
+  compact = false,
 }: {
   posture: 'live' | 'external' | null
   onRetry: () => void
+  compact?: boolean
 }) {
   const { t } = useTranslation('sessions')
   return (
-    <Empty className="h-full" data-state="stalled">
+    <Empty
+      className={compact ? 'mx-auto mt-(--spacing-snug) max-w-sm' : 'h-full'}
+      data-state="stalled"
+    >
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <Icon name="retry" />

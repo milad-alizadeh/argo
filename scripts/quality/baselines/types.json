@@ -75,56 +75,6 @@
     {
       "identity": {
         "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/sessions/renderer/composer/hooks/use-session-permission.ts",
-        "code": "TS2339",
-        "message": "Property 'decideSessionPermission' does not exist on type '{ onAppearanceChanged: (listener: (state: { appearance: \"dark\" | \"light\" | \"system\"; dark: boolean; }) => void) => () => void; onCommand: (listener: (command: string) => void) => () => void; ... 5 more ...; trpcSubscribe: (request: TrpcRequest, listener: (message: TrpcSubscriptionMessage) => void) => Promise<...>; }'."
-      },
-      "owner": "#2773",
-      "reason": "Claude permission and question decisions await typed procedures."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/sessions/renderer/composer/hooks/use-session-permission.ts",
-        "code": "TS2339",
-        "message": "Property 'readSessionPermission' does not exist on type '{ onAppearanceChanged: (listener: (state: { appearance: \"dark\" | \"light\" | \"system\"; dark: boolean; }) => void) => () => void; onCommand: (listener: (command: string) => void) => () => void; ... 5 more ...; trpcSubscribe: (request: TrpcRequest, listener: (message: TrpcSubscriptionMessage) => void) => Promise<...>; }'."
-      },
-      "owner": "#2773",
-      "reason": "Claude permission and question decisions await typed procedures."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/sessions/renderer/composer/hooks/use-session-permission.ts",
-        "code": "TS2345",
-        "message": "Argument of type 'any' is not assignable to parameter of type 'never'."
-      },
-      "owner": "#2773",
-      "reason": "Claude permission and question decisions await typed procedures."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/sessions/renderer/composer/hooks/use-session-question.ts",
-        "code": "TS2339",
-        "message": "Property 'decideSessionQuestion' does not exist on type '{ onAppearanceChanged: (listener: (state: { appearance: \"dark\" | \"light\" | \"system\"; dark: boolean; }) => void) => () => void; onCommand: (listener: (command: string) => void) => () => void; ... 5 more ...; trpcSubscribe: (request: TrpcRequest, listener: (message: TrpcSubscriptionMessage) => void) => Promise<...>; }'."
-      },
-      "owner": "#2773",
-      "reason": "Claude permission and question decisions await typed procedures."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/sessions/renderer/composer/hooks/use-session-question.ts",
-        "code": "TS2345",
-        "message": "Argument of type 'any' is not assignable to parameter of type 'never'."
-      },
-      "owner": "#2773",
-      "reason": "Claude permission and question decisions await typed procedures."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
         "path": "apps/desktop/src/domains/sessions/renderer/composer/layout/composer-attachments.stories.tsx",
         "code": "TS2353",
         "message": "Object literal may only specify known properties, and 'chooseSessionAttachments' does not exist in type '{ onAppearanceChanged: (listener: (state: { appearance: \"dark\" | \"light\" | \"system\"; dark: boolean; }) => void) => () => void; onCommand: (listener: (command: string) => void) => () => void; ... 5 more ...; trpcSubscribe: (request: TrpcRequest, listener: (message: TrpcSubscriptionMessage) => void) => Promise<...>; }'."

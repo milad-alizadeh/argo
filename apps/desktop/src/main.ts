@@ -5,14 +5,21 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { app, type BrowserWindow, dialog, net, protocol, shell } from 'electron'
 import type { ActorRefFrom } from 'xstate'
+import { z } from 'zod'
 import { type Database, openDatabase } from '@/database/database'
 import { createAccountAccess, createAccountProcedureContext } from '@/domains/accounts/main'
 import { safeStorageCipher } from '@/domains/accounts/main/safe-storage'
 import { createConnectionPort } from '@/domains/connections/main'
 import { createHarnessSignInProcedureContext } from '@/domains/harness-signin/main'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
+import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
 import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
-import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
+import {
+  type LiveSessionSupervisorActor,
+  liveSessionActorFor,
+} from '@/domains/sessions/main/live/live-session-supervisor-machine'
+import { SessionEventJournal } from '@/domains/sessions/main/live/session-event-journal'
+import { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
 import type { CatalogActor } from '@/harnesses/catalog/catalog-read'
 import type { CodexRequest } from '@/harnesses/codex/app-server/codex-app-server-client'
@@ -21,7 +28,7 @@ import {
   requestCodexAppServer,
 } from '@/harnesses/codex/app-server/codex-app-server-machine'
 import { createHarnessRegistry, type HarnessRegistry } from '@/harnesses/registry'
-import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
+import { LIVE_EVENT_PROOF_ENV, PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { attachAppearanceWatch } from '@/platform/main/appearance'
 import type { AppActor } from '@/platform/main/application/app-machine'
 import { startDesktopApplication } from '@/platform/main/application/start'
@@ -44,6 +51,7 @@ import { attachTrpcTransport } from '@/platform/main/trpc-transport'
 import { createDesktopWindow } from '@/platform/main/window/create-window'
 import { accountProviders, ticketSources } from '@/providers/composition'
 import { providerEndpoints } from '@/providers/endpoints'
+import { identifierSchema } from '@/shared/validation'
 import { ACCEPTANCE_ENV } from '../scripts/acceptance-protocol.mts'
 
 protocol.registerSchemesAsPrivileged([
@@ -78,6 +86,9 @@ if (acceptanceUserData) app.setPath('userData', acceptanceUserData)
 const projectProofStore = process.env[PROJECT_PROOF_STORE_ENV]
 const PROOF_ENABLED = Boolean(projectProofStore && path.isAbsolute(projectProofStore))
 if (PROOF_ENABLED && projectProofStore) app.setPath('userData', projectProofStore)
+const liveEventProofSchema = z
+  .array(z.strictObject({ sessionId: identifierSchema, body: sessionLiveEventBodySchema }))
+  .max(500)
 
 // A window that never shows still stands up a GPU/compositor process to paint it, and closing
 // that process is where Chromium's shutdown occasionally stalls tens of seconds past a CI
@@ -191,12 +202,24 @@ function routerForWindow(options: {
     sessions: {
       database,
       readHistory: (harness, target) => registry[harness].readHistory(target),
+      watchHistory: (harness, target, invalidate) =>
+        registry[harness].watchHistory?.(target, invalidate) ?? (() => {}),
       rename: ({ harness, nativeId, title }) => {
         const rename = registry[harness].rename
         if (rename === undefined) throw new Error(`${harness} Session renaming is unavailable.`)
         return rename(nativeId, title)
       },
       supervisor: actors.sessions,
+      journal: currentSessionEventJournal(),
+      interactions: currentSessionInteractionBroker(),
+      hasLiveChannel: (sessionId) => {
+        const session = liveSessionActorFor(actors.sessions, sessionId)
+        return (
+          session !== undefined &&
+          !session.getSnapshot().matches('Failed') &&
+          !session.getSnapshot().matches('Closed')
+        )
+      },
       refreshSessionSync: () => actors.sessionSync.send({ type: 'Refresh' }),
       sessionSyncStatus,
     },
@@ -208,6 +231,17 @@ function routerForWindow(options: {
 function currentSessionSyncStatus(): SessionSyncStatusStore {
   if (sessionSyncStatus === undefined) throw new Error('Session sync status is unavailable.')
   return sessionSyncStatus
+}
+
+function currentSessionEventJournal(): SessionEventJournal {
+  if (sessionEventJournal === undefined) throw new Error('Session event journal is unavailable.')
+  return sessionEventJournal
+}
+
+function currentSessionInteractionBroker(): SessionInteractionBroker {
+  if (sessionInteractionBroker === undefined)
+    throw new Error('Session interaction broker is unavailable.')
+  return sessionInteractionBroker
 }
 
 type WindowActors = {
@@ -329,6 +363,8 @@ function createWindow(actor: AppActor, database: Database, registry: HarnessRegi
 
 let applicationDatabase: Database | undefined
 let sessionSyncStatus: SessionSyncStatusStore | undefined
+let sessionEventJournal: SessionEventJournal | undefined
+let sessionInteractionBroker: SessionInteractionBroker | undefined
 let codexSessionSyncStatus: SessionSyncStatusStore | undefined
 
 async function prepare() {
@@ -339,6 +375,13 @@ async function prepare() {
   })
   applicationDatabase = openDatabase(projectData, { packaged: app.isPackaged })
   sessionSyncStatus = new SessionSyncStatusStore(applicationDatabase)
+  sessionEventJournal = new SessionEventJournal()
+  const liveEventProof = process.env[LIVE_EVENT_PROOF_ENV]
+  if (PROOF_ENABLED && liveEventProof !== undefined) {
+    const events = liveEventProofSchema.parse(JSON.parse(liveEventProof))
+    for (const event of events) sessionEventJournal.append(event.sessionId, event.body)
+  }
+  sessionInteractionBroker = new SessionInteractionBroker()
   codexSessionSyncStatus = new SessionSyncStatusStore(applicationDatabase, 'codex')
   if (DEVELOPMENT_INSTANCE) {
     await seedDevelopmentProject(applicationDatabase, DEVELOPMENT_INSTANCE)
@@ -348,6 +391,8 @@ async function prepare() {
     database: applicationDatabase,
     sessionSyncStatus,
     codexSessionSyncStatus,
+    sessionEventJournal,
+    sessionInteractionBroker,
     registry: harnessRegistry,
   }
 }

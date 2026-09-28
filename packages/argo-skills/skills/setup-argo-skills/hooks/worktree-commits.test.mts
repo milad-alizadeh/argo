@@ -25,10 +25,37 @@ test('a commit in the main checkout is refused, and the refusal names the overri
   assert.equal(decision.block, true)
   assert.match(decision.reason ?? '', /ARGO_MAIN_COMMIT=1/)
   assert.match(decision.reason ?? '', /worktree/)
+  assert.match(decision.reason ?? '', /git -C/)
 })
 
 test('the same commit inside a worktree is allowed', () => {
   assert.equal(decideEdit(commit('git commit -m "wip"', WORKTREE)).block, false)
+})
+
+test('a commit explicitly targeting a worktree is allowed from the main checkout cwd', () => {
+  assert.equal(decideEdit(commit(`rtk git -C ${WORKTREE} commit -m "wip"`)).block, false)
+})
+
+test('an explicit main checkout target remains guarded', () => {
+  assert.equal(decideEdit(commit('git -C /repo commit -m "wip"')).block, true)
+})
+
+test('an unresolved explicit target does not bypass the main checkout guard', () => {
+  assert.equal(decideEdit(commit('git -C $WORKTREE commit -m "wip"')).block, true)
+})
+
+test('a git directory override cannot redirect a worktree commit to another index', () => {
+  const commands = [
+    `git -C ${WORKTREE} --git-dir=${ROOT}/.git commit -m "wip"`,
+    `git -C ${WORKTREE} --git-dir ${ROOT}/.git commit -m "wip"`,
+    `GIT_DIR=${ROOT}/.git git -C ${WORKTREE} commit -m "wip"`,
+  ]
+
+  for (const command of commands) {
+    const decision = decideEdit(commit(command, WORKTREE))
+    assert.equal(decision.block, true, command)
+    assert.match(decision.reason ?? '', /cannot prove/)
+  }
 })
 
 test('the human is never guarded', () => {

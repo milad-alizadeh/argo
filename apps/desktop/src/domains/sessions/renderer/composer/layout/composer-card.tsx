@@ -19,6 +19,7 @@ type ComposerCardProps = {
   disabled?: boolean
   editorRef: RefObject<LexicalEditor | null>
   focusOnMount: boolean
+  onFocusAfterMount?: () => void
   harness: HarnessControl | null
   isCompacting: boolean
   isHandingOff?: boolean
@@ -149,9 +150,11 @@ export function ComposerCard(props: ComposerCardProps) {
       >
         <ComposerEditorArea
           contextPickerOpen={contextPickerOpen}
+          disabled={props.disabled ?? false}
           harness={props.harness?.harness ?? null}
           editorRef={props.editorRef}
           focusOnMount={props.focusOnMount}
+          onFocusAfterMount={props.onFocusAfterMount}
           onSend={props.onSend}
           sessionId={props.sessionId}
         />

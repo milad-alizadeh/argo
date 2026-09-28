@@ -16,6 +16,11 @@ const historyEnvelopeSchema = z.object({
   message: z.unknown(),
   origin: z.object({ kind: z.string() }).optional(),
 })
+const assistantIdentitySchema = z.object({ id: z.string().min(1) })
+
+function assistantContentId(message: unknown, fallback: string): string {
+  return assistantIdentitySchema.safeParse(message).data?.id ?? fallback
+}
 
 function validateContents(candidates: FeedContent[], reject: RejectClaudeShape): FeedContent[] {
   return candidates.flatMap((candidate) => {
@@ -38,7 +43,10 @@ export function decodeClaudeHistoryContent(
   return validateContents(
     decodeClaudeBlocks(
       {
-        id: envelope.data.uuid,
+        id:
+          envelope.data.type === 'assistant'
+            ? assistantContentId(envelope.data.message, envelope.data.uuid)
+            : envelope.data.uuid,
         role: envelope.data.type,
         message: envelope.data.message,
         vendorEnvelope: envelope.data.origin !== undefined && envelope.data.origin.kind !== 'human',
@@ -103,7 +111,12 @@ function decodeLiveMessage(
   switch (message.type) {
     case 'assistant':
       return decodeClaudeBlocks(
-        { id, role: 'assistant', message: message.message, vendorEnvelope: false },
+        {
+          id: assistantContentId(message.message, id),
+          role: 'assistant',
+          message: message.message,
+          vendorEnvelope: false,
+        },
         reject,
       )
     case 'user':

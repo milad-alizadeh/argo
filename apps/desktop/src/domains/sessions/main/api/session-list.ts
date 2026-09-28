@@ -5,7 +5,10 @@ import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import { sessionTicketLink } from '@/database/session-ticket-link/schema'
 import { sessionTitleSchema } from '@/domains/sessions/api/session-title'
-import type { LiveSessionSupervisorActor } from '../live/live-session-supervisor-machine'
+import {
+  type LiveSessionSupervisorActor,
+  liveSessionActorFor,
+} from '../live/live-session-supervisor-machine'
 
 const t = initTRPC.create()
 
@@ -155,12 +158,13 @@ type SessionListContext = {
 }
 
 function liveProjection(context: SessionListContext, sessionId: string) {
-  const actor = context.supervisor.getSnapshot().context.sessions[sessionId]
+  const actor = liveSessionActorFor(context.supervisor, sessionId)
   if (actor === undefined) return null
   const snapshot = actor.getSnapshot()
   const stateProjection = {
     Starting: { posture: 'live', status: 'starting' },
     Persisting: { posture: 'live', status: 'starting' },
+    'Awaiting turn': { posture: 'live', status: 'starting' },
     Draining: { posture: 'live', status: 'unknown' },
     Sending: { posture: 'live', status: 'unknown' },
     Ready: { posture: 'live', status: 'unknown' },

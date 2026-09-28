@@ -55,6 +55,21 @@ test("afterGitOptions steps over git's own options to reach the subcommand", () 
   ])
 })
 
+test('afterGitOptions skips separate repository option values', () => {
+  assert.deepEqual(
+    afterGitOptions([
+      '-C',
+      '/tmp/worktree',
+      '--git-dir',
+      '/tmp/main/.git',
+      '--work-tree',
+      '/tmp/worktree',
+      'commit',
+    ]),
+    ['commit'],
+  )
+})
+
 test('unexpanded flags a token this file cannot resolve', () => {
   assert.equal(unexpanded('$BRANCH'), true)
   assert.equal(unexpanded('`git rev-parse HEAD`'), true)

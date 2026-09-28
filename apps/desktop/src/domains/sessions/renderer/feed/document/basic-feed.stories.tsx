@@ -234,6 +234,16 @@ export const Failure: Story = {
     await expect(canvas.getByRole('alert')).toHaveTextContent('Argo could not read these Sessions.')
   },
 }
+export const RefreshFailedWithKnownHistory: Story = {
+  args: { feed, failure: readFailure, onRetryFeed: fn() },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('The matching Session Feed.')).toBeVisible()
+    await expect(canvas.getByRole('alert')).toHaveTextContent('Argo could not read these Sessions.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Retry' }))
+    expect(args.onRetryFeed).toHaveBeenCalledOnce()
+  },
+}
 
 const richFeed = {
   ...feed,
@@ -1712,14 +1722,34 @@ const stalledFeed = {
   sessionId: 'stalled',
   chainId: 'stalled',
   revision: 'stalled-one',
-  rows: [],
+  rows: [
+    {
+      shape: 'prose',
+      id: 'stalled-known-reply',
+      role: 'assistant',
+      text: 'Keep this known history visible.',
+    },
+  ],
 } satisfies SessionFeed
 
-// A fixture whose Feed never settles: `rows` stays empty and `isRunning` stays true for the
-// whole story, so nothing ever satisfies `feedContent`'s running condition (#2102). `stallTimeoutMs`
-// stands in for the production bound so the story does not wait on the real one.
-function StalledFeedHarness() {
+const stalledPrompt: SessionFeedRow = {
+  shape: 'prose',
+  id: 'stalled-prompt',
+  role: 'user',
+  text: 'Keep this pending prompt visible.',
+}
+
+// A fixture whose Feed never settles. `stallTimeoutMs` stands in for the production bound so the
+// story does not wait on the real one.
+function StalledFeedHarness({ onRetryFeed }: { onRetryFeed: () => void }) {
   const [otherClicks, setOtherClicks] = useState(0)
+  const [reading, setReading] = useState<SessionFeed>(stalledFeed)
+  const [liveFacts, setLiveFacts] = useState<FeedLiveFacts>({
+    ...LIVE_FACTS,
+    isRunning: true,
+    optimisticRow: stalledPrompt,
+    posture: 'external',
+  })
   return (
     <div className="flex h-dvh flex-col">
       <button type="button" onClick={() => setOtherClicks((count) => count + 1)}>
@@ -1728,13 +1758,32 @@ function StalledFeedHarness() {
       <div className="min-h-0 flex-1">
         <BasicFeed
           activeEvidenceId={null}
-          feed={stalledFeed}
+          feed={reading}
           failure={null}
-          liveFacts={{ ...LIVE_FACTS, isRunning: true, posture: 'external' }}
+          liveFacts={liveFacts}
           selectedSessionId="stalled"
           onOpenEvidence={() => {}}
           onOpenSession={() => {}}
-          onRetryFeed={() => {}}
+          onRetryFeed={() => {
+            onRetryFeed()
+            window.setTimeout(() => {
+              setReading({
+                ...stalledFeed,
+                revision: 'stalled-recovered',
+                rows: [
+                  ...stalledFeed.rows,
+                  stalledPrompt,
+                  {
+                    shape: 'prose',
+                    id: 'stalled-recovered-reply',
+                    role: 'assistant',
+                    text: 'The Feed recovered after Retry.',
+                  },
+                ],
+              })
+              setLiveFacts(LIVE_FACTS)
+            }, 100)
+          }}
           onAnswerQuestion={() => {}}
           answeringQuestionId={null}
           questionFailure={() => null}
@@ -1748,11 +1797,15 @@ function StalledFeedHarness() {
 // Past the stall bound, the reader sees a retry action instead of an indefinite spinner, and
 // nothing else in the window stops responding while it shows (#2102).
 export const Stalled: Story = {
-  render: () => <StalledFeedHarness />,
-  play: async ({ canvasElement }) => {
+  args: { onRetryFeed: fn() },
+  render: (args) => <StalledFeedHarness onRetryFeed={args.onRetryFeed ?? (() => {})} />,
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await waitFor(() => expect(canvas.getByText('Could not load this Session')).toBeInTheDocument())
     await expect(canvas.getByText(/This Session is external/)).toBeInTheDocument()
+    await expect(canvas.getByText('Keep this known history visible.')).toBeVisible()
+    await expect(canvas.getByText('Keep this pending prompt visible.')).toBeVisible()
+    await expect(canvas.queryByRole('status', { name: 'Loading this Session' })).toBeNull()
     const retry = canvas.getByRole('button', { name: 'Retry' })
 
     const otherControl = canvas.getByRole('button', { name: /Other window control/ })
@@ -1762,7 +1815,10 @@ export const Stalled: Story = {
     ).toBeInTheDocument()
 
     await userEvent.click(retry)
-    await waitFor(() => expect(canvas.getByRole('button', { name: 'Retry' })).toBeInTheDocument())
+    await waitFor(() => expect(args.onRetryFeed).toHaveBeenCalledOnce())
+    await expect(canvas.getByRole('status', { name: 'Loading this Session' })).toBeInTheDocument()
+    await expect(await canvas.findByText('The Feed recovered after Retry.')).toBeVisible()
+    await expect(canvas.queryByText('Could not load this Session')).toBeNull()
   },
 }
 
@@ -2202,5 +2258,111 @@ export const RunningToolAfterAssistantReply: Story = {
       expect(drawnRow(canvasElement, 'streaming-text')).toHaveTextContent(streamedText),
     )
     await expect(drawnRow(canvasElement, 'streaming-tool')).toHaveTextContent('Still working.')
+  },
+}
+
+const pagedRows: SessionFeedRow[] = Array.from({ length: 120 }, (_, index) => ({
+  shape: 'prose',
+  id: `paged-${index}`,
+  role: 'assistant',
+  text: `Saved reply ${index}`,
+}))
+
+function PaginatedHistoryDemo({ onPage }: { onPage: () => void }) {
+  const [visible, setVisible] = useState(50)
+  const reading: SessionFeed = {
+    ...feed,
+    sessionId: 'paged',
+    chainId: 'paged',
+    revision: `paged:${visible}`,
+    rows: pagedRows.slice(-visible),
+  }
+  return (
+    <BasicFeed
+      activeEvidenceId={null}
+      answeringQuestionId={null}
+      failure={null}
+      feed={reading}
+      hasOlder={visible < pagedRows.length}
+      liveFacts={LIVE_FACTS}
+      loadingOlder={false}
+      onAnswerQuestion={() => {}}
+      onLoadOlder={() => {
+        onPage()
+        setVisible((current) => Math.min(pagedRows.length, current + 50))
+      }}
+      onOpenEvidence={() => {}}
+      onOpenSession={() => {}}
+      onRetryFeed={() => {}}
+      questionFailure={() => null}
+      selectedSessionId="paged"
+    />
+  )
+}
+
+export const PaginatedHistory: Story = {
+  args: { onLoadOlder: fn() },
+  render: (args) => <PaginatedHistoryDemo onPage={args.onLoadOlder ?? (() => {})} />,
+  play: async ({ args, canvasElement }) => {
+    const history = await within(canvasElement).findByLabelText('Session history')
+    await waitFor(() => expect(history.scrollTop).toBeGreaterThan(0))
+    history.scrollTop = 0
+    fireEvent.scroll(history)
+    await waitFor(() => expect(args.onLoadOlder).toHaveBeenCalled())
+    await within(canvasElement).findByText('Saved reply 71')
+    expect(history.scrollTop).toBeGreaterThan(160)
+    history.scrollTop = 0
+    fireEvent.scroll(history)
+    await within(canvasElement).findByText('Saved reply 21')
+  },
+}
+
+function OlderPageFailedDemo({ onPage }: { onPage: () => void }) {
+  const [failed, setFailed] = useState(true)
+  const [visible, setVisible] = useState(50)
+  return (
+    <BasicFeed
+      activeEvidenceId={null}
+      answeringQuestionId={null}
+      failure={null}
+      feed={{
+        ...feed,
+        sessionId: 'older-failed',
+        chainId: 'older-failed',
+        rows: pagedRows.slice(-visible),
+      }}
+      hasOlder={!failed && visible < pagedRows.length}
+      liveFacts={LIVE_FACTS}
+      olderError={failed}
+      onAnswerQuestion={() => {}}
+      onLoadOlder={() => {
+        onPage()
+        setFailed(false)
+        setVisible(100)
+      }}
+      onOpenEvidence={() => {}}
+      onOpenSession={() => {}}
+      onRetryFeed={() => {}}
+      questionFailure={() => null}
+      selectedSessionId="older-failed"
+    />
+  )
+}
+
+export const OlderPageFailed: Story = {
+  args: { onLoadOlder: fn() },
+  render: (args) => <OlderPageFailedDemo onPage={args.onLoadOlder ?? (() => {})} />,
+  play: async ({ args, canvasElement }) => {
+    const history = await within(canvasElement).findByLabelText('Session history')
+    await waitFor(() => expect(history.scrollTop).toBeGreaterThan(0))
+    history.scrollTop = 0
+    fireEvent.scroll(history)
+    await userEvent.click(
+      await within(canvasElement).findByRole('button', {
+        name: 'Retry older messages',
+      }),
+    )
+    expect(args.onLoadOlder).toHaveBeenCalledOnce()
+    await waitFor(() => expect(history.scrollTop).toBeGreaterThan(160))
   },
 }
