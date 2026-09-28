@@ -48,16 +48,22 @@ export const accountAwaitRequestSchema = message('account.await', {})
 export const accountCancelRequestSchema = message('account.cancel', {})
 export const accountDismissNoticeRequestSchema = message('account.dismiss-notice', {})
 
-// What the person needs to finish signing in. GitHub's is the code typed on its page; Linear's page
-// needs nothing typed. The device code and the authorization URL stay in the main process.
-export const accountChallengeSchema = z.discriminatedUnion('provider', [
+// What the person needs to finish signing in, by the kind of step the provider asks for. A device
+// code is typed on the provider's page; browser consent needs nothing typed. The device code and the
+// authorization URL stay in the main process.
+export const accountChallengeSchema = z.discriminatedUnion('kind', [
   message('account.challenge', {
-    provider: z.literal('github'),
+    provider,
+    kind: z.literal('device-code'),
     userCode: identifier,
     verificationUri: z.string().refine((value) => URL.canParse(value)),
     expiresAt: z.number(),
   }),
-  message('account.challenge', { provider: z.literal('linear'), expiresAt: z.number() }),
+  message('account.challenge', {
+    provider,
+    kind: z.literal('browser-consent'),
+    expiresAt: z.number(),
+  }),
 ])
 
 // `renewed` is a sign-in as an identity already connected: one Account, with a fresh grant.
@@ -84,6 +90,7 @@ export type AccountDismissNoticeRequest = z.infer<typeof accountDismissNoticeReq
 export type AccountDisconnectRequest = z.infer<typeof accountDisconnectRequestSchema>
 export type AccountListed = z.infer<typeof accountListedSchema>
 export type AccountChallenge = z.infer<typeof accountChallengeSchema>
+export type AccountChallengeKind = AccountChallenge['kind']
 export type AccountConnected = z.infer<typeof accountConnectedSchema>
 
 export const ACCOUNT_ERRORS = {

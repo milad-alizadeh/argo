@@ -1,6 +1,6 @@
 // What each provider does for the Ticket core: check a scope, offer the scopes an Account can see,
-// read one page of open Tickets and move a Ticket to another status. A new provider is one module
-// under `src/providers/` and one line here; nothing in the service branches on which provider it is.
+// read one page of open Tickets and move a Ticket to another status. Each provider registers it once
+// under `src/providers/<provider>/`; nothing in the service branches on which provider it is.
 
 import type {
   Ticket,

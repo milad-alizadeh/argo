@@ -1,4 +1,4 @@
-// One sign-in as the screen sees it: GitHub's device code shown and entered on GitHub, or Linear's
+// One sign-in as the screen sees it: a device code shown and entered on the provider's page, or a
 // consent page opened in the browser, then the wait for the grant. The grant stays in main.
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type {
@@ -33,12 +33,12 @@ export function useSignIn(): SignIn {
   const verify = useMutation<AccountChallenge, ContractFailure>({
     mutationFn: () => settle(trpcClient.accountVerify.mutate()),
   })
-  // Linear has no code to show first, so its consent page opens as soon as it is asked for.
+  // Browser consent has no code to show first, so its page opens as soon as it is asked for.
   const connect = useMutation<AccountChallenge, ContractFailure, Provider>({
     mutationFn: (provider) => settle(trpcClient.accountConnect.mutate({ provider })),
     onSuccess: (challenge) => {
       wait.mutate()
-      if (challenge.provider === 'linear') verify.mutate()
+      if (challenge.kind === 'browser-consent') verify.mutate()
     },
   })
   // A reset observer ignores the abandoned wait's late `sign-in-cancelled` reply.
@@ -67,7 +67,7 @@ export function useSignIn(): SignIn {
     },
     // A clipboard that refuses leaves the code on screen, which is all the person needs.
     openProvider: () => {
-      if (challenge?.provider === 'github') {
+      if (challenge?.kind === 'device-code') {
         void navigator.clipboard.writeText(challenge.userCode).catch(() => undefined)
       }
       verify.mutate()

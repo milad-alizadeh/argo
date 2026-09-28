@@ -10,8 +10,8 @@ import { Alert, AlertDescription } from '@/platform/renderer/components/ui/alert
 import { Button } from '@/platform/renderer/components/ui/button'
 import { useContractText } from '@/platform/renderer/i18n/contract-text'
 import { useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
+import { providerPresentation } from '@/providers/presentation-registry'
 import type { SignIn } from '../hooks/use-sign-in'
-import { providerPresentation } from '../lib/providers'
 
 export type SignedIn = { login: string; outcome: AccountConnected['outcome'] }
 export type SignInPanelProps = Omit<SignIn, 'connected'> & {
@@ -35,18 +35,18 @@ function ConnectedLine({ login, outcome }: SignedIn) {
 
 type StepProps = { challenge: AccountChallenge; onOpen: () => void; onCancel: () => void }
 
-// GitHub's code is typed on its page; Linear's page needs only the person's consent.
+// A device code is typed on the provider's page; browser consent needs only the person's consent.
 function WaitingStep({ challenge, onOpen, onCancel }: StepProps) {
   const { t } = useTranslation('accounts')
   const { provider } = challenge
-  const { name } = providerPresentation(provider)
+  const { name, challenge: step, open } = providerPresentation(provider)
   return (
     <div className="grid gap-(--spacing-shell-gutter) rounded-lg bg-muted/60 p-(--spacing-shell-inset)">
-      <p className="type-body text-muted-foreground">{t(`provider.${provider}.challenge`)}</p>
+      <p className="type-body text-muted-foreground">{step}</p>
       <div className="grid gap-(--spacing-shell-tight)">
-        {challenge.provider === 'github' ? (
+        {challenge.kind === 'device-code' ? (
           <output
-            aria-label={t('provider.github.codeLabel')}
+            aria-label={t('signIn.codeLabel', { provider: name })}
             className="type-title font-mono tracking-widest"
           >
             {challenge.userCode}
@@ -59,7 +59,7 @@ function WaitingStep({ challenge, onOpen, onCancel }: StepProps) {
       <div className="flex flex-wrap gap-(--spacing-shell-item)">
         <Button onClick={onOpen}>
           <Icon name="open-external" />
-          {t(`provider.${provider}.open`)}
+          {open}
         </Button>
         <Button onClick={onCancel} variant="ghost">
           {t('signIn.cancel')}
@@ -70,11 +70,13 @@ function WaitingStep({ challenge, onOpen, onCancel }: StepProps) {
 }
 
 function ConnectButtons({ providers, phase, provider, start }: SignInPanelProps) {
-  const { t } = useTranslation('accounts')
+  // Subscribes to a language change, which the presentation's text does not.
+  useTranslation('providers')
   return (
     <div className="flex flex-wrap gap-(--spacing-shell-item)">
       {providers.map((candidate) => {
         const asking = phase === 'requesting' && provider === candidate
+        const { requesting, connect } = providerPresentation(candidate)
         return (
           <Button
             disabled={phase === 'requesting'}
@@ -83,9 +85,7 @@ function ConnectButtons({ providers, phase, provider, start }: SignInPanelProps)
             variant="outline"
           >
             <Icon name="connect" />
-            {asking
-              ? providerPresentation(candidate).requesting
-              : t(`provider.${candidate}.connect`)}
+            {asking ? requesting : connect}
           </Button>
         )
       })}

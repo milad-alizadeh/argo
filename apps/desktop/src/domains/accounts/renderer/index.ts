@@ -13,10 +13,7 @@ export {
   useAccounts,
   useDismissNotice,
 } from './hooks/use-accounts'
-export {
-  capitalized,
-  providerPresentation,
-} from './lib/providers'
+export { capitalized } from './lib'
 export {
   useAccountsDialog,
   useOpenAccountsDialog,

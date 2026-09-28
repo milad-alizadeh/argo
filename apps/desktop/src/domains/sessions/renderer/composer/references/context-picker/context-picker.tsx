@@ -1,6 +1,7 @@
 import type { RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { providerPresentation } from '@/providers/presentation-registry'
 
 import { ContextPickerContents, type TicketChoice } from './context-picker-contents'
 import { useContextPickerFocus } from './use-context-picker-focus'
@@ -80,8 +81,7 @@ export function ContextPicker({
     status: t(statusKey),
     title: t(titleKey),
   }))
-  const providerLabel = (provider: TicketChoice['provider']) =>
-    t(`composer.contextPicker.provider.${provider}`)
+  const providerLabel = (provider: TicketChoice['provider']) => providerPresentation(provider).name
   const normalizedQuery = query.trim().toLowerCase()
   const shownTickets = tickets.filter((ticket) => {
     if (normalizedQuery === '') return !ticket.terminal

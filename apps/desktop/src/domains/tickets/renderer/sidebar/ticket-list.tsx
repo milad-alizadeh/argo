@@ -1,7 +1,6 @@
 import type { TFunction } from 'i18next'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { providerPresentation } from '@/domains/accounts/renderer'
 import { AppPageHeader } from '@/platform/renderer/app/components/app-shell'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { PageHeading } from '@/platform/renderer/components/page-heading'
@@ -12,6 +11,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/platform/renderer/components/ui/empty'
+import { providerPresentation } from '@/providers/presentation-registry'
 import { type Backlog, backlogRows, unfoldedRows } from '../lib/backlog'
 import { TicketVirtualList } from './ticket-virtual-list'
 

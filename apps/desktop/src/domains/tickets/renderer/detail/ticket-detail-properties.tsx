@@ -4,7 +4,7 @@ import type { Provider } from '@/domains/accounts/contract/contract'
 import type { Ticket, TicketPriority, TicketStatus } from '@/domains/tickets/contract/contract'
 import { SectionTitle } from '@/platform/renderer/components/section-title'
 import { Badge } from '@/platform/renderer/components/ui/badge'
-import { sourcePresentation } from '../lib/sources'
+import { providerPresentation } from '@/providers/presentation-registry'
 import { PriorityMenu } from '../status/priority-menu'
 import { StatusMenu } from '../status/status-menu'
 import { TicketLabel } from '../status/ticket-label'
@@ -63,7 +63,7 @@ export function Properties({
   onChangePriority,
 }: PropertiesProps) {
   const { t } = useTranslation('tickets')
-  const presentation = sourcePresentation(provider)
+  const presentation = providerPresentation(provider)
   const noun = presentation.statusNoun
   const stateNoun = t('status.noun.state')
   return (
@@ -88,7 +88,7 @@ export function Properties({
               <span className={COMPACT_VALUE}>{t(`detail.state.${ticket.state}`)}</span>
             </Property>
           )}
-          {presentation.hasPriority ? (
+          {presentation.priority ? (
             <Property name={t('detail.priority')}>
               <PriorityMenu named metadata onChange={onChangePriority} priority={ticket.priority} />
             </Property>

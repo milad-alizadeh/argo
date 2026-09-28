@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
-import { capitalized, providerPresentation } from '@/domains/accounts/renderer'
+import { capitalized } from '@/domains/accounts/renderer'
 import type { TicketScope } from '@/domains/tickets/contract/contract'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
@@ -17,7 +17,7 @@ import {
   FieldError,
   FieldLabel,
 } from '@/platform/renderer/components/ui/field'
-import { sourcePresentation } from '../lib/sources'
+import { providerPresentation } from '@/providers/presentation-registry'
 
 // The sources the chosen Account can see, read from its provider before the form can offer one.
 export type SourceDiscovery =
@@ -61,7 +61,7 @@ function SourceNote({ provider, login, sources, problem }: SourceFieldProps) {
     case 'listed':
       return sources.scopes.length === 0 ? (
         <FieldDescription id={NOTE_ID}>
-          {sourcePresentation(provider).noScopes(login)}
+          {providerPresentation(provider).noScopes(login)}
         </FieldDescription>
       ) : null
     default:
@@ -102,7 +102,7 @@ export function SourceField(props: SourceFieldProps) {
           className="w-full"
           disabled={disabled}
           id="connect-scope"
-          placeholder={sourcePresentation(provider).scopePlaceholder}
+          placeholder={providerPresentation(provider).scopePlaceholder}
           spellCheck={false}
           triggerLabel={t('connect.field.showMany', { scope: noun.many })}
         />

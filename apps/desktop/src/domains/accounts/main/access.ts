@@ -9,12 +9,12 @@ import type { AccountState } from '@/domains/accounts/contract/contract'
 import { createWriteQueue, portablePath } from '@/platform/main/storage/portable-file'
 import type { ProviderEndpoints } from '@/providers/endpoints'
 import { type Cipher, createGrantStore, type GrantStore } from './grants'
-import type { AccountProvider } from './providers'
+import type { AccountProviders } from './providers'
 import { type AccountRecord, readAccounts, writeAccounts } from './registry'
 
 export type AccountAccess = {
   endpoints: ProviderEndpoints
-  providers: Record<'github' | 'linear', AccountProvider>
+  providers: AccountProviders
   grants: GrantStore
   paths: { accounts: string; connections: string }
   database: Database | null
@@ -31,7 +31,7 @@ export function createAccountAccess(options: {
   accountData: string
   connectionData?: string
   endpoints: ProviderEndpoints
-  providers: Record<'github' | 'linear', AccountProvider>
+  providers: AccountProviders
   cipher: Cipher
   openExternal: (url: string) => Promise<void>
   database?: Database

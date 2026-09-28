@@ -10,13 +10,12 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
-import type { SourcePresentation } from '../lib/sources'
 import { StatusIcon, StatusMark } from './ticket-status'
 
 export type StatusMenuProps = {
   status: TicketStatus
   statuses: readonly TicketStatus[]
-  noun: SourcePresentation['statusNoun']
+  noun: string
   // The Detail writes the name beside the icon; a row draws the icon alone.
   named: boolean
   metadata?: boolean

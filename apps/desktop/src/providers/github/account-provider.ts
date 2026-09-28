@@ -31,7 +31,7 @@ export const githubAccounts: AccountProvider = {
     const { userCode, verificationUri, expiresIn } = challenge.value
     const controller = new AbortController()
     return {
-      challenge: { provider: 'github', userCode, verificationUri },
+      challenge: { kind: 'device-code', userCode, verificationUri },
       // Already checked to be on GitHub's web origin (device-flow.ts).
       url: verificationUri,
       expiresAt: Date.now() + expiresIn * 1000,

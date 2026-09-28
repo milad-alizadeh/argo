@@ -13,6 +13,7 @@ import { HARNESS_CATALOG as harnesses } from '@/harnesses/copy-registry'
 import cockpit from '@/platform/renderer/cockpit/locales/en.json'
 import shared from '@/platform/renderer/i18n/locales/en.json'
 import platform from '@/platform/renderer/i18n/locales/en.json'
+import { PROVIDER_CATALOG as providers } from '@/providers/copy-registry'
 
 export const CATALOGS = {
   accounts,
@@ -22,6 +23,7 @@ export const CATALOGS = {
   harnesses,
   platform,
   projects,
+  providers,
   sessions,
   shared,
   tickets,

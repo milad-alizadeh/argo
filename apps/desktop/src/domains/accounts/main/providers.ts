@@ -1,5 +1,5 @@
 // What each provider an Account can belong to does for the Account core: start a sign-in, and renew
-// a grant that lapses. A new provider is one module under `src/providers/` and one line here.
+// a grant that lapses. Each provider registers it once under `src/providers/<provider>/`.
 
 import {
   type AccountErrorCode,
@@ -15,8 +15,8 @@ export type SignInEnd = { ok: true; signedIn: SignedIn } | { ok: false; code: Ac
 // A sign-in under way. The page it opens is built or checked in main, never named by the renderer.
 export type SignInStart = {
   challenge:
-    | { provider: 'github'; userCode: string; verificationUri: string }
-    | { provider: 'linear' }
+    | { kind: 'device-code'; userCode: string; verificationUri: string }
+    | { kind: 'browser-consent' }
   url: string
   expiresAt: number
   finish(): Promise<SignInEnd>
@@ -31,7 +31,10 @@ export type AccountProvider = {
   renew: ((endpoints: ProviderEndpoints, refreshToken: string) => Promise<TokenReply>) | null
 }
 
+// The Account half of each provider's registration.
+export type AccountProviders = Record<Provider, { accounts: AccountProvider }>
+
 export const availableProviders = (
-  providers: Record<Provider, AccountProvider>,
+  providers: AccountProviders,
   endpoints: ProviderEndpoints,
-): Provider[] => PROVIDERS.filter((provider) => providers[provider].available(endpoints))
+): Provider[] => PROVIDERS.filter((provider) => providers[provider].accounts.available(endpoints))

@@ -3,13 +3,14 @@ import { z } from 'zod'
 import { composerDraft } from '@/database/composer-draft/schema'
 import { composerDraftSelectSchema } from '@/database/composer-draft/validation'
 import type { Database } from '@/database/database'
+import { provider } from '@/domains/accounts/contract/contract'
 import { sessionAttachmentInputSchema } from '@/domains/sessions/api/attachments'
 import { harnessSchema } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
 
 export const draftTicketContextSchema = z.strictObject({
   id: z.string().min(1),
-  provider: z.enum(['github', 'linear']),
+  provider,
   key: z.string().min(1),
   title: z.string(),
   status: z.string(),

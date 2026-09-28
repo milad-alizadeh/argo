@@ -22,6 +22,7 @@ export function createSignIn(access: AccountAccess) {
     version: 1,
     type: 'account.challenge',
     requestId,
+    provider: current.provider,
     ...current.start.challenge,
     expiresAt: current.start.expiresAt,
   })
@@ -51,7 +52,7 @@ export function createSignIn(access: AccountAccess) {
     // A second connect replaces the first: the person asked again, so the old sign-in is abandoned.
     async connect(requestId: string, provider: Provider): Promise<AccountChallengeReply> {
       if (!access.grants.available()) return accountError('secure-storage-unavailable', requestId)
-      const source = access.providers[provider]
+      const source = access.providers[provider].accounts
       if (!source.available(access.endpoints)) {
         return accountError('provider-unavailable', requestId)
       }

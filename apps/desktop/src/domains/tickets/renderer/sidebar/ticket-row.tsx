@@ -1,13 +1,12 @@
 import type { CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Provider } from '@/domains/accounts/contract/contract'
 import type { Ticket, TicketPriority, TicketStatus } from '@/domains/tickets/contract/contract'
 import { ticketAge } from '@/domains/tickets/contract/ticket-age'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/platform/renderer/components/ui/popover'
+import type { ProviderView } from '@/providers/presentation-registry'
 import { type BacklogRow, closedChildren, openBlockers } from '../lib/backlog'
-import type { SourcePresentation } from '../lib/sources'
 import { PriorityMenu } from '../status/priority-menu'
 import { StatusMenu } from '../status/status-menu'
 import { TicketLabel } from '../status/ticket-label'
@@ -199,8 +198,7 @@ type TicketRowProps = {
   row: BacklogRow
   // The tree lines this row draws, one per ancestor column.
   rails: readonly boolean[]
-  presentation: Pick<SourcePresentation, 'keyColumn' | 'statusNoun'>
-  provider: Provider
+  presentation: Pick<ProviderView, 'keyColumn' | 'statusNoun' | 'priority'>
   statuses: readonly TicketStatus[]
   selected: boolean
   folded: boolean
@@ -218,7 +216,7 @@ function SidebarMetadata(props: TicketRowProps) {
   return (
     <>
       <div className="col-start-2 mt-(--spacing-shell-tight) flex min-w-0 items-center gap-(--spacing-shell-item)">
-        {props.provider === 'linear' ? (
+        {props.presentation.priority ? (
           <span className="relative z-10 flex shrink-0 items-center">
             <PriorityMenu
               named={false}
@@ -293,13 +291,13 @@ function SidebarTicketRow(props: TicketRowProps) {
 // keyboard cursor outlines the whole row. The key column keeps parent and child titles aligned.
 function WorkspaceTicketRow(props: TicketRowProps) {
   const { t } = useTranslation('tickets')
-  const { row, rails, presentation, provider, statuses, selected, folded, now } = props
+  const { row, rails, presentation, statuses, selected, folded, now } = props
   const { onSelect, onToggle, onChangeStatus, onChangePriority } = props
   const { ticket, parent } = row
   const age = ticketAge(ticket.createdAt, now)
   return (
     <div className="relative flex min-w-0 items-start gap-(--spacing-shell-tight) rounded-row px-(--spacing-shell-item) hover:bg-muted has-[[aria-current]]:bg-selected">
-      {provider === 'linear' ? (
+      {presentation.priority ? (
         <span className="mt-1 flex w-6 shrink-0 items-center justify-center">
           <PriorityMenu named={false} onChange={onChangePriority} priority={ticket.priority} />
         </span>

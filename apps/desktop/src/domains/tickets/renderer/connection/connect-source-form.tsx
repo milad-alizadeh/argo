@@ -1,7 +1,6 @@
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { AccountSummary } from '@/domains/accounts/contract/contract'
-import { providerPresentation } from '@/domains/accounts/renderer'
 import type { TicketScope } from '@/domains/tickets/contract/contract'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
@@ -30,7 +29,7 @@ import {
 } from '@/platform/renderer/components/ui/select'
 import { contractText } from '@/platform/renderer/i18n/contract-text'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
-import { sourcePresentation } from '../lib/sources'
+import { providerPresentation } from '@/providers/presentation-registry'
 import { offered, type SourceDiscovery, SourceField } from './source-field'
 
 export type ConnectTarget = { accountId: string; scope: string }
@@ -180,7 +179,7 @@ export function ConnectSourceForm({
           <CardDescription>
             {t('connect.form.description', {
               noun,
-              items: sourcePresentation(chosen.provider).items,
+              items: providerPresentation(chosen.provider).items,
             })}
           </CardDescription>
         </CardHeader>

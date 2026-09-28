@@ -1,1 +1,1 @@
-export { capitalized, providerPresentation } from './providers'
+export { capitalized } from './capitalized'
