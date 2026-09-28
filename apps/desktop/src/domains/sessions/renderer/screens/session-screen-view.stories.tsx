@@ -732,6 +732,33 @@ async function expectJumpToLatestInComposerFade(canvasElement: HTMLElement) {
   await waitFor(() => expect(canvas.queryByRole('button', { name: 'Jump to latest' })).toBeNull())
 }
 
+function feedEndGapAboveComposer(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement)
+  const history = canvas.getByLabelText(SESSION_HISTORY_LABEL)
+  const card = canvas
+    .getByLabelText('Session composer')
+    .querySelector<HTMLElement>('[data-component="ComposerCard"]')
+  if (card === null) throw new Error('The composer card is absent.')
+  const rows = [...history.querySelectorAll<HTMLElement>('[data-feed-row]')]
+  const lastRowBottom = Math.max(...rows.map((row) => row.getBoundingClientRect().bottom))
+  return card.getBoundingClientRect().top - lastRowBottom
+}
+
+async function expectFeedEndsOneSnugAboveComposer(
+  canvasElement: HTMLElement,
+  { scrollToEnd }: { scrollToEnd: boolean },
+) {
+  const history = await within(canvasElement).findByLabelText(SESSION_HISTORY_LABEL)
+  await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(history.clientHeight))
+  const snug = Number.parseFloat(getComputedStyle(history).getPropertyValue('--spacing-snug'))
+  await waitFor(() => {
+    if (scrollToEnd) history.scrollTo({ top: history.scrollHeight })
+    const gap = feedEndGapAboveComposer(canvasElement)
+    expect(gap).toBeGreaterThanOrEqual(snug - 2)
+    expect(gap).toBeLessThanOrEqual(snug + 2)
+  })
+}
+
 function expectHeaderActionsAtTrailingEdge(canvasElement: HTMLElement) {
   const canvas = within(canvasElement)
   const headerControls = canvasElement.querySelector<HTMLElement>(
@@ -1077,6 +1104,31 @@ export const JumpToLatestInNormalComposerFade: Story = {
   render: () => <ReviewScreen initialSessionId="shortcut-review" rows={JUMP_TO_LATEST_ROWS} />,
   play: async ({ canvasElement }) => {
     await expectJumpToLatestInComposerFade(canvasElement)
+  },
+}
+
+export const FeedEndsJustAboveComposer: Story = {
+  render: () => <ReviewScreen initialSessionId="shortcut-review" rows={JUMP_TO_LATEST_ROWS} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expectFeedEndsOneSnugAboveComposer(canvasElement, { scrollToEnd: true })
+
+    const card = canvas
+      .getByLabelText('Session composer')
+      .querySelector<HTMLElement>('[data-component="ComposerCard"]')
+    if (card === null) throw new Error('The composer card is absent.')
+    const oneLineHeight = card.getBoundingClientRect().height
+    await userEvent.click(canvas.getByRole('combobox', { name: 'Message' }))
+    await userEvent.keyboard('First line{Shift>}{Enter}{/Shift}Second line')
+    await userEvent.keyboard('{Shift>}{Enter}{/Shift}Third line')
+    await waitFor(() => expect(card.getBoundingClientRect().height).toBeGreaterThan(oneLineHeight))
+    await expectFeedEndsOneSnugAboveComposer(canvasElement, { scrollToEnd: true })
+
+    const history = canvas.getByLabelText(SESSION_HISTORY_LABEL)
+    history.scrollTo({ top: 0 })
+    fireEvent.scroll(history)
+    await userEvent.click(await canvas.findByRole('button', { name: 'Jump to latest' }))
+    await expectFeedEndsOneSnugAboveComposer(canvasElement, { scrollToEnd: false })
   },
 }
 

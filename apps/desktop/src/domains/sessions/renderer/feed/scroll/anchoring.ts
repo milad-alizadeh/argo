@@ -15,18 +15,14 @@ const FEED_OVERSCAN = 8
 const TAIL_THRESHOLD_PX = 80
 const TAIL_KEY = 'feed-tail'
 
-// Where the Feed's virtualizer attaches: the scrollable element itself, and the scroll-padding
-// read off it once, since that padding never changes after mount.
+// Where the Feed's virtualizer attaches: the scrollable element itself, and its top scroll-padding
+// read once. The end space is the viewport's CSS padding, which follows the composer (#2835).
 export function useFeedViewport() {
   const [viewport, setViewport] = useState<HTMLElement | null>(null)
-  const [padding, setPadding] = useState({ start: 0, end: 0 })
+  const [padding, setPadding] = useState({ start: 0 })
   const attachViewport = useCallback((element: HTMLElement | null) => {
     if (element !== null) {
-      const style = getComputedStyle(element)
-      setPadding({
-        start: Number.parseFloat(style.scrollPaddingTop) || 0,
-        end: Number.parseFloat(style.scrollPaddingBottom) || 0,
-      })
+      setPadding({ start: Number.parseFloat(getComputedStyle(element).scrollPaddingTop) || 0 })
     }
     setViewport(element)
   }, [])
@@ -49,7 +45,7 @@ export function useAnchoredVirtualizer({
   rows: readonly SessionFeedRow[]
   tail: ReactNode
   viewport: HTMLElement | null
-  padding: { start: number; end: number }
+  padding: { start: number }
   onChange: (instance: Virtualizer<HTMLElement, Element>, sync: boolean) => void
 }) {
   const virtualizer = useVirtualizer({
@@ -71,7 +67,6 @@ export function useAnchoredVirtualizer({
     onChange,
     overscan: FEED_OVERSCAN,
     paddingStart: padding.start,
-    paddingEnd: padding.end,
     scrollPaddingStart: padding.start,
     scrollEndThreshold: TAIL_THRESHOLD_PX,
   })

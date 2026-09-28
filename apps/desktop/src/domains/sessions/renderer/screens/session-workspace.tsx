@@ -68,10 +68,13 @@ function ComposerSection({
     const section = sectionRef.current
     const body = section?.parentElement
     if (!section || !body) return
-    const card = section.querySelector<HTMLElement>('[data-component="ComposerCard"]')
+    const findCard = () => section.querySelector<HTMLElement>('[data-component="ComposerCard"]')
+    const card = findCard()
     const measure = () => {
       const sectionBounds = section.getBoundingClientRect()
-      body.style.setProperty('--session-composer-height', `${sectionBounds.height}px`)
+      // From the card's top edge: the band above it is transparent fade the Feed may pass under.
+      const cardTop = findCard()?.getBoundingClientRect().top ?? sectionBounds.top
+      body.style.setProperty('--session-composer-height', `${sectionBounds.bottom - cardTop}px`)
       section.style.setProperty('--session-composer-fade-start', `${sectionBounds.height / 2}px`)
       section.style.setProperty('--session-composer-fade-length', `${sectionBounds.height / 2}px`)
     }

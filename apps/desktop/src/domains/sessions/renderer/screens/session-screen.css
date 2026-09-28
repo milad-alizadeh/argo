@@ -29,18 +29,13 @@
   overflow: hidden;
 }
 
-.session-screen__feed .feed__viewport {
-  scroll-padding-bottom: calc(
-    var(--session-composer-height, 0px) +
-    var(--spacing-session-feed-composer-inset)
-  );
-}
-
 .session-screen__feed:has(+ .session-screen__composer) .feed__viewport {
-  padding-bottom: calc(
+  --session-feed-composer-clearance: calc(
     var(--session-composer-height, 0px) +
-    var(--spacing-session-feed-composer-inset)
+    var(--spacing-snug)
   );
+  padding-bottom: var(--session-feed-composer-clearance);
+  scroll-padding-bottom: var(--session-feed-composer-clearance);
 }
 
 .session-screen__composer

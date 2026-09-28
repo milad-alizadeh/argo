@@ -109,10 +109,6 @@
     var(--spacing-session-composer-bottom) +
     var(--spacing-hair)
   );
-  --spacing-session-feed-composer-inset: calc(
-    var(--size-session-composer-overlay) +
-    var(--spacing-snug)
-  );
   --blur-session-composer: 12px;
   --color-session-composer: color-mix(in oklab, var(--card) 82%, transparent);
   --size-attachment-thumbnail: 56px;
