@@ -182,7 +182,7 @@ function ModelOptions({ choices, value, onChange }: TurnConfigurationControlProp
                 <span className="block type-heading">{model.label}</span>
                 {model.detail ? (
                   <span
-                    className={`mt-0.5 block type-meta ${active ? 'text-background/65' : 'text-muted-foreground'}`}
+                    className={`mt-0.5 block type-meta ${active ? 'text-background/80' : 'text-muted-foreground'}`}
                   >
                     {model.detail}
                   </span>

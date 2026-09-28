@@ -164,6 +164,11 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof LiveComposerStory>
 
+export const RunningTurn: Story = {
+  render: () => <LiveComposerStory />,
+  tags: ['view-only'],
+}
+
 export const LiveTurn: Story = {
   render: () => <LiveComposerStory />,
   play: async ({ canvasElement }) => {

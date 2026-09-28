@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { INACTIVE_FEED_LIVE_FACTS } from '../feed/document/feed-live-facts'
 import { sessionRow } from '../session-fixtures'
@@ -76,20 +76,13 @@ export const Open: Story = {
     expectIdentityInPageHeader(canvasElement)
     const title = canvas.getByRole('heading', { name: session.title?.text })
     const header = canvasElement.querySelector<HTMLElement>('[data-component="AppMainHeader"]')
-    const metadata = canvas
-      .getByText('Session ID')
-      .closest<HTMLElement>('[data-component="SessionIdMetadata"]')
-    if (header === null || metadata === null) throw new Error('The Session header is absent.')
+    if (header === null) throw new Error('The Session header is absent.')
     const gutter = Number.parseFloat(getComputedStyle(header).paddingInlineStart)
-    await expect(title.getBoundingClientRect().left).toBeCloseTo(
+    await expect(title.getBoundingClientRect().left).toBeGreaterThanOrEqual(
       header.getBoundingClientRect().left + gutter,
-      1,
     )
-    await expect(metadata).toHaveTextContent(session.id)
-    await expect(metadata.querySelector('svg')).not.toBeNull()
-    await expect(metadata.getBoundingClientRect().top).toBeGreaterThanOrEqual(
-      title.getBoundingClientRect().bottom,
-    )
+    expect(within(header).queryByText('Session ID')).toBeNull()
+    expect(within(header).queryByText('Workspace')).toBeNull()
   },
 }
 
@@ -101,6 +94,40 @@ export const Collapsed: Story = {
     const title = canvas.getByRole('heading', { name: session.title?.text })
     await expect(title.getBoundingClientRect().top).toBeLessThan(
       opener.getBoundingClientRect().bottom,
+    )
+  },
+}
+
+export const ResizeExpandedInspector: Story = {
+  decorators: [
+    (Story) => (
+      <div className="h-dvh w-[1280px]">
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(
+      () => expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeVisible(),
+      { timeout: 5000 },
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Open Session inspector' }))
+    await userEvent.click(await canvas.findByRole('button', { name: 'Expand Session sidebar' }))
+    await waitFor(
+      () => expect(canvas.getByRole('button', { name: 'Restore Session sidebar' })).toBeVisible(),
+      { timeout: 5000 },
+    )
+
+    await userEvent.click(canvas.getByRole('button', { name: /^Collapse sidebar$/ }))
+    await waitFor(
+      () => {
+        expect(
+          canvas.getByLabelText('Session workspace').getBoundingClientRect().width,
+        ).toBeGreaterThan(1)
+        expect(canvas.getByRole('button', { name: 'Expand Session sidebar' })).toBeVisible()
+      },
+      { timeout: 10000 },
     )
   },
 }

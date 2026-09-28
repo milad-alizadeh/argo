@@ -97,7 +97,7 @@ export function SessionRow({
     <div className="min-w-0">
       <button
         aria-current={selected ? 'page' : undefined}
-        className={`group relative flex w-full select-none items-start gap-2 overflow-hidden rounded-lg px-2 py-2 text-left ${focusHighlight} ${rowHighlight}`}
+        className={`group relative flex w-full select-none items-start gap-2 overflow-hidden rounded-lg pl-(--spacing-shell-icon) pr-2 py-2 text-left ${focusHighlight} ${rowHighlight}`}
         data-archived={archived}
         data-session-id={session.id}
         data-history-unavailable={unavailable}

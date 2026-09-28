@@ -14,7 +14,7 @@ import {
 } from '../database/composer-draft'
 import {
   type LiveSessionSupervisorActor,
-  SessionSendRejectedError,
+  SessionSubmitRejectedError,
 } from '../live/live-session-supervisor-machine'
 import type { SessionRenameContext } from './session-rename'
 
@@ -159,7 +159,7 @@ export function sessionSubmitProcedure(context: SessionProcedureContext) {
     .output(outputSchema)
     .mutation(async ({ input }) => {
       const accepted = await sendToSupervisor(context, input).catch((error: unknown) => {
-        if (error instanceof SessionSendRejectedError)
+        if (error instanceof SessionSubmitRejectedError)
           throw new TRPCError({ code: 'PRECONDITION_FAILED', message: error.message })
         throw error
       })

@@ -37,6 +37,7 @@ import type { Session, SessionListPage } from '../types'
 type SessionScreenDetailsProps = {
   permission: ReturnType<typeof import('../composer').useSessionPermission>
   questionPending: boolean
+  liveStatus: ReturnType<typeof import('../feed/use-session-feed').useSessionFeed>['liveStatus']
   session: Session | null
   harness: HarnessControl
   selectedSessionId: string | null
@@ -209,10 +210,24 @@ function useComposerRetryFocus(
   return { focusComposerAfterRetry, clearRecoveryFocus, retryCatalog, retryDraft }
 }
 
+function useSessionInterrupt(selectedSessionId: string | null, harness: HarnessControl) {
+  const { mutateAsync: interrupt } = useMutation(trpc.sessionInterrupt.mutationOptions())
+  if (selectedSessionId === null || harness.harness !== 'claude') return undefined
+  return async () => {
+    try {
+      await interrupt({ sessionId: selectedSessionId })
+      return true
+    } catch {
+      return false
+    }
+  }
+}
+
 // The Session list already knows another process runs it live, so no Send is offered at all (ADR-0040).
 export function SessionComposerArea({
   permission,
   questionPending,
+  liveStatus,
   session,
   harness,
   selectedSessionId,
@@ -243,7 +258,7 @@ export function SessionComposerArea({
   })
   const { focusComposerAfterRetry, clearRecoveryFocus, retryCatalog, retryDraft } =
     useComposerRetryFocus(catalogQuery, draft)
-  const send = useSessionComposerSend({ draft, identity, projectId: cockpit.project?.id ?? null })
+  const onInterrupt = useSessionInterrupt(selectedSessionId, harness)
   if (session?.locked === true) return <OpenElsewhere onRetry={null} />
   if (draft === null)
     return (
@@ -260,6 +275,8 @@ export function SessionComposerArea({
   return (
     <ReadySessionComposer
       {...{ permission, questionPending, session, harness, workspaceCockpit, workspaceActions }}
+      isRunning={liveStatus === 'running' || liveStatus === 'permission' || liveStatus === 'asking'}
+      onInterrupt={onInterrupt}
       catalogFailure={catalogFailure}
       choices={choices}
       composerKey={composerKey}
@@ -270,7 +287,6 @@ export function SessionComposerArea({
       onRefreshCatalog={refreshCatalog}
       onRetryCatalog={retryCatalog}
       onRetryDraft={retryDraft}
-      onSend={send}
     />
   )
 }
@@ -292,7 +308,8 @@ function ReadySessionComposer({
   onRefreshCatalog,
   onRetryCatalog,
   onRetryDraft,
-  onSend,
+  isRunning,
+  onInterrupt,
 }: Pick<
   SessionScreenDetailsProps,
   'permission' | 'questionPending' | 'session' | 'harness' | 'workspaceCockpit' | 'workspaceActions'
@@ -307,9 +324,15 @@ function ReadySessionComposer({
   onRefreshCatalog: () => void
   onRetryCatalog: () => void
   onRetryDraft: () => void
-  onSend: NonNullable<Parameters<typeof ComposerForm>[0]['onSend']>
+  isRunning: boolean
+  onInterrupt?: () => Promise<boolean>
 }) {
   const { t } = useTranslation('sessions')
+  const onSend = useSessionComposerSend({
+    draft,
+    identity,
+    projectId: identity.kind === 'draft' ? identity.projectId : null,
+  })
   return (
     <>
       {permission.failure ? <Failure message={permission.failure} /> : null}
@@ -351,6 +374,8 @@ function ReadySessionComposer({
         }
         plan={session?.plan ?? null}
         onSend={onSend}
+        isRunning={isRunning}
+        onInterrupt={onInterrupt}
       />
     </>
   )

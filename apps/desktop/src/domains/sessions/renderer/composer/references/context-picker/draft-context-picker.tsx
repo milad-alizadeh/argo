@@ -55,12 +55,14 @@ function useTicketKeyboardNavigation(editorRef: RefObject<LexicalEditor | null>,
 }
 
 export function DraftContextPicker({
+  anchorRef,
   editorRef,
   draft,
   onAddTicket,
   onAttach,
   onClose,
 }: {
+  anchorRef?: RefObject<HTMLDivElement | null>
   editorRef: RefObject<LexicalEditor | null>
   draft: string
   onAddTicket: (ticket: Omit<ComposerTicketContext, 'id'>) => void
@@ -72,6 +74,7 @@ export function DraftContextPicker({
   const selectedIndex = useTicketKeyboardNavigation(editorRef, reference?.trigger === '@')
   return (
     <ContextPicker
+      anchorRef={anchorRef}
       onAttach={() => {
         onClose()
         onAttach()

@@ -10,7 +10,7 @@ import { sessionTable } from '@/database/session/schema'
 import { workspace } from '@/database/workspace/schema'
 import {
   type LiveSessionSupervisorActor,
-  SessionSendRejectedError,
+  SessionSubmitRejectedError,
 } from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import { type AppRouterDependencies, createAppRouter } from './trpc-router'
 
@@ -354,7 +354,7 @@ test('reports a definite supervisor rejection and retains the Turn draft', async
   const created = await createSessionDraft('session-1')
   const api = caller((event) => {
     if (event.type !== 'Send') throw new Error(`Unexpected event: ${event.type}`)
-    event.reply.reject(new SessionSendRejectedError('Turn configuration is unavailable.'))
+    event.reply.reject(new SessionSubmitRejectedError('Turn configuration is unavailable.'))
   })
 
   await expect(

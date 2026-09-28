@@ -72,6 +72,7 @@ export function useSessionFeed(
   )
   return {
     feed: displayed,
+    liveStatus: live?.events.findLast((event) => event.type === 'status')?.status ?? null,
     feedError: history.error,
     retryFeed: history.retry,
     loadOlder: history.loadOlder,
