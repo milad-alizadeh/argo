@@ -1,6 +1,6 @@
-import { ChevronDown, FolderGit2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { WorkspaceSummary } from '@/domains/workspaces/renderer'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,9 +8,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
-import { InputGroupButton } from '@/platform/renderer/components/ui/input-group'
+import { ComposerMenuTrigger, ComposerMenuValue } from './composer-menu-trigger'
 
 export type WorkspaceMenuControlProps = {
   workspaces: readonly WorkspaceSummary[]
@@ -25,19 +24,12 @@ export function WorkspaceMenu({ workspaces, workspace, onSelect }: WorkspaceMenu
   const label = workspace?.displayName ?? t('composer.workspace.choose')
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <InputGroupButton
-            variant="ghost"
-            className="max-w-48 min-w-0 shrink-0 type-control text-foreground"
-            aria-label={t('composer.workspace.chooseLabel', { workspace: label })}
-          />
-        }
+      <ComposerMenuTrigger
+        ariaLabel={t('composer.workspace.chooseLabel', { workspace: label })}
+        className="max-w-48 min-w-0 shrink-0 type-control text-foreground"
       >
-        <FolderGit2 />
-        <span className="hidden min-w-0 truncate @[36rem]:inline">{label}</span>
-        <ChevronDown className="hidden text-muted-foreground @[36rem]:block" />
-      </DropdownMenuTrigger>
+        <ComposerMenuValue icon={<Icon name="repository" />} label={label} />
+      </ComposerMenuTrigger>
       <DropdownMenuContent align="start" side="top" className="w-(--size-session-menu) p-1.5">
         <DropdownMenuGroup>
           <DropdownMenuLabel className="px-2 py-1.5 type-control text-muted-foreground">

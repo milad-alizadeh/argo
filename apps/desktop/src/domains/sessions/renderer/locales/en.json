@@ -119,6 +119,8 @@
     "compactShort": "Compact",
     "handoff": "Hand off to a new Session",
     "context": "Context",
+    "contextActions": "Context actions",
+    "handoffAction": "Handoff Session",
     "contextWindow": {
       "title": "Context window",
       "details": "Context details",

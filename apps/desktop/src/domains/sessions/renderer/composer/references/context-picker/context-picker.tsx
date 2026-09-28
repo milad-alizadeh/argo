@@ -1,7 +1,10 @@
+import type { RefObject } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 
 import { ContextPickerContents, type TicketChoice } from './context-picker-contents'
 import { useContextPickerFocus } from './use-context-picker-focus'
+import { useContextPickerPosition } from './use-context-picker-position'
 
 type TicketTextKey =
   | 'composer.contextPicker.ticket.sharedPicker'
@@ -53,6 +56,7 @@ const TICKETS: readonly TicketFixture[] = [
 ]
 
 export function ContextPicker({
+  anchorRef,
   onAttach,
   onClose,
   onSelectTicket,
@@ -60,6 +64,7 @@ export function ContextPicker({
   autoFocus = true,
   selectedIndex = 0,
 }: {
+  anchorRef?: RefObject<HTMLDivElement | null>
   onAttach: () => void
   onClose: () => void
   onSelectTicket: (ticket: TicketChoice) => void
@@ -69,6 +74,7 @@ export function ContextPicker({
 }) {
   const { t } = useTranslation('sessions')
   const focus = useContextPickerFocus(onClose, autoFocus)
+  useContextPickerPosition(anchorRef, focus.pickerRef)
   const tickets = TICKETS.map(({ statusKey, titleKey, ...ticket }) => ({
     ...ticket,
     status: t(statusKey),
@@ -81,11 +87,11 @@ export function ContextPicker({
     if (normalizedQuery === '') return !ticket.terminal
     return `${ticket.key} ${ticket.title} ${ticket.status}`.toLowerCase().includes(normalizedQuery)
   })
-  return (
+  const picker = (
     <div
       aria-label={t('composer.contextPicker.label')}
       aria-modal="true"
-      className="absolute bottom-full left-0 z-40 mb-2 w-full rounded-xl border bg-card p-(--spacing-shell-item) shadow-xl"
+      className={`z-50 mb-(--spacing-shell-item) overflow-y-auto overscroll-contain rounded-xl border bg-popover p-(--spacing-shell-item) shadow-(--shadow-surface) ${anchorRef ? 'fixed max-h-[calc(var(--context-picker-space)-var(--spacing-shell-item)*2)] max-w-(--size-context-picker-max-width)' : 'absolute bottom-full left-0 w-full'}`}
       onKeyDown={focus.onKeyDown}
       ref={focus.pickerRef}
       role="dialog"
@@ -100,4 +106,5 @@ export function ContextPicker({
       />
     </div>
   )
+  return anchorRef ? createPortal(picker, document.body) : picker
 }

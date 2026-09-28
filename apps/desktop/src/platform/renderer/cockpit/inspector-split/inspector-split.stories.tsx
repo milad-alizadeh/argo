@@ -48,11 +48,12 @@ export const CollapseExpandRestore: Story = {
 
     // The page's header owns the controls, so a collapsed inspector opens from its header edge.
     const collapseControl = canvas.getByRole('button', { name: 'Collapse Panel inspector' })
+    await expect(canvas.getByLabelText('Panel inspector').contains(collapseControl)).toBe(true)
     await userEvent.click(collapseControl)
     await waitFor(() =>
       expect(canvas.getByRole('button', { name: 'Open Panel inspector' })).toBeInTheDocument(),
     )
-    await expect(canvas.getByLabelText('Panel contents')).not.toBeVisible()
+    await waitFor(() => expect(canvas.getByLabelText('Panel contents')).not.toBeVisible())
     const openControl = canvas.getByRole('button', { name: 'Open Panel inspector' })
     const workspace = canvas.getByLabelText('Workspace')
     await expect(openControl.getBoundingClientRect().right).toBeLessThanOrEqual(
@@ -62,10 +63,12 @@ export const CollapseExpandRestore: Story = {
     await waitFor(() =>
       expect(canvas.getByRole('button', { name: 'Collapse Panel inspector' })).toBeInTheDocument(),
     )
-    await expect(canvas.getByLabelText('Panel contents')).toBeVisible()
-    expect(
-      canvas.getByLabelText('Panel contents').getBoundingClientRect().width,
-    ).toBeGreaterThanOrEqual(440)
+    await waitFor(() => expect(canvas.getByLabelText('Panel contents')).toBeVisible())
+    await waitFor(() =>
+      expect(
+        canvas.getByLabelText('Panel contents').getBoundingClientRect().width,
+      ).toBeGreaterThanOrEqual(440),
+    )
 
     // When the inspector takes the whole width, its own header keeps the restore control reachable.
     const expandControl = canvas.getByRole('button', { name: 'Expand Panel sidebar' })
@@ -100,7 +103,7 @@ export const NarrowCollapsed: Story = {
     const restore = await canvas.findByRole('button', { name: 'Restore Panel sidebar' })
     const inspector = canvas.getByLabelText('Panel inspector')
     await expect(inspector.contains(restore)).toBe(true)
-    await expect(workspace.getBoundingClientRect().width).toBeLessThanOrEqual(1)
+    await waitFor(() => expect(workspace.getBoundingClientRect().width).toBeLessThanOrEqual(1))
     await expect(inspector.getBoundingClientRect().width).toBeGreaterThanOrEqual(599)
   },
 }

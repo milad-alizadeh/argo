@@ -12,7 +12,7 @@ export function SignInNotice({ onConnect, onDismiss }: SignInNoticeProps) {
   return (
     <Alert
       aria-label={t('notice.label')}
-      className="mx-(--spacing-shell-item) mb-(--spacing-shell-item) w-auto shrink-0 bg-muted/40"
+      className="mx-(--spacing-shell-item) mb-(--spacing-shell-item) min-w-0 w-auto shrink-0 bg-muted/40"
       role="region"
     >
       <Icon name="info" />

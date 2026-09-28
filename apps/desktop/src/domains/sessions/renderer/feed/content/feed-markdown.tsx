@@ -1,4 +1,4 @@
-import { memo, type ReactNode, useContext, useMemo } from 'react'
+import { memo, type ReactNode, useContext, useEffect, useMemo, useRef } from 'react'
 import Markdown, { type Components, type ExtraProps } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Icon } from '@/platform/renderer/components/icon/icon'
@@ -15,6 +15,18 @@ type MarkdownNode = ExtraProps['node']
 
 const REMARK_PLUGINS = [remarkGfm]
 const LANGUAGE_CLASS = 'language-'
+
+function ScrollableTable({ children }: { children: ReactNode }) {
+  const tableRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    tableRef.current?.setAttribute('tabindex', '0')
+  }, [])
+  return (
+    <div ref={tableRef} className={`overflow-x-auto border ${FEED_CARD_RADIUS_CLASS}`}>
+      <table className="w-full text-left type-body">{children}</table>
+    </div>
+  )
+}
 
 // A fence reaches `pre` as one `code` element holding the text, with its word as `language-*`.
 function fenceOf(node: MarkdownNode) {
@@ -108,11 +120,7 @@ const COMPONENTS: Omit<Components, HeadingTag> = {
   blockquote: ({ children }) => (
     <blockquote className="border-l-2 pl-4 text-muted-foreground">{children}</blockquote>
   ),
-  table: ({ children }) => (
-    <div className={`overflow-x-auto border ${FEED_CARD_RADIUS_CLASS}`}>
-      <table className="w-full text-left type-body">{children}</table>
-    </div>
-  ),
+  table: ({ children }) => <ScrollableTable>{children}</ScrollableTable>,
   thead: ({ children }) => <thead className="bg-muted">{children}</thead>,
   tbody: ({ children }) => <tbody className="*:border-t">{children}</tbody>,
   th: ({ style, children }) => (

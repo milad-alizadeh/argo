@@ -32,6 +32,14 @@ function ContextBarFrame({ width }: { width: string }) {
   )
 }
 
+async function openContextActions(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement)
+  await userEvent.click(canvas.getByRole('button', { name: 'Context actions' }))
+  await waitFor(() =>
+    expect(within(document.body).getByRole('menuitem', { name: 'Compact context' })).toBeVisible(),
+  )
+}
+
 export const MeterAndLabels: Story = {
   parameters: { viewport: { defaultViewport: 'desktop' } },
   render: () => <ContextBarFrame width="75rem" />,
@@ -42,9 +50,8 @@ export const MeterAndLabels: Story = {
     const context = canvas.getByRole('button', { name: 'Context 74%' })
     await userEvent.click(context)
     await waitFor(() => expect(within(document.body).getByText('Context window')).toBeVisible())
-    await expect(canvas.getByText('Compact')).toBeVisible()
-    await expect(canvas.getByText('Handoff')).toBeVisible()
-    const handoff = canvas
+    await openContextActions(canvasElement)
+    const handoff = within(document.body)
       .getAllByLabelText('Handoff Session')
       .find((button) => button.getBoundingClientRect().width > 0)
     if (handoff === undefined) throw new Error('The visible context bar actions are absent.')
@@ -57,8 +64,7 @@ export const ProgressIconAndLabels: Story = {
     const canvas = within(canvasElement)
 
     await expect(canvas.getByLabelText(/Context 148k tokens/)).toBeVisible()
-    await expect(canvas.getByText('Compact')).toBeVisible()
-    await expect(canvas.getByText('Handoff')).toBeVisible()
+    await openContextActions(canvasElement)
   },
 }
 
@@ -69,8 +75,7 @@ export const LabelsWaitForTheFullLayout: Story = {
     const bar = canvasElement.querySelector<HTMLElement>('[data-component="SessionContextBar"]')
 
     await expect(canvas.getByLabelText(/Context 148k tokens/)).toBeVisible()
-    await expect(canvas.getByText('Compact')).toBeVisible()
-    await expect(canvas.getByText('Handoff')).toBeVisible()
+    await openContextActions(canvasElement)
     if (bar === null) throw new Error('The context bar is absent.')
 
     expect(bar.scrollWidth).toBeLessThanOrEqual(bar.clientWidth)
@@ -85,8 +90,9 @@ export const PercentageAndIcons: Story = {
     await expect(canvas.getByRole('button', { name: /Context 148k tokens/ })).toHaveAccessibleName(
       /74%/,
     )
-    const labeledActions = canvas.getByText('Compact').parentElement
-    if (labeledActions === null) throw new Error('The full context actions are absent.')
-    await expect(labeledActions).not.toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Context actions' })).toBeVisible()
+    await expect(
+      within(document.body).queryByRole('menuitem', { name: 'Compact context' }),
+    ).toBeNull()
   },
 }

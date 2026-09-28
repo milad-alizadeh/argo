@@ -37,7 +37,7 @@ export function ProjectSwitcher() {
               aria-label={t('switcher.current', { name: projectName })}
               variant="ghost"
               size="sm"
-              className="gap-(--spacing-shell-tight) px-2 type-body"
+              className="min-w-0 max-w-48 gap-(--spacing-shell-tight) border-0 pl-2 pr-(--spacing-shell-icon) type-body"
             />
           }
         >

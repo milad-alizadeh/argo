@@ -71,7 +71,7 @@ export const NestedLongTitle: Story = {
     const parent = within(parentRow)
     const status = parent.getByRole('button', { name: 'State: Open' })
     await expect(parent.queryByText('1/3')).toBeNull()
-    const blocked = parentRow.querySelector('svg.lucide-ban')
+    const blocked = parentRow.querySelector('[data-icon="blocked"]')
     if (blocked === null) throw new Error('A blocked Ticket needs a blocked mark.')
     await expect(blocked.parentElement).toHaveClass('text-destructive')
     const shownLabel = visibleMatches(parent.getAllByText(longTicket.labels[0]?.name ?? ''))[0]

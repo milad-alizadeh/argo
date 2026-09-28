@@ -43,6 +43,7 @@ function awaitingSelectedFeed({
   selectedSessionId: SessionId | null
   liveFacts: FeedLiveFacts
 }) {
+  if (selectedSessionId?.startsWith('optimistic:') === true) return false
   const displayedPrompt = promptBesideFeed(
     current?.rows ?? [],
     liveFacts?.optimisticRow ?? null,

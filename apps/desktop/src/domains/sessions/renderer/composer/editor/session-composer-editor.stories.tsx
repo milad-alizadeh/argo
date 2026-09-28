@@ -385,12 +385,8 @@ export const AtTicketQueryShowsTicketsForCodex: Story = {
   render: (args) => <CodexComposerStory onSend={args.onSend} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const composer = canvas.getByLabelText('Message')
-
-    await userEvent.click(composer)
-    await userEvent.type(composer, '@ENG')
-
-    const picker = await canvas.findByRole('dialog', { name: 'Context picker' })
+    await userEvent.click(canvas.getByRole('button', { name: 'Add context' }))
+    const picker = await within(document.body).findByRole('dialog', { name: 'Context picker' })
     await expect(
       within(picker).getByRole('button', { name: /ENG-42.*Keep the Composer/ }),
     ).toBeVisible()

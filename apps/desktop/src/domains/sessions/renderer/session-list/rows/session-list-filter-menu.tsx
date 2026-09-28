@@ -4,8 +4,10 @@ import { Button } from '@/platform/renderer/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
 import type { SessionListStatus } from '../hooks/use-session-list-filter-store'
@@ -20,10 +22,14 @@ const STATUS_LABELS = {
 const STATUSES = Object.keys(STATUS_LABELS) as SessionListStatus[]
 
 export function SessionListFilterMenu({
+  onRefresh,
   onStatusChange,
+  refreshing,
   status,
 }: {
+  onRefresh: () => void
   onStatusChange: (status: SessionListStatus) => void
+  refreshing: boolean
   status: SessionListStatus
 }) {
   const { t } = useTranslation('sessions')
@@ -36,7 +42,7 @@ export function SessionListFilterMenu({
           </Button>
         }
       />
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="w-max">
         <DropdownMenuRadioGroup
           onValueChange={(value) => onStatusChange(value as SessionListStatus)}
           value={status}
@@ -47,6 +53,15 @@ export function SessionListFilterMenu({
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="whitespace-nowrap type-control"
+          disabled={refreshing}
+          onClick={onRefresh}
+        >
+          <Icon name="retry" />
+          {t('refreshSessions')}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )

@@ -302,15 +302,6 @@
     {
       "identity": {
         "rule": "no-aliased-same-facet-import",
-        "source": "apps/desktop/src/domains/sessions/renderer/composer/layout/composer-editor-area.tsx",
-        "target": "apps/desktop/src/domains/sessions/renderer/model/models.ts"
-      },
-      "owner": "#2642",
-      "reason": "The parked same-facet import gate owns this exact edge."
-    },
-    {
-      "identity": {
-        "rule": "no-aliased-same-facet-import",
         "source": "apps/desktop/src/domains/sessions/renderer/composer/layout/composer-form.tsx",
         "target": "apps/desktop/src/domains/sessions/renderer/model/models.ts"
       },

@@ -140,15 +140,6 @@
     {
       "identity": {
         "project": "storybook-dark",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "New Session Does Not Stall"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-dark",
         "path": "apps/desktop/src/domains/sessions/renderer/screens/session-turn-configuration.stories.tsx",
         "story": "Accepted Choice Stays"
       },
@@ -475,15 +466,6 @@
         "project": "storybook-light",
         "path": "apps/desktop/src/domains/sessions/renderer/screens/session-resume.stories.tsx",
         "story": "Resumes On Send"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook-light",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-screen-view.stories.tsx",
-        "story": "New Session Does Not Stall"
       },
       "owner": "#2587",
       "reason": "The final typed-API cutover owns this Storybook repair."
