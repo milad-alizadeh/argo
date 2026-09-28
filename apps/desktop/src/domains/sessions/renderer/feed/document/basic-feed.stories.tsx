@@ -46,7 +46,6 @@ const meta = {
     liveFacts: LIVE_FACTS,
     onJumpToLatestChange: fn(),
     onOpenEvidence: () => {},
-    onStalledChange: fn(),
     selectedSessionId: 'prose',
   },
 } satisfies Meta<typeof BasicFeed>

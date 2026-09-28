@@ -1,11 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useState } from 'react'
-import { MemoryRouter } from 'react-router'
+import { useCallback, useState } from 'react'
+import { MemoryRouter, Navigate, Route, Routes } from 'react-router'
 import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/renderer/model/models'
 import type { SessionShellOutput } from '@/domains/sessions/renderer/work/types'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
+import { queryClient, trpc } from '@/platform/renderer/trpc-client'
+import { claudeHarnessInfoFixture } from '../../../../../test-fixtures/sessions/harness-catalog.fixture'
 import { ComposerForm } from '../composer/layout/composer-form'
 import { RICH_MARKDOWN } from '../feed/content/feed-samples'
 import { INACTIVE_FEED_LIVE_FACTS } from '../feed/document/feed-live-facts'
@@ -18,6 +20,7 @@ import {
   sessionSubagent,
 } from '../session-fixtures'
 import { SessionList, type SessionListActions } from '../session-list/session-list'
+import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import type { Session, SessionFeed } from '../types'
 import { SessionWorkButtons } from '../work/session-work-buttons'
 import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
@@ -189,6 +192,153 @@ function withListedSessions(sessions: Session[]) {
   }
 }
 
+type StorybookTrpcRequest = Parameters<typeof window.argo.trpc>[0]
+type StorybookTrpcResponse = Awaited<ReturnType<typeof window.argo.trpc>>
+
+function storybookTrpcSuccess(data: unknown): StorybookTrpcResponse {
+  return { result: { data } } as StorybookTrpcResponse
+}
+
+function selectionProjectReply(request: StorybookTrpcRequest): StorybookTrpcResponse | null {
+  const project = { id: 'project-1', name: 'Argo', path: '/storybook/argo' }
+  switch (request.path) {
+    case 'projectList':
+      return storybookTrpcSuccess([project])
+    case 'projectOpen':
+      return storybookTrpcSuccess(project)
+    case 'workspaceList':
+      return storybookTrpcSuccess({
+        type: 'workspace.listed',
+        requestId: '00000000-0000-4000-8000-000000000001',
+        workspaces: [],
+      })
+    default:
+      return null
+  }
+}
+
+function selectionComposerReply(request: StorybookTrpcRequest): StorybookTrpcResponse | null {
+  switch (request.path) {
+    case 'harnessCatalogRead':
+      return storybookTrpcSuccess({ info: claudeHarnessInfoFixture(), failure: null })
+    case 'composerDraftRead':
+      return storybookTrpcSuccess(null)
+    case 'composerDraftCreate': {
+      const input = request.input as {
+        target: { type: 'session'; sessionId: string }
+        content: object
+      }
+      return storybookTrpcSuccess({
+        id: `selection-draft-${input.target.sessionId}`,
+        ...input.content,
+        target: input.target,
+        revision: 0,
+        createdAt: 0,
+        updatedAt: 0,
+      })
+    }
+    case 'composerDraftSave': {
+      const input = request.input as {
+        id: string
+        target: object
+        content: object
+      }
+      return storybookTrpcSuccess({
+        id: input.id,
+        ...input.content,
+        target: input.target,
+        revision: 1,
+        createdAt: 0,
+        updatedAt: 0,
+      })
+    }
+    default:
+      return null
+  }
+}
+
+function selectionFeedReply(request: StorybookTrpcRequest): StorybookTrpcResponse | null {
+  if (request.path !== 'sessionFeedRead') return null
+  const { sessionId } = request.input as { sessionId: string }
+  return storybookTrpcSuccess({
+    version: 1,
+    type: 'session.feed.read',
+    requestId: `selection-${sessionId}`,
+    sessionId,
+    chainId: sessionId,
+    revision: `selection-${sessionId}`,
+    olderCursor: null,
+    content: [
+      {
+        id: `selection-row-${sessionId}`,
+        kind: 'message',
+        role: 'assistant',
+        text: `History for ${sessionId}.`,
+      },
+    ],
+  })
+}
+
+function selectionHostTrpc(base: typeof window.argo.trpc): typeof window.argo.trpc {
+  const sessionTrpc = sessionListTrpc(base, () => SESSION_ROSTER)
+  return async (request) =>
+    selectionProjectReply(request) ??
+    selectionComposerReply(request) ??
+    selectionFeedReply(request) ??
+    sessionTrpc(request)
+}
+
+function clearSelectionQueries() {
+  queryClient.removeQueries({ queryKey: trpc.sessionList.pathKey() })
+  queryClient.removeQueries({ queryKey: trpc.projectList.pathKey() })
+  queryClient.removeQueries({ queryKey: trpc.projectOpen.pathKey() })
+  queryClient.removeQueries({ queryKey: trpc.workspaceList.pathKey() })
+  queryClient.removeQueries({ queryKey: trpc.harnessCatalogRead.pathKey() })
+  queryClient.removeQueries({ queryKey: trpc.composerDraftRead.pathKey() })
+  queryClient.removeQueries({ queryKey: ['sessions', 'feed'] })
+  queryClient.removeQueries({ queryKey: ['sessions', 'shell-output'] })
+  queryClient.removeQueries({ queryKey: ['sessions', 'delegation-usage'] })
+}
+
+function productionSelectionHost() {
+  const before = window.argo
+  clearSelectionQueries()
+  window.argo = Object.assign(
+    { ...before, trpc: selectionHostTrpc(before.trpc) },
+    {
+      readShellOutput: async () => ({
+        type: 'session.shell.output.read',
+        output: { state: 'available', tail: 'Checked 187 files.\n' },
+      }),
+    },
+  )
+  return () => {
+    window.argo = before
+    clearSelectionQueries()
+  }
+}
+
+function ProductionSessionSelectionScreen() {
+  return (
+    <Routes>
+      <Route
+        path="/projects/:projectId/sessions/:sessionId"
+        element={
+          <div className="h-dvh w-full">
+            <AppShell leftHeader={<ProjectSwitcher />} sidebar={<SessionsSidebar />}>
+              <SessionScreenView />
+            </AppShell>
+          </div>
+        }
+      />
+      <Route
+        path="*"
+        element={<Navigate replace to="/projects/project-1/sessions/composer-review" />}
+      />
+    </Routes>
+  )
+}
+
 function ReviewSidebar({
   onSelect,
   selectedSessionId,
@@ -291,6 +441,16 @@ function ReviewScreen({
   workspaces?: readonly ListedWorkspace[]
 }) {
   const [selectedSessionId, setSelectedSessionId] = useState(initialSessionId)
+  const [jumpToLatest, setJumpToLatest] = useState<{
+    action: () => void
+    sessionId: string
+  } | null>(null)
+  const onJumpToLatestChange = useCallback((sessionId: string, action: (() => void) | null) => {
+    setJumpToLatest((current) => {
+      if (action !== null) return { action, sessionId }
+      return current?.sessionId === sessionId ? null : current
+    })
+  }, [])
   // The header's picks drive a real inspector, so the story shows what picking a row opens.
   const [picked, setPicked] = useState<{ id: string; count: number } | null>(null)
   const pick = (id: string) => setPicked((last) => ({ id, count: (last?.count ?? 0) + 1 }))
@@ -305,6 +465,8 @@ function ReviewScreen({
       composerRunning={composerRunning}
       feed={feed}
       headerSession={headerSession}
+      jumpToLatest={jumpToLatest?.action ?? null}
+      onJumpToLatestChange={onJumpToLatestChange}
       onSelectSessionId={setSelectedSessionId}
       pick={pick}
       picked={picked}
@@ -322,6 +484,8 @@ function ReviewContent({
   composerRunning,
   feed,
   headerSession,
+  jumpToLatest,
+  onJumpToLatestChange,
   onSelectSessionId,
   pick,
   picked,
@@ -335,6 +499,8 @@ function ReviewContent({
   composerRunning: boolean
   feed: SessionFeed
   headerSession: Session
+  jumpToLatest: (() => void) | null
+  onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
   onSelectSessionId: (sessionId: string) => void
   pick: (id: string) => void
   picked: { id: string; count: number } | null
@@ -377,6 +543,8 @@ function ReviewContent({
             shell={session.shell}
           />
         }
+        jumpToLatest={jumpToLatest}
+        onJumpToLatestChange={onJumpToLatestChange}
         session={headerSession}
         workspaceIdentity={workspaceIdentity}
         inspector={
@@ -557,7 +725,9 @@ async function expectJumpToLatestInComposerFade(canvasElement: HTMLElement) {
     1,
   )
   expect(latestBounds.bottom).toBeLessThanOrEqual(composerBounds.top)
-  await userEvent.click(latest)
+  latest.focus()
+  await userEvent.keyboard('{Enter}')
+  expect(history).toHaveFocus()
   await waitFor(() => expect(canvas.queryByRole('button', { name: 'Jump to latest' })).toBeNull())
 }
 
@@ -730,6 +900,44 @@ export const Open: Story = {
     await expectDelegatedFeedSurvivesCollapse(canvas)
 
     await expectShellReopensWithOutput(canvasElement)
+  },
+}
+
+export const SwitchingKeepsScreenAreasOnTheSelectedSession: Story = {
+  beforeEach: () => productionSelectionHost(),
+  render: () => <ProductionSessionSelectionScreen />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() =>
+      expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
+        'data-session',
+        'composer-review',
+      ),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: /^Shell/ }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: /bun run quality/ }))
+    await expect(canvas.getByRole('region', { name: 'Background Shell' })).toBeVisible()
+    const firstComposer = canvas.getByRole('combobox', { name: 'Message' })
+    await userEvent.type(firstComposer, 'Draft for the first Session')
+    await expect(firstComposer).toHaveTextContent('Draft for the first Session')
+
+    const nextSession = canvas.getByRole('button', { name: /Add Markdown typing shortcuts/ })
+    await userEvent.click(nextSession)
+    await expect(
+      canvas.getByRole('button', { name: /Add Markdown typing shortcuts/ }),
+    ).toHaveAttribute('aria-current', 'page')
+    await expect(
+      canvas.getByRole('heading', { name: 'Add Markdown typing shortcuts' }),
+    ).toBeVisible()
+    await waitFor(() =>
+      expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
+        'data-session',
+        'shortcut-review',
+      ),
+    )
+    await expect(canvas.getByLabelText('Session composer')).toBeVisible()
+    await expect(canvas.getByRole('combobox', { name: 'Message' })).toHaveTextContent('')
+    await expect(canvas.queryByRole('region', { name: 'Background Shell' })).toBeNull()
   },
 }
 

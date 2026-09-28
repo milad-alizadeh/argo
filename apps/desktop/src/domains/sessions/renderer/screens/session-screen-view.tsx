@@ -1,5 +1,3 @@
-import { useState } from 'react'
-import { useParams } from 'react-router'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { FeedLiveFacts } from '../feed/document/feed-live-facts'
 import { BackgroundWork } from '../feed/rows/background-work'
@@ -36,7 +34,6 @@ function WorkButtons({ model }: { model: SessionScreenModel }) {
 }
 
 function Inspector({ model }: { model: SessionScreenModel }) {
-  const { projectId } = useParams()
   const { evidence, navigate, sessionList, session, setEvidence } = model
   return (
     <SessionInspector
@@ -50,7 +47,7 @@ function Inspector({ model }: { model: SessionScreenModel }) {
         <SessionHandoffFacts onNavigate={navigate} sessionList={sessionList} session={session} />
       }
       onOpenEvidence={setEvidence}
-      onOpenSession={(sessionId) => navigate(`/projects/${projectId}/sessions/${sessionId}`)}
+      onOpenSession={(sessionId) => navigate(`/projects/${model.projectId}/sessions/${sessionId}`)}
       onRetryDelegationFeed={model.retryDelegationFeed}
       onLoadOlderDelegationFeed={model.loadOlderDelegationFeed}
       delegationFeedHasOlder={model.delegationFeedHasOlder}
@@ -120,13 +117,11 @@ function composerFor(model: ReturnType<typeof useSessionScreenModel>) {
 }
 
 export function SessionScreenView() {
-  const { projectId } = useParams()
   const model = useSessionScreenModel()
   const { evidence, feed, feedError, question, session } = model
   const { navigate, retryFeed, selectedSessionId, setEvidence, workReveal } = model
-  const [, setFeedStalledSessionId] = useState<string | null>(null)
   const openSession = (sessionId: string) =>
-    navigate(`/projects/${projectId}/sessions/${sessionId}`)
+    navigate(`/projects/${model.projectId}/sessions/${sessionId}`)
   const answerQuestion = (_sessionId: string, questionId: string, answers: QuestionAnswer[]) =>
     void question.decide(questionId, answers)
   return (
@@ -147,7 +142,8 @@ export function SessionScreenView() {
         onAnswerQuestion={answerQuestion}
         answeringQuestionId={model.question.answeringId}
         questionFailure={model.question.failureFor}
-        onFeedStalledChange={setFeedStalledSessionId}
+        jumpToLatest={model.jumpToLatest}
+        onJumpToLatestChange={model.onJumpToLatestChange}
         composer={composerFor(model)}
         headerControls={<WorkButtons model={model} />}
         session={session}
