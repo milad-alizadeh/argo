@@ -27,6 +27,7 @@ test('a Ticket carries Linear’s own fields, children and blockers', async (con
   )
   assert.deepEqual(page.value.tickets[0], {
     key: 'ENG-1',
+    nativeId: 'issue-ENG-1',
     url: `${mock.origin}/Analytical/issue/ENG-1`,
     title: 'Bind the mill',
     body: 'The mill turns the cards.',
