@@ -15,6 +15,10 @@ import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api
 import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
 import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
 import {
+  markUnresolvedSessionCommandsUnknown,
+  reconcileUnknownSessionCommands,
+} from '@/domains/sessions/main/database/session-command-outcomes'
+import {
   type LiveSessionSupervisorActor,
   liveSessionActorFor,
 } from '@/domains/sessions/main/live/live-session-supervisor-machine'
@@ -374,6 +378,7 @@ async function prepare() {
     instance: DEVELOPMENT_INSTANCE,
   })
   applicationDatabase = openDatabase(projectData, { packaged: app.isPackaged })
+  markUnresolvedSessionCommandsUnknown(applicationDatabase)
   sessionSyncStatus = new SessionSyncStatusStore(applicationDatabase)
   sessionEventJournal = new SessionEventJournal()
   const liveEventProof = process.env[LIVE_EVENT_PROOF_ENV]
@@ -408,7 +413,14 @@ async function ready(actor: AppActor): Promise<void> {
     throw new Error('Application services are unavailable.')
   applicationActor = actor
   if (harnessRegistry === undefined) throw new Error('Harness registry is unavailable.')
-  createWindow(actor, applicationDatabase, harnessRegistry)
+  const registry = harnessRegistry
+  void reconcileUnknownSessionCommands(
+    applicationDatabase,
+    (harness, target) => registry[harness].readHistory(target),
+    (harness, nativeId, turnId) =>
+      registry[harness].hasTurn?.(nativeId, turnId) ?? Promise.resolve(false),
+  ).catch((error) => console.error('Session command recovery failed.', error))
+  createWindow(actor, applicationDatabase, registry)
 
   if (ACCEPTANCE_ENABLED) {
     // A window is open and a PTY may still be draining, so this run also stands as the app-shutdown
