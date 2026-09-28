@@ -146,7 +146,7 @@ export const SurvivesOneFailedRefresh: Story = {
     await queryClient.invalidateQueries({ queryKey: ['sessions', 'feed', session.id] })
     await waitFor(() => expect(flakyFeedReads).toBeGreaterThanOrEqual(2))
     await expect(visible()).toHaveLength(1)
-    await waitFor(() => expect(canvas.getByRole('alert')).toBeVisible())
+    await waitFor(() => expect(canvas.getByText('Session history is unavailable.')).toBeVisible())
   },
 }
 
@@ -154,14 +154,19 @@ export const FirstReadFailureCanRetry: Story = {
   beforeEach: () => flakyFirstOpenHost(),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await waitFor(() => expect(canvas.getByRole('alert')).toBeVisible())
-    await canvas.getByRole('button', { name: 'Retry' }).click()
+    await waitFor(() => expect(canvas.getByText('Session history is unavailable.')).toBeVisible())
+    const feedFailure = canvas
+      .getByText('Session history is unavailable.')
+      .closest('[role="alert"]')
+    if (!(feedFailure instanceof HTMLElement))
+      throw new Error('The Session history failure alert is missing.')
+    await within(feedFailure).getByRole('button', { name: 'Retry' }).click()
     const visible = () =>
       canvas
         .getAllByText('Read after the flake.')
         .filter((node) => node.closest('[aria-hidden]') === null)
     await waitFor(() => expect(visible()).toHaveLength(1))
-    await expect(canvas.queryByRole('alert')).toBeNull()
+    await expect(canvas.queryByText('Session history is unavailable.')).toBeNull()
   },
 }
 
