@@ -102,13 +102,8 @@ test('dispatches only discovery functions selected by the Harness registry', () 
     {
       input: {
         database,
-<<<<<<< HEAD
         harnesses: { claude: { sessionDiscovery: claudeDiscovery, readHistory } },
-        status: { claude: new SessionSyncStatusStore() },
-=======
-        harnesses: { claude: { sessionDiscovery: claudeDiscovery } },
         status: { claude: new SessionSyncStatusStore(undefined, 'claude') },
->>>>>>> origin/main
       },
     },
   ).start()

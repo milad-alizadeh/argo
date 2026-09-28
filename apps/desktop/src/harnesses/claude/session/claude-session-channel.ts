@@ -109,14 +109,10 @@ export class ClaudeSessionChannel implements LiveSessionChannel {
     host: { controls: LiveSessionControls | undefined; executable: string | null },
   ) {
     this.input = input
-<<<<<<< HEAD
     this.projection = new ClaudeFeedProjection(
       claudeSkillFiles('resume' in input ? input.resume.cwd : input.cwd),
     )
-    this.controls = controls
-=======
     this.controls = host.controls
->>>>>>> origin/main
     this.onEvent = onEvent
     this.executable = host.executable
     this.activeCommandId = input.commandId

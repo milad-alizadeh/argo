@@ -258,7 +258,7 @@ test('streams an Agent call as one delegation from its start to its notification
     },
   ]
   const events: unknown[] = []
-  const channel = openClaudeSessionChannel(first, undefined, (event) => events.push(event))
+  const channel = claudeSessionChannelOpener(null)(first, undefined, (event) => events.push(event))
   await until(() => events.some((event) => (event as { type: string }).type === 'turn.completed'))
   const content = events.flatMap((event) => {
     const parsed = liveSessionChannelEventSchema.parse(event)
