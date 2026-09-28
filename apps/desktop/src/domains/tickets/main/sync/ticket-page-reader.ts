@@ -1,5 +1,4 @@
-// One active page of a scope read as its Connection's Account, with every failure named as the
-// Ticket error the screen shows. A refusal renewal could not fix has already marked the Account.
+// One active page of a scope read as the Account, each failure named as the screen's Ticket error.
 import { randomUUID } from 'node:crypto'
 import { type ReadCall, readAs } from '../read-as'
 import type { TicketSyncDependencies } from './ticket-sync-machine'

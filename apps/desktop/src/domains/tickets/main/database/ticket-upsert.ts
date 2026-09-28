@@ -1,16 +1,16 @@
-// The one write of provider Ticket facts into SQLite. An identity is created once per provider,
-// scope and native ID; every later read replaces the facts beside it.
-import { and, eq, sql } from 'drizzle-orm'
+// The one write of provider Ticket facts into SQLite: one identity per native ID, facts replaced.
+import { and, eq } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { ticketTable } from '@/database/ticket/schema'
+import type { TicketScopeTarget } from '@/database/ticket/validation'
 import { ticketContent } from '@/database/ticket-content/schema'
-import type { Provider } from '@/domains/accounts/contract/contract'
+import { nextUpdatedAt } from '@/database/timestamp-columns'
 import type { Ticket } from '@/domains/tickets/contract/contract'
 
-export type TicketScopeTarget = { provider: Provider; scope: string }
 export type ListedBatch = TicketScopeTarget & { scanStartedAt: number; offset: number }
+type Writer = Pick<Database, 'insert' | 'select' | 'update'>
 
-const touched = sql`MAX(CAST(unixepoch('subsec') * 1000 AS INTEGER), ${ticketContent.updatedAt} + 1)`
+const touched = nextUpdatedAt(ticketContent.updatedAt)
 
 function facts(ticket: Ticket) {
   return {
@@ -30,13 +30,8 @@ function facts(ticket: Ticket) {
 }
 
 // The Ticket's key is its native ID within the scope.
-function identity(database: Database, { provider, scope }: TicketScopeTarget, nativeId: string) {
-  database
-    .insert(ticketTable)
-    .values({ argoId: crypto.randomUUID(), provider, scope, nativeId })
-    .onConflictDoNothing()
-    .run()
-  const row = database
+function savedIdentity(database: Writer, { provider, scope }: TicketScopeTarget, nativeId: string) {
+  return database
     .select({ argoId: ticketTable.argoId })
     .from(ticketTable)
     .where(
@@ -46,20 +41,19 @@ function identity(database: Database, { provider, scope }: TicketScopeTarget, na
         eq(ticketTable.nativeId, nativeId),
       ),
     )
-    .get()
-  if (row === undefined) throw new Error('Ticket identity did not persist.')
-  return row.argoId
+    .get()?.argoId
 }
 
-function transaction(database: Database, write: () => void): void {
-  database.$client.exec('BEGIN IMMEDIATE')
-  try {
-    write()
-    database.$client.exec('COMMIT')
-  } catch (error) {
-    database.$client.exec('ROLLBACK')
-    throw error
-  }
+function identity(database: Writer, target: TicketScopeTarget, nativeId: string) {
+  const { provider, scope } = target
+  database
+    .insert(ticketTable)
+    .values({ argoId: crypto.randomUUID(), provider, scope, nativeId })
+    .onConflictDoNothing()
+    .run()
+  const argoId = savedIdentity(database, target, nativeId)
+  if (argoId === undefined) throw new Error('Ticket identity did not persist.')
+  return argoId
 }
 
 // One page of an active scan, committed together, in the provider's order.
@@ -68,11 +62,11 @@ export function saveListedTickets(
   batch: ListedBatch,
   tickets: readonly Ticket[],
 ): void {
-  transaction(database, () => {
+  database.transaction((transaction) => {
     tickets.forEach((ticket, index) => {
-      const ticketId = identity(database, batch, ticket.key)
+      const ticketId = identity(transaction, batch, ticket.key)
       const listed = { position: batch.offset + index, listedAt: batch.scanStartedAt }
-      database
+      transaction
         .insert(ticketContent)
         .values({ ticketId, ...facts(ticket), ...listed })
         .onConflictDoUpdate({
@@ -97,21 +91,11 @@ export function saveConfirmedFields(
       ? {}
       : { priorityJson: fields.priority === null ? null : JSON.stringify(fields.priority) }),
   }
-  const owner = database
-    .select({ argoId: ticketTable.argoId })
-    .from(ticketTable)
-    .where(
-      and(
-        eq(ticketTable.provider, target.provider),
-        eq(ticketTable.scope, target.scope),
-        eq(ticketTable.nativeId, target.key),
-      ),
-    )
-    .get()
-  if (owner === undefined) return
+  const ticketId = savedIdentity(database, target, target.key)
+  if (ticketId === undefined) return
   database
     .update(ticketContent)
     .set({ ...set, updatedAt: touched })
-    .where(eq(ticketContent.ticketId, owner.argoId))
+    .where(eq(ticketContent.ticketId, ticketId))
     .run()
 }

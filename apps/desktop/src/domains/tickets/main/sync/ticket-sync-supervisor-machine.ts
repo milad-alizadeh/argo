@@ -1,7 +1,6 @@
-// The app-scoped owner of Ticket scans. It runs at most one scan per provider scope, and a request
-// that arrives during a scan runs once more after it, so a later change is never missed.
+// The app's Ticket scans: one per scope at a time, and a request during a scan runs once after it.
 import { type ActorRefFrom, enqueueActions, setup, stopChild } from 'xstate'
-import type { TicketScopeTarget } from '../database/ticket-upsert'
+import type { TicketScopeTarget } from '@/database/ticket/validation'
 import {
   type TicketSyncDependencies,
   type TicketSyncRequest,
@@ -72,22 +71,29 @@ export const ticketSyncSupervisorMachine = setup({
         },
       })
     }),
-    release: enqueueActions(({ context, event, enqueue }) => {
-      if (!('actorId' in event)) return
-      const key = event.actorId
-      enqueue(stopChild(key))
-      const { [key]: _finished, ...active } = context.active
-      const { [key]: replay, ...pending } = context.pending
-      enqueue.assign({
-        active,
-        pending,
-      })
-      if (replay !== undefined)
-        enqueue.raise({
-          type: 'Sync',
-          request: replay,
+    release: enqueueActions(
+      (
+        { context, enqueue },
+        {
+          key,
+        }: {
+          key: string
+        },
+      ) => {
+        enqueue(stopChild(key))
+        const { [key]: _finished, ...active } = context.active
+        const { [key]: replay, ...pending } = context.pending
+        enqueue.assign({
+          active,
+          pending,
         })
-    }),
+        if (replay !== undefined)
+          enqueue.raise({
+            type: 'Sync',
+            request: replay,
+          })
+      },
+    ),
   },
 }).createMachine({
   id: 'ticketSyncSupervisor',
@@ -104,7 +110,12 @@ export const ticketSyncSupervisorMachine = setup({
           actions: 'dispatch',
         },
         'xstate.done.actor.*': {
-          actions: 'release',
+          actions: {
+            type: 'release',
+            params: ({ event }) => ({
+              key: event.actorId,
+            }),
+          },
         },
         Shutdown: 'Closed',
       },

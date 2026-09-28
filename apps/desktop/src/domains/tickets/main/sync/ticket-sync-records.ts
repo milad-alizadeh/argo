@@ -1,15 +1,16 @@
 // The saved progress of one provider scope's scan. Coverage moves only when every page was read.
 import { and, eq, sql } from 'drizzle-orm'
 import type { Database } from '@/database/database'
+import type { TicketScopeTarget } from '@/database/ticket/validation'
 import { type TICKET_SYNC_KINDS, ticketSync } from '@/database/ticket-sync/schema'
+import { nextUpdatedAt } from '@/database/timestamp-columns'
 import type { TicketErrorCode, TicketStatus } from '@/domains/tickets/contract/contract'
-import type { TicketScopeTarget } from '../database/ticket-upsert'
 
 export type TicketSyncTarget = TicketScopeTarget & { kind: (typeof TICKET_SYNC_KINDS)[number] }
 
-const touched = sql`MAX(CAST(unixepoch('subsec') * 1000 AS INTEGER), ${ticketSync.updatedAt} + 1)`
+const touched = nextUpdatedAt(ticketSync.updatedAt)
 
-const matching = ({ provider, scope, kind }: TicketSyncTarget) =>
+export const matchingScan = ({ provider, scope, kind }: TicketSyncTarget) =>
   and(eq(ticketSync.provider, provider), eq(ticketSync.scope, scope), eq(ticketSync.kind, kind))
 
 export function beginTicketScan(
@@ -42,7 +43,7 @@ export function completeTicketScan(
       completedAt,
       updatedAt: touched,
     })
-    .where(matching(target))
+    .where(matchingScan(target))
     .run()
 }
 
@@ -54,7 +55,7 @@ export function failTicketScan(
   database
     .update(ticketSync)
     .set({ phase: 'failed', failure, updatedAt: touched })
-    .where(matching(target))
+    .where(matchingScan(target))
     .run()
 }
 

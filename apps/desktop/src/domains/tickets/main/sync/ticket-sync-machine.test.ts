@@ -14,6 +14,7 @@ import {
 
 const TARGET = { provider: 'github', scope: 'octocat/hello-world', kind: 'active' } as const
 const OPEN: TicketStatus = { id: 'open', name: 'Open', category: 'unstarted' }
+const DONE: TicketStatus = { id: 'done', name: 'Done', category: 'completed' }
 
 const tickets = (...keys: string[]) => keys.map((key) => ({ key }) as Ticket)
 const page = (keys: string[], nextCursor: string | null): TicketPage => ({
@@ -35,7 +36,7 @@ function run(pages: Record<string, PageRead>) {
         writes.push(`save ${input.offset} ${input.tickets.map(({ key }) => key).join(',')}`)
       }),
       complete: fromPromise(async ({ input }: { input: CompleteInput }) => {
-        writes.push(`complete ${input.statuses.length}`)
+        writes.push(`complete ${input.statuses.map(({ id }) => id).join(',')}`)
       }),
       recordFailure: fromPromise(async ({ input }: { input: RecordFailureInput }) => {
         writes.push(`fail ${input.failure}`)
@@ -67,7 +68,7 @@ test('reads every page in order and completes only after the last page commits',
   })
   await sync.done
   assert.equal(sync.actor.getSnapshot().value, 'Ready')
-  assert.deepEqual(sync.writes, ['begin', 'save 0 #609,#607', 'save 2 #273', 'complete 1'])
+  assert.deepEqual(sync.writes, ['begin', 'save 0 #609,#607', 'save 2 #273', 'complete open'])
 })
 
 test('a failed page keeps the committed pages and never completes the scan', async () => {
@@ -93,4 +94,13 @@ test('a page read that throws is recorded as an invalid response', async () => {
   const sync = run({})
   await sync.done
   assert.deepEqual(sync.writes, ['begin', 'fail invalid-response'])
+})
+
+test('the completed scan keeps every status any page offered, once each', async () => {
+  const sync = run({
+    first: { ok: true, value: { ...page(['#1'], '2'), statuses: [OPEN, DONE] } },
+    '2': { ok: true, value: { ...page(['#2'], null), statuses: [DONE] } },
+  })
+  await sync.done
+  assert.equal(sync.writes.at(-1), 'complete open,done')
 })

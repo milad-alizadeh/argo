@@ -1,15 +1,16 @@
-// The Ticket screen's reads, answered from SQLite alone. A Ticket is active while the latest
-// complete scan, or a scan since, listed it.
+// The Ticket screen's reads from SQLite alone: active means listed by the latest complete scan or later.
 import { and, asc, count, eq, gte, isNotNull } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { ticketTable } from '@/database/ticket/schema'
+import type { TicketScopeTarget } from '@/database/ticket/validation'
 import { ticketContent } from '@/database/ticket-content/schema'
+import { ticketContentSelectSchema } from '@/database/ticket-content/validation'
 import { ticketSync } from '@/database/ticket-sync/schema'
 import { type TicketSyncState, ticketSyncSelectSchema } from '@/database/ticket-sync/validation'
 import type { Ticket, TicketStatus } from '@/domains/tickets/contract/contract'
 import { ticket, ticketStatus } from '@/domains/tickets/contract/ticket'
-import type { TicketScopeTarget } from './ticket-upsert'
+import { matchingScan } from '../sync/ticket-sync-records'
 
 type ActiveRead = {
   tickets: Ticket[]
@@ -22,7 +23,8 @@ type ContentRow = typeof ticketContent.$inferSelect
 const IDLE: TicketSyncState = { phase: 'idle', failure: null, complete: false, completedAt: null }
 const statuses = z.array(ticketStatus)
 
-function ticketFrom(row: ContentRow): Ticket {
+function ticketFrom(saved: ContentRow): Ticket {
+  const row = ticketContentSelectSchema.parse(saved)
   return ticket.parse({
     key: row.key,
     url: row.url,
@@ -43,13 +45,7 @@ function readSync(database: Database, { provider, scope }: TicketScopeTarget) {
   const row = database
     .select()
     .from(ticketSync)
-    .where(
-      and(
-        eq(ticketSync.provider, provider),
-        eq(ticketSync.scope, scope),
-        eq(ticketSync.kind, 'active'),
-      ),
-    )
+    .where(matchingScan({ provider, scope, kind: 'active' }))
     .get()
   if (row === undefined) return { state: IDLE, statuses: [], coveredFrom: 0 }
   const saved = ticketSyncSelectSchema.parse(row)

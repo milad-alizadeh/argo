@@ -30,10 +30,10 @@ import { SessionEventJournal } from '@/domains/sessions/main/live/session-event-
 import { SessionHistoryFollowers } from '@/domains/sessions/main/live/session-history-followers'
 import { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
-import type { TicketScopeTarget } from '@/domains/tickets/main/database/ticket-upsert'
 import { ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
-import type { TicketSyncSupervisorCommand } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
+import type { TicketSyncRequest } from '@/domains/tickets/main/sync/ticket-sync-machine'
 import { markInterruptedTicketScans } from '@/domains/tickets/main/sync/ticket-sync-records'
+import type { TicketSyncSupervisorCommand } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
 import { TicketChanges } from '@/domains/tickets/main/ticket-changes'
 import { ensureManagedWorkspace } from '@/domains/workspaces/main/workspace-create-managed'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
@@ -258,18 +258,31 @@ function routerForWindow(options: {
       refreshSessionSync: () => actors.sessionSync.send({ type: 'Refresh' }),
       sessionSyncStatus,
     },
-    tickets: {
-      access: domains.access,
-      connections: domains.connections,
-      providers: PROVIDER_REGISTRY,
-      index: {
-        database,
-        changes: currentTicketServices().changes,
-        requestSync: (request) => actors.ticketSync.send({ type: 'Sync', request }),
-      },
-    },
+    tickets: ticketProcedureContext({ database, actors, domains }),
     workspaces: { database, exclusive },
   })
+}
+
+function ticketProcedureContext({
+  database,
+  actors,
+  domains,
+}: {
+  database: Database
+  actors: WindowActors
+  domains: ReturnType<typeof createDomainContexts>
+}) {
+  return {
+    access: domains.access,
+    connections: domains.connections,
+    providers: PROVIDER_REGISTRY,
+    index: {
+      database,
+      changes: currentTicketServices().changes,
+      requestSync: (request: TicketSyncRequest) =>
+        actors.ticketSync.send({ type: 'Sync', request }),
+    },
+  }
 }
 
 function currentSessionSyncStatus(): SessionSyncStatusStore[] {
@@ -503,7 +516,7 @@ async function prepare() {
     ticketSync: {
       database,
       readPage: ticketPageReader({ access: tickets.access, providers: PROVIDER_REGISTRY }),
-      changed: (target: TicketScopeTarget) => tickets.changes.changed(target),
+      changed: tickets.changes.changed,
     },
     registry: harnessRegistry,
   }

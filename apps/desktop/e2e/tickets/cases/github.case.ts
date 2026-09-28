@@ -124,9 +124,7 @@ function committedIds(run: Run): Record<string, string> {
   }
 }
 
-// The backlog is drawn from the rows the scan committed to SQLite: while GitHub holds every read,
-// re-entering the room still draws them, and a Ticket created on GitHub meanwhile arrives only
-// when its scan commits, under a new Argo ID while the others keep theirs.
+// With GitHub reads held, the backlog draws committed rows; a new Ticket waits for its commit.
 export async function proveCommittedBacklog(run: Run) {
   const github = run.fixture.github
   let committed: Record<string, string> = {}

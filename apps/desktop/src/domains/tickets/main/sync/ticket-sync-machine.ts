@@ -1,9 +1,9 @@
-// One scan of one provider scope's active Tickets: every page read in order, each committed before
-// the next is asked for, and coverage recorded only once the last page commits.
+// One scan of a scope's active Tickets: each page commits before the next; the last sets coverage.
 import { assign, fromPromise, setup } from 'xstate'
 import type { Database } from '@/database/database'
+import type { TicketScopeTarget } from '@/database/ticket/validation'
 import type { Ticket, TicketErrorCode, TicketStatus } from '@/domains/tickets/contract/contract'
-import { saveListedTickets, type TicketScopeTarget } from '../database/ticket-upsert'
+import { saveListedTickets } from '../database/ticket-upsert'
 import type { TicketPage } from '../sources'
 import {
   beginTicketScan,
@@ -34,23 +34,23 @@ export type TicketSyncDependencies = {
   changed: (target: TicketScopeTarget) => void
 }
 
-type Step = {
+type ScanInput = {
   dependencies: TicketSyncDependencies
   target: TicketSyncTarget
 }
-export type SavePageInput = Step & {
+export type SavePageInput = ScanInput & {
   scanStartedAt: number
   tickets: readonly Ticket[]
   offset: number
 }
-export type CompleteInput = Step & {
+export type CompleteInput = ScanInput & {
   statuses: readonly TicketStatus[]
 }
-export type RecordFailureInput = Step & {
+export type RecordFailureInput = ScanInput & {
   failure: TicketErrorCode
 }
 
-function commit({ dependencies, target }: Step, write: (database: Database) => void) {
+function commit({ dependencies, target }: ScanInput, write: (database: Database) => void) {
   write(dependencies.database)
   dependencies.changed({
     provider: target.provider,
@@ -58,36 +58,43 @@ function commit({ dependencies, target }: Step, write: (database: Database) => v
   })
 }
 
-const step = ({ dependencies, target }: Step): Step => ({
+const scanInput = ({ dependencies, target }: ScanInput): ScanInput => ({
   dependencies,
   target,
 })
 
+const mergedStatuses = (saved: readonly TicketStatus[], offered: readonly TicketStatus[]) => [
+  ...saved,
+  ...offered.filter(({ id }) => !saved.some((status) => status.id === id)),
+]
+
 export const ticketSyncMachine = setup({
   types: {
-    input: {} as Step & {
+    input: {} as ScanInput & {
       accountId: string
     },
-    context: {} as Step & {
+    context: {} as ScanInput & {
       // The Account the scan reads as; the token stays with Account access.
       accountId: string
       // The scan's start, which is also the listing mark every page of this scan writes.
       scanStartedAt: number
       cursor: string | null
       page: TicketPage | null
+      // Every status any page offered, so a later page cannot drop one an earlier page listed.
+      statuses: TicketStatus[]
       offset: number
       failure: TicketErrorCode | null
     },
   },
   actors: {
-    begin: fromPromise<number, Step>(async ({ input }) => {
+    begin: fromPromise<number, ScanInput>(async ({ input }) => {
       const startedAt = Date.now()
       commit(input, (database) => beginTicketScan(database, input.target, startedAt))
       return startedAt
     }),
     fetchPage: fromPromise<
       PageRead,
-      Step & {
+      ScanInput & {
         accountId: string
         cursor: string | null
       }
@@ -127,6 +134,18 @@ export const ticketSyncMachine = setup({
     }),
   },
   guards: {
+    'if the read failed': (_, read: PageRead) => !read.ok,
+    // A provider that answers the cursor it was asked with would be read forever.
+    'if the provider repeated the cursor': (
+      _,
+      {
+        read,
+        cursor,
+      }: {
+        read: PageRead
+        cursor: string | null
+      },
+    ) => read.ok && read.value.nextCursor !== null && read.value.nextCursor === cursor,
     'if another page follows': ({ context }) => context.page?.nextCursor != null,
   },
   actions: {
@@ -145,6 +164,7 @@ export const ticketSyncMachine = setup({
     scanStartedAt: 0,
     cursor: null,
     page: null,
+    statuses: [],
     offset: 0,
     failure: null,
   }),
@@ -152,7 +172,7 @@ export const ticketSyncMachine = setup({
     Starting: {
       invoke: {
         src: 'begin',
-        input: ({ context }) => step(context),
+        input: ({ context }) => scanInput(context),
         onDone: {
           target: 'Fetching',
           actions: assign({
@@ -171,24 +191,29 @@ export const ticketSyncMachine = setup({
       invoke: {
         src: 'fetchPage',
         input: ({ context }) => ({
-          ...step(context),
+          ...scanInput(context),
           accountId: context.accountId,
           cursor: context.cursor,
         }),
         onDone: [
           {
-            guard: ({ event }) => !event.output.ok,
+            guard: {
+              type: 'if the read failed',
+              params: ({ event }) => event.output,
+            },
             target: 'Failing',
             actions: assign({
               failure: ({ event }) => (event.output.ok ? null : event.output.failure),
             }),
           },
           {
-            // A provider that answers the cursor it was asked with would be read forever.
-            guard: ({ context, event }) =>
-              event.output.ok &&
-              event.output.value.nextCursor !== null &&
-              event.output.value.nextCursor === context.cursor,
+            guard: {
+              type: 'if the provider repeated the cursor',
+              params: ({ context, event }) => ({
+                read: event.output,
+                cursor: context.cursor,
+              }),
+            },
             target: 'Failing',
             actions: assign({
               failure: 'invalid-response' as const,
@@ -196,8 +221,12 @@ export const ticketSyncMachine = setup({
           },
           {
             target: 'Saving',
-            actions: assign({
-              page: ({ event }) => (event.output.ok ? event.output.value : null),
+            actions: assign(({ context, event }) => {
+              const page = event.output.ok ? event.output.value : null
+              return {
+                page,
+                statuses: mergedStatuses(context.statuses, page?.statuses ?? []),
+              }
             }),
           },
         ],
@@ -213,7 +242,7 @@ export const ticketSyncMachine = setup({
       invoke: {
         src: 'savePage',
         input: ({ context }) => ({
-          ...step(context),
+          ...scanInput(context),
           scanStartedAt: context.scanStartedAt,
           tickets: context.page?.tickets ?? [],
           offset: context.offset,
@@ -240,8 +269,8 @@ export const ticketSyncMachine = setup({
       invoke: {
         src: 'complete',
         input: ({ context }) => ({
-          ...step(context),
-          statuses: context.page?.statuses ?? [],
+          ...scanInput(context),
+          statuses: context.statuses,
         }),
         onDone: 'Ready',
         onError: {
@@ -256,7 +285,7 @@ export const ticketSyncMachine = setup({
       invoke: {
         src: 'recordFailure',
         input: ({ context }) => ({
-          ...step(context),
+          ...scanInput(context),
           failure: context.failure ?? 'invalid-response',
         }),
         onDone: 'Failed',

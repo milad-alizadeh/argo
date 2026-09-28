@@ -61,8 +61,7 @@ export function useTicketList(
   return query === '' ? active : searched
 }
 
-// One page per request, the next asked for as the list scrolls; a new query keeps the last
-// answer on screen until its own arrives.
+// One page per scroll request; a new query keeps the last answer until its own arrives.
 function useSearchedTickets(projectId: string | null, ready: boolean, query: string) {
   const client = useQueryClient()
   return useInfiniteQuery<TicketListReply, ContractFailure, TicketPages, QueryKey, string | null>({

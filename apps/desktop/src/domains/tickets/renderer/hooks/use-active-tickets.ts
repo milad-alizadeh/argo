@@ -1,5 +1,4 @@
-// The saved active Tickets of a Project, read from SQLite in numbered pages. Opening the screen
-// asks main for a fresh provider scan, and each committed change refetches the saved pages.
+// A Project's saved active Tickets, read from SQLite by page and refetched on each change.
 import { skipToken, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import {
@@ -25,8 +24,7 @@ export function useTicketChanges() {
   }, [client])
 }
 
-// A scan starts when the screen opens, when the Project or its source changes, and when the
-// Connection's Account becomes readable again.
+// A scan starts on open, on a Project or source change, and when the Account is readable again.
 export function useTicketSync(projectId: string | null, connection: ConnectionSummary | null) {
   const sync = useMutation({
     mutationFn: (id: string) => trpcClient.tickets.sync.mutate({ projectId: id }),

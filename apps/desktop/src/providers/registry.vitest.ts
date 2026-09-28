@@ -69,7 +69,7 @@ async function flows() {
     input: {
       database,
       readPage: ticketPageReader({ access, providers: PROVIDER_REGISTRY }),
-      changed: (target) => changes.changed(target),
+      changed: changes.changed,
     },
   }).start()
   onTestFinished(() => {
@@ -171,8 +171,7 @@ test('the shared Ticket flows read and reprioritize a Linear issue through the r
 
 type Flow = Awaited<ReturnType<typeof flows>>
 
-// Asks for a scan of the Project's scope and waits until SQLite records its outcome. The scan's
-// first commit announces a change, so a finished read after one is this scan's, not an earlier one.
+// Waits for a scan outcome after this request's first change, never an earlier scan's.
 async function synced({ tickets, changes }: Flow, forProject = projectId) {
   let announced = 0
   const stop = changes.subscribe(() => {
