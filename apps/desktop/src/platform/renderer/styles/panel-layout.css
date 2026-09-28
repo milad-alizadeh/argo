@@ -15,6 +15,48 @@
   background-color: var(--background);
 }
 
+/* Animate the library's outer flex items, leaving direct resizing immediate. */
+@utility panel-motion {
+  & > [data-panel] {
+    transition: flex-grow var(--duration-layout) var(--ease-emphasized);
+  }
+
+  &:has(> [data-separator="active"]) > [data-panel],
+  &:has(> [data-separator="focus"]) > [data-panel] {
+    transition: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    & > [data-panel] {
+      transition: none;
+    }
+  }
+}
+
+@utility panel-control-motion {
+  display: grid;
+  grid-template-columns: 0fr;
+  flex-shrink: 0;
+  opacity: 0;
+  transition:
+    grid-template-columns var(--duration-layout) var(--ease-emphasized),
+    opacity var(--duration-layout) var(--ease-emphasized);
+
+  &[data-visible="true"] {
+    grid-template-columns: 1fr;
+    opacity: 1;
+  }
+
+  & > * {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
 /* Outer edges inherit through nested splits; each split squares its interior edges. */
 @utility panel-body {
   display: flex;

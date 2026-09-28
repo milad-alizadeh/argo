@@ -31,7 +31,7 @@ function SidebarToggle({
 }: {
   collapsed: boolean
   onToggle: () => void
-  toggleRef: RefObject<HTMLButtonElement | null>
+  toggleRef?: RefObject<HTMLButtonElement | null>
 }) {
   const { t } = useTranslation('cockpit')
   return (
@@ -73,14 +73,24 @@ export function AppPageHeader({ children }: { children?: ReactNode }) {
   return (
     <header
       data-component="AppMainHeader"
-      className="panel-header drag-region gap-(--spacing-shell-item) px-(--spacing-shell-gutter)"
+      className="panel-header drag-region px-(--spacing-shell-gutter)"
     >
-      {controls?.sidebarCollapsed ? (
-        <SidebarToggle
-          collapsed
-          onToggle={controls.toggleSidebar}
-          toggleRef={controls.sidebarToggleRef}
-        />
+      {controls ? (
+        <div
+          className="panel-control-motion"
+          data-visible={controls.sidebarCollapsed}
+          inert={!controls.sidebarCollapsed}
+        >
+          <div>
+            <div className="w-max pr-(--spacing-shell-item)">
+              <SidebarToggle
+                collapsed
+                onToggle={controls.toggleSidebar}
+                toggleRef={controls.sidebarCollapsed ? controls.sidebarToggleRef : undefined}
+              />
+            </div>
+          </div>
+        </div>
       ) : null}
       <div className="no-drag-region flex min-w-0 flex-1 items-center pl-(--spacing-shell-icon)">
         {children}
@@ -130,7 +140,7 @@ export function AppShell({ rail, sidebar, leftHeader, footer, children }: AppShe
           <AppRail rail={rail} />
           <div className="panel-elevation mb-(--spacing-shell-inset) mr-(--spacing-shell-inset) flex min-w-0 flex-1">
             <ResizablePanelGroup
-              className="min-w-0 flex-1"
+              className="panel-motion min-w-0 flex-1"
               onLayoutChanged={() =>
                 setSidebarCollapsed(sidebarPanelRef.current?.isCollapsed() ?? false)
               }
@@ -147,11 +157,21 @@ export function AppShell({ rail, sidebar, leftHeader, footer, children }: AppShe
               >
                 <aside className="panel-frame panel-outer-start">
                   <header className="panel-header drag-region gap-(--spacing-shell-tight) px-(--spacing-shell-gutter)">
-                    <SidebarToggle
-                      collapsed={false}
-                      onToggle={toggleSidebar}
-                      toggleRef={sidebarToggleRef}
-                    />
+                    <div
+                      className="panel-control-motion"
+                      data-visible={!sidebarCollapsed}
+                      inert={sidebarCollapsed}
+                    >
+                      <div>
+                        <div className="w-max">
+                          <SidebarToggle
+                            collapsed={false}
+                            onToggle={toggleSidebar}
+                            toggleRef={sidebarCollapsed ? undefined : sidebarToggleRef}
+                          />
+                        </div>
+                      </div>
+                    </div>
                     <div className="no-drag-region ml-auto min-w-0">{leftHeader}</div>
                   </header>
                   <div className="panel-body">{sidebar}</div>

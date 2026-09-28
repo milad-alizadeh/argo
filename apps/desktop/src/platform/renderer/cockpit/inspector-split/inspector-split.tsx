@@ -67,11 +67,12 @@ function InspectorPanel({
     >
       <aside
         aria-label={`${noun} inspector`}
+        inert={panels.state === 'collapsed'}
         ref={panels.inspectorElement}
         className={cn(
           'panel-frame',
           panels.state !== 'expanded' && 'panel-inner-start',
-          (panels.state === 'collapsed' || !panels.isInspectorReady) && 'invisible',
+          panels.state !== 'collapsed' && !panels.isInspectorReady && 'invisible',
         )}
       >
         <header className="panel-header drag-region gap-(--spacing-shell-tight) px-(--spacing-shell-gutter)">
@@ -102,16 +103,24 @@ export function InspectorSplit(props: InspectorSplitProps) {
   } = props
   const panels = useInspectorPanels(sizes, reveal, defaultCollapsed)
   const id = noun.toLowerCase()
-  const toggles = (
-    <InspectorToggles
-      noun={noun}
-      onToggle={panels.toggle}
-      onToggleExpanded={panels.toggleExpanded}
-      state={panels.state}
-    />
+  const toggles = (visible: boolean, state: 'open' | 'collapsed' | 'expanded') => (
+    <div className="panel-control-motion" data-visible={visible} inert={!visible}>
+      <div>
+        <div className="flex w-max items-center gap-(--spacing-shell-tight)">
+          <InspectorToggles
+            noun={noun}
+            onToggle={panels.toggle}
+            onToggleExpanded={panels.toggleExpanded}
+            state={state}
+          />
+        </div>
+      </div>
+    </div>
   )
   return (
-    <InspectorHeaderControlsContext.Provider value={panels.state === 'collapsed' ? toggles : null}>
+    <InspectorHeaderControlsContext.Provider
+      value={toggles(panels.state === 'collapsed', 'collapsed')}
+    >
       <div
         data-component="InspectorSplit"
         data-state={panels.state}
@@ -120,7 +129,7 @@ export function InspectorSplit(props: InspectorSplitProps) {
       >
         <ResizablePanelGroup
           orientation="horizontal"
-          className="h-full"
+          className="panel-motion h-full"
           onLayoutChanged={panels.synchronizeCollapsed}
         >
           <ResizablePanel
@@ -138,7 +147,10 @@ export function InspectorSplit(props: InspectorSplitProps) {
           />
           <InspectorPanel
             bar={bar}
-            controls={panels.state === 'collapsed' ? null : toggles}
+            controls={toggles(
+              panels.state !== 'collapsed',
+              panels.state === 'expanded' ? 'expanded' : 'open',
+            )}
             defaultCollapsed={defaultCollapsed}
             defaultInspectorSize={defaultInspectorSize}
             id={id}
