@@ -46,13 +46,7 @@ function ComposerPlaceholder() {
   )
 }
 
-function FocusOnMountPlugin({
-  enabled,
-  onFocused,
-}: {
-  enabled: boolean
-  onFocused?: () => void
-}) {
+function FocusOnMountPlugin({ enabled, onFocused }: { enabled: boolean; onFocused?: () => void }) {
   const [editor] = useLexicalComposerContext()
 
   useEffect(() => {

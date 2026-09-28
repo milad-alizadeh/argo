@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { claudeComposerModelCatalogFixture } from '../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
 import { claudeChoices } from '../../../../../test-fixtures/sessions/harness-catalog.fixture'
@@ -14,13 +14,14 @@ const availableChoices = choices as TurnConfigurationChoices
 function ComposerCatalogRecovery() {
   const [state, setState] = useState<'loading' | 'failed' | 'ready'>('loading')
   const [focusOnReady, setFocusOnReady] = useState(false)
+  const clearRecoveryFocus = useCallback(() => setFocusOnReady(false), [])
   if (state === 'ready')
     return (
       <ComposerForm
         sessionId="catalog-recovery"
         harness={{ harness: 'claude' }}
         focusOnMount={focusOnReady}
-        onFocusAfterMount={() => setFocusOnReady(false)}
+        onFocusAfterMount={clearRecoveryFocus}
         turnConfigurationChoices={availableChoices}
         initialEditing={{ turnConfiguration: availableChoices.opening }}
       />

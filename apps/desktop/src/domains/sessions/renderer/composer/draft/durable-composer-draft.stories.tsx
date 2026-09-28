@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { type Dispatch, type SetStateAction, useRef, useState } from 'react'
+import { type Dispatch, type SetStateAction, useCallback, useRef, useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import {
   queryClient,
@@ -195,6 +195,17 @@ function createServer(
   return server
 }
 
+function useDraftStoryRetryFocus(draft: ReturnType<typeof useDurableComposerDraft>) {
+  const [focusComposerAfterRetry, setFocusComposerAfterRetry] = useState(false)
+  const retryDraftLoad = () => {
+    void draft?.retryLoad().then(({ isSuccess }) => {
+      if (isSuccess) setFocusComposerAfterRetry(true)
+    })
+  }
+  const clearRecoveryFocus = useCallback(() => setFocusComposerAfterRetry(false), [])
+  return { focusComposerAfterRetry, retryDraftLoad, clearRecoveryFocus }
+}
+
 function DurableDraftStory({
   initialOutcome = 'accept',
   draftReadFailures = 0,
@@ -226,14 +237,10 @@ function DurableDraftStory({
   }
   const [sessionId, setSessionId] = useState('session-a')
   const [composerVersion, setComposerVersion] = useState(0)
-  const [focusComposerAfterRetry, setFocusComposerAfterRetry] = useState(false)
   const target: DraftTarget = { type: 'session', sessionId }
   const draft = useDurableComposerDraft({ target, choices, opening: choices.opening })
-  const retryDraftLoad = () => {
-    void draft?.retryLoad().then(({ isSuccess }) => {
-      if (isSuccess) setFocusComposerAfterRetry(true)
-    })
-  }
+  const { focusComposerAfterRetry, retryDraftLoad, clearRecoveryFocus } =
+    useDraftStoryRetryFocus(draft)
   const storedDrafts = storedDraftSummaries(server.drafts)
   void serverVersion
   return (
@@ -254,23 +261,49 @@ function DurableDraftStory({
       {draft?.sendFailed ? (
         <div role="alert">The Turn could not be sent. Your draft is still saved.</div>
       ) : null}
-      {draft?.loadFailed ? <DraftLoadFailure onRetry={retryDraftLoad} /> : null}
       {draft ? (
-        <ComposerForm
-          harness={{ harness: 'claude' }}
-          initialEditing={draft.initialEditing}
-          onEditingChange={draft.onEditingChange}
-          onSend={async (prompt, turnConfiguration, attachments) =>
-            (await draft.submit(prompt, turnConfiguration, attachments)) !== null
-          }
+        <DurableDraftComposer
+          draft={draft}
           sessionId={`${sessionId}:${composerVersion}:${draft.hasDraft ? 'ready' : 'load-failed'}`}
-          disabled={draft.loadFailed && !draft.hasDraft}
-          focusOnMount={focusComposerAfterRetry}
-          onFocusAfterMount={() => setFocusComposerAfterRetry(false)}
-          turnConfigurationChoices={choices as TurnConfigurationChoices}
+          focusOnRetry={focusComposerAfterRetry}
+          onFocusAfterMount={clearRecoveryFocus}
+          onRetry={retryDraftLoad}
         />
       ) : null}
     </div>
+  )
+}
+
+function DurableDraftComposer({
+  draft,
+  sessionId,
+  focusOnRetry,
+  onFocusAfterMount,
+  onRetry,
+}: {
+  draft: NonNullable<ReturnType<typeof useDurableComposerDraft>>
+  sessionId: string
+  focusOnRetry: boolean
+  onFocusAfterMount: () => void
+  onRetry: () => void
+}) {
+  return (
+    <>
+      {draft.loadFailed ? <DraftLoadFailure onRetry={onRetry} /> : null}
+      <ComposerForm
+        harness={{ harness: 'claude' }}
+        initialEditing={draft.initialEditing}
+        onEditingChange={draft.onEditingChange}
+        onSend={async (prompt, turnConfiguration, attachments) =>
+          (await draft.submit(prompt, turnConfiguration, attachments)) !== null
+        }
+        sessionId={sessionId}
+        disabled={draft.loadFailed && !draft.hasDraft}
+        focusOnMount={focusOnRetry}
+        onFocusAfterMount={onFocusAfterMount}
+        turnConfigurationChoices={choices as TurnConfigurationChoices}
+      />
+    </>
   )
 }
 

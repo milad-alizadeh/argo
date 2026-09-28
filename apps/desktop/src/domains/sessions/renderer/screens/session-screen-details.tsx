@@ -68,6 +68,27 @@ function catalogFailureOf(
   return null
 }
 
+function sessionComposerConfiguration(input: {
+  selectedSessionId: string | null
+  projectId: string | null
+  sessionList: SessionListPage | null
+  catalogResult: CatalogReadResult | undefined
+  catalogFailed: boolean
+}) {
+  const catalog = input.catalogResult?.info ?? null
+  const catalogFailure = catalogFailureOf(input.catalogResult, input.catalogFailed)
+  const identity = composerIdentityOf(input.selectedSessionId, input.projectId)
+  const choices = catalog?.availability === 'available' ? catalog : null
+  const initialTurnConfiguration =
+    choices === null || (identity.kind === 'session' && input.sessionList === null)
+      ? null
+      : turnConfigurationFor(choices, {
+          identity,
+          rows: input.sessionList?.sessions ?? [],
+        })
+  return { catalogFailure, choices, initialTurnConfiguration, identity }
+}
+
 function workspaceControl(
   identity: ReturnType<typeof composerIdentityOf>,
   workspaces: WorkspaceCockpit,
@@ -132,6 +153,18 @@ function useCatalogRead(harness: HarnessControl) {
   return { catalogQuery, refreshCatalog }
 }
 
+function useComposerRetryFocus() {
+  const [focusComposerAfterRetry, setFocusComposerAfterRetry] = useState(false)
+  const clearRecoveryFocus = useCallback(() => setFocusComposerAfterRetry(false), [])
+  const focusAfterSuccessfulRetry = (retry: () => Promise<{ isSuccess: boolean }>) => {
+    void retry().then(({ isSuccess }) => {
+      if (isSuccess) setFocusComposerAfterRetry(true)
+    })
+  }
+  return { focusComposerAfterRetry, clearRecoveryFocus, focusAfterSuccessfulRetry }
+}
+
+// The Session list already knows another process runs it live, so no Send is offered at all (ADR-0040).
 export function SessionComposerArea({
   permission,
   questionPending,
@@ -144,24 +177,20 @@ export function SessionComposerArea({
   workspaceActions,
 }: SessionScreenDetailsProps) {
   const { catalogQuery, refreshCatalog } = useCatalogRead(harness)
-  const [focusComposerAfterRetry, setFocusComposerAfterRetry] = useState(false)
-  const clearRecoveryFocus = useCallback(() => setFocusComposerAfterRetry(false), [])
+  const { focusComposerAfterRetry, clearRecoveryFocus, focusAfterSuccessfulRetry } =
+    useComposerRetryFocus()
   const location = useLocation()
-  const catalog = catalogQuery.data?.info ?? null
-  const catalogFailure = catalogFailureOf(catalogQuery.data, catalogQuery.isError)
-  const identity = composerIdentityOf(selectedSessionId, cockpit.project?.id ?? null)
-  const choices = catalog?.availability === 'available' ? catalog : null
-  const initialTurnConfiguration =
-    choices === null || (identity.kind === 'session' && sessionList === null)
-      ? null
-      : turnConfigurationFor(choices, {
-          identity,
-          rows: sessionList?.sessions ?? [],
-        })
+  const { catalogFailure, choices, initialTurnConfiguration, identity } =
+    sessionComposerConfiguration({
+      selectedSessionId,
+      projectId: cockpit.project?.id ?? null,
+      sessionList,
+      catalogResult: catalogQuery.data,
+      catalogFailed: catalogQuery.isError,
+    })
   const composerKey = composerIdentityKey(identity)
-  const target = draftTarget({ identity, harness, cockpit, workspace: workspaceCockpit })
   const draft = useDurableComposerDraft({
-    target,
+    target: draftTarget({ identity, harness, cockpit, workspace: workspaceCockpit }),
     choices,
     opening: initialTurnConfiguration,
   })
@@ -170,17 +199,10 @@ export function SessionComposerArea({
     identity,
     projectId: cockpit.project?.id ?? null,
   })
-  const retryCatalog = () => {
-    void catalogQuery.refetch().then(({ isSuccess }) => {
-      if (isSuccess) setFocusComposerAfterRetry(true)
-    })
-  }
+  const retryCatalog = () => focusAfterSuccessfulRetry(catalogQuery.refetch)
   const retryDraft = () => {
-    void draft?.retryLoad().then(({ isSuccess }) => {
-      if (isSuccess) setFocusComposerAfterRetry(true)
-    })
+    if (draft) focusAfterSuccessfulRetry(draft.retryLoad)
   }
-  // The Session list already knows another process runs it live, so no Send is offered at all (ADR-0040).
   if (session?.locked === true) return <OpenElsewhere onRetry={null} />
   if (draft === null)
     return (
