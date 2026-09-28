@@ -6,7 +6,7 @@ import { afterEach, beforeEach, expect, test } from 'vitest'
 import { type Database, openDatabase } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import { SessionEventJournal } from '../live/session-event-journal'
-import { sessionLiveEventsProcedure } from './session-live-events'
+import { type SessionLiveEventsContext, sessionLiveEventsProcedure } from './session-live-events'
 
 const sessionId = '00000000-0000-4000-8000-000000000001'
 let directory: string
@@ -37,6 +37,23 @@ async function subscribe(cursor: number, live = true, generation: string | null 
   const stream = await caller.live({ sessionId, cursor, generation })
   const subscription = stream.subscribe({ next: (update) => updates.push(update) })
   return { updates, subscription }
+}
+
+function followingCaller(
+  live: boolean,
+  followHistory: NonNullable<SessionLiveEventsContext['followHistory']>,
+) {
+  return initTRPC
+    .create()
+    .router({
+      live: sessionLiveEventsProcedure({
+        database,
+        journal,
+        hasLiveChannel: () => live,
+        followHistory,
+      }),
+    })
+    .createCaller({})
 }
 
 test('replays a cursor then delivers new live events through the product subscription', async () => {
@@ -191,61 +208,73 @@ test('keeps queued replay events ahead of events published during queue delivery
   expect(sequences).toEqual([1, 2, 3, 4])
 })
 
-test.each([false, true])('invalidates vendor history with live channel %s', async (live) => {
-  const t = initTRPC.create()
+test('invalidates an external Session’s rewritten vendor history', async () => {
   const watcher: { invalidate: () => void; closed: boolean } = {
     invalidate: () => {
       throw new Error('Watcher did not attach.')
     },
     closed: false,
   }
-  const caller = t
-    .router({
-      live: sessionLiveEventsProcedure({
-        database,
-        journal,
-        hasLiveChannel: () => live,
-        watchHistory: (harness, target, callback) => {
-          expect(harness).toBe('claude')
-          expect(target.nativeId).toBe('native-1')
-          watcher.invalidate = callback
-          return () => {
-            watcher.closed = true
-          }
-        },
-      }),
-    })
-    .createCaller({})
+  const caller = followingCaller(false, ({ sessionId: followed, harness, target }, callback) => {
+    expect(followed).toBe(sessionId)
+    expect(harness).toBe('claude')
+    expect(target.nativeId).toBe('native-1')
+    watcher.invalidate = callback
+    return () => {
+      watcher.closed = true
+    }
+  })
   const updates: unknown[] = []
   const stream = await caller.live({ sessionId, cursor: 0 })
   const subscription = stream.subscribe({ next: (update) => updates.push(update) })
   watcher.invalidate()
   subscription.unsubscribe()
-  expect(updates).toMatchObject([{ type: 'ready', live }, { type: 'invalidated' }])
+  expect(updates).toMatchObject([{ type: 'ready', live: false }, { type: 'invalidated' }])
   expect(watcher.closed).toBe(true)
 })
 
+test('delivers an external Session’s appended history lines as journal events', async () => {
+  const caller = followingCaller(false, () => () => {})
+  const updates: unknown[] = []
+  const stream = await caller.live({ sessionId, cursor: 0 })
+  const subscription = stream.subscribe({ next: (update) => updates.push(update) })
+  journal.append(sessionId, {
+    type: 'content',
+    commandId: null,
+    turnId: null,
+    vendorEventId: 'line-1',
+    content: { kind: 'message', id: 'line-1', role: 'assistant', text: 'From the terminal.' },
+  })
+  subscription.unsubscribe()
+  expect(updates).toMatchObject([
+    { type: 'ready', live: false },
+    { type: 'event', event: { type: 'content', vendorEventId: 'line-1' } },
+  ])
+})
+
+test('starts no history watcher for a Session with a live channel', async () => {
+  const followed: string[] = []
+  const caller = followingCaller(true, ({ sessionId: session }) => {
+    followed.push(session)
+    return () => {}
+  })
+  const stream = await caller.live({ sessionId, cursor: 0 })
+  const subscription = stream.subscribe({ next: () => {} })
+  subscription.unsubscribe()
+  expect(followed).toEqual([])
+})
+
 test('subscribes to Subagent changes without replaying root Session events', async () => {
-  const t = initTRPC.create()
   const watcher: { invalidate: () => void } = {
     invalidate: () => {
       throw new Error('Subagent watcher did not attach.')
     },
   }
-  const caller = t
-    .router({
-      live: sessionLiveEventsProcedure({
-        database,
-        journal,
-        hasLiveChannel: () => true,
-        watchHistory: (_harness, target, callback) => {
-          expect(target.subagentId).toBe('subagent-1')
-          watcher.invalidate = callback
-          return () => {}
-        },
-      }),
-    })
-    .createCaller({})
+  const caller = followingCaller(true, ({ target }, callback) => {
+    expect(target.subagentId).toBe('subagent-1')
+    watcher.invalidate = callback
+    return () => {}
+  })
   const updates: unknown[] = []
   const stream = await caller.live({ sessionId, subagentId: 'subagent-1', cursor: 0 })
   const subscription = stream.subscribe({ next: (update) => updates.push(update) })

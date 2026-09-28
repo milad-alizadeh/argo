@@ -2,6 +2,21 @@
 
 Status: accepted · 2026-09-24 · Session discovery amended 2026-09-27
 
+## Amendment · watched Sessions and the pushed roster · 2026-09-28
+
+Each Harness registration names where it writes Session history, how to read the lines it
+appends, and which lines open or close a turn. When an open Feed's history file grows, Argo reads
+only the new lines. It appends their events to the live journal, unless the Session has a live
+channel. A rewritten, truncated or branched file still makes the Feed read the whole history.
+
+The roster is one subscription. It sends the whole list first. After a sync commits, a live
+status changes, a rename, or a write to any history file, it sends each changed row, or the whole
+list again when the order or total changed. A history write sets the row's `activityAt` in SQLite.
+It also records, in memory, whether the file's newest turn marker opened or closed a turn. A
+Session with no live actor shows running for an open turn and idle for a closed one. An open turn
+whose file stays quiet for five minutes shows unknown, because a killed terminal writes nothing
+more.
+
 ## Amendment · Harness registrations for sync · 2026-09-28
 
 The sync supervisor reads each Harness's `sessionDiscovery` from its registration and runs the
@@ -14,9 +29,8 @@ ready, so one failed Harness reports its own failure text.
 Live Feed replay is bounded. One memory journal keeps the newest 500 events and 2 MiB across all
 Sessions, and each launch starts a new generation. A cursor older than the journal, or from an
 earlier generation, reads vendor history and merges rows by stable item ID. A Session with no Argo
-live channel is only as fresh as its Harness's history watcher: an open Feed rereads on a change
-signal, and otherwise shows what it last read until the reader reopens it or asks for Refresh.
-Session list metadata changes only at app start and on Refresh.
+live channel is only as fresh as its Harness's history watcher, as the amendment on watched
+Sessions above describes.
 
 ## Amendment · Codex live Session ownership · 2026-09-28
 

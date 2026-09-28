@@ -2,14 +2,13 @@ import { initTRPC } from '@trpc/server'
 import { observable } from '@trpc/server/observable'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
-import type { SessionHistoryTarget } from '@/domains/sessions/api/session-history'
 import {
   type SessionLiveEvent,
   sessionLiveUpdateSchema,
 } from '@/domains/sessions/api/session-live-event'
-import type { Harness } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
 import type { SessionEventJournal } from '../live/session-event-journal'
+import type { SessionHistoryFollowers } from '../live/session-history-followers'
 import { sessionHistoryIdentity } from './session-history-identity'
 
 const t = initTRPC.create()
@@ -38,19 +37,33 @@ export type SessionLiveEventsContext = {
   database: Database
   journal: SessionEventJournal
   hasLiveChannel: (sessionId: string) => boolean
-  watchHistory?: (
-    harness: Harness,
-    target: SessionHistoryTarget,
-    invalidate: () => void,
-  ) => () => void
+  followHistory?: SessionHistoryFollowers['follow']
+}
+
+type StoredSession = ReturnType<typeof sessionHistoryIdentity>
+type LiveUpdate = z.infer<typeof sessionLiveUpdateSchema>
+
+function followHistory(
+  context: SessionLiveEventsContext,
+  session: { sessionId: string; stored: StoredSession; subagentId: string | null },
+  emit: { next: (update: LiveUpdate) => void },
+) {
+  const { sessionId, stored, subagentId } = session
+  return context.followHistory?.(
+    {
+      sessionId,
+      harness: stored.harness,
+      target: { nativeId: stored.nativeId, subagentId, cwd: stored.cwd },
+    },
+    () => emit.next(sessionLiveUpdateSchema.parse({ type: 'invalidated' })),
+  )
 }
 
 function subagentLiveUpdates(
   context: SessionLiveEventsContext,
-  stored: ReturnType<typeof sessionHistoryIdentity>,
-  subagentId: string,
+  session: { sessionId: string; stored: StoredSession; subagentId: string },
 ) {
-  return observable<z.infer<typeof sessionLiveUpdateSchema>>((emit) => {
+  return observable<LiveUpdate>((emit) => {
     emit.next(
       sessionLiveUpdateSchema.parse({
         type: 'ready',
@@ -60,24 +73,49 @@ function subagentLiveUpdates(
         replayExpired: false,
       }),
     )
-    const unwatch = context.watchHistory?.(
-      stored.harness,
-      { nativeId: stored.nativeId, subagentId, cwd: stored.cwd },
-      () => emit.next(sessionLiveUpdateSchema.parse({ type: 'invalidated' })),
-    )
+    const unwatch = followHistory(context, session, emit)
     return () => unwatch?.()
   })
+}
+
+type LiveInput = z.infer<typeof inputSchema>
+type JournalEvent = ReturnType<SessionEventJournal['append']>
+
+// Sends the ready message and the journal's replay, and returns whether the Session is live.
+function sendReplay(
+  context: SessionLiveEventsContext,
+  input: LiveInput,
+  send: {
+    update: (update: LiveUpdate) => void
+    event: (event: JournalEvent, live: boolean) => void
+  },
+) {
+  const replay = context.journal.replay(input.sessionId, input.cursor, input.generation ?? null)
+  const live = context.hasLiveChannel(input.sessionId)
+  send.update(
+    sessionLiveUpdateSchema.parse({
+      type: 'ready',
+      live,
+      cursor: replay.cursor,
+      generation: context.journal.generation,
+      replayExpired: replay.type === 'expired',
+    }),
+  )
+  if (replay.type === 'expired') send.update(sessionLiveUpdateSchema.parse(replay))
+  else for (const event of replay.events) send.event(event, live)
+  return { live, cursor: replay.cursor }
 }
 
 export function sessionLiveEventsProcedure(context: SessionLiveEventsContext) {
   return t.procedure.input(inputSchema).subscription(({ input }) => {
     const stored = sessionHistoryIdentity(context.database, input.sessionId)
     const subagentId = input.subagentId ?? null
-    if (subagentId !== null) return subagentLiveUpdates(context, stored, subagentId)
-    return observable<z.infer<typeof sessionLiveUpdateSchema>>((emit) => {
+    if (subagentId !== null)
+      return subagentLiveUpdates(context, { sessionId: input.sessionId, stored, subagentId })
+    return observable<LiveUpdate>((emit) => {
       let replaying = true
-      const pending: ReturnType<SessionEventJournal['append']>[] = []
-      const sendEvent = (event: (typeof pending)[number], live: boolean) => {
+      const pending: JournalEvent[] = []
+      const sendEvent = (event: JournalEvent, live: boolean) => {
         if (canDeliver(event, live))
           emit.next(sessionLiveUpdateSchema.parse({ type: 'event', event }))
       }
@@ -85,30 +123,20 @@ export function sessionLiveEventsProcedure(context: SessionLiveEventsContext) {
         if (replaying) pending.push(event)
         else sendEvent(event, context.hasLiveChannel(input.sessionId))
       })
-      const replay = context.journal.replay(input.sessionId, input.cursor, input.generation ?? null)
-      const live = context.hasLiveChannel(input.sessionId)
-      emit.next(
-        sessionLiveUpdateSchema.parse({
-          type: 'ready',
-          live,
-          cursor: replay.cursor,
-          generation: context.journal.generation,
-          replayExpired: replay.type === 'expired',
-        }),
-      )
-      if (replay.type === 'expired') emit.next(sessionLiveUpdateSchema.parse(replay))
-      else for (const event of replay.events) sendEvent(event, live)
+      const { live, cursor } = sendReplay(context, input, {
+        update: (update) => emit.next(update),
+        event: sendEvent,
+      })
       while (pending.length > 0) {
         const event = pending.shift()
-        if (event !== undefined && event.sequence > replay.cursor)
+        if (event !== undefined && event.sequence > cursor)
           sendEvent(event, context.hasLiveChannel(input.sessionId))
       }
       replaying = false
-      const unwatch = context.watchHistory?.(
-        stored.harness,
-        { nativeId: stored.nativeId, subagentId: null, cwd: stored.cwd },
-        () => emit.next(sessionLiveUpdateSchema.parse({ type: 'invalidated' })),
-      )
+      // A live channel already delivers every event this Session makes.
+      const unwatch = live
+        ? undefined
+        : followHistory(context, { sessionId: input.sessionId, stored, subagentId: null }, emit)
       return () => {
         unsubscribe()
         unwatch?.()

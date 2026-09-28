@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { Permission, PermissionDecision } from '@/domains/sessions/api/permissions'
 import { trpcClient } from '@/platform/renderer/trpc-client'
-import { invalidateSessionList, sessionPermissionQueryKey } from '../../session-queries'
+import { sessionPermissionQueryKey } from '../../session-queries'
 
 export type PermissionAnswer = PermissionDecision
 
@@ -28,7 +28,6 @@ export function useSessionPermission(sessionId: string | null) {
     try {
       await permissionDecision.mutateAsync({ decision, permission: permission.data })
       queryClient.setQueryData(sessionPermissionQueryKey(permission.data.sessionId), null)
-      await invalidateSessionList(queryClient)
       setFailed(null)
       return true
     } catch (error) {

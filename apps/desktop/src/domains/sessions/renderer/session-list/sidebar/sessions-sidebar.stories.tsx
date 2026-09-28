@@ -3,11 +3,12 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { queryClient, type RouterOutputs, trpc } from '@/platform/renderer/trpc-client'
+import { queryClient, type RouterOutputs } from '@/platform/renderer/trpc-client'
 import { sessionFeedQuery } from '../../feed/session-feed-query'
 import { sessionFeedTrpc, sessionRow, sessionSubagent } from '../../session-fixtures'
 import type { SessionError, SessionId, SessionListPage } from '../../types'
 import { SessionList, type SessionListActions } from '../session-list'
+import { sessionRosterPathKey } from '../session-roster'
 
 const session = sessionRow({
   id: 'prose',
@@ -62,31 +63,57 @@ function listedReply(sessionList: SessionListPage): SessionListPage {
   return sessionList
 }
 
-function sessionListResult(sessionList: SessionListPage, page: number, pageSize: number) {
-  return {
-    page,
-    pageSize,
-    total: sessionList.total,
-    rows: sessionList.sessions,
+type SessionListRead = { projectId: string; search: string; pages: number }
+type SessionListHandler = (request: SessionListRead) => Promise<SessionListPage | SessionError>
+
+// Every roster read a story's host answered, in order.
+let sessionListReads = fn<SessionListHandler>()
+let resendSessionLists = () => {}
+
+type Subscribe = typeof window.argo.trpcSubscribe
+
+function sessionListSubscriber(reads: SessionListHandler, rosters: Set<() => void>): Subscribe {
+  return async (request, listener) => {
+    const input = request.input as SessionListRead
+    const send = async () => {
+      const sessionList = await reads(input)
+      if (!rosters.has(send)) return
+      if ('type' in sessionList) {
+        listener({ id: request.id, type: 'error', error: { message: sessionList.message } })
+        return
+      }
+      listener({
+        id: request.id,
+        type: 'data',
+        result: {
+          data: {
+            type: 'list',
+            pages: input.pages,
+            pageSize: 30,
+            total: sessionList.total,
+            rows: sessionList.sessions,
+          },
+        },
+      })
+    }
+    rosters.add(send)
+    void send()
+    return () => rosters.delete(send)
   }
 }
 
-// The active Session list reads numbered pages through the typed tRPC path. Archive stories keep
-// their separate preload seam until that reader moves in its own slice.
-function withSessionListHost(
-  handler: (request: {
-    projectId: string
-    search: string
-    page: number
-    pageSize: number
-  }) => Promise<SessionListPage | SessionError>,
-) {
-  queryClient.removeQueries({ queryKey: trpc.sessionList.pathKey() })
+// The active Session list subscribes to a growing window of rows through the typed tRPC path, and
+// is sent its rows again after each change. Archive stories keep their separate preload seam until
+// that reader moves in its own slice.
+function withSessionListHost(handler: SessionListHandler) {
+  queryClient.removeQueries({ queryKey: sessionRosterPathKey })
+  sessionListReads = fn(handler)
   const before = window.argo
   const listeners = new Set<{
     id: number
     listener: Parameters<typeof before.trpcSubscribe>[1]
   }>()
+  const rosters = new Set<() => void>()
   let syncStatus = initialSyncStatus
   const publish = (event: SessionSyncEvent) => {
     for (const { id, listener } of listeners)
@@ -95,22 +122,17 @@ function withSessionListHost(
   publishSessionSyncEvent = (event) => {
     if (event.type === 'status') syncStatus = event.status
     publish(event)
+    // The main process sends the roster again after each committed sync.
+    if (event.type === 'committed') resendSessionLists()
   }
+  resendSessionLists = () => {
+    for (const send of rosters) send()
+  }
+  const subscribeSessionList = sessionListSubscriber(sessionListReads, rosters)
   window.argo = {
     ...before,
-    trpc: fn(async (request) => {
-      if (request.path !== 'sessionList') return before.trpc(request)
-      const input = request.input as {
-        projectId: string
-        search: string
-        page: number
-        pageSize: number
-      }
-      const sessionList = await handler(input)
-      if ('type' in sessionList) throw new Error(sessionList.message)
-      return { result: { data: sessionListResult(sessionList, input.page, input.pageSize) } }
-    }) as typeof before.trpc,
     trpcSubscribe: async (request, listener) => {
+      if (request.path === 'sessionList') return subscribeSessionList(request, listener)
       if (request.path !== 'sessionSyncStatus') return before.trpcSubscribe(request, listener)
       listeners.add({ id: request.id, listener })
       listener({
@@ -127,6 +149,7 @@ function withSessionListHost(
   }
   return () => {
     publishSessionSyncEvent = () => {}
+    resendSessionLists = () => {}
     window.argo = before
   }
 }
@@ -146,7 +169,7 @@ function withSessionsHost(initialSessions: SessionListPage['sessions']) {
     },
     repoll(next: SessionListPage['sessions']) {
       sessions = next
-      void queryClient.invalidateQueries({ queryKey: ['sessions'] })
+      resendSessionLists()
     },
     restore,
   }
@@ -1123,16 +1146,16 @@ export const Failure: Story = {
 // time. The sentinel row is what "reached" means, and it is mounted well before it is visible: the
 // virtualizer keeps 30 rows of overscan, so a sentinel below the fold used to count as reached and
 // the Session list grew a page before the reader had scrolled at all (#2277).
-function manySessionsPage(index: number) {
+function manySessionsWindow(pages: number) {
   return {
     ...listed,
-    sessions: Array.from({ length: 40 }, (_unused, row) => ({
+    sessions: Array.from({ length: pages * 40 }, (_unused, row) => ({
       ...session,
-      id: `session-${index}-${row}`,
-      title: { text: `Session number ${row}`, source: 'first-prompt' as const },
+      id: `session-${Math.floor(row / 40)}-${row % 40}`,
+      title: { text: `Session number ${row % 40}`, source: 'first-prompt' as const },
     })),
     total: 80,
-    nextPage: index === 0 ? 2 : null,
+    nextPage: pages === 1 ? 2 : null,
   } satisfies SessionListPage
 }
 
@@ -1151,14 +1174,11 @@ function sessionListScroll(canvasElement: HTMLElement) {
 export const GrowsOnlyWhenTheReaderReachesTheEnd: Story = {
   beforeEach: () => {
     showingActiveSessions()
-    const listSessions = fn(async ({ page }: { page: number }) =>
-      listedReply(manySessionsPage(page - 1)),
-    )
-    return withSessionListHost(listSessions)
+    return withSessionListHost(async ({ pages }) => listedReply(manySessionsWindow(pages)))
   },
   play: async ({ canvasElement }) => {
     const scroll = await waitFor(() => sessionListScroll(canvasElement))
-    const listSessions = window.argo.trpc as ReturnType<typeof fn>
+    const listSessions = sessionListReads
     await expect(scroll.scrollTop).toBe(0)
     await expect(listSessions).toHaveBeenCalledTimes(1)
     scroll.scrollTop = scroll.scrollHeight
@@ -1166,12 +1186,11 @@ export const GrowsOnlyWhenTheReaderReachesTheEnd: Story = {
     // One arrival of the sentinel asks for one page: the callback's identity changes with the
     // cursor the read returned, which used to ask again for as long as the sentinel stayed in view.
     await waitFor(() => expect(listSessions).toHaveBeenCalledTimes(2))
-    await expect(listSessions).toHaveBeenCalledWith(
-      expect.objectContaining({
-        path: 'sessionList',
-        input: { projectId: 'project-1', search: '', page: 2, pageSize: 30 },
-      }),
-    )
+    await expect(listSessions).toHaveBeenLastCalledWith({
+      projectId: 'project-1',
+      search: '',
+      pages: 2,
+    })
     await new Promise((resolve) => setTimeout(resolve, 300))
     await expect(listSessions).toHaveBeenCalledTimes(2)
   },
@@ -1182,13 +1201,12 @@ export const GrowsOnlyWhenTheReaderReachesTheEnd: Story = {
 export const AsksOnceWhenTheWindowDoesNotFillTheViewport: Story = {
   beforeEach: () => {
     showingActiveSessions()
-    const listSessions = fn(async ({ page }: { page: number }) =>
-      listedReply(page === 1 ? { ...listed, total: 3, nextPage: 2 } : listed),
+    return withSessionListHost(async ({ pages }) =>
+      listedReply(pages === 1 ? { ...listed, total: 3, nextPage: 2 } : listed),
     )
-    return withSessionListHost(listSessions)
   },
   play: async () => {
-    const listSessions = window.argo.trpc as ReturnType<typeof fn>
+    const listSessions = sessionListReads
     await waitFor(() => expect(listSessions).toHaveBeenCalledTimes(2))
     await new Promise((resolve) => setTimeout(resolve, 300))
     await expect(listSessions).toHaveBeenCalledTimes(2)
@@ -1200,9 +1218,9 @@ export const AsksOnceWhenTheWindowDoesNotFillTheViewport: Story = {
 export const GrowingTheWindow: Story = {
   beforeEach: () => {
     showingActiveSessions()
-    return withSessionListHost(async ({ page }) =>
-      page === 1
-        ? listedReply(manySessionsPage(0))
+    return withSessionListHost(async ({ pages }) =>
+      pages === 1
+        ? listedReply(manySessionsWindow(1))
         : new Promise(() => {
             // The second page never lands, so the Session list stays on its loading-more row.
           }),

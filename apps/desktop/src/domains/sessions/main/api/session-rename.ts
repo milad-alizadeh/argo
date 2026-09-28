@@ -5,6 +5,7 @@ import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
+import type { SessionRosterChanges } from './session-roster-changes'
 
 const t = initTRPC.create()
 export const sessionRenameInputSchema = z.strictObject({
@@ -15,6 +16,7 @@ export const sessionRenameOutputSchema = z.strictObject({ title: z.string().min(
 
 export type SessionRenameContext = {
   database: Database
+  roster: SessionRosterChanges
   rename: (request: { harness: Harness; nativeId: string; title: string }) => Promise<void>
 }
 
@@ -46,6 +48,7 @@ export function sessionRenameProcedure(context: SessionRenameContext) {
         .get()
       if (updated?.title === null || updated === undefined)
         throw new Error('Session title did not persist.')
+      context.roster.changed()
       return { title: updated.title }
     })
 }

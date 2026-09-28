@@ -14,7 +14,7 @@ import { INACTIVE_FEED_LIVE_FACTS } from '../feed/document/feed-live-facts'
 import { SessionInspector } from '../inspector/session-inspector'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
 import {
-  sessionListTrpc,
+  sessionListSubscribe,
   sessionRow,
   sessionShellCommand,
   sessionSubagent,
@@ -185,7 +185,7 @@ function withListedSessions(sessions: Session[]) {
   const before = window.argo
   window.argo = {
     ...before,
-    trpc: sessionListTrpc(before.trpc, () => sessions),
+    trpcSubscribe: sessionListSubscribe(before.trpcSubscribe, () => sessions),
   }
   return () => {
     window.argo = before

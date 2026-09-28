@@ -4,7 +4,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { type DriveSessionErrorCode, driveSessionError } from '@/domains/sessions/api/session-error'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { sessionListTrpc, sessionRow } from '../session-fixtures'
+import { announceSessionListChange, sessionListSubscribe, sessionRow } from '../session-fixtures'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import { SessionScreenView } from './session-screen-view'
 
@@ -25,12 +25,13 @@ function restartedHost(refusal: DriveSessionErrorCode | null, row = resumable) {
   const before = window.argo
   window.argo = {
     ...before,
-    trpc: sessionListTrpc(before.trpc, () => [
+    trpcSubscribe: sessionListSubscribe(before.trpcSubscribe, () => [
       resumed ? { ...row, posture: 'live', status: 'running' } : row,
     ]),
     sendSession: async ({ sessionId }) => {
       if (refusal !== null) return driveSessionError(refusal, 'claude', 'storybook-send')
       resumed = true
+      announceSessionListChange()
       return { version: 1, type: 'session.accepted', requestId: 'storybook-send', sessionId }
     },
   }
