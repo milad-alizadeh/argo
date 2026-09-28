@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
+import { queryClient } from '@/platform/renderer/trpc-client'
 import { sessionFeedTrpc, sessionListTrpc, sessionRow } from '../session-fixtures'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import { SessionScreenView } from './session-screen-view'
@@ -10,30 +11,32 @@ import { SessionScreenView } from './session-screen-view'
 const session = sessionRow({
   id: 'flaky-feed-session',
   posture: 'external',
-  title: { text: 'Read the transcript through a flaky poll', source: 'first-prompt' },
+  title: { text: 'Read the transcript through a flaky source', source: 'first-prompt' },
   status: 'idle',
   cwd: '/storybook/argo',
 })
 
+let flakyFeedReads = 0
+
 // A live process holding a Session elsewhere can fail one vendor history read; the Session already
 // read stays on screen through that (#2053).
 function flakyFeedHost() {
-  let reads = 0
+  flakyFeedReads = 0
   const before = window.argo
   window.argo = {
     ...before,
     trpc: sessionFeedTrpc(
       sessionListTrpc(before.trpc, () => [session]),
       async (sessionId) => {
-        reads += 1
-        if (reads === 2) throw new Error('Vendor history is unavailable.')
+        flakyFeedReads += 1
+        if (flakyFeedReads === 2) throw new Error('Vendor history is unavailable.')
         return {
           version: 1,
           type: 'session.feed.read',
           requestId: 'storybook-feed',
           sessionId,
           chainId: sessionId,
-          revision: `storybook-feed-${reads}`,
+          revision: `storybook-feed-${flakyFeedReads}`,
           rows: [
             { shape: 'prose', id: 'flaky-row', role: 'assistant', text: 'Read before the flake.' },
           ],
@@ -46,8 +49,7 @@ function flakyFeedHost() {
   }
 }
 
-// The same tolerance must cover a Session's first-ever open, with no cached feed yet: an
-// actively driven Session races its writer on every poll, including the first (#2071).
+// The first read can fail before any history has reached the Feed (#2071).
 function flakyFirstOpenHost() {
   let reads = 0
   const before = window.argo
@@ -135,35 +137,36 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof SessionScreenView>
 
-export const SurvivesATransientPoll: Story = {
+export const SurvivesOneFailedRefresh: Story = {
   beforeEach: () => flakyFeedHost(),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const visible = () => canvas.getAllByText('Read before the flake.')
     await waitFor(() => expect(visible()).toHaveLength(1))
-
-    // The next poll (500ms, session-queries.ts SESSION_REFRESH_MS) fails once; the transcript
-    // already on screen must not be replaced by "Unable to load Session".
-    await new Promise((resolve) => setTimeout(resolve, 700))
+    await queryClient.invalidateQueries({ queryKey: ['sessions', 'feed', session.id] })
+    await waitFor(() => expect(flakyFeedReads).toBeGreaterThanOrEqual(2))
     await expect(visible()).toHaveLength(1)
-    await expect(canvas.queryByRole('alert')).toBeNull()
+    await waitFor(() => expect(canvas.getByText('Session history is unavailable.')).toBeVisible())
   },
 }
 
-export const SurvivesATransientPollOnFirstOpen: Story = {
+export const FirstReadFailureCanRetry: Story = {
   beforeEach: () => flakyFirstOpenHost(),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    // The very first feed read fails before any data has ever landed for this Session; the
-    // one-miss grace must still hold, so no error screen appears while that plays out.
-    await expect(canvas.queryByRole('alert')).toBeNull()
-
+    await waitFor(() => expect(canvas.getByText('Session history is unavailable.')).toBeVisible())
+    const feedFailure = canvas
+      .getByText('Session history is unavailable.')
+      .closest('[role="alert"]')
+    if (!(feedFailure instanceof HTMLElement))
+      throw new Error('The Session history failure alert is missing.')
+    await within(feedFailure).getByRole('button', { name: 'Retry' }).click()
     const visible = () =>
       canvas
         .getAllByText('Read after the flake.')
         .filter((node) => node.closest('[aria-hidden]') === null)
     await waitFor(() => expect(visible()).toHaveLength(1))
-    await expect(canvas.queryByRole('alert')).toBeNull()
+    await expect(canvas.queryByText('Session history is unavailable.')).toBeNull()
   },
 }
 

@@ -10,13 +10,38 @@ const EVENT_PRESENTATION = {
   command: 'event-command',
   context: 'event-context',
   status: 'event-status',
+  liveStatus: 'event-status',
+  liveFailure: 'event-status',
+  permission: 'awaiting-permission',
+  permissionGranted: 'awaiting-permission',
+  permissionDenied: 'awaiting-permission',
+  permissionCancelled: 'awaiting-permission',
   transcript: 'event-transcript',
   'skill-invocation': 'skill-invocation',
 } satisfies Record<FeedEventRow['event'], IconName>
 
+const LIVE_STATUS_KEYS = {
+  starting: 'events.liveStatus.starting',
+  running: 'events.liveStatus.running',
+  permission: 'events.liveStatus.permission',
+  asking: 'events.liveStatus.asking',
+  idle: 'events.liveStatus.idle',
+  stopped: 'events.liveStatus.stopped',
+  ended: 'events.liveStatus.ended',
+  unknown: 'events.liveStatus.unknown',
+} as const
+
+function isLiveStatus(value: string): value is keyof typeof LIVE_STATUS_KEYS {
+  return Object.hasOwn(LIVE_STATUS_KEYS, value)
+}
+
 export function FeedEvent({ row }: { row: FeedEventRow }) {
   const { t } = useTranslation('sessions')
   const label = t(`events.${row.event}.label`)
+  const text =
+    row.event === 'liveStatus' && row.text !== null && isLiveStatus(row.text)
+      ? t(LIVE_STATUS_KEYS[row.text])
+      : row.text
   if (row.event === 'skill-invocation' && row.skill !== undefined)
     return (
       <div className="rounded-md bg-muted/60 px-2.5 py-1.5" data-slot="feed-event">
@@ -47,8 +72,8 @@ export function FeedEvent({ row }: { row: FeedEventRow }) {
         size="control"
       />
       <span className="shrink-0 font-medium text-foreground">{label}</span>
-      {row.text === null ? null : (
-        <span className="min-w-0 break-words text-muted-foreground">{row.text}</span>
+      {text === null ? null : (
+        <span className="min-w-0 break-words text-muted-foreground">{text}</span>
       )}
       {row.raw == null ? null : (
         <details className="ml-auto shrink-0">

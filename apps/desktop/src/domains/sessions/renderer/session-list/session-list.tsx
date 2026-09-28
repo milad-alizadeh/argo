@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { type RefObject, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Progress } from '@/platform/renderer/components/ui/progress'
@@ -89,15 +89,14 @@ function useSessionListSessions(options: {
 }
 
 function useUnavailableSessionIds(selectedSessionId: SessionId | null) {
-  const queryClient = useQueryClient()
-  const selectedFeed = useQuery(sessionFeedQuery(queryClient, selectedSessionId, null))
+  const selectedFeed = useQuery(sessionFeedQuery(selectedSessionId, null, false))
   const failedFeedReads = useConsecutiveFeedFailures(selectedSessionId, selectedFeed)
   const [unavailableSessionIds, setUnavailableSessionIds] = useState<ReadonlySet<SessionId>>(
     () => new Set(),
   )
   useEffect(() => {
     if (selectedSessionId === null) return
-    const unavailable = failedFeedReads > 1 && selectedFeed.error?.code === 'missing-session'
+    const unavailable = failedFeedReads > 0 && selectedFeed.error?.code === 'missing-session'
     if (!unavailable && !selectedFeed.isSuccess) return
     setUnavailableSessionIds((current) => {
       if (unavailable === current.has(selectedSessionId)) return current

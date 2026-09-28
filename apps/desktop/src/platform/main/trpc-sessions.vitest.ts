@@ -73,7 +73,7 @@ test('registers the paged Session list on the global router', async () => {
   })
 })
 
-test('reads historical Feed rows through the saved Session Harness adapter', async () => {
+test('reads historical Feed content through the saved Session Harness adapter', async () => {
   const sessionId = '00000000-0000-4000-8000-000000000003'
   database
     .insert(sessionTable)
@@ -92,14 +92,13 @@ test('reads historical Feed rows through the saved Session Harness adapter', asy
     },
   })
 
-  await expect(
-    createAppRouter(dependencies).createCaller({}).sessionFeedRead({ sessionId }),
-  ).resolves.toMatchObject({
+  const reply = await createAppRouter(dependencies).createCaller({}).sessionFeedRead({ sessionId })
+  expect(reply).toMatchObject({
     type: 'session.feed.read',
     sessionId,
     content: [{ kind: 'message', role: 'user', text: 'Hello' }],
-    rows: [{ role: 'user', text: 'Hello' }],
   })
+  expect(reply).not.toHaveProperty('rows')
   expect(reads).toEqual([
     {
       harness: 'claude',
@@ -135,7 +134,7 @@ test('reads a selected subagent through its parent Harness and retains the Sessi
   ).resolves.toMatchObject({
     sessionId,
     chainId: 'child-thread',
-    rows: [{ id: 'child-message', text: 'Child result' }],
+    content: [{ id: 'child-message', text: 'Child result' }],
   })
   expect(targets).toEqual([
     {

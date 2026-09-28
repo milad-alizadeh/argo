@@ -1,7 +1,9 @@
 import { type ActorRefFrom, assertEvent, fromPromise, setup } from 'xstate'
 import type { Database } from '@/database/database'
 import type { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
-import { liveSessionSupervisorMachine } from '@/domains/sessions/main/live/live-session-supervisor-machine'
+import { createLiveSessionSupervisorMachine } from '@/domains/sessions/main/live/live-session-supervisor-machine'
+import type { SessionEventJournal } from '@/domains/sessions/main/live/session-event-journal'
+import type { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import { sessionSyncSupervisorMachine } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
 import {
   type HarnessCatalog,
@@ -10,7 +12,15 @@ import {
 import { codexAppServerMachine } from '@/harnesses/codex/app-server/codex-app-server-machine'
 import { type HarnessRegistry, readHarnessCatalog } from '@/harnesses/registry'
 
-export function createAppMachine(registry: HarnessRegistry) {
+type AppDependencies = {
+  database: Database
+  sessionSyncStatus: SessionSyncStatusStore
+  codexSessionSyncStatus: SessionSyncStatusStore
+  sessionEventJournal?: SessionEventJournal
+  sessionInteractionBroker?: SessionInteractionBroker
+}
+
+export function createAppMachine(registry: HarnessRegistry, dependencies: AppDependencies) {
   const catalogMachine = harnessCatalogMachine.provide({
     actors: {
       loadCatalog: fromPromise<HarnessCatalog>(() => readHarnessCatalog(registry)),
@@ -18,11 +28,7 @@ export function createAppMachine(registry: HarnessRegistry) {
   })
   return setup({
     types: {
-      input: {} as {
-        database: Database
-        sessionSyncStatus: SessionSyncStatusStore
-        codexSessionSyncStatus: SessionSyncStatusStore
-      },
+      input: {} as AppDependencies,
       context: {} as Record<string, never>,
       events: {} as
         | {
@@ -30,17 +36,17 @@ export function createAppMachine(registry: HarnessRegistry) {
           }
         | {
             type: 'xstate.init'
-            input: {
-              database: Database
-              sessionSyncStatus: SessionSyncStatusStore
-              codexSessionSyncStatus: SessionSyncStatusStore
-            }
+            input: AppDependencies
           },
     },
     actors: {
       codex: codexAppServerMachine,
       catalog: catalogMachine,
-      sessions: liveSessionSupervisorMachine,
+      sessions: createLiveSessionSupervisorMachine({
+        database: dependencies.database,
+        journal: dependencies.sessionEventJournal,
+        interactions: dependencies.sessionInteractionBroker,
+      }),
       sessionSync: sessionSyncSupervisorMachine,
     },
   }).createMachine({
@@ -63,12 +69,6 @@ export function createAppMachine(registry: HarnessRegistry) {
         id: 'sessions',
         systemId: 'sessions',
         src: 'sessions',
-        input: ({ event }) => {
-          assertEvent(event, 'xstate.init')
-          return {
-            database: event.input.database,
-          }
-        },
       },
       {
         id: 'sessionSync',

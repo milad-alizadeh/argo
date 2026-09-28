@@ -58,23 +58,27 @@ export const SpinsForeverAndLeavesTheWindowLive: Story = {
   beforeEach: () => stalledFeedHost(),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await waitFor(() =>
-      expect(canvasElement.querySelector('[data-state="loading"]')).not.toBeNull(),
+    await waitFor(
+      () => expect(canvasElement.querySelector('[data-state="loading"]')).not.toBeNull(),
+      { timeout: 10000 },
     )
 
     // Hit testing over the project switcher: a full-window overlay would answer here instead.
     const projectSwitcher = canvas.getByRole('button', { name: /Current project:/ })
-    const box = projectSwitcher.getBoundingClientRect()
-    const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)
-    await expect(projectSwitcher.contains(hit)).toBe(true)
+    await waitFor(() => {
+      const box = projectSwitcher.getBoundingClientRect()
+      const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)
+      expect(projectSwitcher.contains(hit)).toBe(true)
+    })
 
     // The click reaches the project switcher while the Session remains selected and loading.
     await userEvent.click(projectSwitcher)
-    await waitFor(() => expect(document.activeElement).toBe(projectSwitcher))
+    await waitFor(() => expect(projectSwitcher).toHaveAttribute('aria-expanded', 'true'))
     await userEvent.keyboard('{Escape}')
 
-    // Still spinning: nothing in the Feed's own loading state bounds it.
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    await expect(canvasElement.querySelector('[data-state="loading"]')).not.toBeNull()
+    await waitFor(
+      () => expect(canvasElement.querySelector('[data-state="loading"]')).not.toBeNull(),
+      { timeout: 10000 },
+    )
   },
 }

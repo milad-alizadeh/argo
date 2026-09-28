@@ -42,6 +42,9 @@ function testRouter(
       supervisor: sessionActor,
       refreshSessionSync,
       sessionSyncStatus: new SessionSyncStatusStore(),
+      journal: {} as never,
+      interactions: {} as never,
+      hasLiveChannel: () => false,
     },
     tickets: {} as TicketRouterDependencies,
     workspaces: {} as WorkspaceListContext,
@@ -89,7 +92,13 @@ test('accepts a Session sync refresh', async () => {
 
 test('registers Session procedures directly on the global router', () => {
   const paths = Object.keys(testRouter({} as never)._def.procedures)
-  for (const path of ['sessionList', 'sessionRename', 'sessionRefresh', 'sessionSyncStatus'])
+  for (const path of [
+    'sessionList',
+    'sessionLiveEvents',
+    'sessionRename',
+    'sessionRefresh',
+    'sessionSyncStatus',
+  ])
     expect(paths).toContain(path)
   expect(paths.some((path) => path === 'sessions' || path.startsWith('sessions.'))).toBe(false)
 })

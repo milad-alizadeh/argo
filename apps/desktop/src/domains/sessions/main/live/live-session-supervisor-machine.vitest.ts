@@ -24,7 +24,11 @@ import type { codexAppServerMachine } from '@/harnesses/codex/app-server/codex-a
 import { codexHarnessInfo } from '@/harnesses/codex/catalog'
 import { codexModelCatalogFixture } from '../../../../../test-fixtures/sessions/codex-model-catalog.fixture'
 import type { SessionStartInput } from '../api/session-submit'
-import { liveSessionSupervisorMachine } from './live-session-supervisor-machine'
+import {
+  createLiveSessionSupervisorMachine,
+  type LiveSessionSupervisorActor,
+  liveSessionActorFor,
+} from './live-session-supervisor-machine'
 
 const available = codexHarnessInfo(codexModelCatalogFixture())
 if (available.availability !== 'available') throw new Error('Codex fixture must be available.')
@@ -89,7 +93,7 @@ async function supervisorFor(request: CodexRequest, catalogValue = catalog) {
       catalog: harnessCatalogMachine.provide({
         actors: { loadCatalog: fromPromise(async () => catalogValue) },
       }),
-      sessions: liveSessionSupervisorMachine,
+      sessions: createLiveSessionSupervisorMachine({ database }),
     },
   }).createMachine({
     initial: 'Running',
@@ -103,7 +107,6 @@ async function supervisorFor(request: CodexRequest, catalogValue = catalog) {
             id: 'sessions',
             systemId: 'sessions',
             src: 'sessions',
-            input: ({ context }) => ({ database: context.database }),
           },
         ],
         on: { Shutdown: 'Closed' },
@@ -113,16 +116,14 @@ async function supervisorFor(request: CodexRequest, catalogValue = catalog) {
   })
   const root = createActor(rootMachine, { input: { database } }).start()
   const catalogActor = root.system.get('catalog') as ActorRefFrom<typeof harnessCatalogMachine>
-  const supervisor = root.system.get('sessions') as ActorRefFrom<
-    typeof liveSessionSupervisorMachine
-  >
+  const supervisor = root.system.get('sessions') as LiveSessionSupervisorActor
   catalogActor.send({ type: 'Catalog requested' })
   await waitFor(catalogActor, (snapshot) => snapshot.matches('Ready'))
   return { root, supervisor, client }
 }
 
 function start(
-  actor: ActorRefFrom<typeof liveSessionSupervisorMachine>,
+  actor: LiveSessionSupervisorActor,
   input: SessionStartInput,
   pendingId = 'optimistic:one',
 ) {
@@ -131,10 +132,7 @@ function start(
   )
 }
 
-function send(
-  actor: ActorRefFrom<typeof liveSessionSupervisorMachine>,
-  input: SessionStartInput & { sessionId: string },
-) {
+function send(actor: LiveSessionSupervisorActor, input: SessionStartInput & { sessionId: string }) {
   return new Promise<{ sessionId: string }>((resolve, reject) =>
     actor.send({
       type: 'Send',
@@ -158,8 +156,7 @@ function send(
 }
 
 test('models supervisor lifetime', () => {
-  const paths = getShortestPaths(liveSessionSupervisorMachine, {
-    input: { database: {} as never },
+  const paths = getShortestPaths(createLiveSessionSupervisorMachine({ database: {} as never }), {
     events: (state) => (state.matches('Running') ? [{ type: 'Shutdown' as const }] : []),
   })
   assert.deepEqual(
@@ -241,7 +238,7 @@ test('rejects a changed Codex stance instead of silently retaining the opening s
       },
     )
     await waitFor(supervisor, (snapshot) => snapshot.context.sessions[sessionId] !== undefined)
-    const child = supervisor.getSnapshot().context.sessions[sessionId]
+    const child = liveSessionActorFor(supervisor, sessionId)
     assert.ok(child)
     await waitFor(child, (snapshot) => snapshot.matches('Ready'))
     await assert.rejects(
