@@ -12,7 +12,7 @@ import { FeedLoading } from '../feed-loading'
 import { AnchoredFeed } from '../scroll/anchored-feed'
 import type { Reveal } from '../scroll/reveal'
 import type { DrawnRowProps } from './drawn-row'
-import { awaitingAssistantReply, type Settled, type useSettledFeed } from './use-settled-feed'
+import { awaitingAssistantReply, type useSettledFeed } from './use-settled-feed'
 
 export function feedContent({
   hasOlder,
@@ -28,7 +28,7 @@ export function feedContent({
   onMeasurementsChange,
   onScrollPositionChange,
   DrawnRow,
-  revealsFor,
+  reveals,
   streamingRowId,
   tail,
   emptyText,
@@ -47,7 +47,7 @@ export function feedContent({
   onMeasurementsChange: (sessionId: string, measurements: VirtualItem[]) => void
   onScrollPositionChange: (sessionId: string, position: number) => void
   DrawnRow: (props: DrawnRowProps) => ReactNode
-  revealsFor: (settled: Settled) => ReadonlyMap<string, Reveal>
+  reveals: ReadonlyMap<string, Reveal>
   streamingRowId: string | null
   tail: ReactNode
   emptyText: readonly [title: string, description: string]
@@ -92,7 +92,7 @@ export function feedContent({
         onJumpToLatestChange={onJumpToLatestChange}
         onMeasurementsChange={onMeasurementsChange}
         onScrollPositionChange={onScrollPositionChange}
-        revealsFor={revealsFor}
+        reveals={reveals}
         streamingRowId={streamingRowId}
         tail={tail}
         historyLabel={historyLabel}

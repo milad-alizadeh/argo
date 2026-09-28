@@ -1,5 +1,5 @@
 import type { ReactVirtualizer } from '@tanstack/react-virtual'
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import type { SessionFeedRow } from '../../types'
 import { isFeedRowPrompt } from '../rows/feed-row-renderers'
 
@@ -29,11 +29,12 @@ function usePromptAtTop({
   const latest = rows.findLast(isFeedRowPrompt)?.id ?? null
   const [seen, setSeen] = useState<Pin>({ sessionId, id: latest })
   const [pin, setPin] = useState<(Pin & { index: number }) | null>(null)
-  if (seen.sessionId !== sessionId || seen.id !== latest) {
+  useLayoutEffect(() => {
+    if (seen.sessionId === sessionId && seen.id === latest) return
     setSeen({ sessionId, id: latest })
     if (positioned && seen.sessionId === sessionId && latest !== null)
       setPin({ sessionId, id: latest, index: rows.findLastIndex(isFeedRowPrompt) })
-  }
+  }, [latest, positioned, rows, seen, sessionId])
   const index = pin?.sessionId === sessionId ? rows.findLastIndex(isFeedRowPrompt) : -1
   // By index, not offset: the virtualizer re-aims each frame as the rows it draws on the way
   // measure, where an offset from estimated heights stops short. `scrollPaddingStart` is the gap.
@@ -89,6 +90,8 @@ export function useFeedPrompt({
   paddingStart: number
 }) {
   const promptIndex = usePromptAtTop({ positioned, rows, sessionId, virtualizer })
-  updatePromptHold(virtualizer, promptIndex, paddingStart)
+  useLayoutEffect(() => {
+    updatePromptHold(virtualizer, promptIndex, paddingStart)
+  }, [paddingStart, promptIndex, updatePromptHold, virtualizer])
   return promptIndex
 }

@@ -104,6 +104,61 @@ test('creates, reads, saves, and rejects a stale draft revision', async () => {
   ).rejects.toThrow('stale-draft')
 })
 
+test('saves a Project draft target without changing its content and sends from that target', async () => {
+  database
+    .insert(workspace)
+    .values({
+      id: 'workspace-2',
+      projectId,
+      kind: 'imported',
+      displayName: 'Selected worktree',
+      path: '/selected/repo',
+    })
+    .run()
+  const draftContent = { ...content, attachments: [] }
+  const created = await caller().composerDraftCreate({
+    target: { type: 'project', projectId, workspaceId, harness: 'codex' },
+    content: draftContent,
+  })
+  const target = {
+    type: 'project' as const,
+    projectId,
+    workspaceId: 'workspace-2',
+    harness: 'claude' as const,
+  }
+  const saved = await caller().composerDraftSave({
+    id: created.id,
+    expectedRevision: created.revision,
+    target,
+    content: draftContent,
+  })
+  expect(saved).toMatchObject({ target, revision: 1 })
+  await expect(caller().composerDraftRead(created.target)).resolves.toEqual(saved)
+  await expect(
+    caller().composerDraftSave({
+      id: created.id,
+      expectedRevision: created.revision,
+      target: created.target,
+      content,
+    }),
+  ).rejects.toThrow('stale-draft')
+
+  let submitted: unknown
+  const api = caller((event) => {
+    if (event.type !== 'Start') throw new Error(`Unexpected event: ${event.type}`)
+    submitted = event
+    event.reply.resolve({ sessionId: 'session-2' })
+  })
+  await api.sessionSubmit({
+    draftId: saved.id,
+    expectedRevision: saved.revision,
+    commandId: 'target-only-command',
+  })
+  expect(submitted).toMatchObject({
+    input: { harness: 'claude', workspaceId: 'workspace-2', cwd: '/selected/repo' },
+  })
+})
+
 test('rejects invalid stored draft JSON at the database interface', async () => {
   const created = await createProjectDraft()
   database
