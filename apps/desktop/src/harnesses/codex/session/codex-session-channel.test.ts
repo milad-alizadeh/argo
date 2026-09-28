@@ -387,3 +387,33 @@ test('unknown Codex item shapes are reported and counted', async () => {
     'Rejected 2 unsupported Codex live notification(s): item/completed: missing agentMessage content',
   ])
 })
+
+test('Codex thread status reaches the Session status without repeats (ADR-0024)', async () => {
+  const request = (async (method: string, _params: unknown, parse: (value: unknown) => unknown) =>
+    parse(
+      method === 'thread/start' ? { thread: { id: 'thread-1' } } : { turn: { id: 'turn-1' } },
+    )) as CodexRequest
+  const { channel, events, notify } = testChannel(request)
+  await new Promise((resolve) => setImmediate(resolve))
+  const thread = (status: Record<string, unknown>, threadId = 'thread-1') =>
+    notify({ method: 'thread/status/changed', params: { threadId, status } })
+  thread({ type: 'active', activeFlags: [] })
+  thread({ type: 'active', activeFlags: ['waitingOnApproval'] })
+  thread({ type: 'active', activeFlags: ['waitingOnUserInput'] })
+  thread({ type: 'active', activeFlags: [] })
+  thread({ type: 'idle' }, 'other-thread')
+  thread({ type: 'idle' })
+  thread({ type: 'notLoaded' })
+  notify({
+    method: 'turn/completed',
+    params: { threadId: 'thread-1', turn: { id: 'turn-1', status: 'failed' } },
+  })
+  thread({ type: 'systemError' })
+  assert.deepEqual(
+    events.flatMap((event) =>
+      event.type === 'feed' && event.body.type === 'status' ? [event.body.status] : [],
+    ),
+    ['running', 'permission', 'asking', 'running', 'idle', 'stopped', 'unknown'],
+  )
+  channel.close()
+})
