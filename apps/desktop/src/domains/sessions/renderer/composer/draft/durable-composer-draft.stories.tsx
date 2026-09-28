@@ -22,6 +22,11 @@ type Server = {
   releaseSave: () => void
   holdSessionASave: boolean
   rejectSubmit: boolean
+  uncertainSubmit: boolean
+  holdSubmit: boolean
+  submitPending: boolean
+  releaseSubmit: () => void
+  submissions: MockInput[]
   savePending: boolean
   draftReadFailures: number
   notify: () => void
@@ -32,6 +37,7 @@ type MockInput = {
   expectedRevision?: number
   content?: RouterInputs['composerDraftCreate']['content']
   draftId?: string
+  commandId?: string
 }
 
 const choices = (() => {
@@ -110,7 +116,7 @@ async function saveDraftResult(request: {
     server.savePending = false
   }
   const current = drafts.get(owner)
-  if (current === undefined) throw new Error(`Missing draft for ${owner}.`)
+  if (current === undefined) throw new Error('missing-draft')
   const saved: DraftValue = {
     ...current,
     ...input.content,
@@ -122,19 +128,64 @@ async function saveDraftResult(request: {
   return saved
 }
 
-function submitDraftResult(request: {
+async function submitDraftResult(request: {
   server: Server
   drafts: Map<string, DraftValue>
   input: MockInput
   notify: () => void
 }) {
   const { server, drafts, input, notify } = request
-  if (server.rejectSubmit) throw new Error('The Session rejected this Turn.')
+  server.submissions.push(input)
+  if (server.holdSubmit) {
+    server.submitPending = true
+    notify()
+    await new Promise<void>((resolve) => {
+      server.releaseSubmit = resolve
+    })
+    server.submitPending = false
+    notify()
+  }
+  if (server.uncertainSubmit) throw new Error('The Send response was lost.')
   const submitted = [...drafts.entries()].find(([_, draft]) => draft.id === input.draftId)
   if (submitted !== undefined && submitted[1].revision === input.expectedRevision)
     drafts.delete(submitted[0])
   notify()
   return { sessionId: submitted?.[0] ?? 'session-a' }
+}
+
+async function mockSave(server: Server, input: MockInput, notify: () => void) {
+  try {
+    return {
+      result: { data: await saveDraftResult({ server, drafts: server.drafts, input, notify }) },
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message === 'missing-draft')
+      return {
+        error: {
+          message: 'missing-draft',
+          code: -32004,
+          data: { code: 'NOT_FOUND', httpStatus: 404, path: 'composerDraftSave' },
+        },
+      }
+    throw error
+  }
+}
+
+async function mockSubmit(server: Server, input: MockInput, notify: () => void) {
+  if (server.rejectSubmit && !server.uncertainSubmit) {
+    server.submissions.push(input)
+    notify()
+    return {
+      error: {
+        message: 'The Session rejected this Turn.',
+        code: -32012,
+        data: { code: 'PRECONDITION_FAILED', httpStatus: 412, path: 'sessionSubmit' },
+      },
+    }
+  }
+  return {
+    result: { data: await submitDraftResult({ server, drafts: server.drafts, input, notify }) },
+  }
 }
 
 function createMockTrpc(server: Server, notify: () => void): typeof window.argo.trpc {
@@ -150,25 +201,15 @@ function createMockTrpc(server: Server, notify: () => void): typeof window.argo.
     }
     if (request.path === 'composerDraftCreate')
       return { result: { data: createCreateResult(server.drafts, input, notify) } }
-    if (request.path === 'composerDraftSave')
-      return {
-        result: {
-          data: await saveDraftResult({ server, drafts: server.drafts, input, notify }),
-        },
-      }
-    if (request.path === 'sessionSubmit')
-      return {
-        result: {
-          data: submitDraftResult({ server, drafts: server.drafts, input, notify }),
-        },
-      }
+    if (request.path === 'composerDraftSave') return mockSave(server, input, notify)
+    if (request.path === 'sessionSubmit') return mockSubmit(server, input, notify)
     return { result: { data: null } }
   }) as typeof window.argo.trpc
 }
 
 function createServer(
   notify: () => void,
-  initialOutcome: 'accept' | 'reject' | 'fallback',
+  initialOutcome: 'accept' | 'reject' | 'uncertain' | 'fallback',
   draftReadFailures = 0,
 ): Server {
   const firstDraft = savedDraft('session-a', 'Restored Session A draft.', 1)
@@ -186,7 +227,12 @@ function createServer(
     trpc: (async () => ({ result: { data: null } })) as unknown as typeof window.argo.trpc,
     releaseSave: notify,
     holdSessionASave: false,
-    rejectSubmit: initialOutcome !== 'accept',
+    rejectSubmit: initialOutcome === 'reject' || initialOutcome === 'fallback',
+    uncertainSubmit: initialOutcome === 'uncertain',
+    holdSubmit: false,
+    submitPending: false,
+    releaseSubmit: notify,
+    submissions: [],
     savePending: false,
     draftReadFailures,
     notify,
@@ -210,7 +256,7 @@ function DurableDraftStory({
   initialOutcome = 'accept',
   draftReadFailures = 0,
 }: {
-  initialOutcome?: 'accept' | 'reject' | 'fallback'
+  initialOutcome?: 'accept' | 'reject' | 'uncertain' | 'fallback'
   draftReadFailures?: number
 }) {
   const [serverVersion, setServerVersion] = useState(0)
@@ -241,7 +287,6 @@ function DurableDraftStory({
   const draft = useDurableComposerDraft({ target, choices, opening: choices.opening })
   const { focusComposerAfterRetry, retryDraftLoad, clearRecoveryFocus } =
     useDraftStoryRetryFocus(draft)
-  const storedDrafts = storedDraftSummaries(server.drafts)
   void serverVersion
   return (
     <div className="mx-auto flex h-[560px] max-w-3xl flex-col gap-3 p-6">
@@ -251,16 +296,7 @@ function DurableDraftStory({
         setSessionId={setSessionId}
         setComposerVersion={setComposerVersion}
       />
-      <output
-        aria-label="Stored drafts"
-        data-save-pending={server.savePending}
-        data-read-failures={server.draftReadFailures}
-      >
-        {JSON.stringify(storedDrafts)}
-      </output>
-      {draft?.sendFailed ? (
-        <div role="alert">The Turn could not be sent. Your draft is still saved.</div>
-      ) : null}
+      <DraftStoryStatus server={server} sendFailure={draft?.sendFailure ?? null} />
       {draft ? (
         <DurableDraftComposer
           draft={draft}
@@ -271,6 +307,35 @@ function DurableDraftStory({
         />
       ) : null}
     </div>
+  )
+}
+
+function DraftStoryStatus({
+  server,
+  sendFailure,
+}: {
+  server: Server
+  sendFailure: 'rejected' | 'uncertain' | null
+}) {
+  return (
+    <>
+      <output
+        aria-label="Stored drafts"
+        data-save-pending={server.savePending}
+        data-submit-pending={server.submitPending}
+        data-read-failures={server.draftReadFailures}
+      >
+        {JSON.stringify(storedDraftSummaries(server.drafts))}
+      </output>
+      <output aria-label="Send commands">{JSON.stringify(server.submissions)}</output>
+      {sendFailure ? (
+        <div role="alert">
+          {sendFailure === 'rejected'
+            ? 'The Turn could not be sent. Your draft is still saved.'
+            : 'Argo could not confirm whether the Turn was sent. Your draft is still saved.'}
+        </div>
+      ) : null}
+    </>
   )
 }
 
@@ -295,7 +360,7 @@ function DurableDraftComposer({
         initialEditing={draft.initialEditing}
         onEditingChange={draft.onEditingChange}
         onSend={async (prompt, turnConfiguration, attachments) =>
-          (await draft.submit(prompt, turnConfiguration, attachments)) !== null
+          (await draft.submit(prompt, turnConfiguration, attachments)).outcome
         }
         sessionId={sessionId}
         disabled={draft.loadFailed && !draft.hasDraft}
@@ -370,6 +435,12 @@ function DraftStoryControls({
       </button>
       <button onClick={() => server.releaseSave()} type="button">
         Release Session A save
+      </button>
+      <button onClick={() => (server.holdSubmit = true)} type="button">
+        Hold Sends
+      </button>
+      <button onClick={() => server.releaseSubmit()} type="button">
+        Release Send
       </button>
     </div>
   )
@@ -485,6 +556,125 @@ export const AcceptedSendClearsTheCachedDraft: Story = {
       expect(canvas.getByLabelText('Stored drafts')).not.toHaveTextContent(
         'Restored Session A draft.',
       ),
+    )
+  },
+}
+
+export const UncertainSendKeepsItsDraftWithoutResending: Story = {
+  args: { initialOutcome: 'uncertain' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const editor = await canvas.findByLabelText('Message')
+    await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
+    await expect(await canvas.findByRole('alert')).toHaveTextContent(
+      'Argo could not confirm whether the Turn was sent. Your draft is still saved.',
+    )
+    await expect(editor).toHaveTextContent('Restored Session A draft.')
+    await expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent(
+      'Restored Session A draft.',
+    )
+    await waitFor(() => {
+      const commands = JSON.parse(
+        canvas.getByLabelText('Send commands').textContent ?? '[]',
+      ) as MockInput[]
+      expect(commands).toHaveLength(1)
+      expect(commands[0]?.expectedRevision).toBe(0)
+      expect(commands[0]?.commandId).toMatch(
+        /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i,
+      )
+    })
+  },
+}
+
+export const SwitchingSessionsDuringSendKeepsTheOtherDraft: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await canvas.findByLabelText('Message')
+    await userEvent.click(canvas.getByRole('button', { name: 'Hold Sends' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Stored drafts')).toHaveAttribute('data-submit-pending', 'true'),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Session B' }))
+    const otherEditor = await canvas.findByLabelText('Message')
+    await expect(otherEditor).toHaveTextContent('Restored Session B draft.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Release Send' }))
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Stored drafts')).toHaveAttribute(
+        'data-submit-pending',
+        'false',
+      ),
+    )
+    await expect(otherEditor).toHaveTextContent('Restored Session B draft.')
+    await expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent(
+      'Restored Session B draft.',
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Reopen Session A' }))
+    await expect(await canvas.findByLabelText('Message')).not.toHaveTextContent(
+      'Restored Session A draft.',
+    )
+  },
+}
+
+export const AcceptedSendKeepsAlreadySavedNewerEdit: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const editor = await canvas.findByLabelText('Message')
+    await userEvent.click(canvas.getByRole('button', { name: 'Hold Sends' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Stored drafts')).toHaveAttribute('data-submit-pending', 'true'),
+    )
+    await userEvent.clear(editor)
+    await userEvent.type(editor, 'A newer Session A draft.')
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent('A newer Session A draft.'),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Release Send' }))
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Stored drafts')).toHaveAttribute(
+        'data-submit-pending',
+        'false',
+      ),
+    )
+    await expect(editor).toHaveTextContent('A newer Session A draft.')
+    await expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent(
+      'A newer Session A draft.',
+    )
+  },
+}
+
+export const AcceptedSendRecreatesANewerEditSavedAfterAcceptance: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const editor = await canvas.findByLabelText('Message')
+    await userEvent.click(canvas.getByRole('button', { name: 'Hold Sends' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Hold Session A saves' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Stored drafts')).toHaveAttribute('data-submit-pending', 'true'),
+    )
+    await userEvent.clear(editor)
+    await userEvent.type(editor, 'Saved after acceptance.')
+    await serverRequestedSave(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Release Send' }))
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Stored drafts')).toHaveAttribute(
+        'data-submit-pending',
+        'false',
+      ),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Release Session A save' }))
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Stored drafts')).toHaveTextContent('Saved after acceptance.'),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Session B' }))
+    await expect(await canvas.findByLabelText('Message')).toHaveTextContent(
+      'Restored Session B draft.',
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Reopen Session A' }))
+    await expect(await canvas.findByLabelText('Message')).toHaveTextContent(
+      'Saved after acceptance.',
     )
   },
 }

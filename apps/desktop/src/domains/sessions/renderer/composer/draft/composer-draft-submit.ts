@@ -1,4 +1,6 @@
+import { isTRPCClientError } from '@trpc/client'
 import { useCallback } from 'react'
+import type { AppRouter } from '@/platform/main/trpc-router'
 import type { RouterInputs } from '@/platform/renderer/trpc-client'
 import type { ComposerEditing } from '../editing/composer-editing'
 import type { TurnConfiguration } from '../turn-configuration/turn-configuration'
@@ -11,6 +13,9 @@ type PersistedDraft = {
   owner: string
   fingerprint: string
 }
+type DraftSubmitResult =
+  | { outcome: 'accepted'; sessionId: string }
+  | { outcome: 'rejected' | 'uncertain' }
 export type ComposerDraftActionInput = {
   persist: (content: DraftContent) => Promise<PersistedDraft>
   persisted: React.RefObject<Map<string, PersistedDraft>>
@@ -21,9 +26,11 @@ export type ComposerDraftActionInput = {
   suppressNextEmptyAutosave: React.RefObject<string | null>
 }
 type ComposerDraftSubmitInput = ComposerDraftActionInput & {
-  setSendFailureOwner: React.Dispatch<React.SetStateAction<string | null>>
+  setSendFailure: React.Dispatch<
+    React.SetStateAction<{ owner: string; outcome: 'rejected' | 'uncertain' } | null>
+  >
   submit: (input: RouterInputs['sessionSubmit']) => Promise<{ sessionId: string }>
-  clearAcceptedDraft: () => void
+  clearAcceptedDraft: (saved: PersistedDraft) => void
 }
 type PersistInput = {
   persist: ComposerDraftSubmitInput['persist']
@@ -43,7 +50,7 @@ export function useComposerDraftSubmit(input: ComposerDraftSubmitInput) {
     saveTimer,
     owner,
     setSaveFailureOwner,
-    setSendFailureOwner,
+    setSendFailure,
     suppressNextEmptyAutosave,
     submit,
     clearAcceptedDraft,
@@ -62,7 +69,7 @@ export function useComposerDraftSubmit(input: ComposerDraftSubmitInput) {
           saveTimer,
           owner,
           setSaveFailureOwner,
-          setSendFailureOwner,
+          setSendFailure,
           suppressNextEmptyAutosave,
           submit,
           clearAcceptedDraft,
@@ -79,7 +86,7 @@ export function useComposerDraftSubmit(input: ComposerDraftSubmitInput) {
       persisted,
       saveTimer,
       setSaveFailureOwner,
-      setSendFailureOwner,
+      setSendFailure,
       suppressNextEmptyAutosave,
       submit,
     ],
@@ -98,9 +105,10 @@ async function submitDraft({
   attachments: DraftContent['attachments']
 }) {
   const editing = input.latestEditing.current
-  if (editing === null || turnConfiguration === null || input.owner === null) return null
+  if (editing === null || turnConfiguration === null || input.owner === null)
+    return { outcome: 'rejected' as const }
   cancelSaveTimer(input.saveTimer, input.owner)
-  input.setSendFailureOwner((failedOwner) => (failedOwner === input.owner ? null : failedOwner))
+  input.setSendFailure((failure) => (failure?.owner === input.owner ? null : failure))
   const saved = await persistDraft({
     persist: input.persist,
     editing,
@@ -111,12 +119,14 @@ async function submitDraft({
     setSaveFailureOwner: input.setSaveFailureOwner,
   })
   return saved === null
-    ? null
+    ? { outcome: 'rejected' as const }
     : sendPersistedDraft({
         saved,
+        editing,
+        latestEditing: input.latestEditing,
         submit: input.submit,
         owner: input.owner,
-        setSendFailureOwner: input.setSendFailureOwner,
+        setSendFailure: input.setSendFailure,
         suppressNextEmptyAutosave: input.suppressNextEmptyAutosave,
         persisted: input.persisted,
         clearAcceptedDraft: input.clearAcceptedDraft,
@@ -148,25 +158,41 @@ async function persistDraft(input: PersistInput) {
 
 async function sendPersistedDraft(input: {
   saved: PersistedDraft
+  editing: ComposerEditing
+  latestEditing: React.RefObject<ComposerEditing | null>
   submit: ComposerDraftSubmitInput['submit']
   owner: string
-  setSendFailureOwner: ComposerDraftSubmitInput['setSendFailureOwner']
+  setSendFailure: ComposerDraftSubmitInput['setSendFailure']
   suppressNextEmptyAutosave: React.RefObject<string | null>
   persisted: React.RefObject<Map<string, PersistedDraft>>
-  clearAcceptedDraft: () => void
+  clearAcceptedDraft: ComposerDraftSubmitInput['clearAcceptedDraft']
 }) {
   try {
     const result = await submitSavedDraft(input.saved, input.submit)
-    input.suppressNextEmptyAutosave.current = input.owner
-    if (input.persisted.current.get(input.owner)?.id === input.saved.id)
+    if (input.latestEditing.current === input.editing)
+      input.suppressNextEmptyAutosave.current = input.owner
+    if (
+      input.persisted.current.get(input.owner)?.id === input.saved.id &&
+      input.persisted.current.get(input.owner)?.revision === input.saved.revision
+    )
       input.persisted.current.delete(input.owner)
-    input.clearAcceptedDraft()
-    input.setSendFailureOwner((failedOwner) => (failedOwner === input.owner ? null : failedOwner))
-    return result.sessionId
-  } catch {
-    input.setSendFailureOwner(input.owner)
-    return null
+    input.clearAcceptedDraft(input.saved)
+    input.setSendFailure((failure) => (failure?.owner === input.owner ? null : failure))
+    return { outcome: 'accepted', sessionId: result.sessionId } satisfies DraftSubmitResult
+  } catch (error) {
+    const outcome = definiteRejection(error) ? 'rejected' : 'uncertain'
+    input.setSendFailure({ owner: input.owner, outcome })
+    return { outcome } satisfies DraftSubmitResult
   }
+}
+
+function definiteRejection(error: unknown): boolean {
+  if (!isTRPCClientError<AppRouter>(error)) return false
+  return (
+    error.data?.code === 'BAD_REQUEST' ||
+    error.data?.code === 'NOT_FOUND' ||
+    error.data?.code === 'PRECONDITION_FAILED'
+  )
 }
 
 function submitSavedDraft(saved: PersistedDraft, submit: ComposerDraftSubmitInput['submit']) {

@@ -134,11 +134,11 @@ function useSessionComposerSend(input: {
     turnConfiguration: TurnConfiguration | null,
     attachments: DraftContent['attachments'],
   ) => {
-    const sessionId = (await input.draft?.submit(prompt, turnConfiguration, attachments)) ?? null
-    if (sessionId === null) return false
+    const result = await input.draft?.submit(prompt, turnConfiguration, attachments)
+    if (result?.outcome !== 'accepted') return result?.outcome ?? 'rejected'
     if (input.identity.kind === 'draft' && input.projectId !== null)
-      navigate(`/projects/${input.projectId}/sessions/${sessionId}`, { replace: true })
-    return true
+      navigate(`/projects/${input.projectId}/sessions/${result.sessionId}`, { replace: true })
+    return 'accepted'
   }
 }
 
@@ -279,7 +279,13 @@ function ReadySessionComposer({
       ) : null}
       {draft.loadFailed ? <DraftLoadFailure onRetry={onRetryDraft} /> : null}
       {draft.saveFailed ? <Failure message={t('composer.draftSaveFailed')} /> : null}
-      {draft.sendFailed ? <Failure message={t('composer.sendFailed')} /> : null}
+      {draft.sendFailure ? (
+        <Failure
+          message={t(
+            draft.sendFailure === 'rejected' ? 'composer.sendFailed' : 'composer.sendUncertain',
+          )}
+        />
+      ) : null}
       <ComposerForm
         sessionId={`${composerKey}:${draft.hasDraft ? 'ready' : 'load-failed'}`}
         initialEditing={draft.initialEditing}

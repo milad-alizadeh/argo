@@ -23,6 +23,7 @@ function fixture(overrides: Partial<Parameters<typeof performSend>[0]> = {}) {
       clear: (ids: string[]) => {
         calls.cleared.push(ids)
       },
+      isCurrentDraft: () => true,
       ...overrides,
     },
   }
@@ -44,6 +45,42 @@ test('a rejected Send restores its draft', async () => {
   await performSend(input)
 
   expect(restored).toEqual(['hello'])
+})
+
+test('an accepted Send leaves a newer edit intact', async () => {
+  let current = true
+  let clearCount = 0
+  const { input } = fixture({
+    isCurrentDraft: () => current,
+    onSend: async () => {
+      current = false
+      return 'accepted'
+    },
+    clearDraft: () => {
+      clearCount += 1
+    },
+  })
+
+  await performSend(input)
+
+  expect(clearCount).toBe(0)
+})
+
+test('a rejected Send does not restore over a newer edit', async () => {
+  let current = true
+  const restored: string[] = []
+  const { input } = fixture({
+    isCurrentDraft: () => current,
+    onSend: async () => {
+      current = false
+      return 'rejected'
+    },
+    restoreDraft: (draft) => restored.push(draft),
+  })
+
+  await performSend(input)
+
+  expect(restored).toEqual([])
 })
 
 test('an uncertain Send keeps its draft and does not clear attachments', async () => {

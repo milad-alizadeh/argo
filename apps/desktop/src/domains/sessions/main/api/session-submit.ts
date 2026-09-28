@@ -139,7 +139,7 @@ function sendToSupervisor(
   const draft = readComposerDraft(context.database, input.draftId)
   if (draft === null) throw new TRPCError({ code: 'NOT_FOUND', message: 'missing-draft' })
   if (draft.revision !== input.expectedRevision) {
-    throw new TRPCError({ code: 'CONFLICT', message: 'stale-draft' })
+    throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'stale-draft' })
   }
   const command = commandForDraft(draft, input)
   return new Promise((resolve, reject) => {

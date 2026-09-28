@@ -112,6 +112,7 @@
     "loading": "Loading the Composer…",
     "retry": "Retry",
     "sendFailed": "The Turn could not be sent. Your draft is still saved.",
+    "sendUncertain": "Argo could not confirm whether the Turn was sent. Your draft is still saved.",
     "interrupt": "Interrupt",
     "usage": "Usage",
     "compact": "Compact the conversation",

@@ -2,7 +2,7 @@ import type { LexicalEditor } from 'lexical'
 import { type RefObject, useCallback } from 'react'
 
 import type { SessionAttachmentInput } from '@/domains/sessions/api/attachments'
-import type { ComposerAttachment } from '../editing/composer-editing'
+import type { ComposerAttachment, ComposerEditing } from '../editing/composer-editing'
 import type { TurnConfiguration } from '../turn-configuration/turn-configuration'
 import { resolveAttachments } from './use-composer-attachments'
 
@@ -30,6 +30,7 @@ export async function performSend(input: {
   clearDraft: (editor?: LexicalEditor | null) => void
   restoreDraft: (text: string, editor?: LexicalEditor | null) => void
   clear: (ids: string[]) => void
+  isCurrentDraft: () => boolean
 }) {
   const { draft, attachments, markError, editor, onSend } = input
   const { turnConfigurationValue, clearDraft, clear } = input
@@ -40,11 +41,13 @@ export async function performSend(input: {
     outcomeFor(await onSend(resolved.prompt, turnConfigurationValue ?? null, resolved.attachments))
   ) {
     case 'accepted':
-      clearDraft(editor)
-      clear(resolved.sentIds)
+      if (input.isCurrentDraft()) {
+        clearDraft(editor)
+        clear(resolved.sentIds)
+      }
       return
     case 'rejected':
-      input.restoreDraft(draft, editor)
+      if (input.isCurrentDraft()) input.restoreDraft(draft, editor)
       return
     case 'uncertain':
       return
@@ -62,6 +65,8 @@ export function useSend(input: {
   markError: (ids: string[]) => void
   onSend?: Send
   turnConfigurationValue: TurnConfiguration | null | undefined
+  editing: ComposerEditing
+  latestEditing: RefObject<ComposerEditing>
 }) {
   const { editorRef, draft, attachments, clear, clearDraft, restoreDraft } = input
   const { markError, onSend, turnConfigurationValue } = input
@@ -77,6 +82,7 @@ export function useSend(input: {
         onSend,
         restoreDraft,
         turnConfigurationValue,
+        isCurrentDraft: () => input.latestEditing.current === input.editing,
       }),
     [
       attachments,
@@ -88,6 +94,8 @@ export function useSend(input: {
       onSend,
       restoreDraft,
       turnConfigurationValue,
+      input.editing,
+      input.latestEditing,
     ],
   )
 }

@@ -398,7 +398,7 @@ test('rejects a stale existing-Session submit before sending to the supervisor',
       expectedRevision: created.revision,
       commandId: 'stale-command',
     }),
-  ).rejects.toThrow('stale-draft')
+  ).rejects.toMatchObject({ code: 'PRECONDITION_FAILED', message: 'stale-draft' })
   expect(sends).toBe(0)
 })
 
