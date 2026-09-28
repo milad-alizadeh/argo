@@ -2,6 +2,7 @@ import type { FeedContent, MediaSource } from '@/domains/sessions/api/feed-conte
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import { checkedDataImageUrl, dataImageUrl, fileImageUrl } from './feed-images'
 import type { SessionFeedRow } from './feed-rows'
+import { derivedId } from './fingerprint'
 import type { ToolCall } from './tool-call'
 import { toolRows } from './tool-feed'
 
@@ -90,7 +91,7 @@ function mediaUrl(source: MediaSource): string | null {
 
 function toolOutputRows(content: Extract<FeedContent, { kind: 'tool' }>): SessionFeedRow[] {
   return (content.output ?? []).flatMap((part, index): SessionFeedRow[] => {
-    const id = `${content.callId}:output:${index}`
+    const id = derivedId(content.callId, `:output:${index}`)
     switch (part.kind) {
       case 'text':
         return []

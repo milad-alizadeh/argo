@@ -210,3 +210,20 @@ test('live rows follow the history rows they extend, in sequence order', () => {
   })
   expect(entries.map((entry) => entry.row.id)).toEqual(['m1', 'm3', 'm4'])
 })
+
+test('a generated output row keeps the row when its call id fills the identifier cap', () => {
+  const callId = 'c'.repeat(256)
+  const tool: FeedContent = {
+    kind: 'tool',
+    id: 't1',
+    callId,
+    name: 'Read',
+    status: 'completed',
+    input: null,
+    output: [{ kind: 'json', value: { ok: true } }],
+    summary: null,
+  }
+  const { entries, rejected } = projectFeedRowEntries({ history: [tool], live: [], activity: null })
+  expect(rejected.rows).toBe(0)
+  expect(entries.map((entry) => entry.row.shape)).toEqual(['tool', 'source'])
+})

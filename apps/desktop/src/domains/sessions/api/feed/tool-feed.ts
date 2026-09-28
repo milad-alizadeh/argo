@@ -2,6 +2,7 @@ import { searchLabel, searchOutcome } from '@/domains/sessions/api/feed/tool-cha
 import type { BackgroundState } from './background-task-record'
 import type { SessionFeedRow } from './feed-rows'
 import { editPresentation, fileName } from './file-presentation'
+import { derivedId } from './fingerprint'
 import type { AskFacts, ExecuteFacts, ToolCall } from './tool-call'
 import { resultText, type ToolResult as TranscriptToolResult } from './transcript-content'
 
@@ -128,7 +129,7 @@ function toolRow(call: ToolCall, { results, skillBodies }: ToolEvidence, file = 
   const outcome = presentation.kind === 'searched' ? searchOutcome(result) : null
   return {
     shape: 'tool',
-    id: file === 0 ? call.id : `${call.id}#${file}`,
+    id: file === 0 ? call.id : derivedId(call.id, `#${file}`),
     ...presentation,
     label: outcome === null ? presentation.label : `${presentation.label} · ${outcome}`,
     lineCounts: call.kind === 'edit' ? (call.files[file]?.lineCounts ?? null) : null,

@@ -13,3 +13,11 @@ function pass(value: string, seed: number) {
 export function fingerprint(value: string): string {
   return `${pass(value, 0x811c9dc5)}${pass(value, 0x9e3779b9)}`
 }
+
+const IDENTIFIER_LIMIT = 256
+
+// A row id built from a parent id and a suffix, kept inside the identifier cap.
+export function derivedId(parent: string, suffix: string): string {
+  const id = `${parent}${suffix}`
+  return id.length <= IDENTIFIER_LIMIT ? id : `${fingerprint(parent)}${suffix}`
+}
