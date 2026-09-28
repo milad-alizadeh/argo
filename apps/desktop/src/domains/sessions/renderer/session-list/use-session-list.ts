@@ -1,13 +1,7 @@
-import { useInfiniteQuery } from '@tanstack/react-query'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { sessionError } from '@/domains/sessions/api/session-error'
-import { trpc } from '@/platform/renderer/trpc-client'
-import { useSessionStatusChanges } from './use-session-status-changes'
+import { useSessionRoster } from './session-roster'
 import { useSessionSync } from './use-session-sync'
-
-function nextPageOf(page: { page: number; pageSize: number; total: number }) {
-  return page.page * page.pageSize < page.total ? page.page + 1 : null
-}
 
 export function useSessionList({
   projectId,
@@ -19,40 +13,37 @@ export function useSessionList({
   search?: string
 }) {
   const sync = useSessionSync()
-  useSessionStatusChanges()
-  const query = useInfiniteQuery({
-    ...trpc.sessionList.infiniteQueryOptions(
-      { projectId: projectId ?? 'unselected', search },
-      {
-        initialCursor: 1,
-        getNextPageParam: nextPageOf,
-      },
-    ),
-    enabled: enabled && projectId !== null,
-    staleTime: Infinity,
-  })
-  const lastPage = query.data?.pages.at(-1)
-  const error = query.error === null ? null : sessionError('internal-error', null)
+  const input = { projectId: projectId ?? 'unselected', search }
+  const inputKey = JSON.stringify(input)
+  // The window this reader asked for, reset when it reads another roster.
+  const [requested, setRequested] = useState({ inputKey, pages: 1 })
+  const pages = requested.inputKey === inputKey ? requested.pages : 1
+  const roster = useSessionRoster(input, pages, enabled && projectId !== null)
+  const list = roster?.list ?? null
+  const error = roster?.failed === true ? sessionError('internal-error', null) : null
+  const hasMoreSessions = list !== null && list.rows.length < list.total
+  const isFetchingMoreSessions = list !== null && list.pages < pages
   const sessionList = useMemo(() => {
-    if (lastPage === undefined || error !== null) return null
-    const nextPage = nextPageOf(lastPage)
+    if (list === null || error !== null) return null
+    const more = list.rows.length < list.total
     return {
-      total: lastPage.total,
-      sessions: query.data?.pages.flatMap((page) => page.rows) ?? [],
-      nextPage,
-      historyComplete: nextPage === null,
+      total: list.total,
+      sessions: list.rows,
+      nextPage: more ? list.pages + 1 : null,
+      historyComplete: !more,
     }
-  }, [error, lastPage, query.data?.pages])
+  }, [error, list])
+  const loadedPages = list?.pages ?? 0
   return {
     sessionList,
     sessionListError: error,
-    loadedSessionPages: query.data?.pages.length ?? 0,
-    hasMoreSessions: query.hasNextPage,
-    isFetchingMoreSessions: query.isFetchingNextPage,
+    loadedSessionPages: loadedPages,
+    hasMoreSessions,
+    isFetchingMoreSessions,
     fetchMoreSessions: useCallback(() => {
-      if (!query.hasNextPage || query.isFetchingNextPage) return
-      void query.fetchNextPage()
-    }, [query.fetchNextPage, query.hasNextPage, query.isFetchingNextPage]),
+      if (!hasMoreSessions || isFetchingMoreSessions) return
+      setRequested({ inputKey, pages: loadedPages + 1 })
+    }, [hasMoreSessions, inputKey, isFetchingMoreSessions, loadedPages]),
     refreshSessions: sync.refresh,
     refreshingSessions: sync.refreshing,
     syncStatus: sync.status,

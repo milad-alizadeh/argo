@@ -123,15 +123,6 @@
       "identity": {
         "project": "storybook",
         "path": "apps/desktop/src/domains/sessions/renderer/session-list/sidebar/sessions-sidebar.stories.tsx",
-        "story": "Asks Once When The Window Does Not Fill The Viewport"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook",
-        "path": "apps/desktop/src/domains/sessions/renderer/session-list/sidebar/sessions-sidebar.stories.tsx",
         "story": "Discovered"
       },
       "owner": "#2587",
@@ -141,52 +132,7 @@
       "identity": {
         "project": "storybook",
         "path": "apps/desktop/src/domains/sessions/renderer/session-list/sidebar/sessions-sidebar.stories.tsx",
-        "story": "Focus Recovery"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook",
-        "path": "apps/desktop/src/domains/sessions/renderer/session-list/sidebar/sessions-sidebar.stories.tsx",
-        "story": "Growing The Window"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook",
-        "path": "apps/desktop/src/domains/sessions/renderer/session-list/sidebar/sessions-sidebar.stories.tsx",
-        "story": "Grows Only When The Reader Reaches The End"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook",
-        "path": "apps/desktop/src/domains/sessions/renderer/session-list/sidebar/sessions-sidebar.stories.tsx",
-        "story": "Needs Input Clears After Resolution"
-      },
-      "owner": "#2712",
-      "reason": "Session archive and unread await typed procedures."
-    },
-    {
-      "identity": {
-        "project": "storybook",
-        "path": "apps/desktop/src/domains/sessions/renderer/session-list/sidebar/sessions-sidebar.stories.tsx",
         "story": "Rename Survives Session List Poll"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook",
-        "path": "apps/desktop/src/domains/sessions/renderer/session-list/sidebar/sessions-sidebar.stories.tsx",
-        "story": "Status Transitions"
       },
       "owner": "#2587",
       "reason": "The final typed-API cutover owns this Storybook repair."

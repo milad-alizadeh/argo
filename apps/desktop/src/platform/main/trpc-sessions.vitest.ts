@@ -6,6 +6,7 @@ import { afterEach, beforeEach, expect, test } from 'vitest'
 import { type Database, databaseMigrationsFolder, openDatabase } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
+import { SessionRosterChanges } from '@/domains/sessions/main/api/session-roster-changes'
 import { saveSessionBatch } from '@/domains/sessions/main/sync/session-sync-records'
 import { type AppRouterDependencies, createAppRouter } from './trpc-router'
 
@@ -22,7 +23,13 @@ function routerDependencies(
     projects: { database },
     sessions: {
       database,
-      supervisor: { getSnapshot: () => ({ context: { sessions: {} } }), send: () => {} },
+      roster: new SessionRosterChanges(),
+      watchedStatus: { statusOf: () => null },
+      supervisor: {
+        getSnapshot: () => ({ context: { sessions: {} } }),
+        send: () => {},
+        on: () => ({ unsubscribe: () => {} }),
+      },
       ...sessions,
     },
     tickets: {},
@@ -40,7 +47,7 @@ afterEach(async () => {
   await rm(userData, { recursive: true, force: true })
 })
 
-test('registers the paged Session list on the global router', async () => {
+test('registers the Session roster subscription on the global router', async () => {
   database
     .insert(project)
     .values({ id: 'project-1', path: '/work/one', commonDirectory: '/work/one/.git' })
@@ -55,12 +62,14 @@ test('registers the paged Session list on the global router', async () => {
       firstPrompt: 'Open the saved Session',
     })
     .run()
-  await expect(
-    createAppRouter(routerDependencies())
-      .createCaller({})
-      .sessionList({ projectId: 'project-1', page: 1, pageSize: 30 }),
-  ).resolves.toMatchObject({
-    page: 1,
+  const updates: unknown[] = []
+  const stream = await createAppRouter(routerDependencies())
+    .createCaller({})
+    .sessionList({ projectId: 'project-1', pageSize: 30 })
+  stream.subscribe({ next: (update) => updates.push(update) }).unsubscribe()
+  expect(updates[0]).toMatchObject({
+    type: 'list',
+    pages: 1,
     pageSize: 30,
     total: 1,
     rows: [

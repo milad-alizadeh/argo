@@ -3,7 +3,6 @@ import { isTRPCClientError } from '@trpc/client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AppRouter } from '@/platform/main/trpc-router'
 import { type RouterInputs, trpc } from '@/platform/renderer/trpc-client'
-import { invalidateSessionList } from '../../session-queries'
 import type { ComposerEditing } from '../editing/composer-editing'
 import type {
   TurnConfiguration,
@@ -388,7 +387,7 @@ function useComposerDraftAutosave(
 export function useDurableComposerDraft(input: DurableComposerDraftInput) {
   const { target, choices, opening, targetRestored } = input
   const queryClient = useQueryClient()
-  const { create, save, submitMutation } = useComposerDraftMutations(queryClient)
+  const { create, save, submitMutation } = useComposerDraftMutations()
   const owner = ownerKey(target)
   const persistence = useComposerDraftPersistence({
     target,
@@ -522,14 +521,10 @@ function clearComposerDraftCache(
   }
 }
 
-function useComposerDraftMutations(queryClient: ReturnType<typeof useQueryClient>) {
+function useComposerDraftMutations() {
   const { mutateAsync: createDraft } = useMutation(trpc.composerDraftCreate.mutationOptions())
   const { mutateAsync: saveDraft } = useMutation(trpc.composerDraftSave.mutationOptions())
-  const { mutateAsync: submitDraft } = useMutation(
-    trpc.sessionSubmit.mutationOptions({
-      onSuccess: () => invalidateSessionList(queryClient),
-    }),
-  )
+  const { mutateAsync: submitDraft } = useMutation(trpc.sessionSubmit.mutationOptions())
   return {
     create: useCallback(
       (value: RouterInputs['composerDraftCreate']) => createDraft(value),

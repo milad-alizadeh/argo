@@ -1,19 +1,16 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import { trpcClient } from '@/platform/renderer/trpc-client'
-import { invalidateSessionList } from '../../session-queries'
 
 // A pending Question reaches the renderer through the Feed, so this hook only decides.
 export function useSessionQuestion(sessionId: string | null) {
   const [failure, setFailure] = useState<{ questionId: string; message: string } | null>(null)
-  const queryClient = useQueryClient()
   const decision = useQuestionDecision(sessionId)
   const decide = async (questionId: string, answers: QuestionAnswer[]) => {
     try {
       await decision.mutateAsync({ questionId, answers })
       setFailure(null)
-      await invalidateSessionList(queryClient)
       return true
     } catch (error) {
       setFailure({

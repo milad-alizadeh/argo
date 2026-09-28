@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
 import { queryClient, type RouterOutputs, trpc, trpcClient } from '@/platform/renderer/trpc-client'
-import { invalidateSessionList } from '../session-queries'
+import { sessionArchivePathKey } from '../session-queries'
 
 type SyncStatus = Extract<RouterOutputs['sessionSyncStatus'], { type: 'status' }>['status']
 
@@ -17,8 +17,8 @@ export function useSessionSync() {
     const subscription = trpcClient.sessionSyncStatus.subscribe(undefined, {
       onData: (event) => {
         if (event.type === 'committed') {
-          void invalidateSessionList(queryClient)
           void queryClient.invalidateQueries({ queryKey: ['sessions', 'feed'] })
+          void queryClient.invalidateQueries({ queryKey: sessionArchivePathKey })
           return
         }
         const earlierPhase = previousPhase.current

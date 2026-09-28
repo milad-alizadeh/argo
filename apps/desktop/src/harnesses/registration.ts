@@ -5,7 +5,10 @@ import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { Question, QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { SessionDiscovery } from '@/domains/sessions/api/session-discovery'
 import type { SessionHistoryTarget } from '@/domains/sessions/api/session-history'
-import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
+import {
+  type SessionLiveEventBody,
+  sessionLiveEventBodySchema,
+} from '@/domains/sessions/api/session-live-event'
 import type {
   SessionLiveInput,
   SessionStartInput,
@@ -23,6 +26,23 @@ export const liveSessionChannelEventSchema = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('failure'), detail: z.string().min(1) }),
   z.strictObject({ type: z.literal('closed') }),
 ])
+
+// Where a Harness writes Session history, and how it reads the lines it appends.
+export type HistoryFiles = {
+  directory: string
+  // The Session or Subagent id a history file belongs to, or null for a file that holds none.
+  ownerOf: (relativePath: string) => string | null
+  // A reader for one file from where the tail starts; it keeps what it needs across its calls.
+  openReader: () => (lines: readonly string[]) => HistoryChange
+  // Whether a history line opens a turn, closes one, or says nothing about turns.
+  turnOf: (line: string) => HistoryTurn | null
+}
+
+export type HistoryTurn = 'open' | 'closed'
+
+export type HistoryChange =
+  | { type: 'appended'; events: SessionLiveEventBody[] }
+  | { type: 'rewritten' }
 
 export type LiveSessionChannelEvent = z.infer<typeof liveSessionChannelEventSchema>
 export type LiveSessionCommand = Pick<
@@ -58,7 +78,7 @@ export type HarnessRegistration<Id extends Harness = Harness> = HarnessReadiness
   readCatalog: () => Promise<HarnessInfo>
   readHistory: (target: SessionHistoryTarget) => Promise<FeedContent[]>
   hasTurn?: (nativeId: string, turnId: string) => Promise<boolean>
-  watchHistory?: (target: SessionHistoryTarget, invalidate: () => void) => () => void
+  historyFiles?: HistoryFiles
   openLiveSession?: (
     input: SessionLiveInput,
     controls: LiveSessionControls | undefined,
