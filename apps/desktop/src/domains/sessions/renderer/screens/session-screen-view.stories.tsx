@@ -575,7 +575,9 @@ async function expectJumpToLatestInComposerFade(canvasElement: HTMLElement) {
     1,
   )
   expect(latestBounds.bottom).toBeLessThanOrEqual(composerBounds.top)
-  await userEvent.click(latest)
+  latest.focus()
+  await userEvent.keyboard('{Enter}')
+  expect(history).toHaveFocus()
   await waitFor(() => expect(canvas.queryByRole('button', { name: 'Jump to latest' })).toBeNull())
 }
 
@@ -770,7 +772,9 @@ export const SwitchingKeepsScreenAreasOnTheSelectedSession: Story = {
 
     const nextSession = canvas.getByRole('button', { name: /Add Markdown typing shortcuts/ })
     await userEvent.click(nextSession)
-    await expect(nextSession).toHaveAttribute('aria-current', 'page')
+    await expect(
+      canvas.getByRole('button', { name: /Add Markdown typing shortcuts/ }),
+    ).toHaveAttribute('aria-current', 'page')
     await expect(
       canvas.getByRole('heading', { name: 'Add Markdown typing shortcuts' }),
     ).toBeVisible()

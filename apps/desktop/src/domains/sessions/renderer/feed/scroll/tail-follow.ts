@@ -114,16 +114,19 @@ export function useJumpToLatest({
   sessionId,
   tailFollow,
   virtualizer,
+  viewport,
 }: {
   active: boolean
   onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
   sessionId: string
   tailFollow: ReturnType<typeof useFeedTailFollow>
   virtualizer: ReactVirtualizer<HTMLElement, Element>
+  viewport: HTMLElement | null
 }) {
   const jumpToLatest = useCallback(() => {
     virtualizer.scrollToEnd({ behavior: 'smooth' })
-  }, [virtualizer])
+    viewport?.focus({ preventScroll: true })
+  }, [virtualizer, viewport])
   const offered = active && !tailFollow.awaitingInitialPosition && !tailFollow.atLatest
   useEffect(() => {
     onJumpToLatestChange(sessionId, offered ? jumpToLatest : null)
