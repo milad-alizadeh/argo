@@ -2,21 +2,24 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionContractError } from '../session-contract-error'
-import type { SessionFeed, SessionId } from '../types'
+import type { SessionFeedPage, SessionId } from '../types'
 import { readSessionFeedPage, retrySessionFeed, sessionFeedQuery } from './session-feed-query'
 
 type OlderPages = {
   key: string
-  pages: SessionFeed[]
+  pages: SessionFeedPage[]
   cursor: string | null
   loading: boolean
   failed: boolean
 }
 
-export function mergedContent(pages: readonly SessionFeed[], latest: SessionFeed): FeedContent[] {
+export function mergedContent(
+  pages: readonly SessionFeedPage[],
+  latest: SessionFeedPage,
+): FeedContent[] {
   const merged: FeedContent[] = []
   const positions = new Map<string, number>()
-  for (const item of [...pages, latest].flatMap((page) => page.content ?? [])) {
+  for (const item of [...pages, latest].flatMap((page) => page.content)) {
     const position = positions.get(item.id)
     if (position === undefined) {
       positions.set(item.id, merged.length)
@@ -88,7 +91,7 @@ export function useFeedHistory(
 ) {
   const queryClient = useQueryClient()
   const query = sessionFeedQuery(sessionId, subagentId, enabled)
-  const latest = useQuery<SessionFeed | null, SessionContractError>(query)
+  const latest = useQuery<SessionFeedPage | null, SessionContractError>(query)
   const refetchLatest = latest.refetch
   const { current, cursor, loadOlder } = useOlderPages({
     sessionId,

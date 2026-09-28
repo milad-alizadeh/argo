@@ -1,5 +1,6 @@
 import {
   assign,
+  emit,
   enqueueActions,
   fromPromise,
   type SnapshotFrom,
@@ -10,11 +11,8 @@ import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-e
 import { claudeLiveSessionMachine } from '@/harnesses/claude/session/claude-live-session-machine'
 import type { codexLiveSessionMachine } from '@/harnesses/codex/session/codex-live-session-machine'
 import type { SessionLiveInput, SessionStartInput } from '../api/session-submit'
-import type { SessionInteractionBroker } from './session-interaction-broker'
 
-type DrivenSessionInput = SessionLiveInput & {
-  interactions?: SessionInteractionBroker
-}
+type DrivenSessionInput = SessionLiveInput
 
 export type QueuedLiveSessionCommand = Pick<
   SessionStartInput,
@@ -41,10 +39,6 @@ export const liveSessionMachine = xstateSetup({
       failure: string | null
       harnessReady: boolean
       feedSerial: number
-      feedEvents: {
-        serial: number
-        body: SessionLiveEventBody
-      }[]
     },
     events: {} as
       | {
@@ -83,6 +77,10 @@ export const liveSessionMachine = xstateSetup({
           type: 'xstate.snapshot.harness'
           snapshot: SnapshotFrom<typeof claudeLiveSessionMachine | typeof codexLiveSessionMachine>
         },
+    emitted: {} as {
+      type: 'feed'
+      body: SessionLiveEventBody
+    },
   },
   actors: {
     harness: claudeLiveSessionMachine as
@@ -150,19 +148,9 @@ export const liveSessionMachine = xstateSetup({
       failure: ({ context, event }) =>
         event.type === 'Harness failed' ? event.failure : context.failure,
     }),
-    rememberFeed: assign({
+    rememberFeedSerial: assign({
       feedSerial: ({ context, event }) =>
         event.type === 'Harness feed' ? event.serial : context.feedSerial,
-      feedEvents: ({ context, event }) =>
-        event.type === 'Harness feed'
-          ? [
-              ...context.feedEvents,
-              {
-                serial: event.serial,
-                body: event.body,
-              },
-            ].slice(-500)
-          : context.feedEvents,
     }),
     rememberHarnessReady: assign({
       harnessReady: true,
@@ -194,7 +182,6 @@ export const liveSessionMachine = xstateSetup({
     failure: null,
     harnessReady: false,
     feedSerial: 0,
-    feedEvents: [],
   }),
   invoke: {
     id: 'harness',
@@ -355,7 +342,16 @@ export const liveSessionMachine = xstateSetup({
   },
   on: {
     'Harness feed': {
-      actions: 'rememberFeed',
+      actions: [
+        'rememberFeedSerial',
+        emit(({ event }) => {
+          if (event.type !== 'Harness feed') throw new Error('Expected a Harness Feed event.')
+          return {
+            type: 'feed',
+            body: event.body,
+          }
+        }),
+      ],
     },
   },
 })

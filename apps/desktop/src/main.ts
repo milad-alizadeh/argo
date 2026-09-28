@@ -14,7 +14,10 @@ import { createHarnessSignInProcedureContext } from '@/domains/harness-signin/ma
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
 import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
 import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
-import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
+import {
+  type LiveSessionSupervisorActor,
+  liveSessionActorFor,
+} from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import { SessionEventJournal } from '@/domains/sessions/main/live/session-event-journal'
 import { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
@@ -210,10 +213,7 @@ function routerForWindow(options: {
       journal: currentSessionEventJournal(),
       interactions: currentSessionInteractionBroker(),
       hasLiveChannel: (sessionId) => {
-        const { sessions, starts } = actors.sessions.getSnapshot().context
-        const session =
-          sessions[sessionId] ??
-          Object.values(starts).find((actor) => actor.getSnapshot().context.argoId === sessionId)
+        const session = liveSessionActorFor(actors.sessions, sessionId)
         return (
           session !== undefined &&
           !session.getSnapshot().matches('Failed') &&

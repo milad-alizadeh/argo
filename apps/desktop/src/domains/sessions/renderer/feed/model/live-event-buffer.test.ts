@@ -52,3 +52,12 @@ test('drops older content before repeated snapshots exceed the browser byte budg
   expect(retained.events.map((event) => event.sequence)).toEqual([2])
   expect(retained.eventBytes).toBeLessThanOrEqual(SESSION_LIVE_REPLAY_BYTE_LIMIT)
 })
+
+test('does not retain a single event larger than the browser byte budget', () => {
+  const retained = retainLiveEvent(
+    null,
+    textEvent(1, 'reply-1', 'x'.repeat(SESSION_LIVE_REPLAY_BYTE_LIMIT)),
+  )
+  expect(retained.events).toEqual([])
+  expect(retained.eventBytes).toBe(0)
+})

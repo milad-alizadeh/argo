@@ -2,11 +2,8 @@
 // Subagent spent, and what one background Shell has written so far. Neither rides the Roster or
 // Feed reply.
 import { useQuery } from '@tanstack/react-query'
-import { useMemo } from 'react'
 import type { SessionShellOutput, SubagentUsageFacts } from '@/domains/sessions/renderer/work/types'
-import { projectLiveFeedRows } from '../feed/model/live-feed-rows'
-import { useFeedHistory } from '../feed/use-feed-history'
-import { useLiveFeedEvents } from '../feed/use-live-feed-events'
+import { useSessionFeed } from '../feed/use-session-feed'
 import {
   SESSION_REFRESH_MS,
   sessionShellOutputQueryKey,
@@ -58,18 +55,11 @@ export function useShellOutput(sessionId: SessionId | null, shellId: string | nu
 // by it. Null until a Subagent is picked.
 export function useDelegationFeed(sessionId: SessionId | null, subagentId: string | null) {
   const selectedSessionId = subagentId === null ? null : sessionId
-  const live = useLiveFeedEvents(selectedSessionId, subagentId)
-  const history = useFeedHistory(selectedSessionId, subagentId, live?.ready ?? false)
-  const feed = useMemo(() => {
-    const reading = history.reading
-    return reading?.content === undefined
-      ? reading
-      : { ...reading, rows: projectLiveFeedRows(reading.content, []) }
-  }, [history.reading])
+  const history = useSessionFeed(selectedSessionId, subagentId)
   return {
-    feed,
-    feedError: history.error,
-    retry: history.retry,
+    feed: history.feed,
+    feedError: history.feedError,
+    retry: history.retryFeed,
     loadOlder: history.loadOlder,
     hasOlder: history.hasOlder,
     loadingOlder: history.loadingOlder,

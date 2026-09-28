@@ -29,30 +29,36 @@ function sameAssistantMessage(left: SessionLiveEvent, right: SessionLiveEvent): 
   )
 }
 
+function removeSupersededSnapshot(
+  events: SessionLiveEvent[],
+  eventSizes: number[],
+  event: SessionLiveEvent,
+): number {
+  if (event.type !== 'content' || event.content.kind !== 'message') return 0
+  const first = events.findIndex((candidate) => sameAssistantMessage(candidate, event))
+  const latest = events.findLastIndex((candidate) => sameAssistantMessage(candidate, event))
+  if (latest <= first) return 0
+  events.splice(latest, 1)
+  const removed = eventSizes.splice(latest, 1)[0]
+  if (removed === undefined) throw new Error('Live event buffer lost its byte count.')
+  return removed
+}
+
 export function retainLiveEvent(
   current: LiveEventBuffer | null,
   event: SessionLiveEvent,
 ): LiveEventBuffer {
   const events = [...(current?.events ?? [])]
   const eventSizes = [...(current?.eventSizes ?? [])]
-  let eventBytes = current?.eventBytes ?? 0
-  if (event.type === 'content' && event.content.kind === 'message') {
-    const first = events.findIndex((candidate) => sameAssistantMessage(candidate, event))
-    const latest = events.findLastIndex((candidate) => sameAssistantMessage(candidate, event))
-    if (latest > first) {
-      events.splice(latest, 1)
-      const removed = eventSizes.splice(latest, 1)[0]
-      if (removed === undefined) throw new Error('Live event buffer lost its byte count.')
-      eventBytes -= removed
-    }
-  }
+  let eventBytes = (current?.eventBytes ?? 0) - removeSupersededSnapshot(events, eventSizes, event)
   const bytes = encoder.encode(JSON.stringify(event)).byteLength
+  if (bytes > SESSION_LIVE_REPLAY_BYTE_LIMIT) return current ?? emptyLiveEventBuffer()
   events.push(event)
   eventSizes.push(bytes)
   eventBytes += bytes
   while (
     events.length > SESSION_LIVE_REPLAY_EVENT_LIMIT ||
-    (events.length > 1 && eventBytes > SESSION_LIVE_REPLAY_BYTE_LIMIT)
+    eventBytes > SESSION_LIVE_REPLAY_BYTE_LIMIT
   ) {
     events.shift()
     const removed = eventSizes.shift()

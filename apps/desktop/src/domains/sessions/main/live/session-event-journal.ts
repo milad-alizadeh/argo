@@ -12,14 +12,17 @@ export type SessionEventReplay =
   | { type: 'events'; events: SessionLiveEvent[]; cursor: number }
 
 type RecordedEvent = { event: SessionLiveEvent; bytes: number }
+type PendingEvent = { source: object; body: SessionLiveEventBody; bytes: number }
 
 export class SessionEventJournal {
   private readonly listeners = new Map<string, Set<(event: SessionLiveEvent) => void>>()
   private readonly cursors = new Map<string, number>()
   private readonly events: RecordedEvent[] = []
+  private readonly pending: PendingEvent[] = []
   private readonly limit: number
   private readonly byteLimit: number
   private usedBytes = 0
+  private pendingBytes = 0
 
   constructor(limit = SESSION_LIVE_REPLAY_EVENT_LIMIT, byteLimit = SESSION_LIVE_REPLAY_BYTE_LIMIT) {
     if (!Number.isInteger(limit) || limit < 1)
@@ -46,6 +49,32 @@ export class SessionEventJournal {
     }
     for (const listener of this.listeners.get(sessionId) ?? []) listener(event)
     return event
+  }
+
+  stage(source: object, value: SessionLiveEventBody): void {
+    const body = sessionLiveEventBodySchema.parse(value)
+    const bytes = Buffer.byteLength(JSON.stringify(body), 'utf8')
+    if (bytes > this.byteLimit) return
+    this.pending.push({ source, body, bytes })
+    this.pendingBytes += bytes
+    while (this.pending.length > this.limit || this.pendingBytes > this.byteLimit) {
+      const removed = this.pending.shift()
+      if (removed !== undefined) this.pendingBytes -= removed.bytes
+    }
+  }
+
+  bind(source: object, sessionId: string): void {
+    for (const item of this.pending) if (item.source === source) this.append(sessionId, item.body)
+    this.discard(source)
+  }
+
+  discard(source: object): void {
+    for (let index = this.pending.length - 1; index >= 0; index--) {
+      const item = this.pending[index]
+      if (item?.source !== source) continue
+      this.pendingBytes -= item.bytes
+      this.pending.splice(index, 1)
+    }
   }
 
   replay(sessionId: string, after: number): SessionEventReplay {

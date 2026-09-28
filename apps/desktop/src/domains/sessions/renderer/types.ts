@@ -6,6 +6,7 @@ import type { RouterOutputs } from '@/platform/renderer/trpc-client'
 export type SessionListResult = RouterOutputs['sessionList']
 export type Session = SessionListResult['rows'][number]
 export type SessionId = Session['id']
+export type SessionFeedPage = RouterOutputs['sessionFeedRead']
 
 export type SessionArchiveListed = {
   version: 1

@@ -227,21 +227,21 @@ test('does not deliver a duplicate first command', async () => {
   actor.stop()
 })
 
-test('retains validated Claude Feed events until the Session identity is persisted', async () => {
-  const actor = createActor(testMachine({ emitFeed: true }), { input: first }).start()
-  const ready = await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
-  assert.deepEqual(
-    ready.context.feedEvents.map(({ body }) => body),
-    [
-      {
-        type: 'content',
-        commandId: first.commandId,
-        turnId: first.commandId,
-        vendorEventId: 'assistant-1',
-        content: { id: 'assistant-1', kind: 'message', role: 'assistant', text: 'Working' },
-      },
-    ],
-  )
+test('emits validated Claude Feed events while the Session identity is persisting', async () => {
+  const actor = createActor(testMachine({ emitFeed: true }), { input: first })
+  const events: unknown[] = []
+  actor.on('feed', ({ body }) => events.push(body))
+  actor.start()
+  await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
+  assert.deepEqual(events, [
+    {
+      type: 'content',
+      commandId: first.commandId,
+      turnId: first.commandId,
+      vendorEventId: 'assistant-1',
+      content: { id: 'assistant-1', kind: 'message', role: 'assistant', text: 'Working' },
+    },
+  ])
   actor.stop()
 })
 

@@ -3,11 +3,7 @@ import { initTRPC, TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { type FeedContent, feedContentSchema } from '@/domains/sessions/api/feed-content'
-import {
-  projectSessionHistoryRows,
-  type SessionHistoryTarget,
-  sessionHistoryRowSchema,
-} from '@/domains/sessions/api/session-history'
+import type { SessionHistoryTarget } from '@/domains/sessions/api/session-history'
 import type { Harness } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
 import { SessionFeedPages } from './session-feed-pages'
@@ -28,7 +24,6 @@ const outputSchema = z.strictObject({
   revision: z.string().min(1),
   olderCursor: z.string().nullable(),
   content: z.array(feedContentSchema),
-  rows: z.array(sessionHistoryRowSchema),
 })
 
 export type SessionFeedReadContext = {
@@ -68,7 +63,6 @@ export function sessionFeedReadProcedure(context: SessionFeedReadContext) {
         })
       }
       const { content, olderCursor } = page
-      const rows = projectSessionHistoryRows(content)
       const revision = createHash('sha256').update(JSON.stringify(content)).digest('hex')
       return {
         version: 1,
@@ -79,7 +73,6 @@ export function sessionFeedReadProcedure(context: SessionFeedReadContext) {
         revision,
         olderCursor,
         content,
-        rows,
       }
     })
 }

@@ -10,7 +10,8 @@ function feedReply(sessionId: string, requestId: string, revision: string) {
     sessionId,
     chainId: sessionId,
     revision,
-    rows: [],
+    olderCursor: null,
+    content: [],
   }
 }
 

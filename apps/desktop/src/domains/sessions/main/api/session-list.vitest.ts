@@ -38,7 +38,13 @@ function sessionListCaller(sessions: Record<string, unknown> = {}) {
   );`)
   const database = databaseFrom(client)
   const supervisor = {
-    getSnapshot: () => ({ context: { sessions } }),
+    system: { get: (id: string) => sessions[id] },
+    getSnapshot: () => ({
+      context: {
+        sessions: Object.fromEntries(Object.keys(sessions).map((id) => [id, id])),
+        starts: {},
+      },
+    }),
   }
   const router = initTRPC.create().router({
     list: sessionListProcedure({ database, supervisor: supervisor as never }),

@@ -6,7 +6,7 @@ import type { AppRouter } from '@/platform/main/trpc-router'
 import { trpcClient } from '@/platform/renderer/trpc-client'
 import { SessionContractError, throwSessionContractError } from '../session-contract-error'
 import { sessionFeedQueryKey } from '../session-queries'
-import type { SessionFeed, SessionId } from '../types'
+import type { SessionFeedPage, SessionId } from '../types'
 
 export async function retrySessionFeed(
   queryClient: QueryClient,
@@ -21,7 +21,7 @@ export async function readSessionFeedPage(
   sessionId: SessionId,
   subagentId: string | null,
   before: string | null,
-): Promise<SessionFeed> {
+): Promise<SessionFeedPage> {
   try {
     return await trpcClient.sessionFeedRead.query({ sessionId, subagentId, before })
   } catch (error) {
@@ -38,7 +38,7 @@ export function sessionFeedQuery(
   sessionId: SessionId | null,
   subagentId: string | null,
   enabled = true,
-): UseQueryOptions<SessionFeed | null, SessionContractError> {
+): UseQueryOptions<SessionFeedPage | null, SessionContractError> {
   const key =
     sessionId === null
       ? ['sessions', 'feed', null, subagentId]

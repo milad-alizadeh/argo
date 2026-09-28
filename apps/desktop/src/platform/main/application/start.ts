@@ -41,7 +41,9 @@ export function startDesktopApplication(request: {
     applyStoredAppearance(await readAppearance(app.getPath('userData')))
     const input = await request.prepare()
     const { registry, ...applicationInput } = input
-    actor = createActor(createAppMachine(registry), { input: applicationInput }).start()
+    actor = createActor(createAppMachine(registry, applicationInput), {
+      input: applicationInput,
+    }).start()
     await request.ready(actor)
   }
 

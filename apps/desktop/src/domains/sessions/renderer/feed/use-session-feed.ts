@@ -1,33 +1,40 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { SessionFeed, SessionId } from '../types'
+import type { SessionFeed, SessionFeedPage, SessionId } from '../types'
 import { projectLiveFeedRows } from './model/live-feed-rows'
 import { useFeedHistory } from './use-feed-history'
 import { useLiveFeedEvents } from './use-live-feed-events'
 
-function displayedFeed(
-  selectedSessionId: SessionId | null,
-  reading: SessionFeed | null | undefined,
-  live: ReturnType<typeof useLiveFeedEvents>,
-): SessionFeed | null {
+function displayedFeed({
+  selectedSessionId,
+  subagentId,
+  reading,
+  live,
+}: {
+  selectedSessionId: SessionId | null
+  subagentId: string | null
+  reading: SessionFeedPage | SessionFeed | null | undefined
+  live: ReturnType<typeof useLiveFeedEvents>
+}): SessionFeed | null {
   if (selectedSessionId === null) return null
   const current = reading?.sessionId === selectedSessionId ? reading : null
   const events = live?.events ?? []
   if (current === null && events.length === 0) return null
-  if (current !== null && current.content === undefined && events.length === 0) return current
+  if (current !== null && current.content === undefined) return current as SessionFeed
   const rows = projectLiveFeedRows(current?.content ?? [], events)
-  const base: SessionFeed = current ?? {
+  const base = current ?? {
     version: 1,
     type: 'session.feed.read',
     requestId: selectedSessionId,
     sessionId: selectedSessionId,
-    chainId: selectedSessionId,
+    chainId: subagentId ?? selectedSessionId,
     revision: 'live',
-    rows: [],
+    olderCursor: null,
+    content: [],
   }
   return {
     ...base,
     revision: `${base.revision}:${events.at(-1)?.sequence ?? 0}`,
-    rows: base.content === undefined ? [...base.rows, ...rows] : rows,
+    rows,
   }
 }
 
@@ -53,12 +60,15 @@ export function useConsecutiveFeedFailures(
   return failedReads.sessionId === sessionId ? failedReads.count : 0
 }
 
-export function useSessionFeed(selectedSessionId: SessionId | null) {
-  const live = useLiveFeedEvents(selectedSessionId)
-  const history = useFeedHistory(selectedSessionId, null, live?.ready ?? false)
+export function useSessionFeed(
+  selectedSessionId: SessionId | null,
+  subagentId: string | null = null,
+) {
+  const live = useLiveFeedEvents(selectedSessionId, subagentId)
+  const history = useFeedHistory(selectedSessionId, subagentId, live?.ready ?? false)
   const displayed = useMemo(
-    () => displayedFeed(selectedSessionId, history.reading, live),
-    [history.reading, live, selectedSessionId],
+    () => displayedFeed({ selectedSessionId, subagentId, reading: history.reading, live }),
+    [history.reading, live, selectedSessionId, subagentId],
   )
   return {
     feed: displayed,

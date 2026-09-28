@@ -1,5 +1,8 @@
 import { type Dispatch, type SetStateAction, useEffect, useState } from 'react'
-import type { SessionLiveUpdate } from '@/domains/sessions/api/session-live-event'
+import {
+  SESSION_LIVE_REPLAY_BYTE_LIMIT,
+  type SessionLiveUpdate,
+} from '@/domains/sessions/api/session-live-event'
 import { queryClient, trpcClient } from '@/platform/renderer/trpc-client'
 import { sessionFeedQueryKey, sessionPermissionQueryKey } from '../session-queries'
 import type { SessionId } from '../types'
@@ -43,6 +46,11 @@ function applyLiveUpdate({
       return cursor
     case 'event':
       if (update.event.sequence <= cursor) return cursor
+      if (
+        new TextEncoder().encode(JSON.stringify(update.event)).byteLength >
+        SESSION_LIVE_REPLAY_BYTE_LIMIT
+      )
+        void queryClient.invalidateQueries({ queryKey: sessionFeedQueryKey(selected, subagentId) })
       setState((current) => ({
         ...retainLiveEvent(
           current?.sessionId === selected && current.subagentId === subagentId ? current : null,
