@@ -8,6 +8,9 @@ import { Button } from './button'
 import { Input } from './input'
 import { Textarea } from './textarea'
 
+export const inlineSearchGroupClassName =
+  'min-w-0 flex-1 border-0 bg-transparent shadow-none focus-within:bg-muted dark:bg-transparent dark:focus-within:bg-muted'
+
 function InputGroup({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div

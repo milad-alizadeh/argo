@@ -163,9 +163,15 @@
       "model": "Model"
     },
     "workspace": {
-      "choose": "Choose Workspace",
-      "chooseLabel": "Choose Workspace: {{workspace}}",
-      "label": "Workspace"
+      "choose": "Choose work location",
+      "chooseLabel": "Work location: {{workspace}}",
+      "label": "Work location",
+      "newWorktree": "New worktree",
+      "mainCheckout": "Main checkout",
+      "existingWorktrees": "Existing worktrees",
+      "search": "Search worktrees",
+      "noMatches": "No worktrees found",
+      "saveFailed": "Could not use this work location. Choose another."
     },
     "references": {
       "label": "References",

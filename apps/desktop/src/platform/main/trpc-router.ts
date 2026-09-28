@@ -55,6 +55,7 @@ import {
 } from '@/domains/tickets/main/ticket-router'
 import {
   type WorkspaceListContext,
+  workspaceChooseProcedure,
   workspaceListProcedure,
 } from '@/domains/workspaces/main/api/workspace-list'
 import {
@@ -110,6 +111,7 @@ export function createAppRouter(dependencies: AppRouterDependencies) {
     projectRegister: projectRegisterProcedure(dependencies.projects),
     projectRelocate: projectRelocateProcedure(dependencies.projects),
     workspaceList: workspaceListProcedure(dependencies.workspaces),
+    workspaceChoose: workspaceChooseProcedure(dependencies.workspaces),
     tickets: createTicketRouter(dependencies.tickets),
   })
 }
