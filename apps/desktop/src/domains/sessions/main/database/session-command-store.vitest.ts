@@ -6,7 +6,7 @@ import { createSessionCommandStore } from './session-command-store'
 test('reserves a command once and retains its bound Session and outcome', () => {
   const client = new DatabaseSync(':memory:')
   client.exec(
-    "CREATE TABLE session (argo_id TEXT PRIMARY KEY); CREATE TABLE session_command (command_id TEXT PRIMARY KEY, session_id TEXT REFERENCES session(argo_id), status TEXT NOT NULL, created_at INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL DEFAULT 0); INSERT INTO session (argo_id) VALUES ('argo-1');",
+    "CREATE TABLE session (argo_id TEXT PRIMARY KEY); CREATE TABLE session_command (command_id TEXT PRIMARY KEY, intent_id TEXT, session_id TEXT REFERENCES session(argo_id), harness TEXT, native_id TEXT, turn_id TEXT, cwd TEXT, status TEXT NOT NULL, created_at INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL DEFAULT 0); INSERT INTO session (argo_id) VALUES ('argo-1');",
   )
   const commands = createSessionCommandStore(databaseFrom(client))
   expect(commands.reserve('command-1', null)).toEqual({ reserved: true, sessionId: null })
@@ -22,6 +22,10 @@ test('reserves a command once and retains its bound Session and outcome', () => 
     sessionId: 'argo-1',
     status: 'running',
   })
+  commands.record('command-1', 'uncertain')
+  commands.record('command-1', 'accepted')
+  expect(commands.reserve('command-1', null)).toMatchObject({ status: 'uncertain' })
+  commands.record('command-1', 'running')
   commands.record('command-1', 'completed')
   commands.record('command-1', 'uncertain')
   expect(commands.reserve('command-1', null)).toMatchObject({ status: 'completed' })

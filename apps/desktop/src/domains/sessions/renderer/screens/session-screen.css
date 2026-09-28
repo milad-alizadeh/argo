@@ -19,28 +19,27 @@
     transparent,
     var(--color-session-surface) var(--session-composer-fade-length, 100%)
   );
-  --session-screen-composer-limit: min(var(--size-session-composer-overlay), 50%);
-  max-height: var(--session-screen-composer-limit);
+  /* The composer takes its content's height; the Feed keeps at least half the pane. */
+  max-height: 50%;
 }
 
+/* Past the pane limit the composer scrolls; nothing inside it shrinks to fit. */
 .session-screen__composer-scroll {
   min-height: 0;
   flex: 1 1 auto;
-  overflow: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
-.session-screen__feed .feed__viewport {
-  scroll-padding-bottom: calc(
-    var(--session-composer-height, 0px) +
-    var(--spacing-session-feed-composer-inset)
-  );
+.session-screen__composer-scroll > * {
+  height: auto;
+  flex: none;
 }
 
 .session-screen__feed:has(+ .session-screen__composer) .feed__viewport {
-  padding-bottom: calc(
-    var(--session-composer-height, 0px) +
-    var(--spacing-session-feed-composer-inset)
-  );
+  --session-feed-composer-clearance: calc(var(--session-composer-reach, 0px) + var(--spacing-snug));
+  padding-bottom: var(--session-feed-composer-clearance);
+  scroll-padding-bottom: var(--session-feed-composer-clearance);
 }
 
 .session-screen__composer

@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useCallback, useState } from 'react'
+import { type ReactNode, useCallback, useState } from 'react'
 import { MemoryRouter, Navigate, Route, Routes } from 'react-router'
 import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/renderer/model/models'
 import type { SessionShellOutput } from '@/domains/sessions/renderer/work/types'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
+import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
 import { sessionSelectionHost } from '../../../../../test-fixtures/sessions/session-selection-host.fixture'
 import { ComposerForm } from '../composer/layout/composer-form'
 import { RICH_MARKDOWN } from '../feed/content/feed-samples'
@@ -300,6 +301,7 @@ function ReviewScreen({
   shellOutput = { state: 'available', tail: 'Checked 187 files.\ncheck:design-tokens — clean.\n' },
   showPlan = true,
   composerRunning = false,
+  permissionPrompt = null,
   titleText,
   workspaceId = null,
   workspaces = [],
@@ -309,6 +311,7 @@ function ReviewScreen({
   shellOutput?: SessionShellOutput
   showPlan?: boolean
   composerRunning?: boolean
+  permissionPrompt?: ReactNode
   titleText?: string
   workspaceId?: string | null
   workspaces?: readonly ListedWorkspace[]
@@ -336,6 +339,7 @@ function ReviewScreen({
   return (
     <ReviewContent
       composerRunning={composerRunning}
+      permissionPrompt={permissionPrompt}
       feed={feed}
       headerSession={headerSession}
       jumpToLatest={jumpToLatest?.action ?? null}
@@ -355,6 +359,7 @@ function ReviewScreen({
 
 function ReviewContent({
   composerRunning,
+  permissionPrompt,
   feed,
   headerSession,
   jumpToLatest,
@@ -370,6 +375,7 @@ function ReviewContent({
   workspaceIdentity,
 }: {
   composerRunning: boolean
+  permissionPrompt: ReactNode
   feed: SessionFeed
   headerSession: Session
   jumpToLatest: (() => void) | null
@@ -397,6 +403,7 @@ function ReviewContent({
         composer={
           <ComposerForm
             isRunning={composerRunning}
+            permissionPrompt={permissionPrompt}
             onInterrupt={async () => true}
             onSend={async () => true}
             plan={showPlan ? session.plan : null}
@@ -603,6 +610,61 @@ async function expectJumpToLatestInComposerFade(canvasElement: HTMLElement) {
   await userEvent.keyboard('{Enter}')
   expect(history).toHaveFocus()
   await waitFor(() => expect(canvas.queryByRole('button', { name: 'Jump to latest' })).toBeNull())
+}
+
+function composerCard(canvasElement: HTMLElement) {
+  const card = within(canvasElement)
+    .getByLabelText('Session composer')
+    .querySelector<HTMLElement>('[data-component="ComposerCard"]')
+  if (card === null) throw new Error('The composer card is absent.')
+  return card
+}
+
+// The composer's highest ink: the first stacked prompt above the card, or the card itself.
+function composerInkTop(canvasElement: HTMLElement) {
+  const prompts = within(canvasElement).queryAllByRole('region', { name: /^Permission needed/ })
+  return Math.min(
+    composerCard(canvasElement).getBoundingClientRect().top,
+    ...prompts.map((prompt) => prompt.getBoundingClientRect().top),
+  )
+}
+
+function feedEndGapAboveComposer(canvasElement: HTMLElement) {
+  const history = within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)
+  const rows = [...history.querySelectorAll<HTMLElement>('[data-feed-row]')]
+  const lastRowBottom = Math.max(...rows.map((row) => row.getBoundingClientRect().bottom))
+  return composerInkTop(canvasElement) - lastRowBottom
+}
+
+// `--spacing-snug`, the one gap the Feed keeps above the composer card.
+const FEED_END_GAP_PX = 12
+
+async function expectFeedEndsOneSnugAboveComposer(
+  canvasElement: HTMLElement,
+  { scrollToEnd }: { scrollToEnd: boolean },
+) {
+  const history = await within(canvasElement).findByLabelText(SESSION_HISTORY_LABEL)
+  await waitFor(() => expect(history.scrollHeight).toBeGreaterThan(history.clientHeight))
+  await waitFor(() => {
+    if (scrollToEnd) history.scrollTo({ top: history.scrollHeight })
+    const gap = feedEndGapAboveComposer(canvasElement)
+    expect(gap).toBeGreaterThanOrEqual(FEED_END_GAP_PX - 2)
+    expect(gap).toBeLessThanOrEqual(FEED_END_GAP_PX + 2)
+  })
+}
+
+// Each Allow control is on screen and takes a press, so no prompt is clipped away.
+async function expectEveryAllowReachable(canvasElement: HTMLElement) {
+  await waitFor(() => {
+    for (const allow of within(canvasElement).getAllByRole('button', { name: 'Allow' })) {
+      const bounds = allow.getBoundingClientRect()
+      const hit = document.elementFromPoint(
+        bounds.left + bounds.width / 2,
+        bounds.top + bounds.height / 2,
+      )
+      expect(hit !== null && allow.contains(hit)).toBe(true)
+    }
+  })
 }
 
 function expectHeaderActionsAtTrailingEdge(canvasElement: HTMLElement) {
@@ -922,6 +984,92 @@ export const JumpToLatestInNormalComposerFade: Story = {
   render: () => <ReviewScreen initialSessionId="shortcut-review" rows={JUMP_TO_LATEST_ROWS} />,
   play: async ({ canvasElement }) => {
     await expectJumpToLatestInComposerFade(canvasElement)
+  },
+}
+
+export const FeedEndsJustAboveComposer: Story = {
+  render: () => <ReviewScreen initialSessionId="shortcut-review" rows={JUMP_TO_LATEST_ROWS} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expectFeedEndsOneSnugAboveComposer(canvasElement, { scrollToEnd: true })
+
+    const card = composerCard(canvasElement)
+    const oneLineHeight = card.getBoundingClientRect().height
+    await userEvent.click(canvas.getByRole('combobox', { name: 'Message' }))
+    // Paragraphs past the editor's maximum: the Feed stays at its end as the composer grows.
+    for (const paragraph of ['First', 'Second', 'Third', 'Fourth', 'Fifth']) {
+      await userEvent.keyboard(`${paragraph} paragraph{Shift>}{Enter}{/Shift}`)
+    }
+    await waitFor(() => expect(card.getBoundingClientRect().height).toBeGreaterThan(oneLineHeight))
+    await expectFeedEndsOneSnugAboveComposer(canvasElement, { scrollToEnd: false })
+
+    const history = canvas.getByLabelText(SESSION_HISTORY_LABEL)
+    history.scrollTo({ top: 0 })
+    fireEvent.scroll(history)
+    await userEvent.click(await canvas.findByRole('button', { name: 'Jump to latest' }))
+    await expectFeedEndsOneSnugAboveComposer(canvasElement, { scrollToEnd: false })
+  },
+}
+
+// A pending permission request: the tray above the card is part of the composer's clearance.
+export const FeedEndsAbovePermissionPrompt: Story = {
+  render: () => (
+    <ReviewScreen
+      initialSessionId="shortcut-review"
+      rows={JUMP_TO_LATEST_ROWS}
+      permissionPrompt={
+        <PermissionPrompt
+          harness="claude"
+          headingLevel={2}
+          onDecide={async () => true}
+          permission={{ id: 'pending', description: 'Bash {"command":"bun test"}' }}
+        />
+      }
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    await expect(
+      await within(canvasElement).findByRole('region', { name: /^Permission needed/ }),
+    ).toBeVisible()
+    await expectEveryAllowReachable(canvasElement)
+    await expectFeedEndsOneSnugAboveComposer(canvasElement, { scrollToEnd: true })
+  },
+}
+
+export const FeedEndsAboveStackedPrompts: Story = {
+  render: () => (
+    <ReviewScreen
+      initialSessionId="shortcut-review"
+      rows={JUMP_TO_LATEST_ROWS}
+      permissionPrompt={['bun test', 'bun run quality', 'git status'].map((command, index) => (
+        <PermissionPrompt
+          key={command}
+          harness="claude"
+          headingLevel={2}
+          labels={{ allow: 'Allow', deny: 'Deny', title: `Permission needed: ${command}` }}
+          onDecide={async () => true}
+          permission={{
+            id: `stacked-${index}`,
+            description: `Bash {"command":"${command}"}`,
+          }}
+        />
+      ))}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() =>
+      expect(canvas.getAllByRole('heading', { name: /^Permission needed/ })).toHaveLength(3),
+    )
+    // The Feed opens at its end and stays there while the prompts enter and grow the composer.
+    await expectFeedEndsOneSnugAboveComposer(canvasElement, { scrollToEnd: false })
+    // Every stacked prompt and the context bar stay whole: the composer grows rather than clips.
+    await expectEveryAllowReachable(canvasElement)
+    const usage = canvas.getByText('Usage').getBoundingClientRect()
+    expect(document.elementFromPoint(usage.left + 1, usage.top + usage.height / 2)).not.toBeNull()
+    expect(usage.bottom).toBeLessThanOrEqual(
+      canvas.getByLabelText('Session composer').getBoundingClientRect().bottom,
+    )
   },
 }
 
