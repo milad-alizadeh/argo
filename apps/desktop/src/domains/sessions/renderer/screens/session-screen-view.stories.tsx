@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { MemoryRouter } from 'react-router'
 import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
@@ -291,6 +291,16 @@ function ReviewScreen({
   workspaces?: readonly ListedWorkspace[]
 }) {
   const [selectedSessionId, setSelectedSessionId] = useState(initialSessionId)
+  const [jumpToLatest, setJumpToLatest] = useState<{
+    action: () => void
+    sessionId: string
+  } | null>(null)
+  const onJumpToLatestChange = useCallback((sessionId: string, action: (() => void) | null) => {
+    setJumpToLatest((current) => {
+      if (action !== null) return { action, sessionId }
+      return current?.sessionId === sessionId ? null : current
+    })
+  }, [])
   // The header's picks drive a real inspector, so the story shows what picking a row opens.
   const [picked, setPicked] = useState<{ id: string; count: number } | null>(null)
   const pick = (id: string) => setPicked((last) => ({ id, count: (last?.count ?? 0) + 1 }))
@@ -305,6 +315,8 @@ function ReviewScreen({
       composerRunning={composerRunning}
       feed={feed}
       headerSession={headerSession}
+      jumpToLatest={jumpToLatest?.action ?? null}
+      onJumpToLatestChange={onJumpToLatestChange}
       onSelectSessionId={setSelectedSessionId}
       pick={pick}
       picked={picked}
@@ -322,6 +334,8 @@ function ReviewContent({
   composerRunning,
   feed,
   headerSession,
+  jumpToLatest,
+  onJumpToLatestChange,
   onSelectSessionId,
   pick,
   picked,
@@ -335,6 +349,8 @@ function ReviewContent({
   composerRunning: boolean
   feed: SessionFeed
   headerSession: Session
+  jumpToLatest: (() => void) | null
+  onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
   onSelectSessionId: (sessionId: string) => void
   pick: (id: string) => void
   picked: { id: string; count: number } | null
@@ -377,6 +393,8 @@ function ReviewContent({
             shell={session.shell}
           />
         }
+        jumpToLatest={jumpToLatest}
+        onJumpToLatestChange={onJumpToLatestChange}
         session={headerSession}
         workspaceIdentity={workspaceIdentity}
         inspector={
@@ -730,6 +748,41 @@ export const Open: Story = {
     await expectDelegatedFeedSurvivesCollapse(canvas)
 
     await expectShellReopensWithOutput(canvasElement)
+  },
+}
+
+export const SwitchingKeepsScreenAreasOnTheSelectedSession: Story = {
+  render: () => <ReviewScreen />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await waitFor(() =>
+      expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
+        'data-session',
+        'composer-review',
+      ),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: /^Shell/ }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: /bun run quality/ }))
+    await expect(canvas.getByRole('region', { name: 'Background Shell' })).toBeVisible()
+    const firstComposer = canvas.getByRole('combobox', { name: 'Message' })
+    await userEvent.type(firstComposer, 'Draft for the first Session')
+    await expect(firstComposer).toHaveTextContent('Draft for the first Session')
+
+    const nextSession = canvas.getByRole('button', { name: /Add Markdown typing shortcuts/ })
+    await userEvent.click(nextSession)
+    await expect(nextSession).toHaveAttribute('aria-current', 'page')
+    await expect(
+      canvas.getByRole('heading', { name: 'Add Markdown typing shortcuts' }),
+    ).toBeVisible()
+    await waitFor(() =>
+      expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
+        'data-session',
+        'shortcut-review',
+      ),
+    )
+    await expect(canvas.getByLabelText('Session composer')).toBeVisible()
+    await expect(canvas.getByRole('combobox', { name: 'Message' })).toHaveTextContent('')
+    await expect(canvas.queryByRole('region', { name: 'Background Shell' })).toBeNull()
   },
 }
 

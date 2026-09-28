@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import { Button } from '@/platform/renderer/components/ui/button'
@@ -80,7 +79,6 @@ type BasicFeedProps = {
   onRetryFeed: () => void
   onJumpToLatestChange?: (sessionId: string, action: (() => void) | null) => void
   selectedSessionId: SessionId | null
-  onStalledChange?: (sessionId: SessionId | null) => void
   feedLabel?: string
   historyLabel?: string
 } & FeedQuestionHandlers
@@ -98,7 +96,6 @@ export function BasicFeed({
   onRetryFeed,
   onJumpToLatestChange = ignoreJumpToLatestChange,
   selectedSessionId,
-  onStalledChange,
   feedLabel,
   historyLabel,
   onOpenEvidence,
@@ -135,9 +132,6 @@ export function BasicFeed({
     awaitingFeed ? `${selectedSessionId}:${retryToken}` : false,
     stallTimeoutMs,
   )
-  useEffect(() => {
-    onStalledChange?.(stalled ? selectedSessionId : null)
-  }, [onStalledChange, selectedSessionId, stalled])
   const shared = {
     selectedSessionId,
     hasOlder,
