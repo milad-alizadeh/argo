@@ -8,8 +8,8 @@ The Codex registration supplies the same async live channel interface as Claude.
 Argo live Session machine owns both lifecycles. The Codex live machine named in **Module
 ownership** and its direct invocation there are superseded. The app machine still owns one shared
 Codex app-server client for live Sessions, catalog, discovery, and history. A Codex Session
-failure does not stop another Harness. The Feed reads Codex newest-first vendor pages when the
-verified protocol supports them and otherwise pages a `thread/read` result inside Argo.
+failure does not stop another Harness. The Feed reads one complete `thread/read` snapshot per
+chain and merges live events into it.
 
 ## Amendment · Claude live Session ownership · 2026-09-28
 

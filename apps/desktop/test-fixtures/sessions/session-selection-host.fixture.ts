@@ -148,7 +148,6 @@ function feedReply(request: StorybookTrpcRequest): StorybookTrpcResponse | null 
     sessionId,
     chainId: sessionId,
     revision: `selection-${sessionId}`,
-    olderCursor: null,
     content: [
       {
         id: `selection-row-${sessionId}`,

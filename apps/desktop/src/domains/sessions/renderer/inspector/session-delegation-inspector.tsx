@@ -60,10 +60,6 @@ export function SessionDelegationInspector({
   onOpenEvidence,
   onOpenSession,
   onRetryFeed,
-  onLoadOlder,
-  hasOlder,
-  loadingOlder,
-  olderError,
   sessionId,
 }: {
   activeEvidenceId: string | null
@@ -75,10 +71,6 @@ export function SessionDelegationInspector({
   onOpenEvidence: (evidence: SessionEvidence) => void
   onOpenSession: (sessionId: string) => void
   onRetryFeed: () => void
-  onLoadOlder?: () => void
-  hasOlder?: boolean
-  loadingOlder?: boolean
-  olderError?: boolean
   sessionId: string | null
 }) {
   const { t } = useTranslation('sessions')
@@ -102,10 +94,6 @@ export function SessionDelegationInspector({
         onOpenEvidence={onOpenEvidence}
         onOpenSession={onOpenSession}
         onRetryFeed={onRetryFeed}
-        onLoadOlder={onLoadOlder}
-        hasOlder={hasOlder}
-        loadingOlder={loadingOlder}
-        olderError={olderError}
         questionFailure={() => null}
         selectedSessionId={active ? (reading?.sessionId ?? sessionId) : null}
       />

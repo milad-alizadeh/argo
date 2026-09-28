@@ -166,8 +166,6 @@ function handle(message: Request) {
     return send({ id, error: { code: -32000, message: 'Thread not found' } })
   if (method === 'thread/resume') return send({ id, result: { thread: { id: thread.id } } })
   if (method === 'thread/read') return send({ id, result: { thread } })
-  if (method === 'thread/turns/list')
-    return send({ id, error: { code: -32601, message: 'Method not found' } })
   if (method === 'turn/start') return startTurn(id, params, thread)
   if (method === 'turn/interrupt') {
     send({ id, result: {} })

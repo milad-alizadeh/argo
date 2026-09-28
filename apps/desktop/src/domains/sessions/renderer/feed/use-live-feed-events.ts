@@ -19,35 +19,40 @@ type LiveFeedState = LiveEventBuffer & {
   ready: boolean
 }
 
-function applyLiveUpdate({
-  selected,
-  subagentId,
-  update,
-  cursor,
-  setState,
-}: {
+type LiveUpdateTarget = {
   selected: SessionId
   subagentId: string | null
-  update: SessionLiveUpdate
   cursor: number
+  // Events missed while disconnected may have settled into vendor history.
+  reconnected: boolean
   setState: Dispatch<SetStateAction<LiveFeedState | null>>
-}): number {
+}
+
+function applyReady(
+  { selected, subagentId, cursor, reconnected, setState }: LiveUpdateTarget,
+  update: Extract<SessionLiveUpdate, { type: 'ready' }>,
+): number {
+  if (update.replayExpired || reconnected)
+    void queryClient.invalidateQueries({ queryKey: sessionFeedQueryKey(selected, subagentId) })
+  setState((current) => ({
+    ...(!update.replayExpired &&
+    current?.sessionId === selected &&
+    current.subagentId === subagentId
+      ? current
+      : emptyLiveEventBuffer()),
+    sessionId: selected,
+    subagentId,
+    hasChannel: update.live,
+    ready: true,
+  }))
+  return update.replayExpired ? update.cursor : cursor
+}
+
+export function applyLiveUpdate(target: LiveUpdateTarget & { update: SessionLiveUpdate }): number {
+  const { selected, subagentId, update, cursor, setState } = target
   switch (update.type) {
     case 'ready':
-      if (update.replayExpired)
-        void queryClient.invalidateQueries({ queryKey: sessionFeedQueryKey(selected, subagentId) })
-      setState((current) => ({
-        ...(!update.replayExpired &&
-        current?.sessionId === selected &&
-        current.subagentId === subagentId
-          ? current
-          : emptyLiveEventBuffer()),
-        sessionId: selected,
-        subagentId,
-        hasChannel: update.live,
-        ready: true,
-      }))
-      return update.replayExpired ? update.cursor : cursor
+      return applyReady(target, update)
     case 'event':
       if (update.event.sequence <= cursor) return cursor
       if (
@@ -116,15 +121,25 @@ export function useLiveFeedEvents(
     let stopped = false
     let cursor = 0
     let generation: string | null = null
+    let connections = 0
     let reconnect: ReturnType<typeof setTimeout> | null = null
     let subscription: { unsubscribe: () => void } | null = null
     const connect = () => {
+      const reconnected = connections > 0
+      connections += 1
       subscription = trpcClient.sessionLiveEvents.subscribe(
         { sessionId: selected, subagentId, cursor, generation },
         {
           onData(update) {
             if (update.type === 'ready') generation = update.generation
-            cursor = applyLiveUpdate({ selected, subagentId, update, cursor, setState })
+            cursor = applyLiveUpdate({
+              selected,
+              subagentId,
+              update,
+              cursor,
+              reconnected,
+              setState,
+            })
           },
           onError() {
             if (stopped) return

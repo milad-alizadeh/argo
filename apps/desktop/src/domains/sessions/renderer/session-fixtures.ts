@@ -1,7 +1,7 @@
 // Session rows the Sessions stories draw.
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/renderer/model/models'
 import { queryClient, trpc as trpcOptions } from '@/platform/renderer/trpc-client'
-import type { Session, SessionFeed } from './types'
+import type { Session, SessionFeedSnapshot } from './types'
 
 function listedSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -89,7 +89,7 @@ export function sessionListTrpc(
 
 export function sessionFeedTrpc(
   trpc: typeof window.argo.trpc,
-  read: (sessionId: string, subagentId: string | null) => Promise<SessionFeed>,
+  read: (sessionId: string, subagentId: string | null) => Promise<SessionFeedSnapshot>,
 ): typeof window.argo.trpc {
   queryClient.removeQueries({ queryKey: ['sessions'] })
   return (async (request) => {

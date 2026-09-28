@@ -1,10 +1,12 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
-import type { SessionFeed, SessionFeedPage, SessionId } from '../types'
+import type { SessionContractError } from '../session-contract-error'
+import type { SessionFeed, SessionFeedSnapshot, SessionId } from '../types'
 import { projectLiveFeedRows } from './model/live-feed-rows'
-import { useFeedHistory } from './use-feed-history'
+import { retrySessionFeed, sessionFeedQuery } from './session-feed-query'
 import { useLiveFeedEvents } from './use-live-feed-events'
 
-function displayedFeed({
+export function displayedFeed({
   selectedSessionId,
   subagentId,
   reading,
@@ -12,23 +14,23 @@ function displayedFeed({
 }: {
   selectedSessionId: SessionId | null
   subagentId: string | null
-  reading: SessionFeedPage | SessionFeed | null | undefined
+  reading: SessionFeedSnapshot | null
   live: ReturnType<typeof useLiveFeedEvents>
 }): SessionFeed | null {
   if (selectedSessionId === null) return null
-  const current = reading?.sessionId === selectedSessionId ? reading : null
+  const chainId = subagentId ?? selectedSessionId
+  const current =
+    reading?.sessionId === selectedSessionId && reading.chainId === chainId ? reading : null
   const events = live?.events ?? []
   if (current === null && events.length === 0) return null
-  if (current !== null && current.content === undefined) return current as SessionFeed
   const rows = projectLiveFeedRows(current?.content ?? [], events)
   const base = current ?? {
     version: 1,
     type: 'session.feed.read',
     requestId: selectedSessionId,
     sessionId: selectedSessionId,
-    chainId: subagentId ?? selectedSessionId,
+    chainId,
     revision: 'live',
-    olderCursor: null,
     content: [],
   }
   return {
@@ -65,19 +67,19 @@ export function useSessionFeed(
   subagentId: string | null = null,
 ) {
   const live = useLiveFeedEvents(selectedSessionId, subagentId)
-  const history = useFeedHistory(selectedSessionId, subagentId, live?.ready ?? false)
+  const queryClient = useQueryClient()
+  // Subscribe first, so events that land during the read are buffered rather than missed.
+  const query = sessionFeedQuery(selectedSessionId, subagentId, live?.ready ?? false)
+  const history = useQuery<SessionFeedSnapshot | null, SessionContractError>(query)
+  const reading = history.data ?? null
   const displayed = useMemo(
-    () => displayedFeed({ selectedSessionId, subagentId, reading: history.reading, live }),
-    [history.reading, live, selectedSessionId, subagentId],
+    () => displayedFeed({ selectedSessionId, subagentId, reading, live }),
+    [reading, live, selectedSessionId, subagentId],
   )
   return {
     feed: displayed,
     liveStatus: live?.events.findLast((event) => event.type === 'status')?.status ?? null,
     feedError: history.error,
-    retryFeed: history.retry,
-    loadOlder: history.loadOlder,
-    hasOlder: history.hasOlder,
-    loadingOlder: history.loadingOlder,
-    olderError: history.olderError,
+    retryFeed: () => void retrySessionFeed(queryClient, query.queryKey, history.refetch),
   }
 }

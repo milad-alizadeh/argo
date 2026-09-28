@@ -37,8 +37,8 @@ function flakyFeedHost() {
           sessionId,
           chainId: sessionId,
           revision: `storybook-feed-${flakyFeedReads}`,
-          rows: [
-            { shape: 'prose', id: 'flaky-row', role: 'assistant', text: 'Read before the flake.' },
+          content: [
+            { kind: 'message', id: 'flaky-row', role: 'assistant', text: 'Read before the flake.' },
           ],
         }
       },
@@ -67,8 +67,8 @@ function flakyFirstOpenHost() {
           sessionId,
           chainId: sessionId,
           revision: `storybook-feed-${reads}`,
-          rows: [
-            { shape: 'prose', id: 'flaky-row', role: 'assistant', text: 'Read after the flake.' },
+          content: [
+            { kind: 'message', id: 'flaky-row', role: 'assistant', text: 'Read after the flake.' },
           ],
         }
       },
@@ -98,9 +98,9 @@ function missingHistoryHost(listed = true) {
           sessionId,
           chainId: sessionId,
           revision: 'recovered',
-          rows: [
+          content: [
             {
-              shape: 'prose',
+              kind: 'message',
               id: 'recovered-row',
               role: 'assistant',
               text: 'History recovered.',

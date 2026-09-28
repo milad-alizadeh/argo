@@ -136,12 +136,6 @@ export function answerStoredHistory(message: Request, send: Send): boolean {
       } else send({ id: message.id, result: { thread } })
       return true
     }
-    case 'thread/turns/list':
-      send({
-        id: message.id,
-        error: { code: -32601, message: 'thread/turns/list requires experimentalApi capability' },
-      })
-      return true
     case 'thread/loaded/list':
       send({ id: message.id, result: { data: [] } })
       return true

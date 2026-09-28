@@ -11,9 +11,8 @@ machine described below is superseded. A Codex channel failure affects its Sessi
 client and other Harnesses remain application-owned resources.
 
 Codex turn and item notifications carry stable vendor IDs into the same validated Feed event
-contract as Claude. Vendor history settles those rows. The installed Codex 0.157.0 declares and
-accepts experimental `thread/turns/list`; Argo uses its newest-first pages only for that verified
-version and falls back to `thread/read` with bounded local pages otherwise.
+contract as Claude. Vendor history settles those rows. The Feed reads each chain's complete
+history through `thread/read` as one snapshot and merges live events into it; it has no pages.
 
 Argo reads and drives Sessions through supported vendor interfaces. Claude uses the Claude Agent
 SDK. Codex uses `codex app-server`. Argo does not parse transcript or rollout files. A filesystem

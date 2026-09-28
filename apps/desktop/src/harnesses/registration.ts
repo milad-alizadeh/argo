@@ -57,10 +57,6 @@ export type HarnessRegistration<Id extends Harness = Harness> = HarnessReadiness
   harness: Id
   readCatalog: () => Promise<HarnessInfo>
   readHistory: (target: SessionHistoryTarget) => Promise<FeedContent[]>
-  readHistoryPage?: (
-    target: SessionHistoryTarget,
-    before: string | null,
-  ) => Promise<{ content: FeedContent[]; olderCursor: string | null } | null>
   hasTurn?: (nativeId: string, turnId: string) => Promise<boolean>
   watchHistory?: (target: SessionHistoryTarget, invalidate: () => void) => () => void
   openLiveSession?: (
