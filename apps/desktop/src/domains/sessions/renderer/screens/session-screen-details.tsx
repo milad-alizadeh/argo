@@ -156,8 +156,8 @@ function useCatalogRead(harness: HarnessControl) {
 function useComposerRetryFocus() {
   const [focusComposerAfterRetry, setFocusComposerAfterRetry] = useState(false)
   const clearRecoveryFocus = useCallback(() => setFocusComposerAfterRetry(false), [])
-  const focusAfterSuccessfulRetry = (retry: () => Promise<{ isSuccess: boolean }>) => {
-    void retry().then(({ isSuccess }) => {
+  const focusAfterSuccessfulRetry = (retry: Promise<{ isSuccess: boolean }>) => {
+    void retry.then(({ isSuccess }) => {
       if (isSuccess) setFocusComposerAfterRetry(true)
     })
   }
@@ -199,9 +199,9 @@ export function SessionComposerArea({
     identity,
     projectId: cockpit.project?.id ?? null,
   })
-  const retryCatalog = () => focusAfterSuccessfulRetry(catalogQuery.refetch)
+  const retryCatalog = () => focusAfterSuccessfulRetry(catalogQuery.refetch())
   const retryDraft = () => {
-    if (draft) focusAfterSuccessfulRetry(draft.retryLoad)
+    if (draft) focusAfterSuccessfulRetry(draft.retryLoad())
   }
   if (session?.locked === true) return <OpenElsewhere onRetry={null} />
   if (draft === null)
