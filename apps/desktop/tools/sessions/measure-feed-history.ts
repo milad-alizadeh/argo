@@ -1,4 +1,5 @@
 // Opens 1, 5 and 10 MB Claude histories in the packaged app and reports read size, pauses and memory.
+// Then repeats switch and refresh, sampling memory after forced GC, to tell a leak from a peak.
 // Run with `bun run measure:feed-history`; every gesture is in-page, so no real input device is used.
 import { randomUUID } from 'node:crypto'
 import { appendFile, chmod, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises'
@@ -18,6 +19,7 @@ import { prepare } from '../../e2e/sessions/fixtures/feed.fixture'
 import { writeMockClaude } from '../../mocks/cli/claude/mock-claude-cli'
 import { proofCwd } from '../../mocks/sessions/mock-transcript-files'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
+import { type MemorySample, printSamples, processWorkingSetMb, sample } from './feed-memory-sample'
 
 const SIZES = [
   { label: '1 MB', targetBytes: 1_000_000 },
@@ -212,16 +214,6 @@ async function rendererHeapMb(page: Page) {
     const memory = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory
     return memory ? Math.round(memory.usedJSHeapSize / (1024 * 1024)) : null
   })
-}
-
-async function processWorkingSetMb(application: ElectronApplication) {
-  const kilobytes = await application.evaluate(({ app }) =>
-    app
-      .getAppMetrics()
-      .filter((metric) => metric.type === 'Renderer' || metric.type === 'Tab')
-      .reduce((total, metric) => total + (metric.memory?.workingSetSize ?? 0), 0),
-  )
-  return Math.round(kilobytes / 1024)
 }
 
 // How late a 20 ms main-process timer fires is the main thread's stall.
@@ -512,6 +504,43 @@ function historyPath(transcripts: string, cwd: string, sessionId: string) {
   return path.join(transcripts, cwd.replace(/[^a-zA-Z0-9]/g, '-'), `${sessionId}.jsonl`)
 }
 
+const CYCLES = 10
+
+type CycleRequest = {
+  page: Page
+  application: ElectronApplication
+  fixture: Awaited<ReturnType<typeof prepare>>
+  historyId: string
+  sessionIds: { history: string; other: string }
+  lastUuid: string
+  cwd: string
+}
+
+async function runCycles(request: CycleRequest) {
+  const { page, application, fixture, historyId, sessionIds, cwd } = request
+  const samples: MemorySample[] = [await sample('after steps', page, application)]
+  let last = request.lastUuid
+  for (let cycle = 1; cycle <= CYCLES; cycle += 1) {
+    await openAndReachTail(page, sessionIds.other)
+    await openAndReachTail(page, sessionIds.history, last)
+    const revisionBefore = await activeRevision(page)
+    const appended = refreshTurn(cwd, last)
+    await refreshAndWait({
+      page,
+      fixture,
+      historyId,
+      sessionId: sessionIds.history,
+      appended,
+      revisionBefore,
+    })
+    last = appended.refreshUuid
+    samples.push(await sample(`cycle ${cycle}`, page, application))
+  }
+  await openAndReachTail(page, sessionIds.other)
+  samples.push(await sample('parked on other', page, application))
+  return samples
+}
+
 async function runSize(size: (typeof SIZES)[number]) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'argo-feed-history-'))
   try {
@@ -541,6 +570,11 @@ async function runSize(size: (typeof SIZES)[number]) {
         cwd,
       })
       printTable(size.label, rows)
+      const lastUuid = refreshTurn(cwd, history.lastUuid).refreshUuid
+      printSamples(
+        size.label,
+        await runCycles({ page, application, fixture, historyId, sessionIds, lastUuid, cwd }),
+      )
     } finally {
       await application.close()
     }
