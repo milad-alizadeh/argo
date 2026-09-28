@@ -1,5 +1,12 @@
 import type { ReactNode } from 'react'
-import { createHashRouter, Navigate, Outlet, useLocation, useMatches } from 'react-router'
+import {
+  createHashRouter,
+  Navigate,
+  Outlet,
+  type RouteObject,
+  useLocation,
+  useMatches,
+} from 'react-router'
 import { AtlasSidebar } from '@/domains/atlas/renderer/components/atlas-sidebar'
 import { AtlasPage } from '@/domains/atlas/renderer/pages/atlas-page'
 import { useHarnessReadiness } from '@/domains/harness-signin/renderer/hooks/use-harness-readiness'
@@ -67,12 +74,13 @@ export function CockpitRouteLayout() {
       leftHeader={<ProjectSwitcher />}
       sidebar={sidebar}
     >
-      <Outlet key={location.pathname} />
+      {/* Keyed by section, not path: a section switch draws a fresh screen, a Session switch keeps it. */}
+      <Outlet key={matches[1]?.pathname ?? location.pathname} />
     </AppShell>
   )
 }
 
-export const cockpitRouter = createHashRouter([
+export const cockpitRoutes: RouteObject[] = [
   {
     element: <CockpitRouteLayout />,
     children: [
@@ -103,7 +111,9 @@ export const cockpitRouter = createHashRouter([
       },
     ],
   },
-])
+]
+
+export const cockpitRouter = createHashRouter(cockpitRoutes)
 
 function ProjectIndexRedirect() {
   const [cockpit] = useProjects()

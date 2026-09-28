@@ -5,7 +5,7 @@ import { claudeComposerModelCatalogFixture } from '../../../../../test-fixtures/
 import { claudeChoices } from '../../../../../test-fixtures/sessions/harness-catalog.fixture'
 import { ComposerForm } from '../composer/layout/composer-form'
 import type { TurnConfigurationChoices } from '../composer/turn-configuration/turn-configuration'
-import { ComposerLoadFallback } from './session-screen-details'
+import { ComposerNotices } from './session-screen-details'
 
 const choices = claudeChoices(claudeComposerModelCatalogFixture())
 if (choices === null) throw new Error('The Claude story catalog has no usable model.')
@@ -31,16 +31,27 @@ function ComposerCatalogRecovery() {
       <button onClick={() => setState('failed')} type="button">
         Fail catalog read
       </button>
-      <ComposerLoadFallback
-        sessionId="catalog-recovery"
-        harness={{ harness: 'claude' }}
-        choices={state === 'failed' ? null : availableChoices}
-        opening={state === 'failed' ? null : availableChoices.opening}
+      <ComposerNotices
         catalogFailure={state === 'failed' ? { reason: 'load-failed' } : null}
+        draft={null}
+        harness={{ harness: 'claude' }}
+        loading={state === 'loading'}
         onRetryCatalog={() => {
           setFocusOnReady(true)
           setState('ready')
         }}
+        onRetryDraft={() => {}}
+        permissionFailure={null}
+      />
+      <ComposerForm
+        sessionId="catalog-recovery:loading"
+        catalogFailure={state === 'failed' ? { reason: 'load-failed' } : null}
+        disabled
+        harness={{ harness: 'claude' }}
+        turnConfigurationChoices={state === 'failed' ? null : availableChoices}
+        initialEditing={
+          state === 'failed' ? undefined : { turnConfiguration: availableChoices.opening }
+        }
       />
     </div>
   )

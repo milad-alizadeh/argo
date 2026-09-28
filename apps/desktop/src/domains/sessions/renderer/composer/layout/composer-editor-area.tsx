@@ -27,6 +27,7 @@ export function ComposerEditorArea({
     <>
       <ComposerAttachments />
       <div className="relative min-w-0 flex-1">
+        {/* One Lexical editor per owner, so an in-flight Send cannot clear the next owner's text. */}
         <ComposerEditor
           key={sessionId}
           harness={harness}

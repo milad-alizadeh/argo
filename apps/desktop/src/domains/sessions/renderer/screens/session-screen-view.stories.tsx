@@ -1,12 +1,20 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useCallback, useState } from 'react'
-import { MemoryRouter, Navigate, Route, Routes } from 'react-router'
+import {
+  createMemoryRouter,
+  MemoryRouter,
+  Navigate,
+  Route,
+  RouterProvider,
+  Routes,
+} from 'react-router'
 import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/renderer/model/models'
 import type { SessionShellOutput } from '@/domains/sessions/renderer/work/types'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { queryClient, trpc } from '@/platform/renderer/trpc-client'
+import { cockpitRoutes } from '@/renderer/cockpit-router'
 import { claudeHarnessInfoFixture } from '../../../../../test-fixtures/sessions/harness-catalog.fixture'
 import { ComposerForm } from '../composer/layout/composer-form'
 import { RICH_MARKDOWN } from '../feed/content/feed-samples'
@@ -217,18 +225,26 @@ function selectionProjectReply(request: StorybookTrpcRequest): StorybookTrpcResp
   }
 }
 
+// Drafts the story host has saved, so a Session opened again reads back what it was left with.
+const selectionDrafts = new Map<string, object>()
+
+function selectionDraftReply(value: { target: object; [field: string]: unknown }) {
+  selectionDrafts.set(JSON.stringify(value.target), value)
+  return storybookTrpcSuccess(value)
+}
+
 function selectionComposerReply(request: StorybookTrpcRequest): StorybookTrpcResponse | null {
   switch (request.path) {
     case 'harnessCatalogRead':
       return storybookTrpcSuccess({ info: claudeHarnessInfoFixture(), failure: null })
     case 'composerDraftRead':
-      return storybookTrpcSuccess(null)
+      return storybookTrpcSuccess(selectionDrafts.get(JSON.stringify(request.input)) ?? null)
     case 'composerDraftCreate': {
       const input = request.input as {
         target: { type: 'session'; sessionId: string }
         content: object
       }
-      return storybookTrpcSuccess({
+      return selectionDraftReply({
         id: `selection-draft-${input.target.sessionId}`,
         ...input.content,
         target: input.target,
@@ -240,14 +256,15 @@ function selectionComposerReply(request: StorybookTrpcRequest): StorybookTrpcRes
     case 'composerDraftSave': {
       const input = request.input as {
         id: string
+        expectedRevision: number
         target: object
         content: object
       }
-      return storybookTrpcSuccess({
+      return selectionDraftReply({
         id: input.id,
         ...input.content,
         target: input.target,
-        revision: 1,
+        revision: input.expectedRevision + 1,
         createdAt: 0,
         updatedAt: 0,
       })
@@ -289,6 +306,7 @@ function selectionHostTrpc(base: typeof window.argo.trpc): typeof window.argo.tr
 }
 
 function clearSelectionQueries() {
+  selectionDrafts.clear()
   queryClient.removeQueries({ queryKey: trpc.sessionList.pathKey() })
   queryClient.removeQueries({ queryKey: trpc.projectList.pathKey() })
   queryClient.removeQueries({ queryKey: trpc.projectOpen.pathKey() })
@@ -811,13 +829,17 @@ const meta = {
     layout: 'fullscreen',
   },
   decorators: [
-    (Story) => (
-      <MemoryRouter initialEntries={['/projects/project-1/sessions']}>
-        <div className="h-dvh w-full">
-          <Story />
-        </div>
-      </MemoryRouter>
-    ),
+    // A story on the cockpit's own routes brings its own data router.
+    (Story, { parameters }) =>
+      parameters.ownRouter === true ? (
+        <Story />
+      ) : (
+        <MemoryRouter initialEntries={['/projects/project-1/sessions']}>
+          <div className="h-dvh w-full">
+            <Story />
+          </div>
+        </MemoryRouter>
+      ),
   ],
 } satisfies Meta<typeof SessionScreenView>
 
@@ -966,6 +988,95 @@ export const SwitchingKeepsScreenAreasOnTheSelectedSession: Story = {
     await expect(canvas.getByLabelText('Session composer')).toBeVisible()
     await expect(canvas.getByRole('combobox', { name: 'Message' })).toHaveTextContent('')
     await expect(canvas.queryByRole('region', { name: 'Background Shell' })).toBeNull()
+  },
+}
+
+function CockpitSessionScreen() {
+  const [router] = useState(() =>
+    createMemoryRouter(cockpitRoutes, {
+      initialEntries: ['/projects/project-1/sessions/composer-review'],
+    }),
+  )
+  return (
+    <div className="h-dvh w-full">
+      <RouterProvider router={router} />
+    </div>
+  )
+}
+
+// Counts composer cards after every DOM commit, so a commit that drops the card is caught even
+// when the next one draws it again.
+function watchComposerCards(canvasElement: HTMLElement) {
+  const cards = () => within(canvasElement).queryAllByLabelText(COMPOSER_CARD_LABEL)
+  const [first] = cards()
+  let fewest = cards().length
+  const observer = new MutationObserver(() => {
+    fewest = Math.min(fewest, cards().length)
+  })
+  observer.observe(canvasElement, { childList: true, subtree: true })
+  return {
+    read: () => ({ sameCard: first?.isConnected === true && cards()[0] === first, fewest }),
+    stop: () => observer.disconnect(),
+  }
+}
+
+const COMPOSER_CARD_LABEL = 'Message composer'
+
+async function switchSessionKeepingComposer(
+  canvasElement: HTMLElement,
+  watch: ReturnType<typeof watchComposerCards>,
+  input: { title: RegExp; sessionId: string; draft: string },
+) {
+  const canvas = within(canvasElement)
+  await userEvent.click(canvas.getByRole('button', { name: input.title }))
+  await waitFor(() =>
+    expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
+      'data-session',
+      input.sessionId,
+    ),
+  )
+  await waitFor(() =>
+    expect(canvas.getByRole('combobox', { name: 'Message' })).toHaveTextContent(input.draft),
+  )
+  await expect(watch.read()).toEqual({ sameCard: true, fewest: 1 })
+}
+
+// A Session switch keeps the one composer card on screen and swaps only its content (#2836).
+export const SwitchingKeepsTheComposerCardMounted: Story = {
+  parameters: { ownRouter: true },
+  beforeEach: () => productionSelectionHost(),
+  render: () => <CockpitSessionScreen />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const composer = await canvas.findByRole('combobox', { name: 'Message' })
+    await waitFor(() => expect(composer).toHaveAttribute('contenteditable', 'true'))
+    await userEvent.type(composer, 'Draft for the first Session')
+    // The draft saves after a pause in typing; the switch comes after that save.
+    await waitFor(() =>
+      expect(
+        selectionDrafts.get(JSON.stringify({ type: 'session', sessionId: 'composer-review' })),
+      ).toMatchObject({ prompt: 'Draft for the first Session' }),
+    )
+    const watch = watchComposerCards(canvasElement)
+    try {
+      await switchSessionKeepingComposer(canvasElement, watch, {
+        title: /Add Markdown typing shortcuts/,
+        sessionId: 'shortcut-review',
+        draft: '',
+      })
+      await switchSessionKeepingComposer(canvasElement, watch, {
+        title: /Review transcript rendering/,
+        sessionId: 'feed-review',
+        draft: '',
+      })
+      await switchSessionKeepingComposer(canvasElement, watch, {
+        title: /Finish Session composer review/,
+        sessionId: 'composer-review',
+        draft: 'Draft for the first Session',
+      })
+    } finally {
+      watch.stop()
+    }
   },
 }
 

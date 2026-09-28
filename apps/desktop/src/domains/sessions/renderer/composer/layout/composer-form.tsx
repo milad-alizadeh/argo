@@ -132,8 +132,8 @@ export function ComposerForm({ initialEditing, onEditingChange, ...props }: Comp
   return (
     <ComposerEditingProvider
       initial={initialEditing}
-      key={props.sessionId}
       onChange={onEditingChange}
+      owner={props.sessionId}
     >
       <ComposerFormSurface {...props} />
     </ComposerEditingProvider>
