@@ -1,21 +1,22 @@
-import { type ActorRefFrom, assertEvent, fromPromise, setup } from 'xstate'
+import { type ActorRefFrom, assertEvent, fromCallback, fromPromise, setup } from 'xstate'
 import type { Database } from '@/database/database'
 import type { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
 import { createLiveSessionSupervisorMachine } from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import type { SessionEventJournal } from '@/domains/sessions/main/live/session-event-journal'
 import type { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import { sessionSyncSupervisorMachine } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
+import type { Harness } from '@/harnesses/harness'
+import type { HarnessCatalog } from '@/harnesses/harness-catalog'
 import {
-  type HarnessCatalog,
-  harnessCatalogMachine,
-} from '@/harnesses/catalog/harness-catalog-machine'
-import { type HarnessRegistry, readHarnessCatalog } from '@/harnesses/registry'
-import { codexAppServerMachine } from './codex-app-server-machine'
+  type HarnessRegistry,
+  readHarnessCatalog,
+  shutdownHarnessRegistry,
+} from '@/harnesses/registry'
+import { harnessCatalogMachine } from '../harness-catalog/harness-catalog-machine'
 
 type AppDependencies = {
   database: Database
-  sessionSyncStatus: SessionSyncStatusStore
-  codexSessionSyncStatus: SessionSyncStatusStore
+  sessionSyncStatus: Record<Harness, SessionSyncStatusStore>
   sessionEventJournal?: SessionEventJournal
   sessionInteractionBroker?: SessionInteractionBroker
 }
@@ -40,7 +41,7 @@ export function createAppMachine(registry: HarnessRegistry, dependencies: AppDep
           },
     },
     actors: {
-      codex: codexAppServerMachine,
+      harnessClients: fromCallback(() => () => shutdownHarnessRegistry(registry)),
       catalog: catalogMachine,
       sessions: createLiveSessionSupervisorMachine({
         database: dependencies.database,
@@ -56,10 +57,8 @@ export function createAppMachine(registry: HarnessRegistry, dependencies: AppDep
     context: {},
     invoke: [
       {
-        id: 'codex',
-        systemId: 'codex',
-        src: 'codex',
-        input: {},
+        id: 'harnessClients',
+        src: 'harnessClients',
       },
       {
         id: 'catalog',
@@ -80,10 +79,7 @@ export function createAppMachine(registry: HarnessRegistry, dependencies: AppDep
           return {
             database: event.input.database,
             harnesses: registry,
-            status: {
-              claude: event.input.sessionSyncStatus,
-              codex: event.input.codexSessionSyncStatus,
-            },
+            status: event.input.sessionSyncStatus,
           }
         },
       },

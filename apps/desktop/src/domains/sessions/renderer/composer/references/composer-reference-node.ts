@@ -2,7 +2,11 @@ import type { EditorConfig, NodeKey, SerializedTextNode } from 'lexical'
 import { TextNode } from 'lexical'
 import type { SessionHarness } from '../../harness/harnesses'
 import { composerReferenceIcon } from './composer-reference-icon'
-import { harnessLabel, referenceBySource, referenceSupportsHarness } from './session-reference'
+import {
+  referenceBySource,
+  referenceHarnessLabel,
+  referenceSupportsHarness,
+} from './session-reference'
 
 const SUPPORTED_CLASS =
   'composer-inline-context mx-0.5 inline-flex items-center gap-1 align-middle cursor-text !font-semibold text-foreground type-body'
@@ -47,7 +51,7 @@ export class ComposerReferenceNode extends TextNode {
       element.dataset.unsupported = 'true'
       const fact = element.ownerDocument.createElement('span')
       fact.className = 'sr-only'
-      fact.textContent = ` — not available for ${harnessLabel(this.__harness)}`
+      fact.textContent = ` — not available for ${referenceHarnessLabel(this.__harness)}`
       element.appendChild(fact)
     }
     return element

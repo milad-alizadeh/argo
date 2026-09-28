@@ -1,11 +1,9 @@
 // The version 1 Harness sign-in contract (CONTEXT.md L1 · Harness). Readiness and sign-in for the
-// vendor CLIs Argo drives — Claude and Codex — kept apart from Account: a Harness sign-in is a
+// vendor CLIs Argo drives, kept apart from Account: a Harness sign-in is a
 // subscription to a vendor's own CLI, never an Account entity (#2579).
 import { z } from 'zod'
+import { harnessSchema } from '@/harnesses/harness'
 import { type ContractError, errorFactory, errorSchema, guard, message } from '@/shared/messages'
-
-export const harnessSchema = z.enum(['claude', 'codex'])
-export type Harness = z.infer<typeof harnessSchema>
 
 export const HARNESS_READINESS_STATES = [
   'missing',
@@ -16,8 +14,8 @@ export const HARNESS_READINESS_STATES = [
 export const harnessReadinessStateSchema = z.enum(HARNESS_READINESS_STATES)
 export type HarnessReadinessState = z.infer<typeof harnessReadinessStateSchema>
 
-// `detail` names the reason behind a state the state alone cannot say: the policy path Claude's
-// CLI reports instead of `firstParty`, or why Codex's status text did not parse.
+// `detail` names the reason behind a state the state alone cannot say, such as a policy path the
+// CLI reports or why its status text did not parse.
 const harnessReadinessSchema = z.strictObject({
   harness: harnessSchema,
   state: harnessReadinessStateSchema,

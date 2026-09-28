@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import type { SessionTurnConfiguration } from '@/domains/sessions/renderer/model/models'
-import type { AvailableHarness, CatalogReading } from '@/harnesses/catalog/harness-catalog-machine'
+import type { AvailableHarness, CatalogReading } from '@/harnesses/harness-catalog'
 import type { IconName } from '@/platform/renderer/components/icon/icon'
 import type { ComposerIdentity } from '../identity/composer-identity'
 

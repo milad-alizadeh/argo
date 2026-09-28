@@ -4,6 +4,7 @@ import { eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionSyncStatus } from '@/database/session-sync/schema'
+import type { Harness } from '@/harnesses/harness'
 
 export const sessionSyncStatusSchema = z.strictObject({
   phase: z.enum(['idle', 'fetching', 'saving', 'ready', 'failed']),
@@ -66,9 +67,9 @@ export class SessionSyncStatusStore {
   #status: SessionSyncStatus
   #listeners = new Set<(event: SessionSyncEvent) => void>()
   private readonly database: Database | undefined
-  private readonly harness: string
+  private readonly harness: Harness
 
-  constructor(database?: Database, harness = 'claude') {
+  constructor(database: Database | undefined, harness: Harness) {
     this.database = database
     this.harness = harness
     this.#status =
@@ -125,17 +126,61 @@ export class SessionSyncStatusStore {
     return () => this.#listeners.delete(listener)
   }
 
-  observable() {
-    return observable<SessionSyncEvent>((emit) => this.subscribe((event) => emit.next(event)))
-  }
-
   private emit(event: SessionSyncEvent): void {
     for (const listener of this.#listeners) listener(event)
   }
 }
 
+// Earlier phases win: one active scan keeps the whole sync active.
+const PHASE_PRECEDENCE: readonly SessionSyncStatus['phase'][] = [
+  'fetching',
+  'saving',
+  'failed',
+  'ready',
+  'idle',
+]
+
+function combinedStatus(statuses: readonly SessionSyncStatus[]): SessionSyncStatus {
+  const started = statuses.filter(({ phase }) => phase !== 'idle')
+  const successes = statuses.flatMap(({ lastSuccessfulSyncAt }) =>
+    lastSuccessfulSyncAt === null ? [] : [lastSuccessfulSyncAt],
+  )
+  return {
+    phase:
+      PHASE_PRECEDENCE.find((phase) => statuses.some((status) => status.phase === phase)) ?? 'idle',
+    processed: statuses.reduce((sum, { processed }) => sum + processed, 0),
+    total:
+      started.length === 0 || started.some(({ total }) => total === null)
+        ? null
+        : started.reduce((sum, { total }) => sum + (total ?? 0), 0),
+    skipped: statuses.reduce((sum, { skipped }) => sum + skipped, 0),
+    lastSuccessfulSyncAt: successes.length === 0 ? null : (successes.toSorted().at(-1) ?? null),
+    failure: statuses.find(({ failure }) => failure !== null)?.failure ?? null,
+  }
+}
+
+export function observeSessionSync(
+  stores: readonly SessionSyncStatusStore[],
+  listener: (event: SessionSyncEvent) => void,
+): () => void {
+  let subscribed = false
+  const report = (event: SessionSyncEvent) => {
+    if (event.type === 'committed') listener(event)
+    else if (subscribed)
+      listener({ type: 'status', status: combinedStatus(stores.map((store) => store.current())) })
+  }
+  const stops = stores.map((store) => store.subscribe(report))
+  subscribed = true
+  listener({ type: 'status', status: combinedStatus(stores.map((store) => store.current())) })
+  return () => {
+    for (const stop of stops) stop()
+  }
+}
+
 const t = initTRPC.create()
 
-export function sessionSyncStatusProcedure(store: SessionSyncStatusStore) {
-  return t.procedure.subscription(() => store.observable())
+export function sessionSyncStatusProcedure(stores: readonly SessionSyncStatusStore[]) {
+  return t.procedure.subscription(() =>
+    observable<SessionSyncEvent>((emit) => observeSessionSync(stores, (event) => emit.next(event))),
+  )
 }

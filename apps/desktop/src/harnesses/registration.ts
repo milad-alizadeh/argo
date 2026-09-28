@@ -10,7 +10,7 @@ import type {
   SessionLiveInput,
   SessionStartInput,
 } from '@/domains/sessions/main/api/session-submit'
-import type { HarnessInfo } from '@/harnesses/catalog/harness-catalog-machine'
+import type { HarnessInfo } from '@/harnesses/harness-catalog'
 import { identifierSchema } from '@/shared/validation'
 import type { Harness } from './harness'
 
@@ -66,4 +66,13 @@ export type HarnessRegistration<Id extends Harness = Harness> = HarnessReadiness
   ) => LiveSessionChannel
   rename?: (nativeId: string, title: string) => Promise<void>
   sessionDiscovery: SessionDiscovery
+  // A later Send may change only these Turn settings; any setting left out stays fixed.
+  changeableTurnSettings: readonly ('model' | 'effort' | 'mode')[]
+  acceptsAttachments: boolean
+  // The token count at which the Harness compacts a Session's context on its own.
+  autoCompactLimit?: {
+    read: () => Promise<number>
+    write: (limit: number) => Promise<number>
+  }
+  shutdown?: () => void
 }

@@ -5,7 +5,7 @@ import type {
   SessionDiscoveryInput,
   SessionDiscoveryResult,
 } from '@/domains/sessions/api/session-discovery'
-import { SESSION_CLAUDE_SYNC_FIXTURE_ENV } from '@/harnesses/proof-protocol'
+import { SESSION_CLAUDE_SYNC_FIXTURE_ENV } from '../proof-protocol'
 
 const claudeSessionSchema = z
   .object({

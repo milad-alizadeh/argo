@@ -5,46 +5,6 @@
     {
       "identity": {
         "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/sessions/renderer/composer/context-window/context-popover.stories.tsx",
-        "code": "TS2339",
-        "message": "Property 'getCodexAutoCompactLimit' does not exist on type '{ onAppearanceChanged: (listener: (state: { appearance: \"light\" | \"dark\" | \"system\"; dark: boolean; }) => void) => () => void; onCommand: (listener: (command: string) => void) => () => void; ... 5 more ...; trpcSubscribe: (request: TrpcRequest, listener: (message: TrpcSubscriptionMessage) => void) => Promise<...>; }'."
-      },
-      "owner": "#2710",
-      "reason": "Compaction requests still use the retired preload API."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/sessions/renderer/composer/context-window/context-popover.stories.tsx",
-        "code": "TS2353",
-        "message": "Object literal may only specify known properties, and 'getCodexAutoCompactLimit' does not exist in type '{ onAppearanceChanged: (listener: (state: { appearance: \"light\" | \"dark\" | \"system\"; dark: boolean; }) => void) => () => void; onCommand: (listener: (command: string) => void) => () => void; ... 5 more ...; trpcSubscribe: (request: TrpcRequest, listener: (message: TrpcSubscriptionMessage) => void) => Promise<...>; }'."
-      },
-      "owner": "#2710",
-      "reason": "Compaction requests still use the retired preload API."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/sessions/renderer/composer/context-window/use-codex-auto-compact-threshold.ts",
-        "code": "TS2339",
-        "message": "Property 'getCodexAutoCompactLimit' does not exist on type '{ onAppearanceChanged: (listener: (state: { appearance: \"light\" | \"dark\" | \"system\"; dark: boolean; }) => void) => () => void; onCommand: (listener: (command: string) => void) => () => void; ... 5 more ...; trpcSubscribe: (request: TrpcRequest, listener: (message: TrpcSubscriptionMessage) => void) => Promise<...>; }'."
-      },
-      "owner": "#2710",
-      "reason": "Compaction requests still use the retired preload API."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
-        "path": "apps/desktop/src/domains/sessions/renderer/composer/context-window/use-codex-auto-compact-threshold.ts",
-        "code": "TS2339",
-        "message": "Property 'setCodexAutoCompactLimit' does not exist on type '{ onAppearanceChanged: (listener: (state: { appearance: \"light\" | \"dark\" | \"system\"; dark: boolean; }) => void) => () => void; onCommand: (listener: (command: string) => void) => () => void; ... 5 more ...; trpcSubscribe: (request: TrpcRequest, listener: (message: TrpcSubscriptionMessage) => void) => Promise<...>; }'."
-      },
-      "owner": "#2710",
-      "reason": "Compaction requests still use the retired preload API."
-    },
-    {
-      "identity": {
-        "workspace": "@argo/desktop",
         "path": "apps/desktop/src/domains/sessions/renderer/composer/hooks/use-composer-attachments.ts",
         "code": "TS2339",
         "message": "Property 'chooseSessionAttachments' does not exist on type '{ onAppearanceChanged: (listener: (state: { appearance: \"light\" | \"dark\" | \"system\"; dark: boolean; }) => void) => () => void; onCommand: (listener: (command: string) => void) => () => void; ... 5 more ...; trpcSubscribe: (request: TrpcRequest, listener: (message: TrpcSubscriptionMessage) => void) => Promise<...>; }'."
