@@ -10,6 +10,7 @@ import {
   useFeedViewport,
   useInitialFeedPosition,
   useScrollPositionSnapshot,
+  useTailThroughViewportResize,
 } from './anchoring'
 import { type FeedRowComponent, FeedViewport } from './feed-viewport'
 import { useFeedPrompt, usePromptHold } from './prompt-pin'
@@ -93,7 +94,7 @@ export function AnchoredFeed({
   historyLabel,
 }: AnchoredFeedProps) {
   const { t } = useTranslation('sessions')
-  const { attachViewport, padding, viewport } = useFeedViewport()
+  const { attachViewport, paddingStart, viewport } = useFeedViewport()
   const tailFollow = useFeedTailFollow(settled.reading.sessionId, { active, viewport })
   const { following, update: updatePromptHold } = usePromptHold(tailFollow.shouldFollow)
   const virtualizer = useAnchoredVirtualizer({
@@ -103,9 +104,10 @@ export function AnchoredFeed({
     rows,
     tail,
     viewport,
-    padding,
+    paddingStart,
     onChange: tailFollow.onChange,
   })
+  useTailThroughViewportResize(viewport, following)
   const olderAnchor = useRef<{ id: string; offset: number; firstId: string } | null>(null)
   const visibleAnchor = useRef<{ id: string; offset: number } | null>(null)
   const pendingAnchor = useRef<{ id: string; offset: number } | null>(null)
@@ -225,7 +227,7 @@ export function AnchoredFeed({
     sessionId: settled.reading.sessionId,
     virtualizer,
     updatePromptHold,
-    paddingStart: padding.start,
+    paddingStart,
   })
   useJumpToLatest({
     active,
@@ -250,7 +252,7 @@ export function AnchoredFeed({
       ) : null}
       <FeedViewport
         FeedRow={FeedRow}
-        gap={padding.start}
+        gap={paddingStart}
         promptIndex={promptIndex}
         reveals={reveals}
         rows={rows}
