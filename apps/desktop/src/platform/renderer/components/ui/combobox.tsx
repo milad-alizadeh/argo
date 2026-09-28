@@ -1,4 +1,5 @@
 import { Combobox as ComboboxPrimitive } from '@base-ui/react'
+import { CaretDownIcon, CheckIcon, XIcon } from "@phosphor-icons/react";
 import { cn } from 'cn'
 import * as React from 'react'
 import { Button } from './button'
@@ -8,7 +9,6 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from './input-group'
-import { CheckIcon, CaretDownIcon, XIcon } from "@phosphor-icons/react";
 
 const Combobox = ComboboxPrimitive.Root
 

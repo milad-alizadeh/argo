@@ -62,6 +62,7 @@ function ComposerSection({
   const sectionRef = useRef<HTMLElement>(null)
   const hasComposer = composer !== null
   useLayoutEffect(() => {
+    if (!hasComposer) return
     const section = sectionRef.current
     const body = section?.parentElement
     if (!section || !body) return

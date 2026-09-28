@@ -1,3 +1,4 @@
+import { ArrowDownIcon } from "@phosphor-icons/react";
 import {
   MessageScroller as MessageScrollerPrimitive,
   useMessageScroller,
@@ -7,7 +8,6 @@ import {
 import { cn } from 'cn'
 import type * as React from 'react'
 import { Button } from './button'
-import { ArrowDownIcon } from "@phosphor-icons/react";
 
 function MessageScrollerProvider(
   props: React.ComponentProps<typeof MessageScrollerPrimitive.Provider>,

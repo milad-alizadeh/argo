@@ -54,7 +54,11 @@ export function SessionListFilterMenu({
           ))}
         </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="whitespace-nowrap type-control" disabled={refreshing} onClick={onRefresh}>
+        <DropdownMenuItem
+          className="whitespace-nowrap type-control"
+          disabled={refreshing}
+          onClick={onRefresh}
+        >
           <Icon name="retry" />
           {t('refreshSessions')}
         </DropdownMenuItem>

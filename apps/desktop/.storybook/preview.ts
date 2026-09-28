@@ -1,9 +1,8 @@
-import type { Preview } from '@storybook/react-vite'
 import { IconContext } from '@phosphor-icons/react'
+import type { Preview } from '@storybook/react-vite'
 import { createElement } from 'react'
-
-import { AutoHideScrollbars } from '../src/platform/renderer/auto-hide-scrollbars'
 import { AppQueryProvider } from '../src/platform/renderer/app-query-provider'
+import { AutoHideScrollbars } from '../src/platform/renderer/auto-hide-scrollbars'
 import '../src/renderer/i18n'
 import '../src/platform/renderer/styles/globals.css'
 import { host } from './storybook-host'
@@ -21,7 +20,7 @@ const preview: Preview = {
       return createElement(
         IconContext.Provider,
         { value: { weight: 'regular' } },
-        createElement(AutoHideScrollbars, { children: createElement(AppQueryProvider, null, Story()) }),
+        createElement(AutoHideScrollbars, null, createElement(AppQueryProvider, null, Story())),
       )
     },
   ],

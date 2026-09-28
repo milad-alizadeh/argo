@@ -1,6 +1,6 @@
-import { Icon } from '@/platform/renderer/components/icon/icon'
 import { useTranslation } from 'react-i18next'
 import type { WorkspaceSummary } from '@/domains/workspaces/renderer'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   DropdownMenu,
   DropdownMenuContent,

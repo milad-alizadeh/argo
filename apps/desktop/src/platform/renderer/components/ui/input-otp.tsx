@@ -1,7 +1,7 @@
+import { MinusIcon } from "@phosphor-icons/react";
 import { cn } from 'cn'
 import { OTPInput, OTPInputContext } from 'input-otp'
 import * as React from 'react'
-import { MinusIcon } from "@phosphor-icons/react";
 
 function InputOTP({
   className,

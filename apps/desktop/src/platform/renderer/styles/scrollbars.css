@@ -22,7 +22,11 @@
 ::-webkit-scrollbar-thumb {
   border: var(--spacing-scrollbar-inset) solid transparent;
   border-radius: var(--radius-xl);
-  background-color: color-mix(in srgb, var(--color-scrollbar-thumb) calc(var(--scrollbar-visibility) * 100%), transparent);
+  background-color: color-mix(
+    in srgb,
+    var(--color-scrollbar-thumb) calc(var(--scrollbar-visibility) * 100%),
+    transparent
+  );
   background-clip: padding-box;
 }
 
@@ -38,7 +42,12 @@
 @supports not selector(::-webkit-scrollbar) {
   * {
     scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--color-scrollbar-thumb) calc(var(--scrollbar-visibility) * 100%), transparent) transparent;
+    scrollbar-color: color-mix(
+        in srgb,
+        var(--color-scrollbar-thumb) calc(var(--scrollbar-visibility) * 100%),
+        transparent
+      )
+      transparent;
   }
 }
 
@@ -57,9 +66,15 @@
 }
 
 [data-slot="scroll-area-thumb"] {
-  background-color: color-mix(in srgb, var(--color-scrollbar-thumb) calc(var(--scrollbar-visibility) * 100%), transparent);
+  background-color: color-mix(
+    in srgb,
+    var(--color-scrollbar-thumb) calc(var(--scrollbar-visibility) * 100%),
+    transparent
+  );
 }
 
-[data-slot="scroll-area"] [data-slot="scroll-area-scrollbar"]:is(:hover, :active) [data-slot="scroll-area-thumb"] {
+[data-slot="scroll-area"]
+  [data-slot="scroll-area-scrollbar"]:is(:hover, :active)
+  [data-slot="scroll-area-thumb"] {
   background-color: var(--color-scrollbar-thumb-hover);
 }

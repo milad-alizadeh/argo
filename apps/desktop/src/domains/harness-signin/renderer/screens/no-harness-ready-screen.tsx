@@ -1,6 +1,6 @@
-import { Icon } from '@/platform/renderer/components/icon/icon'
 import { useTranslation } from 'react-i18next'
 import type { HarnessReadiness } from '@/domains/harness-signin/contract/contract'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   Empty,
   EmptyContent,

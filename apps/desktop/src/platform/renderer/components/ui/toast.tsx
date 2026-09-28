@@ -1,11 +1,11 @@
 'use client'
 
 import { Toast as ToastPrimitive } from '@base-ui/react/toast'
+import { CheckCircleIcon, InfoIcon, WarningIcon, XCircleIcon, XIcon } from "@phosphor-icons/react";
 import { cn } from 'cn'
 import type * as React from 'react'
 import { Loader } from '../loader/loader'
 import { Button } from './button'
-import { CheckCircleIcon, InfoIcon, XCircleIcon, WarningIcon, XIcon } from "@phosphor-icons/react";
 
 const toast = ToastPrimitive.createToastManager()
 

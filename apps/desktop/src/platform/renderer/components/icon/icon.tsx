@@ -1,5 +1,5 @@
-import { cn } from 'cn'
 import type { IconWeight } from '@phosphor-icons/react'
+import { cn } from 'cn'
 import type * as React from 'react'
 import { ICONS, type IconName } from './icon-registry'
 

@@ -1,9 +1,9 @@
 'use client'
 
 import { Select as SelectPrimitive } from '@base-ui/react/select'
+import { CaretDownIcon, CaretUpIcon, CheckIcon } from "@phosphor-icons/react";
 import { cn } from 'cn'
 import type * as React from 'react'
-import { CheckIcon, CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
 
 const Select = SelectPrimitive.Root
 

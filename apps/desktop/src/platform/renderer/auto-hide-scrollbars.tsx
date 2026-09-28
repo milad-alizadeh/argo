@@ -12,19 +12,22 @@ export function AutoHideScrollbars({ children }: { children: ReactNode }) {
       fades.delete(element)
       clearTimeout(timers.get(element))
       element.setAttribute('data-scrollbar-active', '')
-      timers.set(element, setTimeout(() => {
-        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-        if (!reducedMotion) {
-          const fade = element.animate(
-            [{ '--scrollbar-visibility': '1' }, { '--scrollbar-visibility': '0' }],
-            { duration: SCROLLBAR_FADE_DURATION_MS, easing: 'ease-out' },
-          )
-          fades.set(element, fade)
-          fade.onfinish = () => fades.delete(element)
-        }
-        element.removeAttribute('data-scrollbar-active')
-        timers.delete(element)
-      }, SCROLLBAR_IDLE_DELAY_MS))
+      timers.set(
+        element,
+        setTimeout(() => {
+          const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          if (!reducedMotion) {
+            const fade = element.animate(
+              [{ '--scrollbar-visibility': '1' }, { '--scrollbar-visibility': '0' }],
+              { duration: SCROLLBAR_FADE_DURATION_MS, easing: 'ease-out' },
+            )
+            fades.set(element, fade)
+            fade.onfinish = () => fades.delete(element)
+          }
+          element.removeAttribute('data-scrollbar-active')
+          timers.delete(element)
+        }, SCROLLBAR_IDLE_DELAY_MS),
+      )
     }
     const onScroll = (event: Event) => {
       const target = event.target === document ? document.scrollingElement : event.target

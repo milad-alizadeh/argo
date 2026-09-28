@@ -1,8 +1,8 @@
 import { mergeProps } from '@base-ui/react/merge-props'
 import { useRender } from '@base-ui/react/use-render'
+import { CaretRightIcon, DotsThreeOutlineIcon } from "@phosphor-icons/react";
 import { cn } from 'cn'
 import type * as React from 'react'
-import { CaretRightIcon, DotsThreeOutlineIcon } from "@phosphor-icons/react";
 
 function Breadcrumb({ className, ...props }: React.ComponentProps<'nav'>) {
   return <nav aria-label="breadcrumb" data-slot="breadcrumb" className={cn(className)} {...props} />

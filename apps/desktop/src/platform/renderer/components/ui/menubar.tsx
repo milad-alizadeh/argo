@@ -2,6 +2,7 @@
 
 import { Menu as MenuPrimitive } from '@base-ui/react/menu'
 import { Menubar as MenubarPrimitive } from '@base-ui/react/menubar'
+import { CheckIcon } from "@phosphor-icons/react";
 import { cn } from 'cn'
 import type * as React from 'react'
 import {
@@ -19,7 +20,6 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from './dropdown-menu'
-import { CheckIcon } from "@phosphor-icons/react";
 
 function Menubar({ className, ...props }: MenubarPrimitive.Props) {
   return (

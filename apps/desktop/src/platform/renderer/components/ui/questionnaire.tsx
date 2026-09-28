@@ -1,10 +1,10 @@
 'use client'
 
+import { CheckIcon } from "@phosphor-icons/react";
 import { Questionnaire as QuestionnairePrimitive } from '@shadcn/react/questionnaire'
 import { cn } from 'cn'
 import type * as React from 'react'
 import { type Button, buttonVariants } from './button'
-import { CheckIcon } from "@phosphor-icons/react";
 
 function Questionnaire({
   className,

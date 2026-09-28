@@ -1,11 +1,11 @@
 import '@fontsource-variable/geist/wght.css'
 import '@fontsource-variable/geist-mono/wght.css'
 
-import { StrictMode } from 'react'
 import { IconContext } from '@phosphor-icons/react'
+import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { AutoHideScrollbars } from '@/platform/renderer/auto-hide-scrollbars'
 import { AppQueryProvider } from '@/platform/renderer/app-query-provider'
+import { AutoHideScrollbars } from '@/platform/renderer/auto-hide-scrollbars'
 import { App } from './app'
 import '@/platform/renderer/styles/globals.css'
 

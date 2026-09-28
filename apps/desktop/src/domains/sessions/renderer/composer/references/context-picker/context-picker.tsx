@@ -91,7 +91,7 @@ export function ContextPicker({
     <div
       aria-label={t('composer.contextPicker.label')}
       aria-modal="true"
-      className={`z-50 mb-(--spacing-shell-item) overflow-y-auto overscroll-contain rounded-xl border bg-popover p-(--spacing-shell-item) shadow-(--shadow-surface) ${anchorRef ? 'fixed max-h-[calc(var(--context-picker-space)-var(--spacing-shell-item)*2)] max-w-[calc(100vw-var(--spacing-shell-item)*2)]' : 'absolute bottom-full left-0 w-full'}`}
+      className={`z-50 mb-(--spacing-shell-item) overflow-y-auto overscroll-contain rounded-xl border bg-popover p-(--spacing-shell-item) shadow-(--shadow-surface) ${anchorRef ? 'fixed max-h-[calc(var(--context-picker-space)-var(--spacing-shell-item)*2)] max-w-(--size-context-picker-max-width)' : 'absolute bottom-full left-0 w-full'}`}
       onKeyDown={focus.onKeyDown}
       ref={focus.pickerRef}
       role="dialog"

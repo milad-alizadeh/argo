@@ -1,9 +1,9 @@
 'use client'
 
 import { ContextMenu as ContextMenuPrimitive } from '@base-ui/react/context-menu'
+import { CaretRightIcon, CheckIcon } from "@phosphor-icons/react";
 import { cn } from 'cn'
 import type * as React from 'react'
-import { CheckIcon, CaretRightIcon } from "@phosphor-icons/react";
 
 function ContextMenu({ ...props }: ContextMenuPrimitive.Root.Props) {
   return <ContextMenuPrimitive.Root data-slot="context-menu" {...props} />
