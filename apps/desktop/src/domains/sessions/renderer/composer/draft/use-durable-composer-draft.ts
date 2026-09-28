@@ -150,6 +150,7 @@ function startDraftLoadIfReady(
     isPending: boolean
     isFetching: boolean
     isError: boolean
+    hasData: boolean
     draft: DraftValue | undefined
   },
 ) {
@@ -165,6 +166,7 @@ function startDraftLoadIfReady(
       loadedOwner: input.loadedOwner,
       isFetching: input.isFetching,
       isError: input.isError,
+      hasData: input.hasData,
     })
   )
     return
@@ -198,6 +200,7 @@ function startComposerDraftLoadEffect(
     isPending: boolean
     isFetching: boolean
     isError: boolean
+    hasData: boolean
     draft: DraftValue | undefined
   },
 ) {
@@ -252,6 +255,7 @@ function useStartComposerDraftLoad(
       isPending: input.query.isPending,
       isFetching: input.query.isFetching,
       isError: input.query.isError,
+      hasData: input.query.data !== undefined,
       draft: input.query.data ?? undefined,
       setLoaded: input.setLoaded,
     })
@@ -281,7 +285,13 @@ function useComposerDraftLoad(input: ComposerDraftLoadInput) {
   })
   const [loaded, setLoaded] = useState<{ owner: string; editing: ComposerEditing } | null>(null)
   useStartComposerDraftLoad({ ...input, loaded, query, setLoaded })
-  return loaded?.owner === input.owner ? loaded.editing : undefined
+  const editing = loaded?.owner === input.owner ? loaded.editing : undefined
+  return {
+    editing,
+    failed: query.isError,
+    hasDraft: editing !== undefined,
+    retry: () => query.refetch(),
+  }
 }
 
 function usePersistComposerDraft(input: {
@@ -391,7 +401,7 @@ export function useDurableComposerDraft(input: DurableComposerDraftInput) {
     submitMutation,
     queryClient,
   })
-  const initialEditing = useComposerDraftLoad({
+  const load = useComposerDraftLoad({
     target,
     choices,
     opening,
@@ -401,10 +411,13 @@ export function useDurableComposerDraft(input: DurableComposerDraftInput) {
     latestEditing: persistence.latestEditing,
     initialFingerprints: persistence.initialFingerprints,
   })
-  return initialEditing === undefined
+  return load.editing === undefined && !load.failed
     ? null
     : {
-        initialEditing,
+        initialEditing: load.editing,
+        loadFailed: load.failed,
+        hasDraft: load.hasDraft,
+        retryLoad: load.retry,
         onEditingChange: persistence.onEditingChange,
         submit: persistence.submit,
         saveFailed: persistence.saveFailed,
