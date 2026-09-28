@@ -28,7 +28,10 @@ import {
   type SessionInteractionContext,
   sessionInteractionProcedures,
 } from '@/domains/sessions/main/api/session-interactions'
-import { sessionListProcedure } from '@/domains/sessions/main/api/session-list'
+import {
+  sessionListProcedure,
+  sessionStatusChangesProcedure,
+} from '@/domains/sessions/main/api/session-list'
 import {
   type SessionLiveEventsContext,
   sessionLiveEventsProcedure,
@@ -87,6 +90,7 @@ export function createAppRouter(dependencies: AppRouterDependencies) {
     composerDraftSave: composerDraftSaveProcedure(dependencies.sessions.database),
     sessionSubmit: sessionSubmitProcedure(dependencies.sessions),
     sessionList: sessionListProcedure(dependencies.sessions),
+    sessionStatusChanges: sessionStatusChangesProcedure(dependencies.sessions),
     sessionFeedRead: sessionFeedReadProcedure(dependencies.sessions),
     ...sessionInteractionProcedures(dependencies.sessions),
     sessionLiveEvents: sessionLiveEventsProcedure(dependencies.sessions),

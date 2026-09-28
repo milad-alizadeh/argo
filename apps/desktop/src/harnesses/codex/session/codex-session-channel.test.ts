@@ -273,6 +273,12 @@ test('Codex controls answer vendor requests and interrupt the active Turn', asyn
   await new Promise((resolve) => setImmediate(resolve))
   await answerSampleApproval({ channel, notify, responses, events })
   await answerSampleQuestion(channel, notify, responses)
+  assert.deepEqual(
+    events.flatMap((event) =>
+      event.type === 'feed' && event.body.type === 'status' ? [event.body.status] : [],
+    ),
+    ['running', 'permission', 'running', 'asking', 'running'],
+  )
   await channel.interrupt()
   assert.deepEqual(calls.at(-1), {
     method: 'turn/interrupt',

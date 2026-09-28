@@ -201,6 +201,19 @@ export class CodexSessionChannel implements LiveSessionChannel {
     })
   }
 
+  private emitInteractionStatus(
+    status: 'running' | 'permission' | 'asking',
+    interaction: CodexInteraction,
+  ) {
+    this.emitFeed({
+      type: 'status',
+      status,
+      commandId: this.active?.commandId ?? null,
+      turnId: interaction.turnId,
+      vendorEventId: interaction.itemId,
+    })
+  }
+
   private clearApproval(requestId: string) {
     const timer = this.approvalTimers.get(requestId)
     if (timer !== undefined) clearTimeout(timer)
@@ -235,6 +248,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
       vendorEventId: pending.itemId,
       detail: 'Codex permission expired without an answer.',
     })
+    this.emitInteractionStatus('running', pending)
   }
 
   private reject(method: string) {
@@ -279,6 +293,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
       description: interaction.description,
       decision: null,
     })
+    this.emitInteractionStatus('permission', interaction)
     return true
   }
 
@@ -303,6 +318,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
       questions: interaction.questions,
       answer: null,
     })
+    this.emitInteractionStatus('asking', interaction)
     return true
   }
 
@@ -521,6 +537,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
       decision,
     })
     if (decision === 'cancel') await this.interrupt()
+    else this.emitInteractionStatus('running', pending)
     return true
   }
 
@@ -543,6 +560,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
         .flatMap(({ answers: values }) => values)
         .join(', '),
     })
+    this.emitInteractionStatus('running', pending)
     return true
   }
 

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import {
   type ActorRefFrom,
   assign,
+  emit,
   enqueueActions,
   fromCallback,
   fromPromise,
@@ -202,6 +203,10 @@ type LiveSessionSupervisorEvent =
   | {
       type: 'Retire session'
       actorId: string
+      sessionId: string
+    }
+  | {
+      type: 'Session status changed'
       sessionId: string
     }
   | {
@@ -477,6 +482,10 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
     types: {
       context: {} as SupervisorContext,
       events: {} as LiveSessionSupervisorEvent,
+      emitted: {} as {
+        type: 'Session status changed'
+        sessionId: string
+      },
     },
     actors: {
       observeIdle: fromCallback<
@@ -507,9 +516,29 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
           type: 'Stop'
         },
         {
+          session: LiveSessionActor
           stop: () => void
+        },
+        Extract<
+          LiveSessionSupervisorEvent,
+          {
+            type: 'Session status changed'
+          }
+        >
+      >(({ input, sendBack }) => {
+        const subscription = input.session.on('feed', ({ body }) => {
+          const sessionId = input.session.getSnapshot().context.argoId
+          if (body.type === 'status' && sessionId !== null)
+            sendBack({
+              type: 'Session status changed',
+              sessionId,
+            })
+        })
+        return () => {
+          subscription.unsubscribe()
+          input.stop()
         }
-      >(({ input }) => input.stop),
+      }),
       observeSession: fromCallback<
         {
           type: 'Stop'
@@ -657,6 +686,7 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
           spawn('observeLiveEvents', {
             id: `events:${actorId}`,
             input: {
+              session: actor,
               stop,
             },
           })
@@ -736,6 +766,10 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
         enqueue(stopChild(actor))
         enqueue(stopChild(`idle:${event.actorId}`))
         enqueue(stopChild(`events:${event.actorId}`))
+        enqueue.emit({
+          type: 'Session status changed',
+          sessionId,
+        })
       }),
       retireFailedSession: enqueueActions(({ context, event, self, enqueue }) => {
         if (event.type !== 'Send') return
@@ -802,6 +836,14 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
       bindCommand: ({ event }) => {
         if (event.type === 'Session persisted') commands.bind(event.commandId, event.sessionId)
       },
+      announceStatus: emit(({ event }) => {
+        if (event.type !== 'Session persisted' && event.type !== 'Session status changed')
+          throw new Error('Expected a Session status change.')
+        return {
+          type: 'Session status changed' as const,
+          sessionId: event.sessionId,
+        }
+      }),
       markUncertain: ({ event }) => {
         if (event.type === 'Session failed' && event.nativeId !== null)
           commands.record(event.commandId, 'uncertain')
@@ -845,7 +887,11 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
         actions: [
           'rememberPersisted',
           'bindCommand',
+          'announceStatus',
         ],
+      },
+      'Session status changed': {
+        actions: 'announceStatus',
       },
       'Session failed': {
         actions: [
