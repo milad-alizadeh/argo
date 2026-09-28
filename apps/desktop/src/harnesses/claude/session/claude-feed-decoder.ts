@@ -1,4 +1,4 @@
-import type { SDKMessage, SessionMessage } from '@anthropic-ai/claude-agent-sdk'
+import type { SDKMessage } from '@anthropic-ai/claude-agent-sdk'
 import { z } from 'zod'
 import { type FeedContent, feedContentSchema } from '@/domains/sessions/api/feed-content'
 import { decodeClaudeBlocks } from './claude-feed-blocks'
@@ -10,11 +10,16 @@ const liveEnvelopeSchema = z.object({
   uuid: z.string().min(1),
   session_id: z.string().min(1),
 })
-const historyEnvelopeSchema = z.object({
+const historyMessageEnvelopeSchema = z.object({
   type: z.enum(['user', 'assistant']),
   uuid: z.string().min(1),
   message: z.unknown(),
   origin: z.object({ kind: z.string() }).optional(),
+})
+const historySystemEnvelopeSchema = z.object({
+  type: z.literal('system'),
+  uuid: z.string().min(1),
+  subtype: z.string().optional(),
 })
 const assistantIdentitySchema = z.object({ id: z.string().min(1) })
 
@@ -32,10 +37,16 @@ function validateContents(candidates: FeedContent[], reject: RejectClaudeShape):
 }
 
 export function decodeClaudeHistoryContent(
-  message: SessionMessage,
+  message: unknown,
   reject: RejectClaudeShape,
 ): FeedContent[] {
-  const envelope = historyEnvelopeSchema.safeParse(message)
+  const system = historySystemEnvelopeSchema.safeParse(message)
+  if (system.success) {
+    return system.data.subtype === 'compact_boundary'
+      ? [{ id: system.data.uuid, kind: 'marker', marker: 'compaction', summary: null }]
+      : []
+  }
+  const envelope = historyMessageEnvelopeSchema.safeParse(message)
   if (!envelope.success) {
     reject('history-envelope')
     return []

@@ -1,4 +1,7 @@
+import { mkdir, writeFile } from 'node:fs/promises'
+import path from 'node:path'
 import { beforeEach, expect, test, vi } from 'vitest'
+import { claudeConfigDirFixture } from '../../test-fixtures/sessions/claude-config-dir.fixture'
 import { claudeModelCatalogFixture } from '../../test-fixtures/sessions/claude-model-catalog.fixture'
 import { codexModelCatalogFixture } from '../../test-fixtures/sessions/codex-model-catalog.fixture'
 import { claudeHarnessInfo } from './claude/catalog'
@@ -23,16 +26,26 @@ const clientFor = (request: CodexRequest): CodexLiveClient => ({
   respond: () => {},
 })
 
+const claudeConfigDir = claudeConfigDirFixture()
+
 beforeEach(() => {
   vendor.getSessionMessages.mockReset()
   vendor.getSubagentMessages.mockReset()
   vendor.renameSession.mockReset()
 })
 
-test('registered Claude reads root and subagent history and renames through the SDK', async () => {
-  vendor.getSessionMessages.mockResolvedValue([
-    { type: 'assistant', uuid: 'reply', message: { role: 'assistant', content: 'Done' } },
-  ])
+test('registered Claude reads root history from its transcript file and subagent history through the SDK, and renames through the SDK', async () => {
+  const projectDir = path.join(claudeConfigDir.dir, 'projects', 'project-one')
+  await mkdir(projectDir, { recursive: true })
+  await writeFile(
+    path.join(projectDir, 'root.jsonl'),
+    `${JSON.stringify({
+      type: 'assistant',
+      uuid: 'reply',
+      parentUuid: null,
+      message: { role: 'assistant', id: 'reply', content: 'Done' },
+    })}\n`,
+  )
   vendor.getSubagentMessages.mockResolvedValue([])
   vendor.renameSession.mockResolvedValue(undefined)
   const registrations = {
@@ -59,7 +72,7 @@ test('registered Claude reads root and subagent history and renames through the 
     subagentId: 'child',
     cwd: '/work/project',
   })
-  expect(vendor.getSessionMessages).toHaveBeenCalledWith('root', { dir: '/work/project' })
+  expect(vendor.getSessionMessages).not.toHaveBeenCalled()
   expect(vendor.getSubagentMessages).toHaveBeenCalledWith('root', 'child', {
     dir: '/work/project',
   })

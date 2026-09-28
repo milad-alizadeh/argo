@@ -1,4 +1,9 @@
-{"type":"last-prompt","leafUuid":"mc-r"}
-{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:00.000Z","uuid":"mc-p","message":{"role":"user","content":"Keep going."}}
-{"type":"system","subtype":"compact_boundary","content":"Conversation compacted","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:01.000Z","uuid":"mc-c","parentUuid":"mc-p"}
-{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:02.000Z","uuid":"mc-r","parentUuid":"mc-c","message":{"role":"user","content":"carry on"}}
+{"type":"last-prompt","leafUuid":"mc-a3"}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:00.000Z","uuid":"mc-p1","parentUuid":null,"message":{"role":"user","content":"Start the work."}}
+{"type":"assistant","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:01.000Z","uuid":"mc-a1","parentUuid":"mc-p1","message":{"role":"assistant","id":"msg-mc-a1","content":[{"type":"text","text":"Starting."}]}}
+{"type":"system","subtype":"compact_boundary","content":"Conversation compacted","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:02.000Z","uuid":"mc-c1","parentUuid":null,"logicalParentUuid":"mc-a1"}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:03.000Z","uuid":"mc-p2","parentUuid":"mc-c1","message":{"role":"user","content":"Keep going."}}
+{"type":"assistant","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:04.000Z","uuid":"mc-a2","parentUuid":"mc-p2","message":{"role":"assistant","id":"msg-mc-a2","content":[{"type":"text","text":"Continuing."}]}}
+{"type":"system","subtype":"compact_boundary","content":"Conversation compacted","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:05.000Z","uuid":"mc-c2","parentUuid":null,"logicalParentUuid":"mc-a2"}
+{"type":"user","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:06.000Z","uuid":"mc-p3","parentUuid":"mc-c2","message":{"role":"user","content":"Carry on."}}
+{"type":"assistant","cwd":"/Users/x/argo","timestamp":"2026-09-19T10:00:07.000Z","uuid":"mc-a3","parentUuid":"mc-p3","message":{"role":"assistant","id":"msg-mc-a3","content":[{"type":"text","text":"Confirmed."}]}}

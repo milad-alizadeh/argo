@@ -1,12 +1,9 @@
-import {
-  getSessionMessages,
-  getSubagentMessages,
-  type SessionMessage,
-} from '@anthropic-ai/claude-agent-sdk'
+import { getSubagentMessages } from '@anthropic-ai/claude-agent-sdk'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { decodeClaudeHistoryContent } from './claude-feed-decoder'
+import { readClaudeTranscriptChain } from './claude-transcript-file'
 
-export function decodeClaudeSessionMessages(messages: readonly SessionMessage[]): FeedContent[] {
+export function decodeClaudeSessionMessages(messages: readonly unknown[]): FeedContent[] {
   let rejected = 0
   const content = messages.flatMap((entry) =>
     decodeClaudeHistoryContent(entry, () => {
@@ -22,10 +19,9 @@ export async function readClaudeSessionHistory(
   cwd: string | null,
   subagentId: string | null = null,
 ): Promise<FeedContent[]> {
-  const options = cwd === null ? {} : { dir: cwd }
   const messages =
     subagentId === null
-      ? await getSessionMessages(nativeId, options)
-      : await getSubagentMessages(nativeId, subagentId, options)
+      ? await readClaudeTranscriptChain(nativeId, cwd)
+      : await getSubagentMessages(nativeId, subagentId, cwd === null ? {} : { dir: cwd })
   return decodeClaudeSessionMessages(messages)
 }
