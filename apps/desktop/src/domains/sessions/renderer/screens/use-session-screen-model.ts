@@ -1,7 +1,7 @@
 // A screen is a thin container: it resolves state here, and SessionScreenView hands a pure render
 // surface the result.
 
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 
 import { useProjects } from '@/domains/projects/renderer'
@@ -51,43 +51,94 @@ function useWorkArtifacts({
   }
 }
 
+function useFeedJumpToLatestAction() {
+  const [jumpToLatest, setJumpToLatest] = useState<{
+    action: () => void
+    sessionId: string
+  } | null>(null)
+  const onJumpToLatestChange = useCallback((sessionId: string, action: (() => void) | null) => {
+    setJumpToLatest((current) => {
+      if (action !== null) return { action, sessionId }
+      return current?.sessionId === sessionId ? null : current
+    })
+  }, [])
+  return { jumpToLatest: jumpToLatest?.action ?? null, onJumpToLatestChange }
+}
+
+function useSessionSelectionData(
+  projectId: string | null,
+  selectedSessionId: string | null,
+  workspaces: ReturnType<typeof useWorkspaces>[0]['workspaces'],
+) {
+  const { sessionList } = useSessionList({ projectId })
+  const session = useSelectedSession(selectedSessionId, sessionList)
+  return {
+    sessionList,
+    session,
+    workspaceIdentity: sessionWorkspaceIdentity(session, workspaces),
+  }
+}
+
+function useSessionInteractions(selectedSessionId: string | null) {
+  // Ask only real Session ids; an optimistic Session row has no backend record yet (#2109).
+  return {
+    permission: useSessionPermission(selectedSessionId),
+    question: useSessionQuestion(selectedSessionId),
+  }
+}
+
+function useSessionInspectorData({
+  session,
+  selectedSessionId,
+  work,
+  workReveal,
+  feedRows,
+}: {
+  session: ReturnType<typeof useSelectedSession>
+  selectedSessionId: string | null
+  work: WorkSelection
+  workReveal: ReturnType<typeof useWorkPick>['workReveal']
+  feedRows: readonly SessionFeedRow[]
+}) {
+  const artifacts = useWorkArtifacts({ session, selectedSessionId, work, feedRows })
+  return {
+    ...artifacts,
+    workReveal: workInspectorReveal(workReveal, artifacts.shell, artifacts.shellOutput),
+  }
+}
+
 export function useSessionScreenModel() {
-  const { sessionId } = useParams()
+  const { projectId, sessionId } = useParams()
   const navigate = useNavigate()
+  const { jumpToLatest, onJumpToLatestChange } = useFeedJumpToLatestAction()
   const [cockpit, projectActions] = useProjects()
   const [workspaceCockpit, workspaceActions] = useWorkspaces(cockpit.project?.id ?? null)
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
   const [evidence, setEvidence] = useState<SessionEvidence | null>(null)
   const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
-  const { feed, feedError, retryFeed, loadOlder, hasOlder, loadingOlder, olderError } =
-    useSessionFeed(selectedSessionId)
-  const { sessionList } = useSessionList({
-    projectId: cockpit.project?.id ?? null,
-  })
+  const sessionFeed = useSessionFeed(selectedSessionId)
+  const { sessionList, session, workspaceIdentity } = useSessionSelectionData(
+    cockpit.project?.id ?? null,
+    selectedSessionId,
+    workspaceCockpit.workspaces,
+  )
   const [lastHarness, chooseHarness] = useState<SessionHarness>('claude')
-  const session = useSelectedSession(selectedSessionId, sessionList)
-  const workspaceIdentity = sessionWorkspaceIdentity(session, workspaceCockpit.workspaces)
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
-  // Ask only real Session ids; an optimistic Session row has no backend record yet (#2109).
-  const permission = useSessionPermission(selectedSessionId),
-    question = useSessionQuestion(selectedSessionId)
-  const artifacts = useWorkArtifacts({
+  const { permission, question } = useSessionInteractions(selectedSessionId)
+  const inspector = useSessionInspectorData({
     session,
     selectedSessionId,
     work,
-    feedRows: feed?.rows ?? [],
+    workReveal,
+    feedRows: sessionFeed.feed?.rows ?? [],
   })
-  const inspectorReveal = workInspectorReveal(workReveal, artifacts.shell, artifacts.shellOutput)
   return {
+    projectId,
+    jumpToLatest,
+    onJumpToLatestChange,
     isNewSession: sessionId === 'new',
     selectedSessionId,
-    feed,
-    feedError,
-    retryFeed,
-    loadOlder,
-    hasOlder,
-    loadingOlder,
-    olderError,
+    ...sessionFeed,
     sessionList,
     navigate,
     session,
@@ -103,8 +154,7 @@ export function useSessionScreenModel() {
     question,
     work,
     pick,
-    workReveal: inspectorReveal,
-    ...artifacts,
+    ...inspector,
   }
 }
 

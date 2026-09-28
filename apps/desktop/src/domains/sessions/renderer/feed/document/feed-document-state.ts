@@ -1,10 +1,8 @@
 import { useCallback, useRef, useState } from 'react'
-import type { SessionFeed, SessionFeedRow, SessionId } from '../../types'
+import type { SessionFeedRow, SessionId } from '../../types'
 import type { FeedLiveFacts } from './feed-live-facts'
 
-// The Standing spinner has no bound of its own: a Session whose read never answers (#2102) never
-// gets a kept document, so `current` (from useKeptDocuments) stays null forever without a retry
-// token to key the stall timer's reset on.
+// The selected Feed's stall bound restarts with each real read or subscription retry (#2102).
 export function useFeedRetry(onRetryFeed: () => void) {
   const [retryToken, setRetryToken] = useState(0)
   const retry = useCallback(() => {
@@ -43,13 +41,4 @@ export function useHeldPrompt(
   }
   if (liveFacts === null || row !== null || held.current === null) return liveFacts
   return { ...liveFacts, settledPromptRow: held.current.row }
-}
-
-// One active document is enough now that the Feed is virtualized. Retaining inactive documents
-// retains their row data, mounted virtualizer state, and rich-content work; repeated switching
-// used to grow that retained set to six full transcripts.
-export function useKeptDocuments(feed: SessionFeed | null, selectedSessionId: SessionId | null) {
-  const current = feed !== null && feed.sessionId === selectedSessionId ? feed : null
-  const ordered = current === null ? [] : [[current.sessionId, current] as const]
-  return { current, ordered }
 }

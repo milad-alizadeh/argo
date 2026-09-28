@@ -46,7 +46,6 @@ const meta = {
     liveFacts: LIVE_FACTS,
     onJumpToLatestChange: fn(),
     onOpenEvidence: () => {},
-    onStalledChange: fn(),
     selectedSessionId: 'prose',
   },
 } satisfies Meta<typeof BasicFeed>
@@ -1723,14 +1722,34 @@ const stalledFeed = {
   sessionId: 'stalled',
   chainId: 'stalled',
   revision: 'stalled-one',
-  rows: [],
+  rows: [
+    {
+      shape: 'prose',
+      id: 'stalled-known-reply',
+      role: 'assistant',
+      text: 'Keep this known history visible.',
+    },
+  ],
 } satisfies SessionFeed
 
-// A fixture whose Feed never settles: `rows` stays empty and `isRunning` stays true for the
-// whole story, so nothing ever satisfies `feedContent`'s running condition (#2102). `stallTimeoutMs`
-// stands in for the production bound so the story does not wait on the real one.
-function StalledFeedHarness() {
+const stalledPrompt: SessionFeedRow = {
+  shape: 'prose',
+  id: 'stalled-prompt',
+  role: 'user',
+  text: 'Keep this pending prompt visible.',
+}
+
+// A fixture whose Feed never settles. `stallTimeoutMs` stands in for the production bound so the
+// story does not wait on the real one.
+function StalledFeedHarness({ onRetryFeed }: { onRetryFeed: () => void }) {
   const [otherClicks, setOtherClicks] = useState(0)
+  const [reading, setReading] = useState<SessionFeed>(stalledFeed)
+  const [liveFacts, setLiveFacts] = useState<FeedLiveFacts>({
+    ...LIVE_FACTS,
+    isRunning: true,
+    optimisticRow: stalledPrompt,
+    posture: 'external',
+  })
   return (
     <div className="flex h-dvh flex-col">
       <button type="button" onClick={() => setOtherClicks((count) => count + 1)}>
@@ -1739,13 +1758,32 @@ function StalledFeedHarness() {
       <div className="min-h-0 flex-1">
         <BasicFeed
           activeEvidenceId={null}
-          feed={stalledFeed}
+          feed={reading}
           failure={null}
-          liveFacts={{ ...LIVE_FACTS, isRunning: true, posture: 'external' }}
+          liveFacts={liveFacts}
           selectedSessionId="stalled"
           onOpenEvidence={() => {}}
           onOpenSession={() => {}}
-          onRetryFeed={() => {}}
+          onRetryFeed={() => {
+            onRetryFeed()
+            window.setTimeout(() => {
+              setReading({
+                ...stalledFeed,
+                revision: 'stalled-recovered',
+                rows: [
+                  ...stalledFeed.rows,
+                  stalledPrompt,
+                  {
+                    shape: 'prose',
+                    id: 'stalled-recovered-reply',
+                    role: 'assistant',
+                    text: 'The Feed recovered after Retry.',
+                  },
+                ],
+              })
+              setLiveFacts(LIVE_FACTS)
+            }, 100)
+          }}
           onAnswerQuestion={() => {}}
           answeringQuestionId={null}
           questionFailure={() => null}
@@ -1759,11 +1797,15 @@ function StalledFeedHarness() {
 // Past the stall bound, the reader sees a retry action instead of an indefinite spinner, and
 // nothing else in the window stops responding while it shows (#2102).
 export const Stalled: Story = {
-  render: () => <StalledFeedHarness />,
-  play: async ({ canvasElement }) => {
+  args: { onRetryFeed: fn() },
+  render: (args) => <StalledFeedHarness onRetryFeed={args.onRetryFeed ?? (() => {})} />,
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await waitFor(() => expect(canvas.getByText('Could not load this Session')).toBeInTheDocument())
     await expect(canvas.getByText(/This Session is external/)).toBeInTheDocument()
+    await expect(canvas.getByText('Keep this known history visible.')).toBeVisible()
+    await expect(canvas.getByText('Keep this pending prompt visible.')).toBeVisible()
+    await expect(canvas.queryByRole('status', { name: 'Loading this Session' })).toBeNull()
     const retry = canvas.getByRole('button', { name: 'Retry' })
 
     const otherControl = canvas.getByRole('button', { name: /Other window control/ })
@@ -1773,7 +1815,10 @@ export const Stalled: Story = {
     ).toBeInTheDocument()
 
     await userEvent.click(retry)
-    await waitFor(() => expect(canvas.getByRole('button', { name: 'Retry' })).toBeInTheDocument())
+    await waitFor(() => expect(args.onRetryFeed).toHaveBeenCalledOnce())
+    await expect(canvas.getByRole('status', { name: 'Loading this Session' })).toBeInTheDocument()
+    await expect(await canvas.findByText('The Feed recovered after Retry.')).toBeVisible()
+    await expect(canvas.queryByText('Could not load this Session')).toBeNull()
   },
 }
 

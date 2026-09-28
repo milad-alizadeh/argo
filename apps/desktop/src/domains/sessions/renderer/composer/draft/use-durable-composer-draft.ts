@@ -151,6 +151,7 @@ function startDraftLoadIfReady(
     isPending: boolean
     isFetching: boolean
     isError: boolean
+    hasData: boolean
     draft: DraftValue | undefined
   },
 ) {
@@ -166,6 +167,7 @@ function startDraftLoadIfReady(
       loadedOwner: input.loadedOwner,
       isFetching: input.isFetching,
       isError: input.isError,
+      hasData: input.hasData,
     })
   )
     return
@@ -199,6 +201,7 @@ function startComposerDraftLoadEffect(
     isPending: boolean
     isFetching: boolean
     isError: boolean
+    hasData: boolean
     draft: DraftValue | undefined
   },
 ) {
@@ -253,6 +256,7 @@ function useStartComposerDraftLoad(
       isPending: input.query.isPending,
       isFetching: input.query.isFetching,
       isError: input.query.isError,
+      hasData: input.query.data !== undefined,
       draft: input.query.data ?? undefined,
       setLoaded: input.setLoaded,
     })
@@ -286,7 +290,14 @@ function useComposerDraftLoad(input: ComposerDraftLoadInput) {
     target: DraftTarget
   } | null>(null)
   useStartComposerDraftLoad({ ...input, loaded, query, setLoaded })
-  return loaded?.owner === input.owner ? loaded : undefined
+  const current = loaded?.owner === input.owner ? loaded : undefined
+  return {
+    editing: current?.editing,
+    loadedTarget: current?.target,
+    failed: query.isError,
+    hasDraft: current !== undefined,
+    retry: () => query.refetch(),
+  }
 }
 
 function usePersistComposerDraft(input: {
@@ -404,7 +415,7 @@ export function useDurableComposerDraft(input: DurableComposerDraftInput) {
     submitMutation,
     queryClient,
   })
-  const loadedDraft = useComposerDraftLoad({
+  const load = useComposerDraftLoad({
     target,
     choices,
     opening,
@@ -414,7 +425,7 @@ export function useDurableComposerDraft(input: DurableComposerDraftInput) {
     latestEditing: persistence.latestEditing,
     initialFingerprints: persistence.initialFingerprints,
   })
-  const initialEditing = loadedDraft?.editing
+  const initialEditing = load.editing
   const targetIdentity = target === null ? null : JSON.stringify(target)
   const editingChange = useRef(persistence.onEditingChange)
   editingChange.current = persistence.onEditingChange
@@ -427,11 +438,14 @@ export function useDurableComposerDraft(input: DurableComposerDraftInput) {
     )
       editingChange.current(persistence.latestEditing.current)
   }, [initialEditing, targetIdentity, targetRestored, persistence.latestEditing])
-  return loadedDraft === undefined
+  return load.editing === undefined && !load.failed
     ? null
     : {
-        initialEditing: loadedDraft.editing,
-        loadedTarget: loadedDraft.target,
+        initialEditing,
+        loadedTarget: load.loadedTarget,
+        loadFailed: load.failed,
+        hasDraft: load.hasDraft,
+        retryLoad: load.retry,
         onEditingChange: persistence.onEditingChange,
         submit: persistence.submit,
         saveFailed: persistence.saveFailed,

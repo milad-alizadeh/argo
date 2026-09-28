@@ -158,6 +158,7 @@ export function AnchoredFeed({
     sessionId: settled.reading.sessionId,
     tailFollow,
     virtualizer,
+    viewport,
   })
 
   return (

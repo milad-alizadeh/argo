@@ -3,6 +3,11 @@ export function shouldLoadComposerDraft(input: {
   loadedOwner: string | null
   isFetching: boolean
   isError: boolean
+  hasData?: boolean
 }) {
-  return input.loadedOwner !== input.owner && !input.isFetching && !input.isError
+  return (
+    input.loadedOwner !== input.owner &&
+    !input.isFetching &&
+    (!input.isError || input.hasData === true)
+  )
 }

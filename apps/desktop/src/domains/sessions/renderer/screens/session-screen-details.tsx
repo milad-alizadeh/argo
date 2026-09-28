@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate, useParams } from 'react-router'
 import type { Cockpit } from '@/domains/projects/renderer'
@@ -31,7 +31,7 @@ import {
   initialTurnConfiguration as turnConfigurationFor,
 } from '../composer/turn-configuration/turn-configuration'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
-import type { HarnessControl } from '../harness/harnesses'
+import { HARNESSES, type HarnessControl } from '../harness/harnesses'
 import type { Session, SessionListPage } from '../types'
 
 type SessionScreenDetailsProps = {
@@ -46,6 +46,18 @@ type SessionScreenDetailsProps = {
   workspaceActions: WorkspaceActions
 }
 
+type SessionsTranslator = ReturnType<typeof useTranslation<'sessions'>>['t']
+
+function catalogFailureMessage(
+  t: SessionsTranslator,
+  harness: HarnessControl['harness'],
+  failure: CatalogFailure,
+) {
+  return t(`composer.turnConfiguration.catalogFailure.${failure.reason}`, {
+    harness: HARNESSES[harness].label,
+  })
+}
+
 function catalogFailureOf(
   result: CatalogReadResult | undefined,
   queryFailed: boolean,
@@ -54,6 +66,27 @@ function catalogFailureOf(
   const info = result?.info
   if (info?.availability === 'unavailable') return { reason: info.reason, detail: info.detail }
   return null
+}
+
+function sessionComposerConfiguration(input: {
+  selectedSessionId: string | null
+  projectId: string | null
+  sessionList: SessionListPage | null
+  catalogResult: CatalogReadResult | undefined
+  catalogFailed: boolean
+}) {
+  const catalog = input.catalogResult?.info ?? null
+  const catalogFailure = catalogFailureOf(input.catalogResult, input.catalogFailed)
+  const identity = composerIdentityOf(input.selectedSessionId, input.projectId)
+  const choices = catalog?.availability === 'available' ? catalog : null
+  const initialTurnConfiguration =
+    choices === null || (identity.kind === 'session' && input.sessionList === null)
+      ? null
+      : turnConfigurationFor(choices, {
+          identity,
+          rows: input.sessionList?.sessions ?? [],
+        })
+  return { catalogFailure, choices, initialTurnConfiguration, identity }
 }
 
 function workspaceControl(
@@ -121,6 +154,53 @@ function useSessionComposerDraft(input: {
   return { draft, targetRestored }
 }
 
+function useSessionComposerSend(input: {
+  draft: ReturnType<typeof useDurableComposerDraft>
+  identity: ComposerIdentity
+  projectId: string | null
+}) {
+  const navigate = useNavigate()
+  return async (
+    prompt: string,
+    turnConfiguration: TurnConfiguration | null,
+    attachments: DraftContent['attachments'],
+  ) => {
+    const sessionId = (await input.draft?.submit(prompt, turnConfiguration, attachments)) ?? null
+    if (sessionId === null) return false
+    if (input.identity.kind === 'draft' && input.projectId !== null)
+      navigate(`/projects/${input.projectId}/sessions/${sessionId}`, { replace: true })
+    return true
+  }
+}
+
+function useCatalogRead(harness: HarnessControl) {
+  const catalogQuery = useQuery(trpc.harnessCatalogRead.queryOptions({ harness: harness.harness }))
+  const catalogRefresh = useMutation(trpc.harnessCatalogRefresh.mutationOptions())
+  const refreshCatalog = () =>
+    catalogRefresh.mutate(
+      { harness: harness.harness },
+      { onSettled: () => void catalogQuery.refetch() },
+    )
+  return { catalogQuery, refreshCatalog }
+}
+
+function useComposerRetryFocus(
+  catalogQuery: ReturnType<typeof useCatalogRead>['catalogQuery'],
+  draft: ReturnType<typeof useDurableComposerDraft>,
+) {
+  const [focusComposerAfterRetry, setFocusComposerAfterRetry] = useState(false)
+  const clearRecoveryFocus = useCallback(() => setFocusComposerAfterRetry(false), [])
+  const focusAfterSuccessfulRetry = (retry: Promise<{ isSuccess: boolean }>) => {
+    void retry.then(({ isSuccess }) => {
+      if (isSuccess) setFocusComposerAfterRetry(true)
+    })
+  }
+  const retryCatalog = () => focusAfterSuccessfulRetry(catalogQuery.refetch())
+  const retryDraft = () => draft && focusAfterSuccessfulRetry(draft.retryLoad())
+  return { focusComposerAfterRetry, clearRecoveryFocus, retryCatalog, retryDraft }
+}
+
+// The Session list already knows another process runs it live, so no Send is offered at all (ADR-0040).
 export function SessionComposerArea({
   permission,
   questionPending,
@@ -132,20 +212,16 @@ export function SessionComposerArea({
   workspaceCockpit,
   workspaceActions,
 }: SessionScreenDetailsProps) {
-  const catalogQuery = useQuery(trpc.harnessCatalogRead.queryOptions({ harness: harness.harness }))
-  const catalogRefresh = useMutation(trpc.harnessCatalogRefresh.mutationOptions())
+  const { catalogQuery, refreshCatalog } = useCatalogRead(harness)
   const location = useLocation()
-  const catalog = catalogQuery.data?.info ?? null
-  const catalogFailure = catalogFailureOf(catalogQuery.data, catalogQuery.isError)
-  const identity = composerIdentityOf(selectedSessionId, cockpit.project?.id ?? null)
-  const choices = catalog?.availability === 'available' ? catalog : null
-  const initialTurnConfiguration =
-    choices === null || (identity.kind === 'session' && sessionList === null)
-      ? null
-      : turnConfigurationFor(choices, {
-          identity,
-          rows: sessionList?.sessions ?? [],
-        })
+  const { catalogFailure, choices, initialTurnConfiguration, identity } =
+    sessionComposerConfiguration({
+      selectedSessionId,
+      projectId: cockpit.project?.id ?? null,
+      sessionList,
+      catalogResult: catalogQuery.data,
+      catalogFailed: catalogQuery.isError,
+    })
   const composerKey = composerIdentityKey(identity)
   const { draft, targetRestored } = useSessionComposerDraft({
     identity,
@@ -156,26 +232,22 @@ export function SessionComposerArea({
     choices,
     opening: initialTurnConfiguration,
   })
-  const navigate = useNavigate()
-  const send = async (
-    prompt: string,
-    turnConfiguration: TurnConfiguration | null,
-    attachments: DraftContent['attachments'],
-  ) => {
-    const sessionId = (await draft?.submit(prompt, turnConfiguration, attachments)) ?? null
-    if (sessionId === null) return false
-    if (identity.kind === 'draft' && cockpit.project !== null)
-      navigate(`/projects/${cockpit.project.id}/sessions/${sessionId}`, { replace: true })
-    return true
-  }
-  // The Session list already knows another process runs it live, so no Send is offered at all (ADR-0040).
+  const { focusComposerAfterRetry, clearRecoveryFocus, retryCatalog, retryDraft } =
+    useComposerRetryFocus(catalogQuery, draft)
+  const send = useSessionComposerSend({ draft, identity, projectId: cockpit.project?.id ?? null })
   if (session?.locked === true) return <OpenElsewhere onRetry={null} />
-  if (draft === null || !targetRestored) return null
-  const refreshCatalog = () =>
-    catalogRefresh.mutate(
-      { harness: harness.harness },
-      { onSettled: () => void catalogQuery.refetch() },
+  if (draft === null)
+    return (
+      <ComposerLoadFallback
+        sessionId={`${composerKey}:loading`}
+        harness={harness}
+        choices={choices}
+        opening={initialTurnConfiguration}
+        catalogFailure={catalogFailure}
+        onRetryCatalog={retryCatalog}
+      />
     )
+  if (!targetRestored && draft.hasDraft) return null
   return (
     <ReadySessionComposer
       {...{ permission, questionPending, session, harness, workspaceCockpit, workspaceActions }}
@@ -183,9 +255,12 @@ export function SessionComposerArea({
       choices={choices}
       composerKey={composerKey}
       draft={draft}
-      focusOnMount={location.state === COMPOSER_FOCUS_STATE}
+      focusOnMount={location.state === COMPOSER_FOCUS_STATE || focusComposerAfterRetry}
+      onFocusAfterMount={clearRecoveryFocus}
       identity={identity}
       onRefreshCatalog={refreshCatalog}
+      onRetryCatalog={retryCatalog}
+      onRetryDraft={retryDraft}
       onSend={send}
     />
   )
@@ -203,8 +278,11 @@ function ReadySessionComposer({
   composerKey,
   draft,
   focusOnMount,
+  onFocusAfterMount,
   identity,
   onRefreshCatalog,
+  onRetryCatalog,
+  onRetryDraft,
   onSend,
 }: Pick<
   SessionScreenDetailsProps,
@@ -215,28 +293,39 @@ function ReadySessionComposer({
   composerKey: string
   draft: NonNullable<ReturnType<typeof useDurableComposerDraft>>
   focusOnMount: boolean
+  onFocusAfterMount: () => void
   identity: ComposerIdentity
   onRefreshCatalog: () => void
+  onRetryCatalog: () => void
+  onRetryDraft: () => void
   onSend: NonNullable<Parameters<typeof ComposerForm>[0]['onSend']>
 }) {
   const { t } = useTranslation('sessions')
   return (
     <>
       {permission.failure ? <Failure message={permission.failure} /> : null}
+      {catalogFailure ? (
+        <Failure
+          message={catalogFailureMessage(t, harness.harness, catalogFailure)}
+          onRetry={onRetryCatalog}
+        />
+      ) : null}
+      {draft.loadFailed ? <DraftLoadFailure onRetry={onRetryDraft} /> : null}
       {draft.saveFailed ? <Failure message={t('composer.draftSaveFailed')} /> : null}
       {draft.sendFailed ? <Failure message={t('composer.sendFailed')} /> : null}
       <ComposerForm
-        sessionId={composerKey}
+        sessionId={`${composerKey}:${draft.hasDraft ? 'ready' : 'load-failed'}`}
         initialEditing={draft.initialEditing}
         onEditingChange={draft.onEditingChange}
         focusOnMount={focusOnMount}
+        onFocusAfterMount={onFocusAfterMount}
         turnConfigurationChoices={choices}
         catalogFailure={catalogFailure}
         refreshCatalog={onRefreshCatalog}
         workspace={workspaceControl(identity, workspaceCockpit, workspaceActions)}
         contextTokens={session?.contextTokens}
         contextWindowTokens={session?.contextWindowTokens}
-        disabled={questionPending}
+        disabled={questionPending || (draft.loadFailed && !draft.hasDraft)}
         harness={harness}
         permissionPrompt={
           <PermissionPrompt
@@ -252,9 +341,53 @@ function ReadySessionComposer({
   )
 }
 
+export function ComposerLoadFallback({
+  sessionId,
+  harness,
+  choices,
+  opening,
+  catalogFailure,
+  onRetryCatalog,
+}: {
+  sessionId: string
+  harness: HarnessControl
+  choices: Parameters<typeof useDurableComposerDraft>[0]['choices']
+  opening: TurnConfiguration | null
+  catalogFailure: CatalogFailure | null
+  onRetryCatalog: () => void
+}) {
+  const { t } = useTranslation('sessions')
+  const message = catalogFailure
+    ? catalogFailureMessage(t, harness.harness, catalogFailure)
+    : t('composer.loading')
+  return (
+    <>
+      <Failure
+        message={message}
+        onRetry={catalogFailure ? onRetryCatalog : undefined}
+        status={!catalogFailure}
+      />
+      <ComposerForm
+        sessionId={sessionId}
+        initialEditing={opening === null ? undefined : { turnConfiguration: opening }}
+        disabled
+        harness={harness}
+        turnConfigurationChoices={choices}
+        catalogFailure={catalogFailure}
+        refreshCatalog={onRetryCatalog}
+      />
+    </>
+  )
+}
+
 function handoffTitle(sessionList: SessionListPage | null, sessionId: string) {
   const row = sessionList?.sessions.find(({ id }) => id === sessionId)
   return row?.title?.text ?? sessionId
+}
+
+export function DraftLoadFailure({ onRetry }: { onRetry: () => void }) {
+  const { t } = useTranslation('sessions')
+  return <Failure message={t('composer.draftLoadFailed')} onRetry={onRetry} />
 }
 
 function HandoffLink({
@@ -316,11 +449,27 @@ export function SessionHandoffFacts({
   )
 }
 
-function Failure({ message }: { message: string }) {
+function Failure({
+  message,
+  onRetry,
+  status = false,
+}: {
+  message: string
+  onRetry?: () => void
+  status?: boolean
+}) {
+  const { t } = useTranslation('sessions')
   return (
     <div className={`${COMPOSER_COLUMN} mt-3`}>
-      <Alert variant="destructive">
+      <Alert role={status ? 'status' : 'alert'} variant={status ? 'default' : 'destructive'}>
         <AlertDescription>{message}</AlertDescription>
+        {onRetry ? (
+          <AlertAction>
+            <Button onClick={onRetry} size="sm" type="button" variant="outline">
+              {t('composer.retry')}
+            </Button>
+          </AlertAction>
+        ) : null}
       </Alert>
     </div>
   )

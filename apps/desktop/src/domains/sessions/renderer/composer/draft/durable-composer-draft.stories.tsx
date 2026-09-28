@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import {
   queryClient,
@@ -9,6 +9,7 @@ import {
 } from '@/platform/renderer/trpc-client'
 import { claudeComposerModelCatalogFixture } from '../../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
 import { claudeChoices } from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
+import { DraftLoadFailure } from '../../screens/session-screen-details'
 import { ComposerForm } from '../layout/composer-form'
 import type { TurnConfigurationChoices } from '../turn-configuration/turn-configuration'
 import { useDurableComposerDraft } from './use-durable-composer-draft'
@@ -24,6 +25,7 @@ type Server = {
   sessionASaveRejected: boolean
   rejectSubmit: boolean
   savePending: boolean
+  draftReadFailures: number
   notify: () => void
   submittedTarget: DraftTarget | null
 }
@@ -163,8 +165,14 @@ function submitDraftResult(request: {
 function createMockTrpc(server: Server, notify: () => void): typeof window.argo.trpc {
   return (async (request) => {
     const input = request.input as MockInput
-    if (request.path === 'composerDraftRead')
+    if (request.path === 'composerDraftRead') {
+      if (server.draftReadFailures > 0) {
+        server.draftReadFailures -= 1
+        notify()
+        throw new Error('The saved draft could not be read.')
+      }
       return { result: { data: createReadResult(server.drafts, input) } }
+    }
     if (request.path === 'composerDraftCreate')
       return { result: { data: createCreateResult(server.drafts, input, notify) } }
     if (request.path === 'composerDraftSave')
@@ -183,11 +191,13 @@ function createMockTrpc(server: Server, notify: () => void): typeof window.argo.
   }) as typeof window.argo.trpc
 }
 
-function createServer(
-  notify: () => void,
-  initialOutcome: 'accept' | 'reject' | 'fallback',
-  project: boolean,
-): Server {
+function createServer(input: {
+  notify: () => void
+  initialOutcome: 'accept' | 'reject' | 'fallback'
+  project: boolean
+  draftReadFailures: number
+}): Server {
+  const { notify, initialOutcome, project, draftReadFailures } = input
   const firstDraft = savedDraft('session-a', 'Restored Session A draft.', 1)
   if (initialOutcome === 'fallback')
     firstDraft.turnConfiguration = {
@@ -208,6 +218,7 @@ function createServer(
     sessionASaveRejected: false,
     rejectSubmit: initialOutcome !== 'accept',
     savePending: false,
+    draftReadFailures,
     notify,
     submittedTarget: null,
   }
@@ -299,17 +310,61 @@ function DraftTimingControls({ server }: { server: Server }) {
   )
 }
 
+function DraftReadControls({ server, target }: { server: Server; target: DraftTarget }) {
+  return (
+    <>
+      <button
+        onClick={() => {
+          server.draftReadFailures = 1
+          server.notify()
+        }}
+        type="button"
+      >
+        Fail next draft read
+      </button>
+      <button
+        onClick={() =>
+          void queryClient.invalidateQueries({
+            queryKey: trpc.composerDraftRead.queryKey(target),
+          })
+        }
+        type="button"
+      >
+        Refresh draft
+      </button>
+    </>
+  )
+}
+
+function useDraftStoryRetryFocus(draft: ReturnType<typeof useDurableComposerDraft>) {
+  const [focusComposerAfterRetry, setFocusComposerAfterRetry] = useState(false)
+  const retryDraftLoad = () => {
+    void draft?.retryLoad().then(({ isSuccess }) => {
+      if (isSuccess) setFocusComposerAfterRetry(true)
+    })
+  }
+  const clearRecoveryFocus = useCallback(() => setFocusComposerAfterRetry(false), [])
+  return { focusComposerAfterRetry, retryDraftLoad, clearRecoveryFocus }
+}
+
 function DurableDraftStory({
   initialOutcome = 'accept',
   project = false,
+  draftReadFailures = 0,
 }: {
   initialOutcome?: 'accept' | 'reject' | 'fallback'
   project?: boolean
+  draftReadFailures?: number
 }) {
   const [serverVersion, setServerVersion] = useState(0)
   const [screenVersion, setScreenVersion] = useState(0)
   const [server] = useState(() =>
-    createServer(() => setServerVersion((version) => version + 1), initialOutcome, project),
+    createServer({
+      notify: () => setServerVersion((version) => version + 1),
+      initialOutcome,
+      project,
+      draftReadFailures,
+    }),
   )
   const initialized = useRef(false)
   if (!initialized.current) {
@@ -367,12 +422,9 @@ function DurableDraftScreen({
     setHarness(loadedTarget.harness)
     setRestoredProjectId(loadedTarget.projectId)
   }, [project, restoredProjectId, loadedTarget])
-  const storedDrafts = [...server.drafts.values()].map(({ target: storedTarget, ...value }) => ({
-    target: storedTarget,
-    prompt: value.prompt,
-    revision: value.revision,
-    turnConfiguration: value.turnConfiguration,
-  }))
+  const { focusComposerAfterRetry, retryDraftLoad, clearRecoveryFocus } =
+    useDraftStoryRetryFocus(draft)
+  const storedDrafts = storedDraftSummaries(server.drafts)
   return (
     <div className="mx-auto flex h-[560px] max-w-3xl flex-col gap-3 p-6">
       <div className="flex gap-2">
@@ -385,8 +437,13 @@ function DurableDraftScreen({
           onHarness={() => setHarness('codex')}
         />
         <DraftTimingControls server={server} />
+        <DraftReadControls server={server} target={target} />
       </div>
-      <output aria-label="Stored drafts" data-save-pending={server.savePending}>
+      <output
+        aria-label="Stored drafts"
+        data-save-pending={server.savePending}
+        data-read-failures={server.draftReadFailures}
+      >
         {JSON.stringify(storedDrafts)}
       </output>
       <output aria-label="Submitted target">{JSON.stringify(server.submittedTarget)}</output>
@@ -397,19 +454,61 @@ function DurableDraftScreen({
         <div role="alert">The Turn could not be sent. Your draft is still saved.</div>
       ) : null}
       {draft && targetRestored ? (
-        <ComposerForm
-          harness={{ harness }}
-          initialEditing={draft.initialEditing}
-          onEditingChange={draft.onEditingChange}
-          onSend={async (prompt, turnConfiguration, attachments) =>
-            (await draft.submit(prompt, turnConfiguration, attachments)) !== null
-          }
-          sessionId={`${project ? 'project-1' : sessionId}:${composerVersion}`}
-          turnConfigurationChoices={choices as TurnConfigurationChoices}
+        <DurableDraftComposer
+          draft={draft}
+          harness={harness}
+          sessionId={`${project ? 'project-1' : sessionId}:${composerVersion}:${draft.hasDraft ? 'ready' : 'load-failed'}`}
+          focusOnRetry={focusComposerAfterRetry}
+          onFocusAfterMount={clearRecoveryFocus}
+          onRetry={retryDraftLoad}
         />
       ) : null}
     </div>
   )
+}
+
+function DurableDraftComposer({
+  draft,
+  harness,
+  sessionId,
+  focusOnRetry,
+  onFocusAfterMount,
+  onRetry,
+}: {
+  draft: NonNullable<ReturnType<typeof useDurableComposerDraft>>
+  harness: 'claude' | 'codex'
+  sessionId: string
+  focusOnRetry: boolean
+  onFocusAfterMount: () => void
+  onRetry: () => void
+}) {
+  return (
+    <>
+      {draft.loadFailed ? <DraftLoadFailure onRetry={onRetry} /> : null}
+      <ComposerForm
+        harness={{ harness }}
+        initialEditing={draft.initialEditing}
+        onEditingChange={draft.onEditingChange}
+        onSend={async (prompt, turnConfiguration, attachments) =>
+          (await draft.submit(prompt, turnConfiguration, attachments)) !== null
+        }
+        sessionId={sessionId}
+        disabled={draft.loadFailed && !draft.hasDraft}
+        focusOnMount={focusOnRetry}
+        onFocusAfterMount={onFocusAfterMount}
+        turnConfigurationChoices={choices as TurnConfigurationChoices}
+      />
+    </>
+  )
+}
+
+function storedDraftSummaries(drafts: Map<string, DraftValue>) {
+  return [...drafts.values()].map(({ target, prompt, revision, turnConfiguration }) => ({
+    target,
+    prompt,
+    revision,
+    turnConfiguration,
+  }))
 }
 
 const meta = {
@@ -442,6 +541,47 @@ export const RestoresAndRetainsRejectedDrafts: Story = {
     await expect(await canvas.findByLabelText('Message')).toHaveTextContent(
       'Restored Session A draft.',
     )
+  },
+}
+
+export const DraftReadFailureCanRetry: Story = {
+  args: { draftReadFailures: 1 },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByRole('alert')).toHaveTextContent(
+      'Argo could not load this draft.',
+    )
+    const retry = canvas.getByRole('button', { name: 'Retry' })
+    await expect(retry).toBeVisible()
+    retry.focus()
+    await userEvent.keyboard('{Enter}')
+    const editor = await canvas.findByLabelText('Message')
+    await expect(editor).toHaveTextContent('Restored Session A draft.')
+    await waitFor(() => expect(editor).toHaveFocus())
+    await expect(canvas.queryByText('Argo could not load this draft.')).toBeNull()
+  },
+}
+
+export const KeepsLoadedDraftAfterRefreshFails: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const editor = await canvas.findByLabelText('Message')
+    await expect(editor).toHaveTextContent('Restored Session A draft.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Fail next draft read' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Refresh draft' }))
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Stored drafts')).toHaveAttribute('data-read-failures', '0'),
+    )
+    await expect(editor).toHaveTextContent('Restored Session A draft.')
+    await expect(await canvas.findByRole('alert')).toHaveTextContent(
+      'Argo could not load this draft.',
+    )
+    const retry = canvas.getByRole('button', { name: 'Retry' })
+    retry.focus()
+    await userEvent.keyboard('{Enter}')
+    await expect(canvas.queryByText('Argo could not load this draft.')).toBeNull()
+    await expect(editor).toHaveTextContent('Restored Session A draft.')
+    await waitFor(() => expect(editor).toHaveFocus())
   },
 }
 

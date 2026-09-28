@@ -33,3 +33,15 @@ test('does not load a cached draft after its owner refresh fails', () => {
     }),
   ).toBe(false)
 })
+
+test('keeps a cached draft available when its refresh fails', () => {
+  expect(
+    shouldLoadComposerDraft({
+      owner: 'project:project-1',
+      loadedOwner: null,
+      isFetching: false,
+      isError: true,
+      hasData: true,
+    }),
+  ).toBe(true)
+})
