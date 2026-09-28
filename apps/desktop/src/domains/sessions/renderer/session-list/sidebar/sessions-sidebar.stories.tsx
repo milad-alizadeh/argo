@@ -258,7 +258,7 @@ export const UnavailableHistoryRecovers: Story = {
           sessionId,
           chainId: sessionId,
           revision: 'recovered',
-          rows: [],
+          content: [],
         }
       }),
     }
