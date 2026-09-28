@@ -1,6 +1,7 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import type { inferRouterOutputs } from '@trpc/server'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, expect, test } from 'vitest'
 import { type Database, databaseMigrationsFolder, openDatabase } from '@/database/database'
@@ -9,7 +10,7 @@ import { sessionTable } from '@/database/session/schema'
 import { SessionRosterChanges } from '@/domains/sessions/main/api/session-roster-changes'
 import { refreshSessionSubagents } from '@/domains/sessions/main/database/session-subagents'
 import { saveSessionBatch } from '@/domains/sessions/main/sync/session-sync-records'
-import { type AppRouterDependencies, createAppRouter } from './trpc-router'
+import { type AppRouter, type AppRouterDependencies, createAppRouter } from './trpc-router'
 
 let userData: string
 let database: Database
@@ -38,6 +39,15 @@ function routerDependencies(
   } as unknown as AppRouterDependencies
 }
 
+async function firstRosterUpdates() {
+  const updates: inferRouterOutputs<AppRouter>['sessionList'][] = []
+  const stream = await createAppRouter(routerDependencies())
+    .createCaller({})
+    .sessionList({ projectId: 'project-1', pageSize: 30 })
+  stream.subscribe({ next: (update) => updates.push(update) }).unsubscribe()
+  return updates
+}
+
 beforeEach(async () => {
   userData = await mkdtemp(path.join(os.tmpdir(), 'argo-session-router-'))
   database = openDatabase(userData, { migrationsFolder: databaseMigrationsFolder() })
@@ -63,11 +73,7 @@ test('registers the Session roster subscription on the global router', async () 
       firstPrompt: 'Open the saved Session',
     })
     .run()
-  const updates: unknown[] = []
-  const stream = await createAppRouter(routerDependencies())
-    .createCaller({})
-    .sessionList({ projectId: 'project-1', pageSize: 30 })
-  stream.subscribe({ next: (update) => updates.push(update) }).unsubscribe()
+  const updates = await firstRosterUpdates()
   expect(updates[0]).toMatchObject({
     type: 'list',
     pages: 1,
@@ -110,11 +116,9 @@ test('lists the Subagents the sync read from each Session history', async () => 
     stopped: () => false,
   })
 
-  const listed = await createAppRouter(routerDependencies())
-    .createCaller({})
-    .sessionList({ projectId: 'project-1', page: 1, pageSize: 30 })
+  const updates = await firstRosterUpdates()
 
-  expect(listed.rows[0]?.subagents).toEqual([
+  expect(updates[0]?.type === 'list' && updates[0].rows[0]?.subagents).toEqual([
     { id: 'agent-1', label: 'Survey', state: 'running', startedAt: null, endedAt: null },
   ])
 })

@@ -4,7 +4,12 @@ import { expect, screen, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { sessionFeedTrpc, sessionListTrpc, sessionRow, sessionSubagent } from '../session-fixtures'
+import {
+  sessionFeedTrpc,
+  sessionListSubscribe,
+  sessionRow,
+  sessionSubagent,
+} from '../session-fixtures'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import type { SessionFeedSnapshot } from '../types'
 import { SessionScreenView } from './session-screen-view'
@@ -93,13 +98,11 @@ const meta = {
     const previous = window.argo
     window.argo = {
       ...previous,
-      trpc: sessionFeedTrpc(
-        sessionListTrpc(previous.trpc, () => [session]),
-        async (sessionId, subagentId) => {
-          readSubagentIds.push(subagentId)
-          return snapshot(sessionId, subagentId)
-        },
-      ),
+      trpcSubscribe: sessionListSubscribe(previous.trpcSubscribe, () => [session]),
+      trpc: sessionFeedTrpc(previous.trpc, async (sessionId, subagentId) => {
+        readSubagentIds.push(subagentId)
+        return snapshot(sessionId, subagentId)
+      }),
     }
     return () => {
       window.argo = previous
