@@ -355,9 +355,12 @@ function SessionComposer({
     projectId: identity.kind === 'draft' ? identity.projectId : null,
     onFailure: reportSendFailure,
   })
+  const waiting = draft?.hasDraft !== true
+  // A failed catalog leaves no draft to wait for: the card disables, and its catalog menu can retry.
+  const catalogBlocked = waiting && catalogFailure !== null
   const form: ComposerFormProps = {
     sessionId: composerKey,
-    loading: draft?.hasDraft !== true,
+    loading: waiting && !catalogBlocked,
     initialEditing: initialFormEditing(draft, opening),
     onEditingChange: draft?.onEditingChange,
     focusOnMount,
@@ -368,7 +371,7 @@ function SessionComposer({
     workspace: workspaceControl(identity, workspaceCockpit, workspaceActions),
     contextTokens: session?.contextTokens,
     contextWindowTokens: session?.contextWindowTokens,
-    disabled: questionPending || (draft?.loadFailed === true && !draft.hasDraft),
+    disabled: questionPending || catalogBlocked || (draft?.loadFailed === true && !draft.hasDraft),
     harness,
     permissionPrompt: (
       <PermissionPrompt
