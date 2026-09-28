@@ -9,6 +9,7 @@ export type HarnessRegistration<Id extends Harness = Harness> = HarnessReadiness
   harness: Id
   readCatalog: () => Promise<HarnessInfo>
   readHistory: (target: SessionHistoryTarget) => Promise<FeedContent[]>
+  watchHistory?: (target: SessionHistoryTarget, invalidate: () => void) => () => void
   rename?: (nativeId: string, title: string) => Promise<void>
   sessionDiscovery: SessionDiscovery
 }

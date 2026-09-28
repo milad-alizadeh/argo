@@ -35,6 +35,8 @@ test('starts a clean database with every ordered migration', async () => {
     expect(database.prepare('SELECT name FROM __drizzle_migrations ORDER BY name').all()).toEqual([
       { name: '20260925212920_conscious_havok' },
       { name: '20260925212921_session_search' },
+      { name: '20260926052843_preserve_session_activity' },
+      { name: '20260926110949_safe_susan_delgado' },
     ])
     expect(
       database

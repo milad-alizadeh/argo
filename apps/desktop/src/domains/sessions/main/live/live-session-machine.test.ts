@@ -21,6 +21,7 @@ function testMachine(services: {
   start?: () => Promise<string>
   send?: (prompt: string) => Promise<void>
   persist?: () => Promise<string>
+  emitFeed?: boolean
 }) {
   let promptCount = 0
   const harness = claudeLiveSessionMachine.provide({
@@ -28,6 +29,17 @@ function testMachine(services: {
       queryActor: fromCallback(({ receive, sendBack }) => {
         receive((event) => {
           promptCount += 1
+          if (services.emitFeed)
+            sendBack({
+              type: 'Feed event',
+              body: {
+                type: 'content',
+                commandId: first.commandId,
+                turnId: first.commandId,
+                vendorEventId: 'assistant-1',
+                content: { id: 'assistant-1', kind: 'message', role: 'assistant', text: 'Working' },
+              },
+            })
           if (promptCount === 1)
             void (services.start?.() ?? Promise.resolve('native-1')).then(
               (nativeId) => sendBack({ type: 'Opened', nativeId }),
@@ -167,6 +179,38 @@ test('queues later sends until persistence, then delivers them in order', async 
   actor.stop()
 })
 
+test('persists a Claude Session before its first turn finishes and holds queued sends', async () => {
+  let finishTurn!: () => void
+  const delivered: string[] = []
+  const harness = claudeLiveSessionMachine.provide({
+    actors: {
+      queryActor: fromCallback(({ receive, sendBack }) => {
+        receive((event) => {
+          delivered.push(event.prompt)
+          if (delivered.length === 1) {
+            sendBack({ type: 'Identified', nativeId: 'native-1' })
+            finishTurn = () => sendBack({ type: 'Opened', nativeId: 'native-1' })
+          } else sendBack({ type: 'Sent' })
+        })
+      }),
+    },
+  })
+  const actor = createActor(
+    liveSessionMachine.provide({
+      actors: { harness, persist: fromPromise(async () => 'argo-1') },
+    }),
+    { input: first },
+  ).start()
+  const persisted = await waitFor(actor, (snapshot) => snapshot.matches('Awaiting turn'))
+  assert.equal(persisted.context.argoId, 'argo-1')
+  actor.send({ type: 'Send', command: { ...first, commandId: 'second', prompt: 'second' } })
+  assert.deepEqual(delivered, ['first'])
+  finishTurn()
+  await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
+  assert.deepEqual(delivered, ['first', 'second'])
+  actor.stop()
+})
+
 test('does not deliver a duplicate first command', async () => {
   const delivered: string[] = []
   const actor = createActor(
@@ -180,6 +224,24 @@ test('does not deliver a duplicate first command', async () => {
   actor.send({ type: 'Send', command: first })
   await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
   assert.deepEqual(delivered, [])
+  actor.stop()
+})
+
+test('emits validated Claude Feed events while the Session identity is persisting', async () => {
+  const actor = createActor(testMachine({ emitFeed: true }), { input: first })
+  const events: unknown[] = []
+  actor.on('feed', ({ body }) => events.push(body))
+  actor.start()
+  await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
+  assert.deepEqual(events, [
+    {
+      type: 'content',
+      commandId: first.commandId,
+      turnId: first.commandId,
+      vendorEventId: 'assistant-1',
+      content: { id: 'assistant-1', kind: 'message', role: 'assistant', text: 'Working' },
+    },
+  ])
   actor.stop()
 })
 

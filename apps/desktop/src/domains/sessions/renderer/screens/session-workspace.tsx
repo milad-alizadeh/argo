@@ -14,6 +14,10 @@ export type SessionWorkspaceProps = {
   feed: ReturnType<typeof useSessionFeed>['feed']
   feedError: ReturnType<typeof useSessionFeed>['feedError']
   onRetryFeed: ReturnType<typeof useSessionFeed>['retryFeed']
+  onLoadOlder?: ReturnType<typeof useSessionFeed>['loadOlder']
+  hasOlder?: boolean
+  loadingOlder?: boolean
+  olderError?: boolean
   liveFacts: FeedLiveFacts
   stallTimeoutMs?: number
   onOpenSession: (sessionId: string) => void
@@ -78,6 +82,10 @@ export function SessionWorkspace({
   feed,
   feedError,
   onRetryFeed,
+  onLoadOlder,
+  hasOlder,
+  loadingOlder,
+  olderError,
   liveFacts,
   stallTimeoutMs,
   onOpenSession,
@@ -120,6 +128,10 @@ export function SessionWorkspace({
           onOpenSession={onOpenSession}
           onJumpToLatestChange={updateJumpToLatest}
           onRetryFeed={onRetryFeed}
+          onLoadOlder={onLoadOlder}
+          hasOlder={hasOlder}
+          loadingOlder={loadingOlder}
+          olderError={olderError}
           questionFailure={questionFailure}
           selectedSessionId={selectedSessionId}
           onStalledChange={onFeedStalledChange}

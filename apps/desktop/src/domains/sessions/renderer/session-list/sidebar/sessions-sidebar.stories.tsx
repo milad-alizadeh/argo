@@ -1,8 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { queryClient, type RouterOutputs, trpc } from '@/platform/renderer/trpc-client'
+import { sessionFeedQuery } from '../../feed/session-feed-query'
 import { sessionFeedTrpc, sessionRow, sessionSubagent } from '../../session-fixtures'
 import type { SessionError, SessionId, SessionListPage } from '../../types'
 import { SessionList, type SessionListActions } from '../session-list'
@@ -163,6 +165,7 @@ function SessionListHarness({ selectedSessionId, ...actions }: SessionListHarnes
 
 function SelectableSessionList(args: SessionListHarnessArgs) {
   const [selectedSessionId, setSelectedSessionId] = useState(args.selectedSessionId)
+  useQuery(sessionFeedQuery(selectedSessionId, null))
   return (
     <SessionListHarness
       {...args}

@@ -8,12 +8,12 @@ import type { HarnessRegistry } from '@/harnesses/registry'
 import { createAppMachine } from './app-machine'
 
 const registry = {} as HarnessRegistry
-const appMachine = createAppMachine(registry)
 const input = {
   database: {} as Database,
   sessionSyncStatus: new SessionSyncStatusStore(),
   codexSessionSyncStatus: new SessionSyncStatusStore(undefined, 'codex'),
 }
+const appMachine = createAppMachine(registry, input)
 
 test('models application startup and shutdown', () => {
   const paths = getShortestPaths(appMachine, {

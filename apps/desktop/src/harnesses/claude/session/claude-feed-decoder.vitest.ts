@@ -25,6 +25,31 @@ function recordedSession(name: string): SessionMessage[] {
     .filter((entry) => ['user', 'assistant'].includes(entry.type))
 }
 
+test('uses the same assistant identity for live replies and SDK history', () => {
+  const message = {
+    role: 'assistant',
+    id: 'msg-api-1',
+    content: [{ type: 'text', text: 'Argo live feed verified.' }],
+  }
+  const history = decodeClaudeHistoryContent(
+    { type: 'assistant', uuid: 'history-envelope-1', message } as SessionMessage,
+    () => {},
+  )
+  const live = decodeClaudeLiveContent(
+    {
+      type: 'assistant',
+      uuid: 'live-envelope-1',
+      session_id: 'session-1',
+      message,
+    } as unknown as SDKMessage,
+    () => {},
+  )
+  expect(history).toEqual([
+    { id: 'msg-api-1', kind: 'message', role: 'assistant', text: 'Argo live feed verified.' },
+  ])
+  expect(live).toEqual(history)
+})
+
 test('decodes recorded command, task, and delegation shapes', () => {
   const rejected: string[] = []
   const decoded = recordedSession('harnessNoise').flatMap((entry) =>

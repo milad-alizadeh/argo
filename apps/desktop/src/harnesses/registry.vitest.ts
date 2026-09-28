@@ -10,6 +10,7 @@ import { type HarnessRegistry, readHarnessCatalog } from './registry'
 
 const vendor = vi.hoisted(() => ({
   getSessionMessages: vi.fn(),
+  getSubagentMessages: vi.fn(),
   renameSession: vi.fn(),
 }))
 
@@ -17,6 +18,7 @@ vi.mock('@anthropic-ai/claude-agent-sdk', () => vendor)
 
 beforeEach(() => {
   vendor.getSessionMessages.mockReset()
+  vendor.getSubagentMessages.mockReset()
   vendor.renameSession.mockReset()
 })
 
@@ -24,6 +26,7 @@ test('registered Claude reads root and subagent history and renames through the 
   vendor.getSessionMessages.mockResolvedValue([
     { type: 'assistant', uuid: 'reply', message: { role: 'assistant', content: 'Done' } },
   ])
+  vendor.getSubagentMessages.mockResolvedValue([])
   vendor.renameSession.mockResolvedValue(undefined)
   const registrations = {
     claude: createClaudeRegistration(),
@@ -47,8 +50,10 @@ test('registered Claude reads root and subagent history and renames through the 
     subagentId: 'child',
     cwd: '/work/project',
   })
-  expect(vendor.getSessionMessages).toHaveBeenNthCalledWith(1, 'root', { dir: '/work/project' })
-  expect(vendor.getSessionMessages).toHaveBeenNthCalledWith(2, 'child', { dir: '/work/project' })
+  expect(vendor.getSessionMessages).toHaveBeenCalledWith('root', { dir: '/work/project' })
+  expect(vendor.getSubagentMessages).toHaveBeenCalledWith('root', 'child', {
+    dir: '/work/project',
+  })
   await claude.rename?.('root', 'New title')
   expect(vendor.renameSession).toHaveBeenCalledWith('root', 'New title')
 })

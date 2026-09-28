@@ -54,6 +54,7 @@
     }
   },
   "feedLabel": "Session Feed",
+  "retryOlderHistory": "Retry older messages",
   "subagentFeedLabel": "Subagent Feed",
   "workspaceLabel": "Session workspace",
   "composerRegionLabel": "Session composer",
@@ -343,6 +344,22 @@
     },
     "context": { "label": "System context updated" },
     "status": { "label": "Status updated" },
+    "liveStatus": {
+      "label": "Session status",
+      "starting": "Starting",
+      "running": "Running",
+      "permission": "Waiting for permission",
+      "asking": "Waiting for an answer",
+      "idle": "Idle",
+      "stopped": "Stopped",
+      "ended": "Ended",
+      "unknown": "Unknown"
+    },
+    "liveFailure": { "label": "Session activity failed" },
+    "permission": { "label": "Permission needed" },
+    "permissionGranted": { "label": "Permission granted" },
+    "permissionDenied": { "label": "Permission denied" },
+    "permissionCancelled": { "label": "Permission cancelled" },
     "transcript": { "label": "Transcript delivered" },
     "protocolDetails": "Protocol text"
   },

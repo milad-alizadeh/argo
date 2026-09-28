@@ -7,6 +7,17 @@
   min-height: 0;
 }
 
+.feed[data-known-read-failure="true"] {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.feed[data-known-read-failure="true"] .feed__document[data-active="true"] {
+  position: relative;
+  inset: auto;
+  grid-row: 2;
+}
+
 .feed__document {
   position: absolute;
   inset: 0;

@@ -4,15 +4,6 @@
   "entries": [
     {
       "identity": {
-        "project": "@argo/desktop:node",
-        "path": "apps/desktop/src/database/database-startup.vitest.ts",
-        "test": "starts a clean database with every ordered migration"
-      },
-      "owner": "#2409",
-      "reason": "The durable SQLite migration path owns this startup repair."
-    },
-    {
-      "identity": {
         "project": "@argo/desktop",
         "path": "apps/desktop/e2e/sessions/real-harness/real-session-harness-backend.test.ts",
         "test": "[suite setup]"
