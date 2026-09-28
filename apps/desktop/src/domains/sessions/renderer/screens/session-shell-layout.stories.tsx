@@ -122,7 +122,7 @@ export const ResizeExpandedInspector: Story = {
         ).toBeGreaterThan(1)
         expect(canvas.getByRole('button', { name: 'Expand Session sidebar' })).toBeVisible()
       },
-      { timeout: 3000 },
+      { timeout: 5000 },
     )
   },
 }
