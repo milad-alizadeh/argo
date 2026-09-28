@@ -36,23 +36,23 @@ async function launchPackagedRun<Fixture>(params: {
 // A flow's `test.extend` fixture: prepare the flow's own state, launch its app, and wait for the
 // one preload surface the flow needs before handing the window to the case.
 export function packagedFixture<Fixture>(
-  prepare: (root: string, packagedApplication: string) => Promise<Fixture>,
+  prepare: (root: string, applicationUnderTest: string) => Promise<Fixture>,
   launch: (fixture: Fixture) => Promise<ElectronApplication>,
   ready: (page: Page) => Promise<unknown>,
 ) {
   return async (
     {
       root,
-      packagedApplication,
+      applicationUnderTest,
       performanceProfile,
     }: Pick<
       PackagedProofFixtures & PackagedProofWorkerFixtures,
-      'root' | 'packagedApplication' | 'performanceProfile'
+      'root' | 'applicationUnderTest' | 'performanceProfile'
     >,
     use: (value: PackagedRunOf<Fixture>) => Promise<void>,
     testInfo: TestInfo,
   ) => {
-    const fixture = await prepare(root, packagedApplication)
+    const fixture = await prepare(root, applicationUnderTest)
     const application = await launch(fixture)
     await launchPackagedRun<Fixture>({
       application,

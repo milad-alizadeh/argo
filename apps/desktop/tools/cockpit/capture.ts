@@ -1,8 +1,8 @@
-// Repeatable visual captures of the PACKAGED cockpit, one PNG per state and appearance.
+// Repeatable visual captures of the cockpit under test, one PNG per state and appearance.
 //
 //   bun run capture:cockpit -- [output-dir]
 //
-// It runs the shipped app against isolated application data, so a capture never reads or writes
+// It runs the app against isolated application data, so a capture never reads or writes
 // the real Project registry, and it drives the states through the shipped controls rather than
 // through a fixture, so a screenshot is of the app rather than of a mock. The window is shown
 // because Chromium throttles a hidden one and the capture comes back unpainted; nothing here

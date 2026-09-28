@@ -193,11 +193,13 @@ It then drives the shipped cockpit through registration, a folder that is not a 
 It also proves accessible names, a focus ring that every control in the first screen's tab ring draws only while focused, and every navigation chord in the table.
 It reads back the original package's production fuses after the run.
 
-`bun run capture:cockpit` writes one PNG per deck state and appearance from the same packaged app.
-`bun run measure:cockpit` records startup and idle evidence for #1863 from five launches of it.
+`bun run capture:cockpit` writes one PNG per deck state and appearance.
+`bun run measure:cockpit` records startup and idle evidence for #1863 from five launches.
+Both tools launch the Vite build by default, where `app.isPackaged` is false.
+Set `ARGO_E2E_PACKAGED=1` after `bun run build` to collect this evidence from the packaged app.
 Only a run on the 120 Hz reference display is judged. Every other run reports `unjudged` and exits zero.
 
-`bun run test:e2e -- --project=tickets` drives the same packaged copy with GitHub replaced by a mock on a loopback port.
+`bun run test:e2e -- --project=tickets` drives the same app with GitHub replaced by a mock on a loopback port.
 The mock is used only when the proof store is set, and only at a `127.0.0.1` origin.
 The proof connects an Account, signs in again as the same identity, and connects a second identity.
 It makes sure that no token reaches the renderer or an unsealed file.

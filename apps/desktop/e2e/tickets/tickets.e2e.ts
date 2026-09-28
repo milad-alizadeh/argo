@@ -2,6 +2,7 @@
 // detail, a status change, restart, revoked access, an expired renewal, disconnect and a visible
 // failure, all through the shipped cockpit against a mock GitHub and a mock Linear. Each case
 // declares the Accounts and source it starts with (`ticket-test.ts`).
+import { packagedRun } from '../application-under-test'
 import { assertShippedFusesIntact } from '../packaged-app'
 import { proveBacklog, proveConnect, proveConnectRepository } from './cases/github.case'
 import {
@@ -55,4 +56,7 @@ test.describe('with a Linear team', () => {
   test('disconnect the Linear Account', ({ tickets }) => proveLinearDisconnect(tickets.run()))
 })
 
-test('the shipped app keeps its fuses', () => assertShippedFusesIntact())
+test('the shipped app keeps its fuses', () => {
+  test.skip(!packagedRun, 'Only the packaged app has fuses.')
+  return assertShippedFusesIntact()
+})

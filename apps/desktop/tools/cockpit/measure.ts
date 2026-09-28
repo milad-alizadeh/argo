@@ -1,9 +1,9 @@
-// Startup and idle evidence for the PACKAGED cockpit (#1863, ceilings from #1736).
+// Startup and idle evidence for the cockpit under test (#1863, ceilings from #1736).
 //
 //   bun run measure:cockpit -- [runs]
 //
 // #1736 fixed one reference Mac, an absolute frame budget of 8.33 ms and an idle p99 ceiling of
-// 12.5 ms, and the FAIL line as the MEDIAN of five interleaved runs. So this launches the shipped
+// 12.5 ms, and the FAIL line as the MEDIAN of five interleaved runs. So this launches the
 // app that many times and reports the median, rather than the best or the last.
 //
 // An idle `requestAnimationFrame` delta is the DISPLAY's period, not the cost of a frame: an idle

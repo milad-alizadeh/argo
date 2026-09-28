@@ -15,7 +15,7 @@ import type { MockLinear } from '../../../mocks/providers/linear/mock-linear'
 import { HIDDEN, TEAM } from '../../../mocks/providers/linear/mock-linear-cast'
 import { startMockLinearLoopback } from '../../../mocks/providers/linear/mock-linear-loopback'
 import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mts'
-import { appExecutable } from '../../packaged-app'
+import { launchCommand } from '../../application-under-test'
 import { makeProjectLocallyReady } from '../../projects/fixtures/locally-ready-project'
 import { repository, seedSingleProject } from '../../projects/fixtures/project.fixture'
 
@@ -80,8 +80,7 @@ export async function prepare(root: string, application: string): Promise<Ticket
 // The mock keychain keeps safeStorage off the login keychain, whose prompt no proof can answer.
 export async function launch(fixture: TicketFixture): Promise<ElectronApplication> {
   const application = await electron.launch({
-    executablePath: appExecutable(fixture.application),
-    args: ['--use-mock-keychain'],
+    ...launchCommand(fixture.application, ['--use-mock-keychain']),
     env: {
       ...process.env,
       [PROJECT_PROOF_STORE_ENV]: fixture.userData,
