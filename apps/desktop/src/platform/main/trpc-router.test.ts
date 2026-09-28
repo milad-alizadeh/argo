@@ -6,7 +6,7 @@ import type { ProjectRegisterContext } from '@/domains/projects/main/api/project
 import { SessionRosterChanges } from '@/domains/sessions/main/api/session-roster-changes'
 import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
 import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
-import type { TicketRouterDependencies } from '@/domains/tickets/main/ticket-router'
+import type { TicketProcedureContext } from '@/domains/tickets/main/api/ticket-procedures'
 import type { WorkspaceListContext } from '@/domains/workspaces/main/api/workspace-list'
 import { claudeHarnessInfo } from '@/harnesses/claude/catalog'
 import { codexHarnessInfo } from '@/harnesses/codex/catalog'
@@ -53,7 +53,7 @@ function testRouter(
       interactions: {} as never,
       hasLiveChannel: () => false,
     },
-    tickets: {} as TicketRouterDependencies,
+    tickets: {} as TicketProcedureContext,
     workspaces: {} as WorkspaceListContext,
   })
 }
@@ -110,6 +110,19 @@ test('registers Session procedures directly on the global router', () => {
   ])
     expect(paths).toContain(path)
   expect(paths.some((path) => path === 'sessions' || path.startsWith('sessions.'))).toBe(false)
+})
+
+test('registers Ticket procedures directly on the global router', () => {
+  const paths = Object.keys(testRouter({} as never)._def.procedures)
+  for (const path of [
+    'ticketConnection',
+    'ticketList',
+    'ticketActive',
+    'ticketSync',
+    'ticketChanges',
+  ])
+    expect(paths).toContain(path)
+  expect(paths.some((path) => path === 'tickets' || path.startsWith('tickets.'))).toBe(false)
 })
 
 test('repeated reads reuse the settled catalog until an explicit refresh', async () => {

@@ -51,9 +51,9 @@ import {
   sessionSyncStatusProcedure,
 } from '@/domains/sessions/main/api/session-sync-status'
 import {
-  createTicketRouter,
-  type TicketRouterDependencies,
-} from '@/domains/tickets/main/ticket-router'
+  type TicketProcedureContext,
+  ticketProcedures,
+} from '@/domains/tickets/main/api/ticket-procedures'
 import {
   type WorkspaceListContext,
   workspaceChooseProcedure,
@@ -84,7 +84,7 @@ export type AppRouterDependencies = {
     SessionListContext &
     SessionLiveEventsContext &
     SessionRefreshContext & { sessionSyncStatus: readonly SessionSyncStatusStore[] }
-  tickets: TicketRouterDependencies
+  tickets: TicketProcedureContext
   workspaces: WorkspaceListContext
 }
 
@@ -114,7 +114,7 @@ export function createAppRouter(dependencies: AppRouterDependencies) {
     projectRelocate: projectRelocateProcedure(dependencies.projects),
     workspaceList: workspaceListProcedure(dependencies.workspaces),
     workspaceChoose: workspaceChooseProcedure(dependencies.workspaces),
-    tickets: createTicketRouter(dependencies.tickets),
+    ...ticketProcedures(dependencies.tickets),
   })
 }
 
