@@ -674,6 +674,14 @@ async function expectDelegatedFeedSurvivesCollapse(canvas: ReturnType<typeof wit
   expectVisibleFeedRowsDoNotOverlap(within(reopenedInspector).getByLabelText('Subagent history'))
 }
 
+function expectNoSessionIdOrWorkspaceInHeader(canvasElement: HTMLElement) {
+  const header = canvasElement.querySelector<HTMLElement>('[data-component="AppMainHeader"]')
+  if (header === null) throw new Error('The Session header is absent.')
+  const content = within(header)
+  expect(content.queryByText('Session ID')).toBeNull()
+  expect(content.queryByText('Workspace')).toBeNull()
+}
+
 export const Open: Story = {
   render: () => (
     <ReviewScreen
@@ -696,8 +704,7 @@ export const Open: Story = {
     await expect(
       canvas.getByRole('heading', { name: 'Finish Session composer review' }),
     ).toBeVisible()
-    await expect(canvas.getByText('Workspace')).toBeVisible()
-    await expect(canvas.getByText('ticket-1846-composer')).toBeVisible()
+    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
     await expect(canvas.getByText('Branch')).toBeVisible()
     await expect(canvas.getByText('feature/composer-review')).toBeVisible()
     expectHeaderActionsAtTrailingEdge(canvasElement)
@@ -740,17 +747,11 @@ export const FormattedHeaderTitle: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const header = canvas.getByRole('heading', { name: /Implement/ })
-    const sessionId = canvas
-      .getByText('Session ID')
-      .closest<HTMLElement>('[data-component="SessionIdMetadata"]')
-    const metadata = canvasElement.querySelector<HTMLElement>('[data-component="SessionMetadata"]')
-    if (sessionId === null || metadata === null) throw new Error('The Session metadata is absent.')
     await expect(header).not.toHaveTextContent('[$implement]')
     await expect(header).toHaveTextContent('https://example.com/guide')
     await expect(header.querySelector('a')).toBeNull()
-    await expect(metadata.getBoundingClientRect().top).toBeGreaterThanOrEqual(
-      header.getBoundingClientRect().bottom,
-    )
+    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
+    expect(canvasElement.querySelector('[data-component="SessionMetadata"]')).toBeNull()
   },
 }
 
@@ -854,7 +855,7 @@ export const SharedCheckout: Story = {
     await expect(
       canvas.getByRole('heading', { name: 'Add Markdown typing shortcuts' }),
     ).toBeVisible()
-    expect(canvas.queryByText('Workspace')).not.toBeInTheDocument()
+    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
     expect(canvas.queryByText('Branch')).not.toBeInTheDocument()
   },
 }
@@ -879,7 +880,7 @@ export const NarrowHeader: Story = {
     await expect(
       canvas.getByRole('heading', { name: 'Finish Session composer review' }),
     ).toBeVisible()
-    await expect(canvas.getByText('ticket-1846-composer')).toBeInTheDocument()
+    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
     await expect(canvas.getByText('feature/composer-review')).toBeInTheDocument()
     await waitFor(() =>
       expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
@@ -901,8 +902,7 @@ export const WorkspaceMainBranch: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Workspace')).toBeVisible()
-    await expect(canvas.getByText('Argo')).toBeVisible()
+    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
     await expect(canvas.getByText('Branch')).toBeVisible()
     await expect(canvas.getByText('main')).toBeVisible()
   },
@@ -919,8 +919,7 @@ export const WorkspaceDetachedHead: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Workspace')).toBeVisible()
-    await expect(canvas.getByText('Detached checkout')).toBeVisible()
+    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
     expect(canvas.queryByText('Branch')).not.toBeInTheDocument()
   },
 }
@@ -933,8 +932,7 @@ export const LegacySessionWithoutWorkspace: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Session ID')).toBeVisible()
-    expect(canvas.queryByText('Workspace')).not.toBeInTheDocument()
+    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
     expect(canvas.queryByText('Branch')).not.toBeInTheDocument()
   },
 }
@@ -948,8 +946,7 @@ export const RemovedWorkspace: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Session ID')).toBeVisible()
-    expect(canvas.queryByText('Workspace')).not.toBeInTheDocument()
+    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
     expect(canvas.queryByText('Branch')).not.toBeInTheDocument()
   },
 }
@@ -975,9 +972,7 @@ export const LongWorkspaceAndBranchNames: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const viewport = canvasElement.getBoundingClientRect()
-    await expect(
-      canvas.getByText('A workspace name that is much longer than the header can display'),
-    ).toBeVisible()
+    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
     await expect(
       canvas.getByText(
         'feature/a-branch-name-that-is-much-longer-than-the-header-can-display-or-the-session-title',

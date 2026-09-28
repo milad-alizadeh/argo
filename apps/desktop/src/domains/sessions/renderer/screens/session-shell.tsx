@@ -44,41 +44,21 @@ function SessionIdentity({
       <h1 className="w-full truncate type-heading">
         <SessionTitle session={session} text={sessionName(session, t('newSession'))} />
       </h1>
-      <div
-        data-component="SessionMetadata"
-        className="flex w-full min-w-0 flex-wrap items-center gap-(--spacing-shell-section) type-meta text-muted-foreground"
-      >
-        <p
-          data-component="SessionIdMetadata"
-          className="flex min-w-0 max-w-40 items-center gap-(--spacing-shell-tight)"
+      {workspaceIdentity !== null && workspaceIdentity.branch !== null ? (
+        <div
+          data-component="SessionMetadata"
+          className="w-full min-w-0 type-meta text-muted-foreground"
         >
-          <Icon name="session" size="meta" />
-          <span className="shrink-0">{t('identity.sessionId')}</span>
-          <code className="min-w-0 truncate font-mono text-foreground">{session.id}</code>
-        </p>
-        {workspaceIdentity ? (
-          <>
-            <p
-              data-component="SessionWorkspaceMetadata"
-              className="flex min-w-0 max-w-48 items-center gap-(--spacing-shell-tight)"
-            >
-              <Icon name="workspace" className="size-(--size-icon-inline) shrink-0" />
-              <span className="shrink-0">{t('identity.workspace')}</span>
-              <span className="min-w-0 truncate">{workspaceIdentity.displayName}</span>
-            </p>
-            {workspaceIdentity.branch === null ? null : (
-              <p
-                data-component="SessionBranchMetadata"
-                className="flex min-w-0 max-w-48 items-center gap-(--spacing-shell-tight)"
-              >
-                <Icon name="branch" className="size-(--size-icon-inline) shrink-0" />
-                <span className="shrink-0">{t('identity.branch')}</span>
-                <span className="min-w-0 truncate">{workspaceIdentity.branch}</span>
-              </p>
-            )}
-          </>
-        ) : null}
-      </div>
+          <p
+            data-component="SessionBranchMetadata"
+            className="flex min-w-0 max-w-48 items-center gap-(--spacing-shell-tight)"
+          >
+            <Icon name="branch" className="size-(--size-icon-inline) shrink-0" />
+            <span className="shrink-0">{t('identity.branch')}</span>
+            <span className="min-w-0 truncate">{workspaceIdentity.branch}</span>
+          </p>
+        </div>
+      ) : null}
     </div>
   )
 }
