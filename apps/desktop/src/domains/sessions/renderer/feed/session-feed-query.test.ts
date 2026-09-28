@@ -1,6 +1,6 @@
 import { QueryClient, QueryObserver } from '@tanstack/react-query'
 import { describe, expect, test, vi } from 'vitest'
-import { refreshSessionFeed, retrySessionFeed, sessionFeedQuery } from './session-feed-query'
+import { retrySessionFeed, sessionFeedQuery } from './session-feed-query'
 
 function feedReply(sessionId: string, requestId: string, revision: string) {
   return {
@@ -10,7 +10,6 @@ function feedReply(sessionId: string, requestId: string, revision: string) {
     sessionId,
     chainId: sessionId,
     revision,
-    olderCursor: null,
     content: [],
   }
 }
@@ -26,6 +25,10 @@ async function withTrpc<T>(trpc: ReturnType<typeof vi.fn>, run: () => Promise<T>
   } finally {
     Object.defineProperty(globalThis, 'window', { configurable: true, value: originalWindow })
   }
+}
+
+async function until(ready: () => boolean) {
+  while (!ready()) await new Promise((resolve) => setTimeout(resolve, 0))
 }
 
 test('reads a newly started Session by its real identifier', async () => {
@@ -54,31 +57,58 @@ test('reads the feed through tRPC without legacy preload methods', async () => {
   })
 })
 
-test('refreshes only the Session whose older cursor expired', async () => {
+test('a failed refresh keeps the known snapshot and Retry reads it again', async () => {
   const client = new QueryClient()
-  const sessionA = feedReply('session-a', 'a-old', 'a-old')
-  const sessionB = feedReply('session-b', 'b-current', 'b-current')
-  client.setQueryData(sessionFeedQuery('session-a', null).queryKey, sessionA)
-  client.setQueryData(sessionFeedQuery('session-b', null).queryKey, sessionB)
-  const refreshedA = { ...feedReply('session-a', 'a-new', 'a-new'), olderCursor: 'a-next' }
-  const trpc = vi.fn().mockResolvedValue({ result: { data: refreshedA } })
-
+  const known = feedReply('session-a', 'known', 'known')
+  const recovered = feedReply('session-a', 'recovered', 'recovered')
+  const trpc = vi
+    .fn()
+    .mockResolvedValueOnce({ result: { data: known } })
+    .mockRejectedValueOnce(new Error('offline'))
+    .mockResolvedValueOnce({ result: { data: recovered } })
+  const options = sessionFeedQuery('session-a', null)
   await withTrpc(trpc, async () => {
-    await refreshSessionFeed(client, 'session-a', null)
+    const observer = new QueryObserver(client, options)
+    const unsubscribe = observer.subscribe(() => {})
+    await until(() => observer.getCurrentResult().data !== undefined)
+    expect(observer.getCurrentResult().data).toMatchObject(known)
+    await client.invalidateQueries({ queryKey: options.queryKey })
+    expect(observer.getCurrentResult()).toMatchObject({
+      data: known,
+      error: { code: 'vendor-history-unavailable' },
+    })
+    await retrySessionFeed(client, options.queryKey, () => observer.refetch())
+    expect(observer.getCurrentResult()).toMatchObject({ data: recovered, error: null })
+    unsubscribe()
   })
+})
 
-  expect(trpc).toHaveBeenCalledWith(
-    expect.objectContaining({
-      path: 'sessionFeedRead',
-      type: 'query',
-      input: expect.objectContaining({ sessionId: 'session-a' }),
-    }),
+test('a late read for Session A never lands in the Session B snapshot', async () => {
+  const client = new QueryClient()
+  let finishA: (value: unknown) => void = () => {}
+  const trpc = vi.fn((request: { input: { sessionId: string } }) =>
+    request.input.sessionId === 'session-a'
+      ? new Promise((resolve) => {
+          finishA = resolve
+        })
+      : Promise.resolve({ result: { data: feedReply('session-b', 'b', 'b') } }),
   )
-  expect(client.getQueryData(sessionFeedQuery('session-a', null).queryKey)).toMatchObject({
-    revision: 'a-new',
-    olderCursor: 'a-next',
+  await withTrpc(trpc, async () => {
+    const observerA = new QueryObserver(client, sessionFeedQuery('session-a', null))
+    const stopA = observerA.subscribe(() => {})
+    stopA()
+    const optionsB = sessionFeedQuery('session-b', null)
+    const observerB = new QueryObserver(client, optionsB)
+    const stopB = observerB.subscribe(() => {})
+    await until(() => observerB.getCurrentResult().data !== undefined)
+    finishA({ result: { data: feedReply('session-a', 'late-a', 'late-a') } })
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(client.getQueryData(optionsB.queryKey)).toMatchObject({
+      sessionId: 'session-b',
+      revision: 'b',
+    })
+    stopB()
   })
-  expect(client.getQueryData(sessionFeedQuery('session-b', null).queryKey)).toBe(sessionB)
 })
 
 test('keeps history reads event-driven for both live and external Sessions', () => {

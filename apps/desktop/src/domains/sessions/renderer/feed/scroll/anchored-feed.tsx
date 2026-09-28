@@ -1,8 +1,6 @@
 import type { VirtualItem, Virtualizer } from '@tanstack/virtual-core'
 import type { ReactNode } from 'react'
-import { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Button } from '@/platform/renderer/components/ui/button'
+import { useLayoutEffect, useRef } from 'react'
 import type { SessionFeedRow } from '../../types'
 import type { Settled } from '../document/use-settled-feed'
 import {
@@ -19,10 +17,6 @@ import { useFeedTailFollow, useJumpToLatest } from './tail-follow'
 
 type AnchoredFeedProps = {
   active: boolean
-  hasOlder?: boolean
-  loadingOlder?: boolean
-  olderError?: boolean
-  onLoadOlder?: () => void
   FeedRow: FeedRowComponent
   initialMeasurementsCache: VirtualItem[]
   initialScrollPosition: number | null
@@ -76,10 +70,6 @@ function scrollToAnchor(
 // TanStack chat pattern: https://tanstack.com/virtual/latest/docs/chat.
 export function AnchoredFeed({
   active,
-  hasOlder = false,
-  loadingOlder = false,
-  olderError = false,
-  onLoadOlder,
   FeedRow,
   initialMeasurementsCache,
   initialScrollPosition,
@@ -93,7 +83,6 @@ export function AnchoredFeed({
   tail,
   historyLabel,
 }: AnchoredFeedProps) {
-  const { t } = useTranslation('sessions')
   const { attachViewport, paddingStart, viewport } = useFeedViewport()
   const tailFollow = useFeedTailFollow(settled.reading.sessionId, { active, viewport })
   const { following, update: updatePromptHold } = usePromptHold(tailFollow.shouldFollow)
@@ -108,39 +97,17 @@ export function AnchoredFeed({
     onChange: tailFollow.onChange,
   })
   useTailThroughViewportResize(viewport, following)
-  const olderAnchor = useRef<{ id: string; offset: number; firstId: string } | null>(null)
   const visibleAnchor = useRef<{ id: string; offset: number } | null>(null)
   const pendingAnchor = useRef<{ id: string; offset: number } | null>(null)
   const committedRows = useRef(rows)
-  const startOlderLoad = useCallback(() => {
-    if (onLoadOlder === undefined || olderAnchor.current !== null) return
-    if (viewport === null) {
-      onLoadOlder()
-      return
-    }
-    // The DOM gives an exact anchor; measurements cover a fast scroll before rows mount.
-    const anchor = currentRowAnchor(viewport, rows, virtualizer)
-    if (anchor === null) {
-      onLoadOlder()
-      return
-    }
-    olderAnchor.current = {
-      ...anchor,
-      firstId: rows[0]?.id ?? anchor.id,
-    }
-    onLoadOlder()
-  }, [onLoadOlder, rows, viewport, virtualizer])
+  // A first snapshot can land under live-only rows; the reader keeps their row.
   useLayoutEffect(() => {
-    const anchor = olderAnchor.current
     const firstId = committedRows.current[0]?.id
     const addedBefore = firstId === undefined ? 0 : rows.findIndex((row) => row.id === firstId)
-    if (viewport !== null && addedBefore > 0) {
-      const preserved = anchor ?? visibleAnchor.current
-      if (preserved !== null && scrollToAnchor(virtualizer, rows, preserved.id))
-        pendingAnchor.current = preserved
+    const preserved = visibleAnchor.current
+    if (viewport !== null && addedBefore > 0 && preserved !== null) {
+      if (scrollToAnchor(virtualizer, rows, preserved.id)) pendingAnchor.current = preserved
     }
-    if (anchor !== null && rows.findIndex((row) => row.id === anchor.firstId) > 0)
-      olderAnchor.current = null
     committedRows.current = rows
   }, [rows, viewport, virtualizer])
   useLayoutEffect(() => {
@@ -179,34 +146,6 @@ export function AnchoredFeed({
       if (frame !== null) cancelAnimationFrame(frame)
     }
   }, [rows, viewport, virtualizer])
-  useEffect(() => {
-    if (olderError) olderAnchor.current = null
-  }, [olderError])
-  useEffect(() => {
-    if (
-      !active ||
-      !hasOlder ||
-      loadingOlder ||
-      tailFollow.awaitingInitialPosition ||
-      viewport === null ||
-      onLoadOlder === undefined
-    )
-      return
-    const loadAtTop = () => {
-      if (viewport.scrollTop <= 160) startOlderLoad()
-    }
-    viewport.addEventListener('scroll', loadAtTop, { passive: true })
-    loadAtTop()
-    return () => viewport.removeEventListener('scroll', loadAtTop)
-  }, [
-    active,
-    hasOlder,
-    loadingOlder,
-    onLoadOlder,
-    startOlderLoad,
-    tailFollow.awaitingInitialPosition,
-    viewport,
-  ])
   useInitialFeedPosition({
     initialScrollPosition,
     onPositioned: tailFollow.markInitiallyPositioned,
@@ -240,16 +179,6 @@ export function AnchoredFeed({
 
   return (
     <div className="feed__scroller">
-      {olderError && onLoadOlder !== undefined ? (
-        <Button
-          className="absolute left-1/2 top-(--spacing-tight) z-10 -translate-x-1/2"
-          onClick={startOlderLoad}
-          type="button"
-          variant="outline"
-        >
-          {t('retryOlderHistory')}
-        </Button>
-      ) : null}
       <FeedViewport
         FeedRow={FeedRow}
         gap={paddingStart}

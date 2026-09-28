@@ -107,6 +107,29 @@ test('reads historical Feed content through the saved Session Harness adapter', 
   ])
 })
 
+test('returns the complete vendor history in one snapshot with no page cursor', async () => {
+  const sessionId = '00000000-0000-4000-8000-000000000007'
+  database
+    .insert(sessionTable)
+    .values({ argoId: sessionId, harness: 'claude', nativeId: 'long-root' })
+    .run()
+  const history = Array.from({ length: 400 }, (_, index) => ({
+    kind: 'message' as const,
+    id: `message-${index}`,
+    role: 'assistant' as const,
+    text: `Reply ${index} ${'x'.repeat(2048)}`,
+  }))
+  const dependencies = routerDependencies({ readHistory: async () => history })
+  const caller = createAppRouter(dependencies).createCaller({})
+
+  const reply = await caller.sessionFeedRead({ sessionId })
+  expect(reply.content.map((item) => item.id)).toEqual(history.map((item) => item.id))
+  expect(reply).not.toHaveProperty('olderCursor')
+  await expect(
+    caller.sessionFeedRead({ sessionId, before: 'cursor' } as { sessionId: string }),
+  ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+})
+
 test('reads a selected subagent through its parent Harness and retains the Session chain', async () => {
   const sessionId = '00000000-0000-4000-8000-000000000005'
   database
@@ -141,43 +164,6 @@ test('reads a selected subagent through its parent Harness and retains the Sessi
       harness: 'codex',
       target: { nativeId: 'root-thread', subagentId: 'child-thread', cwd: '/work/project' },
     },
-  ])
-})
-
-test('uses vendor Feed pages when the registered Harness provides them', async () => {
-  const sessionId = '00000000-0000-4000-8000-000000000007'
-  database
-    .insert(sessionTable)
-    .values({
-      argoId: sessionId,
-      harness: 'codex',
-      nativeId: 'thread-1',
-    })
-    .run()
-  const reads: unknown[] = []
-  const caller = createAppRouter(
-    routerDependencies({
-      readHistory: async () => {
-        throw new Error('Full history was read.')
-      },
-      readHistoryPage: async (harness, target, before) => {
-        reads.push({ harness, target, before })
-        return {
-          content: [{ kind: 'message', id: 'reply-1', role: 'assistant', text: 'Done' }],
-          olderCursor: 'vendor-older',
-        }
-      },
-    }),
-  ).createCaller({})
-  const newest = await caller.sessionFeedRead({ sessionId })
-  expect(newest).toMatchObject({
-    content: [{ id: 'reply-1', text: 'Done' }],
-    olderCursor: 'vendor-older',
-  })
-  await caller.sessionFeedRead({ sessionId, before: 'vendor-older' })
-  expect(reads.map((read) => (read as { before: string | null }).before)).toEqual([
-    null,
-    'vendor-older',
   ])
 })
 

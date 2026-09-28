@@ -6,7 +6,7 @@ import type { AppRouter } from '@/platform/main/trpc-router'
 import { trpcClient } from '@/platform/renderer/trpc-client'
 import { SessionContractError, throwSessionContractError } from '../session-contract-error'
 import { sessionFeedQueryKey } from '../session-queries'
-import type { SessionFeedPage, SessionId } from '../types'
+import type { SessionFeedSnapshot, SessionId } from '../types'
 
 export async function retrySessionFeed(
   queryClient: QueryClient,
@@ -17,42 +17,26 @@ export async function retrySessionFeed(
   await refetch()
 }
 
-export async function readSessionFeedPage(
+async function readSessionFeed(
   sessionId: SessionId,
   subagentId: string | null,
-  before: string | null,
-): Promise<SessionFeedPage> {
+): Promise<SessionFeedSnapshot> {
   try {
-    return await trpcClient.sessionFeedRead.query({ sessionId, subagentId, before })
+    return await trpcClient.sessionFeedRead.query({ sessionId, subagentId })
   } catch (error) {
     if (error instanceof SessionContractError) throw error
     const code = isTRPCClientError<AppRouter>(error) ? error.data?.code : null
-    if (code === 'CONFLICT') throw new Error('expired-feed-cursor')
     throwSessionContractError(
       sessionError(code === 'NOT_FOUND' ? 'missing-session' : 'vendor-history-unavailable', null),
     )
   }
 }
 
-export function refreshSessionFeed(
-  queryClient: QueryClient,
-  sessionId: SessionId,
-  subagentId: string | null,
-): Promise<SessionFeedPage> {
-  return queryClient.fetchQuery({
-    queryKey: sessionFeedQueryKey(sessionId, subagentId),
-    queryFn: () => readSessionFeedPage(sessionId, subagentId, null),
-    staleTime: 0,
-    gcTime: 0,
-    retry: false,
-  })
-}
-
 export function sessionFeedQuery(
   sessionId: SessionId | null,
   subagentId: string | null,
   enabled = true,
-): UseQueryOptions<SessionFeedPage | null, SessionContractError> {
+): UseQueryOptions<SessionFeedSnapshot | null, SessionContractError> {
   const key =
     sessionId === null
       ? ['sessions', 'feed', null, subagentId]
@@ -74,6 +58,6 @@ export function sessionFeedQuery(
     gcTime: 0,
     enabled,
     retry: false,
-    queryFn: () => readSessionFeedPage(sessionId, subagentId, null),
+    queryFn: () => readSessionFeed(sessionId, subagentId),
   }
 }

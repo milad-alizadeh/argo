@@ -60,9 +60,5 @@ export function useDelegationFeed(sessionId: SessionId | null, subagentId: strin
     feed: history.feed,
     feedError: history.feedError,
     retry: history.retryFeed,
-    loadOlder: history.loadOlder,
-    hasOlder: history.hasOlder,
-    loadingOlder: history.loadingOlder,
-    olderError: history.olderError,
   }
 }

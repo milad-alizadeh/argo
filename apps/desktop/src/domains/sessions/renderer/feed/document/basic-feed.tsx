@@ -17,7 +17,6 @@ import { awaitingAssistantReply } from './use-settled-feed'
 import '../feed.css'
 
 function ignoreJumpToLatestChange(_sessionId: string, _action: (() => void) | null) {}
-function ignoreLoadOlder() {}
 
 // A pending id has no Feed to read, so this empty document lets the prompt row and Turn Marker mount at once (#2430).
 function optimisticFeedDocument(sessionId: SessionId): SessionFeed {
@@ -132,10 +131,6 @@ function heldPromptSessionId({
 
 type BasicFeedProps = {
   feed: SessionFeed | null
-  hasOlder?: boolean
-  loadingOlder?: boolean
-  olderError?: boolean
-  onLoadOlder?: () => void
   activeEvidenceId: string | null
   liveFacts: FeedLiveFacts
   onOpenSession: (sessionId: string) => void
@@ -151,10 +146,6 @@ type BasicFeedProps = {
 
 export function BasicFeed({
   feed,
-  hasOlder = false,
-  loadingOlder = false,
-  olderError = false,
-  onLoadOlder = ignoreLoadOlder,
   activeEvidenceId,
   liveFacts: reportedLiveFacts,
   onOpenSession,
@@ -198,10 +189,6 @@ export function BasicFeed({
   }, [onStalledChange, selectedSessionId, stalled])
   const actions: FeedDocumentContext = {
     stalled,
-    hasOlder,
-    loadingOlder,
-    olderError,
-    onLoadOlder,
     activeEvidenceId,
     initialMeasurementsCache:
       selectedSessionId === null ? [] : initialMeasurementsCache(selectedSessionId),

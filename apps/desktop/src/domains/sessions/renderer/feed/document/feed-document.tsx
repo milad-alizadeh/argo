@@ -31,10 +31,6 @@ export type FeedQuestionHandlers = {
 export type FeedDocumentContext = {
   stalled: boolean
   activeEvidenceId: string | null
-  hasOlder?: boolean
-  loadingOlder?: boolean
-  olderError?: boolean
-  onLoadOlder?: () => void
   initialMeasurementsCache?: VirtualItem[] | undefined
   initialScrollPosition?: number | null
   onJumpToLatestChange?: (sessionId: string, action: (() => void) | null) => void
@@ -125,10 +121,6 @@ export function FeedDocument({ reading, liveFacts, actions }: FeedDocumentProps)
   // A quiet marker keeps its box through prose/tool changes, so the Feed height stays stable (#2241).
   const tail = liveFeedTail(live, lastRow, actions.onOpenSession)
   const content = feedContent({
-    hasOlder: actions.hasOlder,
-    loadingOlder: actions.loadingOlder,
-    olderError: actions.olderError,
-    onLoadOlder: actions.onLoadOlder,
     initialMeasurementsCache: actions.initialMeasurementsCache ?? NO_MEASUREMENTS,
     initialScrollPosition: actions.initialScrollPosition ?? null,
     settled,

@@ -15,10 +15,6 @@ import type { DrawnRowProps } from './drawn-row'
 import { awaitingAssistantReply, type useSettledFeed } from './use-settled-feed'
 
 export function feedContent({
-  hasOlder,
-  loadingOlder,
-  olderError,
-  onLoadOlder,
   initialMeasurementsCache,
   initialScrollPosition,
   settled,
@@ -34,10 +30,6 @@ export function feedContent({
   emptyText,
   historyLabel,
 }: {
-  hasOlder?: boolean
-  loadingOlder?: boolean
-  olderError?: boolean
-  onLoadOlder?: () => void
   initialMeasurementsCache: VirtualItem[]
   initialScrollPosition: number | null
   settled: ReturnType<typeof useSettledFeed>['settled']
@@ -80,10 +72,6 @@ export function feedContent({
     <>
       <AnchoredFeed
         active
-        hasOlder={hasOlder}
-        loadingOlder={loadingOlder}
-        olderError={olderError}
-        onLoadOlder={onLoadOlder}
         initialMeasurementsCache={initialMeasurementsCache}
         initialScrollPosition={initialScrollPosition}
         rows={settled.rows}

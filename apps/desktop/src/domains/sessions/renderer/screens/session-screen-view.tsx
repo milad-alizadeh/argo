@@ -49,10 +49,6 @@ function Inspector({ model }: { model: SessionScreenModel }) {
       onOpenEvidence={setEvidence}
       onOpenSession={(sessionId) => navigate(`/projects/${model.projectId}/sessions/${sessionId}`)}
       onRetryDelegationFeed={model.retryDelegationFeed}
-      onLoadOlderDelegationFeed={model.loadOlderDelegationFeed}
-      delegationFeedHasOlder={model.delegationFeedHasOlder}
-      delegationFeedLoadingOlder={model.delegationFeedLoadingOlder}
-      delegationFeedOlderError={model.delegationFeedOlderError}
       shell={model.shell}
       shellOutput={model.shellOutput}
     />
@@ -131,10 +127,6 @@ export function SessionScreenView() {
         feed={feed}
         feedError={feedError}
         onRetryFeed={retryFeed}
-        onLoadOlder={model.loadOlder}
-        hasOlder={model.hasOlder}
-        loadingOlder={model.loadingOlder}
-        olderError={model.olderError}
         liveFacts={liveFactsOf(model)}
         onOpenSession={openSession}
         selectedSessionId={selectedSessionId}

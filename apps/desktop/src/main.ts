@@ -219,8 +219,6 @@ function routerForWindow(options: {
     sessions: {
       database,
       readHistory: (harness, target) => registry[harness].readHistory(target),
-      readHistoryPage: (harness, target, before) =>
-        registry[harness].readHistoryPage?.(target, before) ?? Promise.resolve(null),
       watchHistory: (harness, target, invalidate) =>
         registry[harness].watchHistory?.(target, invalidate) ?? (() => {}),
       rename: ({ harness, nativeId, title }) => {

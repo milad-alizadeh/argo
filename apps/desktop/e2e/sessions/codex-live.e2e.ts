@@ -13,7 +13,7 @@ import { chooseHarness } from './gestures'
 async function prepareCodexApp(root: string, packagedApplication: string) {
   const fixture = await prepare(root, packagedApplication, { projectSelected: true })
   const bun = execFileSync('which', ['bun'], { encoding: 'utf8' }).trim()
-  const server = path.resolve('mocks/cli/codex/mock-codex-live-pages.mts')
+  const server = path.resolve('mocks/cli/codex/mock-codex-live.mts')
   const executable = path.join(root, 'mock-codex')
   await writeFile(
     executable,

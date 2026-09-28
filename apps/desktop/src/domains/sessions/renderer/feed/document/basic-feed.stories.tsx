@@ -2306,125 +2306,76 @@ export const RunningToolAfterAssistantReply: Story = {
   },
 }
 
-const pagedRows: SessionFeedRow[] = Array.from({ length: 120 }, (_, index) => ({
+const fullHistoryRows: SessionFeedRow[] = Array.from({ length: 400 }, (_, index) => ({
   shape: 'prose',
-  id: `paged-${index}`,
+  id: `saved-${index}`,
   role: 'assistant',
   text: `Saved reply ${index}`,
 }))
 
-function PaginatedHistoryDemo({ onPage }: { onPage: () => void }) {
-  const [visible, setVisible] = useState(50)
-  const reading: SessionFeed = {
-    ...feed,
-    sessionId: 'paged',
-    chainId: 'paged',
-    revision: `paged:${visible}`,
-    rows: pagedRows.slice(-visible),
-  }
+function FullHistoryDemo() {
+  const [lastShown, setLastShown] = useState(300)
   return (
-    <BasicFeed
-      activeEvidenceId={null}
-      answeringQuestionId={null}
-      failure={null}
-      feed={reading}
-      hasOlder={visible < pagedRows.length}
-      liveFacts={LIVE_FACTS}
-      loadingOlder={false}
-      onAnswerQuestion={() => {}}
-      onLoadOlder={() => {
-        onPage()
-        setVisible((current) => Math.min(pagedRows.length, current + 50))
-      }}
-      onOpenEvidence={() => {}}
-      onOpenSession={() => {}}
-      onRetryFeed={() => {}}
-      questionFailure={() => null}
-      selectedSessionId="paged"
-    />
+    <>
+      <button onClick={() => setLastShown(fullHistoryRows.length)} type="button">
+        Refresh history
+      </button>
+      <BasicFeed
+        activeEvidenceId={null}
+        answeringQuestionId={null}
+        failure={null}
+        feed={{
+          ...feed,
+          sessionId: 'full-history',
+          chainId: 'full-history',
+          revision: `full-history:${lastShown}`,
+          rows: fullHistoryRows.slice(0, lastShown),
+        }}
+        liveFacts={LIVE_FACTS}
+        onAnswerQuestion={() => {}}
+        onOpenEvidence={() => {}}
+        onOpenSession={() => {}}
+        onRetryFeed={() => {}}
+        questionFailure={() => null}
+        selectedSessionId="full-history"
+      />
+    </>
   )
 }
 
-export const PaginatedHistory: Story = {
-  args: { onLoadOlder: fn() },
-  render: (args) => <PaginatedHistoryDemo onPage={args.onLoadOlder ?? (() => {})} />,
-  play: async ({ args, canvasElement }) => {
-    const history = await within(canvasElement).findByLabelText('Session history')
+function visibleRow(canvasElement: HTMLElement, history: HTMLElement) {
+  const viewport = history.getBoundingClientRect()
+  return drawnRows(canvasElement).find((row) => {
+    const bounds = row.getBoundingClientRect()
+    return bounds.bottom > viewport.top && bounds.top < viewport.bottom
+  })
+}
+
+// The whole history is present, so scrolling only moves the reading position; a refresh keeps it.
+export const FullHistoryRefresh: Story = {
+  render: () => <FullHistoryDemo />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const history = await canvas.findByLabelText('Session history')
     await waitFor(() => expect(history.scrollTop).toBeGreaterThan(0))
-    history.scrollTop = 200
-    fireEvent.scroll(history)
-    await waitFor(() => expect(drawnRow(canvasElement, 'paged-70')).toBeDefined())
     history.scrollTop = 0
-    const anchor = drawnRows(canvasElement).find((row) => {
-      const bounds = row.getBoundingClientRect()
-      const viewport = history.getBoundingClientRect()
-      return bounds.bottom > viewport.top && bounds.top < viewport.bottom
+    fireEvent.scroll(history)
+    await canvas.findByText('Saved reply 0')
+    await waitForScrollToSettle(history)
+    // Initial tail positioning can land after this scroll, so it is repeated until it holds.
+    await waitFor(async () => {
+      history.scrollTop = history.scrollHeight / 2
+      fireEvent.scroll(history)
+      await waitForScrollToSettle(history)
+      expect(history.scrollHeight - history.scrollTop).toBeGreaterThan(history.clientHeight * 4)
     })
-    if (anchor === undefined) throw new Error('Paging needs a visible row to anchor.')
-    const anchorId = anchor.getAttribute('data-feed-row')
-    const anchorTop = anchor.getBoundingClientRect().top
-    fireEvent.scroll(history)
-    await waitFor(() => expect(args.onLoadOlder).toHaveBeenCalled())
-    expect(history.scrollTop).toBeGreaterThan(160)
-    fireEvent.scroll(history)
-    await waitFor(() =>
-      expect(drawnRow(canvasElement, anchorId ?? '')?.getBoundingClientRect().top).toBeCloseTo(
-        anchorTop,
-        0,
-      ),
-    )
-    history.scrollTop = 0
-    fireEvent.scroll(history)
-    await within(canvasElement).findByText('Saved reply 21')
-  },
-}
-
-function OlderPageFailedDemo({ onPage }: { onPage: () => void }) {
-  const [failed, setFailed] = useState(true)
-  const [visible, setVisible] = useState(50)
-  return (
-    <BasicFeed
-      activeEvidenceId={null}
-      answeringQuestionId={null}
-      failure={null}
-      feed={{
-        ...feed,
-        sessionId: 'older-failed',
-        chainId: 'older-failed',
-        rows: pagedRows.slice(-visible),
-      }}
-      hasOlder={!failed && visible < pagedRows.length}
-      liveFacts={LIVE_FACTS}
-      olderError={failed}
-      onAnswerQuestion={() => {}}
-      onLoadOlder={() => {
-        onPage()
-        setFailed(false)
-        setVisible(100)
-      }}
-      onOpenEvidence={() => {}}
-      onOpenSession={() => {}}
-      onRetryFeed={() => {}}
-      questionFailure={() => null}
-      selectedSessionId="older-failed"
-    />
-  )
-}
-
-export const OlderPageFailed: Story = {
-  args: { onLoadOlder: fn() },
-  render: (args) => <OlderPageFailedDemo onPage={args.onLoadOlder ?? (() => {})} />,
-  play: async ({ args, canvasElement }) => {
-    const history = await within(canvasElement).findByLabelText('Session history')
-    await waitFor(() => expect(history.scrollTop).toBeGreaterThan(0))
-    history.scrollTop = 0
-    fireEvent.scroll(history)
-    await userEvent.click(
-      await within(canvasElement).findByRole('button', {
-        name: 'Retry older messages',
-      }),
-    )
-    expect(args.onLoadOlder).toHaveBeenCalledOnce()
-    await waitFor(() => expect(history.scrollTop).toBeGreaterThan(160))
+    await waitFor(() => expect(visibleRow(canvasElement, history)).toBeDefined())
+    const anchor = visibleRow(canvasElement, history)
+    const anchorId = anchor?.getAttribute('data-feed-row') ?? ''
+    const anchorTop = anchor?.getBoundingClientRect().top ?? 0
+    await userEvent.click(canvas.getByRole('button', { name: 'Refresh history' }))
+    await waitForScrollToSettle(history)
+    expect(drawnRow(canvasElement, anchorId)?.getBoundingClientRect().top).toBeCloseTo(anchorTop, 0)
+    expect(drawnRow(canvasElement, 'saved-399')).toBeUndefined()
   },
 }

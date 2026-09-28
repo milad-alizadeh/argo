@@ -60,13 +60,6 @@ export type RequestParams = {
     threadId: string
     includeTurns: boolean
   }
-  'thread/turns/list': {
-    threadId: string
-    cursor: string | null
-    limit: number
-    sortDirection: 'desc'
-    itemsView: 'full'
-  }
   initialize: {
     clientInfo: {
       name: string
@@ -74,7 +67,7 @@ export type RequestParams = {
       version: string
     }
     capabilities: {
-      experimentalApi: boolean
+      experimentalApi: false
       requestAttestation: boolean
     }
   }
@@ -186,8 +179,6 @@ export class CodexProtocolError extends Error {
     this.code = code
   }
 }
-
-const VERIFIED_TURN_PAGES_VERSION = 'codex-cli 0.157.0'
 
 // Conflicting app-server processes can hold the same upstream SQLite locks indefinitely (#2653).
 export class CodexRequestTimeoutError extends Error {
@@ -434,7 +425,7 @@ function resolveBeforeAbort(
   })
 }
 
-async function handshake(channel: CodexChannel, version: string) {
+async function handshake(channel: CodexChannel) {
   await channel.request(
     'initialize',
     {
@@ -444,7 +435,7 @@ async function handshake(channel: CodexChannel, version: string) {
         version: '1',
       },
       capabilities: {
-        experimentalApi: version === VERIFIED_TURN_PAGES_VERSION,
+        experimentalApi: false,
         requestAttestation: false,
       },
     },
@@ -473,8 +464,6 @@ class CodexAppServerClientInstance implements CodexAppServerClient {
 
   readonly request: CodexRequest = async (method, params, parse) => {
     const current = await this.connect()
-    if (method === 'thread/turns/list' && this.identity?.version !== VERIFIED_TURN_PAGES_VERSION)
-      throw new Error('thread/turns/list is not available for this Codex version.')
     return current.request(method, params, parse)
   }
 
@@ -571,7 +560,7 @@ class CodexAppServerClientInstance implements CodexAppServerClient {
       opened = this.openChannel(resolved.executable)
       this.channel = opened
       this.wireChannel(opened)
-      await handshake(opened, resolved.version)
+      await handshake(opened)
     } catch (error) {
       if (opened !== null && this.channel === opened) this.closeChannel()
       this.scheduleReconnect()
