@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import {
   queryClient,
@@ -20,9 +20,12 @@ type Server = {
   trpc: typeof window.argo.trpc
   releaseSave: () => void
   holdSessionASave: boolean
+  failSessionASave: boolean
+  sessionASaveRejected: boolean
   rejectSubmit: boolean
   savePending: boolean
   notify: () => void
+  submittedTarget: DraftTarget | null
 }
 type MockInput = {
   target?: DraftTarget
@@ -66,6 +69,19 @@ function savedDraft(sessionId: string, prompt: string, now: number): DraftValue 
   }
 }
 
+function savedProjectDraft(): DraftValue {
+  return {
+    ...savedDraft('project-1', 'Plan this change.', 3),
+    id: 'draft-project-1',
+    target: {
+      type: 'project',
+      projectId: 'project-1',
+      workspaceId: 'workspace-1',
+      harness: 'claude',
+    },
+  }
+}
+
 function createReadResult(drafts: Map<string, DraftValue>, input: MockInput) {
   if (input.target === undefined) return null
   return drafts.get(ownerKey(input.target)) ?? null
@@ -100,17 +116,25 @@ async function saveDraftResult(request: {
   if (input.target === undefined || input.content === undefined) return null
   const owner = ownerKey(input.target)
   if (owner === 'session-a' && server.holdSessionASave) {
+    server.holdSessionASave = false
     server.savePending = true
     notify()
     await new Promise<void>((resolve) => {
       server.releaseSave = resolve
     })
     server.savePending = false
+    if (server.failSessionASave) {
+      server.sessionASaveRejected = true
+      notify()
+      throw new Error('Session A save failed.')
+    }
   }
   const current = drafts.get(owner)
   if (current === undefined) throw new Error(`Missing draft for ${owner}.`)
+  if (current.revision !== input.expectedRevision) throw new Error('stale-draft')
   const saved: DraftValue = {
     ...current,
+    target: input.target,
     ...input.content,
     revision: current.revision + 1,
     updatedAt: Date.now(),
@@ -129,6 +153,7 @@ function submitDraftResult(request: {
   const { server, drafts, input, notify } = request
   if (server.rejectSubmit) throw new Error('The Session rejected this Turn.')
   const submitted = [...drafts.entries()].find(([_, draft]) => draft.id === input.draftId)
+  server.submittedTarget = submitted?.[1].target ?? null
   if (submitted !== undefined && submitted[1].revision === input.expectedRevision)
     drafts.delete(submitted[0])
   notify()
@@ -161,6 +186,7 @@ function createMockTrpc(server: Server, notify: () => void): typeof window.argo.
 function createServer(
   notify: () => void,
   initialOutcome: 'accept' | 'reject' | 'fallback',
+  project: boolean,
 ): Server {
   const firstDraft = savedDraft('session-a', 'Restored Session A draft.', 1)
   if (initialOutcome === 'fallback')
@@ -173,26 +199,117 @@ function createServer(
     drafts: new Map([
       ['session-a', firstDraft],
       ['session-b', savedDraft('session-b', 'Restored Session B draft.', 2)],
+      ...(project ? ([['project-1', savedProjectDraft()]] as const) : []),
     ]),
     trpc: (async () => ({ result: { data: null } })) as unknown as typeof window.argo.trpc,
     releaseSave: notify,
     holdSessionASave: false,
+    failSessionASave: false,
+    sessionASaveRejected: false,
     rejectSubmit: initialOutcome !== 'accept',
     savePending: false,
     notify,
+    submittedTarget: null,
   }
   server.trpc = createMockTrpc(server, notify)
   return server
 }
 
+function DraftOwnerControls({
+  project,
+  onSession,
+  onReload,
+  onScreenReload,
+  onWorkspace,
+  onHarness,
+}: {
+  project: boolean
+  onSession: (sessionId: string) => void
+  onReload: () => void
+  onScreenReload: () => void
+  onWorkspace: () => void
+  onHarness: () => void
+}) {
+  return (
+    <>
+      <button onClick={() => onSession('session-a')} type="button">
+        Session A
+      </button>
+      <button onClick={() => onSession('session-b')} type="button">
+        Session B
+      </button>
+      <button onClick={() => onSession('session-a')} type="button">
+        Reopen Session A
+      </button>
+      <button onClick={onReload} type="button">
+        Reload composer
+      </button>
+      <button onClick={onScreenReload} type="button">
+        Reload screen
+      </button>
+      {project ? (
+        <>
+          <button onClick={onWorkspace} type="button">
+            Workspace 2
+          </button>
+          <button onClick={onHarness} type="button">
+            Harness Codex
+          </button>
+        </>
+      ) : null}
+    </>
+  )
+}
+
+function DraftTimingControls({ server }: { server: Server }) {
+  return (
+    <>
+      <button
+        onClick={() => {
+          server.holdSessionASave = true
+        }}
+        type="button"
+      >
+        Hold Session A saves
+      </button>
+      <button onClick={() => server.releaseSave()} type="button">
+        Release Session A save
+      </button>
+      <button
+        onClick={() => {
+          server.failSessionASave = true
+          server.releaseSave()
+        }}
+        type="button"
+      >
+        Fail Session A save
+      </button>
+      <button
+        onClick={() => {
+          queryClient.setQueryData(
+            trpc.composerDraftRead.queryKey({ type: 'session', sessionId: 'session-a' }),
+            savedDraft('session-a', 'Late Session A read.', Date.now()),
+          )
+        }}
+        type="button"
+      >
+        Apply late Session A read
+      </button>
+    </>
+  )
+}
+
 function DurableDraftStory({
   initialOutcome = 'accept',
+  project = false,
 }: {
   initialOutcome?: 'accept' | 'reject' | 'fallback'
+  project?: boolean
 }) {
   const [serverVersion, setServerVersion] = useState(0)
+  const [screenVersion, setScreenVersion] = useState(0)
   const [server] = useState(() =>
-    createServer(() => setServerVersion((version) => version + 1), initialOutcome),
+    createServer(() => setServerVersion((version) => version + 1), initialOutcome, project),
   )
   const initialized = useRef(false)
   if (!initialized.current) {
@@ -208,59 +325,86 @@ function DurableDraftStory({
     })
     initialized.current = true
   }
+  void serverVersion
+  return (
+    <DurableDraftScreen
+      key={screenVersion}
+      server={server}
+      project={project}
+      onReloadScreen={() => setScreenVersion((version) => version + 1)}
+    />
+  )
+}
+
+function DurableDraftScreen({
+  server,
+  project,
+  onReloadScreen,
+}: {
+  server: Server
+  project: boolean
+  onReloadScreen: () => void
+}) {
   const [sessionId, setSessionId] = useState('session-a')
+  const [workspaceId, setWorkspaceId] = useState('workspace-1')
+  const [harness, setHarness] = useState<'claude' | 'codex'>('claude')
   const [composerVersion, setComposerVersion] = useState(0)
-  const target: DraftTarget = { type: 'session', sessionId }
-  const draft = useDurableComposerDraft({ target, choices, opening: choices.opening })
+  const [restoredProjectId, setRestoredProjectId] = useState<string | null>(null)
+  const target: DraftTarget = project
+    ? { type: 'project', projectId: 'project-1', workspaceId, harness }
+    : { type: 'session', sessionId }
+  const targetRestored = !project || restoredProjectId === 'project-1'
+  const draft = useDurableComposerDraft({
+    target,
+    choices,
+    opening: choices.opening,
+    targetRestored,
+  })
+  const loadedTarget = draft?.loadedTarget
+  useEffect(() => {
+    if (!project || restoredProjectId !== null || loadedTarget?.type !== 'project') return
+    setWorkspaceId(loadedTarget.workspaceId)
+    setHarness(loadedTarget.harness)
+    setRestoredProjectId(loadedTarget.projectId)
+  }, [project, restoredProjectId, loadedTarget])
   const storedDrafts = [...server.drafts.values()].map(({ target: storedTarget, ...value }) => ({
     target: storedTarget,
     prompt: value.prompt,
     revision: value.revision,
     turnConfiguration: value.turnConfiguration,
   }))
-  void serverVersion
   return (
     <div className="mx-auto flex h-[560px] max-w-3xl flex-col gap-3 p-6">
       <div className="flex gap-2">
-        <button onClick={() => setSessionId('session-a')} type="button">
-          Session A
-        </button>
-        <button onClick={() => setSessionId('session-b')} type="button">
-          Session B
-        </button>
-        <button onClick={() => setSessionId('session-a')} type="button">
-          Reopen Session A
-        </button>
-        <button onClick={() => setComposerVersion((version) => version + 1)} type="button">
-          Reload composer
-        </button>
-        <button
-          onClick={() => {
-            server.holdSessionASave = true
-          }}
-          type="button"
-        >
-          Hold Session A saves
-        </button>
-        <button onClick={() => server.releaseSave()} type="button">
-          Release Session A save
-        </button>
+        <DraftOwnerControls
+          project={project}
+          onSession={setSessionId}
+          onReload={() => setComposerVersion((version) => version + 1)}
+          onScreenReload={onReloadScreen}
+          onWorkspace={() => setWorkspaceId('workspace-2')}
+          onHarness={() => setHarness('codex')}
+        />
+        <DraftTimingControls server={server} />
       </div>
       <output aria-label="Stored drafts" data-save-pending={server.savePending}>
         {JSON.stringify(storedDrafts)}
       </output>
+      <output aria-label="Submitted target">{JSON.stringify(server.submittedTarget)}</output>
+      <output aria-label="Current save failure">{String(draft?.saveFailed ?? false)}</output>
+      <output aria-label="Session A save rejected">{String(server.sessionASaveRejected)}</output>
+      <output aria-label="Current target">{JSON.stringify(target)}</output>
       {draft?.sendFailed ? (
         <div role="alert">The Turn could not be sent. Your draft is still saved.</div>
       ) : null}
-      {draft ? (
+      {draft && targetRestored ? (
         <ComposerForm
-          harness={{ harness: 'claude' }}
+          harness={{ harness }}
           initialEditing={draft.initialEditing}
           onEditingChange={draft.onEditingChange}
           onSend={async (prompt, turnConfiguration, attachments) =>
             (await draft.submit(prompt, turnConfiguration, attachments)) !== null
           }
-          sessionId={`${sessionId}:${composerVersion}`}
+          sessionId={`${project ? 'project-1' : sessionId}:${composerVersion}`}
           turnConfigurationChoices={choices as TurnConfigurationChoices}
         />
       ) : null}
@@ -361,6 +505,92 @@ export const TargetSwitchKeepsAnInFlightSaveWithItsOwner: Story = {
       expect(store).toContain('Updated Session A draft.')
       expect(store).toContain('Updated Session B draft.')
     })
+    await expect(canvas.getByLabelText('Message')).toHaveTextContent('Updated Session B draft.')
+  },
+}
+
+export const SavesOneOwnerInRevisionOrder: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const editor = await canvas.findByLabelText('Message')
+    await userEvent.click(canvas.getByRole('button', { name: 'Hold Session A saves' }))
+    await userEvent.clear(editor)
+    await userEvent.type(editor, 'First revision.')
+    await serverRequestedSave(canvasElement)
+    await userEvent.clear(editor)
+    await userEvent.type(editor, 'Second revision.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Release Session A save' }))
+    await waitFor(() => {
+      const store = canvas.getByLabelText('Stored drafts')
+      expect(store).toHaveTextContent('Second revision.')
+      expect(store).toHaveTextContent('"revision":2')
+    })
+  },
+}
+
+export const LateSessionReadKeepsTheCurrentDraft: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByLabelText('Message')).toHaveTextContent(
+      'Restored Session A draft.',
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Session B' }))
+    const editor = await canvas.findByLabelText('Message')
+    await expect(editor).toHaveTextContent('Restored Session B draft.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Apply late Session A read' }))
+    await expect(canvas.getByLabelText('Message')).toHaveTextContent('Restored Session B draft.')
+  },
+}
+
+export const LateSessionSaveFailureKeepsTheCurrentOwner: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const editor = await canvas.findByLabelText('Message')
+    await userEvent.click(canvas.getByRole('button', { name: 'Hold Session A saves' }))
+    await userEvent.clear(editor)
+    await userEvent.type(editor, 'Session A pending save.')
+    await serverRequestedSave(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Session B' }))
+    await expect(await canvas.findByLabelText('Message')).toHaveTextContent(
+      'Restored Session B draft.',
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Fail Session A save' }))
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Session A save rejected')).toHaveTextContent('true'),
+    )
+    await expect(canvas.getByLabelText('Current save failure')).toHaveTextContent('false')
+    await expect(canvas.getByLabelText('Message')).toHaveTextContent('Restored Session B draft.')
+  },
+}
+
+export const ProjectTargetChangesWithoutTextPersistForSend: Story = {
+  args: { project: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const editor = await canvas.findByLabelText('Message')
+    await expect(editor).toHaveTextContent('Plan this change.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Workspace 2' }))
+    const store = canvas.getByLabelText('Stored drafts')
+    await waitFor(() => expect(store).toHaveTextContent('"workspaceId":"workspace-2"'))
+    await expect(store).toHaveTextContent('"harness":"claude"')
+    await userEvent.click(canvas.getByRole('button', { name: 'Harness Codex' }))
+    await waitFor(() => expect(store).toHaveTextContent('"revision":2'))
+    await expect(store).toHaveTextContent('"harness":"codex"')
+    await userEvent.click(canvas.getByRole('button', { name: 'Reload screen' }))
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Current target')).toHaveTextContent(
+        '"workspaceId":"workspace-2"',
+      ),
+    )
+    await expect(canvas.getByLabelText('Current target')).toHaveTextContent('"harness":"codex"')
+    await expect(await canvas.findByLabelText('Message')).toHaveTextContent('Plan this change.')
+    await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Submitted target')).toHaveTextContent(
+        '"workspaceId":"workspace-2"',
+      ),
+    )
+    await expect(canvas.getByLabelText('Submitted target')).toHaveTextContent('"harness":"codex"')
   },
 }
 
