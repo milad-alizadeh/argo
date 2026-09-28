@@ -1,4 +1,4 @@
-// Driving the PACKAGED cockpit from outside: the Project proof and the appearance capture share
+// Driving the cockpit under test from outside: the Project proof and the appearance capture share
 // it, so both agree on what a state, a control and a chosen folder are.
 //
 // Nothing here holds the real keyboard or mouse: every key and click goes into the renderer over

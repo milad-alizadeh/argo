@@ -56,8 +56,8 @@ export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>(
   backend: async ({ sessionBackend }, use) => {
     await use(BACKENDS[sessionBackend]())
   },
-  sessionFixture: async ({ root, packagedApplication, projectSelected }, use) => {
-    await use(await prepare(root, packagedApplication, { projectSelected }))
+  sessionFixture: async ({ root, applicationUnderTest, projectSelected }, use) => {
+    await use(await prepare(root, applicationUnderTest, { projectSelected }))
   },
   session: async (
     {

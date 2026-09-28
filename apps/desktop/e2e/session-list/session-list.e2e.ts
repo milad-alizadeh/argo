@@ -101,10 +101,10 @@ function seedSessionList(userData: string, beta: string) {
 
 test('shows saved numbered pages and keeps Argo-ID selection', async ({
   root,
-  packagedApplication,
+  applicationUnderTest,
   performanceProfile,
 }, testInfo) => {
-  const fixture = await prepare(root, packagedApplication)
+  const fixture = await prepare(root, applicationUnderTest)
   seedSessionList(fixture.userData, fixture.beta)
 
   const application = await launch(fixture, { PATH: '/usr/bin:/bin' })

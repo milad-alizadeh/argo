@@ -3,14 +3,17 @@ import path from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { _electron as electron } from 'playwright-core'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
-import { appExecutable } from '../packaged-app'
+import { launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
 
-test('starts and stops the packaged Session sync worker', async ({ packagedApplication, root }) => {
+test('starts and stops the packaged Session sync worker', async ({
+  applicationUnderTest,
+  root,
+}) => {
   const userData = path.join(root, 'session-sync-user-data')
   await mkdir(userData, { recursive: true })
   const application = await electron.launch({
-    executablePath: appExecutable(packagedApplication),
+    ...launchCommand(applicationUnderTest),
     env: { ...process.env, [PROJECT_PROOF_STORE_ENV]: userData },
     timeout: 30_000,
   })

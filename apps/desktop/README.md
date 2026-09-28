@@ -313,15 +313,18 @@ The Project-opening contract and its packaged test are recorded in
 The test crosses the packaged renderer, preload, and main process with isolated storage.
 It does not import Swift data.
 
-Package arm64 first. Every command here runs the copy, never the app you have installed.
+The e2e commands build the Vite output with `bun run build:vite` and launch it with the Electron in
+`node_modules`. They do not package the app. CI packages arm64 and sets `ARGO_E2E_PACKAGED=1`, so
+the same cases launch a copy of the packaged app. To run that mode locally, run `bun run build`,
+then `ARGO_E2E_PACKAGED=1 bunx playwright test`. No command here runs the app you have installed.
 
 | Command | What it produces |
 | --- | --- |
-| `bun run test:e2e` | Every flow under `e2e/`, one Playwright project per flow: `projects`, `sessions`, `tickets`. `bun run turbo run test:e2e --filter=@argo/desktop` packages first and caches the run. |
+| `bun run test:e2e` | Every flow under `e2e/`, one Playwright project per flow: `projects`, `sessions`, `tickets`. `bun run turbo run test:e2e --filter=@argo/desktop` caches the run. |
 | `bun run test:e2e -- --project=sessions` | One flow alone. A file path such as `e2e/sessions/journeys.e2e.ts` narrows it further. |
 | `ARGO_E2E_REAL=1 bun run test:e2e -- --project=real-sessions` | The Session journeys against the locally signed-in Claude and Codex CLIs, under an isolated home directory. CI never sets `ARGO_E2E_REAL`. |
-| `bun run capture:cockpit` | One PNG per deck state and appearance, in `out/cockpit-captures`. |
-| `bun run measure:cockpit` | Startup and idle evidence, printed as JSON. |
+| `bun run capture:cockpit` | After `bun run build:vite`, one PNG per deck state and appearance, in `out/cockpit-captures`. |
+| `bun run measure:cockpit` | After `bun run build:vite`, startup and idle evidence, printed as JSON. The evidence comes from the Vite build. Set `ARGO_E2E_PACKAGED=1` after `bun run build` to measure the packaged app. |
 
 Test assets sit outside `src/`. `e2e/<flow>/` holds `*.e2e.ts` files, their `cases/*.case.ts` and
 `fixtures/*.fixture.ts`. `mocks/` holds the mock CLIs, mock providers and their transcripts.
@@ -333,7 +336,7 @@ None of these commands holds the real keyboard or the real mouse.
 
 ## Performance evidence
 
-`bun run measure:cockpit` launches the packaged app five times and reports the median, which is
+`bun run measure:cockpit` launches the app five times and reports the median, which is
 the FAIL line [#1736](https://github.com/milad-alizadeh/argo/issues/1736) set. An idle cockpit
 schedules no work, so an idle `requestAnimationFrame` delta is the display's own period and cannot
 read below it. The budget is therefore taken from the display the run used, and the reading is

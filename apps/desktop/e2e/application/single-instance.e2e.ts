@@ -4,12 +4,12 @@ import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { type ElectronApplication, _electron as electron } from 'playwright-core'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
-import { appExecutable } from '../packaged-app'
+import { launchCommand } from '../application-under-test'
 import { test } from '../packaged-proof'
 
 async function launch(application: string, userData: string): Promise<ElectronApplication> {
   return electron.launch({
-    executablePath: appExecutable(application),
+    ...launchCommand(application),
     env: {
       ...process.env,
       [PROJECT_PROOF_STORE_ENV]: userData,
@@ -19,7 +19,8 @@ async function launch(application: string, userData: string): Promise<ElectronAp
 }
 
 async function launchSecondProcess(application: string, userData: string): Promise<void> {
-  const child = spawn(appExecutable(application), [], {
+  const { executablePath, args } = launchCommand(application)
+  const child = spawn(executablePath, args, {
     env: {
       ...process.env,
       [PROJECT_PROOF_STORE_ENV]: userData,
@@ -49,12 +50,12 @@ async function launchSecondProcess(application: string, userData: string): Promi
 }
 
 test('focuses the existing window when Argo launches a second time', async ({
-  packagedApplication,
+  applicationUnderTest,
   root,
 }) => {
   const userData = path.join(root, 'single-instance-user-data')
   await mkdir(userData, { recursive: true })
-  const application = await launch(packagedApplication, userData)
+  const application = await launch(applicationUnderTest, userData)
   try {
     const page = await application.firstWindow()
     await application.evaluate(({ BrowserWindow }) => {
@@ -68,7 +69,7 @@ test('focuses the existing window when Argo launches a second time', async ({
       1,
     )
 
-    await launchSecondProcess(packagedApplication, userData)
+    await launchSecondProcess(applicationUnderTest, userData)
 
     await page.waitForFunction(() => document.visibilityState === 'visible')
     assert.deepEqual(
@@ -86,7 +87,7 @@ test('focuses the existing window when Argo launches a second time', async ({
     await application.close()
   }
 
-  const reopened = await launch(packagedApplication, userData)
+  const reopened = await launch(applicationUnderTest, userData)
   try {
     await reopened.firstWindow()
     assert.equal(
