@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
+import type { ClaudeSkillFile } from './claude-skill-files'
 
 type Delegation = Extract<FeedContent, { kind: 'delegation' }>
 type Tool = Extract<FeedContent, { kind: 'tool' }>
@@ -15,6 +16,7 @@ const AGENT_TOOLS = new Set(['Agent', 'Task'])
 // The launch or reply text of an Agent call names the id its transcript is stored under.
 const AGENT_ID = /^agentId: ([\w-]+)/m
 const ASYNC_LAUNCH = 'Async agent launched'
+const SLASH_COMMAND = /^\/(\S+)(?:\s+([\s\S]*))?$/
 
 function resultText(content: Tool): string {
   return (content.output ?? [])
@@ -27,10 +29,15 @@ function resultStatus(content: Tool, text: string): Delegation['status'] {
   return text.startsWith(ASYNC_LAUNCH) ? 'running' : 'completed'
 }
 
-// Pairs each Agent call with the Subagent it started, across the messages of one stream.
-export class ClaudeDelegations {
+// Pairs each Agent call with its Subagent and each skill use with its SKILL.md, across one stream.
+export class ClaudeFeedProjection {
   private calls = new Map<string, { call: Tool; delegation: Delegation | null }>()
   private skillCalls = new Set<string>()
+  private skillFile: ClaudeSkillFile
+
+  constructor(skillFile: ClaudeSkillFile) {
+    this.skillFile = skillFile
+  }
 
   project(content: FeedContent): FeedContent[] {
     switch (content.kind) {
@@ -38,8 +45,27 @@ export class ClaudeDelegations {
         return this.tool(content)
       case 'task':
         return this.task(content)
+      case 'command':
+        return [this.command(content)]
       default:
         return [content]
+    }
+  }
+
+  // History cannot tell a skill's slash command from a built-in one, so only a SKILL.md can.
+  private command(content: Extract<FeedContent, { kind: 'command' }>): FeedContent {
+    const invocation = content.command?.match(SLASH_COMMAND)
+    const name = invocation?.[1]
+    if (name === undefined) return content
+    const target = this.skillFile(name)
+    if (target === null) return content
+    return {
+      id: content.id,
+      kind: 'reference',
+      referenceType: 'skill',
+      label: name,
+      target,
+      text: invocation?.[2] ?? null,
     }
   }
 
@@ -66,7 +92,7 @@ export class ClaudeDelegations {
           kind: 'reference',
           referenceType: 'skill',
           label: skill.data.skill,
-          target: null,
+          target: this.skillFile(skill.data.skill),
           text: skill.data.args ?? null,
         },
       ]

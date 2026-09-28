@@ -25,7 +25,7 @@ test('uses a Feed subagent event as an inspector target when the roster has no c
   ])
 })
 
-test('keeps roster facts authoritative for a child already in the roster', () => {
+test('keeps roster facts for a child already in the roster, with the Feed state', () => {
   const rosterChild = sessionSubagent({
     id: 'agent-a64dd851fde47a6f0',
     label: 'Roster name',
@@ -42,5 +42,22 @@ test('keeps roster facts authoritative for a child already in the roster', () =>
     },
   ] satisfies SessionFeedRow[]
 
-  expect(sessionScreenSubagents(rows, [rosterChild])).toEqual([rosterChild])
+  expect(sessionScreenSubagents(rows, [rosterChild])).toEqual([{ ...rosterChild, state: 'failed' }])
+})
+
+test('keeps the Feed name when the roster stored none', () => {
+  const rosterChild = sessionSubagent({ id: 'agent-a64dd851fde47a6f0', label: null })
+  const rows = [
+    {
+      shape: 'subagent',
+      id: 'call-started',
+      subagentId: rosterChild.id,
+      event: 'started',
+      name: 'Feed name',
+    },
+  ] satisfies SessionFeedRow[]
+
+  expect(sessionScreenSubagents(rows, [rosterChild])).toEqual([
+    { ...rosterChild, label: 'Feed name' },
+  ])
 })

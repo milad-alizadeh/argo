@@ -6,6 +6,7 @@ import { afterEach, beforeEach, expect, test } from 'vitest'
 import { type Database, databaseMigrationsFolder, openDatabase } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
+import { refreshSessionSubagents } from '@/domains/sessions/main/database/session-subagents'
 import { saveSessionBatch } from '@/domains/sessions/main/sync/session-sync-records'
 import { type AppRouterDependencies, createAppRouter } from './trpc-router'
 
@@ -71,6 +72,42 @@ test('registers the paged Session list on the global router', async () => {
       },
     ],
   })
+})
+
+test('lists the Subagents the sync read from each Session history', async () => {
+  database
+    .insert(project)
+    .values({ id: 'project-1', path: '/work/one', commonDirectory: '/work/one/.git' })
+    .run()
+  saveSessionBatch(database, 'codex', [
+    { nativeId: 'native-2', projectId: 'project-1', cwd: '/work/one', activityAt: 1 },
+  ])
+  await refreshSessionSubagents({
+    database,
+    harness: 'codex',
+    readHistory: async () => [
+      {
+        kind: 'delegation',
+        id: 'call-1',
+        agentId: 'agent-1',
+        status: 'running',
+        name: 'Survey',
+        prompt: null,
+        model: null,
+        summary: null,
+      },
+    ],
+    committed: () => {},
+    stopped: () => false,
+  })
+
+  const listed = await createAppRouter(routerDependencies())
+    .createCaller({})
+    .sessionList({ projectId: 'project-1', page: 1, pageSize: 30 })
+
+  expect(listed.rows[0]?.subagents).toEqual([
+    { id: 'agent-1', label: 'Survey', state: 'running', startedAt: null, endedAt: null },
+  ])
 })
 
 test('reads historical Feed content through the saved Session Harness adapter', async () => {

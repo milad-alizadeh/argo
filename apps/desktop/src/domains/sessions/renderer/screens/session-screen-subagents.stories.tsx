@@ -4,7 +4,7 @@ import { expect, screen, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { sessionFeedTrpc, sessionListTrpc, sessionRow } from '../session-fixtures'
+import { sessionFeedTrpc, sessionListTrpc, sessionRow, sessionSubagent } from '../session-fixtures'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import type { SessionFeedSnapshot } from '../types'
 import { SessionScreenView } from './session-screen-view'
@@ -19,6 +19,8 @@ const session = sessionRow({
   title: { text: 'Subagent history', source: 'first-prompt' },
   status: 'idle',
   cwd: '/storybook/argo',
+  // The roster the sync stored from the same history.
+  subagents: [sessionSubagent({ id: SUBAGENT_ID, label: SUBAGENT_NAME, state: 'completed' })],
 })
 
 // The content a Harness adapter reads from history; the screen projects it into rows itself.
@@ -123,6 +125,11 @@ export const HistoryDrawsSubagentAndSkillRows: Story = {
       canvas.getByText('diagnosing-bugs The Session keeps showing Running'),
     ).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Subagents · 1' })).toBeVisible()
+    const sidebarRow = canvasElement.querySelector(
+      `nav[aria-label="Sessions"] [data-session-id="${SESSION_ID}"]`,
+    )
+    if (!(sidebarRow instanceof HTMLElement)) throw new Error('The sidebar Session row is missing.')
+    await expect(within(sidebarRow).getByText('1')).toBeVisible()
   },
 }
 

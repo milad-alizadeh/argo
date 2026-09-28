@@ -29,6 +29,14 @@ export function sessionScreenSubagents(
   roster: readonly SessionSubagent[],
 ): SessionSubagent[] {
   const subagents = new Map(foldFeedRows(rows).map((subagent) => [subagent.id, subagent]))
-  for (const subagent of roster) subagents.set(subagent.id, subagent)
+  // The roster was read at the last sync; the Feed's state is at least as new.
+  for (const subagent of roster) {
+    const fed = subagents.get(subagent.id)
+    subagents.set(subagent.id, {
+      ...subagent,
+      label: subagent.label ?? fed?.label ?? null,
+      state: fed?.state ?? subagent.state,
+    })
+  }
   return [...subagents.values()]
 }

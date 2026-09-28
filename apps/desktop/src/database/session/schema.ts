@@ -16,6 +16,8 @@ export const sessionTable = sqliteTable(
     firstPrompt: text('first_prompt'),
     cwd: text(),
     activityAt: integer('activity_at'),
+    // The `activityAt` whose history the stored Subagents were read from.
+    subagentsReadAt: integer('subagents_read_at'),
     ...timestampColumns(),
   },
   (table) => [uniqueIndex('session_harness_native').on(table.harness, table.nativeId)],

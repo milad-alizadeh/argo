@@ -60,3 +60,33 @@ test('reads an Agent call as one delegation that its task notification completes
     },
   ])
 })
+
+test('gives a skill its SKILL.md and draws a skill slash command as a skill', () => {
+  const files: Record<string, string> = {
+    'diagnosing-bugs': '/repo/.claude/skills/diagnosing-bugs/SKILL.md',
+    implement: '/repo/.claude/skills/implement/SKILL.md',
+  }
+  const skillFile = (name: string) => files[name] ?? null
+  const skills = decodeClaudeSessionMessages(
+    [...recordedMessages('delegationHistory'), ...recordedMessages('harnessNoise')],
+    skillFile,
+  ).filter((content) => content.kind === 'reference' || content.kind === 'command')
+
+  expect(skills).toEqual([
+    expect.objectContaining({
+      referenceType: 'skill',
+      label: 'diagnosing-bugs',
+      target: '/repo/.claude/skills/diagnosing-bugs/SKILL.md',
+    }),
+    expect.objectContaining({ kind: 'command', command: '/effort' }),
+    expect.objectContaining({ kind: 'command', output: 'Set effort level to medium' }),
+    {
+      kind: 'reference',
+      id: 'u-implement',
+      referenceType: 'skill',
+      label: 'implement',
+      target: '/repo/.claude/skills/implement/SKILL.md',
+      text: '318 open storybook while you do it',
+    },
+  ])
+})
