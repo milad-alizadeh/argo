@@ -4,6 +4,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { cockpitRoutes } from '@/renderer/cockpit-router'
 import {
+  failSelectionWrites,
   releaseDraftRead,
   savedSelectionDraft,
   sessionSelectionHost,
@@ -257,5 +258,102 @@ export const FirstVisitNeverShowsTheLastSessionsDraft: Story = {
       foreign.stop()
       watch.stop()
     }
+  },
+}
+
+const SAVE_FAILED = 'The draft could not be saved. Try again before closing this Session.'
+const SEND_FAILED = 'The Turn could not be sent. Your draft is still saved.'
+
+// Reads the card's top and the composer section's notices after every DOM change, toasts included.
+function watchComposerPlace(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement)
+  const top = () => canvas.getByLabelText(CARD_LABEL).getBoundingClientRect().top
+  const start = top()
+  const tops = new Set<number>()
+  const notices = new Set<string>()
+  const observer = new MutationObserver(() => {
+    tops.add(top())
+    const section = within(canvas.getByLabelText('Session composer'))
+    for (const notice of [...section.queryAllByRole('alert'), ...section.queryAllByRole('status')])
+      notices.add(notice.textContent ?? '')
+  })
+  observer.observe(canvasElement.ownerDocument.body, {
+    attributes: true,
+    childList: true,
+    subtree: true,
+    characterData: true,
+  })
+  return {
+    read: () => ({ moved: [...tops].filter((seen) => seen !== start), notices: [...notices] }),
+    stop: () => observer.disconnect(),
+  }
+}
+
+async function expectOneToast(canvasElement: HTMLElement, text: string) {
+  const page = within(canvasElement.ownerDocument.body)
+  await waitFor(() => expect(page.getAllByText(text)).toHaveLength(1), { timeout: 3000 })
+}
+
+async function expectNoToast(canvasElement: HTMLElement, text: string) {
+  const page = within(canvasElement.ownerDocument.body)
+  await waitFor(() => expect(page.queryByText(text)).toBeNull(), { timeout: 3000 })
+}
+
+// A failed save and a failed Send toast once each and leave the card where it was.
+async function failSaveThenSend(canvasElement: HTMLElement, words: string) {
+  const canvas = within(canvasElement)
+  const composer = canvas.getByRole('combobox', { name: MESSAGE_LABEL })
+  await waitFor(() => expect(composer).toHaveAttribute('aria-disabled', 'false'))
+  const place = watchComposerPlace(canvasElement)
+  try {
+    failSelectionWrites({ draftSaves: true })
+    await userEvent.type(composer, words)
+    await expectOneToast(canvasElement, SAVE_FAILED)
+    failSelectionWrites({ draftSaves: false, sends: true })
+    await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
+    await expectOneToast(canvasElement, SEND_FAILED)
+    await expectNoToast(canvasElement, SAVE_FAILED)
+    await expect(composer).toHaveTextContent(words)
+    await expect(place.read()).toEqual({ moved: [], notices: [] })
+  } finally {
+    place.stop()
+    failSelectionWrites({ sends: false })
+  }
+}
+
+async function selectSession(canvasElement: HTMLElement, title: string, sessionId: string) {
+  const canvas = within(canvasElement)
+  await userEvent.click(canvas.getByRole('button', { name: new RegExp(title) }))
+  await waitFor(() =>
+    expect(canvas.getByLabelText('Session history')).toHaveAttribute('data-session', sessionId),
+  )
+  await waitFor(() =>
+    expect(canvas.getByRole('combobox', { name: MESSAGE_LABEL })).toHaveAttribute(
+      'aria-disabled',
+      'false',
+    ),
+  )
+}
+
+// Composer failures toast instead of drawing above the card, for Claude and Codex alike, and a
+// Session switch neither carries a toast to the next Session nor raises it again (#2836).
+export const FailuresToastWithoutMovingTheComposer: Story = {
+  beforeEach: () => sessionSelectionHost(ROSTER),
+  play: async ({ canvasElement }) => {
+    await within(canvasElement).findByRole('combobox', { name: MESSAGE_LABEL })
+    await failSaveThenSend(canvasElement, 'Words for Claude')
+    await selectSession(canvasElement, 'Second Codex Session', 'codex-second')
+    await expectNoToast(canvasElement, SEND_FAILED)
+    await failSaveThenSend(canvasElement, 'Words for Codex')
+    failSelectionWrites({ draftSaves: true })
+    await userEvent.type(
+      within(canvasElement).getByRole('combobox', { name: MESSAGE_LABEL }),
+      ' again',
+    )
+    await expectOneToast(canvasElement, SAVE_FAILED)
+    await selectSession(canvasElement, 'First Claude Session', 'claude-first')
+    await expectNoToast(canvasElement, SAVE_FAILED)
+    await selectSession(canvasElement, 'Second Codex Session', 'codex-second')
+    await expect(within(canvasElement.ownerDocument.body).queryByText(SAVE_FAILED)).toBeNull()
   },
 }

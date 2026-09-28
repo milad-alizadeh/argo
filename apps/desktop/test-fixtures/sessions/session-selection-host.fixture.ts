@@ -53,6 +53,24 @@ async function draftRead(target: { type: 'session'; sessionId: string }) {
   return success(drafts.get(JSON.stringify(target)) ?? null)
 }
 
+// Writes the story makes fail: draft saves and creates, and Sends the Session rejects.
+const failing = { draftSaves: false, sends: false }
+
+export function failSelectionWrites(writes: Partial<typeof failing>) {
+  Object.assign(failing, writes)
+}
+
+function failure(path: string, code: 'INTERNAL_SERVER_ERROR' | 'PRECONDITION_FAILED') {
+  const status = code === 'INTERNAL_SERVER_ERROR' ? 500 : 412
+  return {
+    error: {
+      message: `The story failed ${path}.`,
+      code: code === 'INTERNAL_SERVER_ERROR' ? -32603 : -32012,
+      data: { code, httpStatus: status, path },
+    },
+  } as unknown as StorybookTrpcResponse
+}
+
 function draftReply(value: { target: object; [field: string]: unknown }) {
   drafts.set(JSON.stringify(value.target), value)
   return success(value)
@@ -72,6 +90,19 @@ function composerReply(
       return catalogReply(request)
     case 'composerDraftRead':
       return draftRead(request.input as { type: 'session'; sessionId: string })
+    case 'composerDraftCreate':
+    case 'composerDraftSave':
+      if (failing.draftSaves) return failure(request.path, 'INTERNAL_SERVER_ERROR')
+      return draftWrite(request)
+    case 'sessionSubmit':
+      return failing.sends ? failure(request.path, 'PRECONDITION_FAILED') : null
+    default:
+      return null
+  }
+}
+
+function draftWrite(request: StorybookTrpcRequest) {
+  switch (request.path) {
     case 'composerDraftCreate': {
       const input = request.input as {
         target: { type: 'session'; sessionId: string }
@@ -131,6 +162,7 @@ function feedReply(request: StorybookTrpcRequest): StorybookTrpcResponse | null 
 
 function clearSelectionQueries() {
   drafts.clear()
+  failSelectionWrites({ draftSaves: false, sends: false })
   for (const release of heldDraftReads.values()) release()
   heldDraftReads.clear()
   queryClient.removeQueries({ queryKey: trpc.sessionList.pathKey() })

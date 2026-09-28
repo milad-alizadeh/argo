@@ -37,6 +37,7 @@ import {
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import { HARNESSES, type HarnessControl } from '../harness/harnesses'
 import type { Session, SessionListPage } from '../types'
+import { type ComposerFailure, useComposerFailureToasts } from './use-composer-failure-toasts'
 
 type SessionScreenDetailsProps = {
   permission: ReturnType<typeof import('../composer').useSessionPermission>
@@ -174,6 +175,7 @@ function useSessionComposerSend(input: {
   draft: ReturnType<typeof useDurableComposerDraft>
   identity: ComposerIdentity
   projectId: string | null
+  onFailure: (outcome: 'rejected' | 'uncertain') => void
 }) {
   const navigate = useNavigate()
   return async (
@@ -182,7 +184,11 @@ function useSessionComposerSend(input: {
     attachments: DraftContent['attachments'],
   ) => {
     const result = await input.draft?.submit(prompt, turnConfiguration, attachments)
-    if (result?.outcome !== 'accepted') return result?.outcome ?? 'rejected'
+    if (result?.outcome !== 'accepted') {
+      const outcome = result?.outcome ?? 'rejected'
+      input.onFailure(outcome)
+      return outcome
+    }
     if (input.identity.kind === 'draft' && input.projectId !== null)
       navigate(`/projects/${input.projectId}/sessions/${result.sessionId}`, { replace: true })
     return 'accepted'
@@ -293,13 +299,6 @@ function initialFormEditing(draft: LoadedDraft | null, opening: TurnConfiguratio
   return opening === null ? undefined : { turnConfiguration: opening }
 }
 
-// Once a draft has loaded, a later load says nothing, so a Session switch shows no notice.
-function useFirstComposerLoad(loaded: boolean) {
-  const [first, setFirst] = useState(true)
-  if (first && loaded) setFirst(false)
-  return first && !loaded
-}
-
 // One card at one place in the tree while a draft loads and after, so a Session switch swaps its
 // content instead of mounting a new card (#2836). The owner's editor mounts at once, empty and
 // inert but drawn enabled, and its draft fills in when it loads.
@@ -341,12 +340,21 @@ function SessionComposer({
   isRunning: boolean
   onInterrupt?: () => Promise<boolean>
 }) {
+  const reportSendFailure = useComposerFailures({
+    catalogFailure,
+    composerKey,
+    draft,
+    harness,
+    onRetryCatalog,
+    onRetryDraft,
+    permissionFailure: permission.failure,
+  })
   const onSend = useSessionComposerSend({
     draft,
     identity,
     projectId: identity.kind === 'draft' ? identity.projectId : null,
+    onFailure: reportSendFailure,
   })
-  const firstLoad = useFirstComposerLoad(draft !== null)
   const form: ComposerFormProps = {
     sessionId: composerKey,
     loading: draft?.hasDraft !== true,
@@ -374,72 +382,44 @@ function SessionComposer({
     isRunning,
     onInterrupt,
   }
-  return (
-    <>
-      <ComposerNotices
-        catalogFailure={catalogFailure}
-        draft={draft}
-        harness={harness}
-        loading={firstLoad && choices === null}
-        onRetryCatalog={onRetryCatalog}
-        onRetryDraft={onRetryDraft}
-        permissionFailure={permission.failure}
-      />
-      <ComposerForm {...form} />
-    </>
-  )
+  return <ComposerForm {...form} />
 }
 
-// A draft read is local and quick, so only a catalog still loading says the composer is loading.
-export function ComposerNotices({
-  catalogFailure,
-  draft,
-  harness,
-  loading,
-  onRetryCatalog,
-  onRetryDraft,
-  permissionFailure,
-}: {
+// Failures toast instead of drawing above the composer, so an error never moves the card (#2836).
+function useComposerFailures(input: {
   catalogFailure: CatalogFailure | null
+  composerKey: string
   draft: LoadedDraft | null
   harness: HarnessControl
-  loading: boolean
   onRetryCatalog: () => void
   onRetryDraft: () => void
   permissionFailure: string | null
 }) {
   const { t } = useTranslation('sessions')
-  return (
-    <>
-      {permissionFailure ? <Failure message={permissionFailure} /> : null}
-      {catalogFailure ? (
-        <Failure
-          message={catalogFailureMessage(t, harness.harness, catalogFailure)}
-          onRetry={onRetryCatalog}
-        />
-      ) : null}
-      {loading && !catalogFailure ? <Failure message={t('composer.loading')} status /> : null}
-      {draft?.loadFailed ? <DraftLoadFailure onRetry={onRetryDraft} /> : null}
-      {draft?.saveFailed ? <Failure message={t('composer.draftSaveFailed')} /> : null}
-      {draft?.sendFailure ? (
-        <Failure
-          message={t(
-            draft.sendFailure === 'rejected' ? 'composer.sendFailed' : 'composer.sendUncertain',
-          )}
-        />
-      ) : null}
-    </>
-  )
+  const owner = input.composerKey
+  const catalog = `catalog:${input.harness.harness}`
+  const failures: ComposerFailure[] = []
+  if (input.permissionFailure) failures.push({ scope: owner, title: input.permissionFailure })
+  if (input.catalogFailure)
+    failures.push({
+      scope: catalog,
+      title: catalogFailureMessage(t, input.harness.harness, input.catalogFailure),
+      retry: input.onRetryCatalog,
+    })
+  if (input.draft?.loadFailed)
+    failures.push({ scope: owner, title: t('composer.draftLoadFailed'), retry: input.onRetryDraft })
+  if (input.draft?.saveFailed) failures.push({ scope: owner, title: t('composer.draftSaveFailed') })
+  const report = useComposerFailureToasts(failures, [owner, catalog])
+  return (outcome: 'rejected' | 'uncertain') =>
+    report({
+      scope: owner,
+      title: t(outcome === 'rejected' ? 'composer.sendFailed' : 'composer.sendUncertain'),
+    })
 }
 
 function handoffTitle(sessionList: SessionListPage | null, sessionId: string) {
   const row = sessionList?.sessions.find(({ id }) => id === sessionId)
   return row?.title?.text ?? sessionId
-}
-
-export function DraftLoadFailure({ onRetry }: { onRetry: () => void }) {
-  const { t } = useTranslation('sessions')
-  return <Failure message={t('composer.draftLoadFailed')} onRetry={onRetry} />
 }
 
 function HandoffLink({
@@ -498,32 +478,6 @@ export function SessionHandoffFacts({
         />
       ) : null}
     </section>
-  )
-}
-
-function Failure({
-  message,
-  onRetry,
-  status = false,
-}: {
-  message: string
-  onRetry?: () => void
-  status?: boolean
-}) {
-  const { t } = useTranslation('sessions')
-  return (
-    <div className={`${COMPOSER_COLUMN} mt-3`}>
-      <Alert role={status ? 'status' : 'alert'} variant={status ? 'default' : 'destructive'}>
-        <AlertDescription>{message}</AlertDescription>
-        {onRetry ? (
-          <AlertAction>
-            <Button onClick={onRetry} size="sm" type="button" variant="outline">
-              {t('composer.retry')}
-            </Button>
-          </AlertAction>
-        ) : null}
-      </Alert>
-    </div>
   )
 }
 
