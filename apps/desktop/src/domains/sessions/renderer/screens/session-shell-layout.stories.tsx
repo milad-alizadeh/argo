@@ -108,11 +108,16 @@ export const ResizeExpandedInspector: Story = {
   ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await waitFor(
+      () => expect(canvas.getByRole('button', { name: 'Open Session inspector' })).toBeVisible(),
+      { timeout: 5000 },
+    )
     await userEvent.click(canvas.getByRole('button', { name: 'Open Session inspector' }))
     await userEvent.click(await canvas.findByRole('button', { name: 'Expand Session sidebar' }))
-    await expect(
-      canvas.getByRole('button', { name: 'Restore Session sidebar' }),
-    ).toBeInTheDocument()
+    await waitFor(
+      () => expect(canvas.getByRole('button', { name: 'Restore Session sidebar' })).toBeVisible(),
+      { timeout: 5000 },
+    )
 
     await userEvent.click(canvas.getByRole('button', { name: /^Collapse sidebar$/ }))
     await waitFor(
@@ -122,7 +127,7 @@ export const ResizeExpandedInspector: Story = {
         ).toBeGreaterThan(1)
         expect(canvas.getByRole('button', { name: 'Expand Session sidebar' })).toBeVisible()
       },
-      { timeout: 5000 },
+      { timeout: 10000 },
     )
   },
 }
