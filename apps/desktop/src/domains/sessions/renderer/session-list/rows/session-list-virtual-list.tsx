@@ -7,6 +7,7 @@ import {
   SESSION_LIST_ROW_HEIGHT,
   type SessionListRow,
   type SessionListRowHandlers,
+  sessionListRowKey,
 } from './session-list-rows'
 import { SessionRowContextMenu } from './session-row-context-menu'
 import { SessionRowView } from './session-row-view'
@@ -47,6 +48,10 @@ export function SessionListVirtualList({
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollRef.current,
+    getItemKey: (index) => {
+      const row = rows[index]
+      return row === undefined ? index : sessionListRowKey(row)
+    },
     estimateSize: () => SESSION_LIST_ROW_HEIGHT,
     overscan: OVERSCAN,
   })
