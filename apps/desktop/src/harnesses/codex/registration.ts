@@ -6,7 +6,7 @@ import type { CodexRequest } from './app-server/codex-app-server-client'
 import { readCodexHarnessInfo } from './catalog'
 import { createCodexSignInDriver, createSystemCodexReadiness } from './readiness'
 import { createCodexSessionDiscovery } from './session/codex-session-discovery'
-import { readCodexSessionHistory } from './session/codex-session-history'
+import { hasCodexSessionTurn, readCodexSessionHistory } from './session/codex-session-history'
 
 export function createCodexRegistration(request: CodexRequest): HarnessRegistration<'codex'> {
   return {
@@ -17,6 +17,7 @@ export function createCodexRegistration(request: CodexRequest): HarnessRegistrat
     readCatalog: () => readCodexHarnessInfo(request),
     readHistory: ({ nativeId, subagentId }) =>
       readCodexSessionHistory(request, subagentId ?? nativeId),
+    hasTurn: (nativeId, turnId) => hasCodexSessionTurn(request, nativeId, turnId),
     watchHistory: ({ nativeId, subagentId }, invalidate) =>
       watchVendorHistory(
         path.join(process.env.CODEX_HOME ?? path.join(os.homedir(), '.codex'), 'sessions'),

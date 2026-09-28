@@ -2,11 +2,13 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createActor, waitFor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
-import type { CodexRequest } from '../app-server/codex-app-server-client'
+import type { CodexRequest, WireMessage } from '../app-server/codex-app-server-client'
 import { codexLiveSessionActors, codexLiveSessionMachine } from './codex-live-session-machine'
 
 function machineFor(request: CodexRequest) {
-  return codexLiveSessionMachine.provide({ actors: codexLiveSessionActors(request) })
+  return codexLiveSessionMachine.provide({
+    actors: codexLiveSessionActors(request, () => () => {}),
+  })
 }
 
 test('models Codex opening, first turn, later turn, failure, and close paths', () => {
@@ -37,6 +39,7 @@ test('models Codex opening, first turn, later turn, failure, and close paths', (
           {
             type: 'Send' as const,
             command: {
+              commandId: '00000000-0000-4000-8000-000000000002',
               prompt: 'second',
               attachments: [],
               turnConfiguration: { model: 'model', effort: 'medium', mode: 'workspace-write' },
@@ -153,6 +156,7 @@ test('starts later Codex prompts on the persisted thread', async () => {
   actor.send({
     type: 'Send',
     command: {
+      commandId: '00000000-0000-4000-8000-000000000002',
       prompt: 'second',
       attachments: [],
       turnConfiguration: { model: 'model', effort: 'medium', mode: 'workspace-write' },
@@ -165,4 +169,81 @@ test('starts later Codex prompts on the persisted thread', async () => {
     { method: 'turn/start', threadId: 'thread-1' },
   ])
   actor.stop()
+})
+
+test('projects Codex item and completion notifications into ordered live Feed events', async () => {
+  let notify: ((message: WireMessage) => void) | undefined
+  const request: CodexRequest = async (method, _params, parse) =>
+    parse(method === 'thread/start' ? { thread: { id: 'thread-1' } } : { turn: { id: 'turn-1' } })
+  const machine = codexLiveSessionMachine.provide({
+    actors: codexLiveSessionActors(request, (listener) => {
+      notify = listener
+      return () => {
+        notify = undefined
+      }
+    }),
+  })
+  const actor = createActor(machine, {
+    input: {
+      commandId: '00000000-0000-4000-8000-000000000001',
+      harness: 'codex',
+      projectId: '00000000-0000-4000-8000-000000000099',
+      workspaceId: '00000000-0000-4000-8000-000000000098',
+      cwd: '/repo',
+      prompt: 'first',
+      attachments: [],
+      turnConfiguration: { model: 'model', effort: 'medium', mode: 'workspace-write' },
+    },
+  }).start()
+  await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
+  assert.equal(actor.getSnapshot().context.lastFeed?.body.type, 'status')
+  assert.equal(actor.getSnapshot().context.lastFeed?.body.turnId, 'turn-1')
+  notify?.({
+    method: 'item/completed',
+    params: {
+      threadId: 'thread-1',
+      turnId: 'turn-1',
+      item: {
+        id: 'user-1',
+        type: 'userMessage',
+        content: [{ type: 'text', text: 'first' }],
+      },
+    },
+  })
+  assert.equal(actor.getSnapshot().context.lastFeed?.body.type, 'content')
+  assert.equal(actor.getSnapshot().context.lastFeed?.body.vendorEventId, 'user-1')
+  notify?.({
+    method: 'item/completed',
+    params: {
+      threadId: 'thread-1',
+      turnId: 'turn-1',
+      item: { id: 'message-1', type: 'agentMessage', text: 'Done.' },
+    },
+  })
+  assert.deepEqual(actor.getSnapshot().context.lastFeed?.body, {
+    type: 'content',
+    commandId: '00000000-0000-4000-8000-000000000001',
+    turnId: 'turn-1',
+    vendorEventId: 'message-1',
+    content: { kind: 'message', id: 'message-1', role: 'assistant', text: 'Done.' },
+  })
+  notify?.({
+    method: 'turn/completed',
+    params: { threadId: 'thread-1', turn: { id: 'turn-1', status: 'completed' } },
+  })
+  assert.deepEqual(actor.getSnapshot().context.lastFeed?.body, {
+    type: 'status',
+    commandId: '00000000-0000-4000-8000-000000000001',
+    turnId: 'turn-1',
+    vendorEventId: null,
+    status: 'idle',
+  })
+  assert.equal(actor.getSnapshot().context.feedSerial, 4)
+  notify?.({
+    method: 'thread/status/changed',
+    params: { threadId: 'thread-1', status: { type: 'idle' } },
+  })
+  assert.equal(actor.getSnapshot().context.feedSerial, 4)
+  actor.stop()
+  assert.equal(notify, undefined)
 })

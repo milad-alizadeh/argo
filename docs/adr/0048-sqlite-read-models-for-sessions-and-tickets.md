@@ -2,6 +2,18 @@
 
 Status: accepted · 2026-09-24 · Session discovery amended 2026-09-27
 
+## Amendment · command outcomes · 2026-09-28
+
+The earlier decision excluded a launch intent table. That rule changes for small command
+outcomes. The `session_command` table stores command IDs, draft revision identities, Session and
+Harness identities and a vendor turn ID when known, and an outcome. It stores no prompt, live event payload, or vendor
+history. The Session table still owns durable Session identity.
+
+Argo records the command before vendor delivery. On restart, it marks unfinished outcomes unknown
+and reads vendor history for commands with a native Session ID. A matching vendor item or turn can change
+an unknown outcome to observed. An unknown command never causes an automatic resend. A command
+without a known native Session ID stays unknown until other vendor evidence arrives.
+
 ## Amendment · stateless Harness discovery · 2026-09-27
 
 The worker topology in **Sync and reads**, its diagram, and the worker ownership in **Module

@@ -17,6 +17,7 @@ const inputSchema = z.strictObject({
   sessionId: identifierSchema,
   subagentId: identifierSchema.nullable().optional(),
   cursor: z.number().int().nonnegative(),
+  generation: identifierSchema.nullable().optional(),
 })
 
 function canDeliver(event: SessionLiveEvent, live: boolean): boolean {
@@ -50,7 +51,15 @@ export function sessionLiveEventsProcedure(context: SessionLiveEventsContext) {
     const subagentId = input.subagentId ?? null
     if (subagentId !== null)
       return observable<z.infer<typeof sessionLiveUpdateSchema>>((emit) => {
-        emit.next(sessionLiveUpdateSchema.parse({ type: 'ready', live: false, cursor: 0 }))
+        emit.next(
+          sessionLiveUpdateSchema.parse({
+            type: 'ready',
+            live: false,
+            cursor: 0,
+            generation: context.journal.generation,
+            replayExpired: false,
+          }),
+        )
         const unwatch = context.watchHistory?.(
           stored.harness,
           { nativeId: stored.nativeId, subagentId, cwd: stored.cwd },
@@ -69,21 +78,29 @@ export function sessionLiveEventsProcedure(context: SessionLiveEventsContext) {
         if (replaying) pending.push(event)
         else sendEvent(event, context.hasLiveChannel(input.sessionId))
       })
-      const replay = context.journal.replay(input.sessionId, input.cursor)
+      const replay = context.journal.replay(
+        input.sessionId,
+        input.cursor,
+        input.generation ?? null,
+      )
       const live = context.hasLiveChannel(input.sessionId)
       emit.next(
         sessionLiveUpdateSchema.parse({
           type: 'ready',
           live,
           cursor: replay.cursor,
+          generation: context.journal.generation,
+          replayExpired: replay.type === 'expired',
         }),
       )
       if (replay.type === 'expired') emit.next(sessionLiveUpdateSchema.parse(replay))
       else for (const event of replay.events) sendEvent(event, live)
-      replaying = false
-      for (const event of pending)
-        if (event.sequence > replay.cursor)
+      while (pending.length > 0) {
+        const event = pending.shift()
+        if (event !== undefined && event.sequence > replay.cursor)
           sendEvent(event, context.hasLiveChannel(input.sessionId))
+      }
+      replaying = false
       const unwatch = context.watchHistory?.(
         stored.harness,
         { nativeId: stored.nativeId, subagentId: null, cwd: stored.cwd },
