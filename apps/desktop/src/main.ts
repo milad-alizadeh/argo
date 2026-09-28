@@ -417,7 +417,8 @@ async function ready(actor: AppActor): Promise<void> {
   void reconcileUnknownSessionCommands(
     applicationDatabase,
     (harness, target) => registry[harness].readHistory(target),
-    (harness, nativeId, turnId) => registry[harness].hasTurn?.(nativeId, turnId) ?? Promise.resolve(false),
+    (harness, nativeId, turnId) =>
+      registry[harness].hasTurn?.(nativeId, turnId) ?? Promise.resolve(false),
   ).catch((error) => console.error('Session command recovery failed.', error))
   createWindow(actor, applicationDatabase, registry)
 

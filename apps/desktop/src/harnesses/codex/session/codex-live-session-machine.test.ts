@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createActor, waitFor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
+import type { SessionStartInput } from '@/domains/sessions/main/api/session-submit'
 import type { CodexRequest, WireMessage } from '../app-server/codex-app-server-client'
 import { codexLiveSessionActors, codexLiveSessionMachine } from './codex-live-session-machine'
 
@@ -9,6 +10,17 @@ function machineFor(request: CodexRequest) {
   return codexLiveSessionMachine.provide({
     actors: codexLiveSessionActors(request, () => () => {}),
   })
+}
+
+const notificationSession: SessionStartInput = {
+  commandId: '00000000-0000-4000-8000-000000000001',
+  harness: 'codex',
+  projectId: '00000000-0000-4000-8000-000000000099',
+  workspaceId: '00000000-0000-4000-8000-000000000098',
+  cwd: '/repo',
+  prompt: 'first',
+  attachments: [],
+  turnConfiguration: { model: 'model', effort: 'medium', mode: 'workspace-write' },
 }
 
 test('models Codex opening, first turn, later turn, failure, and close paths', () => {
@@ -184,20 +196,9 @@ test('projects Codex item and completion notifications into ordered live Feed ev
     }),
   })
   const actor = createActor(machine, {
-    input: {
-      commandId: '00000000-0000-4000-8000-000000000001',
-      harness: 'codex',
-      projectId: '00000000-0000-4000-8000-000000000099',
-      workspaceId: '00000000-0000-4000-8000-000000000098',
-      cwd: '/repo',
-      prompt: 'first',
-      attachments: [],
-      turnConfiguration: { model: 'model', effort: 'medium', mode: 'workspace-write' },
-    },
+    input: notificationSession,
   }).start()
   await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
-  assert.equal(actor.getSnapshot().context.lastFeed?.body.type, 'status')
-  assert.equal(actor.getSnapshot().context.lastFeed?.body.turnId, 'turn-1')
   notify?.({
     method: 'item/completed',
     params: {

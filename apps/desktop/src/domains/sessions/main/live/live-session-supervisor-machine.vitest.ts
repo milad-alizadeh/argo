@@ -22,6 +22,8 @@ import type {
 } from '@/harnesses/codex/app-server/codex-app-server-client'
 import type { codexAppServerMachine } from '@/harnesses/codex/app-server/codex-app-server-machine'
 import { codexHarnessInfo } from '@/harnesses/codex/catalog'
+import type { HarnessRegistration } from '@/harnesses/registration'
+import { createHarnessRegistry } from '@/harnesses/registry'
 import { codexModelCatalogFixture } from '../../../../../test-fixtures/sessions/codex-model-catalog.fixture'
 import type { SessionStartInput } from '../api/session-submit'
 import {
@@ -35,6 +37,9 @@ if (available.availability !== 'available') throw new Error('Codex fixture must 
 const model = available.models[0]
 if (model === undefined) throw new Error('Codex fixture needs a model.')
 const catalog = harnessCatalogSchema.parse({ harnesses: [unavailable('claude'), available] })
+const claudeCatalog = harnessCatalogSchema.parse({
+  harnesses: [{ ...available, harness: 'claude' }, available],
+})
 const first: SessionStartInput = {
   commandId: 'first-command',
   harness: 'codex',
@@ -44,6 +49,13 @@ const first: SessionStartInput = {
   prompt: 'first',
   attachments: [],
   turnConfiguration: { model: model.value, effort: model.defaultEffort, mode: 'workspace-write' },
+}
+const claudeFirst = { ...first, harness: 'claude' as const }
+const passiveChannelMethods = {
+  interrupt: async () => {},
+  answerPermission: async () => false,
+  answerQuestion: async () => false,
+  close: () => {},
 }
 
 function createStartGate() {
@@ -66,10 +78,14 @@ function successfulCodexRequest(nativeIdForStart: (count: number) => string) {
   return { request, starts: () => starts }
 }
 
-async function supervisorFor(request: CodexRequest, catalogValue = catalog) {
+async function supervisorFor(
+  request: CodexRequest,
+  catalogValue = catalog,
+  openClaude?: NonNullable<HarnessRegistration<'claude'>['openLiveSession']>,
+) {
   const client = new DatabaseSync(':memory:')
   client.exec(
-    'CREATE TABLE session (argo_id TEXT PRIMARY KEY, harness TEXT NOT NULL, native_id TEXT NOT NULL, project_id TEXT, workspace_id TEXT, custom_title TEXT, preview TEXT, first_prompt TEXT, cwd TEXT, activity_at INTEGER, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id); CREATE TABLE session_command (command_id TEXT PRIMARY KEY, intent_id TEXT NOT NULL, session_id TEXT, harness TEXT NOT NULL, native_id TEXT, cwd TEXT NOT NULL, outcome TEXT NOT NULL, created_at INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL DEFAULT 0); CREATE UNIQUE INDEX session_command_intent ON session_command (intent_id);',
+    'CREATE TABLE session (argo_id TEXT PRIMARY KEY, harness TEXT NOT NULL, native_id TEXT NOT NULL, project_id TEXT, workspace_id TEXT, custom_title TEXT, preview TEXT, first_prompt TEXT, cwd TEXT, activity_at INTEGER, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id); CREATE TABLE session_command (command_id TEXT PRIMARY KEY, intent_id TEXT, session_id TEXT, harness TEXT, native_id TEXT, turn_id TEXT, cwd TEXT, status TEXT NOT NULL, created_at INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL DEFAULT 0); CREATE UNIQUE INDEX session_command_intent ON session_command (intent_id);',
   )
   const database = databaseFrom(client)
   const codexClient: CodexAppServerClient = {
@@ -82,6 +98,8 @@ async function supervisorFor(request: CodexRequest, catalogValue = catalog) {
     Parameters<ActorRefFrom<typeof codexAppServerMachine>['send']>[0],
     { type: 'Call' }
   >
+  const registry = createHarnessRegistry(request)
+  if (openClaude !== undefined) registry.claude.openLiveSession = openClaude
   const rootMachine = xstateSetup({
     types: {
       input: {} as { database: typeof database },
@@ -93,7 +111,10 @@ async function supervisorFor(request: CodexRequest, catalogValue = catalog) {
       catalog: harnessCatalogMachine.provide({
         actors: { loadCatalog: fromPromise(async () => catalogValue) },
       }),
-      sessions: createLiveSessionSupervisorMachine({ database }),
+      sessions: createLiveSessionSupervisorMachine({
+        database,
+        registry,
+      }),
     },
   }).createMachine({
     initial: 'Running',
@@ -157,13 +178,118 @@ function send(actor: LiveSessionSupervisorActor, input: SessionStartInput & { se
 }
 
 test('models supervisor lifetime', () => {
-  const paths = getShortestPaths(createLiveSessionSupervisorMachine({ database: {} as never }), {
-    events: (state) => (state.matches('Running') ? [{ type: 'Shutdown' as const }] : []),
-  })
+  const paths = getShortestPaths(
+    createLiveSessionSupervisorMachine({
+      database: {} as never,
+      registry: createHarnessRegistry(async () => {
+        throw new Error('Unused request.')
+      }),
+    }),
+    {
+      events: (state) => (state.matches('Running') ? [{ type: 'Shutdown' as const }] : []),
+    },
+  )
   assert.deepEqual(
     new Set(paths.map(({ state }) => String(state.value))),
     new Set(['Running', 'Closed']),
   )
+})
+
+test('binds a delayed Claude identity once and never repeats a command ID', async () => {
+  let openCount = 0
+  let laterSubmissions = 0
+  let identify!: () => void
+  const { root, supervisor, client } = await supervisorFor(
+    async () => {
+      throw new Error('Codex must not be called.')
+    },
+    claudeCatalog,
+    (input, _controls, emit) => {
+      openCount += 1
+      identify = () => {
+        emit({ type: 'identity', nativeId: 'native-1' })
+        emit({ type: 'turn.completed', commandId: input.commandId })
+      }
+      return {
+        submit: async (command) => {
+          laterSubmissions += 1
+          emit({ type: 'turn.completed', commandId: command.commandId })
+        },
+        ...passiveChannelMethods,
+      }
+    },
+  )
+  try {
+    const pending = start(supervisor, claudeFirst)
+    assert.equal(openCount, 1)
+    identify()
+    const { sessionId } = await pending
+    assert.equal((await start(supervisor, claudeFirst)).sessionId, sessionId)
+    assert.equal(openCount, 1)
+    const later = { ...claudeFirst, sessionId, commandId: 'later-command', prompt: 'later' }
+    await send(supervisor, later)
+    const liveActor = liveSessionActorFor(supervisor, sessionId)
+    assert.ok(liveActor)
+    await waitFor(liveActor, (snapshot) => snapshot.matches('Ready'))
+    await send(supervisor, later)
+    assert.equal(laterSubmissions, 1)
+  } finally {
+    root.send({ type: 'Shutdown' })
+    client.close()
+  }
+})
+
+test('resumes a persisted Claude Session after its live channel fails', async () => {
+  let failFirst!: () => void
+  let identifyRetry!: () => void
+  let openings = 0
+  let queuedSubmissions = 0
+  const { root, supervisor, client } = await supervisorFor(
+    async () => {
+      throw new Error('Codex must not be called.')
+    },
+    claudeCatalog,
+    (input, _controls, emit) => {
+      openings += 1
+      const identify = () => {
+        emit({ type: 'identity', nativeId: 'native-1' })
+        emit({ type: 'turn.completed', commandId: input.commandId })
+      }
+      if (openings === 1) {
+        identify()
+        failFirst = () => emit({ type: 'closed' })
+      } else identifyRetry = identify
+      return {
+        submit: async (command) => {
+          queuedSubmissions += 1
+          emit({ type: 'turn.completed', commandId: command.commandId })
+        },
+        ...passiveChannelMethods,
+      }
+    },
+  )
+  try {
+    const { sessionId } = await start(supervisor, claudeFirst)
+    const firstActor = liveSessionActorFor(supervisor, sessionId)
+    assert.ok(firstActor)
+    failFirst()
+    await waitFor(firstActor, (snapshot) => snapshot.matches('Failed'))
+    const retry = { ...claudeFirst, sessionId, commandId: 'retry-command', prompt: 'retry' }
+    const retried = send(supervisor, retry)
+    const queued = { ...retry, commandId: 'queued-command', prompt: 'queued' }
+    assert.equal((await send(supervisor, queued)).sessionId, sessionId)
+    identifyRetry()
+    assert.equal((await retried).sessionId, sessionId)
+    assert.equal(openings, 2)
+    const resumed = liveSessionActorFor(supervisor, sessionId)
+    assert.ok(resumed)
+    assert.notEqual(resumed, firstActor)
+    await waitFor(resumed, (snapshot) => snapshot.matches('Ready'))
+    assert.equal(queuedSubmissions, 1)
+  } finally {
+    root.send({ type: 'Shutdown' })
+    client.close()
+  }
 })
 
 test('rejects a model mode that the catalog does not support before calling Codex', async () => {
@@ -425,8 +551,8 @@ test('retiring an idle actor keeps the Session identity and the next send resume
     assert.ok(actor)
     await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
     assert.equal(
-      client.prepare('SELECT outcome FROM session_command WHERE command_id = ?').get(first.commandId)
-        ?.outcome,
+      client.prepare('SELECT status FROM session_command WHERE command_id = ?').get(first.commandId)
+        ?.status,
       'accepted',
     )
     const actorId = supervisor.getSnapshot().context.sessions[sessionId]
@@ -443,8 +569,9 @@ test('retiring an idle actor keeps the Session identity and the next send resume
     assert.ok(resumed)
     await waitFor(resumed, (snapshot) => snapshot.matches('Ready'))
     assert.equal(
-      client.prepare('SELECT outcome FROM session_command WHERE command_id = ?').get('second-command')
-        ?.outcome,
+      client
+        .prepare('SELECT status FROM session_command WHERE command_id = ?')
+        .get('second-command')?.status,
       'accepted',
     )
     const resumedActorId = supervisor.getSnapshot().context.sessions[sessionId]

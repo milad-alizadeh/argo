@@ -9,11 +9,10 @@ import {
   setup as xstateSetup,
 } from 'xstate'
 import type { Database } from '@/database/database'
+import type { PermissionDecision } from '@/domains/sessions/api/permissions'
+import type { QuestionAnswer } from '@/domains/sessions/api/questions'
+import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type { harnessCatalogMachine } from '@/harnesses/catalog/harness-catalog-machine'
-import {
-  type claudeLiveSessionMachine,
-  createClaudeLiveSessionMachine,
-} from '@/harnesses/claude/session/claude-live-session-machine'
 import {
   type codexAppServerMachine,
   observeCodexAppServer,
@@ -23,13 +22,15 @@ import {
   codexLiveSessionActors,
   codexLiveSessionMachine,
 } from '@/harnesses/codex/session/codex-live-session-machine'
+import type { HarnessRegistry } from '@/harnesses/registry'
 import type { SessionLiveInput, SessionSendInput, SessionStartInput } from '../api/session-submit'
+import { bindSessionCommand, setSessionCommandOutcome } from '../database/session-command-outcomes'
 import {
-  bindSessionCommand,
-  claimSessionCommand,
-  setSessionCommandOutcome,
-} from '../database/session-command-outcomes'
+  createSessionCommandStore,
+  type SessionCommandStore,
+} from '../database/session-command-store'
 import { createSessionUpsert } from '../database/session-upsert'
+import { liveSessionChannelActor } from './live-session-channel-actor'
 import { liveSessionMachine } from './live-session-machine'
 import type { SessionEventJournal } from './session-event-journal'
 import type { SessionInteractionBroker } from './session-interaction-broker'
@@ -44,6 +45,11 @@ function sessionActor(
   return id === undefined ? undefined : (self.system.get(id) as LiveSessionActor | undefined)
 }
 
+function sessionIsUnavailable(actor: LiveSessionActor): boolean {
+  const snapshot = actor.getSnapshot()
+  return snapshot.matches('Failed') || snapshot.matches('Closed')
+}
+
 export function liveSessionActorFor(supervisor: LiveSessionSupervisorActor, sessionId: string) {
   const { sessions, starts } = supervisor.getSnapshot().context
   const persisted = sessionActor(supervisor, sessions[sessionId])
@@ -52,6 +58,54 @@ export function liveSessionActorFor(supervisor: LiveSessionSupervisorActor, sess
     .map((id) => sessionActor(supervisor, id))
     .find((actor) => actor?.getSnapshot().context.argoId === sessionId)
 }
+
+function recordCommandFeed(database: Database, body: SessionLiveEventBody) {
+  if (body.commandId === null) return
+  if (body.turnId !== null)
+    bindSessionCommand(database, body.commandId, {
+      turnId: body.turnId,
+    })
+  switch (body.type) {
+    case 'failure':
+      setSessionCommandOutcome(database, body.commandId, 'unknown')
+      return
+    case 'status':
+      if (body.status === 'idle') setSessionCommandOutcome(database, body.commandId, 'completed')
+      else if (body.status === 'unknown')
+        setSessionCommandOutcome(database, body.commandId, 'unknown')
+      else if (body.status === 'running')
+        setSessionCommandOutcome(database, body.commandId, 'observed')
+      return
+    case 'content':
+      if (body.content.kind === 'message' && body.content.role === 'user')
+        setSessionCommandOutcome(database, body.commandId, 'observed')
+      return
+    case 'permission':
+    case 'question':
+      return
+  }
+}
+
+function trackCommandSnapshot(
+  database: Database,
+  snapshot: ReturnType<LiveSessionActor['getSnapshot']>,
+  inFlightCommandId: string | null,
+): string | null {
+  if (snapshot.matches('Sending')) {
+    const nextCommandId = snapshot.context.queue[0]?.commandId
+    if (nextCommandId === undefined || nextCommandId === inFlightCommandId) return inFlightCommandId
+    if (inFlightCommandId !== null)
+      setSessionCommandOutcome(database, inFlightCommandId, 'accepted')
+    return nextCommandId
+  }
+  if (inFlightCommandId === null) return null
+  if (snapshot.matches('Ready')) setSessionCommandOutcome(database, inFlightCommandId, 'accepted')
+  else if (snapshot.matches('Failed'))
+    setSessionCommandOutcome(database, inFlightCommandId, 'unknown')
+  else return inFlightCommandId
+  return null
+}
+
 export function recordLiveSessionEvents(
   session: LiveSessionActor,
   journal?: SessionEventJournal,
@@ -60,42 +114,13 @@ export function recordLiveSessionEvents(
   let sessionId: string | null = null
   let inFlightCommandId: string | null = session.getSnapshot().context.first.commandId
   const eventSubscription = session.on('feed', ({ body }) => {
-    if (database !== undefined && body.commandId !== null) {
-      if (body.turnId !== null)
-        bindSessionCommand(database, body.commandId, { turnId: body.turnId })
-      if (body.type === 'failure') setSessionCommandOutcome(database, body.commandId, 'unknown')
-      else if (body.type === 'status' && body.status === 'idle')
-        setSessionCommandOutcome(database, body.commandId, 'completed')
-      else if (body.type === 'status' && body.status === 'unknown')
-        setSessionCommandOutcome(database, body.commandId, 'unknown')
-      else if (
-        (body.type === 'status' && body.status === 'running') ||
-        (body.type === 'content' &&
-          body.content.kind === 'message' &&
-          body.content.role === 'user')
-      )
-        setSessionCommandOutcome(database, body.commandId, 'observed')
-    }
+    if (database !== undefined) recordCommandFeed(database, body)
     if (sessionId === null) journal?.stage(session, body)
     else journal?.append(sessionId, body)
   })
   const subscription = session.subscribe((snapshot) => {
-    if (database !== undefined) {
-      if (snapshot.matches('Sending')) {
-        const nextCommandId = snapshot.context.queue[0]?.commandId
-        if (nextCommandId !== undefined && nextCommandId !== inFlightCommandId) {
-          if (inFlightCommandId !== null)
-            setSessionCommandOutcome(database, inFlightCommandId, 'accepted')
-          inFlightCommandId = nextCommandId
-        }
-      } else if (snapshot.matches('Ready') && inFlightCommandId !== null) {
-        setSessionCommandOutcome(database, inFlightCommandId, 'accepted')
-        inFlightCommandId = null
-      } else if (snapshot.matches('Failed') && inFlightCommandId !== null) {
-        setSessionCommandOutcome(database, inFlightCommandId, 'unknown')
-        inFlightCommandId = null
-      }
-    }
+    if (database !== undefined)
+      inFlightCommandId = trackCommandSnapshot(database, snapshot, inFlightCommandId)
     if (sessionId !== null || snapshot.context.argoId === null) return
     sessionId = snapshot.context.argoId
     journal?.bind(session, sessionId)
@@ -139,6 +164,7 @@ type StartReply = {
   resolve: (value: { sessionId: string }) => void
   reject: (error: Error) => void
 }
+export class SessionSubmitRejectedError extends Error {}
 type CompletedStart =
   | {
       commandId: string
@@ -155,6 +181,7 @@ type SupervisorContext = {
 }
 type LiveSessionSupervisorInput = {
   database: Database
+  registry: HarnessRegistry
   journal?: SessionEventJournal
   interactions?: SessionInteractionBroker
 }
@@ -191,6 +218,34 @@ type LiveSessionSupervisorEvent =
     }
   | {
       type: 'Shutdown'
+    }
+  | {
+      type: 'Interrupt'
+      sessionId: string
+      reply: {
+        resolve: () => void
+        reject: (error: Error) => void
+      }
+    }
+  | {
+      type: 'Answer permission'
+      sessionId: string
+      requestId: string
+      decision: PermissionDecision
+      reply: {
+        resolve: (accepted: boolean) => void
+        reject: (error: Error) => void
+      }
+    }
+  | {
+      type: 'Answer question'
+      sessionId: string
+      requestId: string
+      answers: QuestionAnswer[]
+      reply: {
+        resolve: (accepted: boolean) => void
+        reject: (error: Error) => void
+      }
     }
 
 function turnConfigurationIsAvailable(
@@ -259,6 +314,7 @@ function handledStart({
   event,
   self,
   observeReply,
+  commands,
 }: {
   context: SupervisorContext
   event: Extract<
@@ -271,8 +327,11 @@ function handledStart({
     system: LiveSessionSupervisorActor['system']
   }
   observeReply: (session: LiveSessionActor, reply: StartReply) => void
+  commands: SessionCommandStore
 }): boolean {
-  if (event.type === 'Send' && context.sessions[event.input.sessionId] !== undefined) return true
+  const persisted =
+    event.type === 'Send' ? sessionActor(self, context.sessions[event.input.sessionId]) : undefined
+  if (persisted !== undefined && !sessionIsUnavailable(persisted)) return true
   const pendingId = pendingIdOf(event)
   const catalog = self.system.get('catalog') as
     | ActorRefFrom<typeof harnessCatalogMachine>
@@ -280,20 +339,170 @@ function handledStart({
   if (
     !turnConfigurationIsAvailable(catalog, harnessOf(event.input), event.input.turnConfiguration)
   ) {
-    event.reply.reject(new Error('The selected Turn configuration is no longer available.'))
+    event.reply.reject(
+      new SessionSubmitRejectedError('The selected Turn configuration is no longer available.'),
+    )
     return true
   }
-  if (replyForCompletedStart(context.completed[pendingId], event.input.commandId, event.reply))
+  const staleClaudeSession =
+    event.type === 'Send' &&
+    harnessOf(event.input) === 'claude' &&
+    context.sessions[event.input.sessionId] !== undefined
+  if (
+    !staleClaudeSession &&
+    replyForCompletedStart(context.completed[pendingId], event.input.commandId, event.reply)
+  )
     return true
   const existing = sessionActor(self, context.starts[pendingId])
   if (existing === undefined) return false
-  if (existing.getSnapshot().context.first.commandId !== event.input.commandId)
-    event.reply.reject(new Error('A conflicting start is already active for this draft.'))
-  else observeReply(existing, event.reply)
+  if (existing.getSnapshot().context.first.commandId === event.input.commandId)
+    observeReply(existing, event.reply)
+  else if (event.type === 'Send') {
+    if (reserveActiveCommand(event, commands)) {
+      existing.send({
+        type: 'Send',
+        command: event.input,
+      })
+      event.reply.resolve({
+        sessionId: event.input.sessionId,
+      })
+    }
+  } else event.reply.reject(new Error('A conflicting start is already active for this draft.'))
   return true
 }
 
+function reserveOpeningCommand(
+  event: Extract<
+    LiveSessionSupervisorEvent,
+    {
+      type: 'Start' | 'Send'
+    }
+  >,
+  commands: SessionCommandStore,
+): boolean {
+  let outcome: ReturnType<SessionCommandStore['reserve']>
+  try {
+    outcome = commands.reserve(
+      event.input.commandId,
+      event.type === 'Send' ? event.input.sessionId : null,
+      commandIdentityOf(event),
+    )
+  } catch (error) {
+    event.reply.reject(error instanceof Error ? error : new Error(String(error)))
+    return false
+  }
+  if (outcome.reserved) return true
+  if (outcome.sessionId !== null)
+    event.reply.resolve({
+      sessionId: outcome.sessionId,
+    })
+  else event.reply.reject(new Error('Session send outcome is uncertain.'))
+  return false
+}
+
+function commandIdentityOf(
+  event: Extract<
+    LiveSessionSupervisorEvent,
+    {
+      type: 'Start' | 'Send'
+    }
+  >,
+) {
+  return {
+    intentId: event.type === 'Start' ? event.pendingId : event.intentId,
+    harness: harnessOf(event.input),
+    nativeId: event.type === 'Send' ? event.input.resume.nativeId : null,
+    cwd: event.type === 'Send' ? event.input.resume.cwd : event.input.cwd,
+  }
+}
+
+function reserveActiveCommand(
+  event: Extract<
+    LiveSessionSupervisorEvent,
+    {
+      type: 'Send'
+    }
+  >,
+  commands: SessionCommandStore,
+): boolean {
+  let outcome: ReturnType<SessionCommandStore['reserve']>
+  try {
+    outcome = commands.reserve(
+      event.input.commandId,
+      event.input.sessionId,
+      commandIdentityOf(event),
+    )
+  } catch (error) {
+    event.reply.reject(error instanceof Error ? error : new Error(String(error)))
+    return false
+  }
+  if (outcome.reserved) return true
+  event.reply.resolve({
+    sessionId: event.input.sessionId,
+  })
+  return false
+}
+
+function selectHarness({
+  input,
+  self,
+  dependencies,
+  commands,
+}: {
+  input: SessionLiveInput
+  self: {
+    system: LiveSessionSupervisorActor['system']
+  }
+  dependencies: LiveSessionSupervisorInput
+  commands: SessionCommandStore
+}) {
+  switch (harnessOf(input)) {
+    case 'claude': {
+      const open = dependencies.registry.claude.openLiveSession
+      if (open === undefined) throw new Error('Claude live channel is unavailable.')
+      return liveSessionChannelActor(open, dependencies.interactions, commands)
+    }
+    case 'codex': {
+      const codex = self.system.get('codex') as
+        | ActorRefFrom<typeof codexAppServerMachine>
+        | undefined
+      if (codex === undefined) throw new Error('Codex app-server actor is unavailable.')
+      return codexLiveSessionMachine.provide({
+        actors: codexLiveSessionActors(requestCodexAppServer(codex), (listener) =>
+          observeCodexAppServer(codex, listener),
+        ),
+      })
+    }
+  }
+}
+
+function sendValidationError(
+  actor: LiveSessionActor,
+  input: SessionSendInput,
+  catalog: ActorRefFrom<typeof harnessCatalogMachine> | undefined,
+): SessionSubmitRejectedError | null {
+  if (
+    !turnConfigurationIsAvailable(
+      catalog,
+      harnessOf(actor.getSnapshot().context.first),
+      input.turnConfiguration,
+    )
+  )
+    return new SessionSubmitRejectedError('The selected Turn configuration is no longer available.')
+  if (!acceptsTurnConfigurationChange(actor, input.turnConfiguration))
+    return new SessionSubmitRejectedError(
+      'Changing this Turn configuration requires starting a new Session.',
+    )
+  const snapshot = actor.getSnapshot()
+  if (sessionIsUnavailable(actor))
+    return new SessionSubmitRejectedError(
+      snapshot.context.failure ?? 'Session is not available for sends.',
+    )
+  return null
+}
+
 export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupervisorInput) {
+  const commands = createSessionCommandStore(dependencies.database)
   return xstateSetup({
     types: {
       context: {} as SupervisorContext,
@@ -301,15 +510,26 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
     },
     actors: {
       observeIdle: fromCallback<
-        { type: 'Stop' },
-        { actorId: string; session: LiveSessionActor },
-        Extract<LiveSessionSupervisorEvent, { type: 'Retire session' }>
+        {
+          type: 'Stop'
+        },
+        {
+          actorId: string
+          session: LiveSessionActor
+        },
+        Extract<
+          LiveSessionSupervisorEvent,
+          {
+            type: 'Retire session'
+          }
+        >
       >(({ input, sendBack }) => {
-        return watchIdleSession(
-          input.session,
-          5 * 60_000,
-          (sessionId) =>
-            sendBack({ type: 'Retire session', actorId: input.actorId, sessionId }),
+        return watchIdleSession(input.session, 5 * 60_000, (sessionId) =>
+          sendBack({
+            type: 'Retire session',
+            actorId: input.actorId,
+            sessionId,
+          }),
         )
       }),
       observeLiveEvents: fromCallback<
@@ -340,7 +560,9 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
         const subscription = input.session.subscribe((snapshot) => {
           if (snapshot.context.nativeId !== null && snapshot.context.nativeId !== nativeId) {
             nativeId = snapshot.context.nativeId
-            bindSessionCommand(dependencies.database, snapshot.context.first.commandId, { nativeId })
+            bindSessionCommand(dependencies.database, snapshot.context.first.commandId, {
+              nativeId,
+            })
           }
           if (settled) return
           if (snapshot.context.argoId !== null) {
@@ -412,53 +634,18 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
                   },
                 })
               },
+              commands,
             })
           )
             return context.starts
           const pendingId = pendingIdOf(event)
-          let harness: typeof claudeLiveSessionMachine | typeof codexLiveSessionMachine
-          const harnessName = harnessOf(event.input)
-          switch (harnessName) {
-            case 'claude':
-              harness = createClaudeLiveSessionMachine(dependencies.interactions)
-              break
-            case 'codex': {
-              const codex = self.system.get('codex') as
-                | ActorRefFrom<typeof codexAppServerMachine>
-                | undefined
-              if (codex === undefined) throw new Error('Codex app-server actor is unavailable.')
-              harness = codexLiveSessionMachine.provide({
-                actors: codexLiveSessionActors(
-                  requestCodexAppServer(codex),
-                  (listener) => observeCodexAppServer(codex, listener),
-                ),
-              })
-              break
-            }
-            default: {
-              const unknownHarness: never = harnessName
-              throw new Error(`Unsupported Harness: ${unknownHarness}`)
-            }
-          }
-          try {
-            const claim = claimSessionCommand(dependencies.database, {
-              commandId: event.input.commandId,
-              intentId: event.type === 'Start' ? event.pendingId : event.intentId,
-              sessionId: event.type === 'Send' ? event.input.sessionId : null,
-              harness: harnessName,
-              nativeId: event.type === 'Send' ? event.input.resume.nativeId : null,
-              cwd: event.type === 'Send' ? event.input.resume.cwd : event.input.cwd,
-            })
-            if (!claim.claimed) {
-              if (claim.sessionId === null)
-                event.reply.reject(new Error('The previous Session start is still unresolved.'))
-              else event.reply.resolve({ sessionId: claim.sessionId })
-              return context.starts
-            }
-          } catch (error) {
-            event.reply.reject(error instanceof Error ? error : new Error(String(error)))
-            return context.starts
-          }
+          if (!reserveOpeningCommand(event, commands)) return context.starts
+          const harness = selectHarness({
+            input: event.input,
+            self,
+            dependencies,
+            commands,
+          })
           const actorId = `live-session:${randomUUID()}`
           const actor = spawn(
             liveSessionMachine.provide({
@@ -492,12 +679,17 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
           })
           spawn('observeIdle', {
             id: `idle:${actorId}`,
-            input: { actorId, session: actor },
+            input: {
+              actorId,
+              session: actor,
+            },
           })
           const stop = recordLiveSessionEvents(actor, dependencies.journal, dependencies.database)
           spawn('observeLiveEvents', {
             id: `events:${actorId}`,
-            input: { stop },
+            input: {
+              stop,
+            },
           })
           spawn('replyWhenPersisted', {
             input: {
@@ -550,7 +742,6 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
       }),
       stopFailedSession: enqueueActions(({ context, event, self, enqueue }) => {
         if (event.type !== 'Session failed') return
-        setSessionCommandOutcome(dependencies.database, event.commandId, 'unknown')
         const actor = sessionActor(self, context.starts[event.pendingId])
         if (actor !== undefined) enqueue(stopChild(actor))
       }),
@@ -577,50 +768,26 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
         enqueue(stopChild(`idle:${event.actorId}`))
         enqueue(stopChild(`events:${event.actorId}`))
       }),
+      retireFailedSession: enqueueActions(({ context, event, self, enqueue }) => {
+        if (event.type !== 'Send') return
+        const actor = sessionActor(self, context.sessions[event.input.sessionId])
+        if (actor === undefined) return
+        if (sessionIsUnavailable(actor)) enqueue(stopChild(actor))
+      }),
       forwardSend: ({ context, event, self }) => {
         if (event.type !== 'Send') return
         const actor = sessionActor(self, context.sessions[event.input.sessionId])
         if (actor === undefined) return
-        if (
-          !turnConfigurationIsAvailable(
-            self.system.get('catalog') as ActorRefFrom<typeof harnessCatalogMachine> | undefined,
-            harnessOf(actor.getSnapshot().context.first),
-            event.input.turnConfiguration,
-          )
-        ) {
-          event.reply.reject(new Error('The selected Turn configuration is no longer available.'))
+        if (sessionIsUnavailable(actor)) return
+        const catalog = self.system.get('catalog') as
+          | ActorRefFrom<typeof harnessCatalogMachine>
+          | undefined
+        const error = sendValidationError(actor, event.input, catalog)
+        if (error !== null) {
+          event.reply.reject(error)
           return
         }
-        if (!acceptsTurnConfigurationChange(actor, event.input.turnConfiguration)) {
-          event.reply.reject(
-            new Error('Changing this Turn configuration requires starting a new Session.'),
-          )
-          return
-        }
-        const snapshot = actor.getSnapshot()
-        if (snapshot.matches('Failed') || snapshot.matches('Closed')) {
-          event.reply.reject(
-            new Error(snapshot.context.failure ?? 'Session is not available for sends.'),
-          )
-          return
-        }
-        try {
-          const claim = claimSessionCommand(dependencies.database, {
-            commandId: event.input.commandId,
-            intentId: event.intentId,
-            sessionId: event.input.sessionId,
-            harness: event.input.resume.harness,
-            nativeId: event.input.resume.nativeId,
-            cwd: event.input.resume.cwd,
-          })
-          if (!claim.claimed) {
-            event.reply.resolve({ sessionId: event.input.sessionId })
-            return
-          }
-        } catch (error) {
-          event.reply.reject(error instanceof Error ? error : new Error(String(error)))
-          return
-        }
+        if (!reserveActiveCommand(event, commands)) return
         actor.send({
           type: 'Send',
           command: event.input,
@@ -628,6 +795,47 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
         event.reply.resolve({
           sessionId: event.input.sessionId,
         })
+      },
+      forwardInterrupt: ({ context, event, self }) => {
+        if (event.type !== 'Interrupt') return
+        const actor = sessionActor(self, context.sessions[event.sessionId])
+        if (actor === undefined || harnessOf(actor.getSnapshot().context.first) !== 'claude') {
+          event.reply.reject(new Error('Claude Session is not active.'))
+          return
+        }
+        actor.send({
+          type: 'Interrupt',
+          reply: event.reply,
+        })
+      },
+      forwardAnswer: ({ context, event, self }) => {
+        if (event.type !== 'Answer permission' && event.type !== 'Answer question') return
+        const actor = sessionActor(self, context.sessions[event.sessionId])
+        if (actor === undefined || harnessOf(actor.getSnapshot().context.first) !== 'claude') {
+          event.reply.resolve(false)
+          return
+        }
+        if (event.type === 'Answer permission')
+          actor.send({
+            type: 'Answer permission',
+            requestId: event.requestId,
+            decision: event.decision,
+            reply: event.reply,
+          })
+        else
+          actor.send({
+            type: 'Answer question',
+            requestId: event.requestId,
+            answers: event.answers,
+            reply: event.reply,
+          })
+      },
+      bindCommand: ({ event }) => {
+        if (event.type === 'Session persisted') commands.bind(event.commandId, event.sessionId)
+      },
+      markUncertain: ({ event }) => {
+        if (event.type === 'Session failed' && event.nativeId !== null)
+          commands.record(event.commandId, 'uncertain')
       },
     },
   }).createMachine({
@@ -650,17 +858,31 @@ export function createLiveSessionSupervisorMachine(dependencies: LiveSessionSupe
       },
       Send: {
         actions: [
+          'retireFailedSession',
           'startOrQueue',
           'forwardSend',
         ],
       },
+      Interrupt: {
+        actions: 'forwardInterrupt',
+      },
+      'Answer permission': {
+        actions: 'forwardAnswer',
+      },
+      'Answer question': {
+        actions: 'forwardAnswer',
+      },
       'Session persisted': {
-        actions: 'rememberPersisted',
+        actions: [
+          'rememberPersisted',
+          'bindCommand',
+        ],
       },
       'Session failed': {
         actions: [
           'stopFailedSession',
           'rememberPersisted',
+          'markUncertain',
         ],
       },
       'Retire session': {

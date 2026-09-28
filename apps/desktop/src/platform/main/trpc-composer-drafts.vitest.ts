@@ -8,7 +8,10 @@ import { type Database, databaseMigrationsFolder, openDatabase } from '@/databas
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
 import { workspace } from '@/database/workspace/schema'
-import type { LiveSessionSupervisorActor } from '@/domains/sessions/main/live/live-session-supervisor-machine'
+import {
+  type LiveSessionSupervisorActor,
+  SessionSubmitRejectedError,
+} from '@/domains/sessions/main/live/live-session-supervisor-machine'
 import { type AppRouterDependencies, createAppRouter } from './trpc-router'
 
 const projectId = 'project-1'
@@ -81,6 +84,11 @@ function addSession(sessionId: string, overrides: Partial<typeof sessionTable.$i
 
 function sessionTarget(sessionId: string) {
   return { type: 'session' as const, sessionId }
+}
+
+function createSessionDraft(sessionId: string) {
+  addSession(sessionId)
+  return caller().composerDraftCreate({ target: sessionTarget(sessionId), content })
 }
 
 test('creates, reads, saves, and rejects a stale draft revision', async () => {
@@ -326,11 +334,7 @@ test('submits and removes an existing-Session Turn draft', async () => {
 })
 
 test('retains an existing-Session Turn draft when the supervisor rejects it', async () => {
-  addSession('session-1')
-  const created = await caller().composerDraftCreate({
-    target: { type: 'session', sessionId: 'session-1' },
-    content,
-  })
+  const created = await createSessionDraft('session-1')
   const api = caller((event) => {
     if (event.type !== 'Send') throw new Error(`Unexpected event: ${event.type}`)
     event.reply.reject(new Error('Turn failed.'))
@@ -343,6 +347,26 @@ test('retains an existing-Session Turn draft when the supervisor rejects it', as
       commandId: 'command-1',
     }),
   ).rejects.toThrow('Turn failed.')
+  await expect(api.composerDraftRead(created.target)).resolves.toEqual(created)
+})
+
+test('reports a definite supervisor rejection and retains the Turn draft', async () => {
+  const created = await createSessionDraft('session-1')
+  const api = caller((event) => {
+    if (event.type !== 'Send') throw new Error(`Unexpected event: ${event.type}`)
+    event.reply.reject(new SessionSubmitRejectedError('Turn configuration is unavailable.'))
+  })
+
+  await expect(
+    api.sessionSubmit({
+      draftId: created.id,
+      expectedRevision: created.revision,
+      commandId: 'command-1',
+    }),
+  ).rejects.toMatchObject({
+    code: 'PRECONDITION_FAILED',
+    message: 'Turn configuration is unavailable.',
+  })
   await expect(api.composerDraftRead(created.target)).resolves.toEqual(created)
 })
 
@@ -453,7 +477,7 @@ test('rejects a stale existing-Session submit before sending to the supervisor',
       expectedRevision: created.revision,
       commandId: 'stale-command',
     }),
-  ).rejects.toThrow('stale-draft')
+  ).rejects.toMatchObject({ code: 'PRECONDITION_FAILED', message: 'stale-draft' })
   expect(sends).toBe(0)
 })
 

@@ -24,7 +24,7 @@ function readableLabel(name: IconName) {
 }
 
 // The vocabulary: every semantic name this repo draws an icon by, so a reviewer picks one from
-// here instead of importing a lucide icon at the call site.
+// here instead of importing a Phosphor icon at the call site.
 export const Vocabulary: Story = {
   render: () => (
     <div className="grid grid-cols-4 gap-6">
@@ -54,7 +54,7 @@ export const Sizes: Story = {
     </div>
   ),
   play: async ({ canvasElement }) => {
-    const expectedSizes = [14, 14, 16]
+    const expectedSizes = [16, 16, 16]
     const icons = canvasElement.querySelectorAll('[data-slot="icon"]')
     await expect(icons).toHaveLength(expectedSizes.length)
     for (const [index, icon] of Array.from(icons).entries()) {

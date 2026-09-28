@@ -44,6 +44,7 @@ export function createAppMachine(registry: HarnessRegistry, dependencies: AppDep
       catalog: catalogMachine,
       sessions: createLiveSessionSupervisorMachine({
         database: dependencies.database,
+        registry,
         journal: dependencies.sessionEventJournal,
         interactions: dependencies.sessionInteractionBroker,
       }),

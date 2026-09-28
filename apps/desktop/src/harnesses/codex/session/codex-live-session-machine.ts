@@ -34,8 +34,15 @@ type TurnCommand = Pick<
 >
 
 type CodexLiveNotification =
-  | { type: 'Turn started'; threadId: string; turnId: string }
-  | { type: 'Thread idle'; threadId: string }
+  | {
+      type: 'Turn started'
+      threadId: string
+      turnId: string
+    }
+  | {
+      type: 'Thread idle'
+      threadId: string
+    }
   | {
       type: 'Turn completed'
       threadId: string
@@ -55,7 +62,12 @@ const turnNotificationSchema = z.object({
   threadId: z.string().min(1),
   turn: z.object({
     id: z.string().min(1),
-    status: z.enum(['inProgress', 'completed', 'failed', 'interrupted']),
+    status: z.enum([
+      'inProgress',
+      'completed',
+      'failed',
+      'interrupted',
+    ]),
   }),
 })
 const itemNotificationSchema = z.object({
@@ -68,11 +80,103 @@ const itemNotificationSchema = z.object({
     content: z.array(z.unknown()).optional(),
   }),
 })
-const userTextSchema = z.object({ type: z.literal('text'), text: z.string() })
+const userTextSchema = z.object({
+  type: z.literal('text'),
+  text: z.string(),
+})
 const threadStatusSchema = z.object({
   threadId: z.string().min(1),
-  status: z.object({ type: z.string().min(1) }),
+  status: z.object({
+    type: z.string().min(1),
+  }),
 })
+
+type DecodedNotification = CodexLiveNotification | 'invalid' | null
+
+function decodeThreadStatus(params: Record<string, unknown>): DecodedNotification {
+  const parsed = threadStatusSchema.safeParse(params)
+  if (!parsed.success) return 'invalid'
+  return parsed.data.status.type === 'idle'
+    ? {
+        type: 'Thread idle',
+        threadId: parsed.data.threadId,
+      }
+    : null
+}
+
+function decodeTurn(
+  method: 'turn/started' | 'turn/completed',
+  params: Record<string, unknown>,
+): DecodedNotification {
+  const parsed = turnNotificationSchema.safeParse(params)
+  if (!parsed.success) return 'invalid'
+  const { threadId, turn } = parsed.data
+  if (method === 'turn/started')
+    return turn.status === 'inProgress'
+      ? {
+          type: 'Turn started',
+          threadId,
+          turnId: turn.id,
+        }
+      : 'invalid'
+  if (turn.status === 'inProgress') return 'invalid'
+  return {
+    type: 'Turn completed',
+    threadId,
+    turnId: turn.id,
+    status: turn.status,
+  }
+}
+
+function decodeItem(params: Record<string, unknown>): DecodedNotification {
+  const parsed = itemNotificationSchema.safeParse(params)
+  if (!parsed.success) return 'invalid'
+  const { threadId, turnId, item } = parsed.data
+  if (item.type === 'agentMessage' && item.text !== undefined)
+    return {
+      type: 'Item completed',
+      threadId,
+      turnId,
+      itemId: item.id,
+      role: 'assistant',
+      text: item.text,
+    }
+  if (item.type !== 'userMessage') return null
+  const text = (item.content ?? [])
+    .flatMap((part) => {
+      const parsed = userTextSchema.safeParse(part)
+      return parsed.success
+        ? [
+            parsed.data.text,
+          ]
+        : []
+    })
+    .join('\n')
+  if (text === '') return null
+  return {
+    type: 'Item completed',
+    threadId,
+    turnId,
+    itemId: item.id,
+    role: 'user',
+    text,
+  }
+}
+
+function decodeNotification(message: WireMessage): DecodedNotification {
+  if (!('method' in message)) return null
+  switch (message.method) {
+    case 'thread/status/changed':
+      return decodeThreadStatus(message.params)
+    case 'turn/started':
+    case 'turn/completed':
+      return decodeTurn(message.method, message.params)
+    case 'item/completed':
+      return decodeItem(message.params)
+    default:
+      return null
+  }
+}
 
 export function observeCodexLiveNotifications(
   subscribe: (listener: (message: WireMessage) => void) => () => void,
@@ -80,63 +184,13 @@ export function observeCodexLiveNotifications(
   return fromCallback<CodexLiveNotification>(({ sendBack }) => {
     let invalid = 0
     return subscribe((message) => {
-      if (!('method' in message)) return
-      switch (message.method) {
-        case 'thread/status/changed': {
-          const parsed = threadStatusSchema.safeParse(message.params)
-          if (!parsed.success) break
-          if (parsed.data.status.type === 'idle')
-            sendBack({ type: 'Thread idle', threadId: parsed.data.threadId })
-          return
-        }
-        case 'turn/started':
-        case 'turn/completed': {
-          const parsed = turnNotificationSchema.safeParse(message.params)
-          if (!parsed.success) break
-          const { threadId, turn } = parsed.data
-          if (message.method === 'turn/started')
-            sendBack({ type: 'Turn started', threadId, turnId: turn.id })
-          else if (turn.status !== 'inProgress')
-            sendBack({ type: 'Turn completed', threadId, turnId: turn.id, status: turn.status })
-          return
-        }
-        case 'item/completed': {
-          const parsed = itemNotificationSchema.safeParse(message.params)
-          if (!parsed.success) break
-          const { threadId, turnId, item } = parsed.data
-          if (item.type === 'agentMessage' && item.text !== undefined)
-            sendBack({
-              type: 'Item completed',
-              threadId,
-              turnId,
-              itemId: item.id,
-              role: 'assistant',
-              text: item.text,
-            })
-          else if (item.type === 'userMessage') {
-            const text = (item.content ?? [])
-              .flatMap((part) => {
-                const parsed = userTextSchema.safeParse(part)
-                return parsed.success ? [parsed.data.text] : []
-              })
-              .join('\n')
-            if (text !== '')
-              sendBack({
-                type: 'Item completed',
-                threadId,
-                turnId,
-                itemId: item.id,
-                role: 'user',
-                text,
-              })
-          }
-          return
-        }
-        default:
-          return
-      }
-      invalid += 1
-      console.warn(`Invalid Codex live notification (${invalid}): ${message.method}`)
+      const decoded = decodeNotification(message)
+      if (decoded === 'invalid') {
+        invalid += 1
+        console.warn(
+          `Invalid Codex live notification (${invalid}): ${'method' in message ? message.method : 'response'}`,
+        )
+      } else if (decoded !== null) sendBack(decoded)
     })
   })
 }
@@ -151,6 +205,12 @@ const turnStartResultSchema = z.object({
     id: z.string().min(1),
   }),
 })
+
+function eventTurnId(event: { type: string }): string | null {
+  if ('turnId' in event && typeof event.turnId === 'string') return event.turnId
+  if ('output' in event && typeof event.output === 'string') return event.output
+  return null
+}
 
 export const codexLiveSessionActors = (
   request: CodexRequest,
@@ -217,7 +277,10 @@ export const codexLiveSessionMachine = xstateSetup({
       activeCommandId: string | null
       completedTurnId: string | null
       feedSerial: number
-      lastFeed: { serial: number; body: SessionLiveEventBody } | null
+      lastFeed: {
+        serial: number
+        body: SessionLiveEventBody
+      } | null
     },
     events: {} as
       | CodexLiveNotification
@@ -272,34 +335,25 @@ export const codexLiveSessionMachine = xstateSetup({
   actions: {
     rememberTurn: assign({
       activeTurnId: ({ context, event }) => {
-        const turnId =
-          event.type === 'Turn started'
-            ? event.turnId
-            : 'output' in event && typeof event.output === 'string'
-              ? event.output
-              : null
-        return turnId === context.completedTurnId ? null : turnId ?? context.activeTurnId
+        const turnId = eventTurnId(event)
+        return turnId === context.completedTurnId ? null : (turnId ?? context.activeTurnId)
       },
       activeCommandId: ({ context }) => context.pending?.commandId ?? context.activeCommandId,
       feedSerial: ({ context, event }) => {
-        const turnId =
-          event.type === 'Turn started'
-            ? event.turnId
-            : 'output' in event && typeof event.output === 'string'
-              ? event.output
-              : null
-        return turnId !== null && turnId !== context.activeTurnId && turnId !== context.completedTurnId
+        const turnId = eventTurnId(event)
+        return turnId !== null &&
+          turnId !== context.activeTurnId &&
+          turnId !== context.completedTurnId
           ? context.feedSerial + 1
           : context.feedSerial
       },
       lastFeed: ({ context, event }) => {
-        const turnId =
-          event.type === 'Turn started'
-            ? event.turnId
-            : 'output' in event && typeof event.output === 'string'
-              ? event.output
-              : null
-        if (turnId === null || turnId === context.activeTurnId || turnId === context.completedTurnId)
+        const turnId = eventTurnId(event)
+        if (
+          turnId === null ||
+          turnId === context.activeTurnId ||
+          turnId === context.completedTurnId
+        )
           return context.lastFeed
         return {
           serial: context.feedSerial + 1,
@@ -431,16 +485,16 @@ export const codexLiveSessionMachine = xstateSetup({
     feedSerial: 0,
     lastFeed: null,
   }),
-  invoke: { id: 'notifications', src: 'notifications' },
+  invoke: {
+    id: 'notifications',
+    src: 'notifications',
+  },
   on: {
     'Thread idle': {
       guard: ({ context, event }) =>
         event.threadId === context.nativeId &&
         context.activeTurnId === null &&
-        !(
-          context.lastFeed?.body.type === 'status' &&
-          context.lastFeed.body.status === 'idle'
-        ),
+        !(context.lastFeed?.body.type === 'status' && context.lastFeed.body.status === 'idle'),
       actions: 'rememberThreadIdle',
     },
     'Turn started': {
@@ -457,8 +511,7 @@ export const codexLiveSessionMachine = xstateSetup({
     },
     'Item completed': {
       guard: ({ context, event }) =>
-        event.threadId === context.nativeId &&
-        event.turnId === context.activeTurnId,
+        event.threadId === context.nativeId && event.turnId === context.activeTurnId,
       actions: 'rememberCompletedItem',
     },
   },
@@ -490,7 +543,10 @@ export const codexLiveSessionMachine = xstateSetup({
         }),
         onDone: {
           target: 'Ready',
-          actions: ['rememberTurn', 'clearPending'],
+          actions: [
+            'rememberTurn',
+            'clearPending',
+          ],
         },
         onError: {
           target: 'Failed',
@@ -520,7 +576,10 @@ export const codexLiveSessionMachine = xstateSetup({
         }),
         onDone: {
           target: 'Ready',
-          actions: ['rememberTurn', 'clearPending'],
+          actions: [
+            'rememberTurn',
+            'clearPending',
+          ],
         },
         onError: {
           target: 'Failed',

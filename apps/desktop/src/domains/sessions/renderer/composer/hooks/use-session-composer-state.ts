@@ -38,6 +38,9 @@ export function useSessionComposerState({
   turnConfiguration: TurnConfigurationControlProps | null
 }) {
   const editorRef = useRef<LexicalEditor>(null)
+  const editing = useComposerEditing().editing
+  const latestEditing = useRef(editing)
+  latestEditing.current = editing
   const { clearDraft, draft, restoreDraft } = useComposerDraft(editorRef)
   const { attachments, markError, clear } = useComposerAttachments()
   const send = useSend({
@@ -50,6 +53,8 @@ export function useSessionComposerState({
     onSend,
     restoreDraft,
     turnConfigurationValue: turnConfiguration?.value,
+    editing,
+    latestEditing,
   })
   return { editorRef, send }
 }

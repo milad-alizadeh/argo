@@ -143,3 +143,15 @@ The Feed reads the selected descriptor with the root native Session ID, optional
 and working directory. It keeps the Argo Session UUID and selected chain ID in the response.
 A vendor read failure reports an error and does not confirm an empty Feed. This amends the
 machine-per-Harness boundary above as the migration replaces vendor machines with async clients.
+
+## Amendment: Claude live channel (#2798)
+
+The Claude registration opens an async Session channel. The channel owns the Agent SDK query and
+emits validated identity, command, Turn, control, Feed, failure, and closure events. It contains no XState.
+The Argo live Session machine owns the channel lifetime. The supervisor orders commands and keeps
+active Turns alive when the renderer changes Sessions or reloads.
+
+Argo records small command outcomes before it calls Claude. A duplicate command ID does not start
+another Turn. If Argo loses the process before it can establish the outcome, the command stays
+uncertain. Argo reads vendor history and does not send that command again automatically. This
+replaces the Claude machine boundary described above.

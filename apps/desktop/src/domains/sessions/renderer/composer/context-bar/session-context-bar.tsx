@@ -125,11 +125,11 @@ export function SessionContextBar({
           usedTokens={usedTokens}
         />
       </div>
-      <ContextMeter contextAlert={contextAlert} percentage={percentage} />
-      <ContextSummary percentage={percentage} usedTokens={usedTokens} />
       <SessionContextActions
         {...{ canCompact, canHandoff, isCompacting, isHandingOff, onCompact, onHandoff }}
       />
+      <ContextMeter contextAlert={contextAlert} percentage={percentage} />
+      <ContextSummary percentage={percentage} usedTokens={usedTokens} />
     </div>
   )
 }

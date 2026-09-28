@@ -62,6 +62,7 @@ function expectAlignedCompactMetadata(article: HTMLElement) {
 
 export const Default: Story = {
   args: { ticket: wayfinder },
+  parameters: { detailWidth: '40rem' },
   play: async ({ args, canvasElement }) => {
     const article = within(canvasElement).getByRole('article', { name: 'Ticket #607' })
     await userEvent.click(within(canvasElement).getByRole('link', { name: 'Back to Tickets' }))
@@ -100,7 +101,7 @@ export const Default: Story = {
 // A compact workspace can still fit the core metadata on one row. Every pill keeps one centreline.
 export const CompactMetadataAlignment: Story = {
   args: { ticket: wayfinder },
-  parameters: { detailWidth: '70rem' },
+  parameters: { detailWidth: '40rem' },
   play: async ({ canvasElement }) => {
     const article = within(canvasElement).getByRole('article', { name: 'Ticket #607' })
     expectAlignedCompactMetadata(article)
@@ -126,6 +127,7 @@ export const ChangeState: Story = {
 // Linear's own workflow status and priority show as properties, and its key names the link.
 export const Linear: Story = {
   args: { ticket: engine, provider: 'linear', listed: new Set(), statuses: STATUSES.linear },
+  parameters: { detailWidth: '40rem' },
   play: async ({ canvasElement }) => {
     const article = within(canvasElement).getByRole('article', { name: 'Ticket ENG-12' })
     const properties = within(article).getByText('Status').closest('dl')

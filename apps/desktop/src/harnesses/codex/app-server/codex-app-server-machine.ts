@@ -2,8 +2,8 @@ import { type ActorRefFrom, assertEvent, fromCallback, sendTo, setup } from 'xst
 import {
   type CodexAppServerClient,
   type CodexRequest,
-  type WireMessage,
   createCodexAppServerClient,
+  type WireMessage,
 } from './codex-app-server-client'
 
 type CallEvent = {

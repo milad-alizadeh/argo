@@ -1,10 +1,18 @@
-import { eq, inArray, or } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import type { Database } from '@/database/database'
-import { sessionCommandTable } from '@/database/session-command/schema'
+import { sessionCommandTable } from '@/database/session/command-schema'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
+import { type CommandStatus, createSessionCommandStore } from './session-command-store'
 
 type CommandOutcome = 'queued' | 'accepted' | 'observed' | 'completed' | 'unknown'
+const outcomeStatus: Record<CommandOutcome, CommandStatus> = {
+  queued: 'queued',
+  accepted: 'accepted',
+  observed: 'running',
+  completed: 'completed',
+  unknown: 'uncertain',
+}
 type CommandIdentity = {
   commandId: string
   intentId: string
@@ -15,25 +23,13 @@ type CommandIdentity = {
 }
 
 export function claimSessionCommand(database: Database, input: CommandIdentity) {
-  const prior = database
-    .select()
-    .from(sessionCommandTable)
-    .where(
-      or(
-        eq(sessionCommandTable.commandId, input.commandId),
-        eq(sessionCommandTable.intentId, input.intentId),
-      ),
-    )
-    .get()
-  if (prior !== undefined) {
-    if (prior.commandId !== input.commandId || prior.intentId !== input.intentId)
-      throw new Error('A different command already used this draft or command ID.')
-    if (prior.outcome === 'unknown')
-      throw new Error('The previous send is uncertain. Read vendor history before retrying.')
-    return { claimed: false, sessionId: prior.sessionId }
-  }
-  database.insert(sessionCommandTable).values({ ...input, outcome: 'queued' }).run()
-  return { claimed: true, sessionId: input.sessionId }
+  const result = createSessionCommandStore(database).reserve(input.commandId, input.sessionId, {
+    intentId: input.intentId,
+    harness: input.harness,
+    nativeId: input.nativeId,
+    cwd: input.cwd,
+  })
+  return { claimed: result.reserved, sessionId: result.sessionId }
 }
 
 export function bindSessionCommand(
@@ -41,11 +37,10 @@ export function bindSessionCommand(
   commandId: string,
   identity: { sessionId?: string; nativeId?: string; turnId?: string },
 ): void {
-  database
-    .update(sessionCommandTable)
-    .set({ ...identity, updatedAt: Date.now() })
-    .where(eq(sessionCommandTable.commandId, commandId))
-    .run()
+  const store = createSessionCommandStore(database)
+  if (identity.sessionId !== undefined) store.bind(commandId, identity.sessionId)
+  if (identity.nativeId !== undefined || identity.turnId !== undefined)
+    store.bindIdentity(commandId, identity)
 }
 
 export function setSessionCommandOutcome(
@@ -53,30 +48,11 @@ export function setSessionCommandOutcome(
   commandId: string,
   outcome: CommandOutcome,
 ): void {
-  const prior = database
-    .select({ outcome: sessionCommandTable.outcome })
-    .from(sessionCommandTable)
-    .where(eq(sessionCommandTable.commandId, commandId))
-    .get()
-  if (prior === undefined || prior.outcome === 'completed') return
-  if (
-    (prior.outcome === 'accepted' && outcome === 'queued') ||
-    (prior.outcome === 'observed' && (outcome === 'queued' || outcome === 'accepted'))
-  )
-    return
-  database
-    .update(sessionCommandTable)
-    .set({ outcome, updatedAt: Date.now() })
-    .where(eq(sessionCommandTable.commandId, commandId))
-    .run()
+  createSessionCommandStore(database).record(commandId, outcomeStatus[outcome])
 }
 
 export function markUnresolvedSessionCommandsUnknown(database: Database): void {
-  database
-    .update(sessionCommandTable)
-    .set({ outcome: 'unknown', updatedAt: Date.now() })
-    .where(inArray(sessionCommandTable.outcome, ['queued', 'accepted', 'observed']))
-    .run()
+  createSessionCommandStore(database).markUnresolvedUncertain()
 }
 
 export async function reconcileUnknownSessionCommands(
@@ -90,13 +66,13 @@ export async function reconcileUnknownSessionCommands(
   const uncertain = database
     .select()
     .from(sessionCommandTable)
-    .where(eq(sessionCommandTable.outcome, 'unknown'))
+    .where(eq(sessionCommandTable.status, 'uncertain'))
     .all()
   let invalid = 0
   for (const command of uncertain) {
     if (command.nativeId === null) continue
     const harness = harnessSchema.safeParse(command.harness)
-    if (!harness.success) {
+    if (!harness.success || command.cwd === null) {
       invalid += 1
       continue
     }

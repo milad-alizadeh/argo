@@ -26,7 +26,7 @@ export const Navigation: Story = {
     const canvas = within(canvasElement)
     const sessions = canvas.getByRole('button', { name: 'Sessions' })
 
-    await expect(sessions.querySelector('svg.lucide-messages-square')).not.toBeNull()
+    await expect(sessions.querySelector('[data-icon="messages-square"]')).not.toBeNull()
 
     await userEvent.click(canvas.getByRole('button', { name: 'Tickets' }))
     await expect(canvas.getByRole('button', { name: 'Tickets' })).toHaveAttribute(

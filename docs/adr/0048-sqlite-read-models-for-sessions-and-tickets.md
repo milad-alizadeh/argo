@@ -2,17 +2,27 @@
 
 Status: accepted · 2026-09-24 · Session discovery amended 2026-09-27
 
-## Amendment · command outcomes · 2026-09-28
+## Amendment · Claude live Session ownership · 2026-09-28
 
-The earlier decision excluded a launch intent table. That rule changes for small command
-outcomes. The `session_command` table stores command IDs, draft revision identities, Session and
-Harness identities and a vendor turn ID when known, and an outcome. It stores no prompt, live event payload, or vendor
+The live Session supervisor keeps Claude commands in order and records each command ID before it
+opens or sends through the Claude channel. A small SQLite table keeps the command outcome and its
+Argo Session ID when that ID becomes available. This table does not store Feed content or vendor
+history. The unique Harness and native Session ID pair still identifies one Session row.
+
+The Claude registration supplies the async channel. The generic Argo live Session machine owns its
+lifetime. The Claude Harness machine name in **Module ownership** is superseded. Codex keeps its
+existing live machine until its channel migration.
+
+## Amendment · command recovery · 2026-09-28
+
+The `session_command` table also stores a draft revision identity, Harness and native Session
+identities, and a vendor turn ID when known. It stores no prompt, live event payload, or vendor
 history. The Session table still owns durable Session identity.
 
-Argo records the command before vendor delivery. On restart, it marks unfinished outcomes unknown
-and reads vendor history for commands with a native Session ID. A matching vendor item or turn can change
-an unknown outcome to observed. An unknown command never causes an automatic resend. A command
-without a known native Session ID stays unknown until other vendor evidence arrives.
+Argo records the command before vendor delivery. On restart, it marks unfinished outcomes
+uncertain and reads vendor history for commands with a native Session ID. A matching vendor item
+or turn can change an uncertain outcome to running. Argo never resends an uncertain command.
+A command without a known native Session ID stays uncertain until vendor evidence arrives.
 
 ## Amendment · stateless Harness discovery · 2026-09-27
 

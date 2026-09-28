@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { isTRPCClientError } from '@trpc/client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { attachmentKindOf } from '@/domains/sessions/api/attachments'
+import type { AppRouter } from '@/platform/main/trpc-router'
 import { type RouterInputs, type RouterOutputs, trpc } from '@/platform/renderer/trpc-client'
 import { invalidateSessionList } from '../../session-queries'
 import type { ComposerEditing } from '../editing/composer-editing'
@@ -304,6 +306,23 @@ function useComposerDraftLoad(input: ComposerDraftLoadInput) {
   }
 }
 
+async function saveOrCreateDraft(input: {
+  current: PersistedDraft | undefined
+  target: DraftTarget
+  content: DraftContent
+  create: (value: RouterInputs['composerDraftCreate']) => Promise<DraftValue>
+  save: (value: RouterInputs['composerDraftSave']) => Promise<DraftValue>
+}): Promise<DraftValue> {
+  const { current, target, content, create, save } = input
+  if (current === undefined) return create({ target, content })
+  try {
+    return await save({ id: current.id, expectedRevision: current.revision, target, content })
+  } catch (error) {
+    if (!isTRPCClientError<AppRouter>(error) || error.data?.code !== 'NOT_FOUND') throw error
+    return create({ target, content })
+  }
+}
+
 function usePersistComposerDraft(input: {
   target: DraftTarget | null
   owner: string | null
@@ -323,10 +342,7 @@ function usePersistComposerDraft(input: {
         const contentFingerprint = fingerprint(target, content)
         const current = persisted.current.get(owner)
         if (current?.fingerprint === contentFingerprint) return current
-        const draft =
-          current !== undefined
-            ? await save({ id: current.id, expectedRevision: current.revision, target, content })
-            : await create({ target, content })
+        const draft = await saveOrCreateDraft({ current, target, content, create, save })
         const next = {
           id: draft.id,
           revision: draft.revision,
@@ -456,7 +472,7 @@ export function useDurableComposerDraft(input: DurableComposerDraftInput) {
         onEditingChange: persistence.onEditingChange,
         submit: persistence.submit,
         saveFailed: persistence.saveFailed,
-        sendFailed: persistence.sendFailed,
+        sendFailure: persistence.sendFailure,
       }
 }
 
@@ -473,7 +489,10 @@ function useComposerDraftPersistence(input: {
   const persisted = useRef(new Map<string, PersistedDraft>())
   const initialFingerprints = useRef(new Map<string, string>())
   const [saveFailureOwner, setSaveFailureOwner] = useState<string | null>(null)
-  const [sendFailureOwner, setSendFailureOwner] = useState<string | null>(null)
+  const [sendFailure, setSendFailure] = useState<{
+    owner: string
+    outcome: 'rejected' | 'uncertain'
+  } | null>(null)
   const latestEditing = useRef<ComposerEditing | null>(null)
   const saveChain = useRef<Promise<void>>(Promise.resolve())
   const saveTimer = useRef(new Map<string, number>())
@@ -508,7 +527,7 @@ function useComposerDraftPersistence(input: {
     submit: submitMutation,
     owner,
     setSaveFailureOwner,
-    setSendFailureOwner,
+    setSendFailure,
     suppressNextEmptyAutosave,
     clearAcceptedDraft: clearComposerDraftCache(target, queryClient),
   })
@@ -519,7 +538,7 @@ function useComposerDraftPersistence(input: {
     onEditingChange,
     submit,
     saveFailed: saveFailureOwner === owner,
-    sendFailed: sendFailureOwner === owner,
+    sendFailure: sendFailure?.owner === owner ? sendFailure.outcome : null,
   }
 }
 
@@ -527,8 +546,13 @@ function clearComposerDraftCache(
   target: DraftTarget | null,
   queryClient: ReturnType<typeof useQueryClient>,
 ) {
-  return () => {
-    if (target !== null) queryClient.setQueryData(trpc.composerDraftRead.queryKey(target), null)
+  return (saved: PersistedDraft) => {
+    if (target === null) return
+    queryClient.setQueryData<DraftValue | null>(
+      trpc.composerDraftRead.queryKey(target),
+      (current) =>
+        current?.id === saved.id && current.revision === saved.revision ? null : current,
+    )
   }
 }
 

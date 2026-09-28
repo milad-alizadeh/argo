@@ -12,7 +12,10 @@ import {
   draftTurnConfigurationSchema,
   readComposerDraft,
 } from '../database/composer-draft'
-import type { LiveSessionSupervisorActor } from '../live/live-session-supervisor-machine'
+import {
+  type LiveSessionSupervisorActor,
+  SessionSubmitRejectedError,
+} from '../live/live-session-supervisor-machine'
 import type { SessionRenameContext } from './session-rename'
 
 const t = initTRPC.create()
@@ -140,7 +143,7 @@ function sendToSupervisor(
   const draft = readComposerDraft(context.database, input.draftId)
   if (draft === null) throw new TRPCError({ code: 'NOT_FOUND', message: 'missing-draft' })
   if (draft.revision !== input.expectedRevision) {
-    throw new TRPCError({ code: 'CONFLICT', message: 'stale-draft' })
+    throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'stale-draft' })
   }
   const command = commandForDraft(draft, input)
   return new Promise((resolve, reject) => {
@@ -156,7 +159,11 @@ export function sessionSubmitProcedure(context: SessionProcedureContext) {
     .input(inputSchema)
     .output(outputSchema)
     .mutation(async ({ input }) => {
-      const accepted = await sendToSupervisor(context, input)
+      const accepted = await sendToSupervisor(context, input).catch((error: unknown) => {
+        if (error instanceof SessionSubmitRejectedError)
+          throw new TRPCError({ code: 'PRECONDITION_FAILED', message: error.message })
+        throw error
+      })
       const deleted = deleteComposerDraft(context.database, input.draftId, input.expectedRevision)
       if (!deleted && readComposerDraft(context.database, input.draftId) !== null) {
         throw new TRPCError({ code: 'CONFLICT', message: 'stale-draft' })

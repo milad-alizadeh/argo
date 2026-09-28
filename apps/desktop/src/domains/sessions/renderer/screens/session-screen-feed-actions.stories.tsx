@@ -144,8 +144,8 @@ export const FeedSubagentOpensItsInspector: Story = {
         `feed-${SUBAGENT_ID}-one`,
       ),
     )
-    await expect(
-      await canvas.findByText('Child transcript loaded from the selected Subagent.'),
-    ).toBeVisible()
+    await waitFor(() =>
+      expect(canvas.getByText('Child transcript loaded from the selected Subagent.')).toBeVisible(),
+    )
   },
 }

@@ -680,7 +680,12 @@ export const RefreshProgressWhileFetching: Story = {
     await expect(canvas.getAllByRole('progressbar')).toHaveLength(1)
     await expect(progress).not.toHaveAttribute('aria-valuenow')
     await expect(canvas.getByRole('status')).toHaveTextContent('Syncing Sessions…')
-    await expect(canvas.getByRole('button', { name: 'Refresh Sessions' })).toBeDisabled()
+    const filter = canvas.getByRole('button', { name: 'Filter Sessions' })
+    await userEvent.click(filter)
+    await waitFor(() => expect(filter).toHaveAttribute('aria-expanded', 'true'))
+    await expect(
+      within(document.body).getByRole('menuitem', { name: 'Refresh Sessions' }),
+    ).toHaveAttribute('aria-disabled', 'true')
   },
 }
 
@@ -691,7 +696,12 @@ export const RefreshProgressWhileSaving: Story = {
     const progress = await canvas.findByRole('progressbar', { name: 'Session refresh progress' })
     await expect(progress).toHaveAttribute('aria-valuenow', '50')
     await expect(canvas.getByRole('status')).toHaveTextContent('Syncing 1 out of 2 Sessions')
-    await expect(canvas.getByRole('button', { name: 'Refresh Sessions' })).toBeDisabled()
+    const filter = canvas.getByRole('button', { name: 'Filter Sessions' })
+    await userEvent.click(filter)
+    await waitFor(() => expect(filter).toHaveAttribute('aria-expanded', 'true'))
+    await expect(
+      within(document.body).getByRole('menuitem', { name: 'Refresh Sessions' }),
+    ).toHaveAttribute('aria-disabled', 'true')
   },
 }
 

@@ -336,7 +336,7 @@ export function parseStorybookOutput(rawOutput: string, pathPrefix = ''): Storyb
 
   for (const rawLine of stripAnsi(rawOutput).split(/\r?\n/)) {
     const line = rawLine.replace(TURBO_PREFIX, '')
-    const file = line.match(/[❯>]\s+\|(storybook-(?:dark|light)) \([^)]*\)\| (.+?) \(/)
+    const file = line.match(/[❯>]\s+\|(storybook) \([^)]*\)\| (.+?) \(/)
     if (file?.[1] && file[2]) {
       current = {
         project: file[1],

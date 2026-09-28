@@ -5,10 +5,10 @@ import { fileURLToPath } from 'node:url'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { type Database, openDatabase } from '@/database/database'
-import { sessionCommandTable } from '@/database/session-command/schema'
-import { scanRollouts } from '../../../../../mocks/cli/codex/mock-codex-rollout-history'
+import { sessionCommandTable } from '@/database/session/command-schema'
 import type { CodexRequest } from '@/harnesses/codex/app-server/codex-app-server-client'
 import { hasCodexSessionTurn } from '@/harnesses/codex/session/codex-session-history'
+import { scanRollouts } from '../../../../../mocks/cli/codex/mock-codex-rollout-history'
 import {
   bindSessionCommand,
   claimSessionCommand,
@@ -49,14 +49,14 @@ function storedOutcome() {
 
 test('records only command control facts and prevents a duplicate vendor call', () => {
   expect(claimSessionCommand(database, command)).toEqual({ claimed: true, sessionId: null })
-  bindSessionCommand(database, command.commandId, { nativeId: 'native-1', sessionId: 'session-1' })
+  bindSessionCommand(database, command.commandId, { nativeId: 'native-1' })
   setSessionCommandOutcome(database, command.commandId, 'observed')
   setSessionCommandOutcome(database, command.commandId, 'completed')
   expect(claimSessionCommand(database, command)).toEqual({
     claimed: false,
-    sessionId: 'session-1',
+    sessionId: null,
   })
-  expect(storedOutcome()).toMatchObject({ outcome: 'completed', nativeId: 'native-1' })
+  expect(storedOutcome()).toMatchObject({ status: 'completed', nativeId: 'native-1' })
   expect(database.$client.prepare('SELECT COUNT(*) AS count FROM session_command').get()).toEqual({
     count: 1,
   })
@@ -77,23 +77,30 @@ test('restart checks a recorded Codex turn before resolving an uncertain send', 
   if (thread === undefined || turnId === undefined) throw new Error('Recorded Codex turn missing.')
   const codexCommand = { ...command, harness: 'codex' as const, nativeId: thread.id }
   claimSessionCommand(database, codexCommand)
-  bindSessionCommand(database, command.commandId, { sessionId: 'session-1', turnId })
+  bindSessionCommand(database, command.commandId, { turnId })
   setSessionCommandOutcome(database, command.commandId, 'observed')
   markUnresolvedSessionCommandsUnknown(database)
-  expect(storedOutcome()?.outcome).toBe('unknown')
+  expect(storedOutcome()?.status).toBe('uncertain')
   expect(() => claimSessionCommand(database, codexCommand)).toThrow(/uncertain/)
   const reads: string[] = []
-  await reconcileUnknownSessionCommands(database, async (harness, target) => {
-    reads.push(`${harness}:${target.nativeId}`)
-    return []
-  }, async (harness, nativeId, lookupTurnId) => {
-    expect(harness).toBe('codex')
-    const request = (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
-      parse({ thread })) as CodexRequest
-    return hasCodexSessionTurn(request, nativeId, lookupTurnId)
-  })
+  await reconcileUnknownSessionCommands(
+    database,
+    async (harness, target) => {
+      reads.push(`${harness}:${target.nativeId}`)
+      return []
+    },
+    async (harness, nativeId, lookupTurnId) => {
+      expect(harness).toBe('codex')
+      const request = (async (
+        _method: string,
+        _params: unknown,
+        parse: (value: unknown) => unknown,
+      ) => parse({ thread })) as CodexRequest
+      return hasCodexSessionTurn(request, nativeId, lookupTurnId)
+    },
+  )
   expect(reads).toEqual(['codex:rollout-codexChild'])
-  expect(storedOutcome()?.outcome).toBe('observed')
+  expect(storedOutcome()?.status).toBe('running')
   expect(claimSessionCommand(database, codexCommand).claimed).toBe(false)
 })
 
@@ -101,10 +108,14 @@ test('an unresolved start without a native ID cannot be sent with another comman
   claimSessionCommand(database, command)
   markUnresolvedSessionCommandsUnknown(database)
   let reads = 0
-  await reconcileUnknownSessionCommands(database, async () => {
-    reads += 1
-    return []
-  }, async () => false)
+  await reconcileUnknownSessionCommands(
+    database,
+    async () => {
+      reads += 1
+      return []
+    },
+    async () => false,
+  )
   expect(reads).toBe(0)
   expect(() =>
     claimSessionCommand(database, {
@@ -112,7 +123,7 @@ test('an unresolved start without a native ID cannot be sent with another comman
       commandId: '00000000-0000-4000-8000-000000000002',
     }),
   ).toThrow(/different command/)
-  expect(storedOutcome()?.outcome).toBe('unknown')
+  expect(storedOutcome()?.status).toBe('uncertain')
 })
 
 test('an unavailable vendor read preserves the unknown outcome', async () => {
@@ -121,11 +132,15 @@ test('an unavailable vendor read preserves the unknown outcome', async () => {
   const originalWarn = console.warn
   console.warn = () => {}
   try {
-    await reconcileUnknownSessionCommands(database, async () => {
-      throw new Error('offline')
-    }, async () => false)
+    await reconcileUnknownSessionCommands(
+      database,
+      async () => {
+        throw new Error('offline')
+      },
+      async () => false,
+    )
   } finally {
     console.warn = originalWarn
   }
-  expect(storedOutcome()?.outcome).toBe('unknown')
+  expect(storedOutcome()?.status).toBe('uncertain')
 })

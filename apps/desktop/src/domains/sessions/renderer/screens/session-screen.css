@@ -1,4 +1,24 @@
+.session-screen__feed {
+  --size-session-feed-top-fade: 40px;
+  position: relative;
+}
+
+.session-screen__feed::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: var(--size-session-feed-top-fade);
+  z-index: 10;
+  pointer-events: none;
+  background: linear-gradient(to bottom, var(--color-session-surface), transparent);
+}
+
 .session-screen__composer {
+  --gradient-session-composer-fade: linear-gradient(
+    to bottom,
+    transparent,
+    var(--color-session-surface) var(--session-composer-fade-length, 100%)
+  );
   --session-screen-composer-limit: min(var(--size-session-composer-overlay), 50%);
   max-height: var(--session-screen-composer-limit);
 }
@@ -10,5 +30,29 @@
 }
 
 .session-screen__feed .feed__viewport {
-  scroll-padding-bottom: var(--spacing-session-feed-composer-inset);
+  scroll-padding-bottom: calc(
+    var(--session-composer-height, 0px) +
+    var(--spacing-session-feed-composer-inset)
+  );
+}
+
+.session-screen__feed:has(+ .session-screen__composer) .feed__viewport {
+  padding-bottom: calc(
+    var(--session-composer-height, 0px) +
+    var(--spacing-session-feed-composer-inset)
+  );
+}
+
+.session-screen__composer
+  :is([data-component="ComposerCard"], [data-component="SessionContextBar"]) {
+  background-color: var(--color-session-composer);
+  backdrop-filter: blur(var(--blur-session-composer));
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .session-screen__composer
+    :is([data-component="ComposerCard"], [data-component="SessionContextBar"]) {
+    background-color: var(--card);
+    backdrop-filter: none;
+  }
 }

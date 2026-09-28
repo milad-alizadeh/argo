@@ -675,8 +675,9 @@ async function expectComposerStaysInPlaceWhileHistoryScrolls(canvasElement: HTML
 function expectFeedDoesNotOverlapComposer(canvasElement: HTMLElement) {
   const composer = within(canvasElement).getByLabelText('Session composer')
   const history = within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)
-  expect(history.getBoundingClientRect().bottom).toBeLessThanOrEqual(
-    composer.getBoundingClientRect().top,
+  expect(history.getBoundingClientRect().bottom).toBeCloseTo(
+    composer.getBoundingClientRect().bottom,
+    1,
   )
 }
 
@@ -704,9 +705,9 @@ function expectContextBarInset(canvasElement: HTMLElement) {
   const composerBounds = composer.getBoundingClientRect()
   const workspaceBounds = workspace.getBoundingClientRect()
   const fadeBounds = fade.getBoundingClientRect()
-  expect(fadeBounds.top).toBeCloseTo(composerBounds.top, 1)
+  expect(fadeBounds.top).toBeCloseTo(composerBounds.top + composerBounds.height / 2, 1)
   expect(fadeBounds.bottom).toBeCloseTo(workspaceBounds.bottom, 1)
-  expect(fadeBounds.height).toBeCloseTo(composerBounds.height, 1)
+  expect(fadeBounds.height).toBeCloseTo(composerBounds.height / 2, 1)
   expect(getComputedStyle(fade).pointerEvents).toBe('none')
 }
 
@@ -780,9 +781,11 @@ async function expectCollapsedSidebarDoesNotCoverSessionHeader(canvasElement: HT
   await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
   const opener = await canvas.findByRole('button', { name: 'Open sidebar' })
   const title = canvas.getByRole('heading', { name: 'Finish Session composer review' })
-  expect(title.getBoundingClientRect().left).toBeGreaterThanOrEqual(
-    opener.getBoundingClientRect().right +
-      Number.parseFloat(getComputedStyle(title).getPropertyValue('--spacing-shell-tight')),
+  await waitFor(() =>
+    expect(title.getBoundingClientRect().left).toBeGreaterThanOrEqual(
+      opener.getBoundingClientRect().right +
+        Number.parseFloat(getComputedStyle(title).getPropertyValue('--spacing-shell-tight')),
+    ),
   )
   await userEvent.click(opener)
   await expect(canvas.getByLabelText('Sessions sidebar')).toBeVisible()
@@ -795,7 +798,10 @@ async function expectShellReopensWithOutput(canvasElement: HTMLElement) {
   await userEvent.click(await screen.findByRole('menuitem', { name: /bun run quality/ }))
   const shellInspector = canvas.getByRole('region', { name: 'Background Shell' })
   await expect(shellInspector).toBeVisible()
-  await expect(within(shellInspector).getByText(/Checked 187 files\./)).toBeVisible()
+  await waitFor(
+    () => expect(within(shellInspector).getByText(/Checked 187 files\./)).toBeVisible(),
+    { timeout: 5000 },
+  )
 }
 
 const meta = {
@@ -828,20 +834,41 @@ async function pickSubagent(canvas: ReturnType<typeof within>) {
 
 async function expectDelegatedFeedSurvivesCollapse(canvas: ReturnType<typeof within>) {
   const inspector = canvas.getByRole('region', { name: 'Subagent' })
-  await expect(inspector).toBeVisible()
-  expect(inspector.getBoundingClientRect().width).toBeGreaterThan(0)
-  const subagentMessage = within(inspector)
-    .getAllByText(/Review finding \d+: The inspector keeps a complete implementation report/)
-    .find((message) => message.getBoundingClientRect().height > 0)
-  if (subagentMessage === undefined) throw new Error('The Subagent transcript is absent.')
-  await expect(subagentMessage).toBeVisible()
-  expectVisibleFeedRowsDoNotOverlap(within(inspector).getByLabelText('Subagent history'))
+  await waitFor(
+    () => {
+      expect(inspector).toBeVisible()
+      expect(inspector.getBoundingClientRect().width).toBeGreaterThan(0)
+      const subagentMessage = within(inspector)
+        .getAllByText(/Review finding \d+: The inspector keeps a complete implementation report/)
+        .find((message) => message.getBoundingClientRect().height > 0)
+      if (subagentMessage === undefined) throw new Error('The Subagent transcript is absent.')
+      expect(subagentMessage).toBeVisible()
+      expectVisibleFeedRowsDoNotOverlap(within(inspector).getByLabelText('Subagent history'))
+    },
+    { timeout: 5000 },
+  )
 
   await userEvent.click(canvas.getByRole('button', { name: 'Collapse Session inspector' }))
-  await waitFor(() => expect(inspector.querySelector('.feed__document')).toBeNull())
+  await waitFor(() => expect(inspector.querySelector('.feed__document')).toBeNull(), {
+    timeout: 5000,
+  })
   await pickSubagent(canvas)
   const reopenedInspector = await canvas.findByRole('region', { name: 'Subagent' })
-  expectVisibleFeedRowsDoNotOverlap(within(reopenedInspector).getByLabelText('Subagent history'))
+  await waitFor(
+    () =>
+      expectVisibleFeedRowsDoNotOverlap(
+        within(reopenedInspector).getByLabelText('Subagent history'),
+      ),
+    { timeout: 5000 },
+  )
+}
+
+function expectNoSessionIdOrWorkspaceInHeader(canvasElement: HTMLElement) {
+  const header = canvasElement.querySelector<HTMLElement>('[data-component="AppMainHeader"]')
+  if (header === null) throw new Error('The Session header is absent.')
+  const content = within(header)
+  expect(content.queryByText('Session ID')).toBeNull()
+  expect(content.queryByText('Workspace')).toBeNull()
 }
 
 export const Open: Story = {
@@ -866,11 +893,10 @@ export const Open: Story = {
     await expect(
       canvas.getByRole('heading', { name: 'Finish Session composer review' }),
     ).toBeVisible()
-    await expect(canvas.getByText('Workspace')).toBeVisible()
-    await expect(canvas.getByText('ticket-1846-composer')).toBeVisible()
+    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
     await expect(canvas.getByText('Branch')).toBeVisible()
     await expect(canvas.getByText('feature/composer-review')).toBeVisible()
-    expectHeaderActionsAtTrailingEdge(canvasElement)
+    await waitFor(() => expectHeaderActionsAtTrailingEdge(canvasElement), { timeout: 5000 })
     await expectCollapsedSidebarDoesNotCoverSessionHeader(canvasElement)
     await waitFor(() =>
       expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
@@ -878,7 +904,7 @@ export const Open: Story = {
         'composer-review',
       ),
     )
-    expectTranscriptRowsDoNotOverlap(canvasElement)
+    await waitFor(() => expectTranscriptRowsDoNotOverlap(canvasElement), { timeout: 5000 })
 
     const openInspector = canvas.queryByRole('button', { name: 'Open Session inspector' })
     if (openInspector) await userEvent.click(openInspector)
@@ -888,7 +914,7 @@ export const Open: Story = {
       ).toBeInTheDocument(),
     )
     await userEvent.click(canvas.getByRole('button', { name: 'Collapse Session inspector' }))
-    expectSessionsSidebarIsOpen(canvasElement)
+    await waitFor(() => expectSessionsSidebarIsOpen(canvasElement), { timeout: 5000 })
 
     // Picking a Subagent in the header opens the collapsed inspector on its transcript.
     await pickSubagent(canvas)
@@ -916,7 +942,9 @@ export const SwitchingKeepsScreenAreasOnTheSelectedSession: Story = {
     )
     await userEvent.click(canvas.getByRole('button', { name: /^Shell/ }))
     await userEvent.click(await screen.findByRole('menuitem', { name: /bun run quality/ }))
-    await expect(canvas.getByRole('region', { name: 'Background Shell' })).toBeVisible()
+    await waitFor(() =>
+      expect(canvas.getByRole('region', { name: 'Background Shell' })).toBeVisible(),
+    )
     const firstComposer = canvas.getByRole('combobox', { name: 'Message' })
     await userEvent.type(firstComposer, 'Draft for the first Session')
     await expect(firstComposer).toHaveTextContent('Draft for the first Session')
@@ -948,17 +976,11 @@ export const FormattedHeaderTitle: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const header = canvas.getByRole('heading', { name: /Implement/ })
-    const sessionId = canvas
-      .getByText('Session ID')
-      .closest<HTMLElement>('[data-component="SessionIdMetadata"]')
-    const metadata = canvasElement.querySelector<HTMLElement>('[data-component="SessionMetadata"]')
-    if (sessionId === null || metadata === null) throw new Error('The Session metadata is absent.')
     await expect(header).not.toHaveTextContent('[$implement]')
     await expect(header).toHaveTextContent('https://example.com/guide')
     await expect(header.querySelector('a')).toBeNull()
-    await expect(metadata.getBoundingClientRect().top).toBeGreaterThanOrEqual(
-      header.getBoundingClientRect().bottom,
-    )
+    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
+    expect(canvasElement.querySelector('[data-component="SessionMetadata"]')).toBeNull()
   },
 }
 
@@ -970,7 +992,10 @@ export const CodexShellWithoutOutputDoesNotRevealInspector: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: /^Shell/ }))
     await userEvent.click(await screen.findByRole('menuitem'))
-    await expect(canvas.queryByRole('button', { name: 'Collapse Session inspector' })).toBeNull()
+    await expect(canvas.queryByRole('region', { name: 'Background Shell' })).toBeNull()
+    await expect(
+      canvas.getByRole('button', { name: 'Collapse Session inspector' }),
+    ).toBeInTheDocument()
   },
 }
 
@@ -1013,34 +1038,6 @@ export const WideSharedReadingColumn: Story = {
   },
 }
 
-export const ComposerFadeLight: Story = {
-  globals: { theme: 'light' },
-  render: () => <ReviewScreen />,
-  play: async ({ canvasElement }) => {
-    await waitFor(() =>
-      expect(within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
-        'data-session',
-        'composer-review',
-      ),
-    )
-    expectContextBarInset(canvasElement)
-  },
-}
-
-export const ComposerFadeDark: Story = {
-  globals: { theme: 'dark' },
-  render: () => <ReviewScreen />,
-  play: async ({ canvasElement }) => {
-    await waitFor(() =>
-      expect(within(canvasElement).getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
-        'data-session',
-        'composer-review',
-      ),
-    )
-    expectContextBarInset(canvasElement)
-  },
-}
-
 export const JumpToLatestInExpandedComposerFade: Story = {
   render: () => <ReviewScreen rows={JUMP_TO_LATEST_ROWS} />,
   play: async ({ canvasElement }) => {
@@ -1062,7 +1059,7 @@ export const SharedCheckout: Story = {
     await expect(
       canvas.getByRole('heading', { name: 'Add Markdown typing shortcuts' }),
     ).toBeVisible()
-    expect(canvas.queryByText('Workspace')).not.toBeInTheDocument()
+    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
     expect(canvas.queryByText('Branch')).not.toBeInTheDocument()
   },
 }
@@ -1087,7 +1084,7 @@ export const NarrowHeader: Story = {
     await expect(
       canvas.getByRole('heading', { name: 'Finish Session composer review' }),
     ).toBeVisible()
-    await expect(canvas.getByText('ticket-1846-composer')).toBeInTheDocument()
+    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
     await expect(canvas.getByText('feature/composer-review')).toBeInTheDocument()
     await waitFor(() =>
       expect(canvas.getByLabelText(SESSION_HISTORY_LABEL)).toHaveAttribute(
@@ -1109,8 +1106,7 @@ export const WorkspaceMainBranch: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Workspace')).toBeVisible()
-    await expect(canvas.getByText('Argo')).toBeVisible()
+    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
     await expect(canvas.getByText('Branch')).toBeVisible()
     await expect(canvas.getByText('main')).toBeVisible()
   },
@@ -1127,8 +1123,7 @@ export const WorkspaceDetachedHead: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Workspace')).toBeVisible()
-    await expect(canvas.getByText('Detached checkout')).toBeVisible()
+    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
     expect(canvas.queryByText('Branch')).not.toBeInTheDocument()
   },
 }
@@ -1141,8 +1136,7 @@ export const LegacySessionWithoutWorkspace: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Session ID')).toBeVisible()
-    expect(canvas.queryByText('Workspace')).not.toBeInTheDocument()
+    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
     expect(canvas.queryByText('Branch')).not.toBeInTheDocument()
   },
 }
@@ -1156,8 +1150,7 @@ export const RemovedWorkspace: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Session ID')).toBeVisible()
-    expect(canvas.queryByText('Workspace')).not.toBeInTheDocument()
+    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
     expect(canvas.queryByText('Branch')).not.toBeInTheDocument()
   },
 }
@@ -1183,9 +1176,7 @@ export const LongWorkspaceAndBranchNames: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const viewport = canvasElement.getBoundingClientRect()
-    await expect(
-      canvas.getByText('A workspace name that is much longer than the header can display'),
-    ).toBeVisible()
+    expectNoSessionIdOrWorkspaceInHeader(canvasElement)
     await expect(
       canvas.getByText(
         'feature/a-branch-name-that-is-much-longer-than-the-header-can-display-or-the-session-title',

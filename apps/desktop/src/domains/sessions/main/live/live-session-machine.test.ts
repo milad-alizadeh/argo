@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createActor, fromCallback, fromPromise, waitFor } from 'xstate'
+import { createActor, fromPromise, waitFor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
-import { claudeLiveSessionMachine } from '@/harnesses/claude/session/claude-live-session-machine'
 import type { SessionStartInput } from '../api/session-submit'
+import { liveSessionChannelActor } from './live-session-channel-actor'
 import { liveSessionMachine } from './live-session-machine'
 
 const first: SessionStartInput = {
@@ -17,6 +17,24 @@ const first: SessionStartInput = {
   turnConfiguration: { model: 'model', effort: 'medium', mode: 'default' },
 }
 
+const passiveChannelMethods = {
+  interrupt: async () => {},
+  answerPermission: async () => false,
+  answerQuestion: async () => false,
+  close: () => {},
+}
+
+function actorDelivering(delivered: string[]) {
+  return createActor(
+    testMachine({
+      send: async (prompt) => {
+        delivered.push(prompt)
+      },
+    }),
+    { input: first },
+  ).start()
+}
+
 function testMachine(services: {
   start?: () => Promise<string>
   send?: (prompt: string) => Promise<void>
@@ -24,36 +42,36 @@ function testMachine(services: {
   emitFeed?: boolean
 }) {
   let promptCount = 0
-  const harness = claudeLiveSessionMachine.provide({
-    actors: {
-      queryActor: fromCallback(({ receive, sendBack }) => {
-        receive((event) => {
-          promptCount += 1
-          if (services.emitFeed)
-            sendBack({
-              type: 'Feed event',
-              body: {
-                type: 'content',
-                commandId: first.commandId,
-                turnId: first.commandId,
-                vendorEventId: 'assistant-1',
-                content: { id: 'assistant-1', kind: 'message', role: 'assistant', text: 'Working' },
-              },
-            })
-          if (promptCount === 1)
-            void (services.start?.() ?? Promise.resolve('native-1')).then(
-              (nativeId) => sendBack({ type: 'Opened', nativeId }),
-              (error) => sendBack({ type: 'Query failed', detail: String(error) }),
-            )
-          else
-            void (services.send?.(event.prompt) ?? Promise.resolve()).then(
-              () => sendBack({ type: 'Sent' }),
-              (error) => sendBack({ type: 'Query failed', detail: String(error) }),
-            )
+  const harness = liveSessionChannelActor((input, _controls, emit) => {
+    const deliver = async (command: typeof first) => {
+      promptCount += 1
+      if (services.emitFeed)
+        emit({
+          type: 'feed',
+          body: {
+            type: 'content',
+            commandId: command.commandId,
+            turnId: command.commandId,
+            vendorEventId: 'assistant-1',
+            content: { id: 'assistant-1', kind: 'message', role: 'assistant', text: 'Working' },
+          },
         })
-      }),
-    },
-  })
+      try {
+        if (promptCount === 1) {
+          const nativeId = await (services.start?.() ?? Promise.resolve('native-1'))
+          emit({ type: 'identity', nativeId })
+        } else await (services.send?.(command.prompt) ?? Promise.resolve())
+        emit({ type: 'turn.completed', commandId: command.commandId })
+      } catch (error) {
+        emit({ type: 'failure', detail: String(error) })
+      }
+    }
+    queueMicrotask(() => void deliver(input as typeof first))
+    return {
+      submit: async (command) => deliver(command as typeof first),
+      ...passiveChannelMethods,
+    }
+  }, undefined)
   return liveSessionMachine.provide({
     actors: {
       harness,
@@ -171,6 +189,7 @@ test('queues later sends until persistence, then delivers them in order', async 
   ).start()
   actor.send({ type: 'Send', command: { ...first, commandId: 'second', prompt: 'second' } })
   actor.send({ type: 'Send', command: { ...first, commandId: 'third', prompt: 'third' } })
+  await Promise.resolve()
   releaseStart('native-1')
   await waitFor(actor, (snapshot) => snapshot.matches('Persisting'))
   releasePersist('argo-1')
@@ -182,19 +201,20 @@ test('queues later sends until persistence, then delivers them in order', async 
 test('persists a Claude Session before its first turn finishes and holds queued sends', async () => {
   let finishTurn!: () => void
   const delivered: string[] = []
-  const harness = claudeLiveSessionMachine.provide({
-    actors: {
-      queryActor: fromCallback(({ receive, sendBack }) => {
-        receive((event) => {
-          delivered.push(event.prompt)
-          if (delivered.length === 1) {
-            sendBack({ type: 'Identified', nativeId: 'native-1' })
-            finishTurn = () => sendBack({ type: 'Opened', nativeId: 'native-1' })
-          } else sendBack({ type: 'Sent' })
-        })
-      }),
-    },
-  })
+  const harness = liveSessionChannelActor((input, _controls, emit) => {
+    queueMicrotask(() => {
+      delivered.push(input.prompt)
+      emit({ type: 'identity', nativeId: 'native-1' })
+      finishTurn = () => emit({ type: 'turn.completed', commandId: input.commandId })
+    })
+    return {
+      submit: async (command) => {
+        delivered.push(command.prompt)
+        emit({ type: 'turn.completed', commandId: command.commandId })
+      },
+      ...passiveChannelMethods,
+    }
+  }, undefined)
   const actor = createActor(
     liveSessionMachine.provide({
       actors: { harness, persist: fromPromise(async () => 'argo-1') },
@@ -213,17 +233,23 @@ test('persists a Claude Session before its first turn finishes and holds queued 
 
 test('does not deliver a duplicate first command', async () => {
   const delivered: string[] = []
-  const actor = createActor(
-    testMachine({
-      send: async (prompt) => {
-        delivered.push(prompt)
-      },
-    }),
-    { input: first },
-  ).start()
+  const actor = actorDelivering(delivered)
   actor.send({ type: 'Send', command: first })
   await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
   assert.deepEqual(delivered, [])
+  actor.stop()
+})
+
+test('does not deliver a duplicate later command after that Turn completes', async () => {
+  const delivered: string[] = []
+  const actor = actorDelivering(delivered)
+  await waitFor(actor, (snapshot) => snapshot.matches('Ready'))
+  const second = { ...first, commandId: 'second', prompt: 'second' }
+  actor.send({ type: 'Send', command: second })
+  await waitFor(actor, (snapshot) => snapshot.matches('Ready') && delivered.length === 1)
+  actor.send({ type: 'Send', command: second })
+  await Promise.resolve()
+  assert.deepEqual(delivered, ['second'])
   actor.stop()
 })
 

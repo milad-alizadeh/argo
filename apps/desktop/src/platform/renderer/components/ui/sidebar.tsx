@@ -2,9 +2,9 @@
 
 import { mergeProps } from '@base-ui/react/merge-props'
 import { useRender } from '@base-ui/react/use-render'
+import { SidebarIcon } from "@phosphor-icons/react";
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from 'cn'
-import { PanelLeftIcon } from 'lucide-react'
 import * as React from 'react'
 import { Button } from './button'
 import { Input } from './input'
@@ -259,7 +259,7 @@ function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<t
       }}
       {...props}
     >
-      <PanelLeftIcon />
+      <SidebarIcon strokeWidth={2} />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )

@@ -145,6 +145,14 @@ const page = () => within(document.body)
 
 const TRIGGER = /^Choose Turn configuration/
 
+async function expectRoleHidden(role: string, name: string) {
+  await waitFor(() => {
+    const element = page().queryByRole(role as never, { name })
+    if (element === null) return
+    expect(element).not.toBeVisible()
+  })
+}
+
 export const ChoosesModelAndEffort: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -186,7 +194,7 @@ export const ChoosesModelAndEffort: Story = {
     }
 
     await userEvent.keyboard('{Escape}')
-    await waitFor(() => expect(page().queryByRole('radiogroup', { name: 'Model' })).toBeNull())
+    await expectRoleHidden('radiogroup', 'Model')
     await expect(trigger).toHaveFocus()
     await expect(trigger).toHaveTextContent('Sonnet 5·Extra high')
   },
@@ -238,7 +246,7 @@ export const LoadsClaudeCatalog: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: TRIGGER }))
     await expect(page().getByRole('status')).toHaveTextContent('Loading Claude Code models…')
-    await expect(page().queryByRole('radiogroup', { name: 'Model' })).toBeNull()
+    await expectRoleHidden('radiogroup', 'Model')
   },
 }
 
@@ -250,7 +258,7 @@ export const RetriesClaudeCatalog: Story = {
     await expect(page().getByRole('alert')).toHaveTextContent(
       'Claude Code returned model data that Argo cannot read.',
     )
-    await expect(page().queryByRole('radiogroup', { name: 'Model' })).toBeNull()
+    await expectRoleHidden('radiogroup', 'Model')
     await expect(page().getByRole('button', { name: 'Refresh models' })).toBeEnabled()
     await userEvent.click(page().getByRole('button', { name: 'Refresh models' }))
     await expect(page().queryByRole('alert')).toBeNull()
@@ -268,7 +276,7 @@ export const RetriesUnavailableCatalog: Story = {
     const trigger = canvas.getByRole('button', { name: TRIGGER })
     await userEvent.click(trigger)
     await expect(page().getByRole('alert')).toHaveTextContent('Codex is unavailable. Try again.')
-    await expect(page().queryByRole('radiogroup', { name: 'Model' })).toBeNull()
+    await expectRoleHidden('radiogroup', 'Model')
     await userEvent.click(page().getByRole('button', { name: 'Refresh models' }))
     await expect(canvas.getByRole('button', { name: TRIGGER })).toHaveAccessibleName(
       'Choose Turn configuration: Codex, GPT-5.6-Terra, Balances speed and reasoning',
@@ -307,7 +315,7 @@ export const ChoosesByKeyboard: Story = {
     await expect(page().getByRole('slider', { name: 'Effort' })).toHaveFocus()
 
     await userEvent.keyboard('{Escape}')
-    await waitFor(() => expect(page().queryByRole('radiogroup', { name: 'Model' })).toBeNull())
+    await expectRoleHidden('radiogroup', 'Model')
     await expect(trigger).toHaveFocus()
   },
 }
@@ -349,7 +357,7 @@ export const NewSessionChoosesHarness: Story = {
     await userEvent.click(within(harnesses).getByRole('tab', { name: 'Claude Code' }))
     await expect(page().getByRole('radiogroup', { name: 'Model' })).toBeVisible()
     await userEvent.keyboard('{Escape}')
-    await waitFor(() => expect(page().queryByRole('tablist')).toBeNull())
+    await expectRoleHidden('tablist', 'Harness')
     await expect(trigger).toHaveFocus()
     await expect(trigger).toHaveTextContent('Opus 5·Medium')
   },

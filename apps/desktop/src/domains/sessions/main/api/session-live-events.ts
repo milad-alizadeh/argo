@@ -45,28 +45,35 @@ export type SessionLiveEventsContext = {
   ) => () => void
 }
 
+function subagentLiveUpdates(
+  context: SessionLiveEventsContext,
+  stored: ReturnType<typeof sessionHistoryIdentity>,
+  subagentId: string,
+) {
+  return observable<z.infer<typeof sessionLiveUpdateSchema>>((emit) => {
+    emit.next(
+      sessionLiveUpdateSchema.parse({
+        type: 'ready',
+        live: false,
+        cursor: 0,
+        generation: context.journal.generation,
+        replayExpired: false,
+      }),
+    )
+    const unwatch = context.watchHistory?.(
+      stored.harness,
+      { nativeId: stored.nativeId, subagentId, cwd: stored.cwd },
+      () => emit.next(sessionLiveUpdateSchema.parse({ type: 'invalidated' })),
+    )
+    return () => unwatch?.()
+  })
+}
+
 export function sessionLiveEventsProcedure(context: SessionLiveEventsContext) {
   return t.procedure.input(inputSchema).subscription(({ input }) => {
     const stored = sessionHistoryIdentity(context.database, input.sessionId)
     const subagentId = input.subagentId ?? null
-    if (subagentId !== null)
-      return observable<z.infer<typeof sessionLiveUpdateSchema>>((emit) => {
-        emit.next(
-          sessionLiveUpdateSchema.parse({
-            type: 'ready',
-            live: false,
-            cursor: 0,
-            generation: context.journal.generation,
-            replayExpired: false,
-          }),
-        )
-        const unwatch = context.watchHistory?.(
-          stored.harness,
-          { nativeId: stored.nativeId, subagentId, cwd: stored.cwd },
-          () => emit.next(sessionLiveUpdateSchema.parse({ type: 'invalidated' })),
-        )
-        return () => unwatch?.()
-      })
+    if (subagentId !== null) return subagentLiveUpdates(context, stored, subagentId)
     return observable<z.infer<typeof sessionLiveUpdateSchema>>((emit) => {
       let replaying = true
       const pending: ReturnType<SessionEventJournal['append']>[] = []
@@ -78,11 +85,7 @@ export function sessionLiveEventsProcedure(context: SessionLiveEventsContext) {
         if (replaying) pending.push(event)
         else sendEvent(event, context.hasLiveChannel(input.sessionId))
       })
-      const replay = context.journal.replay(
-        input.sessionId,
-        input.cursor,
-        input.generation ?? null,
-      )
+      const replay = context.journal.replay(input.sessionId, input.cursor, input.generation ?? null)
       const live = context.hasLiveChannel(input.sessionId)
       emit.next(
         sessionLiveUpdateSchema.parse({

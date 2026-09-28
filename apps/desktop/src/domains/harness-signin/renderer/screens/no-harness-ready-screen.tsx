@@ -1,6 +1,6 @@
-import { PlugZap } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { HarnessReadiness } from '@/domains/harness-signin/contract/contract'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   Empty,
   EmptyContent,
@@ -25,7 +25,7 @@ export function NoHarnessReadyScreen({ harnesses }: { harnesses: HarnessReadines
       <Empty>
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <PlugZap aria-hidden="true" />
+            <Icon name="connect" />
           </EmptyMedia>
           <EmptyTitle>{t('empty.title')}</EmptyTitle>
           <EmptyDescription>{t('empty.description')}</EmptyDescription>
