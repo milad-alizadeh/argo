@@ -144,6 +144,43 @@ test('reads a selected subagent through its parent Harness and retains the Sessi
   ])
 })
 
+test('uses vendor Feed pages when the registered Harness provides them', async () => {
+  const sessionId = '00000000-0000-4000-8000-000000000007'
+  database
+    .insert(sessionTable)
+    .values({
+      argoId: sessionId,
+      harness: 'codex',
+      nativeId: 'thread-1',
+    })
+    .run()
+  const reads: unknown[] = []
+  const caller = createAppRouter(
+    routerDependencies({
+      readHistory: async () => {
+        throw new Error('Full history was read.')
+      },
+      readHistoryPage: async (harness, target, before) => {
+        reads.push({ harness, target, before })
+        return {
+          content: [{ kind: 'message', id: 'reply-1', role: 'assistant', text: 'Done' }],
+          olderCursor: 'vendor-older',
+        }
+      },
+    }),
+  ).createCaller({})
+  const newest = await caller.sessionFeedRead({ sessionId })
+  expect(newest).toMatchObject({
+    content: [{ id: 'reply-1', text: 'Done' }],
+    olderCursor: 'vendor-older',
+  })
+  await caller.sessionFeedRead({ sessionId, before: 'vendor-older' })
+  expect(reads.map((read) => (read as { before: string | null }).before)).toEqual([
+    null,
+    'vendor-older',
+  ])
+})
+
 test('reports a failed vendor history read instead of confirming an empty Feed', async () => {
   const sessionId = '00000000-0000-4000-8000-000000000006'
   database

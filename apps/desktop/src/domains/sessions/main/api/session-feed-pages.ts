@@ -47,6 +47,10 @@ function decodeCursor(value: string): Cursor | null {
   }
 }
 
+export function isSessionFeedPagesCursor(value: string): boolean {
+  return decodeCursor(value) !== null
+}
+
 export class SessionFeedPages {
   private readonly cache = new Map<string, CachedHistory>()
   private usedBytes = 0

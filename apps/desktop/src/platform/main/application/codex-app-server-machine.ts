@@ -4,7 +4,7 @@ import {
   type CodexRequest,
   createCodexAppServerClient,
   type WireMessage,
-} from './codex-app-server-client'
+} from '@/harnesses/codex/app-server/codex-app-server-client'
 
 type CallEvent = {
   type: 'Call'
@@ -93,7 +93,7 @@ export function requestCodexAppServer(
 
 export function observeCodexAppServer(
   actor: ActorRefFrom<typeof codexAppServerMachine>,
-  listener: (message: WireMessage) => void,
+  listener: (message: WireMessage) => boolean | undefined,
 ): () => void {
   if (actor.getSnapshot().status !== 'active') return () => {}
   let closed = false
@@ -101,10 +101,7 @@ export function observeCodexAppServer(
   actor.send({
     type: 'Call',
     run: (client) => {
-      const stop = client.onNotification((message) => {
-        listener(message)
-        return undefined
-      })
+      const stop = client.onNotification(listener)
       if (closed) stop()
       else unsubscribe = stop
     },
@@ -113,4 +110,16 @@ export function observeCodexAppServer(
     closed = true
     unsubscribe?.()
   }
+}
+
+export function respondCodexAppServer(
+  actor: ActorRefFrom<typeof codexAppServerMachine>,
+  id: Parameters<CodexAppServerClient['respond']>[0],
+  result: unknown,
+): void {
+  if (actor.getSnapshot().status !== 'active') throw new Error('Codex app-server is closed.')
+  actor.send({
+    type: 'Call',
+    run: (client) => client.respond(id, result),
+  })
 }

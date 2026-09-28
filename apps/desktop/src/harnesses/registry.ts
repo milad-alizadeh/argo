@@ -4,17 +4,17 @@ import {
   unavailable,
 } from './catalog/harness-catalog-machine'
 import { createClaudeRegistration } from './claude/registration'
-import type { CodexRequest } from './codex/app-server/codex-app-server-client'
 import { createCodexRegistration } from './codex/registration'
+import type { CodexLiveClient } from './codex/session/codex-session-channel'
 import type { Harness } from './harness'
 import type { HarnessRegistration } from './registration'
 
 export type HarnessRegistry = { [Id in Harness]: HarnessRegistration<Id> }
 
-export function createHarnessRegistry(codexRequest: CodexRequest): HarnessRegistry {
+export function createHarnessRegistry(codexClient: CodexLiveClient): HarnessRegistry {
   return {
     claude: createClaudeRegistration(),
-    codex: createCodexRegistration(codexRequest),
+    codex: createCodexRegistration(codexClient),
   }
 }
 

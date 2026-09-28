@@ -29,6 +29,11 @@ const outputSchema = z.strictObject({
 export type SessionFeedReadContext = {
   database: Database
   readHistory: (harness: Harness, target: SessionHistoryTarget) => Promise<FeedContent[]>
+  readHistoryPage?: (
+    harness: Harness,
+    target: SessionHistoryTarget,
+    before: string | null,
+  ) => Promise<{ content: FeedContent[]; olderCursor: string | null } | null>
 }
 
 export function sessionFeedReadProcedure(context: SessionFeedReadContext) {
@@ -40,18 +45,20 @@ export function sessionFeedReadProcedure(context: SessionFeedReadContext) {
       const stored = sessionHistoryIdentity(context.database, input.sessionId)
       const chainId = input.subagentId ?? input.sessionId
       let page: { content: FeedContent[]; olderCursor: string | null }
+      const target = {
+        nativeId: stored.nativeId,
+        subagentId: input.subagentId,
+        cwd: stored.cwd,
+      }
       try {
-        page = await pages.read({
-          sessionId: input.sessionId,
-          chainId,
-          before: input.before,
-          readHistory: () =>
-            context.readHistory(stored.harness, {
-              nativeId: stored.nativeId,
-              subagentId: input.subagentId,
-              cwd: stored.cwd,
-            }),
-        })
+        page =
+          (await context.readHistoryPage?.(stored.harness, target, input.before)) ??
+          (await pages.read({
+            sessionId: input.sessionId,
+            chainId,
+            before: input.before,
+            readHistory: () => context.readHistory(stored.harness, target),
+          }))
       } catch (error) {
         if (error instanceof Error && error.message === 'invalid-feed-cursor')
           throw new TRPCError({ code: 'BAD_REQUEST', message: error.message })

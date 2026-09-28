@@ -2,6 +2,19 @@
 
 Status: accepted · 2026-09-21
 
+## Amendment · Codex live Session channel · 2026-09-28
+
+The Codex registration now opens an async channel through the application-owned, shared
+app-server client. The generic live Session machine owns each Codex Session lifecycle and the
+supervisor orders its commands. Codex Harness code imports no XState. The per-Session Codex child
+machine described below is superseded. A Codex channel failure affects its Session; the app-server
+client and other Harnesses remain application-owned resources.
+
+Codex turn and item notifications carry stable vendor IDs into the same validated Feed event
+contract as Claude. Vendor history settles those rows. The installed Codex 0.157.0 declares and
+accepts experimental `thread/turns/list`; Argo uses its newest-first pages only for that verified
+version and falls back to `thread/read` with bounded local pages otherwise.
+
 Argo reads and drives Sessions through supported vendor interfaces. Claude uses the Claude Agent
 SDK. Codex uses `codex app-server`. Argo does not parse transcript or rollout files. A filesystem
 watcher can invalidate a Session without a live channel, but the adapter must then read it through the

@@ -1,16 +1,7 @@
-import {
-  assign,
-  emit,
-  enqueueActions,
-  fromPromise,
-  type SnapshotFrom,
-  sendTo,
-  setup as xstateSetup,
-} from 'xstate'
+import { assign, emit, fromPromise, sendTo, setup as xstateSetup } from 'xstate'
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
-import type { codexLiveSessionMachine } from '@/harnesses/codex/session/codex-live-session-machine'
 import type { SessionLiveInput, SessionStartInput } from '../api/session-submit'
 import { liveSessionChannelActor } from './live-session-channel-actor'
 
@@ -100,12 +91,6 @@ export const liveSessionMachine = xstateSetup({
       | {
           type: 'xstate.error.actor.persist'
           error: unknown
-        }
-      | {
-          type: 'xstate.snapshot.harness'
-          snapshot: SnapshotFrom<
-            ReturnType<typeof liveSessionChannelActor> | typeof codexLiveSessionMachine
-          >
         },
     emitted: {} as {
       type: 'feed'
@@ -115,42 +100,12 @@ export const liveSessionMachine = xstateSetup({
   actors: {
     harness: liveSessionChannelActor(() => {
       throw new Error('Live Session channel was not provided.')
-    }, undefined) as ReturnType<typeof liveSessionChannelActor> | typeof codexLiveSessionMachine,
+    }, undefined),
     persist: fromPromise<string, LiveSessionPersistInput>(async () => {
       throw new Error('Session persistence actor was not provided.')
     }),
   },
   actions: {
-    reportHarnessSnapshot: enqueueActions(({ context, event, enqueue }) => {
-      if (event.type !== 'xstate.snapshot.harness') return
-      const snapshot = event.snapshot
-      if (!('context' in snapshot)) return
-      if ('lastFeed' in snapshot.context) {
-        const feed = snapshot.context.lastFeed
-        if (feed !== null && feed.serial > context.feedSerial)
-          enqueue.raise({
-            type: 'Harness feed',
-            serial: feed.serial,
-            body: feed.body,
-          })
-      }
-      if (snapshot.matches('Failed'))
-        enqueue.raise({
-          type: 'Harness failed',
-          failure: snapshot.context.failure ?? 'Harness failed.',
-        })
-      else if (snapshot.context.nativeId !== null) {
-        enqueue.raise({
-          type: 'Harness identified',
-          nativeId: snapshot.context.nativeId,
-        })
-        if (snapshot.hasTag('ready'))
-          enqueue.raise({
-            type: 'Harness ready',
-            nativeId: snapshot.context.nativeId,
-          })
-      }
-    }),
     queueDistinct: assign(({ context, event }) =>
       event.type === 'Send' && !context.seenCommandIds.includes(event.command.commandId)
         ? {
@@ -237,9 +192,6 @@ export const liveSessionMachine = xstateSetup({
     id: 'harness',
     src: 'harness',
     input: ({ context }) => context.first,
-    onSnapshot: {
-      actions: 'reportHarnessSnapshot',
-    },
   },
   states: {
     Starting: {

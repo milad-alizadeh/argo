@@ -9,8 +9,8 @@ import {
   type HarnessCatalog,
   harnessCatalogMachine,
 } from '@/harnesses/catalog/harness-catalog-machine'
-import { codexAppServerMachine } from '@/harnesses/codex/app-server/codex-app-server-machine'
 import { type HarnessRegistry, readHarnessCatalog } from '@/harnesses/registry'
+import { codexAppServerMachine } from './codex-app-server-machine'
 
 type AppDependencies = {
   database: Database

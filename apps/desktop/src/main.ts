@@ -26,15 +26,17 @@ import { SessionEventJournal } from '@/domains/sessions/main/live/session-event-
 import { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
 import type { CatalogActor } from '@/harnesses/catalog/catalog-read'
-import type { CodexRequest } from '@/harnesses/codex/app-server/codex-app-server-client'
-import {
-  type codexAppServerMachine,
-  requestCodexAppServer,
-} from '@/harnesses/codex/app-server/codex-app-server-machine'
+import type { CodexLiveClient } from '@/harnesses/codex/session/codex-session-channel'
 import { createHarnessRegistry, type HarnessRegistry } from '@/harnesses/registry'
 import { LIVE_EVENT_PROOF_ENV, PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { attachAppearanceWatch } from '@/platform/main/appearance'
 import type { AppActor } from '@/platform/main/application/app-machine'
+import {
+  type codexAppServerMachine,
+  observeCodexAppServer,
+  requestCodexAppServer,
+  respondCodexAppServer,
+} from '@/platform/main/application/codex-app-server-machine'
 import { startDesktopApplication } from '@/platform/main/application/start'
 import {
   DEVELOPMENT_APPLICATION_NAME,
@@ -119,14 +121,25 @@ let focusRequestedBeforeWindowReady = false
 let applicationActor: AppActor | undefined
 let harnessRegistry: HarnessRegistry | undefined
 
-function codexRequest(): CodexRequest {
-  return (method, params, parse) => {
-    const actor = applicationActor?.system.get('codex') as
-      | ActorRefFrom<typeof codexAppServerMachine>
-      | undefined
-    if (actor === undefined)
-      return Promise.reject(new Error('Codex app-server actor is unavailable.'))
-    return requestCodexAppServer(actor)(method, params, parse)
+function codexClient(): CodexLiveClient {
+  const actor = () =>
+    applicationActor?.system.get('codex') as ActorRefFrom<typeof codexAppServerMachine> | undefined
+  return {
+    request: (method, params, parse) => {
+      const current = actor()
+      if (current === undefined)
+        return Promise.reject(new Error('Codex app-server actor is unavailable.'))
+      return requestCodexAppServer(current)(method, params, parse)
+    },
+    onNotification: (listener) => {
+      const current = actor()
+      return current === undefined ? () => {} : observeCodexAppServer(current, listener)
+    },
+    respond: (id, result) => {
+      const current = actor()
+      if (current === undefined) throw new Error('Codex app-server actor is unavailable.')
+      respondCodexAppServer(current, id, result)
+    },
   }
 }
 
@@ -206,6 +219,8 @@ function routerForWindow(options: {
     sessions: {
       database,
       readHistory: (harness, target) => registry[harness].readHistory(target),
+      readHistoryPage: (harness, target, before) =>
+        registry[harness].readHistoryPage?.(target, before) ?? Promise.resolve(null),
       watchHistory: (harness, target, invalidate) =>
         registry[harness].watchHistory?.(target, invalidate) ?? (() => {}),
       rename: ({ harness, nativeId, title }) => {
@@ -391,7 +406,7 @@ async function prepare() {
   if (DEVELOPMENT_INSTANCE) {
     await seedDevelopmentProject(applicationDatabase, DEVELOPMENT_INSTANCE)
   }
-  harnessRegistry = createHarnessRegistry(codexRequest())
+  harnessRegistry = createHarnessRegistry(codexClient())
   return {
     database: applicationDatabase,
     sessionSyncStatus,

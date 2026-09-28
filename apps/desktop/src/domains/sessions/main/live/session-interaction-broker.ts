@@ -1,5 +1,9 @@
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
-import type { Question, QuestionAnswer } from '@/domains/sessions/api/questions'
+import {
+  type Question,
+  type QuestionAnswer,
+  validQuestionAnswers,
+} from '@/domains/sessions/api/questions'
 
 type PendingPermission = {
   kind: 'permission'
@@ -96,19 +100,7 @@ export class SessionInteractionBroker {
 
   decideQuestion(nativeId: string, requestId: string, answers: QuestionAnswer[]): boolean {
     const request = this.pending.get(`${nativeId}:${requestId}`)
-    if (request?.kind !== 'question' || request.questions.length !== answers.length) return false
-    if (
-      !answers.every((answer, position) => {
-        const question = request.questions[position]
-        if (question === undefined) return false
-        if (answer.kind === 'text')
-          return answer.index === question.options.length + 1 && answer.text.trim() !== ''
-        return (
-          (question.multiSelect || answer.indices.length === 1) &&
-          answer.indices.every((index) => index >= 1 && index <= question.options.length)
-        )
-      })
-    )
+    if (request?.kind !== 'question' || !validQuestionAnswers(request.questions, answers))
       return false
     request.resolve(answers)
     return true

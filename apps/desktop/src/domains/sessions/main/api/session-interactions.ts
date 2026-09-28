@@ -40,13 +40,7 @@ async function decidePermission(
   context: SessionInteractionContext,
   input: z.infer<typeof permissionInput>,
 ): Promise<boolean> {
-  const identity = sessionIdentityOf(context, input.sessionId)
-  if (identity.harness !== 'claude')
-    return context.interactions.decidePermission(
-      identity.nativeId,
-      input.permissionId,
-      input.decision,
-    )
+  sessionIdentityOf(context, input.sessionId)
   return new Promise<boolean>((resolve, reject) =>
     context.supervisor.send({
       type: 'Answer permission',
@@ -62,9 +56,7 @@ async function decideQuestion(
   context: SessionInteractionContext,
   input: z.infer<typeof questionInput>,
 ): Promise<boolean> {
-  const identity = sessionIdentityOf(context, input.sessionId)
-  if (identity.harness !== 'claude')
-    return context.interactions.decideQuestion(identity.nativeId, input.questionId, input.answers)
+  sessionIdentityOf(context, input.sessionId)
   return new Promise<boolean>((resolve, reject) =>
     context.supervisor.send({
       type: 'Answer question',

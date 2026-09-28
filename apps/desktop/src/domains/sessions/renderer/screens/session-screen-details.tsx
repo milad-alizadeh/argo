@@ -222,9 +222,9 @@ function useComposerRetryFocus(
   return { focusComposerAfterRetry, clearRecoveryFocus, retryCatalog, retryDraft }
 }
 
-function useSessionInterrupt(selectedSessionId: string | null, harness: HarnessControl) {
+function useSessionInterrupt(selectedSessionId: string | null) {
   const { mutateAsync: interrupt } = useMutation(trpc.sessionInterrupt.mutationOptions())
-  if (selectedSessionId === null || harness.harness !== 'claude') return undefined
+  if (selectedSessionId === null) return undefined
   return async () => {
     try {
       await interrupt({ sessionId: selectedSessionId })
@@ -270,7 +270,7 @@ export function SessionComposerArea({
   })
   const { focusComposerAfterRetry, clearRecoveryFocus, retryCatalog, retryDraft } =
     useComposerRetryFocus(catalogQuery, draft)
-  const onInterrupt = useSessionInterrupt(selectedSessionId, harness)
+  const onInterrupt = useSessionInterrupt(selectedSessionId)
   if (session?.locked === true) return <OpenElsewhere onRetry={null} />
   return (
     <SessionComposer
