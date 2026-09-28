@@ -381,3 +381,43 @@ test('unknown Codex item shapes are reported and counted', async () => {
     'Rejected 2 unsupported Codex live notification(s): item/completed: missing agentMessage content',
   ])
 })
+
+test('Codex channel streams Subagent activity as delegation content', async () => {
+  const request = (async (method: string, _params: unknown, parse: (value: unknown) => unknown) => {
+    if (method === 'thread/start') return parse({ thread: { id: 'thread-1' } })
+    if (method === 'turn/start') return parse({ turn: { id: 'turn-1' } })
+    throw new Error(`Unexpected request: ${method}`)
+  }) as CodexRequest
+  const { channel, events, notify } = testChannel(request)
+  await new Promise((resolve) => setImmediate(resolve))
+  for (const [id, kind] of [
+    ['call_spawn', 'started'],
+    ['subagent-completed-1', 'completed'],
+  ])
+    notify({
+      method: 'item/completed',
+      params: {
+        threadId: 'thread-1',
+        turnId: 'turn-1',
+        item: {
+          id,
+          type: 'subAgentActivity',
+          kind,
+          agentThreadId: 'thread-child',
+          agentPath: '/root/spec_review',
+        },
+      },
+    })
+  const delegations = events.flatMap((event) =>
+    event.type === 'feed' &&
+    event.body.type === 'content' &&
+    event.body.content.kind === 'delegation'
+      ? [[event.body.vendorEventId, event.body.content.agentId, event.body.content.status]]
+      : [],
+  )
+  assert.deepEqual(delegations, [
+    ['call_spawn', 'thread-child', 'running'],
+    ['subagent-completed-1', 'thread-child', 'completed'],
+  ])
+  channel.close()
+})

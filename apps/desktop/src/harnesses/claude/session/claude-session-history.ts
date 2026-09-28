@@ -4,14 +4,16 @@ import {
   type SessionMessage,
 } from '@anthropic-ai/claude-agent-sdk'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
+import { ClaudeDelegations } from './claude-delegations'
 import { decodeClaudeHistoryContent } from './claude-feed-decoder'
 
 export function decodeClaudeSessionMessages(messages: readonly SessionMessage[]): FeedContent[] {
   let rejected = 0
+  const delegations = new ClaudeDelegations()
   const content = messages.flatMap((entry) =>
     decodeClaudeHistoryContent(entry, () => {
       rejected += 1
-    }),
+    }).flatMap((decoded) => delegations.project(decoded)),
   )
   if (rejected > 0) console.warn(`Rejected ${rejected} unsupported Claude history shape(s).`)
   return content

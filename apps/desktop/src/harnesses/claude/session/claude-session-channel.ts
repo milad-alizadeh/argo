@@ -21,6 +21,7 @@ import {
 } from '@/harnesses/registration'
 import { claudeCliEnvironment } from '../cli-environment'
 import { createClaudeToolControl } from './claude-channel-controls'
+import { ClaudeDelegations } from './claude-delegations'
 import { decodeClaudeLiveContent } from './claude-feed-decoder'
 import { ClaudeLiveText } from './claude-live-text'
 
@@ -45,20 +46,23 @@ function isUuid(value: string): boolean {
 
 function decodedFeedEvents(
   message: SDKMessage,
-  fallbackCommandId: string,
+  stream: { fallbackCommandId: string; delegations: ClaudeDelegations },
   reject: () => void,
 ): SessionLiveEventBody[] {
+  const { fallbackCommandId, delegations } = stream
   const commandId =
     'user_message_uuid' in message && typeof message.user_message_uuid === 'string'
       ? message.user_message_uuid
       : fallbackCommandId
-  return decodeClaudeLiveContent(message, reject).map((content) => ({
-    type: 'content',
-    content,
-    commandId,
-    turnId: commandId,
-    vendorEventId: content.id,
-  }))
+  return decodeClaudeLiveContent(message, reject)
+    .flatMap((content) => delegations.project(content))
+    .map((content) => ({
+      type: 'content',
+      content,
+      commandId,
+      turnId: commandId,
+      vendorEventId: content.id,
+    }))
 }
 
 function claudeQueryOptions(
@@ -91,6 +95,7 @@ export class ClaudeSessionChannel implements LiveSessionChannel {
   private seen = new Set<string>()
   private startedCommands = new Set<string>()
   private liveText = new ClaudeLiveText()
+  private delegations = new ClaudeDelegations()
   private input: ClaudeLiveInput
   private controls: LiveSessionControls | undefined
   private onEvent: (event: LiveSessionChannelEvent) => void
@@ -200,9 +205,13 @@ export class ClaudeSessionChannel implements LiveSessionChannel {
         })
       }
     }
-    for (const body of decodedFeedEvents(message, this.activeCommandId, () => {
-      this.rejected += 1
-    }))
+    for (const body of decodedFeedEvents(
+      message,
+      { fallbackCommandId: this.activeCommandId, delegations: this.delegations },
+      () => {
+        this.rejected += 1
+      },
+    ))
       this.emitFeed(body)
   }
 
