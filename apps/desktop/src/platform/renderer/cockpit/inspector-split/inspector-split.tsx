@@ -1,4 +1,11 @@
-import { createContext, type ReactNode, useContext, useLayoutEffect } from 'react'
+import {
+  createContext,
+  type ReactNode,
+  type RefObject,
+  useContext,
+  useLayoutEffect,
+  useRef,
+} from 'react'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../components/ui/resizable'
 import { readCssSize } from '../../lib/read-css-size'
 import { cn } from '../../lib/utils'
@@ -93,17 +100,19 @@ function InspectorToggleSlot({
   noun,
   onToggle,
   onToggleExpanded,
+  slotRef,
   state,
   visible,
 }: {
   noun: string
   onToggle: () => void
   onToggleExpanded: () => void
+  slotRef: RefObject<HTMLDivElement | null>
   state: 'open' | 'collapsed' | 'expanded'
   visible: boolean
 }) {
   return (
-    <div className="panel-control-motion" data-visible={visible} inert={!visible}>
+    <div ref={slotRef} className="panel-control-motion" data-visible={visible} inert={!visible}>
       <div>
         <div className="flex w-max items-center gap-(--spacing-shell-tight)">
           <InspectorToggles
@@ -127,6 +136,8 @@ function InspectorSplitPanels({
   noun,
   panels,
   sizes,
+  onToggle,
+  toggleSlotRef,
   workspace,
 }: {
   bar: ReactNode
@@ -137,6 +148,8 @@ function InspectorSplitPanels({
   noun: string
   panels: ReturnType<typeof useInspectorPanels>
   sizes: InspectorSizes
+  onToggle: () => void
+  toggleSlotRef: RefObject<HTMLDivElement | null>
   workspace: ReactNode
 }) {
   return (
@@ -171,9 +184,10 @@ function InspectorSplitPanels({
           controls={
             <InspectorToggleSlot
               noun={noun}
-              onToggle={panels.toggle}
+              onToggle={onToggle}
               onToggleExpanded={panels.toggleExpanded}
               state={panels.state === 'expanded' ? 'expanded' : 'open'}
+              slotRef={toggleSlotRef}
               visible={panels.state !== 'collapsed'}
             />
           }
@@ -203,11 +217,29 @@ export function InspectorSplit(props: InspectorSplitProps) {
     defaultCollapsed = false,
   } = props
   const panels = useInspectorPanels(sizes, reveal, defaultCollapsed)
+  const collapsedToggleRef = useRef<HTMLDivElement>(null)
+  const inspectorToggleRef = useRef<HTMLDivElement>(null)
+  const shouldRestoreToggleFocus = useRef(false)
+  const toggle = () => {
+    shouldRestoreToggleFocus.current =
+      document.activeElement instanceof HTMLElement &&
+      (collapsedToggleRef.current?.contains(document.activeElement) === true ||
+        inspectorToggleRef.current?.contains(document.activeElement) === true)
+    panels.toggle()
+  }
+  useLayoutEffect(() => {
+    if (!shouldRestoreToggleFocus.current) return
+    const target =
+      panels.state === 'collapsed' ? collapsedToggleRef.current : inspectorToggleRef.current
+    target?.querySelector<HTMLElement>('button')?.focus()
+    shouldRestoreToggleFocus.current = false
+  }, [panels.state])
   const collapsedControls = (
     <InspectorToggleSlot
       noun={noun}
-      onToggle={panels.toggle}
+      onToggle={toggle}
       onToggleExpanded={panels.toggleExpanded}
+      slotRef={collapsedToggleRef}
       state="collapsed"
       visible={panels.state === 'collapsed'}
     />
@@ -223,6 +255,8 @@ export function InspectorSplit(props: InspectorSplitProps) {
         noun={noun}
         panels={panels}
         sizes={sizes}
+        onToggle={toggle}
+        toggleSlotRef={inspectorToggleRef}
         workspace={workspace}
       />
     </InspectorHeaderControlsContext.Provider>

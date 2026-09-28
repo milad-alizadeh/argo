@@ -14,7 +14,7 @@
   width: var(--icon-size, var(--size-icon-control));
   height: var(--icon-size, var(--size-icon-control));
   flex-shrink: 0;
-  color: var(--color-icon);
+  color: currentColor;
 }
 
 /* Inputs retain their focus border without the outer halo. */
