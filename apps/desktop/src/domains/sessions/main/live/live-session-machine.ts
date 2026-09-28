@@ -7,10 +7,12 @@ import {
   sendTo,
   setup as xstateSetup,
 } from 'xstate'
+import type { PermissionDecision } from '@/domains/sessions/api/permissions'
+import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
-import { claudeLiveSessionMachine } from '@/harnesses/claude/session/claude-live-session-machine'
 import type { codexLiveSessionMachine } from '@/harnesses/codex/session/codex-live-session-machine'
 import type { SessionLiveInput, SessionStartInput } from '../api/session-submit'
+import { liveSessionChannelActor } from './live-session-channel-actor'
 
 type DrivenSessionInput = SessionLiveInput
 
@@ -36,6 +38,7 @@ export const liveSessionMachine = xstateSetup({
       first: DrivenSessionInput
       nativeId: string | null
       queue: QueuedLiveSessionCommand[]
+      seenCommandIds: string[]
       failure: string | null
       harnessReady: boolean
       feedSerial: number
@@ -47,6 +50,31 @@ export const liveSessionMachine = xstateSetup({
         }
       | {
           type: 'Close'
+        }
+      | {
+          type: 'Interrupt'
+          reply: {
+            resolve: () => void
+            reject: (error: Error) => void
+          }
+        }
+      | {
+          type: 'Answer permission'
+          requestId: string
+          decision: PermissionDecision
+          reply: {
+            resolve: (accepted: boolean) => void
+            reject: (error: Error) => void
+          }
+        }
+      | {
+          type: 'Answer question'
+          requestId: string
+          answers: QuestionAnswer[]
+          reply: {
+            resolve: (accepted: boolean) => void
+            reject: (error: Error) => void
+          }
         }
       | {
           type: 'Harness identified'
@@ -75,7 +103,9 @@ export const liveSessionMachine = xstateSetup({
         }
       | {
           type: 'xstate.snapshot.harness'
-          snapshot: SnapshotFrom<typeof claudeLiveSessionMachine | typeof codexLiveSessionMachine>
+          snapshot: SnapshotFrom<
+            ReturnType<typeof liveSessionChannelActor> | typeof codexLiveSessionMachine
+          >
         },
     emitted: {} as {
       type: 'feed'
@@ -83,26 +113,18 @@ export const liveSessionMachine = xstateSetup({
     },
   },
   actors: {
-    harness: claudeLiveSessionMachine as
-      | typeof claudeLiveSessionMachine
-      | typeof codexLiveSessionMachine,
+    harness: liveSessionChannelActor(() => {
+      throw new Error('Live Session channel was not provided.')
+    }, undefined) as ReturnType<typeof liveSessionChannelActor> | typeof codexLiveSessionMachine,
     persist: fromPromise<string, LiveSessionPersistInput>(async () => {
       throw new Error('Session persistence actor was not provided.')
     }),
   },
   actions: {
-    reportHarnessSnapshot: enqueueActions(({ context, event, enqueue }) => {
+    reportHarnessSnapshot: enqueueActions(({ event, enqueue }) => {
       if (event.type !== 'xstate.snapshot.harness') return
       const snapshot = event.snapshot
-      if (
-        'lastFeed' in snapshot.context &&
-        snapshot.context.lastFeed !== null &&
-        snapshot.context.lastFeed.serial > context.feedSerial
-      )
-        enqueue.raise({
-          type: 'Harness feed',
-          ...snapshot.context.lastFeed,
-        })
+      if (!('context' in snapshot)) return
       if (snapshot.matches('Failed'))
         enqueue.raise({
           type: 'Harness failed',
@@ -120,17 +142,20 @@ export const liveSessionMachine = xstateSetup({
           })
       }
     }),
-    queueDistinct: assign({
-      queue: ({ context, event }) =>
-        event.type === 'Send' &&
-        event.command.commandId !== context.first.commandId &&
-        !context.queue.some(({ commandId }) => commandId === event.command.commandId)
-          ? [
+    queueDistinct: assign(({ context, event }) =>
+      event.type === 'Send' && !context.seenCommandIds.includes(event.command.commandId)
+        ? {
+            queue: [
               ...context.queue,
               event.command,
-            ]
-          : context.queue,
-    }),
+            ],
+            seenCommandIds: [
+              ...context.seenCommandIds,
+              event.command.commandId,
+            ],
+          }
+        : {},
+    ),
     dequeue: assign({
       queue: ({ context }) => context.queue.slice(1),
     }),
@@ -162,14 +187,27 @@ export const liveSessionMachine = xstateSetup({
       type: 'Send',
       command: context.queue[0],
     })),
+    interrupt: sendTo('harness', ({ event }) => {
+      if (event.type !== 'Interrupt') throw new Error('Expected a Session interrupt.')
+      return {
+        type: 'Interrupt',
+        reply: event.reply,
+      }
+    }),
+    answerPermission: sendTo('harness', ({ event }) => {
+      if (event.type !== 'Answer permission') throw new Error('Expected a Permission answer.')
+      return event
+    }),
+    answerQuestion: sendTo('harness', ({ event }) => {
+      if (event.type !== 'Answer question') throw new Error('Expected a Question answer.')
+      return event
+    }),
   },
   guards: {
     hasQueuedCommand: ({ context }) => context.queue.length > 0,
     harnessIsReady: ({ context }) => context.harnessReady,
     isNewCommand: ({ context, event }) =>
-      event.type === 'Send' &&
-      event.command.commandId !== context.first.commandId &&
-      !context.queue.some(({ commandId }) => commandId === event.command.commandId),
+      event.type === 'Send' && !context.seenCommandIds.includes(event.command.commandId),
   },
 }).createMachine({
   id: 'liveSession',
@@ -179,6 +217,9 @@ export const liveSessionMachine = xstateSetup({
     first: input,
     nativeId: null,
     queue: [],
+    seenCommandIds: [
+      input.commandId,
+    ],
     failure: null,
     harnessReady: false,
     feedSerial: 0,
@@ -352,6 +393,15 @@ export const liveSessionMachine = xstateSetup({
           }
         }),
       ],
+    },
+    Interrupt: {
+      actions: 'interrupt',
+    },
+    'Answer permission': {
+      actions: 'answerPermission',
+    },
+    'Answer question': {
+      actions: 'answerQuestion',
     },
   },
 })

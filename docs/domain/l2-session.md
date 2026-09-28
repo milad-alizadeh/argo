@@ -9,10 +9,11 @@
   Project leaves the Session in the global Session list.
 
   A Session has no durable live-channel posture. An app-scoped live Session supervisor actor owns
-  the live Session actors. Each live Session actor invokes one Harness machine, owns prompt order, and
-  stops with the application. A Session without a live actor remains readable through vendor
-  history; the first new prompt attempts native resume. A live channel is not durable across an
-  Argo restart.
+  the live Session actors and orders their commands. Each live Session actor uses one Harness
+  channel and stops with the application. A Session without a live actor remains readable through
+  vendor history; the first new prompt attempts native resume. A live channel is not durable across
+  an Argo restart. A command with an uncertain outcome stays uncertain until vendor history resolves
+  it. Argo never sends it again automatically.
 
   Vendor history is the source of Feed truth. The selected Harness registration reads the root
   Session or a subagent while the Feed keeps the Argo Session UUID and chain ID. A failed read

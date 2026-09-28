@@ -2,6 +2,17 @@
 
 Status: accepted · 2026-09-24 · Session discovery amended 2026-09-27
 
+## Amendment · Claude live Session ownership · 2026-09-28
+
+The live Session supervisor keeps Claude commands in order and records each command ID before it
+opens or sends through the Claude channel. A small SQLite table keeps the command outcome and its
+Argo Session ID when that ID becomes available. This table does not store Feed content or vendor
+history. The unique Harness and native Session ID pair still identifies one Session row.
+
+The Claude registration supplies the async channel. The generic Argo live Session machine owns its
+lifetime. The Claude Harness machine name in **Module ownership** is superseded. Codex keeps its
+existing live machine until its channel migration.
+
 ## Amendment · stateless Harness discovery · 2026-09-27
 
 The worker topology in **Sync and reads**, its diagram, and the worker ownership in **Module
