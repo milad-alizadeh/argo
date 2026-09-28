@@ -63,6 +63,16 @@ async function motionSettled(viewport: HTMLElement) {
   await nextFrame()
 }
 
+// A restored history pixel is not by itself the tail, but a reader who really was following
+// gets a saved pixel that lands within the threshold of it: the virtualizer's own measurement,
+// once one exists, overrules the "not the end" default so that reader keeps following (#2853).
+export function resolveInitialAtLatest(
+  positionedAtEnd: boolean,
+  measuredAtEnd: boolean | null,
+): boolean {
+  return positionedAtEnd || measuredAtEnd === true
+}
+
 // Whether the Feed should track new rows as they arrive, and the state that decision rests on:
 // whether the document has taken its opening position yet, and whether the reader is currently
 // at the tail (unless a disclosure's own motion is holding the anchor still).
@@ -78,7 +88,9 @@ export function useFeedTailFollow(
   const awaitingInitialPosition = initiallyPositionedSessionId !== sessionId
   const markInitiallyPositioned = useCallback(
     (positionedAtEnd: boolean) => {
-      setAtLatest(positionedAtEnd)
+      const instance = latest.current
+      const measuredAtEnd = instance === null ? null : instance.isAtEnd(TAIL_THRESHOLD_PX)
+      setAtLatest(resolveInitialAtLatest(positionedAtEnd, measuredAtEnd))
       setInitiallyPositionedSessionId(sessionId)
     },
     [sessionId],

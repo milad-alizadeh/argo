@@ -3,11 +3,11 @@
 // the two mutations' own react-query cache, which is a projection of that attempt, not the truth.
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type {
-  Harness,
   HarnessSignInCanceled,
   HarnessSignInResolved,
   HarnessSignInStarted,
 } from '@/domains/harness-signin/contract/contract'
+import type { Harness } from '@/harnesses/harness'
 import { type ContractFailure, QUERY_KEYS, settle } from '@/platform/renderer/lib/query-client'
 import { trpcClient } from '@/platform/renderer/trpc-client'
 

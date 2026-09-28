@@ -1,4 +1,7 @@
 import { useTranslation } from 'react-i18next'
+import type { Harness } from '@/harnesses/harness'
+import type { HarnessPresentation } from '@/harnesses/harness-presentation'
+import { HARNESS_PRESENTATIONS } from '@/harnesses/presentation-registry'
 import { Icon } from '../icon/icon'
 import { Button } from '../ui/button'
 import { ButtonGroup, ButtonGroupSeparator } from '../ui/button-group'
@@ -9,10 +12,11 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu'
 
-// What each Harness's standing allow covers: Claude's gate remembers similar calls, Codex the Session.
-const STANDING_ALLOW = { claude: 'permission.allowSimilar', codex: 'permission.allowAll' } as const
+const STANDING_ALLOW_LABELS = {
+  'similar-calls': 'permission.allowSimilar',
+  session: 'permission.allowAll',
+} as const satisfies Record<HarnessPresentation['standingAllow'], string>
 
-export type SessionHarness = keyof typeof STANDING_ALLOW
 export type PermissionAnswer = 'allow' | 'allowForSession' | 'deny'
 
 export function AllowButton({
@@ -22,7 +26,7 @@ export function AllowButton({
   onDecide,
 }: {
   allowLabel: string
-  harness: SessionHarness | undefined
+  harness: Harness | undefined
   disabled: boolean
   onDecide: (decision: PermissionAnswer) => Promise<void>
 }) {
@@ -49,7 +53,7 @@ export function AllowButton({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" side="top" className="w-auto">
           <DropdownMenuItem onClick={() => void onDecide('allowForSession')}>
-            {t(STANDING_ALLOW[harness])}
+            {t(STANDING_ALLOW_LABELS[HARNESS_PRESENTATIONS[harness].standingAllow])}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

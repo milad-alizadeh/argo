@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate, useParams } from 'react-router'
 import type { Cockpit } from '@/domains/projects/renderer'
 import type { WorkspaceActions, WorkspaceCockpit } from '@/domains/workspaces/renderer'
-import type { CatalogReadResult } from '@/harnesses/catalog/catalog-read'
+import type { CatalogReadResult } from '@/harnesses/harness-catalog'
+import { harnessLabel } from '@/harnesses/presentation-registry'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
 import {
@@ -35,7 +36,7 @@ import {
   initialTurnConfiguration as turnConfigurationFor,
 } from '../composer/turn-configuration/turn-configuration'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
-import { HARNESSES, type HarnessControl } from '../harness/harnesses'
+import type { HarnessControl } from '../harness/harnesses'
 import type { Session, SessionListPage } from '../types'
 import { type ComposerFailure, useComposerFailureToasts } from './use-composer-failure-toasts'
 
@@ -60,7 +61,7 @@ function catalogFailureMessage(
   failure: CatalogFailure,
 ) {
   return t(`composer.turnConfiguration.catalogFailure.${failure.reason}`, {
-    harness: HARNESSES[harness].label,
+    harness: harnessLabel(harness),
   })
 }
 

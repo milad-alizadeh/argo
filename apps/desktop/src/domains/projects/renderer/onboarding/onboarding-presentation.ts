@@ -1,4 +1,7 @@
-import type { ProjectSetupHarnessAvailability } from './model/project-setup-harness'
+import type {
+  ProjectSetupHarness,
+  ProjectSetupHarnessAvailability,
+} from './model/project-setup-harness'
 import type { ProjectSetupAnswer, ProjectSetupQuestion } from './model/project-setup-question'
 import type { ProjectSetupRecoveryCode } from './model/project-setup-recovery'
 import type { ProjectSetupScreen } from './model/project-setup-screen'
@@ -13,12 +16,12 @@ export type OnboardingProject = {
 
 export type ProjectSetupCommand =
   | { type: 'choose-manual' }
-  | { type: 'choose-agent'; harness: 'claude' | 'codex' }
+  | { type: 'choose-agent'; harness: ProjectSetupHarness }
   | { type: 'answer-questions'; answers: ProjectSetupAnswer[] }
   | { type: 'request-plan-change'; feedback: string }
   | { type: 'continue-plan-review' }
   | { type: 'accept-plan'; acceptedPlan: AcceptedSetupPlan }
-  | { type: 'choose-application-harness'; harness: 'claude' | 'codex' }
+  | { type: 'choose-application-harness'; harness: ProjectSetupHarness }
   | { type: 'approve-final-diff' }
   | { type: 'request-application-change'; feedback: string }
   | { type: 'cancel-setup' }
@@ -42,8 +45,8 @@ export type ProjectSetupSnapshot = {
   manualSource: string
   attempt: {
     number: number
-    planningHarness: 'claude' | 'codex'
-    applicationHarness: 'claude' | 'codex' | null
+    planningHarness: ProjectSetupHarness
+    applicationHarness: ProjectSetupHarness | null
     planningSessionId: string | null
     applicationSessionId: string | null
   } | null

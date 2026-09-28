@@ -7,11 +7,9 @@ import { expect as baseExpect } from '@playwright/test'
 import type { ElectronApplication, Page } from 'playwright-core'
 import { openDatabase } from '@/database/database'
 import { project } from '@/database/project/schema'
-import {
-  HARNESS_SIGNIN_CLAUDE_EXECUTABLE_ENV,
-  HARNESS_SIGNIN_CODEX_EXECUTABLE_ENV,
-  HARNESS_SIGNIN_EXPIRES_AFTER_MS_ENV,
-} from '@/domains/harness-signin/contract/proof-protocol'
+import { HARNESS_SIGNIN_EXPIRES_AFTER_MS_ENV } from '@/domains/harness-signin/contract/proof-protocol'
+import { HARNESS_SIGNIN_CLAUDE_EXECUTABLE_ENV } from '@/harnesses/claude/proof-protocol'
+import { HARNESS_SIGNIN_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
 import { writeMockClaudeReadinessCli } from '../../../mocks/cli/claude/mock-claude-readiness-cli'
 import { writeMockCodexReadinessCli } from '../../../mocks/cli/codex/mock-codex-readiness-cli'
 import { test as packagedTest } from '../../packaged-proof'

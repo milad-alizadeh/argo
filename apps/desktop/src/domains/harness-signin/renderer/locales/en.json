@@ -1,8 +1,4 @@
 {
-  "harness": {
-    "claude": "Claude",
-    "codex": "Codex"
-  },
   "list": {
     "label": "Harness sign-ins"
   },
@@ -30,7 +26,7 @@
   },
   "accounts": {
     "title": "Agent sign-ins",
-    "description": "Claude and Codex sign in to their own CLI. This is separate from the Accounts above."
+    "description": "Each Harness signs in to its own CLI. This is separate from the Accounts above."
   },
   "error": {
     "access-denied": "Argo cannot manage Harness sign-in for this window.",

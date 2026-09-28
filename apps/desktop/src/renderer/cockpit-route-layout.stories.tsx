@@ -3,8 +3,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { expect, userEvent, within } from 'storybook/test'
-import type { Harness, HarnessReadinessState } from '@/domains/harness-signin/contract/contract'
+import type { HarnessReadinessState } from '@/domains/harness-signin/contract/contract'
 import { SessionsSidebar } from '@/domains/sessions/renderer/session-list/sidebar/sessions-sidebar'
+import type { Harness } from '@/harnesses/harness'
 import { CockpitRouteLayout } from './cockpit-router'
 
 function SectionScreen({ section }: { section: string }) {

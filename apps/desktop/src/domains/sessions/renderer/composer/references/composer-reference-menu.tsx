@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import type { SessionHarness } from '../../harness/harnesses'
 import {
-  harnessLabel,
+  referenceHarnessLabel,
   referenceSuggestions,
   referenceSupportsHarness,
   type SessionReference,
@@ -118,7 +118,9 @@ export function ComposerReferenceMenu({
               <span className="block type-control">{choice.label}</span>
               <span className="block type-meta text-muted-foreground">
                 {unsupported
-                  ? t('composer.references.unavailable', { harness: harnessLabel(harness) })
+                  ? t('composer.references.unavailable', {
+                      harness: referenceHarnessLabel(harness),
+                    })
                   : choice.detail}
               </span>
             </span>

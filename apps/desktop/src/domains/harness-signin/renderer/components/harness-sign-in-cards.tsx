@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { HarnessReadiness } from '@/domains/harness-signin/contract/contract'
 import { HarnessLogo } from '@/domains/sessions/renderer'
+import { harnessShortLabel } from '@/harnesses/presentation-registry'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Card, CardContent } from '@/platform/renderer/components/ui/card'
 import { useHarnessSignIn } from '../hooks/use-harness-sign-in'
@@ -11,7 +12,7 @@ import { HarnessStateBody, STATE_BADGE_VARIANT } from './harness-readiness-row'
 function HarnessSignInCard({ readiness }: { readiness: HarnessReadiness }) {
   const { t } = useTranslation('harnessSignIn')
   const signIn = useHarnessSignIn(readiness.harness)
-  const name = t(`harness.${readiness.harness}`)
+  const name = harnessShortLabel(readiness.harness)
   return (
     <li className="w-60 min-w-0 list-none">
       <Card className="h-full">
@@ -30,7 +31,7 @@ function HarnessSignInCard({ readiness }: { readiness: HarnessReadiness }) {
   )
 }
 
-// The Roster's empty state has exactly two Harnesses to offer, always (Claude, Codex), so both
+// The Roster's empty state offers every registered Harness, so they
 // sit side by side rather than behind a picker: comparing them and acting on either takes one
 // glance and one click instead of a select-then-act two-step (#2579).
 export function HarnessSignInCards({ harnesses }: { harnesses: HarnessReadiness[] }) {

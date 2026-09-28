@@ -1,5 +1,7 @@
 // Session rows the Sessions stories draw.
+
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/renderer/model/models'
+import { DEFAULT_HARNESS } from '@/harnesses/harness'
 import { queryClient, trpc as trpcOptions } from '@/platform/renderer/trpc-client'
 import type { Session, SessionFeedSnapshot } from './types'
 
@@ -7,7 +9,7 @@ function listedSession(overrides: Partial<Session> = {}): Session {
   return {
     id: 'session-one',
     retiredIds: [],
-    harness: 'claude',
+    harness: DEFAULT_HARNESS,
     posture: 'live',
     customTitle: null,
     preview: null,

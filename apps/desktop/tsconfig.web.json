@@ -25,6 +25,11 @@
     "src/platform/renderer/**/*.ts",
     "src/platform/renderer/**/*.tsx",
     "src/shared/**/*.ts",
+    "src/harnesses/harness.ts",
+    "src/harnesses/harness-presentation.ts",
+    "src/harnesses/presentation-registry.ts",
+    "src/harnesses/*/presentation/**/*.ts",
+    "src/harnesses/*/presentation/**/*.tsx",
     "src/renderer/**/*.ts",
     "src/renderer/**/*.tsx",
     ".storybook/**/*.ts"
