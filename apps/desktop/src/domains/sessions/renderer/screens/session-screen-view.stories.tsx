@@ -731,7 +731,7 @@ async function expectShellReopensWithOutput(canvasElement: HTMLElement) {
   await userEvent.click(canvas.getByRole('button', { name: 'Collapse Session inspector' }))
   await userEvent.click(canvas.getByRole('button', { name: /^Shell/ }))
   await userEvent.click(await screen.findByRole('menuitem', { name: /bun run quality/ }))
-  const shellInspector = canvas.getByRole('region', { name: 'Background Shell' })
+  const shellInspector = await canvas.findByRole('region', { name: 'Background Shell' })
   await expect(shellInspector).toBeVisible()
   await waitFor(
     () => expect(within(shellInspector).getByText(/Checked 187 files\./)).toBeVisible(),
