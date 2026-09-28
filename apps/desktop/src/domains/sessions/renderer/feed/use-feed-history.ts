@@ -3,15 +3,13 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionContractError } from '../session-contract-error'
 import type { SessionFeedPage, SessionId } from '../types'
-import { readSessionFeedPage, retrySessionFeed, sessionFeedQuery } from './session-feed-query'
-
-type OlderPages = {
-  key: string
-  pages: SessionFeedPage[]
-  cursor: string | null
-  loading: boolean
-  failed: boolean
-}
+import { feedChainKey, loadOlderFeedPage, type OlderPagesByChain } from './feed-history-pages'
+import {
+  readSessionFeedPage,
+  refreshSessionFeed,
+  retrySessionFeed,
+  sessionFeedQuery,
+} from './session-feed-query'
 
 export function mergedContent(
   pages: readonly SessionFeedPage[],
@@ -33,54 +31,29 @@ function useOlderPages({
   sessionId,
   subagentId,
   latestCursor,
-  refetchLatest,
+  refreshLatest,
 }: {
   sessionId: SessionId | null
   subagentId: string | null
   latestCursor: string | null
-  refetchLatest: () => Promise<unknown>
+  refreshLatest: () => Promise<SessionFeedPage | null>
 }) {
-  const key = `${sessionId ?? ''}:${subagentId ?? ''}`
-  const [older, setOlder] = useState<OlderPages | null>(null)
-  const loadingKey = useRef<string | null>(null)
-  const current = older?.key === key ? older : null
+  const key = feedChainKey(sessionId, subagentId)
+  const [olderByChain, setOlderByChain] = useState<OlderPagesByChain>({})
+  const loadingKeys = useRef(new Set<string>())
+  const current = olderByChain[key] ?? null
   const cursor = current === null ? latestCursor : current.cursor
   const loadOlder = useCallback(async () => {
-    if (sessionId === null || cursor === null || loadingKey.current === key) return
-    loadingKey.current = key
-    setOlder((previous) => ({
-      key,
-      pages: previous?.key === key ? previous.pages : [],
+    await loadOlderFeedPage({
+      sessionId,
+      subagentId,
       cursor,
-      loading: true,
-      failed: false,
-    }))
-    try {
-      const page = await readSessionFeedPage(sessionId, subagentId, cursor)
-      setOlder((previous) =>
-        previous?.key === key
-          ? {
-              key,
-              pages: [page, ...previous.pages],
-              cursor: page.olderCursor ?? null,
-              loading: false,
-              failed: false,
-            }
-          : previous,
-      )
-    } catch (error) {
-      if (error instanceof Error && error.message === 'expired-feed-cursor') {
-        setOlder(null)
-        await refetchLatest()
-        return
-      }
-      setOlder((previous) =>
-        previous?.key === key ? { ...previous, loading: false, failed: true } : previous,
-      )
-    } finally {
-      if (loadingKey.current === key) loadingKey.current = null
-    }
-  }, [cursor, key, refetchLatest, sessionId, subagentId])
+      loadingKeys: loadingKeys.current,
+      refreshLatest,
+      readPage: readSessionFeedPage,
+      setOlderByChain,
+    })
+  }, [cursor, refreshLatest, sessionId, subagentId])
   return { current, cursor, loadOlder }
 }
 
@@ -93,11 +66,18 @@ export function useFeedHistory(
   const query = sessionFeedQuery(sessionId, subagentId, enabled)
   const latest = useQuery<SessionFeedPage | null, SessionContractError>(query)
   const refetchLatest = latest.refetch
+  const refreshLatest = useCallback(
+    () =>
+      sessionId === null
+        ? Promise.resolve(null)
+        : refreshSessionFeed(queryClient, sessionId, subagentId),
+    [queryClient, sessionId, subagentId],
+  )
   const { current, cursor, loadOlder } = useOlderPages({
     sessionId,
     subagentId,
     latestCursor: latest.data?.olderCursor ?? null,
-    refetchLatest,
+    refreshLatest,
   })
   const reading = useMemo(() => {
     const feed = latest.data

@@ -34,6 +34,20 @@ export async function readSessionFeedPage(
   }
 }
 
+export function refreshSessionFeed(
+  queryClient: QueryClient,
+  sessionId: SessionId,
+  subagentId: string | null,
+): Promise<SessionFeedPage> {
+  return queryClient.fetchQuery({
+    queryKey: sessionFeedQueryKey(sessionId, subagentId),
+    queryFn: () => readSessionFeedPage(sessionId, subagentId, null),
+    staleTime: 0,
+    gcTime: 0,
+    retry: false,
+  })
+}
+
 export function sessionFeedQuery(
   sessionId: SessionId | null,
   subagentId: string | null,
