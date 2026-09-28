@@ -79,7 +79,20 @@ function checkGitCommit({ command, cwd, root, roots }: ShellCheck): Verdict {
   for (const segment of segments(command)) {
     const { prefix, name, args } = invocation(tokenize(segment))
     if (prefix.includes(MAIN_COMMIT_MARKER)) continue
-    if (name !== 'git' || afterGitOptions(args)[0] !== 'commit') continue
+    const commandArgs = afterGitOptions(args)
+    if (name !== 'git' || commandArgs[0] !== 'commit') continue
+    const options = args.slice(0, args.length - commandArgs.length)
+    if (
+      prefix.some((argument) => argument.startsWith('GIT_DIR=')) ||
+      options.some((argument) => argument === '--git-dir' || argument.startsWith('--git-dir='))
+    ) {
+      return {
+        block: true,
+        reason:
+          `This commit uses GIT_DIR or --git-dir. The guard cannot prove that the selected index ` +
+          `belongs to a linked worktree. Remove the override or use a normal ticket-worktree commit.`,
+      }
+    }
     const commitCwd = gitCommitWorkingDirectory(args, cwd)
     if (!guarded({ abs: commitCwd, root, roots })) continue
     return {
