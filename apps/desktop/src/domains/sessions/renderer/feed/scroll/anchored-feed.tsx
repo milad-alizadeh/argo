@@ -48,6 +48,19 @@ function visibleRowAnchor(viewport: HTMLElement, rows: readonly SessionFeedRow[]
   return null
 }
 
+function currentRowAnchor(
+  viewport: HTMLElement,
+  rows: readonly SessionFeedRow[],
+  virtualizer: Virtualizer<HTMLElement, Element>,
+) {
+  const mounted = visibleRowAnchor(viewport, rows)
+  if (mounted !== null) return mounted
+  const measured = virtualizer.getVirtualItemForOffset(viewport.scrollTop)
+  if (measured === undefined) return null
+  const row = rows[measured.index]
+  return row === undefined ? null : { id: row.id, offset: measured.start - viewport.scrollTop }
+}
+
 function scrollToAnchor(
   virtualizer: Virtualizer<HTMLElement, Element>,
   rows: readonly SessionFeedRow[],
@@ -103,8 +116,8 @@ export function AnchoredFeed({
       onLoadOlder()
       return
     }
-    // The scroll event can precede a virtualizer range update; the mounted DOM names this anchor.
-    const anchor = visibleRowAnchor(viewport, rows)
+    // The DOM gives an exact anchor; measurements cover a fast scroll before rows mount.
+    const anchor = currentRowAnchor(viewport, rows, virtualizer)
     if (anchor === null) {
       onLoadOlder()
       return
@@ -114,7 +127,7 @@ export function AnchoredFeed({
       firstId: rows[0]?.id ?? anchor.id,
     }
     onLoadOlder()
-  }, [onLoadOlder, rows, viewport])
+  }, [onLoadOlder, rows, viewport, virtualizer])
   useLayoutEffect(() => {
     const anchor = olderAnchor.current
     const firstId = committedRows.current[0]?.id
@@ -148,10 +161,13 @@ export function AnchoredFeed({
     if (viewport === null) return
     let frame: number | null = null
     const rememberAnchor = () => {
+      const anchor = currentRowAnchor(viewport, rows, virtualizer)
+      // Keep this scroll even if a prepend cancels the next frame.
+      if (anchor !== null) visibleAnchor.current = anchor
       if (frame !== null) cancelAnimationFrame(frame)
       frame = requestAnimationFrame(() => {
-        const anchor = visibleRowAnchor(viewport, rows)
-        if (anchor !== null) visibleAnchor.current = anchor
+        const settledAnchor = visibleRowAnchor(viewport, rows)
+        if (settledAnchor !== null) visibleAnchor.current = settledAnchor
         frame = null
       })
     }
@@ -160,7 +176,7 @@ export function AnchoredFeed({
       viewport.removeEventListener('scroll', rememberAnchor)
       if (frame !== null) cancelAnimationFrame(frame)
     }
-  }, [rows, viewport])
+  }, [rows, viewport, virtualizer])
   useEffect(() => {
     if (olderError) olderAnchor.current = null
   }, [olderError])

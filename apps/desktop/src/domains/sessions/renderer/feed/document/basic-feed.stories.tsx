@@ -1695,6 +1695,8 @@ export const HistoryKeepsItsAnchorWhenEarlierRowsArrive: Story = {
     history.scrollTop = history.scrollHeight / 2
     fireEvent.scroll(history)
     await waitFor(() => expect(drawnRow(canvasElement, historyAnchorId)).toBeDefined())
+    history.scrollTop += 16
+    fireEvent.scroll(history)
     const viewport = history.getBoundingClientRect()
     const anchoredRow = drawnRows(canvasElement).find((row) => {
       const bounds = row.getBoundingClientRect()
@@ -1704,7 +1706,7 @@ export const HistoryKeepsItsAnchorWhenEarlierRowsArrive: Story = {
     const anchorId = anchoredRow.getAttribute('data-feed-row')
     if (anchorId === null) throw new Error('The anchored row needs an id.')
     const anchorTop = anchoredRow.getBoundingClientRect().top
-    await userEvent.click(canvas.getByRole('button', { name: 'Load earlier history' }))
+    fireEvent.click(canvas.getByRole('button', { name: 'Load earlier history' }))
     await waitFor(() => expect(drawnRow(canvasElement, anchorId)).toBe(anchoredRow))
     await waitFor(() => expect(anchoredRow.getBoundingClientRect().top).toBeCloseTo(anchorTop, 0))
   },
