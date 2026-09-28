@@ -1,9 +1,9 @@
-import { searchLabel, searchOutcome } from '@/domains/sessions/renderer/model/tool-changes'
-import type { BackgroundState } from '../source/background-task-record'
-import type { AskFacts, ExecuteFacts, ToolCall } from '../source/tool-call'
-import { resultText, type ToolResult as TranscriptToolResult } from '../source/transcript-content'
+import { searchLabel, searchOutcome } from '@/domains/sessions/api/feed/tool-changes'
+import type { BackgroundState } from './background-task-record'
 import type { SessionFeedRow } from './feed-rows'
 import { editPresentation, fileName } from './file-presentation'
+import type { AskFacts, ExecuteFacts, ToolCall } from './tool-call'
+import { resultText, type ToolResult as TranscriptToolResult } from './transcript-content'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 type AskRow = Extract<SessionFeedRow, { shape: 'ask' }>

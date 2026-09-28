@@ -1,8 +1,8 @@
 import type { FeedContent, MediaSource } from '@/domains/sessions/api/feed-content'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
-import type { SessionFeedRow } from '../../types'
-import type { ToolCall } from '../source/tool-call'
 import { checkedDataImageUrl, dataImageUrl, fileImageUrl } from './feed-images'
+import type { SessionFeedRow } from './feed-rows'
+import type { ToolCall } from './tool-call'
 import { toolRows } from './tool-feed'
 
 function workStatus(
@@ -449,7 +449,7 @@ function liveRows(event: SessionLiveEvent): SessionFeedRow[] {
   }
 }
 
-function rowKey(row: SessionFeedRow): string {
+export function rowKey(row: SessionFeedRow): string {
   const id = row.shape === 'prose' || row.shape === 'thought' ? row.id.replace(/:0$/, '') : row.id
   return `${row.shape}:${id}`
 }

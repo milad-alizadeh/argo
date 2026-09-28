@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { sessionFeedRowSchema } from '@/domains/sessions/renderer/feed/model/feed-rows'
+import { sessionFeedRowSchema } from '@/domains/sessions/api/feed/feed-rows'
 import { sessionRosterRowSchema } from '@/domains/sessions/renderer/model/models'
 import { sessionRosterRow } from '@/domains/sessions/renderer/session-fixtures'
 

@@ -12,14 +12,13 @@ export {
   FEED_EVENT_KINDS,
   FEED_MARKERS,
   type FeedEventKind,
-  type FeedMarker,
   feedEventKindSchema,
   feedMarkerSchema,
   type SessionFeedRow,
   sessionFeedRowSchema,
   UNREADABLE_ROW,
   unreadableRowHeight,
-} from '@/domains/sessions/renderer/feed/model/feed-rows'
+} from '@/domains/sessions/api/feed/feed-rows'
 
 export const SESSION_POSTURES = ['live', 'external'] as const
 export const sessionPostureSchema = z.enum(SESSION_POSTURES)
