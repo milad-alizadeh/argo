@@ -1,6 +1,6 @@
 import { QueryClient, QueryObserver } from '@tanstack/react-query'
 import { describe, expect, test, vi } from 'vitest'
-import { retrySessionFeed, sessionFeedQuery } from './session-feed-query'
+import { refreshSessionFeed, retrySessionFeed, sessionFeedQuery } from './session-feed-query'
 
 function feedReply(sessionId: string, requestId: string, revision: string) {
   return {
@@ -52,6 +52,33 @@ test('reads the feed through tRPC without legacy preload methods', async () => {
     })
     expect(trpc).toHaveBeenCalledOnce()
   })
+})
+
+test('refreshes only the Session whose older cursor expired', async () => {
+  const client = new QueryClient()
+  const sessionA = feedReply('session-a', 'a-old', 'a-old')
+  const sessionB = feedReply('session-b', 'b-current', 'b-current')
+  client.setQueryData(sessionFeedQuery('session-a', null).queryKey, sessionA)
+  client.setQueryData(sessionFeedQuery('session-b', null).queryKey, sessionB)
+  const refreshedA = { ...feedReply('session-a', 'a-new', 'a-new'), olderCursor: 'a-next' }
+  const trpc = vi.fn().mockResolvedValue({ result: { data: refreshedA } })
+
+  await withTrpc(trpc, async () => {
+    await refreshSessionFeed(client, 'session-a', null)
+  })
+
+  expect(trpc).toHaveBeenCalledWith(
+    expect.objectContaining({
+      path: 'sessionFeedRead',
+      type: 'query',
+      input: expect.objectContaining({ sessionId: 'session-a' }),
+    }),
+  )
+  expect(client.getQueryData(sessionFeedQuery('session-a', null).queryKey)).toMatchObject({
+    revision: 'a-new',
+    olderCursor: 'a-next',
+  })
+  expect(client.getQueryData(sessionFeedQuery('session-b', null).queryKey)).toBe(sessionB)
 })
 
 test('keeps history reads event-driven for both live and external Sessions', () => {
