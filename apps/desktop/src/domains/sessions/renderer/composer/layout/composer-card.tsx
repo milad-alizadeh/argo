@@ -110,7 +110,7 @@ function ComposerContextPicker({
 }) {
   const { editing, dispatch } = useComposerEditing()
   const { attachFiles } = useAttachmentTransfer((paths) =>
-    dispatch({ type: 'attachments.added', paths, createId: crypto.randomUUID }),
+    dispatch({ type: 'attachments.added', paths, createId: () => crypto.randomUUID() }),
   )
   if (!open) return null
   return (
@@ -118,7 +118,7 @@ function ComposerContextPicker({
       anchorRef={anchorRef}
       draft={editing.prompt}
       onAddTicket={(ticket) =>
-        dispatch({ type: 'ticket.added', ticket, createId: crypto.randomUUID })
+        dispatch({ type: 'ticket.added', ticket, createId: () => crypto.randomUUID() })
       }
       onAttach={() => void attachFiles()}
       onClose={() => closeContextPicker(editorRef, setOpen)}
@@ -133,7 +133,7 @@ export function ComposerCard(props: ComposerCardProps) {
   const { t } = useTranslation('sessions')
   const { editing, dispatch } = useComposerEditing()
   const { dropFiles: dropAttachedFiles } = useAttachmentTransfer((paths) =>
-    dispatch({ type: 'attachments.added', paths, createId: crypto.randomUUID }),
+    dispatch({ type: 'attachments.added', paths, createId: () => crypto.randomUUID() }),
   )
   const [contextPickerOpen, setContextPickerOpen] = useContextPicker(editing.prompt)
   const interruptRef = useFocusInterruptOnCompactStart(props.isCompacting)
