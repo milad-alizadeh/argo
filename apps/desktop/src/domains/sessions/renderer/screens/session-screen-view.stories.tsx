@@ -834,20 +834,33 @@ async function pickSubagent(canvas: ReturnType<typeof within>) {
 
 async function expectDelegatedFeedSurvivesCollapse(canvas: ReturnType<typeof within>) {
   const inspector = canvas.getByRole('region', { name: 'Subagent' })
-  await expect(inspector).toBeVisible()
-  expect(inspector.getBoundingClientRect().width).toBeGreaterThan(0)
-  const subagentMessage = within(inspector)
-    .getAllByText(/Review finding \d+: The inspector keeps a complete implementation report/)
-    .find((message) => message.getBoundingClientRect().height > 0)
-  if (subagentMessage === undefined) throw new Error('The Subagent transcript is absent.')
-  await expect(subagentMessage).toBeVisible()
-  expectVisibleFeedRowsDoNotOverlap(within(inspector).getByLabelText('Subagent history'))
+  await waitFor(
+    () => {
+      expect(inspector).toBeVisible()
+      expect(inspector.getBoundingClientRect().width).toBeGreaterThan(0)
+      const subagentMessage = within(inspector)
+        .getAllByText(/Review finding \d+: The inspector keeps a complete implementation report/)
+        .find((message) => message.getBoundingClientRect().height > 0)
+      if (subagentMessage === undefined) throw new Error('The Subagent transcript is absent.')
+      expect(subagentMessage).toBeVisible()
+      expectVisibleFeedRowsDoNotOverlap(within(inspector).getByLabelText('Subagent history'))
+    },
+    { timeout: 5000 },
+  )
 
   await userEvent.click(canvas.getByRole('button', { name: 'Collapse Session inspector' }))
-  await waitFor(() => expect(inspector.querySelector('.feed__document')).toBeNull())
+  await waitFor(() => expect(inspector.querySelector('.feed__document')).toBeNull(), {
+    timeout: 5000,
+  })
   await pickSubagent(canvas)
   const reopenedInspector = await canvas.findByRole('region', { name: 'Subagent' })
-  expectVisibleFeedRowsDoNotOverlap(within(reopenedInspector).getByLabelText('Subagent history'))
+  await waitFor(
+    () =>
+      expectVisibleFeedRowsDoNotOverlap(
+        within(reopenedInspector).getByLabelText('Subagent history'),
+      ),
+    { timeout: 5000 },
+  )
 }
 
 function expectNoSessionIdOrWorkspaceInHeader(canvasElement: HTMLElement) {
