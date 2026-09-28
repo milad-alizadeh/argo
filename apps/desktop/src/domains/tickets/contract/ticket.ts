@@ -33,6 +33,9 @@ export const labelColor = (value: unknown): string | null => {
 
 export const ticket = z.strictObject({
   key: ticketKey,
+  // The provider's stable handle when the key can change, such as a Linear issue id; absent means
+  // the key is the native ID.
+  nativeId: z.string().min(1).max(128).optional(),
   // The provider's page for this Ticket, checked in main to be on the provider's own host.
   url: z.url({ protocol: /^https?$/ }).nullable(),
   title: z.string(),

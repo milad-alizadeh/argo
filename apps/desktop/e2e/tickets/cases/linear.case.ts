@@ -12,6 +12,7 @@ import {
   choose,
   chooseAccount,
   closeAccounts,
+  committedTicketIds,
   connectForm,
   detailTitle,
   openAccounts,
@@ -23,6 +24,7 @@ import {
   storeText,
 } from '../screen'
 
+const LINEAR_SCOPE = { provider: 'linear', scope: 'team-engine' }
 const ada = (run: Run) => accountRow(run.page, ADA.name, 'Linear')
 const teamKeys = (run: Run) => backlogKeys(run.page, /^ENG-\d+/)
 const renewals = (run: Run) =>
@@ -83,6 +85,17 @@ export async function proveLinearBacklog(run: Run) {
     // Linear has no new-issue page Argo links to, so New Ticket stays unavailable.
     await expect(run.page.getByRole('button', { name: 'New Ticket' })).toBeDisabled()
   })
+}
+
+// The active Linear scan lands in the same SQLite tables, keyed by Linear's issue id, and a later
+// launch's scan keeps every Argo ID.
+export async function proveLinearCommitted(run: Run, restarted: Run) {
+  await backlog(run.page).getByRole('button', { name: 'Status: In Progress' }).waitFor()
+  const before = committedTicketIds(run, LINEAR_SCOPE)
+  assert.deepEqual(Object.keys(before).sort(), ['issue-ENG-1', 'issue-ENG-2'])
+  await openRoom(restarted.page, 'tickets')
+  assert.deepEqual(await teamKeys(restarted), ['ENG-1', 'ENG-2'])
+  assert.deepEqual(committedTicketIds(restarted, LINEAR_SCOPE), before)
 }
 
 // Moving ENG-2 from its row reaches Linear, which the next launch reads back.

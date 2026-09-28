@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
 import type { ElectronApplication, Locator, Page } from 'playwright-core'
 import type { MockUser } from '../../mocks/providers/github/mock-github'
 import { ADA } from '../../mocks/providers/linear/mock-linear-cast'
@@ -118,3 +119,25 @@ export const accountListing = (page: Page) =>
   page.evaluate(() =>
     window.argo.trpc({ id: 0, path: 'accountList', type: 'query', input: undefined }),
   )
+
+// The Argo ID of each Ticket the main process committed for one provider scope, by native ID.
+export function committedTicketIds(
+  run: Run,
+  { provider, scope }: { provider: string; scope: string },
+): Record<string, string> {
+  const database = new DatabaseSync(path.join(run.fixture.userData, 'argo.sqlite'), {
+    readOnly: true,
+  })
+  try {
+    const rows = database
+      .prepare(
+        `SELECT ticket.native_id, ticket.argo_id FROM ticket
+         JOIN ticket_content ON ticket_content.ticket_id = ticket.argo_id
+         WHERE ticket.provider = ? AND ticket.scope = ?`,
+      )
+      .all(provider, scope)
+    return Object.fromEntries(rows.map((row) => [String(row.native_id), String(row.argo_id)]))
+  } finally {
+    database.close()
+  }
+}
