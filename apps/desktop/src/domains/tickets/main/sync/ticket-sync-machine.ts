@@ -1,14 +1,17 @@
 // One scan of a scope's active Tickets: each page commits before the next; the last sets coverage.
+// A Closed scan reads a single page, the first or the one after the saved cursor.
 import { assign, fromPromise, setup } from 'xstate'
 import type { Database } from '@/database/database'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
 import type { Ticket, TicketErrorCode, TicketStatus } from '@/domains/tickets/contract/contract'
-import { saveListedTickets } from '../database/ticket-upsert'
-import type { TicketPage } from '../sources'
+import { countClosedListed, saveClosedTickets, saveListedTickets } from '../database/ticket-upsert'
+import type { ListingState, TicketPage } from '../sources'
 import {
-  beginTicketScan,
+  beginScan,
+  completeClosedPage,
   completeTicketScan,
   failTicketScan,
+  type ScanStart,
   type TicketSyncTarget,
 } from './ticket-sync-records'
 
@@ -24,12 +27,20 @@ export type PageRead =
 
 export type TicketSyncRequest = TicketScopeTarget & {
   accountId: string
+  // Which listing to read; the open backlog unless a Closed page is asked for.
+  state?: ListingState
 }
 
 export type TicketSyncDependencies = {
   database: Database
-  // One active page of the scope, read as the Account through Account access.
-  readPage: (request: TicketSyncRequest, cursor: string | null) => Promise<PageRead>
+  // One page of the scope's active Tickets, or of a query's matches, read as the Account through
+  // Account access.
+  readPage: (
+    request: TicketSyncRequest & {
+      query: string
+    },
+    cursor: string | null,
+  ) => Promise<PageRead>
   // Called after every commit that can change what a Ticket query answers.
   changed: (target: TicketScopeTarget) => void
 }
@@ -38,11 +49,17 @@ type ScanInput = {
   dependencies: TicketSyncDependencies
   target: TicketSyncTarget
 }
+type BeginInput = ScanInput & {
+  // A Closed scan reads the page after the saved cursor rather than the first.
+  more: boolean
+}
 export type SavePageInput = ScanInput & {
   scanStartedAt: number
   readAt: number
   tickets: readonly Ticket[]
   offset: number
+  first: boolean
+  nextCursor: string | null
 }
 export type CompleteInput = ScanInput & {
   statuses: readonly TicketStatus[]
@@ -51,8 +68,15 @@ export type RecordFailureInput = ScanInput & {
   failure: TicketErrorCode
 }
 
-function commit<Result>(
-  { dependencies, target }: ScanInput,
+// A write to SQLite, then the notice that a Ticket query may answer differently.
+export function commit<Result>(
+  {
+    dependencies,
+    target,
+  }: {
+    dependencies: TicketSyncDependencies
+    target: TicketScopeTarget
+  },
   write: (database: Database) => Result,
 ) {
   const result = write(dependencies.database)
@@ -68,6 +92,11 @@ const scanInput = ({ dependencies, target }: ScanInput): ScanInput => ({
   target,
 })
 
+const LISTING_OF_KIND: Record<TicketSyncTarget['kind'], ListingState> = {
+  active: 'open',
+  closed: 'closed',
+}
+
 const mergedStatuses = (saved: readonly TicketStatus[], offered: readonly TicketStatus[]) => [
   ...saved,
   ...offered.filter(({ id }) => !saved.some((status) => status.id === id)),
@@ -75,12 +104,14 @@ const mergedStatuses = (saved: readonly TicketStatus[], offered: readonly Ticket
 
 export const ticketSyncMachine = setup({
   types: {
-    input: {} as ScanInput & {
+    input: {} as BeginInput & {
       accountId: string
     },
-    context: {} as ScanInput & {
+    context: {} as BeginInput & {
       // The Account the scan reads as; the token stays with Account access.
       accountId: string
+      // Whether the page being saved starts its listing over.
+      first: boolean
       // The scan's start, which is also the listing mark every page of this scan writes.
       scanStartedAt: number
       cursor: string | null
@@ -96,8 +127,13 @@ export const ticketSyncMachine = setup({
     },
   },
   actors: {
-    begin: fromPromise<number, ScanInput>(async ({ input }) => {
-      return commit(input, (database) => beginTicketScan(database, input.target, Date.now()))
+    begin: fromPromise<ScanStart, BeginInput>(async ({ input }) => {
+      return commit(input, (database) =>
+        beginScan(database, input.target, {
+          more: input.more,
+          now: Date.now(),
+        }),
+      )
     }),
     fetchPage: fromPromise<
       PageRead,
@@ -110,24 +146,46 @@ export const ticketSyncMachine = setup({
         {
           ...input.target,
           accountId: input.accountId,
+          state: LISTING_OF_KIND[input.target.kind],
+          query: '',
         },
         input.cursor,
       ),
     ),
+    // A Closed page and its cursor commit together, so a later failure leaves the listing as saved.
     savePage: fromPromise<void, SavePageInput>(async ({ input }) => {
-      const { target, scanStartedAt, offset, readAt } = input
-      commit(input, (database) =>
-        saveListedTickets(
-          database,
-          {
-            ...target,
-            scanStartedAt,
-            offset,
-            readAt,
-          },
-          input.tickets,
-        ),
-      )
+      const { target, scanStartedAt, offset, readAt, first, nextCursor } = input
+      commit(input, (database) => {
+        switch (target.kind) {
+          case 'active':
+            return saveListedTickets(
+              database,
+              {
+                ...target,
+                scanStartedAt,
+                offset,
+                readAt,
+              },
+              input.tickets,
+            )
+          case 'closed': {
+            saveClosedTickets(
+              database,
+              {
+                ...target,
+                offset: first ? 0 : countClosedListed(database, target),
+                readAt,
+                first,
+              },
+              input.tickets,
+            )
+            return completeClosedPage(database, target, {
+              nextCursor,
+              completedAt: Date.now(),
+            })
+          }
+        }
+      })
     }),
     complete: fromPromise<void, CompleteInput>(async ({ input }) => {
       commit(input, (database) =>
@@ -154,7 +212,11 @@ export const ticketSyncMachine = setup({
         cursors: readonly string[]
       },
     ) => read.ok && read.value.nextCursor !== null && cursors.includes(read.value.nextCursor),
-    'if another page follows': ({ context }) => context.page?.nextCursor != null,
+    // A Closed scan is one page; the person asks for the next.
+    'if another page follows': ({ context }) =>
+      context.target.kind === 'active' && context.page?.nextCursor != null,
+    'if the scan is Closed': ({ context }) => context.target.kind === 'closed',
+    'if nothing follows the saved cursor': (_, start: ScanStart) => start.exhausted,
   },
   actions: {
     advance: assign({
@@ -176,6 +238,8 @@ export const ticketSyncMachine = setup({
     dependencies: input.dependencies,
     target: input.target,
     accountId: input.accountId,
+    more: input.more,
+    first: true,
     scanStartedAt: 0,
     cursor: null,
     cursors: [],
@@ -193,13 +257,31 @@ export const ticketSyncMachine = setup({
     Starting: {
       invoke: {
         src: 'begin',
-        input: ({ context }) => scanInput(context),
-        onDone: {
-          target: 'Fetching',
-          actions: assign({
-            scanStartedAt: ({ event }) => event.output,
-          }),
-        },
+        input: ({ context }) => ({
+          ...scanInput(context),
+          more: context.more,
+        }),
+        onDone: [
+          {
+            guard: {
+              type: 'if nothing follows the saved cursor',
+              params: ({ event }) => event.output,
+            },
+            target: 'Ready',
+          },
+          {
+            target: 'Fetching',
+            actions: assign(({ event }) =>
+              event.output.exhausted
+                ? {}
+                : {
+                    scanStartedAt: event.output.scanStartedAt,
+                    cursor: event.output.cursor,
+                    first: event.output.first,
+                  },
+            ),
+          },
+        ],
         onError: {
           target: 'Failing',
           actions: assign({
@@ -271,12 +353,18 @@ export const ticketSyncMachine = setup({
           readAt: context.readAt,
           tickets: context.page?.tickets ?? [],
           offset: context.offset,
+          first: context.first,
+          nextCursor: context.page?.nextCursor ?? null,
         }),
         onDone: [
           {
             guard: 'if another page follows',
             target: 'Fetching',
             actions: 'advance',
+          },
+          {
+            guard: 'if the scan is Closed',
+            target: 'Ready',
           },
           {
             target: 'Completing',

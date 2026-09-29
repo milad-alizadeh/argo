@@ -6,7 +6,12 @@ import { afterEach, beforeEach, test } from 'vitest'
 import { createActor } from 'xstate'
 import { type Database, openDatabase } from '@/database/database'
 import type { Ticket, TicketStatus } from '@/domains/tickets/contract/contract'
-import { readActiveTickets } from '../database/ticket-queries'
+import {
+  readActiveTickets,
+  readClosedTickets,
+  readSavedTicket,
+  readSearchedTickets,
+} from '../database/ticket-queries'
 import type { PageRead, TicketSyncDependencies, TicketSyncRequest } from './ticket-sync-machine'
 import {
   nextScanDelay,
@@ -22,12 +27,16 @@ const REQUEST: TicketSyncRequest = {
   accountId: 'github:583231',
 }
 
-const ticket = (number: number): Ticket => ({
+const ticket = (
+  number: number,
+  title = `Ticket ${number}`,
+  state: Ticket['state'] = 'open',
+): Ticket => ({
   key: `#${number}`,
   url: null,
-  title: `Ticket ${number}`,
+  title,
   body: null,
-  state: 'open',
+  state,
   status: OPEN,
   priority: null,
   createdAt: '2026-09-01T00:00:00Z',
@@ -263,9 +272,217 @@ test('failed scans keep committed rows and retry sooner, backing off to the boun
   )
 })
 
+const DONE: TicketStatus = { id: 'done', name: 'Done', category: 'completed' }
+const closedTicket = (number: number): Ticket => ({
+  ...ticket(number),
+  state: 'closed',
+  status: DONE,
+})
+const closedPage = (numbers: number[], nextCursor: string | null): PageRead => ({
+  ok: true,
+  value: { tickets: numbers.map(closedTicket), statuses: [], nextCursor, total: null },
+})
+const savedClosed = () =>
+  readClosedTickets(database, { provider: 'github', scope: REQUEST.scope, page: 0, pageSize: 25 })
+const closedKeys = () => savedClosed().tickets.map(({ key }) => key)
+
+function closedSupervisor(reads: Record<string, PageRead>) {
+  const asked: { cursor: string | null; state: string | undefined }[] = []
+  const supervisor = createActor(ticketSyncSupervisorMachine, {
+    input: {
+      database,
+      readPage: async (request, cursor) => {
+        asked.push({ cursor, state: request.state })
+        return reads[cursor ?? 'first'] ?? { ok: false, failure: 'github-unreachable' }
+      },
+      timing: TICKET_SYNC_TIMING,
+      changed: () => {},
+    },
+  }).start()
+  // A person opening Closed, or asking for more of it, then waiting for the answer to commit.
+  const ask = async (more: boolean, answered: () => boolean) => {
+    supervisor.send({ type: 'LoadClosed', request: REQUEST, more })
+    await until(answered)
+  }
+  return { supervisor, asked, ask }
+}
+
+const PAGES = () => ({ first: closedPage([9, 8], '2'), '2': closedPage([7], null) })
+const loaded = () => savedClosed().sync.phase === 'ready'
+const complete = () => savedClosed().sync.complete
+
+test('Closed reads a page when opened and the next on request, apart from the active scan', async () => {
+  const { supervisor, asked, ask } = closedSupervisor(PAGES())
+  await ask(false, loaded)
+  assert.deepEqual(closedKeys(), ['#9', '#8'])
+  assert.equal(complete(), false)
+
+  await ask(true, complete)
+  assert.deepEqual(closedKeys(), ['#9', '#8', '#7'])
+  assert.deepEqual(asked, [
+    { cursor: null, state: 'closed' },
+    { cursor: '2', state: 'closed' },
+  ])
+  // The saved Closed Tickets never joined the active list.
+  assert.equal(read().total, 0)
+
+  // Past the last page nothing is read.
+  supervisor.send({ type: 'LoadClosed', request: REQUEST, more: true })
+  await new Promise((settle) => setTimeout(settle, 20))
+  assert.equal(asked.length, 2)
+
+  // Opening Closed again starts the listing over from the first page.
+  await ask(false, () => !complete() && loaded())
+  assert.deepEqual(closedKeys(), ['#9', '#8'])
+  supervisor.stop()
+})
+
+test('a failed Closed page keeps the saved rows, waits for a person, and can be asked again', async () => {
+  const reads: Record<string, PageRead> = { first: closedPage([9, 8], '2') }
+  const { supervisor, asked, ask } = closedSupervisor(reads)
+  await ask(false, loaded)
+  await ask(true, () => savedClosed().sync.phase === 'failed')
+  assert.equal(savedClosed().sync.failure, 'github-unreachable')
+  assert.deepEqual(closedKeys(), ['#9', '#8'])
+  await new Promise((settle) => setTimeout(settle, 20))
+  assert.equal(asked.length, 2)
+
+  reads['2'] = closedPage([7], null)
+  await ask(true, complete)
+  assert.deepEqual(closedKeys(), ['#9', '#8', '#7'])
+  assert.equal(savedClosed().sync.failure, null)
+  supervisor.stop()
+})
+
 test('the wait after a scan is the poll, or the doubled retry up to its bound', () => {
   assert.deepEqual(
     [0, 1, 2, 3, 6, 50].map((failures) => nextScanDelay(TICKET_SYNC_TIMING, failures)),
     [60_000, 5_000, 10_000, 20_000, 160_000, 300_000],
   )
+})
+
+const search = (query: string) =>
+  readSearchedTickets(database, {
+    provider: 'github',
+    scope: REQUEST.scope,
+    query,
+    page: 0,
+    pageSize: 25,
+  })
+
+function supervisorReading(readPage: (query: string) => Promise<PageRead>) {
+  const supervisor = createActor(ticketSyncSupervisorMachine, {
+    input: {
+      database,
+      readPage: (request) => readPage(request.query),
+      timing: TICKET_SYNC_TIMING,
+      changed: () => {},
+    },
+  }).start()
+  return { supervisor }
+}
+
+const page = (...tickets: Ticket[]): PageRead => ({
+  ok: true,
+  value: { tickets, statuses: [OPEN], nextCursor: null, total: null },
+})
+
+test('saved Tickets answer a query before the provider does, and the provider adds its own after', async () => {
+  const { supervisor } = supervisorReading(async (query) =>
+    query === ''
+      ? page(ticket(9, 'History of the roadmap'))
+      : page(ticket(10, 'Old history', 'closed')),
+  )
+  supervisor.send({ type: 'Sync', request: REQUEST })
+  await until(
+    () =>
+      readActiveTickets(database, {
+        provider: 'github',
+        scope: REQUEST.scope,
+        page: 0,
+        pageSize: 5,
+      }).sync.complete,
+  )
+
+  const before = search('history')
+  assert.equal(before.search.phase, 'idle')
+  assert.deepEqual(
+    before.tickets.map(({ key }) => key),
+    ['#9'],
+  )
+
+  supervisor.send({ type: 'Search', request: { ...REQUEST, query: 'history' } })
+  await until(() => search('history').search.completedAt !== null)
+  assert.deepEqual(
+    search('history').tickets.map(({ key }) => key),
+    ['#10', '#9'],
+  )
+  supervisor.stop()
+})
+
+test('a provider-only match is committed under the same identity the detail reads', async () => {
+  const { supervisor } = supervisorReading(async (query) =>
+    query === 'roadmap' ? page(ticket(4, 'Quarterly plan', 'closed')) : page(),
+  )
+  supervisor.send({ type: 'Search', request: { ...REQUEST, query: 'roadmap' } })
+  await until(() => search('roadmap').search.completedAt !== null)
+
+  const found = search('roadmap')
+  assert.equal(found.search.phase, 'ready')
+  assert.deepEqual(
+    found.tickets.map(({ title }) => title),
+    ['Quarterly plan'],
+  )
+  assert.equal(found.total, 1)
+  const detail = readSavedTicket(database, {
+    provider: 'github',
+    scope: REQUEST.scope,
+    reference: '#4',
+  })
+  assert.equal(detail.saved?.ticket.title, 'Quarterly plan')
+  // Unlisted, so the active list is unchanged.
+  assert.equal(
+    readActiveTickets(database, { provider: 'github', scope: REQUEST.scope, page: 0, pageSize: 5 })
+      .total,
+    0,
+  )
+  supervisor.stop()
+})
+
+test('a failed provider search keeps the saved matches and names the failure', async () => {
+  const { supervisor } = supervisorReading(async (query) =>
+    query === 'first'
+      ? page(ticket(1, 'First match'))
+      : { ok: false, failure: 'github-unreachable' },
+  )
+  supervisor.send({ type: 'Search', request: { ...REQUEST, query: 'first' } })
+  await until(() => search('first').search.completedAt !== null)
+  supervisor.send({ type: 'Search', request: { ...REQUEST, query: 'match' } })
+  await until(() => search('match').search.phase === 'failed')
+
+  const failed = search('match')
+  assert.equal(failed.search.failure, 'github-unreachable')
+  assert.equal(failed.search.completedAt, null)
+  assert.deepEqual(
+    failed.tickets.map(({ key }) => key),
+    ['#1'],
+  )
+  supervisor.stop()
+})
+
+test('a query holding SQL wildcards matches only itself', async () => {
+  const { supervisor } = supervisorReading(async () =>
+    page(ticket(1, '100% done'), ticket(2, '100 items')),
+  )
+  supervisor.send({ type: 'Search', request: { ...REQUEST, query: 'zzz' } })
+  await until(() => search('zzz').search.completedAt !== null)
+  assert.deepEqual(
+    search('100%').tickets.map(({ key }) => key),
+    ['#1'],
+  )
+  assert.deepEqual(
+    search('_').tickets.map(({ key }) => key),
+    [],
+  )
+  supervisor.stop()
 })

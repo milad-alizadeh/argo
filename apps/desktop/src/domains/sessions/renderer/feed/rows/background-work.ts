@@ -1,8 +1,9 @@
 import { createContext } from 'react'
+import type { FeedSubagent } from '@/domains/sessions/api/feed/feed-subagents'
 
 export type BackgroundWorkLinks = {
-  // By the id a row names: a Shell's call, or a Subagent, known to the Session or not.
-  open: (id: string) => void
+  // With what the row says of it, since a nested Subagent's row is all the Session has of it.
+  open: (subagent: FeedSubagent) => void
 }
 
 // Set by the Session screen, so every Subagent row opens its own feed. A row outside a Session

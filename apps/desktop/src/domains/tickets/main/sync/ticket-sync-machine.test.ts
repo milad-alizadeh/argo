@@ -11,6 +11,7 @@ import {
   type SavePageInput,
   ticketSyncMachine,
 } from './ticket-sync-machine'
+import type { ScanStart } from './ticket-sync-records'
 
 const TARGET = { provider: 'github', scope: 'octocat/hello-world', kind: 'active' } as const
 const OPEN: TicketStatus = { id: 'open', name: 'Open', category: 'unstarted' }
@@ -28,9 +29,9 @@ function run(pages: Record<string, PageRead>) {
   const writes: string[] = []
   const machine = ticketSyncMachine.provide({
     actors: {
-      begin: fromPromise(async () => {
+      begin: fromPromise(async (): Promise<ScanStart> => {
         writes.push('begin')
-        return 1
+        return { exhausted: false, first: true, cursor: null, scanStartedAt: 1 }
       }),
       savePage: fromPromise(async ({ input }: { input: SavePageInput }) => {
         writes.push(`save ${input.offset} ${input.tickets.map(({ key }) => key).join(',')}`)
@@ -56,6 +57,7 @@ function run(pages: Record<string, PageRead>) {
       },
       target: TARGET,
       accountId: 'github:583231',
+      more: false,
     },
   }).start()
   return { writes, done: toPromise(actor), actor }

@@ -35,7 +35,7 @@ function useWorkArtifacts({
 }) {
   const subagents = sessionScreenSubagents(feedSubagents, session?.subagents ?? [])
   const shell = session?.shell.find((command) => command.id === work.shellId) ?? null
-  const delegation = pickedSubagent(subagents, work.subagentId)
+  const delegation = pickedSubagent(subagents, work)
   const delegationFeed = useDelegationFeed(selectedSessionId, delegation?.id ?? null)
   return {
     shell,

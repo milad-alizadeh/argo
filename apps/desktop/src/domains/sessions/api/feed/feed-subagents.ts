@@ -57,3 +57,11 @@ export function subagentCompletionRows(
     return [completion]
   })
 }
+
+// A Subagent's own Feed holds a transcript when any row is more than its parent's record of it.
+export function hasSubagentTranscript(
+  rows: readonly SessionFeedRow[],
+  subagentId: string,
+): boolean {
+  return rows.some((row) => row.shape !== 'subagent' || row.subagentId !== subagentId)
+}

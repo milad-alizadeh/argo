@@ -15,6 +15,11 @@
   background-color: var(--background);
 }
 
+/* The one horizontal inset of a sidebar's search bar and rows, so nothing shifts between tabs. */
+@utility sidebar-gutter {
+  padding-inline: var(--spacing-shell-gutter);
+}
+
 /* Animate the library's outer flex items, leaving direct resizing immediate. */
 @utility panel-motion {
   & > [data-panel] {
@@ -70,6 +75,12 @@
   border-start-end-radius: var(--panel-end-radius, 0px);
   border-end-end-radius: var(--panel-end-radius, 0px);
   background-color: var(--card);
+}
+
+/* The main content surface of a page: the panel body on the session surface, whatever the tab. */
+@utility panel-content {
+  @apply panel-body;
+  background-color: var(--color-session-surface);
 }
 
 @utility panel-outer-start {

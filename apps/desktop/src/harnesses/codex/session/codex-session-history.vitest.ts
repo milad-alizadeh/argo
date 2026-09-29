@@ -382,7 +382,7 @@ test('keeps a Subagent row without a nickname when its thread cannot be read', a
   expect(content).toMatchObject({ name: 'spec_review' })
   expect(content).not.toHaveProperty('nickname')
   expect(warning).toHaveBeenCalledWith(
-    'Rejected 1 unreadable Codex Subagent thread; it shows no nickname.',
+    'Could not read 1 Codex Subagent thread; it shows no nickname.',
   )
   warning.mockRestore()
 })

@@ -26,7 +26,7 @@ import {
   readCodexInteraction,
 } from './codex-session-interactions'
 import { APPROVAL_TIMEOUT_MS, inputItems } from './codex-session-protocol'
-import { CodexSubagentNicknames, CodexSubagentPairing } from './codex-subagent-content'
+import { CodexSubagentPairing } from './codex-subagent-content'
 import { readCodexThreadStatus } from './codex-thread-status'
 
 export type CodexLiveClient = {
@@ -71,7 +71,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
     },
   ) {
     this.client = client
-    this.subagents = new CodexSubagentPairing(new CodexSubagentNicknames(client.request))
+    this.subagents = new CodexSubagentPairing(client.request)
     this.controls = options.controls
     this.emit = (event) => options.emit(liveSessionChannelEventSchema.parse(event))
     this.unsubscribe = client.onNotification((message) => this.receive(message))
@@ -458,7 +458,9 @@ export class CodexSessionChannel implements LiveSessionChannel {
   }
 
   private subagentItem(item: Extract<ThreadItem, { type: 'subAgentActivity' }>, turnId: string) {
-    const redraw = (content: FeedContent) => this.emitItemContent(content, content.id, turnId)
+    const commandId = this.active?.commandId ?? null
+    const redraw = (content: FeedContent) =>
+      this.emitFeed({ type: 'content', commandId, turnId, vendorEventId: content.id, content })
     this.emitItemContent(this.subagents.activity(item, redraw), item.id, turnId)
   }
 
@@ -519,13 +521,8 @@ export class CodexSessionChannel implements LiveSessionChannel {
   }
 
   private emitItemContent(content: FeedContent, itemId: string, turnId: string) {
-    this.emitFeed({
-      type: 'content',
-      commandId: this.active?.commandId ?? null,
-      turnId,
-      vendorEventId: itemId,
-      content,
-    })
+    const commandId = this.active?.commandId ?? null
+    this.emitFeed({ type: 'content', commandId, turnId, vendorEventId: itemId, content })
   }
 
   private emitMessage(message: {

@@ -7,10 +7,11 @@ import copy from '../locales/en.json'
 import { codexCommandContent } from './codex-command-content'
 import {
   type CodexCollabFacts,
-  CodexSubagentNicknames,
   codexCollabFacts,
   codexSubagentContent,
+  withNickname,
 } from './codex-subagent-content'
+import { readCodexNickname } from './codex-subagent-nicknames'
 
 type ImageGenerationFailure = NonNullable<
   Extract<ThreadItem, { type: 'imageGeneration' }>['failure']
@@ -294,23 +295,27 @@ export async function readCodexSessionHistory(
       throw error
     }
   })
-  return withNicknames(content, new CodexSubagentNicknames(request))
+  return withNicknames(content, request)
 }
 
-// Each spawned thread is read once for the nickname Codex gave it.
+// Each spawned thread is read for the nickname Codex gave it; no history item carries it.
 async function withNicknames(
   content: FeedContent[],
-  nicknames: CodexSubagentNicknames,
+  request: CodexRequest,
 ): Promise<FeedContent[]> {
-  const threads = new Set(
-    content.flatMap((entry) => (entry.kind === 'delegation' ? [entry.agentId] : [])),
+  const threads = [
+    ...new Set(content.flatMap((entry) => (entry.kind === 'delegation' ? [entry.agentId] : []))),
+  ]
+  const nicknames = new Map(
+    await Promise.all(
+      threads.map(
+        async (threadId) => [threadId, await readCodexNickname(request, threadId)] as const,
+      ),
+    ),
   )
-  await Promise.all([...threads].map((threadId) => nicknames.read(threadId)))
-  return content.map((entry) => {
-    if (entry.kind !== 'delegation') return entry
-    const nickname = nicknames.known(entry.agentId)
-    return nickname === null ? entry : { ...entry, nickname }
-  })
+  return content.map((entry) =>
+    entry.kind === 'delegation' ? withNickname(entry, nicknames.get(entry.agentId) ?? null) : entry,
+  )
 }
 
 export async function hasCodexSessionTurn(

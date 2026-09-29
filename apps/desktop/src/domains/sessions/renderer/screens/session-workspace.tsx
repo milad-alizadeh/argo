@@ -159,7 +159,7 @@ export function SessionWorkspace({
   return (
     <section aria-label={t('workspaceLabel')} className="panel-frame @container relative">
       {header ?? null}
-      <div className="panel-body relative bg-(--color-session-surface)">
+      <div className="panel-content relative">
         {/* A layout wrapper only: `BasicFeed` is its own labelled landmark, so this stays a plain `div` to
           avoid a second "Session Feed" region with the same name. */}
         <div className="session-screen__feed min-h-0 flex-1 overflow-hidden">

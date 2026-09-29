@@ -36,12 +36,20 @@ test('keeps the Feed name when the roster stored none', () => {
   ).toEqual([{ ...rosterChild, label: 'Feed name' }])
 })
 
-test('opens a Subagent the Session never listed, as ended with no label', () => {
-  expect(pickedSubagent([], AGENT_ID)).toEqual({
+test('opens a Subagent the Session never listed with what its Feed row said', () => {
+  const opened = {
     id: AGENT_ID,
-    label: null,
-    state: 'completed',
+    label: 'spec_review',
+    nickname: 'Jason',
+    state: 'running',
+  } as const
+  expect(pickedSubagent([], { subagentId: AGENT_ID, opened })).toEqual({
+    ...opened,
     startedAt: null,
     endedAt: null,
   })
+})
+
+test('picks nothing for an id with no listing and no row', () => {
+  expect(pickedSubagent([], { subagentId: AGENT_ID })).toBeNull()
 })

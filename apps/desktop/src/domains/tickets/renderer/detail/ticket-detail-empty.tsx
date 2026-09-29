@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { AppPageSurface } from '@/platform/renderer/app/components/app-shell'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   Empty,
@@ -11,7 +12,7 @@ import {
 export function TicketDetailEmpty() {
   const { t } = useTranslation('tickets')
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <AppPageSurface>
       <Empty className="min-h-0 flex-1">
         <EmptyHeader>
           <EmptyMedia variant="icon">
@@ -21,7 +22,7 @@ export function TicketDetailEmpty() {
           <EmptyDescription>{t('detail.empty.description')}</EmptyDescription>
         </EmptyHeader>
       </Empty>
-    </div>
+    </AppPageSurface>
   )
 }
 

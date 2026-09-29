@@ -4,6 +4,8 @@
     "searching": "Searching {{provider}}…",
     "match_one": "{{count}} match",
     "match_other": "{{count}} matches",
+    "savedMatch_one": "{{count}} saved match",
+    "savedMatch_other": "{{count}} saved matches",
     "allOpen_one": "All open · {{count}} Ticket",
     "allOpen_other": "All open · {{count}} Tickets",
     "allOpenMore": "All open · {{count}}+ Tickets",
@@ -28,7 +30,8 @@
     "tickets": "Argo could not read Tickets.",
     "ticket": "Argo could not open this Ticket.",
     "ticketRefresh": "Argo could not refresh this Ticket. This is the last saved.",
-    "refresh": "Argo could not refresh Tickets. These are the last saved."
+    "refresh": "Argo could not refresh Tickets. These are the last saved.",
+    "search": "Argo could not search {{provider}}. These are the saved matches."
   },
   "row": {
     "expand": "Expand {{key}}",
@@ -154,12 +157,9 @@
     "noAccount": "no Account"
   },
   "sidebarHeader": {
-    "title": "Tickets",
     "search": "Search Tickets",
     "searchPlaceholder": "Search open Tickets",
-    "clearSearch": "Clear search",
-    "newTicket": "New Ticket",
-    "findTicket": "Find a Ticket"
+    "newTicket": "New Ticket"
   },
   "screen": {
     "label": "Tickets",

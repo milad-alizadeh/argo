@@ -78,13 +78,19 @@ function issueJSON(state: MockLinearState, { team, user }: Place, issue: MockLin
 const teamOf = (state: MockLinearState, user: MockLinearUser, id: string | undefined) =>
   visible(state, user).find((candidate) => candidate.id === id)
 
-function openIssues(state: MockLinearState, user: MockLinearUser, variables: Variables) {
-  const team = teamOf(state, user, variables.team)
-  if (!team) return []
-  return team.issues
-    .filter((issue) => !CLOSED.has(typeOf(issue)))
-    .map((issue) => issueJSON(state, { team, user }, issue))
-}
+// The team's issues on one side of Linear's closure: open by default, or completed and canceled.
+const issuesIn =
+  (closure: 'open' | 'closed') =>
+  (state: MockLinearState, user: MockLinearUser, variables: Variables) => {
+    const team = teamOf(state, user, variables.team)
+    if (!team) return []
+    return team.issues
+      .filter((issue) => CLOSED.has(typeOf(issue)) === (closure === 'closed'))
+      .map((issue) => issueJSON(state, { team, user }, issue))
+  }
+
+const openIssues = issuesIn('open')
+const closedIssues = issuesIn('closed')
 
 function workflow(state: MockLinearState, user: MockLinearUser, variables: Variables) {
   const team = teamOf(state, user, variables.teamId)
@@ -124,6 +130,10 @@ const ANSWERS: Record<string, Answer> = {
   }),
   Backlog: (state, user, variables) => {
     const { pageInfo, nodes } = paged(openIssues(state, user, variables), variables)
+    return { issues: { pageInfo, nodes }, team: workflow(state, user, variables) }
+  },
+  ClosedBacklog: (state, user, variables) => {
+    const { pageInfo, nodes } = paged(closedIssues(state, user, variables), variables)
     return { issues: { pageInfo, nodes }, team: workflow(state, user, variables) }
   },
   Search: (state, user, variables) => {

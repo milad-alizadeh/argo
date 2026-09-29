@@ -553,7 +553,7 @@ export const DelegationEvents: StoryObj<typeof LinkedFeed> = {
         name: 'Review the Feed disclosure for keyboard access. sent a reply to the main Session',
       }),
     )
-    await expect(args.onOpen).toHaveBeenCalledWith(REVIEW_AGENT_ID)
+    await expect(args.onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: REVIEW_AGENT_ID }))
   },
 }
 

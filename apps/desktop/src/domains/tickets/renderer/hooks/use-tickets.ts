@@ -1,11 +1,8 @@
 // A Project's Connection and the open Tickets read through it, cached per Project.
 import {
   type InfiniteData,
-  keepPreviousData,
   type QueryClient,
-  type QueryKey,
   skipToken,
-  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
@@ -14,20 +11,19 @@ import type {
   ConnectionSummary,
   TicketConnectedReply,
   TicketDiscoverReply,
-  TicketListed,
-  TicketListReply,
   TicketScope,
 } from '@/domains/tickets/contract/contract'
 import { type ContractFailure, QUERY_KEYS } from '@/platform/renderer/lib/query-client'
 import { trpc, trpcClient } from '@/platform/renderer/trpc-client'
-import { type TicketIndexed, ticketReply } from './ticket-reply'
+import { type TicketIndexed, type TicketSearched, ticketReply } from './ticket-reply'
 import { useActiveTickets } from './use-active-tickets'
+import { useSearchedTickets } from './use-searched-tickets'
 
 const connectionKey = (projectId: string) => trpc.ticketConnection.queryKey({ projectId })
 // Every cached Ticket listing, saved or searched, sits under this key.
 export const listKey = () => trpc.ticketList.pathKey()
 
-export type TicketPages = InfiniteData<TicketListed | TicketIndexed, unknown>
+export type TicketPages = InfiniteData<TicketIndexed | TicketSearched, unknown>
 
 // An expired, refused or unreadable grant is an Account fact, so the Account listing and this Connection's
 // summary are both stale.
@@ -49,7 +45,7 @@ export function useConnection(projectId: string | null) {
   })
 }
 
-// The saved active list with no query; a query searches the provider.
+// The saved active list with no query; a query reads the saved matches and asks the provider.
 export function useTicketList(
   projectId: string | null,
   connection: ConnectionSummary | null,
@@ -59,32 +55,6 @@ export function useTicketList(
   const searched = useSearchedTickets(projectId, ready && query !== '', query)
   const active = useActiveTickets(projectId, ready && query === '')
   return query === '' ? active : searched
-}
-
-// One page per scroll request; a new query keeps the last answer until its own arrives.
-function useSearchedTickets(projectId: string | null, ready: boolean, query: string) {
-  const client = useQueryClient()
-  return useInfiniteQuery<TicketListReply, ContractFailure, TicketPages, QueryKey, string | null>({
-    queryKey: [...listKey(), projectId, query],
-    queryFn:
-      ready && projectId
-        ? ({ pageParam }) =>
-            trpcClient.ticketList
-              .query({ projectId, query, cursor: pageParam })
-              .then(ticketReply)
-              .catch((failure: ContractFailure) => {
-                onRefused(client, projectId, failure)
-                throw failure
-              })
-        : skipToken,
-    initialPageParam: null,
-    getNextPageParam: (last) => ticketReply(last).nextCursor ?? undefined,
-    placeholderData: keepPreviousData,
-    throwOnError: (failure) => {
-      if (projectId) onRefused(client, projectId, failure)
-      return false
-    },
-  })
 }
 
 // The sources an Account could connect this Project to, read only while the form is open.

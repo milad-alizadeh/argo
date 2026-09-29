@@ -223,7 +223,7 @@ export const MissingTranscript: Story = {
   },
 }
 
-// A Codex nickname leads the header facts; the task stays the title.
+// A nickname leads the header facts; the task stays the title.
 export const NicknamedSubagent: Story = {
   args: {
     ...CompletedSubagent.args,

@@ -1,4 +1,5 @@
 import type { Ticket, TicketStatus } from '@/domains/tickets/contract/contract'
+import { AppPageSurface } from '@/platform/renderer/app/components/app-shell'
 import { useLinkedSessions } from '../hooks/use-linked-sessions'
 import type { Backlog } from '../lib/backlog'
 import type { TicketProblemProps } from '../lib/problems'
@@ -47,8 +48,18 @@ export function TicketDeck({
   if (selectedKey === null) {
     return <TicketList backlog={backlog} now={now} onSelect={onSelect} selectedKey={null} />
   }
-  if (selected === null && detail.problem) return <TicketProblem {...detail.problem} />
-  if (selected === null && detail.reading) return <TicketDetailReading reference={selectedKey} />
+  if (selected === null && detail.problem)
+    return (
+      <AppPageSurface>
+        <TicketProblem {...detail.problem} />
+      </AppPageSurface>
+    )
+  if (selected === null && detail.reading)
+    return (
+      <AppPageSurface>
+        <TicketDetailReading reference={selectedKey} />
+      </AppPageSurface>
+    )
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {detail.problem ? <ProblemBanner {...detail.problem} /> : null}
