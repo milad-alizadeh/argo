@@ -37,7 +37,12 @@ const ticket = (overrides: Partial<Ticket> = {}): Ticket => ({
   ...overrides,
 })
 
-const pause = (milliseconds: number) => new Promise((settle) => setTimeout(settle, milliseconds))
+// Waits until the scan has asked the provider for `count` pages, which it holds.
+async function asked(held: unknown[], count: number) {
+  for (let attempt = 0; attempt < 200 && held.length < count; attempt += 1)
+    await new Promise((settle) => setTimeout(settle, 5))
+  assert.equal(held.length, count)
+}
 
 async function cockpit() {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'argo-ticket-race-'))
@@ -82,13 +87,13 @@ async function cockpit() {
 test('a list read asked for before a confirmed status cannot replace it, and a later read can', async () => {
   const { operations, held, scan, listed, page } = await cockpit()
   const first = scan()
-  await pause(5)
+  await asked(held, 1)
   held.shift()?.(page(ticket()))
   await first
   assert.equal(listed()?.status.id, 'open')
 
   const stale = scan()
-  await pause(5)
+  await asked(held, 1)
   const outcome = await changeTicketStatus(operations, {
     ...SCOPE,
     accountId: 'github:1',
@@ -101,7 +106,7 @@ test('a list read asked for before a confirmed status cannot replace it, and a l
   assert.equal(listed()?.status.id, 'done')
 
   const fresh = scan()
-  await pause(5)
+  await asked(held, 1)
   held.shift()?.(page(ticket({ status: OPEN, title: 'Reopened on GitHub' })))
   await fresh
   assert.equal(listed()?.status.id, 'open')
@@ -111,14 +116,20 @@ test('a list read asked for before a confirmed status cannot replace it, and a l
 test('a list read asked for before a confirmed priority cannot replace it', async () => {
   const { database, held, scan, listed, page } = await cockpit()
   const first = scan()
-  await pause(5)
+  await asked(held, 1)
   held.shift()?.(page(ticket()))
   await first
 
   const stale = scan()
-  await pause(5)
+  await asked(held, 1)
   saveConfirmedFields(database, { ...SCOPE, key: '#1' }, { priority: URGENT })
   held.shift()?.(page(ticket()))
   await stale
   assert.deepEqual(listed()?.priority, URGENT)
+
+  const fresh = scan()
+  await asked(held, 1)
+  held.shift()?.(page(ticket({ priority: null })))
+  await fresh
+  assert.equal(listed()?.priority, null)
 })
