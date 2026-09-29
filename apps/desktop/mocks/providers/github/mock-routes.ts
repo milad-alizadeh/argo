@@ -75,7 +75,7 @@ function visibleRepositories(exchange: Exchange, user: MockUser) {
 }
 
 const REPOSITORY_PATH =
-  /^\/repos\/([^/]+\/[^/]+)(?:\/issues(?:\/(\d+)\/(sub_issues|dependencies\/blocked_by))?)?$/
+  /^\/repos\/([^/]+\/[^/]+)(?:\/issues(?:\/(\d+)(?:\/(sub_issues|dependencies\/blocked_by))?)?)?$/
 
 function repositoryRead(exchange: Exchange, user: MockUser) {
   const { state, response, url } = exchange
@@ -93,6 +93,10 @@ function repositoryRead(exchange: Exchange, user: MockUser) {
     return page(exchange, repository.issues.filter(isOpen).map(all))
   }
   const parent = repository.issues.find((issue) => issue.number === Number(match[2]))
+  // One issue by number, open or closed, as GitHub serves a pull request here too.
+  if (!match[3]) {
+    return parent ? send(response, 200, all(parent)) : send(response, 404, { message: 'Not Found' })
+  }
   const numbers = (match[3] === 'sub_issues' ? parent?.children : parent?.blockedBy) ?? []
   page(exchange, repository.issues.filter((issue) => numbers.includes(issue.number)).map(all))
 }

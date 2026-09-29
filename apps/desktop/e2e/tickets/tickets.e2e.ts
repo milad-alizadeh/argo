@@ -1,7 +1,8 @@
-// The packaged Ticket proof (#1848, #1849, #2013, #2870): connect an Account, connect a source,
-// list, detail, a status change, restart, revoked access, an expired renewal, disconnect, a visible
-// failure and the automatic refresh, all through the shipped cockpit against a mock GitHub and a
-// mock Linear. Each case declares the Accounts and source it starts with (`ticket-test.ts`).
+// The packaged Ticket proof (#1848, #1849, #2013, #2870, #2871): connect an Account, connect a
+// source, list, detail, a status change, restart, revoked access, an expired renewal, disconnect, a
+// visible failure, the automatic refresh and linked Tickets opened by ID, all through the shipped
+// cockpit against a mock GitHub and a mock Linear. Each case declares the Accounts and source it
+// starts with (`ticket-test.ts`).
 import { packagedRun } from '../application-under-test'
 import { assertShippedFusesIntact } from '../packaged-app'
 import {
@@ -26,6 +27,7 @@ import {
   proveLinearRestart,
   proveLinearStatus,
 } from './cases/linear.case'
+import { proveGitHubLinkedTicket, proveLinearLinkedTicket } from './cases/linked.case'
 import { proveAutomaticRefresh } from './cases/refresh.case'
 import { test } from './ticket-test'
 
@@ -54,6 +56,8 @@ test.describe('with a GitHub repository', () => {
   test('revoked access', ({ tickets }) => proveRevoked(tickets.run()))
   test('a Ticket changes state', ({ tickets }) => proveChangeState(tickets.run()))
   test('disconnect the GitHub Account', ({ tickets }) => proveDisconnect(tickets.run()))
+  test('a linked GitHub Ticket opens by ID', ({ tickets }) =>
+    proveGitHubLinkedTicket(tickets.run()))
 })
 
 const PROOF_POLL_MS = 500
@@ -78,6 +82,8 @@ test.describe('with a Linear team', () => {
     proveLinearCommitted(tickets.run(), tickets.restart))
   test('an expired Linear renewal', ({ tickets }) => proveLinearExpired(tickets.run()))
   test('disconnect the Linear Account', ({ tickets }) => proveLinearDisconnect(tickets.run()))
+  test('a linked Linear Ticket opens by ID', ({ tickets }) =>
+    proveLinearLinkedTicket(tickets.run()))
 })
 
 test('the shipped app keeps its fuses', () => {

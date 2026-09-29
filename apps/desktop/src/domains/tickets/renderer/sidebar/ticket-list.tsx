@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { AppPageHeader } from '@/platform/renderer/app/components/app-shell'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { PageHeading } from '@/platform/renderer/components/page-heading'
-import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Empty,
   EmptyDescription,
@@ -14,7 +13,7 @@ import {
 } from '@/platform/renderer/components/ui/empty'
 import { providerPresentation } from '@/providers/presentation-registry'
 import { type Backlog, backlogRows, unfoldedRows } from '../lib/backlog'
-import type { TicketProblemProps } from '../lib/problems'
+import { ProblemBanner } from '../status/problem-banner'
 import { TicketVirtualList } from './ticket-virtual-list'
 
 export type TicketListProps = {
@@ -60,32 +59,6 @@ function NoTickets({ query, provider }: Pick<Backlog, 'query' | 'provider'>) {
 }
 
 // A failed scan keeps the saved rows on screen, so its failure sits above them rather than over them.
-function SyncProblem({ icon, title, description, alert, actions }: TicketProblemProps) {
-  return (
-    <div
-      className="flex shrink-0 items-center gap-(--spacing-shell-item) border-b border-border/60 px-(--spacing-shell-inset) py-(--spacing-shell-item)"
-      role={alert ? 'alert' : undefined}
-    >
-      <span className="text-danger">
-        <Icon name={icon} />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="type-body">{title}</p>
-        <p className="type-meta text-muted-foreground">{description}</p>
-      </div>
-      {actions.map((action) => (
-        <Button
-          key={action.label}
-          onClick={action.onClick}
-          size="sm"
-          variant={action.primary ? 'default' : 'ghost'}
-        >
-          {action.label}
-        </Button>
-      ))}
-    </div>
-  )
-}
 
 // A folded parent hides the rows under it until it is unfolded; every parent starts unfolded.
 function useFolds() {
@@ -126,7 +99,7 @@ export function TicketList({
           </div>
         </AppPageHeader>
       ) : null}
-      {backlog.sync.problem ? <SyncProblem {...backlog.sync.problem} /> : null}
+      {backlog.sync.problem ? <ProblemBanner {...backlog.sync.problem} /> : null}
       {backlog.tickets.length === 0 ? (
         <NoTickets provider={backlog.provider} query={backlog.query} />
       ) : null}

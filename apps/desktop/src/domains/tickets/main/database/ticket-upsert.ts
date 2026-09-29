@@ -77,6 +77,25 @@ function identity(database: Writer, target: TicketScopeTarget, nativeId: string)
   return argoId
 }
 
+// The Ticket's identity and facts; a row written after `readAt` keeps its newer facts.
+function saveFacts(
+  database: Writer,
+  target: TicketScopeTarget & { readAt: number },
+  ticket: Ticket,
+): string {
+  const ticketId = identity(database, target, ticket.nativeId ?? ticket.key)
+  database
+    .insert(ticketContent)
+    .values({ ticketId, ...facts(ticket) })
+    .onConflictDoUpdate({
+      target: ticketContent.ticketId,
+      set: { ...facts(ticket), updatedAt: touched },
+      setWhere: lt(ticketContent.updatedAt, target.readAt),
+    })
+    .run()
+  return ticketId
+}
+
 // One page of an active scan, committed together, in the provider's order.
 export function saveListedTickets(
   database: Database,
@@ -85,24 +104,23 @@ export function saveListedTickets(
 ): void {
   database.transaction((transaction) => {
     tickets.forEach((ticket, index) => {
-      const ticketId = identity(transaction, batch, ticket.nativeId ?? ticket.key)
-      const listed = { position: batch.offset + index, listedAt: batch.scanStartedAt }
-      transaction
-        .insert(ticketContent)
-        .values({ ticketId, ...facts(ticket), ...listed })
-        .onConflictDoUpdate({
-          target: ticketContent.ticketId,
-          set: { ...facts(ticket), updatedAt: touched },
-          setWhere: lt(ticketContent.updatedAt, batch.readAt),
-        })
-        .run()
+      const ticketId = saveFacts(transaction, batch, ticket)
       transaction
         .update(ticketContent)
-        .set(listed)
+        .set({ position: batch.offset + index, listedAt: batch.scanStartedAt })
         .where(eq(ticketContent.ticketId, ticketId))
         .run()
     })
   })
+}
+
+// One Ticket read by ID, answering its Argo UUID; only the active scan sets its listing.
+export function saveReadTicket(
+  database: Database,
+  target: TicketScopeTarget & { readAt: number },
+  ticket: Ticket,
+): string {
+  return database.transaction((transaction) => saveFacts(transaction, target, ticket))
 }
 
 // A field the provider confirmed after a write, saved on the Ticket's existing row.

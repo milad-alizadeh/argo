@@ -10,6 +10,7 @@ import type {
 import type { TicketsView } from '../hooks/use-tickets-view'
 import type { Backlog } from '../lib/backlog'
 import { STATUSES } from '../status/status-fixtures'
+import type { SelectedTicket } from './ticket-deck'
 
 const link = (key: string, title: string, state: 'open' | 'closed' = 'open') => ({
   key,
@@ -152,11 +153,32 @@ export const longBacklog = (length: number): Ticket[] =>
     labels: [],
   }))
 
-export const ticketsView = (overrides: Partial<Backlog> = {}): TicketsView => ({
+// A closed Ticket the active list no longer holds, opened from its saved row.
+export const readPath: Ticket = {
+  ...prototype,
+  ...issue(388),
+  title: 'Ticket read path',
+  body: 'Read one Ticket by its ID.',
+  state: 'closed',
+  status: { id: 'completed', name: 'Closed as completed', category: 'completed' },
+}
+
+// No Ticket is selected, so nothing is read by ID.
+export const noDetail: SelectedTicket = {
+  ticket: null,
+  statuses: [],
+  reading: false,
+  problem: null,
+}
+
+export const ticketsView = (
+  overrides: Partial<Backlog> = {},
+): Extract<TicketsView, { kind: 'tickets' }> => ({
   kind: 'tickets',
   projectId: 'storybook-project',
   backlog: backlog(overrides),
   selectedKey: null,
+  detail: noDetail,
   now: new Date('2026-09-25T12:00:00Z').getTime(),
   onBack: fn(),
   onSelect: fn(),

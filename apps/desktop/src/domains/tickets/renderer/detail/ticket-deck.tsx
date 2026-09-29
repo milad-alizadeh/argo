@@ -1,12 +1,26 @@
+import type { Ticket, TicketStatus } from '@/domains/tickets/contract/contract'
 import { useLinkedSessions } from '../hooks/use-linked-sessions'
 import type { Backlog } from '../lib/backlog'
+import type { TicketProblemProps } from '../lib/problems'
 import { TicketList } from '../sidebar/ticket-list'
+import { ProblemBanner } from '../status/problem-banner'
+import { TicketProblem } from '../status/ticket-problem'
 import { TicketDetail } from './ticket-detail'
+import { TicketDetailReading } from './ticket-detail-empty'
+
+// The selected Ticket as SQLite saved it, listed or not, and what its by-ID read is doing.
+export type SelectedTicket = {
+  ticket: Ticket | null
+  statuses: readonly TicketStatus[]
+  reading: boolean
+  problem: TicketProblemProps | null
+}
 
 export type TicketDeckProps = {
   backlog: Backlog
   projectId: string
   selectedKey: string | null
+  detail: SelectedTicket
   now: number
   onBack: () => void
   onSelect: (key: string) => void
@@ -19,29 +33,39 @@ export function TicketDeck({
   backlog,
   projectId,
   selectedKey,
+  detail,
   now,
   onBack,
   onSelect,
   onOpenSession,
 }: TicketDeckProps) {
-  const selected = backlog.tickets.find((ticket) => ticket.key === selectedKey) ?? null
+  // A listed row carries an edit in flight; the saved row covers an unlisted Ticket or a UUID link.
+  const key = detail.ticket?.key ?? selectedKey
+  const selected = backlog.tickets.find((ticket) => ticket.key === key) ?? detail.ticket
   const listed = new Set(backlog.tickets.map((ticket) => ticket.key))
   const linkedSessions = useLinkedSessions(projectId, selected?.key ?? null)
   if (selectedKey === null) {
     return <TicketList backlog={backlog} now={now} onSelect={onSelect} selectedKey={null} />
   }
+  if (selected === null && detail.problem) return <TicketProblem {...detail.problem} />
+  if (selected === null && detail.reading) return <TicketDetailReading reference={selectedKey} />
   return (
-    <TicketDetail
-      linkedSessions={linkedSessions}
-      listed={listed}
-      onBack={onBack}
-      onChangePriority={(priority) => selected && backlog.onChangePriority(selected.key, priority)}
-      onChangeStatus={(status) => selected && backlog.onChangeStatus(selected.key, status)}
-      onOpenSession={onOpenSession}
-      onSelect={onSelect}
-      provider={backlog.provider}
-      statuses={backlog.statuses}
-      ticket={selected}
-    />
+    <div className="flex min-h-0 flex-1 flex-col">
+      {detail.problem ? <ProblemBanner {...detail.problem} /> : null}
+      <TicketDetail
+        linkedSessions={linkedSessions}
+        listed={listed}
+        onBack={onBack}
+        onChangePriority={(priority) =>
+          selected && backlog.onChangePriority(selected.key, priority)
+        }
+        onChangeStatus={(status) => selected && backlog.onChangeStatus(selected.key, status)}
+        onOpenSession={onOpenSession}
+        onSelect={onSelect}
+        provider={backlog.provider}
+        statuses={backlog.statuses.length > 0 ? backlog.statuses : detail.statuses}
+        ticket={selected}
+      />
+    </div>
   )
 }
