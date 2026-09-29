@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
+import { displayedToolLabel } from '@/domains/sessions/api/feed/displayed-tool-label'
 import type { LiveActivity } from '@/domains/sessions/api/feed/feed-rows'
-import { displayedToolLabel } from '@/domains/sessions/api/feed/tool-feed'
 import { standsAlone, TOOL_KIND_PRESENTATION } from '@/domains/sessions/api/feed/tool-groups'
 import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
 import { TaskItem } from '../../ai-elements/task'

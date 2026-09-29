@@ -10,14 +10,16 @@ import { questionSchema } from '../questions'
 import { BACKGROUND_STATES } from './background-task-record'
 import { feedImageUrlSchema } from './feed-images'
 import { SUBAGENT_EVENTS } from './subagent-event'
-import { TRANSCRIPT_EVENT_KINDS } from './transcript-content'
 
-export const FEED_MARKERS = ['compacted', 'interrupted'] as const
-export const feedMarkerSchema = z.enum(FEED_MARKERS)
-export type FeedMarker = z.infer<typeof feedMarkerSchema>
+const FEED_MARKERS = ['compacted', 'interrupted'] as const
+const feedMarkerSchema = z.enum(FEED_MARKERS)
 
-export const FEED_EVENT_KINDS = [
-  ...TRANSCRIPT_EVENT_KINDS,
+const FEED_EVENT_KINDS = [
+  'status',
+  'transcript',
+  'context',
+  'command',
+  'skill-invocation',
   'liveStatus',
   'liveFailure',
   ...feedContentKindSchema.exclude([
@@ -34,8 +36,7 @@ export const FEED_EVENT_KINDS = [
   'permissionDenied',
   'permissionCancelled',
 ] as const
-export const feedEventKindSchema = z.enum(FEED_EVENT_KINDS)
-export type FeedEventKind = z.infer<typeof feedEventKindSchema>
+const feedEventKindSchema = z.enum(FEED_EVENT_KINDS)
 
 const toolEvidenceSchema = z
   .discriminatedUnion('kind', [
@@ -174,9 +175,3 @@ export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
   }),
 ])
 export type SessionFeedRow = z.infer<typeof sessionFeedRowSchema>
-
-export const UNREADABLE_ROW = { paddingBlock: 4, itemHeight: 36 }
-
-export function unreadableRowHeight(): number {
-  return UNREADABLE_ROW.paddingBlock * 2 + UNREADABLE_ROW.itemHeight
-}

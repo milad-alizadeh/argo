@@ -2,8 +2,6 @@
 // allows: inline bytes as `data:`, a file on disk as `argo-attachment://`.
 import { z } from 'zod'
 import { ATTACHMENT_HOST, ATTACHMENT_SCHEME } from '../attachment-url'
-import { attachmentKindOf } from '../attachments'
-import type { ContentBlock } from './transcript-content'
 
 // Never `file://`: Chromium refuses a `file://` subresource load from a document the Vite dev
 // server serves over `http://`, which left every locally-attached image thumbnail unrendered in
@@ -46,13 +44,4 @@ export function fileImageUrl(path: string): FeedImageUrl | null {
           .join('/')}`,
       )
     : null
-}
-
-// An attached file's picture, when its name says it is one.
-export function attachedImageUrl(path: string): FeedImageUrl | null {
-  return attachmentKindOf(path) === 'image' ? fileImageUrl(path) : null
-}
-
-export function imageBlocks(urls: readonly (FeedImageUrl | null)[]): ContentBlock[] {
-  return urls.flatMap((url): ContentBlock[] => (url === null ? [] : [{ shape: 'image', url }]))
 }

@@ -40,10 +40,7 @@ function callActivity(content: FeedContent): { id: string; activity: FeedActivit
       return {
         id: content.id,
         activity: {
-          label: copy.activity.command.replace(
-            '{{command}}',
-            content.command ?? copy.activity.unknownCommand,
-          ),
+          label: commandActivityLabel(content.command),
           kind: 'command',
           open:
             content.status === 'pending' ||
@@ -70,6 +67,10 @@ function callActivity(content: FeedContent): { id: string; activity: FeedActivit
     default:
       return null
   }
+}
+
+export function commandActivityLabel(command: string | null): string {
+  return copy.activity.command.replace('{{command}}', command ?? copy.activity.unknownCommand)
 }
 
 export function advanceFeedActivity(

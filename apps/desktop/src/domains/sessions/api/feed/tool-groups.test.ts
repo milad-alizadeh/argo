@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 import type { SessionFeedRow } from './feed-rows'
-import { groupToolRuns } from './tool-groups'
+import { foldSettledToolRuns, groupToolRuns, TOOL_KIND_PRESENTATION } from './tool-groups'
 
 function tool(
   id: string,
@@ -63,6 +63,43 @@ test('counts a file edited twice as one file', () => {
     tool('edit-3', 'edited', '/repo/b.ts'),
   ]
   expect(groupToolRuns(rows)).toMatchObject([{ label: 'Edited 2 files' }])
+})
+
+test('a command or an unclassified tool call routes inline, and a file edit routes to the evidence panel', () => {
+  expect(TOOL_KIND_PRESENTATION.command.route).toBe('inline')
+  expect(TOOL_KIND_PRESENTATION.tool.route).toBe('inline')
+  expect(TOOL_KIND_PRESENTATION.edited.route).toBe('evidence')
+  expect(TOOL_KIND_PRESENTATION.created.route).toBe('evidence')
+  expect(TOOL_KIND_PRESENTATION.read.route).toBe('evidence')
+  expect(TOOL_KIND_PRESENTATION.searched.icon).toBe('globe')
+})
+
+test('settled runs side by side fold into one count', () => {
+  const folded = foldSettledToolRuns([
+    ...groupToolRuns([tool('1', 'command'), tool('2', 'command')]),
+    ...groupToolRuns([tool('3', 'command')]),
+  ])
+  expect(folded).toMatchObject([
+    { label: 'Ran 3 commands', calls: [{ id: '1' }, { id: '2' }, { id: '3' }] },
+  ])
+})
+
+test('a running call folds into the settled group beside it', () => {
+  const running = { ...tool('3', 'command'), status: 'running' as const }
+  const folded = foldSettledToolRuns([
+    ...groupToolRuns([tool('1', 'command')]),
+    ...groupToolRuns([running]),
+  ])
+  expect(folded).toMatchObject([{ calls: [{ status: 'succeeded' }, { status: 'running' }] }])
+})
+
+test('a skill between commands does not fold into their count', () => {
+  const folded = foldSettledToolRuns([
+    ...groupToolRuns([tool('1', 'command')]),
+    ...groupToolRuns([tool('s', 'skill')]),
+    ...groupToolRuns([tool('2', 'command')]),
+  ])
+  expect(folded).toHaveLength(3)
 })
 
 test('orders group phrases by the first call of each kind and counts every file', () => {
