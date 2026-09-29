@@ -233,10 +233,11 @@ export function SessionComposerArea({
 }: SessionScreenDetailsProps) {
   const { catalogQuery, refreshCatalog } = useCatalogRead(harness)
   const location = useLocation()
+  const { projectId: routeProjectId } = useParams()
   const { catalogFailure, choices, initialTurnConfiguration, identity } =
     sessionComposerConfiguration({
       selectedSessionId,
-      projectId: cockpit.project?.id ?? null,
+      projectId: cockpit.project?.id ?? routeProjectId ?? null,
       sessionList,
       catalogResult: catalogQuery.data,
       catalogFailed: catalogQuery.isError,

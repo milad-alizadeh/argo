@@ -12,8 +12,18 @@ function SectionScreen({ section }: { section: string }) {
   return <h1>{section}</h1>
 }
 
-function CockpitRouteLayoutStory({ projectScoped = false }: { projectScoped?: boolean }) {
+function CockpitRouteLayoutStory({
+  projectScoped = false,
+  noHarnessEntry = false,
+}: {
+  projectScoped?: boolean
+  noHarnessEntry?: boolean
+}) {
   const [queryClient] = useState(() => new QueryClient())
+  const initialEntry = (() => {
+    if (noHarnessEntry) return projectScoped ? '/projects/storybook-project/tickets' : '/tickets'
+    return projectScoped ? '/projects/storybook-project/sessions' : '/sessions'
+  })()
   const [router] = useState(() =>
     createMemoryRouter(
       [
@@ -36,7 +46,9 @@ function CockpitRouteLayoutStory({ projectScoped = false }: { projectScoped?: bo
           ],
         },
       ],
-      { initialEntries: [projectScoped ? '/projects/storybook-project/sessions' : '/sessions'] },
+      {
+        initialEntries: [initialEntry],
+      },
     ),
   )
   return (
@@ -100,6 +112,7 @@ function startedSignIn(input: unknown) {
 // would otherwise show is replaced by a picker over every supported Harness and how to sign in
 // to whichever one is selected (#2579).
 export const NoHarnessReady: Story = {
+  args: { noHarnessEntry: true },
   beforeEach: () =>
     mockHarnessTrpc({
       harnessReadinessList: () =>
@@ -125,6 +138,7 @@ export const NoHarnessReady: Story = {
 // A policy-blocked Harness names the reason instead of offering a CTA there is nothing to sign
 // into (#2579).
 export const NoHarnessReadyPolicyBlocked: Story = {
+  args: { noHarnessEntry: true },
   beforeEach: () =>
     mockHarnessTrpc({
       harnessReadinessList: () =>
@@ -146,6 +160,7 @@ export const NoHarnessReadyPolicyBlocked: Story = {
 // Starting a sign-in shows its own wait state with a way out, since the attempt can outlive the
 // person's patience (#2579).
 export const NoHarnessReadySigningIn: Story = {
+  args: { noHarnessEntry: true },
   beforeEach: () =>
     mockHarnessTrpc({
       harnessReadinessList: () => readinessListed([{ harness: 'claude', state: 'signed-out' }]),
@@ -165,6 +180,7 @@ export const NoHarnessReadySigningIn: Story = {
 // A failed attempt says so in place, so the person retries from the same panel rather than
 // losing their place (#2579).
 export const NoHarnessReadySignInFailed: Story = {
+  args: { noHarnessEntry: true },
   beforeEach: () =>
     mockHarnessTrpc({
       harnessReadinessList: () => readinessListed([{ harness: 'claude', state: 'signed-out' }]),
