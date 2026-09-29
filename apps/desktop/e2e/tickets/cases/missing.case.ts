@@ -1,22 +1,14 @@
 // The Ticket proof's missing Tickets (#2874): a Ticket omitted by a failed scan is untouched; once
 // a complete scan omits it, a direct read by ID finds it moved state or the provider confirms it
-// deleted, and a deleted Ticket keeps its Argo UUID and title.
+// deleted, and a deleted Ticket is hidden and keeps its row.
 import assert from 'node:assert/strict'
 import { expect, test } from '@playwright/test'
 import { TEAM } from '../../../mocks/providers/linear/mock-linear-cast'
 import { helloWorld } from '../fixtures/tickets.fixture'
-import { backlog, committedTicket, detailTitle, openRoom, type Run, showWindow } from '../screen'
+import { backlog, committedTicket, openRoom, type Run, showWindow } from '../screen'
 
 const GITHUB_SCOPE = { provider: 'github', scope: 'octocat/hello-world' }
 const LINEAR_SCOPE = { provider: 'linear', scope: 'team-engine' }
-
-const openLink = (run: Run, reference: string) =>
-  run.page.evaluate(
-    (hash) => {
-      window.location.hash = hash
-    },
-    `#/projects/project-1/tickets/${encodeURIComponent(reference)}`,
-  )
 
 const row = (run: Run, key: RegExp) => backlog(run.page).getByRole('button', { name: key })
 
@@ -54,11 +46,6 @@ export async function proveGitHubMissing(run: Run, pollMs: number) {
     const after = committedTicket(run, GITHUB_SCOPE, '#609')
     assert.equal(after?.argoId, deleted.argoId)
     assert.equal(after?.title, deleted.title)
-    await openLink(run, deleted.argoId)
-    await detailTitle(
-      run.page.getByRole('article', { name: 'Ticket #609' }),
-      'Prototype the Tickets room',
-    ).waitFor()
   })
 }
 

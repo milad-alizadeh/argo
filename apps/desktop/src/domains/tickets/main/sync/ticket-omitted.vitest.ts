@@ -5,7 +5,12 @@ import path from 'node:path'
 import { afterEach, beforeEach, test } from 'vitest'
 import { type Database, openDatabase } from '@/database/database'
 import type { Ticket, TicketErrorCode, TicketStatus } from '@/domains/tickets/contract/contract'
-import { readActiveTickets, readClosedTickets, readSavedTicket } from '../database/ticket-queries'
+import {
+  readActiveTickets,
+  readClosedTickets,
+  readSavedTicket,
+  readSearchedTickets,
+} from '../database/ticket-queries'
 import { saveListedTickets } from '../database/ticket-upsert'
 import { resolveOmittedTickets, type TicketRead } from './ticket-omitted'
 import { beginTicketScan, completeTicketScan } from './ticket-sync-records'
@@ -93,35 +98,47 @@ test('an omitted Ticket that moved state is read by ID, leaves the active list a
   assert.deepEqual(keys(readActiveTickets(database, page)), ['#1'])
   const saved = readSavedTicket(database, { ...SCOPE, reference: '#2' }).saved
   assert.equal(saved?.ticket.state, 'closed')
-  assert.equal(saved?.ticket.deleted, undefined)
+  assert.equal(stored('#2')?.deleted_at, null)
 
   await resolve(completeScan(3000, [1]), read)
   assert.deepEqual(read.asked, ['#2'])
 })
 
-test('a provider-confirmed deletion keeps the Argo UUID, the title and the closed grouping', async () => {
+// The row SQLite keeps whatever the screen shows.
+const stored = (nativeId: string) =>
+  database.$client
+    .prepare(
+      `SELECT ticket.argo_id, ticket_content.title, ticket_content.deleted_at
+       FROM ticket JOIN ticket_content ON ticket_content.ticket_id = ticket.argo_id
+       WHERE ticket.native_id = ?`,
+    )
+    .get(nativeId)
+
+test('a provider-confirmed deletion shows nowhere but keeps the row, its UUID and its title', async () => {
   completeScan(1000, [1, 2])
   const before = readSavedTicket(database, { ...SCOPE, reference: '#2' }).saved
+  assert.ok(before)
   const scanStartedAt = completeScan(2000, [1])
 
   await resolve(scanStartedAt, provider({ '#2': failure('ticket-deleted') }))
 
-  const saved = readSavedTicket(database, { ...SCOPE, reference: '#2' }).saved
-  assert.equal(saved?.argoId, before?.argoId)
-  assert.equal(saved?.ticket.title, 'Ticket 2')
-  assert.equal(saved?.ticket.state, 'closed')
-  assert.equal(saved?.ticket.deleted, true)
   assert.deepEqual(keys(readActiveTickets(database, page)), ['#1'])
-  assert.deepEqual(keys(readClosedTickets(database, page)), ['#2'])
+  assert.deepEqual(keys(readClosedTickets(database, page)), [])
+  assert.deepEqual(keys(readSearchedTickets(database, { ...page, query: 'Ticket' })), ['#1'])
+  assert.equal(readSavedTicket(database, { ...SCOPE, reference: '#2' }).saved, null)
+  assert.equal(readSavedTicket(database, { ...SCOPE, reference: before.argoId }).saved, null)
+  const row = stored('#2')
+  assert.equal(row?.argo_id, before.argoId)
+  assert.equal(row?.title, 'Ticket 2')
+  assert.notEqual(row?.deleted_at, null)
 })
 
-test('a later read that finds a deleted Ticket again clears the deletion', async () => {
+test('a later read that finds a deleted Ticket again shows it again', async () => {
   completeScan(1000, [1, 2])
   await resolve(completeScan(2000, [1]), provider({ '#2': failure('ticket-deleted') }))
   completeScan(3000, [1, 2])
 
-  const saved = readSavedTicket(database, { ...SCOPE, reference: '#2' }).saved
-  assert.equal(saved?.ticket.deleted, undefined)
+  assert.equal(stored('#2')?.deleted_at, null)
   assert.deepEqual(keys(readActiveTickets(database, page)), ['#1', '#2'])
 })
 
@@ -131,9 +148,8 @@ test('a Ticket the provider says is not in this scope is kept and not marked del
 
   await resolve(scanStartedAt, provider({ '#2': failure('ticket-not-found') }))
 
-  const saved = readSavedTicket(database, { ...SCOPE, reference: '#2' }).saved
-  assert.equal(saved?.ticket.deleted, undefined)
-  assert.equal(saved?.ticket.state, 'open')
+  assert.equal(stored('#2')?.deleted_at, null)
+  assert.equal(readSavedTicket(database, { ...SCOPE, reference: '#2' }).saved?.ticket.state, 'open')
 })
 
 test('a read that settles nothing stops the resolution and leaves every omitted Ticket omitted', async () => {
@@ -145,12 +161,7 @@ test('a read that settles nothing stops the resolution and leaves every omitted 
 
   assert.deepEqual(read.asked, ['#2'])
   assert.deepEqual(changes, [])
-  for (const reference of ['#2', '#3']) {
-    assert.equal(
-      readSavedTicket(database, { ...SCOPE, reference }).saved?.ticket.deleted,
-      undefined,
-    )
-  }
+  for (const nativeId of ['#2', '#3']) assert.equal(stored(nativeId)?.deleted_at, null)
   const retry = provider({ '#2': failure('ticket-deleted'), '#3': failure('ticket-deleted') })
   await resolve(completeScan(3000, [1]), retry)
   assert.deepEqual(retry.asked, ['#2', '#3'])
