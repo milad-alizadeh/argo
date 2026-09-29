@@ -110,6 +110,14 @@ function assertSampleFeed(events: LiveSessionChannelEvent[]) {
   )
   assert.deepEqual(
     content.flatMap((item) =>
+      item.kind === 'reference' && item.referenceType === 'skill'
+        ? [[item.label, item.target]]
+        : [],
+    ),
+    [['review', '/repo/.agents/skills/review/SKILL.md']],
+  )
+  assert.deepEqual(
+    content.flatMap((item) =>
       item.kind === 'command' ? [[item.id, item.status, item.output]] : [],
     ),
     [

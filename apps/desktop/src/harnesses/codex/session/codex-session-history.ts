@@ -50,14 +50,35 @@ function attachmentPlaceholder(part: Extract<UserInput, { type: 'text' }>): Prom
   return { label: part.text.split('/').at(-1) ?? part.text, target: part.text }
 }
 
+export type PromptSkill = { label: string; target: string }
+
+// Codex names a skill twice: as a typed part, and as a link in the prompt text the model reads.
+// The row carries the fact, so the link is not prose and does not belong in the drawn prompt.
+function withoutSkillLink(text: string, target: string): string {
+  const tail = `](${target})`
+  const close = text.indexOf(tail)
+  if (close < 0) return text
+  const open = text.lastIndexOf('[', close)
+  if (open < 0) return text
+  const after = close + tail.length
+  const spaced = text[after] === ' ' || text[after] === '\t' ? after + 1 : after
+  return withoutSkillLink(text.slice(0, open) + text.slice(spaced), target)
+}
+
+function withoutSkillLinks(text: string, skills: readonly PromptSkill[]): string {
+  return skills.reduce((carried, skill) => withoutSkillLink(carried, skill.target), text).trim()
+}
+
 export function userPromptParts(content: UserInput[]): {
   text: string
   images: MediaSource[]
   files: PromptFile[]
+  skills: PromptSkill[]
 } {
   const text: string[] = []
   const images: MediaSource[] = []
   const files: PromptFile[] = []
+  const skills: PromptSkill[] = []
   for (const part of content) {
     switch (part.type) {
       case 'text': {
@@ -73,19 +94,19 @@ export function userPromptParts(content: UserInput[]): {
         if ('url' in part) images.push({ kind: 'url', url: part.url })
         else console.warn('Rejected 1 unsupported Codex prompt shape: image by fileId.')
         break
+      case 'skill':
+        skills.push({ label: part.name, target: part.path })
+        break
       case 'audio':
       case 'localAudio':
-      case 'skill':
       case 'mention':
         break
     }
   }
-  return { text: text.join('\n').trim(), images, files }
+  return { text: withoutSkillLinks(text.join('\n'), skills), images, files, skills }
 }
 
-// Shared with the live channel, so a sent image prompt and its reload from history draw the same
-// row instead of the live send showing text-only until history fills in the attachments (#2884).
-export function userPromptMessage(
+function userPromptMessage(
   id: string,
   parts: { text: string; images: MediaSource[]; files: PromptFile[] },
 ): FeedContent | null {
@@ -100,46 +121,73 @@ export function userPromptMessage(
   }
 }
 
+// Shared with the live channel, so a sent prompt and its reload from history draw the same rows
+// instead of the live send showing text-only until history fills in the rest (#2884). A skill row
+// comes before the prompt it was sent with, so a Codex skill use draws as a Claude one does.
+export function userPromptContents(
+  id: string,
+  parts: { text: string; images: MediaSource[]; files: PromptFile[]; skills: PromptSkill[] },
+): FeedContent[] {
+  const message = userPromptMessage(id, parts)
+  return [
+    ...parts.skills.map(
+      (skill, index): FeedContent => ({
+        id: `${id}:skill:${index}`,
+        kind: 'reference',
+        referenceType: 'skill',
+        label: skill.label,
+        target: skill.target,
+        text: null,
+      }),
+    ),
+    ...(message === null ? [] : [message]),
+  ]
+}
+
 function messageItemContent(
   item: Extract<ThreadItem, { type: 'userMessage' | 'agentMessage' }>,
-): FeedContent | null {
+): FeedContent[] {
   if (item.type === 'agentMessage') {
-    if (item.text === '') return null
-    return { kind: 'message', id: item.id, role: 'assistant', text: item.text, phase: item.phase }
+    if (item.text === '') return []
+    return [{ kind: 'message', id: item.id, role: 'assistant', text: item.text, phase: item.phase }]
   }
   const legacyText = 'text' in item && typeof item.text === 'string' ? item.text : ''
   const parts = userPromptParts(item.content ?? [])
-  return userPromptMessage(item.id, { ...parts, text: parts.text || legacyText })
+  return userPromptContents(item.id, { ...parts, text: parts.text || legacyText })
 }
 
-function simpleItemContent(item: ThreadItem): FeedContent | null {
+function simpleItemContent(item: ThreadItem): FeedContent[] {
   switch (item.type) {
     case 'reasoning': {
       const summary = item.summary.join('\n').trim()
-      return { kind: 'reasoning', id: item.id, text: summary || null, redacted: false }
+      return [{ kind: 'reasoning', id: item.id, text: summary || null, redacted: false }]
     }
     case 'contextCompaction':
-      return { kind: 'marker', id: item.id, marker: 'compaction', summary: null }
+      return [{ kind: 'marker', id: item.id, marker: 'compaction', summary: null }]
     case 'enteredReviewMode':
     case 'exitedReviewMode':
-      return {
-        kind: 'marker',
-        id: item.id,
-        marker: item.type === 'enteredReviewMode' ? 'reviewStarted' : 'reviewEnded',
-        summary: null,
-      }
+      return [
+        {
+          kind: 'marker',
+          id: item.id,
+          marker: item.type === 'enteredReviewMode' ? 'reviewStarted' : 'reviewEnded',
+          summary: null,
+        },
+      ]
     case 'plan':
-      return { kind: 'plan', id: item.id, text: item.text }
+      return [{ kind: 'plan', id: item.id, text: item.text }]
     case 'sleep':
-      return { kind: 'wait', id: item.id, durationMs: item.durationMs }
+      return [{ kind: 'wait', id: item.id, durationMs: item.durationMs }]
     case 'imageView':
-      return {
-        kind: 'media',
-        id: item.id,
-        mediaType: 'image',
-        source: { kind: 'path', path: item.path },
-        role: null,
-      }
+      return [
+        {
+          kind: 'media',
+          id: item.id,
+          mediaType: 'image',
+          source: { kind: 'path', path: item.path },
+          role: null,
+        },
+      ]
     case 'userMessage':
     case 'agentMessage':
       return messageItemContent(item)
@@ -153,7 +201,7 @@ function simpleItemContent(item: ThreadItem): FeedContent | null {
     case 'subAgentActivity':
     case 'webSearch':
     case 'imageGeneration':
-      return null
+      return []
     default:
       throw new Error(`Unsupported Codex history item: ${(item as ThreadItem).type}`)
   }
@@ -246,24 +294,23 @@ function imageGenerationContent(
 function codexItemContent(
   item: ThreadItem,
   collab: ReadonlyMap<string, CodexCollabFacts>,
-): FeedContent | null {
+): FeedContent[] {
   switch (item.type) {
-    case 'commandExecution': {
-      return codexCommandContent(item, 'completed')
-    }
+    case 'commandExecution':
+      return [codexCommandContent(item, 'completed')]
     case 'fileChange':
-      return fileChangeContent(item)
+      return [fileChangeContent(item)]
     case 'mcpToolCall':
     case 'dynamicToolCall':
-      return toolCallContent(item)
+      return [toolCallContent(item)]
     case 'webSearch':
-      return searchContent(item)
+      return [searchContent(item)]
     case 'imageGeneration':
-      return imageGenerationContent(item)
+      return [imageGenerationContent(item)]
     case 'subAgentActivity':
-      return codexSubagentContent(item, collab.get(item.id))
+      return [codexSubagentContent(item, collab.get(item.id))]
     case 'collabAgentToolCall':
-      return null
+      return []
     default:
       return simpleItemContent(item)
   }
@@ -271,10 +318,7 @@ function codexItemContent(
 
 export function codexContentFromItems(items: ThreadItem[]): FeedContent[] {
   const collab = codexCollabFacts(items)
-  return items.flatMap((item) => {
-    const content = codexItemContent(item, collab)
-    return content === null ? [] : [content]
-  })
+  return items.flatMap((item) => codexItemContent(item, collab))
 }
 
 export async function readCodexSessionHistory(

@@ -159,6 +159,49 @@ test('reports activity on any Session file with its owner and newest turn', asyn
   assert.deepEqual(activity, [['native-3', 'open']])
 })
 
+// The platform watcher starts asynchronously, so a write made right after it is asked for can be
+// missed. A probe Session the watcher reports proves it is live before the test writes what it
+// asserts on.
+async function watcherStarted(root: string, saw: () => boolean) {
+  const probe = path.join(root, 'probe.jsonl')
+  for (let attempt = 0; attempt < 25; attempt += 1) {
+    writeFileSync(probe, `probe ${attempt}\n`)
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    if (saw()) return
+  }
+  throw new Error('The history watcher never started.')
+}
+
+test('reports the lines a watched Session appended, from the first change onward', async (context) => {
+  const root = await directory(context)
+  const file = path.join(root, 'native-4.jsonl')
+  writeFileSync(file, 'prompt one\n')
+  const appended: string[][] = []
+  let probed = false
+  // A change that adds no line still calls back, so only the batches that carry text are recorded.
+  const stop = watchHistoryActivity(files(root), (owner, _turn, events) => {
+    if (owner === 'probe') {
+      probed = true
+      return
+    }
+    const texts = events.flatMap((event) =>
+      event.type === 'content' && event.content.kind === 'message' ? [event.content.text] : [],
+    )
+    if (texts.length > 0) appended.push(texts)
+  })
+  context.after(stop)
+  await watcherStarted(root, () => probed)
+
+  appendFileSync(file, 'answer one\n')
+  await eventually(() => (appended.length > 0 ? true : undefined))
+  appendFileSync(file, 'prompt two\n')
+  await eventually(() => (appended.length > 1 ? true : undefined))
+
+  // Two batches arrived, which the waits above already required; where the watcher draws the line
+  // between them is the platform's to decide, so only the sequence of lines is asserted.
+  assert.deepEqual(appended.flat(), ['prompt one', 'answer one', 'prompt two'])
+})
+
 test('finds the newest turn marker behind lines that carry none', async (context) => {
   const root = await directory(context)
   const file = path.join(root, 'native-1.jsonl')

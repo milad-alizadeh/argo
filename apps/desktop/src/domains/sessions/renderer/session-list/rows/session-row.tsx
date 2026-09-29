@@ -10,12 +10,7 @@ import { sessionName } from './session-list-rows'
 import { SessionMetadata } from './session-row-metadata'
 import './session-row.css'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import {
-  SessionBlockedBadge,
-  SessionLockedMark,
-  STATUS_LABELS,
-  statusVariantOf,
-} from './session-row-status'
+import { SessionBlockedBadge, STATUS_LABELS, statusVariantOf } from './session-row-status'
 
 function selectionModifierOf(event: {
   shiftKey: boolean
@@ -153,7 +148,6 @@ export function SessionRow({
               </span>
             ) : null}
             <SessionBlockedBadge session={session} />
-            <SessionLockedMark session={session} />
             {session.unread ? (
               <span className="sr-only">{t('sessionListStatusUnread')}</span>
             ) : null}

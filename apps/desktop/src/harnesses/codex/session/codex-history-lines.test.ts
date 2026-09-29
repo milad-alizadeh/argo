@@ -138,3 +138,45 @@ test('reads a line that is not an event as no turn change', () => {
   expect(codexHistoryTurn('{"type":"response_item","payload":{"type":"message"}}')).toBeNull()
   expect(codexHistoryTurn('not json')).toBeNull()
 })
+
+// The live count follows a Codex Session the same way it follows a Claude one (#2861).
+test('reads a Subagent activity a rollout appended as delegation content', () => {
+  const lines = readFileSync(path.join(FIXTURES, 'rollout-paritySubagent.jsonl'), 'utf8')
+    .split('\n')
+    .filter((line) => line !== '')
+  const change = openCodexHistoryReader()(lines)
+  if (change.type !== 'appended') throw new Error(`Expected appended lines, got ${change.type}.`)
+
+  expect(
+    change.events.flatMap((event) =>
+      event.type === 'content' && event.content.kind === 'delegation'
+        ? [[event.content.agentId, event.content.status, event.content.name]]
+        : [],
+    ),
+  ).toEqual([
+    ['par-thread', 'running', 'review_feed'],
+    ['par-thread', 'running', 'review_feed'],
+    ['par-thread', 'completed', 'review_feed'],
+  ])
+})
+
+test('rejects a Subagent activity whose rollout record names an unknown kind', () => {
+  const change = openCodexHistoryReader()([
+    JSON.stringify({
+      type: 'event_msg',
+      payload: {
+        type: 'item_completed',
+        item: {
+          type: 'SubAgentActivity',
+          id: 'sa-1',
+          kind: 'teleported',
+          agent_thread_id: 'thread-1',
+          agent_path: '/root/review',
+        },
+      },
+    }),
+  ])
+  if (change.type !== 'appended') throw new Error(`Expected appended lines, got ${change.type}.`)
+
+  expect(change.events).toEqual([])
+})

@@ -23,6 +23,7 @@ import {
   markUnresolvedSessionCommandsUnknown,
   reconcileUnknownSessionCommands,
 } from '@/domains/sessions/main/database/session-command-outcomes'
+import { recordLiveSubagents } from '@/domains/sessions/main/database/session-subagents'
 import {
   type LiveSessionSupervisorActor,
   liveSessionActorFor,
@@ -434,17 +435,18 @@ function watchRosterSources({
 }): () => void {
   const stops = currentSessionSyncStatus().map((store) =>
     store.subscribe((event) => {
-      if (event.type === 'committed') roster.changed()
+      if (event.type === 'committed' || event.type === 'stored') roster.changed()
     }),
   )
   for (const harness of harnessSchema.options) {
     const files = registry[harness].historyFiles
     if (files === undefined) continue
     stops.push(
-      watchHistoryActivity(files, (owner, turn) => {
+      watchHistoryActivity(files, (owner, turn, events) => {
         const at = Date.now()
         recordHistoryActivity(database, { harness, nativeId: owner, at })
         watchedStatus.record({ harness, nativeId: owner, turn, at })
+        recordLiveSubagents(database, { harness, nativeId: owner, events })
         roster.changed()
       }),
     )

@@ -1,5 +1,6 @@
 import { closeSync, openSync, readdirSync, readSync, statSync, watch } from 'node:fs'
 import path from 'node:path'
+import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type {
   HistoryChange,
   HistoryFiles,
@@ -8,6 +9,8 @@ import type {
 } from '@/harnesses/registration'
 
 const SETTLE_MS = 250
+// The window a first change opens on, before which no read position for that Session exists.
+const ACTIVITY_TAIL_BYTES = 256 * 1024
 // Bytes just before the read offset, compared on each change to catch a rewrite that grew the file.
 const WITNESS_BYTES = 64
 const TURN_SCAN_CHUNK_BYTES = 64 * 1024
@@ -245,13 +248,68 @@ export function latestTurn(file: string, turnOf: HistoryFiles['turnOf']): Histor
   return scan.exhausted
 }
 
+// The window's first whole line, so a reader that has never seen this file starts on a record.
+function tailWindowPosition(file: string): TailPosition | null {
+  try {
+    const { size, ino } = statSync(file)
+    const start = Math.max(0, size - ACTIVITY_TAIL_BYTES)
+    if (start === 0) return positionAt(file, 0, ino)
+    const firstBreak = readRange(file, start, size).indexOf('\n')
+    return firstBreak < 0 ? null : positionAt(file, start + firstBreak + 1, ino)
+  } catch {
+    return null
+  }
+}
+
+// The lines each watched Session appended since the last change, decoded by the Harness's own
+// reader. A Session is read only while it is writing, so an idle roster decodes nothing.
+class ActivityTails {
+  readonly #files: HistoryFiles
+  readonly #tails = new Map<
+    string,
+    { position: TailPosition; read: (lines: readonly string[]) => HistoryChange }
+  >()
+
+  constructor(files: HistoryFiles) {
+    this.#files = files
+  }
+
+  events(owner: string, file: string): SessionLiveEventBody[] {
+    const tail = this.#tails.get(owner) ?? this.#start(owner, file)
+    if (tail === null) return []
+    const growth = growthOf(file, tail.position)
+    if (growth.type === 'missing') {
+      this.#tails.delete(owner)
+      return []
+    }
+    tail.position = growth.position
+    if (growth.type === 'rewritten' || growth.lines.length === 0) {
+      if (growth.type === 'rewritten') tail.read = this.#files.openReader([])
+      return []
+    }
+    const change = tail.read(growth.lines)
+    if (change.type === 'appended') return change.events
+    tail.read = this.#files.openReader([])
+    return []
+  }
+
+  #start(owner: string, file: string) {
+    const position = tailWindowPosition(file)
+    if (position === null) return null
+    const tail = { position, read: this.#files.openReader([]) }
+    this.#tails.set(owner, tail)
+    return tail
+  }
+}
+
 // Names the owner of each history file a Harness writes to, whichever Session it belongs to, with
-// the newest turn marker the file holds.
+// the newest turn marker the file holds and the content of the lines it just gained.
 export function watchHistoryActivity(
   files: HistoryFiles,
-  active: (owner: string, turn: HistoryTurn | null) => void,
+  active: (owner: string, turn: HistoryTurn | null, events: SessionLiveEventBody[]) => void,
 ): () => void {
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
+  const tails = new ActivityTails(files)
   const stop = watchDirectory(files.directory, (relativePath) => {
     const owner = files.ownerOf(relativePath)
     if (owner === null) return
@@ -261,7 +319,8 @@ export function watchHistoryActivity(
       owner,
       setTimeout(() => {
         timers.delete(owner)
-        active(owner, latestTurn(path.join(files.directory, relativePath), files.turnOf))
+        const file = path.join(files.directory, relativePath)
+        active(owner, latestTurn(file, files.turnOf), tails.events(owner, file))
       }, SETTLE_MS),
     )
   })

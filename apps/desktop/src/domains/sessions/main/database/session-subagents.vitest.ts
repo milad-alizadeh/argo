@@ -5,8 +5,13 @@ import { afterEach, beforeEach, expect, test } from 'vitest'
 import { type Database, openDatabase } from '@/database/database'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionHistoryTarget } from '@/domains/sessions/api/session-history'
+import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import { saveSessionBatch } from '../sync/session-sync-records'
-import { refreshSessionSubagents, storedSessionSubagents } from './session-subagents'
+import {
+  recordLiveSubagents,
+  refreshSessionSubagents,
+  storedSessionSubagents,
+} from './session-subagents'
 
 let directory: string
 let database: Database
@@ -83,7 +88,7 @@ test('stores the folded Subagents of each Project Session and reads each activit
     database,
     harness: 'claude',
     readHistory,
-    committed: () => {},
+    stored: () => {},
     stopped: () => false,
   })
 
@@ -110,7 +115,7 @@ test('stores the folded Subagents of each Project Session and reads each activit
     database,
     harness: 'claude',
     readHistory,
-    committed: () => {},
+    stored: () => {},
     stopped: () => false,
   })
   expect(reads).toEqual([])
@@ -128,7 +133,7 @@ test('rereads a Session whose activity moved and replaces what it stored', async
       database,
       harness: 'codex',
       readHistory: historyOf(histories, []),
-      committed: () => {},
+      stored: () => {},
       stopped: () => false,
     })
   await refresh()
@@ -142,14 +147,14 @@ test('rereads a Session whose activity moved and replaces what it stored', async
   ])
 })
 
-test('counts an unreadable history, keeps the Session unread, and drops a read that outlives a stop', async () => {
+test('counts an unreadable history, stops retrying it, and drops a read that outlives a stop', async () => {
   saveSessionBatch(database, 'claude', [
     { nativeId: 'broken', projectId: 'project-1', cwd: '/repo', activityAt: 30 },
     { nativeId: 'parent', projectId: 'project-1', cwd: '/repo', activityAt: 20 },
     { nativeId: 'later', projectId: 'project-1', cwd: '/repo', activityAt: 10 },
   ])
   const reads: SessionHistoryTarget[] = []
-  let committed = 0
+  let stored = 0
 
   const result = await refreshSessionSubagents({
     database,
@@ -161,19 +166,61 @@ test('counts an unreadable history, keeps the Session unread, and drops a read t
       },
       reads,
     ),
-    committed: () => {
-      committed += 1
+    stored: () => {
+      stored += 1
     },
     stopped: () => reads.length === 3,
   })
 
   expect(result).toEqual({ read: 1, failed: 1 })
   expect(reads.map((target) => target.nativeId)).toEqual(['broken', 'parent', 'later'])
-  expect(committed).toBe(1)
+  expect(stored).toBe(2)
   expect(storedSessionSubagents(database, [argoId('parent')]).get(argoId('parent'))).toHaveLength(1)
   const unread = database.$client
     .prepare('SELECT native_id FROM session WHERE subagents_read_at IS NULL ORDER BY native_id')
     .all()
     .map((row) => row.native_id)
-  expect(unread).toEqual(['broken', 'later'])
+  expect(unread).toEqual(['later'])
+})
+
+function contentEvent(content: FeedContent): SessionLiveEventBody {
+  return { type: 'content', commandId: null, turnId: null, vendorEventId: null, content }
+}
+
+test('records a running Session’s Subagents without stamping the Session as read', () => {
+  saveSessionBatch(database, 'claude', [
+    { nativeId: 'parent', projectId: 'project-1', cwd: '/repo', activityAt: 10 },
+  ])
+  const parent = argoId('parent')
+
+  recordLiveSubagents(database, {
+    harness: 'claude',
+    nativeId: 'parent',
+    events: [contentEvent(delegation('agent-a', 'running', 'Survey'))],
+  })
+  recordLiveSubagents(database, {
+    harness: 'claude',
+    nativeId: 'parent',
+    events: [contentEvent(delegation('agent-a', 'completed', null))],
+  })
+
+  expect(storedSessionSubagents(database, [parent]).get(parent)).toEqual([
+    { id: 'agent-a', label: 'Survey', state: 'completed' },
+  ])
+  const read = database.$client
+    .prepare('SELECT subagents_read_at FROM session WHERE native_id = ?')
+    .get('parent')
+  expect(read?.subagents_read_at).toBe(null)
+})
+
+test('ignores a live Subagent whose Session is not stored', () => {
+  recordLiveSubagents(database, {
+    harness: 'claude',
+    nativeId: 'absent',
+    events: [contentEvent(delegation('agent-a', 'running', null))],
+  })
+
+  expect(database.$client.prepare('SELECT count(*) AS rows FROM session_subagent').get()).toEqual({
+    rows: 0,
+  })
 })

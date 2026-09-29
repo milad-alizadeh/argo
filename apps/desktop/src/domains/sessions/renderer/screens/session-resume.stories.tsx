@@ -2,7 +2,6 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
-import { type DriveSessionErrorCode, driveSessionError } from '@/domains/sessions/api/session-error'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { announceSessionListChange, sessionListSubscribe, sessionRow } from '../session-fixtures'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
@@ -19,8 +18,8 @@ const resumable = sessionRow({
 })
 
 // The bridge a restarted Argo answers with: the Roster lists the resumable Session, and a Send
-// either resumes it into a live channel or is refused with the reason.
-function restartedHost(refusal: DriveSessionErrorCode | null, row = resumable) {
+// resumes it into a live channel.
+function restartedHost(row = resumable) {
   let resumed = false
   const before = window.argo
   window.argo = {
@@ -29,7 +28,6 @@ function restartedHost(refusal: DriveSessionErrorCode | null, row = resumable) {
       resumed ? { ...row, posture: 'live', status: 'running' } : row,
     ]),
     sendSession: async ({ sessionId }) => {
-      if (refusal !== null) return driveSessionError(refusal, 'claude', 'storybook-send')
       resumed = true
       announceSessionListChange()
       return { version: 1, type: 'session.accepted', requestId: 'storybook-send', sessionId }
@@ -75,7 +73,7 @@ async function sendDraft(canvasElement: HTMLElement, draft: string) {
 }
 
 export const ResumesOnSend: Story = {
-  beforeEach: () => restartedHost(null),
+  beforeEach: () => restartedHost(),
   play: async ({ canvasElement }) => {
     const { canvas, composer } = await sendDraft(canvasElement, 'Carry on with the fix.')
 
@@ -83,52 +81,5 @@ export const ResumesOnSend: Story = {
     await expect(composer.textContent).toBe('')
     await expect(composer).toHaveFocus()
     await expect(canvas.queryByRole('alert')).toBeNull()
-  },
-}
-
-// Every refusal draws the same lock card, whatever Harness or message caused it (#2092 AC #4/#9).
-const REFUSAL: DriveSessionErrorCode = 'held-elsewhere'
-
-// A Session open in another app cannot take a Turn: the refusal replaces the composer with a
-// lock card rather than sitting above it (#2053, #2092).
-export const RefusedSend: Story = {
-  beforeEach: () => restartedHost(REFUSAL),
-  play: async ({ canvasElement }) => {
-    const { canvas } = await sendDraft(canvasElement, 'Carry on with the fix.')
-
-    await waitFor(() =>
-      expect(canvas.getByRole('alert')).toHaveTextContent('This session is open in another app'),
-    )
-    await expect(canvas.getByRole('alert')).toHaveTextContent(
-      'Close it there to continue it in Argo.',
-    )
-    await expect(canvas.queryByLabelText('Message')).toBeNull()
-    await expect(canvas.queryByRole('button', { name: 'Interrupt' })).toBeNull()
-    await expect(canvas.getByRole('button', { name: 'Retry' })).toBeVisible()
-  },
-}
-
-// A Session another process runs live right now (a `claude` in a terminal, a Codex Turn in the
-// Codex app) is locked in the Roster, and its composer never shows: no Send is offered to refuse.
-const liveElsewhere = sessionRow({ ...resumable, status: 'running', locked: true })
-
-export const LockedWhileLiveElsewhere: Story = {
-  beforeEach: () => restartedHost(null, liveElsewhere),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await waitFor(() =>
-      expect(canvas.getAllByText('Storybook Session Feed.').length).toBeGreaterThan(0),
-    )
-
-    await waitFor(() =>
-      expect(canvas.getByRole('alert')).toHaveTextContent('This session is open in another app'),
-    )
-    await expect(
-      canvas.getByText(
-        'This session is open in another app. Close it there to continue it in Argo.',
-      ),
-    ).toBeInTheDocument()
-    await expect(canvas.queryByLabelText('Message')).toBeNull()
-    await expect(canvas.queryByRole('button', { name: 'Retry' })).toBeNull()
   },
 }

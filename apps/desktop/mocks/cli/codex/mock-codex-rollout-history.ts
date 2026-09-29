@@ -1,6 +1,11 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import { type StoredThread, type StoredTurn, transcriptsRoot } from './mock-codex-history-types.ts'
+import {
+  type StoredItem,
+  type StoredThread,
+  type StoredTurn,
+  transcriptsRoot,
+} from './mock-codex-history-types.ts'
 
 type RolloutState = { turns: Map<string, StoredTurn>; cwd: string | null; updatedAt: number | null }
 
@@ -48,12 +53,39 @@ function recordLine(line: string, state: RolloutState) {
   recordItem(record.payload, state)
 }
 
+// A rollout names a Subagent activity in snake case; the thread read answers in camel case.
+function subagentItem(item: {
+  id: string
+  kind?: unknown
+  agent_thread_id?: unknown
+  agent_path?: unknown
+}): StoredItem | null {
+  const { kind, agent_thread_id: thread, agent_path: agentPath } = item
+  if (typeof kind !== 'string' || typeof thread !== 'string' || typeof agentPath !== 'string')
+    return null
+  return {
+    id: item.id,
+    type: 'subAgentActivity',
+    text: '',
+    kind,
+    agentThreadId: thread,
+    agentPath,
+  }
+}
+
+function storedItem(id: string, item: Record<string, unknown>, type: unknown): StoredItem | null {
+  if (type === 'SubAgentActivity') return subagentItem({ ...item, id })
+  const role = typeof type === 'string' ? itemRole(type) : null
+  return role === null ? null : { id, type: role, text: textFrom(item) }
+}
+
 function recordItem(payload: Record<string, unknown> | undefined, state: RolloutState) {
   const item = payload?.item
   if (payload?.type !== 'item_completed' || typeof item !== 'object' || item === null) return
   const candidate = item as { id?: unknown; type?: unknown }
-  const role = typeof candidate.type === 'string' ? itemRole(candidate.type) : null
-  if (typeof candidate.id !== 'string' || role === null) return
+  if (typeof candidate.id !== 'string') return
+  const stored = storedItem(candidate.id, item as Record<string, unknown>, candidate.type)
+  if (stored === null) return
   const turnId = typeof payload?.turn_id === 'string' ? payload.turn_id : 'turn'
   const turn = state.turns.get(turnId) ?? {
     id: turnId,
@@ -61,7 +93,7 @@ function recordItem(payload: Record<string, unknown> | undefined, state: Rollout
     startedAt: state.updatedAt ?? 0,
     items: [],
   }
-  turn.items.push({ id: candidate.id, type: role, text: textFrom(item) })
+  turn.items.push(stored)
   state.turns.set(turnId, turn)
 }
 
