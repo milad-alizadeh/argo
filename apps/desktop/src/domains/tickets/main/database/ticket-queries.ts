@@ -1,5 +1,5 @@
 // The Ticket screen's reads from SQLite alone: active means listed by the latest complete scan or later.
-import { and, asc, count, eq, gte, isNotNull } from 'drizzle-orm'
+import { and, asc, count, eq, gte, isNotNull, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { ticketTable } from '@/database/ticket/schema'
@@ -19,6 +19,8 @@ type ActiveRead = {
   sync: TicketSyncState
 }
 type ContentRow = typeof ticketContent.$inferSelect
+// One saved Ticket, whether or not the active list still holds it.
+export type SavedTicket = { argoId: string; nativeId: string; ticket: Ticket }
 
 const IDLE: TicketSyncState = { phase: 'idle', failure: null, complete: false, completedAt: null }
 const statuses = z.array(ticketStatus)
@@ -95,4 +97,35 @@ export function readActiveTickets(
     total: total?.value ?? 0,
     sync: sync.state,
   }
+}
+
+// A saved Ticket of the scope named by its Argo UUID, its native ID or its key.
+export function readSavedTicket(
+  database: Database,
+  { provider, scope, reference }: TicketScopeTarget & { reference: string },
+): { saved: SavedTicket | null; statuses: TicketStatus[] } {
+  const row = database
+    .select({ argoId: ticketTable.argoId, nativeId: ticketTable.nativeId, content: ticketContent })
+    .from(ticketTable)
+    .innerJoin(ticketContent, eq(ticketContent.ticketId, ticketTable.argoId))
+    .where(
+      and(
+        eq(ticketTable.provider, provider),
+        eq(ticketTable.scope, scope),
+        or(
+          eq(ticketTable.argoId, reference),
+          eq(ticketTable.nativeId, reference),
+          eq(ticketContent.key, reference),
+        ),
+      ),
+    )
+    // An Argo UUID names one Ticket outright; a native ID outranks a key another row may share.
+    .orderBy(
+      sql`CASE WHEN ${ticketTable.argoId} = ${reference} THEN 0 WHEN ${ticketTable.nativeId} = ${reference} THEN 1 ELSE 2 END`,
+    )
+    .get()
+  const { statuses } = readSync(database, { provider, scope })
+  if (row === undefined) return { saved: null, statuses }
+  const { argoId, nativeId, content } = row
+  return { saved: { argoId, nativeId, ticket: ticketFrom(content) }, statuses }
 }

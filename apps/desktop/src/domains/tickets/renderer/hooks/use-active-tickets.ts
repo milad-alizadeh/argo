@@ -9,16 +9,20 @@ import {
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 import { trpcClient } from '@/platform/renderer/trpc-client'
 import { type TicketIndexed, type TicketIndexedReply, ticketReply } from './ticket-reply'
+import { detailKey } from './use-ticket-detail'
 import { listKey, onRefused, type TicketPages } from './use-tickets'
 
 const activeKey = () => [...listKey(), 'active']
 
-// Every committed Ticket change refetches the saved pages on screen, never a provider.
+// Every committed Ticket change refetches the saved pages and Ticket on screen, never a provider.
 export function useTicketChanges() {
   const client = useQueryClient()
   useEffect(() => {
     const subscription = trpcClient.ticketChanges.subscribe(undefined, {
-      onData: () => void client.invalidateQueries({ queryKey: activeKey() }),
+      onData: () => {
+        void client.invalidateQueries({ queryKey: activeKey() })
+        void client.invalidateQueries({ queryKey: detailKey() })
+      },
     })
     return () => subscription.unsubscribe()
   }, [client])

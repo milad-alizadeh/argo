@@ -24,3 +24,20 @@ export function TicketDetailEmpty() {
     </div>
   )
 }
+
+// A Ticket opened by reference while neither SQLite nor the provider has answered.
+export function TicketDetailReading({ reference }: { reference: string }) {
+  const { t } = useTranslation('tickets')
+  return (
+    <div className="flex h-full min-h-0 flex-col" role="status">
+      <Empty className="min-h-0 flex-1">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <Icon name="ticket" />
+          </EmptyMedia>
+          <EmptyTitle>{t('loading.ticket', { reference })}</EmptyTitle>
+        </EmptyHeader>
+      </Empty>
+    </div>
+  )
+}

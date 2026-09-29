@@ -11,7 +11,9 @@ import {
   connection,
   engine,
   longBacklog,
+  noDetail,
   octocat,
+  readPath,
   standalone,
   ticketsView,
 } from '../detail/ticket-fixtures'
@@ -213,6 +215,7 @@ export const MoreTicketsUnavailable: Story = {
         onRetryLoadMore: retryLoadMore,
       }),
       selectedKey: null,
+      detail: noDetail,
       now: new Date('2026-09-25T12:00:00Z').getTime(),
       onBack: fn(),
       onSelect: fn(),
@@ -255,6 +258,7 @@ export const RefreshFailedKeepsRows: Story = {
         },
       }),
       selectedKey: null,
+      detail: noDetail,
       now: new Date('2026-09-25T12:00:00Z').getTime(),
       onBack: fn(),
       onSelect: fn(),
@@ -337,6 +341,88 @@ export const TicketTree: Story = {
     await expect(
       Math.abs(twig.getBoundingClientRect().top - titleFirstLineCenter),
     ).toBeLessThanOrEqual(1)
+  },
+}
+
+// A linked Ticket the active list no longer holds opens from its saved row.
+export const UnlistedTicket: Story = {
+  args: {
+    view: {
+      ...ticketsView(),
+      selectedKey: '#388',
+      detail: { ...noDetail, ticket: readPath, statuses: STATUSES.github },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const detail = within(within(canvasElement).getByRole('article', { name: 'Ticket #388' }))
+    await expect(detail.getByText('Read one Ticket by its ID.')).toBeInTheDocument()
+    await expect(detail.getByText('Closed as completed')).toBeInTheDocument()
+  },
+}
+
+// A failed by-ID read sits above the saved Ticket rather than replacing it.
+export const SavedTicketRefreshFailed: Story = {
+  args: {
+    view: {
+      ...ticketsView(),
+      selectedKey: '#388',
+      detail: {
+        ...noDetail,
+        ticket: readPath,
+        problem: {
+          icon: 'connection-offline',
+          title: 'Argo could not refresh this Ticket. This is the last saved.',
+          description: 'Argo cannot reach GitHub.',
+          alert: true,
+          actions: [],
+        },
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(
+      within(canvas.getByRole('alert')).getByText('Argo cannot reach GitHub.'),
+    ).toBeVisible()
+    await expect(canvas.getByRole('article', { name: 'Ticket #388' })).toBeVisible()
+  },
+}
+
+// A Ticket opened by an Argo link waits for its by-ID read before anything is drawn.
+export const OpeningTicket: Story = {
+  args: {
+    view: { ...ticketsView(), selectedKey: 'ENG-3', detail: { ...noDetail, reading: true } },
+  },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole('status')).toHaveTextContent('Opening ENG-3…')
+  },
+}
+
+const retryOpen = fn()
+
+// A Ticket the provider cannot find, with nothing saved, says so and offers another read.
+export const TicketNotFound: Story = {
+  args: {
+    view: {
+      ...ticketsView(),
+      selectedKey: '#9999',
+      detail: {
+        ...noDetail,
+        problem: {
+          icon: 'not-visible',
+          title: 'Argo could not open this Ticket.',
+          description: 'The Ticket was not found.',
+          alert: true,
+          actions: [{ label: 'Try again', onClick: retryOpen, primary: true }],
+        },
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const alert = within(within(canvasElement).getByRole('alert'))
+    await expect(alert.getByText('Argo could not open this Ticket.')).toBeInTheDocument()
+    await userEvent.click(alert.getByRole('button', { name: 'Try again' }))
+    await expect(retryOpen).toHaveBeenCalled()
   },
 }
 

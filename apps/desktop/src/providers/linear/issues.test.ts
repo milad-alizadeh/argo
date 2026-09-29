@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { type TestContext, test } from 'node:test'
 import { ADA, HIDDEN, linear, signIn, TEAM } from '@/providers/linear/harness'
-import { readTicketPage } from '@/providers/linear/issues'
+import { readTicket, readTicketPage } from '@/providers/linear/issues'
 import { checkTeam, listTeams } from '@/providers/linear/teams'
 import type { MockLinearTeam } from '../../../mocks/providers/linear/mock-linear'
 import { assertUnstubbedRequestFails } from '../../../mocks/providers/msw-node-bridge'
@@ -130,4 +130,24 @@ test('an access token past its lifetime is refused as unauthorized', async (cont
 test('a call to a route this mock never stubbed fails loudly, naming the request', async (context) => {
   const [mock] = await linear(context)
   await assertUnstubbedRequestFails(`${mock.origin}/oauth/revoke`)
+})
+
+test('one issue reads by key or id, closed included, only within the connected team', async (context) => {
+  const other: MockLinearTeam = { ...HIDDEN, id: 'team-other', visibleTo: [ADA.id] }
+  const { endpoints, accessToken } = await signedIn(context, [TEAM, other])
+  for (const id of ['ENG-3', 'issue-ENG-3']) {
+    const read = await readTicket(endpoints, accessToken, { scope: TEAM.id, id })
+    assert.ok(read.ok)
+    assert.equal(read.value.nativeId, 'issue-ENG-3')
+    assert.equal(read.value.state, 'closed')
+  }
+  for (const request of [
+    { scope: 'team-other', id: 'ENG-3' },
+    { scope: TEAM.id, id: 'ENG-404' },
+  ]) {
+    assert.deepEqual(await readTicket(endpoints, accessToken, request), {
+      ok: false,
+      failure: 'ticket-not-found',
+    })
+  }
 })

@@ -308,3 +308,121 @@ test('an active GitHub scan commits Tickets that the active list reads back from
   assert.deepEqual(other.tickets.map(({ key }) => key).sort(), ['#1', '#2', '#4'])
   assert.deepEqual(argoIds(flow), later)
 })
+
+// Answers the saved Ticket after the provider read, and whether it was saved before the reply.
+async function opened({ tickets, changes }: Flow, reference: string) {
+  let savedBeforeReply = false
+  const stop = changes.subscribe(() => {
+    savedBeforeReply = true
+  })
+  try {
+    const reply = await tickets.ticketOpen({ projectId, reference })
+    const detail = await tickets.ticketDetail({ projectId, reference })
+    assert.ok(detail.type === 'ticket.detail')
+    return { reply, detail, savedBeforeReply }
+  } finally {
+    stop()
+  }
+}
+
+test('a GitHub Ticket outside the active list opens by ID and stays readable from SQLite', async () => {
+  const flow = await signedInToGitHub()
+  const { gitHub, tickets, accountId } = flow
+  const issues = [
+    { number: 1, title: 'Wire the registry' },
+    { number: 3, title: 'Shipped already', state: 'closed' as const },
+  ]
+  gitHub.addRepository({ fullName: 'octo/hello', visibleTo: [OCTOCAT.id], issues })
+  await tickets.ticketConnect({ projectId, accountId, scope: 'octo/hello' })
+  await synced(flow)
+  const unread = await tickets.ticketDetail({ projectId, reference: '#3' })
+  assert.ok(unread.type === 'ticket.detail')
+  assert.equal(unread.ticket, null)
+
+  const closed = await opened(flow, '#3')
+  assert.ok(closed.reply.type === 'ticket.opened')
+  assert.equal(closed.savedBeforeReply, true)
+  assert.equal(closed.detail.ticket?.title, 'Shipped already')
+  assert.equal(closed.detail.ticket?.state, 'closed')
+  assert.equal(closed.detail.argoId, closed.reply.argoId)
+  // The Ticket read by ID does not join the active list.
+  const active = await synced(flow)
+  assert.deepEqual(
+    active.tickets.map(({ key }) => key),
+    ['#1'],
+  )
+
+  const missing = await opened(flow, '#99')
+  assert.ok(missing.reply.type === 'ticket.error')
+  assert.equal(missing.reply.code, 'ticket-not-found')
+  // A repository out of sight also answers 404, and is named as that, not as a missing Ticket.
+  gitHub.addRepository({ fullName: 'octo/hello', visibleTo: [], issues })
+  const hidden = await opened(flow, '#3')
+  assert.ok(hidden.reply.type === 'ticket.error')
+  assert.equal(hidden.reply.code, 'repository-not-visible')
+
+  // #1 leaves the active list; its saved row still answers by key and by Argo UUID, GitHub down.
+  gitHub.addRepository({
+    fullName: 'octo/hello',
+    visibleTo: [OCTOCAT.id],
+    issues: [{ number: 1, title: 'Wire the registry', state: 'closed' as const }],
+  })
+  assert.deepEqual((await synced(flow)).tickets, [])
+  gitHub.outage('down')
+  const argoId = argoIds(flow)['#1']
+  assert.ok(argoId)
+  for (const reference of ['#1', argoId]) {
+    const saved = await tickets.ticketDetail({ projectId, reference })
+    assert.ok(saved.type === 'ticket.detail')
+    assert.equal(saved.ticket?.title, 'Wire the registry')
+  }
+  const refused = await opened(flow, argoId)
+  assert.ok(refused.reply.type === 'ticket.error')
+  assert.equal(refused.reply.code, 'github-unreachable')
+  assert.equal(refused.detail.ticket?.key, '#1')
+  assert.equal(refused.savedBeforeReply, false)
+})
+
+test('a Linear Ticket outside the active list opens by key or Argo UUID', async () => {
+  const flow = await signedInToLinear()
+  const { mockLinear, tickets, accountId } = flow
+  mockLinear.addTeam(TEAM)
+  await tickets.ticketConnect({ projectId, accountId, scope: TEAM.id })
+  await synced(flow)
+
+  const done = await opened(flow, 'ENG-3')
+  assert.ok(done.reply.type === 'ticket.opened')
+  assert.equal(done.savedBeforeReply, true)
+  assert.equal(done.detail.ticket?.title, 'Cast the gears')
+  assert.equal(done.detail.ticket?.status.name, 'Done')
+  // Linear's issue id is the native ID, so a later scan or read keeps the Argo UUID.
+  assert.equal(argoIds(flow)['issue-ENG-3'], done.reply.argoId)
+  const byArgoId = await opened(flow, done.reply.argoId)
+  assert.ok(byArgoId.reply.type === 'ticket.opened')
+  assert.equal(byArgoId.reply.argoId, done.reply.argoId)
+  assert.equal(byArgoId.detail.ticket?.key, 'ENG-3')
+
+  const byNativeId = await opened(flow, 'issue-ENG-3')
+  assert.ok(byNativeId.reply.type === 'ticket.opened')
+  assert.equal(byNativeId.reply.argoId, done.reply.argoId)
+
+  // ENG-2 moves to Done and leaves the active list; its saved row still answers.
+  const moved = await tickets.ticketUpdateStatus({
+    projectId,
+    key: 'ENG-2',
+    statusId: 'team-engine-done',
+  })
+  assert.equal(moved.type, 'ticket.updated')
+  assert.deepEqual(
+    (await synced(flow)).tickets.map(({ key }) => key),
+    ['ENG-1'],
+  )
+  const retained = await tickets.ticketDetail({ projectId, reference: 'ENG-2' })
+  assert.ok(retained.type === 'ticket.detail')
+  assert.equal(retained.ticket?.status.name, 'Done')
+
+  const missing = await opened(flow, 'ENG-404')
+  assert.ok(missing.reply.type === 'ticket.error')
+  assert.equal(missing.reply.code, 'ticket-not-found')
+  assert.equal(missing.detail.ticket, null)
+})

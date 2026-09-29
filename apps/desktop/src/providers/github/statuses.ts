@@ -28,12 +28,15 @@ export function githubStatus(state: 'open' | 'closed', reason: unknown): TicketS
 
 const ISSUE_KEY = /^#([1-9]\d{0,9})$/
 
+// The issue number a key such as `#607` names, or null for anything else.
+export const issueNumber = (key: string): string | null => ISSUE_KEY.exec(key)?.[1] ?? null
+
 export async function updateIssueStatus(
   endpoints: GitHubEndpoints,
   token: string,
   { scope, key, statusId }: StatusChange,
 ): Promise<GitHubRead<TicketStatus> | { ok: false; failure: 'status-unknown' }> {
-  const number = ISSUE_KEY.exec(key)?.[1]
+  const number = issueNumber(key)
   const target = GITHUB_STATUSES.find((status) => status.id === statusId)
   if (!(number && target)) return { ok: false, failure: 'status-unknown' }
   const change = target === OPEN ? { state: 'open' } : { state: 'closed', state_reason: target.id }

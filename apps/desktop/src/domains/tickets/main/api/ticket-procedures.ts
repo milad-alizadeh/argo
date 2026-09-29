@@ -25,6 +25,13 @@ import {
   updateStatus,
 } from '../service'
 import {
+  openTicket,
+  readDetail,
+  ticketDetailOutputSchema,
+  ticketOpenedOutputSchema,
+  ticketReference,
+} from '../ticket-detail-service'
+import {
   readActive,
   requestSync,
   ticketIndexedOutputSchema,
@@ -46,6 +53,7 @@ const listInputSchema = projectInputSchema.extend({
 const listOutputSchema = z.union([ticketListedSchema, ticketErrorSchema])
 // A numbered page of the saved active list; the bound keeps an offset inside SQLite's reach.
 const activeInputSchema = projectInputSchema.extend({ page: z.int().nonnegative().max(100_000) })
+const detailInputSchema = projectInputSchema.extend({ reference: ticketReference })
 const changeSchema = z.strictObject({ provider, scope: identifierSchema })
 const updateStatusInputSchema = projectInputSchema.extend({ key: ticketKey, statusId })
 const updateStatusOutputSchema = z.union([ticketUpdatedSchema, ticketErrorSchema])
@@ -69,6 +77,20 @@ function indexProcedures(dependencies: TicketProcedureContext) {
       .output(ticketIndexedOutputSchema)
       .query(({ input: { projectId, page } }) =>
         readActive(request(dependencies, projectId), page),
+      ),
+    // One saved Ticket by Argo UUID, native ID or key, listed or not.
+    ticketDetail: t.procedure
+      .input(detailInputSchema)
+      .output(ticketDetailOutputSchema)
+      .query(({ input: { projectId, reference } }) =>
+        readDetail(request(dependencies, projectId), reference),
+      ),
+    // Reads one Ticket from the provider by ID and commits it before answering.
+    ticketOpen: t.procedure
+      .input(detailInputSchema)
+      .output(ticketOpenedOutputSchema)
+      .mutation(({ input: { projectId, reference } }) =>
+        openTicket(request(dependencies, projectId), reference),
       ),
     ticketSync: t.procedure
       .input(projectInputSchema)

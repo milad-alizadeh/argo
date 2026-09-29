@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { github, githubWithRepository, OCTOCAT, signIn } from '@/providers/github/harness'
-import { readTicketPage } from '@/providers/github/issues'
+import { readTicket, readTicketPage } from '@/providers/github/issues'
 import { checkRepository, isRepositoryScope } from '@/providers/github/repository'
 import type { MockIssue } from '../../../mocks/providers/github/mock-github'
 
@@ -136,4 +136,30 @@ test('a repository that serves no dependency facts reads as unknown, not unblock
   })
   assert.ok(read.ok)
   assert.equal(read.value.tickets[0]?.blockedBy, null)
+})
+
+test('one issue reads by its key, open or closed, and a pull request is not a Ticket', async (context) => {
+  const [mock, endpoints] = await github(context)
+  mock.signIn(OCTOCAT)
+  mock.addRepository({
+    fullName: 'octo/hello',
+    visibleTo: [OCTOCAT.id],
+    issues: [
+      { number: 1, title: 'Shipped', state: 'closed', stateReason: 'completed', children: [2] },
+      { number: 2, title: 'Child' },
+      { number: 3, title: 'A pull request', pullRequest: true },
+    ],
+  })
+  const token = await signIn(endpoints)
+  const read = await readTicket(endpoints, token, { scope: 'octo/hello', id: '#1' })
+  assert.ok(read.ok)
+  assert.equal(read.value.state, 'closed')
+  assert.equal(read.value.status.id, 'completed')
+  assert.deepEqual(read.value.children, [{ key: '#2', title: 'Child', state: 'open' }])
+  for (const id of ['#3', '#9', 'ENG-1']) {
+    assert.deepEqual(await readTicket(endpoints, token, { scope: 'octo/hello', id }), {
+      ok: false,
+      failure: id === '#9' ? 'not-found' : 'ticket-not-found',
+    })
+  }
 })
