@@ -129,3 +129,22 @@ export const NestedExpandableTags: Story = {
     }
   },
 }
+
+// Until the provider answers, a search draws the saved matches and says they are only those.
+export const SearchShowsSavedMatchesFirst: Story = {
+  args: {
+    backlog: backlog({
+      tickets: [standalone],
+      query: 'planner',
+      total: 1,
+      partial: true,
+      sync: { refreshing: true, problem: null },
+    }),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('1 saved match')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: /^#273/ })).toBeVisible()
+    await expect(canvas.getByText(/^Refreshing from/)).toBeVisible()
+  },
+}

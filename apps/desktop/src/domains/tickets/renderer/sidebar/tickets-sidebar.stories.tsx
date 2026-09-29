@@ -56,16 +56,9 @@ export const Connected: Story = {
       'href',
       'https://github.com/octocat/hello-world/issues/new',
     )
-    await userEvent.click(canvas.getByRole('button', { name: 'Find a Ticket' }))
     const field = canvas.getByRole('textbox', { name: 'Search Tickets' })
-    await expect(field).toHaveFocus()
     await userEvent.type(field, 'crash')
     await expect(field).toHaveValue('crash')
-    // Closing the field ends the search, so no hidden query filters the backlog.
-    await userEvent.keyboard('{Escape}')
-    await expect(canvas.queryByRole('textbox', { name: 'Search Tickets' })).toBeNull()
-    await userEvent.click(canvas.getByRole('button', { name: 'Find a Ticket' }))
-    await expect(canvas.getByRole('textbox', { name: 'Search Tickets' })).toHaveValue('')
     await userEvent.click(canvas.getByRole('button', { name: 'GitHub · octocat Connected' }))
     await expect(args.onManageAccounts).toHaveBeenCalled()
   },
@@ -76,7 +69,6 @@ export const NotConnected: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: 'New Ticket' })).toBeDisabled()
-    await expect(canvas.getByRole('button', { name: 'Find a Ticket' })).toBeDisabled()
     await expect(canvas.getByRole('button', { name: 'Accounts' })).toBeInTheDocument()
   },
 }
@@ -87,7 +79,6 @@ export const Linear: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.queryByRole('button', { name: 'New Ticket' })).toBeNull()
-    await expect(canvas.getByRole('button', { name: 'Find a Ticket' })).toBeEnabled()
     await expect(
       canvas.getByRole('button', { name: 'Linear · ada@analytical.dev Connected' }),
     ).toBeInTheDocument()

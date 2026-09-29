@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 
-const SEARCH_PARAMETER = 'ticketSearch'
 const QUERY_PARAMETER = 'q'
 
 export function useTicketSearch() {
@@ -19,19 +18,7 @@ export function useTicketSearch() {
     [setSearch],
   )
   return {
-    open: search.get(SEARCH_PARAMETER) === '1',
     query: search.get(QUERY_PARAMETER) ?? '',
-    setOpen: useCallback(
-      (open: boolean) =>
-        change((next) => {
-          if (open) next.set(SEARCH_PARAMETER, '1')
-          else {
-            next.delete(SEARCH_PARAMETER)
-            next.delete(QUERY_PARAMETER)
-          }
-        }),
-      [change],
-    ),
     setQuery: useCallback(
       (query: string) =>
         change((next) => {

@@ -65,56 +65,58 @@ export function TicketDetail(props: TicketDetailProps) {
       className="flex min-h-0 flex-1 flex-col overflow-hidden"
     >
       <TicketDetailPageHeader onBack={onBack} />
-      <div
-        data-component="TicketDetailScroll"
-        className="@container min-h-0 flex-1 overflow-y-auto"
-      >
-        <div className={detailMeasure}>
-          <div className="contents @3xl:col-start-1 @3xl:row-start-1 @3xl:block">
-            <header className="order-1 flex min-w-0 flex-col items-start gap-(--spacing-shell-item)">
-              <h2
-                className="min-w-0 self-start line-clamp-2 type-title wrap-anywhere"
-                title={ticket.title}
-              >
-                {ticket.url === null ? (
-                  <>
-                    {ticket.key} - {ticket.title}
-                  </>
+      <div className="panel-content">
+        <div
+          data-component="TicketDetailScroll"
+          className="@container min-h-0 flex-1 overflow-y-auto"
+        >
+          <div className={detailMeasure}>
+            <div className="contents @3xl:col-start-1 @3xl:row-start-1 @3xl:block">
+              <header className="order-1 flex min-w-0 flex-col items-start gap-(--spacing-shell-item)">
+                <h2
+                  className="min-w-0 self-start line-clamp-2 type-title wrap-anywhere"
+                  title={ticket.title}
+                >
+                  {ticket.url === null ? (
+                    <>
+                      {ticket.key} - {ticket.title}
+                    </>
+                  ) : (
+                    <a
+                      aria-label={t('detail.openInProvider', {
+                        key: ticket.key,
+                        provider: providerPresentation(provider).name,
+                      })}
+                      className="hover:underline"
+                      href={ticket.url}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      {ticket.key} - {ticket.title}
+                    </a>
+                  )}
+                </h2>
+              </header>
+              <div className="order-3 grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-(--spacing-shell-section) @3xl:mt-(--spacing-shell-section)">
+                {body ? (
+                  <FeedMarkdown text={body} />
                 ) : (
-                  <a
-                    aria-label={t('detail.openInProvider', {
-                      key: ticket.key,
-                      provider: providerPresentation(provider).name,
-                    })}
-                    className="hover:underline"
-                    href={ticket.url}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    {ticket.key} - {ticket.title}
-                  </a>
+                  <p className="type-body text-muted-foreground">{t('detail.noDescription')}</p>
                 )}
-              </h2>
-            </header>
-            <div className="order-3 grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-(--spacing-shell-section) @3xl:mt-(--spacing-shell-section)">
-              {body ? (
-                <FeedMarkdown text={body} />
-              ) : (
-                <p className="type-body text-muted-foreground">{t('detail.noDescription')}</p>
-              )}
-              <LinkedSessions onOpenSession={onOpenSession} sessions={linkedSessions} />
+                <LinkedSessions onOpenSession={onOpenSession} sessions={linkedSessions} />
+              </div>
             </div>
+            <Properties
+              onChangePriority={onChangePriority}
+              onChangeStatus={onChangeStatus}
+              linkedSessionCount={linkedSessions.length}
+              listed={navigation.listed}
+              onSelect={navigation.onSelect}
+              provider={provider}
+              statuses={statuses}
+              ticket={ticket}
+            />
           </div>
-          <Properties
-            onChangePriority={onChangePriority}
-            onChangeStatus={onChangeStatus}
-            linkedSessionCount={linkedSessions.length}
-            listed={navigation.listed}
-            onSelect={navigation.onSelect}
-            provider={provider}
-            statuses={statuses}
-            ticket={ticket}
-          />
         </div>
       </div>
     </article>

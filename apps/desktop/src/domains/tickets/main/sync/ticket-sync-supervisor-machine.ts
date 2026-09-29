@@ -3,6 +3,7 @@ import { type ActorRefFrom, enqueueActions, setup, stopChild } from 'xstate'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
 import type { TicketErrorCode } from '@/domains/tickets/contract/contract'
 import { TICKET_POLL_PROOF_ENV } from './proof-protocol'
+import { type TicketSearchRequest, ticketSearchMachine } from './ticket-search-machine'
 import {
   type TicketSyncDependencies,
   type TicketSyncRequest,
@@ -79,6 +80,17 @@ export type TicketSyncSupervisorCommand =
       type: 'Sync'
       request: TicketSyncRequest
     }
+  // One page of the scope's Closed Tickets; never polled, never retried on its own.
+  | {
+      type: 'LoadClosed'
+      request: TicketSyncRequest
+      more: boolean
+    }
+  // A provider search for a query the saved Tickets may not cover; one per query runs at a time.
+  | {
+      type: 'Search'
+      request: TicketSearchRequest
+    }
   // A screen showing the scope's Tickets; each watcher is one open view.
   | {
       type: 'Watch'
@@ -108,7 +120,16 @@ type DueEvent = {
 }
 
 const keyOf = ({ provider, scope }: TicketScopeTarget) => `ticket-sync:${provider}:${scope}`
+const SEARCH_PREFIX = 'ticket-search:'
+const searchKeyOf = ({ provider, scope, query }: TicketSearchRequest) =>
+  `${SEARCH_PREFIX}${JSON.stringify([
+    provider,
+    scope,
+    query,
+  ])}`
 const dueId = (key: string) => `due:${key}`
+const closedKeyOf = ({ provider, scope }: TicketScopeTarget) => `ticket-closed:${provider}:${scope}`
+const isClosedKey = (key: string) => key.startsWith('ticket-closed:')
 
 type Watchers = Record<string, TicketSyncRequest>
 
@@ -150,6 +171,7 @@ export const ticketSyncSupervisorMachine = setup({
   },
   actors: {
     sync: ticketSyncMachine,
+    search: ticketSearchMachine,
   },
   actions: {
     dispatch: enqueueActions(({ context, event, enqueue }) => {
@@ -174,6 +196,58 @@ export const ticketSyncSupervisorMachine = setup({
             provider,
             scope,
             kind: 'active',
+          },
+          accountId,
+          more: false,
+        },
+      })
+      enqueue.assign({
+        active: {
+          ...context.active,
+          [key]: true,
+        },
+      })
+    }),
+    // A Closed page already being read answers a second request for it.
+    loadClosed: enqueueActions(({ context, event, enqueue }) => {
+      if (event.type !== 'LoadClosed') return
+      const key = closedKeyOf(event.request)
+      if (context.active[key]) return
+      const { accountId, provider, scope } = event.request
+      enqueue.spawnChild('sync', {
+        id: key,
+        input: {
+          dependencies: context.dependencies,
+          target: {
+            provider,
+            scope,
+            kind: 'closed',
+          },
+          accountId,
+          more: event.more,
+        },
+      })
+      enqueue.assign({
+        active: {
+          ...context.active,
+          [key]: true,
+        },
+      })
+    }),
+    // A search already running for the query is the one that answers.
+    search: enqueueActions(({ context, event, enqueue }) => {
+      if (event.type !== 'Search') return
+      const key = searchKeyOf(event.request)
+      if (context.active[key]) return
+      const { accountId, provider, scope, query } = event.request
+      enqueue.spawnChild('search', {
+        id: key,
+        input: {
+          dependencies: context.dependencies,
+          target: {
+            provider,
+            scope,
+            query,
           },
           accountId,
         },
@@ -253,6 +327,13 @@ export const ticketSyncSupervisorMachine = setup({
       ) => {
         enqueue(stopChild(key))
         const { [key]: _finished, ...active } = context.active
+        // Finished Closed pages and searches neither back off nor poll; the next request asks again.
+        if (isClosedKey(key) || key.startsWith(SEARCH_PREFIX)) {
+          enqueue.assign({
+            active,
+          })
+          return
+        }
         const { [key]: replay, ...pending } = context.pending
         const failures = failure === null ? 0 : (context.failures[key] ?? 0) + 1
         enqueue.assign({
@@ -302,6 +383,12 @@ export const ticketSyncSupervisorMachine = setup({
       on: {
         Sync: {
           actions: 'dispatch',
+        },
+        LoadClosed: {
+          actions: 'loadClosed',
+        },
+        Search: {
+          actions: 'search',
         },
         Watch: {
           actions: 'watch',

@@ -90,7 +90,11 @@ function repositoryRead(exchange: Exchange, user: MockUser) {
     return send(response, 200, { full_name: repository.fullName, has_issues: hasIssues })
   }
   if (!match[2]) {
-    return page(exchange, repository.issues.filter(isOpen).map(all))
+    const closed = url.searchParams.get('state') === 'closed'
+    return page(
+      exchange,
+      repository.issues.filter((issue) => !issue.pullRequest && isOpen(issue) !== closed).map(all),
+    )
   }
   const parent = repository.issues.find((issue) => issue.number === Number(match[2]))
   // One issue by number, open or closed, as GitHub serves a pull request here too.

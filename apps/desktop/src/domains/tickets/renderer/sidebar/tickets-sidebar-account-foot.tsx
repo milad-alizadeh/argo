@@ -15,7 +15,7 @@ export function TicketsSidebarAccountFoot({
 }: TicketsSidebarAccountFootProps) {
   const { t } = useTranslation('tickets')
   return (
-    <footer className="shrink-0 border-t border-border/60 p-(--spacing-shell-item)">
+    <footer className="sidebar-gutter shrink-0 py-(--spacing-shell-item)">
       <button
         className="flex w-full items-center gap-(--spacing-shell-item) rounded-row px-(--spacing-shell-item) py-(--spacing-shell-icon) text-left type-meta text-muted-foreground hover:bg-muted"
         onClick={onManageAccounts}

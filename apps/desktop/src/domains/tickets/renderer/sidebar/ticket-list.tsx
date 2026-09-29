@@ -27,9 +27,10 @@ export type TicketListProps = {
 
 function tally(
   t: TFunction<'tickets'>,
-  { tickets, query, total, hasMore, searching, provider }: Backlog,
+  { tickets, query, total, hasMore, searching, partial, provider }: Backlog,
 ): string {
   if (searching) return t('backlog.searching', { provider: providerPresentation(provider).name })
+  if (query !== '' && partial) return t('backlog.savedMatch', { count: total ?? tickets.length })
   if (query !== '') return t('backlog.match', { count: total ?? tickets.length })
   return hasMore
     ? t('backlog.allOpenMore', { count: tickets.length })
@@ -99,22 +100,24 @@ export function TicketList({
           </div>
         </AppPageHeader>
       ) : null}
-      {backlog.sync.problem ? <ProblemBanner {...backlog.sync.problem} /> : null}
-      {backlog.tickets.length === 0 ? (
-        <NoTickets provider={backlog.provider} query={backlog.query} />
-      ) : null}
-      {backlog.tickets.length > 0 ? (
-        <TicketVirtualList
-          backlog={backlog}
-          folded={folded}
-          now={now}
-          onSelect={onSelect}
-          onToggle={toggle}
-          placement={placement}
-          rows={rows}
-          selectedKey={selectedKey}
-        />
-      ) : null}
+      <div className={placement === 'workspace' ? 'panel-content' : 'flex min-h-0 flex-1 flex-col'}>
+        {backlog.sync.problem ? <ProblemBanner {...backlog.sync.problem} /> : null}
+        {backlog.tickets.length === 0 ? (
+          <NoTickets provider={backlog.provider} query={backlog.query} />
+        ) : null}
+        {backlog.tickets.length > 0 ? (
+          <TicketVirtualList
+            backlog={backlog}
+            folded={folded}
+            now={now}
+            onSelect={onSelect}
+            onToggle={toggle}
+            placement={placement}
+            rows={rows}
+            selectedKey={selectedKey}
+          />
+        ) : null}
+      </div>
     </section>
   )
 }

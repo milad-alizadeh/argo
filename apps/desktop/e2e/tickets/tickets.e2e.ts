@@ -1,10 +1,11 @@
-// The packaged Ticket proof (#1848, #1849, #2013, #2870, #2871): connect an Account, connect a
+// The packaged Ticket proof (#1848, #1849, #2013, #2870, #2871, #2873): connect an Account, connect a
 // source, list, detail, a status change, restart, revoked access, an expired renewal, disconnect, a
-// visible failure, the automatic refresh and linked Tickets opened by ID, all through the shipped
+// visible failure, the automatic refresh, linked Tickets opened by ID and search beyond the local index, all through the shipped
 // cockpit against a mock GitHub and a mock Linear. Each case declares the Accounts and source it
 // starts with (`ticket-test.ts`).
 import { packagedRun } from '../application-under-test'
 import { assertShippedFusesIntact } from '../packaged-app'
+import { proveGitHubClosed, proveLinearClosed } from './cases/closed.case'
 import {
   proveBacklog,
   proveCommittedBacklog,
@@ -29,6 +30,7 @@ import {
 } from './cases/linear.case'
 import { proveGitHubLinkedTicket, proveLinearLinkedTicket } from './cases/linked.case'
 import { proveAutomaticRefresh } from './cases/refresh.case'
+import { proveSearchBeyondIndex, proveSearchFilters } from './cases/search.case'
 import { test } from './ticket-test'
 
 test('connect a GitHub Account', ({ tickets }) => proveConnect(tickets.run()))
@@ -58,6 +60,12 @@ test.describe('with a GitHub repository', () => {
   test('disconnect the GitHub Account', ({ tickets }) => proveDisconnect(tickets.run()))
   test('a linked GitHub Ticket opens by ID', ({ tickets }) =>
     proveGitHubLinkedTicket(tickets.run()))
+  test('Closed loads a page at a time from GitHub', ({ tickets }) =>
+    proveGitHubClosed(tickets.run()))
+  test('search reaches Tickets beyond the local index', ({ tickets }) =>
+    proveSearchBeyondIndex(tickets.run()))
+  test('search filters the list by title, body and key', ({ tickets }) =>
+    proveSearchFilters(tickets.run()))
 })
 
 const PROOF_POLL_MS = 500
@@ -84,6 +92,8 @@ test.describe('with a Linear team', () => {
   test('disconnect the Linear Account', ({ tickets }) => proveLinearDisconnect(tickets.run()))
   test('a linked Linear Ticket opens by ID', ({ tickets }) =>
     proveLinearLinkedTicket(tickets.run()))
+  test('Closed loads a page at a time from Linear', ({ tickets }) =>
+    proveLinearClosed(tickets.run()))
 })
 
 test('the shipped app keeps its fuses', () => {

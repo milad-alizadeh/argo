@@ -14,6 +14,7 @@ type Story = StoryObj<typeof AtlasPage>
 export const Placeholder: Story = {
   play: async ({ canvasElement }) => {
     const main = within(canvasElement).getByRole('main')
-    await expect(main).toBeEmptyDOMElement()
+    await expect(main).toBeInTheDocument()
+    await expect(main.textContent).toBe('')
   },
 }

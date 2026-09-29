@@ -138,6 +138,28 @@ test('a repository that serves no dependency facts reads as unknown, not unblock
   assert.equal(read.value.tickets[0]?.blockedBy, null)
 })
 
+test('a Closed page lists only closed issues', async (context) => {
+  const { endpoints, token } = await githubWithRepository(context, {
+    fullName: 'octo/hello',
+    issues: [
+      { number: 1, title: 'Open' },
+      { number: 2, title: 'Shipped', state: 'closed', stateReason: 'completed' },
+      { number: 3, title: 'A pull request', state: 'closed', pullRequest: true },
+    ],
+  })
+  const read = await readTicketPage(endpoints, token, {
+    scope: 'octo/hello',
+    query: '',
+    page: 1,
+    state: 'closed',
+  })
+  assert.ok(read.ok)
+  assert.deepEqual(
+    read.value.tickets.map((ticket) => ticket.key),
+    ['#2'],
+  )
+})
+
 test('one issue reads by its key, open or closed, and a pull request is not a Ticket', async (context) => {
   const [mock, endpoints] = await github(context)
   mock.signIn(OCTOCAT)

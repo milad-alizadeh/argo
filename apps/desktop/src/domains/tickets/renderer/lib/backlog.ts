@@ -18,6 +18,8 @@ export type Backlog = {
   loadingMore: boolean
   // A later page can fail while the pages already read remain useful.
   loadMoreError: string | null
+  // The rows are the saved matches alone: the provider has not yet answered this query.
+  partial: boolean
   // A new query is reading while the last one's answer stays on screen.
   searching: boolean
   onLoadMore: () => void

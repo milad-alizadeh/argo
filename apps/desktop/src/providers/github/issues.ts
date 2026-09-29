@@ -8,6 +8,7 @@ import {
   type TicketLabel,
   type TicketLink,
 } from '@/domains/tickets/contract/ticket'
+import type { ListingState } from '@/domains/tickets/main/sources'
 import type { GitHubEndpoints } from '@/providers/github/endpoints'
 import { failed, type GitHubRead, get, getAll, getPage } from '@/providers/github/http'
 import { githubStatus, issueNumber } from '@/providers/github/statuses'
@@ -140,11 +141,19 @@ function listing(body: unknown): Listing | null {
   }
 }
 
-export type TicketPageRequest = { scope: string; query: string; page: number }
+export type TicketPageRequest = {
+  scope: string
+  query: string
+  page: number
+  state?: ListingState
+}
 
-function pageURL(endpoints: GitHubEndpoints, { scope, query, page }: TicketPageRequest): string {
+function pageURL(
+  endpoints: GitHubEndpoints,
+  { scope, query, page, state = 'open' }: TicketPageRequest,
+): string {
   const paging = `per_page=${TICKET_PAGE_SIZE}&page=${page}`
-  if (query.trim() === '') return `${endpoints.api}/repos/${scope}/issues?state=open&${paging}`
+  if (query.trim() === '') return `${endpoints.api}/repos/${scope}/issues?state=${state}&${paging}`
   const search = new URLSearchParams({ q: searchQuery(scope, query) })
   return `${endpoints.api}/search/issues?${search}&${paging}`
 }
