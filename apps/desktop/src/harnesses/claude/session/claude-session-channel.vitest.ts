@@ -213,7 +213,7 @@ test('answers Claude Permission and Question requests through the channel', asyn
 
 import { readFileSync } from 'node:fs'
 
-test('streams an Agent call as one delegation from its start to its notification', async () => {
+test('streams an Agent call as a start and a response its notification completes', async () => {
   vendor.prompts = []
   vendor.releaseSecond = null
   const envelope = { session_id: 'native-1' }
@@ -271,7 +271,7 @@ test('streams an Agent call as one delegation from its start to its notification
     ),
   ).toEqual([
     ['toolu_live_agent', 'a1b2c3d4e5f6a7b8c', 'running'],
-    ['toolu_live_agent', 'a1b2c3d4e5f6a7b8c', 'completed'],
+    ['toolu_live_agent:response', 'a1b2c3d4e5f6a7b8c', 'completed'],
   ])
   channel.close()
 })

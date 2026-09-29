@@ -26,7 +26,7 @@ import {
   readCodexInteraction,
 } from './codex-session-interactions'
 import { APPROVAL_TIMEOUT_MS, inputItems, userContentText } from './codex-session-protocol'
-import { codexSubagentContent } from './codex-subagent-content'
+import { CodexSubagentPairing } from './codex-subagent-content'
 import { readCodexThreadStatus } from './codex-thread-status'
 
 export type CodexLiveClient = {
@@ -50,6 +50,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
   private readonly phaseByItem = new Map<string, 'commentary' | 'final_answer' | null>()
   private readonly outputByItem = new Map<string, string>()
   private readonly commandByItem = new Map<string, Extract<FeedContent, { kind: 'command' }>>()
+  private readonly subagents = new CodexSubagentPairing()
   private readonly pending = new Map<string, CodexInteraction>()
   private readonly approvalTimers = new Map<string, ReturnType<typeof setTimeout>>()
   private readonly standingAllow = new Set<string>()
@@ -395,6 +396,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
     this.phaseByItem.clear()
     this.outputByItem.clear()
     this.commandByItem.clear()
+    this.subagents.clear()
     this.active = null
     void this.nextTurn()
   }
@@ -455,8 +457,12 @@ export class CodexSessionChannel implements LiveSessionChannel {
   }
 
   private subagentItem(item: Extract<ThreadItem, { type: 'subAgentActivity' }>, turnId: string) {
-    const delegation = codexSubagentContent(item)
-    this.emitItemContent(delegation, item.id, turnId)
+    this.emitItemContent(this.subagents.activity(item), item.id, turnId)
+  }
+
+  private collabItem(item: Extract<ThreadItem, { type: 'collabAgentToolCall' }>, turnId: string) {
+    const delegation = this.subagents.collab(item)
+    if (delegation !== null) this.emitItemContent(delegation, item.id, turnId)
   }
 
   private userItem(item: Extract<ThreadItem, { type: 'userMessage' }>, turnId: string) {
@@ -474,6 +480,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
       if (threadId !== this.nativeId || this.active?.turnId !== turnId) return
       if (item.type === 'commandExecution') return this.commandItem(item, turnId, phase)
       if (item.type === 'subAgentActivity') return this.subagentItem(item, turnId)
+      if (item.type === 'collabAgentToolCall') return this.collabItem(item, turnId)
       if (phase === 'started') {
         if (item.type === 'agentMessage') this.phaseByItem.set(item.id, item.phase)
         return

@@ -4,7 +4,11 @@ import type { ThreadItem } from '../app-server/protocol-generated/v2/thread-item
 import type { ThreadReadResponse } from '../app-server/protocol-generated/v2/thread-read-response'
 import copy from '../locales/en.json'
 import { codexCommandContent } from './codex-command-content'
-import { codexSubagentContent } from './codex-subagent-content'
+import {
+  type CodexCollabFacts,
+  codexCollabFacts,
+  codexSubagentContent,
+} from './codex-subagent-content'
 
 type ImageGenerationFailure = NonNullable<
   Extract<ThreadItem, { type: 'imageGeneration' }>['failure']
@@ -182,7 +186,10 @@ function imageGenerationContent(
   }
 }
 
-function codexItemContent(item: ThreadItem): FeedContent | null {
+function codexItemContent(
+  item: ThreadItem,
+  collab: ReadonlyMap<string, CodexCollabFacts>,
+): FeedContent | null {
   switch (item.type) {
     case 'commandExecution': {
       return codexCommandContent(item, 'completed')
@@ -196,9 +203,8 @@ function codexItemContent(item: ThreadItem): FeedContent | null {
       return searchContent(item)
     case 'imageGeneration':
       return imageGenerationContent(item)
-    case 'subAgentActivity': {
-      return codexSubagentContent(item)
-    }
+    case 'subAgentActivity':
+      return codexSubagentContent(item, collab.get(item.id))
     case 'collabAgentToolCall':
       return null
     default:
@@ -207,8 +213,9 @@ function codexItemContent(item: ThreadItem): FeedContent | null {
 }
 
 export function codexContentFromItems(items: ThreadItem[]): FeedContent[] {
+  const collab = codexCollabFacts(items)
   return items.flatMap((item) => {
-    const content = codexItemContent(item)
+    const content = codexItemContent(item, collab)
     return content === null ? [] : [content]
   })
 }

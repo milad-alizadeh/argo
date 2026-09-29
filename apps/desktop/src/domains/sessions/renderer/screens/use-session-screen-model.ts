@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 
 import { useProjects } from '@/domains/projects/renderer'
+import type { FeedSubagent } from '@/domains/sessions/api/feed/feed-subagents'
 import { useWorkspaces } from '@/domains/workspaces/renderer'
 import { DEFAULT_HARNESS } from '@/harnesses/harness'
 import { useSessionPermission } from '../composer/hooks/use-session-permission'
@@ -13,7 +14,7 @@ import { useFeedReading } from '../feed/use-feed-reading'
 import type { SessionHarness } from '../harness/harnesses'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
 import { useSessionList } from '../session-list/use-session-list'
-import type { SessionEvidence, SessionFeedRow } from '../types'
+import type { SessionEvidence } from '../types'
 import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../work/use-session-work'
 import { sessionHarness } from './session-screen-state'
 import { sessionScreenSubagents } from './session-screen-subagents'
@@ -25,14 +26,14 @@ function useWorkArtifacts({
   session,
   selectedSessionId,
   work,
-  feedRows,
+  feedSubagents,
 }: {
   session: ReturnType<typeof useSelectedSession>
   selectedSessionId: string | null
   work: WorkSelection
-  feedRows: readonly SessionFeedRow[]
+  feedSubagents: readonly FeedSubagent[]
 }) {
-  const subagents = sessionScreenSubagents(feedRows, session?.subagents ?? [])
+  const subagents = sessionScreenSubagents(feedSubagents, session?.subagents ?? [])
   const shell = session?.shell.find((command) => command.id === work.shellId) ?? null
   const delegation = subagents.find((candidate) => candidate.id === work.subagentId) ?? null
   const delegationFeed = useDelegationFeed(selectedSessionId, delegation?.id ?? null)
@@ -89,15 +90,15 @@ function useSessionInspectorData({
   selectedSessionId,
   work,
   workReveal,
-  feedRows,
+  feedSubagents,
 }: {
   session: ReturnType<typeof useSelectedSession>
   selectedSessionId: string | null
   work: WorkSelection
   workReveal: ReturnType<typeof useWorkPick>['workReveal']
-  feedRows: readonly SessionFeedRow[]
+  feedSubagents: readonly FeedSubagent[]
 }) {
-  const artifacts = useWorkArtifacts({ session, selectedSessionId, work, feedRows })
+  const artifacts = useWorkArtifacts({ session, selectedSessionId, work, feedSubagents })
   return {
     ...artifacts,
     workReveal: workInspectorReveal(workReveal, artifacts.shell, artifacts.shellOutput),
@@ -139,7 +140,7 @@ export function useSessionScreenModel() {
     selectedSessionId,
     work,
     workReveal,
-    feedRows: sessionFeed.feed?.rows ?? [],
+    feedSubagents: sessionFeed.subagents,
   })
   return {
     projectId,

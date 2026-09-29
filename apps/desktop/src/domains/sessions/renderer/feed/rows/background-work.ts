@@ -2,8 +2,8 @@ import { createContext } from 'react'
 import type { SessionWork } from '../../work/session-work'
 
 export type BackgroundWorkLinks = {
-  // By the call a notification names, or else by the name an agent was given when it was sent.
-  find: (work: { callId: string | null; name: string | null }) => SessionWork | null
+  // By the id a row names: a Shell's call, or the Subagent main reported.
+  find: (id: string) => SessionWork | null
   open: (target: SessionWork) => void
 }
 

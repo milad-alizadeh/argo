@@ -38,6 +38,11 @@ export const feedRowEntrySchema = z.strictObject({
 })
 type FeedRowEntry = z.infer<typeof feedRowEntrySchema>
 
+// The Feed rows among its entries, without the transient activity row.
+export function feedEntryRows(entries: readonly FeedRowEntry[]): SessionFeedRow[] {
+  return entries.flatMap(({ row }) => (row.shape === 'activity' ? [] : [row]))
+}
+
 type FeedRowRejections = { history: number; live: number; rows: number }
 
 function entryOf(row: FeedRow): FeedRowEntry {
@@ -104,12 +109,13 @@ function currentActivity(rows: readonly SessionFeedRow[]): LiveActivity | null {
   return activity
 }
 
-// The complete ordered rows of one Feed from recorded history and live events, with settled tool
-// runs grouped and the current activity last. Unrecognised input and a repeated row id are
-// skipped and counted, never drawn.
+// The complete ordered rows of one Feed from recorded history and live events, then any `end`
+// rows another Feed recorded for it, with settled tool runs grouped and the current activity
+// last. Unrecognised input and a repeated row id are skipped and counted, never drawn.
 export function projectFeedRowEntries(input: {
   history: readonly unknown[]
   live: readonly unknown[]
+  end?: readonly SessionFeedRow[]
 }): { entries: FeedRowEntry[]; activity: LiveActivity | null; rejected: FeedRowRejections } {
   const history = accepted(feedContentSchema, input.history)
   const live = accepted(sessionLiveEventSchema, input.live)
@@ -117,7 +123,7 @@ export function projectFeedRowEntries(input: {
   const rows: SessionFeedRow[] = []
   const rowIds = new Set<string>()
   let rejectedRows = 0
-  for (const row of projectLiveFeedRows(history.values, live.values)) {
+  for (const row of [...projectLiveFeedRows(history.values, live.values), ...(input.end ?? [])]) {
     const parsed = sessionFeedRowSchema.safeParse(row)
     if (!parsed.success || rowIds.has(rowKey(parsed.data))) rejectedRows += 1
     else {

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { StrictMode, useState } from 'react'
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
+import { projectLiveFeedRows } from '@/domains/sessions/api/feed/live-feed-rows'
 import type { SessionError, SessionFeed, SessionFeedRow } from '../../types'
 import { BROKEN_PICTURE, RICH_MARKDOWN, SAMPLE_PICTURE } from '../content/feed-samples'
 import { BackgroundWork, type BackgroundWorkLinks } from '../rows/background-work'
@@ -529,8 +530,8 @@ function LinkedFeed({
   ...args
 }: React.ComponentProps<typeof BasicFeed> & { onOpen: BackgroundWorkLinks['open'] }) {
   const links: BackgroundWorkLinks = {
-    find: ({ name }) => {
-      if (name !== REVIEW_AGENT.label) return null
+    find: (id) => {
+      if (id !== REVIEW_AGENT.id) return null
       return {
         kind: 'delegation',
         delegation: REVIEW_AGENT,
@@ -598,13 +599,14 @@ const eventFeed = {
       text: null,
       raw: null,
     },
-    {
-      shape: 'event' as const,
-      id: 'event-context',
-      event: 'context' as const,
-      text: null,
-      raw: null,
-    },
+    // Main's projection of a system context update and a system message: no row at all.
+    ...projectLiveFeedRows(
+      [
+        { kind: 'context', id: 'event-context', source: 'system', text: 'Hand off to review' },
+        { kind: 'message', id: 'event-system', role: 'system', text: 'Internal instructions' },
+      ],
+      [],
+    ),
     {
       shape: 'event' as const,
       id: 'event-command',
@@ -629,11 +631,12 @@ export const ProtocolEvents: Story = {
     await expect(canvas.getAllByText('Status updated')).toHaveLength(2)
     await expect(canvas.getByText('running')).toBeVisible()
     await expect(canvas.getByText('Transcript delivered')).toBeVisible()
-    await expect(canvas.getByText('System context updated')).toBeVisible()
+    await expect(canvas.queryByText('System context updated')).toBeNull()
+    await expect(canvas.queryByText('Hand off to review')).toBeNull()
     await expect(canvas.getByText('Command received')).toBeVisible()
     await expect(canvas.getByText(commandReceipt)).toBeVisible()
     await expect(canvas.queryByText('<status>running</status>')).toBeNull()
-    await expect(canvasElement.querySelectorAll('[data-slot="feed-event"]')).toHaveLength(5)
+    await expect(canvasElement.querySelectorAll('[data-slot="feed-event"]')).toHaveLength(4)
 
     const rawEvent = canvasElement.querySelector('[data-feed-row="event-status-raw"]')
     if (rawEvent === null) throw new Error('Expected the raw-protocol event row to render.')

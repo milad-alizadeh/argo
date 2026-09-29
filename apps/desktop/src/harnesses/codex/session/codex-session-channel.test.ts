@@ -487,38 +487,60 @@ test('unknown Codex item shapes are reported and counted', async () => {
   ])
 })
 
-test('Codex channel streams Subagent activity as delegation content', async () => {
-  const request = startedThreadRequest
-  const { channel, events, notify } = testChannel(request)
+function subagentNotification(item: Record<string, unknown>) {
+  return { method: 'item/completed', params: { threadId: 'thread-1', turnId: 'turn-1', item } }
+}
+
+function delegationFacts(events: readonly LiveSessionChannelEvent[]) {
+  return events.flatMap((event) =>
+    event.type === 'feed' &&
+    event.body.type === 'content' &&
+    event.body.content.kind === 'delegation'
+      ? [
+          [
+            event.body.vendorEventId,
+            event.body.content.event,
+            event.body.content.status,
+            event.body.content.prompt,
+          ],
+        ]
+      : [],
+  )
+}
+
+test('Codex channel streams each Subagent activity as its own delegation event', async () => {
+  const { channel, events, notify } = testChannel(startedThreadRequest)
   await new Promise((resolve) => setImmediate(resolve))
+  notify(
+    subagentNotification({
+      id: 'call_spawn',
+      type: 'collabAgentToolCall',
+      tool: 'spawnAgent',
+      status: 'completed',
+      senderThreadId: 'thread-1',
+      receiverThreadIds: ['thread-child'],
+      prompt: 'Review the branch',
+      model: 'gpt-5',
+      reasoningEffort: null,
+      agentsStates: {},
+    }),
+  )
   for (const [id, kind] of [
     ['call_spawn', 'started'],
     ['subagent-completed-1', 'completed'],
   ])
-    notify({
-      method: 'item/completed',
-      params: {
-        threadId: 'thread-1',
-        turnId: 'turn-1',
-        item: {
-          id,
-          type: 'subAgentActivity',
-          kind,
-          agentThreadId: 'thread-child',
-          agentPath: '/root/spec_review',
-        },
-      },
-    })
-  const delegations = events.flatMap((event) =>
-    event.type === 'feed' &&
-    event.body.type === 'content' &&
-    event.body.content.kind === 'delegation'
-      ? [[event.body.vendorEventId, event.body.content.agentId, event.body.content.status]]
-      : [],
-  )
-  assert.deepEqual(delegations, [
-    ['call_spawn', 'thread-child', 'running'],
-    ['subagent-completed-1', 'thread-child', 'completed'],
+    notify(
+      subagentNotification({
+        id,
+        type: 'subAgentActivity',
+        kind,
+        agentThreadId: 'thread-child',
+        agentPath: '/root/spec_review',
+      }),
+    )
+  assert.deepEqual(delegationFacts(events), [
+    ['call_spawn', 'started', 'running', 'Review the branch'],
+    ['subagent-completed-1', 'responded', 'completed', null],
   ])
   channel.close()
 })

@@ -168,7 +168,7 @@ test('rejects and reports an unknown Codex image-generation status', async () =>
   warning.mockRestore()
 })
 
-test('reads each recorded Subagent as one delegation, updated by its activity', async () => {
+test('reads each recorded Subagent activity as its own delegation event', async () => {
   const recorded = JSON.parse(
     readFileSync(
       new URL(
@@ -180,9 +180,14 @@ test('reads each recorded Subagent as one delegation, updated by its activity', 
   ) as { thread: unknown }
   const request = (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
     parse({ thread: recorded.thread })) as CodexRequest
-  const delegation = (status: 'running' | 'completed' | 'interrupted') => ({
+  const delegation = (
+    id: string,
+    event: 'started' | 'messaged' | 'responded',
+    status: 'running' | 'completed' | 'interrupted',
+  ) => ({
     kind: 'delegation',
-    id: 'thread-child-review',
+    id,
+    event,
     agentId: 'thread-child-review',
     status,
     name: 'spec_review',
@@ -192,10 +197,44 @@ test('reads each recorded Subagent as one delegation, updated by its activity', 
   })
   await expect(readCodexSessionHistory(request, 'thread-parent')).resolves.toEqual([
     { kind: 'message', id: 'user-1', role: 'user', text: 'Review the branch' },
-    delegation('running'),
-    delegation('completed'),
-    delegation('running'),
-    delegation('interrupted'),
+    delegation('call_spawn_review', 'started', 'running'),
+    delegation('subagent-completed-review-1', 'responded', 'completed'),
+    delegation('call_message_review', 'messaged', 'running'),
+    delegation('call_interrupt_review', 'responded', 'interrupted'),
     { kind: 'message', id: 'agent-1', role: 'assistant', text: 'The review is in.' },
+  ])
+})
+
+test('gives a Subagent start the prompt and model its spawn call sent', async () => {
+  const items = [
+    {
+      type: 'collabAgentToolCall',
+      id: 'call_spawn',
+      tool: 'spawnAgent',
+      status: 'completed',
+      senderThreadId: 'thread-parent',
+      receiverThreadIds: ['thread-child'],
+      prompt: 'Review the branch',
+      model: 'gpt-5',
+      reasoningEffort: null,
+      agentsStates: {},
+    },
+    {
+      type: 'subAgentActivity',
+      id: 'call_spawn',
+      kind: 'started',
+      agentThreadId: 'thread-child',
+      agentPath: '/root/reviewer',
+    },
+  ]
+  const request = (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
+    parse({ thread: { turns: [{ items }] } })) as CodexRequest
+  await expect(readCodexSessionHistory(request, 'thread-parent')).resolves.toEqual([
+    expect.objectContaining({
+      kind: 'delegation',
+      event: 'started',
+      prompt: 'Review the branch',
+      model: 'gpt-5',
+    }),
   ])
 })

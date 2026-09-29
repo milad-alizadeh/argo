@@ -1,20 +1,19 @@
 import { expect, test } from 'bun:test'
 import { sessionRow } from '../session-fixtures'
-import type { SessionFeedRow } from '../types'
 import { backgroundWorkLinks } from './background-work-links'
 import { sessionScreenSubagents } from './session-screen-subagents'
 
-test('opens the child Session named by a Feed subagent row', () => {
-  const rows = [
-    {
-      shape: 'subagent',
-      id: 'call-started',
-      subagentId: 'agent-a64dd851fde47a6f0',
-      event: 'started',
-      name: 'Explore Turn Configuration and harness code for issue 2669',
-    },
-  ] satisfies SessionFeedRow[]
-  const subagents = sessionScreenSubagents(rows, [])
+test('opens the Subagent a Feed row names by id', () => {
+  const subagents = sessionScreenSubagents(
+    [
+      {
+        id: 'agent-a64dd851fde47a6f0',
+        label: 'Explore Turn Configuration and harness code for issue 2669',
+        state: 'running',
+      },
+    ],
+    [],
+  )
   const selections: unknown[] = []
   const links = backgroundWorkLinks({
     pick: (selection) => selections.push(selection),
@@ -23,7 +22,7 @@ test('opens the child Session named by a Feed subagent row', () => {
     subagents,
     subagentUsage: {},
   })
-  const target = links.find({ callId: rows[0]?.subagentId ?? null, name: null })
+  const target = links.find('agent-a64dd851fde47a6f0')
 
   expect(target).toMatchObject({
     kind: 'delegation',
@@ -36,4 +35,15 @@ test('opens the child Session named by a Feed subagent row', () => {
   expect(selections).toEqual([
     { sessionId: 'parent-session', subagentId: 'agent-a64dd851fde47a6f0', shellId: null },
   ])
+})
+
+test('never matches a Subagent by its displayed name', () => {
+  const links = backgroundWorkLinks({
+    pick: () => {},
+    selectedSessionId: 'parent-session',
+    session: sessionRow({ id: 'parent-session', subagents: [], shell: [] }),
+    subagents: sessionScreenSubagents([{ id: 'agent-1', label: 'Review', state: 'running' }], []),
+    subagentUsage: {},
+  })
+  expect(links.find('Review')).toBeNull()
 })

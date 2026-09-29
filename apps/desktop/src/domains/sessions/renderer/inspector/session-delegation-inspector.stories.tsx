@@ -22,6 +22,8 @@ const COMPLETED_DELEGATION = sessionSubagent({
   endedAt: '2026-09-02T08:05:00.000Z',
 })
 
+const FAILED_DELEGATION = { ...COMPLETED_DELEGATION, state: 'failed' } satisfies typeof DELEGATION
+
 const FEED = {
   version: 1,
   type: 'session.feed.read',
@@ -44,6 +46,25 @@ const FEED = {
     },
   ],
 } satisfies SessionFeed
+
+// Main ends a finished Subagent's Feed with the parent's response event, its text left to the
+// transcript above it.
+function endedFeed(state: 'completed' | 'failed') {
+  return {
+    ...FEED,
+    rows: [
+      ...FEED.rows,
+      {
+        shape: 'subagent',
+        id: 'call-review:response',
+        subagentId: 'call-review',
+        event: 'responded',
+        state,
+        name: 'Interface review',
+      },
+    ],
+  } satisfies SessionFeed
+}
 
 const meta = {
   title: 'Sessions/Screen/Subagent Inspector',
@@ -140,7 +161,7 @@ export const CompletedSubagent: Story = {
   args: {
     activeEvidenceId: null,
     delegation: COMPLETED_DELEGATION,
-    feed: FEED,
+    feed: endedFeed('completed'),
     failure: null,
     onOpenEvidence: () => {},
     onOpenSession: () => {},
@@ -149,8 +170,27 @@ export const CompletedSubagent: Story = {
   },
   render: (args) => <InspectorStory args={args} />,
   play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
     await expect(
-      within(canvasElement).getByText('Interface review sent a reply to the main Session'),
+      canvas.getByRole('article', { name: 'Interface review sent a reply to the main Session' }),
     ).toBeVisible()
+    await expect(
+      canvas.getAllByText(
+        'The two work buttons take the control size and the meta typography role.',
+      ),
+    ).toHaveLength(1)
+  },
+}
+
+export const FailedSubagent: Story = {
+  args: { ...CompletedSubagent.args, delegation: FAILED_DELEGATION, feed: endedFeed('failed') },
+  render: (args) => <InspectorStory args={args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const ended = canvas.getByRole('article', {
+      name: 'Interface review sent a reply to the main Session',
+    })
+    await expect(within(ended).getByText('Failed')).toBeInTheDocument()
+    await expect(canvas.getAllByRole('article', { name: /Interface review/ })).toHaveLength(1)
   },
 }

@@ -389,6 +389,11 @@
   },
   "delegation": {
     "agent": { "label": "Background Agent" },
+    "body": {
+      "showLess": "Show less",
+      "showPrompt": "Show full prompt",
+      "showReply": "Show full reply"
+    },
     "shell": { "label": "Background Task", "running": "Running Background Task" },
     "event": {
       "messaged": "{{name}} received a message",
