@@ -29,6 +29,7 @@ import {
   requestSync,
   ticketIndexedOutputSchema,
   ticketSyncRequestedOutputSchema,
+  watchTickets,
 } from '../ticket-index-service'
 
 const t = initTRPC.create()
@@ -73,6 +74,12 @@ function indexProcedures(dependencies: TicketProcedureContext) {
       .input(projectInputSchema)
       .output(ticketSyncRequestedOutputSchema)
       .mutation(({ input }) => requestSync(request(dependencies, input.projectId))),
+    // Open while a view shows the Project's Tickets: main scans them and polls while visible.
+    ticketWatch: t.procedure
+      .input(projectInputSchema)
+      .subscription(({ input }) =>
+        observable<never>(() => watchTickets(request(dependencies, input.projectId))),
+      ),
     // Sent after each commit to saved Tickets; the renderer then refetches from SQLite.
     ticketChanges: t.procedure.subscription(() =>
       observable<z.infer<typeof changeSchema>>((emit) =>

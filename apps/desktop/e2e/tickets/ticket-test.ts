@@ -83,14 +83,20 @@ export type Tickets = {
   restart: () => Promise<Run>
 }
 
-export const test = packagedTest.extend<{ ticketState: TicketState; tickets: Tickets }>({
+export const test = packagedTest.extend<{
+  ticketState: TicketState
+  // The main process's active poll in milliseconds; null keeps the minute.
+  ticketPollMs: number | null
+  tickets: Tickets
+}>({
   ticketState: ['none', { option: true }],
+  ticketPollMs: [null, { option: true }],
   tickets: async (
-    { root, applicationUnderTest, ticketState, performanceProfile },
+    { root, applicationUnderTest, ticketState, ticketPollMs, performanceProfile },
     use,
     testInfo,
   ) => {
-    const fixture = await prepare(root, applicationUnderTest)
+    const fixture = await prepare(root, applicationUnderTest, ticketPollMs)
     let application: ElectronApplication | undefined
     let traced: BrowserContext | undefined
     const open = async () => {

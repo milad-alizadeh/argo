@@ -130,16 +130,17 @@ export function connectedView(
     })
   }
   const failed = syncFailure(list.data)
-  if (failed) {
-    return failure(t('failure.tickets'), failed, {
-      onRetry: onSync,
-      onReconnect,
-      provider: connection.provider,
-    })
-  }
-  // Nothing is saved yet and no scan has read every page, so an empty list would be a guess.
   const saved = indexedHead(list.data)
+  const recovery = { onRetry: onSync, onReconnect, provider: connection.provider }
+  // With nothing saved, the failure is all there is to show; otherwise it sits above the rows.
+  if (failed && (saved === null || saved.total === 0))
+    return failure(t('failure.tickets'), failed, recovery)
+  // Nothing is saved yet and no scan has read every page, so an empty list would be a guess.
   if (saved && saved.total === 0 && !saved.sync.complete) return loading(t('loading.tickets'))
+  const sync = {
+    refreshing: saved?.sync.phase === 'syncing',
+    problem: failed ? failureProblem(t('failure.refresh'), failed, recovery) : null,
+  }
   return {
     kind: 'tickets',
     projectId,
@@ -148,6 +149,6 @@ export function connectedView(
     onBack,
     onSelect,
     onOpenSession,
-    backlog: { ...listedBacklog(list.data, listing), provider: connection.provider },
+    backlog: { ...listedBacklog(list.data, listing), provider: connection.provider, sync },
   }
 }

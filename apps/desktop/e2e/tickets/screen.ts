@@ -54,10 +54,10 @@ export const backlog = (page: Page) => page.getByRole('region', { name: 'Backlog
 
 export const room = (run: Run) => run.page.getByRole('main', { name: 'Tickets' })
 
-export async function openRoom(page: Page, room: 'tickets' | 'atlas') {
+export async function openRoom(page: Page, room: 'tickets' | 'atlas', projectId = 'project-1') {
   await page.evaluate((hash) => {
     window.location.hash = hash
-  }, `#/projects/project-1/${room}`)
+  }, `#/projects/${projectId}/${room}`)
   if (room === 'tickets') await page.getByRole('main', { name: 'Tickets' }).waitFor()
 }
 

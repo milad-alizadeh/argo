@@ -20,9 +20,9 @@ export function beginTicketScan(database: Database, target: TicketSyncTarget, no
     .values({ ...target, phase: 'syncing', scanStartedAt: now })
     .onConflictDoUpdate({
       target: [ticketSync.provider, ticketSync.scope, ticketSync.kind],
+      // The last failure stays until a scan completes or fails again, so a retry does not hide it.
       set: {
         phase: 'syncing',
-        failure: null,
         scanStartedAt: sql`MAX(${now}, ${ticketSync.scanStartedAt} + 1)`,
         updatedAt: touched,
       },

@@ -51,7 +51,8 @@ function readSync(database: Database, { provider, scope }: TicketScopeTarget) {
   const saved = ticketSyncSelectSchema.parse(row)
   const state: TicketSyncState = {
     phase: saved.phase,
-    failure: saved.phase === 'failed' ? saved.failure : null,
+    // Kept through a retry's scan, so the screen does not drop the failure while it retries.
+    failure: saved.failure,
     completedAt: saved.completedAt,
     complete: saved.completeScanStartedAt !== null,
   }

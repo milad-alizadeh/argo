@@ -5,8 +5,10 @@ import { createLiveSessionSupervisorMachine } from '@/domains/sessions/main/live
 import type { SessionEventJournal } from '@/domains/sessions/main/live/session-event-journal'
 import type { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import { sessionSyncSupervisorMachine } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
-import type { TicketSyncDependencies } from '@/domains/tickets/main/sync/ticket-sync-machine'
-import { ticketSyncSupervisorMachine } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
+import {
+  type TicketSyncSupervisorInput,
+  ticketSyncSupervisorMachine,
+} from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
 import type { Harness } from '@/harnesses/harness'
 import type { HarnessCatalog } from '@/harnesses/harness-catalog'
 import {
@@ -21,7 +23,7 @@ type AppDependencies = {
   sessionSyncStatus: Record<Harness, SessionSyncStatusStore>
   sessionEventJournal?: SessionEventJournal
   sessionInteractionBroker?: SessionInteractionBroker
-  ticketSync: TicketSyncDependencies
+  ticketSync: TicketSyncSupervisorInput
 }
 
 export function createAppMachine(registry: HarnessRegistry, dependencies: AppDependencies) {

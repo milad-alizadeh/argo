@@ -8,6 +8,7 @@
     "allOpen_other": "All open · {{count}} Tickets",
     "allOpenMore": "All open · {{count}}+ Tickets",
     "loadingMore": "Reading more Tickets",
+    "refreshing": "Refreshing from {{provider}}…",
     "empty": {
       "title": "No open Tickets",
       "titleFiltered": "No open Tickets match",
@@ -23,7 +24,8 @@
   "failure": {
     "accounts": "Argo could not read Accounts.",
     "connection": "Argo could not read the connected Ticket source.",
-    "tickets": "Argo could not read Tickets."
+    "tickets": "Argo could not read Tickets.",
+    "refresh": "Argo could not refresh Tickets. These are the last saved."
   },
   "row": {
     "expand": "Expand {{key}}",

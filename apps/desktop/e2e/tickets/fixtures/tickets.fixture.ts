@@ -3,6 +3,7 @@
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import { type ElectronApplication, _electron as electron } from 'playwright-core'
+import { TICKET_POLL_PROOF_ENV } from '@/domains/tickets/main/sync/proof-protocol'
 import { SESSION_CLAUDE_TRANSCRIPTS_ENV } from '@/harnesses/claude/proof-protocol'
 import { SESSION_CODEX_TRANSCRIPTS_ENV } from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
@@ -29,6 +30,8 @@ export type TicketFixture = {
   noSessions: string
   github: MockGitHub
   linear: MockLinear
+  // The active poll in milliseconds, or null for the minute a person waits.
+  pollMs: number | null
 }
 
 // A fresh copy each time, since the mock closes an issue in place.
@@ -55,6 +58,11 @@ export const helloWorld = (): MockRepository => ({
 function serveRepositories(github: MockGitHub) {
   github.addRepository(helloWorld())
   github.addRepository({ fullName: 'octocat/secret', visibleTo: [], issues: [] })
+  github.addRepository({
+    fullName: 'octocat/engine',
+    visibleTo: [OCTOCAT.id],
+    issues: [{ number: 5, title: 'Tune the engine' }],
+  })
 }
 
 function serveTeams(linear: MockLinear) {
@@ -63,7 +71,11 @@ function serveTeams(linear: MockLinear) {
   linear.tokenLifetime(LINEAR_TOKEN_LIFETIME)
 }
 
-export async function prepare(root: string, application: string): Promise<TicketFixture> {
+export async function prepare(
+  root: string,
+  application: string,
+  pollMs: number | null,
+): Promise<TicketFixture> {
   const userData = path.join(root, 'userData')
   const projectPath = await repository(path.join(root, 'argo'))
   await makeProjectLocallyReady(projectPath)
@@ -71,11 +83,15 @@ export async function prepare(root: string, application: string): Promise<Ticket
   await mkdir(userData, { recursive: true })
   await mkdir(noSessions, { recursive: true })
   seedSingleProject(userData, { id: 'project-1', path: projectPath })
+  // A second Project, so a case can switch the Project on screen.
+  const secondPath = await repository(path.join(root, 'engine'))
+  await makeProjectLocallyReady(secondPath)
+  seedSingleProject(userData, { id: 'project-2', path: secondPath })
   const github = await startMockGitHubLoopback()
   serveRepositories(github)
   const linear = await startMockLinearLoopback()
   serveTeams(linear)
-  return { application, userData, noSessions, github, linear }
+  return { application, userData, noSessions, github, linear, pollMs }
 }
 
 // The mock keychain keeps safeStorage off the login keychain, whose prompt no proof can answer.
@@ -90,6 +106,7 @@ export async function launch(fixture: TicketFixture): Promise<ElectronApplicatio
       [SESSION_CLAUDE_TRANSCRIPTS_ENV]: fixture.noSessions,
       [SESSION_CODEX_TRANSCRIPTS_ENV]: fixture.noSessions,
       [ACCEPTANCE_ENV]: '0',
+      ...(fixture.pollMs === null ? {} : { [TICKET_POLL_PROOF_ENV]: String(fixture.pollMs) }),
     },
     timeout: 30_000,
   })

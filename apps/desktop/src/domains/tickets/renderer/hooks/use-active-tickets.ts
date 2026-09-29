@@ -24,7 +24,8 @@ export function useTicketChanges() {
   }, [client])
 }
 
-// A scan starts on open, on a Project or source change, and when the Account is readable again.
+// While the screen shows a readable Connection, main scans it on open, on a Project or source
+// change, when the Account is readable again, when the window returns, and on its poll.
 export function useTicketSync(projectId: string | null, connection: ConnectionSummary | null) {
   const sync = useMutation({
     mutationFn: (id: string) => trpcClient.ticketSync.mutate({ projectId: id }),
@@ -34,9 +35,10 @@ export function useTicketSync(projectId: string | null, connection: ConnectionSu
   const scope = connection?.scope
   const accountId = connection?.accountId
   useEffect(() => {
-    if (projectId !== null && ready && scope !== undefined && accountId !== undefined)
-      mutate(projectId)
-  }, [projectId, ready, scope, accountId, mutate])
+    if (projectId === null || !ready || scope === undefined || accountId === undefined) return
+    const watch = trpcClient.ticketWatch.subscribe({ projectId }, {})
+    return () => watch.unsubscribe()
+  }, [projectId, ready, scope, accountId])
   return () => {
     if (projectId !== null) mutate(projectId)
   }
@@ -83,9 +85,8 @@ export function indexedHead(pages: TicketPages | undefined): TicketIndexed | nul
   return head?.type === 'ticket.indexed' ? head : null
 }
 
-// The latest scan's failure, as the Ticket error the screen draws, or null while it holds.
+// The last scan's failure, kept while a retry runs, as the Ticket error the screen draws.
 export function syncFailure(pages: TicketPages | undefined): TicketError | null {
-  const sync = indexedHead(pages)?.sync
-  if (sync?.phase !== 'failed' || sync.failure === null) return null
-  return ticketError(sync.failure, null)
+  const failure = indexedHead(pages)?.sync.failure ?? null
+  return failure === null ? null : ticketError(failure, null)
 }

@@ -19,18 +19,22 @@ import {
   storeText,
 } from '../screen'
 
-// A fresh launch reads the sealed grant back. GitHub is down for it, so the failure is on screen,
-// and reading again once GitHub answers draws the same backlog.
+// A fresh launch reads the sealed grant back. GitHub is down for it, so the failure is on screen
+// above the saved backlog, and reading again once GitHub answers clears it.
 export async function proveRestartAndFailure(run: Run) {
   await openRoom(run.page, 'tickets')
-  const failure = room(run).getByRole('alert').filter({ hasText: 'Argo could not read Tickets.' })
+  const failure = backlog(run.page)
+    .getByRole('alert')
+    .filter({ hasText: 'Argo could not refresh Tickets.' })
   await test.step('visible-failure', async () => {
     await failure.getByText('Argo cannot reach GitHub.').waitFor()
+    assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
     await expect(run.page.getByRole('region', { name: 'Sign-in notice' })).toHaveCount(0)
   })
   await test.step('restart', async () => {
     run.fixture.github.outage('none')
     await press(failure, 'Try again')
+    await failure.waitFor({ state: 'detached' })
     assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
   })
 }

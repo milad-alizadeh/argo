@@ -185,6 +185,10 @@ export const ticketSyncMachine = setup({
     offset: 0,
     failure: null,
   }),
+  // The supervisor backs off on a failed scan and polls again after a complete one.
+  output: ({ context }) => ({
+    failure: context.failure,
+  }),
   states: {
     Starting: {
       invoke: {
