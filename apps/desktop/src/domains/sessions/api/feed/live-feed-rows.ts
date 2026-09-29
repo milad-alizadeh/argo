@@ -3,6 +3,7 @@ import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event
 import type { BackgroundState } from './background-task-record'
 import { checkedDataImageUrl, dataImageUrl, fileImageUrl } from './feed-images'
 import type { SessionFeedRow } from './feed-rows'
+import { fileChangeRows } from './file-change-rows'
 import { derivedId } from './fingerprint'
 import type { ToolCall } from './tool-call'
 import { toolRows } from './tool-feed'
@@ -293,62 +294,6 @@ function permissionEventKind(
   }
 }
 
-function fileChangeEvidence(
-  change: Extract<FeedContent, { kind: 'fileChange' }>['changes'][number],
-): string {
-  const text = change.diff ?? ''
-  switch (change.change) {
-    case 'add':
-    case 'delete': {
-      const lines = text === '' ? [] : text.replace(/\n$/, '').split('\n')
-      const added = change.change === 'add'
-      const verb = added ? 'Add' : 'Delete'
-      const oldRange = added || lines.length === 0 ? '0,0' : `1,${lines.length}`
-      const newRange = !added || lines.length === 0 ? '0,0' : `1,${lines.length}`
-      const prefix = added ? '+' : '-'
-      return [
-        `${verb} File: ${change.path}`,
-        `@@ -${oldRange} +${newRange} @@`,
-        ...lines.map((line) => `${prefix}${line}`),
-      ].join('\n')
-    }
-    case 'update':
-    case 'unknown':
-      return `Update File: ${change.path}\n${text}`
-  }
-}
-
-function fileChangeRow(content: Extract<FeedContent, { kind: 'fileChange' }>): SessionFeedRow {
-  const files = content.changes.map((change) => change.path)
-  if (files.length === 0)
-    return {
-      shape: 'event',
-      id: content.id,
-      event: 'fileChange',
-      text: null,
-      status: content.status,
-    }
-  const lastChange = content.changes.at(-1)?.change
-  let kind: Extract<SessionFeedRow, { shape: 'tool' }>['kind'] = 'edited'
-  if (lastChange === 'add') kind = 'created'
-  if (lastChange === 'delete') kind = 'deleted'
-  const label = files.join(', ')
-  return {
-    shape: 'tool',
-    id: content.id,
-    kind,
-    label,
-    lineCounts: null,
-    status: workStatus(content.status),
-    evidence: {
-      kind: 'diff',
-      title: label,
-      source: content.changes.map(fileChangeEvidence).join('\n'),
-    },
-    text: null,
-  }
-}
-
 function markerRow(content: Extract<FeedContent, { kind: 'marker' }>): SessionFeedRow {
   if (content.marker === 'compaction' || content.marker === 'interrupted')
     return {
@@ -398,7 +343,9 @@ function notificationContentRow(
 }
 
 // Decoders preserve content semantics; this maps that content to the existing Feed display rows.
-function contentRow(content: FeedContent): SessionFeedRow | null {
+function contentRow(
+  content: Exclude<FeedContent, { kind: 'tool' | 'fileChange' }>,
+): SessionFeedRow | null {
   switch (content.kind) {
     // A system context update is instruction to the model, never something the reader follows.
     case 'message':
@@ -419,12 +366,8 @@ function contentRow(content: FeedContent): SessionFeedRow | null {
     }
     case 'reference':
       return referenceContentRow(content)
-    case 'tool':
-      return toolContentRow(content)
     case 'command':
       return commandContentRow(content)
-    case 'fileChange':
-      return fileChangeRow(content)
     case 'delegation':
       return delegationContentRow(content)
     case 'search':
@@ -451,10 +394,16 @@ function contentRow(content: FeedContent): SessionFeedRow | null {
 }
 
 function contentRows(content: FeedContent): SessionFeedRow[] {
-  const row = contentRow(content)
-  if (row === null) return []
-  if (content.kind === 'tool') return [row, ...toolOutputRows(content)]
-  return [row]
+  switch (content.kind) {
+    case 'tool':
+      return [toolContentRow(content), ...toolOutputRows(content)]
+    case 'fileChange':
+      return fileChangeRows(content, workStatus(content.status))
+    default: {
+      const row = contentRow(content)
+      return row === null ? [] : [row]
+    }
+  }
 }
 
 function liveRows(event: SessionLiveEvent): SessionFeedRow[] {
