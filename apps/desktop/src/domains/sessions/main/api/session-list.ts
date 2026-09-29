@@ -318,14 +318,36 @@ function sameOrder(
   )
 }
 
-export function sessionListProcedure(context: SessionListContext) {
+function observeVisibleFeeds(
+  observed: Map<string, () => void>,
+  rows: readonly z.infer<typeof sessionListRowSchema>[],
+  observeFeed: ((sessionId: string) => () => void) | undefined,
+): void {
+  const visible = new Set(rows.map((row) => row.id))
+  for (const [sessionId, stop] of observed)
+    if (!visible.has(sessionId)) {
+      observed.delete(sessionId)
+      stop()
+    }
+  for (const sessionId of visible)
+    if (!observed.has(sessionId) && observeFeed !== undefined)
+      observed.set(sessionId, observeFeed(sessionId))
+}
+
+export function sessionListProcedure(
+  context: SessionListContext,
+  observeFeed?: (sessionId: string) => () => void,
+) {
   return t.procedure.input(sessionListInputSchema).subscription(({ input }) =>
     observable<z.infer<typeof sessionListUpdateSchema>>((emit) => {
       let sent = readSessionList(context, input)
       emit.next({ type: 'list', ...sent })
+      const observed = new Map<string, () => void>()
       let pending = false
+      let stopped = false
       const publish = () => {
         pending = false
+        if (stopped) return
         const next = readSessionList(context, input)
         if (!sameOrder(sent, next)) emit.next({ type: 'list', ...next })
         else
@@ -334,6 +356,7 @@ export function sessionListProcedure(context: SessionListContext) {
               emit.next({ type: 'row', row })
           })
         sent = next
+        observeVisibleFeeds(observed, next.rows, observeFeed)
       }
       const changed = () => {
         if (pending) return
@@ -342,9 +365,13 @@ export function sessionListProcedure(context: SessionListContext) {
       }
       const unsubscribeRoster = context.roster.subscribe(changed)
       const statusChanges = context.supervisor.on('Session status changed', changed)
+      observeVisibleFeeds(observed, sent.rows, observeFeed)
       return () => {
+        stopped = true
         unsubscribeRoster()
         statusChanges.unsubscribe()
+        for (const stop of observed.values()) stop()
+        observed.clear()
       }
     }),
   )

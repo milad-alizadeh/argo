@@ -1,3 +1,4 @@
+import { commandActivityLabel } from '../feed-activity'
 import type { FeedContent, MediaSource } from '../feed-content'
 import type { SessionLiveEvent } from '../session-live-event'
 import type { BackgroundState } from './background-task-record'
@@ -5,8 +6,6 @@ import { checkedDataImageUrl, dataImageUrl, fileImageUrl } from './feed-images'
 import type { SessionFeedRow } from './feed-rows'
 import { fileChangeRows } from './file-change-rows'
 import { derivedId } from './fingerprint'
-import type { ToolCall } from './tool-call'
-import { toolRows } from './tool-feed'
 
 function workStatus(
   status: Extract<FeedContent, { kind: 'tool' }>['status'],
@@ -25,59 +24,54 @@ function workStatus(
   }
 }
 
+type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
+
 function textOutput(content: Extract<FeedContent, { kind: 'tool' }>): string | null {
   const text = content.output?.flatMap((part) => (part.kind === 'text' ? [part.text] : [])) ?? []
   return text.length === 0 ? null : text.join('\n')
 }
 
-function presentedToolRow(
-  call: ToolCall,
-  status: Extract<FeedContent, { kind: 'tool' }>['status'],
-  output: string[],
-): SessionFeedRow {
-  const results = new Map(
-    output.length === 0 && status !== 'completed' && status !== 'failed'
-      ? []
-      : [
-          [
-            call.id,
-            {
-              blocks: output.map((text) => ({ shape: 'text' as const, text })),
-              failed: status === 'failed',
-            },
-          ],
-        ],
-  )
-  const row = toolRows([call], { results, skillBodies: new Map() })[0]
-  if (row?.shape !== 'tool') throw new Error('A tool content item must draw one tool row.')
-  return { ...row, status: workStatus(status) }
+// A web tool names a failure in its first output line when the Harness wrote no status code.
+const SEARCH_OUTCOMES = /^(Internal Error|Script error|Empty search results|Failed to fetch)/
+function searchOutcome(source: string | null): string | null {
+  const outcome = source?.split('\n').find((line) => SEARCH_OUTCOMES.test(line)) ?? null
+  return outcome === null ? null : outcome.replace(/\s*\(\)\s*$/, '')
+}
+
+function outputEvidence(title: string, source: string | null): ToolRow['evidence'] {
+  return source === null ? null : { kind: 'output', title, source }
 }
 
 function toolContentRow(content: Extract<FeedContent, { kind: 'tool' }>): SessionFeedRow {
   const source = textOutput(content)
-  const label = content.presentation?.label ?? content.summary ?? (content.name || content.callId)
-  const call: ToolCall = {
+  const title = content.presentation?.label ?? content.summary ?? (content.name || content.callId)
+  const outcome = content.presentation?.kind === 'searched' ? searchOutcome(source) : null
+  return {
+    shape: 'tool',
     id: content.callId,
-    kind: 'other',
-    label,
+    kind: content.presentation?.kind ?? 'tool',
+    label: outcome === null ? title : `${title} · ${outcome}`,
+    lineCounts: null,
+    status: workStatus(content.status),
+    ...(content.presentation?.agentDescription ? { agentDescription: true } : {}),
+    evidence: outputEvidence(title, source),
     text: null,
-    source: null,
-    ...(content.presentation === undefined ? {} : { presentation: content.presentation }),
   }
-  return presentedToolRow(call, content.status, source === null ? [] : [source])
 }
 
 function commandContentRow(content: Extract<FeedContent, { kind: 'command' }>): SessionFeedRow {
-  const call: ToolCall = {
-    id: content.id,
-    kind: 'execute',
-    command: content.command,
-    label: null,
-    text: content.command,
-    background: false,
-  }
+  const title = commandActivityLabel(content.command)
   const output = [content.output, content.stderr].filter((part): part is string => part !== null)
-  return presentedToolRow(call, content.status, output)
+  return {
+    shape: 'tool',
+    id: content.id,
+    kind: 'command',
+    label: title,
+    lineCounts: null,
+    status: workStatus(content.status),
+    evidence: outputEvidence(title, output.length === 0 ? null : output.join('\n')),
+    text: content.command,
+  }
 }
 
 function mediaUrl(source: MediaSource): string | null {

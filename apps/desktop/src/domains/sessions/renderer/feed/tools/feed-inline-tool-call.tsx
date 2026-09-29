@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { displayedToolLabel } from '@/domains/sessions/api/feed/tool-feed'
+import { displayedToolLabel } from '@/domains/sessions/api/feed/displayed-tool-label'
 import {
   CodeBlock,
   CodeBlockActions,
@@ -17,9 +17,7 @@ import { CollapsibleText } from './collapsible-text'
 import { StatusIcon } from './feed-tool-status'
 import { callRunning, type ToolCall, type ToolRow, toolPresentation } from './feed-tools'
 
-// A command or an unclassified tool call reads as one code block despite the transcript's
-// separate invocation and result messages. A Skill call instead reads as the skill's own
-// Markdown body (carried through `text`, see `toolText` in tool-feed.ts), not code.
+// A command or an unclassified tool call reads as one code block. A Skill call reads as Markdown.
 export function FeedInlineToolCall({ call, live }: { call: ToolCall | ToolRow; live: boolean }) {
   const { t } = useTranslation('sessions')
   if (call.kind === 'skill') return <FeedMarkdown text={call.text ?? ''} />

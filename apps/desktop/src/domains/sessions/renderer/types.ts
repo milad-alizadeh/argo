@@ -1,5 +1,5 @@
+import type { SessionFeedRow } from '@/domains/sessions/api/feed/feed-rows'
 import type { SessionError } from '@/domains/sessions/api/session-error'
-import type { SessionFeedRow } from '@/domains/sessions/renderer/model/models'
 import type { RouterOutputs } from '@/platform/renderer/trpc-client'
 
 export type SessionListUpdate = RouterOutputs['sessionList']
