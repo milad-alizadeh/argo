@@ -158,6 +158,7 @@ export function readActiveTickets(
     inScope(request),
     isNotNull(ticketContent.listedAt),
     gte(ticketContent.listedAt, sync.coveredFrom),
+    notDeleted,
   )
   return readListing(database, request, { sync, listed, order: ticketContent.position })
 }
