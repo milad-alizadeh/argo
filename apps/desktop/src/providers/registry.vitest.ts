@@ -341,6 +341,23 @@ test('a Linear priority change the provider refuses keeps the committed value', 
   assert.deepEqual(intents(database), [{ phase: 'rejected', failure: 'ticket-not-writable' }])
 })
 
+test('a GitHub Ticket refuses a priority change before any intent is recorded', async () => {
+  const flow = await signedInToGitHub()
+  const { gitHub, tickets, accountId, database } = flow
+  gitHub.addRepository({
+    fullName: 'octo/hello',
+    visibleTo: [OCTOCAT.id],
+    writers: [OCTOCAT.id],
+    issues: [{ number: 1, title: 'Wire the registry' }],
+  })
+  await connectedKeys(tickets, accountId, 'octo/hello')
+  await synced(flow)
+  const refused = await tickets.ticketUpdatePriority({ projectId, key: '#1', priorityLevel: 1 })
+  assert.ok(refused.type === 'ticket.error')
+  assert.equal(refused.code, 'ticket-not-writable')
+  assert.deepEqual(intents(database), [])
+})
+
 type Flow = Awaited<ReturnType<typeof flows>>
 
 // Waits for a scan outcome after this request's first change, never an earlier scan's.

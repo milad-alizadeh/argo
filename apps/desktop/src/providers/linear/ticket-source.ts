@@ -3,6 +3,7 @@ import type { SourceFailure, TicketSource } from '@/domains/tickets/main/sources
 import type { LinearFailure } from '@/providers/linear/http'
 import { readTicket, readTicketPage } from '@/providers/linear/issues'
 import { updateIssuePriority } from '@/providers/linear/priority'
+import { LINEAR_PRIORITY_CHOICES } from '@/providers/linear/priority-choices'
 import { updateIssueStatus } from '@/providers/linear/statuses'
 import { checkTeam, listTeams } from '@/providers/linear/teams'
 
@@ -37,6 +38,7 @@ const failed = (failure: Failure) => ({ ok: false, failure: FAILURES[failure] })
 const UNREACHABLE = failed('unreachable')
 
 export const linearTickets: TicketSource = {
+  priorityChoices: LINEAR_PRIORITY_CHOICES,
   outage: { 'rate-limited': 'linear-rate-limited', unreachable: 'linear-unreachable' },
 
   // The team is stored by its id, which survives a rename; its name is what a person reads.

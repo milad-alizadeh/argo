@@ -14,7 +14,7 @@ export type RecordedIntent = { intentId: string; ticketId: string }
 
 const touched = nextUpdatedAt(ticketWriteIntent.updatedAt)
 
-// The requested value an intent keeps, such as the provider status ID.
+// The requested value an intent keeps: the provider status ID or the priority level.
 function requestedOf(request: TicketOperationRequest): string {
   return JSON.stringify(
     request.operation === 'status'

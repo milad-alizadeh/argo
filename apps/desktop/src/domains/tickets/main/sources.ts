@@ -36,6 +36,8 @@ export type TicketPage = {
 }
 
 export type TicketSource = {
+  // The priority levels a Ticket can move to; empty where the provider keeps none.
+  priorityChoices: readonly TicketPriority[]
   check(reader: Reader, scope: string): Promise<SourceRead<TicketScope>>
   discover(reader: Reader): Promise<SourceRead<TicketScope[]>>
   page(reader: Reader, request: PageRequest): Promise<SourceRead<TicketPage>>

@@ -42,6 +42,7 @@ const failed = (failure: Failure) => ({ ok: false, failure: FAILURES[failure] })
 const PAGE_CURSOR = /^[1-9]\d{0,5}$/
 
 export const githubTickets: TicketSource = {
+  priorityChoices: [],
   outage: { 'rate-limited': 'rate-limited', unreachable: 'github-unreachable' },
 
   // GitHub's canonical name is what is stored, so the Connection survives a person's casing.

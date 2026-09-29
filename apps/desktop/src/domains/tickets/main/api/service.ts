@@ -148,6 +148,13 @@ export async function updatePriority(
   const target = await writableConnection(call)
   if (!target.ok) return target.error
   const { accountId, provider, scope } = target
+  const { priorityChoices } = call.providers[provider].tickets
+  if (
+    change.priorityLevel !== null &&
+    !priorityChoices.some(({ level }) => level === change.priorityLevel)
+  ) {
+    return ticketError('ticket-not-writable', requestId)
+  }
   const outcome = await call.index.changePriority({
     provider,
     scope,

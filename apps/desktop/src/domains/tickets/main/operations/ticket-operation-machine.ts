@@ -1,5 +1,4 @@
-// One Ticket write, a status or a priority: record the intent, ask the provider, then commit what it
-// confirmed. The saved Ticket changes only in the last step, so a refusal never shows the request.
+// One Ticket write: record the intent, ask the provider, then commit only what it confirmed.
 import { assign, fromPromise, setup } from 'xstate'
 import type { Database } from '@/database/database'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
@@ -146,7 +145,7 @@ export const ticketOperationMachine = setup({
         }
       }
     }),
-    // The confirmed status and the settled intent commit together, then the change is announced.
+    // The confirmed fields and the settled intent commit together, then the change is announced.
     commit: fromPromise(async ({ input }: { input: CommitInput }) => {
       const { dependencies, request, intent, confirmed } = input
       dependencies.database.transaction((transaction) => {
