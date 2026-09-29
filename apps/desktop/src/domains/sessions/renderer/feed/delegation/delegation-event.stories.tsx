@@ -34,13 +34,41 @@ type Story = StoryObj<typeof DelegationEvent>
 export const Started: Story = {
   args: {
     onOpen: fn(),
-    row: { ...RESPONDED_ROW, event: 'started', state: undefined, text: undefined },
+    row: {
+      ...RESPONDED_ROW,
+      event: 'started',
+      state: undefined,
+      text: undefined,
+      prompt: 'Review the specification.',
+    },
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: /Spec review started/ })).toBeVisible()
+    // The prompt lives in the Subagent's own Feed, which the title opens.
+    await expect(canvas.queryByText('Review the specification.')).toBeNull()
     await expect(canvas.queryByText('The specification covers every visible state.')).toBeNull()
     await expect(canvasElement.querySelector('.bg-card')).toBeNull()
+  },
+}
+
+export const Messaged: Story = {
+  args: {
+    row: {
+      ...RESPONDED_ROW,
+      id: 'review:messaged',
+      event: 'messaged',
+      state: undefined,
+      text: undefined,
+      prompt: 'Also check the empty state.',
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(
+      canvas.getByRole('article', { name: 'Spec review received a message' }),
+    ).toBeVisible()
+    await expect(canvas.queryByText('Also check the empty state.')).toBeNull()
   },
 }
 
@@ -48,6 +76,7 @@ export const Responded: Story = {
   args: { onOpen: fn(), row: RESPONDED_ROW },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
+    await expect(canvas.queryByText('The specification covers every visible state.')).toBeNull()
     await userEvent.click(
       canvas.getByRole('button', { name: /Spec review sent a reply to the main Session/ }),
     )
@@ -69,5 +98,34 @@ export const NotClickable: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.queryByRole('button')).toBeNull()
+  },
+}
+
+// A nickname leads each sentence and the task follows it.
+export const Nicknamed: Story = {
+  args: { onOpen: fn(), row: { ...RESPONDED_ROW, nickname: 'Jason' } },
+  render: (args) => (
+    <div className="max-w-(--size-session-column) bg-background p-snug">
+      <DelegationEvent
+        {...args}
+        row={{ ...args.row, id: 'started', event: 'started', state: undefined }}
+      />
+      <DelegationEvent
+        {...args}
+        row={{ ...args.row, id: 'messaged', event: 'messaged', state: undefined }}
+      />
+      <DelegationEvent {...args} />
+      <DelegationEvent {...args} row={{ ...args.row, id: 'stopped', state: 'interrupted' }} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    for (const name of [
+      'Jason started Spec review',
+      'Jason received a message about Spec review',
+      'Jason replied on Spec review',
+      'Jason stopped Spec review',
+    ])
+      await expect(canvas.getByRole('article', { name })).toBeVisible()
   },
 }

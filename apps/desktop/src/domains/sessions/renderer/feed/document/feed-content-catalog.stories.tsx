@@ -175,6 +175,7 @@ export const Delegation = kindStory(
   {
     kind: 'delegation',
     id: 'delegation',
+    event: 'started',
     agentId: 'agent-1',
     status: 'running',
     name: 'Review the Feed',
@@ -206,10 +207,25 @@ export const Notification = kindStory(
   },
   'Connected to the Session',
 )
-export const Context = kindStory(
-  { kind: 'context', id: 'context', source: 'environment', text: 'Workspace ready' },
-  'Workspace ready',
-)
+// A system context update is for the model; the Feed draws nothing for it.
+export const Context: Story = {
+  args: {
+    feed: catalogFeedContents([
+      { kind: 'message', id: 'message', role: 'assistant', text: 'The Feed is ready.' },
+      { kind: 'context', id: 'context', source: 'environment', text: 'Workspace ready' },
+    ]),
+  },
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(canvasElement.querySelector('[data-feed-row]')).toHaveTextContent(
+        'The Feed is ready.',
+      ),
+    )
+    await expect(canvasElement.querySelectorAll('[data-feed-row]')).toHaveLength(1)
+    await expect(canvasElement).not.toHaveTextContent('Workspace ready')
+    await expect(canvasElement).not.toHaveTextContent('System context updated')
+  },
+}
 export const Marker = kindStory(
   { kind: 'marker', id: 'marker', marker: 'compaction', summary: 'Earlier work' },
   'Conversation compacted',
@@ -262,6 +278,7 @@ function workStateContents(status: 'running' | 'completed' | 'failed'): FeedCont
     {
       kind: 'delegation',
       id: `agent-${status}`,
+      event: status === 'running' ? 'started' : 'responded',
       agentId: `agent-${status}`,
       status,
       name: 'Review the Feed',

@@ -265,7 +265,7 @@ test('reports and drops a Codex image sent by fileId, keeping the rest of the pr
   warning.mockRestore()
 })
 
-test('reads each recorded Subagent as one delegation, updated by its activity', async () => {
+test('reads each recorded Subagent activity as its own delegation event', async () => {
   const recorded = JSON.parse(
     readFileSync(
       new URL(
@@ -277,9 +277,14 @@ test('reads each recorded Subagent as one delegation, updated by its activity', 
   ) as { thread: unknown }
   const request = (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
     parse({ thread: recorded.thread })) as CodexRequest
-  const delegation = (status: 'running' | 'completed' | 'interrupted') => ({
+  const delegation = (
+    id: string,
+    event: 'started' | 'messaged' | 'responded',
+    status: 'running' | 'completed' | 'interrupted',
+  ) => ({
     kind: 'delegation',
-    id: 'thread-child-review',
+    id,
+    event,
     agentId: 'thread-child-review',
     status,
     name: 'spec_review',
@@ -289,10 +294,81 @@ test('reads each recorded Subagent as one delegation, updated by its activity', 
   })
   await expect(readCodexSessionHistory(request, 'thread-parent')).resolves.toEqual([
     { kind: 'message', id: 'user-1', role: 'user', text: 'Review the branch' },
-    delegation('running'),
-    delegation('completed'),
-    delegation('running'),
-    delegation('interrupted'),
+    delegation('call_spawn_review', 'started', 'running'),
+    delegation('subagent-completed-review-1', 'responded', 'completed'),
+    delegation('call_message_review', 'messaged', 'running'),
+    delegation('call_interrupt_review', 'responded', 'interrupted'),
     { kind: 'message', id: 'agent-1', role: 'assistant', text: 'The review is in.' },
   ])
+})
+
+test('gives a Subagent start the prompt and model its spawn call sent', async () => {
+  const items = [
+    {
+      type: 'collabAgentToolCall',
+      id: 'call_spawn',
+      tool: 'spawnAgent',
+      status: 'completed',
+      senderThreadId: 'thread-parent',
+      receiverThreadIds: ['thread-child'],
+      prompt: 'Review the branch',
+      model: 'gpt-5',
+      reasoningEffort: null,
+      agentsStates: {},
+    },
+    {
+      type: 'subAgentActivity',
+      id: 'call_spawn',
+      kind: 'started',
+      agentThreadId: 'thread-child',
+      agentPath: '/root/reviewer',
+    },
+  ]
+  const request = (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
+    parse({ thread: { turns: [{ items }] } })) as CodexRequest
+  await expect(readCodexSessionHistory(request, 'thread-parent')).resolves.toEqual([
+    expect.objectContaining({
+      kind: 'delegation',
+      event: 'started',
+      prompt: 'Review the branch',
+      model: 'gpt-5',
+    }),
+  ])
+})
+
+const SPAWNED_ITEMS = [
+  {
+    type: 'subAgentActivity',
+    id: 'call_spawn',
+    kind: 'started',
+    agentThreadId: 'thread-child',
+    agentPath: '/root/spec_review',
+  },
+]
+
+test('names a Subagent with the nickname its own thread carries', async () => {
+  const request = (async (_method: string, params: unknown, parse: (value: unknown) => unknown) =>
+    parse(
+      (params as { threadId: string }).threadId === 'thread-child'
+        ? { thread: { agentNickname: 'Jason', turns: [] } }
+        : { thread: { agentNickname: null, turns: [{ items: SPAWNED_ITEMS }] } },
+    )) as CodexRequest
+  await expect(readCodexSessionHistory(request, 'thread-parent')).resolves.toEqual([
+    expect.objectContaining({ name: 'spec_review', nickname: 'Jason' }),
+  ])
+})
+
+test('keeps a Subagent row without a nickname when its thread cannot be read', async () => {
+  const warning = warningSpy()
+  const request = (async (_method: string, params: unknown, parse: (value: unknown) => unknown) => {
+    if ((params as { threadId: string }).threadId === 'thread-child') throw new Error('not found')
+    return parse({ thread: { turns: [{ items: SPAWNED_ITEMS }] } })
+  }) as CodexRequest
+  const [content] = await readCodexSessionHistory(request, 'thread-parent')
+  expect(content).toMatchObject({ name: 'spec_review' })
+  expect(content).not.toHaveProperty('nickname')
+  expect(warning).toHaveBeenCalledWith(
+    'Could not read 1 Codex Subagent thread; it shows no nickname.',
+  )
+  warning.mockRestore()
 })

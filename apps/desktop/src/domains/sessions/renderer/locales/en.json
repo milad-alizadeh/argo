@@ -63,6 +63,10 @@
   },
   "historyLabel": "Session history",
   "subagentHistoryLabel": "Subagent history",
+  "subagentNoTranscript": {
+    "title": "No transcript found",
+    "description": "Argo found no transcript for this Subagent."
+  },
   "jumpToLatest": "Jump to latest",
   "composer": {
     "label": "Session input",
@@ -395,6 +399,12 @@
       "responded": "{{name}} sent a reply to the main Session",
       "started": "{{name}} started",
       "stopped": "{{name}} stopped"
+    },
+    "namedEvent": {
+      "messaged": "{{nickname}} received a message about {{name}}",
+      "responded": "{{nickname}} replied on {{name}}",
+      "started": "{{nickname}} started {{name}}",
+      "stopped": "{{nickname}} stopped {{name}}"
     },
     "open": "Open the {{name}} Session",
     "tokens": "{{amount}} tokens"

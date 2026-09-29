@@ -1,23 +1,16 @@
 import { expect, test } from 'bun:test'
 import { sessionSubagent } from '../session-fixtures'
-import type { SessionFeedRow } from '../types'
-import { sessionScreenSubagents } from './session-screen-subagents'
+import { pickedSubagent, sessionScreenSubagents } from './session-screen-subagents'
 
-test('uses a Feed subagent event as an inspector target when the roster has no child', () => {
-  const rows = [
-    {
-      shape: 'subagent',
-      id: 'call-started',
-      subagentId: 'agent-a64dd851fde47a6f0',
-      event: 'started',
-      name: 'Explore Turn Configuration and harness code for issue 2669',
-    },
-  ] satisfies SessionFeedRow[]
+const AGENT_ID = 'agent-a64dd851fde47a6f0'
 
-  expect(sessionScreenSubagents(rows, [])).toEqual([
+test('uses a Subagent from the Feed as an inspector target when the roster has no child', () => {
+  expect(
+    sessionScreenSubagents([{ id: AGENT_ID, label: 'Explore the harness', state: 'running' }], []),
+  ).toEqual([
     {
-      id: 'agent-a64dd851fde47a6f0',
-      label: 'Explore Turn Configuration and harness code for issue 2669',
+      id: AGENT_ID,
+      label: 'Explore the harness',
       state: 'running',
       startedAt: null,
       endedAt: null,
@@ -27,37 +20,36 @@ test('uses a Feed subagent event as an inspector target when the roster has no c
 
 test('keeps roster facts for a child already in the roster, with the Feed state', () => {
   const rosterChild = sessionSubagent({
-    id: 'agent-a64dd851fde47a6f0',
+    id: AGENT_ID,
     label: 'Roster name',
     startedAt: '2026-09-23T23:00:00.000Z',
   })
-  const rows = [
-    {
-      shape: 'subagent',
-      id: 'call-started',
-      subagentId: rosterChild.id,
-      event: 'responded',
-      state: 'failed',
-      name: 'Feed name',
-    },
-  ] satisfies SessionFeedRow[]
-
-  expect(sessionScreenSubagents(rows, [rosterChild])).toEqual([{ ...rosterChild, state: 'failed' }])
+  expect(
+    sessionScreenSubagents([{ id: AGENT_ID, label: 'Feed name', state: 'failed' }], [rosterChild]),
+  ).toEqual([{ ...rosterChild, state: 'failed' }])
 })
 
 test('keeps the Feed name when the roster stored none', () => {
-  const rosterChild = sessionSubagent({ id: 'agent-a64dd851fde47a6f0', label: null })
-  const rows = [
-    {
-      shape: 'subagent',
-      id: 'call-started',
-      subagentId: rosterChild.id,
-      event: 'started',
-      name: 'Feed name',
-    },
-  ] satisfies SessionFeedRow[]
+  const rosterChild = sessionSubagent({ id: AGENT_ID, label: null })
+  expect(
+    sessionScreenSubagents([{ id: AGENT_ID, label: 'Feed name', state: 'running' }], [rosterChild]),
+  ).toEqual([{ ...rosterChild, label: 'Feed name' }])
+})
 
-  expect(sessionScreenSubagents(rows, [rosterChild])).toEqual([
-    { ...rosterChild, label: 'Feed name' },
-  ])
+test('opens a Subagent the Session never listed with what its Feed row said', () => {
+  const opened = {
+    id: AGENT_ID,
+    label: 'spec_review',
+    nickname: 'Jason',
+    state: 'running',
+  } as const
+  expect(pickedSubagent([], { subagentId: AGENT_ID, opened })).toEqual({
+    ...opened,
+    startedAt: null,
+    endedAt: null,
+  })
+})
+
+test('picks nothing for an id with no listing and no row', () => {
+  expect(pickedSubagent([], { subagentId: AGENT_ID })).toBeNull()
 })

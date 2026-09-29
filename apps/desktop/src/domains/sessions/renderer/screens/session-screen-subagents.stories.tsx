@@ -35,6 +35,7 @@ const parentContent: FeedContent[] = [
   {
     kind: 'delegation',
     id: 'call-agent',
+    event: 'started',
     agentId: SUBAGENT_ID,
     status: 'running',
     name: SUBAGENT_NAME,
@@ -52,11 +53,12 @@ const parentContent: FeedContent[] = [
   },
   {
     kind: 'delegation',
-    id: 'call-agent',
+    id: 'call-agent:response',
+    event: 'responded',
     agentId: SUBAGENT_ID,
     status: 'completed',
     name: SUBAGENT_NAME,
-    prompt: 'Report each adapter.',
+    prompt: null,
     model: null,
     summary: 'Each adapter owns one process.',
   },
@@ -118,7 +120,7 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof SessionScreenView>
 
-// History content draws one Subagent row per Subagent, a skill row, and the Subagents control.
+// History content draws each Subagent event once, a skill row, and the Subagents control.
 export const HistoryDrawsSubagentAndSkillRows: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -127,7 +129,12 @@ export const HistoryDrawsSubagentAndSkillRows: Story = {
         name: `${SUBAGENT_NAME} sent a reply to the main Session`,
       }),
     ).toBeVisible()
-    await expect(canvas.queryByRole('button', { name: `${SUBAGENT_NAME} started` })).toBeNull()
+    await expect(canvas.getAllByRole('button', { name: `${SUBAGENT_NAME} started` })).toHaveLength(
+      1,
+    )
+    await expect(
+      canvas.getAllByRole('button', { name: `${SUBAGENT_NAME} sent a reply to the main Session` }),
+    ).toHaveLength(1)
     await expect(canvas.getByText('Skill invoked')).toBeVisible()
     await expect(
       canvas.getByText('diagnosing-bugs The Session keeps showing Running'),

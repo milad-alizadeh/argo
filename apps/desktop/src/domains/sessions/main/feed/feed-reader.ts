@@ -1,7 +1,10 @@
 import { TRPCError } from '@trpc/server'
 import type { Database } from '@/database/database'
+import { type FeedChain, feedChainKey } from '@/domains/sessions/api/feed/feed-chain'
 import { type FeedReading, feedReading } from '@/domains/sessions/api/feed/feed-reading'
-import { projectFeedRowEntries } from '@/domains/sessions/api/feed/feed-row-entries'
+import { feedEntryRows, projectFeedRowEntries } from '@/domains/sessions/api/feed/feed-row-entries'
+import type { SessionFeedRow } from '@/domains/sessions/api/feed/feed-rows'
+import { feedSubagents, subagentCompletionRows } from '@/domains/sessions/api/feed/feed-subagents'
 import {
   emptyLiveEventBuffer,
   type LiveEventBuffer,
@@ -69,39 +72,37 @@ function pendingPermission(events: readonly SessionLiveEvent[]): string | null {
   return [...decided].findLast(([, isDecided]) => !isDecided)?.[0] ?? null
 }
 
-// One root Session's Feed: it attaches to live events before it reads vendor history, so an
-// event that lands during the read is reconciled rather than missed.
-class RootFeedReader {
+// A Subagent's Feed ends with the responses its parent's Feed recorded for it.
+type ParentFeed = { observe: (observer: Observer) => () => void }
+
+// One chain's Feed: a root Session attaches to live events before it reads vendor history, so an
+// event that lands during the read is reconciled rather than missed. A Subagent has no live
+// channel of its own; it follows its history file and its parent's record of it.
+class FeedReader {
   readonly #context: SessionFeedReaderContext
-  readonly #sessionId: string
+  readonly #chain: FeedChain
+  readonly #parent: ParentFeed | null
   readonly #observers = new Set<Observer>()
   readonly #stops: (() => void)[] = []
   #follower: { key: string; stop: () => void } | null = null
   #history: FeedContent[] = []
   #events: LiveEventBuffer = emptyLiveEventBuffer()
+  #completion: SessionFeedRow[] = []
   #state: ReadState = 'loading'
   #error: SessionError | null = null
   #read = 0
   #stopped = false
   #reading: FeedReading | null = null
 
-  constructor(context: SessionFeedReaderContext, sessionId: string) {
+  constructor(context: SessionFeedReaderContext, chain: FeedChain, parent: ParentFeed | null) {
     this.#context = context
-    this.#sessionId = sessionId
+    this.#chain = chain
+    this.#parent = parent
   }
 
   start(): void {
-    const { journal, hasLiveChannel } = this.#context
-    const replay = journal.replay(this.#sessionId, 0)
-    const after = replay.cursor
-    this.#stops.push(
-      journal.subscribe(this.#sessionId, (event) => {
-        if (event.sequence > after) this.#receive(event, hasLiveChannel(this.#sessionId))
-      }),
-    )
-    // An expired replay lost events; the history read below is the fresh start.
-    const live = hasLiveChannel(this.#sessionId)
-    if (replay.type === 'events') for (const event of replay.events) this.#retain(event, live)
+    if (this.#parent === null) this.#attachLive()
+    else this.#stops.push(this.#parent.observe((reading) => this.#receiveParent(reading)))
     // A committed sync can move where the Session's history lives.
     this.#stops.push(
       observeSessionSync(this.#context.sessionSyncStatus ?? [], (event) => {
@@ -146,27 +147,43 @@ class RootFeedReader {
     this.#follower = null
     this.#observers.clear()
     // An unobserved Feed publishes nothing more, so its activity would only go stale.
-    this.#context.activities?.publish(this.#sessionId, null)
+    if (this.#parent === null) this.#context.activities?.publish(this.#chain.sessionId, null)
+  }
+
+  #attachLive(): void {
+    const { journal, hasLiveChannel } = this.#context
+    const { sessionId } = this.#chain
+    const replay = journal.replay(sessionId, 0)
+    const after = replay.cursor
+    this.#stops.push(
+      journal.subscribe(sessionId, (event) => {
+        if (event.sequence > after) this.#receive(event, hasLiveChannel(sessionId))
+      }),
+    )
+    // An expired replay lost events; the history read that follows is the fresh start.
+    const live = hasLiveChannel(sessionId)
+    if (replay.type === 'events') for (const event of replay.events) this.#retain(event, live)
+  }
+
+  #target(stored: ReturnType<typeof sessionHistoryIdentity>): SessionHistoryTarget {
+    return { nativeId: stored.nativeId, subagentId: this.#chain.subagentId, cwd: stored.cwd }
   }
 
   async #readHistory(): Promise<FeedContent[]> {
-    const stored = sessionHistoryIdentity(this.#context.database, this.#sessionId)
-    return this.#context.readHistory(stored.harness, {
-      nativeId: stored.nativeId,
-      subagentId: null,
-      cwd: stored.cwd,
-    })
+    const stored = sessionHistoryIdentity(this.#context.database, this.#chain.sessionId)
+    return this.#context.readHistory(stored.harness, this.#target(stored))
   }
 
-  // A Session without a live channel follows its history file; each read re-checks both where
+  // A chain without a live channel follows its history file; each read re-checks both where
   // that file is and whether a live channel now carries the Session instead.
   #follow(): void {
     const { database, followHistory, hasLiveChannel } = this.#context
+    const { sessionId, subagentId } = this.#chain
     if (followHistory === undefined) return
     let stored: ReturnType<typeof sessionHistoryIdentity> | null = null
     try {
-      if (!hasLiveChannel(this.#sessionId))
-        stored = sessionHistoryIdentity(database, this.#sessionId)
+      if (subagentId !== null || !hasLiveChannel(sessionId))
+        stored = sessionHistoryIdentity(database, sessionId)
     } catch {
       stored = null
     }
@@ -176,9 +193,8 @@ class RootFeedReader {
     this.#follower?.stop()
     this.#follower = null
     if (stored === null || key === null) return
-    const target = { nativeId: stored.nativeId, subagentId: null, cwd: stored.cwd }
     const stop = followHistory(
-      { sessionId: this.#sessionId, harness: stored.harness, target },
+      { sessionId, harness: stored.harness, target: this.#target(stored) },
       () => this.refresh(),
     )
     this.#follower = { key, stop }
@@ -199,6 +215,18 @@ class RootFeedReader {
     this.#publish()
   }
 
+  // A new response from the parent means the Subagent's own transcript has settled too.
+  #receiveParent(reading: FeedReading): void {
+    const subagentId = this.#chain.subagentId
+    if (subagentId === null) return
+    const completion = subagentCompletionRows(feedEntryRows(reading.entries), subagentId)
+    if (JSON.stringify(completion) === JSON.stringify(this.#completion)) return
+    this.#completion = completion
+    // A read still in flight already reads the settled transcript.
+    if (this.#state === 'loading') this.#publish()
+    else this.refresh()
+  }
+
   #settle(state: ReadState, error: SessionError | null): void {
     this.#state = state
     this.#error = error
@@ -209,56 +237,69 @@ class RootFeedReader {
     const { entries, activity, rejected } = projectFeedRowEntries({
       history: this.#history,
       live: this.#events.events,
+      end: this.#completion,
     })
     const skipped = rejected.history + rejected.live + rejected.rows
     if (skipped > 0) console.warn(`Skipped ${skipped} unrecognised Session Feed item(s).`)
     const events = this.#events.events
     const status = events.findLast((event) => event.type === 'status')
+    const { sessionId, subagentId } = this.#chain
+    const rows = feedEntryRows(entries)
     const reading = feedReading({
-      sessionId: this.#sessionId,
-      chainId: this.#sessionId,
+      sessionId,
+      chainId: subagentId ?? sessionId,
       state: this.#state,
       error: this.#error,
       pendingPermissionId: pendingPermission(events),
       liveStatus: status?.type === 'status' ? status.status : null,
       entries,
+      subagents: subagentId === null ? feedSubagents(rows) : [],
     })
     if (reading.revision === this.#reading?.revision) return
     this.#reading = reading
-    this.#context.activities?.publish(this.#sessionId, activity)
+    if (subagentId === null) this.#context.activities?.publish(sessionId, activity)
     for (const observer of this.#observers) observer(reading)
   }
 }
 
-// One reader per observed root Session, shared by every observer and stopped with the last.
+// One reader per observed chain, shared by every observer and stopped with the last. A Subagent's
+// reader observes its parent's, so the parent reads as long as either is open.
 export class SessionFeedReaders {
   readonly #context: SessionFeedReaderContext
-  readonly #readers = new Map<string, RootFeedReader>()
+  readonly #readers = new Map<string, FeedReader>()
 
   constructor(context: SessionFeedReaderContext) {
     this.#context = context
   }
 
-  observe(sessionId: string, observer: Observer): () => void {
-    let reader = this.#readers.get(sessionId)
+  observe(chain: FeedChain, observer: Observer): () => void {
+    const key = feedChainKey(chain)
+    let reader = this.#readers.get(key)
     if (reader === undefined) {
-      reader = new RootFeedReader(this.#context, sessionId)
-      this.#readers.set(sessionId, reader)
+      const parent: ParentFeed | null =
+        chain.subagentId === null
+          ? null
+          : {
+              observe: (parentObserver) =>
+                this.observe({ sessionId: chain.sessionId, subagentId: null }, parentObserver),
+            }
+      reader = new FeedReader(this.#context, chain, parent)
+      this.#readers.set(key, reader)
       reader.start()
     }
     const current = reader
     const unobserve = current.observe(observer)
     return () => {
       unobserve()
-      if (current.observed || this.#readers.get(sessionId) !== current) return
-      this.#readers.delete(sessionId)
+      if (current.observed || this.#readers.get(key) !== current) return
+      this.#readers.delete(key)
       current.stop()
     }
   }
 
   // Whether an observed Feed took the request; an unobserved one reads fresh when it opens.
-  refresh(sessionId: string): boolean {
-    const reader = this.#readers.get(sessionId)
+  refresh(chain: FeedChain): boolean {
+    const reader = this.#readers.get(feedChainKey(chain))
     reader?.refresh()
     return reader !== undefined
   }

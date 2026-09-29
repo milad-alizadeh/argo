@@ -22,7 +22,7 @@ test('decodes Claude user and assistant content without system messages', () => 
   ])
 })
 
-test('reads an Agent call as one delegation that its task notification completes', () => {
+test('reads an Agent call as a start that its task notification answers', () => {
   expect(decodeClaudeSessionMessages(recordedMessages('delegationHistory'))).toEqual([
     {
       kind: 'message',
@@ -33,6 +33,7 @@ test('reads an Agent call as one delegation that its task notification completes
     {
       kind: 'delegation',
       id: 'toolu_dh_agent',
+      event: 'started',
       agentId: 'a0d1e2f3a4b5c6d7e',
       status: 'running',
       name: 'Survey the Harness adapters',
@@ -50,11 +51,12 @@ test('reads an Agent call as one delegation that its task notification completes
     },
     {
       kind: 'delegation',
-      id: 'toolu_dh_agent',
+      id: 'toolu_dh_agent:response',
+      event: 'responded',
       agentId: 'a0d1e2f3a4b5c6d7e',
       status: 'completed',
       name: 'Survey the Harness adapters',
-      prompt: "Report each Harness adapter's process ownership, with file paths.",
+      prompt: null,
       model: null,
       summary: 'Agent "Survey the Harness adapters" finished',
     },

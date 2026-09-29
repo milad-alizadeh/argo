@@ -55,6 +55,7 @@ export const SUBAGENT_STATES = ['running', 'completed', 'failed', 'interrupted']
 export const sessionSubagentSchema = z.strictObject({
   id: identifierSchema,
   label: z.string().nullable(),
+  nickname: z.string().optional(),
   state: z.enum(SUBAGENT_STATES),
   startedAt: z.string().nullable(),
   endedAt: z.string().nullable(),

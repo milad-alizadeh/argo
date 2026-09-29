@@ -1,7 +1,9 @@
 // Session rows the Sessions stories draw.
 
+import { feedChainKey } from '@/domains/sessions/api/feed/feed-chain'
 import { type FeedReading, feedReading } from '@/domains/sessions/api/feed/feed-reading'
-import { projectFeedRowEntries } from '@/domains/sessions/api/feed/feed-row-entries'
+import { feedEntryRows, projectFeedRowEntries } from '@/domains/sessions/api/feed/feed-row-entries'
+import { feedSubagents, subagentCompletionRows } from '@/domains/sessions/api/feed/feed-subagents'
 import { sessionError } from '@/domains/sessions/api/session-error'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/renderer/model/models'
@@ -128,8 +130,11 @@ export function sessionFeedTrpc(
   queryClient.removeQueries({ queryKey: ['sessions'] })
   return (async (request) => {
     if (request.path === 'sessionFeedRefresh') {
-      const { sessionId } = request.input as { sessionId: string }
-      const feeds = openFeeds.get(sessionId) ?? new Set()
+      const input = request.input as { sessionId: string; subagentId?: string | null }
+      const feeds =
+        openFeeds.get(
+          feedChainKey({ sessionId: input.sessionId, subagentId: input.subagentId ?? null }),
+        ) ?? new Set()
       for (const refresh of feeds) refresh()
       return { result: { data: { accepted: feeds.size > 0 } } }
     }
@@ -143,7 +148,25 @@ export function sessionFeedTrpc(
   }) as typeof window.argo.trpc
 }
 
-// The root Feed's readings, as the main reader publishes them: loading, then each read's result,
+// A chain's rows as main projects them; a Subagent's end with its parent's responses for it.
+async function chainEntries(
+  read: FeedRead,
+  chain: { sessionId: string; subagentId: string | null },
+  live: readonly SessionLiveEvent[],
+) {
+  const snapshot = await read(chain.sessionId, chain.subagentId)
+  if (chain.subagentId === null)
+    return projectFeedRowEntries({ history: snapshot.content, live }).entries
+  const parent = await read(chain.sessionId, null)
+  const parentRows = feedEntryRows(projectFeedRowEntries({ history: parent.content, live }).entries)
+  return projectFeedRowEntries({
+    history: snapshot.content,
+    live: [],
+    end: subagentCompletionRows(parentRows, chain.subagentId),
+  }).entries
+}
+
+// A chain's readings, as the main reader publishes them: loading, then each read's result,
 // keeping the rows a failed read already had.
 export function sessionFeedSubscribe(
   subscribe: Subscribe,
@@ -152,7 +175,9 @@ export function sessionFeedSubscribe(
 ): Subscribe {
   return async (request, listener) => {
     if (request.path !== 'sessionFeed') return subscribe(request, listener)
-    const { sessionId } = request.input as { sessionId: string }
+    const input = request.input as { sessionId: string; subagentId?: string | null }
+    const { sessionId } = input
+    const subagentId = input.subagentId ?? null
     let entries: FeedReading['entries'] = []
     const status = live.findLast((event) => event.type === 'status')
     let reads = 0
@@ -164,21 +189,22 @@ export function sessionFeedSubscribe(
         result: {
           data: feedReading({
             sessionId,
-            chainId: sessionId,
+            chainId: subagentId ?? sessionId,
             state,
             error,
             pendingPermissionId: null,
-            liveStatus: status?.type === 'status' ? status.status : null,
+            liveStatus: subagentId === null && status?.type === 'status' ? status.status : null,
             entries,
+            subagents: subagentId === null ? feedSubagents(feedEntryRows(entries)) : [],
           }),
         },
       })
     const refresh = () => {
       const current = ++reads
-      read(sessionId, null).then(
-        (snapshot) => {
+      chainEntries(read, { sessionId, subagentId }, live).then(
+        (projected) => {
           if (!open || current !== reads) return
-          entries = projectFeedRowEntries({ history: snapshot.content, live }).entries
+          entries = projected
           send('ready', null)
         },
         (error: unknown) => {
@@ -191,9 +217,10 @@ export function sessionFeedSubscribe(
         },
       )
     }
-    const feeds = openFeeds.get(sessionId) ?? new Set()
+    const key = feedChainKey({ sessionId, subagentId })
+    const feeds = openFeeds.get(key) ?? new Set()
     feeds.add(refresh)
-    openFeeds.set(sessionId, feeds)
+    openFeeds.set(key, feeds)
     queueMicrotask(() => {
       send('loading', null)
       refresh()

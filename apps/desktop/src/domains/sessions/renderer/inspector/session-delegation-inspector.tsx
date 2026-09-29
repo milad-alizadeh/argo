@@ -4,10 +4,19 @@
 
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { hasSubagentTranscript } from '@/domains/sessions/api/feed/feed-subagents'
 import type { SessionSubagent } from '@/domains/sessions/renderer/model/models'
+import { Icon } from '@/platform/renderer/components/icon/icon'
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/platform/renderer/components/ui/empty'
 import { BasicFeed } from '../feed/document/basic-feed'
 import { INACTIVE_FEED_LIVE_FACTS } from '../feed/document/feed-live-facts'
-import type { SessionError, SessionEvidence, SessionFeed, SessionFeedRow } from '../types'
+import type { SessionError, SessionEvidence, SessionFeed } from '../types'
 
 import '../feed/feed.css'
 
@@ -26,30 +35,30 @@ function useVisibleInspector() {
   return { active, inspector }
 }
 
-function responseRow(delegation: SessionSubagent): SessionFeedRow | null {
-  if (delegation.state === 'running') return null
-  return {
-    shape: 'subagent',
-    id: `${delegation.id}:responded`,
-    subagentId: delegation.id,
-    event: 'responded',
-    state: delegation.state,
-    ...(delegation.label === null ? {} : { name: delegation.label }),
-  }
+// An ended Subagent with no transcript rows, or whose history the Harness cannot find, draws none.
+function hasNoTranscript(
+  delegation: SessionSubagent,
+  feed: SessionFeed | null,
+  failure: SessionError | null,
+) {
+  if (failure?.code === 'missing-session') return true
+  if (feed === null || failure !== null || delegation.state === 'running') return false
+  return !hasSubagentTranscript(feed.rows, delegation.id)
 }
 
-// The child transcript is separate from its parent's lifecycle record, so its final event ends the child document.
-function withResponseEvent(
-  feed: SessionFeed | null,
-  delegation: SessionSubagent,
-): SessionFeed | null {
-  const response = responseRow(delegation)
-  if (feed === null || response === null) return feed
-  return {
-    ...feed,
-    revision: `${feed.revision}:${response.id}`,
-    rows: [...feed.rows, response],
-  }
+function NoTranscript() {
+  const { t } = useTranslation('sessions')
+  return (
+    <Empty className="h-full" data-state="no-transcript">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <Icon name="agent" />
+        </EmptyMedia>
+        <EmptyTitle>{t('subagentNoTranscript.title')}</EmptyTitle>
+        <EmptyDescription>{t('subagentNoTranscript.description')}</EmptyDescription>
+      </EmptyHeader>
+    </Empty>
+  )
 }
 
 export function SessionDelegationInspector({
@@ -64,7 +73,7 @@ export function SessionDelegationInspector({
 }: {
   activeEvidenceId: string | null
   delegation: SessionSubagent
-  // What the read has returned so far, or null while the first read is in flight.
+  // Main's reading of the Subagent's own chain, ending with its response; null while it loads.
   feed: SessionFeed | null
   failure: SessionError | null
   now?: number
@@ -75,28 +84,31 @@ export function SessionDelegationInspector({
 }) {
   const { t } = useTranslation('sessions')
   const { active, inspector } = useVisibleInspector()
-  const reading = withResponseEvent(feed, delegation)
   return (
     <section
       aria-label={t('subagent')}
       className="flex h-full min-h-0 flex-1 flex-col overflow-hidden"
       ref={inspector}
     >
-      <BasicFeed
-        activeEvidenceId={activeEvidenceId}
-        answeringQuestionId={null}
-        failure={failure}
-        feed={reading}
-        feedLabel={t('subagentFeedLabel')}
-        historyLabel={t('subagentHistoryLabel')}
-        liveFacts={{ ...INACTIVE_FEED_LIVE_FACTS, isRunning: delegation.state === 'running' }}
-        onAnswerQuestion={() => {}}
-        onOpenEvidence={onOpenEvidence}
-        onOpenSession={onOpenSession}
-        onRetryFeed={onRetryFeed}
-        questionFailure={() => null}
-        selectedSessionId={active ? (reading?.sessionId ?? sessionId) : null}
-      />
+      {hasNoTranscript(delegation, feed, failure) ? (
+        <NoTranscript />
+      ) : (
+        <BasicFeed
+          activeEvidenceId={activeEvidenceId}
+          answeringQuestionId={null}
+          failure={failure}
+          feed={feed}
+          feedLabel={t('subagentFeedLabel')}
+          historyLabel={t('subagentHistoryLabel')}
+          liveFacts={{ ...INACTIVE_FEED_LIVE_FACTS, isRunning: delegation.state === 'running' }}
+          onAnswerQuestion={() => {}}
+          onOpenEvidence={onOpenEvidence}
+          onOpenSession={onOpenSession}
+          onRetryFeed={onRetryFeed}
+          questionFailure={() => null}
+          selectedSessionId={active ? (feed?.sessionId ?? sessionId) : null}
+        />
+      )}
     </section>
   )
 }
