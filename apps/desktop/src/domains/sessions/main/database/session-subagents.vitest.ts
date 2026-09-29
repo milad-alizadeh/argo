@@ -31,7 +31,8 @@ function delegation(
 ): FeedContent {
   return {
     kind: 'delegation',
-    id: `call-${agentId}`,
+    id: `call-${agentId}:${status}`,
+    event: ['completed', 'failed', 'interrupted'].includes(status) ? 'responded' : 'started',
     agentId,
     status,
     name,

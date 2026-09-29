@@ -3,7 +3,7 @@
 // Feed reply.
 import { useQuery } from '@tanstack/react-query'
 import type { SessionShellOutput, SubagentUsageFacts } from '@/domains/sessions/renderer/work/types'
-import { useSessionFeed } from '../feed/use-session-feed'
+import { useFeedReading } from '../feed/use-feed-reading'
 import {
   SESSION_REFRESH_MS,
   sessionShellOutputQueryKey,
@@ -51,14 +51,9 @@ export function useShellOutput(sessionId: SessionId | null, shellId: string | nu
   return output.data ?? null
 }
 
-// One Subagent's own transcript, read as its own document so the Session's Feed is never displaced
+// One Subagent's own Feed, read by main as its own chain so the Session's Feed is never displaced
 // by it. Null until a Subagent is picked.
 export function useDelegationFeed(sessionId: SessionId | null, subagentId: string | null) {
-  const selectedSessionId = subagentId === null ? null : sessionId
-  const history = useSessionFeed(selectedSessionId, subagentId)
-  return {
-    feed: history.feed,
-    feedError: history.feedError,
-    retry: history.retryFeed,
-  }
+  const reading = useFeedReading(subagentId === null ? null : sessionId, subagentId)
+  return { feed: reading.feed, feedError: reading.feedError, retry: reading.retryFeed }
 }

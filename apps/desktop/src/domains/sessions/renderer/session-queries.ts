@@ -3,13 +3,12 @@ import { type SessionRosterState, sessionRosterPathKey } from './session-list/se
 import type { SessionId } from './types'
 
 export const SESSION_REFRESH_MS = 500
-// A Subagent's Feed is a document of its own, so it is its own query: switching between the
-// Session's Feed and a Subagent's swaps documents rather than refetching one (#1582).
-export const sessionFeedQueryKey = (sessionId: SessionId, subagentId: string | null = null) =>
-  ['sessions', 'feed', sessionId, subagentId] as const
-// The root Feed's latest reading, written by its subscription and read by every observer.
-export const sessionFeedReadingQueryKey = (sessionId: SessionId | null) =>
-  ['sessions', 'feed-reading', sessionId] as const
+// A chain's latest reading, written by its subscription and read by every observer. A Subagent's
+// Feed is its own query, so opening one never displaces the Session's (#1582).
+export const sessionFeedReadingQueryKey = (
+  sessionId: SessionId | null,
+  subagentId: string | null = null,
+) => ['sessions', 'feed-reading', sessionId, subagentId] as const
 export const sessionSubagentUsageQueryKey = (sessionId: SessionId) =>
   ['sessions', 'delegation-usage', sessionId] as const
 // Keyed on whether the command is still running too: the last poll of a running command can land

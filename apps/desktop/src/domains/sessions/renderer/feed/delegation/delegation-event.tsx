@@ -13,16 +13,10 @@ const RESPONSE_PHASES = {
   interrupted: 'interrupted',
 } as const satisfies Record<NonNullable<SubagentRow['state']>, DelegationPhase>
 
-const EVENT_TRANSLATION_KEYS = {
-  messaged: 'delegation.event.messaged',
-  responded: 'delegation.event.responded',
-  started: 'delegation.event.started',
-} as const satisfies Record<SubagentRow['event'], string>
-
-const RESPONSE_TRANSLATION_KEYS = {
-  completed: 'delegation.event.responded',
-  failed: 'delegation.event.responded',
-  interrupted: 'delegation.event.stopped',
+const RESPONSE_SENTENCES = {
+  completed: 'responded',
+  failed: 'responded',
+  interrupted: 'stopped',
 } as const satisfies Record<NonNullable<SubagentRow['state']>, string>
 
 function phaseOf(row: SubagentRow): DelegationPhase {
@@ -35,14 +29,20 @@ function phaseOf(row: SubagentRow): DelegationPhase {
   }
 }
 
-function eventTranslationKey(row: SubagentRow) {
+function sentenceOf(row: SubagentRow) {
   switch (row.event) {
     case 'started':
     case 'messaged':
-      return EVENT_TRANSLATION_KEYS[row.event]
+      return row.event
     case 'responded':
-      return RESPONSE_TRANSLATION_KEYS[row.state ?? 'failed']
+      return RESPONSE_SENTENCES[row.state ?? 'failed']
   }
+}
+
+// A nickname is who did the work, so it leads the sentence and the task follows it.
+function eventTranslationKey(row: SubagentRow) {
+  const group = row.nickname === undefined ? 'event' : 'namedEvent'
+  return `delegation.${group}.${sentenceOf(row)}` as const
 }
 
 // A DelegationEvent owns the shared feed treatment for a Subagent lifecycle event.
@@ -51,7 +51,7 @@ export function DelegationEvent({ row, onOpen }: { row: SubagentRow; onOpen?: ()
   const phase = phaseOf(row)
   const title = readableWorkTitle(row.name ?? row.subagentId)
   const state = t(`workState.${DELEGATION_PHASE_WORK_STATES[phase]}`)
-  const label = t(eventTranslationKey(row), { name: title })
+  const label = t(eventTranslationKey(row), { name: title, nickname: row.nickname })
   const stateMark = WORK_STATE_MARKS[DELEGATION_PHASE_WORK_STATES[phase]]
   return (
     <article

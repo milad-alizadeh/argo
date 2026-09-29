@@ -1,8 +1,10 @@
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
+import { TERMINAL_DELEGATION_STATUSES } from './claude-feed-envelopes'
 import type { ClaudeSkillFile } from './claude-skill-files'
 
 type Delegation = Extract<FeedContent, { kind: 'delegation' }>
 type Tool = Extract<FeedContent, { kind: 'tool' }>
+type KnownCall = { call: Tool; delegation: Delegation | null }
 
 const AGENT_TOOLS = new Set(['Agent', 'Task'])
 // The launch or reply text of an Agent call names the id its transcript is stored under.
@@ -27,9 +29,18 @@ function resultStatus(content: Tool, text: string): Delegation['status'] {
   return text.startsWith(ASYNC_LAUNCH) ? 'running' : 'completed'
 }
 
+// A foreground Agent's result is its reply, followed by the id line and usage the tool appends.
+function replyText(text: string): string | null {
+  const idLine = text.match(AGENT_ID)?.index ?? text.length
+  const reply = text.slice(0, idLine).trim()
+  return reply === '' ? null : reply
+}
+
 // Pairs each Agent call with its Subagent and each skill use with its SKILL.md, across one stream.
 export class ClaudeFeedProjection {
-  private calls = new Map<string, { call: Tool; delegation: Delegation | null }>()
+  private calls = new Map<string, KnownCall>()
+  // The last input each started agent was sent.
+  private startedAgents = new Map<string, string | null>()
   private skillCalls = new Set<string>()
   private skillFile: ClaudeSkillFile
 
@@ -45,9 +56,20 @@ export class ClaudeFeedProjection {
         return this.task(content)
       case 'command':
         return [this.command(content)]
+      case 'delegation':
+        return this.delegation(content)
       default:
         return [content]
     }
+  }
+
+  // A repeated envelope for a started agent is a message only when its input is new; the same
+  // input again is a progress report, which no event records.
+  private delegation(content: Delegation): Delegation[] {
+    const repeated = content.event === 'started' && this.startedAgents.has(content.agentId)
+    if (repeated && this.startedAgents.get(content.agentId) === content.prompt) return []
+    if (content.event !== 'responded') this.startedAgents.set(content.agentId, content.prompt)
+    return [repeated ? { ...content, event: 'messaged' } : content]
   }
 
   // History cannot tell a skill's slash command from a built-in one, so only a SKILL.md can.
@@ -73,11 +95,16 @@ export class ClaudeFeedProjection {
     const known = this.calls.get(content.callId)
     if (known === undefined) return [content]
     if (known.delegation !== null)
-      return content.status === 'failed' ? [this.update(known, 'failed', null)] : []
+      return content.status === 'failed' ? this.update(known, 'failed', null) : []
     const text = resultText(content)
     const agentId = text.match(AGENT_ID)?.[1]
     if (agentId === undefined) return [known.call, content]
-    return [this.start(known, agentId, resultStatus(content, text))]
+    const started = this.start(known, agentId)
+    const status = resultStatus(content, text)
+    // A foreground Agent's one result is both its start and its reply.
+    return TERMINAL_DELEGATION_STATUSES.has(status)
+      ? [started, ...this.update(known, status, replyText(text))]
+      : [started]
   }
 
   private call(content: Tool): FeedContent[] {
@@ -112,20 +139,21 @@ export class ClaudeFeedProjection {
       (content.callId === null ? undefined : this.calls.get(content.callId))
     if (known === undefined) return [content]
     const status = content.status ?? 'running'
-    if (known.delegation === null) return [this.start(known, content.taskId, status)]
-    return [this.update(known, status, content.summary)]
+    if (known.delegation !== null) return this.update(known, status, content.summary)
+    const started = this.start(known, content.taskId)
+    return TERMINAL_DELEGATION_STATUSES.has(status)
+      ? [started, ...this.update(known, status, content.summary)]
+      : [started]
   }
 
-  private start(
-    known: { call: Tool; delegation: Delegation | null },
-    agentId: string,
-    status: Delegation['status'],
-  ): Delegation {
+  private start(known: KnownCall, agentId: string): Delegation {
+    this.startedAgents.set(agentId, inputField(known.call.input, 'prompt'))
     known.delegation = {
       id: known.call.callId,
       kind: 'delegation',
+      event: 'started',
       agentId,
-      status,
+      status: 'running',
       name:
         inputField(known.call.input, 'description') ??
         inputField(known.call.input, 'subagent_type'),
@@ -136,13 +164,24 @@ export class ClaudeFeedProjection {
     return known.delegation
   }
 
+  // An end is its own response record; a running update records no event, so the start stays as sent.
   private update(
-    known: { call: Tool; delegation: Delegation | null },
+    known: KnownCall,
     status: Delegation['status'],
     summary: string | null,
-  ): Delegation {
-    if (known.delegation === null) throw new Error('A Subagent update came before its start.')
-    known.delegation = { ...known.delegation, status, summary: summary ?? known.delegation.summary }
-    return known.delegation
+  ): Delegation[] {
+    const started = known.delegation
+    if (started === null) throw new Error('A Subagent update came before its start.')
+    if (!TERMINAL_DELEGATION_STATUSES.has(status)) return []
+    return [
+      {
+        ...started,
+        id: `${started.id}:response`,
+        event: 'responded',
+        status,
+        prompt: null,
+        summary,
+      },
+    ]
   }
 }

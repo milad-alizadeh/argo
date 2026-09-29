@@ -6,23 +6,26 @@ import { identifierSchema } from '@/shared/validation'
 import { type SessionFeedReaderContext, SessionFeedReaders } from '../feed/feed-reader'
 
 const t = initTRPC.create()
-const inputSchema = z.strictObject({ sessionId: identifierSchema })
+const inputSchema = z.strictObject({
+  sessionId: identifierSchema,
+  // A Subagent's own chain; null reads the root Session.
+  subagentId: identifierSchema.nullable().default(null),
+})
 const refreshOutputSchema = z.strictObject({ accepted: z.boolean() })
 
-// Observe publishes each changed reading of a root Session's Feed; Refresh starts a real read.
+// Observe publishes each changed reading of a root Session's or a Subagent's Feed; Refresh starts
+// a real read of the same chain.
 export function sessionFeedProcedures(context: SessionFeedReaderContext) {
   const readers = new SessionFeedReaders(context)
   return {
     sessionFeed: t.procedure
       .input(inputSchema)
       .subscription(({ input }) =>
-        observable<FeedReading>((emit) =>
-          readers.observe(input.sessionId, (reading) => emit.next(reading)),
-        ),
+        observable<FeedReading>((emit) => readers.observe(input, (reading) => emit.next(reading))),
       ),
     sessionFeedRefresh: t.procedure
       .input(inputSchema)
       .output(refreshOutputSchema)
-      .mutation(({ input }) => ({ accepted: readers.refresh(input.sessionId) })),
+      .mutation(({ input }) => ({ accepted: readers.refresh(input) })),
   }
 }

@@ -76,6 +76,7 @@ const durableKinds: FeedContent[] = [
   {
     kind: 'delegation',
     id: 'd1',
+    event: 'started',
     agentId: 'agent-1',
     status: 'running',
     name: null,
@@ -138,7 +139,9 @@ test('every durable content kind projects to a valid entry, in history order', (
   expect(rejected).toEqual({ history: 0, live: 0, rows: 0 })
   expect(entries.filter(({ row }) => row.shape !== 'activity').flatMap(memberIds)).toEqual(
     durableKinds
+      // A status notice and a system context update are for the model, not the reader.
       .filter((content) => content.kind !== 'notification' || content.category !== 'status')
+      .filter((content) => content.kind !== 'context')
       .flatMap((content) => stableId(content)),
   )
   expect(new Set(entries.map((entry) => entry.id)).size).toBe(entries.length)

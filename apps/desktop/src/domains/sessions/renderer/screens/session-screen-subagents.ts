@@ -1,42 +1,37 @@
+import type { FeedSubagent } from '@/domains/sessions/api/feed/feed-subagents'
 import type { SessionSubagent } from '@/domains/sessions/renderer/model/models'
-import type { SessionFeedRow } from '../types'
+import type { WorkSelection } from './work-selection'
 
-type SubagentRow = Extract<SessionFeedRow, { shape: 'subagent' }>
-
-function foldFeedRows(rows: readonly SessionFeedRow[]): SessionSubagent[] {
-  const subagents = new Map<string, SessionSubagent>()
-  for (const row of rows) {
-    if (row.shape !== 'subagent') continue
-    const previous = subagents.get(row.subagentId)
-    subagents.set(row.subagentId, {
-      id: row.subagentId,
-      label: row.name ?? previous?.label ?? null,
-      state: stateOf(row),
-      startedAt: previous?.startedAt ?? null,
-      endedAt: row.event === 'responded' ? (previous?.endedAt ?? null) : null,
-    })
-  }
-  return [...subagents.values()]
-}
-
-function stateOf(row: SubagentRow): SessionSubagent['state'] {
-  if (row.event !== 'responded') return 'running'
-  return row.state ?? 'failed'
-}
-
+// Main's Feed lists every Subagent its rows name; the roster adds when each ran. Both key by id.
 export function sessionScreenSubagents(
-  rows: readonly SessionFeedRow[],
+  feedSubagents: readonly FeedSubagent[],
   roster: readonly SessionSubagent[],
 ): SessionSubagent[] {
-  const subagents = new Map(foldFeedRows(rows).map((subagent) => [subagent.id, subagent]))
+  const subagents = new Map<string, SessionSubagent>(
+    feedSubagents.map((subagent) => [subagent.id, { ...subagent, startedAt: null, endedAt: null }]),
+  )
   // The roster was read at the last sync; the Feed's state is at least as new.
   for (const subagent of roster) {
-    const fed = subagents.get(subagent.id)
+    const current = subagents.get(subagent.id)
+    // Only the Feed knows a nickname; the roster never records one.
+    const nickname = current?.nickname
     subagents.set(subagent.id, {
       ...subagent,
-      label: subagent.label ?? fed?.label ?? null,
-      state: fed?.state ?? subagent.state,
+      ...(nickname === undefined ? {} : { nickname }),
+      label: subagent.label ?? current?.label ?? null,
+      state: current?.state ?? subagent.state,
     })
   }
   return [...subagents.values()]
+}
+
+// The Subagent picked: one the Session lists, or else what the Feed row that opened it said.
+export function pickedSubagent(
+  subagents: readonly SessionSubagent[],
+  work: Pick<WorkSelection, 'subagentId' | 'opened'>,
+): SessionSubagent | null {
+  const listed = subagents.find((subagent) => subagent.id === work.subagentId)
+  if (listed !== undefined) return listed
+  if (work.opened === undefined || work.opened.id !== work.subagentId) return null
+  return { ...work.opened, startedAt: null, endedAt: null }
 }

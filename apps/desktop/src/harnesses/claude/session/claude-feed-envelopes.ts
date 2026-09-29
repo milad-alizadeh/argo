@@ -10,6 +10,12 @@ const delegationStatuses = {
   failed: 'failed',
   interrupted: 'interrupted',
 } as const satisfies Record<string, Extract<FeedContent, { kind: 'delegation' }>['status']>
+// The Subagent statuses that end its run, so its record is a response.
+export const TERMINAL_DELEGATION_STATUSES: ReadonlySet<string> = new Set([
+  'completed',
+  'failed',
+  'interrupted',
+])
 
 function field(value: string, name: string): string | null {
   return value.match(new RegExp(`<${name}>([\\s\\S]*?)</${name}>`))?.[1] ?? null
@@ -96,11 +102,14 @@ function delegation(id: string, value: string, reject: RejectClaudeShape): FeedC
       detail: 'Unknown agent status.',
     }
   }
+  const status = delegationStatuses[rawStatus as keyof typeof delegationStatuses]
   return {
     id,
     kind: 'delegation',
+    // Only the stream knows whether this agent started earlier; the projection names a repeat.
+    event: TERMINAL_DELEGATION_STATUSES.has(status) ? 'responded' : 'started',
     agentId,
-    status: delegationStatuses[rawStatus as keyof typeof delegationStatuses],
+    status,
     name: null,
     prompt: field(value, 'input'),
     model: null,

@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, waitFor, within } from 'storybook/test'
+import { sessionError } from '@/domains/sessions/api/session-error'
 import { sessionSubagent } from '../session-fixtures'
 import type { SessionFeed } from '../types'
 import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
@@ -21,6 +22,8 @@ const COMPLETED_DELEGATION = sessionSubagent({
   startedAt: '2026-09-02T08:00:00.000Z',
   endedAt: '2026-09-02T08:05:00.000Z',
 })
+
+const FAILED_DELEGATION = { ...COMPLETED_DELEGATION, state: 'failed' } satisfies typeof DELEGATION
 
 const FEED = {
   version: 1,
@@ -44,6 +47,25 @@ const FEED = {
     },
   ],
 } satisfies SessionFeed
+
+// Main ends a finished Subagent's Feed with the parent's response event, its text left to the
+// transcript above it.
+function endedFeed(state: 'completed' | 'failed') {
+  return {
+    ...FEED,
+    rows: [
+      ...FEED.rows,
+      {
+        shape: 'subagent',
+        id: 'call-review:response',
+        subagentId: 'call-review',
+        event: 'responded',
+        state,
+        name: 'Interface review',
+      },
+    ],
+  } satisfies SessionFeed
+}
 
 const meta = {
   title: 'Sessions/Screen/Subagent Inspector',
@@ -140,7 +162,7 @@ export const CompletedSubagent: Story = {
   args: {
     activeEvidenceId: null,
     delegation: COMPLETED_DELEGATION,
-    feed: FEED,
+    feed: endedFeed('completed'),
     failure: null,
     onOpenEvidence: () => {},
     onOpenSession: () => {},
@@ -149,8 +171,68 @@ export const CompletedSubagent: Story = {
   },
   render: (args) => <InspectorStory args={args} />,
   play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
     await expect(
-      within(canvasElement).getByText('Interface review sent a reply to the main Session'),
+      canvas.getByRole('article', { name: 'Interface review sent a reply to the main Session' }),
     ).toBeVisible()
+    await expect(
+      canvas.getAllByText(
+        'The two work buttons take the control size and the meta typography role.',
+      ),
+    ).toHaveLength(1)
+  },
+}
+
+export const FailedSubagent: Story = {
+  args: { ...CompletedSubagent.args, delegation: FAILED_DELEGATION, feed: endedFeed('failed') },
+  render: (args) => <InspectorStory args={args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const ended = canvas.getByRole('article', {
+      name: 'Interface review sent a reply to the main Session',
+    })
+    await expect(within(ended).getByText('Failed')).toBeInTheDocument()
+    await expect(canvas.getAllByRole('article', { name: /Interface review/ })).toHaveLength(1)
+  },
+}
+
+// A Subagent whose Feed holds only its parent's response has no transcript to draw.
+export const NoTranscript: Story = {
+  args: {
+    ...CompletedSubagent.args,
+    feed: { ...endedFeed('completed'), rows: endedFeed('completed').rows.slice(-1) },
+  },
+  render: (args) => <InspectorStory args={args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('No transcript found')).toBeVisible()
+    await expect(canvas.queryByRole('article')).toBeNull()
+  },
+}
+
+// The Harness has no history for this Subagent id.
+export const MissingTranscript: Story = {
+  args: {
+    ...CompletedSubagent.args,
+    feed: null,
+    failure: sessionError('missing-session', null),
+  },
+  render: (args) => <InspectorStory args={args} />,
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText('No transcript found')).toBeVisible()
+  },
+}
+
+// A nickname leads the header facts; the task stays the title.
+export const NicknamedSubagent: Story = {
+  args: {
+    ...CompletedSubagent.args,
+    delegation: { ...COMPLETED_DELEGATION, label: 'spec_review', nickname: 'Jason' },
+  },
+  render: (args) => <InspectorStory args={args} />,
+  play: async ({ canvasElement }) => {
+    const header = within(canvasElement.querySelector('header') as HTMLElement)
+    await expect(header.getByText('Spec review')).toBeVisible()
+    await expect(header.getByText(/^Jason · /)).toBeVisible()
   },
 }

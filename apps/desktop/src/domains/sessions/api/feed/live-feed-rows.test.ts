@@ -350,6 +350,7 @@ const catalogHistory: FeedContent[] = [
   {
     kind: 'delegation',
     id: 'delegation',
+    event: 'started',
     agentId: 'agent-1',
     status: 'running',
     name: null,
@@ -373,7 +374,6 @@ const catalogHistory: FeedContent[] = [
     text: 'Connected',
     priority: null,
   },
-  { kind: 'context', id: 'context', source: 'environment', text: 'Workspace ready' },
   { kind: 'marker', id: 'marker', marker: 'compaction', summary: 'Earlier work' },
   { kind: 'refusal', id: 'refusal', reason: 'permission', text: 'Permission denied' },
   {
@@ -387,6 +387,20 @@ const catalogHistory: FeedContent[] = [
   { kind: 'wait', id: 'wait', durationMs: 500 },
   { kind: 'diagnostic', id: 'diagnostic', vendorType: 'unknownItem', detail: 'Unsupported' },
 ]
+
+test('draws no row for a system context update, live or recorded', () => {
+  const context: FeedContent[] = [
+    { kind: 'context', id: 'reminder', source: 'system', text: 'Hand off to the reviewer' },
+    { kind: 'message', id: 'system-1', role: 'system', text: 'Internal instructions' },
+  ]
+  const prompt: FeedContent = { kind: 'message', id: 'prompt', role: 'user', text: 'Go' }
+  expect(
+    projectLiveFeedRows(
+      [...context, prompt],
+      context.map((item, index) => content(index + 1, item)),
+    ),
+  ).toEqual([{ shape: 'prose', id: 'prompt', role: 'user', text: 'Go' }])
+})
 
 test('draws every FeedContent kind with a stable item identity', () => {
   const rows = projectLiveFeedRows(catalogHistory, [])
@@ -459,6 +473,7 @@ test('joins task and delegation progress by native ID without losing earlier det
       content(2, {
         kind: 'delegation',
         id: 'agent-1',
+        event: 'started',
         agentId: 'agent-1',
         status: 'running',
         name: 'Review files',
@@ -478,8 +493,9 @@ test('joins task and delegation progress by native ID without losing earlier det
       content(4, {
         kind: 'delegation',
         id: 'agent-1',
+        event: 'started',
         agentId: 'agent-1',
-        status: 'completed',
+        status: 'running',
         name: null,
         prompt: null,
         model: null,
@@ -490,7 +506,7 @@ test('joins task and delegation progress by native ID without losing earlier det
   expect(rows.map((row) => row.id)).toEqual(['task-1', 'agent-1'])
   expect(rows).toMatchObject([
     { event: 'task', text: 'Inspect files', status: 'completed' },
-    { shape: 'subagent', event: 'responded', state: 'completed', name: 'Review files' },
+    { shape: 'subagent', event: 'started', name: 'Review files', prompt: 'Review files' },
   ])
 })
 
@@ -523,41 +539,6 @@ test('keeps Codex commentary inside the tool group it follows', () => {
     {
       shape: 'tool-group',
       thoughts: [{ id: 'commentary-1', text: 'Checking the result' }],
-    },
-  ])
-})
-
-test('draws one Subagent row per delegation, updated in place as its status changes', () => {
-  const delegation = (status: 'running' | 'completed'): FeedContent => ({
-    id: 'call-agent',
-    kind: 'delegation',
-    agentId: 'agent-7',
-    status,
-    prompt: 'Survey the adapters',
-    model: 'sonnet',
-    name: 'Survey adapters',
-    summary: status === 'completed' ? 'Found two adapters' : null,
-  })
-  expect(projectLiveFeedRows([delegation('running')], [])).toEqual([
-    {
-      shape: 'subagent',
-      id: 'call-agent',
-      subagentId: 'agent-7',
-      event: 'started',
-      name: 'Survey adapters',
-      model: 'sonnet',
-    },
-  ])
-  expect(projectLiveFeedRows([delegation('running'), { ...delegation('completed') }], [])).toEqual([
-    {
-      shape: 'subagent',
-      id: 'call-agent',
-      subagentId: 'agent-7',
-      event: 'responded',
-      state: 'completed',
-      name: 'Survey adapters',
-      model: 'sonnet',
-      text: 'Found two adapters',
     },
   ])
 })
