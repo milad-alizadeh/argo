@@ -1,19 +1,11 @@
 import { type ReactVirtualizer, useVirtualizer } from '@tanstack/react-virtual'
 import type { VirtualItem, Virtualizer } from '@tanstack/virtual-core'
-import {
-  type ReactNode,
-  useCallback,
-  useInsertionEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react'
+import { useCallback, useInsertionEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { SessionFeedRow } from '../../types'
 
 const FEED_ROW_ESTIMATE_PX = 96
 const FEED_OVERSCAN = 8
 const TAIL_THRESHOLD_PX = 80
-export const FEED_TAIL_KEY = 'feed-tail'
 
 export function feedScrollPaddingStart(element: HTMLElement) {
   return Number.parseFloat(getComputedStyle(element).scrollPaddingTop) || 0
@@ -36,7 +28,6 @@ export function useAnchoredVirtualizer({
   initialMeasurementsCache,
   initialScrollPosition,
   rows,
-  tail,
   viewport,
   paddingStart,
   onChange,
@@ -45,18 +36,17 @@ export function useAnchoredVirtualizer({
   initialMeasurementsCache: VirtualItem[]
   initialScrollPosition: number | null
   rows: readonly SessionFeedRow[]
-  tail: ReactNode
   viewport: HTMLElement | null
   paddingStart: number
   onChange: (instance: Virtualizer<HTMLElement, Element>, sync: boolean) => void
 }) {
   const virtualizer = useVirtualizer({
     anchorTo: following ? 'end' : 'start',
-    count: rows.length + (tail === null ? 0 : 1),
+    count: rows.length,
     estimateSize: () => FEED_ROW_ESTIMATE_PX,
     // Smooth tail scrolling delays short-row measurement and leaves estimate-sized gaps (#2545).
     followOnAppend: following,
-    getItemKey: (index) => (index === rows.length ? FEED_TAIL_KEY : feedRowAt(rows, index).id),
+    getItemKey: (index) => feedRowAt(rows, index).id,
     getScrollElement: () => viewport,
     // Seeds the rendered range at construction, not after (#e2e-real-cheap-models): a fresh
     // mount's own scroll listener attaches too late to catch a post-mount scrollTop write, so

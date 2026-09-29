@@ -1,11 +1,9 @@
 import type { VirtualItem, Virtualizer } from '@tanstack/virtual-core'
-import type { ReactNode } from 'react'
 import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import type { SessionFeedRow } from '../../types'
 import type { Settled } from '../document/use-settled-feed'
 import { FeedLoading } from '../feed-loading'
 import {
-  FEED_TAIL_KEY,
   feedScrollPaddingStart,
   useAnchoredVirtualizer,
   useFeedViewport,
@@ -30,8 +28,6 @@ type AnchoredFeedProps = {
   settled: Settled
   reveals: ReadonlyMap<string, Reveal>
   streamingRowId: string | null
-  // Markers after the last row (Working, compaction, handoff), scrolled with it clear of the composer.
-  tail: ReactNode
   historyLabel: string
 }
 
@@ -39,8 +35,7 @@ function MeasureFeedRows({
   FeedRow,
   onMeasured,
   rows,
-  tail,
-}: Pick<AnchoredFeedProps, 'FeedRow' | 'rows' | 'tail'> & {
+}: Pick<AnchoredFeedProps, 'FeedRow' | 'rows'> & {
   onMeasured: (measurements: VirtualItem[]) => void
 }) {
   const content = useRef<HTMLDivElement>(null)
@@ -56,7 +51,7 @@ function MeasureFeedRows({
         const size = wrapper.getBoundingClientRect().height
         const item = {
           index,
-          key: index === rows.length ? FEED_TAIL_KEY : (rows[index]?.id ?? ''),
+          key: rows[index]?.id ?? '',
           start,
           size,
           end: start + size,
@@ -82,11 +77,6 @@ function MeasureFeedRows({
               <FeedRow measurement row={row} />
             </div>
           ))}
-          {tail === null ? null : (
-            <div data-index={rows.length}>
-              <div className="feed-row">{tail}</div>
-            </div>
-          )}
         </div>
       </div>
     </>
@@ -98,14 +88,7 @@ export function AnchoredFeed(props: AnchoredFeedProps) {
   const [measurements, setMeasurements] = useState<VirtualItem[] | null>(null)
   const onMeasured = useCallback((next: VirtualItem[]) => setMeasurements(next), [])
   if (measurements === null)
-    return (
-      <MeasureFeedRows
-        FeedRow={props.FeedRow}
-        onMeasured={onMeasured}
-        rows={props.rows}
-        tail={props.tail}
-      />
-    )
+    return <MeasureFeedRows FeedRow={props.FeedRow} onMeasured={onMeasured} rows={props.rows} />
   return <VirtualFeed {...props} initialMeasurementsCache={measurements} />
 }
 
@@ -157,7 +140,6 @@ function VirtualFeed({
   settled,
   reveals,
   streamingRowId,
-  tail,
   historyLabel,
 }: AnchoredFeedProps) {
   const { attachViewport, paddingStart, viewport } = useFeedViewport()
@@ -168,7 +150,6 @@ function VirtualFeed({
     initialMeasurementsCache,
     initialScrollPosition,
     rows,
-    tail,
     viewport,
     paddingStart,
     onChange: tailFollow.onChange,
@@ -265,7 +246,6 @@ function VirtualFeed({
         setViewport={attachViewport}
         settled={settled}
         streamingRowId={streamingRowId}
-        tail={tail}
         historyLabel={historyLabel}
         virtualizer={virtualizer}
       />

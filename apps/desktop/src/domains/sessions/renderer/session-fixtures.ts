@@ -4,13 +4,14 @@ import { feedChainKey } from '@/domains/sessions/api/feed/feed-chain'
 import { type FeedReading, feedReading } from '@/domains/sessions/api/feed/feed-reading'
 import { feedEntryRows, projectFeedRowEntries } from '@/domains/sessions/api/feed/feed-row-entries'
 import { feedSubagents, subagentCompletionRows } from '@/domains/sessions/api/feed/feed-subagents'
+import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { sessionError } from '@/domains/sessions/api/session-error'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/renderer/model/models'
 import { DEFAULT_HARNESS } from '@/harnesses/harness'
 import { queryClient } from '@/platform/renderer/trpc-client'
 import { sessionRosterPathKey } from './session-list/session-roster'
-import type { Session, SessionFeedSnapshot } from './types'
+import type { Session } from './types'
 
 function listedSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -111,7 +112,11 @@ export function sessionListSubscribe(
   }
 }
 
-type FeedRead = (sessionId: string, subagentId: string | null) => Promise<SessionFeedSnapshot>
+// A story's recorded vendor history for one chain, the same input main's reader takes.
+export type FeedRead = (
+  sessionId: string,
+  subagentId: string | null,
+) => Promise<readonly FeedContent[]>
 const openFeeds = new Map<string, Set<() => void>>()
 
 function readFailure(error: unknown): { message: string; data?: { code?: unknown } } {
@@ -122,11 +127,8 @@ function readFailure(error: unknown): { message: string; data?: { code?: unknown
   return { message: error instanceof Error ? error.message : String(error), data }
 }
 
-// Answers the Feed read, and the root Feed's Refresh, from one story history.
-export function sessionFeedTrpc(
-  trpc: typeof window.argo.trpc,
-  read: FeedRead,
-): typeof window.argo.trpc {
+// Answers the root Feed's Refresh by reading every open story Feed again.
+export function sessionFeedRefreshTrpc(trpc: typeof window.argo.trpc): typeof window.argo.trpc {
   queryClient.removeQueries({ queryKey: ['sessions'] })
   return (async (request) => {
     if (request.path === 'sessionFeedRefresh') {
@@ -138,13 +140,7 @@ export function sessionFeedTrpc(
       for (const refresh of feeds) refresh()
       return { result: { data: { accepted: feeds.size > 0 } } }
     }
-    if (request.path !== 'sessionFeedRead') return trpc(request)
-    const input = request.input as { sessionId: string; subagentId: string | null }
-    try {
-      return { result: { data: await read(input.sessionId, input.subagentId) } }
-    } catch (error) {
-      return { error: { code: -32004, ...readFailure(error) } }
-    }
+    return trpc(request)
   }) as typeof window.argo.trpc
 }
 
@@ -154,13 +150,12 @@ async function chainEntries(
   chain: { sessionId: string; subagentId: string | null },
   live: readonly SessionLiveEvent[],
 ) {
-  const snapshot = await read(chain.sessionId, chain.subagentId)
-  if (chain.subagentId === null)
-    return projectFeedRowEntries({ history: snapshot.content, live }).entries
+  const history = await read(chain.sessionId, chain.subagentId)
+  if (chain.subagentId === null) return projectFeedRowEntries({ history, live }).entries
   const parent = await read(chain.sessionId, null)
-  const parentRows = feedEntryRows(projectFeedRowEntries({ history: parent.content, live }).entries)
+  const parentRows = feedEntryRows(projectFeedRowEntries({ history: parent, live }).entries)
   return projectFeedRowEntries({
-    history: snapshot.content,
+    history,
     live: [],
     end: subagentCompletionRows(parentRows, chain.subagentId),
   }).entries

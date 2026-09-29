@@ -42,7 +42,7 @@ export const feedRowEntrySchema = z.strictObject({
   revision: z.string().min(1),
   row: feedRowSchema,
 })
-type FeedRowEntry = z.infer<typeof feedRowEntrySchema>
+export type FeedRowEntry = z.infer<typeof feedRowEntrySchema>
 
 // The Feed rows among its entries, without the transient activity row.
 export function feedEntryRows(entries: readonly FeedRowEntry[]): SessionFeedRow[] {

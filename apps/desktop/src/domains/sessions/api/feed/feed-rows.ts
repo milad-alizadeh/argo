@@ -110,8 +110,8 @@ export const sessionFeedRowSchema = z.discriminatedUnion('shape', [
         }),
       )
       .optional(),
-    // The Session's activity while the Turn runs, set by the renderer alone (`withHeadline`)
-    // from the same fact the roster draws under the title.
+    // The Session's activity while the Turn runs (`withHeadline`), the same fact the roster
+    // draws under the title. Absent once the Turn settles.
     headline: liveActivitySchema.optional(),
   }),
   z.strictObject({

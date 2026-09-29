@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next'
 
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import { BasicFeed } from '../feed/document/basic-feed'
-import type { FeedLiveFacts } from '../feed/document/feed-live-facts'
 import { FeedJumpToLatest } from '../feed/rows/feed-jump-to-latest'
+import type { SessionPosture } from '../model/models'
 import type { SessionError, SessionEvidence, SessionFeed } from '../types'
 
 export type SessionWorkspaceProps = {
@@ -15,9 +15,10 @@ export type SessionWorkspaceProps = {
   onRetryFeed: () => void
   jumpToLatest?: (() => void) | null
   onJumpToLatestChange?: (sessionId: string, action: (() => void) | null) => void
-  liveFacts: FeedLiveFacts
+  // The Session's own liveness and posture, the facts the Roster reads too.
+  running: boolean
+  posture: SessionPosture | null
   stallTimeoutMs?: number
-  onOpenSession: (sessionId: string) => void
   selectedSessionId: string | null
   activeEvidenceId: string | null
   onOpenEvidence: (evidence: SessionEvidence) => void
@@ -132,9 +133,9 @@ export function SessionWorkspace({
   onRetryFeed,
   jumpToLatest: externalJumpToLatest = undefined,
   onJumpToLatestChange,
-  liveFacts,
+  running,
+  posture,
   stallTimeoutMs,
-  onOpenSession,
   selectedSessionId,
   activeEvidenceId,
   onOpenEvidence,
@@ -170,14 +171,14 @@ export function SessionWorkspace({
             feed={feed}
             onAnswerQuestion={onAnswerQuestion}
             onOpenEvidence={onOpenEvidence}
-            onOpenSession={onOpenSession}
             onJumpToLatestChange={handleJumpToLatestChange}
             onRetryFeed={onRetryFeed}
             questionFailure={questionFailure}
             selectedSessionId={selectedSessionId}
             onStalledChange={onFeedStalledChange}
             stallTimeoutMs={stallTimeoutMs}
-            liveFacts={liveFacts}
+            running={running}
+            posture={posture}
           />
         </div>
         <ComposerSection

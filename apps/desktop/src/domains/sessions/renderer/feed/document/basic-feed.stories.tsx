@@ -1,13 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { StrictMode, useState } from 'react'
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
+import { feedReadingRows } from '@/domains/sessions/api/feed/feed-reading-rows'
+import { projectFeedRowEntries } from '@/domains/sessions/api/feed/feed-row-entries'
 import { projectLiveFeedRows } from '@/domains/sessions/api/feed/live-feed-rows'
+import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionError, SessionFeed, SessionFeedRow } from '../../types'
 import { BROKEN_PICTURE, RICH_MARKDOWN, SAMPLE_PICTURE } from '../content/feed-samples'
 import { BackgroundWork, type BackgroundWorkLinks } from '../rows/background-work'
 import { FeedJumpToLatest } from '../rows/feed-jump-to-latest'
 import { BasicFeed } from './basic-feed'
-import { type FeedLiveFacts, INACTIVE_FEED_LIVE_FACTS } from './feed-live-facts'
 
 const feed = {
   version: 1,
@@ -27,8 +29,6 @@ const readFailure = {
   message: 'Argo could not read these Sessions.',
 } satisfies SessionError
 
-const LIVE_FACTS = INACTIVE_FEED_LIVE_FACTS
-
 const meta = {
   title: 'Sessions/Feed',
   component: BasicFeed,
@@ -44,7 +44,8 @@ const meta = {
     activeEvidenceId: null,
     feed,
     failure: null,
-    liveFacts: LIVE_FACTS,
+    running: false,
+    posture: null,
     onJumpToLatestChange: fn(),
     onOpenEvidence: () => {},
     selectedSessionId: 'prose',
@@ -195,7 +196,8 @@ const repeatTurnFeed = {
 export const LoadingAfterAnotherPrompt: Story = {
   args: {
     feed: repeatTurnFeed,
-    liveFacts: { ...LIVE_FACTS, isRunning: true },
+    running: true,
+    posture: null,
     selectedSessionId: 'repeat-turn',
   },
   play: async ({ canvasElement }) => {
@@ -217,7 +219,7 @@ export const Empty: Story = {
   },
 }
 export const Unselected: Story = {
-  args: { feed: null, failure: null, liveFacts: null, selectedSessionId: null },
+  args: { feed: null, failure: null, running: false, posture: null, selectedSessionId: null },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('No Session selected')).toBeInTheDocument()
@@ -1078,10 +1080,10 @@ function StreamingFeed() {
           activeEvidenceId={null}
           feed={current}
           failure={null}
-          liveFacts={LIVE_FACTS}
+          running={false}
+          posture={null}
           selectedSessionId="streaming"
           onOpenEvidence={() => {}}
-          onOpenSession={() => {}}
           onRetryFeed={() => {}}
           onAnswerQuestion={() => {}}
           answeringQuestionId={null}
@@ -1224,11 +1226,11 @@ function HistoryScrollHarness() {
           activeEvidenceId={null}
           feed={current}
           failure={null}
-          liveFacts={LIVE_FACTS}
+          running={false}
+          posture={null}
           onJumpToLatestChange={(_sessionId, action) => setJumpToLatest(() => action)}
           onAnswerQuestion={() => {}}
           onOpenEvidence={() => {}}
-          onOpenSession={() => {}}
           onRetryFeed={() => {}}
           answeringQuestionId={null}
           questionFailure={() => null}
@@ -1266,10 +1268,10 @@ function SwitchingHistoryHarness({ narrowWhileAway = false }: { narrowWhileAway?
           answeringQuestionId={null}
           failure={null}
           feed={current}
-          liveFacts={LIVE_FACTS}
+          running={false}
+          posture={null}
           onAnswerQuestion={() => {}}
           onOpenEvidence={() => {}}
-          onOpenSession={() => {}}
           onRetryFeed={() => {}}
           questionFailure={() => null}
           selectedSessionId={selected}
@@ -1300,10 +1302,10 @@ function SwitchingHistoryHarnessWithLiveUpdate() {
           answeringQuestionId={null}
           failure={null}
           feed={current}
-          liveFacts={LIVE_FACTS}
+          running={false}
+          posture={null}
           onAnswerQuestion={() => {}}
           onOpenEvidence={() => {}}
-          onOpenSession={() => {}}
           onRetryFeed={() => {}}
           questionFailure={() => null}
           selectedSessionId={selected}
@@ -1326,10 +1328,10 @@ function HistoryPrependHarness() {
           answeringQuestionId={null}
           failure={null}
           feed={current}
-          liveFacts={LIVE_FACTS}
+          running={false}
+          posture={null}
           onAnswerQuestion={() => {}}
           onOpenEvidence={() => {}}
-          onOpenSession={() => {}}
           onRetryFeed={() => {}}
           questionFailure={() => null}
           selectedSessionId="history"
@@ -1348,10 +1350,10 @@ function DisclosureHistoryHarness() {
           answeringQuestionId={null}
           failure={null}
           feed={disclosureHistoryFeed}
-          liveFacts={LIVE_FACTS}
+          running={false}
+          posture={null}
           onAnswerQuestion={() => {}}
           onOpenEvidence={() => {}}
-          onOpenSession={() => {}}
           onRetryFeed={() => {}}
           questionFailure={() => null}
           selectedSessionId="history-disclosure"
@@ -1447,10 +1449,10 @@ function WaitUpdateHarness() {
           answeringQuestionId={null}
           failure={null}
           feed={waitingFeed}
-          liveFacts={LIVE_FACTS}
+          running={false}
+          posture={null}
           onAnswerQuestion={() => {}}
           onOpenEvidence={() => {}}
-          onOpenSession={() => {}}
           onRetryFeed={() => {}}
           questionFailure={() => null}
           selectedSessionId="wait-updates"
@@ -1605,13 +1607,16 @@ const repliedHistoryFeed = {
 
 function SendPromptHarness() {
   const [current, setCurrent] = useState<SessionFeed>(historyFeed)
-  const [sent, setSent] = useState<SessionFeedRow | null>(null)
   const send = () =>
-    setSent({ shape: 'prose', id: 'optimistic-turn:1', role: 'user', text: SENT_PROMPT })
-  const reply = () => {
-    setSent(null)
-    setCurrent(repliedHistoryFeed)
-  }
+    setCurrent({
+      ...historyFeed,
+      revision: 'history-sent',
+      rows: [
+        ...historyRows,
+        { shape: 'prose', id: 'history-prompt', role: 'user', text: SENT_PROMPT },
+      ],
+    })
+  const reply = () => setCurrent(repliedHistoryFeed)
   return (
     <div className="flex h-dvh flex-col">
       <button type="button" onClick={send}>
@@ -1626,10 +1631,10 @@ function SendPromptHarness() {
           answeringQuestionId={null}
           failure={null}
           feed={current}
-          liveFacts={{ ...LIVE_FACTS, optimisticRow: sent }}
+          running
+          posture={null}
           onAnswerQuestion={() => {}}
           onOpenEvidence={() => {}}
-          onOpenSession={() => {}}
           onRetryFeed={() => {}}
           questionFailure={() => null}
           selectedSessionId="history"
@@ -1765,13 +1770,11 @@ const stalledPrompt: SessionFeedRow = {
 // story does not wait on the real one.
 function StalledFeedHarness({ onRetryFeed }: { onRetryFeed: () => void }) {
   const [otherClicks, setOtherClicks] = useState(0)
-  const [reading, setReading] = useState<SessionFeed>(stalledFeed)
-  const [liveFacts, setLiveFacts] = useState<FeedLiveFacts>({
-    ...LIVE_FACTS,
-    isRunning: true,
-    optimisticRow: stalledPrompt,
-    posture: 'external',
+  const [reading, setReading] = useState<SessionFeed>({
+    ...stalledFeed,
+    rows: [...stalledFeed.rows, stalledPrompt],
   })
+  const [running, setRunning] = useState(true)
   return (
     <div className="flex h-dvh flex-col">
       <button type="button" onClick={() => setOtherClicks((count) => count + 1)}>
@@ -1782,10 +1785,10 @@ function StalledFeedHarness({ onRetryFeed }: { onRetryFeed: () => void }) {
           activeEvidenceId={null}
           feed={reading}
           failure={null}
-          liveFacts={liveFacts}
+          running={running}
+          posture="external"
           selectedSessionId="stalled"
           onOpenEvidence={() => {}}
-          onOpenSession={() => {}}
           onRetryFeed={() => {
             onRetryFeed()
             window.setTimeout(() => {
@@ -1803,7 +1806,7 @@ function StalledFeedHarness({ onRetryFeed }: { onRetryFeed: () => void }) {
                   },
                 ],
               })
-              setLiveFacts(LIVE_FACTS)
+              setRunning(false)
             }, 100)
           }}
           onAnswerQuestion={() => {}}
@@ -1859,10 +1862,10 @@ function NeverArrivesHarness({ onRetryFeed }: { onRetryFeed: () => void }) {
           activeEvidenceId={null}
           feed={null}
           failure={null}
-          liveFacts={{ ...LIVE_FACTS, posture: 'external' }}
+          running={false}
+          posture="external"
           selectedSessionId="never-arrives"
           onOpenEvidence={() => {}}
-          onOpenSession={() => {}}
           onRetryFeed={onRetryFeed}
           onAnswerQuestion={() => {}}
           answeringQuestionId={null}
@@ -1963,10 +1966,10 @@ function StreamingTextFeed() {
           activeEvidenceId={null}
           feed={current}
           failure={null}
-          liveFacts={{ ...LIVE_FACTS, isRunning: running }}
+          running={running}
+          posture={null}
           selectedSessionId="streaming"
           onOpenEvidence={() => {}}
-          onOpenSession={() => {}}
           onAnswerQuestion={() => {}}
           onRetryFeed={() => {}}
           answeringQuestionId={null}
@@ -2014,48 +2017,49 @@ export const SmoothedStreamingTextReducedMotion: Story = {
   },
 }
 
-const thinkingPrompt = {
-  shape: 'prose',
-  id: 'thinking-prompt',
-  role: 'user',
-  text: 'Add a single parent ticket.',
-} satisfies SessionFeedRow
-
 // Two reasoning records in a row, the way Codex writes them. Both remain in the Feed history.
-const thinkingFeed = {
-  ...feed,
-  sessionId: 'thinking',
-  chainId: 'thinking',
-  revision: 'thinking-one',
-  rows: [
-    thinkingPrompt,
-    { shape: 'thought', id: 'thought-one', text: 'Planning parent and child ticket labeling' },
-    { shape: 'thought', id: 'thought-two', text: 'Designing issue creation order and labeling' },
-  ],
-} satisfies SessionFeed
-const thinkingActivity = {
-  kind: 'thought',
-  label: 'Designing issue creation order and labeling',
-  open: true,
-  tool: 'reasoning',
-  target: null,
-} satisfies NonNullable<FeedLiveFacts>['activity']
+const thinkingHistory: FeedContent[] = [
+  { kind: 'message', id: 'thinking-prompt', role: 'user', text: 'Add a single parent ticket.' },
+  {
+    kind: 'reasoning',
+    id: 'thought-one',
+    text: 'Planning parent and child ticket labeling',
+    redacted: false,
+  },
+  {
+    kind: 'reasoning',
+    id: 'thought-two',
+    text: 'Designing issue creation order and labeling',
+    redacted: false,
+  },
+]
 
-const thoughtDeliveredFeed = {
-  ...thinkingFeed,
-  revision: 'thinking-two',
-  rows: [
-    ...thinkingFeed.rows,
-    { shape: 'prose', id: 'thinking-reply', role: 'assistant', text: 'One parent issue, then.' },
-  ],
-} satisfies SessionFeed
+const thinkingReply: FeedContent = {
+  kind: 'message',
+  id: 'thinking-reply',
+  role: 'assistant',
+  text: 'One parent issue, then.',
+}
+
+// The reading main publishes for this history, drawn through the same projection the cockpit runs.
+function thinkingReading(history: FeedContent[], running: boolean): SessionFeed {
+  const { entries } = projectFeedRowEntries({ history, live: [] })
+  return {
+    ...feed,
+    sessionId: 'thinking',
+    chainId: 'thinking',
+    revision: `thinking-${history.length}-${running}`,
+    rows: [...feedReadingRows(entries, { running })],
+  }
+}
 
 function ThinkingFeed({ initialRunning = true }: { initialRunning?: boolean }) {
-  const [current, setCurrent] = useState<SessionFeed>(thinkingFeed)
+  const [history, setHistory] = useState<FeedContent[]>(thinkingHistory)
   const [running, setRunning] = useState(initialRunning)
+  const reading = thinkingReading(history, running)
   return (
     <div className="flex h-dvh flex-col">
-      <button type="button" onClick={() => setCurrent(thoughtDeliveredFeed)}>
+      <button type="button" onClick={() => setHistory([...thinkingHistory, thinkingReply])}>
         Deliver reply
       </button>
       <button type="button" onClick={() => setRunning(false)}>
@@ -2064,12 +2068,12 @@ function ThinkingFeed({ initialRunning = true }: { initialRunning?: boolean }) {
       <div className="min-h-0 flex-1">
         <BasicFeed
           activeEvidenceId={null}
-          feed={current}
+          feed={reading}
           failure={null}
-          liveFacts={{ ...LIVE_FACTS, isRunning: running, activity: thinkingActivity }}
+          running={running}
+          posture={null}
           selectedSessionId="thinking"
           onOpenEvidence={() => {}}
-          onOpenSession={() => {}}
           onAnswerQuestion={() => {}}
           onRetryFeed={() => {}}
           answeringQuestionId={null}
@@ -2093,13 +2097,13 @@ export const ThoughtWhileThinking: Story = {
         'Designing issue creation order and labeling',
       )
     })
-    expect(drawnRow(canvasElement, 'thinking:activity')).toBeUndefined()
+    expect(drawnRow(canvasElement, 'activity')).toBeUndefined()
     // Prose delivered mid-Turn lands above the live headline until the Turn ends.
     await userEvent.click(canvas.getByRole('button', { name: 'Deliver reply' }))
     await waitFor(() => {
       expect(drawnRow(canvasElement, 'thinking-reply')).toHaveTextContent('One parent issue, then.')
       const rows = drawnRows(canvasElement).map((row) => row.getAttribute('data-feed-row'))
-      expect(rows.indexOf('thinking:activity')).toBe(rows.indexOf('thinking-reply') + 1)
+      expect(rows.indexOf('activity')).toBe(rows.indexOf('thinking-reply') + 1)
     })
   },
 }
@@ -2115,11 +2119,11 @@ export const ThoughtWhileStatusIsUnknown: Story = {
         'Designing issue creation order and labeling',
       )
     })
-    expect(drawnRow(canvasElement, 'thinking:activity')).toBeUndefined()
+    expect(drawnRow(canvasElement, 'activity')).toBeUndefined()
     await userEvent.click(canvas.getByRole('button', { name: 'Deliver reply' }))
     await waitFor(() => expect(drawnRow(canvasElement, 'thinking-reply')).toBeDefined())
     expect(drawnRow(canvasElement, 'thought-two')).toBeDefined()
-    expect(drawnRow(canvasElement, 'thinking:activity')).toBeUndefined()
+    expect(drawnRow(canvasElement, 'activity')).toBeUndefined()
   },
 }
 
@@ -2138,6 +2142,11 @@ export const CommandActivityWhileStatusIsUnknown: Story = {
           shape: 'tool-group',
           id: 'external-commands',
           label: 'Ran 7 commands',
+          headline: {
+            kind: 'command',
+            label: 'Ran rtk gh issue create',
+            open: false,
+          },
           calls: [
             {
               shape: 'tool',
@@ -2153,17 +2162,8 @@ export const CommandActivityWhileStatusIsUnknown: Story = {
         },
       ],
     },
-    liveFacts: {
-      ...LIVE_FACTS,
-      status: 'unknown',
-      activity: {
-        kind: 'command',
-        label: 'Ran rtk gh issue create',
-        open: false,
-        tool: 'Bash',
-        target: 'rtk gh issue create',
-      },
-    },
+    running: true,
+    posture: null,
     selectedSessionId: 'external-command',
   },
   play: async ({ canvasElement }) => {
@@ -2182,17 +2182,17 @@ export const ThoughtLeavesWithItsTurn: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Deliver reply' }))
     await waitFor(() => {
       expect(drawnRow(canvasElement, 'thinking-reply')).toBeDefined()
-      expect(drawnRow(canvasElement, 'thinking:activity')).toBeDefined()
+      expect(drawnRow(canvasElement, 'activity')).toBeDefined()
     })
     await userEvent.click(canvas.getByRole('button', { name: 'Complete turn' }))
-    await waitFor(() => expect(drawnRow(canvasElement, 'thinking:activity')).toBeUndefined())
+    await waitFor(() => expect(drawnRow(canvasElement, 'activity')).toBeUndefined())
     expect(drawnRow(canvasElement, 'thinking-prompt')).toBeDefined()
     expect(drawnRow(canvasElement, 'thought-two')).toBeDefined()
   },
 }
 
 export const SmoothedStreamingTextSettled: Story = {
-  args: { feed: streamedTextFeed, liveFacts: LIVE_FACTS, selectedSessionId: 'streaming' },
+  args: { feed: streamedTextFeed, running: false, posture: null, selectedSessionId: 'streaming' },
   play: async ({ canvasElement }) => {
     await waitFor(() =>
       expect(drawnRow(canvasElement, 'streaming-text')).toHaveTextContent(streamedText),
@@ -2227,7 +2227,8 @@ const scrollAwayFeed = {
 export const StreamingRevealSurvivesScrollAway: Story = {
   args: {
     feed: scrollAwayFeed,
-    liveFacts: { ...LIVE_FACTS, isRunning: true },
+    running: true,
+    posture: null,
     selectedSessionId: 'streaming',
   },
   play: async ({ canvasElement }) => {
@@ -2273,7 +2274,8 @@ const runningToolFeed = {
 export const RunningToolAfterAssistantReply: Story = {
   args: {
     feed: runningToolFeed,
-    liveFacts: { ...LIVE_FACTS, isRunning: true },
+    running: true,
+    posture: null,
     selectedSessionId: 'streaming',
   },
   play: async ({ canvasElement }) => {
@@ -2309,10 +2311,10 @@ function FullHistoryDemo() {
           revision: `full-history:${lastShown}`,
           rows: fullHistoryRows.slice(0, lastShown),
         }}
-        liveFacts={LIVE_FACTS}
+        running={false}
+        posture={null}
         onAnswerQuestion={() => {}}
         onOpenEvidence={() => {}}
-        onOpenSession={() => {}}
         onRetryFeed={() => {}}
         questionFailure={() => null}
         selectedSessionId="full-history"

@@ -21,12 +21,10 @@ type FeedViewportProps = {
   settled: Settled
   setViewport: (viewport: HTMLElement | null) => void
   streamingRowId: string | null
-  tail: ReactNode
   historyLabel: string
   virtualizer: ReactVirtualizer<HTMLElement, Element>
 }
 
-// The item one past the last row holds the tail markers.
 export function FeedViewport({
   FeedRow,
   gap,
@@ -36,7 +34,6 @@ export function FeedViewport({
   settled,
   setViewport,
   streamingRowId,
-  tail,
   historyLabel,
   virtualizer,
 }: FeedViewportProps) {
@@ -67,7 +64,7 @@ export function FeedViewport({
       >
         {virtualizer.getVirtualItems().map((item) => {
           const row = rows[item.index]
-          if (row === undefined && item.index !== rows.length) return null
+          if (row === undefined) return null
           return (
             <div
               data-index={item.index}
@@ -79,15 +76,11 @@ export function FeedViewport({
                 width: '100%',
               }}
             >
-              {row === undefined ? (
-                <div className="feed-row">{tail}</div>
-              ) : (
-                <FeedRow
-                  reveal={reveals.get(row.id)}
-                  row={row}
-                  streaming={row.id === streamingRowId}
-                />
-              )}
+              <FeedRow
+                reveal={reveals.get(row.id)}
+                row={row}
+                streaming={row.id === streamingRowId}
+              />
             </div>
           )
         })}

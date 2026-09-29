@@ -5,13 +5,13 @@ import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { trpcClient } from '@/platform/renderer/trpc-client'
 import {
+  type FeedRead,
+  sessionFeedRefreshTrpc,
   sessionFeedSubscribe,
-  sessionFeedTrpc,
   sessionListSubscribe,
   sessionRow,
 } from '../session-fixtures'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
-import type { SessionFeedSnapshot } from '../types'
 import { SessionScreenView } from './session-screen-view'
 
 const session = sessionRow({
@@ -29,20 +29,10 @@ let flakyFeedReads = 0
 function flakyFeedHost() {
   flakyFeedReads = 0
   const before = window.argo
-  const read = async (sessionId: string): Promise<SessionFeedSnapshot> => {
+  const read: FeedRead = async () => {
     flakyFeedReads += 1
     if (flakyFeedReads === 2) throw new Error('Vendor history is unavailable.')
-    return {
-      version: 1,
-      type: 'session.feed.read',
-      requestId: 'storybook-feed',
-      sessionId,
-      chainId: sessionId,
-      revision: `storybook-feed-${flakyFeedReads}`,
-      content: [
-        { kind: 'message', id: 'flaky-row', role: 'assistant', text: 'Read before the flake.' },
-      ],
-    }
+    return [{ kind: 'message', id: 'flaky-row', role: 'assistant', text: 'Read before the flake.' }]
   }
   window.argo = {
     ...before,
@@ -50,7 +40,7 @@ function flakyFeedHost() {
       sessionListSubscribe(before.trpcSubscribe, () => [session]),
       read,
     ),
-    trpc: sessionFeedTrpc(before.trpc, read),
+    trpc: sessionFeedRefreshTrpc(before.trpc),
   }
   return () => {
     window.argo = before
@@ -61,20 +51,10 @@ function flakyFeedHost() {
 function flakyFirstOpenHost() {
   let reads = 0
   const before = window.argo
-  const read = async (sessionId: string): Promise<SessionFeedSnapshot> => {
+  const read: FeedRead = async () => {
     reads += 1
     if (reads === 1) throw new Error('Vendor history is unavailable.')
-    return {
-      version: 1,
-      type: 'session.feed.read',
-      requestId: 'storybook-feed',
-      sessionId,
-      chainId: sessionId,
-      revision: `storybook-feed-${reads}`,
-      content: [
-        { kind: 'message', id: 'flaky-row', role: 'assistant', text: 'Read after the flake.' },
-      ],
-    }
+    return [{ kind: 'message', id: 'flaky-row', role: 'assistant', text: 'Read after the flake.' }]
   }
   window.argo = {
     ...before,
@@ -82,7 +62,7 @@ function flakyFirstOpenHost() {
       sessionListSubscribe(before.trpcSubscribe, () => [session]),
       read,
     ),
-    trpc: sessionFeedTrpc(before.trpc, read),
+    trpc: sessionFeedRefreshTrpc(before.trpc),
   }
   return () => {
     window.argo = before
@@ -94,25 +74,10 @@ let historyReady = false
 function missingHistoryHost(listed = true) {
   historyReady = false
   const before = window.argo
-  const read = async (sessionId: string): Promise<SessionFeedSnapshot> => {
+  const read: FeedRead = async () => {
     if (!historyReady)
       throw Object.assign(new Error('Session is missing.'), { data: { code: 'NOT_FOUND' } })
-    return {
-      version: 1,
-      type: 'session.feed.read',
-      requestId: 'storybook-feed',
-      sessionId,
-      chainId: sessionId,
-      revision: 'recovered',
-      content: [
-        {
-          kind: 'message',
-          id: 'recovered-row',
-          role: 'assistant',
-          text: 'History recovered.',
-        },
-      ],
-    }
+    return [{ kind: 'message', id: 'recovered-row', role: 'assistant', text: 'History recovered.' }]
   }
   window.argo = {
     ...before,
@@ -120,7 +85,7 @@ function missingHistoryHost(listed = true) {
       sessionListSubscribe(before.trpcSubscribe, () => (listed ? [session] : [])),
       read,
     ),
-    trpc: sessionFeedTrpc(before.trpc, read),
+    trpc: sessionFeedRefreshTrpc(before.trpc),
   }
   return () => {
     window.argo = before
@@ -132,15 +97,9 @@ const liveIdentity = { sessionId: session.id, commandId: null, turnId: null } as
 // Main joins the read history with live work that history does not hold yet, in one reading.
 function liveFeedHost() {
   const before = window.argo
-  const read = async (sessionId: string): Promise<SessionFeedSnapshot> => ({
-    version: 1,
-    type: 'session.feed.read',
-    requestId: 'storybook-feed',
-    sessionId,
-    chainId: sessionId,
-    revision: 'storybook-live',
-    content: [{ kind: 'message', id: 'history-row', role: 'user', text: 'Check the build.' }],
-  })
+  const read: FeedRead = async () => [
+    { kind: 'message', id: 'history-row', role: 'user', text: 'Check the build.' },
+  ]
   window.argo = {
     ...before,
     trpcSubscribe: sessionFeedSubscribe(
@@ -162,7 +121,7 @@ function liveFeedHost() {
         },
       ],
     ),
-    trpc: sessionFeedTrpc(before.trpc, read),
+    trpc: sessionFeedRefreshTrpc(before.trpc),
   }
   return () => {
     window.argo = before

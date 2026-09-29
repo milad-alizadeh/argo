@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { INACTIVE_FEED_LIVE_FACTS } from '../feed/document/feed-live-facts'
 import { sessionRow } from '../session-fixtures'
 import { SessionShell } from './session-shell'
 
@@ -30,10 +29,10 @@ function SessionLayout() {
         feed={null}
         feedError={null}
         inspector={null}
-        liveFacts={INACTIVE_FEED_LIVE_FACTS}
+        running={false}
+        posture={null}
         onAnswerQuestion={() => {}}
         onOpenEvidence={() => {}}
-        onOpenSession={() => {}}
         onRetryFeed={() => {}}
         questionFailure={() => null}
         selectedSessionId={null}

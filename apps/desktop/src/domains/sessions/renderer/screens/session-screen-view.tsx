@@ -1,5 +1,4 @@
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
-import type { FeedLiveFacts } from '../feed/document/feed-live-facts'
 import { BackgroundWork } from '../feed/rows/background-work'
 import { SessionInspector } from '../inspector/session-inspector'
 import { SessionWorkButtons } from '../work/session-work-buttons'
@@ -40,7 +39,6 @@ function Inspector({ model }: { model: SessionScreenModel }) {
         <SessionHandoffFacts onNavigate={navigate} sessionList={sessionList} session={session} />
       }
       onOpenEvidence={setEvidence}
-      onOpenSession={(sessionId) => navigate(`/projects/${model.projectId}/sessions/${sessionId}`)}
       onRetryDelegationFeed={model.retryDelegationFeed}
       shell={model.shell}
       shellOutput={model.shellOutput}
@@ -65,23 +63,6 @@ function InspectorBar({ model }: { model: SessionScreenModel }) {
     )
   }
   return null
-}
-
-function liveFactsOf({ session }: SessionScreenModel): NonNullable<FeedLiveFacts> {
-  return {
-    compactionStartedAt: session?.compactionStartedAt ?? null,
-    compactionPercentage: session?.compactionPercentage ?? null,
-    compactionTokens: session?.compactionTokens ?? null,
-    handoffStartedAt: session?.handoffStartedAt ?? null,
-    handoffTo: session?.handoffTo ?? null,
-    isRunning: session?.status === 'running' || session?.status === 'permission',
-    status: session?.status ?? null,
-    activity: session?.activity ?? null,
-    optimisticRow: null,
-    settledPromptRow: null,
-    posture: session?.posture ?? null,
-    turnMarker: null,
-  }
 }
 
 function composerFor(model: ReturnType<typeof useSessionScreenModel>) {
@@ -109,9 +90,7 @@ function composerFor(model: ReturnType<typeof useSessionScreenModel>) {
 export function SessionScreenView() {
   const model = useSessionScreenModel()
   const { evidence, feed, feedError, question, session } = model
-  const { navigate, retryFeed, selectedSessionId, setEvidence, workReveal } = model
-  const openSession = (sessionId: string) =>
-    navigate(`/projects/${model.projectId}/sessions/${sessionId}`)
+  const { retryFeed, selectedSessionId, setEvidence, workReveal } = model
   const answerQuestion = (_sessionId: string, questionId: string, answers: QuestionAnswer[]) =>
     void question.decide(questionId, answers)
   return (
@@ -120,8 +99,8 @@ export function SessionScreenView() {
         feed={feed}
         feedError={feedError}
         onRetryFeed={retryFeed}
-        liveFacts={liveFactsOf(model)}
-        onOpenSession={openSession}
+        running={model.feedRunning}
+        posture={session?.posture ?? null}
         selectedSessionId={selectedSessionId}
         activeEvidenceId={evidence?.id ?? null}
         onOpenEvidence={setEvidence}

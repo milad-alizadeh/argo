@@ -3,13 +3,13 @@ import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { sessionFeedRowSchema } from '@/domains/sessions/api/feed/feed-rows'
 import { projectFeed } from '@/domains/sessions/main/projection/feed/feed-incremental'
-import { stitchChains } from '@/domains/sessions/renderer/feed/source/chains'
-import type { TranscriptRecord } from '@/domains/sessions/renderer/feed/source/transcript'
-import { readTranscriptFile } from '@/domains/sessions/renderer/feed/source/transcript-file'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
 import { parseTranscriptLine } from '@/harnesses/claude/transcript'
 import { parseCodexTranscriptLine } from '@/harnesses/codex/sessions/records'
 import { isRecord } from '@/shared/validation'
+import { stitchChains } from './transcript/chains'
+import type { TranscriptRecord } from './transcript/transcript'
+import { readTranscriptFile } from './transcript/transcript-file'
 
 async function transcriptPaths(root: string): Promise<string[]> {
   const entries = await readdir(root, { withFileTypes: true }).catch(() => [])

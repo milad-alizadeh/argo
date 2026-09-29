@@ -5,14 +5,14 @@ import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import {
+  type FeedRead,
+  sessionFeedRefreshTrpc,
   sessionFeedSubscribe,
-  sessionFeedTrpc,
   sessionListSubscribe,
   sessionRow,
   sessionSubagent,
 } from '../session-fixtures'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
-import type { SessionFeedSnapshot } from '../types'
 import { SessionScreenView } from './session-screen-view'
 
 const SESSION_ID = 'subagent-session'
@@ -67,18 +67,6 @@ const childContent: FeedContent[] = [
   { kind: 'message', id: 'child-reply', role: 'assistant', text: 'Child transcript loaded.' },
 ]
 
-function snapshot(sessionId: string, subagentId: string | null): SessionFeedSnapshot {
-  return {
-    version: 1,
-    type: 'session.feed.read',
-    requestId: `feed-${subagentId ?? 'parent'}`,
-    sessionId,
-    chainId: subagentId ?? sessionId,
-    revision: `feed-${subagentId ?? 'parent'}-one`,
-    content: subagentId === null ? parentContent : childContent,
-  }
-}
-
 const meta = {
   title: 'Sessions/Screen/Subagents',
   component: SessionScreenView,
@@ -99,9 +87,9 @@ const meta = {
   beforeEach: () => {
     readSubagentIds = []
     const previous = window.argo
-    const read = async (sessionId: string, subagentId: string | null) => {
+    const read: FeedRead = async (_sessionId, subagentId) => {
       readSubagentIds.push(subagentId)
-      return snapshot(sessionId, subagentId)
+      return subagentId === null ? parentContent : childContent
     }
     window.argo = {
       ...previous,
@@ -109,7 +97,7 @@ const meta = {
         sessionListSubscribe(previous.trpcSubscribe, () => [session]),
         read,
       ),
-      trpc: sessionFeedTrpc(previous.trpc, read),
+      trpc: sessionFeedRefreshTrpc(previous.trpc),
     }
     return () => {
       window.argo = previous

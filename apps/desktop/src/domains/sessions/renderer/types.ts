@@ -7,7 +7,6 @@ export type SessionListUpdate = RouterOutputs['sessionList']
 export type SessionListResult = Extract<SessionListUpdate, { type: 'list' }>
 export type Session = SessionListResult['rows'][number]
 export type SessionId = Session['id']
-export type SessionFeedSnapshot = RouterOutputs['sessionFeedRead']
 
 export type SessionArchiveListed = {
   version: 1

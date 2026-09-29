@@ -1,75 +1,46 @@
-import { useEffect } from 'react'
+import type { VirtualItem } from '@tanstack/virtual-core'
+import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { QuestionAnswer } from '@/domains/sessions/api/questions'
+import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Alert, AlertDescription, AlertTitle } from '@/platform/renderer/components/ui/alert'
 import { Button } from '@/platform/renderer/components/ui/button'
-import type { SessionError, SessionFeed, SessionId } from '../../types'
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/platform/renderer/components/ui/empty'
+import type { SessionPosture } from '../../model/models'
+import type { SessionError, SessionEvidence, SessionFeed, SessionId } from '../../types'
+import { sessionPostureLocksAnswer } from '../../types'
+import { FeedLoading } from '../feed-loading'
 import { FEED_STALL_TIMEOUT_MS, useStallTimer } from '../feed-stall'
+import { isFeedRowStreaming } from '../rows/feed-row-renderers'
+import type { RevealCache } from '../rows/streaming-text'
+import { ToolGroupState } from '../rows/tool-group-state'
+import { AnchoredFeed } from '../scroll/anchored-feed'
+import { useReveals } from '../scroll/reveal'
 import { StalledFeed } from '../stalled-feed'
 import { Standing } from '../standing'
 import { useFeedMeasurementsCache } from '../use-feed-measurements-cache'
-import type { FeedDocumentContext, FeedQuestionHandlers } from './feed-document'
-import { FeedDocument } from './feed-document'
-import { useFeedRetry, useFeedScrollPositions, useHeldPrompt } from './feed-document-state'
-import type { FeedLiveFacts } from './feed-live-facts'
-import { promptBesideFeed } from './prompt-beside-feed'
-import { awaitingAssistantReply } from './use-settled-feed'
+import { useDrawnRow } from './drawn-row'
+import { useFeedRetry, useFeedScrollPositions } from './feed-document-state'
+import { awaitingAssistantReply, useSettledFeed } from './use-settled-feed'
 
 import '../feed.css'
 
+// Shared by the Feed view and its callers, so the two do not drift out of sync.
+export type FeedQuestionHandlers = {
+  onOpenEvidence: (evidence: SessionEvidence) => void
+  onAnswerQuestion: (sessionId: string, questionId: string, answers: QuestionAnswer[]) => void
+  answeringQuestionId: string | null
+  questionFailure: (questionId: string) => string | null
+}
+
 function ignoreJumpToLatestChange(_sessionId: string, _action: (() => void) | null) {}
-
-// A pending id has no Feed to read, so this empty document lets the prompt row and Turn Marker mount at once (#2430).
-function optimisticFeedDocument(sessionId: SessionId): SessionFeed {
-  return {
-    version: 1,
-    type: 'session.feed.read',
-    requestId: sessionId,
-    sessionId,
-    chainId: sessionId,
-    revision: 'optimistic',
-    rows: [],
-  }
-}
-
-function awaitingSelectedFeed({
-  current,
-  failure,
-  selectedSessionId,
-  liveFacts,
-}: {
-  current: SessionFeed | null
-  failure: SessionError | null
-  selectedSessionId: SessionId | null
-  liveFacts: FeedLiveFacts
-}) {
-  if (selectedSessionId?.startsWith('optimistic:') === true) return false
-  const displayedPrompt = promptBesideFeed(
-    current?.rows ?? [],
-    liveFacts?.optimisticRow ?? null,
-    liveFacts?.settledPromptRow ?? null,
-  )
-  const waitingOnDisplayedPrompt =
-    displayedPrompt?.shape === 'prose' && displayedPrompt.role === 'user'
-  return (
-    failure === null &&
-    selectedSessionId !== null &&
-    (current === null ||
-      (liveFacts?.isRunning === true &&
-        (awaitingAssistantReply(current.rows) || waitingOnDisplayedPrompt)))
-  )
-}
-
-function needsStanding({
-  current,
-  failure,
-  holdsPrompt,
-}: {
-  current: SessionFeed | null
-  failure: SessionError | null
-  holdsPrompt: boolean
-}) {
-  return (failure !== null && current === null) || (current === null && !holdsPrompt)
-}
+function ignoreMeasurementsChange(_sessionId: string, _measurements: VirtualItem[]) {}
 
 function feedFailureNotice({
   failure,
@@ -96,44 +67,12 @@ function feedFailureNotice({
   )
 }
 
-function stalledFeedNotice({
-  stalled,
-  hasDocument,
-  posture,
-  onRetry,
-}: {
-  stalled: boolean
-  hasDocument: boolean
-  posture: 'live' | 'external' | null
-  onRetry: () => void
-}) {
-  if (!stalled || !hasDocument) return null
-  return <StalledFeed compact posture={posture} onRetry={onRetry} />
-}
-
-function heldPromptSessionId({
-  current,
-  selectedSessionId,
-  liveFacts,
-}: {
-  current: SessionFeed | null
-  selectedSessionId: SessionId | null
-  liveFacts: FeedLiveFacts
-}): SessionId | null {
-  if (
-    current === null &&
-    selectedSessionId !== null &&
-    (liveFacts?.optimisticRow != null || liveFacts?.settledPromptRow != null)
-  )
-    return selectedSessionId
-  return null
-}
-
 type BasicFeedProps = {
   feed: SessionFeed | null
   activeEvidenceId: string | null
-  liveFacts: FeedLiveFacts
-  onOpenSession: (sessionId: string) => void
+  // The Session's own liveness and posture, the facts the Roster reads too.
+  running: boolean
+  posture: SessionPosture | null
   failure: SessionError | null
   onRetryFeed: () => void
   onJumpToLatestChange?: (sessionId: string, action: (() => void) | null) => void
@@ -144,11 +83,13 @@ type BasicFeedProps = {
   stallTimeoutMs?: number
 } & FeedQuestionHandlers
 
+// The Feed a reader sees: main's rows drawn in order, with this browser's measurement, scroll,
+// disclosure and reveal state. It makes no Feed row of its own.
 export function BasicFeed({
   feed,
   activeEvidenceId,
-  liveFacts: reportedLiveFacts,
-  onOpenSession,
+  running,
+  posture,
   failure,
   onRetryFeed,
   onJumpToLatestChange = ignoreJumpToLatestChange,
@@ -165,21 +106,15 @@ export function BasicFeed({
   const { t } = useTranslation('sessions')
   const { initialPosition, savePosition } = useFeedScrollPositions()
   const { initialMeasurementsCache, saveMeasurementsCache } = useFeedMeasurementsCache()
-  const current = feed !== null && feed.sessionId === selectedSessionId ? feed : null
-  const liveFacts = useHeldPrompt(selectedSessionId, reportedLiveFacts)
+  const document = feed !== null && feed.sessionId === selectedSessionId ? feed : null
   // The selected Feed has no history row to settle its first read (#2102).
   const { retry, retryToken } = useFeedRetry(onRetryFeed)
-  // The prompt row outlives the temporary id: the real Session's first read can trail the hand-off.
-  const heldPromptId = heldPromptSessionId({ current, selectedSessionId, liveFacts })
-  const hasHeldPrompt = heldPromptId !== null
-  const optimisticDocument = heldPromptId === null ? null : optimisticFeedDocument(heldPromptId)
-  const document = optimisticDocument ?? current
-  const awaitingFeed = awaitingSelectedFeed({
-    current,
-    failure,
-    selectedSessionId,
-    liveFacts,
-  })
+  // A Session the cockpit has only just named has no reading to wait on, so it never stalls.
+  const awaitingFeed =
+    failure === null &&
+    selectedSessionId !== null &&
+    !selectedSessionId.startsWith('optimistic:') &&
+    (document === null || (running && awaitingAssistantReply(document.rows)))
   const stalled = useStallTimer(
     awaitingFeed ? `${selectedSessionId}:${retryToken}` : false,
     stallTimeoutMs,
@@ -187,59 +122,151 @@ export function BasicFeed({
   useEffect(() => {
     onStalledChange?.(stalled ? selectedSessionId : null)
   }, [onStalledChange, selectedSessionId, stalled])
-  const actions: FeedDocumentContext = {
-    stalled,
-    activeEvidenceId,
-    initialMeasurementsCache:
-      selectedSessionId === null ? [] : initialMeasurementsCache(selectedSessionId),
-    initialScrollPosition: selectedSessionId === null ? null : initialPosition(selectedSessionId),
-    onOpenSession,
-    onMeasurementsChange: saveMeasurementsCache,
-    onScrollPositionChange: savePosition,
-    onJumpToLatestChange,
-    onOpenEvidence,
-    onAnswerQuestion,
-    answeringQuestionId,
-    questionFailure,
-    historyLabel: historyLabel ?? t('historyLabel'),
-  }
 
   return (
     <section
       aria-label={feedLabel ?? t('feedLabel')}
       className="feed"
-      data-known-read-failure={failure !== null && current !== null}
+      data-known-read-failure={failure !== null && document !== null}
     >
       {feedFailureNotice({
         failure,
-        hasCurrent: current !== null,
+        hasCurrent: document !== null,
         title: t('standing.failure'),
         retryLabel: t('standing.retry'),
         onRetry: retry,
       })}
       {document === null ? null : (
         <FeedDocument
-          actions={actions}
           key={document.sessionId}
-          liveFacts={liveFacts}
           reading={document}
+          running={running}
+          posture={posture}
+          stalled={stalled}
+          activeEvidenceId={activeEvidenceId}
+          initialMeasurementsCache={initialMeasurementsCache(document.sessionId)}
+          initialScrollPosition={initialPosition(document.sessionId)}
+          onMeasurementsChange={saveMeasurementsCache}
+          onScrollPositionChange={savePosition}
+          onJumpToLatestChange={onJumpToLatestChange}
+          onOpenEvidence={onOpenEvidence}
+          onAnswerQuestion={onAnswerQuestion}
+          answeringQuestionId={answeringQuestionId}
+          questionFailure={questionFailure}
+          historyLabel={historyLabel ?? t('historyLabel')}
         />
       )}
-      {stalledFeedNotice({
-        stalled,
-        hasDocument: document !== null,
-        posture: liveFacts?.posture ?? null,
-        onRetry: retry,
-      })}
-      {needsStanding({ current, failure, holdsPrompt: hasHeldPrompt }) ? (
+      {stalled && document !== null ? (
+        <StalledFeed compact posture={posture} onRetry={retry} />
+      ) : null}
+      {document === null ? (
         <Standing
           failure={failure}
           selected={selectedSessionId !== null}
           stalled={stalled}
-          posture={liveFacts?.posture ?? null}
+          posture={posture}
           onRetry={retry}
         />
       ) : null}
     </section>
+  )
+}
+
+type FeedDocumentProps = {
+  reading: SessionFeed
+  running: boolean
+  posture: SessionPosture | null
+  stalled: boolean
+  activeEvidenceId: string | null
+  initialMeasurementsCache: VirtualItem[]
+  initialScrollPosition: number | null
+  onMeasurementsChange?: (sessionId: string, measurements: VirtualItem[]) => void
+  onScrollPositionChange: (sessionId: string, position: number) => void
+  onJumpToLatestChange: (sessionId: string, action: (() => void) | null) => void
+  historyLabel: string
+} & FeedQuestionHandlers
+
+function EmptyFeed({ title, description }: { title: string; description: string }) {
+  return (
+    <Empty className="h-full">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <Icon name="empty-feed" />
+        </EmptyMedia>
+        <EmptyTitle>{title}</EmptyTitle>
+        <EmptyDescription>{description}</EmptyDescription>
+      </EmptyHeader>
+    </Empty>
+  )
+}
+
+// The selected document owns its virtualized history and scroll state.
+function FeedDocument({
+  reading,
+  running,
+  posture,
+  stalled,
+  activeEvidenceId,
+  initialMeasurementsCache,
+  initialScrollPosition,
+  onMeasurementsChange = ignoreMeasurementsChange,
+  onScrollPositionChange,
+  onJumpToLatestChange,
+  onOpenEvidence,
+  onAnswerQuestion,
+  answeringQuestionId,
+  questionFailure,
+  historyLabel,
+}: FeedDocumentProps) {
+  const { t } = useTranslation('sessions')
+  const toolGroups = useRef(new ToolGroupState()).current
+  const revealCache = useRef<RevealCache>(new Map()).current
+  const DrawnRow = useDrawnRow({
+    sessionId: reading.sessionId,
+    activeEvidenceId,
+    onOpenEvidence,
+    toolGroups,
+    revealCache,
+    onAnswerQuestion,
+    answeringQuestionId,
+    questionFailure,
+    questionLocked: sessionPostureLocksAnswer(posture),
+  })
+  const { column, settled } = useSettledFeed({
+    sessionId: reading.sessionId,
+    revision: reading.revision,
+    rows: reading.rows,
+  })
+  const reveals = useReveals(settled)
+  const lastRow = reading.rows.at(-1)
+  const tailIsLive = lastRow !== undefined && isFeedRowStreaming(lastRow)
+  const streamingRowId = running && tailIsLive ? lastRow.id : null
+  const noRows = settled === null || settled.rows.length === 0
+  const awaitingReply = running && (noRows || awaitingAssistantReply(settled?.rows ?? []))
+  return (
+    <div className="feed__document" data-active="true" data-revision={settled?.reading.revision}>
+      <div className="feed__column" ref={column}>
+        {noRows ? null : (
+          <AnchoredFeed
+            active
+            initialMeasurementsCache={initialMeasurementsCache}
+            initialScrollPosition={initialScrollPosition}
+            rows={settled.rows}
+            settled={settled}
+            FeedRow={DrawnRow}
+            onJumpToLatestChange={onJumpToLatestChange}
+            onMeasurementsChange={onMeasurementsChange}
+            onScrollPositionChange={onScrollPositionChange}
+            reveals={reveals}
+            streamingRowId={streamingRowId}
+            historyLabel={historyLabel}
+          />
+        )}
+        {noRows && !awaitingReply ? (
+          <EmptyFeed title={t('empty.blank.title')} description={t('empty.blank.description')} />
+        ) : null}
+        {awaitingReply && !stalled ? <FeedLoading state="running" /> : null}
+      </div>
+    </div>
   )
 }

@@ -10,7 +10,6 @@ import { PermissionPrompt } from '@/platform/renderer/components/permission/perm
 import { sessionSelectionHost } from '../../../../../test-fixtures/sessions/session-selection-host.fixture'
 import { ComposerForm } from '../composer/layout/composer-form'
 import { RICH_MARKDOWN } from '../feed/content/feed-samples'
-import { INACTIVE_FEED_LIVE_FACTS } from '../feed/document/feed-live-facts'
 import { SessionInspector } from '../inspector/session-inspector'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
 import {
@@ -97,14 +96,6 @@ const SESSION_ROSTER = [
     spentTokens: 2_900,
   }),
 ] satisfies Session[]
-
-function liveFactsFor(session: Pick<Session, 'posture' | 'status'>) {
-  return {
-    ...INACTIVE_FEED_LIVE_FACTS,
-    isRunning: session.status === 'running',
-    posture: session.posture,
-  }
-}
 
 const SESSION_HISTORY_LABEL = 'Session history'
 const JUMP_TO_LATEST_ROWS = Array.from({ length: 36 }, (_unused, index) => ({
@@ -255,7 +246,6 @@ function ReviewInspector({
       sessionId={null}
       handoff={null}
       onOpenEvidence={() => {}}
-      onOpenSession={() => {}}
       onRetryDelegationFeed={() => {}}
       shell={shell}
       shellOutput={shellOutput}
@@ -433,9 +423,9 @@ function ReviewContent({
         inspectorBar={<ReviewInspectorBar delegation={delegation} shell={shell} />}
         defaultInspectorCollapsed
         inspectorReveal={reviewInspectorReveal(picked, shell, shellOutput)}
-        liveFacts={liveFactsFor(session)}
+        running={session.status === 'running'}
+        posture={session.posture}
         onOpenEvidence={() => {}}
-        onOpenSession={() => {}}
         onAnswerQuestion={() => {}}
         answeringQuestionId={null}
         questionFailure={() => null}
@@ -494,10 +484,10 @@ function NewSessionScreen() {
         feed={null}
         feedError={null}
         inspector={null}
-        liveFacts={INACTIVE_FEED_LIVE_FACTS}
+        running={false}
+        posture={null}
         onAnswerQuestion={() => {}}
         onOpenEvidence={() => {}}
-        onOpenSession={() => {}}
         onRetryFeed={() => {}}
         questionFailure={() => null}
         selectedSessionId={selectedSessionId}

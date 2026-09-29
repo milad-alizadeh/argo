@@ -17,7 +17,6 @@ export function SessionInspector({
   sessionId,
   handoff,
   onOpenEvidence,
-  onOpenSession,
   onRetryDelegationFeed,
   shell,
   shellOutput,
@@ -31,7 +30,6 @@ export function SessionInspector({
   // The Sessions this one was handed off to or from, drawn when nothing else is open.
   handoff: ReactNode
   onOpenEvidence: (evidence: SessionEvidence) => void
-  onOpenSession: (sessionId: string) => void
   onRetryDelegationFeed: () => void
   shell: SessionShellCommand | null
   shellOutput: SessionShellOutput | null
@@ -49,7 +47,6 @@ export function SessionInspector({
         feed={delegationFeed}
         failure={delegationFeedError}
         onOpenEvidence={onOpenEvidence}
-        onOpenSession={onOpenSession}
         onRetryFeed={onRetryDelegationFeed}
         sessionId={sessionId}
       />
