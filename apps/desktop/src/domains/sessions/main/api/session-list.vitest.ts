@@ -15,7 +15,10 @@ const IDS = [
   '00000000-0000-4000-8000-000000000003',
 ] as const
 
-function sessionListCaller(sessions: Record<string, unknown> = {}) {
+function sessionListCaller(
+  sessions: Record<string, unknown> = {},
+  observeFeed?: (sessionId: string) => () => void,
+) {
   const client = new DatabaseSync(':memory:')
   client.exec(`CREATE TABLE session (
     argo_id TEXT PRIMARY KEY,
@@ -67,13 +70,16 @@ function sessionListCaller(sessions: Record<string, unknown> = {}) {
   const watchedStatus = new WatchedSessionStatus(() => roster.changed())
   const activities = new SessionActivities(() => roster.changed())
   const router = initTRPC.create().router({
-    list: sessionListProcedure({
-      database,
-      supervisor: supervisor as never,
-      roster,
-      watchedStatus,
-      activities,
-    }),
+    list: sessionListProcedure(
+      {
+        database,
+        supervisor: supervisor as never,
+        roster,
+        watchedStatus,
+        activities,
+      },
+      observeFeed,
+    ),
   })
   const caller = router.createCaller({})
   const updates = async (input: Parameters<typeof caller.list>[0]) => {
@@ -607,6 +613,54 @@ test('draws the activity the Session’s Feed published under its title', async 
     ])
     activities.publish(IDS[1], null)
     assert.deepEqual(await activityOf(), [null])
+  } finally {
+    client.close()
+  }
+})
+
+test('keeps available activity for every visible Session while switching Feeds', async () => {
+  const active = new Map<string, number>()
+  let activities: SessionActivities
+  const observeFeed = (sessionId: string) => {
+    active.set(sessionId, (active.get(sessionId) ?? 0) + 1)
+    activities.publish(sessionId, {
+      label: `Activity for ${sessionId}`,
+      kind: 'thought',
+      open: true,
+    })
+    return () => {
+      const remaining = (active.get(sessionId) ?? 1) - 1
+      if (remaining === 0) {
+        active.delete(sessionId)
+        activities.publish(sessionId, null)
+      } else active.set(sessionId, remaining)
+    }
+  }
+  const fixture = sessionListCaller({}, observeFeed)
+  activities = fixture.activities
+  const { client, updates } = fixture
+  try {
+    for (const [index, id] of IDS.slice(0, 2).entries())
+      insertSession(client, {
+        id,
+        harness: 'claude',
+        nativeId: `native-${index}`,
+        updatedAt: 20 - index,
+      })
+    const { received, stop } = await updates({ projectId: 'project-1', pageSize: 10 })
+    await settled()
+    assert.deepEqual(active, new Map(IDS.slice(0, 2).map((id) => [id, 1])))
+    assert.deepEqual(
+      received
+        .filter((update) => update.type === 'row')
+        .map((update) => update.row.activity?.label),
+      IDS.slice(0, 2).map((id) => `Activity for ${id}`),
+    )
+    const leaveSelectedFeed = observeFeed(IDS[0])
+    leaveSelectedFeed()
+    assert.equal(activities.activityOf(IDS[0])?.label, `Activity for ${IDS[0]}`)
+    stop()
+    assert.equal(active.size, 0)
   } finally {
     client.close()
   }

@@ -7,8 +7,10 @@ import { afterEach, beforeEach, expect, test } from 'vitest'
 import { type Database, databaseMigrationsFolder, openDatabase } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
+import { SessionActivities } from '@/domains/sessions/main/api/session-activities'
 import { SessionRosterChanges } from '@/domains/sessions/main/api/session-roster-changes'
 import { refreshSessionSubagents } from '@/domains/sessions/main/database/session-subagents'
+import { SessionEventJournal } from '@/domains/sessions/main/live/session-event-journal'
 import { saveSessionBatch } from '@/domains/sessions/main/sync/session-sync-records'
 import { type AppRouter, type AppRouterDependencies, createAppRouter } from './trpc-router'
 
@@ -25,6 +27,9 @@ function routerDependencies(
     projects: { database },
     sessions: {
       database,
+      journal: new SessionEventJournal(),
+      hasLiveChannel: () => false,
+      readHistory: async () => [],
       roster: new SessionRosterChanges(),
       watchedStatus: { statusOf: () => null },
       supervisor: {
@@ -87,6 +92,79 @@ test('registers the Session roster subscription on the global router', async () 
       },
     ],
   })
+})
+
+function insertActivitySessions(ids: readonly string[]) {
+  for (const [index, id] of ids.entries())
+    database
+      .insert(sessionTable)
+      .values({
+        argoId: id,
+        harness: 'claude',
+        nativeId: `native-${index}`,
+        projectId: 'project-1',
+        firstPrompt: `Session ${index}`,
+      })
+      .run()
+}
+
+test('keeps both roster activities when the selected Feed changes', async () => {
+  database
+    .insert(project)
+    .values({ id: 'project-1', path: '/work/one', commonDirectory: '/work/one/.git' })
+    .run()
+  const ids = [
+    '00000000-0000-4000-8000-000000000001',
+    '00000000-0000-4000-8000-000000000002',
+  ] as const
+  insertActivitySessions(ids)
+  const roster = new SessionRosterChanges()
+  const activities = new SessionActivities(() => roster.changed())
+  const caller = createAppRouter(
+    routerDependencies({
+      roster,
+      activities,
+      readHistory: async (_harness, target) => [
+        { kind: 'message', id: 'prompt', role: 'user', text: 'Go' },
+        {
+          kind: 'command',
+          id: 'command',
+          command: target.nativeId,
+          cwd: null,
+          status: 'completed',
+          output: null,
+          stderr: null,
+          exitCode: 0,
+        },
+      ],
+    }),
+  ).createCaller({})
+  const updates: inferRouterOutputs<AppRouter>['sessionList'][] = []
+  const rosterStream = await caller.sessionList({ projectId: 'project-1' })
+  const rosterSubscription = rosterStream.subscribe({ next: (update) => updates.push(update) })
+  const firstStream = await caller.sessionFeed({ sessionId: ids[0] })
+  const firstSubscription = firstStream.subscribe({ next: () => {} })
+  const secondStream = await caller.sessionFeed({ sessionId: ids[1] })
+  const secondSubscription = secondStream.subscribe({ next: () => {} })
+  try {
+    await new Promise((resolve) => setImmediate(resolve))
+    firstSubscription.unsubscribe()
+    await new Promise((resolve) => setImmediate(resolve))
+    expect(ids.map((id) => activities.activityOf(id)?.label)).toEqual([
+      'Ran native-0',
+      'Ran native-1',
+    ])
+    expect(
+      new Set(
+        updates
+          .filter((update) => update.type === 'row')
+          .map((update) => update.row.activity?.label),
+      ),
+    ).toEqual(new Set(['Ran native-0', 'Ran native-1']))
+  } finally {
+    secondSubscription.unsubscribe()
+    rosterSubscription.unsubscribe()
+  }
 })
 
 test('lists the Subagents the sync read from each Session history', async () => {
