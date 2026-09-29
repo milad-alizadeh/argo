@@ -1,12 +1,10 @@
 import { createContext } from 'react'
-import type { SessionWork } from '../../work/session-work'
 
 export type BackgroundWorkLinks = {
-  // By the id a row names: a Shell's call, or the Subagent main reported.
-  find: (id: string) => SessionWork | null
-  open: (target: SessionWork) => void
+  // By the id a row names: a Shell's call, or a Subagent, known to the Session or not.
+  open: (id: string) => void
 }
 
-// Set by the Session screen, so a Subagent row can open its own feed. A row with no link, or
-// outside a Session, still draws the same height with no chevron.
+// Set by the Session screen, so every Subagent row opens its own feed. A row outside a Session
+// draws the same title as plain text.
 export const BackgroundWork = createContext<BackgroundWorkLinks | null>(null)

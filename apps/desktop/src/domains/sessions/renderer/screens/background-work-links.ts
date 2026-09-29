@@ -1,27 +1,18 @@
 import type { BackgroundWorkLinks } from '../feed/rows/background-work'
 import type { SessionScreenModel } from './use-session-screen-model'
 
+// A row opens the Shell with its id, or else the Subagent with its id; the inspector shows an
+// empty state when that Subagent has no transcript.
 export function backgroundWorkLinks(
-  model: Pick<
-    SessionScreenModel,
-    'pick' | 'selectedSessionId' | 'session' | 'subagents' | 'subagentUsage'
-  >,
+  model: Pick<SessionScreenModel, 'pick' | 'selectedSessionId' | 'session'>,
 ): BackgroundWorkLinks {
   const { pick, selectedSessionId, session } = model
   return {
-    find: (id) => {
-      const command = session?.shell.find((entry) => entry.id === id)
-      if (command !== undefined) return { kind: 'shell', command }
-      const delegation = model.subagents.find((entry) => entry.id === id)
-      if (delegation === undefined) return null
-      const usage = model.subagentUsage[delegation.id] ?? { tokens: null, model: null }
-      return { kind: 'delegation', delegation, usage }
-    },
-    open: (target) =>
+    open: (id) =>
       pick(
-        target.kind === 'shell'
-          ? { sessionId: selectedSessionId, subagentId: null, shellId: target.command.id }
-          : { sessionId: selectedSessionId, subagentId: target.delegation.id, shellId: null },
+        session?.shell.some((command) => command.id === id) === true
+          ? { sessionId: selectedSessionId, subagentId: null, shellId: id }
+          : { sessionId: selectedSessionId, subagentId: id, shellId: null },
       ),
   }
 }

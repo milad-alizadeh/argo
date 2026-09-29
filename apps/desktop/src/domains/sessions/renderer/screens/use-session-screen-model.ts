@@ -17,7 +17,7 @@ import { useSessionList } from '../session-list/use-session-list'
 import type { SessionEvidence } from '../types'
 import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../work/use-session-work'
 import { sessionHarness } from './session-screen-state'
-import { sessionScreenSubagents } from './session-screen-subagents'
+import { pickedSubagent, sessionScreenSubagents } from './session-screen-subagents'
 import { sessionWorkspaceIdentity } from './session-screen-workspace'
 import { useSelectedSession } from './use-selected-session'
 import { useWorkPick, type WorkSelection } from './work-selection'
@@ -35,7 +35,7 @@ function useWorkArtifacts({
 }) {
   const subagents = sessionScreenSubagents(feedSubagents, session?.subagents ?? [])
   const shell = session?.shell.find((command) => command.id === work.shellId) ?? null
-  const delegation = subagents.find((candidate) => candidate.id === work.subagentId) ?? null
+  const delegation = pickedSubagent(subagents, work.subagentId)
   const delegationFeed = useDelegationFeed(selectedSessionId, delegation?.id ?? null)
   return {
     shell,

@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, waitFor, within } from 'storybook/test'
+import { sessionError } from '@/domains/sessions/api/session-error'
 import { sessionSubagent } from '../session-fixtures'
 import type { SessionFeed } from '../types'
 import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
@@ -192,5 +193,32 @@ export const FailedSubagent: Story = {
     })
     await expect(within(ended).getByText('Failed')).toBeInTheDocument()
     await expect(canvas.getAllByRole('article', { name: /Interface review/ })).toHaveLength(1)
+  },
+}
+
+// A Subagent whose Feed holds only its parent's response has no transcript to draw.
+export const NoTranscript: Story = {
+  args: {
+    ...CompletedSubagent.args,
+    feed: { ...endedFeed('completed'), rows: endedFeed('completed').rows.slice(-1) },
+  },
+  render: (args) => <InspectorStory args={args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('No transcript found')).toBeVisible()
+    await expect(canvas.queryByRole('article')).toBeNull()
+  },
+}
+
+// The Harness has no history for this Subagent id.
+export const MissingTranscript: Story = {
+  args: {
+    ...CompletedSubagent.args,
+    feed: null,
+    failure: sessionError('missing-session', null),
+  },
+  render: (args) => <InspectorStory args={args} />,
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText('No transcript found')).toBeVisible()
   },
 }

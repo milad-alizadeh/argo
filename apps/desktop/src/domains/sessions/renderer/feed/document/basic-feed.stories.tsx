@@ -517,30 +517,14 @@ const delegationFeed = {
   ],
 } satisfies SessionFeed
 
-const REVIEW_AGENT = {
-  id: 'call-review',
-  label: 'Review the Feed disclosure for keyboard access.',
-  state: 'completed' as const,
-  startedAt: '2026-09-02T08:00:00.000Z',
-  endedAt: '2026-09-02T08:01:12.000Z',
-}
+const REVIEW_AGENT_ID = 'call-review'
 
-// The Session screen's links, reduced to the command and the Subagent this Feed names.
+// The Session screen's links, reduced to the id a row opens.
 function LinkedFeed({
   onOpen,
   ...args
 }: React.ComponentProps<typeof BasicFeed> & { onOpen: BackgroundWorkLinks['open'] }) {
-  const links: BackgroundWorkLinks = {
-    find: (id) => {
-      if (id !== REVIEW_AGENT.id) return null
-      return {
-        kind: 'delegation',
-        delegation: REVIEW_AGENT,
-        usage: { tokens: 4200, model: 'gpt-5.6-terra' },
-      }
-    },
-    open: onOpen,
-  }
+  const links: BackgroundWorkLinks = { open: onOpen }
   return (
     <BackgroundWork.Provider value={links}>
       <BasicFeed {...args} />
@@ -569,11 +553,7 @@ export const DelegationEvents: StoryObj<typeof LinkedFeed> = {
         name: 'Review the Feed disclosure for keyboard access. sent a reply to the main Session',
       }),
     )
-    await expect(args.onOpen).toHaveBeenCalledWith({
-      kind: 'delegation',
-      delegation: REVIEW_AGENT,
-      usage: { tokens: 4200, model: 'gpt-5.6-terra' },
-    })
+    await expect(args.onOpen).toHaveBeenCalledWith(REVIEW_AGENT_ID)
   },
 }
 

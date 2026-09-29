@@ -20,3 +20,21 @@ export function sessionScreenSubagents(
   }
   return [...subagents.values()]
 }
+
+// The Subagent a row opened. One the Session never listed still opens, so its inspector can say
+// it has no transcript; with no event to read, it shows as ended.
+export function pickedSubagent(
+  subagents: readonly SessionSubagent[],
+  subagentId: string | null,
+): SessionSubagent | null {
+  if (subagentId === null) return null
+  return (
+    subagents.find((subagent) => subagent.id === subagentId) ?? {
+      id: subagentId,
+      label: null,
+      state: 'completed',
+      startedAt: null,
+      endedAt: null,
+    }
+  )
+}

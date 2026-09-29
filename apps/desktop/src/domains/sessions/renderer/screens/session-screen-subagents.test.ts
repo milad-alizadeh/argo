@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 import { sessionSubagent } from '../session-fixtures'
-import { sessionScreenSubagents } from './session-screen-subagents'
+import { pickedSubagent, sessionScreenSubagents } from './session-screen-subagents'
 
 const AGENT_ID = 'agent-a64dd851fde47a6f0'
 
@@ -34,4 +34,14 @@ test('keeps the Feed name when the roster stored none', () => {
   expect(
     sessionScreenSubagents([{ id: AGENT_ID, label: 'Feed name', state: 'running' }], [rosterChild]),
   ).toEqual([{ ...rosterChild, label: 'Feed name' }])
+})
+
+test('opens a Subagent the Session never listed, as ended with no label', () => {
+  expect(pickedSubagent([], AGENT_ID)).toEqual({
+    id: AGENT_ID,
+    label: null,
+    state: 'completed',
+    startedAt: null,
+    endedAt: null,
+  })
 })

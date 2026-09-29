@@ -5,10 +5,9 @@ import { BackgroundWork } from './background-work'
 
 type SubagentRow = Extract<SessionFeedRow, { shape: 'subagent' }>
 
-// FeedSubagent resolves its row to a child Session and leaves event presentation to DelegationEvent.
+// FeedSubagent opens its row by id and leaves event presentation to DelegationEvent.
 export function FeedSubagent({ row }: { row: SubagentRow }) {
   const links = useContext(BackgroundWork)
-  const target = links?.find(row.subagentId) ?? null
-  const open = links === null || target === null ? undefined : () => links.open(target)
+  const open = links === null ? undefined : () => links.open(row.subagentId)
   return <DelegationEvent onOpen={open} row={row} />
 }
