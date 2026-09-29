@@ -8,18 +8,6 @@ import {
 import { ticketKey } from '@/domains/tickets/api/ticket'
 import { identifierSchema } from '@/shared/validation'
 
-export {
-  FEED_EVENT_KINDS,
-  FEED_MARKERS,
-  type FeedEventKind,
-  feedEventKindSchema,
-  feedMarkerSchema,
-  type SessionFeedRow,
-  sessionFeedRowSchema,
-  UNREADABLE_ROW,
-  unreadableRowHeight,
-} from '@/domains/sessions/api/feed/feed-rows'
-
 export const SESSION_POSTURES = ['live', 'external'] as const
 export const sessionPostureSchema = z.enum(SESSION_POSTURES)
 export const SESSION_ENTRIES = ['interactive', 'headless'] as const

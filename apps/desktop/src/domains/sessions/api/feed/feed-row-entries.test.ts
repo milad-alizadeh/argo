@@ -338,6 +338,166 @@ test('a reused projector draws what grouping the whole row list draws', () => {
   }
 })
 
+function command(
+  id: string,
+  status: 'running' | 'completed' | 'failed',
+  fields: { command?: string | null; output?: string | null; stderr?: string | null } = {},
+): FeedContent {
+  return {
+    kind: 'command',
+    id,
+    command: fields.command === undefined ? 'bun test' : fields.command,
+    cwd: null,
+    status,
+    output: fields.output === undefined ? null : fields.output,
+    stderr: fields.stderr === undefined ? null : fields.stderr,
+    exitCode: status === 'completed' ? 0 : null,
+  }
+}
+
+function presentedTool(
+  callId: string,
+  presentation: NonNullable<Extract<FeedContent, { kind: 'tool' }>['presentation']>,
+  fields: { status?: 'running' | 'completed' | 'failed'; output?: string } = {},
+): FeedContent {
+  return {
+    kind: 'tool',
+    id: callId,
+    callId,
+    name: presentation.kind,
+    status: fields.status ?? 'completed',
+    input: null,
+    output: fields.output === undefined ? null : [{ kind: 'text', text: fields.output }],
+    summary: null,
+    presentation,
+  }
+}
+
+function groups(entries: ReturnType<typeof projectFeedRowEntries>['entries']) {
+  return entries.flatMap(({ row }) => (row.shape === 'tool-group' ? [row] : []))
+}
+
+test('a running command is one open call, with its text and no evidence', () => {
+  const { entries } = projectFeedRowEntries({
+    history: [message('m1', 'user', 'Hi'), command('c1', 'running')],
+    live: [],
+  })
+  expect(groups(entries)).toMatchObject([
+    {
+      label: 'Ran a command',
+      calls: [
+        {
+          id: 'c1',
+          kind: 'command',
+          label: 'Ran bun test',
+          status: 'running',
+          evidence: null,
+          text: 'bun test',
+        },
+      ],
+    },
+  ])
+})
+
+test('a finished command keeps stdout and stderr as its evidence', () => {
+  const { entries } = projectFeedRowEntries({
+    history: [command('c1', 'completed', { command: 'bun test', output: 'ok\n', stderr: 'warn' })],
+    live: [],
+  })
+  expect(groups(entries)[0]).toMatchObject({
+    calls: [
+      {
+        status: 'succeeded',
+        evidence: { kind: 'output', title: 'Ran bun test', source: 'ok\n\nwarn' },
+      },
+    ],
+  })
+})
+
+test('a failed command keeps its output and reads as failed', () => {
+  const { entries } = projectFeedRowEntries({
+    history: [command('c1', 'failed', { output: 'boom\n' })],
+    live: [],
+  })
+  expect(groups(entries)[0]).toMatchObject({
+    calls: [{ status: 'failed', evidence: { source: 'boom\n' } }],
+  })
+})
+
+test('a search tool appends the harness failure line to its label', () => {
+  const { entries } = projectFeedRowEntries({
+    history: [
+      presentedTool(
+        'w',
+        { kind: 'searched', label: 'Searched argo cockpit' },
+        { output: 'Internal Error ()\nL0: Failed' },
+      ),
+    ],
+    live: [],
+  })
+  expect(groups(entries)[0]).toMatchObject({
+    label: 'Ran a command',
+    calls: [
+      {
+        kind: 'searched',
+        status: 'succeeded',
+        label: 'Searched argo cockpit · Internal Error',
+        evidence: {
+          kind: 'output',
+          title: 'Searched argo cockpit',
+          source: 'Internal Error ()\nL0: Failed',
+        },
+      },
+    ],
+  })
+})
+
+test('an agent-written command label stays on the call', () => {
+  const { entries } = projectFeedRowEntries({
+    history: [
+      presentedTool(
+        'c1',
+        { kind: 'command', label: 'Checking types', agentDescription: true },
+        {
+          status: 'running',
+        },
+      ),
+    ],
+    live: [],
+  })
+  expect(groups(entries)[0]).toMatchObject({
+    calls: [{ kind: 'command', label: 'Checking types', agentDescription: true, text: null }],
+  })
+})
+
+test('a skill stays its own row between commands', () => {
+  const { entries } = projectFeedRowEntries({
+    history: [
+      command('c1', 'completed', { command: 'bun test' }),
+      presentedTool('s', { kind: 'skill', label: 'Simple english' }),
+      command('c2', 'completed', { command: 'bun run typecheck' }),
+    ],
+    live: [],
+  })
+  expect(groups(entries)).toMatchObject([
+    { label: 'Ran a command', calls: [{ id: 'c1', kind: 'command' }] },
+    { label: 'Invoked a skill', calls: [{ id: 's', kind: 'skill', label: 'Simple english' }] },
+    { label: 'Ran a command', calls: [{ id: 'c2', kind: 'command' }] },
+  ])
+})
+
+test('a long tool run keeps its group id inside the Feed row limit', () => {
+  const history = Array.from({ length: 12 }, (_, index) =>
+    command(`123e4567-e89b-12d3-a456-426614174${String(index).padStart(3, '0')}`, 'completed'),
+  )
+  const { entries, rejected } = projectFeedRowEntries({ history, live: [] })
+  const [group] = groups(entries)
+  if (group === undefined) throw new Error('missing group')
+  expect(rejected.rows).toBe(0)
+  expect(group).toMatchObject({ calls: history.map((item) => ({ id: item.id })) })
+  expect(group.id.length).toBeLessThanOrEqual(256)
+})
+
 test('a reused projector keeps the entries of settled history rows no live event touches', () => {
   const projector = new FeedRowProjector()
   const [first, second] = streamingInputs()
