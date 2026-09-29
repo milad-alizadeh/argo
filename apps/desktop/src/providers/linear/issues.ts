@@ -32,9 +32,18 @@ const FIELDS = `id identifier title description url createdAt priority priorityL
 // The closure every provider shares; Linear's own state word is drawn beside it.
 const OPEN_FILTER =
   '{ team: { id: { eq: $team } }, state: { type: { nin: ["completed", "canceled"] } } }'
+const CLOSED_FILTER =
+  '{ team: { id: { eq: $team } }, state: { type: { in: ["completed", "canceled"] } } }'
 
 const BACKLOG = `query Backlog($team: ID!, $teamId: String!, $first: Int!, $after: String) {
   issues(first: $first, after: $after, filter: ${OPEN_FILTER}) {
+    pageInfo { hasNextPage endCursor } nodes { ${FIELDS} }
+  }
+  ${TEAM_STATES}
+}`
+
+const CLOSED_BACKLOG = `query ClosedBacklog($team: ID!, $teamId: String!, $first: Int!, $after: String) {
+  issues(first: $first, after: $after, filter: ${CLOSED_FILTER}) {
     pageInfo { hasNextPage endCursor } nodes { ${FIELDS} }
   }
   ${TEAM_STATES}
@@ -118,7 +127,12 @@ function ticket(endpoints: LinearEndpoints, value: unknown): Ticket | null {
   }
 }
 
-export type TicketPageRequest = { scope: string; query: string; cursor: string | null }
+export type TicketPageRequest = {
+  scope: string
+  query: string
+  cursor: string | null
+  state?: 'open' | 'closed'
+}
 export type TicketPage = {
   tickets: Ticket[]
   statuses: TicketStatus[]
@@ -135,9 +149,10 @@ export async function readTicketPage(
   const { scope } = request
   const variables = { team: scope, teamId: scope, first: TICKET_PAGE_SIZE, after: request.cursor }
   const caller = { endpoints, token }
+  const listing = request.state === 'closed' ? CLOSED_BACKLOG : BACKLOG
   const reply = term
     ? await query(caller, SEARCH, { ...variables, term })
-    : await query(caller, BACKLOG, variables)
+    : await query(caller, listing, variables)
   if (!reply.ok) return reply
   const connection = term ? reply.value.searchIssues : reply.value.issues
   if (!isRecord(connection) || !Array.isArray(connection.nodes)) return failed('unreachable')

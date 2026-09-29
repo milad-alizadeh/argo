@@ -18,7 +18,13 @@ export type SourceFailure = TicketErrorCode | 'refused'
 export type SourceRead<T> = { ok: true; value: T } | { ok: false; failure: SourceFailure }
 
 export type Reader = { endpoints: ProviderEndpoints; token: string }
-export type PageRequest = { scope: string; query: string; cursor: string | null }
+// `state` is the listing read: the open backlog unless a page of Closed Tickets is asked for.
+export type PageRequest = {
+  scope: string
+  query: string
+  cursor: string | null
+  state?: 'open' | 'closed'
+}
 // One Ticket of the scope named by its native ID or its key.
 type TicketReadRequest = { scope: string; id: string }
 export type TicketPage = {

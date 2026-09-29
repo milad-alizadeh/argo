@@ -64,6 +64,53 @@ export function failTicketScan(
     .run()
 }
 
+export type ScanStart =
+  | { exhausted: true }
+  | { exhausted: false; first: boolean; cursor: string | null; scanStartedAt: number }
+
+// Opens a scan: an active scan starts over, and a Closed one reads a single page.
+export function beginScan(
+  database: Database,
+  target: TicketSyncTarget,
+  { more, now }: { more: boolean; now: number },
+): ScanStart {
+  if (target.kind === 'closed') return beginClosedPage(database, target, { more, now })
+  const scanStartedAt = beginTicketScan(database, target, now)
+  return { exhausted: false, first: true, cursor: null, scanStartedAt }
+}
+
+// Opens one Closed page: the first, or the one after the saved cursor. Nothing opens past the last.
+function beginClosedPage(
+  database: Database,
+  target: TicketSyncTarget,
+  { more, now }: { more: boolean; now: number },
+): ScanStart {
+  const saved = database.select().from(ticketSync).where(matchingScan(target)).get()
+  const loaded = saved?.completedAt != null
+  if (more && loaded && saved.nextCursor === null) return { exhausted: true }
+  const first = !(more && loaded)
+  const scanStartedAt = beginTicketScan(database, target, now)
+  return {
+    exhausted: false,
+    first,
+    cursor: first ? null : (saved?.nextCursor ?? null),
+    scanStartedAt,
+  }
+}
+
+// A Closed page that was saved: the listing is complete once no cursor follows.
+export function completeClosedPage(
+  database: Database,
+  target: TicketSyncTarget,
+  { nextCursor, completedAt }: { nextCursor: string | null; completedAt: number },
+): void {
+  database
+    .update(ticketSync)
+    .set({ phase: 'ready', failure: null, nextCursor, completedAt, updatedAt: touched })
+    .where(matchingScan(target))
+    .run()
+}
+
 // A scan the last process was running when it stopped is no longer running.
 export function markInterruptedTicketScans(database: Database): void {
   database

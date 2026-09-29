@@ -140,11 +140,19 @@ function listing(body: unknown): Listing | null {
   }
 }
 
-export type TicketPageRequest = { scope: string; query: string; page: number }
+export type TicketPageRequest = {
+  scope: string
+  query: string
+  page: number
+  state?: 'open' | 'closed'
+}
 
-function pageURL(endpoints: GitHubEndpoints, { scope, query, page }: TicketPageRequest): string {
+function pageURL(
+  endpoints: GitHubEndpoints,
+  { scope, query, page, state = 'open' }: TicketPageRequest,
+): string {
   const paging = `per_page=${TICKET_PAGE_SIZE}&page=${page}`
-  if (query.trim() === '') return `${endpoints.api}/repos/${scope}/issues?state=open&${paging}`
+  if (query.trim() === '') return `${endpoints.api}/repos/${scope}/issues?state=${state}&${paging}`
   const search = new URLSearchParams({ q: searchQuery(scope, query) })
   return `${endpoints.api}/search/issues?${search}&${paging}`
 }

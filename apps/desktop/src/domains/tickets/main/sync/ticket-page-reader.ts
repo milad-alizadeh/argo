@@ -6,10 +6,10 @@ import type { TicketSyncDependencies } from './ticket-sync-machine'
 export function ticketPageReader(
   dependencies: Pick<ReadCall, 'access' | 'providers'>,
 ): TicketSyncDependencies['readPage'] {
-  return async ({ accountId, scope }, cursor) => {
+  return async ({ accountId, scope, state }, cursor) => {
     const call = { ...dependencies, requestId: randomUUID() }
     const read = await readAs(call, accountId, (source, reader) =>
-      source.page(reader, { scope, query: '', cursor }),
+      source.page(reader, { scope, query: '', cursor, state }),
     )
     return read.ok ? { ok: true, value: read.value } : { ok: false, failure: read.error.code }
   }

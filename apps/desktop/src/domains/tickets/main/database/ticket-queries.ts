@@ -1,5 +1,5 @@
 // The Ticket screen's reads from SQLite alone: active means listed by the latest complete scan or later.
-import { and, asc, count, eq, gte, isNotNull, or, sql } from 'drizzle-orm'
+import { type AnyColumn, and, asc, count, eq, gte, isNotNull, or, type SQL, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { ticketTable } from '@/database/ticket/schema'
@@ -10,7 +10,7 @@ import { ticketSync } from '@/database/ticket-sync/schema'
 import { type TicketSyncState, ticketSyncSelectSchema } from '@/database/ticket-sync/validation'
 import type { Ticket, TicketStatus } from '@/domains/tickets/contract/contract'
 import { ticket, ticketStatus } from '@/domains/tickets/contract/ticket'
-import { matchingScan } from '../sync/ticket-sync-records'
+import { matchingScan, type TicketSyncTarget } from '../sync/ticket-sync-records'
 
 type ActiveRead = {
   tickets: Ticket[]
@@ -43,11 +43,15 @@ function ticketFrom(saved: ContentRow): Ticket {
   })
 }
 
-function readSync(database: Database, { provider, scope }: TicketScopeTarget) {
+function readSync(
+  database: Database,
+  { provider, scope }: TicketScopeTarget,
+  kind: TicketSyncTarget['kind'] = 'active',
+) {
   const row = database
     .select()
     .from(ticketSync)
-    .where(matchingScan({ provider, scope, kind: 'active' }))
+    .where(matchingScan({ provider, scope, kind }))
     .get()
   if (row === undefined) return { state: IDLE, statuses: [], coveredFrom: 0 }
   const saved = ticketSyncSelectSchema.parse(row)
@@ -56,7 +60,11 @@ function readSync(database: Database, { provider, scope }: TicketScopeTarget) {
     // Kept through a retry's scan, so the screen does not drop the failure while it retries.
     failure: saved.failure,
     completedAt: saved.completedAt,
-    complete: saved.completeScanStartedAt !== null,
+    // A Closed listing is complete once its last page was saved.
+    complete:
+      kind === 'closed'
+        ? saved.nextCursor === null && saved.completedAt !== null
+        : saved.completeScanStartedAt !== null,
   }
   return {
     state,
@@ -65,23 +73,21 @@ function readSync(database: Database, { provider, scope }: TicketScopeTarget) {
   }
 }
 
-export function readActiveTickets(
-  database: Database,
-  request: TicketScopeTarget & { page: number; pageSize: number },
-): ActiveRead {
-  const sync = readSync(database, request)
-  const listed = and(
-    eq(ticketTable.provider, request.provider),
-    eq(ticketTable.scope, request.scope),
-    isNotNull(ticketContent.listedAt),
-    gte(ticketContent.listedAt, sync.coveredFrom),
-  )
+type Numbered = TicketScopeTarget & { page: number; pageSize: number }
+type Listing = {
+  sync: ReturnType<typeof readSync>
+  listed: SQL | undefined
+  order: AnyColumn
+}
+
+// One numbered page of a listing, with the total the listing holds.
+function readListing(database: Database, request: Numbered, { sync, listed, order }: Listing) {
   const rows = database
     .select({ content: ticketContent })
     .from(ticketContent)
     .innerJoin(ticketTable, eq(ticketTable.argoId, ticketContent.ticketId))
     .where(listed)
-    .orderBy(asc(ticketContent.position), asc(ticketContent.key))
+    .orderBy(asc(order), asc(ticketContent.key))
     .limit(request.pageSize)
     .offset(request.page * request.pageSize)
     .all()
@@ -97,6 +103,26 @@ export function readActiveTickets(
     total: total?.value ?? 0,
     sync: sync.state,
   }
+}
+
+const inScope = ({ provider, scope }: TicketScopeTarget) =>
+  and(eq(ticketTable.provider, provider), eq(ticketTable.scope, scope))
+
+export function readActiveTickets(database: Database, request: Numbered): ActiveRead {
+  const sync = readSync(database, request)
+  const listed = and(
+    inScope(request),
+    isNotNull(ticketContent.listedAt),
+    gte(ticketContent.listedAt, sync.coveredFrom),
+  )
+  return readListing(database, request, { sync, listed, order: ticketContent.position })
+}
+
+// One numbered page of the Closed Tickets the Closed pages saved, in the provider's order.
+export function readClosedTickets(database: Database, request: Numbered): ActiveRead {
+  const sync = readSync(database, request, 'closed')
+  const listed = and(inScope(request), isNotNull(ticketContent.closedPosition))
+  return readListing(database, request, { sync, listed, order: ticketContent.closedPosition })
 }
 
 // A saved Ticket of the scope named by its Argo UUID, its native ID or its key.

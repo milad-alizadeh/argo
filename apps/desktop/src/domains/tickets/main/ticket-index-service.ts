@@ -4,9 +4,11 @@ import { ticketSyncStateSchema } from '@/database/ticket-sync/validation'
 import { TICKET_PAGE_SIZE, ticketErrorSchema } from '@/domains/tickets/contract/contract'
 import { ticket, ticketStatus } from '@/domains/tickets/contract/ticket'
 import { identifier, message } from '@/shared/messages'
-import { readActiveTickets } from './database/ticket-queries'
+import { readActiveTickets, readClosedTickets } from './database/ticket-queries'
 import type { Call } from './read-as'
 import { writableConnection } from './service'
+import type { TicketSyncRequest } from './sync/ticket-sync-machine'
+import type { TicketSyncSupervisorCommand } from './sync/ticket-sync-supervisor-machine'
 
 // One numbered page of the active Tickets saved in SQLite, and the scan state behind them.
 export const ticketIndexedOutputSchema = z.union([
@@ -27,15 +29,16 @@ export const ticketSyncRequestedOutputSchema = z.union([
   ticketErrorSchema,
 ])
 
-export async function readActive(
+async function readListing(
   call: Call,
   page: number,
+  read: typeof readActiveTickets,
 ): Promise<z.infer<typeof ticketIndexedOutputSchema>> {
   const target = await writableConnection(call)
   if (!target.ok) return target.error
   const { provider, scope } = target
   const pageSize = TICKET_PAGE_SIZE
-  const read = readActiveTickets(call.index.database, { provider, scope, page, pageSize })
+  const saved = read(call.index.database, { provider, scope, page, pageSize })
   const { requestId, projectId } = call
   return {
     version: 1,
@@ -45,20 +48,33 @@ export async function readActive(
     scope,
     page,
     pageSize,
-    ...read,
+    ...saved,
   }
 }
 
-export async function requestSync(
+export const readActive = (call: Call, page: number) => readListing(call, page, readActiveTickets)
+
+// The Closed Tickets saved in SQLite, and the state of their own paging.
+export const readClosed = (call: Call, page: number) => readListing(call, page, readClosedTickets)
+
+async function requestScan(
   call: Call,
+  command: (request: TicketSyncRequest) => TicketSyncSupervisorCommand,
 ): Promise<z.infer<typeof ticketSyncRequestedOutputSchema>> {
   const target = await writableConnection(call)
   if (!target.ok) return target.error
   const { provider, scope, accountId } = target
-  call.index.send({ type: 'Sync', request: { provider, scope, accountId } })
+  call.index.send(command({ provider, scope, accountId }))
   const { requestId, projectId } = call
   return { version: 1, type: 'ticket.sync-requested', requestId, projectId }
 }
+
+export const requestSync = (call: Call) =>
+  requestScan(call, (request) => ({ type: 'Sync', request }))
+
+// The first Closed page, or the one after the last saved; the answer is the commit.
+export const requestClosed = (call: Call, more: boolean) =>
+  requestScan(call, (request) => ({ type: 'LoadClosed', request, more }))
 
 // A view showing the Project's Tickets, until the returned stop. The request ID names the view.
 export function watchTickets(call: Call): () => void {

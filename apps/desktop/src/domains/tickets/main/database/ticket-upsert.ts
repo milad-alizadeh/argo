@@ -1,5 +1,5 @@
 // The one write of provider Ticket facts into SQLite: one identity per native ID, facts replaced.
-import { and, eq, lt } from 'drizzle-orm'
+import { and, count, eq, inArray, isNotNull, lt } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { ticketTable } from '@/database/ticket/schema'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
@@ -112,6 +112,56 @@ export function saveListedTickets(
         .run()
     })
   })
+}
+
+// One page of Closed Tickets, committed together. The first page starts the listing over, so the
+// pages after it number on from it.
+export function saveClosedTickets(
+  database: Database,
+  batch: TicketScopeTarget & { offset: number; readAt: number; first: boolean },
+  tickets: readonly Ticket[],
+): void {
+  database.transaction((transaction) => {
+    if (batch.first) clearClosedListing(transaction, batch)
+    tickets.forEach((ticket, index) => {
+      const ticketId = saveFacts(transaction, batch, ticket)
+      transaction
+        .update(ticketContent)
+        .set({ closedPosition: batch.offset + index })
+        .where(eq(ticketContent.ticketId, ticketId))
+        .run()
+    })
+  })
+}
+
+function clearClosedListing(database: Writer, { provider, scope }: TicketScopeTarget): void {
+  const ids = database
+    .select({ argoId: ticketTable.argoId })
+    .from(ticketTable)
+    .where(and(eq(ticketTable.provider, provider), eq(ticketTable.scope, scope)))
+  database
+    .update(ticketContent)
+    .set({ closedPosition: null })
+    .where(inArray(ticketContent.ticketId, ids))
+    .run()
+}
+
+// The number of Closed Tickets the listing holds, which is where the next page numbers from.
+export function countClosedListed(database: Database, { provider, scope }: TicketScopeTarget) {
+  return (
+    database
+      .select({ value: count() })
+      .from(ticketContent)
+      .innerJoin(ticketTable, eq(ticketTable.argoId, ticketContent.ticketId))
+      .where(
+        and(
+          eq(ticketTable.provider, provider),
+          eq(ticketTable.scope, scope),
+          isNotNull(ticketContent.closedPosition),
+        ),
+      )
+      .get()?.value ?? 0
+  )
 }
 
 // One Ticket read by ID, answering its Argo UUID; only the active scan sets its listing.

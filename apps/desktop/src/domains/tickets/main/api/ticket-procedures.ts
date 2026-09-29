@@ -33,6 +33,8 @@ import {
 } from '../ticket-detail-service'
 import {
   readActive,
+  readClosed,
+  requestClosed,
   requestSync,
   ticketIndexedOutputSchema,
   ticketSyncRequestedOutputSchema,
@@ -53,6 +55,7 @@ const listInputSchema = projectInputSchema.extend({
 const listOutputSchema = z.union([ticketListedSchema, ticketErrorSchema])
 // A numbered page of the saved active list; the bound keeps an offset inside SQLite's reach.
 const activeInputSchema = projectInputSchema.extend({ page: z.int().nonnegative().max(100_000) })
+const closedLoadInputSchema = projectInputSchema.extend({ more: z.boolean() })
 const detailInputSchema = projectInputSchema.extend({ reference: ticketReference })
 const changeSchema = z.strictObject({ provider, scope: identifierSchema })
 const updateStatusInputSchema = projectInputSchema.extend({ key: ticketKey, statusId })
@@ -77,6 +80,20 @@ function indexProcedures(dependencies: TicketProcedureContext) {
       .output(ticketIndexedOutputSchema)
       .query(({ input: { projectId, page } }) =>
         readActive(request(dependencies, projectId), page),
+      ),
+    // The Closed Tickets the Closed pages saved, by number.
+    ticketClosed: t.procedure
+      .input(activeInputSchema)
+      .output(ticketIndexedOutputSchema)
+      .query(({ input: { projectId, page } }) =>
+        readClosed(request(dependencies, projectId), page),
+      ),
+    // Reads one Closed page from the provider: the first, or the one after the saved cursor.
+    ticketClosedLoad: t.procedure
+      .input(closedLoadInputSchema)
+      .output(ticketSyncRequestedOutputSchema)
+      .mutation(({ input: { projectId, more } }) =>
+        requestClosed(request(dependencies, projectId), more),
       ),
     // One saved Ticket by Argo UUID, native ID or key, listed or not.
     ticketDetail: t.procedure

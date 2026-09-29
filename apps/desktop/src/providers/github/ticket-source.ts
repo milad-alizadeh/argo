@@ -52,11 +52,11 @@ export const githubTickets: TicketSource = {
     return { ok: true, value: read.value.map((name) => ({ scope: name, label: name })) }
   },
 
-  async page({ endpoints, token }, { scope, query, cursor }) {
+  async page({ endpoints, token }, { scope, query, cursor, state }) {
     if (cursor !== null && !PAGE_CURSOR.test(cursor))
       return { ok: false, failure: 'invalid-request' }
     const page = cursor === null ? 1 : Number(cursor)
-    const read = await readTicketPage(endpoints.github, token, { scope, query, page })
+    const read = await readTicketPage(endpoints.github, token, { scope, query, page, state })
     if (!read.ok) return failed(read.failure)
     const { tickets, nextPage, total } = read.value
     const nextCursor = nextPage === null ? null : String(nextPage)
