@@ -4,6 +4,7 @@
 
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { hasSubagentTranscript } from '@/domains/sessions/api/feed/feed-subagents'
 import type { SessionSubagent } from '@/domains/sessions/renderer/model/models'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
@@ -34,8 +35,7 @@ function useVisibleInspector() {
   return { active, inspector }
 }
 
-// An ended Subagent whose Feed holds only its own lifecycle events, or whose history the Harness
-// cannot find, has no transcript to draw.
+// An ended Subagent with no transcript rows, or whose history the Harness cannot find, draws none.
 function hasNoTranscript(
   delegation: SessionSubagent,
   feed: SessionFeed | null,
@@ -43,7 +43,7 @@ function hasNoTranscript(
 ) {
   if (failure?.code === 'missing-session') return true
   if (feed === null || failure !== null || delegation.state === 'running') return false
-  return feed.rows.every((row) => row.shape === 'subagent' && row.subagentId === delegation.id)
+  return !hasSubagentTranscript(feed.rows, delegation.id)
 }
 
 function NoTranscript() {

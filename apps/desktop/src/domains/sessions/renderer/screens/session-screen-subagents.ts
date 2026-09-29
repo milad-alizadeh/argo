@@ -1,5 +1,6 @@
 import type { FeedSubagent } from '@/domains/sessions/api/feed/feed-subagents'
 import type { SessionSubagent } from '@/domains/sessions/renderer/model/models'
+import type { WorkSelection } from './work-selection'
 
 // Main's Feed lists every Subagent its rows name; the roster adds when each ran. Both key by id.
 export function sessionScreenSubagents(
@@ -12,7 +13,8 @@ export function sessionScreenSubagents(
   // The roster was read at the last sync; the Feed's state is at least as new.
   for (const subagent of roster) {
     const current = subagents.get(subagent.id)
-    const nickname = subagent.nickname ?? current?.nickname
+    // Only the Feed knows a nickname; the roster never records one.
+    const nickname = current?.nickname
     subagents.set(subagent.id, {
       ...subagent,
       ...(nickname === undefined ? {} : { nickname }),
@@ -23,20 +25,13 @@ export function sessionScreenSubagents(
   return [...subagents.values()]
 }
 
-// The Subagent a row opened. One the Session never listed still opens, so its inspector can say
-// it has no transcript; with no event to read, it shows as ended.
+// The Subagent picked: one the Session lists, or else what the Feed row that opened it said.
 export function pickedSubagent(
   subagents: readonly SessionSubagent[],
-  subagentId: string | null,
+  work: Pick<WorkSelection, 'subagentId' | 'opened'>,
 ): SessionSubagent | null {
-  if (subagentId === null) return null
-  return (
-    subagents.find((subagent) => subagent.id === subagentId) ?? {
-      id: subagentId,
-      label: null,
-      state: 'completed',
-      startedAt: null,
-      endedAt: null,
-    }
-  )
+  const listed = subagents.find((subagent) => subagent.id === work.subagentId)
+  if (listed !== undefined) return listed
+  if (work.opened === undefined || work.opened.id !== work.subagentId) return null
+  return { ...work.opened, startedAt: null, endedAt: null }
 }

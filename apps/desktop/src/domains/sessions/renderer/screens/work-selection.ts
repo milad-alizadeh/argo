@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { FeedSubagent } from '@/domains/sessions/api/feed/feed-subagents'
 import type { SessionShellCommand } from '@/domains/sessions/renderer/model/models'
 import type { SessionShellOutput } from '@/domains/sessions/renderer/work/types'
 
@@ -9,6 +10,8 @@ export type WorkSelection = {
   sessionId: string | null
   subagentId: string | null
   shellId: string | null
+  // What a Feed row said of the Subagent it opened, for one the Session never listed.
+  opened?: FeedSubagent
 }
 
 const NOTHING_PICKED: WorkSelection = { sessionId: null, subagentId: null, shellId: null }
