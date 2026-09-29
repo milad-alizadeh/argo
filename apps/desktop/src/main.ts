@@ -37,6 +37,7 @@ import {
   type TicketOperationSupervisorActor,
 } from '@/domains/tickets/main/operations/ticket-operation-supervisor-machine'
 import { ticketStatusWriter } from '@/domains/tickets/main/operations/ticket-status-writer'
+import { TicketChanges } from '@/domains/tickets/main/sync/ticket-changes'
 import { ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
 import { failInterruptedTicketSearches } from '@/domains/tickets/main/sync/ticket-search-records'
 import { markInterruptedTicketScans } from '@/domains/tickets/main/sync/ticket-sync-records'
@@ -45,7 +46,6 @@ import {
   ticketSyncTiming,
 } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
 import { reportWindowVisibility } from '@/domains/tickets/main/sync/window-visibility'
-import { TicketChanges } from '@/domains/tickets/main/sync/ticket-changes'
 import { ensureManagedWorkspace } from '@/domains/workspaces/main/workspace-create-managed'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
 import { tailSessionHistory, watchHistoryActivity } from '@/harnesses/host/history-watch'

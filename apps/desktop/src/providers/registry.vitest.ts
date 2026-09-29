@@ -20,12 +20,12 @@ import {
   ticketOperationSupervisorMachine,
 } from '@/domains/tickets/main/operations/ticket-operation-supervisor-machine'
 import { ticketStatusWriter } from '@/domains/tickets/main/operations/ticket-status-writer'
+import { TicketChanges } from '@/domains/tickets/main/sync/ticket-changes'
 import { ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
 import {
   TICKET_SYNC_TIMING,
   ticketSyncSupervisorMachine,
 } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
-import { TicketChanges } from '@/domains/tickets/main/sync/ticket-changes'
 import { proofEndpoints } from '@/providers/github/endpoints'
 import { OCTOCAT } from '@/providers/github/harness'
 import { linearProofEndpoints } from '@/providers/linear/endpoints'
