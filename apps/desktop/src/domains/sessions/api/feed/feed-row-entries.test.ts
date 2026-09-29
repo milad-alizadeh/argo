@@ -8,7 +8,6 @@ import { projectLiveFeedRows } from './live-feed-rows'
 import { foldSettledToolRuns, groupToolRuns } from './tool-groups'
 
 const sessionId = '00000000-0000-4000-8000-000000000001'
-const running = { label: 'Reading the code', kind: 'thought', open: true } as const
 
 function message(id: string, role: 'user' | 'assistant', text: string): FeedContent {
   return { kind: 'message', id, role, text }
@@ -135,10 +134,9 @@ test('every durable content kind projects to a valid entry, in history order', (
   const { entries, rejected } = projectFeedRowEntries({
     history: durableKinds,
     live: [],
-    activity: null,
   })
   expect(rejected).toEqual({ history: 0, live: 0, rows: 0 })
-  expect(entries.flatMap(memberIds)).toEqual(
+  expect(entries.filter(({ row }) => row.shape !== 'activity').flatMap(memberIds)).toEqual(
     durableKinds
       .filter((content) => content.kind !== 'notification' || content.category !== 'status')
       .flatMap((content) => stableId(content)),
@@ -147,7 +145,7 @@ test('every durable content kind projects to a valid entry, in history order', (
 })
 
 test('a prompt attachment draws as a user image row', () => {
-  const { entries } = projectFeedRowEntries({ history: [attachment], live: [], activity: null })
+  const { entries } = projectFeedRowEntries({ history: [attachment], live: [] })
   expect(entries[0]?.row).toMatchObject({ shape: 'image', role: 'user' })
 })
 
@@ -155,15 +153,13 @@ test('ids and revisions are stable across projections of the same input', () => 
   const input = {
     history: [message('m1', 'user', 'Hi'), message('m2', 'assistant', 'Yo')],
     live: [],
-    activity: null,
   }
   expect(projectFeedRowEntries(input).entries).toEqual(projectFeedRowEntries(input).entries)
 })
 
 test('a changed row keeps its id and changes its revision', () => {
   const project = (text: string) =>
-    projectFeedRowEntries({ history: [message('m1', 'assistant', text)], live: [], activity: null })
-      .entries[0]
+    projectFeedRowEntries({ history: [message('m1', 'assistant', text)], live: [] }).entries[0]
   expect(project('One two')?.id).toBe(project('One')?.id)
   expect(project('One two')?.revision).not.toBe(project('One')?.revision)
 })
@@ -175,29 +171,77 @@ test('history and live inputs reconcile into one row each, in history order', ()
       live(1, message('m2', 'assistant', 'Done')),
       live(2, message('m3', 'assistant', 'More')),
     ],
-    activity: null,
   })
   expect(entries.map((entry) => entry.row.id)).toEqual(['m1', 'm2', 'm3'])
 })
 
-test('one transient activity row ends the rows', () => {
-  const { entries } = projectFeedRowEntries({
-    history: [message('m1', 'user', 'Hi')],
+function tool(callId: string, status: 'running' | 'completed'): FeedContent {
+  return {
+    kind: 'tool',
+    id: callId,
+    callId,
+    name: 'Grep',
+    status,
+    input: null,
+    output: null,
+    summary: `Searched ${callId}`,
+  }
+}
+
+const thought = (id: string, text: string): FeedContent => ({
+  kind: 'reasoning',
+  id,
+  text,
+  redacted: false,
+})
+
+test('one transient activity row ends the rows with the Turn latest call', () => {
+  const { entries, activity } = projectFeedRowEntries({
+    history: [
+      message('m1', 'user', 'Hi'),
+      thought('r1', 'Reading the code'),
+      tool('c1', 'running'),
+    ],
     live: [],
-    activity: running,
   })
-  expect(entries.at(-1)).toMatchObject({
-    id: 'activity',
-    row: { shape: 'activity', activity: running },
-  })
+  expect(activity).toMatchObject({ label: 'Searched c1', kind: 'tool', open: true })
+  expect(entries.at(-1)).toMatchObject({ id: 'activity', row: { shape: 'activity', activity } })
   expect(entries.filter((entry) => entry.row.shape === 'activity')).toHaveLength(1)
+})
+
+test('a newer thought replaces the call as the activity, and a new Turn starts empty', () => {
+  const history = [
+    message('m1', 'user', 'Hi'),
+    tool('c1', 'completed'),
+    thought('r1', '  Checking the result  '),
+  ]
+  expect(projectFeedRowEntries({ history, live: [] }).activity).toEqual({
+    label: 'Checking the result',
+    kind: 'thought',
+    open: true,
+  })
+  const next = projectFeedRowEntries({
+    history: [...history, message('m2', 'user', 'Next')],
+    live: [],
+  })
+  expect(next.activity).toBeNull()
+  expect(next.entries.some((entry) => entry.row.shape === 'activity')).toBe(false)
+})
+
+test('reasoning without readable text is neither a row nor an activity', () => {
+  const unreadable: FeedContent = { kind: 'reasoning', id: 'r1', text: null, redacted: true }
+  const { entries, activity } = projectFeedRowEntries({
+    history: [message('m1', 'user', 'Hi'), unreadable, { ...unreadable, id: 'r2' }],
+    live: [],
+  })
+  expect(entries.map((entry) => entry.row.id)).toEqual(['m1'])
+  expect(activity).toBeNull()
 })
 
 test('unsupported input is skipped and counted, never drawn', () => {
   const { entries, rejected } = projectFeedRowEntries({
     history: [message('m1', 'user', 'Hi'), { kind: 'hologram', id: 'h1' }, 'nonsense'],
     live: [{ type: 'teleport', sequence: 1 }],
-    activity: null,
   })
   expect(entries.map((entry) => entry.row.id)).toEqual(['m1'])
   expect(rejected).toEqual({ history: 2, live: 1, rows: 0 })
@@ -215,8 +259,8 @@ test('the entries draw the rows the renderer drew before', () => {
     live(1, message('m9', 'assistant', 'Later')),
     live(2, durableKinds[9] as FeedContent),
   ]
-  const { entries } = projectFeedRowEntries({ history, live: liveEvents, activity: null })
-  expect(entries.map((entry) => entry.row)).toEqual(
+  const { entries } = projectFeedRowEntries({ history, live: liveEvents })
+  expect(entries.flatMap((entry) => (entry.row.shape === 'activity' ? [] : [entry.row]))).toEqual(
     foldSettledToolRuns(groupToolRuns(projectLiveFeedRows(history, liveEvents))),
   )
 })
@@ -225,7 +269,6 @@ test('live rows follow the history rows they extend, in sequence order', () => {
   const { entries } = projectFeedRowEntries({
     history: [message('m1', 'user', 'Hi')],
     live: [live(3, message('m4', 'assistant', 'C')), live(2, message('m3', 'assistant', 'B'))],
-    activity: null,
   })
   expect(entries.map((entry) => entry.row.id)).toEqual(['m1', 'm3', 'm4'])
 })
@@ -242,7 +285,7 @@ test('a generated output row keeps the row when its call id fills the identifier
     output: [{ kind: 'json', value: { ok: true } }],
     summary: null,
   }
-  const { entries, rejected } = projectFeedRowEntries({ history: [tool], live: [], activity: null })
+  const { entries, rejected } = projectFeedRowEntries({ history: [tool], live: [] })
   expect(rejected.rows).toBe(0)
-  expect(entries.map((entry) => entry.row.shape)).toEqual(['tool-group', 'source'])
+  expect(entries.map((entry) => entry.row.shape)).toEqual(['tool-group', 'source', 'activity'])
 })

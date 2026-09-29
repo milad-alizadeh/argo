@@ -69,11 +69,12 @@ export function FeedEvent({ row }: { row: FeedEventRow }) {
   if (row.event === 'liveStatus' && text !== null && isLiveStatus(text))
     text = t(LIVE_STATUS_KEYS[text])
   if (row.event === 'media' && text !== null && isMediaType(text)) text = t(MEDIA_KEYS[text])
-  if (row.event === 'skill-invocation' && row.skill !== undefined)
+  if (row.event === 'skill-invocation' && row.skill !== undefined) {
+    const skillPath = row.skill.path
     return (
       <div className="rounded-md bg-muted/60 px-2.5 py-1.5" data-slot="feed-event">
         <CollapsibleText
-          content={<SessionSkillBody path={row.skill.path} />}
+          content={() => <SessionSkillBody path={skillPath} />}
           contentVariant="flush"
           icon={EVENT_PRESENTATION[row.event]}
           title={t(`events.${row.event}.title`, { label, invocation: row.text ?? '' })}
@@ -88,6 +89,7 @@ export function FeedEvent({ row }: { row: FeedEventRow }) {
         )}
       </div>
     )
+  }
   return (
     <div
       className="flex min-w-0 items-center gap-2 rounded-md bg-muted/60 px-2.5 py-1.5 type-body"

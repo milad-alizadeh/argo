@@ -2140,7 +2140,7 @@ export const ThoughtWhileStatusIsUnknown: Story = {
 }
 
 // External Sessions cannot always prove a live Turn, but their Feed and Roster still name the
-// same newest observed activity, followed by the grouped command count.
+// same newest observed activity, and the live title waits to count the group.
 export const CommandActivityWhileStatusIsUnknown: Story = {
   args: {
     feed: {
@@ -2184,9 +2184,8 @@ export const CommandActivityWhileStatusIsUnknown: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(
-      canvas.getByRole('button', { name: 'Ran rtk gh issue create · Ran 7 commands' }),
-    ).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Ran rtk gh issue create' })).toBeVisible()
+    await expect(canvas.queryByText(/Ran 7 commands/)).toBeNull()
   },
 }
 

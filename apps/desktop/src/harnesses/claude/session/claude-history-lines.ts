@@ -1,7 +1,7 @@
 import path from 'node:path'
 import type { SessionMessage } from '@anthropic-ai/claude-agent-sdk'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
-import type { HistoryChange, HistoryTurn } from '@/harnesses/registration'
+import type { HistoryChange, HistoryTurn, HistoryTurnMarker } from '@/harnesses/registration'
 import { decodeClaudeHistoryContent } from './claude-feed-decoder'
 
 const CLOSING_STOP_REASONS = new Set(['end_turn', 'stop_sequence'])
@@ -22,8 +22,14 @@ function promptTexts(content: unknown): string[] | null {
   return texts.length > 0 ? texts : null
 }
 
-// A person's prompt opens a turn; the final answer, the turn's duration line or an interruption closes it.
-export function claudeHistoryTurn(line: string): HistoryTurn | null {
+// A person's prompt opens a turn; the final answer, the turn's duration line or an interruption
+// closes it. Claude writes no turn id, so the newest marker stands.
+export function claudeHistoryTurn(line: string): HistoryTurnMarker | null {
+  const turn = claudeTurn(line)
+  return turn === null ? null : { turn, turnId: null }
+}
+
+function claudeTurn(line: string): HistoryTurn | null {
   const record = recordOf(line)
   if (record === null) return null
   const { type, subtype, isMeta, isSidechain } = record

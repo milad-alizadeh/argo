@@ -34,9 +34,11 @@ function files(root: string, opened: (readonly string[])[] = []): HistoryFiles {
         ),
       })
     },
+    // `prompt#t1` opens turn t1; a marker without `#` names no turn.
     turnOf: (line) => {
-      if (line.startsWith('prompt')) return 'open'
-      return line.startsWith('answer') ? 'closed' : null
+      const turnId = line.split('#')[1] ?? null
+      if (line.startsWith('prompt')) return { turn: 'open', turnId }
+      return line.startsWith('answer') ? { turn: 'closed', turnId } : null
     },
   }
 }
@@ -167,6 +169,16 @@ test('finds the newest turn marker behind lines that carry none', async (context
   appendFileSync(file, 'answer two\n')
   assert.equal(latestTurn(file, files(root).turnOf), 'closed')
   assert.equal(latestTurn(path.join(root, 'missing.jsonl'), files(root).turnOf), null)
+})
+
+test('keeps the newest turn open when an earlier turn closes after it starts', async (context) => {
+  const root = await directory(context)
+  const file = path.join(root, 'native-1.jsonl')
+  writeFileSync(file, 'prompt#t1\nprompt#t2\nanswer#t1\ntool call\n')
+
+  assert.equal(latestTurn(file, files(root).turnOf), 'open')
+  appendFileSync(file, 'answer#t2\n')
+  assert.equal(latestTurn(file, files(root).turnOf), 'closed')
 })
 
 test('reads no turn from a file whose marker lies beyond the scanned window', async (context) => {

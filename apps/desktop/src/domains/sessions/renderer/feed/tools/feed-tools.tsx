@@ -2,9 +2,9 @@ import { useTranslation } from 'react-i18next'
 import { displayedToolLabel } from '@/domains/sessions/api/feed/tool-feed'
 import { standsAlone, TOOL_KIND_PRESENTATION } from '@/domains/sessions/api/feed/tool-groups'
 import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
-import { RunningText } from '@/platform/renderer/components/running-text'
 import { TaskItem } from '../../ai-elements/task'
 import type { SessionFeedRow } from '../../types'
+import { FeedMarkdown } from '../content/feed-markdown'
 import { LiveActivityText } from '../rows/live-activity-text'
 import { type ToolGroupState, useToolGroupOpen } from '../rows/tool-group-state'
 import { CollapsibleText } from './collapsible-text'
@@ -45,20 +45,30 @@ function LineCounts({ added, removed }: NonNullable<ToolCall['lineCounts']>) {
   )
 }
 
+// A call reads as running only inside the live group: an older group's call that never
+// reported an end is history once newer work has begun.
+export function callRunning(call: ToolCall | ToolRow, live: boolean) {
+  return live && call.status === 'running'
+}
+
 // The numbers sit right after the label, as if inline; a running spinner keeps the far edge.
+// Only the live title shimmers, so a call line never does.
 export function FeedToolLine({
   call,
   activeEvidenceId,
+  live,
   onOpen,
 }: {
   call: ToolCall | ToolRow
   activeEvidenceId: string | null
+  live: boolean
   onOpen: (row: ToolRow) => void
 }) {
   const { t } = useTranslation('sessions')
   const iconName = toolPresentation(call.kind).icon
   const active = activeEvidenceId === call.id
   const failed = call.status === 'failed'
+  const running = callRunning(call, live)
   return (
     <button
       type="button"
@@ -69,14 +79,12 @@ export function FeedToolLine({
     >
       <Icon className="!size-(--size-icon-inline) shrink-0" name={iconName} />
       <span className="min-w-0 truncate text-left [direction:rtl]">
-        <RunningText running={call.status === 'running'}>
-          {displayedToolLabel(call, call.status === 'running', t('workState.running'))}
-        </RunningText>
+        {displayedToolLabel(call, running, t('workState.running'))}
       </span>
       {call.lineCounts === null ? null : <LineCounts {...call.lineCounts} />}
       {failed ? <span className="sr-only">{t('tools.failed')}</span> : null}
       <span className="ml-auto flex shrink-0 items-center">
-        <StatusIcon status={call.status} />
+        {running ? <StatusIcon status={call.status} /> : null}
       </span>
     </button>
   )
@@ -87,23 +95,27 @@ function GroupedCall({
   activeEvidenceId,
   call,
   isSole,
+  live,
   onOpen,
   toolGroups,
 }: {
   activeEvidenceId: string | null
   call: ToolCall
   isSole: boolean
+  live: boolean
   onOpen: (row: ToolRow) => void
   toolGroups: ToolGroupState
 }) {
   if (toolPresentation(call.kind).route !== 'inline')
-    return <FeedToolLine activeEvidenceId={activeEvidenceId} call={call} onOpen={onOpen} />
-  if (!isSole) return <FeedInlineToolCallItem call={call} toolGroups={toolGroups} />
+    return (
+      <FeedToolLine activeEvidenceId={activeEvidenceId} call={call} live={live} onOpen={onOpen} />
+    )
+  if (!isSole) return <FeedInlineToolCallItem call={call} live={live} toolGroups={toolGroups} />
   // The group's title is its count, so the agent's own description of the call reads here.
   return (
     <>
       {describesItself(call) && <p className="type-body text-muted-foreground">{call.label}</p>}
-      <FeedInlineToolCall call={call} />
+      <FeedInlineToolCall call={call} live={live} />
     </>
   )
 }
@@ -141,51 +153,47 @@ export function FeedToolGroup({
   const { onOpenChange, open } = useToolGroupOpen(toolGroups, group.id)
   const soleCall = group.calls.length === 1 ? group.calls[0] : undefined
   const activity = liveActivity(group)
-  const latestCommentary = group.thoughts?.at(-1)?.text
+  const live = activity !== null
+  const latestCommentary = group.thoughts?.at(-1)
   // A call that stands alone (`groupedRowIndexes`) names its group. Every other settled group
   // reads as its count: a command that has run is history, and its text is one disclosure away,
   // never a stray line in the Feed.
   const titleCall = soleCall !== undefined && standsAlone(soleCall.kind) ? soleCall : undefined
-  const headline =
-    activity === null ? (
-      (latestCommentary ?? titleCall?.label ?? group.label)
-    ) : (
-      <LiveActivityText activity={activity} running shimmer />
-    )
-  const title =
-    activity === null && latestCommentary === undefined ? (
-      headline
+  const settledTitle =
+    latestCommentary === undefined ? (
+      (titleCall?.label ?? group.label)
     ) : (
       <span className="flex min-w-0 items-baseline gap-2">
-        <span className="truncate">{headline}</span>
+        <span className="truncate">{latestCommentary.text}</span>
         <span className="shrink-0">· {group.label}</span>
       </span>
     )
-  const titleThoughtId =
-    activity === null || (activity.kind === 'thought' && activity.label === latestCommentary)
-      ? group.thoughts?.at(-1)?.id
-      : undefined
-  const thoughtsByCall = groupThoughtsByCall(group, titleThoughtId)
+  // The live title is the activity alone: the count waits for the group to settle.
+  const title = live ? <LiveActivityText activity={activity} running shimmer /> : settledTitle
+  const thoughtsByCall = groupThoughtsByCall(group, live ? undefined : latestCommentary?.id)
   return (
     <CollapsibleText
-      content={group.calls.flatMap((call, index) => [
-        <TaskItem key={call.id}>
-          <GroupedCall
-            activeEvidenceId={activeEvidenceId}
-            call={call}
-            isSole={call.id === soleCall?.id}
-            onOpen={onOpen}
-            toolGroups={toolGroups}
-          />
-        </TaskItem>,
-        ...(thoughtsByCall.get(index) ?? []).map((thought) => (
-          <TaskItem key={thought.id}>
-            <p className="whitespace-pre-wrap break-words text-muted-foreground type-body">
-              {thought.text}
-            </p>
-          </TaskItem>
-        )),
-      ])}
+      content={() =>
+        group.calls.flatMap((call, index) => [
+          <TaskItem key={call.id}>
+            <GroupedCall
+              activeEvidenceId={activeEvidenceId}
+              call={call}
+              isSole={call.id === soleCall?.id}
+              live={live}
+              onOpen={onOpen}
+              toolGroups={toolGroups}
+            />
+          </TaskItem>,
+          ...(thoughtsByCall.get(index) ?? []).map((thought) => (
+            <TaskItem key={thought.id}>
+              <div className="break-words text-muted-foreground type-body">
+                <FeedMarkdown text={thought.text} />
+              </div>
+            </TaskItem>
+          )),
+        ])
+      }
       contentVariant="flush"
       icon={groupIcon(activity, titleCall?.kind)}
       onOpenChange={onOpenChange}

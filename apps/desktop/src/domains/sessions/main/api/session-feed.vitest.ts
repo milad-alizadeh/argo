@@ -10,6 +10,7 @@ import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type { SessionFeedReaderContext } from '../feed/feed-reader'
 import { SessionEventJournal } from '../live/session-event-journal'
+import { SessionActivities } from './session-activities'
 import { sessionFeedProcedures } from './session-feed'
 import { SessionSyncStatusStore } from './session-sync-status'
 
@@ -190,6 +191,67 @@ test('a settled Turn reads vendor history again', async () => {
   expect(feed.latest()).toMatchObject({ state: 'ready', liveStatus: 'idle' })
   expect(rowIds(feed.latest())).toContain('m1')
   feed.subscription.unsubscribe()
+})
+
+function running(id: string, text: string): FeedContent {
+  return {
+    kind: 'command',
+    id,
+    command: text,
+    cwd: null,
+    status: 'running',
+    output: null,
+    stderr: null,
+    exitCode: null,
+  }
+}
+
+function reasoning(id: string, text: string | null): FeedContent {
+  return { kind: 'reasoning', id, text, redacted: text === null }
+}
+
+const activityOf = (reading: FeedReading | undefined) =>
+  reading?.entries.find(({ row }) => row.shape === 'activity')?.row
+
+test('a multi-activity Turn publishes its latest activity to the Feed and the roster', async () => {
+  let rosterChanges = 0
+  const activities = new SessionActivities(() => {
+    rosterChanges += 1
+  })
+  const history = historyReads()
+  const feed = await observe({ readHistory: history.readHistory, activities })
+  await history.answer([message('m1', 'user', 'Check it'), command('c1', 'bun test')])
+  const first = { kind: 'command', label: 'Ran bun test', open: false }
+  expect(activityOf(feed.latest())).toMatchObject({ activity: first })
+  expect(activities.activityOf(sessionId)).toMatchObject(first)
+
+  journal.append(sessionId, content(reasoning('r1', null)))
+  journal.append(sessionId, content(reasoning('r2', 'Reading **the** failure')))
+  const thought = { kind: 'thought', label: 'Reading **the** failure', open: true }
+  expect(activityOf(feed.latest())).toMatchObject({ activity: thought })
+  // Unreadable reasoning is dropped: no tile, and no text made up for it.
+  expect(rowIds(feed.latest())).not.toContain('r1')
+
+  journal.append(sessionId, content(running('c2', 'bun run typecheck')))
+  const latest = { kind: 'command', label: 'Ran bun run typecheck', open: true }
+  expect(activityOf(feed.latest())).toMatchObject({ activity: latest })
+  expect(activities.activityOf(sessionId)).toMatchObject(latest)
+  expect(feed.latest()?.entries.filter(({ row }) => row.shape === 'activity')).toHaveLength(1)
+
+  journal.append(sessionId, content(command('c2', 'bun run typecheck')))
+  journal.append(sessionId, { type: 'status', ...identity, status: 'idle' })
+  await history.answer([
+    message('m1', 'user', 'Check it'),
+    command('c1', 'bun test'),
+    reasoning('r2', 'Reading **the** failure'),
+    command('c2', 'bun run typecheck'),
+    message('m2', 'assistant', 'Both pass.'),
+  ])
+  expect(activityOf(feed.latest())).toMatchObject({ activity: { ...latest, open: false } })
+  const changesBeforeClose = rosterChanges
+  feed.subscription.unsubscribe()
+  expect(activities.activityOf(sessionId)).toBeNull()
+  expect(rosterChanges).toBe(changesBeforeClose + 1)
 })
 
 test('names the waiting Question and Permission', async () => {
