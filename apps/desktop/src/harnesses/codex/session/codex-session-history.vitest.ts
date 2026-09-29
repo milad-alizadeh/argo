@@ -7,6 +7,15 @@ import { hasCodexSessionTurn, readCodexSessionHistory } from './codex-session-hi
 
 afterEach(() => vi.unstubAllEnvs())
 
+function warningSpy() {
+  return vi.spyOn(console, 'warn').mockImplementation(() => {})
+}
+
+function singleItemRequest(item: Record<string, unknown>): CodexRequest {
+  return (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
+    parse({ thread: { turns: [{ items: [item] }] } })) as CodexRequest
+}
+
 test('projects recorded Codex user and agent messages into Feed content', async () => {
   vi.stubEnv(
     'ARGO_CODEX_TRANSCRIPTS',
@@ -156,15 +165,103 @@ test('shows the image-generation usage limit and reset reported by Codex', async
 })
 
 test('rejects and reports an unknown Codex image-generation status', async () => {
-  const warning = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  const warning = warningSpy()
+  const request = singleItemRequest({
+    id: 'image-1',
+    type: 'imageGeneration',
+    status: 'futureStatus',
+  })
+  await expect(readCodexSessionHistory(request, 'thread')).rejects.toThrow()
+  expect(warning).toHaveBeenCalledWith('Rejected 1 unsupported Codex history shape.')
+  warning.mockRestore()
+})
+
+test('folds a Codex image into the prompt row and keeps a raw attachment path out of its text', async () => {
   const request = (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
     parse({
       thread: {
-        turns: [{ items: [{ id: 'image-1', type: 'imageGeneration', status: 'futureStatus' }] }],
+        turns: [
+          {
+            items: [
+              {
+                id: 'user-image',
+                type: 'userMessage',
+                clientId: null,
+                content: [
+                  { type: 'text', text: 'Check this screenshot', text_elements: [] },
+                  { type: 'localImage', path: '/tmp/screenshot.png' },
+                  {
+                    type: 'text',
+                    text: '/tmp/report.pdf',
+                    text_elements: [
+                      { byteRange: { start: 0, end: 15 }, placeholder: '/tmp/report.pdf' },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
       },
     })) as CodexRequest
-  await expect(readCodexSessionHistory(request, 'thread')).rejects.toThrow()
-  expect(warning).toHaveBeenCalledWith('Rejected 1 unsupported Codex history shape.')
+  await expect(readCodexSessionHistory(request, 'thread')).resolves.toEqual([
+    {
+      kind: 'message',
+      id: 'user-image',
+      role: 'user',
+      text: 'Check this screenshot',
+      images: [{ kind: 'path', path: '/tmp/screenshot.png' }],
+      files: [{ label: 'report.pdf', target: '/tmp/report.pdf' }],
+    },
+  ])
+})
+
+test('shows a Codex image-only prompt with no text', async () => {
+  const request = (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
+    parse({
+      thread: {
+        turns: [
+          {
+            items: [
+              {
+                id: 'user-image-only',
+                type: 'userMessage',
+                clientId: null,
+                content: [{ type: 'localImage', path: '/tmp/only.png' }],
+              },
+            ],
+          },
+        ],
+      },
+    })) as CodexRequest
+  await expect(readCodexSessionHistory(request, 'thread')).resolves.toEqual([
+    {
+      kind: 'message',
+      id: 'user-image-only',
+      role: 'user',
+      text: '',
+      images: [{ kind: 'path', path: '/tmp/only.png' }],
+    },
+  ])
+})
+
+test('reports and drops a Codex image sent by fileId, keeping the rest of the prompt', async () => {
+  const warning = warningSpy()
+  const request = singleItemRequest({
+    id: 'user-fileid-image',
+    type: 'userMessage',
+    clientId: null,
+    content: [
+      { type: 'text', text: 'Check this upload', text_elements: [] },
+      { type: 'image', fileId: 'file-123' },
+    ],
+  })
+  await expect(readCodexSessionHistory(request, 'thread')).resolves.toEqual([
+    { kind: 'message', id: 'user-fileid-image', role: 'user', text: 'Check this upload' },
+  ])
+  expect(warning).toHaveBeenCalledWith(
+    'Rejected 1 unsupported Codex prompt shape: image by fileId.',
+  )
   warning.mockRestore()
 })
 

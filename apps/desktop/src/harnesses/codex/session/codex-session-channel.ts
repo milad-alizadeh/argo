@@ -16,7 +16,7 @@ import type { ReasoningSummaryTextDeltaNotification } from '../app-server/protoc
 import type { ThreadItem } from '../app-server/protocol-generated/v2/thread-item'
 import type { ThreadReadResponse } from '../app-server/protocol-generated/v2/thread-read-response'
 import { codexCommandContent } from './codex-command-content'
-import { codexContentFromItems } from './codex-session-history'
+import { codexContentFromItems, userPromptMessage, userPromptParts } from './codex-session-history'
 import {
   approvalResponse,
   type CodexApproval,
@@ -25,7 +25,7 @@ import {
   questionResponse,
   readCodexInteraction,
 } from './codex-session-interactions'
-import { APPROVAL_TIMEOUT_MS, inputItems, userContentText } from './codex-session-protocol'
+import { APPROVAL_TIMEOUT_MS, inputItems } from './codex-session-protocol'
 import { CodexSubagentPairing } from './codex-subagent-content'
 import { readCodexThreadStatus } from './codex-thread-status'
 
@@ -466,8 +466,8 @@ export class CodexSessionChannel implements LiveSessionChannel {
   }
 
   private userItem(item: Extract<ThreadItem, { type: 'userMessage' }>, turnId: string) {
-    const text = userContentText(item.content)
-    if (text !== '') this.emitMessage({ itemId: item.id, turnId, role: 'user', text })
+    const content = userPromptMessage(item.id, userPromptParts(item.content))
+    if (content !== null) this.emitItemContent(content, item.id, turnId)
   }
 
   private itemNotification(params: Record<string, unknown>, phase: 'started' | 'completed') {

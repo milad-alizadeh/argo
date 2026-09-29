@@ -55,6 +55,34 @@ function question(
   }
 }
 
+test('draws an authored prompt with its images, files, and pasted content as one row', () => {
+  const rows = projectLiveFeedRows(
+    [
+      {
+        kind: 'message',
+        id: 'prompt-1',
+        role: 'user',
+        text: 'See attached',
+        images: [{ kind: 'data', mimeType: 'image/png', base64: 'aGVsbG8=' }],
+        files: [{ label: 'report.pdf', target: '/repo/report.pdf' }],
+        pastedContent: [{ id: 'pasted-1', text: 'Pasted body' }],
+      },
+    ],
+    [],
+  )
+  expect(rows).toEqual([
+    {
+      shape: 'prose',
+      id: 'prompt-1',
+      role: 'user',
+      text: 'See attached',
+      images: ['data:image/png;base64,aGVsbG8='],
+      files: ['/repo/report.pdf'],
+      pastedContent: [{ id: 'pasted-1', text: 'Pasted body' }],
+    },
+  ])
+})
+
 test('shows ordered live text, tool work, status, Permission, and Question rows', () => {
   const rows = projectLiveFeedRows(
     [],
