@@ -1,4 +1,12 @@
-import { closeSync, openSync, readdirSync, readSync, statSync, watch } from 'node:fs'
+import {
+  closeSync,
+  type FSWatcher,
+  openSync,
+  readdirSync,
+  readSync,
+  statSync,
+  watch,
+} from 'node:fs'
 import path from 'node:path'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type {
@@ -21,19 +29,57 @@ const EXISTING_LINE_BYTES = 1024 * 1024
 function watchDirectory(
   directory: string,
   changed: (relativePath: string) => void,
-): (() => void) | null {
+  includes: (relativePath: string) => boolean,
+): () => void {
+  // macOS can miss writes to an open rollout through the recursive directory watcher.
+  const files = new Map<string, FSWatcher>()
+  const watchFile = (relativePath: string) => {
+    if (!includes(relativePath) || files.has(relativePath)) return
+    try {
+      const watcher = watch(path.join(directory, relativePath), (event) => {
+        if (event === 'rename') {
+          watcher.close()
+          files.delete(relativePath)
+          watchFile(relativePath)
+        }
+        changed(relativePath)
+      })
+      watcher.on('error', (error) => {
+        files.delete(relativePath)
+        watcher.close()
+        console.warn('Vendor history file watcher stopped:', error)
+      })
+      files.set(relativePath, watcher)
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT')
+        console.warn('Vendor history file watcher unavailable:', error)
+    }
+  }
+  let directoryWatcher: FSWatcher | null = null
   try {
-    const watcher = watch(directory, { recursive: true }, (_event, filename) => {
-      if (filename !== null) changed(String(filename))
+    directoryWatcher = watch(directory, { recursive: true }, (_event, filename) => {
+      if (filename === null) return
+      const relativePath = String(filename)
+      watchFile(relativePath)
+      if (includes(relativePath)) changed(relativePath)
     })
-    watcher.on('error', (error) => {
+    directoryWatcher.on('error', (error) => {
       console.warn('Vendor history watcher stopped:', error)
-      watcher.close()
+      directoryWatcher?.close()
     })
-    return () => watcher.close()
   } catch (error) {
     console.warn('Vendor history watcher unavailable:', error)
-    return null
+  }
+  try {
+    for (const relativePath of readdirSync(directory, { recursive: true, encoding: 'utf8' }))
+      watchFile(relativePath)
+  } catch (error) {
+    console.warn('Vendor history files unavailable:', error)
+  }
+  return () => {
+    directoryWatcher?.close()
+    for (const watcher of files.values()) watcher.close()
+    files.clear()
   }
 }
 
@@ -177,14 +223,16 @@ export function tailSessionHistory(
       readAppended(file)
     }, SETTLE_MS)
   }
-  const stop = watchDirectory(files.directory, (relativePath) => {
-    if (files.ownerOf(relativePath) === owner) settle(path.join(files.directory, relativePath))
-  })
+  const stop = watchDirectory(
+    files.directory,
+    (relativePath) => settle(path.join(files.directory, relativePath)),
+    (relativePath) => files.ownerOf(relativePath) === owner,
+  )
   // The platform watcher starts late enough to miss a write made just after it was asked for.
   if (position !== null) settle(position.file)
   return () => {
     if (timer !== null) clearTimeout(timer)
-    stop?.()
+    stop()
   }
 }
 
@@ -310,22 +358,26 @@ export function watchHistoryActivity(
 ): () => void {
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
   const tails = new ActivityTails(files)
-  const stop = watchDirectory(files.directory, (relativePath) => {
-    const owner = files.ownerOf(relativePath)
-    if (owner === null) return
-    const pending = timers.get(owner)
-    if (pending !== undefined) clearTimeout(pending)
-    timers.set(
-      owner,
-      setTimeout(() => {
-        timers.delete(owner)
-        const file = path.join(files.directory, relativePath)
-        active(owner, latestTurn(file, files.turnOf), tails.events(owner, file))
-      }, SETTLE_MS),
-    )
-  })
+  const stop = watchDirectory(
+    files.directory,
+    (relativePath) => {
+      const owner = files.ownerOf(relativePath)
+      if (owner === null) return
+      const pending = timers.get(owner)
+      if (pending !== undefined) clearTimeout(pending)
+      timers.set(
+        owner,
+        setTimeout(() => {
+          timers.delete(owner)
+          const file = path.join(files.directory, relativePath)
+          active(owner, latestTurn(file, files.turnOf), tails.events(owner, file))
+        }, SETTLE_MS),
+      )
+    },
+    (relativePath) => files.ownerOf(relativePath) !== null,
+  )
   return () => {
     for (const timer of timers.values()) clearTimeout(timer)
-    stop?.()
+    stop()
   }
 }

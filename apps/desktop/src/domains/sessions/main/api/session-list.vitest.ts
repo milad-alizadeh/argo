@@ -580,13 +580,18 @@ test('stays quiet when a change leaves every row as it was', async () => {
   }
 })
 
-test('shows what a watched Session’s history last said about its turn', async () => {
-  const { client, updates, roster, watchedStatus } = sessionListCaller()
+test('shows watched Codex history when an open live channel has no status', async () => {
+  const { client, updates, roster, watchedStatus } = sessionListCaller({
+    [IDS[0]]: liveSession('Ready'),
+  })
   try {
     insertSession(client, { id: IDS[0], harness: 'codex', nativeId: 'native-1', updatedAt: 20 })
     const { received, stop } = await updates({ projectId: 'project-1', pageSize: 10 })
 
     watchedStatus.record({ harness: 'codex', nativeId: 'native-1', turn: 'open', at: Date.now() })
+    roster.changed()
+    await settled()
+    watchedStatus.record({ harness: 'codex', nativeId: 'native-1', turn: null, at: Date.now() })
     roster.changed()
     await settled()
     watchedStatus.record({ harness: 'codex', nativeId: 'native-1', turn: 'closed', at: Date.now() })
@@ -595,6 +600,21 @@ test('shows what a watched Session’s history last said about its turn', async 
     stop()
 
     assert.deepEqual(statusesOf(received), [['unknown'], 'running', 'idle'])
+  } finally {
+    watchedStatus.dispose()
+    client.close()
+  }
+})
+
+test('keeps a known live status ahead of watched history', async () => {
+  const { client, list, watchedStatus } = sessionListCaller({
+    [IDS[0]]: liveSession('Ready', 'idle'),
+  })
+  try {
+    insertSession(client, { id: IDS[0], harness: 'codex', nativeId: 'native-1', updatedAt: 20 })
+    watchedStatus.record({ harness: 'codex', nativeId: 'native-1', turn: 'open', at: Date.now() })
+
+    assert.equal((await list({ projectId: 'project-1', pageSize: 10 })).rows[0]?.status, 'idle')
   } finally {
     watchedStatus.dispose()
     client.close()
