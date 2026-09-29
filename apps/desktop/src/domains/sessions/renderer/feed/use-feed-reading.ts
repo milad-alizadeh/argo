@@ -1,7 +1,7 @@
 import { skipToken, useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { applyFeedReadingChange, type FeedReading } from '@/domains/sessions/api/feed/feed-reading'
-import { feedEntryRows } from '@/domains/sessions/api/feed/feed-row-entries'
+import { feedReadingRows } from '@/domains/sessions/api/feed/feed-reading-rows'
 import { sessionError } from '@/domains/sessions/api/session-error'
 import { queryClient, trpcClient } from '@/platform/renderer/trpc-client'
 import { sessionFeedReadingQueryKey, sessionPermissionQueryKey } from '../session-queries'
@@ -11,17 +11,16 @@ import { useFocusRefresh } from './use-focus-refresh'
 const NO_SUBAGENTS: FeedReading['subagents'] = []
 
 // A Feed with no rows has nothing to draw until a read settles it; its Standing says why.
-function drawnFeed(reading: FeedReading): SessionFeed | null {
-  const rows = feedEntryRows(reading.entries)
+function drawnFeed(reading: FeedReading, running: boolean): SessionFeed | null {
+  const rows = feedReadingRows(reading.entries, { running })
   if (reading.state !== 'ready' && rows.length === 0) return null
   return {
-    version: 1,
-    type: 'session.feed.read',
-    requestId: reading.revision,
     sessionId: reading.sessionId,
     chainId: reading.chainId,
-    revision: reading.revision,
-    rows,
+    // The drawn rows, not the reading, are what a revision stands for: the same reading draws
+    // different rows once its activity folds in, so a live draw needs its own revision.
+    revision: running ? `${reading.revision}:live` : reading.revision,
+    rows: [...rows],
   }
 }
 
@@ -101,7 +100,12 @@ function useFeedSubscription(sessionId: SessionId | null, subagentId: string | n
 
 // A root Session's or a Subagent's Feed as main reads it. The renderer only draws it; Retry and
 // focus start a real read, or a reconnection when no reader answers.
-export function useFeedReading(sessionId: SessionId | null, subagentId: string | null = null) {
+export function useFeedReading(
+  sessionId: SessionId | null,
+  subagentId: string | null = null,
+  // The Session's own liveness: the Feed folds its current activity in only while the Turn runs.
+  running = false,
+) {
   const { reconnect, lost } = useFeedSubscription(sessionId, subagentId)
   const refresh = useMemo(() => {
     if (sessionId === null) return null
@@ -118,7 +122,10 @@ export function useFeedReading(sessionId: SessionId | null, subagentId: string |
   // Focus reads vendor history again, for a Session with no live channel.
   useFocusRefresh(refresh)
   const reading = useObservedFeedReading(sessionId, subagentId)
-  const feed = useMemo(() => (reading === null ? null : drawnFeed(reading)), [reading])
+  const feed = useMemo(
+    () => (reading === null ? null : drawnFeed(reading, running)),
+    [reading, running],
+  )
   usePermissionRequest(subagentId === null ? sessionId : null, reading?.pendingPermissionId ?? null)
   const retryFeed = useCallback(() => refresh?.(), [refresh])
   return {

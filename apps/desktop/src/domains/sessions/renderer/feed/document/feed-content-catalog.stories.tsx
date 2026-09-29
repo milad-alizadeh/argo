@@ -1,11 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, waitFor, within } from 'storybook/test'
-import { projectLiveFeedRows } from '@/domains/sessions/api/feed/live-feed-rows'
-import { groupToolRuns } from '@/domains/sessions/api/feed/tool-groups'
+import { feedReadingRows } from '@/domains/sessions/api/feed/feed-reading-rows'
+import { projectFeedRowEntries } from '@/domains/sessions/api/feed/feed-row-entries'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionFeed } from '../../types'
 import { BasicFeed } from './basic-feed'
-import { INACTIVE_FEED_LIVE_FACTS } from './feed-live-facts'
 
 const meta = {
   title: 'Sessions/Feed/Content catalog',
@@ -21,11 +20,11 @@ const meta = {
   args: {
     activeEvidenceId: null,
     failure: null,
-    liveFacts: INACTIVE_FEED_LIVE_FACTS,
+    running: false,
+    posture: null,
     selectedSessionId: 'catalog',
     onOpenEvidence: fn(),
     onJumpToLatestChange: fn(),
-    onOpenSession: fn(),
     onStalledChange: fn(),
     onRetryFeed: fn(),
     onAnswerQuestion: fn(),
@@ -36,22 +35,20 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof BasicFeed>
 
-function catalogFeedContents(content: FeedContent[]): SessionFeed {
+// The same projection main's reader runs, so a catalog row is the row the cockpit draws.
+function catalogFeedContents(content: FeedContent[], running = false): SessionFeed {
   const revision = content.map((item) => item.id).join(':') || 'empty'
+  const { entries } = projectFeedRowEntries({ history: content, live: [] })
   return {
-    version: 1,
-    type: 'session.feed.read',
-    requestId: revision,
     sessionId: 'catalog',
     chainId: 'catalog',
     revision,
-    content,
-    rows: groupToolRuns(projectLiveFeedRows(content, [])),
+    rows: [...feedReadingRows(entries, { running })],
   }
 }
 
-function catalogFeed(content: FeedContent): SessionFeed {
-  return catalogFeedContents([content])
+function catalogFeed(content: FeedContent, running = false): SessionFeed {
+  return catalogFeedContents([content], running)
 }
 
 function kindStory(content: FeedContent, visible: string): Story {
@@ -118,20 +115,8 @@ const runningTool: FeedContent = {
 // A running call names its group only while it is the running Turn's activity.
 export const Tool: Story = {
   args: {
-    feed: catalogFeed(runningTool),
-    liveFacts: {
-      ...INACTIVE_FEED_LIVE_FACTS,
-      isRunning: true,
-      status: 'running',
-      activity: {
-        label: 'Run the Feed tests',
-        kind: 'command',
-        open: true,
-        agentDescription: true,
-        tool: 'Bash',
-        target: null,
-      },
-    },
+    feed: catalogFeed(runningTool, true),
+    running: true,
   },
   play: async ({ canvasElement }) => {
     await waitFor(() =>
@@ -354,37 +339,29 @@ export const Unsupported: Story = {
 // Live commentary after a call reads once, as Markdown, in the one shimmering line.
 export const CommentaryAfterTool: Story = {
   args: {
-    feed: catalogFeedContents([
-      {
-        kind: 'tool',
-        id: 'commentary-tool',
-        callId: 'commentary-call',
-        name: 'Read',
-        status: 'completed',
-        input: null,
-        output: null,
-        summary: null,
-      },
-      {
-        kind: 'message',
-        id: 'commentary-message',
-        role: 'assistant',
-        phase: 'commentary',
-        text: '**Checking** the result',
-      },
-    ]),
-    liveFacts: {
-      ...INACTIVE_FEED_LIVE_FACTS,
-      isRunning: true,
-      status: 'running',
-      activity: {
-        label: '**Checking** the result',
-        kind: 'thought',
-        open: true,
-        tool: 'thought',
-        target: null,
-      },
-    },
+    feed: catalogFeedContents(
+      [
+        {
+          kind: 'tool',
+          id: 'commentary-tool',
+          callId: 'commentary-call',
+          name: 'Read',
+          status: 'completed',
+          input: null,
+          output: null,
+          summary: null,
+        },
+        {
+          kind: 'message',
+          id: 'commentary-message',
+          role: 'assistant',
+          phase: 'commentary',
+          text: '**Checking** the result',
+        },
+      ],
+      true,
+    ),
+    running: true,
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

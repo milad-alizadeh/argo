@@ -1,6 +1,6 @@
 import path from 'node:path'
-import { parseTranscriptLine } from '@/harnesses/claude/transcript'
-import { assistantAfterPrompt, createTranscriptMatcher } from './real-session-transcript'
+import { openClaudeHistoryReader } from '@/harnesses/claude/session/claude-history-lines'
+import { assistantAfterPrompt } from './real-session-transcript'
 
 export const realClaudeCli = {
   authentication: ['auth', 'status'],
@@ -10,5 +10,5 @@ export const realClaudeCli = {
   label: 'Claude',
   transcripts: (home: string) => path.join(home, '.claude', 'projects'),
   replyAfterPrompt: (folder: string, prompt: string) =>
-    assistantAfterPrompt(folder, prompt, createTranscriptMatcher(parseTranscriptLine)),
+    assistantAfterPrompt(folder, prompt, () => openClaudeHistoryReader()),
 }

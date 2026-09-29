@@ -1,14 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, within } from 'storybook/test'
-import { BasicFeed, INACTIVE_FEED_LIVE_FACTS } from '../../feed'
+import { BasicFeed } from '../../feed'
 import type { SessionFeed } from '../../types'
 import { ComposerForm } from '../layout/composer-form'
 
 const COMPACTION_FEED = {
-  version: 1,
-  type: 'session.feed.read',
-  requestId: 'storybook-compaction',
   sessionId: 'compacting-session',
   chainId: 'compacting-session',
   revision: 'one',
@@ -26,18 +23,12 @@ function CompactingComposerStory() {
           failure={null}
           feed={COMPACTION_FEED}
           onOpenEvidence={() => {}}
-          onOpenSession={() => {}}
           onRetryFeed={() => {}}
           onAnswerQuestion={() => {}}
           answeringQuestionId={null}
           questionFailure={() => null}
-          liveFacts={{
-            ...INACTIVE_FEED_LIVE_FACTS,
-            compactionPercentage: compacting ? 22 : null,
-            compactionStartedAt: compacting ? '2026-09-13T22:01:00.000Z' : null,
-            compactionTokens: compacting ? '10.1k tokens' : null,
-            isRunning: compacting,
-          }}
+          running={compacting}
+          posture={null}
           selectedSessionId="compacting-session"
         />
       </div>

@@ -15,7 +15,6 @@ import {
   EmptyTitle,
 } from '@/platform/renderer/components/ui/empty'
 import { BasicFeed } from '../feed/document/basic-feed'
-import { INACTIVE_FEED_LIVE_FACTS } from '../feed/document/feed-live-facts'
 import type { SessionError, SessionEvidence, SessionFeed } from '../types'
 
 import '../feed/feed.css'
@@ -67,7 +66,6 @@ export function SessionDelegationInspector({
   feed,
   failure,
   onOpenEvidence,
-  onOpenSession,
   onRetryFeed,
   sessionId,
 }: {
@@ -78,7 +76,6 @@ export function SessionDelegationInspector({
   failure: SessionError | null
   now?: number
   onOpenEvidence: (evidence: SessionEvidence) => void
-  onOpenSession: (sessionId: string) => void
   onRetryFeed: () => void
   sessionId: string | null
 }) {
@@ -100,10 +97,10 @@ export function SessionDelegationInspector({
           feed={feed}
           feedLabel={t('subagentFeedLabel')}
           historyLabel={t('subagentHistoryLabel')}
-          liveFacts={{ ...INACTIVE_FEED_LIVE_FACTS, isRunning: delegation.state === 'running' }}
+          running={delegation.state === 'running'}
+          posture={null}
           onAnswerQuestion={() => {}}
           onOpenEvidence={onOpenEvidence}
-          onOpenSession={onOpenSession}
           onRetryFeed={onRetryFeed}
           questionFailure={() => null}
           selectedSessionId={active ? (feed?.sessionId ?? sessionId) : null}

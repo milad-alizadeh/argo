@@ -26,9 +26,6 @@ const COMPLETED_DELEGATION = sessionSubagent({
 const FAILED_DELEGATION = { ...COMPLETED_DELEGATION, state: 'failed' } satisfies typeof DELEGATION
 
 const FEED = {
-  version: 1,
-  type: 'session.feed.read',
-  requestId: 'subagent-feed',
   sessionId: 'composer-review',
   chainId: 'composer-review#call-review',
   revision: 'subagent-feed-1',
@@ -115,7 +112,6 @@ export const RunningSubagent: Story = {
     failure: null,
     now: NOW,
     onOpenEvidence: () => {},
-    onOpenSession: () => {},
     onRetryFeed: () => {},
     sessionId: 'composer-review',
   },
@@ -146,7 +142,6 @@ export const LoadingSubagent: Story = {
     feed: null,
     failure: null,
     onOpenEvidence: () => {},
-    onOpenSession: () => {},
     onRetryFeed: () => {},
     sessionId: 'composer-review',
   },
@@ -165,7 +160,6 @@ export const CompletedSubagent: Story = {
     feed: endedFeed('completed'),
     failure: null,
     onOpenEvidence: () => {},
-    onOpenSession: () => {},
     onRetryFeed: () => {},
     sessionId: 'composer-review',
   },

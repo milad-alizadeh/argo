@@ -53,7 +53,11 @@ export function useShellOutput(sessionId: SessionId | null, shellId: string | nu
 
 // One Subagent's own Feed, read by main as its own chain so the Session's Feed is never displaced
 // by it. Null until a Subagent is picked.
-export function useDelegationFeed(sessionId: SessionId | null, subagentId: string | null) {
-  const reading = useFeedReading(subagentId === null ? null : sessionId, subagentId)
+export function useDelegationFeed(
+  sessionId: SessionId | null,
+  subagentId: string | null,
+  running: boolean,
+) {
+  const reading = useFeedReading(subagentId === null ? null : sessionId, subagentId, running)
   return { feed: reading.feed, feedError: reading.feedError, retry: reading.retryFeed }
 }

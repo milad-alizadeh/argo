@@ -5,24 +5,6 @@
     {
       "identity": {
         "project": "@argo/desktop",
-        "path": "apps/desktop/e2e/sessions/real-harness/real-session-harness-backend.test.ts",
-        "test": "[suite setup]"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this test repair."
-    },
-    {
-      "identity": {
-        "project": "@argo/desktop",
-        "path": "apps/desktop/e2e/sessions/real-harness/transcript-feed-corpus.test.ts",
-        "test": "[suite setup]"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this test repair."
-    },
-    {
-      "identity": {
-        "project": "@argo/desktop",
         "path": "apps/desktop/mocks/cli/claude/mock-claude-adversarial.test.ts",
         "test": "[suite setup]"
       },

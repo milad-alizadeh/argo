@@ -1,6 +1,7 @@
 import type { BackgroundState } from './background-task-record'
 import type { SessionFeedRow } from './feed-rows'
 import { fileName } from './file-presentation'
+import { withoutRepeatedTitle } from './skill-title'
 import type { AskFacts, ExecuteFacts, ToolCall } from './tool-call'
 import { searchLabel, searchOutcome } from './tool-changes'
 import { resultText, type ToolResult as TranscriptToolResult } from './transcript-content'
@@ -113,18 +114,21 @@ function toolRow(call: ToolCall, { results, skillBodies }: ToolEvidence): ToolRo
   const result = results.get(call.id)
   const presentation = toolPresentation(call)
   const outcome = presentation.kind === 'searched' ? searchOutcome(result) : null
+  const label = outcome === null ? presentation.label : `${presentation.label} · ${outcome}`
+  const text = toolText(call, skillBodies)
   return {
     shape: 'tool',
     id: call.id,
     ...presentation,
-    label: outcome === null ? presentation.label : `${presentation.label} · ${outcome}`,
+    label,
     lineCounts: null,
     status: outcome === null ? toolStatus(result) : 'failed',
     ...(call.kind === 'other' && call.presentation?.agentDescription
       ? { agentDescription: true }
       : {}),
     evidence: evidenceOf(call, result),
-    text: toolText(call, skillBodies),
+    // A skill body opening on its own name repeats the row's label, so the row drops that heading.
+    text: text === null ? null : withoutRepeatedTitle(text, label),
   }
 }
 

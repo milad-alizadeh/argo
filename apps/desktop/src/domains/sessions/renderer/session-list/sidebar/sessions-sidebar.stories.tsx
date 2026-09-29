@@ -5,12 +5,13 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { queryClient, type RouterOutputs } from '@/platform/renderer/trpc-client'
 import { useFeedReading } from '../../feed/use-feed-reading'
 import {
+  type FeedRead,
+  sessionFeedRefreshTrpc,
   sessionFeedSubscribe,
-  sessionFeedTrpc,
   sessionRow,
   sessionSubagent,
 } from '../../session-fixtures'
-import type { SessionError, SessionFeedSnapshot, SessionId, SessionListPage } from '../../types'
+import type { SessionError, SessionId, SessionListPage } from '../../types'
 import { SessionList, type SessionListActions } from '../session-list'
 import { sessionRosterPathKey } from '../session-roster'
 
@@ -272,24 +273,16 @@ export const UnavailableHistoryRecovers: Story = {
     recoverMissingHistory = () => {
       historyAvailable = true
     }
-    const read = async (sessionId: string): Promise<SessionFeedSnapshot> => {
+    const read: FeedRead = async (sessionId) => {
       if (!historyAvailable && sessionId === session.id) {
         throw Object.assign(new Error(readFailure.message), { data: { code: 'NOT_FOUND' } })
       }
-      return {
-        version: 1,
-        type: 'session.feed.read',
-        requestId: 'storybook-feed',
-        sessionId,
-        chainId: sessionId,
-        revision: 'recovered',
-        content: [],
-      }
+      return []
     }
     window.argo = {
       ...before,
       trpcSubscribe: sessionFeedSubscribe(before.trpcSubscribe, read),
-      trpc: sessionFeedTrpc(before.trpc, read),
+      trpc: sessionFeedRefreshTrpc(before.trpc),
     }
     return () => {
       window.argo = before

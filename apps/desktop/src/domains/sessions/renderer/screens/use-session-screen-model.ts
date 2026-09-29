@@ -13,8 +13,9 @@ import { useSessionQuestion } from '../composer/hooks/use-session-question'
 import { useFeedReading } from '../feed/use-feed-reading'
 import type { SessionHarness } from '../harness/harnesses'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
+import type { SessionStatus } from '../model/models'
 import { useSessionList } from '../session-list/use-session-list'
-import type { SessionEvidence } from '../types'
+import type { Session, SessionEvidence } from '../types'
 import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../work/use-session-work'
 import { sessionHarness } from './session-screen-state'
 import { pickedSubagent, sessionScreenSubagents } from './session-screen-subagents'
@@ -36,7 +37,11 @@ function useWorkArtifacts({
   const subagents = sessionScreenSubagents(feedSubagents, session?.subagents ?? [])
   const shell = session?.shell.find((command) => command.id === work.shellId) ?? null
   const delegation = pickedSubagent(subagents, work)
-  const delegationFeed = useDelegationFeed(selectedSessionId, delegation?.id ?? null)
+  const delegationFeed = useDelegationFeed(
+    selectedSessionId,
+    delegation?.id ?? null,
+    delegation?.state === 'running',
+  )
   return {
     shell,
     delegation,
@@ -126,12 +131,13 @@ export function useSessionScreenModel() {
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
   const { evidence, setEvidence } = useSessionEvidence(selectedSessionId)
   const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
-  const sessionFeed = useFeedReading(selectedSessionId)
   const { sessionList, session, workspaceIdentity } = useSessionSelectionData(
     cockpit.project?.id ?? null,
     selectedSessionId,
     workspaceCockpit.workspaces,
   )
+  const feedRunning = sessionTurnRunning(session)
+  const sessionFeed = useFeedReading(selectedSessionId, null, feedRunning)
   const [lastHarness, chooseHarness] = useState<SessionHarness>(DEFAULT_HARNESS)
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
   const { permission, question } = useSessionInteractions(selectedSessionId)
@@ -149,6 +155,7 @@ export function useSessionScreenModel() {
     isNewSession: sessionId === 'new',
     selectedSessionId,
     ...sessionFeed,
+    feedRunning,
     sessionList,
     navigate,
     session,
@@ -166,6 +173,23 @@ export function useSessionScreenModel() {
     pick,
     ...inspector,
   }
+}
+
+// A Turn the cockpit knows is in flight draws its current activity; every other Session, including
+// one whose liveness is unknown, draws only what vendor history recorded.
+const TURN_RUNNING: Record<SessionStatus, boolean> = {
+  running: true,
+  permission: true,
+  starting: false,
+  asking: false,
+  unknown: false,
+  idle: false,
+  stopped: false,
+  ended: false,
+}
+
+function sessionTurnRunning(session: Session | null | undefined) {
+  return session === null || session === undefined ? false : TURN_RUNNING[session.status]
 }
 
 export type SessionScreenModel = ReturnType<typeof useSessionScreenModel>

@@ -1,9 +1,10 @@
+import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import {
   sessionFeedSubscribe,
   sessionListSubscribe,
 } from '@/domains/sessions/renderer/session-fixtures'
 import { sessionRosterPathKey } from '@/domains/sessions/renderer/session-list/session-roster'
-import type { Session, SessionFeedSnapshot } from '@/domains/sessions/renderer/types'
+import type { Session } from '@/domains/sessions/renderer/types'
 import { queryClient, trpc } from '@/platform/renderer/trpc-client'
 import { claudeHarnessInfoFixture, codexHarnessInfoFixture } from './harness-catalog.fixture'
 
@@ -142,29 +143,15 @@ function draftWrite(request: StorybookTrpcRequest) {
   }
 }
 
-async function readFeed(sessionId: string): Promise<SessionFeedSnapshot> {
-  return {
-    version: 1,
-    type: 'session.feed.read',
-    requestId: `selection-${sessionId}`,
-    sessionId,
-    chainId: sessionId,
-    revision: `selection-${sessionId}`,
-    content: [
-      {
-        id: `selection-row-${sessionId}`,
-        kind: 'message',
-        role: 'assistant',
-        text: `History for ${sessionId}.`,
-      },
-    ],
-  }
-}
-
-async function feedReply(request: StorybookTrpcRequest): Promise<StorybookTrpcResponse | null> {
-  if (request.path !== 'sessionFeedRead') return null
-  const { sessionId } = request.input as { sessionId: string }
-  return success(await readFeed(sessionId))
+async function readFeed(sessionId: string): Promise<readonly FeedContent[]> {
+  return [
+    {
+      id: `selection-row-${sessionId}`,
+      kind: 'message',
+      role: 'assistant',
+      text: `History for ${sessionId}.`,
+    },
+  ]
 }
 
 function clearSelectionQueries() {
@@ -211,7 +198,6 @@ export function sessionSelectionHost(
       trpc: (async (request) =>
         projectReply(request) ??
         composerReply(request) ??
-        (await feedReply(request)) ??
         before.trpc(request)) satisfies typeof window.argo.trpc,
       trpcSubscribe: sessionFeedSubscribe(
         sessionListSubscribe(before.trpcSubscribe, () => roster),

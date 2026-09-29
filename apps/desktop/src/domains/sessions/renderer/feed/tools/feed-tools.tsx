@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import type { LiveActivity } from '@/domains/sessions/api/feed/feed-rows'
 import { displayedToolLabel } from '@/domains/sessions/api/feed/tool-feed'
 import { standsAlone, TOOL_KIND_PRESENTATION } from '@/domains/sessions/api/feed/tool-groups'
 import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
@@ -9,7 +10,6 @@ import { FeedMarkdown } from '../content/feed-markdown'
 import { LiveActivityText } from '../rows/live-activity-text'
 import { type ToolGroupState, useToolGroupOpen } from '../rows/tool-group-state'
 import { CollapsibleText } from './collapsible-text'
-import { groupIcon, liveActivity } from './feed-group-title'
 import { FeedInlineToolCall, FeedInlineToolCallItem } from './feed-inline-tool-call'
 import { StatusIcon } from './feed-tool-status'
 
@@ -91,6 +91,15 @@ export function FeedToolLine({
   )
 }
 
+// A thought titles under a spark; a call under its own kind; a settled count under the terminal.
+function groupIcon(
+  activity: LiveActivity | null,
+  titleKind: ToolRow['kind'] | undefined,
+): IconName {
+  if (activity?.kind === 'thought') return 'sparkles'
+  return toolPresentation(titleKind ?? activity?.kind ?? 'command').icon
+}
+
 // A group's only inline call shows its code block directly; any other nests in its own disclosure.
 function GroupedCall({
   activeEvidenceId,
@@ -153,7 +162,8 @@ export function FeedToolGroup({
 }) {
   const { onOpenChange, open } = useToolGroupOpen(toolGroups, group.id)
   const soleCall = group.calls.length === 1 ? group.calls[0] : undefined
-  const activity = liveActivity(group)
+  // The group's headline is the Session's current activity, placed by main's reading.
+  const activity = group.headline ?? null
   const live = activity !== null
   // A thought with no words, blank or a bare `---`, renders empty, so it never titles the group.
   const latestCommentary = group.thoughts?.findLast((thought) => /[\p{L}\p{N}]/u.test(thought.text))

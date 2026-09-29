@@ -16,15 +16,13 @@ import { type ToolGroupState, useToolGroupOpen } from '../rows/tool-group-state'
 import { CollapsibleText } from './collapsible-text'
 import { StatusIcon } from './feed-tool-status'
 import { callRunning, type ToolCall, type ToolRow, toolPresentation } from './feed-tools'
-import { withoutRepeatedTitle } from './skill-title'
 
 // A command or an unclassified tool call reads as one code block despite the transcript's
 // separate invocation and result messages. A Skill call instead reads as the skill's own
 // Markdown body (carried through `text`, see `toolText` in tool-feed.ts), not code.
 export function FeedInlineToolCall({ call, live }: { call: ToolCall | ToolRow; live: boolean }) {
   const { t } = useTranslation('sessions')
-  if (call.kind === 'skill')
-    return <FeedMarkdown text={withoutRepeatedTitle(call.text ?? '', call.label)} />
+  if (call.kind === 'skill') return <FeedMarkdown text={call.text ?? ''} />
   const result = call.evidence?.kind === 'output' ? call.evidence.source : null
   const source = [call.text, result].filter((part) => part !== null).join('\n')
   const language = detectCodeLanguage(call.text ?? '', call.kind === 'command' ? 'bash' : undefined)

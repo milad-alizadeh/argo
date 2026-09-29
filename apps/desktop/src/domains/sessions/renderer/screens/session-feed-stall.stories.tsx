@@ -4,8 +4,8 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import {
+  sessionFeedRefreshTrpc,
   sessionFeedSubscribe,
-  sessionFeedTrpc,
   sessionListSubscribe,
   sessionRow,
 } from '../session-fixtures'
@@ -31,7 +31,7 @@ function stalledFeedHost() {
       sessionListSubscribe(before.trpcSubscribe, () => [stalled]),
       read,
     ),
-    trpc: sessionFeedTrpc(before.trpc, read),
+    trpc: sessionFeedRefreshTrpc(before.trpc),
   }
   return () => {
     window.argo = before

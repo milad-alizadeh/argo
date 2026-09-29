@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
-import { codexStatePath } from '@/harnesses/codex/sessions/discovery/roots'
+import { codexStatePath } from './codex-state-store.ts'
 import { historyFile, type StoredThread, transcriptsRoot } from './mock-codex-history-types.ts'
 import { scanRollouts } from './mock-codex-rollout-history.ts'
 
@@ -9,17 +9,30 @@ import { scanRollouts } from './mock-codex-rollout-history.ts'
 // (`state_5.sqlite`), outside Argo's own rename channel: the real `codex` app-server reads that
 // store when it answers `thread/list`/`thread/read`, so this stand-in reads it too, rather than
 // only the rollout scan and Argo's own overlay (#2650).
-// `state-store` imports `node:sqlite`, which only Electron's Node ships (see its own comment);
-// a `bun test` unit run never sets ARGO_CODEX_TRANSCRIPTS, so `require` stays lazy and behind that
-// same guard rather than crashing every mock CLI process bun spawns.
+// `node:sqlite` ships with Node and Electron but not with Bun, which runs the unit suite; a unit run
+// never sets ARGO_CODEX_TRANSCRIPTS, so the require stays lazy behind that same guard rather than
+// crashing every mock CLI process bun spawns.
 const requireFromHere = createRequire(import.meta.url)
+const THREAD_NAME_QUERY = `SELECT name FROM threads
+  WHERE id = ? AND trim(coalesce(name, '')) != ''`
+
+// Undefined when the store is missing, locked, or has no name for the thread, so a later sweep asks
+// again rather than blanking a name.
 function stateStoreNameFor(threadId: string): string | undefined {
   const root = transcriptsRoot()
   if (root === '') return undefined
-  const { codexThreadNames } = requireFromHere(
-    '../../../src/harnesses/codex/sessions/records/state-store.ts',
-  ) as typeof import('@/harnesses/codex/sessions/records/state-store')
-  return codexThreadNames(codexStatePath(root))([threadId]).get(threadId)
+  const { DatabaseSync } = requireFromHere('node:sqlite') as typeof import('node:sqlite')
+  let store: InstanceType<typeof DatabaseSync> | null = null
+  try {
+    store = new DatabaseSync(codexStatePath(root), { readOnly: true, timeout: 0 })
+    const [row] = store.prepare(THREAD_NAME_QUERY).all(threadId)
+    const name = row === undefined ? null : (row as { name?: unknown }).name
+    return typeof name === 'string' && name.trim() !== '' ? name.trim() : undefined
+  } catch {
+    return undefined
+  } finally {
+    store?.close()
+  }
 }
 
 type Request = { id?: unknown; method?: string; params?: Record<string, unknown> }
