@@ -39,17 +39,19 @@ function SessionListErrorAlert({ error }: { error: SessionError }) {
 // the Archive's own empty row speaks instead.
 export function SessionListOutcome({
   count,
+  searching,
   sessionList,
   sessionListError,
   status,
 }: {
   count: number
+  searching: boolean
   sessionList: SessionListPage | null
   sessionListError: SessionError | null
   status: SessionListStatus
 }) {
   if (sessionListError !== null) return <SessionListErrorAlert error={sessionListError} />
-  if (sessionList === null) return <SessionListLoading />
-  if (count === 0 && showsActive(status)) return <NoSessionsFound />
+  if (sessionList === null) return searching ? null : <SessionListLoading />
+  if (count === 0 && (searching || showsActive(status))) return <NoSessionsFound />
   return null
 }
