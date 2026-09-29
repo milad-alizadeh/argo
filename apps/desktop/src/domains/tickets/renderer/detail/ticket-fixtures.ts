@@ -136,6 +136,7 @@ export const backlog = (overrides: Partial<Backlog> = {}): Backlog => ({
   loadMoreError: null,
   searching: false,
   partial: false,
+  writable: true,
   onLoadMore: fn(),
   onRetryLoadMore: fn(),
   sync: { refreshing: false, problem: null },

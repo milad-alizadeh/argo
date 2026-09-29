@@ -206,6 +206,7 @@ type TicketRowProps = {
   now: number
   onSelect: () => void
   onToggle: () => void
+  writable: boolean
   onChangeStatus: (status: TicketStatus) => void
   onChangePriority: (priority: TicketPriority | null) => void
 }
@@ -222,6 +223,7 @@ function SidebarMetadata(props: TicketRowProps) {
               choices={props.presentation.priorityChoices}
               named={false}
               onChange={props.onChangePriority}
+              writable={props.writable}
               priority={ticket.priority}
             />
           </span>
@@ -244,7 +246,7 @@ function SidebarMetadata(props: TicketRowProps) {
 function SidebarTicketRow(props: TicketRowProps) {
   const { t } = useTranslation('tickets')
   const { row, rails, presentation, statuses, selected, folded } = props
-  const { onSelect, onToggle, onChangeStatus } = props
+  const { onSelect, onToggle, onChangeStatus, writable } = props
   const { ticket, parent } = row
   return (
     <div className="relative flex min-w-0 items-stretch gap-(--spacing-shell-tight) rounded-row px-(--spacing-shell-item) hover:bg-muted has-[[aria-current]]:bg-selected">
@@ -260,6 +262,7 @@ function SidebarTicketRow(props: TicketRowProps) {
               named={false}
               noun={presentation.statusNoun}
               onChange={onChangeStatus}
+              writable={writable}
               status={ticket.status}
               statuses={statuses}
               total={ticket.children.length || undefined}
@@ -305,6 +308,7 @@ function WorkspaceTicketRow(props: TicketRowProps) {
             named={false}
             onChange={onChangePriority}
             priority={ticket.priority}
+            writable={props.writable}
           />
         </span>
       ) : null}
@@ -320,6 +324,7 @@ function WorkspaceTicketRow(props: TicketRowProps) {
           named={false}
           noun={presentation.statusNoun}
           onChange={onChangeStatus}
+          writable={props.writable}
           status={ticket.status}
           statuses={statuses}
           total={ticket.children.length || undefined}

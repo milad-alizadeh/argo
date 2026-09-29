@@ -1,8 +1,22 @@
 import { projectNames } from '@/domains/accounts/main'
 import type { TicketConnection } from '@/domains/connections/main'
-import { type TicketConnectedReply, ticketError } from '@/domains/tickets/contract/contract'
+import {
+  type ConnectionState,
+  type TicketConnectedReply,
+  type TicketErrorCode,
+  ticketError,
+} from '@/domains/tickets/contract/contract'
 import { connectionSummary } from '../connection-summary'
 import type { Call } from '../read-as'
+
+// What each Connection state that cannot call the provider answers a write with.
+const ACCOUNT_REFUSALS: Record<ConnectionState, TicketErrorCode | null> = {
+  ready: null,
+  'account-missing': 'missing-account',
+  'account-expired': 'account-expired',
+  'account-revoked': 'account-revoked',
+  'account-unreadable': 'grant-unreadable',
+}
 
 const STORAGE_ERRORS = { unreadable: 'storage-unavailable', invalid: 'storage-invalid' } as const
 
@@ -34,6 +48,12 @@ export async function writableConnection(call: Call) {
     return { ok: false, error: ticketError('not-connected', call.requestId) } as const
   }
   return { ok: true, ...found.connection } as const
+}
+
+// A failed Account is refused before an intent is saved, so no write is recorded for it.
+export async function accountRefusal(call: Call, target: TicketConnection) {
+  const code = ACCOUNT_REFUSALS[(await connectionSummary(call.access, target)).state]
+  return code ? ticketError(code, call.requestId) : null
 }
 
 export async function saveConnection(

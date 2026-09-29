@@ -194,3 +194,29 @@ export async function proveGitHubStatusRefused(run: Run) {
     assert.equal(await backlog(run.page).getByRole('button', { name: 'State: Open' }).count(), 3)
   })
 }
+
+// A list read GitHub answered before the change cannot put #273 back to Open when it lands after.
+export async function proveStaleListKeepsConfirmedStatus(run: Run) {
+  const github = run.fixture.github
+  const asked = () =>
+    github.requests.filter((request) => request === 'GET /repos/octocat/hello-world/issues').length
+  const release = github.holdStaleReads()
+  try {
+    await openRoom(run.page, 'atlas')
+    const before = asked()
+    await openRoom(run.page, 'tickets')
+    await expect.poll(asked).toBeGreaterThan(before)
+    await choose(run.page, lastStatus(run, 'Open'), {
+      role: 'menuitemradio',
+      name: 'Closed as completed',
+    })
+    await lastStatus(run, 'Closed as completed').waitFor()
+  } finally {
+    release()
+  }
+  await test.step('stale-list-lands', async () => {
+    await expect(backlog(run.page).getByText(/^Refreshing from/)).toHaveCount(0)
+    assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
+    await lastStatus(run, 'Closed as completed').waitFor()
+  })
+}

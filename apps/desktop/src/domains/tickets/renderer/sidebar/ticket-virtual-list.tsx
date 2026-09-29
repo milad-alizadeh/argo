@@ -109,6 +109,7 @@ function VirtualTicketRow({
           row={row}
           selected={row.ticket.key === selectedKey}
           statuses={backlog.statuses}
+          writable={backlog.writable}
         />
       ) : (
         <NextPage loading={backlog.loadingMore} />

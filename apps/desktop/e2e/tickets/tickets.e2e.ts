@@ -1,4 +1,4 @@
-// The packaged Ticket proof (#1848, #1849, #2013, #2870, #2871, #2873, #2874, #2876): connect an Account, connect a
+// The packaged Ticket proof (#1848, #1849, #2013, #2870, #2871, #2873, #2874, #2876, #2877): connect an Account, connect a
 // source, list, detail, a status change, restart, revoked access, an expired renewal, disconnect, a
 // visible failure, the automatic refresh, linked Tickets opened by ID and search beyond the local index, all through the shipped
 // cockpit against a mock GitHub and a mock Linear. Each case declares the Accounts and source it
@@ -15,6 +15,7 @@ import {
   proveGitHubStatus,
   proveGitHubStatusRefused,
   proveRestartFromSqlite,
+  proveStaleListKeepsConfirmedStatus,
 } from './cases/github.case'
 import {
   proveChangeState,
@@ -58,6 +59,8 @@ test.describe('with a GitHub repository', () => {
     proveGitHubStatusRefused(tickets.run()))
   test('a GitHub Ticket offers no priority control', ({ tickets }) =>
     proveGitHubNoPriority(tickets.run()))
+  test('a stale list read cannot undo a confirmed GitHub status', ({ tickets }) =>
+    proveStaleListKeepsConfirmedStatus(tickets.run()))
   test('the backlog reads committed Tickets', ({ tickets }) => proveCommittedBacklog(tickets.run()))
   test('a restart draws committed Tickets while GitHub holds every read', async ({ tickets }) => {
     const release = tickets.run().fixture.github.holdReads()

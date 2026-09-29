@@ -17,7 +17,7 @@ type Listing = {
 export function listedBacklog(
   pages: TicketPages,
   { list, query, onChangeStatus, onChangePriority }: Listing,
-): Omit<Backlog, 'provider' | 'partial' | 'sync'> {
+): Omit<Backlog, 'provider' | 'partial' | 'sync' | 'writable'> {
   const loadMore = () => {
     if (!list.isFetching) void list.fetchNextPage()
   }

@@ -76,6 +76,7 @@ export function TicketDeck({
         provider={backlog.provider}
         statuses={backlog.statuses.length > 0 ? backlog.statuses : detail.statuses}
         ticket={selected}
+        writable={backlog.writable}
       />
     </div>
   )

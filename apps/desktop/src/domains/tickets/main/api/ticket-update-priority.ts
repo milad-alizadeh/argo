@@ -1,7 +1,7 @@
 import { type TicketPriorityReply, ticketError } from '@/domains/tickets/contract/contract'
 import type { PriorityChange } from '@/domains/tickets/contract/ticket'
 import type { Call } from '../read-as'
-import { writableConnection } from './ticket-connection'
+import { accountRefusal, writableConnection } from './ticket-connection'
 
 // The same path as a status change: the priority in the reply is the one the provider confirmed.
 export async function updatePriority(
@@ -19,6 +19,8 @@ export async function updatePriority(
   ) {
     return ticketError('ticket-not-writable', requestId)
   }
+  const refusal = await accountRefusal(call, target)
+  if (refusal) return refusal
   const outcome = await call.index.changePriority({
     provider,
     scope,

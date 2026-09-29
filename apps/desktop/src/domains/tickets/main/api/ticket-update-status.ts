@@ -1,6 +1,6 @@
 import { type TicketUpdateReply, ticketError } from '@/domains/tickets/contract/contract'
 import type { Call } from '../read-as'
-import { writableConnection } from './ticket-connection'
+import { accountRefusal, writableConnection } from './ticket-connection'
 
 // The change is committed by the operation supervisor; the reply announces only what it committed.
 export async function updateStatus(
@@ -11,6 +11,8 @@ export async function updateStatus(
   const target = await writableConnection(call)
   if (!target.ok) return target.error
   const { accountId, provider, scope } = target
+  const refusal = await accountRefusal(call, target)
+  if (refusal) return refusal
   const outcome = await call.index.changeStatus({
     provider,
     scope,

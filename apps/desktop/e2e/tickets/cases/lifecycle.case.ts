@@ -45,6 +45,14 @@ export async function proveRevoked(run: Run) {
   await openRoom(run.page, 'tickets')
   await test.step('revoked-access', async () => {
     await room(run).getByText('GitHub no longer accepts octocat').waitFor()
+    // The committed rows stay, and their state controls stop offering a write.
+    assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
+    assert.equal(
+      await backlog(run.page)
+        .getByRole('button', { name: /^State:/ })
+        .count(),
+      0,
+    )
     await openAccounts(run.page)
     const octocat = accountRow(run.page, 'octocat')
     await octocat.getByText('Access revoked').waitFor()
@@ -61,6 +69,10 @@ export async function proveRevoked(run: Run) {
     assert.equal(await signIn(run, OCTOCAT, start), 'Signed in again as octocat.')
     await closeAccounts(run.page)
     assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
+    await backlog(run.page)
+      .getByRole('button', { name: /^State:/ })
+      .first()
+      .waitFor()
   })
 }
 

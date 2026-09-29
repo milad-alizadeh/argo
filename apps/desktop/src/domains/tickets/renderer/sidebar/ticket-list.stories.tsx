@@ -148,3 +148,31 @@ export const SearchShowsSavedMatchesFirst: Story = {
     await expect(canvas.getByText(/^Refreshing from/)).toBeVisible()
   },
 }
+
+// While the Account cannot be called, the saved rows stay and their status controls stop editing.
+export const SavedRowsWithoutWrites: Story = {
+  args: {
+    backlog: backlog({
+      provider: 'linear',
+      tickets: [standalone],
+      writable: false,
+      sync: {
+        refreshing: false,
+        problem: {
+          icon: 'account-expired',
+          title: 'ada needs to sign in to Linear again',
+          description: 'Sign in again to read and change Tickets.',
+          alert: false,
+          actions: [],
+        },
+      },
+    }),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('button', { name: /^#273/ })).toBeVisible()
+    await expect(canvas.getByText('ada needs to sign in to Linear again')).toBeVisible()
+    await expect(canvas.queryByRole('button', { name: /^(State|Status):/ })).toBeNull()
+    await expect(canvas.queryByRole('button', { name: /^Priority:/ })).toBeNull()
+  },
+}

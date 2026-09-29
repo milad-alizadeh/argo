@@ -26,6 +26,7 @@ import { listedBacklog, type TicketListing } from './listed-backlog'
 import { savedRead } from './use-active-tickets'
 import type { ConnectForm } from './use-connect-form'
 import type { TicketDetailRead } from './use-ticket-detail'
+import type { TicketPages } from './use-tickets'
 
 // Everything the Tickets screen can show, resolved here before anything draws.
 export type TicketsView =
@@ -118,6 +119,14 @@ function refreshProblem(
   return failureProblem(title, failed, recovery)
 }
 
+function detailProblem(t: TFunction<'tickets'>, detail: TicketDetailRead, recovery: Recovery) {
+  if (!detail.failure) return null
+  const title = t(detail.ticket ? 'failure.ticketRefresh' : 'failure.ticket')
+  return failureProblem(title, detail.failure, recovery)
+}
+
+const hasSavedRows = (pages: TicketPages | undefined) => (savedRead(pages)?.total ?? 0) > 0
+
 export function connectedView(
   t: TFunction<'tickets'>,
   {
@@ -135,13 +144,12 @@ export function connectedView(
     ...listing
   }: Connected,
 ): TicketsView {
-  if (isConnectionProblem(connection)) {
-    return {
-      kind: 'problem',
-      ...connectionProblem(connection, { onReconnect, onDisconnectSource }),
-    }
-  }
   const { list } = listing
+  const connectionIssue = isConnectionProblem(connection)
+    ? connectionProblem(connection, { onReconnect, onDisconnectSource })
+    : null
+  // Saved Tickets stay on screen while their Account cannot be read; only writes are withheld.
+  if (connectionIssue && !hasSavedRows(list.data)) return { kind: 'problem', ...connectionIssue }
   if (list.isPending) return loading(t('loading.tickets'))
   if (list.error && !list.isFetchNextPageError) {
     return failure(t('failure.tickets'), list.error, {
@@ -154,13 +162,15 @@ export function connectedView(
   const failed = saved?.failure ?? null
   const recovery = { onRetry: onSync, onReconnect, provider: connection.provider }
   // With nothing saved, the failure is all there is to show; otherwise it sits above the rows.
-  if (failed && (saved === null || saved.total === 0))
+  if (!connectionIssue && failed && (saved === null || saved.total === 0))
     return failure(t('failure.tickets'), failed, recovery)
   // Nothing is saved yet and the provider has not answered, so an empty list would be a guess.
   if (saved && saved.total === 0 && !saved.complete) return loading(t('loading.tickets'))
   const sync = {
     refreshing: saved?.refreshing ?? false,
-    problem: refreshProblem(t, { failed, query: listing.query, recovery }, connection.provider),
+    problem:
+      connectionIssue ??
+      refreshProblem(t, { failed, query: listing.query, recovery }, connection.provider),
   }
   const detailRecovery = { ...recovery, onRetry: detail.retry }
   return {
@@ -171,13 +181,7 @@ export function connectedView(
       ticket: detail.ticket,
       statuses: detail.statuses,
       reading: detail.reading,
-      problem: detail.failure
-        ? failureProblem(
-            t(detail.ticket ? 'failure.ticketRefresh' : 'failure.ticket'),
-            detail.failure,
-            detailRecovery,
-          )
-        : null,
+      problem: detailProblem(t, detail, detailRecovery),
     },
     now,
     onBack,
@@ -187,6 +191,7 @@ export function connectedView(
       ...listedBacklog(list.data, listing),
       provider: connection.provider,
       partial: saved !== null && !saved.complete,
+      writable: connectionIssue === null,
       sync,
     },
   }
