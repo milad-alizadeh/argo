@@ -65,7 +65,10 @@ function commandFromRow(row: unknown, reject: (shape: string) => void): Composer
   }
 }
 
-export function readComposerCommands(rows: unknown, reject: (shape: string) => void): ComposerCommand[] {
+export function readComposerCommands(
+  rows: unknown,
+  reject: (shape: string) => void,
+): ComposerCommand[] {
   if (!Array.isArray(rows)) {
     reject('composer-commands')
     return []
