@@ -14,6 +14,7 @@ import { claudeSessionChannelOpener } from './session/claude-session-channel'
 import { discoverClaudeSessions } from './session/claude-session-discovery'
 import { readClaudeSessionHistory } from './session/claude-session-history'
 import { claudeSessionRenamer } from './session/claude-session-rename'
+import { readClaudeSkillCommands } from './session/claude-skill-commands'
 
 export function createClaudeRegistration(): HarnessRegistration<'claude'> {
   const executable =
@@ -27,6 +28,18 @@ export function createClaudeRegistration(): HarnessRegistration<'claude'> {
     readHistory: ({ nativeId, subagentId, cwd }) =>
       readClaudeSessionHistory(nativeId, cwd, subagentId),
     openLiveSession: claudeSessionChannelOpener(executable),
+    listCommands: ({ cwd }) => {
+      let rejected = 0
+      return readClaudeSkillCommands({
+        cwd,
+        reject: () => {
+          rejected += 1
+        },
+      }).then((commands) => {
+        if (rejected > 0) console.warn(`Rejected ${rejected} unsupported Claude skill shape(s).`)
+        return { availability: 'listed' as const, commands }
+      })
+    },
     historyFiles: {
       directory: path.join(
         process.env.CLAUDE_CONFIG_DIR ?? path.join(os.homedir(), '.claude'),

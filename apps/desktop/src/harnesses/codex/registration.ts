@@ -13,6 +13,7 @@ import {
 import { openCodexSessionChannel } from './session/codex-session-channel'
 import { createCodexSessionDiscovery } from './session/codex-session-discovery'
 import { hasCodexSessionTurn, readCodexSessionHistory } from './session/codex-session-history'
+import { readCodexSkillCommands } from './session/codex-skill-commands'
 
 export function createCodexRegistration(
   client: CodexAppServerClient,
@@ -30,6 +31,19 @@ export function createCodexRegistration(
     hasTurn: (nativeId, turnId) => hasCodexSessionTurn(request, nativeId, turnId),
     openLiveSession: (input, controls, emit) =>
       openCodexSessionChannel(input, client, { emit, controls }),
+    listCommands: ({ cwd }) => {
+      let rejected = 0
+      return readCodexSkillCommands({
+        cwd,
+        codexHome,
+        reject: () => {
+          rejected += 1
+        },
+      }).then((commands) => {
+        if (rejected > 0) console.warn(`Rejected ${rejected} unsupported Codex skill shape(s).`)
+        return { availability: 'listed' as const, commands }
+      })
+    },
     historyFiles: {
       directory: path.join(codexHome, 'sessions'),
       ownerOf: codexHistoryOwner,

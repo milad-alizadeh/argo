@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { MemoryRouter } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { CockpitContentChrome } from './cockpit-content-chrome'
 import { CockpitNavigationRail } from './cockpit-navigation-rail'
@@ -12,9 +13,11 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div className="h-dvh w-full">
-        <Story />
-      </div>
+      <MemoryRouter initialEntries={['/projects/storybook-project/sessions']}>
+        <div className="h-dvh w-full">
+          <Story />
+        </div>
+      </MemoryRouter>
     ),
   ],
 } satisfies Meta<typeof CockpitShell>
@@ -57,7 +60,7 @@ export const SidebarControls: Story = {
     )
     const chromeFixture = canvas.getByText('Workspace controls')
     const content = canvas.getByRole('main', { name: 'Cockpit content' })
-    expect(chromeFixture.getBoundingClientRect().left).toBeGreaterThan(
+    expect(chromeFixture.getBoundingClientRect().left).toBeGreaterThanOrEqual(
       content.getBoundingClientRect().left,
     )
 

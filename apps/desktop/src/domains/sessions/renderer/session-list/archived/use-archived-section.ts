@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
-import type { SessionId } from '../../types'
+import type { Session, SessionId } from '../../types'
 import {
   showsArchived,
   useSessionListStatus,
@@ -18,6 +18,7 @@ export function useArchivedSection(
   const status = useSessionListStatus()
   const setStatus = useSetSessionListStatus()
   const loadedIds = useRef<Set<SessionId>>(new Set())
+  const restoredSession = useRef<Session | null>(null)
   // A selection that is not among the active rows AND not already loaded here can only be an
   // archived Session restored from a route or a persisted choice: ask the reader for it by id
   // even before the section is opened by hand, so the sidebar can show it selected rather than
@@ -42,6 +43,10 @@ export function useArchivedSection(
     sessions,
   } = useArchivedSessions(enabled, restoreId)
 
+  if (restored !== null) restoredSession.current = restored
+  const preservedRestored =
+    restored ?? (restoredSession.current?.id === selectedSessionId ? restoredSession.current : null)
+
   useEffect(() => {
     for (const session of sessions) loadedIds.current.add(session.id)
     if (restored !== null) loadedIds.current.add(restored.id)
@@ -57,10 +62,10 @@ export function useArchivedSection(
   // list rather than assuming a later page will bring it into view.
   const displayed = useMemo(
     () =>
-      restored === null || sessions.some((session) => session.id === restored.id)
+      preservedRestored === null || sessions.some((session) => session.id === preservedRestored.id)
         ? sessions
-        : [restored, ...sessions],
-    [restored, sessions],
+        : [preservedRestored, ...sessions],
+    [preservedRestored, sessions],
   )
 
   // One stable object, because the caller builds the row list from it: a fresh object here rebuilds

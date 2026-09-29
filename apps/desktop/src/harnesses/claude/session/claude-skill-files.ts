@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { z } from 'zod'
+import { projectFolders } from '@/harnesses/project-folders'
 
 export type ClaudeSkillFile = (name: string) => string | null
 
@@ -12,16 +13,6 @@ const PLUGIN_SKILL_NAME = /^([\w-][\w.-]*):([\w-][\w.-]*)$/
 // Each install is validated on its own, so one unreadable entry does not hide every other plugin.
 const installedPluginsSchema = z.object({ plugins: z.record(z.string(), z.array(z.unknown())) })
 const pluginInstallSchema = z.object({ installPath: z.string().min(1) }).loose()
-
-// The start folder and each parent up to the repo root, root first; only the start folder outside a repo.
-function projectFolders(cwd: string): string[] {
-  const folders: string[] = []
-  for (let folder = cwd; ; folder = path.dirname(folder)) {
-    folders.push(folder)
-    if (existsSync(path.join(folder, '.git'))) return folders.reverse()
-    if (path.dirname(folder) === folder) return [cwd]
-  }
-}
 
 // Every install folder recorded for one plugin, whichever marketplace it came from.
 function pluginInstallPaths(home: string, plugin: string): string[] {

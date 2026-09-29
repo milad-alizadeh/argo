@@ -16,13 +16,12 @@ export function useRenameDialog(
     async (session: Session, name: string) => {
       rename(session.id, name)
       try {
-        await onRename(session, name)
+        rename(session.id, await onRename(session, name))
       } catch {
         clearRename(session.id)
         add({ title: t('rename.failure'), type: 'error' })
         return
       }
-      clearRename(session.id)
     },
     [add, clearRename, rename, onRename, t],
   )

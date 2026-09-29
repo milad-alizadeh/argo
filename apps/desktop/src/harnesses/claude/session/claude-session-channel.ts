@@ -5,6 +5,7 @@ import {
   type SDKMessage,
   type SDKUserMessage,
 } from '@anthropic-ai/claude-agent-sdk'
+import { readComposerCommands } from '@/domains/sessions/api/composer-commands'
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
@@ -192,7 +193,25 @@ export class ClaudeSessionChannel implements LiveSessionChannel {
     this.wakeInput()
   }
 
+  private publishCommands(rows: readonly unknown[]) {
+    const commands = readComposerCommands(rows, () => {
+      this.rejected += 1
+    })
+    this.emit({ type: 'commands', availability: 'listed', commands })
+  }
+
+  private async readSupportedCommands(session: Query) {
+    try {
+      this.publishCommands(await session.supportedCommands())
+    } catch {
+      this.rejected += 1
+      this.publishCommands([])
+    }
+  }
+
   private emitOutput(message: ClaudeOutput) {
+    if (message.type === 'system' && message.subtype === 'commands_changed')
+      this.publishCommands(message.commands)
     if (message.type === 'assistant' || message.type === 'stream_event') this.markTurnStarted()
     if (message.type === 'system' && message.subtype === 'init' && !this.opened) {
       this.nativeId = message.session_id
@@ -273,14 +292,16 @@ export class ClaudeSessionChannel implements LiveSessionChannel {
                 this.rejected += 1
               },
             })
-      this.session = query({
+      const session = query({
         prompt: this.messages(),
         options: {
           ...claudeQueryOptions(this.input, mode, canUseTool),
           ...(this.executable === null ? {} : { pathToClaudeCodeExecutable: this.executable }),
         },
       })
-      await this.readResults(this.session)
+      this.session = session
+      await this.readSupportedCommands(session)
+      await this.readResults(session)
     } catch (error) {
       this.reportFailure(error)
     } finally {

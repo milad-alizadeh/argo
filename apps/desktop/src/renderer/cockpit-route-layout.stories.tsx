@@ -12,8 +12,18 @@ function SectionScreen({ section }: { section: string }) {
   return <h1>{section}</h1>
 }
 
-function CockpitRouteLayoutStory() {
+function CockpitRouteLayoutStory({
+  projectScoped = false,
+  noHarnessEntry = false,
+}: {
+  projectScoped?: boolean
+  noHarnessEntry?: boolean
+}) {
   const [queryClient] = useState(() => new QueryClient())
+  const initialEntry = (() => {
+    if (noHarnessEntry) return projectScoped ? '/projects/storybook-project/tickets' : '/tickets'
+    return projectScoped ? '/projects/storybook-project/sessions' : '/sessions'
+  })()
   const [router] = useState(() =>
     createMemoryRouter(
       [
@@ -21,7 +31,7 @@ function CockpitRouteLayoutStory() {
           element: <CockpitRouteLayout />,
           children: [
             {
-              path: '/sessions',
+              path: projectScoped ? '/projects/:projectId/sessions' : '/sessions',
               handle: { sidebar: <SessionsSidebar /> },
               // The sidebar reopens the last selected Session, so that path must resolve.
               children: [
@@ -29,11 +39,16 @@ function CockpitRouteLayoutStory() {
                 { path: ':sessionId', element: <SectionScreen section="Sessions screen" /> },
               ],
             },
-            { path: '/tickets', element: <SectionScreen section="Tickets screen" /> },
+            {
+              path: projectScoped ? '/projects/:projectId/tickets' : '/tickets',
+              element: <SectionScreen section="Tickets screen" />,
+            },
           ],
         },
       ],
-      { initialEntries: ['/sessions'] },
+      {
+        initialEntries: [initialEntry],
+      },
     ),
   )
   return (
@@ -97,6 +112,7 @@ function startedSignIn(input: unknown) {
 // would otherwise show is replaced by a picker over every supported Harness and how to sign in
 // to whichever one is selected (#2579).
 export const NoHarnessReady: Story = {
+  args: { noHarnessEntry: true },
   beforeEach: () =>
     mockHarnessTrpc({
       harnessReadinessList: () =>
@@ -122,6 +138,7 @@ export const NoHarnessReady: Story = {
 // A policy-blocked Harness names the reason instead of offering a CTA there is nothing to sign
 // into (#2579).
 export const NoHarnessReadyPolicyBlocked: Story = {
+  args: { noHarnessEntry: true },
   beforeEach: () =>
     mockHarnessTrpc({
       harnessReadinessList: () =>
@@ -143,6 +160,7 @@ export const NoHarnessReadyPolicyBlocked: Story = {
 // Starting a sign-in shows its own wait state with a way out, since the attempt can outlive the
 // person's patience (#2579).
 export const NoHarnessReadySigningIn: Story = {
+  args: { noHarnessEntry: true },
   beforeEach: () =>
     mockHarnessTrpc({
       harnessReadinessList: () => readinessListed([{ harness: 'claude', state: 'signed-out' }]),
@@ -162,6 +180,7 @@ export const NoHarnessReadySigningIn: Story = {
 // A failed attempt says so in place, so the person retries from the same panel rather than
 // losing their place (#2579).
 export const NoHarnessReadySignInFailed: Story = {
+  args: { noHarnessEntry: true },
   beforeEach: () =>
     mockHarnessTrpc({
       harnessReadinessList: () => readinessListed([{ harness: 'claude', state: 'signed-out' }]),
@@ -186,11 +205,16 @@ export const NoHarnessReadySignInFailed: Story = {
 
 // A rail switch draws the chosen section's screen, in both directions (#2836).
 export const SectionSwitchDrawsTheChosenScreen: Story = {
+  args: { projectScoped: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await canvas.findByRole('heading', { name: 'Sessions screen' })
     await userEvent.click(canvas.getByRole('button', { name: 'Tickets' }))
     await expect(await canvas.findByRole('heading', { name: 'Tickets screen' })).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Tickets' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
     await expect(canvas.queryByRole('heading', { name: 'Sessions screen' })).toBeNull()
     await userEvent.click(canvas.getByRole('button', { name: 'Sessions' }))
     await expect(await canvas.findByRole('heading', { name: 'Sessions screen' })).toBeVisible()

@@ -19,6 +19,12 @@ export function announceSessionListChange() {
   for (const send of openRosters) send()
 }
 
+export function announceSessionFeedChange() {
+  for (const feeds of openFeeds.values()) {
+    for (const refresh of feeds) refresh()
+  }
+}
+
 export function sessionListSubscribe(
   subscribe: Subscribe,
   sessions: () => readonly Session[],
@@ -113,7 +119,6 @@ export function sessionFeedSubscribe(
     const { sessionId } = input
     const subagentId = input.subagentId ?? null
     let entries: FeedReading['entries'] = []
-    const status = live.findLast((event) => event.type === 'status')
     let reads = 0
     let open = true
     const send = (state: FeedReading['state'], error: FeedReading['error']) =>
@@ -127,7 +132,10 @@ export function sessionFeedSubscribe(
             state,
             error,
             pendingPermissionId: null,
-            liveStatus: subagentId === null && status?.type === 'status' ? status.status : null,
+            liveStatus:
+              subagentId === null
+                ? (live.findLast((event) => event.type === 'status')?.status ?? null)
+                : null,
             entries,
             subagents: subagentId === null ? feedSubagents(feedEntryRows(entries)) : [],
           }),
