@@ -37,16 +37,52 @@ test('a settled Turn draws no headline and no activity row', () => {
   expect(rows.some((row) => row.shape === 'thought')).toBe(false)
 })
 
-test('a running thought reads once, as the trailing row', () => {
+test('running Codex commentary titles the latest expandable group until the Turn settles', () => {
   const history: FeedContent[] = [
     prompt,
     command('c1', 'bun test', 'completed'),
-    { kind: 'reasoning', id: 'r1', text: 'Reading the failure', redacted: false },
+    {
+      kind: 'message',
+      id: 'commentary-1',
+      role: 'assistant',
+      phase: 'commentary',
+      text: 'Reading the failure',
+    },
   ]
-  const rows = rowsOf(history, true)
-  expect(rows.at(-1)).toEqual({ shape: 'thought', id: 'activity', text: 'Reading the failure' })
-  const group = rows.at(-2)
+  const running = rowsOf(history, true)
+  expect(running.at(-1)).toMatchObject({
+    shape: 'tool-group',
+    headline: { kind: 'thought', label: 'Reading the failure' },
+    calls: [{ id: 'c1' }],
+  })
+  expect(running.some((row) => row.shape === 'thought')).toBe(false)
+  const group = running.at(-1)
   expect(group?.shape === 'tool-group' && (group.thoughts ?? [])).toEqual([])
+
+  const settled = rowsOf(history, false)
+  const settledGroup = settled.at(-1)
+  expect(settledGroup).toMatchObject({ shape: 'tool-group', label: 'Ran a command' })
+  expect(settledGroup).not.toHaveProperty('headline')
+  expect(settledGroup?.shape === 'tool-group' && settledGroup.thoughts).toEqual([
+    { id: 'commentary-1', text: 'Reading the failure', afterCallIndex: 0 },
+  ])
+})
+
+test('running commentary without a group remains a separate thought row', () => {
+  const rows = rowsOf(
+    [
+      prompt,
+      {
+        kind: 'message',
+        id: 'commentary-1',
+        role: 'assistant',
+        phase: 'commentary',
+        text: 'Planning the work',
+      },
+    ],
+    true,
+  )
+  expect(rows.at(-1)).toMatchObject({ shape: 'thought', text: 'Planning the work' })
 })
 
 test('an activity with no group of its own leaves the rows alone', () => {

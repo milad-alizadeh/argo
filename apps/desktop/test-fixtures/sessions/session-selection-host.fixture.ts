@@ -192,25 +192,24 @@ export function sessionSelectionHost(
       updatedAt: 0,
     })
   for (const sessionId of options.heldDraftReads ?? []) heldDraftReads.set(sessionId, () => {})
-  window.argo = Object.assign(
-    {
-      ...before,
-      trpc: (async (request) =>
-        projectReply(request) ??
-        composerReply(request) ??
-        before.trpc(request)) satisfies typeof window.argo.trpc,
-      trpcSubscribe: sessionFeedSubscribe(
-        sessionListSubscribe(before.trpcSubscribe, () => roster),
-        readFeed,
-      ),
-    },
-    {
-      readShellOutput: async () => ({
-        type: 'session.shell.output.read',
-        output: { state: 'available', tail: 'Checked 187 files.\n' },
-      }),
-    },
-  )
+  window.argo = {
+    ...before,
+    trpc: (async (request) =>
+      projectReply(request) ??
+      composerReply(request) ??
+      // Screen stories open the shell inspector and read this tail. Production stays absent.
+      (request.path === 'sessionShellOutput'
+        ? {
+            id: request.id,
+            result: { data: { state: 'available' as const, tail: 'Checked 187 files.\n' } },
+          }
+        : null) ??
+      before.trpc(request)) satisfies typeof window.argo.trpc,
+    trpcSubscribe: sessionFeedSubscribe(
+      sessionListSubscribe(before.trpcSubscribe, () => roster),
+      readFeed,
+    ),
+  }
   return () => {
     window.argo = before
     clearSelectionQueries()

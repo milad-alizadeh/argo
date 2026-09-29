@@ -92,7 +92,19 @@
 }
 
 .composer-inline-context {
+  display: inline;
+  margin-inline: 0.125rem;
   font-size: 0;
+  line-height: 0;
+  vertical-align: baseline;
+}
+.composer-inline-context svg {
+  display: inline-block;
+  width: 0.875rem;
+  height: 0.875rem;
+  margin-right: 0.25rem;
+  /* The chip's font size is 0 so the source stays hidden. An em offset would be 0 too. */
+  vertical-align: -3px;
 }
 .composer-inline-context::after {
   content: attr(data-context-label);

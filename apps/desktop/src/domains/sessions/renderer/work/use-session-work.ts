@@ -3,6 +3,7 @@
 // Feed reply.
 import { useQuery } from '@tanstack/react-query'
 import type { SessionShellOutput, SubagentUsageFacts } from '@/domains/sessions/renderer/work/types'
+import { trpcClient } from '@/platform/renderer/trpc-client'
 import { useFeedReading } from '../feed/use-feed-reading'
 import {
   SESSION_REFRESH_MS,
@@ -23,8 +24,7 @@ export function useDelegationUsage(sessionId: SessionId | null) {
     retry: false,
     queryFn: async () => {
       if (sessionId === null) return {}
-      const reply = await window.argo.readSubagentUsage({ sessionId })
-      if (reply.type !== 'session.subagent.usage.read') return {}
+      const reply = await trpcClient.sessionSubagentUsage.query({ sessionId })
       return Object.fromEntries(reply.usage.map(({ id, tokens, model }) => [id, { tokens, model }]))
     },
   })
@@ -44,8 +44,8 @@ export function useShellOutput(sessionId: SessionId | null, shellId: string | nu
     retry: false,
     queryFn: async () => {
       if (sessionId === null || shellId === null) return null
-      const reply = await window.argo.readShellOutput({ sessionId, shellId })
-      return reply.type === 'session.shell.output.read' ? reply.output : null
+      const reply = await trpcClient.sessionShellOutput.query({ sessionId, shellId })
+      return reply
     },
   })
   return output.data ?? null

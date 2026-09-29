@@ -1,16 +1,17 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
+import { MemoryRouter } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
-import { REGISTER_PROJECT_COMMAND } from '@/platform/contract/commands'
-import { STORYBOOK_COMMAND_EVENT } from '../../../../../.storybook/storybook-commands'
 import { ProjectSwitcher } from './project-switcher'
 
 function ProjectSwitcherStory() {
   const [queryClient] = useState(() => new QueryClient())
   return (
     <QueryClientProvider client={queryClient}>
-      <ProjectSwitcher />
+      <MemoryRouter initialEntries={['/projects/argo/sessions']}>
+        <ProjectSwitcher />
+      </MemoryRouter>
     </QueryClientProvider>
   )
 }
@@ -23,21 +24,11 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof ProjectSwitcherStory>
 
-function dispatchProjectCommand(canvasElement: HTMLElement) {
-  const view = canvasElement.ownerDocument.defaultView
-  if (!view) return
-  view.dispatchEvent(
-    new view.CustomEvent(STORYBOOK_COMMAND_EVENT, { detail: REGISTER_PROJECT_COMMAND }),
-  )
-}
-
 export const ProjectActions: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const menu = within(canvasElement.ownerDocument.body)
     const currentProject = () => canvas.getByRole('button', { name: /^Current project:/ })
-    await waitFor(() => expect(currentProject()).toBeEnabled())
-    dispatchProjectCommand(canvasElement)
     await waitFor(() => expect(currentProject()).toBeEnabled())
     await userEvent.click(currentProject())
     await waitFor(() => expect(menu.getByText('Switch project')).toBeInTheDocument())

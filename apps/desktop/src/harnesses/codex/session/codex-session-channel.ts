@@ -25,7 +25,9 @@ import {
   questionResponse,
   readCodexInteraction,
 } from './codex-session-interactions'
+import { dispatchCodexNotification } from './codex-session-notifications'
 import { APPROVAL_TIMEOUT_MS, inputItems } from './codex-session-protocol'
+import { followCodexSkillCommands } from './codex-skill-commands'
 import { CodexSubagentPairing } from './codex-subagent-content'
 import { readCodexThreadStatus } from './codex-thread-status'
 
@@ -60,6 +62,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
   private opening = true
   private closed = false
   private rejected = 0
+  private stopSkills: (() => void) | null = null
   private lastStatus: string | null = null
 
   constructor(
@@ -95,6 +98,14 @@ export class CodexSessionChannel implements LiveSessionChannel {
       if (this.closed) return
       this.nativeId = nativeId
       this.emit({ type: 'identity', nativeId })
+      this.stopSkills = followCodexSkillCommands({
+        cwd: 'resume' in input ? input.resume.cwd : input.cwd,
+        closed: () => this.closed,
+        reject: (shape) => this.reject(shape),
+        onCommands: (commands) => {
+          if (!this.closed) this.emit({ type: 'commands', availability: 'listed', commands })
+        },
+      })
       this.opening = false
       await this.submit(input)
     } catch (error) {
@@ -326,34 +337,15 @@ export class CodexSessionChannel implements LiveSessionChannel {
   }
 
   private receiveNotification(message: Extract<WireMessage, { method: string }>): undefined {
-    switch (message.method) {
-      case 'turn/started':
-        this.turnStarted(message.params)
-        return undefined
-      case 'turn/completed':
-        this.turnCompleted(message.params)
-        return undefined
-      case 'thread/status/changed':
-        this.threadStatusChanged(message.params)
-        return undefined
-      case 'item/agentMessage/delta':
-        this.messageDelta(message.params)
-        return undefined
-      case 'item/reasoning/summaryTextDelta':
-        this.reasoningSummaryDelta(message.params)
-        return undefined
-      case 'item/commandExecution/outputDelta':
-        this.commandOutputDelta(message.params)
-        return undefined
-      case 'item/completed':
-        this.itemNotification(message.params, 'completed')
-        return undefined
-      case 'item/started':
-        this.itemNotification(message.params, 'started')
-        return undefined
-      default:
-        return undefined
-    }
+    return dispatchCodexNotification(message, {
+      turnStarted: (params) => this.turnStarted(params),
+      turnCompleted: (params) => this.turnCompleted(params),
+      threadStatusChanged: (params) => this.threadStatusChanged(params),
+      messageDelta: (params) => this.messageDelta(params),
+      reasoningSummaryDelta: (params) => this.reasoningSummaryDelta(params),
+      commandOutputDelta: (params) => this.commandOutputDelta(params),
+      itemNotification: (params, phase) => this.itemNotification(params, phase),
+    })
   }
 
   private turnStarted(params: Record<string, unknown>) {
@@ -615,6 +607,8 @@ export class CodexSessionChannel implements LiveSessionChannel {
   close(): void {
     if (this.closed) return
     this.closed = true
+    this.stopSkills?.()
+    this.stopSkills = null
     this.pending.clear()
     this.interactionAbort.abort()
     for (const timer of this.approvalTimers.values()) clearTimeout(timer)

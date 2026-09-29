@@ -22,9 +22,12 @@ const navigationLabelKeys = {
   Atlas: 'rail.destinations.atlas',
 } as const satisfies Record<Destination, string>
 
-function destinationFromPathname(pathname: string): Destination {
+function destinationFromPathname(pathname: string, projectPath: string): Destination {
   return (
-    DESTINATIONS.find((destination) => pathname === DESTINATION_PATHS[destination]) ?? 'Sessions'
+    DESTINATIONS.find((destination) => {
+      const destinationPath = `${projectPath}${DESTINATION_PATHS[destination]}`
+      return pathname === destinationPath || pathname.startsWith(`${destinationPath}/`)
+    }) ?? 'Sessions'
   )
 }
 
@@ -32,7 +35,8 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
   const { t } = useTranslation('cockpit')
   const location = useLocation()
   const navigate = useNavigate()
-  const destination = destinationFromPathname(location.pathname)
+  const projectPath = location.pathname.match(/^\/projects\/[^/]+(?=\/|$)/)?.[0] ?? ''
+  const destination = destinationFromPathname(location.pathname, projectPath)
   const settingsLabel = t('rail.settings')
 
   return (
@@ -54,7 +58,7 @@ export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
                   aria-label={label}
                   className={`no-drag-region grid size-(--size-navigation-control) place-items-center rounded-lg transition-colors ${active ? 'bg-selected text-foreground' : 'text-muted-foreground hover:bg-selected hover:text-foreground'}`}
                   onClick={() => {
-                    navigate(DESTINATION_PATHS[itemDestination])
+                    navigate(`${projectPath}${DESTINATION_PATHS[itemDestination]}`)
                   }}
                 >
                   <Icon name={iconName} weight={active ? 'fill' : 'regular'} />

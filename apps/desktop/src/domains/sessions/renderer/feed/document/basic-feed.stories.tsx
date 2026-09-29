@@ -378,13 +378,16 @@ export const SkillInvocation: Story = {
     const previous = window.argo
     window.argo = {
       ...previous,
-      readSkillFile: (request: { path: string }) =>
-        Promise.resolve({
-          version: 1,
-          type: 'session.skill.read',
-          requestId: 'storybook-skill-invocation',
-          content: request.path === skillInvocationPath ? skillInvocationMarkdown : null,
-        }),
+      trpc: (async (request) => {
+        if (request.path !== 'sessionSkillRead') return previous.trpc(request)
+        const requested = (request.input as { path: string }).path
+        return {
+          id: request.id,
+          result: {
+            data: { content: requested === skillInvocationPath ? skillInvocationMarkdown : null },
+          },
+        }
+      }) as typeof window.argo.trpc,
     }
     return () => {
       window.argo = previous

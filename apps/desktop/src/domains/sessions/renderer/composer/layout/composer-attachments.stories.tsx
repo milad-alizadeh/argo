@@ -24,21 +24,22 @@ function mockAttachmentsHost({
   const before = window.argo
   window.argo = {
     ...before,
-    chooseSessionAttachments: async () => ({
-      version: 1,
-      type: 'session.attachments.chosen',
-      requestId: 'storybook-attachments-choose',
-      paths: chosenPaths,
-    }),
-    statSessionAttachments: async ({ paths }) => {
-      const readable = new Set(readablePaths ? readablePaths(paths) : paths)
-      return {
-        version: 1,
-        type: 'session.attachments.statted',
-        requestId: 'storybook-attachments-stat',
-        files: paths.map((path) => ({ path, readable: readable.has(path) })),
+    trpc: (async (request) => {
+      if (request.path === 'sessionAttachmentChoose') {
+        return { id: request.id, result: { data: { paths: chosenPaths } } }
       }
-    },
+      if (request.path === 'sessionAttachmentStat') {
+        const paths = (request.input as { paths: string[] }).paths
+        const readable = new Set(readablePaths ? readablePaths(paths) : paths)
+        return {
+          id: request.id,
+          result: {
+            data: { files: paths.map((path) => ({ path, readable: readable.has(path) })) },
+          },
+        }
+      }
+      return before.trpc(request)
+    }) as typeof window.argo.trpc,
     pathForFile: (file) => `/dropped/${file.name}`,
   }
   return () => {

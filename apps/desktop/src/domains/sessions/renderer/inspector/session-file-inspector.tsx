@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { trpcClient } from '@/platform/renderer/trpc-client'
 import { CodeBlock } from '../ai-elements/code-block'
 import { detectCodeLanguageFromPath } from '../feed/content/code-language'
 import { FeedMarkdown } from '../feed/content/feed-markdown'
@@ -15,9 +16,9 @@ function useWorkspaceFile(sessionId: string | null, path: string) {
     const read =
       sessionId === null
         ? Promise.resolve(null)
-        : window.argo
-            .readWorkspaceFile({ sessionId, path })
-            .then((reply) => (reply.type === 'session.file.read' ? reply.content : null))
+        : trpcClient.sessionWorkspaceFileRead
+            .query({ sessionId, path })
+            .then((reply) => reply.content)
     void read.then((text) => {
       if (current) setContent({ path, text })
     })

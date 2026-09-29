@@ -2,10 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
-import {
-  throwSessionContractError,
-  throwUnexpectedSessionReply,
-} from '../../session-contract-error'
+import { trpcClient } from '@/platform/renderer/trpc-client'
 import { sessionArchivePathKey } from '../../session-queries'
 import type { SessionId } from '../../types'
 
@@ -22,17 +19,8 @@ const UNDO_TOAST_TIMEOUT_MS = 8000
 export function useSessionArchiveMutation() {
   const queryClient = useQueryClient()
   return useMutation<ArchiveSetOutcome, Error, { sessionIds: SessionId[]; archived: boolean }>({
-    mutationFn: async ({ sessionIds, archived }) => {
-      const reply = await window.argo.setSessionsArchived({ sessionIds, archived })
-      switch (reply.type) {
-        case 'session.archive.applied':
-          return { applied: reply.applied, failed: reply.failed }
-        case 'session.error':
-          return throwSessionContractError(reply)
-        default:
-          return throwUnexpectedSessionReply(reply)
-      }
-    },
+    mutationFn: ({ sessionIds, archived }) =>
+      trpcClient.sessionArchiveSet.mutate({ sessionIds, archived }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: sessionArchivePathKey })
     },

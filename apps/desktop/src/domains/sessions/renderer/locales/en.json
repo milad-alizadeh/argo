@@ -178,6 +178,8 @@
     },
     "references": {
       "label": "References",
+      "empty": "No skills or commands",
+      "pending": "Skills appear when this Session is running",
       "unavailable": "Not available for {{harness}}",
       "badgeUnavailable": " — not available for {{harness}}"
     },

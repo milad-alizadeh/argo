@@ -1,24 +1,23 @@
 import { expect } from '@playwright/test'
 import { mountFeedRow } from '../feed-virtualization'
+import { feedRows, sessionFeed, sessionRows } from '../page-trpc'
 
 async function openPackageReadEvidence(page) {
-  const history = page.locator('section[aria-label="Session history"][data-session="shellRunning"]')
-  const evidenceGroupId = await page.evaluate(async () => {
-    const feed = await window.argo.readSessionFeed({
-      subagentId: null,
-      revision: null,
-      sessionId: 'shellRunning',
-    })
-    if (feed.type !== 'session.feed.read') throw new Error('shellRunning Feed did not load')
-    const group = feed.rows.find(
-      (row) =>
-        row.shape === 'tool-group' && row.calls.some((call) => call.id === 'sh-call-package'),
-    )
-    if (group === undefined || group.shape !== 'tool-group')
-      throw new Error('shell package-read group was not returned')
-    return group.id
-  })
-  await mountFeedRow(page, { rowId: evidenceGroupId, session: 'shellRunning' })
+  const rows = await sessionRows(page)
+  const session = rows.find((row) => row.id === 'shellRunning')
+  if (session === undefined) throw new Error('shellRunning Session was not listed')
+  const history = page.locator(
+    `section[aria-label="Session history"][data-session="${session.id}"]`,
+  )
+  const reading = await sessionFeed(page, session.id)
+  if (reading.state !== 'ready') throw new Error('shellRunning Feed did not load')
+  const group = feedRows(reading).find(
+    (row) => row.shape === 'tool-group' && row.calls?.some((call) => call.id === 'sh-call-package'),
+  )
+  if (group === undefined || group.id === undefined)
+    throw new Error('shell package-read group was not returned')
+  const evidenceGroupId = group.id
+  await mountFeedRow(page, { rowId: evidenceGroupId, session: session.id })
   const evidenceGroup = history.locator(`[data-feed-row="${evidenceGroupId}"]`)
   const evidenceGroupTrigger = evidenceGroup.getByRole('button')
   await evidenceGroupTrigger.waitFor()

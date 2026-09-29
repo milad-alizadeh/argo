@@ -1,9 +1,8 @@
-import assert from 'node:assert/strict'
+import { sessionRows } from './page-trpc'
 
 export async function rosterRow(page, sessionId) {
-  const reply = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
-  assert.equal(reply.type, 'session.listed')
-  return reply.sessions.filter((session) => session.id === sessionId)
+  const rows = await sessionRows(page)
+  return rows.filter((session) => session.id === sessionId)
 }
 
 export async function waitFor(condition, timeout = 10_000) {

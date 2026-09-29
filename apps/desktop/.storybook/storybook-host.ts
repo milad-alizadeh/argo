@@ -23,6 +23,14 @@ const procedureHandlers = (): StorybookProcedureHandlers => {
     ...storybookHarnessSignInProcedures,
     ...storybookAutoCompactProcedures,
     accountList: ticketsHost.accountList,
+    composerCommands: () => ({ availability: 'pending', commands: [] }),
+    ticketConnection: (input: { projectId: string }) => ({
+      version: 1,
+      type: 'ticket.connected',
+      requestId: 'story',
+      projectId: input.projectId,
+      connection: null,
+    }),
     'sessions.list': (input: { page: number; pageSize: number }) => ({
       page: input.page,
       pageSize: input.pageSize,

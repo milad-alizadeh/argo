@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { expect } from '@playwright/test'
 import { chooseRosterStatus, openSessionByClick, visibleArchiveMenuItem } from '../gestures'
+import { sessionRows } from '../page-trpc'
 import { readRosterIds, waitForActiveSessions } from '../roster-facts'
 
 function archivedRow(sessionId: string) {
@@ -43,12 +44,8 @@ async function proveUpdatedRowsStayPut(page, mutations) {
     'nav[aria-label="Sessions"] button[data-session-id="prose"]:has-text("Prose renamed in place")',
   )
   assert.deepEqual(await readRosterIds(page), before)
-  const updated = await page.evaluate(async () => {
-    const reply = await window.argo.listSessions({ projectRoot: null })
-    return reply.type === 'session.listed'
-      ? reply.sessions.find((session) => session.id === 'prose')
-      : null
-  })
+  const rows = await sessionRows(page)
+  const updated = rows.find((session) => session.title?.text === 'Prose renamed in place') ?? null
   assert.deepEqual(
     {
       title: updated?.title?.text,

@@ -12,8 +12,18 @@ function SectionScreen({ section }: { section: string }) {
   return <h1>{section}</h1>
 }
 
-function CockpitRouteLayoutStory() {
+function CockpitRouteLayoutStory({
+  projectScoped = false,
+  noHarnessEntry = false,
+}: {
+  projectScoped?: boolean
+  noHarnessEntry?: boolean
+}) {
   const [queryClient] = useState(() => new QueryClient())
+  const initialEntry = (() => {
+    if (noHarnessEntry) return projectScoped ? '/projects/storybook-project/tickets' : '/tickets'
+    return projectScoped ? '/projects/storybook-project/sessions' : '/sessions'
+  })()
   const [router] = useState(() =>
     createMemoryRouter(
       [
@@ -21,7 +31,7 @@ function CockpitRouteLayoutStory() {
           element: <CockpitRouteLayout />,
           children: [
             {
-              path: '/sessions',
+              path: projectScoped ? '/projects/:projectId/sessions' : '/sessions',
               handle: { sidebar: <SessionsSidebar /> },
               // The sidebar reopens the last selected Session, so that path must resolve.
               children: [
@@ -29,11 +39,16 @@ function CockpitRouteLayoutStory() {
                 { path: ':sessionId', element: <SectionScreen section="Sessions screen" /> },
               ],
             },
-            { path: '/tickets', element: <SectionScreen section="Tickets screen" /> },
+            {
+              path: projectScoped ? '/projects/:projectId/tickets' : '/tickets',
+              element: <SectionScreen section="Tickets screen" />,
+            },
           ],
         },
       ],
-      { initialEntries: ['/sessions'] },
+      {
+        initialEntries: [initialEntry],
+      },
     ),
   )
   return (
@@ -67,26 +82,45 @@ function readinessListed(harnesses: Array<{ harness: Harness; state: HarnessRead
   }
 }
 
+function mockHarnessTrpc(replies: Record<string, (input: unknown) => unknown | Promise<unknown>>) {
+  const before = window.argo
+  window.argo = {
+    ...before,
+    trpc: (async (request) => {
+      const reply = replies[request.path]
+      if (reply === undefined) return before.trpc(request)
+      return { id: request.id, result: { data: await reply(request.input) } }
+    }) as typeof window.argo.trpc,
+  }
+  return () => {
+    window.argo = before
+  }
+}
+
+function startedSignIn(input: unknown) {
+  return {
+    version: 1,
+    type: 'harness-sign-in.started' as const,
+    requestId: 'story-harness-sign-in-start',
+    harness: (input as { harness: 'claude' | 'codex' }).harness,
+    status: 'pending' as const,
+    expiresAt: Date.now() + 60_000,
+  }
+}
+
 // A Project with no ready Harness has nothing to run a Session on, so the roster this Project
 // would otherwise show is replaced by a picker over every supported Harness and how to sign in
 // to whichever one is selected (#2579).
 export const NoHarnessReady: Story = {
-  beforeEach: () => {
-    const before = window.argo
-    window.argo = {
-      ...before,
-      listHarnessReadiness: () =>
-        Promise.resolve(
-          readinessListed([
-            { harness: 'claude', state: 'signed-out' },
-            { harness: 'codex', state: 'missing' },
-          ]),
-        ),
-    }
-    return () => {
-      window.argo = before
-    }
-  },
+  args: { noHarnessEntry: true },
+  beforeEach: () =>
+    mockHarnessTrpc({
+      harnessReadinessList: () =>
+        readinessListed([
+          { harness: 'claude', state: 'signed-out' },
+          { harness: 'codex', state: 'missing' },
+        ]),
+    }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Sign in to a Harness')).toBeVisible()
@@ -104,22 +138,15 @@ export const NoHarnessReady: Story = {
 // A policy-blocked Harness names the reason instead of offering a CTA there is nothing to sign
 // into (#2579).
 export const NoHarnessReadyPolicyBlocked: Story = {
-  beforeEach: () => {
-    const before = window.argo
-    window.argo = {
-      ...before,
-      listHarnessReadiness: () =>
-        Promise.resolve(
-          readinessListed([
-            { harness: 'claude', state: 'policy-blocked' },
-            { harness: 'codex', state: 'missing' },
-          ]),
-        ),
-    }
-    return () => {
-      window.argo = before
-    }
-  },
+  args: { noHarnessEntry: true },
+  beforeEach: () =>
+    mockHarnessTrpc({
+      harnessReadinessList: () =>
+        readinessListed([
+          { harness: 'claude', state: 'policy-blocked' },
+          { harness: 'codex', state: 'missing' },
+        ]),
+    }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await canvas.findByText('Sign in to a Harness')
@@ -133,28 +160,14 @@ export const NoHarnessReadyPolicyBlocked: Story = {
 // Starting a sign-in shows its own wait state with a way out, since the attempt can outlive the
 // person's patience (#2579).
 export const NoHarnessReadySigningIn: Story = {
-  beforeEach: () => {
-    const before = window.argo
-    window.argo = {
-      ...before,
-      listHarnessReadiness: () =>
-        Promise.resolve(readinessListed([{ harness: 'claude', state: 'signed-out' }])),
-      startHarnessSignIn: ({ harness }) =>
-        Promise.resolve({
-          version: 1,
-          type: 'harness-sign-in.started',
-          requestId: 'story-harness-sign-in-start',
-          harness,
-          status: 'pending',
-          expiresAt: Date.now() + 60_000,
-        }),
+  args: { noHarnessEntry: true },
+  beforeEach: () =>
+    mockHarnessTrpc({
+      harnessReadinessList: () => readinessListed([{ harness: 'claude', state: 'signed-out' }]),
+      harnessSignInStart: (input) => startedSignIn(input),
       // Never settles: the story only exercises the pending state, not what follows it.
-      waitHarnessSignIn: () => new Promise(() => {}),
-    }
-    return () => {
-      window.argo = before
-    }
-  },
+      harnessSignInWait: () => new Promise(() => {}),
+    }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await canvas.findByText('Sign in to a Harness')
@@ -167,36 +180,21 @@ export const NoHarnessReadySigningIn: Story = {
 // A failed attempt says so in place, so the person retries from the same panel rather than
 // losing their place (#2579).
 export const NoHarnessReadySignInFailed: Story = {
-  beforeEach: () => {
-    const before = window.argo
-    window.argo = {
-      ...before,
-      listHarnessReadiness: () =>
-        Promise.resolve(readinessListed([{ harness: 'claude', state: 'signed-out' }])),
-      startHarnessSignIn: ({ harness }) =>
-        Promise.resolve({
-          version: 1,
-          type: 'harness-sign-in.started',
-          requestId: 'story-harness-sign-in-start',
-          harness,
-          status: 'pending',
-          expiresAt: Date.now() + 60_000,
-        }),
-      waitHarnessSignIn: ({ harness }) =>
-        Promise.resolve({
-          version: 1,
-          type: 'harness-sign-in.resolved',
-          requestId: 'story-harness-sign-in-wait',
-          harness,
-          status: 'failed',
-          expiresAt: null,
-          readiness: null,
-        }),
-    }
-    return () => {
-      window.argo = before
-    }
-  },
+  args: { noHarnessEntry: true },
+  beforeEach: () =>
+    mockHarnessTrpc({
+      harnessReadinessList: () => readinessListed([{ harness: 'claude', state: 'signed-out' }]),
+      harnessSignInStart: (input) => startedSignIn(input),
+      harnessSignInWait: (input) => ({
+        version: 1,
+        type: 'harness-sign-in.resolved' as const,
+        requestId: 'story-harness-sign-in-wait',
+        harness: (input as { harness: 'claude' }).harness,
+        status: 'failed' as const,
+        expiresAt: null,
+        readiness: null,
+      }),
+    }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await canvas.findByText('Sign in to a Harness')
@@ -207,11 +205,16 @@ export const NoHarnessReadySignInFailed: Story = {
 
 // A rail switch draws the chosen section's screen, in both directions (#2836).
 export const SectionSwitchDrawsTheChosenScreen: Story = {
+  args: { projectScoped: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await canvas.findByRole('heading', { name: 'Sessions screen' })
     await userEvent.click(canvas.getByRole('button', { name: 'Tickets' }))
     await expect(await canvas.findByRole('heading', { name: 'Tickets screen' })).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Tickets' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
     await expect(canvas.queryByRole('heading', { name: 'Sessions screen' })).toBeNull()
     await userEvent.click(canvas.getByRole('button', { name: 'Sessions' }))
     await expect(await canvas.findByRole('heading', { name: 'Sessions screen' })).toBeVisible()

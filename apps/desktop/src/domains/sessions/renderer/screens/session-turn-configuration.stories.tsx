@@ -1,10 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionTurnConfiguration } from '@/domains/sessions/renderer/model/models'
-import { claudeComposerModelCatalogFixture } from '../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
+import { queryClient, trpc } from '@/platform/renderer/trpc-client'
+import { claudeHarnessInfoFixture } from '../../../../../test-fixtures/sessions/harness-catalog.fixture'
 import { announceSessionListChange, sessionListSubscribe, sessionRow } from '../session-fixtures'
+import { sessionRosterQueryKey } from '../session-list/session-roster'
 import { SessionScreenView } from './session-screen-view'
 
 const SESSION_ID = 'live-turn-configuration'
@@ -12,7 +15,11 @@ const OPENING_TURN = '2026-09-13T10:00:00.000Z'
 const NEXT_TURN = '2026-09-13T10:01:00.000Z'
 
 // A live Claude Session whose next Turn runs on whatever `reply` says the Harness used.
-function liveSession(reply: SessionTurnConfiguration, sent: unknown[]) {
+function liveSession(
+  reply: SessionTurnConfiguration,
+  sent: unknown[],
+  trpc: typeof window.argo.trpc,
+) {
   const row = sessionRow({
     id: SESSION_ID,
     posture: 'live',
@@ -24,18 +31,19 @@ function liveSession(reply: SessionTurnConfiguration, sent: unknown[]) {
   })
   return {
     trpcSubscribe: sessionListSubscribe(window.argo.trpcSubscribe, () => [row]),
-    sendSession: (request: { sessionId: string }) => {
-      sent.push(request)
+    trpc: (async (request) => {
+      if (request.path === 'harnessCatalogRead') {
+        return {
+          id: request.id,
+          result: { data: { info: claudeHarnessInfoFixture(), failure: null } },
+        }
+      }
+      if (request.path !== 'sessionSubmit') return trpc(request)
+      sent.push(request.input)
       Object.assign(row, { turnStartedAt: NEXT_TURN, turnConfiguration: reply })
       announceSessionListChange()
-      return Promise.resolve({
-        version: 1 as const,
-        type: 'session.accepted' as const,
-        requestId: 'turn-configuration-send',
-        sessionId: request.sessionId,
-      })
-    },
-    readClaudeModelCatalog: () => Promise.resolve(claudeComposerModelCatalogFixture()),
+      return { id: request.id, result: { data: { sessionId: SESSION_ID } } }
+    }) as typeof window.argo.trpc,
   }
 }
 
@@ -46,8 +54,34 @@ function withBridge(reply: SessionTurnConfiguration) {
     sent,
     beforeEach: () => {
       sent.length = 0
+      queryClient.removeQueries({
+        queryKey: trpc.harnessCatalogRead.queryKey({ harness: 'claude' }),
+      })
+      queryClient.setQueryData(
+        sessionRosterQueryKey({ projectId: 'storybook-project', search: '' }),
+        {
+          list: {
+            type: 'list',
+            pages: 1,
+            pageSize: 30,
+            total: 1,
+            rows: [
+              sessionRow({
+                id: SESSION_ID,
+                posture: 'live',
+                title: { text: 'Turn turnConfiguration Session', source: 'first-prompt' },
+                status: 'idle',
+                cwd: '/storybook/argo',
+                turnStartedAt: OPENING_TURN,
+                turnConfiguration: { model: 'claude-opus-5', effort: 'medium', mode: 'default' },
+              }),
+            ],
+          },
+          failed: false,
+        },
+      )
       const previous = window.argo
-      window.argo = { ...previous, ...liveSession(reply, sent) }
+      window.argo = { ...previous, ...liveSession(reply, sent, previous.trpc) }
       return () => {
         window.argo = previous
       }
@@ -62,11 +96,17 @@ const meta = {
   decorators: [
     (Story, { parameters }) => (
       <div className="h-dvh w-full">
-        <MemoryRouter initialEntries={[parameters.route ?? `/sessions/${SESSION_ID}`]}>
-          <Routes>
-            <Route path="/sessions/:sessionId" element={<Story />} />
-          </Routes>
-        </MemoryRouter>
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter
+            initialEntries={[
+              parameters.route ?? `/projects/storybook-project/sessions/${SESSION_ID}`,
+            ]}
+          >
+            <Routes>
+              <Route path="/projects/:projectId/sessions/:sessionId" element={<Story />} />
+            </Routes>
+          </MemoryRouter>
+        </QueryClientProvider>
       </div>
     ),
   ],

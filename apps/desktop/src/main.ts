@@ -13,6 +13,7 @@ import { createHarnessSignInProcedureContext } from '@/domains/harness-signin/ma
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
 import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
 import { SessionActivities } from '@/domains/sessions/main/api/session-activities'
+import { listComposerCommandsFor } from '@/domains/sessions/main/api/session-composer-commands'
 import {
   recordHistoryActivity,
   SessionRosterChanges,
@@ -166,6 +167,15 @@ async function chooseProjectFolder(window: BrowserWindow): Promise<string | null
   return chosen.canceled ? null : (chosen.filePaths[0] ?? null)
 }
 
+async function chooseAttachmentFiles(window: BrowserWindow): Promise<string[]> {
+  const chosen = await dialog.showOpenDialog(window, {
+    title: platformText('dialog.attachFiles.title'),
+    buttonLabel: platformText('dialog.attachFiles.confirm'),
+    properties: ['openFile', 'openDirectory', 'multiSelections'],
+  })
+  return chosen.canceled ? [] : chosen.filePaths
+}
+
 // Account access and the Connection store, created once: the Ticket scans and every window share them.
 function createTicketServices(database: Database) {
   const userData = app.getPath('userData')
@@ -275,9 +285,11 @@ function routerForWindow(options: {
       watchedStatus,
       activities: options.activities,
       acceptsAttachments: (harness) => registry[harness].acceptsAttachments,
+      chooseAttachmentFiles: () => chooseAttachmentFiles(window),
       journal: currentSessionEventJournal(),
       interactions: currentSessionInteractionBroker(),
       hasLiveChannel,
+      listComposerCommands: ({ harness, cwd }) => listComposerCommandsFor(registry[harness], cwd),
       refreshSessionSync: () => actors.sessionSync.send({ type: 'Refresh' }),
       sessionSyncStatus,
     },

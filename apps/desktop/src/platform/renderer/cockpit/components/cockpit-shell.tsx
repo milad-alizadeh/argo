@@ -112,7 +112,11 @@ function CockpitContent({
     <div
       data-component="CockpitContent"
       data-sidebar-state={isSidebarCollapsed ? 'collapsed' : 'open'}
-      className="relative h-full min-w-0 overflow-hidden bg-background"
+      className={`relative h-full min-w-0 overflow-hidden bg-background ${
+        isSidebarCollapsed
+          ? '[--inset-cockpit-content-leading:calc(var(--size-navigation-control)_+_var(--spacing-shell-gutter))]'
+          : '[--inset-cockpit-content-leading:0px]'
+      }`}
     >
       {children}
     </div>
