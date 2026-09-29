@@ -1,4 +1,4 @@
-import type { FeedContent } from '@/domains/sessions/api/feed-content'
+import type { FeedContent } from '../feed-content'
 
 // A row names the file, never the path that reached it: every surface drawing this label is narrow
 // and the absolute path is both too long to read and the same prefix on every line (#2273).

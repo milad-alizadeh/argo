@@ -7,7 +7,7 @@ import type {
   ConnectionSummary,
   Ticket,
   TicketPriority,
-} from '@/domains/tickets/contract/contract'
+} from '@/domains/tickets/api/messages'
 import type { TicketsView } from '../hooks/use-tickets-view'
 import type { Backlog } from '../lib/backlog'
 import { STATUSES } from '../status/status-fixtures'

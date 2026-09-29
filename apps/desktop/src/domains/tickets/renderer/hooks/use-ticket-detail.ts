@@ -2,7 +2,7 @@
 // commits it before the row is read again, so a Ticket outside the active list still opens.
 import { skipToken, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import type { Ticket, TicketStatus } from '@/domains/tickets/contract/contract'
+import type { Ticket, TicketStatus } from '@/domains/tickets/api/messages'
 import { type ContractFailure, settle } from '@/platform/renderer/lib/query-client'
 import { type RouterOutputs, trpc, trpcClient } from '@/platform/renderer/trpc-client'
 import { onRefused } from './use-tickets'

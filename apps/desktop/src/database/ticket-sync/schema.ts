@@ -1,7 +1,7 @@
 import { integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import { timestampColumns } from '@/database/timestamp-columns'
 import { PROVIDERS } from '@/domains/accounts/contract/contract'
-import { TICKET_ERRORS, type TicketErrorCode } from '@/domains/tickets/contract/contract'
+import { TICKET_ERRORS, type TicketErrorCode } from '@/domains/tickets/api/messages'
 
 export const TICKET_SYNC_KINDS = ['active', 'closed'] as const
 // Whether a scan is running; coverage is `complete_scan_started_at`, not the phase.

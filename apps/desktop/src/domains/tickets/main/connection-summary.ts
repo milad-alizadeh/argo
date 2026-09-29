@@ -1,7 +1,7 @@
 import type { AccountState } from '@/domains/accounts/contract/contract'
 import { type AccountAccess, accountState, readAccounts } from '@/domains/accounts/main'
 import type { TicketConnection } from '@/domains/connections/main'
-import type { ConnectionState, ConnectionSummary } from '@/domains/tickets/contract/contract'
+import type { ConnectionState, ConnectionSummary } from '@/domains/tickets/api/messages'
 
 const ACCOUNT_STATES: Record<AccountState, ConnectionState> = {
   connected: 'ready',

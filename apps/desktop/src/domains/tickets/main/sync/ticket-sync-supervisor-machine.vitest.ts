@@ -5,7 +5,7 @@ import path from 'node:path'
 import { afterEach, beforeEach, test } from 'vitest'
 import { createActor } from 'xstate'
 import { type Database, openDatabase } from '@/database/database'
-import type { Ticket, TicketStatus } from '@/domains/tickets/contract/contract'
+import type { Ticket, TicketStatus } from '@/domains/tickets/api/messages'
 import {
   readActiveTickets,
   readClosedTickets,

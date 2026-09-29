@@ -5,7 +5,7 @@ import {
   type TicketConnectedReply,
   type TicketErrorCode,
   ticketError,
-} from '@/domains/tickets/contract/contract'
+} from '@/domains/tickets/api/messages'
 import { connectionSummary } from '../connection-summary'
 import type { Call } from '../read-as'
 

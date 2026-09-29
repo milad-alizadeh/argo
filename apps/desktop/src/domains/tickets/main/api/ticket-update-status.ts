@@ -1,4 +1,4 @@
-import { type TicketUpdateReply, ticketError } from '@/domains/tickets/contract/contract'
+import { type TicketUpdateReply, ticketError } from '@/domains/tickets/api/messages'
 import type { Call } from '../read-as'
 import { writableTarget } from './ticket-connection'
 

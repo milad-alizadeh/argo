@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
-import type { TicketStatus } from '@/domains/tickets/contract/contract'
+import type { TicketStatus } from '@/domains/tickets/api/messages'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {

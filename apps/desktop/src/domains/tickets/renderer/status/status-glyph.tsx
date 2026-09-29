@@ -1,7 +1,7 @@
 // A status category drawn the way Linear draws it: a dashed ring, a ring, a ring filling with a
 // pie, and a disc with its check or cross cut out, so the shape carries the category.
 import { type ReactNode, useId } from 'react'
-import type { TicketStatus } from '@/domains/tickets/contract/contract'
+import type { TicketStatus } from '@/domains/tickets/api/messages'
 
 type Category = TicketStatus['category']
 

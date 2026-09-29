@@ -1,5 +1,4 @@
-import assert from 'node:assert/strict'
-import { test } from 'node:test'
+import { expect, test } from 'bun:test'
 import { ticketAge } from './ticket-age'
 
 const NOW = Date.parse('2026-09-13T12:00:00Z')
@@ -16,6 +15,6 @@ test('a Ticket reads its age as a human-readable relative date', () => {
     // A clock behind GitHub's reads a Ticket from the future as just opened.
     ['2026-09-14T12:00:00Z', 'opened just now', 'Opened just now'],
   ] as const) {
-    assert.deepEqual(ticketAge(createdAt, NOW), { short, long }, createdAt)
+    expect(ticketAge(createdAt, NOW), createdAt).toEqual({ short, long })
   }
 })

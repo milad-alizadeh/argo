@@ -2,11 +2,10 @@ import type {
   TicketConnected,
   TicketDiscovered,
   TicketError,
-  TicketListed,
   TicketPrioritized,
   TicketPriorityChoices,
   TicketUpdated,
-} from '@/domains/tickets/contract/contract'
+} from '@/domains/tickets/api/messages'
 import type { RouterOutputs } from '@/platform/renderer/trpc-client'
 
 export type TicketIndexedReply = RouterOutputs['ticketActive']
@@ -22,7 +21,6 @@ type TicketSuccess =
   | TicketConnected
   | TicketDiscovered
   | TicketIndexed
-  | TicketListed
   | TicketSearched
   | TicketSearchRequested
   | TicketPriorityChoices

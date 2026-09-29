@@ -2,8 +2,8 @@
 import { z } from 'zod'
 import { ticketSearchStateSchema } from '@/database/ticket-search/validation'
 import { ticketSyncStateSchema } from '@/database/ticket-sync/validation'
-import { TICKET_PAGE_SIZE, ticketErrorSchema } from '@/domains/tickets/contract/contract'
-import { ticket, ticketStatus } from '@/domains/tickets/contract/ticket'
+import { TICKET_PAGE_SIZE, ticketErrorSchema } from '@/domains/tickets/api/messages'
+import { ticket, ticketStatus } from '@/domains/tickets/api/ticket'
 import { identifier, message } from '@/shared/messages'
 import { writableConnection } from './api/ticket-connection'
 import {

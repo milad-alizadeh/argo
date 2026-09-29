@@ -1,4 +1,4 @@
-import type { TicketPriorityChoicesReply } from '@/domains/tickets/contract/contract'
+import type { TicketPriorityChoicesReply } from '@/domains/tickets/api/messages'
 import { type Call, readAs } from '../read-as'
 import { writableConnection } from './ticket-connection'
 

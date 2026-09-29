@@ -1,4 +1,4 @@
-import { type TicketConnectedReply, ticketError } from '@/domains/tickets/contract/contract'
+import { type TicketConnectedReply, ticketError } from '@/domains/tickets/api/messages'
 import type { Call } from '../read-as'
 import { connected, findConnection, projectExists } from './ticket-connection'
 

@@ -1,7 +1,7 @@
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { AccountSummary } from '@/domains/accounts/contract/contract'
-import type { TicketScope } from '@/domains/tickets/contract/contract'
+import type { TicketScope } from '@/domains/tickets/api/messages'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {

@@ -12,7 +12,7 @@ import type {
   TicketConnectedReply,
   TicketDiscoverReply,
   TicketScope,
-} from '@/domains/tickets/contract/contract'
+} from '@/domains/tickets/api/messages'
 import { type ContractFailure, QUERY_KEYS } from '@/platform/renderer/lib/query-client'
 import { trpc, trpcClient } from '@/platform/renderer/trpc-client'
 import { type TicketIndexed, type TicketSearched, ticketReply } from './ticket-reply'
@@ -21,7 +21,7 @@ import { useSearchedTickets } from './use-searched-tickets'
 
 const connectionKey = (projectId: string) => trpc.ticketConnection.queryKey({ projectId })
 // Every cached Ticket listing, saved or searched, sits under this key.
-export const listKey = () => trpc.ticketList.pathKey()
+export const listKey = () => trpc.ticketActive.pathKey()
 
 export type TicketPages = InfiniteData<TicketIndexed | TicketSearched, unknown>
 

@@ -8,12 +8,11 @@ import {
   ticketConnectedSchema,
   ticketDiscoveredSchema,
   ticketErrorSchema,
-  ticketListedSchema,
   ticketPrioritizedSchema,
   ticketPriorityChoicesSchema,
   ticketUpdatedSchema,
-} from '@/domains/tickets/contract/contract'
-import { priorityLevel, statusId, ticketKey } from '@/domains/tickets/contract/ticket'
+} from '@/domains/tickets/api/messages'
+import { priorityLevel, statusId, ticketKey } from '@/domains/tickets/api/ticket'
 import { identifierSchema } from '@/shared/validation'
 import type { Call } from '../read-as'
 import {
@@ -40,7 +39,6 @@ import { connectSource } from './ticket-connect'
 import { readConnection } from './ticket-connection-read'
 import { disconnectSource } from './ticket-disconnect'
 import { discoverSources } from './ticket-discover'
-import { listTickets } from './ticket-list'
 import { readPriorityChoices } from './ticket-priority-choices'
 import { updatePriority } from './ticket-update-priority'
 import { updateStatus } from './ticket-update-status'
@@ -51,12 +49,6 @@ const connectionOutputSchema = z.union([ticketConnectedSchema, ticketErrorSchema
 const discoverInputSchema = projectInputSchema.extend({ accountId: identifierSchema })
 const discoverOutputSchema = z.union([ticketDiscoveredSchema, ticketErrorSchema])
 const connectInputSchema = discoverInputSchema.extend({ scope: identifierSchema })
-const cursorSchema = z.string().min(1).max(512).nullable()
-const listInputSchema = projectInputSchema.extend({
-  query: z.string().max(TICKET_QUERY_LIMIT),
-  cursor: cursorSchema,
-})
-const listOutputSchema = z.union([ticketListedSchema, ticketErrorSchema])
 // A numbered page of the saved active list; the bound keeps an offset inside SQLite's reach.
 const activeInputSchema = projectInputSchema.extend({ page: z.int().nonnegative().max(100_000) })
 const closedLoadInputSchema = projectInputSchema.extend({ more: z.boolean() })
@@ -164,12 +156,6 @@ export function ticketProcedures(dependencies: TicketProcedureContext) {
       .input(projectInputSchema)
       .output(connectionOutputSchema)
       .query(({ input }) => readConnection(request(dependencies, input.projectId))),
-    ticketList: t.procedure
-      .input(listInputSchema)
-      .output(listOutputSchema)
-      .query(({ input: { projectId, query, cursor } }) =>
-        listTickets(request(dependencies, projectId), { query, cursor }),
-      ),
     ...indexProcedures(dependencies),
     ticketDiscover: t.procedure
       .input(discoverInputSchema)

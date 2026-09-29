@@ -3,7 +3,7 @@
 import { assign, fromPromise, setup } from 'xstate'
 import type { Database } from '@/database/database'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
-import type { Ticket, TicketErrorCode, TicketStatus } from '@/domains/tickets/contract/contract'
+import type { Ticket, TicketErrorCode, TicketStatus } from '@/domains/tickets/api/messages'
 import { countClosedListed, saveClosedTickets, saveListedTickets } from '../database/ticket-upsert'
 import type { ListingState, TicketPage } from '../sources'
 import { resolveOmittedTickets, type TicketRead } from './ticket-omitted'

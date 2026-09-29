@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { ticketError } from '@/domains/tickets/contract/contract'
+import { ticketError } from '@/domains/tickets/api/messages'
 import { connection } from '../detail/ticket-fixtures'
 import { SourceSettings } from './source-settings'
 

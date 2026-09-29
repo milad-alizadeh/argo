@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { type ConnectionSummary, TICKET_QUERY_LIMIT } from '@/domains/tickets/contract/contract'
+import { type ConnectionSummary, TICKET_QUERY_LIMIT } from '@/domains/tickets/api/messages'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { SidebarSearch } from '@/platform/renderer/components/sidebar-search'
 import { Button } from '@/platform/renderer/components/ui/button'

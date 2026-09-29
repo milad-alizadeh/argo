@@ -10,7 +10,7 @@ import type {
   TicketError,
   TicketPriority,
   TicketStatus,
-} from '@/domains/tickets/contract/contract'
+} from '@/domains/tickets/api/messages'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 import { providerPresentation } from '@/providers/presentation-registry'
 import type { ConnectSourceFormProps } from '../connection/connect-source-form'

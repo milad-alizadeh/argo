@@ -76,11 +76,11 @@
       "comment": "One folder, one secret (AGENTS.md): a feature folder directly under a domain facet or a harness is reached through its entry point, never past it. The entry point is index.ts, or the file named after the folder, and the four of the latter that exist today are listed below. Parked at info for a follow-up ticket: 754 edges still breach it, so as an error it would gate every PR on finishing the whole restructure. The count is the distance to the target. Shrink it by adding entry points and raise this back to error at zero, never widen the rule to fit.",
       "severity": "info",
       "from": {
-        "path": "^apps/desktop/src/((?:domains/[^/]+/(?:contract|main|preload|renderer)|harnesses/[^/]+)/[^/]+|[^/]+)",
+        "path": "^apps/desktop/src/((?:domains/[^/]+/(?:api|contract|main|preload|renderer)|harnesses/[^/]+)/[^/]+|[^/]+)",
         "pathNot": ["\\.(test|stories)\\.(ts|tsx)$"]
       },
       "to": {
-        "path": "^apps/desktop/src/(?:domains/[^/]+/(?:contract|main|preload|renderer)|harnesses/[^/]+)/[^/]+/",
+        "path": "^apps/desktop/src/(?:domains/[^/]+/(?:api|contract|main|preload|renderer)|harnesses/[^/]+)/[^/]+/",
         "pathNot": [
           "^apps/desktop/src/$1/",
           "/index\\.tsx?$",
@@ -96,7 +96,7 @@
       "comment": "A file inside one domain facet, platform facet, or harness reaches another file in that same facet with a relative path; @/ is reserved for crossing to another facet, domain, or harness.",
       "severity": "error",
       "from": {
-        "path": "^(apps/desktop/src/(?:domains/[^/]+/(?:contract|main|preload|renderer)|platform/(?:main|preload|renderer|shared)|harnesses/[^/]+|renderer|shared))/"
+        "path": "^(apps/desktop/src/(?:domains/[^/]+/(?:api|contract|main|preload|renderer)|platform/(?:main|preload|renderer|shared)|harnesses/[^/]+|renderer|shared))/"
       },
       "to": {
         "dependencyTypes": ["aliased-tsconfig"],
@@ -108,7 +108,7 @@
       "comment": "A relative import stays inside its own domain facet, platform facet, or harness. Reaching another one uses @/ (pairs with no-aliased-same-facet-import).",
       "severity": "error",
       "from": {
-        "path": "^(apps/desktop/src/(?:domains/[^/]+/(?:contract|main|preload|renderer)|platform/(?:main|preload|renderer|shared)|harnesses/[^/]+|renderer|shared))/"
+        "path": "^(apps/desktop/src/(?:domains/[^/]+/(?:api|contract|main|preload|renderer)|platform/(?:main|preload|renderer|shared)|harnesses/[^/]+|renderer|shared))/"
       },
       "to": {
         "path": "^apps/desktop/src/",

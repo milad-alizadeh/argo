@@ -9,8 +9,8 @@ import type {
   TicketPriority,
   TicketScope,
   TicketStatus,
-} from '@/domains/tickets/contract/contract'
-import type { PriorityChange, StatusChange } from '@/domains/tickets/contract/ticket'
+} from '@/domains/tickets/api/messages'
+import type { PriorityChange, StatusChange } from '@/domains/tickets/api/ticket'
 import type { ProviderEndpoints } from '@/providers/endpoints'
 
 // `refused` is the provider refusing the token itself: the one failure an Account renewal can fix.

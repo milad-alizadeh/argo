@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
 import { FeedMarkdown } from '@/domains/sessions/renderer'
-import type { Ticket } from '@/domains/tickets/contract/contract'
+import type { Ticket } from '@/domains/tickets/api/messages'
 import { AppPageHeader } from '@/platform/renderer/app/components/app-shell'
 import { PageHeading } from '@/platform/renderer/components/page-heading'
 import { providerPresentation } from '@/providers/presentation-registry'

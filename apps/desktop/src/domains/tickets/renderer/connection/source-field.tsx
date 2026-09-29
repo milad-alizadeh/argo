@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
 import { capitalized } from '@/domains/accounts/renderer'
-import type { TicketScope } from '@/domains/tickets/contract/contract'
+import type { TicketScope } from '@/domains/tickets/api/messages'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
   Combobox,

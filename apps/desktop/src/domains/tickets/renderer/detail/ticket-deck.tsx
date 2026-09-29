@@ -1,4 +1,4 @@
-import type { Ticket, TicketStatus } from '@/domains/tickets/contract/contract'
+import type { Ticket, TicketStatus } from '@/domains/tickets/api/messages'
 import { AppPageSurface } from '@/platform/renderer/app/components/app-shell'
 import { useLinkedSessions } from '../hooks/use-linked-sessions'
 import type { Backlog } from '../lib/backlog'

@@ -5,7 +5,7 @@ import {
   type ConnectionSummary,
   type TicketError,
   ticketError,
-} from '@/domains/tickets/contract/contract'
+} from '@/domains/tickets/api/messages'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 import { trpcClient } from '@/platform/renderer/trpc-client'
 import { numberedPages } from './numbered-pages'

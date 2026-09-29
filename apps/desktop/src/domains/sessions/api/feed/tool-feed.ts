@@ -1,8 +1,8 @@
-import { searchLabel, searchOutcome } from '@/domains/sessions/api/feed/tool-changes'
 import type { BackgroundState } from './background-task-record'
 import type { SessionFeedRow } from './feed-rows'
 import { fileName } from './file-presentation'
 import type { AskFacts, ExecuteFacts, ToolCall } from './tool-call'
+import { searchLabel, searchOutcome } from './tool-changes'
 import { resultText, type ToolResult as TranscriptToolResult } from './transcript-content'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>

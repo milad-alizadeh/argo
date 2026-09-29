@@ -4,7 +4,7 @@ import type {
   ConnectionSummary,
   TicketPriority,
   TicketPriorityChoices,
-} from '@/domains/tickets/contract/contract'
+} from '@/domains/tickets/api/messages'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 import { trpc, trpcClient } from '@/platform/renderer/trpc-client'
 import { providerPresentation } from '@/providers/presentation-registry'

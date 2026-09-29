@@ -11,7 +11,7 @@ import {
   identifier,
   message,
 } from '@/shared/messages'
-import { priorityLevel, statusId, ticket, ticketKey, ticketPriority, ticketStatus } from './ticket'
+import { ticketKey, ticketPriority, ticketStatus } from './ticket'
 
 export type {
   Ticket,
@@ -48,42 +48,10 @@ const connectionSummary = z.strictObject({
   state: z.enum(CONNECTION_STATES),
 })
 
-const project = { projectId: identifier }
-
-export const ticketConnectionRequestSchema = message('ticket.connection', project)
-export const ticketConnectRequestSchema = message('ticket.connect', {
-  ...project,
-  accountId: identifier,
-  scope: identifier,
-})
-export const ticketDisconnectRequestSchema = message('ticket.disconnect', project)
-// The repositories or teams an Account could connect this Project to.
-export const ticketDiscoverRequestSchema = message('ticket.discover', {
-  ...project,
-  accountId: identifier,
-})
 // GitHub refuses a search query over 256 characters, and the scope qualifiers take their share.
 export const TICKET_QUERY_LIMIT = 200
-// The provider's own opaque place in a listing: a GitHub page number, a Linear end cursor.
-const cursor = z.string().min(1).max(512)
-// An empty query reads the open backlog in the provider's order; any other searches it there.
-export const ticketListRequestSchema = message('ticket.list', {
-  ...project,
-  query: z.string().max(TICKET_QUERY_LIMIT),
-  cursor: cursor.nullable(),
-})
-// Moves one Ticket to one of the statuses its listing offered.
-export const ticketUpdateRequestSchema = message('ticket.update', {
-  ...project,
-  key: ticketKey,
-  statusId,
-})
-// Moves one Ticket to another priority level, or to none.
-export const ticketPriorityRequestSchema = message('ticket.priority', {
-  ...project,
-  key: ticketKey,
-  priorityLevel: priorityLevel.nullable(),
-})
+const project = { projectId: identifier }
+
 export const ticketConnectedSchema = message('ticket.connected', {
   ...project,
   connection: connectionSummary.nullable(),
@@ -93,15 +61,6 @@ export const ticketDiscoveredSchema = message('ticket.discovered', {
   scopes: z.array(z.strictObject({ scope: identifier, label: z.string() })),
 })
 // `total` is known only for a search: neither provider counts a backlog without paging it all.
-export const ticketListedSchema = message('ticket.listed', {
-  ...project,
-  scope: identifier,
-  tickets: z.array(ticket),
-  // Every status a Ticket here can move to, in the provider's order.
-  statuses: z.array(ticketStatus),
-  nextCursor: cursor.nullable(),
-  total: z.int().nonnegative().nullable(),
-})
 export const ticketUpdatedSchema = message('ticket.updated', {
   ...project,
   key: ticketKey,
@@ -121,20 +80,12 @@ export const ticketPriorityChoicesSchema = message('ticket.priorityChoices', {
 
 export type ConnectionSummary = z.infer<typeof connectionSummary>
 export type ConnectionState = ConnectionSummary['state']
-export type TicketConnectionRequest = z.infer<typeof ticketConnectionRequestSchema>
-export type TicketConnectRequest = z.infer<typeof ticketConnectRequestSchema>
-export type TicketDisconnectRequest = z.infer<typeof ticketDisconnectRequestSchema>
-export type TicketListRequest = z.infer<typeof ticketListRequestSchema>
-export type TicketUpdateRequest = z.infer<typeof ticketUpdateRequestSchema>
 export type TicketUpdated = z.infer<typeof ticketUpdatedSchema>
-export type TicketPriorityRequest = z.infer<typeof ticketPriorityRequestSchema>
 export type TicketPrioritized = z.infer<typeof ticketPrioritizedSchema>
 export type TicketPriorityChoices = z.infer<typeof ticketPriorityChoicesSchema>
-export type TicketDiscoverRequest = z.infer<typeof ticketDiscoverRequestSchema>
 export type TicketDiscovered = z.infer<typeof ticketDiscoveredSchema>
 export type TicketScope = TicketDiscovered['scopes'][number]
 export type TicketConnected = z.infer<typeof ticketConnectedSchema>
-export type TicketListed = z.infer<typeof ticketListedSchema>
 
 export const TICKET_ERRORS = {
   'access-denied': 'Argo cannot read Tickets for this window.',
@@ -166,7 +117,6 @@ export const TICKET_ERRORS = {
 export type TicketErrorCode = keyof typeof TICKET_ERRORS
 export type TicketError = ContractError<'ticket.error', TicketErrorCode>
 export type TicketConnectedReply = TicketConnected | TicketError
-export type TicketListReply = TicketListed | TicketError
 export type TicketDiscoverReply = TicketDiscovered | TicketError
 export type TicketUpdateReply = TicketUpdated | TicketError
 export type TicketPriorityReply = TicketPrioritized | TicketError

@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ConnectionSummary } from '@/domains/tickets/contract/contract'
+import type { ConnectionSummary } from '@/domains/tickets/api/messages'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Loader } from '@/platform/renderer/components/loader/loader'
 import { Alert, AlertDescription } from '@/platform/renderer/components/ui/alert'

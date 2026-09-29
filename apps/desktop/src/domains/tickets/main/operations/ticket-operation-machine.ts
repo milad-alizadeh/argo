@@ -2,12 +2,8 @@
 import { assign, fromPromise, setup } from 'xstate'
 import type { Database } from '@/database/database'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
-import type {
-  TicketErrorCode,
-  TicketPriority,
-  TicketStatus,
-} from '@/domains/tickets/contract/contract'
-import { closureOf, type PriorityChange } from '@/domains/tickets/contract/ticket'
+import type { TicketErrorCode, TicketPriority, TicketStatus } from '@/domains/tickets/api/messages'
+import { closureOf, type PriorityChange } from '@/domains/tickets/api/ticket'
 import { saveConfirmedFields } from '../database/ticket-upsert'
 import {
   type RecordedIntent,

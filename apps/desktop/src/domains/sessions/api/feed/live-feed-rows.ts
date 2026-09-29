@@ -1,5 +1,5 @@
-import type { FeedContent, MediaSource } from '@/domains/sessions/api/feed-content'
-import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
+import type { FeedContent, MediaSource } from '../feed-content'
+import type { SessionLiveEvent } from '../session-live-event'
 import type { BackgroundState } from './background-task-record'
 import { checkedDataImageUrl, dataImageUrl, fileImageUrl } from './feed-images'
 import type { SessionFeedRow } from './feed-rows'

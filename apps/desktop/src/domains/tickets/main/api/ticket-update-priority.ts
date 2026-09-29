@@ -1,5 +1,5 @@
-import { type TicketPriorityReply, ticketError } from '@/domains/tickets/contract/contract'
-import type { PriorityChange } from '@/domains/tickets/contract/ticket'
+import { type TicketPriorityReply, ticketError } from '@/domains/tickets/api/messages'
+import type { PriorityChange } from '@/domains/tickets/api/ticket'
 import type { Call } from '../read-as'
 import { writableTarget } from './ticket-connection'
 

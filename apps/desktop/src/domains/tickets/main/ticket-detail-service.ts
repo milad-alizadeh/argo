@@ -1,7 +1,7 @@
 // One Ticket opened by reference: read from SQLite, and read by ID from the provider into SQLite.
 import { z } from 'zod'
-import { ticketError, ticketErrorSchema } from '@/domains/tickets/contract/contract'
-import { ticket, ticketStatus } from '@/domains/tickets/contract/ticket'
+import { ticketError, ticketErrorSchema } from '@/domains/tickets/api/messages'
+import { ticket, ticketStatus } from '@/domains/tickets/api/ticket'
 import { identifier, message } from '@/shared/messages'
 import { writableConnection } from './api/ticket-connection'
 import { readSavedTicket } from './database/ticket-queries'

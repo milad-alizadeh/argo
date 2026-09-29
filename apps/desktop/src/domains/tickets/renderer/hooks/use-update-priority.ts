@@ -1,7 +1,7 @@
 // Moving a Ticket to another priority level, or to none. The row moves when the provider's
 // confirmed priority is saved; a refusal leaves it where it was and says why.
 import type { QueryClient } from '@tanstack/react-query'
-import type { TicketPrioritized, TicketPriority } from '@/domains/tickets/contract/contract'
+import type { TicketPrioritized, TicketPriority } from '@/domains/tickets/api/messages'
 import { trpcClient } from '@/platform/renderer/trpc-client'
 import { patchTicket, type TicketChange, useTicketFieldMutation } from './use-ticket-field-mutation'
 

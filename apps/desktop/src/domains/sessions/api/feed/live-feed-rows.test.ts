@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
-import { groupToolRuns } from '@/domains/sessions/api/feed/tool-groups'
-import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
+import type { FeedContent } from '../feed-content'
+import type { SessionLiveEvent } from '../session-live-event'
 import { projectLiveFeedRows } from './live-feed-rows'
+import { groupToolRuns } from './tool-groups'
 
 const sessionId = '00000000-0000-4000-8000-000000000001'
 function content(sequence: number, value: FeedContent): SessionLiveEvent {

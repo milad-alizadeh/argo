@@ -1,4 +1,4 @@
-import type { TicketDiscoverReply } from '@/domains/tickets/contract/contract'
+import type { TicketDiscoverReply } from '@/domains/tickets/api/messages'
 import { type Call, readAs } from '../read-as'
 
 export async function discoverSources(call: Call, accountId: string): Promise<TicketDiscoverReply> {
