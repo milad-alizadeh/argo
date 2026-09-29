@@ -25,8 +25,7 @@ import {
   storeText,
 } from '../screen'
 
-const UNRECONCILED =
-  'This Ticket has an unresolved change from before. Argo is checking with the provider before it can change again.'
+const UNRECONCILED = 'This Ticket has an unresolved change. Try again once Argo confirms it.'
 
 const GITHUB_SCOPE = { provider: 'github', scope: 'octocat/hello-world' }
 

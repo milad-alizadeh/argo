@@ -11,8 +11,7 @@ export const TICKET_ERRORS = {
   'not-connected': 'This Project has no connected Ticket source.',
   'invalid-scope': 'Enter a repository as owner/name.',
   'missing-account': 'That Account is not connected.',
-  'account-expired':
-    'This Account’s sign-in expired and could not be renewed. Reconnect it to read Tickets.',
+  'account-expired': 'This Account’s sign-in expired. Reconnect it to read Tickets.',
   'account-revoked': 'This Account’s sign-in is no longer accepted. Reconnect it to read Tickets.',
   'repository-not-visible': 'This GitHub Account cannot see that repository.',
   'issues-disabled': 'That repository has GitHub Issues turned off.',
@@ -21,8 +20,7 @@ export const TICKET_ERRORS = {
   'ticket-deleted': 'That Ticket was deleted.',
   'ticket-not-writable': 'This Account is not allowed to change that Ticket.',
   'status-unknown': 'That status is not one this Ticket can move to.',
-  'ticket-unreconciled':
-    'This Ticket has an unresolved change from before. Argo is checking with the provider before it can change again.',
+  'ticket-unreconciled': 'This Ticket has an unresolved change. Try again once Argo confirms it.',
   ...PROVIDER_OUTAGE_ERRORS,
   'grant-unreadable': 'Argo cannot read the stored sign-in. Reconnect the Account.',
   'storage-invalid': 'The store of connected Ticket sources cannot be read in this format.',
