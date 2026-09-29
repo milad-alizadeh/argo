@@ -55,7 +55,28 @@ export async function requestSync(
   const target = await writableConnection(call)
   if (!target.ok) return target.error
   const { provider, scope, accountId } = target
-  call.index.requestSync({ provider, scope, accountId })
+  call.index.send({ type: 'Sync', request: { provider, scope, accountId } })
   const { requestId, projectId } = call
   return { version: 1, type: 'ticket.sync-requested', requestId, projectId }
+}
+
+// A view showing the Project's Tickets, until the returned stop. The request ID names the view.
+export function watchTickets(call: Call): () => void {
+  let stopped = false
+  void writableConnection(call).then(
+    (target) => {
+      if (stopped || !target.ok) return
+      const { provider, scope, accountId } = target
+      call.index.send({
+        type: 'Watch',
+        watcherId: call.requestId,
+        request: { provider, scope, accountId },
+      })
+    },
+    (error: unknown) => console.warn('The watched Ticket Connection could not be read.', error),
+  )
+  return () => {
+    stopped = true
+    call.index.send({ type: 'Unwatch', watcherId: call.requestId })
+  }
 }

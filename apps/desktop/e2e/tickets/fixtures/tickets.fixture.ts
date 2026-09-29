@@ -6,7 +6,11 @@ import { type ElectronApplication, _electron as electron } from 'playwright-core
 import { SESSION_CLAUDE_TRANSCRIPTS_ENV } from '@/harnesses/claude/proof-protocol'
 import { SESSION_CODEX_TRANSCRIPTS_ENV } from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
-import { GITHUB_PROOF_ORIGIN_ENV, LINEAR_PROOF_ORIGIN_ENV } from '@/providers/proof-protocol'
+import {
+  GITHUB_PROOF_ORIGIN_ENV,
+  LINEAR_PROOF_ORIGIN_ENV,
+  TICKET_POLL_PROOF_ENV,
+} from '@/providers/proof-protocol'
 import type { MockGitHub, MockRepository } from '../../../mocks/providers/github/mock-github'
 import { startMockGitHubLoopback } from '../../../mocks/providers/github/mock-github-loopback'
 import type { MockLinear } from '../../../mocks/providers/linear/mock-linear'
@@ -29,6 +33,8 @@ export type TicketFixture = {
   noSessions: string
   github: MockGitHub
   linear: MockLinear
+  // The active poll in milliseconds, or null for the minute a person waits.
+  pollMs: number | null
 }
 
 // A fresh copy each time, since the mock closes an issue in place.
@@ -63,7 +69,11 @@ function serveTeams(linear: MockLinear) {
   linear.tokenLifetime(LINEAR_TOKEN_LIFETIME)
 }
 
-export async function prepare(root: string, application: string): Promise<TicketFixture> {
+export async function prepare(
+  root: string,
+  application: string,
+  pollMs: number | null,
+): Promise<TicketFixture> {
   const userData = path.join(root, 'userData')
   const projectPath = await repository(path.join(root, 'argo'))
   await makeProjectLocallyReady(projectPath)
@@ -75,7 +85,7 @@ export async function prepare(root: string, application: string): Promise<Ticket
   serveRepositories(github)
   const linear = await startMockLinearLoopback()
   serveTeams(linear)
-  return { application, userData, noSessions, github, linear }
+  return { application, userData, noSessions, github, linear, pollMs }
 }
 
 // The mock keychain keeps safeStorage off the login keychain, whose prompt no proof can answer.
@@ -90,6 +100,7 @@ export async function launch(fixture: TicketFixture): Promise<ElectronApplicatio
       [SESSION_CLAUDE_TRANSCRIPTS_ENV]: fixture.noSessions,
       [SESSION_CODEX_TRANSCRIPTS_ENV]: fixture.noSessions,
       [ACCEPTANCE_ENV]: '0',
+      ...(fixture.pollMs === null ? {} : { [TICKET_POLL_PROOF_ENV]: String(fixture.pollMs) }),
     },
     timeout: 30_000,
   })

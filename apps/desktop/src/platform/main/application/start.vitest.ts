@@ -1,5 +1,6 @@
 import { afterEach, expect, test, vi } from 'vitest'
 import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
+import { TICKET_SYNC_TIMING } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
 import type { HarnessRegistry } from '@/harnesses/registry'
 
 const electron = vi.hoisted(() => ({
@@ -38,6 +39,7 @@ function prepared() {
       database: {} as never,
       readPage: async () => ({ ok: false as const, failure: 'github-unreachable' as const }),
       changed: () => {},
+      timing: TICKET_SYNC_TIMING,
     },
     registry: {} as HarnessRegistry,
   }

@@ -89,10 +89,12 @@ export async function proveLinearBacklog(run: Run) {
 
 // The active Linear scan lands in the same SQLite tables, keyed by Linear's issue id, and a later
 // launch's scan keeps every Argo ID.
-export async function proveLinearCommitted(run: Run, restarted: Run) {
+export async function proveLinearCommitted(run: Run, restart: () => Promise<Run>) {
   await backlog(run.page).getByRole('button', { name: 'Status: In Progress' }).waitFor()
   const before = committedTicketIds(run, LINEAR_SCOPE)
   assert.deepEqual(Object.keys(before).sort(), ['issue-ENG-1', 'issue-ENG-2'])
+  // The first launch is read before the restart closes it.
+  const restarted = await restart()
   await openRoom(restarted.page, 'tickets')
   assert.deepEqual(await teamKeys(restarted), ['ENG-1', 'ENG-2'])
   assert.deepEqual(committedTicketIds(restarted, LINEAR_SCOPE), before)

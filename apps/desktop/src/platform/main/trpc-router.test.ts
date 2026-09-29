@@ -117,6 +117,7 @@ test('registers Ticket procedures directly on the global router', () => {
     'ticketList',
     'ticketActive',
     'ticketSync',
+    'ticketWatch',
     'ticketChanges',
   ])
     expect(paths).toContain(path)

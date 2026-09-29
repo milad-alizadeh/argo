@@ -31,9 +31,12 @@ import { SessionHistoryFollowers } from '@/domains/sessions/main/live/session-hi
 import { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
 import { ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
-import type { TicketSyncRequest } from '@/domains/tickets/main/sync/ticket-sync-machine'
 import { markInterruptedTicketScans } from '@/domains/tickets/main/sync/ticket-sync-records'
-import type { TicketSyncSupervisorCommand } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
+import {
+  type TicketSyncSupervisorCommand,
+  ticketSyncTiming,
+} from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
+import { reportWindowVisibility } from '@/domains/tickets/main/sync/window-visibility'
 import { TicketChanges } from '@/domains/tickets/main/ticket-changes'
 import { ensureManagedWorkspace } from '@/domains/workspaces/main/workspace-create-managed'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
@@ -279,8 +282,7 @@ function ticketProcedureContext({
     index: {
       database,
       changes: currentTicketServices().changes,
-      requestSync: (request: TicketSyncRequest) =>
-        actors.ticketSync.send({ type: 'Sync', request }),
+      send: (command: TicketSyncSupervisorCommand) => actors.ticketSync.send(command),
     },
   }
 }
@@ -460,6 +462,7 @@ function createWindow(actor: AppActor, database: Database, registry: HarnessRegi
         registry,
       })
       attachAppearanceWatch(window)
+      reportWindowVisibility(window, actors.ticketSync.send)
       window.once('closed', () => closeDesktopWindow({ actor, database, domains, detachTrpc }))
       installMenu(window)
     },
@@ -517,6 +520,7 @@ async function prepare() {
       database,
       readPage: ticketPageReader({ access: tickets.access, providers: PROVIDER_REGISTRY }),
       changed: tickets.changes.changed,
+      timing: ticketSyncTiming(PROOF_ENABLED),
     },
     registry: harnessRegistry,
   }

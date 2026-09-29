@@ -1,7 +1,7 @@
 // Announces that a provider scope's saved Tickets changed; each reader refetches from SQLite.
 import type { Database } from '@/database/database'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
-import type { TicketSyncRequest } from './sync/ticket-sync-machine'
+import type { TicketSyncSupervisorCommand } from './sync/ticket-sync-supervisor-machine'
 
 export class TicketChanges {
   readonly #listeners = new Set<(target: TicketScopeTarget) => void>()
@@ -27,5 +27,6 @@ export class TicketChanges {
 export type TicketIndex = {
   database: Database
   changes: TicketChanges
-  requestSync: (request: TicketSyncRequest) => void
+  // A scan request, or a view watching or leaving a scope.
+  send: (command: TicketSyncSupervisorCommand) => void
 }

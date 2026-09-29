@@ -234,6 +234,44 @@ export const MoreTicketsUnavailable: Story = {
   },
 }
 
+const retryRefresh = fn()
+
+// A failed refresh keeps the saved rows, says so above them, and offers another read.
+export const RefreshFailedKeepsRows: Story = {
+  args: {
+    view: {
+      kind: 'tickets',
+      projectId: 'storybook-project',
+      backlog: backlog({
+        sync: {
+          refreshing: true,
+          problem: {
+            icon: 'connection-offline',
+            title: 'Argo could not refresh Tickets. These are the last saved.',
+            description: 'Argo cannot reach GitHub.',
+            alert: true,
+            actions: [{ label: 'Try again', onClick: retryRefresh, primary: true }],
+          },
+        },
+      }),
+      selectedKey: null,
+      now: new Date('2026-09-25T12:00:00Z').getTime(),
+      onBack: fn(),
+      onSelect: fn(),
+      onOpenSession: fn(),
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const list = within(within(canvasElement).getByRole('region', { name: 'Backlog' }))
+    await expect(list.getByRole('button', { name: /^#607/ })).toBeInTheDocument()
+    await expect(list.getByText('Refreshing from GitHub…')).toBeInTheDocument()
+    const alert = within(list.getByRole('alert'))
+    await expect(alert.getByText('Argo cannot reach GitHub.')).toBeInTheDocument()
+    await userEvent.click(alert.getByRole('button', { name: 'Try again' }))
+    await expect(retryRefresh).toHaveBeenCalled()
+  },
+}
+
 // A parent's chevron folds its children away and brings them back.
 export const FoldedParent: Story = {
   play: async ({ canvasElement }) => {

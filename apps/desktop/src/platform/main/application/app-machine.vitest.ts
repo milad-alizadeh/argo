@@ -4,6 +4,7 @@ import { createActor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
 import type { Database } from '@/database/database'
 import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
+import { TICKET_SYNC_TIMING } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
 import type { HarnessRegistry } from '@/harnesses/registry'
 import { createAppMachine } from './app-machine'
 
@@ -22,6 +23,7 @@ const input = {
     database: {} as Database,
     readPage: async () => ({ ok: false as const, failure: 'github-unreachable' as const }),
     changed: () => {},
+    timing: TICKET_SYNC_TIMING,
   },
 }
 const appMachine = createAppMachine(registry, input)

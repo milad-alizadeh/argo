@@ -1,7 +1,7 @@
-// The packaged Ticket proof (#1848, #1849, #2013): connect an Account, connect a source, list,
-// detail, a status change, restart, revoked access, an expired renewal, disconnect and a visible
-// failure, all through the shipped cockpit against a mock GitHub and a mock Linear. Each case
-// declares the Accounts and source it starts with (`ticket-test.ts`).
+// The packaged Ticket proof (#1848, #1849, #2013, #2870): connect an Account, connect a source,
+// list, detail, a status change, restart, revoked access, an expired renewal, disconnect, a visible
+// failure and the automatic refresh, all through the shipped cockpit against a mock GitHub and a
+// mock Linear. Each case declares the Accounts and source it starts with (`ticket-test.ts`).
 import { packagedRun } from '../application-under-test'
 import { assertShippedFusesIntact } from '../packaged-app'
 import {
@@ -26,6 +26,7 @@ import {
   proveLinearRestart,
   proveLinearStatus,
 } from './cases/linear.case'
+import { proveAutomaticRefresh } from './cases/refresh.case'
 import { test } from './ticket-test'
 
 test('connect a GitHub Account', ({ tickets }) => proveConnect(tickets.run()))
@@ -55,6 +56,15 @@ test.describe('with a GitHub repository', () => {
   test('disconnect the GitHub Account', ({ tickets }) => proveDisconnect(tickets.run()))
 })
 
+const PROOF_POLL_MS = 500
+
+test.describe('with a GitHub repository polled quickly', () => {
+  test.use({ ticketState: 'github-repository', ticketPollMs: PROOF_POLL_MS })
+
+  test('the visible Project refreshes automatically', ({ tickets }) =>
+    proveAutomaticRefresh(tickets.run(), PROOF_POLL_MS))
+})
+
 test.describe('with a Linear team', () => {
   test.use({ ticketState: 'linear-team' })
 
@@ -64,9 +74,8 @@ test.describe('with a Linear team', () => {
     await proveLinearStatus(tickets.run())
     await proveLinearRestart(await tickets.restart())
   })
-  test('the Linear scan commits Tickets that keep their identity', async ({ tickets }) => {
-    await proveLinearCommitted(tickets.run(), await tickets.restart())
-  })
+  test('the Linear scan commits Tickets that keep their identity', ({ tickets }) =>
+    proveLinearCommitted(tickets.run(), tickets.restart))
   test('an expired Linear renewal', ({ tickets }) => proveLinearExpired(tickets.run()))
   test('disconnect the Linear Account', ({ tickets }) => proveLinearDisconnect(tickets.run()))
 })

@@ -14,7 +14,10 @@ import { createSignIn } from '@/domains/accounts/main/sign-in'
 import { createConnectionPort } from '@/domains/connections/main'
 import { ticketProcedures } from '@/domains/tickets/main/api/ticket-procedures'
 import { ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
-import { ticketSyncSupervisorMachine } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
+import {
+  TICKET_SYNC_TIMING,
+  ticketSyncSupervisorMachine,
+} from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
 import { TicketChanges } from '@/domains/tickets/main/ticket-changes'
 import { proofEndpoints } from '@/providers/github/endpoints'
 import { OCTOCAT } from '@/providers/github/harness'
@@ -39,6 +42,7 @@ function ticketCaller(database: Database, access: AccountAccess, changes: Ticket
       database,
       readPage: ticketPageReader({ access, providers: PROVIDER_REGISTRY }),
       changed: changes.changed,
+      timing: TICKET_SYNC_TIMING,
     },
   }).start()
   onTestFinished(() => {
@@ -54,7 +58,7 @@ function ticketCaller(database: Database, access: AccountAccess, changes: Ticket
     index: {
       database,
       changes,
-      requestSync: (request) => ticketSync.send({ type: 'Sync', request }),
+      send: (command) => ticketSync.send(command),
     },
   })
   return initTRPC.create().router(procedures).createCaller({})
