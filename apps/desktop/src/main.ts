@@ -12,8 +12,8 @@ import { createConnectionPort } from '@/domains/connections/main'
 import { createHarnessSignInProcedureContext } from '@/domains/harness-signin/main'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
 import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
-import { listComposerCommandsFor } from '@/domains/sessions/main/api/composer-commands'
 import { SessionActivities } from '@/domains/sessions/main/api/session-activities'
+import { listComposerCommandsFor } from '@/domains/sessions/main/api/session-composer-commands'
 import {
   recordHistoryActivity,
   SessionRosterChanges,

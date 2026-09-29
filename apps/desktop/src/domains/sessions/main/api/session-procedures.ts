@@ -1,12 +1,12 @@
 import { type SessionFeedReaderContext, SessionFeedReaders } from '../feed/feed-reader'
+import { composerDraftCreateProcedure } from './composer-draft-create'
+import { composerDraftReadProcedure } from './composer-draft-read'
+import { composerDraftSaveProcedure } from './composer-draft-save'
 import {
   type ComposerCommandContext,
   composerCommandsProcedure,
   sessionComposerCommandsProcedure,
-} from './composer-commands'
-import { composerDraftCreateProcedure } from './composer-draft-create'
-import { composerDraftReadProcedure } from './composer-draft-read'
-import { composerDraftSaveProcedure } from './composer-draft-save'
+} from './session-composer-commands'
 import { sessionFeedProcedures } from './session-feed'
 import {
   type SessionInteractionContext,

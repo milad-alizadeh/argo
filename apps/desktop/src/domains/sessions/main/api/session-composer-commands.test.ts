@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { listComposerCommandsFor } from './composer-commands'
+import { listComposerCommandsFor } from './session-composer-commands'
 
 test('a Harness that lists commands returns that list', async () => {
   await expect(
