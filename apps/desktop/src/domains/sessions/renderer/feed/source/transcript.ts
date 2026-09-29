@@ -20,8 +20,6 @@ export {
 } from '@/domains/sessions/api/feed/subagent-event'
 export type {
   AskFacts,
-  EditedFile,
-  EditFacts,
   ExecuteFacts,
   FetchFacts,
   OtherFacts,

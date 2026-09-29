@@ -1,8 +1,7 @@
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionFeedRow } from './feed-rows'
-import { editPresentation, fileName } from './file-presentation'
+import { fileChangePresentation, fileName } from './file-presentation'
 import { derivedId } from './fingerprint'
-import type { EditedFile } from './tool-call'
 
 type FileChange = Extract<FeedContent, { kind: 'fileChange' }>['changes'][number]
 
@@ -27,12 +26,6 @@ function fileChangeEvidence(change: FileChange): string {
       return `Update File: ${change.movedTo ?? change.path}\n${text}`
   }
 }
-
-const FILE_CHANGE_EDIT = {
-  add: 'create',
-  update: 'update',
-  delete: 'delete',
-} as const satisfies Record<FileChange['change'], EditedFile['change']>
 
 // Null when the Harness sent no diff: a size the Feed cannot know is not drawn as zero.
 function fileChangeLineCounts(change: FileChange) {
@@ -71,7 +64,7 @@ export function fileChangeRows(
       { shape: 'event', id: content.id, event: 'fileChange', text: null, status: content.status },
     ]
   return content.changes.map((change, index) => {
-    const edit = editPresentation({ change: FILE_CHANGE_EDIT[change.change], file: change.path })
+    const edit = fileChangePresentation(change)
     const label =
       change.movedTo === undefined
         ? edit.label
