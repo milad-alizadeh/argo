@@ -52,6 +52,9 @@ export const accountRow = (page: Page, login: string, provider = 'GitHub') =>
 
 export const backlog = (page: Page) => page.getByRole('region', { name: 'Backlog' })
 
+// The toast region: where a refusal is told, apart from the alert that repeats it for a screen reader.
+export const notification = (page: Page) => page.getByRole('region', { name: 'Notifications' })
+
 export const room = (run: Run) => run.page.getByRole('main', { name: 'Tickets' })
 
 export async function openRoom(page: Page, room: 'tickets' | 'atlas', projectId = 'project-1') {

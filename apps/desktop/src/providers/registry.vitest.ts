@@ -7,18 +7,25 @@ import { onTestFinished, test } from 'vitest'
 import { createActor } from 'xstate'
 import { type Database, openDatabase } from '@/database/database'
 import { project } from '@/database/project/schema'
+import { ticketContent } from '@/database/ticket-content/schema'
+import { ticketWriteIntent } from '@/database/ticket-write-intent/schema'
 import { isAccountChallengeReply, type Provider } from '@/domains/accounts/contract/contract'
 import { type AccountAccess, createAccountAccess } from '@/domains/accounts/main'
 import type { Cipher } from '@/domains/accounts/main/grants'
 import { createSignIn } from '@/domains/accounts/main/sign-in'
 import { createConnectionPort } from '@/domains/connections/main'
 import { ticketProcedures } from '@/domains/tickets/main/api/ticket-procedures'
+import {
+  changeTicketStatus,
+  ticketOperationSupervisorMachine,
+} from '@/domains/tickets/main/operations/ticket-operation-supervisor-machine'
+import { ticketStatusWriter } from '@/domains/tickets/main/operations/ticket-status-writer'
+import { TicketChanges } from '@/domains/tickets/main/sync/ticket-changes'
 import { ticketByIdReader, ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
 import {
   TICKET_SYNC_TIMING,
   ticketSyncSupervisorMachine,
 } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
-import { TicketChanges } from '@/domains/tickets/main/ticket-changes'
 import { proofEndpoints } from '@/providers/github/endpoints'
 import { OCTOCAT } from '@/providers/github/harness'
 import { linearProofEndpoints } from '@/providers/linear/endpoints'
@@ -46,8 +53,16 @@ function ticketCaller(database: Database, access: AccountAccess, changes: Ticket
       timing: TICKET_SYNC_TIMING,
     },
   }).start()
+  const ticketOperations = createActor(ticketOperationSupervisorMachine, {
+    input: {
+      database,
+      writeStatus: ticketStatusWriter({ access, providers: PROVIDER_REGISTRY }),
+      changed: changes.changed,
+    },
+  }).start()
   onTestFinished(() => {
     ticketSync.stop()
+    ticketOperations.stop()
   })
   const procedures = ticketProcedures({
     access,
@@ -60,6 +75,7 @@ function ticketCaller(database: Database, access: AccountAccess, changes: Ticket
       database,
       changes,
       send: (command) => ticketSync.send(command),
+      changeStatus: (request) => changeTicketStatus(ticketOperations, request),
     },
   })
   return initTRPC.create().router(procedures).createCaller({})
@@ -189,16 +205,94 @@ test('a Linear sign-in asks for browser consent and connects the Account it gran
 })
 
 test('the shared Ticket flows read and close a GitHub issue through the registry', async () => {
-  const { gitHub, tickets, accountId } = await signedInToGitHub()
+  const flow = await signedInToGitHub()
+  const { gitHub, tickets, accountId } = flow
   gitHub.addRepository({
     fullName: 'octo/hello',
     visibleTo: [OCTOCAT.id],
     issues: [{ number: 1, title: 'Wire the registry' }],
   })
   assert.deepEqual(await connectedKeys(tickets, accountId, 'octo/hello'), ['#1'])
+  await synced(flow)
   const updated = await tickets.ticketUpdateStatus({ projectId, key: '#1', statusId: 'completed' })
   assert.ok(updated.type === 'ticket.updated')
   assert.equal(updated.status.id, 'completed')
+})
+
+function intents(database: Database) {
+  return database
+    .select({ phase: ticketWriteIntent.phase, failure: ticketWriteIntent.failure })
+    .from(ticketWriteIntent)
+    .all()
+}
+
+test('a confirmed GitHub status change is recorded, committed, then announced', async () => {
+  const flow = await signedInToGitHub()
+  const { gitHub, tickets, accountId, changes, database } = flow
+  gitHub.addRepository({
+    fullName: 'octo/hello',
+    visibleTo: [OCTOCAT.id],
+    issues: [{ number: 1, title: 'Wire the registry' }],
+  })
+  await connectedKeys(tickets, accountId, 'octo/hello')
+  await synced(flow)
+  const seen: string[] = []
+  changes.subscribe(() => {
+    // The saved Ticket already holds the confirmed status when the change is announced.
+    const saved = database.select({ status: ticketContent.statusJson }).from(ticketContent).all()
+    seen.push(JSON.parse(saved[0]?.status ?? 'null').id)
+  })
+  const updated = await tickets.ticketUpdateStatus({ projectId, key: '#1', statusId: 'completed' })
+  assert.ok(updated.type === 'ticket.updated')
+  assert.deepEqual(seen, ['completed'])
+  assert.deepEqual(intents(database), [{ phase: 'committed', failure: null }])
+})
+
+test('a GitHub status change the provider refuses leaves the saved Ticket unchanged', async () => {
+  const flow = await signedInToGitHub()
+  const { gitHub, tickets, accountId, changes, database } = flow
+  gitHub.addRepository({
+    fullName: 'octo/hello',
+    visibleTo: [OCTOCAT.id],
+    writers: [],
+    issues: [{ number: 1, title: 'Wire the registry' }],
+  })
+  await connectedKeys(tickets, accountId, 'octo/hello')
+  await synced(flow)
+  let announced = 0
+  changes.subscribe(() => {
+    announced += 1
+  })
+  const refused = await tickets.ticketUpdateStatus({ projectId, key: '#1', statusId: 'completed' })
+  assert.ok(refused.type === 'ticket.error')
+  assert.equal(refused.code, 'ticket-not-writable')
+  const saved = await tickets.ticketDetail({ projectId, reference: '#1' })
+  assert.ok(saved.type === 'ticket.detail')
+  assert.equal(saved.ticket?.status.id, 'open')
+  assert.equal(announced, 0)
+  assert.deepEqual(intents(database), [{ phase: 'rejected', failure: 'ticket-not-writable' }])
+})
+
+test('a Linear status change the provider refuses leaves the saved Ticket unchanged', async () => {
+  const flow = await signedInToLinear()
+  const { mockLinear, tickets, accountId, database } = flow
+  mockLinear.addTeam(TEAM)
+  await connectedKeys(tickets, accountId, TEAM.id)
+  await synced(flow)
+  const before = await tickets.ticketDetail({ projectId, reference: 'ENG-2' })
+  assert.ok(before.type === 'ticket.detail')
+  mockLinear.refuseWrites()
+  const refused = await tickets.ticketUpdateStatus({
+    projectId,
+    key: 'ENG-2',
+    statusId: 'team-engine-done',
+  })
+  assert.ok(refused.type === 'ticket.error')
+  assert.equal(refused.code, 'ticket-not-writable')
+  const after = await tickets.ticketDetail({ projectId, reference: 'ENG-2' })
+  assert.ok(after.type === 'ticket.detail')
+  assert.deepEqual(after.ticket?.status, before.ticket?.status)
+  assert.deepEqual(intents(database), [{ phase: 'rejected', failure: 'ticket-not-writable' }])
 })
 
 test('the shared Ticket flows read and reprioritize a Linear issue through the registry', async () => {

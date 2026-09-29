@@ -10,7 +10,7 @@ import type { Cipher } from '@/domains/accounts/main/grants'
 import { createConnectionPort } from '@/domains/connections/main'
 import { providerEndpoints } from '@/providers/endpoints'
 import { PROVIDER_REGISTRY } from '@/providers/registry'
-import { TicketChanges } from '../ticket-changes'
+import { TicketChanges } from '../sync/ticket-changes'
 import { ticketProcedures } from './ticket-procedures'
 
 const cipher: Cipher = {
@@ -41,7 +41,12 @@ async function caller(context: TestContext) {
         }),
         providers: PROVIDER_REGISTRY,
         // These cases are refused before any saved Ticket is read.
-        index: { database: {} as Database, changes: new TicketChanges(), send: () => {} },
+        index: {
+          database: {} as Database,
+          changes: new TicketChanges(),
+          send: () => {},
+          changeStatus: async () => ({ type: 'rejected', failure: 'not-connected' }),
+        },
       }),
     )
     .createCaller({})

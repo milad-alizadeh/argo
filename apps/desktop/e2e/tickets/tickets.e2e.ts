@@ -11,6 +11,8 @@ import {
   proveCommittedBacklog,
   proveConnect,
   proveConnectRepository,
+  proveGitHubStatus,
+  proveGitHubStatusRefused,
   proveRestartFromSqlite,
 } from './cases/github.case'
 import {
@@ -27,6 +29,7 @@ import {
   proveLinearExpired,
   proveLinearRestart,
   proveLinearStatus,
+  proveLinearStatusRefused,
 } from './cases/linear.case'
 import { proveGitHubLinkedTicket, proveLinearLinkedTicket } from './cases/linked.case'
 import { proveGitHubMissing, proveLinearMissing } from './cases/missing.case'
@@ -47,6 +50,9 @@ test.describe('with a GitHub repository', () => {
   test.use({ ticketState: 'github-repository' })
 
   test('list the backlog', ({ tickets }) => proveBacklog(tickets.run()))
+  test('change a GitHub status', ({ tickets }) => proveGitHubStatus(tickets.run()))
+  test('a refused GitHub status change leaves the Ticket as it was', ({ tickets }) =>
+    proveGitHubStatusRefused(tickets.run()))
   test('the backlog reads committed Tickets', ({ tickets }) => proveCommittedBacklog(tickets.run()))
   test('a restart draws committed Tickets while GitHub holds every read', async ({ tickets }) => {
     const release = tickets.run().fixture.github.holdReads()
@@ -85,6 +91,8 @@ test.describe('with a Linear team', () => {
 
   test('list the Linear backlog', ({ tickets }) => proveLinearBacklog(tickets.run()))
   test('change a Linear status', ({ tickets }) => proveLinearStatus(tickets.run()))
+  test('a refused Linear status change leaves the Ticket as it was', ({ tickets }) =>
+    proveLinearStatusRefused(tickets.run()))
   test('restart with a Linear Account', async ({ tickets }) => {
     await proveLinearStatus(tickets.run())
     await proveLinearRestart(await tickets.restart())

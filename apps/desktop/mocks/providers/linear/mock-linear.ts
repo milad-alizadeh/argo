@@ -7,7 +7,7 @@ import { mountMockProvider, type NodeRoute } from '../msw-node-bridge'
 import { linearControls } from './mock-linear-controls'
 import { answerGraphQL } from './mock-linear-graphql'
 import { authorize, token } from './mock-linear-oauth'
-import type { MockLinearState } from './mock-linear-state'
+import { initialMockLinearState } from './mock-linear-state'
 
 export type MockLinearUser = { id: string; name: string; email: string; workspace: string }
 
@@ -54,6 +54,8 @@ export type MockLinear = {
   // This user's refresh tokens are refused, as a grant left unused past its renewal.
   refuseRefresh(userId: string): void
   outage(kind: MockLinearOutage): void
+  // Every write is refused as Linear refuses a member who cannot edit; reads still answer.
+  refuseWrites(): void
   close(): Promise<void>
 }
 
@@ -63,17 +65,7 @@ const MOCK_LINEAR_ORIGIN = 'http://127.0.0.1:41100'
 
 export async function startMockLinear(): Promise<MockLinear> {
   const requests: string[] = []
-  const state: MockLinearState = {
-    origin: MOCK_LINEAR_ORIGIN,
-    signIn: 'declined',
-    codes: new Map(),
-    access: new Map(),
-    refresh: new Map(),
-    teams: new Map(),
-    outage: 'none',
-    lifetime: 86_399,
-    serial: 0,
-  }
+  const state = initialMockLinearState(MOCK_LINEAR_ORIGIN)
   const routes: Record<string, NodeRoute> = {
     'GET /oauth/authorize': (request, response) => authorize(state, request, response),
     'POST /oauth/token': (request, response) => token(state, request, response),

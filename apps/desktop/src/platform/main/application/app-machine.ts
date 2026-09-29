@@ -6,6 +6,10 @@ import type { SessionEventJournal } from '@/domains/sessions/main/live/session-e
 import type { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import { sessionSyncSupervisorMachine } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
 import {
+  type TicketOperationSupervisorInput,
+  ticketOperationSupervisorMachine,
+} from '@/domains/tickets/main/operations/ticket-operation-supervisor-machine'
+import {
   type TicketSyncSupervisorInput,
   ticketSyncSupervisorMachine,
 } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
@@ -24,6 +28,7 @@ type AppDependencies = {
   sessionEventJournal?: SessionEventJournal
   sessionInteractionBroker?: SessionInteractionBroker
   ticketSync: TicketSyncSupervisorInput
+  ticketOperations: TicketOperationSupervisorInput
 }
 
 export function createAppMachine(registry: HarnessRegistry, dependencies: AppDependencies) {
@@ -56,6 +61,7 @@ export function createAppMachine(registry: HarnessRegistry, dependencies: AppDep
       }),
       sessionSync: sessionSyncSupervisorMachine,
       ticketSync: ticketSyncSupervisorMachine,
+      ticketOperations: ticketOperationSupervisorMachine,
     },
   }).createMachine({
     id: 'application',
@@ -96,6 +102,15 @@ export function createAppMachine(registry: HarnessRegistry, dependencies: AppDep
         input: ({ event }) => {
           assertEvent(event, 'xstate.init')
           return event.input.ticketSync
+        },
+      },
+      {
+        id: 'ticketOperations',
+        systemId: 'ticketOperations',
+        src: 'ticketOperations',
+        input: ({ event }) => {
+          assertEvent(event, 'xstate.init')
+          return event.input.ticketOperations
         },
       },
     ],

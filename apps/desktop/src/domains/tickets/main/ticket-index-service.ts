@@ -5,13 +5,13 @@ import { ticketSyncStateSchema } from '@/database/ticket-sync/validation'
 import { TICKET_PAGE_SIZE, ticketErrorSchema } from '@/domains/tickets/contract/contract'
 import { ticket, ticketStatus } from '@/domains/tickets/contract/ticket'
 import { identifier, message } from '@/shared/messages'
+import { writableConnection } from './api/service'
 import {
   readActiveTickets,
   readClosedTickets,
   readSearchedTickets,
 } from './database/ticket-queries'
 import type { Call } from './read-as'
-import { writableConnection } from './service'
 import type { TicketSyncRequest } from './sync/ticket-sync-machine'
 import type { TicketSyncSupervisorCommand } from './sync/ticket-sync-supervisor-machine'
 

@@ -31,5 +31,8 @@ export function linearControls(
     outage: (kind) => {
       state.outage = kind
     },
+    refuseWrites: () => {
+      state.writesRefused = true
+    },
   }
 }

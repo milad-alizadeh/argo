@@ -15,6 +15,7 @@ import {
   committedTicketIds,
   connectForm,
   detailTitle,
+  notification,
   openAccounts,
   openRoom,
   press,
@@ -108,6 +109,25 @@ export async function proveLinearStatus(run: Run) {
       name: 'In Progress',
     })
     await backlog(run.page).getByRole('button', { name: 'Status: In Progress' }).nth(1).waitFor()
+  })
+}
+
+// Linear refuses the change: ENG-2 keeps its status, and the reader is told why.
+export async function proveLinearStatusRefused(run: Run) {
+  run.fixture.linear.refuseWrites()
+  await test.step('linear-refused-status', async () => {
+    await choose(run.page, backlog(run.page).getByRole('button', { name: 'Status: Todo' }), {
+      role: 'menuitemradio',
+      name: 'In Progress',
+    })
+    await notification(run.page)
+      .getByText('This Account is not allowed to change that Ticket.')
+      .waitFor()
+    await backlog(run.page).getByRole('button', { name: 'Status: Todo' }).waitFor()
+    assert.equal(
+      await backlog(run.page).getByRole('button', { name: 'Status: In Progress' }).count(),
+      1,
+    )
   })
 }
 
