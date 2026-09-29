@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 import type { FeedContent } from '../feed-content'
 import { feedContentKindSchema } from '../feed-content'
 import type { SessionLiveEvent } from '../session-live-event'
-import { projectFeedRowEntries } from './feed-row-entries'
+import { FeedRowProjector, projectFeedRowEntries } from './feed-row-entries'
 import type { SessionFeedRow } from './feed-rows'
 import { projectLiveFeedRows } from './live-feed-rows'
 import { foldSettledToolRuns, groupToolRuns } from './tool-groups'
@@ -291,4 +291,59 @@ test('a generated output row keeps the row when its call id fills the identifier
   const { entries, rejected } = projectFeedRowEntries({ history: [tool], live: [] })
   expect(rejected.rows).toBe(0)
   expect(entries.map((entry) => entry.row.shape)).toEqual(['tool-group', 'source', 'activity'])
+})
+
+// Successive inputs of one streaming Turn over a settled history, as the reader passes them.
+function streamingInputs() {
+  const history: unknown[] = [
+    message('m1', 'user', 'Hi'),
+    tool('c1', 'completed'),
+    message('m2', 'assistant', 'Done'),
+    message('m3', 'user', 'Again'),
+    thought('r1', 'Looking'),
+    tool('c2', 'running'),
+  ]
+  const settled = [live(1, tool('c2', 'completed')), live(2, tool('c3', 'completed'))]
+  const turn = [
+    [live(1, tool('c2', 'completed'))],
+    [live(1, tool('c2', 'completed')), live(2, tool('c3', 'running'))],
+    [...settled, live(3, message('m4', 'assistant', 'Stream'))],
+    [
+      ...settled,
+      live(3, message('m4', 'assistant', 'Streamed reply')),
+      live(4, message('m2', 'assistant', 'Done, revised')),
+    ],
+  ]
+  return [
+    { history, live: [] },
+    ...turn.map((events) => ({ history, live: events })),
+    { history: [...history, 'nonsense', message('m5', 'user', 'Next')], live: turn[3] ?? [] },
+  ]
+}
+
+test('a reused projector reads each input as a fresh projection does', () => {
+  const projector = new FeedRowProjector()
+  for (const input of streamingInputs())
+    expect(projector.project(input)).toEqual(projectFeedRowEntries(input))
+})
+
+test('a reused projector draws what grouping the whole row list draws', () => {
+  const projector = new FeedRowProjector()
+  for (const input of streamingInputs()) {
+    const history = input.history.filter((item): item is FeedContent => typeof item === 'object')
+    const { entries } = projector.project(input)
+    expect(entries.flatMap(({ row }) => (row.shape === 'activity' ? [] : [row]))).toEqual(
+      foldSettledToolRuns(groupToolRuns(projectLiveFeedRows(history, input.live))),
+    )
+  }
+})
+
+test('a reused projector keeps the entries of settled history rows no live event touches', () => {
+  const projector = new FeedRowProjector()
+  const [first, second] = streamingInputs()
+  if (first === undefined || second === undefined) throw new Error('missing inputs')
+  const before = projector.project(first).entries
+  const after = projector.project(second).entries
+  expect(after[0]).toBe(before[0] as (typeof before)[number])
+  expect(after[1]).toBe(before[1] as (typeof before)[number])
 })

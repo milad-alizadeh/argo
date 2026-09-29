@@ -1,253 +1,72 @@
-// Opens 1, 5 and 10 MB Claude histories in the packaged app and reports read size, pauses and memory.
+// Opens 1, 5 and 10 MB Claude histories in the Vite build (or the packaged app under
+// ARGO_E2E_PACKAGED=1) and reports open, switch, Refresh and streaming cost: time, Feed IPC bytes,
+// main-thread stalls, renderer long tasks and Feed row DOM updates, and memory.
 // Then repeats switch and refresh, sampling memory after forced GC, to tell a leak from a peak.
-// Run with `bun run measure:feed-history`; every gesture is in-page, so no real input device is used.
+// Run with `bun run measure:feed-history [--sizes=1,5,10] [--json=<file>]`; every gesture is
+// in-page, so no real input device is used.
 import { randomUUID } from 'node:crypto'
-import { appendFile, chmod, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises'
+import { appendFile, mkdir, mkdtemp, realpath, rm, symlink, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { type ElectronApplication, _electron as electron, type Page } from 'playwright-core'
 import {
   SESSION_CLAUDE_EXECUTABLE_ENV,
+  SESSION_CLAUDE_TRANSCRIPTS_ENV,
+} from '@/harnesses/claude/proof-protocol'
+import {
   SESSION_CODEX_EXECUTABLE_ENV,
-  SESSION_MOCK_REPLY_DELAY_MS_ENV,
-} from '@/harnesses/proof-protocol'
+  SESSION_CODEX_TRANSCRIPTS_ENV,
+} from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
-import { appExecutable, packagedTestCopy } from '../../e2e/packaged-app'
+import { applicationUnderTest, launchCommand } from '../../e2e/application-under-test'
 import { prepare } from '../../e2e/sessions/fixtures/feed.fixture'
-// `mock-session-harness-backend` imports a Codex mock driver whose `@/harnesses/codex/drive` modules are gone.
-import { writeMockClaude } from '../../mocks/cli/claude/mock-claude-cli'
+import { createMockSessionHarnessBackend } from '../../mocks/sessions/mock-session-harness-backend'
 import { proofCwd } from '../../mocks/sessions/mock-transcript-files'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
+import {
+  type AppendedTurn,
+  buildHistory,
+  type FeedHistory,
+  historyPath,
+  refreshTurn,
+  writeHistory,
+} from './feed-history-fixture'
 import { type MemorySample, printSamples, processWorkingSetMb, sample } from './feed-memory-sample'
+import {
+  armDriftProbe,
+  armFeedIpcProbe,
+  drainDrift,
+  drainFeedIpc,
+  drainRendererProbes,
+  instrumentPage,
+  rendererHeapMb,
+} from './feed-probes'
 
 const SIZES = [
-  { label: '1 MB', targetBytes: 1_000_000 },
-  { label: '5 MB', targetBytes: 5_000_000 },
-  { label: '10 MB', targetBytes: 10_000_000 },
+  { label: '1 MB', megabytes: 1 },
+  { label: '5 MB', megabytes: 5 },
+  { label: '10 MB', megabytes: 10 },
 ]
 const STEP_TIMEOUT_MS = 60_000
 const VIEWPORT = { width: 1440, height: 860 }
+// The mock Claude streams this prompt's reply as 300 text deltas, 10 ms apart.
+const STREAM_PROMPT = 'FeedStreamProbe: stream a long reply.'
 
-function line(record: Record<string, unknown>): string {
-  return `${JSON.stringify(record)}\n`
+function argumentValue(name: string): string | null {
+  const prefix = `--${name}=`
+  return process.argv.find((value) => value.startsWith(prefix))?.slice(prefix.length) ?? null
 }
 
-const LOREM =
-  'Reviewed the call site, weighed the alternative shape, and kept the one that names the ' +
-  'behaviour rather than the mechanism. '
-
-function longProse(index: number): string {
-  return `Turn ${index}: ${LOREM.repeat(24)}`
-}
-
-function toolOutput(index: number): string {
-  return `$ bun test composer --grep "turn ${index}"\n${'ok 1 - renders the composer\n'.repeat(40)}`
-}
-
-type QuadContext = { cwd: string; timestamp: string; parentUuid: string | null; index: number }
-
-function userPromptLine({ cwd, timestamp, parentUuid, index }: QuadContext, uuid: string) {
-  return line({
-    type: 'user',
-    cwd,
-    timestamp,
-    uuid,
-    parentUuid,
-    message: { role: 'user', content: `Run the composer tests for turn ${index}.` },
-  })
-}
-
-function toolCallLine({ cwd, timestamp, index }: QuadContext, uuid: string, parentUuid: string) {
-  return line({
-    type: 'assistant',
-    cwd,
-    timestamp,
-    uuid,
-    parentUuid,
-    message: {
-      role: 'assistant',
-      stop_reason: 'tool_use',
-      content: [
-        {
-          type: 'tool_use',
-          id: `tool-${index}`,
-          name: 'Bash',
-          input: { command: `bun test composer --grep "turn ${index}"` },
-        },
-      ],
-    },
-  })
-}
-
-function toolResultLine({ cwd, timestamp, index }: QuadContext, uuid: string, parentUuid: string) {
-  return line({
-    type: 'user',
-    cwd,
-    timestamp,
-    uuid,
-    parentUuid,
-    message: {
-      role: 'user',
-      content: [{ type: 'tool_result', tool_use_id: `tool-${index}`, content: toolOutput(index) }],
-    },
-  })
-}
-
-function prosedLine({ cwd, timestamp, index }: QuadContext, uuid: string, parentUuid: string) {
-  return line({
-    type: 'assistant',
-    cwd,
-    timestamp,
-    uuid,
-    parentUuid,
-    message: {
-      role: 'assistant',
-      stop_reason: 'end_turn',
-      content: [
-        { type: 'thinking', thinking: `Weighing turn ${index} before answering.` },
-        { type: 'text', text: longProse(index) },
-      ],
-    },
-  })
-}
-
-// One short prompt, one Bash call with output, and one long reply.
-function turnQuad(cwd: string, index: number, parentUuid: string | null) {
-  const base = `hist-${index}`
-  const userUuid = `${base}-u`
-  const toolUuid = `${base}-tool`
-  const resultUuid = `${base}-result`
-  const proseUuid = `${base}-prose`
-  const context: QuadContext = {
-    cwd,
-    timestamp: new Date(Date.UTC(2026, 0, 1) + index * 60_000).toISOString(),
-    parentUuid,
-    index,
-  }
-  const lines = [
-    userPromptLine(context, userUuid),
-    toolCallLine(context, toolUuid, userUuid),
-    toolResultLine(context, resultUuid, toolUuid),
-    prosedLine(context, proseUuid, resultUuid),
-  ]
-  return { lines, lastUuid: proseUuid }
-}
-
-function buildHistory(cwd: string, targetBytes: number, firstIndex = 0) {
-  const lines: string[] = []
-  let bytes = 0
-  let parent: string | null = null
-  let lastUuid = ''
-  let index = firstIndex
-  while (bytes < targetBytes) {
-    index += 1
-    const quad = turnQuad(cwd, index, parent)
-    for (const written of quad.lines) bytes += Buffer.byteLength(written, 'utf8')
-    lines.push(...quad.lines)
-    parent = quad.lastUuid
-    lastUuid = quad.lastUuid
-  }
-  return { text: lines.join(''), lastUuid, bytes, turns: index - firstIndex }
-}
-
-function refreshTurn(cwd: string, parentUuid: string) {
-  const refreshUuid = `${parentUuid}-refresh`
-  return {
-    text: line({
-      type: 'assistant',
-      cwd,
-      timestamp: new Date().toISOString(),
-      uuid: refreshUuid,
-      parentUuid,
-      message: {
-        role: 'assistant',
-        stop_reason: 'end_turn',
-        content: [{ type: 'text', text: 'A turn appended while the reader was looking.' }],
-      },
-    }),
-    refreshUuid,
-    cwd,
-  }
-}
-
-// Drained between steps, so each row reports only its own long tasks.
-async function instrumentPage(page: Page) {
-  await page.evaluate(() => {
-    const held: PerformanceEntry[] = []
-    ;(window as unknown as { __longTasks: PerformanceEntry[] }).__longTasks = held
-    new PerformanceObserver((list) => held.push(...list.getEntries())).observe({
-      type: 'longtask',
-      buffered: true,
-    })
-  })
-}
-
-async function drainLongTasks(page: Page) {
-  const durations = await page.evaluate(() => {
-    const held = (window as unknown as { __longTasks: PerformanceEntry[] }).__longTasks
-    ;(window as unknown as { __longTasks: PerformanceEntry[] }).__longTasks = []
-    return held.map((entry) => entry.duration)
-  })
-  return {
-    count: durations.length,
-    totalMs: Number(durations.reduce((total, one) => total + one, 0).toFixed(1)),
-    maxMs: Number((durations.length ? Math.max(...durations) : 0).toFixed(1)),
-  }
-}
-
-// `window.argo.trpc` is a frozen contextBridge function, so the read is repeated rather than wrapped.
-async function feedReadBytes(page: Page, sessionId: string) {
-  return page.evaluate(async (id) => {
-    const response = await window.argo.trpc({
-      id: Date.now(),
-      path: 'sessionFeedRead',
-      type: 'query',
-      input: { sessionId: id, subagentId: null },
-    })
-    return new TextEncoder().encode(JSON.stringify(response)).length
-  }, sessionId)
-}
-
-async function rendererHeapMb(page: Page) {
-  return page.evaluate(() => {
-    const memory = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory
-    return memory ? Math.round(memory.usedJSHeapSize / (1024 * 1024)) : null
-  })
-}
-
-// How late a 20 ms main-process timer fires is the main thread's stall.
-async function armDriftProbe(application: ElectronApplication) {
-  await application.evaluate(() => {
-    const state = globalThis as unknown as { __argoDrift: number[] }
-    state.__argoDrift = []
-    let last = Date.now()
-    setInterval(() => {
-      const now = Date.now()
-      state.__argoDrift.push(now - last - 20)
-      last = now
-    }, 20)
-  })
-}
-
-async function drainDrift(application: ElectronApplication) {
-  const samples = await application.evaluate(() => {
-    const state = globalThis as unknown as { __argoDrift: number[] }
-    const held = state.__argoDrift
-    state.__argoDrift = []
-    return held
-  })
-  return {
-    maxMs: samples.length ? Math.max(...samples) : 0,
-    overMs: samples.filter((sample) => sample > 16).length,
-  }
-}
+type Fixture = Awaited<ReturnType<typeof prepare>>
+type SessionIds = { history: string; other: string }
 
 type StepResult = {
   step: string
   ms: number
-  feedReadBytes: number | null
+  feedIpc: { bytes: number; messages: number }
   longTasks: { count: number; totalMs: number; maxMs: number }
+  rowUpdates: number
   mainThreadDrift: { maxMs: number; overMs: number }
   rendererHeapMb: number | null
   processWorkingSetMb: number
@@ -258,42 +77,50 @@ type MeasureStepRequest = {
   page: Page
   application: ElectronApplication
   action: () => Promise<void>
-  readBytesFor?: string
 }
 
 async function measureStep(request: MeasureStepRequest): Promise<StepResult> {
-  const { step, page, application, action, readBytesFor } = request
-  await drainLongTasks(page)
-  await drainDrift(application)
+  const { step, page, application, action } = request
+  console.log(`  measuring ${step}`)
+  await Promise.all([drainRendererProbes(page), drainDrift(application), drainFeedIpc(application)])
   const started = Date.now()
   await action()
   const ms = Date.now() - started
-  const [longTasks, mainThreadDrift, heapMb, workingSetMb, bytes] = await Promise.all([
-    drainLongTasks(page),
+  const [renderer, mainThreadDrift, feedIpc, heapMb, workingSetMb] = await Promise.all([
+    drainRendererProbes(page),
     drainDrift(application),
+    drainFeedIpc(application),
     rendererHeapMb(page),
     processWorkingSetMb(application),
-    readBytesFor !== undefined ? feedReadBytes(page, readBytesFor) : Promise.resolve(null),
   ])
   return {
     step,
     ms,
-    feedReadBytes: bytes,
-    longTasks,
+    feedIpc,
+    longTasks: renderer.longTasks,
+    rowUpdates: renderer.rowUpdates,
     mainThreadDrift,
     rendererHeapMb: heapMb,
     processWorkingSetMb: workingSetMb,
   }
 }
 
-async function openAndReachTail(page: Page, sessionId: string, lastUuid?: string) {
-  await page.locator(`nav[aria-label="Sessions"] button[data-session-id="${sessionId}"]`).click()
-  const viewport = `.feed__viewport[data-session="${sessionId}"]`
-  await page.waitForSelector(`${viewport} [data-feed-row]`, { timeout: STEP_TIMEOUT_MS })
+function viewportOf(sessionId: string) {
+  return `.feed__viewport[data-session="${sessionId}"]`
+}
+
+async function scrollToTail(page: Page, sessionId: string) {
   await page.evaluate((selector) => {
     const element = document.querySelector(selector)
     if (element) element.scrollTop = element.scrollHeight
-  }, viewport)
+  }, viewportOf(sessionId))
+}
+
+async function openAndReachTail(page: Page, sessionId: string, lastUuid?: string) {
+  await page.locator(`nav[aria-label="Sessions"] button[data-session-id="${sessionId}"]`).click()
+  const viewport = viewportOf(sessionId)
+  await page.waitForSelector(`${viewport} [data-feed-row]`, { timeout: STEP_TIMEOUT_MS })
+  await scrollToTail(page, sessionId)
   if (lastUuid !== undefined) {
     await page.waitForSelector(`${viewport} [data-feed-row^="${lastUuid}"]`, {
       timeout: STEP_TIMEOUT_MS,
@@ -306,8 +133,9 @@ function printTable(label: string, rows: StepResult[]) {
   const header = [
     'step',
     'ms',
-    'feedReadBytes',
+    'feedIpc(bytes/messages)',
     'longTasks(count/total/max ms)',
+    'rowUpdates',
     'mainThreadStall(max/over16 ms)',
     'rendererHeapMb',
     'processWorkingSetMb',
@@ -318,8 +146,9 @@ function printTable(label: string, rows: StepResult[]) {
       [
         row.step,
         row.ms,
-        row.feedReadBytes ?? '-',
+        `${row.feedIpc.bytes}/${row.feedIpc.messages}`,
         `${row.longTasks.count}/${row.longTasks.totalMs}/${row.longTasks.maxMs}`,
+        row.rowUpdates,
         `${row.mainThreadDrift.maxMs}/${row.mainThreadDrift.overMs}`,
         row.rendererHeapMb ?? '-',
         row.processWorkingSetMb,
@@ -328,34 +157,30 @@ function printTable(label: string, rows: StepResult[]) {
   }
 }
 
-// The app spawns Codex for readiness checks only, so exiting cleanly is enough.
-async function writeStubCodexExecutable(root: string) {
-  const executable = path.join(root, 'codex')
-  await writeFile(executable, '#!/bin/sh\nexit 0\n')
-  await chmod(executable, 0o755)
-  return executable
-}
-
-async function launchSession(root: string, fixture: Awaited<ReturnType<typeof prepare>>) {
-  // Claude discovery reads CLAUDE_CONFIG_DIR/projects, so point that at the fixture transcripts.
+// The mock backend every Session proof runs against: both mock CLIs, and both transcript roots
+// pointed at the fixture tree.
+async function launchSession(root: string, fixture: Fixture) {
+  const run = await createMockSessionHarnessBackend().start({ root, fixture })
+  // The app discovers Claude under CLAUDE_CONFIG_DIR/projects and Codex under CODEX_HOME, so both
+  // point into the root rather than at this machine's own Sessions.
   const claudeConfig = path.join(root, 'claude-config')
-  await mkdir(claudeConfig, { recursive: true })
+  const codexHome = path.join(root, 'codex-home')
+  await Promise.all([mkdir(claudeConfig, { recursive: true }), mkdir(codexHome)])
   await symlink(fixture.claudeTranscripts, path.join(claudeConfig, 'projects'))
-  const [claudeExecutable, codexExecutable] = await Promise.all([
-    writeMockClaude(root, fixture.claudeTranscripts),
-    writeStubCodexExecutable(root),
-  ])
   const environment = {
     ...process.env,
     CLAUDE_CONFIG_DIR: claudeConfig,
-    [SESSION_CLAUDE_EXECUTABLE_ENV]: claudeExecutable,
-    [SESSION_CODEX_EXECUTABLE_ENV]: codexExecutable,
-    [SESSION_MOCK_REPLY_DELAY_MS_ENV]: '0',
+    CODEX_HOME: codexHome,
+    [SESSION_CLAUDE_TRANSCRIPTS_ENV]: fixture.claudeTranscripts,
+    [SESSION_CODEX_TRANSCRIPTS_ENV]: fixture.codexTranscripts,
+    [SESSION_CLAUDE_EXECUTABLE_ENV]: run.executables.claude,
+    [SESSION_CODEX_EXECUTABLE_ENV]: run.executables.codex,
+    ...run.launchEnv({ slowReply: false }),
     [PROJECT_PROOF_STORE_ENV]: fixture.userData,
     [ACCEPTANCE_ENV]: '0',
   }
   const application = await electron.launch({
-    executablePath: appExecutable(fixture.application),
+    ...launchCommand(fixture.application),
     env: environment,
     timeout: 30_000,
   })
@@ -384,16 +209,16 @@ function activeRevision(page: Page) {
 
 type RefreshRequest = {
   page: Page
-  fixture: Awaited<ReturnType<typeof prepare>>
+  fixture: Fixture
   historyId: string
   sessionId: string
-  appended: ReturnType<typeof refreshTurn>
-  revisionBefore: string | null
+  appended: AppendedTurn
 }
 
 // Appends a turn, then dispatches the `focus` event `useFocusRefresh` listens for.
 async function refreshAndWait(request: RefreshRequest) {
-  const { page, fixture, historyId, sessionId, appended, revisionBefore } = request
+  const { page, fixture, historyId, sessionId, appended } = request
+  const revisionBefore = await activeRevision(page)
   await appendFile(historyPath(fixture.claudeTranscripts, appended.cwd, historyId), appended.text)
   await page.evaluate(() => window.dispatchEvent(new Event('focus')))
   await page.waitForFunction(
@@ -404,89 +229,83 @@ async function refreshAndWait(request: RefreshRequest) {
     revisionBefore,
     { timeout: STEP_TIMEOUT_MS },
   )
-  const viewport = `.feed__viewport[data-session="${sessionId}"]`
-  await page.evaluate((selector) => {
-    const element = document.querySelector(selector)
-    if (element) element.scrollTop = element.scrollHeight
-  }, viewport)
-  await page.waitForSelector(`${viewport} [data-feed-row^="${appended.refreshUuid}"]`, {
-    timeout: STEP_TIMEOUT_MS,
-  })
+  await scrollToTail(page, sessionId)
+  await page.waitForSelector(
+    `${viewportOf(sessionId)} [data-feed-row^="${appended.refreshUuid}"]`,
+    {
+      timeout: STEP_TIMEOUT_MS,
+    },
+  )
+}
+
+// Sends the probe prompt through the Composer and waits for the settled reply after its stream.
+async function streamAndWait(page: Page, sessionId: string) {
+  const composer = page.getByRole('combobox', { name: 'Message' })
+  await composer.click()
+  await page.keyboard.type(STREAM_PROMPT)
+  // Send stays disabled until the Harness catalog loads, and a click before then is dropped.
+  await page.waitForSelector('button[aria-label="Send message"]:not([disabled])')
+  await page.getByRole('button', { name: 'Send message' }).click()
+  const feed = page.locator(viewportOf(sessionId))
+  await feed
+    .getByText(`Mock Claude read: ${STREAM_PROMPT}`)
+    .first()
+    .waitFor({ timeout: STEP_TIMEOUT_MS })
+    .catch(async (error: unknown) => {
+      await scrollToTail(page, sessionId)
+      const tail = (await feed.locator('[data-feed-row]').allTextContents())
+        .slice(-3)
+        .map((text) => text.slice(0, 80))
+      const send = await page.getByRole('button', { name: 'Send message' }).isEnabled()
+      throw new Error(
+        `The streamed reply never settled; Send enabled: ${send}; the Feed ends with ${JSON.stringify(tail)}`,
+        { cause: error },
+      )
+    })
 }
 
 type RunStepsRequest = {
   page: Page
   application: ElectronApplication
-  fixture: Awaited<ReturnType<typeof prepare>>
+  fixture: Fixture
   historyId: string
   // The Roster and Feed key Sessions by Argo id, not by the transcript's vendor id.
-  sessionIds: { history: string; other: string }
-  history: ReturnType<typeof buildHistory>
+  sessionIds: SessionIds
+  history: FeedHistory
   cwd: string
 }
 
 async function runSteps(request: RunStepsRequest) {
   const { page, application, fixture, historyId, sessionIds, history, cwd } = request
+  const measure = (step: string, action: () => Promise<void>) =>
+    measureStep({ step, page, application, action })
   const rows: StepResult[] = []
   rows.push(
-    await measureStep({
-      step: 'open',
-      page,
-      application,
-      action: () => openAndReachTail(page, sessionIds.history, history.lastUuid),
-      readBytesFor: sessionIds.history,
-    }),
+    await measure('open', () => openAndReachTail(page, sessionIds.history, history.lastUuid)),
   )
+  rows.push(await measure('switch away', () => openAndReachTail(page, sessionIds.other)))
   rows.push(
-    await measureStep({
-      step: 'switch away',
-      page,
-      application,
-      action: () => openAndReachTail(page, sessionIds.other),
-      readBytesFor: sessionIds.other,
-    }),
+    await measure('switch back', () =>
+      openAndReachTail(page, sessionIds.history, history.lastUuid),
+    ),
   )
-  rows.push(
-    await measureStep({
-      step: 'switch back',
-      page,
-      application,
-      action: () => openAndReachTail(page, sessionIds.history, history.lastUuid),
-      readBytesFor: sessionIds.history,
-    }),
-  )
-  const revisionBefore = await activeRevision(page)
   const appended = refreshTurn(cwd, history.lastUuid)
   rows.push(
-    await measureStep({
-      step: 'refresh (append + focus)',
-      page,
-      application,
-      action: () =>
-        refreshAndWait({
-          page,
-          fixture,
-          historyId,
-          sessionId: sessionIds.history,
-          appended,
-          revisionBefore,
-        }),
-      readBytesFor: sessionIds.history,
-    }),
+    await measure('refresh (append + focus)', () =>
+      refreshAndWait({ page, fixture, historyId, sessionId: sessionIds.history, appended }),
+    ),
   )
-  return rows
+  rows.push(
+    await measure('stream (300 text deltas)', () => streamAndWait(page, sessionIds.history)),
+  )
+  return { rows, lastUuid: appended.refreshUuid }
 }
 
 const HISTORY_TITLE = 'Run the composer tests for turn 1.'
 const OTHER_FIRST_INDEX = 1000
 const OTHER_TITLE = `Run the composer tests for turn ${OTHER_FIRST_INDEX + 1}.`
 
-async function writeHistory(file: string, text: string) {
-  await mkdir(path.dirname(file), { recursive: true })
-  await writeFile(file, text)
-}
-
-async function rosterSessionIds(page: Page) {
+async function rosterSessionIds(page: Page): Promise<SessionIds> {
   const rows = 'nav[aria-label="Sessions"] button[data-session-id]'
   const history = page.locator(rows, { hasText: HISTORY_TITLE }).first()
   await history.waitFor({ timeout: STEP_TIMEOUT_MS })
@@ -499,19 +318,14 @@ async function rosterSessionIds(page: Page) {
   return { history: historyId, other: otherId }
 }
 
-// The SDK reads a Session's history from the folder its cwd encodes to, not from where discovery found it.
-function historyPath(transcripts: string, cwd: string, sessionId: string) {
-  return path.join(transcripts, cwd.replace(/[^a-zA-Z0-9]/g, '-'), `${sessionId}.jsonl`)
-}
-
 const CYCLES = 10
 
 type CycleRequest = {
   page: Page
   application: ElectronApplication
-  fixture: Awaited<ReturnType<typeof prepare>>
+  fixture: Fixture
   historyId: string
-  sessionIds: { history: string; other: string }
+  sessionIds: SessionIds
   lastUuid: string
   cwd: string
 }
@@ -522,17 +336,9 @@ async function runCycles(request: CycleRequest) {
   let last = request.lastUuid
   for (let cycle = 1; cycle <= CYCLES; cycle += 1) {
     await openAndReachTail(page, sessionIds.other)
-    await openAndReachTail(page, sessionIds.history, last)
-    const revisionBefore = await activeRevision(page)
+    await openAndReachTail(page, sessionIds.history)
     const appended = refreshTurn(cwd, last)
-    await refreshAndWait({
-      page,
-      fixture,
-      historyId,
-      sessionId: sessionIds.history,
-      appended,
-      revisionBefore,
-    })
+    await refreshAndWait({ page, fixture, historyId, sessionId: sessionIds.history, appended })
     last = appended.refreshUuid
     samples.push(await sample(`cycle ${cycle}`, page, application))
   }
@@ -541,14 +347,20 @@ async function runCycles(request: CycleRequest) {
   return samples
 }
 
-async function runSize(size: (typeof SIZES)[number]) {
-  const root = await mkdtemp(path.join(os.tmpdir(), 'argo-feed-history-'))
+type SizeResult = { size: string; turns: number; bytes: number; steps: StepResult[] }
+
+async function runSize(size: (typeof SIZES)[number]): Promise<SizeResult> {
+  // The macOS temp folder is a symlink the history reader resolves, so the root is its real path.
+  const root = await realpath(await mkdtemp(path.join(os.tmpdir(), 'argo-feed-history-')))
   try {
-    const packagedApplication = await packagedTestCopy(root)
-    const fixture = await prepare(root, packagedApplication, { projectSelected: true })
+    const fixture = await prepare(root, await applicationUnderTest(root), {
+      projectSelected: true,
+    })
     const historyId = randomUUID()
     const cwd = proofCwd(fixture.claudeTranscripts, 'history')
-    const history = buildHistory(cwd, size.targetBytes)
+    // A Send resumes the Session in its recorded cwd, so the folder must exist.
+    await mkdir(cwd, { recursive: true })
+    const history = buildHistory(cwd, size.megabytes * 1_000_000)
     await writeHistory(historyPath(fixture.claudeTranscripts, cwd, historyId), history.text)
     const otherCwd = proofCwd(fixture.claudeTranscripts, 'other')
     const other = buildHistory(otherCwd, 20_000, OTHER_FIRST_INDEX)
@@ -559,8 +371,9 @@ async function runSize(size: (typeof SIZES)[number]) {
     try {
       await instrumentPage(page)
       await armDriftProbe(application)
+      await armFeedIpcProbe(application)
       const sessionIds = await rosterSessionIds(page)
-      const rows = await runSteps({
+      const steps = await runSteps({
         page,
         application,
         fixture,
@@ -569,12 +382,20 @@ async function runSize(size: (typeof SIZES)[number]) {
         history,
         cwd,
       })
-      printTable(size.label, rows)
-      const lastUuid = refreshTurn(cwd, history.lastUuid).refreshUuid
+      printTable(size.label, steps.rows)
       printSamples(
         size.label,
-        await runCycles({ page, application, fixture, historyId, sessionIds, lastUuid, cwd }),
+        await runCycles({
+          page,
+          application,
+          fixture,
+          historyId,
+          sessionIds,
+          lastUuid: steps.lastUuid,
+          cwd,
+        }),
       )
+      return { size: size.label, turns: history.turns, bytes: history.bytes, steps: steps.rows }
     } finally {
       await application.close()
     }
@@ -583,6 +404,10 @@ async function runSize(size: (typeof SIZES)[number]) {
   }
 }
 
+const chosen = argumentValue('sizes')?.split(',').map(Number) ?? null
+const results: SizeResult[] = []
 for (const size of SIZES) {
-  await runSize(size)
+  if (chosen === null || chosen.includes(size.megabytes)) results.push(await runSize(size))
 }
+const json = argumentValue('json')
+if (json !== null) await writeFile(json, `${JSON.stringify(results, null, 2)}\n`)

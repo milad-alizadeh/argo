@@ -1,6 +1,6 @@
 import { skipToken, useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { FeedReading } from '@/domains/sessions/api/feed/feed-reading'
+import { applyFeedReadingChange, type FeedReading } from '@/domains/sessions/api/feed/feed-reading'
 import { feedEntryRows } from '@/domains/sessions/api/feed/feed-row-entries'
 import { sessionError } from '@/domains/sessions/api/session-error'
 import { queryClient, trpcClient } from '@/platform/renderer/trpc-client'
@@ -69,11 +69,15 @@ function useFeedSubscription(sessionId: SessionId | null, subagentId: string | n
       subscription = trpcClient.sessionFeed.subscribe(
         { sessionId, subagentId },
         {
-          onData(reading) {
-            if (reading.sessionId !== sessionId || reading.chainId !== (subagentId ?? sessionId))
+          onData(message) {
+            if (message.sessionId !== sessionId || message.chainId !== (subagentId ?? sessionId))
               return
+            const key = sessionFeedReadingQueryKey(sessionId, subagentId)
+            const reading = applyFeedReadingChange(queryClient.getQueryData(key), message)
+            // A change against a reading this cache no longer holds needs a whole one again.
+            if (reading === null) return connect()
             setLostSessionId(null)
-            queryClient.setQueryData(sessionFeedReadingQueryKey(sessionId, subagentId), reading)
+            queryClient.setQueryData(key, reading)
           },
           onError() {
             if (stopped) return
