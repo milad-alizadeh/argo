@@ -11,6 +11,8 @@ export type MockState = {
   outage: MockOutage
   // While set, every API read waits for it to settle, as a slow GitHub would.
   held: Promise<void> | null
+  // A held read answers as GitHub was when it was asked, not when it is released.
+  answerAsAsked: boolean
   serial: number
 }
 
@@ -23,6 +25,7 @@ export const initialMockState = (origin: string): MockState => ({
   repositories: new Map(),
   outage: 'none',
   held: null,
+  answerAsAsked: false,
   serial: 0,
 })
 
