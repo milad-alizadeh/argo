@@ -7,18 +7,31 @@ import { type TICKET_WRITE_PHASES, ticketWriteIntent } from '@/database/ticket-w
 import { nextUpdatedAt } from '@/database/timestamp-columns'
 import type { TicketErrorCode } from '@/domains/tickets/contract/contract'
 import { savedIdentityByKey } from '../database/ticket-upsert'
+import type { TicketOperationRequest } from './ticket-operation-machine'
 
 export type TicketWriteTarget = TicketScopeTarget & { key: string }
 export type RecordedIntent = { intentId: string; ticketId: string }
 
 const touched = nextUpdatedAt(ticketWriteIntent.updatedAt)
 
-// Records a `status` intent for a saved Ticket; a Ticket Argo has not saved has no identity to hold.
-export function recordStatusIntent(
+// The requested value an intent keeps: the provider status ID or the priority level.
+function requestedOf(request: TicketOperationRequest): string {
+  switch (request.operation) {
+    case 'status':
+      return JSON.stringify({ statusId: request.statusId })
+    case 'priority':
+      return JSON.stringify({ priorityLevel: request.priorityLevel })
+    default:
+      return request satisfies never
+  }
+}
+
+// Records an intent for a saved Ticket; a Ticket Argo has not saved has no identity to hold.
+export function recordIntent(
   database: Database,
-  { provider, scope, key }: TicketWriteTarget,
-  statusId: string,
+  request: TicketOperationRequest,
 ): RecordedIntent | null {
+  const { provider, scope, key } = request
   const ticketId = savedIdentityByKey(database, { provider, scope }, key)
   const base =
     ticketId === undefined
@@ -35,8 +48,8 @@ export function recordStatusIntent(
     .values({
       intentId,
       ticketId,
-      operation: 'status',
-      requestedJson: JSON.stringify({ statusId }),
+      operation: request.operation,
+      requestedJson: requestedOf(request),
       baseUpdatedAt: base.updatedAt,
       phase: 'pending',
     })

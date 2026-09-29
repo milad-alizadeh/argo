@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { editCall, onlyToolRow, readCall } from './tool-feed-test-fixtures'
+import { editRows, onlyToolRow, readCall } from './tool-feed-test-fixtures'
 
 test('a file read with no result yet has no evidence to open', () => {
   const row = onlyToolRow([readCall('call-1', 'src/app.ts')])
@@ -14,10 +14,10 @@ test('names a file by its last segment, not the absolute path that reached it', 
   assert.equal(read.label, 'Read app.ts')
   for (const { change, label } of [
     { change: 'update', label: 'Edited app.ts' },
-    { change: 'create', label: 'Created app.ts' },
+    { change: 'add', label: 'Created app.ts' },
     { change: 'delete', label: 'Deleted app.ts' },
   ] as const) {
-    const row = onlyToolRow([editCall('call-1', '/Users/someone/project/src/app.ts', change)])
-    assert.equal(row.label, label)
+    const [row] = editRows('call-1', '/Users/someone/project/src/app.ts', change)
+    assert.equal(row?.shape === 'tool' ? row.label : null, label)
   }
 })

@@ -1,27 +1,63 @@
-// One Ticket status change: record the intent, ask the provider, then commit what it confirmed.
-// The saved Ticket changes only in the last step, so a refusal never shows the requested status.
+// One Ticket write: record the intent, ask the provider, then commit only what it confirmed.
 import { assign, fromPromise, setup } from 'xstate'
 import type { Database } from '@/database/database'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
-import type { TicketErrorCode, TicketStatus } from '@/domains/tickets/contract/contract'
-import { closureOf } from '@/domains/tickets/contract/ticket'
+import type {
+  TicketErrorCode,
+  TicketPriority,
+  TicketStatus,
+} from '@/domains/tickets/contract/contract'
+import { closureOf, type PriorityChange } from '@/domains/tickets/contract/ticket'
 import { saveConfirmedFields } from '../database/ticket-upsert'
 import {
   type RecordedIntent,
-  recordStatusIntent,
+  recordIntent,
   settleIntent,
   type TicketWriteTarget,
 } from './ticket-write-intents'
 
-export type StatusOperationRequest = TicketWriteTarget & {
-  accountId: string
-  statusId: string
-}
+type TicketChange =
+  | {
+      operation: 'status'
+      statusId: string
+    }
+  | {
+      operation: 'priority'
+      priorityLevel: PriorityChange['priorityLevel']
+    }
 
-export type StatusWrite =
+export type TicketOperationRequest = TicketWriteTarget & {
+  accountId: string
+} & TicketChange
+
+export type StatusRequest = Extract<
+  TicketOperationRequest,
+  {
+    operation: 'status'
+  }
+>
+export type PriorityRequest = Extract<
+  TicketOperationRequest,
+  {
+    operation: 'priority'
+  }
+>
+
+// What the provider confirmed, as the fields the saved Ticket takes.
+export type ConfirmedFields =
+  | {
+      operation: 'status'
+      status: TicketStatus
+    }
+  | {
+      operation: 'priority'
+      priority: TicketPriority | null
+    }
+
+export type TicketWrite =
   | {
       ok: true
-      status: TicketStatus
+      confirmed: ConfirmedFields
     }
   | {
       ok: false
@@ -30,16 +66,16 @@ export type StatusWrite =
 
 export type TicketOperationDependencies = {
   database: Database
-  // Asks the provider to move the Ticket, as the Account, through Account access.
-  writeStatus: (request: StatusOperationRequest) => Promise<StatusWrite>
+  // Asks the provider to change the Ticket, as the Account, through Account access.
+  write: (request: TicketOperationRequest) => Promise<TicketWrite>
   // Called after a commit that changes what a Ticket query answers.
   changed: (target: TicketScopeTarget) => void
 }
 
-export type StatusOperationOutcome =
+export type TicketOperationOutcome =
   | {
       type: 'committed'
-      status: TicketStatus
+      confirmed: ConfirmedFields
     }
   | {
       type: 'rejected'
@@ -53,16 +89,32 @@ export type StatusOperationOutcome =
 
 type OperationInput = {
   dependencies: TicketOperationDependencies
-  request: StatusOperationRequest
+  request: TicketOperationRequest
 }
 export type CommitInput = OperationInput & {
   intent: RecordedIntent
-  status: TicketStatus
+  confirmed: ConfirmedFields
 }
 export type SettleInput = OperationInput & {
   intent: RecordedIntent
   phase: 'rejected' | 'uncertain'
   failure: TicketErrorCode
+}
+
+function savedFields(confirmed: ConfirmedFields) {
+  switch (confirmed.operation) {
+    case 'status':
+      return {
+        status: confirmed.status,
+        state: closureOf(confirmed.status.category),
+      }
+    case 'priority':
+      return {
+        priority: confirmed.priority,
+      }
+    default:
+      return confirmed satisfies never
+  }
 }
 
 // A failure that leaves the provider's answer unknown, as opposed to one it gave.
@@ -79,19 +131,19 @@ export const ticketOperationMachine = setup({
     input: {} as OperationInput,
     context: {} as OperationInput & {
       intent: RecordedIntent | null
-      // The status the provider confirmed, held until it is committed.
-      confirmed: TicketStatus | null
-      outcome: StatusOperationOutcome | null
+      // What the provider confirmed, held until it is committed.
+      confirmed: ConfirmedFields | null
+      outcome: TicketOperationOutcome | null
     },
-    output: {} as StatusOperationOutcome,
+    output: {} as TicketOperationOutcome,
   },
   actors: {
     record: fromPromise(async ({ input }: { input: OperationInput }) =>
-      recordStatusIntent(input.dependencies.database, input.request, input.request.statusId),
+      recordIntent(input.dependencies.database, input.request),
     ),
-    call: fromPromise(async ({ input }: { input: OperationInput }): Promise<StatusWrite> => {
+    call: fromPromise(async ({ input }: { input: OperationInput }): Promise<TicketWrite> => {
       try {
-        return await input.dependencies.writeStatus(input.request)
+        return await input.dependencies.write(input.request)
       } catch {
         return {
           ok: false,
@@ -99,14 +151,11 @@ export const ticketOperationMachine = setup({
         }
       }
     }),
-    // The confirmed status and the settled intent commit together, then the change is announced.
+    // The confirmed fields and the settled intent commit together, then the change is announced.
     commit: fromPromise(async ({ input }: { input: CommitInput }) => {
-      const { dependencies, request, intent, status } = input
+      const { dependencies, request, intent, confirmed } = input
       dependencies.database.transaction((transaction) => {
-        saveConfirmedFields(transaction, request, {
-          status,
-          state: closureOf(status.category),
-        })
+        saveConfirmedFields(transaction, request, savedFields(confirmed))
         settleIntent(transaction, {
           intentId: intent.intentId,
           phase: 'committed',
@@ -185,13 +234,13 @@ export const ticketOperationMachine = setup({
             guard: ({ event }) => event.output.ok,
             target: 'Committing',
             actions: assign({
-              confirmed: ({ event }) => (event.output.ok ? event.output.status : null),
+              confirmed: ({ event }) => (event.output.ok ? event.output.confirmed : null),
             }),
           },
           {
             target: 'Settling',
             actions: assign({
-              outcome: ({ event }): StatusOperationOutcome => {
+              outcome: ({ event }): TicketOperationOutcome => {
                 const failure = event.output.ok ? 'invalid-response' : event.output.failure
                 return {
                   type: UNCERTAIN.has(failure) ? 'uncertain' : 'rejected',
@@ -213,13 +262,13 @@ export const ticketOperationMachine = setup({
             dependencies: context.dependencies,
             request: context.request,
             intent,
-            status: confirmed,
+            confirmed,
           }
         },
         onDone: {
           target: 'Done',
           actions: assign({
-            outcome: ({ context }): StatusOperationOutcome =>
+            outcome: ({ context }): TicketOperationOutcome =>
               context.confirmed === null
                 ? {
                     type: 'rejected',
@@ -227,7 +276,7 @@ export const ticketOperationMachine = setup({
                   }
                 : {
                     type: 'committed',
-                    status: context.confirmed,
+                    confirmed: context.confirmed,
                   },
           }),
         },

@@ -1,5 +1,5 @@
 // A Linear team's issues keep a priority, independent of their workflow state. Linear owns the
-// levels; the cockpit reads them with every page and keeps none.
+// levels; the cockpit reads them from Linear and keeps none.
 
 import type { PriorityChange, TicketPriority } from '@/domains/tickets/contract/ticket'
 import type { LinearEndpoints } from '@/providers/linear/endpoints'
@@ -17,7 +17,33 @@ const SET = `mutation SetPriority($id: String!, $priority: Int!) {
   issueUpdate(id: $id, input: { priority: $priority }) { success issue { priority priorityLabel } }
 }`
 
+// Linear lists its levels itself, with "No priority" (0) among them; that one is no choice.
+const CHOICES = `query PriorityChoices {
+  issuePriorityValues { priority label }
+}`
+
 type Refusal = 'ticket-not-found'
+
+export async function readPriorityChoices(
+  endpoints: LinearEndpoints,
+  token: string,
+): Promise<LinearRead<readonly TicketPriority[]>> {
+  const read = await query({ endpoints, token }, CHOICES)
+  if (!read.ok) return read
+  const rows = read.value.issuePriorityValues
+  if (!Array.isArray(rows)) return failed('unreachable')
+  // "No priority" (0) is no choice; any other row that is not a known level rejects the payload.
+  const choices: TicketPriority[] = []
+  for (const row of rows) {
+    if (!isRecord(row)) return failed('unreachable')
+    if (row.priority === 0) continue
+    const choice = priorityOf(row.priority, row.label)
+    if (!choice) return failed('unreachable')
+    choices.push(choice)
+  }
+  choices.sort((first, second) => first.level - second.level)
+  return { ok: true, value: choices }
+}
 
 // The issue is found and checked to be in the Connection's team before anything is written.
 // Linear's priority takes any of 0 through 4, so there is no state to check it against.

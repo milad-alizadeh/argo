@@ -6,6 +6,18 @@ import type { MockGitHub } from './mock-github'
 export function githubControls(
   state: MockState,
 ): Omit<MockGitHub, 'origin' | 'requests' | 'close'> {
+  const hold = (answerAsAsked: boolean) => {
+    let release = () => {}
+    state.held = new Promise((settle) => {
+      release = settle
+    })
+    state.answerAsAsked = answerAsAsked
+    return () => {
+      state.held = null
+      state.answerAsAsked = false
+      release()
+    }
+  }
   return {
     signIn(answer, pendingPolls = 1) {
       state.signIn = { answer, pending: pendingPolls, held: false }
@@ -23,14 +35,10 @@ export function githubControls(
       state.outage = kind
     },
     holdReads() {
-      let release = () => {}
-      state.held = new Promise((settle) => {
-        release = settle
-      })
-      return () => {
-        state.held = null
-        release()
-      }
+      return hold(false)
+    },
+    holdStaleReads() {
+      return hold(true)
     },
   }
 }

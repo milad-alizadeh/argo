@@ -149,6 +149,10 @@ const ANSWERS: Record<string, Answer> = {
     const moved = moveIssue(state, variables.id ?? '', variables.state ?? '')
     return { issueUpdate: { success: moved !== null, issue: moved ? { state: moved } : null } }
   },
+  // Linear lists its levels with "No priority" (0) first.
+  PriorityChoices: () => ({
+    issuePriorityValues: PRIORITY_LABELS.map((label, priority) => ({ priority, label })),
+  }),
   PriorityTarget: (state, user, variables) => ({ issue: target(state, user, variables.key ?? '') }),
   SetPriority: (state, _user, variables) => {
     const level = variables.priority ?? 0

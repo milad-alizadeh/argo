@@ -85,7 +85,14 @@ test('reads Codex reasoning, commentary, file edits, and MCP results from thread
                 id: 'edit-1',
                 type: 'fileChange',
                 status: 'completed',
-                changes: [{ path: '/repo/feed.ts', diff: '+updated', kind: { type: 'update' } }],
+                changes: [
+                  { path: '/repo/feed.ts', diff: '+updated', kind: { type: 'update' } },
+                  {
+                    path: '/repo/old.ts',
+                    diff: '',
+                    kind: { type: 'update', move_path: '/repo/new.ts' },
+                  },
+                ],
               },
               {
                 id: 'mcp-1',
@@ -106,7 +113,14 @@ test('reads Codex reasoning, commentary, file edits, and MCP results from thread
   expect(content).toMatchObject([
     { kind: 'reasoning', id: 'reason-1', text: 'Checking the Feed contract' },
     { kind: 'message', id: 'progress-1', phase: 'commentary' },
-    { kind: 'fileChange', id: 'edit-1', changes: [{ path: '/repo/feed.ts', change: 'update' }] },
+    {
+      kind: 'fileChange',
+      id: 'edit-1',
+      changes: [
+        { path: '/repo/feed.ts', change: 'update' },
+        { path: '/repo/old.ts', change: 'update', movedTo: '/repo/new.ts' },
+      ],
+    },
     { kind: 'tool', id: 'mcp-1', output: [{ kind: 'text', text: 'updated' }] },
     { kind: 'message', id: 'answer-1', phase: 'final_answer' },
   ])

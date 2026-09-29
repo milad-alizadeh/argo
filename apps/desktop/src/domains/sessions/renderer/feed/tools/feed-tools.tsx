@@ -4,6 +4,7 @@ import { standsAlone, TOOL_KIND_PRESENTATION } from '@/domains/sessions/api/feed
 import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
 import { TaskItem } from '../../ai-elements/task'
 import type { SessionFeedRow } from '../../types'
+import { FeedInlineMarkdown } from '../content/feed-inline-markdown'
 import { FeedMarkdown } from '../content/feed-markdown'
 import { LiveActivityText } from '../rows/live-activity-text'
 import { type ToolGroupState, useToolGroupOpen } from '../rows/tool-group-state'
@@ -154,7 +155,8 @@ export function FeedToolGroup({
   const soleCall = group.calls.length === 1 ? group.calls[0] : undefined
   const activity = liveActivity(group)
   const live = activity !== null
-  const latestCommentary = group.thoughts?.at(-1)
+  // A thought with no words, blank or a bare `---`, renders empty, so it never titles the group.
+  const latestCommentary = group.thoughts?.findLast((thought) => /[\p{L}\p{N}]/u.test(thought.text))
   // A call that stands alone (`groupedRowIndexes`) names its group. Every other settled group
   // reads as its count: a command that has run is history, and its text is one disclosure away,
   // never a stray line in the Feed.
@@ -164,7 +166,9 @@ export function FeedToolGroup({
       (titleCall?.label ?? group.label)
     ) : (
       <span className="flex min-w-0 items-baseline gap-2">
-        <span className="truncate">{latestCommentary.text}</span>
+        <span className="truncate">
+          <FeedInlineMarkdown text={latestCommentary.text.trim()} />
+        </span>
         <span className="shrink-0">· {group.label}</span>
       </span>
     )

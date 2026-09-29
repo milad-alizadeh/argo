@@ -1,19 +1,21 @@
 // The app's Ticket writes: one operation per Ticket at a time, and a second one waits its turn.
 import { type ActorRefFrom, enqueueActions, setup, stopChild } from 'xstate'
 import {
-  type StatusOperationOutcome,
-  type StatusOperationRequest,
+  type PriorityRequest,
+  type StatusRequest,
   type TicketOperationDependencies,
+  type TicketOperationOutcome,
+  type TicketOperationRequest,
   ticketOperationMachine,
 } from './ticket-operation-machine'
 
 export type TicketOperationSupervisorInput = TicketOperationDependencies
 
 export type TicketOperationCommand = {
-  type: 'ChangeStatus'
-  request: StatusOperationRequest
+  type: 'ChangeStatus' | 'ChangePriority'
+  request: TicketOperationRequest
   // Answers the caller once the operation ends; it is called exactly once.
-  reply: (outcome: StatusOperationOutcome) => void
+  reply: (outcome: TicketOperationOutcome) => void
 }
 
 type Waiting = Pick<TicketOperationCommand, 'request' | 'reply'>
@@ -21,10 +23,10 @@ type Waiting = Pick<TicketOperationCommand, 'request' | 'reply'>
 type FinishedEvent = {
   type: `xstate.done.actor.${string}`
   actorId: string
-  output: StatusOperationOutcome
+  output: TicketOperationOutcome
 }
 
-const keyOf = ({ provider, scope, key }: StatusOperationRequest) =>
+const keyOf = ({ provider, scope, key }: TicketOperationRequest) =>
   `ticket-operation:${JSON.stringify([
     provider,
     scope,
@@ -53,7 +55,7 @@ export const ticketOperationSupervisorMachine = setup({
   },
   actions: {
     change: enqueueActions(({ context, event, enqueue }) => {
-      if (event.type !== 'ChangeStatus') return
+      if (event.type !== 'ChangeStatus' && event.type !== 'ChangePriority') return
       const key = keyOf(event.request)
       if (context.running[key]) {
         enqueue.assign({
@@ -92,7 +94,7 @@ export const ticketOperationSupervisorMachine = setup({
           outcome,
         }: {
           key: string
-          outcome: StatusOperationOutcome
+          outcome: TicketOperationOutcome
         },
       ) => {
         enqueue(stopChild(key))
@@ -112,7 +114,7 @@ export const ticketOperationSupervisorMachine = setup({
         })
         if (next !== undefined)
           enqueue.raise({
-            type: 'ChangeStatus',
+            type: next.request.operation === 'status' ? 'ChangeStatus' : 'ChangePriority',
             ...next,
           })
       },
@@ -130,6 +132,9 @@ export const ticketOperationSupervisorMachine = setup({
     Running: {
       on: {
         ChangeStatus: {
+          actions: 'change',
+        },
+        ChangePriority: {
           actions: 'change',
         },
         'xstate.done.actor.*': {
@@ -152,16 +157,28 @@ export const ticketOperationSupervisorMachine = setup({
 
 export type TicketOperationSupervisorActor = ActorRefFrom<typeof ticketOperationSupervisorMachine>
 
-// Sends one status change and resolves with how it ended.
-export function changeTicketStatus(
+function send(
   actor: Pick<TicketOperationSupervisorActor, 'send'>,
-  request: StatusOperationRequest,
-): Promise<StatusOperationOutcome> {
+  type: TicketOperationCommand['type'],
+  request: TicketOperationRequest,
+): Promise<TicketOperationOutcome> {
   return new Promise((resolve) =>
     actor.send({
-      type: 'ChangeStatus',
+      type,
       request,
       reply: resolve,
     }),
   )
 }
+
+// Sends one status change and resolves with how it ended.
+export const changeTicketStatus = (
+  actor: Pick<TicketOperationSupervisorActor, 'send'>,
+  request: StatusRequest,
+) => send(actor, 'ChangeStatus', request)
+
+// Sends one priority change and resolves with how it ended.
+export const changeTicketPriority = (
+  actor: Pick<TicketOperationSupervisorActor, 'send'>,
+  request: PriorityRequest,
+) => send(actor, 'ChangePriority', request)

@@ -4,6 +4,7 @@ import type {
   TicketError,
   TicketListed,
   TicketPrioritized,
+  TicketPriorityChoices,
   TicketUpdated,
 } from '@/domains/tickets/contract/contract'
 import type { RouterOutputs } from '@/platform/renderer/trpc-client'
@@ -24,6 +25,7 @@ type TicketSuccess =
   | TicketListed
   | TicketSearched
   | TicketSearchRequested
+  | TicketPriorityChoices
   | TicketPrioritized
   | TicketUpdated
 
