@@ -173,25 +173,27 @@ export function FeedToolGroup({
   const thoughtsByCall = groupThoughtsByCall(group, live ? undefined : latestCommentary?.id)
   return (
     <CollapsibleText
-      content={group.calls.flatMap((call, index) => [
-        <TaskItem key={call.id}>
-          <GroupedCall
-            activeEvidenceId={activeEvidenceId}
-            call={call}
-            isSole={call.id === soleCall?.id}
-            live={live}
-            onOpen={onOpen}
-            toolGroups={toolGroups}
-          />
-        </TaskItem>,
-        ...(thoughtsByCall.get(index) ?? []).map((thought) => (
-          <TaskItem key={thought.id}>
-            <div className="break-words text-muted-foreground type-body">
-              <FeedMarkdown text={thought.text} />
-            </div>
-          </TaskItem>
-        )),
-      ])}
+      content={() =>
+        group.calls.flatMap((call, index) => [
+          <TaskItem key={call.id}>
+            <GroupedCall
+              activeEvidenceId={activeEvidenceId}
+              call={call}
+              isSole={call.id === soleCall?.id}
+              live={live}
+              onOpen={onOpen}
+              toolGroups={toolGroups}
+            />
+          </TaskItem>,
+          ...(thoughtsByCall.get(index) ?? []).map((thought) => (
+            <TaskItem key={thought.id}>
+              <div className="break-words text-muted-foreground type-body">
+                <FeedMarkdown text={thought.text} />
+              </div>
+            </TaskItem>
+          )),
+        ])
+      }
       contentVariant="flush"
       icon={groupIcon(activity, titleCall?.kind)}
       onOpenChange={onOpenChange}

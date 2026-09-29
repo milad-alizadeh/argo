@@ -50,6 +50,7 @@ openToolGroups.setOpen('command-2', true)
 const closedToolGroups = new ToolGroupState()
 const staleToolGroups = new ToolGroupState()
 const severalToolGroups = new ToolGroupState()
+const lazyToolGroups = new ToolGroupState()
 
 const meta = {
   title: 'Sessions/Feed/Tool Line',
@@ -389,4 +390,33 @@ export const GroupOpen = {
       toolGroups={openToolGroups}
     />
   ),
+}
+
+// A closed group builds no body, so a long Feed pays for titles alone; the body mounts on open,
+// stays through the closing transition, and leaves once it ends.
+export const ClosedGroupBuildsNoBody = {
+  render: () => (
+    <FeedToolGroup
+      group={{
+        shape: 'tool-group',
+        id: 'tool-group:lazy',
+        label: 'Ran a command, edited a file',
+        calls: [command, edited],
+      }}
+      activeEvidenceId={null}
+      onOpen={() => {}}
+      toolGroups={lazyToolGroups}
+    />
+  ),
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+    const group = canvas.getByRole('button', { name: 'Ran a command, edited a file' })
+    await expect(canvas.queryByText('Edited Composer.tsx')).toBeNull()
+    await userEvent.click(group)
+    const edit = await canvas.findByRole('button', { name: 'Edited Composer.tsx +3 −1' })
+    await userEvent.click(group)
+    await expect(group).toHaveAttribute('aria-expanded', 'false')
+    await expect(edit).toBeInTheDocument()
+    await waitFor(() => expect(canvas.queryByText('Edited Composer.tsx')).toBeNull())
+  },
 }

@@ -80,7 +80,7 @@ export function FeedInlineToolCallItem({
   const { onOpenChange, open } = useToolGroupOpen(toolGroups, call.id)
   return (
     <CollapsibleText
-      content={<FeedInlineToolCall call={call} live={live} />}
+      content={() => <FeedInlineToolCall call={call} live={live} />}
       contentVariant="flush"
       icon={Icon}
       onOpenChange={onOpenChange}

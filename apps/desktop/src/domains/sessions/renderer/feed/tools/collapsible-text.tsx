@@ -12,6 +12,12 @@ const CONTENT_VARIANT_CLASS = {
   flush: 'mt-2 space-y-2',
 } as const
 
+// The panel mounts only while open or animating shut, so its body is built only then: a closed
+// row costs the Feed its title alone.
+function PanelBody({ content }: { content: () => ReactNode }) {
+  return content()
+}
+
 export function CollapsibleText({
   content,
   contentVariant = 'line',
@@ -21,7 +27,7 @@ export function CollapsibleText({
   open,
   title,
 }: {
-  content: ReactNode
+  content: () => ReactNode
   contentVariant?: 'line' | 'plain' | 'flush'
   defaultOpen?: boolean
   icon: IconName
@@ -42,7 +48,9 @@ export function CollapsibleText({
         />
       </CollapsibleTrigger>
       <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden type-body text-popover-foreground outline-none transition-[height,opacity,transform] duration-200 ease-out data-[starting-style]:h-0 data-[starting-style]:-translate-y-2 data-[starting-style]:opacity-0 data-[ending-style]:h-0 data-[ending-style]:-translate-y-2 data-[ending-style]:opacity-0 motion-reduce:transition-none">
-        <div className={CONTENT_VARIANT_CLASS[contentVariant]}>{content}</div>
+        <div className={CONTENT_VARIANT_CLASS[contentVariant]}>
+          <PanelBody content={content} />
+        </div>
       </CollapsibleContent>
     </Collapsible>
   )
