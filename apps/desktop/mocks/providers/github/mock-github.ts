@@ -53,6 +53,8 @@ export type MockGitHub = {
   outage(kind: MockOutage): void
   // API reads wait until the returned release is called.
   holdReads(): () => void
+  // Like `holdReads`, but each held read answers with GitHub as it was when the read was asked.
+  holdStaleReads(): () => void
   close(): Promise<void>
 }
 

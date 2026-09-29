@@ -9,6 +9,6 @@ export type ProviderPresentation = {
   keyColumn: string
   // Which word names a Ticket's status: GitHub's open or closed state, Linear's workflow status.
   statusTerm: 'state' | 'status'
-  // Whether a Ticket carries a Priority it can be moved between.
-  priority: boolean
+  // Whether the provider keeps a priority. Its levels are read from the provider, not declared here.
+  hasPriority: boolean
 }

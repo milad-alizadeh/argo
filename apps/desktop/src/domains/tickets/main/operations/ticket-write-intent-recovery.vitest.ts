@@ -11,15 +11,23 @@ import { DONE, SCOPE, seededDatabase, ticket } from './test-support/ticket-opera
 import { accountForScopeFrom, reconcileTicketWriteIntents } from './ticket-write-intent-recovery'
 import {
   markUnresolvedTicketWriteIntentsUncertain,
-  recordStatusIntent,
+  recordIntent,
   settleIntent,
 } from './ticket-write-intents'
 
 const withDatabase = () => seededDatabase(['#1'])
 
+const statusIntent = (key: string, statusId: string) => ({
+  ...SCOPE,
+  key,
+  accountId: 'github:1',
+  operation: 'status' as const,
+  statusId,
+})
+
 // Records and settles an intent as `uncertain`, as recovery leaves one after a dropped call.
 function leaveUncertain(database: Database, key: string): void {
-  const recorded = recordStatusIntent(database, { ...SCOPE, key }, 'done')
+  const recorded = recordIntent(database, statusIntent(key, 'done'))
   assert.ok(recorded.ok)
   settleIntent(database, {
     intentId: recorded.intentId,
@@ -44,7 +52,7 @@ const savedStatus = (database: Database, key: string) => {
 
 test('a pending intent left by a stopped process becomes uncertain', async () => {
   const database = await withDatabase()
-  const recorded = recordStatusIntent(database, { ...SCOPE, key: '#1' }, 'done')
+  const recorded = recordIntent(database, statusIntent('#1', 'done'))
   assert.ok(recorded.ok)
   markUnresolvedTicketWriteIntentsUncertain(database)
   assert.deepEqual(phases(database), [{ phase: 'uncertain' }])
@@ -119,7 +127,7 @@ test('no connected Account for the scope is skipped without a read', async () =>
 test('a new change is refused while an intent is still unresolved', async () => {
   const database = await withDatabase()
   leaveUncertain(database, '#1')
-  const blocked = recordStatusIntent(database, { ...SCOPE, key: '#1' }, 'started')
+  const blocked = recordIntent(database, statusIntent('#1', 'started'))
   assert.deepEqual(blocked, { ok: false, reason: 'unreconciled' })
 })
 

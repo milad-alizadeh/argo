@@ -60,6 +60,8 @@ const toolCallSchema = z.strictObject({
     .nullable(),
   status: z.enum(['succeeded', 'failed', 'running', 'interrupted']),
   agentDescription: z.boolean().optional(),
+  // The file a file-change call touched, so a group counts files rather than calls.
+  file: z.string().optional(),
   evidence: toolEvidenceSchema,
   // The call's own raw text, read by a kind routed inline (a command's full text). Null for a
   // kind routed to the evidence panel, which reads the call through `evidence` instead.

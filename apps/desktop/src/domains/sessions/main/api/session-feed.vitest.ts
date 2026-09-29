@@ -2,13 +2,18 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { initTRPC } from '@trpc/server'
-import { afterEach, beforeEach, expect, test } from 'vitest'
+import type { Observable } from '@trpc/server/observable'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { type Database, openDatabase } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
-import type { FeedReading } from '@/domains/sessions/api/feed/feed-reading'
+import {
+  applyFeedReadingChange,
+  type FeedReading,
+  type FeedReadingMessage,
+} from '@/domains/sessions/api/feed/feed-reading'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
-import type { SessionFeedReaderContext } from '../feed/feed-reader'
+import { FEED_TEXT_COALESCE_MS, type SessionFeedReaderContext } from '../feed/feed-reader'
 import { SessionEventJournal } from '../live/session-event-journal'
 import { SessionActivities } from './session-activities'
 import { sessionFeedProcedures } from './session-feed'
@@ -30,6 +35,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
+  vi.useRealTimers()
   database.$client.close()
   await rm(directory, { recursive: true, force: true })
 })
@@ -70,7 +76,7 @@ function historyReads() {
       if (read === undefined) throw new Error('No history read is waiting.')
       if (value instanceof Error) read.reject(value)
       else read.resolve(value)
-      await new Promise((resolve) => setTimeout(resolve, 0))
+      await new Promise((resolve) => setImmediate(resolve))
     },
   }
 }
@@ -84,10 +90,23 @@ async function observe(
     .create()
     .router(sessionFeedProcedures({ database, journal, hasLiveChannel: () => true, ...context }))
     .createCaller({})
-  const readings: FeedReading[] = []
   const stream = await caller.sessionFeed({ sessionId: observedId, subagentId })
-  const subscription = stream.subscribe({ next: (reading) => readings.push(reading) })
-  return { caller, readings, subscription, latest: () => readings.at(-1) }
+  return { caller, ...collect(stream) }
+}
+
+// Each message applied to the reading before it, as the renderer applies them.
+function collect(stream: Observable<FeedReadingMessage, unknown>) {
+  const readings: FeedReading[] = []
+  const messages: FeedReadingMessage[] = []
+  const subscription = stream.subscribe({
+    next: (message) => {
+      messages.push(message)
+      const reading = applyFeedReadingChange(readings.at(-1), message)
+      if (reading === null) throw new Error('A change arrived against a reading never sent.')
+      readings.push(reading)
+    },
+  })
+  return { readings, messages, subscription, latest: () => readings.at(-1) }
 }
 
 // The trigger starts a second history read, and its answer replaces the first one's rows.
@@ -116,10 +135,12 @@ test('opens loading, then publishes the history rows in order', async () => {
 })
 
 test('an event during the first read is kept and reconciled with history once', async () => {
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   const history = historyReads()
   const feed = await observe({ readHistory: history.readHistory })
   journal.append(sessionId, content(message('m2', 'assistant', 'Hello')))
   journal.append(sessionId, content(message('m3', 'assistant', 'Still going')))
+  await vi.advanceTimersByTimeAsync(FEED_TEXT_COALESCE_MS)
   expect(rowIds(feed.latest())).toEqual(['m2', 'm3'])
   await history.answer([message('m1', 'user', 'Hi'), message('m2', 'assistant', 'Hello')])
   expect(rowIds(feed.latest())).toEqual(['m1', 'm2', 'm3'])
@@ -226,8 +247,10 @@ test('a multi-activity Turn publishes its latest activity to the Feed and the ro
   expect(activityOf(feed.latest())).toMatchObject({ activity: first })
   expect(activities.activityOf(sessionId)).toMatchObject(first)
 
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   journal.append(sessionId, content(reasoning('r1', null)))
   journal.append(sessionId, content(reasoning('r2', 'Reading **the** failure')))
+  await vi.advanceTimersByTimeAsync(FEED_TEXT_COALESCE_MS)
   const thought = { kind: 'thought', label: 'Reading **the** failure', open: true }
   expect(activityOf(feed.latest())).toMatchObject({ activity: thought })
   // Unreadable reasoning is dropped: no tile, and no text made up for it.
@@ -291,6 +314,76 @@ test('names the waiting Question and Permission', async () => {
   })
   expect(feed.latest()?.pendingPermissionId).toBeNull()
   feed.subscription.unsubscribe()
+})
+
+// One streamed reply: each snapshot carries the whole text so far under one message id.
+function stream(words: number) {
+  for (let count = 1; count <= words; count += 1)
+    journal.append(
+      sessionId,
+      content(message('m2', 'assistant', Array.from({ length: count }, () => 'word').join(' '))),
+    )
+}
+
+test('streamed text publishes one reading per window, with the latest text', async () => {
+  const history = historyReads()
+  let reads = 0
+  const feed = await observe({
+    readHistory: () => {
+      reads += 1
+      return history.readHistory()
+    },
+  })
+  await history.answer([message('m1', 'user', 'Go')])
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  const before = feed.readings.length
+  stream(20)
+  expect(feed.readings).toHaveLength(before)
+  await vi.advanceTimersByTimeAsync(FEED_TEXT_COALESCE_MS)
+  expect(feed.readings).toHaveLength(before + 1)
+  expect(feed.latest()?.entries[1]?.row).toMatchObject({ text: Array(20).fill('word').join(' ') })
+  stream(3)
+  await vi.advanceTimersByTimeAsync(FEED_TEXT_COALESCE_MS * 5)
+  expect(feed.readings).toHaveLength(before + 2)
+  // Each change carries the streamed row alone, not the prompt before it.
+  expect(feed.messages.at(-1)).toMatchObject({ kept: 1, tail: [{ row: { id: 'm2' } }] })
+  expect(reads).toBe(1)
+  feed.subscription.unsubscribe()
+})
+
+test('a Question or Permission publishes at once, with the text still waiting', async () => {
+  const history = historyReads()
+  const feed = await observe({ readHistory: history.readHistory })
+  await history.answer([])
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  stream(2)
+  journal.append(sessionId, {
+    type: 'permission',
+    ...identity,
+    requestId: 'permission-1',
+    description: 'Run bun test',
+    decision: null,
+  })
+  expect(feed.latest()?.pendingPermissionId).toBe('permission-1')
+  expect(feed.latest()?.entries[0]?.row).toMatchObject({ id: 'm2', text: 'word word' })
+  const published = feed.readings.length
+  // The text went out with the Permission, so its window has nothing left to publish.
+  await vi.advanceTimersByTimeAsync(FEED_TEXT_COALESCE_MS)
+  expect(feed.readings).toHaveLength(published)
+  feed.subscription.unsubscribe()
+})
+
+test('text still waiting when the last observer leaves publishes nothing', async () => {
+  const history = historyReads()
+  const feed = await observe({ readHistory: history.readHistory })
+  await history.answer([])
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  const before = feed.readings.length
+  stream(2)
+  feed.subscription.unsubscribe()
+  await vi.advanceTimersByTimeAsync(FEED_TEXT_COALESCE_MS)
+  expect(feed.readings).toHaveLength(before)
+  expect(vi.getTimerCount()).toBe(0)
 })
 
 test('a Session Argo does not know reads as missing', async () => {
@@ -413,10 +506,7 @@ test('a Session missing at open follows its history once a Refresh finds it', as
 
 // A second observer on the same router, so both share its readers.
 async function also(feed: Awaited<ReturnType<typeof observe>>, subagentId: string) {
-  const readings: FeedReading[] = []
-  const stream = await feed.caller.sessionFeed({ sessionId, subagentId })
-  const subscription = stream.subscribe({ next: (reading) => readings.push(reading) })
-  return { readings, subscription, latest: () => readings.at(-1) }
+  return collect(await feed.caller.sessionFeed({ sessionId, subagentId }))
 }
 
 function delegation(

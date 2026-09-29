@@ -60,19 +60,6 @@ export type SubagentControlFacts = {
   model: string | null
 }
 
-// One file an edit touched. `diff` is the typed diff Result: the change is known from the call
-// itself, so it is ready before the harness answers.
-export type EditedFile = {
-  change: 'create' | 'update' | 'delete'
-  file: string | null
-  diff: string
-  lineCounts: { added: number; removed: number }
-}
-
-// A file change. A harness that writes one call for several files fills one entry per file, and
-// the Feed draws one row for each.
-export type EditFacts = { kind: 'edit'; files: EditedFile[] }
-
 // A harness adapter classifies every Tool Call before it crosses the transcript contract. The
 // raw harness name and untyped input stay in that adapter; `other.label` is their sole exception.
 export type ToolCall = { id: string } & (
@@ -84,5 +71,4 @@ export type ToolCall = { id: string } & (
   | OtherFacts
   | AskFacts
   | SubagentControlFacts
-  | EditFacts
 )

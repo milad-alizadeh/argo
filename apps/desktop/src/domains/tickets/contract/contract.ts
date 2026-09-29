@@ -113,6 +113,12 @@ export const ticketPrioritizedSchema = message('ticket.prioritized', {
   priority: ticketPriority.nullable(),
 })
 
+// The priority levels the Connection's provider offers now, in its words; none where it keeps none.
+export const ticketPriorityChoicesSchema = message('ticket.priorityChoices', {
+  ...project,
+  choices: z.array(ticketPriority),
+})
+
 export type ConnectionSummary = z.infer<typeof connectionSummary>
 export type ConnectionState = ConnectionSummary['state']
 export type TicketConnectionRequest = z.infer<typeof ticketConnectionRequestSchema>
@@ -123,6 +129,7 @@ export type TicketUpdateRequest = z.infer<typeof ticketUpdateRequestSchema>
 export type TicketUpdated = z.infer<typeof ticketUpdatedSchema>
 export type TicketPriorityRequest = z.infer<typeof ticketPriorityRequestSchema>
 export type TicketPrioritized = z.infer<typeof ticketPrioritizedSchema>
+export type TicketPriorityChoices = z.infer<typeof ticketPriorityChoicesSchema>
 export type TicketDiscoverRequest = z.infer<typeof ticketDiscoverRequestSchema>
 export type TicketDiscovered = z.infer<typeof ticketDiscoveredSchema>
 export type TicketScope = TicketDiscovered['scopes'][number]
@@ -165,6 +172,7 @@ export type TicketListReply = TicketListed | TicketError
 export type TicketDiscoverReply = TicketDiscovered | TicketError
 export type TicketUpdateReply = TicketUpdated | TicketError
 export type TicketPriorityReply = TicketPrioritized | TicketError
+export type TicketPriorityChoicesReply = TicketPriorityChoices | TicketError
 
 export const ticketError = errorFactory('ticket.error', TICKET_ERRORS)
 export const ticketErrorSchema = errorSchema('ticket.error', TICKET_ERRORS)

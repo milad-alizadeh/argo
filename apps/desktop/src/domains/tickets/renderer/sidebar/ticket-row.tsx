@@ -198,7 +198,8 @@ type TicketRowProps = {
   row: BacklogRow
   // The tree lines this row draws, one per ancestor column.
   rails: readonly boolean[]
-  presentation: Pick<ProviderView, 'keyColumn' | 'statusNoun' | 'priority'>
+  presentation: Pick<ProviderView, 'keyColumn' | 'statusNoun' | 'hasPriority'>
+  priorityChoices: readonly TicketPriority[]
   statuses: readonly TicketStatus[]
   selected: boolean
   folded: boolean
@@ -206,6 +207,7 @@ type TicketRowProps = {
   now: number
   onSelect: () => void
   onToggle: () => void
+  writable: boolean
   onChangeStatus: (status: TicketStatus) => void
   onChangePriority: (priority: TicketPriority | null) => void
 }
@@ -216,11 +218,13 @@ function SidebarMetadata(props: TicketRowProps) {
   return (
     <>
       <div className="col-start-2 mt-(--spacing-shell-tight) flex min-w-0 items-center gap-(--spacing-shell-item)">
-        {props.presentation.priority ? (
+        {props.presentation.hasPriority ? (
           <span className="relative z-10 flex shrink-0 items-center">
             <PriorityMenu
+              choices={props.priorityChoices}
               named={false}
               onChange={props.onChangePriority}
+              writable={props.writable}
               priority={ticket.priority}
             />
           </span>
@@ -243,7 +247,7 @@ function SidebarMetadata(props: TicketRowProps) {
 function SidebarTicketRow(props: TicketRowProps) {
   const { t } = useTranslation('tickets')
   const { row, rails, presentation, statuses, selected, folded } = props
-  const { onSelect, onToggle, onChangeStatus } = props
+  const { onSelect, onToggle, onChangeStatus, writable } = props
   const { ticket, parent } = row
   return (
     <div className="relative flex min-w-0 items-stretch gap-(--spacing-shell-tight) rounded-row px-(--spacing-shell-item) hover:bg-muted has-[[aria-current]]:bg-selected">
@@ -259,6 +263,7 @@ function SidebarTicketRow(props: TicketRowProps) {
               named={false}
               noun={presentation.statusNoun}
               onChange={onChangeStatus}
+              writable={writable}
               status={ticket.status}
               statuses={statuses}
               total={ticket.children.length || undefined}
@@ -297,9 +302,15 @@ function WorkspaceTicketRow(props: TicketRowProps) {
   const age = ticketAge(ticket.createdAt, now)
   return (
     <div className="relative flex min-w-0 items-start gap-(--spacing-shell-tight) rounded-row px-(--spacing-shell-item) hover:bg-muted has-[[aria-current]]:bg-selected">
-      {presentation.priority ? (
+      {presentation.hasPriority ? (
         <span className="mt-1 flex w-6 shrink-0 items-center justify-center">
-          <PriorityMenu named={false} onChange={onChangePriority} priority={ticket.priority} />
+          <PriorityMenu
+            choices={props.priorityChoices}
+            named={false}
+            onChange={onChangePriority}
+            priority={ticket.priority}
+            writable={props.writable}
+          />
         </span>
       ) : null}
       <span
@@ -314,6 +325,7 @@ function WorkspaceTicketRow(props: TicketRowProps) {
           named={false}
           noun={presentation.statusNoun}
           onChange={onChangeStatus}
+          writable={props.writable}
           status={ticket.status}
           statuses={statuses}
           total={ticket.children.length || undefined}

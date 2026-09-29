@@ -153,8 +153,11 @@ export async function answer(state: MockState, request: IncomingMessage, respons
   if (route === 'POST /login/oauth/access_token') return accessToken(exchange)
   if (route === 'GET /login/device') return enterCode(exchange)
   if (request.method === 'GET') {
+    const seen = state.answerAsAsked
+      ? { ...state, repositories: structuredClone(state.repositories) }
+      : state
     await state.held
-    return apiRead(exchange)
+    return apiRead({ ...exchange, state: seen })
   }
   if (request.method === 'PATCH') return issueWrite(exchange)
   send(response, 405, { message: 'Method not allowed' })

@@ -28,7 +28,7 @@ const input = {
   },
   ticketOperations: {
     database: {} as Database,
-    writeStatus: async () => ({ ok: false as const, failure: 'github-unreachable' as const }),
+    write: async () => ({ ok: false as const, failure: 'github-unreachable' as const }),
     changed: () => {},
   },
 }

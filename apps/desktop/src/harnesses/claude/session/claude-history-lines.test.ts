@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { getSessionMessages } from '@anthropic-ai/claude-agent-sdk'
@@ -10,6 +10,7 @@ import {
   openClaudeHistoryReader,
 } from './claude-history-lines'
 import { decodeClaudeSessionMessages } from './claude-session-history'
+import { claudeSkillFiles } from './claude-skill-files'
 
 const FIXTURES = new URL('../../../../mocks/cli/claude/fixtures/sessions/', import.meta.url)
 
@@ -19,15 +20,19 @@ function recorded(name: string): string[] {
     .filter((line) => line.trim() !== '')
 }
 
-test.each(['toolCalls', 'harnessNoise', 'askPending'])(
+test.each(['toolCalls', 'harnessNoise', 'askPending', 'recordedEdit'])(
   'streams the %s transcript as the same content a full read decodes',
   async (name) => {
-    const home = await mkdtemp(path.join(os.tmpdir(), 'argo-claude-lines-'))
+    const home = await realpath(await mkdtemp(path.join(os.tmpdir(), 'argo-claude-lines-')))
     const previous = process.env.CLAUDE_CONFIG_DIR
     try {
       const cwd = path.join(home, 'work')
       const project = path.join(home, 'projects', cwd.replace(/[^a-zA-Z0-9]/g, '-'))
       await mkdir(project, { recursive: true })
+      for (const skill of ['diagnosing-bugs', 'implement']) {
+        await mkdir(path.join(cwd, '.claude', 'skills', skill), { recursive: true })
+        await writeFile(path.join(cwd, '.claude', 'skills', skill, 'SKILL.md'), '')
+      }
       const lines = recorded(name).map((line) => {
         const record = JSON.parse(line)
         return JSON.stringify({ ...record, sessionId: '00000000-0000-4000-8000-000000000009', cwd })
@@ -39,6 +44,7 @@ test.each(['toolCalls', 'harnessNoise', 'askPending'])(
       process.env.CLAUDE_CONFIG_DIR = home
       const full = decodeClaudeSessionMessages(
         await getSessionMessages('00000000-0000-4000-8000-000000000009', { dir: cwd }),
+        claudeSkillFiles(cwd),
       )
 
       const streamed = openClaudeHistoryReader()(lines)
@@ -165,4 +171,48 @@ test.each([
   ['a broken line', 'not json', null],
 ] as const)('reads %s as a turn that is %p', (_name, line, turn) => {
   expect(claudeHistoryTurn(line)).toEqual(turn === null ? null : { turn, turnId: null })
+})
+
+test('an edit result read after its call settles the edit rather than drawing a bare call', () => {
+  const lines = recorded('recordedEdit')
+  const streamed = openClaudeHistoryReader(lines.slice(0, 2))(lines.slice(2, 3))
+  if (streamed.type !== 'appended') throw new Error('The transcript did not stream.')
+  expect(streamed.events.map((event) => (event.type === 'content' ? event.content : null))).toEqual(
+    [
+      {
+        id: 'toolu_01QcoWSLSMjQ9e4NFtQ5Aq7F',
+        kind: 'fileChange',
+        status: 'completed',
+        changes: [
+          {
+            path: '/Users/x/argo/apps/desktop/src/domains/sessions/api/feed/tool-groups.ts',
+            change: 'update',
+            diff: expect.stringContaining('+function toolGroupLabel'),
+          },
+        ],
+      },
+    ],
+  )
+})
+
+test('resolves a streamed skill against the folder its records name', async () => {
+  const cwd = await realpath(await mkdtemp(path.join(os.tmpdir(), 'argo-claude-skill-')))
+  try {
+    const skill = path.join(cwd, '.claude', 'skills', 'implement', 'SKILL.md')
+    await mkdir(path.dirname(skill), { recursive: true })
+    await writeFile(skill, '')
+    const lines = recorded('harnessNoise').map((line) =>
+      JSON.stringify({ ...JSON.parse(line), cwd }),
+    )
+    const streamed = openClaudeHistoryReader()(lines)
+    if (streamed.type !== 'appended') throw new Error('The transcript did not stream.')
+    const contents = streamed.events.map((event) =>
+      event.type === 'content' ? event.content : null,
+    )
+    expect(contents).toContainEqual(
+      expect.objectContaining({ kind: 'reference', label: 'implement', target: skill }),
+    )
+  } finally {
+    await rm(cwd, { recursive: true, force: true })
+  }
 })

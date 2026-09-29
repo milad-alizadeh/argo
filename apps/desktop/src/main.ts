@@ -31,17 +31,21 @@ import { SessionEventJournal } from '@/domains/sessions/main/live/session-event-
 import { SessionHistoryFollowers } from '@/domains/sessions/main/live/session-history-followers'
 import { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
-import type { StatusOperationRequest } from '@/domains/tickets/main/operations/ticket-operation-machine'
+import type {
+  PriorityRequest,
+  StatusRequest,
+} from '@/domains/tickets/main/operations/ticket-operation-machine'
 import {
+  changeTicketPriority,
   changeTicketStatus,
   type TicketOperationSupervisorActor,
 } from '@/domains/tickets/main/operations/ticket-operation-supervisor-machine'
-import { ticketStatusWriter } from '@/domains/tickets/main/operations/ticket-status-writer'
 import {
   accountForScopeFrom,
   reconcileTicketWriteIntents,
 } from '@/domains/tickets/main/operations/ticket-write-intent-recovery'
 import { markUnresolvedTicketWriteIntentsUncertain } from '@/domains/tickets/main/operations/ticket-write-intents'
+import { ticketWriter } from '@/domains/tickets/main/operations/ticket-writer'
 import { TicketChanges } from '@/domains/tickets/main/sync/ticket-changes'
 import { ticketByIdReader, ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
 import { failInterruptedTicketSearches } from '@/domains/tickets/main/sync/ticket-search-records'
@@ -298,8 +302,10 @@ function ticketProcedureContext({
       database,
       changes: currentTicketServices().changes,
       send: (command: TicketSyncSupervisorCommand) => actors.ticketSync.send(command),
-      changeStatus: (request: StatusOperationRequest) =>
+      changeStatus: (request: StatusRequest) =>
         changeTicketStatus(actors.ticketOperations, request),
+      changePriority: (request: PriorityRequest) =>
+        changeTicketPriority(actors.ticketOperations, request),
     },
   }
 }
@@ -563,7 +569,7 @@ async function prepare() {
     },
     ticketOperations: {
       database,
-      writeStatus: ticketStatusWriter({ access: tickets.access, providers: PROVIDER_REGISTRY }),
+      write: ticketWriter({ access: tickets.access, providers: PROVIDER_REGISTRY }),
       changed: tickets.changes.changed,
     },
     registry: harnessRegistry,

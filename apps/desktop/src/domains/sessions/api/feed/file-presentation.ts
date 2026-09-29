@@ -1,4 +1,4 @@
-import type { EditedFile } from './tool-call'
+import type { FeedContent } from '@/domains/sessions/api/feed-content'
 
 // A row names the file, never the path that reached it: every surface drawing this label is narrow
 // and the absolute path is both too long to read and the same prefix on every line (#2273).
@@ -7,13 +7,15 @@ export function fileName(path: unknown) {
   return path.split('/').findLast((segment) => segment.length > 0) ?? path
 }
 
-const EDIT_PRESENTATION = {
-  create: { kind: 'created', verb: 'Created' },
+type FileChange = Extract<FeedContent, { kind: 'fileChange' }>['changes'][number]
+
+const FILE_CHANGE_PRESENTATION = {
+  add: { kind: 'created', verb: 'Created' },
   update: { kind: 'edited', verb: 'Edited' },
   delete: { kind: 'deleted', verb: 'Deleted' },
-} as const
+} as const satisfies Record<FileChange['change'], { kind: string; verb: string }>
 
-export function editPresentation(file: EditedFile) {
-  const { kind, verb } = EDIT_PRESENTATION[file.change]
-  return { kind, label: `${verb} ${fileName(file.file)}` }
+export function fileChangePresentation({ change, path }: Pick<FileChange, 'change' | 'path'>) {
+  const { kind, verb } = FILE_CHANGE_PRESENTATION[change]
+  return { kind, label: `${verb} ${fileName(path)}` }
 }

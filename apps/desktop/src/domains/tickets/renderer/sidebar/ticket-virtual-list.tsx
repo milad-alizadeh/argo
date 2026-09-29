@@ -105,10 +105,12 @@ function VirtualTicketRow({
           onToggle={() => onToggle(row.ticket.key)}
           placement={placement}
           presentation={providerPresentation(backlog.provider)}
+          priorityChoices={backlog.priorityChoices}
           rails={rails}
           row={row}
           selected={row.ticket.key === selectedKey}
           statuses={backlog.statuses}
+          writable={backlog.writable}
         />
       ) : (
         <NextPage loading={backlog.loadingMore} />

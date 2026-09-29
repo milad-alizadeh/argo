@@ -84,7 +84,11 @@ export const githubTickets: TicketSource = {
     return written.ok ? written : { ok: false, failure: WRITE_FAILURES[written.failure] }
   },
 
-  // GitHub keeps no priority; the row and Detail menus never call this for a GitHub Ticket.
+  // GitHub keeps no priority, so it offers no choices and refuses a change.
+  async readPriorityChoices() {
+    return { ok: true, value: [] }
+  },
+
   async updatePriority() {
     return { ok: false, failure: 'ticket-not-writable' }
   },

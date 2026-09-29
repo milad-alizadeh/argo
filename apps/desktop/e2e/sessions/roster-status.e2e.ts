@@ -13,11 +13,11 @@ import {
 } from '@/harnesses/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { writeMockClaude } from '../../mocks/cli/claude/mock-claude-cli'
+import { writeMockCodexLive } from '../../mocks/cli/codex/mock-codex-cli'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
 import { prepare } from './fixtures/feed.fixture'
-import { writeMockCodex } from './fixtures/mock-codex.fixture'
 import { chooseHarness, PERSISTED_ROW, TURN_CONFIGURATION } from './gestures'
 
 // Long enough for the roster to re-read while the Turn still runs.
@@ -35,7 +35,7 @@ async function launch(
       ...process.env,
       [SESSION_CLAUDE_EXECUTABLE_ENV]: await writeMockClaude(root, fixture.claudeTranscripts),
       [SESSION_CLAUDE_TRANSCRIPTS_ENV]: fixture.claudeTranscripts,
-      [SESSION_CODEX_EXECUTABLE_ENV]: await writeMockCodex(root),
+      [SESSION_CODEX_EXECUTABLE_ENV]: await writeMockCodexLive(root),
       [SESSION_MOCK_REPLY_DELAY_MS_ENV]: String(REPLY_DELAY_MS),
       [PROJECT_PROOF_STORE_ENV]: fixture.userData,
       [ACCEPTANCE_ENV]: '0',

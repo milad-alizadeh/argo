@@ -76,14 +76,6 @@ const PRIORITY_MARKS: Record<TicketPriority['level'], Mark> = {
 }
 const NO_PRIORITY_MARK: Mark = { render: () => <PriorityBars filled={null} />, tone: 'text-faint' }
 
-// Linear's own words for every level a Ticket's priority can move to, No priority included.
-export const PRIORITY_OPTIONS: readonly (TicketPriority | null)[] = [
-  null,
-  { level: 1, label: 'Urgent' },
-  { level: 2, label: 'High' },
-  { level: 3, label: 'Medium' },
-  { level: 4, label: 'Low' },
-]
 export const NO_PRIORITY_LABEL = 'No priority'
 export const priorityName = (priority: TicketPriority | null): string =>
   priority?.label ?? NO_PRIORITY_LABEL

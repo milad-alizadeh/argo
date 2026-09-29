@@ -2,7 +2,7 @@
 import type { SourceFailure, TicketSource } from '@/domains/tickets/main/sources'
 import type { LinearFailure } from '@/providers/linear/http'
 import { readTicket, readTicketPage } from '@/providers/linear/issues'
-import { updateIssuePriority } from '@/providers/linear/priority'
+import { readPriorityChoices, updateIssuePriority } from '@/providers/linear/priority'
 import { updateIssueStatus } from '@/providers/linear/statuses'
 import { checkTeam, listTeams } from '@/providers/linear/teams'
 
@@ -74,6 +74,12 @@ export const linearTickets: TicketSource = {
     if (!endpoints.linear) return UNREACHABLE
     const written = await updateIssueStatus(endpoints.linear, token, change)
     return written.ok ? written : { ok: false, failure: WRITE_FAILURES[written.failure] }
+  },
+
+  async readPriorityChoices({ endpoints, token }) {
+    if (!endpoints.linear) return UNREACHABLE
+    const read = await readPriorityChoices(endpoints.linear, token)
+    return read.ok ? read : failed(read.failure)
   },
 
   async updatePriority({ endpoints, token }, change) {

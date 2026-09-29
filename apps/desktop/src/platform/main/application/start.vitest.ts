@@ -46,7 +46,7 @@ function prepared() {
     },
     ticketOperations: {
       database: {} as never,
-      writeStatus: async () => ({ ok: false as const, failure: 'github-unreachable' as const }),
+      write: async () => ({ ok: false as const, failure: 'github-unreachable' as const }),
       changed: () => {},
     },
     registry: {} as HarnessRegistry,
