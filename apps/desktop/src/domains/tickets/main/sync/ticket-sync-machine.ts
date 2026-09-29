@@ -6,6 +6,7 @@ import type { TicketScopeTarget } from '@/database/ticket/validation'
 import type { Ticket, TicketErrorCode, TicketStatus } from '@/domains/tickets/contract/contract'
 import { countClosedListed, saveClosedTickets, saveListedTickets } from '../database/ticket-upsert'
 import type { ListingState, TicketPage } from '../sources'
+import { resolveOmittedTickets, type TicketRead } from './ticket-omitted'
 import {
   beginScan,
   completeClosedPage,
@@ -41,6 +42,13 @@ export type TicketSyncDependencies = {
     },
     cursor: string | null,
   ) => Promise<PageRead>
+  // One Ticket by native ID, read as the Account; settles what a complete scan omitted.
+  readTicket: (
+    request: TicketScopeTarget & {
+      accountId: string
+    },
+    id: string,
+  ) => Promise<TicketRead>
   // Called after every commit that can change what a Ticket query answers.
   changed: (target: TicketScopeTarget) => void
 }
@@ -63,6 +71,10 @@ export type SavePageInput = ScanInput & {
 }
 export type CompleteInput = ScanInput & {
   statuses: readonly TicketStatus[]
+}
+export type ResolveInput = ScanInput & {
+  accountId: string
+  scanStartedAt: number
 }
 export type RecordFailureInput = ScanInput & {
   failure: TicketErrorCode
@@ -194,6 +206,10 @@ export const ticketSyncMachine = setup({
           completedAt: Date.now(),
         }),
       )
+    }),
+    // Only a complete scan reaches this, so a failed or partial one never marks a Ticket omitted.
+    resolveOmitted: fromPromise<void, ResolveInput>(async ({ input }) => {
+      await resolveOmittedTickets(input.dependencies, input.target, input)
     }),
     recordFailure: fromPromise<void, RecordFailureInput>(async ({ input }) => {
       commit(input, (database) => failTicketScan(database, input.target, input.failure))
@@ -385,13 +401,26 @@ export const ticketSyncMachine = setup({
           ...scanInput(context),
           statuses: context.statuses,
         }),
-        onDone: 'Ready',
+        onDone: 'Resolving',
         onError: {
           target: 'Failing',
           actions: assign({
             failure: 'storage-not-written' as const,
           }),
         },
+      },
+    },
+    // The scan is complete and committed, so a resolution that fails leaves it Ready.
+    Resolving: {
+      invoke: {
+        src: 'resolveOmitted',
+        input: ({ context }) => ({
+          ...scanInput(context),
+          accountId: context.accountId,
+          scanStartedAt: context.scanStartedAt,
+        }),
+        onDone: 'Ready',
+        onError: 'Ready',
       },
     },
     Failing: {

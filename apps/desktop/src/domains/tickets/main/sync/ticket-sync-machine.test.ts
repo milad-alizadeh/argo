@@ -8,6 +8,7 @@ import {
   type CompleteInput,
   type PageRead,
   type RecordFailureInput,
+  type ResolveInput,
   type SavePageInput,
   ticketSyncMachine,
 } from './ticket-sync-machine'
@@ -25,7 +26,7 @@ const page = (keys: string[], nextCursor: string | null): TicketPage => ({
   total: null,
 })
 
-function run(pages: Record<string, PageRead>) {
+function run(pages: Record<string, PageRead>, resolving: () => Promise<void> = async () => {}) {
   const writes: string[] = []
   const machine = ticketSyncMachine.provide({
     actors: {
@@ -38,6 +39,10 @@ function run(pages: Record<string, PageRead>) {
       }),
       complete: fromPromise(async ({ input }: { input: CompleteInput }) => {
         writes.push(`complete ${input.statuses.map(({ id }) => id).join(',')}`)
+      }),
+      resolveOmitted: fromPromise(async ({ input }: { input: ResolveInput }) => {
+        writes.push(`resolve ${input.scanStartedAt} ${input.accountId}`)
+        await resolving()
       }),
       recordFailure: fromPromise(async ({ input }: { input: RecordFailureInput }) => {
         writes.push(`fail ${input.failure}`)
@@ -53,6 +58,7 @@ function run(pages: Record<string, PageRead>) {
           if (read === undefined) throw new Error(`No page ${cursor}`)
           return read
         },
+        readTicket: async () => ({ ok: false, failure: 'github-unreachable' }),
         changed: () => {},
       },
       target: TARGET,
@@ -70,7 +76,13 @@ test('reads every page in order and completes only after the last page commits',
   })
   await sync.done
   assert.equal(sync.actor.getSnapshot().value, 'Ready')
-  assert.deepEqual(sync.writes, ['begin', 'save 0 #609,#607', 'save 2 #273', 'complete open'])
+  assert.deepEqual(sync.writes, [
+    'begin',
+    'save 0 #609,#607',
+    'save 2 #273',
+    'complete open',
+    'resolve 1 github:583231',
+  ])
 })
 
 test('a failed page keeps the committed pages and never completes the scan', async () => {
@@ -114,5 +126,14 @@ test('the completed scan keeps every status any page offered, once each', async 
     '2': { ok: true, value: { ...page(['#2'], null), statuses: [DONE] } },
   })
   await sync.done
-  assert.equal(sync.writes.at(-1), 'complete open,done')
+  assert.equal(sync.writes.at(-2), 'complete open,done')
+})
+
+test('a resolution that throws leaves the committed scan Ready', async () => {
+  const sync = run({ first: { ok: true, value: page(['#1'], null) } }, async () => {
+    throw new Error('storage is busy')
+  })
+  await sync.done
+  assert.equal(sync.actor.getSnapshot().value, 'Ready')
+  assert.deepEqual(sync.writes.slice(-2), ['complete open', 'resolve 1 github:583231'])
 })

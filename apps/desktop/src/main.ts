@@ -31,7 +31,7 @@ import { SessionEventJournal } from '@/domains/sessions/main/live/session-event-
 import { SessionHistoryFollowers } from '@/domains/sessions/main/live/session-history-followers'
 import { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
-import { ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
+import { ticketByIdReader, ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
 import { failInterruptedTicketSearches } from '@/domains/tickets/main/sync/ticket-search-records'
 import { markInterruptedTicketScans } from '@/domains/tickets/main/sync/ticket-sync-records'
 import {
@@ -526,6 +526,7 @@ async function prepare() {
     ticketSync: {
       database,
       readPage: ticketPageReader({ access: tickets.access, providers: PROVIDER_REGISTRY }),
+      readTicket: ticketByIdReader({ access: tickets.access, providers: PROVIDER_REGISTRY }),
       changed: tickets.changes.changed,
       timing: ticketSyncTiming(PROOF_ENABLED),
     },

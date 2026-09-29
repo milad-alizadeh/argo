@@ -1,5 +1,17 @@
 // The Ticket screen's reads from SQLite alone: active means listed by the latest complete scan or later.
-import { type AnyColumn, and, asc, count, eq, gte, isNotNull, or, type SQL, sql } from 'drizzle-orm'
+import {
+  type AnyColumn,
+  and,
+  asc,
+  count,
+  eq,
+  gte,
+  isNotNull,
+  isNull,
+  or,
+  type SQL,
+  sql,
+} from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { ticketTable } from '@/database/ticket/schema'
@@ -106,6 +118,9 @@ function readContentPage(
   return { rows: rows.map(({ content }) => content), total: total?.value ?? 0 }
 }
 
+// A Ticket the provider confirmed deleted stays in SQLite and shows nowhere.
+const notDeleted = isNull(ticketContent.deletedAt)
+
 const inScope = ({ provider, scope }: TicketScopeTarget) =>
   and(eq(ticketTable.provider, provider), eq(ticketTable.scope, scope))
 
@@ -143,6 +158,7 @@ export function readActiveTickets(
     inScope(request),
     isNotNull(ticketContent.listedAt),
     gte(ticketContent.listedAt, sync.coveredFrom),
+    notDeleted,
   )
   return readListing(database, request, { sync, listed, order: ticketContent.position })
 }
@@ -153,7 +169,7 @@ export function readClosedTickets(
   request: TicketScopeTarget & Paged,
 ): ActiveRead {
   const sync = readSync(database, request, 'closed')
-  const listed = and(inScope(request), isNotNull(ticketContent.closedPosition))
+  const listed = and(inScope(request), isNotNull(ticketContent.closedPosition), notDeleted)
   return readListing(database, request, { sync, listed, order: ticketContent.closedPosition })
 }
 
@@ -170,6 +186,7 @@ export function readSavedTicket(
       and(
         eq(ticketTable.provider, provider),
         eq(ticketTable.scope, scope),
+        notDeleted,
         or(
           eq(ticketTable.argoId, reference),
           eq(ticketTable.nativeId, reference),
@@ -217,6 +234,7 @@ export function readSearchedTickets(
   const matching = and(
     eq(ticketTable.provider, provider),
     eq(ticketTable.scope, scope),
+    notDeleted,
     or(
       sql`${linkPosition} IS NOT NULL`,
       sql`${ticketContent.key} LIKE ${pattern} ESCAPE '\\'`,
