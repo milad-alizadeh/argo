@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { MemoryRouter } from 'react-router'
 import { expect, userEvent, within } from 'storybook/test'
 
 import { CockpitNavigationRail } from './cockpit-navigation-rail'
@@ -11,9 +12,11 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div className="h-dvh">
-        <Story />
-      </div>
+      <MemoryRouter initialEntries={['/projects/storybook-project/sessions']}>
+        <div className="h-dvh">
+          <Story />
+        </div>
+      </MemoryRouter>
     ),
   ],
 } satisfies Meta<typeof CockpitNavigationRail>

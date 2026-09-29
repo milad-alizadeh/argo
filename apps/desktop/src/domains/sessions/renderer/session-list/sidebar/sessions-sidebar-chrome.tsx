@@ -39,7 +39,13 @@ export function SessionsSidebarHeader({
           refreshing={refreshing}
           status={status}
         />
-        <Button aria-label={t('newSession')} onClick={onNew} size="icon-sm" variant="ghost">
+        <Button
+          aria-label={t('newSession')}
+          className="-mr-1.5"
+          onClick={onNew}
+          size="icon-sm"
+          variant="ghost"
+        >
           <Icon name="add" />
         </Button>
       </div>
