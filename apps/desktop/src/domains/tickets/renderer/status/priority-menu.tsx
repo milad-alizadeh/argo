@@ -16,6 +16,7 @@ export type PriorityMenuProps = {
   priority: TicketPriority | null
   named: boolean
   metadata?: boolean
+  writable?: boolean
   onChange: (priority: TicketPriority | null) => void
 }
 
@@ -27,12 +28,29 @@ const namedInset = (named: boolean, metadata: boolean) => {
 const priorityValue = (priority: TicketPriority | null) =>
   priority ? String(priority.level) : 'none'
 
-export function PriorityMenu({ priority, named, metadata = false, onChange }: PriorityMenuProps) {
+// The priority without its choices, for a Ticket whose Account cannot be called.
+function StaticPriority({ priority, named }: Pick<PriorityMenuProps, 'priority' | 'named'>) {
+  return (
+    <span className="flex items-center gap-(--spacing-shell-tight) type-meta text-muted-foreground">
+      <PriorityIcon priority={priority} />
+      {named ? priorityName(priority) : <span className="sr-only">{priorityName(priority)}</span>}
+    </span>
+  )
+}
+
+export function PriorityMenu({
+  priority,
+  named,
+  metadata = false,
+  writable = true,
+  onChange,
+}: PriorityMenuProps) {
   const { t } = useTranslation('tickets')
   const choose = (value: unknown) => {
     const next = PRIORITY_OPTIONS.find((option) => priorityValue(option) === value)
     if (next !== undefined && priorityValue(next) !== priorityValue(priority)) onChange(next)
   }
+  if (!writable) return <StaticPriority named={named} priority={priority} />
   return (
     <DropdownMenu>
       <DropdownMenuTrigger

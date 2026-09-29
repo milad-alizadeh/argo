@@ -53,7 +53,11 @@ export function useTicketList(
 ) {
   const ready = projectId !== null && connection?.state === 'ready'
   const searched = useSearchedTickets(projectId, ready && query !== '', query)
-  const active = useActiveTickets(projectId, ready && query === '')
+  // Saved rows are read from SQLite, so a failed Account still draws them.
+  const active = useActiveTickets(
+    projectId,
+    projectId !== null && connection !== null && query === '',
+  )
   return query === '' ? active : searched
 }
 

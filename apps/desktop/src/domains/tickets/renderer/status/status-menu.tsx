@@ -21,6 +21,8 @@ export type StatusMenuProps = {
   metadata?: boolean
   current?: number
   total?: number
+  // False draws the status without the choices, for a Ticket whose Account cannot be called.
+  writable?: boolean
   onChange: (status: TicketStatus) => void
 }
 
@@ -40,10 +42,11 @@ export function StatusMenu({
   metadata = false,
   current,
   total,
+  writable = true,
   onChange,
 }: StatusMenuProps) {
   const { t } = useTranslation('tickets')
-  if (statuses.length === 0) return <StatusMark named={named} status={status} />
+  if (!writable || statuses.length === 0) return <StatusMark named={named} status={status} />
   const choose = (id: unknown) => {
     const next = statuses.find((candidate) => candidate.id === id)
     if (next && next.id !== status.id) onChange(next)

@@ -153,6 +153,14 @@ export async function proveLinearExpired(run: Run) {
   await openRoom(run.page, 'tickets')
   await test.step('linear-refresh-failure', async () => {
     await room(run).getByText(`The sign-in for ${ADA.name} expired`).waitFor()
+    // The committed rows stay, and nothing on them offers a write until the sign-in returns.
+    assert.deepEqual(await teamKeys(run), ['ENG-1', 'ENG-2'])
+    assert.equal(
+      await backlog(run.page)
+        .getByRole('button', { name: /^Status:/ })
+        .count(),
+      0,
+    )
     await openAccounts(run.page)
     await ada(run).getByText('Sign-in expired', { exact: true }).waitFor()
     await ada(run).getByText('Linear would not renew it', { exact: false }).waitFor()
@@ -167,6 +175,10 @@ export async function proveLinearExpired(run: Run) {
     assert.equal(await signInToLinear(run, start), `Signed in again as ${ADA.name}.`)
     await closeAccounts(run.page)
     assert.deepEqual(await teamKeys(run), ['ENG-1', 'ENG-2'])
+    await backlog(run.page)
+      .getByRole('button', { name: /^Status:/ })
+      .first()
+      .waitFor()
   })
 }
 
