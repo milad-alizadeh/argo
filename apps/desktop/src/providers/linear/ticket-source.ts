@@ -6,7 +6,12 @@ import { updateIssuePriority } from '@/providers/linear/priority'
 import { updateIssueStatus } from '@/providers/linear/statuses'
 import { checkTeam, listTeams } from '@/providers/linear/teams'
 
-type Failure = LinearFailure | 'team-not-visible' | 'ticket-not-found' | 'status-unknown'
+type Failure =
+  | LinearFailure
+  | 'team-not-visible'
+  | 'ticket-not-found'
+  | 'ticket-deleted'
+  | 'status-unknown'
 
 const FAILURES: Record<Failure, SourceFailure> = {
   unauthorized: 'refused',
@@ -15,6 +20,7 @@ const FAILURES: Record<Failure, SourceFailure> = {
   unreachable: 'linear-unreachable',
   'team-not-visible': 'team-not-visible',
   'ticket-not-found': 'ticket-not-found',
+  'ticket-deleted': 'ticket-deleted',
   'status-unknown': 'status-unknown',
 }
 
@@ -54,10 +60,14 @@ export const linearTickets: TicketSource = {
     return read.ok ? read : failed(read.failure)
   },
 
+  // An absent issue is deleted only while the team is still visible to the Account.
   async read({ endpoints, token }, request) {
     if (!endpoints.linear) return UNREACHABLE
     const read = await readTicket(endpoints.linear, token, request)
-    return read.ok ? read : failed(read.failure)
+    if (read.ok) return read
+    if (read.failure !== 'ticket-absent') return failed(read.failure)
+    const check = await checkTeam(endpoints.linear, token, request.scope)
+    return check.ok ? failed('ticket-deleted') : failed(check.failure)
   },
 
   async update({ endpoints, token }, change) {

@@ -152,13 +152,14 @@ test('one issue reads by key or id, closed included, only within the connected t
     assert.equal(read.value.nativeId, 'issue-ENG-3')
     assert.equal(read.value.state, 'closed')
   }
-  for (const request of [
-    { scope: 'team-other', id: 'ENG-3' },
-    { scope: TEAM.id, id: 'ENG-404' },
-  ]) {
-    assert.deepEqual(await readTicket(endpoints, accessToken, request), {
-      ok: false,
-      failure: 'ticket-not-found',
-    })
-  }
+  // Another team's issue is not this team's; no issue at all is only absent until the team is seen.
+  const elsewhere = { scope: 'team-other', id: 'ENG-3' }
+  assert.deepEqual(await readTicket(endpoints, accessToken, elsewhere), {
+    ok: false,
+    failure: 'ticket-not-found',
+  })
+  assert.deepEqual(await readTicket(endpoints, accessToken, { scope: TEAM.id, id: 'ENG-404' }), {
+    ok: false,
+    failure: 'ticket-absent',
+  })
 })

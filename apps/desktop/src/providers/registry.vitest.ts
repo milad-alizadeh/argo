@@ -13,7 +13,7 @@ import type { Cipher } from '@/domains/accounts/main/grants'
 import { createSignIn } from '@/domains/accounts/main/sign-in'
 import { createConnectionPort } from '@/domains/connections/main'
 import { ticketProcedures } from '@/domains/tickets/main/api/ticket-procedures'
-import { ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
+import { ticketByIdReader, ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
 import {
   TICKET_SYNC_TIMING,
   ticketSyncSupervisorMachine,
@@ -41,6 +41,7 @@ function ticketCaller(database: Database, access: AccountAccess, changes: Ticket
     input: {
       database,
       readPage: ticketPageReader({ access, providers: PROVIDER_REGISTRY }),
+      readTicket: ticketByIdReader({ access, providers: PROVIDER_REGISTRY }),
       changed: changes.changed,
       timing: TICKET_SYNC_TIMING,
     },

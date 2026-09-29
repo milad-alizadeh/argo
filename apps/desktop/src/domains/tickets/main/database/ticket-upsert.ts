@@ -35,6 +35,7 @@ function facts(ticket: Ticket) {
     type: ticket.type,
     childrenJson: JSON.stringify(ticket.children),
     blockedByJson: ticket.blockedBy === null ? null : JSON.stringify(ticket.blockedBy),
+    deletedAt: null,
   }
 }
 
@@ -234,4 +235,66 @@ export function saveConfirmedFields(
     .set({ ...set, updatedAt: touched })
     .where(eq(ticketContent.ticketId, ticketId))
     .run()
+}
+
+// What the provider answered when an omitted Ticket was read by its native ID.
+export type OmittedOutcome =
+  | { kind: 'read'; ticket: Ticket }
+  | { kind: 'deleted'; at: number }
+  | { kind: 'elsewhere' }
+
+// The native IDs of Tickets an earlier scan listed that the scan starting at `scanStartedAt` did not.
+export function omittedNativeIds(
+  database: Database,
+  target: TicketScopeTarget,
+  scanStartedAt: number,
+): string[] {
+  return database
+    .select({ nativeId: ticketTable.nativeId })
+    .from(ticketContent)
+    .innerJoin(ticketTable, eq(ticketTable.argoId, ticketContent.ticketId))
+    .where(
+      and(
+        inTicketScope(target),
+        isNotNull(ticketContent.listedAt),
+        lt(ticketContent.listedAt, scanStartedAt),
+      ),
+    )
+    .orderBy(ticketContent.position)
+    .all()
+    .map(({ nativeId }) => nativeId)
+}
+
+// One omitted Ticket settled by the provider's answer; it is never read again, and a deletion keeps the row.
+export function saveOmittedTicket(
+  database: Database,
+  target: TicketScopeTarget & { nativeId: string; readAt: number },
+  outcome: OmittedOutcome,
+): void {
+  database.transaction((transaction) => {
+    const ticketId = savedIdentity(transaction, target, target.nativeId)
+    if (ticketId === undefined) return
+    switch (outcome.kind) {
+      case 'read':
+        saveFacts(transaction, target, outcome.ticket)
+        break
+      case 'deleted':
+        transaction
+          .update(ticketContent)
+          .set({ deletedAt: outcome.at, updatedAt: touched })
+          // A row written since the read keeps its newer facts, as in every other write.
+          .where(
+            and(eq(ticketContent.ticketId, ticketId), lt(ticketContent.updatedAt, target.readAt)),
+          )
+          .run()
+        break
+      case 'elsewhere':
+        break
+    }
+    transaction
+      .update(ticketContent)
+      .set({ listedAt: null, position: null })
+      .where(eq(ticketContent.ticketId, ticketId))
+      .run()
+  })
 }

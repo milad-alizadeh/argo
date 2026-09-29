@@ -84,6 +84,7 @@ test('a Sync commits every page before it notifies, and a Sync during the scan r
   const supervisor = createActor(ticketSyncSupervisorMachine, {
     input: {
       database,
+      readTicket: readNoTicket,
       readPage: (_request, cursor) => {
         reads.push(cursor)
         return gates[reads.length - 1]?.promise ?? Promise.reject(new Error('Too many reads.'))
@@ -135,6 +136,7 @@ test('scans of different scopes run side by side', async () => {
   const supervisor = createActor(ticketSyncSupervisorMachine, {
     input: {
       database,
+      readTicket: readNoTicket,
       readPage: async (request) => {
         scopes.push(request.scope)
         return { ok: true, value: { tickets: [], statuses: [], nextCursor: null, total: null } }
@@ -154,6 +156,11 @@ const EMPTY: PageRead = {
   ok: true,
   value: { tickets: [], statuses: [], nextCursor: null, total: null },
 }
+// A Ticket read that settles nothing, for scans that omit no Ticket.
+const readNoTicket: TicketSyncDependencies['readTicket'] = async () => ({
+  ok: false,
+  failure: 'github-unreachable',
+})
 const settle = (milliseconds: number) => new Promise((done) => setTimeout(done, milliseconds))
 
 // Every read's time, answered by `answers` in order and then by its last entry.
@@ -171,7 +178,7 @@ function watchingSupervisor(
   timing: TicketSyncTiming,
 ) {
   return createActor(ticketSyncSupervisorMachine, {
-    input: { database, readPage, changed: () => {}, timing },
+    input: { database, readPage, readTicket: readNoTicket, changed: () => {}, timing },
   }).start()
 }
 
@@ -291,6 +298,7 @@ function closedSupervisor(reads: Record<string, PageRead>) {
   const supervisor = createActor(ticketSyncSupervisorMachine, {
     input: {
       database,
+      readTicket: readNoTicket,
       readPage: async (request, cursor) => {
         asked.push({ cursor, state: request.state })
         return reads[cursor ?? 'first'] ?? { ok: false, failure: 'github-unreachable' }
@@ -374,6 +382,7 @@ function supervisorReading(readPage: (query: string) => Promise<PageRead>) {
   const supervisor = createActor(ticketSyncSupervisorMachine, {
     input: {
       database,
+      readTicket: readNoTicket,
       readPage: (request) => readPage(request.query),
       timing: TICKET_SYNC_TIMING,
       changed: () => {},
