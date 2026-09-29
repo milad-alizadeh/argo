@@ -270,14 +270,13 @@ export const MixedRunWithLatestCommentary = {
   ),
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement)
-    const disclosure = canvas.getByRole('button', {
-      name: /Checking the result.*Ran 2 commands, edited a file/,
-    })
+    const disclosure = canvas.getByRole('button', { name: 'Ran 2 commands, edited a file' })
     await expect(disclosure).toHaveAttribute('aria-expanded', 'false')
+    await expect(canvas.queryByText('Checking the result')).toBeNull()
     await expect(canvas.queryByRole('button', { name: /Reading the output/ })).toBeNull()
-    await expect(canvas.getByText('Checking the result')).not.toHaveClass('feed-work-shimmer')
     await userEvent.click(disclosure)
     await waitFor(() => expect(canvas.getByText('Reading the output')).toBeVisible())
+    await expect(canvas.getByText('Checking the result')).not.toHaveClass('feed-work-shimmer')
     const first = canvas.getByRole('button', { name: 'Ran first command' })
     const firstCommentary = canvas.getByText('Reading the output')
     const edit = canvas.getByRole('button', { name: 'Edited Composer.tsx +3 −1' })
@@ -294,7 +293,7 @@ export const MixedRunWithLatestCommentary = {
         Node.DOCUMENT_POSITION_FOLLOWING,
       )
     }
-    await expect(canvas.getAllByText('Checking the result')).toHaveLength(1)
+    await expect(canvas.getByText('Checking the result')).toBeVisible()
   },
 }
 
@@ -485,7 +484,7 @@ export const SettledCommandAndEdits = {
   },
 }
 
-// Commentary titles its group as Markdown, and a blank thought never leaves a bare separator.
+// Settled commentary stays in its group, and a blank thought never leaves a bare separator.
 export const CommentaryTitles = {
   render: () => (
     <div className="flex flex-col gap-2">
@@ -520,9 +519,10 @@ export const CommentaryTitles = {
   ),
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement)
-    await expect(
-      canvas.getByRole('button', { name: /^Checking the feed result.*Ran a command$/ }),
-    ).toBeVisible()
+    const group = canvas.getByRole('button', { name: 'Ran a command' })
+    await expect(group).toBeVisible()
+    await expect(canvas.queryByText('Checking')).toBeNull()
+    await userEvent.click(group)
     await expect(canvas.getByText('Checking').tagName).toBe('STRONG')
     await expect(canvas.getByText('feed').tagName).toBe('CODE')
     await expect(canvas.queryByText(/\*\*/)).toBeNull()

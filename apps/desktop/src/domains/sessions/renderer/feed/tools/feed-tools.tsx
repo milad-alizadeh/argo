@@ -5,7 +5,6 @@ import { standsAlone, TOOL_KIND_PRESENTATION } from '@/domains/sessions/api/feed
 import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
 import { TaskItem } from '../../ai-elements/task'
 import type { SessionFeedRow } from '../../types'
-import { FeedInlineMarkdown } from '../content/feed-inline-markdown'
 import { FeedMarkdown } from '../content/feed-markdown'
 import { LiveActivityText } from '../rows/live-activity-text'
 import { type ToolGroupState, useToolGroupOpen } from '../rows/tool-group-state'
@@ -137,10 +136,9 @@ function describesItself(call: ToolCall) {
 
 type ToolGroup = Extract<SessionFeedRow, { shape: 'tool-group' }>
 
-function groupThoughtsByCall(group: ToolGroup, titleThoughtId: string | undefined) {
+function groupThoughtsByCall(group: ToolGroup) {
   const thoughtsByCall = new Map<number, NonNullable<ToolGroup['thoughts']>>()
   for (const thought of group.thoughts ?? []) {
-    if (thought.id === titleThoughtId) continue
     const callIndex = thought.afterCallIndex ?? group.calls.length - 1
     const associated = thoughtsByCall.get(callIndex) ?? []
     associated.push(thought)
@@ -165,26 +163,17 @@ export function FeedToolGroup({
   // The group's headline is the Session's current activity, placed by main's reading.
   const activity = group.headline ?? null
   const live = activity !== null
-  // A thought with no words, blank or a bare `---`, renders empty, so it never titles the group.
-  const latestCommentary = group.thoughts?.findLast((thought) => /[\p{L}\p{N}]/u.test(thought.text))
   // A call that stands alone (`groupedRowIndexes`) names its group. Every other settled group
   // reads as its count: a command that has run is history, and its text is one disclosure away,
   // never a stray line in the Feed.
   const titleCall = soleCall !== undefined && standsAlone(soleCall.kind) ? soleCall : undefined
-  const settledTitle =
-    latestCommentary === undefined ? (
-      (titleCall?.label ?? group.label)
-    ) : (
-      <span className="flex min-w-0 items-baseline gap-2">
-        <span className="truncate">
-          <FeedInlineMarkdown text={latestCommentary.text.trim()} />
-        </span>
-        <span className="shrink-0">· {group.label}</span>
-      </span>
-    )
   // The live title is the activity alone: the count waits for the group to settle.
-  const title = live ? <LiveActivityText activity={activity} running shimmer /> : settledTitle
-  const thoughtsByCall = groupThoughtsByCall(group, live ? undefined : latestCommentary?.id)
+  const title = live ? (
+    <LiveActivityText activity={activity} running shimmer />
+  ) : (
+    (titleCall?.label ?? group.label)
+  )
+  const thoughtsByCall = groupThoughtsByCall(group)
   return (
     <CollapsibleText
       content={() =>
