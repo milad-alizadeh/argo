@@ -179,7 +179,7 @@ export const answerGraphQL: Route = async (state, request, response) => {
   const operation = /(?:query|mutation) (\w+)/.exec(body.query ?? '')?.[1] ?? ''
   const answer = ANSWERS[operation]
   if (!answer) return reply(response, 400, refusal('GRAPHQL_VALIDATION_FAILED'))
-  if (WRITES.has(operation) && !grant.scope.split(' ').includes('write')) {
+  if (WRITES.has(operation) && (state.writesRefused || !grant.scope.split(' ').includes('write'))) {
     return reply(response, 400, refusal('FORBIDDEN'))
   }
   reply(response, 200, { data: answer(state, grant.user, body.variables ?? {}) })

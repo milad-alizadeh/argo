@@ -26,6 +26,11 @@ const input = {
     changed: () => {},
     timing: TICKET_SYNC_TIMING,
   },
+  ticketOperations: {
+    database: {} as Database,
+    writeStatus: async () => ({ ok: false as const, failure: 'github-unreachable' as const }),
+    changed: () => {},
+  },
 }
 const appMachine = createAppMachine(registry, input)
 

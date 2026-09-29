@@ -17,14 +17,6 @@ import { identifierSchema } from '@/shared/validation'
 import { updatePriority } from '../priority-service'
 import type { Call } from '../read-as'
 import {
-  connectSource,
-  disconnectSource,
-  discoverSources,
-  listTickets,
-  readConnection,
-  updateStatus,
-} from '../service'
-import {
   openTicket,
   readDetail,
   ticketDetailOutputSchema,
@@ -44,6 +36,14 @@ import {
   ticketSyncRequestedOutputSchema,
   watchTickets,
 } from '../ticket-index-service'
+import {
+  connectSource,
+  disconnectSource,
+  discoverSources,
+  listTickets,
+  readConnection,
+  updateStatus,
+} from './service'
 
 const t = initTRPC.create()
 const projectInputSchema = z.strictObject({ projectId: identifierSchema })

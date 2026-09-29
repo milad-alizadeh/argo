@@ -1,5 +1,6 @@
-// The optimistic-mutation shape shared by every field a Ticket can be moved to: the row moves at
-// once, a listing not yet reloaded moves too, and a refusal puts every moved row back and says why.
+// The mutation shape shared by every field a Ticket can be moved to. An optimistic field moves the
+// row at once, and a refusal puts every moved row back and says why. A field that waits moves the
+// row only when the reply reports the provider's confirmed value.
 import { type QueryClient, type QueryKey, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { Ticket } from '@/domains/tickets/contract/contract'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
@@ -37,8 +38,10 @@ export function useTicketFieldMutation<
   move,
   request,
   reply,
+  optimistic = true,
 }: {
   move: (client: QueryClient, change: Change) => void
+  optimistic?: boolean
   request: (change: Change) => Promise<Reply | ContractFailure>
   reply: (reply: Reply) => Change
 }) {
@@ -48,6 +51,7 @@ export function useTicketFieldMutation<
   return useMutation<Reply, ContractFailure, Change, Snapshot>({
     mutationFn: (change) => settle(request(change)),
     onMutate: async (change) => {
+      if (!optimistic) return []
       await client.cancelQueries({ queryKey: listKey() })
       const snapshot = client.getQueriesData<TicketPages>({ queryKey: listKey() })
       move(client, change)

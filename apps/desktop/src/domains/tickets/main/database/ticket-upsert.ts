@@ -55,7 +55,11 @@ function savedIdentity(database: Writer, { provider, scope }: TicketScopeTarget,
 }
 
 // A Ticket addressed by its key, which is not its native ID where the key can change.
-function savedIdentityByKey(database: Writer, { provider, scope }: TicketScopeTarget, key: string) {
+export function savedIdentityByKey(
+  database: Writer,
+  { provider, scope }: TicketScopeTarget,
+  key: string,
+) {
   return database
     .select({ argoId: ticketTable.argoId })
     .from(ticketTable)
@@ -217,7 +221,7 @@ export function saveSearchedTickets(
 
 // A field the provider confirmed after a write, saved on the Ticket's existing row.
 export function saveConfirmedFields(
-  database: Database,
+  database: Writer,
   target: TicketScopeTarget & { key: string },
   fields: Partial<Pick<Ticket, 'status' | 'state' | 'priority'>>,
 ): void {

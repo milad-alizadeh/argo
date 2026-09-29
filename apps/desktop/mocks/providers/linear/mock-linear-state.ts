@@ -20,9 +20,24 @@ export type MockLinearState = {
   refresh: Map<string, MockConsent>
   teams: Map<string, MockLinearTeam>
   outage: MockLinearOutage
+  writesRefused: boolean
   lifetime: number
   serial: number
 }
+
+// A Linear with no sign-in answered, no teams and no outage.
+export const initialMockLinearState = (origin: string): MockLinearState => ({
+  origin,
+  signIn: 'declined',
+  codes: new Map(),
+  access: new Map(),
+  refresh: new Map(),
+  teams: new Map(),
+  outage: 'none',
+  writesRefused: false,
+  lifetime: 86_399,
+  serial: 0,
+})
 
 export type Route = (
   state: MockLinearState,
