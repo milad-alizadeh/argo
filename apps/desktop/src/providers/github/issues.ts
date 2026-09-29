@@ -182,7 +182,12 @@ export async function readTicket(
   const base = `${endpoints.api}/repos/${scope}`
   const read = await get(`${base}/issues/${number}`, token)
   if (!read.ok) return read
+  // A pull request, or an issue answered under another number, is not the Ticket asked for.
+  const other = isRecord(read.value) && Object.hasOwn(read.value, 'pull_request')
+  if (other || (isRecord(read.value) && read.value.number !== Number(number))) {
+    return { ok: false, failure: 'ticket-not-found' }
+  }
   const served = issue(read.value, `${endpoints.web}/${scope}/issues`)
-  if (served === null) return { ok: false, failure: 'ticket-not-found' }
+  if (served === null) return failed('unreachable')
   return withEdges({ base, token }, served)
 }

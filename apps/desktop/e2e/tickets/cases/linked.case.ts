@@ -28,7 +28,7 @@ export async function proveGitHubLinkedTicket(run: Run) {
     assert.equal(committedTicketIds(run, GITHUB_SCOPE)['#388'], undefined)
     await openLink(run.page, '#388')
     await detailTitle(detail(run, '#388'), 'Ticket read path').waitFor()
-    await detail(run, '#388').getByText('Closed as completed').waitFor()
+    await detail(run, '#388').getByText('Closed as completed', { exact: true }).waitFor()
     assert.ok(committedTicketIds(run, GITHUB_SCOPE)['#388'])
   })
   await test.step('github-link-by-argo-id', async () => {
@@ -61,7 +61,7 @@ export async function proveLinearLinkedTicket(run: Run) {
     assert.equal(committedTicketIds(run, LINEAR_SCOPE)['issue-ENG-3'], undefined)
     await openLink(run.page, 'ENG-3')
     await detailTitle(detail(run, 'ENG-3'), 'Cast the gears').waitFor()
-    await detail(run, 'ENG-3').getByText('Done').waitFor()
+    await detail(run, 'ENG-3').getByText('Done', { exact: true }).waitFor()
     assert.ok(committedTicketIds(run, LINEAR_SCOPE)['issue-ENG-3'])
   })
   await test.step('linear-link-by-argo-id', async () => {

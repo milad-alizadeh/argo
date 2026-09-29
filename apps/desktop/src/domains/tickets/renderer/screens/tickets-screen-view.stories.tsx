@@ -360,6 +360,34 @@ export const UnlistedTicket: Story = {
   },
 }
 
+// A failed by-ID read sits above the saved Ticket rather than replacing it.
+export const SavedTicketRefreshFailed: Story = {
+  args: {
+    view: {
+      ...ticketsView(),
+      selectedKey: '#388',
+      detail: {
+        ...noDetail,
+        ticket: readPath,
+        problem: {
+          icon: 'connection-offline',
+          title: 'Argo could not refresh this Ticket. This is the last saved.',
+          description: 'Argo cannot reach GitHub.',
+          alert: true,
+          actions: [],
+        },
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(
+      within(canvas.getByRole('alert')).getByText('Argo cannot reach GitHub.'),
+    ).toBeVisible()
+    await expect(canvas.getByRole('article', { name: 'Ticket #388' })).toBeVisible()
+  },
+}
+
 // A Ticket opened by an Argo link waits for its by-ID read before anything is drawn.
 export const OpeningTicket: Story = {
   args: {

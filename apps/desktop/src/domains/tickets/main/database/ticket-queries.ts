@@ -1,5 +1,5 @@
 // The Ticket screen's reads from SQLite alone: active means listed by the latest complete scan or later.
-import { and, asc, count, eq, gte, isNotNull, or } from 'drizzle-orm'
+import { and, asc, count, eq, gte, isNotNull, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { ticketTable } from '@/database/ticket/schema'
@@ -118,6 +118,10 @@ export function readSavedTicket(
           eq(ticketContent.key, reference),
         ),
       ),
+    )
+    // An Argo UUID names one Ticket outright; a native ID outranks a key another row may share.
+    .orderBy(
+      sql`CASE WHEN ${ticketTable.argoId} = ${reference} THEN 0 WHEN ${ticketTable.nativeId} = ${reference} THEN 1 ELSE 2 END`,
     )
     .get()
   const { statuses } = readSync(database, { provider, scope })

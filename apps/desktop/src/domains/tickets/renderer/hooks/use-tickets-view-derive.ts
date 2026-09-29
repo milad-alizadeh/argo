@@ -155,7 +155,11 @@ export function connectedView(
       statuses: detail.statuses,
       reading: detail.reading,
       problem: detail.failure
-        ? failureProblem(t('failure.ticket'), detail.failure, detailRecovery)
+        ? failureProblem(
+            t(detail.ticket ? 'failure.ticketRefresh' : 'failure.ticket'),
+            detail.failure,
+            detailRecovery,
+          )
         : null,
     },
     now,

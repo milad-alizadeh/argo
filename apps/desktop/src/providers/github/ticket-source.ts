@@ -63,9 +63,13 @@ export const githubTickets: TicketSource = {
     return { ok: true, value: { tickets, statuses: [...GITHUB_STATUSES], nextCursor, total } }
   },
 
+  // GitHub answers 404 for a repository out of sight too, so the repository is checked once.
   async read({ endpoints, token }, request) {
     const read = await readTicket(endpoints.github, token, request)
-    return read.ok ? read : { ok: false, failure: READ_FAILURES[read.failure] }
+    if (read.ok) return read
+    if (read.failure !== 'not-found') return { ok: false, failure: READ_FAILURES[read.failure] }
+    const check = await checkRepository(endpoints.github, token, request.scope)
+    return check.ok ? { ok: false, failure: 'ticket-not-found' } : failed(check.failure)
   },
 
   async update({ endpoints, token }, change) {

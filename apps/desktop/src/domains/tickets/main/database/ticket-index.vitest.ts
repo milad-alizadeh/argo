@@ -11,8 +11,8 @@ import {
   failTicketScan,
   markInterruptedTicketScans,
 } from '../sync/ticket-sync-records'
-import { readActiveTickets } from './ticket-queries'
-import { saveConfirmedFields, saveListedTickets } from './ticket-upsert'
+import { readActiveTickets, readSavedTicket } from './ticket-queries'
+import { saveConfirmedFields, saveListedTickets, saveReadTicket } from './ticket-upsert'
 
 const OPEN: TicketStatus = { id: 'open', name: 'Open', category: 'unstarted' }
 const NOT_PLANNED: TicketStatus = {
@@ -217,4 +217,33 @@ test('a scan the app was stopped during reads as idle after restart', () => {
   scan(1000, [[ticket(1)]])
   markInterruptedTicketScans(database)
   assert.equal(active().sync.phase, 'idle')
+})
+
+const saved = (reference: string) => readSavedTicket(database, { ...SCOPE, reference }).saved
+
+test('a Ticket read by ID keeps its identity, stays out of the active list, and outlives it', () => {
+  scan(1000, [[ticket(607)]])
+  const argoId = saveReadTicket(database, { ...SCOPE, readAt: Date.now() }, ticket(388, 'Closed'))
+  assert.equal(saved('#388')?.argoId, argoId)
+  assert.equal(saved(argoId)?.ticket.title, 'Closed')
+  assert.deepEqual(
+    active().tickets.map(({ key }) => key),
+    ['#607'],
+  )
+  scan(2000, [[]])
+  completeTicketScan(database, ACTIVE, { statuses: [OPEN], completedAt: 2001 })
+  assert.equal(active().total, 0)
+  assert.equal(saved('#607')?.ticket.title, 'Ticket 607')
+})
+
+test('a read by ID asked for before a newer write cannot replace it, and a later one can', () => {
+  const asked = Date.now() - 60_000
+  scan(1000, [[ticket(607, 'Written first')]])
+  saveReadTicket(database, { ...SCOPE, readAt: asked }, ticket(607, 'Read before it'))
+  assert.equal(saved('#607')?.ticket.title, 'Written first')
+  saveReadTicket(database, { ...SCOPE, readAt: Number.MAX_SAFE_INTEGER }, ticket(607, 'Read after'))
+  assert.equal(saved('#607')?.ticket.title, 'Read after')
+  // A scan page asked for before that read keeps the read's newer facts.
+  scan(2000, [[ticket(607, 'Stale page')]], asked)
+  assert.equal(saved('#607')?.ticket.title, 'Read after')
 })

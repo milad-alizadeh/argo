@@ -352,6 +352,15 @@ test('a GitHub Ticket outside the active list opens by ID and stays readable fro
     ['#1'],
   )
 
+  const missing = await opened(flow, '#99')
+  assert.ok(missing.reply.type === 'ticket.error')
+  assert.equal(missing.reply.code, 'ticket-not-found')
+  // A repository out of sight also answers 404, and is named as that, not as a missing Ticket.
+  gitHub.addRepository({ fullName: 'octo/hello', visibleTo: [], issues })
+  const hidden = await opened(flow, '#3')
+  assert.ok(hidden.reply.type === 'ticket.error')
+  assert.equal(hidden.reply.code, 'repository-not-visible')
+
   // #1 leaves the active list; its saved row still answers by key and by Argo UUID, GitHub down.
   gitHub.addRepository({
     fullName: 'octo/hello',
@@ -392,6 +401,25 @@ test('a Linear Ticket outside the active list opens by key or Argo UUID', async 
   assert.ok(byArgoId.reply.type === 'ticket.opened')
   assert.equal(byArgoId.reply.argoId, done.reply.argoId)
   assert.equal(byArgoId.detail.ticket?.key, 'ENG-3')
+
+  const byNativeId = await opened(flow, 'issue-ENG-3')
+  assert.ok(byNativeId.reply.type === 'ticket.opened')
+  assert.equal(byNativeId.reply.argoId, done.reply.argoId)
+
+  // ENG-2 moves to Done and leaves the active list; its saved row still answers.
+  const moved = await tickets.ticketUpdateStatus({
+    projectId,
+    key: 'ENG-2',
+    statusId: 'team-engine-done',
+  })
+  assert.equal(moved.type, 'ticket.updated')
+  assert.deepEqual(
+    (await synced(flow)).tickets.map(({ key }) => key),
+    ['ENG-1'],
+  )
+  const retained = await tickets.ticketDetail({ projectId, reference: 'ENG-2' })
+  assert.ok(retained.type === 'ticket.detail')
+  assert.equal(retained.ticket?.status.name, 'Done')
 
   const missing = await opened(flow, 'ENG-404')
   assert.ok(missing.reply.type === 'ticket.error')

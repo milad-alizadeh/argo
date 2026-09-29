@@ -27,6 +27,7 @@
     "connection": "Argo could not read the connected Ticket source.",
     "tickets": "Argo could not read Tickets.",
     "ticket": "Argo could not open this Ticket.",
+    "ticketRefresh": "Argo could not refresh this Ticket. This is the last saved.",
     "refresh": "Argo could not refresh Tickets. These are the last saved."
   },
   "row": {

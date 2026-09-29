@@ -114,8 +114,7 @@ export function saveListedTickets(
   })
 }
 
-// One Ticket read by its ID: its facts replace the saved ones, and its place in the active list,
-// if it has one, is left for the active scan to decide. Answers the Ticket's Argo UUID.
+// One Ticket read by ID, answering its Argo UUID; only the active scan sets its listing.
 export function saveReadTicket(
   database: Database,
   target: TicketScopeTarget & { readAt: number },

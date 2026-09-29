@@ -16,13 +16,14 @@ export type TicketDetailRead = {
   statuses: readonly TicketStatus[]
   // Neither SQLite nor the provider has answered yet.
   reading: boolean
-  // The provider read failed; a saved Ticket is still drawn beside it.
+  // The provider read failed; a saved Ticket is still drawn below it.
   failure: ContractFailure | null
   retry: () => void
 }
 
 type Target = { projectId: string; reference: string }
 type Detail = Extract<RouterOutputs['ticketDetail'], { type: 'ticket.detail' }>
+type Opened = Extract<RouterOutputs['ticketOpen'], { type: 'ticket.opened' }>
 
 export function useTicketDetail(
   projectId: string | null,
@@ -32,15 +33,27 @@ export function useTicketDetail(
   const client = useQueryClient()
   const target: Target | null =
     enabled && projectId !== null && reference !== null ? { projectId, reference } : null
-  const saved = useQuery<Detail, ContractFailure>({
-    queryKey: [...detailKey(), projectId, reference],
-    queryFn: target ? () => settle(trpcClient.ticketDetail.query(target)) : skipToken,
-  })
-  const open = useMutation<unknown, ContractFailure, Target>({
+  const open = useMutation<Opened, ContractFailure, Target>({
     mutationFn: (input) => settle(trpcClient.ticketOpen.mutate(input)),
-    // The reply follows the commit, so this read sees the provider's answer.
-    onSuccess: () => void client.invalidateQueries({ queryKey: detailKey() }),
+    // Awaited, so the read stays pending until the committed row is fetched.
+    onSuccess: () => client.invalidateQueries({ queryKey: detailKey() }),
     onError: (failure, input) => onRefused(client, input.projectId, failure),
+  })
+  // The provider may resolve the reference to a key it no longer matches, so read by Argo UUID.
+  const current = open.variables?.projectId === projectId && open.variables?.reference === reference
+  const readReference = (current ? open.data?.argoId : undefined) ?? reference
+  const saved = useQuery<Detail, ContractFailure>({
+    queryKey: [...detailKey(), projectId, readReference],
+    queryFn:
+      target && readReference !== null
+        ? () =>
+            settle(
+              trpcClient.ticketDetail.query({
+                projectId: target.projectId,
+                reference: readReference,
+              }),
+            )
+        : skipToken,
   })
   const { mutate, reset } = open
   const openProject = target?.projectId ?? null

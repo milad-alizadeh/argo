@@ -3,6 +3,7 @@ import { useLinkedSessions } from '../hooks/use-linked-sessions'
 import type { Backlog } from '../lib/backlog'
 import type { TicketProblemProps } from '../lib/problems'
 import { TicketList } from '../sidebar/ticket-list'
+import { ProblemBanner } from '../status/problem-banner'
 import { TicketProblem } from '../status/ticket-problem'
 import { TicketDetail } from './ticket-detail'
 import { TicketDetailReading } from './ticket-detail-empty'
@@ -38,8 +39,7 @@ export function TicketDeck({
   onSelect,
   onOpenSession,
 }: TicketDeckProps) {
-  // A listed row carries an edit in flight; the saved Ticket covers one the list no longer holds,
-  // and names the key behind an Argo UUID.
+  // A listed row carries an edit in flight; the saved row covers an unlisted Ticket or a UUID link.
   const key = detail.ticket?.key ?? selectedKey
   const selected = backlog.tickets.find((ticket) => ticket.key === key) ?? detail.ticket
   const listed = new Set(backlog.tickets.map((ticket) => ticket.key))
@@ -50,17 +50,22 @@ export function TicketDeck({
   if (selected === null && detail.problem) return <TicketProblem {...detail.problem} />
   if (selected === null && detail.reading) return <TicketDetailReading reference={selectedKey} />
   return (
-    <TicketDetail
-      linkedSessions={linkedSessions}
-      listed={listed}
-      onBack={onBack}
-      onChangePriority={(priority) => selected && backlog.onChangePriority(selected.key, priority)}
-      onChangeStatus={(status) => selected && backlog.onChangeStatus(selected.key, status)}
-      onOpenSession={onOpenSession}
-      onSelect={onSelect}
-      provider={backlog.provider}
-      statuses={backlog.statuses.length > 0 ? backlog.statuses : detail.statuses}
-      ticket={selected}
-    />
+    <div className="flex min-h-0 flex-1 flex-col">
+      {detail.problem ? <ProblemBanner {...detail.problem} /> : null}
+      <TicketDetail
+        linkedSessions={linkedSessions}
+        listed={listed}
+        onBack={onBack}
+        onChangePriority={(priority) =>
+          selected && backlog.onChangePriority(selected.key, priority)
+        }
+        onChangeStatus={(status) => selected && backlog.onChangeStatus(selected.key, status)}
+        onOpenSession={onOpenSession}
+        onSelect={onSelect}
+        provider={backlog.provider}
+        statuses={backlog.statuses.length > 0 ? backlog.statuses : detail.statuses}
+        ticket={selected}
+      />
+    </div>
   )
 }
