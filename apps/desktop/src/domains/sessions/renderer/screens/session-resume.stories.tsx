@@ -27,11 +27,12 @@ function restartedHost(row = resumable) {
     trpcSubscribe: sessionListSubscribe(before.trpcSubscribe, () => [
       resumed ? { ...row, posture: 'live', status: 'running' } : row,
     ]),
-    sendSession: async ({ sessionId }) => {
+    trpc: (async (request) => {
+      if (request.path !== 'sessionSubmit') return before.trpc(request)
       resumed = true
       announceSessionListChange()
-      return { version: 1, type: 'session.accepted', requestId: 'storybook-send', sessionId }
-    },
+      return { id: request.id, result: { data: { sessionId: row.id } } }
+    }) as typeof window.argo.trpc,
   }
   return () => {
     window.argo = before

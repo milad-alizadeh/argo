@@ -50,7 +50,8 @@ function sessionListCaller(
     label TEXT,
     state TEXT NOT NULL,
     PRIMARY KEY (session_id, subagent_id)
-  );`)
+  );
+  CREATE TABLE session_archive (session_id TEXT PRIMARY KEY);`)
   const database = databaseFrom(client)
   const statusListeners = new Set<(event: { sessionId: string }) => void>()
   const supervisor = {

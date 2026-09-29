@@ -1,41 +1,30 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
-import {
-  type SessionContractError,
-  throwSessionContractError,
-  throwUnexpectedSessionReply,
-} from '../../session-contract-error'
+import { useParams } from 'react-router'
+import { sessionError } from '@/domains/sessions/api/session-error'
+import { type RouterOutputs, trpcClient } from '@/platform/renderer/trpc-client'
+import { SessionContractError } from '../../session-contract-error'
 import { sessionArchiveQueryKey } from '../../session-queries'
-import type { SessionArchiveListed, SessionId } from '../../types'
+import type { SessionId } from '../../types'
 
-type ArchivePage = Pick<
-  SessionArchiveListed,
-  'sessions' | 'nextCursor' | 'restored' | 'historyComplete'
->
+type ArchivePage = RouterOutputs['sessionArchiveList']
 
 // Archived Sessions are read on demand, one page per fetch, rather than on every Session list read
 // (#1593). `restoreId` asks the reader to hand back a Session's row even when it falls outside
 // the pages already loaded, so a previously selected archived Session can be shown restored
 // without paging through everything to find it.
 export function useArchivedSessions(enabled: boolean, restoreId: SessionId | null) {
-  const query = useInfiniteQuery<ArchivePage, SessionContractError>({
+  const { projectId = 'unscoped' } = useParams()
+  const query = useInfiniteQuery<ArchivePage>({
     queryKey: sessionArchiveQueryKey(restoreId),
     enabled,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
-    queryFn: async ({ pageParam }) => {
-      const reply = await window.argo.listArchivedSessions({
+    queryFn: ({ pageParam }) =>
+      trpcClient.sessionArchiveList.query({
+        projectId,
         cursor: pageParam as string | null,
         restoreId,
-      })
-      switch (reply.type) {
-        case 'session.archive.listed':
-          return reply
-        case 'session.error':
-          return throwSessionContractError(reply)
-        default:
-          return throwUnexpectedSessionReply(reply)
-      }
-    },
+      }),
   })
 
   const seen = new Set<string>()
@@ -59,6 +48,12 @@ export function useArchivedSessions(enabled: boolean, restoreId: SessionId | nul
     fetchNextPage: () => {
       if (query.hasNextPage && !query.isFetchingNextPage) void query.fetchNextPage()
     },
-    error: enabled ? query.error : null,
+    error:
+      enabled && query.error !== null
+        ? new SessionContractError({
+            ...sessionError('internal-error', null),
+            message: query.error.message,
+          })
+        : null,
   }
 }

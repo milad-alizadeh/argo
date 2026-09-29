@@ -3,7 +3,6 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionTurnConfiguration } from '@/domains/sessions/renderer/model/models'
-import { claudeComposerModelCatalogFixture } from '../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
 import { announceSessionListChange, sessionListSubscribe, sessionRow } from '../session-fixtures'
 import { SessionScreenView } from './session-screen-view'
 
@@ -12,7 +11,11 @@ const OPENING_TURN = '2026-09-13T10:00:00.000Z'
 const NEXT_TURN = '2026-09-13T10:01:00.000Z'
 
 // A live Claude Session whose next Turn runs on whatever `reply` says the Harness used.
-function liveSession(reply: SessionTurnConfiguration, sent: unknown[]) {
+function liveSession(
+  reply: SessionTurnConfiguration,
+  sent: unknown[],
+  trpc: typeof window.argo.trpc,
+) {
   const row = sessionRow({
     id: SESSION_ID,
     posture: 'live',
@@ -24,18 +27,13 @@ function liveSession(reply: SessionTurnConfiguration, sent: unknown[]) {
   })
   return {
     trpcSubscribe: sessionListSubscribe(window.argo.trpcSubscribe, () => [row]),
-    sendSession: (request: { sessionId: string }) => {
-      sent.push(request)
+    trpc: (async (request) => {
+      if (request.path !== 'sessionSubmit') return trpc(request)
+      sent.push(request.input)
       Object.assign(row, { turnStartedAt: NEXT_TURN, turnConfiguration: reply })
       announceSessionListChange()
-      return Promise.resolve({
-        version: 1 as const,
-        type: 'session.accepted' as const,
-        requestId: 'turn-configuration-send',
-        sessionId: request.sessionId,
-      })
-    },
-    readClaudeModelCatalog: () => Promise.resolve(claudeComposerModelCatalogFixture()),
+      return { id: request.id, result: { data: { sessionId: SESSION_ID } } }
+    }) as typeof window.argo.trpc,
   }
 }
 
@@ -47,7 +45,7 @@ function withBridge(reply: SessionTurnConfiguration) {
     beforeEach: () => {
       sent.length = 0
       const previous = window.argo
-      window.argo = { ...previous, ...liveSession(reply, sent) }
+      window.argo = { ...previous, ...liveSession(reply, sent, previous.trpc) }
       return () => {
         window.argo = previous
       }

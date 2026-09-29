@@ -1,21 +1,16 @@
 // The Session contracts under the mock CLIs' seeded jitter, split bytes, stalls and failures.
 import { createSessionByClick } from './gestures'
+import { sessionRows } from './page-trpc'
 import { expect, test } from './session-proof-run'
 
 async function statusFor(page: Parameters<typeof createSessionByClick>[0], sessionId: string) {
-  return page.evaluate(async (id) => {
-    const reply = await window.argo.listSessions({ projectRoot: null })
-    if (reply.type !== 'session.listed') return null
-    return reply.sessions.find((session) => session.id === id)?.status ?? null
-  }, sessionId)
+  const rows = await sessionRows(page)
+  return rows.find((session) => session.id === sessionId)?.status ?? null
 }
 
 async function postureFor(page: Parameters<typeof createSessionByClick>[0], sessionId: string) {
-  return page.evaluate(async (id) => {
-    const reply = await window.argo.listSessions({ projectRoot: null })
-    if (reply.type !== 'session.listed') return null
-    return reply.sessions.find((session) => session.id === id)?.posture ?? null
-  }, sessionId)
+  const rows = await sessionRows(page)
+  return rows.find((session) => session.id === sessionId)?.posture ?? null
 }
 
 test.describe('session-adversarial', () => {

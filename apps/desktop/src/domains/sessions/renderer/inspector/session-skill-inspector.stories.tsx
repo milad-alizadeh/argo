@@ -17,15 +17,17 @@ const SKILL_FILE = [
 
 // A story has no preload, so the one read the inspector makes is answered here.
 function answerSkillReads(content: string | null) {
+  const before = window.argo
   window.argo = {
-    ...window.argo,
-    readSkillFile: (request: { path: string }) =>
-      Promise.resolve({
-        version: 1,
-        type: 'session.skill.read',
-        requestId: 'storybook-skill',
-        content: request.path === SKILL_PATH ? content : null,
-      }),
+    ...before,
+    trpc: (async (request) => {
+      if (request.path !== 'sessionSkillRead') return before.trpc(request)
+      const requested = (request.input as { path: string }).path
+      return {
+        id: request.id,
+        result: { data: { content: requested === SKILL_PATH ? content : null } },
+      }
+    }) as typeof window.argo.trpc,
   }
 }
 

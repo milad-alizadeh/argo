@@ -9,15 +9,14 @@ const SCRIPT_PATH = '/storybook/argo/scripts/measure.ts'
 
 // A story has no preload, so the one read the inspector makes is answered here.
 function answerWorkspaceReads(files: Record<string, string>) {
+  const before = window.argo
   window.argo = {
-    ...window.argo,
-    readWorkspaceFile: (request: { sessionId: string; path: string }) =>
-      Promise.resolve({
-        version: 1,
-        type: 'session.file.read',
-        requestId: 'storybook-file',
-        content: files[request.path] ?? null,
-      }),
+    ...before,
+    trpc: (async (request) => {
+      if (request.path !== 'sessionWorkspaceFileRead') return before.trpc(request)
+      const requested = (request.input as { path: string }).path
+      return { id: request.id, result: { data: { content: files[requested] ?? null } } }
+    }) as typeof window.argo.trpc,
   }
 }
 
