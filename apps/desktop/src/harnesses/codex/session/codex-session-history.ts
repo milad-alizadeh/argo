@@ -168,6 +168,9 @@ function fileChangeContent(file: Extract<ThreadItem, { type: 'fileChange' }>): F
       path: change.path,
       change: change.kind.type,
       diff: change.diff ?? null,
+      ...(change.kind.type === 'update' && typeof change.kind.move_path === 'string'
+        ? { movedTo: change.kind.move_path }
+        : {}),
     })),
   }
 }

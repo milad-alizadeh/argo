@@ -1,8 +1,7 @@
 import { searchLabel, searchOutcome } from '@/domains/sessions/api/feed/tool-changes'
 import type { BackgroundState } from './background-task-record'
 import type { SessionFeedRow } from './feed-rows'
-import { editPresentation, fileName } from './file-presentation'
-import { derivedId } from './fingerprint'
+import { fileName } from './file-presentation'
 import type { AskFacts, ExecuteFacts, ToolCall } from './tool-call'
 import { resultText, type ToolResult as TranscriptToolResult } from './transcript-content'
 
@@ -45,17 +44,11 @@ export function skillTitle(slug: string): string {
 // compact surface never has to rebuild reader-facing words from the Harness's execution type. An
 // unclassified tool reads as something the agent ran, the same verb as a command, under the
 // title the agent gave the call when it gave one.
-// `file` picks which of an edit's files the presentation is for.
-export function toolPresentation(call: ToolCall, file = 0) {
+export function toolPresentation(call: ToolCall) {
   // The agent's own description is already a whole label; the command's first line is the fallback.
   switch (call.kind) {
     case 'execute':
       return { kind: 'command' as const, label: commandLabel(call) }
-    case 'edit': {
-      const edited = call.files[file]
-      if (edited === undefined) throw new Error('An edit Tool Call must name a file')
-      return editPresentation(edited)
-    }
     case 'read':
       return { kind: 'read' as const, label: `Read ${fileName(call.target)}` }
     case 'skill':
@@ -72,17 +65,11 @@ export function toolPresentation(call: ToolCall, file = 0) {
   }
 }
 
-function evidenceOf(
-  call: ToolCall,
-  result: ToolResult | undefined,
-  file: number,
-): ToolRow['evidence'] {
+function evidenceOf(call: ToolCall, result: ToolResult | undefined): ToolRow['evidence'] {
   // A Skill call's own result is a fixed placeholder ("Launching skill: X"); its real content is
   // the skill body, carried through `text` (see `toolText`), not the evidence panel.
   if (call.kind === 'skill') return null
-  const presentation = toolPresentation(call, file)
-  const edited = call.kind === 'edit' ? call.files[file] : undefined
-  if (edited !== undefined) return { kind: 'diff', title: presentation.label, source: edited.diff }
+  const presentation = toolPresentation(call)
   const source = result === undefined ? null : resultText(result.blocks)
   if (source === null) return null
   const kind = call.kind === 'read' ? 'document' : 'output'
@@ -115,7 +102,6 @@ function toolText(call: ToolCall, skillBodies: Map<string, string>): string | nu
     case 'other':
       return call.source === null ? call.text : null
     case 'read':
-    case 'edit':
     case 'ask':
       return null
     case 'subagent-control':
@@ -123,21 +109,21 @@ function toolText(call: ToolCall, skillBodies: Map<string, string>): string | nu
   }
 }
 
-function toolRow(call: ToolCall, { results, skillBodies }: ToolEvidence, file = 0): ToolRow {
+function toolRow(call: ToolCall, { results, skillBodies }: ToolEvidence): ToolRow {
   const result = results.get(call.id)
-  const presentation = toolPresentation(call, file)
+  const presentation = toolPresentation(call)
   const outcome = presentation.kind === 'searched' ? searchOutcome(result) : null
   return {
     shape: 'tool',
-    id: file === 0 ? call.id : derivedId(call.id, `#${file}`),
+    id: call.id,
     ...presentation,
     label: outcome === null ? presentation.label : `${presentation.label} · ${outcome}`,
-    lineCounts: call.kind === 'edit' ? (call.files[file]?.lineCounts ?? null) : null,
+    lineCounts: null,
     status: outcome === null ? toolStatus(result) : 'failed',
     ...(call.kind === 'other' && call.presentation?.agentDescription
       ? { agentDescription: true }
       : {}),
-    evidence: evidenceOf(call, result, file),
+    evidence: evidenceOf(call, result),
     text: toolText(call, skillBodies),
   }
 }
@@ -152,14 +138,11 @@ export function askRow(
   return { shape: 'ask', id, questions: ask.questions, answer, unsupported: ask.unsupported }
 }
 
-// An edit over several files draws one row per file.
 function feedRows(call: ToolCall, evidence: ToolEvidence): SessionFeedRow[] {
   if (call.kind === 'ask') {
     return [askRow(call.id, call, resultText(evidence.results.get(call.id)?.blocks ?? []))]
   }
   if (call.kind === 'subagent-control') return []
-  const files = call.kind === 'edit' ? call.files : []
-  if (files.length > 1) return files.map((_, file) => toolRow(call, evidence, file))
   return [toolRow(call, evidence)]
 }
 
