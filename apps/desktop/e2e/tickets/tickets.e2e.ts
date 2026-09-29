@@ -29,7 +29,7 @@ import {
 } from './cases/linear.case'
 import { proveGitHubLinkedTicket, proveLinearLinkedTicket } from './cases/linked.case'
 import { proveAutomaticRefresh } from './cases/refresh.case'
-import { proveSearchBeyondIndex } from './cases/search.case'
+import { proveSearchBeyondIndex, proveSearchFilters } from './cases/search.case'
 import { test } from './ticket-test'
 
 test('connect a GitHub Account', ({ tickets }) => proveConnect(tickets.run()))
@@ -61,6 +61,8 @@ test.describe('with a GitHub repository', () => {
     proveGitHubLinkedTicket(tickets.run()))
   test('search reaches Tickets beyond the local index', ({ tickets }) =>
     proveSearchBeyondIndex(tickets.run()))
+  test('search filters the list by title, body and key', ({ tickets }) =>
+    proveSearchFilters(tickets.run()))
 })
 
 const PROOF_POLL_MS = 500

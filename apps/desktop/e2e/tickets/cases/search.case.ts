@@ -1,6 +1,6 @@
 // The Ticket proof's search beyond the local index (#2873): saved matches draw before GitHub
-// answers, a Ticket only GitHub holds is committed and drawn, and a failed search keeps the saved
-// matches beside its failure.
+// answers, a Ticket only GitHub holds is committed and drawn, a failed search keeps the saved
+// matches beside its failure, and the words filter the list by title, body and key.
 import assert from 'node:assert/strict'
 import { expect, test } from '@playwright/test'
 import { helloWorld } from '../fixtures/tickets.fixture'
@@ -62,5 +62,44 @@ export async function proveSearchBeyondIndex(run: Run) {
     await alert.getByText('Argo cannot reach GitHub.').waitFor()
     await expect(row(run, 273)).toBeVisible()
     await backlog(run.page).getByText('1 saved match', { exact: true }).waitFor()
+  })
+}
+
+const shownNumbers = async (run: Run) => {
+  const names = await backlog(run.page).getByRole('button', { name: /^#\d+/ }).allTextContents()
+  return names.map((name) => /^#(\d+)/.exec(name)?.[1]).sort()
+}
+
+// The list settles on the numbers, since the tally can still read the previous query's count.
+const shows = (run: Run, numbers: string[]) =>
+  expect.poll(() => shownNumbers(run)).toEqual(numbers)
+
+export async function proveSearchFilters(run: Run) {
+  await row(run, 273).waitFor()
+  await test.step('title-words-narrow-the-list', async () => {
+    await search(run, 'tickets room')
+    await shows(run, ['607', '609'])
+  })
+  await test.step('body-words-match-and-case-does-not-matter', async () => {
+    await search(run, 'BACKLOG in the deck')
+    await shows(run, ['607'])
+  })
+  await test.step('a-key-finds-its-Ticket', async () => {
+    await search(run, '273')
+    await shows(run, ['273'])
+  })
+  await test.step('no-match-says-nothing-was-found', async () => {
+    await search(run, 'no such words anywhere')
+    await backlog(run.page).getByText('No open Tickets match').waitFor()
+    await shows(run, [])
+  })
+  await test.step('wildcards-match-literally', async () => {
+    await search(run, '%')
+    await backlog(run.page).getByText('No open Tickets match').waitFor()
+    await shows(run, [])
+  })
+  await test.step('clearing-the-search-restores-the-backlog', async () => {
+    await clearSearch(run)
+    await shows(run, ['273', '607', '609'])
   })
 }
