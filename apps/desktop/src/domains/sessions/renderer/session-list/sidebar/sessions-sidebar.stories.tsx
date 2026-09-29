@@ -76,10 +76,15 @@ type SessionListHandler = (request: SessionListRead) => Promise<SessionListPage 
 // Every roster read a story's host answered, in order.
 let sessionListReads = fn<SessionListHandler>()
 let resendSessionLists = () => {}
+let sendSessionListRow = (_row: SessionListPage['sessions'][number]) => {}
 
 type Subscribe = typeof window.argo.trpcSubscribe
 
-function sessionListSubscriber(reads: SessionListHandler, rosters: Set<() => void>): Subscribe {
+function sessionListSubscriber(
+  reads: SessionListHandler,
+  rosters: Set<() => void>,
+  rowRosters: Set<(row: SessionListPage['sessions'][number]) => void>,
+): Subscribe {
   return async (request, listener) => {
     const input = request.input as SessionListRead
     const send = async () => {
@@ -103,9 +108,15 @@ function sessionListSubscriber(reads: SessionListHandler, rosters: Set<() => voi
         },
       })
     }
+    const sendRow = (row: SessionListPage['sessions'][number]) =>
+      listener({ id: request.id, type: 'data', result: { data: { type: 'row', row } } })
     rosters.add(send)
+    rowRosters.add(sendRow)
     void send()
-    return () => rosters.delete(send)
+    return () => {
+      rosters.delete(send)
+      rowRosters.delete(sendRow)
+    }
   }
 }
 
@@ -121,6 +132,7 @@ function withSessionListHost(handler: SessionListHandler) {
     listener: Parameters<typeof before.trpcSubscribe>[1]
   }>()
   const rosters = new Set<() => void>()
+  const rowRosters = new Set<(row: SessionListPage['sessions'][number]) => void>()
   let syncStatus = initialSyncStatus
   const publish = (event: SessionSyncEvent) => {
     for (const { id, listener } of listeners)
@@ -135,7 +147,10 @@ function withSessionListHost(handler: SessionListHandler) {
   resendSessionLists = () => {
     for (const send of rosters) send()
   }
-  const subscribeSessionList = sessionListSubscriber(sessionListReads, rosters)
+  sendSessionListRow = (row) => {
+    for (const send of rowRosters) send(row)
+  }
+  const subscribeSessionList = sessionListSubscriber(sessionListReads, rosters, rowRosters)
   window.argo = {
     ...before,
     trpcSubscribe: async (request, listener) => {
@@ -157,6 +172,7 @@ function withSessionListHost(handler: SessionListHandler) {
   return () => {
     publishSessionSyncEvent = () => {}
     resendSessionLists = () => {}
+    sendSessionListRow = () => {}
     window.argo = before
   }
 }
@@ -177,6 +193,10 @@ function withSessionsHost(initialSessions: SessionListPage['sessions']) {
     repoll(next: SessionListPage['sessions']) {
       sessions = next
       resendSessionLists()
+    },
+    updateSession(row: SessionListPage['sessions'][number]) {
+      sessions = sessions.map((session) => (session.id === row.id ? row : session))
+      sendSessionListRow(row)
     },
     restore,
   }
@@ -491,6 +511,87 @@ export const OpenCommandReadsRunning: Story = {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Running bun run quality')).toBeVisible()
     await expect(canvas.getByText('Ran bun run quality')).toBeVisible()
+  },
+}
+
+function concurrentActivityRows(activityBySession: Record<string, string>) {
+  return ['Alpha', 'Beta', 'Gamma'].map((name) => ({
+    ...session,
+    id: name.toLowerCase(),
+    title: { text: `${name} session`, source: 'first-prompt' as const },
+    status: activityBySession[name] === undefined ? ('idle' as const) : ('running' as const),
+    cwd: null,
+    subagents: [],
+    activity:
+      activityBySession[name] === undefined
+        ? null
+        : {
+            label: activityBySession[name],
+            kind: 'command' as const,
+            open: true,
+            tool: 'command',
+            target: null,
+          },
+  }))
+}
+
+export const ConcurrentActivityKeepsRowsStill: Story = {
+  beforeEach: () => {
+    sessionsHost = withSessionsHost(concurrentActivityRows({}))
+    return () => {
+      sessionsHost?.restore()
+      sessionsHost = null
+    }
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const alpha = await canvas.findByRole('button', { name: /Alpha session/ })
+    const beta = canvas.getByRole('button', { name: /Beta session/ })
+    const gamma = canvas.getByRole('button', { name: /Gamma session/ })
+    const buttons = [alpha, beta, gamma]
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    )
+    const originalTop = buttons.map((row) => row.getBoundingClientRect().top)
+    const activities: Record<string, string> = {}
+    const measurements: { session: string; paintMs: number; frameMs: number; tops: number[] }[] = []
+    async function publishActivity(name: string) {
+      activities[name] = `Ran ${name.toLowerCase()} command`
+      const row = concurrentActivityRows(activities).find(
+        (candidate) => candidate.id === name.toLowerCase(),
+      )
+      if (row === undefined) throw new Error(`Missing ${name} Session row`)
+      const started = performance.now()
+      sessionsHost?.updateSession(row)
+      await expect(await canvas.findByText(`Running ${name.toLowerCase()} command`)).toBeVisible()
+      const firstFrame = await new Promise<number>((resolve) => requestAnimationFrame(resolve))
+      const secondFrame = await new Promise<number>((resolve) => requestAnimationFrame(resolve))
+      const tops = buttons.map((button) => button.getBoundingClientRect().top)
+      measurements.push({
+        session: name,
+        paintMs: secondFrame - started,
+        frameMs: secondFrame - firstFrame,
+        tops,
+      })
+      canvasElement.dataset.activityReplay = JSON.stringify(measurements)
+      expect(tops).toEqual(originalTop)
+    }
+
+    await publishActivity('Alpha')
+    expect(beta).not.toHaveTextContent('Running alpha command')
+    expect(gamma).not.toHaveTextContent('Running alpha command')
+    await publishActivity('Beta')
+    await publishActivity('Gamma')
+    expect(alpha).toHaveTextContent('Running alpha command')
+    expect(beta).toHaveTextContent('Running beta command')
+    expect(gamma).toHaveTextContent('Running gamma command')
+    expect(alpha).not.toHaveTextContent('Running beta command')
+    expect(beta).not.toHaveTextContent('Running gamma command')
+    expect(canvas.getByRole('button', { name: /Alpha session/ })).toBe(alpha)
+    expect(canvas.getByRole('button', { name: /Beta session/ })).toBe(beta)
+    expect(canvas.getByRole('button', { name: /Gamma session/ })).toBe(gamma)
+    expect(Math.max(...measurements.map((sample) => sample.paintMs))).toBeLessThan(500)
+    expect(Math.max(...measurements.map((sample) => sample.frameMs))).toBeLessThan(100)
   },
 }
 
