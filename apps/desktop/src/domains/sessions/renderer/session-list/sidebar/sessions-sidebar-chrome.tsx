@@ -1,12 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/platform/renderer/components/icon/icon'
+import { SidebarSearch } from '@/platform/renderer/components/sidebar-search'
 import { Button } from '@/platform/renderer/components/ui/button'
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-  inlineSearchGroupClassName,
-} from '@/platform/renderer/components/ui/input-group'
 import type { SessionListStatus } from '../hooks/use-session-list-filter-store'
 import { SessionListFilterMenu } from '../rows/session-list-filter-menu'
 
@@ -29,19 +24,13 @@ export function SessionsSidebarHeader({
 }) {
   const { t } = useTranslation('sessions')
   return (
-    <header className="flex h-(--size-chrome-bar) shrink-0 items-center px-(--spacing-shell-gutter)">
-      <InputGroup className={inlineSearchGroupClassName}>
-        <InputGroupAddon className="pl-(--spacing-shell-icon)">
-          <Icon name="search" />
-        </InputGroupAddon>
-        <InputGroupInput
-          aria-label={t('searchSessions')}
-          className="type-control"
-          onChange={(event) => onSearch(event.target.value)}
-          placeholder={`${t('searchSessions')}…`}
-          value={search}
-        />
-      </InputGroup>
+    <header className="flex h-(--size-chrome-bar) sidebar-gutter shrink-0 items-center">
+      <SidebarSearch
+        label={t('searchSessions')}
+        onChange={onSearch}
+        placeholder={`${t('searchSessions')}…`}
+        value={search}
+      />
       {/* The filter sits left of the plus, so the plus keeps the right edge every row lines up on. */}
       <div className="ml-(--spacing-shell-tight) flex items-center">
         <SessionListFilterMenu

@@ -1,53 +1,10 @@
 import { useTranslation } from 'react-i18next'
 import { type ConnectionSummary, TICKET_QUERY_LIMIT } from '@/domains/tickets/contract/contract'
 import { Icon } from '@/platform/renderer/components/icon/icon'
+import { SidebarSearch } from '@/platform/renderer/components/sidebar-search'
 import { Button } from '@/platform/renderer/components/ui/button'
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from '@/platform/renderer/components/ui/input-group'
 import { providerPresentation } from '@/providers/presentation-registry'
 import { useTicketSearch } from '../state/use-ticket-search'
-
-// The provider answers the search, so the field only holds the words; the backlog reads the settled query.
-function TicketSearchField() {
-  const { t } = useTranslation('tickets')
-  const { query, setOpen, setQuery } = useTicketSearch()
-  return (
-    <div className="shrink-0 border-b border-border/60 p-(--spacing-shell-item)">
-      <InputGroup>
-        <InputGroupAddon>
-          <Icon name="search" />
-        </InputGroupAddon>
-        <InputGroupInput
-          aria-label={t('sidebarHeader.search')}
-          // The field opens because the person asked to type in it.
-          autoFocus
-          maxLength={TICKET_QUERY_LIMIT}
-          onChange={(event) => setQuery(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') setOpen(false)
-          }}
-          placeholder={t('sidebarHeader.searchPlaceholder')}
-          value={query}
-        />
-        {query === '' ? null : (
-          <InputGroupAddon align="inline-end">
-            <InputGroupButton
-              aria-label={t('sidebarHeader.clearSearch')}
-              onClick={() => setQuery('')}
-              size="icon-xs"
-            >
-              <Icon name="close" />
-            </InputGroupButton>
-          </InputGroupAddon>
-        )}
-      </InputGroup>
-    </div>
-  )
-}
 
 // A new Ticket is written on the provider's own page until Argo can write one (#1850, #1851).
 function NewTicket({ connection }: { connection: ConnectionSummary | null }) {
@@ -74,29 +31,22 @@ function NewTicket({ connection }: { connection: ConnectionSummary | null }) {
   )
 }
 
+// The provider answers the search, so the field only holds the words; the backlog reads the settled query.
 export function TicketsSidebarHeader({ connection }: { connection: ConnectionSummary | null }) {
   const { t } = useTranslation('tickets')
-  const { open, setOpen } = useTicketSearch()
-  const scope = connection?.scope ?? null
+  const { query, setQuery } = useTicketSearch()
   return (
-    <>
-      <header className="flex h-(--size-chrome-bar) shrink-0 items-center border-b border-border/60 px-(--spacing-shell-inset)">
-        <h2 className="type-heading flex-1">{t('sidebarHeader.title')}</h2>
-        <div className="flex items-center gap-(--spacing-shell-tight)">
-          <NewTicket connection={connection} />
-          <Button
-            aria-label={t('sidebarHeader.findTicket')}
-            aria-pressed={open}
-            disabled={scope === null}
-            onClick={() => setOpen(!open)}
-            size="icon-sm"
-            variant="ghost"
-          >
-            <Icon name="search" />
-          </Button>
-        </div>
-      </header>
-      {open && scope !== null ? <TicketSearchField /> : null}
-    </>
+    <header className="flex h-(--size-chrome-bar) sidebar-gutter shrink-0 items-center">
+      <SidebarSearch
+        label={t('sidebarHeader.search')}
+        maxLength={TICKET_QUERY_LIMIT}
+        onChange={setQuery}
+        placeholder={t('sidebarHeader.searchPlaceholder')}
+        value={query}
+      />
+      <div className="ml-(--spacing-shell-tight) flex items-center">
+        <NewTicket connection={connection} />
+      </div>
+    </header>
   )
 }

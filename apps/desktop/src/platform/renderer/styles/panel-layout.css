@@ -15,6 +15,11 @@
   background-color: var(--background);
 }
 
+/* The one horizontal inset of a sidebar's search bar and rows, so nothing shifts between tabs. */
+@utility sidebar-gutter {
+  padding-inline: var(--spacing-shell-gutter);
+}
+
 /* Animate the library's outer flex items, leaving direct resizing immediate. */
 @utility panel-motion {
   & > [data-panel] {
