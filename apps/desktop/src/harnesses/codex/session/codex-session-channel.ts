@@ -16,7 +16,7 @@ import type { ReasoningSummaryTextDeltaNotification } from '../app-server/protoc
 import type { ThreadItem } from '../app-server/protocol-generated/v2/thread-item'
 import type { ThreadReadResponse } from '../app-server/protocol-generated/v2/thread-read-response'
 import { codexCommandContent } from './codex-command-content'
-import { codexContentFromItems, userPromptMessage, userPromptParts } from './codex-session-history'
+import { codexContentFromItems, userPromptContents, userPromptParts } from './codex-session-history'
 import {
   approvalResponse,
   type CodexApproval,
@@ -470,8 +470,8 @@ export class CodexSessionChannel implements LiveSessionChannel {
   }
 
   private userItem(item: Extract<ThreadItem, { type: 'userMessage' }>, turnId: string) {
-    const content = userPromptMessage(item.id, userPromptParts(item.content))
-    if (content !== null) this.emitItemContent(content, item.id, turnId)
+    for (const content of userPromptContents(item.id, userPromptParts(item.content)))
+      this.emitItemContent(content, item.id, turnId)
   }
 
   private itemNotification(params: Record<string, unknown>, phase: 'started' | 'completed') {

@@ -5,10 +5,11 @@ import type { HistoryChange, HistoryTurn, HistoryTurnMarker } from '@/harnesses/
 import { decodeClaudeHistoryContent } from './claude-feed-decoder'
 import { ClaudeFeedProjection } from './claude-feed-projection'
 import { type ClaudeSkillFile, claudeSkillFiles } from './claude-skill-files'
+import { ClaudeSkillDirectoryScan } from './claude-skill-records'
 
 const CLOSING_STOP_REASONS = new Set(['end_turn', 'stop_sequence'])
 
-function object(value: unknown): Record<string, unknown> | null {
+export function jsonObject(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null
@@ -18,7 +19,7 @@ function promptTexts(content: unknown): string[] | null {
   if (typeof content === 'string') return [content]
   if (!Array.isArray(content)) return null
   const texts = content.flatMap((block) => {
-    const text = object(block)
+    const text = jsonObject(block)
     return text?.type === 'text' && typeof text.text === 'string' ? [text.text] : []
   })
   return texts.length > 0 ? texts : null
@@ -32,10 +33,10 @@ export function claudeHistoryTurn(line: string): HistoryTurnMarker | null {
 }
 
 function claudeTurn(line: string): HistoryTurn | null {
-  const record = recordOf(line)
+  const record = historyRecord(line)
   if (record === null) return null
   const { type, subtype, isMeta, isSidechain } = record
-  const message = object(record.message)
+  const message = jsonObject(record.message)
   if (isSidechain === true || isMeta === true) return null
   if (type === 'system') return subtype === 'turn_duration' ? 'closed' : null
   if (type === 'assistant')
@@ -56,9 +57,9 @@ export function claudeHistoryOwner(relativePath: string): string | null {
   return path.basename(relativePath, '.jsonl').replace(/^agent-/, '')
 }
 
-function recordOf(line: string): Record<string, unknown> | null {
+export function historyRecord(line: string): Record<string, unknown> | null {
   try {
-    const record = object(JSON.parse(line))
+    const record = jsonObject(JSON.parse(line))
     return typeof record?.type === 'string' ? record : null
   } catch {
     return null
@@ -112,7 +113,7 @@ function chainStep(
     learnCwd: (record: Record<string, unknown> | null) => void
   },
 ): ChainStep {
-  const value = recordOf(line)
+  const value = historyRecord(line)
   decoder.learnCwd(value)
   if (value === null) {
     decoder.reject()
@@ -126,7 +127,7 @@ function chainStep(
 function leafOf(lines: readonly string[]): string | null {
   let leaf: string | null = null
   for (const line of lines) {
-    const record = recordOf(line)
+    const record = historyRecord(line)
     if (record !== null) leaf = chainLink(leaf, record)?.leaf ?? leaf
   }
   return leaf
@@ -146,14 +147,19 @@ export function openClaudeHistoryReader(
     if (skillFile === null && typeof record?.cwd === 'string')
       skillFile = claudeSkillFiles(record.cwd)
   }
+  // The folders the transcript records, read from the same lines; a row prefers them to disk.
+  const skills = new ClaudeSkillDirectoryScan()
+  skills.read(existing)
   // Decodes as a full read does; the lines already read teach it the calls a new result answers.
-  const projection = new ClaudeFeedProjection(resolveSkill)
+  const projection = new ClaudeFeedProjection(resolveSkill, () => skills.directories)
   for (const line of existing) {
-    const record = recordOf(line)
+    const record = historyRecord(line)
     learnCwd(record)
     if (record !== null) contentEvents(record, () => {}, projection)
   }
   return (lines) => {
+    // Scanned first, so an invocation and the folder recorded after it land in one batch.
+    skills.read(lines)
     let rejected = 0
     const reject = () => {
       rejected += 1

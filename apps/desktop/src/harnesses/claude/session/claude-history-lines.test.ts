@@ -11,6 +11,7 @@ import {
 } from './claude-history-lines'
 import { decodeClaudeSessionMessages } from './claude-session-history'
 import { claudeSkillFiles } from './claude-skill-files'
+import { readClaudeSkillDirectories } from './claude-skill-records'
 
 const FIXTURES = new URL('../../../../mocks/cli/claude/fixtures/sessions/', import.meta.url)
 
@@ -45,6 +46,7 @@ test.each(['toolCalls', 'harnessNoise', 'askPending', 'recordedEdit'])(
       const full = decodeClaudeSessionMessages(
         await getSessionMessages('00000000-0000-4000-8000-000000000009', { dir: cwd }),
         claudeSkillFiles(cwd),
+        () => readClaudeSkillDirectories('00000000-0000-4000-8000-000000000009'),
       )
 
       const streamed = openClaudeHistoryReader()(lines)
@@ -195,24 +197,52 @@ test('an edit result read after its call settles the edit rather than drawing a 
   )
 })
 
-test('resolves a streamed skill against the folder its records name', async () => {
+// The transcript records the folder the skill was read from; the row prefers it to a disk lookup.
+const RECORDED_SKILL_FOLDER = '/Users/x/argo/.claude/skills/implement'
+
+// The harnessNoise transcript streamed under a temporary cwd that holds the skill on disk, with
+// the folder the records name rewritten or left as recorded.
+async function streamedSkillRow(recordedFolder: (folder: string) => string) {
   const cwd = await realpath(await mkdtemp(path.join(os.tmpdir(), 'argo-claude-skill-')))
   try {
-    const skill = path.join(cwd, '.claude', 'skills', 'implement', 'SKILL.md')
-    await mkdir(path.dirname(skill), { recursive: true })
-    await writeFile(skill, '')
+    const folder = path.join(cwd, '.claude', 'skills', 'implement')
+    await mkdir(folder, { recursive: true })
+    await writeFile(path.join(folder, 'SKILL.md'), '')
     const lines = recorded('harnessNoise').map((line) =>
-      JSON.stringify({ ...JSON.parse(line), cwd }),
+      JSON.stringify({
+        ...JSON.parse(line.replaceAll(RECORDED_SKILL_FOLDER, recordedFolder(folder))),
+        cwd,
+      }),
     )
     const streamed = openClaudeHistoryReader()(lines)
     if (streamed.type !== 'appended') throw new Error('The transcript did not stream.')
-    const contents = streamed.events.map((event) =>
-      event.type === 'content' ? event.content : null,
-    )
-    expect(contents).toContainEqual(
-      expect.objectContaining({ kind: 'reference', label: 'implement', target: skill }),
-    )
+    return streamed.events.map((event) => (event.type === 'content' ? event.content : null))
   } finally {
     await rm(cwd, { recursive: true, force: true })
   }
+}
+
+test('resolves a streamed skill against the folder its records name', async () => {
+  let recordedFolder = ''
+  const contents = await streamedSkillRow((folder) => {
+    recordedFolder = folder
+    return folder
+  })
+
+  expect(contents).toContainEqual(
+    expect.objectContaining({
+      kind: 'reference',
+      label: 'implement',
+      target: path.join(recordedFolder, 'SKILL.md'),
+    }),
+  )
+})
+
+// A skill deleted since the Session ran keeps its row and offers no expansion (#2861 C).
+test('keeps a streamed skill row when the folder its records name is gone', async () => {
+  const contents = await streamedSkillRow(() => RECORDED_SKILL_FOLDER)
+
+  expect(contents).toContainEqual(
+    expect.objectContaining({ kind: 'reference', label: 'implement', target: null }),
+  )
 })

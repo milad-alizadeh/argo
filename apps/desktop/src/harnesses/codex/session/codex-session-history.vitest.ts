@@ -230,6 +230,44 @@ test('folds a Codex image into the prompt row and keeps a raw attachment path ou
   ])
 })
 
+test('draws a Codex skill use as a skill row and keeps its link out of the prompt', async () => {
+  const request = (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
+    parse({
+      thread: {
+        turns: [
+          {
+            items: [
+              {
+                id: 'user-skill',
+                type: 'userMessage',
+                clientId: null,
+                content: [
+                  {
+                    type: 'text',
+                    text: 'Use [$review](/repo/.agents/skills/review/SKILL.md) on this branch',
+                    text_elements: [],
+                  },
+                  { type: 'skill', name: 'review', path: '/repo/.agents/skills/review/SKILL.md' },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    })) as CodexRequest
+  await expect(readCodexSessionHistory(request, 'thread')).resolves.toEqual([
+    {
+      kind: 'reference',
+      id: 'user-skill:skill:0',
+      referenceType: 'skill',
+      label: 'review',
+      target: '/repo/.agents/skills/review/SKILL.md',
+      text: null,
+    },
+    { kind: 'message', id: 'user-skill', role: 'user', text: 'Use on this branch' },
+  ])
+})
+
 test('shows a Codex image-only prompt with no text', async () => {
   const request = (async (_method: string, _params: unknown, parse: (value: unknown) => unknown) =>
     parse({

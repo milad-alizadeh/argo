@@ -50,6 +50,10 @@ type SessionSyncEvent =
       harness: Harness
     }
   | {
+      type: 'SyncStored'
+      harness: Harness
+    }
+  | {
       type: 'SyncCompleted'
       harness: Harness
     }
@@ -96,9 +100,9 @@ const sessionSyncActor = fromCallback<
         database,
         harness,
         readHistory,
-        committed: () =>
+        stored: () =>
           sendBack({
-            type: 'SyncCommitted',
+            type: 'SyncStored',
             harness,
           }),
         stopped: () => stopped,
@@ -173,6 +177,10 @@ const sessionSyncStatusActor = fromCallback<
   | {
       type: 'Committed'
       harness: Harness
+    }
+  | {
+      type: 'Stored'
+      harness: Harness
     },
   Partial<Record<Harness, SessionSyncStatusStore>>
 >(({ input, receive }) => {
@@ -183,6 +191,9 @@ const sessionSyncStatusActor = fromCallback<
         break
       case 'Committed':
         input[event.harness]?.committed()
+        break
+      case 'Stored':
+        input[event.harness]?.stored()
         break
     }
   })
@@ -300,6 +311,13 @@ export const sessionSyncSupervisorMachine = setup({
         harness: event.harness,
       }
     }),
+    reportStored: sendTo('status', ({ event }) => {
+      assertEvent(event, 'SyncStored')
+      return {
+        type: 'Stored',
+        harness: event.harness,
+      }
+    }),
   },
 }).createMachine({
   id: 'sessionSyncSupervisor',
@@ -332,6 +350,9 @@ export const sessionSyncSupervisorMachine = setup({
         },
         SyncCommitted: {
           actions: 'reportCommit',
+        },
+        SyncStored: {
+          actions: 'reportStored',
         },
         SyncCompleted: {
           actions: 'releaseSync',

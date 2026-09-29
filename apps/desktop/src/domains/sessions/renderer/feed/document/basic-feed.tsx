@@ -14,7 +14,6 @@ import {
 } from '@/platform/renderer/components/ui/empty'
 import type { SessionPosture } from '../../model/models'
 import type { SessionError, SessionEvidence, SessionFeed, SessionId } from '../../types'
-import { sessionPostureLocksAnswer } from '../../types'
 import { FeedLoading } from '../feed-loading'
 import { FEED_STALL_TIMEOUT_MS, useStallTimer } from '../feed-stall'
 import { isFeedRowStreaming } from '../rows/feed-row-renderers'
@@ -141,7 +140,6 @@ export function BasicFeed({
           key={document.sessionId}
           reading={document}
           running={running}
-          posture={posture}
           stalled={stalled}
           activeEvidenceId={activeEvidenceId}
           initialMeasurementsCache={initialMeasurementsCache(document.sessionId)}
@@ -175,7 +173,6 @@ export function BasicFeed({
 type FeedDocumentProps = {
   reading: SessionFeed
   running: boolean
-  posture: SessionPosture | null
   stalled: boolean
   activeEvidenceId: string | null
   initialMeasurementsCache: VirtualItem[]
@@ -204,7 +201,6 @@ function EmptyFeed({ title, description }: { title: string; description: string 
 function FeedDocument({
   reading,
   running,
-  posture,
   stalled,
   activeEvidenceId,
   initialMeasurementsCache,
@@ -230,7 +226,8 @@ function FeedDocument({
     onAnswerQuestion,
     answeringQuestionId,
     questionFailure,
-    questionLocked: sessionPostureLocksAnswer(posture),
+    // Standing, not posture, is what refuses an answer; it lands with the lease (#2861 E2).
+    questionLocked: false,
   })
   const { column, settled } = useSettledFeed({
     sessionId: reading.sessionId,

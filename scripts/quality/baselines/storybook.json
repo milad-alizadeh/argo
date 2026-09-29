@@ -33,24 +33,6 @@
       "identity": {
         "project": "storybook",
         "path": "apps/desktop/src/domains/sessions/renderer/screens/session-resume.stories.tsx",
-        "story": "Locked While Live Elsewhere"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-resume.stories.tsx",
-        "story": "Refused Send"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-resume.stories.tsx",
         "story": "Resumes On Send"
       },
       "owner": "#2587",

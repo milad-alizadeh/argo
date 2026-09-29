@@ -1,6 +1,14 @@
 import path from 'node:path'
 
-export type StoredItem = { id: string; type: string; text: string }
+// A Subagent activity carries no text; it names the thread it opened and the agent it ran.
+export type StoredItem = {
+  id: string
+  type: string
+  text: string
+  kind?: string
+  agentThreadId?: string
+  agentPath?: string
+}
 export type StoredTurn = { id: string; status: string; startedAt: number; items: StoredItem[] }
 export type StoredThread = {
   id: string

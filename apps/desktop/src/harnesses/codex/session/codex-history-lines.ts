@@ -1,6 +1,8 @@
 import path from 'node:path'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type { HistoryChange, HistoryTurn, HistoryTurnMarker } from '@/harnesses/registration'
+import type { SubAgentActivityKind } from '../app-server/protocol-generated/v2/sub-agent-activity-kind'
+import { codexSubagentContent } from './codex-subagent-content'
 
 const turnOfEvent = new Map<unknown, HistoryTurn>([
   ['task_started', 'open'],
@@ -83,6 +85,53 @@ function messageEvents(payload: unknown): SessionLiveEventBody[] {
   ]
 }
 
+// A rollout names a Subagent activity in snake case. It draws the same content `thread/read`
+// draws, so a live count and a reload from history agree.
+const SUBAGENT_KINDS: Record<SubAgentActivityKind, true> = {
+  started: true,
+  interacted: true,
+  interrupted: true,
+  completed: true,
+}
+
+function subagentEvents(payload: unknown, reject: () => void): SessionLiveEventBody[] {
+  const record = object(payload)
+  if (record?.type !== 'item_completed') return []
+  const item = object(record.item)
+  if (item?.type !== 'SubAgentActivity') return []
+  const { id, kind, agent_thread_id: agentThreadId, agent_path: agentPath } = item
+  if (
+    typeof id !== 'string' ||
+    typeof agentThreadId !== 'string' ||
+    typeof agentPath !== 'string'
+  ) {
+    reject()
+    return []
+  }
+  if (typeof kind !== 'string' || !Object.hasOwn(SUBAGENT_KINDS, kind)) {
+    reject()
+    return []
+  }
+  return [
+    {
+      type: 'content',
+      commandId: null,
+      turnId: typeof record.turn_id === 'string' ? record.turn_id : null,
+      vendorEventId: id,
+      content: codexSubagentContent(
+        {
+          type: 'subAgentActivity',
+          id,
+          kind: kind as SubAgentActivityKind,
+          agentThreadId,
+          agentPath,
+        },
+        undefined,
+      ),
+    },
+  ]
+}
+
 // A command or an edit differs between a rollout and `thread/read`, so the Feed reads it whole.
 const READ_WHOLE = new Set(['CommandExecution', 'FileChange'])
 
@@ -96,13 +145,17 @@ function completesWork(line: string): boolean {
 export function openCodexHistoryReader(): (lines: readonly string[]) => HistoryChange {
   return (lines) => {
     let rejected = 0
+    const reject = () => {
+      rejected += 1
+    }
     const events = lines.flatMap((line) => {
       const record = recordOf(line)
       if (record === null || typeof record.type !== 'string') {
-        rejected += 1
+        reject()
         return []
       }
-      return record.type === 'event_msg' ? messageEvents(record.payload) : []
+      if (record.type !== 'event_msg') return []
+      return [...messageEvents(record.payload), ...subagentEvents(record.payload, reject)]
     })
     if (rejected > 0) console.warn(`Rejected ${rejected} unsupported Codex rollout line(s).`)
     return lines.some(completesWork) ? { type: 'rewritten' } : { type: 'appended', events }
