@@ -1,12 +1,13 @@
 // Every reason the Tickets screen cannot show a backlog, resolved into what the one problem state
 // draws: an icon, a title, a sentence and the actions that can clear it.
 import type { Provider } from '@/domains/accounts/contract/contract'
-import type { ConnectionSummary, TicketErrorCode } from '@/domains/tickets/api/messages'
+import type { TicketErrorCode } from '@/domains/tickets/api/errors'
 import type { IconName } from '@/platform/renderer/components/icon/icon'
 import { contractText } from '@/platform/renderer/i18n/contract-text'
 import { i18n } from '@/platform/renderer/i18n/i18n'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 import { providerPresentation } from '@/providers/presentation-registry'
+import type { ConnectionSummary } from '../hooks/ticket-reply'
 
 export type ProblemAction = { label: string; onClick: () => void; primary: boolean }
 

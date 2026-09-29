@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 
-import { ticketError } from '@/domains/tickets/api/messages'
+import { ticketError } from '@/domains/tickets/api/errors'
 import { ada, octocat } from '../detail/ticket-fixtures'
 import { ConnectSourceForm, type ConnectSourceFormProps } from './connect-source-form'
 

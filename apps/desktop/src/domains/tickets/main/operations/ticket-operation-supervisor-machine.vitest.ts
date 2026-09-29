@@ -8,7 +8,7 @@ import { createActor } from 'xstate'
 import { type Database, openDatabase } from '@/database/database'
 import { ticketContent } from '@/database/ticket-content/schema'
 import { ticketWriteIntent } from '@/database/ticket-write-intent/schema'
-import type { Ticket, TicketPriority, TicketStatus } from '@/domains/tickets/api/messages'
+import type { Ticket, TicketPriority, TicketStatus } from '@/domains/tickets/api/ticket'
 import { saveListedTickets } from '../database/ticket-upsert'
 import type { TicketOperationDependencies, TicketWrite } from './ticket-operation-machine'
 import {

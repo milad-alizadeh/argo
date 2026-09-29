@@ -2,12 +2,11 @@
 import { fn } from 'storybook/test'
 
 import type { AccountSummary, Provider } from '@/domains/accounts/contract/contract'
-import type {
-  ConnectionState,
-  ConnectionSummary,
-  Ticket,
-  TicketPriority,
-} from '@/domains/tickets/api/messages'
+import type { Ticket, TicketPriority } from '@/domains/tickets/api/ticket'
+import type { ConnectionSummary } from '../hooks/ticket-reply'
+
+type ConnectionState = ConnectionSummary['state']
+
 import type { TicketsView } from '../hooks/use-tickets-view'
 import type { Backlog } from '../lib/backlog'
 import { STATUSES } from '../status/status-fixtures'

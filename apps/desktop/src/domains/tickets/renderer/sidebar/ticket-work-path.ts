@@ -1,4 +1,4 @@
-import type { Ticket } from '@/domains/tickets/api/messages'
+import type { Ticket } from '@/domains/tickets/api/ticket'
 import { openBlockers } from '../lib/backlog'
 
 export type WorkPathTicket = Pick<Ticket, 'key' | 'title'>

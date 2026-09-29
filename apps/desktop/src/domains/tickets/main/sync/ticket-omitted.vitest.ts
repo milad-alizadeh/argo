@@ -4,7 +4,8 @@ import os from 'node:os'
 import path from 'node:path'
 import { afterEach, beforeEach, test } from 'vitest'
 import { type Database, openDatabase } from '@/database/database'
-import type { Ticket, TicketErrorCode, TicketStatus } from '@/domains/tickets/api/messages'
+import type { TicketErrorCode } from '@/domains/tickets/api/errors'
+import type { Ticket, TicketStatus } from '@/domains/tickets/api/ticket'
 import {
   readActiveTickets,
   readClosedTickets,

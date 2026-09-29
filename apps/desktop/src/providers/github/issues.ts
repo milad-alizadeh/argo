@@ -1,9 +1,9 @@
 // The Ticket port filled by GitHub Issues: one Connection's open Tickets with their hierarchy and
 // dependencies (CONTEXT.md L1 · Ticket). Parsed here, at the edge, and nowhere else.
 
-import { TICKET_PAGE_SIZE } from '@/domains/tickets/api/messages'
 import {
   labelColor,
+  TICKET_PAGE_SIZE,
   type Ticket,
   type TicketLabel,
   type TicketLink,

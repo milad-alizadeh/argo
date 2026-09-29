@@ -1,7 +1,7 @@
 // A provider label in its own colour: the colour tints an opaque surface and leans the text toward
 // it from the foreground, so overlapping labels never blend into a third colour.
 import type { CSSProperties } from 'react'
-import type { TicketLabel as Label } from '@/domains/tickets/api/messages'
+import type { TicketLabel as Label } from '@/domains/tickets/api/ticket'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 
 const TINTED =

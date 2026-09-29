@@ -1,7 +1,7 @@
 import { integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import { timestampColumns } from '@/database/timestamp-columns'
 import { PROVIDERS } from '@/domains/accounts/contract/contract'
-import { TICKET_ERRORS, type TicketErrorCode } from '@/domains/tickets/api/messages'
+import { TICKET_ERRORS, type TicketErrorCode } from '@/domains/tickets/api/errors'
 
 export const TICKET_SEARCH_PHASES = ['syncing', 'ready', 'failed'] as const
 const TICKET_ERROR_CODES = Object.keys(TICKET_ERRORS) as [TicketErrorCode, ...TicketErrorCode[]]

@@ -7,14 +7,14 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
+import { type ContractFailure, QUERY_KEYS } from '@/platform/renderer/lib/query-client'
+import { trpc, trpcClient } from '@/platform/renderer/trpc-client'
 import type {
   ConnectionSummary,
   TicketConnectedReply,
   TicketDiscoverReply,
   TicketScope,
-} from '@/domains/tickets/api/messages'
-import { type ContractFailure, QUERY_KEYS } from '@/platform/renderer/lib/query-client'
-import { trpc, trpcClient } from '@/platform/renderer/trpc-client'
+} from './ticket-reply'
 import { type TicketIndexed, type TicketSearched, ticketReply } from './ticket-reply'
 import { useActiveTickets } from './use-active-tickets'
 import { useSearchedTickets } from './use-searched-tickets'

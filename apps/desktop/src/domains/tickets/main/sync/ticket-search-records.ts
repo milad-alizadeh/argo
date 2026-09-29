@@ -4,7 +4,7 @@ import type { Database } from '@/database/database'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
 import { ticketSearch } from '@/database/ticket-search/schema'
 import { nextUpdatedAt } from '@/database/timestamp-columns'
-import type { TicketErrorCode } from '@/domains/tickets/api/messages'
+import type { TicketErrorCode } from '@/domains/tickets/api/errors'
 
 export type TicketSearchTarget = TicketScopeTarget & { query: string }
 

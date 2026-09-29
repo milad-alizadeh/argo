@@ -5,7 +5,8 @@ import type { TicketScopeTarget } from '@/database/ticket/validation'
 import { type TICKET_SYNC_KINDS, ticketSync } from '@/database/ticket-sync/schema'
 import { ticketSyncSelectSchema } from '@/database/ticket-sync/validation'
 import { nextUpdatedAt } from '@/database/timestamp-columns'
-import type { TicketErrorCode, TicketStatus } from '@/domains/tickets/api/messages'
+import type { TicketErrorCode } from '@/domains/tickets/api/errors'
+import type { TicketStatus } from '@/domains/tickets/api/ticket'
 
 export type TicketSyncTarget = TicketScopeTarget & { kind: (typeof TICKET_SYNC_KINDS)[number] }
 

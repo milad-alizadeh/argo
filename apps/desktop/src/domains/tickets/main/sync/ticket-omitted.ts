@@ -2,7 +2,8 @@
 // its native ID: it moved state, left the scope, or the provider confirms it deleted.
 import type { Database } from '@/database/database'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
-import type { Ticket, TicketErrorCode } from '@/domains/tickets/api/messages'
+import type { TicketErrorCode } from '@/domains/tickets/api/errors'
+import type { Ticket } from '@/domains/tickets/api/ticket'
 import { type OmittedOutcome, omittedNativeIds, saveOmittedTicket } from '../database/ticket-upsert'
 
 export type TicketRead =

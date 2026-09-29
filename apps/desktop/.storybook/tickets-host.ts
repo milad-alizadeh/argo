@@ -1,5 +1,5 @@
 import { type AccountListReply, PROVIDERS } from '../src/domains/accounts/contract/contract'
-import type { TicketConnectedReply } from '../src/domains/tickets/api/messages'
+import type { TicketConnectedReply } from '../src/domains/tickets/renderer/hooks/ticket-reply'
 
 type StorybookTicketsHost = {
   accountList: () => Promise<AccountListReply>

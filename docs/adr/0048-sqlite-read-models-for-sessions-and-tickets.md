@@ -218,10 +218,10 @@ Session repository, or second normalized-record parser is needed. Old contract f
 their owning slices replace them. The Electron transport keeps trusted-frame authorization.
 Procedures carry product commands and projections, never raw XState events or actor snapshots.
 
-Ticket API handlers follow the same placement rule. Procedure input and output schemas live beside
-`domains/tickets/main/api/ticket-procedures.ts`. Runtime-neutral Ticket values and message schemas
-shared by providers, SQLite queries, and the renderer live in `domains/tickets/api/`. Renderer
-types come from the tRPC router. The direct provider-backed `ticketList` procedure is retired;
+Ticket API handlers follow the same placement rule. Procedure input and output schemas live in
+`domains/tickets/main/api/ticket-procedures.ts`. Runtime-neutral Ticket values shared by
+providers, SQLite queries, and the renderer live in `domains/tickets/api/`. Callers infer their
+types from the router. The direct provider-backed `ticketList` procedure is retired;
 Ticket list views read committed SQLite rows, while sync and search machines own provider reads.
 One app-scoped live Session supervisor actor receives those commands. It spawns one live Session
 actor per live conversation, correlates command IDs with results, and owns shutdown. Each actor

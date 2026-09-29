@@ -5,12 +5,7 @@ import type { TFunction } from 'i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
 import type { AccountListing } from '@/domains/accounts/renderer'
 import type { ProjectSummary } from '@/domains/projects/renderer'
-import type {
-  ConnectionSummary,
-  TicketError,
-  TicketPriority,
-  TicketStatus,
-} from '@/domains/tickets/api/messages'
+import type { TicketPriority, TicketStatus } from '@/domains/tickets/api/ticket'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 import { providerPresentation } from '@/providers/presentation-registry'
 import type { ConnectSourceFormProps } from '../connection/connect-source-form'
@@ -23,6 +18,7 @@ import {
   type TicketProblemProps,
 } from '../lib/problems'
 import { listedBacklog, type TicketListing } from './listed-backlog'
+import type { ConnectionSummary, TicketError } from './ticket-reply'
 import { savedRead } from './use-active-tickets'
 import type { ConnectForm } from './use-connect-form'
 import type { TicketDetailRead } from './use-ticket-detail'

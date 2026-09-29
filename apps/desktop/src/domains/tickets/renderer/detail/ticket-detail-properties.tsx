@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Provider } from '@/domains/accounts/contract/contract'
-import type { Ticket, TicketPriority, TicketStatus } from '@/domains/tickets/api/messages'
+import type { Ticket, TicketPriority, TicketStatus } from '@/domains/tickets/api/ticket'
 import { SectionTitle } from '@/platform/renderer/components/section-title'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { providerPresentation } from '@/providers/presentation-registry'

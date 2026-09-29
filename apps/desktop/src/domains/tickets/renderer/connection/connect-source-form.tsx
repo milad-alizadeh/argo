@@ -1,7 +1,6 @@
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { AccountSummary } from '@/domains/accounts/contract/contract'
-import type { TicketScope } from '@/domains/tickets/api/messages'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {
@@ -30,6 +29,7 @@ import {
 import { contractText } from '@/platform/renderer/i18n/contract-text'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 import { providerPresentation } from '@/providers/presentation-registry'
+import type { TicketScope } from '../hooks/ticket-reply'
 import { offered, type SourceDiscovery, SourceField } from './source-field'
 
 export type ConnectTarget = { accountId: string; scope: string }

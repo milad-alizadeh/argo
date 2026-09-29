@@ -55,6 +55,17 @@ export const ticket = z.strictObject({
   blockedBy: z.array(ticketLink).nullable(),
 })
 
+export type TicketScope = { scope: string; label: string }
+export const TICKET_PAGE_SIZE = 25
+export const TICKET_QUERY_LIMIT = 200
+export const CONNECTION_STATES = [
+  'ready',
+  'account-missing',
+  'account-expired',
+  'account-revoked',
+  'account-unreadable',
+] as const
+
 // A Ticket whose status falls in one of these categories is closed, on every provider.
 const CLOSED_CATEGORIES: ReadonlySet<TicketStatus['category']> = new Set(['completed', 'canceled'])
 export const closureOf = (category: TicketStatus['category']): TicketState =>

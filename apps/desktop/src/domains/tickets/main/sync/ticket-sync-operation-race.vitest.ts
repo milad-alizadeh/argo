@@ -6,7 +6,7 @@ import path from 'node:path'
 import { onTestFinished, test } from 'vitest'
 import { createActor, toPromise } from 'xstate'
 import { openDatabase } from '@/database/database'
-import type { Ticket, TicketPriority, TicketStatus } from '@/domains/tickets/api/messages'
+import type { Ticket, TicketPriority, TicketStatus } from '@/domains/tickets/api/ticket'
 import { readActiveTickets } from '../database/ticket-queries'
 import { saveConfirmedFields } from '../database/ticket-upsert'
 import {

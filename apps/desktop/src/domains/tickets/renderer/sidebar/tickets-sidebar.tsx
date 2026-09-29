@@ -5,8 +5,8 @@ import {
   type SignInNoticeProps,
   useOpenAccountsDialog,
 } from '@/domains/accounts/renderer'
-import type { ConnectionSummary } from '@/domains/tickets/api/messages'
 import { useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
+import type { ConnectionSummary } from '../hooks/ticket-reply'
 import { useTicketsView } from '../hooks/use-tickets-view'
 import type { TicketWorkPath } from './ticket-work-path'
 import { ticketWorkPath } from './ticket-work-path'

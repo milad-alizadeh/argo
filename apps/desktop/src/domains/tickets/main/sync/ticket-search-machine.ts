@@ -2,7 +2,7 @@
 // the query, and only then does the screen learn of it.
 import { assign, fromPromise, setup } from 'xstate'
 import type { Database } from '@/database/database'
-import type { TicketErrorCode } from '@/domains/tickets/api/messages'
+import type { TicketErrorCode } from '@/domains/tickets/api/errors'
 import { saveSearchedTickets } from '../database/ticket-upsert'
 import {
   beginTicketSearch,

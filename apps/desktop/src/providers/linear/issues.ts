@@ -1,11 +1,11 @@
 // The Ticket port filled by Linear issues: one team's open Tickets with their children and blockers
 // (CONTEXT.md L1 · Ticket). Linear owns every field; nothing here is kept after the read.
 
-import { TICKET_PAGE_SIZE } from '@/domains/tickets/api/messages'
 import {
   closureOf,
   labelColor,
   PRIORITY_LEVELS,
+  TICKET_PAGE_SIZE,
   type Ticket,
   type TicketLabel,
   type TicketLink,

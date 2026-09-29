@@ -1,13 +1,10 @@
 // The priority levels a Project's provider offers, read from the provider and kept for the Project.
 import { skipToken, useQuery } from '@tanstack/react-query'
-import type {
-  ConnectionSummary,
-  TicketPriority,
-  TicketPriorityChoices,
-} from '@/domains/tickets/api/messages'
+import type { TicketPriority } from '@/domains/tickets/api/ticket'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 import { trpc, trpcClient } from '@/platform/renderer/trpc-client'
 import { providerPresentation } from '@/providers/presentation-registry'
+import type { ConnectionSummary, TicketPriorityChoices } from './ticket-reply'
 import { ticketReply } from './ticket-reply'
 
 const NONE: readonly TicketPriority[] = []

@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { Ticket, TicketPriority, TicketStatus } from '@/domains/tickets/api/messages'
+import type { Ticket, TicketPriority, TicketStatus } from '@/domains/tickets/api/ticket'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/platform/renderer/components/ui/popover'

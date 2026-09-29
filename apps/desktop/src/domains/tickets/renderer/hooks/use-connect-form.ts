@@ -4,11 +4,11 @@ import type { UseQueryResult } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { AccountSummary } from '@/domains/accounts/contract/contract'
 import { useOpenAccountsDialog } from '@/domains/accounts/renderer'
-import type { TicketScope } from '@/domains/tickets/api/messages'
 import { useContractText } from '@/platform/renderer/i18n/contract-text'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 import type { ConnectSourceFormProps } from '../connection/connect-source-form'
 import type { SourceDiscovery } from '../connection/source-field'
+import type { TicketScope } from './ticket-reply'
 import { useConnectSource, useSources } from './use-tickets'
 
 export type ConnectForm = Omit<ConnectSourceFormProps, 'projectName' | 'accounts'>

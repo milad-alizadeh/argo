@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'vitest'
 import { createActor, fromPromise, toPromise } from 'xstate'
 import type { Database } from '@/database/database'
-import type { Ticket, TicketStatus } from '@/domains/tickets/api/messages'
+import type { Ticket, TicketStatus } from '@/domains/tickets/api/ticket'
 import type { TicketPage } from '../sources'
 import {
   type CompleteInput,
