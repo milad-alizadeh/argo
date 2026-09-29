@@ -1334,8 +1334,34 @@ export const SearchNoMatches: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await typeSearch(canvasElement, 'nothing indexed holds this')
-    await waitFor(() =>
-      expect(canvas.getByText('No Sessions match your search')).toBeInTheDocument(),
+    await expect(await canvas.findByText('No Sessions found')).toBeInTheDocument()
+    await expect(canvas.queryByText('No Sessions match your search')).toBeNull()
+  },
+}
+
+export const SearchDoesNotShowInitialSkeleton: Story = {
+  beforeEach: () => {
+    let resolveSearch: ((result: SessionListPage) => void) | null = null
+    const pendingSearch = new Promise<SessionListPage>((resolve) => {
+      resolveSearch = resolve
+    })
+    const restore = withSessionListHost(({ search }) =>
+      search === '' ? Promise.resolve(listed) : pendingSearch,
     )
+    return () => {
+      resolveSearch?.({ ...listed, sessions: [], total: 0 })
+      restore()
+    }
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await canvas.findByRole('button', { name: /Read the Session transcript/ })
+    await typeSearch(canvasElement, 'absent')
+    await waitFor(() =>
+      expect(sessionListReads).toHaveBeenCalledWith(expect.objectContaining({ search: 'absent' })),
+    )
+    await expect(canvas.getByRole('button', { name: /Read the Session transcript/ })).toBeVisible()
+    await expect(canvas.queryByRole('status', { name: 'Reading Sessions' })).toBeNull()
+    await expect(canvasElement.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(0)
   },
 }

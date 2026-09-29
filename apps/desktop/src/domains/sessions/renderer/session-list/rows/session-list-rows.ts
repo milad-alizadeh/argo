@@ -53,7 +53,6 @@ export type SessionListRow =
   | { kind: 'archivedSentinel' }
   | { kind: 'archivedLoadingMore' }
   | { kind: 'archivedIndexing' }
-  | { kind: 'searchEmpty' }
 
 // Two rows draw the same thing. A Session list read rebuilds every row object when one Session changes,
 // so the row's memo boundary compares what the row draws rather than the object it arrived in
@@ -136,8 +135,8 @@ function archivedSessionListRows(
   return rows
 }
 
-// The status filter chooses which Sessions the one list carries. A title search filters its loaded
-// active rows in place, so selection and virtualization stay on the same list.
+// The status filter chooses which Sessions the one list carries. A search shows only the
+// matching active rows, so selection and virtualization stay on the same list.
 export function sessionListRows({
   active,
   archived,
@@ -158,7 +157,7 @@ export function sessionListRows({
   const rows: SessionListRow[] = showsActive(status)
     ? active.map((session) => ({ kind: 'session', session, archived: false }))
     : []
-  if (searching) return rows.length === 0 ? [{ kind: 'searchEmpty' }] : rows
+  if (searching) return rows
   // Scrolling this row into view is the reader action that grows the active sessionList's own bounded
   // window (#2239); it carries no loaded rows itself, so it is never mistaken for one.
   if (showsActive(status) && hasMoreSessions) rows.push({ kind: 'sessionListSentinel' })
