@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next'
 import { AttachmentChip } from '../../attachment-chip'
-import { PromptText } from '../../prompt/prompt-text'
 import type { SessionEvidence } from '../../types'
 import { FeedImage } from '../content/feed-images'
 import { FeedMarkdown } from '../content/feed-markdown'
@@ -62,14 +61,15 @@ export function FeedPrompt({
         </div>
       )}
       {text === '' ? null : (
-        <p className="self-start">
-          <PromptText
-            onOpenSkill={({ name, path }) =>
-              onOpenEvidence({ shape: 'skill', id: `skill:${path}`, name, path })
-            }
+        <div className="w-full min-w-0 self-start">
+          <FeedMarkdown
+            activeEvidenceId={activeEvidenceId}
+            onOpenEvidence={onOpenEvidence}
+            promptSkillMentions
+            rowId={rowId}
             text={text}
           />
-        </p>
+        </div>
       )}
       {pastedContent.map(({ id, text: content }) => (
         <div className="w-full min-w-0" key={`${rowId}:${id}`}>

@@ -278,7 +278,8 @@ export const FormattedProse: Story = {
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(drawnRows(canvasElement)).toHaveLength(2))
     const [prompt, answer] = drawnRows(canvasElement)
-    await expect(prompt).toHaveTextContent('Show me the **composer** check.')
+    await expect(prompt).toHaveTextContent('Show me the composer check.')
+    await expect(within(prompt as HTMLElement).getByText('composer').tagName).toBe('STRONG')
     await expect(prompt?.querySelector('[data-slot="bubble"]')).toHaveAttribute(
       'data-variant',
       'muted',

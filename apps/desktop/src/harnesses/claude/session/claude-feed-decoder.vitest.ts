@@ -350,7 +350,7 @@ test('decodes Claude local shell output without exposing its tags', () => {
   expect(rejected).toEqual([])
 })
 
-test('keeps Claude image and document sources structured', () => {
+test('folds a Claude image into the authored prompt row, leaving other document media standalone', () => {
   const rejected: string[] = []
   const message = {
     type: 'user',
@@ -366,11 +366,11 @@ test('keeps Claude image and document sources structured', () => {
   } as SessionMessage
   expect(decodeClaudeHistoryContent(message, (shape) => rejected.push(shape))).toEqual([
     {
-      id: 'media-1:0',
-      kind: 'media',
-      mediaType: 'image',
+      id: 'media-1',
+      kind: 'message',
       role: 'user',
-      source: { kind: 'data', mimeType: 'image/png', base64: 'aGVsbG8=' },
+      text: '',
+      images: [{ kind: 'data', mimeType: 'image/png', base64: 'aGVsbG8=' }],
     },
     {
       id: 'media-1:1',
@@ -378,6 +378,34 @@ test('keeps Claude image and document sources structured', () => {
       mediaType: 'document',
       role: 'user',
       source: { kind: 'url', url: 'https://example.invalid/file.pdf' },
+    },
+  ])
+  expect(rejected).toEqual([])
+})
+
+test('folds a Claude image and pasted document text into the same authored prompt as its text', () => {
+  const rejected: string[] = []
+  const message = {
+    type: 'user',
+    uuid: 'media-2',
+    session_id: 'session-1',
+    message: {
+      role: 'user',
+      content: [
+        { type: 'text', text: 'See attached.' },
+        { type: 'image', source: { type: 'base64', media_type: 'image/png', data: 'aGVsbG8=' } },
+        { type: 'document', source: { type: 'text', data: 'Pasted body' } },
+      ],
+    },
+  } as SessionMessage
+  expect(decodeClaudeHistoryContent(message, (shape) => rejected.push(shape))).toEqual([
+    {
+      id: 'media-2:0',
+      kind: 'message',
+      role: 'user',
+      text: 'See attached.',
+      images: [{ kind: 'data', mimeType: 'image/png', base64: 'aGVsbG8=' }],
+      pastedContent: [{ id: 'media-2:2', text: 'Pasted body' }],
     },
   ])
   expect(rejected).toEqual([])

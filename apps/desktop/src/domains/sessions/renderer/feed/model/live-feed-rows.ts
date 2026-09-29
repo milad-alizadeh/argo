@@ -88,6 +88,23 @@ function mediaUrl(source: MediaSource): string | null {
   }
 }
 
+function promptRow(content: Extract<FeedContent, { kind: 'message' }>): SessionFeedRow {
+  const images = (content.images ?? []).flatMap((source) => {
+    const url = mediaUrl(source)
+    return url === null ? [] : [url]
+  })
+  const files = (content.files ?? []).map((file) => file.target)
+  return {
+    shape: 'prose',
+    id: content.id,
+    role: content.role as 'user' | 'assistant',
+    text: content.text,
+    ...(images.length > 0 ? { images } : {}),
+    ...(files.length > 0 ? { files } : {}),
+    ...(content.pastedContent === undefined ? {} : { pastedContent: content.pastedContent }),
+  }
+}
+
 function toolOutputRows(content: Extract<FeedContent, { kind: 'tool' }>): SessionFeedRow[] {
   return (content.output ?? []).flatMap((part, index): SessionFeedRow[] => {
     const id = `${content.callId}:output:${index}`
@@ -352,9 +369,9 @@ function contentRow(content: FeedContent): SessionFeedRow | null {
     case 'message':
       if (content.role === 'system')
         return { shape: 'event', id: content.id, event: 'context', text: content.text }
-      return content.phase === 'commentary'
-        ? { shape: 'thought', id: content.id, text: content.text }
-        : { shape: 'prose', id: content.id, role: content.role, text: content.text }
+      if (content.phase === 'commentary')
+        return { shape: 'thought', id: content.id, text: content.text }
+      return promptRow(content)
     case 'reasoning':
       return content.text === null
         ? { shape: 'event', id: content.id, event: 'reasoning', text: null }
