@@ -26,6 +26,8 @@ export type Backlog = {
   onRetryLoadMore: () => void
   // The provider scan behind saved rows: whether one runs, and the last one's failure.
   sync: { refreshing: boolean; problem: TicketProblemProps | null }
+  // False while the Ticket's Account cannot be called: the rows stay, their controls do not edit.
+  writable: boolean
   // Every status a Ticket here can move to, and the move.
   statuses: readonly TicketStatus[]
   onChangeStatus: (key: string, status: TicketStatus) => void

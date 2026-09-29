@@ -44,12 +44,39 @@ function TicketDetailPageHeader({ onBack }: Pick<TicketDetailProps, 'onBack'>) {
   )
 }
 
+function TicketTitle({ ticket, provider }: { ticket: Ticket; provider: Provider }) {
+  const { t } = useTranslation('tickets')
+  return (
+    <h2 className="min-w-0 self-start line-clamp-2 type-title wrap-anywhere" title={ticket.title}>
+      {ticket.url === null ? (
+        <>
+          {ticket.key} - {ticket.title}
+        </>
+      ) : (
+        <a
+          aria-label={t('detail.openInProvider', {
+            key: ticket.key,
+            provider: providerPresentation(provider).name,
+          })}
+          className="hover:underline"
+          href={ticket.url}
+          rel="noreferrer"
+          target="_blank"
+        >
+          {ticket.key} - {ticket.title}
+        </a>
+      )}
+    </h2>
+  )
+}
+
 export function TicketDetail(props: TicketDetailProps) {
   const { t } = useTranslation('tickets')
   const {
     ticket,
     provider,
     statuses,
+    writable,
     onChangeStatus,
     onChangePriority,
     linkedSessions,
@@ -73,29 +100,7 @@ export function TicketDetail(props: TicketDetailProps) {
           <div className={detailMeasure}>
             <div className="contents @3xl:col-start-1 @3xl:row-start-1 @3xl:block">
               <header className="order-1 flex min-w-0 flex-col items-start gap-(--spacing-shell-item)">
-                <h2
-                  className="min-w-0 self-start line-clamp-2 type-title wrap-anywhere"
-                  title={ticket.title}
-                >
-                  {ticket.url === null ? (
-                    <>
-                      {ticket.key} - {ticket.title}
-                    </>
-                  ) : (
-                    <a
-                      aria-label={t('detail.openInProvider', {
-                        key: ticket.key,
-                        provider: providerPresentation(provider).name,
-                      })}
-                      className="hover:underline"
-                      href={ticket.url}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      {ticket.key} - {ticket.title}
-                    </a>
-                  )}
-                </h2>
+                <TicketTitle provider={provider} ticket={ticket} />
               </header>
               <div className="order-3 grid max-w-2xl grid-cols-[minmax(0,1fr)] content-start gap-(--spacing-shell-section) @3xl:mt-(--spacing-shell-section)">
                 {body ? (
@@ -114,6 +119,7 @@ export function TicketDetail(props: TicketDetailProps) {
               onSelect={navigation.onSelect}
               provider={provider}
               statuses={statuses}
+              writable={writable}
               ticket={ticket}
             />
           </div>

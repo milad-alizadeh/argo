@@ -1,9 +1,11 @@
 import { projectNames } from '@/domains/accounts/main'
 import type { TicketConnection } from '@/domains/connections/main'
 import {
+  type ConnectionState,
   type TicketConnectedReply,
   type TicketDiscoverReply,
   type TicketError,
+  type TicketErrorCode,
   type TicketListReply,
   type TicketUpdateReply,
   ticketError,
@@ -11,6 +13,15 @@ import {
 import { connectionSummary } from '../connection-summary'
 import { saveConfirmedFields } from '../database/ticket-upsert'
 import { type Call, readAs } from '../read-as'
+
+// What each Connection state that cannot call the provider answers a write with.
+const ACCOUNT_REFUSALS: Record<ConnectionState, TicketErrorCode | null> = {
+  ready: null,
+  'account-missing': 'missing-account',
+  'account-expired': 'account-expired',
+  'account-revoked': 'account-revoked',
+  'account-unreadable': 'grant-unreadable',
+}
 
 const STORAGE_ERRORS = { unreadable: 'storage-unavailable', invalid: 'storage-invalid' } as const
 
@@ -144,6 +155,9 @@ export async function updateStatus(
   const target = await writableConnection(call)
   if (!target.ok) return target.error
   const { accountId, provider, scope } = target
+  // A failed Account is refused before an intent is saved, so no write is recorded for it.
+  const account = ACCOUNT_REFUSALS[(await connectionSummary(call.access, target)).state]
+  if (account) return ticketError(account, requestId)
   const outcome = await call.index.changeStatus({ provider, scope, accountId, ...change })
   if (outcome.type !== 'committed') return ticketError(outcome.failure, requestId)
   const { key } = change
