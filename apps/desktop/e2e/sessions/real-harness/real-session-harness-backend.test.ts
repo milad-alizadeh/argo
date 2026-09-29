@@ -124,10 +124,20 @@ test('recognizes an assistant record after the prompt in a real Claude transcrip
       'run.jsonl',
     )
     await mkdir(path.dirname(transcript), { recursive: true })
-    await writeFile(
-      transcript,
-      `${JSON.stringify({ type: 'user', uuid: 'user', message: { content: 'Reply with ACK.' } })}\n${JSON.stringify({ type: 'assistant', uuid: 'assistant', message: { content: 'ACK' } })}\n`,
-    )
+    // The reader follows the record chain, so the reply names the prompt as its parent.
+    const prompt = {
+      type: 'user',
+      uuid: 'user',
+      parentUuid: null,
+      message: { content: 'Reply with ACK.' },
+    }
+    const reply = {
+      type: 'assistant',
+      uuid: 'assistant',
+      parentUuid: 'user',
+      message: { content: 'ACK' },
+    }
+    await writeFile(transcript, `${JSON.stringify(prompt)}\n${JSON.stringify(reply)}\n`)
 
     expect(await backend.recorded({ harness: 'claude', prompt: 'Reply with ACK.' })).toBe(true)
   }))
