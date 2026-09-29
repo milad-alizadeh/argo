@@ -9,8 +9,8 @@ import {
   type TicketLink,
 } from '@/domains/tickets/contract/ticket'
 import type { GitHubEndpoints } from '@/providers/github/endpoints'
-import { failed, type GitHubRead, getAll, getPage } from '@/providers/github/http'
-import { githubStatus } from '@/providers/github/statuses'
+import { failed, type GitHubRead, get, getAll, getPage } from '@/providers/github/http'
+import { githubStatus, issueNumber } from '@/providers/github/statuses'
 import { isRecord } from '@/shared/validation'
 
 // Tickets read at once. Each reads its edges one after another, so this is also the number of
@@ -167,4 +167,22 @@ export async function readTicketPage(
   if (!tickets.ok) return tickets
   const nextPage = read.value.next ? request.page + 1 : null
   return { ok: true, value: { tickets: tickets.value, nextPage, total: served.total } }
+}
+
+type TicketReadRequest = { scope: string; id: string }
+
+// One issue of the repository by its key, open or closed; a pull request is not a Ticket.
+export async function readTicket(
+  endpoints: GitHubEndpoints,
+  token: string,
+  { scope, id }: TicketReadRequest,
+): Promise<GitHubRead<Ticket> | { ok: false; failure: 'ticket-not-found' }> {
+  const number = issueNumber(id)
+  if (number === null) return { ok: false, failure: 'ticket-not-found' }
+  const base = `${endpoints.api}/repos/${scope}`
+  const read = await get(`${base}/issues/${number}`, token)
+  if (!read.ok) return read
+  const served = issue(read.value, `${endpoints.web}/${scope}/issues`)
+  if (served === null) return { ok: false, failure: 'ticket-not-found' }
+  return withEdges({ base, token }, served)
 }

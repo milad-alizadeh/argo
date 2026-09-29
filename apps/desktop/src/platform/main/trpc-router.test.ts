@@ -118,6 +118,8 @@ test('registers Ticket procedures directly on the global router', () => {
     'ticketConnection',
     'ticketList',
     'ticketActive',
+    'ticketDetail',
+    'ticketOpen',
     'ticketSync',
     'ticketWatch',
     'ticketChanges',

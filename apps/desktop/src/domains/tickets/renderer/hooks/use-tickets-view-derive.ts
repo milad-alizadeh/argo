@@ -22,6 +22,7 @@ import {
 import { listedBacklog, type TicketListing } from './listed-backlog'
 import { indexedHead, syncFailure } from './use-active-tickets'
 import type { ConnectForm } from './use-connect-form'
+import type { TicketDetailRead } from './use-ticket-detail'
 
 // Everything the Tickets screen can show, resolved here before anything draws.
 export type TicketsView =
@@ -89,6 +90,8 @@ export type Connected = {
   onChangeStatus: (key: string, status: TicketStatus) => void
   onChangePriority: (key: string, priority: TicketPriority | null) => void
   selectedKey: string | null
+  // The selected Ticket as SQLite saved it, and its by-ID provider read.
+  detail: TicketDetailRead
   now: number
   onBack: () => void
   onSelect: (key: string) => void
@@ -105,6 +108,7 @@ export function connectedView(
     connection,
     onDisconnectSource,
     selectedKey,
+    detail,
     now,
     onBack,
     onSelect,
@@ -141,10 +145,19 @@ export function connectedView(
     refreshing: saved?.sync.phase === 'syncing',
     problem: failed ? failureProblem(t('failure.refresh'), failed, recovery) : null,
   }
+  const detailRecovery = { ...recovery, onRetry: detail.retry }
   return {
     kind: 'tickets',
     projectId,
     selectedKey,
+    detail: {
+      ticket: detail.ticket,
+      statuses: detail.statuses,
+      reading: detail.reading,
+      problem: detail.failure
+        ? failureProblem(t('failure.ticket'), detail.failure, detailRecovery)
+        : null,
+    },
     now,
     onBack,
     onSelect,

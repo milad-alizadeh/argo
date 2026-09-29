@@ -1,12 +1,25 @@
+import type { Ticket, TicketStatus } from '@/domains/tickets/contract/contract'
 import { useLinkedSessions } from '../hooks/use-linked-sessions'
 import type { Backlog } from '../lib/backlog'
+import type { TicketProblemProps } from '../lib/problems'
 import { TicketList } from '../sidebar/ticket-list'
+import { TicketProblem } from '../status/ticket-problem'
 import { TicketDetail } from './ticket-detail'
+import { TicketDetailReading } from './ticket-detail-empty'
+
+// The selected Ticket as SQLite saved it, listed or not, and what its by-ID read is doing.
+export type SelectedTicket = {
+  ticket: Ticket | null
+  statuses: readonly TicketStatus[]
+  reading: boolean
+  problem: TicketProblemProps | null
+}
 
 export type TicketDeckProps = {
   backlog: Backlog
   projectId: string
   selectedKey: string | null
+  detail: SelectedTicket
   now: number
   onBack: () => void
   onSelect: (key: string) => void
@@ -19,17 +32,23 @@ export function TicketDeck({
   backlog,
   projectId,
   selectedKey,
+  detail,
   now,
   onBack,
   onSelect,
   onOpenSession,
 }: TicketDeckProps) {
-  const selected = backlog.tickets.find((ticket) => ticket.key === selectedKey) ?? null
+  // A listed row carries an edit in flight; the saved Ticket covers one the list no longer holds,
+  // and names the key behind an Argo UUID.
+  const key = detail.ticket?.key ?? selectedKey
+  const selected = backlog.tickets.find((ticket) => ticket.key === key) ?? detail.ticket
   const listed = new Set(backlog.tickets.map((ticket) => ticket.key))
   const linkedSessions = useLinkedSessions(projectId, selected?.key ?? null)
   if (selectedKey === null) {
     return <TicketList backlog={backlog} now={now} onSelect={onSelect} selectedKey={null} />
   }
+  if (selected === null && detail.problem) return <TicketProblem {...detail.problem} />
+  if (selected === null && detail.reading) return <TicketDetailReading reference={selectedKey} />
   return (
     <TicketDetail
       linkedSessions={linkedSessions}
@@ -40,7 +59,7 @@ export function TicketDeck({
       onOpenSession={onOpenSession}
       onSelect={onSelect}
       provider={backlog.provider}
-      statuses={backlog.statuses}
+      statuses={backlog.statuses.length > 0 ? backlog.statuses : detail.statuses}
       ticket={selected}
     />
   )

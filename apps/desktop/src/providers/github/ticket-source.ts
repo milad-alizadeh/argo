@@ -1,11 +1,11 @@
 // GitHub as a Ticket source: a repository is the scope, and its Issues are the Tickets.
 import type { SourceFailure, TicketSource } from '@/domains/tickets/main/sources'
 import type { GitHubFailure } from '@/providers/github/http'
-import { readTicketPage } from '@/providers/github/issues'
+import { readTicket, readTicketPage } from '@/providers/github/issues'
 import { checkRepository, isRepositoryScope, listRepositories } from '@/providers/github/repository'
 import { GITHUB_STATUSES, updateIssueStatus } from '@/providers/github/statuses'
 
-type Failure = GitHubFailure | 'issues-disabled' | 'status-unknown'
+type Failure = GitHubFailure | 'issues-disabled' | 'status-unknown' | 'ticket-not-found'
 
 const FAILURES: Record<Failure, SourceFailure> = {
   unauthorized: 'refused',
@@ -15,13 +15,19 @@ const FAILURES: Record<Failure, SourceFailure> = {
   unreachable: 'github-unreachable',
   'issues-disabled': 'issues-disabled',
   'status-unknown': 'status-unknown',
+  'ticket-not-found': 'ticket-not-found',
+}
+
+// An issue GitHub cannot find is that Ticket out of reach, not the repository.
+const READ_FAILURES: Record<Failure, SourceFailure> = {
+  ...FAILURES,
+  'not-found': 'ticket-not-found',
 }
 
 // A write GitHub refuses is a Ticket out of reach, not a repository out of sight.
 const WRITE_FAILURES: Record<Failure, SourceFailure> = {
-  ...FAILURES,
+  ...READ_FAILURES,
   forbidden: 'ticket-not-writable',
-  'not-found': 'ticket-not-found',
 }
 
 const failed = (failure: Failure) => ({ ok: false, failure: FAILURES[failure] }) as const
@@ -55,6 +61,11 @@ export const githubTickets: TicketSource = {
     const { tickets, nextPage, total } = read.value
     const nextCursor = nextPage === null ? null : String(nextPage)
     return { ok: true, value: { tickets, statuses: [...GITHUB_STATUSES], nextCursor, total } }
+  },
+
+  async read({ endpoints, token }, request) {
+    const read = await readTicket(endpoints.github, token, request)
+    return read.ok ? read : { ok: false, failure: READ_FAILURES[read.failure] }
   },
 
   async update({ endpoints, token }, change) {
