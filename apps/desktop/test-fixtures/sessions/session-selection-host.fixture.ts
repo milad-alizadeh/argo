@@ -197,8 +197,12 @@ export function sessionSelectionHost(
     trpc: (async (request) =>
       projectReply(request) ??
       composerReply(request) ??
+      // Screen stories open the shell inspector and read this tail. Production stays absent.
       (request.path === 'sessionShellOutput'
-        ? { id: request.id, result: { data: { state: 'absent' as const } } }
+        ? {
+            id: request.id,
+            result: { data: { state: 'available' as const, tail: 'Checked 187 files.\n' } },
+          }
         : null) ??
       before.trpc(request)) satisfies typeof window.argo.trpc,
     trpcSubscribe: sessionFeedSubscribe(
