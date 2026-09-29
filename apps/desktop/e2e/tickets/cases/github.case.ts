@@ -25,6 +25,9 @@ import {
   storeText,
 } from '../screen'
 
+const UNRECONCILED =
+  'This Ticket has an unresolved change from before. Argo is checking with the provider before it can change again.'
+
 const GITHUB_SCOPE = { provider: 'github', scope: 'octocat/hello-world' }
 
 export async function proveConnect(run: Run) {
@@ -168,14 +171,18 @@ const lastStatus = (run: Run, name: string) =>
     .getByRole('button', { name: `State: ${name}` })
     .last()
 
+// Opens #273's status menu and picks "Closed as completed", the change every case below sends.
+const closeAsCompleted = (run: Run) =>
+  choose(run.page, lastStatus(run, 'Open'), {
+    role: 'menuitemradio',
+    name: 'Closed as completed',
+  })
+
 // Closing #273 from its row reaches GitHub, and the row then shows the status GitHub confirmed.
 export async function proveGitHubStatus(run: Run) {
   await test.step('github-change-status', async () => {
     assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
-    await choose(run.page, lastStatus(run, 'Open'), {
-      role: 'menuitemradio',
-      name: 'Closed as completed',
-    })
+    await closeAsCompleted(run)
     await lastStatus(run, 'Closed as completed').waitFor()
     assert.ok(run.fixture.github.requests.includes('PATCH /repos/octocat/hello-world/issues/273'))
   })
@@ -185,14 +192,43 @@ export async function proveGitHubStatus(run: Run) {
 export async function proveGitHubStatusRefused(run: Run) {
   run.fixture.github.addRepository({ ...helloWorld(), writers: [] })
   await test.step('github-refused-status', async () => {
-    await choose(run.page, lastStatus(run, 'Open'), {
-      role: 'menuitemradio',
-      name: 'Closed as completed',
-    })
+    await closeAsCompleted(run)
     await notification(run.page).getByText(REFUSED).waitFor()
     assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
     assert.equal(await backlog(run.page).getByRole('button', { name: 'State: Open' }).count(), 3)
   })
+}
+
+// GitHub is down for the write: the change is left uncertain, sent once, and a second attempt is
+// refused locally until it settles (#2878).
+export async function proveGitHubStatusUncertain(run: Run) {
+  run.fixture.github.outage('down')
+  await test.step('write-left-uncertain', async () => {
+    await closeAsCompleted(run)
+    await notification(run.page).getByText('Argo cannot reach GitHub.').waitFor()
+    await lastStatus(run, 'Open').waitFor()
+  })
+  await test.step('blocked-until-reconciled', async () => {
+    await closeAsCompleted(run)
+    await notification(run.page).getByText(UNRECONCILED).waitFor()
+    assert.equal(
+      run.fixture.github.requests.filter(
+        (request) => request === 'PATCH /repos/octocat/hello-world/issues/273',
+      ).length,
+      1,
+    )
+  })
+  run.fixture.github.outage('none')
+}
+
+// A restart reads the uncertain write's Ticket by native ID: GitHub never applied it, so the row
+// stays Open and a new change is no longer blocked (#2878).
+export async function proveRestartReconcilesUncertainStatus(run: Run) {
+  await openRoom(run.page, 'tickets')
+  await lastStatus(run, 'Open').waitFor()
+  await closeAsCompleted(run)
+  await lastStatus(run, 'Closed as completed').waitFor()
+  assert.ok(run.fixture.github.requests.includes('PATCH /repos/octocat/hello-world/issues/273'))
 }
 
 // A list read GitHub answered before the change cannot put #273 back to Open when it lands after.

@@ -1,5 +1,6 @@
-// The durable record of a provider write: kept before the call, settled after its answer.
-import { eq } from 'drizzle-orm'
+// The durable record of a provider write: kept before the call, settled after its answer. A Ticket
+// with an intent still pending or uncertain refuses another, so a write is never sent twice.
+import { and, eq, inArray } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
 import { ticketContent } from '@/database/ticket-content/schema'
@@ -11,8 +12,25 @@ import type { TicketOperationRequest } from './ticket-operation-machine'
 
 export type TicketWriteTarget = TicketScopeTarget & { key: string }
 export type RecordedIntent = { intentId: string; ticketId: string }
+export type RecordIntentResult =
+  | ({ ok: true } & RecordedIntent)
+  // `not-found` is a Ticket Argo has not saved; `unreconciled` is one an earlier intent still holds.
+  | { ok: false; reason: 'not-found' | 'unreconciled' }
 
 const touched = nextUpdatedAt(ticketWriteIntent.updatedAt)
+const UNRESOLVED = ['pending', 'uncertain'] as const
+
+function hasUnresolvedIntent(database: Database, ticketId: string): boolean {
+  return (
+    database
+      .select({ intentId: ticketWriteIntent.intentId })
+      .from(ticketWriteIntent)
+      .where(
+        and(eq(ticketWriteIntent.ticketId, ticketId), inArray(ticketWriteIntent.phase, UNRESOLVED)),
+      )
+      .get() !== undefined
+  )
+}
 
 // The requested value an intent keeps: the provider status ID or the priority level.
 function requestedOf(request: TicketOperationRequest): string {
@@ -30,7 +48,7 @@ function requestedOf(request: TicketOperationRequest): string {
 export function recordIntent(
   database: Database,
   request: TicketOperationRequest,
-): RecordedIntent | null {
+): RecordIntentResult {
   const { provider, scope, key } = request
   const ticketId = savedIdentityByKey(database, { provider, scope }, key)
   const base =
@@ -41,7 +59,8 @@ export function recordIntent(
           .from(ticketContent)
           .where(eq(ticketContent.ticketId, ticketId))
           .get()
-  if (ticketId === undefined || base === undefined) return null
+  if (ticketId === undefined || base === undefined) return { ok: false, reason: 'not-found' }
+  if (hasUnresolvedIntent(database, ticketId)) return { ok: false, reason: 'unreconciled' }
   const intentId = crypto.randomUUID()
   database
     .insert(ticketWriteIntent)
@@ -54,7 +73,17 @@ export function recordIntent(
       phase: 'pending',
     })
     .run()
-  return { intentId, ticketId }
+  return { ok: true, intentId, ticketId }
+}
+
+// An intent still `pending` when the last process stopped: the provider may or may not have
+// applied it, so it is never sent again. Recovery settles it by reading the Ticket's native ID.
+export function markUnresolvedTicketWriteIntentsUncertain(database: Database): void {
+  database
+    .update(ticketWriteIntent)
+    .set({ phase: 'uncertain', failure: 'connection-lost', updatedAt: touched })
+    .where(eq(ticketWriteIntent.phase, 'pending'))
+    .run()
 }
 
 export function settleIntent(
