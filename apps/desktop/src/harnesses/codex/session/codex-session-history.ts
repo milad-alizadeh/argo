@@ -5,7 +5,13 @@ import type { ThreadReadResponse } from '../app-server/protocol-generated/v2/thr
 import type { UserInput } from '../app-server/protocol-generated/v2/user-input'
 import copy from '../locales/en.json'
 import { codexCommandContent } from './codex-command-content'
-import { codexSubagentContent } from './codex-subagent-content'
+import {
+  type CodexCollabFacts,
+  codexCollabFacts,
+  codexSubagentContent,
+  withNickname,
+} from './codex-subagent-content'
+import { readCodexNickname } from './codex-subagent-nicknames'
 
 type ImageGenerationFailure = NonNullable<
   Extract<ThreadItem, { type: 'imageGeneration' }>['failure']
@@ -234,7 +240,10 @@ function imageGenerationContent(
   }
 }
 
-function codexItemContent(item: ThreadItem): FeedContent | null {
+function codexItemContent(
+  item: ThreadItem,
+  collab: ReadonlyMap<string, CodexCollabFacts>,
+): FeedContent | null {
   switch (item.type) {
     case 'commandExecution': {
       return codexCommandContent(item, 'completed')
@@ -248,9 +257,8 @@ function codexItemContent(item: ThreadItem): FeedContent | null {
       return searchContent(item)
     case 'imageGeneration':
       return imageGenerationContent(item)
-    case 'subAgentActivity': {
-      return codexSubagentContent(item)
-    }
+    case 'subAgentActivity':
+      return codexSubagentContent(item, collab.get(item.id))
     case 'collabAgentToolCall':
       return null
     default:
@@ -259,8 +267,9 @@ function codexItemContent(item: ThreadItem): FeedContent | null {
 }
 
 export function codexContentFromItems(items: ThreadItem[]): FeedContent[] {
+  const collab = codexCollabFacts(items)
   return items.flatMap((item) => {
-    const content = codexItemContent(item)
+    const content = codexItemContent(item, collab)
     return content === null ? [] : [content]
   })
 }
@@ -283,7 +292,27 @@ export async function readCodexSessionHistory(
       throw error
     }
   })
-  return content
+  return withNicknames(content, request)
+}
+
+// Each spawned thread is read for the nickname Codex gave it; no history item carries it.
+async function withNicknames(
+  content: FeedContent[],
+  request: CodexRequest,
+): Promise<FeedContent[]> {
+  const threads = [
+    ...new Set(content.flatMap((entry) => (entry.kind === 'delegation' ? [entry.agentId] : []))),
+  ]
+  const nicknames = new Map(
+    await Promise.all(
+      threads.map(
+        async (threadId) => [threadId, await readCodexNickname(request, threadId)] as const,
+      ),
+    ),
+  )
+  return content.map((entry) =>
+    entry.kind === 'delegation' ? withNickname(entry, nicknames.get(entry.agentId) ?? null) : entry,
+  )
 }
 
 export async function hasCodexSessionTurn(

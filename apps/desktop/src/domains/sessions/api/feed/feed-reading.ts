@@ -3,6 +3,7 @@ import { sessionErrorSchema } from '@/domains/sessions/api/session-error'
 import { sessionLiveStatusSchema } from '@/domains/sessions/api/session-live-event'
 import { identifierSchema } from '@/shared/validation'
 import { feedRowEntrySchema } from './feed-row-entries'
+import { feedSubagentSchema } from './feed-subagents'
 import { fingerprint } from './fingerprint'
 
 const FEED_READ_STATES = ['loading', 'ready', 'failed'] as const
@@ -23,6 +24,8 @@ const feedReadingSchema = z.strictObject({
   // The latest status the live channel reported; null when it reported none.
   liveStatus: sessionLiveStatusSchema.nullable(),
   entries: z.array(feedRowEntrySchema),
+  // The Subagents this Feed's rows name; empty for a Subagent's own Feed.
+  subagents: z.array(feedSubagentSchema),
 })
 export type FeedReading = z.infer<typeof feedReadingSchema>
 

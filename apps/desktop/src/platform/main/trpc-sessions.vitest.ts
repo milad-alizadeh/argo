@@ -104,6 +104,7 @@ test('lists the Subagents the sync read from each Session history', async () => 
       {
         kind: 'delegation',
         id: 'call-1',
+        event: 'started',
         agentId: 'agent-1',
         status: 'running',
         name: 'Survey',

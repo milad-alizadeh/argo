@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { SUBAGENT_EVENTS } from '@/domains/sessions/api/feed/subagent-event'
 import { identifierSchema } from '@/shared/validation'
 
 const base = z.strictObject({ id: identifierSchema })
@@ -119,9 +120,13 @@ export const feedContentSchema = z.discriminatedUnion('kind', [
   base.extend({ kind: z.literal('plan'), text: z.string() }),
   base.extend({
     kind: z.literal('delegation'),
+    // Which step of the Subagent's life this record is; each step keeps its own `id`.
+    event: z.enum(SUBAGENT_EVENTS),
     agentId: identifierSchema,
     status: workStatusSchema,
     name: z.string().nullable(),
+    // A name the Harness gave the Subagent itself, apart from its task; absent where it gives none.
+    nickname: z.string().optional(),
     prompt: z.string().nullable(),
     model: z.string().nullable(),
     summary: z.string().nullable(),

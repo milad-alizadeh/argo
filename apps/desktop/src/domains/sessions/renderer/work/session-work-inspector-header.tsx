@@ -22,7 +22,7 @@ export function SessionWorkInspectorHeader({ work, now }: { work: SessionWork; n
     )
     return (
       <InspectorHeader
-        facts={[presentation.state, presentation.facts]}
+        facts={[delegation.nickname ?? null, presentation.state, presentation.facts]}
         title={presentation.title}
       />
     )

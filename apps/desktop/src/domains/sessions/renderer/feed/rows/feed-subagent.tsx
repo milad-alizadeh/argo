@@ -1,14 +1,15 @@
 import { useContext } from 'react'
+import { feedSubagents } from '@/domains/sessions/api/feed/feed-subagents'
 import type { SessionFeedRow } from '../../types'
 import { DelegationEvent } from '../delegation/delegation-event'
 import { BackgroundWork } from './background-work'
 
 type SubagentRow = Extract<SessionFeedRow, { shape: 'subagent' }>
 
-// FeedSubagent resolves its row to a child Session and leaves event presentation to DelegationEvent.
+// FeedSubagent opens its row's Subagent and leaves event presentation to DelegationEvent.
 export function FeedSubagent({ row }: { row: SubagentRow }) {
   const links = useContext(BackgroundWork)
-  const target = links?.find({ callId: row.subagentId, name: row.name ?? null }) ?? null
-  const open = links === null || target === null ? undefined : () => links.open(target)
+  const [subagent] = feedSubagents([row])
+  const open = links === null || subagent === undefined ? undefined : () => links.open(subagent)
   return <DelegationEvent onOpen={open} row={row} />
 }

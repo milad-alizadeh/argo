@@ -1,12 +1,11 @@
 import { createContext } from 'react'
-import type { SessionWork } from '../../work/session-work'
+import type { FeedSubagent } from '@/domains/sessions/api/feed/feed-subagents'
 
 export type BackgroundWorkLinks = {
-  // By the call a notification names, or else by the name an agent was given when it was sent.
-  find: (work: { callId: string | null; name: string | null }) => SessionWork | null
-  open: (target: SessionWork) => void
+  // With what the row says of it, since a nested Subagent's row is all the Session has of it.
+  open: (subagent: FeedSubagent) => void
 }
 
-// Set by the Session screen, so a Subagent row can open its own feed. A row with no link, or
-// outside a Session, still draws the same height with no chevron.
+// Set by the Session screen, so every Subagent row opens its own feed. A row outside a Session
+// draws the same title as plain text.
 export const BackgroundWork = createContext<BackgroundWorkLinks | null>(null)

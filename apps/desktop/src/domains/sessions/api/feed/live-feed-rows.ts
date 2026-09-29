@@ -1,5 +1,6 @@
 import type { FeedContent, MediaSource } from '@/domains/sessions/api/feed-content'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
+import type { BackgroundState } from './background-task-record'
 import { checkedDataImageUrl, dataImageUrl, fileImageUrl } from './feed-images'
 import type { SessionFeedRow } from './feed-rows'
 import { derivedId } from './fingerprint'
@@ -168,20 +169,25 @@ function mergeProgressContent(
       summary: update.summary ?? earlier.summary,
     }
   if (update.kind === 'delegation' && earlier.kind === 'delegation')
-    return {
-      ...update,
-      name: update.name ?? earlier.name,
-      prompt: update.prompt ?? earlier.prompt,
-      model: update.model ?? earlier.model,
-      summary: update.summary ?? earlier.summary,
-    }
+    return mergeDelegationContent(earlier, update)
   return update
+}
+
+function mergeDelegationContent(earlier: Delegation, update: Delegation): Delegation {
+  const nickname = update.nickname ?? earlier.nickname
+  return {
+    ...update,
+    name: update.name ?? earlier.name,
+    ...(nickname === undefined ? {} : { nickname }),
+    prompt: update.prompt ?? earlier.prompt,
+    model: update.model ?? earlier.model,
+    summary: update.summary ?? earlier.summary,
+  }
 }
 
 function joinContent(
   content: FeedContent,
-  tools: Map<string, Extract<FeedContent, { kind: 'tool' }>>,
-  progress: Map<string, Extract<FeedContent, { kind: 'task' | 'delegation' }>>,
+  { tools, progress, agents }: Omit<ProjectionState, 'questionCalls'>,
 ): FeedContent {
   switch (content.kind) {
     case 'tool': {
@@ -198,37 +204,64 @@ function joinContent(
     case 'delegation': {
       const joined = mergeProgressContent(progress.get(content.id), content)
       progress.set(content.id, joined)
-      return joined
+      return joined.kind === 'delegation' ? withAgentFacts(joined, agents) : joined
     }
     default:
       return content
   }
 }
 
-function delegationContentRow(
-  content: Extract<FeedContent, { kind: 'delegation' }>,
-): SessionFeedRow {
+type Delegation = Extract<FeedContent, { kind: 'delegation' }>
+type AgentFacts = Map<
+  string,
+  { name: string | null; nickname: string | undefined; model: string | null }
+>
+
+const RESPONSE_STATES = {
+  pending: null,
+  running: null,
+  paused: null,
+  completed: 'completed',
+  failed: 'failed',
+  interrupted: 'interrupted',
+} as const satisfies Record<Delegation['status'], BackgroundState | null>
+
+// A later event names the Subagent only when its own record does; its start said who it was.
+function withAgentFacts(content: Delegation, agents: AgentFacts): Delegation {
+  const known = agents.get(content.agentId)
+  const name = content.name ?? known?.name ?? null
+  const nickname = content.nickname ?? known?.nickname
+  const model = content.model ?? known?.model ?? null
+  agents.set(content.agentId, { name, nickname, model })
+  return { ...content, name, model, ...(nickname === undefined ? {} : { nickname }) }
+}
+
+function delegationContentRow(content: Delegation): SessionFeedRow {
   const facts = {
     shape: 'subagent',
     id: content.id,
     subagentId: content.agentId,
     ...(content.name === null ? {} : { name: content.name }),
+    ...(content.nickname === undefined ? {} : { nickname: content.nickname }),
     ...(content.model === null ? {} : { model: content.model }),
   } as const
-  switch (content.status) {
-    case 'pending':
-    case 'running':
-    case 'paused':
-      return { ...facts, event: 'started' }
-    case 'completed':
-    case 'failed':
-    case 'interrupted':
+  switch (content.event) {
+    case 'started':
+    case 'messaged':
+      return {
+        ...facts,
+        event: content.event,
+        ...(content.prompt === null ? {} : { prompt: content.prompt }),
+      }
+    case 'responded': {
+      const state = RESPONSE_STATES[content.status]
       return {
         ...facts,
         event: 'responded',
-        state: content.status,
+        ...(state === null ? {} : { state }),
         ...(content.summary === null ? {} : { text: content.summary }),
       }
+    }
   }
 }
 
@@ -367,9 +400,9 @@ function notificationContentRow(
 // Decoders preserve content semantics; this maps that content to the existing Feed display rows.
 function contentRow(content: FeedContent): SessionFeedRow | null {
   switch (content.kind) {
+    // A system context update is instruction to the model, never something the reader follows.
     case 'message':
-      if (content.role === 'system')
-        return { shape: 'event', id: content.id, event: 'context', text: content.text }
+      if (content.role === 'system') return null
       if (content.phase === 'commentary')
         return { shape: 'thought', id: content.id, text: content.text }
       return promptRow(content)
@@ -403,7 +436,7 @@ function contentRow(content: FeedContent): SessionFeedRow | null {
     case 'notification':
       return notificationContentRow(content)
     case 'context':
-      return eventContentRow(content, content.kind, content.text)
+      return null
     case 'marker':
       return markerRow(content)
     case 'refusal':
@@ -479,11 +512,12 @@ type ProjectionState = {
   questionCalls: Set<string>
   tools: Map<string, Extract<FeedContent, { kind: 'tool' }>>
   progress: Map<string, Extract<FeedContent, { kind: 'task' | 'delegation' }>>
+  agents: AgentFacts
 }
 
 function projectedContentRows(content: FeedContent, state: ProjectionState): SessionFeedRow[] {
   if (content.kind === 'tool' && state.questionCalls.has(content.callId)) return []
-  return contentRows(joinContent(content, state.tools, state.progress))
+  return contentRows(joinContent(content, state))
 }
 
 function upsertRows<Row>(
@@ -509,6 +543,7 @@ function historyFeedRows(history: readonly FeedContent[], questionCalls: Set<str
     questionCalls,
     tools: new Map(),
     progress: new Map(),
+    agents: new Map(),
   }
   for (const content of history) {
     upsertRows(
@@ -527,6 +562,7 @@ function liveFeedRows(live: readonly SessionLiveEvent[], questionCalls: Set<stri
     questionCalls,
     tools: new Map(),
     progress: new Map(),
+    agents: new Map(),
   }
   for (const event of live) {
     const projected =
