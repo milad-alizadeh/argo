@@ -265,8 +265,7 @@ export function omittedNativeIds(
     .map(({ nativeId }) => nativeId)
 }
 
-// One omitted Ticket, settled by the provider's answer. It leaves the omitted set whatever the
-// answer, so no later scan reads it again; a deletion keeps the row, its title and its links.
+// One omitted Ticket settled by the provider's answer; it is never read again, and a deletion keeps the row.
 export function saveOmittedTicket(
   database: Database,
   target: TicketScopeTarget & { nativeId: string; readAt: number },
@@ -283,7 +282,10 @@ export function saveOmittedTicket(
         transaction
           .update(ticketContent)
           .set({ deletedAt: outcome.at, updatedAt: touched })
-          .where(eq(ticketContent.ticketId, ticketId))
+          // A row written since the read keeps its newer facts, as in every other write.
+          .where(
+            and(eq(ticketContent.ticketId, ticketId), lt(ticketContent.updatedAt, target.readAt)),
+          )
           .run()
         break
       case 'elsewhere':
