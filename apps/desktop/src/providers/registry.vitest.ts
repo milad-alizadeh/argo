@@ -358,6 +358,34 @@ test('a GitHub Ticket refuses a priority change before any intent is recorded', 
   assert.deepEqual(intents(database), [])
 })
 
+test('the priority levels come from Linear, and GitHub offers none', async () => {
+  const linear = await signedInToLinear()
+  linear.mockLinear.addTeam(TEAM)
+  await connectedKeys(linear.tickets, linear.accountId, TEAM.id)
+  const offered = await linear.tickets.ticketPriorityChoices({ projectId })
+  assert.ok(offered.type === 'ticket.priorityChoices')
+  assert.deepEqual(
+    offered.choices.map(({ level, label }) => [level, label]),
+    [
+      [1, 'Urgent'],
+      [2, 'High'],
+      [3, 'Medium'],
+      [4, 'Low'],
+    ],
+  )
+  const github = await signedInToGitHub()
+  github.gitHub.addRepository({
+    fullName: 'octo/hello',
+    visibleTo: [OCTOCAT.id],
+    writers: [OCTOCAT.id],
+    issues: [],
+  })
+  await connectedKeys(github.tickets, github.accountId, 'octo/hello')
+  const none = await github.tickets.ticketPriorityChoices({ projectId })
+  assert.ok(none.type === 'ticket.priorityChoices')
+  assert.deepEqual(none.choices, [])
+})
+
 type Flow = Awaited<ReturnType<typeof flows>>
 
 // Waits for a scan outcome after this request's first change, never an earlier scan's.

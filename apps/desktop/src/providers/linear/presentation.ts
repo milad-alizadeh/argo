@@ -1,4 +1,3 @@
-import { LINEAR_PRIORITY_CHOICES } from '@/providers/linear/priority-choices'
 import type { ProviderPresentation } from '@/providers/presentation'
 
 export const linearPresentation: ProviderPresentation = {
@@ -6,5 +5,5 @@ export const linearPresentation: ProviderPresentation = {
   newTicketURL: null,
   keyColumn: 'w-(--size-ticket-key-long)',
   statusTerm: 'status',
-  priorityChoices: LINEAR_PRIORITY_CHOICES,
+  hasPriority: true,
 }

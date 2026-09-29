@@ -73,6 +73,7 @@ export function TicketDeck({
         onChangeStatus={(status) => selected && backlog.onChangeStatus(selected.key, status)}
         onOpenSession={onOpenSession}
         onSelect={onSelect}
+        priorityChoices={backlog.priorityChoices}
         provider={backlog.provider}
         statuses={backlog.statuses.length > 0 ? backlog.statuses : detail.statuses}
         ticket={selected}

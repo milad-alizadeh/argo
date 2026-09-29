@@ -42,7 +42,6 @@ const failed = (failure: Failure) => ({ ok: false, failure: FAILURES[failure] })
 const PAGE_CURSOR = /^[1-9]\d{0,5}$/
 
 export const githubTickets: TicketSource = {
-  priorityChoices: [],
   outage: { 'rate-limited': 'rate-limited', unreachable: 'github-unreachable' },
 
   // GitHub's canonical name is what is stored, so the Connection survives a person's casing.
@@ -85,7 +84,11 @@ export const githubTickets: TicketSource = {
     return written.ok ? written : { ok: false, failure: WRITE_FAILURES[written.failure] }
   },
 
-  // GitHub keeps no priority; the row and Detail menus never call this for a GitHub Ticket.
+  // GitHub keeps no priority, so it offers no choices and refuses a change.
+  async readPriorityChoices() {
+    return { ok: true, value: [] }
+  },
+
   async updatePriority() {
     return { ok: false, failure: 'ticket-not-writable' }
   },

@@ -41,6 +41,7 @@ function MetadataSection({ title, children }: { title: string; children: ReactNo
 // What the Detail offers to change, and the change.
 export type Editing = {
   writable: boolean
+  priorityChoices: readonly TicketPriority[]
   statuses: readonly TicketStatus[]
   onChangeStatus: (status: TicketStatus) => void
   onChangePriority: (priority: TicketPriority | null) => void
@@ -61,6 +62,7 @@ export function Properties({
   onSelect,
   statuses,
   writable,
+  priorityChoices,
   onChangeStatus,
   onChangePriority,
 }: PropertiesProps) {
@@ -91,10 +93,10 @@ export function Properties({
               <span className={COMPACT_VALUE}>{t(`detail.state.${ticket.state}`)}</span>
             </Property>
           )}
-          {presentation.priorityChoices.length > 0 ? (
+          {presentation.hasPriority ? (
             <Property name={t('detail.priority')}>
               <PriorityMenu
-                choices={presentation.priorityChoices}
+                choices={priorityChoices}
                 metadata
                 named
                 onChange={onChangePriority}

@@ -6,6 +6,7 @@ import type {
   ConnectionState,
   ConnectionSummary,
   Ticket,
+  TicketPriority,
 } from '@/domains/tickets/contract/contract'
 import type { TicketsView } from '../hooks/use-tickets-view'
 import type { Backlog } from '../lib/backlog'
@@ -69,6 +70,14 @@ export const standalone: Ticket = {
   ],
   blockedBy: [],
 }
+
+// What Linear's `issuePriorityValues` answers, without its "No priority" row.
+export const LINEAR_PRIORITIES: readonly TicketPriority[] = [
+  { level: 1, label: 'Urgent' },
+  { level: 2, label: 'High' },
+  { level: 3, label: 'Medium' },
+  { level: 4, label: 'Low' },
+]
 
 // A Linear issue keeps a workflow status and a priority that a GitHub Issue has no word for.
 export const engine: Ticket = {
@@ -137,6 +146,7 @@ export const backlog = (overrides: Partial<Backlog> = {}): Backlog => ({
   searching: false,
   partial: false,
   writable: true,
+  priorityChoices: [],
   onLoadMore: fn(),
   onRetryLoadMore: fn(),
   sync: { refreshing: false, problem: null },

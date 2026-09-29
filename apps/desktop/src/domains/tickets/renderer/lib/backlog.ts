@@ -28,6 +28,8 @@ export type Backlog = {
   sync: { refreshing: boolean; problem: TicketProblemProps | null }
   // False while the Ticket's Account cannot be called: the rows stay, their controls do not edit.
   writable: boolean
+  // The levels the provider offers now; empty while unread and where it keeps no priority.
+  priorityChoices: readonly TicketPriority[]
   // Every status a Ticket here can move to, and the move.
   statuses: readonly TicketStatus[]
   onChangeStatus: (key: string, status: TicketStatus) => void

@@ -77,6 +77,7 @@ export function TicketDetail(props: TicketDetailProps) {
     provider,
     statuses,
     writable,
+    priorityChoices,
     onChangeStatus,
     onChangePriority,
     linkedSessions,
@@ -119,6 +120,7 @@ export function TicketDetail(props: TicketDetailProps) {
               onSelect={navigation.onSelect}
               provider={provider}
               statuses={statuses}
+              priorityChoices={priorityChoices}
               writable={writable}
               ticket={ticket}
             />

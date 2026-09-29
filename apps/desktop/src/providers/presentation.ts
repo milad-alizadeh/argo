@@ -1,5 +1,3 @@
-import type { TicketPriority } from '@/domains/tickets/contract/ticket'
-
 // How the renderer draws one provider; shared screens read it by provider ID and never branch on one.
 // Reader text sits in the provider's own `locales/en.json`, read through the `providers` namespace.
 export type ProviderPresentation = {
@@ -11,6 +9,6 @@ export type ProviderPresentation = {
   keyColumn: string
   // Which word names a Ticket's status: GitHub's open or closed state, Linear's workflow status.
   statusTerm: 'state' | 'status'
-  // The Priorities a Ticket can be moved to, in the provider's words; empty where it keeps none.
-  priorityChoices: readonly TicketPriority[]
+  // Whether the provider keeps a priority. Its levels are read from the provider, not declared here.
+  hasPriority: boolean
 }

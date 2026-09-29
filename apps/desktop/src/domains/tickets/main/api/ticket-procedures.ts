@@ -10,6 +10,7 @@ import {
   ticketErrorSchema,
   ticketListedSchema,
   ticketPrioritizedSchema,
+  ticketPriorityChoicesSchema,
   ticketUpdatedSchema,
 } from '@/domains/tickets/contract/contract'
 import { priorityLevel, statusId, ticketKey } from '@/domains/tickets/contract/ticket'
@@ -40,6 +41,7 @@ import { readConnection } from './ticket-connection-read'
 import { disconnectSource } from './ticket-disconnect'
 import { discoverSources } from './ticket-discover'
 import { listTickets } from './ticket-list'
+import { readPriorityChoices } from './ticket-priority-choices'
 import { updatePriority } from './ticket-update-priority'
 import { updateStatus } from './ticket-update-status'
 
@@ -70,6 +72,7 @@ const updatePriorityInputSchema = projectInputSchema.extend({
   key: ticketKey,
   priorityLevel: priorityLevel.nullable(),
 })
+const priorityChoicesOutputSchema = z.union([ticketPriorityChoicesSchema, ticketErrorSchema])
 const updatePriorityOutputSchema = z.union([ticketPrioritizedSchema, ticketErrorSchema])
 
 export type TicketProcedureContext = Pick<Call, 'access' | 'connections' | 'providers' | 'index'>
@@ -190,6 +193,11 @@ export function ticketProcedures(dependencies: TicketProcedureContext) {
       .mutation(({ input: { projectId, key, statusId: nextStatusId } }) =>
         updateStatus(request(dependencies, projectId), { key, statusId: nextStatusId }),
       ),
+    // The priority levels the Project's provider offers, read from the provider.
+    ticketPriorityChoices: t.procedure
+      .input(projectInputSchema)
+      .output(priorityChoicesOutputSchema)
+      .query(({ input }) => readPriorityChoices(request(dependencies, input.projectId))),
     ticketUpdatePriority: t.procedure
       .input(updatePriorityInputSchema)
       .output(updatePriorityOutputSchema)

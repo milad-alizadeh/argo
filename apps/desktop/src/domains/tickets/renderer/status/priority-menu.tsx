@@ -54,7 +54,7 @@ export function PriorityMenu({
     const next = options.find((option) => priorityValue(option) === value)
     if (next !== undefined && priorityValue(next) !== priorityValue(priority)) onChange(next)
   }
-  if (!writable) return <StaticPriority named={named} priority={priority} />
+  if (!writable || choices.length === 0) return <StaticPriority named={named} priority={priority} />
   return (
     <DropdownMenu>
       <DropdownMenuTrigger

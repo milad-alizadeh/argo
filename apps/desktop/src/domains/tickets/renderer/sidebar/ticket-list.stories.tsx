@@ -156,6 +156,7 @@ export const SavedRowsWithoutWrites: Story = {
       provider: 'linear',
       tickets: [standalone],
       writable: false,
+      priorityChoices: [],
       sync: {
         refreshing: false,
         problem: {
