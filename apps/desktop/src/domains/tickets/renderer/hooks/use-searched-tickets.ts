@@ -12,6 +12,7 @@ import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 import { trpcClient } from '@/platform/renderer/trpc-client'
 import { numberedPages } from './numbered-pages'
 import { type TicketSearchedReply, ticketReply } from './ticket-reply'
+import { savedRead } from './use-active-tickets'
 import { listKey, onRefused, type TicketPages } from './use-tickets'
 
 export const searchKey = () => [...listKey(), 'search']
@@ -51,8 +52,7 @@ export function useSearchedTickets(projectId: string | null, enabled: boolean, q
     placeholderData: keepPreviousData,
   })
   // A search refused as the Account also leaves the Account listing and Connection stale.
-  const head = list.data?.pages[0]
-  const failed = head?.type === 'ticket.searched' ? head.search.failure : null
+  const failed = savedRead(list.data)?.failure?.code
   useEffect(() => {
     if (projectId && failed) onRefused(client, projectId, ticketError(failed, null))
   }, [client, projectId, failed])

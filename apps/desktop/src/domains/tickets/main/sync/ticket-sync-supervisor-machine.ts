@@ -116,7 +116,11 @@ type DueEvent = {
 const keyOf = ({ provider, scope }: TicketScopeTarget) => `ticket-sync:${provider}:${scope}`
 const SEARCH_PREFIX = 'ticket-search:'
 const searchKeyOf = ({ provider, scope, query }: TicketSearchRequest) =>
-  `${SEARCH_PREFIX}${provider}:${scope}:${query}`
+  `${SEARCH_PREFIX}${JSON.stringify([
+    provider,
+    scope,
+    query,
+  ])}`
 const dueId = (key: string) => `due:${key}`
 
 type Watchers = Record<string, TicketSyncRequest>

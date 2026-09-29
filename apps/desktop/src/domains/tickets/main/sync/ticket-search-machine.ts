@@ -67,6 +67,10 @@ async function search(input: SearchInput): Promise<TicketErrorCode | null> {
     record((database) => failTicketSearch(database, target, read.failure))
     return read.failure
   } catch {
+    // Best effort: with storage down, the interrupted-search sweep settles the row at restart.
+    try {
+      record((database) => failTicketSearch(database, target, 'storage-not-written'))
+    } catch {}
     return 'storage-not-written'
   }
 }

@@ -88,17 +88,23 @@ export function savedRead(pages: TicketPages | undefined): SavedRead | null {
   const head = pages?.pages[0]
   if (head === undefined) return null
   const { total } = head
-  if (head.type === 'ticket.indexed') {
-    const { sync } = head
-    // Kept through a retry's scan, so the screen does not drop the failure while it retries.
-    const failure = sync.failure === null ? null : ticketError(sync.failure, null)
-    return { total, complete: sync.complete, refreshing: sync.phase === 'syncing', failure }
-  }
-  const { search } = head
-  return {
-    total,
-    complete: search.completedAt !== null,
-    refreshing: search.phase === 'syncing',
-    failure: search.failure === null ? null : ticketError(search.failure, null),
+  switch (head.type) {
+    case 'ticket.indexed': {
+      const { sync } = head
+      // Kept through a retry's scan, so the screen does not drop the failure while it retries.
+      const failure = sync.failure === null ? null : ticketError(sync.failure, null)
+      return { total, complete: sync.complete, refreshing: sync.phase === 'syncing', failure }
+    }
+    case 'ticket.searched': {
+      const { search } = head
+      return {
+        total,
+        complete: search.completedAt !== null,
+        refreshing: search.phase === 'syncing',
+        failure: search.failure === null ? null : ticketError(search.failure, null),
+      }
+    }
+    default:
+      return head satisfies never
   }
 }
