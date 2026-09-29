@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, waitFor, within } from 'storybook/test'
 import { sessionError } from '@/domains/sessions/api/session-error'
-import { sessionSubagent } from '../session-fixtures'
+import { sessionSubagent } from '@/mocks/sessions/session-rows'
 import type { SessionFeed } from '../types'
 import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
 import { SessionDelegationInspector } from './session-delegation-inspector'

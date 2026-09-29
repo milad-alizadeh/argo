@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
-import { claudeComposerModelCatalogFixture } from '../../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
-import { claudeChoices } from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
+import { claudeComposerModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
+import { claudeChoices } from '@/mocks/sessions/harness-catalog.fixture'
 import type { TurnConfigurationChoices } from '../turn-configuration/turn-configuration'
 import { ModeMenu } from './mode-menu'
 

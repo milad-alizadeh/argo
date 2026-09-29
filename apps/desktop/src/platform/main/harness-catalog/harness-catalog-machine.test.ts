@@ -6,8 +6,8 @@ import { adjacencyMapToArray, getAdjacencyMap, getShortestPaths } from 'xstate/g
 import { claudeHarnessInfo } from '@/harnesses/claude/catalog'
 import { codexHarnessInfo } from '@/harnesses/codex/catalog'
 import { harnessCatalogSchema, unavailable } from '@/harnesses/harness-catalog'
-import { claudeModelCatalogFixture } from '../../../../test-fixtures/sessions/claude-model-catalog.fixture'
-import { codexModelCatalogFixture } from '../../../../test-fixtures/sessions/codex-model-catalog.fixture'
+import { claudeModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
+import { codexModelCatalogFixture } from '@/mocks/sessions/codex-model-catalog.fixture'
 import { assertModeledTransitions } from '../test-doubles/xstate-model-transitions'
 import { harnessCatalogMachine } from './harness-catalog-machine'
 

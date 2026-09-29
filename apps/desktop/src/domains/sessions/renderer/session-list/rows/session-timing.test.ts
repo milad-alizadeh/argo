@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { sessionRow } from '../../session-fixtures'
+import { sessionRow } from '@/mocks/sessions/session-rows'
 import { sessionTiming } from './session-timing'
 
 const NOW = Date.parse('2026-09-14T12:00:00.000Z')

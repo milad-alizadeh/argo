@@ -4,10 +4,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { promisify } from 'node:util'
 import { onTestFinished, test } from 'vitest'
 import { databaseFrom } from '@/database/database'
-import {
-  addLinkedWorktree,
-  workspaceRepoFixture,
-} from '../../../../../test-fixtures/projects/workspaces/workspace-repo.fixture'
+import { addLinkedWorktree, workspaceRepoFixture } from '@/mocks/projects/workspace-repo.fixture'
 import { reconcileWorkspaces } from './workspace-reconciliation'
 
 const run = promisify(execFile)

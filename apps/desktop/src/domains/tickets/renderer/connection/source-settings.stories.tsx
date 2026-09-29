@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { ticketError } from '@/domains/tickets/api/errors'
-import { connection } from '../detail/ticket-fixtures'
+import { connection } from '@/mocks/tickets/renderer-models'
 import { SourceSettings } from './source-settings'
 
 const meta = {

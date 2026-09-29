@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
+import { engine, linearPriorities, prototype, wayfinder } from '@/mocks/tickets/renderer-models'
+import { ticketStatuses } from '@/mocks/tickets/scenario'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { STATUSES } from '../status/status-fixtures'
 import { TicketDetail } from './ticket-detail'
-import { engine, LINEAR_PRIORITIES, prototype, wayfinder } from './ticket-fixtures'
 
 const URL_BODY = `See https://github.com/octocat/hello-world/blob/main/${'deeply-nested-'.repeat(12)}path.md`
 
@@ -31,7 +31,7 @@ const meta = {
     onOpenSession: fn(),
     onSelect: fn(),
     provider: 'github',
-    statuses: STATUSES.github,
+    statuses: ticketStatuses('github'),
     priorityChoices: [],
     onChangeStatus: fn(),
     onChangePriority: fn(),
@@ -62,7 +62,7 @@ function expectAlignedCompactMetadata(article: HTMLElement) {
 }
 
 export const Default: Story = {
-  args: { ticket: wayfinder },
+  args: { ticket: wayfinder() },
   parameters: { detailWidth: '40rem' },
   play: async ({ args, canvasElement }) => {
     const article = within(canvasElement).getByRole('article', { name: 'Ticket #607' })
@@ -94,14 +94,14 @@ export const Default: Story = {
     // A label GitHub colours is tinted with that colour; one without a colour stays plain.
     const tint = (name: string) =>
       within(article).getByText(name).style.getPropertyValue('--ticket-label')
-    await expect(tint('wayfinder')).toBe(`#${wayfinder.labels[0]?.color}`)
+    await expect(tint('wayfinder')).toBe(`#${wayfinder().labels[0]?.color}`)
     await expect(tint('prd')).toBe('')
   },
 }
 
 // A compact workspace can still fit the core metadata on one row. Every pill keeps one centreline.
 export const CompactMetadataAlignment: Story = {
-  args: { ticket: wayfinder },
+  args: { ticket: wayfinder() },
   parameters: { detailWidth: '40rem' },
   play: async ({ canvasElement }) => {
     const article = within(canvasElement).getByRole('article', { name: 'Ticket #607' })
@@ -111,7 +111,7 @@ export const CompactMetadataAlignment: Story = {
 
 // GitHub's state is open or a reason for closing, and the menu offers each one.
 export const ChangeState: Story = {
-  args: { ticket: wayfinder },
+  args: { ticket: wayfinder() },
   play: async ({ args, canvasElement }) => {
     const article = within(canvasElement).getByRole('article', { name: 'Ticket #607' })
     await userEvent.click(within(article).getByRole('button', { name: 'State: Open' }))
@@ -121,18 +121,18 @@ export const ChangeState: Story = {
     await userEvent.click(
       within(menu).getByRole('menuitemradio', { name: 'Closed as not planned' }),
     )
-    await expect(args.onChangeStatus).toHaveBeenCalledWith(STATUSES.github[2])
+    await expect(args.onChangeStatus).toHaveBeenCalledWith(ticketStatuses('github')[2])
   },
 }
 
 // Linear's own workflow status and priority show as properties, and its key names the link.
 export const Linear: Story = {
   args: {
-    ticket: engine,
+    ticket: engine(),
     provider: 'linear',
     listed: new Set(),
-    statuses: STATUSES.linear,
-    priorityChoices: LINEAR_PRIORITIES,
+    statuses: ticketStatuses('linear'),
+    priorityChoices: linearPriorities(),
   },
   parameters: { detailWidth: '40rem' },
   play: async ({ canvasElement }) => {
@@ -153,11 +153,11 @@ export const Linear: Story = {
 // Linear's priority menu moves the Ticket to another level, in Linear's own words.
 export const ChangePriority: Story = {
   args: {
-    ticket: engine,
+    ticket: engine(),
     provider: 'linear',
     listed: new Set(),
-    statuses: STATUSES.linear,
-    priorityChoices: LINEAR_PRIORITIES,
+    statuses: ticketStatuses('linear'),
+    priorityChoices: linearPriorities(),
   },
   play: async ({ args, canvasElement }) => {
     const article = within(canvasElement).getByRole('article', { name: 'Ticket ENG-12' })
@@ -171,7 +171,7 @@ export const ChangePriority: Story = {
 
 // #609 has no body and GitHub gives no dependency information for it.
 export const NoBody: Story = {
-  args: { ticket: prototype },
+  args: { ticket: prototype() },
   play: async ({ canvasElement }) => {
     const article = within(canvasElement).getByRole('article', { name: 'Ticket #609' })
     await expect(within(article).getByText('No description.')).toBeInTheDocument()
@@ -185,7 +185,7 @@ export const NoBody: Story = {
 export const LongContent: Story = {
   args: {
     ticket: {
-      ...wayfinder,
+      ...wayfinder(),
       title:
         'Tickets list stalls on repositories with thousands of open issues when search runs before the first page arrives',
       body: URL_BODY,
@@ -208,7 +208,7 @@ const MARKDOWN_BODY = [
 
 // A description reaches the feed's own Markdown renderer; FeedMarkdown's stories check its output.
 export const MarkdownBody: Story = {
-  args: { ticket: { ...wayfinder, body: MARKDOWN_BODY } },
+  args: { ticket: { ...wayfinder(), body: MARKDOWN_BODY } },
   play: async ({ canvasElement }) => {
     const article = within(canvasElement).getByRole('article', { name: 'Ticket #607' })
     await expect(within(article).getByRole('heading', { name: 'Flow' })).toBeVisible()

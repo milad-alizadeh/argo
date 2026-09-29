@@ -1,17 +1,17 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { TICKET_PAGE_SIZE } from '@/domains/tickets/api/ticket'
-import { github, githubWithRepository, OCTOCAT, signIn } from '@/providers/github/harness'
+import { github, githubWithRepository, octocatUser, signIn } from '@/providers/github/harness'
 import { readTicketPage, searchQuery } from '@/providers/github/issues'
 
 test('a backlog reads one page at a time and names the next until it ends', async (context) => {
   const [mock, endpoints] = await github(context)
-  mock.signIn(OCTOCAT)
+  mock.signIn(octocatUser())
   const issues = Array.from({ length: TICKET_PAGE_SIZE + 5 }, (_, index) => ({
     number: index + 1,
     title: `T${index}`,
   }))
-  mock.addRepository({ fullName: 'octo/big', visibleTo: [OCTOCAT.id], issues })
+  mock.addRepository({ fullName: 'octo/big', visibleTo: [octocatUser().id], issues })
   const token = await signIn(endpoints)
   const first = await readTicketPage(endpoints, token, { scope: 'octo/big', query: '', page: 1 })
   assert.ok(first.ok)

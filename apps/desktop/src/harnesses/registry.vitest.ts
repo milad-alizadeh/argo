@@ -1,6 +1,6 @@
 import { beforeEach, expect, test, vi } from 'vitest'
-import { claudeModelCatalogFixture } from '../../test-fixtures/sessions/claude-model-catalog.fixture'
-import { codexModelCatalogFixture } from '../../test-fixtures/sessions/codex-model-catalog.fixture'
+import { claudeModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
+import { codexModelCatalogFixture } from '@/mocks/sessions/codex-model-catalog.fixture'
 import { claudeHarnessInfo } from './claude/catalog'
 import { createClaudeRegistration } from './claude/registration'
 import type { CodexAppServerClient, CodexRequest } from './codex/app-server/codex-app-server-client'

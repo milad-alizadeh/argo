@@ -4,15 +4,15 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
-import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { queryClient } from '@/platform/renderer/trpc-client'
+import { sessionRow } from '@/mocks/sessions/session-rows'
 import {
   announceSessionFeedChange,
   announceSessionListChange,
   sessionFeedSubscribe,
   sessionListSubscribe,
-  sessionRow,
-} from '../session-fixtures'
+} from '@/mocks/sessions/session-story-host'
+import { AppShell } from '@/platform/renderer/app/components/app-shell'
+import { queryClient } from '@/platform/renderer/trpc-client'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import { SessionScreenView } from './session-screen-view'
 

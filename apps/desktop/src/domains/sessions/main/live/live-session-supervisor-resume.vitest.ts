@@ -12,7 +12,7 @@ import {
   send,
   start,
   supervisorFor,
-} from '../../../../../test-fixtures/sessions/live-session-supervisor.fixture'
+} from '@/mocks/sessions/live-session-supervisor.fixture'
 import { liveSessionActorFor } from './live-session-supervisor-machine'
 
 test('resumes a persisted Claude Session after its live channel fails', async () => {

@@ -3,15 +3,14 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, screen, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import { AppShell } from '@/platform/renderer/app/components/app-shell'
+import { sessionRow, sessionSubagent } from '@/mocks/sessions/session-rows'
 import {
   type FeedRead,
   sessionFeedRefreshTrpc,
   sessionFeedSubscribe,
   sessionListSubscribe,
-  sessionRow,
-  sessionSubagent,
-} from '../session-fixtures'
+} from '@/mocks/sessions/session-story-host'
+import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import { SessionScreenView } from './session-screen-view'
 

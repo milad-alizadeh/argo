@@ -6,7 +6,7 @@ import { ClaudeLiveText } from './claude-live-text'
 // Captured from a Claude Agent SDK query with includePartialMessages on 2026-09-28.
 test('builds a stable assistant row from recorded Claude Agent SDK stream events', () => {
   const recorded = readFileSync(
-    new URL('./fixtures/claude-live-stream.jsonl', import.meta.url),
+    new URL('../../../../mocks/cli/claude/fixtures/claude-live-stream.jsonl', import.meta.url),
     'utf8',
   )
     .trim()

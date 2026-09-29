@@ -1,17 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { claudeComposerModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
+import { claudeChoices, codexHarnessInfoFixture } from '@/mocks/sessions/harness-catalog.fixture'
 import {
   queryClient,
   type RouterInputs,
   type RouterOutputs,
   trpc,
 } from '@/platform/renderer/trpc-client'
-import { claudeComposerModelCatalogFixture } from '../../../../../../test-fixtures/sessions/claude-model-catalog.fixture'
-import {
-  claudeChoices,
-  codexHarnessInfoFixture,
-} from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
 import { useComposerFailureToasts } from '../../screens/use-composer-failure-toasts'
 import { ComposerForm } from '../layout/composer-form'
 import type { TurnConfigurationChoices } from '../turn-configuration/turn-configuration'

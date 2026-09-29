@@ -1,10 +1,10 @@
-import path from 'node:path'
 import { defineConfig } from 'vite'
+import { desktopAlias } from './vite-alias'
 
 // node-pty is a native module: it must stay an external require, never be bundled.
 export default defineConfig({
   resolve: {
-    alias: { '@': path.resolve(import.meta.dirname, 'src') },
+    alias: desktopAlias(import.meta.dirname),
   },
   build: {
     rollupOptions: {

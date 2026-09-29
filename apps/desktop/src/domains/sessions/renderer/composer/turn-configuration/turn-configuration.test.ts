@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { claudeChoices } from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
+import { claudeChoices } from '@/mocks/sessions/harness-catalog.fixture'
 import {
   configurationFromReading,
   initialTurnConfiguration,

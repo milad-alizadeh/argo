@@ -4,8 +4,6 @@ import { MemoryRouter } from 'react-router'
 import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
 import { AccountsPanel } from '@/domains/accounts/renderer'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
-import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { ConnectSourceFields } from '../connection/connect-source-form'
 import {
   backlog,
   connection,
@@ -16,11 +14,13 @@ import {
   readPath,
   standalone,
   ticketsView,
-} from '../detail/ticket-fixtures'
+} from '@/mocks/tickets/renderer-models'
+import { ticketStatuses } from '@/mocks/tickets/scenario'
+import { AppShell } from '@/platform/renderer/app/components/app-shell'
+import { ConnectSourceFields } from '../connection/connect-source-form'
 import type { TicketsScreenProps } from '../hooks/use-tickets-view'
 import { ticketWorkPath } from '../sidebar/ticket-work-path'
 import { TicketsSidebarContent } from '../sidebar/tickets-sidebar'
-import { STATUSES } from '../status/status-fixtures'
 import { TicketsScreen } from './tickets-screen-view'
 
 // The screen no longer holds its own selection (#2134: a Session's "Open Ticket" must land on the
@@ -73,13 +73,13 @@ function TicketsScreenStory({ view, notice = null }: TicketsScreenStoryProps) {
 
 // The repository-connect form draws inline in the Accounts panel once an Account connects (#2411).
 function AccountToRepositoryForm() {
-  const [accountId, setAccountId] = useState<string | null>(octocat.id)
+  const [accountId, setAccountId] = useState<string | null>(octocat().id)
   return (
     <AccountsPanel
       connect={
         <ConnectSourceFields
           accountId={accountId}
-          accounts={[octocat]}
+          accounts={[octocat()]}
           error={null}
           onConnectSource={fn()}
           onSelectAccount={setAccountId}
@@ -94,7 +94,7 @@ function AccountToRepositoryForm() {
       disconnecting={null}
       harnesses={null}
       listError={null}
-      listing={{ accounts: [octocat], notice: false, providers: ['github'] }}
+      listing={{ accounts: [octocat()], notice: false, providers: ['github'] }}
       onDisconnect={fn()}
       signIn={{
         cancel: fn(),
@@ -123,7 +123,9 @@ const meta = {
       </div>
     ),
   ],
-  args: { view: ticketsView() },
+  args: {
+    view: { ...ticketsView(), onBack: fn(), onSelect: fn(), onOpenSession: fn() },
+  },
 } satisfies Meta<typeof TicketsScreenStory>
 
 export default meta
@@ -215,7 +217,7 @@ export const MoreTicketsUnavailable: Story = {
         onRetryLoadMore: retryLoadMore,
       }),
       selectedKey: null,
-      detail: noDetail,
+      detail: noDetail(),
       now: new Date('2026-09-25T12:00:00Z').getTime(),
       onBack: fn(),
       onSelect: fn(),
@@ -258,7 +260,7 @@ export const RefreshFailedKeepsRows: Story = {
         },
       }),
       selectedKey: null,
-      detail: noDetail,
+      detail: noDetail(),
       now: new Date('2026-09-25T12:00:00Z').getTime(),
       onBack: fn(),
       onSelect: fn(),
@@ -295,7 +297,7 @@ export const FoldedParent: Story = {
 }
 
 const branch = (number: number, title: string, children: number[] = []) => ({
-  ...standalone,
+  ...standalone(),
   key: `#${number}`,
   url: `https://github.com/octocat/hello-world/issues/${number}`,
   title,
@@ -316,7 +318,7 @@ export const TicketTree: Story = {
         branch(701, 'Read the plan', [703]),
         branch(703, 'Parse the plan file'),
         branch(702, 'Draw the plan'),
-        standalone,
+        standalone(),
       ],
     }),
   },
@@ -350,7 +352,7 @@ export const UnlistedTicket: Story = {
     view: {
       ...ticketsView(),
       selectedKey: '#388',
-      detail: { ...noDetail, ticket: readPath, statuses: STATUSES.github },
+      detail: { ...noDetail(), ticket: readPath(), statuses: ticketStatuses('github') },
     },
   },
   play: async ({ canvasElement }) => {
@@ -367,8 +369,8 @@ export const SavedTicketRefreshFailed: Story = {
       ...ticketsView(),
       selectedKey: '#388',
       detail: {
-        ...noDetail,
-        ticket: readPath,
+        ...noDetail(),
+        ticket: readPath(),
         problem: {
           icon: 'connection-offline',
           title: 'Argo could not refresh this Ticket. This is the last saved.',
@@ -391,7 +393,7 @@ export const SavedTicketRefreshFailed: Story = {
 // A Ticket opened by an Argo link waits for its by-ID read before anything is drawn.
 export const OpeningTicket: Story = {
   args: {
-    view: { ...ticketsView(), selectedKey: 'ENG-3', detail: { ...noDetail, reading: true } },
+    view: { ...ticketsView(), selectedKey: 'ENG-3', detail: { ...noDetail(), reading: true } },
   },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByRole('status')).toHaveTextContent('Opening ENG-3…')
@@ -407,7 +409,7 @@ export const TicketNotFound: Story = {
       ...ticketsView(),
       selectedKey: '#9999',
       detail: {
-        ...noDetail,
+        ...noDetail(),
         problem: {
           icon: 'not-visible',
           title: 'Argo could not open this Ticket.',
@@ -428,7 +430,13 @@ export const TicketNotFound: Story = {
 
 // A Linear row carries its team key and workflow status; the Detail's own stories check its priority.
 export const LinearBacklog: Story = {
-  args: { view: ticketsView({ provider: 'linear', tickets: [engine] }) },
+  args: {
+    view: ticketsView({
+      provider: 'linear',
+      tickets: [engine()],
+      onChangeStatus: fn(),
+    }),
+  },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     // Moving a Ticket from its row leaves the Ticket selected where it was.
@@ -436,7 +444,10 @@ export const LinearBacklog: Story = {
     const menu = await within(canvasElement.ownerDocument.body).findByRole('menu')
     await userEvent.click(within(menu).getByRole('menuitemradio', { name: 'Done' }))
     const { backlog } = args.view.kind === 'tickets' ? args.view : { backlog: null }
-    await expect(backlog?.onChangeStatus).toHaveBeenCalledWith('ENG-12', STATUSES.linear[4])
+    await expect(backlog?.onChangeStatus).toHaveBeenCalledWith(
+      'ENG-12',
+      ticketStatuses('linear')[4],
+    )
     await expect(canvas.getByRole('button', { name: /^ENG-12/ })).toBeInTheDocument()
     await expect(canvas.getByRole('button', { name: 'Status: In Review' })).toBeVisible()
   },
@@ -504,7 +515,7 @@ export const LongBacklog: Story = {
 // GitHub answers the search and counts every match, not only the page read so far.
 export const SearchResults: Story = {
   args: {
-    view: ticketsView({ tickets: [standalone], query: 'wayfinder', total: 12, hasMore: true }),
+    view: ticketsView({ tickets: [standalone()], query: 'wayfinder', total: 12, hasMore: true }),
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

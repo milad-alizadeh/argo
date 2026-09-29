@@ -4,7 +4,10 @@
     "module": "Preserve",
     "moduleResolution": "bundler",
     "baseUrl": ".",
-    "paths": { "@/*": ["./src/*"] },
+    "paths": {
+      "@/mocks/*": ["./mocks/*"],
+      "@/*": ["./src/*"]
+    },
     "lib": ["ES2023"],
     "types": ["node", "bun"],
     "strict": true,

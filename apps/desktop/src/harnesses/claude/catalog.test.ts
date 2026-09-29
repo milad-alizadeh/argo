@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { claudeModelCatalogFixture } from '../../../test-fixtures/sessions/claude-model-catalog.fixture'
+import { claudeModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
 import { claudeHarnessInfo, claudeModelCatalogSchema, permissionModesFromHelp } from './catalog'
 
 test('reads permission modes from the installed Claude CLI help', () => {

@@ -1,7 +1,7 @@
 // The Ticket proof's automatic refresh (#2870). The proof's window starts hidden.
 import assert from 'node:assert/strict'
 import { expect, test } from '@playwright/test'
-import { helloWorld } from '../fixtures/tickets.fixture'
+import { helloWorldRepository as helloWorld } from '@/mocks/tickets/provider-inputs'
 import {
   backlog,
   chooseAccount,

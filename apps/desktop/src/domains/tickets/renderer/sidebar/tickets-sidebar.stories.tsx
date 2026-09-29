@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter } from 'react-router'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { backlog, connection } from '../detail/ticket-fixtures'
+import { backlog, connection } from '@/mocks/tickets/renderer-models'
 import { ticketWorkPath } from './ticket-work-path'
 import { TicketsSidebarContent, type TicketsSidebarContentProps } from './tickets-sidebar'
 

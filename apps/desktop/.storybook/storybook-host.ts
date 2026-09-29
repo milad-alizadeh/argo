@@ -1,4 +1,4 @@
-import { sessionRow } from '../src/domains/sessions/renderer/session-fixtures'
+import { sessionRow } from '@/mocks/sessions/session-rows'
 import { storybookAutoCompactProcedures } from './storybook-auto-compact'
 import { subscribeToStorybookCommands } from './storybook-commands'
 import { storybookHarnessSignInProcedures } from './storybook-harness-signin'

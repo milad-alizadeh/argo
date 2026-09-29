@@ -8,7 +8,6 @@
         "path": "^apps/desktop/src/domains/([^/]+)/",
         "pathNot": [
           "\\.(test|stories)\\.(ts|tsx)$",
-          "^apps/desktop/src/domains/accounts/main/test-support/harness-fixtures\\.ts$",
           "^apps/desktop/src/domains/sessions/main/indexing/session-index/roster-fixtures\\.ts$"
         ]
       },
@@ -17,7 +16,6 @@
         "pathNot": [
           "^apps/desktop/src/domains/$1/",
           "/index\\.tsx?$",
-          "^apps/desktop/src/domains/accounts/main/test-support/harness-fixtures\\.ts$",
           "^apps/desktop/src/domains/sessions/main/indexing/session-index/roster-fixtures\\.ts$"
         ]
       }
@@ -115,6 +113,19 @@
         "pathNot": "^$1/",
         "dependencyTypesNot": ["aliased-tsconfig"]
       }
+    },
+    {
+      "name": "production-does-not-import-mocks",
+      "comment": "Production modules stay free of fixture data under mocks/ (#2907). Provider harness.ts files are the unit-test drivers that start those mocks.",
+      "severity": "error",
+      "from": {
+        "path": "^apps/desktop/src/",
+        "pathNot": [
+          "\\.(test|vitest|stories)\\.(ts|tsx)$",
+          "^apps/desktop/src/providers/[^/]+/harness\\.ts$"
+        ]
+      },
+      "to": { "path": "^apps/desktop/mocks/" }
     },
     {
       "name": "mocks-and-e2e-reach-src-through-alias",

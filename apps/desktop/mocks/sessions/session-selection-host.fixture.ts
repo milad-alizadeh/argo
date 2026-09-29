@@ -1,10 +1,7 @@
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import {
-  sessionFeedSubscribe,
-  sessionListSubscribe,
-} from '@/domains/sessions/renderer/session-fixtures'
 import { sessionRosterPathKey } from '@/domains/sessions/renderer/session-list/session-roster'
 import type { Session } from '@/domains/sessions/renderer/types'
+import { sessionFeedSubscribe, sessionListSubscribe } from '@/mocks/sessions/session-story-host'
 import { queryClient, trpc } from '@/platform/renderer/trpc-client'
 import { claudeHarnessInfoFixture, codexHarnessInfoFixture } from './harness-catalog.fixture'
 

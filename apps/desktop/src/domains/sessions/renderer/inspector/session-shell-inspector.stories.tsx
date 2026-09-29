@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { sessionShellCommand } from '../session-fixtures'
+import { sessionShellCommand } from '@/mocks/sessions/session-rows'
 import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
 import { SessionShellInspector } from './session-shell-inspector'
 

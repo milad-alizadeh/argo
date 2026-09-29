@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { sessionShellCommand } from '../session-fixtures'
+import { sessionShellCommand } from '@/mocks/sessions/session-rows'
 import { workInspectorReveal } from './work-inspector-reveal'
 
 const shell = sessionShellCommand({ id: 'codex-command', command: 'bun run typecheck' })

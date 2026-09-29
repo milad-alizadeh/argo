@@ -1,17 +1,17 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { github, githubWithRepository, OCTOCAT, signIn } from '@/providers/github/harness'
+import { github, githubWithRepository, octocatUser, signIn } from '@/providers/github/harness'
 import { readTicket, readTicketPage } from '@/providers/github/issues'
 import { checkRepository, isRepositoryScope } from '@/providers/github/repository'
 import type { MockIssue } from '../../../mocks/providers/github/mock-github'
 
 test('a repository check names the repository by its canonical name', async (context) => {
   const [mock, endpoints] = await github(context)
-  mock.signIn(OCTOCAT)
-  mock.addRepository({ fullName: 'Octo/Hello', visibleTo: [OCTOCAT.id], issues: [] })
+  mock.signIn(octocatUser())
+  mock.addRepository({ fullName: 'Octo/Hello', visibleTo: [octocatUser().id], issues: [] })
   mock.addRepository({
     fullName: 'octo/quiet',
-    visibleTo: [OCTOCAT.id],
+    visibleTo: [octocatUser().id],
     issues: [],
     hasIssues: false,
   })
@@ -33,8 +33,8 @@ test('a repository check names the repository by its canonical name', async (con
 
 test('a revoked token and a throttled one are told apart', async (context) => {
   const [mock, endpoints] = await github(context)
-  mock.signIn(OCTOCAT)
-  mock.addRepository({ fullName: 'octo/hello', visibleTo: [OCTOCAT.id], issues: [] })
+  mock.signIn(octocatUser())
+  mock.addRepository({ fullName: 'octo/hello', visibleTo: [octocatUser().id], issues: [] })
   const token = await signIn(endpoints)
   mock.outage('rate-limited')
   assert.deepEqual(await readTicketPage(endpoints, token, { scope: 'octo/hello', ...FIRST }), {
@@ -75,8 +75,8 @@ const BACKLOG: MockIssue[] = [
 
 test('open Tickets carry their body, hierarchy and dependencies, and a pull request is none of them', async (context) => {
   const [mock, endpoints] = await github(context)
-  mock.signIn(OCTOCAT)
-  mock.addRepository({ fullName: 'octo/hello', visibleTo: [OCTOCAT.id], issues: BACKLOG })
+  mock.signIn(octocatUser())
+  mock.addRepository({ fullName: 'octo/hello', visibleTo: [octocatUser().id], issues: BACKLOG })
   const read = await readTicketPage(endpoints, await signIn(endpoints), {
     scope: 'octo/hello',
     ...FIRST,
@@ -162,10 +162,10 @@ test('a Closed page lists only closed issues', async (context) => {
 
 test('one issue reads by its key, open or closed, and a pull request is not a Ticket', async (context) => {
   const [mock, endpoints] = await github(context)
-  mock.signIn(OCTOCAT)
+  mock.signIn(octocatUser())
   mock.addRepository({
     fullName: 'octo/hello',
-    visibleTo: [OCTOCAT.id],
+    visibleTo: [octocatUser().id],
     issues: [
       { number: 1, title: 'Shipped', state: 'closed', stateReason: 'completed', children: [2] },
       { number: 2, title: 'Child' },

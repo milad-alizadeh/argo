@@ -18,7 +18,7 @@ import {
   start,
   successfulCodexRequest,
   supervisorFor,
-} from '../../../../../test-fixtures/sessions/live-session-supervisor.fixture'
+} from '@/mocks/sessions/live-session-supervisor.fixture'
 import {
   createLiveSessionSupervisorMachine,
   liveSessionActorFor,

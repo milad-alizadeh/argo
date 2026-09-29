@@ -3,8 +3,8 @@
 // deleted, and a deleted Ticket is hidden and keeps its row.
 import assert from 'node:assert/strict'
 import { expect, test } from '@playwright/test'
+import { helloWorldRepository as helloWorld } from '@/mocks/tickets/provider-inputs'
 import { TEAM } from '../../../mocks/providers/linear/mock-linear-cast'
-import { helloWorld } from '../fixtures/tickets.fixture'
 import { backlog, committedTicket, openRoom, type Run, showWindow } from '../screen'
 
 const GITHUB_SCOPE = { provider: 'github', scope: 'octocat/hello-world' }

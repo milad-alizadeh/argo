@@ -1,8 +1,9 @@
 // Each Ticket case declares its starting Accounts and source, reached by a person's gestures (#2326).
 import type { BrowserContext, ElectronApplication } from 'playwright-core'
+import { hubotUser, octocatUser } from '@/mocks/tickets/provider-inputs'
 import { ADA } from '../../mocks/providers/linear/mock-linear-cast'
 import { finishRecording, test as packagedTest, startRecording } from '../packaged-proof'
-import { HUBOT, launch, OCTOCAT, prepare, type TicketFixture } from './fixtures/tickets.fixture'
+import { launch, prepare, type TicketFixture } from './fixtures/tickets.fixture'
 import {
   accountsDialog,
   backlog,
@@ -40,8 +41,8 @@ async function connectGitHubAccounts(run: Run) {
   await openRoom(run.page, 'tickets')
   await press(room(run), 'Connect an Account')
   const connect = { scope: accountsDialog(run.page), name: 'Connect a GitHub Account' }
-  await signIn(run, OCTOCAT, connect)
-  await signIn(run, HUBOT, connect)
+  await signIn(run, octocatUser(), connect)
+  await signIn(run, hubotUser(), connect)
   await closeAccounts(run.page)
 }
 

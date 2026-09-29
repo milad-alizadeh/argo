@@ -42,7 +42,13 @@ const config: StorybookConfig = {
         '@codemirror/state',
         '@codemirror/view',
       ],
+      // Inlined, not imported from vite-alias.ts. Storybook prints on that extensionless
+      // import, and the print lands in the Vitest JSON the test gate parses.
       alias: [
+        {
+          find: /^@\/mocks\/(.*)$/,
+          replacement: `${path.resolve(import.meta.dirname, '../mocks')}/$1`,
+        },
         { find: '@', replacement: path.resolve(import.meta.dirname, '../src') },
         {
           find: /^cn$/,

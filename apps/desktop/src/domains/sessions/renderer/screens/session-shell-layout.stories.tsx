@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { sessionRow } from '@/mocks/sessions/session-rows'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { sessionRow } from '../session-fixtures'
 import { SessionShell } from './session-shell'
 
 const session = sessionRow({

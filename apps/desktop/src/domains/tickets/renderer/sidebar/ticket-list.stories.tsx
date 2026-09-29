@@ -1,10 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { backlog, prototype, standalone, wayfinder } from '../detail/ticket-fixtures'
+import { backlog, prototype, standalone, wayfinder } from '@/mocks/tickets/renderer-models'
 import { TicketList } from './ticket-list'
 
+const parent = wayfinder()
+const plain = standalone()
+
 const longTicket = {
-  ...wayfinder,
+  ...parent,
   title:
     'Truncate Ticket and sidebar text before a long title can widen the Ticket list beyond its pane',
   labels: [
@@ -14,7 +17,7 @@ const longTicket = {
 }
 
 const manyLabels = {
-  ...standalone,
+  ...plain,
   labels: [
     { name: 'enhancement', color: 'a2eeef' },
     { name: 'wallet', color: '0e8a16' },
@@ -28,8 +31,8 @@ const manyLabels = {
 }
 
 const tagRailParent = {
-  ...wayfinder,
-  children: wayfinder.children.map((child, index) =>
+  ...parent,
+  children: (parent.children ?? []).map((child, index) =>
     index === 0 ? { key: manyLabels.key, title: manyLabels.title, state: 'open' as const } : child,
   ),
 }
@@ -38,7 +41,7 @@ const meta = {
   title: 'Tickets/List',
   component: TicketList,
   args: {
-    backlog: backlog({ tickets: [wayfinder, prototype, standalone] }),
+    backlog: backlog({ tickets: [wayfinder(), prototype(), standalone()] }),
     onSelect: fn(),
     selectedKey: null,
     // Fixed, so a Ticket's age reads the same however long this story sits open.
@@ -54,7 +57,7 @@ const visibleMatches = (elements: HTMLElement[]) =>
 
 export const NestedLongTitle: Story = {
   args: {
-    backlog: backlog({ tickets: [longTicket, prototype] }),
+    backlog: backlog({ tickets: [longTicket, prototype()] }),
   },
   decorators: [
     (Story) => (
@@ -134,7 +137,7 @@ export const NestedExpandableTags: Story = {
 export const SearchShowsSavedMatchesFirst: Story = {
   args: {
     backlog: backlog({
-      tickets: [standalone],
+      tickets: [standalone()],
       query: 'planner',
       total: 1,
       partial: true,
@@ -154,7 +157,7 @@ export const SavedRowsWithoutWrites: Story = {
   args: {
     backlog: backlog({
       provider: 'linear',
-      tickets: [standalone],
+      tickets: [standalone()],
       writable: false,
       priorityChoices: [],
       sync: {

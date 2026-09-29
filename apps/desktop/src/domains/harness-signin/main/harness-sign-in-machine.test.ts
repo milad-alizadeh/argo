@@ -2,11 +2,11 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { type ActorLogic, createActor } from 'xstate'
 import { adjacencyMapToArray, getAdjacencyMap, getShortestPaths } from 'xstate/graph'
-import { assertModeledTransitions } from '@/platform/main/test-doubles/xstate-model-transitions'
 import {
   type HarnessSignInModelEvent,
   harnessSignInModelEvents,
-} from '../../../../test-fixtures/harness-signin/harness-sign-in-model.fixture'
+} from '@/mocks/harness-signin/harness-sign-in-model.fixture'
+import { assertModeledTransitions } from '@/platform/main/test-doubles/xstate-model-transitions'
 import { createHarnessSignInMachine, type HarnessSignInDriver } from './harness-sign-in-machine'
 
 // The model drives every transition, including 'Signing in' -> 'Checking readiness' -> Ready/

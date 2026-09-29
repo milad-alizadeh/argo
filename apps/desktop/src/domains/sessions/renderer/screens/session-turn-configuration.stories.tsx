@@ -4,9 +4,13 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionTurnConfiguration } from '@/domains/sessions/renderer/model/models'
+import { claudeHarnessInfoFixture } from '@/mocks/sessions/harness-catalog.fixture'
+import { sessionRow } from '@/mocks/sessions/session-rows'
+import {
+  announceSessionListChange,
+  sessionListSubscribe,
+} from '@/mocks/sessions/session-story-host'
 import { queryClient, trpc } from '@/platform/renderer/trpc-client'
-import { claudeHarnessInfoFixture } from '../../../../../test-fixtures/sessions/harness-catalog.fixture'
-import { announceSessionListChange, sessionListSubscribe, sessionRow } from '../session-fixtures'
 import { sessionRosterQueryKey } from '../session-list/session-roster'
 import { SessionScreenView } from './session-screen-view'
 

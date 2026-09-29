@@ -1,8 +1,8 @@
-import path from 'node:path'
 import { defineConfig } from 'vite'
+import { desktopAlias } from './vite-alias'
 
 export default defineConfig({
   resolve: {
-    alias: { '@': path.resolve(import.meta.dirname, 'src') },
+    alias: desktopAlias(import.meta.dirname),
   },
 })

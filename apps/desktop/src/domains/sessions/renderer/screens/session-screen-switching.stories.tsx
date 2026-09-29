@@ -2,14 +2,14 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
-import { cockpitRoutes } from '@/renderer/cockpit-router'
+import { sessionRow } from '@/mocks/sessions/session-rows'
 import {
   failSelectionWrites,
   releaseDraftRead,
   savedSelectionDraft,
   sessionSelectionHost,
-} from '../../../../../test-fixtures/sessions/session-selection-host.fixture'
-import { sessionRow } from '../session-fixtures'
+} from '@/mocks/sessions/session-selection-host.fixture'
+import { cockpitRoutes } from '@/renderer/cockpit-router'
 import type { Session } from '../types'
 
 const ROSTER = [
