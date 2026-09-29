@@ -2,6 +2,7 @@ import { memo, type ReactNode, useContext, useEffect, useMemo, useRef } from 're
 import Markdown, { type Components, type ExtraProps } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Icon } from '@/platform/renderer/components/icon/icon'
+import { SkillButton } from '../../prompt/prompt-text'
 import { FeedCode } from './feed-code'
 import { GalleryImage, GalleryParagraph } from './feed-markdown-gallery'
 import { type HeadingTag, headingComponents } from './feed-markdown-headings'
@@ -43,11 +44,28 @@ function fenceOf(node: MarkdownNode) {
   return { source, language }
 }
 
+// The prompt's own skill-mention syntax is a markdown link whose label is the raw `$name` (#2049).
+function skillMentionName(children: ReactNode): string | null {
+  return typeof children === 'string' && children.startsWith('$') ? children.slice(1) : null
+}
+
 // An absolute path opens in the inspector, as recorded evidence does; every other link opens
 // in the browser. `feedUrlTransform` has already turned what neither can open into no href.
 function Link({ href, children }: { href?: string; children?: ReactNode }) {
   const context = useContext(MarkdownEvidence)
   if (!href) return <span>{children}</span>
+  if (context !== null && context.skillMentions === true) {
+    const name = skillMentionName(children)
+    if (name !== null)
+      return (
+        <SkillButton
+          onOpen={(skill) =>
+            context.onOpenEvidence({ shape: 'skill', id: `skill:${skill.path}`, ...skill })
+          }
+          skill={{ name, path: href }}
+        />
+      )
+  }
   if (!href.startsWith('/'))
     return (
       <a href={href} target="_blank" rel="noreferrer" className={LINK_CLASS}>
@@ -157,6 +175,7 @@ export const FeedMarkdown = memo(function FeedMarkdown({
   activeEvidenceId = null,
   headingOffset = 1,
   onOpenEvidence,
+  promptSkillMentions = false,
 }: {
   text: string
   rowId?: string
@@ -165,14 +184,16 @@ export const FeedMarkdown = memo(function FeedMarkdown({
   // markdown one level under it. A caller with a deeper ancestor passes a larger offset.
   headingOffset?: number
   onOpenEvidence?: MarkdownEvidenceContextValue['onOpenEvidence']
+  // The Feed prompt bubble's own text; draws a `[$name](path)` mention as a skill badge (#2884).
+  promptSkillMentions?: boolean
 }) {
   // A fresh value here re-renders every fence and file link below it, whatever the text did.
   const markdownEvidence: MarkdownEvidenceContextValue | null = useMemo(
     () =>
       rowId === undefined || onOpenEvidence === undefined
         ? null
-        : { rowId, activeEvidenceId, onOpenEvidence },
-    [activeEvidenceId, onOpenEvidence, rowId],
+        : { rowId, activeEvidenceId, onOpenEvidence, skillMentions: promptSkillMentions },
+    [activeEvidenceId, onOpenEvidence, promptSkillMentions, rowId],
   )
   const components = useMemo(
     () => ({ ...COMPONENTS, ...headingComponents(headingOffset) }),

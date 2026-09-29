@@ -13,6 +13,9 @@ export const mediaSourceSchema = z.discriminatedUnion('kind', [
 ])
 export type MediaSource = z.infer<typeof mediaSourceSchema>
 
+export const promptFileSchema = z.strictObject({ label: z.string(), target: z.string() })
+export type PromptFile = z.infer<typeof promptFileSchema>
+
 const contentPartSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('text'), text: z.string() }),
   z.strictObject({ kind: z.literal('image'), source: mediaSourceSchema }),
@@ -54,6 +57,14 @@ export const feedContentSchema = z.discriminatedUnion('kind', [
     role: z.enum(['user', 'assistant', 'system']),
     text: z.string(),
     phase: z.enum(['commentary', 'final_answer']).nullable().optional(),
+    // The images and files an authored prompt carried alongside its text, and any pasted-in
+    // document text — folded in at decode time so one Turn's prompt draws as one row (#2884).
+    images: z.array(mediaSourceSchema).min(1).optional(),
+    files: z.array(promptFileSchema).min(1).optional(),
+    pastedContent: z
+      .array(z.strictObject({ id: identifierSchema, text: z.string() }))
+      .min(1)
+      .optional(),
   }),
   base.extend({ kind: z.literal('reasoning'), text: z.string().nullable(), redacted: z.boolean() }),
   base.extend({
