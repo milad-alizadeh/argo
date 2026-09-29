@@ -223,6 +223,8 @@ function sessionListRow(
   subagents: readonly StoredSubagent[],
 ) {
   const live = liveProjection(context, row.id)
+  const watched = context.watchedStatus.statusOf(row.harness, row.nativeId, Date.now())
+  const liveStatus = live?.status === 'unknown' ? null : live?.status
   const ticket =
     row.ticket === null ? null : { ...row.ticket, state: ticketStateOf(row.ticket.state) }
   return {
@@ -233,10 +235,7 @@ function sessionListRow(
     customTitle: row.customTitle,
     preview: row.preview,
     title: displayedTitle({ ...row, ticketTitle: ticket?.title ?? null }),
-    status:
-      live?.status ??
-      context.watchedStatus.statusOf(row.harness, row.nativeId, Date.now()) ??
-      ('unknown' as const),
+    status: liveStatus ?? watched ?? ('unknown' as const),
     cwd: row.cwd,
     workspaceId: row.workspaceId,
     branch: null,
