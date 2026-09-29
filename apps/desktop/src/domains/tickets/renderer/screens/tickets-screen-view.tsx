@@ -101,7 +101,7 @@ export function TicketsScreenView() {
 export function TicketsScreen({ view }: TicketsScreenProps) {
   const { t } = useTranslation('tickets')
   return (
-    <main aria-label={t('screen.label')} className="h-full min-h-0 bg-background">
+    <main aria-label={t('screen.label')} className="h-full min-h-0 bg-(--color-session-surface)">
       <Body view={view} />
     </main>
   )
