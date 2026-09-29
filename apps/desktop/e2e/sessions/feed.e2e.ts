@@ -7,6 +7,7 @@ import { completeWatch, writeWatchOutput } from '../../mocks/sessions/mock-shell
 import { packagedRun } from '../application-under-test'
 import { assertShippedFusesIntact } from '../packaged-app'
 import { proveBackgroundShell } from './cases/background-shell.case'
+import { proveClaudeAcpHistory } from './cases/claude-acp-history.case'
 import { proveClaudeRename } from './cases/claude-rename.case'
 import { provePackagedResume } from './cases/claude-resume.case'
 import { provePackagedCodexResume } from './cases/codex-resume.case'
@@ -185,6 +186,17 @@ test('session-search', async ({ session }) => {
 
 test('session-created-by-click', async ({ session, backend }) => {
   await proveSessionCreatedByClick(session.page(), backend)
+})
+
+test.describe('with the Claude ACP agent', () => {
+  test.skip(
+    ({ sessionBackend }) => sessionBackend === 'real',
+    'The real backend runs no ACP agent.',
+  )
+
+  test('session-claude-acp-history', async ({ session, backend }) => {
+    await proveClaudeAcpHistory(session.page(), { backend, root: session.root })
+  })
 })
 
 test.describe('with the real Claude SDK history', () => {
