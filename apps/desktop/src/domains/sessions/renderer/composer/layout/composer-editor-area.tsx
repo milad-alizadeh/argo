@@ -1,10 +1,12 @@
 import type { LexicalEditor } from 'lexical'
 import type { RefObject } from 'react'
+import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
 import type { SessionHarness } from '../../harness/harnesses'
 import { ComposerEditor } from '../editor/session-composer-editor'
 import { ComposerAttachments } from './composer-attachments'
 
 export function ComposerEditorArea({
+  commands,
   contextPickerOpen,
   disabled,
   harness,
@@ -14,6 +16,7 @@ export function ComposerEditorArea({
   onSend,
   sessionId,
 }: {
+  commands: ComposerCommandListing
   contextPickerOpen: boolean
   disabled: boolean
   harness: SessionHarness | null
@@ -30,6 +33,7 @@ export function ComposerEditorArea({
         {/* One Lexical editor per owner, so an in-flight Send cannot clear the next owner's text. */}
         <ComposerEditor
           key={sessionId}
+          commands={commands}
           harness={harness}
           contextPickerOpen={contextPickerOpen}
           disabled={disabled}

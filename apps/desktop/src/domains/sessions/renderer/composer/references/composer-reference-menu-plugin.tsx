@@ -8,6 +8,7 @@ import {
   type LexicalEditor,
 } from 'lexical'
 import { useEffect, useRef, useState } from 'react'
+import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
 import type { SessionHarness } from '../../harness/harnesses'
 import {
   activeReference,
@@ -33,10 +34,15 @@ function replaceActiveReference(editor: LexicalEditor, source: string) {
   })
 }
 
-function useReferenceChoices(draft: string, editor: LexicalEditor) {
+function useReferenceChoices(
+  draft: string,
+  listing: ComposerCommandListing,
+  editor: LexicalEditor,
+) {
   const [selected, setSelected] = useState(0)
   const [dismissedDraft, setDismissedDraft] = useState<string | null>(null)
-  const choices = referenceMenu(draft)
+  const menu = dismissedDraft === draft ? null : referenceMenu(draft, listing)
+  const choices = menu?.kind === 'choices' ? menu.choices : null
   const choose = (choice: ReferenceSuggestion) => {
     replaceActiveReference(editor, choice.source)
     setDismissedDraft(draft)
@@ -47,26 +53,32 @@ function useReferenceChoices(draft: string, editor: LexicalEditor) {
     setSelected(0)
   }
   const move = (direction: 1 | -1) => {
-    if (choices === null) return
+    if (choices === null || choices.length === 0) return
     setSelected((current) => (current + direction + choices.length) % choices.length)
   }
-  return { choices: dismissedDraft === draft ? null : choices, choose, dismiss, move, selected }
+  return { choices, choose, dismiss, menu, move, selected }
 }
 
 export function ComposerReferenceMenuPlugin({
   harness = null,
   disabled = false,
   draft,
+  listing,
   onOpenChange,
 }: {
   harness?: SessionHarness | null
   disabled?: boolean
   draft: string
+  listing: ComposerCommandListing
   onOpenChange: (open: boolean) => void
 }) {
   const [editor] = useLexicalComposerContext()
   const reference = activeReference(draft)
-  const menu = useReferenceChoices(disabled || reference?.trigger === '@' ? '' : draft, editor)
+  const menu = useReferenceChoices(
+    disabled || reference?.trigger === '@' ? '' : draft,
+    listing,
+    editor,
+  )
   const menuRef = useRef(menu)
   menuRef.current = menu
   useEffect(
@@ -74,32 +86,36 @@ export function ComposerReferenceMenuPlugin({
       editor.registerCommand(
         KEY_DOWN_COMMAND,
         (event) => {
-          const currentMenu = menuRef.current
-          return (
-            currentMenu.choices !== null &&
-            referenceMenuKey({
-              choices: currentMenu.choices,
-              event,
-              onChoose: currentMenu.choose,
-              onDismiss: currentMenu.dismiss,
-              onMove: currentMenu.move,
-              selected: currentMenu.selected,
-            })
-          )
+          const current = menuRef.current
+          if (current.menu === null) return false
+          if (current.menu.kind === 'note') {
+            if (event.key !== 'Escape') return false
+            event.preventDefault()
+            current.dismiss()
+            return true
+          }
+          return referenceMenuKey({
+            choices: current.menu.choices,
+            event,
+            onChoose: current.choose,
+            onDismiss: current.dismiss,
+            onMove: current.move,
+            selected: current.selected,
+          })
         },
         COMMAND_PRIORITY_HIGH,
       ),
     [editor],
   )
-  useEffect(
-    () => onOpenChange(!disabled && menu.choices !== null),
-    [disabled, menu.choices, onOpenChange],
-  )
-  if (disabled || menu.choices === null) return null
+  const menuOpen = !disabled && menu.menu !== null
+  useEffect(() => {
+    onOpenChange(menuOpen)
+  }, [menuOpen, onOpenChange])
+  if (disabled || menu.menu === null) return null
   return (
     <ComposerReferenceMenu
-      choices={menu.choices}
       harness={harness}
+      menu={menu.menu}
       onChoose={menu.choose}
       selected={menu.selected}
     />

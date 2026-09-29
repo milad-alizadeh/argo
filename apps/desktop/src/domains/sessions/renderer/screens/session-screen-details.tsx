@@ -258,6 +258,7 @@ export function SessionComposerArea({
   return (
     <SessionComposer
       {...{ permission, questionPending, session, harness, workspaceCockpit, workspaceActions }}
+      projectId={cockpit.project?.id ?? null}
       isRunning={liveStatus === 'running' || liveStatus === 'permission' || liveStatus === 'asking'}
       onInterrupt={onInterrupt}
       catalogFailure={catalogFailure}
@@ -300,6 +301,7 @@ function SessionComposer({
   focusOnMount,
   onFocusAfterMount,
   identity,
+  projectId,
   onRefreshCatalog,
   onRetryCatalog,
   onRetryDraft,
@@ -317,6 +319,7 @@ function SessionComposer({
   focusOnMount: boolean
   onFocusAfterMount: () => void
   identity: ComposerIdentity
+  projectId: string | null
   onRefreshCatalog: () => void
   onRetryCatalog: () => void
   onRetryDraft: () => void
@@ -365,6 +368,12 @@ function SessionComposer({
       />
     ),
     plan: session?.plan ?? null,
+    projectId,
+    commandCwd:
+      identity.kind === 'session'
+        ? (session?.cwd ?? null)
+        : (workspaceCockpit.workspace?.path ?? null),
+    liveSessionId: identity.kind === 'session' ? identity.sessionId : null,
     onSend,
     isRunning,
     onInterrupt,

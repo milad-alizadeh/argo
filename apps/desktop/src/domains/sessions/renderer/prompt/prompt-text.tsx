@@ -116,9 +116,8 @@ function renderSegment(segment: PromptSegment, key: string, options: RenderOptio
 // passes false and keeps the link text as plain text.
 //
 // `renderText` lets a caller further decorate a segment's plain-text leftovers, e.g. the
-// Roster badging the composer's own bare reference tokens (`/implement`, `@AGENTS.md`) via
-// `SessionReferenceText` (#2044) — a fixed-list token match unrelated to this module's dynamic
-// markdown-mention parsing, so it stays out of `promptSegments` rather than merge with it.
+// Roster badging the composer's own bare slash tokens via `SessionReferenceText` — the commands
+// the Harness has listed, unrelated to this module's dynamic markdown-mention parsing.
 export function PromptText({
   text,
   interactiveLinks = true,

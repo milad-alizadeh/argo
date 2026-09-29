@@ -11,6 +11,7 @@ const vendor = vi.hoisted(() => ({
   releaseSecond: null as (() => void) | null,
   canUseTool: null as CanUseTool | null,
   recordedEvents: [] as unknown[],
+  commands: [] as unknown[],
   executable: undefined as string | undefined,
 }))
 
@@ -48,6 +49,9 @@ vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
       },
       async interrupt() {
         vendor.interrupts += 1
+      },
+      async supportedCommands() {
+        return vendor.commands
       },
       close() {
         closed = true
@@ -274,4 +278,47 @@ test('streams an Agent call as a start and a response its notification completes
     ['toolu_live_agent:response', 'a1b2c3d4e5f6a7b8c', 'completed'],
   ])
   channel.close()
+})
+
+test('replaces the command list when Claude reports commands_changed', async () => {
+  vendor.prompts = []
+  vendor.commands = [
+    { name: 'implement', description: 'Build an approved ticket', argumentHint: '<ticket>' },
+  ]
+  vendor.recordedEvents = [
+    {
+      type: 'system',
+      subtype: 'commands_changed',
+      commands: [
+        { name: 'review', description: 'Read the diff', argumentHint: '' },
+        { name: 'bad name', description: 'nope' },
+      ],
+    },
+  ]
+  const warnings: unknown[][] = []
+  const warn = console.warn
+  console.warn = (...args: unknown[]) => {
+    warnings.push(args)
+  }
+  const events: unknown[] = []
+  try {
+    const channel = claudeSessionChannelOpener(null)(first, undefined, (event) =>
+      events.push(event),
+    )
+    await until(() => events.some((event) => (event as { type: string }).type === 'turn.completed'))
+    const listed = events.flatMap((event) => {
+      const parsed = liveSessionChannelEventSchema.parse(event)
+      return parsed.type === 'commands' ? [parsed] : []
+    })
+    expect(listed[0]?.commands.map((command) => command.name)).toEqual(['implement'])
+    expect(listed.at(-1)?.commands).toEqual([
+      { name: 'review', description: 'Read the diff', argumentHint: '', aliases: [] },
+    ])
+    channel.close()
+    await until(() => warnings.length > 0)
+    expect(warnings).toContainEqual(['Rejected 1 unsupported Claude live shape(s).'])
+  } finally {
+    console.warn = warn
+    vendor.commands = []
+  }
 })

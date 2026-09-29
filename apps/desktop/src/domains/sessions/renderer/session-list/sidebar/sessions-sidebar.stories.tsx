@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { queryClient, type RouterOutputs } from '@/platform/renderer/trpc-client'
+import { replaceComposerCommands } from '../../composer/references/composer-command-registry'
 import { useFeedReading } from '../../feed/use-feed-reading'
 import {
   type FeedRead,
@@ -366,13 +367,26 @@ export const Discovered: Story = {
 }
 
 export const CommandTitledSession: Story = {
-  beforeEach: () =>
-    withSessionListHost(async () =>
+  beforeEach: () => {
+    replaceComposerCommands('claude', [
+      {
+        name: 'implement',
+        description: 'Build an approved ticket',
+        argumentHint: '',
+        aliases: [],
+      },
+    ])
+    const restore = withSessionListHost(async () =>
       listedReply({
         ...listed,
         sessions: [{ ...session, title: { text: '/implement 1847', source: 'first-prompt' } }],
       }),
-    ),
+    )
+    return () => {
+      replaceComposerCommands('claude', [])
+      restore()
+    }
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const reference = await canvas.findByText('/implement')

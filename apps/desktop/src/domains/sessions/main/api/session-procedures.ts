@@ -5,6 +5,11 @@ import { composerDraftReadProcedure } from './composer-draft-read'
 import { composerDraftSaveProcedure } from './composer-draft-save'
 import { sessionArchiveProcedures } from './session-archive'
 import { type SessionAttachmentContext, sessionAttachmentProcedures } from './session-attachments'
+import {
+  type ComposerCommandContext,
+  composerCommandsProcedure,
+  sessionComposerCommandsProcedure,
+} from './session-composer-commands'
 import { sessionFeedProcedures } from './session-feed'
 import { sessionFileReadProcedures } from './session-file-reads'
 import {
@@ -23,11 +28,14 @@ export type SessionApiContext = SessionProcedureContext &
   SessionFeedReaderContext &
   SessionInteractionContext &
   SessionListContext &
-  SessionRefreshContext & { sessionSyncStatus: readonly SessionSyncStatusStore[] }
+  SessionRefreshContext &
+  ComposerCommandContext & { sessionSyncStatus: readonly SessionSyncStatusStore[] }
 
 export function sessionProcedures(context: SessionApiContext) {
   const readers = new SessionFeedReaders(context)
   return {
+    composerCommands: composerCommandsProcedure(context),
+    sessionComposerCommands: sessionComposerCommandsProcedure(context),
     composerDraftCreate: composerDraftCreateProcedure(context.database),
     composerDraftRead: composerDraftReadProcedure(context.database),
     composerDraftSave: composerDraftSaveProcedure(context.database),
