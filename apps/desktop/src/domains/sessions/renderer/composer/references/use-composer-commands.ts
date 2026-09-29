@@ -8,6 +8,7 @@ import { trpcClient } from '@/platform/renderer/trpc-client'
 import { replaceComposerCommands } from './composer-command-registry'
 
 const PENDING: ComposerCommandListing = { availability: 'pending', commands: [] }
+const LISTED_EMPTY: ComposerCommandListing = { availability: 'listed', commands: [] }
 
 export function useComposerCommands(input: {
   enabled: boolean
@@ -16,8 +17,10 @@ export function useComposerCommands(input: {
   sessionId: string | null
 }): ComposerCommandListing {
   const requestKey = `${input.enabled}:${input.harness ?? ''}:${input.sessionId ?? ''}:${input.cwd ?? ''}`
-  const [state, setState] = useState({ requestKey, listing: PENDING })
-  if (state.requestKey !== requestKey) setState({ requestKey, listing: PENDING })
+  // A draft lists from disk. Pending is only a live Session whose list has not arrived.
+  const idle = input.sessionId === null ? LISTED_EMPTY : PENDING
+  const [state, setState] = useState({ requestKey, listing: idle })
+  if (state.requestKey !== requestKey) setState({ requestKey, listing: idle })
   const { listing } = state
 
   useEffect(() => {
@@ -34,7 +37,7 @@ export function useComposerCommands(input: {
     if (input.sessionId === null) {
       void trpcClient.composerCommands
         .query({ harness, cwd: input.cwd })
-        .then(publish, () => publish(PENDING))
+        .then(publish, () => publish(LISTED_EMPTY))
       return () => {
         cancelled = true
       }

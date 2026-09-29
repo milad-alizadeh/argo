@@ -95,7 +95,7 @@ export type HarnessRegistration<Id extends Harness = Harness> = HarnessReadiness
     controls: LiveSessionControls | undefined,
     emit: (event: LiveSessionChannelEvent) => void,
   ) => LiveSessionChannel
-  // Commands a draft can show before a live Session exists. Claude has none: it lists from the query.
+  // Commands a draft can show before a live Session exists. A Harness without this stays pending.
   listCommands?: (input: { cwd: string | null }) => Promise<ComposerCommandListing>
   rename?: (nativeId: string, title: string) => Promise<void>
   sessionDiscovery: SessionDiscovery

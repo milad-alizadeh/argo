@@ -107,10 +107,10 @@ export function ComposerReferenceMenuPlugin({
       ),
     [editor],
   )
-  useEffect(
-    () => onOpenChange(!disabled && menu.menu !== null),
-    [disabled, menu.menu, onOpenChange],
-  )
+  const menuOpen = !disabled && menu.menu !== null
+  useEffect(() => {
+    onOpenChange(menuOpen)
+  }, [menuOpen, onOpenChange])
   if (disabled || menu.menu === null) return null
   return (
     <ComposerReferenceMenu

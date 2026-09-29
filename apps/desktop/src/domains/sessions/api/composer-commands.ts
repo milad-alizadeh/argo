@@ -12,9 +12,9 @@ export const composerCommandSchema = z.strictObject({
 
 export type ComposerCommand = z.infer<typeof composerCommandSchema>
 
-// `pending` is a Session whose Harness has not listed commands yet. Claude answers only from a
-// live query, so a Session that has not started stays pending. `unavailable` is a Harness with no
-// command source. `listed` includes an empty list: the menu's empty state.
+// `pending` is a live Session whose command list has not arrived. A Harness with `listCommands`
+// answers before a Session starts. `unavailable` is a Harness with no command source.
+// `listed` includes an empty list: the menu's empty state.
 export const composerCommandListingSchema = z.strictObject({
   availability: z.enum(['listed', 'pending', 'unavailable']),
   commands: z.array(composerCommandSchema),

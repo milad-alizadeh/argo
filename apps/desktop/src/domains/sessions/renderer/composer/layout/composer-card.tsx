@@ -54,9 +54,12 @@ function useFocusInterruptOnCompactStart(isCompacting: boolean) {
 
 function useContextPicker(draft: string) {
   const [open, setOpen] = useState(false)
+  const trigger = activeReference(draft)?.trigger
   useEffect(() => {
-    if (activeReference(draft)?.trigger === '@') setOpen(true)
-  }, [draft])
+    if (trigger === '@') setOpen(true)
+    // A slash command and the context picker cannot both own the composer.
+    if (trigger === '/') setOpen(false)
+  }, [trigger])
   return [open, setOpen] as const
 }
 
