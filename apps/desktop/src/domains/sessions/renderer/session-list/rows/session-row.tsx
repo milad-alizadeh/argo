@@ -1,6 +1,6 @@
 import { type MouseEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useLiveActivityText } from '../../feed/rows/live-activity-text'
+import { LiveActivityWords, useLiveActivityText } from '../../feed/rows/live-activity-text'
 import { HarnessLogo } from '../../harness/harness-logo'
 import { SESSION_HARNESSES, type SessionHarness } from '../../harness/harnesses'
 import { SessionTitle } from '../../prompt/session-title'
@@ -33,13 +33,17 @@ function knownHarness(harness: string): harness is SessionHarness {
 
 // The same line the Feed's live tail draws, as still text: the shimmer is the Feed's.
 function ActivityLine({ session }: { session: Session }) {
-  const text = useLiveActivityText({
+  const line = useLiveActivityText({
     activity: session.activity,
     running: session.status === 'running',
     compacting: (session.compactionStartedAt ?? null) !== null,
   })
-  if (text === null) return null
-  return <span className="mt-0.5 block truncate type-meta text-faint">{text}</span>
+  if (line === null) return null
+  return (
+    <span className="mt-0.5 block truncate type-meta text-faint">
+      <LiveActivityWords line={line} />
+    </span>
+  )
 }
 
 // A row that already carries a ground keeps it under the pointer: hover answers "this one is

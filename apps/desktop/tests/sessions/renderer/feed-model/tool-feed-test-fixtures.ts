@@ -1,4 +1,5 @@
 import type { SessionFeedRow } from '@/domains/sessions/api/feed/feed-rows'
+import { fileChangeRows } from '@/domains/sessions/api/feed/file-change-rows'
 import type { ToolCall } from '@/domains/sessions/api/feed/tool-call'
 import { type ToolResult, toolRows } from '@/domains/sessions/api/feed/tool-feed'
 
@@ -44,22 +45,16 @@ export function fetchCall(id: string, url: string | null): ToolCall {
 }
 
 // A file change the way an adapter hands it over.
-export function editCall(
+// A settled edit of one file, drawn the way every Harness's file change reaches the Feed.
+export function editRows(
   id: string,
-  file: string,
-  change: 'create' | 'update' | 'delete' = 'update',
-) {
-  const edited = {
-    change,
-    file,
-    diff: '@@ -1,1 +1,1 @@\n-a\n+b',
-    lineCounts: { added: 1, removed: 1 },
-  }
-  return {
-    id,
-    kind: 'edit',
-    files: [edited],
-  } satisfies ToolCall
+  path: string,
+  change: 'add' | 'update' | 'delete' = 'update',
+): SessionFeedRow[] {
+  return fileChangeRows(
+    { kind: 'fileChange', id, status: 'completed', changes: [{ path, change, diff: '-a\n+b' }] },
+    'succeeded',
+  )
 }
 
 export function onlyToolRow(calls: ToolCall[], results = new Map<string, ToolResult>()): ToolRow {

@@ -485,6 +485,8 @@ export class CodexSessionChannel implements LiveSessionChannel {
       if (item.type === 'commandExecution') return this.commandItem(item, turnId, phase)
       if (item.type === 'subAgentActivity') return this.subagentItem(item, turnId)
       if (item.type === 'collabAgentToolCall') return this.collabItem(item, turnId)
+      // A started edit already names its files, so the Feed shows it before the patch lands.
+      if (item.type === 'fileChange') return this.completedItem(item, turnId)
       if (phase === 'started') {
         if (item.type === 'agentMessage') this.phaseByItem.set(item.id, item.phase)
         return

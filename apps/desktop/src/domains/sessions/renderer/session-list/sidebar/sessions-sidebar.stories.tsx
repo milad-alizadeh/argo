@@ -486,6 +486,51 @@ export const OpenCommandReadsRunning: Story = {
   },
 }
 
+// The agent's commentary draws its Markdown; a command's label stays literal.
+export const CommentaryActivityDrawsMarkdown: Story = {
+  beforeEach: () =>
+    withSessionListHost(async () =>
+      listedReply({
+        ...listed,
+        sessions: [
+          {
+            ...session,
+            id: 'commentary',
+            activity: {
+              label: '**Checking** the `tool-groups.ts` order',
+              kind: 'thought',
+              open: true,
+              tool: 'thought',
+              target: null,
+            },
+            status: 'running',
+            title: { text: 'Order the group phrases', source: 'first-prompt' },
+          },
+          {
+            ...session,
+            id: 'literal-command',
+            activity: {
+              label: 'Ran ls *.ts *.tsx',
+              kind: 'command',
+              open: false,
+              tool: 'Bash',
+              target: 'ls *.ts *.tsx',
+            },
+            status: 'idle',
+            title: { text: 'List the sources', source: 'first-prompt' },
+          },
+        ],
+      }),
+    ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByText('Checking')).toBeVisible()
+    await expect(canvas.getByText('tool-groups.ts').tagName).toBe('CODE')
+    await expect(canvas.queryByText(/\*\*Checking\*\*/)).toBeNull()
+    await expect(canvas.getByText('Ran ls *.ts *.tsx')).toBeVisible()
+  },
+}
+
 export const SessionListStructure: Story = {
   beforeEach: () =>
     withSessionListHost(async () =>

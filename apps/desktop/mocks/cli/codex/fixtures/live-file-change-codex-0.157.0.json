@@ -1,0 +1,260 @@
+{
+  "producer": "codex-cli 0.157.0 app-server",
+  "messages": [
+    {
+      "method": "turn/started",
+      "params": {
+        "threadId": "01a0ed18-6de3-7310-9fff-bca3bc04fae2",
+        "turn": {
+          "id": "01a0ed18-6f35-7d52-819e-0cfdfd7717ec",
+          "items": [],
+          "itemsView": "notLoaded",
+          "status": "inProgress",
+          "error": null,
+          "startedAt": 1790684196,
+          "completedAt": null,
+          "durationMs": null
+        }
+      },
+      "emittedAtMs": 1790684196700
+    },
+    {
+      "method": "item/started",
+      "params": {
+        "item": {
+          "type": "userMessage",
+          "id": "01a0ed18-760c-74a1-ab55-4139a5d06c5b",
+          "clientId": null,
+          "content": [
+            {
+              "type": "text",
+              "text": "Using your patch tool only (no shell), in one patch: create notes.md containing the line hello, and in app.txt change beta to gamma. Then reply done.",
+              "text_elements": []
+            }
+          ]
+        },
+        "threadId": "01a0ed18-6de3-7310-9fff-bca3bc04fae2",
+        "turnId": "01a0ed18-6f35-7d52-819e-0cfdfd7717ec",
+        "startedAtMs": 1790684198414
+      },
+      "emittedAtMs": 1790684198415
+    },
+    {
+      "method": "item/completed",
+      "params": {
+        "item": {
+          "type": "userMessage",
+          "id": "01a0ed18-760c-74a1-ab55-4139a5d06c5b",
+          "clientId": null,
+          "content": [
+            {
+              "type": "text",
+              "text": "Using your patch tool only (no shell), in one patch: create notes.md containing the line hello, and in app.txt change beta to gamma. Then reply done.",
+              "text_elements": []
+            }
+          ]
+        },
+        "threadId": "01a0ed18-6de3-7310-9fff-bca3bc04fae2",
+        "turnId": "01a0ed18-6f35-7d52-819e-0cfdfd7717ec",
+        "completedAtMs": 1790684198414
+      },
+      "emittedAtMs": 1790684198441
+    },
+    {
+      "method": "item/started",
+      "params": {
+        "item": {
+          "type": "fileChange",
+          "id": "exec-817e1a4c-4dd4-47c8-8992-0fedf6c0bfbb",
+          "changes": [
+            {
+              "path": "/repo/app.txt",
+              "kind": {
+                "type": "update",
+                "move_path": null
+              },
+              "diff": "@@ -1,2 +1,2 @@\n alpha\n-beta\n+gamma\n"
+            },
+            {
+              "path": "/repo/notes.md",
+              "kind": {
+                "type": "add"
+              },
+              "diff": "hello\n"
+            }
+          ],
+          "status": "inProgress"
+        },
+        "threadId": "01a0ed18-6de3-7310-9fff-bca3bc04fae2",
+        "turnId": "01a0ed18-6f35-7d52-819e-0cfdfd7717ec",
+        "startedAtMs": 1790684200789
+      },
+      "emittedAtMs": 1790684200790
+    },
+    {
+      "method": "item/completed",
+      "params": {
+        "item": {
+          "type": "fileChange",
+          "id": "exec-817e1a4c-4dd4-47c8-8992-0fedf6c0bfbb",
+          "changes": [
+            {
+              "path": "/repo/app.txt",
+              "kind": {
+                "type": "update",
+                "move_path": null
+              },
+              "diff": "@@ -1,2 +1,2 @@\n alpha\n-beta\n+gamma\n"
+            },
+            {
+              "path": "/repo/notes.md",
+              "kind": {
+                "type": "add"
+              },
+              "diff": "hello\n"
+            }
+          ],
+          "status": "completed"
+        },
+        "threadId": "01a0ed18-6de3-7310-9fff-bca3bc04fae2",
+        "turnId": "01a0ed18-6f35-7d52-819e-0cfdfd7717ec",
+        "completedAtMs": 1790684200827
+      },
+      "emittedAtMs": 1790684200828
+    },
+    {
+      "method": "item/started",
+      "params": {
+        "item": {
+          "type": "agentMessage",
+          "id": "msg_0628ec1a4503e8f5016abbac2a4d3087d2ae634107badf63bf",
+          "text": "",
+          "phase": "final_answer",
+          "memoryCitation": null,
+          "delivery": null,
+          "questions": null
+        },
+        "threadId": "01a0ed18-6de3-7310-9fff-bca3bc04fae2",
+        "turnId": "01a0ed18-6f35-7d52-819e-0cfdfd7717ec",
+        "startedAtMs": 1790684202259
+      },
+      "emittedAtMs": 1790684202259
+    },
+    {
+      "method": "item/agentMessage/delta",
+      "params": {
+        "threadId": "01a0ed18-6de3-7310-9fff-bca3bc04fae2",
+        "turnId": "01a0ed18-6f35-7d52-819e-0cfdfd7717ec",
+        "itemId": "msg_0628ec1a4503e8f5016abbac2a4d3087d2ae634107badf63bf",
+        "delta": "done"
+      },
+      "emittedAtMs": 1790684202259
+    },
+    {
+      "method": "item/completed",
+      "params": {
+        "item": {
+          "type": "agentMessage",
+          "id": "msg_0628ec1a4503e8f5016abbac2a4d3087d2ae634107badf63bf",
+          "text": "done",
+          "phase": "final_answer",
+          "memoryCitation": null,
+          "delivery": null,
+          "questions": null
+        },
+        "threadId": "01a0ed18-6de3-7310-9fff-bca3bc04fae2",
+        "turnId": "01a0ed18-6f35-7d52-819e-0cfdfd7717ec",
+        "completedAtMs": 1790684202335
+      },
+      "emittedAtMs": 1790684202339
+    },
+    {
+      "method": "turn/completed",
+      "params": {
+        "threadId": "01a0ed18-6de3-7310-9fff-bca3bc04fae2",
+        "turn": {
+          "id": "01a0ed18-6f35-7d52-819e-0cfdfd7717ec",
+          "items": [
+            {
+              "type": "agentMessage",
+              "id": "msg_0628ec1a4503e8f5016abbac2a4d3087d2ae634107badf63bf",
+              "text": "done",
+              "phase": "final_answer",
+              "memoryCitation": null,
+              "delivery": null,
+              "questions": null
+            }
+          ],
+          "itemsView": "summary",
+          "status": "completed",
+          "error": null,
+          "startedAt": 1790684196,
+          "completedAt": 1790684202,
+          "durationMs": 5828
+        }
+      },
+      "emittedAtMs": 1790684202498
+    }
+  ],
+  "threadRead": {
+    "thread": {
+      "id": "01a0ed18-6de3-7310-9fff-bca3bc04fae2",
+      "turns": [
+        {
+          "id": "01a0ed18-6f35-7d52-819e-0cfdfd7717ec",
+          "items": [
+            {
+              "type": "userMessage",
+              "id": "01a0ed18-760c-74a1-ab55-4139a5d06c5b",
+              "clientId": null,
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Using your patch tool only (no shell), in one patch: create notes.md containing the line hello, and in app.txt change beta to gamma. Then reply done.",
+                  "text_elements": []
+                }
+              ]
+            },
+            {
+              "type": "fileChange",
+              "id": "exec-817e1a4c-4dd4-47c8-8992-0fedf6c0bfbb",
+              "changes": [
+                {
+                  "path": "/repo/app.txt",
+                  "kind": {
+                    "type": "update",
+                    "move_path": null
+                  },
+                  "diff": "@@ -1,2 +1,2 @@\n alpha\n-beta\n+gamma\n"
+                },
+                {
+                  "path": "/repo/notes.md",
+                  "kind": {
+                    "type": "add"
+                  },
+                  "diff": "hello\n"
+                }
+              ],
+              "status": "completed"
+            },
+            {
+              "type": "agentMessage",
+              "id": "msg_0628ec1a4503e8f5016abbac2a4d3087d2ae634107badf63bf",
+              "text": "done",
+              "phase": "final_answer",
+              "memoryCitation": null,
+              "delivery": null,
+              "questions": null
+            }
+          ],
+          "itemsView": "full",
+          "status": "completed",
+          "error": null,
+          "startedAt": 1790684196,
+          "completedAt": 1790684202,
+          "durationMs": 5828
+        }
+      ]
+    }
+  }
+}

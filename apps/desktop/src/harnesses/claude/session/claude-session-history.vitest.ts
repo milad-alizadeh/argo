@@ -92,3 +92,36 @@ test('gives a skill its SKILL.md and draws a skill slash command as a skill', ()
     },
   ])
 })
+
+test('reads a recorded Edit and Write as settled file changes carrying their diffs', () => {
+  const edits = decodeClaudeSessionMessages(recordedMessages('recordedEdit')).filter(
+    (content) => content.kind !== 'message',
+  )
+  expect(edits).toMatchObject([
+    {
+      kind: 'fileChange',
+      id: 'toolu_01QcoWSLSMjQ9e4NFtQ5Aq7F',
+      status: 'running',
+      changes: [
+        {
+          path: '/Users/x/argo/apps/desktop/src/domains/sessions/api/feed/tool-groups.ts',
+          change: 'update',
+        },
+      ],
+    },
+    { kind: 'fileChange', id: 'toolu_01QcoWSLSMjQ9e4NFtQ5Aq7F', status: 'completed' },
+    {
+      kind: 'fileChange',
+      id: 'toolu_015ibQYLNWgCPTmJHFnse358',
+      status: 'running',
+      changes: [
+        {
+          path: '/Users/x/argo/apps/desktop/src/domains/sessions/renderer/feed/content/feed-inline-markdown.tsx',
+          change: 'add',
+          diff: expect.stringContaining('export const FeedInlineMarkdown'),
+        },
+      ],
+    },
+    { kind: 'fileChange', id: 'toolu_015ibQYLNWgCPTmJHFnse358', status: 'completed' },
+  ])
+})
