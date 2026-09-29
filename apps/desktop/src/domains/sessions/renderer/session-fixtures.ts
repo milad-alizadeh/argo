@@ -178,11 +178,7 @@ export function sessionFeedSubscribe(
       read(sessionId, null).then(
         (snapshot) => {
           if (!open || current !== reads) return
-          entries = projectFeedRowEntries({
-            history: snapshot.content,
-            live,
-            activity: null,
-          }).entries
+          entries = projectFeedRowEntries({ history: snapshot.content, live }).entries
           send('ready', null)
         },
         (error: unknown) => {

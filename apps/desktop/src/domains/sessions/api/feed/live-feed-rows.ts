@@ -356,9 +356,10 @@ function contentRow(content: FeedContent): SessionFeedRow | null {
       return content.phase === 'commentary'
         ? { shape: 'thought', id: content.id, text: content.text }
         : { shape: 'prose', id: content.id, role: content.role, text: content.text }
+    // Reasoning the Harness withholds has nothing to read, so it draws no row.
     case 'reasoning':
-      return content.text === null
-        ? { shape: 'event', id: content.id, event: 'reasoning', text: null }
+      return content.text === null || content.text.trim() === ''
+        ? null
         : { shape: 'thought', id: content.id, text: content.text }
     case 'media': {
       const source = content.mediaType === 'image' ? mediaUrl(content.source) : null

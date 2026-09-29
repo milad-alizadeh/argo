@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next'
 import { displayedToolLabel } from '@/domains/sessions/api/feed/tool-feed'
-import { RunningText } from '@/platform/renderer/components/running-text'
 import {
   CodeBlock,
   CodeBlockActions,
@@ -16,13 +15,13 @@ import { FEED_CARD_RADIUS_CLASS } from '../content/feed-surface'
 import { type ToolGroupState, useToolGroupOpen } from '../rows/tool-group-state'
 import { CollapsibleText } from './collapsible-text'
 import { StatusIcon } from './feed-tool-status'
-import { type ToolCall, type ToolRow, toolPresentation } from './feed-tools'
+import { callRunning, type ToolCall, type ToolRow, toolPresentation } from './feed-tools'
 import { withoutRepeatedTitle } from './skill-title'
 
 // A command or an unclassified tool call reads as one code block despite the transcript's
 // separate invocation and result messages. A Skill call instead reads as the skill's own
 // Markdown body (carried through `text`, see `toolText` in tool-feed.ts), not code.
-export function FeedInlineToolCall({ call }: { call: ToolCall | ToolRow }) {
+export function FeedInlineToolCall({ call, live }: { call: ToolCall | ToolRow; live: boolean }) {
   const { t } = useTranslation('sessions')
   if (call.kind === 'skill')
     return <FeedMarkdown text={withoutRepeatedTitle(call.text ?? '', call.label)} />
@@ -39,11 +38,8 @@ export function FeedInlineToolCall({ call }: { call: ToolCall | ToolRow }) {
         <CodeBlockFilename>{languageLabel}</CodeBlockFilename>
       </CodeBlockTitle>
       <CodeBlockActions>
-        {call.status === 'failed' ? (
-          <span className="text-destructive">{t('tools.failed')}</span>
-        ) : (
-          <StatusIcon status={call.status} />
-        )}
+        {call.status === 'failed' && <span className="text-destructive">{t('tools.failed')}</span>}
+        {callRunning(call, live) && <StatusIcon status={call.status} />}
         <CodeBlockCopyButton aria-label={t('tools.copyRun')} className="size-7" />
       </CodeBlockActions>
     </CodeBlockHeader>
@@ -72,9 +68,11 @@ export function FeedInlineToolCall({ call }: { call: ToolCall | ToolRow }) {
 // default, so a "Ran N commands" group expands to a list of commands rather than N open code blocks.
 export function FeedInlineToolCallItem({
   call,
+  live,
   toolGroups,
 }: {
   call: ToolCall | ToolRow
+  live: boolean
   toolGroups: ToolGroupState
 }) {
   const { t } = useTranslation('sessions')
@@ -82,16 +80,12 @@ export function FeedInlineToolCallItem({
   const { onOpenChange, open } = useToolGroupOpen(toolGroups, call.id)
   return (
     <CollapsibleText
-      content={<FeedInlineToolCall call={call} />}
+      content={<FeedInlineToolCall call={call} live={live} />}
       contentVariant="flush"
       icon={Icon}
       onOpenChange={onOpenChange}
       open={open}
-      title={
-        <RunningText running={call.status === 'running'}>
-          {displayedToolLabel(call, call.status === 'running', t('workState.running'))}
-        </RunningText>
-      }
+      title={displayedToolLabel(call, callRunning(call, live), t('workState.running'))}
     />
   )
 }

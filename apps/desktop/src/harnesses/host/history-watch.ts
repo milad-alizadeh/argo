@@ -1,6 +1,11 @@
 import { closeSync, openSync, readdirSync, readSync, statSync, watch } from 'node:fs'
 import path from 'node:path'
-import type { HistoryChange, HistoryFiles, HistoryTurn } from '@/harnesses/registration'
+import type {
+  HistoryChange,
+  HistoryFiles,
+  HistoryTurn,
+  HistoryTurnMarker,
+} from '@/harnesses/registration'
 
 const SETTLE_MS = 250
 // Bytes just before the read offset, compared on each change to catch a rewrite that grew the file.
@@ -180,7 +185,40 @@ export function tailSessionHistory(
   }
 }
 
-// The newest turn marker in a history file, read backwards from its end within a bounded window.
+// Reads markers newest first. The newest opened turn is the current one, so a close only counts
+// when it names that turn or names none; a close for an earlier turn is stale.
+class TurnScan {
+  readonly #closedTurnIds = new Set<string>()
+
+  // The current turn's state once a marker settles it; undefined while older lines still decide.
+  read(marker: HistoryTurnMarker): HistoryTurn | undefined {
+    // No opening has been read yet, so every close here is newer than the current turn's start.
+    if (marker.turn === 'closed') {
+      if (marker.turnId === null) return 'closed'
+      this.#closedTurnIds.add(marker.turnId)
+      return undefined
+    }
+    if (marker.turnId === null) return this.#closedTurnIds.size > 0 ? 'closed' : 'open'
+    return this.#closedTurnIds.has(marker.turnId) ? 'closed' : 'open'
+  }
+
+  // The newest lines of a chunk first; undefined when none of them settles the current turn.
+  readLines(lines: readonly string[], turnOf: HistoryFiles['turnOf']): HistoryTurn | undefined {
+    for (let index = lines.length - 1; index >= 0; index -= 1) {
+      const marker = turnOf(lines[index] ?? '')
+      const turn = marker === null ? undefined : this.read(marker)
+      if (turn !== undefined) return turn
+    }
+    return undefined
+  }
+
+  // The window ended before an opening marker: a close seen without its opening still closed a turn.
+  get exhausted(): HistoryTurn | null {
+    return this.#closedTurnIds.size > 0 ? 'closed' : null
+  }
+}
+
+// The current turn's state in a history file, read backwards from its end within a bounded window.
 export function latestTurn(file: string, turnOf: HistoryFiles['turnOf']): HistoryTurn | null {
   let size: number
   try {
@@ -188,6 +226,7 @@ export function latestTurn(file: string, turnOf: HistoryFiles['turnOf']): Histor
   } catch {
     return null
   }
+  const scan = new TurnScan()
   let end = size
   let carried = Buffer.alloc(0)
   while (end > 0 && size - end < TURN_SCAN_BYTES) {
@@ -199,13 +238,11 @@ export function latestTurn(file: string, turnOf: HistoryFiles['turnOf']): Histor
       .subarray(firstBreak + 1)
       .toString('utf8')
       .split('\n')
-    for (let index = lines.length - 1; index >= 0; index -= 1) {
-      const turn = turnOf(lines[index] ?? '')
-      if (turn !== null) return turn
-    }
+    const turn = scan.readLines(lines, turnOf)
+    if (turn !== undefined) return turn
     end = start
   }
-  return null
+  return scan.exhausted
 }
 
 // Names the owner of each history file a Harness writes to, whichever Session it belongs to, with

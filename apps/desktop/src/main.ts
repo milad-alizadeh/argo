@@ -12,6 +12,7 @@ import { createConnectionPort } from '@/domains/connections/main'
 import { createHarnessSignInProcedureContext } from '@/domains/harness-signin/main'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
 import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
+import { SessionActivities } from '@/domains/sessions/main/api/session-activities'
 import {
   recordHistoryActivity,
   SessionRosterChanges,
@@ -210,6 +211,7 @@ function routerForWindow(options: {
   registry: HarnessRegistry
   roster: SessionRosterChanges
   watchedStatus: WatchedSessionStatus
+  activities: SessionActivities
 }) {
   const { window, database, actors, domains, sessionSyncStatus, registry, roster, watchedStatus } =
     options
@@ -254,6 +256,7 @@ function routerForWindow(options: {
       supervisor: actors.sessions,
       roster,
       watchedStatus,
+      activities: options.activities,
       acceptsAttachments: (harness) => registry[harness].acceptsAttachments,
       journal: currentSessionEventJournal(),
       interactions: currentSessionInteractionBroker(),
@@ -359,6 +362,7 @@ function attachWindowTrpc({
 }): () => void {
   const roster = new SessionRosterChanges()
   const watchedStatus = new WatchedSessionStatus(() => roster.changed())
+  const activities = new SessionActivities(() => roster.changed())
   const router = routerForWindow({
     actors,
     domains,
@@ -368,6 +372,7 @@ function attachWindowTrpc({
     registry,
     roster,
     watchedStatus,
+    activities,
   })
   const stopRosterSources = watchRosterSources({ database, registry, roster, watchedStatus })
   const detach = attachTrpcTransport({ window, rendererURL, router, context: undefined })

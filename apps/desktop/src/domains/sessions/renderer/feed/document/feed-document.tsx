@@ -46,23 +46,37 @@ export type FeedDocumentProps = {
 function ignoreJumpToLatestChange(_sessionId: string, _action: (() => void) | null) {}
 function ignoreMeasurementsChange(_sessionId: string, _measurements: VirtualItem[]) {}
 
+type ToolGroupRow = Extract<SessionFeedRow, { shape: 'tool-group' }>
+
+// The live thought reads once, as the trailing row, so the group it follows lets it go.
+function withoutThought(group: ToolGroupRow, text: string): ToolGroupRow {
+  const thoughts = group.thoughts ?? []
+  return thoughts.at(-1)?.text.trim() === text
+    ? { ...group, thoughts: thoughts.slice(0, -1) }
+    : group
+}
+
+// While the Turn runs, its one activity draws once: a call titles the tail group, and a thought
+// is the trailing row. Once the Turn settles neither is drawn, so no live row is left behind.
 function liveRows(reading: SessionFeed, facts: NonNullable<FeedLiveFacts>): SessionFeedRow[] {
   const rows = reading.rows
-  const hasTrailingThought = reading.rows.at(-1)?.shape === 'thought'
   const activity =
-    facts.compactionStartedAt === null &&
-    (facts.isRunning ||
-      facts.status === 'unknown' ||
-      (facts.activity?.kind === 'thought' && hasTrailingThought))
+    facts.compactionStartedAt === null && (facts.isRunning || facts.status === 'unknown')
       ? facts.activity
       : null
   if (activity === null) return rows
-  const turnStart = rows.findLastIndex((row) => row.shape === 'prose' && row.role === 'user')
   const last = rows.at(-1)
-  if (last?.shape === 'tool-group' && rows.length - 1 > turnStart)
-    return [...rows.slice(0, -1), withHeadline(last, activity)]
-  if (activity.kind !== 'thought' || hasTrailingThought) return rows
-  return [...rows, { shape: 'thought', id: `${reading.sessionId}:activity`, text: activity.label }]
+  if (last?.shape === 'thought') return rows
+  const turnStart = rows.findLastIndex((row) => row.shape === 'prose' && row.role === 'user')
+  const tailGroup = last?.shape === 'tool-group' && rows.length - 1 > turnStart ? last : null
+  if (activity.kind !== 'thought')
+    return tailGroup === null ? rows : [...rows.slice(0, -1), withHeadline(tailGroup, activity)]
+  const settled =
+    tailGroup === null ? rows : [...rows.slice(0, -1), withoutThought(tailGroup, activity.label)]
+  return [
+    ...settled,
+    { shape: 'thought', id: `${reading.sessionId}:activity`, text: activity.label },
+  ]
 }
 
 function withLiveRows(reading: SessionFeed, facts: NonNullable<FeedLiveFacts>): SessionFeed {

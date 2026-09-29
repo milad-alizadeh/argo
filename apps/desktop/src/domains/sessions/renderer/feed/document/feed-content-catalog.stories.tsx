@@ -305,13 +305,13 @@ export const Unsupported: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await waitFor(() => {
-      expect(canvas.getByText('Reasoning unavailable')).toBeVisible()
-      expect(canvas.getByText('Unsupported item')).toBeVisible()
-    })
+    await waitFor(() => expect(canvas.getByText('Unsupported item')).toBeVisible())
+    // Withheld reasoning has nothing to read, so it draws no tile.
+    expect(canvas.queryByText('Reasoning unavailable')).toBeNull()
   },
 }
 
+// Live commentary after a call reads once, as Markdown, in the one shimmering line.
 export const CommentaryAfterTool: Story = {
   args: {
     feed: catalogFeedContents([
@@ -330,7 +330,7 @@ export const CommentaryAfterTool: Story = {
         id: 'commentary-message',
         role: 'assistant',
         phase: 'commentary',
-        text: 'Checking the result',
+        text: '**Checking** the result',
       },
     ]),
     liveFacts: {
@@ -338,7 +338,7 @@ export const CommentaryAfterTool: Story = {
       isRunning: true,
       status: 'running',
       activity: {
-        label: 'Checking the result',
+        label: '**Checking** the result',
         kind: 'thought',
         open: true,
         tool: 'thought',
@@ -347,10 +347,10 @@ export const CommentaryAfterTool: Story = {
     },
   },
   play: async ({ canvasElement }) => {
-    await waitFor(() =>
-      expect(
-        within(canvasElement).getByRole('button', { name: /Checking the result/ }),
-      ).toBeVisible(),
-    )
+    const canvas = within(canvasElement)
+    await waitFor(() => expect(canvas.getByText('Checking', { selector: 'strong' })).toBeVisible())
+    await expect(canvas.getAllByText('Checking', { selector: 'strong' })).toHaveLength(1)
+    await expect(canvas.queryByText(/\*\*/)).toBeNull()
+    await expect(canvas.queryByRole('button', { name: /Checking/ })).toBeNull()
   },
 }

@@ -16,6 +16,7 @@ import {
   type SessionLiveEvent,
 } from '@/domains/sessions/api/session-live-event'
 import type { Harness } from '@/harnesses/harness'
+import type { SessionActivities } from '../api/session-activities'
 import { sessionHistoryIdentity } from '../api/session-history-identity'
 import { observeSessionSync, type SessionSyncStatusStore } from '../api/session-sync-status'
 import type { SessionEventJournal } from '../live/session-event-journal'
@@ -28,6 +29,8 @@ export type SessionFeedReaderContext = {
   readHistory: (harness: Harness, target: SessionHistoryTarget) => Promise<FeedContent[]>
   followHistory?: SessionHistoryFollowers['follow']
   sessionSyncStatus?: readonly SessionSyncStatusStore[]
+  // Where each reading's current activity goes, so the roster draws the same line.
+  activities?: Pick<SessionActivities, 'publish'>
 }
 
 type Observer = (reading: FeedReading) => void
@@ -142,6 +145,8 @@ class RootFeedReader {
     this.#follower?.stop()
     this.#follower = null
     this.#observers.clear()
+    // An unobserved Feed publishes nothing more, so its activity would only go stale.
+    this.#context.activities?.publish(this.#sessionId, null)
   }
 
   async #readHistory(): Promise<FeedContent[]> {
@@ -201,10 +206,9 @@ class RootFeedReader {
   }
 
   #publish(): void {
-    const { entries, rejected } = projectFeedRowEntries({
+    const { entries, activity, rejected } = projectFeedRowEntries({
       history: this.#history,
       live: this.#events.events,
-      activity: null,
     })
     const skipped = rejected.history + rejected.live + rejected.rows
     if (skipped > 0) console.warn(`Skipped ${skipped} unrecognised Session Feed item(s).`)
@@ -221,6 +225,7 @@ class RootFeedReader {
     })
     if (reading.revision === this.#reading?.revision) return
     this.#reading = reading
+    this.#context.activities?.publish(this.#sessionId, activity)
     for (const observer of this.#observers) observer(reading)
   }
 }

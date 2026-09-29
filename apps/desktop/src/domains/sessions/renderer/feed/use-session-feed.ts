@@ -26,7 +26,6 @@ export function displayedFeed({
   const { entries } = projectFeedRowEntries({
     history: current?.content ?? [],
     live: events,
-    activity: null,
   })
   const rows = entries.flatMap(({ row }) => (row.shape === 'activity' ? [] : [row]))
   const base = current ?? {

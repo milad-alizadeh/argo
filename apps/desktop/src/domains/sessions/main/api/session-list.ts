@@ -12,6 +12,7 @@ import {
   type LiveSessionSupervisorActor,
   liveSessionActorFor,
 } from '../live/live-session-supervisor-machine'
+import type { SessionActivities } from './session-activities'
 import type { SessionRosterChanges } from './session-roster-changes'
 import type { WatchedSessionStatus } from './watched-session-status'
 
@@ -149,6 +150,17 @@ export type SessionListContext = {
   supervisor: LiveSessionSupervisorActor
   roster: SessionRosterChanges
   watchedStatus: Pick<WatchedSessionStatus, 'statusOf'>
+  // The activity an observed Feed published; it outranks the live channel's own.
+  activities?: Pick<SessionActivities, 'activityOf'>
+}
+
+// The Feed's activity names no tool or target, so the row keeps its kind as the tool.
+function observedActivity(
+  context: SessionListContext,
+  sessionId: string,
+): z.infer<typeof feedActivitySchema> | null {
+  const activity = context.activities?.activityOf(sessionId) ?? null
+  return activity === null ? null : { ...activity, tool: activity.kind, target: null }
 }
 
 function liveProjection(context: SessionListContext, sessionId: string) {
@@ -236,7 +248,7 @@ function sessionListRow(
     unreadableLines: 0,
     originUnread: false,
     turnStartedAt: null,
-    activity: live?.activity ?? null,
+    activity: observedActivity(context, row.id) ?? live?.activity ?? null,
     plan: null,
     subagents: subagents.map((subagent) => ({ ...subagent, startedAt: null, endedAt: null })),
     shell: [],
