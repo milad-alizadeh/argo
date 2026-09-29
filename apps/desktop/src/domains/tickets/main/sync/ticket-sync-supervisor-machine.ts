@@ -62,6 +62,7 @@ const RETRYABLE: Record<TicketErrorCode, boolean> = {
   'ticket-deleted': false,
   'ticket-not-writable': false,
   'status-unknown': false,
+  'ticket-unreconciled': false,
   'github-unreachable': true,
   'rate-limited': true,
   'linear-unreachable': true,
