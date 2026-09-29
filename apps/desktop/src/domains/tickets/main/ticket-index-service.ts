@@ -72,7 +72,7 @@ async function requestScan(
 export const requestSync = (call: Call) =>
   requestScan(call, (request) => ({ type: 'Sync', request }))
 
-// The first Closed page, or the one after the last saved; the answer is the commit.
+// The first Closed page, or the one after the last saved; the page commits, then the scope's change fires.
 export const requestClosed = (call: Call, more: boolean) =>
   requestScan(call, (request) => ({ type: 'LoadClosed', request, more }))
 

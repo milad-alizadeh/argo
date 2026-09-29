@@ -1,6 +1,4 @@
-// The Ticket proof's Closed paging (#2872): opening Closed reads one provider page into SQLite, more
-// reads the next, and a failed page keeps the rows already saved. The Closed room has no screen yet,
-// so the case asks through the tRPC channel the screen will use and reads what SQLite answers.
+// The Ticket proof's Closed paging (#2872), driven through the tRPC channel and read from SQLite.
 import assert from 'node:assert/strict'
 import { expect, test } from '@playwright/test'
 import type { Page } from 'playwright-core'

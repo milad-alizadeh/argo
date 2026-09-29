@@ -79,13 +79,13 @@ export type TicketSyncSupervisorCommand =
       type: 'Sync'
       request: TicketSyncRequest
     }
-  // A screen showing the scope's Tickets; each watcher is one open view.
   // One page of the scope's Closed Tickets; never polled, never retried on its own.
   | {
       type: 'LoadClosed'
       request: TicketSyncRequest
       more: boolean
     }
+  // A screen showing the scope's Tickets; each watcher is one open view.
   | {
       type: 'Watch'
       watcherId: string

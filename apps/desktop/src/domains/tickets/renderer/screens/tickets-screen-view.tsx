@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { AccountsDialog, useAccountsDialog } from '@/domains/accounts/renderer'
+import { AppPageSurface } from '@/platform/renderer/app/components/app-shell'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   Empty,
@@ -58,13 +59,29 @@ function Body({ view }: { view: TicketsView }) {
   const { open: dialogOpen } = useAccountsDialog()
   switch (view.kind) {
     case 'no-project':
-      return <NoProject />
+      return (
+        <AppPageSurface>
+          <NoProject />
+        </AppPageSurface>
+      )
     case 'loading':
-      return <Loading label={view.label} />
+      return (
+        <AppPageSurface>
+          <Loading label={view.label} />
+        </AppPageSurface>
+      )
     case 'problem':
-      return <TicketProblem {...view} />
+      return (
+        <AppPageSurface>
+          <TicketProblem {...view} />
+        </AppPageSurface>
+      )
     case 'unconnected':
-      return dialogOpen ? null : <ConnectSourceForm key={view.projectId} {...view} />
+      return dialogOpen ? null : (
+        <AppPageSurface>
+          <ConnectSourceForm key={view.projectId} {...view} />
+        </AppPageSurface>
+      )
     case 'tickets':
       // A new Project starts with nothing selected, as the connect form starts empty.
       return <TicketDeck key={view.projectId} {...view} />
@@ -101,7 +118,7 @@ export function TicketsScreenView() {
 export function TicketsScreen({ view }: TicketsScreenProps) {
   const { t } = useTranslation('tickets')
   return (
-    <main aria-label={t('screen.label')} className="h-full min-h-0 bg-(--color-session-surface)">
+    <main aria-label={t('screen.label')} className="panel-frame">
       <Body view={view} />
     </main>
   )

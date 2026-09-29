@@ -13,6 +13,7 @@ import {
   type TicketState,
   type TicketStatus,
 } from '@/domains/tickets/contract/ticket'
+import type { ListingState } from '@/domains/tickets/main/sources'
 import type { LinearEndpoints } from '@/providers/linear/endpoints'
 import { failed, type LinearRead, query } from '@/providers/linear/http'
 import { categoryOf, statusOf, TEAM_STATES, teamStatuses } from '@/providers/linear/statuses'
@@ -131,7 +132,7 @@ export type TicketPageRequest = {
   scope: string
   query: string
   cursor: string | null
-  state?: 'open' | 'closed'
+  state?: ListingState
 }
 export type TicketPage = {
   tickets: Ticket[]

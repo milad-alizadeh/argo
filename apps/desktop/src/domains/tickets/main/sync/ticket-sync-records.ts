@@ -3,6 +3,7 @@ import { and, eq, sql } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
 import { type TICKET_SYNC_KINDS, ticketSync } from '@/database/ticket-sync/schema'
+import { ticketSyncSelectSchema } from '@/database/ticket-sync/validation'
 import { nextUpdatedAt } from '@/database/timestamp-columns'
 import type { TicketErrorCode, TicketStatus } from '@/domains/tickets/contract/contract'
 
@@ -85,7 +86,8 @@ function beginClosedPage(
   target: TicketSyncTarget,
   { more, now }: { more: boolean; now: number },
 ): ScanStart {
-  const saved = database.select().from(ticketSync).where(matchingScan(target)).get()
+  const row = database.select().from(ticketSync).where(matchingScan(target)).get()
+  const saved = row === undefined ? undefined : ticketSyncSelectSchema.parse(row)
   const loaded = saved?.completedAt != null
   if (more && loaded && saved.nextCursor === null) return { exhausted: true }
   const first = !(more && loaded)

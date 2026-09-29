@@ -134,11 +134,14 @@ export function saveClosedTickets(
   })
 }
 
-function clearClosedListing(database: Writer, { provider, scope }: TicketScopeTarget): void {
+const inTicketScope = ({ provider, scope }: TicketScopeTarget) =>
+  and(eq(ticketTable.provider, provider), eq(ticketTable.scope, scope))
+
+function clearClosedListing(database: Writer, target: TicketScopeTarget): void {
   const ids = database
     .select({ argoId: ticketTable.argoId })
     .from(ticketTable)
-    .where(and(eq(ticketTable.provider, provider), eq(ticketTable.scope, scope)))
+    .where(inTicketScope(target))
   database
     .update(ticketContent)
     .set({ closedPosition: null })
@@ -147,19 +150,13 @@ function clearClosedListing(database: Writer, { provider, scope }: TicketScopeTa
 }
 
 // The number of Closed Tickets the listing holds, which is where the next page numbers from.
-export function countClosedListed(database: Database, { provider, scope }: TicketScopeTarget) {
+export function countClosedListed(database: Database, target: TicketScopeTarget) {
   return (
     database
       .select({ value: count() })
       .from(ticketContent)
       .innerJoin(ticketTable, eq(ticketTable.argoId, ticketContent.ticketId))
-      .where(
-        and(
-          eq(ticketTable.provider, provider),
-          eq(ticketTable.scope, scope),
-          isNotNull(ticketContent.closedPosition),
-        ),
-      )
+      .where(and(inTicketScope(target), isNotNull(ticketContent.closedPosition)))
       .get()?.value ?? 0
   )
 }

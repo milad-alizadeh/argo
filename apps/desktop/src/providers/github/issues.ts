@@ -8,6 +8,7 @@ import {
   type TicketLabel,
   type TicketLink,
 } from '@/domains/tickets/contract/ticket'
+import type { ListingState } from '@/domains/tickets/main/sources'
 import type { GitHubEndpoints } from '@/providers/github/endpoints'
 import { failed, type GitHubRead, get, getAll, getPage } from '@/providers/github/http'
 import { githubStatus, issueNumber } from '@/providers/github/statuses'
@@ -144,7 +145,7 @@ export type TicketPageRequest = {
   scope: string
   query: string
   page: number
-  state?: 'open' | 'closed'
+  state?: ListingState
 }
 
 function pageURL(

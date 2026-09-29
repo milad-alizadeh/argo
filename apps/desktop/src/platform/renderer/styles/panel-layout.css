@@ -72,6 +72,12 @@
   background-color: var(--card);
 }
 
+/* The main content surface of a page: the panel body on the session surface, whatever the tab. */
+@utility panel-content {
+  @apply panel-body;
+  background-color: var(--color-session-surface);
+}
+
 @utility panel-outer-start {
   --panel-start-radius: var(--radius-2xl);
 }

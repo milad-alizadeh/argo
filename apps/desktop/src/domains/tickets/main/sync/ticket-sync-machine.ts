@@ -5,7 +5,7 @@ import type { Database } from '@/database/database'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
 import type { Ticket, TicketErrorCode, TicketStatus } from '@/domains/tickets/contract/contract'
 import { countClosedListed, saveClosedTickets, saveListedTickets } from '../database/ticket-upsert'
-import type { TicketPage } from '../sources'
+import type { ListingState, TicketPage } from '../sources'
 import {
   beginScan,
   completeClosedPage,
@@ -28,7 +28,7 @@ export type PageRead =
 export type TicketSyncRequest = TicketScopeTarget & {
   accountId: string
   // Which listing to read; the open backlog unless a Closed page is asked for.
-  state?: 'open' | 'closed'
+  state?: ListingState
 }
 
 export type TicketSyncDependencies = {
@@ -79,6 +79,11 @@ const scanInput = ({ dependencies, target }: ScanInput): ScanInput => ({
   target,
 })
 
+const LISTING_OF_KIND: Record<TicketSyncTarget['kind'], ListingState> = {
+  active: 'open',
+  closed: 'closed',
+}
+
 const mergedStatuses = (saved: readonly TicketStatus[], offered: readonly TicketStatus[]) => [
   ...saved,
   ...offered.filter(({ id }) => !saved.some((status) => status.id === id)),
@@ -128,7 +133,7 @@ export const ticketSyncMachine = setup({
         {
           ...input.target,
           accountId: input.accountId,
-          state: input.target.kind === 'closed' ? 'closed' : 'open',
+          state: LISTING_OF_KIND[input.target.kind],
         },
         input.cursor,
       ),
@@ -137,32 +142,35 @@ export const ticketSyncMachine = setup({
     savePage: fromPromise<void, SavePageInput>(async ({ input }) => {
       const { target, scanStartedAt, offset, readAt, first, nextCursor } = input
       commit(input, (database) => {
-        if (target.kind === 'active')
-          return saveListedTickets(
-            database,
-            {
-              ...target,
-              scanStartedAt,
-              offset,
-              readAt,
-            },
-            input.tickets,
-          )
-        const start = first ? 0 : countClosedListed(database, target)
-        saveClosedTickets(
-          database,
-          {
-            ...target,
-            offset: start,
-            readAt,
-            first,
-          },
-          input.tickets,
-        )
-        completeClosedPage(database, target, {
-          nextCursor,
-          completedAt: Date.now(),
-        })
+        switch (target.kind) {
+          case 'active':
+            return saveListedTickets(
+              database,
+              {
+                ...target,
+                scanStartedAt,
+                offset,
+                readAt,
+              },
+              input.tickets,
+            )
+          case 'closed': {
+            saveClosedTickets(
+              database,
+              {
+                ...target,
+                offset: first ? 0 : countClosedListed(database, target),
+                readAt,
+                first,
+              },
+              input.tickets,
+            )
+            return completeClosedPage(database, target, {
+              nextCursor,
+              completedAt: Date.now(),
+            })
+          }
+        }
       })
     }),
     complete: fromPromise<void, CompleteInput>(async ({ input }) => {
