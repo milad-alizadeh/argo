@@ -67,12 +67,17 @@ export function useActiveTickets(projectId: string | null, enabled: boolean) {
       enabled ? (id, page) => trpcClient.ticketActive.query({ projectId: id, page }) : null,
     ),
   })
-  // A scan refused as the Account also leaves the Account listing and Connection stale.
-  const failed = savedRead(list.data)?.failure?.code
+  useAccountRefusal(projectId, list.data)
+  return list
+}
+
+// A scan or search refused as the Account also leaves the Account listing and Connection stale.
+export function useAccountRefusal(projectId: string | null, pages: TicketPages | undefined) {
+  const client = useQueryClient()
+  const failed = savedRead(pages)?.failure?.code
   useEffect(() => {
     if (projectId && failed) onRefused(client, projectId, ticketError(failed, null))
   }, [client, projectId, failed])
-  return list
 }
 
 // What the saved pages of a listing say of the provider behind them, whichever listing it is.

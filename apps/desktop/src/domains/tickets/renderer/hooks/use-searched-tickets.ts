@@ -7,12 +7,11 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import { ticketError } from '@/domains/tickets/contract/contract'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 import { trpcClient } from '@/platform/renderer/trpc-client'
 import { numberedPages } from './numbered-pages'
 import { type TicketSearchedReply, ticketReply } from './ticket-reply'
-import { savedRead } from './use-active-tickets'
+import { useAccountRefusal } from './use-active-tickets'
 import { listKey, onRefused, type TicketPages } from './use-tickets'
 
 export const searchKey = () => [...listKey(), 'search']
@@ -51,10 +50,6 @@ export function useSearchedTickets(projectId: string | null, enabled: boolean, q
     ),
     placeholderData: keepPreviousData,
   })
-  // A search refused as the Account also leaves the Account listing and Connection stale.
-  const failed = savedRead(list.data)?.failure?.code
-  useEffect(() => {
-    if (projectId && failed) onRefused(client, projectId, ticketError(failed, null))
-  }, [client, projectId, failed])
+  useAccountRefusal(projectId, list.data)
   return list
 }
