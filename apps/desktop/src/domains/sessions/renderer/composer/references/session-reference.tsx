@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { ComposerCommand } from '@/domains/sessions/api/composer-commands'
 import { HARNESS_PRESENTATIONS, harnessLabel } from '@/harnesses/presentation-registry'
 import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
 import type { SessionHarness } from '../../harness/harnesses'
+import { useHarnessCommands } from './composer-command-registry'
 import { InlineContext } from './inline-context'
 
 export type SessionReferenceKind = 'command' | 'file' | 'plugin' | 'skill'
@@ -12,40 +14,41 @@ export type SessionReference = {
   kind: SessionReferenceKind
   label: string
   source: string
+  argumentHint?: string
+  aliases?: readonly string[]
   // Every Harness supports a reference unless it needs the live Argo permission plugin.
   needsPermissionPlugin?: boolean
 }
 
-export const sessionReferences = [
-  { detail: 'Build an approved ticket', kind: 'command', label: 'Implement', source: '/implement' },
-  { detail: 'Pressure-test the brief', kind: 'command', label: 'Grill Me', source: '/grill-me' },
-  { detail: 'Compress the task context', kind: 'command', label: 'Compact', source: '/compact' },
-  { detail: 'Repository instructions', kind: 'file', label: 'AGENTS.md', source: '@AGENTS.md' },
-  {
-    detail: 'Current desktop folder',
-    kind: 'file',
-    label: 'apps/desktop',
-    source: '@apps/desktop',
-  },
-  {
-    detail: 'Frequently used skill',
-    kind: 'skill',
-    label: 'frontend design',
-    source: '@$frontend-design',
-  },
-  {
-    detail: 'Live Session permission plugin',
-    kind: 'plugin',
-    label: 'Argo Session plugin',
-    source: '@argo-plugin',
-    needsPermissionPlugin: true,
-  },
-] as const satisfies readonly SessionReference[]
+export function referencesFromCommands(commands: readonly ComposerCommand[]): SessionReference[] {
+  return commands.map((command) => ({
+    detail: command.description,
+    kind: 'command',
+    label: command.name,
+    source: `/${command.name}`,
+    argumentHint: command.argumentHint,
+    aliases: command.aliases,
+  }))
+}
 
-const escapedSources = sessionReferences.map((reference) =>
-  reference.source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
-)
-const sourcePattern = new RegExp(`(^|\\s)(${escapedSources.join('|')})(?=\\s|$)`, 'g')
+function escapeSource(source: string) {
+  return source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+export function referencePattern(references: readonly SessionReference[]) {
+  const sources = references.flatMap((reference) => [
+    reference.source,
+    ...(reference.aliases ?? []).map((alias) => `/${alias}`),
+  ])
+  if (sources.length === 0) return /(?!)/g
+  return new RegExp(`(^|\\s)(${sources.map(escapeSource).join('|')})(?=\\s|$)`, 'g')
+}
+
+let remembered: readonly SessionReference[] = []
+
+export function rememberComposerReferences(references: readonly SessionReference[]) {
+  remembered = references
+}
 
 // A slash command is a skill invoked by name, so both wear the wand rather than a keyboard glyph.
 const referenceIcons: Record<SessionReferenceKind, IconName> = {
@@ -65,8 +68,15 @@ function renderReferenceIcon(unsupported: boolean, reference: SessionReference |
   return null
 }
 
-export function referenceBySource(source: string) {
-  return sessionReferences.find((reference) => reference.source === source)
+export function referenceBySource(
+  source: string,
+  references: readonly SessionReference[] = remembered,
+) {
+  return references.find(
+    (reference) =>
+      reference.source === source ||
+      reference.aliases?.some((alias) => `/${alias}` === source) === true,
+  )
 }
 
 export function referenceSupportsHarness(
@@ -84,9 +94,11 @@ export function referenceHarnessLabel(harness: SessionHarness | null) {
   return harness ? harnessLabel(harness) : 'this Harness'
 }
 
-export function referenceInText(text: string) {
-  const match = sourcePattern.exec(text)
-  sourcePattern.lastIndex = 0
+export function referenceInText(
+  text: string,
+  references: readonly SessionReference[] = remembered,
+) {
+  const match = referencePattern(references).exec(text)
   if (match === null || match.index === undefined) return null
   const source = match[2]
   if (source === undefined) return null
@@ -99,13 +111,15 @@ export function referenceInText(text: string) {
 
 export function SessionReferenceBadge({
   harness = null,
+  references,
   source,
 }: {
   harness?: SessionHarness | null
+  references: readonly SessionReference[]
   source: string
 }) {
   const { t } = useTranslation('sessions')
-  const reference = referenceBySource(source)
+  const reference = referenceBySource(source, references)
   const unsupported = reference !== undefined && !referenceSupportsHarness(reference, harness)
   return (
     <span className={unsupported ? 'mx-0.5 opacity-60' : 'mx-0.5'}>
@@ -126,31 +140,40 @@ export function SessionReferenceText({
   harness?: SessionHarness | null
   text: string
 }) {
+  const commands = useHarnessCommands(harness)
+  const references = referencesFromCommands(commands)
   const fragments: ReactNode[] = []
   let cursor = 0
-  let match = referenceInText(text)
+  let match = referenceInText(text, references)
   while (match !== null) {
     if (cursor < match.start) fragments.push(text.slice(cursor, match.start))
     fragments.push(
       <SessionReferenceBadge
         harness={harness}
         key={`${match.start}:${match.source}`}
+        references={references}
         source={match.source}
       />,
     )
     cursor = match.end
-    match = referenceInText(text.slice(cursor))
+    match = referenceInText(text.slice(cursor), references)
     if (match !== null) match = { ...match, end: match.end + cursor, start: match.start + cursor }
   }
   if (cursor < text.length) fragments.push(text.slice(cursor))
   return fragments
 }
 
-export function referenceSuggestions(trigger: '/' | '@', query: string) {
+export function referenceSuggestions(references: readonly SessionReference[], query: string) {
   const loweredQuery = query.toLowerCase()
-  const suggestions = sessionReferences.filter((reference) => reference.source.startsWith(trigger))
-  return suggestions.filter((reference) =>
-    `${reference.label} ${reference.detail} ${reference.source}`
+  return references.filter((reference) =>
+    [
+      reference.label,
+      reference.detail,
+      reference.source,
+      reference.argumentHint ?? '',
+      ...(reference.aliases ?? []),
+    ]
+      .join(' ')
       .toLowerCase()
       .includes(loweredQuery),
   )

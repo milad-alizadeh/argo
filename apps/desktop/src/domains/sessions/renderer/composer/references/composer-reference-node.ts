@@ -9,9 +9,8 @@ import {
 } from './session-reference'
 
 const SUPPORTED_CLASS =
-  'composer-inline-context mx-0.5 inline-flex items-center gap-1 align-middle cursor-text !font-semibold text-foreground type-body'
-const UNSUPPORTED_CLASS =
-  'composer-inline-context mx-0.5 inline-flex items-center gap-1 align-middle cursor-text text-muted-foreground type-body'
+  'composer-inline-context cursor-text !font-semibold text-foreground type-body'
+const UNSUPPORTED_CLASS = 'composer-inline-context cursor-text text-muted-foreground type-body'
 
 export class ComposerReferenceNode extends TextNode {
   __harness: SessionHarness | null

@@ -4,7 +4,7 @@ import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/tes
 import { Button } from '@/platform/renderer/components/ui/button'
 import type { ComposerEditing } from '../editing/composer-editing'
 import { ComposerForm, type ComposerFormProps } from '../layout/composer-form'
-import { ComposerStory } from './composer-story-samples'
+import { ComposerStory, STORY_COMMANDS, STORY_TICKETS } from './composer-story-samples'
 
 const FRAME = 'mx-auto max-w-4xl p-8'
 
@@ -74,11 +74,25 @@ function ClosableComposerStory({
 
 // The send never settles, so the composer keeps its draft while delivery is uncertain.
 function UnsettledSendStory({ onSend }: { onSend: ComposerFormProps['onSend'] }) {
-  return <ComposerForm onSend={onSend} plan={null} sessionId="unsettled-session" />
+  return (
+    <ComposerForm
+      commands={STORY_COMMANDS}
+      onSend={onSend}
+      plan={null}
+      sessionId="unsettled-session"
+    />
+  )
 }
 
 function CodexComposerStory({ onSend }: { onSend: ComposerFormProps['onSend'] }) {
-  return <ComposerForm harness={{ harness: 'codex' }} onSend={onSend} sessionId="codex-session" />
+  return (
+    <ComposerForm
+      harness={{ harness: 'codex' }}
+      onSend={onSend}
+      sessionId="codex-session"
+      tickets={STORY_TICKETS}
+    />
+  )
 }
 
 const MARKDOWN_SHORTCUTS: Array<{
@@ -311,7 +325,7 @@ export const EnterPicksASlashReferenceWhileTheMenuIsOpen: Story = {
 
     await userEvent.click(composer)
     await userEvent.type(composer, 'Read /implement')
-    const option = await canvas.findByRole('option', { name: /Implement/ })
+    const option = await canvas.findByRole('option', { name: /implement/ })
     const menu = option.closest('[role="listbox"]')
     const card = canvasElement.querySelector<HTMLElement>('[data-component="ComposerCard"]')
     if (!menu || !card) throw new Error('Reference menu or Composer card is missing.')
@@ -343,8 +357,8 @@ export const RichFormatting: Story = {
   },
 }
 
-// #1887: a Claude-only reference typed into a Codex Session shows as unsupported, and the exact
-// markdown Codex receives is never rewritten to compensate.
+// #1887: a token the command list does not contain stays ordinary text, and the exact markdown
+// Codex receives is never rewritten to compensate.
 export const CodexUnsupportedReferenceIsHonest: Story = {
   render: (args) => <CodexComposerStory onSend={args.onSend} />,
   play: async ({ args, canvasElement }) => {
@@ -354,18 +368,16 @@ export const CodexUnsupportedReferenceIsHonest: Story = {
     await userEvent.click(composer)
     await userEvent.paste(CODEX_REFERENCE_DRAFT)
 
-    const reference = canvasElement.querySelector('[data-reference="@argo-plugin"]')
-    if (!reference) throw new Error('The @argo-plugin reference did not render.')
-    await expect(reference).toHaveAttribute('data-unsupported', 'true')
-    await expect(reference.querySelector('.sr-only')).toHaveTextContent('— not available for Codex')
+    await expect(canvasElement.querySelector('[data-reference="@argo-plugin"]')).toBeNull()
+    await expect(composer).toHaveTextContent('@argo-plugin')
 
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
     await expect(args.onSend).toHaveBeenCalledWith(CODEX_REFERENCE_DRAFT, null, [])
   },
 }
 
-// #1887: leaving and returning to a Codex Session restores the exact draft, unsupported
-// reference included, not a document that lost its honest state along the way.
+// #1887: leaving and returning to a Codex Session restores the exact draft, including a token
+// that is ordinary text.
 export const CodexDraftRestoresUnsupportedReference: Story = {
   render: (args) => <ClosableComposerStory harness="codex" onSend={args.onSend} />,
   play: async ({ args, canvasElement }) => {
@@ -379,10 +391,8 @@ export const CodexDraftRestoresUnsupportedReference: Story = {
     await userEvent.click(canvas.getByRole('button', { name: 'Return to the Session' }))
     await expect(canvas.getByLabelText('Message')).toBeVisible()
 
-    const reference = canvasElement.querySelector('[data-reference="@argo-plugin"]')
-    if (!reference) throw new Error('The @argo-plugin reference did not survive restoration.')
-    await expect(reference).toHaveAttribute('data-unsupported', 'true')
-    await expect(reference.querySelector('.sr-only')).toHaveTextContent('— not available for Codex')
+    await expect(canvasElement.querySelector('[data-reference="@argo-plugin"]')).toBeNull()
+    await expect(canvas.getByLabelText('Message')).toHaveTextContent('@argo-plugin')
 
     await userEvent.click(canvas.getByRole('button', { name: 'Send message' }))
     await expect(args.onSend).toHaveBeenCalledWith(CODEX_REFERENCE_DRAFT, null, [])

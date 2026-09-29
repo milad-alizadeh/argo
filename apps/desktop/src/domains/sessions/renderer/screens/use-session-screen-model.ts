@@ -127,12 +127,13 @@ export function useSessionScreenModel() {
   const navigate = useNavigate()
   const { jumpToLatest, onJumpToLatestChange } = useFeedJumpToLatestAction()
   const [cockpit, projectActions] = useProjects()
-  const [workspaceCockpit, workspaceActions] = useWorkspaces(cockpit.project?.id ?? null)
+  const selectedProjectId = cockpit.project?.id ?? projectId ?? null
+  const [workspaceCockpit, workspaceActions] = useWorkspaces(selectedProjectId)
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
   const { evidence, setEvidence } = useSessionEvidence(selectedSessionId)
   const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
   const { sessionList, session, workspaceIdentity } = useSessionSelectionData(
-    cockpit.project?.id ?? null,
+    selectedProjectId,
     selectedSessionId,
     workspaceCockpit.workspaces,
   )

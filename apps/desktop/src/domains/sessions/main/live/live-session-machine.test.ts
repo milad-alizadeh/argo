@@ -387,3 +387,32 @@ test('leaves queued turns unsent when persistence fails', async () => {
   assert.deepEqual(delivered, [])
   actor.stop()
 })
+
+test('stores the Harness command list', async () => {
+  const harness = liveSessionChannelActor((_input, _controls, emit) => {
+    queueMicrotask(() => {
+      emit({
+        type: 'commands',
+        availability: 'listed',
+        commands: [
+          {
+            name: 'implement',
+            description: 'Build an approved ticket',
+            argumentHint: '',
+            aliases: [],
+          },
+        ],
+      })
+    })
+    return { submit: async () => {}, ...passiveChannelMethods }
+  }, undefined)
+  const actor = createActor(liveSessionMachine.provide({ actors: { harness } }), {
+    input: first,
+  }).start()
+  const stored = await waitFor(
+    actor,
+    (snapshot) => snapshot.context.commands?.commands[0]?.name === 'implement',
+  )
+  assert.equal(stored.context.commands?.availability, 'listed')
+  actor.stop()
+})

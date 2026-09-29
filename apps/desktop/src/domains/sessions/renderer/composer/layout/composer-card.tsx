@@ -1,12 +1,14 @@
 import type { LexicalEditor } from 'lexical'
 import { type DragEvent, type RefObject, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
 import type { SessionPlan } from '@/domains/sessions/renderer/model/models'
 import type { HarnessControl } from '../../harness/harnesses'
 import { SessionContextBar } from '../context-bar/session-context-bar'
 import { useComposerEditing } from '../editing/composer-editing-context'
 import { useAttachmentTransfer } from '../hooks/use-composer-attachments'
 import { activeReference } from '../references/composer-reference-menu'
+import type { TicketChoice } from '../references/context-picker/context-picker-contents'
 import { DraftContextPicker } from '../references/context-picker/draft-context-picker'
 import { ComposerToolbar } from '../toolbar/composer-toolbar'
 import type { TurnConfigurationControlProps } from '../toolbar/turn-configuration-menu'
@@ -29,6 +31,9 @@ type ComposerCardProps = {
   onSend: () => void
   plan: SessionPlan | null
   sessionId: string
+  commands: ComposerCommandListing
+  projectId?: string | null
+  tickets?: readonly TicketChoice[]
   turnConfiguration: TurnConfigurationControlProps | null
   catalogState?: {
     catalogFailure: import('../toolbar/turn-configuration-menu').CatalogFailure | null
@@ -49,9 +54,12 @@ function useFocusInterruptOnCompactStart(isCompacting: boolean) {
 
 function useContextPicker(draft: string) {
   const [open, setOpen] = useState(false)
+  const trigger = activeReference(draft)?.trigger
   useEffect(() => {
-    if (activeReference(draft)?.trigger === '@') setOpen(true)
-  }, [draft])
+    if (trigger === '@') setOpen(true)
+    // A slash command and the context picker cannot both own the composer.
+    if (trigger === '/') setOpen(false)
+  }, [trigger])
   return [open, setOpen] as const
 }
 
@@ -99,12 +107,16 @@ function ComposerContextPicker({
   anchorRef,
   editorRef,
   open,
+  projectId,
   setOpen,
+  tickets,
 }: {
   anchorRef: RefObject<HTMLDivElement | null>
   editorRef: RefObject<LexicalEditor | null>
   open: boolean
+  projectId?: string | null
   setOpen: (open: boolean) => void
+  tickets?: readonly TicketChoice[]
 }) {
   const { editing, dispatch } = useComposerEditing()
   const { attachFiles } = useAttachmentTransfer((paths) =>
@@ -120,6 +132,8 @@ function ComposerContextPicker({
       }
       onAttach={() => void attachFiles()}
       onClose={() => closeContextPicker(editorRef, setOpen)}
+      projectId={projectId}
+      tickets={tickets}
       editorRef={editorRef}
     />
   )
@@ -153,6 +167,7 @@ export function ComposerCard(props: ComposerCardProps) {
           editorRef={props.editorRef}
           focusOnMount={props.focusOnMount}
           onFocusAfterMount={props.onFocusAfterMount}
+          commands={props.commands}
           onSend={props.onSend}
           sessionId={props.sessionId}
         />
@@ -174,7 +189,9 @@ export function ComposerCard(props: ComposerCardProps) {
         anchorRef={cardRef}
         editorRef={props.editorRef}
         open={contextPickerOpen}
+        projectId={props.projectId}
         setOpen={setContextPickerOpen}
+        tickets={props.tickets}
       />
       <ComposerContextBar {...props} />
     </div>

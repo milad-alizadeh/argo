@@ -1,8 +1,11 @@
 import { type ReactNode, useCallback } from 'react'
+import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
 import type { SessionPlan } from '@/domains/sessions/renderer/model/models'
 import type { HarnessControl } from '../../harness/harnesses'
 import type { Send } from '../hooks/use-send'
 import { useSessionComposerState } from '../hooks/use-session-composer-state'
+import type { TicketChoice } from '../references/context-picker/context-picker-contents'
+import { useComposerCommands } from '../references/use-composer-commands'
 import type {
   CatalogFailure,
   TurnConfigurationControlProps,
@@ -43,6 +46,11 @@ export type ComposerFormProps = {
   workspace?: WorkspaceMenuControlProps | null
   initialEditing?: Partial<ComposerEditing>
   onEditingChange?: (editing: ComposerEditing) => void
+  commands?: ComposerCommandListing
+  tickets?: readonly TicketChoice[]
+  projectId?: string | null
+  commandCwd?: string | null
+  liveSessionId?: string | null
 }
 
 function editingTurnConfiguration(input: {
@@ -55,6 +63,42 @@ function editingTurnConfiguration(input: {
   if (choices === undefined) return supplied
   if (choices === null || editing.turnConfiguration === null) return null
   return { choices, value: editing.turnConfiguration, onChange }
+}
+
+function useComposerListing(input: {
+  commands: ComposerCommandListing | undefined
+  projectId: string | null | undefined
+  liveSessionId: string | null | undefined
+  harness: HarnessControl | null
+  commandCwd: string | null
+}) {
+  const remoteCommands = useComposerCommands({
+    enabled:
+      input.commands === undefined &&
+      (input.projectId !== undefined || input.liveSessionId !== undefined),
+    harness: input.harness?.harness ?? null,
+    cwd: input.commandCwd,
+    sessionId: input.liveSessionId ?? null,
+  })
+  return input.commands ?? remoteCommands
+}
+
+function useEditingTurnConfiguration(
+  supplied: TurnConfigurationControlProps | null,
+  choices: TurnConfigurationChoices | null | undefined,
+) {
+  const { editing, dispatch } = useComposerEditing()
+  const changeTurnConfiguration = useCallback(
+    (turnConfiguration: NonNullable<ComposerEditing['turnConfiguration']>) =>
+      dispatch({ type: 'turn-configuration.changed', turnConfiguration }),
+    [dispatch],
+  )
+  return editingTurnConfiguration({
+    supplied,
+    choices,
+    editing,
+    onChange: changeTurnConfiguration,
+  })
 }
 
 function ComposerFormSurface({
@@ -80,20 +124,24 @@ function ComposerFormSurface({
   catalogFailure = null,
   refreshCatalog,
   workspace = null,
+  commands,
+  tickets,
+  projectId,
+  commandCwd = null,
+  liveSessionId,
 }: Omit<ComposerFormProps, 'initialEditing' | 'onEditingChange'>) {
-  const { editing, dispatch } = useComposerEditing()
-  const changeTurnConfiguration = useCallback(
-    (turnConfiguration: NonNullable<ComposerEditing['turnConfiguration']>) =>
-      dispatch({ type: 'turn-configuration.changed', turnConfiguration }),
-    [dispatch],
+  const turnConfiguration = useEditingTurnConfiguration(
+    suppliedTurnConfiguration,
+    turnConfigurationChoices,
   )
-  const turnConfiguration = editingTurnConfiguration({
-    supplied: suppliedTurnConfiguration,
-    choices: turnConfigurationChoices,
-    editing,
-    onChange: changeTurnConfiguration,
-  })
   const state = useSessionComposerState({ onSend, turnConfiguration })
+  const listing = useComposerListing({
+    commands,
+    projectId,
+    liveSessionId,
+    harness,
+    commandCwd,
+  })
   const send = () => {
     if (!disabled && !loading && onSend) void state.send()
   }
@@ -127,8 +175,11 @@ function ComposerFormSurface({
         onHandoff={onHandoff}
         onInterrupt={onInterrupt}
         onSend={send}
+        commands={listing}
         plan={plan}
+        projectId={projectId}
         sessionId={sessionId}
+        tickets={tickets}
         turnConfiguration={turnConfiguration}
         catalogState={{ catalogFailure, refreshCatalog, sendAvailable: onSend !== undefined }}
       />

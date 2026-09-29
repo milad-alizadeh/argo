@@ -1,9 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
+import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { announceSessionListChange, sessionListSubscribe, sessionRow } from '../session-fixtures'
+import { queryClient } from '@/platform/renderer/trpc-client'
+import {
+  announceSessionFeedChange,
+  announceSessionListChange,
+  sessionFeedSubscribe,
+  sessionListSubscribe,
+  sessionRow,
+} from '../session-fixtures'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import { SessionScreenView } from './session-screen-view'
 
@@ -21,16 +30,38 @@ const resumable = sessionRow({
 // resumes it into a live channel.
 function restartedHost(row = resumable) {
   let resumed = false
+  const live: SessionLiveEvent[] = []
   const before = window.argo
   window.argo = {
     ...before,
-    trpcSubscribe: sessionListSubscribe(before.trpcSubscribe, () => [
-      resumed ? { ...row, posture: 'live', status: 'running' } : row,
-    ]),
+    trpcSubscribe: sessionFeedSubscribe(
+      sessionListSubscribe(before.trpcSubscribe, () => [
+        resumed ? { ...row, posture: 'live', status: 'running' } : row,
+      ]),
+      async () => [
+        {
+          kind: 'message',
+          id: 'storybook-row',
+          role: 'assistant',
+          text: 'Storybook Session Feed.',
+        },
+      ],
+      live,
+    ),
     trpc: (async (request) => {
       if (request.path !== 'sessionSubmit') return before.trpc(request)
       resumed = true
+      live.push({
+        sessionId: row.id,
+        sequence: 1,
+        type: 'status',
+        commandId: null,
+        turnId: null,
+        vendorEventId: null,
+        status: 'running',
+      })
       announceSessionListChange()
+      announceSessionFeedChange()
       return { id: request.id, result: { data: { sessionId: row.id } } }
     }) as typeof window.argo.trpc,
   }
@@ -46,13 +77,15 @@ const meta = {
   decorators: [
     (Story) => (
       <div className="h-dvh w-full">
-        <MemoryRouter initialEntries={[`/sessions/${resumable.id}`]}>
-          <AppShell leftHeader={<ProjectSwitcher />} sidebar={<SessionsSidebar />}>
-            <Routes>
-              <Route path="/sessions/:sessionId" element={<Story />} />
-            </Routes>
-          </AppShell>
-        </MemoryRouter>
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter initialEntries={[`/projects/storybook-project/sessions/${resumable.id}`]}>
+            <AppShell leftHeader={<ProjectSwitcher />} sidebar={<SessionsSidebar />}>
+              <Routes>
+                <Route path="/projects/:projectId/sessions/:sessionId" element={<Story />} />
+              </Routes>
+            </AppShell>
+          </MemoryRouter>
+        </QueryClientProvider>
       </div>
     ),
   ],
