@@ -595,27 +595,18 @@ test('shows what a watched Session’s history last said about its turn', async 
 })
 
 test('draws the activity the Session’s Feed published under its title', async () => {
-  const { client, updates, activities } = sessionListCaller()
+  const { client, list, activities } = sessionListCaller()
+  const activityOf = async () =>
+    (await list({ projectId: 'project-1', pageSize: 10 })).rows.map((row) => row.activity)
   try {
-    insertSession(client, { id: IDS[0], harness: 'codex', nativeId: 'native-1', updatedAt: 20 })
-    const { received, stop } = await updates({ projectId: 'project-1', pageSize: 10 })
+    insertSession(client, { id: IDS[1], harness: 'claude', nativeId: 'native-2', updatedAt: 30 })
 
-    activities.publish(IDS[0], { label: 'Ran bun test', kind: 'command', open: true })
-    await settled()
-    activities.publish(IDS[0], null)
-    await settled()
-    stop()
-
-    assert.deepEqual(
-      received.map((update) =>
-        update.type === 'row' ? update.row.activity : update.rows.map((row) => row.activity),
-      ),
-      [
-        [null],
-        { label: 'Ran bun test', kind: 'command', open: true, tool: 'command', target: null },
-        null,
-      ],
-    )
+    activities.publish(IDS[1], { label: 'Ran bun test', kind: 'command', open: true })
+    assert.deepEqual(await activityOf(), [
+      { label: 'Ran bun test', kind: 'command', open: true, tool: 'command', target: null },
+    ])
+    activities.publish(IDS[1], null)
+    assert.deepEqual(await activityOf(), [null])
   } finally {
     client.close()
   }

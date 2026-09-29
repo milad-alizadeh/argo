@@ -194,7 +194,16 @@ test('a settled Turn reads vendor history again', async () => {
 })
 
 function running(id: string, text: string): FeedContent {
-  return { ...command(id, text), status: 'running', exitCode: null }
+  return {
+    kind: 'command',
+    id,
+    command: text,
+    cwd: null,
+    status: 'running',
+    output: null,
+    stderr: null,
+    exitCode: null,
+  }
 }
 
 function reasoning(id: string, text: string | null): FeedContent {

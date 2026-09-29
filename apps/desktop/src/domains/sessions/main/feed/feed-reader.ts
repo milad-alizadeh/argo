@@ -30,7 +30,7 @@ export type SessionFeedReaderContext = {
   followHistory?: SessionHistoryFollowers['follow']
   sessionSyncStatus?: readonly SessionSyncStatusStore[]
   // Where each reading's current activity goes, so the roster draws the same line.
-  activities?: Pick<SessionActivities, 'publish'>
+  activities?: SessionActivities
 }
 
 type Observer = (reading: FeedReading) => void

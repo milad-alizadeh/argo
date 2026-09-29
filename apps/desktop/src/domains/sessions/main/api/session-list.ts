@@ -151,7 +151,7 @@ export type SessionListContext = {
   roster: SessionRosterChanges
   watchedStatus: Pick<WatchedSessionStatus, 'statusOf'>
   // The activity an observed Feed published; it outranks the live channel's own.
-  activities?: Pick<SessionActivities, 'activityOf'>
+  activities?: SessionActivities
 }
 
 // The Feed's activity names no tool or target, so the row keeps its kind as the tool.
