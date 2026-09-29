@@ -3,11 +3,10 @@ import { DatabaseSync } from 'node:sqlite'
 import { setTimeout } from 'node:timers/promises'
 import type { Page } from 'playwright-core'
 import { codexStatePath } from '../../../mocks/cli/codex/codex-state-store'
+import { sessionRows } from '../page-trpc'
 
 const THREAD = 'rollout-codexParent'
 const NAME = 'Named by Codex Desktop'
-
-type RosterTitle = { id: string; title: { text: string; source: string } | null }
 
 type ColumnInfo = { name: string; type: string; notnull: number; dflt_value: unknown }
 
@@ -45,9 +44,11 @@ function writeStateStore(codexTranscripts: string) {
 }
 
 async function rosterTitle(page: Page) {
-  const reply = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
-  assert.equal(reply.type, 'session.listed')
-  return reply.sessions.find((session: RosterTitle) => session.id === THREAD)?.title ?? null
+  const rows = await sessionRows(page)
+  const titled = rows.find(
+    (session) => session.title?.text === 'Run Codex check' || session.title?.text === NAME,
+  )
+  return titled?.title ?? null
 }
 
 // ADR-0042: the packaged main process opens the store through Electron's own `node:sqlite`.

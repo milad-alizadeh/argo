@@ -98,13 +98,20 @@ test('an accepted Send clears sent content after an attachment status error', as
     configurable: true,
     value: {
       argo: {
-        statSessionAttachments: async () => ({
-          type: 'session.attachments.statted',
-          files: [
-            { path: '/readable', readable: true },
-            { path: '/missing', readable: false },
-          ],
-        }),
+        trpc: async (request: { id: number; path: string }) => {
+          if (request.path !== 'sessionAttachmentStat') throw new Error(request.path)
+          return {
+            id: request.id,
+            result: {
+              data: {
+                files: [
+                  { path: '/readable', readable: true },
+                  { path: '/missing', readable: false },
+                ],
+              },
+            },
+          }
+        },
       },
     },
   })

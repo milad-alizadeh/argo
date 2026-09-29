@@ -1,12 +1,12 @@
 // The gestures a person makes in the Sessions surface, for the packaged drivers to make the same
-// way (#2117). Every packaged case used to inherit its Session from an injected
-// `window.argo.startSession()`, and that one uncrossed boundary is where a cluster of creation
+// way (#2117). Creating a Session goes through the composer, which is where a cluster of creation
 // bugs reached the user.
 
 import assert from 'node:assert/strict'
 import { expect } from '@playwright/test'
 import type { Page } from 'playwright-core'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
+import { sessionRows } from './page-trpc'
 
 // The harness tab labels, typed against SessionHarness so a new Harness cannot be left out. The strings
 // themselves live in the renderer's turn turnConfiguration (claude-turn-configuration.ts, codex-turn-configuration.ts), which
@@ -130,9 +130,8 @@ async function chooseAutoPermissionMode(page: Page) {
 // The Roster ids the shipped app answers with. Reading is an assertion, not a gesture: nothing a
 // person does is injected here.
 export async function rosterIds(page: Page): Promise<string[]> {
-  const reply = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
-  assert.equal(reply.type, 'session.listed')
-  return reply.sessions.map(({ id }: { id: string }) => id)
+  const rows = await sessionRows(page)
+  return rows.map(({ id }) => id)
 }
 
 function readCreatedRow(page: Page, known: string[], prompt: string) {

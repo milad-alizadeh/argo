@@ -1003,7 +1003,18 @@ function withArchiveHost(
   handler: (request: { cursor: string | null; restoreId: string | null }) => Promise<unknown>,
 ) {
   const before = window.argo
-  window.argo = { ...before, listArchivedSessions: handler as typeof before.listArchivedSessions }
+  window.argo = {
+    ...before,
+    trpc: (async (request) => {
+      if (request.path !== 'sessionArchiveList') return before.trpc(request)
+      return {
+        id: request.id,
+        result: {
+          data: await handler(request.input as { cursor: string | null; restoreId: string | null }),
+        },
+      }
+    }) as typeof window.argo.trpc,
+  }
   return () => {
     window.argo = before
   }
@@ -1016,9 +1027,6 @@ function archiveReply(fields: {
   historyComplete?: boolean
 }) {
   return {
-    version: 1,
-    type: 'session.archive.listed',
-    requestId: 'storybook-archive',
     sessions: [],
     nextCursor: null,
     restored: null,

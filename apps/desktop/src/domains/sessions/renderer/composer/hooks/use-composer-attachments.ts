@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 
 import { attachmentKindOf, type SessionAttachmentInput } from '@/domains/sessions/api/attachments'
+import { trpcClient } from '@/platform/renderer/trpc-client'
 import type { ComposerAttachment } from '../editing/composer-editing'
 
 // The chooser and drag-and-drop are the two ways a file joins the strip (#1845 gap-decision);
@@ -8,8 +9,8 @@ import type { ComposerAttachment } from '../editing/composer-editing'
 export function useAttachmentTransfer(attach: (paths: string[]) => void) {
   return {
     attachFiles: useCallback(async () => {
-      const reply = await window.argo.chooseSessionAttachments()
-      if (reply.type === 'session.attachments.chosen') attach(reply.paths)
+      const reply = await trpcClient.sessionAttachmentChoose.mutate()
+      attach(reply.paths)
     }, [attach]),
     dropFiles: useCallback(
       (files: FileList) => {
@@ -31,13 +32,10 @@ export async function resolveAttachments(
   markError: (ids: string[]) => void,
 ): Promise<{ prompt: string; attachments: SessionAttachmentInput[]; sentIds: string[] }> {
   if (attachments.length === 0) return { prompt: draft, attachments: [], sentIds: [] }
-  const reply = await window.argo.statSessionAttachments({
+  const reply = await trpcClient.sessionAttachmentStat.query({
     paths: attachments.map((attachment) => attachment.path),
   })
-  const readable =
-    reply.type === 'session.attachments.statted'
-      ? new Set(reply.files.filter((file) => file.readable).map((file) => file.path))
-      : new Set<string>()
+  const readable = new Set(reply.files.filter((file) => file.readable).map((file) => file.path))
   const sent = attachments.filter((attachment) => readable.has(attachment.path))
   const failed = attachments.filter((attachment) => !readable.has(attachment.path))
   if (failed.length > 0) markError(failed.map((attachment) => attachment.id))

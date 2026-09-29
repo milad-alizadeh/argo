@@ -11,6 +11,7 @@ export default defineConfig({
     './src/database/composer-draft/schema.ts',
     './src/database/session-ticket-link/schema.ts',
     './src/database/session-subagent/schema.ts',
+    './src/database/session-archive/schema.ts',
     './src/database/ticket/schema.ts',
     './src/database/ticket-content/schema.ts',
     './src/database/ticket-sync/schema.ts',
