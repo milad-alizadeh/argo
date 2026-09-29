@@ -131,6 +131,45 @@ export async function proveLinearStatusRefused(run: Run) {
   })
 }
 
+// ENG-2 has no priority; Linear confirms Urgent and the row then shows it.
+export async function proveLinearPriority(run: Run) {
+  await test.step('linear-change-priority', async () => {
+    await choose(
+      run.page,
+      backlog(run.page).getByRole('button', { name: 'Priority: No priority' }),
+      {
+        role: 'menuitemradio',
+        name: 'Urgent',
+      },
+    )
+    await backlog(run.page).getByRole('button', { name: 'Priority: Urgent' }).waitFor()
+    await backlog(run.page).getByRole('button', { name: 'Priority: High' }).waitFor()
+  })
+}
+
+// Linear refuses the change: ENG-2 keeps having no priority, and the reader is told why.
+export async function proveLinearPriorityRefused(run: Run) {
+  run.fixture.linear.refuseWrites()
+  await test.step('linear-refused-priority', async () => {
+    await choose(
+      run.page,
+      backlog(run.page).getByRole('button', { name: 'Priority: No priority' }),
+      {
+        role: 'menuitemradio',
+        name: 'Urgent',
+      },
+    )
+    await notification(run.page)
+      .getByText('This Account is not allowed to change that Ticket.')
+      .waitFor()
+    await backlog(run.page).getByRole('button', { name: 'Priority: No priority' }).waitFor()
+    assert.equal(
+      await backlog(run.page).getByRole('button', { name: 'Priority: Urgent' }).count(),
+      0,
+    )
+  })
+}
+
 // A fresh launch unseals the grant, and the short-lived token is renewed before the first read.
 export async function proveLinearRestart(run: Run) {
   await test.step('linear-restart-renewal', async () => {

@@ -16,10 +16,11 @@ import { createSignIn } from '@/domains/accounts/main/sign-in'
 import { createConnectionPort } from '@/domains/connections/main'
 import { ticketProcedures } from '@/domains/tickets/main/api/ticket-procedures'
 import {
+  changeTicketPriority,
   changeTicketStatus,
   ticketOperationSupervisorMachine,
 } from '@/domains/tickets/main/operations/ticket-operation-supervisor-machine'
-import { ticketStatusWriter } from '@/domains/tickets/main/operations/ticket-status-writer'
+import { ticketWriter } from '@/domains/tickets/main/operations/ticket-writer'
 import { TicketChanges } from '@/domains/tickets/main/sync/ticket-changes'
 import { ticketByIdReader, ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
 import {
@@ -56,7 +57,7 @@ function ticketCaller(database: Database, access: AccountAccess, changes: Ticket
   const ticketOperations = createActor(ticketOperationSupervisorMachine, {
     input: {
       database,
-      writeStatus: ticketStatusWriter({ access, providers: PROVIDER_REGISTRY }),
+      write: ticketWriter({ access, providers: PROVIDER_REGISTRY }),
       changed: changes.changed,
     },
   }).start()
@@ -76,6 +77,7 @@ function ticketCaller(database: Database, access: AccountAccess, changes: Ticket
       changes,
       send: (command) => ticketSync.send(command),
       changeStatus: (request) => changeTicketStatus(ticketOperations, request),
+      changePriority: (request) => changeTicketPriority(ticketOperations, request),
     },
   })
   return initTRPC.create().router(procedures).createCaller({})
@@ -295,10 +297,16 @@ test('a Linear status change the provider refuses leaves the saved Ticket unchan
   assert.deepEqual(intents(database), [{ phase: 'rejected', failure: 'ticket-not-writable' }])
 })
 
-test('the shared Ticket flows read and reprioritize a Linear issue through the registry', async () => {
-  const { mockLinear, tickets, accountId } = await signedInToLinear()
+test('a confirmed Linear priority is committed to SQLite and announced', async () => {
+  const flow = await signedInToLinear()
+  const { mockLinear, tickets, accountId, changes, database } = flow
   mockLinear.addTeam(TEAM)
-  assert.deepEqual(await connectedKeys(tickets, accountId, TEAM.id), ['ENG-1', 'ENG-2'])
+  await connectedKeys(tickets, accountId, TEAM.id)
+  await synced(flow)
+  let announced = 0
+  changes.subscribe(() => {
+    announced += 1
+  })
   const prioritized = await tickets.ticketUpdatePriority({
     projectId,
     key: 'ENG-1',
@@ -306,6 +314,76 @@ test('the shared Ticket flows read and reprioritize a Linear issue through the r
   })
   assert.ok(prioritized.type === 'ticket.prioritized')
   assert.equal(prioritized.priority?.level, 1)
+  const saved = await tickets.ticketDetail({ projectId, reference: 'ENG-1' })
+  assert.ok(saved.type === 'ticket.detail')
+  assert.equal(saved.ticket?.priority?.level, 1)
+  assert.equal(announced, 1)
+  assert.deepEqual(intents(database), [{ phase: 'committed', failure: null }])
+})
+
+test('a Linear priority change the provider refuses keeps the committed value', async () => {
+  const flow = await signedInToLinear()
+  const { mockLinear, tickets, accountId, database } = flow
+  mockLinear.addTeam(TEAM)
+  await connectedKeys(tickets, accountId, TEAM.id)
+  await synced(flow)
+  mockLinear.refuseWrites()
+  const refused = await tickets.ticketUpdatePriority({
+    projectId,
+    key: 'ENG-1',
+    priorityLevel: 1,
+  })
+  assert.ok(refused.type === 'ticket.error')
+  assert.equal(refused.code, 'ticket-not-writable')
+  const saved = await tickets.ticketDetail({ projectId, reference: 'ENG-1' })
+  assert.ok(saved.type === 'ticket.detail')
+  assert.equal(saved.ticket?.priority?.level, 2)
+  assert.deepEqual(intents(database), [{ phase: 'rejected', failure: 'ticket-not-writable' }])
+})
+
+test('a GitHub Ticket refuses a priority change and keeps the refusal as a rejected intent', async () => {
+  const flow = await signedInToGitHub()
+  const { gitHub, tickets, accountId, database } = flow
+  gitHub.addRepository({
+    fullName: 'octo/hello',
+    visibleTo: [OCTOCAT.id],
+    writers: [OCTOCAT.id],
+    issues: [{ number: 1, title: 'Wire the registry' }],
+  })
+  await connectedKeys(tickets, accountId, 'octo/hello')
+  await synced(flow)
+  const refused = await tickets.ticketUpdatePriority({ projectId, key: '#1', priorityLevel: 1 })
+  assert.ok(refused.type === 'ticket.error')
+  assert.equal(refused.code, 'ticket-not-writable')
+  assert.deepEqual(intents(database), [{ phase: 'rejected', failure: 'ticket-not-writable' }])
+})
+
+test('the priority levels come from Linear, and GitHub offers none', async () => {
+  const linear = await signedInToLinear()
+  linear.mockLinear.addTeam(TEAM)
+  await connectedKeys(linear.tickets, linear.accountId, TEAM.id)
+  const offered = await linear.tickets.ticketPriorityChoices({ projectId })
+  assert.ok(offered.type === 'ticket.priorityChoices')
+  assert.deepEqual(
+    offered.choices.map(({ level, label }) => [level, label]),
+    [
+      [1, 'Urgent'],
+      [2, 'High'],
+      [3, 'Medium'],
+      [4, 'Low'],
+    ],
+  )
+  const github = await signedInToGitHub()
+  github.gitHub.addRepository({
+    fullName: 'octo/hello',
+    visibleTo: [OCTOCAT.id],
+    writers: [OCTOCAT.id],
+    issues: [],
+  })
+  await connectedKeys(github.tickets, github.accountId, 'octo/hello')
+  const none = await github.tickets.ticketPriorityChoices({ projectId })
+  assert.ok(none.type === 'ticket.priorityChoices')
+  assert.deepEqual(none.choices, [])
 })
 
 type Flow = Awaited<ReturnType<typeof flows>>

@@ -93,6 +93,7 @@ export type Connected = {
   onDisconnectSource: () => void
   onChangeStatus: (key: string, status: TicketStatus) => void
   onChangePriority: (key: string, priority: TicketPriority | null) => void
+  priorityChoices: readonly TicketPriority[]
   selectedKey: string | null
   // The selected Ticket as SQLite saved it, and its by-ID provider read.
   detail: TicketDetailRead
@@ -141,6 +142,7 @@ export function connectedView(
     onOpenSession,
     onReconnect,
     onSync,
+    priorityChoices,
     ...listing
   }: Connected,
 ): TicketsView {
@@ -192,6 +194,7 @@ export function connectedView(
       provider: connection.provider,
       partial: saved !== null && !saved.complete,
       writable: connectionIssue === null,
+      priorityChoices,
       sync,
     },
   }

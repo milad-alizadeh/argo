@@ -5,5 +5,5 @@ export const linearPresentation: ProviderPresentation = {
   newTicketURL: null,
   keyColumn: 'w-(--size-ticket-key-long)',
   statusTerm: 'status',
-  priority: true,
+  hasPriority: true,
 }

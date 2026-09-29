@@ -52,6 +52,7 @@ async function caller(
             changes: new TicketChanges(),
             send: () => {},
             changeStatus,
+            changePriority: async () => ({ type: 'rejected', failure: 'not-connected' }),
           },
         }),
       )

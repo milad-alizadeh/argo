@@ -69,7 +69,7 @@ async function cockpit() {
   const operations = createActor(ticketOperationSupervisorMachine, {
     input: {
       database,
-      writeStatus: async () => ({ ok: true, status: DONE }),
+      write: async () => ({ ok: true, confirmed: { operation: 'status', status: DONE } }),
       changed: () => {},
     },
   }).start()
@@ -97,6 +97,7 @@ test('a list read asked for before a confirmed status cannot replace it, and a l
   const outcome = await changeTicketStatus(operations, {
     ...SCOPE,
     accountId: 'github:1',
+    operation: 'status',
     key: '#1',
     statusId: 'done',
   })

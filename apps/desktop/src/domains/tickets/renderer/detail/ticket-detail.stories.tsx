@@ -3,7 +3,7 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { STATUSES } from '../status/status-fixtures'
 import { TicketDetail } from './ticket-detail'
-import { engine, prototype, wayfinder } from './ticket-fixtures'
+import { engine, LINEAR_PRIORITIES, prototype, wayfinder } from './ticket-fixtures'
 
 const URL_BODY = `See https://github.com/octocat/hello-world/blob/main/${'deeply-nested-'.repeat(12)}path.md`
 
@@ -32,6 +32,7 @@ const meta = {
     onSelect: fn(),
     provider: 'github',
     statuses: STATUSES.github,
+    priorityChoices: [],
     onChangeStatus: fn(),
     onChangePriority: fn(),
   },
@@ -126,7 +127,13 @@ export const ChangeState: Story = {
 
 // Linear's own workflow status and priority show as properties, and its key names the link.
 export const Linear: Story = {
-  args: { ticket: engine, provider: 'linear', listed: new Set(), statuses: STATUSES.linear },
+  args: {
+    ticket: engine,
+    provider: 'linear',
+    listed: new Set(),
+    statuses: STATUSES.linear,
+    priorityChoices: LINEAR_PRIORITIES,
+  },
   parameters: { detailWidth: '40rem' },
   play: async ({ canvasElement }) => {
     const article = within(canvasElement).getByRole('article', { name: 'Ticket ENG-12' })
@@ -145,7 +152,13 @@ export const Linear: Story = {
 
 // Linear's priority menu moves the Ticket to another level, in Linear's own words.
 export const ChangePriority: Story = {
-  args: { ticket: engine, provider: 'linear', listed: new Set(), statuses: STATUSES.linear },
+  args: {
+    ticket: engine,
+    provider: 'linear',
+    listed: new Set(),
+    statuses: STATUSES.linear,
+    priorityChoices: LINEAR_PRIORITIES,
+  },
   play: async ({ args, canvasElement }) => {
     const article = within(canvasElement).getByRole('article', { name: 'Ticket ENG-12' })
     await userEvent.click(within(article).getByRole('button', { name: 'Priority: High' }))

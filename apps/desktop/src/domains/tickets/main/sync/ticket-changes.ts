@@ -2,8 +2,9 @@
 import type { Database } from '@/database/database'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
 import type {
-  StatusOperationOutcome,
-  StatusOperationRequest,
+  PriorityRequest,
+  StatusRequest,
+  TicketOperationOutcome,
 } from '../operations/ticket-operation-machine'
 import type { TicketSyncSupervisorCommand } from './ticket-sync-supervisor-machine'
 
@@ -34,5 +35,7 @@ export type TicketIndex = {
   // A scan request, or a view watching or leaving a scope.
   send: (command: TicketSyncSupervisorCommand) => void
   // Moves a Ticket to a status through the operation supervisor, and answers how that ended.
-  changeStatus: (request: StatusOperationRequest) => Promise<StatusOperationOutcome>
+  changeStatus: (request: StatusRequest) => Promise<TicketOperationOutcome>
+  // Moves a Ticket to a priority level the same way.
+  changePriority: (request: PriorityRequest) => Promise<TicketOperationOutcome>
 }

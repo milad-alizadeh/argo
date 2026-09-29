@@ -17,6 +17,7 @@ import {
 export type { TicketsView } from './use-tickets-view-derive'
 
 import { useTicketChanges, useTicketSync } from './use-active-tickets'
+import { usePriorityChoices } from './use-priority-choices'
 import { useProviderSearch } from './use-searched-tickets'
 import { useTicketDetail } from './use-ticket-detail'
 import { useConnection, useDisconnectSource, useTicketList } from './use-tickets'
@@ -35,17 +36,15 @@ export function useTicketsView(): TicketsScreenProps {
   const query = useSettledQuery()
   const list = useTicketList(projectId, connection.data ?? null, query)
   const sync = useTicketSync(projectId, connection.data ?? null)
-  const search = useProviderSearch(
-    projectId,
-    connection.data?.state === 'ready' && query !== '',
-    query,
-  )
-  const detail = useTicketDetail(projectId, ticketKey ?? null, connection.data?.state === 'ready')
+  const ready = connection.data?.state === 'ready'
+  const search = useProviderSearch(projectId, ready && query !== '', query)
+  const detail = useTicketDetail(projectId, ticketKey ?? null, ready)
   useTicketChanges()
   const form = useConnectForm(projectId, accounts.data?.accounts, connection.data === null)
   const disconnectSource = useDisconnectSource()
   const updateStatus = useUpdateStatus()
   const updatePriority = useUpdatePriority()
+  const priorityChoices = usePriorityChoices(projectId, connection.data ?? null)
   const navigate = useNavigate()
   const openAccountsDialog = useOpenAccountsDialog()
 
@@ -69,6 +68,7 @@ export function useTicketsView(): TicketsScreenProps {
       query,
       onDisconnectSource: () => disconnectSource.mutate({ projectId }),
       onChangeStatus: (key, status) => updateStatus.mutate({ projectId, key, status }),
+      priorityChoices,
       onChangePriority: (key, priority) => updatePriority.mutate({ projectId, key, priority }),
       selectedKey: ticketKey ?? null,
       detail,

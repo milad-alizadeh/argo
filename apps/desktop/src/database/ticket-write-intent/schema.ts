@@ -3,7 +3,7 @@ import { timestampColumns } from '@/database/timestamp-columns'
 import { TICKET_ERRORS, type TicketErrorCode } from '@/domains/tickets/contract/contract'
 import { ticketTable } from '../ticket/schema'
 
-export const TICKET_WRITE_OPERATIONS = ['status'] as const
+export const TICKET_WRITE_OPERATIONS = ['status', 'priority'] as const
 // `pending` is recorded before the provider call; it claims no change to the Ticket.
 export const TICKET_WRITE_PHASES = ['pending', 'committed', 'rejected', 'uncertain'] as const
 const TICKET_ERROR_CODES = Object.keys(TICKET_ERRORS) as [TicketErrorCode, ...TicketErrorCode[]]
