@@ -5,7 +5,12 @@ import { readTicket, readTicketPage } from '@/providers/github/issues'
 import { checkRepository, isRepositoryScope, listRepositories } from '@/providers/github/repository'
 import { GITHUB_STATUSES, updateIssueStatus } from '@/providers/github/statuses'
 
-type Failure = GitHubFailure | 'issues-disabled' | 'status-unknown' | 'ticket-not-found'
+type Failure =
+  | GitHubFailure
+  | 'issues-disabled'
+  | 'status-unknown'
+  | 'ticket-not-found'
+  | 'ticket-deleted'
 
 const FAILURES: Record<Failure, SourceFailure> = {
   unauthorized: 'refused',
@@ -16,6 +21,7 @@ const FAILURES: Record<Failure, SourceFailure> = {
   'issues-disabled': 'issues-disabled',
   'status-unknown': 'status-unknown',
   'ticket-not-found': 'ticket-not-found',
+  'ticket-deleted': 'ticket-deleted',
 }
 
 // An issue GitHub cannot find is that Ticket out of reach, not the repository.
@@ -63,13 +69,14 @@ export const githubTickets: TicketSource = {
     return { ok: true, value: { tickets, statuses: [...GITHUB_STATUSES], nextCursor, total } }
   },
 
-  // GitHub answers 404 for a repository out of sight too, so the repository is checked once.
+  // GitHub answers 404 for a repository out of sight too, so the repository is checked once. Only
+  // a visible repository with Issues on makes a missing issue a deleted one.
   async read({ endpoints, token }, request) {
     const read = await readTicket(endpoints.github, token, request)
     if (read.ok) return read
     if (read.failure !== 'not-found') return { ok: false, failure: READ_FAILURES[read.failure] }
     const check = await checkRepository(endpoints.github, token, request.scope)
-    return check.ok ? { ok: false, failure: 'ticket-not-found' } : failed(check.failure)
+    return check.ok ? { ok: false, failure: 'ticket-deleted' } : failed(check.failure)
   },
 
   async update({ endpoints, token }, change) {

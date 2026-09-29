@@ -38,7 +38,7 @@ import {
 } from '@/domains/tickets/main/operations/ticket-operation-supervisor-machine'
 import { ticketStatusWriter } from '@/domains/tickets/main/operations/ticket-status-writer'
 import { TicketChanges } from '@/domains/tickets/main/sync/ticket-changes'
-import { ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
+import { ticketByIdReader, ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
 import { failInterruptedTicketSearches } from '@/domains/tickets/main/sync/ticket-search-records'
 import { markInterruptedTicketScans } from '@/domains/tickets/main/sync/ticket-sync-records'
 import {
@@ -539,6 +539,7 @@ async function prepare() {
     ticketSync: {
       database,
       readPage: ticketPageReader({ access: tickets.access, providers: PROVIDER_REGISTRY }),
+      readTicket: ticketByIdReader({ access: tickets.access, providers: PROVIDER_REGISTRY }),
       changed: tickets.changes.changed,
       timing: ticketSyncTiming(PROOF_ENABLED),
     },

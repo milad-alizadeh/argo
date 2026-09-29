@@ -123,6 +123,44 @@ export const accountListing = (page: Page) =>
     window.argo.trpc({ id: 0, path: 'accountList', type: 'query', input: undefined }),
   )
 
+// The main process owns the window, so only it can show or hide it as a person would.
+export const showWindow = (application: ElectronApplication, shown: boolean) =>
+  application.evaluate(({ BrowserWindow }, show) => {
+    const window = BrowserWindow.getAllWindows()[0]
+    if (show) window?.showInactive()
+    else window?.hide()
+  }, shown)
+
+// One committed Ticket by native ID: its Argo ID, closure and the time its deletion was confirmed.
+export function committedTicket(
+  run: Run,
+  { provider, scope }: { provider: string; scope: string },
+  nativeId: string,
+) {
+  const database = new DatabaseSync(path.join(run.fixture.userData, 'argo.sqlite'), {
+    readOnly: true,
+  })
+  try {
+    const row = database
+      .prepare(
+        `SELECT ticket.argo_id, ticket_content.state, ticket_content.title, ticket_content.deleted_at
+         FROM ticket JOIN ticket_content ON ticket_content.ticket_id = ticket.argo_id
+         WHERE ticket.provider = ? AND ticket.scope = ? AND ticket.native_id = ?`,
+      )
+      .get(provider, scope, nativeId)
+    return row === undefined
+      ? undefined
+      : {
+          argoId: String(row.argo_id),
+          state: String(row.state),
+          title: String(row.title),
+          deletedAt: row.deleted_at === null ? null : Number(row.deleted_at),
+        }
+  } finally {
+    database.close()
+  }
+}
+
 // The Argo ID of each Ticket the main process committed for one provider scope, by native ID.
 export function committedTicketIds(
   run: Run,

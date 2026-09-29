@@ -1,7 +1,7 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "857a4d4c-8b9c-4b83-893f-3467d15644e8",
+  "id": "35c271b7-a801-4e1b-bf2a-5dcdf07cc3a1",
   "prevIds": ["b5068d94-d57c-4bb3-bcbd-2bdb3c472015"],
   "ddl": [
     {
@@ -54,10 +54,6 @@
     },
     {
       "name": "ticket_search_ticket_link",
-      "entityType": "tables"
-    },
-    {
-      "name": "ticket_write_intent",
       "entityType": "tables"
     },
     {
@@ -982,6 +978,16 @@
     },
     {
       "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "deleted_at",
+      "entityType": "columns",
+      "table": "ticket_content"
+    },
+    {
+      "type": "integer",
       "notNull": true,
       "autoincrement": false,
       "default": "(CAST(unixepoch('subsec') * 1000 AS INTEGER))",
@@ -1251,96 +1257,6 @@
       "table": "ticket_search_ticket_link"
     },
     {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "intent_id",
-      "entityType": "columns",
-      "table": "ticket_write_intent"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "ticket_id",
-      "entityType": "columns",
-      "table": "ticket_write_intent"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "operation",
-      "entityType": "columns",
-      "table": "ticket_write_intent"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "requested_json",
-      "entityType": "columns",
-      "table": "ticket_write_intent"
-    },
-    {
-      "type": "integer",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "base_updated_at",
-      "entityType": "columns",
-      "table": "ticket_write_intent"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "phase",
-      "entityType": "columns",
-      "table": "ticket_write_intent"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "failure",
-      "entityType": "columns",
-      "table": "ticket_write_intent"
-    },
-    {
-      "type": "integer",
-      "notNull": true,
-      "autoincrement": false,
-      "default": "(CAST(unixepoch('subsec') * 1000 AS INTEGER))",
-      "generated": null,
-      "name": "created_at",
-      "entityType": "columns",
-      "table": "ticket_write_intent"
-    },
-    {
-      "type": "integer",
-      "notNull": true,
-      "autoincrement": false,
-      "default": "(CAST(unixepoch('subsec') * 1000 AS INTEGER))",
-      "generated": null,
-      "name": "updated_at",
-      "entityType": "columns",
-      "table": "ticket_write_intent"
-    },
-    {
       "columns": ["project_id"],
       "tableTo": "project",
       "columnsTo": ["id"],
@@ -1451,17 +1367,6 @@
       "table": "ticket_search_ticket_link"
     },
     {
-      "columns": ["ticket_id"],
-      "tableTo": "ticket",
-      "columnsTo": ["argo_id"],
-      "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
-      "nameExplicit": false,
-      "name": "fk_ticket_write_intent_ticket_id_ticket_argo_id_fk",
-      "entityType": "fks",
-      "table": "ticket_write_intent"
-    },
-    {
       "columns": ["session_id", "subagent_id"],
       "nameExplicit": false,
       "name": "session_subagent_pk",
@@ -1550,13 +1455,6 @@
       "nameExplicit": false,
       "name": "ticket_content_pk",
       "table": "ticket_content",
-      "entityType": "pks"
-    },
-    {
-      "columns": ["intent_id"],
-      "nameExplicit": false,
-      "name": "ticket_write_intent_pk",
-      "table": "ticket_write_intent",
       "entityType": "pks"
     },
     {

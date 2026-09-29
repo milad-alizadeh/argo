@@ -61,7 +61,12 @@ export async function openTicket(
   const id = readSavedTicket(database, { provider, scope, reference }).saved?.nativeId ?? reference
   const readAt = Date.now()
   const read = await readAs(call, accountId, (source, reader) => source.read(reader, { scope, id }))
-  if (!read.ok) return read.error
+  // A reference the reader typed may never have existed, so a deletion is not claimed here.
+  if (!read.ok) {
+    return read.error.code === 'ticket-deleted'
+      ? ticketError('ticket-not-found', call.requestId)
+      : read.error
+  }
   let argoId: string
   try {
     argoId = saveReadTicket(database, { provider, scope, readAt }, read.value)

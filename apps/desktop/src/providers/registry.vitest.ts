@@ -21,7 +21,7 @@ import {
 } from '@/domains/tickets/main/operations/ticket-operation-supervisor-machine'
 import { ticketStatusWriter } from '@/domains/tickets/main/operations/ticket-status-writer'
 import { TicketChanges } from '@/domains/tickets/main/sync/ticket-changes'
-import { ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
+import { ticketByIdReader, ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
 import {
   TICKET_SYNC_TIMING,
   ticketSyncSupervisorMachine,
@@ -48,6 +48,7 @@ function ticketCaller(database: Database, access: AccountAccess, changes: Ticket
     input: {
       database,
       readPage: ticketPageReader({ access, providers: PROVIDER_REGISTRY }),
+      readTicket: ticketByIdReader({ access, providers: PROVIDER_REGISTRY }),
       changed: changes.changed,
       timing: TICKET_SYNC_TIMING,
     },

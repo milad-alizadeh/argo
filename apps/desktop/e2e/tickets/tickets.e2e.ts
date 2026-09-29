@@ -1,4 +1,4 @@
-// The packaged Ticket proof (#1848, #1849, #2013, #2870, #2871, #2873): connect an Account, connect a
+// The packaged Ticket proof (#1848, #1849, #2013, #2870, #2871, #2873, #2874): connect an Account, connect a
 // source, list, detail, a status change, restart, revoked access, an expired renewal, disconnect, a
 // visible failure, the automatic refresh, linked Tickets opened by ID and search beyond the local index, all through the shipped
 // cockpit against a mock GitHub and a mock Linear. Each case declares the Accounts and source it
@@ -32,6 +32,7 @@ import {
   proveLinearStatusRefused,
 } from './cases/linear.case'
 import { proveGitHubLinkedTicket, proveLinearLinkedTicket } from './cases/linked.case'
+import { proveGitHubMissing, proveLinearMissing } from './cases/missing.case'
 import { proveAutomaticRefresh } from './cases/refresh.case'
 import { proveSearchBeyondIndex, proveSearchFilters } from './cases/search.case'
 import { test } from './ticket-test'
@@ -81,6 +82,8 @@ test.describe('with a GitHub repository polled quickly', () => {
 
   test('the visible Project refreshes automatically', ({ tickets }) =>
     proveAutomaticRefresh(tickets.run(), PROOF_POLL_MS))
+  test('omitted Tickets resolve as moved or deleted', ({ tickets }) =>
+    proveGitHubMissing(tickets.run(), PROOF_POLL_MS))
 })
 
 test.describe('with a Linear team', () => {
@@ -102,6 +105,8 @@ test.describe('with a Linear team', () => {
     proveLinearLinkedTicket(tickets.run()))
   test('Closed loads a page at a time from Linear', ({ tickets }) =>
     proveLinearClosed(tickets.run()))
+  test('omitted Linear Tickets resolve as moved or deleted', ({ tickets }) =>
+    proveLinearMissing(tickets.run()))
 })
 
 test('the shipped app keeps its fuses', () => {

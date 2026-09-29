@@ -1,0 +1,1 @@
+ALTER TABLE `ticket_content` ADD `deleted_at` integer;

@@ -28,6 +28,8 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
+const unreachable = async () => ({ ok: false as const, failure: 'github-unreachable' as const })
+
 function prepared() {
   return {
     database: {} as never,
@@ -37,7 +39,8 @@ function prepared() {
     },
     ticketSync: {
       database: {} as never,
-      readPage: async () => ({ ok: false as const, failure: 'github-unreachable' as const }),
+      readPage: unreachable,
+      readTicket: unreachable,
       changed: () => {},
       timing: TICKET_SYNC_TIMING,
     },
