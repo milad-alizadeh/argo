@@ -5,11 +5,7 @@ import type { Provider } from '@/domains/accounts/contract/contract'
 import { providerOf } from '@/domains/accounts/contract/provider'
 import { type AccountAccess, asAccount, type TokenFailure } from '@/domains/accounts/main'
 import type { ConnectionPort } from '@/domains/connections/main'
-import {
-  type TicketError,
-  type TicketErrorCode,
-  ticketError,
-} from '@/domains/tickets/contract/contract'
+import { type TicketErrorCode, ticketError } from '@/domains/tickets/api/errors'
 import type { Reader, SourceRead, TicketSource } from './sources'
 import type { TicketIndex } from './sync/ticket-changes'
 
@@ -31,6 +27,7 @@ export type Call = {
   index: TicketIndex
 }
 
+type TicketError = ReturnType<typeof ticketError>
 type Read<T> = { ok: true; value: T; provider: Provider } | { ok: false; error: TicketError }
 
 // What a provider read needs from a Call: Account access, the registrations and a request ID.

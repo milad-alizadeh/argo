@@ -1,4 +1,4 @@
-import type { FeedContent } from '@/domains/sessions/api/feed-content'
+import type { FeedContent } from '../feed-content'
 import type { SessionFeedRow } from './feed-rows'
 import { fileChangePresentation, fileName } from './file-presentation'
 import { derivedId } from './fingerprint'

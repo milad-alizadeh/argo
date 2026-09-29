@@ -7,7 +7,7 @@ import { eq } from 'drizzle-orm'
 import { onTestFinished } from 'vitest'
 import { type Database, openDatabase } from '@/database/database'
 import { ticketContent } from '@/database/ticket-content/schema'
-import type { Ticket, TicketStatus } from '@/domains/tickets/contract/contract'
+import type { Ticket, TicketStatus } from '@/domains/tickets/api/ticket'
 import { saveListedTickets } from '../../database/ticket-upsert'
 
 export const OPEN: TicketStatus = { id: 'open', name: 'Open', category: 'unstarted' }

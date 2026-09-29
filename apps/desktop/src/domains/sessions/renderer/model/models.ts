@@ -5,7 +5,7 @@ import {
   sessionTitleSchema,
   sessionTitleSourceSchema,
 } from '@/domains/sessions/api/session-title'
-import { ticketKey } from '@/domains/tickets/contract/ticket'
+import { ticketKey } from '@/domains/tickets/api/ticket'
 import { identifierSchema } from '@/shared/validation'
 
 export {

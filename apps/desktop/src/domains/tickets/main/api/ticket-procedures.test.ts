@@ -67,7 +67,7 @@ test('the Ticket procedures rejects malformed input before reading a domain owne
 
 test('the Ticket procedures preserves a structured domain refusal', async (context) => {
   const { tickets } = await caller(context)
-  const reply = await tickets.ticketList({ projectId: 'project-one', query: '', cursor: null })
+  const reply = await tickets.ticketActive({ projectId: 'project-one', page: 0 })
   assert.equal(reply.type, 'ticket.error')
   if (reply.type === 'ticket.error') assert.equal(reply.code, 'not-connected')
 })

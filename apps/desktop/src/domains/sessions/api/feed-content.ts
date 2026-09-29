@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { SUBAGENT_EVENTS } from '@/domains/sessions/api/feed/subagent-event'
 import { identifierSchema } from '@/shared/validation'
+import { SUBAGENT_EVENTS } from './feed/subagent-event'
 
 const base = z.strictObject({ id: identifierSchema })
 export const mediaSourceSchema = z.discriminatedUnion('kind', [

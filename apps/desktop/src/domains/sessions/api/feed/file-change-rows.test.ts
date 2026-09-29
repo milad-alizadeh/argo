@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
-import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
+import type { FeedContent } from '../feed-content'
+import type { SessionLiveEvent } from '../session-live-event'
 import { projectLiveFeedRows } from './live-feed-rows'
 
 const live = (sequence: number, value: FeedContent): SessionLiveEvent => ({

@@ -1,12 +1,9 @@
-import { type TicketUpdateReply, ticketError } from '@/domains/tickets/contract/contract'
+import { ticketError } from '@/domains/tickets/api/errors'
 import type { Call } from '../read-as'
 import { writableTarget } from './ticket-connection'
 
 // The change is committed by the operation supervisor; the reply announces only what it committed.
-export async function updateStatus(
-  call: Call,
-  change: { key: string; statusId: string },
-): Promise<TicketUpdateReply> {
+export async function updateStatus(call: Call, change: { key: string; statusId: string }) {
   const { requestId, projectId } = call
   const target = await writableTarget(call)
   if (!target.ok) return target.error

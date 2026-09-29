@@ -1,5 +1,5 @@
-import type { ToolPresentation } from '@/domains/sessions/api/feed-content'
-import type { Question } from '@/domains/sessions/api/questions'
+import type { ToolPresentation } from '../feed-content'
+import type { Question } from '../questions'
 
 // Where a Tool Call stands (CONTEXT.md L3 · Tool Call). A call the person declines can be
 // `failed` with the reason as its text; a call stopped before it finished is `interrupted`.

@@ -3,14 +3,15 @@
 // provider registers it once under `src/providers/<provider>/`; nothing in the service branches on
 // which provider it is.
 
+import type { TicketErrorCode } from '@/domains/tickets/api/errors'
 import type {
+  PriorityChange,
+  StatusChange,
   Ticket,
-  TicketErrorCode,
   TicketPriority,
   TicketScope,
   TicketStatus,
-} from '@/domains/tickets/contract/contract'
-import type { PriorityChange, StatusChange } from '@/domains/tickets/contract/ticket'
+} from '@/domains/tickets/api/ticket'
 import type { ProviderEndpoints } from '@/providers/endpoints'
 
 // `refused` is the provider refusing the token itself: the one failure an Account renewal can fix.

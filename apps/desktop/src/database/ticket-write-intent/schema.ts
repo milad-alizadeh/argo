@@ -1,6 +1,6 @@
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import { timestampColumns } from '@/database/timestamp-columns'
-import { TICKET_ERRORS, type TicketErrorCode } from '@/domains/tickets/contract/contract'
+import { TICKET_ERRORS, type TicketErrorCode } from '@/domains/tickets/api/errors'
 import { ticketTable } from '../ticket/schema'
 
 export const TICKET_WRITE_OPERATIONS = ['status', 'priority'] as const

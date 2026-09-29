@@ -2,9 +2,9 @@
 // a refusal leaves it where it was and says why. A Ticket moved to a closed status stays on screen
 // until the backlog is next read.
 import type { QueryClient } from '@tanstack/react-query'
-import type { TicketUpdated } from '@/domains/tickets/contract/contract'
-import { closureOf, type TicketStatus } from '@/domains/tickets/contract/ticket'
+import { closureOf, type TicketStatus } from '@/domains/tickets/api/ticket'
 import { trpcClient } from '@/platform/renderer/trpc-client'
+import type { TicketUpdated } from './ticket-reply'
 import { patchTicket, type TicketChange, useTicketFieldMutation } from './use-ticket-field-mutation'
 
 export type StatusChange = TicketChange & { status: TicketStatus }

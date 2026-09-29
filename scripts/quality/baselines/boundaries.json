@@ -4,24 +4,6 @@
   "entries": [
     {
       "identity": {
-        "rule": "domain-port-only",
-        "source": "apps/desktop/src/domains/sessions/main/api/session-submit.ts",
-        "target": "apps/desktop/src/domains/workspaces/main/workspace-resolve-path.ts"
-      },
-      "owner": "#2758",
-      "reason": "Durable Session start owns this cross-domain submit edge."
-    },
-    {
-      "identity": {
-        "rule": "domain-port-only",
-        "source": "apps/desktop/src/domains/tickets/renderer/hooks/use-linked-sessions.ts",
-        "target": "apps/desktop/src/domains/sessions/renderer/session-list/use-session-list.ts"
-      },
-      "owner": "#2704",
-      "reason": "Ticket-to-Session linking owns this cross-domain read edge."
-    },
-    {
-      "identity": {
         "rule": "mocks-and-e2e-reach-src-through-alias",
         "source": "apps/desktop/mocks/platform/trpc-transport.test.ts",
         "target": "apps/desktop/src/platform/main/trpc-transport.ts"

@@ -9,7 +9,7 @@ import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTicketLink } from '@/database/session-ticket-link/schema'
 import { sessionTicketLinkSelectSchema } from '@/database/session-ticket-link/validation'
-import { ticketKey } from '@/domains/tickets/contract/ticket'
+import { ticketKey } from '@/domains/tickets/api/ticket'
 import {
   createWriteQueue,
   readDocument,

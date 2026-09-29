@@ -1,9 +1,6 @@
 import { z } from 'zod'
-import { type FeedContent, feedContentSchema } from '@/domains/sessions/api/feed-content'
-import {
-  type SessionLiveEvent,
-  sessionLiveEventSchema,
-} from '@/domains/sessions/api/session-live-event'
+import { type FeedContent, feedContentSchema } from '../feed-content'
+import { type SessionLiveEvent, sessionLiveEventSchema } from '../session-live-event'
 import {
   type LiveActivity,
   liveActivitySchema,

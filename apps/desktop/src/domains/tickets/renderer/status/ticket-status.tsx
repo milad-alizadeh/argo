@@ -1,7 +1,7 @@
 // A Ticket's status and priority, drawn where the provider keeps them. Only Linear keeps a priority.
 // The icon's shape carries the category, so a status is never its colour alone.
 import type { ReactNode } from 'react'
-import type { TicketPriority, TicketStatus } from '@/domains/tickets/contract/contract'
+import type { TicketPriority, TicketStatus } from '@/domains/tickets/api/ticket'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { StatusGlyph } from './status-glyph'
 

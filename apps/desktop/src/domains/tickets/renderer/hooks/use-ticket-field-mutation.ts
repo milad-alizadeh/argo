@@ -2,7 +2,7 @@
 // row at once, and a refusal puts every moved row back and says why. A field that waits moves the
 // row only when the reply reports the provider's confirmed value.
 import { type QueryClient, type QueryKey, useMutation, useQueryClient } from '@tanstack/react-query'
-import type { Ticket } from '@/domains/tickets/contract/contract'
+import type { Ticket } from '@/domains/tickets/api/ticket'
 import { useToastManager } from '@/platform/renderer/components/ui/toast'
 import { useContractText } from '@/platform/renderer/i18n/contract-text'
 import { type ContractFailure, settle } from '@/platform/renderer/lib/query-client'
