@@ -164,13 +164,13 @@ test('reports the lines a watched Session appended, from the first change onward
   const file = path.join(root, 'native-4.jsonl')
   writeFileSync(file, 'prompt one\n')
   const appended: string[][] = []
-  const stop = watchHistoryActivity(files(root), (_owner, _turn, events) =>
-    appended.push(
-      events.flatMap((event) =>
-        event.type === 'content' && event.content.kind === 'message' ? [event.content.text] : [],
-      ),
-    ),
-  )
+  // A change that adds no line still calls back, so only the batches that carry text are recorded.
+  const stop = watchHistoryActivity(files(root), (_owner, _turn, events) => {
+    const texts = events.flatMap((event) =>
+      event.type === 'content' && event.content.kind === 'message' ? [event.content.text] : [],
+    )
+    if (texts.length > 0) appended.push(texts)
+  })
   context.after(stop)
 
   appendFileSync(file, 'answer one\n')
@@ -178,7 +178,8 @@ test('reports the lines a watched Session appended, from the first change onward
   appendFileSync(file, 'prompt two\n')
   await eventually(() => (appended.length > 1 ? true : undefined))
 
-  assert.deepEqual(appended, [['prompt one', 'answer one'], ['prompt two']])
+  assert.deepEqual(appended.flat(), ['prompt one', 'answer one', 'prompt two'])
+  assert.deepEqual(appended.at(-1), ['prompt two'])
 })
 
 test('finds the newest turn marker behind lines that carry none', async (context) => {
