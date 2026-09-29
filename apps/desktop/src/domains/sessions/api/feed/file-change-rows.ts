@@ -24,17 +24,14 @@ function fileChangeEvidence(change: FileChange): string {
       ].join('\n')
     }
     case 'update':
-    case 'unknown':
       return `Update File: ${change.movedTo ?? change.path}\n${text}`
   }
 }
 
-// An unknown change reads as an edit: the file changed, and nothing says how.
 const FILE_CHANGE_EDIT = {
   add: 'create',
   update: 'update',
   delete: 'delete',
-  unknown: 'update',
 } as const satisfies Record<FileChange['change'], EditedFile['change']>
 
 // Null when the Harness sent no diff: a size the Feed cannot know is not drawn as zero.
@@ -48,7 +45,6 @@ function fileChangeLineCounts(change: FileChange) {
     case 'delete':
       return { added: 0, removed: lines.length }
     case 'update':
-    case 'unknown':
       return { added: count('+'), removed: count('-') }
   }
 }
