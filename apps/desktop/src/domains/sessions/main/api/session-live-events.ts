@@ -2,11 +2,9 @@ import { initTRPC } from '@trpc/server'
 import { observable } from '@trpc/server/observable'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
-import {
-  type SessionLiveEvent,
-  sessionLiveUpdateSchema,
-} from '@/domains/sessions/api/session-live-event'
+import { sessionLiveUpdateSchema } from '@/domains/sessions/api/session-live-event'
 import { identifierSchema } from '@/shared/validation'
+import { canDeliver } from '../feed/feed-reader'
 import type { SessionEventJournal } from '../live/session-event-journal'
 import type { SessionHistoryFollowers } from '../live/session-history-followers'
 import { sessionHistoryIdentity } from './session-history-identity'
@@ -18,20 +16,6 @@ const inputSchema = z.strictObject({
   cursor: z.number().int().nonnegative(),
   generation: identifierSchema.nullable().optional(),
 })
-
-function canDeliver(event: SessionLiveEvent, live: boolean): boolean {
-  if (live) return true
-  switch (event.type) {
-    case 'permission':
-      return false
-    case 'question':
-      return event.answer !== null
-    case 'content':
-    case 'status':
-    case 'failure':
-      return true
-  }
-}
 
 export type SessionLiveEventsContext = {
   database: Database

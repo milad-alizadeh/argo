@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
+import { groupToolRuns } from '@/domains/sessions/api/feed/tool-groups'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
-import { groupToolRuns } from '@/domains/sessions/renderer/feed/model/tool-groups'
 import { projectLiveFeedRows } from './live-feed-rows'
 
 const sessionId = '00000000-0000-4000-8000-000000000001'

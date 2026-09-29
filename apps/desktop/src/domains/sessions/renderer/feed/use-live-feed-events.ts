@@ -1,4 +1,9 @@
-import { type Dispatch, type SetStateAction, useEffect, useState } from 'react'
+import { type Dispatch, type SetStateAction, useEffect, useMemo, useState } from 'react'
+import {
+  emptyLiveEventBuffer,
+  type LiveEventBuffer,
+  retainLiveEvent,
+} from '@/domains/sessions/api/feed/live-event-buffer'
 import {
   SESSION_LIVE_REPLAY_BYTE_LIMIT,
   type SessionLiveUpdate,
@@ -6,11 +11,7 @@ import {
 import { queryClient, trpcClient } from '@/platform/renderer/trpc-client'
 import { sessionFeedQueryKey, sessionPermissionQueryKey } from '../session-queries'
 import type { SessionId } from '../types'
-import {
-  emptyLiveEventBuffer,
-  type LiveEventBuffer,
-  retainLiveEvent,
-} from './model/live-event-buffer'
+import { useFocusRefresh } from './use-focus-refresh'
 
 type LiveFeedState = LiveEventBuffer & {
   sessionId: SessionId
@@ -86,26 +87,11 @@ export function applyLiveUpdate(target: LiveUpdateTarget & { update: SessionLive
   }
 }
 
-function useFocusRefresh(sessionId: SessionId | null, subagentId: string | null) {
-  useEffect(() => {
-    if (sessionId === null) return
-    let timer: ReturnType<typeof setTimeout> | null = null
-    const refresh = () => {
-      if (timer !== null) clearTimeout(timer)
-      timer = setTimeout(() => {
-        void queryClient.invalidateQueries({ queryKey: sessionFeedQueryKey(sessionId, subagentId) })
-      }, 250)
-    }
-    const onVisibilityChange = () => {
-      if (document.visibilityState === 'visible') refresh()
-    }
-    window.addEventListener('focus', refresh)
-    document.addEventListener('visibilitychange', onVisibilityChange)
-    return () => {
-      if (timer !== null) clearTimeout(timer)
-      window.removeEventListener('focus', refresh)
-      document.removeEventListener('visibilitychange', onVisibilityChange)
-    }
+function useFeedInvalidation(sessionId: SessionId | null, subagentId: string | null) {
+  return useMemo(() => {
+    if (sessionId === null) return null
+    const queryKey = sessionFeedQueryKey(sessionId, subagentId)
+    return () => void queryClient.invalidateQueries({ queryKey })
   }, [sessionId, subagentId])
 }
 
@@ -114,7 +100,7 @@ export function useLiveFeedEvents(
   subagentId: string | null = null,
 ): LiveFeedState | null {
   const [state, setState] = useState<LiveFeedState | null>(null)
-  useFocusRefresh(sessionId, subagentId)
+  useFocusRefresh(useFeedInvalidation(sessionId, subagentId))
   useEffect(() => {
     if (sessionId === null) return
     const selected = sessionId

@@ -17,14 +17,16 @@
 
   Vendor history is the source of Feed truth. The selected Harness registration reads the root
   Session or a subagent while the Feed keeps the Argo Session UUID and chain ID. A failed read
-  reports failure and keeps known Feed content. Live vendor events add immediate updates. Metadata
+  reports failure and keeps known Feed content. Live vendor events add immediate updates. The main
+  process reconciles those events with vendor history and publishes the root Feed as one ordered
+  reading; the renderer draws that reading and does not join or group Feed items. Metadata
   synchronization commits vendor changes to SQLite and tells readers to refresh the affected
   projection. A transcript or rollout file is never an Argo domain object or input.
 
   Argo keeps recent live events in one bounded memory journal: the newest 500 events and 2 MiB
-  across all Sessions. Each launch starts an empty journal with a new generation. A reader whose
-  cursor is older than the journal holds, or belongs to an earlier generation, reads vendor history
-  instead and merges rows by stable item ID. A separate SQLite table holds small command outcomes.
+  across all Sessions. Each launch starts an empty journal with a new generation. When the journal
+  no longer holds a Session's full replay, the Feed reader reads vendor history instead and merges
+  rows by stable item ID. A separate SQLite table holds small command outcomes.
   After a restart, unfinished commands become uncertain until vendor history provides evidence. Argo
   never resends an uncertain command automatically. An idle live actor can retire while the Session
   identity and vendor history remain.

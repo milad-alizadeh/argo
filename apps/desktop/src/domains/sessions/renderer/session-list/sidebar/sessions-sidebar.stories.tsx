@@ -1,12 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { queryClient, type RouterOutputs } from '@/platform/renderer/trpc-client'
-import { sessionFeedQuery } from '../../feed/session-feed-query'
-import { sessionFeedTrpc, sessionRow, sessionSubagent } from '../../session-fixtures'
-import type { SessionError, SessionId, SessionListPage } from '../../types'
+import { useFeedReading } from '../../feed/use-feed-reading'
+import {
+  sessionFeedSubscribe,
+  sessionFeedTrpc,
+  sessionRow,
+  sessionSubagent,
+} from '../../session-fixtures'
+import type { SessionError, SessionFeedSnapshot, SessionId, SessionListPage } from '../../types'
 import { SessionList, type SessionListActions } from '../session-list'
 import { sessionRosterPathKey } from '../session-roster'
 
@@ -188,7 +192,7 @@ function SessionListHarness({ selectedSessionId, ...actions }: SessionListHarnes
 
 function SelectableSessionList(args: SessionListHarnessArgs) {
   const [selectedSessionId, setSelectedSessionId] = useState(args.selectedSessionId)
-  useQuery(sessionFeedQuery(selectedSessionId, null))
+  useFeedReading(selectedSessionId)
   return (
     <SessionListHarness
       {...args}
@@ -268,22 +272,24 @@ export const UnavailableHistoryRecovers: Story = {
     recoverMissingHistory = () => {
       historyAvailable = true
     }
+    const read = async (sessionId: string): Promise<SessionFeedSnapshot> => {
+      if (!historyAvailable && sessionId === session.id) {
+        throw Object.assign(new Error(readFailure.message), { data: { code: 'NOT_FOUND' } })
+      }
+      return {
+        version: 1,
+        type: 'session.feed.read',
+        requestId: 'storybook-feed',
+        sessionId,
+        chainId: sessionId,
+        revision: 'recovered',
+        content: [],
+      }
+    }
     window.argo = {
       ...before,
-      trpc: sessionFeedTrpc(before.trpc, async (sessionId) => {
-        if (!historyAvailable && sessionId === session.id) {
-          throw Object.assign(new Error(readFailure.message), { data: { code: 'NOT_FOUND' } })
-        }
-        return {
-          version: 1,
-          type: 'session.feed.read',
-          requestId: 'storybook-feed',
-          sessionId,
-          chainId: sessionId,
-          revision: 'recovered',
-          content: [],
-        }
-      }),
+      trpcSubscribe: sessionFeedSubscribe(before.trpcSubscribe, read),
+      trpc: sessionFeedTrpc(before.trpc, read),
     }
     return () => {
       window.argo = before

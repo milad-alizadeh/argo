@@ -101,6 +101,8 @@ test('registers Session procedures directly on the global router', () => {
   const paths = Object.keys(testRouter({} as never)._def.procedures)
   for (const path of [
     'sessionList',
+    'sessionFeed',
+    'sessionFeedRefresh',
     'sessionLiveEvents',
     'sessionRename',
     'sessionRefresh',

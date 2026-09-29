@@ -3,9 +3,15 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { queryClient } from '@/platform/renderer/trpc-client'
-import { sessionFeedTrpc, sessionListSubscribe, sessionRow } from '../session-fixtures'
+import { trpcClient } from '@/platform/renderer/trpc-client'
+import {
+  sessionFeedSubscribe,
+  sessionFeedTrpc,
+  sessionListSubscribe,
+  sessionRow,
+} from '../session-fixtures'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
+import type { SessionFeedSnapshot } from '../types'
 import { SessionScreenView } from './session-screen-view'
 
 const session = sessionRow({
@@ -23,24 +29,28 @@ let flakyFeedReads = 0
 function flakyFeedHost() {
   flakyFeedReads = 0
   const before = window.argo
+  const read = async (sessionId: string): Promise<SessionFeedSnapshot> => {
+    flakyFeedReads += 1
+    if (flakyFeedReads === 2) throw new Error('Vendor history is unavailable.')
+    return {
+      version: 1,
+      type: 'session.feed.read',
+      requestId: 'storybook-feed',
+      sessionId,
+      chainId: sessionId,
+      revision: `storybook-feed-${flakyFeedReads}`,
+      content: [
+        { kind: 'message', id: 'flaky-row', role: 'assistant', text: 'Read before the flake.' },
+      ],
+    }
+  }
   window.argo = {
     ...before,
-    trpcSubscribe: sessionListSubscribe(before.trpcSubscribe, () => [session]),
-    trpc: sessionFeedTrpc(before.trpc, async (sessionId) => {
-      flakyFeedReads += 1
-      if (flakyFeedReads === 2) throw new Error('Vendor history is unavailable.')
-      return {
-        version: 1,
-        type: 'session.feed.read',
-        requestId: 'storybook-feed',
-        sessionId,
-        chainId: sessionId,
-        revision: `storybook-feed-${flakyFeedReads}`,
-        content: [
-          { kind: 'message', id: 'flaky-row', role: 'assistant', text: 'Read before the flake.' },
-        ],
-      }
-    }),
+    trpcSubscribe: sessionFeedSubscribe(
+      sessionListSubscribe(before.trpcSubscribe, () => [session]),
+      read,
+    ),
+    trpc: sessionFeedTrpc(before.trpc, read),
   }
   return () => {
     window.argo = before
@@ -51,24 +61,28 @@ function flakyFeedHost() {
 function flakyFirstOpenHost() {
   let reads = 0
   const before = window.argo
+  const read = async (sessionId: string): Promise<SessionFeedSnapshot> => {
+    reads += 1
+    if (reads === 1) throw new Error('Vendor history is unavailable.')
+    return {
+      version: 1,
+      type: 'session.feed.read',
+      requestId: 'storybook-feed',
+      sessionId,
+      chainId: sessionId,
+      revision: `storybook-feed-${reads}`,
+      content: [
+        { kind: 'message', id: 'flaky-row', role: 'assistant', text: 'Read after the flake.' },
+      ],
+    }
+  }
   window.argo = {
     ...before,
-    trpcSubscribe: sessionListSubscribe(before.trpcSubscribe, () => [session]),
-    trpc: sessionFeedTrpc(before.trpc, async (sessionId) => {
-      reads += 1
-      if (reads === 1) throw new Error('Vendor history is unavailable.')
-      return {
-        version: 1,
-        type: 'session.feed.read',
-        requestId: 'storybook-feed',
-        sessionId,
-        chainId: sessionId,
-        revision: `storybook-feed-${reads}`,
-        content: [
-          { kind: 'message', id: 'flaky-row', role: 'assistant', text: 'Read after the flake.' },
-        ],
-      }
-    }),
+    trpcSubscribe: sessionFeedSubscribe(
+      sessionListSubscribe(before.trpcSubscribe, () => [session]),
+      read,
+    ),
+    trpc: sessionFeedTrpc(before.trpc, read),
   }
   return () => {
     window.argo = before
@@ -80,29 +94,75 @@ let historyReady = false
 function missingHistoryHost(listed = true) {
   historyReady = false
   const before = window.argo
+  const read = async (sessionId: string): Promise<SessionFeedSnapshot> => {
+    if (!historyReady)
+      throw Object.assign(new Error('Session is missing.'), { data: { code: 'NOT_FOUND' } })
+    return {
+      version: 1,
+      type: 'session.feed.read',
+      requestId: 'storybook-feed',
+      sessionId,
+      chainId: sessionId,
+      revision: 'recovered',
+      content: [
+        {
+          kind: 'message',
+          id: 'recovered-row',
+          role: 'assistant',
+          text: 'History recovered.',
+        },
+      ],
+    }
+  }
   window.argo = {
     ...before,
-    trpcSubscribe: sessionListSubscribe(before.trpcSubscribe, () => (listed ? [session] : [])),
-    trpc: sessionFeedTrpc(before.trpc, async (sessionId) => {
-      if (!historyReady)
-        throw Object.assign(new Error('Session is missing.'), { data: { code: 'NOT_FOUND' } })
-      return {
-        version: 1,
-        type: 'session.feed.read',
-        requestId: 'storybook-feed',
-        sessionId,
-        chainId: sessionId,
-        revision: 'recovered',
-        content: [
-          {
+    trpcSubscribe: sessionFeedSubscribe(
+      sessionListSubscribe(before.trpcSubscribe, () => (listed ? [session] : [])),
+      read,
+    ),
+    trpc: sessionFeedTrpc(before.trpc, read),
+  }
+  return () => {
+    window.argo = before
+  }
+}
+
+const liveIdentity = { sessionId: session.id, commandId: null, turnId: null } as const
+
+// Main joins the read history with live work that history does not hold yet, in one reading.
+function liveFeedHost() {
+  const before = window.argo
+  const read = async (sessionId: string): Promise<SessionFeedSnapshot> => ({
+    version: 1,
+    type: 'session.feed.read',
+    requestId: 'storybook-feed',
+    sessionId,
+    chainId: sessionId,
+    revision: 'storybook-live',
+    content: [{ kind: 'message', id: 'history-row', role: 'user', text: 'Check the build.' }],
+  })
+  window.argo = {
+    ...before,
+    trpcSubscribe: sessionFeedSubscribe(
+      sessionListSubscribe(before.trpcSubscribe, () => [session]),
+      read,
+      [
+        { ...liveIdentity, sequence: 1, type: 'status', vendorEventId: null, status: 'running' },
+        {
+          ...liveIdentity,
+          sequence: 2,
+          type: 'content',
+          vendorEventId: 'live-row',
+          content: {
             kind: 'message',
-            id: 'recovered-row',
+            id: 'live-row',
             role: 'assistant',
-            text: 'History recovered.',
+            text: 'The build is still running.',
           },
-        ],
-      }
-    }),
+        },
+      ],
+    ),
+    trpc: sessionFeedTrpc(before.trpc, read),
   }
   return () => {
     window.argo = before
@@ -137,7 +197,7 @@ export const SurvivesOneFailedRefresh: Story = {
     const canvas = within(canvasElement)
     const visible = () => canvas.getAllByText('Read before the flake.')
     await waitFor(() => expect(visible()).toHaveLength(1))
-    await queryClient.invalidateQueries({ queryKey: ['sessions', 'feed', session.id] })
+    await trpcClient.sessionFeedRefresh.mutate({ sessionId: session.id })
     await waitFor(() => expect(flakyFeedReads).toBeGreaterThanOrEqual(2))
     await expect(visible()).toHaveLength(1)
     await waitFor(() => expect(canvas.getByText('Session history is unavailable.')).toBeVisible())
@@ -198,5 +258,22 @@ export const UnknownSessionHasTruthfulRecovery: Story = {
       'archive it from the Session list menu if it appears there',
     )
     await expect(canvas.getByRole('button', { name: 'Retry' })).toBeVisible()
+  },
+}
+
+export const LiveWorkFollowsHistory: Story = {
+  beforeEach: () => liveFeedHost(),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const drawn = (text: string) =>
+      canvas.getAllByText(text).filter((node) => node.closest('[aria-hidden]') === null)
+    await waitFor(() => expect(drawn('The build is still running.')).toHaveLength(1))
+    const [live] = drawn('The build is still running.')
+    const [history] = drawn('Check the build.')
+    if (live === undefined || history === undefined) throw new Error('A Feed row is missing.')
+    await expect(live).toBeVisible()
+    await expect(
+      history.compareDocumentPosition(live) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
   },
 }

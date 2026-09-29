@@ -293,3 +293,10 @@ Session rename calls the same descriptor before SQLite stores the confirmed titl
 offers rename only when its vendor supports it. Claude offers rename; Codex currently does not.
 This replaces the separate desktop history switch and rename table described by the earlier
 machine boundary. The Session sync and live Session migrations remain separate work.
+
+## Amendment: main-owned root Feed reading (#2824)
+
+A root Session's Feed crosses IPC as one tRPC subscription of complete readings, with a Refresh
+mutation. Main reads the journal and vendor history, reconciles them, and publishes only a changed
+reading. The renderer no longer reads the root chain through the Feed history query or receives its
+raw live events. A committed Session sync makes an open reader read vendor history again.

@@ -1,6 +1,9 @@
-import { sessionListSubscribe } from '@/domains/sessions/renderer/session-fixtures'
+import {
+  sessionFeedSubscribe,
+  sessionListSubscribe,
+} from '@/domains/sessions/renderer/session-fixtures'
 import { sessionRosterPathKey } from '@/domains/sessions/renderer/session-list/session-roster'
-import type { Session } from '@/domains/sessions/renderer/types'
+import type { Session, SessionFeedSnapshot } from '@/domains/sessions/renderer/types'
 import { queryClient, trpc } from '@/platform/renderer/trpc-client'
 import { claudeHarnessInfoFixture, codexHarnessInfoFixture } from './harness-catalog.fixture'
 
@@ -139,10 +142,8 @@ function draftWrite(request: StorybookTrpcRequest) {
   }
 }
 
-function feedReply(request: StorybookTrpcRequest): StorybookTrpcResponse | null {
-  if (request.path !== 'sessionFeedRead') return null
-  const { sessionId } = request.input as { sessionId: string }
-  return success({
+async function readFeed(sessionId: string): Promise<SessionFeedSnapshot> {
+  return {
     version: 1,
     type: 'session.feed.read',
     requestId: `selection-${sessionId}`,
@@ -157,7 +158,13 @@ function feedReply(request: StorybookTrpcRequest): StorybookTrpcResponse | null 
         text: `History for ${sessionId}.`,
       },
     ],
-  })
+  }
+}
+
+async function feedReply(request: StorybookTrpcRequest): Promise<StorybookTrpcResponse | null> {
+  if (request.path !== 'sessionFeedRead') return null
+  const { sessionId } = request.input as { sessionId: string }
+  return success(await readFeed(sessionId))
 }
 
 function clearSelectionQueries() {
@@ -172,6 +179,7 @@ function clearSelectionQueries() {
   queryClient.removeQueries({ queryKey: trpc.harnessCatalogRead.pathKey() })
   queryClient.removeQueries({ queryKey: trpc.composerDraftRead.pathKey() })
   queryClient.removeQueries({ queryKey: ['sessions', 'feed'] })
+  queryClient.removeQueries({ queryKey: ['sessions', 'feed-reading'] })
   queryClient.removeQueries({ queryKey: ['sessions', 'shell-output'] })
   queryClient.removeQueries({ queryKey: ['sessions', 'delegation-usage'] })
 }
@@ -203,9 +211,12 @@ export function sessionSelectionHost(
       trpc: (async (request) =>
         projectReply(request) ??
         composerReply(request) ??
-        feedReply(request) ??
+        (await feedReply(request)) ??
         before.trpc(request)) satisfies typeof window.argo.trpc,
-      trpcSubscribe: sessionListSubscribe(before.trpcSubscribe, () => roster),
+      trpcSubscribe: sessionFeedSubscribe(
+        sessionListSubscribe(before.trpcSubscribe, () => roster),
+        readFeed,
+      ),
     },
     {
       readShellOutput: async () => ({

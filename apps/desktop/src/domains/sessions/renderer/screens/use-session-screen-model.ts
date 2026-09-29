@@ -9,7 +9,7 @@ import { useWorkspaces } from '@/domains/workspaces/renderer'
 import { DEFAULT_HARNESS } from '@/harnesses/harness'
 import { useSessionPermission } from '../composer/hooks/use-session-permission'
 import { useSessionQuestion } from '../composer/hooks/use-session-question'
-import { useSessionFeed } from '../feed/use-session-feed'
+import { useFeedReading } from '../feed/use-feed-reading'
 import type { SessionHarness } from '../harness/harnesses'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
 import { useSessionList } from '../session-list/use-session-list'
@@ -125,7 +125,7 @@ export function useSessionScreenModel() {
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
   const { evidence, setEvidence } = useSessionEvidence(selectedSessionId)
   const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
-  const sessionFeed = useSessionFeed(selectedSessionId)
+  const sessionFeed = useFeedReading(selectedSessionId)
   const { sessionList, session, workspaceIdentity } = useSessionSelectionData(
     cockpit.project?.id ?? null,
     selectedSessionId,

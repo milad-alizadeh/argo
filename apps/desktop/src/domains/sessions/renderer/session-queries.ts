@@ -7,6 +7,9 @@ export const SESSION_REFRESH_MS = 500
 // Session's Feed and a Subagent's swaps documents rather than refetching one (#1582).
 export const sessionFeedQueryKey = (sessionId: SessionId, subagentId: string | null = null) =>
   ['sessions', 'feed', sessionId, subagentId] as const
+// The root Feed's latest reading, written by its subscription and read by every observer.
+export const sessionFeedReadingQueryKey = (sessionId: SessionId | null) =>
+  ['sessions', 'feed-reading', sessionId] as const
 export const sessionSubagentUsageQueryKey = (sessionId: SessionId) =>
   ['sessions', 'delegation-usage', sessionId] as const
 // Keyed on whether the command is still running too: the last poll of a running command can land
