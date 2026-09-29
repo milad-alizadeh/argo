@@ -14,6 +14,8 @@ export default defineConfig({
     './src/database/ticket/schema.ts',
     './src/database/ticket-content/schema.ts',
     './src/database/ticket-sync/schema.ts',
+    './src/database/ticket-search/schema.ts',
+    './src/database/ticket-search-ticket-link/schema.ts',
   ],
   out: './drizzle',
 })

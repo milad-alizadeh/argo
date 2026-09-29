@@ -32,6 +32,7 @@ import { SessionHistoryFollowers } from '@/domains/sessions/main/live/session-hi
 import { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
 import { ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
+import { failInterruptedTicketSearches } from '@/domains/tickets/main/sync/ticket-search-records'
 import { markInterruptedTicketScans } from '@/domains/tickets/main/sync/ticket-sync-records'
 import {
   type TicketSyncSupervisorCommand,
@@ -496,6 +497,7 @@ async function prepare() {
   applicationDatabase = openDatabase(projectData, { packaged: app.isPackaged })
   markUnresolvedSessionCommandsUnknown(applicationDatabase)
   markInterruptedTicketScans(applicationDatabase)
+  failInterruptedTicketSearches(applicationDatabase)
   const database = applicationDatabase
   const tickets = createTicketServices(database)
   ticketServices = tickets

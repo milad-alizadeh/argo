@@ -1,5 +1,5 @@
 // A Project's saved active Tickets, read from SQLite by page and refetched on each change.
-import { skipToken, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import {
   type ConnectionSummary,
@@ -8,7 +8,9 @@ import {
 } from '@/domains/tickets/contract/contract'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 import { trpcClient } from '@/platform/renderer/trpc-client'
-import { type TicketIndexed, type TicketIndexedReply, ticketReply } from './ticket-reply'
+import { numberedPages } from './numbered-pages'
+import type { TicketIndexedReply } from './ticket-reply'
+import { searchKey } from './use-searched-tickets'
 import { detailKey } from './use-ticket-detail'
 import { listKey, onRefused, type TicketPages } from './use-tickets'
 
@@ -21,6 +23,7 @@ export function useTicketChanges() {
     const subscription = trpcClient.ticketChanges.subscribe(undefined, {
       onData: () => {
         void client.invalidateQueries({ queryKey: activeKey() })
+        void client.invalidateQueries({ queryKey: searchKey() })
         void client.invalidateQueries({ queryKey: detailKey() })
       },
     })
@@ -58,39 +61,55 @@ export function useActiveTickets(projectId: string | null, enabled: boolean) {
     number
   >({
     queryKey: [...activeKey(), projectId],
-    queryFn:
-      enabled && projectId
-        ? ({ pageParam }) =>
-            trpcClient.ticketActive
-              .query({ projectId, page: pageParam })
-              .then(ticketReply)
-              .catch((failure: ContractFailure) => {
-                onRefused(client, projectId, failure)
-                throw failure
-              })
-        : skipToken,
-    initialPageParam: 0,
-    getNextPageParam: (last) => {
-      const read = ticketReply(last)
-      return (read.page + 1) * read.pageSize < read.total ? read.page + 1 : undefined
-    },
+    ...numberedPages(
+      client,
+      projectId,
+      enabled ? (id, page) => trpcClient.ticketActive.query({ projectId: id, page }) : null,
+    ),
   })
-  // A scan refused as the Account also leaves the Account listing and Connection stale.
-  const failed = syncFailure(list.data)?.code
-  useEffect(() => {
-    if (projectId && failed) onRefused(client, projectId, ticketError(failed, null))
-  }, [client, projectId, failed])
+  useAccountRefusal(projectId, list.data)
   return list
 }
 
-// The saved pages of an active listing, when the listing is one.
-export function indexedHead(pages: TicketPages | undefined): TicketIndexed | null {
-  const head = pages?.pages[0]
-  return head?.type === 'ticket.indexed' ? head : null
+// A scan or search refused as the Account also leaves the Account listing and Connection stale.
+export function useAccountRefusal(projectId: string | null, pages: TicketPages | undefined) {
+  const client = useQueryClient()
+  const failed = savedRead(pages)?.failure?.code
+  useEffect(() => {
+    if (projectId && failed) onRefused(client, projectId, ticketError(failed, null))
+  }, [client, projectId, failed])
 }
 
-// The last scan's failure, kept while a retry runs, as the Ticket error the screen draws.
-export function syncFailure(pages: TicketPages | undefined): TicketError | null {
-  const failure = indexedHead(pages)?.sync.failure ?? null
-  return failure === null ? null : ticketError(failure, null)
+// What the saved pages of a listing say of the provider behind them, whichever listing it is.
+export type SavedRead = {
+  total: number
+  // Whether the provider has answered: a complete active scan, or a committed search.
+  complete: boolean
+  refreshing: boolean
+  failure: TicketError | null
+}
+
+export function savedRead(pages: TicketPages | undefined): SavedRead | null {
+  const head = pages?.pages[0]
+  if (head === undefined) return null
+  const { total } = head
+  switch (head.type) {
+    case 'ticket.indexed': {
+      const { sync } = head
+      // Kept through a retry's scan, so the screen does not drop the failure while it retries.
+      const failure = sync.failure === null ? null : ticketError(sync.failure, null)
+      return { total, complete: sync.complete, refreshing: sync.phase === 'syncing', failure }
+    }
+    case 'ticket.searched': {
+      const { search } = head
+      return {
+        total,
+        complete: search.completedAt !== null,
+        refreshing: search.phase === 'syncing',
+        failure: search.failure === null ? null : ticketError(search.failure, null),
+      }
+    }
+    default:
+      return head satisfies never
+  }
 }
