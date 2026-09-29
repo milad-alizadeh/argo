@@ -23,7 +23,7 @@ import {
   listTickets,
   readConnection,
   updateStatus,
-} from '../service'
+} from './service'
 import {
   openTicket,
   readDetail,

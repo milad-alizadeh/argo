@@ -2,7 +2,7 @@
 import type { TicketPriorityReply } from '@/domains/tickets/contract/contract'
 import type { PriorityChange } from '@/domains/tickets/contract/ticket'
 import { type Call, readAs } from './read-as'
-import { writeTicketField } from './service'
+import { writeTicketField } from './api/service'
 
 export async function updatePriority(
   call: Call,

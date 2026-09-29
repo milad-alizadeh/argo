@@ -10,7 +10,7 @@ import type { Cipher } from '@/domains/accounts/main/grants'
 import { createConnectionPort } from '@/domains/connections/main'
 import { providerEndpoints } from '@/providers/endpoints'
 import { PROVIDER_REGISTRY } from '@/providers/registry'
-import { TicketChanges } from '../ticket-changes'
+import { TicketChanges } from '../sync/ticket-changes'
 import { ticketProcedures } from './ticket-procedures'
 
 const cipher: Cipher = {

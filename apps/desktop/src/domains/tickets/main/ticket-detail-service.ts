@@ -6,7 +6,7 @@ import { identifier, message } from '@/shared/messages'
 import { readSavedTicket } from './database/ticket-queries'
 import { saveReadTicket } from './database/ticket-upsert'
 import { type Call, readAs } from './read-as'
-import { writableConnection } from './service'
+import { writableConnection } from './api/service'
 
 // An Argo UUID, a provider's native ID, or a key such as `#607` or `ENG-12`.
 export const ticketReference = z.string().min(1).max(128)

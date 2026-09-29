@@ -11,7 +11,7 @@ import {
   readSearchedTickets,
 } from './database/ticket-queries'
 import type { Call } from './read-as'
-import { writableConnection } from './service'
+import { writableConnection } from './api/service'
 import type { TicketSyncRequest } from './sync/ticket-sync-machine'
 import type { TicketSyncSupervisorCommand } from './sync/ticket-sync-supervisor-machine'
 

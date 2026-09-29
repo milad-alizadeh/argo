@@ -11,7 +11,7 @@ import {
   ticketError,
 } from '@/domains/tickets/contract/contract'
 import type { Reader, SourceRead, TicketSource } from './sources'
-import type { TicketIndex } from './ticket-changes'
+import type { TicketIndex } from './sync/ticket-changes'
 
 const TOKEN_ERRORS: Record<Exclude<TokenFailure['reason'], 'renewal-failed'>, TicketErrorCode> = {
   storage: 'storage-unavailable',

@@ -45,7 +45,7 @@ import {
   ticketSyncTiming,
 } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
 import { reportWindowVisibility } from '@/domains/tickets/main/sync/window-visibility'
-import { TicketChanges } from '@/domains/tickets/main/ticket-changes'
+import { TicketChanges } from '@/domains/tickets/main/sync/ticket-changes'
 import { ensureManagedWorkspace } from '@/domains/workspaces/main/workspace-create-managed'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
 import { tailSessionHistory, watchHistoryActivity } from '@/harnesses/host/history-watch'

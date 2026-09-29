@@ -25,7 +25,7 @@ import {
   TICKET_SYNC_TIMING,
   ticketSyncSupervisorMachine,
 } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
-import { TicketChanges } from '@/domains/tickets/main/ticket-changes'
+import { TicketChanges } from '@/domains/tickets/main/sync/ticket-changes'
 import { proofEndpoints } from '@/providers/github/endpoints'
 import { OCTOCAT } from '@/providers/github/harness'
 import { linearProofEndpoints } from '@/providers/linear/endpoints'

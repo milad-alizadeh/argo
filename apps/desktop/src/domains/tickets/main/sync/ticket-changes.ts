@@ -4,8 +4,8 @@ import type { TicketScopeTarget } from '@/database/ticket/validation'
 import type {
   StatusOperationOutcome,
   StatusOperationRequest,
-} from './operations/ticket-operation-machine'
-import type { TicketSyncSupervisorCommand } from './sync/ticket-sync-supervisor-machine'
+} from '../operations/ticket-operation-machine'
+import type { TicketSyncSupervisorCommand } from './ticket-sync-supervisor-machine'
 
 export class TicketChanges {
   readonly #listeners = new Set<(target: TicketScopeTarget) => void>()
