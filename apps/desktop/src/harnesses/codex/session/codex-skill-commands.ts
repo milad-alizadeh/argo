@@ -1,6 +1,6 @@
 // Codex has no command list on the app-server. Skills are the directories under the user
 // skill folder and each project's `.agents/skills`. The description is frontmatter only.
-import { type Dirent, existsSync, type FSWatcher, watch } from 'node:fs'
+import { type Dirent, type FSWatcher, watch } from 'node:fs'
 import { open, readdir } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -8,20 +8,12 @@ import {
   type ComposerCommand,
   readComposerCommands,
 } from '@/domains/sessions/api/composer-commands'
+import { projectFolders } from '@/harnesses/project-folders'
 
 const SKILL_NAME = /^[\w][\w.-]*$/
 
 function isEnoent(error: unknown) {
   return typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT'
-}
-
-function projectFolders(cwd: string): string[] {
-  const folders: string[] = []
-  for (let folder = cwd; ; folder = path.dirname(folder)) {
-    folders.push(folder)
-    if (existsSync(path.join(folder, '.git'))) return folders.reverse()
-    if (path.dirname(folder) === folder) return [cwd]
-  }
 }
 
 export function codexSkillHome(codexHome?: string) {
