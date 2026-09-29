@@ -121,7 +121,8 @@ function DiffHeader({
     <CodeBlockHeader className="shrink-0 bg-sidebar px-4 py-3">
       <CodeBlockTitle className="min-w-0">
         <CodeBlockFilename className="block truncate text-left [direction:rtl] type-body font-semibold">
-          {path}
+          {/* Isolated so a path's leading slash stays at its start while the start truncates. */}
+          <bdi dir="ltr">{path}</bdi>
         </CodeBlockFilename>
       </CodeBlockTitle>
       <CodeBlockActions>

@@ -8,7 +8,7 @@ function toolGroupId(calls: ToolRow[]) {
   return `tool-group:${fingerprint(firstCallId)}`
 }
 
-// One tool-kind record owns its icon, route, group wording, and group order.
+// One tool-kind record owns its icon, route, and group wording.
 export const TOOL_KIND_PRESENTATION: Record<
   ToolRow['kind'],
   {
@@ -27,7 +27,6 @@ export const TOOL_KIND_PRESENTATION: Record<
   skill: { icon: 'wand', route: 'inline', verb: 'invoked', noun: 'skill' },
   searched: { icon: 'globe', route: 'inline', verb: 'searched', noun: 'the web' },
 }
-const KIND_ORDER = Object.keys(TOOL_KIND_PRESENTATION) as ToolRow['kind'][]
 
 // A skill keeps its own line under its own name, so it neither joins a run
 // nor folds into a count.
@@ -48,14 +47,14 @@ function labelKind(kind: ToolRow['kind']): ToolRow['kind'] {
   return kind === 'tool' || kind === 'searched' ? 'command' : kind
 }
 
+// Each kind's phrase stands where that kind first happened, so the title reads in source order.
 function toolGroupLabel(calls: ToolRow[]) {
-  const counts = Object.fromEntries(KIND_ORDER.map((kind) => [kind, 0])) as Record<
-    ToolRow['kind'],
-    number
-  >
-  for (const call of calls) counts[labelKind(call.kind)] += 1
-  const kinds = KIND_ORDER.filter((kind) => labelKind(kind) === kind && counts[kind] > 0)
-  return kinds.map((kind, index) => countPhrase(kind, counts[kind], index === 0)).join(', ')
+  const counts = new Map<ToolRow['kind'], number>()
+  for (const call of calls) {
+    const kind = labelKind(call.kind)
+    counts.set(kind, (counts.get(kind) ?? 0) + 1)
+  }
+  return [...counts].map(([kind, count], index) => countPhrase(kind, count, index === 0)).join(', ')
 }
 
 // A caller supplies the ids that began immediately after a hidden transcript delivery. That

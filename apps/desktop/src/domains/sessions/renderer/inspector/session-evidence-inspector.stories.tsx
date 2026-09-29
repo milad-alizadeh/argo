@@ -75,6 +75,32 @@ export const FileDiff: Story = {
   },
 }
 
+// A Claude Edit states no line numbers, so its diff draws none rather than counting from zero.
+export const EditDiffWithoutLineNumbers: Story = {
+  args: {
+    sessionId: null,
+    evidence: {
+      ...command,
+      id: 'claude-edit',
+      evidence: {
+        kind: 'diff',
+        title: 'Edited app.ts',
+        source: 'Update File: /repo/src/app.ts\n-  return oldValue\n+  return newValue',
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('/repo/src/app.ts')).toBeVisible()
+    await expect(canvas.getByText(/oldValue/)).toBeVisible()
+    await expect(canvas.getByText(/newValue/)).toBeVisible()
+    const lineNumbers = [...canvasElement.querySelectorAll('pre [aria-hidden="true"].w-6')].filter(
+      (line) => line.textContent !== '',
+    )
+    await expect(lineNumbers).toHaveLength(0)
+  },
+}
+
 // A Codex `apply_patch` over two files: one section per file, named by its file, each hunk
 // numbered from its own start.
 export const PatchOverTwoFiles: Story = {

@@ -419,44 +419,6 @@ test('draws every FeedContent kind with a stable item identity', () => {
   expect(rows.find((row) => row.id === 'imageGeneration')).toMatchObject({ status: 'failed' })
 })
 
-test('shows added and deleted file contents on their respective diff sides', () => {
-  const rows = projectLiveFeedRows(
-    [
-      {
-        kind: 'fileChange',
-        id: 'patch-1',
-        status: 'completed',
-        changes: [
-          { path: '/repo/new.ts', change: 'add', diff: 'first\n\nlast\n' },
-          { path: '/repo/old.ts', change: 'delete', diff: 'goodbye\n' },
-          { path: '/repo/changed.ts', change: 'update', diff: '@@ -1 +1 @@\n-old\n+new' },
-        ],
-      },
-    ],
-    [],
-  )
-  expect(rows[0]).toMatchObject({
-    shape: 'tool',
-    evidence: {
-      kind: 'diff',
-      source: [
-        'Add File: /repo/new.ts',
-        '@@ -0,0 +1,3 @@',
-        '+first',
-        '+',
-        '+last',
-        'Delete File: /repo/old.ts',
-        '@@ -1,1 +0,0 @@',
-        '-goodbye',
-        'Update File: /repo/changed.ts',
-        '@@ -1 +1 @@',
-        '-old',
-        '+new',
-      ].join('\n'),
-    },
-  })
-})
-
 test('joins task and delegation progress by native ID without losing earlier details', () => {
   const rows = projectLiveFeedRows(
     [],

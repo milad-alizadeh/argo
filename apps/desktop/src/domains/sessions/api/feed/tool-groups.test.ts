@@ -53,3 +53,18 @@ test('a hidden turn boundary starts another disclosure even after commentary', (
     'tool-group',
   ])
 })
+
+test('orders group phrases by the first call of each kind and counts every file', () => {
+  const rows: SessionFeedRow[] = [
+    tool('edit-1', 'edited'),
+    tool('edit-2', 'edited'),
+    tool('command-1', 'command'),
+    tool('create-1', 'created'),
+  ]
+  expect(groupToolRuns(rows)).toMatchObject([
+    {
+      label: 'Edited 2 files, ran a command, created a file',
+      calls: [{ id: 'edit-1' }, { id: 'edit-2' }, { id: 'command-1' }, { id: 'create-1' }],
+    },
+  ])
+})

@@ -19,7 +19,7 @@ function recorded(name: string): string[] {
     .filter((line) => line.trim() !== '')
 }
 
-test.each(['toolCalls', 'harnessNoise', 'askPending'])(
+test.each(['toolCalls', 'harnessNoise', 'askPending', 'recordedEdit'])(
   'streams the %s transcript as the same content a full read decodes',
   async (name) => {
     const home = await mkdtemp(path.join(os.tmpdir(), 'argo-claude-lines-'))
@@ -165,4 +165,26 @@ test.each([
   ['a broken line', 'not json', null],
 ] as const)('reads %s as a turn that is %p', (_name, line, turn) => {
   expect(claudeHistoryTurn(line)).toEqual(turn === null ? null : { turn, turnId: null })
+})
+
+test('an edit result read after its call settles the edit rather than drawing a bare call', () => {
+  const lines = recorded('recordedEdit')
+  const streamed = openClaudeHistoryReader(lines.slice(0, 2))(lines.slice(2, 3))
+  if (streamed.type !== 'appended') throw new Error('The transcript did not stream.')
+  expect(streamed.events.map((event) => (event.type === 'content' ? event.content : null))).toEqual(
+    [
+      {
+        id: 'toolu_01QcoWSLSMjQ9e4NFtQ5Aq7F',
+        kind: 'fileChange',
+        status: 'completed',
+        changes: [
+          {
+            path: '/Users/x/argo/apps/desktop/src/domains/sessions/api/feed/tool-groups.ts',
+            change: 'update',
+            diff: expect.stringContaining('+function toolGroupLabel'),
+          },
+        ],
+      },
+    ],
+  )
 })

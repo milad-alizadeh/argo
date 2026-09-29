@@ -4,6 +4,7 @@ import type { ClaudeSkillFile } from './claude-skill-files'
 
 type Delegation = Extract<FeedContent, { kind: 'delegation' }>
 type Tool = Extract<FeedContent, { kind: 'tool' }>
+type FileChange = Extract<FeedContent, { kind: 'fileChange' }>
 type KnownCall = { call: Tool; delegation: Delegation | null }
 
 const AGENT_TOOLS = new Set(['Agent', 'Task'])
@@ -29,6 +30,34 @@ function resultStatus(content: Tool, text: string): Delegation['status'] {
   return text.startsWith(ASYNC_LAUNCH) ? 'running' : 'completed'
 }
 
+const prefixed = (prefix: '+' | '-', text: string) =>
+  text === '' ? [] : text.split('\n').map((line) => `${prefix}${line}`)
+
+// An Edit or Write names its file and text in its input, so its diff is known before it runs.
+// The input states no line numbers, so an Edit's diff carries no hunk header.
+function fileChange(content: Tool): FileChange | null {
+  const path = inputField(content.input, 'file_path')
+  if (path === null) return null
+  const written = content.name === 'Write' ? inputField(content.input, 'content') : null
+  if (written !== null)
+    return {
+      id: content.callId,
+      kind: 'fileChange',
+      status: 'running',
+      changes: [{ path, change: 'add', diff: written }],
+    }
+  const removed = inputField(content.input, 'old_string')
+  const added = inputField(content.input, 'new_string')
+  if (content.name !== 'Edit' || removed === null || added === null) return null
+  const diff = [...prefixed('-', removed), ...prefixed('+', added)].join('\n')
+  return {
+    id: content.callId,
+    kind: 'fileChange',
+    status: 'running',
+    changes: [{ path, change: 'update', diff }],
+  }
+}
+
 // A foreground Agent's result is its reply, followed by the id line and usage the tool appends.
 function replyText(text: string): string | null {
   const idLine = text.match(AGENT_ID)?.index ?? text.length
@@ -42,6 +71,7 @@ export class ClaudeFeedProjection {
   // The last input each started agent was sent.
   private startedAgents = new Map<string, string | null>()
   private skillCalls = new Set<string>()
+  private fileChanges = new Map<string, FileChange>()
   private skillFile: ClaudeSkillFile
 
   constructor(skillFile: ClaudeSkillFile) {
@@ -92,6 +122,8 @@ export class ClaudeFeedProjection {
   private tool(content: Tool): FeedContent[] {
     if (content.input !== null) return this.call(content)
     if (this.skillCalls.has(content.callId)) return []
+    const edit = this.fileChanges.get(content.callId)
+    if (edit !== undefined) return [{ ...edit, status: content.status }]
     const known = this.calls.get(content.callId)
     if (known === undefined) return [content]
     if (known.delegation !== null)
@@ -108,6 +140,11 @@ export class ClaudeFeedProjection {
   }
 
   private call(content: Tool): FeedContent[] {
+    const edit = fileChange(content)
+    if (edit !== null) {
+      this.fileChanges.set(content.callId, edit)
+      return [edit]
+    }
     const skill = content.name === 'Skill' ? inputField(content.input, 'skill') : null
     if (skill !== null && skill !== '') {
       this.skillCalls.add(content.callId)

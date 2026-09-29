@@ -1,54 +1,12 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionStartInput } from '@/domains/sessions/main/api/session-submit'
 import type { LiveSessionChannelEvent } from '@/harnesses/registration'
 import recorded from '../../../../mocks/cli/codex/fixtures/live-notifications-codex-0.157.0.json' with {
   type: 'json',
 }
+import { first, testChannel } from '../../../../mocks/cli/codex/mock-codex-channel'
 import type { CodexRequest, WireMessage } from '../app-server/codex-app-server-client'
-import { openCodexSessionChannel } from './codex-session-channel'
-
-const first: SessionStartInput = {
-  commandId: '00000000-0000-4000-8000-000000000001',
-  harness: 'codex',
-  projectId: '00000000-0000-4000-8000-000000000099',
-  workspaceId: '00000000-0000-4000-8000-000000000098',
-  cwd: '/repo',
-  prompt: 'first',
-  attachments: [],
-  turnConfiguration: { model: 'model', effort: 'medium', mode: 'workspace-write' },
-}
-
-function testChannel(
-  request: CodexRequest,
-  responses: Array<{ id: string | number; result: unknown }> = [],
-) {
-  const events: LiveSessionChannelEvent[] = []
-  let listener: ((message: WireMessage) => boolean | undefined) | undefined
-  const channel = openCodexSessionChannel(
-    first,
-    {
-      request,
-      onNotification(notify) {
-        listener = notify
-        return () => {
-          listener = undefined
-        }
-      },
-      respond: (id, result) => responses.push({ id, result }),
-    },
-    { emit: events.push.bind(events) },
-  )
-  return {
-    channel,
-    events,
-    notify(message: WireMessage) {
-      assert.ok(listener)
-      return listener(message)
-    },
-    subscribed: () => listener !== undefined,
-  }
-}
+import type { openCodexSessionChannel } from './codex-session-channel'
 
 function sampleMessages(notify: (message: WireMessage) => unknown) {
   notify({
