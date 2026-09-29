@@ -53,6 +53,9 @@ export const ticket = z.strictObject({
   children: z.array(ticketLink),
   // Null where the provider serves no dependency facts at all, which is not a Ticket nothing blocks.
   blockedBy: z.array(ticketLink).nullable(),
+  // Set once the provider confirmed the Ticket deleted; `state` reads closed and the rest is the
+  // last known.
+  deleted: z.literal(true).optional(),
 })
 
 // A Ticket whose status falls in one of these categories is closed, on every provider.

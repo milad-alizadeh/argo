@@ -1,7 +1,6 @@
 // The Ticket proof's automatic refresh (#2870). The proof's window starts hidden.
 import assert from 'node:assert/strict'
 import { expect, test } from '@playwright/test'
-import type { ElectronApplication } from 'playwright-core'
 import { helloWorld } from '../fixtures/tickets.fixture'
 import {
   backlog,
@@ -11,17 +10,10 @@ import {
   openRoom,
   press,
   type Run,
+  showWindow,
 } from '../screen'
 
 const GITHUB_SCOPE = { provider: 'github', scope: 'octocat/hello-world' }
-
-// The main process owns the window, so only it can show or hide it as a person would.
-const showWindow = (application: ElectronApplication, shown: boolean) =>
-  application.evaluate(({ BrowserWindow }, show) => {
-    const window = BrowserWindow.getAllWindows()[0]
-    if (show) window?.showInactive()
-    else window?.hide()
-  }, shown)
 
 // The repository as GitHub serves it after Tickets are created outside Argo.
 function createOnGitHub(run: Run, numbers: readonly number[]) {

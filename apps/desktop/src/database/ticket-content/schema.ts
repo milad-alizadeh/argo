@@ -27,6 +27,8 @@ export const ticketContent = sqliteTable(
     listedAt: integer('listed_at'),
     // The provider's order within the Closed pages that listed this Ticket.
     closedPosition: integer('closed_position'),
+    // When the provider confirmed the Ticket deleted; a later successful read clears it.
+    deletedAt: integer('deleted_at'),
     ...timestampColumns(),
   },
   (table) => [

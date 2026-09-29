@@ -146,6 +146,7 @@ export const TICKET_ERRORS = {
   'issues-disabled': 'That repository has GitHub Issues turned off.',
   'team-not-visible': 'This Linear Account cannot see that team.',
   'ticket-not-found': 'That Ticket is no longer in this repository or team.',
+  'ticket-deleted': 'That Ticket was deleted.',
   'ticket-not-writable': 'This Account is not allowed to change that Ticket.',
   'status-unknown': 'That status is not one this Ticket can move to.',
   ...PROVIDER_OUTAGE_ERRORS,

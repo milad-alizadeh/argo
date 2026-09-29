@@ -176,15 +176,17 @@ export async function readTicketPage(
 
 type TicketReadRequest = { scope: string; id: string }
 
-// One issue of the team by its key or id, open or closed; one in another team is not found here.
+// One issue of the team by its key or id, open or closed. One in another team is not found here.
+// `ticket-absent` is Linear answering no issue at all, which proves nothing until the team is seen.
 export async function readTicket(
   endpoints: LinearEndpoints,
   token: string,
   { scope, id }: TicketReadRequest,
-): Promise<LinearRead<Ticket> | { ok: false; failure: 'ticket-not-found' }> {
+): Promise<LinearRead<Ticket> | { ok: false; failure: 'ticket-not-found' | 'ticket-absent' }> {
   const reply = await query({ endpoints, token }, ISSUE, { key: id })
   if (!reply.ok) return reply
   const issue = reply.value.issue
+  if (issue === null) return { ok: false, failure: 'ticket-absent' }
   if (!isRecord(issue) || !isRecord(issue.team) || issue.team.id !== scope) {
     return { ok: false, failure: 'ticket-not-found' }
   }

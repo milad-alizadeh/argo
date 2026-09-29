@@ -22,6 +22,7 @@ const input = {
   ticketSync: {
     database: {} as Database,
     readPage: async () => ({ ok: false as const, failure: 'github-unreachable' as const }),
+    readTicket: async () => ({ ok: false as const, failure: 'github-unreachable' as const }),
     changed: () => {},
     timing: TICKET_SYNC_TIMING,
   },

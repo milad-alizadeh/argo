@@ -40,7 +40,8 @@ function ticketFrom(saved: ContentRow): Ticket {
     url: row.url,
     title: row.title,
     body: row.body,
-    state: row.state,
+    state: row.deletedAt === null ? row.state : 'closed',
+    ...(row.deletedAt === null ? {} : { deleted: true }),
     status: JSON.parse(row.statusJson),
     priority: row.priorityJson === null ? null : JSON.parse(row.priorityJson),
     createdAt: row.providerCreatedAt,
@@ -112,7 +113,7 @@ const inScope = ({ provider, scope }: TicketScopeTarget) =>
 type Listing = {
   sync: ReturnType<typeof readSync>
   listed: SQL | undefined
-  order: AnyColumn
+  order: AnyColumn | SQL
 }
 
 // One numbered page of a listing, with the total the listing holds.
@@ -153,8 +154,16 @@ export function readClosedTickets(
   request: TicketScopeTarget & Paged,
 ): ActiveRead {
   const sync = readSync(database, request, 'closed')
-  const listed = and(inScope(request), isNotNull(ticketContent.closedPosition))
-  return readListing(database, request, { sync, listed, order: ticketContent.closedPosition })
+  // A deleted Ticket groups with closed work, after the pages the provider listed.
+  const listed = and(
+    inScope(request),
+    or(isNotNull(ticketContent.closedPosition), isNotNull(ticketContent.deletedAt)),
+  )
+  return readListing(database, request, {
+    sync,
+    listed,
+    order: sql`${ticketContent.closedPosition} IS NULL, ${ticketContent.closedPosition}`,
+  })
 }
 
 // A saved Ticket of the scope named by its Argo UUID, its native ID or its key.
