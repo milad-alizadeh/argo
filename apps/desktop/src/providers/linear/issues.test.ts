@@ -132,6 +132,17 @@ test('a call to a route this mock never stubbed fails loudly, naming the request
   await assertUnstubbedRequestFails(`${mock.origin}/oauth/revoke`)
 })
 
+test('a Closed page lists only the completed and canceled issues', async (context) => {
+  const { endpoints, accessToken } = await signedIn(context, [TEAM])
+  const page = await readTicketPage(endpoints, accessToken, { ...BACKLOG, state: 'closed' })
+  assert.ok(page.ok)
+  assert.deepEqual(
+    page.value.tickets.map((ticket) => [ticket.key, ticket.state]),
+    [['ENG-3', 'closed']],
+  )
+  assert.equal(page.value.nextCursor, null)
+})
+
 test('one issue reads by key or id, closed included, only within the connected team', async (context) => {
   const other: MockLinearTeam = { ...HIDDEN, id: 'team-other', visibleTo: [ADA.id] }
   const { endpoints, accessToken } = await signedIn(context, [TEAM, other])

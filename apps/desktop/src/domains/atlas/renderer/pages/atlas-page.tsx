@@ -1,3 +1,9 @@
+import { AppPageSurface } from '@/platform/renderer/app/components/app-shell'
+
 export function AtlasPage() {
-  return <main className="h-full min-h-0 bg-background" />
+  return (
+    <main className="panel-frame">
+      <AppPageSurface />
+    </main>
+  )
 }

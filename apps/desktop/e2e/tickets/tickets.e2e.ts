@@ -5,6 +5,7 @@
 // starts with (`ticket-test.ts`).
 import { packagedRun } from '../application-under-test'
 import { assertShippedFusesIntact } from '../packaged-app'
+import { proveGitHubClosed, proveLinearClosed } from './cases/closed.case'
 import {
   proveBacklog,
   proveCommittedBacklog,
@@ -59,6 +60,8 @@ test.describe('with a GitHub repository', () => {
   test('disconnect the GitHub Account', ({ tickets }) => proveDisconnect(tickets.run()))
   test('a linked GitHub Ticket opens by ID', ({ tickets }) =>
     proveGitHubLinkedTicket(tickets.run()))
+  test('Closed loads a page at a time from GitHub', ({ tickets }) =>
+    proveGitHubClosed(tickets.run()))
   test('search reaches Tickets beyond the local index', ({ tickets }) =>
     proveSearchBeyondIndex(tickets.run()))
   test('search filters the list by title, body and key', ({ tickets }) =>
@@ -89,6 +92,8 @@ test.describe('with a Linear team', () => {
   test('disconnect the Linear Account', ({ tickets }) => proveLinearDisconnect(tickets.run()))
   test('a linked Linear Ticket opens by ID', ({ tickets }) =>
     proveLinearLinkedTicket(tickets.run()))
+  test('Closed loads a page at a time from Linear', ({ tickets }) =>
+    proveLinearClosed(tickets.run()))
 })
 
 test('the shipped app keeps its fuses', () => {

@@ -47,6 +47,7 @@ test('starts a clean database with every ordered migration', async () => {
       { name: '20260928171634_session_subagents' },
       { name: '20260928203203_ticket_read_model' },
       { name: '20260929103122_ticket_search' },
+      { name: '20260929114059_closed_tickets' },
     ])
     expect(
       database

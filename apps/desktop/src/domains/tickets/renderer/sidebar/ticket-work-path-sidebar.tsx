@@ -89,7 +89,7 @@ export function TicketWorkPathSidebar({
       </div>
 
       {path.readyOutsidePath ? (
-        <section className="mt-(--spacing-shell-section) border-t border-border/60 pt-(--spacing-shell-item)">
+        <section className="mt-(--spacing-shell-section) pt-(--spacing-shell-item)">
           <SectionTitle as="h4" className="text-muted-foreground" icon="sparkles">
             {t('sidebar.readyOutsidePath')}
           </SectionTitle>

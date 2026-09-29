@@ -157,12 +157,9 @@
     "noAccount": "no Account"
   },
   "sidebarHeader": {
-    "title": "Tickets",
     "search": "Search Tickets",
     "searchPlaceholder": "Search open Tickets",
-    "clearSearch": "Clear search",
-    "newTicket": "New Ticket",
-    "findTicket": "Find a Ticket"
+    "newTicket": "New Ticket"
   },
   "screen": {
     "label": "Tickets",

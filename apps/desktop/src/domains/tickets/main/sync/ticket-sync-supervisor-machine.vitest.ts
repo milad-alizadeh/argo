@@ -6,7 +6,12 @@ import { afterEach, beforeEach, test } from 'vitest'
 import { createActor } from 'xstate'
 import { type Database, openDatabase } from '@/database/database'
 import type { Ticket, TicketStatus } from '@/domains/tickets/contract/contract'
-import { readActiveTickets, readSavedTicket, readSearchedTickets } from '../database/ticket-queries'
+import {
+  readActiveTickets,
+  readClosedTickets,
+  readSavedTicket,
+  readSearchedTickets,
+} from '../database/ticket-queries'
 import type { PageRead, TicketSyncDependencies, TicketSyncRequest } from './ticket-sync-machine'
 import {
   nextScanDelay,
@@ -265,6 +270,88 @@ test('failed scans keep committed rows and retry sooner, backing off to the boun
     read().tickets.map(({ key }) => key),
     ['#1'],
   )
+})
+
+const DONE: TicketStatus = { id: 'done', name: 'Done', category: 'completed' }
+const closedTicket = (number: number): Ticket => ({
+  ...ticket(number),
+  state: 'closed',
+  status: DONE,
+})
+const closedPage = (numbers: number[], nextCursor: string | null): PageRead => ({
+  ok: true,
+  value: { tickets: numbers.map(closedTicket), statuses: [], nextCursor, total: null },
+})
+const savedClosed = () =>
+  readClosedTickets(database, { provider: 'github', scope: REQUEST.scope, page: 0, pageSize: 25 })
+const closedKeys = () => savedClosed().tickets.map(({ key }) => key)
+
+function closedSupervisor(reads: Record<string, PageRead>) {
+  const asked: { cursor: string | null; state: string | undefined }[] = []
+  const supervisor = createActor(ticketSyncSupervisorMachine, {
+    input: {
+      database,
+      readPage: async (request, cursor) => {
+        asked.push({ cursor, state: request.state })
+        return reads[cursor ?? 'first'] ?? { ok: false, failure: 'github-unreachable' }
+      },
+      timing: TICKET_SYNC_TIMING,
+      changed: () => {},
+    },
+  }).start()
+  // A person opening Closed, or asking for more of it, then waiting for the answer to commit.
+  const ask = async (more: boolean, answered: () => boolean) => {
+    supervisor.send({ type: 'LoadClosed', request: REQUEST, more })
+    await until(answered)
+  }
+  return { supervisor, asked, ask }
+}
+
+const PAGES = () => ({ first: closedPage([9, 8], '2'), '2': closedPage([7], null) })
+const loaded = () => savedClosed().sync.phase === 'ready'
+const complete = () => savedClosed().sync.complete
+
+test('Closed reads a page when opened and the next on request, apart from the active scan', async () => {
+  const { supervisor, asked, ask } = closedSupervisor(PAGES())
+  await ask(false, loaded)
+  assert.deepEqual(closedKeys(), ['#9', '#8'])
+  assert.equal(complete(), false)
+
+  await ask(true, complete)
+  assert.deepEqual(closedKeys(), ['#9', '#8', '#7'])
+  assert.deepEqual(asked, [
+    { cursor: null, state: 'closed' },
+    { cursor: '2', state: 'closed' },
+  ])
+  // The saved Closed Tickets never joined the active list.
+  assert.equal(read().total, 0)
+
+  // Past the last page nothing is read.
+  supervisor.send({ type: 'LoadClosed', request: REQUEST, more: true })
+  await new Promise((settle) => setTimeout(settle, 20))
+  assert.equal(asked.length, 2)
+
+  // Opening Closed again starts the listing over from the first page.
+  await ask(false, () => !complete() && loaded())
+  assert.deepEqual(closedKeys(), ['#9', '#8'])
+  supervisor.stop()
+})
+
+test('a failed Closed page keeps the saved rows, waits for a person, and can be asked again', async () => {
+  const reads: Record<string, PageRead> = { first: closedPage([9, 8], '2') }
+  const { supervisor, asked, ask } = closedSupervisor(reads)
+  await ask(false, loaded)
+  await ask(true, () => savedClosed().sync.phase === 'failed')
+  assert.equal(savedClosed().sync.failure, 'github-unreachable')
+  assert.deepEqual(closedKeys(), ['#9', '#8'])
+  await new Promise((settle) => setTimeout(settle, 20))
+  assert.equal(asked.length, 2)
+
+  reads['2'] = closedPage([7], null)
+  await ask(true, complete)
+  assert.deepEqual(closedKeys(), ['#9', '#8', '#7'])
+  assert.equal(savedClosed().sync.failure, null)
+  supervisor.stop()
 })
 
 test('the wait after a scan is the poll, or the doubled retry up to its bound', () => {

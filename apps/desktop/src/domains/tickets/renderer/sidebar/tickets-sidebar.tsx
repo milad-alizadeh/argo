@@ -44,7 +44,7 @@ export function TicketsSidebarContent({
     >
       <TicketsSidebarHeader connection={connection} />
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <nav aria-label={t('sidebar.views')} className="p-(--spacing-shell-item)">
+        <nav aria-label={t('sidebar.views')} className="sidebar-gutter py-(--spacing-shell-item)">
           <div
             aria-current="page"
             className="flex items-center gap-(--spacing-shell-item) rounded-row bg-muted px-(--spacing-shell-item) py-(--spacing-shell-icon) type-body"
@@ -56,7 +56,7 @@ export function TicketsSidebarContent({
           </div>
         </nav>
         {workPath ? (
-          <div className="border-t border-border/60 py-(--spacing-shell-section)">
+          <div className="py-(--spacing-shell-section)">
             <TicketWorkPathSidebar onSelect={onSelectTicket} path={workPath} />
           </div>
         ) : null}

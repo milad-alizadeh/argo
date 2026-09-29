@@ -25,7 +25,12 @@ export const ticketContent = sqliteTable(
     position: integer(),
     // The start of the active scan that last listed this Ticket.
     listedAt: integer('listed_at'),
+    // The provider's order within the Closed pages that listed this Ticket.
+    closedPosition: integer('closed_position'),
     ...timestampColumns(),
   },
-  (table) => [index('ticket_content_listed').on(table.listedAt, table.position)],
+  (table) => [
+    index('ticket_content_listed').on(table.listedAt, table.position),
+    index('ticket_content_closed').on(table.closedPosition),
+  ],
 )

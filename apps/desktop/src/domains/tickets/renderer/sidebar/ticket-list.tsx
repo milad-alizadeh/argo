@@ -100,22 +100,24 @@ export function TicketList({
           </div>
         </AppPageHeader>
       ) : null}
-      {backlog.sync.problem ? <ProblemBanner {...backlog.sync.problem} /> : null}
-      {backlog.tickets.length === 0 ? (
-        <NoTickets provider={backlog.provider} query={backlog.query} />
-      ) : null}
-      {backlog.tickets.length > 0 ? (
-        <TicketVirtualList
-          backlog={backlog}
-          folded={folded}
-          now={now}
-          onSelect={onSelect}
-          onToggle={toggle}
-          placement={placement}
-          rows={rows}
-          selectedKey={selectedKey}
-        />
-      ) : null}
+      <div className={placement === 'workspace' ? 'panel-content' : 'flex min-h-0 flex-1 flex-col'}>
+        {backlog.sync.problem ? <ProblemBanner {...backlog.sync.problem} /> : null}
+        {backlog.tickets.length === 0 ? (
+          <NoTickets provider={backlog.provider} query={backlog.query} />
+        ) : null}
+        {backlog.tickets.length > 0 ? (
+          <TicketVirtualList
+            backlog={backlog}
+            folded={folded}
+            now={now}
+            onSelect={onSelect}
+            onToggle={toggle}
+            placement={placement}
+            rows={rows}
+            selectedKey={selectedKey}
+          />
+        ) : null}
+      </div>
     </section>
   )
 }

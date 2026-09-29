@@ -100,6 +100,16 @@ export function AppPageHeader({ children }: { children?: ReactNode }) {
   )
 }
 
+// A page's header bar with its content on the rounded surface, as the Sessions workspace draws it.
+export function AppPageSurface({ children }: { children?: ReactNode }) {
+  return (
+    <>
+      <AppPageHeader />
+      <div className="panel-content">{children}</div>
+    </>
+  )
+}
+
 function appContentInsets(): CSSProperties {
   return {
     '--inset-app-content-body': 'var(--spacing-shell-inset)',
