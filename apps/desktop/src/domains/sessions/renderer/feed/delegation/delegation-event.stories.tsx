@@ -31,18 +31,6 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof DelegationEvent>
 
-const LONG_PROMPT = [
-  '## Review the **Feed** specification',
-  '',
-  ...Array.from(
-    { length: 8 },
-    (_, index) =>
-      `- Check that state ${index + 1} renders its label, its marker and its keyboard focus.`,
-  ),
-  '',
-  'Report every gap at `apps/desktop/src/domains/sessions/renderer/feed/delegation/delegation-event.tsx`.',
-].join('\n')
-
 export const Started: Story = {
   args: {
     onOpen: fn(),
@@ -57,46 +45,10 @@ export const Started: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: /Spec review started/ })).toBeVisible()
-    await expect(canvas.getByText('Review the specification.')).toBeVisible()
-    await expect(canvas.queryByRole('button', { name: 'Show full prompt' })).toBeNull()
+    // The prompt lives in the Subagent's own Feed, which the title opens.
+    await expect(canvas.queryByText('Review the specification.')).toBeNull()
     await expect(canvas.queryByText('The specification covers every visible state.')).toBeNull()
     await expect(canvasElement.querySelector('.bg-card')).toBeNull()
-  },
-}
-
-export const LongPrompt: Story = {
-  args: {
-    onOpen: fn(),
-    row: {
-      ...RESPONDED_ROW,
-      event: 'started',
-      state: undefined,
-      text: undefined,
-      prompt: LONG_PROMPT,
-    },
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await expect(
-      canvas.getByRole('heading', { name: 'Review the Feed specification' }),
-    ).toBeVisible()
-    const toggle = canvas.getByRole('button', { name: 'Show full prompt' })
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false')
-    const body = canvasElement.querySelector('[data-slot="delegation-body"]')
-    const clipped = () =>
-      canvas.getByText(/Report every gap/).getBoundingClientRect().top >=
-      (body?.getBoundingClientRect().bottom ?? 0)
-    await expect(clipped()).toBe(true)
-    toggle.focus()
-    await userEvent.keyboard('{Enter}')
-    await expect(canvas.getByRole('button', { name: 'Show less' })).toHaveAttribute(
-      'aria-expanded',
-      'true',
-    )
-    await expect(clipped()).toBe(false)
-    await expect(canvasElement.scrollWidth).toBeLessThanOrEqual(canvasElement.clientWidth)
-    await userEvent.keyboard(' ')
-    await expect(canvas.getByRole('button', { name: 'Show full prompt' })).toBeVisible()
   },
 }
 
@@ -116,7 +68,7 @@ export const Messaged: Story = {
     await expect(
       canvas.getByRole('article', { name: 'Spec review received a message' }),
     ).toBeVisible()
-    await expect(canvas.getByText('Also check the empty state.')).toBeVisible()
+    await expect(canvas.queryByText('Also check the empty state.')).toBeNull()
   },
 }
 
@@ -124,7 +76,7 @@ export const Responded: Story = {
   args: { onOpen: fn(), row: RESPONDED_ROW },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('The specification covers every visible state.')).toBeVisible()
+    await expect(canvas.queryByText('The specification covers every visible state.')).toBeNull()
     await userEvent.click(
       canvas.getByRole('button', { name: /Spec review sent a reply to the main Session/ }),
     )
