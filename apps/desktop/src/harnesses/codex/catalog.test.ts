@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { codexModelCatalogFixture } from '../../../test-fixtures/sessions/codex-model-catalog.fixture'
+import { codexModelCatalogFixture } from '@/mocks/sessions/codex-model-catalog.fixture'
 import type { CodexRequest } from './app-server/codex-app-server-client'
 import { codexHarnessInfo, readCodexHarnessInfo, readModelCatalog } from './catalog'
 

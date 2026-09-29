@@ -8,7 +8,7 @@ import {
   passiveChannelMethods,
   start,
   supervisorFor,
-} from '../../../../../test-fixtures/sessions/live-session-supervisor.fixture'
+} from '@/mocks/sessions/live-session-supervisor.fixture'
 import { sessionListProcedure } from '../api/session-list'
 import { SessionRosterChanges } from '../api/session-roster-changes'
 import type { LiveSessionSupervisorActor } from './live-session-supervisor-machine'

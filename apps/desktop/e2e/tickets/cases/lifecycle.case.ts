@@ -3,7 +3,7 @@
 // The initial connection and backlog cases are `github.case.ts`.
 import assert from 'node:assert/strict'
 import { expect, test } from '@playwright/test'
-import { OCTOCAT } from '../fixtures/tickets.fixture'
+import { octocatUser } from '@/mocks/tickets/provider-inputs'
 import {
   accountRow,
   backlog,
@@ -66,7 +66,7 @@ export async function proveRevoked(run: Run) {
   await test.step('reconnect', async () => {
     const octocat = accountRow(run.page, 'octocat')
     const start = { scope: octocat, name: 'Reconnect' }
-    assert.equal(await signIn(run, OCTOCAT, start), 'Signed in again as octocat.')
+    assert.equal(await signIn(run, octocatUser(), start), 'Signed in again as octocat.')
     await closeAccounts(run.page)
     assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
     await backlog(run.page)

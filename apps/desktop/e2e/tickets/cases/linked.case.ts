@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict'
 import { expect, test } from '@playwright/test'
 import type { Page } from 'playwright-core'
-import { helloWorld } from '../fixtures/tickets.fixture'
+import { helloWorldRepository as helloWorld } from '@/mocks/tickets/provider-inputs'
 import { backlog, committedTicketIds, detailTitle, openRoom, type Run } from '../screen'
 
 const GITHUB_SCOPE = { provider: 'github', scope: 'octocat/hello-world' }

@@ -2,10 +2,12 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 
 import { ticketError } from '@/domains/tickets/api/errors'
-import { ada, octocat } from '../detail/ticket-fixtures'
+import { ada, octocat } from '@/mocks/tickets/renderer-models'
 import { ConnectSourceForm, type ConnectSourceFormProps } from './connect-source-form'
 
-const hubot = { ...octocat, id: 'github:1', login: 'hubot' }
+const githubAccount = octocat()
+const linearAccount = ada()
+const hubot = { ...githubAccount, id: 'github:1', login: 'hubot' }
 const repository = (scope: string) => ({ scope, label: scope })
 
 const meta = {
@@ -13,8 +15,8 @@ const meta = {
   component: ConnectSourceForm,
   args: {
     projectName: 'argo',
-    accounts: [octocat, { ...hubot, state: 'revoked' }],
-    accountId: octocat.id,
+    accounts: [githubAccount, { ...hubot, state: 'revoked' }],
+    accountId: githubAccount.id,
     sources: {
       state: 'listed',
       scopes: ['hubot/arm', 'octocat/hello-world', 'octocat/spoon-knife'].map(repository),
@@ -87,7 +89,7 @@ export const KeyboardOrder: Story = {
 }
 
 export const SwitchAccount: Story = {
-  args: { accounts: [octocat, hubot] },
+  args: { accounts: [githubAccount, hubot] },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Connect repository' }))
@@ -167,7 +169,7 @@ export const RepositoryRefused: Story = {
 }
 
 export const NoAccount: Story = {
-  args: { accounts: [{ ...octocat, state: 'revoked' }] },
+  args: { accounts: [{ ...githubAccount, state: 'revoked' }] },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('Connect an Account to read Tickets')).toBeInTheDocument()
@@ -179,8 +181,8 @@ export const NoAccount: Story = {
 // A Linear Account offers its teams by name and connects the team's id.
 export const ConnectTeam: Story = {
   args: {
-    accounts: [octocat, ada],
-    accountId: ada.id,
+    accounts: [githubAccount, linearAccount],
+    accountId: linearAccount.id,
     sources: { state: 'listed', scopes: [{ scope: 'team-engine', label: 'Engine' }] },
   },
   play: async ({ args, canvasElement }) => {

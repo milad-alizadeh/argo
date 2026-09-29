@@ -2,15 +2,15 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, waitFor, within } from 'storybook/test'
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
-import { AppShell } from '@/platform/renderer/app/components/app-shell'
-import { trpcClient } from '@/platform/renderer/trpc-client'
+import { sessionRow } from '@/mocks/sessions/session-rows'
 import {
   type FeedRead,
   sessionFeedRefreshTrpc,
   sessionFeedSubscribe,
   sessionListSubscribe,
-  sessionRow,
-} from '../session-fixtures'
+} from '@/mocks/sessions/session-story-host'
+import { AppShell } from '@/platform/renderer/app/components/app-shell'
+import { trpcClient } from '@/platform/renderer/trpc-client'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import { SessionScreenView } from './session-screen-view'
 

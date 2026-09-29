@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { awaitGrant, readIdentity, requestChallenge } from '@/providers/github/device-flow'
 import { proofEndpoints } from '@/providers/github/endpoints'
-import { github, OCTOCAT } from '@/providers/github/harness'
+import { github, octocatUser } from '@/providers/github/harness'
 import { assertUnstubbedRequestFails } from '../../../mocks/providers/msw-node-bridge'
 
 test('a proof origin is taken only when it is a loopback origin', () => {
@@ -24,7 +24,7 @@ test('a proof origin is taken only when it is a loopback origin', () => {
 
 test('a granted device code yields the scopes GitHub granted and a stable numeric identity', async (context) => {
   const [mock, endpoints] = await github(context)
-  mock.signIn(OCTOCAT, 2)
+  mock.signIn(octocatUser(), 2)
   const challenge = await requestChallenge(endpoints)
   assert.ok(challenge.ok)
   assert.equal(challenge.value.verificationUri, `${mock.origin}/login/device`)
@@ -51,7 +51,7 @@ test('a sign-in the person declines or lets expire ends as that outcome', async 
 
 test('a cancelled wait ends as cancelled without another poll', async (context) => {
   const [mock, endpoints] = await github(context)
-  mock.signIn(OCTOCAT, 1_000)
+  mock.signIn(octocatUser(), 1_000)
   const challenge = await requestChallenge(endpoints)
   assert.ok(challenge.ok)
   const controller = new AbortController()

@@ -3,7 +3,11 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 
 import type { SessionTurnConfiguration } from '@/domains/sessions/renderer/model/models'
-import { announceSessionListChange, sessionListSubscribe, sessionRow } from '../session-fixtures'
+import { sessionRow } from '@/mocks/sessions/session-rows'
+import {
+  announceSessionListChange,
+  sessionListSubscribe,
+} from '@/mocks/sessions/session-story-host'
 import { SessionScreenView } from './session-screen-view'
 
 const SESSION_ID = 'live-turn-configuration'

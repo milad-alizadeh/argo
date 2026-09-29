@@ -4,7 +4,10 @@
     "module": "Preserve",
     "moduleResolution": "bundler",
     "baseUrl": ".",
-    "paths": { "@/*": ["./src/*"] },
+    "paths": {
+      "@/mocks/*": ["./mocks/*"],
+      "@/*": ["./src/*"]
+    },
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["node"],
     // The e2e flows serialize browser closures through Playwright, and their assertions execute

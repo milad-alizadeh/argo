@@ -3,7 +3,7 @@
 // matches beside its failure, and the words filter the list by title, body and key.
 import assert from 'node:assert/strict'
 import { expect, test } from '@playwright/test'
-import { helloWorld } from '../fixtures/tickets.fixture'
+import { helloWorldRepository as helloWorld } from '@/mocks/tickets/provider-inputs'
 import { backlog, committedTicketIds, openRoom, type Run } from '../screen'
 
 const GITHUB_SCOPE = { provider: 'github', scope: 'octocat/hello-world' }

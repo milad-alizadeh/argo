@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
 import { playwright } from '@vitest/browser-playwright'
 import { defineConfig } from 'vitest/config'
+import { desktopAlias } from './vite-alias'
 
 const directory = path.dirname(fileURLToPath(import.meta.url))
 
@@ -30,7 +31,9 @@ const storybookProject = {
 // and Bun's own matcher never claims it.
 const nodeProject = {
   extends: true as const,
-  resolve: { alias: { '@': path.join(directory, 'src') } },
+  resolve: {
+    alias: desktopAlias(directory),
+  },
   test: { name: 'node', environment: 'node' as const, include: ['src/**/*.vitest.ts'] },
 }
 

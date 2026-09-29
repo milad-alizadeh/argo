@@ -28,7 +28,7 @@ import {
   ticketSyncSupervisorMachine,
 } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
 import { proofEndpoints } from '@/providers/github/endpoints'
-import { OCTOCAT } from '@/providers/github/harness'
+import { octocatUser } from '@/providers/github/harness'
 import { linearProofEndpoints } from '@/providers/linear/endpoints'
 import { ADA, browse, TEAM } from '@/providers/linear/harness'
 import { PROVIDER_REGISTRY } from '@/providers/registry'
@@ -92,7 +92,7 @@ async function flows() {
   const githubEndpoints = proofEndpoints(gitHub.origin)
   const linearEndpoints = linearProofEndpoints(mockLinear.origin)
   assert.ok(githubEndpoints && linearEndpoints)
-  gitHub.signIn(OCTOCAT)
+  gitHub.signIn(octocatUser())
   mockLinear.signIn(ADA)
   const directory = await mkdtemp(path.join(os.tmpdir(), 'argo-provider-registry-'))
   onTestFinished(() => rm(directory, { force: true, recursive: true }))
@@ -195,7 +195,7 @@ test('a GitHub sign-in asks for a device code and connects the Account it grants
   assert.ok(challenge.type === 'account.challenge' && challenge.kind === 'device-code')
   assert.equal(challenge.provider, 'github')
   assert.ok(challenge.userCode.length > 0)
-  assert.equal(accountId, `github:${OCTOCAT.id}`)
+  assert.equal(accountId, `github:${octocatUser().id}`)
 })
 
 test('a Linear sign-in asks for browser consent and connects the Account it grants', async () => {
@@ -211,7 +211,7 @@ test('the shared Ticket flows read and close a GitHub issue through the registry
   const { gitHub, tickets, accountId } = flow
   gitHub.addRepository({
     fullName: 'octo/hello',
-    visibleTo: [OCTOCAT.id],
+    visibleTo: [octocatUser().id],
     issues: [{ number: 1, title: 'Wire the registry' }],
   })
   assert.deepEqual(await connectedKeys(flow, accountId, 'octo/hello'), ['#1'])
@@ -232,7 +232,7 @@ test('a confirmed GitHub status change is recorded, committed, then announced', 
   const { gitHub, tickets, accountId, changes, database } = flow
   gitHub.addRepository({
     fullName: 'octo/hello',
-    visibleTo: [OCTOCAT.id],
+    visibleTo: [octocatUser().id],
     issues: [{ number: 1, title: 'Wire the registry' }],
   })
   await connectedKeys(flow, accountId, 'octo/hello')
@@ -253,7 +253,7 @@ test('a GitHub status change the provider refuses leaves the saved Ticket unchan
   const { gitHub, tickets, accountId, changes, database } = flow
   gitHub.addRepository({
     fullName: 'octo/hello',
-    visibleTo: [OCTOCAT.id],
+    visibleTo: [octocatUser().id],
     writers: [],
     issues: [{ number: 1, title: 'Wire the registry' }],
   })
@@ -340,8 +340,8 @@ test('a GitHub Ticket refuses a priority change and keeps the refusal as a rejec
   const { gitHub, tickets, accountId, database } = flow
   gitHub.addRepository({
     fullName: 'octo/hello',
-    visibleTo: [OCTOCAT.id],
-    writers: [OCTOCAT.id],
+    visibleTo: [octocatUser().id],
+    writers: [octocatUser().id],
     issues: [{ number: 1, title: 'Wire the registry' }],
   })
   await connectedKeys(flow, accountId, 'octo/hello')
@@ -369,8 +369,8 @@ test('the priority levels come from Linear, and GitHub offers none', async () =>
   const github = await signedInToGitHub()
   github.gitHub.addRepository({
     fullName: 'octo/hello',
-    visibleTo: [OCTOCAT.id],
-    writers: [OCTOCAT.id],
+    visibleTo: [octocatUser().id],
+    writers: [octocatUser().id],
     issues: [],
   })
   await connectedKeys(github, github.accountId, 'octo/hello')
@@ -419,7 +419,7 @@ test('an active GitHub scan commits Tickets that the active list reads back from
     { number: 2, title: 'Read from SQLite' },
     { number: 3, title: 'Shipped already', state: 'closed' as const },
   ]
-  gitHub.addRepository({ fullName: 'octo/hello', visibleTo: [OCTOCAT.id], issues })
+  gitHub.addRepository({ fullName: 'octo/hello', visibleTo: [octocatUser().id], issues })
   const connected = await tickets.ticketConnect({ projectId, accountId, scope: 'octo/hello' })
   assert.equal(connected.type, 'ticket.connected')
   const changed: string[] = []
@@ -446,7 +446,7 @@ test('an active GitHub scan commits Tickets that the active list reads back from
   gitHub.outage('none')
   gitHub.addRepository({
     fullName: 'octo/hello',
-    visibleTo: [OCTOCAT.id],
+    visibleTo: [octocatUser().id],
     issues: [
       { number: 1, title: 'Wire the registry, renamed' },
       issues[1] as (typeof issues)[number],
@@ -498,7 +498,7 @@ test('a GitHub Ticket outside the active list opens by ID and stays readable fro
     { number: 1, title: 'Wire the registry' },
     { number: 3, title: 'Shipped already', state: 'closed' as const },
   ]
-  gitHub.addRepository({ fullName: 'octo/hello', visibleTo: [OCTOCAT.id], issues })
+  gitHub.addRepository({ fullName: 'octo/hello', visibleTo: [octocatUser().id], issues })
   await tickets.ticketConnect({ projectId, accountId, scope: 'octo/hello' })
   await synced(flow)
   const unread = await tickets.ticketDetail({ projectId, reference: '#3' })
@@ -530,7 +530,7 @@ test('a GitHub Ticket outside the active list opens by ID and stays readable fro
   // #1 leaves the active list; its saved row still answers by key and by Argo UUID, GitHub down.
   gitHub.addRepository({
     fullName: 'octo/hello',
-    visibleTo: [OCTOCAT.id],
+    visibleTo: [octocatUser().id],
     issues: [{ number: 1, title: 'Wire the registry', state: 'closed' as const }],
   })
   assert.deepEqual((await synced(flow)).tickets, [])

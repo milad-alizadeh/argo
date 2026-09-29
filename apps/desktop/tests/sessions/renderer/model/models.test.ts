@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { sessionFeedRowSchema } from '@/domains/sessions/api/feed/feed-rows'
 import { sessionRosterRowSchema } from '@/domains/sessions/renderer/model/models'
-import { sessionRosterRow } from '@/domains/sessions/renderer/session-fixtures'
+import { sessionRosterRow } from '@/mocks/sessions/session-rows'
 
 const roster = sessionRosterRow({
   id: 'session-one',

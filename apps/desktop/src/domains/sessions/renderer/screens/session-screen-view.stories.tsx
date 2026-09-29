@@ -5,19 +5,15 @@ import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook
 import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-switcher'
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/renderer/model/models'
 import type { SessionShellOutput } from '@/domains/sessions/renderer/work/types'
+import { sessionRow, sessionShellCommand, sessionSubagent } from '@/mocks/sessions/session-rows'
+import { sessionSelectionHost } from '@/mocks/sessions/session-selection-host.fixture'
+import { sessionListSubscribe } from '@/mocks/sessions/session-story-host'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
-import { sessionSelectionHost } from '../../../../../test-fixtures/sessions/session-selection-host.fixture'
 import { ComposerForm } from '../composer/layout/composer-form'
 import { RICH_MARKDOWN } from '../feed/content/feed-samples'
 import { SessionInspector } from '../inspector/session-inspector'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
-import {
-  sessionListSubscribe,
-  sessionRow,
-  sessionShellCommand,
-  sessionSubagent,
-} from '../session-fixtures'
 import { SessionList, type SessionListActions } from '../session-list/session-list'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
 import type { Session, SessionFeed } from '../types'

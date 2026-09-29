@@ -367,7 +367,12 @@
       }
     },
     {
-      "includes": ["apps/desktop/test-fixtures/**/*.{ts,tsx}"],
+      "includes": [
+        "apps/desktop/mocks/tickets/**/*.{ts,tsx}",
+        "apps/desktop/mocks/sessions/**/*.{ts,tsx}",
+        "apps/desktop/mocks/projects/**/*.{ts,tsx}",
+        "apps/desktop/mocks/harness-signin/**/*.{ts,tsx}"
+      ],
       "linter": {
         "rules": {
           "style": {

@@ -2,15 +2,14 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { queryClient, type RouterOutputs } from '@/platform/renderer/trpc-client'
-import { useFeedReading } from '../../feed/use-feed-reading'
+import { sessionRow, sessionSubagent } from '@/mocks/sessions/session-rows'
 import {
   type FeedRead,
   sessionFeedRefreshTrpc,
   sessionFeedSubscribe,
-  sessionRow,
-  sessionSubagent,
-} from '../../session-fixtures'
+} from '@/mocks/sessions/session-story-host'
+import { queryClient, type RouterOutputs } from '@/platform/renderer/trpc-client'
+import { useFeedReading } from '../../feed/use-feed-reading'
 import type { SessionError, SessionId, SessionListPage } from '../../types'
 import { SessionList, type SessionListActions } from '../session-list'
 import { sessionRosterPathKey } from '../session-roster'

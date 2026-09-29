@@ -11,8 +11,8 @@ import type { WorkspaceListContext } from '@/domains/workspaces/main/api/workspa
 import { claudeHarnessInfo } from '@/harnesses/claude/catalog'
 import { codexHarnessInfo } from '@/harnesses/codex/catalog'
 import { harnessCatalogSchema } from '@/harnesses/harness-catalog'
-import { claudeModelCatalogFixture } from '../../../test-fixtures/sessions/claude-model-catalog.fixture'
-import { codexModelCatalogFixture } from '../../../test-fixtures/sessions/codex-model-catalog.fixture'
+import { claudeModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
+import { codexModelCatalogFixture } from '@/mocks/sessions/codex-model-catalog.fixture'
 import { harnessCatalogMachine } from './harness-catalog/harness-catalog-machine'
 import { createAppRouter } from './trpc-router'
 

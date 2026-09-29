@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { sessionSubagent } from '../session-fixtures'
+import { sessionSubagent } from '@/mocks/sessions/session-rows'
 import { pickedSubagent, sessionScreenSubagents } from './session-screen-subagents'
 
 const AGENT_ID = 'agent-a64dd851fde47a6f0'

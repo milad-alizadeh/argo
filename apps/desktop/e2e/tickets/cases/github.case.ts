@@ -4,7 +4,11 @@
 // `linear.case.ts`.
 import assert from 'node:assert/strict'
 import { expect, test } from '@playwright/test'
-import { HUBOT, helloWorld, OCTOCAT } from '../fixtures/tickets.fixture'
+import {
+  helloWorldRepository as helloWorld,
+  hubotUser,
+  octocatUser,
+} from '@/mocks/tickets/provider-inputs'
 import {
   accountListing,
   accountRow,
@@ -35,14 +39,14 @@ export async function proveConnect(run: Run) {
   const start = { scope: accountsDialog(run.page), name: 'Connect a GitHub Account' }
   await press(room(run), 'Connect an Account')
   await test.step('connect', async () => {
-    assert.equal(await signIn(run, OCTOCAT, start), 'Connected octocat.')
+    assert.equal(await signIn(run, octocatUser(), start), 'Connected octocat.')
   })
   // The same GitHub identity signs in again as the one Account; another identity is another.
   await test.step('same-identity', async () => {
-    assert.equal(await signIn(run, OCTOCAT, start), 'Signed in again as octocat.')
+    assert.equal(await signIn(run, octocatUser(), start), 'Signed in again as octocat.')
   })
   await test.step('second-identity', async () => {
-    assert.equal(await signIn(run, HUBOT, start), 'Connected hubot.')
+    assert.equal(await signIn(run, hubotUser(), start), 'Connected hubot.')
     await accountRow(run.page, 'hubot').waitFor()
   })
   await test.step('sealed-grant', async () => {

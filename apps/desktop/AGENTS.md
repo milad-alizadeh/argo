@@ -24,8 +24,9 @@ Test assets live outside `src/`, and a mock is called a mock.
 - Cases build on the `test` in `e2e/packaged-proof.ts` and declare their starting state as a
   fixture option (`test.use`), never as a case that runs first. A flow variant, such as the
   real-Harness backend, is a project `use` option on the same file, never a copy.
-- `mocks/` holds `mock-*` CLIs, providers and transcripts; `tools/` holds capture, measure and
-  repro scripts; `scripts/` holds runtime wrappers only.
+- `mocks/` holds `mock-*` CLIs, providers, transcripts, and reusable fixture data for stories
+  and tests. `tools/` holds capture, measure and repro scripts; `scripts/` holds runtime wrappers
+  only.
 
 ## Test runners
 

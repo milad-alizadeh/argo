@@ -2,6 +2,7 @@ import path from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+import { desktopAlias } from './vite-alias'
 
 const developmentPort = Number(process.env.ARGO_DESKTOP_DEV_PORT)
 const developmentServer =
@@ -9,8 +10,8 @@ const developmentServer =
     ? { port: developmentPort, strictPort: true }
     : undefined
 
-// The `@/…` alias is declared here, in `tsconfig.web.json` and in `.storybook/main.ts`; the shadcn
-// generator reads the tsconfig copy, Vite reads this one, and a rename has to move all three.
+// The `@/…` alias is declared in `vite-alias.ts`, `tsconfig.web.json`, and `.storybook/main.ts`.
+// The shadcn generator reads the tsconfig copy, and a rename has to move the copies it reads.
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
@@ -31,7 +32,7 @@ export default defineConfig({
       '@lexical/utils',
     ],
     alias: [
-      { find: '@', replacement: path.resolve(import.meta.dirname, 'src') },
+      ...desktopAlias(import.meta.dirname),
       {
         find: /^cn$/,
         replacement: path.resolve(import.meta.dirname, 'src/platform/renderer/lib/utils.ts'),

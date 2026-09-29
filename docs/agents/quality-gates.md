@@ -125,9 +125,9 @@ bans), only the `../*`/`./*/*` ban.
 (#2623, ADR-0044). This is a separate gate from the specifier rule above, on a separate engine:
 `.dependency-cruiser.json`'s `domain-port-only` rule, run as `quality:boundaries` and in CI as its
 own step. Biome cannot express it as one rule (no regex backreference between `from` and `to`), so
-it moved out rather than becoming six near-identical `noRestrictedImports` overrides. Two files
-are exempt by name because they reach across domains on purpose to build test fixtures:
-`accounts/main/harness-fixtures.ts` and `sessions/main/index/session-index/roster-fixtures.ts`.
+it moved out rather than becoming six near-identical `noRestrictedImports` overrides. One file
+is exempt by name because it reaches across domains on purpose to build test fixtures:
+`sessions/main/index/session-index/roster-fixtures.ts`.
 `*.test.ts`/`*.stories.tsx` files are exempt too, matching the same allowance the old
 `biome.jsonc` matrix made. Nothing reads the import graph for cycles.
 - **`tsconfig.web.json` sets `"types": []`**, and it is load-bearing. Without it the renderer

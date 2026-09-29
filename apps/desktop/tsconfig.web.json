@@ -13,6 +13,7 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "paths": {
+      "@/mocks/*": ["./mocks/*"],
       "@/*": ["./src/*"],
       "cn": ["./src/platform/renderer/lib/utils.ts"]
     }

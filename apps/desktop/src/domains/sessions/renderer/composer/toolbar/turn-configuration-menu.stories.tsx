@@ -5,7 +5,7 @@ import type { AvailableHarness, CatalogReadResult } from '@/harnesses/harness-ca
 import {
   claudeHarnessInfoFixture,
   codexHarnessInfoFixture,
-} from '../../../../../../test-fixtures/sessions/harness-catalog.fixture'
+} from '@/mocks/sessions/harness-catalog.fixture'
 import type { SessionHarness } from '../../harness/harnesses'
 import type { TurnConfiguration } from '../turn-configuration/turn-configuration'
 import { type CatalogFailure, TurnConfigurationMenu } from './turn-configuration-menu'

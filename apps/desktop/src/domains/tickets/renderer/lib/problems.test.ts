@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
+import { connection } from '@/mocks/tickets/renderer-models'
 import { initializeRendererI18n } from '@/platform/renderer/i18n/i18n'
 import { CATALOGS } from '@/renderer/catalogs'
-import { connection } from '../detail/ticket-fixtures'
 import { connectionProblem } from './problems'
 
 await initializeRendererI18n({

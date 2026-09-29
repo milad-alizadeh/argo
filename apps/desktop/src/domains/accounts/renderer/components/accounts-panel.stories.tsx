@@ -3,7 +3,7 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 
 import { type AccountSummary, accountError } from '@/domains/accounts/contract/contract'
 import { ConnectSourceFields } from '@/domains/tickets/renderer/connection/connect-source-form'
-import { ada, octocat } from '@/domains/tickets/renderer/detail/ticket-fixtures'
+import { ada, octocat } from '@/mocks/tickets/renderer-models'
 import { i18n } from '@/platform/renderer/i18n/i18n'
 import { AccountsPanel, type AccountsPanelProps } from './accounts-dialog'
 
@@ -26,10 +26,10 @@ const listing = (accounts: AccountSummary[]) => ({
 })
 
 const connected = {
-  ...octocat,
+  ...octocat(),
   connections: [{ projectId: 'argo', projectName: 'argo', label: 'octocat/hello-world' }],
 }
-const revoked = { ...octocat, id: 'github:1', login: 'hubot', state: 'revoked' as const }
+const revoked = { ...octocat(), id: 'github:1', login: 'hubot', state: 'revoked' as const }
 
 const meta = {
   title: 'Accounts/Accounts Panel',
@@ -87,7 +87,7 @@ export const LinearExpired: Story = {
   args: {
     listing: listing([
       {
-        ...ada,
+        ...ada(),
         state: 'expired',
         connections: [{ projectId: 'argo', projectName: 'argo', label: 'Engine' }],
       },
@@ -196,11 +196,11 @@ export const NoAccounts: Story = {
 // The repository-connect form draws inline once the caller passes it (#2411).
 export const NoTicketConnection: Story = {
   args: {
-    listing: listing([octocat]),
+    listing: listing([octocat()]),
     connect: (
       <ConnectSourceFields
-        accountId={octocat.id}
-        accounts={[octocat]}
+        accountId={octocat().id}
+        accounts={[octocat()]}
         error={null}
         onConnectSource={fn()}
         onSelectAccount={fn()}
@@ -250,7 +250,7 @@ export const RequestingCode: Story = {
 }
 
 export const DisconnectInProgress: Story = {
-  args: { disconnecting: octocat.id },
+  args: { disconnecting: octocat().id },
   play: async ({ canvasElement }) => {
     const row = within(canvasElement).getByRole('listitem', { name: 'GitHub Account octocat' })
     await userEvent.click(within(row).getByRole('button', { name: 'Disconnect…' }))
@@ -280,7 +280,7 @@ export const DisconnectManyConnections: Story = {
   args: {
     listing: listing([
       {
-        ...octocat,
+        ...octocat(),
         connections: [
           { projectId: 'argo', projectName: 'argo', label: 'octocat/hello-world' },
           { projectId: 'atlas', projectName: 'atlas', label: 'octocat/atlas' },

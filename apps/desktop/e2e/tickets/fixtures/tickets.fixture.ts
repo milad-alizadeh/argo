@@ -6,9 +6,14 @@ import { type ElectronApplication, _electron as electron } from 'playwright-core
 import { TICKET_POLL_PROOF_ENV } from '@/domains/tickets/main/sync/proof-protocol'
 import { SESSION_CLAUDE_TRANSCRIPTS_ENV } from '@/harnesses/claude/proof-protocol'
 import { SESSION_CODEX_TRANSCRIPTS_ENV } from '@/harnesses/codex/proof-protocol'
+import type { MockGitHub } from '@/mocks/providers/github/mock-github'
+import {
+  engineRepository,
+  helloWorldRepository,
+  secretRepository,
+} from '@/mocks/tickets/provider-inputs'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { GITHUB_PROOF_ORIGIN_ENV, LINEAR_PROOF_ORIGIN_ENV } from '@/providers/proof-protocol'
-import type { MockGitHub, MockRepository } from '../../../mocks/providers/github/mock-github'
 import { startMockGitHubLoopback } from '../../../mocks/providers/github/mock-github-loopback'
 import type { MockLinear } from '../../../mocks/providers/linear/mock-linear'
 import { HIDDEN, TEAM } from '../../../mocks/providers/linear/mock-linear-cast'
@@ -18,8 +23,6 @@ import { launchCommand } from '../../application-under-test'
 import { makeProjectLocallyReady } from '../../projects/fixtures/locally-ready-project'
 import { repository, seedSingleProject } from '../../projects/fixtures/project.fixture'
 
-export const OCTOCAT = { id: 583231, login: 'octocat' }
-export const HUBOT = { id: 2, login: 'hubot' }
 // Short enough that every read renews the grant first, so a relaunch proves the refresh.
 export const LINEAR_TOKEN_LIFETIME = 60
 
@@ -35,34 +38,12 @@ export type TicketFixture = {
 }
 
 // A fresh copy each time, since the mock closes an issue in place.
-export const helloWorld = (): MockRepository => ({
-  fullName: 'octocat/hello-world',
-  visibleTo: [OCTOCAT.id, HUBOT.id],
-  issues: [
-    { number: 609, title: 'Prototype the Tickets room' },
-    {
-      number: 607,
-      title: 'Wayfinder: the Tickets room, end to end',
-      body: 'The backlog in the deck and the Ticket beside it.',
-      labels: [{ name: 'wayfinder', color: '5319e7' }],
-      type: 'PRD',
-      children: [609, 388],
-      blockedBy: [609],
-    },
-    { number: 388, title: 'Ticket read path', state: 'closed' },
-    { number: 273, title: 'The Next-up planner' },
-    { number: 700, title: 'A pull request is not a Ticket', pullRequest: true },
-  ],
-})
+export const helloWorld = helloWorldRepository
 
 function serveRepositories(github: MockGitHub) {
   github.addRepository(helloWorld())
-  github.addRepository({ fullName: 'octocat/secret', visibleTo: [], issues: [] })
-  github.addRepository({
-    fullName: 'octocat/engine',
-    visibleTo: [OCTOCAT.id],
-    issues: [{ number: 5, title: 'Tune the engine' }],
-  })
+  github.addRepository(secretRepository())
+  github.addRepository(engineRepository())
 }
 
 function serveTeams(linear: MockLinear) {

@@ -2,8 +2,8 @@
 import assert from 'node:assert/strict'
 import { expect, test } from '@playwright/test'
 import type { Page } from 'playwright-core'
+import { helloWorldRepository as helloWorld } from '@/mocks/tickets/provider-inputs'
 import { TEAM } from '../../../mocks/providers/linear/mock-linear-cast'
-import { helloWorld } from '../fixtures/tickets.fixture'
 import { backlog, type Run } from '../screen'
 
 const PAGE_SIZE = 25

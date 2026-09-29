@@ -103,7 +103,7 @@ function interactiveControls(): LiveSessionControls {
 test('validates delayed identity and completes each submitted Turn once', async () => {
   vendor.prompts = []
   vendor.recordedEvents = readFileSync(
-    new URL('./fixtures/claude-live-stream.jsonl', import.meta.url),
+    new URL('../../../../mocks/cli/claude/fixtures/claude-live-stream.jsonl', import.meta.url),
     'utf8',
   )
     .trim()

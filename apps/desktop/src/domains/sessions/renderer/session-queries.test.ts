@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 import { QueryClient } from '@tanstack/react-query'
-import { sessionRow } from './session-fixtures'
+import { sessionRow } from '@/mocks/sessions/session-rows'
 import { type SessionRosterState, sessionRosterQueryKey } from './session-list/session-roster'
 import { markSessionRead } from './session-queries'
 import type { Session } from './types'

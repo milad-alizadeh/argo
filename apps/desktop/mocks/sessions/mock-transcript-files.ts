@@ -5,7 +5,7 @@
 // `strandedResume`, `plannedWork`, `marks` and `shellRunning` are new, for readings the copied set
 // does not reach.
 //
-// Kept apart from `session-fixtures` because the packaged proof runs under node, which cannot
+// Kept apart from `session-story-host` because the packaged proof runs under node, which cannot
 // resolve the extensionless TypeScript imports that file reaches for.
 import { cp, mkdir, readFile, utimes, writeFile } from 'node:fs/promises'
 import path from 'node:path'

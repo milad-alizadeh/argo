@@ -1,6 +1,7 @@
 import path from 'node:path'
 import type { StorybookConfig } from '@storybook/react-vite'
 import tailwindcss from '@tailwindcss/vite'
+import { desktopAlias } from '../vite-alias'
 
 const config: StorybookConfig = {
   stories: [
@@ -43,7 +44,7 @@ const config: StorybookConfig = {
         '@codemirror/view',
       ],
       alias: [
-        { find: '@', replacement: path.resolve(import.meta.dirname, '../src') },
+        ...desktopAlias(path.resolve(import.meta.dirname, '..')),
         {
           find: /^cn$/,
           replacement: path.resolve(import.meta.dirname, '../src/platform/renderer/lib/utils.ts'),
