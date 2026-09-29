@@ -447,15 +447,15 @@ function DurableDraftStory({
   const initialized = useRef(false)
   if (!initialized.current) {
     queryClient.removeQueries({ queryKey: trpc.composerDraftRead.pathKey() })
-    window.argo.trpc = server.trpc
-    Object.assign(window.argo, {
-      statSessionAttachments: async ({ paths }: { paths: string[] }) => ({
-        version: 1,
-        type: 'session.attachments.statted',
-        requestId: 'storybook-draft-attachments',
-        files: paths.map((path) => ({ path, readable: true })),
-      }),
-    })
+    const serverTrpc = server.trpc
+    window.argo.trpc = (async (request) => {
+      if (request.path !== 'sessionAttachmentStat') return serverTrpc(request)
+      const paths = (request.input as { paths: string[] }).paths
+      return {
+        id: request.id,
+        result: { data: { files: paths.map((path) => ({ path, readable: true })) } },
+      }
+    }) as typeof window.argo.trpc
     initialized.current = true
   }
   void serverVersion

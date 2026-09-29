@@ -4,6 +4,7 @@ import path from 'node:path'
 import { setTimeout } from 'node:timers/promises'
 import type { Page } from 'playwright-core'
 import { createSessionByClick, openSessionByClick } from '../gestures'
+import { sessionRows } from '../page-trpc'
 import type { SessionHarnessBackend } from '../session-harness-backend'
 
 type Restart = () => Promise<Page>
@@ -24,9 +25,8 @@ async function markVendorActive(root: string, sessionId: string) {
 }
 
 async function rosterRow(page: Page, sessionId: string) {
-  const reply = await page.evaluate(() => window.argo.listSessions({ projectRoot: null }))
-  assert.equal(reply.type, 'session.listed')
-  return reply.sessions.filter((session: { id: string }) => session.id === sessionId)
+  const rows = await sessionRows(page)
+  return rows.filter((session) => session.id === sessionId)
 }
 
 async function sendFromComposer(page: Page, text: string) {

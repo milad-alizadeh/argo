@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { trpcClient } from '@/platform/renderer/trpc-client'
 import { FeedMarkdown } from '../feed/content/feed-markdown'
 import type { SessionSkillEvidence } from '../types'
 
@@ -10,10 +11,9 @@ function useSkillContent(path: string) {
   const [content, setContent] = useState<{ path: string; text: string | null } | null>(null)
   useEffect(() => {
     let current = true
-    void window.argo.readSkillFile({ path }).then((reply) => {
+    void trpcClient.sessionSkillRead.query({ path }).then((reply) => {
       if (!current) return
-      const text = reply.type === 'session.skill.read' ? reply.content : null
-      setContent({ path, text: text?.replace(FRONTMATTER, '') ?? null })
+      setContent({ path, text: reply.content?.replace(FRONTMATTER, '') ?? null })
     })
     return () => {
       current = false

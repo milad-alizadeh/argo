@@ -9,11 +9,3 @@ export class SessionContractError extends ContractError<SessionError> {
     this.name = 'SessionContractError'
   }
 }
-
-export function throwSessionContractError(reply: SessionError): never {
-  throw new SessionContractError(reply)
-}
-
-export function throwUnexpectedSessionReply(reply: never): never {
-  throw new Error(`Argo returned an unexpected Session reply: ${String(reply)}`)
-}
