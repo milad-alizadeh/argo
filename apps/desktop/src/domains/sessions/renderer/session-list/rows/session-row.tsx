@@ -33,10 +33,9 @@ function ActivityLine({ session }: { session: Session }) {
     running: session.status === 'running',
     compacting: (session.compactionStartedAt ?? null) !== null,
   })
-  if (line === null) return null
   return (
-    <span className="mt-0.5 block truncate type-meta text-faint">
-      <LiveActivityWords line={line} />
+    <span className="mt-0.5 block min-h-lh truncate type-meta text-faint">
+      {line === null ? null : <LiveActivityWords line={line} />}
     </span>
   )
 }
