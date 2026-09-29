@@ -1,4 +1,5 @@
 import type { SessionFeedReaderContext } from '../feed/feed-reader'
+import { SessionFeedReaders } from '../feed/feed-reader'
 import { composerDraftCreateProcedure } from './composer-draft-create'
 import { composerDraftReadProcedure } from './composer-draft-read'
 import { composerDraftSaveProcedure } from './composer-draft-save'
@@ -20,13 +21,16 @@ export type SessionApiContext = SessionProcedureContext &
   SessionRefreshContext & { sessionSyncStatus: readonly SessionSyncStatusStore[] }
 
 export function sessionProcedures(context: SessionApiContext) {
+  const readers = new SessionFeedReaders(context)
   return {
     composerDraftCreate: composerDraftCreateProcedure(context.database),
     composerDraftRead: composerDraftReadProcedure(context.database),
     composerDraftSave: composerDraftSaveProcedure(context.database),
     sessionSubmit: sessionSubmitProcedure(context),
-    sessionList: sessionListProcedure(context),
-    ...sessionFeedProcedures(context),
+    sessionList: sessionListProcedure(context, (sessionId) =>
+      readers.observe({ sessionId, subagentId: null }, () => {}),
+    ),
+    ...sessionFeedProcedures(context, readers),
     ...sessionInteractionProcedures(context),
     sessionRename: sessionRenameProcedure(context),
     sessionRefresh: sessionRefreshProcedure(context),
