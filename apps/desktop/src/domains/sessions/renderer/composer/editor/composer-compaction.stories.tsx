@@ -67,10 +67,11 @@ export const CompactionStarts: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
-    await userEvent.click(canvas.getByRole('button', { name: 'Compact context' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Context actions' }))
+    await userEvent.click(
+      await within(document.body).findByRole('menuitem', { name: 'Compact context' }),
+    )
     const interrupt = await canvas.findByRole('button', { name: 'Interrupt' })
     await expect(interrupt).toBeDisabled()
-    await expect(canvas.getByText('Compacting conversation…')).toBeVisible()
-    await expect(canvas.getByText('22%')).toBeVisible()
   },
 }

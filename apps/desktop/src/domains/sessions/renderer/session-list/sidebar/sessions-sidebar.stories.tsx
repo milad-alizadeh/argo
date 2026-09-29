@@ -12,6 +12,7 @@ import {
   sessionRow,
   sessionSubagent,
 } from '../../session-fixtures'
+import { sessionArchivePathKey } from '../../session-queries'
 import type { SessionError, SessionId, SessionListPage } from '../../types'
 import { SessionList, type SessionListActions } from '../session-list'
 import { sessionRosterPathKey } from '../session-roster'
@@ -1002,6 +1003,7 @@ async function chooseStatus(canvasElement: HTMLElement, name: string) {
 function withArchiveHost(
   handler: (request: { cursor: string | null; restoreId: string | null }) => Promise<unknown>,
 ) {
+  queryClient.removeQueries({ queryKey: sessionArchivePathKey })
   const before = window.argo
   window.argo = {
     ...before,

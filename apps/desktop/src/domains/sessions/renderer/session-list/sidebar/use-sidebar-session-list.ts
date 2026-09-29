@@ -1,4 +1,4 @@
-import { type RefObject, useCallback, useMemo, useState } from 'react'
+import { type RefObject, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Session, SessionError, SessionId, SessionListPage } from '../../types'
 import {
   useSessionListStatus,
@@ -25,6 +25,23 @@ function pendingRenames(renamed: Record<string, string>, sessions: readonly Sess
   return Object.keys(pending).length === 0 ? NO_TITLES : pending
 }
 
+function usePendingRenames(sessions: readonly Session[]) {
+  const [renamed, setRenamed] = useState<Record<string, string>>(NO_TITLES)
+  useEffect(() => {
+    setRenamed((current) => {
+      const settled = Object.keys(current).filter(
+        (sessionId) =>
+          sessions.find((session) => session.id === sessionId)?.title?.text === current[sessionId],
+      )
+      if (settled.length === 0) return current
+      const next = { ...current }
+      for (const sessionId of settled) delete next[sessionId]
+      return Object.keys(next).length === 0 ? NO_TITLES : next
+    })
+  }, [sessions])
+  return { renamed, setRenamed }
+}
+
 // Everything the sidebar reads off one Session list: what the search and status filter leave visible,
 // which rows are selected, where the keyboard is, and the titles a rename is still waiting on. A
 export function useSidebarSessionList({
@@ -44,10 +61,10 @@ export function useSidebarSessionList({
   selectedSessionId: SessionId | null
   sidebar: RefObject<HTMLElement | null>
 }) {
-  const [renamed, setRenamed] = useState<Record<string, string>>(NO_TITLES)
   const status = useSessionListStatus()
   const setStatus = useSetSessionListStatus()
   const sessions = sessionList?.sessions ?? NO_SESSIONS
+  const { renamed, setRenamed } = usePendingRenames(sessions)
   const searching = search.trim() !== ''
   const visible = sessions
   const visibleIds = useMemo(() => visible.map((session) => session.id), [visible])
