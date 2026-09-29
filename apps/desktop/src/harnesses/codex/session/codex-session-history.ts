@@ -7,6 +7,7 @@ import copy from '../locales/en.json'
 import { codexCommandContent } from './codex-command-content'
 import {
   type CodexCollabFacts,
+  CodexSubagentNicknames,
   codexCollabFacts,
   codexSubagentContent,
 } from './codex-subagent-content'
@@ -290,7 +291,23 @@ export async function readCodexSessionHistory(
       throw error
     }
   })
-  return content
+  return withNicknames(content, new CodexSubagentNicknames(request))
+}
+
+// Each spawned thread is read once for the nickname Codex gave it.
+async function withNicknames(
+  content: FeedContent[],
+  nicknames: CodexSubagentNicknames,
+): Promise<FeedContent[]> {
+  const threads = new Set(
+    content.flatMap((entry) => (entry.kind === 'delegation' ? [entry.agentId] : [])),
+  )
+  await Promise.all([...threads].map((threadId) => nicknames.read(threadId)))
+  return content.map((entry) => {
+    if (entry.kind !== 'delegation') return entry
+    const nickname = nicknames.known(entry.agentId)
+    return nickname === null ? entry : { ...entry, nickname }
+  })
 }
 
 export async function hasCodexSessionTurn(

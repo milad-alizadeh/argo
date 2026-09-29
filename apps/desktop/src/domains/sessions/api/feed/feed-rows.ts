@@ -81,6 +81,7 @@ const subagentRowSchema = z.strictObject({
   state: z.enum(BACKGROUND_STATES).optional(),
   // Each fact is absent where the harness does not give it, never a placeholder.
   name: z.string().optional(),
+  nickname: z.string().optional(),
   type: z.string().optional(),
   model: z.string().optional(),
   durationMs: z.number().int().nonnegative().optional(),

@@ -12,8 +12,10 @@ export function sessionScreenSubagents(
   // The roster was read at the last sync; the Feed's state is at least as new.
   for (const subagent of roster) {
     const current = subagents.get(subagent.id)
+    const nickname = subagent.nickname ?? current?.nickname
     subagents.set(subagent.id, {
       ...subagent,
+      ...(nickname === undefined ? {} : { nickname }),
       label: subagent.label ?? current?.label ?? null,
       state: current?.state ?? subagent.state,
     })

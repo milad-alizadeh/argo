@@ -335,3 +335,40 @@ test('gives a Subagent start the prompt and model its spawn call sent', async ()
     }),
   ])
 })
+
+const SPAWNED_ITEMS = [
+  {
+    type: 'subAgentActivity',
+    id: 'call_spawn',
+    kind: 'started',
+    agentThreadId: 'thread-child',
+    agentPath: '/root/spec_review',
+  },
+]
+
+test('names a Subagent with the nickname its own thread carries', async () => {
+  const request = (async (_method: string, params: unknown, parse: (value: unknown) => unknown) =>
+    parse(
+      (params as { threadId: string }).threadId === 'thread-child'
+        ? { thread: { agentNickname: 'Jason', turns: [] } }
+        : { thread: { agentNickname: null, turns: [{ items: SPAWNED_ITEMS }] } },
+    )) as CodexRequest
+  await expect(readCodexSessionHistory(request, 'thread-parent')).resolves.toEqual([
+    expect.objectContaining({ name: 'spec_review', nickname: 'Jason' }),
+  ])
+})
+
+test('keeps a Subagent row without a nickname when its thread cannot be read', async () => {
+  const warning = warningSpy()
+  const request = (async (_method: string, params: unknown, parse: (value: unknown) => unknown) => {
+    if ((params as { threadId: string }).threadId === 'thread-child') throw new Error('not found')
+    return parse({ thread: { turns: [{ items: SPAWNED_ITEMS }] } })
+  }) as CodexRequest
+  const [content] = await readCodexSessionHistory(request, 'thread-parent')
+  expect(content).toMatchObject({ name: 'spec_review' })
+  expect(content).not.toHaveProperty('nickname')
+  expect(warning).toHaveBeenCalledWith(
+    'Rejected 1 unreadable Codex Subagent thread; it shows no nickname.',
+  )
+  warning.mockRestore()
+})

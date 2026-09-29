@@ -100,3 +100,32 @@ export const NotClickable: Story = {
     await expect(canvas.queryByRole('button')).toBeNull()
   },
 }
+
+// A nickname leads each sentence and the task follows it.
+export const Nicknamed: Story = {
+  args: { onOpen: fn(), row: { ...RESPONDED_ROW, nickname: 'Jason' } },
+  render: (args) => (
+    <div className="max-w-(--size-session-column) bg-background p-snug">
+      <DelegationEvent
+        {...args}
+        row={{ ...args.row, id: 'started', event: 'started', state: undefined }}
+      />
+      <DelegationEvent
+        {...args}
+        row={{ ...args.row, id: 'messaged', event: 'messaged', state: undefined }}
+      />
+      <DelegationEvent {...args} />
+      <DelegationEvent {...args} row={{ ...args.row, id: 'stopped', state: 'interrupted' }} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    for (const name of [
+      'Jason started Spec review',
+      'Jason received a message about Spec review',
+      'Jason replied on Spec review',
+      'Jason stopped Spec review',
+    ])
+      await expect(canvas.getByRole('article', { name })).toBeVisible()
+  },
+}

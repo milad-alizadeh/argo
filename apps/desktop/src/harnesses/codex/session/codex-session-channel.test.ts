@@ -390,6 +390,7 @@ const startedThreadRequest = (async (
 ) => {
   if (method === 'thread/start') return parse({ thread: { id: 'thread-1' } })
   if (method === 'turn/start') return parse({ turn: { id: 'turn-1' } })
+  if (method === 'thread/read') return parse({ thread: { agentNickname: null, turns: [] } })
   throw new Error(`Unexpected request: ${method}`)
 }) as CodexRequest
 
@@ -546,6 +547,40 @@ test('Codex channel streams each Subagent activity as its own delegation event',
     ['call_spawn', 'started', 'running', 'Review the branch'],
     ['subagent-completed-1', 'responded', 'completed', null],
   ])
+  channel.close()
+})
+
+test('Codex channel redraws a Subagent activity with the nickname its thread carries', async () => {
+  const request = (async (method: string, params: unknown, parse: (value: unknown) => unknown) => {
+    if (method === 'thread/read' && (params as { threadId: string }).threadId === 'thread-child')
+      return parse({ thread: { agentNickname: 'Jason', turns: [] } })
+    return startedThreadRequest(method as 'thread/start', params as never, parse)
+  }) as CodexRequest
+  const { channel, events, notify } = testChannel(request)
+  await new Promise((resolve) => setImmediate(resolve))
+  notify(
+    subagentNotification({
+      id: 'call_spawn',
+      type: 'subAgentActivity',
+      kind: 'started',
+      agentThreadId: 'thread-child',
+      agentPath: '/root/spec_review',
+    }),
+  )
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.deepEqual(
+    events.flatMap((event) =>
+      event.type === 'feed' &&
+      event.body.type === 'content' &&
+      event.body.content.kind === 'delegation'
+        ? [[event.body.vendorEventId, event.body.content.nickname ?? null]]
+        : [],
+    ),
+    [
+      ['call_spawn', null],
+      ['call_spawn', 'Jason'],
+    ],
+  )
   channel.close()
 })
 

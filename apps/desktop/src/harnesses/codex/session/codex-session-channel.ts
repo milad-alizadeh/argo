@@ -26,7 +26,7 @@ import {
   readCodexInteraction,
 } from './codex-session-interactions'
 import { APPROVAL_TIMEOUT_MS, inputItems } from './codex-session-protocol'
-import { CodexSubagentPairing } from './codex-subagent-content'
+import { CodexSubagentNicknames, CodexSubagentPairing } from './codex-subagent-content'
 import { readCodexThreadStatus } from './codex-thread-status'
 
 export type CodexLiveClient = {
@@ -50,7 +50,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
   private readonly phaseByItem = new Map<string, 'commentary' | 'final_answer' | null>()
   private readonly outputByItem = new Map<string, string>()
   private readonly commandByItem = new Map<string, Extract<FeedContent, { kind: 'command' }>>()
-  private readonly subagents = new CodexSubagentPairing()
+  private readonly subagents: CodexSubagentPairing
   private readonly pending = new Map<string, CodexInteraction>()
   private readonly approvalTimers = new Map<string, ReturnType<typeof setTimeout>>()
   private readonly standingAllow = new Set<string>()
@@ -71,6 +71,7 @@ export class CodexSessionChannel implements LiveSessionChannel {
     },
   ) {
     this.client = client
+    this.subagents = new CodexSubagentPairing(new CodexSubagentNicknames(client.request))
     this.controls = options.controls
     this.emit = (event) => options.emit(liveSessionChannelEventSchema.parse(event))
     this.unsubscribe = client.onNotification((message) => this.receive(message))
@@ -457,7 +458,8 @@ export class CodexSessionChannel implements LiveSessionChannel {
   }
 
   private subagentItem(item: Extract<ThreadItem, { type: 'subAgentActivity' }>, turnId: string) {
-    this.emitItemContent(this.subagents.activity(item), item.id, turnId)
+    const redraw = (content: FeedContent) => this.emitItemContent(content, content.id, turnId)
+    this.emitItemContent(this.subagents.activity(item, redraw), item.id, turnId)
   }
 
   private collabItem(item: Extract<ThreadItem, { type: 'collabAgentToolCall' }>, turnId: string) {

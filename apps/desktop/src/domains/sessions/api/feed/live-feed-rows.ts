@@ -169,14 +169,20 @@ function mergeProgressContent(
       summary: update.summary ?? earlier.summary,
     }
   if (update.kind === 'delegation' && earlier.kind === 'delegation')
-    return {
-      ...update,
-      name: update.name ?? earlier.name,
-      prompt: update.prompt ?? earlier.prompt,
-      model: update.model ?? earlier.model,
-      summary: update.summary ?? earlier.summary,
-    }
+    return mergeDelegationContent(earlier, update)
   return update
+}
+
+function mergeDelegationContent(earlier: Delegation, update: Delegation): Delegation {
+  const nickname = update.nickname ?? earlier.nickname
+  return {
+    ...update,
+    name: update.name ?? earlier.name,
+    ...(nickname === undefined ? {} : { nickname }),
+    prompt: update.prompt ?? earlier.prompt,
+    model: update.model ?? earlier.model,
+    summary: update.summary ?? earlier.summary,
+  }
 }
 
 function joinContent(
@@ -206,7 +212,10 @@ function joinContent(
 }
 
 type Delegation = Extract<FeedContent, { kind: 'delegation' }>
-type AgentFacts = Map<string, { name: string | null; model: string | null }>
+type AgentFacts = Map<
+  string,
+  { name: string | null; nickname: string | undefined; model: string | null }
+>
 
 const RESPONSE_STATES = {
   pending: null,
@@ -221,9 +230,10 @@ const RESPONSE_STATES = {
 function withAgentFacts(content: Delegation, agents: AgentFacts): Delegation {
   const known = agents.get(content.agentId)
   const name = content.name ?? known?.name ?? null
+  const nickname = content.nickname ?? known?.nickname
   const model = content.model ?? known?.model ?? null
-  agents.set(content.agentId, { name, model })
-  return { ...content, name, model }
+  agents.set(content.agentId, { name, nickname, model })
+  return { ...content, name, model, ...(nickname === undefined ? {} : { nickname }) }
 }
 
 function delegationContentRow(content: Delegation): SessionFeedRow {
@@ -232,6 +242,7 @@ function delegationContentRow(content: Delegation): SessionFeedRow {
     id: content.id,
     subagentId: content.agentId,
     ...(content.name === null ? {} : { name: content.name }),
+    ...(content.nickname === undefined ? {} : { nickname: content.nickname }),
     ...(content.model === null ? {} : { model: content.model }),
   } as const
   switch (content.event) {

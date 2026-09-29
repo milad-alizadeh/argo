@@ -10,6 +10,7 @@ const FEED_SUBAGENT_STATES = ['running', ...BACKGROUND_STATES] as const
 export const feedSubagentSchema = z.strictObject({
   id: identifierSchema,
   label: z.string().nullable(),
+  nickname: z.string().optional(),
   state: z.enum(FEED_SUBAGENT_STATES),
 })
 export type FeedSubagent = z.infer<typeof feedSubagentSchema>
@@ -31,9 +32,12 @@ export function feedSubagents(rows: readonly SessionFeedRow[]): FeedSubagent[] {
   const subagents = new Map<string, FeedSubagent>()
   for (const row of rows) {
     if (row.shape !== 'subagent') continue
+    const earlier = subagents.get(row.subagentId)
+    const nickname = row.nickname ?? earlier?.nickname
     subagents.set(row.subagentId, {
       id: row.subagentId,
-      label: row.name ?? subagents.get(row.subagentId)?.label ?? null,
+      label: row.name ?? earlier?.label ?? null,
+      ...(nickname === undefined ? {} : { nickname }),
       state: stateOf(row),
     })
   }

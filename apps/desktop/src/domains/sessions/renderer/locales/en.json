@@ -400,6 +400,12 @@
       "started": "{{name}} started",
       "stopped": "{{name}} stopped"
     },
+    "namedEvent": {
+      "messaged": "{{nickname}} received a message about {{name}}",
+      "responded": "{{nickname}} replied on {{name}}",
+      "started": "{{nickname}} started {{name}}",
+      "stopped": "{{nickname}} stopped {{name}}"
+    },
     "open": "Open the {{name}} Session",
     "tokens": "{{amount}} tokens"
   },

@@ -222,3 +222,17 @@ export const MissingTranscript: Story = {
     await expect(within(canvasElement).getByText('No transcript found')).toBeVisible()
   },
 }
+
+// A Codex nickname leads the header facts; the task stays the title.
+export const NicknamedSubagent: Story = {
+  args: {
+    ...CompletedSubagent.args,
+    delegation: { ...COMPLETED_DELEGATION, label: 'spec_review', nickname: 'Jason' },
+  },
+  render: (args) => <InspectorStory args={args} />,
+  play: async ({ canvasElement }) => {
+    const header = within(canvasElement.querySelector('header') as HTMLElement)
+    await expect(header.getByText('Spec review')).toBeVisible()
+    await expect(header.getByText(/^Jason · /)).toBeVisible()
+  },
+}

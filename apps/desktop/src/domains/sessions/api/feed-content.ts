@@ -125,6 +125,8 @@ export const feedContentSchema = z.discriminatedUnion('kind', [
     agentId: identifierSchema,
     status: workStatusSchema,
     name: z.string().nullable(),
+    // A name the Harness gave the Subagent itself, apart from its task; absent where it gives none.
+    nickname: z.string().optional(),
     prompt: z.string().nullable(),
     model: z.string().nullable(),
     summary: z.string().nullable(),
