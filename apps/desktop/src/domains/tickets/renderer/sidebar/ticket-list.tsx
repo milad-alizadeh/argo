@@ -27,9 +27,10 @@ export type TicketListProps = {
 
 function tally(
   t: TFunction<'tickets'>,
-  { tickets, query, total, hasMore, searching, provider }: Backlog,
+  { tickets, query, total, hasMore, searching, partial, provider }: Backlog,
 ): string {
   if (searching) return t('backlog.searching', { provider: providerPresentation(provider).name })
+  if (query !== '' && partial) return t('backlog.savedMatch', { count: total ?? tickets.length })
   if (query !== '') return t('backlog.match', { count: total ?? tickets.length })
   return hasMore
     ? t('backlog.allOpenMore', { count: tickets.length })

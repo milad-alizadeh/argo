@@ -17,6 +17,7 @@ import {
 export type { TicketsView } from './use-tickets-view-derive'
 
 import { useTicketChanges, useTicketSync } from './use-active-tickets'
+import { useProviderSearch } from './use-searched-tickets'
 import { useTicketDetail } from './use-ticket-detail'
 import { useConnection, useDisconnectSource, useTicketList } from './use-tickets'
 import { useUpdatePriority } from './use-update-priority'
@@ -34,6 +35,11 @@ export function useTicketsView(): TicketsScreenProps {
   const query = useSettledQuery()
   const list = useTicketList(projectId, connection.data ?? null, query)
   const sync = useTicketSync(projectId, connection.data ?? null)
+  const search = useProviderSearch(
+    projectId,
+    connection.data?.state === 'ready' && query !== '',
+    query,
+  )
   const detail = useTicketDetail(projectId, ticketKey ?? null, connection.data?.state === 'ready')
   useTicketChanges()
   const form = useConnectForm(projectId, accounts.data?.accounts, connection.data === null)
@@ -71,7 +77,7 @@ export function useTicketsView(): TicketsScreenProps {
       onSelect: (key) => navigate(`/projects/${projectId}/tickets/${encodeURIComponent(key)}`),
       onOpenSession: (id) => navigate(`/projects/${projectId}/sessions/${id}`),
       onReconnect: openAccountsDialog,
-      onSync: sync,
+      onSync: query === '' ? sync : search,
     })
   }
 
