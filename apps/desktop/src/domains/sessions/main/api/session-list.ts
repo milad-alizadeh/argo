@@ -1,6 +1,6 @@
 import { initTRPC } from '@trpc/server'
 import { observable } from '@trpc/server/observable'
-import { and, asc, count, desc, eq, or, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, inArray, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
@@ -218,6 +218,7 @@ function sessionListRow(
       state: string
       createdAt: string
     } | null
+    archived?: boolean
   },
   subagents: readonly StoredSubagent[],
 ) {
@@ -247,28 +248,14 @@ function sessionListRow(
     shell: [],
     pullRequest: null,
     ticket,
-    archived: false,
+    archived: row.archived ?? false,
     unread: false,
     turnConfiguration: live?.turnConfiguration ?? { model: null, effort: null, mode: null },
   }
 }
 
-function readSessionList(
-  context: SessionListContext,
-  input: z.infer<typeof sessionListInputSchema>,
-): z.infer<typeof sessionListSchema> {
-  const projectFilter = eq(sessionTable.projectId, input.projectId)
-  const filter =
-    input.search === ''
-      ? projectFilter
-      : and(
-          projectFilter,
-          or(
-            sql<boolean>`instr(lower(coalesce(${sessionTable.customTitle}, '')), lower(${input.search})) > 0`,
-            sql<boolean>`instr(lower(coalesce(${sessionTable.preview}, '')), lower(${input.search})) > 0`,
-          ),
-        )
-  const stored = context.database
+function storedSessionRows(database: Database) {
+  return database
     .select({
       id: sessionTable.argoId,
       harness: sessionTable.harness,
@@ -290,6 +277,25 @@ function readSessionList(
     })
     .from(sessionTable)
     .leftJoin(sessionTicketLink, eq(sessionTicketLink.sessionId, sessionTable.argoId))
+}
+
+function readSessionList(
+  context: SessionListContext,
+  input: z.infer<typeof sessionListInputSchema>,
+): z.infer<typeof sessionListSchema> {
+  const projectFilter = eq(sessionTable.projectId, input.projectId)
+  const active = sql`not exists (select 1 from session_archive where session_archive.session_id = ${sessionTable.argoId})`
+  const filter = and(
+    projectFilter,
+    active,
+    input.search === ''
+      ? undefined
+      : or(
+          sql<boolean>`instr(lower(coalesce(${sessionTable.customTitle}, '')), lower(${input.search})) > 0`,
+          sql<boolean>`instr(lower(coalesce(${sessionTable.preview}, '')), lower(${input.search})) > 0`,
+        ),
+  )
+  const stored = storedSessionRows(context.database)
     .where(filter)
     .orderBy(
       desc(sql`coalesce(${sessionTable.activityAt}, ${sessionTable.updatedAt})`),
@@ -305,6 +311,24 @@ function readSessionList(
   const total =
     context.database.select({ value: count() }).from(sessionTable).where(filter).get()?.value ?? 0
   return sessionListSchema.parse({ pages: input.pages, pageSize: input.pageSize, total, rows })
+}
+
+export function rowsForSessionIds(
+  context: SessionListContext,
+  projectId: string,
+  ids: readonly string[],
+) {
+  if (ids.length === 0) return []
+  const stored = storedSessionRows(context.database)
+    .where(and(eq(sessionTable.projectId, projectId), inArray(sessionTable.argoId, [...ids])))
+    .all()
+  const subagents = storedSessionSubagents(
+    context.database,
+    stored.map((row) => row.id),
+  )
+  return stored.map((row) =>
+    sessionListRow(context, { ...row, archived: true }, subagents.get(row.id) ?? []),
+  )
 }
 
 function sameOrder(

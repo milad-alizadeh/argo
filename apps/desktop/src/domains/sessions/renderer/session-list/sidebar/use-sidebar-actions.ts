@@ -37,15 +37,9 @@ export function useSidebarActions() {
     }, []),
 
     select: useCallback(
-      async (selectedSessionId: SessionId, retiredIds: SessionId[] = []) => {
+      (selectedSessionId: SessionId, retiredIds: SessionId[] = []) => {
         navigate(`/projects/${projectId}/sessions/${selectedSessionId}${location.search}`)
-        const reply = await window.argo.focusSessionUnread({
-          sessionId: selectedSessionId,
-          retiredIds,
-        })
-        if (reply.type === 'session.unread.focused') {
-          markSessionRead(queryClient, selectedSessionId, retiredIds)
-        }
+        markSessionRead(queryClient, selectedSessionId, retiredIds)
       },
       [location.search, navigate, projectId, queryClient],
     ),

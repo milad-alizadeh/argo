@@ -7,16 +7,6 @@ export type SessionListResult = Extract<SessionListUpdate, { type: 'list' }>
 export type Session = SessionListResult['rows'][number]
 export type SessionId = Session['id']
 
-export type SessionArchiveListed = {
-  version: 1
-  type: 'session.archive.listed'
-  requestId: string
-  sessions: Session[]
-  nextCursor: string | null
-  restored: Session | null
-  historyComplete: boolean
-}
-
 // One chain's Feed as the renderer draws it: main's reading, reduced to what a row needs. The
 // revision changes whenever the rows do, and a mounted row whose revision held draws nothing.
 export type SessionFeed = {

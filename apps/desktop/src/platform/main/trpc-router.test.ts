@@ -47,6 +47,7 @@ function testRouter(
       watchedStatus: { statusOf: () => null },
       supervisor: sessionActor,
       acceptsAttachments: () => true,
+      chooseAttachmentFiles: async () => [],
       refreshSessionSync,
       sessionSyncStatus: [new SessionSyncStatusStore(undefined, 'claude')],
       journal: {} as never,

@@ -120,7 +120,7 @@ export async function createPackagedSessionHarness(request: {
       (viewport) => window.innerWidth === viewport.width && window.innerHeight === viewport.height,
       SESSION_VIEWPORT,
     )
-    await opened.waitForFunction(() => typeof window.argo?.listSessions === 'function')
+    await opened.waitForFunction(() => typeof window.argo?.trpc === 'function')
     page = opened
     return opened
   }

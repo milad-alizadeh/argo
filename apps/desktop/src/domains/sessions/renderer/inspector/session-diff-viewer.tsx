@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { trpcClient } from '@/platform/renderer/trpc-client'
 import { detectCodeLanguageFromPath } from '../feed/content/code-language'
 import { CurrentFileContent, DiffContent } from './session-diff-content'
 
@@ -33,9 +34,9 @@ export function SessionDiffViewer({
     shouldRestoreFocus.current = true
     setView('file')
     if (sessionId === null) return setContent(null)
-    void window.argo
-      .readWorkspaceFile({ sessionId, path })
-      .then((reply) => setContent(reply.type === 'session.file.read' ? reply.content : null))
+    void trpcClient.sessionWorkspaceFileRead
+      .query({ sessionId, path })
+      .then((reply) => setContent(reply.content))
   }
   if (view === 'file')
     return (
