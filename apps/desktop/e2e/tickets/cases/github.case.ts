@@ -148,6 +148,19 @@ export async function proveRestartFromSqlite(run: Run, release: () => void) {
   })
 }
 
+// GitHub keeps no priority, so no row offers a control for one.
+export async function proveGitHubNoPriority(run: Run) {
+  await test.step('github-no-priority', async () => {
+    assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
+    assert.equal(
+      await backlog(run.page)
+        .getByRole('button', { name: /^Priority:/ })
+        .count(),
+      0,
+    )
+  })
+}
+
 const REFUSED = 'This Account is not allowed to change that Ticket.'
 // #273 is the last row, so its status control is the last one drawn.
 const lastStatus = (run: Run, name: string) =>

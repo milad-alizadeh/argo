@@ -88,9 +88,15 @@ export function Properties({
               <span className={COMPACT_VALUE}>{t(`detail.state.${ticket.state}`)}</span>
             </Property>
           )}
-          {presentation.priority ? (
+          {presentation.priorityChoices.length > 0 ? (
             <Property name={t('detail.priority')}>
-              <PriorityMenu named metadata onChange={onChangePriority} priority={ticket.priority} />
+              <PriorityMenu
+                choices={presentation.priorityChoices}
+                metadata
+                named
+                onChange={onChangePriority}
+                priority={ticket.priority}
+              />
             </Property>
           ) : null}
           {ticket.type ? (

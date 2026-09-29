@@ -10,10 +10,12 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
-import { NO_PRIORITY_LABEL, PRIORITY_OPTIONS, PriorityIcon, priorityName } from './ticket-status'
+import { NO_PRIORITY_LABEL, PriorityIcon, priorityName } from './ticket-status'
 
 export type PriorityMenuProps = {
   priority: TicketPriority | null
+  // The provider's declared choices; No priority is always offered beside them.
+  choices: readonly TicketPriority[]
   named: boolean
   metadata?: boolean
   onChange: (priority: TicketPriority | null) => void
@@ -27,10 +29,17 @@ const namedInset = (named: boolean, metadata: boolean) => {
 const priorityValue = (priority: TicketPriority | null) =>
   priority ? String(priority.level) : 'none'
 
-export function PriorityMenu({ priority, named, metadata = false, onChange }: PriorityMenuProps) {
+export function PriorityMenu({
+  priority,
+  choices,
+  named,
+  metadata = false,
+  onChange,
+}: PriorityMenuProps) {
+  const options = [null, ...choices]
   const { t } = useTranslation('tickets')
   const choose = (value: unknown) => {
-    const next = PRIORITY_OPTIONS.find((option) => priorityValue(option) === value)
+    const next = options.find((option) => priorityValue(option) === value)
     if (next !== undefined && priorityValue(next) !== priorityValue(priority)) onChange(next)
   }
   return (
@@ -59,7 +68,7 @@ export function PriorityMenu({ priority, named, metadata = false, onChange }: Pr
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-auto">
         <DropdownMenuRadioGroup onValueChange={choose} value={priorityValue(priority)}>
-          {PRIORITY_OPTIONS.map((option) => (
+          {options.map((option) => (
             <DropdownMenuRadioItem key={priorityValue(option)} value={priorityValue(option)}>
               <PriorityIcon priority={option} />
               {option?.label ?? NO_PRIORITY_LABEL}

@@ -46,6 +46,7 @@ async function caller(context: TestContext) {
           changes: new TicketChanges(),
           send: () => {},
           changeStatus: async () => ({ type: 'rejected', failure: 'not-connected' }),
+          changePriority: async () => ({ type: 'rejected', failure: 'not-connected' }),
         },
       }),
     )

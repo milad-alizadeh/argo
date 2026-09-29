@@ -14,7 +14,6 @@ import {
 } from '@/domains/tickets/contract/contract'
 import { priorityLevel, statusId, ticketKey } from '@/domains/tickets/contract/ticket'
 import { identifierSchema } from '@/shared/validation'
-import { updatePriority } from '../priority-service'
 import type { Call } from '../read-as'
 import {
   openTicket,
@@ -42,6 +41,7 @@ import {
   discoverSources,
   listTickets,
   readConnection,
+  updatePriority,
   updateStatus,
 } from './service'
 

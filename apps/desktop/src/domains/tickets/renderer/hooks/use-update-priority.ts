@@ -1,5 +1,5 @@
-// Moving a Ticket to another priority level, or to none. The row moves at once; a refusal puts
-// it back and says why.
+// Moving a Ticket to another priority level, or to none. The row moves when the provider's
+// confirmed priority is saved; a refusal leaves it where it was and says why.
 import type { QueryClient } from '@tanstack/react-query'
 import type { TicketPrioritized, TicketPriority } from '@/domains/tickets/contract/contract'
 import { trpcClient } from '@/platform/renderer/trpc-client'
@@ -14,6 +14,7 @@ function move(client: QueryClient, change: PriorityChange) {
 export function useUpdatePriority() {
   return useTicketFieldMutation<TicketPrioritized, PriorityChange>({
     move,
+    optimistic: false,
     request: ({ projectId, key, priority }) =>
       trpcClient.ticketUpdatePriority.mutate({
         projectId,

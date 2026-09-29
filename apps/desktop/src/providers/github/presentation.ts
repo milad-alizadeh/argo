@@ -5,5 +5,5 @@ export const githubPresentation: ProviderPresentation = {
   newTicketURL: (scope) => `https://github.com/${scope}/issues/new`,
   keyColumn: 'w-(--size-ticket-key)',
   statusTerm: 'state',
-  priority: false,
+  priorityChoices: [],
 }

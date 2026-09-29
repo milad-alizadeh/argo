@@ -198,7 +198,7 @@ type TicketRowProps = {
   row: BacklogRow
   // The tree lines this row draws, one per ancestor column.
   rails: readonly boolean[]
-  presentation: Pick<ProviderView, 'keyColumn' | 'statusNoun' | 'priority'>
+  presentation: Pick<ProviderView, 'keyColumn' | 'statusNoun' | 'priorityChoices'>
   statuses: readonly TicketStatus[]
   selected: boolean
   folded: boolean
@@ -216,9 +216,10 @@ function SidebarMetadata(props: TicketRowProps) {
   return (
     <>
       <div className="col-start-2 mt-(--spacing-shell-tight) flex min-w-0 items-center gap-(--spacing-shell-item)">
-        {props.presentation.priority ? (
+        {props.presentation.priorityChoices.length > 0 ? (
           <span className="relative z-10 flex shrink-0 items-center">
             <PriorityMenu
+              choices={props.presentation.priorityChoices}
               named={false}
               onChange={props.onChangePriority}
               priority={ticket.priority}
@@ -297,9 +298,14 @@ function WorkspaceTicketRow(props: TicketRowProps) {
   const age = ticketAge(ticket.createdAt, now)
   return (
     <div className="relative flex min-w-0 items-start gap-(--spacing-shell-tight) rounded-row px-(--spacing-shell-item) hover:bg-muted has-[[aria-current]]:bg-selected">
-      {presentation.priority ? (
+      {presentation.priorityChoices.length > 0 ? (
         <span className="mt-1 flex w-6 shrink-0 items-center justify-center">
-          <PriorityMenu named={false} onChange={onChangePriority} priority={ticket.priority} />
+          <PriorityMenu
+            choices={presentation.priorityChoices}
+            named={false}
+            onChange={onChangePriority}
+            priority={ticket.priority}
+          />
         </span>
       ) : null}
       <span

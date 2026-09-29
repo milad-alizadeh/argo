@@ -3,13 +3,13 @@ import type { TicketConnection } from '@/domains/connections/main'
 import {
   type TicketConnectedReply,
   type TicketDiscoverReply,
-  type TicketError,
   type TicketListReply,
+  type TicketPriorityReply,
   type TicketUpdateReply,
   ticketError,
 } from '@/domains/tickets/contract/contract'
+import type { PriorityChange } from '@/domains/tickets/contract/ticket'
 import { connectionSummary } from '../connection-summary'
-import { saveConfirmedFields } from '../database/ticket-upsert'
 import { type Call, readAs } from '../read-as'
 
 const STORAGE_ERRORS = { unreadable: 'storage-unavailable', invalid: 'storage-invalid' } as const
@@ -48,29 +48,6 @@ export async function writableConnection(call: Call) {
     return { ok: false, error: ticketError('not-connected', call.requestId) } as const
   }
   return { ok: true, ...found.connection } as const
-}
-
-// A provider-confirmed field is committed to the saved Ticket before the reply announces it.
-export async function writeTicketField<Value>(
-  call: Call,
-  write: {
-    key: string
-    read: (
-      accountId: string,
-      scope: string,
-    ) => Promise<{ ok: true; value: Value } | { ok: false; error: TicketError }>
-    confirmed: (value: Value) => Parameters<typeof saveConfirmedFields>[2]
-  },
-): Promise<{ ok: true; value: Value } | { ok: false; error: TicketError }> {
-  const { key, read, confirmed } = write
-  const target = await writableConnection(call)
-  if (!target.ok) return target
-  const written = await read(target.accountId, target.scope)
-  if (!written.ok) return written
-  const { provider, scope } = target
-  saveConfirmedFields(call.index.database, { provider, scope, key }, confirmed(written.value))
-  call.index.changes.changed({ provider, scope })
-  return written
 }
 
 async function saveConnection(
@@ -144,8 +121,47 @@ export async function updateStatus(
   const target = await writableConnection(call)
   if (!target.ok) return target.error
   const { accountId, provider, scope } = target
-  const outcome = await call.index.changeStatus({ provider, scope, accountId, ...change })
-  if (outcome.type !== 'committed') return ticketError(outcome.failure, requestId)
+  const outcome = await call.index.changeStatus({
+    provider,
+    scope,
+    accountId,
+    operation: 'status',
+    ...change,
+  })
+  if (outcome.type !== 'committed' || outcome.confirmed.operation !== 'status') {
+    return ticketError(
+      outcome.type === 'committed' ? 'invalid-response' : outcome.failure,
+      requestId,
+    )
+  }
   const { key } = change
-  return { version: 1, type: 'ticket.updated', requestId, projectId, key, status: outcome.status }
+  const { status } = outcome.confirmed
+  return { version: 1, type: 'ticket.updated', requestId, projectId, key, status }
+}
+
+// The same path as a status change: the priority in the reply is the one the provider confirmed.
+export async function updatePriority(
+  call: Call,
+  change: Omit<PriorityChange, 'scope'>,
+): Promise<TicketPriorityReply> {
+  const { requestId, projectId } = call
+  const target = await writableConnection(call)
+  if (!target.ok) return target.error
+  const { accountId, provider, scope } = target
+  const outcome = await call.index.changePriority({
+    provider,
+    scope,
+    accountId,
+    operation: 'priority',
+    ...change,
+  })
+  if (outcome.type !== 'committed' || outcome.confirmed.operation !== 'priority') {
+    return ticketError(
+      outcome.type === 'committed' ? 'invalid-response' : outcome.failure,
+      requestId,
+    )
+  }
+  const { key } = change
+  const { priority } = outcome.confirmed
+  return { version: 1, type: 'ticket.prioritized', requestId, projectId, key, priority }
 }
