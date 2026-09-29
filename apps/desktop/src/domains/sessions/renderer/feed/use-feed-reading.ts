@@ -15,11 +15,10 @@ function drawnFeed(reading: FeedReading, running: boolean): SessionFeed | null {
   const rows = feedReadingRows(reading.entries, { running })
   if (reading.state !== 'ready' && rows.length === 0) return null
   return {
-    version: 1,
-    type: 'session.feed.read',
-    requestId: reading.revision,
     sessionId: reading.sessionId,
     chainId: reading.chainId,
+    // The drawn rows, not the reading, are what a revision stands for: the same reading draws
+    // different rows once its activity folds in, so a live draw needs its own revision.
     revision: running ? `${reading.revision}:live` : reading.revision,
     rows: [...rows],
   }

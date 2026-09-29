@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { DatabaseSync } from 'node:sqlite'
 import { setTimeout } from 'node:timers/promises'
 import type { Page } from 'playwright-core'
-import { codexStatePath } from '@/harnesses/codex/sessions/discovery/roots'
+import { codexStatePath } from '../../../mocks/cli/codex/codex-state-store'
 
 const THREAD = 'rollout-codexParent'
 const NAME = 'Named by Codex Desktop'

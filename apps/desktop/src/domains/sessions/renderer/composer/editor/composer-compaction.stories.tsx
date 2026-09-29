@@ -6,9 +6,6 @@ import type { SessionFeed } from '../../types'
 import { ComposerForm } from '../layout/composer-form'
 
 const COMPACTION_FEED = {
-  version: 1,
-  type: 'session.feed.read',
-  requestId: 'storybook-compaction',
   sessionId: 'compacting-session',
   chainId: 'compacting-session',
   revision: 'one',

@@ -12,9 +12,6 @@ import { FeedJumpToLatest } from '../rows/feed-jump-to-latest'
 import { BasicFeed } from './basic-feed'
 
 const feed = {
-  version: 1,
-  type: 'session.feed.read',
-  requestId: 'storybook-feed',
   sessionId: 'prose',
   chainId: 'prose',
   revision: 'one',

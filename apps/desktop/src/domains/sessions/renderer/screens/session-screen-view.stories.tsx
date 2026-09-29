@@ -107,9 +107,6 @@ const JUMP_TO_LATEST_ROWS = Array.from({ length: 36 }, (_unused, index) => ({
 
 function feedFor(sessionId: string) {
   return {
-    version: 1,
-    type: 'session.feed.read',
-    requestId: 'screen-review-feed',
     sessionId,
     chainId: sessionId,
     revision: `screen-review-${sessionId}`,
@@ -139,9 +136,6 @@ function feedFor(sessionId: string) {
 function delegationFeedFor(delegation: SessionSubagent) {
   const sessionId = `composer-review#${delegation.id}`
   return {
-    version: 1,
-    type: 'session.feed.read',
-    requestId: 'screen-review-delegation-feed',
     sessionId,
     chainId: sessionId,
     revision: `screen-review-${delegation.id}`,

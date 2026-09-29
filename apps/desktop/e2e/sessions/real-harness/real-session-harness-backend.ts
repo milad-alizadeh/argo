@@ -3,8 +3,8 @@ import { copyFile, mkdir, rm, symlink } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
-import { codexStatePath } from '@/harnesses/codex/sessions/discovery/roots'
 import { findExecutableOnLoginShellPath } from '@/harnesses/host/executable-path'
+import { codexStatePath } from '../../../mocks/cli/codex/codex-state-store'
 import type {
   SessionFixture,
   SessionHarnessBackend,

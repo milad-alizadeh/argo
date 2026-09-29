@@ -26,9 +26,6 @@ const COMPLETED_DELEGATION = sessionSubagent({
 const FAILED_DELEGATION = { ...COMPLETED_DELEGATION, state: 'failed' } satisfies typeof DELEGATION
 
 const FEED = {
-  version: 1,
-  type: 'session.feed.read',
-  requestId: 'subagent-feed',
   sessionId: 'composer-review',
   chainId: 'composer-review#call-review',
   revision: 'subagent-feed-1',

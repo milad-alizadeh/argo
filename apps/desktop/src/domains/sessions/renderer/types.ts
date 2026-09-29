@@ -1,4 +1,3 @@
-import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionError } from '@/domains/sessions/api/session-error'
 import type { SessionFeedRow } from '@/domains/sessions/renderer/model/models'
 import type { RouterOutputs } from '@/platform/renderer/trpc-client'
@@ -18,14 +17,12 @@ export type SessionArchiveListed = {
   historyComplete: boolean
 }
 
+// One chain's Feed as the renderer draws it: main's reading, reduced to what a row needs. The
+// revision changes whenever the rows do, and a mounted row whose revision held draws nothing.
 export type SessionFeed = {
-  version: 1
-  type: 'session.feed.read'
-  requestId: string
   sessionId: string
   chainId: string
   revision: string
-  content?: FeedContent[]
   rows: SessionFeedRow[]
 }
 

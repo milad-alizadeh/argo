@@ -40,13 +40,9 @@ function catalogFeedContents(content: FeedContent[], running = false): SessionFe
   const revision = content.map((item) => item.id).join(':') || 'empty'
   const { entries } = projectFeedRowEntries({ history: content, live: [] })
   return {
-    version: 1,
-    type: 'session.feed.read',
-    requestId: revision,
     sessionId: 'catalog',
     chainId: 'catalog',
     revision,
-    content,
     rows: [...feedReadingRows(entries, { running })],
   }
 }
