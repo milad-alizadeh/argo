@@ -26,6 +26,9 @@ test('starts a clean database with every ordered migration', async () => {
         { name: 'session_ticket_link' },
         { name: 'session' },
         { name: 'session_command' },
+        { name: 'ticket' },
+        { name: 'ticket_content' },
+        { name: 'ticket_sync' },
       ]),
     )
     expect(
@@ -42,6 +45,7 @@ test('starts a clean database with every ordered migration', async () => {
       { name: '20260928112826_little_wonder_man' },
       { name: '20260928160329_little_raider' },
       { name: '20260928171634_session_subagents' },
+      { name: '20260928203203_ticket_read_model' },
     ])
     expect(
       database

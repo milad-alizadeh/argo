@@ -2,19 +2,12 @@ import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { FeedLiveFacts } from '../feed/document/feed-live-facts'
 import { BackgroundWork } from '../feed/rows/background-work'
 import { SessionInspector } from '../inspector/session-inspector'
-import type { SessionFeed } from '../types'
 import { SessionWorkButtons } from '../work/session-work-buttons'
 import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
 import { backgroundWorkLinks } from './background-work-links'
 import { SessionComposerArea, SessionHandoffFacts } from './session-screen-details'
 import { SessionShell } from './session-shell'
 import { type SessionScreenModel, useSessionScreenModel } from './use-session-screen-model'
-
-// An unanswered ask row, if the Feed is currently showing one.
-function pendingQuestionId(feed: SessionFeed | null): string | null {
-  const row = feed?.rows.find((row) => row.shape === 'ask' && row.answer === null)
-  return row?.id ?? null
-}
 
 function WorkButtons({ model }: { model: SessionScreenModel }) {
   const { pick, selectedSessionId, session, work } = model
@@ -100,7 +93,7 @@ function composerFor(model: ReturnType<typeof useSessionScreenModel>) {
   return (
     <SessionComposerArea
       permission={model.permission}
-      questionPending={model.session?.posture === 'live' && pendingQuestionId(model.feed) !== null}
+      questionPending={model.session?.posture === 'live' && model.pendingQuestionId !== null}
       liveStatus={model.liveStatus}
       session={model.session}
       harness={model.harness}

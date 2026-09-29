@@ -5,6 +5,7 @@ import { ProjectSwitcher } from '@/domains/projects/renderer/components/project-
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { AppShell } from '@/platform/renderer/app/components/app-shell'
 import {
+  sessionFeedSubscribe,
   sessionFeedTrpc,
   sessionListSubscribe,
   sessionRow,
@@ -96,13 +97,17 @@ const meta = {
   beforeEach: () => {
     readSubagentIds = []
     const previous = window.argo
+    const read = async (sessionId: string, subagentId: string | null) => {
+      readSubagentIds.push(subagentId)
+      return snapshot(sessionId, subagentId)
+    }
     window.argo = {
       ...previous,
-      trpcSubscribe: sessionListSubscribe(previous.trpcSubscribe, () => [session]),
-      trpc: sessionFeedTrpc(previous.trpc, async (sessionId, subagentId) => {
-        readSubagentIds.push(subagentId)
-        return snapshot(sessionId, subagentId)
-      }),
+      trpcSubscribe: sessionFeedSubscribe(
+        sessionListSubscribe(previous.trpcSubscribe, () => [session]),
+        read,
+      ),
+      trpc: sessionFeedTrpc(previous.trpc, read),
     }
     return () => {
       window.argo = previous

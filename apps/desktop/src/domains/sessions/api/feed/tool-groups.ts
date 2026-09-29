@@ -1,24 +1,11 @@
-import type { SessionFeedRow } from '../../model/models'
-import type { LiveActivity } from './feed-rows'
+import type { LiveActivity, SessionFeedRow } from './feed-rows'
+import { fingerprint } from './fingerprint'
 
 type ToolRow = Extract<SessionFeedRow, { shape: 'tool' }>
 
-// Group ids cross the Session IPC boundary, where identifiers are deliberately capped at 256
-// characters. A run can hold many ordinary UUID-length tool calls, so joining every id makes a
-// valid Feed fail its whole reply contract. These two independent 32-bit passes keep the id
-// deterministic and bounded without depending on Node APIs (this module is also renderer-safe).
-function groupFingerprint(value: string, seed: number) {
-  let hash = seed
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index)
-    hash = Math.imul(hash, 0x01000193)
-  }
-  return (hash >>> 0).toString(16).padStart(8, '0')
-}
-
 function toolGroupId(calls: ToolRow[]) {
   const firstCallId = calls[0]?.id ?? ''
-  return `tool-group:${groupFingerprint(firstCallId, 0x811c9dc5)}${groupFingerprint(firstCallId, 0x9e3779b9)}`
+  return `tool-group:${fingerprint(firstCallId)}`
 }
 
 // One tool-kind record owns its icon, route, group wording, and group order.
@@ -137,8 +124,8 @@ export function foldSettledToolRuns(rows: SessionFeedRow[]): SessionFeedRow[] {
   return folded
 }
 
-// The running Turn's latest thought, when it lands after a run, titles that run's group: the
-// Feed then has one shimmering line, the group's own, and the roster reads the same words.
+// The running Turn's latest call titles its tail group: the Feed then has one shimmering line,
+// the group's own, and the roster reads the same words.
 export function withHeadline(row: SessionFeedRow, headline: LiveActivity): SessionFeedRow {
   return row.shape === 'tool-group' ? { ...row, headline } : row
 }

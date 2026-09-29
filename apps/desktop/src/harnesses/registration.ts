@@ -35,10 +35,12 @@ export type HistoryFiles = {
   // A reader for the lines appended after `existing`, the newest complete lines already in the file.
   openReader: (existing: readonly string[]) => (lines: readonly string[]) => HistoryChange
   // Whether a history line opens a turn, closes one, or says nothing about turns.
-  turnOf: (line: string) => HistoryTurn | null
+  turnOf: (line: string) => HistoryTurnMarker | null
 }
 
 export type HistoryTurn = 'open' | 'closed'
+// The turn a marker names, where the Harness writes one; a close for another turn is stale.
+export type HistoryTurnMarker = { turn: HistoryTurn; turnId: string | null }
 
 export type HistoryChange =
   | { type: 'appended'; events: SessionLiveEventBody[] }

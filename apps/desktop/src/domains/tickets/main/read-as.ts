@@ -11,6 +11,7 @@ import {
   ticketError,
 } from '@/domains/tickets/contract/contract'
 import type { Reader, SourceRead, TicketSource } from './sources'
+import type { TicketIndex } from './ticket-changes'
 
 const TOKEN_ERRORS: Record<Exclude<TokenFailure['reason'], 'renewal-failed'>, TicketErrorCode> = {
   storage: 'storage-unavailable',
@@ -27,16 +28,20 @@ export type Call = {
   projectId: string
   // The Ticket half of each provider's registration.
   providers: Record<Provider, { tickets: TicketSource }>
+  index: TicketIndex
 }
 
 type Read<T> = { ok: true; value: T; provider: Provider } | { ok: false; error: TicketError }
 
-const failure = (call: Call, code: TicketErrorCode) =>
+// What a provider read needs from a Call: Account access, the registrations and a request ID.
+export type ReadCall = Pick<Call, 'access' | 'providers' | 'requestId'>
+
+const failure = (call: ReadCall, code: TicketErrorCode) =>
   ({ ok: false, error: ticketError(code, call.requestId) }) as const
 
 // One source read as the Account. A refusal the renewal could not fix has already marked it.
 export async function readAs<T>(
-  call: Call,
+  call: ReadCall,
   accountId: string,
   read: (source: TicketSource, reader: Reader) => Promise<SourceRead<T>>,
 ): Promise<Read<T>> {

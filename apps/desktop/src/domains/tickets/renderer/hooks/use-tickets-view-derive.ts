@@ -20,7 +20,9 @@ import {
   type TicketProblemProps,
 } from '../lib/problems'
 import { listedBacklog, type TicketListing } from './listed-backlog'
+import { indexedHead, syncFailure } from './use-active-tickets'
 import type { ConnectForm } from './use-connect-form'
+import type { TicketDetailRead } from './use-ticket-detail'
 
 // Everything the Tickets screen can show, resolved here before anything draws.
 export type TicketsView =
@@ -88,11 +90,15 @@ export type Connected = {
   onChangeStatus: (key: string, status: TicketStatus) => void
   onChangePriority: (key: string, priority: TicketPriority | null) => void
   selectedKey: string | null
+  // The selected Ticket as SQLite saved it, and its by-ID provider read.
+  detail: TicketDetailRead
   now: number
   onBack: () => void
   onSelect: (key: string) => void
   onOpenSession: (id: string) => void
   onReconnect: () => void
+  // Asks main to scan the provider again.
+  onSync: () => void
 }
 
 export function connectedView(
@@ -102,11 +108,13 @@ export function connectedView(
     connection,
     onDisconnectSource,
     selectedKey,
+    detail,
     now,
     onBack,
     onSelect,
     onOpenSession,
     onReconnect,
+    onSync,
     ...listing
   }: Connected,
 ): TicketsView {
@@ -125,14 +133,39 @@ export function connectedView(
       provider: connection.provider,
     })
   }
+  const failed = syncFailure(list.data)
+  const saved = indexedHead(list.data)
+  const recovery = { onRetry: onSync, onReconnect, provider: connection.provider }
+  // With nothing saved, the failure is all there is to show; otherwise it sits above the rows.
+  if (failed && (saved === null || saved.total === 0))
+    return failure(t('failure.tickets'), failed, recovery)
+  // Nothing is saved yet and no scan has read every page, so an empty list would be a guess.
+  if (saved && saved.total === 0 && !saved.sync.complete) return loading(t('loading.tickets'))
+  const sync = {
+    refreshing: saved?.sync.phase === 'syncing',
+    problem: failed ? failureProblem(t('failure.refresh'), failed, recovery) : null,
+  }
+  const detailRecovery = { ...recovery, onRetry: detail.retry }
   return {
     kind: 'tickets',
     projectId,
     selectedKey,
+    detail: {
+      ticket: detail.ticket,
+      statuses: detail.statuses,
+      reading: detail.reading,
+      problem: detail.failure
+        ? failureProblem(
+            t(detail.ticket ? 'failure.ticketRefresh' : 'failure.ticket'),
+            detail.failure,
+            detailRecovery,
+          )
+        : null,
+    },
     now,
     onBack,
     onSelect,
     onOpenSession,
-    backlog: { ...listedBacklog(list.data, listing), provider: connection.provider },
+    backlog: { ...listedBacklog(list.data, listing), provider: connection.provider, sync },
   }
 }

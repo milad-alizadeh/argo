@@ -74,14 +74,14 @@ export function FeedPrompt({
       {pastedContent.map(({ id, text: content }) => (
         <div className="w-full min-w-0" key={`${rowId}:${id}`}>
           <CollapsibleText
-            content={
+            content={() => (
               <FeedMarkdown
                 activeEvidenceId={activeEvidenceId}
                 onOpenEvidence={onOpenEvidence}
                 rowId={`${rowId}:pasted-content:${id}`}
                 text={content}
               />
-            }
+            )}
             contentVariant="flush"
             icon="file"
             title={t('pastedContent')}

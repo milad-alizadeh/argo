@@ -1,5 +1,9 @@
 // Session rows the Sessions stories draw.
 
+import { type FeedReading, feedReading } from '@/domains/sessions/api/feed/feed-reading'
+import { projectFeedRowEntries } from '@/domains/sessions/api/feed/feed-row-entries'
+import { sessionError } from '@/domains/sessions/api/session-error'
+import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
 import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/renderer/model/models'
 import { DEFAULT_HARNESS } from '@/harnesses/harness'
 import { queryClient } from '@/platform/renderer/trpc-client'
@@ -105,23 +109,98 @@ export function sessionListSubscribe(
   }
 }
 
+type FeedRead = (sessionId: string, subagentId: string | null) => Promise<SessionFeedSnapshot>
+const openFeeds = new Map<string, Set<() => void>>()
+
+function readFailure(error: unknown): { message: string; data?: { code?: unknown } } {
+  const data =
+    typeof error === 'object' && error !== null && 'data' in error
+      ? (error as { data?: { code?: unknown } }).data
+      : undefined
+  return { message: error instanceof Error ? error.message : String(error), data }
+}
+
+// Answers the Feed read, and the root Feed's Refresh, from one story history.
 export function sessionFeedTrpc(
   trpc: typeof window.argo.trpc,
-  read: (sessionId: string, subagentId: string | null) => Promise<SessionFeedSnapshot>,
+  read: FeedRead,
 ): typeof window.argo.trpc {
   queryClient.removeQueries({ queryKey: ['sessions'] })
   return (async (request) => {
+    if (request.path === 'sessionFeedRefresh') {
+      const { sessionId } = request.input as { sessionId: string }
+      const feeds = openFeeds.get(sessionId) ?? new Set()
+      for (const refresh of feeds) refresh()
+      return { result: { data: { accepted: feeds.size > 0 } } }
+    }
     if (request.path !== 'sessionFeedRead') return trpc(request)
     const input = request.input as { sessionId: string; subagentId: string | null }
     try {
       return { result: { data: await read(input.sessionId, input.subagentId) } }
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      const data =
-        typeof error === 'object' && error !== null && 'data' in error
-          ? (error as { data?: unknown }).data
-          : undefined
-      return { error: { code: -32004, message, data } }
+      return { error: { code: -32004, ...readFailure(error) } }
     }
   }) as typeof window.argo.trpc
+}
+
+// The root Feed's readings, as the main reader publishes them: loading, then each read's result,
+// keeping the rows a failed read already had.
+export function sessionFeedSubscribe(
+  subscribe: Subscribe,
+  read: FeedRead,
+  live: readonly SessionLiveEvent[] = [],
+): Subscribe {
+  return async (request, listener) => {
+    if (request.path !== 'sessionFeed') return subscribe(request, listener)
+    const { sessionId } = request.input as { sessionId: string }
+    let entries: FeedReading['entries'] = []
+    const status = live.findLast((event) => event.type === 'status')
+    let reads = 0
+    let open = true
+    const send = (state: FeedReading['state'], error: FeedReading['error']) =>
+      listener({
+        id: request.id,
+        type: 'data',
+        result: {
+          data: feedReading({
+            sessionId,
+            chainId: sessionId,
+            state,
+            error,
+            pendingPermissionId: null,
+            liveStatus: status?.type === 'status' ? status.status : null,
+            entries,
+          }),
+        },
+      })
+    const refresh = () => {
+      const current = ++reads
+      read(sessionId, null).then(
+        (snapshot) => {
+          if (!open || current !== reads) return
+          entries = projectFeedRowEntries({ history: snapshot.content, live }).entries
+          send('ready', null)
+        },
+        (error: unknown) => {
+          if (!open || current !== reads) return
+          const missing = readFailure(error).data?.code === 'NOT_FOUND'
+          send(
+            'failed',
+            sessionError(missing ? 'missing-session' : 'vendor-history-unavailable', null),
+          )
+        },
+      )
+    }
+    const feeds = openFeeds.get(sessionId) ?? new Set()
+    feeds.add(refresh)
+    openFeeds.set(sessionId, feeds)
+    queueMicrotask(() => {
+      send('loading', null)
+      refresh()
+    })
+    return () => {
+      open = false
+      feeds.delete(refresh)
+    }
+  }
 }

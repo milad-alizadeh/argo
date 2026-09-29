@@ -1,8 +1,17 @@
 import { afterEach, expect, test } from 'bun:test'
-import { readdirSync, readFileSync } from 'node:fs'
+import {
+  appendFileSync,
+  copyFileSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+} from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
+import { latestTurn } from '@/harnesses/host/history-watch'
 import { scanRollouts } from '../../../../mocks/cli/codex/mock-codex-rollout-history.ts'
 import type { CodexRequest } from '../app-server/codex-app-server-client'
 import { codexHistoryOwner, codexHistoryTurn, openCodexHistoryReader } from './codex-history-lines'
@@ -85,7 +94,36 @@ test.each([
   ['turn_aborted', 'closed'],
   ['token_count', null],
 ] as const)('reads a %s event as a turn that is %p', (type, turn) => {
-  expect(codexHistoryTurn(JSON.stringify({ type: 'event_msg', payload: { type } }))).toBe(turn)
+  expect(
+    codexHistoryTurn(JSON.stringify({ type: 'event_msg', payload: { type, turn_id: 'turn-1' } })),
+  ).toEqual(turn === null ? null : { turn, turnId: 'turn-1' })
+})
+
+test('reads a marker without a turn id as one that names no turn', () => {
+  expect(
+    codexHistoryTurn(JSON.stringify({ type: 'event_msg', payload: { type: 'task_complete' } })),
+  ).toEqual({ turn: 'closed', turnId: null })
+})
+
+// Codex aborts a replaced turn after it starts the next one; the late abort must not end it.
+test('keeps a watched Session running when an earlier turn closes after the next starts', () => {
+  const directory = mkdtempSync(path.join(os.tmpdir(), 'argo-codex-turn-'))
+  try {
+    const file = path.join(directory, 'rollout-codexReplacedTurn.jsonl')
+    copyFileSync(path.join(FIXTURES, 'rollout-codexReplacedTurn.jsonl'), file)
+    expect(latestTurn(file, codexHistoryTurn)).toBe('open')
+
+    appendFileSync(
+      file,
+      `${JSON.stringify({
+        type: 'event_msg',
+        payload: { type: 'task_complete', turn_id: '01a0b000-0000-7000-8000-00000000b002' },
+      })}\n`,
+    )
+    expect(latestTurn(file, codexHistoryTurn)).toBe('closed')
+  } finally {
+    rmSync(directory, { recursive: true, force: true })
+  }
 })
 
 test('reads a line that is not an event as no turn change', () => {

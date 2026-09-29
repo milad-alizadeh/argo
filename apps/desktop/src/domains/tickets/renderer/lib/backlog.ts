@@ -1,6 +1,7 @@
 // The Backlog's rows: each open Ticket once, a listed child indented under its first listed parent.
 import type { Provider } from '@/domains/accounts/contract/contract'
 import type { Ticket, TicketPriority, TicketStatus } from '@/domains/tickets/contract/contract'
+import type { TicketProblemProps } from './problems'
 
 // `nested` is true when a row of the listing is drawn under this one, so this one can fold.
 export type BacklogRow = { ticket: Ticket; depth: number; parent: string | null; nested: boolean }
@@ -21,6 +22,8 @@ export type Backlog = {
   searching: boolean
   onLoadMore: () => void
   onRetryLoadMore: () => void
+  // The provider scan behind saved rows: whether one runs, and the last one's failure.
+  sync: { refreshing: boolean; problem: TicketProblemProps | null }
   // Every status a Ticket here can move to, and the move.
   statuses: readonly TicketStatus[]
   onChangeStatus: (key: string, status: TicketStatus) => void

@@ -156,3 +156,45 @@ for (const writer of [claude, codex])
       await application.close()
     }
   })
+
+const codexMarker = (type: string, turnId: string) =>
+  `${JSON.stringify({ type: 'event_msg', payload: { type, turn_id: turnId } })}\n`
+
+// Codex aborts a replaced turn after the next one starts: that late close must not end the newer
+// turn, whether the Session's Feed is open, another Session is, or more history lands.
+test('a watched codex Session stays running past a stale close and idles on its own', async ({
+  root,
+  applicationUnderTest,
+}) => {
+  const { application, page, older } = await launch(root, applicationUnderTest, codex)
+  try {
+    const file = codexFile(root, older)
+    const olderRow = rowTitled(page, OLDER)
+    const dot = olderRow.locator('[data-slot="session-status"]')
+    await expect(olderRow).toHaveCount(1, { timeout: 30_000 })
+
+    await appendFile(file, codexMarker('task_started', 'replaced-turn'))
+    await expect(dot).toHaveAttribute('data-variant', 'active', { timeout: 10_000 })
+    await olderRow.click()
+    await expect(page.getByRole('region', { name: 'Session Feed' })).toBeVisible()
+
+    await appendFile(file, codexMarker('task_started', 'current-turn'))
+    await appendFile(file, codexMarker('turn_aborted', 'replaced-turn'))
+    // An absence needs a wait: this one outlasts the watcher's 250 ms settle several times over.
+    await page.waitForTimeout(1_000)
+    await expect(dot).toHaveAttribute('data-variant', 'active')
+
+    await rowTitled(page, NEWER).click()
+    await appendFile(file, codexMarker('token_count', 'current-turn'))
+    await page.waitForTimeout(1_000)
+    await expect(dot).toHaveAttribute('data-variant', 'active')
+    await olderRow.click()
+    await expect(dot).toHaveAttribute('data-variant', 'active')
+
+    await appendFile(file, codexMarker('task_complete', 'current-turn'))
+    await expect(dot).toHaveAttribute('data-variant', /^(idle|unread)$/, { timeout: 10_000 })
+    await expect(page.getByRole('region', { name: 'Session Feed' })).toBeVisible()
+  } finally {
+    await application.close()
+  }
+})

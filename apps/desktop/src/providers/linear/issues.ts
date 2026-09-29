@@ -47,6 +47,11 @@ const SEARCH = `query Search($team: ID!, $teamId: String!, $term: String!, $firs
   ${TEAM_STATES}
 }`
 
+// `issue(id:)` takes the key a person reads, `ENG-12`, as well as Linear's own id.
+const ISSUE = `query Issue($key: String!) {
+  issue(id: $key) { ${FIELDS} team { id } }
+}`
+
 const stateOf = (value: unknown): TicketState | null => {
   const category = categoryOf(value)
   return category ? closureOf(category) : null
@@ -96,6 +101,7 @@ function ticket(endpoints: LinearEndpoints, value: unknown): Ticket | null {
   const prose = typeof description === 'string' ? description.trim() : ''
   return {
     ...own,
+    nativeId: typeof value.id === 'string' && value.id !== '' ? value.id : undefined,
     url: pageURL(endpoints, value.url),
     body: prose === '' ? null : prose,
     status,
@@ -150,4 +156,22 @@ export async function readTicketPage(
       total: typeof total === 'number' && Number.isInteger(total) && total >= 0 ? total : null,
     },
   }
+}
+
+type TicketReadRequest = { scope: string; id: string }
+
+// One issue of the team by its key or id, open or closed; one in another team is not found here.
+export async function readTicket(
+  endpoints: LinearEndpoints,
+  token: string,
+  { scope, id }: TicketReadRequest,
+): Promise<LinearRead<Ticket> | { ok: false; failure: 'ticket-not-found' }> {
+  const reply = await query({ endpoints, token }, ISSUE, { key: id })
+  if (!reply.ok) return reply
+  const issue = reply.value.issue
+  if (!isRecord(issue) || !isRecord(issue.team) || issue.team.id !== scope) {
+    return { ok: false, failure: 'ticket-not-found' }
+  }
+  const read = ticket(endpoints, issue)
+  return read ? { ok: true, value: read } : failed('unreachable')
 }

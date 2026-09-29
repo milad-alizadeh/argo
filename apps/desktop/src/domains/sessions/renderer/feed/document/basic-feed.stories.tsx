@@ -869,7 +869,7 @@ export const DisclosureAtLatestKeepsItsControlStill: Story = {
   },
 }
 
-// commandRuns.jsonl has adjacent Claude runs; each assistant record owns a distinct Feed block.
+// commandRuns.jsonl has adjacent Claude runs; main folds the settled runs into one group.
 const separateToolRunsFeed = {
   ...feed,
   chainId: 'command-runs',
@@ -879,7 +879,7 @@ const separateToolRunsFeed = {
     {
       shape: 'tool-group' as const,
       id: 'tool-group:run-one',
-      label: 'Ran 2 commands',
+      label: 'Ran 3 commands',
       calls: [
         {
           shape: 'tool' as const,
@@ -901,13 +901,6 @@ const separateToolRunsFeed = {
           evidence: null,
           text: 'bun run typecheck',
         },
-      ],
-    },
-    {
-      shape: 'tool-group' as const,
-      id: 'tool-group:run-two',
-      label: 'Ran a command',
-      calls: [
         {
           shape: 'tool' as const,
           id: 'run-two-format',
@@ -927,7 +920,7 @@ export const SeparateToolRuns: Story = {
   args: { feed: separateToolRunsFeed, selectedSessionId: 'command-runs' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    // Settled runs side by side fold into one count; no command names itself in the Feed.
+    // The folded runs read as one count; no command names itself in the Feed.
     await expect(canvas.getByRole('button', { name: 'Ran 3 commands' })).toBeVisible()
     await expect(canvas.queryByRole('button', { name: 'Ran 2 commands' })).toBeNull()
     await expect(canvas.queryByRole('button', { name: 'Ran bunx biome check .' })).toBeNull()
@@ -2148,7 +2141,7 @@ export const ThoughtWhileStatusIsUnknown: Story = {
 }
 
 // External Sessions cannot always prove a live Turn, but their Feed and Roster still name the
-// same newest observed activity, followed by the grouped command count.
+// same newest observed activity, and the live title waits to count the group.
 export const CommandActivityWhileStatusIsUnknown: Story = {
   args: {
     feed: {
@@ -2192,9 +2185,8 @@ export const CommandActivityWhileStatusIsUnknown: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(
-      canvas.getByRole('button', { name: 'Ran rtk gh issue create · Ran 7 commands' }),
-    ).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Ran rtk gh issue create' })).toBeVisible()
+    await expect(canvas.queryByText(/Ran 7 commands/)).toBeNull()
   },
 }
 

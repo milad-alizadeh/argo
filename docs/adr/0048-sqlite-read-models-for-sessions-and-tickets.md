@@ -12,8 +12,11 @@ channel. A rewritten, truncated or branched file still makes the Feed read the w
 The roster is one subscription. It sends the whole list first. After a sync commits, a live
 status changes, a rename, or a write to any history file, it sends each changed row, or the whole
 list again when the order or total changed. A history write sets the row's `activityAt` in SQLite.
-It also records, in memory, whether the file's newest turn marker opened or closed a turn. A
-Session with no live actor shows running for an open turn and idle for a closed one. An open turn
+It also records, in memory, whether the file's current turn is open or closed. The newest opened
+turn is the current one. A close counts only when it names that turn or names no turn, so a late
+close for an earlier Codex turn leaves the newer turn open. A Session with no live actor shows
+running for an open turn and idle for a closed one. The roster's activity line for a Session
+whose Feed is open is the activity that Feed's main reading published. An open turn
 whose file stays quiet for five minutes shows unknown, because a killed terminal writes nothing
 more.
 
@@ -293,3 +296,10 @@ Session rename calls the same descriptor before SQLite stores the confirmed titl
 offers rename only when its vendor supports it. Claude offers rename; Codex currently does not.
 This replaces the separate desktop history switch and rename table described by the earlier
 machine boundary. The Session sync and live Session migrations remain separate work.
+
+## Amendment: main-owned root Feed reading (#2824)
+
+A root Session's Feed crosses IPC as one tRPC subscription of complete readings, with a Refresh
+mutation. Main reads the journal and vendor history, reconciles them, and publishes only a changed
+reading. The renderer no longer reads the root chain through the Feed history query or receives its
+raw live events. A committed Session sync makes an open reader read vendor history again.

@@ -48,11 +48,14 @@ openToolGroups.setOpen('tool-group:two-commands', true)
 openToolGroups.setOpen('command-1', true)
 openToolGroups.setOpen('command-2', true)
 const closedToolGroups = new ToolGroupState()
+const staleToolGroups = new ToolGroupState()
+const severalToolGroups = new ToolGroupState()
+const lazyToolGroups = new ToolGroupState()
 
 const meta = {
   title: 'Sessions/Feed/Tool Line',
   component: FeedToolLine,
-  args: { activeEvidenceId: null, call: edited, onOpen: () => {} },
+  args: { activeEvidenceId: null, call: edited, live: false, onOpen: () => {} },
 } satisfies Meta<typeof FeedToolLine>
 
 export default meta
@@ -63,16 +66,19 @@ export const StatusVariants = {
       <FeedToolLine
         activeEvidenceId={null}
         call={{ ...edited, status: 'succeeded' }}
+        live={false}
         onOpen={() => {}}
       />
       <FeedToolLine
         activeEvidenceId={null}
         call={{ ...edited, status: 'failed' }}
+        live={false}
         onOpen={() => {}}
       />
       <FeedToolLine
         activeEvidenceId={null}
         call={{ ...edited, status: 'running' }}
+        live
         onOpen={() => {}}
       />
     </div>
@@ -172,35 +178,39 @@ export const CommandGroupOfTwo = {
   ),
 }
 
-// While a call still runs, the closed group names that call, not its summary.
-export const GroupWithARunningCommand = {
+const staleRunningGroup = {
+  shape: 'tool-group' as const,
+  id: 'tool-group:running',
+  label: 'Ran 2 commands',
+  calls: [
+    { ...command, id: 'running-1', label: 'Ran bun test' },
+    {
+      ...command,
+      id: 'running-2',
+      label: 'Ran bun run typecheck',
+      status: 'running' as const,
+      evidence: null,
+    },
+  ],
+}
+
+// A group that is not the live tail is history, even with a call that never reported its end:
+// it reads as its count, and no call in it says Running.
+export const GroupWithAStaleRunningCommand = {
   render: () => (
     <FeedToolGroup
-      group={{
-        shape: 'tool-group',
-        id: 'tool-group:running',
-        label: 'Ran 2 commands',
-        calls: [
-          { ...command, id: 'running-1', label: 'Ran bun test' },
-          {
-            ...command,
-            id: 'running-2',
-            label: 'Ran bun run typecheck',
-            status: 'running' as const,
-            evidence: null,
-          },
-        ],
-      }}
+      group={staleRunningGroup}
       activeEvidenceId={null}
       onOpen={() => {}}
-      toolGroups={closedToolGroups}
+      toolGroups={staleToolGroups}
     />
   ),
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement)
-    await expect(
-      canvas.getByRole('button', { name: /Running bun run typecheck.*Ran 2 commands/ }),
-    ).toBeVisible()
+    const group = canvas.getByRole('button', { name: 'Ran 2 commands' })
+    await userEvent.click(group)
+    await canvas.findByRole('button', { name: 'Ran bun run typecheck' })
+    await expect(canvas.queryByText(/Running/)).toBeNull()
   },
 }
 
@@ -223,8 +233,9 @@ export const LiveGroupBetweenCalls = {
   ),
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('button', { name: /Edited Composer.tsx/ })).toBeVisible()
-    await expect(canvas.getByText('· Ran a command, edited a file')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Edited Composer.tsx' })).toBeVisible()
+    // The live title is the activity alone: no count, and no separator before one.
+    await expect(canvas.queryByText(/Ran a command, edited a file/)).toBeNull()
     // Settled between two calls, the Session still runs, so the title still shimmers.
     await expect(canvas.getByText('Edited Composer.tsx')).toHaveClass('feed-work-shimmer')
   },
@@ -283,28 +294,53 @@ export const MixedRunWithLatestCommentary = {
   },
 }
 
-export const LiveMixedRunWithCommentary = {
+const liveGroup = {
+  shape: 'tool-group' as const,
+  id: 'tool-group:live-command',
+  label: 'Ran 2 commands, edited a file',
+  calls: [
+    command,
+    edited,
+    {
+      ...command,
+      id: 'last-command',
+      label: 'Ran bun run typecheck',
+      status: 'running' as const,
+      evidence: null,
+    },
+  ],
+  thoughts: [{ id: 'commentary', text: 'Checking the result', afterCallIndex: 1 }],
+  headline: { kind: 'command' as const, label: 'Ran bun run typecheck', open: true },
+}
+
+// A Turn with several groups: the newest activity titles the live tail, the older group settles,
+// and only the live title shimmers.
+export const LiveTurnWithSeveralGroups = {
   render: () => (
-    <FeedToolGroup
-      group={{
-        shape: 'tool-group',
-        id: 'tool-group:live-commentary',
-        label: 'Ran 2 commands, edited a file',
-        calls: [command, edited, { ...command, id: 'last-command' }],
-        thoughts: [{ id: 'commentary', text: 'Checking the result' }],
-        headline: { kind: 'thought', label: 'Checking the result', open: false },
-      }}
-      activeEvidenceId={null}
-      onOpen={() => {}}
-      toolGroups={closedToolGroups}
-    />
+    <div className="flex flex-col gap-2">
+      <FeedToolGroup
+        group={{ ...staleRunningGroup, id: 'tool-group:stale' }}
+        activeEvidenceId={null}
+        onOpen={() => {}}
+        toolGroups={severalToolGroups}
+      />
+      <FeedToolGroup
+        group={liveGroup}
+        activeEvidenceId={null}
+        onOpen={() => {}}
+        toolGroups={severalToolGroups}
+      />
+    </div>
   ),
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement)
-    await expect(
-      canvas.getByRole('button', { name: /Checking the result.*Ran 2 commands, edited a file/ }),
-    ).toHaveAttribute('aria-expanded', 'false')
-    await expect(canvas.getByText('Checking the result')).toHaveClass('feed-work-shimmer')
+    await expect(canvas.getByRole('button', { name: 'Ran 2 commands' })).toBeVisible()
+    const live = canvas.getByRole('button', { name: 'Running bun run typecheck' })
+    await expect(canvas.getByText('Running bun run typecheck')).toHaveClass('feed-work-shimmer')
+    await expect(canvasElement.querySelectorAll('.feed-work-shimmer')).toHaveLength(1)
+    await userEvent.click(live)
+    await waitFor(() => expect(canvas.getByText('Checking the result')).toBeVisible())
+    await expect(canvasElement.querySelectorAll('.feed-work-shimmer')).toHaveLength(1)
   },
 }
 
@@ -354,4 +390,33 @@ export const GroupOpen = {
       toolGroups={openToolGroups}
     />
   ),
+}
+
+// A closed group builds no body, so a long Feed pays for titles alone; the body mounts on open,
+// stays through the closing transition, and leaves once it ends.
+export const ClosedGroupBuildsNoBody = {
+  render: () => (
+    <FeedToolGroup
+      group={{
+        shape: 'tool-group',
+        id: 'tool-group:lazy',
+        label: 'Ran a command, edited a file',
+        calls: [command, edited],
+      }}
+      activeEvidenceId={null}
+      onOpen={() => {}}
+      toolGroups={lazyToolGroups}
+    />
+  ),
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+    const group = canvas.getByRole('button', { name: 'Ran a command, edited a file' })
+    await expect(canvas.queryByText('Edited Composer.tsx')).toBeNull()
+    await userEvent.click(group)
+    const edit = await canvas.findByRole('button', { name: 'Edited Composer.tsx +3 −1' })
+    await userEvent.click(group)
+    await expect(group).toHaveAttribute('aria-expanded', 'false')
+    await expect(edit).toBeInTheDocument()
+    await waitFor(() => expect(canvas.queryByText('Edited Composer.tsx')).toBeNull())
+  },
 }

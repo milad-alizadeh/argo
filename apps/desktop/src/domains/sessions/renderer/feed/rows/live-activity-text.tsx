@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { displayedToolLabel } from '@/domains/sessions/renderer/feed/model/tool-feed'
+import { displayedToolLabel } from '@/domains/sessions/api/feed/tool-feed'
 import type { SessionActivity } from '@/domains/sessions/renderer/model/models'
 import { RunningText } from '@/platform/renderer/components/running-text'
 

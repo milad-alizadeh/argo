@@ -3,15 +3,18 @@
 // app. Its account lifecycle cases are `lifecycle.case.ts`, and Linear's are
 // `linear.case.ts`.
 import assert from 'node:assert/strict'
-import { test } from '@playwright/test'
-import { HUBOT, OCTOCAT } from '../fixtures/tickets.fixture'
+import { expect, test } from '@playwright/test'
+import { HUBOT, helloWorld, OCTOCAT } from '../fixtures/tickets.fixture'
 import {
+  accountListing,
   accountRow,
   accountsDialog,
   backlog,
   backlogKeys,
   chooseAccount,
+  committedTicketIds,
   connectForm,
+  detailTitle,
   openRoom,
   press,
   type Run,
@@ -20,11 +23,10 @@ import {
   storeText,
 } from '../screen'
 
+const GITHUB_SCOPE = { provider: 'github', scope: 'octocat/hello-world' }
+
 export async function proveConnect(run: Run) {
   await openRoom(run.page, 'tickets')
-  const notice = run.page.getByRole('region', { name: 'Sign-in notice' })
-  await press(notice, 'Dismiss')
-  await notice.waitFor({ state: 'detached' })
   await run.page.getByText('Connect an Account to read Tickets').waitFor()
   const start = { scope: accountsDialog(run.page), name: 'Connect a GitHub Account' }
   await press(room(run), 'Connect an Account')
@@ -43,9 +45,7 @@ export async function proveConnect(run: Run) {
     const rows = accountsDialog(run.page).getByRole('listitem', { name: /^GitHub Account / })
     assert.equal(await rows.count(), 2)
     // The grant is sealed on disk, and nothing the renderer can ask for carries it.
-    const listing = await run.page.evaluate(() =>
-      window.argo.listAccounts({ version: 1, type: 'account.list', requestId: 'proof' }),
-    )
+    const listing = await accountListing(run.page)
     for (const text of [JSON.stringify(listing), await storeText(run.fixture, 'grants.json')]) {
       assert.equal(text.includes('token-'), false)
     }
@@ -98,11 +98,50 @@ export async function proveBacklog(run: Run) {
   await test.step('detail', async () => {
     await backlog(run.page).getByRole('button', { name: /^#607/ }).click()
     const detail = run.page.getByRole('article', { name: 'Ticket #607' })
-    await detail.getByRole('heading', { name: 'Wayfinder: the Tickets room, end to end' }).waitFor()
+    await detailTitle(detail, 'Wayfinder: the Tickets room, end to end').waitFor()
     await detail.getByText('The backlog in the deck and the Ticket beside it.').waitFor()
     await detail.getByText('wayfinder', { exact: true }).waitFor()
-    await detail.getByRole('region', { name: 'Children · 1 of 2 closed' }).waitFor()
-    await detail.getByRole('region', { name: 'Blocked by · 1' }).waitFor()
-    await run.page.getByRole('button', { name: 'GitHub · octocat Connected' }).waitFor()
+    await detail.getByRole('heading', { name: 'Children · 1 of 2 closed' }).waitFor()
+    await detail.getByRole('heading', { name: 'Blocked by · 1' }).waitFor()
+  })
+}
+
+// With GitHub reads held, the backlog draws committed rows; a new Ticket waits for its commit.
+export async function proveCommittedBacklog(run: Run) {
+  const github = run.fixture.github
+  let committed: Record<string, string> = {}
+  await test.step('committed', async () => {
+    assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
+    committed = committedTicketIds(run, GITHUB_SCOPE)
+    assert.deepEqual(Object.keys(committed).sort(), ['#273', '#607', '#609'])
+  })
+  const release = github.holdReads()
+  try {
+    await test.step('drawn-from-sqlite', async () => {
+      const repository = helloWorld()
+      repository.issues.push({ number: 710, title: 'Created on GitHub' })
+      github.addRepository(repository)
+      await openRoom(run.page, 'atlas')
+      await openRoom(run.page, 'tickets')
+      assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
+      await expect(backlog(run.page).getByRole('button', { name: /^#710/ })).toHaveCount(0)
+    })
+  } finally {
+    release()
+  }
+  await test.step('external-ticket', async () => {
+    await backlog(run.page).getByRole('button', { name: /^#710/ }).waitFor()
+    const later = committedTicketIds(run, GITHUB_SCOPE)
+    for (const key of Object.keys(committed)) assert.equal(later[key], committed[key])
+    assert.ok(later['#710'])
+  })
+}
+
+// A fresh launch has no renderer cache, so a backlog drawn while GitHub holds every read is SQLite's.
+export async function proveRestartFromSqlite(run: Run, release: () => void) {
+  await test.step('restart-from-sqlite', async () => {
+    await openRoom(run.page, 'tickets')
+    assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
+    release()
   })
 }

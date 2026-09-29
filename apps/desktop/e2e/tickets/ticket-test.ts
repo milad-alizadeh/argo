@@ -7,7 +7,9 @@ import {
   accountsDialog,
   backlog,
   chooseAccount,
+  closeAccounts,
   connectForm,
+  openAccounts,
   openRoom,
   press,
   type Run,
@@ -30,19 +32,17 @@ async function start(fixture: TicketFixture): Promise<Run> {
   const application = await launch(fixture)
   const page = await application.firstWindow()
   page.setDefaultTimeout(30_000)
-  await page.waitForFunction(() => typeof window.argo?.listTickets === 'function')
+  await page.waitForFunction(() => typeof window.argo?.trpc === 'function')
   return { application, page, fixture }
 }
 
 async function connectGitHubAccounts(run: Run) {
   await openRoom(run.page, 'tickets')
-  const notice = run.page.getByRole('region', { name: 'Sign-in notice' })
-  await press(notice, 'Dismiss')
   await press(room(run), 'Connect an Account')
   const connect = { scope: accountsDialog(run.page), name: 'Connect a GitHub Account' }
   await signIn(run, OCTOCAT, connect)
   await signIn(run, HUBOT, connect)
-  await press(accountsDialog(run.page), 'Close')
+  await closeAccounts(run.page)
 }
 
 async function connectRepository(run: Run) {
@@ -54,9 +54,9 @@ async function connectRepository(run: Run) {
 }
 
 async function connectLinearTeam(run: Run) {
-  await run.page.getByRole('button', { name: 'Accounts', exact: true }).click()
+  await openAccounts(run.page)
   await signInToLinear(run, { scope: accountsDialog(run.page), name: 'Connect a Linear Account' })
-  await press(accountsDialog(run.page), 'Close')
+  await closeAccounts(run.page)
   await chooseAccount(run.page, `Linear · ${ADA.name}`)
   await connectForm(run.page).getByRole('combobox', { name: 'Team' }).fill('Eng')
   await run.page.getByRole('option', { name: 'Engine' }).click()
@@ -83,14 +83,20 @@ export type Tickets = {
   restart: () => Promise<Run>
 }
 
-export const test = packagedTest.extend<{ ticketState: TicketState; tickets: Tickets }>({
+export const test = packagedTest.extend<{
+  ticketState: TicketState
+  // The main process's active poll in milliseconds; null keeps the minute.
+  ticketPollMs: number | null
+  tickets: Tickets
+}>({
   ticketState: ['none', { option: true }],
+  ticketPollMs: [null, { option: true }],
   tickets: async (
-    { root, applicationUnderTest, ticketState, performanceProfile },
+    { root, applicationUnderTest, ticketState, ticketPollMs, performanceProfile },
     use,
     testInfo,
   ) => {
-    const fixture = await prepare(root, applicationUnderTest)
+    const fixture = await prepare(root, applicationUnderTest, ticketPollMs)
     let application: ElectronApplication | undefined
     let traced: BrowserContext | undefined
     const open = async () => {

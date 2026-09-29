@@ -1,22 +1,23 @@
+import type { BackgroundTaskRecord } from '@/domains/sessions/api/feed/background-task-record'
+import type { SubagentCall, SubagentEvent } from '@/domains/sessions/api/feed/subagent-event'
+import type { ToolCall } from '@/domains/sessions/api/feed/tool-call'
+import type {
+  ContentBlock,
+  ToolResult,
+  TranscriptEventKind,
+} from '@/domains/sessions/api/feed/transcript-content'
 import type { SessionEntry } from '@/domains/sessions/renderer/model/models'
-import type { BackgroundTaskRecord } from './background-task-record'
-import type { SubagentCall, SubagentEvent } from './subagent-event'
-import type { ToolCall } from './tool-call'
-import type { ContentBlock, ToolResult, TranscriptEventKind } from './transcript-content'
 import type { PlanChange } from './transcript-plan'
 import type { TranscriptUsage } from './transcript-usage'
 
-export type {
-  BackgroundState,
-  BackgroundTaskRecord,
-} from './background-task-record'
-export { BACKGROUND_STATES } from './background-task-record'
+export type { BackgroundTaskRecord } from '@/domains/sessions/api/feed/background-task-record'
+export { BACKGROUND_STATES } from '@/domains/sessions/api/feed/background-task-record'
 export {
   SUBAGENT_EVENTS,
   type SubagentEvent,
   type SubagentEventName,
   type SubagentFacts,
-} from './subagent-event'
+} from '@/domains/sessions/api/feed/subagent-event'
 export type {
   AskFacts,
   EditedFile,
@@ -28,20 +29,15 @@ export type {
   SearchFacts,
   SkillFacts,
   SubagentControlFacts,
-  ToolCall,
   ToolCallStatus,
-} from './tool-call'
-export { TOOL_CALL_STATUSES } from './tool-call'
+} from '@/domains/sessions/api/feed/tool-call'
+export { TOOL_CALL_STATUSES } from '@/domains/sessions/api/feed/tool-call'
 export type {
   ContentBlock,
   RichResultBlock,
-  ToolResult,
   TranscriptEventKind,
-} from './transcript-content'
-export {
-  resultText,
-  TRANSCRIPT_EVENT_KINDS,
-} from './transcript-content'
+} from '@/domains/sessions/api/feed/transcript-content'
+export { TRANSCRIPT_EVENT_KINDS } from '@/domains/sessions/api/feed/transcript-content'
 export type { PlanChange } from './transcript-plan'
 export type { TranscriptUsage } from './transcript-usage'
 

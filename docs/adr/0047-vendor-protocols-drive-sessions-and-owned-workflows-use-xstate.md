@@ -2,6 +2,17 @@
 
 Status: accepted · 2026-09-21
 
+## Amendment · main-owned root Feed reading (#2824) · 2026-09-28
+
+A root Session's Feed has one main-process reader. It attaches to the event journal before it reads
+vendor history, reconciles live items with history by stable identity, groups settled tool runs,
+and publishes one validated reading: the ordered rows with stable IDs and render revisions, the read
+state, any read error, and the waiting Question and Permission. The renderer observes that reading
+and asks for Refresh; it holds no replay cursor, joins nothing, and groups no calls. An expired
+replay or a new reader reads vendor history afresh. A failed read keeps the rows it had. This
+replaces the renderer cursor in the replay amendment below. Subagent chains still use the history
+query and raw event route until they move to the same reader (#2882).
+
 ## Amendment · Harness registrations · 2026-09-28
 
 Shared Session, platform, and renderer code select Harness behavior by Harness ID through one

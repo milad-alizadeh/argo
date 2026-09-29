@@ -5,8 +5,8 @@
 // confirms it.
 
 import type { SessionAttachmentInput } from '@/domains/sessions/api/attachments'
-import { attachedImageUrl } from '@/domains/sessions/renderer/feed/model/feed-images'
-import type { SessionFeedRow } from '@/domains/sessions/renderer/feed/model/feed-rows'
+import { attachedImageUrl } from '@/domains/sessions/api/feed/feed-images'
+import type { SessionFeedRow } from '@/domains/sessions/api/feed/feed-rows'
 import type { SessionPosture, SessionStatus } from '@/domains/sessions/renderer/model/models'
 
 export const TURN_MARKER_STAGES = ['starting', 'resuming', 'live'] as const

@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
-import { RunningText } from '@/platform/renderer/components/running-text'
 import type { SessionEvidence, SessionFeedRow } from '../../types'
 import { FeedGallery, FeedImage } from '../content/feed-images'
 import { FeedMarkdown } from '../content/feed-markdown'
@@ -64,8 +63,13 @@ function PlainText({ text }: { text: string }) {
 }
 
 export const FEED_ROW_RENDERERS = {
-  tool: ({ row, activeEvidenceId, onOpenEvidence }) => (
-    <FeedToolLine activeEvidenceId={activeEvidenceId} call={row} onOpen={onOpenEvidence} />
+  tool: ({ row, activeEvidenceId, onOpenEvidence, streaming }) => (
+    <FeedToolLine
+      activeEvidenceId={activeEvidenceId}
+      call={row}
+      live={streaming}
+      onOpen={onOpenEvidence}
+    />
   ),
   'tool-group': ({ row, activeEvidenceId, onOpenEvidence, toolGroups }) => (
     <FeedToolGroup
@@ -94,10 +98,16 @@ export const FEED_ROW_RENDERERS = {
         text={streamingText}
       />
     ),
-  thought: ({ row, streaming }) => (
-    <p className="whitespace-pre-wrap break-words text-muted-foreground">
-      <RunningText running={streaming}>{row.text}</RunningText>
-    </p>
+  // Commentary is Markdown; while it is the live tail it is the one line that shimmers.
+  thought: ({ row, activeEvidenceId, onOpenEvidence, streaming }) => (
+    <div className={`break-words text-muted-foreground ${streaming ? 'feed-work-shimmer' : ''}`}>
+      <FeedMarkdown
+        activeEvidenceId={activeEvidenceId}
+        onOpenEvidence={onOpenEvidence}
+        rowId={row.id}
+        text={row.text}
+      />
+    </div>
   ),
   'command-output': ({ row }) => <PlainText text={row.text} />,
   event: ({ row }) => <FeedEvent row={row} />,

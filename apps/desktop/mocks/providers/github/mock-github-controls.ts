@@ -22,5 +22,15 @@ export function githubControls(
     outage(kind) {
       state.outage = kind
     },
+    holdReads() {
+      let release = () => {}
+      state.held = new Promise((settle) => {
+        release = settle
+      })
+      return () => {
+        state.held = null
+        release()
+      }
+    },
   }
 }

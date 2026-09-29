@@ -12,6 +12,7 @@ import { createConnectionPort } from '@/domains/connections/main'
 import { createHarnessSignInProcedureContext } from '@/domains/harness-signin/main'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
 import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
+import { SessionActivities } from '@/domains/sessions/main/api/session-activities'
 import {
   recordHistoryActivity,
   SessionRosterChanges,
@@ -30,6 +31,14 @@ import { SessionEventJournal } from '@/domains/sessions/main/live/session-event-
 import { SessionHistoryFollowers } from '@/domains/sessions/main/live/session-history-followers'
 import { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
+import { ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
+import { markInterruptedTicketScans } from '@/domains/tickets/main/sync/ticket-sync-records'
+import {
+  type TicketSyncSupervisorCommand,
+  ticketSyncTiming,
+} from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
+import { reportWindowVisibility } from '@/domains/tickets/main/sync/window-visibility'
+import { TicketChanges } from '@/domains/tickets/main/ticket-changes'
 import { ensureManagedWorkspace } from '@/domains/workspaces/main/workspace-create-managed'
 import { type Harness, harnessSchema } from '@/harnesses/harness'
 import { tailSessionHistory, watchHistoryActivity } from '@/harnesses/host/history-watch'
@@ -140,7 +149,8 @@ async function chooseProjectFolder(window: BrowserWindow): Promise<string | null
   return chosen.canceled ? null : (chosen.filePaths[0] ?? null)
 }
 
-function createDomainContexts(database: Database, registry: HarnessRegistry) {
+// Account access and the Connection store, created once: the Ticket scans and every window share them.
+function createTicketServices(database: Database) {
   const userData = app.getPath('userData')
   const { accountData, connectionData } = developmentStoreDirectories({
     userData,
@@ -157,13 +167,21 @@ function createDomainContexts(database: Database, registry: HarnessRegistry) {
     openExternal: (url) => shell.openExternal(url).then(() => undefined),
     database,
   })
+  const connections = createConnectionPort({
+    path: access.paths.connections,
+    exclusive: access.exclusive,
+  })
+  return { access, connections, changes: new TicketChanges() }
+}
+
+type TicketServices = ReturnType<typeof createTicketServices>
+
+function createDomainContexts(services: TicketServices, registry: HarnessRegistry) {
+  const { access, connections } = services
   return {
     access,
     accounts: createAccountProcedureContext(access),
-    connections: createConnectionPort({
-      path: access.paths.connections,
-      exclusive: access.exclusive,
-    }),
+    connections,
     harnessSignIn: createHarnessSignInProcedureContext(Object.values(registry)),
   }
 }
@@ -193,6 +211,7 @@ function routerForWindow(options: {
   registry: HarnessRegistry
   roster: SessionRosterChanges
   watchedStatus: WatchedSessionStatus
+  activities: SessionActivities
 }) {
   const { window, database, actors, domains, sessionSyncStatus, registry, roster, watchedStatus } =
     options
@@ -237,6 +256,7 @@ function routerForWindow(options: {
       supervisor: actors.sessions,
       roster,
       watchedStatus,
+      activities: options.activities,
       acceptsAttachments: (harness) => registry[harness].acceptsAttachments,
       journal: currentSessionEventJournal(),
       interactions: currentSessionInteractionBroker(),
@@ -244,18 +264,40 @@ function routerForWindow(options: {
       refreshSessionSync: () => actors.sessionSync.send({ type: 'Refresh' }),
       sessionSyncStatus,
     },
-    tickets: {
-      access: domains.access,
-      connections: domains.connections,
-      providers: PROVIDER_REGISTRY,
-    },
+    tickets: ticketProcedureContext({ database, actors, domains }),
     workspaces: { database, exclusive },
   })
+}
+
+function ticketProcedureContext({
+  database,
+  actors,
+  domains,
+}: {
+  database: Database
+  actors: WindowActors
+  domains: ReturnType<typeof createDomainContexts>
+}) {
+  return {
+    access: domains.access,
+    connections: domains.connections,
+    providers: PROVIDER_REGISTRY,
+    index: {
+      database,
+      changes: currentTicketServices().changes,
+      send: (command: TicketSyncSupervisorCommand) => actors.ticketSync.send(command),
+    },
+  }
 }
 
 function currentSessionSyncStatus(): SessionSyncStatusStore[] {
   if (sessionSyncStatus === undefined) throw new Error('Session sync status is unavailable.')
   return Object.values(sessionSyncStatus)
+}
+
+function currentTicketServices(): TicketServices {
+  if (ticketServices === undefined) throw new Error('Ticket services are unavailable.')
+  return ticketServices
 }
 
 function currentSessionEventJournal(): SessionEventJournal {
@@ -275,6 +317,9 @@ type WindowActors = {
   sessionSync: {
     send: (event: SessionSyncSupervisorCommand) => void
   }
+  ticketSync: {
+    send: (event: TicketSyncSupervisorCommand) => void
+  }
 }
 
 function requireWindowActors(actor: AppActor): WindowActors {
@@ -285,9 +330,19 @@ function requireWindowActors(actor: AppActor): WindowActors {
         send: (event: SessionSyncSupervisorCommand) => void
       }
     | undefined
-  if (catalog === undefined || sessions === undefined || sessionSync === undefined)
+  const ticketSync = actor.system.get('ticketSync') as
+    | {
+        send: (event: TicketSyncSupervisorCommand) => void
+      }
+    | undefined
+  if (
+    catalog === undefined ||
+    sessions === undefined ||
+    sessionSync === undefined ||
+    ticketSync === undefined
+  )
     throw new Error('Application child actors are unavailable.')
-  return { catalog, sessions, sessionSync }
+  return { catalog, sessions, sessionSync, ticketSync }
 }
 
 function attachWindowTrpc({
@@ -307,6 +362,7 @@ function attachWindowTrpc({
 }): () => void {
   const roster = new SessionRosterChanges()
   const watchedStatus = new WatchedSessionStatus(() => roster.changed())
+  const activities = new SessionActivities(() => roster.changed())
   const router = routerForWindow({
     actors,
     domains,
@@ -316,6 +372,7 @@ function attachWindowTrpc({
     registry,
     roster,
     watchedStatus,
+    activities,
   })
   const stopRosterSources = watchRosterSources({ database, registry, roster, watchedStatus })
   const detach = attachTrpcTransport({ window, rendererURL, router, context: undefined })
@@ -382,7 +439,7 @@ function closeDesktopWindow({
 function createWindow(actor: AppActor, database: Database, registry: HarnessRegistry): void {
   const actors = requireWindowActors(actor)
   actors.sessionSync.send({ type: 'Refresh' })
-  const domains = createDomainContexts(database, registry)
+  const domains = createDomainContexts(currentTicketServices(), registry)
   desktopWindow = createDesktopWindow({
     buildDirectory: __dirname,
     rendererName: MAIN_WINDOW_VITE_NAME,
@@ -410,6 +467,7 @@ function createWindow(actor: AppActor, database: Database, registry: HarnessRegi
         registry,
       })
       attachAppearanceWatch(window)
+      reportWindowVisibility(window, actors.ticketSync.send)
       window.once('closed', () => closeDesktopWindow({ actor, database, domains, detachTrpc }))
       installMenu(window)
     },
@@ -427,6 +485,7 @@ let applicationDatabase: Database | undefined
 let sessionSyncStatus: Record<Harness, SessionSyncStatusStore> | undefined
 let sessionEventJournal: SessionEventJournal | undefined
 let sessionInteractionBroker: SessionInteractionBroker | undefined
+let ticketServices: TicketServices | undefined
 
 async function prepare() {
   const { projectData } = developmentStoreDirectories({
@@ -436,7 +495,10 @@ async function prepare() {
   })
   applicationDatabase = openDatabase(projectData, { packaged: app.isPackaged })
   markUnresolvedSessionCommandsUnknown(applicationDatabase)
+  markInterruptedTicketScans(applicationDatabase)
   const database = applicationDatabase
+  const tickets = createTicketServices(database)
+  ticketServices = tickets
   sessionSyncStatus = Object.fromEntries(
     harnessSchema.options.map((harness) => [
       harness,
@@ -459,6 +521,12 @@ async function prepare() {
     sessionSyncStatus,
     sessionEventJournal,
     sessionInteractionBroker,
+    ticketSync: {
+      database,
+      readPage: ticketPageReader({ access: tickets.access, providers: PROVIDER_REGISTRY }),
+      changed: tickets.changes.changed,
+      timing: ticketSyncTiming(PROOF_ENABLED),
+    },
     registry: harnessRegistry,
   }
 }

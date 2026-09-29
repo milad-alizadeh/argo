@@ -230,15 +230,6 @@
     {
       "identity": {
         "rule": "no-aliased-same-facet-import",
-        "source": "apps/desktop/src/domains/sessions/renderer/attachment-chip.tsx",
-        "target": "apps/desktop/src/domains/sessions/renderer/feed/model/feed-images.ts"
-      },
-      "owner": "#2642",
-      "reason": "The parked same-facet import gate owns this exact edge."
-    },
-    {
-      "identity": {
-        "rule": "no-aliased-same-facet-import",
         "source": "apps/desktop/src/domains/sessions/renderer/composer/editor/composer-layout.stories.tsx",
         "target": "apps/desktop/src/domains/sessions/renderer/model/models.ts"
       },
@@ -311,33 +302,6 @@
     {
       "identity": {
         "rule": "no-aliased-same-facet-import",
-        "source": "apps/desktop/src/domains/sessions/renderer/feed/document/feed-document.tsx",
-        "target": "apps/desktop/src/domains/sessions/renderer/feed/model/tool-groups.ts"
-      },
-      "owner": "#2642",
-      "reason": "The parked same-facet import gate owns this exact edge."
-    },
-    {
-      "identity": {
-        "rule": "no-aliased-same-facet-import",
-        "source": "apps/desktop/src/domains/sessions/renderer/feed/model/tool-feed.ts",
-        "target": "apps/desktop/src/domains/sessions/renderer/model/tool-changes.ts"
-      },
-      "owner": "#2642",
-      "reason": "The parked same-facet import gate owns this exact edge."
-    },
-    {
-      "identity": {
-        "rule": "no-aliased-same-facet-import",
-        "source": "apps/desktop/src/domains/sessions/renderer/feed/rows/live-activity-text.tsx",
-        "target": "apps/desktop/src/domains/sessions/renderer/feed/model/tool-feed.ts"
-      },
-      "owner": "#2642",
-      "reason": "The parked same-facet import gate owns this exact edge."
-    },
-    {
-      "identity": {
-        "rule": "no-aliased-same-facet-import",
         "source": "apps/desktop/src/domains/sessions/renderer/feed/rows/live-activity-text.tsx",
         "target": "apps/desktop/src/domains/sessions/renderer/model/models.ts"
       },
@@ -348,33 +312,6 @@
       "identity": {
         "rule": "no-aliased-same-facet-import",
         "source": "apps/desktop/src/domains/sessions/renderer/feed/rows/turn-marker-state.ts",
-        "target": "apps/desktop/src/domains/sessions/renderer/feed/model/feed-images.ts"
-      },
-      "owner": "#2642",
-      "reason": "The parked same-facet import gate owns this exact edge."
-    },
-    {
-      "identity": {
-        "rule": "no-aliased-same-facet-import",
-        "source": "apps/desktop/src/domains/sessions/renderer/feed/rows/turn-marker-state.ts",
-        "target": "apps/desktop/src/domains/sessions/renderer/feed/model/feed-rows.ts"
-      },
-      "owner": "#2642",
-      "reason": "The parked same-facet import gate owns this exact edge."
-    },
-    {
-      "identity": {
-        "rule": "no-aliased-same-facet-import",
-        "source": "apps/desktop/src/domains/sessions/renderer/feed/rows/turn-marker-state.ts",
-        "target": "apps/desktop/src/domains/sessions/renderer/model/models.ts"
-      },
-      "owner": "#2642",
-      "reason": "The parked same-facet import gate owns this exact edge."
-    },
-    {
-      "identity": {
-        "rule": "no-aliased-same-facet-import",
-        "source": "apps/desktop/src/domains/sessions/renderer/feed/source/transcript-content.ts",
         "target": "apps/desktop/src/domains/sessions/renderer/model/models.ts"
       },
       "owner": "#2642",
@@ -394,42 +331,6 @@
         "rule": "no-aliased-same-facet-import",
         "source": "apps/desktop/src/domains/sessions/renderer/feed/source/transcript.ts",
         "target": "apps/desktop/src/domains/sessions/renderer/model/models.ts"
-      },
-      "owner": "#2642",
-      "reason": "The parked same-facet import gate owns this exact edge."
-    },
-    {
-      "identity": {
-        "rule": "no-aliased-same-facet-import",
-        "source": "apps/desktop/src/domains/sessions/renderer/feed/tools/feed-group-title.tsx",
-        "target": "apps/desktop/src/domains/sessions/renderer/feed/model/feed-rows.ts"
-      },
-      "owner": "#2642",
-      "reason": "The parked same-facet import gate owns this exact edge."
-    },
-    {
-      "identity": {
-        "rule": "no-aliased-same-facet-import",
-        "source": "apps/desktop/src/domains/sessions/renderer/feed/tools/feed-inline-tool-call.tsx",
-        "target": "apps/desktop/src/domains/sessions/renderer/feed/model/tool-feed.ts"
-      },
-      "owner": "#2642",
-      "reason": "The parked same-facet import gate owns this exact edge."
-    },
-    {
-      "identity": {
-        "rule": "no-aliased-same-facet-import",
-        "source": "apps/desktop/src/domains/sessions/renderer/feed/tools/feed-tools.tsx",
-        "target": "apps/desktop/src/domains/sessions/renderer/feed/model/tool-feed.ts"
-      },
-      "owner": "#2642",
-      "reason": "The parked same-facet import gate owns this exact edge."
-    },
-    {
-      "identity": {
-        "rule": "no-aliased-same-facet-import",
-        "source": "apps/desktop/src/domains/sessions/renderer/feed/tools/feed-tools.tsx",
-        "target": "apps/desktop/src/domains/sessions/renderer/feed/model/tool-groups.ts"
       },
       "owner": "#2642",
       "reason": "The parked same-facet import gate owns this exact edge."
@@ -502,15 +403,6 @@
         "rule": "no-aliased-same-facet-import",
         "source": "apps/desktop/src/domains/sessions/renderer/inspector/work-inspector-reveal.ts",
         "target": "apps/desktop/src/domains/sessions/renderer/work/types.ts"
-      },
-      "owner": "#2642",
-      "reason": "The parked same-facet import gate owns this exact edge."
-    },
-    {
-      "identity": {
-        "rule": "no-aliased-same-facet-import",
-        "source": "apps/desktop/src/domains/sessions/renderer/model/models.ts",
-        "target": "apps/desktop/src/domains/sessions/renderer/feed/model/feed-rows.ts"
       },
       "owner": "#2642",
       "reason": "The parked same-facet import gate owns this exact edge."

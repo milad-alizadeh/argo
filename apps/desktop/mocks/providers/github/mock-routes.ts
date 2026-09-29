@@ -75,7 +75,7 @@ function visibleRepositories(exchange: Exchange, user: MockUser) {
 }
 
 const REPOSITORY_PATH =
-  /^\/repos\/([^/]+\/[^/]+)(?:\/issues(?:\/(\d+)\/(sub_issues|dependencies\/blocked_by))?)?$/
+  /^\/repos\/([^/]+\/[^/]+)(?:\/issues(?:\/(\d+)(?:\/(sub_issues|dependencies\/blocked_by))?)?)?$/
 
 function repositoryRead(exchange: Exchange, user: MockUser) {
   const { state, response, url } = exchange
@@ -93,6 +93,10 @@ function repositoryRead(exchange: Exchange, user: MockUser) {
     return page(exchange, repository.issues.filter(isOpen).map(all))
   }
   const parent = repository.issues.find((issue) => issue.number === Number(match[2]))
+  // One issue by number, open or closed, as GitHub serves a pull request here too.
+  if (!match[3]) {
+    return parent ? send(response, 200, all(parent)) : send(response, 404, { message: 'Not Found' })
+  }
   const numbers = (match[3] === 'sub_issues' ? parent?.children : parent?.blockedBy) ?? []
   page(exchange, repository.issues.filter((issue) => numbers.includes(issue.number)).map(all))
 }
@@ -143,7 +147,10 @@ export async function answer(state: MockState, request: IncomingMessage, respons
   if (route === 'POST /login/device/code') return deviceCode(exchange)
   if (route === 'POST /login/oauth/access_token') return accessToken(exchange)
   if (route === 'GET /login/device') return enterCode(exchange)
-  if (request.method === 'GET') return apiRead(exchange)
+  if (request.method === 'GET') {
+    await state.held
+    return apiRead(exchange)
+  }
   if (request.method === 'PATCH') return issueWrite(exchange)
   send(response, 405, { message: 'Method not allowed' })
 }

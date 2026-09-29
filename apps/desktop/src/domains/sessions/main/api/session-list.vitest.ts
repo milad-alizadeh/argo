@@ -4,6 +4,7 @@ import { initTRPC } from '@trpc/server'
 import { test } from 'vitest'
 import type { z } from 'zod'
 import { databaseFrom } from '@/database/database'
+import { SessionActivities } from './session-activities'
 import { sessionListProcedure, type sessionListUpdateSchema } from './session-list'
 import { SessionRosterChanges } from './session-roster-changes'
 import { WatchedSessionStatus } from './watched-session-status'
@@ -64,12 +65,14 @@ function sessionListCaller(sessions: Record<string, unknown> = {}) {
   }
   const roster = new SessionRosterChanges()
   const watchedStatus = new WatchedSessionStatus(() => roster.changed())
+  const activities = new SessionActivities(() => roster.changed())
   const router = initTRPC.create().router({
     list: sessionListProcedure({
       database,
       supervisor: supervisor as never,
       roster,
       watchedStatus,
+      activities,
     }),
   })
   const caller = router.createCaller({})
@@ -89,7 +92,7 @@ function sessionListCaller(sessions: Record<string, unknown> = {}) {
   const statusChanged = (sessionId: string) => {
     for (const listener of statusListeners) listener({ sessionId })
   }
-  return { client, list, updates, roster, statusChanged, watchedStatus }
+  return { client, list, updates, roster, statusChanged, watchedStatus, activities }
 }
 
 type SessionListUpdate = z.infer<typeof sessionListUpdateSchema>
@@ -587,6 +590,24 @@ test('shows what a watched Session’s history last said about its turn', async 
     assert.deepEqual(statusesOf(received), [['unknown'], 'running', 'idle'])
   } finally {
     watchedStatus.dispose()
+    client.close()
+  }
+})
+
+test('draws the activity the Session’s Feed published under its title', async () => {
+  const { client, list, activities } = sessionListCaller()
+  const activityOf = async () =>
+    (await list({ projectId: 'project-1', pageSize: 10 })).rows.map((row) => row.activity)
+  try {
+    insertSession(client, { id: IDS[1], harness: 'claude', nativeId: 'native-2', updatedAt: 30 })
+
+    activities.publish(IDS[1], { label: 'Ran bun test', kind: 'command', open: true })
+    assert.deepEqual(await activityOf(), [
+      { label: 'Ran bun test', kind: 'command', open: true, tool: 'command', target: null },
+    ])
+    activities.publish(IDS[1], null)
+    assert.deepEqual(await activityOf(), [null])
+  } finally {
     client.close()
   }
 })

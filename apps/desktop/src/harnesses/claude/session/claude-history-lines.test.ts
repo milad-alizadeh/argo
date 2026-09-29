@@ -164,5 +164,5 @@ test.each([
   ],
   ['a broken line', 'not json', null],
 ] as const)('reads %s as a turn that is %p', (_name, line, turn) => {
-  expect(claudeHistoryTurn(line)).toBe(turn)
+  expect(claudeHistoryTurn(line)).toEqual(turn === null ? null : { turn, turnId: null })
 })

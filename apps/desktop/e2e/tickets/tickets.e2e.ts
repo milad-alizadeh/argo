@@ -1,10 +1,17 @@
-// The packaged Ticket proof (#1848, #1849, #2013): connect an Account, connect a source, list,
-// detail, a status change, restart, revoked access, an expired renewal, disconnect and a visible
-// failure, all through the shipped cockpit against a mock GitHub and a mock Linear. Each case
-// declares the Accounts and source it starts with (`ticket-test.ts`).
+// The packaged Ticket proof (#1848, #1849, #2013, #2870, #2871): connect an Account, connect a
+// source, list, detail, a status change, restart, revoked access, an expired renewal, disconnect, a
+// visible failure, the automatic refresh and linked Tickets opened by ID, all through the shipped
+// cockpit against a mock GitHub and a mock Linear. Each case declares the Accounts and source it
+// starts with (`ticket-test.ts`).
 import { packagedRun } from '../application-under-test'
 import { assertShippedFusesIntact } from '../packaged-app'
-import { proveBacklog, proveConnect, proveConnectRepository } from './cases/github.case'
+import {
+  proveBacklog,
+  proveCommittedBacklog,
+  proveConnect,
+  proveConnectRepository,
+  proveRestartFromSqlite,
+} from './cases/github.case'
 import {
   proveChangeState,
   proveDisconnect,
@@ -13,12 +20,15 @@ import {
 } from './cases/lifecycle.case'
 import {
   proveLinearBacklog,
+  proveLinearCommitted,
   proveLinearConnect,
   proveLinearDisconnect,
   proveLinearExpired,
   proveLinearRestart,
   proveLinearStatus,
 } from './cases/linear.case'
+import { proveGitHubLinkedTicket, proveLinearLinkedTicket } from './cases/linked.case'
+import { proveAutomaticRefresh } from './cases/refresh.case'
 import { test } from './ticket-test'
 
 test('connect a GitHub Account', ({ tickets }) => proveConnect(tickets.run()))
@@ -34,6 +44,11 @@ test.describe('with a GitHub repository', () => {
   test.use({ ticketState: 'github-repository' })
 
   test('list the backlog', ({ tickets }) => proveBacklog(tickets.run()))
+  test('the backlog reads committed Tickets', ({ tickets }) => proveCommittedBacklog(tickets.run()))
+  test('a restart draws committed Tickets while GitHub holds every read', async ({ tickets }) => {
+    const release = tickets.run().fixture.github.holdReads()
+    await proveRestartFromSqlite(await tickets.restart(), release)
+  })
   test('restart while GitHub is down', async ({ tickets }) => {
     tickets.run().fixture.github.outage('down')
     await proveRestartAndFailure(await tickets.restart())
@@ -41,6 +56,17 @@ test.describe('with a GitHub repository', () => {
   test('revoked access', ({ tickets }) => proveRevoked(tickets.run()))
   test('a Ticket changes state', ({ tickets }) => proveChangeState(tickets.run()))
   test('disconnect the GitHub Account', ({ tickets }) => proveDisconnect(tickets.run()))
+  test('a linked GitHub Ticket opens by ID', ({ tickets }) =>
+    proveGitHubLinkedTicket(tickets.run()))
+})
+
+const PROOF_POLL_MS = 500
+
+test.describe('with a GitHub repository polled quickly', () => {
+  test.use({ ticketState: 'github-repository', ticketPollMs: PROOF_POLL_MS })
+
+  test('the visible Project refreshes automatically', ({ tickets }) =>
+    proveAutomaticRefresh(tickets.run(), PROOF_POLL_MS))
 })
 
 test.describe('with a Linear team', () => {
@@ -52,8 +78,12 @@ test.describe('with a Linear team', () => {
     await proveLinearStatus(tickets.run())
     await proveLinearRestart(await tickets.restart())
   })
+  test('the Linear scan commits Tickets that keep their identity', ({ tickets }) =>
+    proveLinearCommitted(tickets.run(), tickets.restart))
   test('an expired Linear renewal', ({ tickets }) => proveLinearExpired(tickets.run()))
   test('disconnect the Linear Account', ({ tickets }) => proveLinearDisconnect(tickets.run()))
+  test('a linked Linear Ticket opens by ID', ({ tickets }) =>
+    proveLinearLinkedTicket(tickets.run()))
 })
 
 test('the shipped app keeps its fuses', () => {

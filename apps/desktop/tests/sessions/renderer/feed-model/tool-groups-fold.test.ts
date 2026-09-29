@@ -1,12 +1,9 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import type { SessionFeedRow } from '@/domains/sessions/renderer/feed/model/feed-rows'
-import { type ToolResult, toolRows } from '@/domains/sessions/renderer/feed/model/tool-feed'
-import {
-  foldSettledToolRuns,
-  groupToolRuns,
-} from '@/domains/sessions/renderer/feed/model/tool-groups'
-import type { ToolCall } from '@/domains/sessions/renderer/feed/source/tool-call'
+import type { SessionFeedRow } from '@/domains/sessions/api/feed/feed-rows'
+import type { ToolCall } from '@/domains/sessions/api/feed/tool-call'
+import { type ToolResult, toolRows } from '@/domains/sessions/api/feed/tool-feed'
+import { foldSettledToolRuns, groupToolRuns } from '@/domains/sessions/api/feed/tool-groups'
 import { searchCall } from './tool-feed-test-fixtures'
 
 function bash(id: string, command: string): ToolCall {

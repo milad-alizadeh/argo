@@ -99,6 +99,14 @@ function target(state: MockLinearState, user: MockLinearUser, key: string) {
   return { id: `issue-${found.issue.identifier}`, team: { id: found.team.id, states } }
 }
 
+// One issue by its identifier or its `issue-` id, open or closed, with the team it belongs to.
+function issueById(state: MockLinearState, user: MockLinearUser, key: string) {
+  const found = findIssue(state, key.replace(/^issue-/, ''))
+  if (!found?.team.visibleTo.includes(user.id)) return null
+  const { team, issue } = found
+  return { ...issueJSON(state, { team, user }, issue), team: { id: team.id } }
+}
+
 const ANSWERS: Record<string, Answer> = {
   Viewer: (_state, user) => ({
     viewer: {
@@ -125,6 +133,7 @@ const ANSWERS: Record<string, Answer> = {
     )
     return { searchIssues: paged(matches, variables), team: workflow(state, user, variables) }
   },
+  Issue: (state, user, variables) => ({ issue: issueById(state, user, variables.key ?? '') }),
   Target: (state, user, variables) => ({ issue: target(state, user, variables.key ?? '') }),
   Move: (state, _user, variables) => {
     const moved = moveIssue(state, variables.id ?? '', variables.state ?? '')

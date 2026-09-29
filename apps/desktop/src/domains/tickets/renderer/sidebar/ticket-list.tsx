@@ -13,6 +13,7 @@ import {
 } from '@/platform/renderer/components/ui/empty'
 import { providerPresentation } from '@/providers/presentation-registry'
 import { type Backlog, backlogRows, unfoldedRows } from '../lib/backlog'
+import { ProblemBanner } from '../status/problem-banner'
 import { TicketVirtualList } from './ticket-virtual-list'
 
 export type TicketListProps = {
@@ -57,6 +58,8 @@ function NoTickets({ query, provider }: Pick<Backlog, 'query' | 'provider'>) {
   )
 }
 
+// A failed scan keeps the saved rows on screen, so its failure sits above them rather than over them.
+
 // A folded parent hides the rows under it until it is unfolded; every parent starts unfolded.
 function useFolds() {
   const [folded, setFolded] = useState<ReadonlySet<string>>(new Set())
@@ -84,11 +87,19 @@ export function TicketList({
       {placement === 'workspace' ? (
         <AppPageHeader>
           <PageHeading>{t('backlog.label')}</PageHeading>
-          <p aria-live="polite" className="ml-auto type-meta text-muted-foreground">
-            {tally(t, backlog)}
-          </p>
+          <div className="ml-auto flex items-center gap-(--spacing-shell-item)">
+            {backlog.sync.refreshing ? (
+              <p className="type-meta text-faint">
+                {t('backlog.refreshing', { provider: providerPresentation(backlog.provider).name })}
+              </p>
+            ) : null}
+            <p aria-live="polite" className="type-meta text-muted-foreground">
+              {tally(t, backlog)}
+            </p>
+          </div>
         </AppPageHeader>
       ) : null}
+      {backlog.sync.problem ? <ProblemBanner {...backlog.sync.problem} /> : null}
       {backlog.tickets.length === 0 ? (
         <NoTickets provider={backlog.provider} query={backlog.query} />
       ) : null}

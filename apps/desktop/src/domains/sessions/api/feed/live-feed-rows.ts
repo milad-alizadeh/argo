@@ -1,8 +1,9 @@
 import type { FeedContent, MediaSource } from '@/domains/sessions/api/feed-content'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
-import type { SessionFeedRow } from '../../types'
-import type { ToolCall } from '../source/tool-call'
 import { checkedDataImageUrl, dataImageUrl, fileImageUrl } from './feed-images'
+import type { SessionFeedRow } from './feed-rows'
+import { derivedId } from './fingerprint'
+import type { ToolCall } from './tool-call'
 import { toolRows } from './tool-feed'
 
 function workStatus(
@@ -107,7 +108,7 @@ function promptRow(content: Extract<FeedContent, { kind: 'message' }>): SessionF
 
 function toolOutputRows(content: Extract<FeedContent, { kind: 'tool' }>): SessionFeedRow[] {
   return (content.output ?? []).flatMap((part, index): SessionFeedRow[] => {
-    const id = `${content.callId}:output:${index}`
+    const id = derivedId(content.callId, `:output:${index}`)
     switch (part.kind) {
       case 'text':
         return []
@@ -372,9 +373,10 @@ function contentRow(content: FeedContent): SessionFeedRow | null {
       if (content.phase === 'commentary')
         return { shape: 'thought', id: content.id, text: content.text }
       return promptRow(content)
+    // Reasoning the Harness withholds has nothing to read, so it draws no row.
     case 'reasoning':
-      return content.text === null
-        ? { shape: 'event', id: content.id, event: 'reasoning', text: null }
+      return content.text === null || content.text.trim() === ''
+        ? null
         : { shape: 'thought', id: content.id, text: content.text }
     case 'media': {
       const source = content.mediaType === 'image' ? mediaUrl(content.source) : null
@@ -466,7 +468,7 @@ function liveRows(event: SessionLiveEvent): SessionFeedRow[] {
   }
 }
 
-function rowKey(row: SessionFeedRow): string {
+export function rowKey(row: SessionFeedRow): string {
   const id = row.shape === 'prose' || row.shape === 'thought' ? row.id.replace(/:0$/, '') : row.id
   return `${row.shape}:${id}`
 }

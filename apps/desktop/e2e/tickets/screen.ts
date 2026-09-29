@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
 import type { ElectronApplication, Locator, Page } from 'playwright-core'
 import type { MockUser } from '../../mocks/providers/github/mock-github'
 import { ADA } from '../../mocks/providers/linear/mock-linear-cast'
@@ -33,6 +34,19 @@ export const chooseAccount = (page: Page, name: string) =>
 
 export const accountsDialog = (page: Page) => page.getByRole('dialog', { name: 'Accounts' })
 
+export const openAccounts = (page: Page) =>
+  page.getByRole('button', { name: 'Accounts', exact: true }).click()
+
+// The dialog fades out, and a click meant for the room behind it lands on the fading dialog.
+export async function closeAccounts(page: Page) {
+  await press(accountsDialog(page), 'Close')
+  await accountsDialog(page).waitFor({ state: 'hidden' })
+}
+
+// The Detail's title line, which links the Ticket out to its provider.
+export const detailTitle = (detail: Locator, title: string) =>
+  detail.getByRole('heading', { level: 2 }).filter({ hasText: title })
+
 export const accountRow = (page: Page, login: string, provider = 'GitHub') =>
   accountsDialog(page).getByRole('listitem', { name: `${provider} Account ${login}` })
 
@@ -40,10 +54,10 @@ export const backlog = (page: Page) => page.getByRole('region', { name: 'Backlog
 
 export const room = (run: Run) => run.page.getByRole('main', { name: 'Tickets' })
 
-export async function openRoom(page: Page, room: 'tickets' | 'atlas') {
+export async function openRoom(page: Page, room: 'tickets' | 'atlas', projectId = 'project-1') {
   await page.evaluate((hash) => {
     window.location.hash = hash
-  }, `#/${room}`)
+  }, `#/projects/${projectId}/${room}`)
   if (room === 'tickets') await page.getByRole('main', { name: 'Tickets' }).waitFor()
 }
 
@@ -99,3 +113,31 @@ export async function signInToLinear(run: Run, start: { scope: Locator; name: st
 
 export const storeText = (fixture: TicketFixture, name: string) =>
   readFile(path.join(fixture.userData, 'portable-v1', name), 'utf8').catch(() => '')
+
+// Everything the renderer can ask about Accounts, through the same tRPC channel the screen uses.
+export const accountListing = (page: Page) =>
+  page.evaluate(() =>
+    window.argo.trpc({ id: 0, path: 'accountList', type: 'query', input: undefined }),
+  )
+
+// The Argo ID of each Ticket the main process committed for one provider scope, by native ID.
+export function committedTicketIds(
+  run: Run,
+  { provider, scope }: { provider: string; scope: string },
+): Record<string, string> {
+  const database = new DatabaseSync(path.join(run.fixture.userData, 'argo.sqlite'), {
+    readOnly: true,
+  })
+  try {
+    const rows = database
+      .prepare(
+        `SELECT ticket.native_id, ticket.argo_id FROM ticket
+         JOIN ticket_content ON ticket_content.ticket_id = ticket.argo_id
+         WHERE ticket.provider = ? AND ticket.scope = ?`,
+      )
+      .all(provider, scope)
+    return Object.fromEntries(rows.map((row) => [String(row.native_id), String(row.argo_id)]))
+  } finally {
+    database.close()
+  }
+}

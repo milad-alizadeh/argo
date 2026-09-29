@@ -1,12 +1,12 @@
 import path from 'node:path'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
-import type { HistoryChange, HistoryTurn } from '@/harnesses/registration'
+import type { HistoryChange, HistoryTurn, HistoryTurnMarker } from '@/harnesses/registration'
 
-const turnOfEvent: Record<string, HistoryTurn> = {
-  task_started: 'open',
-  task_complete: 'closed',
-  turn_aborted: 'closed',
-}
+const turnOfEvent = new Map<unknown, HistoryTurn>([
+  ['task_started', 'open'],
+  ['task_complete', 'closed'],
+  ['turn_aborted', 'closed'],
+])
 
 // `YYYY/MM/DD/rollout-<timestamp>-<threadId>.jsonl`, where the thread id may stand alone.
 export function codexHistoryOwner(relativePath: string): string | null {
@@ -30,11 +30,15 @@ function recordOf(line: string): Record<string, unknown> | null {
   }
 }
 
-export function codexHistoryTurn(line: string): HistoryTurn | null {
+// Each marker names its turn, so a late close for an earlier turn cannot end a newer one.
+export function codexHistoryTurn(line: string): HistoryTurnMarker | null {
   const event = recordOf(line)
   if (event?.type !== 'event_msg') return null
   const payload = object(event.payload)
-  return typeof payload?.type === 'string' ? (turnOfEvent[payload.type] ?? null) : null
+  const turn = turnOfEvent.get(payload?.type)
+  if (turn === undefined) return null
+  const turnId = payload?.turn_id
+  return { turn, turnId: typeof turnId === 'string' && turnId !== '' ? turnId : null }
 }
 
 function completedItem(payload: unknown) {

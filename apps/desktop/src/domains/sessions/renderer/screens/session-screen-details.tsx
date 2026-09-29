@@ -44,7 +44,7 @@ import { type ComposerFailure, useComposerFailureToasts } from './use-composer-f
 type SessionScreenDetailsProps = {
   permission: ReturnType<typeof import('../composer').useSessionPermission>
   questionPending: boolean
-  liveStatus: ReturnType<typeof import('../feed/use-session-feed').useSessionFeed>['liveStatus']
+  liveStatus: ReturnType<typeof import('../feed/use-feed-reading').useFeedReading>['liveStatus']
   session: Session | null
   harness: HarnessControl
   selectedSessionId: string | null
