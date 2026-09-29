@@ -507,7 +507,10 @@ export const CommentaryTitles = {
           id: 'tool-group:blank-commentary',
           label: 'Edited a file',
           calls: [{ ...edited, id: 'blank-edit' }],
-          thoughts: [{ id: 'blank', text: '  ', afterCallIndex: 0 }],
+          thoughts: [
+            { id: 'blank', text: '  ', afterCallIndex: 0 },
+            { id: 'rule', text: '---', afterCallIndex: 0 },
+          ],
         }}
         activeEvidenceId={null}
         onOpen={() => {}}

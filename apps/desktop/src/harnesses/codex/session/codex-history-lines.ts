@@ -83,15 +83,16 @@ function messageEvents(payload: unknown): SessionLiveEventBody[] {
   ]
 }
 
-// A command's rollout fields differ from its `thread/read` shape, so the Feed reads it whole.
-function completesCommand(line: string): boolean {
+// A command or an edit differs between a rollout and `thread/read`, so the Feed reads it whole.
+const READ_WHOLE = new Set(['CommandExecution', 'FileChange'])
+
+function completesWork(line: string): boolean {
   const record = recordOf(line)
-  return (
-    record?.type === 'event_msg' && completedItem(record.payload)?.item.type === 'CommandExecution'
-  )
+  const type = record?.type === 'event_msg' ? completedItem(record.payload)?.item.type : undefined
+  return typeof type === 'string' && READ_WHOLE.has(type)
 }
 
-// Streams the messages a rollout completes and reads the whole Session for a completed command.
+// Streams the messages a rollout completes and reads the whole Session for completed work.
 export function openCodexHistoryReader(): (lines: readonly string[]) => HistoryChange {
   return (lines) => {
     let rejected = 0
@@ -104,6 +105,6 @@ export function openCodexHistoryReader(): (lines: readonly string[]) => HistoryC
       return record.type === 'event_msg' ? messageEvents(record.payload) : []
     })
     if (rejected > 0) console.warn(`Rejected ${rejected} unsupported Codex rollout line(s).`)
-    return lines.some(completesCommand) ? { type: 'rewritten' } : { type: 'appended', events }
+    return lines.some(completesWork) ? { type: 'rewritten' } : { type: 'appended', events }
   }
 }

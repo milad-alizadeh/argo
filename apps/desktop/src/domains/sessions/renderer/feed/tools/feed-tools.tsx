@@ -155,8 +155,8 @@ export function FeedToolGroup({
   const soleCall = group.calls.length === 1 ? group.calls[0] : undefined
   const activity = liveActivity(group)
   const live = activity !== null
-  // A blank thought has nothing to say, so the title never opens on its separator.
-  const latestCommentary = group.thoughts?.findLast((thought) => thought.text.trim() !== '')
+  // A thought with no words, blank or a bare `---`, renders empty, so it never titles the group.
+  const latestCommentary = group.thoughts?.findLast((thought) => /[\p{L}\p{N}]/u.test(thought.text))
   // A call that stands alone (`groupedRowIndexes`) names its group. Every other settled group
   // reads as its count: a command that has run is history, and its text is one disclosure away,
   // never a stray line in the Feed.

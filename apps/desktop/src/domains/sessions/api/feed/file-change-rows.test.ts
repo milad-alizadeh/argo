@@ -42,6 +42,21 @@ test('names a moved file by both names and shows its diff at the new path', () =
   ])
 })
 
+test('keeps the destination folder when a move keeps the file name', () => {
+  const rows = projectLiveFeedRows(
+    [
+      {
+        kind: 'fileChange',
+        id: 'patch-rename',
+        status: 'completed',
+        changes: [{ path: '/repo/a/x.ts', change: 'update', diff: null, movedTo: '/repo/b/x.ts' }],
+      },
+    ],
+    [],
+  )
+  expect(rows).toMatchObject([{ label: 'Moved x.ts to b/x.ts', file: '/repo/b/x.ts' }])
+})
+
 test('shows added and deleted file contents on their respective diff sides', () => {
   const rows = projectLiveFeedRows(
     [

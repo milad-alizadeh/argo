@@ -8,7 +8,7 @@ import { openCodexSessionChannel } from '@/harnesses/codex/session/codex-session
 import type { LiveSessionChannelEvent } from '@/harnesses/registration'
 
 // A Codex channel over a mock app-server client; `notify` delivers what the app-server would.
-export const first: SessionStartInput = {
+export const mockStartInput: SessionStartInput = {
   commandId: '00000000-0000-4000-8000-000000000001',
   harness: 'codex',
   projectId: '00000000-0000-4000-8000-000000000099',
@@ -19,14 +19,14 @@ export const first: SessionStartInput = {
   turnConfiguration: { model: 'model', effort: 'medium', mode: 'workspace-write' },
 }
 
-export function testChannel(
+export function mockCodexChannel(
   request: CodexRequest,
   responses: Array<{ id: string | number; result: unknown }> = [],
 ) {
   const events: LiveSessionChannelEvent[] = []
   let listener: ((message: WireMessage) => boolean | undefined) | undefined
   const channel = openCodexSessionChannel(
-    first,
+    mockStartInput,
     {
       request,
       onNotification(notify) {

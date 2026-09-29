@@ -48,13 +48,18 @@ function labelKind(kind: ToolRow['kind']): ToolRow['kind'] {
 }
 
 // Each kind's phrase stands where that kind first happened, so the title reads in source order.
+// A file changed twice as one kind counts once in that kind.
 function toolGroupLabel(calls: ToolRow[]) {
-  const counts = new Map<ToolRow['kind'], number>()
+  const counted = new Map<ToolRow['kind'], Set<string>>()
   for (const call of calls) {
     const kind = labelKind(call.kind)
-    counts.set(kind, (counts.get(kind) ?? 0) + 1)
+    const subjects = counted.get(kind) ?? new Set<string>()
+    subjects.add(call.file ?? call.id)
+    counted.set(kind, subjects)
   }
-  return [...counts].map(([kind, count], index) => countPhrase(kind, count, index === 0)).join(', ')
+  return [...counted]
+    .map(([kind, subjects], index) => countPhrase(kind, subjects.size, index === 0))
+    .join(', ')
 }
 
 // A caller supplies the ids that began immediately after a hidden transcript delivery. That

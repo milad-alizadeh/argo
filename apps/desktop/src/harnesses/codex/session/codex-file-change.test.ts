@@ -5,7 +5,7 @@ import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event
 import fileChangeTurn from '../../../../mocks/cli/codex/fixtures/live-file-change-codex-0.157.0.json' with {
   type: 'json',
 }
-import { testChannel } from '../../../../mocks/cli/codex/mock-codex-channel'
+import { mockCodexChannel } from '../../../../mocks/cli/codex/mock-codex-channel'
 import type { CodexRequest, WireMessage } from '../app-server/codex-app-server-client'
 import type { ThreadItem } from '../app-server/protocol-generated/v2/thread-item'
 import { codexContentFromItems } from './codex-session-history'
@@ -21,7 +21,7 @@ async function replayFileChangeTurn() {
     if (method === 'turn/start') return parse({ turn: { id: turnId } })
     throw new Error(`Unexpected request: ${method}`)
   }) as CodexRequest
-  const { channel, events, notify } = testChannel(request)
+  const { channel, events, notify } = mockCodexChannel(request)
   await new Promise((resolve) => setImmediate(resolve))
   for (const message of fileChangeTurn.messages) notify(message as WireMessage)
   channel.close()

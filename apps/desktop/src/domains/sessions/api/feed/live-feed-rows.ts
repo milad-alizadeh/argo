@@ -3,7 +3,7 @@ import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event
 import type { BackgroundState } from './background-task-record'
 import { checkedDataImageUrl, dataImageUrl, fileImageUrl } from './feed-images'
 import type { SessionFeedRow } from './feed-rows'
-import { fileName } from './file-presentation'
+import { fileChangeRows } from './file-change-rows'
 import { derivedId } from './fingerprint'
 import type { ToolCall } from './tool-call'
 import { toolRows } from './tool-feed'
@@ -294,76 +294,6 @@ function permissionEventKind(
   }
 }
 
-type FileChange = Extract<FeedContent, { kind: 'fileChange' }>['changes'][number]
-
-function fileChangeEvidence(change: FileChange): string {
-  const text = change.diff ?? ''
-  switch (change.change) {
-    case 'add':
-    case 'delete': {
-      const lines = text === '' ? [] : text.replace(/\n$/, '').split('\n')
-      const added = change.change === 'add'
-      const verb = added ? 'Add' : 'Delete'
-      const oldRange = added || lines.length === 0 ? '0,0' : `1,${lines.length}`
-      const newRange = !added || lines.length === 0 ? '0,0' : `1,${lines.length}`
-      const prefix = added ? '+' : '-'
-      return [
-        `${verb} File: ${change.path}`,
-        `@@ -${oldRange} +${newRange} @@`,
-        ...lines.map((line) => `${prefix}${line}`),
-      ].join('\n')
-    }
-    case 'update':
-    case 'unknown':
-      return `Update File: ${change.movedTo ?? change.path}\n${text}`
-  }
-}
-
-const FILE_CHANGE_PRESENTATION = {
-  add: { kind: 'created', verb: 'Created' },
-  update: { kind: 'edited', verb: 'Edited' },
-  delete: { kind: 'deleted', verb: 'Deleted' },
-  unknown: { kind: 'edited', verb: 'Edited' },
-} as const satisfies Record<
-  FileChange['change'],
-  { kind: Extract<SessionFeedRow, { shape: 'tool' }>['kind']; verb: string }
->
-
-// Null when the Harness sent no diff: a size the Feed cannot know is not drawn as zero.
-function fileChangeLineCounts(change: FileChange) {
-  if (change.diff === null || change.diff === '') return null
-  const lines = change.diff.replace(/\n$/, '').split('\n')
-  if (change.change === 'add') return { added: lines.length, removed: 0 }
-  if (change.change === 'delete') return { added: 0, removed: lines.length }
-  const count = (sign: '+' | '-') => lines.filter((line) => line.startsWith(sign)).length
-  return { added: count('+'), removed: count('-') }
-}
-
-// One row per file, so a group counts files and each line opens its own diff.
-function fileChangeRows(content: Extract<FeedContent, { kind: 'fileChange' }>): SessionFeedRow[] {
-  if (content.changes.length === 0)
-    return [
-      { shape: 'event', id: content.id, event: 'fileChange', text: null, status: content.status },
-    ]
-  return content.changes.map((change, index) => {
-    const { kind, verb } = FILE_CHANGE_PRESENTATION[change.change]
-    const label =
-      change.movedTo === undefined
-        ? `${verb} ${fileName(change.path)}`
-        : `Moved ${fileName(change.path)} to ${fileName(change.movedTo)}`
-    return {
-      shape: 'tool',
-      id: index === 0 ? content.id : derivedId(content.id, `#${index}`),
-      kind,
-      label,
-      lineCounts: fileChangeLineCounts(change),
-      status: workStatus(content.status),
-      evidence: { kind: 'diff', title: label, source: fileChangeEvidence(change) },
-      text: null,
-    }
-  })
-}
-
 function markerRow(content: Extract<FeedContent, { kind: 'marker' }>): SessionFeedRow {
   if (content.marker === 'compaction' || content.marker === 'interrupted')
     return {
@@ -468,7 +398,7 @@ function contentRows(content: FeedContent): SessionFeedRow[] {
     case 'tool':
       return [toolContentRow(content), ...toolOutputRows(content)]
     case 'fileChange':
-      return fileChangeRows(content)
+      return fileChangeRows(content, workStatus(content.status))
     default: {
       const row = contentRow(content)
       return row === null ? [] : [row]

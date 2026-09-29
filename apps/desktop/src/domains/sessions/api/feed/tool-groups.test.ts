@@ -5,11 +5,13 @@ import { groupToolRuns } from './tool-groups'
 function tool(
   id: string,
   kind: Extract<SessionFeedRow, { shape: 'tool' }>['kind'],
+  file?: string,
 ): SessionFeedRow {
   return {
     shape: 'tool',
     id,
     kind,
+    ...(file === undefined ? {} : { file }),
     label: id,
     lineCounts: null,
     status: 'succeeded',
@@ -52,6 +54,15 @@ test('a hidden turn boundary starts another disclosure even after commentary', (
     'tool-group',
     'tool-group',
   ])
+})
+
+test('counts a file edited twice as one file', () => {
+  const rows: SessionFeedRow[] = [
+    tool('edit-1', 'edited', '/repo/a.ts'),
+    tool('edit-2', 'edited', '/repo/a.ts'),
+    tool('edit-3', 'edited', '/repo/b.ts'),
+  ]
+  expect(groupToolRuns(rows)).toMatchObject([{ label: 'Edited 2 files' }])
 })
 
 test('orders group phrases by the first call of each kind and counts every file', () => {

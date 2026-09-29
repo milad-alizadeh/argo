@@ -13,7 +13,7 @@ const EDIT_PRESENTATION = {
   delete: { kind: 'deleted', verb: 'Deleted' },
 } as const
 
-export function editPresentation(file: EditedFile) {
+export function editPresentation(file: Pick<EditedFile, 'change' | 'file'>) {
   const { kind, verb } = EDIT_PRESENTATION[file.change]
   return { kind, label: `${verb} ${fileName(file.file)}` }
 }

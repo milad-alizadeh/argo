@@ -4,7 +4,7 @@ import type { LiveSessionChannelEvent } from '@/harnesses/registration'
 import recorded from '../../../../mocks/cli/codex/fixtures/live-notifications-codex-0.157.0.json' with {
   type: 'json',
 }
-import { first, testChannel } from '../../../../mocks/cli/codex/mock-codex-channel'
+import { mockCodexChannel, mockStartInput } from '../../../../mocks/cli/codex/mock-codex-channel'
 import type { CodexRequest, WireMessage } from '../app-server/codex-app-server-client'
 import type { openCodexSessionChannel } from './codex-session-channel'
 
@@ -198,14 +198,14 @@ test('Codex channel opens once, queues sends, and updates stable Feed items', as
     if (method === 'turn/start') return parse({ turn: { id: `turn-${++turn}` } })
     throw new Error(`Unexpected request: ${method}`)
   }) as CodexRequest
-  const { channel, events, notify, subscribed } = testChannel(request)
+  const { channel, events, notify, subscribed } = mockCodexChannel(request)
   await new Promise((resolve) => setImmediate(resolve))
   assert.deepEqual(calls, ['thread/start', 'turn/start'])
   assert.deepEqual(events.slice(0, 2), [
     { type: 'identity', nativeId: 'thread-1' },
-    { type: 'command.accepted', commandId: first.commandId },
+    { type: 'command.accepted', commandId: mockStartInput.commandId },
   ])
-  await channel.submit({ ...first, commandId: 'second-command', prompt: 'second' })
+  await channel.submit({ ...mockStartInput, commandId: 'second-command', prompt: 'second' })
   assert.equal(calls.length, 2)
   sampleMessages(notify)
   sampleCommand(notify)
@@ -233,7 +233,7 @@ test('Codex controls answer vendor requests and interrupt the active Turn', asyn
     if (method === 'turn/interrupt') return parse({})
     throw new Error(`Unexpected request: ${method}`)
   }) as CodexRequest
-  const { channel, events, notify } = testChannel(request, responses)
+  const { channel, events, notify } = mockCodexChannel(request, responses)
   await new Promise((resolve) => setImmediate(resolve))
   await answerSampleApproval({ channel, notify, responses, events })
   await answerSampleQuestion(channel, notify, responses)
@@ -267,7 +267,7 @@ test('Codex channel projects recorded app-server notifications', async () => {
         throw new Error(`Unexpected request: ${method}`)
     }
   }) as CodexRequest
-  const { channel, events, notify, subscribed } = testChannel(request)
+  const { channel, events, notify, subscribed } = mockCodexChannel(request)
   await new Promise((resolve) => setImmediate(resolve))
   assert.equal(subscribed(), true)
   for (const message of recorded.messages) notify(message as WireMessage)
@@ -354,7 +354,7 @@ const startedThreadRequest = (async (
 
 test('Codex live commentary and reasoning stay separate from the final answer', async () => {
   const request = startedThreadRequest
-  const { channel, events, notify } = testChannel(request)
+  const { channel, events, notify } = mockCodexChannel(request)
   await new Promise((resolve) => setImmediate(resolve))
   sendProgressNotifications(notify)
   const content = events.flatMap((event) =>
@@ -386,7 +386,7 @@ test('a Turn notification establishes vendor delivery before the request respons
       })
     throw new Error(`Unexpected request: ${method}`)
   }) as CodexRequest
-  const { channel, events, notify, subscribed } = testChannel(request)
+  const { channel, events, notify, subscribed } = mockCodexChannel(request)
   await new Promise((resolve) => setImmediate(resolve))
   assert.equal(subscribed(), true)
   notify({
@@ -410,7 +410,7 @@ test('unknown Codex item shapes are reported and counted', async () => {
     parse(
       method === 'thread/start' ? { thread: { id: 'thread-1' } } : { turn: { id: 'turn-1' } },
     )) as CodexRequest
-  const { channel, notify, subscribed } = testChannel(request)
+  const { channel, notify, subscribed } = mockCodexChannel(request)
   await new Promise((resolve) => setImmediate(resolve))
   assert.equal(subscribed(), true)
   try {
@@ -472,7 +472,7 @@ function delegationFacts(events: readonly LiveSessionChannelEvent[]) {
 }
 
 test('Codex channel streams each Subagent activity as its own delegation event', async () => {
-  const { channel, events, notify } = testChannel(startedThreadRequest)
+  const { channel, events, notify } = mockCodexChannel(startedThreadRequest)
   await new Promise((resolve) => setImmediate(resolve))
   notify(
     subagentNotification({
@@ -513,7 +513,7 @@ test('Codex thread status reaches the Session status without repeats (ADR-0024)'
     parse(
       method === 'thread/start' ? { thread: { id: 'thread-1' } } : { turn: { id: 'turn-1' } },
     )) as CodexRequest
-  const { channel, events, notify } = testChannel(request)
+  const { channel, events, notify } = mockCodexChannel(request)
   await new Promise((resolve) => setImmediate(resolve))
   const thread = (status: Record<string, unknown>, threadId = 'thread-1') =>
     notify({ method: 'thread/status/changed', params: { threadId, status } })

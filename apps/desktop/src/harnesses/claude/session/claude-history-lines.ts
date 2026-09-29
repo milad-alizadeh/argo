@@ -109,7 +109,7 @@ function chainStep(
   decoder: {
     reject: () => void
     projection: ClaudeFeedProjection
-    learnCwd: (record: Record<string, unknown> | null) => unknown
+    learnCwd: (record: Record<string, unknown> | null) => void
   },
 ): ChainStep {
   const value = recordOf(line)
@@ -145,12 +145,12 @@ export function openClaudeHistoryReader(
   const learnCwd = (record: Record<string, unknown> | null) => {
     if (skillFile === null && typeof record?.cwd === 'string')
       skillFile = claudeSkillFiles(record.cwd)
-    return record
   }
   // Decodes as a full read does; the lines already read teach it the calls a new result answers.
   const projection = new ClaudeFeedProjection(resolveSkill)
   for (const line of existing) {
-    const record = learnCwd(recordOf(line))
+    const record = recordOf(line)
+    learnCwd(record)
     if (record !== null) contentEvents(record, () => {}, projection)
   }
   return (lines) => {
