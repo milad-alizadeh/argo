@@ -159,6 +159,28 @@ test('reports activity on any Session file with its owner and newest turn', asyn
   assert.deepEqual(activity, [['native-3', 'open']])
 })
 
+test('reports the lines a watched Session appended, from the first change onward', async (context) => {
+  const root = await directory(context)
+  const file = path.join(root, 'native-4.jsonl')
+  writeFileSync(file, 'prompt one\n')
+  const appended: string[][] = []
+  const stop = watchHistoryActivity(files(root), (_owner, _turn, events) =>
+    appended.push(
+      events.flatMap((event) =>
+        event.type === 'content' && event.content.kind === 'message' ? [event.content.text] : [],
+      ),
+    ),
+  )
+  context.after(stop)
+
+  appendFileSync(file, 'answer one\n')
+  await eventually(() => (appended.length > 0 ? true : undefined))
+  appendFileSync(file, 'prompt two\n')
+  await eventually(() => (appended.length > 1 ? true : undefined))
+
+  assert.deepEqual(appended, [['prompt one', 'answer one'], ['prompt two']])
+})
+
 test('finds the newest turn marker behind lines that carry none', async (context) => {
   const root = await directory(context)
   const file = path.join(root, 'native-1.jsonl')

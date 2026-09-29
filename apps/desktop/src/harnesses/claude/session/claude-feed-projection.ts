@@ -1,6 +1,7 @@
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { TERMINAL_DELEGATION_STATUSES } from './claude-feed-envelopes'
-import type { ClaudeSkillFile } from './claude-skill-files'
+import { type ClaudeSkillFile, claudeSkillFileIn } from './claude-skill-files'
+import type { ClaudeSkillDirectories } from './claude-skill-records'
 
 type Delegation = Extract<FeedContent, { kind: 'delegation' }>
 type Tool = Extract<FeedContent, { kind: 'tool' }>
@@ -73,9 +74,24 @@ export class ClaudeFeedProjection {
   private skillCalls = new Set<string>()
   private fileChanges = new Map<string, FileChange>()
   private skillFile: ClaudeSkillFile
+  private skillDirectories: () => ClaudeSkillDirectories
 
-  constructor(skillFile: ClaudeSkillFile) {
+  // The recorded folders are read only once a skill row asks for them, so a Session that used none
+  // never opens its transcript twice.
+  constructor(
+    skillFile: ClaudeSkillFile,
+    skillDirectories: () => ClaudeSkillDirectories = () => new Map(),
+  ) {
     this.skillFile = skillFile
+    this.skillDirectories = skillDirectories
+  }
+
+  // The folder the Session recorded for this invocation outranks whatever sits on disk now.
+  private skillTarget(key: string, name: string): { target: string | null; recorded: boolean } {
+    const folder = this.skillDirectories().get(key)
+    if (folder !== undefined) return { target: claudeSkillFileIn(folder), recorded: true }
+    const target = this.skillFile(name)
+    return { target, recorded: target !== null }
   }
 
   project(content: FeedContent): FeedContent[] {
@@ -107,8 +123,8 @@ export class ClaudeFeedProjection {
     const invocation = content.command?.match(SLASH_COMMAND)
     const name = invocation?.[1]
     if (name === undefined) return content
-    const target = this.skillFile(name)
-    if (target === null) return content
+    const { target, recorded } = this.skillTarget(content.id.split(':')[0] ?? content.id, name)
+    if (!recorded) return content
     return {
       id: content.id,
       kind: 'reference',
@@ -154,7 +170,7 @@ export class ClaudeFeedProjection {
           kind: 'reference',
           referenceType: 'skill',
           label: skill,
-          target: this.skillFile(skill),
+          target: this.skillTarget(content.callId, skill).target,
           text: inputField(content.input, 'args'),
         },
       ]

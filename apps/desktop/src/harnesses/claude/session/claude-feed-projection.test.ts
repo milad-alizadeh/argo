@@ -1,4 +1,7 @@
-import { expect, test } from 'bun:test'
+import { afterEach, beforeEach, expect, test } from 'bun:test'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { ClaudeFeedProjection } from './claude-feed-projection'
 
@@ -90,4 +93,70 @@ test('records no event for a repeated delegation envelope with the same input', 
   expect(
     projection.project(delegationEnvelope('progress', 'running', 'Review the Feed card')),
   ).toEqual([])
+})
+
+let root: string
+
+beforeEach(() => {
+  root = mkdtempSync(path.join(os.tmpdir(), 'argo-claude-projection-'))
+})
+
+afterEach(() => {
+  rmSync(root, { recursive: true, force: true })
+})
+
+function command(id: string, text: string): FeedContent {
+  return {
+    kind: 'command',
+    id,
+    command: text,
+    cwd: null,
+    status: 'completed',
+    output: null,
+    stderr: null,
+    exitCode: null,
+  }
+}
+
+function skillFolder(name: string): string {
+  const folder = path.join(root, name)
+  mkdirSync(folder, { recursive: true })
+  writeFileSync(path.join(folder, 'SKILL.md'), `# ${name}\n`)
+  return folder
+}
+
+test('expands a skill row to the folder the transcript recorded, not the one on disk now', () => {
+  const recorded = skillFolder('implement')
+  const projection = new ClaudeFeedProjection(
+    () => path.join(root, 'elsewhere', 'SKILL.md'),
+    () => new Map([['command-1', recorded]]),
+  )
+
+  expect(projection.project(command('command-1', '/implement 2861'))).toEqual([
+    {
+      id: 'command-1',
+      kind: 'reference',
+      referenceType: 'skill',
+      label: 'implement',
+      target: path.join(recorded, 'SKILL.md'),
+      text: '2861',
+    },
+  ])
+})
+
+test('keeps a skill row with no expansion once its recorded folder is gone', () => {
+  const projection = new ClaudeFeedProjection(
+    () => null,
+    () => new Map([['command-2', path.join(root, 'deleted')]]),
+  )
+
+  expect(projection.project(command('command-2', '/deleted'))).toMatchObject([
+    { kind: 'reference', referenceType: 'skill', label: 'deleted', target: null },
+  ])
+})
+
+test('falls back to the disk lookup when the transcript recorded no folder', () => {
+  const projection = new ClaudeFeedProjection(() => null)
+
+  expect(projection.project(command('command-3', '/clear'))).toMatchObject([{ kind: 'command' }])
 })

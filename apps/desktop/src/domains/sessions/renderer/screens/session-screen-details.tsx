@@ -6,15 +6,7 @@ import type { Cockpit } from '@/domains/projects/renderer'
 import type { WorkspaceActions, WorkspaceCockpit } from '@/domains/workspaces/renderer'
 import type { CatalogReadResult } from '@/harnesses/harness-catalog'
 import { harnessLabel } from '@/harnesses/presentation-registry'
-import { Icon } from '@/platform/renderer/components/icon/icon'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
-import {
-  Alert,
-  AlertAction,
-  AlertDescription,
-  AlertTitle,
-} from '@/platform/renderer/components/ui/alert'
-import { Button } from '@/platform/renderer/components/ui/button'
 import { trpc } from '@/platform/renderer/trpc-client'
 import {
   type DraftContent,
@@ -25,11 +17,7 @@ import {
   composerIdentityKey,
   composerIdentityOf,
 } from '../composer/identity/composer-identity'
-import {
-  COMPOSER_COLUMN,
-  ComposerForm,
-  type ComposerFormProps,
-} from '../composer/layout/composer-form'
+import { ComposerForm, type ComposerFormProps } from '../composer/layout/composer-form'
 import type { CatalogFailure } from '../composer/toolbar/turn-configuration-menu'
 import {
   type TurnConfiguration,
@@ -266,7 +254,6 @@ export function SessionComposerArea({
   const { focusComposerAfterRetry, clearRecoveryFocus, retryCatalog, retryDraft } =
     useComposerRetryFocus(catalogQuery, draft)
   const onInterrupt = useSessionInterrupt(selectedSessionId)
-  if (session?.locked === true) return <OpenElsewhere onRetry={null} />
   return (
     <SessionComposer
       {...{ permission, questionPending, session, harness, workspaceCockpit, workspaceActions }}
@@ -477,27 +464,5 @@ export function SessionHandoffFacts({
         />
       ) : null}
     </section>
-  )
-}
-
-// One lock icon for any read-only Session, regardless of Harness (#2092 AC #4/#9). A list lock lifts
-// on its own at the next poll, so it offers no Retry.
-function OpenElsewhere({ onRetry }: { onRetry: (() => void) | null }) {
-  const { t } = useTranslation('sessions')
-  return (
-    <div className={`${COMPOSER_COLUMN} mt-3 pb-(--spacing-session-composer-ink-bottom)`}>
-      <Alert>
-        <Icon name="awaiting-permission" />
-        <AlertTitle>{t('openElsewhere.title')}</AlertTitle>
-        <AlertDescription>{t('openElsewhere.description')}</AlertDescription>
-        {onRetry === null ? null : (
-          <AlertAction>
-            <Button onClick={onRetry} size="sm" variant="outline">
-              {t('openElsewhere.retry')}
-            </Button>
-          </AlertAction>
-        )}
-      </Alert>
-    </div>
   )
 }

@@ -5,6 +5,7 @@ import { type SESSION_SUBAGENT_STATES, sessionSubagent } from '@/database/sessio
 import { sessionSubagentSelectSchema } from '@/database/session-subagent/validation'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionHistoryReader } from '@/domains/sessions/api/session-history'
+import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type { Harness } from '@/harnesses/harness'
 
 type Delegation = Extract<FeedContent, { kind: 'delegation' }>
@@ -37,6 +38,45 @@ function subagentsOf(content: readonly FeedContent[]): StoredSubagent[] {
   return [...subagents.values()]
 }
 
+function subagentRows(sessionId: string, subagents: readonly StoredSubagent[]) {
+  return subagents.map((subagent) => ({
+    sessionId,
+    subagentId: subagent.id,
+    label: subagent.label,
+    state: subagent.state,
+  }))
+}
+
+// A Subagent a watched Session named while it was running. The Session's `subagentsReadAt` is left
+// alone, so the next sync pass still reads its whole history and corrects anything missed here.
+export function recordLiveSubagents(
+  database: Database,
+  input: { harness: Harness; nativeId: string; events: readonly SessionLiveEventBody[] },
+): void {
+  const subagents = subagentsOf(
+    input.events.flatMap((event) => (event.type === 'content' ? [event.content] : [])),
+  )
+  if (subagents.length === 0) return
+  const session = database
+    .select({ argoId: sessionTable.argoId })
+    .from(sessionTable)
+    .where(and(eq(sessionTable.harness, input.harness), eq(sessionTable.nativeId, input.nativeId)))
+    .get()
+  if (session === undefined) return
+  database
+    .insert(sessionSubagent)
+    .values(subagentRows(session.argoId, subagents))
+    .onConflictDoUpdate({
+      target: [sessionSubagent.sessionId, sessionSubagent.subagentId],
+      // A Subagent that ends names no description, so the label it started with stands.
+      set: {
+        label: sql`coalesce(excluded.label, ${sessionSubagent.label})`,
+        state: sql`excluded.state`,
+      },
+    })
+    .run()
+}
+
 function unreadSessions(database: Database, harness: Harness) {
   return database
     .select({
@@ -61,39 +101,37 @@ function unreadSessions(database: Database, harness: Harness) {
     .all()
 }
 
+type ReadSession = { argoId: string; activityAt: number | null }
+
+// The activity the stored Subagents were read from, so the next pass skips a Session that stood still.
+function stampSubagentsRead(writer: Pick<Database, 'update'>, session: ReadSession): void {
+  writer
+    .update(sessionTable)
+    .set({ subagentsReadAt: session.activityAt })
+    .where(eq(sessionTable.argoId, session.argoId))
+    .run()
+}
+
 function saveSubagents(
   database: Database,
-  session: { argoId: string; activityAt: number | null },
+  session: ReadSession,
   subagents: readonly StoredSubagent[],
 ): void {
   database.transaction((transaction) => {
     transaction.delete(sessionSubagent).where(eq(sessionSubagent.sessionId, session.argoId)).run()
     if (subagents.length > 0)
-      transaction
-        .insert(sessionSubagent)
-        .values(
-          subagents.map((subagent) => ({
-            sessionId: session.argoId,
-            subagentId: subagent.id,
-            label: subagent.label,
-            state: subagent.state,
-          })),
-        )
-        .run()
-    transaction
-      .update(sessionTable)
-      .set({ subagentsReadAt: session.activityAt })
-      .where(eq(sessionTable.argoId, session.argoId))
-      .run()
+      transaction.insert(sessionSubagent).values(subagentRows(session.argoId, subagents)).run()
+    stampSubagentsRead(transaction, session)
   })
 }
 
-// Reads the history of each Project Session whose activity moved since its Subagents were stored.
+// Reads the history of each Project Session whose activity moved since its Subagents were stored,
+// newest first, and reports each one as it is stored.
 export async function refreshSessionSubagents(input: {
   database: Database
   harness: Harness
   readHistory: SessionHistoryReader
-  committed: () => void
+  stored: () => void
   stopped: () => boolean
 }): Promise<{ read: number; failed: number }> {
   let read = 0
@@ -110,11 +148,13 @@ export async function refreshSessionSubagents(input: {
       saveSubagents(input.database, session, subagentsOf(content))
       read += 1
     } catch {
+      // A history that cannot be read keeps the rows it has, and is stamped so the next pass skips
+      // it until its activity moves again.
+      stampSubagentsRead(input.database, session)
       failed += 1
     }
+    input.stored()
   }
-  // One invalidation for the pass: each one also refetches every open Feed.
-  if (read > 0) input.committed()
   return { read, failed }
 }
 

@@ -110,6 +110,9 @@ function decodeLiveMessage(
         reject,
       )
     case 'user':
+      // A meta record is the CLI talking to itself — a skill's whole SKILL.md body arrives as one.
+      // The history line reader drops them too, so a live turn and its reload draw the same rows.
+      if (Reflect.get(message, 'isMeta') === true) return []
       return decodeClaudeBlocks(
         {
           id,

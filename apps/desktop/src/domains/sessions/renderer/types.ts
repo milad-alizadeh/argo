@@ -60,7 +60,3 @@ export type SessionEvidence =
   | SessionDiagramEvidence
   | SessionSkillEvidence
   | SessionFileEvidence
-
-export function sessionPostureLocksAnswer(posture: Session['posture'] | null): boolean {
-  return posture !== 'live'
-}

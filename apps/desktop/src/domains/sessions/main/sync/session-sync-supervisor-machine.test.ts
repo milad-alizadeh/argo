@@ -28,6 +28,7 @@ type SyncEvent =
       status: ReturnType<SessionSyncStatusStore['current']>
     }
   | { type: 'SyncCommitted'; harness: 'claude' | 'codex' }
+  | { type: 'SyncStored'; harness: 'claude' | 'codex' }
   | { type: 'SyncCompleted'; harness: 'claude' | 'codex' }
   | { type: 'SyncFailed'; harness: 'claude' | 'codex' }
 

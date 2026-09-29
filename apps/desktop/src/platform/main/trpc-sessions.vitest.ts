@@ -113,7 +113,7 @@ test('lists the Subagents the sync read from each Session history', async () => 
         summary: null,
       },
     ],
-    committed: () => {},
+    stored: () => {},
     stopped: () => false,
   })
 

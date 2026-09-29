@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { withHeadline } from '@/domains/sessions/api/feed/tool-groups'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { SessionEvidence, SessionFeed, SessionFeedRow } from '../../types'
-import { sessionPostureLocksAnswer } from '../../types'
 import { isFeedRowStreaming } from '../rows/feed-row-renderers'
 import type { RevealCache } from '../rows/streaming-text'
 import { ToolGroupState } from '../rows/tool-group-state'
@@ -118,7 +117,8 @@ export function FeedDocument({ reading, liveFacts, actions }: FeedDocumentProps)
     onAnswerQuestion: actions.onAnswerQuestion,
     answeringQuestionId: actions.answeringQuestionId,
     questionFailure: actions.questionFailure,
-    questionLocked: sessionPostureLocksAnswer(live.posture),
+    // Standing, not posture, is what refuses an answer; it lands with the lease (#2861 E2).
+    questionLocked: false,
   })
   const { column, settled } = useSettledFeed({
     sessionId: live.reading.sessionId,
