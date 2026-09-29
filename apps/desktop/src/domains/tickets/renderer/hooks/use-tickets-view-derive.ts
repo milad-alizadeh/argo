@@ -145,11 +145,11 @@ export function connectedView(
   }: Connected,
 ): TicketsView {
   const { list } = listing
-  const account = isConnectionProblem(connection)
+  const connectionIssue = isConnectionProblem(connection)
     ? connectionProblem(connection, { onReconnect, onDisconnectSource })
     : null
   // Saved Tickets stay on screen while their Account cannot be read; only writes are withheld.
-  if (account && !hasSavedRows(list.data)) return { kind: 'problem', ...account }
+  if (connectionIssue && !hasSavedRows(list.data)) return { kind: 'problem', ...connectionIssue }
   if (list.isPending) return loading(t('loading.tickets'))
   if (list.error && !list.isFetchNextPageError) {
     return failure(t('failure.tickets'), list.error, {
@@ -162,14 +162,15 @@ export function connectedView(
   const failed = saved?.failure ?? null
   const recovery = { onRetry: onSync, onReconnect, provider: connection.provider }
   // With nothing saved, the failure is all there is to show; otherwise it sits above the rows.
-  if (!account && failed && (saved === null || saved.total === 0))
+  if (!connectionIssue && failed && (saved === null || saved.total === 0))
     return failure(t('failure.tickets'), failed, recovery)
   // Nothing is saved yet and the provider has not answered, so an empty list would be a guess.
   if (saved && saved.total === 0 && !saved.complete) return loading(t('loading.tickets'))
   const sync = {
     refreshing: saved?.refreshing ?? false,
     problem:
-      account ?? refreshProblem(t, { failed, query: listing.query, recovery }, connection.provider),
+      connectionIssue ??
+      refreshProblem(t, { failed, query: listing.query, recovery }, connection.provider),
   }
   const detailRecovery = { ...recovery, onRetry: detail.retry }
   return {
@@ -190,7 +191,7 @@ export function connectedView(
       ...listedBacklog(list.data, listing),
       provider: connection.provider,
       partial: saved !== null && !saved.complete,
-      writable: account === null,
+      writable: connectionIssue === null,
       sync,
     },
   }

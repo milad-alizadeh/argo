@@ -160,7 +160,7 @@ export const SavedRowsWithoutWrites: Story = {
         refreshing: false,
         problem: {
           icon: 'account-expired',
-          title: 'octocat needs to sign in to GitHub again',
+          title: 'ada needs to sign in to Linear again',
           description: 'Sign in again to read and change Tickets.',
           alert: false,
           actions: [],
@@ -171,7 +171,7 @@ export const SavedRowsWithoutWrites: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: /^#273/ })).toBeVisible()
-    await expect(canvas.getByText('octocat needs to sign in to GitHub again')).toBeVisible()
+    await expect(canvas.getByText('ada needs to sign in to Linear again')).toBeVisible()
     await expect(canvas.queryByRole('button', { name: /^(State|Status):/ })).toBeNull()
     await expect(canvas.queryByRole('button', { name: /^Priority:/ })).toBeNull()
   },
