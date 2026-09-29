@@ -143,7 +143,11 @@ function assertSampleFeed(events: LiveSessionChannelEvent[]) {
   )
   assert.ok(
     content.some(
-      (item) => item.kind === 'message' && item.id === 'prompt-1' && item.text === 'first',
+      (item) =>
+        item.kind === 'message' &&
+        item.id === 'prompt-1' &&
+        item.text === 'first' &&
+        item.images?.length === 1,
     ),
   )
   assert.deepEqual(

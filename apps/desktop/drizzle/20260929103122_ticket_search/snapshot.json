@@ -1,7 +1,7 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "bd2e9aa4-57ce-41f9-87e2-a70d0471dc86",
+  "id": "06b3b013-723f-4246-b2b0-438ba3f24acd",
   "prevIds": ["6d7c0446-9678-4d57-99d2-1c3913693caa"],
   "ddl": [
     {
@@ -46,6 +46,14 @@
     },
     {
       "name": "ticket_sync",
+      "entityType": "tables"
+    },
+    {
+      "name": "ticket_search",
+      "entityType": "tables"
+    },
+    {
+      "name": "ticket_search_ticket_link",
       "entityType": "tables"
     },
     {
@@ -960,16 +968,6 @@
     },
     {
       "type": "integer",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "closed_position",
-      "entityType": "columns",
-      "table": "ticket_content"
-    },
-    {
-      "type": "integer",
       "notNull": true,
       "autoincrement": false,
       "default": "(CAST(unixepoch('subsec') * 1000 AS INTEGER))",
@@ -1079,16 +1077,6 @@
       "table": "ticket_sync"
     },
     {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "next_cursor",
-      "entityType": "columns",
-      "table": "ticket_sync"
-    },
-    {
       "type": "integer",
       "notNull": true,
       "autoincrement": false,
@@ -1107,6 +1095,136 @@
       "name": "updated_at",
       "entityType": "columns",
       "table": "ticket_sync"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "provider",
+      "entityType": "columns",
+      "table": "ticket_search"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "scope",
+      "entityType": "columns",
+      "table": "ticket_search"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "query",
+      "entityType": "columns",
+      "table": "ticket_search"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "phase",
+      "entityType": "columns",
+      "table": "ticket_search"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "failure",
+      "entityType": "columns",
+      "table": "ticket_search"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "completed_at",
+      "entityType": "columns",
+      "table": "ticket_search"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "(CAST(unixepoch('subsec') * 1000 AS INTEGER))",
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "ticket_search"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "(CAST(unixepoch('subsec') * 1000 AS INTEGER))",
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "ticket_search"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "provider",
+      "entityType": "columns",
+      "table": "ticket_search_ticket_link"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "scope",
+      "entityType": "columns",
+      "table": "ticket_search_ticket_link"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "query",
+      "entityType": "columns",
+      "table": "ticket_search_ticket_link"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ticket_id",
+      "entityType": "columns",
+      "table": "ticket_search_ticket_link"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "position",
+      "entityType": "columns",
+      "table": "ticket_search_ticket_link"
     },
     {
       "columns": ["project_id"],
@@ -1208,6 +1326,17 @@
       "table": "ticket_content"
     },
     {
+      "columns": ["ticket_id"],
+      "tableTo": "ticket",
+      "columnsTo": ["argo_id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_ticket_search_ticket_link_ticket_id_ticket_argo_id_fk",
+      "entityType": "fks",
+      "table": "ticket_search_ticket_link"
+    },
+    {
       "columns": ["session_id", "subagent_id"],
       "nameExplicit": false,
       "name": "session_subagent_pk",
@@ -1220,6 +1349,20 @@
       "name": "ticket_sync_pk",
       "entityType": "pks",
       "table": "ticket_sync"
+    },
+    {
+      "columns": ["provider", "scope", "query"],
+      "nameExplicit": false,
+      "name": "ticket_search_pk",
+      "entityType": "pks",
+      "table": "ticket_search"
+    },
+    {
+      "columns": ["provider", "scope", "query", "ticket_id"],
+      "nameExplicit": false,
+      "name": "ticket_search_ticket_link_pk",
+      "entityType": "pks",
+      "table": "ticket_search_ticket_link"
     },
     {
       "columns": ["id"],
@@ -1409,16 +1552,16 @@
     {
       "columns": [
         {
-          "value": "closed_position",
+          "value": "ticket_id",
           "isExpression": false
         }
       ],
       "isUnique": false,
       "where": null,
       "origin": "manual",
-      "name": "ticket_content_closed",
+      "name": "ticket_search_ticket_link_ticket",
       "entityType": "indexes",
-      "table": "ticket_content"
+      "table": "ticket_search_ticket_link"
     },
     {
       "columns": ["common_directory"],

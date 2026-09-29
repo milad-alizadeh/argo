@@ -7,20 +7,23 @@ import type { AccountListing } from '@/domains/accounts/renderer'
 import type { ProjectSummary } from '@/domains/projects/renderer'
 import type {
   ConnectionSummary,
+  TicketError,
   TicketPriority,
   TicketStatus,
 } from '@/domains/tickets/contract/contract'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
+import { providerPresentation } from '@/providers/presentation-registry'
 import type { ConnectSourceFormProps } from '../connection/connect-source-form'
 import type { TicketDeckProps } from '../detail/ticket-deck'
 import {
   connectionProblem,
   failureProblem,
   isConnectionProblem,
+  type Recovery,
   type TicketProblemProps,
 } from '../lib/problems'
 import { listedBacklog, type TicketListing } from './listed-backlog'
-import { indexedHead, syncFailure } from './use-active-tickets'
+import { savedRead } from './use-active-tickets'
 import type { ConnectForm } from './use-connect-form'
 import type { TicketDetailRead } from './use-ticket-detail'
 
@@ -97,8 +100,22 @@ export type Connected = {
   onSelect: (key: string) => void
   onOpenSession: (id: string) => void
   onReconnect: () => void
-  // Asks main to scan the provider again.
+  // Asks main to scan the provider, or to search it while a query is set, again.
   onSync: () => void
+}
+
+// A failed search leaves the saved matches, a failed scan the saved list.
+function refreshProblem(
+  t: TFunction<'tickets'>,
+  { failed, query, recovery }: { failed: TicketError | null; query: string; recovery: Recovery },
+  provider: Provider,
+) {
+  if (failed === null) return null
+  const title =
+    query === ''
+      ? t('failure.refresh')
+      : t('failure.search', { provider: providerPresentation(provider).name })
+  return failureProblem(title, failed, recovery)
 }
 
 export function connectedView(
@@ -133,17 +150,17 @@ export function connectedView(
       provider: connection.provider,
     })
   }
-  const failed = syncFailure(list.data)
-  const saved = indexedHead(list.data)
+  const saved = savedRead(list.data)
+  const failed = saved?.failure ?? null
   const recovery = { onRetry: onSync, onReconnect, provider: connection.provider }
   // With nothing saved, the failure is all there is to show; otherwise it sits above the rows.
   if (failed && (saved === null || saved.total === 0))
     return failure(t('failure.tickets'), failed, recovery)
-  // Nothing is saved yet and no scan has read every page, so an empty list would be a guess.
-  if (saved && saved.total === 0 && !saved.sync.complete) return loading(t('loading.tickets'))
+  // Nothing is saved yet and the provider has not answered, so an empty list would be a guess.
+  if (saved && saved.total === 0 && !saved.complete) return loading(t('loading.tickets'))
   const sync = {
-    refreshing: saved?.sync.phase === 'syncing',
-    problem: failed ? failureProblem(t('failure.refresh'), failed, recovery) : null,
+    refreshing: saved?.refreshing ?? false,
+    problem: refreshProblem(t, { failed, query: listing.query, recovery }, connection.provider),
   }
   const detailRecovery = { ...recovery, onRetry: detail.retry }
   return {
@@ -166,6 +183,11 @@ export function connectedView(
     onBack,
     onSelect,
     onOpenSession,
-    backlog: { ...listedBacklog(list.data, listing), provider: connection.provider, sync },
+    backlog: {
+      ...listedBacklog(list.data, listing),
+      provider: connection.provider,
+      partial: saved !== null && !saved.complete,
+      sync,
+    },
   }
 }

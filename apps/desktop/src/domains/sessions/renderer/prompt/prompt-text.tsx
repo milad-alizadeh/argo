@@ -41,7 +41,7 @@ function SkillLabel({ name }: { name: string }) {
 
 // The same badge as a button, where a caller can open the skill (the Feed, into the inspector). The
 // prompt bubble shares the badge's own ground, so an outline on the page ground marks it a control.
-function SkillButton({
+export function SkillButton({
   skill,
   onOpen,
 }: {

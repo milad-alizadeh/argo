@@ -4,8 +4,11 @@ import type { Database } from '@/database/database'
 import { ticketTable } from '@/database/ticket/schema'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
 import { ticketContent } from '@/database/ticket-content/schema'
+import { ticketSearch } from '@/database/ticket-search/schema'
+import { ticketSearchTicketLink } from '@/database/ticket-search-ticket-link/schema'
 import { nextUpdatedAt } from '@/database/timestamp-columns'
 import type { Ticket } from '@/domains/tickets/contract/contract'
+import { matchingSearch } from '../sync/ticket-search-records'
 
 // `readAt` is when the page was asked for; a Ticket written since keeps its newer facts.
 export type ListedBatch = TicketScopeTarget & {
@@ -16,6 +19,7 @@ export type ListedBatch = TicketScopeTarget & {
 type Writer = Pick<Database, 'insert' | 'select' | 'update'>
 
 const touched = nextUpdatedAt(ticketContent.updatedAt)
+const searchTouched = nextUpdatedAt(ticketSearch.updatedAt)
 
 function facts(ticket: Ticket) {
   return {
@@ -168,6 +172,46 @@ export function saveReadTicket(
   ticket: Ticket,
 ): string {
   return database.transaction((transaction) => saveFacts(transaction, target, ticket))
+}
+
+// The provider's matches for a query, saved as Tickets and linked to the query in the provider's
+// order. A Ticket the listing does not hold stays unlisted, so only the search shows it.
+export function saveSearchedTickets(
+  database: Database,
+  target: TicketScopeTarget & { query: string; readAt: number; completedAt: number },
+  tickets: readonly Ticket[],
+): void {
+  const { provider, scope, query } = target
+  database.transaction((transaction) => {
+    const ticketIds = tickets.map((ticket) => saveFacts(transaction, target, ticket))
+    transaction
+      .delete(ticketSearchTicketLink)
+      .where(
+        and(
+          eq(ticketSearchTicketLink.provider, provider),
+          eq(ticketSearchTicketLink.scope, scope),
+          eq(ticketSearchTicketLink.query, query),
+        ),
+      )
+      .run()
+    ticketIds.forEach((ticketId, position) => {
+      transaction
+        .insert(ticketSearchTicketLink)
+        .values({ provider, scope, query, ticketId, position })
+        .onConflictDoNothing()
+        .run()
+    })
+    transaction
+      .update(ticketSearch)
+      .set({
+        phase: 'ready',
+        failure: null,
+        completedAt: target.completedAt,
+        updatedAt: searchTouched,
+      })
+      .where(matchingSearch(target))
+      .run()
+  })
 }
 
 // A field the provider confirmed after a write, saved on the Ticket's existing row.

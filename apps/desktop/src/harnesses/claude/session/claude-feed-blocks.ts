@@ -168,6 +168,41 @@ function decodeBlock(
   }
 }
 
+type PromptMessage = Extract<FeedContent, { kind: 'message' }>
+
+// A human prompt's image, document-text and message blocks decode as siblings; fold them into
+// one authored row so a Turn's prompt draws as text with its own attachments, never scattered
+// across the Feed (#2884). Tool blocks never appear in a genuine human turn, so anything else
+// in `content` passes through untouched.
+function foldUserPromptContent(id: string, content: FeedContent[]): FeedContent[] {
+  const images = content.flatMap((item) =>
+    item.kind === 'media' && item.mediaType === 'image' ? [item.source] : [],
+  )
+  const pastedContent = content.flatMap((item) =>
+    item.kind === 'reference' && item.referenceType === 'pasted'
+      ? [{ id: item.id, text: item.text ?? '' }]
+      : [],
+  )
+  if (images.length === 0 && pastedContent.length === 0) return content
+  const promptIndex = content.findIndex((item): item is PromptMessage => item.kind === 'message')
+  const prompt: PromptMessage =
+    promptIndex === -1
+      ? { id, kind: 'message', role: 'user', text: '' }
+      : (content[promptIndex] as PromptMessage)
+  const merged: FeedContent = {
+    ...prompt,
+    ...(images.length > 0 ? { images } : {}),
+    ...(pastedContent.length > 0 ? { pastedContent } : {}),
+  }
+  const rest = content.filter(
+    (item, index) =>
+      index !== promptIndex &&
+      !(item.kind === 'media' && item.mediaType === 'image') &&
+      !(item.kind === 'reference' && item.referenceType === 'pasted'),
+  )
+  return [merged, ...rest]
+}
+
 export function decodeClaudeBlocks(
   input: {
     id: string
@@ -198,5 +233,5 @@ export function decodeClaudeBlocks(
     if (candidate === null) return
     content.push(candidate)
   })
-  return content
+  return input.role === 'user' ? foldUserPromptContent(input.id, content) : content
 }

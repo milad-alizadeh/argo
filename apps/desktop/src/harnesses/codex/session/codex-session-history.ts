@@ -1,7 +1,8 @@
-import type { FeedContent } from '@/domains/sessions/api/feed-content'
+import type { FeedContent, MediaSource, PromptFile } from '@/domains/sessions/api/feed-content'
 import type { CodexRequest } from '../app-server/codex-app-server-client'
 import type { ThreadItem } from '../app-server/protocol-generated/v2/thread-item'
 import type { ThreadReadResponse } from '../app-server/protocol-generated/v2/thread-read-response'
+import type { UserInput } from '../app-server/protocol-generated/v2/user-input'
 import copy from '../locales/en.json'
 import { codexCommandContent } from './codex-command-content'
 import { codexSubagentContent } from './codex-subagent-content'
@@ -32,26 +33,77 @@ function workStatus(
   }
 }
 
+// A `text` part whose entire span is one placeholder marks a non-image attachment Codex sent as
+// literal path text (`inputItems()` in codex-session-protocol.ts); it names a file, never prose,
+// and must not leak the temporary path into the displayed prompt (#2884).
+function attachmentPlaceholder(part: Extract<UserInput, { type: 'text' }>): PromptFile | null {
+  const [element, ...rest] = part.text_elements ?? []
+  if (element === undefined || rest.length > 0 || element.placeholder === null) return null
+  if (element.byteRange.start !== 0 || element.byteRange.end !== Buffer.byteLength(part.text))
+    return null
+  return { label: part.text.split('/').at(-1) ?? part.text, target: part.text }
+}
+
+export function userPromptParts(content: UserInput[]): {
+  text: string
+  images: MediaSource[]
+  files: PromptFile[]
+} {
+  const text: string[] = []
+  const images: MediaSource[] = []
+  const files: PromptFile[] = []
+  for (const part of content) {
+    switch (part.type) {
+      case 'text': {
+        const attachment = attachmentPlaceholder(part)
+        if (attachment === null) text.push(part.text)
+        else files.push(attachment)
+        break
+      }
+      case 'localImage':
+        images.push({ kind: 'path', path: part.path })
+        break
+      case 'image':
+        if ('url' in part) images.push({ kind: 'url', url: part.url })
+        else console.warn('Rejected 1 unsupported Codex prompt shape: image by fileId.')
+        break
+      case 'audio':
+      case 'localAudio':
+      case 'skill':
+      case 'mention':
+        break
+    }
+  }
+  return { text: text.join('\n').trim(), images, files }
+}
+
+// Shared with the live channel, so a sent image prompt and its reload from history draw the same
+// row instead of the live send showing text-only until history fills in the attachments (#2884).
+export function userPromptMessage(
+  id: string,
+  parts: { text: string; images: MediaSource[]; files: PromptFile[] },
+): FeedContent | null {
+  if (parts.text === '' && parts.images.length === 0 && parts.files.length === 0) return null
+  return {
+    kind: 'message',
+    id,
+    role: 'user',
+    text: parts.text,
+    ...(parts.images.length > 0 ? { images: parts.images } : {}),
+    ...(parts.files.length > 0 ? { files: parts.files } : {}),
+  }
+}
+
 function messageItemContent(
   item: Extract<ThreadItem, { type: 'userMessage' | 'agentMessage' }>,
 ): FeedContent | null {
-  const userContent = item.type === 'userMessage' ? item.content : null
-  const legacyText = 'text' in item && typeof item.text === 'string' ? item.text : ''
-  const text =
-    item.type === 'agentMessage'
-      ? item.text
-      : (userContent ?? [])
-          .flatMap((part) => (part.type === 'text' ? [part.text] : []))
-          .join('\n')
-          .trim() || legacyText
-  if (text === '') return null
-  return {
-    kind: 'message',
-    id: item.id,
-    role: item.type === 'agentMessage' ? 'assistant' : 'user',
-    text,
-    ...(item.type === 'agentMessage' ? { phase: item.phase } : {}),
+  if (item.type === 'agentMessage') {
+    if (item.text === '') return null
+    return { kind: 'message', id: item.id, role: 'assistant', text: item.text, phase: item.phase }
   }
+  const legacyText = 'text' in item && typeof item.text === 'string' ? item.text : ''
+  const parts = userPromptParts(item.content ?? [])
+  return userPromptMessage(item.id, { ...parts, text: parts.text || legacyText })
 }
 
 function simpleItemContent(item: ThreadItem): FeedContent | null {

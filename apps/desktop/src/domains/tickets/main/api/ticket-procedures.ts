@@ -34,9 +34,13 @@ import {
 import {
   readActive,
   readClosed,
+  readSearch,
   requestClosed,
+  requestSearch,
   requestSync,
   ticketIndexedOutputSchema,
+  ticketSearchedOutputSchema,
+  ticketSearchRequestedOutputSchema,
   ticketSyncRequestedOutputSchema,
   watchTickets,
 } from '../ticket-index-service'
@@ -56,6 +60,10 @@ const listOutputSchema = z.union([ticketListedSchema, ticketErrorSchema])
 // A numbered page of the saved active list; the bound keeps an offset inside SQLite's reach.
 const activeInputSchema = projectInputSchema.extend({ page: z.int().nonnegative().max(100_000) })
 const closedLoadInputSchema = projectInputSchema.extend({ more: z.boolean() })
+// A query is searched by its trimmed text, so the saved search and its request name one query.
+const searchQuery = z.string().trim().min(1).max(TICKET_QUERY_LIMIT)
+const searchInputSchema = activeInputSchema.extend({ query: searchQuery })
+const searchRequestInputSchema = projectInputSchema.extend({ query: searchQuery })
 const detailInputSchema = projectInputSchema.extend({ reference: ticketReference })
 const changeSchema = z.strictObject({ provider, scope: identifierSchema })
 const updateStatusInputSchema = projectInputSchema.extend({ key: ticketKey, statusId })
@@ -70,6 +78,26 @@ export type TicketProcedureContext = Pick<Call, 'access' | 'connections' | 'prov
 
 function request(dependencies: TicketProcedureContext, projectId: string): Call {
   return { ...dependencies, projectId, requestId: randomUUID() }
+}
+
+// Searches of the saved Tickets, and the provider searches that widen them.
+function searchProcedures(dependencies: TicketProcedureContext) {
+  return {
+    // The saved Tickets for a query, open or closed, with the state of its provider search.
+    ticketSearch: t.procedure
+      .input(searchInputSchema)
+      .output(ticketSearchedOutputSchema)
+      .query(({ input: { projectId, query, page } }) =>
+        readSearch(request(dependencies, projectId), { query, page }),
+      ),
+    // Searches the provider for the query; matches are committed before the change is sent.
+    ticketSearchProvider: t.procedure
+      .input(searchRequestInputSchema)
+      .output(ticketSearchRequestedOutputSchema)
+      .mutation(({ input: { projectId, query } }) =>
+        requestSearch(request(dependencies, projectId), query),
+      ),
+  }
 }
 
 // The saved Ticket list: reads from SQLite, scan requests, and the commits that change it.
@@ -95,6 +123,7 @@ function indexProcedures(dependencies: TicketProcedureContext) {
       .mutation(({ input: { projectId, more } }) =>
         requestClosed(request(dependencies, projectId), more),
       ),
+    ...searchProcedures(dependencies),
     // One saved Ticket by Argo UUID, native ID or key, listed or not.
     ticketDetail: t.procedure
       .input(detailInputSchema)

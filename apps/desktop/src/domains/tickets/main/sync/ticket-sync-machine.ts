@@ -33,8 +33,14 @@ export type TicketSyncRequest = TicketScopeTarget & {
 
 export type TicketSyncDependencies = {
   database: Database
-  // One active page of the scope, read as the Account through Account access.
-  readPage: (request: TicketSyncRequest, cursor: string | null) => Promise<PageRead>
+  // One page of the scope's active Tickets, or of a query's matches, read as the Account through
+  // Account access.
+  readPage: (
+    request: TicketSyncRequest & {
+      query: string
+    },
+    cursor: string | null,
+  ) => Promise<PageRead>
   // Called after every commit that can change what a Ticket query answers.
   changed: (target: TicketScopeTarget) => void
 }
@@ -62,8 +68,15 @@ export type RecordFailureInput = ScanInput & {
   failure: TicketErrorCode
 }
 
-function commit<Result>(
-  { dependencies, target }: ScanInput,
+// A write to SQLite, then the notice that a Ticket query may answer differently.
+export function commit<Result>(
+  {
+    dependencies,
+    target,
+  }: {
+    dependencies: TicketSyncDependencies
+    target: TicketScopeTarget
+  },
   write: (database: Database) => Result,
 ) {
   const result = write(dependencies.database)
@@ -134,6 +147,7 @@ export const ticketSyncMachine = setup({
           ...input.target,
           accountId: input.accountId,
           state: LISTING_OF_KIND[input.target.kind],
+          query: '',
         },
         input.cursor,
       ),
