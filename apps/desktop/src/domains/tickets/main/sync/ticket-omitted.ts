@@ -26,7 +26,7 @@ type Resolution = {
 }
 
 // The outcome only a definite provider answer gives; any other failure settles nothing.
-function outcomeOf(read: TicketRead): OmittedOutcome | null {
+export function outcomeOf(read: TicketRead): OmittedOutcome | null {
   if (read.ok) return { kind: 'read', ticket: read.value }
   switch (read.failure) {
     case 'ticket-deleted':
