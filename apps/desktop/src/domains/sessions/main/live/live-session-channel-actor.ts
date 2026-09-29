@@ -1,4 +1,5 @@
 import { fromCallback } from 'xstate'
+import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import {
@@ -20,6 +21,7 @@ export type LiveChannelActorEvent =
       body: Extract<LiveSessionChannelEvent, { type: 'feed' }>['body']
     }
   | { type: 'Harness failed'; failure: string }
+  | { type: 'Harness commands'; listing: ComposerCommandListing }
 
 type ChannelCommand =
   | { type: 'Send'; command: Parameters<LiveSessionChannel['submit']>[0] }
@@ -82,6 +84,12 @@ function channelEvents(
       case 'turn.started':
         activeCommandId = event.commandId
         commands?.record(event.commandId, 'running')
+        return
+      case 'commands':
+        sendBack({
+          type: 'Harness commands',
+          listing: { availability: event.availability, commands: event.commands },
+        })
         return
     }
   }

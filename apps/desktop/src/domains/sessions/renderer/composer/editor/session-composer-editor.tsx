@@ -6,8 +6,9 @@ import { HorizontalRulePlugin } from '@lexical/react/LexicalHorizontalRulePlugin
 import { MarkdownShortcutPlugin } from '@lexical/react/LexicalMarkdownShortcutPlugin'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import type { LexicalEditor } from 'lexical'
-import { type RefObject, useEffect, useState } from 'react'
+import { type RefObject, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
 import { lastInputWasKeyboard } from '@/platform/renderer/lib/input-modality'
 import type { SessionHarness } from '../../harness/harnesses'
 import { useComposerEditing } from '../editing/composer-editing-context'
@@ -16,6 +17,7 @@ import { ComposerReferenceNode } from '../references/composer-reference-node'
 import { ComposerReferencePlugin } from '../references/composer-reference-plugin'
 import { ComposerTicketReferenceNode } from '../references/composer-ticket-reference-node'
 import { ComposerTicketReferencePlugin } from '../references/composer-ticket-reference-plugin'
+import { referencesFromCommands } from '../references/session-reference'
 import { ComposerEditorAdapter, initialComposerDocument } from './composer-editor-adapter'
 import { SendOnEnterPlugin } from './session-composer-enter'
 import {
@@ -41,6 +43,7 @@ function FocusOnMountPlugin({ enabled, onFocused }: { enabled: boolean; onFocuse
 }
 
 export function ComposerEditor({
+  commands,
   disabled = false,
   harness = null,
   contextPickerOpen,
@@ -49,6 +52,7 @@ export function ComposerEditor({
   onFocusAfterMount,
   onSend,
 }: {
+  commands: ComposerCommandListing
   disabled?: boolean
   harness?: SessionHarness | null
   contextPickerOpen: boolean
@@ -62,6 +66,7 @@ export function ComposerEditor({
   const { prompt: draft, tickets } = editing
   const [showsKeyboardFocus, setShowsKeyboardFocus] = useState(false)
   const [referencesOpen, setReferencesOpen] = useState(false)
+  const references = useMemo(() => referencesFromCommands(commands.commands), [commands.commands])
   return (
     <LexicalComposer
       initialConfig={{
@@ -98,7 +103,7 @@ export function ComposerEditor({
       />
       <MarkdownShortcutPlugin transformers={composerTransformers} />
       <MarkdownTypingShortcutPlugin />
-      <ComposerReferencePlugin harness={harness} />
+      <ComposerReferencePlugin harness={harness} references={references} />
       <ComposerTicketReferencePlugin tickets={tickets} />
       <HorizontalRulePlugin />
       <MarkdownPastePlugin />
@@ -109,6 +114,7 @@ export function ComposerEditor({
         harness={harness}
         disabled={contextPickerOpen}
         draft={draft}
+        listing={commands}
         onOpenChange={setReferencesOpen}
       />
     </LexicalComposer>

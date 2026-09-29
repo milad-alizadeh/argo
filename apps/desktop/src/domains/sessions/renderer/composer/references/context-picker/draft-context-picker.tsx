@@ -13,6 +13,7 @@ import type { ComposerTicketContext } from '../../editing/composer-editing'
 import { activeReference } from '../composer-reference-menu'
 import { $createComposerTicketReferenceNode } from '../composer-ticket-reference-node'
 import { ContextPicker } from './context-picker'
+import type { TicketChoice } from './context-picker-contents'
 
 function contextTicketButtons() {
   return [...document.querySelectorAll<HTMLButtonElement>('[data-context-ticket="true"]')]
@@ -61,6 +62,8 @@ export function DraftContextPicker({
   onAddTicket,
   onAttach,
   onClose,
+  projectId = null,
+  tickets,
 }: {
   anchorRef?: RefObject<HTMLDivElement | null>
   editorRef: RefObject<LexicalEditor | null>
@@ -68,6 +71,8 @@ export function DraftContextPicker({
   onAddTicket: (ticket: Omit<ComposerTicketContext, 'id'>) => void
   onAttach: () => void
   onClose: () => void
+  projectId?: string | null
+  tickets?: readonly TicketChoice[]
 }) {
   const reference = activeReference(draft)
   const query = reference?.trigger === '@' ? reference.query : ''
@@ -80,7 +85,9 @@ export function DraftContextPicker({
         onAttach()
       }}
       onClose={onClose}
+      projectId={projectId}
       query={query}
+      tickets={tickets}
       autoFocus={reference === null}
       selectedIndex={selectedIndex}
       onSelectTicket={(ticket) => {

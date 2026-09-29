@@ -1,5 +1,9 @@
 import { z } from 'zod'
 import type { HarnessReadinessRegistration } from '@/domains/harness-signin/main'
+import {
+  type ComposerCommandListing,
+  composerCommandSchema,
+} from '@/domains/sessions/api/composer-commands'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { Question, QuestionAnswer } from '@/domains/sessions/api/questions'
@@ -25,6 +29,11 @@ export const liveSessionChannelEventSchema = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('feed'), body: sessionLiveEventBodySchema }),
   z.strictObject({ type: z.literal('failure'), detail: z.string().min(1) }),
   z.strictObject({ type: z.literal('closed') }),
+  z.strictObject({
+    type: z.literal('commands'),
+    availability: z.enum(['listed', 'unavailable']),
+    commands: z.array(composerCommandSchema),
+  }),
 ])
 
 // Where a Harness writes Session history, and how it reads the lines it appends.
@@ -86,6 +95,8 @@ export type HarnessRegistration<Id extends Harness = Harness> = HarnessReadiness
     controls: LiveSessionControls | undefined,
     emit: (event: LiveSessionChannelEvent) => void,
   ) => LiveSessionChannel
+  // Commands a draft can show before a live Session exists. Claude has none: it lists from the query.
+  listCommands?: (input: { cwd: string | null }) => Promise<ComposerCommandListing>
   rename?: (nativeId: string, title: string) => Promise<void>
   sessionDiscovery: SessionDiscovery
   // A later Send may change only these Turn settings; any setting left out stays fixed.

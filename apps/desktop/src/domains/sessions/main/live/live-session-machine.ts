@@ -1,4 +1,5 @@
 import { assign, emit, fromPromise, sendTo, setup as xstateSetup } from 'xstate'
+import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
 import {
   advanceFeedActivity,
   EMPTY_FEED_ACTIVITY,
@@ -47,6 +48,7 @@ export const liveSessionMachine = xstateSetup({
       feedSerial: number
       status: LiveSessionStatus | null
       activity: FeedActivityState
+      commands: ComposerCommandListing | null
     },
     events: {} as
       | {
@@ -97,6 +99,10 @@ export const liveSessionMachine = xstateSetup({
           type: 'Harness feed'
           serial: number
           body: SessionLiveEventBody
+        }
+      | {
+          type: 'Harness commands'
+          listing: ComposerCommandListing
         }
       | {
           type: 'xstate.done.actor.persist'
@@ -161,6 +167,10 @@ export const liveSessionMachine = xstateSetup({
           ? event.body.status
           : context.status,
     }),
+    rememberCommands: assign({
+      commands: ({ context, event }) =>
+        event.type === 'Harness commands' ? event.listing : context.commands,
+    }),
     rememberActivity: assign({
       activity: ({ context, event }) => {
         if (event.type !== 'Harness feed') return context.activity
@@ -219,6 +229,7 @@ export const liveSessionMachine = xstateSetup({
     feedSerial: 0,
     status: null,
     activity: EMPTY_FEED_ACTIVITY,
+    commands: null,
   }),
   invoke: {
     id: 'harness',
@@ -375,6 +386,9 @@ export const liveSessionMachine = xstateSetup({
     },
   },
   on: {
+    'Harness commands': {
+      actions: 'rememberCommands',
+    },
     'Harness feed': {
       actions: [
         'rememberFeedSerial',

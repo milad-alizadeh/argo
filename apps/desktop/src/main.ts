@@ -12,6 +12,7 @@ import { createConnectionPort } from '@/domains/connections/main'
 import { createHarnessSignInProcedureContext } from '@/domains/harness-signin/main'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
 import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
+import { listComposerCommandsFor } from '@/domains/sessions/main/api/composer-commands'
 import { SessionActivities } from '@/domains/sessions/main/api/session-activities'
 import {
   recordHistoryActivity,
@@ -278,6 +279,7 @@ function routerForWindow(options: {
       journal: currentSessionEventJournal(),
       interactions: currentSessionInteractionBroker(),
       hasLiveChannel,
+      listComposerCommands: ({ harness, cwd }) => listComposerCommandsFor(registry[harness], cwd),
       refreshSessionSync: () => actors.sessionSync.send({ type: 'Refresh' }),
       sessionSyncStatus,
     },

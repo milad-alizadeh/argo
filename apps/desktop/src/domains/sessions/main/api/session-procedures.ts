@@ -1,5 +1,9 @@
-import type { SessionFeedReaderContext } from '../feed/feed-reader'
-import { SessionFeedReaders } from '../feed/feed-reader'
+import { type SessionFeedReaderContext, SessionFeedReaders } from '../feed/feed-reader'
+import {
+  type ComposerCommandContext,
+  composerCommandsProcedure,
+  sessionComposerCommandsProcedure,
+} from './composer-commands'
 import { composerDraftCreateProcedure } from './composer-draft-create'
 import { composerDraftReadProcedure } from './composer-draft-read'
 import { composerDraftSaveProcedure } from './composer-draft-save'
@@ -18,11 +22,14 @@ export type SessionApiContext = SessionProcedureContext &
   SessionFeedReaderContext &
   SessionInteractionContext &
   SessionListContext &
-  SessionRefreshContext & { sessionSyncStatus: readonly SessionSyncStatusStore[] }
+  SessionRefreshContext &
+  ComposerCommandContext & { sessionSyncStatus: readonly SessionSyncStatusStore[] }
 
 export function sessionProcedures(context: SessionApiContext) {
   const readers = new SessionFeedReaders(context)
   return {
+    composerCommands: composerCommandsProcedure(context),
+    sessionComposerCommands: sessionComposerCommandsProcedure(context),
     composerDraftCreate: composerDraftCreateProcedure(context.database),
     composerDraftRead: composerDraftReadProcedure(context.database),
     composerDraftSave: composerDraftSaveProcedure(context.database),
