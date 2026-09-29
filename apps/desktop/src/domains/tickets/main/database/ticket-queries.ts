@@ -26,8 +26,8 @@ import {
 import { ticketSearchTicketLink } from '@/database/ticket-search-ticket-link/schema'
 import { ticketSync } from '@/database/ticket-sync/schema'
 import { type TicketSyncState, ticketSyncSelectSchema } from '@/database/ticket-sync/validation'
-import type { Ticket, TicketStatus } from '@/domains/tickets/contract/contract'
-import { ticket, ticketStatus } from '@/domains/tickets/contract/ticket'
+import type { Ticket, TicketStatus } from '@/domains/tickets/api/ticket'
+import { ticket, ticketStatus } from '@/domains/tickets/api/ticket'
 import { matchingSearch } from '../sync/ticket-search-records'
 import { matchingScan, type TicketSyncTarget } from '../sync/ticket-sync-records'
 

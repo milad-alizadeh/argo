@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
-import type { TicketPriority } from '@/domains/tickets/contract/contract'
+import type { TicketPriority } from '@/domains/tickets/api/ticket'
 import { Badge } from '@/platform/renderer/components/ui/badge'
 import { Button } from '@/platform/renderer/components/ui/button'
 import {

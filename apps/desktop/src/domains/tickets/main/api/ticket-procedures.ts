@@ -2,18 +2,18 @@ import { randomUUID } from 'node:crypto'
 import { initTRPC } from '@trpc/server'
 import { observable } from '@trpc/server/observable'
 import { z } from 'zod'
-import { provider } from '@/domains/accounts/contract/contract'
+import { displayName, provider } from '@/domains/accounts/contract/contract'
+import { ticketErrorSchema } from '@/domains/tickets/api/errors'
 import {
+  CONNECTION_STATES,
+  priorityLevel,
+  statusId,
   TICKET_QUERY_LIMIT,
-  ticketConnectedSchema,
-  ticketDiscoveredSchema,
-  ticketErrorSchema,
-  ticketListedSchema,
-  ticketPrioritizedSchema,
-  ticketPriorityChoicesSchema,
-  ticketUpdatedSchema,
-} from '@/domains/tickets/contract/contract'
-import { priorityLevel, statusId, ticketKey } from '@/domains/tickets/contract/ticket'
+  ticketKey,
+  ticketPriority,
+  ticketStatus,
+} from '@/domains/tickets/api/ticket'
+import { message } from '@/shared/messages'
 import { identifierSchema } from '@/shared/validation'
 import type { Call } from '../read-as'
 import {
@@ -40,23 +40,48 @@ import { connectSource } from './ticket-connect'
 import { readConnection } from './ticket-connection-read'
 import { disconnectSource } from './ticket-disconnect'
 import { discoverSources } from './ticket-discover'
-import { listTickets } from './ticket-list'
 import { readPriorityChoices } from './ticket-priority-choices'
 import { updatePriority } from './ticket-update-priority'
 import { updateStatus } from './ticket-update-status'
 
 const t = initTRPC.create()
 const projectInputSchema = z.strictObject({ projectId: identifierSchema })
+const project = { projectId: identifierSchema }
+const ticketScope = z.strictObject({ scope: identifierSchema, label: z.string() })
+const connectionSummarySchema = z.strictObject({
+  accountId: identifierSchema,
+  provider,
+  login: displayName.nullable(),
+  scope: identifierSchema,
+  label: z.string(),
+  state: z.enum(CONNECTION_STATES),
+})
+const ticketConnectedSchema = message('ticket.connected', {
+  ...project,
+  connection: connectionSummarySchema.nullable(),
+})
+const ticketDiscoveredSchema = message('ticket.discovered', {
+  ...project,
+  scopes: z.array(ticketScope),
+})
+const ticketUpdatedSchema = message('ticket.updated', {
+  ...project,
+  key: ticketKey,
+  status: ticketStatus,
+})
+const ticketPrioritizedSchema = message('ticket.prioritized', {
+  ...project,
+  key: ticketKey,
+  priority: ticketPriority.nullable(),
+})
+const ticketPriorityChoicesSchema = message('ticket.priorityChoices', {
+  ...project,
+  choices: z.array(ticketPriority),
+})
 const connectionOutputSchema = z.union([ticketConnectedSchema, ticketErrorSchema])
 const discoverInputSchema = projectInputSchema.extend({ accountId: identifierSchema })
 const discoverOutputSchema = z.union([ticketDiscoveredSchema, ticketErrorSchema])
 const connectInputSchema = discoverInputSchema.extend({ scope: identifierSchema })
-const cursorSchema = z.string().min(1).max(512).nullable()
-const listInputSchema = projectInputSchema.extend({
-  query: z.string().max(TICKET_QUERY_LIMIT),
-  cursor: cursorSchema,
-})
-const listOutputSchema = z.union([ticketListedSchema, ticketErrorSchema])
 // A numbered page of the saved active list; the bound keeps an offset inside SQLite's reach.
 const activeInputSchema = projectInputSchema.extend({ page: z.int().nonnegative().max(100_000) })
 const closedLoadInputSchema = projectInputSchema.extend({ more: z.boolean() })
@@ -164,12 +189,6 @@ export function ticketProcedures(dependencies: TicketProcedureContext) {
       .input(projectInputSchema)
       .output(connectionOutputSchema)
       .query(({ input }) => readConnection(request(dependencies, input.projectId))),
-    ticketList: t.procedure
-      .input(listInputSchema)
-      .output(listOutputSchema)
-      .query(({ input: { projectId, query, cursor } }) =>
-        listTickets(request(dependencies, projectId), { query, cursor }),
-      ),
     ...indexProcedures(dependencies),
     ticketDiscover: t.procedure
       .input(discoverInputSchema)

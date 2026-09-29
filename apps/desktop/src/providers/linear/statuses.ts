@@ -1,7 +1,7 @@
 // A Linear team's workflow states, and moving one of its issues to another. Linear owns the states;
 // the cockpit reads them with every page and keeps none.
 
-import type { StatusChange, TicketStatus } from '@/domains/tickets/contract/ticket'
+import type { StatusChange, TicketStatus } from '@/domains/tickets/api/ticket'
 import type { LinearEndpoints } from '@/providers/linear/endpoints'
 import { failed, type LinearRead, query } from '@/providers/linear/http'
 import { resolvedTarget } from '@/providers/linear/issue-target'

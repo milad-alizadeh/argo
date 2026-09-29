@@ -1,7 +1,9 @@
 import type { AccountState } from '@/domains/accounts/contract/contract'
 import { type AccountAccess, accountState, readAccounts } from '@/domains/accounts/main'
 import type { TicketConnection } from '@/domains/connections/main'
-import type { ConnectionState, ConnectionSummary } from '@/domains/tickets/contract/contract'
+import type { CONNECTION_STATES } from '@/domains/tickets/api/ticket'
+
+type ConnectionState = (typeof CONNECTION_STATES)[number]
 
 const ACCOUNT_STATES: Record<AccountState, ConnectionState> = {
   connected: 'ready',
@@ -10,10 +12,7 @@ const ACCOUNT_STATES: Record<AccountState, ConnectionState> = {
   unreadable: 'account-unreadable',
 }
 
-export async function connectionSummary(
-  access: AccountAccess,
-  connection: TicketConnection,
-): Promise<ConnectionSummary> {
+export async function connectionSummary(access: AccountAccess, connection: TicketConnection) {
   const read = await readAccounts(access.paths.accounts)
   const account = read.ok
     ? read.registry.accounts.find((candidate) => candidate.id === connection.accountId)

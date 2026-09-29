@@ -4,7 +4,7 @@ import { onTestFinished, test } from 'vitest'
 import { createActor } from 'xstate'
 import { ticketContent } from '@/database/ticket-content/schema'
 import { ticketWriteIntent } from '@/database/ticket-write-intent/schema'
-import type { TicketPriority, TicketStatus } from '@/domains/tickets/contract/contract'
+import type { TicketPriority, TicketStatus } from '@/domains/tickets/api/ticket'
 import {
   DONE,
   SCOPE,

@@ -1,13 +1,13 @@
 // The Ticket port filled by GitHub Issues: one Connection's open Tickets with their hierarchy and
 // dependencies (CONTEXT.md L1 · Ticket). Parsed here, at the edge, and nowhere else.
 
-import { TICKET_PAGE_SIZE } from '@/domains/tickets/contract/contract'
 import {
   labelColor,
+  TICKET_PAGE_SIZE,
   type Ticket,
   type TicketLabel,
   type TicketLink,
-} from '@/domains/tickets/contract/ticket'
+} from '@/domains/tickets/api/ticket'
 import type { ListingState } from '@/domains/tickets/main/sources'
 import type { GitHubEndpoints } from '@/providers/github/endpoints'
 import { failed, type GitHubRead, get, getAll, getPage } from '@/providers/github/http'

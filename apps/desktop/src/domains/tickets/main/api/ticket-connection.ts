@@ -1,13 +1,10 @@
 import { projectNames } from '@/domains/accounts/main'
 import type { TicketConnection } from '@/domains/connections/main'
-import {
-  type ConnectionState,
-  type TicketConnectedReply,
-  type TicketErrorCode,
-  ticketError,
-} from '@/domains/tickets/contract/contract'
+import { type TicketErrorCode, ticketError } from '@/domains/tickets/api/errors'
 import { connectionSummary } from '../connection-summary'
 import type { Call } from '../read-as'
+
+type ConnectionState = Awaited<ReturnType<typeof connectionSummary>>['state']
 
 // What each Connection state that cannot call the provider answers a write with.
 const ACCOUNT_REFUSALS: Record<ConnectionState, TicketErrorCode | null> = {
@@ -20,10 +17,7 @@ const ACCOUNT_REFUSALS: Record<ConnectionState, TicketErrorCode | null> = {
 
 const STORAGE_ERRORS = { unreadable: 'storage-unavailable', invalid: 'storage-invalid' } as const
 
-export async function connected(
-  call: Call,
-  connection: TicketConnection | undefined,
-): Promise<TicketConnectedReply> {
+export async function connected(call: Call, connection: TicketConnection | undefined) {
   const { requestId, projectId } = call
   const value = connection ? await connectionSummary(call.access, connection) : null
   return { version: 1, type: 'ticket.connected', requestId, projectId, connection: value }
@@ -58,10 +52,7 @@ export async function writableTarget(call: Call) {
   return code ? ({ ok: false, error: ticketError(code, call.requestId) } as const) : target
 }
 
-export async function saveConnection(
-  call: Call,
-  next: TicketConnection | null,
-): Promise<TicketConnectedReply> {
+export async function saveConnection(call: Call, next: TicketConnection | null) {
   const saved = await call.connections.replaceTicket(call.projectId, next)
   if (typeof saved !== 'boolean' && !saved.ok) {
     return ticketError(STORAGE_ERRORS[saved.reason], call.requestId)

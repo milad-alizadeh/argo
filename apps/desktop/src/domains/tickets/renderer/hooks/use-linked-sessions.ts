@@ -1,6 +1,6 @@
 // Every Session linked to one Ticket (CONTEXT.md L1 · Session → Ticket), most recently linked
 // first, read here from the Session list through its generated tRPC query.
-import { useSessionList } from '@/domains/sessions/renderer/session-list/use-session-list'
+import { useSessionList } from '@/domains/sessions/renderer'
 
 export type LinkedSession = { id: string; title: string }
 

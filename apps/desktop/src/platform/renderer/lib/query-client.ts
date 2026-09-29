@@ -2,9 +2,10 @@
 // contract reply: its data is the success, and its error is the channel's own error, code and table text intact.
 import type { AccountError } from '@/domains/accounts/contract/contract'
 import type { HarnessSignInError } from '@/domains/harness-signin/contract/contract'
-import type { TicketError } from '@/domains/tickets/contract/contract'
+import type { RouterOutputs } from '../trpc-client'
 
 // Each query names it as its error type: the Session queries on the same cache throw their own.
+type TicketError = Extract<RouterOutputs[keyof RouterOutputs], { type: 'ticket.error' }>
 export type ContractFailure = AccountError | TicketError | HarnessSignInError
 
 export const QUERY_KEYS = {

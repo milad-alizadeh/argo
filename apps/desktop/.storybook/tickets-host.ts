@@ -1,12 +1,9 @@
 import { type AccountListReply, PROVIDERS } from '../src/domains/accounts/contract/contract'
-import type {
-  TicketConnectedReply,
-  TicketConnectionRequest,
-} from '../src/domains/tickets/contract/contract'
+import type { TicketConnectedReply } from '../src/domains/tickets/renderer/hooks/ticket-reply'
 
 type StorybookTicketsHost = {
   accountList: () => Promise<AccountListReply>
-  readConnection: (request: TicketConnectionRequest) => Promise<TicketConnectedReply>
+  readConnection: (request: { projectId: string }) => Promise<TicketConnectedReply>
 }
 
 // No Account and no Connection: a story that reaches the Tickets screen draws its first-run screen.

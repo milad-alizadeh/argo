@@ -1,10 +1,7 @@
 import { expect, test } from 'bun:test'
-import { projectLiveFeedRows } from '@/domains/sessions/api/feed/live-feed-rows'
-import {
-  SESSION_LIVE_REPLAY_BYTE_LIMIT,
-  type SessionLiveEvent,
-} from '@/domains/sessions/api/session-live-event'
+import { SESSION_LIVE_REPLAY_BYTE_LIMIT, type SessionLiveEvent } from '../session-live-event'
 import { emptyLiveEventBuffer, retainLiveEvent } from './live-event-buffer'
+import { projectLiveFeedRows } from './live-feed-rows'
 
 const sessionId = '00000000-0000-4000-8000-000000000001'
 

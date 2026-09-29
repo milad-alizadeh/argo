@@ -1,8 +1,8 @@
 // An image a prompt carries reaches the Feed as a URL the renderer's CSP `img-src` already
 // allows: inline bytes as `data:`, a file on disk as `argo-attachment://`.
 import { z } from 'zod'
-import { ATTACHMENT_HOST, ATTACHMENT_SCHEME } from '@/domains/sessions/api/attachment-url'
-import { attachmentKindOf } from '@/domains/sessions/api/attachments'
+import { ATTACHMENT_HOST, ATTACHMENT_SCHEME } from '../attachment-url'
+import { attachmentKindOf } from '../attachments'
 import type { ContentBlock } from './transcript-content'
 
 // Never `file://`: Chromium refuses a `file://` subresource load from a document the Vite dev

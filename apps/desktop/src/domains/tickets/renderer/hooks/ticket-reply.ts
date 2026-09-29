@@ -1,12 +1,3 @@
-import type {
-  TicketConnected,
-  TicketDiscovered,
-  TicketError,
-  TicketListed,
-  TicketPrioritized,
-  TicketPriorityChoices,
-  TicketUpdated,
-} from '@/domains/tickets/contract/contract'
 import type { RouterOutputs } from '@/platform/renderer/trpc-client'
 
 export type TicketIndexedReply = RouterOutputs['ticketActive']
@@ -18,11 +9,27 @@ export type TicketSearchRequested = Extract<
   { type: 'ticket.search-requested' }
 >
 
+export type TicketError = Extract<RouterOutputs[keyof RouterOutputs], { type: 'ticket.error' }>
+export type TicketConnectedReply = RouterOutputs['ticketConnection']
+export type TicketConnected = Extract<TicketConnectedReply, { type: 'ticket.connected' }>
+export type ConnectionSummary = NonNullable<TicketConnected['connection']>
+export type TicketDiscoverReply = RouterOutputs['ticketDiscover']
+export type TicketDiscovered = Extract<TicketDiscoverReply, { type: 'ticket.discovered' }>
+export type TicketScope = TicketDiscovered['scopes'][number]
+export type TicketUpdated = Extract<RouterOutputs['ticketUpdateStatus'], { type: 'ticket.updated' }>
+export type TicketPrioritized = Extract<
+  RouterOutputs['ticketUpdatePriority'],
+  { type: 'ticket.prioritized' }
+>
+export type TicketPriorityChoices = Extract<
+  RouterOutputs['ticketPriorityChoices'],
+  { type: 'ticket.priorityChoices' }
+>
+
 type TicketSuccess =
   | TicketConnected
   | TicketDiscovered
   | TicketIndexed
-  | TicketListed
   | TicketSearched
   | TicketSearchRequested
   | TicketPriorityChoices

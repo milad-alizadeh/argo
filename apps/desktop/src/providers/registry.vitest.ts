@@ -179,14 +179,14 @@ async function signedInToLinear() {
 
 // Connects the Project to the scope and answers the keys of the Tickets the list then shows.
 async function connectedKeys(
-  tickets: Awaited<ReturnType<typeof flows>>['tickets'],
+  flow: Awaited<ReturnType<typeof flows>>,
   accountId: string,
   scope: string,
 ) {
-  const connected = await tickets.ticketConnect({ projectId, accountId, scope })
+  const connected = await flow.tickets.ticketConnect({ projectId, accountId, scope })
   assert.equal(connected.type, 'ticket.connected')
-  const listed = await tickets.ticketList({ projectId, query: '', cursor: null })
-  assert.ok(listed.type === 'ticket.listed')
+  const listed = await synced(flow)
+  assert.ok(listed.type === 'ticket.indexed')
   return listed.tickets.map((ticket) => ticket.key).sort()
 }
 
@@ -214,8 +214,7 @@ test('the shared Ticket flows read and close a GitHub issue through the registry
     visibleTo: [OCTOCAT.id],
     issues: [{ number: 1, title: 'Wire the registry' }],
   })
-  assert.deepEqual(await connectedKeys(tickets, accountId, 'octo/hello'), ['#1'])
-  await synced(flow)
+  assert.deepEqual(await connectedKeys(flow, accountId, 'octo/hello'), ['#1'])
   const updated = await tickets.ticketUpdateStatus({ projectId, key: '#1', statusId: 'completed' })
   assert.ok(updated.type === 'ticket.updated')
   assert.equal(updated.status.id, 'completed')
@@ -236,8 +235,7 @@ test('a confirmed GitHub status change is recorded, committed, then announced', 
     visibleTo: [OCTOCAT.id],
     issues: [{ number: 1, title: 'Wire the registry' }],
   })
-  await connectedKeys(tickets, accountId, 'octo/hello')
-  await synced(flow)
+  await connectedKeys(flow, accountId, 'octo/hello')
   const seen: string[] = []
   changes.subscribe(() => {
     // The saved Ticket already holds the confirmed status when the change is announced.
@@ -259,8 +257,7 @@ test('a GitHub status change the provider refuses leaves the saved Ticket unchan
     writers: [],
     issues: [{ number: 1, title: 'Wire the registry' }],
   })
-  await connectedKeys(tickets, accountId, 'octo/hello')
-  await synced(flow)
+  await connectedKeys(flow, accountId, 'octo/hello')
   let announced = 0
   changes.subscribe(() => {
     announced += 1
@@ -279,8 +276,7 @@ test('a Linear status change the provider refuses leaves the saved Ticket unchan
   const flow = await signedInToLinear()
   const { mockLinear, tickets, accountId, database } = flow
   mockLinear.addTeam(TEAM)
-  await connectedKeys(tickets, accountId, TEAM.id)
-  await synced(flow)
+  await connectedKeys(flow, accountId, TEAM.id)
   const before = await tickets.ticketDetail({ projectId, reference: 'ENG-2' })
   assert.ok(before.type === 'ticket.detail')
   mockLinear.refuseWrites()
@@ -301,8 +297,7 @@ test('a confirmed Linear priority is committed to SQLite and announced', async (
   const flow = await signedInToLinear()
   const { mockLinear, tickets, accountId, changes, database } = flow
   mockLinear.addTeam(TEAM)
-  await connectedKeys(tickets, accountId, TEAM.id)
-  await synced(flow)
+  await connectedKeys(flow, accountId, TEAM.id)
   let announced = 0
   changes.subscribe(() => {
     announced += 1
@@ -325,8 +320,7 @@ test('a Linear priority change the provider refuses keeps the committed value', 
   const flow = await signedInToLinear()
   const { mockLinear, tickets, accountId, database } = flow
   mockLinear.addTeam(TEAM)
-  await connectedKeys(tickets, accountId, TEAM.id)
-  await synced(flow)
+  await connectedKeys(flow, accountId, TEAM.id)
   mockLinear.refuseWrites()
   const refused = await tickets.ticketUpdatePriority({
     projectId,
@@ -350,8 +344,7 @@ test('a GitHub Ticket refuses a priority change and keeps the refusal as a rejec
     writers: [OCTOCAT.id],
     issues: [{ number: 1, title: 'Wire the registry' }],
   })
-  await connectedKeys(tickets, accountId, 'octo/hello')
-  await synced(flow)
+  await connectedKeys(flow, accountId, 'octo/hello')
   const refused = await tickets.ticketUpdatePriority({ projectId, key: '#1', priorityLevel: 1 })
   assert.ok(refused.type === 'ticket.error')
   assert.equal(refused.code, 'ticket-not-writable')
@@ -361,7 +354,7 @@ test('a GitHub Ticket refuses a priority change and keeps the refusal as a rejec
 test('the priority levels come from Linear, and GitHub offers none', async () => {
   const linear = await signedInToLinear()
   linear.mockLinear.addTeam(TEAM)
-  await connectedKeys(linear.tickets, linear.accountId, TEAM.id)
+  await connectedKeys(linear, linear.accountId, TEAM.id)
   const offered = await linear.tickets.ticketPriorityChoices({ projectId })
   assert.ok(offered.type === 'ticket.priorityChoices')
   assert.deepEqual(
@@ -380,7 +373,7 @@ test('the priority levels come from Linear, and GitHub offers none', async () =>
     writers: [OCTOCAT.id],
     issues: [],
   })
-  await connectedKeys(github.tickets, github.accountId, 'octo/hello')
+  await connectedKeys(github, github.accountId, 'octo/hello')
   const none = await github.tickets.ticketPriorityChoices({ projectId })
   assert.ok(none.type === 'ticket.priorityChoices')
   assert.deepEqual(none.choices, [])

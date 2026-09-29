@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import type { ConnectionSummary } from '@/domains/tickets/contract/contract'
+import type { ConnectionSummary } from '../hooks/ticket-reply'
 
 const STATE_MARK: Record<ConnectionSummary['state'], string> = {
   ready: 'bg-active',

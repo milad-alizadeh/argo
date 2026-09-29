@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
-import { CONNECTION_STATES, TICKET_ERRORS } from '@/domains/tickets/contract/contract'
+import { TICKET_ERRORS } from '@/domains/tickets/api/errors'
+import { CONNECTION_STATES } from '@/domains/tickets/api/ticket'
 import tickets from './en.json'
 
 test('the Tickets catalog answers every Ticket error code', () => {

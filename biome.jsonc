@@ -282,6 +282,7 @@
     {
       "includes": [
         "apps/desktop/src/domains/*/contract/**",
+        "apps/desktop/src/domains/*/api/**",
         "apps/desktop/src/platform/shared/**",
         "apps/desktop/src/shared/**",
         "!**/*.{test,stories}.{ts,tsx}"
@@ -293,14 +294,14 @@
               "level": "error",
               "options": {
                 "paths": {
-                  "electron": "Contract and shared code stay runtime-neutral.",
-                  "node-pty": "Contract and shared code stay runtime-neutral.",
-                  "react": "Contract and shared code stay free of React."
+                  "electron": "API, contract, and shared code stay runtime-neutral.",
+                  "node-pty": "API, contract, and shared code stay runtime-neutral.",
+                  "react": "API, contract, and shared code stay free of React."
                 },
                 "patterns": [
                   {
                     "group": ["node:*", "node:*/**"],
-                    "message": "Contract and shared code stay runtime-neutral."
+                    "message": "API, contract, and shared code stay runtime-neutral."
                   },
                   {
                     "group": [
@@ -323,7 +324,7 @@
                       "@/core",
                       "@/core/**"
                     ],
-                    "message": "Contract and shared code can import only contract or shared facets."
+                    "message": "API, contract, and shared code can import only API, contract, or shared facets."
                   }
                 ]
               }
@@ -356,7 +357,7 @@
                       "@/platform/renderer",
                       "@/platform/renderer/**"
                     ],
-                    "message": "Main facets can import only contract, main, or shared facets."
+                    "message": "Main facets can import only API, contract, main, or shared facets."
                   }
                 ]
               }
@@ -409,7 +410,7 @@
                       "@/platform/renderer",
                       "@/platform/renderer/**"
                     ],
-                    "message": "Preload facets can import only contract, preload, or shared facets."
+                    "message": "Preload facets can import only API, contract, preload, or shared facets."
                   }
                 ]
               }
@@ -455,7 +456,7 @@
                       "@/core",
                       "@/core/**"
                     ],
-                    "message": "Renderer facets can import only contract, renderer, or shared facets."
+                    "message": "Renderer facets can import only API, contract, renderer, or shared facets."
                   }
                 ]
               }

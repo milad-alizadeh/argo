@@ -1,6 +1,5 @@
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ConnectionSummary } from '@/domains/tickets/contract/contract'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Loader } from '@/platform/renderer/components/loader/loader'
 import { Alert, AlertDescription } from '@/platform/renderer/components/ui/alert'
@@ -17,6 +16,7 @@ import { useContractText } from '@/platform/renderer/i18n/contract-text'
 import { useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 import { providerPresentation } from '@/providers/presentation-registry'
+import type { ConnectionSummary } from '../hooks/ticket-reply'
 import { ConnectionStatusMark } from './connection-status-mark'
 
 export type SourceSettingsProps = {

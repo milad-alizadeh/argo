@@ -1,12 +1,12 @@
 import { z } from 'zod'
-import { feedActivityBaseSchema } from '@/domains/sessions/api/feed-activity'
+import { identifierSchema } from '@/shared/validation'
+import { feedActivityBaseSchema } from '../feed-activity'
 import {
   feedContentKindSchema,
   toolPresentationKindSchema,
   workStatusSchema,
-} from '@/domains/sessions/api/feed-content'
-import { questionSchema } from '@/domains/sessions/api/questions'
-import { identifierSchema } from '@/shared/validation'
+} from '../feed-content'
+import { questionSchema } from '../questions'
 import { BACKGROUND_STATES } from './background-task-record'
 import { feedImageUrlSchema } from './feed-images'
 import { SUBAGENT_EVENTS } from './subagent-event'

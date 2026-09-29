@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ticketKeyInPlace } from '@/domains/tickets/contract/branch-ticket'
+import { ticketKeyInPlace } from '@/domains/tickets/api/branch-ticket'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import type { Session } from '../../types'
 import { sessionTiming } from './session-timing'

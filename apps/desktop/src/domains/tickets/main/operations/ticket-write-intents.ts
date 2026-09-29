@@ -6,7 +6,7 @@ import type { TicketScopeTarget } from '@/database/ticket/validation'
 import { ticketContent } from '@/database/ticket-content/schema'
 import { type TICKET_WRITE_PHASES, ticketWriteIntent } from '@/database/ticket-write-intent/schema'
 import { nextUpdatedAt } from '@/database/timestamp-columns'
-import type { TicketErrorCode } from '@/domains/tickets/contract/contract'
+import type { TicketErrorCode } from '@/domains/tickets/api/errors'
 import { savedIdentityByKey } from '../database/ticket-upsert'
 import type { TicketOperationRequest } from './ticket-operation-machine'
 

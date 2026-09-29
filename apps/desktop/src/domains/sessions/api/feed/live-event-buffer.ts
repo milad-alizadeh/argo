@@ -2,7 +2,7 @@ import {
   SESSION_LIVE_REPLAY_BYTE_LIMIT,
   SESSION_LIVE_REPLAY_EVENT_LIMIT,
   type SessionLiveEvent,
-} from '@/domains/sessions/api/session-live-event'
+} from '../session-live-event'
 
 export type LiveEventBuffer = {
   events: SessionLiveEvent[]

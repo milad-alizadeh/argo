@@ -116,7 +116,6 @@ test('registers Ticket procedures directly on the global router', () => {
   const paths = Object.keys(testRouter({} as never)._def.procedures)
   for (const path of [
     'ticketConnection',
-    'ticketList',
     'ticketActive',
     'ticketDetail',
     'ticketOpen',
@@ -125,6 +124,7 @@ test('registers Ticket procedures directly on the global router', () => {
     'ticketChanges',
   ])
     expect(paths).toContain(path)
+  expect(paths).not.toContain('ticketList')
   expect(paths.some((path) => path === 'tickets' || path.startsWith('tickets.'))).toBe(false)
 })
 

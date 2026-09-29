@@ -1,5 +1,5 @@
 import type { Provider } from '@/domains/accounts/contract/contract'
-import type { TicketStatus } from '@/domains/tickets/contract/contract'
+import type { TicketStatus } from '@/domains/tickets/api/ticket'
 
 // The statuses each provider offers: GitHub's open and reasons for closing, a Linear team's workflow.
 export const STATUSES: Record<Provider, TicketStatus[]> = {

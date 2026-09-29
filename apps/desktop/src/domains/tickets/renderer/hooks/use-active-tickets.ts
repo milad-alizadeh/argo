@@ -1,15 +1,11 @@
 // A Project's saved active Tickets, read from SQLite by page and refetched on each change.
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import {
-  type ConnectionSummary,
-  type TicketError,
-  ticketError,
-} from '@/domains/tickets/contract/contract'
+import { ticketError } from '@/domains/tickets/api/errors'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 import { trpcClient } from '@/platform/renderer/trpc-client'
 import { numberedPages } from './numbered-pages'
-import type { TicketIndexedReply } from './ticket-reply'
+import type { ConnectionSummary, TicketError, TicketIndexedReply } from './ticket-reply'
 import { searchKey } from './use-searched-tickets'
 import { detailKey } from './use-ticket-detail'
 import { listKey, onRefused, type TicketPages } from './use-tickets'
