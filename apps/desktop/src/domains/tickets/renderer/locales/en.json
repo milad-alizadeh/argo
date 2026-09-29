@@ -209,6 +209,6 @@
     "storage-invalid": "The store of connected Ticket sources cannot be read in this format.",
     "storage-unavailable": "Argo cannot access the store of connected Ticket sources.",
     "storage-not-written": "Argo could not save the connected Ticket source.",
-    "ticket-unreconciled": "This Ticket has an unresolved change from before. Argo is checking with the provider before it can change again."
+    "ticket-unreconciled": "This Ticket has an unresolved change. Try again once Argo confirms it."
   }
 }
