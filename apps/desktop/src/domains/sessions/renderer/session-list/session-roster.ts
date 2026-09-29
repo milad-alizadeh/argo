@@ -82,5 +82,10 @@ export function useSessionRoster(input: Required<RosterInput>, pages: number, en
     queryKey: sessionRosterQueryKey(input),
     queryFn: skipToken,
     staleTime: Number.POSITIVE_INFINITY,
+    placeholderData: (previous, previousQuery) =>
+      previous?.failed === false &&
+      previousQuery?.queryKey[sessionRosterPathKey.length] === projectId
+        ? previous
+        : undefined,
   }).data
 }

@@ -207,6 +207,7 @@ export function SessionList({ actions, projectId, selectedSessionId }: SessionLi
       <SessionSyncFeedback status={read.syncStatus} />
       <SessionListOutcome
         count={sessions.sessionCount}
+        searching={sessions.searching}
         sessionList={read.sessionList}
         sessionListError={read.sessionListError}
         status={sessions.status}
