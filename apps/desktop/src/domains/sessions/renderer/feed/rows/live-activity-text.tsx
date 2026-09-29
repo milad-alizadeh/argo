@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { displayedToolLabel } from '@/domains/sessions/api/feed/tool-feed'
 import type { SessionActivity } from '@/domains/sessions/renderer/model/models'
 import { RunningText } from '@/platform/renderer/components/running-text'
+import { FeedInlineMarkdown } from '../content/feed-inline-markdown'
 
 export type LiveActivity = {
   activity: Pick<SessionActivity, 'kind' | 'label' | 'open'> | null
@@ -29,6 +30,13 @@ export function LiveActivityText({
 }: LiveActivity & { shimmer?: boolean }) {
   const text = useLiveActivityText(live)
   if (text === null) return null
-  if (!shimmer) return <>{text}</>
-  return <RunningText running={live.running}>{text}</RunningText>
+  // The agent's own words are Markdown; a tool's label is literal, so `*` in a command stays.
+  const content =
+    live.compacting !== true && live.activity?.kind === 'thought' ? (
+      <FeedInlineMarkdown shimmering={shimmer && live.running} text={text} />
+    ) : (
+      text
+    )
+  if (!shimmer) return <>{content}</>
+  return <RunningText running={live.running}>{content}</RunningText>
 }

@@ -108,6 +108,8 @@ export const feedContentSchema = z.discriminatedUnion('kind', [
         path: z.string(),
         change: z.enum(['add', 'update', 'delete', 'unknown']),
         diff: z.string().nullable(),
+        // Where an update left the file when it also renamed it.
+        movedTo: z.string().optional(),
       }),
     ),
   }),

@@ -11,13 +11,24 @@ const COMPONENTS: Components = {
   strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
   code: ({ children }) => <code className="rounded-md bg-muted px-1 font-mono">{children}</code>,
 }
+// The shimmer paints through the text, so a code ground would cover its letters.
+const SHIMMERING_COMPONENTS: Components = {
+  ...COMPONENTS,
+  code: ({ children }) => <code className="font-mono">{children}</code>,
+}
 
 // One line of Markdown inside a single-line title: emphasis and code draw, every block unwraps.
-export const FeedInlineMarkdown = memo(function FeedInlineMarkdown({ text }: { text: string }) {
+export const FeedInlineMarkdown = memo(function FeedInlineMarkdown({
+  shimmering = false,
+  text,
+}: {
+  shimmering?: boolean
+  text: string
+}) {
   return (
     <Markdown
       allowedElements={INLINE_ELEMENTS}
-      components={COMPONENTS}
+      components={shimmering ? SHIMMERING_COMPONENTS : COMPONENTS}
       remarkPlugins={REMARK_PLUGINS}
       unwrapDisallowed
     >

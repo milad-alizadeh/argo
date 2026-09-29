@@ -13,6 +13,35 @@ const live = (sequence: number, value: FeedContent): SessionLiveEvent => ({
   content: value,
 })
 
+test('names a moved file by both names and shows its diff at the new path', () => {
+  const rows = projectLiveFeedRows(
+    [
+      {
+        kind: 'fileChange',
+        id: 'patch-move',
+        status: 'completed',
+        changes: [
+          {
+            path: '/repo/old.ts',
+            change: 'update',
+            diff: '@@ -1 +1 @@\n-a\n+b',
+            movedTo: '/repo/lib/new.ts',
+          },
+        ],
+      },
+    ],
+    [],
+  )
+  expect(rows).toMatchObject([
+    {
+      kind: 'edited',
+      label: 'Moved old.ts to new.ts',
+      lineCounts: { added: 1, removed: 1 },
+      evidence: { source: ['Update File: /repo/lib/new.ts', '@@ -1 +1 @@', '-a', '+b'].join('\n') },
+    },
+  ])
+})
+
 test('shows added and deleted file contents on their respective diff sides', () => {
   const rows = projectLiveFeedRows(
     [

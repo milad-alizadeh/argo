@@ -315,7 +315,7 @@ function fileChangeEvidence(change: FileChange): string {
     }
     case 'update':
     case 'unknown':
-      return `Update File: ${change.path}\n${text}`
+      return `Update File: ${change.movedTo ?? change.path}\n${text}`
   }
 }
 
@@ -347,7 +347,10 @@ function fileChangeRows(content: Extract<FeedContent, { kind: 'fileChange' }>): 
     ]
   return content.changes.map((change, index) => {
     const { kind, verb } = FILE_CHANGE_PRESENTATION[change.change]
-    const label = `${verb} ${fileName(change.path)}`
+    const label =
+      change.movedTo === undefined
+        ? `${verb} ${fileName(change.path)}`
+        : `Moved ${fileName(change.path)} to ${fileName(change.movedTo)}`
     return {
       shape: 'tool',
       id: index === 0 ? content.id : derivedId(content.id, `#${index}`),

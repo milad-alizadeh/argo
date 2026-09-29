@@ -4,6 +4,7 @@ import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-e
 import type { HistoryChange, HistoryTurn, HistoryTurnMarker } from '@/harnesses/registration'
 import { decodeClaudeHistoryContent } from './claude-feed-decoder'
 import { ClaudeFeedProjection } from './claude-feed-projection'
+import { type ClaudeSkillFile, claudeSkillFiles } from './claude-skill-files'
 
 const CLOSING_STOP_REASONS = new Set(['end_turn', 'stop_sequence'])
 
@@ -105,9 +106,14 @@ function chainLink(
 function chainStep(
   leaf: string | null,
   line: string,
-  decoder: { reject: () => void; projection: ClaudeFeedProjection },
+  decoder: {
+    reject: () => void
+    projection: ClaudeFeedProjection
+    learnCwd: (record: Record<string, unknown> | null) => unknown
+  },
 ): ChainStep {
   const value = recordOf(line)
+  decoder.learnCwd(value)
   if (value === null) {
     decoder.reject()
     return { leaf, branched: false, events: [] }
@@ -132,10 +138,19 @@ export function openClaudeHistoryReader(
   existing: readonly string[] = [],
 ): (lines: readonly string[]) => HistoryChange {
   let leaf = leafOf(existing)
+  // Skills resolve against the Session's folder, which discovery also reads from its first record.
+  const homeSkills = claudeSkillFiles(null)
+  let skillFile: ClaudeSkillFile | null = null
+  const resolveSkill = (name: string) => (skillFile ?? homeSkills)(name)
+  const learnCwd = (record: Record<string, unknown> | null) => {
+    if (skillFile === null && typeof record?.cwd === 'string')
+      skillFile = claudeSkillFiles(record.cwd)
+    return record
+  }
   // Decodes as a full read does; the lines already read teach it the calls a new result answers.
-  const projection = new ClaudeFeedProjection(() => null)
+  const projection = new ClaudeFeedProjection(resolveSkill)
   for (const line of existing) {
-    const record = recordOf(line)
+    const record = learnCwd(recordOf(line))
     if (record !== null) contentEvents(record, () => {}, projection)
   }
   return (lines) => {
@@ -146,7 +161,7 @@ export function openClaudeHistoryReader(
     const events: SessionLiveEventBody[] = []
     let branched = false
     for (const line of lines) {
-      const step = chainStep(leaf, line, { reject, projection })
+      const step = chainStep(leaf, line, { reject, projection, learnCwd })
       leaf = step.leaf
       branched ||= step.branched
       events.push(...step.events)
