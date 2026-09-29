@@ -287,5 +287,5 @@ test('a generated output row keeps the row when its call id fills the identifier
   }
   const { entries, rejected } = projectFeedRowEntries({ history: [tool], live: [] })
   expect(rejected.rows).toBe(0)
-  expect(entries.map((entry) => entry.row.shape)).toEqual(['tool-group', 'source'])
+  expect(entries.map((entry) => entry.row.shape)).toEqual(['tool-group', 'source', 'activity'])
 })

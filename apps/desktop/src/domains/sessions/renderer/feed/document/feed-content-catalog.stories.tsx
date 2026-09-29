@@ -104,20 +104,43 @@ export const Reference = kindStory(
   },
   'Source file',
 )
-export const Tool = kindStory(
-  {
-    kind: 'tool',
-    id: 'tool',
-    callId: 'call-1',
-    name: 'Bash',
-    status: 'running',
-    input: { command: 'bun test' },
-    output: null,
-    summary: null,
-    presentation: { kind: 'command', label: 'Run the Feed tests', agentDescription: true },
+const runningTool: FeedContent = {
+  kind: 'tool',
+  id: 'tool',
+  callId: 'call-1',
+  name: 'Bash',
+  status: 'running',
+  input: { command: 'bun test' },
+  output: null,
+  summary: null,
+  presentation: { kind: 'command', label: 'Run the Feed tests', agentDescription: true },
+}
+// A running call names its group only while it is the running Turn's activity.
+export const Tool: Story = {
+  args: {
+    feed: catalogFeed(runningTool),
+    liveFacts: {
+      ...INACTIVE_FEED_LIVE_FACTS,
+      isRunning: true,
+      status: 'running',
+      activity: {
+        label: 'Run the Feed tests',
+        kind: 'command',
+        open: true,
+        agentDescription: true,
+        tool: 'Bash',
+        target: null,
+      },
+    },
   },
-  'Run the Feed tests',
-)
+  play: async ({ canvasElement }) => {
+    await waitFor(() =>
+      expect(canvasElement.querySelector('[data-feed-row]')).toHaveTextContent(
+        'Run the Feed tests',
+      ),
+    )
+  },
+}
 export const Command = kindStory(
   {
     kind: 'command',
