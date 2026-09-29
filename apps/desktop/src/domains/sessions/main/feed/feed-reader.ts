@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server'
 import type { Database } from '@/database/database'
 import { type FeedChain, feedChainKey } from '@/domains/sessions/api/feed/feed-chain'
 import { type FeedReading, feedReading } from '@/domains/sessions/api/feed/feed-reading'
-import { feedEntryRows, projectFeedRowEntries } from '@/domains/sessions/api/feed/feed-row-entries'
+import { FeedRowProjector, feedEntryRows } from '@/domains/sessions/api/feed/feed-row-entries'
 import type { SessionFeedRow } from '@/domains/sessions/api/feed/feed-rows'
 import { feedSubagents, subagentCompletionRows } from '@/domains/sessions/api/feed/feed-subagents'
 import {
@@ -40,6 +40,16 @@ type Observer = (reading: FeedReading) => void
 type ReadState = FeedReading['state']
 
 const encoder = new TextEncoder()
+
+// Streamed text publishes at most once a window; any other event publishes at once.
+export const FEED_TEXT_COALESCE_MS = 100
+
+// Assistant text and reasoning arrive as snapshot after snapshot of the same row.
+function isStreamedText(event: SessionLiveEvent): boolean {
+  if (event.type !== 'content') return false
+  const { content } = event
+  return content.kind === 'reasoning' || (content.kind === 'message' && content.role !== 'user')
+}
 
 // Without a live channel, only what vendor history can also settle reaches the Feed.
 export function canDeliver(event: SessionLiveEvent, live: boolean): boolean {
@@ -93,6 +103,8 @@ class FeedReader {
   #read = 0
   #stopped = false
   #reading: FeedReading | null = null
+  #textTimer: ReturnType<typeof setTimeout> | null = null
+  readonly #projector = new FeedRowProjector()
 
   constructor(context: SessionFeedReaderContext, chain: FeedChain, parent: ParentFeed | null) {
     this.#context = context
@@ -145,6 +157,7 @@ class FeedReader {
     for (const stop of this.#stops.splice(0)) stop()
     this.#follower?.stop()
     this.#follower = null
+    this.#cancelText()
     this.#observers.clear()
     // An unobserved Feed publishes nothing more, so its activity would only go stale.
     if (this.#parent === null) this.#context.activities?.publish(this.#chain.sessionId, null)
@@ -212,7 +225,13 @@ class FeedReader {
       encoder.encode(JSON.stringify(event)).byteLength > SESSION_LIVE_REPLAY_BYTE_LIMIT
     // A settled Turn and an event too large to keep both live in vendor history now.
     if (oversized || (event.type === 'status' && event.status === 'idle')) this.refresh()
-    this.#publish()
+    if (!isStreamedText(event)) this.#publish()
+    else this.#textTimer ??= setTimeout(() => this.#publish(), FEED_TEXT_COALESCE_MS)
+  }
+
+  #cancelText(): void {
+    if (this.#textTimer !== null) clearTimeout(this.#textTimer)
+    this.#textTimer = null
   }
 
   // A new response from the parent means the Subagent's own transcript has settled too.
@@ -233,8 +252,10 @@ class FeedReader {
     this.#publish()
   }
 
+  // Publishing reads every retained event, so text still waiting goes out with it.
   #publish(): void {
-    const { entries, activity, rejected } = projectFeedRowEntries({
+    this.#cancelText()
+    const { entries, activity, rejected } = this.#projector.project({
       history: this.#history,
       live: this.#events.events,
       end: this.#completion,

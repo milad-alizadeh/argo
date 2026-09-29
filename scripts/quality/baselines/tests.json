@@ -77,15 +77,6 @@
     {
       "identity": {
         "project": "@argo/desktop",
-        "path": "apps/desktop/mocks/sessions/mock-session-harness-backend.test.ts",
-        "test": "[suite setup]"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this test repair."
-    },
-    {
-      "identity": {
-        "project": "@argo/desktop",
         "path": "apps/desktop/src/renderer/catalogs.test.ts",
         "test": "every catalog key has a call site"
       },

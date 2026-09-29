@@ -1,7 +1,11 @@
 import { initTRPC } from '@trpc/server'
 import { observable } from '@trpc/server/observable'
 import { z } from 'zod'
-import type { FeedReading } from '@/domains/sessions/api/feed/feed-reading'
+import {
+  type FeedReading,
+  type FeedReadingMessage,
+  feedReadingChange,
+} from '@/domains/sessions/api/feed/feed-reading'
 import { identifierSchema } from '@/shared/validation'
 import { type SessionFeedReaderContext, SessionFeedReaders } from '../feed/feed-reader'
 
@@ -13,16 +17,20 @@ const inputSchema = z.strictObject({
 })
 const refreshOutputSchema = z.strictObject({ accepted: z.boolean() })
 
-// Observe publishes each changed reading of a root Session's or a Subagent's Feed; Refresh starts
-// a real read of the same chain.
+// Observe publishes each changed reading of a root Session's or a Subagent's Feed, whole and then
+// as changes to the one it sent before; Refresh starts a real read of the same chain.
 export function sessionFeedProcedures(context: SessionFeedReaderContext) {
   const readers = new SessionFeedReaders(context)
   return {
-    sessionFeed: t.procedure
-      .input(inputSchema)
-      .subscription(({ input }) =>
-        observable<FeedReading>((emit) => readers.observe(input, (reading) => emit.next(reading))),
-      ),
+    sessionFeed: t.procedure.input(inputSchema).subscription(({ input }) =>
+      observable<FeedReadingMessage>((emit) => {
+        let sent: FeedReading | null = null
+        return readers.observe(input, (reading) => {
+          emit.next(sent === null ? reading : feedReadingChange(sent, reading))
+          sent = reading
+        })
+      }),
+    ),
     sessionFeedRefresh: t.procedure
       .input(inputSchema)
       .output(refreshOutputSchema)

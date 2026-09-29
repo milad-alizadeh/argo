@@ -455,10 +455,10 @@ export function rowKey(row: SessionFeedRow): string {
   return `${row.shape}:${id}`
 }
 
-type IndexedRows = { rows: SessionFeedRow[]; index: Map<string, number> }
+export type IndexedRows = { rows: SessionFeedRow[]; index: Map<string, number> }
 type LiveRow = { key: string; row: SessionFeedRow; sequence: number }
 type ProjectionState = {
-  questionCalls: Set<string>
+  questionCalls: ReadonlySet<string>
   tools: Map<string, Extract<FeedContent, { kind: 'tool' }>>
   progress: Map<string, Extract<FeedContent, { kind: 'task' | 'delegation' }>>
   agents: AgentFacts
@@ -485,7 +485,11 @@ function upsertRows<Row>(
   }
 }
 
-function historyFeedRows(history: readonly FeedContent[], questionCalls: Set<string>): IndexedRows {
+// Recorded history's rows by row key; the same history and Questions give the same rows.
+export function historyFeedRows(
+  history: readonly FeedContent[],
+  questionCalls: ReadonlySet<string>,
+): IndexedRows {
   const historyRows: SessionFeedRow[] = []
   const historyIndex = new Map<string, number>()
   const state: ProjectionState = {
@@ -504,7 +508,10 @@ function historyFeedRows(history: readonly FeedContent[], questionCalls: Set<str
   return { rows: historyRows, index: historyIndex }
 }
 
-function liveFeedRows(live: readonly SessionLiveEvent[], questionCalls: Set<string>): LiveRow[] {
+function liveFeedRows(
+  live: readonly SessionLiveEvent[],
+  questionCalls: ReadonlySet<string>,
+): LiveRow[] {
   const rows: LiveRow[] = []
   const liveIndex = new Map<string, number>()
   const state: ProjectionState = {
@@ -525,7 +532,37 @@ function liveFeedRows(live: readonly SessionLiveEvent[], questionCalls: Set<stri
   return rows
 }
 
-function mergeFeedRows(history: IndexedRows, live: LiveRow[], settledThrough: number) {
+// Live events in order, the tool calls their Questions stand for, and the last settled sequence.
+export type LiveFeed = {
+  events: SessionLiveEvent[]
+  questionCalls: ReadonlySet<string>
+  settledThrough: number
+}
+
+export function liveFeed(live: readonly SessionLiveEvent[]): LiveFeed {
+  const events = [...live].sort((left, right) => left.sequence - right.sequence)
+  const questionCalls = new Set(
+    events.flatMap((event) =>
+      event.type === 'question' && event.vendorEventId !== null ? [event.vendorEventId] : [],
+    ),
+  )
+  const settledThrough = events.reduce(
+    (sequence, event) =>
+      event.type === 'status' && event.status === 'idle'
+        ? Math.max(sequence, event.sequence)
+        : sequence,
+    0,
+  )
+  return { events, questionCalls, settledThrough }
+}
+
+// History and live rows in order. The first `settledPrefix` rows are history's own, before any row
+// a live event matches, so a caller can keep what it derived from them.
+export function mergeFeedRows(
+  history: IndexedRows,
+  { events, questionCalls, settledThrough }: LiveFeed,
+): { rows: SessionFeedRow[]; settledPrefix: number } {
+  const live = liveFeedRows(events, questionCalls)
   const { rows: historyRows, index: historyIndex } = history
   const firstMatch = live
     .map(({ key }) => historyIndex.get(key))
@@ -546,29 +583,13 @@ function mergeFeedRows(history: IndexedRows, live: LiveRow[], settledThrough: nu
     nextHistory = matched + 1
   }
   rows.push(...historyRows.slice(nextHistory))
-  return rows
+  return { rows, settledPrefix: firstMatch ?? historyRows.length }
 }
 
 export function projectLiveFeedRows(
   history: readonly FeedContent[],
   live: readonly SessionLiveEvent[],
 ): SessionFeedRow[] {
-  const sortedLive = [...live].sort((left, right) => left.sequence - right.sequence)
-  const questionCalls = new Set(
-    sortedLive.flatMap((event) =>
-      event.type === 'question' && event.vendorEventId !== null ? [event.vendorEventId] : [],
-    ),
-  )
-  const settledThrough = sortedLive.reduce(
-    (sequence, event) =>
-      event.type === 'status' && event.status === 'idle'
-        ? Math.max(sequence, event.sequence)
-        : sequence,
-    0,
-  )
-  return mergeFeedRows(
-    historyFeedRows(history, questionCalls),
-    liveFeedRows(sortedLive, questionCalls),
-    settledThrough,
-  )
+  const events = liveFeed(live)
+  return mergeFeedRows(historyFeedRows(history, events.questionCalls), events).rows
 }
