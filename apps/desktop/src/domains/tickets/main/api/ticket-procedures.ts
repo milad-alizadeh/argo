@@ -35,15 +35,13 @@ import {
   ticketSyncRequestedOutputSchema,
   watchTickets,
 } from '../ticket-index-service'
-import {
-  connectSource,
-  disconnectSource,
-  discoverSources,
-  listTickets,
-  readConnection,
-  updatePriority,
-  updateStatus,
-} from './service'
+import { connectSource } from './ticket-connect'
+import { readConnection } from './ticket-connection-read'
+import { disconnectSource } from './ticket-disconnect'
+import { discoverSources } from './ticket-discover'
+import { listTickets } from './ticket-list'
+import { updatePriority } from './ticket-update-priority'
+import { updateStatus } from './ticket-update-status'
 
 const t = initTRPC.create()
 const projectInputSchema = z.strictObject({ projectId: identifierSchema })
