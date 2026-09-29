@@ -193,30 +193,45 @@ test('a watched scope scans when watched, polls only while visible, and scans wh
   supervisor.stop()
 })
 
-test('two views of one scope share its scan, and switching to another scope scans that one', async () => {
+test('a second view of a watched scope shares it, and switching to another scope scans that one', async () => {
   const scopes: string[] = []
-  const gate = deferred()
   const supervisor = watchingSupervisor(
-    (request) => {
+    async (request) => {
       scopes.push(request.scope)
-      return scopes.length === 1 ? gate.promise : Promise.resolve(EMPTY)
+      return EMPTY
     },
     { pollMs: 60_000, retryMs: 60_000, retryCapMs: 60_000 },
   )
-  supervisor.send({ type: 'Watch', watcherId: 'sidebar', request: REQUEST })
+  supervisor.send({ type: 'Visibility', visible: true })
   supervisor.send({ type: 'Watch', watcherId: 'screen', request: REQUEST })
-  supervisor.send({ type: 'Sync', request: REQUEST })
-  gate.resolve(EMPTY)
-  // The explicit Sync still runs once after the shared scan.
-  await until(() => scopes.length === 2)
+  await until(() => scopes.length === 1)
   await settle(50)
-  assert.deepEqual(scopes, [REQUEST.scope, REQUEST.scope])
+  // The scan finished and its poll is a minute away, so a second view reads nothing new.
+  supervisor.send({ type: 'Watch', watcherId: 'sidebar', request: REQUEST })
+  await settle(100)
+  assert.deepEqual(scopes, [REQUEST.scope])
 
   const other = { ...REQUEST, scope: 'octocat/other' }
   supervisor.send({ type: 'Unwatch', watcherId: 'sidebar' })
   supervisor.send({ type: 'Watch', watcherId: 'sidebar', request: other })
-  await until(() => scopes.length === 3)
-  assert.equal(scopes[2], 'octocat/other')
+  await until(() => scopes.length === 2)
+  assert.equal(scopes[1], 'octocat/other')
+  supervisor.stop()
+})
+
+test('a failure only a person can clear is not retried until the scope is watched again', async () => {
+  const { times, readPage } = recordedReads([{ ok: false, failure: 'repository-not-visible' }])
+  const supervisor = watchingSupervisor(readPage, { pollMs: 20, retryMs: 20, retryCapMs: 20 })
+  supervisor.send({ type: 'Visibility', visible: true })
+  supervisor.send({ type: 'Watch', watcherId: 'screen', request: REQUEST })
+  await until(() => times.length === 1)
+  await settle(150)
+  assert.equal(times.length, 1)
+  assert.equal(read().sync.failure, 'repository-not-visible')
+
+  supervisor.send({ type: 'Unwatch', watcherId: 'screen' })
+  supervisor.send({ type: 'Watch', watcherId: 'screen', request: REQUEST })
+  await until(() => times.length === 2)
   supervisor.stop()
 })
 
@@ -233,6 +248,8 @@ test('failed scans keep committed rows and retry sooner, backing off to the boun
   supervisor.send({ type: 'Watch', watcherId: 'screen', request: REQUEST })
   await until(() => times.length >= 6)
   supervisor.stop()
+  // A retry leaves the last failure in place until it has its own answer.
+  assert.equal(read().sync.failure, 'github-unreachable')
   const gaps = times.slice(1, 6).map((time, index) => time - (times[index] ?? 0))
   // After the listing, the poll; after each failure, the doubled retry up to its bound.
   const expected = [30, 20, 40, 80, 80]

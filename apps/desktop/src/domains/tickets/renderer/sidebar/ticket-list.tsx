@@ -60,11 +60,11 @@ function NoTickets({ query, provider }: Pick<Backlog, 'query' | 'provider'>) {
 }
 
 // A failed scan keeps the saved rows on screen, so its failure sits above them rather than over them.
-function SyncProblem({ icon, title, description, actions }: TicketProblemProps) {
+function SyncProblem({ icon, title, description, alert, actions }: TicketProblemProps) {
   return (
     <div
       className="flex shrink-0 items-center gap-(--spacing-shell-item) border-b border-border/60 px-(--spacing-shell-inset) py-(--spacing-shell-item)"
-      role="alert"
+      role={alert ? 'alert' : undefined}
     >
       <span className="text-danger">
         <Icon name={icon} />

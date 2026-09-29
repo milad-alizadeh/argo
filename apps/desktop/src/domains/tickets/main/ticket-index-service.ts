@@ -65,7 +65,12 @@ export function watchTickets(call: Call): () => void {
   let stopped = false
   void writableConnection(call).then(
     (target) => {
-      if (stopped || !target.ok) return
+      if (stopped) return
+      // The screen shows this refusal from its own reads; the watch only says why it does not poll.
+      if (!target.ok) {
+        console.warn(`A Ticket watch was refused: ${target.error.code}.`)
+        return
+      }
       const { provider, scope, accountId } = target
       call.index.send({
         type: 'Watch',

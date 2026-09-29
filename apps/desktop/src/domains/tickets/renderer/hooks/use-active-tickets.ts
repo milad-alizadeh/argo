@@ -85,9 +85,8 @@ export function indexedHead(pages: TicketPages | undefined): TicketIndexed | nul
   return head?.type === 'ticket.indexed' ? head : null
 }
 
-// The latest scan's failure, as the Ticket error the screen draws, or null while it holds.
+// The last scan's failure, kept while a retry runs, as the Ticket error the screen draws.
 export function syncFailure(pages: TicketPages | undefined): TicketError | null {
-  const sync = indexedHead(pages)?.sync
-  if (sync?.phase !== 'failed' || sync.failure === null) return null
-  return ticketError(sync.failure, null)
+  const failure = indexedHead(pages)?.sync.failure ?? null
+  return failure === null ? null : ticketError(failure, null)
 }

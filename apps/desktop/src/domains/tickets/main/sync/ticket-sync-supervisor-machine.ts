@@ -1,10 +1,8 @@
 // The app's Ticket scans: one per scope at a time, and a request during a scan runs once after it.
-// A watched scope is scanned when first watched, when the window returns, and on a timer while the
-// window is visible; a failed scan retries sooner, backing off to a bound.
 import { type ActorRefFrom, enqueueActions, setup, stopChild } from 'xstate'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
 import type { TicketErrorCode } from '@/domains/tickets/contract/contract'
-import { TICKET_POLL_PROOF_ENV } from '@/providers/proof-protocol'
+import { TICKET_POLL_PROOF_ENV } from './proof-protocol'
 import {
   type TicketSyncDependencies,
   type TicketSyncRequest,
@@ -41,6 +39,35 @@ export function ticketSyncTiming(
     retryMs: pollMs,
     retryCapMs: pollMs,
   }
+}
+
+// Whether another scan could succeed without a person acting; any other failure waits for one.
+const RETRYABLE: Record<TicketErrorCode, boolean> = {
+  'access-denied': false,
+  'invalid-request': false,
+  'unsupported-version': false,
+  'invalid-response': true,
+  'connection-lost': true,
+  'missing-project': false,
+  'not-connected': false,
+  'invalid-scope': false,
+  'missing-account': false,
+  'account-expired': false,
+  'account-revoked': false,
+  'repository-not-visible': false,
+  'issues-disabled': false,
+  'team-not-visible': false,
+  'ticket-not-found': false,
+  'ticket-not-writable': false,
+  'status-unknown': false,
+  'github-unreachable': true,
+  'rate-limited': true,
+  'linear-unreachable': true,
+  'linear-rate-limited': true,
+  'grant-unreadable': false,
+  'storage-invalid': false,
+  'storage-unavailable': true,
+  'storage-not-written': true,
 }
 
 export type TicketSyncSupervisorInput = TicketSyncDependencies & {
@@ -179,11 +206,15 @@ export const ticketSyncSupervisorMachine = setup({
       if (event.type !== 'Unwatch') return
       const { [event.watcherId]: request, ...watchers } = context.watchers
       if (request === undefined) return
+      const key = keyOf(request)
+      const { [key]: _failures, ...failures } = context.failures
+      const watched = watchedScopes(watchers).has(key)
+      // The last view leaving a scope ends its timer and its backoff.
       enqueue.assign({
         watchers,
+        failures: watched ? context.failures : failures,
       })
-      const key = keyOf(request)
-      if (!watchedScopes(watchers).has(key)) enqueue.cancel(dueId(key))
+      if (!watched) enqueue.cancel(dueId(key))
     }),
     // A window that returns scans every watched scope now; a hidden one stops the timers.
     changeVisibility: enqueueActions(({ context, event, enqueue }) => {
@@ -239,7 +270,8 @@ export const ticketSyncSupervisorMachine = setup({
           })
           return
         }
-        if (context.visible && watchedScopes(context.watchers).has(key))
+        const retryable = failure === null || RETRYABLE[failure]
+        if (retryable && context.visible && watchedScopes(context.watchers).has(key))
           enqueue.raise(
             {
               type: 'Due',

@@ -1,10 +1,19 @@
-// The Ticket proof's automatic refresh (#2870): main polls the Project on screen only while its
-// window can be seen, scans again when the window returns, and a failed scan keeps the saved rows
-// on screen and retries until GitHub answers. The proof's window starts hidden.
+// The Ticket proof's automatic refresh (#2870). The proof's window starts hidden.
+import assert from 'node:assert/strict'
 import { expect, test } from '@playwright/test'
 import type { ElectronApplication } from 'playwright-core'
 import { helloWorld } from '../fixtures/tickets.fixture'
-import { backlog, type Run } from '../screen'
+import {
+  backlog,
+  chooseAccount,
+  committedTicketIds,
+  connectForm,
+  openRoom,
+  press,
+  type Run,
+} from '../screen'
+
+const GITHUB_SCOPE = { provider: 'github', scope: 'octocat/hello-world' }
 
 // The main process owns the window, so only it can show or hide it as a person would.
 const showWindow = (application: ElectronApplication, shown: boolean) =>
@@ -24,10 +33,22 @@ function createOnGitHub(run: Run, numbers: readonly number[]) {
 const row = (run: Run, number: number) =>
   backlog(run.page).getByRole('button', { name: new RegExp(`^#${number}`) })
 
-// Several polls pass while each assertion waits, so a missing row proves nothing polled.
+// A Project with no source yet, connected to the second repository from its own Tickets room.
+async function connectSecondProject(run: Run) {
+  await openRoom(run.page, 'tickets', 'project-2')
+  await chooseAccount(run.page, 'GitHub · octocat')
+  await connectForm(run.page).getByRole('combobox', { name: 'Repository' }).fill('engine')
+  await run.page.getByRole('option', { name: 'octocat/engine' }).click()
+  await press(connectForm(run.page), 'Connect repository')
+  await row(run, 5).waitFor()
+}
+
+// Each wait for nothing to happen spans several polls.
 export async function proveAutomaticRefresh(run: Run, pollMs: number) {
   const idle = pollMs * 4
   await backlog(run.page).waitFor()
+  // The entry scan ends before GitHub changes, so only a later scan can read the change.
+  await expect(backlog(run.page).getByText(/^Refreshing from/)).toHaveCount(0)
   await test.step('hidden-window-is-not-polled', async () => {
     createOnGitHub(run, [710])
     await run.page.waitForTimeout(idle)
@@ -53,11 +74,20 @@ export async function proveAutomaticRefresh(run: Run, pollMs: number) {
     await row(run, 712).waitFor()
     await expect(backlog(run.page).getByRole('alert')).toHaveCount(0)
   })
+  await test.step('project-switch', async () => {
+    await connectSecondProject(run)
+    // The Project off screen is not polled, so its change waits for the switch back.
+    createOnGitHub(run, [710, 711, 712, 714])
+    await run.page.waitForTimeout(idle)
+    assert.equal(committedTicketIds(run, GITHUB_SCOPE)['#714'], undefined)
+    await openRoom(run.page, 'tickets')
+    await row(run, 714).waitFor()
+  })
   await test.step('hidden-again', async () => {
     await showWindow(run.application, false)
     // A poll already under way when the window hid may still land.
     await run.page.waitForTimeout(pollMs * 2)
-    createOnGitHub(run, [710, 711, 712, 713])
+    createOnGitHub(run, [710, 711, 712, 714, 713])
     await run.page.waitForTimeout(idle)
     await expect(row(run, 713)).toHaveCount(0)
   })

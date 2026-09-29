@@ -150,6 +150,8 @@ test('only a complete scan drops Tickets it no longer listed; a failed one chang
   })
 
   scan(3000, [[ticket(1), ticket(3)]])
+  // A retry keeps the last failure on screen until it has its own answer.
+  assert.equal(active().sync.failure, 'github-unreachable')
   completeTicketScan(database, ACTIVE, { statuses: [OPEN], completedAt: 3100 })
   read = active()
   assert.deepEqual(
