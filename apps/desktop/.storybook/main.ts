@@ -1,7 +1,6 @@
 import path from 'node:path'
 import type { StorybookConfig } from '@storybook/react-vite'
 import tailwindcss from '@tailwindcss/vite'
-import { desktopAlias } from '../vite-alias'
 
 const config: StorybookConfig = {
   stories: [
@@ -43,8 +42,14 @@ const config: StorybookConfig = {
         '@codemirror/state',
         '@codemirror/view',
       ],
+      // Inlined, not imported from vite-alias.ts. Storybook prints on that extensionless
+      // import, and the print lands in the Vitest JSON the test gate parses.
       alias: [
-        ...desktopAlias(path.resolve(import.meta.dirname, '..')),
+        {
+          find: /^@\/mocks\/(.*)$/,
+          replacement: `${path.resolve(import.meta.dirname, '../mocks')}/$1`,
+        },
+        { find: '@', replacement: path.resolve(import.meta.dirname, '../src') },
         {
           find: /^cn$/,
           replacement: path.resolve(import.meta.dirname, '../src/platform/renderer/lib/utils.ts'),
