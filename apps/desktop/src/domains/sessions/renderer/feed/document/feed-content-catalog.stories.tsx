@@ -336,7 +336,7 @@ export const Unsupported: Story = {
   },
 }
 
-// Live commentary after a call reads once, as Markdown, in the one shimmering line.
+// Live commentary after a call titles its group once, as Markdown.
 export const CommentaryAfterTool: Story = {
   args: {
     feed: catalogFeedContents(
@@ -368,6 +368,9 @@ export const CommentaryAfterTool: Story = {
     await waitFor(() => expect(canvas.getByText('Checking', { selector: 'strong' })).toBeVisible())
     await expect(canvas.getAllByText('Checking', { selector: 'strong' })).toHaveLength(1)
     await expect(canvas.queryByText(/\*\*/)).toBeNull()
-    await expect(canvas.queryByRole('button', { name: /Checking/ })).toBeNull()
+    await expect(canvas.getByRole('button', { name: 'Checking the result' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
   },
 }

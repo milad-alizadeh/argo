@@ -20,19 +20,22 @@ function currentTurnTailGroup(rows: readonly SessionFeedRow[]): ToolGroupRow | n
   return rows.length - 1 > turnStart ? last : null
 }
 
-// While the Turn runs, its one activity draws once: a call titles the tail group, and a thought
-// is the trailing row. A settled Turn draws neither, so no live row is left behind.
+// While the Turn runs, its one activity titles the tail group or draws as a trailing thought.
+// A settled Turn draws neither, so no live row is left behind.
 function withActivity(
   rows: readonly SessionFeedRow[],
   activity: LiveActivity,
 ): readonly SessionFeedRow[] {
   if (rows.at(-1)?.shape === 'thought') return rows
   const tailGroup = currentTurnTailGroup(rows)
-  if (activity.kind !== 'thought')
-    return tailGroup === null ? rows : [...rows.slice(0, -1), withHeadline(tailGroup, activity)]
-  const settled =
-    tailGroup === null ? rows : [...rows.slice(0, -1), withoutThought(tailGroup, activity.label)]
-  return [...settled, { shape: 'thought', id: 'activity', text: activity.label }]
+  if (tailGroup !== null) {
+    const group =
+      activity.kind === 'thought' ? withoutThought(tailGroup, activity.label) : tailGroup
+    return [...rows.slice(0, -1), withHeadline(group, activity)]
+  }
+  return activity.kind === 'thought'
+    ? [...rows, { shape: 'thought', id: 'activity', text: activity.label }]
+    : rows
 }
 
 // The rows a Feed reading draws: its settled rows, and the current activity folded in while the
