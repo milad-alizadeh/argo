@@ -2,7 +2,7 @@ import path from 'node:path'
 import { _electron as electron } from 'playwright-core'
 import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
-import { writeMockCodex } from '../../mocks/cli/codex/mock-codex-cli'
+import { writeMockCodexLive } from '../../mocks/cli/codex/mock-codex-cli'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
@@ -13,7 +13,7 @@ async function prepareCodexApp(root: string, applicationUnderTest: string) {
   const fixture = await prepare(root, applicationUnderTest, { projectSelected: true })
   const environment = {
     ...process.env,
-    [SESSION_CODEX_EXECUTABLE_ENV]: await writeMockCodex(root),
+    [SESSION_CODEX_EXECUTABLE_ENV]: await writeMockCodexLive(root),
     [PROJECT_PROOF_STORE_ENV]: fixture.userData,
     [ACCEPTANCE_ENV]: '0',
     ARGO_CODEX_E2E_STATE: path.join(root, 'codex-state.json'),

@@ -8,10 +8,10 @@ import type { MockHarness } from '../mock-cli'
 
 // A `codex` that answers the version and login probes, then serves the mock app-server. Its thread
 // state lives beside it unless the launch names another file.
-export async function writeMockCodex(root: string) {
+export async function writeMockCodexLive(root: string) {
   const bun = execFileSync('which', ['bun'], { encoding: 'utf8' }).trim()
   const server = path.resolve('mocks/cli/codex/mock-codex-live.mts')
-  const executable = path.join(root, 'mock-codex')
+  const executable = path.join(root, 'codex')
   const state = path.join(root, 'codex-state.json')
   await writeFile(
     executable,
@@ -22,7 +22,7 @@ export async function writeMockCodex(root: string) {
 }
 
 export const mockCodexHarness: MockHarness = {
-  write: writeMockCodex,
+  write: writeMockCodexLive,
   folder: (transcripts) => transcripts,
   replyMark: (prompt) => prompt,
 }
