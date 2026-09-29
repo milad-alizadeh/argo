@@ -37,6 +37,11 @@ import {
   type TicketOperationSupervisorActor,
 } from '@/domains/tickets/main/operations/ticket-operation-supervisor-machine'
 import { ticketStatusWriter } from '@/domains/tickets/main/operations/ticket-status-writer'
+import {
+  accountForScopeFrom,
+  reconcileTicketWriteIntents,
+} from '@/domains/tickets/main/operations/ticket-write-intent-recovery'
+import { markUnresolvedTicketWriteIntentsUncertain } from '@/domains/tickets/main/operations/ticket-write-intents'
 import { TicketChanges } from '@/domains/tickets/main/sync/ticket-changes'
 import { ticketByIdReader, ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
 import { failInterruptedTicketSearches } from '@/domains/tickets/main/sync/ticket-search-records'
@@ -309,6 +314,18 @@ function currentTicketServices(): TicketServices {
   return ticketServices
 }
 
+// Every write intent left uncertain by the last process, settled by reading its Ticket's native ID.
+async function reconcileTicketWriteIntentsAtStartup(database: Database): Promise<void> {
+  const { access, connections, changes } = currentTicketServices()
+  const read = await connections.read()
+  await reconcileTicketWriteIntents({
+    database,
+    readTicket: ticketByIdReader({ access, providers: PROVIDER_REGISTRY }),
+    accountForScope: accountForScopeFrom(read.ok ? read.document.connections : []),
+    changed: changes.changed,
+  })
+}
+
 function currentSessionEventJournal(): SessionEventJournal {
   if (sessionEventJournal === undefined) throw new Error('Session event journal is unavailable.')
   return sessionEventJournal
@@ -511,6 +528,7 @@ async function prepare() {
   markUnresolvedSessionCommandsUnknown(applicationDatabase)
   markInterruptedTicketScans(applicationDatabase)
   failInterruptedTicketSearches(applicationDatabase)
+  markUnresolvedTicketWriteIntentsUncertain(applicationDatabase)
   const database = applicationDatabase
   const tickets = createTicketServices(database)
   ticketServices = tickets
@@ -569,6 +587,9 @@ async function ready(actor: AppActor): Promise<void> {
     (harness, nativeId, turnId) =>
       registry[harness].hasTurn?.(nativeId, turnId) ?? Promise.resolve(false),
   ).catch((error) => console.error('Session command recovery failed.', error))
+  void reconcileTicketWriteIntentsAtStartup(applicationDatabase).catch((error) =>
+    console.error('Ticket write intent recovery failed.', error),
+  )
   createWindow(actor, applicationDatabase, registry)
 
   if (ACCEPTANCE_ENABLED) {

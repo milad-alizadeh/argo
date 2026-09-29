@@ -13,6 +13,12 @@ import {
   type TicketWriteTarget,
 } from './ticket-write-intents'
 
+// Why an intent could not be recorded, named as the Ticket error the caller is told.
+const RECORDING_FAILURE: Record<'not-found' | 'unreconciled', TicketErrorCode> = {
+  'not-found': 'ticket-not-found',
+  unreconciled: 'ticket-unreconciled',
+}
+
 export type StatusOperationRequest = TicketWriteTarget & {
   accountId: string
   statusId: string
@@ -146,19 +152,27 @@ export const ticketOperationMachine = setup({
         }),
         onDone: [
           {
-            guard: ({ event }) => event.output === null,
+            guard: ({ event }) => !event.output.ok,
             target: 'Done',
             actions: assign({
-              outcome: {
+              outcome: ({ event }): StatusOperationOutcome => ({
                 type: 'rejected',
-                failure: 'ticket-not-found',
-              },
+                failure: event.output.ok
+                  ? 'ticket-not-found'
+                  : RECORDING_FAILURE[event.output.reason],
+              }),
             }),
           },
           {
             target: 'Calling',
             actions: assign({
-              intent: ({ event }) => event.output,
+              intent: ({ event }): RecordedIntent | null =>
+                event.output.ok
+                  ? {
+                      intentId: event.output.intentId,
+                      ticketId: event.output.ticketId,
+                    }
+                  : null,
             }),
           },
         ],

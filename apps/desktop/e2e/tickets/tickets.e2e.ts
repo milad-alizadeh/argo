@@ -13,7 +13,9 @@ import {
   proveConnectRepository,
   proveGitHubStatus,
   proveGitHubStatusRefused,
+  proveGitHubStatusUncertain,
   proveRestartFromSqlite,
+  proveRestartReconcilesUncertainStatus,
 } from './cases/github.case'
 import {
   proveChangeState,
@@ -61,6 +63,12 @@ test.describe('with a GitHub repository', () => {
   test('restart while GitHub is down', async ({ tickets }) => {
     tickets.run().fixture.github.outage('down')
     await proveRestartAndFailure(await tickets.restart())
+  })
+  test('a status change left uncertain by an outage reconciles after restart', async ({
+    tickets,
+  }) => {
+    await proveGitHubStatusUncertain(tickets.run())
+    await proveRestartReconcilesUncertainStatus(await tickets.restart())
   })
   test('revoked access', ({ tickets }) => proveRevoked(tickets.run()))
   test('a Ticket changes state', ({ tickets }) => proveChangeState(tickets.run()))

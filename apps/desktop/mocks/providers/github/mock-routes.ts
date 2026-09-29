@@ -125,6 +125,7 @@ const ISSUE_PATH = /^\/repos\/([^/]+\/[^/]+)\/issues\/(\d+)$/
 // GitHub's issue update, as far as the cockpit sends it: a state, and a reason for closing.
 async function issueWrite(exchange: Exchange) {
   const { state, request, response, url } = exchange
+  if (state.outage === 'down') return send(response, 503, { message: 'Unavailable' })
   const user = state.tokens.get(request.headers.authorization?.replace(/^Bearer /, '') ?? '')
   if (!user) return send(response, 401, { message: 'Bad credentials' })
   const match = url.pathname.match(ISSUE_PATH)
