@@ -71,8 +71,7 @@ const shownNumbers = async (run: Run) => {
 }
 
 // The list settles on the numbers, since the tally can still read the previous query's count.
-const shows = (run: Run, numbers: string[]) =>
-  expect.poll(() => shownNumbers(run)).toEqual(numbers)
+const shows = (run: Run, numbers: string[]) => expect.poll(() => shownNumbers(run)).toEqual(numbers)
 
 export async function proveSearchFilters(run: Run) {
   await row(run, 273).waitFor()
