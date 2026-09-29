@@ -41,6 +41,11 @@ function prepared() {
       changed: () => {},
       timing: TICKET_SYNC_TIMING,
     },
+    ticketOperations: {
+      database: {} as never,
+      writeStatus: async () => ({ ok: false as const, failure: 'github-unreachable' as const }),
+      changed: () => {},
+    },
     registry: {} as HarnessRegistry,
   }
 }

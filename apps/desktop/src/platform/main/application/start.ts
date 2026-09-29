@@ -4,6 +4,7 @@ import type { Database } from '@/database/database'
 import type { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
 import type { SessionEventJournal } from '@/domains/sessions/main/live/session-event-journal'
 import type { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
+import type { TicketOperationSupervisorInput } from '@/domains/tickets/main/operations/ticket-operation-supervisor-machine'
 import type { TicketSyncSupervisorInput } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
 import type { Harness } from '@/harnesses/harness'
 import type { HarnessRegistry } from '@/harnesses/registry'
@@ -18,6 +19,7 @@ export function startDesktopApplication(request: {
     sessionEventJournal?: SessionEventJournal
     sessionInteractionBroker?: SessionInteractionBroker
     ticketSync: TicketSyncSupervisorInput
+    ticketOperations: TicketOperationSupervisorInput
     registry: HarnessRegistry
   }>
   ready: (actor: AppActor) => Promise<void> | void

@@ -1,5 +1,6 @@
-// Moving a Ticket to another status. The row moves at once; a refusal puts it back and says why.
-// A Ticket moved to a closed status stays on screen until the backlog is next read.
+// Moving a Ticket to another status. The row moves when the provider's confirmed status is saved;
+// a refusal leaves it where it was and says why. A Ticket moved to a closed status stays on screen
+// until the backlog is next read.
 import type { QueryClient } from '@tanstack/react-query'
 import type { TicketUpdated } from '@/domains/tickets/contract/contract'
 import { closureOf, type TicketStatus } from '@/domains/tickets/contract/ticket'
@@ -16,6 +17,7 @@ function move(client: QueryClient, change: StatusChange) {
 export function useUpdateStatus() {
   return useTicketFieldMutation<TicketUpdated, StatusChange>({
     move,
+    optimistic: false,
     request: ({ projectId, key, status }) =>
       trpcClient.ticketUpdateStatus.mutate({ projectId, key, statusId: status.id }),
     reply: ({ projectId, key, status }) => ({ projectId, key, status }),

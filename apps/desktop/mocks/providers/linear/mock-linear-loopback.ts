@@ -8,7 +8,7 @@ import type { MockLinear } from './mock-linear'
 import { linearControls } from './mock-linear-controls'
 import { answerGraphQL } from './mock-linear-graphql'
 import { authorize, token } from './mock-linear-oauth'
-import { type MockLinearState, type Route, reply } from './mock-linear-state'
+import { initialMockLinearState, type Route, reply } from './mock-linear-state'
 
 const ROUTES: Record<string, Route> = {
   'GET /oauth/authorize': authorize,
@@ -18,17 +18,7 @@ const ROUTES: Record<string, Route> = {
 
 export async function startMockLinearLoopback(): Promise<MockLinear> {
   const requests: string[] = []
-  const state: MockLinearState = {
-    origin: '',
-    signIn: 'declined',
-    codes: new Map(),
-    access: new Map(),
-    refresh: new Map(),
-    teams: new Map(),
-    outage: 'none',
-    lifetime: 86_399,
-    serial: 0,
-  }
+  const state = initialMockLinearState('')
   const server = createServer((request, response) => {
     const route = `${request.method} ${new URL(request.url ?? '/', 'http://x').pathname}`
     requests.push(route)

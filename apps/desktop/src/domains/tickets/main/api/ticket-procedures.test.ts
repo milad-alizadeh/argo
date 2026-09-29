@@ -41,7 +41,12 @@ async function caller(context: TestContext) {
         }),
         providers: PROVIDER_REGISTRY,
         // These cases are refused before any saved Ticket is read.
-        index: { database: {} as Database, changes: new TicketChanges(), send: () => {} },
+        index: {
+          database: {} as Database,
+          changes: new TicketChanges(),
+          send: () => {},
+          changeStatus: async () => ({ type: 'rejected', failure: 'not-connected' }),
+        },
       }),
     )
     .createCaller({})

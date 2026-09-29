@@ -31,6 +31,12 @@ import { SessionEventJournal } from '@/domains/sessions/main/live/session-event-
 import { SessionHistoryFollowers } from '@/domains/sessions/main/live/session-history-followers'
 import { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
 import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
+import type { StatusOperationRequest } from '@/domains/tickets/main/operations/ticket-operation-machine'
+import {
+  changeTicketStatus,
+  type TicketOperationSupervisorActor,
+} from '@/domains/tickets/main/operations/ticket-operation-supervisor-machine'
+import { ticketStatusWriter } from '@/domains/tickets/main/operations/ticket-status-writer'
 import { ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
 import { failInterruptedTicketSearches } from '@/domains/tickets/main/sync/ticket-search-records'
 import { markInterruptedTicketScans } from '@/domains/tickets/main/sync/ticket-sync-records'
@@ -287,6 +293,8 @@ function ticketProcedureContext({
       database,
       changes: currentTicketServices().changes,
       send: (command: TicketSyncSupervisorCommand) => actors.ticketSync.send(command),
+      changeStatus: (request: StatusOperationRequest) =>
+        changeTicketStatus(actors.ticketOperations, request),
     },
   }
 }
@@ -321,6 +329,7 @@ type WindowActors = {
   ticketSync: {
     send: (event: TicketSyncSupervisorCommand) => void
   }
+  ticketOperations: Pick<TicketOperationSupervisorActor, 'send'>
 }
 
 function requireWindowActors(actor: AppActor): WindowActors {
@@ -336,14 +345,18 @@ function requireWindowActors(actor: AppActor): WindowActors {
         send: (event: TicketSyncSupervisorCommand) => void
       }
     | undefined
+  const ticketOperations = actor.system.get('ticketOperations') as
+    | Pick<TicketOperationSupervisorActor, 'send'>
+    | undefined
   if (
     catalog === undefined ||
     sessions === undefined ||
     sessionSync === undefined ||
-    ticketSync === undefined
+    ticketSync === undefined ||
+    ticketOperations === undefined
   )
     throw new Error('Application child actors are unavailable.')
-  return { catalog, sessions, sessionSync, ticketSync }
+  return { catalog, sessions, sessionSync, ticketSync, ticketOperations }
 }
 
 function attachWindowTrpc({
@@ -528,6 +541,11 @@ async function prepare() {
       readPage: ticketPageReader({ access: tickets.access, providers: PROVIDER_REGISTRY }),
       changed: tickets.changes.changed,
       timing: ticketSyncTiming(PROOF_ENABLED),
+    },
+    ticketOperations: {
+      database,
+      writeStatus: ticketStatusWriter({ access: tickets.access, providers: PROVIDER_REGISTRY }),
+      changed: tickets.changes.changed,
     },
     registry: harnessRegistry,
   }

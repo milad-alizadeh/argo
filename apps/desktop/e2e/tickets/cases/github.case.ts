@@ -11,10 +11,12 @@ import {
   accountsDialog,
   backlog,
   backlogKeys,
+  choose,
   chooseAccount,
   committedTicketIds,
   connectForm,
   detailTitle,
+  notification,
   openRoom,
   press,
   type Run,
@@ -143,5 +145,39 @@ export async function proveRestartFromSqlite(run: Run, release: () => void) {
     await openRoom(run.page, 'tickets')
     assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
     release()
+  })
+}
+
+const REFUSED = 'This Account is not allowed to change that Ticket.'
+// #273 is the last row, so its status control is the last one drawn.
+const lastStatus = (run: Run, name: string) =>
+  backlog(run.page)
+    .getByRole('button', { name: `State: ${name}` })
+    .last()
+
+// Closing #273 from its row reaches GitHub, and the row then shows the status GitHub confirmed.
+export async function proveGitHubStatus(run: Run) {
+  await test.step('github-change-status', async () => {
+    assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
+    await choose(run.page, lastStatus(run, 'Open'), {
+      role: 'menuitemradio',
+      name: 'Closed as completed',
+    })
+    await lastStatus(run, 'Closed as completed').waitFor()
+    assert.ok(run.fixture.github.requests.includes('PATCH /repos/octocat/hello-world/issues/273'))
+  })
+}
+
+// GitHub refuses the change: the row keeps its status, and the reader is told why.
+export async function proveGitHubStatusRefused(run: Run) {
+  run.fixture.github.addRepository({ ...helloWorld(), writers: [] })
+  await test.step('github-refused-status', async () => {
+    await choose(run.page, lastStatus(run, 'Open'), {
+      role: 'menuitemradio',
+      name: 'Closed as completed',
+    })
+    await notification(run.page).getByText(REFUSED).waitFor()
+    assert.deepEqual(await backlogKeys(run.page), ['#607', '#609', '#273'])
+    assert.equal(await backlog(run.page).getByRole('button', { name: 'State: Open' }).count(), 3)
   })
 }

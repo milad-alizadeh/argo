@@ -8,7 +8,6 @@ import {
   type TicketUpdateReply,
   ticketError,
 } from '@/domains/tickets/contract/contract'
-import { closureOf } from '@/domains/tickets/contract/ticket'
 import { connectionSummary } from './connection-summary'
 import { saveConfirmedFields } from './database/ticket-upsert'
 import { type Call, readAs } from './read-as'
@@ -136,18 +135,17 @@ export async function listTickets(
   }
 }
 
+// The change is committed by the operation supervisor; the reply announces only what it committed.
 export async function updateStatus(
   call: Call,
   change: { key: string; statusId: string },
 ): Promise<TicketUpdateReply> {
   const { requestId, projectId } = call
-  const written = await writeTicketField(call, {
-    key: change.key,
-    read: (accountId, scope) =>
-      readAs(call, accountId, (source, reader) => source.update(reader, { scope, ...change })),
-    confirmed: (status) => ({ status, state: closureOf(status.category) }),
-  })
-  if (!written.ok) return written.error
+  const target = await writableConnection(call)
+  if (!target.ok) return target.error
+  const { accountId, provider, scope } = target
+  const outcome = await call.index.changeStatus({ provider, scope, accountId, ...change })
+  if (outcome.type !== 'committed') return ticketError(outcome.failure, requestId)
   const { key } = change
-  return { version: 1, type: 'ticket.updated', requestId, projectId, key, status: written.value }
+  return { version: 1, type: 'ticket.updated', requestId, projectId, key, status: outcome.status }
 }

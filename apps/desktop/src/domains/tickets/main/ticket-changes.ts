@@ -1,6 +1,10 @@
 // Announces that a provider scope's saved Tickets changed; each reader refetches from SQLite.
 import type { Database } from '@/database/database'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
+import type {
+  StatusOperationOutcome,
+  StatusOperationRequest,
+} from './operations/ticket-operation-machine'
 import type { TicketSyncSupervisorCommand } from './sync/ticket-sync-supervisor-machine'
 
 export class TicketChanges {
@@ -29,4 +33,6 @@ export type TicketIndex = {
   changes: TicketChanges
   // A scan request, or a view watching or leaving a scope.
   send: (command: TicketSyncSupervisorCommand) => void
+  // Moves a Ticket to a status through the operation supervisor, and answers how that ended.
+  changeStatus: (request: StatusOperationRequest) => Promise<StatusOperationOutcome>
 }
