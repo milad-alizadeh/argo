@@ -2,11 +2,11 @@ import path from 'node:path'
 import { _electron as electron } from 'playwright-core'
 import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
+import { writeMockCodex } from '../../mocks/cli/codex/mock-codex-cli'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
 import { prepare } from './fixtures/feed.fixture'
-import { writeMockCodex } from './fixtures/mock-codex.fixture'
 import { chooseHarness, PERSISTED_ROW } from './gestures'
 
 async function prepareCodexApp(root: string, applicationUnderTest: string) {

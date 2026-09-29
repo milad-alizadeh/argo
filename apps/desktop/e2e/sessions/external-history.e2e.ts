@@ -9,11 +9,11 @@ import {
 import { SESSION_CODEX_EXECUTABLE_ENV } from '@/harnesses/codex/proof-protocol'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
 import { writeMockClaude } from '../../mocks/cli/claude/mock-claude-cli'
+import { writeMockCodex } from '../../mocks/cli/codex/mock-codex-cli'
 import { ACCEPTANCE_ENV } from '../../scripts/acceptance-protocol.mts'
 import { launchCommand } from '../application-under-test'
 import { expect, test } from '../packaged-proof'
 import { prepare } from './fixtures/feed.fixture'
-import { writeMockCodex } from './fixtures/mock-codex.fixture'
 import { PERSISTED_ROW } from './gestures'
 
 const OLDER = 'Older terminal Session'
