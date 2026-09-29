@@ -20,6 +20,7 @@ import { useTicketChanges, useTicketSync } from './use-active-tickets'
 import { usePriorityChoices } from './use-priority-choices'
 import { useProviderSearch } from './use-searched-tickets'
 import { useTicketDetail } from './use-ticket-detail'
+import { useTicketProblemToasts } from './use-ticket-problem-toasts'
 import { useConnection, useDisconnectSource, useTicketList } from './use-tickets'
 import { useUpdatePriority } from './use-update-priority'
 import { useUpdateStatus } from './use-update-status'
@@ -81,5 +82,6 @@ export function useTicketsView(): TicketsScreenProps {
     })
   }
 
+  useTicketProblemToasts(view())
   return { view: view() }
 }
