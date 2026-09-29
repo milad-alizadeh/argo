@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useLocation, useMatches, useNavigate } from 'react-router'
+import { useLocation, useNavigate } from 'react-router'
 import { DESTINATION_PATHS, DESTINATIONS, type Destination } from '@/platform/contract/commands'
 import { Icon, type IconName } from '../../components/icon/icon'
 import {
@@ -34,10 +34,8 @@ function destinationFromPathname(pathname: string, projectPath: string): Destina
 export const CockpitNavigationRail = memo(function CockpitNavigationRail() {
   const { t } = useTranslation('cockpit')
   const location = useLocation()
-  const matches = useMatches()
   const navigate = useNavigate()
-  const projectId = matches.find((match) => match.params.projectId)?.params.projectId
-  const projectPath = projectId ? `/projects/${encodeURIComponent(projectId)}` : ''
+  const projectPath = location.pathname.match(/^\/projects\/[^/]+(?=\/|$)/)?.[0] ?? ''
   const destination = destinationFromPathname(location.pathname, projectPath)
   const settingsLabel = t('rail.settings')
 
