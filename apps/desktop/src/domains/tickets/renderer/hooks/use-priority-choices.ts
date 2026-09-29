@@ -3,7 +3,7 @@ import { skipToken, useQuery } from '@tanstack/react-query'
 import type {
   ConnectionSummary,
   TicketPriority,
-  TicketPriorityChoicesReply,
+  TicketPriorityChoices,
 } from '@/domains/tickets/contract/contract'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 import { trpc, trpcClient } from '@/platform/renderer/trpc-client'
@@ -16,13 +16,13 @@ const NONE: readonly TicketPriority[] = []
 export function usePriorityChoices(projectId: string | null, connection: ConnectionSummary | null) {
   const enabled =
     connection?.state === 'ready' && providerPresentation(connection.provider).hasPriority
-  const choices = useQuery<TicketPriorityChoicesReply, ContractFailure, readonly TicketPriority[]>({
+  const choices = useQuery<TicketPriorityChoices, ContractFailure, readonly TicketPriority[]>({
     queryKey: [...trpc.ticketPriorityChoices.pathKey(), projectId],
     queryFn:
       enabled && projectId
         ? () => trpcClient.ticketPriorityChoices.query({ projectId }).then(ticketReply)
         : skipToken,
-    select: (reply) => ticketReply(reply).choices,
+    select: (reply) => reply.choices,
     staleTime: Number.POSITIVE_INFINITY,
   })
   return choices.data ?? NONE

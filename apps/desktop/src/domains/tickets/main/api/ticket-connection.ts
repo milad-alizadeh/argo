@@ -50,10 +50,12 @@ export async function writableConnection(call: Call) {
   return { ok: true, ...found.connection } as const
 }
 
-// A failed Account is refused before an intent is saved, so no write is recorded for it.
-export async function accountRefusal(call: Call, target: TicketConnection) {
+// The Connection a write goes through; a failed Account is refused before an intent is saved.
+export async function writableTarget(call: Call) {
+  const target = await writableConnection(call)
+  if (!target.ok) return target
   const code = ACCOUNT_REFUSALS[(await connectionSummary(call.access, target)).state]
-  return code ? ticketError(code, call.requestId) : null
+  return code ? ({ ok: false, error: ticketError(code, call.requestId) } as const) : target
 }
 
 export async function saveConnection(

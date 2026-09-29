@@ -101,15 +101,21 @@ export type SettleInput = OperationInput & {
   failure: TicketErrorCode
 }
 
-const savedFields = (confirmed: ConfirmedFields) =>
-  confirmed.operation === 'status'
-    ? {
+function savedFields(confirmed: ConfirmedFields) {
+  switch (confirmed.operation) {
+    case 'status':
+      return {
         status: confirmed.status,
         state: closureOf(confirmed.status.category),
       }
-    : {
+    case 'priority':
+      return {
         priority: confirmed.priority,
       }
+    default:
+      return confirmed satisfies never
+  }
+}
 
 // A failure that leaves the provider's answer unknown, as opposed to one it gave.
 const UNCERTAIN: ReadonlySet<TicketErrorCode> = new Set([

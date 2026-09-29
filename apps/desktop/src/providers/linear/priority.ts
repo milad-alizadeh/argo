@@ -32,10 +32,16 @@ export async function readPriorityChoices(
   if (!read.ok) return read
   const rows = read.value.issuePriorityValues
   if (!Array.isArray(rows)) return failed('unreachable')
-  const choices = rows
-    .map((row) => (isRecord(row) ? priorityOf(row.priority, row.label) : null))
-    .filter((choice) => choice !== null)
-    .sort((first, second) => first.level - second.level)
+  // "No priority" (0) is no choice; any other row that is not a known level rejects the payload.
+  const choices: TicketPriority[] = []
+  for (const row of rows) {
+    if (!isRecord(row)) return failed('unreachable')
+    if (row.priority === 0) continue
+    const choice = priorityOf(row.priority, row.label)
+    if (!choice) return failed('unreachable')
+    choices.push(choice)
+  }
+  choices.sort((first, second) => first.level - second.level)
   return { ok: true, value: choices }
 }
 

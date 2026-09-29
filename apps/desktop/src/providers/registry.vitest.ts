@@ -341,7 +341,7 @@ test('a Linear priority change the provider refuses keeps the committed value', 
   assert.deepEqual(intents(database), [{ phase: 'rejected', failure: 'ticket-not-writable' }])
 })
 
-test('a GitHub Ticket refuses a priority change before any intent is recorded', async () => {
+test('a GitHub Ticket refuses a priority change and keeps the refusal as a rejected intent', async () => {
   const flow = await signedInToGitHub()
   const { gitHub, tickets, accountId, database } = flow
   gitHub.addRepository({
@@ -355,7 +355,7 @@ test('a GitHub Ticket refuses a priority change before any intent is recorded', 
   const refused = await tickets.ticketUpdatePriority({ projectId, key: '#1', priorityLevel: 1 })
   assert.ok(refused.type === 'ticket.error')
   assert.equal(refused.code, 'ticket-not-writable')
-  assert.deepEqual(intents(database), [])
+  assert.deepEqual(intents(database), [{ phase: 'rejected', failure: 'ticket-not-writable' }])
 })
 
 test('the priority levels come from Linear, and GitHub offers none', async () => {

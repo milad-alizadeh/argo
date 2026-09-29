@@ -16,11 +16,14 @@ const touched = nextUpdatedAt(ticketWriteIntent.updatedAt)
 
 // The requested value an intent keeps: the provider status ID or the priority level.
 function requestedOf(request: TicketOperationRequest): string {
-  return JSON.stringify(
-    request.operation === 'status'
-      ? { statusId: request.statusId }
-      : { priorityLevel: request.priorityLevel },
-  )
+  switch (request.operation) {
+    case 'status':
+      return JSON.stringify({ statusId: request.statusId })
+    case 'priority':
+      return JSON.stringify({ priorityLevel: request.priorityLevel })
+    default:
+      return request satisfies never
+  }
 }
 
 // Records an intent for a saved Ticket; a Ticket Argo has not saved has no identity to hold.
