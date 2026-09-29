@@ -55,6 +55,7 @@ const severalToolGroups = new ToolGroupState()
 const lazyToolGroups = new ToolGroupState()
 const editToolGroups = new ToolGroupState()
 const commentaryToolGroups = new ToolGroupState()
+const liveCommentaryGroups = new ToolGroupState()
 
 const meta = {
   title: 'Sessions/Feed/Tool Line',
@@ -242,6 +243,37 @@ export const LiveGroupBetweenCalls = {
     await expect(canvas.queryByText(/Ran a command, edited a file/)).toBeNull()
     // Settled between two calls, the Session still runs, so the title still shimmers.
     await expect(canvas.getByText('Edited Composer.tsx')).toHaveClass('feed-work-shimmer')
+  },
+}
+
+export const LiveCommentaryTitlesLatestGroup = {
+  render: () => (
+    <FeedToolGroup
+      group={{
+        shape: 'tool-group',
+        id: 'tool-group:live-commentary',
+        label: 'Ran 2 commands',
+        calls: [
+          { ...command, id: 'pull-request-command-1', label: 'Ran first command' },
+          { ...command, id: 'pull-request-command-2', label: 'Ran second command' },
+        ],
+        headline: { kind: 'thought', label: 'Creating new pull requests', open: true },
+      }}
+      activeEvidenceId={null}
+      onOpen={() => {}}
+      toolGroups={liveCommentaryGroups}
+    />
+  ),
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+    const group = canvas.getByRole('button', { name: 'Creating new pull requests' })
+    await expect(group).toHaveAttribute('aria-expanded', 'false')
+    await expect(canvas.queryByText('Ran 2 commands')).toBeNull()
+    await userEvent.click(group)
+    await waitFor(() =>
+      expect(canvas.getByRole('button', { name: 'Ran first command' })).toBeVisible(),
+    )
+    await expect(canvas.getByRole('button', { name: 'Ran second command' })).toBeVisible()
   },
 }
 
