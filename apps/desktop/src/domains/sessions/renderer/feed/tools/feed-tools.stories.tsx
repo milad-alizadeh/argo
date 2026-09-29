@@ -1,5 +1,7 @@
 import type { Meta } from '@storybook/react-vite'
-import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
+import { projectLiveFeedRows } from '@/domains/sessions/api/feed/live-feed-rows'
+import { groupToolRuns } from '@/domains/sessions/api/feed/tool-groups'
 import { ToolGroupState } from '../rows/tool-group-state'
 import { FeedToolGroup, FeedToolLine } from './feed-tools'
 
@@ -51,6 +53,8 @@ const closedToolGroups = new ToolGroupState()
 const staleToolGroups = new ToolGroupState()
 const severalToolGroups = new ToolGroupState()
 const lazyToolGroups = new ToolGroupState()
+const editToolGroups = new ToolGroupState()
+const commentaryToolGroups = new ToolGroupState()
 
 const meta = {
   title: 'Sessions/Feed/Tool Line',
@@ -418,5 +422,110 @@ export const ClosedGroupBuildsNoBody = {
     await expect(group).toHaveAttribute('aria-expanded', 'false')
     await expect(edit).toBeInTheDocument()
     await waitFor(() => expect(canvas.queryByText('Edited Composer.tsx')).toBeNull())
+  },
+}
+
+// A command, then one patch over two files, as the Feed projects them from Harness content.
+const [settledEdits] = groupToolRuns(
+  projectLiveFeedRows(
+    [
+      {
+        kind: 'command',
+        id: 'check',
+        command: 'bun test',
+        cwd: '/repo',
+        status: 'completed',
+        output: '3 pass',
+        stderr: null,
+        exitCode: 0,
+      },
+      {
+        kind: 'fileChange',
+        id: 'patch',
+        status: 'completed',
+        changes: [
+          {
+            path: '/repo/app.txt',
+            change: 'update',
+            diff: '@@ -1,2 +1,2 @@\n alpha\n-beta\n+gamma\n',
+          },
+          { path: '/repo/notes.md', change: 'add', diff: 'hello\n' },
+        ],
+      },
+    ],
+    [],
+  ),
+)
+const openEditEvidence = fn()
+
+// A settled group counts each file in the order the work ran, and every file opens its own diff.
+export const SettledCommandAndEdits = {
+  render: () =>
+    settledEdits?.shape === 'tool-group' ? (
+      <FeedToolGroup
+        group={settledEdits}
+        activeEvidenceId={null}
+        onOpen={openEditEvidence}
+        toolGroups={editToolGroups}
+      />
+    ) : null,
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+    const group = canvas.getByRole('button', {
+      name: 'Ran a command, edited a file, created a file',
+    })
+    await userEvent.click(group)
+    await userEvent.click(await canvas.findByRole('button', { name: 'Edited app.txt +1 −1' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Created notes.md +1 −0' }))
+    const opened = openEditEvidence.mock.calls.map(([row]) => row.evidence?.source ?? '')
+    await expect(opened).toEqual([
+      expect.stringContaining('Update File: /repo/app.txt'),
+      expect.stringContaining('Add File: /repo/notes.md'),
+    ])
+  },
+}
+
+// Commentary titles its group as Markdown, and a blank thought never leaves a bare separator.
+export const CommentaryTitles = {
+  render: () => (
+    <div className="flex flex-col gap-2">
+      <FeedToolGroup
+        group={{
+          shape: 'tool-group',
+          id: 'tool-group:markdown-commentary',
+          label: 'Ran a command',
+          calls: [command],
+          thoughts: [{ id: 'markdown', text: '**Checking** the `feed` result', afterCallIndex: 0 }],
+        }}
+        activeEvidenceId={null}
+        onOpen={() => {}}
+        toolGroups={commentaryToolGroups}
+      />
+      <FeedToolGroup
+        group={{
+          shape: 'tool-group',
+          id: 'tool-group:blank-commentary',
+          label: 'Edited a file',
+          calls: [{ ...edited, id: 'blank-edit' }],
+          thoughts: [
+            { id: 'blank', text: '  ', afterCallIndex: 0 },
+            { id: 'rule', text: '---', afterCallIndex: 0 },
+          ],
+        }}
+        activeEvidenceId={null}
+        onOpen={() => {}}
+        toolGroups={commentaryToolGroups}
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+    await expect(
+      canvas.getByRole('button', { name: /^Checking the feed result.*Ran a command$/ }),
+    ).toBeVisible()
+    await expect(canvas.getByText('Checking').tagName).toBe('STRONG')
+    await expect(canvas.getByText('feed').tagName).toBe('CODE')
+    await expect(canvas.queryByText(/\*\*/)).toBeNull()
+    await expect(canvas.getByRole('button', { name: 'Edited a file' })).toBeVisible()
   },
 }

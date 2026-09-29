@@ -77,6 +77,14 @@ test('asks for a full read when a rollout completes a command', () => {
   ).toEqual({ type: 'rewritten' })
 })
 
+test('asks for a full read when a rollout completes a file edit', () => {
+  expect(
+    openCodexHistoryReader()([
+      '{"type":"event_msg","payload":{"type":"item_completed","item":{"type":"FileChange","id":"e","changes":{"/repo/app.txt":{"type":"update","unified_diff":"@@ -1 +1 @@\\n-beta\\n+gamma\\n","move_path":null}},"status":"completed"}}}',
+    ]),
+  ).toEqual({ type: 'rewritten' })
+})
+
 test('names the thread a rollout file belongs to', () => {
   expect(
     codexHistoryOwner(
