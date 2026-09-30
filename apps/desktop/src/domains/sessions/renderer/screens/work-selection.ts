@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FeedSubagent } from '@/domains/sessions/api/feed/feed-subagents'
-import type { SessionShellCommand } from '@/domains/sessions/renderer/model/models'
-import type { SessionShellOutput } from '@/domains/sessions/renderer/work/types'
+import type { SessionShellCommand } from '../model/models'
+import type { SessionShellOutput } from '../work/types'
 
 // What the reader picked out of the header's work buttons, held against the Session it was picked
 // in: a selection made in one Session says nothing about the next, and keying it this way retires

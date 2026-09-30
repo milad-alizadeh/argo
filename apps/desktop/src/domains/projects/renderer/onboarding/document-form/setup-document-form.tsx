@@ -1,8 +1,5 @@
 import { useState } from 'react'
-import {
-  type SetupDocument,
-  setupConfiguration,
-} from '@/domains/projects/renderer/onboarding/model/setup-document'
+import { type SetupDocument, setupConfiguration } from '../model/setup-document'
 import { setupSections } from '../plan/setup-plan-sections'
 import { CustomizeSetup } from '../screens/customize-setup'
 import { ImportSetup } from '../screens/import-setup'

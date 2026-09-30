@@ -2,7 +2,6 @@
 // Subagent spent, and what one background Shell has written so far. Neither rides the Roster or
 // Feed reply.
 import { useQuery } from '@tanstack/react-query'
-import type { SessionShellOutput, SubagentUsageFacts } from '@/domains/sessions/renderer/work/types'
 import { trpcClient } from '@/platform/renderer/trpc-client'
 import { useFeedReading } from '../feed/use-feed-reading'
 import {
@@ -11,6 +10,7 @@ import {
   sessionSubagentUsageQueryKey,
 } from '../session-queries'
 import type { SessionId } from '../types'
+import type { SessionShellOutput, SubagentUsageFacts } from './types'
 
 // Each read re-parses every Subagent transcript the Session has, so a Session whose Subagents have
 // all come back is read once rather than on every pass.

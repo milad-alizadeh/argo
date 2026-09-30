@@ -1,7 +1,4 @@
-import {
-  type SetupDocument,
-  setupPlanText,
-} from '@/domains/projects/renderer/onboarding/model/setup-document'
+import { type SetupDocument, setupPlanText } from '../model/setup-document'
 import type { SetupAnswer } from '../use-setup-answers'
 import { SetupPlanField } from './setup-plan-field'
 import { fieldsForSection, SectionIcon, type SetupSectionModel } from './setup-plan-sections'

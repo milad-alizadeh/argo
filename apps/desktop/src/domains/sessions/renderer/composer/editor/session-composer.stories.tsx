@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import type { SessionPlan } from '@/domains/sessions/renderer/model/models'
 import type { WorkspaceSummary } from '@/domains/workspaces/renderer'
 import { claudeComposerModelCatalogFixture } from '@/mocks/sessions/claude-model-catalog.fixture'
 import { claudeChoices } from '@/mocks/sessions/harness-catalog.fixture'
 import type { SessionHarness } from '../../harness/harnesses'
+import type { SessionPlan } from '../../model/models'
 import { ComposerForm } from '../layout/composer-form'
 import type { TurnConfigurationChoices } from '../turn-configuration/turn-configuration'
 

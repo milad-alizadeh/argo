@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import type { SetupDocument } from '@/domains/projects/renderer/onboarding/model/setup-document'
 import { Button } from '@/platform/renderer/components/ui/button'
+import type { SetupDocument } from '../model/setup-document'
 import { SetupPlanCustomization } from '../plan/setup-plan-customization'
 import type { SetupSectionModel } from '../plan/setup-plan-sections'
 import type { SetupAnswer } from '../use-setup-answers'
