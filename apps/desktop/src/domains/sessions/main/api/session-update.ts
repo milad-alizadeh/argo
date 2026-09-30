@@ -6,11 +6,11 @@ import { sessionTable } from '@/database/session/schema'
 import type { SessionStatus } from '@/database/session/validation'
 import { sessionArchive } from '@/database/session-archive/schema'
 import { nextUpdatedAt } from '@/database/timestamp-columns'
-import type { LiveActivity } from '@/domains/sessions/api/feed/feed-rows'
+import type { LiveActivity } from '@/domains/sessions/api/feed'
 import { WORKING_SESSION_STATUSES } from '@/domains/sessions/api/session-live-event'
 import type { Harness } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
-import { sessionHistoryIdentity } from './session-history-identity'
+import { sessionHistoryIdentity } from '../session-history-identity'
 import type { SessionListChanges } from './session-list-changes'
 
 export type SessionUpdate = {

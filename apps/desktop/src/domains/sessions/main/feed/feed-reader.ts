@@ -1,15 +1,19 @@
 import { TRPCError } from '@trpc/server'
 import type { Database } from '@/database/database'
-import { type FeedChain, feedChainKey } from '@/domains/sessions/api/feed/feed-chain'
-import { type FeedReading, feedReading } from '@/domains/sessions/api/feed/feed-reading'
-import { FeedRowProjector, feedEntryRows } from '@/domains/sessions/api/feed/feed-row-entries'
-import type { SessionFeedRow } from '@/domains/sessions/api/feed/feed-rows'
-import { feedSubagents, subagentCompletionRows } from '@/domains/sessions/api/feed/feed-subagents'
+import type { SessionFeedRow } from '@/domains/sessions/api/feed'
 import {
   emptyLiveEventBuffer,
+  type FeedChain,
+  type FeedReading,
+  FeedRowProjector,
+  feedChainKey,
+  feedEntryRows,
+  feedReading,
+  feedSubagents,
   type LiveEventBuffer,
   retainLiveEvent,
-} from '@/domains/sessions/api/feed/live-event-buffer'
+  subagentCompletionRows,
+} from '@/domains/sessions/api/feed'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionError } from '@/domains/sessions/api/session-error'
 import { sessionError } from '@/domains/sessions/api/session-error'
@@ -19,11 +23,10 @@ import {
   type SessionLiveEvent,
 } from '@/domains/sessions/api/session-live-event'
 import type { Harness } from '@/harnesses/harness'
-import { sessionHistoryIdentity } from '../api/session-history-identity'
-import type { SessionListChanges } from '../api/session-list-changes'
-import { updateSession } from '../api/session-update'
-import type { SessionEventJournal } from '../live/session-event-journal'
-import type { SessionHistoryFollowers } from '../live/session-history-followers'
+import type { SessionListChanges } from '../api'
+import { updateSession } from '../api'
+import type { SessionEventJournal, SessionHistoryFollowers } from '../live'
+import { sessionHistoryIdentity } from '../session-history-identity'
 
 export type SessionFeedReaderContext = {
   database: Database

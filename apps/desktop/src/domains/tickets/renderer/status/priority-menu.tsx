@@ -1,8 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
 import type { TicketPriority } from '@/domains/tickets/api/ticket'
-import { Badge } from '@/platform/renderer/components/ui/badge'
-import { Button } from '@/platform/renderer/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +8,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/platform/renderer/components/ui/dropdown-menu'
+import { ticketMenuTrigger } from './ticket-menu-trigger'
 import { NO_PRIORITY_LABEL, PriorityIcon, priorityName } from './ticket-status'
 
 export type PriorityMenuProps = {
@@ -22,11 +21,6 @@ export type PriorityMenuProps = {
   onChange: (priority: TicketPriority | null) => void
 }
 
-const NAMED_INSET = '-ml-[calc(--spacing(2)+var(--size-border))]'
-const namedInset = (named: boolean, metadata: boolean) => {
-  if (!named) return ''
-  return metadata ? '' : NAMED_INSET
-}
 const priorityValue = (priority: TicketPriority | null) =>
   priority ? String(priority.level) : 'none'
 
@@ -59,22 +53,7 @@ export function PriorityMenu({
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label={t('priority.trigger', { priority: priorityName(priority) })}
-        render={
-          metadata ? (
-            <Badge
-              className={`relative z-10 @3xl:bg-transparent @3xl:text-muted-foreground ${namedInset(named, metadata)}`}
-              render={<button type="button" />}
-              size="default"
-              variant="secondary"
-            />
-          ) : (
-            <Button
-              className={`relative z-10 shrink-0 type-meta text-muted-foreground ${namedInset(named, metadata)}`}
-              size={named ? 'xs' : 'icon-xs'}
-              variant="ghost"
-            />
-          )
-        }
+        render={ticketMenuTrigger(named, metadata)}
       >
         <PriorityIcon priority={priority} />
         {named ? priorityName(priority) : null}
@@ -82,7 +61,11 @@ export function PriorityMenu({
       <DropdownMenuContent align="start" className="w-auto">
         <DropdownMenuRadioGroup onValueChange={choose} value={priorityValue(priority)}>
           {options.map((option) => (
-            <DropdownMenuRadioItem key={priorityValue(option)} value={priorityValue(option)}>
+            <DropdownMenuRadioItem
+              closeOnClick
+              key={priorityValue(option)}
+              value={priorityValue(option)}
+            >
               <PriorityIcon priority={option} />
               {option?.label ?? NO_PRIORITY_LABEL}
             </DropdownMenuRadioItem>

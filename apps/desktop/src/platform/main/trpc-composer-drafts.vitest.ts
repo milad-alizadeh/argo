@@ -13,7 +13,7 @@ import { workspace } from '@/database/workspace/schema'
 import {
   type LiveSessionSupervisorActor,
   SessionSubmitRejectedError,
-} from '@/domains/sessions/main/live/live-session-supervisor-machine'
+} from '@/domains/sessions/main/live'
 import { ensureManagedWorkspace } from '@/domains/workspaces/main/workspace-create-managed'
 import { type AppRouterDependencies, createAppRouter } from './trpc-router'
 
@@ -81,6 +81,17 @@ async function createProjectDraft() {
   return caller().composerDraftCreate({
     target: { type: 'project', projectId, workspaceId, harness: 'codex' },
     content,
+  })
+}
+
+function submitCreated(
+  api: ReturnType<typeof caller>,
+  created: Awaited<ReturnType<typeof createProjectDraft>>,
+) {
+  return api.sessionSubmit({
+    draftId: created.id,
+    expectedRevision: created.revision,
+    commandId: 'command-1',
   })
 }
 
@@ -205,13 +216,7 @@ test('resolves the Workspace path in main and deletes an accepted new-Session dr
     event.reply.resolve({ sessionId: 'session-1' })
   })
 
-  await expect(
-    api.sessionSubmit({
-      draftId: created.id,
-      expectedRevision: created.revision,
-      commandId: 'command-1',
-    }),
-  ).resolves.toEqual({ sessionId: 'session-1' })
+  await expect(submitCreated(api, created)).resolves.toEqual({ sessionId: 'session-1' })
   expect(submitted).toMatchObject({
     pendingId: `optimistic:${created.id}:${created.revision}`,
     input: { cwd: '/current/repo', projectId, workspaceId, prompt: content.prompt },
@@ -272,13 +277,7 @@ test('retains a newer draft revision when the accepted Session loses the delete 
     event.reply.resolve({ sessionId: 'session-1' })
   })
 
-  await expect(
-    api.sessionSubmit({
-      draftId: created.id,
-      expectedRevision: created.revision,
-      commandId: 'command-1',
-    }),
-  ).rejects.toThrow('stale-draft')
+  await expect(submitCreated(api, created)).resolves.toEqual({ sessionId: 'session-1' })
   await expect(api.composerDraftRead(created.target)).resolves.toMatchObject({
     prompt: 'A newer thought.',
     revision: created.revision + 1,
@@ -619,7 +618,7 @@ test('retains a newer Session revision when an accepted Turn loses the delete ra
       expectedRevision: created.revision,
       commandId: 'delete-race-command',
     }),
-  ).rejects.toThrow('stale-draft')
+  ).resolves.toEqual({ sessionId: 'session-1' })
   await expect(api.composerDraftRead(created.target)).resolves.toMatchObject({
     prompt: 'Written while submit was pending.',
     revision: created.revision + 1,

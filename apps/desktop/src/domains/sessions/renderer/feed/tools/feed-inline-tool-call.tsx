@@ -1,13 +1,13 @@
 import { useTranslation } from 'react-i18next'
-import { displayedToolLabel } from '@/domains/sessions/api/feed/displayed-tool-label'
+import { displayedToolLabel } from '@/domains/sessions/api/feed'
 import {
   CodeBlock,
   CodeBlockActions,
+  CodeBlockCopyButton,
   CodeBlockFilename,
   CodeBlockHeader,
   CodeBlockTitle,
-} from '../../ai-elements/code-block'
-import { CodeBlockCopyButton } from '../../ai-elements/code-block-copy-button'
+} from '../../ai-elements'
 import { codeLanguageLabel, detectCodeLanguage } from '../content/code-language'
 import { CodeLanguageIcon } from '../content/code-language-icon'
 import { FeedMarkdown } from '../content/feed-markdown'

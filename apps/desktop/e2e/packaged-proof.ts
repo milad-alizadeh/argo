@@ -47,7 +47,8 @@ export const test = base.extend<PackagedProofFixtures, PackagedProofWorkerFixtur
     try {
       await use(root)
     } finally {
-      await rm(root, { recursive: true, force: true })
+      // A Harness still exiting can write its config backup mid-removal, so ENOTEMPTY retries.
+      await rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
     }
   },
 })

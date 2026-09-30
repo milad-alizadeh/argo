@@ -4,6 +4,7 @@ import { z } from 'zod'
 import type { AppearanceState } from '@/platform/contract/appearance'
 import { APPEARANCE_CHANGED_CHANNEL, isAppearanceState } from '@/platform/contract/appearance'
 import { COMMAND_CHANNEL } from '@/platform/contract/commands'
+import { TRPC_CHANNEL, type TrpcSubscriptionMessage } from '@/platform/contract/trpc-wire'
 import { developmentIdentityFromArguments } from '@/platform/preload/development-identity'
 
 type Subscription = {
@@ -12,12 +13,6 @@ type Subscription = {
 }
 
 const subscriptions = new Map<string, Subscription>()
-
-const TRPC_CHANNEL = 'argo:trpc'
-type TrpcSubscriptionMessage =
-  | { id: number; type: 'data'; result: { data: unknown } }
-  | { id: number; type: 'error'; error: unknown }
-  | { id: number; type: 'complete' }
 
 let invalidTrpcSubscriptionMessageCount = 0
 

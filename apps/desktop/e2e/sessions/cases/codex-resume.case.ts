@@ -49,7 +49,7 @@ export async function provePackagedCodexResume(
   const relaunched = await restart()
 
   const reread = await sessionDetails(relaunched, sessionId)
-  assert.equal(reread?.posture, 'external')
+  assert.equal(reread?.posture, null)
   await openSessionByClick(relaunched, sessionId)
   const history = relaunched.getByRole('region', { name: 'Session history' })
   await backend.waitForReply(relaunched, { harness: 'codex', prompt: OPENING_PROMPT })
@@ -94,5 +94,5 @@ export async function provePackagedCodexResumeRefusal(
   await alert.waitFor()
   assert.match((await alert.textContent()) ?? '', new RegExp(REFUSAL))
   const row = await sessionDetails(relaunched, sessionId)
-  assert.equal(row?.posture, 'external')
+  assert.equal(row?.posture, null)
 }

@@ -32,7 +32,6 @@ export async function proveSessionCreatedByClick(
     prompt,
     budgetTurnConfiguration,
     permissionMode,
-    harnessWrote: () => backend.recorded(reply),
   })
 
   // The gesture ended in a real Session: the Harness answers the prompt it was sent.

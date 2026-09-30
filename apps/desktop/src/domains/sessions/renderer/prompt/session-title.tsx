@@ -1,5 +1,5 @@
 import { harnessOrDefault } from '@/harnesses/harness'
-import { SessionReferenceText } from '../composer/references/session-reference'
+import { SessionReferenceText } from '../composer/references'
 import type { Session } from '../types'
 import { PromptText } from './prompt-text'
 

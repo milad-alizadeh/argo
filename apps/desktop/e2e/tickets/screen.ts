@@ -6,6 +6,7 @@ import { DatabaseSync } from 'node:sqlite'
 import type { ElectronApplication, Locator, Page } from 'playwright-core'
 import type { MockUser } from '../../mocks/providers/github/mock-github'
 import { ADA } from '../../mocks/providers/linear/mock-linear-cast'
+import { openRoute } from '../packaged-window'
 import { openedURLs, type TicketFixture } from './fixtures/tickets.fixture'
 
 export type Run = { application: ElectronApplication; page: Page; fixture: TicketFixture }
@@ -58,10 +59,21 @@ export const notification = (page: Page) => page.getByRole('region', { name: 'No
 export const room = (run: Run) => run.page.getByRole('main', { name: 'Tickets' })
 
 export async function openRoom(page: Page, room: 'tickets' | 'atlas', projectId = 'project-1') {
-  await page.evaluate((hash) => {
-    window.location.hash = hash
-  }, `#/projects/${projectId}/${room}`)
-  if (room === 'tickets') await page.getByRole('main', { name: 'Tickets' }).waitFor()
+  await openRoute(page, `#/projects/${projectId}/${room}`)
+  if (room !== 'tickets') return
+  await page
+    .getByRole('main', { name: 'Tickets' })
+    .waitFor()
+    .catch(async (error: unknown) => {
+      // Names the screen that drew instead, since a CI failure keeps no picture of it.
+      const drawn = await page.evaluate(() => ({
+        hash: window.location.hash,
+        headings: [...document.querySelectorAll('h1, h2, [role="main"]')].map(
+          (element) => element.getAttribute('aria-label') ?? element.textContent?.slice(0, 80),
+        ),
+      }))
+      throw new Error(`The Tickets room never drew: ${JSON.stringify(drawn)}`, { cause: error })
+    })
 }
 
 // The keys of the backlog's rows in order: `#607` on GitHub, `ENG-1` on Linear.

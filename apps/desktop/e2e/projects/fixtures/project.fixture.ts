@@ -9,6 +9,7 @@ import { _electron as electron } from 'playwright-core'
 import { databasePath, openDatabase } from '@/database/database'
 import { project as projectTable } from '@/database/project/schema'
 import { PROJECT_PROOF_STORE_ENV } from '@/platform/contract/project-proof'
+import { signedInHarnessEnvironment } from '../../../mocks/cli/signed-in-harness'
 import { ACCEPTANCE_ENV } from '../../../scripts/acceptance-protocol.mts'
 import { applicationUnderTest, launchCommand } from '../../application-under-test'
 import { makeProjectLocallyReady } from './locally-ready-project'
@@ -63,11 +64,12 @@ export async function prepare(root, application?) {
 
 // One launch of the app against the fixture's own application data. A restart is another
 // call to this, which is the only honest way to prove what survives one.
-export function launch(fixture, environment: Record<string, string> = {}) {
+export async function launch(fixture, environment: Record<string, string> = {}) {
   return electron.launch({
     ...launchCommand(fixture.application),
     env: {
       ...process.env,
+      ...(await signedInHarnessEnvironment(path.dirname(fixture.userData))),
       [PROJECT_PROOF_STORE_ENV]: fixture.userData,
       ...environment,
       [ACCEPTANCE_ENV]: '0',

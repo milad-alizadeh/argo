@@ -4,7 +4,7 @@
 
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { hasSubagentTranscript } from '@/domains/sessions/api/feed/feed-subagents'
+import { hasSubagentTranscript } from '@/domains/sessions/api/feed'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
   Empty,
@@ -13,10 +13,10 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/platform/renderer/components/ui/empty'
-import { BasicFeed } from '../feed/document/basic-feed'
+import { BasicFeed } from '../feed'
 import type { SessionError, SessionEvidence, SessionFeed, SessionSubagent } from '../types'
 
-import '../feed/feed.css'
+import '../feed'
 
 function useVisibleInspector() {
   const inspector = useRef<HTMLElement>(null)

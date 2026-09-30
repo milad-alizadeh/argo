@@ -13,7 +13,7 @@ import { ticketTable } from '@/database/ticket/schema'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
 import { ticketContent } from '@/database/ticket-content/schema'
 import { ticketContentSelectSchema } from '@/database/ticket-content/validation'
-import { type LiveActivity, liveActivitySchema } from '@/domains/sessions/api/feed/feed-rows'
+import { type LiveActivity, liveActivitySchema } from '@/domains/sessions/api/feed'
 import { feedActivitySchema } from '@/domains/sessions/api/feed-activity'
 import {
   isWorkingStatus,
@@ -21,11 +21,8 @@ import {
 } from '@/domains/sessions/api/session-live-event'
 import { sessionTitleSchema } from '@/domains/sessions/api/session-title'
 import { identifierSchema } from '@/shared/validation'
-import { type StoredSubagent, storedSessionSubagents } from '../database/session-subagents'
-import {
-  type LiveSessionSupervisorActor,
-  liveSessionActorFor,
-} from '../live/live-session-supervisor-machine'
+import { type StoredSubagent, storedSessionSubagents } from '../database'
+import { type LiveSessionSupervisorActor, liveSessionActorFor } from '../live'
 import type { SessionListChanges } from './session-list-changes'
 
 const t = initTRPC.create()

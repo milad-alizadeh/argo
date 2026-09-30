@@ -1,5 +1,7 @@
 // Picking a Subagent off the header button opens its own transcript in the inspector, beside the
 // Session's own Feed rather than in place of it (#1582).
+import { fixtureSession } from '../fixture-sessions'
+import { openSessionByRoute } from '../gestures'
 
 // The drawn Feed, never the measurement layer behind it, which holds a hidden copy of every row.
 function textIn(page, selector, text) {
@@ -14,13 +16,11 @@ function textIn(page, selector, text) {
 }
 
 export async function proveSubagentFeed(page) {
-  await page.evaluate(() => {
-    window.location.hash = '#/sessions/subagentTail'
-  })
+  await openSessionByRoute(page, await fixtureSession('subagentTail'))
   await textIn(page, '.feed__viewport', 'Search the tree for every caller')
 
   await page.getByRole('button', { name: /^Subagents/ }).click()
-  await page.getByRole('menuitem', { name: /call-task-1/ }).click()
+  await page.getByRole('menuitem', { name: /caller-sweep/ }).click()
 
   const pane = page.locator('section[aria-label="Subagent"]')
   await pane.waitFor()
@@ -33,6 +33,6 @@ export async function proveSubagentFeed(page) {
   await page.getByRole('button', { name: 'Collapse Session inspector' }).click()
   await page.getByRole('button', { name: 'Open Session inspector' }).waitFor()
   await page.getByRole('button', { name: /^Subagents/ }).click()
-  await page.getByRole('menuitem', { name: /call-task-1/ }).click()
+  await page.getByRole('menuitem', { name: /caller-sweep/ }).click()
   await page.getByRole('button', { name: 'Collapse Session inspector' }).waitFor()
 }

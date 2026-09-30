@@ -1,6 +1,6 @@
 import { afterEach, expect, test, vi } from 'vitest'
-import { SessionListChanges } from '@/domains/sessions/main/api/session-list-changes'
-import { TICKET_SYNC_TIMING } from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
+import { SessionListChanges } from '@/domains/sessions/main/api'
+import { TICKET_SYNC_TIMING } from '@/domains/tickets/main/sync'
 import type { HarnessRegistry } from '@/harnesses/registry'
 import { migratedDatabase } from '@/mocks/database/migrated-database'
 

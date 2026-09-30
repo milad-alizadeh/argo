@@ -8,7 +8,7 @@ import { projectSelectSchema } from '@/database/project/validation'
 import { workspace } from '@/database/workspace/schema'
 import { workspaceRecordSchema } from '@/database/workspace/validation'
 import { identifierSchema } from '@/shared/validation'
-import { reconcileWorkspaces } from '../database/workspace-reconciliation'
+import { reconcileWorkspaces } from '../database'
 import { readWorkspaceFacts } from '../workspace-facts'
 
 const t = initTRPC.create()

@@ -15,13 +15,13 @@ import type {
   SessionSummaryReader,
 } from '@/domains/sessions/api/session-discovery'
 import type { Harness } from '@/harnesses/harness'
-import type { SessionListChanges } from '../api/session-list-changes'
+import type { SessionListChanges } from '../api'
 import {
   type SessionSyncStatus,
   saveCompletedSyncStatus,
   savedSyncStatus,
   sessionSyncStatusSchema,
-} from '../api/session-sync-status'
+} from '../session-sync-status'
 import { sessionSyncMachine } from './session-sync-machine'
 import { knownSessionIds, matchSessionsToProjects, saveSessionBatch } from './session-sync-records'
 

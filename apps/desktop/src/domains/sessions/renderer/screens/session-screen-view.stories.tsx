@@ -622,7 +622,8 @@ async function expectShellReopensWithOutput(canvasElement: HTMLElement) {
   await userEvent.click(canvas.getByRole('button', { name: /^Shell/ }))
   await userEvent.click(await screen.findByRole('menuitem', { name: /bun run quality/ }))
   const shellInspector = await canvas.findByRole('region', { name: 'Background Shell' })
-  await expect(shellInspector).toBeVisible()
+  // The inspector stays invisible until its panel is ready, so the region mounts before it shows.
+  await waitFor(() => expect(shellInspector).toBeVisible())
   await waitFor(
     () => expect(within(shellInspector).getByText(/Checked 187 files\./)).toBeVisible(),
     { timeout: 5000 },

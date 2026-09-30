@@ -14,9 +14,8 @@ import {
 } from '@/platform/renderer/components/ui/dialog'
 import { firstControl, useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
 import type { ContractFailure } from '@/platform/renderer/lib/query-client'
-import { type AccountListing, useAccounts, useDisconnect } from '../hooks/use-accounts'
-import { useSignIn } from '../hooks/use-sign-in'
-import { useAccountsDialog } from '../state/use-accounts-dialog'
+import { type AccountListing, useAccounts, useDisconnect, useSignIn } from '../hooks'
+import { useAccountsDialog } from '../state'
 import { AccountRow } from './account-row'
 import { type SignedIn, SignInPanel, type SignInPanelProps } from './sign-in-panel'
 

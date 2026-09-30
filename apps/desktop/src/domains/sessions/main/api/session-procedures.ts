@@ -1,4 +1,5 @@
-import type { SessionFeedReaders } from '../feed/feed-reader'
+import type { SessionFeedReaders } from '../feed'
+import { type SessionSyncStatusSource, sessionSyncStatusProcedure } from '../session-sync-status'
 import { composerDraftCreateProcedure } from './composer-draft-create'
 import { composerDraftReadProcedure } from './composer-draft-read'
 import { composerDraftSaveProcedure } from './composer-draft-save'
@@ -22,7 +23,6 @@ import {
 } from './session-list'
 import { type SessionRefreshContext, sessionRefreshProcedure } from './session-refresh'
 import { type SessionProcedureContext, sessionSubmitProcedure } from './session-submit'
-import { type SessionSyncStatusSource, sessionSyncStatusProcedure } from './session-sync-status'
 import { type SessionUpdateProcedureContext, sessionUpdateProcedure } from './session-update'
 import { sessionWorkReadProcedures } from './session-work-reads'
 

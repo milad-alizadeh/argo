@@ -9,10 +9,7 @@ import { readComposerCommands } from '@/domains/sessions/api/composer-commands'
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
-import type {
-  SessionLiveInput,
-  SessionStartInput,
-} from '@/domains/sessions/main/api/session-submit'
+import type { SessionLiveInput, SessionStartInput } from '@/domains/sessions/main/api'
 import {
   type HarnessRegistration,
   type LiveSessionChannel,

@@ -1,6 +1,5 @@
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import type { CodexRequest } from '../app-server/codex-app-server-client'
-import type { ThreadItem } from '../app-server/protocol-generated/v2/thread-item'
+import type { CodexRequest, ThreadItem } from '../app-server'
 import { readCodexNickname } from './codex-subagent-nicknames'
 
 type SubagentItem = Extract<ThreadItem, { type: 'subAgentActivity' }>

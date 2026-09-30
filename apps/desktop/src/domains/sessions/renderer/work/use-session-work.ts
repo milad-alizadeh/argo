@@ -3,7 +3,7 @@
 // Feed reply.
 import { useQuery } from '@tanstack/react-query'
 import { trpcClient } from '@/platform/renderer/trpc-client'
-import { useFeedReading } from '../feed/use-feed-reading'
+import { useFeedReading } from '../feed'
 import {
   SESSION_REFRESH_MS,
   sessionShellOutputQueryKey,

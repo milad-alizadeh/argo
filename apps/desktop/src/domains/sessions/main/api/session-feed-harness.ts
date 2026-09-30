@@ -12,11 +12,11 @@ import {
   applyFeedReadingChange,
   type FeedReading,
   type FeedReadingMessage,
-} from '@/domains/sessions/api/feed/feed-reading'
+} from '@/domains/sessions/api/feed'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
-import { type SessionFeedReaderContext, SessionFeedReaders } from '../feed/feed-reader'
-import { SessionEventJournal } from '../live/session-event-journal'
+import { type SessionFeedReaderContext, SessionFeedReaders } from '../feed'
+import { SessionEventJournal } from '../live'
 import { sessionFeedProcedures } from './session-feed'
 import { SessionListChanges } from './session-list-changes'
 

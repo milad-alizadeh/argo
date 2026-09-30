@@ -18,6 +18,7 @@ import { mockClaudeAcpHarness } from '../cli/claude-acp/mock-claude-acp-cli'
 import { mockClaudeAcpRoot } from '../cli/claude-acp/mock-claude-acp-transcripts'
 import { mockCodexHarness } from '../cli/codex/mock-codex-cli'
 import type { MockHarness } from '../cli/mock-cli'
+import { signedInHarnessEnvironment } from '../cli/signed-in-harness'
 
 // Long enough for a case to read the app's wait state before the mock answers (#2119).
 const SLOW_REPLY_MS = 2_000
@@ -68,12 +69,14 @@ export function createMockSessionHarnessBackend(): SessionHarnessBackend {
         folders[harness] = MOCKS[harness].folder(roots[harness])
         executables[harness] = await MOCKS[harness].write(root, roots[harness])
       }
+      const signedIn = await signedInHarnessEnvironment(root)
       return {
         executables,
         transcripts: { claude: roots.claude, codex: roots.codex },
         launchEnv: ({ slowReply, adversarialSeed }) => {
           if (adversarialSeed !== undefined) console.info(`Session mock seed: ${adversarialSeed}`)
           return {
+            ...signedIn,
             [SESSION_MOCK_REPLY_DELAY_MS_ENV]: String(slowReply ? SLOW_REPLY_MS : 0),
             ...(adversarialSeed === undefined
               ? {}

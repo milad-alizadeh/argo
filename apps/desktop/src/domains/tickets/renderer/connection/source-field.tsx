@@ -17,7 +17,7 @@ import {
   FieldLabel,
 } from '@/platform/renderer/components/ui/field'
 import { providerPresentation } from '@/providers/presentation-registry'
-import type { TicketScope } from '../hooks/ticket-reply'
+import type { TicketScope } from '../hooks'
 
 // The sources the chosen Account can see, read from its provider before the form can offer one.
 export type SourceDiscovery =

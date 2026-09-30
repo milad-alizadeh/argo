@@ -7,7 +7,7 @@ import type {
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
-import type { SessionLiveInput } from '@/domains/sessions/main/api/session-submit'
+import type { SessionLiveInput } from '@/domains/sessions/main/api'
 import {
   type LiveSessionChannel,
   type LiveSessionChannelEvent,

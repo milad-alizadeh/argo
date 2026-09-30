@@ -2,8 +2,7 @@ import { type ReactNode, useCallback, useLayoutEffect, useRef, useState } from '
 import { useTranslation } from 'react-i18next'
 
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
-import { BasicFeed } from '../feed/document/basic-feed'
-import { FeedJumpToLatest } from '../feed/rows/feed-jump-to-latest'
+import { BasicFeed, FeedJumpToLatest } from '../feed'
 import type { SessionError, SessionEvidence, SessionFeed, SessionPosture } from '../types'
 
 export type SessionWorkspaceProps = {

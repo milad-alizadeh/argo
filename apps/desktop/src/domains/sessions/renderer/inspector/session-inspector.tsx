@@ -6,7 +6,7 @@ import type {
   SessionShellCommand,
   SessionSubagent,
 } from '../types'
-import type { SessionShellOutput } from '../work/types'
+import type { SessionShellOutput } from '../work'
 import { SessionDelegationInspector } from './session-delegation-inspector'
 import { SessionEvidenceInspector } from './session-evidence-inspector'
 import { SessionShellInspector } from './session-shell-inspector'

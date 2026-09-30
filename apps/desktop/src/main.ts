@@ -9,56 +9,57 @@ import { type Database, openDatabase } from '@/database/database'
 import { createAccountAccess, createAccountProcedureContext } from '@/domains/accounts/main'
 import { safeStorageCipher } from '@/domains/accounts/main/safe-storage'
 import { createConnectionPort } from '@/domains/connections/main'
-import { createHarnessSignInProcedureContext } from '@/domains/harness-signin/main'
+import {
+  createHarnessSignInProcedureContext,
+  harnessSignInExpiresAfterMs,
+} from '@/domains/harness-signin/main'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
 import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
-import { listComposerCommandsFor } from '@/domains/sessions/main/api/session-composer-commands'
-import { watchSessionList } from '@/domains/sessions/main/api/session-list'
-import { SessionListChanges } from '@/domains/sessions/main/api/session-list-changes'
 import {
   clearWorkingStatuses,
+  listComposerCommandsFor,
+  SessionListChanges,
   updateHarnessSession,
-} from '@/domains/sessions/main/api/session-update'
-import { WatchedSessionStatus } from '@/domains/sessions/main/api/watched-session-status'
+  WatchedSessionStatus,
+  watchSessionList,
+} from '@/domains/sessions/main/api'
 import {
   markUnresolvedSessionCommandsUnknown,
   reconcileUnknownSessionCommands,
-} from '@/domains/sessions/main/database/session-command-outcomes'
-import { recordLiveSubagents } from '@/domains/sessions/main/database/session-subagents'
-import { SessionFeedReaders } from '@/domains/sessions/main/feed/feed-reader'
+  recordLiveSubagents,
+} from '@/domains/sessions/main/database'
+import { SessionFeedReaders } from '@/domains/sessions/main/feed'
 import {
   type LiveSessionSupervisorActor,
   liveSessionActorFor,
-} from '@/domains/sessions/main/live/live-session-supervisor-machine'
-import { SessionEventJournal } from '@/domains/sessions/main/live/session-event-journal'
-import { SessionHistoryFollowers } from '@/domains/sessions/main/live/session-history-followers'
-import { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
-import type { SessionSyncSupervisorActor } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
-import { projectTicketScope } from '@/domains/tickets/main/api/ticket-connection'
-import type {
-  PriorityRequest,
-  StatusRequest,
-} from '@/domains/tickets/main/operations/ticket-operation-machine'
+  SessionEventJournal,
+  SessionHistoryFollowers,
+  SessionInteractionBroker,
+} from '@/domains/sessions/main/live'
+import type { SessionSyncSupervisorActor } from '@/domains/sessions/main/sync'
 import {
-  changeTicketPriority,
-  changeTicketStatus,
-  type TicketOperationSupervisorActor,
-} from '@/domains/tickets/main/operations/ticket-operation-supervisor-machine'
+  failInterruptedTicketSearches,
+  markInterruptedTicketScans,
+} from '@/domains/tickets/main/database'
+import type { PriorityRequest, StatusRequest } from '@/domains/tickets/main/operations'
 import {
   accountForScopeFrom,
+  changeTicketPriority,
+  changeTicketStatus,
+  markUnresolvedTicketWriteIntentsUncertain,
   reconcileTicketWriteIntents,
-} from '@/domains/tickets/main/operations/ticket-write-intent-recovery'
-import { markUnresolvedTicketWriteIntentsUncertain } from '@/domains/tickets/main/operations/ticket-write-intents'
-import { ticketWriter } from '@/domains/tickets/main/operations/ticket-writer'
-import { TicketChanges } from '@/domains/tickets/main/sync/ticket-changes'
-import { ticketByIdReader, ticketPageReader } from '@/domains/tickets/main/sync/ticket-page-reader'
-import { failInterruptedTicketSearches } from '@/domains/tickets/main/sync/ticket-search-records'
-import { markInterruptedTicketScans } from '@/domains/tickets/main/sync/ticket-sync-records'
+  type TicketOperationSupervisorActor,
+  ticketWriter,
+} from '@/domains/tickets/main/operations'
 import {
+  reportWindowVisibility,
+  TicketChanges,
   type TicketSyncSupervisorCommand,
+  ticketByIdReader,
+  ticketPageReader,
   ticketSyncTiming,
-} from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
-import { reportWindowVisibility } from '@/domains/tickets/main/sync/window-visibility'
+} from '@/domains/tickets/main/sync'
+import { projectTicketScope } from '@/domains/tickets/main/ticket-connection'
 import { ensureManagedWorkspace } from '@/domains/workspaces/main/workspace-create-managed'
 import { harnessSchema } from '@/harnesses/harness'
 import { tailSessionHistory, watchHistoryActivity } from '@/harnesses/host/history-watch'
@@ -211,7 +212,9 @@ function createDomainContexts(services: TicketServices, registry: HarnessRegistr
     access,
     accounts: createAccountProcedureContext(access),
     connections,
-    harnessSignIn: createHarnessSignInProcedureContext(Object.values(registry)),
+    harnessSignIn: createHarnessSignInProcedureContext(Object.values(registry), {
+      expiresAfterMs: harnessSignInExpiresAfterMs(PROOF_ENABLED),
+    }),
   }
 }
 

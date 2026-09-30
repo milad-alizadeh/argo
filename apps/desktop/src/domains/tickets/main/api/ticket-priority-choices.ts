@@ -1,5 +1,5 @@
 import { type Call, readAs } from '../read-as'
-import { writableConnection } from './ticket-connection'
+import { writableConnection } from '../ticket-connection'
 
 // The levels come from the provider on every read; the renderer keeps them until a Project changes.
 export async function readPriorityChoices(call: Call) {

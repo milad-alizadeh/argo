@@ -12,8 +12,8 @@ import {
   EmptyTitle,
 } from '@/platform/renderer/components/ui/empty'
 import { providerPresentation } from '@/providers/presentation-registry'
-import { type Backlog, backlogRows, unfoldedRows } from '../lib/backlog'
-import { ProblemBanner } from '../status/problem-banner'
+import { type Backlog, backlogRows, unfoldedRows } from '../lib'
+import { ProblemBanner } from '../status'
 import { TicketVirtualList } from './ticket-virtual-list'
 
 export type TicketListProps = {

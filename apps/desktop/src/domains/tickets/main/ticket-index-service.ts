@@ -5,15 +5,10 @@ import { ticketSyncStateSchema } from '@/database/ticket-sync/validation'
 import { ticketErrorSchema } from '@/domains/tickets/api/errors'
 import { TICKET_PAGE_SIZE, ticket, ticketStatus } from '@/domains/tickets/api/ticket'
 import { identifier, message } from '@/shared/messages'
-import { writableConnection } from './api/ticket-connection'
-import {
-  readActiveTickets,
-  readClosedTickets,
-  readSearchedTickets,
-} from './database/ticket-queries'
+import { readActiveTickets, readClosedTickets, readSearchedTickets } from './database'
 import type { Call } from './read-as'
-import type { TicketSyncRequest } from './sync/ticket-sync-machine'
-import type { TicketSyncSupervisorCommand } from './sync/ticket-sync-supervisor-machine'
+import type { TicketSyncRequest, TicketSyncSupervisorCommand } from './sync'
+import { writableConnection } from './ticket-connection'
 
 // One numbered page of Tickets saved in SQLite.
 const savedPage = {

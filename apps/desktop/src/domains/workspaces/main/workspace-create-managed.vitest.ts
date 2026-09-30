@@ -9,7 +9,7 @@ import { afterEach, expect, test } from 'vitest'
 import { project } from '@/database/project/schema'
 import { workspace } from '@/database/workspace/schema'
 import { migratedDatabase } from '@/mocks/database/migrated-database'
-import { workspaceChooseProcedure, workspaceListProcedure } from './api/workspace-list'
+import { workspaceChooseProcedure, workspaceListProcedure } from './api'
 import { ensureManagedWorkspace } from './workspace-create-managed'
 
 const run = promisify(execFile)

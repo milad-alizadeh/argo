@@ -15,13 +15,14 @@ import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type { HarnessRegistry } from '@/harnesses/registry'
 import type { harnessCatalogMachine } from '@/platform/main/harness-catalog/harness-catalog-machine'
-import type { SessionLiveInput, SessionSendInput, SessionStartInput } from '../api/session-submit'
-import { bindSessionCommand, setSessionCommandOutcome } from '../database/session-command-outcomes'
+import type { SessionLiveInput, SessionSendInput, SessionStartInput } from '../api'
 import {
+  bindSessionCommand,
   createSessionCommandStore,
+  createSessionUpsert,
   type SessionCommandStore,
-} from '../database/session-command-store'
-import { createSessionUpsert } from '../database/session-upsert'
+  setSessionCommandOutcome,
+} from '../database'
 import { liveSessionChannelActor } from './live-session-channel-actor'
 import { liveSessionMachine } from './live-session-machine'
 import type { SessionEventJournal } from './session-event-journal'

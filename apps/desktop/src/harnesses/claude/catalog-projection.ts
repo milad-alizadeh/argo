@@ -1,21 +1,13 @@
 import { z } from 'zod'
+import { effortLabel } from '@/harnesses/effort-labels'
 import {
   type HarnessInfo,
   harnessInfoSchema,
   invalidCatalogResponse,
   unavailable,
 } from '@/harnesses/harness-catalog'
-import { platformText } from '@/platform/main/i18n'
-import copy from './locales/en.json'
+import { en as copy } from './locales'
 
-const effortLabels: Record<string, string> = {
-  low: platformText('harnessCatalog.effort.low'),
-  medium: platformText('harnessCatalog.effort.medium'),
-  high: platformText('harnessCatalog.effort.high'),
-  xhigh: platformText('harnessCatalog.effort.xhigh'),
-  max: platformText('harnessCatalog.effort.max'),
-  ultra: platformText('harnessCatalog.effort.ultra'),
-}
 const permissionModePresentation: Record<
   string,
   {
@@ -145,7 +137,7 @@ export function claudeHarnessInfo(response: unknown): HarnessInfo {
     efforts: [...new Set(usableModels.flatMap((model) => model.supportedEffortLevels))].map(
       (value) => ({
         value,
-        label: effortLabels[value] ?? value,
+        label: effortLabel(value),
         readings: { exact: [value], prefixes: [] },
       }),
     ),

@@ -9,7 +9,7 @@ import {
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
-import type { SessionLiveInput, SessionStartInput } from '../api/session-submit'
+import type { SessionLiveInput, SessionStartInput } from '../api'
 import { liveSessionChannelActor } from './live-session-channel-actor'
 
 type DrivenSessionInput = SessionLiveInput

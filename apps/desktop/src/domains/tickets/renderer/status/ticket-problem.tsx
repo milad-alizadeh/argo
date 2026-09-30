@@ -8,7 +8,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/platform/renderer/components/ui/empty'
-import type { TicketProblemProps } from '../lib/problems'
+import type { TicketProblemProps } from '../lib'
 
 export function TicketProblem({ icon, title, description, alert, actions }: TicketProblemProps) {
   return (

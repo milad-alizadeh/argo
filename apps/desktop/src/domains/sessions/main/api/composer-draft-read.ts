@@ -4,7 +4,7 @@ import {
   composerDraftTargetSchema,
   composerDraftValueSchema,
   readComposerDraftForTarget,
-} from '../database/composer-draft'
+} from '../database'
 
 const t = initTRPC.create()
 

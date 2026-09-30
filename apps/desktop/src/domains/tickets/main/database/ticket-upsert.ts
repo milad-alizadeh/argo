@@ -8,7 +8,7 @@ import { ticketSearch } from '@/database/ticket-search/schema'
 import { ticketSearchTicketLink } from '@/database/ticket-search-ticket-link/schema'
 import { nextUpdatedAt } from '@/database/timestamp-columns'
 import type { Ticket } from '@/domains/tickets/api/ticket'
-import { matchingSearch } from '../sync/ticket-search-records'
+import { matchingSearch } from './ticket-search-records'
 
 // `readAt` is when the page was asked for; a Ticket written since keeps its newer facts.
 export type ListedBatch = TicketScopeTarget & {

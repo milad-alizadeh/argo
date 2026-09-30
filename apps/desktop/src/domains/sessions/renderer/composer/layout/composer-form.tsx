@@ -1,6 +1,6 @@
 import { type ReactNode, useCallback } from 'react'
 import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
-import type { HarnessControl } from '../../harness/harnesses'
+import type { HarnessControl } from '../../harness'
 import type { SessionPlan } from '../../types'
 import type { Send } from '../hooks/use-send'
 import { useSessionComposerState } from '../hooks/use-session-composer-state'

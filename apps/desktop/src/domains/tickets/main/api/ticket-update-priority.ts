@@ -1,7 +1,7 @@
 import { ticketError } from '@/domains/tickets/api/errors'
 import type { PriorityChange } from '@/domains/tickets/api/ticket'
 import type { Call } from '../read-as'
-import { writableTarget } from './ticket-connection'
+import { writableTarget } from '../ticket-connection'
 
 // The same path as a status change: the priority in the reply is the one the provider confirmed.
 export async function updatePriority(call: Call, change: Omit<PriorityChange, 'scope'>) {

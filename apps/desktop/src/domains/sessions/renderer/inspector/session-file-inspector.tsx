@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { trpcClient } from '@/platform/renderer/trpc-client'
-import { CodeBlock } from '../ai-elements/code-block'
-import { detectCodeLanguageFromPath } from '../feed/content/code-language'
-import { FeedMarkdown } from '../feed/content/feed-markdown'
+import { CodeBlock } from '../ai-elements'
+import { detectCodeLanguageFromPath, FeedMarkdown } from '../feed/content'
 import type { SessionFileEvidence } from '../types'
 
 const MARKDOWN_FILE = /\.(md|markdown)$/i

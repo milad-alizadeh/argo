@@ -8,7 +8,7 @@ export function createClaudeAcpReadiness(
   claudeReadiness: () => Promise<HarnessReadiness> = createSystemClaudeReadiness(),
 ): () => Promise<HarnessReadiness> {
   return async () =>
-    executable() === null
+    !executable()
       ? { harness: 'claude-acp', state: 'missing', detail: null }
       : { ...(await claudeReadiness()), harness: 'claude-acp' }
 }

@@ -9,7 +9,7 @@ import {
   saveTicket,
   sessionListCaller,
 } from '@/mocks/sessions/session-list-caller'
-import { recordLiveSubagents } from '../database/session-subagents'
+import { recordLiveSubagents } from '../database'
 import { updateSession } from './session-update'
 
 type Caller = ReturnType<typeof sessionListCaller>

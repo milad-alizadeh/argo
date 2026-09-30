@@ -11,7 +11,7 @@ import {
   PopoverTrigger,
 } from '@/platform/renderer/components/ui/popover'
 import { providerPresentation } from '@/providers/presentation-registry'
-import { closedChildren } from '../lib/backlog'
+import { closedChildren } from '../lib'
 
 const STATE_ICONS: Record<TicketState, { icon: IconName; tone: string }> = {
   open: { icon: 'ticket-link-open', tone: 'text-active' },

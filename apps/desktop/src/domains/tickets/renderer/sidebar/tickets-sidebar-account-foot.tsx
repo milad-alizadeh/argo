@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { providerPresentation } from '@/providers/presentation-registry'
-import { ConnectionStatusMark } from '../connection/connection-status-mark'
-import type { ConnectionSummary } from '../hooks/ticket-reply'
+import { ConnectionStatusMark } from '../connection'
+import type { ConnectionSummary } from '../hooks'
 
 export type TicketsSidebarAccountFootProps = {
   connection: ConnectionSummary | null

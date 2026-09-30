@@ -1,18 +1,17 @@
 import { type ActorRefFrom, assertEvent, fromCallback, fromPromise, setup } from 'xstate'
 import type { Database } from '@/database/database'
-import type { SessionListChanges } from '@/domains/sessions/main/api/session-list-changes'
-import { createLiveSessionSupervisorMachine } from '@/domains/sessions/main/live/live-session-supervisor-machine'
-import type { SessionEventJournal } from '@/domains/sessions/main/live/session-event-journal'
-import type { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
-import { sessionSyncSupervisorMachine } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
+import type { SessionListChanges } from '@/domains/sessions/main/api'
+import type { SessionEventJournal, SessionInteractionBroker } from '@/domains/sessions/main/live'
+import { createLiveSessionSupervisorMachine } from '@/domains/sessions/main/live'
+import { sessionSyncSupervisorMachine } from '@/domains/sessions/main/sync'
 import {
   type TicketOperationSupervisorInput,
   ticketOperationSupervisorMachine,
-} from '@/domains/tickets/main/operations/ticket-operation-supervisor-machine'
+} from '@/domains/tickets/main/operations'
 import {
   type TicketSyncSupervisorInput,
   ticketSyncSupervisorMachine,
-} from '@/domains/tickets/main/sync/ticket-sync-supervisor-machine'
+} from '@/domains/tickets/main/sync'
 import type { HarnessCatalog } from '@/harnesses/harness-catalog'
 import {
   type HarnessRegistry,

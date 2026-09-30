@@ -1,15 +1,14 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CodeBlock } from '../ai-elements/code-block'
-import { detectCodeLanguageFromPath } from '../feed/content/code-language'
-import { FeedMermaid } from '../feed/content/feed-mermaid'
-import { patchFiles } from '../model/patch-files'
+import { CodeBlock } from '../ai-elements'
+import { detectCodeLanguageFromPath, FeedMermaid } from '../feed/content'
+import { patchFiles } from '../model'
 import type { SessionEvidence } from '../types'
 import { InspectorTerminal } from './inspector-terminal'
 import { SessionDiffViewer } from './session-diff-viewer'
 import { SessionFileInspector } from './session-file-inspector'
 import { SessionPatchViewer } from './session-patch-viewer'
-import { SessionSkillInspector } from './session-skill-inspector'
+import { SessionSkillInspector } from './skill'
 
 // A long path truncates at its start, so the filename at the end stays visible.
 function InspectorTitle({ title }: { title: string }) {

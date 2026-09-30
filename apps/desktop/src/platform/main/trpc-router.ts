@@ -7,22 +7,10 @@ import {
   type HarnessSignInProcedureContext,
   harnessSignInProcedures,
 } from '@/domains/harness-signin/main/harness-sign-in-procedures'
-import {
-  type ProjectApiContext,
-  projectProcedures,
-} from '@/domains/projects/main/api/project-procedures'
-import {
-  type SessionApiContext,
-  sessionProcedures,
-} from '@/domains/sessions/main/api/session-procedures'
-import {
-  type TicketProcedureContext,
-  ticketProcedures,
-} from '@/domains/tickets/main/api/ticket-procedures'
-import {
-  type WorkspaceApiContext,
-  workspaceProcedures,
-} from '@/domains/workspaces/main/api/workspace-procedures'
+import { type ProjectApiContext, projectProcedures } from '@/domains/projects/main/api'
+import { type SessionApiContext, sessionProcedures } from '@/domains/sessions/main/api'
+import { type TicketProcedureContext, ticketProcedures } from '@/domains/tickets/main/api'
+import { type WorkspaceApiContext, workspaceProcedures } from '@/domains/workspaces/main/api'
 import {
   type HarnessCatalogApiContext,
   harnessCatalogProcedures,

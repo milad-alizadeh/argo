@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Icon, type IconName } from '@/platform/renderer/components/icon/icon'
-import { SessionSkillBody } from '../../inspector/session-skill-inspector'
+import { SessionSkillBody } from '../../inspector/skill'
 import type { SessionFeedRow } from '../../types'
 import { CollapsibleText } from '../tools/collapsible-text'
 

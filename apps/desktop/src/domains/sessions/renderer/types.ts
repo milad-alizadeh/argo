@@ -1,5 +1,4 @@
-import type { SessionFeedRow } from '@/domains/sessions/api/feed/feed-rows'
-import type { FeedSubagent } from '@/domains/sessions/api/feed/feed-subagents'
+import type { FeedSubagent, SessionFeedRow } from '@/domains/sessions/api/feed'
 import type { SessionError } from '@/domains/sessions/api/session-error'
 import type { RouterOutputs } from '@/platform/renderer/trpc-client'
 

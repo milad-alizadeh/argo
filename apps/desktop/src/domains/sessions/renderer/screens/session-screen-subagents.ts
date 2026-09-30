@@ -1,4 +1,4 @@
-import type { FeedSubagent } from '@/domains/sessions/api/feed/feed-subagents'
+import type { FeedSubagent } from '@/domains/sessions/api/feed'
 import type { SessionSubagent } from '../types'
 import type { WorkSelection } from './work-selection'
 

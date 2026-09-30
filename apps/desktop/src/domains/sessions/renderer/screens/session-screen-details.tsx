@@ -8,23 +8,20 @@ import type { CatalogReadResult } from '@/harnesses/harness-catalog'
 import { harnessLabel } from '@/harnesses/presentation-registry'
 import { PermissionPrompt } from '@/platform/renderer/components/permission/permission-prompt'
 import { trpc } from '@/platform/renderer/trpc-client'
+import type { CatalogFailure } from '../composer'
 import {
-  type DraftContent,
-  useDurableComposerDraft,
-} from '../composer/draft/use-durable-composer-draft'
-import {
+  ComposerForm,
+  type ComposerFormProps,
   type ComposerIdentity,
   composerIdentityKey,
   composerIdentityOf,
-} from '../composer/identity/composer-identity'
-import { ComposerForm, type ComposerFormProps } from '../composer/layout/composer-form'
-import type { CatalogFailure } from '../composer/toolbar/turn-configuration-menu'
-import {
+  type DraftContent,
   type TurnConfiguration,
   initialTurnConfiguration as turnConfigurationFor,
-} from '../composer/turn-configuration/turn-configuration'
+  useDurableComposerDraft,
+} from '../composer'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
-import type { HarnessControl } from '../harness/harnesses'
+import type { HarnessControl } from '../harness'
 import { sessionName } from '../session-name'
 import type { Session, SessionExtras } from '../types'
 import { draftTarget } from './session-draft-target'
@@ -32,11 +29,9 @@ import { type ComposerFailure, useComposerFailureToasts } from './use-composer-f
 import { useSessionDetails } from './use-session-details'
 
 type SessionScreenDetailsProps = {
-  permission: ReturnType<
-    typeof import('../composer/hooks/use-session-permission').useSessionPermission
-  >
+  permission: ReturnType<typeof import('../composer').useSessionPermission>
   questionPending: boolean
-  liveStatus: ReturnType<typeof import('../feed/use-feed-reading').useFeedReading>['liveStatus']
+  liveStatus: ReturnType<typeof import('../feed').useFeedReading>['liveStatus']
   session: (Session & SessionExtras) | null
   harness: HarnessControl
   selectedSessionId: string | null

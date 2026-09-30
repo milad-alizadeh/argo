@@ -1,12 +1,13 @@
 import { z } from 'zod'
+import { effortLabel } from '@/harnesses/effort-labels'
 import {
   type HarnessInfo,
   harnessInfoSchema,
   invalidCatalogResponse,
   unavailable,
 } from '@/harnesses/harness-catalog'
-import type { CodexRequest } from './app-server/codex-app-server-client'
-import copy from './locales/en.json'
+import type { CodexRequest } from './app-server'
+import { en as copy } from './locales'
 
 const codexModelEffortSchema = z.object({
   reasoningEffort: z.string().min(1),
@@ -105,7 +106,7 @@ export function codexHarnessInfo(catalog: CodexModelCatalog | null): HarnessInfo
       ).values(),
     ].map((effort) => ({
       value: effort.reasoningEffort,
-      label: effort.reasoningEffort,
+      label: effortLabel(effort.reasoningEffort),
       readings: { exact: [effort.reasoningEffort], prefixes: [] },
     })),
     modes: SANDBOX_MODES.map((mode) => ({

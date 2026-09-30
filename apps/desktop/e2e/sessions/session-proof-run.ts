@@ -1,12 +1,14 @@
 // Each Session case declares its state with `test.use` and launches against its own root (#2326).
 import type { TestInfo } from '@playwright/test'
-import type { BrowserContext } from 'playwright-core'
+import type { BrowserContext, Page } from 'playwright-core'
 import { createMockSessionHarnessBackend } from '../../mocks/sessions/mock-session-harness-backend'
 import { packagedRun } from '../application-under-test'
 import { finishRecording, test as packagedTest, startRecording } from '../packaged-proof'
 import { feedStateSnapshot } from './feed-selectors'
-import { prepare } from './fixtures/feed.fixture'
+import { fixtureSession, readFixtureSessionsFrom } from './fixture-sessions'
+import { ARCHIVED_FIXTURES, CODEX_FIXTURES, FIXTURES, prepare } from './fixtures/feed.fixture'
 import { createPackagedSessionHarness, type PackagedSession } from './packaged-session-harness'
+import { archiveSet } from './page-trpc'
 import { createRealSessionHarnessBackend } from './real-harness/real-session-harness-backend'
 import type { SessionBackendOptions } from './session-backend-option'
 import type { SessionFixture, SessionHarnessBackend } from './session-harness-backend'
@@ -46,6 +48,20 @@ async function attachFailure(session: PackagedSession, testInfo: TestInfo) {
   })
 }
 
+// Codex lists its threads after Claude, so a case waits for every listed fixture before it reads the Roster.
+const LISTED_FIXTURES = [
+  ...FIXTURES.filter((name) => name !== 'unparseableBody'),
+  ...CODEX_FIXTURES,
+]
+
+// The reader archived these before the case begins, through the call the Roster's Archive makes.
+async function archiveFixtures(page: Page) {
+  await Promise.all(LISTED_FIXTURES.map(fixtureSession))
+  const sessionIds = await Promise.all(ARCHIVED_FIXTURES.map(fixtureSession))
+  const { failed } = await archiveSet(page, sessionIds, true)
+  if (failed.length > 0) throw new Error(`Could not archive ${failed.join(', ')}.`)
+}
+
 // `real` drives the signed-in local CLIs, so only the opt-in `real-sessions` project sets it.
 export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>({
   sessionBackend: ['mock', { option: true, scope: 'worker' }],
@@ -58,12 +74,19 @@ export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>(
     await use(BACKENDS[sessionBackend]())
   },
   sessionFixture: async ({ root, applicationUnderTest, projectSelected }, use) => {
-    await use(await prepare(root, applicationUnderTest, { projectSelected }))
+    const fixture = await prepare(root, applicationUnderTest, { projectSelected })
+    readFixtureSessionsFrom(fixture.userData)
+    try {
+      await use(fixture)
+    } finally {
+      readFixtureSessionsFrom(null)
+    }
   },
   session: async (
     {
       root,
       sessionFixture,
+      projectSelected,
       backend,
       slowReply,
       adversarialSeed,
@@ -88,9 +111,10 @@ export const test = packagedTest.extend<SessionFixtures, SessionBackendOptions>(
       videoDir: process.env.ARGO_E2E_VIDEO === '1' ? testInfo.outputPath('video') : undefined,
     })
     try {
-      await session.launch()
+      const page = await session.launch()
       if (packagedRun && !(await session.isPackaged()))
         throw new Error('The case did not drive the packaged app.')
+      if (projectSelected && sessionSyncFixture === undefined) await archiveFixtures(page)
       await use(session)
       await finishRecording(performanceProfile, traced, testInfo)
       if (testInfo.status !== testInfo.expectedStatus) await attachFailure(session, testInfo)

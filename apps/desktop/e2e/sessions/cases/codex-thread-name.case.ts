@@ -3,9 +3,12 @@ import { DatabaseSync } from 'node:sqlite'
 import { setTimeout } from 'node:timers/promises'
 import type { Page } from 'playwright-core'
 import { codexStatePath } from '../../../mocks/cli/codex/codex-state-store'
+import { fixtureSessionId } from '../../../mocks/sessions/mock-transcript-files'
+import { CODEX_PARENT } from '../fixtures/feed.fixture'
+import { refreshSessions } from '../gestures'
 import { sessionRows } from '../page-trpc'
 
-const THREAD = 'rollout-codexParent'
+const THREAD = fixtureSessionId(CODEX_PARENT)
 const NAME = 'Named by Codex Desktop'
 
 type ColumnInfo = { name: string; type: string; notnull: number; dflt_value: unknown }
@@ -55,6 +58,8 @@ async function sessionListTitle(page: Page) {
 export async function proveCodexThreadName(page: Page, codexTranscripts: string) {
   assert.deepEqual(await sessionListTitle(page), { text: 'Run Codex check', source: 'custom' })
   writeStateStore(codexTranscripts)
+  // Argo reads the name from the Harness's thread list, which a sync asks for.
+  await refreshSessions(page)
   const deadline = Date.now() + 10_000
   let title = await sessionListTitle(page)
   while (title?.text !== NAME && Date.now() < deadline) {

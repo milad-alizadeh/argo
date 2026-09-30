@@ -5,7 +5,7 @@ import type { TicketScopeTarget } from '@/database/ticket/validation'
 import type { TicketErrorCode } from '@/domains/tickets/api/errors'
 import type { TicketPriority, TicketStatus } from '@/domains/tickets/api/ticket'
 import { closureOf, type PriorityChange } from '@/domains/tickets/api/ticket'
-import { saveConfirmedFields } from '../database/ticket-upsert'
+import { saveConfirmedFields } from '../database'
 import {
   type RecordedIntent,
   recordIntent,

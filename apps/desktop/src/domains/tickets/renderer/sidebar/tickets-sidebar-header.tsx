@@ -4,8 +4,8 @@ import { Icon } from '@/platform/renderer/components/icon/icon'
 import { SidebarSearch } from '@/platform/renderer/components/sidebar-search'
 import { Button } from '@/platform/renderer/components/ui/button'
 import { providerPresentation } from '@/providers/presentation-registry'
-import type { ConnectionSummary } from '../hooks/ticket-reply'
-import { useTicketSearch } from '../state/use-ticket-search'
+import type { ConnectionSummary } from '../hooks'
+import { useTicketSearch } from '../state'
 
 // A new Ticket is written on the provider's own page until Argo can write one (#1850, #1851).
 function NewTicket({ connection }: { connection: ConnectionSummary | null }) {

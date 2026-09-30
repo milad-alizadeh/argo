@@ -7,7 +7,7 @@ import { type AccountAccess, asAccount, type TokenFailure } from '@/domains/acco
 import type { ConnectionPort } from '@/domains/connections/main'
 import { type TicketErrorCode, ticketError } from '@/domains/tickets/api/errors'
 import type { Reader, SourceRead, TicketSource } from './sources'
-import type { TicketIndex } from './sync/ticket-changes'
+import type { TicketIndex } from './sync'
 
 const TOKEN_ERRORS: Record<Exclude<TokenFailure['reason'], 'renewal-failed'>, TicketErrorCode> = {
   storage: 'storage-unavailable',

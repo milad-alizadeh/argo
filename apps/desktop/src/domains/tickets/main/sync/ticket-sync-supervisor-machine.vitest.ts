@@ -11,7 +11,7 @@ import {
   readClosedTickets,
   readSavedTicket,
   readSearchedTickets,
-} from '../database/ticket-queries'
+} from '../database'
 import type { PageRead, TicketSyncDependencies, TicketSyncRequest } from './ticket-sync-machine'
 import {
   nextScanDelay,

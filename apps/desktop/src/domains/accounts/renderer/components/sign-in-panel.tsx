@@ -11,7 +11,7 @@ import { Button } from '@/platform/renderer/components/ui/button'
 import { useContractText } from '@/platform/renderer/i18n/contract-text'
 import { useFocusRescue } from '@/platform/renderer/lib/focus-rescue'
 import { providerPresentation } from '@/providers/presentation-registry'
-import type { SignIn } from '../hooks/use-sign-in'
+import type { SignIn } from '../hooks'
 
 export type SignedIn = { login: string; outcome: AccountConnected['outcome'] }
 export type SignInPanelProps = Omit<SignIn, 'connected'> & {

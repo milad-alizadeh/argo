@@ -6,8 +6,8 @@ import { ticketTable } from '@/database/ticket/schema'
 import type { TicketScopeTarget } from '@/database/ticket/validation'
 import { ticketWriteIntent } from '@/database/ticket-write-intent/schema'
 import type { TicketConnection } from '@/domains/connections/main'
-import { saveOmittedTicket, saveReadTicket } from '../database/ticket-upsert'
-import { outcomeOf, type TicketRead } from '../sync/ticket-omitted'
+import { saveOmittedTicket, saveReadTicket } from '../database'
+import { outcomeOf, type TicketRead } from '../sync'
 import { settleIntent } from './ticket-write-intents'
 
 // The Account a scope's Ticket writes go through, or null when no Connection names one now.
