@@ -5,7 +5,7 @@
 import { z } from 'zod'
 import { identifierSchema } from '@/shared/validation'
 
-export const SETUP_RENDERER_CAPABILITIES = [
+const SETUP_RENDERER_CAPABILITIES = [
   'fields',
   'recommendations',
   'plan',
@@ -69,12 +69,11 @@ const booleanFieldSchema = setupFieldBaseSchema.extend({
   value: z.boolean().optional(),
 })
 
-export const setupFieldSchema = z.discriminatedUnion('type', [
+const setupFieldSchema = z.discriminatedUnion('type', [
   textFieldSchema,
   choiceFieldSchema,
   booleanFieldSchema,
 ])
-export type SetupField = z.infer<typeof setupFieldSchema>
 
 const localizedItemSchema = z.object({
   label: z.string().min(1),
@@ -95,7 +94,7 @@ const setupPlanItemSchema = z.object({
   fieldIds: z.array(identifierSchema).optional().default([]),
 })
 
-export const setupDocumentSchema = z
+const setupDocumentSchema = z
   .object({
     version: z.literal(1),
     requiredCapabilities: z.array(z.string().min(1)),
@@ -121,7 +120,7 @@ type ValidationContext = {
   addIssue: (issue: { code: 'custom'; message: string; path: (string | number)[] }) => void
 }
 
-export function validateSetupDocument(document: SetupDocument, context: ValidationContext) {
+function validateSetupDocument(document: SetupDocument, context: ValidationContext) {
   validateEnglishText(document, context)
   validatePlanSections(document, context)
   validateCapabilities(document, context)
@@ -229,7 +228,7 @@ function validateCapabilities(document: SetupDocument, context: ValidationContex
   })
 }
 
-export function setupLocale(document: SetupDocument, language: string) {
+function setupLocale(document: SetupDocument, language: string) {
   const locale = document.locales[language] ?? document.locales.en
   if (!locale) throw new Error('Setup document must provide an English locale.')
   return locale

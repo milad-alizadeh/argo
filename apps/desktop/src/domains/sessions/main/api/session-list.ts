@@ -19,7 +19,7 @@ import type { WatchedSessionStatus } from './watched-session-status'
 const t = initTRPC.create()
 
 // The roster reads the newest `pages` pages; loading more asks for one page more.
-export const sessionListInputSchema = z.strictObject({
+const sessionListInputSchema = z.strictObject({
   projectId: z.string().min(1),
   search: z.string().trim().max(500).default(''),
   pages: z.number().int().min(1).max(1_000).default(1),
@@ -72,7 +72,7 @@ const sessionTicketSchema = z.strictObject({
   createdAt: z.iso.datetime(),
 })
 
-export const sessionListRowSchema = z.strictObject({
+const sessionListRowSchema = z.strictObject({
   id: z.string().uuid(),
   retiredIds: z.array(z.string().uuid()),
   harness: z.string().min(1),

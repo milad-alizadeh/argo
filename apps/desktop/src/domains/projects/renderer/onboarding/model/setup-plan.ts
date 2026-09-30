@@ -4,12 +4,8 @@
 
 import { z } from 'zod'
 import { identifierSchema } from '@/shared/validation'
-import { projectSetupQuestionSchema } from './project-setup-question'
 
-export function findsCycle(
-  ids: Set<string>,
-  prerequisitesOf: Map<string, string[]>,
-): string | null {
+function findsCycle(ids: Set<string>, prerequisitesOf: Map<string, string[]>): string | null {
   const state = new Map<string, 'visiting' | 'done'>()
   for (const id of ids) {
     const cycle = visitCycle({ id, path: [], state, prerequisitesOf })
@@ -155,13 +151,13 @@ const verificationStepSchema = z.object({
   required: z.boolean(),
 })
 
-export const handoffSchema = z.object({
+const handoffSchema = z.object({
   mutationBoundary: z.string().min(1),
   acceptanceState: z.enum(['pending-review', 'accepted']),
   applicationOrder: z.array(identifierSchema),
 })
 
-export const setupPlanSchema = z
+const setupPlanSchema = z
   .object({
     source: planSourceSchema,
     inventory: inventorySchema,
@@ -188,7 +184,7 @@ export const setupPlanSchema = z
   })
   .superRefine(validateSetupPlan)
 
-export const acceptedSetupPlanSchema = z.object({
+const acceptedSetupPlanSchema = z.object({
   sourceRevision: z.string().min(1),
   projectRoot: z.string().min(1),
   fingerprints: z.record(z.string().min(1), z.string().min(1)),
@@ -207,14 +203,14 @@ export type AcceptedSetupPlan = z.infer<typeof acceptedSetupPlanSchema>
 type Step = { id: string; prerequisiteIds: string[] }
 type StepCollection = 'repositoryActions' | 'targetActions' | 'verification'
 
-export function validateIdentifiers(plan: SetupPlan, context: z.RefinementCtx): void {
+function validateIdentifiers(plan: SetupPlan, context: z.RefinementCtx): void {
   for (const [path, ids] of identifierCollections(plan)) {
     for (const id of duplicateIds(ids))
       context.addIssue({ code: 'custom', path: [path], message: `Duplicate id "${id}".` })
   }
 }
 
-export function validateTargetReferences(plan: SetupPlan, context: z.RefinementCtx): void {
+function validateTargetReferences(plan: SetupPlan, context: z.RefinementCtx): void {
   const knownTargetIds = new Set(plan.targets.map((target) => target.id))
   for (const [path, index, targetId] of targetReferences(plan)) {
     if (!knownTargetIds.has(targetId)) {
@@ -227,7 +223,7 @@ export function validateTargetReferences(plan: SetupPlan, context: z.RefinementC
   }
 }
 
-export function validateDefaultTargets(plan: SetupPlan, context: z.RefinementCtx): void {
+function validateDefaultTargets(plan: SetupPlan, context: z.RefinementCtx): void {
   const defaultCount = plan.targets.filter((target) => target.isDefault).length
   if (plan.targets.length > 0 && defaultCount !== 1) {
     context.addIssue({
@@ -238,7 +234,7 @@ export function validateDefaultTargets(plan: SetupPlan, context: z.RefinementCtx
   }
 }
 
-export function validatePrerequisites(plan: SetupPlan, context: z.RefinementCtx): void {
+function validatePrerequisites(plan: SetupPlan, context: z.RefinementCtx): void {
   const entries = prerequisiteEntries(plan)
   const stepIds = new Set(entries.map(([, , step]) => step.id))
   for (const [path, index, step] of entries) {
@@ -338,7 +334,7 @@ function duplicateIds(ids: string[]): string[] {
   return duplicates
 }
 
-export function validateSetupPlan(plan: SetupPlan, context: z.RefinementCtx): void {
+function validateSetupPlan(plan: SetupPlan, context: z.RefinementCtx): void {
   validateIdentifiers(plan, context)
   validateTargetReferences(plan, context)
   validateDefaultTargets(plan, context)
@@ -367,144 +363,4 @@ function validateVerificationCoverage(plan: SetupPlan, context: z.RefinementCtx)
       })
     }
   }
-}
-
-export interface PlanValidationOutcome {
-  valid: boolean
-  issues: string[]
-}
-
-/** Proves stable IDs for unchanged items across a planning revision (#2381 revision rule). */
-export function validatePlanRevision(
-  previousPlan: SetupPlan,
-  nextPlan: SetupPlan,
-): PlanValidationOutcome {
-  const issues =
-    nextPlan.source.planRevision === previousPlan.source.planRevision
-      ? ['A revised plan must advance its plan revision.']
-      : []
-  const previousKinds = entryKinds(previousPlan)
-  const nextKinds = entryKinds(nextPlan)
-  for (const [id, kind] of previousKinds) {
-    const nextKind = nextKinds.get(id)
-    if (nextKind && nextKind !== kind)
-      issues.push(`Id "${id}" changed kind from "${kind}" to "${nextKind}" across revisions.`)
-  }
-  return { valid: issues.length === 0, issues }
-}
-
-function entryKinds(plan: SetupPlan): Map<string, string> {
-  return new Map([
-    ...plan.targets.map((item) => [item.id, 'target'] as const),
-    ...plan.capabilities.map((item) => [item.id, 'capability'] as const),
-    ...plan.toolRecommendations.map((item) => [item.id, 'toolRecommendation'] as const),
-    ...[...plan.repositoryActions, ...plan.targetActions].map(
-      (item) => [item.id, 'action'] as const,
-    ),
-    ...plan.verification.map((item) => [item.id, 'verification'] as const),
-  ])
-}
-
-export const setupPlanningResultSchema = z.discriminatedUnion('status', [
-  z.object({
-    status: z.literal('needs-user-input'),
-    revision: z.string().min(1),
-    questions: z.array(projectSetupQuestionSchema).min(1),
-  }),
-  z.object({
-    status: z.literal('ready-for-review'),
-    revision: z.string().min(1),
-    plan: setupPlanSchema,
-  }),
-  z.object({
-    status: z.literal('cannot-plan'),
-    revision: z.string().min(1),
-    reason: z.enum([
-      'inaccessible-project',
-      'ambiguous-boundary',
-      'unsupported-workspace',
-      'skill-unavailable',
-    ]),
-    evidence: z.string().min(1),
-    recoveryAction: z.string().min(1),
-  }),
-])
-
-export type SetupPlanningResult = z.infer<typeof setupPlanningResultSchema>
-
-export function parseSetupPlanningResult(value: unknown): SetupPlanningResult {
-  return setupPlanningResultSchema.parse(value)
-}
-
-export function parseAcceptedSetupPlan(value: unknown): AcceptedSetupPlan {
-  return acceptedSetupPlanSchema.parse(value)
-}
-
-export interface AcceptedPlanValidationOutcome {
-  valid: boolean
-  issues: string[]
-}
-
-/** Proves an accepted plan derives from the reviewed source plan (#2381 acceptance rule). */
-export function validateAcceptedSetupPlan(
-  sourcePlan: SetupPlan,
-  acceptedPlan: AcceptedSetupPlan,
-): AcceptedPlanValidationOutcome {
-  const issues = validationIssues(sourcePlan, acceptedPlan)
-  return { valid: issues.length === 0, issues }
-}
-
-function validationIssues(sourcePlan: SetupPlan, acceptedPlan: AcceptedSetupPlan): string[] {
-  const issues = revisionIssues(sourcePlan, acceptedPlan)
-  for (const [name, acceptedItems, sourceItems] of boundedCollections(sourcePlan, acceptedPlan)) {
-    const sourceById = new Map(sourceItems.map((item) => [item.id, item]))
-    for (const acceptedItem of acceptedItems) {
-      const sourceItem = sourceById.get(acceptedItem.id)
-      if (!sourceItem) {
-        issues.push(
-          `Accepted ${name} entry "${acceptedItem.id}" is not present in the reviewed source plan.`,
-        )
-      } else if (!sameContent(sourceItem, acceptedItem)) {
-        issues.push(
-          `Accepted ${name} entry "${acceptedItem.id}" does not match the reviewed source plan.`,
-        )
-      }
-    }
-  }
-  return issues
-}
-
-function revisionIssues(sourcePlan: SetupPlan, acceptedPlan: AcceptedSetupPlan): string[] {
-  const issues: string[] = []
-  if (acceptedPlan.sourceRevision !== sourcePlan.source.planRevision) {
-    issues.push(
-      `Accepted plan revision "${acceptedPlan.sourceRevision}" does not match source revision "${sourcePlan.source.planRevision}".`,
-    )
-  }
-  if (acceptedPlan.projectRoot !== sourcePlan.source.projectRoot) {
-    issues.push('Accepted plan project root does not match the source plan.')
-  }
-  if (!sameContent(sourcePlan.source.fingerprints, acceptedPlan.fingerprints)) {
-    issues.push('Fingerprint set does not retain the complete source fingerprint set.')
-  }
-  return issues
-}
-
-function boundedCollections(sourcePlan: SetupPlan, acceptedPlan: AcceptedSetupPlan) {
-  return [
-    ['targets', acceptedPlan.targets, sourcePlan.targets],
-    [
-      'capabilities',
-      acceptedPlan.capabilities,
-      sourcePlan.capabilities.map(({ disposition: _disposition, ...capability }) => capability),
-    ],
-    ['toolRecommendations', acceptedPlan.toolRecommendations, sourcePlan.toolRecommendations],
-    ['repositoryActions', acceptedPlan.repositoryActions, sourcePlan.repositoryActions],
-    ['targetActions', acceptedPlan.targetActions, sourcePlan.targetActions],
-    ['verification', acceptedPlan.verification, sourcePlan.verification],
-  ] as const
-}
-
-function sameContent(left: unknown, right: unknown): boolean {
-  return JSON.stringify(left) === JSON.stringify(right)
 }

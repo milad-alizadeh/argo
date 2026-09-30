@@ -4,11 +4,10 @@
 // (a secret answer, e.g.) — a reason the Feed's `ask` row shows instead of a form.
 import { z } from 'zod'
 
-export const questionOptionSchema = z.strictObject({
+const questionOptionSchema = z.strictObject({
   label: z.string().min(1),
   description: z.string().nullable(),
 })
-export type QuestionOption = z.infer<typeof questionOptionSchema>
 
 // One question, verbatim off the Harness's own asked question (CONTEXT.md L2 · asking). `options` may
 // be empty: a Harness can ask a pure free-text question with no offered choices at all.

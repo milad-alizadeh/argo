@@ -12,7 +12,7 @@ import { Input } from '@/platform/renderer/components/ui/input'
 import { Label } from '@/platform/renderer/components/ui/label'
 import type { Session } from '../../types'
 
-export function normalizeSessionName(value: string): string {
+function normalizeSessionName(value: string): string {
   return [...value]
     .map((character) =>
       (character.codePointAt(0) ?? 0) < 32 ||

@@ -18,7 +18,7 @@ import '../editor/composer-content.css'
 import type { ComposerEditing } from '../editing/composer-editing'
 import { ComposerEditingProvider, useComposerEditing } from '../editing/composer-editing-context'
 
-export const COMPOSER_COLUMN = 'mx-auto w-full max-w-(--size-session-column)'
+const COMPOSER_COLUMN = 'mx-auto w-full max-w-(--size-session-column)'
 
 export type ComposerFormProps = {
   contextTokens?: number | null

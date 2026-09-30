@@ -33,7 +33,7 @@
     "quality:baseline:remove-resolved": "node scripts/quality/migration-ratchet.mts remove-resolved",
     "quality:boundaries": "node scripts/quality/migration-ratchet.mts check boundaries",
     "quality:boundaries:raw": "node scripts/quality/migration-ratchet.mts raw boundaries",
-    "quality:dead-code": "knip --no-progress --max-issues 601",
+    "quality:dead-code": "knip --no-progress --max-issues 0",
     "quality:duplication": "jscpd --config .jscpd.json --baseline-from-ref origin/main --fail-on-new-clones=0 apps packages scripts",
     "quality:raw": "bun run format-and-lint; argo_format_status=$?; bun run test:quality-ratchet; argo_ratchet_test_status=$?; bun run quality:types:raw; argo_types_status=$?; bun run quality:duplication; argo_duplication_status=$?; bun run quality:boundaries:raw; argo_boundaries_status=$?; bun run quality:dead-code; argo_dead_code_status=$?; test \"$argo_format_status\" -eq 0 -a \"$argo_ratchet_test_status\" -eq 0 -a \"$argo_types_status\" -eq 0 -a \"$argo_duplication_status\" -eq 0 -a \"$argo_boundaries_status\" -eq 0 -a \"$argo_dead_code_status\" -eq 0",
     "quality:types": "node scripts/quality/migration-ratchet.mts check types",

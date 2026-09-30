@@ -10,7 +10,7 @@ import { ticketContent } from '@/database/ticket-content/schema'
 import type { Ticket, TicketStatus } from '@/domains/tickets/api/ticket'
 import { saveListedTickets } from '../../database/ticket-upsert'
 
-export const OPEN: TicketStatus = { id: 'open', name: 'Open', category: 'unstarted' }
+const OPEN: TicketStatus = { id: 'open', name: 'Open', category: 'unstarted' }
 export const DONE: TicketStatus = { id: 'done', name: 'Done', category: 'completed' }
 export const SCOPE = { provider: 'github', scope: 'octocat/hello-world' } as const
 

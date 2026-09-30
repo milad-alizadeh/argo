@@ -8,7 +8,7 @@ import { sessionAttachmentInputSchema } from '@/domains/sessions/api/attachments
 import { harnessSchema } from '@/harnesses/harness'
 import { identifierSchema } from '@/shared/validation'
 
-export const draftTicketContextSchema = z.strictObject({
+const draftTicketContextSchema = z.strictObject({
   id: z.string().min(1),
   provider,
   key: z.string().min(1),

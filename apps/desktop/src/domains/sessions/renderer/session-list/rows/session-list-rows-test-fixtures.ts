@@ -29,7 +29,7 @@ export const archiveFetchingMore = { ...someArchived, isFetchingNextPage: true }
 export const archiveStillIndexing = { ...noArchive, historyComplete: false }
 export const archivedSoFarStillIndexing = { ...someArchived, historyComplete: false }
 
-export function activeSessionList(count: number) {
+function activeSessionList(count: number) {
   return Array.from({ length: count }, (_, index) => ({ id: `session-${index}` }) as Session)
 }
 

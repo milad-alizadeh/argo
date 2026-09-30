@@ -52,7 +52,7 @@ function isStreamedText(event: SessionLiveEvent): boolean {
 }
 
 // Without a live channel, only what vendor history can also settle reaches the Feed.
-export function canDeliver(event: SessionLiveEvent, live: boolean): boolean {
+function canDeliver(event: SessionLiveEvent, live: boolean): boolean {
   if (live) return true
   switch (event.type) {
     case 'permission':

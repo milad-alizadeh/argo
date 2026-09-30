@@ -4,7 +4,7 @@ import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import { sessionInsertSchema } from '@/database/session/validation'
 
-export type SessionUpsertInput = z.infer<typeof sessionInsertSchema>
+type SessionUpsertInput = z.infer<typeof sessionInsertSchema>
 
 export type SessionUpsert = (input: SessionUpsertInput) => string
 

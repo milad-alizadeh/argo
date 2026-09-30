@@ -9,7 +9,7 @@ import type { ContractFailure } from '@/platform/renderer/lib/query-client'
 import { providerPresentation } from '@/providers/presentation-registry'
 import type { ConnectionSummary } from '../hooks/ticket-reply'
 
-export type ProblemAction = { label: string; onClick: () => void; primary: boolean }
+type ProblemAction = { label: string; onClick: () => void; primary: boolean }
 
 export type TicketProblemProps = {
   icon: IconName

@@ -20,7 +20,7 @@ function marker(name: string): { command: string; needle: string } {
   return { command: `printf '%s%s\\n' ARGO ${name}`, needle: `ARGO${name}` }
 }
 
-export async function startsAndSaysSomething(cwd: string): Promise<void> {
+async function startsAndSaysSomething(cwd: string): Promise<void> {
   const session = new PtySession(SHELL, [], cwd)
   try {
     if (!(session.child.pid > 0)) throw new Error(`spawn returned pid ${session.child.pid}`)
@@ -40,7 +40,7 @@ export async function startsAndSaysSomething(cwd: string): Promise<void> {
 // pty pair whose child never execed — which is exactly the failure this whole file exists to
 // catch. So: assert the echo of the literal text, then assert the OUTPUT with a split marker the
 // echo can never contain.
-export async function echoesWhatIsTyped(cwd: string): Promise<void> {
+async function echoesWhatIsTyped(cwd: string): Promise<void> {
   const session = new PtySession(SHELL, [], cwd)
   try {
     const { command, needle } = marker('TYPED')
@@ -55,7 +55,7 @@ export async function echoesWhatIsTyped(cwd: string): Promise<void> {
 
 // The window size has to reach the kernel's terminal, not just node-pty's own state, so the check
 // asks the shell what IT thinks the size is.
-export async function resizeReachesTheShell(cwd: string): Promise<void> {
+async function resizeReachesTheShell(cwd: string): Promise<void> {
   const session = new PtySession(SHELL, [], cwd)
   try {
     session.resize(100, 30)
@@ -69,7 +69,7 @@ export async function resizeReachesTheShell(cwd: string): Promise<void> {
 
 // Ctrl-C is a byte on the wire that the line discipline turns into SIGINT for the foreground
 // process group. Nothing about that works if the pty was really a pipe.
-export async function interruptStopsTheForegroundJob(cwd: string): Promise<void> {
+async function interruptStopsTheForegroundJob(cwd: string): Promise<void> {
   const session = new PtySession(SHELL, [], cwd)
   try {
     session.write('sleep 30\n')
@@ -85,7 +85,7 @@ export async function interruptStopsTheForegroundJob(cwd: string): Promise<void>
 
 // Exactly once. A second onExit would double every Session teardown in the cockpit, and a missing
 // one would leave a Session that never ends.
-export async function exitFiresExactlyOnce(cwd: string): Promise<void> {
+async function exitFiresExactlyOnce(cwd: string): Promise<void> {
   const session = new PtySession(SHELL, ['-c', 'exit 0'], cwd)
   const deadline = Date.now() + CASE_TIMEOUT_MS
   while (session.exitCount === 0 && Date.now() < deadline) await sleep(20)
@@ -96,7 +96,7 @@ export async function exitFiresExactlyOnce(cwd: string): Promise<void> {
 
 // Killing the PTY has to take the process with it. A survivor is an orphan holding a descriptor
 // and, in the cockpit, a Session that reads as ended while its Harness is still running.
-export async function killLeavesNoOrphan(cwd: string): Promise<void> {
+async function killLeavesNoOrphan(cwd: string): Promise<void> {
   const session = new PtySession(SHELL, ['-c', 'sleep 30'], cwd)
   const { pid } = session.child
   await sleep(SETTLE_MS)

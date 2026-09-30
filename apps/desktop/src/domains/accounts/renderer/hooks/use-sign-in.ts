@@ -10,7 +10,7 @@ import { type ContractFailure, settle } from '@/platform/renderer/lib/query-clie
 import { trpcClient } from '@/platform/renderer/trpc-client'
 import { storeListing } from './use-accounts'
 
-export type SignInPhase = 'idle' | 'requesting' | 'waiting' | 'connected'
+type SignInPhase = 'idle' | 'requesting' | 'waiting' | 'connected'
 
 export type SignIn = {
   phase: SignInPhase

@@ -12,7 +12,7 @@ const CALLBACK_PATH = '/linear/callback'
 // How long the loopback waits for the browser before the sign-in ends as expired.
 export const AUTHORIZATION_PATIENCE_MILLISECONDS = 300_000
 
-export type Authorization = { url: string; outcome: Promise<GrantOutcome> }
+type Authorization = { url: string; outcome: Promise<GrantOutcome> }
 
 export type AuthorizationStart =
   | { ok: true; authorization: Authorization }

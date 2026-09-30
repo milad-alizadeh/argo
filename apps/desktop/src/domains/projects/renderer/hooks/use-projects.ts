@@ -8,7 +8,7 @@ export type ProjectSummary = RouterOutputs['projectList'][number]
 type ProjectErrorCode = keyof typeof messages.error
 const PROJECT_ERROR_CODES = Object.keys(messages.error) as ProjectErrorCode[]
 
-export type CockpitStatus = 'loading' | 'empty' | 'selected' | 'refused'
+type CockpitStatus = 'loading' | 'empty' | 'selected' | 'refused'
 
 export type Cockpit = {
   status: CockpitStatus
@@ -23,7 +23,7 @@ export type ProjectActions = {
   open: () => void
 }
 
-export type ProjectCockpit = Cockpit
+type ProjectCockpit = Cockpit
 
 const IDLE = { project: null, projects: [], message: null, code: null, busy: false } as const
 const LOADING: ProjectCockpit = { status: 'loading', ...IDLE }

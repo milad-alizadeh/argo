@@ -33,7 +33,7 @@ function descriptionValue(frontmatter: string) {
   )
 }
 
-export async function skillFrontmatterDescription(file: string): Promise<string> {
+async function skillFrontmatterDescription(file: string): Promise<string> {
   let text = ''
   try {
     const handle = await open(file, 'r')

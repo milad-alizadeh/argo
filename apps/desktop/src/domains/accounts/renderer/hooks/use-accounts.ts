@@ -43,9 +43,3 @@ export const useDisconnect = () =>
     mutationKey: ['accounts', 'disconnect'],
     mutationFn: (accountId: string) => trpcClient.accountDisconnect.mutate({ accountId }),
   })
-
-export const useDismissNotice = () =>
-  useListingAction({
-    mutationKey: ['accounts', 'dismiss-notice'],
-    mutationFn: () => trpcClient.accountDismissNotice.mutate(),
-  })

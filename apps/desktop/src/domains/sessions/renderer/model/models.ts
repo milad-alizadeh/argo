@@ -1,18 +1,11 @@
 import { z } from 'zod'
 import { feedActivitySchema } from '@/domains/sessions/api/feed-activity'
-import {
-  SESSION_TITLE_SOURCES,
-  sessionTitleSchema,
-  sessionTitleSourceSchema,
-} from '@/domains/sessions/api/session-title'
 import { ticketKey } from '@/domains/tickets/api/ticket'
 import { identifierSchema } from '@/shared/validation'
 
-export const SESSION_POSTURES = ['live', 'external'] as const
-export const sessionPostureSchema = z.enum(SESSION_POSTURES)
-export const SESSION_ENTRIES = ['interactive', 'headless'] as const
-export const sessionEntrySchema = z.enum(SESSION_ENTRIES)
-export const SESSION_STATUSES = [
+const SESSION_POSTURES = ['live', 'external'] as const
+const sessionPostureSchema = z.enum(SESSION_POSTURES)
+const SESSION_STATUSES = [
   'starting',
   'running',
   'permission',
@@ -22,25 +15,18 @@ export const SESSION_STATUSES = [
   'ended',
   'unknown',
 ] as const
-export const sessionStatusSchema = z.enum(SESSION_STATUSES)
-export {
-  SESSION_TITLE_SOURCES as TITLE_SOURCES,
-  sessionTitleSchema,
-  sessionTitleSourceSchema as titleSourceSchema,
-}
+const sessionStatusSchema = z.enum(SESSION_STATUSES)
 
 export type SessionPosture = z.infer<typeof sessionPostureSchema>
-export type SessionEntry = z.infer<typeof sessionEntrySchema>
 export type SessionStatus = z.infer<typeof sessionStatusSchema>
-export type SessionTitle = z.infer<typeof sessionTitleSchema>
 
 // CONTEXT.md L3 · Subagent, as the parent Session's transcript shows it: the events its adapter
 // reported, folded by Subagent id into one entry. `state` is what the newest event says, and the
 // Feed's newest row for the same Subagent says the same. Whether a running one is still running is
 // a question about the parent's own status too, which is why that fold is `subagents.ts`'s.
 // `startedAt` and `endedAt` are when its first event and its last `responded` were written.
-export const SUBAGENT_STATES = ['running', 'completed', 'failed', 'interrupted'] as const
-export const sessionSubagentSchema = z.strictObject({
+const SUBAGENT_STATES = ['running', 'completed', 'failed', 'interrupted'] as const
+const sessionSubagentSchema = z.strictObject({
   id: identifierSchema,
   label: z.string().nullable(),
   nickname: z.string().optional(),
@@ -51,18 +37,17 @@ export const sessionSubagentSchema = z.strictObject({
 export type SessionSubagent = z.infer<typeof sessionSubagentSchema>
 
 const countSchema = z.number().int().nonnegative()
-export const PLAN_ENTRY_STATUSES = ['pending', 'in_progress', 'completed'] as const
-export const planEntryStatusSchema = z.enum(PLAN_ENTRY_STATUSES)
+const PLAN_ENTRY_STATUSES = ['pending', 'in_progress', 'completed'] as const
+const planEntryStatusSchema = z.enum(PLAN_ENTRY_STATUSES)
 export type PlanEntryStatus = z.infer<typeof planEntryStatusSchema>
 
 // CONTEXT.md L3 · Plan: newest snapshot verbatim, plus its display position; malformed is never partial.
-export const sessionPlanEntrySchema = z.strictObject({
+const sessionPlanEntrySchema = z.strictObject({
   content: z.string().trim().min(1),
   position: countSchema,
   status: planEntryStatusSchema,
 })
-export type SessionPlanEntry = z.infer<typeof sessionPlanEntrySchema>
-export const sessionPlanSchema = z.discriminatedUnion('state', [
+const sessionPlanSchema = z.discriminatedUnion('state', [
   z.strictObject({ state: z.literal('available'), entries: z.array(sessionPlanEntrySchema) }),
   z.strictObject({ state: z.literal('malformed') }),
 ])
@@ -71,24 +56,14 @@ export type SessionPlan = z.infer<typeof sessionPlanSchema>
 // The newest Tool Call inside the open Turn: its canonical reader-facing label and kind, plus the
 // tool's own name and the one thing it acted on as metadata. `open` is the transcript holding no
 // answer to it yet, what lets the row read "Running" rather than "Ran" while the Session runs.
-export const sessionActivitySchema = feedActivitySchema
+const sessionActivitySchema = feedActivitySchema
 export type SessionActivity = z.infer<typeof sessionActivitySchema>
-
-// The newest pull request the Harness linked this Session to, as its own `pr-link` record states it.
-// Its state (open, merged, closed, draft) is the code host's fact (CONTEXT.md L4 · Delivery), and
-// no transcript holds it.
-export const sessionPullRequestSchema = z.strictObject({
-  number: countSchema,
-  url: z.string(),
-  repository: z.string().nullable(),
-})
-export type SessionPullRequest = z.infer<typeof sessionPullRequestSchema>
 
 // The Ticket a reader asserted this Session works on (CONTEXT.md L1 · Session → Ticket), the
 // fallback link ADR-0017 persists for a Session with no branch to derive one through. `title` and
 // `state` are the cached echo from the moment a reader connected it, never authoritative: a screen
 // that needs the current fact re-reads the Ticket through its Project's Connection.
-export const sessionTicketSchema = z.strictObject({
+const sessionTicketSchema = z.strictObject({
   projectId: identifierSchema,
   key: ticketKey,
   title: z.string(),
@@ -100,15 +75,15 @@ export type SessionTicket = z.infer<typeof sessionTicketSchema>
 // How a Shell command stands. A foreground command is `running` until its result lands, and is
 // then not read at all. A background one keeps its final state, because that result is what
 // replaces the running row the reader was watching (#1582).
-export const SHELL_STATES = ['running', 'completed', 'failed', 'interrupted'] as const
-export const shellStateSchema = z.enum(SHELL_STATES)
+const SHELL_STATES = ['running', 'completed', 'failed', 'interrupted'] as const
+const shellStateSchema = z.enum(SHELL_STATES)
 export type ShellState = z.infer<typeof shellStateSchema>
 
 // A shell command the Session ran: the first line of what it was asked to run, whether it was
 // sent to the background, and where it stands. `command` is absent where the call carries none.
 // A background command also names the file the Harness streams its output to, and the sentence the
 // notification ended it with.
-export const sessionShellCommandSchema = z.strictObject({
+const sessionShellCommandSchema = z.strictObject({
   id: identifierSchema,
   command: z.string().nullable(),
   label: z.string().nullable(),
@@ -122,7 +97,7 @@ export const sessionShellCommandSchema = z.strictObject({
 export type SessionShellCommand = z.infer<typeof sessionShellCommandSchema>
 
 // The newest Turn's Model, Effort and Mode, verbatim; null where no record states it yet.
-export const sessionTurnConfigurationSchema = z.strictObject({
+const sessionTurnConfigurationSchema = z.strictObject({
   model: z.string().nullable(),
   effort: z.string().nullable(),
   mode: z.string().nullable(),
@@ -138,13 +113,4 @@ export function currentSessionId<Session extends { id: string; retiredIds: strin
       (session) => session.id === rememberedId || session.retiredIds.includes(rememberedId),
     )?.id ?? null
   )
-}
-
-// The Session list order (#1593, #2239): newest-first by `updatedAt`, shared by every read that
-// re-sorts a set of rows rather than trusting an already-ordered source.
-export function newestFirst(
-  left: { updatedAt: string | null },
-  right: { updatedAt: string | null },
-): number {
-  return (right.updatedAt ?? '').localeCompare(left.updatedAt ?? '')
 }

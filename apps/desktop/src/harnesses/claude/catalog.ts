@@ -46,7 +46,7 @@ function readSupportedPermissionModes(executablePath: string): Promise<string[]>
   })
 }
 
-export class InvalidPermissionModesError extends Error {
+class InvalidPermissionModesError extends Error {
   constructor() {
     super('Claude help does not list permission modes.')
   }

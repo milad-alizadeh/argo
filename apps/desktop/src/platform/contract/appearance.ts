@@ -4,8 +4,8 @@ import { z } from 'zod'
 
 export const APPEARANCE_CHANGED_CHANNEL = 'argo:appearance:changed'
 
-export const APPEARANCES = ['system', 'light', 'dark'] as const
-export const appearanceSchema = z.enum(APPEARANCES)
+const APPEARANCES = ['system', 'light', 'dark'] as const
+const appearanceSchema = z.enum(APPEARANCES)
 export type Appearance = z.infer<typeof appearanceSchema>
 
 // The stored file. Another portable client may hold fields this build does not own, and a write
@@ -15,7 +15,7 @@ export const appearanceDocumentSchema = z.object({ appearance: appearanceSchema 
 // `dark` is the resolved answer: what the window actually draws once System has asked the
 // operating system. The renderer needs both, because the control shows the choice and the page
 // shows the resolution. This is also the push channel's shape, which carries no request id.
-export const appearanceStateSchema = z.strictObject({
+const appearanceStateSchema = z.strictObject({
   appearance: appearanceSchema,
   dark: z.boolean(),
 })
@@ -28,14 +28,10 @@ export const DEFAULT_APPEARANCE: Appearance = 'system'
 // `src/platform/renderer/styles/globals.css`: `oklch(1 0 0)` light,
 // `oklch(0.145 0 0)` dark. Change one and
 // change the other, or the window flashes the wrong ground on every launch.
-export const WINDOW_BACKGROUND = { light: '#ffffff', dark: '#0a0a0a' } as const
+const WINDOW_BACKGROUND = { light: '#ffffff', dark: '#0a0a0a' } as const
 
 export function windowBackground(dark: boolean): string {
   return dark ? WINDOW_BACKGROUND.dark : WINDOW_BACKGROUND.light
-}
-
-export function isAppearance(value: unknown): value is Appearance {
-  return appearanceSchema.safeParse(value).success
 }
 
 export function isAppearanceState(value: unknown): value is AppearanceState {

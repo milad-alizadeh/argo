@@ -33,10 +33,6 @@ export function isFeedRowPrompt(row: SessionFeedRow): row is PromptRow {
   return row.shape === 'prose' && row.role === 'user'
 }
 
-export function isFeedToolGroup(row: SessionFeedRow): row is ToolGroupRow {
-  return row.shape === 'tool-group'
-}
-
 export type FeedRowRendererProps = {
   row: SessionFeedRow
   activeEvidenceId: string | null
@@ -62,7 +58,7 @@ function PlainText({ text }: { text: string }) {
   return <p className="whitespace-pre-wrap break-words">{text}</p>
 }
 
-export const FEED_ROW_RENDERERS = {
+const FEED_ROW_RENDERERS = {
   tool: ({ row, activeEvidenceId, onOpenEvidence, streaming }) => (
     <FeedToolLine
       activeEvidenceId={activeEvidenceId}

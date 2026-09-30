@@ -18,7 +18,7 @@ const TerminalContext = React.createContext<TerminalContextValue>({
   output: '',
 })
 
-export function TerminalHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+function TerminalHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
@@ -30,7 +30,7 @@ export function TerminalHeader({ className, ...props }: HTMLAttributes<HTMLDivEl
   )
 }
 
-export function TerminalTitle({
+function TerminalTitle({
   children = 'Terminal',
   className,
   ...props

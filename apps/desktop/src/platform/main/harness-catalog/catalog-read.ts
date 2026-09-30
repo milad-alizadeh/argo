@@ -19,7 +19,7 @@ function selectedCatalog(actor: CatalogActor, harness: Harness) {
   return { info, failure: snapshot.context.failure }
 }
 
-export function readCatalog(actor: CatalogActor, harness: Harness, refresh = false) {
+function readCatalog(actor: CatalogActor, harness: Harness, refresh = false) {
   const before = actor.getSnapshot()
   if (refresh) actor.send({ type: before.matches('Failed') ? 'Retry' : 'Refresh' })
   else if (before.matches('Idle')) actor.send({ type: 'Catalog requested' })

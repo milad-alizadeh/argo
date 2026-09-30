@@ -40,7 +40,7 @@ function LinkContent({ link }: { link: TicketLink }) {
   )
 }
 
-export function Links({ links, listed, onSelect }: { links: readonly TicketLink[] } & Navigation) {
+function Links({ links, listed, onSelect }: { links: readonly TicketLink[] } & Navigation) {
   return (
     <ul className="-mx-(--spacing-shell-item) grid grid-cols-[minmax(0,1fr)]">
       {links.map((link) => (

@@ -10,14 +10,6 @@ export function isIdentifier(value: unknown): value is string {
   return identifierSchema.safeParse(value).success
 }
 
-export function requestIdentifier(value: unknown): string | null {
-  return isRecord(value) && isIdentifier(value.requestId) ? value.requestId : null
-}
-
-export function hasKeys(value: Record<string, unknown>, keys: string[]): boolean {
-  return Object.keys(value).length === keys.length && keys.every((key) => Object.hasOwn(value, key))
-}
-
 // A packaged proof's mock provider origin: plain HTTP on 127.0.0.1 and nothing else, written
 // exactly, so a stray value cannot send a bearer token off this machine.
 export function isLoopbackOrigin(origin: string | undefined): origin is string {

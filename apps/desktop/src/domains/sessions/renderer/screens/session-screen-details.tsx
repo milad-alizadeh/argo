@@ -30,7 +30,9 @@ import { draftTarget } from './session-draft-target'
 import { type ComposerFailure, useComposerFailureToasts } from './use-composer-failure-toasts'
 
 type SessionScreenDetailsProps = {
-  permission: ReturnType<typeof import('../composer').useSessionPermission>
+  permission: ReturnType<
+    typeof import('../composer/hooks/use-session-permission').useSessionPermission
+  >
   questionPending: boolean
   liveStatus: ReturnType<typeof import('../feed/use-feed-reading').useFeedReading>['liveStatus']
   session: Session | null

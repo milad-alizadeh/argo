@@ -21,7 +21,7 @@ export type SourceRead<T> = { ok: true; value: T } | { ok: false; failure: Sourc
 export type Reader = { endpoints: ProviderEndpoints; token: string }
 // The listing a page belongs to: the open backlog, or the Closed Tickets.
 export type ListingState = 'open' | 'closed'
-export type PageRequest = {
+type PageRequest = {
   scope: string
   query: string
   cursor: string | null

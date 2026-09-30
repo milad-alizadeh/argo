@@ -12,7 +12,7 @@ export const feedActivitySchema = feedActivityBaseSchema.extend({
   tool: z.string(),
   target: z.string().nullable(),
 })
-export type FeedActivity = z.infer<typeof feedActivitySchema>
+type FeedActivity = z.infer<typeof feedActivitySchema>
 
 export type FeedActivityState = { activity: FeedActivity | null; callId: string | null }
 export const EMPTY_FEED_ACTIVITY: FeedActivityState = { activity: null, callId: null }

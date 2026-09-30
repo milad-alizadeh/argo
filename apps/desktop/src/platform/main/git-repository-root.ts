@@ -7,7 +7,7 @@ import { isRecord } from '@/shared/validation'
 
 const run = promisify(execFile)
 
-export type RepositoryFailure =
+type RepositoryFailure =
   | 'access-denied'
   | 'git-unavailable'
   | 'internal-error'
