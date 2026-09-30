@@ -49,7 +49,7 @@ test('registered Claude reads root and subagent history and renames through the 
   const claude = registrations.claude
 
   expect(claude.harness).toBe('claude')
-  expect(claude.sessionDiscovery).toEqual(expect.any(Function))
+  expect(claude.listSessionSummaries).toEqual(expect.any(Function))
   await expect(
     claude.readHistory({
       nativeId: 'root',
@@ -86,7 +86,7 @@ test('registered Codex reads the selected thread through its shared request and 
   const codex = registrations.codex
 
   expect(codex.harness).toBe('codex')
-  expect(codex.sessionDiscovery).toEqual(expect.any(Function))
+  expect(codex.listSessionSummaries).toEqual(expect.any(Function))
   expect(codex.rename).toBeUndefined()
   await expect(
     codex.readHistory({

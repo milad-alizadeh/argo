@@ -33,7 +33,7 @@ import {
   SessionInteractionBroker,
 } from '@/domains/sessions/main/live'
 import { SessionSyncStatusStore } from '@/domains/sessions/main/session-sync-status'
-import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync'
+import { isKnownSession, type SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync'
 import {
   failInterruptedTicketSearches,
   markInterruptedTicketScans,
@@ -437,7 +437,14 @@ function attachWindowTrpc({
     watchedStatus,
     activities,
   })
-  const stopRosterSources = watchRosterSources({ database, registry, roster, watchedStatus })
+  const stopRosterSources = watchRosterSources({
+    database,
+    registry,
+    roster,
+    watchedStatus,
+    discover: (harness, nativeId) =>
+      actors.sessionSync.send({ type: 'Discover', harness, nativeId }),
+  })
   const detach = attachTrpcTransport({ window, rendererURL, router, context: undefined })
   return () => {
     stopRosterSources()
@@ -452,15 +459,17 @@ function watchRosterSources({
   registry,
   roster,
   watchedStatus,
+  discover,
 }: {
   database: Database
   registry: HarnessRegistry
   roster: SessionRosterChanges
   watchedStatus: WatchedSessionStatus
+  discover: (harness: Harness, nativeId: string) => void
 }): () => void {
   const stops = currentSessionSyncStatus().map((store) =>
     store.subscribe((event) => {
-      if (event.type === 'committed' || event.type === 'stored') roster.changed()
+      if (event.type === 'committed') roster.changed()
     }),
   )
   for (const harness of harnessSchema.options) {
@@ -469,6 +478,7 @@ function watchRosterSources({
     stops.push(
       watchHistoryActivity(files, (owner, turn, events) => {
         const at = Date.now()
+        if (!isKnownSession(database, harness, owner)) discover(harness, owner)
         const turnChanged = watchedStatus.record({ harness, nativeId: owner, turn, at })
         recordHistoryActivity(database, { harness, nativeId: owner, at, turnChanged })
         recordLiveSubagents(database, { harness, nativeId: owner, events })

@@ -1,4 +1,4 @@
-export { saveSessionBatch } from './session-sync-records'
+export { isKnownSession, saveSessionBatch } from './session-sync-records'
 export {
   type SessionSyncSupervisorCommand,
   sessionSyncSupervisorMachine,

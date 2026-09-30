@@ -1,5 +1,9 @@
 import { z } from 'zod'
-import type { DiscoveredSession, SessionDiscovery } from '@/domains/sessions/api/session-discovery'
+import type {
+  SessionSummary,
+  SessionSummaryList,
+  SessionSummaryReader,
+} from '@/domains/sessions/api/session-discovery'
 import type { CodexRequest } from '../app-server'
 
 const threadSchema = z
@@ -18,7 +22,7 @@ const pageSchema = z.strictObject({
   backwardsCursor: z.string().nullable().optional(),
 })
 const readSchema = z.strictObject({ thread: z.unknown() })
-type CodexSessionRecord = DiscoveredSession
+type CodexSessionRecord = SessionSummary
 
 function rememberRecord(records: Map<string, CodexSessionRecord>, record: CodexSessionRecord) {
   records.set(record.nativeId, { ...records.get(record.nativeId), ...record })
@@ -70,6 +74,22 @@ async function readListedCodexSessions(
   return records
 }
 
+async function readCodexThread(
+  request: CodexRequest,
+  nativeId: string,
+): Promise<{ found: false } | { found: true; record: CodexSessionRecord | null }> {
+  let result: z.infer<typeof readSchema>
+  try {
+    result = await request('thread/read', { threadId: nativeId, includeTurns: false }, (value) =>
+      readSchema.parse(value),
+    )
+  } catch (error) {
+    if (isMissingCodexThread(error)) return { found: false }
+    throw error
+  }
+  return { found: true, record: parseThread(result.thread) }
+}
+
 async function readKnownCodexSessions(input: {
   request: CodexRequest
   knownNativeIds: readonly string[]
@@ -78,20 +98,10 @@ async function readKnownCodexSessions(input: {
 }): Promise<void> {
   for (const nativeId of input.knownNativeIds) {
     if (input.records.has(nativeId)) continue
-    let result: z.infer<typeof readSchema>
-    try {
-      result = await input.request(
-        'thread/read',
-        { threadId: nativeId, includeTurns: false },
-        (value) => readSchema.parse(value),
-      )
-    } catch (error) {
-      if (isMissingCodexThread(error)) continue
-      throw error
-    }
-    const record = parseThread(result.thread)
-    if (record === null) input.reportMalformed()
-    else rememberRecord(input.records, record)
+    const thread = await readCodexThread(input.request, nativeId)
+    if (!thread.found) continue
+    if (thread.record === null) input.reportMalformed()
+    else rememberRecord(input.records, thread.record)
   }
 }
 
@@ -105,7 +115,7 @@ export async function readCodexSessions(input: {
   return [...records.values()]
 }
 
-export function createCodexSessionDiscovery(request: CodexRequest): SessionDiscovery {
+export function createCodexSessionSummaryList(request: CodexRequest): SessionSummaryList {
   return async ({ knownNativeIds }) => {
     let skipped = 0
     const records = await readCodexSessions({
@@ -116,5 +126,15 @@ export function createCodexSessionDiscovery(request: CodexRequest): SessionDisco
       },
     })
     return { records, skipped }
+  }
+}
+
+export function createCodexSessionSummaryReader(request: CodexRequest): SessionSummaryReader {
+  return async (nativeId) => {
+    const thread = await readCodexThread(request, nativeId)
+    if (!thread.found) return null
+    if (thread.record === null)
+      console.warn(`Rejected an unrecognised Codex Session summary for ${nativeId}.`)
+    return thread.record
   }
 }

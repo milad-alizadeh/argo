@@ -7,7 +7,10 @@ import {
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import type { PermissionDecision } from '@/domains/sessions/api/permissions'
 import type { Question, QuestionAnswer } from '@/domains/sessions/api/questions'
-import type { SessionDiscovery } from '@/domains/sessions/api/session-discovery'
+import type {
+  SessionSummaryList,
+  SessionSummaryReader,
+} from '@/domains/sessions/api/session-discovery'
 import type { SessionHistoryTarget } from '@/domains/sessions/api/session-history'
 import {
   type SessionLiveEventBody,
@@ -95,7 +98,8 @@ export type HarnessRegistration<Id extends Harness = Harness> = HarnessReadiness
   // Commands a draft can show before a live Session exists. A Harness without this stays pending.
   listCommands?: (input: { cwd: string | null }) => Promise<ComposerCommandListing>
   rename?: (nativeId: string, title: string) => Promise<void>
-  sessionDiscovery: SessionDiscovery
+  listSessionSummaries: SessionSummaryList
+  getSessionSummary: SessionSummaryReader
   // A later Send may change only these Turn settings; any setting left out stays fixed.
   changeableTurnSettings: readonly ('model' | 'effort' | 'mode')[]
   acceptsAttachments: boolean

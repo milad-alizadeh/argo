@@ -33,7 +33,6 @@ function sessionListCaller(
     activity_at INTEGER,
     list_order_at INTEGER NOT NULL DEFAULT 0,
     activity TEXT,
-    subagents_read_at INTEGER,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
   ); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);

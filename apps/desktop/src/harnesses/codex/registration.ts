@@ -9,7 +9,8 @@ import { createCodexSignInDriver, createSystemCodexReadiness } from './readiness
 import {
   codexHistoryOwner,
   codexHistoryTurn,
-  createCodexSessionDiscovery,
+  createCodexSessionSummaryList,
+  createCodexSessionSummaryReader,
   hasCodexSessionTurn,
   openCodexHistoryReader,
   openCodexSessionChannel,
@@ -25,7 +26,8 @@ export function createCodexRegistration(
   const signInExecutable = process.env[HARNESS_SIGNIN_CODEX_EXECUTABLE_ENV]
   return {
     harness: 'codex',
-    sessionDiscovery: createCodexSessionDiscovery(request),
+    listSessionSummaries: createCodexSessionSummaryList(request),
+    getSessionSummary: createCodexSessionSummaryReader(request),
     checkReadiness: createSystemCodexReadiness(signInExecutable),
     signIn: createCodexSignInDriver(signInExecutable),
     readCatalog: () => readCodexHarnessInfo(request),

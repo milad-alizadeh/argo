@@ -52,6 +52,7 @@ test('starts a clean database with every ordered migration', async () => {
       { name: '20260929131520_ticket_write_intent' },
       { name: '20260929180801_cloudy_blizzard' },
       { name: '20260930101125_session_list_order' },
+      { name: '20260930113033_drop_subagents_read_at' },
     ])
     expect(
       database

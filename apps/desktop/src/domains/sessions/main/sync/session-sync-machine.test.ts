@@ -3,8 +3,8 @@ import { test } from 'vitest'
 import { createActor, type EventFrom, fromPromise, waitFor } from 'xstate'
 import { getShortestPaths } from 'xstate/graph'
 import type {
-  SessionDiscovery,
-  SessionDiscoveryResult,
+  SessionSummaryList,
+  SessionSummaryListResult,
 } from '@/domains/sessions/api/session-discovery'
 import { SESSION_SYNC_BATCH_SIZE, sessionSyncMachine } from './session-sync-machine'
 
@@ -12,11 +12,11 @@ const twoBatchRecords = Array.from({ length: SESSION_SYNC_BATCH_SIZE + 1 }, (_va
   nativeId: `native-${index}`,
   customTitle: null,
 }))
-const sessionDiscovery: SessionDiscovery = async () => ({ records: [], skipped: 0 })
-const input = { harness: 'claude' as const, knownNativeIds: [], sessionDiscovery }
+const listSessionSummaries: SessionSummaryList = async () => ({ records: [], skipped: 0 })
+const input = { harness: 'claude' as const, knownNativeIds: [], listSessionSummaries }
 const fetchTwoBatchRecords = fromPromise<
-  SessionDiscoveryResult,
-  { knownNativeIds: string[]; sessionDiscovery: SessionDiscovery }
+  SessionSummaryListResult,
+  { knownNativeIds: string[]; listSessionSummaries: SessionSummaryList }
 >(async () => ({
   records: twoBatchRecords,
   skipped: 0,
@@ -35,7 +35,7 @@ test('moves from Idle through Fetching and Saving to Ready', async () => {
     {
       input: {
         ...input,
-        sessionDiscovery: async () => ({
+        listSessionSummaries: async () => ({
           records: [{ nativeId: 'native-1', customTitle: null }],
           skipped: 2,
         }),
@@ -60,8 +60,8 @@ test('fails after three fetch attempts', async () => {
     sessionSyncMachine.provide({
       actors: {
         fetch: fromPromise<
-          SessionDiscoveryResult,
-          { knownNativeIds: string[]; sessionDiscovery: SessionDiscovery }
+          SessionSummaryListResult,
+          { knownNativeIds: string[]; listSessionSummaries: SessionSummaryList }
         >(async () => {
           attempts += 1
           throw new Error('Claude is unavailable.')

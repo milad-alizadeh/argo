@@ -9,9 +9,9 @@ import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
 import { sessionArchive } from '@/database/session-archive/schema'
 import { SessionActivities, SessionRosterChanges } from '@/domains/sessions/main/api'
-import { refreshSessionSubagents } from '@/domains/sessions/main/database'
-import { SessionEventJournal } from '@/domains/sessions/main/live'
+import { recordLiveSubagents } from '@/domains/sessions/main/database'
 import { saveSessionBatch } from '@/domains/sessions/main/sync'
+import { sessionRouterDependencies } from '@/mocks/sessions/session-router-dependencies.fixture'
 import { type AppRouter, type AppRouterDependencies, createAppRouter } from './trpc-router'
 
 let userData: string
@@ -20,28 +20,7 @@ let database: Database
 function routerDependencies(
   sessions: Partial<AppRouterDependencies['sessions']> = {},
 ): AppRouterDependencies {
-  return {
-    accounts: {},
-    catalog: {},
-    harnessSignIn: {},
-    projects: { database },
-    sessions: {
-      database,
-      journal: new SessionEventJournal(),
-      hasLiveChannel: () => false,
-      readHistory: async () => [],
-      roster: new SessionRosterChanges(),
-      watchedStatus: { statusOf: () => null },
-      supervisor: {
-        getSnapshot: () => ({ context: { sessions: {} } }),
-        send: () => {},
-        on: () => ({ unsubscribe: () => {} }),
-      },
-      ...sessions,
-    },
-    tickets: {},
-    workspaces: { database },
-  } as unknown as AppRouterDependencies
+  return sessionRouterDependencies(database, sessions)
 }
 
 async function firstRosterUpdates() {
@@ -168,7 +147,7 @@ test('keeps both roster activities when the selected Feed changes', async () => 
   }
 })
 
-test('lists the Subagents the sync read from each Session history', async () => {
+test('lists the Subagents a watched Session named', async () => {
   database
     .insert(project)
     .values({ id: 'project-1', path: '/work/one', commonDirectory: '/work/one/.git' })
@@ -176,24 +155,28 @@ test('lists the Subagents the sync read from each Session history', async () => 
   saveSessionBatch(database, 'codex', [
     { nativeId: 'native-2', projectId: 'project-1', cwd: '/work/one', activityAt: 1 },
   ])
-  await refreshSessionSubagents({
-    database,
+  recordLiveSubagents(database, {
     harness: 'codex',
-    readHistory: async () => [
+    nativeId: 'native-2',
+    events: [
       {
-        kind: 'delegation',
-        id: 'call-1',
-        event: 'started',
-        agentId: 'agent-1',
-        status: 'running',
-        name: 'Survey',
-        prompt: null,
-        model: null,
-        summary: null,
+        type: 'content',
+        commandId: null,
+        turnId: null,
+        vendorEventId: null,
+        content: {
+          kind: 'delegation',
+          id: 'call-1',
+          event: 'started',
+          agentId: 'agent-1',
+          status: 'running',
+          name: 'Survey',
+          prompt: null,
+          model: null,
+          summary: null,
+        },
       },
     ],
-    stored: () => {},
-    stopped: () => false,
   })
 
   const updates = await firstRosterUpdates()

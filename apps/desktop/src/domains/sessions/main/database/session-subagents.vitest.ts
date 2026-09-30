@@ -4,14 +4,9 @@ import path from 'node:path'
 import { afterEach, beforeEach, expect, test } from 'vitest'
 import { type Database, openDatabase } from '@/database/database'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
-import type { SessionHistoryTarget } from '@/domains/sessions/api/session-history'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import { saveSessionBatch } from '../sync'
-import {
-  recordLiveSubagents,
-  refreshSessionSubagents,
-  storedSessionSubagents,
-} from './session-subagents'
+import { recordLiveSubagents, storedSessionSubagents } from './session-subagents'
 
 let directory: string
 let database: Database
@@ -55,139 +50,11 @@ function argoId(nativeId: string): string {
   return row.argo_id
 }
 
-function historyOf(histories: Record<string, FeedContent[]>, reads: SessionHistoryTarget[]) {
-  return async (target: SessionHistoryTarget) => {
-    reads.push(target)
-    const content = histories[target.nativeId]
-    if (content === undefined) throw new Error(`No history for ${target.nativeId}.`)
-    return content
-  }
-}
-
-test('stores the folded Subagents of each Project Session and reads each activity once', async () => {
-  saveSessionBatch(database, 'claude', [
-    { nativeId: 'parent', projectId: 'project-1', cwd: '/repo', activityAt: 10 },
-    { nativeId: 'plain', projectId: 'project-1', cwd: '/repo', activityAt: 5 },
-    { nativeId: 'unmatched', cwd: '/elsewhere', activityAt: 20 },
-  ])
-  const reads: SessionHistoryTarget[] = []
-  const readHistory = historyOf(
-    {
-      parent: [
-        { kind: 'message', id: 'prompt', role: 'user', text: 'Survey, then fix.' },
-        delegation('agent-a', 'running', 'Survey'),
-        delegation('agent-b', 'paused', null),
-        delegation('agent-a', 'completed', 'Survey'),
-      ],
-      plain: [],
-    },
-    reads,
-  )
-
-  const result = await refreshSessionSubagents({
-    database,
-    harness: 'claude',
-    readHistory,
-    stored: () => {},
-    stopped: () => false,
-  })
-
-  expect(result).toEqual({ read: 2, failed: 0 })
-  expect(reads).toEqual([
-    { nativeId: 'parent', subagentId: null, cwd: '/repo' },
-    { nativeId: 'plain', subagentId: null, cwd: '/repo' },
-  ])
-  const parent = argoId('parent')
-  expect(storedSessionSubagents(database, [parent, argoId('plain')])).toEqual(
-    new Map([
-      [
-        parent,
-        [
-          { id: 'agent-a', label: 'Survey', state: 'completed' },
-          { id: 'agent-b', label: null, state: 'running' },
-        ],
-      ],
-    ]),
-  )
-
-  reads.length = 0
-  await refreshSessionSubagents({
-    database,
-    harness: 'claude',
-    readHistory,
-    stored: () => {},
-    stopped: () => false,
-  })
-  expect(reads).toEqual([])
-})
-
-test('rereads a Session whose activity moved and replaces what it stored', async () => {
-  saveSessionBatch(database, 'codex', [
-    { nativeId: 'parent', projectId: 'project-1', cwd: '/repo', activityAt: 10 },
-  ])
-  const histories: Record<string, FeedContent[]> = {
-    parent: [delegation('agent-a', 'running', 'Survey')],
-  }
-  const refresh = () =>
-    refreshSessionSubagents({
-      database,
-      harness: 'codex',
-      readHistory: historyOf(histories, []),
-      stored: () => {},
-      stopped: () => false,
-    })
-  await refresh()
-  histories.parent = [delegation('agent-b', 'failed', 'Fix')]
-  saveSessionBatch(database, 'codex', [{ nativeId: 'parent', activityAt: 11 }])
-
-  await refresh()
-
-  expect(storedSessionSubagents(database, [argoId('parent')]).get(argoId('parent'))).toEqual([
-    { id: 'agent-b', label: 'Fix', state: 'failed' },
-  ])
-})
-
-test('counts an unreadable history, stops retrying it, and drops a read that outlives a stop', async () => {
-  saveSessionBatch(database, 'claude', [
-    { nativeId: 'broken', projectId: 'project-1', cwd: '/repo', activityAt: 30 },
-    { nativeId: 'parent', projectId: 'project-1', cwd: '/repo', activityAt: 20 },
-    { nativeId: 'later', projectId: 'project-1', cwd: '/repo', activityAt: 10 },
-  ])
-  const reads: SessionHistoryTarget[] = []
-  let stored = 0
-
-  const result = await refreshSessionSubagents({
-    database,
-    harness: 'claude',
-    readHistory: historyOf(
-      {
-        parent: [delegation('agent-a', 'running', null)],
-        later: [delegation('agent-c', 'running', null)],
-      },
-      reads,
-    ),
-    stored: () => {
-      stored += 1
-    },
-    stopped: () => reads.length === 3,
-  })
-
-  expect(result).toEqual({ read: 1, failed: 1 })
-  expect(reads.map((target) => target.nativeId)).toEqual(['broken', 'parent', 'later'])
-  expect(stored).toBe(2)
-  expect(storedSessionSubagents(database, [argoId('parent')]).get(argoId('parent'))).toHaveLength(1)
-  const unread = database.$client
-    .prepare('SELECT native_id FROM session WHERE subagents_read_at IS NULL ORDER BY native_id')
-    .all()
-    .map((row) => row.native_id)
-  expect(unread).toEqual(['later'])
-})
-
 function contentEvent(content: FeedContent): SessionLiveEventBody {
   return { type: 'content', commandId: null, turnId: null, vendorEventId: null, content }
 }
 
-test('records a running Session’s Subagents without stamping the Session as read', () => {
+test('records a running Session’s Subagents', () => {
   saveSessionBatch(database, 'claude', [
     { nativeId: 'parent', projectId: 'project-1', cwd: '/repo', activityAt: 10 },
   ])
@@ -207,10 +74,6 @@ test('records a running Session’s Subagents without stamping the Session as re
   expect(storedSessionSubagents(database, [parent]).get(parent)).toEqual([
     { id: 'agent-a', label: 'Survey', state: 'completed' },
   ])
-  const read = database.$client
-    .prepare('SELECT subagents_read_at FROM session WHERE native_id = ?')
-    .get('parent')
-  expect(read?.subagents_read_at).toBe(null)
 })
 
 test('ignores a live Subagent whose Session is not stored', () => {

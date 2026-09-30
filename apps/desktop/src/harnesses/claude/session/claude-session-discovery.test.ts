@@ -1,12 +1,12 @@
 import { expect, test } from 'bun:test'
-import { discoverClaudeSessions } from './claude-session-discovery'
+import { getClaudeSessionSummary, listClaudeSessionSummaries } from './claude-session-discovery'
 
 const ID_ONE = '00000000-0000-4000-8000-000000000001'
 const ID_TWO = '00000000-0000-4000-8000-000000000002'
 
 test('returns generic Session records and counts malformed Claude metadata', async () => {
   const requested: string[] = []
-  const result = await discoverClaudeSessions({
+  const result = await listClaudeSessionSummaries({
     knownNativeIds: [ID_ONE],
     reader: {
       list: async () => [{ sessionId: 'invalid', summary: 'Bad', lastModified: 1 }],
@@ -25,7 +25,7 @@ test('returns generic Session records and counts malformed Claude metadata', asy
 
 test('reads interactive Sessions and gets metadata for known Argo Sessions', async () => {
   const requested: string[] = []
-  const result = await discoverClaudeSessions({
+  const result = await listClaudeSessionSummaries({
     knownNativeIds: [ID_ONE, ID_TWO],
     reader: {
       list: async () => [
@@ -51,7 +51,7 @@ test('reads interactive Sessions and gets metadata for known Argo Sessions', asy
 })
 
 test('distinguishes a missing custom title from an explicit removal', async () => {
-  const result = await discoverClaudeSessions({
+  const result = await listClaudeSessionSummaries({
     knownNativeIds: [],
     reader: {
       list: async () => [
@@ -63,4 +63,22 @@ test('distinguishes a missing custom title from an explicit removal', async () =
   })
   expect(result.records[0]).not.toHaveProperty('customTitle')
   expect(result.records[1]).toHaveProperty('customTitle', null)
+})
+
+test('gets one Session summary without listing, and null for one Claude does not know', async () => {
+  const reader = {
+    list: async () => {
+      throw new Error('A single summary must not list every Session.')
+    },
+    get: async (nativeId: string) =>
+      nativeId === ID_ONE
+        ? { sessionId: ID_ONE, summary: 'New Session', lastModified: 3 }
+        : undefined,
+  }
+  expect(await getClaudeSessionSummary(ID_ONE, reader)).toEqual({
+    nativeId: ID_ONE,
+    preview: 'New Session',
+    activityAt: 3,
+  })
+  expect(await getClaudeSessionSummary(ID_TWO, reader)).toBeNull()
 })

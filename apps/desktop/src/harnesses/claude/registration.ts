@@ -13,7 +13,8 @@ import {
   claudeHistoryTurn,
   claudeSessionChannelOpener,
   claudeSessionRenamer,
-  discoverClaudeSessions,
+  getClaudeSessionSummary,
+  listClaudeSessionSummaries,
   openClaudeHistoryReader,
   readClaudeSessionHistory,
   readClaudeSkillCommands,
@@ -25,7 +26,8 @@ export function createClaudeRegistration(): HarnessRegistration<'claude'> {
   const signInExecutable = process.env[HARNESS_SIGNIN_CLAUDE_EXECUTABLE_ENV]
   return {
     harness: 'claude',
-    sessionDiscovery: discoverClaudeSessions,
+    listSessionSummaries: listClaudeSessionSummaries,
+    getSessionSummary: (nativeId) => getClaudeSessionSummary(nativeId),
     checkReadiness: createSystemClaudeReadiness(signInExecutable),
     signIn: createClaudeSignInDriver(signInExecutable),
     readCatalog: () => readClaudeHarnessInfo(executable),
