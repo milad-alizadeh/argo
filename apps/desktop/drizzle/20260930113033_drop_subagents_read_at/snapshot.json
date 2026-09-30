@@ -1,10 +1,8 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "18f3b22f-9351-49fb-ad6f-9d1b3e9528e4",
-  "prevIds": [
-    "89216d54-b5aa-4b27-854f-a82da020bef8"
-  ],
+  "id": "49fee6cd-9dfe-46d7-b102-4ba8f53292af",
+  "prevIds": ["89216d54-b5aa-4b27-854f-a82da020bef8"],
   "ddl": [
     {
       "name": "project",
@@ -302,7 +300,7 @@
       "autoincrement": false,
       "default": "0",
       "generated": null,
-      "name": "sort_order",
+      "name": "list_order_at",
       "entityType": "columns",
       "table": "session"
     },
@@ -313,26 +311,6 @@
       "default": null,
       "generated": null,
       "name": "activity",
-      "entityType": "columns",
-      "table": "session"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "status",
-      "entityType": "columns",
-      "table": "session"
-    },
-    {
-      "type": "integer",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "subagents_read_at",
       "entityType": "columns",
       "table": "session"
     },
@@ -1397,13 +1375,9 @@
       "table": "ticket_write_intent"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -1412,13 +1386,9 @@
       "table": "workspace"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
       "nameExplicit": false,
@@ -1427,13 +1397,9 @@
       "table": "session"
     },
     {
-      "columns": [
-        "workspace_id"
-      ],
+      "columns": ["workspace_id"],
       "tableTo": "workspace",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
       "nameExplicit": false,
@@ -1442,13 +1408,9 @@
       "table": "session"
     },
     {
-      "columns": [
-        "session_id"
-      ],
+      "columns": ["session_id"],
       "tableTo": "session",
-      "columnsTo": [
-        "argo_id"
-      ],
+      "columnsTo": ["argo_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
       "nameExplicit": false,
@@ -1457,13 +1419,9 @@
       "table": "session_command"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -1472,13 +1430,9 @@
       "table": "composer_draft"
     },
     {
-      "columns": [
-        "session_id"
-      ],
+      "columns": ["session_id"],
       "tableTo": "session",
-      "columnsTo": [
-        "argo_id"
-      ],
+      "columnsTo": ["argo_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -1487,13 +1441,9 @@
       "table": "composer_draft"
     },
     {
-      "columns": [
-        "workspace_id"
-      ],
+      "columns": ["workspace_id"],
       "tableTo": "workspace",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -1502,13 +1452,9 @@
       "table": "composer_draft"
     },
     {
-      "columns": [
-        "session_id"
-      ],
+      "columns": ["session_id"],
       "tableTo": "session",
-      "columnsTo": [
-        "argo_id"
-      ],
+      "columnsTo": ["argo_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -1517,13 +1463,9 @@
       "table": "session_subagent"
     },
     {
-      "columns": [
-        "session_id"
-      ],
+      "columns": ["session_id"],
       "tableTo": "session",
-      "columnsTo": [
-        "argo_id"
-      ],
+      "columnsTo": ["argo_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -1532,13 +1474,9 @@
       "table": "session_archive"
     },
     {
-      "columns": [
-        "ticket_id"
-      ],
+      "columns": ["ticket_id"],
       "tableTo": "ticket",
-      "columnsTo": [
-        "argo_id"
-      ],
+      "columnsTo": ["argo_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -1547,13 +1485,9 @@
       "table": "ticket_content"
     },
     {
-      "columns": [
-        "ticket_id"
-      ],
+      "columns": ["ticket_id"],
       "tableTo": "ticket",
-      "columnsTo": [
-        "argo_id"
-      ],
+      "columnsTo": ["argo_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -1562,13 +1496,9 @@
       "table": "ticket_search_ticket_link"
     },
     {
-      "columns": [
-        "ticket_id"
-      ],
+      "columns": ["ticket_id"],
       "tableTo": "ticket",
-      "columnsTo": [
-        "argo_id"
-      ],
+      "columnsTo": ["argo_id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -1577,143 +1507,105 @@
       "table": "ticket_write_intent"
     },
     {
-      "columns": [
-        "session_id",
-        "subagent_id"
-      ],
+      "columns": ["session_id", "subagent_id"],
       "nameExplicit": false,
       "name": "session_subagent_pk",
       "entityType": "pks",
       "table": "session_subagent"
     },
     {
-      "columns": [
-        "provider",
-        "scope",
-        "kind"
-      ],
+      "columns": ["provider", "scope", "kind"],
       "nameExplicit": false,
       "name": "ticket_sync_pk",
       "entityType": "pks",
       "table": "ticket_sync"
     },
     {
-      "columns": [
-        "provider",
-        "scope",
-        "query"
-      ],
+      "columns": ["provider", "scope", "query"],
       "nameExplicit": false,
       "name": "ticket_search_pk",
       "entityType": "pks",
       "table": "ticket_search"
     },
     {
-      "columns": [
-        "provider",
-        "scope",
-        "query",
-        "ticket_id"
-      ],
+      "columns": ["provider", "scope", "query", "ticket_id"],
       "nameExplicit": false,
       "name": "ticket_search_ticket_link_pk",
       "entityType": "pks",
       "table": "ticket_search_ticket_link"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "project_pk",
       "table": "project",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "workspace_pk",
       "table": "workspace",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "argo_id"
-      ],
+      "columns": ["argo_id"],
       "nameExplicit": false,
       "name": "session_pk",
       "table": "session",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "command_id"
-      ],
+      "columns": ["command_id"],
       "nameExplicit": false,
       "name": "session_command_pk",
       "table": "session_command",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "harness"
-      ],
+      "columns": ["harness"],
       "nameExplicit": false,
       "name": "session_sync_status_pk",
       "table": "session_sync_status",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "composer_draft_pk",
       "table": "composer_draft",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "session_id"
-      ],
+      "columns": ["session_id"],
       "nameExplicit": false,
       "name": "session_ticket_link_pk",
       "table": "session_ticket_link",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "session_id"
-      ],
+      "columns": ["session_id"],
       "nameExplicit": false,
       "name": "session_archive_pk",
       "table": "session_archive",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "argo_id"
-      ],
+      "columns": ["argo_id"],
       "nameExplicit": false,
       "name": "ticket_pk",
       "table": "ticket",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "ticket_id"
-      ],
+      "columns": ["ticket_id"],
       "nameExplicit": false,
       "name": "ticket_content_pk",
       "table": "ticket_content",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "intent_id"
-      ],
+      "columns": ["intent_id"],
       "nameExplicit": false,
       "name": "ticket_write_intent_pk",
       "table": "ticket_write_intent",
@@ -1744,11 +1636,7 @@
           "isExpression": false
         },
         {
-          "value": "sort_order",
-          "isExpression": false
-        },
-        {
-          "value": "created_at",
+          "value": "list_order_at",
           "isExpression": false
         },
         {
@@ -1896,9 +1784,7 @@
       "table": "ticket_search_ticket_link"
     },
     {
-      "columns": [
-        "common_directory"
-      ],
+      "columns": ["common_directory"],
       "nameExplicit": false,
       "name": "project_common_directory_unique",
       "entityType": "uniques",

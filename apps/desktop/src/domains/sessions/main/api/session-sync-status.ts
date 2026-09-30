@@ -25,7 +25,7 @@ export type SessionSyncEvent = z.infer<typeof sessionSyncEventSchema>
 // The Sessions a pass saved, for the Session List. Only `committed` crosses to the renderer, without IDs.
 export type SessionSyncStoreEvent =
   | Extract<SessionSyncEvent, { type: 'status' }>
-  | { type: 'committed' | 'stored'; sessionIds: readonly string[] }
+  | { type: 'committed'; sessionIds: readonly string[] }
 const initialSessionSyncStatus: SessionSyncStatus = {
   phase: 'idle',
   processed: 0,
@@ -124,10 +124,6 @@ export class SessionSyncStatusStore {
     this.emit({ type: 'committed', sessionIds })
   }
 
-  stored(sessionIds: readonly string[]): void {
-    this.emit({ type: 'stored', sessionIds })
-  }
-
   subscribe(listener: (event: SessionSyncStoreEvent) => void): () => void {
     this.#listeners.add(listener)
     listener({ type: 'status', status: this.#status })
@@ -173,7 +169,7 @@ export function observeSessionSync(
 ): () => void {
   let subscribed = false
   const report = (event: SessionSyncStoreEvent) => {
-    if (event.type === 'committed' || event.type === 'stored') listener(event)
+    if (event.type === 'committed') listener(event)
     else if (subscribed)
       listener({ type: 'status', status: combinedStatus(stores.map((store) => store.current())) })
   }

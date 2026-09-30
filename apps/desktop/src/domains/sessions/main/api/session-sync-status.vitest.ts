@@ -77,12 +77,8 @@ test('subscribers receive current status and a separate committed signal', () =>
   const events: SessionSyncStoreEvent[] = []
   const unsubscribe = store.subscribe((event) => events.push(event))
   store.committed([ID])
-  store.stored([OTHER_ID])
   unsubscribe()
-  assert.deepEqual(events.slice(1), [
-    { type: 'committed', sessionIds: [ID] },
-    { type: 'stored', sessionIds: [OTHER_ID] },
-  ])
+  assert.deepEqual(events.slice(1), [{ type: 'committed', sessionIds: [ID] }])
 })
 
 const idle: SessionSyncStatus = {
@@ -97,7 +93,7 @@ const idle: SessionSyncStatus = {
 test('one observer reports every Harness scan as one status and forwards each commit', () => {
   const first = new SessionSyncStatusStore(undefined, 'claude')
   const second = new SessionSyncStatusStore(undefined, 'codex')
-  const events: SessionSyncStoreEvent[] = []
+  const events: SessionSyncEvent[] = []
   const stop = observeSessionSync([first, second], (event) => events.push(event))
   first.update({
     ...idle,
@@ -149,7 +145,7 @@ test('one observer reports every Harness scan as one status and forwards each co
   ])
 })
 
-test('the renderer gets a commit without Session IDs, and no stored signal', async () => {
+test('the renderer gets a commit without Session IDs', async () => {
   const store = new SessionSyncStatusStore(undefined, 'claude')
   const caller = initTRPC
     .create()
@@ -157,7 +153,6 @@ test('the renderer gets a commit without Session IDs, and no stored signal', asy
     .createCaller({})
   const events: SessionSyncEvent[] = []
   const subscription = (await caller.sync()).subscribe({ next: (event) => events.push(event) })
-  store.stored([ID])
   store.committed([ID])
   subscription.unsubscribe()
   assert.deepEqual(events.slice(1), [{ type: 'committed' }])

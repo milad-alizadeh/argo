@@ -22,8 +22,6 @@ export const sessionTable = sqliteTable(
     activity: text('activity'),
     // The last status the history watcher saw; a live channel's own status outranks it.
     status: text('status'),
-    // The `activityAt` whose history the stored Subagents were read from.
-    subagentsReadAt: integer('subagents_read_at'),
     ...timestampColumns(),
   },
   (table) => [

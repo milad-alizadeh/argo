@@ -98,7 +98,8 @@ export function createAcpRegistration<Id extends Harness>(
     openLiveSession: (input, controls, emit) =>
       new AcpSessionChannel(input, emit, { command: required(command(), harness), controls }),
     // Discovery through `session/list` lands with #2803; until then nothing is listed.
-    sessionDiscovery: async () => ({ records: [], skipped: 0 }),
+    listSessionSummaries: async () => ({ records: [], skipped: 0 }),
+    getSessionSummary: async () => null,
     changeableTurnSettings: ['model', 'effort', 'mode'],
     acceptsAttachments: false,
   }

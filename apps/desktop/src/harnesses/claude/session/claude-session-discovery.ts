@@ -1,9 +1,9 @@
 import { getSessionInfo, listSessions } from '@anthropic-ai/claude-agent-sdk'
 import { z } from 'zod'
 import type {
-  DiscoveredSession,
-  SessionDiscoveryInput,
-  SessionDiscoveryResult,
+  SessionSummary,
+  SessionSummaryListInput,
+  SessionSummaryListResult,
 } from '@/domains/sessions/api/session-discovery'
 import { SESSION_CLAUDE_SYNC_FIXTURE_ENV } from '../proof-protocol'
 
@@ -18,7 +18,7 @@ const claudeSessionSchema = z
   })
   .passthrough()
 
-type ClaudeSessionRecord = DiscoveredSession
+type ClaudeSessionRecord = SessionSummary
 
 export type ClaudeSessionReader = {
   list: () => Promise<unknown[]>
@@ -99,9 +99,9 @@ async function readClaudeSessions(request: {
   return [...records.values()]
 }
 
-export async function discoverClaudeSessions(
-  input: SessionDiscoveryInput & { reader?: ClaudeSessionReader },
-): Promise<SessionDiscoveryResult> {
+export async function listClaudeSessionSummaries(
+  input: SessionSummaryListInput & { reader?: ClaudeSessionReader },
+): Promise<SessionSummaryListResult> {
   let skipped = 0
   const records = await readClaudeSessions({
     reader: input.reader ?? proofClaudeSessionReader() ?? systemClaudeSessionReader(),
@@ -111,4 +111,16 @@ export async function discoverClaudeSessions(
     },
   })
   return { records, skipped }
+}
+
+export async function getClaudeSessionSummary(
+  nativeId: string,
+  reader: ClaudeSessionReader = proofClaudeSessionReader() ?? systemClaudeSessionReader(),
+): Promise<ClaudeSessionRecord | null> {
+  const raw = await reader.get(nativeId)
+  if (raw === undefined) return null
+  const record = parseClaudeSession(raw)
+  if (record === null)
+    console.warn(`Rejected an unrecognised Claude Session summary for ${nativeId}.`)
+  return record
 }

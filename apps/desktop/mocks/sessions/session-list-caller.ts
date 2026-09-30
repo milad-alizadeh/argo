@@ -27,7 +27,6 @@ const SESSION_LIST_TABLES = `CREATE TABLE session (
     sort_order INTEGER NOT NULL DEFAULT 0,
     activity TEXT,
     status TEXT,
-    subagents_read_at INTEGER,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
   ); CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);

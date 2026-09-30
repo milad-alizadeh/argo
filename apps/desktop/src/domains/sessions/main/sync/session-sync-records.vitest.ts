@@ -4,8 +4,8 @@ import { test } from 'vitest'
 import { createActor, fromPromise, waitFor } from 'xstate'
 import { databaseFrom } from '@/database/database'
 import type {
-  SessionDiscovery,
-  SessionDiscoveryResult,
+  SessionSummaryList,
+  SessionSummaryListResult,
 } from '@/domains/sessions/api/session-discovery'
 import { sessionSyncMachine } from './session-sync-machine'
 import { knownSessionIds, matchSessionsToProjects, saveSessionBatch } from './session-sync-records'
@@ -16,7 +16,7 @@ function createDatabase() {
   const client = new DatabaseSync(':memory:')
   client.exec(`CREATE TABLE project (id TEXT PRIMARY KEY, path TEXT NOT NULL, common_directory TEXT NOT NULL, created_at INTEGER, updated_at INTEGER);
     CREATE TABLE workspace (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, kind TEXT NOT NULL, display_name TEXT NOT NULL, path TEXT NOT NULL, created_at INTEGER, updated_at INTEGER);
-    CREATE TABLE session (argo_id TEXT PRIMARY KEY, harness TEXT NOT NULL, native_id TEXT NOT NULL, project_id TEXT, workspace_id TEXT, custom_title TEXT, preview TEXT, first_prompt TEXT, cwd TEXT, activity_at INTEGER, sort_order INTEGER NOT NULL DEFAULT 0, activity TEXT, status TEXT, subagents_read_at INTEGER, created_at INTEGER NOT NULL DEFAULT 1, updated_at INTEGER NOT NULL DEFAULT 1);
+    CREATE TABLE session (argo_id TEXT PRIMARY KEY, harness TEXT NOT NULL, native_id TEXT NOT NULL, project_id TEXT, workspace_id TEXT, custom_title TEXT, preview TEXT, first_prompt TEXT, cwd TEXT, activity_at INTEGER, sort_order INTEGER NOT NULL DEFAULT 0, activity TEXT, status TEXT, created_at INTEGER NOT NULL DEFAULT 1, updated_at INTEGER NOT NULL DEFAULT 1);
     CREATE UNIQUE INDEX session_harness_native ON session (harness, native_id);`)
   client.exec("INSERT INTO project VALUES ('project-1', '/repo', '/repo/.git', 1, 1);")
   client.exec(
@@ -161,8 +161,8 @@ test('keeps the first committed batch after the second batch exhausts retries', 
     sessionSyncMachine.provide({
       actors: {
         fetch: fromPromise<
-          SessionDiscoveryResult,
-          { knownNativeIds: string[]; sessionDiscovery: SessionDiscovery }
+          SessionSummaryListResult,
+          { knownNativeIds: string[]; listSessionSummaries: SessionSummaryList }
         >(async () => ({ records, skipped: 0 })),
         save: fromPromise(async ({ input }) => {
           if (input.records[0]?.nativeId === 'native-50') {
@@ -177,7 +177,7 @@ test('keeps the first committed batch after the second batch exhausts retries', 
       input: {
         harness: 'claude',
         knownNativeIds: [],
-        sessionDiscovery: async () => ({ records: [], skipped: 0 }),
+        listSessionSummaries: async () => ({ records: [], skipped: 0 }),
       },
     },
   ).start()

@@ -37,6 +37,7 @@ import {
 import { SessionEventJournal } from '@/domains/sessions/main/live/session-event-journal'
 import { SessionHistoryFollowers } from '@/domains/sessions/main/live/session-history-followers'
 import { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
+import { isKnownSession } from '@/domains/sessions/main/sync/session-sync-records'
 import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
 import type {
   PriorityRequest,
@@ -428,7 +429,14 @@ function attachWindowTrpc({
     roster,
     activities,
   })
-  const stopRosterSources = watchRosterSources({ database, registry, roster, watchedStatus })
+  const stopRosterSources = watchRosterSources({
+    database,
+    registry,
+    roster,
+    watchedStatus,
+    discover: (harness, nativeId) =>
+      actors.sessionSync.send({ type: 'Discover', harness, nativeId }),
+  })
   const detach = attachTrpcTransport({ window, rendererURL, router, context: undefined })
   return () => {
     stopRosterSources()
@@ -443,15 +451,17 @@ function watchRosterSources({
   registry,
   roster,
   watchedStatus,
+  discover,
 }: {
   database: Database
   registry: HarnessRegistry
   roster: SessionRosterChanges
   watchedStatus: WatchedSessionStatus
+  discover: (harness: Harness, nativeId: string) => void
 }): () => void {
   const stops = currentSessionSyncStatus().map((store) =>
     store.subscribe((event) => {
-      if (event.type === 'committed' || event.type === 'stored') roster.changed(event.sessionIds)
+      if (event.type === 'committed') roster.changed(event.sessionIds)
     }),
   )
   for (const harness of harnessSchema.options) {
@@ -460,6 +470,7 @@ function watchRosterSources({
     stops.push(
       watchHistoryActivity(files, (owner, turn, events) => {
         const at = Date.now()
+        if (!isKnownSession(database, harness, owner)) discover(harness, owner)
         watchedStatus.record({ harness, nativeId: owner, turn, at })
         recordHistoryActivity(database, { harness, nativeId: owner, at })
         recordLiveSubagents(database, { harness, nativeId: owner, events })

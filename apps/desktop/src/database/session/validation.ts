@@ -5,7 +5,6 @@ const serverOwnedSessionFields = {
   argoId: true,
   createdAt: true,
   updatedAt: true,
-  subagentsReadAt: true,
   sortOrder: true,
   status: true,
   activity: true,

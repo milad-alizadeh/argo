@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'vitest'
 import { createActor, fromCallback } from 'xstate'
 import type { Database } from '@/database/database'
-import type { SessionDiscovery } from '@/domains/sessions/api/session-discovery'
+import type { SessionSummaryList } from '@/domains/sessions/api/session-discovery'
 import type { Harness } from '@/harnesses/harness'
 import { SessionSyncStatusStore } from '../api/session-sync-status'
 import {
@@ -11,9 +11,9 @@ import {
 } from './session-sync-supervisor-machine'
 
 const database = {} as Database
-const claudeDiscovery: SessionDiscovery = async () => ({ records: [], skipped: 0 })
-const codexDiscovery: SessionDiscovery = async () => ({ records: [], skipped: 0 })
-const readHistory = async () => []
+const claudeDiscovery: SessionSummaryList = async () => ({ records: [], skipped: 0 })
+const codexDiscovery: SessionSummaryList = async () => ({ records: [], skipped: 0 })
+const getSessionSummary = async () => null
 const fetchingStatus = {
   phase: 'fetching' as const,
   processed: 0,
@@ -29,7 +29,6 @@ type SyncEvent =
       status: ReturnType<SessionSyncStatusStore['current']>
     }
   | { type: 'SyncCommitted'; harness: Harness; sessionIds: readonly string[] }
-  | { type: 'SyncStored'; harness: Harness; sessionId: string }
   | { type: 'SyncCompleted'; harness: Harness }
   | { type: 'SyncFailed'; harness: Harness }
 
@@ -59,8 +58,8 @@ test('dispatches registered Session discovery functions and runs a Refresh that 
     input: {
       database,
       harnesses: {
-        claude: { sessionDiscovery: claudeDiscovery, readHistory },
-        codex: { sessionDiscovery: codexDiscovery, readHistory },
+        claude: { listSessionSummaries: claudeDiscovery, getSessionSummary },
+        codex: { listSessionSummaries: codexDiscovery, getSessionSummary },
       },
       status: { claude: status, codex: new SessionSyncStatusStore(undefined, 'codex') },
     },
@@ -92,19 +91,19 @@ test('dispatches registered Session discovery functions and runs a Refresh that 
 })
 
 test('dispatches only discovery functions selected by the Harness registry', () => {
-  const dispatched: SessionDiscovery[] = []
+  const dispatched: SessionSummaryList[] = []
   const actor = createActor(
     sessionSyncSupervisorMachine.provide({
       actors: {
         sync: fromCallback<{ type: 'Stop' }, SessionSyncActorInput, SyncEvent>(({ input }) => {
-          dispatched.push(input.sessionDiscovery)
+          dispatched.push(input.listSessionSummaries)
         }),
       },
     }),
     {
       input: {
         database,
-        harnesses: { claude: { sessionDiscovery: claudeDiscovery, readHistory } },
+        harnesses: { claude: { listSessionSummaries: claudeDiscovery, getSessionSummary } },
         status: { claude: new SessionSyncStatusStore(undefined, 'claude') },
       },
     },
