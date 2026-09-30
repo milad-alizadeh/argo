@@ -118,7 +118,7 @@ test('session-subagent-feed', async ({ session }) => {
   await proveSubagentFeed(session.page())
 })
 
-// Stored Sessions list no Shell commands and the Shell tail reads absent (session-list.ts, session-work-reads.ts).
+// Stored Sessions list no Shell commands and the Shell tail reads absent (session-list.ts, session-work-reads.ts). (#2911)
 test.fixme('session-background-shell', async ({ session }) => {
   await proveBackgroundShell(session.page(), {
     writeOutput: (text: string) => writeWatchOutput(session.root, text),
@@ -126,12 +126,12 @@ test.fixme('session-background-shell', async ({ session }) => {
   })
 })
 
-// History draws a pending AskUserQuestion as a tool row; only a live question event draws the question row.
+// History draws a pending AskUserQuestion as a tool row; only a live question event draws the question row. (#2959)
 test.fixme('session-question', async ({ session }) => {
   await proveSessionQuestion(session.page())
 })
 
-// A row above shrinking leaves a reader at the tail 198px short of it, and it stays there.
+// A row above shrinking leaves a reader at the tail 198px short of it, and it stays there. (#2960)
 test.fixme('session-feed-reader-anchor', async ({ session }) => {
   await proveLiveFeed(session.page(), {
     transcripts: session.fixture.claudeTranscripts,
@@ -155,12 +155,12 @@ test('session-diagram', async ({ session }) => {
   })
 })
 
-// Stored Sessions carry no Plan (session-list.ts sets it null), so no Open task plan control draws.
+// Stored Sessions carry no Plan (session-list.ts sets it null), so no Open task plan control draws. (#2961)
 test.fixme('session-plan', async ({ session }) => {
   await proveSessionPlan(session.page(), () => updatePlan(session.fixture.claudeTranscripts))
 })
 
-// The composer reads a stored Session's Model, Effort and Mode only from a live channel, not its records.
+// The composer reads a stored Session's Model, Effort and Mode only from a live channel, not its records. (#2962)
 test.fixme('session-turn-configuration', async ({ session }) => {
   await proveTurnConfiguration(session.page())
 })
@@ -169,7 +169,7 @@ test('session-live-codex-model-choices', async ({ session }) => {
   await proveLiveCodexModelChoices(session.page())
 })
 
-// Activity moves a row up, resumed Sessions no longer fold into one row, and a deleted transcript keeps its row.
+// Activity moves a row up, resumed Sessions no longer fold into one row, and a deleted transcript keeps its row. (#2963)
 test.fixme('session-roster-stable-polling', async ({ session }) => {
   await proveStableRosterPolling(
     session.page(),
@@ -177,7 +177,7 @@ test.fixme('session-roster-stable-polling', async ({ session }) => {
   )
 })
 
-// A launch no longer restores the selected Session, and a deleted transcript keeps its row.
+// A launch no longer restores the selected Session, and a deleted transcript keeps its row. (#2964)
 test.fixme('session-roster-restart', async ({ session }) => {
   await provePackagedRosterRestart(session.page(), {
     remove: () => removeProse(session.fixture.claudeTranscripts),
@@ -192,7 +192,7 @@ test('session-roster-window', async ({ session }) => {
   await proveRosterWindow(session.page())
 })
 
-// Search matches a custom title or preview only, so a Session titled by its first prompt is not found.
+// Search matches a custom title or preview only, so a Session titled by its first prompt is not found. (#2965)
 test.fixme('session-search', async ({ session }) => {
   const { claudeTranscripts, project } = session.fixture
   await session.restart(async () => {
@@ -279,12 +279,12 @@ test.describe('with real Session transcript corpora', () => {
   })
 })
 
-// The Harness picked for a new Session is component state, so a reload resets it to the default.
+// The Harness picked for a new Session is component state, so a reload resets it to the default. (#2966)
 test.fixme('session-composer-memory', async ({ session }) => {
   await proveComposerMemory(session.page())
 })
 
-// No screen passes onCompact to the composer, so Compact context is always disabled.
+// No screen passes onCompact to the composer, so Compact context is always disabled. (#2967)
 test.fixme('session-claude-resume', async ({ session, backend }) => {
   await provePackagedResume(session.page(), {
     backend,
