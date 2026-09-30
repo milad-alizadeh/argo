@@ -40,6 +40,8 @@ export const liveSessionMachine = xstateSetup({
     context: {} as {
       argoId: string | null
       first: DrivenSessionInput
+      // The configuration of the newest accepted command; later Sends may change it.
+      turnConfiguration: DrivenSessionInput['turnConfiguration']
       nativeId: string | null
       queue: QueuedLiveSessionCommand[]
       seenCommandIds: string[]
@@ -137,6 +139,7 @@ export const liveSessionMachine = xstateSetup({
               ...context.seenCommandIds,
               event.command.commandId,
             ],
+            turnConfiguration: event.command.turnConfiguration,
           }
         : {},
     ),
@@ -219,6 +222,7 @@ export const liveSessionMachine = xstateSetup({
   context: ({ input }) => ({
     argoId: null,
     first: input,
+    turnConfiguration: input.turnConfiguration,
     nativeId: null,
     queue: [],
     seenCommandIds: [
