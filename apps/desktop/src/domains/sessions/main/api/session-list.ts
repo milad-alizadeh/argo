@@ -1,6 +1,6 @@
 import { initTRPC } from '@trpc/server'
 import { observable } from '@trpc/server/observable'
-import { and, asc, count, desc, eq, inArray, not, or, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, not, or, type SQL, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
@@ -25,6 +25,8 @@ const sessionListInputSchema = z.strictObject({
   pages: z.number().int().min(1).max(1_000).default(1),
   pageSize: z.number().int().min(1).max(100).default(30),
 })
+
+type SessionListInput = z.infer<typeof sessionListInputSchema>
 
 const identifierSchema = z.string().min(1)
 const countSchema = z.number().int().nonnegative()
@@ -292,28 +294,59 @@ export function coalescedChanges(publish: () => void) {
   }
 }
 
-function storedSessionRows(database: Database) {
+export function storedSessionRows<Extra extends Record<string, SQL>>(
+  database: Database,
+  extra: Extra = {} as Extra,
+) {
   return database
-    .select(storedSessionColumns)
+    .select({ ...storedSessionColumns, ...extra })
     .from(sessionTable)
     .leftJoin(sessionTicketLink, eq(sessionTicketLink.sessionId, sessionTable.argoId))
 }
 
+// The substring scan reads every row of the Project; it runs only when the search could have
+// gained or lost a Session.
+function searchFilter(input: SessionListInput) {
+  return or(
+    sql<boolean>`instr(lower(coalesce(${sessionTable.customTitle}, '')), lower(${input.search})) > 0`,
+    sql<boolean>`instr(lower(coalesce(${sessionTable.preview}, '')), lower(${input.search})) > 0`,
+  )
+}
+
+function activeInProject(input: SessionListInput) {
+  return and(eq(sessionTable.projectId, input.projectId), not(sessionIsArchived))
+}
+
+// Every match in the Project, or with `sessionId`, whether that one Session matches.
+function matchingSessionIds(
+  context: SessionListContext,
+  input: SessionListInput,
+  sessionId?: string,
+): Set<string> {
+  const rows = context.database
+    .select({ id: sessionTable.argoId })
+    .from(sessionTable)
+    .where(
+      and(
+        sessionId === undefined ? undefined : eq(sessionTable.argoId, sessionId),
+        activeInProject(input),
+        searchFilter(input),
+      ),
+    )
+    .all()
+  return new Set(rows.map((row) => row.id))
+}
+
+// A search reads its window from the IDs its last scan matched, by primary key.
 function readSessionList(
   context: SessionListContext,
-  input: z.infer<typeof sessionListInputSchema>,
+  input: SessionListInput,
+  matches: ReadonlySet<string> | null,
 ): z.infer<typeof sessionListSchema> {
-  const projectFilter = eq(sessionTable.projectId, input.projectId)
-  const filter = and(
-    projectFilter,
-    not(sessionIsArchived),
-    input.search === ''
-      ? undefined
-      : or(
-          sql<boolean>`instr(lower(coalesce(${sessionTable.customTitle}, '')), lower(${input.search})) > 0`,
-          sql<boolean>`instr(lower(coalesce(${sessionTable.preview}, '')), lower(${input.search})) > 0`,
-        ),
-  )
+  const filter =
+    matches === null
+      ? activeInProject(input)
+      : sql<boolean>`${sessionTable.argoId} in (select value from json_each(${JSON.stringify([...matches])}))`
   const stored = storedSessionRows(context.database)
     .where(filter)
     .orderBy(desc(sessionTable.listOrderAt), asc(sessionTable.argoId))
@@ -325,26 +358,10 @@ function readSessionList(
   )
   const rows = stored.map((row) => sessionListRow(context, row, subagents.get(row.id) ?? []))
   const total =
-    context.database.select({ value: count() }).from(sessionTable).where(filter).get()?.value ?? 0
+    matches?.size ??
+    context.database.select({ value: count() }).from(sessionTable).where(filter).get()?.value ??
+    0
   return sessionListSchema.parse({ pages: input.pages, pageSize: input.pageSize, total, rows })
-}
-
-export function rowsForSessionIds(
-  context: SessionListContext,
-  projectId: string,
-  ids: readonly string[],
-) {
-  if (ids.length === 0) return []
-  const stored = storedSessionRows(context.database)
-    .where(and(eq(sessionTable.projectId, projectId), inArray(sessionTable.argoId, [...ids])))
-    .all()
-  const subagents = storedSessionSubagents(
-    context.database,
-    stored.map((row) => row.id),
-  )
-  return stored.map((row) =>
-    sessionListRow(context, { ...row, archived: true }, subagents.get(row.id) ?? []),
-  )
 }
 
 function sameOrder(
@@ -385,11 +402,16 @@ export function sessionListProcedure(
 ) {
   return t.procedure.input(sessionListInputSchema).subscription(({ input }) =>
     observable<z.infer<typeof sessionListUpdateSchema>>((emit) => {
-      let sent = readSessionList(context, input)
+      const scan = () => (input.search === '' ? null : matchingSessionIds(context, input))
+      let matches = scan()
+      let rescan = false
+      let sent = readSessionList(context, input, matches)
       emit.next({ type: 'list', ...sent })
       const observed = new Map<string, () => void>()
       const { changed, stop } = coalescedChanges(() => {
-        const next = readSessionList(context, input)
+        if (rescan) matches = scan()
+        rescan = false
+        const next = readSessionList(context, input, matches)
         if (!sameOrder(sent, next)) emit.next({ type: 'list', ...next })
         else
           next.rows.forEach((row, index) => {
@@ -399,8 +421,20 @@ export function sessionListProcedure(
         sent = next
         observeWorkingFeeds(observed, next.rows, observeFeed)
       })
-      const unsubscribeRoster = context.roster.subscribe(changed)
-      const statusChanges = context.supervisor.on('Session status changed', changed)
+      const unsubscribeRoster = context.roster.subscribe((change) => {
+        if (change === 'membership') rescan = true
+        changed()
+      })
+      // A live Session announces itself by status alone, so a new match is found by its ID.
+      const statusChanges = context.supervisor.on('Session status changed', ({ sessionId }) => {
+        if (
+          matches !== null &&
+          !matches.has(sessionId) &&
+          matchingSessionIds(context, input, sessionId).size > 0
+        )
+          rescan = true
+        changed()
+      })
       observeWorkingFeeds(observed, sent.rows, observeFeed)
       return () => {
         stop()

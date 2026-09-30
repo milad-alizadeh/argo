@@ -5,6 +5,7 @@ import { useObservedFeedReading } from '../feed/use-feed-reading'
 import type { Session, SessionId } from '../types'
 import { useArchivedSection } from './archived/use-archived-section'
 import { useSessionListStatus } from './hooks/use-session-list-filter-store'
+import { useSettledSearch } from './hooks/use-settled-search'
 import { RenameDialog } from './rename/rename-dialog'
 import { useRenameDialog } from './rename/use-rename-dialog'
 import type { SessionListActions } from './rows/session-list-actions'
@@ -20,19 +21,21 @@ import { useSessionList } from './use-session-list'
 export type { SessionListActions } from './rows'
 
 function useSessionListRows(options: {
+  projectId: string | null
   read: ReturnType<typeof useSessionList>
   searching: boolean
   selectedSessionId: SessionId | null
   visible: readonly Session[]
 }) {
-  const { read, searching, selectedSessionId, visible } = options
+  const { projectId, read, searching, selectedSessionId, visible } = options
   const visibleSessionIds = useMemo(() => visible.map((session) => session.id), [visible])
   const status = useSessionListStatus()
-  const archived = useArchivedSection(
+  const archived = useArchivedSection({
+    projectId,
     selectedSessionId,
     visibleSessionIds,
-    read.sessionList !== null,
-  )
+    sessionListResolved: read.sessionList !== null,
+  })
   const rows = useMemo(
     () =>
       sessionListRows({
@@ -62,12 +65,13 @@ function useSessionListRows(options: {
 
 function useSessionListSessions(options: {
   actions: SessionListActions
+  projectId: string | null
   read: ReturnType<typeof useSessionList>
   search: string
   selectedSessionId: SessionId | null
   sidebar: RefObject<HTMLElement | null>
 }) {
-  const { actions, read, search, selectedSessionId, sidebar } = options
+  const { actions, projectId, read, search, selectedSessionId, sidebar } = options
   const sessions = useSidebarSessionList({
     onArchiveSelected: actions.onArchiveSelected,
     onSelect: actions.onSelect,
@@ -78,6 +82,7 @@ function useSessionListSessions(options: {
     sidebar,
   })
   const rows = useSessionListRows({
+    projectId,
     read,
     searching: sessions.searching,
     selectedSessionId,
@@ -180,14 +185,17 @@ function SessionSyncFeedback({
 export function SessionList({ actions, projectId, selectedSessionId }: SessionListProps) {
   const sidebar = useRef<HTMLElement>(null)
   const [search, setSearch] = useState('')
+  // The rows and the search state follow the text the list was last read with.
+  const settledSearch = useSettledSearch(search)
   const read = useSessionList({
     projectId,
-    search: search.trim(),
+    search: settledSearch,
   })
   const sessions = useSessionListSessions({
     actions,
+    projectId,
     read,
-    search,
+    search: settledSearch,
     selectedSessionId,
     sidebar,
   })

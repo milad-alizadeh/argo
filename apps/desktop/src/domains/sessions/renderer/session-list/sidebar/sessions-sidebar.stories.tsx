@@ -380,8 +380,10 @@ export const Discovered: Story = {
     ).toHaveLength(2)
     await userEvent.click(search)
     await userEvent.keyboard('second')
+    await waitFor(() =>
+      expect(canvas.queryByRole('button', { name: /Keep the Session list stable/ })).toBeNull(),
+    )
     await expect(canvas.getByRole('button', { name: /A second Session/ })).toBeInTheDocument()
-    await expect(canvas.queryByRole('button', { name: /Keep the Session list stable/ })).toBeNull()
   },
 }
 
@@ -1435,8 +1437,10 @@ export const SearchFiltersCustomTitlesAndPreviews: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await typeSearch(canvasElement, 'second')
+    await waitFor(() =>
+      expect(canvas.queryByRole('button', { name: /Read the Session transcript/ })).toBeNull(),
+    )
     await expect(canvas.getByRole('button', { name: /A second Session/ })).toBeVisible()
-    await expect(canvas.queryByRole('button', { name: /Read the Session transcript/ })).toBeNull()
   },
 }
 
@@ -1473,5 +1477,141 @@ export const SearchDoesNotShowInitialSkeleton: Story = {
     await expect(canvas.getByRole('button', { name: /Read the Session transcript/ })).toBeVisible()
     await expect(canvas.queryByRole('status', { name: 'Reading Sessions' })).toBeNull()
     await expect(canvasElement.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(0)
+  },
+}
+
+// Typing reads the roster once, for the settled text, rather than once per keystroke.
+export const SearchWaitsForTypingToSettle: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await canvas.findByRole('button', { name: /Read the Session transcript/ })
+    await typeSearch(canvasElement, 'second')
+    await waitFor(() =>
+      expect(canvas.queryByRole('button', { name: /Read the Session transcript/ })).toBeNull(),
+    )
+    await expect(sessionListReads.mock.calls.map(([read]) => read.search)).toEqual(['', 'second'])
+  },
+}
+
+// A search with more results than one page grows its window the way browsing does.
+export const SearchGrowsPastTheFirstPage: Story = {
+  beforeEach: () => {
+    showingActiveSessions()
+    return withSessionListHost(async ({ pages, search }) =>
+      listedReply(search === '' ? listed : manySessionsWindow(pages)),
+    )
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await canvas.findByRole('button', { name: /Read the Session transcript/ })
+    await typeSearch(canvasElement, 'number')
+    await canvas.findAllByRole('button', { name: /Session number/ })
+    const scroll = sessionListScroll(canvasElement)
+    scroll.scrollTop = scroll.scrollHeight
+    scroll.dispatchEvent(new Event('scroll'))
+    await waitFor(() =>
+      expect(sessionListReads).toHaveBeenCalledWith(
+        expect.objectContaining({ search: 'number', pages: 2 }),
+      ),
+    )
+  },
+}
+
+function ProjectSwitchingSessionList(args: SessionListHarnessArgs) {
+  const [projectId, setProjectId] = useState('project-1')
+  return (
+    <>
+      <button onClick={() => setProjectId('project-2')} type="button">
+        Open the second Project
+      </button>
+      <SessionList
+        actions={args}
+        projectId={projectId}
+        selectedSessionId={args.selectedSessionId}
+      />
+    </>
+  )
+}
+
+// Another Project reads its own active and archived rows, keeping the search the reader typed.
+export const ProjectSwitchReadsThatProject: Story = {
+  render: (args) => <ProjectSwitchingSessionList {...args} />,
+  beforeEach: () => {
+    const restoreList = withSessionListHost(async ({ projectId }) =>
+      listedReply({
+        ...listed,
+        sessions: [
+          {
+            ...session,
+            id: `${projectId}-active`,
+            title: { text: `Active in ${projectId}`, source: 'first-prompt' },
+          },
+        ],
+        total: 1,
+      }),
+    )
+    const restoreArchive = withArchiveHost(async (request) => {
+      const { projectId } = request as unknown as { projectId: string }
+      return archiveReply({
+        sessions: [
+          {
+            ...session,
+            id: `${projectId}-archived`,
+            archived: true,
+            title: { text: `Archived in ${projectId}`, source: 'first-prompt' },
+          },
+        ],
+      })
+    })
+    return () => {
+      restoreArchive()
+      restoreList()
+    }
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await chooseStatus(canvasElement, 'All')
+    await canvas.findByRole('button', { name: /Archived in project-1/ })
+    await typeSearch(canvasElement, 'active')
+    await waitFor(() =>
+      expect(sessionListReads).toHaveBeenCalledWith(
+        expect.objectContaining({ projectId: 'project-1', search: 'active' }),
+      ),
+    )
+    await userEvent.click(canvas.getByRole('button', { name: 'Open the second Project' }))
+    await canvas.findByRole('button', { name: /Active in project-2/ })
+    await expect(sessionListReads).toHaveBeenLastCalledWith(
+      expect.objectContaining({ projectId: 'project-2', search: 'active' }),
+    )
+    await userEvent.clear(canvas.getByRole('textbox', { name: 'Search Sessions' }))
+    await canvas.findByRole('button', { name: /Archived in project-2/ })
+    await expect(canvas.queryByRole('button', { name: /Archived in project-1/ })).toBeNull()
+  },
+}
+
+// Until the typed text settles, the list is still the unsearched one, Archive rows included.
+export const UnsettledSearchKeepsTheArchive: Story = {
+  beforeEach: () =>
+    withArchiveHost(async () =>
+      archiveReply({
+        sessions: [
+          {
+            ...session,
+            id: 'archived-session',
+            archived: true,
+            title: { text: 'Read the archived transcript', source: 'first-prompt' },
+          },
+        ],
+      }),
+    ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await chooseStatus(canvasElement, 'All')
+    await canvas.findByRole('button', { name: /Read the archived transcript/ })
+    await typeSearch(canvasElement, 's')
+    await expect(canvas.getByRole('button', { name: /Read the archived transcript/ })).toBeVisible()
+    await waitFor(() =>
+      expect(canvas.queryByRole('button', { name: /Read the archived transcript/ })).toBeNull(),
+    )
   },
 }

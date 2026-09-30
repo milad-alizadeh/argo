@@ -411,8 +411,8 @@ function attachWindowTrpc({
   registry: HarnessRegistry
 }): () => void {
   const roster = new SessionRosterChanges()
-  const watchedStatus = new WatchedSessionStatus(() => roster.changed())
-  const activities = new SessionActivities(database, () => roster.changed())
+  const watchedStatus = new WatchedSessionStatus(() => roster.changed('activity'))
+  const activities = new SessionActivities(database, () => roster.changed('activity'))
   const router = routerForWindow({
     actors,
     domains,
@@ -447,7 +447,7 @@ function watchRosterSources({
 }): () => void {
   const stops = currentSessionSyncStatus().map((store) =>
     store.subscribe((event) => {
-      if (event.type === 'committed' || event.type === 'stored') roster.changed()
+      if (event.type === 'committed' || event.type === 'stored') roster.changed('membership')
     }),
   )
   for (const harness of harnessSchema.options) {
@@ -459,7 +459,7 @@ function watchRosterSources({
         const turnChanged = watchedStatus.record({ harness, nativeId: owner, turn, at })
         recordHistoryActivity(database, { harness, nativeId: owner, at, turnChanged })
         recordLiveSubagents(database, { harness, nativeId: owner, events })
-        roster.changed()
+        roster.changed('activity')
       }),
     )
   }

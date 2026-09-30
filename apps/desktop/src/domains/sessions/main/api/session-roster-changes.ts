@@ -3,15 +3,19 @@ import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import type { Harness } from '@/harnesses/harness'
 
+// `membership` may add, remove, move or retitle a row, so a search must scan again; `activity`
+// changes only what a row shows and when it is ordered.
+export type SessionRosterChange = 'membership' | 'activity'
+
 // Announces that some roster row may have changed; each roster reader works out which one.
 export class SessionRosterChanges {
-  readonly #listeners = new Set<() => void>()
+  readonly #listeners = new Set<(change: SessionRosterChange) => void>()
 
-  changed(): void {
-    for (const listener of this.#listeners) listener()
+  changed(change: SessionRosterChange): void {
+    for (const listener of this.#listeners) listener(change)
   }
 
-  subscribe(listener: () => void): () => void {
+  subscribe(listener: (change: SessionRosterChange) => void): () => void {
     this.#listeners.add(listener)
     return () => this.#listeners.delete(listener)
   }

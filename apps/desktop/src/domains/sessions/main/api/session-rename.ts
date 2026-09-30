@@ -48,7 +48,7 @@ export function sessionRenameProcedure(context: SessionRenameContext) {
         .get()
       if (updated?.title === null || updated === undefined)
         throw new Error('Session title did not persist.')
-      context.roster.changed()
+      context.roster.changed('membership')
       return { title: updated.title }
     })
 }

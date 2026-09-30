@@ -24,8 +24,8 @@ export const sessionPermissionQueryKey = (sessionId: SessionId) =>
 // Keyed on the restoreId too: a different restoreId asks the reader to hand back a different row
 // outside the loaded pages, so it is a different query rather than a refetch of the same one.
 export const sessionArchivePathKey = ['sessions', 'archive'] as const
-export const sessionArchiveQueryKey = (restoreId: SessionId | null) =>
-  [...sessionArchivePathKey, restoreId] as const
+export const sessionArchiveQueryKey = (projectId: string | null, restoreId: SessionId | null) =>
+  [...sessionArchivePathKey, projectId, restoreId] as const
 
 export function markSessionRead(
   queryClient: QueryClient,

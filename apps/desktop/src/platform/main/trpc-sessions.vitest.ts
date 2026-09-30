@@ -121,7 +121,7 @@ test('keeps both roster activities when the selected Feed changes', async () => 
   ] as const
   insertActivitySessions(ids)
   const roster = new SessionRosterChanges()
-  const activities = new SessionActivities(database, () => roster.changed())
+  const activities = new SessionActivities(database, () => roster.changed('activity'))
   const caller = createAppRouter(
     routerDependencies({
       roster,

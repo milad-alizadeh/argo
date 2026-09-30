@@ -300,30 +300,44 @@ function sqlMeasurements(userData: string) {
     session_ticket_link.title, session_ticket_link.state, session_ticket_link.created_at`
   const listFrom = `FROM session LEFT JOIN session_ticket_link
     ON session_ticket_link.session_id = session.argo_id`
-  const browse = `SELECT ${listColumns} ${listFrom} WHERE session.project_id = ? AND NOT EXISTS
-    (SELECT 1 FROM session_archive WHERE session_archive.session_id = session.argo_id)
-    ORDER BY coalesce(session.activity_at, session.updated_at) DESC, session.argo_id ASC LIMIT 30`
-  const search = `SELECT ${listColumns} ${listFrom} WHERE session.project_id = ? AND NOT EXISTS
-    (SELECT 1 FROM session_archive WHERE session_archive.session_id = session.argo_id)
-    AND (instr(lower(coalesce(session.custom_title, '')), lower(?)) > 0
-      OR instr(lower(coalesce(session.preview, '')), lower(?)) > 0)
-    ORDER BY coalesce(session.activity_at, session.updated_at) DESC, session.argo_id ASC LIMIT 30`
-  const count = `SELECT count(*) FROM session WHERE project_id = ? AND NOT EXISTS
+  const active = `session.project_id = ? AND NOT EXISTS
     (SELECT 1 FROM session_archive WHERE session_archive.session_id = session.argo_id)`
-  const archive = `SELECT session_id FROM session_archive`
-  const archivedIds = database
-    .prepare(archive)
-    .all()
-    .map((row) => String(row.session_id))
-  const archiveRows = `SELECT session.argo_id FROM session LEFT JOIN session_ticket_link
-    ON session_ticket_link.session_id = session.argo_id WHERE session.project_id = ?
-    AND session.argo_id IN (${archivedIds.map(() => '?').join(',')})`
+  const matching = `(instr(lower(coalesce(session.custom_title, '')), lower(?)) > 0
+      OR instr(lower(coalesce(session.preview, '')), lower(?)) > 0)`
+  const listOrder = 'ORDER BY session.list_order_at DESC, session.argo_id ASC LIMIT 30'
+  const browse = `SELECT ${listColumns} ${listFrom} WHERE ${active} ${listOrder}`
+  // The scan runs only when a Session may join or leave the results; the window reads its matches.
+  const search = `SELECT session.argo_id FROM session WHERE ${active} AND ${matching}`
+  const searchMatches = database
+    .prepare(search)
+    .all(PROJECT_ID, 'Session', 'Session')
+    .map((row) => String(row.argo_id))
+  const searchWindow = `SELECT ${listColumns} ${listFrom}
+    WHERE session.argo_id IN (SELECT value FROM json_each(?)) ${listOrder}`
+  const count = `SELECT count(*) FROM session WHERE ${active}`
+  const archiveOrder = `ORDER BY coalesce(session.activity_at, session.updated_at) DESC,
+    session.argo_id ASC`
+  const archive = `SELECT ${listColumns} ${listFrom} INNER JOIN session_archive
+    ON session_archive.session_id = session.argo_id WHERE session.project_id = ?
+    ${archiveOrder} LIMIT 21`
+  const archiveRestore = `SELECT ${listColumns} ${listFrom} INNER JOIN session_archive
+    ON session_archive.session_id = session.argo_id WHERE session.project_id = ?
+    AND session.argo_id = ? ${archiveOrder} LIMIT 1`
+  const archivedId = String(
+    database.prepare('SELECT session_id FROM session_archive LIMIT 1').get()?.session_id,
+  )
   const queries = [
     { name: 'browse', sql: browse, arguments: [PROJECT_ID] },
     { name: 'search', sql: search, arguments: [PROJECT_ID, 'Needle', 'Needle'] },
+    { name: 'search broad', sql: search, arguments: [PROJECT_ID, 'Session', 'Session'] },
+    {
+      name: 'search window',
+      sql: searchWindow,
+      arguments: [JSON.stringify(searchMatches)],
+    },
     { name: 'count', sql: count, arguments: [PROJECT_ID] },
-    { name: 'archive', sql: archive, arguments: [] },
-    { name: 'archive rows', sql: archiveRows, arguments: [PROJECT_ID, ...archivedIds] },
+    { name: 'archive', sql: archive, arguments: [PROJECT_ID] },
+    { name: 'archive restore', sql: archiveRestore, arguments: [PROJECT_ID, archivedId] },
   ]
   const measurements = queries.map((query) => {
     const statement = database.prepare(query.sql)

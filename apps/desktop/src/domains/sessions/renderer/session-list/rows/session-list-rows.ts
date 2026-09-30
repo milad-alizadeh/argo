@@ -136,7 +136,7 @@ function archivedSessionListRows(
 }
 
 // The status filter chooses which Sessions the one list carries. A search shows only the
-// matching active rows, so selection and virtualization stay on the same list.
+// matching active rows and grows like browsing, so selection and virtualization stay on one list.
 export function sessionListRows({
   active,
   archived,
@@ -157,7 +157,6 @@ export function sessionListRows({
   const rows: SessionListRow[] = showsActive(status)
     ? active.map((session) => ({ kind: 'session', session, archived: false }))
     : []
-  if (searching) return rows
   // Scrolling this row into view is the reader action that grows the active sessionList's own bounded
   // window (#2239); it carries no loaded rows itself, so it is never mistaken for one.
   if (showsActive(status) && hasMoreSessions) rows.push({ kind: 'sessionListSentinel' })
@@ -167,6 +166,6 @@ export function sessionListRows({
   if (sessionListLoadingMoreShown) rows.push({ kind: 'sessionListLoadingMore' })
   // The initial Session list load draws its own skeleton (session-list-status-row.tsx), so the Archive's
   // own outcome stays off the list until the Session list has resolved once (#2239).
-  if (!showArchive || !showsArchived(status)) return rows
+  if (searching || !showArchive || !showsArchived(status)) return rows
   return [...rows, ...archivedSessionListRows(archived, sessionListLoadingMoreShown)]
 }

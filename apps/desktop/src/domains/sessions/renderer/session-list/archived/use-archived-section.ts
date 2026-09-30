@@ -10,11 +10,17 @@ import { useArchivedSessions } from './use-archived-sessions'
 // Ids the archive query has already surfaced, so a click on a row already on screen never counts
 // as a restore: a restore changes the query's cache key (below), and treating every already-loaded
 // row as one would drop the pages already fetched under the old key.
-export function useArchivedSection(
-  selectedSessionId: SessionId | null,
-  visibleSessionIds: readonly SessionId[],
-  sessionListResolved: boolean,
-) {
+export function useArchivedSection({
+  projectId,
+  selectedSessionId,
+  visibleSessionIds,
+  sessionListResolved,
+}: {
+  projectId: string | null
+  selectedSessionId: SessionId | null
+  visibleSessionIds: readonly SessionId[]
+  sessionListResolved: boolean
+}) {
   const status = useSessionListStatus()
   const setStatus = useSetSessionListStatus()
   const loadedIds = useRef<Set<SessionId>>(new Set())
@@ -41,7 +47,7 @@ export function useArchivedSection(
     isLoading,
     restored,
     sessions,
-  } = useArchivedSessions(enabled, restoreId)
+  } = useArchivedSessions(projectId, enabled, restoreId)
 
   if (restored !== null) restoredSession.current = restored
   const preservedRestored =

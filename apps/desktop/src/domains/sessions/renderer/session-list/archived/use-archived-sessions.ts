@@ -1,5 +1,4 @@
-import { useInfiniteQuery } from '@tanstack/react-query'
-import { useParams } from 'react-router'
+import { skipToken, useInfiniteQuery } from '@tanstack/react-query'
 import { sessionError } from '@/domains/sessions/api/session-error'
 import { type RouterOutputs, trpcClient } from '@/platform/renderer/trpc-client'
 import { SessionContractError } from '../../session-contract-error'
@@ -12,19 +11,25 @@ type ArchivePage = RouterOutputs['sessionArchiveList']
 // (#1593). `restoreId` asks the reader to hand back a Session's row even when it falls outside
 // the pages already loaded, so a previously selected archived Session can be shown restored
 // without paging through everything to find it.
-export function useArchivedSessions(enabled: boolean, restoreId: SessionId | null) {
-  const { projectId = 'unscoped' } = useParams()
+export function useArchivedSessions(
+  projectId: string | null,
+  enabled: boolean,
+  restoreId: SessionId | null,
+) {
   const query = useInfiniteQuery<ArchivePage>({
-    queryKey: sessionArchiveQueryKey(restoreId),
+    queryKey: sessionArchiveQueryKey(projectId, restoreId),
     enabled,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
-    queryFn: ({ pageParam }) =>
-      trpcClient.sessionArchiveList.query({
-        projectId,
-        cursor: pageParam as string | null,
-        restoreId,
-      }),
+    queryFn:
+      projectId === null
+        ? skipToken
+        : ({ pageParam }) =>
+            trpcClient.sessionArchiveList.query({
+              projectId,
+              cursor: pageParam as string | null,
+              restoreId,
+            }),
   })
 
   const seen = new Set<string>()
