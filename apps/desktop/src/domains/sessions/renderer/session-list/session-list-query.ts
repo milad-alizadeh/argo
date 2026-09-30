@@ -10,8 +10,7 @@ export type SessionListInput = Required<
 const PAGE_SIZE = 30
 
 export const sessionListPathKey = ['sessions', 'list'] as const
-export const sessionListQueryKey = (input: SessionListInput) =>
-  [...sessionListPathKey, input] as const
+const sessionListQueryKey = (input: SessionListInput) => [...sessionListPathKey, input] as const
 
 // Main announces each saved change, and every loaded list reads its pages again.
 export function useSessionListQuery(input: SessionListInput, enabled: boolean) {
