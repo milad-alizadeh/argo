@@ -1,14 +1,24 @@
 import { initTRPC } from '@trpc/server'
 import { observable } from '@trpc/server/observable'
-import { and, asc, count, desc, eq, inArray, not, or, type SQL, sql } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  isNull,
+  or,
+  type SQL,
+  sql,
+} from 'drizzle-orm'
+import { createSelectSchema } from 'drizzle-orm/zod'
 import { z } from 'zod'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
-import {
-  type SessionStatus,
-  sessionSelectSchema,
-  sessionStatusSchema,
-} from '@/database/session/validation'
+import { sessionSelectSchema, sessionStatusSchema } from '@/database/session/validation'
+import { sessionArchive } from '@/database/session-archive/schema'
 import { sessionTicketLink } from '@/database/session-ticket-link/schema'
 import { feedActivitySchema } from '@/domains/sessions/api/feed-activity'
 import {
@@ -16,6 +26,7 @@ import {
   WORKING_SESSION_STATUSES,
 } from '@/domains/sessions/api/session-live-event'
 import { sessionTitleSchema } from '@/domains/sessions/api/session-title'
+import { identifierSchema } from '@/shared/validation'
 import { type StoredSubagent, storedSessionSubagents } from '../database/session-subagents'
 import {
   type LiveSessionSupervisorActor,
@@ -31,11 +42,11 @@ const sessionListInputSchema = z.strictObject({
   projectId: z.string().min(1),
   filter: z.enum(['active', 'archived', 'all']).default('active'),
   search: z.string().trim().max(500).default(''),
+  ticketKey: identifierSchema.optional(),
   offset: z.number().int().min(0).default(0),
   limit: z.number().int().min(1).max(100).default(30),
 })
 
-const identifierSchema = z.string().min(1)
 const countSchema = z.number().int().nonnegative()
 const sessionPlanSchema = z.discriminatedUnion('state', [
   z.strictObject({
@@ -68,24 +79,31 @@ const sessionShellCommandSchema = z.strictObject({
   outputPath: z.string().nullable(),
   result: z.string().nullable(),
 })
+const storedTicketLink = createSelectSchema(sessionTicketLink).shape
 const sessionTicketSchema = z.strictObject({
-  projectId: identifierSchema,
-  key: z.string().min(1),
-  title: z.string(),
-  state: z.enum(['open', 'closed']),
+  projectId: storedTicketLink.projectId,
+  key: storedTicketLink.ticketKey,
+  title: storedTicketLink.title,
+  state: storedTicketLink.state,
   createdAt: z.iso.datetime(),
 })
 
 // The stored columns a row carries unchanged.
-const storedSessionSchema = sessionSelectSchema.pick({
-  harness: true,
-  projectId: true,
-  sortOrder: true,
-  customTitle: true,
-  preview: true,
-  cwd: true,
-  workspaceId: true,
-})
+const passedSessionColumns = {
+  harness: sessionTable.harness,
+  projectId: sessionTable.projectId,
+  sortOrder: sessionTable.sortOrder,
+  customTitle: sessionTable.customTitle,
+  preview: sessionTable.preview,
+  cwd: sessionTable.cwd,
+  workspaceId: sessionTable.workspaceId,
+}
+const storedSessionSchema = sessionSelectSchema.pick(
+  Object.fromEntries(Object.keys(passedSessionColumns).map((key) => [key, true])) as Record<
+    keyof typeof passedSessionColumns,
+    true
+  >,
+)
 
 // The Session screen reads `plan`, `shell`, the context sizes and the handoff links through
 // `sessionDetails`, which shares this schema.
@@ -93,7 +111,7 @@ export const sessionListRowSchema = z.strictObject({
   ...storedSessionSchema.shape,
   id: z.string().uuid(),
   createdAt: z.iso.datetime(),
-  posture: z.enum(['live', 'external']).nullable(),
+  posture: z.literal('live').nullable(),
   title: sessionTitleSchema.nullable(),
   status: sessionStatusSchema,
   updatedAt: z.string().nullable(),
@@ -118,12 +136,6 @@ const sessionListSchema = z.strictObject({
   total: z.number().int().nonnegative(),
   rows: z.array(sessionListRowSchema),
 })
-
-type StoredSessionTitle = {
-  customTitle: string | null
-  preview: string | null
-  firstPrompt: string | null
-}
 
 export type SessionListContext = {
   database: Database
@@ -165,87 +177,46 @@ function liveProjection(context: SessionListContext, sessionId: string) {
   }
 }
 
-function displayedTitle(
-  row: StoredSessionTitle & { ticketTitle: string | null },
-): z.infer<typeof sessionTitleSchema> | null {
-  if (row.customTitle !== null) return { text: row.customTitle, source: 'custom' }
-  if (row.ticketTitle !== null) return { text: row.ticketTitle, source: 'ticket' }
-  if (row.preview !== null && row.preview !== row.firstPrompt)
-    return { text: row.preview, source: 'summarised' }
+function displayedTitle(row: StoredSessionRow): z.infer<typeof sessionTitleSchema> | null {
+  const { customTitle, preview } = row.passed
+  if (customTitle !== null) return { text: customTitle, source: 'custom' }
+  if (row.ticket !== null) return { text: row.ticket.title, source: 'ticket' }
+  if (preview !== null && preview !== row.firstPrompt)
+    return { text: preview, source: 'summarised' }
   if (row.firstPrompt !== null) return { text: row.firstPrompt, source: 'first-prompt' }
   return null
 }
 
-function ticketStateOf(value: string): 'open' | 'closed' {
-  return z.enum(['open', 'closed']).parse(value)
-}
-
 function sessionListRow(
   context: SessionListContext,
-  row: StoredSessionTitle & {
-    id: string
-    harness: string
-    nativeId: string
-    projectId: string | null
-    createdAt: number
-    sortOrder: number
-    cwd: string | null
-    workspaceId: string | null
-    activityAt: number | null
-    activity: string | null
-    status: SessionStatus | null
-    updatedAt: number
-    ticket: {
-      projectId: string
-      key: string
-      title: string
-      state: string
-      createdAt: string
-    } | null
-    archived: boolean
-  },
+  row: StoredSessionRow,
   subagents: readonly StoredSubagent[],
 ) {
   const live = liveProjection(context, row.id)
   const liveStatus = live?.status === 'unknown' ? null : live?.status
-  const ticket =
-    row.ticket === null ? null : { ...row.ticket, state: ticketStateOf(row.ticket.state) }
   return {
+    ...row.passed,
     id: row.id,
-    harness: row.harness,
-    projectId: row.projectId,
     createdAt: new Date(row.createdAt).toISOString(),
-    sortOrder: row.sortOrder,
     posture: live?.posture ?? null,
-    customTitle: row.customTitle,
-    preview: row.preview,
-    title: displayedTitle({ ...row, ticketTitle: ticket?.title ?? null }),
+    title: displayedTitle(row),
     status: liveStatus ?? row.status ?? 'unknown',
-    cwd: row.cwd,
-    workspaceId: row.workspaceId,
     updatedAt: new Date(row.activityAt ?? row.updatedAt).toISOString(),
     activity: observedActivity(row.activity) ?? live?.activity ?? null,
     plan: null,
     subagents: subagents.map((subagent) => ({ ...subagent, startedAt: null, endedAt: null })),
     shell: [],
-    ticket,
+    ticket: row.ticket,
     archived: row.archived,
     turnConfiguration: live?.turnConfiguration ?? { model: null, effort: null, mode: null },
   }
 }
 
 const storedSessionColumns = {
+  passed: passedSessionColumns,
   id: sessionTable.argoId,
-  harness: sessionTable.harness,
-  nativeId: sessionTable.nativeId,
-  projectId: sessionTable.projectId,
   createdAt: sessionTable.createdAt,
-  sortOrder: sessionTable.sortOrder,
-  customTitle: sessionTable.customTitle,
-  preview: sessionTable.preview,
   firstPrompt: sessionTable.firstPrompt,
-  cwd: sessionTable.cwd,
-  workspaceId: sessionTable.workspaceId,
   activityAt: sessionTable.activityAt,
   activity: sessionTable.activity,
   status: sessionTable.status,
@@ -259,7 +230,37 @@ const storedSessionColumns = {
   },
 }
 
-const sessionIsArchived = sql<boolean>`exists (select 1 from session_archive where session_archive.session_id = ${sessionTable.argoId})`
+const sessionListOrder = [
+  asc(sessionTable.sortOrder),
+  desc(sessionTable.createdAt),
+  asc(sessionTable.argoId),
+]
+
+// The stored Sessions `where` selects, with their Ticket link and archive mark.
+function storedSessionQuery(database: Database, where: SQL | undefined) {
+  return database
+    .select({
+      ...storedSessionColumns,
+      archived: isNotNull(sessionArchive.sessionId).mapWith(Boolean),
+    })
+    .from(sessionTable)
+    .leftJoin(sessionTicketLink, eq(sessionTicketLink.sessionId, sessionTable.argoId))
+    .leftJoin(sessionArchive, eq(sessionArchive.sessionId, sessionTable.argoId))
+    .where(where)
+}
+
+type StoredSessionRow = ReturnType<ReturnType<typeof storedSessionQuery>['all']>[number]
+
+function sessionListRows(
+  context: SessionListContext,
+  stored: readonly StoredSessionRow[],
+): z.infer<typeof sessionListRowSchema>[] {
+  const subagents = storedSessionSubagents(
+    context.database,
+    stored.map((row) => row.id),
+  )
+  return stored.map((row) => sessionListRow(context, row, subagents.get(row.id) ?? []))
+}
 
 // Runs `publish` once in the next microtask for any burst of `changed` calls, until stopped.
 function coalescedChanges(publish: () => void) {
@@ -280,31 +281,13 @@ function coalescedChanges(publish: () => void) {
   }
 }
 
-// The Session List rows `where` selects, in list order.
-export function readSessionRows(
+// One saved Session's row, or null for an unknown ID.
+export function readSessionRow(
   context: SessionListContext,
-  where: SQL | undefined,
-  page?: { limit: number; offset: number },
-): z.infer<typeof sessionListRowSchema>[] {
-  const query = context.database
-    .select({ ...storedSessionColumns, archived: sessionIsArchived })
-    .from(sessionTable)
-    .leftJoin(sessionTicketLink, eq(sessionTicketLink.sessionId, sessionTable.argoId))
-    .where(where)
-    .orderBy(asc(sessionTable.sortOrder), desc(sessionTable.createdAt), asc(sessionTable.argoId))
-  const stored =
-    page === undefined ? query.all() : query.limit(page.limit).offset(page.offset).all()
-  const subagents = storedSessionSubagents(
-    context.database,
-    stored.map((row) => row.id),
-  )
-  return stored.map((row) =>
-    sessionListRow(
-      context,
-      { ...row, archived: Boolean(row.archived) },
-      subagents.get(row.id) ?? [],
-    ),
-  )
+  sessionId: string,
+): z.infer<typeof sessionListRowSchema> | null {
+  const stored = storedSessionQuery(context.database, eq(sessionTable.argoId, sessionId)).all()
+  return sessionListRows(context, stored)[0] ?? null
 }
 
 function readSessionList(
@@ -312,13 +295,19 @@ function readSessionList(
   input: z.infer<typeof sessionListInputSchema>,
 ): z.infer<typeof sessionListSchema> {
   const filters = {
-    active: not(sessionIsArchived),
-    archived: sessionIsArchived,
+    active: isNull(sessionArchive.sessionId),
+    archived: isNotNull(sessionArchive.sessionId),
     all: undefined,
   } as const satisfies Record<typeof input.filter, SQL | undefined>
   const where = and(
     eq(sessionTable.projectId, input.projectId),
     filters[input.filter],
+    input.ticketKey === undefined
+      ? undefined
+      : and(
+          eq(sessionTicketLink.projectId, input.projectId),
+          eq(sessionTicketLink.ticketKey, input.ticketKey),
+        ),
     input.search === ''
       ? undefined
       : or(
@@ -326,10 +315,19 @@ function readSessionList(
           sql<boolean>`instr(lower(coalesce(${sessionTable.preview}, '')), lower(${input.search})) > 0`,
         ),
   )
-  const rows = readSessionRows(context, where, { limit: input.limit, offset: input.offset })
-  const total =
-    context.database.select({ value: count() }).from(sessionTable).where(where).get()?.value ?? 0
-  return { total, rows }
+  // A Ticket's Sessions read most recently linked first.
+  const order =
+    input.ticketKey === undefined
+      ? sessionListOrder
+      : [desc(sessionTicketLink.createdAt), ...sessionListOrder]
+  const stored = storedSessionQuery(context.database, where)
+    .orderBy(...order)
+    .limit(input.limit)
+    .offset(input.offset)
+    .all()
+  const listed = storedSessionQuery(context.database, where).as('listed')
+  const total = context.database.select({ value: count() }).from(listed).get()?.value ?? 0
+  return { total, rows: sessionListRows(context, stored) }
 }
 
 export function sessionListProcedure(context: SessionListContext) {

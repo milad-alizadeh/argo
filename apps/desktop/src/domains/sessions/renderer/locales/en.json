@@ -1,10 +1,6 @@
 {
   "navigationLabel": "Sessions",
   "sidebarLabel": "Sessions sidebar",
-  "title": "Sessions",
-  "subtitle": "Harness messages",
-  "loading": "Argo is reading this machine's Sessions.",
-  "readAgain": "Read again",
   "refreshSessions": "Refresh Sessions",
   "sync": {
     "fetching": "Syncing Sessions…",
@@ -21,16 +17,10 @@
   },
   "searchSessions": "Search Sessions",
   "subagent": "Subagent",
-  "findSession": "Find a Session",
-  "reading": "Reading this Session",
   "noSessionsFound": "No Sessions found",
   "loadingMoreSessions": "Loading more Sessions",
   "unableToLoadSessions": "Unable to load Sessions",
   "sessionListReadFailure": "Argo could not read these Sessions.",
-  "errors": {
-    "sessionList": "Argo could not read the Sessions again.",
-    "feed": "Argo cannot read this Session's history."
-  },
   "stalled": {
     "title": "Could not load this Session",
     "description": {
@@ -236,15 +226,17 @@
   },
   "sessionList": {
     "planProgress": "{{completed}} of {{total}} steps completed",
-    "planUnreadable": "Plan unreadable",
-    "sourceFailed": "{{harness}} Sessions did not load"
+    "planUnreadable": "Plan unreadable"
   },
   "inspector": {
     "diagramLabel": "Diagram inspector",
     "evidenceUnavailable": "Recorded evidence is unavailable.",
     "commandAndFileLabel": "Command and file inspector"
   },
-  "codeLanguage": { "typescript": "TS", "go": "GO" },
+  "codeLanguage": {
+    "typescript": "TS",
+    "go": "GO"
+  },
   "diagram": {
     "title": "Diagram",
     "failedTitle": "Diagram · Could not render",
@@ -270,7 +262,9 @@
     "unselectedTitle": "No Session selected",
     "unselectedDescription": "Choose a Session from the Session list to read its history."
   },
-  "harness": { "label": "Harness" },
+  "harness": {
+    "label": "Harness"
+  },
   "promptSender": "You",
   "promptImage": "Attached image {{number}}",
   "promptImageOpen": "Open attached image {{number}}",
@@ -292,11 +286,17 @@
   "sessionListStatusArchived": "Archived",
   "sessionListStatusAll": "All",
   "readingSessions": "Reading Sessions",
-  "searchingSessions": "Searching Sessions",
   "needsInput": "Needs input",
-  "loadingMoreSearchResults": "Loading more matches",
-  "unableToSearchSessions": "Unable to search Sessions",
-  "searchStillIndexing": "Still indexing older Sessions",
+  "sessionStatus": {
+    "asking": "Asking",
+    "ended": "Ended",
+    "idle": "Idle",
+    "permission": "Waiting on permission",
+    "running": "Running",
+    "starting": "Starting",
+    "stopped": "Stopped",
+    "unknown": "Unknown"
+  },
   "bulkSelect": {
     "selected": "Selected",
     "archive": "Archive",
@@ -316,25 +316,9 @@
     "linkTicket": "Link Ticket…"
   },
   "empty": {
-    "unselected": {
-      "title": "No Session selected",
-      "description": "Select a Session on the left to read its messages."
-    },
     "blank": {
       "title": "No messages",
       "description": "This Session has no messages to show."
-    },
-    "no-sessions": {
-      "title": "No Sessions on this machine",
-      "description": "Argo lists a Session here as soon as a Harness writes one."
-    },
-    "sessionList": {
-      "title": "No Sessions on this machine",
-      "description": "Argo lists a Session here as soon as a Harness writes one."
-    },
-    "archived": {
-      "title": "Nothing archived",
-      "description": "A Session you archive moves in here."
     }
   },
   "marks": {
@@ -345,13 +329,19 @@
     "interrupted": "Interrupted"
   },
   "events": {
-    "command": { "label": "Command received" },
+    "command": {
+      "label": "Command received"
+    },
     "skill-invocation": {
       "label": "Skill invoked",
       "title": "{{label}} {{invocation}}"
     },
-    "context": { "label": "System context updated" },
-    "status": { "label": "Status updated" },
+    "context": {
+      "label": "System context updated"
+    },
+    "status": {
+      "label": "Status updated"
+    },
     "liveStatus": {
       "label": "Session status",
       "starting": "Starting",
@@ -363,33 +353,70 @@
       "ended": "Ended",
       "unknown": "Unknown"
     },
-    "liveFailure": { "label": "Session activity failed" },
-    "reasoning": { "label": "Reasoning unavailable" },
+    "liveFailure": {
+      "label": "Session activity failed"
+    },
+    "reasoning": {
+      "label": "Reasoning unavailable"
+    },
     "media": {
       "label": "Attachment",
       "image": "Image unavailable",
       "audio": "Audio",
       "document": "Document"
     },
-    "fileChange": { "label": "File change" },
-    "search": { "label": "Search" },
-    "plan": { "label": "Plan" },
-    "delegation": { "label": "Subagent" },
-    "task": { "label": "Task" },
-    "refusal": { "label": "Request declined" },
-    "imageGeneration": { "label": "Image generation" },
-    "wait": { "label": "Wait" },
-    "diagnostic": { "label": "Unsupported item" },
-    "permission": { "label": "Permission needed" },
-    "permissionGranted": { "label": "Permission granted" },
-    "permissionDenied": { "label": "Permission denied" },
-    "permissionCancelled": { "label": "Permission cancelled" },
-    "transcript": { "label": "Transcript delivered" },
+    "fileChange": {
+      "label": "File change"
+    },
+    "search": {
+      "label": "Search"
+    },
+    "plan": {
+      "label": "Plan"
+    },
+    "delegation": {
+      "label": "Subagent"
+    },
+    "task": {
+      "label": "Task"
+    },
+    "refusal": {
+      "label": "Request declined"
+    },
+    "imageGeneration": {
+      "label": "Image generation"
+    },
+    "wait": {
+      "label": "Wait"
+    },
+    "diagnostic": {
+      "label": "Unsupported item"
+    },
+    "permission": {
+      "label": "Permission needed"
+    },
+    "permissionGranted": {
+      "label": "Permission granted"
+    },
+    "permissionDenied": {
+      "label": "Permission denied"
+    },
+    "permissionCancelled": {
+      "label": "Permission cancelled"
+    },
+    "transcript": {
+      "label": "Transcript delivered"
+    },
     "protocolDetails": "Protocol text"
   },
   "delegation": {
-    "agent": { "label": "Background Agent" },
-    "shell": { "label": "Background Task", "running": "Running Background Task" },
+    "agent": {
+      "label": "Background Agent"
+    },
+    "shell": {
+      "label": "Background Task",
+      "running": "Running Background Task"
+    },
     "event": {
       "messaged": "{{name}} received a message",
       "responded": "{{name}} sent a reply to the main Session",
@@ -451,7 +478,9 @@
     "plan": "{{completed}} of {{total}} done",
     "delegationRunning_one": "One Subagent running",
     "delegationRunning_other": "{{count}} Subagents running",
-    "delegationFinished": "Every delegation finished"
+    "delegationFinished": "Every delegation finished",
+    "updatedJustNow": "Updated just now",
+    "updatedAgo": "Updated {{duration}} ago"
   },
   "facts": {
     "placeUnknown": "working directory unknown"

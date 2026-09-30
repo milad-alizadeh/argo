@@ -7,11 +7,10 @@ import { useNavigate, useParams } from 'react-router'
 import { useProjects } from '@/domains/projects/renderer'
 import type { FeedSubagent } from '@/domains/sessions/api/feed/feed-subagents'
 import { useWorkspaces } from '@/domains/workspaces/renderer'
-import { DEFAULT_HARNESS } from '@/harnesses/harness'
+import { DEFAULT_HARNESS, type Harness } from '@/harnesses/harness'
 import { useSessionPermission } from '../composer/hooks/use-session-permission'
 import { useSessionQuestion } from '../composer/hooks/use-session-question'
 import { useFeedReading } from '../feed/use-feed-reading'
-import type { SessionHarness } from '../harness/harnesses'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
 import type { Session, SessionEvidence } from '../types'
 import { useDelegationFeed, useDelegationUsage, useShellOutput } from '../work/use-session-work'
@@ -21,15 +20,18 @@ import { sessionWorkspaceIdentity } from './session-screen-workspace'
 import { useSessionDetails } from './use-session-details'
 import { useWorkPick, type WorkSelection } from './work-selection'
 
-function useWorkArtifacts({
+// The Shell command or Subagent picked, what the inspector reads for it, and when it opens.
+function useWorkInspector({
   session,
   selectedSessionId,
   work,
+  workReveal,
   feedSubagents,
 }: {
   session: Session | null
   selectedSessionId: string | null
   work: WorkSelection
+  workReveal: ReturnType<typeof useWorkPick>['workReveal']
   feedSubagents: readonly FeedSubagent[]
 }) {
   const subagents = sessionScreenSubagents(feedSubagents, session?.subagents ?? [])
@@ -40,15 +42,22 @@ function useWorkArtifacts({
     delegation?.id ?? null,
     delegation?.state === 'running',
   )
+  const subagentUsage = useDelegationUsage(subagents.length === 0 ? null : selectedSessionId)
+  const shellOutput = useShellOutput(
+    selectedSessionId,
+    shell?.id ?? null,
+    shell?.state === 'running',
+  )
   return {
     shell,
     delegation,
     delegationFeed: delegationFeed.feed,
     delegationFeedError: delegationFeed.feedError,
     retryDelegationFeed: delegationFeed.retry,
-    subagentUsage: useDelegationUsage(subagents.length === 0 ? null : selectedSessionId),
-    shellOutput: useShellOutput(selectedSessionId, shell?.id ?? null, shell?.state === 'running'),
+    subagentUsage,
+    shellOutput,
     subagents,
+    workReveal: workInspectorReveal(workReveal, shell, shellOutput),
   }
 }
 
@@ -66,46 +75,6 @@ function useFeedJumpToLatestAction() {
   return { jumpToLatest: jumpToLatest?.action ?? null, onJumpToLatestChange }
 }
 
-function useSessionSelectionData(
-  selectedSessionId: string | null,
-  workspaces: ReturnType<typeof useWorkspaces>[0]['workspaces'],
-) {
-  const { session, loaded } = useSessionDetails(selectedSessionId)
-  return {
-    session,
-    sessionLoaded: loaded,
-    workspaceIdentity: sessionWorkspaceIdentity(session, workspaces),
-  }
-}
-
-function useSessionInteractions(selectedSessionId: string | null) {
-  // Ask only real Session ids; an optimistic Session row has no backend record yet (#2109).
-  return {
-    permission: useSessionPermission(selectedSessionId),
-    question: useSessionQuestion(selectedSessionId),
-  }
-}
-
-function useSessionInspectorData({
-  session,
-  selectedSessionId,
-  work,
-  workReveal,
-  feedSubagents,
-}: {
-  session: Session | null
-  selectedSessionId: string | null
-  work: WorkSelection
-  workReveal: ReturnType<typeof useWorkPick>['workReveal']
-  feedSubagents: readonly FeedSubagent[]
-}) {
-  const artifacts = useWorkArtifacts({ session, selectedSessionId, work, feedSubagents })
-  return {
-    ...artifacts,
-    workReveal: workInspectorReveal(workReveal, artifacts.shell, artifacts.shellOutput),
-  }
-}
-
 // Opened evidence is held against its Session, since the Session screen stays mounted across a
 // switch and evidence from one Session says nothing about the next.
 function useSessionEvidence(sessionId: string | null) {
@@ -119,25 +88,23 @@ function useSessionEvidence(sessionId: string | null) {
 }
 
 export function useSessionScreenModel() {
-  const { projectId, sessionId } = useParams()
+  const { sessionId } = useParams()
   const navigate = useNavigate()
   const { jumpToLatest, onJumpToLatestChange } = useFeedJumpToLatestAction()
   const [cockpit, projectActions] = useProjects()
-  const selectedProjectId = cockpit.project?.id ?? projectId ?? null
-  const [workspaceCockpit, workspaceActions] = useWorkspaces(selectedProjectId)
+  const [workspaceCockpit, workspaceActions] = useWorkspaces(cockpit.project?.id ?? null)
   const selectedSessionId = sessionId === 'new' ? null : (sessionId ?? null)
   const { evidence, setEvidence } = useSessionEvidence(selectedSessionId)
   const { work, pick, workReveal } = useWorkPick(selectedSessionId, () => setEvidence(null))
-  const { session, sessionLoaded, workspaceIdentity } = useSessionSelectionData(
-    selectedSessionId,
-    workspaceCockpit.workspaces,
-  )
+  const { session, loaded: sessionLoaded } = useSessionDetails(selectedSessionId)
   const feedRunning = sessionTurnRunning(session)
   const sessionFeed = useFeedReading(selectedSessionId, null, feedRunning)
-  const [lastHarness, chooseHarness] = useState<SessionHarness>(DEFAULT_HARNESS)
+  const [lastHarness, chooseHarness] = useState<Harness>(DEFAULT_HARNESS)
   const harness = sessionHarness({ selectedSessionId, lastHarness, chooseHarness, session })
-  const { permission, question } = useSessionInteractions(selectedSessionId)
-  const inspector = useSessionInspectorData({
+  // Ask only real Session ids; an optimistic Session row has no backend record yet (#2109).
+  const permission = useSessionPermission(selectedSessionId)
+  const question = useSessionQuestion(selectedSessionId)
+  const inspector = useWorkInspector({
     session,
     selectedSessionId,
     work,
@@ -145,7 +112,6 @@ export function useSessionScreenModel() {
     feedSubagents: sessionFeed.subagents,
   })
   return {
-    projectId,
     jumpToLatest,
     onJumpToLatestChange,
     isNewSession: sessionId === 'new',
@@ -155,7 +121,7 @@ export function useSessionScreenModel() {
     navigate,
     session,
     sessionLoaded,
-    workspaceIdentity,
+    workspaceIdentity: sessionWorkspaceIdentity(session, workspaceCockpit.workspaces),
     evidence,
     setEvidence,
     harness,

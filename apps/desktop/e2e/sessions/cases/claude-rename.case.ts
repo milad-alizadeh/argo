@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
-import { rosterRow, waitFor } from '../claude-proof-helpers'
+import { waitFor } from '../claude-proof-helpers'
 import { createSessionByClick } from '../gestures'
-import { updateSession } from '../page-trpc'
+import { sessionDetails, updateSession } from '../page-trpc'
 
 const RENAMED = 'Ticket: fix the roster badge'
 
@@ -12,11 +12,11 @@ export async function proveClaudeRename(page, { backend, transcripts }) {
   const sessionId = await createSessionByClick(page, { harness: 'claude', prompt })
   await waitFor(() => backend.recorded({ harness: 'claude', prompt }))
 
-  const [beforeRename] = await rosterRow(page, sessionId)
+  const beforeRename = await sessionDetails(page, sessionId)
   assert.deepEqual(beforeRename?.title, { text: prompt, source: 'first-prompt' })
 
-  const [renamed] = await updateSession(page, { sessionIds: [sessionId], title: RENAMED })
-  assert.equal(renamed?.customTitle, RENAMED)
+  await updateSession(page, { sessionIds: [sessionId], title: RENAMED })
+  assert.equal((await sessionDetails(page, sessionId))?.customTitle, RENAMED)
 
   const folder = path.join(transcripts, 'mock-claude')
   await waitFor(async () => {
@@ -28,9 +28,9 @@ export async function proveClaudeRename(page, { backend, transcripts }) {
     return false
   })
   await waitFor(async () => {
-    const [row] = await rosterRow(page, sessionId)
+    const row = await sessionDetails(page, sessionId)
     return row?.title?.source === 'custom' && row.title.text === RENAMED
   })
-  const [afterRename] = await rosterRow(page, sessionId)
+  const afterRename = await sessionDetails(page, sessionId)
   assert.deepEqual(afterRename?.title, { text: RENAMED, source: 'custom' })
 }

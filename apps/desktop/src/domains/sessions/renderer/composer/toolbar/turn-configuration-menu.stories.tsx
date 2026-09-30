@@ -1,12 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
+import type { Harness } from '@/harnesses/harness'
 import type { AvailableHarness, CatalogReadResult } from '@/harnesses/harness-catalog'
 import {
   claudeHarnessInfoFixture,
   codexHarnessInfoFixture,
 } from '@/mocks/sessions/harness-catalog.fixture'
-import type { SessionHarness } from '../../harness/harnesses'
 import type { TurnConfiguration } from '../turn-configuration/turn-configuration'
 import { type CatalogFailure, TurnConfigurationMenu } from './turn-configuration-menu'
 
@@ -74,11 +74,11 @@ function failureOf(result: CatalogReadResult | null): CatalogFailure | null {
 
 // A started Session keeps its harness; a new one offers the harness tabs.
 function TurnConfigurationStory({ started = true }: { started?: boolean }) {
-  const [harness, setHarness] = useState<SessionHarness>('claude')
+  const [harness, setHarness] = useState<Harness>('claude')
   const [turnConfiguration, setTurnConfiguration] = useState(liveClaudeInfo.opening)
   const result = harness === 'codex' ? readyCodex : readyClaude
   const choices = availableInfo(result)
-  const chooseHarness = (nextHarness: SessionHarness) => {
+  const chooseHarness = (nextHarness: Harness) => {
     setHarness(nextHarness)
     setTurnConfiguration(nextHarness === 'codex' ? liveCodexInfo.opening : liveClaudeInfo.opening)
   }
@@ -99,7 +99,7 @@ function CatalogStory({
   failed = false,
   initialReady = false,
 }: {
-  harness: SessionHarness
+  harness: Harness
   failed?: boolean
   initialReady?: boolean
 }) {

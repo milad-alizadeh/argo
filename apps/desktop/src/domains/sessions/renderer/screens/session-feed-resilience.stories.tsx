@@ -17,7 +17,7 @@ import { SessionScreenView } from './session-screen-view'
 
 const session = sessionRow({
   id: 'flaky-feed-session',
-  posture: 'external',
+  posture: null,
   title: { text: 'Read the transcript through a flaky source', source: 'first-prompt' },
   status: 'idle',
   cwd: '/storybook/argo',

@@ -4,8 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { QuestionAnswer } from '@/domains/sessions/api/questions'
 import { BasicFeed } from '../feed/document/basic-feed'
 import { FeedJumpToLatest } from '../feed/rows/feed-jump-to-latest'
-import type { SessionPosture } from '../model/models'
-import type { SessionError, SessionEvidence, SessionFeed } from '../types'
+import type { SessionError, SessionEvidence, SessionFeed, SessionPosture } from '../types'
 
 export type SessionWorkspaceProps = {
   composer: ReactNode | null

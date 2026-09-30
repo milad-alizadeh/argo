@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
+import type { Harness } from '@/harnesses/harness'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import type { SessionHarness } from '../../harness/harnesses'
 import {
   referenceHarnessLabel,
   referenceSuggestions,
@@ -96,7 +96,7 @@ function ReferenceNote({
   harness,
   note,
 }: {
-  harness: SessionHarness | null
+  harness: Harness | null
   note: 'empty' | 'pending' | 'unavailable'
 }) {
   const { t } = useTranslation('sessions')
@@ -123,7 +123,7 @@ export function ComposerReferenceMenu({
   onChoose,
   selected,
 }: {
-  harness?: SessionHarness | null
+  harness?: Harness | null
   menu: ReferenceMenu
   onChoose: (choice: ReferenceSuggestion) => void
   selected: number

@@ -17,7 +17,7 @@ import { SessionScreenView } from './session-screen-view'
 // the play function reads what the window does while it is waiting.
 const stalled = sessionRow({
   id: 'stalled-feed-session',
-  posture: 'external',
+  posture: null,
   title: { text: 'A transcript still being written', source: 'first-prompt' },
   status: 'idle',
   cwd: '/storybook/argo',

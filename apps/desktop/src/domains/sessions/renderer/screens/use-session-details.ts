@@ -1,7 +1,6 @@
 import { skipToken, useQuery } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import { queryClient, trpcClient } from '@/platform/renderer/trpc-client'
-import { sessionDetailsQueryKey } from '../session-queries'
+import { queryClient, trpc, trpcClient } from '@/platform/renderer/trpc-client'
 import type { SessionId } from '../types'
 
 // A Session's details by ID, independent of the roster, read again when main announces a change.
@@ -12,14 +11,13 @@ export function useSessionDetails(sessionId: SessionId | null) {
     const subscription = trpcClient.sessionListChanged.subscribe(undefined, {
       onData: ({ sessionIds }) => {
         if (sessionIds.includes(sessionId))
-          queryClient.invalidateQueries({ queryKey: sessionDetailsQueryKey(sessionId) })
+          queryClient.invalidateQueries({ queryKey: trpc.sessionDetails.queryKey({ sessionId }) })
       },
     })
     return () => subscription.unsubscribe()
   }, [sessionId])
-  const { data } = useQuery({
-    queryKey: sessionDetailsQueryKey(sessionId),
-    queryFn: sessionId === null ? skipToken : () => trpcClient.sessionDetails.query({ sessionId }),
-  })
+  const { data } = useQuery(
+    trpc.sessionDetails.queryOptions(sessionId === null ? skipToken : { sessionId }),
+  )
   return { session: data ?? null, loaded: sessionId !== null && data !== undefined }
 }

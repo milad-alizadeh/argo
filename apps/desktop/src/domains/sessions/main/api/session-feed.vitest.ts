@@ -1,10 +1,11 @@
+import { eq } from 'drizzle-orm'
 import { expect, test, vi } from 'vitest'
 import { sessionTable } from '@/database/session/schema'
 import type { FeedReading } from '@/domains/sessions/api/feed/feed-reading'
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { FEED_TEXT_COALESCE_MS } from '../feed/feed-reader'
 import { SessionEventJournal } from '../live/session-event-journal'
-import { SessionActivities } from './session-activities'
+import { storedActivity } from './session-activities'
 import {
   command,
   content,
@@ -136,19 +137,27 @@ function reasoning(id: string, text: string | null): FeedContent {
 const activityOf = (reading: FeedReading | undefined) =>
   reading?.entries.find(({ row }) => row.shape === 'activity')?.row
 
+const rosterActivity = () =>
+  storedActivity(
+    database
+      .select({ activity: sessionTable.activity })
+      .from(sessionTable)
+      .where(eq(sessionTable.argoId, sessionId))
+      .get()?.activity ?? null,
+  )
+
 test('a multi-activity Turn publishes its latest activity to the Feed and keeps it for the roster', async () => {
   let rosterChanges = 0
   const roster = new SessionRosterChanges()
   roster.subscribe(() => {
     rosterChanges += 1
   })
-  const activities = new SessionActivities({ database, roster })
   const history = historyReads()
-  const feed = await observe({ readHistory: history.readHistory, activities })
+  const feed = await observe({ readHistory: history.readHistory, roster })
   await history.answer([message('m1', 'user', 'Check it'), command('c1', 'bun test')])
   const first = { kind: 'command', label: 'Ran bun test', open: false }
   expect(activityOf(feed.latest())).toMatchObject({ activity: first })
-  expect(activities.activityOf(sessionId)).toMatchObject(first)
+  expect(rosterActivity()).toMatchObject(first)
 
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   journal.append(sessionId, content(reasoning('r1', null)))
@@ -162,7 +171,7 @@ test('a multi-activity Turn publishes its latest activity to the Feed and keeps 
   journal.append(sessionId, content(running('c2', 'bun run typecheck')))
   const latest = { kind: 'command', label: 'Ran bun run typecheck', open: true }
   expect(activityOf(feed.latest())).toMatchObject({ activity: latest })
-  expect(activities.activityOf(sessionId)).toMatchObject(latest)
+  expect(rosterActivity()).toMatchObject(latest)
   expect(feed.latest()?.entries.filter(({ row }) => row.shape === 'activity')).toHaveLength(1)
 
   journal.append(sessionId, content(command('c2', 'bun run typecheck')))
@@ -177,7 +186,7 @@ test('a multi-activity Turn publishes its latest activity to the Feed and keeps 
   expect(activityOf(feed.latest())).toMatchObject({ activity: { ...latest, open: false } })
   const changesBeforeClose = rosterChanges
   feed.subscription.unsubscribe()
-  expect(activities.activityOf(sessionId)).toMatchObject({ ...latest, open: false })
+  expect(rosterActivity()).toMatchObject({ ...latest, open: false })
   expect(rosterChanges).toBe(changesBeforeClose)
 })
 
@@ -328,6 +337,16 @@ test('a committed sync reads vendor history again', async () => {
   const store = new SessionSyncStatusStore(undefined, 'claude')
   const feed = await observe({ readHistory: history.readHistory, sessionSyncStatus: [store] })
   await expectFreshRead(feed, history, () => store.committed([sessionId]))
+})
+
+test('a committed sync that names another Session reads nothing again', async () => {
+  const history = historyReads()
+  const store = new SessionSyncStatusStore(undefined, 'claude')
+  const feed = await observe({ readHistory: history.readHistory, sessionSyncStatus: [store] })
+  await history.answer([message('m1', 'assistant', 'Before')])
+  store.committed(['00000000-0000-4000-8000-000000000099'])
+  expect(history.pending).toHaveLength(0)
+  feed.subscription.unsubscribe()
 })
 
 test('a read that lands after the last observer left publishes nothing', async () => {

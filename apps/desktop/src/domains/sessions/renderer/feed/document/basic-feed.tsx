@@ -12,8 +12,13 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/platform/renderer/components/ui/empty'
-import type { SessionPosture } from '../../model/models'
-import type { SessionError, SessionEvidence, SessionFeed, SessionId } from '../../types'
+import type {
+  SessionError,
+  SessionEvidence,
+  SessionFeed,
+  SessionId,
+  SessionPosture,
+} from '../../types'
 import { FeedLoading } from '../feed-loading'
 import { FEED_STALL_TIMEOUT_MS, useStallTimer } from '../feed-stall'
 import { isFeedRowStreaming } from '../rows/feed-row-renderers'

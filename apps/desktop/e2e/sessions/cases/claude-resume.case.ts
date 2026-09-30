@@ -6,8 +6,9 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fixturePath, proofCwd, replaceInFile } from '../../../mocks/sessions/mock-transcript-files'
-import { rosterRow, waitFor } from '../claude-proof-helpers'
+import { waitFor } from '../claude-proof-helpers'
 import { createSessionByClick, openSessionByClick } from '../gestures'
+import { sessionDetails } from '../page-trpc'
 import { waitForRosterSettled } from '../roster-facts'
 
 async function sendFromComposer(page, text) {
@@ -24,7 +25,7 @@ export async function provePackagedResume(page, { backend, project, restart, tra
   await waitFor(() => backend.recorded(opened))
 
   const relaunched = await restart()
-  const [reread] = await rosterRow(relaunched, sessionId)
+  const reread = await sessionDetails(relaunched, sessionId)
   assert.equal(reread?.posture, 'external')
   // A fresh launch is still discovering the fixture pool off disk; a row that click resolves
   // before that settles can have another row's translateY shift onto it before the dispatched
@@ -40,11 +41,8 @@ export async function provePackagedResume(page, { backend, project, restart, tra
     .catch((error) => reportStalledResume({ error, page: relaunched, sessionId, transcripts }))
   await relaunched.getByRole('button', { name: 'Compact context' }).click()
   await waitForCompactionFeed(relaunched, sessionId)
-  const resumed = await rosterRow(relaunched, sessionId)
-  assert.deepEqual(
-    resumed.map(({ posture }) => posture),
-    ['live'],
-  )
+  const resumed = await sessionDetails(relaunched, sessionId)
+  assert.equal(resumed?.posture, 'live')
 
   // 11111111-2222-4333-8444-555555555555's fixture cwd is a folder under the Project that no one created; a real send
   // resumes a real process, so it needs a directory that exists on this machine.
@@ -84,7 +82,7 @@ async function reportStalledResume({ error, page, sessionId, transcripts }) {
   const feedRows = await page
     .locator(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`)
     .allTextContents()
-  const [row] = await rosterRow(page, sessionId)
+  const row = await sessionDetails(page, sessionId)
   const written = await readFile(
     path.join(transcripts, 'mock-claude', `${sessionId}.jsonl`),
     'utf8',

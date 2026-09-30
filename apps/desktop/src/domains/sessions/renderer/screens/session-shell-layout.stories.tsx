@@ -6,7 +6,7 @@ import { SessionShell } from './session-shell'
 
 const session = sessionRow({
   id: '01K5S9WHWCG1S9K3K88P4JBQBP',
-  posture: 'external',
+  posture: null,
   status: 'idle',
   title: {
     text: 'Keep the sidebar control clear of every Session title at every workspace width',

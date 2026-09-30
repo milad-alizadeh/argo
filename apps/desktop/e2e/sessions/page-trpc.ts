@@ -1,4 +1,5 @@
 import type { Page } from 'playwright-core'
+import type { Session } from '@/domains/sessions/renderer/types'
 
 type TrpcCall = {
   path: string
@@ -15,22 +16,6 @@ export type SessionFeedReading = {
   state: string
   error: { code: string } | null
   entries: FeedEntry[]
-}
-
-export type SessionRow = {
-  id: string
-  title: { text: string; source: string } | null
-  status: string
-  posture: string | null
-  archived: boolean
-  updatedAt: string | null
-  activity: {
-    label: string
-    kind: string
-    open: boolean
-    tool: string | null
-    target: string | null
-  } | null
 }
 
 export async function trpcCall<Data>(page: Page, call: TrpcCall): Promise<Data> {
@@ -62,9 +47,9 @@ export async function selectedProjectId(page: Page): Promise<string> {
 export async function sessionRows(
   page: Page,
   filter: 'active' | 'archived' | 'all' = 'active',
-): Promise<SessionRow[]> {
+): Promise<Session[]> {
   const projectId = await selectedProjectId(page)
-  const list = await trpcCall<{ total: number; rows: SessionRow[] }>(page, {
+  const list = await trpcCall<{ total: number; rows: Session[] }>(page, {
     path: 'sessionList',
     type: 'query',
     input: { projectId, filter, limit: 100 },
@@ -138,9 +123,21 @@ export function feedRows(reading: SessionFeedReading) {
   return reading.entries.flatMap((entry) => (entry.row.shape === 'activity' ? [] : [entry.row]))
 }
 
+export async function sessionDetails(page: Page, sessionId: string): Promise<Session | null> {
+  return trpcCall<Session | null>(page, {
+    path: 'sessionDetails',
+    type: 'query',
+    input: { sessionId },
+  })
+}
+
 export async function updateSession(
   page: Page,
   input: { sessionIds: string[]; title?: string; archived?: boolean },
 ) {
-  return trpcCall<SessionRow[]>(page, { path: 'sessionUpdate', type: 'mutation', input })
+  return trpcCall<{ sessionIds: string[] }>(page, {
+    path: 'sessionUpdate',
+    type: 'mutation',
+    input,
+  })
 }

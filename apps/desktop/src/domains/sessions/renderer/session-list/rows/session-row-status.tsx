@@ -24,19 +24,6 @@ export function statusVariantOf(session: Pick<Session, 'status'>): SessionStatus
   }
 }
 
-// The dot beside a Session carries its status as colour; this is that same fact in words, for a
-// reader the dot's colour never reaches (apps/desktop/AGENTS.md "Accessible names").
-export const STATUS_LABELS: Record<Session['status'], string> = {
-  asking: 'Asking',
-  ended: 'Ended',
-  idle: 'Idle',
-  permission: 'Waiting on permission',
-  running: 'Running',
-  starting: 'Starting',
-  stopped: 'Stopped',
-  unknown: 'Unknown',
-}
-
 export function SessionBlockedBadge({ session }: { session: Session }) {
   const { t } = useTranslation('sessions')
   if (statusVariantOf(session) !== 'attention') return null

@@ -14,6 +14,7 @@ import {
   start,
   supervisorFor,
 } from '@/mocks/sessions/live-session-supervisor.fixture'
+import { IDS, insertSession, sessionListCaller } from '@/mocks/sessions/session-list-caller'
 import { liveSessionActorFor } from '../live/live-session-supervisor-machine'
 import { sessionDetailsProcedure } from './session-details'
 import { sessionListChangedProcedure } from './session-list'
@@ -110,4 +111,16 @@ test('refreshes selected details when the live channel fails', async () => {
   )
 
   expect(seen.at(-1)).toEqual({ posture: null, effort: null })
+})
+
+test('reads an archived Session by ID and says it is archived, and nothing for an unknown ID', async () => {
+  const { client, database, details } = sessionListCaller()
+  try {
+    insertSession(database, { id: IDS[0], createdAt: 10, archived: true })
+
+    expect(await details({ sessionId: IDS[0] })).toMatchObject({ id: IDS[0], archived: true })
+    expect(await details({ sessionId: IDS[1] })).toBeNull()
+  } finally {
+    client.close()
+  }
 })

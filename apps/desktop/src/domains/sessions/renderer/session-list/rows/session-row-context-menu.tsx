@@ -1,4 +1,4 @@
-import { type MouseEvent, type ReactNode, useCallback, useRef, useState } from 'react'
+import { type MouseEvent, type ReactNode, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '@/platform/renderer/components/icon/icon'
 import {
@@ -40,18 +40,12 @@ export function SessionRowContextMenu({
   // A ref beside the state, because the trigger opens the menu in the same event that names the row:
   // the state has not landed yet when it asks whether to open.
   const pointed = useRef<Session | null>(null)
-  // The rows are read at click time, through a ref. A Session list read rebuilds them several times a
-  // second while a Session runs, and a handler that closed over them changed the trigger's props
-  // every time, for a menu nobody had opened (#2386).
-  const list = useRef(sessions)
-  list.current = sessions
-
-  const readTarget = useCallback((event: MouseEvent) => {
-    const found = targetOf(event.target, list.current)
+  const readTarget = (event: MouseEvent) => {
+    const found = targetOf(event.target, sessions)
     pointed.current = found
     setTarget(found)
-  }, [])
-  const openChanged = useCallback((next: boolean) => setOpen(next && pointed.current !== null), [])
+  }
+  const openChanged = (next: boolean) => setOpen(next && pointed.current !== null)
 
   return (
     <ContextMenu onOpenChange={openChanged} open={open}>

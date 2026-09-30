@@ -16,15 +16,10 @@ export const sessionSyncStatusSchema = z.strictObject({
 })
 
 export type SessionSyncStatus = z.infer<typeof sessionSyncStatusSchema>
-const sessionSyncEventSchema = z.discriminatedUnion('type', [
-  z.strictObject({ type: z.literal('status'), status: sessionSyncStatusSchema }),
-  z.strictObject({ type: z.literal('committed') }),
-])
-
-export type SessionSyncEvent = z.infer<typeof sessionSyncEventSchema>
-// The Sessions a pass saved, for the Session List. Only `committed` crosses to the renderer, without IDs.
+export type SessionSyncEvent = { type: 'status'; status: SessionSyncStatus }
+// The Sessions a pass saved stay in main, which moves their roster rows and Feeds.
 export type SessionSyncStoreEvent =
-  | Extract<SessionSyncEvent, { type: 'status' }>
+  | SessionSyncEvent
   | { type: 'committed'; sessionIds: readonly string[] }
 const initialSessionSyncStatus: SessionSyncStatus = {
   phase: 'idle',
@@ -188,7 +183,6 @@ export function sessionSyncStatusProcedure(stores: readonly SessionSyncStatusSto
     observable<SessionSyncEvent>((emit) =>
       observeSessionSync(stores, (event) => {
         if (event.type === 'status') emit.next(event)
-        else if (event.type === 'committed') emit.next({ type: 'committed' })
       }),
     ),
   )

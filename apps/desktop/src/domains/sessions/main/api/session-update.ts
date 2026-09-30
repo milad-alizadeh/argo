@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import type { SessionStatus } from '@/database/session/validation'
@@ -14,6 +14,7 @@ export type SessionUpdate = {
   archived?: boolean
   activity?: LiveActivity | null
   status?: SessionStatus | null
+  activityAt?: number
 }
 
 export type SessionUpdateContext = { database: Database; roster: SessionRosterChanges }
@@ -27,6 +28,10 @@ function sessionColumns(update: SessionUpdate) {
       ? {}
       : { activity: update.activity === null ? null : JSON.stringify(update.activity) }),
     ...(update.status === undefined ? {} : { status: update.status }),
+    // Activity only moves forward, so a late write never ages the row.
+    ...(update.activityAt === undefined
+      ? {}
+      : { activityAt: sql`max(coalesce(${sessionTable.activityAt}, 0), ${update.activityAt})` }),
   }
 }
 
@@ -56,14 +61,14 @@ export function updateSession(
   return known
 }
 
-// Updates a Session found by its Harness's own ID; one never saved is left alone.
+// Updates a Session found by its Harness's own ID. Returns false for one never saved.
 export function updateHarnessSession(
   context: SessionUpdateContext,
   session: { harness: Harness; nativeId: string },
   update: SessionUpdate,
-): void {
+): boolean {
   const sessionId = savedSessionId(context.database, session.harness, session.nativeId)
-  if (sessionId !== undefined) updateSession(context, sessionId, update)
+  return sessionId !== undefined && updateSession(context, sessionId, update)
 }
 
 // The Argo ID a Harness's own Session ID was saved under, if it was saved.

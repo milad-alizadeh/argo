@@ -1,10 +1,13 @@
 // Session rows the Sessions stories and unit tests draw.
 
-import type { SessionShellCommand, SessionSubagent } from '@/domains/sessions/renderer/model/models'
-import type { Session } from '@/domains/sessions/renderer/types'
+import type {
+  Session,
+  SessionShellCommand,
+  SessionSubagent,
+} from '@/domains/sessions/renderer/types'
 import { DEFAULT_HARNESS } from '@/harnesses/harness'
 
-function listedSession(overrides: Partial<Session> = {}): Session {
+export function sessionRow(overrides: Partial<Session> = {}): Session {
   return {
     id: 'session-one',
     harness: DEFAULT_HARNESS,
@@ -50,10 +53,4 @@ export function sessionSubagent(
   overrides: Partial<SessionSubagent> & Pick<SessionSubagent, 'id'>,
 ): SessionSubagent {
   return { label: null, state: 'running', startedAt: null, endedAt: null, ...overrides }
-}
-
-export function sessionRow(
-  overrides: Partial<Session> & Pick<Session, 'id' | 'cwd' | 'posture' | 'status' | 'title'>,
-): Session {
-  return listedSession(overrides)
 }

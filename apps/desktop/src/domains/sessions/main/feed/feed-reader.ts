@@ -19,8 +19,9 @@ import {
   type SessionLiveEvent,
 } from '@/domains/sessions/api/session-live-event'
 import type { Harness } from '@/harnesses/harness'
-import type { SessionActivities } from '../api/session-activities'
+import { publishActivity } from '../api/session-activities'
 import { sessionHistoryIdentity } from '../api/session-history-identity'
+import type { SessionRosterChanges } from '../api/session-roster-changes'
 import { observeSessionSync, type SessionSyncStatusStore } from '../api/session-sync-status'
 import type { SessionEventJournal } from '../live/session-event-journal'
 import type { SessionHistoryFollowers } from '../live/session-history-followers'
@@ -32,8 +33,8 @@ export type SessionFeedReaderContext = {
   readHistory: (harness: Harness, target: SessionHistoryTarget) => Promise<FeedContent[]>
   followHistory?: SessionHistoryFollowers['follow']
   sessionSyncStatus?: readonly SessionSyncStatusStore[]
-  // Where each reading's current activity goes, so the roster draws the same line.
-  activities?: SessionActivities
+  // Announces each reading's current activity, so the roster draws the same line.
+  roster?: SessionRosterChanges
 }
 
 type Observer = (reading: FeedReading) => void
@@ -118,7 +119,8 @@ class FeedReader {
     // A committed sync can move where the Session's history lives.
     this.#stops.push(
       observeSessionSync(this.#context.sessionSyncStatus ?? [], (event) => {
-        if (event.type === 'committed') this.refresh()
+        if (event.type === 'committed' && event.sessionIds.includes(this.#chain.sessionId))
+          this.refresh()
       }),
     )
     this.refresh()
@@ -276,7 +278,9 @@ class FeedReader {
     })
     if (reading.revision === this.#reading?.revision) return
     this.#reading = reading
-    if (subagentId === null) this.#context.activities?.publish(sessionId, activity)
+    const { database, roster } = this.#context
+    if (subagentId === null && roster !== undefined)
+      publishActivity({ database, roster }, sessionId, activity)
     for (const observer of this.#observers) observer(reading)
   }
 }

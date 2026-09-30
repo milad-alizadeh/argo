@@ -21,10 +21,5 @@ export function sessionTiming(session: Session, now: number) {
   if (isWorkingStatus(session.status) || timestamp === null) return null
   const minutes = elapsedMinutes(timestamp, now)
   if (minutes === null) return null
-  const duration = compactDuration(minutes)
-  return {
-    dateTime: timestamp,
-    label: minutes < 1 ? 'Updated just now' : `Updated ${duration} ago`,
-    text: duration,
-  }
+  return { dateTime: timestamp, minutes, text: compactDuration(minutes) }
 }

@@ -5,11 +5,11 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { sessionRow } from '@/mocks/sessions/session-rows'
 import {
   failSelectionWrites,
-  releaseDraftRead,
+  heldDraftReads,
   savedSelectionDraft,
   sessionSelectionHost,
 } from '@/mocks/sessions/session-selection-host.fixture'
-import { holdSessionDetails, releaseSessionDetails } from '@/mocks/sessions/session-story-host'
+import { heldDetails } from '@/mocks/sessions/session-story-host'
 import { cockpitRoutes } from '@/renderer/cockpit-router'
 import type { Session } from '../types'
 
@@ -242,7 +242,7 @@ export const FirstVisitNeverShowsTheLastSessionsDraft: Story = {
       await expect(canvas.getByRole('combobox', { name: MESSAGE_LABEL })).not.toHaveTextContent(
         'Draft for the first Session',
       )
-      releaseDraftRead('claude-third')
+      heldDraftReads.release('claude-third')
       await waitFor(() =>
         expect(canvas.getByRole('combobox', { name: MESSAGE_LABEL })).toHaveTextContent(
           'Draft kept for the third Session',
@@ -415,10 +415,10 @@ export const AReopenedSessionTakesItsCurrentDetails: Story = {
     await userEvent.click(canvas.getByRole('button', { name: /Second Codex Session/ }))
     await canvas.findByRole('heading', { level: 1, name: 'Second Codex Session' })
     Object.assign(RENAMED_ROSTER[0] ?? {}, { title: { text: 'Renamed first', source: 'custom' } })
-    holdSessionDetails('claude-first')
+    heldDetails.hold('claude-first')
     await userEvent.click(canvas.getByRole('button', { name: /First Claude Session/ }))
     await canvas.findByRole('heading', { level: 1, name: 'First Claude Session' })
-    releaseSessionDetails('claude-first')
+    heldDetails.release('claude-first')
     await canvas.findByRole('heading', { level: 1, name: 'Renamed first' })
   },
 }

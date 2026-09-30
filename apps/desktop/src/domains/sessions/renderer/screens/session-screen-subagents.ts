@@ -1,5 +1,5 @@
 import type { FeedSubagent } from '@/domains/sessions/api/feed/feed-subagents'
-import type { SessionSubagent } from '../model/models'
+import type { SessionSubagent } from '../types'
 import type { WorkSelection } from './work-selection'
 
 // Main's Feed lists every Subagent its rows name; the roster adds when each ran. Both key by id.

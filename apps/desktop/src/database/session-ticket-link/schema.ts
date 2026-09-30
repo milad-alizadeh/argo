@@ -9,7 +9,7 @@ export const sessionTicketLink = sqliteTable(
     projectId: text('project_id').notNull(),
     ticketKey: text('ticket_key').notNull(),
     title: text().notNull(),
-    state: text().notNull(),
+    state: text({ enum: ['open', 'closed'] }).notNull(),
     createdAt: text('created_at').notNull().default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
     updatedAt: updatedAtColumn(),
   },

@@ -1,21 +1,21 @@
 import assert from 'node:assert/strict'
-import type { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
+import type { Database } from '@/database/database'
 import { IDS, insertSession, sessionListCaller } from '@/mocks/sessions/session-list-caller'
 
 const manyId = (index: number) => `00000000-0000-4000-8000-2${String(index).padStart(11, '0')}`
 
 // `matching` Sessions titled "Deploy n", newest first, then one titled "Unrelated".
-function insertSearchCorpus(client: DatabaseSync, matching: number) {
+function insertSearchCorpus(database: Database, matching: number) {
   for (let index = 0; index < matching; index += 1)
-    insertSession(client, {
+    insertSession(database, {
       id: manyId(index),
       harness: 'claude',
       nativeId: `deploy-${index}`,
       customTitle: `Deploy ${index}`,
       createdAt: 1_000 - index,
     })
-  insertSession(client, {
+  insertSession(database, {
     id: manyId(matching),
     harness: 'claude',
     nativeId: 'unrelated',
@@ -25,9 +25,9 @@ function insertSearchCorpus(client: DatabaseSync, matching: number) {
 }
 
 test('searches past the first page of results in list order', async () => {
-  const { client, list } = sessionListCaller()
+  const { client, database, list } = sessionListCaller()
   try {
-    insertSearchCorpus(client, 25)
+    insertSearchCorpus(database, 25)
     const first = await list({ projectId: 'project-1', search: 'deploy', limit: 10 })
     const last = await list({ projectId: 'project-1', search: 'deploy', offset: 20, limit: 10 })
 
@@ -46,9 +46,9 @@ test('searches past the first page of results in list order', async () => {
 })
 
 test('matches custom title and preview without case, and never the first prompt', async () => {
-  const { client, list } = sessionListCaller()
+  const { client, database, list } = sessionListCaller()
   try {
-    insertSession(client, {
+    insertSession(database, {
       id: IDS[0],
       harness: 'claude',
       nativeId: 'native-1',
@@ -57,7 +57,7 @@ test('matches custom title and preview without case, and never the first prompt'
       firstPrompt: 'Hidden first prompt',
       createdAt: 10,
     })
-    insertSession(client, {
+    insertSession(database, {
       id: IDS[1],
       harness: 'codex',
       nativeId: 'native-2',
@@ -85,10 +85,10 @@ test('matches custom title and preview without case, and never the first prompt'
 })
 
 test('a search in another Project reads only that Project’s matches', async () => {
-  const { client, list } = sessionListCaller()
+  const { client, database, list } = sessionListCaller()
   try {
-    insertSearchCorpus(client, 3)
-    insertSession(client, {
+    insertSearchCorpus(database, 3)
+    insertSession(database, {
       id: IDS[0],
       harness: 'codex',
       nativeId: 'elsewhere',

@@ -9,16 +9,18 @@ import {
   DropdownMenuSeparator,
 } from '@/platform/renderer/components/ui/dropdown-menu'
 import { MenuDropdownTrigger } from '@/platform/renderer/components/ui/dropdown-trigger'
-import type { SessionListStatus } from '../hooks/use-session-list-filter-store'
+import type { SessionListInput } from '../session-list-query'
+
+type SessionListFilter = SessionListInput['filter']
 
 // The closed set of filters, each with the catalog key that names it to the reader.
 const STATUS_LABELS = {
   active: 'sessionListStatusActive',
   archived: 'sessionListStatusArchived',
   all: 'sessionListStatusAll',
-} as const
+} as const satisfies Record<SessionListFilter, string>
 
-const STATUSES = Object.keys(STATUS_LABELS) as SessionListStatus[]
+const STATUSES = Object.keys(STATUS_LABELS) as SessionListFilter[]
 
 export function SessionListFilterMenu({
   onRefresh,
@@ -27,9 +29,9 @@ export function SessionListFilterMenu({
   status,
 }: {
   onRefresh: () => void
-  onStatusChange: (status: SessionListStatus) => void
+  onStatusChange: (status: SessionListFilter) => void
   refreshing: boolean
-  status: SessionListStatus
+  status: SessionListFilter
 }) {
   const { t } = useTranslation('sessions')
   return (
@@ -43,7 +45,7 @@ export function SessionListFilterMenu({
       />
       <DropdownMenuContent align="end" className="w-max">
         <DropdownMenuRadioGroup
-          onValueChange={(value) => onStatusChange(value as SessionListStatus)}
+          onValueChange={(value) => onStatusChange(value as SessionListFilter)}
           value={status}
         >
           {STATUSES.map((value) => (

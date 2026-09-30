@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
-import type { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
+import type { Database } from '@/database/database'
 import {
   IDS,
   insertSession,
@@ -9,15 +9,15 @@ import {
   settled,
 } from '@/mocks/sessions/session-list-caller'
 
-function insertTwoSessions(client: DatabaseSync) {
-  insertSession(client, { id: IDS[0], harness: 'claude', nativeId: 'native-1', createdAt: 20 })
-  insertSession(client, { id: IDS[1], harness: 'claude', nativeId: 'native-2', createdAt: 10 })
+function insertTwoSessions(database: Database) {
+  insertSession(database, { id: IDS[0], harness: 'claude', nativeId: 'native-1', createdAt: 20 })
+  insertSession(database, { id: IDS[1], harness: 'claude', nativeId: 'native-2', createdAt: 10 })
 }
 
 test('a roster announcement names the Sessions it changed', async () => {
-  const { client, changes, roster } = sessionListCaller()
+  const { client, database, changes, roster } = sessionListCaller()
   try {
-    insertTwoSessions(client)
+    insertTwoSessions(database)
     const { received, stop } = await changes()
 
     roster.changed([IDS[1]])
@@ -39,9 +39,9 @@ test('a live status change names that Session without a roster announcement', as
       context: { status, turnConfiguration: { model: null, effort: null, mode: null } },
     }),
   }
-  const { client, changes, statusChanged } = sessionListCaller({ [IDS[0]]: session })
+  const { client, database, changes, statusChanged } = sessionListCaller({ [IDS[0]]: session })
   try {
-    insertTwoSessions(client)
+    insertTwoSessions(database)
     const { received, stop } = await changes()
 
     status = 'idle'
@@ -56,9 +56,9 @@ test('a live status change names that Session without a roster announcement', as
 })
 
 test('a burst of announcements in one tick sends one change', async () => {
-  const { client, changes, roster, statusChanged } = sessionListCaller()
+  const { client, database, changes, roster, statusChanged } = sessionListCaller()
   try {
-    insertTwoSessions(client)
+    insertTwoSessions(database)
     const { received, stop } = await changes()
 
     roster.changed([IDS[0]])
@@ -79,13 +79,13 @@ test('opens a Feed reader only for working Sessions, and closes them on unsubscr
     observed.set(sessionId, (observed.get(sessionId) ?? 0) + 1)
     return () => observed.delete(sessionId)
   }
-  const { client, changes, roster } = sessionListCaller(
+  const { client, database, changes, roster } = sessionListCaller(
     { [IDS[0]]: liveSession('Ready', 'running') },
     observeFeed,
   )
   try {
-    insertTwoSessions(client)
-    insertSession(client, {
+    insertTwoSessions(database)
+    insertSession(database, {
       id: IDS[2],
       harness: 'codex',
       nativeId: 'native-3',

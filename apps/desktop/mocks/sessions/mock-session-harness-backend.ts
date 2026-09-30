@@ -3,7 +3,7 @@
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { Page } from 'playwright-core'
-import type { SessionHarness } from '@/domains/sessions/renderer/harness/harnesses'
+import type { Harness } from '@/domains/sessions/renderer/harness/harnesses'
 import {
   SESSION_MOCK_ADVERSARIAL_SEED_ENV,
   SESSION_MOCK_REPLY_DELAY_MS_ENV,
@@ -25,13 +25,13 @@ const BUDGET_MS = 30_000
 const HISTORY = { name: 'Session history' }
 
 // Every mock this backend runs, registered once. Adding a Harness is one entry here plus its adapter.
-const MOCKS: Record<SessionHarness, MockHarness> = {
+const MOCKS: Record<Harness, MockHarness> = {
   claude: mockClaudeHarness,
   codex: mockCodexHarness,
   'claude-acp': mockClaudeAcpHarness,
 }
 
-function transcriptRoots(root: string, fixture: SessionFixture): Record<SessionHarness, string> {
+function transcriptRoots(root: string, fixture: SessionFixture): Record<Harness, string> {
   return {
     claude: fixture.claudeTranscripts,
     codex: fixture.codexTranscripts,
@@ -49,7 +49,7 @@ async function transcriptHolds(folder: string, mark: string) {
 
 export function createMockSessionHarnessBackend(): SessionHarnessBackend {
   // Where each mock writes its transcripts, filled in by `start` before any case runs.
-  const folders: Record<SessionHarness, string> = { claude: '', codex: '', 'claude-acp': '' }
+  const folders: Record<Harness, string> = { claude: '', codex: '', 'claude-acp': '' }
   const mark = ({ harness, prompt }: SessionReply) => MOCKS[harness].replyMark(prompt)
   const feedMark = (page: Page, reply: SessionReply) =>
     page.getByRole('region', HISTORY).getByText(mark(reply))
@@ -59,12 +59,12 @@ export function createMockSessionHarnessBackend(): SessionHarnessBackend {
     budgetMs: BUDGET_MS,
     start: async ({ root, fixture }) => {
       const roots = transcriptRoots(root, fixture)
-      const executables: Record<SessionHarness, string> = {
+      const executables: Record<Harness, string> = {
         claude: '',
         codex: '',
         'claude-acp': '',
       }
-      for (const harness of Object.keys(MOCKS) as SessionHarness[]) {
+      for (const harness of Object.keys(MOCKS) as Harness[]) {
         folders[harness] = MOCKS[harness].folder(roots[harness])
         executables[harness] = await MOCKS[harness].write(root, roots[harness])
       }

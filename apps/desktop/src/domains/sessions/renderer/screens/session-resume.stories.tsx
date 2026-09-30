@@ -23,7 +23,7 @@ import { SessionScreenView } from './session-screen-view'
 // Send is what resumes it, regardless of whether Argo started it originally.
 const resumable = sessionRow({
   id: 'resumable-session',
-  posture: 'external',
+  posture: null,
   title: { text: 'Fix the flaky roster test', source: 'first-prompt' },
   status: 'idle',
   cwd: '/storybook/argo',

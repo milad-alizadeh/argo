@@ -9,7 +9,7 @@ import {
 } from '@/mocks/sessions/session-selection-host.fixture'
 import { announceSessionListChange } from '@/mocks/sessions/session-story-host'
 import { queryClient } from '@/platform/renderer/trpc-client'
-import type { SessionTurnConfiguration } from '../model/models'
+import type { SessionTurnConfiguration } from '../types'
 import { SessionScreenView } from './session-screen-view'
 
 const SESSION_ID = 'live-turn-configuration'

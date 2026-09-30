@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { displayedToolLabel } from '@/domains/sessions/api/feed/displayed-tool-label'
 import { RunningText } from '@/platform/renderer/components/running-text'
-import type { SessionActivity } from '../../model/models'
+import type { SessionActivity } from '../../types'
 import { FeedInlineMarkdown } from '../content/feed-inline-markdown'
 
 export type LiveActivity = {

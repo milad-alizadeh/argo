@@ -3,7 +3,7 @@ import { test } from 'vitest'
 import { sessionTable } from '@/database/session/schema'
 import { migratedDatabase } from '@/mocks/database/migrated-database'
 import { SessionRosterChanges } from './session-roster-changes'
-import { clearWorkingStatuses, updateSession } from './session-update'
+import { clearWorkingStatuses, updateHarnessSession, updateSession } from './session-update'
 
 const IDS = [
   '00000000-0000-4000-8000-000000000001',
@@ -62,6 +62,27 @@ test('a restart clears working statuses and keeps settled ones', () => {
     clearWorkingStatuses(database)
 
     assert.deepEqual(statusesNow(), ['unknown', 'idle', null])
+  } finally {
+    client.close()
+  }
+})
+
+test('history activity moves a saved Session forward only, and reports one never saved', () => {
+  const { client, database, roster, announced } = sessionsWithStatuses([null])
+  const activityAt = () => client.prepare('SELECT activity_at FROM session').get()?.activity_at
+  const context = { database, roster }
+  try {
+    const saved = { harness: 'claude' as const, nativeId: 'native-0' }
+    assert.equal(updateHarnessSession(context, saved, { activityAt: 20 }), true)
+    assert.equal(updateHarnessSession(context, saved, { activityAt: 10 }), true)
+    assert.equal(activityAt(), 20)
+    assert.deepEqual(announced, [[IDS[0]], [IDS[0]]])
+
+    assert.equal(
+      updateHarnessSession(context, { harness: 'claude', nativeId: 'unsaved' }, { activityAt: 30 }),
+      false,
+    )
+    assert.equal(activityAt(), 20)
   } finally {
     client.close()
   }

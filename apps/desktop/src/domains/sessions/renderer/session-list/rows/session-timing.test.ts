@@ -14,5 +14,5 @@ test('shows recency instead of accumulated lifetime for an idle Session', () => 
     updatedAt: '2026-09-14T11:52:00.000Z',
   })
 
-  expect(sessionTiming(session, NOW)).toMatchObject({ label: 'Updated 8m ago', text: '8m' })
+  expect(sessionTiming(session, NOW)).toMatchObject({ minutes: 8, text: '8m' })
 })

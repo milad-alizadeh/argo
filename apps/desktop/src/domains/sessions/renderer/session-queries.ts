@@ -7,10 +7,6 @@ export const sessionFeedReadingQueryKey = (
   sessionId: SessionId | null,
   subagentId: string | null = null,
 ) => ['sessions', 'feed-reading', sessionId, subagentId] as const
-// A Session's details by ID, read again when main announces a change to it.
-export const sessionDetailsPathKey = ['sessions', 'details'] as const
-export const sessionDetailsQueryKey = (sessionId: SessionId | null) =>
-  [...sessionDetailsPathKey, sessionId] as const
 export const sessionSubagentUsageQueryKey = (sessionId: SessionId) =>
   ['sessions', 'delegation-usage', sessionId] as const
 // Keyed on whether the command is still running too: the last poll of a running command can land

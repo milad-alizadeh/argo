@@ -1,11 +1,12 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useEffect, useRef } from 'react'
+import { type ComponentProps, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Session, SessionId } from '../../types'
 import { moveFocus } from './session-list-arrow-keys'
-import { SESSION_LIST_ROW_HEIGHT, type SessionListRowHandlers } from './session-list-rows'
+import { SESSION_LIST_ROW_HEIGHT, type SessionListMenuHandlers } from './session-list-rows'
 import { SessionListLoadingMoreRow } from './session-list-status-row'
+import { SessionRow } from './session-row'
 import { SessionRowContextMenu } from './session-row-context-menu'
-import { SessionRowView } from './session-row-view'
 
 // Overscan generous enough to keep a sessionList's realistic session count fully mounted, so arrow-key
 // navigation (which walks the mounted buttons) behaves the same as the flat list it replaces;
@@ -16,7 +17,6 @@ export function SessionListVirtualList({
   fetchNextPage,
   hasNextPage,
   isFetchingNextPage,
-  label,
   onArchive,
   onFocus,
   onOpenTicket,
@@ -28,17 +28,18 @@ export function SessionListVirtualList({
   sessions,
   tabStop,
   unavailableSessionIds,
-}: SessionListRowHandlers & {
-  fetchNextPage: () => unknown
-  hasNextPage: boolean
-  isFetchingNextPage: boolean
-  label: string
-  selectedIds: ReadonlySet<SessionId>
-  selectedSessionId: SessionId | null
-  sessions: readonly Session[]
-  tabStop: SessionId | null
-  unavailableSessionIds: ReadonlySet<SessionId>
-}) {
+}: SessionListMenuHandlers &
+  Pick<ComponentProps<typeof SessionRow>, 'onFocus' | 'onSelect' | 'onToggleSelect'> & {
+    fetchNextPage: () => unknown
+    hasNextPage: boolean
+    isFetchingNextPage: boolean
+    selectedIds: ReadonlySet<SessionId>
+    selectedSessionId: SessionId | null
+    sessions: readonly Session[]
+    tabStop: SessionId | null
+    unavailableSessionIds: ReadonlySet<SessionId>
+  }) {
+  const { t } = useTranslation('sessions')
   const scrollRef = useRef<HTMLDivElement>(null)
   const virtualizer = useVirtualizer({
     count: sessions.length,
@@ -67,7 +68,7 @@ export function SessionListVirtualList({
         onRename={onRename}
         sessions={sessions}
       >
-        <nav aria-label={label} className="min-w-0">
+        <nav aria-label={t('navigationLabel')} className="min-w-0">
           <ul
             className="relative flex min-w-0 flex-col px-3"
             onKeyDown={moveFocus}
@@ -84,8 +85,8 @@ export function SessionListVirtualList({
                   style={{ transform: `translateY(${item.start}px)` }}
                 >
                   {session === undefined ? null : (
-                    <SessionRowView
-                      checked={!session.archived && selectedIds.has(session.id)}
+                    <SessionRow
+                      checked={selectedIds.has(session.id)}
                       onFocus={onFocus}
                       onSelect={onSelect}
                       onToggleSelect={onToggleSelect}

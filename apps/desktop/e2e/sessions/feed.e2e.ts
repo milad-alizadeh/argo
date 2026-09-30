@@ -40,13 +40,13 @@ import {
   proveLiveCodexModelChoices,
   proveTurnConfiguration,
 } from './cases/turn-configuration.case'
-import { rosterRow } from './claude-proof-helpers'
 import { appendProse, removeProse, streamProse } from './fixtures/feed.fixture'
 import { updatePlan } from './fixtures/plan.fixture'
 import { rosterOrderMutations } from './fixtures/roster-order.fixture'
 import { writeWindowFillerSessions } from './fixtures/roster-window.fixture'
 import { writeBuriedSearchTarget } from './fixtures/search-window.fixture'
 import { openSessionByClick } from './gestures'
+import { sessionDetails } from './page-trpc'
 import { assertTranscriptFeedCorpus } from './real-harness/transcript-feed-corpus'
 import { expect, test } from './session-proof-run'
 
@@ -207,7 +207,7 @@ test.describe('with the real Claude SDK history', () => {
   test('session-sdk-history-real', async ({ session, backend }) => {
     const sessionId = await proveSessionCreatedByClick(session.page(), backend)
     const restarted = await session.restart()
-    const [external] = await rosterRow(restarted, sessionId)
+    const external = await sessionDetails(restarted, sessionId)
     expect(external?.posture).toBe('external')
     await openSessionByClick(restarted, sessionId)
     await restarted.waitForSelector(`.feed__viewport[data-session="${sessionId}"] [data-feed-row]`)
@@ -217,7 +217,7 @@ test.describe('with the real Claude SDK history', () => {
     await restarted.keyboard.type(prompt)
     await restarted.getByRole('button', { name: 'Send message' }).click()
     await backend.waitForReply(restarted, { harness: 'claude', prompt })
-    const [live] = await rosterRow(restarted, sessionId)
+    const live = await sessionDetails(restarted, sessionId)
     expect(live?.posture).toBe('live')
   })
 })

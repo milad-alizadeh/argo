@@ -1786,7 +1786,7 @@ function StalledFeedHarness({ onRetryFeed }: { onRetryFeed: () => void }) {
           feed={reading}
           failure={null}
           running={running}
-          posture="external"
+          posture={null}
           selectedSessionId="stalled"
           onOpenEvidence={() => {}}
           onRetryFeed={() => {
@@ -1863,7 +1863,7 @@ function NeverArrivesHarness({ onRetryFeed }: { onRetryFeed: () => void }) {
           feed={null}
           failure={null}
           running={false}
-          posture="external"
+          posture={null}
           selectedSessionId="never-arrives"
           onOpenEvidence={() => {}}
           onRetryFeed={onRetryFeed}

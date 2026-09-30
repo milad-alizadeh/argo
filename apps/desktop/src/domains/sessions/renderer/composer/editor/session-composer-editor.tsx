@@ -9,8 +9,8 @@ import type { LexicalEditor } from 'lexical'
 import { type RefObject, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ComposerCommandListing } from '@/domains/sessions/api/composer-commands'
+import type { Harness } from '@/harnesses/harness'
 import { lastInputWasKeyboard } from '@/platform/renderer/lib/input-modality'
-import type { SessionHarness } from '../../harness/harnesses'
 import { useComposerEditing } from '../editing/composer-editing-context'
 import { ComposerReferenceMenuPlugin } from '../references/composer-reference-menu-plugin'
 import { ComposerReferenceNode } from '../references/composer-reference-node'
@@ -54,7 +54,7 @@ export function ComposerEditor({
 }: {
   commands: ComposerCommandListing
   disabled?: boolean
-  harness?: SessionHarness | null
+  harness?: Harness | null
   contextPickerOpen: boolean
   editorRef: RefObject<LexicalEditor | null>
   focusOnMount: boolean

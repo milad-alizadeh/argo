@@ -38,11 +38,16 @@ function SessionPlanBar({ session }: { session: Session }) {
 type SessionTimingValue = NonNullable<ReturnType<typeof sessionTiming>>
 
 function SessionTiming({ timing }: { timing: SessionTimingValue }) {
+  const { t } = useTranslation('sessions')
   return (
     <time
       className="inline-flex shrink-0 tabular-nums"
       dateTime={timing.dateTime}
-      title={timing.label}
+      title={
+        timing.minutes < 1
+          ? t('row.updatedJustNow')
+          : t('row.updatedAgo', { duration: timing.text })
+      }
     >
       {timing.text}
     </time>

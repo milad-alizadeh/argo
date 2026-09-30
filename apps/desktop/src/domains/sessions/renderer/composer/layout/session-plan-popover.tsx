@@ -9,7 +9,7 @@ import {
   PopoverTrigger,
 } from '@/platform/renderer/components/ui/popover'
 import { Progress } from '@/platform/renderer/components/ui/progress'
-import type { PlanEntryStatus, SessionPlan } from '../../model/models'
+import type { PlanEntryStatus, SessionPlan } from '../../types'
 
 const PLAN_ENTRY_CLASS: Record<PlanEntryStatus, string> = {
   completed: 'bg-foreground text-background',

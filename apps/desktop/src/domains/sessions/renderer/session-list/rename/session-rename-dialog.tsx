@@ -11,26 +11,15 @@ import {
 import { Input } from '@/platform/renderer/components/ui/input'
 import { Label } from '@/platform/renderer/components/ui/label'
 import type { Session } from '../../types'
+import { sessionName } from '../rows/session-list-rows'
 
-function normalizeSessionName(value: string): string {
-  return [...value]
-    .map((character) =>
-      (character.codePointAt(0) ?? 0) < 32 ||
-      ((character.codePointAt(0) ?? 0) >= 127 && (character.codePointAt(0) ?? 0) <= 159)
-        ? ' '
-        : character,
-    )
-    .join('')
-    .trim()
-    .replace(/\s+/g, ' ')
-}
-
+// A failed rename keeps the dialog open with the reason inline.
 export function SessionRenameDialog({
-  onOpenChange,
+  onClose,
   onRename,
   session,
 }: {
-  onOpenChange: (open: boolean) => void
+  onClose: () => void
   onRename: (session: Session, name: string) => Promise<void>
   session: Session | null
 }) {
@@ -42,26 +31,25 @@ export function SessionRenameDialog({
 
   useEffect(() => {
     if (session === null) return
-    setName(session.title?.text ?? session.id)
+    setName(sessionName(session, t('newSession')))
     setError(null)
-  }, [session])
+  }, [session, t])
 
   const close = () => {
     if (saving) return
-    onOpenChange(false)
+    onClose()
   }
   const save = async () => {
     if (session === null || saving) return
-    const normalized = normalizeSessionName(name)
-    if (normalized.length === 0) {
+    if (name.trim() === '') {
       setError(t('rename.enterName'))
       return
     }
     setSaving(true)
     setError(null)
     try {
-      await onRename(session, normalized)
-      onOpenChange(false)
+      await onRename(session, name)
+      onClose()
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : t('rename.failure'))
     } finally {

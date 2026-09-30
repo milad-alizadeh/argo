@@ -4,27 +4,28 @@ import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { sessionRow, sessionSubagent } from '@/mocks/sessions/session-rows'
 import {
+  announceSessionListChange,
   type FeedRead,
+  publishSessionSyncStatus,
+  type SessionListRead,
   sessionFeedRefreshTrpc,
   sessionFeedSubscribe,
+  sessionListSubscribe,
+  sessionListTrpc,
   storySessionPage,
 } from '@/mocks/sessions/session-story-host'
-import {
-  queryClient,
-  type RouterInputs,
-  type RouterOutputs,
-  trpcClient,
-} from '@/platform/renderer/trpc-client'
+import type { RouterInputs, RouterOutputs } from '@/platform/renderer/trpc-client'
 import { replaceComposerCommands } from '../../composer/references/composer-command-registry'
 import { useFeedReading } from '../../feed/use-feed-reading'
 import type { Session, SessionError, SessionId, SessionListResult } from '../../types'
-import { SessionList, type SessionListActions } from '../session-list'
-import { sessionListPathKey } from '../session-list-query'
+import type { SessionListActions } from '../rows/session-list-actions'
+import { SessionList } from '../session-list'
 import { useArchiveSelected } from './use-session-archive-mutation'
+import { useSidebarActions } from './use-sidebar-actions'
 
 const session = sessionRow({
   id: 'prose',
-  posture: 'external',
+  posture: null,
   customTitle: 'Read the Session transcript',
   preview: 'A transcript preview',
   title: { text: 'Read the Session transcript', source: 'first-prompt' },
@@ -51,147 +52,74 @@ const readFailure = {
   message: 'Argo could not read these Sessions.',
 } satisfies SessionError
 
-type SessionSyncStatus = Extract<RouterOutputs['sessionSyncStatus'], { type: 'status' }>['status']
-type SessionSyncEvent = RouterOutputs['sessionSyncStatus']
-
-const initialSyncStatus: SessionSyncStatus = {
-  phase: 'idle',
-  processed: 0,
-  total: null,
-  skipped: 0,
-  lastSuccessfulSyncAt: null,
-  failure: null,
-}
-
-type SessionListRead = Required<RouterInputs['sessionList']>
-type SessionListHandler = (read: SessionListRead) => Promise<SessionListResult | SessionError>
-type SessionUpdateHandler = (update: RouterInputs['sessionUpdate']) => Promise<Session[]>
-type Listener = Parameters<typeof window.argo.trpcSubscribe>[1]
+type SessionListReply = (read: SessionListRead) => Promise<SessionListResult | SessionError>
+type SessionUpdateReply = (
+  update: RouterInputs['sessionUpdate'],
+) => Promise<RouterOutputs['sessionUpdate']>
 
 // Every Session List read and Session update a story's host answered, in order.
-let sessionListReads = fn<SessionListHandler>()
-let sessionUpdates = fn<SessionUpdateHandler>()
-let publishSessionSyncEvent = (_event: SessionSyncEvent) => {}
-let announceSessionListChange = (_sessionIds: readonly SessionId[]) => {}
+let sessionListReads = fn<SessionListReply>()
+let sessionUpdates = fn<SessionUpdateReply>()
+// The rows main holds for the story.
+let rows: Session[] = []
 
-// One offset page of these rows, as main's list query cuts it.
-function listPage(sessions: readonly Session[], read: SessionListRead): SessionListResult {
-  return { total: sessions.length, rows: sessions.slice(read.offset, read.offset + read.limit) }
+// Main stores each changed row, then announces the change.
+function announce(changed: readonly Session[]) {
+  const fresh = changed.filter((row) => !rows.some(({ id }) => id === row.id))
+  rows = [...rows.map((row) => changed.find(({ id }) => id === row.id) ?? row), ...fresh]
+  announceSessionListChange()
 }
 
-function missingUpdate(): Promise<Session[]> {
-  return Promise.reject(new Error('This story answers no Session update.'))
+async function updateRows({ sessionIds, title, archived }: RouterInputs['sessionUpdate']) {
+  const updated = rows
+    .filter(({ id }) => sessionIds.includes(id))
+    .map((current) => ({
+      ...current,
+      customTitle: title ?? current.customTitle,
+      title: title === undefined ? current.title : { text: title, source: 'custom' as const },
+      archived: archived ?? current.archived,
+    }))
+  announce(updated)
+  return { sessionIds: updated.map(({ id }) => id) }
 }
 
-// Answers the `sessionList` query and `sessionUpdate` through tRPC, and sends changed rows on the
-// `sessionListChanged` subscription when a story announces them.
-function withSessionListHost(
-  handler: SessionListHandler,
-  update: SessionUpdateHandler = missingUpdate,
-) {
-  queryClient.removeQueries({ queryKey: sessionListPathKey })
-  sessionListReads = fn(handler)
-  sessionUpdates = fn(update)
+// The shared host over these rows; `list` replaces main's page read.
+function showingSessions(initial: readonly Session[], list?: SessionListReply) {
+  rows = [...initial]
+  sessionListReads = fn(list ?? (async (read) => storySessionPage(rows, read)))
+  sessionUpdates = fn(updateRows)
   const before = window.argo
-  const syncListeners = new Map<number, Listener>()
-  const changeListeners = new Map<number, Listener>()
-  let syncStatus = initialSyncStatus
-  publishSessionSyncEvent = (event) => {
-    if (event.type === 'status') syncStatus = event.status
-    for (const [id, listener] of syncListeners)
-      listener({ id, type: 'data', result: { data: event } })
-  }
-  announceSessionListChange = (sessionIds) => {
-    for (const [id, listener] of changeListeners)
-      listener({ id, type: 'data', result: { data: { sessionIds: [...sessionIds] } } })
-  }
   window.argo = {
     ...before,
-    trpc: (async (request) => {
-      if (request.path === 'sessionUpdate') {
-        const updated = await sessionUpdates(request.input as RouterInputs['sessionUpdate'])
-        return { id: request.id, result: { data: updated } }
-      }
-      if (request.path !== 'sessionList') return before.trpc(request)
-      const reply = await sessionListReads(request.input as SessionListRead)
-      if ('type' in reply) return { id: request.id, error: { message: reply.message } }
-      return { id: request.id, result: { data: reply } }
-    }) as typeof window.argo.trpc,
-    trpcSubscribe: async (request, listener) => {
-      if (request.path === 'sessionListChanged') {
-        changeListeners.set(request.id, listener)
-        return () => changeListeners.delete(request.id)
-      }
-      if (request.path !== 'sessionSyncStatus') return before.trpcSubscribe(request, listener)
-      syncListeners.set(request.id, listener)
-      listener({
-        id: request.id,
-        type: 'data',
-        result: { data: { type: 'status', status: syncStatus } },
-      })
-      return () => syncListeners.delete(request.id)
-    },
+    trpc: sessionListTrpc(before.trpc, () => rows, {
+      list: sessionListReads,
+      update: sessionUpdates,
+    }),
+    trpcSubscribe: sessionListSubscribe(before.trpcSubscribe, () => rows),
   }
   return () => {
-    publishSessionSyncEvent = () => {}
-    announceSessionListChange = () => {}
     window.argo = before
   }
 }
 
-function showingSessions(sessions: readonly Session[]) {
-  return withSessionListHost(async (read) => storySessionPage(sessions, read))
+type SessionListHarnessArgs = Omit<SessionListActions, 'onRename'> & {
+  projectId?: string
+  selectedSessionId: SessionId | null
 }
 
-function publishSyncStatus(status: SessionSyncStatus) {
-  publishSessionSyncEvent({ type: 'status', status })
-}
-
-// Rows that change after the first read: main stores each change, then announces the changed rows.
-function withSessionsHost(initialSessions: readonly Session[]) {
-  let sessions = [...initialSessions]
-  const store = (changed: readonly Session[]) => {
-    const fresh = changed.filter((row) => !sessions.some(({ id }) => id === row.id))
-    sessions = [...sessions.map((row) => changed.find(({ id }) => id === row.id) ?? row), ...fresh]
-  }
-  const restore = withSessionListHost(
-    async (read) => storySessionPage(sessions, read),
-    async ({ sessionIds, title, archived }) => {
-      const updated = sessions
-        .filter(({ id }) => sessionIds.includes(id))
-        .map((current) => ({
-          ...current,
-          customTitle: title ?? current.customTitle,
-          title: title === undefined ? current.title : { text: title, source: 'custom' as const },
-          archived: archived ?? current.archived,
-        }))
-      store(updated)
-      announceSessionListChange(updated.map(({ id }) => id))
-      return updated
-    },
-  )
-  return {
-    announce(changed: readonly Session[]) {
-      store(changed)
-      announceSessionListChange(changed.map(({ id }) => id))
-    },
-    restore,
-  }
-}
-
-// The rename the sidebar sends: one Session update, which the host stores and announces.
-async function renameThroughSessionUpdate(renamed: Session, name: string) {
-  await trpcClient.sessionUpdate.mutate({ sessionIds: [renamed.id], title: name })
-}
-
-type SessionListHarnessArgs = SessionListActions & { selectedSessionId: SessionId | null }
-
-// The presentational seam Storybook drives: SessionList's own props, plus the routing a real caller
-// gives it. Project scoping plays no part in what a story renders, so every story reads the same
-// null root and tells the Session list apart by what `sessionList` answers instead.
-function SessionListHarness({ selectedSessionId, ...actions }: SessionListHarnessArgs) {
+// SessionList's own props, with the sidebar's real rename; a story tells lists apart by its host.
+function SessionListHarness({
+  projectId = 'project-1',
+  selectedSessionId,
+  ...actions
+}: SessionListHarnessArgs) {
+  const { onRename } = useSidebarActions(projectId)
   return (
-    <SessionList actions={actions} projectId="project-1" selectedSessionId={selectedSessionId} />
+    <SessionList
+      actions={{ ...actions, onRename }}
+      projectId={projectId}
+      selectedSessionId={selectedSessionId}
+    />
   )
 }
 
@@ -248,7 +176,6 @@ const meta = {
     onArchiveSelected: fn(),
     onNew: fn(),
     onOpenTicket: fn(),
-    onRename: fn(renameThroughSessionUpdate),
     onSelect: fn(),
     selectedSessionId: null,
   },
@@ -317,13 +244,7 @@ function expectOnlySecondSession(canvas: ReturnType<typeof within>, first: RegEx
 
 export const Discovered: Story = {
   render: (args) => <RoutedSessionList {...args} />,
-  beforeEach: () => {
-    sessionsHost = withSessionsHost(listed)
-    return () => {
-      sessionsHost?.restore()
-      sessionsHost = null
-    }
-  },
+  beforeEach: () => showingSessions(listed),
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
     const search = canvas.getByRole('textbox', { name: 'Search Sessions' })
@@ -503,13 +424,7 @@ function concurrentActivityRows(activityBySession: Record<string, string>) {
 }
 
 export const ConcurrentActivityKeepsRowsStill: Story = {
-  beforeEach: () => {
-    sessionsHost = withSessionsHost(concurrentActivityRows({}))
-    return () => {
-      sessionsHost?.restore()
-      sessionsHost = null
-    }
-  },
+  beforeEach: () => showingSessions(concurrentActivityRows({})),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const alpha = await canvas.findByRole('button', { name: /Alpha session/ })
@@ -529,7 +444,7 @@ export const ConcurrentActivityKeepsRowsStill: Story = {
       )
       if (row === undefined) throw new Error(`Missing ${name} Session row`)
       const started = performance.now()
-      sessionsHost?.announce([row])
+      announce([row])
       await expect(await canvas.findByText(`Running ${name.toLowerCase()} command`)).toBeVisible()
       const firstFrame = await new Promise<number>((resolve) => requestAnimationFrame(resolve))
       const secondFrame = await new Promise<number>((resolve) => requestAnimationFrame(resolve))
@@ -669,8 +584,8 @@ export const PendingBadges: Story = {
 }
 
 export const StatusTransitions: Story = {
-  beforeEach: () => {
-    sessionsHost = withSessionsHost([
+  beforeEach: () =>
+    showingSessions([
       {
         ...session,
         id: 'waiting-for-permission',
@@ -688,12 +603,7 @@ export const StatusTransitions: Story = {
         status: 'starting',
         title: { text: 'New Session', source: 'first-prompt' },
       },
-    ])
-    return () => {
-      sessionsHost?.restore()
-      sessionsHost = null
-    }
-  },
+    ]),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const waiting = await canvas.findByRole('button', { name: /Approve the command/ })
@@ -718,7 +628,7 @@ export const StatusTransitions: Story = {
       'data-active',
       'false',
     )
-    sessionsHost?.announce([
+    announce([
       { ...session, id: 'waiting-for-permission', status: 'idle' },
       {
         ...session,
@@ -741,25 +651,20 @@ export const StatusTransitions: Story = {
 }
 
 export const NeedsInputClearsAfterResolution: Story = {
-  beforeEach: () => {
-    sessionsHost = withSessionsHost([
+  beforeEach: () =>
+    showingSessions([
       {
         ...session,
         id: 'waiting-for-permission',
         status: 'permission',
         title: { text: 'Approve the command', source: 'first-prompt' },
       },
-    ])
-    return () => {
-      sessionsHost?.restore()
-      sessionsHost = null
-    }
-  },
+    ]),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const waiting = await canvas.findByRole('button', { name: /Approve the command/ })
     await expect(within(waiting).getByText('Needs input')).toBeVisible()
-    sessionsHost?.announce([{ ...session, id: 'waiting-for-permission', status: 'idle' }])
+    announce([{ ...session, id: 'waiting-for-permission', status: 'idle' }])
     await waitFor(() => expect(within(waiting).queryByText('Needs input')).toBeNull())
   },
 }
@@ -790,13 +695,14 @@ export const NarrowSidebarWithLongSessionName: Story = {
   },
 }
 
-export const RefreshProgressWhileFetching: Story = {
+// Refresh stays disabled while a sync runs, and its bar fills with the share saved.
+export const RefreshProgressWhileSyncing: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    publishSyncStatus({ ...initialSyncStatus, phase: 'fetching' })
-    const progress = await canvas.findByRole('progressbar', { name: 'Session refresh progress' })
+    const progress = () => canvas.getByRole('progressbar', { name: 'Session refresh progress' })
+    publishSessionSyncStatus({ phase: 'fetching' })
+    await waitFor(() => expect(progress()).not.toHaveAttribute('aria-valuenow'))
     await expect(canvas.getAllByRole('progressbar')).toHaveLength(1)
-    await expect(progress).not.toHaveAttribute('aria-valuenow')
     await expect(canvas.getByRole('status')).toHaveTextContent('Syncing Sessions…')
     const filter = canvas.getByRole('button', { name: 'Filter Sessions' })
     await userEvent.click(filter)
@@ -804,29 +710,20 @@ export const RefreshProgressWhileFetching: Story = {
     await expect(
       within(document.body).getByRole('menuitem', { name: 'Refresh Sessions' }),
     ).toHaveAttribute('aria-disabled', 'true')
-  },
-}
-
-export const RefreshProgressWhileSaving: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    publishSyncStatus({ ...initialSyncStatus, phase: 'saving', processed: 1, total: 2 })
-    const progress = await canvas.findByRole('progressbar', { name: 'Session refresh progress' })
-    await expect(progress).toHaveAttribute('aria-valuenow', '50')
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(filter).toHaveAttribute('aria-expanded', 'false'))
+    publishSessionSyncStatus({ phase: 'saving', processed: 1, total: 2 })
+    await waitFor(() => expect(progress()).toHaveAttribute('aria-valuenow', '50'))
     await expect(canvas.getByRole('status')).toHaveTextContent('Syncing 1 out of 2 Sessions')
-    const filter = canvas.getByRole('button', { name: 'Filter Sessions' })
-    await userEvent.click(filter)
-    await waitFor(() => expect(filter).toHaveAttribute('aria-expanded', 'true'))
-    await expect(
-      within(document.body).getByRole('menuitem', { name: 'Refresh Sessions' }),
-    ).toHaveAttribute('aria-disabled', 'true')
+    publishSessionSyncStatus({ phase: 'saving', processed: 0, total: 0 })
+    await waitFor(() => expect(progress()).toHaveAttribute('aria-valuenow', '100'))
   },
 }
 
 export const PartialRefreshShowsOneToast: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    publishSyncStatus({ ...initialSyncStatus, phase: 'ready', skipped: 2 })
+    publishSessionSyncStatus({ phase: 'ready', skipped: 2 })
     const toast = await within(document.body).findByText(
       'Skipped 2 Sessions with unreadable metadata.',
     )
@@ -840,7 +737,7 @@ export const PartialRefreshShowsOneToast: Story = {
 
 export const FailedRefreshShowsOneToast: Story = {
   play: async ({ canvasElement }) => {
-    publishSyncStatus({ ...initialSyncStatus, phase: 'failed', failure: 'Reader unavailable.' })
+    publishSessionSyncStatus({ phase: 'failed', failure: 'Reader unavailable.' })
     await waitFor(() => {
       const toastTitles = document.body.querySelectorAll('[data-slot="toast-title"]')
       expect(toastTitles).toHaveLength(1)
@@ -855,10 +752,9 @@ export const FailedRefreshShowsOneToast: Story = {
 export const CompletedRefreshFeedbackDisappears: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    publishSyncStatus({ ...initialSyncStatus, phase: 'saving', processed: 1, total: 2 })
+    publishSessionSyncStatus({ phase: 'saving', processed: 1, total: 2 })
     await canvas.findByRole('progressbar', { name: 'Session refresh progress' })
-    publishSyncStatus({
-      ...initialSyncStatus,
+    publishSessionSyncStatus({
       phase: 'ready',
       lastSuccessfulSyncAt: new Date().toISOString(),
     })
@@ -868,55 +764,23 @@ export const CompletedRefreshFeedbackDisappears: Story = {
   },
 }
 
-export const CommittedRefreshRereadsSessionList: Story = {
-  beforeEach: () => {
-    sessionsHost = withSessionsHost(listed)
-    return () => {
-      sessionsHost?.restore()
-      sessionsHost = null
-    }
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const added = {
-      ...session,
-      id: 'synced-session',
-      title: { text: 'A Session found by Refresh', source: 'first-prompt' as const },
-    }
-    await canvas.findByRole('button', { name: /Read the Session transcript/ })
-    const reads = sessionListReads.mock.calls.length
-    publishSessionSyncEvent({ type: 'committed' })
-    sessionsHost?.announce([added])
-    await expect(
-      await canvas.findByRole('button', { name: /A Session found by Refresh/ }),
-    ).toBeVisible()
-    // An announced change reads the loaded pages again.
-    await expect(sessionListReads.mock.calls.length).toBeGreaterThan(reads)
-  },
-}
-
 // The list re-sorts by activity, so a row that moves to a new index must carry its DOM node with
 // it instead of swapping content into whatever node sits at that index now (#2852): the swap is
 // what restarts the harness spin and status-dot transitions on unrelated rows, and it also drops
 // keyboard focus a reader was holding on a row that only moved, never disappeared.
 export const ReorderKeepsRowFocus: Story = {
-  beforeEach: () => {
-    sessionsHost = withSessionsHost([
+  beforeEach: () =>
+    showingSessions([
       { ...session, id: 'alpha', title: { text: 'Alpha session', source: 'first-prompt' } },
       { ...session, id: 'beta', title: { text: 'Beta session', source: 'first-prompt' } },
-    ])
-    return () => {
-      sessionsHost?.restore()
-      sessionsHost = null
-    }
-  },
+    ]),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const beta = await canvas.findByRole('button', { name: /Beta session/ })
     beta.focus()
     await expect(beta).toHaveFocus()
     // A lower sort order lists first, so beta moves above alpha.
-    sessionsHost?.announce([
+    announce([
       {
         ...session,
         id: 'beta',
@@ -957,23 +821,15 @@ export const SkillMentionTitle: Story = {
   },
 }
 
-let sessionsHost: ReturnType<typeof withSessionsHost> | null = null
-
 export const FocusRecovery: Story = {
-  beforeEach: () => {
-    sessionsHost = withSessionsHost(listed)
-    return () => {
-      sessionsHost?.restore()
-      sessionsHost = null
-    }
-  },
+  beforeEach: () => showingSessions(listed),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const removed = await canvas.findByRole('button', { name: /A second Session/ })
     removed.focus()
     await expect(removed).toHaveFocus()
     // An archived row leaves the active list.
-    sessionsHost?.announce([{ ...secondSession, archived: true }])
+    announce([{ ...secondSession, archived: true }])
     const survivor = canvas.getByRole('button', { name: /Read the Session transcript/ })
     await waitFor(async () => {
       await expect(survivor).toHaveFocus()
@@ -983,7 +839,7 @@ export const FocusRecovery: Story = {
 }
 
 export const Loading: Story = {
-  beforeEach: () => withSessionListHost(() => new Promise(() => {})),
+  beforeEach: () => showingSessions([], () => new Promise(() => {})),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('status', { name: 'Reading Sessions' })).toBeInTheDocument()
@@ -1084,13 +940,7 @@ function ArchivingSessionList(args: SessionListHarnessArgs) {
 // A bulk archive and its Undo are one Session update per row, and the list reads its pages again.
 export const BulkArchiveAndUndoUpdateEachSession: Story = {
   render: (args) => <ArchivingSessionList {...args} />,
-  beforeEach: () => {
-    sessionsHost = withSessionsHost(listed)
-    return () => {
-      sessionsHost?.restore()
-      sessionsHost = null
-    }
-  },
+  beforeEach: () => showingSessions(listed),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const first = await canvas.findByRole('button', { name: /Read the Session transcript/ })
@@ -1121,7 +971,7 @@ export const BulkArchiveAndUndoUpdateEachSession: Story = {
 }
 
 export const Failure: Story = {
-  beforeEach: () => withSessionListHost(async () => readFailure),
+  beforeEach: () => showingSessions([], async () => readFailure),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const alert = await canvas.findByRole('alert')
@@ -1136,6 +986,7 @@ export const Failure: Story = {
 const manySessions: Session[] = Array.from({ length: 80 }, (_unused, row) => ({
   ...session,
   id: `session-${String(row).padStart(2, '0')}`,
+  customTitle: `Session number ${row}`,
   title: { text: `Session number ${row}`, source: 'first-prompt' as const },
 }))
 
@@ -1146,7 +997,7 @@ function sessionListScroll(canvasElement: HTMLElement) {
 }
 
 export const GrowsOnlyWhenTheReaderReachesTheEnd: Story = {
-  beforeEach: () => withSessionListHost(async (read) => listPage(manySessions, read)),
+  beforeEach: () => showingSessions(manySessions),
   play: async ({ canvasElement }) => {
     const scroll = await waitFor(() => sessionListScroll(canvasElement))
     const listSessions = sessionListReads
@@ -1173,7 +1024,7 @@ export const GrowsOnlyWhenTheReaderReachesTheEnd: Story = {
 export const AsksOnceWhenTheWindowDoesNotFillTheViewport: Story = {
   beforeEach: () => {
     const third = { ...session, id: 'third-session' }
-    return withSessionListHost(async ({ offset }) =>
+    return showingSessions([], async ({ offset }) =>
       offset === 0 ? { total: 3, rows: listed } : { total: 3, rows: [third] },
     )
   },
@@ -1190,9 +1041,9 @@ export const AsksOnceWhenTheWindowDoesNotFillTheViewport: Story = {
 // the spinner centered in it and no border of its own.
 export const GrowingTheWindow: Story = {
   beforeEach: () =>
-    withSessionListHost((read) =>
+    showingSessions([], (read) =>
       read.offset === 0
-        ? Promise.resolve(listPage(manySessions, read))
+        ? Promise.resolve(storySessionPage(manySessions, read))
         : new Promise(() => {
             // The second page never lands, so the Session list stays on its loading-more row.
           }),
@@ -1223,14 +1074,6 @@ async function typeSearch(canvasElement: HTMLElement, query: string) {
   await userEvent.keyboard(query)
 }
 
-export const SearchFiltersCustomTitlesAndPreviews: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await typeSearch(canvasElement, 'second')
-    await waitFor(() => expectOnlySecondSession(canvas, /Read the Session transcript/))
-  },
-}
-
 export const SearchNoMatches: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -1246,8 +1089,8 @@ export const SearchDoesNotShowInitialSkeleton: Story = {
     const pendingSearch = new Promise<SessionListResult>((resolve) => {
       resolveSearch = resolve
     })
-    const restore = withSessionListHost((read) =>
-      read.search === '' ? Promise.resolve(listPage(listed, read)) : pendingSearch,
+    const restore = showingSessions([], (read) =>
+      read.search === '' ? Promise.resolve(storySessionPage(listed, read)) : pendingSearch,
     )
     return () => {
       resolveSearch?.({ total: 0, rows: [] })
@@ -1278,26 +1121,6 @@ export const SearchWaitsForTypingToSettle: Story = {
   },
 }
 
-// A search with more results than one page reads its next offset the way browsing does.
-export const SearchGrowsPastTheFirstPage: Story = {
-  beforeEach: () =>
-    withSessionListHost(async (read) => listPage(read.search === '' ? listed : manySessions, read)),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await canvas.findByRole('button', { name: /Read the Session transcript/ })
-    await typeSearch(canvasElement, 'number')
-    await canvas.findAllByRole('button', { name: /Session number/ })
-    const scroll = sessionListScroll(canvasElement)
-    scroll.scrollTop = scroll.scrollHeight
-    scroll.dispatchEvent(new Event('scroll'))
-    await waitFor(() =>
-      expect(sessionListReads).toHaveBeenCalledWith(
-        expect.objectContaining({ search: 'number', offset: 30 }),
-      ),
-    )
-  },
-}
-
 function ProjectSwitchingSessionList(args: SessionListHarnessArgs) {
   const [projectId, setProjectId] = useState('project-1')
   return (
@@ -1305,11 +1128,7 @@ function ProjectSwitchingSessionList(args: SessionListHarnessArgs) {
       <button onClick={() => setProjectId('project-2')} type="button">
         Open the second Project
       </button>
-      <SessionList
-        actions={args}
-        projectId={projectId}
-        selectedSessionId={args.selectedSessionId}
-      />
+      <SessionListHarness {...args} projectId={projectId} />
     </>
   )
 }
@@ -1333,7 +1152,7 @@ function projectSessions(projectId: string): Session[] {
 export const ProjectSwitchReadsThatProject: Story = {
   render: (args) => <ProjectSwitchingSessionList {...args} />,
   beforeEach: () =>
-    showingSessions([...projectSessions('project-1'), ...projectSessions('project-2')]),
+    showingSessions([], async (read) => storySessionPage(projectSessions(read.projectId), read)),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await chooseStatus(canvasElement, 'All')

@@ -4,7 +4,7 @@ import path from 'node:path'
 import { setTimeout } from 'node:timers/promises'
 import type { Page } from 'playwright-core'
 import { createSessionByClick, openSessionByClick, sendFromComposer } from '../gestures'
-import { sessionRows } from '../page-trpc'
+import { sessionDetails } from '../page-trpc'
 import type { SessionHarnessBackend } from '../session-harness-backend'
 
 type Restart = () => Promise<Page>
@@ -24,16 +24,11 @@ async function markVendorActive(root: string, sessionId: string) {
   await writeFile(file, JSON.stringify(stored))
 }
 
-async function rosterRow(page: Page, sessionId: string) {
-  const rows = await sessionRows(page)
-  return rows.filter((session) => session.id === sessionId)
-}
-
 async function liveRosterRow(page: Page, sessionId: string, budgetMs: number) {
   const deadline = Date.now() + budgetMs
   while (Date.now() < deadline) {
-    const rows = await rosterRow(page, sessionId)
-    if (rows.some((row: { posture: string }) => row.posture === 'live')) return rows
+    const row = await sessionDetails(page, sessionId)
+    if (row?.posture === 'live') return row
     await setTimeout(100)
   }
   throw new Error(`Session ${sessionId} did not become live after resuming.`)
@@ -53,7 +48,7 @@ export async function provePackagedCodexResume(
 
   const relaunched = await restart()
 
-  const [reread] = await rosterRow(relaunched, sessionId)
+  const reread = await sessionDetails(relaunched, sessionId)
   assert.equal(reread?.posture, 'external')
   await openSessionByClick(relaunched, sessionId)
   const history = relaunched.getByRole('region', { name: 'Session history' })
@@ -65,7 +60,7 @@ export async function provePackagedCodexResume(
     .catch(async (error) => {
       const rows = await history.locator('[data-feed-row]').allTextContents()
       const alerted = await relaunched.locator('[role="alert"]').allTextContents()
-      const [row] = await rosterRow(relaunched, sessionId)
+      const row = await sessionDetails(relaunched, sessionId)
       throw new Error(
         `${error.message}\nFeed rows: ${JSON.stringify(rows)}\nAlerts: ${JSON.stringify(alerted)}\nRoster row: ${JSON.stringify(row)}`,
       )
@@ -74,10 +69,7 @@ export async function provePackagedCodexResume(
   // invalidation that follows a Send lands, so the Roster's posture catches up on its own poll
   // rather than by the time the message is visible.
   const resumed = await liveRosterRow(relaunched, sessionId, backend.budgetMs)
-  assert.deepEqual(
-    resumed.map(({ id, posture }: { id: string; posture: string }) => ({ id, posture })),
-    [{ id: sessionId, posture: 'live' }],
-  )
+  assert.deepEqual({ id: resumed.id, posture: resumed.posture }, { id: sessionId, posture: 'live' })
   return relaunched
 }
 
@@ -101,6 +93,6 @@ export async function provePackagedCodexResumeRefusal(
   const alert = relaunched.getByRole('alert')
   await alert.waitFor()
   assert.match((await alert.textContent()) ?? '', new RegExp(REFUSAL))
-  const [row] = await rosterRow(relaunched, sessionId)
+  const row = await sessionDetails(relaunched, sessionId)
   assert.equal(row?.posture, 'external')
 }

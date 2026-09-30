@@ -12,12 +12,8 @@ import { createConnectionPort } from '@/domains/connections/main'
 import { createHarnessSignInProcedureContext } from '@/domains/harness-signin/main'
 import { ATTACHMENT_SCHEME, attachmentPathFromUrl } from '@/domains/sessions/api/attachment-url'
 import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-event'
-import { SessionActivities } from '@/domains/sessions/main/api/session-activities'
 import { listComposerCommandsFor } from '@/domains/sessions/main/api/session-composer-commands'
-import {
-  recordHistoryActivity,
-  SessionRosterChanges,
-} from '@/domains/sessions/main/api/session-roster-changes'
+import { SessionRosterChanges } from '@/domains/sessions/main/api/session-roster-changes'
 import { SessionSyncStatusStore } from '@/domains/sessions/main/api/session-sync-status'
 import {
   clearWorkingStatuses,
@@ -36,7 +32,6 @@ import {
 import { SessionEventJournal } from '@/domains/sessions/main/live/session-event-journal'
 import { SessionHistoryFollowers } from '@/domains/sessions/main/live/session-history-followers'
 import { SessionInteractionBroker } from '@/domains/sessions/main/live/session-interaction-broker'
-import { isKnownSession } from '@/domains/sessions/main/sync/session-sync-records'
 import type { SessionSyncSupervisorCommand } from '@/domains/sessions/main/sync/session-sync-supervisor-machine'
 import type {
   PriorityRequest,
@@ -242,7 +237,6 @@ function routerForWindow(options: {
   domains: ReturnType<typeof createDomainContexts>
   registry: HarnessRegistry
   roster: SessionRosterChanges
-  activities: SessionActivities
 }) {
   const { window, database, actors, domains, sessionSyncStatus, registry, roster } = options
   const exclusive = createWriteQueue()
@@ -285,7 +279,6 @@ function routerForWindow(options: {
       },
       supervisor: actors.sessions,
       roster,
-      activities: options.activities,
       acceptsAttachments: (harness) => registry[harness].acceptsAttachments,
       chooseAttachmentFiles: () => chooseAttachmentFiles(window),
       journal: currentSessionEventJournal(),
@@ -416,7 +409,6 @@ function attachWindowTrpc({
   const watchedStatus = new WatchedSessionStatus((session, status) =>
     updateHarnessSession({ database, roster }, session, { status }),
   )
-  const activities = new SessionActivities({ database, roster })
   const router = routerForWindow({
     actors,
     domains,
@@ -425,7 +417,6 @@ function attachWindowTrpc({
     database,
     registry,
     roster,
-    activities,
   })
   const stopRosterSources = watchRosterSources({
     database,
@@ -468,12 +459,11 @@ function watchRosterSources({
     stops.push(
       watchHistoryActivity(files, (owner, turn, events) => {
         const at = Date.now()
-        if (!isKnownSession(database, harness, owner)) discover(harness, owner)
-        watchedStatus.record({ harness, nativeId: owner, turn, at })
-        recordHistoryActivity(database, { harness, nativeId: owner, at })
-        recordLiveSubagents(database, { harness, nativeId: owner, events })
-        // An empty update still announces the saved Session's new activity and Subagents.
-        updateHarnessSession({ database, roster }, { harness, nativeId: owner }, {})
+        const session = { harness, nativeId: owner }
+        watchedStatus.record({ ...session, turn, at })
+        recordLiveSubagents(database, { ...session, events })
+        const saved = updateHarnessSession({ database, roster }, session, { activityAt: at })
+        if (!saved) discover(harness, owner)
       }),
     )
   }

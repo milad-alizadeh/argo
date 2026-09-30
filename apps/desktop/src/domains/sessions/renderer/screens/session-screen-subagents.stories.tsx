@@ -21,7 +21,7 @@ const SUBAGENT_NAME = 'Survey the Harness adapters'
 let readSubagentIds: Array<string | null> = []
 const session = sessionRow({
   id: SESSION_ID,
-  posture: 'external',
+  posture: null,
   title: { text: 'Subagent history', source: 'first-prompt' },
   status: 'idle',
   cwd: '/storybook/argo',

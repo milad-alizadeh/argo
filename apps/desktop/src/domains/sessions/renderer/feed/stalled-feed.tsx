@@ -9,6 +9,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/platform/renderer/components/ui/empty'
+import type { SessionPosture } from '../types'
 
 // Past a stall bound (feed-stall.ts), the reader sees this instead of an indefinite spinner.
 // Retry re-runs whatever produced the stall rather than reloading the app (#2102).
@@ -17,7 +18,7 @@ export function StalledFeed({
   onRetry,
   compact = false,
 }: {
-  posture: 'live' | 'external' | null
+  posture: SessionPosture | null
   onRetry: () => void
   compact?: boolean
 }) {

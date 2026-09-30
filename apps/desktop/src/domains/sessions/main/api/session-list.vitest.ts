@@ -1,17 +1,20 @@
 import assert from 'node:assert/strict'
-import type { DatabaseSync } from 'node:sqlite'
 import { test } from 'vitest'
+import type { Database } from '@/database/database'
+import { sessionTicketLink } from '@/database/session-ticket-link/schema'
 import {
   IDS,
   insertSession,
   liveSession,
   sessionListCaller,
 } from '@/mocks/sessions/session-list-caller'
+import { recordLiveSubagents } from '../database/session-subagents'
+import { publishActivity } from './session-activities'
 
 type Caller = ReturnType<typeof sessionListCaller>
 
-function listOneSession(client: DatabaseSync, list: Caller['list']) {
-  insertSession(client, {
+function listOneSession(database: Database, list: Caller['list']) {
+  insertSession(database, {
     id: IDS[0],
     harness: 'claude',
     nativeId: 'native-1',
@@ -22,45 +25,35 @@ function listOneSession(client: DatabaseSync, list: Caller['list']) {
 }
 
 function insertTicketLink(
-  client: DatabaseSync,
-  values: {
-    sessionId: string
-    projectId: string
-    key: string
-    title: string
-    state: 'open' | 'closed'
-  },
+  database: Database,
+  { key, ...values }: { sessionId: string; key: string; title: string; createdAt?: string },
 ) {
-  client
-    .prepare(
-      `INSERT INTO session_ticket_link (
-        session_id, project_id, ticket_key, title, state, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?)`,
-    )
-    .run(
-      values.sessionId,
-      values.projectId,
-      values.key,
-      values.title,
-      values.state,
-      '2026-09-26T10:00:00.000Z',
-    )
+  database
+    .insert(sessionTicketLink)
+    .values({
+      projectId: 'project-1',
+      ticketKey: key,
+      state: 'open',
+      createdAt: '2026-09-26T10:00:00.000Z',
+      ...values,
+    })
+    .run()
 }
 
 test('pages by sort order, then newest created, then Argo ID', async () => {
-  const { client, list } = sessionListCaller()
+  const { client, database, list } = sessionListCaller()
   try {
-    insertSession(client, {
+    insertSession(database, {
       id: '00000000-0000-4000-8000-000000000005',
       harness: 'claude',
       nativeId: 'moved-down',
       sortOrder: 1,
       createdAt: 50,
     })
-    insertSession(client, { id: IDS[2], harness: 'claude', nativeId: 'older', createdAt: 10 })
-    insertSession(client, { id: IDS[1], harness: 'codex', nativeId: 'tied-2', createdAt: 20 })
-    insertSession(client, { id: IDS[0], harness: 'claude', nativeId: 'tied-1', createdAt: 20 })
-    insertSession(client, {
+    insertSession(database, { id: IDS[2], harness: 'claude', nativeId: 'older', createdAt: 10 })
+    insertSession(database, { id: IDS[1], harness: 'codex', nativeId: 'tied-2', createdAt: 20 })
+    insertSession(database, { id: IDS[0], harness: 'claude', nativeId: 'tied-1', createdAt: 20 })
+    insertSession(database, {
       id: '00000000-0000-4000-8000-000000000004',
       harness: 'claude',
       nativeId: 'other-project',
@@ -97,21 +90,21 @@ test('pages by sort order, then newest created, then Argo ID', async () => {
 })
 
 test('pages many archived Sessions apart from the active ones', async () => {
-  const { client, list } = sessionListCaller()
+  const { client, database, list } = sessionListCaller()
   try {
     const archivedIds = Array.from(
       { length: 5 },
       (_, index) => `00000000-0000-4000-8000-00000000010${index}`,
     )
     for (const [index, id] of archivedIds.entries())
-      insertSession(client, {
+      insertSession(database, {
         id,
         harness: 'claude',
         nativeId: `archived-${index}`,
         createdAt: 100 - index,
         archived: true,
       })
-    insertSession(client, { id: IDS[0], harness: 'claude', nativeId: 'active', createdAt: 200 })
+    insertSession(database, { id: IDS[0], harness: 'claude', nativeId: 'active', createdAt: 200 })
 
     const pages = await Promise.all(
       [0, 2, 4].map((offset) =>
@@ -135,16 +128,16 @@ test('pages many archived Sessions apart from the active ones', async () => {
 })
 
 test('projects the stored Workspace identity, including null for legacy Sessions', async () => {
-  const { client, list } = sessionListCaller()
+  const { client, database, list } = sessionListCaller()
   try {
-    insertSession(client, {
+    insertSession(database, {
       id: IDS[0],
       harness: 'claude',
       nativeId: 'linked-session',
       workspaceId: 'workspace-1',
       createdAt: 20,
     })
-    insertSession(client, {
+    insertSession(database, {
       id: IDS[1],
       harness: 'codex',
       nativeId: 'legacy-session',
@@ -163,9 +156,9 @@ test('projects the stored Workspace identity, including null for legacy Sessions
 })
 
 test('chooses custom title, Ticket title, distinct vendor preview, then first prompt', async () => {
-  const { client, list } = sessionListCaller()
+  const { client, database, list } = sessionListCaller()
   try {
-    insertSession(client, {
+    insertSession(database, {
       id: IDS[0],
       harness: 'claude',
       nativeId: 'native-1',
@@ -175,7 +168,7 @@ test('chooses custom title, Ticket title, distinct vendor preview, then first pr
       cwd: '/work/one',
       createdAt: 40,
     })
-    insertSession(client, {
+    insertSession(database, {
       id: IDS[1],
       harness: 'codex',
       nativeId: 'native-2',
@@ -183,7 +176,7 @@ test('chooses custom title, Ticket title, distinct vendor preview, then first pr
       firstPrompt: 'First prompt',
       createdAt: 30,
     })
-    insertSession(client, {
+    insertSession(database, {
       id: IDS[2],
       harness: 'claude',
       nativeId: 'native-3',
@@ -191,7 +184,7 @@ test('chooses custom title, Ticket title, distinct vendor preview, then first pr
       firstPrompt: 'First prompt',
       createdAt: 20,
     })
-    insertSession(client, {
+    insertSession(database, {
       id: '00000000-0000-4000-8000-000000000004',
       harness: 'claude',
       nativeId: 'native-4',
@@ -199,13 +192,7 @@ test('chooses custom title, Ticket title, distinct vendor preview, then first pr
       firstPrompt: 'First prompt',
       createdAt: 10,
     })
-    insertTicketLink(client, {
-      sessionId: IDS[1],
-      projectId: 'project-1',
-      key: '#2765',
-      title: 'Ticket title',
-      state: 'open',
-    })
+    insertTicketLink(database, { sessionId: IDS[1], key: '#2765', title: 'Ticket title' })
 
     const result = await list({ projectId: 'project-1' })
 
@@ -225,21 +212,19 @@ test('chooses custom title, Ticket title, distinct vendor preview, then first pr
 })
 
 test('joins a Session to its Ticket as one nested ticket object', async () => {
-  const { client, list } = sessionListCaller()
+  const { client, database, list } = sessionListCaller()
   try {
-    insertSession(client, {
+    insertSession(database, {
       id: IDS[0],
       harness: 'claude',
       nativeId: 'native-1',
       firstPrompt: 'Linked Session',
       createdAt: 10,
     })
-    insertTicketLink(client, {
+    insertTicketLink(database, {
       sessionId: IDS[0],
-      projectId: 'project-1',
       key: '#2744',
       title: 'Simplify Session renderer state',
-      state: 'open',
     })
 
     const result = await list({ projectId: 'project-1' })
@@ -262,10 +247,48 @@ test('joins a Session to its Ticket as one nested ticket object', async () => {
   }
 })
 
-async function savedSessionRowWithLiveState(state: string) {
-  const { client, list } = sessionListCaller({ [IDS[0]]: liveSession(state) })
+test('lists only one Ticket’s Sessions, most recently linked first, past the first page', async () => {
+  const { client, database, list } = sessionListCaller()
   try {
-    const result = await listOneSession(client, list)
+    for (let index = 0; index < 35; index += 1)
+      insertSession(database, {
+        id: `00000000-0000-4000-8000-3${String(index).padStart(11, '0')}`,
+        nativeId: `unlinked-${index}`,
+        createdAt: 1_000 + index,
+      })
+    insertSession(database, { id: IDS[0], nativeId: 'linked-first', createdAt: 20 })
+    insertSession(database, { id: IDS[1], nativeId: 'linked-later', createdAt: 10 })
+    insertSession(database, { id: IDS[2], nativeId: 'other-ticket', createdAt: 30 })
+    insertTicketLink(database, {
+      sessionId: IDS[0],
+      key: '#2937',
+      title: 'Page the archive',
+      createdAt: '2026-09-26T10:00:00.000Z',
+    })
+    insertTicketLink(database, {
+      sessionId: IDS[1],
+      key: '#2937',
+      title: 'Page the archive',
+      createdAt: '2026-09-27T10:00:00.000Z',
+    })
+    insertTicketLink(database, { sessionId: IDS[2], key: '#2938', title: 'Another Ticket' })
+
+    const linked = await list({ projectId: 'project-1', ticketKey: '#2937', limit: 30 })
+
+    assert.deepEqual(
+      linked.rows.map(({ id }) => id),
+      [IDS[1], IDS[0]],
+    )
+    assert.equal(linked.total, 2)
+  } finally {
+    client.close()
+  }
+})
+
+async function savedSessionRowWithLiveState(state: string) {
+  const { client, database, list } = sessionListCaller({ [IDS[0]]: liveSession(state) })
+  try {
+    const result = await listOneSession(database, list)
     return result.rows[0]
   } finally {
     client.close()
@@ -297,10 +320,12 @@ test('does not project a failed live channel as live', async () => {
 })
 
 test('projects the latest live status over the machine state, and unknown with no live actor', async () => {
-  const { client, list } = sessionListCaller({ [IDS[0]]: liveSession('Sending', 'running') })
+  const { client, database, list } = sessionListCaller({
+    [IDS[0]]: liveSession('Sending', 'running'),
+  })
   try {
-    insertSession(client, { id: IDS[0], harness: 'codex', nativeId: 'native-1', createdAt: 20 })
-    insertSession(client, { id: IDS[1], harness: 'claude', nativeId: 'native-2', createdAt: 10 })
+    insertSession(database, { id: IDS[0], harness: 'codex', nativeId: 'native-1', createdAt: 20 })
+    insertSession(database, { id: IDS[1], harness: 'claude', nativeId: 'native-2', createdAt: 10 })
 
     const result = await list({ projectId: 'project-1' })
 
@@ -314,26 +339,26 @@ test('projects the latest live status over the machine state, and unknown with n
 })
 
 test('shows the stored status when the live channel has none, and the live status over it', async () => {
-  const { client, list } = sessionListCaller({
+  const { client, database, list } = sessionListCaller({
     [IDS[0]]: liveSession('Ready'),
     [IDS[1]]: liveSession('Ready', 'idle'),
   })
   try {
-    insertSession(client, {
+    insertSession(database, {
       id: IDS[0],
       harness: 'codex',
       nativeId: 'native-1',
       status: 'running',
       createdAt: 30,
     })
-    insertSession(client, {
+    insertSession(database, {
       id: IDS[1],
       harness: 'codex',
       nativeId: 'native-2',
       status: 'running',
       createdAt: 20,
     })
-    insertSession(client, { id: IDS[2], harness: 'claude', nativeId: 'native-3', createdAt: 10 })
+    insertSession(database, { id: IDS[2], harness: 'claude', nativeId: 'native-3', createdAt: 10 })
 
     assert.deepEqual(
       (await list({ projectId: 'project-1' })).rows.map(({ status }) => status),
@@ -345,18 +370,58 @@ test('shows the stored status when the live channel has none, and the live statu
 })
 
 test('draws the activity the Session’s Feed published under its title', async () => {
-  const { client, list, activities } = sessionListCaller()
+  const { client, database, list, roster } = sessionListCaller()
   const activityOf = async () =>
     (await list({ projectId: 'project-1' })).rows.map((row) => row.activity)
   try {
-    insertSession(client, { id: IDS[1], harness: 'claude', nativeId: 'native-2', createdAt: 30 })
+    insertSession(database, { id: IDS[1], harness: 'claude', nativeId: 'native-2', createdAt: 30 })
 
-    activities.publish(IDS[1], { label: 'Ran bun test', kind: 'command', open: true })
+    publishActivity({ database, roster }, IDS[1], {
+      label: 'Ran bun test',
+      kind: 'command',
+      open: true,
+    })
     assert.deepEqual(await activityOf(), [
       { label: 'Ran bun test', kind: 'command', open: true, tool: 'command', target: null },
     ])
-    activities.publish(IDS[1], null)
+    publishActivity({ database, roster }, IDS[1], null)
     assert.deepEqual(await activityOf(), [null])
+  } finally {
+    client.close()
+  }
+})
+
+test('lists the Subagents a watched Session named', async () => {
+  const { client, database, list } = sessionListCaller()
+  try {
+    insertSession(database, { id: IDS[0], harness: 'codex', nativeId: 'native-2', createdAt: 10 })
+    recordLiveSubagents(database, {
+      harness: 'codex',
+      nativeId: 'native-2',
+      events: [
+        {
+          type: 'content',
+          commandId: null,
+          turnId: null,
+          vendorEventId: null,
+          content: {
+            kind: 'delegation',
+            id: 'call-1',
+            event: 'started',
+            agentId: 'agent-1',
+            status: 'running',
+            name: 'Survey',
+            prompt: null,
+            model: null,
+            summary: null,
+          },
+        },
+      ],
+    })
+
+    assert.deepEqual((await list({ projectId: 'project-1' })).rows[0]?.subagents, [
+      { id: 'agent-1', label: 'Survey', state: 'running', startedAt: null, endedAt: null },
+    ])
   } finally {
     client.close()
   }

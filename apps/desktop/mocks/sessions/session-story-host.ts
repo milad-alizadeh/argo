@@ -1,4 +1,4 @@
-// Storybook host for the Session List query, its change subscription and Feed subscriptions.
+// Storybook host for the Session List query, its updates, change and sync subscriptions, and Feeds.
 
 import { feedChainKey } from '@/domains/sessions/api/feed/feed-chain'
 import { type FeedReading, feedReading } from '@/domains/sessions/api/feed/feed-reading'
@@ -7,13 +7,10 @@ import { feedSubagents, subagentCompletionRows } from '@/domains/sessions/api/fe
 import type { FeedContent } from '@/domains/sessions/api/feed-content'
 import { sessionError } from '@/domains/sessions/api/session-error'
 import type { SessionLiveEvent } from '@/domains/sessions/api/session-live-event'
-import {
-  type SessionListInput,
-  sessionListPathKey,
-} from '@/domains/sessions/renderer/session-list/session-list-query'
-import { sessionDetailsPathKey } from '@/domains/sessions/renderer/session-queries'
-import type { Session } from '@/domains/sessions/renderer/types'
-import { queryClient } from '@/platform/renderer/trpc-client'
+import type { SessionListInput } from '@/domains/sessions/renderer/session-list/session-list-query'
+import type { SessionSyncStatus } from '@/domains/sessions/renderer/session-list/use-session-sync'
+import type { Session, SessionError, SessionListResult } from '@/domains/sessions/renderer/types'
+import { queryClient, type RouterInputs, type RouterOutputs } from '@/platform/renderer/trpc-client'
 
 type Subscribe = typeof window.argo.trpcSubscribe
 const openReaders = new Set<() => void>()
@@ -29,33 +26,35 @@ export function announceSessionFeedChange() {
   }
 }
 
-// Details reads the story holds back until it releases them, by Session id.
-const heldDetails = new Map<string, () => void>()
-
-export function holdSessionDetails(sessionId: string) {
-  heldDetails.set(sessionId, () => {})
+// Reads a story holds back by Session id until it releases them.
+export function heldReads() {
+  const held = new Map<string, () => void>()
+  return {
+    hold: (sessionId: string) => void held.set(sessionId, () => {}),
+    // Settles at once for an id not held, else when the story releases it.
+    wait: (sessionId: string) =>
+      held.has(sessionId)
+        ? new Promise<void>((resolve) => held.set(sessionId, resolve))
+        : Promise.resolve(),
+    release: (sessionId: string) => {
+      const release = held.get(sessionId)
+      held.delete(sessionId)
+      release?.()
+    },
+    releaseAll: () => {
+      for (const release of held.values()) release()
+      held.clear()
+    },
+  }
 }
 
-export function forgetHeldSessionDetails() {
-  heldDetails.clear()
-}
-
-export function releaseSessionDetails(sessionId: string) {
-  const release = heldDetails.get(sessionId)
-  heldDetails.delete(sessionId)
-  release?.()
-}
+export const heldDetails = heldReads()
 
 // Answers a Session's details from the story's rows, found by ID as main reads them.
-function sessionDetailsReply(sessionId: string, sessions: () => readonly Session[]) {
-  const reply = () => {
-    const session = sessions().find(({ id }) => id === sessionId)
-    return { result: { data: session === undefined ? null : structuredClone(session) } }
-  }
-  if (!heldDetails.has(sessionId)) return Promise.resolve(reply())
-  return new Promise<ReturnType<typeof reply>>((resolve) =>
-    heldDetails.set(sessionId, () => resolve(reply())),
-  )
+async function sessionDetailsReply(sessionId: string, sessions: () => readonly Session[]) {
+  await heldDetails.wait(sessionId)
+  const session = sessions().find(({ id }) => id === sessionId)
+  return { result: { data: session === undefined ? null : structuredClone(session) } }
 }
 
 // Story rows belong to whichever Project the list last read, copied as IPC would copy them.
@@ -63,14 +62,43 @@ let listedProjectId = 'project-1'
 const listedRows = (sessions: readonly Session[]) =>
   sessions.map((session) => ({ ...session, projectId: listedProjectId }))
 
-// Answers the Session List's change subscription with every story row whenever a story announces one.
+const IDLE_SYNC_STATUS: SessionSyncStatus = {
+  phase: 'idle',
+  processed: 0,
+  total: null,
+  skipped: 0,
+  lastSuccessfulSyncAt: null,
+  failure: null,
+}
+let syncStatus = IDLE_SYNC_STATUS
+const syncReaders = new Set<() => void>()
+
+// Sends a History sync status to every open sync reader, as main's worker does.
+export function publishSessionSyncStatus(status: Partial<SessionSyncStatus>) {
+  syncStatus = { ...IDLE_SYNC_STATUS, ...status }
+  for (const send of syncReaders) send()
+}
+
+// Answers the change subscription with every story row when a story announces one, and the sync
+// subscription with the status a story last published.
 export function sessionListSubscribe(
   subscribe: Subscribe,
   sessions: () => readonly Session[],
 ): Subscribe {
-  queryClient.removeQueries({ queryKey: sessionListPathKey })
-  queryClient.removeQueries({ queryKey: sessionDetailsPathKey })
+  queryClient.clear()
+  syncStatus = IDLE_SYNC_STATUS
   return async (request, listener) => {
+    if (request.path === 'sessionSyncStatus') {
+      const send = () =>
+        listener({
+          id: request.id,
+          type: 'data',
+          result: { data: { type: 'status', status: syncStatus } },
+        })
+      syncReaders.add(send)
+      send()
+      return () => syncReaders.delete(send)
+    }
     if (request.path !== 'sessionListChanged') return subscribe(request, listener)
     const send = () =>
       listener({
@@ -83,17 +111,20 @@ export function sessionListSubscribe(
   }
 }
 
-// Main's list query over story rows: one Project, the filter, a search, and lower sort order first.
-export function storySessionPage(
-  sessions: readonly Session[],
-  input: SessionListInput & { offset: number; limit: number },
-) {
+export type SessionListRead = SessionListInput & { offset: number; limit: number }
+
+// Main's list query over story rows: the filter, a search, and main's order.
+export function storySessionPage(sessions: readonly Session[], input: SessionListRead) {
   const needle = input.search.trim().toLowerCase()
   const listed = sessions
-    .toSorted((left, right) => left.sortOrder - right.sortOrder)
+    .toSorted(
+      (left, right) =>
+        left.sortOrder - right.sortOrder ||
+        right.createdAt.localeCompare(left.createdAt) ||
+        left.id.localeCompare(right.id),
+    )
     .filter(
       (session) =>
-        session.projectId === input.projectId &&
         (input.filter === 'all' || session.archived === (input.filter === 'archived')) &&
         [session.customTitle, session.preview].some((text) =>
           (text ?? '').toLowerCase().includes(needle),
@@ -102,24 +133,35 @@ export function storySessionPage(
   return { total: listed.length, rows: listed.slice(input.offset, input.offset + input.limit) }
 }
 
-// Answers one page of the Session List query from the story's rows, in the story's order.
+type SessionListHost = {
+  // Replaces the page read from the story rows; a Session error answers as a failed read.
+  list?: (read: SessionListRead) => Promise<SessionListResult | SessionError>
+  update?: (update: RouterInputs['sessionUpdate']) => Promise<RouterOutputs['sessionUpdate']>
+}
+
+// Answers the Session List query, `sessionUpdate` and `sessionDetails` from the story's rows.
 export function sessionListTrpc(
-  trpc: typeof window.argo.trpc,
+  next: typeof window.argo.trpc,
   sessions: () => readonly Session[],
+  { list, update }: SessionListHost = {},
 ): typeof window.argo.trpc {
   return (async (request) => {
     if (request.path === 'sessionDetails')
       return sessionDetailsReply((request.input as { sessionId: string }).sessionId, sessions)
-    if (request.path !== 'sessionList') return trpc(request)
-    const input = request.input as Partial<SessionListInput> & { offset?: number; limit?: number }
+    if (request.path === 'sessionUpdate' && update !== undefined)
+      return { result: { data: await update(request.input as RouterInputs['sessionUpdate']) } }
+    if (request.path !== 'sessionList') return next(request)
+    const input = request.input as Partial<SessionListRead>
     listedProjectId = input.projectId ?? 'project-1'
-    const page = storySessionPage(listedRows(sessions()), {
+    const read = {
       projectId: listedProjectId,
       filter: input.filter ?? 'active',
       search: input.search ?? '',
       offset: input.offset ?? 0,
       limit: input.limit ?? 30,
-    })
+    }
+    const page = await (list?.(read) ?? storySessionPage(listedRows(sessions()), read))
+    if ('type' in page) return { error: { message: page.message } }
     return { result: { data: page } }
   }) as typeof window.argo.trpc
 }
@@ -140,8 +182,7 @@ function readFailure(error: unknown): { message: string; data?: { code?: unknown
 }
 
 // Answers the root Feed's Refresh by reading every open story Feed again.
-export function sessionFeedRefreshTrpc(trpc: typeof window.argo.trpc): typeof window.argo.trpc {
-  queryClient.removeQueries({ queryKey: ['sessions'] })
+export function sessionFeedRefreshTrpc(next: typeof window.argo.trpc): typeof window.argo.trpc {
   return (async (request) => {
     if (request.path === 'sessionFeedRefresh') {
       const input = request.input as { sessionId: string; subagentId?: string | null }
@@ -152,7 +193,7 @@ export function sessionFeedRefreshTrpc(trpc: typeof window.argo.trpc): typeof wi
       for (const refresh of feeds) refresh()
       return { result: { data: { accepted: feeds.size > 0 } } }
     }
-    return trpc(request)
+    return next(request)
   }) as typeof window.argo.trpc
 }
 

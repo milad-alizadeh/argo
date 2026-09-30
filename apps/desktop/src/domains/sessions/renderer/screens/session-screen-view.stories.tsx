@@ -12,10 +12,10 @@ import { ComposerForm } from '../composer/layout/composer-form'
 import { RICH_MARKDOWN } from '../feed/content/feed-samples'
 import { SessionInspector } from '../inspector/session-inspector'
 import { workInspectorReveal } from '../inspector/work-inspector-reveal'
-import type { SessionShellCommand, SessionSubagent } from '../model/models'
-import { SessionList, type SessionListActions } from '../session-list/session-list'
+import type { SessionListActions } from '../session-list/rows/session-list-actions'
+import { SessionList } from '../session-list/session-list'
 import { SessionsSidebar } from '../session-list/sidebar/sessions-sidebar'
-import type { Session, SessionFeed } from '../types'
+import type { Session, SessionFeed, SessionShellCommand, SessionSubagent } from '../types'
 import { SessionWorkButtons } from '../work/session-work-buttons'
 import { SessionWorkInspectorHeader } from '../work/session-work-inspector-header'
 import type { SessionShellOutput } from '../work/types'
@@ -26,7 +26,7 @@ import { SessionShell } from './session-shell'
 const SESSION_ROSTER = [
   sessionRow({
     id: 'composer-review',
-    posture: 'external',
+    posture: null,
     title: { text: 'Finish Session composer review', source: 'first-prompt' },
     status: 'running',
     cwd: '/workspace/argo/.claude/worktrees/ticket-1846-composer',
@@ -69,7 +69,7 @@ const SESSION_ROSTER = [
   }),
   sessionRow({
     id: 'feed-review',
-    posture: 'external',
+    posture: null,
     title: { text: 'Review transcript rendering', source: 'custom' },
     status: 'permission',
     cwd: '/workspace/argo',
@@ -196,9 +196,12 @@ function ReviewSidebar({
   selectedSessionId: string
   titleText?: string
 }) {
-  withListedSessions(
-    SESSION_ROSTER.map((session) =>
-      sessionWithTitle(session, session.id === 'composer-review' ? titleText : undefined),
+  // Installed once, before the list's first read.
+  useState(() =>
+    withListedSessions(
+      SESSION_ROSTER.map((session) =>
+        sessionWithTitle(session, session.id === 'composer-review' ? titleText : undefined),
+      ),
     ),
   )
   return (
@@ -440,7 +443,7 @@ function sessionWithTitle(session: Session, titleText: string | undefined): Sess
 
 function NewSessionScreen() {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
-  withListedSessions([])
+  useState(() => withListedSessions([]))
   return (
     <AppShell
       leftHeader={<ProjectSwitcher />}

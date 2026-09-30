@@ -3,13 +3,12 @@ import { Icon } from '@/platform/renderer/components/icon/icon'
 import { Skeleton } from '@/platform/renderer/components/ui/skeleton'
 import { SESSION_LIST_ROW_HEIGHT } from './session-list-rows'
 
-// The one spinner every Session list load-more state draws, so the active Session list and the Archive read the
-// same at the point where the list is still growing. It takes one row's height, the height of the
-// Session row it stands in for, and centers the spinner in it.
-function SessionListStatusRow({ label }: { label: string }) {
+// The bottom of the list while the next page arrives: one row tall, the spinner centred in it.
+export function SessionListLoadingMoreRow() {
+  const { t } = useTranslation('sessions')
   return (
     <div
-      aria-label={label}
+      aria-label={t('loadingMoreSessions')}
       className="flex items-center justify-center"
       role="status"
       style={{ height: SESSION_LIST_ROW_HEIGHT }}
@@ -17,12 +16,6 @@ function SessionListStatusRow({ label }: { label: string }) {
       <Icon name="loading" className="size-4 animate-spin text-muted-foreground" />
     </div>
   )
-}
-
-// The bottom of the active Session list while the next window arrives.
-export function SessionListLoadingMoreRow() {
-  const { t } = useTranslation('sessions')
-  return <SessionListStatusRow label={t('loadingMoreSessions')} />
 }
 
 // A skeleton row previews the shape of the Session row it is about to become

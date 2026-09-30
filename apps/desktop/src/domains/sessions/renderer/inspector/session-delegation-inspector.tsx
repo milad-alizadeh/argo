@@ -14,8 +14,7 @@ import {
   EmptyTitle,
 } from '@/platform/renderer/components/ui/empty'
 import { BasicFeed } from '../feed/document/basic-feed'
-import type { SessionSubagent } from '../model/models'
-import type { SessionError, SessionEvidence, SessionFeed } from '../types'
+import type { SessionError, SessionEvidence, SessionFeed, SessionSubagent } from '../types'
 
 import '../feed/feed.css'
 

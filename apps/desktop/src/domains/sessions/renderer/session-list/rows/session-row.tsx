@@ -1,16 +1,16 @@
-import { type MouseEvent, useState } from 'react'
+import { type MouseEvent, memo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { harnessSchema } from '@/harnesses/harness'
 import { LiveActivityWords, useLiveActivityText } from '../../feed/rows/live-activity-text'
 import { HarnessLogo } from '../../harness/harness-logo'
-import { SESSION_HARNESSES, type SessionHarness } from '../../harness/harnesses'
 import { SessionTitle } from '../../prompt/session-title'
-import type { Session } from '../../types'
+import type { Session, SessionId } from '../../types'
 import type { SelectionModifier } from '../hooks/session-list-selection'
 import { sessionName } from './session-list-rows'
 import { SessionMetadata } from './session-row-metadata'
 import './session-row.css'
 import { Icon } from '@/platform/renderer/components/icon/icon'
-import { SessionBlockedBadge, STATUS_LABELS, statusVariantOf } from './session-row-status'
+import { SessionBlockedBadge, statusVariantOf } from './session-row-status'
 
 function selectionModifierOf(event: {
   shiftKey: boolean
@@ -20,10 +20,6 @@ function selectionModifierOf(event: {
   if (event.shiftKey) return 'range'
   if (event.metaKey || event.ctrlKey) return 'additive'
   return 'plain'
-}
-
-function knownHarness(harness: string): harness is SessionHarness {
-  return (SESSION_HARNESSES as readonly string[]).includes(harness)
 }
 
 // The same line the Feed's live tail draws, as still text: the shimmer is the Feed's.
@@ -47,48 +43,49 @@ function rowHighlightOf(checked: boolean, selected: boolean, archived: boolean):
   return 'hover:bg-muted'
 }
 
-// The row carries no context menu of its own: the list holds one menu and reads the row under the
-// pointer from `data-session-id` (session-row-context-menu.tsx).
-export function SessionRow({
-  archived,
-  checked,
+// Memoized with boolean props: a running Session rebuilds the list several times a second.
+// The list's one context menu finds this row by `data-session-id` (session-row-context-menu.tsx).
+export const SessionRow = memo(function SessionRow({
+  checked: picked,
   onFocus,
   onSelect,
   onToggleSelect,
-  selectable,
   selected,
   session,
-  tabIndex,
-  unavailable = false,
+  tabbable,
+  unavailable,
 }: {
-  archived: boolean
   checked: boolean
-  onFocus: () => void
-  onSelect: () => void
-  onToggleSelect: (modifier: SelectionModifier) => void
-  selectable: boolean
+  onFocus: (sessionId: SessionId) => void
+  onSelect: (sessionId: SessionId) => void
+  onToggleSelect: (sessionId: SessionId, modifier: SelectionModifier) => void
   selected: boolean
   session: Session
-  tabIndex: number
-  unavailable?: boolean
+  tabbable: boolean
+  unavailable: boolean
 }) {
   const { t } = useTranslation('sessions')
   const [pointerFocused, setPointerFocused] = useState(false)
+  const { archived } = session
+  // An archived row takes no part in a bulk selection.
+  const checked = picked && !archived
   const rowHighlight = rowHighlightOf(checked, selected, archived)
   const focusHighlight = pointerFocused
     ? 'focus-visible:outline-2 focus-visible:outline-transparent focus-visible:ring-0'
     : 'focus-visible:ring-2 focus-visible:ring-ring'
   const running = session.status === 'running'
+  // The Roster stores an open Harness string (ADR-0021); an unknown one draws no logo.
+  const harness = harnessSchema.safeParse(session.harness)
   const statusVariant = unavailable ? 'failed' : statusVariantOf(session)
   // A shift- or platform-modifier click selects (ranges or adds to the bulk selection) instead of
   // opening the Session, so no checkbox is needed for multi-select (#2194, dropped per review). A
   // plain click keeps opening the Session, as it did before selection existed.
   function handleRowClick(event: MouseEvent) {
-    if (selectable && (event.shiftKey || event.metaKey || event.ctrlKey)) {
-      onToggleSelect(selectionModifierOf(event))
+    if (!archived && (event.shiftKey || event.metaKey || event.ctrlKey)) {
+      onToggleSelect(session.id, selectionModifierOf(event))
       return
     }
-    onSelect()
+    onSelect(session.id)
   }
   return (
     <div className="min-w-0">
@@ -100,22 +97,22 @@ export function SessionRow({
         data-history-unavailable={unavailable}
         onBlur={() => setPointerFocused(false)}
         onClick={handleRowClick}
-        onFocus={onFocus}
+        onFocus={() => onFocus(session.id)}
         onKeyDown={(event) => {
           setPointerFocused(false)
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault()
-            onSelect()
+            onSelect(session.id)
           }
         }}
         onPointerDown={() => setPointerFocused(true)}
-        tabIndex={tabIndex}
+        tabIndex={tabbable ? 0 : -1}
         type="button"
       >
         <span aria-hidden="true" className="relative flex h-5 w-4 shrink-0 items-center">
           <span className="session-list-harness-mark">
             <span data-active={running} data-slot="harness-logo">
-              {knownHarness(session.harness) ? <HarnessLogo harness={session.harness} /> : null}
+              {harness.success ? <HarnessLogo harness={harness.data} /> : null}
             </span>
           </span>
           <span
@@ -124,7 +121,10 @@ export function SessionRow({
             data-slot="session-status"
           />
         </span>
-        {unavailable ? null : <span className="sr-only">{STATUS_LABELS[session.status]}</span>}
+        {/* The status dot's colour, in words for a reader it never reaches. */}
+        {unavailable ? null : (
+          <span className="sr-only">{t(`sessionStatus.${session.status}`)}</span>
+        )}
         {checked ? <span className="sr-only">{t('bulkSelect.selected')}</span> : null}
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
@@ -153,4 +153,4 @@ export function SessionRow({
       </button>
     </div>
   )
-}
+})

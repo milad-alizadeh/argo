@@ -1,23 +1,25 @@
-import type { DatabaseSync } from 'node:sqlite'
-import { initTRPC } from '@trpc/server'
+import { type inferRouterOutputs, initTRPC } from '@trpc/server'
 import type { z } from 'zod'
-import { databaseFrom } from '@/database/database'
+import type { Database } from '@/database/database'
 import { sessionTable } from '@/database/session/schema'
 import { sessionArchive } from '@/database/session-archive/schema'
-import { SessionActivities } from '@/domains/sessions/main/api/session-activities'
+import { sessionDetailsProcedure } from '@/domains/sessions/main/api/session-details'
 import {
   sessionListChangedProcedure,
   sessionListProcedure,
   type sessionListRowSchema,
 } from '@/domains/sessions/main/api/session-list'
 import { SessionRosterChanges } from '@/domains/sessions/main/api/session-roster-changes'
-import { sessionUpdateProcedure } from '@/domains/sessions/main/api/session-update-procedure'
-import type { Harness } from '@/harnesses/harness'
+import {
+  type SessionUpdateProcedureContext,
+  sessionUpdateProcedure,
+} from '@/domains/sessions/main/api/session-update-procedure'
 import {
   insertProject,
   insertWorkspace,
   migratedDatabase,
 } from '@/mocks/database/migrated-database'
+import type { AppRouter } from '@/platform/main/trpc-router'
 
 export const IDS = [
   '00000000-0000-4000-8000-000000000001',
@@ -26,8 +28,8 @@ export const IDS = [
 ] as const
 
 export type SessionListRow = z.infer<typeof sessionListRowSchema>
-export type SessionListChange = { sessionIds: string[] }
-type RenameRequest = { harness: Harness; nativeId: string; title: string }
+type SessionListChange = inferRouterOutputs<AppRouter>['sessionListChanged']
+type RenameRequest = Parameters<SessionUpdateProcedureContext['rename']>[0]
 
 function mockSupervisor(sessions: Record<string, unknown>) {
   const statusListeners = new Set<(event: { sessionId: string }) => void>()
@@ -58,7 +60,6 @@ export function sessionListCaller(
   const client = database.$client
   const { supervisor, statusChanged } = mockSupervisor(sessions)
   const roster = new SessionRosterChanges()
-  const activities = new SessionActivities({ database, roster })
   const renames: RenameRequest[] = []
   const context = {
     database,
@@ -74,6 +75,7 @@ export function sessionListCaller(
       list: sessionListProcedure(context),
       changed: sessionListChangedProcedure(context, observeFeed),
       update: sessionUpdateProcedure(context),
+      details: sessionDetailsProcedure(context),
     })
     .createCaller({})
   const changes = async () => {
@@ -84,12 +86,13 @@ export function sessionListCaller(
   }
   return {
     client,
+    database,
     list: caller.list,
     update: caller.update,
+    details: caller.details,
     changes,
     roster,
     statusChanged,
-    activities,
     renames,
   }
 }
@@ -109,50 +112,28 @@ export function liveSession(state: string, status: string | null = null) {
   }
 }
 
-type SessionTableStatus = typeof sessionTable.$inferInsert.status
-
+// Saves one Session, and its Project and Workspace, with the stored columns a test names.
 export function insertSession(
-  client: DatabaseSync,
-  values: {
-    id: string
-    harness: string
-    nativeId: string
-    createdAt: number
-    customTitle?: string | null
-    preview?: string | null
-    firstPrompt?: string | null
-    cwd?: string | null
-    workspaceId?: string | null
-    activityAt?: number | null
-    projectId?: string
-    sortOrder?: number
-    status?: SessionTableStatus
-    archived?: boolean
-  },
+  database: Database,
+  {
+    id,
+    archived,
+    ...values
+  }: Partial<typeof sessionTable.$inferInsert> & { id: string; archived?: boolean },
 ) {
-  const database = databaseFrom(client)
   const projectId = values.projectId ?? 'project-1'
   insertProject(database, projectId)
   if (values.workspaceId != null) insertWorkspace(database, values.workspaceId, projectId)
   database
     .insert(sessionTable)
     .values({
-      argoId: values.id,
-      harness: values.harness,
-      nativeId: values.nativeId,
-      projectId,
-      workspaceId: values.workspaceId ?? null,
-      customTitle: values.customTitle ?? null,
-      preview: values.preview ?? null,
-      firstPrompt: values.firstPrompt ?? null,
-      cwd: values.cwd ?? null,
-      activityAt: values.activityAt ?? null,
-      sortOrder: values.sortOrder ?? 0,
-      status: values.status ?? null,
-      createdAt: values.createdAt,
+      harness: 'claude',
+      nativeId: id,
       updatedAt: values.createdAt,
+      ...values,
+      argoId: id,
+      projectId,
     })
     .run()
-  if (values.archived === true)
-    database.insert(sessionArchive).values({ sessionId: values.id }).run()
+  if (archived === true) database.insert(sessionArchive).values({ sessionId: id }).run()
 }

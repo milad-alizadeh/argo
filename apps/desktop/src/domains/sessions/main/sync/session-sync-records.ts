@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import type { Database } from '@/database/database'
 import { project } from '@/database/project/schema'
 import { sessionTable } from '@/database/session/schema'
@@ -34,16 +34,6 @@ export function knownSessionIds(database: Database, harness: Harness): string[] 
     .where(eq(sessionTable.harness, harness))
     .all()
     .map((row) => row.nativeId)
-}
-
-export function isKnownSession(database: Database, harness: Harness, nativeId: string): boolean {
-  return (
-    database
-      .select({ argoId: sessionTable.argoId })
-      .from(sessionTable)
-      .where(and(eq(sessionTable.harness, harness), eq(sessionTable.nativeId, nativeId)))
-      .get() !== undefined
-  )
 }
 
 function sessionRoots(database: Database): SessionRoot[] {

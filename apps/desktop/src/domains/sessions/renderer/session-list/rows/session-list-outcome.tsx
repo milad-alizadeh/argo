@@ -36,18 +36,12 @@ function SessionListErrorAlert() {
 
 // What the list says instead of rows: the read failed, the first read has not landed, or there are
 // no Sessions to show.
-export function SessionListOutcome({
-  searching,
-  state,
-}: {
-  searching: boolean
-  state: SessionListState
-}) {
+export function SessionListOutcome({ state }: { state: SessionListState }) {
   switch (state) {
     case 'error':
       return <SessionListErrorAlert />
     case 'loading':
-      return searching ? null : <SessionListLoading />
+      return <SessionListLoading />
     case 'empty':
       return <NoSessionsFound />
     case 'ready':

@@ -25,6 +25,7 @@ import {
 } from '../composer/turn-configuration/turn-configuration'
 import { COMPOSER_FOCUS_STATE } from '../composer-focus-state'
 import type { HarnessControl } from '../harness/harnesses'
+import { sessionName } from '../session-list/rows/session-list-rows'
 import type { Session } from '../types'
 import { draftTarget } from './session-draft-target'
 import { type ComposerFailure, useComposerFailureToasts } from './use-composer-failure-toasts'
@@ -235,11 +236,10 @@ export function SessionComposerArea({
 }: SessionScreenDetailsProps) {
   const { catalogQuery, refreshCatalog } = useCatalogRead(harness)
   const location = useLocation()
-  const { projectId: routeProjectId } = useParams()
   const { catalogFailure, choices, initialTurnConfiguration, identity } =
     sessionComposerConfiguration({
       selectedSessionId,
-      projectId: cockpit.project?.id ?? routeProjectId ?? null,
+      projectId: cockpit.project?.id ?? null,
       session,
       sessionLoaded,
       catalogResult: catalogQuery.data,
@@ -426,6 +426,7 @@ function HandoffLink({
   sessionId: string
   onNavigate: (path: string) => void
 }) {
+  const { t } = useTranslation('sessions')
   const { projectId } = useParams()
   const { session } = useSessionDetails(sessionId)
   return (
@@ -436,7 +437,7 @@ function HandoffLink({
         onClick={() => onNavigate(`/projects/${projectId}/sessions/${sessionId}`)}
         type="button"
       >
-        {session?.title?.text ?? sessionId}
+        {session === null ? sessionId : sessionName(session, t('newSession'))}
       </button>
     </p>
   )
