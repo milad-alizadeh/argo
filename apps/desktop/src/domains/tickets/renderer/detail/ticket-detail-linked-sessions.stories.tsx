@@ -11,7 +11,6 @@ const LINKED = Array.from({ length: 45 }, (_unused, index) =>
   sessionRow({
     id: `linked-${index}`,
     archived: index === 0,
-    title: { text: `Linked Session ${index}`, source: 'first-prompt' },
     name: `Linked Session ${index}`,
     ticket: {
       projectId: 'storybook-project',

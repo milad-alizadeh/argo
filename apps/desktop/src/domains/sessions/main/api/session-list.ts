@@ -33,7 +33,6 @@ import {
   isWorkingStatus,
   WORKING_SESSION_STATUSES,
 } from '@/domains/sessions/api/session-live-event'
-import { sessionTitleSchema } from '@/domains/sessions/api/session-title'
 import { identifierSchema } from '@/shared/validation'
 import { type StoredSubagent, storedSessionSubagents } from '../database'
 import { type LiveSessionSupervisorActor, liveSessionActorFor } from '../live'
@@ -70,9 +69,7 @@ export const sessionListRowSchema = z.strictObject({
   ...storedSessionSchema.shape,
   id: z.string().uuid(),
   posture: z.literal('live').nullable(),
-  title: sessionTitleSchema.nullable(),
-  // The title, else the ID; null only while an untitled Session starts, which the UI labels.
-  name: z.string().nullable(),
+  name: z.string(),
   status: sessionSelectSchema.shape.status,
   updatedAt: z.iso.datetime(),
   activity: feedActivitySchema.nullable(),
@@ -154,18 +151,12 @@ function sessionListRow(
 ) {
   const live = liveProjection(context, row.id)
   const liveStatus = live?.status === 'unknown' ? null : live?.status
-  const status = liveStatus ?? row.status
-  const title =
-    row.title === null || row.titleSource === null
-      ? null
-      : { text: row.title, source: row.titleSource }
   return {
     ...row.passed,
     id: row.id,
     posture: live === null ? null : ('live' as const),
-    title,
-    name: title?.text ?? (status === 'starting' ? null : row.id),
-    status,
+    name: row.name,
+    status: liveStatus ?? row.status,
     updatedAt: new Date(row.activityAt ?? row.updatedAt).toISOString(),
     activity: observedActivity(row.activity) ?? live?.activity ?? null,
     subagents,
@@ -182,22 +173,13 @@ function linkedTicket({ projectId, key, createdAt, ...content }: StoredSessionRo
     : { projectId, key, createdAt, ...content }
 }
 
-// The title a row shows, strongest first; a preview that repeats the first prompt is that prompt.
-const shownTitle = sql<
-  string | null
->`coalesce(${sessionTable.customTitle}, ${ticketContent.title}, ${sessionTable.preview}, ${sessionTable.firstPrompt})`
-const shownTitleSource = sql<z.infer<typeof sessionTitleSchema>['source'] | null>`case
-  when ${sessionTable.customTitle} is not null then 'custom'
-  when ${ticketContent.title} is not null then 'ticket'
-  when ${sessionTable.preview} is not null and ${sessionTable.preview} is not ${sessionTable.firstPrompt} then 'summarised'
-  when ${sessionTable.firstPrompt} is not null then 'first-prompt'
-end`
+// The name a row shows, strongest first, down to the Session ID.
+const shownName = sql<string>`coalesce(${sessionTable.customTitle}, ${ticketContent.title}, ${sessionTable.preview}, ${sessionTable.firstPrompt}, ${sessionTable.argoId})`
 
 const storedSessionColumns = {
   passed: passedSessionColumns,
   id: sessionTable.argoId,
-  title: shownTitle,
-  titleSource: shownTitleSource,
+  name: shownName,
   activityAt: sessionTable.activityAt,
   activity: sessionTable.activity,
   status: sessionTable.status,
@@ -304,7 +286,7 @@ async function readSessionList(
         ),
     input.search === ''
       ? undefined
-      : sql<boolean>`instr(lower(coalesce(${shownTitle}, '')), lower(${input.search})) > 0`,
+      : sql<boolean>`instr(lower(${shownName}), lower(${input.search})) > 0`,
   )
   // A Ticket's Sessions read most recently linked first.
   const order =

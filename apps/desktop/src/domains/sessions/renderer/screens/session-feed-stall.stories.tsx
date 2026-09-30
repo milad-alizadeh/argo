@@ -13,7 +13,6 @@ import { SessionScreenView } from './session-screen-view'
 const stalled = sessionRow({
   id: 'stalled-feed-session',
   posture: null,
-  title: { text: 'A transcript still being written', source: 'first-prompt' },
   name: 'A transcript still being written',
   status: 'idle',
   cwd: '/storybook/argo',

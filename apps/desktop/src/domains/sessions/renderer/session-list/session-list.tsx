@@ -417,9 +417,7 @@ function SessionMenuItems({
 }: SessionMenuHandlers & { target: Session }) {
   const { t } = useTranslation('sessions')
   return (
-    <ContextMenuContent
-      aria-label={t('contextMenu.actions', { title: target.name ?? t('newSession') })}
-    >
+    <ContextMenuContent aria-label={t('contextMenu.actions', { title: target.name })}>
       <ContextMenuGroup>
         <ContextMenuItem onClick={() => onRename(target)}>
           {t('contextMenu.rename')}

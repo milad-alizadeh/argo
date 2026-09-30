@@ -16,7 +16,6 @@ export function sessionRow(
     harness: DEFAULT_HARNESS,
     projectId: 'project-1',
     posture: 'live',
-    title: null,
     name: 'session-one',
     status: 'idle',
     cwd: null,

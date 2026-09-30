@@ -19,7 +19,6 @@ const SESSION_ROWS = [
     posture: 'live',
     status: 'idle',
     cwd: '/workspace/argo',
-    title: { text: 'First Claude Session', source: 'custom' },
     name: 'First Claude Session',
     updatedAt: '2026-09-13T15:50:00Z',
   }),
@@ -29,7 +28,6 @@ const SESSION_ROWS = [
     posture: 'live',
     status: 'idle',
     cwd: '/workspace/argo',
-    title: { text: 'Second Codex Session', source: 'custom' },
     name: 'Second Codex Session',
     updatedAt: '2026-09-13T15:40:00Z',
   }),
@@ -38,7 +36,6 @@ const SESSION_ROWS = [
     posture: 'live',
     status: 'idle',
     cwd: '/workspace/argo',
-    title: { text: 'Third Claude Session', source: 'custom' },
     name: 'Third Claude Session',
     updatedAt: '2026-09-13T15:30:00Z',
   }),
@@ -371,7 +368,6 @@ const BEYOND_THE_WINDOW = sessionRow({
   posture: null,
   status: 'idle',
   cwd: '/workspace/argo',
-  title: { text: 'Codex Session beyond the window', source: 'custom' },
   name: 'Codex Session beyond the window',
   updatedAt: '2026-09-01T09:00:00Z',
 })
@@ -382,7 +378,6 @@ const LONG_SESSION_ROWS = [
       posture: null,
       status: 'idle',
       cwd: '/workspace/argo',
-      title: { text: `Claude Session ${index}`, source: 'custom' },
       name: `Claude Session ${index}`,
       updatedAt: `2026-09-13T${String(10 + (index % 10)).padStart(2, '0')}:00:00Z`,
     }),
@@ -420,7 +415,6 @@ export const AReopenedSessionTakesItsCurrentDetails: Story = {
     await userEvent.click(canvas.getByRole('button', { name: /Second Codex Session/ }))
     await canvas.findByRole('heading', { level: 1, name: 'Second Codex Session' })
     Object.assign(RENAMED_SESSION_ROWS[0] ?? {}, {
-      title: { text: 'Renamed first', source: 'custom' },
       name: 'Renamed first',
     })
     heldDetails.hold('claude-first')

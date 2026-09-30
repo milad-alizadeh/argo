@@ -8,10 +8,6 @@ const session = sessionRow({
   id: '01K5S9WHWCG1S9K3K88P4JBQBP',
   posture: null,
   status: 'idle',
-  title: {
-    text: 'Keep the sidebar control clear of every Session title at every workspace width',
-    source: 'custom',
-  },
   name: 'Keep the sidebar control clear of every Session title at every workspace width',
   cwd: '/workspace/argo/.claude/worktrees/ticket-page-layout',
 })
@@ -45,7 +41,7 @@ function SessionLayout() {
 
 function expectIdentityInPageHeader(canvasElement: HTMLElement) {
   const canvas = within(canvasElement)
-  const title = canvas.getByRole('heading', { name: session.title?.text })
+  const title = canvas.getByRole('heading', { name: session.name })
   const header = canvasElement.querySelector<HTMLElement>('[data-component="AppMainHeader"]')
   const identity = canvasElement.querySelector<HTMLElement>('[data-component="SessionIdentity"]')
   if (header === null || identity === null)
@@ -74,7 +70,7 @@ export const Open: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     expectIdentityInPageHeader(canvasElement)
-    const title = canvas.getByRole('heading', { name: session.title?.text })
+    const title = canvas.getByRole('heading', { name: session.name })
     const header = canvasElement.querySelector<HTMLElement>('[data-component="AppMainHeader"]')
     if (header === null) throw new Error('The Session header is absent.')
     const gutter = Number.parseFloat(getComputedStyle(header).paddingInlineStart)
@@ -91,7 +87,7 @@ export const Collapsed: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Collapse sidebar' }))
     const opener = await canvas.findByRole('button', { name: 'Open sidebar' })
-    const title = canvas.getByRole('heading', { name: session.title?.text })
+    const title = canvas.getByRole('heading', { name: session.name })
     await expect(title.getBoundingClientRect().top).toBeLessThan(
       opener.getBoundingClientRect().bottom,
     )

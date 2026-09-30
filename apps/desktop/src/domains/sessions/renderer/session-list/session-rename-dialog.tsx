@@ -29,9 +29,9 @@ export function SessionRenameDialog({
 
   useEffect(() => {
     if (session === null) return
-    setName(session.name ?? t('newSession'))
+    setName(session.name)
     setError(null)
-  }, [session, t])
+  }, [session])
 
   const close = () => {
     if (saving) return

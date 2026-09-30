@@ -420,7 +420,6 @@ function HandoffLink({
   sessionId: string
   onNavigate: (path: string) => void
 }) {
-  const { t } = useTranslation('sessions')
   const { projectId } = useParams()
   const { session } = useSessionDetails(sessionId)
   return (
@@ -431,7 +430,7 @@ function HandoffLink({
         onClick={() => onNavigate(`/projects/${projectId}/sessions/${sessionId}`)}
         type="button"
       >
-        {session === null ? sessionId : (session.name ?? t('newSession'))}
+        {session === null ? sessionId : session.name}
       </button>
     </p>
   )

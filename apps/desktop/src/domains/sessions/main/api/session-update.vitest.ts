@@ -163,10 +163,7 @@ test('a rename goes to the Harness, then stores the custom title', async () => {
     await update({ sessionIds: [IDS[0]], title: 'Renamed' })
 
     assert.deepEqual(renames, [{ harness: 'claude', nativeId: 'native-1', title: 'Renamed' }])
-    assert.deepEqual((await details({ sessionId: IDS[0] }))?.title, {
-      text: 'Renamed',
-      source: 'custom',
-    })
+    assert.equal((await details({ sessionId: IDS[0] }))?.name, 'Renamed')
   } finally {
     database.$client.close()
   }
@@ -178,7 +175,7 @@ test('a title is stored with control characters and repeated spaces collapsed', 
     await update({ sessionIds: [IDS[0]], title: '  Fix\tthe\n\nSession List  ' })
 
     assert.equal(renames[0]?.title, 'Fix the Session List')
-    assert.equal((await details({ sessionId: IDS[0] }))?.title?.text, 'Fix the Session List')
+    assert.equal((await details({ sessionId: IDS[0] }))?.name, 'Fix the Session List')
     await assert.rejects(update({ sessionIds: [IDS[0]], title: ' \u0007 ' }))
   } finally {
     database.$client.close()
@@ -193,10 +190,7 @@ test('keeps the existing title when the Harness rejects a rename', async () => {
     await assert.rejects(update({ sessionIds: [IDS[0]], title: 'Rejected title' }), {
       message: 'Harness rejected the rename.',
     })
-    assert.deepEqual((await details({ sessionId: IDS[0] }))?.title, {
-      text: 'hello',
-      source: 'first-prompt',
-    })
+    assert.equal((await details({ sessionId: IDS[0] }))?.name, 'hello')
   } finally {
     database.$client.close()
   }

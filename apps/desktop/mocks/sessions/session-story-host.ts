@@ -108,14 +108,12 @@ function listRead(input: Partial<SessionListRead>): SessionListRead {
   return sessionListInputSchema.parse({ projectId: 'project-1', ...input })
 }
 
-// The rows an update changed, with its title and archive applied.
+// The rows an update changed, with its name and archive applied.
 function updatedRows(rows: readonly Session[], input: SessionUpdate, sessionIds: string[]) {
   return rows
     .filter(({ id }) => sessionIds.includes(id))
     .map((row) => ({
       ...row,
-      title:
-        input.title === undefined ? row.title : { text: input.title, source: 'custom' as const },
       name: input.title ?? row.name,
       archived: input.archived ?? row.archived,
     }))

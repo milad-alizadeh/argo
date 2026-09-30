@@ -31,7 +31,6 @@ const SESSION_ROWS = [
   sessionRow({
     id: 'composer-review',
     posture: null,
-    title: { text: 'Finish Session composer review', source: 'first-prompt' },
     name: 'Finish Session composer review',
     status: 'running',
     cwd: '/workspace/argo/.claude/worktrees/ticket-1846-composer',
@@ -65,7 +64,6 @@ const SESSION_ROWS = [
     id: 'shortcut-review',
     harness: 'codex',
     posture: 'live',
-    title: { text: 'Add Markdown typing shortcuts', source: 'summarised' },
     name: 'Add Markdown typing shortcuts',
     status: 'idle',
     cwd: '/workspace/argo',
@@ -76,7 +74,6 @@ const SESSION_ROWS = [
   sessionRow({
     id: 'feed-review',
     posture: null,
-    title: { text: 'Review transcript rendering', source: 'custom' },
     name: 'Review transcript rendering',
     status: 'permission',
     cwd: '/workspace/argo',
@@ -365,9 +362,7 @@ function ReviewContent({
 }
 
 function sessionWithTitle(session: Session, titleText: string | undefined): Session {
-  return titleText === undefined
-    ? session
-    : { ...session, title: { text: titleText, source: 'first-prompt' }, name: titleText }
+  return titleText === undefined ? session : { ...session, name: titleText }
 }
 
 function NewSessionScreen() {

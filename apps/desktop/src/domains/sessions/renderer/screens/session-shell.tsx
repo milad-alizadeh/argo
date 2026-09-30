@@ -41,7 +41,7 @@ function SessionIdentity({
       className="flex min-w-0 flex-1 flex-col items-start justify-center gap-(--spacing-shell-tight)"
     >
       <h1 className="w-full truncate type-heading">
-        <SessionTitle session={session} text={session.name ?? t('newSession')} />
+        <SessionTitle session={session} text={session.name} />
       </h1>
       {workspaceIdentity !== null && workspaceIdentity.branch !== null ? (
         <div

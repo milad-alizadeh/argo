@@ -12,7 +12,6 @@ export function LinkedSessions({
   onOpenSession: (id: string) => void
 }) {
   const { t } = useTranslation('tickets')
-  const { t: sessionsT } = useTranslation('sessions')
   if (sessions.length === 0) return null
   return (
     <TicketDetailSection
@@ -27,9 +26,7 @@ export function LinkedSessions({
               onClick={() => onOpenSession(session.id)}
               type="button"
             >
-              <span className="min-w-0 flex-1 truncate type-body">
-                {session.name ?? sessionsT('newSession')}
-              </span>
+              <span className="min-w-0 flex-1 truncate type-body">{session.name}</span>
             </button>
           </li>
         ))}

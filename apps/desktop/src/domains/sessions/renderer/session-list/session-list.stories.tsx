@@ -16,7 +16,6 @@ import { SessionList } from './session-list'
 const session = sessionRow({
   id: 'prose',
   posture: null,
-  title: { text: 'Read the Session transcript', source: 'first-prompt' },
   name: 'Read the Session transcript',
   status: 'idle',
   cwd: '/workspace/argo',
@@ -26,7 +25,6 @@ const session = sessionRow({
 const secondSession: Session = {
   ...session,
   id: 'second-session',
-  title: { text: 'A second Session', source: 'summarised' },
   name: 'A second Session',
 }
 
@@ -199,7 +197,6 @@ export const CommandTitledSession: Story = {
     const restore = showing([
       {
         ...session,
-        title: { text: '/implement 1847', source: 'first-prompt' },
         name: '/implement 1847',
       },
     ])
@@ -224,7 +221,6 @@ export const MissingActivityKeepsStatusOutOfTheSubtitle: Story = {
         ...session,
         activity: null,
         status: 'unknown',
-        title: { text: 'A Session with no observed activity', source: 'first-prompt' },
         name: 'A Session with no observed activity',
       },
     ]),
@@ -253,7 +249,6 @@ export const OpenCommandReadsRunning: Story = {
           target: 'bun run quality',
         },
         status: 'running',
-        title: { text: 'Gate the branch', source: 'first-prompt' },
         name: 'Gate the branch',
       },
       {
@@ -267,7 +262,6 @@ export const OpenCommandReadsRunning: Story = {
           target: 'bun run quality',
         },
         status: 'idle',
-        title: { text: 'Gated the branch', source: 'first-prompt' },
         name: 'Gated the branch',
       },
     ]),
@@ -282,7 +276,6 @@ function concurrentActivityRows(activityBySession: Record<string, string>) {
   return ['Alpha', 'Beta', 'Gamma'].map((name) => ({
     ...session,
     id: name.toLowerCase(),
-    title: { text: `${name} session`, source: 'first-prompt' as const },
     name: `${name} session`,
     status: activityBySession[name] === undefined ? ('idle' as const) : ('running' as const),
     cwd: null,
@@ -369,7 +362,6 @@ export const CommentaryActivityDrawsMarkdown: Story = {
           target: null,
         },
         status: 'running',
-        title: { text: 'Order the group phrases', source: 'first-prompt' },
         name: 'Order the group phrases',
       },
       {
@@ -383,7 +375,6 @@ export const CommentaryActivityDrawsMarkdown: Story = {
           target: 'ls *.ts *.tsx',
         },
         status: 'idle',
-        title: { text: 'List the sources', source: 'first-prompt' },
         name: 'List the sources',
       },
     ]),
@@ -416,7 +407,6 @@ export const SessionListStructure: Story = {
             { content: 'Match the layout', position: 1, status: 'in_progress' },
           ],
         },
-        title: { text: 'Codex session names displaying as ID', source: 'first-prompt' },
         name: 'Codex session names displaying as ID',
       },
     ]),
@@ -465,28 +455,24 @@ export const StatusMarks: Story = {
         id: 'wants-answer',
         posture: 'live',
         status: 'asking',
-        title: { text: 'A question is waiting', source: 'first-prompt' },
         name: 'A question is waiting',
       },
       {
         ...session,
         id: 'wants-permission',
         status: 'permission',
-        title: { text: 'A tool call is waiting', source: 'first-prompt' },
         name: 'A tool call is waiting',
       },
       {
         ...session,
         id: 'starting-session',
         status: 'starting',
-        title: { text: 'New Session', source: 'first-prompt' },
         name: 'New Session',
       },
       {
         ...session,
         id: 'running-session',
         status: 'running',
-        title: { text: 'Build the approved layout', source: 'first-prompt' },
         name: 'Build the approved layout',
       },
     ]),
@@ -523,13 +509,11 @@ export const StatusFollowsChanges: Story = {
         ...session,
         id: 'waiting-for-permission',
         status: 'permission',
-        title: { text: 'Approve the command', source: 'first-prompt' },
         name: 'Approve the command',
       },
       {
         ...session,
         id: 'idle-session',
-        title: { text: 'Read the idle Session', source: 'first-prompt' },
         name: 'Read the idle Session',
       },
     ]),
@@ -546,7 +530,6 @@ export const StatusFollowsChanges: Story = {
         ...session,
         id: 'idle-session',
         status: 'running',
-        title: { text: 'Read the idle Session', source: 'first-prompt' },
         name: 'Read the idle Session',
       },
     ])
@@ -566,7 +549,6 @@ export const LostChangeSignalReconnects: Story = {
     host.dropChangeSignal([
       {
         ...session,
-        title: { text: 'Renamed while the signal was lost', source: 'custom' },
         name: 'Renamed while the signal was lost',
       },
     ])
@@ -583,10 +565,6 @@ export const NarrowSidebarWithLongSessionName: Story = {
     showing([
       {
         ...session,
-        title: {
-          text: 'Keep the Sessions sidebar readable when a Session name is substantially longer than its pane',
-          source: 'first-prompt',
-        },
         name: 'Keep the Sessions sidebar readable when a Session name is substantially longer than its pane',
       },
     ]),
@@ -686,13 +664,11 @@ export const CompletedRefreshFeedbackDisappears: Story = {
 const alpha: Session = {
   ...session,
   id: 'alpha',
-  title: { text: 'Alpha session', source: 'first-prompt' },
   name: 'Alpha session',
 }
 const beta: Session = {
   ...session,
   id: 'beta',
-  title: { text: 'Beta session', source: 'first-prompt' },
   name: 'Beta session',
 }
 let reordered = false
@@ -729,10 +705,6 @@ export const SkillMentionTitle: Story = {
     showing([
       {
         ...session,
-        title: {
-          text: '[$implement](/Users/milad/Developer/argo/.agents/skills/implement/SKILL.md) [https://github.com/milad-alizadeh/argo/issues/1944](https://github.com/milad-alizadeh/argo/issues/1944)',
-          source: 'first-prompt',
-        },
         name: '[$implement](/Users/milad/Developer/argo/.agents/skills/implement/SKILL.md) [https://github.com/milad-alizadeh/argo/issues/1944](https://github.com/milad-alizadeh/argo/issues/1944)',
       },
     ]),
@@ -793,7 +765,6 @@ const archivedSession: Session = {
   ...session,
   id: 'archived-session',
   archived: true,
-  title: { text: 'Read the archived transcript', source: 'first-prompt' },
   name: 'Read the archived transcript',
 }
 
@@ -822,7 +793,6 @@ export const ArchivedRowsCanBeOpened: Story = {
     showing([
       {
         ...archivedSession,
-        title: { text: 'Open the archived transcript', source: 'first-prompt' },
         name: 'Open the archived transcript',
       },
     ]),
@@ -897,7 +867,6 @@ export const Failure: Story = {
 const manySessions: Session[] = Array.from({ length: 80 }, (_unused, row) => ({
   ...session,
   id: `session-${String(row).padStart(2, '0')}`,
-  title: { text: `Session number ${row}`, source: 'first-prompt' as const },
   name: `Session number ${row}`,
 }))
 
@@ -1034,7 +1003,6 @@ function projectSessions(projectId: string): Session[] {
       id: `${projectId}-${archived ? 'archived' : 'active'}`,
       projectId,
       archived,
-      title: { text: name, source: 'first-prompt' },
       name: name,
     }
   })

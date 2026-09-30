@@ -13,7 +13,7 @@ export async function proveClaudeRename(page, { backend, transcripts }) {
   await waitFor(() => backend.recorded({ harness: 'claude', prompt }))
 
   const beforeRename = await sessionDetails(page, sessionId)
-  assert.deepEqual(beforeRename?.title, { text: prompt, source: 'first-prompt' })
+  assert.equal(beforeRename?.name, prompt)
 
   await sendSessionUpdate(page, { sessionIds: [sessionId], title: RENAMED })
 
@@ -27,8 +27,8 @@ export async function proveClaudeRename(page, { backend, transcripts }) {
   })
   await waitFor(async () => {
     const row = await sessionDetails(page, sessionId)
-    return row?.title?.source === 'custom' && row.title.text === RENAMED
+    return row?.name === RENAMED
   })
   const afterRename = await sessionDetails(page, sessionId)
-  assert.deepEqual(afterRename?.title, { text: RENAMED, source: 'custom' })
+  assert.equal(afterRename?.name, RENAMED)
 }

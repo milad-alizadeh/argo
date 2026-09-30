@@ -147,7 +147,7 @@ test('projects each Session’s stored Workspace, and null for one outside any W
   }
 })
 
-test('chooses custom title, Ticket title, distinct vendor preview, then first prompt', async () => {
+test('names a Session by its custom title, then Ticket title, vendor preview and first prompt', async () => {
   const { database, list } = sessionListCaller()
   try {
     insertSession(database, {
@@ -189,13 +189,8 @@ test('chooses custom title, Ticket title, distinct vendor preview, then first pr
     const result = await list({ projectId: 'project-1' })
 
     assert.deepEqual(
-      result.rows.map(({ title }) => title),
-      [
-        { text: 'Custom title', source: 'custom' },
-        { text: 'Ticket title', source: 'ticket' },
-        { text: 'Vendor preview', source: 'summarised' },
-        { text: 'First prompt', source: 'first-prompt' },
-      ],
+      result.rows.map(({ name }) => name),
+      ['Custom title', 'Ticket title', 'Vendor preview', 'First prompt'],
     )
     assert.equal(result.rows[0]?.cwd, '/work/one')
   } finally {
@@ -228,10 +223,7 @@ test('joins a Session to its Ticket, whose state follows the provider with no li
       state: 'open',
       createdAt: '2026-09-26T10:00:00.000Z',
     })
-    assert.deepEqual(result.rows[0]?.title, {
-      text: 'Simplify Session renderer state',
-      source: 'ticket',
-    })
+    assert.equal(result.rows[0]?.name, 'Simplify Session renderer state')
     assert.equal('ticketKey' in (result.rows[0] ?? {}), false)
 
     saveTicket(database, { key: '#2744', title: 'Closed since', state: 'closed' })
@@ -262,7 +254,7 @@ test('a linked Ticket with no saved content shows its key with no title or state
       state: null,
       createdAt: '2026-09-26T10:00:00.000Z',
     })
-    assert.deepEqual(result.rows[0]?.title, { text: 'Prompt', source: 'first-prompt' })
+    assert.equal(result.rows[0]?.name, 'Prompt')
   } finally {
     database.$client.close()
   }
@@ -306,10 +298,8 @@ test('lists only one Ticket’s Sessions, most recently linked first, past the f
   }
 })
 
-test('names a Session by its title, else its ID, and an untitled starting one not at all', async () => {
-  const { database, list } = sessionListCaller({
-    sessions: { [IDS[2]]: liveSession('Starting', null) },
-  })
+test('names a Session by its title, else its ID', async () => {
+  const { database, list } = sessionListCaller()
   try {
     insertSession(database, {
       id: IDS[0],
@@ -318,13 +308,12 @@ test('names a Session by its title, else its ID, and an untitled starting one no
       createdAt: 30,
     })
     insertSession(database, { id: IDS[1], nativeId: 'native-2', createdAt: 20 })
-    insertSession(database, { id: IDS[2], nativeId: 'native-3', createdAt: 10 })
 
     const result = await list({ projectId: 'project-1' })
 
     assert.deepEqual(
       result.rows.map(({ name }) => name),
-      ['Prompt', IDS[1], null],
+      ['Prompt', IDS[1]],
     )
   } finally {
     database.$client.close()

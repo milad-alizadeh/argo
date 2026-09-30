@@ -17,7 +17,6 @@ import { SessionScreenView } from './session-screen-view'
 const resumable = sessionRow({
   id: 'resumable-session',
   posture: null,
-  title: { text: 'Fix the flaky roster test', source: 'first-prompt' },
   name: 'Fix the flaky roster test',
   status: 'idle',
   cwd: '/storybook/argo',

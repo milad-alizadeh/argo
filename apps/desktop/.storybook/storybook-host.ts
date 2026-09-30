@@ -13,7 +13,7 @@ export const host = window
 const storybookSession = sessionRow({
   id: 'storybook-session',
   posture: null,
-  title: { text: 'Storybook Session', source: 'first-prompt' },
+  name: 'Storybook Session',
   status: 'idle',
   cwd: '/storybook/argo',
 })

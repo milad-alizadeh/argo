@@ -18,7 +18,6 @@ function liveRow() {
   return sessionRow({
     id: SESSION_ID,
     posture: 'live',
-    title: { text: 'Turn turnConfiguration Session', source: 'first-prompt' },
     name: 'Turn turnConfiguration Session',
     status: 'idle',
     cwd: '/storybook/argo',
