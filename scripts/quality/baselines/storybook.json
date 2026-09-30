@@ -1,33 +1,5 @@
 {
   "version": 1,
   "gate": "storybook",
-  "entries": [
-    {
-      "identity": {
-        "project": "storybook",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-resume.stories.tsx",
-        "story": "Resumes On Send"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-turn-configuration.stories.tsx",
-        "story": "Accepted Choice Stays"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    },
-    {
-      "identity": {
-        "project": "storybook",
-        "path": "apps/desktop/src/domains/sessions/renderer/screens/session-turn-configuration.stories.tsx",
-        "story": "Refused Choice Reverts"
-      },
-      "owner": "#2587",
-      "reason": "The final typed-API cutover owns this Storybook repair."
-    }
-  ]
+  "entries": []
 }

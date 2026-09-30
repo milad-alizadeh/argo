@@ -1,40 +1,51 @@
 import assert from 'node:assert/strict'
+import { randomUUID } from 'node:crypto'
+import { mkdtemp, readFile } from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
 import { test } from 'node:test'
-import { createCodexAppServerDriveAdapter } from '@/harnesses/codex/drive/codex-app-server-drive-adapter'
-import { createAdapter, mockCodexExecutable } from './mock-codex-session-adapter-support.ts'
+import type { SessionSendInput } from '@/domains/sessions/main/api/session-submit'
+import { mockStartInput } from './mock-codex-channel.ts'
+import { clientBackedByMock, mockCodexExecutable, waitFor } from './mock-codex-driver.ts'
+import { openLiveSession } from './mock-codex-live-session.ts'
 
 test('sends a follow-up Turn to a Codex Session this window does not hold yet', async () => {
-  const executable = await mockCodexExecutable()
-  const first = createAdapter(executable)
-  const started = await first.execute({
-    type: 'session.start',
-    harness: 'codex',
-    prompt: 'Open the Codex resume proof.',
-    workspace: { kind: 'main' },
+  const echoFile = path.join(await mkdtemp(path.join(os.tmpdir(), 'argo-codex-echo-')), 'echo')
+  const executable = await mockCodexExecutable({ ARGO_CODEX_ECHO_FILE: echoFile })
+  const firstClient = clientBackedByMock(executable)
+  const first = openLiveSession(firstClient, {
+    ...mockStartInput,
+    prompt: 'Open the resume proof.',
   })
-  assert.equal(started.kind, 'accepted')
-  if (started.kind !== 'accepted') return
-  const sessionId = started.projection.session.nativeId
-  await first.close()
-  const resumed = createAdapter(executable)
+  await waitFor(() => first.has('turn.completed'), 'the first Turn to complete')
+  const nativeId = first.nativeId()
+  assert.ok(nativeId)
+  first.channel.close()
+  firstClient.shutdown()
+
+  const resumedClient = clientBackedByMock(executable)
+  const resume: SessionSendInput = {
+    commandId: randomUUID(),
+    prompt: 'Carry on after the restart.',
+    attachments: [],
+    turnConfiguration: mockStartInput.turnConfiguration,
+    sessionId: randomUUID(),
+    resume: {
+      harness: 'codex',
+      nativeId,
+      projectId: mockStartInput.projectId,
+      workspaceId: mockStartInput.workspaceId,
+      cwd: mockStartInput.cwd,
+    },
+  }
+  const resumed = openLiveSession(resumedClient, resume)
   try {
-    const sent = await createCodexAppServerDriveAdapter({
-      adapter: resumed,
-      workspaceForCwd: async () => ({ kind: 'main' }),
-    }).send({
-      sessionId,
-      cwd: process.cwd(),
-      prompt: 'Carry on after the restart.',
-      setup: null,
-      attachments: [],
-    })
-    assert.deepEqual(sent, { ok: true })
-    const projection = resumed.projections().find((item) => item.session.nativeId === sessionId)
-    assert.equal(
-      projection?.messages.some((message) => message.text === 'Carry on after the restart.'),
-      true,
-    )
+    await waitFor(() => resumed.has('turn.completed'), 'the resumed Turn to complete')
+    assert.equal(resumed.nativeId(), nativeId)
+    assert.equal(resumed.has('failure'), false)
+    assert.match(await readFile(echoFile, 'utf8'), /Carry on after the restart\./)
   } finally {
-    await resumed.close()
+    resumed.channel.close()
+    resumedClient.shutdown()
   }
 })
