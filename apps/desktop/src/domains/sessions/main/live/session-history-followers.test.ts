@@ -61,7 +61,7 @@ test('shares one tail between readers and stops it after the last one leaves', (
     invalidated.push('second'),
   )
 
-  tails[0]?.changed({ type: 'rewritten' })
+  tails[0]?.changed({ type: 'rewritten', events: [] })
   first()
   expect(tails[0]?.stopped).toBe(false)
   second()

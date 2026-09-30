@@ -179,7 +179,7 @@ test('reports the lines a watched Session appended, from the first change onward
   const appended: string[][] = []
   let probed = false
   // A change that adds no line still calls back, so only the batches that carry text are recorded.
-  const stop = watchHistoryActivity(files(root), (owner, _turn, events) => {
+  const stop = watchHistoryActivity(files(root), (owner, _turn, { events }) => {
     if (owner === 'probe') {
       probed = true
       return
@@ -200,6 +200,60 @@ test('reports the lines a watched Session appended, from the first change onward
   // Two batches arrived, which the waits above already required; where the watcher draws the line
   // between them is the platform's to decide, so only the sequence of lines is asserted.
   assert.deepEqual(appended.flat(), ['prompt one', 'answer one', 'prompt two'])
+})
+
+type Reading = { restarted: boolean; texts: string[] }
+
+// Records each reading of one owner that carries text, after the watcher is known to be live.
+async function watchReadings(context: TestContext, root: string, owner: string) {
+  const readings: Reading[] = []
+  let probed = false
+  const stop = watchHistoryActivity(files(root), (seen, _turn, { restarted, events }) => {
+    if (seen === 'probe') probed = true
+    if (seen !== owner) return
+    const texts = events.flatMap((event) =>
+      event.type === 'content' && event.content.kind === 'message' ? [event.content.text] : [],
+    )
+    if (texts.length > 0) readings.push({ restarted, texts })
+  })
+  context.after(stop)
+  await watcherStarted(root, () => probed)
+  return readings
+}
+
+test('reads the tail window again, as a restart, when a file is truncated', async (context) => {
+  const root = await directory(context)
+  const file = path.join(root, 'native-5.jsonl')
+  writeFileSync(file, 'prompt one\nanswer one\n')
+  const readings = await watchReadings(context, root, 'native-5')
+  appendFileSync(file, 'prompt two\n')
+  await eventually(() => (readings.length > 0 ? true : undefined))
+
+  writeFileSync(file, 'fresh\n')
+  await eventually(() => readings.find((reading) => reading.texts.includes('fresh')))
+
+  // The watcher may see the first write before or with the append; either read starts the window.
+  assert.deepEqual(readings[0]?.texts.slice(0, 2), ['prompt one', 'answer one'])
+  assert.equal(readings[0]?.restarted, true)
+  assert.deepEqual(readings.at(-1), { restarted: true, texts: ['fresh'] })
+})
+
+test('reads an append longer than the tail window as the window alone', async (context) => {
+  const root = await directory(context)
+  const file = path.join(root, 'native-6.jsonl')
+  writeFileSync(file, 'prompt one\n')
+  const readings = await watchReadings(context, root, 'native-6')
+  appendFileSync(file, 'answer one\n')
+  await eventually(() => (readings.length > 0 ? true : undefined))
+
+  const filler = `${'x'.repeat(1023)}\n`.repeat(512)
+  appendFileSync(file, `${filler}last line\n`)
+  await eventually(() => readings.find((reading) => reading.texts.includes('last line')))
+
+  const large = readings.at(-1)
+  assert.equal(large?.restarted, true)
+  assert.ok((large?.texts.length ?? 0) <= 256, 'The watcher read past its window.')
+  assert.equal(large?.texts.includes('prompt one'), false)
 })
 
 test('finds the newest turn marker behind lines that carry none', async (context) => {

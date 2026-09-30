@@ -51,9 +51,12 @@ export type HistoryTurn = 'open' | 'closed'
 // The turn a marker names, where the Harness writes one; a close for another turn is stale.
 export type HistoryTurnMarker = { turn: HistoryTurn; turnId: string | null }
 
-export type HistoryChange =
-  | { type: 'appended'; events: SessionLiveEventBody[] }
-  | { type: 'rewritten' }
+// A rewritten file must be read whole; its events are what the new lines alone decoded to.
+export type HistoryChange = { type: 'appended' | 'rewritten'; events: SessionLiveEventBody[] }
+
+// What a Session's history file gained since the last change. A read that starts again from the
+// tail window, with a fresh reader, replaces what earlier reads gave rather than extending it.
+export type HistoryActivityReading = { restarted: boolean; events: SessionLiveEventBody[] }
 
 export type LiveSessionChannelEvent = z.infer<typeof liveSessionChannelEventSchema>
 export type LiveSessionCommand = Pick<

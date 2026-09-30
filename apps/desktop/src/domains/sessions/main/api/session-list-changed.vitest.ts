@@ -1,13 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'vitest'
 import type { Database } from '@/database/database'
-import {
-  IDS,
-  insertSession,
-  liveSession,
-  sessionListCaller,
-  settled,
-} from '@/mocks/sessions/session-list-caller'
+import { IDS, insertSession, sessionListCaller, settled } from '@/mocks/sessions/session-list-caller'
 
 function insertTwoSessions(database: Database) {
   insertSession(database, { id: IDS[0], harness: 'claude', nativeId: 'native-1', createdAt: 20 })
@@ -54,52 +48,6 @@ test('a burst of announcements in one tick sends one change', async () => {
     stop()
 
     assert.deepEqual(received, [{ sessionIds: [IDS[0], IDS[1], IDS[2]] }])
-  } finally {
-    database.$client.close()
-  }
-})
-
-test('opens a Feed reader only for working Sessions, and closes them when the watcher stops', async () => {
-  const observed = new Map<string, number>()
-  const observeFeed = (sessionId: string) => {
-    observed.set(sessionId, (observed.get(sessionId) ?? 0) + 1)
-    return () => observed.delete(sessionId)
-  }
-  const { database, sessionListChanges, stopWatching } = sessionListCaller({
-    sessions: { [IDS[0]]: liveSession('Ready', 'running') },
-    observeFeed,
-  })
-  try {
-    insertTwoSessions(database)
-    insertSession(database, {
-      id: IDS[2],
-      harness: 'codex',
-      nativeId: 'native-3',
-      status: 'idle',
-      createdAt: 5,
-    })
-    assert.deepEqual(observed, new Map([[IDS[0], 1]]))
-
-    database.$client
-      .prepare("UPDATE session SET status = 'permission' WHERE argo_id = ?")
-      .run(IDS[1])
-    sessionListChanges.changed([IDS[1]])
-    await settled()
-    assert.deepEqual(
-      observed,
-      new Map([
-        [IDS[0], 1],
-        [IDS[1], 1],
-      ]),
-    )
-
-    database.$client.prepare("UPDATE session SET status = 'idle' WHERE argo_id = ?").run(IDS[1])
-    sessionListChanges.changed([IDS[1]])
-    await settled()
-    assert.deepEqual(observed, new Map([[IDS[0], 1]]))
-
-    stopWatching()
-    assert.equal(observed.size, 0)
   } finally {
     database.$client.close()
   }

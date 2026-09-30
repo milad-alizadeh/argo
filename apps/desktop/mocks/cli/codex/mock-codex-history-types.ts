@@ -5,6 +5,7 @@ export type StoredItem = {
   id: string
   type: string
   text: string
+  phase?: string
   kind?: string
   agentThreadId?: string
   agentPath?: string

@@ -2,6 +2,8 @@ import path from 'node:path'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type { HistoryChange, HistoryTurn, HistoryTurnMarker } from '@/harnesses/registration'
 import type { SubAgentActivityKind } from '../app-server'
+import { codexRolloutWorkItem } from './codex-rollout-items'
+import { codexContentFromItems } from './codex-session-history'
 import { codexSubagentContent } from './codex-subagent-content'
 import { codexTaskNotification } from './codex-task-notification'
 
@@ -52,9 +54,13 @@ function completedItem(payload: unknown) {
   const id = item.id
   if (typeof id !== 'string' || id === '') return null
   return {
-    item: { id, type: item.type, content: item.content },
+    item: item as Record<string, unknown> & { id: string },
     turnId: typeof record.turn_id === 'string' ? record.turn_id : null,
   }
+}
+
+function messagePhase(phase: unknown): 'commentary' | 'final_answer' | undefined {
+  return phase === 'commentary' || phase === 'final_answer' ? phase : undefined
 }
 
 function messageEvents(payload: unknown, reject: () => void): SessionLiveEventBody[] {
@@ -81,7 +87,9 @@ function messageEvents(payload: unknown, reject: () => void): SessionLiveEventBo
         kind: 'message',
         role: item.type === 'UserMessage' ? 'user' : 'assistant',
         text,
-        ...(item.type === 'AgentMessage' ? { phase: undefined } : {}),
+        ...(item.type === 'AgentMessage'
+          ? { phase: messagePhase(item.phase) }
+          : {}),
       },
     },
   ]
@@ -134,6 +142,20 @@ function subagentEvents(payload: unknown, reject: () => void): SessionLiveEventB
   ]
 }
 
+// The completed work a rollout records, decoded as `thread/read` decodes the same item.
+function workEvents(payload: unknown, reject: () => void): SessionLiveEventBody[] {
+  const completed = completedItem(payload)
+  const item = completed === null ? null : codexRolloutWorkItem(completed.item, reject)
+  if (completed === null || item === null) return []
+  return codexContentFromItems([item]).map((content) => ({
+    type: 'content',
+    commandId: null,
+    turnId: completed.turnId,
+    vendorEventId: completed.item.id,
+    content,
+  }))
+}
+
 // A command or an edit differs between a rollout and `thread/read`, so the Feed reads it whole.
 const READ_WHOLE = new Set(['CommandExecution', 'FileChange'])
 
@@ -157,9 +179,13 @@ export function openCodexHistoryReader(): (lines: readonly string[]) => HistoryC
         return []
       }
       if (record.type !== 'event_msg') return []
-      return [...messageEvents(record.payload, reject), ...subagentEvents(record.payload, reject)]
+      return [
+        ...messageEvents(record.payload, reject),
+        ...subagentEvents(record.payload, reject),
+        ...workEvents(record.payload, reject),
+      ]
     })
     if (rejected > 0) console.warn(`Rejected ${rejected} unsupported Codex rollout line(s).`)
-    return lines.some(completesWork) ? { type: 'rewritten' } : { type: 'appended', events }
+    return { type: lines.some(completesWork) ? 'rewritten' : 'appended', events }
   }
 }

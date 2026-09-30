@@ -67,7 +67,7 @@ test.each(['toolCalls', 'harnessNoise', 'askPending', 'recordedEdit'])(
 test.each(['prose', 'parityProse'])(
   'reports the %s transcript, whose records branch or start a second root, as a rewrite',
   (name) => {
-    expect(openClaudeHistoryReader()(recorded(name))).toEqual({ type: 'rewritten' })
+    expect(openClaudeHistoryReader()(recorded(name))).toMatchObject({ type: 'rewritten' })
   },
 )
 
@@ -91,7 +91,7 @@ test('keeps its place in the chain across appends', () => {
     read([
       '{"type":"user","uuid":"u-3","parentUuid":"u-1","message":{"role":"user","content":"fork"}}',
     ]),
-  ).toEqual({ type: 'rewritten' })
+  ).toMatchObject({ type: 'rewritten' })
 })
 
 test('takes its place in the chain from the lines already in the file', () => {
@@ -104,7 +104,7 @@ test('takes its place in the chain from the lines already in the file', () => {
     read([
       '{"type":"user","uuid":"u-3","parentUuid":"u-1","message":{"role":"user","content":"fork"}}',
     ]),
-  ).toEqual({ type: 'rewritten' })
+  ).toMatchObject({ type: 'rewritten' })
 })
 
 test('skips transcript bookkeeping and counts a line that is not a record', () => {

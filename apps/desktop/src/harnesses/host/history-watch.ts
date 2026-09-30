@@ -10,6 +10,7 @@ import {
 import path from 'node:path'
 import type { SessionLiveEventBody } from '@/domains/sessions/api/session-live-event'
 import type {
+  HistoryActivityReading,
   HistoryChange,
   HistoryFiles,
   HistoryTurn,
@@ -195,7 +196,7 @@ export function tailSessionHistory(
 
   const rewritten = () => {
     read = files.openReader(existingLines(position))
-    changed({ type: 'rewritten' })
+    changed({ type: 'rewritten', events: [] })
   }
   const readAppended = (file: string) => {
     const growth = growthOf(file, position)
@@ -309,44 +310,66 @@ function tailWindowPosition(file: string): TailPosition | null {
   }
 }
 
+const NOTHING_READ: HistoryActivityReading = { restarted: false, events: [] }
+
+type ActivityTail = { position: TailPosition; read: (lines: readonly string[]) => HistoryChange }
+
 // The lines each watched Session appended since the last change, decoded by the Harness's own
-// reader. A Session is read only while it is writing, so an idle roster decodes nothing.
+// reader. A Session is read only while it is writing, so an idle roster decodes nothing, and no
+// change reads more than the tail window.
 class ActivityTails {
   readonly #files: HistoryFiles
-  readonly #tails = new Map<
-    string,
-    { position: TailPosition; read: (lines: readonly string[]) => HistoryChange }
-  >()
+  readonly #tails = new Map<string, ActivityTail>()
 
   constructor(files: HistoryFiles) {
     this.#files = files
   }
 
-  events(owner: string, file: string): SessionLiveEventBody[] {
-    const tail = this.#tails.get(owner) ?? this.#start(owner, file)
-    if (tail === null) return []
+  read(owner: string, file: string): HistoryActivityReading {
+    const tail = this.#tails.get(owner)
+    if (tail === undefined || this.#outgrew(tail, file)) return this.#restart(owner, file)
     const growth = growthOf(file, tail.position)
-    if (growth.type === 'missing') {
-      this.#tails.delete(owner)
-      return []
+    switch (growth.type) {
+      case 'missing':
+        this.#tails.delete(owner)
+        return NOTHING_READ
+      case 'rewritten':
+        return this.#restart(owner, file)
+      case 'appended':
+        tail.position = growth.position
+        return { restarted: false, events: this.#decode(tail, growth.lines) }
     }
-    tail.position = growth.position
-    if (growth.type === 'rewritten' || growth.lines.length === 0) {
-      if (growth.type === 'rewritten') tail.read = this.#files.openReader([])
-      return []
-    }
-    const change = tail.read(growth.lines)
-    if (change.type === 'appended') return change.events
-    tail.read = this.#files.openReader([])
-    return []
   }
 
-  #start(owner: string, file: string) {
+  // An append longer than the window is read as the window alone.
+  #outgrew(tail: ActivityTail, file: string): boolean {
+    try {
+      return statSync(file).size - tail.position.offset > ACTIVITY_TAIL_BYTES
+    } catch {
+      return false
+    }
+  }
+
+  #decode(tail: ActivityTail, lines: readonly string[]): SessionLiveEventBody[] {
+    if (lines.length === 0) return []
+    const change = tail.read(lines)
+    // The lines no longer continue what the reader holds, so the next append starts it afresh.
+    if (change.type === 'rewritten') tail.read = this.#files.openReader([])
+    return change.events
+  }
+
+  #restart(owner: string, file: string): HistoryActivityReading {
     const position = tailWindowPosition(file)
-    if (position === null) return null
+    if (position === null) {
+      this.#tails.delete(owner)
+      return NOTHING_READ
+    }
     const tail = { position, read: this.#files.openReader([]) }
     this.#tails.set(owner, tail)
-    return tail
+    const growth = growthOf(file, position)
+    if (growth.type !== 'appended') return NOTHING_READ
+    tail.position = growth.position
+    return { restarted: true, events: this.#decode(tail, growth.lines) }
   }
 }
 
@@ -354,7 +377,7 @@ class ActivityTails {
 // the newest turn marker the file holds and the content of the lines it just gained.
 export function watchHistoryActivity(
   files: HistoryFiles,
-  active: (owner: string, turn: HistoryTurn | null, events: SessionLiveEventBody[]) => void,
+  active: (owner: string, turn: HistoryTurn | null, reading: HistoryActivityReading) => void,
 ): () => void {
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
   const tails = new ActivityTails(files)
@@ -370,7 +393,7 @@ export function watchHistoryActivity(
         setTimeout(() => {
           timers.delete(owner)
           const file = path.join(files.directory, relativePath)
-          active(owner, latestTurn(file, files.turnOf), tails.events(owner, file))
+          active(owner, latestTurn(file, files.turnOf), tails.read(owner, file))
         }, SETTLE_MS),
       )
     },

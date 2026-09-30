@@ -7,7 +7,6 @@ import {
   desc,
   eq,
   getTableColumns,
-  inArray,
   isNotNull,
   isNull,
   type SQL,
@@ -29,10 +28,6 @@ import { ticketContentSelectSchema } from '@/database/ticket-content/validation'
 import { type LiveActivity, liveActivitySchema } from '@/domains/sessions/api/feed'
 import { feedActivitySchema } from '@/domains/sessions/api/feed-activity'
 import { sessionListInputSchema } from '@/domains/sessions/api/session-list-input'
-import {
-  isWorkingStatus,
-  WORKING_SESSION_STATUSES,
-} from '@/domains/sessions/api/session-live-event'
 import { identifierSchema } from '@/shared/validation'
 import { type StoredSubagent, storedSessionSubagents } from '../database'
 import { type LiveSessionSupervisorActor, liveSessionActorFor } from '../live'
@@ -114,8 +109,7 @@ function storedActivity(stored: string | null): LiveActivity | null {
   return null
 }
 
-// The Feed's activity names no tool or target, so the row keeps its kind as the tool. It outranks
-// the live channel's own.
+// A stored line names no tool or target, so the row keeps its kind as the tool.
 function observedActivity(stored: string | null): z.infer<typeof feedActivitySchema> | null {
   const activity = storedActivity(stored)
   return activity === null ? null : { ...activity, tool: activity.kind, target: null }
@@ -158,7 +152,8 @@ function sessionListRow(
     name: row.name,
     status: liveStatus ?? row.status,
     updatedAt: new Date(row.activityAt ?? row.updatedAt).toISOString(),
-    activity: observedActivity(row.activity) ?? live?.activity ?? null,
+    // A live channel's own activity outranks the line the history watcher or a Feed stored.
+    activity: live?.activity ?? observedActivity(row.activity),
     subagents,
     ticket: linkedTicket(row.ticket),
     archived: row.archived,
@@ -334,49 +329,13 @@ export function sessionListChangedProcedure(context: SessionListContext) {
   )
 }
 
-// The Sessions working now: a live channel's status, or else the one the history watcher stored.
-function workingSessionIds(
-  context: Pick<SessionListContext, 'database' | 'supervisor'>,
-): Set<string> {
-  const stored = context.database
-    .select({ id: sessionTable.argoId })
-    .from(sessionTable)
-    .where(inArray(sessionTable.status, [...WORKING_SESSION_STATUSES]))
-    .all()
-  const working = new Set(stored.map((row) => row.id))
-  for (const sessionId of Object.keys(context.supervisor.getSnapshot().context.sessions)) {
-    const status = liveProjection(context, sessionId)?.status
-    if (status !== undefined && isWorkingStatus(status)) working.add(sessionId)
-  }
-  return working
-}
-
-// Announces each live status change, and keeps a Feed reader open for each working Session so its
-// row draws the Feed's activity line. Idle rows open no reader.
+// Announces each live status change. The rows' activity lines are stored by the history watcher,
+// so the list opens no Feed reader.
 export function watchSessionList(
-  context: Pick<SessionListContext, 'database' | 'supervisor' | 'changes'>,
-  observeFeed: (sessionId: string) => () => void,
+  context: Pick<SessionListContext, 'supervisor' | 'changes'>,
 ): () => void {
-  const observed = new Map<string, () => void>()
-  const observeWorking = () => {
-    const working = workingSessionIds(context)
-    for (const [sessionId, stop] of observed)
-      if (!working.has(sessionId)) {
-        observed.delete(sessionId)
-        stop()
-      }
-    for (const sessionId of working)
-      if (!observed.has(sessionId)) observed.set(sessionId, observeFeed(sessionId))
-  }
   const statusChanges = context.supervisor.on('Session status changed', ({ sessionId }) =>
     context.changes.changed([sessionId]),
   )
-  const unsubscribe = context.changes.subscribe(observeWorking)
-  observeWorking()
-  return () => {
-    statusChanges.unsubscribe()
-    unsubscribe()
-    for (const stop of observed.values()) stop()
-    observed.clear()
-  }
+  return () => statusChanges.unsubscribe()
 }

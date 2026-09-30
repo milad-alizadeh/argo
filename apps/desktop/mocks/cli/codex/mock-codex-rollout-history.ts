@@ -76,7 +76,9 @@ function subagentItem(item: {
 function storedItem(id: string, item: Record<string, unknown>, type: unknown): StoredItem | null {
   if (type === 'SubAgentActivity') return subagentItem({ ...item, id })
   const role = typeof type === 'string' ? itemRole(type) : null
-  return role === null ? null : { id, type: role, text: textFrom(item) }
+  if (role === null) return null
+  const phase = typeof item.phase === 'string' ? { phase: item.phase } : {}
+  return { id, type: role, text: textFrom(item), ...phase }
 }
 
 function recordItem(payload: Record<string, unknown> | undefined, state: RolloutState) {

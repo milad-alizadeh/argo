@@ -35,11 +35,14 @@ the newer turn open. The watcher stores `running` for an open turn and `idle` fo
 the Session row, in the same write as `activityAt`. Every row has a status, `unknown` until
 something is known. An open turn whose file stays quiet for five minutes is stored as `unknown`,
 because a killed terminal writes nothing more, and a restart and a shutdown reset every working
-status to `unknown`. A live channel's own status outranks the stored one. The row's activity line
-is the last activity a Feed's main reading published, stored on the Session row. Main starts the
-history watchers, the status tracker and one set of Feed readers once for the app, not per window.
-It opens a Feed reader only for a Session that is starting, running, or waiting on the user, so an
-idle row keeps its stored line with no reader.
+status to `unknown`. A live channel's own status and activity outrank the stored ones. The row's
+activity line is stored on the Session row. The history watcher finds it from the lines it already
+decoded, with the Feed's own rules, and an open Feed's main reading also stores it. The watcher
+reads at most the last 256 KiB of a file for one change, and starts again from that window when a
+file is rewritten, truncated, or grows by more than the window. Each Session's line is written at
+most once every 500 ms, as its newest value. Main starts the history watchers, the status tracker
+and one set of Feed readers once for the app, not per window. The Session List opens no Feed
+reader, so listing, search, Archive and scrolling read no whole history.
 
 ## Amendment · Harness registrations for sync · 2026-09-28
 

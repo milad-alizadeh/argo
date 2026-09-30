@@ -173,6 +173,6 @@ export function openClaudeHistoryReader(
       events.push(...step.events)
     }
     if (rejected > 0) console.warn(`Rejected ${rejected} unsupported Claude history line(s).`)
-    return branched ? { type: 'rewritten' } : { type: 'appended', events }
+    return { type: branched ? 'rewritten' : 'appended', events }
   }
 }

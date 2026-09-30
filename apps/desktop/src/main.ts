@@ -18,6 +18,7 @@ import { sessionLiveEventBodySchema } from '@/domains/sessions/api/session-live-
 import {
   clearWorkingStatuses,
   listComposerCommandsFor,
+  SessionActivities,
   SessionListChanges,
   updateHarnessSession,
   WatchedSessionStatus,
@@ -415,28 +416,26 @@ function sessionFeedReaders(actors: WindowActors, database: Database, registry: 
   })
 }
 
-// The Session watchers the app runs once: every history write moves its Session's row, and each
-// working Session keeps a Feed reader open for its activity line.
+// The Session watchers the app runs once: every history write moves its Session's row and stores
+// its activity line from the lines the watcher read, so the Session List opens no Feed reader.
 function startSessionServices(actors: WindowActors, database: Database, registry: HarnessRegistry) {
   const readers = sessionFeedReaders(actors, database, registry)
   const context = { database, changes: sessionListChanges }
   const watchedStatus = new WatchedSessionStatus((session) =>
     updateHarnessSession(context, session, { status: 'unknown' }),
   )
-  const stops = [
-    watchSessionList({ ...context, supervisor: actors.sessions }, (sessionId) =>
-      readers.observe({ sessionId, subagentId: null }, () => {}),
-    ),
-  ]
+  const activities = new SessionActivities(context)
+  const stops = [watchSessionList({ ...context, supervisor: actors.sessions })]
   for (const harness of harnessSchema.options) {
     const files = registry[harness].historyFiles
     if (files === undefined) continue
     stops.push(
-      watchHistoryActivity(files, (owner, turn, events) => {
+      watchHistoryActivity(files, (owner, turn, reading) => {
         const at = Date.now()
         const session = { harness, nativeId: owner }
         const status = watchedStatus.record({ ...session, turn, at })
-        recordLiveSubagents(database, { ...session, events })
+        recordLiveSubagents(database, { ...session, events: reading.events })
+        activities.publish(session, reading)
         if (!updateHarnessSession(context, session, { status, activityAt: at }))
           actors.sessionSync.send({ type: 'Discover', harness, nativeId: owner })
       }),
@@ -446,6 +445,7 @@ function startSessionServices(actors: WindowActors, database: Database, registry
     readers,
     stop: () => {
       for (const stop of stops) stop()
+      activities.stop()
       watchedStatus.dispose()
     },
   }
